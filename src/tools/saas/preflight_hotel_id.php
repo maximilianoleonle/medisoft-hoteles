@@ -298,9 +298,27 @@ $tablasHabitacionesMigradas = [
     ],
 ];
 
-$tablasPermitidasConHotelIdPost2A1 = array_merge(
+$tablasInventarioBaseMigradas = [
+    'inventario_categorias' => [
+        'indice' => 'idx_inventario_categorias_hotel_id',
+        'foreign_key' => 'fk_inventario_categorias_hotel',
+    ],
+    'inventario_productos' => [
+        'indice' => 'idx_inventario_productos_hotel_id',
+        'foreign_key' => 'fk_inventario_productos_hotel',
+    ],
+    'inventario_config_habitacion' => [
+        'indice' => 'idx_inventario_config_habitacion_hotel_id',
+        'foreign_key' => 'fk_inventario_config_habitacion_hotel',
+    ],
+];
+
+$tablasMigradasConHotelId = array_merge($tablasHabitacionesMigradas, $tablasInventarioBaseMigradas);
+
+$tablasPermitidasConHotelIdPostInventario1C = array_merge(
     ['hotel_configuracion', 'hotel_usuarios', 'logs_auditoria'],
-    array_keys($tablasHabitacionesMigradas)
+    array_keys($tablasHabitacionesMigradas),
+    array_keys($tablasInventarioBaseMigradas)
 );
 
 $tablas = [
@@ -394,6 +412,15 @@ if (existeTablaPreflight($pdo, $databaseName, 'migrations')) {
     } else {
         preflightError('Migracion 20260526_003_add_hotel_id_habitaciones.sql no esta registrada');
     }
+
+    $estadoMigracionInventarioBase = obtenerEstadoMigracion($pdo, '20260526_006_add_hotel_id_inventario_base.sql');
+    if ($estadoMigracionInventarioBase === 'ejecutada') {
+        preflightOk('Migracion 20260526_006_add_hotel_id_inventario_base.sql registrada como ejecutada');
+    } elseif ($estadoMigracionInventarioBase !== null) {
+        preflightWarn("Migracion 20260526_006_add_hotel_id_inventario_base.sql registrada con estado {$estadoMigracionInventarioBase}");
+    } else {
+        preflightError('Migracion 20260526_006_add_hotel_id_inventario_base.sql no esta registrada');
+    }
 }
 
 foreach ($tablas as $grupo => $grupoTablas) {
@@ -429,8 +456,8 @@ foreach ($tablas as $grupo => $grupoTablas) {
         if ($tieneHotelId) {
             $tablasConHotelId[] = $tabla;
             preflightOk("Tabla {$tabla} ya tiene hotel_id");
-        } elseif (array_key_exists($tabla, $tablasHabitacionesMigradas)) {
-            preflightError("Tabla {$tabla} deberia tener hotel_id despues de Fase 2A.1");
+        } elseif (array_key_exists($tabla, $tablasMigradasConHotelId)) {
+            preflightError("Tabla {$tabla} deberia tener hotel_id despues de su migracion tenant");
             $tablasSinHotelIdNecesarias[] = $tabla;
         } elseif ($metadata['necesita_hotel_id']) {
             $tablasSinHotelIdNecesarias[] = $tabla;
@@ -439,11 +466,11 @@ foreach ($tablas as $grupo => $grupoTablas) {
             preflightOk("Tabla {$tabla} no requiere hotel_id directo");
         }
 
-        if ($tieneHotelId && !in_array($tabla, $tablasPermitidasConHotelIdPost2A1, true)) {
+        if ($tieneHotelId && !in_array($tabla, $tablasPermitidasConHotelIdPostInventario1C, true)) {
             preflightError("Tabla {$tabla} tiene hotel_id antes de la fase autorizada");
         }
 
-        if (array_key_exists($tabla, $tablasHabitacionesMigradas) && $tieneHotelId) {
+        if (array_key_exists($tabla, $tablasMigradasConHotelId) && $tieneHotelId) {
             if ($hotelLosCedrosId === null) {
                 preflightError("No se puede validar backfill de {$tabla} porque no existe Los Cedros");
             } else {
@@ -472,22 +499,24 @@ foreach ($tablas as $grupo => $grupoTablas) {
                 }
             }
 
-            if (existeIndicePreflight($pdo, $databaseName, $tabla, $tablasHabitacionesMigradas[$tabla]['indice'])) {
-                preflightOk("Indice {$tablasHabitacionesMigradas[$tabla]['indice']} existe");
+            if (existeIndicePreflight($pdo, $databaseName, $tabla, $tablasMigradasConHotelId[$tabla]['indice'])) {
+                preflightOk("Indice {$tablasMigradasConHotelId[$tabla]['indice']} existe");
             } else {
-                preflightError("Indice {$tablasHabitacionesMigradas[$tabla]['indice']} no existe");
+                preflightError("Indice {$tablasMigradasConHotelId[$tabla]['indice']} no existe");
             }
 
-            if (existeForeignKeyPreflight($pdo, $databaseName, $tabla, $tablasHabitacionesMigradas[$tabla]['foreign_key'])) {
-                preflightOk("Foreign key {$tablasHabitacionesMigradas[$tabla]['foreign_key']} existe hacia hoteles(id)");
+            if (existeForeignKeyPreflight($pdo, $databaseName, $tabla, $tablasMigradasConHotelId[$tabla]['foreign_key'])) {
+                preflightOk("Foreign key {$tablasMigradasConHotelId[$tabla]['foreign_key']} existe hacia hoteles(id)");
             } else {
-                preflightError("Foreign key {$tablasHabitacionesMigradas[$tabla]['foreign_key']} no existe hacia hoteles(id)");
+                preflightError("Foreign key {$tablasMigradasConHotelId[$tabla]['foreign_key']} no existe hacia hoteles(id)");
             }
         }
 
         $necesitaTexto = $metadata['necesita_hotel_id'] ? 'si, en Fase 2 o posterior' : 'no';
         if (array_key_exists($tabla, $tablasHabitacionesMigradas)) {
-            $necesitaTexto .= '; migrada en Fase 2A.1, pendiente integracion de codigo';
+            $necesitaTexto .= '; migrada en Fase 2A.1, con codigo de Habitaciones ya scoped';
+        } elseif (array_key_exists($tabla, $tablasInventarioBaseMigradas)) {
+            $necesitaTexto .= '; migrada en Inventario 1-C, pendiente integracion de codigo de Inventario';
         } elseif (in_array($tabla, $primerasCandidatas, true)) {
             $necesitaTexto .= '; primera candidata';
         }
@@ -566,7 +595,7 @@ if ($topRiesgos === []) {
     }
 }
 
-echo "Recomendacion de siguiente fase: preparar Fase 2A.2 de integracion de codigo solo para Habitaciones. Mantener reservaciones, caja y PWA/sync fuera hasta aprobacion explicita.\n";
+echo "Recomendacion de siguiente fase: preparar auditoria de codigo de Inventario base. Mantener movimientos, check-in/check-out, reservaciones, caja y PWA/sync fuera hasta aprobacion explicita.\n";
 echo "Total OK: {$ok}\n";
 echo "Total WARN: {$warnings}\n";
 echo "Total ERROR: {$errors}\n";
