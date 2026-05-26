@@ -187,8 +187,12 @@ class Inventario extends Model {
      */
     public function getHabitacionesActivas() {
         $db = Database::getInstance();
-        $sql = "SELECT id, numero FROM habitaciones WHERE activa = 1 ORDER BY numero";
-        $stmt = $db->query($sql);
+        $hotelId = $this->hotelIdActual();
+        $sql = "SELECT id, numero
+                FROM habitaciones
+                WHERE activa = 1 AND hotel_id = ?
+                ORDER BY numero";
+        $stmt = $db->query($sql, [$hotelId]);
         return $stmt ? $stmt->fetchAll() : [];
     }
 

@@ -6,6 +6,8 @@
  * Corrige el problema de ordenamiento de movimientos recientes
  */
 
+require_once __DIR__ . '/../helpers/hotel_config.php';
+
 class MovimientoInventario extends Model {
     protected $table = 'movimientos_inventario';
     protected $timestamps = true;
@@ -19,8 +21,60 @@ class MovimientoInventario extends Model {
     'habitacion_id',
     'reservacion_id',
     'usuario_id',
+    'hotel_id',
     'created_at'  // ASEGÚRATE DE QUE ESTA LÍNEA ESTÉ AQUÍ
 ];
+
+    private function hotelIdActual() {
+        return obtenerHotelIdActualCompat();
+    }
+
+    private function productoPerteneceAlHotel($productoId, $hotelId): bool {
+        $result = $this->query(
+            "SELECT COUNT(*) AS total
+             FROM inventario_productos
+             WHERE id = ? AND hotel_id = ?",
+            [$productoId, $hotelId]
+        );
+
+        return (int)($result[0]['total'] ?? 0) > 0;
+    }
+
+    private function habitacionPerteneceAlHotel($habitacionId, $hotelId): bool {
+        $result = $this->query(
+            "SELECT COUNT(*) AS total
+             FROM habitaciones
+             WHERE id = ? AND hotel_id = ?",
+            [$habitacionId, $hotelId]
+        );
+
+        return (int)($result[0]['total'] ?? 0) > 0;
+    }
+
+    public function crearMovimientoManual(array $data) {
+        $hotelId = $this->hotelIdActual();
+        $productoId = (int)($data['producto_id'] ?? 0);
+        $habitacionId = $data['habitacion_id'] ?? null;
+
+        if ($productoId <= 0 || !$this->productoPerteneceAlHotel($productoId, $hotelId)) {
+            throw new Exception('Producto no encontrado para el hotel actual');
+        }
+
+        if ($habitacionId !== null && $habitacionId !== '') {
+            $habitacionId = (int)$habitacionId;
+            if ($habitacionId <= 0 || !$this->habitacionPerteneceAlHotel($habitacionId, $hotelId)) {
+                throw new Exception('Habitacion no encontrada para el hotel actual');
+            }
+            $data['habitacion_id'] = $habitacionId;
+        } else {
+            $data['habitacion_id'] = null;
+        }
+
+        $data['producto_id'] = $productoId;
+        $data['hotel_id'] = $hotelId;
+
+        return parent::create($data);
+    }
     
     /**
      * Obtener movimientos con detalles - VERSIÓN CORREGIDA CON ORDENAMIENTO

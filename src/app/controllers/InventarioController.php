@@ -817,8 +817,14 @@ public function debugMovimientosDateAction() {
                 throw new Exception('La categoria seleccionada no pertenece al hotel actual');
             }
             
+            $this->db->safeBeginTransaction();
+
             // Crear el producto
             $producto_id = $this->inventarioModel->create($data);
+
+            if (!$producto_id) {
+                throw new Exception('Error al crear el producto');
+            }
             
             if ($producto_id) {
                 // Si hay stock inicial, registrar el movimiento
@@ -834,17 +840,21 @@ public function debugMovimientosDateAction() {
     'created_at' => date('Y-m-d H:i:s') // AGREGAR ESTA LÍNEA
 ];
                     
-                    $this->movimientoModel->create($movimiento_data);
+                    $this->movimientoModel->crearMovimientoManual($movimiento_data);
                 }
-                
+
+                $this->db->safeCommit();
                 set_mensaje('Producto creado correctamente', 'success');
             } else {
                 set_mensaje('Error al crear el producto', 'error');
             }
-            
-        } catch (Exception $e) {
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
-        }
+
+	        } catch (Exception $e) {
+            if ($this->db->enTransaccion()) {
+                $this->db->safeRollBack();
+            }
+	            set_mensaje('Error: ' . $e->getMessage(), 'error');
+	        }
         
         $this->redirect('inventario');
     }
@@ -878,7 +888,7 @@ public function debugMovimientosDateAction() {
             $motivo = trim($this->getPost('motivo'));
             
             // Obtener producto actual
-            $producto = $this->inventarioModel->find($producto_id);
+            $producto = $this->inventarioModel->getByIdWithCategory($producto_id);
             
             if (!$producto) {
                 throw new Exception('Producto no encontrado');
@@ -887,8 +897,10 @@ public function debugMovimientosDateAction() {
             $stock_anterior = intval($producto['stock_actual']);
             $stock_nuevo = $stock_anterior + $cantidad;
             
+            $this->db->safeBeginTransaction();
+
             // Actualizar stock directamente
-            $actualizado = $this->inventarioModel->update($producto_id, [
+            $actualizado = $this->inventarioModel->actualizarProductoBase($producto_id, [
                 'stock_actual' => $stock_nuevo
             ]);
             
@@ -905,16 +917,20 @@ public function debugMovimientosDateAction() {
     'created_at' => date('Y-m-d H:i:s') // AGREGAR ESTA LÍNEA
 ];
                 
-                $this->movimientoModel->create($movimiento_data);
-                
+                $this->movimientoModel->crearMovimientoManual($movimiento_data);
+
+                $this->db->safeCommit();
                 set_mensaje('Entrada registrada correctamente', 'success');
             } else {
                 throw new Exception('No se pudo actualizar el stock');
             }
             
-        } catch (Exception $e) {
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
-        }
+	        } catch (Exception $e) {
+            if ($this->db->enTransaccion()) {
+                $this->db->safeRollBack();
+            }
+	            set_mensaje('Error: ' . $e->getMessage(), 'error');
+	        }
         
         $this->redirect('inventario');
     }
@@ -951,7 +967,7 @@ public function debugMovimientosDateAction() {
             $habitacion_id = $this->getPost('habitacion_id') ?: null;
             
             // Obtener producto actual
-            $producto = $this->inventarioModel->find($producto_id);
+            $producto = $this->inventarioModel->getByIdWithCategory($producto_id);
             
             if (!$producto) {
                 throw new Exception('Producto no encontrado');
@@ -966,8 +982,10 @@ public function debugMovimientosDateAction() {
             
             $stock_nuevo = $stock_anterior - $cantidad;
             
+            $this->db->safeBeginTransaction();
+
             // Actualizar stock directamente
-            $actualizado = $this->inventarioModel->update($producto_id, [
+            $actualizado = $this->inventarioModel->actualizarProductoBase($producto_id, [
                 'stock_actual' => $stock_nuevo
             ]);
             
@@ -985,16 +1003,20 @@ public function debugMovimientosDateAction() {
     'created_at' => date('Y-m-d H:i:s') // AGREGAR ESTA LÍNEA
 ];
                 
-                $this->movimientoModel->create($movimiento_data);
-                
+                $this->movimientoModel->crearMovimientoManual($movimiento_data);
+
+                $this->db->safeCommit();
                 set_mensaje('Salida registrada correctamente', 'success');
             } else {
                 throw new Exception('No se pudo actualizar el stock');
             }
             
-        } catch (Exception $e) {
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
-            $this->redirect('inventario/salida');
+	        } catch (Exception $e) {
+            if ($this->db->enTransaccion()) {
+                $this->db->safeRollBack();
+            }
+	            set_mensaje('Error: ' . $e->getMessage(), 'error');
+	            $this->redirect('inventario/salida');
             return;
         }
         
@@ -1201,7 +1223,7 @@ public function debugMovimientosDateAction() {
             $motivo = trim($this->getPost('motivo'));
             
             // Obtener producto actual
-            $producto = $this->inventarioModel->find($producto_id);
+            $producto = $this->inventarioModel->getByIdWithCategory($producto_id);
             
             if (!$producto) {
                 throw new Exception('Producto no encontrado');
@@ -1211,8 +1233,10 @@ public function debugMovimientosDateAction() {
             
             // Solo procesar si hay diferencia
             if ($stock_anterior !== $stock_nuevo) {
+                $this->db->safeBeginTransaction();
+
                 // Actualizar stock
-                $actualizado = $this->inventarioModel->update($producto_id, [
+                $actualizado = $this->inventarioModel->actualizarProductoBase($producto_id, [
                     'stock_actual' => $stock_nuevo
                 ]);
                 
@@ -1231,16 +1255,9 @@ public function debugMovimientosDateAction() {
     'usuario_id' => $_SESSION['usuario_id'] ?? null,
     'created_at' => date('Y-m-d H:i:s') // AGREGAR ESTA LÍNEA
 ];
-                    // Justo antes de crear el movimiento
-error_log("=== DEBUG MOVIMIENTO ===");
-error_log("Datos antes de create: " . print_r($movimiento_data, true));
+                    $this->movimientoModel->crearMovimientoManual($movimiento_data);
 
-$resultado = $this->movimientoModel->create($movimiento_data);
-
-error_log("Resultado del create: " . $resultado);
-error_log("=== FIN DEBUG ===");
-                    $this->movimientoModel->create($movimiento_data);
-                    
+                    $this->db->safeCommit();
                     set_mensaje('Ajuste realizado correctamente', 'success');
                 } else {
                     throw new Exception('No se pudo actualizar el stock');
@@ -1249,9 +1266,12 @@ error_log("=== FIN DEBUG ===");
                 set_mensaje('No hay cambios en el stock', 'info');
             }
             
-        } catch (Exception $e) {
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
-        }
+	        } catch (Exception $e) {
+            if ($this->db->enTransaccion()) {
+                $this->db->safeRollBack();
+            }
+	            set_mensaje('Error: ' . $e->getMessage(), 'error');
+	        }
         
         $this->redirect('inventario');
     }
