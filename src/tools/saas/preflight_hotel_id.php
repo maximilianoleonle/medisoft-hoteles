@@ -160,6 +160,49 @@ function obtenerIndicesUnicos(PDO $pdo, string $databaseName, string $tabla): ar
     return $indices;
 }
 
+function existeIndicePreflight(PDO $pdo, string $databaseName, string $tabla, string $indice): bool
+{
+    $stmt = $pdo->prepare(
+        'SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = :schema AND TABLE_NAME = :tabla AND INDEX_NAME = :indice'
+    );
+    $stmt->execute(['schema' => $databaseName, 'tabla' => $tabla, 'indice' => $indice]);
+
+    return (int) $stmt->fetchColumn() > 0;
+}
+
+function existeForeignKeyPreflight(PDO $pdo, string $databaseName, string $tabla, string $constraint): bool
+{
+    $stmt = $pdo->prepare(
+        'SELECT COUNT(*) FROM information_schema.KEY_COLUMN_USAGE
+         WHERE TABLE_SCHEMA = :schema
+           AND TABLE_NAME = :tabla
+           AND CONSTRAINT_NAME = :constraint
+           AND COLUMN_NAME = "hotel_id"
+           AND REFERENCED_TABLE_NAME = "hoteles"
+           AND REFERENCED_COLUMN_NAME = "id"'
+    );
+    $stmt->execute(['schema' => $databaseName, 'tabla' => $tabla, 'constraint' => $constraint]);
+
+    return (int) $stmt->fetchColumn() > 0;
+}
+
+function obtenerEstadoMigracion(PDO $pdo, string $nombre): ?string
+{
+    $stmt = $pdo->prepare('SELECT estado FROM migrations WHERE nombre = :nombre LIMIT 1');
+    $stmt->execute(['nombre' => $nombre]);
+    $estado = $stmt->fetchColumn();
+
+    return $estado === false ? null : (string) $estado;
+}
+
+function obtenerIdHotelLosCedros(PDO $pdo): ?int
+{
+    $stmt = $pdo->query("SELECT id FROM hoteles WHERE slug = 'los-cedros' LIMIT 1");
+    $id = $stmt->fetchColumn();
+
+    return $id === false ? null : (int) $id;
+}
+
 function formatearLista(array $valores): string
 {
     return $valores === [] ? 'ninguno' : implode(', ', $valores);
@@ -236,6 +279,30 @@ $primerasCandidatas = [
     'mantenimientos_habitaciones',
 ];
 
+$tablasHabitacionesMigradas = [
+    'tipos_habitacion' => [
+        'indice' => 'idx_tipos_habitacion_hotel_id',
+        'foreign_key' => 'fk_tipos_habitacion_hotel',
+    ],
+    'habitaciones' => [
+        'indice' => 'idx_habitaciones_hotel_id',
+        'foreign_key' => 'fk_habitaciones_hotel',
+    ],
+    'habitacion_imagenes' => [
+        'indice' => 'idx_habitacion_imagenes_hotel_id',
+        'foreign_key' => 'fk_habitacion_imagenes_hotel',
+    ],
+    'mantenimientos_habitaciones' => [
+        'indice' => 'idx_mantenimientos_habitaciones_hotel_id',
+        'foreign_key' => 'fk_mantenimientos_habitaciones_hotel',
+    ],
+];
+
+$tablasPermitidasConHotelIdPost2A1 = array_merge(
+    ['hotel_configuracion', 'hotel_usuarios', 'logs_auditoria'],
+    array_keys($tablasHabitacionesMigradas)
+);
+
 $tablas = [
     'SaaS/base' => [
         'hoteles' => ['necesita_hotel_id' => false, 'orden' => 0, 'riesgo' => 'bajo', 'motivo' => 'Tabla raiz de hoteles; no debe tener hotel_id propio.'],
@@ -303,10 +370,31 @@ $tablasFaltantes = 0;
 $tablasConHotelId = [];
 $tablasSinHotelIdNecesarias = [];
 $riesgosDetectados = [];
+$hotelLosCedrosId = null;
 
 echo "Preflight hotel_id SaaS local - Base: {$databaseName}\n";
 echo str_repeat('=', 72) . "\n";
 echo "[INFO] Analisis de solo lectura. No ejecuta ALTER/INSERT/UPDATE/DELETE.\n";
+
+if (existeTablaPreflight($pdo, $databaseName, 'hoteles')) {
+    $hotelLosCedrosId = obtenerIdHotelLosCedros($pdo);
+    if ($hotelLosCedrosId !== null) {
+        preflightOk("Hotel Los Cedros encontrado con id {$hotelLosCedrosId}");
+    } else {
+        preflightError('Hotel Los Cedros no existe; no se puede validar Fase 2A.1');
+    }
+}
+
+if (existeTablaPreflight($pdo, $databaseName, 'migrations')) {
+    $estadoMigracionHabitaciones = obtenerEstadoMigracion($pdo, '20260526_003_add_hotel_id_habitaciones.sql');
+    if ($estadoMigracionHabitaciones === 'ejecutada') {
+        preflightOk('Migracion 20260526_003_add_hotel_id_habitaciones.sql registrada como ejecutada');
+    } elseif ($estadoMigracionHabitaciones !== null) {
+        preflightWarn("Migracion 20260526_003_add_hotel_id_habitaciones.sql registrada con estado {$estadoMigracionHabitaciones}");
+    } else {
+        preflightError('Migracion 20260526_003_add_hotel_id_habitaciones.sql no esta registrada');
+    }
+}
 
 foreach ($tablas as $grupo => $grupoTablas) {
     echo "\n";
@@ -341,6 +429,9 @@ foreach ($tablas as $grupo => $grupoTablas) {
         if ($tieneHotelId) {
             $tablasConHotelId[] = $tabla;
             preflightOk("Tabla {$tabla} ya tiene hotel_id");
+        } elseif (array_key_exists($tabla, $tablasHabitacionesMigradas)) {
+            preflightError("Tabla {$tabla} deberia tener hotel_id despues de Fase 2A.1");
+            $tablasSinHotelIdNecesarias[] = $tabla;
         } elseif ($metadata['necesita_hotel_id']) {
             $tablasSinHotelIdNecesarias[] = $tabla;
             preflightOk("Tabla {$tabla} todavia no tiene hotel_id");
@@ -348,12 +439,56 @@ foreach ($tablas as $grupo => $grupoTablas) {
             preflightOk("Tabla {$tabla} no requiere hotel_id directo");
         }
 
-        if ($tieneHotelId && !in_array($tabla, ['hotel_configuracion', 'hotel_usuarios', 'logs_auditoria'], true)) {
+        if ($tieneHotelId && !in_array($tabla, $tablasPermitidasConHotelIdPost2A1, true)) {
             preflightError("Tabla {$tabla} tiene hotel_id antes de la fase autorizada");
         }
 
+        if (array_key_exists($tabla, $tablasHabitacionesMigradas) && $tieneHotelId) {
+            if ($hotelLosCedrosId === null) {
+                preflightError("No se puede validar backfill de {$tabla} porque no existe Los Cedros");
+            } else {
+                $stmt = $pdo->prepare(
+                    'SELECT COUNT(*) AS total,
+                            SUM(CASE WHEN hotel_id = :hotel_id THEN 1 ELSE 0 END) AS con_los_cedros,
+                            SUM(CASE WHEN hotel_id IS NULL THEN 1 ELSE 0 END) AS hotel_id_null
+                     FROM ' . quoteIdentifier($tabla)
+                );
+                $stmt->execute(['hotel_id' => $hotelLosCedrosId]);
+                $conteoHotel = $stmt->fetch(PDO::FETCH_ASSOC);
+                $totalHotel = (int) $conteoHotel['total'];
+                $conLosCedros = (int) $conteoHotel['con_los_cedros'];
+                $hotelIdNull = (int) $conteoHotel['hotel_id_null'];
+
+                if ($hotelIdNull === 0) {
+                    preflightOk("Tabla {$tabla} no tiene hotel_id NULL");
+                } else {
+                    preflightError("Tabla {$tabla} tiene {$hotelIdNull} registros con hotel_id NULL");
+                }
+
+                if ($totalHotel === $conLosCedros) {
+                    preflightOk("Tabla {$tabla} tiene {$conLosCedros}/{$totalHotel} registros asignados a Los Cedros");
+                } else {
+                    preflightError("Tabla {$tabla} tiene {$conLosCedros}/{$totalHotel} registros asignados a Los Cedros");
+                }
+            }
+
+            if (existeIndicePreflight($pdo, $databaseName, $tabla, $tablasHabitacionesMigradas[$tabla]['indice'])) {
+                preflightOk("Indice {$tablasHabitacionesMigradas[$tabla]['indice']} existe");
+            } else {
+                preflightError("Indice {$tablasHabitacionesMigradas[$tabla]['indice']} no existe");
+            }
+
+            if (existeForeignKeyPreflight($pdo, $databaseName, $tabla, $tablasHabitacionesMigradas[$tabla]['foreign_key'])) {
+                preflightOk("Foreign key {$tablasHabitacionesMigradas[$tabla]['foreign_key']} existe hacia hoteles(id)");
+            } else {
+                preflightError("Foreign key {$tablasHabitacionesMigradas[$tabla]['foreign_key']} no existe hacia hoteles(id)");
+            }
+        }
+
         $necesitaTexto = $metadata['necesita_hotel_id'] ? 'si, en Fase 2 o posterior' : 'no';
-        if (in_array($tabla, $primerasCandidatas, true)) {
+        if (array_key_exists($tabla, $tablasHabitacionesMigradas)) {
+            $necesitaTexto .= '; migrada en Fase 2A.1, pendiente integracion de codigo';
+        } elseif (in_array($tabla, $primerasCandidatas, true)) {
             $necesitaTexto .= '; primera candidata';
         }
         preflightInfo("Necesitara hotel_id: {$necesitaTexto}");
@@ -431,7 +566,7 @@ if ($topRiesgos === []) {
     }
 }
 
-echo "Recomendacion de siguiente fase: preparar Fase 2A solo para tipos_habitacion, habitaciones, habitacion_imagenes y mantenimientos_habitaciones, con backup fresco y migracion reversible. Mantener reservaciones, caja y PWA/sync fuera hasta aprobacion explicita.\n";
+echo "Recomendacion de siguiente fase: preparar Fase 2A.2 de integracion de codigo solo para Habitaciones. Mantener reservaciones, caja y PWA/sync fuera hasta aprobacion explicita.\n";
 echo "Total OK: {$ok}\n";
 echo "Total WARN: {$warnings}\n";
 echo "Total ERROR: {$errors}\n";

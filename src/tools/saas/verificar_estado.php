@@ -67,6 +67,47 @@ function existeTabla(PDO $pdo, string $databaseName, string $tabla): bool
     return (int) $stmt->fetchColumn() > 0;
 }
 
+function quoteIdentifier(string $identifier): string
+{
+    return '`' . str_replace('`', '``', $identifier) . '`';
+}
+
+function existeColumna(PDO $pdo, string $databaseName, string $tabla, string $columna): bool
+{
+    $stmt = $pdo->prepare(
+        'SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = :schema AND TABLE_NAME = :tabla AND COLUMN_NAME = :columna'
+    );
+    $stmt->execute(['schema' => $databaseName, 'tabla' => $tabla, 'columna' => $columna]);
+
+    return (int) $stmt->fetchColumn() > 0;
+}
+
+function existeIndice(PDO $pdo, string $databaseName, string $tabla, string $indice): bool
+{
+    $stmt = $pdo->prepare(
+        'SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = :schema AND TABLE_NAME = :tabla AND INDEX_NAME = :indice'
+    );
+    $stmt->execute(['schema' => $databaseName, 'tabla' => $tabla, 'indice' => $indice]);
+
+    return (int) $stmt->fetchColumn() > 0;
+}
+
+function existeForeignKey(PDO $pdo, string $databaseName, string $tabla, string $constraint): bool
+{
+    $stmt = $pdo->prepare(
+        'SELECT COUNT(*) FROM information_schema.KEY_COLUMN_USAGE
+         WHERE TABLE_SCHEMA = :schema
+           AND TABLE_NAME = :tabla
+           AND CONSTRAINT_NAME = :constraint
+           AND COLUMN_NAME = "hotel_id"
+           AND REFERENCED_TABLE_NAME = "hoteles"
+           AND REFERENCED_COLUMN_NAME = "id"'
+    );
+    $stmt->execute(['schema' => $databaseName, 'tabla' => $tabla, 'constraint' => $constraint]);
+
+    return (int) $stmt->fetchColumn() > 0;
+}
+
 function obtenerValorConfiguracion(PDO $pdo, string $clave): ?array
 {
     $stmt = $pdo->prepare(
@@ -113,6 +154,8 @@ try {
 echo "Verificacion SaaS local - Base: {$databaseName}\n";
 echo str_repeat('=', 56) . "\n";
 
+$hotel = null;
+
 $tablasSaas = [
     'migrations',
     'hoteles',
@@ -136,6 +179,7 @@ if ($tablasDisponibles['migrations']) {
     $migracionesEsperadas = [
         '20260526_001_crear_base_saas_multihotel.sql',
         '20260526_002_seed_hotel_los_cedros.sql',
+        '20260526_003_add_hotel_id_habitaciones.sql',
     ];
 
     $stmt = $pdo->prepare('SELECT estado FROM migrations WHERE nombre = :nombre LIMIT 1');
@@ -244,6 +288,10 @@ $tablasPermitidasConHotelId = [
     'hotel_configuracion',
     'hotel_usuarios',
     'logs_auditoria',
+    'tipos_habitacion',
+    'habitaciones',
+    'habitacion_imagenes',
+    'mantenimientos_habitaciones',
 ];
 
 $stmt = $pdo->prepare(
@@ -259,7 +307,7 @@ $tablasNoPermitidas = array_values(array_diff($tablasConHotelId, $tablasPermitid
 $tablasPermitidasFaltantes = array_values(array_diff($tablasPermitidasConHotelId, $tablasConHotelId));
 
 if ($tablasNoPermitidas === []) {
-    ok('Columnas hotel_id solo existen en tablas SaaS permitidas');
+    ok('Columnas hotel_id solo existen en tablas permitidas para el estado post Fase 2A.1');
 } else {
     errorCheck('Columnas hotel_id encontradas fuera de tablas permitidas: ' . implode(', ', $tablasNoPermitidas));
 }
@@ -268,18 +316,94 @@ foreach ($tablasPermitidasFaltantes as $tablaFaltante) {
     errorCheck("La tabla {$tablaFaltante} no tiene columna hotel_id esperada");
 }
 
-$tablasOperativasEsperadas = [
-    'habitaciones',
+$tablasHabitacionesMigradas = [
+    'tipos_habitacion' => [
+        'indice' => 'idx_tipos_habitacion_hotel_id',
+        'foreign_key' => 'fk_tipos_habitacion_hotel',
+    ],
+    'habitaciones' => [
+        'indice' => 'idx_habitaciones_hotel_id',
+        'foreign_key' => 'fk_habitaciones_hotel',
+    ],
+    'habitacion_imagenes' => [
+        'indice' => 'idx_habitacion_imagenes_hotel_id',
+        'foreign_key' => 'fk_habitacion_imagenes_hotel',
+    ],
+    'mantenimientos_habitaciones' => [
+        'indice' => 'idx_mantenimientos_habitaciones_hotel_id',
+        'foreign_key' => 'fk_mantenimientos_habitaciones_hotel',
+    ],
+];
+
+if ($hotel === null || !isset($hotel['id'])) {
+    errorCheck('No se puede validar hotel_id en Habitaciones porque no se encontro Los Cedros');
+} else {
+    foreach ($tablasHabitacionesMigradas as $tabla => $metadata) {
+        if (!existeTabla($pdo, $databaseName, $tabla)) {
+            errorCheck("Tabla {$tabla} no existe para validar hotel_id post Fase 2A.1");
+            continue;
+        }
+
+        if (!existeColumna($pdo, $databaseName, $tabla, 'hotel_id')) {
+            errorCheck("Tabla {$tabla} no tiene hotel_id post Fase 2A.1");
+            continue;
+        }
+
+        ok("Tabla {$tabla} tiene hotel_id post Fase 2A.1");
+
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*) AS total,
+                    SUM(CASE WHEN hotel_id = :hotel_id THEN 1 ELSE 0 END) AS con_los_cedros,
+                    SUM(CASE WHEN hotel_id IS NULL THEN 1 ELSE 0 END) AS hotel_id_null
+             FROM ' . quoteIdentifier($tabla)
+        );
+        $stmt->execute(['hotel_id' => $hotel['id']]);
+        $conteo = $stmt->fetch(PDO::FETCH_ASSOC);
+        $total = (int) $conteo['total'];
+        $conLosCedros = (int) $conteo['con_los_cedros'];
+        $hotelIdNull = (int) $conteo['hotel_id_null'];
+
+        if ($hotelIdNull === 0) {
+            ok("Tabla {$tabla} no tiene hotel_id NULL en registros existentes");
+        } else {
+            errorCheck("Tabla {$tabla} tiene {$hotelIdNull} registros con hotel_id NULL");
+        }
+
+        if ($total === $conLosCedros) {
+            ok("Tabla {$tabla} tiene {$conLosCedros}/{$total} registros asignados a Los Cedros");
+        } else {
+            errorCheck("Tabla {$tabla} tiene {$conLosCedros}/{$total} registros asignados a Los Cedros");
+        }
+
+        if (existeIndice($pdo, $databaseName, $tabla, $metadata['indice'])) {
+            ok("Indice {$metadata['indice']} existe");
+        } else {
+            errorCheck("Indice {$metadata['indice']} no existe");
+        }
+
+        if (existeForeignKey($pdo, $databaseName, $tabla, $metadata['foreign_key'])) {
+            ok("Foreign key {$metadata['foreign_key']} existe hacia hoteles(id)");
+        } else {
+            errorCheck("Foreign key {$metadata['foreign_key']} no existe hacia hoteles(id)");
+        }
+    }
+}
+
+$tablasOperativasSinHotelIdEsperadas = [
     'reservaciones',
     'huespedes',
     'cajas',
     'cortes_caja',
     'movimientos_caja',
+    'reservacion_habitaciones',
+    'reservacion_pagos',
+    'sync_queue',
+    'push_subscriptions',
     'inventario_productos',
     'tarifas_temporada',
 ];
 
-foreach ($tablasOperativasEsperadas as $tablaOperativa) {
+foreach ($tablasOperativasSinHotelIdEsperadas as $tablaOperativa) {
     if (!existeTabla($pdo, $databaseName, $tablaOperativa)) {
         warn("Tabla operativa {$tablaOperativa} no existe con ese nombre en la base actual");
         continue;
