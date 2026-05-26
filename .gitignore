@@ -45,3 +45,6 @@ src/public_html/uploads/temp/
 *.backup
 *.tmp
 *.temp
+
+# Migraciones SQL versionadas del proyecto
+!migrations/*.sql
