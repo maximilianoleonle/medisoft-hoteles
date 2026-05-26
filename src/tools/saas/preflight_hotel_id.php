@@ -320,17 +320,40 @@ $tablasMovimientosInventarioMigradas = [
     ],
 ];
 
+$tablasReservacionesBaseMigradas = [
+    'reservaciones' => [
+        'indice' => 'idx_reservaciones_hotel_id',
+    ],
+    'reservacion_habitaciones' => [
+        'indice' => 'idx_reservacion_habitaciones_hotel_id',
+    ],
+    'reservacion_pagos' => [
+        'indice' => 'idx_reservacion_pagos_hotel_id',
+    ],
+    'reservacion_abonos' => [
+        'indice' => 'idx_reservacion_abonos_hotel_id',
+    ],
+    'reservacion_notas' => [
+        'indice' => 'idx_reservacion_notas_hotel_id',
+    ],
+    'solicitudes_factura' => [
+        'indice' => 'idx_solicitudes_factura_hotel_id',
+    ],
+];
+
 $tablasMigradasConHotelId = array_merge(
     $tablasHabitacionesMigradas,
     $tablasInventarioBaseMigradas,
-    $tablasMovimientosInventarioMigradas
+    $tablasMovimientosInventarioMigradas,
+    $tablasReservacionesBaseMigradas
 );
 
-$tablasPermitidasConHotelIdPostInventario1EB = array_merge(
+$tablasPermitidasConHotelIdPostReservaciones1B = array_merge(
     ['hotel_configuracion', 'hotel_usuarios', 'logs_auditoria'],
     array_keys($tablasHabitacionesMigradas),
     array_keys($tablasInventarioBaseMigradas),
-    array_keys($tablasMovimientosInventarioMigradas)
+    array_keys($tablasMovimientosInventarioMigradas),
+    array_keys($tablasReservacionesBaseMigradas)
 );
 
 $tablas = [
@@ -442,6 +465,15 @@ if (existeTablaPreflight($pdo, $databaseName, 'migrations')) {
     } else {
         preflightError('Migracion 20260526_007_add_hotel_id_movimientos_inventario.sql no esta registrada');
     }
+
+    $estadoMigracionReservacionesBase = obtenerEstadoMigracion($pdo, '20260526_008_add_hotel_id_reservaciones_base.sql');
+    if ($estadoMigracionReservacionesBase === 'ejecutada') {
+        preflightOk('Migracion 20260526_008_add_hotel_id_reservaciones_base.sql registrada como ejecutada');
+    } elseif ($estadoMigracionReservacionesBase !== null) {
+        preflightWarn("Migracion 20260526_008_add_hotel_id_reservaciones_base.sql registrada con estado {$estadoMigracionReservacionesBase}");
+    } else {
+        preflightError('Migracion 20260526_008_add_hotel_id_reservaciones_base.sql no esta registrada');
+    }
 }
 
 foreach ($tablas as $grupo => $grupoTablas) {
@@ -487,7 +519,7 @@ foreach ($tablas as $grupo => $grupoTablas) {
             preflightOk("Tabla {$tabla} no requiere hotel_id directo");
         }
 
-        if ($tieneHotelId && !in_array($tabla, $tablasPermitidasConHotelIdPostInventario1EB, true)) {
+        if ($tieneHotelId && !in_array($tabla, $tablasPermitidasConHotelIdPostReservaciones1B, true)) {
             preflightError("Tabla {$tabla} tiene hotel_id antes de la fase autorizada");
         }
 
@@ -526,10 +558,14 @@ foreach ($tablas as $grupo => $grupoTablas) {
                 preflightError("Indice {$tablasMigradasConHotelId[$tabla]['indice']} no existe");
             }
 
-            if (existeForeignKeyPreflight($pdo, $databaseName, $tabla, $tablasMigradasConHotelId[$tabla]['foreign_key'])) {
-                preflightOk("Foreign key {$tablasMigradasConHotelId[$tabla]['foreign_key']} existe hacia hoteles(id)");
+            if (isset($tablasMigradasConHotelId[$tabla]['foreign_key'])) {
+                if (existeForeignKeyPreflight($pdo, $databaseName, $tabla, $tablasMigradasConHotelId[$tabla]['foreign_key'])) {
+                    preflightOk("Foreign key {$tablasMigradasConHotelId[$tabla]['foreign_key']} existe hacia hoteles(id)");
+                } else {
+                    preflightError("Foreign key {$tablasMigradasConHotelId[$tabla]['foreign_key']} no existe hacia hoteles(id)");
+                }
             } else {
-                preflightError("Foreign key {$tablasMigradasConHotelId[$tabla]['foreign_key']} no existe hacia hoteles(id)");
+                preflightOk("Tabla {$tabla} no requiere foreign key estricta de hotel_id en esta fase");
             }
         }
 
@@ -540,6 +576,8 @@ foreach ($tablas as $grupo => $grupoTablas) {
             $necesitaTexto .= '; migrada en Inventario 1-C, con codigo base de Inventario ya scoped';
         } elseif (array_key_exists($tabla, $tablasMovimientosInventarioMigradas)) {
             $necesitaTexto .= '; migrada en Inventario 1-E-B, pendiente integracion funcional de movimientos';
+        } elseif (array_key_exists($tabla, $tablasReservacionesBaseMigradas)) {
+            $necesitaTexto .= '; migrada en Reservaciones 1-B, pendiente integracion funcional de Reservaciones';
         } elseif (in_array($tabla, $primerasCandidatas, true)) {
             $necesitaTexto .= '; primera candidata';
         }
@@ -618,7 +656,7 @@ if ($topRiesgos === []) {
     }
 }
 
-echo "Recomendacion de siguiente fase: documentar estado post Inventario 1-E-B y auditar integracion funcional de movimientos antes de tocar InventarioService, check-in/check-out, reservaciones, caja o PWA/sync.\n";
+echo "Recomendacion de siguiente fase: actualizar codigo base de Reservaciones solo en fase aprobada; no tocar Caja, PWA/sync ni check-in/check-out todavia.\n";
 echo "Total OK: {$ok}\n";
 echo "Total WARN: {$warnings}\n";
 echo "Total ERROR: {$errors}\n";

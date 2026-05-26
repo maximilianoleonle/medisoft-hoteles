@@ -182,6 +182,7 @@ if ($tablasDisponibles['migrations']) {
         '20260526_003_add_hotel_id_habitaciones.sql',
         '20260526_006_add_hotel_id_inventario_base.sql',
         '20260526_007_add_hotel_id_movimientos_inventario.sql',
+        '20260526_008_add_hotel_id_reservaciones_base.sql',
     ];
 
     $stmt = $pdo->prepare('SELECT estado FROM migrations WHERE nombre = :nombre LIMIT 1');
@@ -298,6 +299,12 @@ $tablasPermitidasConHotelId = [
     'inventario_productos',
     'inventario_config_habitacion',
     'movimientos_inventario',
+    'reservaciones',
+    'reservacion_habitaciones',
+    'reservacion_pagos',
+    'reservacion_abonos',
+    'reservacion_notas',
+    'solicitudes_factura',
 ];
 
 $stmt = $pdo->prepare(
@@ -313,7 +320,7 @@ $tablasNoPermitidas = array_values(array_diff($tablasConHotelId, $tablasPermitid
 $tablasPermitidasFaltantes = array_values(array_diff($tablasPermitidasConHotelId, $tablasConHotelId));
 
 if ($tablasNoPermitidas === []) {
-    ok('Columnas hotel_id solo existen en tablas permitidas para el estado post Inventario 1-E-B');
+    ok('Columnas hotel_id solo existen en tablas permitidas para el estado post Reservaciones 1-B');
 } else {
     errorCheck('Columnas hotel_id encontradas fuera de tablas permitidas: ' . implode(', ', $tablasNoPermitidas));
 }
@@ -360,6 +367,27 @@ $tablasMovimientosInventarioMigradas = [
     'movimientos_inventario' => [
         'indice' => 'idx_movimientos_inventario_hotel_id',
         'foreign_key' => 'fk_movimientos_inventario_hotel',
+    ],
+];
+
+$tablasReservacionesBaseMigradas = [
+    'reservaciones' => [
+        'indice' => 'idx_reservaciones_hotel_id',
+    ],
+    'reservacion_habitaciones' => [
+        'indice' => 'idx_reservacion_habitaciones_hotel_id',
+    ],
+    'reservacion_pagos' => [
+        'indice' => 'idx_reservacion_pagos_hotel_id',
+    ],
+    'reservacion_abonos' => [
+        'indice' => 'idx_reservacion_abonos_hotel_id',
+    ],
+    'reservacion_notas' => [
+        'indice' => 'idx_reservacion_notas_hotel_id',
+    ],
+    'solicitudes_factura' => [
+        'indice' => 'idx_solicitudes_factura_hotel_id',
     ],
 ];
 
@@ -525,14 +553,76 @@ if ($hotel === null || !isset($hotel['id'])) {
     }
 }
 
+if ($hotel === null || !isset($hotel['id'])) {
+    errorCheck('No se puede validar hotel_id en Reservaciones base porque no se encontro Los Cedros');
+} else {
+    foreach ($tablasReservacionesBaseMigradas as $tabla => $metadata) {
+        if (!existeTabla($pdo, $databaseName, $tabla)) {
+            errorCheck("Tabla {$tabla} no existe para validar hotel_id post Reservaciones 1-B");
+            continue;
+        }
+
+        if (!existeColumna($pdo, $databaseName, $tabla, 'hotel_id')) {
+            errorCheck("Tabla {$tabla} no tiene hotel_id post Reservaciones 1-B");
+            continue;
+        }
+
+        ok("Tabla {$tabla} tiene hotel_id post Reservaciones 1-B");
+
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*) AS total,
+                    SUM(CASE WHEN hotel_id = :hotel_id THEN 1 ELSE 0 END) AS con_los_cedros,
+                    SUM(CASE WHEN hotel_id IS NULL THEN 1 ELSE 0 END) AS hotel_id_null
+             FROM ' . quoteIdentifier($tabla)
+        );
+        $stmt->execute(['hotel_id' => $hotel['id']]);
+        $conteo = $stmt->fetch(PDO::FETCH_ASSOC);
+        $total = (int) $conteo['total'];
+        $conLosCedros = (int) $conteo['con_los_cedros'];
+        $hotelIdNull = (int) $conteo['hotel_id_null'];
+
+        if ($hotelIdNull === 0) {
+            ok("Tabla {$tabla} no tiene hotel_id NULL en registros existentes");
+        } else {
+            errorCheck("Tabla {$tabla} tiene {$hotelIdNull} registros con hotel_id NULL");
+        }
+
+        if ($total === $conLosCedros) {
+            ok("Tabla {$tabla} tiene {$conLosCedros}/{$total} registros asignados a Los Cedros");
+        } else {
+            errorCheck("Tabla {$tabla} tiene {$conLosCedros}/{$total} registros asignados a Los Cedros");
+        }
+
+        if (existeIndice($pdo, $databaseName, $tabla, $metadata['indice'])) {
+            ok("Indice {$metadata['indice']} existe");
+        } else {
+            errorCheck("Indice {$metadata['indice']} no existe");
+        }
+    }
+
+    if (existeTabla($pdo, $databaseName, 'reservaciones')) {
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*)
+             FROM reservaciones
+             WHERE id IN (48, 49)
+               AND hotel_id = :hotel_id'
+        );
+        $stmt->execute(['hotel_id' => $hotel['id']]);
+        $reservacionesFallback = (int) $stmt->fetchColumn();
+
+        if ($reservacionesFallback === 2) {
+            ok('Reservaciones 48 y 49 tienen hotel_id de Los Cedros');
+        } else {
+            errorCheck("Reservaciones 48 y 49 con hotel_id de Los Cedros: {$reservacionesFallback}/2");
+        }
+    }
+}
+
 $tablasOperativasSinHotelIdEsperadas = [
-    'reservaciones',
     'huespedes',
     'cajas',
     'cortes_caja',
     'movimientos_caja',
-    'reservacion_habitaciones',
-    'reservacion_pagos',
     'sync_queue',
     'push_subscriptions',
     'inventario_movimientos',
