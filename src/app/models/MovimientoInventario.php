@@ -83,17 +83,24 @@ class MovimientoInventario extends Model {
     try {
         // Obtener conexión directa a la base de datos
         $db = Database::getInstance();
+        $hotelId = $this->hotelIdActual();
         
         // Consulta simplificada que sabemos que funciona
-        $sql = "SELECT m.*, 
-                (SELECT nombre FROM inventario_productos WHERE id = m.producto_id) as producto_nombre,
-                (SELECT codigo FROM inventario_productos WHERE id = m.producto_id) as producto_codigo
+        $sql = "SELECT m.*,
+                COALESCE(p.nombre, CONCAT('Producto #', m.producto_id)) as producto_nombre,
+                COALESCE(p.codigo, 'N/A') as producto_codigo,
+                h.numero as habitacion_numero
                 FROM movimientos_inventario m
+                LEFT JOIN inventario_productos p
+                    ON m.producto_id = p.id AND p.hotel_id = m.hotel_id
+                LEFT JOIN habitaciones h
+                    ON m.habitacion_id = h.id AND h.hotel_id = m.hotel_id
+                WHERE m.hotel_id = ?
                 ORDER BY m.id DESC
                 LIMIT " . intval($limit);
         
         // Ejecutar directamente con la conexión de base de datos
-        $stmt = $db->query($sql);
+        $stmt = $db->query($sql, [$hotelId]);
         
         if ($stmt === false) {
             return [];
@@ -104,7 +111,7 @@ class MovimientoInventario extends Model {
         // Agregar valores por defecto para campos faltantes
         foreach ($results as &$row) {
             $row['usuario_nombre'] = 'Usuario #' . ($row['usuario_id'] ?? 'Sistema');
-            $row['habitacion_numero'] = $row['habitacion_id'] ? 'Hab. ' . $row['habitacion_id'] : null;
+            $row['habitacion_numero'] = $row['habitacion_numero'] ?: ($row['habitacion_id'] ? 'Hab. ' . $row['habitacion_id'] : null);
         }
         
         return $results;
@@ -120,18 +127,27 @@ class MovimientoInventario extends Model {
      */
     public function getMovimientosPorProducto($producto_id, $limit = 50) {
         try {
+            $hotelId = $this->hotelIdActual();
+            $productoId = (int)$producto_id;
+
+            if ($productoId <= 0 || !$this->productoPerteneceAlHotel($productoId, $hotelId)) {
+                return [];
+            }
+
             $sql = "SELECT m.*,
                     COALESCE(p.nombre, CONCAT('Producto #', m.producto_id)) as producto_nombre,
                     COALESCE(p.codigo, 'N/A') as producto_codigo,
                     COALESCE(h.numero, m.habitacion_id) as habitacion_numero
                     FROM movimientos_inventario m
-                    LEFT JOIN inventario_productos p ON m.producto_id = p.id
-                    LEFT JOIN habitaciones h ON m.habitacion_id = h.id
-                    WHERE m.producto_id = ?
+                    LEFT JOIN inventario_productos p
+                        ON m.producto_id = p.id AND p.hotel_id = m.hotel_id
+                    LEFT JOIN habitaciones h
+                        ON m.habitacion_id = h.id AND h.hotel_id = m.hotel_id
+                    WHERE m.producto_id = ? AND m.hotel_id = ?
                     ORDER BY IFNULL(m.created_at, NOW()) DESC, m.id DESC 
                     LIMIT " . intval($limit);
             
-            $results = $this->query($sql, [$producto_id]);
+            $results = $this->query($sql, [$productoId, $hotelId]);
             
             // Agregar usuario_nombre si falta
             foreach ($results as &$row) {
@@ -152,18 +168,22 @@ class MovimientoInventario extends Model {
      */
     public function getMovimientosRecientes($limit = 20) {
         try {
+            $hotelId = $this->hotelIdActual();
             // Ordenar por ID descendente garantiza los más recientes
             $sql = "SELECT m.*, 
                     p.nombre as producto_nombre,
                     p.codigo as producto_codigo,
                     h.numero as habitacion_numero
                     FROM movimientos_inventario m
-                    LEFT JOIN inventario_productos p ON m.producto_id = p.id
-                    LEFT JOIN habitaciones h ON m.habitacion_id = h.id
+                    LEFT JOIN inventario_productos p
+                        ON m.producto_id = p.id AND p.hotel_id = m.hotel_id
+                    LEFT JOIN habitaciones h
+                        ON m.habitacion_id = h.id AND h.hotel_id = m.hotel_id
+                    WHERE m.hotel_id = ?
                     ORDER BY m.id DESC
                     LIMIT " . intval($limit);
             
-            $results = $this->query($sql);
+            $results = $this->query($sql, [$hotelId]);
             
             if (!empty($results)) {
                 foreach ($results as &$row) {
