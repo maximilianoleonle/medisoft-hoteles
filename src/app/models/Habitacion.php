@@ -168,14 +168,17 @@ public function tieneReservacionPendienteHoy($habitacion_id) {
         return false;
     }
 
+    $hotelId = $this->hotelIdActual();
     $sql = "SELECT COUNT(*) as total 
             FROM reservaciones r
             INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
+            INNER JOIN habitaciones hab_scope ON rh.habitacion_id = hab_scope.id
             WHERE rh.habitacion_id = ?
+            AND hab_scope.hotel_id = ?
             AND r.fecha_entrada = CURDATE()
             AND r.estado = 'confirmada'";
     
-    $stmt = $this->db->query($sql, [$habitacion_id]);
+    $stmt = $this->db->query($sql, [$habitacion_id, $hotelId]);
     $result = $stmt->fetch();
     return $result['total'] > 0;
 }
@@ -220,11 +223,13 @@ public function disponiblesEntreFechas($fecha_entrada, $fecha_salida, $excluir_r
     $sql_ocupadas = "SELECT DISTINCT rh.habitacion_id 
                      FROM reservacion_habitaciones rh
                      INNER JOIN reservaciones r ON rh.reservacion_id = r.id
-                     WHERE r.estado IN ('confirmada', 'checked_in')
+                     INNER JOIN habitaciones hab_scope ON rh.habitacion_id = hab_scope.id
+                     WHERE hab_scope.hotel_id = ?
+                     AND r.estado IN ('confirmada', 'checked_in')
                      AND ? > r.fecha_entrada
                      AND ? < r.fecha_salida";
     
-    $params = [$fecha_salida, $fecha_entrada];
+    $params = [$hotelId, $fecha_salida, $fecha_entrada];
     
     if ($excluir_reservacion_id) {
         $sql_ocupadas .= " AND r.id != ?";
@@ -270,7 +275,9 @@ public function disponiblesEntreFechas($fecha_entrada, $fecha_salida, $excluir_r
                     SELECT rh.habitacion_id 
                     FROM reservacion_habitaciones rh
                     INNER JOIN reservaciones r ON rh.reservacion_id = r.id
-                    WHERE r.estado IN ('confirmada', 'checked_in')
+                    INNER JOIN habitaciones h_res ON rh.habitacion_id = h_res.id
+                    WHERE h_res.hotel_id = ?
+                    AND r.estado IN ('confirmada', 'checked_in')
                     AND ((r.fecha_entrada <= ? AND r.fecha_salida >= ?)
                     OR (r.fecha_entrada <= ? AND r.fecha_salida >= ?)
                     OR (r.fecha_entrada >= ? AND r.fecha_salida <= ?))
@@ -291,6 +298,7 @@ public function disponiblesEntreFechas($fecha_entrada, $fecha_salida, $excluir_r
                 )";
         
         $params = [
+            $hotelId,
             $hotelId,
             $fecha_entrada, $fecha_entrada,
             $fecha_salida, $fecha_salida,
@@ -415,6 +423,7 @@ public function getOcupacionActual($habitacion_id) {
         return null;
     }
 
+    $hotelId = $this->hotelIdActual();
     // Buscar el huésped que debería estar ocupando la habitación HOY
     // Prioridad: 1) checked_in, 2) confirmada con fecha de hoy
     $sql = "SELECT r.*, h.nombre_completo, h.telefono, h.id as huesped_id,
@@ -422,8 +431,10 @@ public function getOcupacionActual($habitacion_id) {
             FROM reservaciones r
             INNER JOIN huespedes h ON r.huesped_id = h.id
             INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
+            INNER JOIN habitaciones hab_scope ON rh.habitacion_id = hab_scope.id
             LEFT JOIN reservacion_habitaciones rh2 ON r.id = rh2.reservacion_id
             WHERE rh.habitacion_id = ?
+            AND hab_scope.hotel_id = ?
             AND r.estado IN ('checked_in', 'confirmada')
             AND r.fecha_entrada <= CURDATE()
             AND r.fecha_salida >= CURDATE()
@@ -433,7 +444,7 @@ public function getOcupacionActual($habitacion_id) {
                 r.fecha_entrada ASC
             LIMIT 1";
     
-    $stmt = $this->db->query($sql, [$habitacion_id]);
+    $stmt = $this->db->query($sql, [$habitacion_id, $hotelId]);
     return $stmt->fetch() ?: null;
 }
     
@@ -445,10 +456,13 @@ public function getOcupacionActual($habitacion_id) {
             return false;
         }
 
+        $hotelId = $this->hotelIdActual();
         $sql = "SELECT COUNT(*) as conflictos 
                 FROM reservacion_habitaciones rh
                 INNER JOIN reservaciones r ON rh.reservacion_id = r.id
+                INNER JOIN habitaciones hab_scope ON rh.habitacion_id = hab_scope.id
                 WHERE rh.habitacion_id = ? 
+                AND hab_scope.hotel_id = ?
                 AND r.estado IN ('confirmada', 'checked_in')
                 AND ((r.fecha_entrada <= ? AND r.fecha_salida >= ?)
                 OR (r.fecha_entrada <= ? AND r.fecha_salida >= ?)
@@ -456,6 +470,7 @@ public function getOcupacionActual($habitacion_id) {
         
         $params = [
             $habitacion_id,
+            $hotelId,
             $fecha_entrada, $fecha_entrada,
             $fecha_salida, $fecha_salida,
             $fecha_entrada, $fecha_salida
@@ -495,20 +510,23 @@ public function getOcupacionActual($habitacion_id) {
             return null;
         }
 
+        $hotelId = $this->hotelIdActual();
         $sql = "SELECT r.*, h.nombre_completo,
                 COUNT(DISTINCT rh2.habitacion_id) as total_habitaciones
                 FROM reservaciones r
                 INNER JOIN huespedes h ON r.huesped_id = h.id
                 INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
+                INNER JOIN habitaciones hab_scope ON rh.habitacion_id = hab_scope.id
                 LEFT JOIN reservacion_habitaciones rh2 ON r.id = rh2.reservacion_id
                 WHERE rh.habitacion_id = ?
+                AND hab_scope.hotel_id = ?
                 AND r.estado = 'checked_in'
                 AND r.fecha_salida >= CURDATE()
                 GROUP BY r.id
                 ORDER BY r.fecha_salida ASC
                 LIMIT 1";
         
-        $stmt = $this->db->query($sql, [$habitacion_id]);
+        $stmt = $this->db->query($sql, [$habitacion_id, $hotelId]);
         $result = $stmt->fetch();
         return $result ?: null;
     }

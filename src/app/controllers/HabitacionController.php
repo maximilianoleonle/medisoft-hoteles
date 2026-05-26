@@ -74,6 +74,7 @@ public function indexAction() {
     
     // Obtener reservaciones de hoy que no han hecho check-in
     $db = Database::getInstance();
+    $hotelId = $this->hotelIdActual();
     $sql = "SELECT 
             rh.habitacion_id,
             r.id as reservacion_id,
@@ -83,13 +84,15 @@ public function indexAction() {
             COUNT(DISTINCT rh2.habitacion_id) as total_habitaciones
             FROM reservaciones r
             INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
+            INNER JOIN habitaciones hab_scope ON rh.habitacion_id = hab_scope.id
             INNER JOIN huespedes h ON r.huesped_id = h.id
             LEFT JOIN reservacion_habitaciones rh2 ON r.id = rh2.reservacion_id
-            WHERE r.fecha_entrada = CURDATE()
+            WHERE hab_scope.hotel_id = ?
+            AND r.fecha_entrada = CURDATE()
             AND r.estado = 'confirmada'
             GROUP BY rh.habitacion_id, r.id";
     
-    $stmt = $db->query($sql);
+    $stmt = $db->query($sql, [$hotelId]);
     $reservaciones_pendientes = [];
     
     while ($row = $stmt->fetch()) {
@@ -223,6 +226,7 @@ if (!empty($filtros['estado']) && $filtros['estado'] === 'mantenimiento') {
     // Query para obtener ocupadas - Todas las habitaciones ocupadas EN la fecha específica
     // NO incluye las que hacen check-out ese día (porque ese día se desocupan)
     // Incluye checked_out para mostrar correctamente fechas pasadas
+    $hotelId = $this->hotelIdActual();
     $sql_ocupadas = "SELECT DISTINCT 
                      rh.habitacion_id,
                      hab.numero as habitacion_numero,
@@ -236,12 +240,13 @@ if (!empty($filtros['estado']) && $filtros['estado'] === 'mantenimiento') {
             INNER JOIN huespedes h ON r.huesped_id = h.id
             INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id
             WHERE r.estado IN ('confirmada', 'checked_in', 'checked_out')
+            AND hab.hotel_id = ?
             AND DATE(r.fecha_entrada) <= ?
             AND DATE(r.fecha_salida) > ?
             ORDER BY hab.numero";
     
     error_log("=== EJECUTANDO QUERY DE OCUPADAS ===");
-    $stmt = $db->query($sql_ocupadas, [$fecha_consulta, $fecha_consulta]);
+    $stmt = $db->query($sql_ocupadas, [$hotelId, $fecha_consulta, $fecha_consulta]);
     $ocupadas = [];
     
     while ($row = $stmt->fetch()) {
@@ -426,6 +431,7 @@ error_log(print_r($ocupacion_actual, true));
     
     // Verificar si hay reservación pendiente para hoy
     $db = Database::getInstance();
+    $hotelId = $this->hotelIdActual();
     $sql = "SELECT 
             r.id as reservacion_id,
             r.hora_llegada_estimada,
@@ -436,15 +442,17 @@ error_log(print_r($ocupacion_actual, true));
             COUNT(DISTINCT rh2.habitacion_id) as total_habitaciones
             FROM reservaciones r
             INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
+            INNER JOIN habitaciones hab_scope ON rh.habitacion_id = hab_scope.id
             INNER JOIN huespedes h ON r.huesped_id = h.id
             LEFT JOIN reservacion_habitaciones rh2 ON r.id = rh2.reservacion_id
             WHERE rh.habitacion_id = ?
+            AND hab_scope.hotel_id = ?
             AND r.fecha_entrada = CURDATE()
             AND r.estado = 'confirmada'
             GROUP BY r.id
             LIMIT 1";
     
-    $stmt = $db->query($sql, [$id]);
+    $stmt = $db->query($sql, [$id, $hotelId]);
     $reservacion_pendiente = $stmt->fetch();
     
     // Determinar el estado real de visualización
@@ -501,14 +509,16 @@ error_log(print_r($ocupacion_actual, true));
             FROM reservaciones r
             INNER JOIN huespedes h ON r.huesped_id = h.id
             INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
+            INNER JOIN habitaciones hab_scope ON rh.habitacion_id = hab_scope.id
             WHERE 
                 rh.habitacion_id = ?
+                AND hab_scope.hotel_id = ?
                 AND r.estado IN ('checked_out', 'checked_in', 'confirmada')
             GROUP BY r.id
             ORDER BY r.fecha_salida DESC, r.created_at DESC
             LIMIT 10";
         
-        $stmt = $db->query($sql, [$id]);
+        $stmt = $db->query($sql, [$id, $this->hotelIdActual()]);
         
         if ($stmt !== false) {
             $historial_reciente = $stmt->fetchAll();
@@ -717,13 +727,15 @@ public function historial() {
             FROM reservaciones r
             INNER JOIN huespedes h ON r.huesped_id = h.id
             INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
+            INNER JOIN habitaciones hab_scope ON rh.habitacion_id = hab_scope.id
             WHERE 
                 rh.habitacion_id = ?
+                AND hab_scope.hotel_id = ?
                 AND r.estado IN ('checked_out', 'checked_in', 'confirmada')
             GROUP BY r.id
             ORDER BY r.fecha_salida DESC, r.created_at DESC";
         
-        $stmt = $db->query($sql, [$id]);
+        $stmt = $db->query($sql, [$id, $this->hotelIdActual()]);
         
         if ($stmt !== false) {
             $historial = $stmt->fetchAll();
@@ -1277,17 +1289,20 @@ public function programarMantenimientoAction() {
     $fecha_fin_check_ext = date('Y-m-d', strtotime($fecha_fin_check . ' +1 day'));
     
     $db = Database::getInstance();
+    $hotelId = $this->hotelIdActual();
     $sql = "SELECT r.id, h.nombre_completo, r.fecha_entrada, r.fecha_salida
             FROM reservaciones r
             INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
+            INNER JOIN habitaciones hab_scope ON rh.habitacion_id = hab_scope.id
             INNER JOIN huespedes h ON r.huesped_id = h.id
             WHERE rh.habitacion_id = ?
+            AND hab_scope.hotel_id = ?
             AND r.estado IN ('confirmada', 'checked_in')
             AND r.fecha_entrada < ?
             AND r.fecha_salida > ?
             LIMIT 5";
     
-    $stmt = $db->query($sql, [$id, $fecha_fin_check_ext, $fecha_inicio]);
+    $stmt = $db->query($sql, [$id, $hotelId, $fecha_fin_check_ext, $fecha_inicio]);
     $reservaciones_conflicto = $stmt->fetchAll();
     
     if (!empty($reservaciones_conflicto)) {
