@@ -12,18 +12,18 @@
 
 return [
     // Credenciales de Green API
-    'id_instance' => '7103511479',           // Ej: '1101123456'
-    'api_token' => 'aa265f433ed743bba3acf43bbe119dcf030ac2fbd9eb4d5eba',       // Ej: 'd75b3a66374942c5...'
+    'id_instance' => getenv('APP_WHATSAPP_ID_INSTANCE') ?: (getenv('WHATSAPP_ID_INSTANCE') ?: ''),           // Ej: '1101123456'
+    'api_token' => getenv('APP_WHATSAPP_API_TOKEN') ?: (getenv('WHATSAPP_API_TOKEN') ?: ''),       // Ej: 'd75b3a66374942c5...'
     
     // Número del dueño/gerente (formato: código país + número sin espacios ni signos)
     // México: 52 + 10 dígitos. Ejemplo: '5219511234567'
-    'numero_destino' => '5219512211406',
+    'numero_destino' => getenv('APP_WHATSAPP_DESTINATION') ?: (getenv('WHATSAPP_DESTINATION') ?: ''),
     
     // Host de Green API (no cambiar a menos que te lo indiquen)
-    'api_host' => 'https://api.green-api.com',
+    'api_host' => getenv('APP_WHATSAPP_API_HOST') ?: (getenv('WHATSAPP_API_HOST') ?: 'https://api.green-api.com'),
     
     // Activar/desactivar envío automático al cerrar caja
-    'envio_activo' => true,
+    'envio_activo' => filter_var(getenv('APP_WHATSAPP_SEND_ENABLED') ?: (getenv('WHATSAPP_SEND_ENABLED') ?: false), FILTER_VALIDATE_BOOLEAN),
     
     // Mensaje que acompaña al PDF
     'mensaje_corte' => '📊 *Corte de Caja - Los Cedros*' . "\n" .

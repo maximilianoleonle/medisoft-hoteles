@@ -12,7 +12,7 @@ return [
     'version' => '1.0.0',
     
     // Modo debug (cambiar a false en producción)
-    'debug' => true,
+    'debug' => filter_var(getenv('APP_DEBUG') ?: false, FILTER_VALIDATE_BOOLEAN),
     
     // URL base (dejar vacío para detección automática)
     'url' => '',

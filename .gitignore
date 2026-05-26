@@ -33,3 +33,15 @@ temp/
 
 # Archivos locales sensibles o de diagnostico
 _local_quarantine_sensitive/
+
+# Fase 0.5 - artefactos locales y operativos
+backups/
+src/app/uploads/
+src/public_html/uploads/temp/
+*.sql
+*.sql.gz
+*.dump
+*.bak
+*.backup
+*.tmp
+*.temp

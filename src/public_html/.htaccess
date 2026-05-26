@@ -72,6 +72,10 @@ RewriteRule ^app/ - [F,L]
 RewriteRule ^fdpdf/(doc|tutorial|makefont|font)/ - [F,L]
 RewriteRule ^.*\.(zip|sql|bak|backup)$ - [F,L]
 
+# Bloquear herramientas publicas de diagnostico, pruebas, instalacion y correccion.
+# Se conservan en disco para revision, pero no deben ser navegables.
+RewriteRule ^(info|instalar_correccion|diagnostico_.*|fix_.*|test[-_].*|verificar-rutas|corregir_precios_reservaciones|limpiar_reservaciones_antiguas|CorreccionController|correccion_index)\.(php|html)$ - [F,L]
+
 RewriteCond %{REQUEST_URI} !^/manifest\.json$
 RewriteCond %{REQUEST_URI} !^/service-worker\.js$
 RewriteCond %{REQUEST_URI} !^/offline\.html$
