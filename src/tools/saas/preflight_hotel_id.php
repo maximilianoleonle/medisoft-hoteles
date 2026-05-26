@@ -1,0 +1,440 @@
+<?php
+/**
+ * Preflight local para planear la migracion de hotel_id.
+ *
+ * Solo lectura. No ejecuta migraciones ni modifica datos.
+ */
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    echo "Esta herramienta solo puede ejecutarse por CLI.\n";
+    exit(1);
+}
+
+$appEnv = getenv('APP_ENV');
+if ($appEnv !== 'local') {
+    echo "[ERROR] APP_ENV debe ser local para ejecutar esta herramienta. Valor actual: " . ($appEnv === false || $appEnv === '' ? '(sin definir)' : $appEnv) . "\n";
+    echo "Resultado general: FAIL\n";
+    exit(1);
+}
+
+$configPath = dirname(__DIR__, 2) . '/config/database.php';
+if (!is_file($configPath)) {
+    echo "[ERROR] No se encontro el archivo de configuracion de base de datos: {$configPath}\n";
+    echo "Resultado general: FAIL\n";
+    exit(1);
+}
+
+$dbConfig = require $configPath;
+$databaseName = $dbConfig['database'] ?? '';
+$ok = 0;
+$warnings = 0;
+$errors = 0;
+
+function reportarPreflight(string $nivel, string $mensaje): void
+{
+    echo "[{$nivel}] {$mensaje}\n";
+}
+
+function preflightOk(string $mensaje): void
+{
+    global $ok;
+    $ok++;
+    reportarPreflight('OK', $mensaje);
+}
+
+function preflightWarn(string $mensaje): void
+{
+    global $warnings;
+    $warnings++;
+    reportarPreflight('WARN', $mensaje);
+}
+
+function preflightError(string $mensaje): void
+{
+    global $errors;
+    $errors++;
+    reportarPreflight('ERROR', $mensaje);
+}
+
+function preflightInfo(string $mensaje): void
+{
+    reportarPreflight('INFO', $mensaje);
+}
+
+function quoteIdentifier(string $identifier): string
+{
+    return '`' . str_replace('`', '``', $identifier) . '`';
+}
+
+function existeTablaPreflight(PDO $pdo, string $databaseName, string $tabla): bool
+{
+    $stmt = $pdo->prepare(
+        'SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = :schema AND TABLE_NAME = :tabla'
+    );
+    $stmt->execute(['schema' => $databaseName, 'tabla' => $tabla]);
+
+    return (int) $stmt->fetchColumn() > 0;
+}
+
+function contarRegistros(PDO $pdo, string $tabla): int
+{
+    $stmt = $pdo->query('SELECT COUNT(*) FROM ' . quoteIdentifier($tabla));
+
+    return (int) $stmt->fetchColumn();
+}
+
+function obtenerColumnas(PDO $pdo, string $databaseName, string $tabla): array
+{
+    $stmt = $pdo->prepare(
+        'SELECT COLUMN_NAME
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = :schema
+           AND TABLE_NAME = :tabla
+         ORDER BY ORDINAL_POSITION'
+    );
+    $stmt->execute(['schema' => $databaseName, 'tabla' => $tabla]);
+
+    return $stmt->fetchAll(PDO::FETCH_COLUMN);
+}
+
+function obtenerPrimaryKey(PDO $pdo, string $databaseName, string $tabla): array
+{
+    $stmt = $pdo->prepare(
+        "SELECT COLUMN_NAME
+         FROM information_schema.KEY_COLUMN_USAGE
+         WHERE TABLE_SCHEMA = :schema
+           AND TABLE_NAME = :tabla
+           AND CONSTRAINT_NAME = 'PRIMARY'
+         ORDER BY ORDINAL_POSITION"
+    );
+    $stmt->execute(['schema' => $databaseName, 'tabla' => $tabla]);
+
+    return $stmt->fetchAll(PDO::FETCH_COLUMN);
+}
+
+function obtenerForaneas(PDO $pdo, string $databaseName, string $tabla): array
+{
+    $stmt = $pdo->prepare(
+        'SELECT CONSTRAINT_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
+         FROM information_schema.KEY_COLUMN_USAGE
+         WHERE TABLE_SCHEMA = :schema
+           AND TABLE_NAME = :tabla
+           AND REFERENCED_TABLE_NAME IS NOT NULL
+         ORDER BY CONSTRAINT_NAME, ORDINAL_POSITION'
+    );
+    $stmt->execute(['schema' => $databaseName, 'tabla' => $tabla]);
+
+    $foraneas = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $nombre = $row['CONSTRAINT_NAME'];
+        $foraneas[$nombre][] = sprintf(
+            '%s -> %s(%s)',
+            $row['COLUMN_NAME'],
+            $row['REFERENCED_TABLE_NAME'],
+            $row['REFERENCED_COLUMN_NAME']
+        );
+    }
+
+    return $foraneas;
+}
+
+function obtenerIndicesUnicos(PDO $pdo, string $databaseName, string $tabla): array
+{
+    $stmt = $pdo->prepare(
+        "SELECT INDEX_NAME, COLUMN_NAME
+         FROM information_schema.STATISTICS
+         WHERE TABLE_SCHEMA = :schema
+           AND TABLE_NAME = :tabla
+           AND NON_UNIQUE = 0
+           AND INDEX_NAME <> 'PRIMARY'
+         ORDER BY INDEX_NAME, SEQ_IN_INDEX"
+    );
+    $stmt->execute(['schema' => $databaseName, 'tabla' => $tabla]);
+
+    $indices = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $indices[$row['INDEX_NAME']][] = $row['COLUMN_NAME'];
+    }
+
+    return $indices;
+}
+
+function formatearLista(array $valores): string
+{
+    return $valores === [] ? 'ninguno' : implode(', ', $valores);
+}
+
+function formatearForaneas(array $foraneas): string
+{
+    if ($foraneas === []) {
+        return 'ninguna';
+    }
+
+    $partes = [];
+    foreach ($foraneas as $nombre => $columnas) {
+        $partes[] = $nombre . ': ' . implode('; ', $columnas);
+    }
+
+    return implode(' | ', $partes);
+}
+
+function formatearIndicesUnicos(array $indices): string
+{
+    if ($indices === []) {
+        return 'ninguno';
+    }
+
+    $partes = [];
+    foreach ($indices as $nombre => $columnas) {
+        $partes[] = $nombre . '(' . implode(', ', $columnas) . ')';
+    }
+
+    return implode(' | ', $partes);
+}
+
+try {
+    $dsn = sprintf(
+        'mysql:host=%s;dbname=%s;charset=%s',
+        $dbConfig['host'],
+        $dbConfig['database'],
+        $dbConfig['charset'] ?? 'utf8mb4'
+    );
+
+    $pdo = new PDO(
+        $dsn,
+        $dbConfig['username'],
+        $dbConfig['password'],
+        $dbConfig['options'] ?? [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]
+    );
+} catch (Throwable $e) {
+    preflightError('No fue posible conectar a la base de datos local: ' . $e->getMessage());
+    echo "Resultado general: FAIL\n";
+    exit(1);
+}
+
+$altoRiesgo = [
+    'reservaciones',
+    'reservacion_habitaciones',
+    'reservacion_pagos',
+    'reservacion_abonos',
+    'cajas',
+    'cortes_caja',
+    'movimientos_caja',
+    'sync_queue',
+    'push_subscriptions',
+];
+
+$primerasCandidatas = [
+    'tipos_habitacion',
+    'habitaciones',
+    'habitacion_imagenes',
+    'mantenimientos_habitaciones',
+];
+
+$tablas = [
+    'SaaS/base' => [
+        'hoteles' => ['necesita_hotel_id' => false, 'orden' => 0, 'riesgo' => 'bajo', 'motivo' => 'Tabla raiz de hoteles; no debe tener hotel_id propio.'],
+        'hotel_configuracion' => ['necesita_hotel_id' => true, 'orden' => 0, 'riesgo' => 'bajo', 'motivo' => 'Tabla SaaS ya creada para configuracion por hotel.'],
+        'hotel_usuarios' => ['necesita_hotel_id' => true, 'orden' => 0, 'riesgo' => 'bajo', 'motivo' => 'Tabla pivote SaaS ya creada para relacionar usuarios y hoteles.'],
+        'logs_auditoria' => ['necesita_hotel_id' => true, 'orden' => 0, 'riesgo' => 'medio', 'motivo' => 'Auditoria multi-hotel futura; todavia no debe activarse en modulos.'],
+        'migrations' => ['necesita_hotel_id' => false, 'orden' => 0, 'riesgo' => 'bajo', 'motivo' => 'Registro global de migraciones; no es informacion operativa por hotel.'],
+    ],
+    'habitaciones' => [
+        'habitaciones' => ['necesita_hotel_id' => true, 'orden' => 2, 'riesgo' => 'medio', 'motivo' => 'Entidad operativa central; primera candidata, pero conecta con reservaciones y ocupacion.'],
+        'tipos_habitacion' => ['necesita_hotel_id' => true, 'orden' => 1, 'riesgo' => 'bajo', 'motivo' => 'Catalogo acotado por hotel; buena primera migracion.'],
+        'habitacion_imagenes' => ['necesita_hotel_id' => true, 'orden' => 3, 'riesgo' => 'bajo', 'motivo' => 'Depende de habitaciones; migrar despues de habitaciones.'],
+        'mantenimientos_habitaciones' => ['necesita_hotel_id' => true, 'orden' => 4, 'riesgo' => 'medio', 'motivo' => 'Operacion ligada a habitaciones; validar nombres reales y relaciones.'],
+    ],
+    'huespedes/reservaciones' => [
+        'huespedes' => ['necesita_hotel_id' => true, 'orden' => 20, 'riesgo' => 'medio', 'motivo' => 'Datos compartibles por visitas; definir si huesped sera global o por hotel.'],
+        'reservaciones' => ['necesita_hotel_id' => true, 'orden' => 30, 'riesgo' => 'alto', 'motivo' => 'Flujo critico con fechas, habitaciones, pagos y estados.'],
+        'reservacion_habitaciones' => ['necesita_hotel_id' => true, 'orden' => 31, 'riesgo' => 'alto', 'motivo' => 'Tabla puente critica entre reservaciones y habitaciones.'],
+        'reservacion_pagos' => ['necesita_hotel_id' => true, 'orden' => 32, 'riesgo' => 'alto', 'motivo' => 'Pagos de reservaciones; requiere conciliacion con caja.'],
+        'reservacion_abonos' => ['necesita_hotel_id' => true, 'orden' => 33, 'riesgo' => 'alto', 'motivo' => 'Abonos ligados a reservaciones y cortes.'],
+        'reservacion_notas' => ['necesita_hotel_id' => true, 'orden' => 34, 'riesgo' => 'medio', 'motivo' => 'Notas dependientes de reservaciones; migrar despues del nucleo.'],
+        'solicitudes_factura' => ['necesita_hotel_id' => true, 'orden' => 35, 'riesgo' => 'medio', 'motivo' => 'Facturacion depende del contexto fiscal por hotel.'],
+    ],
+    'caja' => [
+        'cajas' => ['necesita_hotel_id' => true, 'orden' => 40, 'riesgo' => 'alto', 'motivo' => 'Caja es critica; requiere aislamiento y pruebas de corte.'],
+        'cortes_caja' => ['necesita_hotel_id' => true, 'orden' => 41, 'riesgo' => 'alto', 'motivo' => 'Cortes no pueden mezclarse entre hoteles.'],
+        'movimientos_caja' => ['necesita_hotel_id' => true, 'orden' => 42, 'riesgo' => 'alto', 'motivo' => 'Movimientos financieros; requiere indices compuestos y auditoria.'],
+        'denominaciones_efectivo' => ['necesita_hotel_id' => true, 'orden' => 43, 'riesgo' => 'medio', 'motivo' => 'Denominaciones/cortes pueden necesitar contexto de caja por hotel.'],
+        'categorias_movimientos' => ['necesita_hotel_id' => true, 'orden' => 44, 'riesgo' => 'medio', 'motivo' => 'Catalogo configurable por hotel; migrar antes de movimientos si aplica.'],
+    ],
+    'inventario' => [
+        'inventario_productos' => ['necesita_hotel_id' => true, 'orden' => 50, 'riesgo' => 'medio', 'motivo' => 'Stock por hotel; revisar codigos y unicidad.'],
+        'inventario_categorias' => ['necesita_hotel_id' => true, 'orden' => 49, 'riesgo' => 'bajo', 'motivo' => 'Catalogo de inventario por hotel.'],
+        'inventario_config_habitacion' => ['necesita_hotel_id' => true, 'orden' => 51, 'riesgo' => 'medio', 'motivo' => 'Configuracion por habitacion; depende de habitaciones e inventario.'],
+        'inventario_habitacion_config' => ['necesita_hotel_id' => true, 'orden' => 51, 'riesgo' => 'medio', 'motivo' => 'Posible variante de configuracion por habitacion.'],
+        'inventario_movimientos' => ['necesita_hotel_id' => true, 'orden' => 52, 'riesgo' => 'medio', 'motivo' => 'Movimientos de inventario; validar trazabilidad por hotel.'],
+        'movimientos_inventario' => ['necesita_hotel_id' => true, 'orden' => 52, 'riesgo' => 'medio', 'motivo' => 'Movimientos de inventario; validar nombre real usado por el sistema.'],
+        'productos' => ['necesita_hotel_id' => true, 'orden' => 48, 'riesgo' => 'medio', 'motivo' => 'Catalogo o stock, segun uso actual; requiere revisar unicidad.'],
+        'categorias_producto' => ['necesita_hotel_id' => true, 'orden' => 47, 'riesgo' => 'bajo', 'motivo' => 'Catalogo por hotel si los productos son locales.'],
+        'alertas_inventario' => ['necesita_hotel_id' => true, 'orden' => 53, 'riesgo' => 'medio', 'motivo' => 'Alertas deben aislarse por hotel y stock.'],
+    ],
+    'tarifas/configuracion' => [
+        'tarifas_temporada' => ['necesita_hotel_id' => true, 'orden' => 10, 'riesgo' => 'medio', 'motivo' => 'Tarifas por hotel; revisar solapes de fechas y tipos.'],
+        'incrementos_tarifas' => ['necesita_hotel_id' => true, 'orden' => 11, 'riesgo' => 'medio', 'motivo' => 'Reglas de tarifa por hotel; revisar indices de fechas.'],
+        'configuracion' => ['necesita_hotel_id' => true, 'orden' => 12, 'riesgo' => 'medio', 'motivo' => 'Configuracion historica mono-hotel; evaluar migracion hacia hotel_configuracion.'],
+    ],
+    'operacion' => [
+        'control_llaves' => ['necesita_hotel_id' => true, 'orden' => 14, 'riesgo' => 'medio', 'motivo' => 'Operacion por habitacion; migrar despues de habitaciones.'],
+        'historial_llaves' => ['necesita_hotel_id' => true, 'orden' => 15, 'riesgo' => 'medio', 'motivo' => 'Historial operativo; preservar trazabilidad por hotel.'],
+        'control_remotos' => ['necesita_hotel_id' => true, 'orden' => 14, 'riesgo' => 'medio', 'motivo' => 'Operacion por habitacion; migrar despues de habitaciones.'],
+        'historial_remotos' => ['necesita_hotel_id' => true, 'orden' => 15, 'riesgo' => 'medio', 'motivo' => 'Historial operativo; preservar trazabilidad por hotel.'],
+    ],
+    'PWA/sync/acceso' => [
+        'sync_queue' => ['necesita_hotel_id' => true, 'orden' => 90, 'riesgo' => 'alto', 'motivo' => 'Offline/sync es alto riesgo; no tocar hasta tener aislamiento probado.'],
+        'push_subscriptions' => ['necesita_hotel_id' => true, 'orden' => 91, 'riesgo' => 'alto', 'motivo' => 'Notificaciones pueden cruzar hoteles si no hay contexto seguro.'],
+        'remember_tokens' => ['necesita_hotel_id' => true, 'orden' => 92, 'riesgo' => 'medio', 'motivo' => 'Login/sesion no se toca todavia; evaluar contexto activo por usuario en fase posterior.'],
+        'logs_acceso' => ['necesita_hotel_id' => true, 'orden' => 93, 'riesgo' => 'medio', 'motivo' => 'Logs de acceso pueden requerir contexto de hotel activo.'],
+    ],
+];
+
+$riesgoPeso = ['alto' => 3, 'medio' => 2, 'bajo' => 1];
+$tablasRevisadas = 0;
+$tablasExistentes = 0;
+$tablasFaltantes = 0;
+$tablasConHotelId = [];
+$tablasSinHotelIdNecesarias = [];
+$riesgosDetectados = [];
+
+echo "Preflight hotel_id SaaS local - Base: {$databaseName}\n";
+echo str_repeat('=', 72) . "\n";
+echo "[INFO] Analisis de solo lectura. No ejecuta ALTER/INSERT/UPDATE/DELETE.\n";
+
+foreach ($tablas as $grupo => $grupoTablas) {
+    echo "\n";
+    preflightInfo("Grupo {$grupo}");
+
+    foreach ($grupoTablas as $tabla => $metadata) {
+        $tablasRevisadas++;
+        echo str_repeat('-', 72) . "\n";
+
+        if (!existeTablaPreflight($pdo, $databaseName, $tabla)) {
+            $tablasFaltantes++;
+            preflightWarn("Tabla {$tabla} no existe; se omite analisis estructural");
+            preflightInfo("Necesitara hotel_id: " . ($metadata['necesita_hotel_id'] ? 'si, en fase posterior' : 'no'));
+            preflightInfo("Riesgo estimado: {$metadata['riesgo']} - {$metadata['motivo']}");
+            preflightInfo("Orden recomendado de migracion: {$metadata['orden']}");
+            continue;
+        }
+
+        $tablasExistentes++;
+        $columnas = obtenerColumnas($pdo, $databaseName, $tabla);
+        $primaryKey = obtenerPrimaryKey($pdo, $databaseName, $tabla);
+        $foraneas = obtenerForaneas($pdo, $databaseName, $tabla);
+        $indicesUnicos = obtenerIndicesUnicos($pdo, $databaseName, $tabla);
+        $tieneHotelId = in_array('hotel_id', $columnas, true);
+        $totalRegistros = contarRegistros($pdo, $tabla);
+
+        preflightOk("Tabla {$tabla} existe (registros: {$totalRegistros})");
+        preflightInfo("Llave primaria: " . formatearLista($primaryKey));
+        preflightInfo("Llaves foraneas: " . formatearForaneas($foraneas));
+        preflightInfo("Indices unicos: " . formatearIndicesUnicos($indicesUnicos));
+
+        if ($tieneHotelId) {
+            $tablasConHotelId[] = $tabla;
+            preflightOk("Tabla {$tabla} ya tiene hotel_id");
+        } elseif ($metadata['necesita_hotel_id']) {
+            $tablasSinHotelIdNecesarias[] = $tabla;
+            preflightOk("Tabla {$tabla} todavia no tiene hotel_id");
+        } else {
+            preflightOk("Tabla {$tabla} no requiere hotel_id directo");
+        }
+
+        if ($tieneHotelId && !in_array($tabla, ['hotel_configuracion', 'hotel_usuarios', 'logs_auditoria'], true)) {
+            preflightError("Tabla {$tabla} tiene hotel_id antes de la fase autorizada");
+        }
+
+        $necesitaTexto = $metadata['necesita_hotel_id'] ? 'si, en Fase 2 o posterior' : 'no';
+        if (in_array($tabla, $primerasCandidatas, true)) {
+            $necesitaTexto .= '; primera candidata';
+        }
+        preflightInfo("Necesitara hotel_id: {$necesitaTexto}");
+
+        $riesgo = in_array($tabla, $altoRiesgo, true) ? 'alto' : $metadata['riesgo'];
+        $motivo = in_array($tabla, $altoRiesgo, true) ? 'Tabla marcada explicitamente como alto riesgo para multi-hotel.' : $metadata['motivo'];
+        preflightInfo("Riesgo estimado: {$riesgo} - {$motivo}");
+        preflightInfo("Orden recomendado de migracion: {$metadata['orden']}");
+
+        $indicesCompuestos = [];
+        if ($metadata['necesita_hotel_id']) {
+            foreach ($indicesUnicos as $nombreIndice => $columnasIndice) {
+                if (!in_array('hotel_id', $columnasIndice, true)) {
+                    $indicesCompuestos[] = $nombreIndice . '(hotel_id, ' . implode(', ', $columnasIndice) . ')';
+                }
+            }
+        }
+
+        if ($indicesCompuestos !== []) {
+            preflightInfo("Posibles indices compuestos con hotel_id: " . implode(' | ', $indicesCompuestos));
+        } else {
+            preflightInfo('Posibles indices compuestos con hotel_id: ninguno detectado por indices unicos actuales');
+        }
+
+        $riesgosDetectados[] = [
+            'tabla' => $tabla,
+            'riesgo' => $riesgo,
+            'motivo' => $motivo,
+            'orden' => $metadata['orden'],
+            'registros' => $totalRegistros,
+            'peso' => $riesgoPeso[$riesgo] ?? 0,
+        ];
+    }
+}
+
+usort(
+    $riesgosDetectados,
+    static function (array $a, array $b): int {
+        if ($a['peso'] !== $b['peso']) {
+            return $b['peso'] <=> $a['peso'];
+        }
+
+        if ($a['registros'] !== $b['registros']) {
+            return $b['registros'] <=> $a['registros'];
+        }
+
+        return $a['orden'] <=> $b['orden'];
+    }
+);
+
+$topRiesgos = array_slice($riesgosDetectados, 0, 5);
+
+echo "\n" . str_repeat('=', 72) . "\n";
+echo "Resumen preflight hotel_id\n";
+echo str_repeat('=', 72) . "\n";
+echo "Total de tablas revisadas: {$tablasRevisadas}\n";
+echo "Total de tablas existentes: {$tablasExistentes}\n";
+echo "Total de tablas faltantes: {$tablasFaltantes}\n";
+echo "Tablas con hotel_id: " . formatearLista($tablasConHotelId) . "\n";
+echo "Tablas sin hotel_id que lo necesitaran: " . formatearLista($tablasSinHotelIdNecesarias) . "\n";
+echo "Top 5 riesgos:\n";
+
+if ($topRiesgos === []) {
+    echo "- ninguno\n";
+} else {
+    foreach ($topRiesgos as $riesgo) {
+        echo sprintf(
+            "- %s: %s, %s registros, orden %s. %s\n",
+            $riesgo['tabla'],
+            $riesgo['riesgo'],
+            $riesgo['registros'],
+            $riesgo['orden'],
+            $riesgo['motivo']
+        );
+    }
+}
+
+echo "Recomendacion de siguiente fase: preparar Fase 2A solo para tipos_habitacion, habitaciones, habitacion_imagenes y mantenimientos_habitaciones, con backup fresco y migracion reversible. Mantener reservaciones, caja y PWA/sync fuera hasta aprobacion explicita.\n";
+echo "Total OK: {$ok}\n";
+echo "Total WARN: {$warnings}\n";
+echo "Total ERROR: {$errors}\n";
+echo 'Resultado general: ' . ($errors === 0 ? 'PASS' : 'FAIL') . "\n";
+
+exit($errors === 0 ? 0 : 1);
