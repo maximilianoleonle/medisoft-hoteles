@@ -4,6 +4,8 @@
  * Los Cedros
  */
 
+require_once __DIR__ . '/../helpers/hotel_config.php';
+
 class Reservacion extends Model {
     protected $table = 'reservaciones';
     protected $fillable = [
@@ -406,76 +408,197 @@ public function checkOutParcial($reservacion_id, $habitaciones_ids, $hora_salida
     
  private function devolverInventarioCancelacion($reservacion_id) {
     $db = Database::getInstance();
-    
+
     try {
-        // Obtener todos los movimientos de SALIDA de esta reservación
-        $sql = "SELECT DISTINCT
-                    im.producto_id,
-                    im.cantidad,
-                    ip.nombre as producto_nombre,
-                    ip.codigo,
-                    ip.stock_actual
-                FROM inventario_movimientos im
-                JOIN inventario_productos ip ON im.producto_id = ip.id
-                WHERE im.reservacion_id = ? 
-                AND im.tipo_movimiento = 'SALIDA'
-                ORDER BY im.producto_id";
-        
-        $stmt = $db->query($sql, [$reservacion_id]);
-        $movimientos = $stmt->fetchAll();
-        
-        if (empty($movimientos)) {
-            error_log("No se encontraron movimientos de inventario para devolver");
-            return ['success' => true, 'productos_devueltos' => 0];
+        $hotel_id = obtenerHotelIdActualCompat();
+        $motivo_devolucion = "Devolucion por cancelacion - Reservacion #" . $reservacion_id;
+
+        $sql_validacion = "SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN m.hotel_id IS NULL THEN 1 ELSE 0 END) AS sin_hotel,
+                    SUM(CASE WHEN m.hotel_id IS NOT NULL AND m.hotel_id != ? THEN 1 ELSE 0 END) AS hotel_distinto,
+                    SUM(CASE WHEN ip.id IS NULL OR ip.hotel_id != m.hotel_id THEN 1 ELSE 0 END) AS producto_invalido,
+                    SUM(CASE
+                        WHEN m.habitacion_id IS NOT NULL
+                            AND (h.id IS NULL OR h.hotel_id != m.hotel_id)
+                        THEN 1 ELSE 0
+                    END) AS habitacion_invalida
+                FROM movimientos_inventario m
+                LEFT JOIN inventario_productos ip ON m.producto_id = ip.id
+                LEFT JOIN habitaciones h ON m.habitacion_id = h.id
+                WHERE m.reservacion_id = ?
+                    AND m.tipo_movimiento = 'SALIDA'";
+
+        $stmt_validacion = $db->query($sql_validacion, [$hotel_id, $reservacion_id]);
+        if (!$stmt_validacion) {
+            throw new Exception("No se pudieron validar los movimientos de inventario de la reservacion");
         }
-        
+
+        $validacion = $stmt_validacion->fetch();
+        $total_salidas = (int)($validacion['total'] ?? 0);
+
+        if ($total_salidas === 0) {
+            error_log("No se encontraron movimientos de inventario para devolver");
+            return ['success' => true, 'productos_devueltos' => 0, 'detalles' => []];
+        }
+
+        if ((int)($validacion['sin_hotel'] ?? 0) > 0) {
+            throw new Exception("Hay movimientos de inventario sin hotel_id para esta reservacion");
+        }
+
+        if ((int)($validacion['hotel_distinto'] ?? 0) > 0) {
+            throw new Exception("Hay movimientos de inventario de otro hotel para esta reservacion");
+        }
+
+        if ((int)($validacion['producto_invalido'] ?? 0) > 0) {
+            throw new Exception("Hay movimientos con producto de inventario fuera del hotel actual");
+        }
+
+        if ((int)($validacion['habitacion_invalida'] ?? 0) > 0) {
+            throw new Exception("Hay movimientos con habitacion fuera del hotel actual");
+        }
+
+        $sql_movimientos = "SELECT
+                    m.producto_id,
+                    m.habitacion_id,
+                    m.hotel_id,
+                    ip.nombre AS producto_nombre,
+                    ip.codigo,
+                    SUM(m.cantidad) AS cantidad_salida,
+                    COALESCE(dev.cantidad_devuelta, 0) AS cantidad_devuelta,
+                    SUM(m.cantidad) - COALESCE(dev.cantidad_devuelta, 0) AS cantidad_devolver
+                FROM movimientos_inventario m
+                INNER JOIN inventario_productos ip
+                    ON m.producto_id = ip.id
+                    AND ip.hotel_id = m.hotel_id
+                LEFT JOIN (
+                    SELECT
+                        producto_id,
+                        habitacion_id,
+                        hotel_id,
+                        reservacion_id,
+                        SUM(cantidad) AS cantidad_devuelta
+                    FROM movimientos_inventario
+                    WHERE reservacion_id = ?
+                        AND tipo_movimiento = 'ENTRADA'
+                        AND motivo = ?
+                    GROUP BY producto_id, habitacion_id, hotel_id, reservacion_id
+                ) dev
+                    ON dev.producto_id = m.producto_id
+                    AND dev.habitacion_id <=> m.habitacion_id
+                    AND dev.hotel_id = m.hotel_id
+                    AND dev.reservacion_id = m.reservacion_id
+                WHERE m.reservacion_id = ?
+                    AND m.tipo_movimiento = 'SALIDA'
+                    AND m.hotel_id = ?
+                GROUP BY
+                    m.producto_id,
+                    m.habitacion_id,
+                    m.hotel_id,
+                    ip.nombre,
+                    ip.codigo,
+                    dev.cantidad_devuelta
+                HAVING cantidad_devolver > 0
+                ORDER BY m.producto_id, m.habitacion_id";
+
+        $stmt_movimientos = $db->query($sql_movimientos, [
+            $reservacion_id,
+            $motivo_devolucion,
+            $reservacion_id,
+            $hotel_id
+        ]);
+
+        if (!$stmt_movimientos) {
+            throw new Exception("No se pudieron consultar los movimientos a devolver");
+        }
+
+        $movimientos = $stmt_movimientos->fetchAll();
+
+        if (empty($movimientos)) {
+            error_log("La reservacion #{$reservacion_id} ya tiene devolucion de inventario registrada");
+            return ['success' => true, 'productos_devueltos' => 0, 'detalles' => []];
+        }
+
         $productos_devueltos = [];
-        $usuario_id = user_id();
-        
+        $usuario_id = function_exists('user_id') ? user_id() : null;
+
         foreach ($movimientos as $mov) {
-            // Actualizar stock (devolver)
-            $nuevo_stock = $mov['stock_actual'] + $mov['cantidad'];
-            
-            $sql = "UPDATE inventario_productos 
-                    SET stock_actual = ? 
-                    WHERE id = ?";
-            $db->query($sql, [$nuevo_stock, $mov['producto_id']]);
-            
-            // Registrar movimiento de ENTRADA (devolución)
-            $sql = "INSERT INTO inventario_movimientos 
-                    (producto_id, tipo_movimiento, cantidad, stock_anterior, 
-                     stock_posterior, motivo, reservacion_id, usuario_id, created_at)
-                    VALUES (?, 'ENTRADA', ?, ?, ?, ?, ?, ?, NOW())";
-            
-            $motivo = "Devolución por cancelación - Reservación #" . $reservacion_id;
-            
-            $db->query($sql, [
-                $mov['producto_id'],
-                $mov['cantidad'],
-                $mov['stock_actual'],
-                $nuevo_stock,
-                $motivo,
-                $reservacion_id,
-                $usuario_id
-            ]);
-            
+            $cantidad_devolver = (int)$mov['cantidad_devolver'];
+
+            if ($cantidad_devolver <= 0) {
+                continue;
+            }
+
+            $stmt_stock = $db->query(
+                "SELECT stock_actual
+                 FROM inventario_productos
+                 WHERE id = ? AND hotel_id = ?
+                 FOR UPDATE",
+                [$mov['producto_id'], $hotel_id]
+            );
+
+            if (!$stmt_stock) {
+                throw new Exception("No se pudo bloquear el producto para devolver inventario");
+            }
+
+            $producto_actual = $stmt_stock->fetch();
+            if (!$producto_actual) {
+                throw new Exception("Producto no encontrado para el hotel actual durante la devolucion");
+            }
+
+            $stock_anterior = (int)$producto_actual['stock_actual'];
+            $stock_posterior = $stock_anterior + $cantidad_devolver;
+
+            $stmt_update = $db->query(
+                "UPDATE inventario_productos
+                 SET stock_actual = ?
+                 WHERE id = ? AND hotel_id = ?",
+                [$stock_posterior, $mov['producto_id'], $hotel_id]
+            );
+
+            if (!$stmt_update || $stmt_update->rowCount() === 0) {
+                throw new Exception("No se pudo restaurar el stock del producto {$mov['producto_id']}");
+            }
+
+            $stmt_insert = $db->query(
+                "INSERT INTO movimientos_inventario
+                    (hotel_id, producto_id, tipo_movimiento, cantidad, stock_anterior,
+                     stock_posterior, motivo, habitacion_id, reservacion_id, usuario_id, created_at)
+                 VALUES (?, ?, 'ENTRADA', ?, ?, ?, ?, ?, ?, ?, NOW())",
+                [
+                    $hotel_id,
+                    $mov['producto_id'],
+                    $cantidad_devolver,
+                    $stock_anterior,
+                    $stock_posterior,
+                    $motivo_devolucion,
+                    $mov['habitacion_id'] ?: null,
+                    $reservacion_id,
+                    $usuario_id
+                ]
+            );
+
+            if (!$stmt_insert) {
+                throw new Exception("No se pudo registrar el movimiento de devolucion");
+            }
+
             $productos_devueltos[] = [
                 'producto' => $mov['producto_nombre'],
-                'cantidad' => $mov['cantidad']
+                'cantidad' => $cantidad_devolver
             ];
-            
-            error_log("Devuelto al inventario: {$mov['cantidad']} de {$mov['producto_nombre']}");
+
+            error_log("Devuelto al inventario: {$cantidad_devolver} de {$mov['producto_nombre']}");
         }
-        
+
         return [
             'success' => true,
             'productos_devueltos' => count($productos_devueltos),
             'detalles' => $productos_devueltos
         ];
-        
+
     } catch (Exception $e) {
         error_log("Error al devolver inventario: " . $e->getMessage());
-        return ['success' => false, 'error' => $e->getMessage()];
+        return ['success' => false, 'error' => $e->getMessage(), 'productos_devueltos' => 0, 'detalles' => []];
     }
 }
 /**
@@ -2048,7 +2171,11 @@ public function checkOut($reservacion_id, $hora_salida = null) {
             error_log("Procesando devolución de inventario para reservación cancelada #$id");
             
             $resultado_inventario = $this->devolverInventarioCancelacion($id);
-            
+
+            if (!$resultado_inventario['success']) {
+                throw new Exception("Error al devolver inventario: " . ($resultado_inventario['error'] ?? 'Error desconocido'));
+            }
+
             if ($resultado_inventario['success'] && $resultado_inventario['productos_devueltos'] > 0) {
                 error_log("Se devolvieron {$resultado_inventario['productos_devueltos']} productos al inventario");
                 
