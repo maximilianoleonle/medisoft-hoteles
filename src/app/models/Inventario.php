@@ -4,61 +4,149 @@
  * Los Cedros
  */
 
+require_once __DIR__ . '/../helpers/hotel_config.php';
+
 class Inventario extends Model {
     protected $table = 'inventario_productos'; // CORREGIDO
     protected $fillable = [
         'codigo',
-        'nombre', 
+        'nombre',
         'categoria_id',
         'stock_actual',
         'stock_minimo',
         'descuento_automatico',
         'costo_unitario', // Cambiado de precio_unitario
         'unidad_medida',
-        'activo'
+        'activo',
+        'hotel_id'
     ];
-    
+
+    public function hotelIdActual() {
+        return obtenerHotelIdActualCompat();
+    }
+
+    public function create($data) {
+        if (!isset($data['hotel_id'])) {
+            $data['hotel_id'] = $this->hotelIdActual();
+        }
+
+        return parent::create($data);
+    }
+
+    public function codigoExisteEnHotel($codigo, $excluirId = null) {
+        $hotelId = $this->hotelIdActual();
+        $params = [$codigo, $hotelId];
+        $sql = "SELECT COUNT(*) AS total
+                FROM inventario_productos
+                WHERE codigo = ? AND hotel_id = ?";
+
+        if ($excluirId !== null) {
+            $sql .= " AND id != ?";
+            $params[] = $excluirId;
+        }
+
+        $result = $this->query($sql, $params);
+        return (int)($result[0]['total'] ?? 0) > 0;
+    }
+
+    public function categoriaPerteneceAlHotel($categoriaId) {
+        $hotelId = $this->hotelIdActual();
+        $result = $this->query(
+            "SELECT COUNT(*) AS total
+             FROM inventario_categorias
+             WHERE id = ? AND hotel_id = ?",
+            [$categoriaId, $hotelId]
+        );
+
+        return (int)($result[0]['total'] ?? 0) > 0;
+    }
+
+    public function actualizarProductoBase($id, array $data) {
+        $hotelId = $this->hotelIdActual();
+        $data = $this->filterFillable($data);
+
+        unset($data['hotel_id']);
+
+        if (empty($data)) {
+            return $this->getByIdWithCategory($id);
+        }
+
+        if ($this->timestamps) {
+            $data['updated_at'] = date('Y-m-d H:i:s');
+        }
+
+        $fields = [];
+        $values = [];
+        foreach ($data as $field => $value) {
+            $fields[] = "{$field} = ?";
+            $values[] = $value;
+        }
+
+        $values[] = $id;
+        $values[] = $hotelId;
+
+        $sql = "UPDATE {$this->table}
+                SET " . implode(', ', $fields) . "
+                WHERE id = ? AND hotel_id = ?";
+
+        $this->query($sql, $values);
+
+        return $this->getByIdWithCategory($id);
+    }
+
+    public function desactivarProductoBase($id) {
+        return $this->actualizarProductoBase($id, ['activo' => 0]);
+    }
+
     /**
-     * Obtener todos los productos con su categoría
+     * Obtener todos los productos con su categoria
      */
     public function getAllWithCategory() {
-        $sql = "SELECT p.*, 
-                COALESCE(c.nombre, 'Sin categoría') as categoria_nombre 
-                FROM inventario_productos p 
-                LEFT JOIN inventario_categorias c ON p.categoria_id = c.id 
-                WHERE p.activo = 1 
+        $hotelId = $this->hotelIdActual();
+        $sql = "SELECT p.*,
+                COALESCE(c.nombre, 'Sin categoria') as categoria_nombre
+                FROM inventario_productos p
+                LEFT JOIN inventario_categorias c
+                    ON p.categoria_id = c.id AND c.hotel_id = p.hotel_id
+                WHERE p.activo = 1
+                    AND p.hotel_id = ?
                 ORDER BY p.nombre";
-        return $this->query($sql);
+        return $this->query($sql, [$hotelId]);
     }
-    
+
     /**
-     * Obtener un producto con su categoría
+     * Obtener un producto con su categoria
      */
     public function getByIdWithCategory($id) {
-        $sql = "SELECT p.*, c.nombre as categoria_nombre 
-                FROM inventario_productos p 
-                LEFT JOIN inventario_categorias c ON p.categoria_id = c.id 
-                WHERE p.id = ?";
-        $results = $this->query($sql, [$id]);
+        $hotelId = $this->hotelIdActual();
+        $sql = "SELECT p.*, c.nombre as categoria_nombre
+                FROM inventario_productos p
+                LEFT JOIN inventario_categorias c
+                    ON p.categoria_id = c.id AND c.hotel_id = p.hotel_id
+                WHERE p.id = ? AND p.hotel_id = ?";
+        $results = $this->query($sql, [$id, $hotelId]);
         return !empty($results) ? $results[0] : null;
     }
-    
+
     /**
      * Actualizar stock
+     *
+     * Fuera de alcance de Inventario 1-D-B: este metodo esta conectado con
+     * movimientos/check-in/check-out y se conserva sin scope por ahora.
      */
     public function actualizarStock($producto_id, $cantidad, $tipo = 'SALIDA') {
         $db = Database::getInstance();
-        
+
         if ($tipo == 'SALIDA') {
             $cantidad = -abs($cantidad);
         } else {
             $cantidad = abs($cantidad);
         }
-        
+
         $sql = "UPDATE inventario_productos SET stock_actual = stock_actual + ? WHERE id = ?";
         return $db->query($sql, [$cantidad, $producto_id]);
     }
-    
+
     /**
      * Obtener stock actual
      */
@@ -66,24 +154,34 @@ class Inventario extends Model {
         $producto = $this->find($producto_id);
         return $producto ? $producto['stock_actual'] : 0;
     }
-    
+
     /**
-     * Obtener productos para descuento automático
+     * Obtener productos para descuento automatico
      */
     public function getProductosDescuentoAutomatico() {
-        return $this->where(['descuento_automatico' => 1, 'activo' => 1]);
+        $hotelId = $this->hotelIdActual();
+        $sql = "SELECT *
+                FROM inventario_productos
+                WHERE descuento_automatico = 1
+                    AND activo = 1
+                    AND hotel_id = ?
+                ORDER BY nombre";
+        return $this->query($sql, [$hotelId]);
     }
-    
+
     /**
-     * Obtener categorías
+     * Obtener categorias
      */
     public function getCategorias() {
-        $db = Database::getInstance();
-        $sql = "SELECT * FROM inventario_categorias WHERE activo = 1 ORDER BY orden";
-        $stmt = $db->query($sql);
-        return $stmt ? $stmt->fetchAll() : [];
+        $hotelId = $this->hotelIdActual();
+        $sql = "SELECT *
+                FROM inventario_categorias
+                WHERE activo = 1
+                    AND hotel_id = ?
+                ORDER BY orden";
+        return $this->query($sql, [$hotelId]);
     }
-    
+
     /**
      * Obtener habitaciones activas
      */
@@ -93,104 +191,115 @@ class Inventario extends Model {
         $stmt = $db->query($sql);
         return $stmt ? $stmt->fetchAll() : [];
     }
-    
+
     /**
-     * Obtener configuración completa
+     * Obtener configuracion completa
      */
-    /**
- * Obtener configuración completa
- */
-public function getConfiguracionCompleta() {
-    $db = Database::getInstance();
-    
-    try {
-        // Usar directamente inventario_config_habitacion
-        $sql = "SELECT 
-                    ich.tipo_habitacion,
-                    ich.producto_id,
-                    ich.cantidad_descontar,
-                    ich.activo,
-                    p.nombre as producto_nombre,
-                    p.codigo
-                FROM inventario_config_habitacion ich
-                JOIN inventario_productos p ON ich.producto_id = p.id
-                WHERE ich.activo = 1 AND p.activo = 1
-                ORDER BY ich.tipo_habitacion, p.nombre";
-        
-        $stmt = $db->query($sql);
-        $results = $stmt ? $stmt->fetchAll() : [];
-        
-        // Organizar por tipo de habitación
-        $configuracion = [];
-        foreach ($results as $row) {
-            if (!isset($configuracion[$row['tipo_habitacion']])) {
-                $configuracion[$row['tipo_habitacion']] = [];
+    public function getConfiguracionCompleta() {
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            // Usar directamente inventario_config_habitacion
+            $sql = "SELECT
+                        ich.tipo_habitacion,
+                        ich.producto_id,
+                        ich.cantidad_descontar,
+                        ich.activo,
+                        p.nombre as producto_nombre,
+                        p.codigo
+                    FROM inventario_config_habitacion ich
+                    JOIN inventario_productos p
+                        ON ich.producto_id = p.id AND p.hotel_id = ich.hotel_id
+                    WHERE ich.activo = 1
+                        AND p.activo = 1
+                        AND ich.hotel_id = ?
+                    ORDER BY ich.tipo_habitacion, p.nombre";
+
+            $results = $this->query($sql, [$hotelId]);
+
+            // Organizar por tipo de habitacion
+            $configuracion = [];
+            foreach ($results as $row) {
+                if (!isset($configuracion[$row['tipo_habitacion']])) {
+                    $configuracion[$row['tipo_habitacion']] = [];
+                }
+                $configuracion[$row['tipo_habitacion']][] = $row;
             }
-            $configuracion[$row['tipo_habitacion']][] = $row;
+
+            return $configuracion;
+
+        } catch (Exception $e) {
+            error_log("Error en getConfiguracionCompleta: " . $e->getMessage());
+            return [];
         }
-        
-        return $configuracion;
-        
-    } catch (Exception $e) {
-        error_log("Error en getConfiguracionCompleta: " . $e->getMessage());
-        return [];
     }
-}
-    
+
     /**
-     * Actualizar configuración de habitación
+     * Actualizar configuracion de habitacion
      */
-    /**
- * Actualizar configuración de habitación
- */
-public function actualizarConfiguracion($tipo_habitacion, $producto_id, $cantidad) {
-    $db = Database::getInstance();
-    
-    try {
-        // Convertir cantidad a entero para evitar decimales
-        $cantidad = intval($cantidad);
-        
-        // Primero verificar si existe el registro
-        $sql = "SELECT id FROM inventario_config_habitacion 
-                WHERE tipo_habitacion = ? AND producto_id = ?";
-        $stmt = $db->query($sql, [$tipo_habitacion, $producto_id]);
-        $existe = $stmt ? $stmt->fetch() : null;
-        
-        if ($existe) {
-            // Si existe, actualizar
-            $sql = "UPDATE inventario_config_habitacion 
-                    SET cantidad_descontar = ?, 
-                        activo = ?,
-                        created_at = NOW()
-                    WHERE tipo_habitacion = ? AND producto_id = ?";
-            $result = $db->query($sql, [
-                $cantidad, 
-                $cantidad > 0 ? 1 : 0, 
-                $tipo_habitacion, 
-                $producto_id
-            ]);
-        } else {
-            // Si no existe y la cantidad es mayor a 0, insertar
-            if ($cantidad > 0) {
-                $sql = "INSERT INTO inventario_config_habitacion 
-                        (tipo_habitacion, producto_id, cantidad_descontar, activo, created_at) 
-                        VALUES (?, ?, ?, ?, NOW())";
-                $result = $db->query($sql, [
-                    $tipo_habitacion, 
-                    $producto_id, 
-                    $cantidad, 
-                    1
+    public function actualizarConfiguracion($tipo_habitacion, $producto_id, $cantidad) {
+        $hotelId = $this->hotelIdActual();
+        $db = Database::getInstance();
+
+        try {
+            // Convertir cantidad a entero para evitar decimales
+            $cantidad = intval($cantidad);
+
+            $producto = $this->query(
+                "SELECT id
+                 FROM inventario_productos
+                 WHERE id = ? AND hotel_id = ?",
+                [$producto_id, $hotelId]
+            );
+
+            if (empty($producto)) {
+                return false;
+            }
+
+            // Primero verificar si existe el registro
+            $sql = "SELECT id FROM inventario_config_habitacion
+                    WHERE tipo_habitacion = ? AND producto_id = ? AND hotel_id = ?";
+            $stmt = $db->query($sql, [$tipo_habitacion, $producto_id, $hotelId]);
+            $existe = $stmt ? $stmt->fetch() : null;
+
+            if ($existe) {
+                // Si existe, actualizar
+                $sql = "UPDATE inventario_config_habitacion
+                        SET cantidad_descontar = ?,
+                            activo = ?,
+                            created_at = NOW()
+                        WHERE tipo_habitacion = ? AND producto_id = ? AND hotel_id = ?";
+                $db->query($sql, [
+                    $cantidad,
+                    $cantidad > 0 ? 1 : 0,
+                    $tipo_habitacion,
+                    $producto_id,
+                    $hotelId
                 ]);
             } else {
-                // Si la cantidad es 0 y no existe, no hacer nada
-                return true;
+                // Si no existe y la cantidad es mayor a 0, insertar
+                if ($cantidad > 0) {
+                    $sql = "INSERT INTO inventario_config_habitacion
+                            (tipo_habitacion, producto_id, cantidad_descontar, activo, hotel_id, created_at)
+                            VALUES (?, ?, ?, ?, ?, NOW())";
+                    $db->query($sql, [
+                        $tipo_habitacion,
+                        $producto_id,
+                        $cantidad,
+                        1,
+                        $hotelId
+                    ]);
+                } else {
+                    // Si la cantidad es 0 y no existe, no hacer nada
+                    return true;
+                }
             }
+
+            return true;
+
+        } catch (Exception $e) {
+            error_log("Error en actualizarConfiguracion: " . $e->getMessage());
+            return false;
         }
-        
-        return true;
-        
-    } catch (Exception $e) {
-        error_log("Error en actualizarConfiguracion: " . $e->getMessage());
-        return false;
     }
-}}
+}

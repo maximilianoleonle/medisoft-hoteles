@@ -802,6 +802,20 @@ public function debugMovimientosDateAction() {
                 'descuento_automatico' => $this->getPost('descuento_automatico') ? 1 : 0,
                 'activo' => 1
             ];
+
+            $data['hotel_id'] = $this->inventarioModel->hotelIdActual();
+
+            if ($data['codigo'] === '') {
+                throw new Exception('El codigo del producto es obligatorio');
+            }
+
+            if ($this->inventarioModel->codigoExisteEnHotel($data['codigo'])) {
+                throw new Exception('Ya existe un producto con ese codigo en este hotel');
+            }
+
+            if (!$this->inventarioModel->categoriaPerteneceAlHotel($data['categoria_id'])) {
+                throw new Exception('La categoria seleccionada no pertenece al hotel actual');
+            }
             
             // Crear el producto
             $producto_id = $this->inventarioModel->create($data);
@@ -1098,8 +1112,26 @@ public function debugMovimientosDateAction() {
                 'descripcion' => trim($this->getPost('descripcion', '')),
                 'descuento_automatico' => $this->getPost('descuento_automatico') ? 1 : 0
             ];
+
+            $producto = $this->inventarioModel->getByIdWithCategory($id);
+
+            if (!$producto) {
+                throw new Exception('Producto no encontrado');
+            }
+
+            if ($data['codigo'] === '') {
+                throw new Exception('El codigo del producto es obligatorio');
+            }
+
+            if ($this->inventarioModel->codigoExisteEnHotel($data['codigo'], $id)) {
+                throw new Exception('Ya existe otro producto con ese codigo en este hotel');
+            }
+
+            if (!$this->inventarioModel->categoriaPerteneceAlHotel($data['categoria_id'])) {
+                throw new Exception('La categoria seleccionada no pertenece al hotel actual');
+            }
             
-            if ($this->inventarioModel->update($id, $data)) {
+            if ($this->inventarioModel->actualizarProductoBase($id, $data)) {
                 set_mensaje('Producto actualizado correctamente', 'success');
             } else {
                 throw new Exception('Error al actualizar el producto');
@@ -1127,7 +1159,7 @@ public function debugMovimientosDateAction() {
         
         try {
             // Solo desactivar, no eliminar físicamente
-            if ($this->inventarioModel->update($id, ['activo' => 0])) {
+            if ($this->inventarioModel->desactivarProductoBase($id)) {
                 set_mensaje('Producto eliminado correctamente', 'success');
             } else {
                 throw new Exception('Error al eliminar el producto');
