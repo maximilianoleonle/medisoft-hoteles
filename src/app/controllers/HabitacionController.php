@@ -1,4 +1,5 @@
 <?php require_once __DIR__ . '/../models/IncrementoTarifa.php';
+require_once __DIR__ . '/../helpers/hotel_config.php';
 /**
  * Controlador de Habitaciones - COMPLETO PARA Los Cedros
  * Los Cedros - Santa Catarina Juquila, Oaxaca
@@ -600,7 +601,8 @@ error_log(print_r($ocupacion_actual, true));
             'piso' => intval($this->getPost('piso')),
             'precio_base' => floatval($this->getPost('precio_base')),
             'estado' => 'disponible',
-            'activa' => $this->getPost('activa') ? 1 : 0
+            'activa' => $this->getPost('activa') ? 1 : 0,
+            'hotel_id' => $this->hotelIdActual()
         ];
         
         // Procesar características
@@ -841,8 +843,8 @@ public function historial() {
         $errores = $this->habitacionModel->validar($data);
         
         // Verificar número único (excluyendo la habitación actual)
-        $sql = "SELECT COUNT(*) as total FROM habitaciones WHERE numero = ? AND id != ?";
-        $stmt = Database::getInstance()->query($sql, [$data['numero'], $id]);
+        $sql = "SELECT COUNT(*) as total FROM habitaciones WHERE numero = ? AND id != ? AND hotel_id = ?";
+        $stmt = Database::getInstance()->query($sql, [$data['numero'], $id, $this->hotelIdActual()]);
         if ($stmt->fetch()['total'] > 0) {
             $errores[] = 'Ya existe otra habitación con ese número';
         }
@@ -916,7 +918,10 @@ public function historial() {
             foreach ($imagenes as $imagen) {
                 $this->eliminarImagenHabitacion($imagen['url']);
             }
-            $db->query("DELETE FROM habitacion_imagenes WHERE habitacion_id = ?", [$id]);
+            $db->query(
+                "DELETE FROM habitacion_imagenes WHERE habitacion_id = ? AND hotel_id = ?",
+                [$id, $this->hotelIdActual()]
+            );
             
             // Eliminar imagen principal si existe
             if (!empty($habitacion['foto_url'])) {
@@ -1082,16 +1087,16 @@ public function eliminarImagenAction() {
             
             // Buscar otra imagen para establecer como principal
             $sql = "SELECT * FROM habitacion_imagenes 
-                    WHERE habitacion_id = ? AND id != ? 
+                    WHERE habitacion_id = ? AND id != ? AND hotel_id = ?
                     ORDER BY orden ASC, id ASC 
                     LIMIT 1";
-            $stmt = $db->query($sql, [$habitacion_id, $imagen_id]);
+            $stmt = $db->query($sql, [$habitacion_id, $imagen_id, $this->hotelIdActual()]);
             $nueva_principal = $stmt->fetch();
             
             if ($nueva_principal) {
                 // Establecer la nueva imagen como principal
-                $sql_update = "UPDATE habitacion_imagenes SET es_principal = 1 WHERE id = ?";
-                $db->query($sql_update, [$nueva_principal['id']]);
+                $sql_update = "UPDATE habitacion_imagenes SET es_principal = 1 WHERE id = ? AND hotel_id = ?";
+                $db->query($sql_update, [$nueva_principal['id'], $this->hotelIdActual()]);
                 
                 // Actualizar foto_url en la tabla habitaciones
                 $this->habitacionModel->update($habitacion_id, ['foto_url' => $nueva_principal['url']]);
@@ -1099,8 +1104,8 @@ public function eliminarImagenAction() {
         }
         
         // Eliminar registro de la base de datos
-        $sql_delete = "DELETE FROM habitacion_imagenes WHERE id = ?";
-        $stmt = $db->query($sql_delete, [$imagen_id]);
+        $sql_delete = "DELETE FROM habitacion_imagenes WHERE id = ? AND hotel_id = ?";
+        $stmt = $db->query($sql_delete, [$imagen_id, $this->hotelIdActual()]);
         
         if ($stmt->rowCount() > 0) {
             $db->commit();
@@ -1166,6 +1171,12 @@ public function mantenimientoAction() {
     $accion = $this->getPost('accion');
     
     $db = Database::getInstance();
+    $habitacion = $this->habitacionModel->find($id);
+
+    if (!$habitacion) {
+        set_mensaje('Habitación no encontrada', 'error');
+        $this->redirect('habitaciones');
+    }
     
     try {
         $db->beginTransaction();
@@ -1176,10 +1187,11 @@ public function mantenimientoAction() {
             
             // Registrar en tabla de mantenimientos - AGREGADO fecha_inicio y estado
             $sql = "INSERT INTO mantenimientos_habitaciones 
-                    (habitacion_id, tipo_mantenimiento, prioridad, motivo, usuario_registro_id, fecha_inicio, estado) 
-                    VALUES (?, ?, ?, ?, ?, NOW(), 'en_proceso')";
+                    (hotel_id, habitacion_id, tipo_mantenimiento, prioridad, motivo, usuario_registro_id, fecha_inicio, estado)
+                    VALUES (?, ?, ?, ?, ?, ?, NOW(), 'en_proceso')";
             
             $db->query($sql, [
+                $this->hotelIdActual(),
                 $id,
                 $this->getPost('tipo_mantenimiento'),
                 $this->getPost('prioridad', 'media'),
@@ -1197,9 +1209,9 @@ public function mantenimientoAction() {
             // Actualizar registro de mantenimiento
             $sql = "UPDATE mantenimientos_habitaciones 
                     SET estado = 'completado', fecha_fin = NOW() 
-                    WHERE habitacion_id = ? AND estado = 'en_proceso'";
+                    WHERE habitacion_id = ? AND hotel_id = ? AND estado = 'en_proceso'";
             
-            $db->query($sql, [$id]);
+            $db->query($sql, [$id, $this->hotelIdActual()]);
             
             $db->commit();
             set_mensaje('Mantenimiento finalizado correctamente', 'success');
@@ -1430,6 +1442,11 @@ public function cancelarMantenimientoProgramadoAction() {
     }
     
     // ==================== MÉTODOS PRIVADOS ====================
+
+    private function hotelIdActual()
+    {
+        return obtenerHotelIdActualCompat();
+    }
     
     /**
      * Procesar múltiples imágenes
@@ -1478,6 +1495,7 @@ public function cancelarMantenimientoProgramadoAction() {
             if ($resultado['success']) {
                 // Guardar en la tabla habitacion_imagenes
                 $imagen_data = [
+                    'hotel_id' => $this->hotelIdActual(),
                     'habitacion_id' => $habitacion_id,
                     'url' => $resultado['path'],
                     'descripcion' => null,
@@ -1828,9 +1846,9 @@ private function crearControlLlave($habitacion_id) {
     private function obtenerMantenimientoActual($habitacion_id) {
         $db = Database::getInstance();
         $sql = "SELECT * FROM mantenimientos_habitaciones 
-                WHERE habitacion_id = ? AND estado = 'en_proceso' 
+                WHERE habitacion_id = ? AND hotel_id = ? AND estado = 'en_proceso'
                 ORDER BY fecha_inicio DESC LIMIT 1";
-        $stmt = $db->query($sql, [$habitacion_id]);
+        $stmt = $db->query($sql, [$habitacion_id, $this->hotelIdActual()]);
         return $stmt->fetch();
     }
     

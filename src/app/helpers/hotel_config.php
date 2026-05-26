@@ -59,6 +59,57 @@ if (!function_exists('hotel_config_resolve_hotel_id')) {
     }
 }
 
+if (!function_exists('obtenerHotelIdActualCompat')) {
+    function obtenerHotelIdActualCompat()
+    {
+        static $hotelId = null;
+
+        if ($hotelId !== null) {
+            return $hotelId;
+        }
+
+        if (class_exists('TenantContext') && method_exists('TenantContext', 'hotelId')) {
+            $tenantHotelId = TenantContext::hotelId();
+
+            if ($tenantHotelId) {
+                $hotelId = (int) $tenantHotelId;
+                return $hotelId;
+            }
+        }
+
+        if (!class_exists('Database')) {
+            $databasePath = dirname(__DIR__, 2) . '/core/Database.php';
+
+            if (file_exists($databasePath)) {
+                require_once $databasePath;
+            }
+        }
+
+        if (!class_exists('Database')) {
+            throw new RuntimeException('No se pudo resolver la base de datos para obtener el hotel actual.');
+        }
+
+        $db = Database::getInstance();
+        $stmt = $db->query(
+            "SELECT id FROM hoteles WHERE slug = ? AND activo = 1 LIMIT 1",
+            ['los-cedros']
+        );
+
+        if (!$stmt) {
+            throw new RuntimeException('No se pudo consultar el hotel actual de compatibilidad.');
+        }
+
+        $row = $stmt->fetch();
+
+        if (!$row || empty($row['id'])) {
+            throw new RuntimeException('No se encontro el hotel de compatibilidad los-cedros.');
+        }
+
+        $hotelId = (int) $row['id'];
+        return $hotelId;
+    }
+}
+
 if (!function_exists('hotel_config_cast_value')) {
     function hotel_config_cast_value($valor, $tipo, $default = null)
     {

@@ -6,10 +6,12 @@
 
 require_once __DIR__ . '/../../core/Model.php';
 require_once __DIR__ . '/../../core/Database.php';
+require_once __DIR__ . '/../helpers/hotel_config.php';
 
 class Mantenimiento extends Model {
     protected $table = 'mantenimientos_habitaciones';
     protected $fillable = [
+        'hotel_id',
         'habitacion_id',
         'tipo_mantenimiento',
         'prioridad',
@@ -26,6 +28,64 @@ class Mantenimiento extends Model {
         'fecha_programada_fin',
         'programado'
     ];
+
+    protected function hotelIdActual()
+    {
+        return obtenerHotelIdActualCompat();
+    }
+
+    public function find($id, $columns = ['*']) {
+        $columns = implode(', ', $columns);
+        $sql = "SELECT {$columns} FROM {$this->table} WHERE {$this->primaryKey} = ? AND hotel_id = ?";
+        $stmt = $this->db->query($sql, [$id, $this->hotelIdActual()]);
+        return $stmt ? $stmt->fetch() : false;
+    }
+
+    public function where($conditions, $columns = ['*']) {
+        $conditions['hotel_id'] = $this->hotelIdActual();
+        return parent::where($conditions, $columns);
+    }
+
+    public function create($data) {
+        $data['hotel_id'] = $data['hotel_id'] ?? $this->hotelIdActual();
+        return parent::create($data);
+    }
+
+    public function update($id, $data) {
+        $data = $this->filterFillable($data);
+        unset($data['hotel_id']);
+
+        if ($this->timestamps) {
+            $data['updated_at'] = date('Y-m-d H:i:s');
+        }
+
+        if (empty($data)) {
+            return false;
+        }
+
+        $fields = [];
+        $values = [];
+
+        foreach ($data as $field => $value) {
+            $fields[] = "{$field} = ?";
+            $values[] = $value;
+        }
+
+        $values[] = $id;
+        $values[] = $this->hotelIdActual();
+
+        $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) .
+               " WHERE {$this->primaryKey} = ? AND hotel_id = ?";
+
+        $stmt = $this->db->query($sql, $values);
+        return $stmt ? $this->find($id) : false;
+    }
+
+    public function delete($id) {
+        $sql = "DELETE FROM {$this->table} WHERE {$this->primaryKey} = ? AND hotel_id = ?";
+        $stmt = $this->db->query($sql, [$id, $this->hotelIdActual()]);
+        return $stmt !== false;
+    }
     
     /**
      * Tipos de mantenimiento disponibles
@@ -82,10 +142,10 @@ class Mantenimiento extends Model {
      */
     public function mantenimientoActual($habitacion_id) {
         $sql = "SELECT * FROM {$this->table} 
-                WHERE habitacion_id = ? AND estado = 'en_proceso' 
+                WHERE habitacion_id = ? AND hotel_id = ? AND estado = 'en_proceso'
                 ORDER BY fecha_inicio DESC LIMIT 1";
         
-        $stmt = $this->db->query($sql, [$habitacion_id]);
+        $stmt = $this->db->query($sql, [$habitacion_id, $this->hotelIdActual()]);
         return $stmt->fetch();
     }
     
@@ -100,6 +160,7 @@ class Mantenimiento extends Model {
         }
         
         $data['habitacion_id'] = $habitacion_id;
+        $data['hotel_id'] = $this->hotelIdActual();
         $data['estado'] = 'en_proceso';
         $data['fecha_inicio'] = date('Y-m-d H:i:s');
         
@@ -189,12 +250,13 @@ class Mantenimiento extends Model {
      * Obtener estadísticas de mantenimientos
      */
     public function estadisticas($fecha_inicio = null, $fecha_fin = null) {
-        $where = "";
-        $params = [];
+        $where = "WHERE hotel_id = ?";
+        $params = [$this->hotelIdActual()];
         
         if ($fecha_inicio && $fecha_fin) {
-            $where = "WHERE fecha_inicio BETWEEN ? AND ?";
-            $params = [$fecha_inicio, $fecha_fin];
+            $where .= " AND fecha_inicio BETWEEN ? AND ?";
+            $params[] = $fecha_inicio;
+            $params[] = $fecha_fin;
         }
         
         $sql = "SELECT 
@@ -222,11 +284,11 @@ class Mantenimiento extends Model {
         $sql = "SELECT m.*, u.nombre as usuario_nombre
                 FROM {$this->table} m
                 LEFT JOIN usuarios u ON m.usuario_registro_id = u.id
-                WHERE m.habitacion_id = ?
+                WHERE m.habitacion_id = ? AND m.hotel_id = ?
                 ORDER BY m.fecha_inicio DESC
                 LIMIT ?";
         
-        $stmt = $this->db->query($sql, [$habitacion_id, $limite]);
+        $stmt = $this->db->query($sql, [$habitacion_id, $this->hotelIdActual(), $limite]);
         return $stmt->fetchAll();
     }
     
@@ -234,8 +296,9 @@ class Mantenimiento extends Model {
      * Buscar mantenimientos
      */
     public function buscar($filtros = []) {
-        $conditions = [];
-        $params = [];
+        $hotelId = $this->hotelIdActual();
+        $conditions = ["m.hotel_id = ?", "h.hotel_id = ?"];
+        $params = [$hotelId, $hotelId];
         
         if (!empty($filtros['habitacion_id'])) {
             $conditions[] = "m.habitacion_id = ?";
@@ -281,6 +344,7 @@ class Mantenimiento extends Model {
      */
     public function programar($habitacion_id, $data) {
         $data['habitacion_id'] = $habitacion_id;
+        $data['hotel_id'] = $this->hotelIdActual();
         $data['estado'] = 'programado';
         $data['programado'] = 1;
         $data['fecha_inicio'] = date('Y-m-d H:i:s');
@@ -294,11 +358,12 @@ class Mantenimiento extends Model {
     public function programadosPorHabitacion($habitacion_id) {
         $sql = "SELECT * FROM {$this->table} 
                 WHERE habitacion_id = ? 
+                AND hotel_id = ?
                 AND programado = 1 
                 AND estado = 'programado'
                 ORDER BY fecha_programada ASC";
         
-        $stmt = $this->db->query($sql, [$habitacion_id]);
+        $stmt = $this->db->query($sql, [$habitacion_id, $this->hotelIdActual()]);
         return $stmt->fetchAll();
     }
     
@@ -306,15 +371,18 @@ class Mantenimiento extends Model {
      * Obtener todos los mantenimientos programados (activos)
      */
     public function todosProgramados() {
+        $hotelId = $this->hotelIdActual();
         $sql = "SELECT m.*, h.numero as habitacion_numero, h.tipo as habitacion_tipo,
                        h.piso as habitacion_piso
                 FROM {$this->table} m
                 INNER JOIN habitaciones h ON m.habitacion_id = h.id
                 WHERE m.programado = 1 
+                AND m.hotel_id = ?
+                AND h.hotel_id = ?
                 AND m.estado = 'programado'
                 ORDER BY m.fecha_programada ASC";
         
-        $stmt = $this->db->query($sql);
+        $stmt = $this->db->query($sql, [$hotelId, $hotelId]);
         return $stmt->fetchAll();
     }
     
@@ -325,6 +393,7 @@ class Mantenimiento extends Model {
     public function tieneConflictoConFechas($habitacion_id, $fecha_entrada, $fecha_salida) {
         $sql = "SELECT COUNT(*) as conflictos FROM {$this->table} 
                 WHERE habitacion_id = ? 
+                AND hotel_id = ?
                 AND estado IN ('programado', 'en_proceso')
                 AND (
                     -- Mantenimiento programado que se solapa con las fechas
@@ -339,6 +408,7 @@ class Mantenimiento extends Model {
         
         $params = [
             $habitacion_id,
+            $this->hotelIdActual(),
             $fecha_salida, $fecha_entrada,  // caso 1: mantenimiento empieza antes y termina después
             $fecha_entrada, $fecha_salida,  // caso 2: mantenimiento empieza dentro del rango
             $fecha_entrada, $fecha_salida   // caso 3: mantenimiento termina dentro del rango
@@ -354,11 +424,14 @@ class Mantenimiento extends Model {
      * Retorna array de habitacion_ids con conflicto
      */
     public function habitacionesConConflicto($fecha_entrada, $fecha_salida) {
+        $hotelId = $this->hotelIdActual();
         $sql = "SELECT DISTINCT m.habitacion_id, m.fecha_programada, m.fecha_programada_fin,
                        m.tipo_mantenimiento, m.motivo, h.numero as habitacion_numero
                 FROM {$this->table} m
                 INNER JOIN habitaciones h ON m.habitacion_id = h.id
                 WHERE m.estado IN ('programado', 'en_proceso')
+                AND m.hotel_id = ?
+                AND h.hotel_id = ?
                 AND (
                     (m.programado = 1 AND m.fecha_programada IS NOT NULL AND (
                         (m.fecha_programada < ? AND (m.fecha_programada_fin IS NULL OR m.fecha_programada_fin > ?))
@@ -369,6 +442,7 @@ class Mantenimiento extends Model {
                 )";
         
         $params = [
+            $hotelId, $hotelId,
             $fecha_salida, $fecha_entrada,
             $fecha_entrada, $fecha_salida,
             $fecha_entrada, $fecha_salida
@@ -420,15 +494,18 @@ class Mantenimiento extends Model {
      */
     public function activarMantenimientosPendientes() {
         $hoy = date('Y-m-d');
+        $hotelId = $this->hotelIdActual();
         
         $sql = "SELECT m.*, h.numero as habitacion_numero 
                 FROM {$this->table} m
                 INNER JOIN habitaciones h ON m.habitacion_id = h.id
                 WHERE m.programado = 1 
+                AND m.hotel_id = ?
+                AND h.hotel_id = ?
                 AND m.estado = 'programado' 
                 AND m.fecha_programada <= ?";
         
-        $stmt = $this->db->query($sql, [$hoy]);
+        $stmt = $this->db->query($sql, [$hotelId, $hotelId, $hoy]);
         $pendientes = $stmt->fetchAll();
         
         $activados = 0;
@@ -440,8 +517,8 @@ class Mantenimiento extends Model {
             ]);
             
             // Cambiar estado de la habitación a mantenimiento
-            $sql_hab = "UPDATE habitaciones SET estado = 'mantenimiento' WHERE id = ? AND estado = 'disponible'";
-            $this->db->query($sql_hab, [$mant['habitacion_id']]);
+            $sql_hab = "UPDATE habitaciones SET estado = 'mantenimiento' WHERE id = ? AND hotel_id = ? AND estado = 'disponible'";
+            $this->db->query($sql_hab, [$mant['habitacion_id'], $hotelId]);
             
             $activados++;
         }

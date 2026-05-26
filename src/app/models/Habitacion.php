@@ -5,9 +5,12 @@
  * Los Cedros - Santa Catarina Juquila, Oaxaca
  */
 
+require_once __DIR__ . '/../helpers/hotel_config.php';
+
 class Habitacion extends Model {
     protected $table = 'habitaciones';
     protected $fillable = [
+        'hotel_id',
         'numero',
         'tipo',
         'piso',
@@ -17,6 +20,84 @@ class Habitacion extends Model {
         'activa',
         'foto_url'
     ];
+
+    protected function hotelIdActual()
+    {
+        return obtenerHotelIdActualCompat();
+    }
+
+    public function find($id, $columns = ['*']) {
+        $columns = implode(', ', $columns);
+        $sql = "SELECT {$columns} FROM {$this->table} WHERE {$this->primaryKey} = ? AND hotel_id = ?";
+        $stmt = $this->db->query($sql, [$id, $this->hotelIdActual()]);
+        return $stmt ? $stmt->fetch() : false;
+    }
+
+    public function where($conditions, $columns = ['*']) {
+        $conditions['hotel_id'] = $this->hotelIdActual();
+        return parent::where($conditions, $columns);
+    }
+
+    public function first($conditions, $columns = ['*']) {
+        $results = $this->where($conditions, $columns);
+        return !empty($results) ? $results[0] : null;
+    }
+
+    public function count($conditions = []) {
+        $conditions['hotel_id'] = $this->hotelIdActual();
+        return parent::count($conditions);
+    }
+
+    public function exists($conditions) {
+        return $this->count($conditions) > 0;
+    }
+
+    public function create($data) {
+        $data['hotel_id'] = $data['hotel_id'] ?? $this->hotelIdActual();
+        $id = parent::create($data);
+        return $id ? $this->find($id) : false;
+    }
+
+    public function update($id, $data) {
+        $data = $this->filterFillable($data);
+        unset($data['hotel_id']);
+
+        if ($this->timestamps) {
+            $data['updated_at'] = date('Y-m-d H:i:s');
+        }
+
+        if (empty($data)) {
+            return false;
+        }
+
+        $fields = [];
+        $values = [];
+
+        foreach ($data as $field => $value) {
+            $fields[] = "{$field} = ?";
+            $values[] = $value;
+        }
+
+        $values[] = $id;
+        $values[] = $this->hotelIdActual();
+
+        $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) .
+               " WHERE {$this->primaryKey} = ? AND hotel_id = ?";
+
+        $stmt = $this->db->query($sql, $values);
+
+        if ($stmt) {
+            return $this->find($id);
+        }
+
+        return false;
+    }
+
+    public function delete($id) {
+        $sql = "DELETE FROM {$this->table} WHERE {$this->primaryKey} = ? AND hotel_id = ?";
+        $stmt = $this->db->query($sql, [$id, $this->hotelIdActual()]);
+        return $stmt !== false;
+    }
     
     /**
      * Estados posibles de la habitación
@@ -83,6 +164,10 @@ class Habitacion extends Model {
  * Verificar si la habitación tiene reservación pendiente para hoy
  */
 public function tieneReservacionPendienteHoy($habitacion_id) {
+    if (!$this->find($habitacion_id)) {
+        return false;
+    }
+
     $sql = "SELECT COUNT(*) as total 
             FROM reservaciones r
             INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
@@ -108,22 +193,25 @@ public function tieneReservacionPendienteHoy($habitacion_id) {
  */
 public function disponiblesEntreFechas($fecha_entrada, $fecha_salida, $excluir_reservacion_id = null) {
     $db = Database::getInstance();
+    $hotelId = $this->hotelIdActual();
     
     // Primero obtener todas las habitaciones activas
     $sql = "SELECT h.* FROM habitaciones h 
-            WHERE h.activa = 1 
+            WHERE h.hotel_id = ?
+            AND h.activa = 1
             AND h.estado != 'mantenimiento'
             AND h.id NOT IN (
                 SELECT m2.habitacion_id 
                 FROM mantenimientos_habitaciones m2
-                WHERE m2.estado = 'programado'
+                WHERE m2.hotel_id = ?
+                AND m2.estado = 'programado'
                 AND m2.programado = 1 
                 AND m2.fecha_programada IS NOT NULL
                 AND m2.fecha_programada < ?
                 AND (m2.fecha_programada_fin IS NULL OR m2.fecha_programada_fin > ?)
             )";
     
-    $stmt = $db->query($sql, [$fecha_salida, $fecha_entrada]);
+    $stmt = $db->query($sql, [$hotelId, $hotelId, $fecha_salida, $fecha_entrada]);
     $todas_habitaciones = $stmt->fetchAll();
     
     // Luego obtener las habitaciones que tienen reservaciones en esas fechas
@@ -173,8 +261,10 @@ public function disponiblesEntreFechas($fecha_entrada, $fecha_salida, $excluir_r
      * Obtener habitaciones disponibles en un rango de fechas - ACTUALIZADO
      */
     public function disponiblesEnFechas($fecha_entrada, $fecha_salida, $tipo = null) {
+        $hotelId = $this->hotelIdActual();
         $sql = "SELECT h.* FROM {$this->table} h
-                WHERE h.activa = 1 
+                WHERE h.hotel_id = ?
+                AND h.activa = 1
                 AND h.estado = 'disponible'
                 AND h.id NOT IN (
                     SELECT rh.habitacion_id 
@@ -188,7 +278,8 @@ public function disponiblesEntreFechas($fecha_entrada, $fecha_salida, $excluir_r
                 AND h.id NOT IN (
                     SELECT m.habitacion_id 
                     FROM mantenimientos_habitaciones m
-                    WHERE m.estado IN ('programado', 'en_proceso')
+                    WHERE m.hotel_id = ?
+                    AND m.estado IN ('programado', 'en_proceso')
                     AND (
                         (m.programado = 1 AND m.fecha_programada IS NOT NULL AND (
                             (m.fecha_programada < ? AND (m.fecha_programada_fin IS NULL OR m.fecha_programada_fin > ?))
@@ -200,9 +291,11 @@ public function disponiblesEntreFechas($fecha_entrada, $fecha_salida, $excluir_r
                 )";
         
         $params = [
+            $hotelId,
             $fecha_entrada, $fecha_entrada,
             $fecha_salida, $fecha_salida,
             $fecha_entrada, $fecha_salida,
+            $hotelId,
             $fecha_salida, $fecha_entrada,
             $fecha_entrada, $fecha_salida,
             $fecha_entrada, $fecha_salida
@@ -236,6 +329,7 @@ public function disponiblesEntreFechas($fecha_entrada, $fecha_salida, $excluir_r
      * Obtener estadísticas de habitaciones - ACTUALIZADO
      */
     public function estadisticas() {
+        $hotelId = $this->hotelIdActual();
         $sql = "SELECT 
                     COUNT(*) as total,
                     SUM(CASE WHEN estado = 'disponible' THEN 1 ELSE 0 END) as disponibles,
@@ -255,9 +349,9 @@ public function disponiblesEntreFechas($fecha_entrada, $fecha_salida, $excluir_r
                     MAX(precio_base) as precio_maximo,
                     AVG(precio_base) as precio_promedio
                 FROM {$this->table}
-                WHERE activa = 1";
+                WHERE hotel_id = ? AND activa = 1";
         
-        $stmt = $this->db->query($sql);
+        $stmt = $this->db->query($sql, [$hotelId]);
         return $stmt->fetch();
     }
     
@@ -265,6 +359,7 @@ public function disponiblesEntreFechas($fecha_entrada, $fecha_salida, $excluir_r
      * Obtener estadísticas por piso
      */
     public function estadisticasPorPiso() {
+        $hotelId = $this->hotelIdActual();
         $sql = "SELECT 
                     piso,
                     CASE 
@@ -281,11 +376,11 @@ public function disponiblesEntreFechas($fecha_entrada, $fecha_salida, $excluir_r
                     SUM(CASE WHEN estado = 'ocupada' THEN 1 ELSE 0 END) as ocupadas,
                     AVG(precio_base) as precio_promedio
                 FROM {$this->table}
-                WHERE activa = 1
+                WHERE hotel_id = ? AND activa = 1
                 GROUP BY piso
                 ORDER BY piso";
         
-        $stmt = $this->db->query($sql);
+        $stmt = $this->db->query($sql, [$hotelId]);
         return $stmt->fetchAll();
     }
     
@@ -293,6 +388,7 @@ public function disponiblesEntreFechas($fecha_entrada, $fecha_salida, $excluir_r
      * Obtener estadísticas por tipo
      */
     public function estadisticasPorTipo() {
+        $hotelId = $this->hotelIdActual();
         $sql = "SELECT 
                     tipo,
                     COUNT(*) as total,
@@ -302,11 +398,11 @@ public function disponiblesEntreFechas($fecha_entrada, $fecha_salida, $excluir_r
                     MAX(precio_base) as precio_maximo,
                     AVG(precio_base) as precio_promedio
                 FROM {$this->table}
-                WHERE activa = 1
+                WHERE hotel_id = ? AND activa = 1
                 GROUP BY tipo
                 ORDER BY precio_promedio";
         
-        $stmt = $this->db->query($sql);
+        $stmt = $this->db->query($sql, [$hotelId]);
         return $stmt->fetchAll();
     }
     
@@ -315,6 +411,10 @@ public function disponiblesEntreFechas($fecha_entrada, $fecha_salida, $excluir_r
  * Obtener ocupación actual de la habitación - VERSIÓN FINAL
  */
 public function getOcupacionActual($habitacion_id) {
+    if (!$this->find($habitacion_id)) {
+        return null;
+    }
+
     // Buscar el huésped que debería estar ocupando la habitación HOY
     // Prioridad: 1) checked_in, 2) confirmada con fecha de hoy
     $sql = "SELECT r.*, h.nombre_completo, h.telefono, h.id as huesped_id,
@@ -341,6 +441,10 @@ public function getOcupacionActual($habitacion_id) {
      * Verificar si habitación está disponible para reservar - ACTUALIZADO
      */
     public function estaDisponible($habitacion_id, $fecha_entrada, $fecha_salida, $excluir_reservacion_id = null) {
+        if (!$this->find($habitacion_id)) {
+            return false;
+        }
+
         $sql = "SELECT COUNT(*) as conflictos 
                 FROM reservacion_habitaciones rh
                 INNER JOIN reservaciones r ON rh.reservacion_id = r.id
@@ -371,13 +475,15 @@ public function getOcupacionActual($habitacion_id) {
      * Buscar habitaciones - MEJORADO
      */
     public function buscar($termino) {
+        $hotelId = $this->hotelIdActual();
         $sql = "SELECT * FROM {$this->table} 
-                WHERE activa = 1 
+                WHERE hotel_id = ?
+                AND activa = 1
                 AND (numero LIKE ? OR caracteristicas LIKE ? OR tipo LIKE ?)
                 ORDER BY piso, CAST(numero AS UNSIGNED)";
         
         $termino = '%' . $termino . '%';
-        $stmt = $this->db->query($sql, [$termino, $termino, $termino]);
+        $stmt = $this->db->query($sql, [$hotelId, $termino, $termino, $termino]);
         return $stmt->fetchAll();
     }
     
@@ -385,6 +491,10 @@ public function getOcupacionActual($habitacion_id) {
      * Obtener próxima salida de la habitación - ACTUALIZADO
      */
     public function getProximaSalida($habitacion_id) {
+        if (!$this->find($habitacion_id)) {
+            return null;
+        }
+
         $sql = "SELECT r.*, h.nombre_completo,
                 COUNT(DISTINCT rh2.habitacion_id) as total_habitaciones
                 FROM reservaciones r
@@ -407,12 +517,13 @@ public function getOcupacionActual($habitacion_id) {
      * Obtener habitaciones con características especiales
      */
     public function conCaracteristicasEspeciales() {
+        $hotelId = $this->hotelIdActual();
         $sql = "SELECT 
                     'Con Jacuzzi' as categoria,
                     COUNT(*) as total,
                     GROUP_CONCAT(numero ORDER BY CAST(numero AS UNSIGNED) SEPARATOR ', ') as habitaciones
                 FROM {$this->table}
-                WHERE activa = 1 AND (caracteristicas LIKE '%jacuzzi%' OR tipo LIKE '%jacuzzi%')
+                WHERE hotel_id = ? AND activa = 1 AND (caracteristicas LIKE '%jacuzzi%' OR tipo LIKE '%jacuzzi%')
                 
                 UNION ALL
                 
@@ -421,7 +532,7 @@ public function getOcupacionActual($habitacion_id) {
                     COUNT(*) as total,
                     GROUP_CONCAT(numero ORDER BY CAST(numero AS UNSIGNED) SEPARATOR ', ') as habitaciones
                 FROM {$this->table}
-                WHERE activa = 1 AND caracteristicas LIKE '%pantalla%'
+                WHERE hotel_id = ? AND activa = 1 AND caracteristicas LIKE '%pantalla%'
                 
                 UNION ALL
                 
@@ -430,7 +541,7 @@ public function getOcupacionActual($habitacion_id) {
                     COUNT(*) as total,
                     GROUP_CONCAT(numero ORDER BY CAST(numero AS UNSIGNED) SEPARATOR ', ') as habitaciones
                 FROM {$this->table}
-                WHERE activa = 1 AND caracteristicas LIKE '%balcón%'
+                WHERE hotel_id = ? AND activa = 1 AND caracteristicas LIKE '%balcón%'
                 
                 UNION ALL
                 
@@ -439,9 +550,9 @@ public function getOcupacionActual($habitacion_id) {
                     COUNT(*) as total,
                     GROUP_CONCAT(numero ORDER BY CAST(numero AS UNSIGNED) SEPARATOR ', ') as habitaciones
                 FROM {$this->table}
-                WHERE activa = 1 AND caracteristicas LIKE '%más amplia%'";
+                WHERE hotel_id = ? AND activa = 1 AND caracteristicas LIKE '%más amplia%'";
         
-        $stmt = $this->db->query($sql);
+        $stmt = $this->db->query($sql, [$hotelId, $hotelId, $hotelId, $hotelId]);
         return $stmt->fetchAll();
     }
     
@@ -449,6 +560,7 @@ public function getOcupacionActual($habitacion_id) {
      * Obtener habitaciones más rentables
      */
     public function masRentables($limite = 10) {
+        $hotelId = $this->hotelIdActual();
         $sql = "SELECT h.*, 
                 COUNT(DISTINCT r.id) as total_reservaciones,
                 SUM(r.precio_total) as ingresos_totales,
@@ -457,12 +569,12 @@ public function getOcupacionActual($habitacion_id) {
                 LEFT JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
                 LEFT JOIN reservaciones r ON rh.reservacion_id = r.id 
                     AND r.estado IN ('checked_in', 'checked_out')
-                WHERE h.activa = 1
+                WHERE h.hotel_id = ? AND h.activa = 1
                 GROUP BY h.id
                 ORDER BY ingresos_totales DESC, total_reservaciones DESC
                 LIMIT ?";
         
-        $stmt = $this->db->query($sql, [$limite]);
+        $stmt = $this->db->query($sql, [$hotelId, $limite]);
         return $stmt->fetchAll();
     }
     
@@ -470,13 +582,14 @@ public function getOcupacionActual($habitacion_id) {
      * Contar habitaciones por tipo
      */
     public function contarPorTipo() {
+        $hotelId = $this->hotelIdActual();
         $sql = "SELECT tipo, COUNT(*) as total 
                 FROM {$this->table} 
-                WHERE activa = 1 
+                WHERE hotel_id = ? AND activa = 1
                 GROUP BY tipo
                 ORDER BY total DESC";
         
-        $stmt = $this->db->query($sql);
+        $stmt = $this->db->query($sql, [$hotelId]);
         return $stmt->fetchAll();
     }
     
@@ -491,14 +604,16 @@ public function getOcupacionActual($habitacion_id) {
         
         $direccion = strtoupper($direccion) === 'DESC' ? 'DESC' : 'ASC';
         
+        $hotelId = $this->hotelIdActual();
+
         if ($campo === 'numero') {
             // Ordenar numéricamente los números de habitación
-            $sql = "SELECT * FROM {$this->table} WHERE activa = 1 ORDER BY CAST(numero AS UNSIGNED) {$direccion}, piso";
+            $sql = "SELECT * FROM {$this->table} WHERE hotel_id = ? AND activa = 1 ORDER BY CAST(numero AS UNSIGNED) {$direccion}, piso";
         } else {
-            $sql = "SELECT * FROM {$this->table} WHERE activa = 1 ORDER BY {$campo} {$direccion}, CAST(numero AS UNSIGNED)";
+            $sql = "SELECT * FROM {$this->table} WHERE hotel_id = ? AND activa = 1 ORDER BY {$campo} {$direccion}, CAST(numero AS UNSIGNED)";
         }
         
-        $stmt = $this->db->query($sql);
+        $stmt = $this->db->query($sql, [$hotelId]);
         return $stmt->fetchAll();
     }
     
@@ -546,6 +661,7 @@ public function getOcupacionActual($habitacion_id) {
      * Obtener resumen de disponibilidad por tipo
      */
     public function resumenDisponibilidadPorTipo() {
+        $hotelId = $this->hotelIdActual();
         $sql = "SELECT 
                     tipo,
                     COUNT(*) as total,
@@ -553,11 +669,11 @@ public function getOcupacionActual($habitacion_id) {
                     SUM(CASE WHEN estado = 'ocupada' THEN 1 ELSE 0 END) as ocupadas,
                     AVG(precio_base) as precio_promedio
                 FROM {$this->table}
-                WHERE activa = 1
+                WHERE hotel_id = ? AND activa = 1
                 GROUP BY tipo
                 ORDER BY precio_promedio DESC";
         
-        $stmt = $this->db->query($sql);
+        $stmt = $this->db->query($sql, [$hotelId]);
         return $stmt->fetchAll();
     }
 }
