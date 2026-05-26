@@ -7,7 +7,7 @@
     ports:
       - "${APP_PORT:-8080}:80"
     volumes:
-      - ./public:/var/www/html
+      - ./src:/var/www/html
     env_file:
       - .env
     environment:

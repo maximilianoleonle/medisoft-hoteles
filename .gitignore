@@ -30,3 +30,6 @@ temp/
 
 # No ignorar archivos plantilla
 !.env.example
+
+# Archivos locales sensibles o de diagnostico
+_local_quarantine_sensitive/

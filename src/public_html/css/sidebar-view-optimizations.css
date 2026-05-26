@@ -1,0 +1,320 @@
+/* ===================================
+   OPTIMIZACIONES PARA VISTAS CON SIDEBAR
+   Archivo: sidebar-view-optimizations.css
+   =================================== */
+
+/* ===================================
+   AJUSTES GLOBALES
+   =================================== */
+
+/* Resetear márgenes del body cuando hay sidebar */
+@media (min-width: 1025px) {
+    /* Contenedor principal flex */
+    .flex-1.flex.flex-col.overflow-hidden {
+        margin-left: 0 !important;
+    }
+    
+    /* Main content */
+    main.flex-1.overflow-y-auto {
+        padding: 0;
+        margin: 0;
+        width: 100%;
+    }
+    
+    /* Remover padding lateral excesivo */
+    .px-4.sm\:px-6.lg\:px-8 {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    
+    /* Headers de página */
+    .bg-white.shadow-sm.border-b {
+        margin: 0;
+        width: 100%;
+    }
+}
+
+/* ===================================
+   VISTA DE DASHBOARD
+   =================================== */
+
+/* Dashboard container */
+.min-h-screen.bg-gray-50 {
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+/* Grid de widgets */
+.grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-4 {
+    gap: 1rem !important;
+}
+
+/* Widgets más compactos */
+.bg-white.rounded-xl.shadow-sm .p-6 {
+    padding: 1rem !important;
+}
+
+/* Gráficas */
+.lg\:col-span-2 {
+    padding: 1rem !important;
+}
+
+/* ===================================
+   VISTA DE HABITACIONES
+   =================================== */
+
+/* Header de gestión */
+.bg-gradient-to-r.from-hotel-brown.to-hotel-brown-dark {
+    margin: 0 !important;
+    padding: 0.75rem 1.25rem !important;
+    width: 100% !important;
+}
+
+/* Título más pequeño */
+.bg-gradient-to-r h1 {
+    font-size: 1.25rem !important;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Subtítulo */
+.bg-gradient-to-r p {
+    font-size: 0.8rem !important;
+    opacity: 0.9;
+}
+
+/* Botones del header */
+.bg-gradient-to-r button,
+.bg-gradient-to-r a {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+}
+
+/* Estadísticas de habitaciones */
+.grid.grid-cols-2.md\:grid-cols-5.gap-4 {
+    gap: 0.75rem !important;
+    margin-bottom: 1rem !important;
+}
+
+/* Cards de estadísticas */
+.bg-white.rounded-lg.shadow-sm.p-4 {
+    padding: 0.75rem !important;
+}
+
+.text-2xl.font-bold {
+    font-size: 1.5rem !important;
+}
+
+/* Grid de habitaciones optimizado */
+.grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.xl\:grid-cols-4 {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important;
+    gap: 0.75rem !important;
+}
+
+/* Cards de habitación */
+.habitacion-card,
+.bg-white.rounded-xl.shadow-sm.border {
+    padding: 0.875rem !important;
+}
+
+/* Imágenes de habitación */
+.habitacion-card img {
+    height: 120px !important;
+    object-fit: cover;
+}
+
+/* Precio más prominente */
+.text-2xl.font-bold.text-hotel-brown {
+    font-size: 1.25rem !important;
+}
+
+/* Botones en cards */
+.habitacion-card .flex.gap-2 button,
+.habitacion-card .flex.gap-2 a {
+    padding: 0.375rem 0.75rem !important;
+    font-size: 0.75rem !important;
+}
+
+/* ===================================
+   VISTA DE HUÉSPEDES
+   =================================== */
+
+/* Tabla de huéspedes */
+.overflow-x-auto {
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem;
+}
+
+table {
+    font-size: 0.875rem;
+}
+
+table th {
+    padding: 0.5rem !important;
+    font-size: 0.75rem !important;
+}
+
+table td {
+    padding: 0.625rem 0.5rem !important;
+}
+
+/* ===================================
+   VISTA DE RESERVACIONES
+   =================================== */
+
+/* Calendario */
+.fc-toolbar {
+    padding: 0.5rem !important;
+    gap: 0.5rem;
+}
+
+.fc-toolbar-title {
+    font-size: 1.125rem !important;
+}
+
+.fc-button {
+    padding: 0.375rem 0.75rem !important;
+    font-size: 0.8rem !important;
+}
+
+/* ===================================
+   MODALES Y OVERLAYS
+   =================================== */
+
+/* Asegurar que modales aparezcan sobre el sidebar */
+.fixed.inset-0.z-50,
+.modal,
+[role="dialog"] {
+    z-index: 1100 !important;
+}
+
+/* Backdrop de modales */
+.fixed.inset-0.bg-black.bg-opacity-50 {
+    z-index: 1050 !important;
+}
+
+/* ===================================
+   OPTIMIZACIONES RESPONSIVE
+   =================================== */
+
+/* Pantallas medianas (1280px - 1400px) */
+@media (min-width: 1280px) and (max-width: 1400px) {
+    /* Grid de 4 columnas */
+    .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.xl\:grid-cols-4 {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+}
+
+/* Pantallas grandes (1400px - 1920px) */
+@media (min-width: 1400px) and (max-width: 1920px) {
+    /* Grid adaptativo de 4-5 columnas */
+    .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.xl\:grid-cols-4 {
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
+    }
+    
+    /* Padding lateral más generoso */
+    .px-4.sm\:px-6.lg\:px-8 {
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+    }
+}
+
+/* Pantallas ultra anchas (1920px+) */
+@media (min-width: 1920px) {
+    /* Grid de hasta 6 columnas */
+    .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.xl\:grid-cols-4 {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    }
+    
+    /* Contenedor con ancho máximo */
+    .px-4.sm\:px-6.lg\:px-8 {
+        max-width: 1800px !important;
+        margin: 0 auto !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+    }
+}
+
+/* ===================================
+   ESTADOS CON SIDEBAR COLAPSADO
+   =================================== */
+
+/* Más espacio cuando el sidebar está colapsado */
+body.sidebar-collapsed .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.xl\:grid-cols-4 {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+}
+
+body.sidebar-collapsed .px-4.sm\:px-6.lg\:px-8 {
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+}
+
+/* ===================================
+   UTILIDADES
+   =================================== */
+
+/* Ocultar sidebar antiguo si existe */
+#sidebar.bg-gradient-to-b {
+    display: none !important;
+}
+
+/* Transiciones suaves */
+* {
+    transition-property: margin, padding, width;
+    transition-duration: 0.3s;
+    transition-timing-function: ease;
+}
+
+/* Prevenir overflow horizontal */
+body {
+    overflow-x: hidden;
+}
+
+/* Fix para contenido que se sale del viewport */
+.overflow-hidden {
+    overflow: hidden !important;
+}
+
+/* ===================================
+   OPTIMIZACIONES DE RENDIMIENTO
+   =================================== */
+
+/* Lazy loading para imágenes */
+img {
+    loading: lazy;
+}
+
+/* Hardware acceleration para animaciones */
+.habitacion-card,
+.nav-item,
+.sidebar-main {
+    will-change: transform;
+}
+
+/* Reducir reflows */
+.grid {
+    contain: layout;
+}
+
+/* ===================================
+   MODO IMPRESIÓN
+   =================================== */
+
+@media print {
+    .sidebar-main,
+    .sidebar-overlay,
+    #mobile-menu-toggle {
+        display: none !important;
+    }
+    
+    body {
+        margin-left: 0 !important;
+    }
+    
+    main {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+}

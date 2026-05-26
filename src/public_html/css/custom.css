@@ -1,0 +1,455 @@
+/* ===================================
+   ESTILOS PERSONALIZADOS - Los Cedros
+   Archivo: custom.css
+   =================================== */
+
+/* ===================================
+   VARIABLES GLOBALES
+   =================================== */
+:root {
+    --sidebar-width: 200px;
+    --sidebar-collapsed-width: 60px;
+    --header-height: 64px;
+    --hotel-brown: #6B4423;
+    --hotel-brown-dark: #5A3A1E;
+    --hotel-brown-light: #8B5A3C;
+    --hotel-gold: #D4A574;
+    --hotel-cream: #FFF8F3;
+}
+
+/* ===================================
+   RESET Y BASE
+   =================================== */
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+/* ===================================
+   LAYOUT PRINCIPAL CON SIDEBAR
+   =================================== */
+
+/* Body con margen para el sidebar */
+@media (min-width: 1025px) {
+    body {
+        padding-left: var(--sidebar-width);
+    }
+    
+    body.sidebar-collapsed {
+        padding-left: var(--sidebar-collapsed-width);
+    }
+}
+
+/* Contenedor principal después del sidebar */
+.main-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Header principal */
+.main-header {
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    flex-shrink: 0;
+}
+
+/* Contenido principal */
+.main-content {
+    flex: 1;
+    overflow-y: auto;
+    background: #f3f4f6;
+}
+
+/* ===================================
+   ANCHO COMPLETO PARA CONTENIDO
+   =================================== */
+
+/* Remover TODAS las restricciones de ancho máximo */
+.container,
+[class*="max-w-"],
+.mx-auto {
+    max-width: 100% !important;
+    width: 100% !important;
+}
+
+/* Ajustar márgenes automáticos */
+.mx-auto {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Paddings consistentes */
+.px-4,
+.px-6,
+.px-8 {
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+}
+
+@media (min-width: 1280px) {
+    .px-4,
+    .px-6,
+    .px-8 {
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+    }
+}
+
+@media (min-width: 1536px) {
+    .px-4,
+    .px-6,
+    .px-8 {
+        padding-left: 3rem !important;
+        padding-right: 3rem !important;
+    }
+}
+
+/* ===================================
+   VISTAS ESPECÍFICAS
+   =================================== */
+
+/* Vista de huéspedes */
+.p-6 {
+    padding: 1.5rem !important;
+}
+
+@media (min-width: 1280px) {
+    .p-6 {
+        padding: 2rem !important;
+    }
+}
+
+/* Tablas */
+.overflow-x-auto {
+    width: 100% !important;
+    overflow-x: auto !important;
+}
+
+table {
+    width: 100% !important;
+}
+
+/* Grids */
+.grid {
+    width: 100% !important;
+}
+
+/* ===================================
+   COMPONENTES
+   =================================== */
+
+/* Notificaciones */
+.notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #ef4444;
+    color: white;
+    border-radius: 9999px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--hotel-brown);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--hotel-brown-dark);
+}
+
+/* ===================================
+   ESTADOS DE HABITACIÓN
+   =================================== */
+
+/* Estados con gradientes */
+.habitacion-disponible {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-color: #86efac;
+}
+
+.habitacion-ocupada {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-color: #fca5a5;
+}
+
+.habitacion-mantenimiento {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border-color: #fde047;
+}
+
+.habitacion-limpieza {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-color: #93c5fd;
+}
+
+.habitacion-por-llegar {
+    background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+    border-color: #c084fc;
+}
+
+/* Estados con colores sólidos */
+.estado-disponible {
+    background-color: #10b981;
+    color: white;
+}
+
+.estado-ocupada {
+    background-color: #ef4444;
+    color: white;
+}
+
+.estado-mantenimiento {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.estado-limpieza {
+    background-color: #3b82f6;
+    color: white;
+}
+
+/* ===================================
+   ANIMACIONES
+   =================================== */
+
+/* Fade in */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Slide in */
+.slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Pulse */
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Spinner */
+.spinner {
+    border: 3px solid #F5E6D3;
+    border-top: 3px solid var(--hotel-brown);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ===================================
+   CARDS Y HOVER EFFECTS
+   =================================== */
+
+.habitacion-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.habitacion-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.card-hover {
+    transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* ===================================
+   TABLAS
+   =================================== */
+
+.table-hover tbody tr:hover {
+    background-color: var(--hotel-cream);
+    cursor: pointer;
+}
+
+/* ===================================
+   FORMULARIOS
+   =================================== */
+
+.form-control:focus {
+    border-color: var(--hotel-brown);
+    box-shadow: 0 0 0 3px rgba(107, 68, 35, 0.1);
+}
+
+/* ===================================
+   UTILIDADES
+   =================================== */
+
+/* Line clamp */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* No imprimir */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .print-break {
+        page-break-after: always;
+    }
+    
+    body {
+        padding-left: 0 !important;
+    }
+    
+    .sidebar-main {
+        display: none !important;
+    }
+}
+
+/* ===================================
+   RESPONSIVE
+   =================================== */
+
+@media (max-width: 1024px) {
+    body {
+        padding-left: 0 !important;
+    }
+    
+    .main-wrapper {
+        margin-left: 0 !important;
+    }
+    
+    .px-4,
+    .px-6,
+    .px-8,
+    .p-6 {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+}
+
+/* ===================================
+   FIXES ESPECÍFICOS
+   =================================== */
+
+/* Asegurar que el sidebar no interfiera */
+.sidebar-main {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+}
+
+/* Fix para el contenedor flex principal */
+.flex.h-screen.overflow-hidden {
+    height: 100vh !important;
+    overflow: hidden !important;
+}
+
+/* Fix para contenido que no se expande */
+.flex-1 {
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+}
+
+/* Excepciones para modales */
+.fixed.inset-0 .max-w-5xl,
+.modal .max-w-5xl {
+    max-width: 1024px !important;
+}
+
+/* Barra de búsqueda del header */
+.flex-1.max-w-md.mx-4 {
+    max-width: 28rem !important;
+}
+
+/* ===================================
+   COLORES ADICIONALES DEL HOTEL
+   =================================== */
+
+.bg-hotel-brown { background-color: var(--hotel-brown); }
+.bg-hotel-brown-dark { background-color: var(--hotel-brown-dark); }
+.bg-hotel-brown-light { background-color: var(--hotel-brown-light); }
+.bg-hotel-gold { background-color: var(--hotel-gold); }
+.bg-hotel-cream { background-color: var(--hotel-cream); }
+
+.text-hotel-brown { color: var(--hotel-brown); }
+.text-hotel-brown-dark { color: var(--hotel-brown-dark); }
+.text-hotel-brown-light { color: var(--hotel-brown-light); }
+.text-hotel-gold { color: var(--hotel-gold); }
+.text-hotel-cream { color: var(--hotel-cream); }
+
+.border-hotel-brown { border-color: var(--hotel-brown); }
+.border-hotel-brown-dark { border-color: var(--hotel-brown-dark); }
+.border-hotel-brown-light { border-color: var(--hotel-brown-light); }
+.border-hotel-gold { border-color: var(--hotel-gold); }
+.border-hotel-cream { border-color: var(--hotel-cream); }
+
+/* Hover states */
+.hover\:bg-hotel-brown:hover { background-color: var(--hotel-brown); }
+.hover\:bg-hotel-brown-dark:hover { background-color: var(--hotel-brown-dark); }
+.hover\:text-hotel-brown:hover { color: var(--hotel-brown); }

@@ -1,0 +1,90 @@
+/* mobile-logo-fix.css */
+/* Arreglo para mantener el tamaño del logo consistente en móviles */
+
+@media (max-width: 1024px) {
+    /* Forzar tamaño consistente del logo en el header móvil */
+    .mobile-header-logo {
+        height: 40px !important;
+        min-height: 40px !important;
+        max-height: 40px !important;
+        width: auto !important;
+        min-width: 120px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        position: absolute !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+    }
+    
+    .mobile-header-logo img {
+        height: 40px !important;
+        min-height: 40px !important;
+        max-height: 40px !important;
+        width: auto !important;
+        object-fit: contain !important;
+        display: block !important;
+        /* Prevenir cualquier transformación o animación */
+        transition: none !important;
+        transform: none !important;
+        animation: none !important;
+    }
+    
+    /* Asegurar que el logo no cambie en ninguna vista */
+    .mobile-header-modern .mobile-header-logo,
+    .mobile-header-modern .mobile-header-logo img,
+    .mobile-header-modern.hidden .mobile-header-logo,
+    .mobile-header-modern.hidden .mobile-header-logo img,
+    body.loading .mobile-header-logo,
+    body.loading .mobile-header-logo img,
+    main .mobile-header-logo,
+    main .mobile-header-logo img {
+        height: 40px !important;
+        min-height: 40px !important;
+        max-height: 40px !important;
+    }
+    
+    /* Prevenir cambios de tamaño por clases específicas de página */
+    .page-dashboard .mobile-header-logo img,
+    .page-habitaciones .mobile-header-logo img,
+    .page-reservaciones .mobile-header-logo img,
+    .page-huespedes .mobile-header-logo img,
+    .page-reportes .mobile-header-logo img,
+    .page-configuracion .mobile-header-logo img,
+    .page-inventario .mobile-header-logo img,
+    .page-caja .mobile-header-logo img,
+    .page-usuarios .mobile-header-logo img {
+        height: 40px !important;
+        min-height: 40px !important;
+        max-height: 40px !important;
+        width: auto !important;
+    }
+    
+    /* Prevenir cambios durante transiciones */
+    .mobile-header-modern * {
+        will-change: auto !important;
+    }
+    
+    .mobile-header-logo,
+    .mobile-header-logo * {
+        will-change: auto !important;
+        backface-visibility: hidden !important;
+        -webkit-backface-visibility: hidden !important;
+        perspective: 1000px !important;
+        -webkit-perspective: 1000px !important;
+    }
+}
+
+/* Asegurar que el filtro del logo no afecte su tamaño */
+@media (max-width: 1024px) {
+    .mobile-header-logo img {
+        /* Mantener el efecto dorado pero sin afectar el tamaño */
+        filter: brightness(0) invert(1) 
+                drop-shadow(0 0 10px rgba(212, 175, 55, 0.6))
+                drop-shadow(0 0 20px rgba(212, 175, 55, 0.4))
+                drop-shadow(0 0 30px rgba(212, 175, 55, 0.2)) !important;
+        /* Forzar renderizado por GPU para evitar cambios de tamaño */
+        transform: translateZ(0) !important;
+        -webkit-transform: translateZ(0) !important;
+    }
+}

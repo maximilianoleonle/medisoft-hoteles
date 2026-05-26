@@ -1,0 +1,206 @@
+# Los Cedros - Configuración Apache
+
+# Activar reescritura de URLs
+RewriteEngine On
+
+# Configuraciones de seguridad
+Options -Indexes
+Options -MultiViews
+
+# Establecer página de inicio
+DirectoryIndex index.php
+
+# EXCEPCIÓN PARA ARCHIVOS PWA - DEBE IR PRIMERO
+<Files "manifest.json">
+    Order Allow,Deny
+    Allow from all
+</Files>
+
+<Files "service-worker.js">
+    Order Allow,Deny
+    Allow from all
+</Files>
+
+<Files "offline.html">
+    Order Allow,Deny
+    Allow from all
+</Files>
+
+# Denegar acceso a archivos sensibles (EXCEPTO manifest.json)
+<FilesMatch "\.(env|lock|md|xml|yml|yaml|log|bak|swp|old)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Denegar acceso a otros archivos JSON (pero no manifest.json)
+<FilesMatch "^(?!manifest).*\.json$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Denegar acceso a archivos de configuración PHP
+<FilesMatch "\.(inc|conf|config)\.php$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Tipos MIME para PWA
+AddType application/manifest+json .json .webmanifest
+AddType application/javascript .js
+AddType text/javascript .js
+
+# Headers específicos para Service Worker
+<Files "service-worker.js">
+    Header set Service-Worker-Allowed "/"
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+</Files>
+
+# Headers para manifest
+<Files "manifest.json">
+    Header set Cache-Control "public, max-age=604800"
+</Files>
+
+# Forzar HTTPS si está disponible (descomentar cuando tengas SSL)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+# Reglas de reescritura - EXCLUIR archivos PWA
+# Bloquear carpetas/librerias que no deben navegarse directamente
+RewriteRule ^app/ - [F,L]
+RewriteRule ^fdpdf/(doc|tutorial|makefont|font)/ - [F,L]
+RewriteRule ^.*\.(zip|sql|bak|backup)$ - [F,L]
+
+RewriteCond %{REQUEST_URI} !^/manifest\.json$
+RewriteCond %{REQUEST_URI} !^/service-worker\.js$
+RewriteCond %{REQUEST_URI} !^/offline\.html$
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?$1 [L,QSA]
+
+# Headers de seguridad mejorados
+<IfModule mod_headers.c>
+    # Prevenir ataques XSS
+    Header set X-XSS-Protection "1; mode=block"
+    
+    # Prevenir clickjacking
+    Header set X-Frame-Options "SAMEORIGIN"
+    
+    # Prevenir MIME type sniffing
+    Header set X-Content-Type-Options "nosniff"
+    
+    # Política de referrer
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # Política de permisos (ajustar según necesites)
+    Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    
+    # Content Security Policy básica (ajustar según tus necesidades)
+    # Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self';"
+    
+    # Remover información del servidor
+    Header unset Server
+    Header unset X-Powered-By
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" "expr=%{HTTPS} == 'on'"
+</IfModule>
+
+# Comprensión GZIP mejorada
+<IfModule mod_deflate.c>
+    # Comprimir HTML, CSS, JavaScript, Text, XML, fonts
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE application/manifest+json
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/vnd.ms-fontobject
+    AddOutputFilterByType DEFLATE application/x-font
+    AddOutputFilterByType DEFLATE application/x-font-opentype
+    AddOutputFilterByType DEFLATE application/x-font-otf
+    AddOutputFilterByType DEFLATE application/x-font-truetype
+    AddOutputFilterByType DEFLATE application/x-font-ttf
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE font/opentype
+    AddOutputFilterByType DEFLATE font/otf
+    AddOutputFilterByType DEFLATE font/ttf
+    AddOutputFilterByType DEFLATE image/svg+xml
+    AddOutputFilterByType DEFLATE image/x-icon
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/xml
+    
+    # Remover bugs de navegadores antiguos
+    BrowserMatch ^Mozilla/4 gzip-only-text/html
+    BrowserMatch ^Mozilla/4\.0[678] no-gzip
+    BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
+    Header append Vary User-Agent
+</IfModule>
+
+# Cache de navegador optimizado
+<IfModule mod_expires.c>
+    ExpiresActive On
+    
+    # Imágenes
+    ExpiresByType image/jpg "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/webp "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType image/x-icon "access plus 1 month"
+    ExpiresByType image/ico "access plus 1 month"
+    
+    # CSS y JavaScript
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+    ExpiresByType text/javascript "access plus 1 week"
+    
+    # PWA
+    ExpiresByType application/manifest+json "access plus 1 week"
+    
+    # Fuentes
+    ExpiresByType font/ttf "access plus 1 month"
+    ExpiresByType font/otf "access plus 1 month"
+    ExpiresByType font/woff "access plus 1 month"
+    ExpiresByType font/woff2 "access plus 1 month"
+    ExpiresByType application/font-woff "access plus 1 month"
+    
+    # Otros
+    ExpiresByType application/pdf "access plus 1 month"
+    ExpiresByType video/mp4 "access plus 1 month"
+</IfModule>
+
+# Configuración adicional de caché
+<IfModule mod_headers.c>
+    # Cache para archivos estáticos
+    <FilesMatch "\.(ico|jpg|jpeg|png|gif|webp|css|js|woff2?)$">
+        Header set Cache-Control "public, max-age=2592000"
+    </FilesMatch>
+    
+    # No cache para archivos dinámicos
+    <FilesMatch "\.(php|html?)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+</IfModule>
+
+# Límites de carga de archivos (ajustar según necesidades)
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+</IfModule>
+
+# Proteger archivos .htaccess
+<Files ~ "^\.ht">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Deshabilitar ejecución de PHP en directorios de uploads
+# (Ver uploads/.htaccess)

@@ -1,0 +1,418 @@
+/* Dashboard Styles - Los Cedros */
+
+/* Variables de color personalizadas */
+:root {
+    --hotel-brown: #6B4423;
+    --hotel-brown-dark: #5A3A1E;
+    --hotel-brown-light: #8B5A3C;
+    --hotel-gold: #D4A574;
+    --hotel-cream: #FFF8F3;
+}
+
+/* Animaciones */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+/* Dashboard container */
+.dashboard-container {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+/* Widgets principales */
+.dashboard-widget {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.dashboard-widget::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.dashboard-widget:hover::before {
+    left: 100%;
+}
+
+.dashboard-widget:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* Iconos de widgets */
+.widget-icon {
+    transition: transform 0.3s ease;
+}
+
+.dashboard-widget:hover .widget-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+/* Números grandes en widgets */
+.stat-number {
+    font-feature-settings: 'tnum';
+    letter-spacing: -0.02em;
+    line-height: 1;
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Barras de progreso animadas */
+.progress-bar {
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    transition: width 1s ease-out;
+    position: relative;
+}
+
+.progress-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Tablas mejoradas */
+.dashboard-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.dashboard-table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.dashboard-table tbody tr:hover {
+    background-color: var(--hotel-cream);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Estado de habitaciones */
+.room-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.room-status-badge:hover {
+    transform: scale(1.05);
+}
+
+/* Habitaciones por llegar - efecto especial */
+.por-llegar-badge {
+    animation: pulse-purple 2s infinite;
+}
+
+@keyframes pulse-purple {
+    0%, 100% {
+        background-color: rgba(147, 51, 234, 0.1);
+    }
+    50% {
+        background-color: rgba(147, 51, 234, 0.2);
+    }
+}
+
+/* Indicador visual para habitaciones por llegar */
+.por-llegar-indicator {
+    position: relative;
+}
+
+.por-llegar-indicator::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    background: #9333EA;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+/* Nota informativa en widgets */
+.widget-note {
+    background-color: var(--hotel-cream);
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    margin-top: 0.75rem;
+    border: 1px solid rgba(107, 68, 35, 0.1);
+}
+
+/* Texto secundario en contadores */
+.counter-detail {
+    font-size: 0.75rem;
+    color: #6B7280;
+    font-weight: normal;
+    margin-left: 0.25rem;
+}
+
+/* Gráficos */
+.chart-container {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+    transform: scale(1.02);
+}
+
+/* Botones de acción rápida */
+.action-button {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.action-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.action-button:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Alertas animadas */
+.alert-box {
+    animation: slideIn 0.5s ease-out;
+}
+
+/* Estado de caja */
+.caja-status {
+    position: relative;
+}
+
+.caja-status.abierta::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    background: #10B981;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+/* Cards de información */
+.info-card {
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.info-card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* Indicadores de carga */
+.loading-indicator {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid var(--hotel-brown);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Tooltips personalizados */
+.custom-tooltip {
+    position: relative;
+    cursor: help;
+}
+
+.custom-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-5px);
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    z-index: 1000;
+}
+
+.custom-tooltip:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-10px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dashboard-widget {
+        margin-bottom: 1rem;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --hotel-cream: #1F2937;
+    }
+    
+    .dashboard-widget {
+        background: #1F2937;
+        color: #F3F4F6;
+    }
+}
+
+/* Efectos de hover para enlaces */
+.dashboard-link {
+    position: relative;
+    transition: color 0.3s ease;
+}
+
+.dashboard-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--hotel-brown);
+    transition: width 0.3s ease;
+}
+
+.dashboard-link:hover::after {
+    width: 100%;
+}
+
+/* Contador actualizado - efecto de destello */
+.counter-updated {
+    animation: flash-update 1s ease-out;
+}
+
+@keyframes flash-update {
+    0% {
+        background-color: rgba(59, 130, 246, 0.2);
+        transform: scale(1);
+    }
+    50% {
+        background-color: rgba(59, 130, 246, 0.3);
+        transform: scale(1.1);
+    }
+    100% {
+        background-color: transparent;
+        transform: scale(1);
+    }
+}
+
+/* Animación de entrada escalonada */
+.stagger-animation > * {
+    opacity: 0;
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.stagger-animation > *:nth-child(1) { animation-delay: 0.1s; }
+.stagger-animation > *:nth-child(2) { animation-delay: 0.2s; }
+.stagger-animation > *:nth-child(3) { animation-delay: 0.3s; }
+.stagger-animation > *:nth-child(4) { animation-delay: 0.4s; }
+
+/* Mejoras para los gráficos */
+.chart-legend {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.chart-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.chart-legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+/* Efecto de brillo para números importantes */
+.highlight-number {
+    background: linear-gradient(135deg, var(--hotel-gold), var(--hotel-brown));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+}

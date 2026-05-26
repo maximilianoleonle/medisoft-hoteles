@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Check-out Parcial - Los Cedros</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .success { color: #10B981; font-weight: bold; }
+        .error { color: #EF4444; font-weight: bold; }
+        .info { color: #3B82F6; }
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            max-height: 400px;
+        }
+        button {
+            background: #F97316;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #EA580C;
+        }
+        .warning {
+            background: #FEF3C7;
+            border-left: 4px solid #F59E0B;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        input[type="number"], input[type="text"], input[type="time"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+        .resultado {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .step {
+            background: #EFF6FF;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #3B82F6;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Completo: Check-out Parcial</h1>
+    <p><strong>Los Cedros</strong> - Diagnóstico de Sistema</p>
+    
+    <div class="warning">
+        ⚠️ <strong>IMPORTANTE:</strong> Ejecuta estos tests en orden. Cada uno verifica un componente diferente del sistema.
+    </div>
+
+    <!-- TEST 1: VERIFICAR RUTA -->
+    <div class="test-section">
+        <h2>1️⃣ Verificar Ruta en routes.php</h2>
+        <p>Verifica si la ruta <code>/reservaciones/check-out-parcial/{id}</code> está definida.</p>
+        
+        <button onclick="verificarRuta()">▶️ Verificar Ruta</button>
+        
+        <div id="resultado-ruta" class="resultado"></div>
+    </div>
+
+    <!-- TEST 2: PROBAR API -->
+    <div class="test-section">
+        <h2>2️⃣ Probar API de Habitaciones (GET)</h2>
+        <p>Prueba el endpoint que obtiene las habitaciones de una reservación.</p>
+        
+        <div class="step">
+            <strong>Endpoint:</strong> <code>GET /api/reservaciones/{id}/habitaciones</code>
+        </div>
+        
+        <label>ID Reservación: 
+            <input type="number" id="reservacion-api" value="308">
+        </label>
+        <button onclick="probarAPI()">▶️ Probar API</button>
+        
+        <div id="resultado-api" class="resultado"></div>
+    </div>
+
+    <!-- TEST 3: VERIFICAR MÉTODO EN CONTROLADOR -->
+    <div class="test-section">
+        <h2>3️⃣ Verificar Método en Controlador</h2>
+        <p>Verifica que el método <code>checkOutParcialAction</code> existe en ReservacionController.php</p>
+        
+        <button onclick="verificarControlador()">▶️ Verificar Controlador</button>
+        
+        <div id="resultado-controlador" class="resultado"></div>
+    </div>
+
+    <!-- TEST 4: SIMULAR CHECK-OUT -->
+    <div class="test-section">
+        <h2>4️⃣ Simular Check-out Parcial (POST)</h2>
+        
+        <div class="warning">
+            ⚠️ <strong>CUIDADO:</strong> Este test hace un check-out REAL. Úsalo solo con una reservación de prueba.
+        </div>
+        
+        <div class="step">
+            <strong>Endpoint:</strong> <code>POST /reservaciones/check-out-parcial/{id}</code><br>
+            <strong>Datos enviados:</strong> habitaciones[], hora_salida
+        </div>
+        
+        <div style="margin: 15px 0;">
+            <label>ID Reservación: 
+                <input type="number" id="reservacion-checkout" value="308">
+            </label><br><br>
+            
+            <label>IDs de Habitaciones (separados por coma): 
+                <input type="text" id="habitaciones-ids" value="63,66,45" style="width: 300px;">
+            </label><br><br>
+            
+            <label>Hora de Salida: 
+                <input type="time" id="hora-salida" value="12:00">
+            </label>
+        </div>
+        
+        <button onclick="probarCheckout()" style="background: #DC2626;">⚠️ Ejecutar Check-out (CUIDADO)</button>
+        
+        <div id="resultado-checkout" class="resultado"></div>
+    </div>
+
+    <!-- TEST 5: VER LOGS -->
+    <div class="test-section">
+        <h2>5️⃣ Ver Logs de PHP</h2>
+        <p>Si los tests anteriores fallan, revisa los logs del servidor.</p>
+        
+        <button onclick="mostrarInstruccionesLogs()">📋 Ver Instrucciones</button>
+        
+        <div id="instrucciones-logs"></div>
+    </div>
+
+    <!-- SCRIPT -->
+    <script>
+        // Función para verificar si la ruta existe
+        async function verificarRuta() {
+            const resultado = document.getElementById('resultado-ruta');
+            resultado.innerHTML = '<p class="info">⏳ Verificando rutas...</p>';
+            
+            try {
+                const response = await fetch('/verificar-rutas.php');
+                const text = await response.text();
+                
+                // Mostrar la respuesta completa
+                resultado.innerHTML = text;
+                
+                // Agregar conclusión
+                if (text.includes('check-out-parcial ENCONTRADA')) {
+                    resultado.innerHTML += `
+                        <div style="background: #DCFCE7; padding: 15px; margin-top: 10px; border-radius: 5px;">
+                            <p class="success">✅ CONCLUSIÓN: La ruta está correctamente configurada</p>
+                            <p>Puedes continuar con el siguiente test.</p>
+                        </div>
+                    `;
+                } else if (text.includes('check-out-parcial NO ENCONTRADA')) {
+                    resultado.innerHTML += `
+                        <div style="background: #FEE2E2; padding: 15px; margin-top: 10px; border-radius: 5px;">
+                            <p class="error">❌ CONCLUSIÓN: Falta agregar la ruta</p>
+                            <p>Debes agregar la ruta en config/routes.php</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultado.innerHTML = `
+                    <div style="background: #FEE2E2; padding: 15px; border-radius: 5px;">
+                        <p class="error">❌ Error al cargar verificar-rutas.php</p>
+                        <p>Asegúrate de que el archivo <code>verificar-rutas.php</code> esté en la raíz de tu proyecto.</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Función para probar el API de habitaciones
+        async function probarAPI() {
+            const reservacionId = document.getElementById('reservacion-api').value;
+            const resultado = document.getElementById('resultado-api');
+            resultado.innerHTML = '<p class="info">⏳ Consultando API...</p>';
+            
+            try {
+                const response = await fetch(`/api/reservaciones/${reservacionId}/habitaciones`);
+                const contentType = response.headers.get('content-type');
+                
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        resultado.innerHTML = `
+                            <div style="background: #DCFCE7; padding: 15px; border-radius: 5px;">
+                                <p class="success">✅ API funcionando correctamente</p>
+                                <p><strong>Total habitaciones:</strong> ${data.total_habitaciones}</p>
+                                <p><strong>Habitaciones encontradas:</strong></p>
+                                <pre>${JSON.stringify(data.habitaciones, null, 2)}</pre>
+                            </div>
+                        `;
+                    } else {
+                        resultado.innerHTML = `
+                            <div style="background: #FEE2E2; padding: 15px; border-radius: 5px;">
+                                <p class="error">❌ API respondió con error</p>
+                                <p><strong>Mensaje:</strong> ${data.message || 'Sin mensaje'}</p>
+                                <pre>${JSON.stringify(data, null, 2)}</pre>
+                            </div>
+                        `;
+                    }
+                } else {
+                    const text = await response.text();
+                    resultado.innerHTML = `
+                        <div style="background: #FEF3C7; padding: 15px; border-radius: 5px;">
+                            <p class="error">⚠️ La respuesta no es JSON</p>
+                            <p><strong>Content-Type:</strong> ${contentType}</p>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Respuesta:</strong></p>
+                            <pre>${text.substring(0, 500)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultado.innerHTML = `
+                    <div style="background: #FEE2E2; padding: 15px; border-radius: 5px;">
+                        <p class="error">❌ Error en la petición</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Función para verificar el controlador
+        async function verificarControlador() {
+            const resultado = document.getElementById('resultado-controlador');
+            resultado.innerHTML = '<p class="info">⏳ Verificando controlador...</p>';
+            
+            // Como no podemos leer archivos PHP directamente desde el navegador,
+            // hacemos una petición de prueba al endpoint
+            try {
+                const response = await fetch('/reservaciones/check-out-parcial/999', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'test=1'
+                });
+                
+                const status = response.status;
+                
+                if (status === 404) {
+                    resultado.innerHTML = `
+                        <div style="background: #FEE2E2; padding: 15px; border-radius: 5px;">
+                            <p class="error">❌ Error 404: Ruta no encontrada</p>
+                            <p>La ruta no está registrada en routes.php o el Router no la está procesando correctamente.</p>
+                        </div>
+                    `;
+                } else if (status === 500) {
+                    resultado.innerHTML = `
+                        <div style="background: #FEF3C7; padding: 15px; border-radius: 5px;">
+                            <p class="info">⚠️ Error 500: Error interno del servidor</p>
+                            <p>La ruta existe pero hay un error en el método del controlador.</p>
+                            <p>Revisa los logs de PHP para más detalles.</p>
+                        </div>
+                    `;
+                } else if (status === 302 || status === 200) {
+                    resultado.innerHTML = `
+                        <div style="background: #DCFCE7; padding: 15px; border-radius: 5px;">
+                            <p class="success">✅ El endpoint responde (Status: ${status})</p>
+                            <p>La ruta y el método existen. Ahora prueba con datos reales.</p>
+                        </div>
+                    `;
+                } else {
+                    const text = await response.text();
+                    resultado.innerHTML = `
+                        <div style="background: #EFF6FF; padding: 15px; border-radius: 5px;">
+                            <p class="info">ℹ️ Respuesta recibida (Status: ${status})</p>
+                            <pre>${text.substring(0, 500)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultado.innerHTML = `
+                    <div style="background: #FEE2E2; padding: 15px; border-radius: 5px;">
+                        <p class="error">❌ Error en la petición</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Función para probar el check-out parcial
+        async function probarCheckout() {
+            const reservacionId = document.getElementById('reservacion-checkout').value;
+            const habitacionesInput = document.getElementById('habitaciones-ids').value;
+            const horaSalida = document.getElementById('hora-salida').value;
+            const resultado = document.getElementById('resultado-checkout');
+            
+            if (!confirm('⚠️ ESTO HARÁ UN CHECK-OUT REAL. ¿Estás seguro?')) {
+                return;
+            }
+            
+            resultado.innerHTML = '<p class="info">⏳ Ejecutando check-out...</p>';
+            
+            // Convertir IDs a array
+            const habitacionesIds = habitacionesInput.split(',').map(id => id.trim());
+            
+            try {
+                // Crear FormData
+                const formData = new FormData();
+                formData.append('hora_salida', horaSalida + ':00');
+                habitacionesIds.forEach(id => formData.append('habitaciones[]', id));
+                
+                // Hacer la petición
+                const response = await fetch(`/reservaciones/check-out-parcial/${reservacionId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                // Ver qué tipo de respuesta es
+                const contentType = response.headers.get('content-type');
+                const responseText = await response.text();
+                
+                let statusColor = '#FEE2E2';
+                let statusIcon = '❌';
+                
+                if (response.status === 200 || response.status === 302) {
+                    statusColor = '#DCFCE7';
+                    statusIcon = '✅';
+                } else if (response.status === 404) {
+                    statusColor = '#FEE2E2';
+                    statusIcon = '❌';
+                }
+                
+                resultado.innerHTML = `
+                    <div style="background: ${statusColor}; padding: 15px; border-radius: 5px;">
+                        <p><strong>${statusIcon} Status:</strong> ${response.status} ${response.statusText}</p>
+                        <p><strong>Content-Type:</strong> ${contentType}</p>
+                        <p><strong>Respuesta:</strong></p>
+                        <pre>${responseText.substring(0, 1000)}</pre>
+                    </div>
+                `;
+                
+                if (response.status === 200 || response.status === 302) {
+                    resultado.innerHTML += `
+                        <div style="background: #DCFCE7; padding: 15px; margin-top: 10px; border-radius: 5px;">
+                            <p class="success">✅ Check-out ejecutado exitosamente</p>
+                        </div>
+                    `;
+                } else if (response.status === 404) {
+                    resultado.innerHTML += `
+                        <div style="background: #FEE2E2; padding: 15px; margin-top: 10px; border-radius: 5px;">
+                            <p class="error">❌ Error 404 - La ruta no existe</p>
+                            <p>Asegúrate de que la ruta esté definida en routes.php</p>
+                        </div>
+                    `;
+                } else {
+                    resultado.innerHTML += `
+                        <div style="background: #FEF3C7; padding: 15px; margin-top: 10px; border-radius: 5px;">
+                            <p class="error">⚠️ Error ${response.status}</p>
+                            <p>Revisa los logs de PHP para más detalles</p>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                resultado.innerHTML = `
+                    <div style="background: #FEE2E2; padding: 15px; border-radius: 5px;">
+                        <p class="error">❌ Error en la petición</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Mostrar instrucciones para ver logs
+        function mostrarInstruccionesLogs() {
+            const div = document.getElementById('instrucciones-logs');
+            div.innerHTML = `
+                <div style="background: #EFF6FF; padding: 15px; margin-top: 10px; border-radius: 5px;">
+                    <h3>📋 Cómo ver los logs de PHP:</h3>
+                    
+                    <h4>Opción 1: cPanel</h4>
+                    <ol>
+                        <li>Ve a cPanel</li>
+                        <li>Busca "Errors" o "Error Log"</li>
+                        <li>Busca las últimas entradas</li>
+                        <li>Busca errores relacionados con "checkOutParcialAction"</li>
+                    </ol>
+                    
+                    <h4>Opción 2: Archivo en tu hosting</h4>
+                    <p>Busca un archivo llamado <code>error_log</code> o <code>error.log</code> en:</p>
+                    <ul>
+                        <li>Raíz de tu sitio (public_html)</li>
+                        <li>Carpeta logs</li>
+                        <li>Carpeta de tu dominio</li>
+                    </ul>
+                    
+                    <h4>Opción 3: Crear archivo para ver logs</h4>
+                    <p>Crea un archivo <code>ver_logs.php</code> con este contenido:</p>
+                    <pre style="background: #F4F4F4; padding: 10px; border-radius: 5px;">
+&lt;?php
+$log = file_get_contents(__DIR__ . '/error_log');
+$lines = explode("\\n", $log);
+$last30 = array_slice($lines, -30);
+echo "&lt;pre&gt;" . htmlspecialchars(implode("\\n", $last30)) . "&lt;/pre&gt;";
+?&gt;
+                    </pre>
+                    
+                    <p><strong>Compárteme las últimas 20-30 líneas del log de errores.</strong></p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

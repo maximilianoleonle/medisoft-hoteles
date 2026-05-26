@@ -1,0 +1,187 @@
+<!-- Ajustar Stock -->
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-4">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-hotel-brown to-hotel-brown-dark text-white shadow-xl">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold font-playfair flex items-center gap-2">
+                        <i class="fas fa-sync text-xl opacity-80"></i>
+                        Ajustar Stock
+                    </h1>
+                    <p class="text-hotel-gold mt-1 text-sm">
+                        Registrar entrada o salida de inventario
+                    </p>
+                </div>
+                <a href="<?= url('inventario') ?>" 
+                   class="bg-white/10 backdrop-blur text-white px-4 py-2 rounded-lg hover:bg-white/20 transition-all duration-300 flex items-center gap-2 border border-white/20">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Volver</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container mx-auto px-6 py-6 max-w-2xl">
+        <!-- Info del Producto -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <div class="text-center">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                    <?= htmlspecialchars($producto['nombre']) ?>
+                </h2>
+                <p class="text-gray-600 mb-4">
+                    Código: <span class="font-semibold"><?= htmlspecialchars($producto['codigo']) ?></span>
+                </p>
+                
+                <!-- Stock Actual -->
+                <div class="inline-flex items-center justify-center bg-gray-100 rounded-lg px-6 py-3">
+                    <div class="text-center">
+                        <p class="text-sm text-gray-600 mb-1">Stock Actual</p>
+                        <p class="text-3xl font-bold text-gray-800">
+                            <?= number_format($producto['stock_actual'], 0) ?>
+                            <span class="text-lg font-normal text-gray-600">pzs</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Formulario de Ajuste -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <form method="POST" action="<?= url('inventario/ajuste/' . $producto['id']) ?>" class="space-y-6">
+                <?= csrf_field() ?>
+                
+                <!-- Tipo de Movimiento -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">
+                        Tipo de Movimiento <span class="text-red-500">*</span>
+                    </label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="relative">
+                            <input type="radio" 
+                                   name="tipo" 
+                                   value="ENTRADA"
+                                   class="peer sr-only"
+                                   required>
+                            <div class="p-4 border-2 border-gray-300 rounded-lg cursor-pointer text-center transition-all duration-300 peer-checked:border-green-500 peer-checked:bg-green-50 hover:border-gray-400">
+                                <i class="fas fa-plus-circle text-2xl text-green-600 mb-2"></i>
+                                <p class="font-semibold text-gray-700">Entrada</p>
+                                <p class="text-sm text-gray-500">Agregar al inventario</p>
+                            </div>
+                        </label>
+                        
+                        <label class="relative">
+                            <input type="radio" 
+                                   name="tipo" 
+                                   value="SALIDA"
+                                   class="peer sr-only"
+                                   required>
+                            <div class="p-4 border-2 border-gray-300 rounded-lg cursor-pointer text-center transition-all duration-300 peer-checked:border-red-500 peer-checked:bg-red-50 hover:border-gray-400">
+                                <i class="fas fa-minus-circle text-2xl text-red-600 mb-2"></i>
+                                <p class="font-semibold text-gray-700">Salida</p>
+                                <p class="text-sm text-gray-500">Retirar del inventario</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Cantidad -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Cantidad <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input type="number" 
+                               name="cantidad" 
+                               min="1"
+                               step="1"
+                               class="w-full px-4 py-3 pr-12 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all duration-300"
+                               placeholder="0"
+                               required>
+                        <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                            pzs
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Motivo -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Motivo del Ajuste <span class="text-red-500">*</span>
+                    </label>
+                    <textarea name="motivo" 
+                              rows="3"
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all duration-300"
+                              placeholder="Describe el motivo del ajuste..."
+                              required></textarea>
+                </div>
+                
+                <!-- Vista Previa -->
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-info-circle text-amber-600 mt-0.5"></i>
+                        <div class="text-sm text-amber-800">
+                            <p class="font-semibold mb-1">Vista previa del cambio:</p>
+                            <p id="preview-text" class="hidden">
+                                Stock actual: <span class="font-semibold"><?= number_format($producto['stock_actual'], 0) ?></span> → 
+                                Stock nuevo: <span class="font-semibold" id="nuevo-stock">?</span> pzs
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botones -->
+                <div class="flex justify-end gap-3 pt-4 border-t">
+                    <a href="<?= url('inventario') ?>" 
+                       class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all duration-300">
+                        Cancelar
+                    </a>
+                    <button type="submit" 
+                            class="px-6 py-2 bg-hotel-brown text-white rounded-lg hover:bg-hotel-brown-dark transition-all duration-300 flex items-center gap-2">
+                        <i class="fas fa-check"></i>
+                        <span>Confirmar Ajuste</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Vista previa del stock
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoInputs = document.querySelectorAll('input[name="tipo"]');
+    const cantidadInput = document.querySelector('input[name="cantidad"]');
+    const previewText = document.getElementById('preview-text');
+    const nuevoStockSpan = document.getElementById('nuevo-stock');
+    const stockActual = <?= $producto['stock_actual'] ?>;
+    
+    function actualizarPreview() {
+        const tipo = document.querySelector('input[name="tipo"]:checked');
+        const cantidad = parseInt(cantidadInput.value) || 0;
+        
+        if (tipo && cantidad > 0) {
+            let nuevoStock;
+            if (tipo.value === 'ENTRADA') {
+                nuevoStock = stockActual + cantidad;
+            } else {
+                nuevoStock = stockActual - cantidad;
+            }
+            
+            nuevoStockSpan.textContent = nuevoStock;
+            previewText.classList.remove('hidden');
+            
+            if (nuevoStock < 0) {
+                nuevoStockSpan.classList.add('text-red-600', 'font-bold');
+            } else {
+                nuevoStockSpan.classList.remove('text-red-600', 'font-bold');
+            }
+        } else {
+            previewText.classList.add('hidden');
+        }
+    }
+    
+    tipoInputs.forEach(input => input.addEventListener('change', actualizarPreview));
+    cantidadInput.addEventListener('input', actualizarPreview);
+});
+</script>

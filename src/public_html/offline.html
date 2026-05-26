@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sin Conexión - Los Cedros</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f0e6;
+            color: #5D4037;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            text-align: center;
+            max-width: 500px;
+        }
+        .logo {
+            width: 150px;
+            margin-bottom: 30px;
+        }
+        h1 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #5D4037;
+        }
+        p {
+            font-size: 1.2em;
+            line-height: 1.6;
+            color: #795548;
+        }
+        .retry-button {
+            background-color: #5D4037;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            border-radius: 5px;
+            margin-top: 30px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .retry-button:hover {
+            background-color: #4E342E;
+        }
+        .icon-offline {
+            font-size: 4em;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon-offline">📵</div>
+        <img src="/img/logo.png" alt="Los Cedros" class="logo">
+        <h1>Sin Conexión a Internet</h1>
+        <p>
+            Parece que no tienes conexión a internet en este momento. 
+            Por favor, verifica tu conexión y vuelve a intentarlo.
+        </p>
+        <p>
+            El sistema necesita conexión para sincronizar reservaciones y 
+            actualizar la información en tiempo real.
+        </p>
+        <button class="retry-button" onclick="window.location.reload()">
+            Reintentar
+        </button>
+    </div>
+
+    <script>
+        // Detectar cuando vuelva la conexión
+        window.addEventListener('online', () => {
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

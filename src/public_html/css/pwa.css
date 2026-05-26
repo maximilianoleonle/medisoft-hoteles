@@ -1,0 +1,306 @@
+/**
+ * pwa.css — Los Cedros
+ * Estilos para: banner offline, indicador sync, toasts, botón instalar, banner actualización
+ */
+
+/* ─── Variables ─────────────────────────────────────────────────────────────── */
+:root {
+  --pwa-offline-bg:   #1e293b;
+  --pwa-offline-text: #f1f5f9;
+  --pwa-warning:      #f59e0b;
+  --pwa-success:      #10b981;
+  --pwa-error:        #ef4444;
+  --pwa-info:         #3b82f6;
+  --pwa-z:            10000;
+}
+
+/* ─── Banner Offline ─────────────────────────────────────────────────────────── */
+#pwa-offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--pwa-z);
+  background: var(--pwa-offline-bg);
+  color: var(--pwa-offline-text);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transform: translateY(-100%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+#pwa-offline-banner.visible {
+  transform: translateY(0);
+}
+
+#pwa-offline-banner .pwa-banner-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+#pwa-offline-banner .pwa-banner-text {
+  flex: 1;
+}
+
+#pwa-offline-banner .pwa-banner-text strong {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--pwa-warning);
+}
+
+#pwa-offline-banner .pwa-banner-text span {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+/* Cuando el banner está visible, empujar el contenido hacia abajo */
+#pwa-offline-banner.visible ~ * {
+  padding-top: 44px;
+}
+
+/* ─── Banner de actualización ────────────────────────────────────────────────── */
+#pwa-update-banner {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  z-index: var(--pwa-z);
+  background: #1e3a5f;
+  color: #e0f2fe;
+  padding: 12px 20px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 0.875rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  white-space: nowrap;
+}
+
+#pwa-update-banner.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+#pwa-update-banner button[data-action="update"] {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#pwa-update-banner button[data-action="update"]:hover {
+  background: #2563eb;
+}
+
+/* ─── Botón Instalar PWA ─────────────────────────────────────────────────────── */
+#pwa-install-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #9CA777, #7A8B5C);
+  color: white;
+  border: none;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  white-space: nowrap;
+}
+
+#pwa-install-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+#pwa-install-btn.hidden {
+  display: none;
+}
+
+/* ─── Indicador de sincronización ────────────────────────────────────────────── */
+#pwa-sync-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.7);
+  font-size: 0.8rem;
+  cursor: default;
+  transition: color 0.3s;
+  position: relative;
+}
+
+#pwa-sync-indicator.syncing {
+  color: var(--pwa-warning);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Badge de cola pendiente ────────────────────────────────────────────────── */
+#pwa-queue-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--pwa-warning);
+  color: #1a1a1a;
+  font-size: 0.6rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+  transition: opacity 0.2s;
+}
+
+#pwa-queue-badge.hidden {
+  display: none;
+}
+
+/* ─── Toasts ─────────────────────────────────────────────────────────────────── */
+#pwa-toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--pwa-z);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  pointer-events: none;
+  width: min(92vw, 420px);
+}
+
+.pwa-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  transform: translateY(16px) scale(0.97);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: auto;
+}
+
+.pwa-toast.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.pwa-toast-success { background: #065f46; border-left: 4px solid var(--pwa-success); }
+.pwa-toast-warning { background: #78350f; border-left: 4px solid var(--pwa-warning); }
+.pwa-toast-error   { background: #7f1d1d; border-left: 4px solid var(--pwa-error);   }
+.pwa-toast-info    { background: #1e3a5f; border-left: 4px solid var(--pwa-info);    }
+
+.pwa-toast-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.pwa-toast-msg {
+  flex: 1;
+  line-height: 1.4;
+}
+
+/* ─── Indicador de estado en la barra de navegación (sidebar) ────────────────── */
+.pwa-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--pwa-success);
+  display: inline-block;
+  transition: background 0.3s, box-shadow 0.3s;
+  flex-shrink: 0;
+}
+
+.is-offline .pwa-status-dot {
+  background: var(--pwa-warning);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+  animation: pulse-offline 2s infinite;
+}
+
+@keyframes pulse-offline {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  50%       { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+}
+
+/* Etiqueta de estado junto al dot */
+.pwa-status-label {
+  font-size: 0.7rem;
+  opacity: 0.75;
+  transition: color 0.3s;
+}
+
+.is-offline .pwa-status-label {
+  color: var(--pwa-warning) !important;
+}
+
+/* ─── Overlay de modo offline sobre acciones deshabilitadas ──────────────────── */
+.is-offline [data-requires-online] {
+  opacity: 0.45;
+  pointer-events: none;
+  cursor: not-allowed;
+  position: relative;
+}
+
+.is-offline [data-requires-online]::after {
+  content: 'Sin conexión';
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: #6b7280;
+  border-radius: inherit;
+}
+
+/* ─── Mobile adjustments ─────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  #pwa-toast-container {
+    bottom: 16px;
+    width: 95vw;
+  }
+
+  #pwa-update-banner {
+    bottom: 20px;
+    font-size: 0.8rem;
+    padding: 10px 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
+  }
+}

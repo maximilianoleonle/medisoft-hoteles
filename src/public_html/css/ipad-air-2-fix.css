@@ -1,0 +1,184 @@
+/* ===================================
+   FIXES ESPECÍFICOS PARA IPAD AIR 2
+   Archivo: ipad-air-2-fix.css
+   =================================== */
+
+/* iPad Air 2 en landscape: 1024x768 */
+@media screen and (min-width: 1024px) and (max-width: 1024px) and (orientation: landscape),
+       screen and (width: 1024px) and (orientation: landscape) {
+    
+    /* FORZAR COMPORTAMIENTO MÓVIL */
+    body {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+    
+    body.sidebar-collapsed {
+        margin-left: 0 !important;
+    }
+    
+    /* Sidebar oculto por defecto */
+    .sidebar-main {
+        transform: translateX(-100%) !important;
+        position: fixed !important;
+        z-index: 1000 !important;
+    }
+    
+    .sidebar-main.open {
+        transform: translateX(0) !important;
+    }
+    
+    /* MOSTRAR BOTÓN HAMBURGUESA */
+    #mobile-menu-toggle {
+        display: block !important;
+    }
+    
+    /* Ocultar botón de colapsar desktop */
+    .sidebar-collapse-btn {
+        display: none !important;
+    }
+    
+    /* Asegurar que el header no tenga margin */
+    .main-header,
+    header.bg-white.shadow-md {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        width: 100% !important;
+    }
+    
+    /* Main content sin margen */
+    .main-wrapper {
+        margin-left: 0 !important;
+    }
+    
+    main.flex-1.overflow-y-auto {
+        margin-left: 0 !important;
+    }
+}
+
+/* iPad Air 2 en portrait: 768x1024 */
+@media screen and (min-width: 768px) and (max-width: 768px) and (orientation: portrait),
+       screen and (width: 768px) and (orientation: portrait) {
+    
+    /* Comportamiento móvil también en portrait */
+    body {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+    
+    .sidebar-main {
+        transform: translateX(-100%) !important;
+    }
+    
+    .sidebar-main.open {
+        transform: translateX(0) !important;
+    }
+    
+    #mobile-menu-toggle {
+        display: block !important;
+    }
+    
+    .sidebar-collapse-btn {
+        display: none !important;
+    }
+}
+
+/* Fix adicional para cualquier iPad */
+@media screen and (min-device-width: 768px) and (max-device-width: 1024px) {
+    /* Forzar comportamiento móvil en iPads */
+    body {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+    
+    .sidebar-main {
+        transform: translateX(-100%) !important;
+    }
+    
+    .sidebar-main.open {
+        transform: translateX(0) !important;
+    }
+    
+    #mobile-menu-toggle {
+        display: block !important;
+    }
+}
+
+/* ===================================
+   MEJORAS PARA INTERACCIÓN TÁCTIL
+   =================================== */
+
+/* Botones más grandes para touch */
+@media screen and (max-width: 1024px) {
+    .nav-item {
+        padding: 0.75rem !important;
+        min-height: 48px !important;
+    }
+    
+    .nav-icon {
+        width: 32px !important;
+        height: 32px !important;
+    }
+    
+    .nav-icon i {
+        font-size: 1rem !important;
+    }
+    
+    /* Botón hamburguesa más grande */
+    #mobile-menu-toggle {
+        padding: 12px !important;
+        min-width: 48px !important;
+        min-height: 48px !important;
+    }
+    
+    #mobile-menu-toggle i {
+        font-size: 1.25rem !important;
+    }
+}
+
+/* ===================================
+   OPTIMIZACIONES ESPECÍFICAS PARA IPAD
+   =================================== */
+
+/* Prevenir selección accidental de texto */
+@media screen and (max-device-width: 1024px) {
+    .sidebar-main {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+    
+    /* Mejorar el scroll en iOS */
+    .sidebar-nav {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Eliminar el highlight azul en iOS */
+    .nav-item,
+    button,
+    a {
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+/* ===================================
+   DEBUG - MOSTRAR INFO DEL DISPOSITIVO
+   =================================== */
+
+/* Descomenta esto para ver qué reglas se aplican */
+/*
+@media screen and (width: 1024px) {
+    body::before {
+        content: "iPad Air 2 Landscape - 1024px";
+        position: fixed;
+        top: 0;
+        left: 0;
+        background: red;
+        color: white;
+        padding: 5px;
+        z-index: 9999;
+        font-size: 12px;
+    }
+}
+*/

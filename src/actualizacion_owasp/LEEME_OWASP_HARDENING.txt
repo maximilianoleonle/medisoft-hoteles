@@ -1,0 +1,6 @@
+﻿# Los Cedros - OWASP hardening
+
+Despues de extraer este ZIP en el servidor, borrar manualmente si existe:
+public_html/app/views/correccion/index.php
+
+Ese archivo es una copia vieja expuesta bajo public_html y ya no debe estar navegable.

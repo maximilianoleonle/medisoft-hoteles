@@ -1,0 +1,438 @@
+/* ===================================
+   OPTIMIZACIONES DE RENDIMIENTO PARA HABITACIONES
+   Los Cedros - Sin cambiar funcionalidad
+   =================================== */
+
+/* ===================================
+   PREVENIR FOUC (Flash of Unstyled Content)
+   =================================== */
+.habitaciones-view {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.habitaciones-view.loaded {
+    opacity: 1;
+}
+
+/* ===================================
+   OPTIMIZACIONES DE GPU Y COMPOSITING
+   =================================== */
+
+/* Optimizar tarjetas de habitación para mejor performance */
+.room-card,
+.bg-white.rounded-xl.shadow-sm.border {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    /* Transiciones más rápidas */
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.room-card:hover,
+.bg-white.rounded-xl.shadow-sm.border:hover {
+    transform: translateY(-2px) translateZ(0);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1) !important;
+}
+
+/* ===================================
+   GRID OPTIMIZADO PARA MEJOR RESPONSIVE
+   =================================== */
+
+/* Mejorar el grid existente sin cambiar la funcionalidad */
+.grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.xl\:grid-cols-4 {
+    /* Optimización del grid */
+    contain: layout;
+    gap: 1rem !important;
+}
+
+/* Responsive mejorado */
+@media (min-width: 1536px) {
+    .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.xl\:grid-cols-4 {
+        grid-template-columns: repeat(5, 1fr) !important;
+    }
+}
+
+@media (min-width: 1920px) {
+    .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.xl\:grid-cols-4 {
+        grid-template-columns: repeat(6, 1fr) !important;
+        gap: 1.5rem !important;
+    }
+}
+
+/* ===================================
+   OPTIMIZAR ANIMACIONES EXISTENTES
+   =================================== */
+
+/* Hacer las animaciones existentes más eficientes */
+.group.relative.bg-gradient-to-br {
+    /* Optimizar compositing */
+    contain: layout style paint;
+    will-change: transform;
+}
+
+/* Optimizar hover effects existentes */
+.transition-all.duration-300.hover\:-translate-y-0\.5 {
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+/* ===================================
+   OPTIMIZACIONES DEL HEADER
+   =================================== */
+
+/* Optimizar el header gradient */
+.bg-gradient-to-r.from-hotel-brown.to-hotel-brown-dark {
+    will-change: transform;
+    contain: layout style;
+}
+
+/* Optimizar botones del header */
+.bg-gradient-to-r button,
+.bg-gradient-to-r a {
+    contain: layout style;
+    will-change: transform;
+}
+
+/* ===================================
+   OPTIMIZAR ESTADÍSTICAS
+   =================================== */
+
+/* Optimizar el grid de estadísticas */
+.grid.grid-cols-2.lg\:grid-cols-6.gap-3 {
+    contain: layout;
+    will-change: contents;
+}
+
+/* Optimizar las tarjetas de estadísticas */
+.relative.bg-white.rounded-xl.shadow-md {
+    contain: layout style;
+    will-change: transform;
+}
+
+/* ===================================
+   OPTIMIZAR MODAL
+   =================================== */
+
+/* Optimizar backdrop del modal */
+.fixed.inset-0.bg-black.bg-opacity-50 {
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+/* Optimizar contenido del modal */
+.bg-white.rounded-xl.shadow-2xl {
+    will-change: transform, opacity;
+    contain: layout style;
+}
+
+/* ===================================
+   OPTIMIZACIONES DE SCROLL
+   =================================== */
+
+/* Optimizar scroll en contenedores */
+.overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+/* Scrollbar más limpia */
+.overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* ===================================
+   OPTIMIZAR LOADING STATES
+   =================================== */
+
+/* Para elementos que se cargan dinámicamente */
+.loading-placeholder {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ===================================
+   OPTIMIZAR FORMULARIOS
+   =================================== */
+
+/* Optimizar inputs de filtros */
+.focus\:ring-2.focus\:ring-hotel-brown\/20 {
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+/* ===================================
+   REDUCIR REFLOWS Y REPAINTS
+   =================================== */
+
+/* Contenedores que no cambian de tamaño */
+.bg-white.rounded-xl.shadow-md.p-5 {
+    contain: layout size;
+}
+
+/* Elementos con texto que no cambia */
+.text-sm.font-medium.text-gray-500.uppercase.tracking-wider,
+.text-lg.font-semibold.text-gray-800 {
+    contain: layout style;
+}
+
+/* ===================================
+   OPTIMIZAR ICONOS
+   =================================== */
+
+/* Iconos de Font Awesome más eficientes */
+.fas {
+    contain: layout style;
+    will-change: transform;
+}
+
+/* ===================================
+   MEJORAR PERFORMANCE EN MÓVIL
+   =================================== */
+
+@media (max-width: 768px) {
+    /* Reducir animaciones en móvil */
+    .transition-all.duration-300 {
+        transition: transform 0.15s ease !important;
+    }
+    
+    /* Optimizar grid en móvil */
+    .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.xl\:grid-cols-4 {
+        gap: 0.75rem !important;
+    }
+}
+
+/* ===================================
+   OPTIMIZAR BADGES Y ELEMENTOS PEQUEÑOS
+   =================================== */
+
+/* Badges de estado más eficientes */
+.px-2\.5.py-0\.5.rounded-full.text-xs.font-medium {
+    contain: layout style;
+    will-change: transform;
+}
+
+/* ===================================
+   CRITICAL CSS HINTS
+   =================================== */
+
+/* Elementos críticos que deben cargarse rápido */
+.bg-gradient-to-r.from-hotel-brown.to-hotel-brown-dark,
+.grid.grid-cols-2.lg\:grid-cols-6,
+.bg-white.rounded-xl.shadow-md {
+    contain: layout style;
+}
+
+/* ===================================
+   ACCESSIBILITY Y REDUCED MOTION
+   =================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .room-card:hover {
+        transform: none !important;
+    }
+}
+
+/* ===================================
+   OPTIMIZAR LAYOUT SHIFTS
+   =================================== */
+
+/* Prevenir cambios de layout */
+.grid {
+    min-height: 200px; /* Altura mínima para evitar shifts */
+}
+
+/* Reservar espacio para badges flotantes */
+.absolute.-top-2.-right-2 {
+    contain: layout;
+}
+
+/* ===================================
+   PERFORMANCE HINTS PARA EL BROWSER
+   =================================== */
+
+/* Hint al browser sobre elementos interactivos */
+.cursor-pointer {
+    contain: layout style;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Optimizar elementos con backdrop-blur */
+.backdrop-blur {
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+
+/* ===================================
+   FIXES ESPECÍFICOS PARA TU CÓDIGO
+   =================================== */
+
+/* Optimizar el contenedor principal */
+.min-h-screen.bg-gradient-to-br.from-gray-50.to-gray-100 {
+    contain: layout;
+    will-change: contents;
+}
+
+/* Optimizar contenedor de habitaciones */
+.container.mx-auto.px-8.py-6.max-w-7xl {
+    contain: layout;
+    max-width: none !important; /* Usar todo el ancho disponible */
+}
+
+/* Optimizar padding para mejor uso del espacio */
+.px-8 {
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+}
+
+@media (min-width: 1280px) {
+    .px-8 {
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+    }
+}
+
+@media (min-width: 1536px) {
+    .px-8 {
+        padding-left: 2.5rem !important;
+        padding-right: 2.5rem !important;
+    }
+}
+
+/* ===================================
+   OPTIMIZAR CONTADOR DE ACTUALIZACIÓN
+   =================================== */
+
+/* El indicador de actualización que aparece cuando hay limpieza */
+.fixed.bottom-4.right-4.bg-blue-600 {
+    contain: layout style;
+    will-change: contents;
+}
+
+/* ===================================
+   PRELOAD OPTIMIZATIONS
+   =================================== */
+
+/* Para imágenes si las agregas después */
+img {
+    loading: lazy;
+    decoding: async;
+}
+
+/* ===================================
+   MEMORY OPTIMIZATIONS
+   =================================== */
+
+/* Optimizar elementos que se repiten mucho */
+.text-xs,
+.text-sm,
+.font-medium,
+.font-semibold,
+.font-bold {
+    contain: style;
+}
+
+/* ===================================
+   BROWSER SPECIFIC OPTIMIZATIONS
+   =================================== */
+
+/* Chrome/Safari specific */
+@supports (-webkit-appearance: none) {
+    .room-card {
+        -webkit-transform: translateZ(0);
+    }
+}
+
+/* Firefox specific */
+@supports (-moz-appearance: none) {
+    .grid {
+        -moz-contain: layout;
+    }
+}
+
+/* ===================================
+   PRINT OPTIMIZATIONS
+   =================================== */
+
+@media print {
+    .fixed,
+    .absolute,
+    .shadow-md,
+    .shadow-lg,
+    .shadow-xl {
+        display: none !important;
+    }
+    
+    .room-card {
+        break-inside: avoid;
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+    }
+}
+
+/* ===================================
+   FINAL OPTIMIZATIONS
+   =================================== */
+
+/* GPU acceleration para elementos críticos */
+.transform,
+.group-hover\:scale-110,
+.hover\:shadow-lg {
+    transform: translateZ(0);
+}
+
+/* Optimizar transiciones globales */
+.transition-all {
+    transition-property: transform, box-shadow, background-color, border-color !important;
+}
+
+/* ===================================
+   IMPORTANTE: INSTRUCCIONES DE USO
+   =================================== */
+
+/*
+CÓMO IMPLEMENTAR:
+
+1. Agregar este CSS DESPUÉS de tus estilos existentes:
+   <link rel="stylesheet" href="css/sidebar-styles.css">
+   <link rel="stylesheet" href="css/custom.css">
+   <link rel="stylesheet" href="css/performance-optimization.css"> <!-- NUEVO -->
+
+2. Agregar esta clase al contenedor principal en tu PHP:
+   <div class="habitaciones-view min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-4">
+
+3. Agregar este JavaScript al final de tu archivo:
+   document.addEventListener('DOMContentLoaded', function() {
+       document.querySelector('.habitaciones-view')?.classList.add('loaded');
+   });
+
+4. OPCIONAL: Agregar estas clases a las tarjetas individuales para mejor performance:
+   class="room-card-fast group relative bg-gradient-to-br..."
+
+¡ESTO NO ROMPERÁ NADA DE TU FUNCIONALIDAD EXISTENTE!
+*/
