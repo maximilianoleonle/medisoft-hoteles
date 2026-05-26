@@ -34,6 +34,11 @@ class ReservacionController extends Controller {
         $this->habitacionModel = new Habitacion();
         $this->cajaModel = new Caja();
     }
+
+    private function hotelIdActual() {
+        return obtenerHotelIdActualCompat();
+    }
+
     public function agregarNotaAction() {
     if (!$this->isPost()) {
         header('Content-Type: application/json');
@@ -1708,7 +1713,7 @@ public function indexAction() {
     public function editarHabitacionesAction() {
     $id = $this->route_params['id'] ?? 0;
     
-    $reservacion = $this->reservacionModel->find($id);
+    $reservacion = $this->reservacionModel->obtenerPorId($id);
     
     if (!$reservacion) {
         set_mensaje('Reservación no encontrada', 'error');
@@ -1716,6 +1721,8 @@ public function indexAction() {
         return;
     }
     
+    $hotel_id = $this->hotelIdActual();
+
     // Solo permitir edición en estado confirmada
     if ($reservacion['estado'] !== 'confirmada') {
         set_mensaje('Solo se pueden modificar habitaciones en reservaciones confirmadas', 'warning');
@@ -1753,10 +1760,12 @@ public function indexAction() {
         // Verificar ocupación
         $sql = "SELECT r.id, r.fecha_entrada, r.fecha_salida, h.nombre_completo as huesped_nombre
                 FROM reservacion_habitaciones rh
-                INNER JOIN reservaciones r ON rh.reservacion_id = r.id
+                INNER JOIN reservaciones r ON rh.reservacion_id = r.id AND rh.hotel_id = r.hotel_id
                 INNER JOIN huespedes h ON r.huesped_id = h.id
                 WHERE rh.habitacion_id = ?
                 AND r.id != ?  -- Excluir la reservación actual
+                AND r.hotel_id = ?
+                AND rh.hotel_id = ?
                 AND r.estado IN ('confirmada', 'checked_in')
                 AND (
                     (? BETWEEN r.fecha_entrada AND DATE_SUB(r.fecha_salida, INTERVAL 1 DAY))
@@ -1769,6 +1778,8 @@ public function indexAction() {
         $stmt->execute([
             $hab['id'], 
             $id,
+            $hotel_id,
+            $hotel_id,
             $reservacion['fecha_entrada'],
             $reservacion['fecha_salida'],
             $reservacion['fecha_entrada'],
@@ -1862,6 +1873,7 @@ public function indexAction() {
             // Obtener datos del POST
             $reservacion_id = intval($this->getPost('reservacion_id'));
             $habitaciones_ids = $this->getPost('habitaciones', []);
+            $habitaciones_ids = array_values(array_unique(array_map('intval', (array) $habitaciones_ids)));
             $cortesias_ids = $this->getPost('cortesias', []);
             
             error_log("=== ACTUALIZAR HABITACIONES ===");
@@ -1870,13 +1882,13 @@ public function indexAction() {
             error_log("Cortesías seleccionadas: " . json_encode($cortesias_ids));
             
             // Validar que existe la reservación
-            $reservacion = $this->reservacionModel->find($reservacion_id);
+            $reservacion = $this->reservacionModel->obtenerPorId($reservacion_id);
             if (!$reservacion) {
                 throw new Exception('Reservación no encontrada');
             }
             
-           if (!in_array($reservacion['estado'], ['confirmada', 'checked_in'])) {
-    throw new Exception('Solo se pueden modificar habitaciones en reservaciones confirmadas o con check-in activo');
+           if ($reservacion['estado'] !== 'confirmada') {
+    throw new Exception('Solo se pueden modificar habitaciones en reservaciones confirmadas');
 }
             
             // Validar que hay habitaciones
@@ -1891,6 +1903,10 @@ public function indexAction() {
                 if ($hab) {
                     $habitaciones[] = $hab;
                 }
+            }
+
+            if (count($habitaciones) !== count(array_unique(array_map('intval', $habitaciones_ids)))) {
+                throw new Exception('Una o mas habitaciones no pertenecen al hotel actual');
             }
             
             // Verificar disponibilidad de las nuevas habitaciones
@@ -1957,7 +1973,7 @@ public function indexAction() {
     public function verAction() {
         $id = $this->route_params['id'] ?? 0;
         
-        $reservacion = $this->reservacionModel->find($id);
+        $reservacion = $this->reservacionModel->obtenerPorId($id);
         
         if (!$reservacion) {
             set_mensaje('Reservación no encontrada', 'error');
@@ -2009,10 +2025,11 @@ error_log("=== FIN DEBUG ===");
                 if ($result && $result->fetch()) {
                     // La tabla existe, obtener pagos
                     $sql = "SELECT * FROM reservacion_pagos 
-                            WHERE reservacion_id = ? 
+                            WHERE reservacion_id = ?
+                            AND hotel_id = ?
                             ORDER BY created_at DESC";
                     $stmt = $this->db->prepare($sql);
-                    $stmt->execute([$id]);
+                    $stmt->execute([$id, $this->hotelIdActual()]);
                     $pagos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
             } catch (Exception $e) {
@@ -2877,7 +2894,8 @@ private function validarCancelacion($reservacion) {
             'metodo_pago' => null,
             'notas' => trim($this->getPost('notas', '')),
             'estado' => 'confirmada',
-            'usuario_registro_id' => user_id()
+            'usuario_registro_id' => user_id(),
+            'hotel_id' => $this->hotelIdActual()
         ];
         
         // DEBUG: Log datos procesados
@@ -2885,6 +2903,7 @@ private function validarCancelacion($reservacion) {
         
         // Obtener habitaciones seleccionadas
         $habitaciones_ids = $this->getPost('habitaciones', []);
+        $habitaciones_ids = array_values(array_unique(array_map('intval', (array) $habitaciones_ids)));
         // Obtener habitaciones marcadas como cortesía (NUEVO)
 $cortesias_ids = $this->getPost('cortesias', []);
 error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_ids));
@@ -2915,6 +2934,10 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             }
         }
         
+        if (count($habitaciones) !== count($habitaciones_ids)) {
+            throw new Exception('Una o mas habitaciones no pertenecen al hotel actual');
+        }
+
         // Verificar disponibilidad
         error_log("Verificando disponibilidad...");
         $disponible = $this->reservacionModel->verificarDisponibilidadMultiple(

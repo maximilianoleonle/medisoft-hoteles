@@ -9,6 +9,7 @@ require_once __DIR__ . '/../helpers/hotel_config.php';
 class Reservacion extends Model {
     protected $table = 'reservaciones';
     protected $fillable = [
+        'hotel_id',
         'huesped_id',
         'total_habitaciones',
         'habitaciones_cortesia',
@@ -23,6 +24,45 @@ class Reservacion extends Model {
         'notas',
         'usuario_registro_id'
     ];
+
+    protected function hotelIdActual()
+    {
+        return obtenerHotelIdActualCompat();
+    }
+
+    private function normalizarHabitacionIds($habitacion_ids)
+    {
+        $ids = array_map('intval', (array) $habitacion_ids);
+        $ids = array_filter($ids, function ($id) {
+            return $id > 0;
+        });
+
+        return array_values(array_unique($ids));
+    }
+
+    private function validarHabitacionesDelHotel($habitacion_ids, $hotel_id = null)
+    {
+        $ids = $this->normalizarHabitacionIds($habitacion_ids);
+
+        if (empty($ids)) {
+            return false;
+        }
+
+        $hotel_id = $hotel_id ?: $this->hotelIdActual();
+        $placeholders = str_repeat('?,', count($ids) - 1) . '?';
+        $params = array_merge($ids, [$hotel_id]);
+
+        $sql = "SELECT COUNT(*) as total
+                FROM habitaciones
+                WHERE id IN ($placeholders)
+                AND hotel_id = ?
+                AND activa = 1";
+
+        $stmt = $this->db->query($sql, $params);
+        $row = $stmt ? $stmt->fetch() : null;
+
+        return (int) ($row['total'] ?? 0) === count($ids);
+    }
     public function obtenerReservacionesDelDia($buscar = null) {
     $sql = "SELECT r.*, 
             h.nombre_completo as huesped_nombre,
@@ -34,14 +74,15 @@ class Reservacion extends Model {
             u.nombre_completo as usuario_registro
             FROM {$this->table} r
             INNER JOIN huespedes h ON r.huesped_id = h.id
-            LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-            LEFT JOIN habitaciones hab ON rh.habitacion_id = hab.id
+            LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+            LEFT JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
             LEFT JOIN usuarios u ON r.usuario_registro_id = u.id
-            WHERE r.estado IN ('confirmada', 'checked_in', 'checked_out')
+            WHERE r.hotel_id = ?
+            AND r.estado IN ('confirmada', 'checked_in', 'checked_out')
             AND CURDATE() >= r.fecha_entrada 
             AND CURDATE() <= r.fecha_salida";
     
-    $params = [];
+    $params = [$this->hotelIdActual()];
     
     if ($buscar) {
         $sql .= " AND (h.nombre_completo LIKE ? OR h.telefono LIKE ? OR hab.numero LIKE ? OR r.id = ?)";
@@ -96,21 +137,24 @@ public function obtenerHabitacionesReservadasPorFecha($fecha = null, $buscar = n
                 (SELECT COUNT(*) 
                  FROM reservacion_habitaciones rh2 
                  WHERE rh2.reservacion_id = r.id
+                 AND rh2.hotel_id = r.hotel_id
                 ) AS total_habitaciones_reserva,
                 (SELECT GROUP_CONCAT(h2.numero ORDER BY CAST(h2.numero AS UNSIGNED), h2.numero SEPARATOR ', ')
                  FROM reservacion_habitaciones rh2 
-                 INNER JOIN habitaciones h2 ON rh2.habitacion_id = h2.id
+                 INNER JOIN habitaciones h2 ON rh2.habitacion_id = h2.id AND h2.hotel_id = rh2.hotel_id
                  WHERE rh2.reservacion_id = r.id
+                 AND rh2.hotel_id = r.hotel_id
                 ) AS todas_habitaciones
             FROM reservaciones r
             INNER JOIN huespedes h ON r.huesped_id = h.id
-            INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-            INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id
+            INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+            INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
             LEFT JOIN usuarios u ON r.usuario_registro_id = u.id
-WHERE r.estado IN ('confirmada', 'checked_in', 'checked_out')
+WHERE r.hotel_id = ?
+AND r.estado IN ('confirmada', 'checked_in', 'checked_out')
 AND ? >= DATE(r.fecha_entrada) AND ? < DATE(r.fecha_salida)";
     
-    $params = [$fecha, $fecha];
+    $params = [$this->hotelIdActual(), $fecha, $fecha];
     
     if ($buscar) {
         $sql .= " AND (h.nombre_completo LIKE ? OR h.telefono LIKE ? OR hab.numero LIKE ? OR r.id = ?)";
@@ -899,15 +943,26 @@ public function checkInConPagosMixtos($id, $hora_entrada, $pagos, $monto_recibid
             return false;
         }
         
+        $habitacion_ids = $this->normalizarHabitacionIds($habitacion_ids);
+        $hotel_id = $this->hotelIdActual();
+
+        if (!$this->validarHabitacionesDelHotel($habitacion_ids, $hotel_id)) {
+            return false;
+        }
+
         $placeholders = str_repeat('?,', count($habitacion_ids) - 1) . '?';
         $sql = "SELECT COUNT(DISTINCT rh.habitacion_id) as ocupadas
                 FROM reservacion_habitaciones rh
-                INNER JOIN reservaciones r ON rh.reservacion_id = r.id
+                INNER JOIN reservaciones r ON rh.reservacion_id = r.id AND rh.hotel_id = r.hotel_id
                 WHERE rh.habitacion_id IN ($placeholders)
+                AND rh.hotel_id = ?
+                AND r.hotel_id = ?
                 AND r.estado IN ('confirmada', 'checked_in')";
         
         // Agregar exclusión si se proporciona
         $params = $habitacion_ids;
+        $params[] = $hotel_id;
+        $params[] = $hotel_id;
         
         if ($excluir_reservacion_id) {
             $sql .= " AND r.id != ?";
@@ -951,9 +1006,12 @@ public function actualizarHabitaciones($reservacion_id, $habitaciones, $cortesia
         
         $pdo = $this->db->getConnection();
         $pdo->beginTransaction();
+        $hotel_id = $this->hotelIdActual();
         
         // Obtener reservación actual
-        $reservacion_actual = $this->find($reservacion_id);
+        $stmt_reservacion = $pdo->prepare("SELECT * FROM reservaciones WHERE id = ? AND hotel_id = ? LIMIT 1");
+        $stmt_reservacion->execute([$reservacion_id, $hotel_id]);
+        $reservacion_actual = $stmt_reservacion->fetch(PDO::FETCH_ASSOC);
         if (!$reservacion_actual) {
             throw new Exception("Reservación no encontrada");
         }
@@ -963,6 +1021,15 @@ public function actualizarHabitaciones($reservacion_id, $habitaciones, $cortesia
         // ====== IMPORTANTE: Guardar el estado de la reservación ======
         $estado_reservacion = $reservacion_actual['estado'];
         error_log("Estado de la reservación: $estado_reservacion");
+
+        if ($estado_reservacion !== 'confirmada') {
+            throw new Exception("La modificacion de habitaciones con check-in activo debe esperar una fase de check-in/check-out");
+        }
+
+        $habitacion_ids = array_column($habitaciones, 'id');
+        if (!$this->validarHabitacionesDelHotel($habitacion_ids, $hotel_id)) {
+            throw new Exception("Una o mas habitaciones no pertenecen al hotel actual");
+        }
         
         // ====== CALCULAR PRECIO CON TARIFAS DINÁMICAS ======
         // Cargar modelo de tarifas
@@ -1039,16 +1106,16 @@ public function actualizarHabitaciones($reservacion_id, $habitaciones, $cortesia
         // ====== FIN CÁLCULO DE PRECIO ======
         
         // ====== NUEVO: Obtener habitaciones antiguas antes de eliminarlas ======
-        $sql_old = "SELECT habitacion_id FROM reservacion_habitaciones WHERE reservacion_id = ?";
+        $sql_old = "SELECT habitacion_id FROM reservacion_habitaciones WHERE reservacion_id = ? AND hotel_id = ?";
         $stmt_old = $pdo->prepare($sql_old);
-        $stmt_old->execute([$reservacion_id]);
+        $stmt_old->execute([$reservacion_id, $hotel_id]);
         $habitaciones_antiguas = $stmt_old->fetchAll(PDO::FETCH_COLUMN);
         
         error_log("Habitaciones antiguas: " . json_encode($habitaciones_antiguas));
         
         // Eliminar habitaciones anteriores
-        $sql = "DELETE FROM reservacion_habitaciones WHERE reservacion_id = ?";
-        $pdo->prepare($sql)->execute([$reservacion_id]);
+        $sql = "DELETE FROM reservacion_habitaciones WHERE reservacion_id = ? AND hotel_id = ?";
+        $pdo->prepare($sql)->execute([$reservacion_id, $hotel_id]);
         
         error_log("Habitaciones anteriores eliminadas");
         
@@ -1071,13 +1138,14 @@ public function actualizarHabitaciones($reservacion_id, $habitaciones, $cortesia
         
         // Insertar nuevas habitaciones CON PRECIOS CALCULADOS
         $sql = "INSERT INTO reservacion_habitaciones 
-                (reservacion_id, habitacion_id, precio, es_cortesia) 
-                VALUES (?, ?, ?, ?)";
+                (hotel_id, reservacion_id, habitacion_id, precio, es_cortesia)
+                VALUES (?, ?, ?, ?, ?)";
         
         $stmt = $pdo->prepare($sql);
         
         foreach ($habitaciones_con_precio as $hab) {
             $stmt->execute([
+                $hotel_id,
                 $reservacion_id,
                 $hab['id'],
                 $hab['precio'],
@@ -1128,13 +1196,15 @@ public function actualizarHabitaciones($reservacion_id, $habitaciones, $cortesia
                     total_habitaciones = ?,
                     habitaciones_cortesia = ?,
                     updated_at = NOW()
-                WHERE id = ?";
+                WHERE id = ?
+                AND hotel_id = ?";
         
         $pdo->prepare($sql)->execute([
             $precio_total,
             $total_habitaciones,
             $habitaciones_cortesia,
-            $reservacion_id
+            $reservacion_id,
+            $hotel_id
         ]);
         
         error_log("Reservación actualizada - Nuevo precio total: \${$precio_total}");
@@ -1221,16 +1291,18 @@ private function intentarRegistrarPagosMixtos($reservacion_id, $pagos, $monto_re
     $sql = "SELECT r.*, 
             h.nombre_completo as huesped_nombre,
             h.telefono as huesped_telefono,
-            h.correo as huesped_correo,
+            h.email as huesped_correo,
             h.procedencia_estado,
             h.procedencia_ciudad,
-            u.nombre as usuario_registro
+            u.nombre_completo as usuario_registro
             FROM reservaciones r
             INNER JOIN huespedes h ON r.huesped_id = h.id
             LEFT JOIN usuarios u ON r.usuario_registro_id = u.id
-            WHERE r.id = ?";
+            WHERE r.id = ?
+            AND r.hotel_id = ?";
     
-    $stmt = $this->db->query($sql, [$id]);
+    $hotel_id = $this->hotelIdActual();
+    $stmt = $this->db->query($sql, [$id, $hotel_id]);
     $reservacion = $stmt->fetch();
     
     if ($reservacion) {
@@ -1244,11 +1316,12 @@ private function intentarRegistrarPagosMixtos($reservacion_id, $pagos, $monto_re
                             h.tipo,
                             h.precio_base
                             FROM reservacion_habitaciones rh
-                            INNER JOIN habitaciones h ON rh.habitacion_id = h.id
+                            INNER JOIN habitaciones h ON rh.habitacion_id = h.id AND h.hotel_id = rh.hotel_id
                             WHERE rh.reservacion_id = ?
+                            AND rh.hotel_id = ?
                             ORDER BY h.numero";
         
-        $stmt_hab = $this->db->query($sql_habitaciones, [$id]);
+        $stmt_hab = $this->db->query($sql_habitaciones, [$id, $hotel_id]);
         $reservacion['habitaciones'] = $stmt_hab->fetchAll();
         
         // Calcular total de habitaciones de cortesía
@@ -1275,12 +1348,12 @@ private function intentarRegistrarPagosMixtos($reservacion_id, $pagos, $monto_re
                 u.nombre_completo as usuario_registro
                 FROM {$this->table} r
                 INNER JOIN huespedes h ON r.huesped_id = h.id
-                LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                LEFT JOIN habitaciones hab ON rh.habitacion_id = hab.id
+                LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+                LEFT JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
                 LEFT JOIN usuarios u ON r.usuario_registro_id = u.id
-                WHERE 1=1";
+                WHERE r.hotel_id = ?";
         
-        $params = [];
+        $params = [$this->hotelIdActual()];
         
         // Aplicar búsqueda
         if ($termino) {
@@ -1496,6 +1569,7 @@ public function obtenerEstadisticasDashboard() {
         }
         
         $pdo->beginTransaction();
+        $hotel_id = $this->hotelIdActual();
         
         // Verificar campos requeridos
         $campos_requeridos = ['huesped_id', 'fecha_entrada', 'fecha_salida', 'precio_total'];
@@ -1509,6 +1583,11 @@ public function obtenerEstadisticasDashboard() {
         // NUEVA LÓGICA: Usar cortesías seleccionadas por el usuario
         $total_habitaciones = count($habitaciones);
         $habitaciones_cortesia = count($cortesias_seleccionadas);
+
+        $habitacion_ids = array_column($habitaciones, 'id');
+        if (!$this->validarHabitacionesDelHotel($habitacion_ids, $hotel_id)) {
+            throw new Exception("Una o mas habitaciones no pertenecen al hotel actual");
+        }
         
         error_log("Total habitaciones: " . $total_habitaciones);
         error_log("Habitaciones de cortesía seleccionadas por usuario: " . $habitaciones_cortesia);
@@ -1546,9 +1625,10 @@ public function obtenerEstadisticasDashboard() {
                     usuario_registro_id, 
                     total_habitaciones, 
                     habitaciones_cortesia,
+                    hotel_id,
                     created_at, 
                     updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
         
         $params = [
             $data['huesped_id'],
@@ -1560,7 +1640,8 @@ public function obtenerEstadisticasDashboard() {
             $data['notas'] ?? '',
             $data['usuario_registro_id'] ?? 1,
             $total_habitaciones,
-            $habitaciones_cortesia
+            $habitaciones_cortesia,
+            $hotel_id
         ];
         
         error_log("SQL: " . $sql);
@@ -1605,8 +1686,8 @@ public function obtenerEstadisticasDashboard() {
         error_log("Insertando habitaciones con precios calculados...");
         
         $sql_hab = "INSERT INTO reservacion_habitaciones 
-                    (reservacion_id, habitacion_id, precio, es_cortesia) 
-                    VALUES (?, ?, ?, ?)";
+                    (hotel_id, reservacion_id, habitacion_id, precio, es_cortesia)
+                    VALUES (?, ?, ?, ?, ?)";
         
         $stmt_hab = $pdo->prepare($sql_hab);
         
@@ -1665,6 +1746,7 @@ public function obtenerEstadisticasDashboard() {
             // ====== FIN CORRECCIÓN ======
             
             $params_hab = [
+                $hotel_id,
                 $reservacion_id,
                 $habitacion['id'],
                 $precio,
@@ -1711,19 +1793,34 @@ public function obtenerEstadisticasDashboard() {
      * Verificar disponibilidad de múltiples habitaciones
      */
     public function verificarDisponibilidadMultiple($habitaciones_ids, $fecha_entrada, $fecha_salida, $excluir_reservacion_id = null) {
+    if (empty($habitaciones_ids)) {
+        return false;
+    }
+
+    $habitaciones_ids = $this->normalizarHabitacionIds($habitaciones_ids);
+    $hotel_id = $this->hotelIdActual();
+
+    if (!$this->validarHabitacionesDelHotel($habitaciones_ids, $hotel_id)) {
+        return false;
+    }
+
     $placeholders = str_repeat('?,', count($habitaciones_ids) - 1) . '?';
     
     // 1. Verificar conflictos con reservaciones existentes
     $sql = "SELECT habitacion_id, COUNT(*) as conflictos 
             FROM reservacion_habitaciones rh
-            INNER JOIN reservaciones r ON rh.reservacion_id = r.id
+            INNER JOIN reservaciones r ON rh.reservacion_id = r.id AND rh.hotel_id = r.hotel_id
             WHERE rh.habitacion_id IN ($placeholders)
+            AND rh.hotel_id = ?
+            AND r.hotel_id = ?
             AND r.estado IN ('confirmada', 'checked_in')
             AND ? < r.fecha_salida
             AND ? > r.fecha_entrada";
     
     $params = $habitaciones_ids;
-    array_push($params, $fecha_salida, $fecha_entrada);
+    $params[] = $hotel_id;
+    $params[] = $hotel_id;
+    array_push($params, $fecha_entrada, $fecha_salida);
     
     if ($excluir_reservacion_id) {
         $sql .= " AND r.id != ?";
@@ -1744,6 +1841,7 @@ public function obtenerEstadisticasDashboard() {
     $sql_mant = "SELECT DISTINCT m.habitacion_id 
                  FROM mantenimientos_habitaciones m
                  WHERE m.habitacion_id IN ($placeholders2)
+                 AND m.hotel_id = ?
                  AND m.estado IN ('programado', 'en_proceso')
                  AND (
                      (m.programado = 1 AND m.fecha_programada IS NOT NULL AND (
@@ -1755,6 +1853,7 @@ public function obtenerEstadisticasDashboard() {
                  )";
     
     $params_mant = $habitaciones_ids;
+    $params_mant[] = $hotel_id;
     array_push($params_mant, 
         $fecha_salida, $fecha_entrada,
         $fecha_entrada, $fecha_salida,
@@ -1871,12 +1970,14 @@ public function calcularPrecioMultiple($habitaciones, $fecha_entrada, $fecha_sal
                 h.caracteristicas,
 h.observaciones
                 FROM reservacion_habitaciones rh
-                INNER JOIN habitaciones h ON rh.habitacion_id = h.id
+                INNER JOIN habitaciones h ON rh.habitacion_id = h.id AND h.hotel_id = rh.hotel_id
+                INNER JOIN reservaciones r ON rh.reservacion_id = r.id AND r.hotel_id = rh.hotel_id
                 WHERE rh.reservacion_id = ?
+                AND rh.hotel_id = ?
                 ORDER BY CAST(h.numero AS UNSIGNED)";
         
         try {
-            $stmt = $this->db->query($sql, [$reservacion_id]);
+            $stmt = $this->db->query($sql, [$reservacion_id, $this->hotelIdActual()]);
             $result = $stmt->fetchAll();
             return $result;
         } catch (Exception $e) {
@@ -2330,9 +2431,10 @@ public function paraCalendario($mes = null, $año = null) {
             GROUP_CONCAT(DISTINCT hab.id) as habitaciones_ids
             FROM {$this->table} r
             INNER JOIN huespedes h ON r.huesped_id = h.id
-            LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-            LEFT JOIN habitaciones hab ON rh.habitacion_id = hab.id
-            WHERE (
+            LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+            LEFT JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
+            WHERE r.hotel_id = ?
+            AND (
                 -- Reservaciones que COMIENZAN en el mes
                 (MONTH(r.fecha_entrada) = ? AND YEAR(r.fecha_entrada) = ?)
                 OR
@@ -2349,7 +2451,7 @@ public function paraCalendario($mes = null, $año = null) {
             ORDER BY r.fecha_entrada, habitaciones_numeros";
     
     // Parámetros actualizados para cubrir todos los casos
-    $params = [$mes, $año, $mes, $año, $año, $mes, $año, $mes];
+    $params = [$this->hotelIdActual(), $mes, $año, $mes, $año, $año, $mes, $año, $mes];
     
     $stmt = $this->db->query($sql, $params);
     return $stmt->fetchAll();
