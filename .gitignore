@@ -1,0 +1,32 @@
+﻿# Variables de entorno locales
+.env
+
+# Backups de base de datos
+backups/*.sql
+backups/*.sql.gz
+backups/*.zip
+
+# Archivos temporales del sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Dependencias si después usas Composer o Node
+vendor/
+node_modules/
+
+# Archivos temporales de editores
+.vscode/
+.idea/
+
+# Archivos de cache
+.cache/
+tmp/
+temp/
+
+# No ignorar archivos plantilla
+!.env.example
