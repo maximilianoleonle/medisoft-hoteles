@@ -849,6 +849,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerOcupacionPorTipo($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 h.tipo,
@@ -858,13 +859,16 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 AVG(rh.precio) as precio_promedio
                 FROM habitaciones h
                 LEFT JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
+                    AND rh.hotel_id = h.hotel_id
                 LEFT JOIN reservaciones r ON rh.reservacion_id = r.id
-                WHERE DATE(r.fecha_entrada) BETWEEN ? AND ?
+                    AND r.hotel_id = h.hotel_id
+                WHERE h.hotel_id = ?
+                AND DATE(r.fecha_entrada) BETWEEN ? AND ?
                 AND r.estado NOT IN ('cancelada', 'no_show')
                 GROUP BY h.tipo
                 ORDER BY ingresos_totales DESC";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetchAll();
     }
     
