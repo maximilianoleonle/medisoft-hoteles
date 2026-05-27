@@ -427,6 +427,7 @@ class Caja extends Model {
      */
     public function obtenerEstadisticasMes($mes = null, $año = null) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $mes = $mes ?: date('m');
         $año = $año ?: date('Y');
@@ -441,9 +442,10 @@ class Caja extends Model {
                 FROM cortes_caja cc
                 WHERE MONTH(cc.fecha_apertura) = ? 
                 AND YEAR(cc.fecha_apertura) = ?
+                AND cc.hotel_id = ?
                 AND cc.estado = 'cerrado'";
         
-        $stmt = $db->query($sql, [$mes, $año]);
+        $stmt = $db->query($sql, [$mes, $año, $hotel_id]);
         $stats = $stmt->fetch();
         
         // Obtener días con más movimiento
@@ -452,14 +454,15 @@ class Caja extends Model {
                 COUNT(mc.id) as total_movimientos,
                 SUM(CASE WHEN mc.tipo = 'ingreso' THEN mc.monto ELSE 0 END) as ingresos_dia
                 FROM cortes_caja cc
-                LEFT JOIN movimientos_caja mc ON cc.id = mc.corte_id
+                LEFT JOIN movimientos_caja mc ON cc.id = mc.corte_id AND mc.hotel_id = cc.hotel_id
                 WHERE MONTH(cc.fecha_apertura) = ? 
                 AND YEAR(cc.fecha_apertura) = ?
+                AND cc.hotel_id = ?
                 GROUP BY DATE(cc.fecha_apertura)
                 ORDER BY ingresos_dia DESC
                 LIMIT 5";
         
-        $stmt = $db->query($sql, [$mes, $año]);
+        $stmt = $db->query($sql, [$mes, $año, $hotel_id]);
         $stats['dias_top'] = $stmt->fetchAll();
         
         return $stats;

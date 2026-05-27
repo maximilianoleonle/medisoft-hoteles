@@ -393,6 +393,7 @@ $sql .= " ORDER BY mc.created_at $orden";
      */
     public function obtenerTotalesPorPeriodo($fecha_inicio, $fecha_fin = null) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 tipo,
@@ -400,9 +401,10 @@ $sql .= " ORDER BY mc.created_at $orden";
                 COUNT(*) as cantidad,
                 SUM(monto) as total
                 FROM {$this->table}
-                WHERE DATE(created_at) >= ?";
+                WHERE hotel_id = ?
+                AND DATE(created_at) >= ?";
         
-        $params = [$fecha_inicio];
+        $params = [$hotel_id, $fecha_inicio];
         
         if ($fecha_fin) {
             $sql .= " AND DATE(created_at) <= ?";
