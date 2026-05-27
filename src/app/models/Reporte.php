@@ -768,6 +768,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerProcedenciaPorCiudad($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 h.procedencia_estado as estado,
@@ -776,14 +777,15 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 SUM(r.precio_total) as ingresos_totales
                 FROM huespedes h
                 INNER JOIN reservaciones r ON h.id = r.huesped_id
-                WHERE DATE(r.fecha_entrada) BETWEEN ? AND ?
+                WHERE r.hotel_id = ?
+                AND DATE(r.fecha_entrada) BETWEEN ? AND ?
                 AND r.estado NOT IN ('cancelada', 'no_show')
                 AND h.procedencia_ciudad IS NOT NULL
                 GROUP BY h.procedencia_estado, h.procedencia_ciudad
                 ORDER BY total_huespedes DESC
                 LIMIT 20";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetchAll();
     }
     
@@ -792,6 +794,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerEvolucionProcedencia($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 DATE_FORMAT(r.fecha_entrada, '%Y-%m') as mes,
@@ -799,12 +802,13 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 COUNT(DISTINCT h.id) as total_huespedes
                 FROM huespedes h
                 INNER JOIN reservaciones r ON h.id = r.huesped_id
-                WHERE DATE(r.fecha_entrada) BETWEEN ? AND ?
+                WHERE r.hotel_id = ?
+                AND DATE(r.fecha_entrada) BETWEEN ? AND ?
                 AND r.estado NOT IN ('cancelada', 'no_show')
                 GROUP BY mes, h.procedencia_estado
                 ORDER BY mes, total_huespedes DESC";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetchAll();
     }
     
@@ -991,6 +995,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerOcupacionPorDiaSemana($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 DAYOFWEEK(fecha_entrada) as dia_semana,
@@ -1007,12 +1012,14 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 ROUND(AVG(rh.precio), 2) as precio_promedio
                 FROM reservaciones r
                 INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                WHERE DATE(r.fecha_entrada) BETWEEN ? AND ?
+                    AND rh.hotel_id = r.hotel_id
+                WHERE r.hotel_id = ?
+                AND DATE(r.fecha_entrada) BETWEEN ? AND ?
                 AND r.estado NOT IN ('cancelada', 'no_show')
                 GROUP BY DAYOFWEEK(fecha_entrada)
                 ORDER BY dia_semana";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetchAll();
     }
     
@@ -1021,6 +1028,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerPromedioEstancia($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 AVG(DATEDIFF(fecha_salida, fecha_entrada)) as promedio_dias,
@@ -1028,11 +1036,12 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 MAX(DATEDIFF(fecha_salida, fecha_entrada)) as estancia_maxima,
                 COUNT(*) as total_reservaciones
                 FROM reservaciones
-                WHERE fecha_entrada BETWEEN ? AND ?
+                WHERE hotel_id = ?
+                AND fecha_entrada BETWEEN ? AND ?
                 AND estado = 'checked_out'
                 AND fecha_salida IS NOT NULL";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetch();
     }
     
@@ -1087,18 +1096,20 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerDistribucionEstancia($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 DATEDIFF(fecha_salida, fecha_entrada) as dias_estancia,
                 COUNT(*) as cantidad
                 FROM reservaciones
-                WHERE fecha_entrada BETWEEN ? AND ?
+                WHERE hotel_id = ?
+                AND fecha_entrada BETWEEN ? AND ?
                 AND estado = 'checked_out'
                 AND fecha_salida IS NOT NULL
                 GROUP BY dias_estancia
                 ORDER BY dias_estancia";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetchAll();
     }
     
@@ -1107,19 +1118,21 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerTendenciaEstancia($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 DATE_FORMAT(fecha_entrada, '%Y-%m') as mes,
                 AVG(DATEDIFF(fecha_salida, fecha_entrada)) as promedio_dias,
                 COUNT(*) as total_reservaciones
                 FROM reservaciones
-                WHERE fecha_entrada BETWEEN ? AND ?
+                WHERE hotel_id = ?
+                AND fecha_entrada BETWEEN ? AND ?
                 AND estado = 'checked_out'
                 AND fecha_salida IS NOT NULL
                 GROUP BY DATE_FORMAT(fecha_entrada, '%Y-%m')
                 ORDER BY mes";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetchAll();
     }
     
