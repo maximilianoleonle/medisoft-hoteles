@@ -5,6 +5,7 @@
  */
 
 require_once __DIR__ . '/../../core/Controller.php';
+require_once __DIR__ . '/../helpers/hotel_config.php';
 
 class ReportesController extends Controller {
     private $reporteModel;
@@ -12,6 +13,10 @@ class ReportesController extends Controller {
     private $cajaModel;
     private $huespedModel;
     private $habitacionModel;
+
+    private function hotelIdActual() {
+        return obtenerHotelIdActualCompat();
+    }
     
     public function __construct($router = null) {
         parent::__construct($router);
@@ -104,6 +109,7 @@ public function ingresosGastosAction() {
 // Método para obtener datos por método de pago
 private function getMetodosPagoData($fecha_inicio, $fecha_fin) {
     $db = Database::getInstance();
+    $hotel_id = $this->hotelIdActual();
     
     $sql = "SELECT 
                 metodo_pago,
@@ -111,10 +117,11 @@ private function getMetodosPagoData($fecha_inicio, $fecha_fin) {
                 SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as total_gastos,
                 SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) as balance
             FROM movimientos_caja 
-            WHERE DATE(created_at) BETWEEN ? AND ?
+            WHERE hotel_id = ?
+            AND DATE(created_at) BETWEEN ? AND ?
             GROUP BY metodo_pago";
     
-    $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+    $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
     $results = $stmt->fetchAll();
     
     // Estructurar los datos por método de pago
