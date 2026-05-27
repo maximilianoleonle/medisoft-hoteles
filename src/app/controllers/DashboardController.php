@@ -4,6 +4,8 @@
  * Los Cedros
  */
 
+require_once __DIR__ . '/../helpers/hotel_config.php';
+
 class DashboardController extends Controller {
     
     private $cajaModel;
@@ -20,6 +22,10 @@ class DashboardController extends Controller {
         $this->habitacionModel = new Habitacion();
         $this->reservacionModel = new Reservacion();
         $this->movimientoModel = new MovimientoCaja();
+    }
+
+    private function hotelIdActual() {
+        return obtenerHotelIdActualCompat();
     }
     
     /**
@@ -104,6 +110,7 @@ class DashboardController extends Controller {
      */
     private function getEstadisticasCompletas() {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         // 1. HABITACIONES - Estado actual detallado
         $stmt = $db->query("
@@ -111,9 +118,10 @@ class DashboardController extends Controller {
                 estado,
                 COUNT(*) as total 
             FROM habitaciones 
-            WHERE activa = 1
+            WHERE hotel_id = ?
+            AND activa = 1
             GROUP BY estado
-        ");
+        ", [$hotel_id]);
         
         $habitacionesPorEstado = [];
         while ($row = $stmt->fetch()) {
@@ -121,7 +129,10 @@ class DashboardController extends Controller {
         }
         
         // Total de habitaciones activas
-        $stmt = $db->query("SELECT COUNT(*) as total FROM habitaciones WHERE activa = 1");
+        $stmt = $db->query(
+            "SELECT COUNT(*) as total FROM habitaciones WHERE hotel_id = ? AND activa = 1",
+            [$hotel_id]
+        );
         $totalHabitaciones = $stmt->fetch()['total'] ?? 0;
         
         $ocupadas = $habitacionesPorEstado['ocupada'] ?? 0;
@@ -133,13 +144,14 @@ class DashboardController extends Controller {
         $stmt = $db->query("
             SELECT COUNT(DISTINCT rh.habitacion_id) as total
             FROM reservacion_habitaciones rh
-            INNER JOIN reservaciones r ON rh.reservacion_id = r.id
-            INNER JOIN habitaciones h ON rh.habitacion_id = h.id
-            WHERE r.fecha_entrada = CURDATE()
+            INNER JOIN reservaciones r ON rh.reservacion_id = r.id AND r.hotel_id = rh.hotel_id
+            INNER JOIN habitaciones h ON rh.habitacion_id = h.id AND h.hotel_id = rh.hotel_id
+            WHERE rh.hotel_id = ?
+            AND r.fecha_entrada = CURDATE()
             AND r.estado = 'confirmada'
             AND h.estado = 'disponible'
             AND h.activa = 1
-        ");
+        ", [$hotel_id]);
         $porLlegar = $stmt->fetch()['total'] ?? 0;
         
         // Ajustar disponibles reales
@@ -169,10 +181,11 @@ class DashboardController extends Controller {
                 metodo_pago,
                 SUM(monto) as total
             FROM movimientos_caja 
-            WHERE DATE(created_at) = CURDATE()
+            WHERE hotel_id = ?
+            AND DATE(created_at) = CURDATE()
             AND tipo = 'ingreso'
             GROUP BY metodo_pago
-        ");
+        ", [$hotel_id]);
         
         while ($row = $stmt->fetch()) {
             $metodo = $row['metodo_pago'];
@@ -187,10 +200,11 @@ class DashboardController extends Controller {
                 metodo_pago,
                 SUM(monto) as total
             FROM movimientos_caja 
-            WHERE DATE(created_at) = CURDATE()
+            WHERE hotel_id = ?
+            AND DATE(created_at) = CURDATE()
             AND tipo = 'gasto'
             GROUP BY metodo_pago
-        ");
+        ", [$hotel_id]);
         
         while ($row = $stmt->fetch()) {
             $metodo = $row['metodo_pago'];
@@ -205,11 +219,12 @@ class DashboardController extends Controller {
                 metodo_pago,
                 SUM(monto) as total
             FROM movimientos_caja 
-            WHERE DATE(created_at) = CURDATE()
+            WHERE hotel_id = ?
+            AND DATE(created_at) = CURDATE()
             AND tipo = 'gasto'
             AND categoria = 'Devoluciones'
             GROUP BY metodo_pago
-        ");
+        ", [$hotel_id]);
         
         $devolucionesPorMetodo = [
             'efectivo' => 0,
@@ -260,9 +275,10 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
                 SUM(CASE WHEN hora_entrada IS NULL THEN 1 ELSE 0 END) as pendientes,
                 SUM(CASE WHEN hora_entrada IS NOT NULL THEN 1 ELSE 0 END) as completadas
             FROM reservaciones 
-            WHERE fecha_entrada = CURDATE() 
+            WHERE hotel_id = ?
+            AND fecha_entrada = CURDATE()
             AND estado IN ('confirmada', 'checked_in')
-        ");
+        ", [$hotel_id]);
         $entradasHoy = $stmt->fetch();
         
         // Salidas (Check-outs) de hoy
@@ -272,9 +288,10 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
                 SUM(CASE WHEN hora_salida IS NULL THEN 1 ELSE 0 END) as pendientes,
                 SUM(CASE WHEN hora_salida IS NOT NULL THEN 1 ELSE 0 END) as completadas
             FROM reservaciones 
-            WHERE fecha_salida = CURDATE() 
+            WHERE hotel_id = ?
+            AND fecha_salida = CURDATE()
             AND estado IN ('checked_in', 'checked_out')
-        ");
+        ", [$hotel_id]);
         $salidasHoy = $stmt->fetch();
         
         // 4. HUÉSPEDES ACTUALES
@@ -283,11 +300,12 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
                 COUNT(DISTINCT r.huesped_id) as total_huespedes,
                 COUNT(DISTINCT rh.habitacion_id) as habitaciones_ocupadas
             FROM reservaciones r
-            INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-            WHERE r.estado = 'checked_in'
+            INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+            WHERE r.hotel_id = ?
+            AND r.estado = 'checked_in'
             AND r.fecha_entrada <= CURDATE()
             AND r.fecha_salida >= CURDATE()
-        ");
+        ", [$hotel_id]);
         $huespedesActuales = $stmt->fetch();
         
         return [
@@ -335,6 +353,7 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
      */
     private function getCajaInfo() {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $stmt = $db->query("
             SELECT 
@@ -347,11 +366,12 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
                     COALESCE(SUM(CASE WHEN mc.tipo = 'ingreso' AND mc.metodo_pago = 'efectivo' THEN mc.monto ELSE 0 END), 0) -
                     COALESCE(SUM(CASE WHEN mc.tipo = 'gasto' AND mc.metodo_pago = 'efectivo' THEN mc.monto ELSE 0 END), 0) as efectivo_esperado
             FROM cortes_caja cc
-            LEFT JOIN movimientos_caja mc ON cc.id = mc.corte_id
-            WHERE cc.estado = 'abierto'
+            LEFT JOIN movimientos_caja mc ON cc.id = mc.corte_id AND mc.hotel_id = cc.hotel_id
+            WHERE cc.hotel_id = ?
+            AND cc.estado = 'abierto'
             GROUP BY cc.id
             LIMIT 1
-        ");
+        ", [$hotel_id]);
         
         return $stmt->fetch() ?: null;
     }
@@ -361,6 +381,7 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
      */
     private function getReservacionesHoy() {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "
             SELECT 
@@ -370,15 +391,16 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
                 GROUP_CONCAT(hab.numero ORDER BY hab.numero) as habitaciones
             FROM reservaciones r
             INNER JOIN huespedes h ON r.huesped_id = h.id
-            INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-            INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id
-            WHERE (r.fecha_entrada = CURDATE() OR r.fecha_salida = CURDATE())
+            INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+            INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
+            WHERE r.hotel_id = ?
+            AND (r.fecha_entrada = CURDATE() OR r.fecha_salida = CURDATE())
             AND r.estado IN ('confirmada', 'checked_in', 'checked_out')
             GROUP BY r.id
             ORDER BY r.fecha_entrada, r.hora_llegada_estimada
         ";
         
-        $stmt = $db->query($sql);
+        $stmt = $db->query($sql, [$hotel_id]);
         return $stmt->fetchAll();
     }
     
@@ -395,6 +417,7 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
     private function getProximasLlegadas() {
         try {
             $db = Database::getInstance();
+            $hotel_id = $this->hotelIdActual();
             
             $sql = "
                 SELECT 
@@ -410,16 +433,17 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
                     r.precio_total
                 FROM reservaciones r
                 INNER JOIN huespedes h ON r.huesped_id = h.id
-                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id
-                WHERE r.fecha_entrada = CURDATE()
+                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+                INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
+                WHERE r.hotel_id = ?
+                AND r.fecha_entrada = CURDATE()
                 AND r.estado = 'confirmada'
                 GROUP BY r.id
                 ORDER BY r.hora_llegada_estimada
                 LIMIT 10
             ";
             
-            $stmt = $db->query($sql);
+            $stmt = $db->query($sql, [$hotel_id]);
             
             if (!$stmt) {
                 error_log("Error en getProximasLlegadas: consulta falló");
@@ -440,6 +464,7 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
     private function getProximasSalidas() {
         try {
             $db = Database::getInstance();
+            $hotel_id = $this->hotelIdActual();
             
             $sql = "
                 SELECT 
@@ -452,9 +477,10 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
                     r.precio_total
                 FROM reservaciones r
                 INNER JOIN huespedes h ON r.huesped_id = h.id
-                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id
-                WHERE r.fecha_salida = CURDATE()
+                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+                INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
+                WHERE r.hotel_id = ?
+                AND r.fecha_salida = CURDATE()
                 AND r.estado IN ('checked_in', 'checked_out')
                 GROUP BY r.id
                 ORDER BY CASE 
@@ -464,7 +490,7 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
                 LIMIT 10
             ";
             
-            $stmt = $db->query($sql);
+            $stmt = $db->query($sql, [$hotel_id]);
             
             if (!$stmt) {
                 error_log("Error en getProximasSalidas: consulta falló");
@@ -484,9 +510,13 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
      */
     private function getDatosGraficos() {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         // Total de habitaciones activas
-        $stmt = $db->query("SELECT COUNT(*) as total FROM habitaciones WHERE activa = 1");
+        $stmt = $db->query(
+            "SELECT COUNT(*) as total FROM habitaciones WHERE hotel_id = ? AND activa = 1",
+            [$hotel_id]
+        );
         $totalHabitaciones = $stmt->fetch()['total'] ?? 0;
         
         // Ocupación semanal: para cada día cuenta habitaciones ACTIVAS ese día
@@ -502,11 +532,14 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
             $stmtDia = $db->query("
                 SELECT COUNT(DISTINCT rh.habitacion_id) as ocupadas
                 FROM reservaciones r
-                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                WHERE r.estado IN ('checked_in', 'checked_out', 'reservada')
+                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+                INNER JOIN habitaciones h ON rh.habitacion_id = h.id AND h.hotel_id = r.hotel_id
+                WHERE r.hotel_id = ?
+                  AND h.activa = 1
+                  AND r.estado IN ('checked_in', 'checked_out', 'reservada')
                   AND DATE(r.fecha_entrada) <= ?
                   AND DATE(r.fecha_salida)  >  ?
-            ", [$fecha, $fecha]);
+            ", [$hotel_id, $fecha, $fecha]);
             
             $ocupadas = $stmtDia ? (int)($stmtDia->fetch()['ocupadas'] ?? 0) : 0;
             
@@ -525,14 +558,15 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
                 COUNT(DISTINCT r.id) as reservaciones,
                 SUM(rh.precio) as ingresos
             FROM reservacion_habitaciones rh
-            INNER JOIN habitaciones h ON rh.habitacion_id = h.id
-            INNER JOIN reservaciones r ON rh.reservacion_id = r.id
-            WHERE MONTH(r.created_at) = MONTH(CURDATE())
+            INNER JOIN habitaciones h ON rh.habitacion_id = h.id AND h.hotel_id = rh.hotel_id
+            INNER JOIN reservaciones r ON rh.reservacion_id = r.id AND r.hotel_id = rh.hotel_id
+            WHERE rh.hotel_id = ?
+            AND MONTH(r.created_at) = MONTH(CURDATE())
             AND YEAR(r.created_at) = YEAR(CURDATE())
             AND r.estado != 'cancelada'
             GROUP BY h.tipo
             ORDER BY ingresos DESC
-        ");
+        ", [$hotel_id]);
         
         $ingresosPorTipo = [];
         while ($row = $stmt->fetch()) {

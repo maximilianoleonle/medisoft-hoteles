@@ -25,6 +25,7 @@ echo " -->";
 function get_vehiculos_activos_hoy() {
     try {
         $db = Database::getInstance();
+        $hotel_id = obtenerHotelIdActualCompat();
         
         $sql = "
             SELECT 
@@ -32,7 +33,8 @@ function get_vehiculos_activos_hoy() {
                 COUNT(DISTINCT hv.id) as total
             FROM huesped_vehiculos hv
             INNER JOIN reservaciones r ON hv.huesped_id = r.huesped_id
-            WHERE r.estado = 'checked_in'
+            WHERE r.hotel_id = ?
+            AND r.estado = 'checked_in'
             AND r.fecha_entrada <= CURDATE()
             AND r.fecha_salida >= CURDATE()
             AND hv.activo = 1
@@ -40,7 +42,7 @@ function get_vehiculos_activos_hoy() {
             GROUP BY hv.estacionamiento
         ";
         
-        $stmt = $db->query($sql);
+        $stmt = $db->query($sql, [$hotel_id]);
         if (!$stmt) {
             return ['coches' => 0];
         }
@@ -68,6 +70,7 @@ $limite_coches = 30;
 function get_lista_vehiculos_estacionamiento() {
     try {
         $db = Database::getInstance();
+        $hotel_id = obtenerHotelIdActualCompat();
         $sql = "
             SELECT
                 h.nombre_completo AS huesped,
@@ -79,16 +82,17 @@ function get_lista_vehiculos_estacionamiento() {
             FROM huesped_vehiculos hv
             INNER JOIN reservaciones r        ON hv.huesped_id = r.huesped_id
             INNER JOIN huespedes h             ON h.id = hv.huesped_id
-            LEFT  JOIN reservacion_habitaciones rh ON rh.reservacion_id = r.id
-            LEFT  JOIN habitaciones hab        ON hab.id = rh.habitacion_id
-            WHERE r.estado = 'checked_in'
+            LEFT  JOIN reservacion_habitaciones rh ON rh.reservacion_id = r.id AND rh.hotel_id = r.hotel_id
+            LEFT  JOIN habitaciones hab        ON hab.id = rh.habitacion_id AND hab.hotel_id = r.hotel_id
+            WHERE r.hotel_id = ?
+              AND r.estado = 'checked_in'
               AND r.fecha_entrada <= CURDATE()
               AND r.fecha_salida  >= CURDATE()
               AND hv.activo = 1
             GROUP BY hv.id, h.id, hv.marca, hv.modelo, hv.color, hv.placas
             ORDER BY h.nombre_completo
         ";
-        $stmt = $db->query($sql);
+        $stmt = $db->query($sql, [$hotel_id]);
         if (!$stmt) {
             error_log('DEBUG VEHICULOS: query() devolvió false');
             return [];
@@ -107,6 +111,7 @@ $lista_vehiculos_estacionamiento = get_lista_vehiculos_estacionamiento();
 function get_vehiculos_por_habitacion() {
     try {
         $db = Database::getInstance();
+        $hotel_id = obtenerHotelIdActualCompat();
         $sql = "
             SELECT
                 hab.numero            AS habitacion,
@@ -119,15 +124,16 @@ function get_vehiculos_por_habitacion() {
             FROM huesped_vehiculos hv
             INNER JOIN reservaciones r             ON hv.huesped_id = r.huesped_id
             INNER JOIN huespedes h                  ON h.id = hv.huesped_id
-            LEFT  JOIN reservacion_habitaciones rh  ON rh.reservacion_id = r.id
-            LEFT  JOIN habitaciones hab             ON hab.id = rh.habitacion_id
-            WHERE r.estado = 'checked_in'
+            LEFT  JOIN reservacion_habitaciones rh  ON rh.reservacion_id = r.id AND rh.hotel_id = r.hotel_id
+            LEFT  JOIN habitaciones hab             ON hab.id = rh.habitacion_id AND hab.hotel_id = r.hotel_id
+            WHERE r.hotel_id = ?
+              AND r.estado = 'checked_in'
               AND r.fecha_entrada <= CURDATE()
               AND r.fecha_salida  >= CURDATE()
               AND hv.activo = 1
             ORDER BY hab.numero, hv.id
         ";
-        $stmt = $db->query($sql);
+        $stmt = $db->query($sql, [$hotel_id]);
         if (!$stmt) return [];
         $rows = $stmt->fetchAll() ?: [];
 
@@ -1058,7 +1064,16 @@ body { overflow-x: hidden; }
                                     if (isset($llegada['huesped_id'])) {
                                         try {
                                             $db = Database::getInstance();
-                                            $stmt = $db->query("SELECT COUNT(*) as total FROM huesped_vehiculos WHERE huesped_id = ? AND activo = 1", [$llegada['huesped_id']]);
+                                            $hotel_id = obtenerHotelIdActualCompat();
+                                            $stmt = $db->query("
+                                                SELECT COUNT(DISTINCT hv.id) as total
+                                                FROM huesped_vehiculos hv
+                                                INNER JOIN reservaciones r ON hv.huesped_id = r.huesped_id
+                                                WHERE hv.huesped_id = ?
+                                                AND r.id = ?
+                                                AND r.hotel_id = ?
+                                                AND hv.activo = 1
+                                            ", [$llegada['huesped_id'], $llegada['id'], $hotel_id]);
                                             if ($stmt) {
                                                 $result = $stmt->fetch();
                                                 $tiene_vehiculo = $result && $result['total'] > 0;
@@ -1266,7 +1281,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 y: {
                     stacked: true,
                     beginAtZero: true,
-                    max: 49,
+                    max: <?= max(1, (int)($stats['habitaciones']['total'] ?? 0)) ?>,
                     ticks: {
                         stepSize: 7,
                         font: { size: window.innerWidth < 640 ? 9 : 11 }
