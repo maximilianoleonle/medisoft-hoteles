@@ -299,6 +299,7 @@ public function calcularPrecioTotal($habitacion_ids, $fecha_entrada, $fecha_sali
  */
 public function checkOutParcial($reservacion_id, $habitaciones_ids, $hora_salida = null) {
     $db = Database::getInstance();
+    $hotel_id = $this->hotelIdActual();
     
     try {
         error_log("=== INICIO checkOutParcial ===");
@@ -308,7 +309,11 @@ public function checkOutParcial($reservacion_id, $habitaciones_ids, $hora_salida
         $db->beginTransaction();
         
         // Validar que la reservación exista y esté en checked_in
-        $reservacion = $this->find($reservacion_id);
+        $stmt_reservacion = $db->query(
+            "SELECT * FROM reservaciones WHERE id = ? AND hotel_id = ?",
+            [$reservacion_id, $hotel_id]
+        );
+        $reservacion = $stmt_reservacion ? $stmt_reservacion->fetch() : null;
         if (!$reservacion) {
             throw new Exception('La reservación no existe');
         }
@@ -325,9 +330,13 @@ public function checkOutParcial($reservacion_id, $habitaciones_ids, $hora_salida
         // Obtener todas las habitaciones de la reservación
         $sql = "SELECT rh.habitacion_id, h.numero 
                 FROM reservacion_habitaciones rh
-                INNER JOIN habitaciones h ON rh.habitacion_id = h.id
-                WHERE rh.reservacion_id = ?";
-        $stmt = $db->query($sql, [$reservacion_id]);
+                INNER JOIN habitaciones h
+                    ON rh.habitacion_id = h.id
+                    AND h.hotel_id = rh.hotel_id
+                WHERE rh.reservacion_id = ?
+                AND rh.hotel_id = ?
+                AND h.hotel_id = ?";
+        $stmt = $db->query($sql, [$reservacion_id, $hotel_id, $hotel_id]);
         $todas_habitaciones = $stmt->fetchAll();
         
         error_log("Habitaciones de la reservación:");
@@ -356,22 +365,27 @@ public function checkOutParcial($reservacion_id, $habitaciones_ids, $hora_salida
         $sql = "UPDATE habitaciones 
                 SET estado = 'limpieza' 
                 WHERE id IN ($placeholders) 
+                AND hotel_id = ?
                 AND estado = 'ocupada'
                 AND NOT EXISTS (
                     SELECT 1 FROM reservacion_habitaciones rh2
-                    INNER JOIN reservaciones r2 ON rh2.reservacion_id = r2.id
+                    INNER JOIN reservaciones r2
+                        ON rh2.reservacion_id = r2.id
+                        AND r2.hotel_id = rh2.hotel_id
                     WHERE rh2.habitacion_id = habitaciones.id
+                    AND rh2.hotel_id = ?
+                    AND r2.hotel_id = ?
                     AND r2.id != ?
                     AND r2.estado = 'checked_in'
                 )";
-        $params_update = array_merge($habitaciones_ids, [$reservacion_id]);
+        $params_update = array_merge($habitaciones_ids, [$hotel_id, $hotel_id, $hotel_id, $reservacion_id]);
         $result = $db->query($sql, $params_update);
         
         error_log("Habitaciones actualizadas: " . $result->rowCount());
         
         // Obtener números de habitaciones liberadas para la nota
-        $sql = "SELECT numero FROM habitaciones WHERE id IN ($placeholders) ORDER BY numero";
-        $stmt = $db->query($sql, $habitaciones_ids);
+        $sql = "SELECT numero FROM habitaciones WHERE id IN ($placeholders) AND hotel_id = ? ORDER BY numero";
+        $stmt = $db->query($sql, array_merge($habitaciones_ids, [$hotel_id]));
         $habitaciones_liberadas = $stmt->fetchAll(PDO::FETCH_COLUMN);
         
         error_log("Números liberados: " . implode(', ', $habitaciones_liberadas));
@@ -379,10 +393,14 @@ public function checkOutParcial($reservacion_id, $habitaciones_ids, $hora_salida
         // Verificar cuántas habitaciones quedan ocupadas
         $sql = "SELECT COUNT(*) as ocupadas 
                 FROM reservacion_habitaciones rh
-                INNER JOIN habitaciones h ON rh.habitacion_id = h.id
+                INNER JOIN habitaciones h
+                    ON rh.habitacion_id = h.id
+                    AND h.hotel_id = rh.hotel_id
                 WHERE rh.reservacion_id = ? 
+                AND rh.hotel_id = ?
+                AND h.hotel_id = ?
                 AND h.estado = 'ocupada'";
-        $stmt = $db->query($sql, [$reservacion_id]);
+        $stmt = $db->query($sql, [$reservacion_id, $hotel_id, $hotel_id]);
         $resultado = $stmt->fetch();
         $habitaciones_ocupadas = $resultado['ocupadas'];
         
@@ -408,11 +426,13 @@ public function checkOutParcial($reservacion_id, $habitaciones_ids, $hora_salida
                     SET estado = 'checked_out',
                         hora_salida = ?,
                         notas = CONCAT(IFNULL(notas, ''), ?)
-                    WHERE id = ?";
+                    WHERE id = ?
+                    AND hotel_id = ?";
             $db->query($sql, [
                 $hora_salida ?? date('H:i:s'),
                 $nota,
-                $reservacion_id
+                $reservacion_id,
+                $hotel_id
             ]);
             
             error_log("✓ Check-out COMPLETO - Reservación marcada como checked_out");
@@ -420,8 +440,9 @@ public function checkOutParcial($reservacion_id, $habitaciones_ids, $hora_salida
             // Si quedan habitaciones, solo agregar nota
             $sql = "UPDATE reservaciones 
                     SET notas = CONCAT(IFNULL(notas, ''), ?)
-                    WHERE id = ?";
-            $db->query($sql, [$nota, $reservacion_id]);
+                    WHERE id = ?
+                    AND hotel_id = ?";
+            $db->query($sql, [$nota, $reservacion_id, $hotel_id]);
             
             error_log("✓ Check-out PARCIAL - Reservación sigue activa");
         }
@@ -652,6 +673,16 @@ public function checkOutParcial($reservacion_id, $habitaciones_ids, $hora_salida
 
 private function registrarPagosMixtos($reservacion_id, $pagos, $monto_recibido = null, $cambio = null) {
     $db = Database::getInstance();
+    $hotel_id = $this->hotelIdActual();
+
+    $stmt_reservacion = $db->query(
+        "SELECT id FROM reservaciones WHERE id = ? AND hotel_id = ?",
+        [$reservacion_id, $hotel_id]
+    );
+
+    if (!$stmt_reservacion || !$stmt_reservacion->fetch()) {
+        throw new Exception("Reservacion no encontrada para el hotel actual");
+    }
     
     // Verificar si la tabla existe
     $sql = "SHOW TABLES LIKE 'reservacion_pagos'";
@@ -662,18 +693,19 @@ private function registrarPagosMixtos($reservacion_id, $pagos, $monto_recibido =
     }
     
     // Eliminar pagos anteriores si existen
-    $sql = "DELETE FROM reservacion_pagos WHERE reservacion_id = ?";
-    $db->query($sql, [$reservacion_id]);
+    $sql = "DELETE FROM reservacion_pagos WHERE reservacion_id = ? AND hotel_id = ?";
+    $db->query($sql, [$reservacion_id, $hotel_id]);
     
     // Insertar nuevos pagos
     $sql = "INSERT INTO reservacion_pagos 
-            (reservacion_id, metodo_pago, monto, referencia, created_at) 
-            VALUES (?, ?, ?, ?, NOW())";
+            (reservacion_id, hotel_id, metodo_pago, monto, referencia, created_at)
+            VALUES (?, ?, ?, ?, ?, NOW())";
     
     foreach ($pagos as $pago) {
         if ($pago['monto'] > 0) {
             $db->query($sql, [
                 $reservacion_id,
+                $hotel_id,
                 $pago['metodo'],
                 $pago['monto'],
                 $pago['referencia'] ?? null
@@ -744,6 +776,7 @@ public function resumenPagosPorMetodo($reservacion_id) {
  */
 public function checkInConPagosMixtos($id, $hora_entrada, $pagos, $monto_recibido = null, $cambio = null) {
     $db = Database::getInstance();
+    $hotel_id = $this->hotelIdActual();
     
     try {
         $db->beginTransaction();
@@ -757,7 +790,11 @@ public function checkInConPagosMixtos($id, $hora_entrada, $pagos, $monto_recibid
         }
         
         // Obtener datos de la reservación
-        $reservacion = $this->find($id);
+        $stmt_reservacion = $db->query(
+            "SELECT * FROM reservaciones WHERE id = ? AND hotel_id = ?",
+            [$id, $hotel_id]
+        );
+        $reservacion = $stmt_reservacion ? $stmt_reservacion->fetch() : null;
         if (!$reservacion) {
             throw new Exception("Reservación no encontrada");
         }
@@ -791,9 +828,9 @@ public function checkInConPagosMixtos($id, $hora_entrada, $pagos, $monto_recibid
                     metodo_pago = ?,
                     monto_recibido = ?,
                     cambio = ?
-                WHERE id = ? AND estado = 'confirmada'";
+                WHERE id = ? AND hotel_id = ? AND estado = 'confirmada'";
                 
-        $stmt = $db->query($sql, [$hora_entrada, $metodo_principal, $monto_recibido, $cambio, $id]);
+        $stmt = $db->query($sql, [$hora_entrada, $metodo_principal, $monto_recibido, $cambio, $id, $hotel_id]);
         
         if (!$stmt || $stmt->rowCount() == 0) {
             throw new Exception("No se pudo actualizar el estado de la reservación");
@@ -803,11 +840,15 @@ public function checkInConPagosMixtos($id, $hora_entrada, $pagos, $monto_recibid
         // Verificar que ninguna habitación esté en un estado no válido (mantenimiento, ocupada, etc.)
         $sql_validar = "SELECT h.numero, h.estado 
                         FROM habitaciones h
-                        INNER JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
+                        INNER JOIN reservacion_habitaciones rh
+                            ON h.id = rh.habitacion_id
+                            AND h.hotel_id = rh.hotel_id
                         WHERE rh.reservacion_id = ?
+                        AND rh.hotel_id = ?
+                        AND h.hotel_id = ?
                         AND h.estado NOT IN ('disponible', 'limpieza')";
         
-        $stmt_validar = $db->query($sql_validar, [$id]);
+        $stmt_validar = $db->query($sql_validar, [$id, $hotel_id, $hotel_id]);
         $habitaciones_problema = $stmt_validar->fetchAll();
         
         if (!empty($habitaciones_problema)) {
@@ -834,20 +875,29 @@ public function checkInConPagosMixtos($id, $hora_entrada, $pagos, $monto_recibid
         
         // 2. Actualizar habitaciones a ocupadas
         $sql = "UPDATE habitaciones h
-                INNER JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
+                INNER JOIN reservacion_habitaciones rh
+                    ON h.id = rh.habitacion_id
+                    AND h.hotel_id = rh.hotel_id
                 SET h.estado = 'ocupada'
-                WHERE rh.reservacion_id = ? AND h.estado IN ('disponible', 'limpieza')";
+                WHERE rh.reservacion_id = ?
+                AND rh.hotel_id = ?
+                AND h.hotel_id = ?
+                AND h.estado IN ('disponible', 'limpieza')";
                 
-        $stmt = $db->query($sql, [$id]);
+        $stmt = $db->query($sql, [$id, $hotel_id, $hotel_id]);
         
         // Verificar que se actualizaron habitaciones
         if ($stmt->rowCount() == 0) {
             // Verificar el estado actual de las habitaciones
             $sql_check = "SELECT h.numero, h.estado 
                           FROM habitaciones h
-                          INNER JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
-                          WHERE rh.reservacion_id = ?";
-            $stmt_check = $db->query($sql_check, [$id]);
+                          INNER JOIN reservacion_habitaciones rh
+                            ON h.id = rh.habitacion_id
+                            AND h.hotel_id = rh.hotel_id
+                          WHERE rh.reservacion_id = ?
+                          AND rh.hotel_id = ?
+                          AND h.hotel_id = ?";
+            $stmt_check = $db->query($sql_check, [$id, $hotel_id, $hotel_id]);
             $habitaciones_estados = $stmt_check->fetchAll();
             
             $estados_info = [];
@@ -1991,6 +2041,7 @@ h.observaciones
      */
     public function checkIn($reservacion_id, $hora_entrada = null) {
         $hora = $hora_entrada ?? date('H:i:s');
+        $hotel_id = $this->hotelIdActual();
         
         $db = Database::getInstance();
         
@@ -1998,19 +2049,29 @@ h.observaciones
             $db->beginTransaction();
             
             // Actualizar reservación
-            $result = $this->update($reservacion_id, [
-                'estado' => 'checked_in',
-                'hora_entrada' => $hora
-            ]);
+            $sql = "UPDATE reservaciones
+                    SET estado = 'checked_in',
+                        hora_entrada = ?,
+                        updated_at = NOW()
+                    WHERE id = ?
+                    AND hotel_id = ?
+                    AND estado = 'confirmada'";
+            $stmt = $db->query($sql, [$hora, $reservacion_id, $hotel_id]);
+            $result = $stmt && $stmt->rowCount() > 0;
             
             if ($result) {
                 // Actualizar estado de todas las habitaciones
                 $sql = "UPDATE habitaciones h
-        INNER JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
+        INNER JOIN reservacion_habitaciones rh
+            ON h.id = rh.habitacion_id
+            AND h.hotel_id = rh.hotel_id
         SET h.estado = 'ocupada'
-        WHERE rh.reservacion_id = ? AND h.estado IN ('disponible', 'limpieza')";
+        WHERE rh.reservacion_id = ?
+        AND rh.hotel_id = ?
+        AND h.hotel_id = ?
+        AND h.estado IN ('disponible', 'limpieza')";
                 
-                $db->query($sql, [$reservacion_id]);
+                $db->query($sql, [$reservacion_id, $hotel_id, $hotel_id]);
             }
             
             $db->commit();
@@ -2030,6 +2091,7 @@ h.observaciones
  */
 public function checkOut($reservacion_id, $hora_salida = null) {
     $hora = $hora_salida ?? date('H:i:s');
+    $hotel_id = $this->hotelIdActual();
     
     $db = Database::getInstance();
     
@@ -2040,28 +2102,37 @@ public function checkOut($reservacion_id, $hora_salida = null) {
         $sql = "UPDATE reservaciones 
                 SET estado = 'checked_out', 
                     hora_salida = ?
-                WHERE id = ? 
+                WHERE id = ?
+                AND hotel_id = ?
                 AND estado = 'checked_in'"; // Solo si está en check-in
         
-        $stmt = $db->query($sql, [$hora, $reservacion_id]);
+        $stmt = $db->query($sql, [$hora, $reservacion_id, $hotel_id]);
         
         // Verificar si se actualizó algún registro
         if ($stmt && $stmt->rowCount() > 0) {
             // 2. Liberar habitaciones — SOLO si no están ocupadas por OTRA reservación activa
             $sql = "UPDATE habitaciones h
-                    INNER JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
+                    INNER JOIN reservacion_habitaciones rh
+                        ON h.id = rh.habitacion_id
+                        AND h.hotel_id = rh.hotel_id
                     SET h.estado = 'limpieza'
                     WHERE rh.reservacion_id = ?
+                    AND rh.hotel_id = ?
+                    AND h.hotel_id = ?
                     AND h.estado = 'ocupada'
                     AND NOT EXISTS (
                         SELECT 1 FROM reservacion_habitaciones rh2
-                        INNER JOIN reservaciones r2 ON rh2.reservacion_id = r2.id
+                        INNER JOIN reservaciones r2
+                            ON rh2.reservacion_id = r2.id
+                            AND r2.hotel_id = rh2.hotel_id
                         WHERE rh2.habitacion_id = h.id
+                        AND rh2.hotel_id = ?
+                        AND r2.hotel_id = ?
                         AND r2.id != ?
                         AND r2.estado = 'checked_in'
                     )";
             
-            $db->query($sql, [$reservacion_id, $reservacion_id]);
+            $db->query($sql, [$reservacion_id, $hotel_id, $hotel_id, $hotel_id, $hotel_id, $reservacion_id]);
             
             return true;
         } else {
@@ -2527,7 +2598,12 @@ public function paraCalendario($mes = null, $año = null) {
      * @return array con información del estado
      */
     public function verificarEstadoCheckIn($reservacion_id) {
-        $reservacion = $this->find($reservacion_id);
+        $hotel_id = $this->hotelIdActual();
+        $stmt_reservacion = $this->db->query(
+            "SELECT * FROM reservaciones WHERE id = ? AND hotel_id = ?",
+            [$reservacion_id, $hotel_id]
+        );
+        $reservacion = $stmt_reservacion ? $stmt_reservacion->fetch() : null;
         
         if (!$reservacion) {
             return [
@@ -2602,6 +2678,7 @@ public function paraCalendario($mes = null, $año = null) {
      */
     public function checkInTardio($reservacion_id, $hora_entrada = null, $notas_adicionales = null) {
         $verificacion = $this->verificarEstadoCheckIn($reservacion_id);
+        $hotel_id = $this->hotelIdActual();
         
         if (!$verificacion['puede_checkin']) {
             throw new Exception($verificacion['motivo']);
@@ -2634,17 +2711,22 @@ public function paraCalendario($mes = null, $año = null) {
                     SET estado = 'checked_in',
                         hora_entrada = ?,
                         notas = CONCAT(IFNULL(notas, ''), ?)
-                    WHERE id = ?";
+                    WHERE id = ?
+                    AND hotel_id = ?";
             
-            $db->query($sql, [$hora, $nota, $reservacion_id]);
+            $db->query($sql, [$hora, $nota, $reservacion_id, $hotel_id]);
             
             // Actualizar habitaciones a ocupadas
             $sql = "UPDATE habitaciones h
-                    INNER JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
+                    INNER JOIN reservacion_habitaciones rh
+                        ON h.id = rh.habitacion_id
+                        AND h.hotel_id = rh.hotel_id
                     SET h.estado = 'ocupada'
-                    WHERE rh.reservacion_id = ?";
+                    WHERE rh.reservacion_id = ?
+                    AND rh.hotel_id = ?
+                    AND h.hotel_id = ?";
             
-            $db->query($sql, [$reservacion_id]);
+            $db->query($sql, [$reservacion_id, $hotel_id, $hotel_id]);
             
             $db->commit();
             
@@ -2664,6 +2746,7 @@ public function paraCalendario($mes = null, $año = null) {
      */
     public function checkInCheckOutExpress($reservacion_id, $pagos = [], $notas_adicionales = null) {
         $verificacion = $this->verificarEstadoCheckIn($reservacion_id);
+        $hotel_id = $this->hotelIdActual();
         
         if (!$verificacion['puede_checkin']) {
             throw new Exception($verificacion['motivo']);
@@ -2695,12 +2778,14 @@ public function paraCalendario($mes = null, $año = null) {
                     SET estado = 'checked_in',
                         hora_entrada = ?,
                         notas = CONCAT(IFNULL(notas, ''), ?)
-                    WHERE id = ?";
+                    WHERE id = ?
+                    AND hotel_id = ?";
             
             $db->query($sql, [
                 $reservacion['hora_llegada_estimada'] ?? '14:00:00',
                 $nota_checkin,
-                $reservacion_id
+                $reservacion_id,
+                $hotel_id
             ]);
             
             // FASE 2: REGISTRAR PAGOS (SI HAY)
@@ -2760,17 +2845,22 @@ public function paraCalendario($mes = null, $año = null) {
                     SET estado = 'checked_out',
                         hora_salida = ?,
                         notas = CONCAT(IFNULL(notas, ''), ?)
-                    WHERE id = ?";
+                    WHERE id = ?
+                    AND hotel_id = ?";
             
-            $db->query($sql, [$hora_actual, $nota_checkout, $reservacion_id]);
+            $db->query($sql, [$hora_actual, $nota_checkout, $reservacion_id, $hotel_id]);
             
             // Liberar habitaciones
             $sql = "UPDATE habitaciones h
-                    INNER JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
+                    INNER JOIN reservacion_habitaciones rh
+                        ON h.id = rh.habitacion_id
+                        AND h.hotel_id = rh.hotel_id
                     SET h.estado = 'limpieza'
-                    WHERE rh.reservacion_id = ?";
+                    WHERE rh.reservacion_id = ?
+                    AND rh.hotel_id = ?
+                    AND h.hotel_id = ?";
             
-            $db->query($sql, [$reservacion_id]);
+            $db->query($sql, [$reservacion_id, $hotel_id, $hotel_id]);
             
             $db->commit();
             

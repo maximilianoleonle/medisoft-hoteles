@@ -829,6 +829,11 @@ public function checkOutParcialAction() {
             return $this->redirect('/reservaciones/ver/' . $id);
         }
         
+        $reservacion = $this->reservacionModel->obtenerPorId($id);
+        if (!$reservacion) {
+            throw new Exception('Reservación no encontrada para el hotel actual');
+        }
+
         // Obtener hora de salida
         $hora_salida = $this->getPost('hora_salida', date('H:i:s'));
         
@@ -2422,22 +2427,10 @@ public function recibirRemotoAction() {
             $cambio_total = 0;
             
             // Obtener la reservación para saber el precio
-            $reservacion = $this->reservacionModel->find($id);
-            // En ReservacionController.php, método verAction()
-// Después de obtener la reservación
-$reservacion = $this->reservacionModel->find($id);
-
-// Obtener el nombre del usuario que registró
-if ($reservacion && $reservacion['usuario_registro_id']) {
-    $sql = "SELECT nombre_completo FROM usuarios WHERE id = ?";
-    $stmt = $this->db->prepare($sql);
-    $stmt->execute([$reservacion['usuario_registro_id']]);
-    $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($usuario) {
-        $reservacion['usuario_registro'] = $usuario['nombre_completo'];
-    }
-}
+            $reservacion = $this->reservacionModel->obtenerPorId($id);
+            if (!$reservacion) {
+                throw new Exception('Reservación no encontrada para el hotel actual');
+            }
             // Verificar cada método de pago
             $metodos = ['efectivo', 'tarjeta', 'transferencia'];
             
@@ -2601,6 +2594,13 @@ private function procesarEntregaLlavesCheckIn($reservacion_id) {
     
     $this->validateCSRF();
     
+    $reservacion = $this->reservacionModel->obtenerPorId($id);
+    if (!$reservacion) {
+        set_mensaje('Reservación no encontrada para el hotel actual', 'error');
+        $this->redirect('reservaciones');
+        return;
+    }
+
     // Obtener hora de salida
     $hora_salida = $this->getPost('hora_salida', date('H:i:s'));
     
@@ -3489,12 +3489,17 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
      */
     private function procesarDescuentoInventario($reservacion_id) {
     try {
+        $hotel_id = $this->hotelIdActual();
         error_log("=== INICIO procesarDescuentoInventario ===");
         error_log("Reservacion ID: " . $reservacion_id);
         
         // 1. Verificar configuración de inventario
-        $sql = "SELECT COUNT(*) as total FROM inventario_config_habitacion WHERE activo = 1";
-        $stmt = $this->db->query($sql);
+        $sql = "SELECT COUNT(*) as total
+                FROM inventario_config_habitacion
+                WHERE hotel_id = ?
+                AND activo = 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$hotel_id]);
         $config_count = $stmt->fetch()['total'];
         error_log("Configuraciones activas de inventario: " . $config_count);
         
@@ -3508,11 +3513,19 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
         // 2. Obtener todas las habitaciones de la reservación
         $sql = "SELECT rh.habitacion_id, h.numero, h.tipo
                 FROM reservacion_habitaciones rh
-                INNER JOIN habitaciones h ON rh.habitacion_id = h.id
-                WHERE rh.reservacion_id = ?";
+                INNER JOIN habitaciones h
+                    ON rh.habitacion_id = h.id
+                    AND h.hotel_id = rh.hotel_id
+                INNER JOIN reservaciones r
+                    ON r.id = rh.reservacion_id
+                    AND r.hotel_id = rh.hotel_id
+                WHERE rh.reservacion_id = ?
+                AND rh.hotel_id = ?
+                AND h.hotel_id = ?
+                AND r.hotel_id = ?";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$reservacion_id]);
+        $stmt->execute([$reservacion_id, $hotel_id, $hotel_id, $hotel_id]);
         $habitaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         error_log("Habitaciones encontradas: " . count($habitaciones));
@@ -3529,9 +3542,11 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
         foreach ($habitaciones as $hab) {
             $sql = "SELECT COUNT(*) as total 
                     FROM inventario_config_habitacion 
-                    WHERE tipo_habitacion = ? AND activo = 1";
+                    WHERE tipo_habitacion = ?
+                    AND hotel_id = ?
+                    AND activo = 1";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$hab['tipo']]);
+            $stmt->execute([$hab['tipo'], $hotel_id]);
             $config_tipo = $stmt->fetch()['total'];
             error_log("  Configuraciones para tipo '{$hab['tipo']}': " . $config_tipo);
         }
@@ -3668,7 +3683,7 @@ public function checkOutRapidoAction() {
     
     try {
         // Obtener datos de la reservación
-        $reservacion = $this->reservacionModel->find($id);
+        $reservacion = $this->reservacionModel->obtenerPorId($id);
         
         if (!$reservacion) {
             header('Content-Type: application/json');
@@ -3706,12 +3721,17 @@ public function checkOutRapidoAction() {
         $huesped = $this->huespedModel->find($reservacion['huesped_id']);
         
         // Obtener habitaciones para mostrar
+        $hotel_id = $this->hotelIdActual();
         $sql = "SELECT GROUP_CONCAT(h.numero ORDER BY h.numero SEPARATOR ', ') as habitaciones
                 FROM reservacion_habitaciones rh
-                INNER JOIN habitaciones h ON rh.habitacion_id = h.id
-                WHERE rh.reservacion_id = ?";
+                INNER JOIN habitaciones h
+                    ON rh.habitacion_id = h.id
+                    AND h.hotel_id = rh.hotel_id
+                WHERE rh.reservacion_id = ?
+                AND rh.hotel_id = ?
+                AND h.hotel_id = ?";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$id]);
+        $stmt->execute([$id, $hotel_id, $hotel_id]);
         $habitaciones_info = $stmt->fetch(PDO::FETCH_ASSOC);
         
         // Obtener hora de salida
@@ -3833,7 +3853,10 @@ public function checkOutRapidoAction() {
             }
             
             // Obtener datos completos de la reservación
-            $reservacion = $this->reservacionModel->find($id);
+            $reservacion = $verificacion['reservacion'] ?? $this->reservacionModel->obtenerPorId($id);
+            if (!$reservacion) {
+                throw new Exception('Reservación no encontrada para el hotel actual');
+            }
             $huesped = $this->huespedModel->find($reservacion['huesped_id']);
             $habitaciones = $this->reservacionModel->getHabitaciones($id);
             
@@ -3892,7 +3915,10 @@ public function checkOutRapidoAction() {
                     $this->procesarEntregaRemotosCheckIn($id);
                     
                     // ========== PROCESAR SOLICITUD DE FACTURA ==========
-                    $reservacion = $this->reservacionModel->find($id);
+                    $reservacion = $this->reservacionModel->obtenerPorId($id);
+                    if (!$reservacion) {
+                        throw new Exception('Reservación no encontrada para el hotel actual');
+                    }
                     $pagos_tardio = $this->obtenerPagosDelPost();
                     $this->procesarSolicitudFactura($id, $pagos_tardio, $reservacion['precio_total']);
                     // ========== FIN FACTURA ==========
@@ -3952,7 +3978,10 @@ public function checkOutRapidoAction() {
                     }
                 } elseif ($metodo_pago && $metodo_pago != 'pendiente') {
                     // Pago único
-                    $reservacion = $this->reservacionModel->find($id);
+                    $reservacion = $this->reservacionModel->obtenerPorId($id);
+                    if (!$reservacion) {
+                        throw new Exception('Reservación no encontrada para el hotel actual');
+                    }
                     $pagos[] = [
                         'metodo' => $metodo_pago,
                         'monto' => $reservacion['precio_total'],
@@ -3974,7 +4003,10 @@ public function checkOutRapidoAction() {
                     // Procesar descuento de inventario si aplica
                     $this->procesarDescuentoInventario($id);
                     // ========== PROCESAR SOLICITUD DE FACTURA ==========
-                    $reservacion_express = $this->reservacionModel->find($id);
+                    $reservacion_express = $this->reservacionModel->obtenerPorId($id);
+                    if (!$reservacion_express) {
+                        throw new Exception('Reservación no encontrada para el hotel actual');
+                    }
                     $this->procesarSolicitudFactura($id, $pagos, $reservacion_express['precio_total']);
                     // ========== FIN FACTURA ==========
                     $mensaje = "✓ Proceso EXPRESS completado: Check-in y Check-out registrados automáticamente";
