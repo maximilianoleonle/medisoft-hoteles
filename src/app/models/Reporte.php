@@ -817,6 +817,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerRentabilidadHabitaciones($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 h.id,
@@ -830,13 +831,16 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 ROUND(COUNT(DISTINCT DATE(r.fecha_entrada)) * 100.0 / DATEDIFF(?, ?), 2) as porcentaje_ocupacion
                 FROM habitaciones h
                 LEFT JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
+                    AND rh.hotel_id = h.hotel_id
                 LEFT JOIN reservaciones r ON rh.reservacion_id = r.id
-                WHERE DATE(r.fecha_entrada) BETWEEN ? AND ?
+                    AND r.hotel_id = h.hotel_id
+                WHERE h.hotel_id = ?
+                AND DATE(r.fecha_entrada) BETWEEN ? AND ?
                 AND r.estado = 'checked_out'
                 GROUP BY h.id, h.numero, h.tipo, h.piso
                 ORDER BY ingresos_totales DESC";
         
-        $stmt = $db->query($sql, [$fecha_fin, $fecha_inicio, $fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$fecha_fin, $fecha_inicio, $hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetchAll();
     }
     
@@ -869,6 +873,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerIngresoPromedioPorHabitacion($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 h.tipo,
@@ -878,12 +883,15 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 COUNT(*) as total_reservaciones
                 FROM habitaciones h
                 INNER JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
+                    AND rh.hotel_id = h.hotel_id
                 INNER JOIN reservaciones r ON rh.reservacion_id = r.id
-                WHERE DATE(r.fecha_entrada) BETWEEN ? AND ?
+                    AND r.hotel_id = h.hotel_id
+                WHERE h.hotel_id = ?
+                AND DATE(r.fecha_entrada) BETWEEN ? AND ?
                 AND r.estado = 'checked_out'
                 GROUP BY h.tipo";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetchAll();
     }
     
