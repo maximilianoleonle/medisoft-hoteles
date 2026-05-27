@@ -6,6 +6,7 @@
 
 require_once __DIR__ . '/../../core/Model.php';
 require_once __DIR__ . '/../../core/Database.php';
+require_once __DIR__ . '/../helpers/hotel_config.php';
 
 class Reporte extends Model {
     protected $table = ''; // No usa tabla específica
@@ -14,6 +15,10 @@ class Reporte extends Model {
     public function __construct() {
         // No llamar a parent::__construct() porque no necesitamos una tabla específica
         $this->db = Database::getInstance();
+    }
+
+    private function hotelIdActual() {
+        return obtenerHotelIdActualCompat();
     }
     
     /**
@@ -59,6 +64,7 @@ class Reporte extends Model {
     }
 public function getIngresosVsGastos($fecha_inicio, $fecha_fin) {
     $db = Database::getInstance();
+    $hotel_id = $this->hotelIdActual();
     
     // Obtener ingresos por categoría
     $sqlIngresos = "SELECT 
@@ -66,12 +72,13 @@ public function getIngresosVsGastos($fecha_inicio, $fecha_fin) {
                         COUNT(*) as cantidad,
                         SUM(monto) as total
                     FROM movimientos_caja 
-                    WHERE tipo = 'ingreso' 
+                    WHERE hotel_id = ?
+                    AND tipo = 'ingreso'
                     AND DATE(created_at) BETWEEN ? AND ?
                     GROUP BY categoria 
                     ORDER BY total DESC";
     
-    $stmtIngresos = $db->query($sqlIngresos, [$fecha_inicio, $fecha_fin]);
+    $stmtIngresos = $db->query($sqlIngresos, [$hotel_id, $fecha_inicio, $fecha_fin]);
     $ingresos = $stmtIngresos->fetchAll();
     
     // Obtener gastos por categoría
@@ -80,12 +87,13 @@ public function getIngresosVsGastos($fecha_inicio, $fecha_fin) {
                       COUNT(*) as cantidad,
                       SUM(monto) as total
                   FROM movimientos_caja 
-                  WHERE tipo = 'gasto' 
+                  WHERE hotel_id = ?
+                  AND tipo = 'gasto'
                   AND DATE(created_at) BETWEEN ? AND ?
                   GROUP BY categoria 
                   ORDER BY total DESC";
     
-    $stmtGastos = $db->query($sqlGastos, [$fecha_inicio, $fecha_fin]);
+    $stmtGastos = $db->query($sqlGastos, [$hotel_id, $fecha_inicio, $fecha_fin]);
     $gastos = $stmtGastos->fetchAll();
     
     // Asegurar que siempre devolvamos arrays aunque estén vacíos
@@ -98,6 +106,7 @@ public function getIngresosVsGastos($fecha_inicio, $fecha_fin) {
 // Método modificado para getResumenDiario con manejo de datos vacíos
 public function getResumenDiario($fecha_inicio, $fecha_fin) {
     $db = Database::getInstance();
+    $hotel_id = $this->hotelIdActual();
     
     $sql = "SELECT 
                 DATE(created_at) as fecha,
@@ -105,11 +114,12 @@ public function getResumenDiario($fecha_inicio, $fecha_fin) {
                 SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as gastos,
                 SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) as utilidad
             FROM movimientos_caja 
-            WHERE DATE(created_at) BETWEEN ? AND ?
+            WHERE hotel_id = ?
+            AND DATE(created_at) BETWEEN ? AND ?
             GROUP BY DATE(created_at)
             ORDER BY fecha";
     
-    $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+    $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
     $resumen = $stmt->fetchAll();
     
     // Si no hay datos, crear un array con las fechas del período con valores en 0
@@ -163,6 +173,7 @@ public function getResumenDiario($fecha_inicio, $fecha_fin) {
 // Nuevo método para obtener datos agrupados por método de pago
 public function getIngresosPorMetodoPago($fecha_inicio, $fecha_fin) {
     $db = Database::getInstance();
+    $hotel_id = $this->hotelIdActual();
     
     $sql = "SELECT 
                 metodo_pago,
@@ -170,11 +181,12 @@ public function getIngresosPorMetodoPago($fecha_inicio, $fecha_fin) {
                 COUNT(*) as cantidad,
                 SUM(monto) as total
             FROM movimientos_caja 
-            WHERE DATE(created_at) BETWEEN ? AND ?
+            WHERE hotel_id = ?
+            AND DATE(created_at) BETWEEN ? AND ?
             GROUP BY metodo_pago, tipo
             ORDER BY metodo_pago, tipo";
     
-    $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+    $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
     $results = $stmt->fetchAll();
     
     // Estructurar los datos
@@ -211,6 +223,7 @@ public function getIngresosPorMetodoPago($fecha_inicio, $fecha_fin) {
 // Método para obtener movimientos de un usuario específico
 public function getMovimientosPorUsuario($usuario_id, $fecha_inicio, $fecha_fin) {
     $db = Database::getInstance();
+    $hotel_id = $this->hotelIdActual();
     
     $sql = "SELECT 
                 mc.*,
@@ -222,16 +235,18 @@ public function getMovimientosPorUsuario($usuario_id, $fecha_inicio, $fecha_fin)
             LEFT JOIN categorias_movimientos cm ON mc.categoria_id = cm.id
             LEFT JOIN usuarios u ON mc.usuario_id = u.id
             WHERE mc.usuario_id = ? 
+            AND mc.hotel_id = ?
             AND DATE(mc.created_at) BETWEEN ? AND ?
             ORDER BY mc.created_at DESC";
     
-    $stmt = $db->query($sql, [$usuario_id, $fecha_inicio, $fecha_fin]);
+    $stmt = $db->query($sql, [$usuario_id, $hotel_id, $fecha_inicio, $fecha_fin]);
     return $stmt->fetchAll();
 }
 
 // Método para obtener resumen por usuario
 public function getResumenPorUsuario($fecha_inicio, $fecha_fin) {
     $db = Database::getInstance();
+    $hotel_id = $this->hotelIdActual();
     
     $sql = "SELECT 
                 u.id,
@@ -245,18 +260,20 @@ public function getResumenPorUsuario($fecha_inicio, $fecha_fin) {
             FROM usuarios u
             LEFT JOIN movimientos_caja mc ON u.id = mc.usuario_id 
                 AND DATE(mc.created_at) BETWEEN ? AND ?
+                AND mc.hotel_id = ?
             WHERE u.activo = 1
             GROUP BY u.id, u.nombre_completo
             HAVING total_movimientos > 0
             ORDER BY balance DESC";
     
-    $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+    $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin, $hotel_id]);
     return $stmt->fetchAll();
 }
 
 // Método para obtener estadísticas avanzadas
 public function getEstadisticasAvanzadas($fecha_inicio, $fecha_fin) {
     $db = Database::getInstance();
+    $hotel_id = $this->hotelIdActual();
     
     // Hora pico de ingresos
     $sqlHoraPico = "SELECT 
@@ -264,13 +281,14 @@ public function getEstadisticasAvanzadas($fecha_inicio, $fecha_fin) {
                         COUNT(*) as cantidad,
                         SUM(monto) as total
                     FROM movimientos_caja
-                    WHERE tipo = 'ingreso'
+                    WHERE hotel_id = ?
+                    AND tipo = 'ingreso'
                     AND DATE(created_at) BETWEEN ? AND ?
                     GROUP BY HOUR(created_at)
                     ORDER BY total DESC
                     LIMIT 1";
     
-    $stmtHora = $db->query($sqlHoraPico, [$fecha_inicio, $fecha_fin]);
+    $stmtHora = $db->query($sqlHoraPico, [$hotel_id, $fecha_inicio, $fecha_fin]);
     $horaPico = $stmtHora->fetch();
     
     // Día de la semana más rentable
@@ -280,11 +298,12 @@ public function getEstadisticasAvanzadas($fecha_inicio, $fecha_fin) {
                         SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as ingresos,
                         SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as gastos
                     FROM movimientos_caja
-                    WHERE DATE(created_at) BETWEEN ? AND ?
+                    WHERE hotel_id = ?
+                    AND DATE(created_at) BETWEEN ? AND ?
                     GROUP BY DAYOFWEEK(created_at)
                     ORDER BY ingresos DESC";
     
-    $stmtDia = $db->query($sqlDiaSemana, [$fecha_inicio, $fecha_fin]);
+    $stmtDia = $db->query($sqlDiaSemana, [$hotel_id, $fecha_inicio, $fecha_fin]);
     $diasSemana = $stmtDia->fetchAll();
     
     // Tendencia de crecimiento
@@ -296,9 +315,10 @@ public function getEstadisticasAvanzadas($fecha_inicio, $fecha_fin) {
                         SUM(CASE WHEN DATE(created_at) <= ? AND tipo = 'ingreso' THEN monto ELSE 0 END) as ingresos_primera_mitad,
                         SUM(CASE WHEN DATE(created_at) > ? AND tipo = 'ingreso' THEN monto ELSE 0 END) as ingresos_segunda_mitad
                     FROM movimientos_caja
-                    WHERE DATE(created_at) BETWEEN ? AND ?";
+                    WHERE hotel_id = ?
+                    AND DATE(created_at) BETWEEN ? AND ?";
     
-    $stmtTendencia = $db->query($sqlTendencia, [$fecha_mitad, $fecha_mitad, $fecha_inicio, $fecha_fin]);
+    $stmtTendencia = $db->query($sqlTendencia, [$fecha_mitad, $fecha_mitad, $hotel_id, $fecha_inicio, $fecha_fin]);
     $tendencia = $stmtTendencia->fetch();
     
     return [
@@ -314,6 +334,7 @@ public function getEstadisticasAvanzadas($fecha_inicio, $fecha_fin) {
 // Método para obtener transacciones más grandes
 public function getTransaccionesMayores($fecha_inicio, $fecha_fin, $limit = 10) {
     $db = Database::getInstance();
+    $hotel_id = $this->hotelIdActual();
     
     $sql = "SELECT 
                 mc.*,
@@ -322,17 +343,19 @@ public function getTransaccionesMayores($fecha_inicio, $fecha_fin, $limit = 10) 
             FROM movimientos_caja mc
             LEFT JOIN usuarios u ON mc.usuario_id = u.id
             LEFT JOIN categorias_movimientos cm ON mc.categoria_id = cm.id
-            WHERE DATE(mc.created_at) BETWEEN ? AND ?
+            WHERE mc.hotel_id = ?
+            AND DATE(mc.created_at) BETWEEN ? AND ?
             ORDER BY mc.monto DESC
             LIMIT ?";
     
-    $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin, $limit]);
+    $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin, $limit]);
     return $stmt->fetchAll();
 }
 
 // Método para obtener comparación entre períodos
 public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, $fecha_inicio_anterior, $fecha_fin_anterior) {
     $db = Database::getInstance();
+    $hotel_id = $this->hotelIdActual();
     
     $sql = "SELECT 
                 'actual' as periodo,
@@ -341,7 +364,8 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 COUNT(CASE WHEN tipo = 'ingreso' THEN 1 END) as cantidad_ingresos,
                 COUNT(CASE WHEN tipo = 'gasto' THEN 1 END) as cantidad_gastos
             FROM movimientos_caja
-            WHERE DATE(created_at) BETWEEN ? AND ?
+            WHERE hotel_id = ?
+            AND DATE(created_at) BETWEEN ? AND ?
             
             UNION ALL
             
@@ -352,9 +376,10 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 COUNT(CASE WHEN tipo = 'ingreso' THEN 1 END) as cantidad_ingresos,
                 COUNT(CASE WHEN tipo = 'gasto' THEN 1 END) as cantidad_gastos
             FROM movimientos_caja
-            WHERE DATE(created_at) BETWEEN ? AND ?";
+            WHERE hotel_id = ?
+            AND DATE(created_at) BETWEEN ? AND ?";
     
-    $stmt = $db->query($sql, [$fecha_inicio_actual, $fecha_fin_actual, $fecha_inicio_anterior, $fecha_fin_anterior]);
+    $stmt = $db->query($sql, [$hotel_id, $fecha_inicio_actual, $fecha_fin_actual, $hotel_id, $fecha_inicio_anterior, $fecha_fin_anterior]);
     $results = $stmt->fetchAll();
     
     $comparacion = [];
@@ -664,6 +689,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerResumenDiario($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 DATE(created_at) as fecha,
@@ -671,11 +697,12 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as gastos,
                 SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) as utilidad
                 FROM movimientos_caja
-                WHERE DATE(created_at) BETWEEN ? AND ?
+                WHERE hotel_id = ?
+                AND DATE(created_at) BETWEEN ? AND ?
                 GROUP BY DATE(created_at)
                 ORDER BY fecha";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetchAll();
     }
     
@@ -684,6 +711,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerResumenPorCategoria($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 cm.nombre as categoria,
@@ -693,11 +721,12 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 AVG(mc.monto) as promedio
                 FROM movimientos_caja mc
                 LEFT JOIN categorias_movimientos cm ON mc.categoria_id = cm.id
-                WHERE DATE(mc.created_at) BETWEEN ? AND ?
+                WHERE mc.hotel_id = ?
+                AND DATE(mc.created_at) BETWEEN ? AND ?
                 GROUP BY cm.id, cm.nombre, cm.tipo
                 ORDER BY cm.tipo, total DESC";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetchAll();
     }
     
@@ -1195,17 +1224,19 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerDatosGraficaIngresosGastos($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 DATE(created_at) as fecha,
                 SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as ingresos,
                 SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END) as gastos
                 FROM movimientos_caja
-                WHERE DATE(created_at) BETWEEN ? AND ?
+                WHERE hotel_id = ?
+                AND DATE(created_at) BETWEEN ? AND ?
                 GROUP BY DATE(created_at)
                 ORDER BY fecha";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         $datos = $stmt->fetchAll();
         
         return [
