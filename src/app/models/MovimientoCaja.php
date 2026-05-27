@@ -4,9 +4,12 @@
  * Los Cedros
  */
 
+require_once __DIR__ . '/../helpers/hotel_config.php';
+
 class MovimientoCaja extends Model {
     protected $table = 'movimientos_caja';
     protected $fillable = [
+        'hotel_id',
         'tipo',
         'categoria',
         'categoria_id',
@@ -20,6 +23,23 @@ class MovimientoCaja extends Model {
         'usuario_id',
         'corte_id'
     ];
+
+    private function hotelIdActual() {
+        return obtenerHotelIdActualCompat();
+    }
+
+    public function obtenerPorId($id, $hotel_id = null) {
+        $hotel_id = $hotel_id ?: $this->hotelIdActual();
+
+        $sql = "SELECT *
+                FROM {$this->table}
+                WHERE id = ?
+                AND hotel_id = ?
+                LIMIT 1";
+
+        $stmt = $this->db->query($sql, [$id, $hotel_id]);
+        return $stmt ? $stmt->fetch() : false;
+    }
     
     /**
      * Tipos de movimiento
@@ -50,6 +70,7 @@ class MovimientoCaja extends Model {
  */
 public function registrarMovimiento($data) {
     $db = Database::getInstance();
+    $hotel_id = $this->hotelIdActual();
     
     try {
         // Obtener corte actual
@@ -59,10 +80,15 @@ public function registrarMovimiento($data) {
         if (!$corteActual) {
             return ['success' => false, 'message' => 'No hay una caja abierta'];
         }
+
+        if ((int)($corteActual['hotel_id'] ?? 0) !== $hotel_id) {
+            return ['success' => false, 'message' => 'El corte abierto no pertenece al hotel actual'];
+        }
         
         // Agregar corte_id y usuario_id
         $data['corte_id'] = $corteActual['id'];
         $data['usuario_id'] = $_SESSION['user_id'] ?? null;
+        $data['hotel_id'] = $hotel_id;
         
         // Si no hay usuario_id, intentar obtenerlo de otra forma
         if (!$data['usuario_id']) {
@@ -91,15 +117,29 @@ public function registrarMovimiento($data) {
         if (empty($data['monto']) || $data['monto'] <= 0) {
             return ['success' => false, 'message' => 'El monto debe ser mayor a 0'];
         }
+
+        if (!empty($data['reservacion_id'])) {
+            $sql = "SELECT id
+                    FROM reservaciones
+                    WHERE id = ?
+                    AND hotel_id = ?
+                    LIMIT 1";
+            $stmt = $db->query($sql, [$data['reservacion_id'], $hotel_id]);
+
+            if (!$stmt || !$stmt->fetch()) {
+                return ['success' => false, 'message' => 'Reservacion no encontrada para el hotel actual'];
+            }
+        }
         
         // Crear el movimiento
         $sql = "INSERT INTO movimientos_caja 
-                (tipo, categoria, categoria_id, descripcion, monto, metodo_pago, 
+                (hotel_id, tipo, categoria, categoria_id, descripcion, monto, metodo_pago,
                  referencia, comprobante, proveedor, reservacion_id, usuario_id, 
                  corte_id, created_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
         
         $params = [
+            $data['hotel_id'],
             $data['tipo'],
             $data['categoria'] ?? null,
             $data['categoria_id'] ?? null,
@@ -149,6 +189,7 @@ public function registrarMovimiento($data) {
      */
     public function obtenerMovimientosDetallados($filtros = []) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
         mc.*,
@@ -166,13 +207,15 @@ public function registrarMovimiento($data) {
         FROM {$this->table} mc
         LEFT JOIN categorias_movimientos cm ON mc.categoria_id = cm.id
         LEFT JOIN usuarios u ON mc.usuario_id = u.id
-        LEFT JOIN reservaciones r ON mc.reservacion_id = r.id
+        LEFT JOIN reservaciones r ON mc.reservacion_id = r.id AND r.hotel_id = mc.hotel_id
         LEFT JOIN huespedes h ON r.huesped_id = h.id
-        LEFT JOIN reservacion_habitaciones rh ON mc.reservacion_id = rh.reservacion_id
-        LEFT JOIN habitaciones hab ON rh.habitacion_id = hab.id
-        WHERE 1=1";
+        LEFT JOIN reservacion_habitaciones rh
+            ON mc.reservacion_id = rh.reservacion_id AND rh.hotel_id = mc.hotel_id
+        LEFT JOIN habitaciones hab
+            ON rh.habitacion_id = hab.id AND hab.hotel_id = mc.hotel_id
+        WHERE mc.hotel_id = ?";
         
-        $params = [];
+        $params = [$hotel_id];
         
         // Aplicar filtros
         if (!empty($filtros['corte_id'])) {
@@ -236,20 +279,24 @@ $sql .= " ORDER BY mc.created_at $orden";
      */
     public function editarMovimiento($id, $data, $motivo, $usuario_id) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         try {
             $db->beginTransaction();
             
             // Obtener movimiento original
-            $movimientoOriginal = $this->find($id);
+            $movimientoOriginal = $this->obtenerPorId($id, $hotel_id);
             
             if (!$movimientoOriginal) {
                 throw new Exception("Movimiento no encontrado");
             }
             
             // Verificar que el corte esté abierto
-            $sql = "SELECT estado FROM cortes_caja WHERE id = ?";
-            $stmt = $db->query($sql, [$movimientoOriginal['corte_id']]);
+            $sql = "SELECT estado
+                    FROM cortes_caja
+                    WHERE id = ?
+                    AND hotel_id = ?";
+            $stmt = $db->query($sql, [$movimientoOriginal['corte_id'], $hotel_id]);
             $corte = $stmt->fetch();
             
             if (!$corte || $corte['estado'] != 'abierto') {
@@ -262,7 +309,40 @@ $sql .= " ORDER BY mc.created_at $orden";
             $data['usuario_edicion_id'] = $usuario_id;
             $data['fecha_edicion'] = date('Y-m-d H:i:s');
             
-            $resultado = $this->update($id, $data);
+            $camposPermitidos = [
+                'descripcion',
+                'monto',
+                'metodo_pago',
+                'referencia',
+                'editado',
+                'motivo_edicion',
+                'usuario_edicion_id',
+                'fecha_edicion'
+            ];
+            $data = array_intersect_key($data, array_flip($camposPermitidos));
+
+            $fields = [];
+            $params = [];
+
+            foreach ($data as $campo => $valor) {
+                $fields[] = "{$campo} = ?";
+                $params[] = $valor;
+            }
+
+            if (empty($fields)) {
+                throw new Exception("No hay datos para actualizar");
+            }
+
+            $params[] = $id;
+            $params[] = $hotel_id;
+
+            $sql = "UPDATE {$this->table}
+                    SET " . implode(', ', $fields) . "
+                    WHERE id = ?
+                    AND hotel_id = ?";
+
+            $stmt = $db->query($sql, $params);
+            $resultado = $stmt && $stmt->rowCount() > 0 ? $this->obtenerPorId($id, $hotel_id) : false;
             
             if ($resultado) {
                 // Registrar en log
@@ -411,6 +491,7 @@ $sql .= " ORDER BY mc.created_at $orden";
      */
     public function obtenerUltimosMovimientos($limite = 10) {
     $db = Database::getInstance();
+    $hotel_id = $this->hotelIdActual();
     
     $sql = "SELECT 
         mc.*,
@@ -426,13 +507,16 @@ $sql .= " ORDER BY mc.created_at $orden";
         FROM movimientos_caja mc
         LEFT JOIN categorias_movimientos cm ON mc.categoria_id = cm.id
         LEFT JOIN usuarios u ON mc.usuario_id = u.id
-        LEFT JOIN reservacion_habitaciones rh ON mc.reservacion_id = rh.reservacion_id
-        LEFT JOIN habitaciones hab ON rh.habitacion_id = hab.id
+        LEFT JOIN reservacion_habitaciones rh
+            ON mc.reservacion_id = rh.reservacion_id AND rh.hotel_id = mc.hotel_id
+        LEFT JOIN habitaciones hab
+            ON rh.habitacion_id = hab.id AND hab.hotel_id = mc.hotel_id
+        WHERE mc.hotel_id = ?
         GROUP BY mc.id
         ORDER BY mc.created_at DESC
         LIMIT ?";
     
-    $stmt = $db->query($sql, [$limite]);
+    $stmt = $db->query($sql, [$hotel_id, $limite]);
     $movimientos = $stmt->fetchAll();
     
     // Normalizar tipo para la vista

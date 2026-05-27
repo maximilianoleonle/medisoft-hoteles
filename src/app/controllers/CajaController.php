@@ -380,6 +380,12 @@ public function cerrarCorteAction() {
     $corte_id = intval($this->getPost('corte_id'));
     $efectivo_contado = floatval($this->getPost('efectivo_contado'));
     $observaciones = trim($this->getPost('observaciones'));
+
+    if (!$this->cajaModel->obtenerCortePorId($corte_id)) {
+        set_mensaje('Corte no encontrado para el hotel actual', 'error');
+        $this->redirect('caja/corte');
+        return;
+    }
     
     // Guardar denominaciones si se proporcionaron
     $denominaciones = $this->getPost('denominaciones', []);
@@ -554,7 +560,7 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
         $this->requireAjax();
         
         $id = intval($this->getQuery('id'));
-        $movimiento = $this->movimientoModel->find($id);
+        $movimiento = $this->movimientoModel->obtenerPorId($id);
         
         if ($movimiento) {
             $this->jsonResponse(['success' => true, 'data' => $movimiento]);

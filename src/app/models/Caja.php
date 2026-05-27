@@ -4,23 +4,63 @@
  * Hotel San Nicolás
  */
 
+require_once __DIR__ . '/../helpers/hotel_config.php';
+
 class Caja extends Model {
     protected $table = 'cajas';
     protected $fillable = [
+        'hotel_id',
         'nombre',
         'ubicacion',
         'monto_inicial',
         'activa'
     ];
+
+    private function hotelIdActual() {
+        return obtenerHotelIdActualCompat();
+    }
+
+    private function obtenerCajaPorId($caja_id, $hotel_id = null) {
+        $hotel_id = $hotel_id ?: $this->hotelIdActual();
+
+        $sql = "SELECT *
+                FROM cajas
+                WHERE id = ?
+                AND hotel_id = ?
+                AND activa = 1
+                LIMIT 1";
+
+        $stmt = $this->db->query($sql, [$caja_id, $hotel_id]);
+        return $stmt ? $stmt->fetch() : false;
+    }
+
+    public function obtenerCortePorId($corte_id, $hotel_id = null) {
+        $hotel_id = $hotel_id ?: $this->hotelIdActual();
+
+        $sql = "SELECT cc.*
+                FROM cortes_caja cc
+                INNER JOIN cajas c ON cc.caja_id = c.id AND c.hotel_id = cc.hotel_id
+                WHERE cc.id = ?
+                AND cc.hotel_id = ?
+                LIMIT 1";
+
+        $stmt = $this->db->query($sql, [$corte_id, $hotel_id]);
+        return $stmt ? $stmt->fetch() : false;
+    }
     
     /**
      * Obtener caja activa principal
      */
     public function obtenerCajaPrincipal() {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
-        $sql = "SELECT * FROM cajas WHERE activa = 1 LIMIT 1";
-        $stmt = $db->query($sql);
+        $sql = "SELECT *
+                FROM cajas
+                WHERE hotel_id = ?
+                AND activa = 1
+                LIMIT 1";
+        $stmt = $db->query($sql, [$hotel_id]);
         
         return $stmt->fetch();
     }
@@ -37,11 +77,19 @@ class Caja extends Model {
         }
         
         if (!$caja_id) return false;
+
+        $hotel_id = $this->hotelIdActual();
+
+        if (!$this->obtenerCajaPorId($caja_id, $hotel_id)) {
+            return false;
+        }
         
         $sql = "SELECT COUNT(*) as total FROM cortes_caja 
-                WHERE caja_id = ? AND estado = 'abierto'";
+                WHERE caja_id = ?
+                AND hotel_id = ?
+                AND estado = 'abierto'";
         
-        $stmt = $db->query($sql, [$caja_id]);
+        $stmt = $db->query($sql, [$caja_id, $hotel_id]);
         $result = $stmt->fetch();
         
         return $result['total'] > 0;
@@ -59,14 +107,23 @@ class Caja extends Model {
         }
         
         if (!$caja_id) return null;
+
+        $hotel_id = $this->hotelIdActual();
+
+        if (!$this->obtenerCajaPorId($caja_id, $hotel_id)) {
+            return null;
+        }
         
         $sql = "SELECT cc.*, u.nombre_completo as usuario_apertura
                 FROM cortes_caja cc
+                INNER JOIN cajas c ON cc.caja_id = c.id AND c.hotel_id = cc.hotel_id
                 LEFT JOIN usuarios u ON cc.usuario_apertura_id = u.id
-                WHERE cc.caja_id = ? AND cc.estado = 'abierto'
+                WHERE cc.caja_id = ?
+                AND cc.hotel_id = ?
+                AND cc.estado = 'abierto'
                 ORDER BY cc.id DESC LIMIT 1";
         
-        $stmt = $db->query($sql, [$caja_id]);
+        $stmt = $db->query($sql, [$caja_id, $hotel_id]);
         return $stmt->fetch();
     }
     
@@ -75,6 +132,11 @@ class Caja extends Model {
      */
     public function abrirCaja($caja_id, $monto_inicial, $usuario_id) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
+
+        if (!$this->obtenerCajaPorId($caja_id, $hotel_id)) {
+            return ['success' => false, 'message' => 'Caja no encontrada para el hotel actual'];
+        }
         
         // Verificar que no haya un corte abierto
         if ($this->tieneCorteAbierto($caja_id)) {
@@ -83,10 +145,10 @@ class Caja extends Model {
         
         // Crear nuevo corte
         $sql = "INSERT INTO cortes_caja 
-                (caja_id, fecha_apertura, monto_inicial, usuario_apertura_id, estado) 
-                VALUES (?, NOW(), ?, ?, 'abierto')";
+                (hotel_id, caja_id, fecha_apertura, monto_inicial, usuario_apertura_id, estado)
+                VALUES (?, ?, NOW(), ?, ?, 'abierto')";
         
-        $stmt = $db->query($sql, [$caja_id, $monto_inicial, $usuario_id]);
+        $stmt = $db->query($sql, [$hotel_id, $caja_id, $monto_inicial, $usuario_id]);
         
         if ($stmt) {
             $corte_id = $db->lastInsertId();
@@ -105,12 +167,16 @@ class Caja extends Model {
      */
    public function obtenerResumenCaja($corte_id = null) {
     $db = Database::getInstance();
+    $hotel_id = $this->hotelIdActual();
     
     if (!$corte_id) {
         $corteActual = $this->obtenerCorteActual();
         if (!$corteActual) return null;
         $corte_id = $corteActual['id'];
     }
+
+    $corte = $this->obtenerCortePorId($corte_id, $hotel_id);
+    if (!$corte) return null;
     
     // Obtener TODOS los movimientos del corte
     $sql = "SELECT 
@@ -121,9 +187,10 @@ class Caja extends Model {
             COUNT(*) as cantidad
             FROM movimientos_caja 
             WHERE corte_id = ?
+            AND hotel_id = ?
             GROUP BY tipo, metodo_pago, categoria";
     
-    $stmt = $db->query($sql, [$corte_id]);
+    $stmt = $db->query($sql, [$corte_id, $hotel_id]);
     $movimientos = $stmt->fetchAll();
     
     // Inicializar totales
@@ -168,8 +235,11 @@ class Caja extends Model {
     }
     
     // Obtener monto inicial del corte
-    $sql = "SELECT monto_inicial FROM cortes_caja WHERE id = ?";
-    $stmt = $db->query($sql, [$corte_id]);
+    $sql = "SELECT monto_inicial
+            FROM cortes_caja
+            WHERE id = ?
+            AND hotel_id = ?";
+    $stmt = $db->query($sql, [$corte_id, $hotel_id]);
     $corte = $stmt->fetch();
     
     $resumen['monto_inicial'] = floatval($corte['monto_inicial'] ?? 0);
@@ -200,6 +270,11 @@ class Caja extends Model {
      */
    public function obtenerMovimientosPorCategoria($corte_id, $tipo = null) {
     $db = Database::getInstance();
+    $hotel_id = $this->hotelIdActual();
+
+    if (!$this->obtenerCortePorId($corte_id, $hotel_id)) {
+        return [];
+    }
     
     $sql = "SELECT 
             cm.nombre as categoria,
@@ -209,9 +284,10 @@ class Caja extends Model {
             SUM(mc.monto) as total
             FROM movimientos_caja mc
             LEFT JOIN categorias_movimientos cm ON mc.categoria_id = cm.id
-            WHERE mc.corte_id = ?";
+            WHERE mc.corte_id = ?
+            AND mc.hotel_id = ?";
     
-    $params = [$corte_id];
+    $params = [$corte_id, $hotel_id];
     
     if ($tipo) {
         // Si se especifica 'gasto', incluir también 'egreso'
@@ -235,6 +311,7 @@ class Caja extends Model {
      */
     public function cerrarCaja($corte_id, $efectivo_contado, $observaciones, $usuario_cierre_id) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         try {
             // Obtener resumen actual
@@ -263,7 +340,9 @@ class Caja extends Model {
                     estado = 'cerrado',
                     observaciones = ?,
                     usuario_cierre_id = ?
-                    WHERE id = ?";
+                    WHERE id = ?
+                    AND hotel_id = ?
+                    AND estado = 'abierto'";
             
             $params = [
                 $resumen['ingresos']['efectivo']['total'],
@@ -277,12 +356,13 @@ class Caja extends Model {
                 $diferencia,
                 $observaciones,
                 $usuario_cierre_id,
-                $corte_id
+                $corte_id,
+                $hotel_id
             ];
             
             $result = $db->query($sql, $params);
             
-            if ($result) {
+            if ($result && $result->rowCount() > 0) {
                 return [
                     'success' => true,
                     'diferencia' => $diferencia,
@@ -303,6 +383,7 @@ class Caja extends Model {
      */
     public function obtenerHistorialCortes($caja_id = null, $limite = 30) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 cc.*,
@@ -312,14 +393,15 @@ class Caja extends Model {
                 (cc.total_ingresos_efectivo + cc.total_ingresos_tarjeta + cc.total_ingresos_transferencia) as total_ingresos,
                 (cc.total_gastos_efectivo + cc.total_gastos_tarjeta + cc.total_gastos_transferencia) as total_gastos
                 FROM cortes_caja cc
-                INNER JOIN cajas c ON cc.caja_id = c.id
+                INNER JOIN cajas c ON cc.caja_id = c.id AND c.hotel_id = cc.hotel_id
                 LEFT JOIN usuarios ua ON cc.usuario_apertura_id = ua.id
-                LEFT JOIN usuarios uc ON cc.usuario_cierre_id = uc.id";
+                LEFT JOIN usuarios uc ON cc.usuario_cierre_id = uc.id
+                WHERE cc.hotel_id = ?";
         
-        $params = [];
+        $params = [$hotel_id];
         
         if ($caja_id) {
-            $sql .= " WHERE cc.caja_id = ?";
+            $sql .= " AND cc.caja_id = ?";
             $params[] = $caja_id;
         }
         
