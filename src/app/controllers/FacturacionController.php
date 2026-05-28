@@ -44,10 +44,14 @@ class FacturacionController extends Controller {
         $fecha_hasta = $this->getQuery('fecha_hasta', '');
         $pagina = max(1, intval($this->getQuery('page', 1)));
         $por_pagina = 20;
+        $hotel_id = obtenerHotelIdActualCompat();
         
         // Construir query
-        $where = [];
-        $params = [];
+        $where = [
+            "sf.hotel_id = ?",
+            "r.hotel_id = ?"
+        ];
+        $params = [$hotel_id, $hotel_id];
         
         if ($filtro_tipo) {
             $where[] = "sf.tipo = ?";
@@ -81,7 +85,9 @@ class FacturacionController extends Controller {
         // Contar total
         $sql_count = "SELECT COUNT(*) as total 
                       FROM solicitudes_factura sf
-                      INNER JOIN reservaciones r ON sf.reservacion_id = r.id
+                      INNER JOIN reservaciones r
+                          ON sf.reservacion_id = r.id
+                          AND sf.hotel_id = r.hotel_id
                       INNER JOIN huespedes h ON r.huesped_id = h.id
                       {$where_sql}";
         $stmt = $this->db->prepare($sql_count);
@@ -103,7 +109,9 @@ class FacturacionController extends Controller {
                        h.email as huesped_email,
                        u.nombre_completo as registrado_por
                 FROM solicitudes_factura sf
-                INNER JOIN reservaciones r ON sf.reservacion_id = r.id
+                INNER JOIN reservaciones r
+                    ON sf.reservacion_id = r.id
+                    AND sf.hotel_id = r.hotel_id
                 INNER JOIN huespedes h ON r.huesped_id = h.id
                 LEFT JOIN usuarios u ON sf.usuario_registro_id = u.id
                 {$where_sql}
