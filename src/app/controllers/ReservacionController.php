@@ -2698,6 +2698,8 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
     $this->validateCSRF();
     
     try {
+        $hotel_id = obtenerHotelIdActualCompat();
+
         // Obtener la razón de cancelación
         $razon = trim($this->getPost('razon_cancelacion', ''));
         
@@ -2706,10 +2708,12 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
         }
         
         // Obtener información de la reservación antes de cancelar
-        $reservacion = $this->reservacionModel->find($id);
+        $reservacion = $this->reservacionModel->obtenerPorId($id);
         
-        if (!$reservacion) {
-            throw new Exception("Reservación no encontrada");
+        if (!$reservacion || (int)($reservacion['hotel_id'] ?? 0) !== (int)$hotel_id) {
+            set_mensaje('Reservación no encontrada', 'error');
+            $this->redirect('reservaciones');
+            return;
         }
         
         // Verificar que la reservación pueda ser cancelada
@@ -2724,7 +2728,7 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
         // Si hay un pago registrado, verificar que haya caja abierta
         if ($reservacion['estado'] == 'checked_in' && !empty($reservacion['metodo_pago'])) {
             $corteActual = $this->cajaModel->obtenerCorteActual();
-            if (!$corteActual) {
+            if (!$corteActual || (int)($corteActual['hotel_id'] ?? 0) !== (int)$hotel_id) {
                 set_mensaje('No se puede cancelar la reservación. Debe abrir la caja primero para procesar la devolución.', 'error');
                 $this->redirect('reservaciones/ver/' . $id);
                 return;
@@ -2735,9 +2739,9 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
             // para que la contabilidad quede correcta por fecha.
             $stmt_check = $this->db->prepare(
                 "SELECT COUNT(*) FROM movimientos_caja
-                 WHERE reservacion_id = ? AND tipo = 'ingreso' AND corte_id != ?"
+                 WHERE reservacion_id = ? AND hotel_id = ? AND tipo = 'ingreso' AND corte_id != ?"
             );
-            $stmt_check->execute([$id, $corteActual['id']]);
+            $stmt_check->execute([$id, $hotel_id, $corteActual['id']]);
             $pagos_en_corte_cerrado = (int) $stmt_check->fetchColumn();
 
             if ($pagos_en_corte_cerrado > 0) {
