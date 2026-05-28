@@ -422,6 +422,7 @@ $sql .= " ORDER BY mc.created_at $orden";
      */
     public function obtenerParaExportar($corte_id) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 mc.created_at as 'Fecha y Hora',
@@ -436,12 +437,15 @@ $sql .= " ORDER BY mc.created_at $orden";
                 u.nombre_completo as 'Registrado por',
                 CASE WHEN mc.reservacion_id IS NOT NULL THEN CONCAT('Reserva #', mc.reservacion_id) ELSE '' END as 'Reservación'
                 FROM {$this->table} mc
+                INNER JOIN cortes_caja cc ON mc.corte_id = cc.id AND cc.hotel_id = mc.hotel_id
                 LEFT JOIN categorias_movimientos cm ON mc.categoria_id = cm.id
                 LEFT JOIN usuarios u ON mc.usuario_id = u.id
-                WHERE mc.corte_id = ?
+                WHERE cc.id = ?
+                AND cc.hotel_id = ?
+                AND mc.hotel_id = ?
                 ORDER BY mc.created_at";
         
-        $stmt = $db->query($sql, [$corte_id]);
+        $stmt = $db->query($sql, [$corte_id, $hotel_id, $hotel_id]);
         return $stmt->fetchAll();
     }
     

@@ -494,6 +494,7 @@ class Caja extends Model {
      */
     public function obtenerIngresosPorTipoHabitacion($corte_id) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         // Movimientos de ingreso con reservación
         $sql = "SELECT 
@@ -503,24 +504,30 @@ class Caja extends Model {
                     mc.reservacion_id,
                     h.nombre_completo as huesped_nombre
                 FROM movimientos_caja mc
-                INNER JOIN reservaciones r ON mc.reservacion_id = r.id
+                INNER JOIN cortes_caja cc ON mc.corte_id = cc.id AND cc.hotel_id = mc.hotel_id
+                INNER JOIN reservaciones r ON mc.reservacion_id = r.id AND r.hotel_id = mc.hotel_id
                 LEFT JOIN huespedes h ON r.huesped_id = h.id
                 WHERE mc.corte_id = ?
+                AND cc.hotel_id = ?
+                AND mc.hotel_id = ?
                 AND mc.tipo = 'ingreso'
                 AND mc.reservacion_id IS NOT NULL
                 ORDER BY mc.created_at";
         
-        $stmt = $db->query($sql, [$corte_id]);
+        $stmt = $db->query($sql, [$corte_id, $hotel_id, $hotel_id]);
         $registros = $stmt->fetchAll();
         
         // Ingresos SIN reservación
         $sqlOtros = "SELECT mc.metodo_pago, SUM(mc.monto) as total
                      FROM movimientos_caja mc
+                     INNER JOIN cortes_caja cc ON mc.corte_id = cc.id AND cc.hotel_id = mc.hotel_id
                      WHERE mc.corte_id = ?
+                     AND cc.hotel_id = ?
+                     AND mc.hotel_id = ?
                      AND mc.tipo = 'ingreso'
                      AND (mc.reservacion_id IS NULL OR mc.reservacion_id = 0)
                      GROUP BY mc.metodo_pago";
-        $stmtOtros = $db->query($sqlOtros, [$corte_id]);
+        $stmtOtros = $db->query($sqlOtros, [$corte_id, $hotel_id, $hotel_id]);
         $otros = $stmtOtros->fetchAll();
         
         $resultado = [
@@ -544,9 +551,10 @@ class Caja extends Model {
             // Obtener habitaciones de esta reservación con su precio y tipo
             $sqlHabs = "SELECT hab.numero, hab.tipo, hab.precio_base
                         FROM reservacion_habitaciones rh
-                        INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id
-                        WHERE rh.reservacion_id = ?";
-            $stmtHabs = $db->query($sqlHabs, [$resId]);
+                        INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = rh.hotel_id
+                        WHERE rh.reservacion_id = ?
+                        AND rh.hotel_id = ?";
+            $stmtHabs = $db->query($sqlHabs, [$resId, $hotel_id]);
             $habitaciones = $stmtHabs->fetchAll();
             
             // Calcular precio total y separar por propiedad
