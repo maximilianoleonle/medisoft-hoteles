@@ -703,8 +703,9 @@ public function testDatosAction() {
      * Obtener ingresos por propiedad (MANOLO vs ELIA) para un rango de fechas
      * Reparte proporcionalmente cuando hay habitaciones mixtas
      */
-public function obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, $usuario_id = null) {
+public function obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, $usuario_id = null, $hotel_id = null) {
     $db = Database::getInstance();
+    $hotel_id = $hotel_id ?? $this->hotelIdActual();
     
     $sql = "SELECT 
                 mc.id as movimiento_id,
@@ -713,11 +714,14 @@ public function obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, $usuario_
                 mc.reservacion_id,
                 mc.created_at
             FROM movimientos_caja mc
-            WHERE mc.tipo = 'ingreso'
+            INNER JOIN reservaciones r ON mc.reservacion_id = r.id
+                AND r.hotel_id = mc.hotel_id
+            WHERE mc.hotel_id = ?
+            AND mc.tipo = 'ingreso'
             AND mc.reservacion_id IS NOT NULL
             AND DATE(mc.created_at) BETWEEN ? AND ?";
     
-    $params = [$fecha_inicio, $fecha_fin];
+    $params = [$hotel_id, $fecha_inicio, $fecha_fin];
     
     if ($usuario_id) {
         $sql .= " AND mc.usuario_id = ?";
@@ -744,9 +748,13 @@ public function obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, $usuario_
         // Obtener habitaciones de la reservación
         $sqlHabs = "SELECT hab.tipo, hab.precio_base
                     FROM reservacion_habitaciones rh
+                    INNER JOIN reservaciones r ON rh.reservacion_id = r.id
+                        AND rh.hotel_id = r.hotel_id
                     INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id
-                    WHERE rh.reservacion_id = ?";
-        $stmtHabs = $db->query($sqlHabs, [$resId]);
+                        AND hab.hotel_id = rh.hotel_id
+                    WHERE rh.reservacion_id = ?
+                    AND r.hotel_id = ?";
+        $stmtHabs = $db->query($sqlHabs, [$resId, $hotel_id]);
         $habitaciones = $stmtHabs->fetchAll();
         
         $precioManolo = 0;
@@ -939,6 +947,7 @@ private function exportarIngresosGastosPdf() {
     
     $fecha_inicio = $this->getQuery('fecha_inicio', date('Y-m-01'));
     $fecha_fin = $this->getQuery('fecha_fin', date('Y-m-d'));
+    $hotel_id = $this->hotelIdActual();
     
     $reporteModel = new Reporte();
     $datos = $reporteModel->getIngresosVsGastos($fecha_inicio, $fecha_fin);
@@ -1106,7 +1115,7 @@ private function exportarIngresosGastosPdf() {
     // ═══════════════════════════════════════════
     // ═══ SECCIÓN MANOLO vs ELIA ═══
     // ═══════════════════════════════════════════
-    $propiedades = $this->obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin);
+    $propiedades = $this->obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, null, $hotel_id);
     $this->generarSeccionPropiedadesPDF($pdf, $propiedades);
     
     // ── FOOTER ──
