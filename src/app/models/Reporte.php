@@ -1253,6 +1253,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerEvolucionEstados($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 DATE_FORMAT(r.fecha_entrada, '%Y-%m') as mes,
@@ -1260,12 +1261,13 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 COUNT(DISTINCT r.id) as total_reservaciones
                 FROM reservaciones r
                 INNER JOIN huespedes h ON r.huesped_id = h.id
-                WHERE DATE(r.fecha_entrada) BETWEEN ? AND ?
+                WHERE r.hotel_id = ?
+                AND DATE(r.fecha_entrada) BETWEEN ? AND ?
                 AND r.estado NOT IN ('cancelada', 'no_show')
                 GROUP BY mes, h.procedencia_estado
                 ORDER BY mes, total_reservaciones DESC";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetchAll();
     }
     
