@@ -39,6 +39,7 @@ class Reporte extends Model {
      */
     public function obtenerIngresosGastos($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         // Ingresos
         $sqlIngresos = "SELECT 
@@ -48,11 +49,12 @@ class Reporte extends Model {
                         FROM movimientos_caja mc
                         LEFT JOIN categorias_movimientos cm ON mc.categoria_id = cm.id
                         WHERE mc.tipo = 'ingreso'
+                        AND mc.hotel_id = ?
                         AND DATE(mc.created_at) BETWEEN ? AND ?
                         GROUP BY cm.id, cm.nombre
                         ORDER BY total DESC";
         
-        $stmtIngresos = $db->query($sqlIngresos, [$fecha_inicio, $fecha_fin]);
+        $stmtIngresos = $db->query($sqlIngresos, [$hotel_id, $fecha_inicio, $fecha_fin]);
         $ingresos = $stmtIngresos->fetchAll();
         
         // Gastos
@@ -63,11 +65,12 @@ class Reporte extends Model {
                       FROM movimientos_caja mc
                       LEFT JOIN categorias_movimientos cm ON mc.categoria_id = cm.id
                       WHERE mc.tipo = 'gasto'
+                      AND mc.hotel_id = ?
                       AND DATE(mc.created_at) BETWEEN ? AND ?
                       GROUP BY cm.id, cm.nombre
                       ORDER BY total DESC";
         
-        $stmtGastos = $db->query($sqlGastos, [$fecha_inicio, $fecha_fin]);
+        $stmtGastos = $db->query($sqlGastos, [$hotel_id, $fecha_inicio, $fecha_fin]);
         $gastos = $stmtGastos->fetchAll();
         
         return [
