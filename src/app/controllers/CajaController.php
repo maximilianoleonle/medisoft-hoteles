@@ -577,9 +577,17 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
     public function exportarAction() {
         $formato = $this->getQuery('formato', 'excel');
         $corte_id = intval($this->getQuery('corte_id'));
+        $hotel_id = obtenerHotelIdActualCompat();
         
         if (!$corte_id) {
             set_mensaje('Corte no especificado', 'error');
+            $this->redirect('caja/movimientos');
+            return;
+        }
+
+        $corte = $this->cajaModel->obtenerCortePorId($corte_id, $hotel_id);
+        if (!$corte) {
+            set_mensaje('Corte no encontrado para el hotel actual', 'error');
             $this->redirect('caja/movimientos');
             return;
         }
