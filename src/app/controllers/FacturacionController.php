@@ -220,6 +220,15 @@ class FacturacionController extends Controller {
         }
         
         try {
+            $hotel_id = obtenerHotelIdActualCompat();
+            $solicitud = $this->obtenerSolicitudCompleta($id);
+
+            if (!$solicitud || (int)($solicitud['hotel_id'] ?? 0) !== (int)$hotel_id) {
+                set_mensaje('Solicitud de factura no encontrada', 'error');
+                $this->redirect('facturacion');
+                return;
+            }
+
             $datos = [
                 'rfc' => strtoupper(trim($this->getPost('rfc', ''))),
                 'razon_social' => trim($this->getPost('razon_social', '')),
