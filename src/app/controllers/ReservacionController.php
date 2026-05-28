@@ -1008,6 +1008,8 @@ public function obtenerNotasAction() {
             throw new Exception('Formato de fecha inválido');
         }
         
+        $hotel_id = obtenerHotelIdActualCompat();
+
         $fecha_formateada = date('d/m/Y', strtotime($fecha));
         
         // Fecha bonita en español
@@ -1019,14 +1021,15 @@ public function obtenerNotasAction() {
         // Obtener todas las habitaciones — numéricas primero, luego colores
         $sql = "SELECT id, numero, tipo, precio_base 
                 FROM habitaciones 
-                WHERE activa = 1 
+                WHERE hotel_id = ?
+                AND activa = 1
                 ORDER BY 
                     CASE WHEN numero REGEXP '^[0-9]+$' THEN 0 ELSE 1 END,
                     CASE WHEN numero REGEXP '^[0-9]+$' THEN CAST(numero AS UNSIGNED) ELSE 0 END,
                     numero";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->execute();
+        $stmt->execute([$hotel_id]);
         $habitaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Obtener reservaciones activas (NO incluir día de check-out)
@@ -1038,14 +1041,15 @@ public function obtenerNotasAction() {
                 GROUP_CONCAT(hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones_numeros
             FROM reservaciones r
             INNER JOIN huespedes h ON r.huesped_id = h.id
-            LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-            LEFT JOIN habitaciones hab ON rh.habitacion_id = hab.id
-            WHERE ? >= r.fecha_entrada AND ? < r.fecha_salida
+            LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+            LEFT JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = rh.hotel_id
+            WHERE r.hotel_id = ?
+            AND ? >= r.fecha_entrada AND ? < r.fecha_salida
             AND r.estado NOT IN ('cancelada', 'completada')
             GROUP BY r.id";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$fecha, $fecha]);
+        $stmt->execute([$hotel_id, $fecha, $fecha]);
         $reservaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Vehículos
@@ -1069,8 +1073,8 @@ public function obtenerNotasAction() {
             if (!empty($res_ids)) {
                 $placeholders = str_repeat('?,', count($res_ids) - 1) . '?';
                 try {
-                    $stmt = $this->db->prepare("SELECT reservacion_id FROM solicitudes_factura WHERE reservacion_id IN ($placeholders) AND requiere_factura = 'si'");
-                    $stmt->execute(array_values($res_ids));
+                    $stmt = $this->db->prepare("SELECT reservacion_id FROM solicitudes_factura WHERE reservacion_id IN ($placeholders) AND hotel_id = ? AND requiere_factura = 'si'");
+                    $stmt->execute(array_merge(array_values($res_ids), [$hotel_id]));
                     while ($f = $stmt->fetch(PDO::FETCH_ASSOC)) {
                         $facturas_por_reservacion[$f['reservacion_id']] = true;
                     }
@@ -1082,8 +1086,8 @@ public function obtenerNotasAction() {
         $ocupacion_por_habitacion = [];
         foreach ($reservaciones as $r) {
             if (!empty($r['habitaciones_ids'])) {
-                $stmt2 = $this->db->prepare("SELECT rh.habitacion_id, rh.precio, rh.es_cortesia FROM reservacion_habitaciones rh WHERE rh.reservacion_id = ?");
-                $stmt2->execute([$r['id']]);
+                $stmt2 = $this->db->prepare("SELECT rh.habitacion_id, rh.precio, rh.es_cortesia FROM reservacion_habitaciones rh WHERE rh.reservacion_id = ? AND rh.hotel_id = ?");
+                $stmt2->execute([$r['id'], $hotel_id]);
                 $precios_hab = [];
                 while ($ph = $stmt2->fetch(PDO::FETCH_ASSOC)) {
                     $precios_hab[$ph['habitacion_id']] = $ph;
