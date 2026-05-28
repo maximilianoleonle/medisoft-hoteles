@@ -788,6 +788,10 @@ public function checkInConPagosMixtos($id, $hora_entrada, $pagos, $monto_recibid
         if (!$corteActual) {
             throw new Exception("No se puede registrar el pago. Debe abrir la caja primero.");
         }
+
+        if ((int)($corteActual['hotel_id'] ?? 0) !== (int)$hotel_id) {
+            throw new Exception("El corte abierto no pertenece al hotel actual");
+        }
         
         // Obtener datos de la reservación
         $stmt_reservacion = $db->query(
@@ -934,12 +938,13 @@ public function checkInConPagosMixtos($id, $hora_entrada, $pagos, $monto_recibid
         foreach ($pagos as $pago) {
             if ($pago['monto'] > 0) {
                 $sql = "INSERT INTO movimientos_caja 
-                        (tipo, categoria, categoria_id, descripcion, monto, metodo_pago, 
+                        (hotel_id, tipo, categoria, categoria_id, descripcion, monto, metodo_pago,
                          referencia, reservacion_id, usuario_id, corte_id, created_at) 
-                        VALUES ('ingreso', 'Hospedaje', ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                        VALUES (?, 'ingreso', 'Hospedaje', ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
                 
                 $descripcion = "Hospedaje - Reservación #" . $id;
                 $params = [
+                    $hotel_id,
                     $categoria_id,
                     $descripcion,
                     $pago['monto'],
