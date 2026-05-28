@@ -1276,6 +1276,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerComparativaEstados($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         // Obtener período anterior
         $dias_diferencia = (strtotime($fecha_fin) - strtotime($fecha_inicio)) / 86400;
@@ -1291,15 +1292,30 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                     ELSE ROUND((COALESCE(actual.total, 0) - COALESCE(anterior.total, 0)) * 100.0 / COALESCE(anterior.total, 1), 2)
                 END as variacion_porcentaje
                 FROM (
-                    SELECT DISTINCT procedencia_estado as estado 
-                    FROM huespedes 
-                    WHERE procedencia_estado IS NOT NULL
+                    SELECT h.procedencia_estado as estado
+                    FROM reservaciones r
+                    INNER JOIN huespedes h ON r.huesped_id = h.id
+                    WHERE r.hotel_id = ?
+                    AND DATE(r.fecha_entrada) BETWEEN ? AND ?
+                    AND r.estado NOT IN ('cancelada', 'no_show')
+                    AND h.procedencia_estado IS NOT NULL
+                    GROUP BY h.procedencia_estado
+                    UNION
+                    SELECT h.procedencia_estado as estado
+                    FROM reservaciones r
+                    INNER JOIN huespedes h ON r.huesped_id = h.id
+                    WHERE r.hotel_id = ?
+                    AND DATE(r.fecha_entrada) BETWEEN ? AND ?
+                    AND r.estado NOT IN ('cancelada', 'no_show')
+                    AND h.procedencia_estado IS NOT NULL
+                    GROUP BY h.procedencia_estado
                 ) estados
                 LEFT JOIN (
                     SELECT h.procedencia_estado as estado, COUNT(DISTINCT r.id) as total
                     FROM reservaciones r
                     INNER JOIN huespedes h ON r.huesped_id = h.id
-                    WHERE DATE(r.fecha_entrada) BETWEEN ? AND ?
+                    WHERE r.hotel_id = ?
+                    AND DATE(r.fecha_entrada) BETWEEN ? AND ?
                     AND r.estado NOT IN ('cancelada', 'no_show')
                     GROUP BY h.procedencia_estado
                 ) actual ON estados.estado = actual.estado
@@ -1307,14 +1323,20 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                     SELECT h.procedencia_estado as estado, COUNT(DISTINCT r.id) as total
                     FROM reservaciones r
                     INNER JOIN huespedes h ON r.huesped_id = h.id
-                    WHERE DATE(r.fecha_entrada) BETWEEN ? AND ?
+                    WHERE r.hotel_id = ?
+                    AND DATE(r.fecha_entrada) BETWEEN ? AND ?
                     AND r.estado NOT IN ('cancelada', 'no_show')
                     GROUP BY h.procedencia_estado
                 ) anterior ON estados.estado = anterior.estado
                 WHERE COALESCE(actual.total, 0) > 0 OR COALESCE(anterior.total, 0) > 0
                 ORDER BY total_actual DESC";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin, $fecha_inicio_anterior, $fecha_fin_anterior]);
+        $stmt = $db->query($sql, [
+            $hotel_id, $fecha_inicio, $fecha_fin,
+            $hotel_id, $fecha_inicio_anterior, $fecha_fin_anterior,
+            $hotel_id, $fecha_inicio, $fecha_fin,
+            $hotel_id, $fecha_inicio_anterior, $fecha_fin_anterior
+        ]);
         return $stmt->fetchAll();
     }
     
