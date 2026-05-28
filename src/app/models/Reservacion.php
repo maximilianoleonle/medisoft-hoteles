@@ -2996,16 +2996,21 @@ public function paraCalendario($mes = null, $año = null) {
      */
     public function obtenerSolicitudesPendientes($tipo = null) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT sf.*, r.precio_total, r.fecha_entrada, r.fecha_salida,
                        h.nombre as huesped_nombre, h.apellido as huesped_apellido,
                        h.telefono as huesped_telefono
                 FROM solicitudes_factura sf
-                INNER JOIN reservaciones r ON sf.reservacion_id = r.id
+                INNER JOIN reservaciones r
+                    ON sf.reservacion_id = r.id
+                    AND sf.hotel_id = r.hotel_id
                 INNER JOIN huespedes h ON r.huesped_id = h.id
-                WHERE sf.estatus = 'pendiente'";
+                WHERE sf.estatus = 'pendiente'
+                  AND sf.hotel_id = ?
+                  AND r.hotel_id = ?";
         
-        $params = [];
+        $params = [$hotel_id, $hotel_id];
         
         if ($tipo) {
             $sql .= " AND sf.tipo = ?";
