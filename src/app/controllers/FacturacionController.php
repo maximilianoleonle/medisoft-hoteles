@@ -421,36 +421,88 @@ h.nombre_completo as huesped_nombre,
      */
     private function obtenerEstadisticas() {
         $stats = [];
+        $hotel_id = obtenerHotelIdActualCompat();
         
         // Total pendientes
-        $sql = "SELECT COUNT(*) as total FROM solicitudes_factura WHERE estatus = 'pendiente'";
-        $stmt = $this->db->query($sql);
+        $sql = "SELECT COUNT(*) as total
+                FROM solicitudes_factura sf
+                INNER JOIN reservaciones r
+                    ON sf.reservacion_id = r.id
+                    AND sf.hotel_id = r.hotel_id
+                WHERE sf.hotel_id = ?
+                  AND r.hotel_id = ?
+                  AND sf.estatus = 'pendiente'";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$hotel_id, $hotel_id]);
         $stats['pendientes'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
         
         // Total en proceso
-        $sql = "SELECT COUNT(*) as total FROM solicitudes_factura WHERE estatus = 'en_proceso'";
-        $stmt = $this->db->query($sql);
+        $sql = "SELECT COUNT(*) as total
+                FROM solicitudes_factura sf
+                INNER JOIN reservaciones r
+                    ON sf.reservacion_id = r.id
+                    AND sf.hotel_id = r.hotel_id
+                WHERE sf.hotel_id = ?
+                  AND r.hotel_id = ?
+                  AND sf.estatus = 'en_proceso'";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$hotel_id, $hotel_id]);
         $stats['en_proceso'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
         
         // Total completadas (este mes)
-        $sql = "SELECT COUNT(*) as total FROM solicitudes_factura 
-                WHERE estatus = 'completada' AND MONTH(fecha_facturada) = MONTH(NOW()) AND YEAR(fecha_facturada) = YEAR(NOW())";
-        $stmt = $this->db->query($sql);
+        $sql = "SELECT COUNT(*) as total
+                FROM solicitudes_factura sf
+                INNER JOIN reservaciones r
+                    ON sf.reservacion_id = r.id
+                    AND sf.hotel_id = r.hotel_id
+                WHERE sf.hotel_id = ?
+                  AND r.hotel_id = ?
+                  AND sf.estatus = 'completada'
+                  AND MONTH(sf.fecha_facturada) = MONTH(NOW())
+                  AND YEAR(sf.fecha_facturada) = YEAR(NOW())";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$hotel_id, $hotel_id]);
         $stats['completadas_mes'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
         
         // Pendientes de cliente
-        $sql = "SELECT COUNT(*) as total FROM solicitudes_factura WHERE estatus = 'pendiente' AND tipo = 'cliente'";
-        $stmt = $this->db->query($sql);
+        $sql = "SELECT COUNT(*) as total
+                FROM solicitudes_factura sf
+                INNER JOIN reservaciones r
+                    ON sf.reservacion_id = r.id
+                    AND sf.hotel_id = r.hotel_id
+                WHERE sf.hotel_id = ?
+                  AND r.hotel_id = ?
+                  AND sf.estatus = 'pendiente'
+                  AND sf.tipo = 'cliente'";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$hotel_id, $hotel_id]);
         $stats['pendientes_cliente'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
         
         // Pendientes uso interno
-        $sql = "SELECT COUNT(*) as total FROM solicitudes_factura WHERE estatus = 'pendiente' AND tipo = 'uso_interno'";
-        $stmt = $this->db->query($sql);
+        $sql = "SELECT COUNT(*) as total
+                FROM solicitudes_factura sf
+                INNER JOIN reservaciones r
+                    ON sf.reservacion_id = r.id
+                    AND sf.hotel_id = r.hotel_id
+                WHERE sf.hotel_id = ?
+                  AND r.hotel_id = ?
+                  AND sf.estatus = 'pendiente'
+                  AND sf.tipo = 'uso_interno'";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$hotel_id, $hotel_id]);
         $stats['pendientes_interno'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
         
         // Monto total pendiente
-        $sql = "SELECT COALESCE(SUM(monto_total), 0) as total FROM solicitudes_factura WHERE estatus IN ('pendiente', 'en_proceso')";
-        $stmt = $this->db->query($sql);
+        $sql = "SELECT COALESCE(SUM(sf.monto_total), 0) as total
+                FROM solicitudes_factura sf
+                INNER JOIN reservaciones r
+                    ON sf.reservacion_id = r.id
+                    AND sf.hotel_id = r.hotel_id
+                WHERE sf.hotel_id = ?
+                  AND r.hotel_id = ?
+                  AND sf.estatus IN ('pendiente', 'en_proceso')";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$hotel_id, $hotel_id]);
         $stats['monto_pendiente'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
         
         return $stats;
