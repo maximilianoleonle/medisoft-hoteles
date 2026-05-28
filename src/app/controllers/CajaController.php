@@ -439,17 +439,20 @@ public function cerrarCorteAction() {
 private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $observaciones) {
     // Obtener datos completos del corte
     $db = Database::getInstance();
+    $hotel_id = obtenerHotelIdActualCompat();
+
     $sql = "SELECT cc.*, 
             c.nombre as caja_nombre,
             ua.nombre_completo as usuario_apertura,
             uc.nombre_completo as usuario_cierre
             FROM cortes_caja cc
-            INNER JOIN cajas c ON cc.caja_id = c.id
+            INNER JOIN cajas c ON cc.caja_id = c.id AND c.hotel_id = cc.hotel_id
             LEFT JOIN usuarios ua ON cc.usuario_apertura_id = ua.id
             LEFT JOIN usuarios uc ON cc.usuario_cierre_id = uc.id
-            WHERE cc.id = ?";
+            WHERE cc.id = ?
+            AND cc.hotel_id = ?";
     
-    $stmt = $db->query($sql, [$corte_id]);
+    $stmt = $db->query($sql, [$corte_id, $hotel_id]);
     $corte = $stmt->fetch();
     
     if (!$corte) {
