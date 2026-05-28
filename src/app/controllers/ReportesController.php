@@ -199,6 +199,7 @@ private function exportarIngresosGastosUsuarioPdf() {
     $usuario_id = $this->getQuery('usuario_id');
     $fecha_inicio = $this->getQuery('fecha_inicio', date('Y-m-01'));
     $fecha_fin = $this->getQuery('fecha_fin', date('Y-m-d'));
+    $hotel_id = $this->hotelIdActual();
     
     if (!$usuario_id) {
         set_mensaje('Debe seleccionar un usuario', 'error');
@@ -227,14 +228,18 @@ private function exportarIngresosGastosUsuarioPdf() {
                 GROUP_CONCAT(DISTINCT h.numero ORDER BY h.numero) as habitaciones_numeros
             FROM movimientos_caja mc
             LEFT JOIN reservaciones r ON mc.reservacion_id = r.id
+                AND r.hotel_id = mc.hotel_id
             LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
+                AND rh.hotel_id = r.hotel_id
             LEFT JOIN habitaciones h ON rh.habitacion_id = h.id
+                AND h.hotel_id = rh.hotel_id
             WHERE mc.usuario_id = ? 
+            AND mc.hotel_id = ?
             AND DATE(mc.created_at) BETWEEN ? AND ?
             GROUP BY mc.id
             ORDER BY mc.created_at DESC";
     
-    $stmt = $db->query($sql, [$usuario_id, $fecha_inicio, $fecha_fin]);
+    $stmt = $db->query($sql, [$usuario_id, $hotel_id, $fecha_inicio, $fecha_fin]);
     $movimientos = $stmt->fetchAll();
     
     // Procesar movimientos
@@ -402,7 +407,7 @@ private function exportarIngresosGastosUsuarioPdf() {
     $pdf->writeHTML($html, true, false, false, false, '');
     $pdf->Ln(8);
     // ═══ SECCIÓN MANOLO vs ELIA (ESTE USUARIO) ═══
-    $propiedadesUsuario = $this->obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, $usuario_id);
+    $propiedadesUsuario = $this->obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, $usuario_id, $hotel_id);
     $this->generarSeccionPropiedadesPDF($pdf, $propiedadesUsuario);
     $pdf->Ln(5);
     // DESGLOSE DE HOSPEDAJES POR FECHA
@@ -1243,6 +1248,7 @@ private function exportarIngresosTotalesPdf() {
     
     $fecha_inicio = $this->getQuery('fecha_inicio', date('Y-m-01'));
     $fecha_fin = $this->getQuery('fecha_fin', date('Y-m-d'));
+    $hotel_id = $this->hotelIdActual();
     
     $db = Database::getInstance();
     
@@ -1256,13 +1262,17 @@ private function exportarIngresosTotalesPdf() {
             FROM movimientos_caja mc
             LEFT JOIN usuarios u ON mc.usuario_id = u.id
             LEFT JOIN reservaciones r ON mc.reservacion_id = r.id
+                AND r.hotel_id = mc.hotel_id
             LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
+                AND rh.hotel_id = r.hotel_id
             LEFT JOIN habitaciones h ON rh.habitacion_id = h.id
-            WHERE DATE(mc.created_at) BETWEEN ? AND ?
+                AND h.hotel_id = rh.hotel_id
+            WHERE mc.hotel_id = ?
+            AND DATE(mc.created_at) BETWEEN ? AND ?
             GROUP BY mc.id
             ORDER BY mc.created_at ASC";
     
-    $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+    $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
     $movimientos = $stmt->fetchAll();
     
     // Procesar datos
@@ -1514,7 +1524,7 @@ private function exportarIngresosTotalesPdf() {
     $pdf->writeHTML($html, true, false, false, false, '');
     
     // ═══ SECCIÓN MANOLO vs ELIA ═══
-    $propiedades = $this->obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin);
+    $propiedades = $this->obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, null, $hotel_id);
     $this->generarSeccionPropiedadesPDF($pdf, $propiedades);
     
     // Nueva página para detalle diario
