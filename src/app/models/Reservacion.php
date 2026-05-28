@@ -3029,6 +3029,7 @@ public function paraCalendario($mes = null, $año = null) {
      */
     public function actualizarSolicitudFactura($id, $datos) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $campos = [];
         $params = [];
@@ -3045,9 +3046,28 @@ public function paraCalendario($mes = null, $año = null) {
         }
         
         if (empty($campos)) return false;
+
+        $stmt_solicitud = $db->query(
+            "SELECT sf.id
+             FROM solicitudes_factura sf
+             INNER JOIN reservaciones r
+                 ON sf.reservacion_id = r.id
+                 AND sf.hotel_id = r.hotel_id
+             WHERE sf.id = ?
+               AND sf.hotel_id = ?
+               AND r.hotel_id = ?
+             LIMIT 1",
+            [$id, $hotel_id, $hotel_id]
+        );
+        $solicitud = $stmt_solicitud ? $stmt_solicitud->fetch(PDO::FETCH_ASSOC) : null;
+
+        if (!$solicitud) {
+            return false;
+        }
         
         $params[] = $id;
-        $sql = "UPDATE solicitudes_factura SET " . implode(', ', $campos) . " WHERE id = ?";
+        $params[] = $hotel_id;
+        $sql = "UPDATE solicitudes_factura SET " . implode(', ', $campos) . " WHERE id = ? AND hotel_id = ?";
         
         $stmt = $db->query($sql, $params);
         return $stmt && $stmt->rowCount() > 0;
