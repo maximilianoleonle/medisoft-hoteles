@@ -337,7 +337,15 @@ class FacturacionController extends Controller {
         $motivo = trim($this->getPost('motivo', ''));
         
         try {
+            $hotel_id = obtenerHotelIdActualCompat();
             $solicitud = $this->obtenerSolicitudCompleta($id);
+
+            if (!$solicitud || (int)($solicitud['hotel_id'] ?? 0) !== (int)$hotel_id) {
+                set_mensaje('Solicitud de factura no encontrada', 'error');
+                $this->redirect('facturacion');
+                return;
+            }
+
             $notas_actuales = $solicitud['notas'] ?? '';
             $notas_nuevas = $notas_actuales . "\n[CANCELADA] " . date('d/m/Y H:i') . " - " . ($motivo ?: 'Sin motivo especificado');
             
