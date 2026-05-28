@@ -291,6 +291,15 @@ class FacturacionController extends Controller {
         $numero_factura = trim($this->getPost('numero_factura', ''));
         
         try {
+            $hotel_id = obtenerHotelIdActualCompat();
+            $solicitud = $this->obtenerSolicitudCompleta($id);
+
+            if (!$solicitud || (int)($solicitud['hotel_id'] ?? 0) !== (int)$hotel_id) {
+                set_mensaje('Solicitud de factura no encontrada', 'error');
+                $this->redirect('facturacion');
+                return;
+            }
+
             $datos = [
                 'estatus' => 'completada',
                 'fecha_facturada' => date('Y-m-d H:i:s'),
@@ -367,6 +376,15 @@ class FacturacionController extends Controller {
         $id = $this->getPost('solicitud_id');
         
         try {
+            $hotel_id = obtenerHotelIdActualCompat();
+            $solicitud = $this->obtenerSolicitudCompleta($id);
+
+            if (!$solicitud || (int)($solicitud['hotel_id'] ?? 0) !== (int)$hotel_id) {
+                set_mensaje('Solicitud de factura no encontrada', 'error');
+                $this->redirect('facturacion');
+                return;
+            }
+
             $resultado = $this->reservacionModel->actualizarSolicitudFactura($id, [
                 'estatus' => 'en_proceso'
             ]);
