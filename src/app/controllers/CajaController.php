@@ -809,6 +809,8 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
  */
 public function descargarPDFAction() {
 $corte_id = intval($this->route_params['id'] ?? 0);   
+    $hotel_id = obtenerHotelIdActualCompat();
+
     if (!$corte_id) {
         set_mensaje('Corte no encontrado', 'error');
         $this->redirect('caja/historial');
@@ -822,12 +824,13 @@ $corte_id = intval($this->route_params['id'] ?? 0);
             ua.nombre_completo as usuario_apertura,
             uc.nombre_completo as usuario_cierre
             FROM cortes_caja cc
-            INNER JOIN cajas c ON cc.caja_id = c.id
+            INNER JOIN cajas c ON cc.caja_id = c.id AND c.hotel_id = cc.hotel_id
             LEFT JOIN usuarios ua ON cc.usuario_apertura_id = ua.id
             LEFT JOIN usuarios uc ON cc.usuario_cierre_id = uc.id
-            WHERE cc.id = ?";
+            WHERE cc.id = ?
+            AND cc.hotel_id = ?";
     
-    $stmt = $db->query($sql, [$corte_id]);
+    $stmt = $db->query($sql, [$corte_id, $hotel_id]);
     $corte = $stmt->fetch();
     
     if (!$corte) {
