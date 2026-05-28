@@ -2923,15 +2923,27 @@ public function paraCalendario($mes = null, $año = null) {
      */
     public function crearSolicitudFactura($datos) {
         $db = Database::getInstance();
+        $hotel_id = isset($datos['hotel_id']) ? (int)$datos['hotel_id'] : (int)$this->hotelIdActual();
         
         try {
+            $stmt_reservacion = $db->query(
+                "SELECT id, hotel_id FROM reservaciones WHERE id = ? AND hotel_id = ? LIMIT 1",
+                [$datos['reservacion_id'], $hotel_id]
+            );
+            $reservacion = $stmt_reservacion ? $stmt_reservacion->fetch(PDO::FETCH_ASSOC) : null;
+
+            if (!$reservacion) {
+                throw new Exception("Reservación no encontrada para el hotel actual");
+            }
+
             $sql = "INSERT INTO solicitudes_factura 
-                    (reservacion_id, requiere_factura, tipo, estatus, 
+                    (reservacion_id, hotel_id, requiere_factura, tipo, estatus,
                      metodo_pago_principal, monto_total, usuario_registro_id, notas, created_at) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
             
             $params = [
                 $datos['reservacion_id'],
+                $hotel_id,
                 $datos['requiere_factura'],
                 $datos['tipo'],
                 $datos['estatus'],

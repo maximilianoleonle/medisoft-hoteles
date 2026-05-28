@@ -4149,6 +4149,13 @@ public function checkOutRapidoAction() {
             if (empty($requiere_factura)) {
                 return;
             }
+
+            $hotel_id = obtenerHotelIdActualCompat();
+            $reservacion = $this->reservacionModel->obtenerPorId($reservacion_id);
+
+            if (!$reservacion || (int)$reservacion['hotel_id'] !== (int)$hotel_id) {
+                throw new Exception('Reservación no encontrada para el hotel actual');
+            }
             
             $usuario_id = $_SESSION['user_id'] ?? null;
             
@@ -4183,6 +4190,7 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                 // CASO 1: Cliente SÍ quiere factura → Siempre crear
                 $this->reservacionModel->crearSolicitudFactura([
                     'reservacion_id' => $reservacion_id,
+                    'hotel_id' => $hotel_id,
                     'requiere_factura' => 'si',
                     'tipo' => 'cliente',
                     'estatus' => 'pendiente',
@@ -4206,6 +4214,7 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                     
                     $this->reservacionModel->crearSolicitudFactura([
                         'reservacion_id' => $reservacion_id,
+                        'hotel_id' => $hotel_id,
                         'requiere_factura' => 'no',
                         'tipo' => 'uso_interno',
                         'estatus' => 'pendiente',
