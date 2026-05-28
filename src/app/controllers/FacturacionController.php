@@ -379,6 +379,8 @@ class FacturacionController extends Controller {
      * Obtener solicitud completa con datos del huésped y reservación
      */
     private function obtenerSolicitudCompleta($id) {
+        $hotel_id = obtenerHotelIdActualCompat();
+
         $sql = "SELECT sf.*, 
                        r.id as reservacion_id,
                        r.precio_total as reservacion_total,
@@ -399,13 +401,17 @@ h.nombre_completo as huesped_nombre,
                        h.email as huesped_email,
                        u.nombre_completo as registrado_por
                 FROM solicitudes_factura sf
-                INNER JOIN reservaciones r ON sf.reservacion_id = r.id
+                INNER JOIN reservaciones r
+                    ON sf.reservacion_id = r.id
+                    AND sf.hotel_id = r.hotel_id
                 INNER JOIN huespedes h ON r.huesped_id = h.id
                 LEFT JOIN usuarios u ON sf.usuario_registro_id = u.id
-                WHERE sf.id = ?";
+                WHERE sf.id = ?
+                  AND sf.hotel_id = ?
+                  AND r.hotel_id = ?";
         
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$id]);
+        $stmt->execute([$id, $hotel_id, $hotel_id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
     
