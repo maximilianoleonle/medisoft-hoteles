@@ -101,8 +101,9 @@ class ReservacionController extends Controller {
             }
  
             // Obtener reservación
-            $reservacion = $this->reservacionModel->find($reservacion_id);
-            if (!$reservacion) {
+            $hotel_id = obtenerHotelIdActualCompat();
+            $reservacion = $this->reservacionModel->obtenerPorId($reservacion_id);
+            if (!$reservacion || (int)($reservacion['hotel_id'] ?? 0) !== (int)$hotel_id) {
                 die('Reservación no encontrada.');
             }
  
