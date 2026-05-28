@@ -4239,6 +4239,8 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
         }
         
         try {
+            $hotel_id = obtenerHotelIdActualCompat();
+
             // Leer JSON del body
             $input = json_decode(file_get_contents('php://input'), true);
             
@@ -4248,8 +4250,8 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
             }
             
             // Verificar que la reservación existe y está en check-in
-            $reservacion = $this->reservacionModel->find($id);
-            if (!$reservacion) {
+            $reservacion = $this->reservacionModel->obtenerPorId($id);
+            if (!$reservacion || (int)$reservacion['hotel_id'] !== (int)$hotel_id) {
                 echo json_encode(['success' => false, 'message' => 'Reservación no encontrada']);
                 exit;
             }
@@ -4279,6 +4281,11 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                 echo json_encode(['success' => false, 'message' => 'No hay caja abierta. Abra la caja primero.']);
                 exit;
             }
+
+            if ((int)$corteActual['hotel_id'] !== (int)$hotel_id) {
+                echo json_encode(['success' => false, 'message' => 'El corte activo no pertenece al hotel actual']);
+                exit;
+            }
             
             $usuario_id = user_id();
             
@@ -4300,26 +4307,27 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
             $this->db->beginTransaction();
             
             // 1. Actualizar método de pago en reservaciones
-            $sql = "UPDATE reservaciones SET metodo_pago = ? WHERE id = ?";
+            $sql = "UPDATE reservaciones SET metodo_pago = ? WHERE id = ? AND hotel_id = ?";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$metodo_principal, $id]);
+            $stmt->execute([$metodo_principal, $id, $hotel_id]);
             
             // 2. Eliminar pagos anteriores de reservacion_pagos
             $sql_check = "SHOW TABLES LIKE 'reservacion_pagos'";
             $result = $this->db->query($sql_check);
             
             if ($result && $result->fetch()) {
-                $sql = "DELETE FROM reservacion_pagos WHERE reservacion_id = ?";
+                $sql = "DELETE FROM reservacion_pagos WHERE reservacion_id = ? AND hotel_id = ?";
                 $stmt = $this->db->prepare($sql);
-                $stmt->execute([$id]);
+                $stmt->execute([$id, $hotel_id]);
                 
                 // 3. Insertar nuevos pagos
-                $sql = "INSERT INTO reservacion_pagos (reservacion_id, metodo_pago, monto, referencia, created_at) VALUES (?, ?, ?, ?, NOW())";
+                $sql = "INSERT INTO reservacion_pagos (reservacion_id, hotel_id, metodo_pago, monto, referencia, created_at) VALUES (?, ?, ?, ?, ?, NOW())";
                 foreach ($pagos as $pago) {
                     if (floatval($pago['monto']) > 0) {
                         $stmt = $this->db->prepare($sql);
                         $stmt->execute([
                             $id,
+                            $hotel_id,
                             $pago['metodo'],
                             floatval($pago['monto']),
                             $pago['referencia'] ?? null
@@ -4339,16 +4347,22 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
             $categoria_id = $categoria ? $categoria['id'] : null;
             
             // Verificar en qué corte están los movimientos actuales de esta reservación
-            $sql_check_corte = "SELECT id, corte_id FROM movimientos_caja 
-                                WHERE reservacion_id = ? AND categoria = 'Hospedaje' AND tipo = 'ingreso'";
+            $sql_check_corte = "SELECT mc.id, mc.corte_id, cc.estado as corte_estado, c.id as caja_id
+                                FROM movimientos_caja mc
+                                LEFT JOIN cortes_caja cc ON mc.corte_id = cc.id AND cc.hotel_id = mc.hotel_id
+                                LEFT JOIN cajas c ON cc.caja_id = c.id AND c.hotel_id = cc.hotel_id
+                                WHERE mc.reservacion_id = ?
+                                AND mc.hotel_id = ?
+                                AND mc.categoria = 'Hospedaje'
+                                AND mc.tipo = 'ingreso'";
             $stmt_check = $this->db->prepare($sql_check_corte);
-            $stmt_check->execute([$id]);
+            $stmt_check->execute([$id, $hotel_id]);
             $movimientos_existentes = $stmt_check->fetchAll(PDO::FETCH_ASSOC);
             
             $hay_movimientos_en_corte_cerrado = false;
             if (!empty($movimientos_existentes)) {
                 foreach ($movimientos_existentes as $mov) {
-                    if ($mov['corte_id'] != $corteActual['id']) {
+                    if ($mov['corte_id'] != $corteActual['id'] || !$mov['corte_estado'] || !$mov['caja_id']) {
                         $hay_movimientos_en_corte_cerrado = true;
                         break;
                     }
@@ -4362,21 +4376,22 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                 error_log("Cambio de método Res #$id: movimientos en corte cerrado, solo se actualizó reservacion_pagos. No se tocó movimientos_caja.");
             } else {
                 // Los movimientos están en el corte actual o no existen → seguro eliminar y recrear
-                $sql = "DELETE FROM movimientos_caja WHERE reservacion_id = ? AND categoria = 'Hospedaje'";
+                $sql = "DELETE FROM movimientos_caja WHERE reservacion_id = ? AND hotel_id = ? AND categoria = 'Hospedaje'";
                 $stmt = $this->db->prepare($sql);
-                $stmt->execute([$id]);
+                $stmt->execute([$id, $hotel_id]);
                 
                 // Insertar nuevos movimientos en el corte actual
                 foreach ($pagos as $pago) {
                     if (floatval($pago['monto']) > 0) {
                         $sql = "INSERT INTO movimientos_caja 
-                                (tipo, categoria, categoria_id, descripcion, monto, metodo_pago, 
+                                (hotel_id, tipo, categoria, categoria_id, descripcion, monto, metodo_pago,
                                  referencia, reservacion_id, usuario_id, corte_id, created_at) 
-                                VALUES ('ingreso', 'Hospedaje', ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                                VALUES (?, 'ingreso', 'Hospedaje', ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
                         
                         $descripcion = "Hospedaje - Reservación #" . $id . " (Cambio de método)";
                         $stmt = $this->db->prepare($sql);
                         $stmt->execute([
+                            $hotel_id,
                             $categoria_id,
                             $descripcion,
                             floatval($pago['monto']),
