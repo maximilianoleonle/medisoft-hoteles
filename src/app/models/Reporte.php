@@ -1222,6 +1222,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerRankingEstados($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 h.procedencia_estado as estado,
@@ -1232,16 +1233,18 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 AVG(DATEDIFF(r.fecha_salida, r.fecha_entrada)) as estancia_promedio,
                 ROUND(COUNT(DISTINCT r.id) * 100.0 / 
                     (SELECT COUNT(*) FROM reservaciones 
-                     WHERE fecha_entrada BETWEEN ? AND ? 
+                     WHERE hotel_id = ?
+                     AND fecha_entrada BETWEEN ? AND ?
                      AND estado NOT IN ('cancelada', 'no_show')), 2) as porcentaje_del_total
                 FROM huespedes h
                 INNER JOIN reservaciones r ON h.id = r.huesped_id
-                WHERE DATE(r.fecha_entrada) BETWEEN ? AND ?
+                WHERE r.hotel_id = ?
+                AND DATE(r.fecha_entrada) BETWEEN ? AND ?
                 AND r.estado NOT IN ('cancelada', 'no_show')
                 GROUP BY h.procedencia_estado
                 ORDER BY total_reservaciones DESC";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin, $fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin, $hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetchAll();
     }
     
