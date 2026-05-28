@@ -1152,6 +1152,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerEstanciaPorProcedencia($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 h.procedencia_estado as estado,
@@ -1159,14 +1160,15 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 COUNT(DISTINCT r.id) as total_reservaciones
                 FROM reservaciones r
                 INNER JOIN huespedes h ON r.huesped_id = h.id
-                WHERE r.fecha_entrada BETWEEN ? AND ?
+                WHERE r.hotel_id = ?
+                AND r.fecha_entrada BETWEEN ? AND ?
                 AND r.estado = 'checked_out'
                 AND r.fecha_salida IS NOT NULL
                 GROUP BY h.procedencia_estado
                 HAVING total_reservaciones >= 5
                 ORDER BY promedio_dias DESC";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetchAll();
     }
     
