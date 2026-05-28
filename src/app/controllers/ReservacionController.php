@@ -3038,6 +3038,7 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             }
 
             // Obtener datos del huésped
+            $hotel_id = obtenerHotelIdActualCompat();
             $huesped = $this->huespedModel->find($huesped_id);
             if (!$huesped) {
                 die('Huésped no encontrado.');
@@ -3046,10 +3047,12 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             // Obtener habitaciones
             $habitaciones = [];
             foreach ($habitaciones_ids as $hab_id) {
+                $hab_id = (int)$hab_id;
                 $hab = $this->habitacionModel->find($hab_id);
-                if ($hab) {
-                    $habitaciones[] = $hab;
+                if (!$hab || (int)($hab['hotel_id'] ?? 0) !== (int)$hotel_id) {
+                    die('Habitacion no encontrada para el hotel actual.');
                 }
+                $habitaciones[] = $hab;
             }
 
             if (empty($habitaciones)) {
