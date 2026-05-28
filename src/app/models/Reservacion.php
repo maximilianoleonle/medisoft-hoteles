@@ -2974,9 +2974,19 @@ public function paraCalendario($mes = null, $año = null) {
      */
     public function obtenerSolicitudFactura($reservacion_id) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
-        $sql = "SELECT * FROM solicitudes_factura WHERE reservacion_id = ? ORDER BY created_at DESC LIMIT 1";
-        $stmt = $db->query($sql, [$reservacion_id]);
+        $sql = "SELECT sf.*
+                FROM solicitudes_factura sf
+                INNER JOIN reservaciones r
+                    ON sf.reservacion_id = r.id
+                    AND sf.hotel_id = r.hotel_id
+                WHERE sf.reservacion_id = ?
+                  AND sf.hotel_id = ?
+                  AND r.hotel_id = ?
+                ORDER BY sf.created_at DESC
+                LIMIT 1";
+        $stmt = $db->query($sql, [$reservacion_id, $hotel_id, $hotel_id]);
         
         return $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
     }
