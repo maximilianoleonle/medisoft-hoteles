@@ -176,9 +176,10 @@ class FacturacionController extends Controller {
         // Obtener pagos de la reservación
         $pagos = [];
         try {
-            $sql = "SELECT * FROM movimientos_caja WHERE reservacion_id = ? AND tipo = 'ingreso' ORDER BY created_at DESC";
+            $hotel_id = obtenerHotelIdActualCompat();
+            $sql = "SELECT * FROM movimientos_caja WHERE reservacion_id = ? AND hotel_id = ? AND tipo = 'ingreso' ORDER BY created_at DESC";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$solicitud['reservacion_id']]);
+            $stmt->execute([$solicitud['reservacion_id'], $hotel_id]);
             $pagos = $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
             error_log("Error al obtener pagos de facturación: " . $e->getMessage());
