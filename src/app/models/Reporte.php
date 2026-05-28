@@ -1125,6 +1125,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerEstanciaPorTipo($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 h.tipo,
@@ -1132,14 +1133,17 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 COUNT(DISTINCT r.id) as total_reservaciones
                 FROM reservaciones r
                 INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
+                    AND rh.hotel_id = r.hotel_id
                 INNER JOIN habitaciones h ON rh.habitacion_id = h.id
-                WHERE r.fecha_entrada BETWEEN ? AND ?
+                    AND h.hotel_id = rh.hotel_id
+                WHERE r.hotel_id = ?
+                AND r.fecha_entrada BETWEEN ? AND ?
                 AND r.estado = 'checked_out'
                 AND r.fecha_salida IS NOT NULL
                 GROUP BY h.tipo
                 ORDER BY promedio_dias DESC";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetchAll();
     }
     
