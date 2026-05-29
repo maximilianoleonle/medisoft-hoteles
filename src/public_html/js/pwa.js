@@ -42,6 +42,13 @@
   // El contexto frontend solo separa storage local; la autorizacion real sigue en servidor.
   const OFFLINE_STORAGE_CONTEXT = resolveOfflineStorageContext();
   const DB_NAME = OFFLINE_STORAGE_CONTEXT?.dbName || null;
+  const LEGACY_DB_NAME = 'loscedros-db';
+  const STORAGE_SCOPE_KEY = 'loscedros_offline_storage_scope';
+  const STORAGE_DB_KEY = 'loscedros_offline_db_name';
+  const KNOWN_SESSION_KEYS = [
+    'loscedros_sw_controller_reload',
+    'sw_cache_list',
+  ];
 
   function hasOfflineStorageContext() {
     return Boolean(DB_NAME);
@@ -51,6 +58,38 @@
     if (missingContextWarned) return;
     missingContextWarned = true;
     console.warn('[PWA] Offline storage deshabilitado: falta MEDISOFT_CONTEXT.storage_scope/hotel_id.');
+  }
+
+  function safeLocalStorageGet(key) {
+    try {
+      return window.localStorage?.getItem(key) || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function safeLocalStorageSet(key, value) {
+    try {
+      window.localStorage?.setItem(key, value);
+    } catch {}
+  }
+
+  function safeLocalStorageRemove(key) {
+    try {
+      window.localStorage?.removeItem(key);
+    } catch {}
+  }
+
+  function safeSessionStorageRemove(key) {
+    try {
+      window.sessionStorage?.removeItem(key);
+    } catch {}
+  }
+
+  function rememberCurrentStorageScope() {
+    if (!hasOfflineStorageContext()) return;
+    safeLocalStorageSet(STORAGE_SCOPE_KEY, OFFLINE_STORAGE_CONTEXT.scope);
+    safeLocalStorageSet(STORAGE_DB_KEY, DB_NAME);
   }
 
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -221,43 +260,113 @@
     }));
   }
 
-  function deleteIndexedDB() {
+  function closeCurrentDB() {
+    if (!db) return;
+
+    db.close();
+    db = null;
+  }
+
+  function deleteIndexedDBByName(name, { preserveCurrent = false } = {}) {
     return new Promise(resolve => {
-      if (!('indexedDB' in window) || !hasOfflineStorageContext()) {
+      if (!name || !('indexedDB' in window)) {
         resolve();
         return;
       }
 
-      if (db) {
-        db.close();
-        db = null;
+      if (preserveCurrent && name === DB_NAME) {
+        resolve();
+        return;
       }
 
-      const req = indexedDB.deleteDatabase(DB_NAME);
+      if (name === DB_NAME) {
+        closeCurrentDB();
+      }
+
+      const req = indexedDB.deleteDatabase(name);
       req.onsuccess = () => resolve();
       req.onerror = () => resolve();
       req.onblocked = () => resolve();
     });
   }
 
+  async function clearKnownLosCedrosCaches() {
+    if (!('caches' in window)) return;
+
+    const keys = await caches.keys();
+    await Promise.all(
+      keys
+        .filter(key => key.startsWith('loscedros-'))
+        .map(key => caches.delete(key))
+    );
+  }
+
+  function clearKnownOfflineStorageKeys({ keepCurrentScope = false } = {}) {
+    for (const key of KNOWN_SESSION_KEYS) {
+      safeSessionStorageRemove(key);
+    }
+
+    if (!keepCurrentScope) {
+      safeLocalStorageRemove(STORAGE_SCOPE_KEY);
+      safeLocalStorageRemove(STORAGE_DB_KEY);
+    }
+  }
+
+  async function clearOfflineStorageForScopeChange() {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return;
+    }
+
+    const previousScope = safeLocalStorageGet(STORAGE_SCOPE_KEY);
+    const previousDbName = safeLocalStorageGet(STORAGE_DB_KEY)
+      || (previousScope ? `loscedros-db-${sanitizeStorageScope(previousScope)}` : null);
+    const currentScope = OFFLINE_STORAGE_CONTEXT.scope;
+    const dbsToDelete = new Set([LEGACY_DB_NAME]);
+    const scopeChanged = Boolean(previousScope && previousScope !== currentScope);
+
+    if (previousDbName && previousDbName !== DB_NAME) {
+      dbsToDelete.add(previousDbName);
+    }
+
+    try {
+      await Promise.all(
+        [...dbsToDelete].map(name => deleteIndexedDBByName(name, { preserveCurrent: true }))
+      );
+
+      if (scopeChanged) {
+        await clearKnownLosCedrosCaches();
+        clearKnownOfflineStorageKeys({ keepCurrentScope: true });
+      }
+    } catch (err) {
+      console.warn('[PWA] No se pudo limpiar storage offline previo:', err);
+    } finally {
+      rememberCurrentStorageScope();
+    }
+  }
+
   async function clearLocalPrivateData() {
     try {
       postToSW({ type: 'CLEAR_PRIVATE_DATA' });
 
-      if ('caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(
-          keys
-            .filter(key => key.startsWith('loscedros-'))
-            .map(key => caches.delete(key))
-        );
-      }
+      await clearKnownLosCedrosCaches();
 
-      await deleteIndexedDB();
+      const previousDbName = safeLocalStorageGet(STORAGE_DB_KEY);
+      const dbsToDelete = new Set([LEGACY_DB_NAME]);
+      if (previousDbName) dbsToDelete.add(previousDbName);
+      if (DB_NAME) dbsToDelete.add(DB_NAME);
+
+      await Promise.all(
+        [...dbsToDelete].map(name => deleteIndexedDBByName(name))
+      );
+
+      clearKnownOfflineStorageKeys();
     } catch (err) {
       console.warn('[PWA] No se pudieron limpiar todos los datos locales:', err);
     }
   }
+
+  clearOfflineStorageForScopeChange();
 
   // Exponer la API de datos para que otras partes de la app la puedan usar
   window.LosCedrosDB = {
