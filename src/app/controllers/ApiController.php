@@ -1495,151 +1495,36 @@ public function vehiculosHuespedAction() {
     }
     
     public function previewCheckinInventarioAction() {
-    try {
-        $reservacion_id = $this->route_params['id'] ?? 0;
-        
-        if (!$reservacion_id) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => 'ID de reservación no válido'
-            ]);
-            return;
-        }
-        
-        // Obtener habitaciones de la reservación
-        $sql = "SELECT 
-                    rh.habitacion_id,
-                    h.numero,
-                    h.tipo_habitacion_id,
-                    th.nombre as tipo_nombre
-                FROM reservacion_habitaciones rh
-                INNER JOIN habitaciones h ON rh.habitacion_id = h.id
-                LEFT JOIN tipos_habitacion th ON h.tipo_habitacion_id = th.id
-                WHERE rh.reservacion_id = ?";
-        
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$reservacion_id]);
-        $habitaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        if (empty($habitaciones)) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => 'No se encontraron habitaciones para esta reservación'
-            ]);
-            return;
-        }
-        
-        // Incluir el servicio de inventario
-        require_once __DIR__ . '/../services/InventarioService.php';
-        $inventarioService = new InventarioService($this->db);
-        
-        $todos_los_productos = [];
-        $habitaciones_info = [];
-        
-        // Obtener productos para cada habitación
-        foreach ($habitaciones as $hab) {
-            $productos = $inventarioService->obtenerProductosCheckIn($hab['habitacion_id']);
-            
-            if (!empty($productos)) {
-                foreach ($productos as $producto) {
-                    // Agregar número de habitación al producto
-                    $producto['habitacion'] = $hab['numero'];
-                    $producto['tipo_habitacion'] = $hab['tipo_nombre'] ?? 'Sin tipo';
-                    $todos_los_productos[] = $producto;
-                }
-                
-                $habitaciones_info[] = [
-                    'numero' => $hab['numero'],
-                    'tipo' => $hab['tipo_nombre'] ?? 'Sin tipo',
-                    'productos_count' => count($productos)
-                ];
-            }
-        }
-        
-        // Agrupar productos por nombre para mostrar totales
-        $productos_agrupados = [];
-        foreach ($todos_los_productos as $producto) {
-            $key = $producto['nombre'];
-            if (!isset($productos_agrupados[$key])) {
-                $productos_agrupados[$key] = [
-                    'nombre' => $producto['nombre'],
-                    'cantidad_total' => 0,
-                    'unidad_medida' => $producto['unidad_medida'],
-                    'stock_actual' => $producto['stock_actual'],
-                    'disponible' => true,
-                    'habitaciones' => []
-                ];
-            }
-            
-            $productos_agrupados[$key]['cantidad_total'] += $producto['cantidad'];
-            $productos_agrupados[$key]['habitaciones'][] = $producto['habitacion'];
-            
-            // Verificar disponibilidad total
-            if ($productos_agrupados[$key]['stock_actual'] < $productos_agrupados[$key]['cantidad_total']) {
-                $productos_agrupados[$key]['disponible'] = false;
-            }
-        }
-        
-        // Convertir a array indexado
-        $productos_finales = array_values($productos_agrupados);
-        
-        // Preparar respuesta
-        $this->jsonResponse([
-            'success' => true,
-            'productos' => $productos_finales,
-            'habitaciones' => $habitaciones_info,
-            'total_productos' => count($productos_finales),
-            'mensaje' => count($productos_finales) > 0 
-                ? 'Se encontraron productos configurados para descuento automático'
-                : 'No hay productos configurados para estas habitaciones'
-        ]);
-        
-    } catch (Exception $e) {
-        error_log("Error en previewCheckinInventario: " . $e->getMessage());
-        $this->jsonResponse([
-            'success' => false,
-            'error' => 'Error al obtener preview de inventario'
-        ]);
-    }
-}
+        $reservacion_id = (int)($this->route_params['id'] ?? 0);
 
+        if ($reservacion_id <= 0) {
+            View::renderJSON([
+                'success' => false,
+                'error' => 'ID de reservacion no valido'
+            ], 400);
+            return;
+        }
+
+        View::renderJSON([
+            'success' => false,
+            'error' => 'Preview de inventario pendiente de scope por hotel_id',
+            'productos' => [],
+            'habitaciones' => [],
+            'total_productos' => 0
+        ], 501);
+    }
 /**
  * Obtener alertas actuales de inventario
  * Endpoint: GET /api/inventario/alertas
  */
 public function alertasInventarioAction() {
-    try {
-        // Obtener alertas activas
-        $sql = "SELECT 
-                    ai.*,
-                    p.nombre as producto_nombre,
-                    p.stock_actual,
-                    p.stock_minimo
-                FROM alertas_inventario ai
-                INNER JOIN productos p ON ai.producto_id = p.id
-                WHERE ai.estado = 'ACTIVA'
-                AND DATE(ai.created_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-                ORDER BY 
-                    FIELD(ai.nivel, 'CRITICO', 'ADVERTENCIA', 'INFO'),
-                    ai.created_at DESC
-                LIMIT 10";
-        
-        $stmt = $this->db->query($sql);
-        $alertas = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        $this->jsonResponse([
-            'success' => true,
-            'alertas' => $alertas,
-            'total' => count($alertas)
-        ]);
-        
-    } catch (Exception $e) {
-        error_log("Error obteniendo alertas: " . $e->getMessage());
-        $this->jsonResponse([
-            'success' => false,
-            'error' => 'Error al obtener alertas de inventario'
-        ]);
-    }
+    View::renderJSON([
+        'success' => false,
+        'error' => 'Alertas de inventario pendientes de fuente scoped por hotel_id',
+        'alertas' => [],
+        'total' => 0
+    ], 501);
+    return;
 }
 
 /**
@@ -1648,34 +1533,31 @@ public function alertasInventarioAction() {
  */
 public function verificarStockHabitacionAction() {
     try {
-        $habitacion_id = $this->route_params['id'] ?? 0;
+        $habitacion_id = (int)($this->route_params['id'] ?? 0);
         
-        if (!$habitacion_id) {
-            $this->jsonResponse([
+        if ($habitacion_id <= 0) {
+            View::renderJSON([
                 'success' => false,
                 'error' => 'ID de habitación no válido'
-            ]);
+            ], 400);
             return;
         }
-        
-        require_once __DIR__ . '/../services/InventarioService.php';
-        $inventarioService = new InventarioService($this->db);
-        
-        $verificacion = $inventarioService->verificarDisponibilidadInventario($habitacion_id);
-        
-        $this->jsonResponse([
-            'success' => true,
-            'disponible' => $verificacion['disponible'],
-            'productos_faltantes' => $verificacion['productos_faltantes'],
-            'total_productos' => $verificacion['total_productos']
-        ]);
+
+        View::renderJSON([
+            'success' => false,
+            'error' => 'Verificacion de stock pendiente de InventarioService::verificarDisponibilidad()',
+            'disponible' => false,
+            'productos_faltantes' => [],
+            'total_productos' => 0
+        ], 501);
+        return;
         
     } catch (Exception $e) {
         error_log("Error verificando stock: " . $e->getMessage());
-        $this->jsonResponse([
+        View::renderJSON([
             'success' => false,
             'error' => 'Error al verificar disponibilidad de inventario'
-        ]);
+        ], 500);
     }
 }
     
