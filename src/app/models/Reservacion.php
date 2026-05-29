@@ -2161,8 +2161,9 @@ public function checkOut($reservacion_id, $hora_salida = null) {
         $db->beginTransaction();
         
         // 1. Obtener información de la reservación antes de cancelar
-        $reservacion = $this->find($id);
-        if (!$reservacion) {
+        $hotel_id = $this->hotelIdActual();
+        $reservacion = $this->obtenerPorId($id);
+        if (!$reservacion || (int)($reservacion['hotel_id'] ?? 0) !== (int)$hotel_id) {
             throw new Exception("Reservación no encontrada");
         }
         
