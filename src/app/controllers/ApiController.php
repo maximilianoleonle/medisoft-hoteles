@@ -1233,6 +1233,100 @@ public function vehiculosHuespedAction() {
     }
     
     /**
+     * Alertas del dashboard
+     */
+    public function alertasDashboardAction() {
+        try {
+            $db = Database::getInstance();
+            $hotel_id = $this->hotelIdActual();
+            $alertas = [];
+
+            $sqlCheckIns = "
+                SELECT
+                    r.id,
+                    r.fecha_entrada,
+                    h.nombre_completo,
+                    GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones,
+                    DATEDIFF(CURDATE(), r.fecha_entrada) as dias_retraso
+                FROM reservaciones r
+                INNER JOIN huespedes h ON r.huesped_id = h.id
+                INNER JOIN reservacion_habitaciones rh ON rh.reservacion_id = r.id AND rh.hotel_id = r.hotel_id
+                INNER JOIN habitaciones hab ON hab.id = rh.habitacion_id AND hab.hotel_id = rh.hotel_id
+                WHERE r.hotel_id = ?
+                AND r.estado = 'confirmada'
+                AND r.fecha_entrada < CURDATE()
+                GROUP BY r.id, r.fecha_entrada, h.nombre_completo
+                ORDER BY r.fecha_entrada
+                LIMIT 5
+            ";
+
+            $stmt = $db->query($sqlCheckIns, [$hotel_id]);
+            foreach ($stmt->fetchAll() as $reserva) {
+                $dias = (int)($reserva['dias_retraso'] ?? 0);
+                $alertas[] = [
+                    'type' => 'warning',
+                    'title' => 'Check-in pendiente',
+                    'message' => sprintf(
+                        'Reservacion #%d de %s, habitacion(es) %s, con %d dia(s) de retraso.',
+                        (int)$reserva['id'],
+                        $reserva['nombre_completo'] ?? 'Huesped',
+                        $reserva['habitaciones'] ?: 'sin habitaciones',
+                        $dias
+                    )
+                ];
+            }
+
+            $sqlCheckOuts = "
+                SELECT
+                    r.id,
+                    r.fecha_salida,
+                    h.nombre_completo,
+                    GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones,
+                    DATEDIFF(CURDATE(), r.fecha_salida) as dias_retraso
+                FROM reservaciones r
+                INNER JOIN huespedes h ON r.huesped_id = h.id
+                INNER JOIN reservacion_habitaciones rh ON rh.reservacion_id = r.id AND rh.hotel_id = r.hotel_id
+                INNER JOIN habitaciones hab ON hab.id = rh.habitacion_id AND hab.hotel_id = rh.hotel_id
+                WHERE r.hotel_id = ?
+                AND r.estado = 'checked_in'
+                AND r.fecha_salida < CURDATE()
+                GROUP BY r.id, r.fecha_salida, h.nombre_completo
+                ORDER BY r.fecha_salida
+                LIMIT 5
+            ";
+
+            $stmt = $db->query($sqlCheckOuts, [$hotel_id]);
+            foreach ($stmt->fetchAll() as $reserva) {
+                $dias = (int)($reserva['dias_retraso'] ?? 0);
+                $alertas[] = [
+                    'type' => 'error',
+                    'title' => 'Check-out vencido',
+                    'message' => sprintf(
+                        'Reservacion #%d de %s, habitacion(es) %s, con %d dia(s) de retraso.',
+                        (int)$reserva['id'],
+                        $reserva['nombre_completo'] ?? 'Huesped',
+                        $reserva['habitaciones'] ?: 'sin habitaciones',
+                        $dias
+                    )
+                ];
+            }
+
+            View::renderJSON([
+                'success' => true,
+                'data' => $alertas,
+                'timestamp' => date('Y-m-d H:i:s')
+            ]);
+        } catch (Exception $e) {
+            error_log("Error obteniendo alertas dashboard: " . $e->getMessage());
+            View::renderJSON([
+                'success' => false,
+                'message' => 'Error al obtener alertas del dashboard',
+                'data' => []
+            ], 500);
+        }
+    }
+
+    /**
      * Verificar disponibilidad de habitaciones múltiples
      */
     public function verificarDisponibilidadAction() {
