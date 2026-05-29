@@ -1231,6 +1231,53 @@ public function vehiculosHuespedAction() {
             'timestamp' => date('Y-m-d H:i:s')
         ]);
     }
+
+    /**
+     * Ocupacion actual del dashboard
+     */
+    public function ocupacionActualAction() {
+        try {
+            $this->hotelIdActual();
+            $dashboardController = new DashboardController($this->route_params);
+
+            $statsReflection = new ReflectionMethod($dashboardController, 'getEstadisticasCompletas');
+            $statsReflection->setAccessible(true);
+            $stats = $statsReflection->invoke($dashboardController);
+
+            $graficosReflection = new ReflectionMethod($dashboardController, 'getDatosGraficos');
+            $graficosReflection->setAccessible(true);
+            $graficos = $graficosReflection->invoke($dashboardController);
+
+            $habitaciones = $stats['habitaciones'] ?? [];
+
+            View::renderJSON([
+                'success' => true,
+                'data' => [
+                    'habitaciones' => $habitaciones,
+                    'porcentaje_ocupacion' => (float)($habitaciones['porcentaje_ocupacion'] ?? 0),
+                    'ocupadas' => (int)($habitaciones['ocupadas'] ?? 0),
+                    'disponibles' => (int)($habitaciones['disponibles'] ?? 0),
+                    'total' => (int)($habitaciones['total'] ?? 0),
+                    'ocupacion_semanal' => $graficos['ocupacion_semanal'] ?? []
+                ],
+                'timestamp' => date('Y-m-d H:i:s')
+            ]);
+        } catch (Exception $e) {
+            error_log("Error obteniendo ocupacion dashboard: " . $e->getMessage());
+            View::renderJSON([
+                'success' => false,
+                'message' => 'Error al obtener ocupacion del dashboard',
+                'data' => [
+                    'habitaciones' => [],
+                    'porcentaje_ocupacion' => 0,
+                    'ocupadas' => 0,
+                    'disponibles' => 0,
+                    'total' => 0,
+                    'ocupacion_semanal' => []
+                ]
+            ], 500);
+        }
+    }
     
     /**
      * Alertas del dashboard
