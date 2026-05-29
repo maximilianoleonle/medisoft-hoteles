@@ -4652,12 +4652,22 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
             // Solo si la reservación ya tiene check-in (ya se cobró)
             $ajuste_caja = null;
             if ($reservacion['estado'] === 'checked_in' && $diferencia != 0 && $corteActual) {
+                if ((int)($reservacion['hotel_id'] ?? 0) !== (int)$hotel_id) {
+                    echo json_encode(['success' => false, 'mensaje' => 'Reservacion no encontrada.']);
+                    return;
+                }
+
+                if ((int)($corteActual['hotel_id'] ?? 0) !== (int)$hotel_id) {
+                    echo json_encode(['success' => false, 'mensaje' => 'El corte abierto no pertenece al hotel actual.']);
+                    return;
+                }
+
                 $usuario_id = user_id();
 
                 // Obtener el método de pago principal de la reservación
                 $stmt_mp = $db->query(
-                    "SELECT metodo_pago FROM reservaciones WHERE id = ?",
-                    [$reservacion_id]
+                    "SELECT metodo_pago FROM reservaciones WHERE id = ? AND hotel_id = ?",
+                    [$reservacion_id, $hotel_id]
                 );
                 $row_mp = $stmt_mp->fetch();
                 $metodo_pago = $row_mp ? $row_mp['metodo_pago'] : 'efectivo';
@@ -4691,10 +4701,11 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
 
                     $db->query(
                         "INSERT INTO movimientos_caja 
-                         (tipo, categoria, categoria_id, descripcion, monto, metodo_pago,
-                          referencia, reservacion_id, usuario_id, corte_id, created_at) 
-                         VALUES ('gasto', 'Devoluciones', ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+                         (hotel_id, tipo, categoria, categoria_id, descripcion, monto, metodo_pago,
+                           referencia, reservacion_id, usuario_id, corte_id, created_at)
+                         VALUES (?, 'gasto', 'Devoluciones', ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
                         [
+                            $hotel_id,
                             $categoria_id,
                             $descripcion,
                             $monto_devolver,
@@ -4743,10 +4754,11 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
 
                     $db->query(
                         "INSERT INTO movimientos_caja 
-                         (tipo, categoria, categoria_id, descripcion, monto, metodo_pago,
-                          referencia, reservacion_id, usuario_id, corte_id, created_at) 
-                         VALUES ('ingreso', 'Hospedaje', ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+                         (hotel_id, tipo, categoria, categoria_id, descripcion, monto, metodo_pago,
+                           referencia, reservacion_id, usuario_id, corte_id, created_at)
+                         VALUES (?, 'ingreso', 'Hospedaje', ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
                         [
+                            $hotel_id,
                             $categoria_id,
                             $descripcion,
                             $monto_cobrar,
