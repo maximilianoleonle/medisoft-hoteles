@@ -2338,18 +2338,25 @@ public function checkOut($reservacion_id, $hora_salida = null) {
         if ($reservacion['estado'] == 'checked_in') {
             $sql = "UPDATE habitaciones h
                     INNER JOIN reservacion_habitaciones rh ON h.id = rh.habitacion_id
+                    INNER JOIN reservaciones r ON rh.reservacion_id = r.id
                     SET h.estado = 'disponible'
                     WHERE rh.reservacion_id = ? 
+                    AND r.hotel_id = ?
+                    AND rh.hotel_id = r.hotel_id
+                    AND h.hotel_id = rh.hotel_id
                     AND h.estado = 'ocupada'
                     AND NOT EXISTS (
                         SELECT 1 FROM reservacion_habitaciones rh2
                         INNER JOIN reservaciones r2 ON rh2.reservacion_id = r2.id
                         WHERE rh2.habitacion_id = h.id
+                        AND rh2.hotel_id = r2.hotel_id
+                        AND rh2.hotel_id = h.hotel_id
+                        AND r2.hotel_id = r.hotel_id
                         AND r2.id != ?
                         AND r2.estado = 'checked_in'
                     )";
             
-            $stmt = $db->query($sql, [$id, $id]);
+            $stmt = $db->query($sql, [$id, $hotel_id, $id]);
             $habitaciones_liberadas = $stmt->rowCount();
             
             error_log("Habitaciones liberadas: " . $habitaciones_liberadas);
@@ -2398,9 +2405,10 @@ public function checkOut($reservacion_id, $hora_salida = null) {
         $sql = "UPDATE reservaciones 
                 SET estado = 'cancelada',
                     notas = CONCAT(IFNULL(notas, ''), ?)
-                WHERE id = ?";
+                WHERE id = ?
+                AND hotel_id = ?";
         
-        $stmt = $db->query($sql, [$nota_cancelacion, $id]);
+        $stmt = $db->query($sql, [$nota_cancelacion, $id, $hotel_id]);
         
         if (!$stmt || $stmt->rowCount() == 0) {
             throw new Exception("No se pudo actualizar el estado de la reservación");
