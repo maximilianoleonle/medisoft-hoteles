@@ -1221,7 +1221,7 @@ public function vehiculosHuespedAction() {
         $dashboardController = new DashboardController($this->route_params);
         
         // Usar reflexión para acceder al método privado
-        $reflection = new ReflectionMethod($dashboardController, 'getEstadisticas');
+        $reflection = new ReflectionMethod($dashboardController, 'getEstadisticasCompletas');
         $reflection->setAccessible(true);
         $stats = $reflection->invoke($dashboardController);
         
