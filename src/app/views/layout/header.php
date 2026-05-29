@@ -96,9 +96,27 @@
         }
     </script>
     
+    <?php
+        if (!function_exists('obtenerHotelIdActualCompat') && defined('APP_PATH')) {
+            require_once APP_PATH . '/helpers/hotel_config.php';
+        }
+
+        $medisoftHotelId = obtenerHotelIdActualCompat();
+        $medisoftUsuarioId = user_id();
+        $medisoftContext = [
+            'hotel_id' => (int) $medisoftHotelId,
+            'usuario_id' => $medisoftUsuarioId ? (int) $medisoftUsuarioId : null,
+            'hotel_scope' => 'hotel-' . (int) $medisoftHotelId,
+            'storage_scope' => 'hotel-' . (int) $medisoftHotelId . '-user-' . ($medisoftUsuarioId ? (int) $medisoftUsuarioId : 'anon'),
+            'storage_version' => 'v1',
+            'generated_at' => date('c'),
+        ];
+    ?>
     <script>
         window.BASE_URL = '<?= rtrim(url(''), '/') ?>';
         window.API_URL = '<?= url('api') ?>';
+        window.MEDISOFT_CONTEXT = <?= json_encode($medisoftContext, JSON_UNESCAPED_SLASHES) ?>;
+        window.USUARIO_ID = window.MEDISOFT_CONTEXT.usuario_id;
     </script>
 
     <!-- O usando un meta tag -->
@@ -130,9 +148,6 @@
 
     <!-- Offline Data: snapshots de habitaciones/reservaciones + cola tipada + sync -->
     <script src="<?= asset('js/offline-data.js') ?>" defer></script>
-
-    <!-- ID del usuario para las operaciones offline -->
-    <script>window.USUARIO_ID = <?= user_id() ?? 'null' ?>;</script>
 
     <style>
         /* PWA critical UI: evita banners planos si el CSS externo aun no carga */
