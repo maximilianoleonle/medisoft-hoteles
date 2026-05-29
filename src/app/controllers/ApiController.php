@@ -1565,13 +1565,74 @@ public function vehiculosHuespedAction() {
  * Endpoint: GET /api/inventario/alertas
  */
 public function alertasInventarioAction() {
-    View::renderJSON([
-        'success' => false,
-        'error' => 'Alertas de inventario pendientes de fuente scoped por hotel_id',
-        'alertas' => [],
-        'total' => 0
-    ], 501);
-    return;
+    try {
+        $hotel_id = $this->hotelIdActual();
+        $db = Database::getInstance();
+
+        $sql = "SELECT
+                    id,
+                    codigo,
+                    nombre,
+                    stock_actual,
+                    stock_minimo,
+                    unidad_medida
+                FROM inventario_productos
+                WHERE hotel_id = ?
+                    AND activo = 1
+                    AND stock_actual <= stock_minimo
+                ORDER BY
+                    CASE WHEN stock_actual <= 0 THEN 0 ELSE 1 END,
+                    stock_actual ASC,
+                    nombre ASC
+                LIMIT 10";
+
+        $stmt = $db->query($sql, [$hotel_id]);
+
+        if (!$stmt) {
+            throw new Exception('No se pudieron obtener alertas scoped de inventario');
+        }
+
+        $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $alertas = [];
+
+        foreach ($productos as $producto) {
+            $stock_actual = (float)($producto['stock_actual'] ?? 0);
+            $stock_minimo = (float)($producto['stock_minimo'] ?? 0);
+            $sin_stock = $stock_actual <= 0;
+
+            $alertas[] = [
+                'producto_id' => (int)$producto['id'],
+                'codigo' => $producto['codigo'] ?? '',
+                'producto_nombre' => $producto['nombre'] ?? '',
+                'stock_actual' => $stock_actual,
+                'stock_minimo' => $stock_minimo,
+                'unidad_medida' => $producto['unidad_medida'] ?? '',
+                'nivel' => $sin_stock ? 'CRITICO' : 'ADVERTENCIA',
+                'tipo' => $sin_stock ? 'SIN_STOCK' : 'STOCK_BAJO',
+                'mensaje' => $sin_stock
+                    ? 'Producto sin stock disponible'
+                    : 'Producto por debajo del stock minimo'
+            ];
+        }
+
+        View::renderJSON([
+            'success' => true,
+            'data' => $alertas,
+            'mensaje' => empty($alertas)
+                ? 'No hay alertas de inventario para el hotel actual'
+                : 'Alertas de inventario obtenidas correctamente',
+            'timestamp' => date('c')
+        ]);
+
+    } catch (Exception $e) {
+        error_log("Error obteniendo alertas de inventario: " . $e->getMessage());
+        View::renderJSON([
+            'success' => false,
+            'data' => [],
+            'mensaje' => 'Error al obtener alertas de inventario',
+            'timestamp' => date('c')
+        ], 500);
+    }
 }
 
 /**
