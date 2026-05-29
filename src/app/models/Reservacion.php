@@ -2415,16 +2415,20 @@ public function checkOut($reservacion_id, $hora_salida = null) {
         }
         
         // 5. Cancelar solicitudes de factura pendientes de esta reservación
-        $sql = "UPDATE solicitudes_factura 
-                SET estatus = 'cancelada',
-                    notas = CONCAT(IFNULL(notas, ''), ?)
-                WHERE reservacion_id = ? 
-                AND estatus IN ('pendiente', 'en_proceso')";
+        $sql = "UPDATE solicitudes_factura sf
+                INNER JOIN reservaciones r ON sf.reservacion_id = r.id
+                SET sf.estatus = 'cancelada',
+                    sf.notas = CONCAT(IFNULL(sf.notas, ''), ?)
+                WHERE sf.reservacion_id = ?
+                AND sf.hotel_id = ?
+                AND sf.hotel_id = r.hotel_id
+                AND r.hotel_id = ?
+                AND sf.estatus IN ('pendiente', 'en_proceso')";
         
         $nota_factura = "\n[CANCELADA AUTOMÁTICAMENTE] " . date('d/m/Y H:i') . 
                        " - Reservación #" . $id . " fue cancelada. Razón: " . $razon;
         
-        $stmt_factura = $db->query($sql, [$nota_factura, $id]);
+        $stmt_factura = $db->query($sql, [$nota_factura, $id, $hotel_id, $hotel_id]);
         $facturas_canceladas = $stmt_factura ? $stmt_factura->rowCount() : 0;
         
         if ($facturas_canceladas > 0) {
