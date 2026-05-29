@@ -1495,23 +1495,70 @@ public function vehiculosHuespedAction() {
     }
     
     public function previewCheckinInventarioAction() {
-        $reservacion_id = (int)($this->route_params['id'] ?? 0);
+        try {
+            $reservacion_id = (int)($this->route_params['id'] ?? 0);
 
-        if ($reservacion_id <= 0) {
+            if ($reservacion_id <= 0) {
+                View::renderJSON([
+                    'success' => false,
+                    'data' => [],
+                    'mensaje' => 'ID de reservacion no valido',
+                    'timestamp' => date('c')
+                ], 400);
+                return;
+            }
+
+            $hotel_id = $this->hotelIdActual();
+            $db = Database::getInstance();
+
+            $sql = "SELECT
+                        r.id,
+                        COUNT(DISTINCT h.id) as habitaciones_count
+                    FROM reservaciones r
+                    INNER JOIN reservacion_habitaciones rh
+                        ON rh.reservacion_id = r.id
+                        AND rh.hotel_id = r.hotel_id
+                    INNER JOIN habitaciones h
+                        ON h.id = rh.habitacion_id
+                        AND h.hotel_id = rh.hotel_id
+                    WHERE r.id = ?
+                    AND r.hotel_id = ?
+                    GROUP BY r.id";
+
+            $stmt = $db->query($sql, [$reservacion_id, $hotel_id]);
+
+            if (!$stmt) {
+                throw new Exception('No se pudo validar la reservacion para preview de inventario');
+            }
+
+            $reservacion = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$reservacion) {
+                View::renderJSON([
+                    'success' => false,
+                    'data' => [],
+                    'mensaje' => 'Reservacion no encontrada para el hotel actual',
+                    'timestamp' => date('c')
+                ], 404);
+                return;
+            }
+
             View::renderJSON([
                 'success' => false,
-                'error' => 'ID de reservacion no valido'
-            ], 400);
-            return;
-        }
+                'data' => [],
+                'mensaje' => 'Preview de inventario aun no disponible con fuente scoped',
+                'timestamp' => date('c')
+            ]);
 
-        View::renderJSON([
-            'success' => false,
-            'error' => 'Preview de inventario pendiente de scope por hotel_id',
-            'productos' => [],
-            'habitaciones' => [],
-            'total_productos' => 0
-        ], 501);
+        } catch (Exception $e) {
+            error_log("Error en previewCheckinInventario: " . $e->getMessage());
+            View::renderJSON([
+                'success' => false,
+                'data' => [],
+                'mensaje' => 'Error al validar preview de inventario',
+                'timestamp' => date('c')
+            ], 500);
+        }
     }
 /**
  * Obtener alertas actuales de inventario
