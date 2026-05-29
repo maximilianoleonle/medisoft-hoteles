@@ -1278,6 +1278,34 @@ public function vehiculosHuespedAction() {
             ], 500);
         }
     }
+
+    /**
+     * Movimientos recientes del dashboard
+     */
+    public function movimientosRecientesAction() {
+        try {
+            $hotel_id = $this->hotelIdActual();
+            $movimientoModel = new MovimientoCaja();
+            $movimientos = $movimientoModel->obtenerUltimosMovimientos(10);
+
+            $movimientos = array_values(array_filter($movimientos, function ($movimiento) use ($hotel_id) {
+                return !isset($movimiento['hotel_id']) || (int)$movimiento['hotel_id'] === (int)$hotel_id;
+            }));
+
+            View::renderJSON([
+                'success' => true,
+                'data' => $movimientos,
+                'timestamp' => date('Y-m-d H:i:s')
+            ]);
+        } catch (Exception $e) {
+            error_log("Error obteniendo movimientos recientes dashboard: " . $e->getMessage());
+            View::renderJSON([
+                'success' => false,
+                'message' => 'Error al obtener movimientos recientes del dashboard',
+                'data' => []
+            ], 500);
+        }
+    }
     
     /**
      * Alertas del dashboard
