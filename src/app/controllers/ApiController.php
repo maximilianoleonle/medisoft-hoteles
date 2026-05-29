@@ -29,6 +29,10 @@ class ApiController extends Controller {
         
         return true;
     }
+
+    private function hotelIdActual() {
+        return obtenerHotelIdActualCompat();
+    }
     
     
 public function validarImagenAction() {
@@ -126,15 +130,16 @@ public function todasConOcupacionAction() {
             $fecha_salida = date('Y-m-d', strtotime($fecha_entrada . ' +1 day'));
         }
         
-        // Obtener TODAS las habitaciones activas
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT h.* 
                 FROM habitaciones h 
-                WHERE h.activa = 1 
+                WHERE h.hotel_id = ?
+                AND h.activa = 1
                 ORDER BY h.piso, CAST(h.numero AS UNSIGNED)";
         
-        $stmt = $db->query($sql);
+        $stmt = $db->query($sql, [$hotel_id]);
         $todas_habitaciones = $stmt->fetchAll();
         
         // CONSULTA CORREGIDA: Obtener todas las reservaciones que se traslapen
@@ -150,13 +155,19 @@ public function todasConOcupacionAction() {
                           h.procedencia_estado
                           FROM reservacion_habitaciones rh
                           INNER JOIN reservaciones r ON rh.reservacion_id = r.id
+                            AND rh.hotel_id = r.hotel_id
+                          INNER JOIN habitaciones hab_scope ON rh.habitacion_id = hab_scope.id
+                            AND hab_scope.hotel_id = rh.hotel_id
                           INNER JOIN huespedes h ON r.huesped_id = h.id
-                          WHERE r.estado IN ('confirmada', 'checked_in')
+                          WHERE r.hotel_id = ?
+                          AND rh.hotel_id = ?
+                          AND hab_scope.hotel_id = ?
+                          AND r.estado IN ('confirmada', 'checked_in')
                           AND NOT (
                               r.fecha_salida <= ? OR r.fecha_entrada >= ?
                           )";
         
-        $params = [$fecha_entrada, $fecha_salida];
+        $params = [$hotel_id, $hotel_id, $hotel_id, $fecha_entrada, $fecha_salida];
         
         $stmt = $db->query($sql_ocupacion, $params);
         $ocupaciones = $stmt->fetchAll();
@@ -731,12 +742,20 @@ public function vehiculosHuespedAction() {
         if ($q === '__offline_cache__') {
             try {
                 $db = Database::getInstance();
+                $hotel_id = $this->hotelIdActual();
 
                 $stmt = $db->query(
                     "SELECT id, nombre_completo, telefono, procedencia_estado
-                     FROM huespedes
+                     FROM huespedes h
+                     WHERE EXISTS (
+                         SELECT 1
+                         FROM reservaciones r
+                         WHERE r.huesped_id = h.id
+                           AND r.hotel_id = ?
+                     )
                      ORDER BY nombre_completo ASC
-                     LIMIT 1000"
+                     LIMIT 1000",
+                    [$hotel_id]
                 );
                 $huespedes = $stmt ? $stmt->fetchAll() : [];
 
@@ -754,18 +773,24 @@ public function vehiculosHuespedAction() {
                      FROM reservaciones r
                      INNER JOIN huespedes h ON r.huesped_id = h.id
                      LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
+                        AND rh.hotel_id = r.hotel_id
                      LEFT JOIN habitaciones hab ON rh.habitacion_id = hab.id
+                        AND hab.hotel_id = rh.hotel_id
+                     WHERE r.hotel_id = ?
                      GROUP BY r.id
                      ORDER BY r.updated_at DESC, r.id DESC
-                     LIMIT 3000"
+                     LIMIT 3000",
+                    [$hotel_id]
                 );
                 $reservaciones = $stmt ? $stmt->fetchAll() : [];
 
                 $stmt = $db->query(
                     "SELECT id, numero, tipo, estado, precio_base
                      FROM habitaciones
-                     WHERE activa = 1
-                     ORDER BY numero ASC"
+                     WHERE hotel_id = ?
+                       AND activa = 1
+                     ORDER BY numero ASC",
+                    [$hotel_id]
                 );
                 $habitaciones = $stmt ? $stmt->fetchAll() : [];
 
@@ -864,6 +889,7 @@ public function vehiculosHuespedAction() {
 
         try {
             $db = Database::getInstance();
+            $hotel_id = $this->hotelIdActual();
             $buscar = '%' . $q . '%';
             $q_id = preg_replace('/\D+/', '', $q);
             $buscar_id = $q_id !== '' ? '%' . $q_id . '%' : $buscar;
@@ -872,11 +898,17 @@ public function vehiculosHuespedAction() {
 
             $stmt = $db->query(
                 "SELECT id, nombre_completo, telefono, procedencia_estado
-                 FROM huespedes
-                 WHERE nombre_completo LIKE ? OR telefono LIKE ?
+                 FROM huespedes h
+                 WHERE (nombre_completo LIKE ? OR telefono LIKE ?)
+                   AND EXISTS (
+                       SELECT 1
+                       FROM reservaciones r
+                       WHERE r.huesped_id = h.id
+                         AND r.hotel_id = ?
+                   )
                  ORDER BY nombre_completo ASC
                  LIMIT ?",
-                [$buscar, $buscar, $limite]
+                [$buscar, $buscar, $hotel_id, $limite]
             );
             $huespedes = $stmt ? $stmt->fetchAll() : [];
 
@@ -887,10 +919,15 @@ public function vehiculosHuespedAction() {
                  FROM reservaciones r
                  INNER JOIN huespedes h ON r.huesped_id = h.id
                  LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
+                    AND rh.hotel_id = r.hotel_id
                  LEFT JOIN habitaciones hab ON rh.habitacion_id = hab.id
-                 WHERE CAST(r.id AS CHAR) LIKE ?
+                    AND hab.hotel_id = rh.hotel_id
+                 WHERE r.hotel_id = ?
+                   AND (
+                    CAST(r.id AS CHAR) LIKE ?
                     OR h.nombre_completo LIKE ?
                     OR hab.numero LIKE ?
+                   )
                  GROUP BY r.id
                  ORDER BY
                     CASE
@@ -900,18 +937,19 @@ public function vehiculosHuespedAction() {
                     END,
                     r.fecha_entrada DESC
                  LIMIT ?",
-                [$buscar_id, $buscar, $buscar, $id_exacto, $buscar_id, $limite]
+                [$hotel_id, $buscar_id, $buscar, $buscar, $id_exacto, $buscar_id, $limite]
             );
             $reservaciones = $stmt ? $stmt->fetchAll() : [];
 
             $stmt = $db->query(
                 "SELECT id, numero, tipo, estado, precio_base
                  FROM habitaciones
-                 WHERE (numero LIKE ? OR tipo LIKE ?)
+                 WHERE hotel_id = ?
+                   AND (numero LIKE ? OR tipo LIKE ?)
                    AND activa = 1
                  ORDER BY numero ASC
                  LIMIT ?",
-                [$buscar, $buscar, $limite]
+                [$hotel_id, $buscar, $buscar, $limite]
             );
             $habitaciones = $stmt ? $stmt->fetchAll() : [];
 
@@ -980,6 +1018,7 @@ public function vehiculosHuespedAction() {
     public function reservacionesHoyAction() {
         try {
             $db = Database::getInstance();
+            $hotel_id = $this->hotelIdActual();
             $hoy = date('Y-m-d');
 
             $sql = "SELECT
@@ -1004,14 +1043,17 @@ public function vehiculosHuespedAction() {
                     FROM reservaciones r
                     INNER JOIN huespedes h ON r.huesped_id = h.id
                     LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
+                        AND rh.hotel_id = r.hotel_id
                     LEFT JOIN habitaciones hab ON rh.habitacion_id = hab.id
-                    WHERE r.estado IN ('confirmada', 'checked_in')
+                        AND hab.hotel_id = rh.hotel_id
+                    WHERE r.hotel_id = ?
+                      AND r.estado IN ('confirmada', 'checked_in')
                       AND r.fecha_entrada <= DATE_ADD(?, INTERVAL 1 DAY)
                       AND r.fecha_salida >= ?
                     GROUP BY r.id
                     ORDER BY r.fecha_entrada ASC, r.hora_llegada_estimada ASC";
 
-            $stmt = $db->query($sql, [$hoy, $hoy]);
+            $stmt = $db->query($sql, [$hotel_id, $hoy, $hoy]);
             $filas = $stmt ? $stmt->fetchAll() : [];
 
             $reservaciones = array_map(function (array $r): array {
@@ -1213,15 +1255,35 @@ public function vehiculosHuespedAction() {
         }
         
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         // Verificar cada habitación individualmente
         $habitaciones_no_disponibles = [];
         
         foreach ($habitaciones_ids as $hab_id) {
+            $hab_id = (int) $hab_id;
+
+            $stmt_hab = $db->query(
+                "SELECT numero FROM habitaciones WHERE id = ? AND hotel_id = ?",
+                [$hab_id, $hotel_id]
+            );
+            $hab_info = $stmt_hab ? $stmt_hab->fetch() : null;
+
+            if (!$hab_info) {
+                $habitaciones_no_disponibles[] = 'Habitacion no encontrada';
+                continue;
+            }
+
             $sql = "SELECT COUNT(*) as conflictos 
                     FROM reservacion_habitaciones rh
                     INNER JOIN reservaciones r ON rh.reservacion_id = r.id
+                        AND rh.hotel_id = r.hotel_id
+                    INNER JOIN habitaciones h ON rh.habitacion_id = h.id
+                        AND h.hotel_id = rh.hotel_id
                     WHERE rh.habitacion_id = ? 
+                    AND rh.hotel_id = ?
+                    AND h.hotel_id = ?
+                    AND r.hotel_id = ?
                     AND r.estado IN ('confirmada', 'checked_in')
                     AND ((r.fecha_entrada <= ? AND r.fecha_salida >= ?)
                     OR (r.fecha_entrada <= ? AND r.fecha_salida >= ?)
@@ -1229,6 +1291,9 @@ public function vehiculosHuespedAction() {
             
             $params = [
                 $hab_id,
+                $hotel_id,
+                $hotel_id,
+                $hotel_id,
                 $fecha_entrada, $fecha_entrada,
                 $fecha_salida, $fecha_salida,
                 $fecha_entrada, $fecha_salida
@@ -1244,8 +1309,6 @@ public function vehiculosHuespedAction() {
             
             if ($result['conflictos'] > 0) {
                 // Obtener info de la habitación
-                $stmt_hab = $db->query("SELECT numero FROM habitaciones WHERE id = ?", [$hab_id]);
-                $hab_info = $stmt_hab->fetch();
                 $habitaciones_no_disponibles[] = $hab_info['numero'];
             }
         }
@@ -1460,6 +1523,7 @@ public function verificarStockHabitacionAction() {
     if (is_string($habitaciones_ids)) {
         $habitaciones_ids = explode(',', $habitaciones_ids);
     }
+    $habitaciones_ids = array_values(array_unique(array_filter(array_map('intval', $habitaciones_ids))));
     
     if (empty($habitaciones_ids) || !$fecha_entrada || !$fecha_salida) {
         View::renderJSON([
@@ -1472,15 +1536,16 @@ public function verificarStockHabitacionAction() {
     $db = Database::getInstance();
     
     // Obtener información de las habitaciones
+    $hotel_id = $this->hotelIdActual();
     $placeholders = str_repeat('?,', count($habitaciones_ids) - 1) . '?';
-    $sql = "SELECT id, numero, tipo, precio_base FROM habitaciones WHERE id IN ($placeholders)";
-    $stmt = $db->query($sql, $habitaciones_ids);
+    $sql = "SELECT id, numero, tipo, precio_base FROM habitaciones WHERE hotel_id = ? AND id IN ($placeholders)";
+    $stmt = $db->query($sql, array_merge([$hotel_id], $habitaciones_ids));
     $habitaciones = $stmt->fetchAll();
     
-    if (empty($habitaciones)) {
+    if (count($habitaciones) !== count($habitaciones_ids)) {
         View::renderJSON([
             'success' => false,
-            'message' => 'Habitaciones no encontradas'
+            'message' => 'Habitaciones no encontradas para el hotel actual'
         ]);
         return;
     }
