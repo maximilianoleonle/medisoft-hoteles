@@ -2180,15 +2180,20 @@ public function checkOut($reservacion_id, $hora_salida = null) {
             if (!$corteActual) {
                 throw new Exception("No se puede cancelar. Debe abrir la caja primero para procesar la devolución.");
             }
+
+            if ((int)($corteActual['hotel_id'] ?? 0) !== (int)$hotel_id) {
+                throw new Exception("El corte abierto no pertenece al hotel actual.");
+            }
             
             // Buscar TODOS los movimientos de ingreso de esta reservación
-            $sql = "SELECT id, monto, metodo_pago, categoria_id, descripcion, corte_id 
+            $sql = "SELECT id, hotel_id, monto, metodo_pago, categoria_id, descripcion, corte_id
                     FROM movimientos_caja 
-                    WHERE reservacion_id = ? 
+                    WHERE reservacion_id = ?
+                    AND hotel_id = ?
                     AND tipo = 'ingreso'
                     ORDER BY metodo_pago";
             
-            $stmt = $db->query($sql, [$id]);
+            $stmt = $db->query($sql, [$id, $hotel_id]);
             $movimientos = $stmt->fetchAll();
             
             error_log("Movimientos de ingreso encontrados: " . count($movimientos));
@@ -2246,6 +2251,9 @@ public function checkOut($reservacion_id, $hora_salida = null) {
             $usuario_id = user_id();
             
             foreach ($movimientos as $mov) {
+                if ((int)($mov['hotel_id'] ?? 0) !== (int)$hotel_id) {
+                    throw new Exception("Movimiento de caja fuera del hotel actual.");
+                }
 
                 if ($mov['corte_id'] != $corteActual['id']) {
                     // El movimiento está en un corte CERRADO (ya fue auditado/cerrado).
@@ -2257,12 +2265,13 @@ public function checkOut($reservacion_id, $hora_salida = null) {
                                        " (" . ucfirst($mov['metodo_pago']) . ")";
 
                     $sql_dev = "INSERT INTO movimientos_caja
-                                (tipo, categoria, categoria_id, descripcion, monto,
+                                (hotel_id, tipo, categoria, categoria_id, descripcion, monto,
                                  metodo_pago, referencia, reservacion_id, usuario_id,
                                  corte_id, created_at)
-                                VALUES ('gasto', 'Devoluciones', ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                                VALUES (?, 'gasto', 'Devoluciones', ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
                     $db->query($sql_dev, [
+                        $hotel_id,
                         $categoria_id,
                         $descripcion_dev,
                         $mov['monto'],
@@ -2284,15 +2293,16 @@ public function checkOut($reservacion_id, $hora_salida = null) {
                 
                 // El movimiento está en el corte ACTUAL → devolución normal
                 $sql = "INSERT INTO movimientos_caja 
-                        (tipo, categoria, categoria_id, descripcion, monto, 
+                        (hotel_id, tipo, categoria, categoria_id, descripcion, monto,
                          metodo_pago, referencia, reservacion_id, usuario_id, 
                          corte_id, created_at) 
-                        VALUES ('gasto', 'Devoluciones', ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                        VALUES (?, 'gasto', 'Devoluciones', ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
                 
                 $descripcion = "Devolución por cancelación - Reservación #" . $id . 
                               " (" . ucfirst($mov['metodo_pago']) . ")";
                 
                 $params = [
+                    $hotel_id,
                     $categoria_id,
                     $descripcion,
                     $mov['monto'],
