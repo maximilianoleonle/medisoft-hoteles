@@ -3,13 +3,12 @@
  * Estrategia de cachÃ© por capas con soporte offline completo
  */
 
-const SW_VERSION = 'v15';
+const SW_VERSION = 'v16';
 const BASE = self.registration.scope; // detecta automÃ¡ticamente el subdirectorio
 
 const CACHE = {
   shell:   `loscedros-shell-${SW_VERSION}`,   // assets estÃ¡ticos locales
   ext:     `loscedros-ext-${SW_VERSION}`,     // librerÃ­as externas (CDN)
-  pages:   `loscedros-pages-${SW_VERSION}`,   // pÃ¡ginas HTML visitadas
 };
 
 // â”€â”€â”€ Assets del shell de la app â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -53,32 +52,11 @@ const CDN_ASSETS = [
   'https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js',
 ];
 
-// â”€â”€â”€ PÃ¡ginas clave a pre-cachear â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const KEY_PAGES = [
-  '',
-  'dashboard',
-  'reservaciones',
-  'reservaciones/crear',
-  'reservaciones/calendario',
-  'habitaciones',
-  'habitaciones/disponibles',
-  'huespedes',
-  'huespedes/buscar',
-  'caja',
-  'inventario',
-  'facturacion',
-  'reportes',
-  'usuarios',
-  'configuracion/tarifas',
-];
-
+// â”€â”€â”€ PÃ¡ginas dinamicas excluidas del cache â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function cacheKeyPages() {
-  const cache = await caches.open(CACHE.pages);
-  const urls = KEY_PAGES.map(p => BASE + p);
-
-  return Promise.allSettled(urls.map(url =>
-    cache.add(url).catch(e => console.warn('[SW] Pagina no cacheada:', url, e.message))
-  ));
+  // No se cachean paginas privadas o dinamicas: dashboard, reservaciones,
+  // caja, facturacion, reportes, huespedes, usuarios o configuracion.
+  return Promise.resolve([]);
 }
 
 // â”€â”€â”€ INSTALL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -100,7 +78,6 @@ self.addEventListener('install', event => {
             .catch(e => console.warn('[SW] CDN no cacheado:', url, e.message))
         ));
       }),
-      cacheKeyPages(),
     ]).then(() => self.skipWaiting())
   );
 });
@@ -153,19 +130,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  if (request.mode === 'navigate' ||
-      (request.headers.get('accept') || '').includes('text/html')) {
-    event.respondWith(networkFirstPage(request));
-    return;
-  }
-
-  // â”€â”€ 3. Assets estÃ¡ticos locales â†’ Cache First â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  if (/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|otf|webp)(\?.*)?$/i.test(url.pathname)) {
-    event.respondWith(cacheFirst(request, CACHE.shell));
-    return;
-  }
-
-  // â”€â”€ 4. Rutas de API/AJAX â†’ Network Only con respuesta offline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â”€â”€ 3. Rutas de API/AJAX â†’ Network Only con respuesta offline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (url.pathname.includes('/api/') ||
       request.headers.get('X-Requested-With') === 'XMLHttpRequest') {
     event.respondWith(
@@ -183,8 +148,20 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // â”€â”€ 5. PÃ¡ginas HTML â†’ Network First con fallback al cachÃ© â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  event.respondWith(networkFirstPage(request));
+  // â”€â”€ 4. Assets estÃ¡ticos locales â†’ Cache First â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  if (isSafeStaticAsset(url)) {
+    event.respondWith(cacheFirst(request, CACHE.shell));
+    return;
+  }
+
+  // â”€â”€ 5. PÃ¡ginas HTML privadas/dinamicas â†’ Network Only + offline.html â”€â”€â”€â”€â”€â”€â”€
+  if (request.mode === 'navigate' ||
+      (request.headers.get('accept') || '').includes('text/html')) {
+    event.respondWith(networkOnlyPage(request));
+    return;
+  }
+
+  event.respondWith(fetch(request));
 });
 
 // â”€â”€â”€ BACKGROUND SYNC â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -244,7 +221,7 @@ self.addEventListener('message', event => {
       break;
 
     case 'CACHE_PAGE':
-      // La app pide cachear una pÃ¡gina especÃ­fica
+      // Cache de paginas dinamicas deshabilitado por aislamiento multi-hotel.
       if (event.data.url) {
         event.waitUntil(cachePage(event.data.url));
       }
@@ -255,13 +232,13 @@ self.addEventListener('message', event => {
       break;
 
     case 'GET_CACHE_LIST':
-      // Devolver lista de pÃ¡ginas en cachÃ©
-      caches.open(CACHE.pages).then(cache => cache.keys()).then(keys => {
+      // No hay cache de paginas privadas.
+      if (event.source) {
         event.source.postMessage({
           type: 'CACHE_LIST',
-          urls: keys.map(r => r.url),
+          urls: [],
         });
-      });
+      }
       break;
 
     case 'CLEAR_PRIVATE_DATA':
@@ -273,6 +250,14 @@ self.addEventListener('message', event => {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // ESTRATEGIAS DE CACHÃ‰
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+function isSafeStaticAsset(url) {
+  const pathname = url.pathname;
+
+  return pathname.endsWith('/offline.html') ||
+    pathname.endsWith('/manifest.json') ||
+    /\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|otf|webp)(\?.*)?$/i.test(pathname);
+}
 
 /** Cache First: devuelve del cachÃ©, si no existe lo busca en red y lo guarda */
 async function cacheFirst(request, cacheName) {
@@ -313,31 +298,19 @@ async function staleWhileRevalidate(request, cacheName) {
   return cached || fetchPromise || new Response('', { status: 503 });
 }
 
-/** Network First para pÃ¡ginas HTML: intenta red, si falla devuelve cachÃ© o offline.html */
-async function networkFirstPage(request) {
-  const cache = await caches.open(CACHE.pages);
-
+/** Network Only para HTML privado/dinamico: no guarda pantallas con datos de hotel. */
+async function networkOnlyPage(request) {
   try {
     const response = await fetch(request);
-
-    // Solo cachear respuestas HTML exitosas de pÃ¡ginas de la app
-    if (response.ok && response.headers.get('content-type')?.includes('text/html')) {
-      cache.put(request, response.clone());
-      // Avisar a los clientes que la app estÃ¡ online
-      notifyClients({ type: 'ONLINE' });
-    }
+    notifyClients({ type: 'ONLINE' });
     return response;
   } catch {
     notifyClients({ type: 'OFFLINE' });
 
-    const cachedPage = await cache.match(request, { ignoreSearch: true });
-    if (cachedPage) return cachedPage;
+    const offline = await caches.match(BASE + 'offline.html');
+    if (offline) return offline;
 
-    // Fallback a paginas clave del sistema
-    const fallback = await fallbackAppPage(request, cache);
-    if (fallback) return fallback;
-
-    return new Response('<h1>Los Cedros</h1><p>Abre el sistema con internet una vez para guardar esta pantalla.</p>', {
+    return new Response('<h1>Los Cedros</h1><p>Sin conexion. Vuelve a intentarlo cuando tengas internet.</p>', {
       status: 503,
       headers: { 'Content-Type': 'text/html' },
     });
@@ -345,59 +318,7 @@ async function networkFirstPage(request) {
 }
 
 async function cachePage(url) {
-  try {
-    const cache = await caches.open(CACHE.pages);
-    const request = new Request(url, {
-      cache: 'reload',
-      credentials: 'include',
-    });
-    const response = await fetch(request);
-
-    if (response.ok && response.headers.get('content-type')?.includes('text/html')) {
-      await cache.put(url, response.clone());
-    }
-  } catch (e) {
-    console.warn('[SW] Pagina actual no cacheada:', url, e.message);
-  }
-}
-
-async function fallbackAppPage(request, cache) {
-  const url = new URL(request.url);
-  const basePath = new URL(BASE).pathname.replace(/\/$/, '');
-  let path = url.pathname;
-
-  if (basePath && path.startsWith(basePath)) {
-    path = path.slice(basePath.length);
-  }
-
-  path = path.replace(/^\/+/, '').replace(/\/$/, '');
-
-  const grupos = [
-    [path],
-    path.startsWith('reservaciones/crear') ? ['reservaciones/crear', 'reservaciones'] : [],
-    path.startsWith('reservaciones/calendario') ? ['reservaciones/calendario', 'reservaciones'] : [],
-    path.startsWith('reservaciones') ? ['reservaciones'] : [],
-    path.startsWith('habitaciones/disponibles') ? ['habitaciones/disponibles', 'habitaciones'] : [],
-    path.startsWith('habitaciones') ? ['habitaciones'] : [],
-    path.startsWith('huespedes/buscar') ? ['huespedes/buscar', 'huespedes'] : [],
-    path.startsWith('huespedes') ? ['huespedes'] : [],
-    path.startsWith('caja') ? ['caja'] : [],
-    path.startsWith('inventario') ? ['inventario'] : [],
-    path.startsWith('facturacion') ? ['facturacion'] : [],
-    path.startsWith('reportes') ? ['reportes'] : [],
-    path.startsWith('usuarios') ? ['usuarios'] : [],
-    path.startsWith('configuracion/tarifas') ? ['configuracion/tarifas'] : [],
-    ['dashboard', ''],
-  ];
-
-  for (const grupo of grupos) {
-    for (const item of grupo) {
-      const response = await cache.match(BASE + item, { ignoreSearch: true });
-      if (response) return response;
-    }
-  }
-
-  return null;
+  console.info('[SW] Cache de paginas dinamicas deshabilitado:', url);
 }
 
 function notifyClients(message) {
