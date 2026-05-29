@@ -10,6 +10,48 @@
   const SW_BASE_PATH = new URL((BASE_LIMPIO || '') + '/', window.location.origin).pathname.replace(/\/$/, '');
   const SW_URL = `${window.location.origin}${SW_BASE_PATH}/service-worker.js`;
   const SW_SCOPE = `${SW_BASE_PATH || ''}/`;
+  const DB_VERSION = 4;           // v4: agrega indice global y reservaciones para busqueda offline
+  let db = null;
+  let missingContextWarned = false;
+
+  function sanitizeStorageScope(value) {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
+  function resolveOfflineStorageContext() {
+    const context = window.MEDISOFT_CONTEXT || null;
+    const rawScope = context?.storage_scope || context?.hotel_scope || (context?.hotel_id ? `hotel-${context.hotel_id}` : '');
+    const scope = sanitizeStorageScope(rawScope);
+
+    if (!context || !scope) {
+      return null;
+    }
+
+    return {
+      context,
+      scope,
+      dbName: `loscedros-db-${scope}`,
+    };
+  }
+
+  // El contexto frontend solo separa storage local; la autorizacion real sigue en servidor.
+  const OFFLINE_STORAGE_CONTEXT = resolveOfflineStorageContext();
+  const DB_NAME = OFFLINE_STORAGE_CONTEXT?.dbName || null;
+
+  function hasOfflineStorageContext() {
+    return Boolean(DB_NAME);
+  }
+
+  function warnMissingOfflineContext() {
+    if (missingContextWarned) return;
+    missingContextWarned = true;
+    console.warn('[PWA] Offline storage deshabilitado: falta MEDISOFT_CONTEXT.storage_scope/hotel_id.');
+  }
 
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // 1. SERVICE WORKER
@@ -71,12 +113,14 @@
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // 2. INDEXEDDB â€” almacÃ©n local para datos offline
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-  const DB_NAME    = 'loscedros-db';
-  const DB_VERSION = 4;           // v4: agrega indice global y reservaciones para busqueda offline
-  let db = null;
-
   function openDB() {
     return new Promise((resolve, reject) => {
+      if (!hasOfflineStorageContext()) {
+        warnMissingOfflineContext();
+        reject(new Error('missing_offline_storage_context'));
+        return;
+      }
+
       const req = indexedDB.open(DB_NAME, DB_VERSION);
 
       req.onupgradeneeded = e => {
@@ -136,6 +180,11 @@
   }
 
   function dbPut(storeName, data) {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return Promise.reject(new Error('missing_offline_storage_context'));
+    }
+
     return openDB().then(db => new Promise((resolve, reject) => {
       const tx  = db.transaction(storeName, 'readwrite');
       const req = tx.objectStore(storeName).put(data);
@@ -145,6 +194,11 @@
   }
 
   function dbGetAll(storeName) {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return Promise.resolve([]);
+    }
+
     return openDB().then(db => new Promise((resolve, reject) => {
       const tx  = db.transaction(storeName, 'readonly');
       const req = tx.objectStore(storeName).getAll();
@@ -154,6 +208,11 @@
   }
 
   function dbDelete(storeName, key) {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return Promise.resolve();
+    }
+
     return openDB().then(db => new Promise((resolve, reject) => {
       const tx  = db.transaction(storeName, 'readwrite');
       const req = tx.objectStore(storeName).delete(key);
@@ -164,7 +223,7 @@
 
   function deleteIndexedDB() {
     return new Promise(resolve => {
-      if (!('indexedDB' in window)) {
+      if (!('indexedDB' in window) || !hasOfflineStorageContext()) {
         resolve();
         return;
       }
@@ -201,7 +260,15 @@
   }
 
   // Exponer la API de datos para que otras partes de la app la puedan usar
-  window.LosCedrosDB = { put: dbPut, getAll: dbGetAll, delete: dbDelete, clearLocalPrivateData };
+  window.LosCedrosDB = {
+    name: DB_NAME,
+    storageScope: OFFLINE_STORAGE_CONTEXT?.scope || null,
+    hasContext: hasOfflineStorageContext,
+    put: dbPut,
+    getAll: dbGetAll,
+    delete: dbDelete,
+    clearLocalPrivateData,
+  };
 
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // 3. COLA OFFLINE â€” encola acciones cuando no hay conexiÃ³n
@@ -222,13 +289,19 @@
     const action = form.action || window.location.href;
     const method = (form.method || 'POST').toUpperCase();
 
-    await dbPut('offline_queue', {
-      url:       action,
-      method:    method,
-      body:      JSON.stringify(data),
-      timestamp: Date.now(),
-      label:     form.dataset.offlineLabel || 'Accion pendiente',
-    });
+    try {
+      await dbPut('offline_queue', {
+        url:       action,
+        method:    method,
+        body:      JSON.stringify(data),
+        timestamp: Date.now(),
+        label:     form.dataset.offlineLabel || 'Accion pendiente',
+      });
+    } catch (err) {
+      console.warn('[PWA] No se guardo accion offline sin contexto de hotel:', err.message);
+      showToast('Modo offline no disponible sin contexto de hotel.', 'error');
+      return;
+    }
 
     showToast('Sin conexion: accion guardada. Se enviara cuando vuelva internet.', 'warning');
     updateQueueBadge();

@@ -20,10 +20,51 @@
   // Intervalo de snapshot automático (15 min mientras hay internet)
   const SNAPSHOT_INTERVALO_MS = 15 * 60 * 1000;
   const BUSQUEDA_GLOBAL_LIMITE = 40;
+  const DB_VERSION = 4;
+  let missingContextWarned = false;
+
+  function sanitizeStorageScope(value) {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
+  function resolveOfflineStorageContext() {
+    const context = window.MEDISOFT_CONTEXT || null;
+    const rawScope = context?.storage_scope || context?.hotel_scope || (context?.hotel_id ? `hotel-${context.hotel_id}` : '');
+    const scope = sanitizeStorageScope(rawScope);
+
+    if (!context || !scope) {
+      return null;
+    }
+
+    return {
+      context,
+      scope,
+      dbName: window.LosCedrosDB?.name || `loscedros-db-${scope}`,
+    };
+  }
+
+  // El contexto frontend solo separa storage local; no autoriza datos en servidor.
+  const OFFLINE_STORAGE_CONTEXT = resolveOfflineStorageContext();
+  const DB_NAME = OFFLINE_STORAGE_CONTEXT?.dbName || null;
+
+  function hasOfflineStorageContext() {
+    return Boolean(DB_NAME);
+  }
+
+  function warnMissingOfflineContext() {
+    if (missingContextWarned) return;
+    missingContextWarned = true;
+    console.warn('[OfflineData] Offline data deshabilitado: falta MEDISOFT_CONTEXT.storage_scope/hotel_id.');
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 1. HELPERS DE INDEXEDDB
-  //    Trabajan sobre la misma DB que pwa.js (loscedros-db v2).
+  //    Trabajan sobre la misma DB scoped que pwa.js.
   //    Usamos window.LosCedrosDB.put/getAll/delete para los stores
   //    existentes y añadimos acceso directo a operaciones_offline.
   // ═══════════════════════════════════════════════════════════════════════════
@@ -31,7 +72,13 @@
   /** Abre la DB (la misma que pwa.js — ya tiene todos los stores). */
   function abrirDB() {
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open('loscedros-db', 4);
+      if (!hasOfflineStorageContext()) {
+        warnMissingOfflineContext();
+        reject(new Error('missing_offline_storage_context'));
+        return;
+      }
+
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
       req.onupgradeneeded = e => {
         const db = e.target.result;
         if (!db.objectStoreNames.contains('huespedes')) {
@@ -54,6 +101,11 @@
   }
 
   function _txPut(storeName, data) {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return Promise.reject(new Error('missing_offline_storage_context'));
+    }
+
     return abrirDB().then(db => new Promise((resolve, reject) => {
       const tx  = db.transaction(storeName, 'readwrite');
       const req = tx.objectStore(storeName).put(data);
@@ -63,6 +115,11 @@
   }
 
   function _txGetAll(storeName, indexName, valor) {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return Promise.resolve([]);
+    }
+
     return abrirDB().then(db => new Promise((resolve, reject) => {
       const tx    = db.transaction(storeName, 'readonly');
       const store = tx.objectStore(storeName);
@@ -75,6 +132,11 @@
   }
 
   function _txGet(storeName, key) {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return Promise.resolve(null);
+    }
+
     return abrirDB().then(db => new Promise((resolve, reject) => {
       const tx  = db.transaction(storeName, 'readonly');
       const req = tx.objectStore(storeName).get(key);
@@ -84,6 +146,11 @@
   }
 
   function _txDelete(storeName, key) {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return Promise.resolve();
+    }
+
     return abrirDB().then(db => new Promise((resolve, reject) => {
       const tx  = db.transaction(storeName, 'readwrite');
       const req = tx.objectStore(storeName).delete(key);
@@ -93,6 +160,11 @@
   }
 
   function _txClear(storeName) {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return Promise.resolve();
+    }
+
     return abrirDB().then(db => new Promise((resolve, reject) => {
       const tx  = db.transaction(storeName, 'readwrite');
       const req = tx.objectStore(storeName).clear();
@@ -152,6 +224,10 @@
    * y lo guarda en IndexedDB. Actualiza meta.ultima_sync_habitaciones.
    */
   async function capturarHabitaciones(fechaEntrada = fechaConOffset(0), fechaSalida = fechaConOffset(1)) {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return;
+    }
     if (!navigator.onLine) return;
 
     try {
@@ -194,6 +270,10 @@
    * Actualiza meta.ultima_sync_reservaciones.
    */
   async function capturarReservaciones() {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return;
+    }
     if (!navigator.onLine) return;
 
     try {
@@ -231,6 +311,10 @@
   }
 
   async function capturarHuespedes() {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return;
+    }
     if (!navigator.onLine) return;
 
     try {
@@ -255,6 +339,10 @@
   }
 
   async function capturarIndiceGlobal() {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return;
+    }
     if (!navigator.onLine) return;
 
     try {
@@ -325,6 +413,10 @@
    * Si no hay, devuelve el último snapshot.
    */
   async function obtenerHabitaciones(fechaEntrada = fechaConOffset(0), fechaSalida = fechaConOffset(1)) {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return [];
+    }
     if (navigator.onLine) await capturarHabitaciones(fechaEntrada, fechaSalida);
     const habitaciones = await _txGetAll('habitaciones');
     return _habitacionesParaFechas(habitaciones, fechaEntrada, fechaSalida);
@@ -335,6 +427,10 @@
    * Mismo comportamiento: online = actualiza primero, offline = caché.
    */
   async function obtenerReservaciones() {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return [];
+    }
     if (navigator.onLine) await capturarReservaciones();
     return _txGetAll('reservaciones');
   }
@@ -384,6 +480,11 @@
   }
 
   async function guardarReservacionLocal(reservacion) {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      throw new Error('Offline data no disponible sin contexto de hotel');
+    }
+
     if (!reservacion || !reservacion.id) {
       throw new Error('La reservacion local necesita un id');
     }
@@ -505,6 +606,11 @@
    * @returns {string}        - UUID de la operación creada
    */
   async function encolarOperacion(tipo, payload, label = '') {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      throw new Error('No se puede encolar operacion offline sin contexto de hotel');
+    }
+
     const uuid = generarUUID();
     const op   = {
       uuid,
@@ -547,6 +653,11 @@
    * Es seguro llamarla múltiples veces — tiene guard de concurrencia.
    */
   async function sincronizar() {
+    if (!hasOfflineStorageContext()) {
+      warnMissingOfflineContext();
+      return;
+    }
+
     if (_sincronizando || !navigator.onLine) return;
 
     const pendientes = await obtenerPendientes();
@@ -734,7 +845,12 @@
 
     // Utils
     generarUUID,
+    storage: {
+      dbName: DB_NAME,
+      scope: OFFLINE_STORAGE_CONTEXT?.scope || null,
+      hasContext: hasOfflineStorageContext,
+    },
   };
 
-  console.log('[OfflineData] Módulo listo (DB v2)');
+  console.log('[OfflineData] Modulo listo', DB_NAME || 'sin-contexto');
 })();
