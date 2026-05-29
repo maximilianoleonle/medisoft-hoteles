@@ -629,13 +629,14 @@ class ReservacionController extends Controller {
 public function habitacionesApiAction() {
     header('Content-Type: application/json');
     
-    $id = $this->route_params['id'] ?? 0;
+    $id = (int)($this->route_params['id'] ?? 0);
     
     try {
         // Verificar que la reservación exista
-        $reservacion = $this->reservacionModel->find($id);
+        $hotel_id = $this->hotelIdActual();
+        $reservacion = $this->reservacionModel->obtenerPorId($id);
         
-        if (!$reservacion) {
+        if (!$reservacion || (int)($reservacion['hotel_id'] ?? 0) !== (int)$hotel_id) {
             http_response_code(404);
             echo json_encode([
                 'success' => false,
