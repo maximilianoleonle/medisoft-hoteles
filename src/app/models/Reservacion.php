@@ -3101,16 +3101,20 @@ public function paraCalendario($mes = null, $año = null) {
      */
     public function modificarFechaSalida($reservacion_id, $nueva_fecha_salida, $nuevo_precio_total) {
         try {
+            $hotel_id = $this->hotelIdActual();
+
             $sql = "UPDATE reservaciones
                     SET fecha_salida = ?,
                         precio_total = ?,
                         updated_at   = NOW()
-                    WHERE id = ?";
+                    WHERE id = ?
+                    AND hotel_id = ?";
 
             $stmt = $this->db->query($sql, [
                 $nueva_fecha_salida,
                 $nuevo_precio_total,
-                $reservacion_id
+                $reservacion_id,
+                $hotel_id
             ]);
 
             return $stmt && $stmt->rowCount() > 0;
@@ -3126,9 +3130,14 @@ public function paraCalendario($mes = null, $año = null) {
      */
     public function obtenerDatosBasicos($reservacion_id) {
         try {
+            $hotel_id = $this->hotelIdActual();
+
             $stmt = $this->db->query(
-                "SELECT id, estado, fecha_entrada, fecha_salida, precio_total FROM reservaciones WHERE id = ?",
-                [$reservacion_id]
+                "SELECT id, hotel_id, estado, fecha_entrada, fecha_salida, precio_total
+                 FROM reservaciones
+                 WHERE id = ?
+                 AND hotel_id = ?",
+                [$reservacion_id, $hotel_id]
             );
             return $stmt ? $stmt->fetch() : null;
         } catch (Exception $e) {
@@ -3142,9 +3151,17 @@ public function paraCalendario($mes = null, $año = null) {
      */
     public function obtenerHabitacionIds($reservacion_id) {
         try {
+            $hotel_id = $this->hotelIdActual();
+
             $stmt = $this->db->query(
-                "SELECT habitacion_id FROM reservacion_habitaciones WHERE reservacion_id = ?",
-                [$reservacion_id]
+                "SELECT rh.habitacion_id
+                 FROM reservacion_habitaciones rh
+                 INNER JOIN reservaciones r ON rh.reservacion_id = r.id
+                 WHERE rh.reservacion_id = ?
+                 AND rh.hotel_id = ?
+                 AND rh.hotel_id = r.hotel_id
+                 AND r.hotel_id = ?",
+                [$reservacion_id, $hotel_id, $hotel_id]
             );
             if (!$stmt) return [];
             return array_column($stmt->fetchAll(), 'habitacion_id');
