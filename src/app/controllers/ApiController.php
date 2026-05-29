@@ -1543,14 +1543,20 @@ public function verificarStockHabitacionAction() {
             return;
         }
 
+        require_once __DIR__ . '/../services/InventarioService.php';
+
+        $db = Database::getInstance()->getConnection();
+        $inventarioService = new InventarioService($db);
+        $verificacion = $inventarioService->verificarDisponibilidad($habitacion_id);
+        $productos_faltantes = $verificacion['productos_insuficientes'] ?? [];
+
         View::renderJSON([
-            'success' => false,
-            'error' => 'Verificacion de stock pendiente de InventarioService::verificarDisponibilidad()',
-            'disponible' => false,
-            'productos_faltantes' => [],
-            'total_productos' => 0
-        ], 501);
-        return;
+            'success' => true,
+            'disponible' => (bool)($verificacion['disponible'] ?? false),
+            'productos_faltantes' => $productos_faltantes,
+            'total_productos' => count($productos_faltantes),
+            'mensaje' => $verificacion['mensaje'] ?? ''
+        ]);
         
     } catch (Exception $e) {
         error_log("Error verificando stock: " . $e->getMessage());
