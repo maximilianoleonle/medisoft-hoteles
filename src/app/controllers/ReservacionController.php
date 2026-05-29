@@ -4499,10 +4499,11 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
 
         try {
             $model = new Reservacion();
+            $hotel_id = obtenerHotelIdActualCompat();
 
-            $reservacion = $model->obtenerDatosBasicos($reservacion_id);
+            $reservacion = $model->obtenerPorId($reservacion_id);
 
-            if (!$reservacion) {
+            if (!$reservacion || (int)($reservacion['hotel_id'] ?? 0) !== (int)$hotel_id) {
                 echo json_encode(['disponible' => false, 'mensaje' => 'Reservación no encontrada.']);
                 return;
             }
@@ -4574,10 +4575,11 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
         try {
             $model = new Reservacion();
             $db = Database::getInstance();
+            $hotel_id = obtenerHotelIdActualCompat();
 
-            $reservacion = $model->obtenerDatosBasicos($reservacion_id);
+            $reservacion = $model->obtenerPorId($reservacion_id);
 
-            if (!$reservacion) {
+            if (!$reservacion || (int)($reservacion['hotel_id'] ?? 0) !== (int)$hotel_id) {
                 echo json_encode(['success' => false, 'mensaje' => 'Reservación no encontrada.']);
                 return;
             }
@@ -4594,6 +4596,11 @@ if ($tiene_tarjeta && !empty($tipo_tarjeta)) {
                 $corteActual = $cajaModel->obtenerCorteActual();
                 if (!$corteActual) {
                     echo json_encode(['success' => false, 'mensaje' => 'Debe abrir la caja antes de modificar días en una reservación con check-in activo.']);
+                    return;
+                }
+
+                if ((int)($corteActual['hotel_id'] ?? 0) !== (int)$hotel_id) {
+                    echo json_encode(['success' => false, 'mensaje' => 'El corte abierto no pertenece al hotel actual.']);
                     return;
                 }
             }
