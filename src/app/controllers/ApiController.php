@@ -1100,73 +1100,18 @@ public function vehiculosHuespedAction() {
 
         $this->validateCSRF();
 
-        $body = file_get_contents('php://input');
-        $data = json_decode($body, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            View::renderJSON(['success' => false, 'message' => 'JSON invalido: ' . json_last_error_msg()], 400);
-            return;
-        }
-
-        $operaciones = $data['operaciones'] ?? [];
-
-        if (!is_array($operaciones)) {
-            View::renderJSON(['success' => false, 'message' => 'El campo operaciones debe ser un array.'], 400);
-            return;
-        }
-
-        if (empty($operaciones)) {
-            View::renderJSON([
-                'success' => true,
-                'exitosas' => [],
-                'fallidas' => [],
-                'total' => 0,
-                'procesadas' => 0,
-                'mensaje' => 'Sin operaciones pendientes',
-            ]);
-            return;
-        }
-
-        if (count($operaciones) > 100) {
-            View::renderJSON(['success' => false, 'message' => 'Demasiadas operaciones en un lote (max 100).'], 400);
-            return;
-        }
-
-        $usuario_id = user_id();
-        $operaciones_limpias = [];
-
-        foreach ($operaciones as $op) {
-            if (!is_array($op)) {
-                continue;
-            }
-
-            $operaciones_limpias[] = [
-                'uuid' => trim((string) ($op['uuid'] ?? '')),
-                'tipo' => trim((string) ($op['tipo'] ?? '')),
-                'payload' => is_array($op['payload'] ?? null) ? $op['payload'] : [],
-                'timestamp' => (int) ($op['timestamp'] ?? 0),
-                'usuario_id' => $usuario_id,
-            ];
-        }
-
         try {
-            $syncModel = new Sync();
-            $resultado = $syncModel->procesarLote($operaciones_limpias, $usuario_id);
-            $total = count($operaciones_limpias);
-            $procesadas = count($resultado['exitosas']);
-
-            View::renderJSON([
-                'success' => true,
-                'exitosas' => $resultado['exitosas'],
-                'fallidas' => $resultado['fallidas'],
-                'total' => $total,
-                'procesadas' => $procesadas,
-                'mensaje' => "$procesadas de $total operaciones sincronizadas correctamente.",
-            ]);
+            $this->hotelIdActual();
         } catch (Throwable $e) {
-            error_log('[API sync] ' . $e->getMessage());
-            View::renderJSON(['success' => false, 'message' => 'Error interno del servidor. Intenta de nuevo.'], 500);
+            error_log('[API sync] No se pudo resolver hotel actual: ' . $e->getMessage());
         }
+
+        View::renderJSON([
+            'success' => false,
+            'error' => 'sync_temporarily_disabled',
+            'message' => 'La sincronización offline está temporalmente deshabilitada mientras se asegura el aislamiento multi-hotel.',
+            'pending_operations_preserved' => true,
+        ], 423);
     }
 
     public function buscarHuespedesAction() {
