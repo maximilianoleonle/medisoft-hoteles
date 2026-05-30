@@ -22,6 +22,21 @@ class Usuario extends Model {
     public function findByUsername($username) {
         return $this->first(['nombre_usuario' => $username]);
     }
+
+    /**
+     * Buscar usuario por nombre de usuario para flujos SaaS.
+     */
+    public function buscarPorNombreUsuario($username) {
+        $resultado = $this->query(
+            "SELECT id, nombre_usuario, nombre_completo, email, rol, activo
+             FROM {$this->table}
+             WHERE nombre_usuario = ?
+             LIMIT 1",
+            [$username]
+        );
+
+        return $resultado[0] ?? null;
+    }
     
     /**
      * Obtener usuarios activos

@@ -5,10 +5,12 @@
 
 class SaasAdminController extends Controller {
     private $hotelModel;
+    private $usuarioModel;
 
     public function __construct($route_params) {
         parent::__construct($route_params);
         $this->hotelModel = new Hotel();
+        $this->usuarioModel = new Usuario();
     }
 
     protected function before() {
@@ -65,10 +67,12 @@ class SaasAdminController extends Controller {
 
     public function verHotelAction($id) {
         $hotel = $this->obtenerHotelORedirigir($id);
+        $usuariosHotel = $this->hotelModel->listarUsuariosParaSaasAdmin((int) $hotel['id']);
 
         View::renderTemplate('admin/saas/hotel_detalle', [
             'title' => 'Panel Medisoft interno - Detalle de hotel',
-            'hotel' => $hotel
+            'hotel' => $hotel,
+            'usuariosHotel' => $usuariosHotel
         ]);
     }
 
@@ -132,6 +136,90 @@ class SaasAdminController extends Controller {
         $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
     }
 
+    public function guardarAdminHotelAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('admin/saas/hoteles/' . (int) $id);
+        }
+
+        $this->validateCSRF();
+        $hotel = $this->obtenerHotelORedirigir($id);
+        $data = $this->datosAdminHotelDesdePost();
+        $usuarioExistente = $this->usuarioModel->buscarPorNombreUsuario($data['nombre_usuario']);
+        $errores = $this->validarDatosAdminHotel($data, $usuarioExistente);
+
+        if (!empty($errores)) {
+            $this->guardarOldInputAdminHotel($data);
+            set_mensaje(implode('<br>', $errores), 'error');
+            $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
+        }
+
+        if ($usuarioExistente && $this->hotelModel->usuarioVinculado((int) $hotel['id'], (int) $usuarioExistente['id'])) {
+            $this->guardarOldInputAdminHotel($data);
+            set_mensaje('El usuario ya esta vinculado a este hotel.', 'error');
+            $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
+        }
+
+        if ($usuarioExistente && empty($usuarioExistente['activo'])) {
+            $this->guardarOldInputAdminHotel($data);
+            set_mensaje('El usuario existe, pero esta inactivo. Active la cuenta antes de vincularla.', 'error');
+            $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
+        }
+
+        $db = Database::getInstance();
+
+        try {
+            $db->safeBeginTransaction();
+            $usuarioId = $usuarioExistente['id'] ?? null;
+            $usuarioCreado = false;
+
+            if (!$usuarioId) {
+                $usuarioId = $this->usuarioModel->crearUsuario([
+                    'nombre_usuario' => $data['nombre_usuario'],
+                    'password' => $data['password'],
+                    'nombre_completo' => $data['nombre_completo'],
+                    'email' => $data['email'],
+                    'telefono' => null,
+                    'rol' => $data['rol_hotel'],
+                    'activo' => 1
+                ]);
+                $usuarioCreado = true;
+
+                if (!$usuarioId) {
+                    throw new Exception('No se pudo crear el usuario.');
+                }
+            }
+
+            $vinculado = $this->hotelModel->vincularUsuarioParaSaasAdmin(
+                (int) $hotel['id'],
+                (int) $usuarioId,
+                $data['rol_hotel'],
+                !empty($data['es_principal']),
+                !empty($data['activo'])
+            );
+
+            if (!$vinculado) {
+                throw new Exception('No se pudo vincular el usuario al hotel.');
+            }
+
+            $db->safeCommit();
+            clear_old_input();
+
+            set_mensaje(
+                $usuarioCreado
+                    ? 'Usuario administrador creado y vinculado al hotel correctamente.'
+                    : 'Usuario existente vinculado al hotel correctamente.',
+                'success'
+            );
+            $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
+        } catch (Exception $e) {
+            $db->safeRollBack();
+            error_log('Error al crear administrador hotelero: ' . $e->getMessage());
+            $this->guardarOldInputAdminHotel($data);
+            set_mensaje('No se pudo guardar el administrador del hotel. Revise los datos e intente nuevamente.', 'error');
+            $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
+        }
+    }
+
     private function obtenerHotelORedirigir($id) {
         $hotel = $this->hotelModel->obtenerParaSaasAdmin((int) $id);
 
@@ -190,6 +278,58 @@ class SaasAdminController extends Controller {
         }
 
         return $errores;
+    }
+
+    private function datosAdminHotelDesdePost() {
+        return [
+            'nombre_completo' => trim($this->getPost('nombre_completo', '')),
+            'nombre_usuario' => strtolower(trim($this->getPost('nombre_usuario', ''))),
+            'email' => $this->valorNullable(strtolower($this->getPost('email', ''))),
+            'password' => (string) $this->getPost('password', ''),
+            'rol_hotel' => trim($this->getPost('rol_hotel', 'administrador')),
+            'es_principal' => (int) $this->getPost('es_principal', 0) === 1 ? 1 : 0,
+            'activo' => (int) $this->getPost('activo', 1) === 1 ? 1 : 0,
+        ];
+    }
+
+    private function validarDatosAdminHotel(array $data, $usuarioExistente = null) {
+        $errores = [];
+
+        if ($data['nombre_usuario'] === '') {
+            $errores[] = 'El nombre de usuario es obligatorio.';
+        } elseif (strlen($data['nombre_usuario']) < 4) {
+            $errores[] = 'El nombre de usuario debe tener al menos 4 caracteres.';
+        } elseif (!preg_match('/^[a-z0-9_]+$/', $data['nombre_usuario'])) {
+            $errores[] = 'El nombre de usuario solo puede contener minusculas, numeros y guiones bajos.';
+        }
+
+        if (!$usuarioExistente) {
+            if ($data['nombre_completo'] === '') {
+                $errores[] = 'El nombre completo es obligatorio para crear un usuario nuevo.';
+            }
+
+            if ($data['password'] === '') {
+                $errores[] = 'La contrasena temporal es obligatoria para crear un usuario nuevo.';
+            } elseif (strlen($data['password']) < 10) {
+                $errores[] = 'La contrasena temporal debe tener al menos 10 caracteres.';
+            }
+        }
+
+        if (!empty($data['email']) && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            $errores[] = 'El email no tiene un formato valido.';
+        }
+
+        $rolesValidos = ['administrador', 'gerente'];
+        if (!in_array($data['rol_hotel'], $rolesValidos, true)) {
+            $errores[] = 'El rol hotelero seleccionado no es valido.';
+        }
+
+        return $errores;
+    }
+
+    private function guardarOldInputAdminHotel(array $data) {
+        unset($data['password']);
+        save_old_input($data);
     }
 
     private function normalizarSlug($slug) {
