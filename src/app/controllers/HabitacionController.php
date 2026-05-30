@@ -20,6 +20,7 @@ class HabitacionController extends Controller {
      */
     protected function before() {
         $this->requireAuth();
+        require_hotel_module('habitaciones');
         return true;
     }
     

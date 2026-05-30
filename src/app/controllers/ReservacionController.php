@@ -1680,6 +1680,7 @@ private function generarHTMLReservacionesPersonalizado(
      */
     protected function before() {
         $this->requireAuth();
+        require_hotel_module('reservaciones');
         return true;
     }
     

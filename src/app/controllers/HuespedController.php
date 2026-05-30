@@ -17,6 +17,7 @@ class HuespedController extends Controller {
      */
     protected function before() {
         $this->requireAuth();
+        require_hotel_module('huespedes');
         return true;
     }
     

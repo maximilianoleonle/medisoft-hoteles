@@ -21,6 +21,7 @@ class CajaController extends Controller {
      */
     protected function before() {
         $this->requireAuth();
+        require_hotel_module('caja');
         return true;
 }
     public function indexAction() {

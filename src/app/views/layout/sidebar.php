@@ -1,6 +1,26 @@
-<!-- Sidebar Completo - Los Cedros -->
+<?php
+$menuModuloActivo = function ($clave) {
+    return function_exists('hotel_menu_module_enabled') ? hotel_menu_module_enabled($clave) : true;
+};
+
+$menuModulosSinConfigurar = function_exists('hotel_menu_modules_unconfigured') && hotel_menu_modules_unconfigured();
+$mostrarDashboard = $menuModuloActivo('dashboard');
+$mostrarHabitaciones = $menuModuloActivo('habitaciones');
+$mostrarReservaciones = $menuModuloActivo('reservaciones');
+$mostrarHuespedes = $menuModuloActivo('huespedes');
+$mostrarCaja = $menuModuloActivo('caja');
+$mostrarInventario = $menuModuloActivo('inventario');
+$mostrarFacturacion = $menuModuloActivo('facturacion');
+$mostrarReportes = $menuModuloActivo('reportes');
+$mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes;
+$mostrarOperaciones = $mostrarCaja || $mostrarInventario || $mostrarFacturacion;
+$filtrarMenuHotel = function_exists('hotel_menu_should_filter_modules') && hotel_menu_should_filter_modules();
+$mostrarUsuariosAdmin = !$filtrarMenuHotel && can('usuarios.view');
+$mostrarTarifas = !$filtrarMenuHotel && can('usuarios.view');
+$mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarTarifas);
+?>
+
 <aside id="sidebar" class="sidebar-main sidebar-fixed">
-    <!-- Logo y título -->
     <div class="sidebar-header">
         <div class="logo-container">
             <img src="<?= asset('img/logo-hotel-san-nicolas2.png') ?>" alt="Los Cedros" class="logo-img">
@@ -10,20 +30,18 @@
             </div>
         </div>
     </div>
-    
-    <!-- Buscador Global -->
+
     <div class="sidebar-search" style="position:relative;">
         <div class="search-box" style="position:relative;display:flex;align-items:center;isolation:isolate;cursor:text;">
             <i class="fas fa-search search-icon" style="pointer-events:none;"></i>
             <input type="text"
                    id="buscador-global-input"
-                   placeholder="Buscar huésped, reservación..."
+                   placeholder="Buscar huesped, reservacion..."
                    class="search-input"
                    autocomplete="off"
                    style="padding-right:28px;position:relative;z-index:2;pointer-events:auto;cursor:text;user-select:text;">
-            <!-- Botón limpiar -->
             <button id="buscador-global-clear"
-                    title="Limpiar búsqueda"
+                    title="Limpiar busqueda"
                     style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);
                            width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.18);
                            color:white;border:none;cursor:pointer;
@@ -31,7 +49,6 @@
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <!-- Dropdown de resultados -->
         <div id="buscador-global-dropdown"
              style="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);
                     background:white;border-radius:12px;
@@ -40,12 +57,11 @@
                     z-index:9999;max-height:420px;overflow-y:auto;">
         </div>
     </div>
-    
-    <!-- Menú de navegación -->
+
     <nav class="sidebar-nav">
-        <!-- Dashboard -->
+        <?php if ($mostrarDashboard): ?>
         <div class="nav-section">
-            <a href="<?= url('dashboard') ?>" 
+            <a href="<?= url('dashboard') ?>"
                class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'dashboard') !== false ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-th-large"></i>
@@ -53,107 +69,128 @@
                 <span class="nav-text">Dashboard</span>
             </a>
         </div>
-        
-        <!-- Sección Gestión -->
+        <?php endif; ?>
+
+        <?php if ($menuModulosSinConfigurar): ?>
+        <div class="nav-section">
+            <div style="padding:8px 12px;font-size:0.75rem;color:#6b7280;">
+                Modulos del hotel pendientes de configurar.
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <?php if ($mostrarGestion): ?>
         <div class="nav-section">
             <div class="nav-section-title">
-                <span>GESTIÓN</span>
+                <span>GESTION</span>
             </div>
-            
-            <a href="<?= url('habitaciones') ?>" 
+
+            <?php if ($mostrarHabitaciones): ?>
+            <a href="<?= url('habitaciones') ?>"
                class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'habitaciones') !== false ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-bed"></i>
-                    <?php 
-                    // Contador de habitaciones ocupadas (opcional)
+                    <?php
                     $habitaciones_ocupadas = $habitaciones_ocupadas ?? 0;
-                    if ($habitaciones_ocupadas > 0): 
+                    if ($habitaciones_ocupadas > 0):
                     ?>
                     <span class="nav-badge"><?= $habitaciones_ocupadas ?></span>
                     <?php endif; ?>
                 </div>
                 <span class="nav-text">Habitaciones</span>
             </a>
-            
-            <a href="<?= url('reservaciones') ?>" 
+            <?php endif; ?>
+
+            <?php if ($mostrarReservaciones): ?>
+            <a href="<?= url('reservaciones') ?>"
                class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'reservaciones') !== false ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-calendar-check"></i>
-                    <?php 
-                    // Contador de reservaciones pendientes (opcional)
+                    <?php
                     $pending_reservations = $pending_reservations ?? 0;
-                    if ($pending_reservations > 0): 
+                    if ($pending_reservations > 0):
                     ?>
                     <span class="nav-badge"><?= $pending_reservations ?></span>
                     <?php endif; ?>
                 </div>
                 <span class="nav-text">Reservaciones</span>
             </a>
-            
-            <a href="<?= url('huespedes') ?>" 
+            <?php endif; ?>
+
+            <?php if ($mostrarHuespedes): ?>
+            <a href="<?= url('huespedes') ?>"
                class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'huespedes') !== false ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-users"></i>
                 </div>
-                <span class="nav-text">Huéspedes</span>
+                <span class="nav-text">Huespedes</span>
             </a>
+            <?php endif; ?>
         </div>
-        
-        <!-- Sección Operaciones -->
+        <?php endif; ?>
+
+        <?php if ($mostrarOperaciones): ?>
         <div class="nav-section">
             <div class="nav-section-title">
                 <span>OPERACIONES</span>
             </div>
-            
-            <a href="<?= url('caja') ?>" 
+
+            <?php if ($mostrarCaja): ?>
+            <a href="<?= url('caja') ?>"
                class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'caja') !== false ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-cash-register"></i>
-                    <?php 
-                    // Indicador de caja abierta (opcional)
+                    <?php
                     $caja_abierta = $caja_abierta ?? false;
-                    if ($caja_abierta): 
+                    if ($caja_abierta):
                     ?>
                     <span class="nav-badge pulse-green"></span>
                     <?php endif; ?>
                 </div>
                 <span class="nav-text">Caja</span>
             </a>
-            
-            <a href="<?= url('inventario') ?>" 
+            <?php endif; ?>
+
+            <?php if ($mostrarInventario): ?>
+            <a href="<?= url('inventario') ?>"
                class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'inventario') !== false ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-boxes"></i>
                 </div>
                 <span class="nav-text">Inventarios</span>
             </a>
-            <a href="<?= url('facturacion') ?>" 
-   class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'facturacion') !== false ? 'active' : '' ?>">
-    <div class="nav-icon">
-        <i class="fas fa-file-invoice-dollar"></i>
-    </div>
-    <span class="nav-text">Facturación</span>
-</a>
+            <?php endif; ?>
 
-            
-            
+            <?php if ($mostrarFacturacion): ?>
+            <a href="<?= url('facturacion') ?>"
+               class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'facturacion') !== false ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <span class="nav-text">Facturacion</span>
+            </a>
+            <?php endif; ?>
         </div>
-        
-        <!-- Sección Administración (condicional) -->
-        <?php if (can('usuarios.view') || can('configuracion.view')): ?>
+        <?php endif; ?>
+
+        <?php if ($mostrarAdministracion): ?>
         <div class="nav-section">
             <div class="nav-section-title">
-                <span>ADMINISTRACIÓN</span>
+                <span>ADMINISTRACION</span>
             </div>
-            <a href="<?= url('reportes') ?>" 
+
+            <?php if ($mostrarReportes): ?>
+            <a href="<?= url('reportes') ?>"
                class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'reportes') !== false ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-chart-line"></i>
                 </div>
                 <span class="nav-text">Reportes</span>
             </a>
-            <?php if (can('usuarios.view')): ?>
-            <a href="<?= url('usuarios') ?>" 
+            <?php endif; ?>
+
+            <?php if ($mostrarUsuariosAdmin): ?>
+            <a href="<?= url('usuarios') ?>"
                class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'usuarios') !== false ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-user-cog"></i>
@@ -161,32 +198,25 @@
                 <span class="nav-text">Usuarios</span>
             </a>
             <?php endif; ?>
-            
-            <?php if (can('usuarios.view')): ?>
-            <a href="<?= url('configuracion/tarifas') ?>" 
+
+            <?php if ($mostrarTarifas): ?>
+            <a href="<?= url('configuracion/tarifas') ?>"
                class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'tarifas') !== false ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-tags"></i>
                 </div>
-                <span class="nav-text">Tarifas Dinámicas</span>
+                <span class="nav-text">Tarifas Dinamicas</span>
             </a>
-            <?php endif; ?>
-            
-            <?php if (can('configuracion.view')): ?>
-            
             <?php endif; ?>
         </div>
         <?php endif; ?>
     </nav>
-    
-    <!-- Footer del sidebar con info del usuario -->
+
     <div class="sidebar-footer">
-        <!-- Indicador de estado de red -->
         <div style="display:flex;align-items:center;gap:8px;padding:6px 12px 2px;opacity:0.85;">
             <span class="pwa-status-dot"></span>
-            <span class="pwa-status-label" id="sidebar-net-label">En línea</span>
+            <span class="pwa-status-label" id="sidebar-net-label">En linea</span>
         </div>
-        <!-- Usuario -->
         <div class="user-section">
             <div class="user-avatar">
                 <i class="fas fa-user"></i>
@@ -199,40 +229,33 @@
                 <i class="fas fa-ellipsis-v"></i>
             </button>
         </div>
-        
-        <!-- Menú desplegable del usuario -->
+
         <div class="user-dropdown" id="user-dropdown">
-           
             <div class="dropdown-divider"></div>
             <form method="POST" action="<?= url('logout') ?>" id="logout-form" style="margin:0;">
                 <?= csrf_field() ?>
                 <button type="submit" class="dropdown-item text-red" style="width:100%;background:none;border:0;text-align:left;cursor:pointer;">
                 <i class="fas fa-sign-out-alt"></i>
-                <span>Cerrar Sesión</span>
+                <span>Cerrar Sesion</span>
                 </button>
             </form>
         </div>
     </div>
 </aside>
 
-<!-- Overlay para móvil (mantenido solo para respuesta táctil) -->
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
-<!-- CSS adicional para hacer funcionar el dropdown -->
 <style>
-/* Hacer que el dropdown funcione con la clase 'active' */
 .user-dropdown.active {
     opacity: 1 !important;
     visibility: visible !important;
     transform: translateY(0) !important;
 }
 
-/* Asegurar z-index alto para el dropdown */
 .user-dropdown {
     z-index: 1100 !important;
 }
 
-/* Mejorar el hover del botón de menú - VERDE OLIVO */
 .user-menu-btn {
     cursor: pointer;
 }
@@ -242,41 +265,35 @@
 }
 </style>
 
-<!-- Incluir estilos del sidebar -->
 <link rel="stylesheet" href="<?= asset('css/sidebar-styles.css') ?>">
 
-<!-- Incluir scripts del sidebar modificado -->
 <script src="<?= asset('js/sidebar-scripts.js') ?>"></script>
 
-<!-- Script adicional para corregir el dropdown -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const userMenuBtn = document.getElementById('user-menu-toggle');
     const userDropdown = document.getElementById('user-dropdown');
-    
+
     if (userMenuBtn && userDropdown) {
-        // Toggle dropdown al hacer clic
         userMenuBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            
+
             const isActive = userDropdown.classList.contains('active');
-            
+
             if (isActive) {
                 userDropdown.classList.remove('active', 'show');
             } else {
                 userDropdown.classList.add('active', 'show');
             }
         });
-        
-        // Cerrar al hacer clic fuera
+
         document.addEventListener('click', function(e) {
             if (!userDropdown.contains(e.target) && !userMenuBtn.contains(e.target)) {
                 userDropdown.classList.remove('active', 'show');
             }
         });
-        
-        // Prevenir que clicks dentro del dropdown lo cierren
+
         userDropdown.addEventListener('click', function(e) {
             e.stopPropagation();
         });
@@ -285,10 +302,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
-
-
-
-/* Corregir el dropdown del usuario - VERDE OLIVO */
 #user-dropdown {
     position: absolute;
     bottom: 100%;

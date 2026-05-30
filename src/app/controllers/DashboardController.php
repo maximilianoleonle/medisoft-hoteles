@@ -33,6 +33,7 @@ class DashboardController extends Controller {
      */
     protected function before() {
         $this->requireAuth();
+        require_hotel_module('dashboard');
         return true;
     }
     

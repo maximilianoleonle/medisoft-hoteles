@@ -6,11 +6,13 @@
 class SaasAdminController extends Controller {
     private $hotelModel;
     private $usuarioModel;
+    private $moduloModel;
 
     public function __construct($route_params) {
         parent::__construct($route_params);
         $this->hotelModel = new Hotel();
         $this->usuarioModel = new Usuario();
+        $this->moduloModel = new Modulo();
     }
 
     protected function before() {
@@ -68,11 +70,13 @@ class SaasAdminController extends Controller {
     public function verHotelAction($id) {
         $hotel = $this->obtenerHotelORedirigir($id);
         $usuariosHotel = $this->hotelModel->listarUsuariosParaSaasAdmin((int) $hotel['id']);
+        $modulosHotel = $this->moduloModel->listarParaHotelSaasAdmin((int) $hotel['id']);
 
         View::renderTemplate('admin/saas/hotel_detalle', [
             'title' => 'Panel Medisoft interno - Detalle de hotel',
             'hotel' => $hotel,
-            'usuariosHotel' => $usuariosHotel
+            'usuariosHotel' => $usuariosHotel,
+            'modulosHotel' => $modulosHotel
         ]);
     }
 
@@ -220,6 +224,29 @@ class SaasAdminController extends Controller {
         }
     }
 
+    public function actualizarModulosHotelAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('admin/saas/hoteles/' . (int) $id);
+        }
+
+        $this->validateCSRF();
+        $hotel = $this->obtenerHotelORedirigir($id);
+        $modulosActivos = $this->normalizarModuloIds($this->getPost('modulos', []));
+        $actualizado = $this->moduloModel->actualizarModulosHotel(
+            (int) $hotel['id'],
+            $modulosActivos,
+            user_id()
+        );
+
+        if (!$actualizado) {
+            set_mensaje('No se pudieron actualizar los modulos del hotel. Verifique que la migracion de modulos este aplicada.', 'error');
+            $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
+        }
+
+        set_mensaje('Modulos del hotel actualizados correctamente.', 'success');
+        $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
+    }
+
     private function obtenerHotelORedirigir($id) {
         $hotel = $this->hotelModel->obtenerParaSaasAdmin((int) $id);
 
@@ -330,6 +357,14 @@ class SaasAdminController extends Controller {
     private function guardarOldInputAdminHotel(array $data) {
         unset($data['password']);
         save_old_input($data);
+    }
+
+    private function normalizarModuloIds($modulos) {
+        if (!is_array($modulos)) {
+            return [];
+        }
+
+        return array_values(array_unique(array_filter(array_map('intval', $modulos))));
     }
 
     private function normalizarSlug($slug) {

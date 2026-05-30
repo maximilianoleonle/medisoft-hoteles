@@ -670,6 +670,7 @@ public function debugMovimientosDateAction() {
      */
     protected function before() {
         $this->requireAuth();
+        require_hotel_module('inventario');
         return true;
     }
     public function eliminar($id) {

@@ -33,6 +33,8 @@ class ReportesController extends Controller {
             redirect('dashboard');
             exit;
         }
+
+        require_hotel_module('reportes');
         
         // Incluir modelos necesarios
         require_once __DIR__ . '/../models/Reporte.php';

@@ -1,6 +1,7 @@
 <?php
 $hotel = $hotel ?? [];
 $usuariosHotel = $usuariosHotel ?? [];
+$modulosHotel = $modulosHotel ?? [];
 $activo = !empty($hotel['activo']);
 $fila = function ($label, $value) {
     $value = $value === null || $value === '' ? '-' : $value;
@@ -77,6 +78,72 @@ $fila = function ($label, $value) {
                 </button>
             </form>
         </div>
+    </div>
+
+    <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Modulos activos</h2>
+            <p class="text-sm text-gray-500">Base inicial para habilitar o deshabilitar secciones por hotel.</p>
+        </div>
+
+        <?php if (empty($modulosHotel)): ?>
+            <div class="px-6 py-6 text-sm text-gray-600">
+                No hay catalogo de modulos disponible. Aplique la migracion de modulos antes de configurar esta seccion.
+            </div>
+        <?php else: ?>
+            <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/modulos') ?>">
+                <?= csrf_field() ?>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Activo</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Modulo</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Categoria</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ruta base</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Global</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <?php foreach ($modulosHotel as $modulo): ?>
+                                <?php $globalActivo = !empty($modulo['activo_global']); ?>
+                                <tr class="<?= $globalActivo ? '' : 'bg-gray-50 text-gray-500' ?>">
+                                    <td class="px-4 py-3 text-sm">
+                                        <input type="checkbox"
+                                               name="modulos[]"
+                                               value="<?= (int) $modulo['id'] ?>"
+                                               <?= !empty($modulo['activo_hotel']) ? 'checked' : '' ?>
+                                               <?= $globalActivo ? '' : 'disabled' ?>
+                                               class="rounded border-gray-300 text-gray-900 focus:ring-gray-900">
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-gray-900">
+                                        <div class="font-medium"><?= htmlspecialchars($modulo['nombre'] ?? '', ENT_QUOTES, 'UTF-8') ?></div>
+                                        <div class="text-xs text-gray-500"><?= htmlspecialchars($modulo['clave'] ?? '', ENT_QUOTES, 'UTF-8') ?></div>
+                                        <?php if (!empty($modulo['descripcion'])): ?>
+                                            <div class="mt-1 text-xs text-gray-500"><?= htmlspecialchars($modulo['descripcion'], ENT_QUOTES, 'UTF-8') ?></div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-gray-700"><?= htmlspecialchars($modulo['categoria'] ?: '-', ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="px-4 py-3 text-sm text-gray-700"><?= htmlspecialchars($modulo['ruta_base'] ?: '-', ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="px-4 py-3 text-sm">
+                                        <span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold <?= $globalActivo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700' ?>">
+                                            <?= $globalActivo ? 'Activo' : 'Inactivo' ?>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+                    <button type="submit" class="px-4 py-2 rounded-md bg-gray-900 text-white text-sm font-medium hover:bg-gray-800">
+                        Guardar modulos
+                    </button>
+                </div>
+            </form>
+        <?php endif; ?>
     </div>
 
     <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">

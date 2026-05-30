@@ -26,8 +26,38 @@ class ApiController extends Controller {
             ], 401);
             return false;
         }
+
+        $module = $this->moduleForCurrentApiAction();
+        if ($module && function_exists('require_hotel_module_api')) {
+            require_hotel_module_api($module);
+        }
         
         return true;
+    }
+
+    private function moduleForCurrentApiAction() {
+        $action = $this->route_params['action'] ?? '';
+
+        $map = [
+            'alertasDashboard' => 'dashboard',
+            'calcularPrecio' => 'reservaciones',
+            'estadisticasDashboard' => 'dashboard',
+            'habitacionesDisponibles' => 'habitaciones',
+            'informacionImagen' => 'habitaciones',
+            'movimientosRecientes' => 'dashboard',
+            'ocupacionActual' => 'dashboard',
+            'reservacionesHoy' => 'reservaciones',
+            'todasConOcupacion' => 'habitaciones',
+            'validarImagen' => 'habitaciones',
+            'vehiculosHuesped' => 'huespedes',
+            'verificarDisponibilidad' => 'reservaciones',
+            'buscarHuespedes' => 'huespedes',
+            'alertasInventario' => 'inventario',
+            'previewCheckinInventario' => 'inventario',
+            'verificarStockHabitacion' => 'inventario'
+        ];
+
+        return $map[$action] ?? null;
     }
 
     private function hotelIdActual() {
