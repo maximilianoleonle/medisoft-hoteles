@@ -193,6 +193,12 @@ $router->get('/dashboard/charts', ['controller' => 'Dashboard', 'action' => 'cha
 
 // Panel Medisoft interno SaaS
 $router->get('/admin/saas/hoteles', ['controller' => 'SaasAdmin', 'action' => 'hoteles']);
+$router->get('/admin/saas/hoteles/crear', ['controller' => 'SaasAdmin', 'action' => 'crearHotel']);
+$router->post('/admin/saas/hoteles', ['controller' => 'SaasAdmin', 'action' => 'guardarHotel']);
+$router->get('/admin/saas/hoteles/{id:[0-9]+}', ['controller' => 'SaasAdmin', 'action' => 'verHotel']);
+$router->get('/admin/saas/hoteles/{id:[0-9]+}/editar', ['controller' => 'SaasAdmin', 'action' => 'editarHotel']);
+$router->post('/admin/saas/hoteles/{id:[0-9]+}/actualizar', ['controller' => 'SaasAdmin', 'action' => 'actualizarHotel']);
+$router->post('/admin/saas/hoteles/{id:[0-9]+}/estado', ['controller' => 'SaasAdmin', 'action' => 'estadoHotel']);
 
 // APIs del Dashboard para actualización en tiempo real
 $router->get('/api/dashboard/ocupacion', ['controller' => 'Api', 'action' => 'ocupacionActual']);
