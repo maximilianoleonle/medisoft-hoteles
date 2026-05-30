@@ -208,8 +208,42 @@ function is_recepcionista() {
 /**
  * Verificar acceso al Panel Medisoft interno SaaS.
  */
+function current_saas_admin() {
+    if (!is_authenticated()) {
+        return null;
+    }
+
+    $usuarioId = $_SESSION['user_id'] ?? null;
+    if (!$usuarioId) {
+        return null;
+    }
+
+    try {
+        $db = Database::getInstance();
+        $stmt = $db->query(
+            "SELECT id, usuario_id, rol, activo, permisos_json
+             FROM saas_admins
+             WHERE usuario_id = ?
+               AND activo = 1
+               AND rol IN ('owner', 'admin', 'soporte')
+             LIMIT 1",
+            [(int) $usuarioId]
+        );
+
+        if (!$stmt) {
+            return null;
+        }
+
+        $saasAdmin = $stmt->fetch();
+        return $saasAdmin ?: null;
+    } catch (Throwable $e) {
+        error_log('Error al validar saas_admins: ' . $e->getMessage());
+        return null;
+    }
+}
+
 function isSaasAdmin() {
-    return is_authenticated() && user_role() === 'superadmin';
+    return current_saas_admin() !== null;
 }
 
 /**
