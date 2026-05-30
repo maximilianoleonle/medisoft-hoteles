@@ -60,6 +60,14 @@ class ApiController extends Controller {
         return $map[$action] ?? null;
     }
 
+    private function globalSearchModuleAllowed($clave) {
+        if (!function_exists('has_hotel_context') || !has_hotel_context()) {
+            return true;
+        }
+
+        return function_exists('current_hotel_has_module') && current_hotel_has_module($clave);
+    }
+
     private function hotelIdActual() {
         return obtenerHotelIdActualCompat();
     }
@@ -768,61 +776,73 @@ public function vehiculosHuespedAction() {
      */
     public function buscarGlobalAction() {
         $q = trim($this->getQuery('q', ''));
+        $buscarHuespedes = $this->globalSearchModuleAllowed('huespedes');
+        $buscarReservaciones = $this->globalSearchModuleAllowed('reservaciones');
+        $buscarHabitaciones = $this->globalSearchModuleAllowed('habitaciones');
 
         if ($q === '__offline_cache__') {
             try {
                 $db = Database::getInstance();
                 $hotel_id = $this->hotelIdActual();
 
-                $stmt = $db->query(
-                    "SELECT id, nombre_completo, telefono, procedencia_estado
-                     FROM huespedes h
-                     WHERE EXISTS (
-                         SELECT 1
+                $huespedes = [];
+                if ($buscarHuespedes) {
+                    $stmt = $db->query(
+                        "SELECT id, nombre_completo, telefono, procedencia_estado
+                         FROM huespedes h
+                         WHERE EXISTS (
+                             SELECT 1
+                             FROM reservaciones r
+                             WHERE r.huesped_id = h.id
+                               AND r.hotel_id = ?
+                         )
+                         ORDER BY nombre_completo ASC
+                         LIMIT 1000",
+                        [$hotel_id]
+                    );
+                    $huespedes = $stmt ? $stmt->fetchAll() : [];
+                }
+
+                $reservaciones = [];
+                if ($buscarReservaciones) {
+                    $stmt = $db->query(
+                        "SELECT r.id, r.estado, r.fecha_entrada, r.fecha_salida,
+                                r.hora_llegada_estimada, r.hora_entrada, r.hora_salida,
+                                r.precio_total, r.metodo_pago, r.notas, r.total_habitaciones,
+                                h.id AS huesped_id,
+                                h.nombre_completo AS huesped_nombre,
+                                h.telefono AS huesped_telefono,
+                                h.procedencia_estado,
+                                GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') AS habitaciones,
+                                GROUP_CONCAT(DISTINCT hab.id SEPARATOR ',') AS habitaciones_ids,
+                                GROUP_CONCAT(DISTINCT hab.tipo SEPARATOR '||') AS habitaciones_tipos
                          FROM reservaciones r
-                         WHERE r.huesped_id = h.id
-                           AND r.hotel_id = ?
-                     )
-                     ORDER BY nombre_completo ASC
-                     LIMIT 1000",
-                    [$hotel_id]
-                );
-                $huespedes = $stmt ? $stmt->fetchAll() : [];
+                         INNER JOIN huespedes h ON r.huesped_id = h.id
+                         LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
+                            AND rh.hotel_id = r.hotel_id
+                         LEFT JOIN habitaciones hab ON rh.habitacion_id = hab.id
+                            AND hab.hotel_id = rh.hotel_id
+                         WHERE r.hotel_id = ?
+                         GROUP BY r.id
+                         ORDER BY r.updated_at DESC, r.id DESC
+                         LIMIT 3000",
+                        [$hotel_id]
+                    );
+                    $reservaciones = $stmt ? $stmt->fetchAll() : [];
+                }
 
-                $stmt = $db->query(
-                    "SELECT r.id, r.estado, r.fecha_entrada, r.fecha_salida,
-                            r.hora_llegada_estimada, r.hora_entrada, r.hora_salida,
-                            r.precio_total, r.metodo_pago, r.notas, r.total_habitaciones,
-                            h.id AS huesped_id,
-                            h.nombre_completo AS huesped_nombre,
-                            h.telefono AS huesped_telefono,
-                            h.procedencia_estado,
-                            GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') AS habitaciones,
-                            GROUP_CONCAT(DISTINCT hab.id SEPARATOR ',') AS habitaciones_ids,
-                            GROUP_CONCAT(DISTINCT hab.tipo SEPARATOR '||') AS habitaciones_tipos
-                     FROM reservaciones r
-                     INNER JOIN huespedes h ON r.huesped_id = h.id
-                     LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                        AND rh.hotel_id = r.hotel_id
-                     LEFT JOIN habitaciones hab ON rh.habitacion_id = hab.id
-                        AND hab.hotel_id = rh.hotel_id
-                     WHERE r.hotel_id = ?
-                     GROUP BY r.id
-                     ORDER BY r.updated_at DESC, r.id DESC
-                     LIMIT 3000",
-                    [$hotel_id]
-                );
-                $reservaciones = $stmt ? $stmt->fetchAll() : [];
-
-                $stmt = $db->query(
-                    "SELECT id, numero, tipo, estado, precio_base
-                     FROM habitaciones
-                     WHERE hotel_id = ?
-                       AND activa = 1
-                     ORDER BY numero ASC",
-                    [$hotel_id]
-                );
-                $habitaciones = $stmt ? $stmt->fetchAll() : [];
+                $habitaciones = [];
+                if ($buscarHabitaciones) {
+                    $stmt = $db->query(
+                        "SELECT id, numero, tipo, estado, precio_base
+                         FROM habitaciones
+                         WHERE hotel_id = ?
+                           AND activa = 1
+                         ORDER BY numero ASC",
+                        [$hotel_id]
+                    );
+                    $habitaciones = $stmt ? $stmt->fetchAll() : [];
+                }
 
                 $resultados = [];
 
@@ -926,62 +946,71 @@ public function vehiculosHuespedAction() {
             $id_exacto = $q_id !== '' ? $q_id : '__sin_id__';
             $limite = 5;
 
-            $stmt = $db->query(
-                "SELECT id, nombre_completo, telefono, procedencia_estado
-                 FROM huespedes h
-                 WHERE (nombre_completo LIKE ? OR telefono LIKE ?)
-                   AND EXISTS (
-                       SELECT 1
-                       FROM reservaciones r
-                       WHERE r.huesped_id = h.id
-                         AND r.hotel_id = ?
-                   )
-                 ORDER BY nombre_completo ASC
-                 LIMIT ?",
-                [$buscar, $buscar, $hotel_id, $limite]
-            );
-            $huespedes = $stmt ? $stmt->fetchAll() : [];
+            $huespedes = [];
+            if ($buscarHuespedes) {
+                $stmt = $db->query(
+                    "SELECT id, nombre_completo, telefono, procedencia_estado
+                     FROM huespedes h
+                     WHERE (nombre_completo LIKE ? OR telefono LIKE ?)
+                       AND EXISTS (
+                           SELECT 1
+                           FROM reservaciones r
+                           WHERE r.huesped_id = h.id
+                             AND r.hotel_id = ?
+                       )
+                     ORDER BY nombre_completo ASC
+                     LIMIT ?",
+                    [$buscar, $buscar, $hotel_id, $limite]
+                );
+                $huespedes = $stmt ? $stmt->fetchAll() : [];
+            }
 
-            $stmt = $db->query(
-                "SELECT r.id, r.estado, r.fecha_entrada, r.fecha_salida, r.precio_total,
-                        h.nombre_completo AS huesped_nombre,
-                        GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') AS habitaciones
-                 FROM reservaciones r
-                 INNER JOIN huespedes h ON r.huesped_id = h.id
-                 LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                    AND rh.hotel_id = r.hotel_id
-                 LEFT JOIN habitaciones hab ON rh.habitacion_id = hab.id
-                    AND hab.hotel_id = rh.hotel_id
-                 WHERE r.hotel_id = ?
-                   AND (
-                    CAST(r.id AS CHAR) LIKE ?
-                    OR h.nombre_completo LIKE ?
-                    OR hab.numero LIKE ?
-                   )
-                 GROUP BY r.id
-                 ORDER BY
-                    CASE
-                        WHEN CAST(r.id AS CHAR) = ? THEN 0
-                        WHEN CAST(r.id AS CHAR) LIKE ? THEN 1
-                        ELSE 2
-                    END,
-                    r.fecha_entrada DESC
-                 LIMIT ?",
-                [$hotel_id, $buscar_id, $buscar, $buscar, $id_exacto, $buscar_id, $limite]
-            );
-            $reservaciones = $stmt ? $stmt->fetchAll() : [];
+            $reservaciones = [];
+            if ($buscarReservaciones) {
+                $stmt = $db->query(
+                    "SELECT r.id, r.estado, r.fecha_entrada, r.fecha_salida, r.precio_total,
+                            h.nombre_completo AS huesped_nombre,
+                            GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') AS habitaciones
+                     FROM reservaciones r
+                     INNER JOIN huespedes h ON r.huesped_id = h.id
+                     LEFT JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
+                        AND rh.hotel_id = r.hotel_id
+                     LEFT JOIN habitaciones hab ON rh.habitacion_id = hab.id
+                        AND hab.hotel_id = rh.hotel_id
+                     WHERE r.hotel_id = ?
+                       AND (
+                        CAST(r.id AS CHAR) LIKE ?
+                        OR h.nombre_completo LIKE ?
+                        OR hab.numero LIKE ?
+                       )
+                     GROUP BY r.id
+                     ORDER BY
+                        CASE
+                            WHEN CAST(r.id AS CHAR) = ? THEN 0
+                            WHEN CAST(r.id AS CHAR) LIKE ? THEN 1
+                            ELSE 2
+                        END,
+                        r.fecha_entrada DESC
+                     LIMIT ?",
+                    [$hotel_id, $buscar_id, $buscar, $buscar, $id_exacto, $buscar_id, $limite]
+                );
+                $reservaciones = $stmt ? $stmt->fetchAll() : [];
+            }
 
-            $stmt = $db->query(
-                "SELECT id, numero, tipo, estado, precio_base
-                 FROM habitaciones
-                 WHERE hotel_id = ?
-                   AND (numero LIKE ? OR tipo LIKE ?)
-                   AND activa = 1
-                 ORDER BY numero ASC
-                 LIMIT ?",
-                [$hotel_id, $buscar, $buscar, $limite]
-            );
-            $habitaciones = $stmt ? $stmt->fetchAll() : [];
+            $habitaciones = [];
+            if ($buscarHabitaciones) {
+                $stmt = $db->query(
+                    "SELECT id, numero, tipo, estado, precio_base
+                     FROM habitaciones
+                     WHERE hotel_id = ?
+                       AND (numero LIKE ? OR tipo LIKE ?)
+                       AND activa = 1
+                     ORDER BY numero ASC
+                     LIMIT ?",
+                    [$hotel_id, $buscar, $buscar, $limite]
+                );
+                $habitaciones = $stmt ? $stmt->fetchAll() : [];
+            }
 
             $resultados = [];
 
