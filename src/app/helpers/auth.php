@@ -106,6 +106,13 @@ function is_recepcionista() {
 }
 
 /**
+ * Verificar acceso al Panel Medisoft interno SaaS.
+ */
+function isSaasAdmin() {
+    return is_authenticated() && user_role() === 'superadmin';
+}
+
+/**
  * Verificar si el usuario puede acceder a una funcionalidad
  */
 function can($permission) {
@@ -189,6 +196,25 @@ function require_role($role) {
         }
         
         set_mensaje('No tiene permisos para acceder a esta página', 'error');
+        redirect('dashboard');
+    }
+}
+
+/**
+ * Requerir acceso al Panel Medisoft interno SaaS.
+ */
+function requireSaasAdmin() {
+    require_auth();
+
+    if (!isSaasAdmin()) {
+        if (is_ajax()) {
+            json_response([
+                'success' => false,
+                'message' => 'No tiene permisos para acceder al Panel Medisoft interno'
+            ], 403);
+        }
+
+        set_mensaje('No tiene permisos para acceder al Panel Medisoft interno', 'error');
         redirect('dashboard');
     }
 }

@@ -189,6 +189,9 @@ $router->get('/dashboard', ['controller' => 'Dashboard', 'action' => 'index']);
 $router->get('/dashboard/stats', ['controller' => 'Dashboard', 'action' => 'stats']);
 $router->get('/dashboard/charts', ['controller' => 'Dashboard', 'action' => 'charts']);
 
+// Panel Medisoft interno SaaS
+$router->get('/admin/saas/hoteles', ['controller' => 'SaasAdmin', 'action' => 'hoteles']);
+
 // APIs del Dashboard para actualización en tiempo real
 $router->get('/api/dashboard/ocupacion', ['controller' => 'Api', 'action' => 'ocupacionActual']);
 $router->get('/api/dashboard/movimientos-recientes', ['controller' => 'Api', 'action' => 'movimientosRecientes']);
