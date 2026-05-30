@@ -5,6 +5,7 @@ $modulosHotel = $modulosHotel ?? [];
 $planes = $planes ?? [];
 $planActual = $planActual ?? null;
 $modulosPorPlan = $modulosPorPlan ?? [];
+$brandingHotel = $brandingHotel ?? [];
 $auditoriaPlan = $auditoriaPlan ?? [
     'estado' => 'sin_plan',
     'mensaje' => 'No hay auditoria disponible.',
@@ -12,6 +13,21 @@ $auditoriaPlan = $auditoriaPlan ?? [
     'modulos_activos_fuera_plan' => [],
 ];
 $activo = !empty($hotel['activo']);
+$brandingOld = $_SESSION['old_input'] ?? [];
+$brandingCampo = function ($key, $default = '') use ($brandingOld, $brandingHotel) {
+    $value = array_key_exists($key, $brandingOld)
+        ? $brandingOld[$key]
+        : ($brandingHotel[$key] ?? $default);
+
+    return htmlspecialchars((string) ($value ?? ''), ENT_QUOTES, 'UTF-8');
+};
+$brandingActivo = array_key_exists('activo', $brandingOld)
+    ? !empty($brandingOld['activo'])
+    : (!isset($brandingHotel['activo']) || !empty($brandingHotel['activo']));
+$brandingNombrePreview = $brandingHotel['nombre_visual'] ?? $hotel['nombre'] ?? 'Medisoft Hoteles';
+$brandingLogoPreview = function_exists('hotel_branding_asset_url')
+    ? hotel_branding_asset_url($brandingHotel['logo_url'] ?? null)
+    : null;
 $fila = function ($label, $value) {
     $value = $value === null || $value === '' ? '-' : $value;
     ?>
@@ -88,6 +104,137 @@ $fila = function ($label, $value) {
                 </button>
             </form>
         </div>
+    </div>
+
+    <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Branding basico</h2>
+            <p class="text-sm text-gray-500">Identidad visual controlada para login y layout hotelero. No permite CSS, HTML ni JavaScript libre.</p>
+        </div>
+
+        <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/branding') ?>">
+            <?= csrf_field() ?>
+
+            <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label for="nombre_visual" class="block text-sm font-medium text-gray-700">Nombre visual</label>
+                        <input type="text" id="nombre_visual" name="nombre_visual" maxlength="150"
+                               value="<?= $brandingCampo('nombre_visual', $hotel['nombre'] ?? '') ?>"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
+                               placeholder="Hotel Demo SaaS">
+                    </div>
+
+                    <div>
+                        <label for="color_primary" class="block text-sm font-medium text-gray-700">Color primario</label>
+                        <input type="text" id="color_primary" name="color_primary"
+                               value="<?= $brandingCampo('color_primary') ?>"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
+                               placeholder="#0F766E">
+                    </div>
+
+                    <div>
+                        <label for="color_secondary" class="block text-sm font-medium text-gray-700">Color secundario</label>
+                        <input type="text" id="color_secondary" name="color_secondary"
+                               value="<?= $brandingCampo('color_secondary') ?>"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
+                               placeholder="#115E59">
+                    </div>
+
+                    <div>
+                        <label for="color_accent" class="block text-sm font-medium text-gray-700">Color acento</label>
+                        <input type="text" id="color_accent" name="color_accent"
+                               value="<?= $brandingCampo('color_accent') ?>"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
+                               placeholder="#F59E0B">
+                    </div>
+
+                    <div>
+                        <label for="sidebar_style" class="block text-sm font-medium text-gray-700">Estilo sidebar</label>
+                        <select id="sidebar_style" name="sidebar_style"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
+                            <?php foreach (['default' => 'Default', 'solid' => 'Solido', 'dark' => 'Oscuro'] as $value => $label): ?>
+                                <option value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>" <?= ($brandingHotel['sidebar_style'] ?? 'default') === $value ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label for="logo_url" class="block text-sm font-medium text-gray-700">Logo URL/ruta</label>
+                        <input type="text" id="logo_url" name="logo_url"
+                               value="<?= $brandingCampo('logo_url') ?>"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
+                               placeholder="/img/logo-hotel-san-nicolas2.png">
+                        <p class="mt-1 text-xs text-gray-500">Por ahora se aceptan rutas publicas controladas o URL http/https de imagen. Upload queda para una microfase posterior.</p>
+                    </div>
+
+                    <div>
+                        <label for="favicon_url" class="block text-sm font-medium text-gray-700">Favicon URL/ruta</label>
+                        <input type="text" id="favicon_url" name="favicon_url"
+                               value="<?= $brandingCampo('favicon_url') ?>"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
+                               placeholder="/img/favicon.png">
+                    </div>
+
+                    <div>
+                        <label for="login_background_url" class="block text-sm font-medium text-gray-700">Fondo login URL/ruta</label>
+                        <input type="text" id="login_background_url" name="login_background_url"
+                               value="<?= $brandingCampo('login_background_url') ?>"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
+                               placeholder="/uploads/branding/hotel/fondo.webp">
+                    </div>
+
+                    <div>
+                        <label for="login_style" class="block text-sm font-medium text-gray-700">Estilo login</label>
+                        <select id="login_style" name="login_style"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
+                            <?php foreach (['default' => 'Default', 'soft' => 'Suave', 'image' => 'Con imagen'] as $value => $label): ?>
+                                <option value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>" <?= ($brandingHotel['login_style'] ?? 'default') === $value ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <label class="mt-6 flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" name="activo" value="1"
+                               <?= $brandingActivo ? 'checked' : '' ?>
+                               class="rounded border-gray-300 text-gray-900 focus:ring-gray-900">
+                        Branding activo
+                    </label>
+                </div>
+
+                <div class="lg:col-span-1">
+                    <div class="rounded-lg border border-gray-200 overflow-hidden">
+                        <div style="background:linear-gradient(135deg, <?= htmlspecialchars($brandingHotel['color_primary'] ?? '#9CA777', ENT_QUOTES, 'UTF-8') ?>, <?= htmlspecialchars($brandingHotel['color_secondary'] ?? '#7A8B5C', ENT_QUOTES, 'UTF-8') ?>);" class="px-4 py-8 text-center text-white">
+                            <?php if ($brandingLogoPreview): ?>
+                                <img src="<?= htmlspecialchars($brandingLogoPreview, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($brandingNombrePreview, ENT_QUOTES, 'UTF-8') ?>" class="mx-auto h-16 w-16 rounded-full bg-white object-contain p-2">
+                            <?php else: ?>
+                                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-2xl font-bold">
+                                    <?= htmlspecialchars(strtoupper(substr((string) $brandingNombrePreview, 0, 1)), ENT_QUOTES, 'UTF-8') ?>
+                                </div>
+                            <?php endif; ?>
+                            <div class="mt-3 text-sm font-semibold"><?= htmlspecialchars($brandingNombrePreview, ENT_QUOTES, 'UTF-8') ?></div>
+                            <div class="mt-1 text-xs opacity-80">Vista previa basica</div>
+                        </div>
+                        <div class="p-4 text-xs text-gray-600">
+                            Los valores se imprimen como CSS variables sanitizadas:
+                            <span class="font-mono">--brand-primary</span>,
+                            <span class="font-mono">--brand-secondary</span> y
+                            <span class="font-mono">--brand-accent</span>.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+                <button type="submit" class="px-4 py-2 rounded-md bg-gray-900 text-white text-sm font-medium hover:bg-gray-800">
+                    Guardar branding
+                </button>
+            </div>
+        </form>
     </div>
 
     <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
@@ -243,7 +390,6 @@ $fila = function ($label, $value) {
         <?php endif; ?>
     </div>
 
-    <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
     <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Modulos activos</h2>

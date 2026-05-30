@@ -202,6 +202,7 @@ $router->post('/admin/saas/hoteles/{id:[0-9]+}/estado', ['controller' => 'SaasAd
 $router->post('/admin/saas/hoteles/{id:[0-9]+}/usuarios', ['controller' => 'SaasAdmin', 'action' => 'guardarAdminHotel']);
 $router->post('/admin/saas/hoteles/{id:[0-9]+}/modulos', ['controller' => 'SaasAdmin', 'action' => 'actualizarModulosHotel']);
 $router->post('/admin/saas/hoteles/{id:[0-9]+}/plan', ['controller' => 'SaasAdmin', 'action' => 'actualizarPlanHotel']);
+$router->post('/admin/saas/hoteles/{id:[0-9]+}/branding', ['controller' => 'SaasAdmin', 'action' => 'actualizarBrandingHotel']);
 
 // APIs del Dashboard para actualización en tiempo real
 $router->get('/api/dashboard/ocupacion', ['controller' => 'Api', 'action' => 'ocupacionActual']);

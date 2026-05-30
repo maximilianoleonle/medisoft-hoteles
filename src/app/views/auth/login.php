@@ -2,7 +2,16 @@
 $loginHotel = isset($hotel) && is_array($hotel) ? $hotel : null;
 $loginHotelId = $loginHotel['hotel_id'] ?? null;
 $loginHotelSlug = $loginHotel['slug'] ?? null;
-$loginHotelNombre = $loginHotel['nombre_comercial'] ?? 'Los Cedros';
+$loginBranding = isset($branding) && is_array($branding) ? $branding : (function_exists('hotel_branding') ? hotel_branding($loginHotelId, $loginHotel) : []);
+$loginHotelNombre = function_exists('hotel_branding_public_name')
+    ? hotel_branding_public_name($loginBranding, $loginHotel['nombre_comercial'] ?? 'Medisoft Hoteles')
+    : ($loginBranding['nombre_visual'] ?? $loginHotel['nombre_comercial'] ?? 'Medisoft Hoteles');
+$loginLogoUrl = function_exists('hotel_branding_asset_url')
+    ? (hotel_branding_asset_url($loginBranding['logo_url'] ?? null) ?: asset('img/logo-hotel-san-nicolas2.png'))
+    : asset('img/logo-hotel-san-nicolas2.png');
+$loginBackgroundUrl = function_exists('hotel_branding_asset_url')
+    ? hotel_branding_asset_url($loginBranding['login_background_url'] ?? null)
+    : null;
 $loginAction = $login_action ?? url('login/authenticate');
 $loginDisabled = !empty($login_disabled);
 ?>
@@ -24,21 +33,22 @@ $loginDisabled = !empty($login_disabled);
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;700;800&display=swap" rel="stylesheet">
     
+    <?= function_exists('hotel_branding_css_vars') ? hotel_branding_css_vars($loginBranding) : '' ?>
     <style>
         /* ========================================
            VARIABLES CSS
            ======================================== */
         :root {
-            --primary-color: #9CA777;
-            --primary-dark: #7A8B5C;
-            --secondary-color: #8B5A3C;
-            --gold: #D4AF37;
+            --primary-color: var(--brand-primary, #9CA777);
+            --primary-dark: var(--brand-secondary, #7A8B5C);
+            --secondary-color: var(--brand-secondary, #8B5A3C);
+            --gold: var(--brand-accent, #D4AF37);
             --gold-light: #E5D285;
             --cream: #FFF8E7;
             /* Tonos de verde olivo del logo */
-            --olive-green: #9CA777;
+            --olive-green: var(--brand-primary, #9CA777);
             --olive-green-light: #B8C49A;
-            --olive-green-dark: #7A8B5C;
+            --olive-green-dark: var(--brand-secondary, #7A8B5C);
             --olive-accent: rgba(156, 167, 119, 0.15);
             --dark-color: #2c2c2c;
             --light-color: #f8f9fa;
@@ -52,6 +62,16 @@ $loginDisabled = !empty($login_disabled);
             --gradient-gold: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
             --gradient-olive: linear-gradient(135deg, var(--olive-green) 0%, var(--olive-green-light) 100%);
         }
+
+        <?php if ($loginBackgroundUrl): ?>
+        body {
+            background-image:
+                linear-gradient(135deg, rgba(255, 248, 231, 0.88) 0%, rgba(255, 255, 255, 0.9) 100%),
+                url('<?= htmlspecialchars($loginBackgroundUrl, ENT_QUOTES, 'UTF-8') ?>');
+            background-size: cover;
+            background-position: center;
+        }
+        <?php endif; ?>
 
         /* ========================================
            RESET Y BASE
@@ -1047,7 +1067,7 @@ $loginDisabled = !empty($login_disabled);
             <div class="logo-container">
                 <div class="logo-wrapper">
                     <!-- Logo del Los Cedros -->
-                    <img src="<?= asset('img/logo-hotel-san-nicolas2.png') ?>" alt="<?= htmlspecialchars($loginHotelNombre, ENT_QUOTES, 'UTF-8') ?>" class="logo-img">
+                    <img src="<?= htmlspecialchars($loginLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($loginHotelNombre, ENT_QUOTES, 'UTF-8') ?>" class="logo-img">
                 </div>
                 
                 <div class="brand-info">

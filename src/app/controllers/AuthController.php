@@ -16,8 +16,10 @@ class AuthController extends Controller {
         }
         
         // Renderizar vista de login
+        $branding = function_exists('hotel_branding') ? hotel_branding() : null;
         View::render('auth/login', [
-            'title' => 'Iniciar Sesión - Los Cedros'
+            'title' => 'Iniciar Sesión - ' . hotel_branding_public_name($branding, 'Medisoft Hoteles'),
+            'branding' => $branding
         ]);
     }
     
@@ -42,7 +44,8 @@ class AuthController extends Controller {
             View::render('auth/login', [
                 'title' => 'Hotel no encontrado - Medisoft',
                 'login_disabled' => true,
-                'login_action' => url('login/authenticate')
+                'login_action' => url('login/authenticate'),
+                'branding' => function_exists('hotel_branding') ? hotel_branding() : null
             ]);
             return;
         }
@@ -58,10 +61,15 @@ class AuthController extends Controller {
             $this->redirect('dashboard');
         }
 
+        $branding = function_exists('hotel_branding')
+            ? hotel_branding((int) $hotel['hotel_id'], $hotel)
+            : null;
+
         View::render('auth/login', [
-            'title' => 'Iniciar Sesion - ' . htmlspecialchars($hotel['nombre_comercial'], ENT_QUOTES, 'UTF-8'),
+            'title' => 'Iniciar Sesion - ' . hotel_branding_public_name($branding, $hotel['nombre_comercial']),
             'hotel' => $hotel,
-            'login_action' => url('h/' . $hotel['slug'] . '/login/authenticate')
+            'login_action' => url('h/' . $hotel['slug'] . '/login/authenticate'),
+            'branding' => $branding
         ]);
     }
 

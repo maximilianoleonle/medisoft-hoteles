@@ -69,6 +69,7 @@ require_once APP_PATH . '/helpers/functions.php';
 require_once APP_PATH . '/helpers/auth.php';
 require_once APP_PATH . '/helpers/hotel_config.php';
 require_once APP_PATH . '/helpers/modulos.php';
+require_once APP_PATH . '/helpers/branding.php';
 
 // Cargar helper de habitaciones si existe
 if (file_exists(APP_PATH . '/helpers/habitaciones.php')) {

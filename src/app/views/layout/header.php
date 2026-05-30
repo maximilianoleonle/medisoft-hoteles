@@ -1,3 +1,16 @@
+<?php
+$layoutRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+$layoutEsPanelSaas = strpos($layoutRequestPath, '/admin/saas') === 0;
+$layoutBranding = (!$layoutEsPanelSaas && function_exists('has_hotel_context') && has_hotel_context() && function_exists('current_hotel_branding'))
+    ? current_hotel_branding()
+    : null;
+$layoutNombreVisual = $layoutBranding
+    ? hotel_branding_public_name($layoutBranding, current_hotel_nombre() ?: 'Los Cedros')
+    : ($layoutEsPanelSaas ? 'Medisoft' : 'Los Cedros');
+$layoutLogoUrl = ($layoutBranding && function_exists('hotel_branding_asset_url'))
+    ? (hotel_branding_asset_url($layoutBranding['logo_url'] ?? null) ?: asset('img/logo-hotel-san-nicolas2.png'))
+    : asset('img/logo-hotel-san-nicolas2.png');
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -95,6 +108,10 @@
             }
         }
     </script>
+
+    <?php if ($layoutBranding && function_exists('hotel_branding_css_vars')): ?>
+        <?= hotel_branding_css_vars($layoutBranding) ?>
+    <?php endif; ?>
     
     <?php
         if (!function_exists('obtenerHotelIdActualCompat') && defined('APP_PATH')) {
@@ -305,7 +322,7 @@
                 left: 0;
                 right: 0;
                 height: 60px;
-                background: linear-gradient(135deg, #9CA777 0%, #7A8B5C 100%);
+                background: linear-gradient(135deg, var(--brand-primary, #9CA777) 0%, var(--brand-secondary, #7A8B5C) 100%);
                 box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
                 z-index: 9999;
                 display: flex;
@@ -425,7 +442,7 @@
                 left: 0;
                 right: 0;
                 height: 2px;
-                background: #D4AF37;
+            background: var(--brand-accent, #D4AF37);
                 transform-origin: left;
                 transform: scaleX(0);
                 z-index: 9998;
@@ -479,7 +496,7 @@
         
         <!-- Logo centrado con efecto verde olivo -->
         <div class="mobile-header-logo">
-            <img src="<?= asset('img/logo-hotel-san-nicolas2.png') ?>" alt="Los Cedros">
+            <img src="<?= htmlspecialchars($layoutLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
         </div>
         
         <!-- Acciones: sync + install -->

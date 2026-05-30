@@ -8,6 +8,7 @@ class SaasAdminController extends Controller {
     private $usuarioModel;
     private $moduloModel;
     private $planModel;
+    private $brandingModel;
 
     public function __construct($route_params) {
         parent::__construct($route_params);
@@ -15,6 +16,7 @@ class SaasAdminController extends Controller {
         $this->usuarioModel = new Usuario();
         $this->moduloModel = new Modulo();
         $this->planModel = new Plan();
+        $this->brandingModel = new HotelBranding();
     }
 
     protected function before() {
@@ -77,6 +79,7 @@ class SaasAdminController extends Controller {
         $planActual = $this->planModel->obtenerActualDeHotel((int) $hotel['id']);
         $modulosPorPlan = $this->modulosPorPlan($planes);
         $auditoriaPlan = $this->planModel->auditarConsistenciaHotel((int) $hotel['id']);
+        $brandingHotel = $this->brandingModel->resolverParaHotel((int) $hotel['id'], $hotel);
 
         View::renderTemplate('admin/saas/hotel_detalle', [
             'title' => 'Panel Medisoft interno - Detalle de hotel',
@@ -86,7 +89,8 @@ class SaasAdminController extends Controller {
             'planes' => $planes,
             'planActual' => $planActual,
             'modulosPorPlan' => $modulosPorPlan,
-            'auditoriaPlan' => $auditoriaPlan
+            'auditoriaPlan' => $auditoriaPlan,
+            'brandingHotel' => $brandingHotel
         ]);
     }
 
@@ -325,6 +329,33 @@ class SaasAdminController extends Controller {
         }
     }
 
+    public function actualizarBrandingHotelAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('admin/saas/hoteles/' . (int) $id);
+        }
+
+        $this->validateCSRF();
+        $hotel = $this->obtenerHotelORedirigir($id);
+        $data = $this->datosBrandingDesdePost();
+        $errores = $this->brandingModel->validarDatos($data);
+
+        if (!empty($errores)) {
+            save_old_input($data);
+            set_mensaje(implode('<br>', $errores), 'error');
+            $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
+        }
+
+        if (!$this->brandingModel->guardarParaHotel((int) $hotel['id'], $data)) {
+            save_old_input($data);
+            set_mensaje('No se pudo guardar el branding. Verifique que la migracion de branding este aplicada.', 'error');
+            $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
+        }
+
+        clear_old_input();
+        set_mensaje('Branding basico actualizado correctamente.', 'success');
+        $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
+    }
+
     private function obtenerHotelORedirigir($id) {
         $hotel = $this->hotelModel->obtenerParaSaasAdmin((int) $id);
 
@@ -393,6 +424,21 @@ class SaasAdminController extends Controller {
             'password' => (string) $this->getPost('password', ''),
             'rol_hotel' => trim($this->getPost('rol_hotel', 'administrador')),
             'es_principal' => (int) $this->getPost('es_principal', 0) === 1 ? 1 : 0,
+            'activo' => (int) $this->getPost('activo', 1) === 1 ? 1 : 0,
+        ];
+    }
+
+    private function datosBrandingDesdePost() {
+        return [
+            'nombre_visual' => trim($this->getPost('nombre_visual', '')),
+            'logo_url' => trim($this->getPost('logo_url', '')),
+            'favicon_url' => trim($this->getPost('favicon_url', '')),
+            'login_background_url' => trim($this->getPost('login_background_url', '')),
+            'color_primary' => trim($this->getPost('color_primary', '')),
+            'color_secondary' => trim($this->getPost('color_secondary', '')),
+            'color_accent' => trim($this->getPost('color_accent', '')),
+            'sidebar_style' => trim($this->getPost('sidebar_style', 'default')),
+            'login_style' => trim($this->getPost('login_style', 'default')),
             'activo' => (int) $this->getPost('activo', 1) === 1 ? 1 : 0,
         ];
     }

@@ -18,15 +18,45 @@ $filtrarMenuHotel = function_exists('hotel_menu_should_filter_modules') && hotel
 $mostrarUsuariosAdmin = !$filtrarMenuHotel && can('usuarios.view');
 $mostrarTarifas = !$filtrarMenuHotel && can('usuarios.view');
 $mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarTarifas);
+$sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+$sidebarEsPanelSaas = strpos($sidebarRequestPath, '/admin/saas') === 0;
+$sidebarBranding = (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_context() && function_exists('current_hotel_branding'))
+    ? current_hotel_branding()
+    : null;
+$sidebarNombreVisual = $sidebarBranding
+    ? hotel_branding_public_name($sidebarBranding, current_hotel_nombre() ?: 'Los Cedros')
+    : ($sidebarEsPanelSaas ? 'Medisoft' : 'Los Cedros');
+$sidebarSubtitulo = $sidebarEsPanelSaas ? 'Panel SaaS' : 'Hotel';
+$sidebarLogoUrl = ($sidebarBranding && function_exists('hotel_branding_asset_url'))
+    ? (hotel_branding_asset_url($sidebarBranding['logo_url'] ?? null) ?: asset('img/logo-hotel-san-nicolas2.png'))
+    : asset('img/logo-hotel-san-nicolas2.png');
 ?>
+
+<?php if ($sidebarBranding): ?>
+<style>
+    .sidebar-main .logo-title {
+        color: var(--brand-primary, #9CA777);
+    }
+
+    .sidebar-main .nav-item.active,
+    .sidebar-main .nav-item:hover {
+        background: linear-gradient(135deg, var(--brand-primary, #9CA777), var(--brand-secondary, #7A8B5C));
+    }
+
+    .sidebar-main .nav-badge,
+    .sidebar-main .pulse-green {
+        background: var(--brand-accent, #D4AF37);
+    }
+</style>
+<?php endif; ?>
 
 <aside id="sidebar" class="sidebar-main sidebar-fixed">
     <div class="sidebar-header">
         <div class="logo-container">
-            <img src="<?= asset('img/logo-hotel-san-nicolas2.png') ?>" alt="Los Cedros" class="logo-img">
+            <img src="<?= htmlspecialchars($sidebarLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?>" class="logo-img">
             <div class="logo-text">
-                <h2 class="logo-title">Los Cedros</h2>
-                <p class="logo-subtitle">Hotel</p>
+                <h2 class="logo-title"><?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?></h2>
+                <p class="logo-subtitle"><?= htmlspecialchars($sidebarSubtitulo, ENT_QUOTES, 'UTF-8') ?></p>
             </div>
         </div>
     </div>
