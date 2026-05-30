@@ -76,6 +76,7 @@ class SaasAdminController extends Controller {
         $planes = $this->planModel->listarActivos();
         $planActual = $this->planModel->obtenerActualDeHotel((int) $hotel['id']);
         $modulosPorPlan = $this->modulosPorPlan($planes);
+        $auditoriaPlan = $this->planModel->auditarConsistenciaHotel((int) $hotel['id']);
 
         View::renderTemplate('admin/saas/hotel_detalle', [
             'title' => 'Panel Medisoft interno - Detalle de hotel',
@@ -84,7 +85,8 @@ class SaasAdminController extends Controller {
             'modulosHotel' => $modulosHotel,
             'planes' => $planes,
             'planActual' => $planActual,
-            'modulosPorPlan' => $modulosPorPlan
+            'modulosPorPlan' => $modulosPorPlan,
+            'auditoriaPlan' => $auditoriaPlan
         ]);
     }
 

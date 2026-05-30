@@ -5,6 +5,12 @@ $modulosHotel = $modulosHotel ?? [];
 $planes = $planes ?? [];
 $planActual = $planActual ?? null;
 $modulosPorPlan = $modulosPorPlan ?? [];
+$auditoriaPlan = $auditoriaPlan ?? [
+    'estado' => 'sin_plan',
+    'mensaje' => 'No hay auditoria disponible.',
+    'modulos_incluidos_apagados' => [],
+    'modulos_activos_fuera_plan' => [],
+];
 $activo = !empty($hotel['activo']);
 $fila = function ($label, $value) {
     $value = $value === null || $value === '' ? '-' : $value;
@@ -158,6 +164,86 @@ $fila = function ($label, $value) {
         <?php endif; ?>
     </div>
 
+    <?php
+    $estadoAuditoria = $auditoriaPlan['estado'] ?? 'sin_plan';
+    $estadoClase = [
+        'consistente' => 'bg-green-100 text-green-800',
+        'diferencias' => 'bg-amber-100 text-amber-800',
+        'personalizado' => 'bg-blue-100 text-blue-800',
+        'sin_plan' => 'bg-gray-100 text-gray-700',
+    ][$estadoAuditoria] ?? 'bg-gray-100 text-gray-700';
+    $estadoTexto = [
+        'consistente' => 'Consistente',
+        'diferencias' => 'Con diferencias',
+        'personalizado' => 'Personalizado',
+        'sin_plan' => 'Sin plan',
+    ][$estadoAuditoria] ?? 'No disponible';
+    $modulosApagados = $auditoriaPlan['modulos_incluidos_apagados'] ?? [];
+    $modulosFueraPlan = $auditoriaPlan['modulos_activos_fuera_plan'] ?? [];
+    ?>
+    <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900">Consistencia del plan</h2>
+                <p class="text-sm text-gray-500">Auditoria no bloqueante entre el plan comercial y los modulos activos reales.</p>
+            </div>
+            <span class="inline-flex w-fit rounded-full px-3 py-1 text-sm font-semibold <?= $estadoClase ?>">
+                <?= htmlspecialchars($estadoTexto, ENT_QUOTES, 'UTF-8') ?>
+            </span>
+        </div>
+
+        <div class="px-6 py-5">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="rounded-md border border-gray-200 p-4">
+                    <div class="text-xs font-semibold uppercase tracking-wider text-gray-500">Plan actual</div>
+                    <div class="mt-1 text-sm font-medium text-gray-900"><?= htmlspecialchars($planActual['nombre'] ?? 'Sin plan', ENT_QUOTES, 'UTF-8') ?></div>
+                    <p class="mt-2 text-xs text-gray-600"><?= htmlspecialchars($auditoriaPlan['mensaje'] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
+                </div>
+
+                <div class="rounded-md border border-gray-200 p-4">
+                    <div class="text-xs font-semibold uppercase tracking-wider text-gray-500">Incluidos pero apagados</div>
+                    <?php if (empty($modulosApagados)): ?>
+                        <p class="mt-2 text-sm text-gray-600">Sin diferencias.</p>
+                    <?php else: ?>
+                        <ul class="mt-2 space-y-1 text-sm text-gray-800">
+                            <?php foreach ($modulosApagados as $modulo): ?>
+                                <li><?= htmlspecialchars($modulo['nombre'] ?? $modulo['clave'] ?? '', ENT_QUOTES, 'UTF-8') ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                </div>
+
+                <div class="rounded-md border border-gray-200 p-4">
+                    <div class="text-xs font-semibold uppercase tracking-wider text-gray-500">Activos fuera del plan</div>
+                    <?php if (empty($modulosFueraPlan)): ?>
+                        <p class="mt-2 text-sm text-gray-600">Sin diferencias.</p>
+                    <?php else: ?>
+                        <ul class="mt-2 space-y-1 text-sm text-gray-800">
+                            <?php foreach ($modulosFueraPlan as $modulo): ?>
+                                <li><?= htmlspecialchars($modulo['nombre'] ?? $modulo['clave'] ?? '', ENT_QUOTES, 'UTF-8') ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <?php if ($estadoAuditoria === 'diferencias' && !empty($planActual['id'])): ?>
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p class="text-sm text-amber-800">Reaplicar el preset puede activar o desactivar modulos para coincidir con el plan actual.</p>
+                <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/plan') ?>">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="plan_id" value="<?= (int) $planActual['id'] ?>">
+                    <input type="hidden" name="aplicar_modulos" value="1">
+                    <button type="submit" class="px-4 py-2 rounded-md bg-gray-900 text-white text-sm font-medium hover:bg-gray-800">
+                        Reaplicar preset del plan
+                    </button>
+                </form>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
     <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Modulos activos</h2>

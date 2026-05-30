@@ -97,6 +97,67 @@ class Plan extends Model {
         return array_values(array_unique(array_map('intval', array_column($modulos, 'id'))));
     }
 
+    public function auditarConsistenciaHotel($hotelId) {
+        $plan = $this->obtenerActualDeHotel($hotelId);
+        $modulosActivos = $this->listarModulosActivosDeHotel($hotelId);
+
+        if (!$plan || empty($plan['id'])) {
+            return [
+                'estado' => 'sin_plan',
+                'plan' => null,
+                'modulos_esperados' => [],
+                'modulos_activos' => $modulosActivos,
+                'modulos_incluidos_apagados' => [],
+                'modulos_activos_fuera_plan' => [],
+                'mensaje' => 'Este hotel aun no tiene un plan comercial asignado.'
+            ];
+        }
+
+        if (($plan['clave'] ?? '') === 'personalizado') {
+            return [
+                'estado' => 'personalizado',
+                'plan' => $plan,
+                'modulos_esperados' => [],
+                'modulos_activos' => $modulosActivos,
+                'modulos_incluidos_apagados' => [],
+                'modulos_activos_fuera_plan' => [],
+                'mensaje' => 'Este hotel usa configuracion manual de modulos.'
+            ];
+        }
+
+        $modulosEsperados = $this->listarModulosDelPlan((int) $plan['id']);
+        $esperadosPorClave = $this->indexarModulosPorClave($modulosEsperados);
+        $activosPorClave = $this->indexarModulosPorClave($modulosActivos);
+
+        $incluidosApagados = [];
+        foreach ($esperadosPorClave as $clave => $modulo) {
+            if (!isset($activosPorClave[$clave])) {
+                $incluidosApagados[] = $modulo;
+            }
+        }
+
+        $activosFueraPlan = [];
+        foreach ($activosPorClave as $clave => $modulo) {
+            if (!isset($esperadosPorClave[$clave])) {
+                $activosFueraPlan[] = $modulo;
+            }
+        }
+
+        $consistente = empty($incluidosApagados) && empty($activosFueraPlan);
+
+        return [
+            'estado' => $consistente ? 'consistente' : 'diferencias',
+            'plan' => $plan,
+            'modulos_esperados' => $modulosEsperados,
+            'modulos_activos' => $modulosActivos,
+            'modulos_incluidos_apagados' => $incluidosApagados,
+            'modulos_activos_fuera_plan' => $activosFueraPlan,
+            'mensaje' => $consistente
+                ? 'Los modulos activos coinciden con el preset del plan.'
+                : 'Hay diferencias entre el preset comercial y los modulos activos reales.'
+        ];
+    }
+
     public function actualizarPlanHotel($hotelId, $planId) {
         try {
             $stmt = $this->db->query(
@@ -111,5 +172,43 @@ class Plan extends Model {
             error_log('Error al actualizar plan de hotel: ' . $e->getMessage());
             return false;
         }
+    }
+
+    private function listarModulosActivosDeHotel($hotelId) {
+        try {
+            return $this->query(
+                "SELECT m.id,
+                        m.clave,
+                        m.nombre,
+                        m.descripcion,
+                        m.categoria,
+                        m.activo_global,
+                        m.orden,
+                        m.icono,
+                        m.ruta_base
+                 FROM hotel_modulos hm
+                 INNER JOIN modulos m ON m.id = hm.modulo_id
+                 WHERE hm.hotel_id = ?
+                   AND hm.activo = 1
+                   AND m.activo_global = 1
+                 ORDER BY m.orden ASC, m.nombre ASC",
+                [(int) $hotelId]
+            );
+        } catch (Throwable $e) {
+            error_log('Error al listar modulos activos para auditoria de plan: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function indexarModulosPorClave(array $modulos) {
+        $indexados = [];
+
+        foreach ($modulos as $modulo) {
+            if (!empty($modulo['clave'])) {
+                $indexados[(string) $modulo['clave']] = $modulo;
+            }
+        }
+
+        return $indexados;
     }
 }
