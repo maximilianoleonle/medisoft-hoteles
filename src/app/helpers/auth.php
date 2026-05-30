@@ -7,6 +7,44 @@
 /**
  * Verificar si el usuario está autenticado
  */
+function bootstrap_tenant_context_from_session() {
+    if (!class_exists('TenantContext')) {
+        return;
+    }
+
+    if (empty($_SESSION['hotel_id'])) {
+        TenantContext::reset();
+        return;
+    }
+
+    $roles = [];
+
+    if (!empty($_SESSION['hotel_usuario']['rol'])) {
+        $roles[] = $_SESSION['hotel_usuario']['rol'];
+    }
+
+    if (!empty($_SESSION['user']['rol'])) {
+        $roles[] = $_SESSION['user']['rol'];
+    }
+
+    TenantContext::boot([
+        'hotel' => [
+            'id' => (int) $_SESSION['hotel_id'],
+            'slug' => $_SESSION['hotel_slug'] ?? null,
+            'nombre' => $_SESSION['hotel_nombre'] ?? null,
+        ],
+        'usuario_id' => $_SESSION['user_id'] ?? null,
+        'roles' => array_values(array_unique(array_filter($roles))),
+        'permisos' => [],
+        'hoteles_disponibles' => [[
+            'id' => (int) $_SESSION['hotel_id'],
+            'slug' => $_SESSION['hotel_slug'] ?? null,
+            'nombre' => $_SESSION['hotel_nombre'] ?? null,
+        ]],
+        'superadmin' => in_array('superadmin', $roles, true),
+    ]);
+}
+
 function is_authenticated() {
     if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
         return false;
@@ -21,6 +59,7 @@ function is_authenticated() {
     }
 
     $_SESSION['last_activity'] = time();
+    bootstrap_tenant_context_from_session();
     return true;
 }
 
@@ -52,6 +91,7 @@ function current_user() {
         if ($user) {
             unset($user['password']); // No guardar password en sesión
             $_SESSION['user'] = $user;
+            bootstrap_tenant_context_from_session();
         } else {
             // Usuario no válido, cerrar sesión
             logout();
@@ -67,6 +107,66 @@ function current_user() {
  */
 function user_id() {
     return is_authenticated() ? $_SESSION['user_id'] : null;
+}
+
+function current_hotel_id() {
+    return !empty($_SESSION['hotel_id']) ? (int) $_SESSION['hotel_id'] : null;
+}
+
+function current_hotel_slug() {
+    return $_SESSION['hotel_slug'] ?? null;
+}
+
+function current_hotel_nombre() {
+    return $_SESSION['hotel_nombre'] ?? null;
+}
+
+function current_hotel_user_id() {
+    return $_SESSION['hotel_usuario']['id'] ?? null;
+}
+
+function current_hotel_user_role() {
+    return $_SESSION['hotel_usuario']['rol'] ?? null;
+}
+
+function has_hotel_context() {
+    return current_hotel_id() !== null && current_hotel_slug() !== null;
+}
+
+function login_path_for_current_context($requestUri = null) {
+    $slug = null;
+
+    if ($requestUri) {
+        $path = parse_url($requestUri, PHP_URL_PATH) ?: '';
+
+        if (preg_match('#^/h/([a-z0-9-]+)(?:/|$)#i', $path, $matches)) {
+            $slug = strtolower($matches[1]);
+        }
+    }
+
+    if (!$slug && current_hotel_slug()) {
+        $slug = current_hotel_slug();
+    }
+
+    return $slug ? 'h/' . $slug . '/login' : 'login';
+}
+
+function require_hotel_context() {
+    if (has_hotel_context()) {
+        bootstrap_tenant_context_from_session();
+        return current_hotel_id();
+    }
+
+    if (is_ajax()) {
+        json_response([
+            'success' => false,
+            'message' => 'No hay contexto de hotel activo.',
+            'redirect' => url(login_path_for_current_context($_SERVER['REQUEST_URI'] ?? null))
+        ], 403);
+    }
+
+    set_mensaje('No hay contexto de hotel activo. Inicie sesion desde el acceso de su hotel.', 'error');
+    redirect(login_path_for_current_context($_SERVER['REQUEST_URI'] ?? null));
 }
 
 /**
@@ -166,18 +266,20 @@ function can($permission) {
  */
 function require_auth() {
     if (!is_authenticated()) {
+        $loginPath = login_path_for_current_context($_SERVER['REQUEST_URI'] ?? null);
+
         // Si es una petición AJAX, retornar JSON
         if (is_ajax()) {
             json_response([
                 'success' => false,
                 'message' => 'Sesión expirada. Por favor, inicie sesión nuevamente.',
-                'redirect' => url('login')
+                'redirect' => url($loginPath)
             ], 401);
         }
         
         // Para peticiones normales, redirigir al login
         set_mensaje('Debe iniciar sesión para acceder a esta página', 'error');
-        redirect('login');
+        redirect($loginPath);
     }
 }
 
@@ -241,13 +343,25 @@ function require_permission($permission) {
 /**
  * Login del usuario
  */
-function login($user_id, $remember = false) {
+function login($user_id, $remember = false, $hotel = null) {
     // Regenerar ID de sesión por seguridad
     session_regenerate_id(true);
 
     $_SESSION['user_id'] = $user_id;
     $_SESSION['login_time'] = time();
     $_SESSION['last_activity'] = time();
+
+    if (is_array($hotel) && !empty($hotel['id'])) {
+        $_SESSION['hotel_id'] = (int) $hotel['id'];
+        $_SESSION['hotel_slug'] = $hotel['slug'] ?? null;
+        $_SESSION['hotel_nombre'] = $hotel['nombre'] ?? null;
+        $_SESSION['hotel_usuario'] = [
+            'id' => $hotel['hotel_usuario_id'] ?? null,
+            'rol' => $hotel['rol_hotel'] ?? null,
+        ];
+
+        bootstrap_tenant_context_from_session();
+    }
     
     // Registrar login en base de datos
     $db = Database::getInstance();
@@ -284,6 +398,10 @@ function login($user_id, $remember = false) {
  * Logout del usuario
  */
 function logout() {
+    if (class_exists('TenantContext')) {
+        TenantContext::reset();
+    }
+
     // Eliminar remember token si existe
     if (isset($_COOKIE['remember_token'])) {
         $db = Database::getInstance();

@@ -24,6 +24,144 @@ class AuthController extends Controller {
     /**
      * Procesar autenticación
      */
+    /**
+     * Mostrar login scoped por hotel usando slug.
+     */
+    public function hotelLoginAction($slug) {
+        $slug = $this->normalizarSlugHotel($slug);
+
+        if ($slug === '') {
+            set_mensaje('Liga de hotel invalida.', 'error');
+            $this->redirect('login');
+        }
+
+        $hotel = $this->resolverHotelLoginPorSlug($slug);
+
+        if (!$hotel) {
+            set_mensaje('Hotel no encontrado o inactivo. Verifique la liga de acceso.', 'error');
+            View::render('auth/login', [
+                'title' => 'Hotel no encontrado - Medisoft',
+                'login_disabled' => true,
+                'login_action' => url('login/authenticate')
+            ]);
+            return;
+        }
+
+        if (is_authenticated()) {
+            $sessionSlug = $_SESSION['hotel_slug'] ?? null;
+
+            if ($sessionSlug === $hotel['slug']) {
+                $this->redirect('dashboard');
+            }
+
+            set_mensaje('Ya hay una sesion activa. Cierre sesion antes de ingresar a otro hotel.', 'error');
+            $this->redirect('dashboard');
+        }
+
+        View::render('auth/login', [
+            'title' => 'Iniciar Sesion - ' . htmlspecialchars($hotel['nombre_comercial'], ENT_QUOTES, 'UTF-8'),
+            'hotel' => $hotel,
+            'login_action' => url('h/' . $hotel['slug'] . '/login/authenticate')
+        ]);
+    }
+
+    /**
+     * Procesar autenticacion scoped por hotel.
+     */
+    public function hotelAuthenticateAction($slug) {
+        $slug = $this->normalizarSlugHotel($slug);
+
+        if ($slug === '') {
+            set_mensaje('Liga de hotel invalida.', 'error');
+            $this->redirect('login');
+        }
+
+        $hotel = $this->resolverHotelLoginPorSlug($slug);
+        $loginPath = 'h/' . $slug . '/login';
+
+        if (!$hotel) {
+            set_mensaje('Hotel no encontrado o inactivo. Verifique la liga de acceso.', 'error');
+            $this->redirect($loginPath);
+        }
+
+        if (is_authenticated()) {
+            if (($_SESSION['hotel_slug'] ?? null) === $hotel['slug']) {
+                $this->redirect('dashboard');
+            }
+
+            set_mensaje('Ya hay una sesion activa. Cierre sesion antes de ingresar a otro hotel.', 'error');
+            $this->redirect('dashboard');
+        }
+
+        if (!$this->isPost()) {
+            $this->redirect($loginPath);
+        }
+
+        $this->validateCSRF();
+
+        $ip = get_client_ip();
+        $intentos_key = 'login_intentos_' . md5($ip . '|' . $hotel['slug']);
+        $bloqueo_key  = 'login_bloqueado_' . md5($ip . '|' . $hotel['slug']);
+
+        if (isset($_SESSION[$bloqueo_key]) && $_SESSION[$bloqueo_key] > time()) {
+            $segundos = $_SESSION[$bloqueo_key] - time();
+            set_mensaje('Demasiados intentos fallidos. Espera ' . ceil($segundos / 60) . ' minuto(s) antes de intentar de nuevo.', 'error');
+            $this->redirect($loginPath);
+        }
+
+        $nombre_usuario = trim($this->getPost('nombre_usuario', ''));
+        $password = $this->getPost('password', '');
+        $remember = $this->getPost('remember') ? true : false;
+
+        if (empty($nombre_usuario) || empty($password)) {
+            set_mensaje('Por favor complete todos los campos', 'error');
+            $this->redirect($loginPath);
+        }
+
+        $db = Database::getInstance();
+        $stmt = $db->query(
+            "SELECT * FROM usuarios WHERE nombre_usuario = ? AND activo = 1",
+            [$nombre_usuario]
+        );
+
+        $usuario = $stmt->fetch();
+        $credencialesValidas = $usuario && password_verify($password, $usuario['password']);
+        $hotelUsuario = $credencialesValidas
+            ? $this->resolverHotelUsuarioActivo((int) $hotel['hotel_id'], (int) $usuario['id'])
+            : null;
+
+        if ($credencialesValidas && $hotelUsuario) {
+            unset($_SESSION[$intentos_key], $_SESSION[$bloqueo_key]);
+
+            login($usuario['id'], $remember, [
+                'id' => (int) $hotel['hotel_id'],
+                'slug' => $hotel['slug'],
+                'nombre' => $hotel['nombre_comercial'],
+                'rol_hotel' => $hotelUsuario['rol'] ?? null,
+                'hotel_usuario_id' => $hotelUsuario['id'] ?? null
+            ]);
+
+            $this->logLogin($usuario['id'], true);
+            set_mensaje('Bienvenido ' . $usuario['nombre_completo'], 'success');
+            $this->redirect('dashboard');
+        }
+
+        $_SESSION[$intentos_key] = ($_SESSION[$intentos_key] ?? 0) + 1;
+
+        if ($_SESSION[$intentos_key] >= 5) {
+            $_SESSION[$bloqueo_key] = time() + 900;
+            unset($_SESSION[$intentos_key]);
+            $this->logLogin(null, false, $nombre_usuario);
+            set_mensaje('Cuenta bloqueada temporalmente por multiples intentos fallidos. Intenta en 15 minutos.', 'error');
+            $this->redirect($loginPath);
+        }
+
+        $this->logLogin(null, false, $nombre_usuario);
+        $restantes = 5 - $_SESSION[$intentos_key];
+        set_mensaje('Usuario o contrasena no validos para este hotel. Te quedan ' . $restantes . ' intento(s).', 'error');
+        $this->redirect($loginPath);
+    }
+
     public function authenticateAction() {
         // Verificar que sea POST
         if (!$this->isPost()) {
@@ -124,6 +262,59 @@ class AuthController extends Controller {
     /**
      * Registrar intento de login en log
      */
+    private function normalizarSlugHotel($slug) {
+        $slug = strtolower(trim((string) $slug));
+
+        if (!preg_match('/^[a-z0-9-]+$/', $slug)) {
+            return '';
+        }
+
+        return $slug;
+    }
+
+    private function resolverHotelLoginPorSlug($slug) {
+        if ($slug === '') {
+            return null;
+        }
+
+        $db = Database::getInstance();
+        // El esquema actual no tiene bandera "demo"; esta microfase solo resuelve hoteles activos.
+        $stmt = $db->query(
+            "SELECT id AS hotel_id, nombre AS nombre_comercial, slug
+             FROM hoteles
+             WHERE slug = ? AND activo = 1
+             LIMIT 1",
+            [$slug]
+        );
+
+        if (!$stmt) {
+            return null;
+        }
+
+        $hotel = $stmt->fetch();
+
+        return $hotel ?: null;
+    }
+
+    private function resolverHotelUsuarioActivo($hotelId, $usuarioId) {
+        $db = Database::getInstance();
+        $stmt = $db->query(
+            "SELECT id, hotel_id, usuario_id, rol, activo
+             FROM hotel_usuarios
+             WHERE hotel_id = ? AND usuario_id = ? AND activo = 1
+             LIMIT 1",
+            [$hotelId, $usuarioId]
+        );
+
+        if (!$stmt) {
+            return null;
+        }
+
+        $hotelUsuario = $stmt->fetch();
+
+        return $hotelUsuario ?: null;
+    }
+
     private function logLogin($user_id, $success, $username = null) {
         try {
             $db = Database::getInstance();

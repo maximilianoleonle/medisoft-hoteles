@@ -1,3 +1,11 @@
+<?php
+$loginHotel = isset($hotel) && is_array($hotel) ? $hotel : null;
+$loginHotelId = $loginHotel['hotel_id'] ?? null;
+$loginHotelSlug = $loginHotel['slug'] ?? null;
+$loginHotelNombre = $loginHotel['nombre_comercial'] ?? 'Los Cedros';
+$loginAction = $login_action ?? url('login/authenticate');
+$loginDisabled = !empty($login_disabled);
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1020,7 +1028,10 @@
     <!-- ========================================
          CONTENEDOR PRINCIPAL
          ======================================== -->
-    <div class="login-wrapper">
+    <div class="login-wrapper"
+         data-hotel-id="<?= htmlspecialchars((string) ($loginHotelId ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+         data-hotel-slug="<?= htmlspecialchars((string) ($loginHotelSlug ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+         data-hotel-nombre="<?= htmlspecialchars((string) $loginHotelNombre, ENT_QUOTES, 'UTF-8') ?>">
         
         <!-- ========================================
              PANEL IZQUIERDO - BRANDING
@@ -1036,11 +1047,11 @@
             <div class="logo-container">
                 <div class="logo-wrapper">
                     <!-- Logo del Los Cedros -->
-                    <img src="<?= asset('img/logo-hotel-san-nicolas2.png') ?>" alt="Los Cedros" class="logo-img">
+                    <img src="<?= asset('img/logo-hotel-san-nicolas2.png') ?>" alt="<?= htmlspecialchars($loginHotelNombre, ENT_QUOTES, 'UTF-8') ?>" class="logo-img">
                 </div>
                 
                 <div class="brand-info">
-                    <h1 class="brand-title">Los Cedros</h1>
+                    <h1 class="brand-title"><?= htmlspecialchars($loginHotelNombre, ENT_QUOTES, 'UTF-8') ?></h1>
                     <div class="decorative-line"></div>
                     <p class="brand-subtitle">Sistema integral de gestión hotelera</p>
                 </div>
@@ -1075,8 +1086,11 @@
                 <?php endif; ?>
                 
                 <!-- Formulario de login -->
-                <form action="<?= url('login/authenticate') ?>" method="POST" class="login-form" id="loginForm">
+                <form action="<?= htmlspecialchars($loginAction, ENT_QUOTES, 'UTF-8') ?>" method="POST" class="login-form" id="loginForm">
                     <?= csrf_field() ?>
+                    <?php if ($loginHotelId): ?>
+                        <input type="hidden" name="hotel_id_context" value="<?= htmlspecialchars((string) $loginHotelId, ENT_QUOTES, 'UTF-8') ?>">
+                    <?php endif; ?>
                     
                     <!-- Campo de Usuario -->
                     <div class="form-group">
@@ -1086,7 +1100,7 @@
                                 type="text" 
                                 id="nombre_usuario" 
                                 name="nombre_usuario" 
-                                required
+                                <?= $loginDisabled ? 'disabled' : 'required' ?>
                                 autocomplete="username"
                                 class="form-control"
                                 placeholder="Ingresa tu usuario"
@@ -1103,7 +1117,7 @@
                                 type="password" 
                                 id="password" 
                                 name="password" 
-                                required
+                                <?= $loginDisabled ? 'disabled' : 'required' ?>
                                 autocomplete="current-password"
                                 class="form-control"
                                 placeholder="Ingresa tu contraseña"
@@ -1118,14 +1132,14 @@
                     <!-- Recordarme y Olvidé contraseña -->
                     <div class="form-options">
                         <label class="remember-me">
-                            <input type="checkbox" name="remember">
+                            <input type="checkbox" name="remember" <?= $loginDisabled ? 'disabled' : '' ?>>
                             <span>Recordarme</span>
                         </label>
                         <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
                     </div>
                     
                     <!-- Botón de envío -->
-                    <button type="submit" class="submit-btn" id="submitBtn">
+                    <button type="submit" class="submit-btn" id="submitBtn" <?= $loginDisabled ? 'disabled' : '' ?>>
                         Iniciar Sesión
                     </button>
                 </form>

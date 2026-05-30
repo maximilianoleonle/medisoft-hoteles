@@ -18,11 +18,13 @@ class Router {
         'GET' => [
             '/^\/$/i',                    // Página principal (redirige a login)
             '/^\/login$/i',               // Login
+            '/^\/h\/[a-z0-9-]+\/login$/i', // Login scoped por hotel
             '/^\/manifest\.json$/i',      // PWA manifest
             '/^\/service-worker\.js$/i',  // Service worker
             '/^\/offline\.html$/i'        // Página offline
         ],
         'POST' => [
+            '/^\/h\/[a-z0-9-]+\/login\/authenticate$/i', // Proceso de autenticacion scoped por hotel
             '/^\/login\/authenticate$/i'  // Proceso de autenticación
         ]
     ];
@@ -82,6 +84,10 @@ class Router {
         
         // Para todas las demás rutas, verificar autenticación
         if (!is_authenticated()) {
+            $loginPath = function_exists('login_path_for_current_context')
+                ? login_path_for_current_context($url)
+                : 'login';
+
             // Si es AJAX, retornar JSON
             if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && 
                 strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
@@ -91,7 +97,7 @@ class Router {
                 echo json_encode([
                     'success' => false,
                     'message' => 'Sesión expirada. Por favor, inicie sesión nuevamente.',
-                    'redirect' => '/login'
+                    'redirect' => url($loginPath)
                 ]);
                 exit;
             }
@@ -99,7 +105,7 @@ class Router {
             // Para peticiones normales, redirigir al login
             if (!headers_sent()) {
                 set_mensaje('Debe iniciar sesión para acceder a esta página', 'error');
-                header('Location: ' . url('login'), true, 303);
+                header('Location: ' . url($loginPath), true, 303);
                 exit;
             }
             
@@ -301,8 +307,12 @@ class Router {
         // También verificar autenticación para páginas 404
         if (!$this->isPublicRoute($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD'])) {
             if (!is_authenticated()) {
+                $loginPath = function_exists('login_path_for_current_context')
+                    ? login_path_for_current_context($_SERVER['REQUEST_URI'] ?? null)
+                    : 'login';
+
                 set_mensaje('Debe iniciar sesión para acceder a esta página', 'error');
-                header('Location: ' . url('login'), true, 303);
+                header('Location: ' . url($loginPath), true, 303);
                 exit;
             }
         }

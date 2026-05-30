@@ -182,6 +182,8 @@ $router->get('/api/huespedes/vehiculos/{id:[0-9]+}', ['controller' => 'Api', 'ac
 $router->get('/', ['controller' => 'Auth', 'action' => 'login']);
 $router->get('/login', ['controller' => 'Auth', 'action' => 'login']);
 $router->post('/login/authenticate', ['controller' => 'Auth', 'action' => 'authenticate']);
+$router->get('/h/{slug:[a-z0-9-]+}/login', ['controller' => 'Auth', 'action' => 'hotelLogin']);
+$router->post('/h/{slug:[a-z0-9-]+}/login/authenticate', ['controller' => 'Auth', 'action' => 'hotelAuthenticate']);
 $router->post('/logout', ['controller' => 'Auth', 'action' => 'logout']);
 
 // Dashboard

@@ -55,6 +55,10 @@ if (!function_exists('hotel_config_resolve_hotel_id')) {
             return (int) TenantContext::hotelId();
         }
 
+        if (!empty($_SESSION['hotel_id'])) {
+            return (int) $_SESSION['hotel_id'];
+        }
+
         return null;
     }
 }
@@ -77,6 +81,11 @@ if (!function_exists('obtenerHotelIdActualCompat')) {
             }
         }
 
+        if (!empty($_SESSION['hotel_id'])) {
+            $hotelId = (int) $_SESSION['hotel_id'];
+            return $hotelId;
+        }
+
         if (!class_exists('Database')) {
             $databasePath = dirname(__DIR__, 2) . '/core/Database.php';
 
@@ -89,6 +98,8 @@ if (!function_exists('obtenerHotelIdActualCompat')) {
             throw new RuntimeException('No se pudo resolver la base de datos para obtener el hotel actual.');
         }
 
+        // Fallback de compatibilidad mono-hotel: solo se usa cuando no existe TenantContext
+        // ni hotel_id en sesion. Las rutas /h/{slug}/login no deben depender de este fallback.
         $db = Database::getInstance();
         $stmt = $db->query(
             "SELECT id FROM hoteles WHERE slug = ? AND activo = 1 LIMIT 1",
