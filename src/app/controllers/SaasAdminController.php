@@ -7,12 +7,14 @@ class SaasAdminController extends Controller {
     private $hotelModel;
     private $usuarioModel;
     private $moduloModel;
+    private $planModel;
 
     public function __construct($route_params) {
         parent::__construct($route_params);
         $this->hotelModel = new Hotel();
         $this->usuarioModel = new Usuario();
         $this->moduloModel = new Modulo();
+        $this->planModel = new Plan();
     }
 
     protected function before() {
@@ -71,12 +73,18 @@ class SaasAdminController extends Controller {
         $hotel = $this->obtenerHotelORedirigir($id);
         $usuariosHotel = $this->hotelModel->listarUsuariosParaSaasAdmin((int) $hotel['id']);
         $modulosHotel = $this->moduloModel->listarParaHotelSaasAdmin((int) $hotel['id']);
+        $planes = $this->planModel->listarActivos();
+        $planActual = $this->planModel->obtenerActualDeHotel((int) $hotel['id']);
+        $modulosPorPlan = $this->modulosPorPlan($planes);
 
         View::renderTemplate('admin/saas/hotel_detalle', [
             'title' => 'Panel Medisoft interno - Detalle de hotel',
             'hotel' => $hotel,
             'usuariosHotel' => $usuariosHotel,
-            'modulosHotel' => $modulosHotel
+            'modulosHotel' => $modulosHotel,
+            'planes' => $planes,
+            'planActual' => $planActual,
+            'modulosPorPlan' => $modulosPorPlan
         ]);
     }
 
@@ -247,6 +255,74 @@ class SaasAdminController extends Controller {
         $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
     }
 
+    public function actualizarPlanHotelAction($id) {
+        if (!$this->isPost()) {
+            $this->redirect('admin/saas/hoteles/' . (int) $id);
+        }
+
+        $this->validateCSRF();
+        $hotel = $this->obtenerHotelORedirigir($id);
+        $planId = (int) $this->getPost('plan_id', 0);
+        $aplicarModulos = (int) $this->getPost('aplicar_modulos', 0) === 1;
+
+        if ($planId <= 0) {
+            set_mensaje('Seleccione un plan valido.', 'error');
+            $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
+        }
+
+        $plan = $this->planModel->obtenerPorId($planId);
+
+        if (!$plan || empty($plan['activo'])) {
+            set_mensaje('El plan seleccionado no existe o esta inactivo.', 'error');
+            $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
+        }
+
+        $db = Database::getInstance();
+
+        try {
+            $db->safeBeginTransaction();
+
+            if (!$this->planModel->actualizarPlanHotel((int) $hotel['id'], $planId)) {
+                throw new Exception('No se pudo actualizar el plan del hotel.');
+            }
+
+            if ($aplicarModulos && $plan['clave'] !== 'personalizado') {
+                $moduloIds = $this->planModel->moduloIdsDelPlan($planId);
+
+                if (empty($moduloIds)) {
+                    throw new Exception('El plan seleccionado no tiene modulos configurados.');
+                }
+
+                $actualizado = $this->moduloModel->actualizarModulosHotel(
+                    (int) $hotel['id'],
+                    $moduloIds,
+                    user_id()
+                );
+
+                if (!$actualizado) {
+                    throw new Exception('No se pudieron aplicar los modulos del plan.');
+                }
+            }
+
+            $db->safeCommit();
+
+            $mensaje = 'Plan del hotel actualizado correctamente.';
+            if ($aplicarModulos && $plan['clave'] !== 'personalizado') {
+                $mensaje .= ' Se aplicaron los modulos sugeridos por el plan.';
+            } elseif ($plan['clave'] === 'personalizado') {
+                $mensaje .= ' El plan personalizado mantiene la seleccion manual de modulos.';
+            }
+
+            set_mensaje($mensaje, 'success');
+            $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
+        } catch (Exception $e) {
+            $db->safeRollBack();
+            error_log('Error al actualizar plan del hotel: ' . $e->getMessage());
+            set_mensaje('No se pudo actualizar el plan del hotel. Verifique que la migracion de planes este aplicada.', 'error');
+            $this->redirect('admin/saas/hoteles/' . (int) $hotel['id']);
+        }
+    }
+
     private function obtenerHotelORedirigir($id) {
         $hotel = $this->hotelModel->obtenerParaSaasAdmin((int) $id);
 
@@ -365,6 +441,16 @@ class SaasAdminController extends Controller {
         }
 
         return array_values(array_unique(array_filter(array_map('intval', $modulos))));
+    }
+
+    private function modulosPorPlan(array $planes) {
+        $resultado = [];
+
+        foreach ($planes as $plan) {
+            $resultado[(int) $plan['id']] = $this->planModel->listarModulosDelPlan((int) $plan['id']);
+        }
+
+        return $resultado;
     }
 
     private function normalizarSlug($slug) {

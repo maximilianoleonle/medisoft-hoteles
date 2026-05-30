@@ -2,6 +2,9 @@
 $hotel = $hotel ?? [];
 $usuariosHotel = $usuariosHotel ?? [];
 $modulosHotel = $modulosHotel ?? [];
+$planes = $planes ?? [];
+$planActual = $planActual ?? null;
+$modulosPorPlan = $modulosPorPlan ?? [];
 $activo = !empty($hotel['activo']);
 $fila = function ($label, $value) {
     $value = $value === null || $value === '' ? '-' : $value;
@@ -63,6 +66,7 @@ $fila = function ($label, $value) {
             $fila('Pais', $hotel['pais'] ?? null);
             $fila('Zona horaria', $hotel['zona_horaria'] ?? null);
             $fila('Moneda', trim(($hotel['moneda_codigo'] ?? '') . ' ' . ($hotel['moneda_simbolo'] ?? '')));
+            $fila('Plan comercial', $planActual['nombre'] ?? 'Sin plan');
             $fila('Creado', $hotel['created_at'] ?? null);
             $fila('Actualizado', $hotel['updated_at'] ?? null);
             ?>
@@ -78,6 +82,80 @@ $fila = function ($label, $value) {
                 </button>
             </form>
         </div>
+    </div>
+
+    <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Plan comercial</h2>
+            <p class="text-sm text-gray-500">El plan define un preset comercial. El acceso real sigue dependiendo de los modulos activos del hotel.</p>
+        </div>
+
+        <?php if (empty($planes)): ?>
+            <div class="px-6 py-6 text-sm text-gray-600">
+                No hay catalogo de planes disponible. Aplique la migracion de planes antes de configurar esta seccion.
+            </div>
+        <?php else: ?>
+            <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/plan') ?>">
+                <?= csrf_field() ?>
+
+                <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-5">
+                    <div class="lg:col-span-1">
+                        <label for="plan_id" class="block text-sm font-medium text-gray-700">Plan actual</label>
+                        <select id="plan_id" name="plan_id" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
+                            <?php foreach ($planes as $plan): ?>
+                                <option value="<?= (int) $plan['id'] ?>" <?= !empty($planActual['id']) && (int) $planActual['id'] === (int) $plan['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($plan['nombre'] ?? '', ENT_QUOTES, 'UTF-8') ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+
+                        <label class="mt-4 flex items-start gap-2 text-sm text-gray-700">
+                            <input type="checkbox" name="aplicar_modulos" value="1"
+                                   class="mt-1 rounded border-gray-300 text-gray-900 focus:ring-gray-900">
+                            <span>
+                                Aplicar modulos sugeridos por el plan.
+                                <span class="block text-xs text-amber-700">
+                                    Esto puede activar o desactivar modulos segun el preset seleccionado.
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="lg:col-span-2">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <?php foreach ($planes as $plan): ?>
+                                <?php
+                                $planId = (int) $plan['id'];
+                                $clavesPlan = array_column($modulosPorPlan[$planId] ?? [], 'clave');
+                                ?>
+                                <div class="rounded-md border border-gray-200 p-4">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <h3 class="text-sm font-semibold text-gray-900"><?= htmlspecialchars($plan['nombre'] ?? '', ENT_QUOTES, 'UTF-8') ?></h3>
+                                        <?php if (!empty($planActual['id']) && (int) $planActual['id'] === $planId): ?>
+                                            <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Actual</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-500"><?= htmlspecialchars($plan['descripcion'] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
+                                    <?php if (($plan['clave'] ?? '') === 'personalizado'): ?>
+                                        <p class="mt-3 text-xs text-gray-600">No fuerza modulos. Use la seccion manual de modulos activos.</p>
+                                    <?php else: ?>
+                                        <p class="mt-3 text-xs font-medium text-gray-700">Preset:</p>
+                                        <p class="mt-1 text-xs text-gray-600"><?= htmlspecialchars(implode(', ', $clavesPlan), ENT_QUOTES, 'UTF-8') ?></p>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+                    <button type="submit" class="px-4 py-2 rounded-md bg-gray-900 text-white text-sm font-medium hover:bg-gray-800">
+                        Guardar plan
+                    </button>
+                </div>
+            </form>
+        <?php endif; ?>
     </div>
 
     <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
