@@ -7,8 +7,8 @@ $loginHotelNombre = function_exists('hotel_branding_public_name')
     ? hotel_branding_public_name($loginBranding, $loginHotel['nombre_comercial'] ?? 'Medisoft Hoteles')
     : ($loginBranding['nombre_visual'] ?? $loginHotel['nombre_comercial'] ?? 'Medisoft Hoteles');
 $loginLogoUrl = function_exists('hotel_branding_asset_url')
-    ? (hotel_branding_asset_url($loginBranding['logo_url'] ?? null) ?: asset('img/logo-hotel-san-nicolas2.png'))
-    : asset('img/logo-hotel-san-nicolas2.png');
+    ? (hotel_branding_asset_url($loginBranding['logo_url'] ?? null) ?: hotel_branding_default_logo_url())
+    : (function_exists('asset') ? asset('img/logo.png') : '/img/logo.png');
 $loginFaviconUrl = function_exists('hotel_branding_asset_url')
     ? hotel_branding_asset_url($loginBranding['favicon_url'] ?? null)
     : null;
@@ -23,7 +23,7 @@ $loginDisabled = !empty($login_disabled);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title><?= $title ?? 'Los Cedros - Sistema de Gestión' ?></title>
+    <title><?= htmlspecialchars($title ?? ($loginHotelNombre . ' - Sistema de Gestion'), ENT_QUOTES, 'UTF-8') ?></title>
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#6B4423">
@@ -52,11 +52,11 @@ $loginDisabled = !empty($login_disabled);
             --gold: var(--brand-accent, #D4AF37);
             --gold-light: #E5D285;
             --cream: #FFF8E7;
-            /* Tonos de verde olivo del logo */
+            /* Tonos base del branding */
             --olive-green: var(--brand-primary, #9CA777);
             --olive-green-light: #B8C49A;
             --olive-green-dark: var(--brand-secondary, #7A8B5C);
-            --olive-accent: rgba(156, 167, 119, 0.15);
+            --olive-accent: color-mix(in srgb, var(--brand-primary, #9CA777) 15%, transparent);
             --dark-color: #2c2c2c;
             --light-color: #f8f9fa;
             --gray-light: #e9ecef;
@@ -153,7 +153,7 @@ $loginDisabled = !empty($login_disabled);
             height: 350px;
             top: -150px;
             left: -150px;
-            background: rgba(156, 167, 119, 0.12); /* Verde olivo sutil */
+            background: color-mix(in srgb, var(--brand-primary, #9CA777) 12%, transparent);
             animation: float 8s ease-in-out infinite;
         }
 
@@ -172,7 +172,7 @@ $loginDisabled = !empty($login_disabled);
             top: 50%;
             left: 20%;
             transform: translate(-50%, -50%);
-            background: rgba(156, 167, 119, 0.1); /* Verde olivo sutil */
+            background: color-mix(in srgb, var(--brand-primary, #9CA777) 10%, transparent);
             animation: float 10s ease-in-out infinite;
         }
 
@@ -206,7 +206,7 @@ $loginDisabled = !empty($login_disabled);
             margin: 0 auto 40px;
             box-shadow: 
                 0 20px 40px rgba(0, 0, 0, 0.2),
-                inset 0 0 0 1px rgba(212, 175, 55, 0.2);
+                inset 0 0 0 1px color-mix(in srgb, var(--brand-accent, #D4AF37) 20%, transparent);
             position: relative;
             overflow: hidden;
             backdrop-filter: blur(10px);
@@ -220,7 +220,7 @@ $loginDisabled = !empty($login_disabled);
             left: -50%;
             width: 200%;
             height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(212, 175, 55, 0.4), transparent);
+            background: linear-gradient(45deg, transparent, color-mix(in srgb, var(--brand-accent, #D4AF37) 40%, transparent), transparent);
             transform: rotate(45deg);
             animation: shine 4s ease-in-out infinite;
         }
@@ -280,7 +280,7 @@ $loginDisabled = !empty($login_disabled);
             background: linear-gradient(90deg, var(--olive-green) 0%, var(--gold) 50%, var(--olive-green-light) 100%);
             margin: 24px auto;
             border-radius: 3px;
-            box-shadow: 0 2px 8px rgba(156, 167, 119, 0.4);
+            box-shadow: 0 2px 8px color-mix(in srgb, var(--brand-primary, #9CA777) 40%, transparent);
         }
 
         /* ========================================
@@ -300,7 +300,7 @@ $loginDisabled = !empty($login_disabled);
             position: absolute;
             width: 100px;
             height: 100px;
-            border: 3px solid rgba(156, 167, 119, 0.2); /* Verde olivo sutil */
+            border: 3px solid color-mix(in srgb, var(--brand-primary, #9CA777) 20%, transparent);
             border-radius: 50%;
             pointer-events: none;
         }
@@ -622,9 +622,9 @@ $loginDisabled = !empty($login_disabled);
             font-size: 12px;
             color: var(--gray-medium);
             padding: 8px 16px;
-            background: linear-gradient(135deg, var(--light-color) 0%, rgba(156, 167, 119, 0.08) 100%);
+            background: linear-gradient(135deg, var(--light-color) 0%, color-mix(in srgb, var(--brand-primary, #9CA777) 8%, transparent) 100%);
             border-radius: 20px;
-            border: 1px solid rgba(156, 167, 119, 0.15);
+            border: 1px solid color-mix(in srgb, var(--brand-primary, #9CA777) 15%, transparent);
         }
 
         .security-badge i {
@@ -1037,7 +1037,7 @@ $loginDisabled = !empty($login_disabled);
             .toggle-password,
             .forgot-password,
             .support-link a {
-                -webkit-tap-highlight-color: rgba(156, 167, 119, 0.2);
+                -webkit-tap-highlight-color: color-mix(in srgb, var(--brand-primary, #9CA777) 20%, transparent);
             }
 
             .submit-btn:hover {
@@ -1073,7 +1073,7 @@ $loginDisabled = !empty($login_disabled);
             <!-- Contenedor del logo -->
             <div class="logo-container">
                 <div class="logo-wrapper">
-                    <!-- Logo del Los Cedros -->
+                    <!-- Logo del hotel -->
                     <img src="<?= htmlspecialchars($loginLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($loginHotelNombre, ENT_QUOTES, 'UTF-8') ?>" class="logo-img">
                 </div>
                 
@@ -1257,7 +1257,7 @@ $loginDisabled = !empty($login_disabled);
                 if (this.value.trim() === '') {
                     this.style.borderColor = '#ef4444';
                 } else {
-                    this.style.borderColor = '#9CA777'; /* Verde olivo */
+                    this.style.borderColor = 'var(--brand-primary, #9CA777)';
                 }
             });
             

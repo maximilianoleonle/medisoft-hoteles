@@ -21,7 +21,7 @@ class HotelBranding extends Model {
 
     private $fallback = [
         'nombre_visual' => 'Medisoft Hoteles',
-        'logo_url' => 'img/logo-hotel-san-nicolas2.png',
+        'logo_url' => 'img/logo.png',
         'favicon_url' => null,
         'login_background_url' => null,
         'color_primary' => '#9CA777',

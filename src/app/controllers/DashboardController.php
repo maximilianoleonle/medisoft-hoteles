@@ -1,7 +1,6 @@
 <?php
 /**
  * Controlador del Dashboard - VERSIÓN MEJORADA
- * Los Cedros
  */
 
 require_once __DIR__ . '/../helpers/hotel_config.php';
@@ -12,6 +11,7 @@ class DashboardController extends Controller {
     private $habitacionModel;
     private $reservacionModel;
     private $movimientoModel;
+    private $dashboardNombreVisual;
     
     /**
      * Constructor - Inicializar modelos
@@ -26,6 +26,36 @@ class DashboardController extends Controller {
 
     private function hotelIdActual() {
         return obtenerHotelIdActualCompat();
+    }
+
+    private function dashboardTitle() {
+        return 'Dashboard - ' . $this->dashboardNombreVisual();
+    }
+
+    private function dashboardNombreVisual() {
+        if ($this->dashboardNombreVisual !== null) {
+            return $this->dashboardNombreVisual;
+        }
+
+        $fallback = 'Medisoft Hoteles';
+        $nombreHotel = function_exists('current_hotel_nombre') ? current_hotel_nombre() : ($_SESSION['hotel_nombre'] ?? null);
+        $nombreHotel = trim((string) $nombreHotel);
+        $fallbackHotel = $nombreHotel !== '' ? $nombreHotel : $fallback;
+
+        if (function_exists('has_hotel_context') && has_hotel_context()
+            && function_exists('current_hotel_branding')
+            && function_exists('hotel_branding_public_name')) {
+            try {
+                $branding = current_hotel_branding();
+                $this->dashboardNombreVisual = hotel_branding_public_name(is_array($branding) ? $branding : [], $fallbackHotel);
+                return $this->dashboardNombreVisual;
+            } catch (Throwable $e) {
+                error_log('Error al resolver branding para dashboard: ' . $e->getMessage());
+            }
+        }
+
+        $this->dashboardNombreVisual = $fallbackHotel;
+        return $this->dashboardNombreVisual;
     }
     
     /**
@@ -69,7 +99,7 @@ class DashboardController extends Controller {
             
             // Preparar datos para la vista
             $data = [
-                'title' => 'Dashboard - Los Cedros',
+                'title' => $this->dashboardTitle(),
                 'stats' => $stats,
                 'caja_info' => $caja_info,
                 'corte_actual' => $corte_actual,
@@ -90,7 +120,7 @@ class DashboardController extends Controller {
             
             // Renderizar con datos vacíos en caso de error
             View::renderTemplate('dashboard/index', [
-                'title' => 'Dashboard - Los Cedros',
+                'title' => $this->dashboardTitle(),
                 'stats' => $this->getEstadisticasVacias(),
                 'caja_info' => null,
                 'corte_actual' => null,

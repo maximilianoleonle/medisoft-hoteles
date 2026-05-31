@@ -11,7 +11,7 @@ function hotel_branding($hotelId = null, array $hotel = null) {
         error_log('Error en helper hotel_branding: ' . $e->getMessage());
         return [
             'nombre_visual' => $hotel['nombre_comercial'] ?? $hotel['nombre'] ?? 'Medisoft Hoteles',
-            'logo_url' => 'img/logo-hotel-san-nicolas2.png',
+            'logo_url' => hotel_branding_default_logo_path(),
             'favicon_url' => null,
             'login_background_url' => null,
             'color_primary' => '#9CA777',
@@ -22,6 +22,15 @@ function hotel_branding($hotelId = null, array $hotel = null) {
             'activo' => 1
         ];
     }
+}
+
+function hotel_branding_default_logo_path() {
+    return 'img/logo.png';
+}
+
+function hotel_branding_default_logo_url() {
+    $path = hotel_branding_default_logo_path();
+    return function_exists('asset') ? asset($path) : '/' . $path;
 }
 
 function current_hotel_branding() {

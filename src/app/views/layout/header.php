@@ -5,11 +5,11 @@ $layoutBranding = (!$layoutEsPanelSaas && function_exists('has_hotel_context') &
     ? current_hotel_branding()
     : null;
 $layoutNombreVisual = $layoutBranding
-    ? hotel_branding_public_name($layoutBranding, current_hotel_nombre() ?: 'Los Cedros')
-    : ($layoutEsPanelSaas ? 'Medisoft' : 'Los Cedros');
+    ? hotel_branding_public_name($layoutBranding, current_hotel_nombre() ?: 'Medisoft Hoteles')
+    : 'Medisoft Hoteles';
 $layoutLogoUrl = ($layoutBranding && function_exists('hotel_branding_asset_url'))
-    ? (hotel_branding_asset_url($layoutBranding['logo_url'] ?? null) ?: asset('img/logo-hotel-san-nicolas2.png'))
-    : asset('img/logo-hotel-san-nicolas2.png');
+    ? (hotel_branding_asset_url($layoutBranding['logo_url'] ?? null) ?: hotel_branding_default_logo_url())
+    : (function_exists('hotel_branding_default_logo_url') ? hotel_branding_default_logo_url() : asset('img/logo.png'));
 $layoutFaviconUrl = ($layoutBranding && function_exists('hotel_branding_asset_url'))
     ? hotel_branding_asset_url($layoutBranding['favicon_url'] ?? null)
     : null;
@@ -19,17 +19,17 @@ $layoutFaviconUrl = ($layoutBranding && function_exists('hotel_branding_asset_ur
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Sistema de Gestión Hotelera - Los Cedros, Santa Catarina Juquila, Oaxaca">
-    <title><?= $title ?? 'Los Cedros' ?></title>
+    <meta name="description" content="Sistema de Gestión Hotelera - <?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
+    <title><?= htmlspecialchars($title ?? $layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?></title>
     
     <!-- PWA Meta Tags -->
-    <!-- ACTUALIZADO: Color verde olivo para la barra de estado -->
+    <!-- Color base para la barra de estado -->
     <meta name="theme-color" content="#9CA777">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="Los Cedros">
-    <meta name="application-name" content="Los Cedros">
+    <meta name="apple-mobile-web-app-title" content="Medisoft Hoteles">
+    <meta name="application-name" content="Medisoft Hoteles">
     <meta name="msapplication-TileColor" content="#9CA777">
     <meta name="msapplication-TileImage" content="<?= asset('img/icons/icon-144x144.png') ?>">
     <meta name="msapplication-config" content="<?= asset('browserconfig.xml') ?>">
@@ -500,7 +500,7 @@ $layoutFaviconUrl = ($layoutBranding && function_exists('hotel_branding_asset_ur
             <i class="fas fa-bars"></i>
         </button>
         
-        <!-- Logo centrado con efecto verde olivo -->
+        <!-- Logo centrado -->
         <div class="mobile-header-logo">
             <img src="<?= htmlspecialchars($layoutLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
         </div>
@@ -520,7 +520,7 @@ $layoutFaviconUrl = ($layoutBranding && function_exists('hotel_branding_asset_ur
         </div>
     </div>
     
-    <!-- Barra de progreso de scroll con verde olivo -->
+    <!-- Barra de progreso de scroll -->
     <div class="scroll-progress" id="scrollProgress"></div>
     
     <!-- Contenedor Principal -->
@@ -576,7 +576,7 @@ $layoutFaviconUrl = ($layoutBranding && function_exists('hotel_branding_asset_ur
     <script>
         // Ejecutar cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Iniciando script de auto-hide - Los Cedros');
+            console.log('Iniciando script de auto-hide del header');
             
             // Variables para auto-hide
             let lastScrollTop = 0;
@@ -586,7 +586,7 @@ $layoutFaviconUrl = ($layoutBranding && function_exists('hotel_branding_asset_ur
             
             // Verificar que el header existe
             if (mobileHeader) {
-                console.log('Header móvil Los Cedros encontrado');
+                console.log('Header movil encontrado');
                 
                 // Función para manejar el scroll
                 function handleScroll() {
@@ -641,11 +641,11 @@ $layoutFaviconUrl = ($layoutBranding && function_exists('hotel_branding_asset_ur
                     if (mobileHeader.classList.contains('hidden')) {
                         mobileHeader.classList.remove('hidden');
                         document.body.classList.remove('header-hidden');
-                        console.log('Header Los Cedros mostrado - Pantalla normal');
+                        console.log('Header mostrado - Pantalla normal');
                     } else {
                         mobileHeader.classList.add('hidden');
                         document.body.classList.add('header-hidden');
-                        console.log('Header Los Cedros oculto - Pantalla completa');
+                        console.log('Header oculto - Pantalla completa');
                     }
                 };
                 

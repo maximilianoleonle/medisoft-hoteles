@@ -5,13 +5,18 @@ Archivo: app/views/components/loading-screen.php
 ===================================
 -->
 
+<?php
+$loadingNombreVisual = $layoutNombreVisual ?? 'Medisoft';
+$loadingLogoUrl = $layoutLogoUrl ?? (function_exists('hotel_branding_default_logo_url') ? hotel_branding_default_logo_url() : (function_exists('asset') ? asset('img/logo.png') : '/img/logo.png'));
+?>
+
 <!-- Pantalla de Carga Principal -->
 <div id="loadingScreen" class="loading-screen">
     <div class="loading-content">
         <div class="logo-container">
             <div class="logo-glow"></div>
-            <img src="<?= asset('img/logo-hotel-san-nicolas2.png') ?>" 
-                 alt="Los Cedros" 
+            <img src="<?= htmlspecialchars($loadingLogoUrl, ENT_QUOTES, 'UTF-8') ?>"
+                 alt="<?= htmlspecialchars($loadingNombreVisual, ENT_QUOTES, 'UTF-8') ?>"
                  class="logo-image">
         </div>
         
@@ -22,8 +27,8 @@ Archivo: app/views/components/loading-screen.php
 
 <!-- Contenedor para transiciones entre páginas -->
 <div class="page-transition" style="display: none;">
-    <img src="<?= asset('img/logo-hotel-san-nicolas2.png') ?>" 
-         alt="Los Cedros" 
+    <img src="<?= htmlspecialchars($loadingLogoUrl, ENT_QUOTES, 'UTF-8') ?>"
+         alt="<?= htmlspecialchars($loadingNombreVisual, ENT_QUOTES, 'UTF-8') ?>"
          class="logo-mini">
 </div>
 

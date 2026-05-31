@@ -24,12 +24,12 @@ $sidebarBranding = (!$sidebarEsPanelSaas && function_exists('has_hotel_context')
     ? current_hotel_branding()
     : null;
 $sidebarNombreVisual = $sidebarBranding
-    ? hotel_branding_public_name($sidebarBranding, current_hotel_nombre() ?: 'Los Cedros')
-    : ($sidebarEsPanelSaas ? 'Medisoft' : 'Los Cedros');
+    ? hotel_branding_public_name($sidebarBranding, current_hotel_nombre() ?: 'Medisoft Hoteles')
+    : 'Medisoft Hoteles';
 $sidebarSubtitulo = $sidebarEsPanelSaas ? 'Panel SaaS' : 'Hotel';
 $sidebarLogoUrl = ($sidebarBranding && function_exists('hotel_branding_asset_url'))
-    ? (hotel_branding_asset_url($sidebarBranding['logo_url'] ?? null) ?: asset('img/logo-hotel-san-nicolas2.png'))
-    : asset('img/logo-hotel-san-nicolas2.png');
+    ? (hotel_branding_asset_url($sidebarBranding['logo_url'] ?? null) ?: hotel_branding_default_logo_url())
+    : (function_exists('hotel_branding_default_logo_url') ? hotel_branding_default_logo_url() : asset('img/logo.png'));
 ?>
 
 <?php if ($sidebarBranding): ?>
@@ -291,7 +291,7 @@ $sidebarLogoUrl = ($sidebarBranding && function_exists('hotel_branding_asset_url
 }
 
 .user-menu-btn:hover {
-    background: rgba(156, 167, 119, 0.1);
+    background: color-mix(in srgb, var(--brand-primary, #9CA777) 10%, transparent);
 }
 </style>
 
@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function() {
     right: 0;
     margin-bottom: 0.5rem;
     background: white;
-    border: 1px solid rgba(156, 167, 119, 0.1);
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #9CA777) 10%, transparent);
     border-radius: 6px;
     padding: 0.5rem;
     box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.1);
