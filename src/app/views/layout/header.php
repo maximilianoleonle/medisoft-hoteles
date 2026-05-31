@@ -128,6 +128,55 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
     <?php if ($layoutBranding && function_exists('hotel_branding_css_vars')): ?>
         <?= hotel_branding_css_vars($layoutBranding) ?>
     <?php endif; ?>
+
+    <?php if ($layoutEsPanelSaas): ?>
+    <style>
+        .ms-admin-scope {
+            --ms-bg: #F6F8FB;
+            --ms-surface: #FFFFFF;
+            --ms-sidebar: #0B1220;
+            --ms-primary: #2563EB;
+            --ms-primary-hover: #1D4ED8;
+            --ms-accent: #06B6D4;
+            --ms-text: #0F172A;
+            --ms-muted: #64748B;
+            --ms-border: #E2E8F0;
+            --ms-success: #16A34A;
+            --ms-warning: #F59E0B;
+            --ms-danger: #DC2626;
+            background: var(--ms-bg);
+            color: var(--ms-text);
+        }
+
+        .ms-admin-scope .main-content {
+            background: var(--ms-bg);
+            color: var(--ms-text);
+        }
+
+        .ms-admin-scope header.bg-white,
+        .ms-admin-scope .bg-white {
+            background-color: var(--ms-surface);
+        }
+
+        .ms-admin-scope .text-gray-500,
+        .ms-admin-scope .text-gray-600,
+        .ms-admin-scope .text-gray-700 {
+            color: var(--ms-muted);
+        }
+
+        .ms-admin-scope .text-gray-900 {
+            color: var(--ms-text);
+        }
+
+        .ms-admin-scope .border-gray-100,
+        .ms-admin-scope .border-gray-200,
+        .ms-admin-scope .border-gray-300,
+        .ms-admin-scope .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+        .ms-admin-scope .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+            border-color: var(--ms-border);
+        }
+    </style>
+    <?php endif; ?>
     
     <?php
         $medisoftContext = null;
@@ -484,7 +533,7 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
         }
     </style>
 </head>
-<body class="bg-gray-100 font-inter loading">
+<body class="bg-gray-100 font-inter loading<?= $layoutEsPanelSaas ? ' ms-admin-scope' : '' ?>">
 
   <!-- ── Banner Offline ─────────────────────────────────────────────────── -->
   <div id="pwa-offline-banner" role="alert" aria-live="assertive" hidden>
