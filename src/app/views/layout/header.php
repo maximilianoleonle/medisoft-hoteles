@@ -1,7 +1,12 @@
 <?php
 $layoutRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 $layoutEsPanelSaas = strpos($layoutRequestPath, '/admin/saas') === 0;
-$layoutBranding = (!$layoutEsPanelSaas && function_exists('has_hotel_context') && has_hotel_context() && function_exists('current_hotel_branding'))
+$layoutTieneContextoHotel = function_exists('has_hotel_context') && has_hotel_context();
+$layoutOfflineHoteleroActivo = !$layoutEsPanelSaas
+    && $layoutTieneContextoHotel
+    && function_exists('is_authenticated')
+    && is_authenticated();
+$layoutBranding = (!$layoutEsPanelSaas && $layoutTieneContextoHotel && function_exists('current_hotel_branding'))
     ? current_hotel_branding()
     : null;
 $layoutNombreVisual = $layoutBranding
@@ -125,26 +130,28 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
     <?php endif; ?>
     
     <?php
-        if (!function_exists('obtenerHotelIdActualCompat') && defined('APP_PATH')) {
-            require_once APP_PATH . '/helpers/hotel_config.php';
+        $medisoftContext = null;
+        if ($layoutOfflineHoteleroActivo) {
+            $medisoftHotelId = current_hotel_id();
+            $medisoftUsuarioId = user_id();
+            $medisoftContext = [
+                'hotel_id' => (int) $medisoftHotelId,
+                'usuario_id' => $medisoftUsuarioId ? (int) $medisoftUsuarioId : null,
+                'hotel_scope' => 'hotel-' . (int) $medisoftHotelId,
+                'storage_scope' => 'hotel-' . (int) $medisoftHotelId . '-user-' . ($medisoftUsuarioId ? (int) $medisoftUsuarioId : 'anon'),
+                'storage_version' => 'v1',
+                'generated_at' => date('c'),
+            ];
         }
-
-        $medisoftHotelId = obtenerHotelIdActualCompat();
-        $medisoftUsuarioId = user_id();
-        $medisoftContext = [
-            'hotel_id' => (int) $medisoftHotelId,
-            'usuario_id' => $medisoftUsuarioId ? (int) $medisoftUsuarioId : null,
-            'hotel_scope' => 'hotel-' . (int) $medisoftHotelId,
-            'storage_scope' => 'hotel-' . (int) $medisoftHotelId . '-user-' . ($medisoftUsuarioId ? (int) $medisoftUsuarioId : 'anon'),
-            'storage_version' => 'v1',
-            'generated_at' => date('c'),
-        ];
     ?>
     <script>
         window.BASE_URL = '<?= rtrim(url(''), '/') ?>';
         window.API_URL = '<?= url('api') ?>';
+        window.MEDISOFT_OFFLINE_ENABLED = <?= $layoutOfflineHoteleroActivo ? 'true' : 'false' ?>;
+        <?php if ($medisoftContext): ?>
         window.MEDISOFT_CONTEXT = <?= json_encode($medisoftContext, JSON_UNESCAPED_SLASHES) ?>;
         window.USUARIO_ID = window.MEDISOFT_CONTEXT.usuario_id;
+        <?php endif; ?>
     </script>
 
     <!-- O usando un meta tag -->
@@ -172,10 +179,12 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
     <script src="<?= asset('js/app.js') ?>" defer></script>
 
     <!-- PWA: registro de SW + lógica offline (reemplaza el script inline de SW) -->
+    <?php if ($layoutOfflineHoteleroActivo): ?>
     <script src="<?= asset('js/pwa.js') ?>" defer></script>
 
     <!-- Offline Data: snapshots de habitaciones/reservaciones + cola tipada + sync -->
     <script src="<?= asset('js/offline-data.js') ?>" defer></script>
+    <?php endif; ?>
 
     <style>
         /* PWA critical UI: evita banners planos si el CSS externo aun no carga */
