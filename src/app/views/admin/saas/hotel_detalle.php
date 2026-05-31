@@ -104,29 +104,34 @@ $fila = function ($label, $value) {
                 <a href="#usuarios" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Usuarios</a>
             </div>
         </div>
-        <div class="grid grid-cols-1 divide-y divide-gray-100 md:grid-cols-4 md:divide-x md:divide-y-0">
-            <div class="px-6 py-4">
-                <div class="text-xs font-semibold uppercase tracking-wider text-gray-500">Estado</div>
-                <div class="mt-2">
-                    <span class="inline-flex rounded-full px-3 py-1 text-sm font-semibold <?= $activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700' ?>">
+        <div class="grid grid-cols-1 divide-y divide-gray-100 md:grid-cols-5 md:divide-x md:divide-y-0">
+            <div class="px-5 py-3">
+                <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Estado</div>
+                <div class="mt-1.5">
+                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold <?= $activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700' ?>">
                         <?= $activo ? 'Activo' : 'Inactivo' ?>
                     </span>
                 </div>
             </div>
-            <div class="px-6 py-4">
-                <div class="text-xs font-semibold uppercase tracking-wider text-gray-500">Plan</div>
-                <div class="mt-2 text-sm font-semibold text-gray-900"><?= htmlspecialchars($planActual['nombre'] ?? 'Sin plan', ENT_QUOTES, 'UTF-8') ?></div>
-                <div class="mt-1 text-xs text-gray-500"><?= htmlspecialchars($estadoTexto, ENT_QUOTES, 'UTF-8') ?></div>
+            <div class="px-5 py-3">
+                <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Plan</div>
+                <div class="mt-1.5 text-sm font-semibold text-gray-900"><?= htmlspecialchars($planActual['nombre'] ?? 'Sin plan', ENT_QUOTES, 'UTF-8') ?></div>
             </div>
-            <div class="px-6 py-4">
-                <div class="text-xs font-semibold uppercase tracking-wider text-gray-500">Modulos activos</div>
-                <div class="mt-2 text-2xl font-semibold text-gray-900"><?= (int) $modulosActivosCount ?></div>
-                <div class="mt-1 text-xs text-gray-500">de <?= count($modulosHotel) ?> disponibles</div>
+            <div class="px-5 py-3">
+                <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Consistencia</div>
+                <div class="mt-1.5">
+                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold <?= $estadoClase ?>">
+                        <?= htmlspecialchars($estadoTexto, ENT_QUOTES, 'UTF-8') ?>
+                    </span>
+                </div>
             </div>
-            <div class="px-6 py-4">
-                <div class="text-xs font-semibold uppercase tracking-wider text-gray-500">Admins hotel</div>
-                <div class="mt-2 text-2xl font-semibold text-gray-900"><?= (int) $usuariosAdminCount ?></div>
-                <div class="mt-1 text-xs text-gray-500">usuarios vinculados</div>
+            <div class="px-5 py-3">
+                <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Modulos activos</div>
+                <div class="mt-1.5 text-sm font-semibold text-gray-900"><?= (int) $modulosActivosCount ?> <span class="font-normal text-gray-500">/ <?= count($modulosHotel) ?></span></div>
+            </div>
+            <div class="px-5 py-3">
+                <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Admins hotel</div>
+                <div class="mt-1.5 text-sm font-semibold text-gray-900"><?= (int) $usuariosAdminCount ?> <span class="font-normal text-gray-500">vinculados</span></div>
             </div>
         </div>
     </div>
@@ -483,15 +488,14 @@ $fila = function ($label, $value) {
             </span>
         </div>
 
-        <div class="px-6 py-5">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="rounded-md border border-gray-200 p-4">
+        <div class="divide-y divide-gray-100 md:grid md:grid-cols-3 md:divide-x md:divide-y-0">
+                <div class="p-5">
                     <div class="text-xs font-semibold uppercase tracking-wider text-gray-500">Plan actual</div>
                     <div class="mt-1 text-sm font-medium text-gray-900"><?= htmlspecialchars($planActual['nombre'] ?? 'Sin plan', ENT_QUOTES, 'UTF-8') ?></div>
                     <p class="mt-2 text-xs text-gray-600"><?= htmlspecialchars($auditoriaPlan['mensaje'] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
                 </div>
 
-                <div class="rounded-md border border-gray-200 p-4">
+                <div class="p-5">
                     <div class="text-xs font-semibold uppercase tracking-wider text-gray-500">Incluidos pero apagados</div>
                     <?php if (empty($modulosApagados)): ?>
                         <p class="mt-2 text-sm text-gray-600">Sin diferencias.</p>
@@ -504,7 +508,7 @@ $fila = function ($label, $value) {
                     <?php endif; ?>
                 </div>
 
-                <div class="rounded-md border border-gray-200 p-4">
+                <div class="p-5">
                     <div class="text-xs font-semibold uppercase tracking-wider text-gray-500">Activos fuera del plan</div>
                     <?php if (empty($modulosFueraPlan)): ?>
                         <p class="mt-2 text-sm text-gray-600">Sin diferencias.</p>
@@ -516,7 +520,6 @@ $fila = function ($label, $value) {
                         </ul>
                     <?php endif; ?>
                 </div>
-            </div>
         </div>
 
         <?php if ($estadoAuditoria === 'diferencias' && !empty($planActual['id'])): ?>
