@@ -53,7 +53,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
 </style>
 <?php endif; ?>
 
-<aside id="sidebar" class="sidebar-main sidebar-fixed">
+<aside id="sidebar" class="sidebar-main sidebar-fixed <?= $sidebarEsPanelSaas ? 'sidebar-saas' : '' ?>">
     <div class="sidebar-header">
         <div class="logo-container">
             <img src="<?= htmlspecialchars($sidebarLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?>" class="logo-img">
@@ -95,13 +95,13 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
 
     <nav class="sidebar-nav">
         <?php if ($sidebarEsPanelSaas): ?>
-        <div class="nav-section">
-            <div class="nav-section-title">
-                <span>PANEL MEDISOFT</span>
+        <div class="nav-section saas-nav-section">
+            <div class="nav-section-title saas-section-title">
+                <span>Operación SaaS</span>
             </div>
 
             <a href="<?= url('admin/saas/hoteles') ?>"
-               class="nav-item <?= strpos($sidebarRequestPath, '/admin/saas/hoteles') === 0 && $sidebarRequestPath !== '/admin/saas/hoteles/crear' ? 'active' : '' ?>">
+               class="nav-item saas-nav-item <?= strpos($sidebarRequestPath, '/admin/saas/hoteles') === 0 && $sidebarRequestPath !== '/admin/saas/hoteles/crear' ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-building"></i>
                 </div>
@@ -109,7 +109,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
             </a>
 
             <a href="<?= url('admin/saas/hoteles/crear') ?>"
-               class="nav-item <?= $sidebarRequestPath === '/admin/saas/hoteles/crear' ? 'active' : '' ?>">
+               class="nav-item saas-nav-item <?= $sidebarRequestPath === '/admin/saas/hoteles/crear' ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-plus-circle"></i>
                 </div>
@@ -117,12 +117,13 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
             </a>
         </div>
 
-        <div class="nav-section">
-            <div class="nav-section-title">
-                <span>GESTION</span>
+        <div class="nav-section saas-nav-section">
+            <div class="nav-section-title saas-section-title">
+                <span>Gestión</span>
             </div>
-            <div style="padding:8px 12px;font-size:0.75rem;color:#6b7280;line-height:1.4;">
-                Los modulos, planes y branding se administran desde el detalle de cada hotel.
+            <div class="saas-sidebar-note">
+                <i class="fas fa-sliders-h"></i>
+                <span>Los módulos, planes y branding se administran desde el detalle de cada hotel.</span>
             </div>
         </div>
         <?php else: ?>
@@ -317,7 +318,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
                 <?= csrf_field() ?>
                 <button type="submit" class="dropdown-item text-red" style="width:100%;background:none;border:0;text-align:left;cursor:pointer;">
                 <i class="fas fa-sign-out-alt"></i>
-                <span>Cerrar Sesion</span>
+                <span><?= $sidebarEsPanelSaas ? 'Cerrar sesión' : 'Cerrar Sesion' ?></span>
                 </button>
             </form>
         </div>
@@ -342,11 +343,161 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
 }
 
 .user-menu-btn:hover {
-    background: color-mix(in srgb, var(--brand-primary, #9CA777) 10%, transparent);
+    background: color-mix(in srgb, <?= $sidebarEsPanelSaas ? 'var(--ms-primary, #2563EB)' : 'var(--brand-primary, #9CA777)' ?> 10%, transparent);
 }
 </style>
 
 <link rel="stylesheet" href="<?= asset('css/sidebar-styles.css') ?>">
+
+<?php if ($sidebarEsPanelSaas): ?>
+<style>
+.sidebar-main.sidebar-saas {
+    background: var(--ms-sidebar, #0B1220);
+    color: #E5EDF8;
+    border-right: 1px solid rgba(148, 163, 184, 0.18);
+    box-shadow: 16px 0 40px rgba(15, 23, 42, 0.18);
+}
+
+.sidebar-saas .sidebar-header {
+    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+    background:
+        radial-gradient(circle at top left, color-mix(in srgb, var(--ms-primary, #2563EB) 26%, transparent), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0));
+}
+
+.sidebar-saas .logo-container {
+    align-items: center;
+}
+
+.sidebar-saas .logo-img {
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+}
+
+.sidebar-saas .logo-title {
+    color: #F8FAFC;
+    letter-spacing: 0;
+}
+
+.sidebar-saas .logo-subtitle {
+    display: inline-flex;
+    width: fit-content;
+    margin-top: 0.25rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ms-accent, #06B6D4) 18%, transparent);
+    color: #BAE6FD;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.sidebar-saas .sidebar-nav {
+    padding-top: 1rem;
+}
+
+.sidebar-saas .saas-nav-section {
+    padding-inline: 0.85rem;
+}
+
+.sidebar-saas .saas-section-title {
+    color: #93A4BA;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+}
+
+.sidebar-saas .saas-nav-item {
+    margin-top: 0.35rem;
+    border: 1px solid transparent;
+    color: #CBD5E1;
+    transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.sidebar-saas .saas-nav-item:hover {
+    background: rgba(37, 99, 235, 0.12);
+    border-color: rgba(96, 165, 250, 0.28);
+    color: #F8FAFC;
+    transform: translateX(2px);
+}
+
+.sidebar-saas .saas-nav-item.active {
+    background: linear-gradient(135deg, var(--ms-primary, #2563EB), var(--ms-primary-hover, #1D4ED8));
+    border-color: color-mix(in srgb, var(--ms-accent, #06B6D4) 34%, transparent);
+    color: #F8FAFC;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
+}
+
+.sidebar-saas .saas-nav-item .nav-icon {
+    color: inherit;
+}
+
+.sidebar-saas .saas-sidebar-note {
+    display: flex;
+    gap: 0.65rem;
+    margin: 0.45rem 0.85rem 0;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.42);
+    padding: 0.75rem;
+    color: #AAB8CA;
+    font-size: 0.75rem;
+    line-height: 1.45;
+}
+
+.sidebar-saas .saas-sidebar-note i {
+    margin-top: 0.15rem;
+    color: var(--ms-accent, #06B6D4);
+}
+
+.sidebar-saas .sidebar-footer {
+    border-top: 1px solid rgba(148, 163, 184, 0.16);
+    background: rgba(2, 6, 23, 0.24);
+}
+
+.sidebar-saas .user-section {
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.48);
+}
+
+.sidebar-saas .user-avatar {
+    background: color-mix(in srgb, var(--ms-primary, #2563EB) 22%, transparent);
+    color: #DBEAFE;
+}
+
+.sidebar-saas .user-name {
+    color: #F8FAFC;
+}
+
+.sidebar-saas .user-role {
+    color: #94A3B8;
+}
+
+.sidebar-saas .user-menu-btn {
+    color: #CBD5E1;
+}
+
+.sidebar-saas .user-menu-btn:hover {
+    background: rgba(37, 99, 235, 0.14);
+    color: #F8FAFC;
+}
+
+.sidebar-saas #user-dropdown {
+    background: #F8FAFC;
+    border-color: rgba(15, 23, 42, 0.12);
+}
+
+.sidebar-saas .dropdown-item {
+    color: #334155;
+}
+
+.sidebar-saas .dropdown-item.text-red {
+    color: var(--ms-danger, #DC2626);
+}
+</style>
+<?php endif; ?>
 
 <script src="<?= asset('js/sidebar-scripts.js') ?>"></script>
 
@@ -390,7 +541,7 @@ document.addEventListener('DOMContentLoaded', function() {
     right: 0;
     margin-bottom: 0.5rem;
     background: white;
-    border: 1px solid color-mix(in srgb, var(--brand-primary, #9CA777) 10%, transparent);
+    border: 1px solid color-mix(in srgb, <?= $sidebarEsPanelSaas ? 'var(--ms-primary, #2563EB)' : 'var(--brand-primary, #9CA777)' ?> 10%, transparent);
     border-radius: 6px;
     padding: 0.5rem;
     box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.1);
