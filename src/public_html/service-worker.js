@@ -1,9 +1,9 @@
 ﻿/**
- * Service Worker - Los Cedros
+ * Service Worker - Medisoft Hoteles
  * Estrategia de cachÃ© por capas con soporte offline completo
  */
 
-const SW_VERSION = 'v16';
+const SW_VERSION = 'v17';
 const BASE = self.registration.scope; // detecta automÃ¡ticamente el subdirectorio
 
 const CACHE = {
@@ -30,7 +30,7 @@ const SHELL_ASSETS = [
   'js/caja-offline.js',
   'js/dashboard.js',
   'js/loading-screen.js',
-  'img/logo-hotel-san-nicolas2.png',
+  'img/logo.png',
   'img/icons/icon-192x192.png',
   'img/icons/icon-512x512.png',
 ];
@@ -187,7 +187,7 @@ async function syncPendingActions() {
 self.addEventListener('push', event => {
   const data = event.data ? event.data.json() : {};
   const options = {
-    body: data.body || 'Nueva notificaciÃ³n de Los Cedros',
+    body: data.body || 'Nueva notificacion de Medisoft Hoteles',
     icon: BASE + 'img/icons/icon-192x192.png',
     badge: BASE + 'img/icons/icon-72x72.png',
     vibrate: [100, 50, 100],
@@ -198,7 +198,7 @@ self.addEventListener('push', event => {
     ],
   };
   event.waitUntil(
-    self.registration.showNotification('Los Cedros', options)
+    self.registration.showNotification('Medisoft Hoteles', options)
   );
 });
 
@@ -310,7 +310,7 @@ async function networkOnlyPage(request) {
     const offline = await caches.match(BASE + 'offline.html');
     if (offline) return offline;
 
-    return new Response('<h1>Los Cedros</h1><p>Sin conexion. Vuelve a intentarlo cuando tengas internet.</p>', {
+    return new Response('<h1>Medisoft Hoteles</h1><p>Sin conexion. Vuelve a intentarlo cuando tengas internet.</p>', {
       status: 503,
       headers: { 'Content-Type': 'text/html' },
     });

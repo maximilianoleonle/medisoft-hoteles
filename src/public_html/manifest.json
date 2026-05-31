@@ -1,7 +1,7 @@
 {
-    "name": "Los Cedros - Sistema de Gestión",
-    "short_name": "Los Cedros",
-    "description": "Sistema integral de gestión hotelera para Los Cedros, Santa Catarina Juquila, Oaxaca",
+    "name": "Medisoft Hoteles",
+    "short_name": "Medisoft",
+    "description": "Sistema integral de gestion hotelera multi-hotel de Medisoft Hoteles",
     "start_url": "/dashboard",
     "display": "standalone",
     "background_color": "#5D3A1A",
@@ -73,7 +73,7 @@
             "src": "/img/screenshots/habitaciones.png",
             "sizes": "1280x720",
             "type": "image/png",
-            "label": "Gestión de habitaciones"
+            "label": "Gestion de habitaciones"
         },
         {
             "src": "/img/screenshots/reservaciones.png",
@@ -84,9 +84,9 @@
     ],
     "shortcuts": [
         {
-            "name": "Nueva Reservación",
+            "name": "Nueva Reservacion",
             "short_name": "Reservar",
-            "description": "Crear una nueva reservación",
+            "description": "Crear una nueva reservacion",
             "url": "/reservaciones/crear",
             "icons": [{
                 "src": "/img/icons/shortcut-reserva.png",
@@ -96,7 +96,7 @@
         {
             "name": "Check-in",
             "short_name": "Check-in",
-            "description": "Realizar check-in rápido",
+            "description": "Realizar check-in rapido",
             "url": "/dashboard?action=checkin",
             "icons": [{
                 "src": "/img/icons/shortcut-checkin.png",
