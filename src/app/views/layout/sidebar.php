@@ -30,6 +30,7 @@ $sidebarSubtitulo = $sidebarEsPanelSaas ? 'Panel SaaS' : 'Hotel';
 $sidebarLogoUrl = ($sidebarBranding && function_exists('hotel_branding_asset_url'))
     ? (hotel_branding_asset_url($sidebarBranding['logo_url'] ?? null) ?: hotel_branding_default_logo_url())
     : (function_exists('hotel_branding_default_logo_url') ? hotel_branding_default_logo_url() : asset('img/logo.png'));
+$sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_context();
 ?>
 
 <?php if ($sidebarBranding): ?>
@@ -262,6 +263,17 @@ $sidebarLogoUrl = ($sidebarBranding && function_exists('hotel_branding_asset_url
 
         <div class="user-dropdown" id="user-dropdown">
             <div class="dropdown-divider"></div>
+            <?php if ($sidebarMostrarLimpiezaOffline): ?>
+            <button type="button"
+                    class="dropdown-item"
+                    id="manual-offline-cleanup-btn"
+                    style="width:100%;background:none;border:0;text-align:left;cursor:pointer;"
+                    title="Limpia solo los datos offline locales de este navegador, con confirmacion previa.">
+                <i class="fas fa-broom"></i>
+                <span>Limpiar datos offline</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <?php endif; ?>
             <form method="POST" action="<?= url('logout') ?>" id="logout-form" style="margin:0;">
                 <?= csrf_field() ?>
                 <button type="submit" class="dropdown-item text-red" style="width:100%;background:none;border:0;text-align:left;cursor:pointer;">

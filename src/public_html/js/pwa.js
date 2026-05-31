@@ -270,12 +270,12 @@
   function deleteIndexedDBByName(name, { preserveCurrent = false } = {}) {
     return new Promise(resolve => {
       if (!name || !('indexedDB' in window)) {
-        resolve();
+        resolve(false);
         return;
       }
 
       if (preserveCurrent && name === DB_NAME) {
-        resolve();
+        resolve(false);
         return;
       }
 
@@ -284,9 +284,9 @@
       }
 
       const req = indexedDB.deleteDatabase(name);
-      req.onsuccess = () => resolve();
-      req.onerror = () => resolve();
-      req.onblocked = () => resolve();
+      req.onsuccess = () => resolve(true);
+      req.onerror = () => resolve(false);
+      req.onblocked = () => resolve(false);
     });
   }
 
@@ -343,6 +343,93 @@
     }
   }
 
+  async function countPendingOfflineData() {
+    try {
+      const [offlineQueue, typedOperations] = await Promise.all([
+        dbGetAll('offline_queue'),
+        dbGetAll('operaciones_offline'),
+      ]);
+      const pendingTypedOperations = typedOperations
+        .filter(item => item && item.estado !== 'sincronizado');
+
+      return {
+        offlineQueue: offlineQueue.length,
+        operacionesOffline: pendingTypedOperations.length,
+        total: offlineQueue.length + pendingTypedOperations.length,
+      };
+    } catch (err) {
+      console.warn('[PWA] No se pudieron verificar pendientes offline:', err);
+      return null;
+    }
+  }
+
+  async function manualOfflineDataCleanup() {
+    if (!hasOfflineStorageContext() || !DB_NAME) {
+      warnMissingOfflineContext();
+      showToast('No hay contexto offline activo para limpiar.', 'warning');
+      return;
+    }
+
+    const pending = await countPendingOfflineData();
+    if (!pending) {
+      window.alert(
+        'No se pudo verificar si existen operaciones offline pendientes. ' +
+        'Por seguridad no se limpiaron datos locales.'
+      );
+      return;
+    }
+
+    const baseMessage = [
+      'Esto solo afecta este navegador o dispositivo.',
+      'No elimina datos del servidor.',
+      'No habilita sincronizacion offline.',
+      'Se limpiara solo la base local del hotel/usuario actual.',
+    ].join('\n');
+
+    if (pending.total > 0) {
+      const typedCount = pending.operacionesOffline;
+      const queueCount = pending.offlineQueue;
+      const typedLabel = typedCount === 1 ? 'operacion tipada' : 'operaciones tipadas';
+      const queueLabel = queueCount === 1 ? 'accion generica' : 'acciones genericas';
+      const warning = [
+        'Hay datos offline pendientes sin sincronizar:',
+        `- ${typedCount} ${typedLabel}`,
+        `- ${queueCount} ${queueLabel}`,
+        '',
+        baseMessage,
+        '',
+        'Si continuas, esos datos locales podrian perderse.',
+        'Escribe LIMPIAR para confirmar.'
+      ].join('\n');
+      const typedConfirmation = window.prompt(warning, '');
+
+      if (typedConfirmation !== 'LIMPIAR') {
+        showToast('Limpieza offline cancelada.', 'info');
+        return;
+      }
+    } else {
+      const confirmed = window.confirm(
+        `${baseMessage}\n\nNo se detectaron operaciones offline pendientes.\n\n` +
+        'Deseas limpiar los datos offline locales de este dispositivo?'
+      );
+
+      if (!confirmed) {
+        showToast('Limpieza offline cancelada.', 'info');
+        return;
+      }
+    }
+
+    const deleted = await deleteIndexedDBByName(DB_NAME);
+    if (!deleted) {
+      showToast('No se pudo limpiar la base offline. Cierra otras pestanas e intenta de nuevo.', 'error');
+      return;
+    }
+
+    clearKnownOfflineStorageKeys({ keepCurrentScope: true });
+    rememberCurrentStorageScope();
+    showToast('Datos offline locales limpiados en este dispositivo.', 'success');
+  }
+
   clearOfflineStorageForScopeChange();
 
   // Exponer la API de datos para que otras partes de la app la puedan usar
@@ -354,6 +441,7 @@
     getAll: dbGetAll,
     delete: dbDelete,
     clearLocalPrivateData,
+    clearCurrentScopedData: manualOfflineDataCleanup,
   };
 
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -657,11 +745,20 @@
     }
   });
 
+  document.addEventListener('click', event => {
+    const button = event.target?.closest?.('#manual-offline-cleanup-btn');
+    if (!button) return;
+
+    event.preventDefault();
+    manualOfflineDataCleanup();
+  });
+
   // Exponer utilidades pÃºblicas
   window.PWA = {
     showToast,
     processOfflineQueue,
     clearLocalPrivateData,
+    manualOfflineDataCleanup,
     triggerInstall: window.triggerInstall,
     checkOnline: detectarConexionReal,
     isOnline: () => _onlineConfirmado,
