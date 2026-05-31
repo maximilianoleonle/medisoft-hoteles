@@ -476,23 +476,14 @@
   }
 
   /**
-   * Lee la metadata del snapshot de reservaciones desde IndexedDB.
-   * offline-data.js guarda la key 'ultima_sync_reservaciones' con campo 'valor' (ISO timestamp).
+   * Lee la metadata del snapshot de reservaciones desde la DB scoped.
+   * offline-data.js guarda la key 'ultima_sync_reservaciones' con campo 'valor'.
    */
   async function _leerMetaSnapshot() {
     try {
-      return await new Promise((resolve) => {
-        const req = indexedDB.open('loscedros-db', 2);
-        req.onsuccess = e => {
-          const db    = e.target.result;
-          const tx    = db.transaction('meta', 'readonly');
-          const store = tx.objectStore('meta');
-          const get   = store.get('ultima_sync_reservaciones');
-          get.onsuccess = () => resolve(get.result || null);
-          get.onerror   = () => resolve(null);
-        };
-        req.onerror = () => resolve(null);
-      });
+      if (!window.OfflineData?.obtenerMetaSync) return null;
+      const meta = await window.OfflineData.obtenerMetaSync();
+      return meta?.reservaciones || null;
     } catch (_) {
       return null;
     }
