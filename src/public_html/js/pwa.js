@@ -319,27 +319,16 @@
     }
 
     const previousScope = safeLocalStorageGet(STORAGE_SCOPE_KEY);
-    const previousDbName = safeLocalStorageGet(STORAGE_DB_KEY)
-      || (previousScope ? `loscedros-db-${sanitizeStorageScope(previousScope)}` : null);
     const currentScope = OFFLINE_STORAGE_CONTEXT.scope;
-    const dbsToDelete = new Set([LEGACY_DB_NAME]);
     const scopeChanged = Boolean(previousScope && previousScope !== currentScope);
 
-    if (previousDbName && previousDbName !== DB_NAME) {
-      dbsToDelete.add(previousDbName);
-    }
-
     try {
-      await Promise.all(
-        [...dbsToDelete].map(name => deleteIndexedDBByName(name, { preserveCurrent: true }))
-      );
-
       if (scopeChanged) {
-        await clearKnownLosCedrosCaches();
         clearKnownOfflineStorageKeys({ keepCurrentScope: true });
+        console.warn('[PWA] Datos offline previos preservados por seguridad al cambiar de contexto.');
       }
     } catch (err) {
-      console.warn('[PWA] No se pudo limpiar storage offline previo:', err);
+      console.warn('[PWA] No se pudo actualizar el marcador de contexto offline:', err);
     } finally {
       rememberCurrentStorageScope();
     }
@@ -347,22 +336,10 @@
 
   async function clearLocalPrivateData() {
     try {
-      postToSW({ type: 'CLEAR_PRIVATE_DATA' });
-
-      await clearKnownLosCedrosCaches();
-
-      const previousDbName = safeLocalStorageGet(STORAGE_DB_KEY);
-      const dbsToDelete = new Set([LEGACY_DB_NAME]);
-      if (previousDbName) dbsToDelete.add(previousDbName);
-      if (DB_NAME) dbsToDelete.add(DB_NAME);
-
-      await Promise.all(
-        [...dbsToDelete].map(name => deleteIndexedDBByName(name))
-      );
-
-      clearKnownOfflineStorageKeys();
+      clearKnownOfflineStorageKeys({ keepCurrentScope: true });
+      console.warn('[PWA] Datos offline locales preservados por seguridad durante logout.');
     } catch (err) {
-      console.warn('[PWA] No se pudieron limpiar todos los datos locales:', err);
+      console.warn('[PWA] No se pudieron actualizar los marcadores locales:', err);
     }
   }
 
