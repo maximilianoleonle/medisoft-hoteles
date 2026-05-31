@@ -2,8 +2,10 @@
 (function() {
     'use strict';
 
+    const medisoftOfflineEnabled = window.MEDISOFT_OFFLINE_ENABLED === true;
+
     // Verificar soporte de Service Worker
-    if ('serviceWorker' in navigator && !window.BASE_URL) {
+    if (medisoftOfflineEnabled && 'serviceWorker' in navigator && !window.BASE_URL) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register((window.BASE_URL || '') + '/service-worker.js', {
                 scope: (window.BASE_URL || '') + '/'
