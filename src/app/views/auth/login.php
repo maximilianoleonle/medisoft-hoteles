@@ -15,6 +15,13 @@ $loginFaviconUrl = function_exists('hotel_branding_asset_url')
 $loginBackgroundUrl = function_exists('hotel_branding_asset_url')
     ? hotel_branding_asset_url($loginBranding['login_background_url'] ?? null)
     : null;
+$loginManifestHref = asset('manifest.json');
+if ($loginHotelSlug && preg_match('/^[a-z0-9-]+$/', (string) $loginHotelSlug)) {
+    $loginManifestHref = url('h/' . $loginHotelSlug . '/manifest.webmanifest');
+}
+$loginThemeColor = function_exists('hotel_branding_hex')
+    ? hotel_branding_hex($loginBranding['color_primary'] ?? null, '#9CA777')
+    : '#9CA777';
 $loginAction = $login_action ?? url('login/authenticate');
 $loginDisabled = !empty($login_disabled);
 ?>
@@ -26,9 +33,10 @@ $loginDisabled = !empty($login_disabled);
     <title><?= htmlspecialchars($title ?? ($loginHotelNombre . ' - Sistema de Gestion'), ENT_QUOTES, 'UTF-8') ?></title>
     
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#6B4423">
+    <meta name="theme-color" content="<?= htmlspecialchars($loginThemeColor, ENT_QUOTES, 'UTF-8') ?>">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="manifest" href="<?= htmlspecialchars($loginManifestHref, ENT_QUOTES, 'UTF-8') ?>">
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">

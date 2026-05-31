@@ -13,6 +13,11 @@ $layoutLogoUrl = ($layoutBranding && function_exists('hotel_branding_asset_url')
 $layoutFaviconUrl = ($layoutBranding && function_exists('hotel_branding_asset_url'))
     ? hotel_branding_asset_url($layoutBranding['favicon_url'] ?? null)
     : null;
+$layoutManifestHref = asset('manifest.json');
+$layoutHotelSlug = function_exists('current_hotel_slug') ? current_hotel_slug() : null;
+if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $layoutHotelSlug)) {
+    $layoutManifestHref = url('h/' . $layoutHotelSlug . '/manifest.webmanifest');
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -39,7 +44,7 @@ $layoutFaviconUrl = ($layoutBranding && function_exists('hotel_branding_asset_ur
     <meta name="csrf-token" content="<?= csrf_token() ?>">
     
     <!-- Manifest PWA -->
-    <link rel="manifest" href="<?= asset('manifest.json') ?>">
+    <link rel="manifest" href="<?= htmlspecialchars($layoutManifestHref, ENT_QUOTES, 'UTF-8') ?>">
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="<?= asset('img/favicon-32x32.png') ?>">

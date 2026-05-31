@@ -184,6 +184,7 @@ $router->get('/login', ['controller' => 'Auth', 'action' => 'login']);
 $router->post('/login/authenticate', ['controller' => 'Auth', 'action' => 'authenticate']);
 $router->get('/h/{slug:[a-z0-9-]+}/login', ['controller' => 'Auth', 'action' => 'hotelLogin']);
 $router->post('/h/{slug:[a-z0-9-]+}/login/authenticate', ['controller' => 'Auth', 'action' => 'hotelAuthenticate']);
+$router->get('/h/{slug:[a-z0-9-]+}/manifest.webmanifest', ['controller' => 'Pwa', 'action' => 'manifest']);
 $router->post('/logout', ['controller' => 'Auth', 'action' => 'logout']);
 
 // Dashboard
