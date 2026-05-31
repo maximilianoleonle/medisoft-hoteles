@@ -13,6 +13,25 @@ $auditoriaPlan = $auditoriaPlan ?? [
     'modulos_activos_fuera_plan' => [],
 ];
 $activo = !empty($hotel['activo']);
+$usuariosAdminCount = count($usuariosHotel);
+$modulosActivosCount = count(array_filter($modulosHotel, function ($modulo) {
+    return !empty($modulo['activo_hotel']);
+}));
+$estadoAuditoria = $auditoriaPlan['estado'] ?? 'sin_plan';
+$estadoClase = [
+    'consistente' => 'bg-green-100 text-green-800',
+    'diferencias' => 'bg-amber-100 text-amber-800',
+    'personalizado' => 'bg-blue-100 text-blue-800',
+    'sin_plan' => 'bg-gray-100 text-gray-700',
+][$estadoAuditoria] ?? 'bg-gray-100 text-gray-700';
+$estadoTexto = [
+    'consistente' => 'Consistente',
+    'diferencias' => 'Con diferencias',
+    'personalizado' => 'Personalizado',
+    'sin_plan' => 'Sin plan',
+][$estadoAuditoria] ?? 'No disponible';
+$modulosApagados = $auditoriaPlan['modulos_incluidos_apagados'] ?? [];
+$modulosFueraPlan = $auditoriaPlan['modulos_activos_fuera_plan'] ?? [];
 $brandingOld = $_SESSION['old_input'] ?? [];
 $brandingCampo = function ($key, $default = '') use ($brandingOld, $brandingHotel) {
     $value = array_key_exists($key, $brandingOld)
@@ -74,7 +93,45 @@ $fila = function ($label, $value) {
         </div>
     <?php endif; ?>
 
-    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    <div class="mb-6 rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div class="border-b border-gray-200 px-6 py-4">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Mapa del panel</p>
+            <div class="mt-3 grid grid-cols-2 gap-2 md:grid-cols-5">
+                <a href="#resumen" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Resumen</a>
+                <a href="#usuarios" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Usuarios</a>
+                <a href="#modulos" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Modulos</a>
+                <a href="#plan" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Plan</a>
+                <a href="#branding" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Branding/PWA</a>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 divide-y divide-gray-100 md:grid-cols-4 md:divide-x md:divide-y-0">
+            <div class="px-6 py-4">
+                <div class="text-xs font-semibold uppercase tracking-wider text-gray-500">Estado</div>
+                <div class="mt-2">
+                    <span class="inline-flex rounded-full px-3 py-1 text-sm font-semibold <?= $activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700' ?>">
+                        <?= $activo ? 'Activo' : 'Inactivo' ?>
+                    </span>
+                </div>
+            </div>
+            <div class="px-6 py-4">
+                <div class="text-xs font-semibold uppercase tracking-wider text-gray-500">Plan</div>
+                <div class="mt-2 text-sm font-semibold text-gray-900"><?= htmlspecialchars($planActual['nombre'] ?? 'Sin plan', ENT_QUOTES, 'UTF-8') ?></div>
+                <div class="mt-1 text-xs text-gray-500"><?= htmlspecialchars($estadoTexto, ENT_QUOTES, 'UTF-8') ?></div>
+            </div>
+            <div class="px-6 py-4">
+                <div class="text-xs font-semibold uppercase tracking-wider text-gray-500">Modulos activos</div>
+                <div class="mt-2 text-2xl font-semibold text-gray-900"><?= (int) $modulosActivosCount ?></div>
+                <div class="mt-1 text-xs text-gray-500">de <?= count($modulosHotel) ?> disponibles</div>
+            </div>
+            <div class="px-6 py-4">
+                <div class="text-xs font-semibold uppercase tracking-wider text-gray-500">Admins hotel</div>
+                <div class="mt-2 text-2xl font-semibold text-gray-900"><?= (int) $usuariosAdminCount ?></div>
+                <div class="mt-1 text-xs text-gray-500">usuarios vinculados</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="resumen" class="scroll-mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h2 class="text-lg font-semibold text-gray-900">Datos del hotel</h2>
@@ -118,7 +175,14 @@ $fila = function ($label, $value) {
         </div>
     </div>
 
-    <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    <div id="branding" class="mt-8 scroll-mt-6">
+        <div class="mb-3">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Marca y PWA</p>
+            <h2 class="text-xl font-semibold text-gray-900">Identidad visual del hotel</h2>
+            <p class="mt-1 text-sm text-gray-500">Ajustes visibles para login, layout hotelero y manifest instalado.</p>
+        </div>
+
+    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Branding basico</h2>
             <p class="text-sm text-gray-500">Identidad visual controlada para login y layout hotelero. No permite CSS, HTML ni JavaScript libre.</p>
@@ -325,8 +389,16 @@ $fila = function ($label, $value) {
             </div>
         </form>
     </div>
+    </div>
 
-    <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    <div id="plan" class="mt-8 scroll-mt-6">
+        <div class="mb-3">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Comercial</p>
+            <h2 class="text-xl font-semibold text-gray-900">Plan contratado y consistencia</h2>
+            <p class="mt-1 text-sm text-gray-500">El plan sugiere modulos, pero el acceso real sigue en la tabla de modulos activos.</p>
+        </div>
+
+    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Plan comercial</h2>
             <p class="text-sm text-gray-500">El plan define un preset comercial. El acceso real sigue dependiendo de los modulos activos del hotel.</p>
@@ -400,24 +472,7 @@ $fila = function ($label, $value) {
         <?php endif; ?>
     </div>
 
-    <?php
-    $estadoAuditoria = $auditoriaPlan['estado'] ?? 'sin_plan';
-    $estadoClase = [
-        'consistente' => 'bg-green-100 text-green-800',
-        'diferencias' => 'bg-amber-100 text-amber-800',
-        'personalizado' => 'bg-blue-100 text-blue-800',
-        'sin_plan' => 'bg-gray-100 text-gray-700',
-    ][$estadoAuditoria] ?? 'bg-gray-100 text-gray-700';
-    $estadoTexto = [
-        'consistente' => 'Consistente',
-        'diferencias' => 'Con diferencias',
-        'personalizado' => 'Personalizado',
-        'sin_plan' => 'Sin plan',
-    ][$estadoAuditoria] ?? 'No disponible';
-    $modulosApagados = $auditoriaPlan['modulos_incluidos_apagados'] ?? [];
-    $modulosFueraPlan = $auditoriaPlan['modulos_activos_fuera_plan'] ?? [];
-    ?>
-    <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
                 <h2 class="text-lg font-semibold text-gray-900">Consistencia del plan</h2>
@@ -478,8 +533,16 @@ $fila = function ($label, $value) {
             </div>
         <?php endif; ?>
     </div>
+    </div>
 
-    <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    <div id="modulos" class="mt-8 scroll-mt-6">
+        <div class="mb-3">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Acceso operativo</p>
+            <h2 class="text-xl font-semibold text-gray-900">Modulos activos del hotel</h2>
+            <p class="mt-1 text-sm text-gray-500">Controla que se muestra en el menu hotelero y que rutas quedan disponibles.</p>
+        </div>
+
+    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Modulos activos</h2>
             <p class="text-sm text-gray-500">Base inicial para habilitar o deshabilitar secciones por hotel.</p>
@@ -544,8 +607,16 @@ $fila = function ($label, $value) {
             </form>
         <?php endif; ?>
     </div>
+    </div>
 
-    <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    <div id="usuarios" class="mt-8 scroll-mt-6">
+        <div class="mb-3">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Accesos</p>
+            <h2 class="text-xl font-semibold text-gray-900">Administradores hoteleros</h2>
+            <p class="mt-1 text-sm text-gray-500">Usuarios que pueden entrar por el login hotel-aware de este cliente.</p>
+        </div>
+
+    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Usuarios administradores del hotel</h2>
             <p class="text-sm text-gray-500">Usuarios vinculados a este hotel para acceso hotel-aware.</p>
@@ -660,5 +731,6 @@ $fila = function ($label, $value) {
                 </button>
             </div>
         </form>
+    </div>
     </div>
 </div>
