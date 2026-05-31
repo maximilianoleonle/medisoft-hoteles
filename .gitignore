@@ -37,6 +37,7 @@ _local_quarantine_sensitive/
 # Fase 0.5 - artefactos locales y operativos
 backups/
 src/app/uploads/
+src/public_html/uploads/branding/
 src/public_html/uploads/temp/
 *.sql
 *.sql.gz

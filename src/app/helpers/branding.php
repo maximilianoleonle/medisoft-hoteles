@@ -94,3 +94,182 @@ function hotel_branding_public_name(array $branding = null, $fallback = 'Medisof
     $nombre = trim((string) ($branding['nombre_visual'] ?? ''));
     return $nombre !== '' ? $nombre : $fallback;
 }
+
+function hotel_branding_upload_asset(array $file, $hotelSlug, $tipo) {
+    $config = hotel_branding_upload_config($tipo);
+    if (!$config) {
+        return ['success' => false, 'error' => 'Tipo de asset de branding no valido.'];
+    }
+
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+        return ['success' => true, 'path' => null, 'uploaded' => false];
+    }
+
+    if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+        return ['success' => false, 'error' => 'No se pudo recibir el archivo de ' . $config['label'] . '.'];
+    }
+
+    $tmpName = $file['tmp_name'] ?? '';
+    if (!$tmpName || !is_uploaded_file($tmpName)) {
+        return ['success' => false, 'error' => 'El archivo de ' . $config['label'] . ' no es una subida valida.'];
+    }
+
+    $size = (int) ($file['size'] ?? 0);
+    if ($size <= 0 || $size > $config['max_size']) {
+        return ['success' => false, 'error' => 'El archivo de ' . $config['label'] . ' excede el tamano maximo de ' . hotel_branding_format_bytes($config['max_size']) . '.'];
+    }
+
+    $originalName = (string) ($file['name'] ?? '');
+    $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+    if ($extension === 'svg' || !in_array($extension, $config['extensions'], true)) {
+        return ['success' => false, 'error' => 'Extension no permitida para ' . $config['label'] . '.'];
+    }
+
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime = $finfo ? finfo_file($finfo, $tmpName) : null;
+    if ($finfo) {
+        finfo_close($finfo);
+    }
+
+    if (!$mime || !in_array($mime, $config['mimes'], true)) {
+        return ['success' => false, 'error' => 'MIME no permitido para ' . $config['label'] . '.'];
+    }
+
+    $expectedExtensions = hotel_branding_extensions_for_mime($mime);
+    if (!in_array($extension, $expectedExtensions, true)) {
+        return ['success' => false, 'error' => 'La extension no coincide con el tipo real del archivo de ' . $config['label'] . '.'];
+    }
+
+    $imageInfo = @getimagesize($tmpName);
+    if (!$imageInfo || empty($imageInfo[0]) || empty($imageInfo[1])) {
+        return ['success' => false, 'error' => 'El archivo de ' . $config['label'] . ' no es una imagen valida.'];
+    }
+
+    [$width, $height] = $imageInfo;
+    if ($width < $config['min_width'] || $height < $config['min_height']) {
+        return ['success' => false, 'error' => 'La imagen de ' . $config['label'] . ' debe medir al menos ' . $config['min_width'] . 'x' . $config['min_height'] . ' px.'];
+    }
+
+    if ($width > $config['max_width'] || $height > $config['max_height']) {
+        return ['success' => false, 'error' => 'La imagen de ' . $config['label'] . ' excede el tamano maximo de ' . $config['max_width'] . 'x' . $config['max_height'] . ' px.'];
+    }
+
+    $slug = hotel_branding_safe_slug($hotelSlug);
+    if ($slug === '') {
+        return ['success' => false, 'error' => 'Slug de hotel no valido para guardar assets.'];
+    }
+
+    $relativeDir = 'uploads/branding/' . $slug . '/' . $config['dir'];
+    $absoluteDir = PUBLIC_PATH . '/' . $relativeDir;
+
+    if (!is_dir($absoluteDir) && !mkdir($absoluteDir, 0755, true)) {
+        return ['success' => false, 'error' => 'No se pudo crear la carpeta de branding.'];
+    }
+
+    hotel_branding_write_upload_guards(PUBLIC_PATH . '/uploads/branding');
+
+    $filename = $tipo . '-' . date('YmdHis') . '-' . bin2hex(random_bytes(8)) . '.' . $extension;
+    $absolutePath = $absoluteDir . '/' . $filename;
+
+    if (!move_uploaded_file($tmpName, $absolutePath)) {
+        return ['success' => false, 'error' => 'No se pudo guardar el archivo de ' . $config['label'] . '.'];
+    }
+
+    @chmod($absolutePath, 0644);
+
+    return [
+        'success' => true,
+        'path' => $relativeDir . '/' . $filename,
+        'uploaded' => true,
+        'mime' => $mime,
+        'size' => $size,
+        'width' => (int) $width,
+        'height' => (int) $height
+    ];
+}
+
+function hotel_branding_upload_config($tipo) {
+    $configs = [
+        'logo' => [
+            'label' => 'logo',
+            'dir' => 'logo',
+            'max_size' => 2 * 1024 * 1024,
+            'extensions' => ['png', 'jpg', 'jpeg', 'webp'],
+            'mimes' => ['image/png', 'image/jpeg', 'image/webp'],
+            'min_width' => 64,
+            'min_height' => 64,
+            'max_width' => 4096,
+            'max_height' => 4096
+        ],
+        'favicon' => [
+            'label' => 'favicon',
+            'dir' => 'favicon',
+            'max_size' => 512 * 1024,
+            'extensions' => ['ico', 'png'],
+            'mimes' => ['image/png', 'image/x-icon', 'image/vnd.microsoft.icon'],
+            'min_width' => 16,
+            'min_height' => 16,
+            'max_width' => 1024,
+            'max_height' => 1024
+        ],
+        'login_bg' => [
+            'label' => 'fondo de login',
+            'dir' => 'login-bg',
+            'max_size' => 4 * 1024 * 1024,
+            'extensions' => ['png', 'jpg', 'jpeg', 'webp'],
+            'mimes' => ['image/png', 'image/jpeg', 'image/webp'],
+            'min_width' => 800,
+            'min_height' => 400,
+            'max_width' => 6000,
+            'max_height' => 6000
+        ],
+    ];
+
+    return $configs[$tipo] ?? null;
+}
+
+function hotel_branding_extensions_for_mime($mime) {
+    $map = [
+        'image/png' => ['png'],
+        'image/jpeg' => ['jpg', 'jpeg'],
+        'image/webp' => ['webp'],
+        'image/x-icon' => ['ico'],
+        'image/vnd.microsoft.icon' => ['ico'],
+    ];
+
+    return $map[$mime] ?? [];
+}
+
+function hotel_branding_safe_slug($slug) {
+    $slug = strtolower(trim((string) $slug));
+    return preg_match('/^[a-z0-9](?:[a-z0-9-]{0,118}[a-z0-9])?$/', $slug) ? $slug : '';
+}
+
+function hotel_branding_format_bytes($bytes) {
+    if ($bytes >= 1024 * 1024) {
+        return (int) ($bytes / 1024 / 1024) . ' MB';
+    }
+
+    return (int) ceil($bytes / 1024) . ' KB';
+}
+
+function hotel_branding_write_upload_guards($dir) {
+    if (!is_dir($dir)) {
+        return;
+    }
+
+    $htaccess = rtrim($dir, '/\\') . '/.htaccess';
+    if (file_exists($htaccess)) {
+        return;
+    }
+
+    $content = "Options -Indexes\n"
+        . "<FilesMatch \"\\.(php|phtml|php3|php4|php5|phar|pl|py|jsp|asp|aspx|sh|cgi|html|htm|js|css|svg)$\">\n"
+        . "    Require all denied\n"
+        . "</FilesMatch>\n"
+        . "<FilesMatch \"\\.(jpg|jpeg|png|webp|ico)$\">\n"
+        . "    Require all granted\n"
+        . "</FilesMatch>\n";
+
+    @file_put_contents($htaccess, $content);
+}

@@ -10,6 +10,9 @@ $layoutNombreVisual = $layoutBranding
 $layoutLogoUrl = ($layoutBranding && function_exists('hotel_branding_asset_url'))
     ? (hotel_branding_asset_url($layoutBranding['logo_url'] ?? null) ?: asset('img/logo-hotel-san-nicolas2.png'))
     : asset('img/logo-hotel-san-nicolas2.png');
+$layoutFaviconUrl = ($layoutBranding && function_exists('hotel_branding_asset_url'))
+    ? hotel_branding_asset_url($layoutBranding['favicon_url'] ?? null)
+    : null;
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -42,6 +45,9 @@ $layoutLogoUrl = ($layoutBranding && function_exists('hotel_branding_asset_url')
     <link rel="icon" type="image/png" sizes="32x32" href="<?= asset('img/favicon-32x32.png') ?>">
     <link rel="icon" type="image/png" sizes="16x16" href="<?= asset('img/favicon-16x16.png') ?>">
     <link rel="icon" type="image/png" href="<?= asset('img/favicon.png') ?>">
+    <?php if ($layoutFaviconUrl): ?>
+    <link rel="icon" href="<?= htmlspecialchars($layoutFaviconUrl, ENT_QUOTES, 'UTF-8') ?>">
+    <?php endif; ?>
     
     <!-- iOS Icons -->
     <link rel="apple-touch-icon" href="<?= asset('img/icons/icon-192x192.png') ?>">

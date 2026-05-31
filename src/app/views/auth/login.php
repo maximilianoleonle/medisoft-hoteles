@@ -9,6 +9,9 @@ $loginHotelNombre = function_exists('hotel_branding_public_name')
 $loginLogoUrl = function_exists('hotel_branding_asset_url')
     ? (hotel_branding_asset_url($loginBranding['logo_url'] ?? null) ?: asset('img/logo-hotel-san-nicolas2.png'))
     : asset('img/logo-hotel-san-nicolas2.png');
+$loginFaviconUrl = function_exists('hotel_branding_asset_url')
+    ? hotel_branding_asset_url($loginBranding['favicon_url'] ?? null)
+    : null;
 $loginBackgroundUrl = function_exists('hotel_branding_asset_url')
     ? hotel_branding_asset_url($loginBranding['login_background_url'] ?? null)
     : null;
@@ -29,6 +32,10 @@ $loginDisabled = !empty($login_disabled);
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <?php if ($loginFaviconUrl): ?>
+    <link rel="icon" href="<?= htmlspecialchars($loginFaviconUrl, ENT_QUOTES, 'UTF-8') ?>">
+    <?php endif; ?>
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;700;800&display=swap" rel="stylesheet">
@@ -63,16 +70,6 @@ $loginDisabled = !empty($login_disabled);
             --gradient-olive: linear-gradient(135deg, var(--olive-green) 0%, var(--olive-green-light) 100%);
         }
 
-        <?php if ($loginBackgroundUrl): ?>
-        body {
-            background-image:
-                linear-gradient(135deg, rgba(255, 248, 231, 0.88) 0%, rgba(255, 255, 255, 0.9) 100%),
-                url('<?= htmlspecialchars($loginBackgroundUrl, ENT_QUOTES, 'UTF-8') ?>');
-            background-size: cover;
-            background-position: center;
-        }
-        <?php endif; ?>
-
         /* ========================================
            RESET Y BASE
            ======================================== */
@@ -100,6 +97,16 @@ $loginDisabled = !empty($login_disabled);
             color: var(--dark-color);
             position: relative;
         }
+
+        <?php if ($loginBackgroundUrl): ?>
+        body.branding-login-bg {
+            background-image:
+                linear-gradient(135deg, rgba(255, 248, 231, 0.88) 0%, rgba(255, 255, 255, 0.9) 100%),
+                url('<?= htmlspecialchars($loginBackgroundUrl, ENT_QUOTES, 'UTF-8') ?>');
+            background-size: cover;
+            background-position: center;
+        }
+        <?php endif; ?>
 
         /* ========================================
            CONTENEDOR PRINCIPAL - DESKTOP
@@ -1043,7 +1050,7 @@ $loginDisabled = !empty($login_disabled);
         }
     </style>
 </head>
-<body>
+<body class="<?= $loginBackgroundUrl ? 'branding-login-bg' : '' ?>">
     
     <!-- ========================================
          CONTENEDOR PRINCIPAL

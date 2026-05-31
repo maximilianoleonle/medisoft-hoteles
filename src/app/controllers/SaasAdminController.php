@@ -337,7 +337,8 @@ class SaasAdminController extends Controller {
         $this->validateCSRF();
         $hotel = $this->obtenerHotelORedirigir($id);
         $data = $this->datosBrandingDesdePost();
-        $errores = $this->brandingModel->validarDatos($data);
+        $errores = $this->procesarUploadsBranding($hotel, $data);
+        $errores = array_merge($errores, $this->brandingModel->validarDatos($data));
 
         if (!empty($errores)) {
             save_old_input($data);
@@ -441,6 +442,38 @@ class SaasAdminController extends Controller {
             'login_style' => trim($this->getPost('login_style', 'default')),
             'activo' => (int) $this->getPost('activo', 1) === 1 ? 1 : 0,
         ];
+    }
+
+    private function procesarUploadsBranding(array $hotel, array &$data) {
+        $errores = [];
+        $mapa = [
+            'logo_file' => ['tipo' => 'logo', 'campo' => 'logo_url'],
+            'favicon_file' => ['tipo' => 'favicon', 'campo' => 'favicon_url'],
+            'login_background_file' => ['tipo' => 'login_bg', 'campo' => 'login_background_url'],
+        ];
+
+        foreach ($mapa as $input => $config) {
+            if (empty($_FILES[$input]) || ($_FILES[$input]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+
+            if (!function_exists('hotel_branding_upload_asset')) {
+                $errores[] = 'El helper de upload de branding no esta disponible.';
+                continue;
+            }
+
+            $resultado = hotel_branding_upload_asset($_FILES[$input], $hotel['slug'] ?? '', $config['tipo']);
+            if (empty($resultado['success'])) {
+                $errores[] = $resultado['error'] ?? 'No se pudo subir el asset de branding.';
+                continue;
+            }
+
+            if (!empty($resultado['uploaded']) && !empty($resultado['path'])) {
+                $data[$config['campo']] = $resultado['path'];
+            }
+        }
+
+        return $errores;
     }
 
     private function validarDatosAdminHotel(array $data, $usuarioExistente = null) {

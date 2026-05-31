@@ -28,6 +28,12 @@ $brandingNombrePreview = $brandingHotel['nombre_visual'] ?? $hotel['nombre'] ?? 
 $brandingLogoPreview = function_exists('hotel_branding_asset_url')
     ? hotel_branding_asset_url($brandingHotel['logo_url'] ?? null)
     : null;
+$brandingFaviconPreview = function_exists('hotel_branding_asset_url')
+    ? hotel_branding_asset_url($brandingHotel['favicon_url'] ?? null)
+    : null;
+$brandingLoginBgPreview = function_exists('hotel_branding_asset_url')
+    ? hotel_branding_asset_url($brandingHotel['login_background_url'] ?? null)
+    : null;
 $fila = function ($label, $value) {
     $value = $value === null || $value === '' ? '-' : $value;
     ?>
@@ -112,7 +118,7 @@ $fila = function ($label, $value) {
             <p class="text-sm text-gray-500">Identidad visual controlada para login y layout hotelero. No permite CSS, HTML ni JavaScript libre.</p>
         </div>
 
-        <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/branding') ?>">
+        <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/branding') ?>" enctype="multipart/form-data">
             <?= csrf_field() ?>
 
             <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -167,7 +173,10 @@ $fila = function ($label, $value) {
                                value="<?= $brandingCampo('logo_url') ?>"
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
                                placeholder="/img/logo-hotel-san-nicolas2.png">
-                        <p class="mt-1 text-xs text-gray-500">Por ahora se aceptan rutas publicas controladas o URL http/https de imagen. Upload queda para una microfase posterior.</p>
+                        <label for="logo_file" class="mt-3 block text-sm font-medium text-gray-700">Subir logo</label>
+                        <input type="file" id="logo_file" name="logo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800">
+                        <p class="mt-1 text-xs text-gray-500">PNG, JPG, JPEG o WebP. Maximo 2 MB. No SVG.</p>
                     </div>
 
                     <div>
@@ -176,6 +185,10 @@ $fila = function ($label, $value) {
                                value="<?= $brandingCampo('favicon_url') ?>"
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
                                placeholder="/img/favicon.png">
+                        <label for="favicon_file" class="mt-3 block text-sm font-medium text-gray-700">Subir favicon</label>
+                        <input type="file" id="favicon_file" name="favicon_file" accept=".ico,.png,image/x-icon,image/vnd.microsoft.icon,image/png"
+                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800">
+                        <p class="mt-1 text-xs text-gray-500">ICO o PNG. Maximo 512 KB.</p>
                     </div>
 
                     <div>
@@ -184,6 +197,10 @@ $fila = function ($label, $value) {
                                value="<?= $brandingCampo('login_background_url') ?>"
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
                                placeholder="/uploads/branding/hotel/fondo.webp">
+                        <label for="login_background_file" class="mt-3 block text-sm font-medium text-gray-700">Subir fondo login</label>
+                        <input type="file" id="login_background_file" name="login_background_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800">
+                        <p class="mt-1 text-xs text-gray-500">PNG, JPG, JPEG o WebP. Maximo 4 MB. No SVG.</p>
                     </div>
 
                     <div>
@@ -224,6 +241,26 @@ $fila = function ($label, $value) {
                             <span class="font-mono">--brand-primary</span>,
                             <span class="font-mono">--brand-secondary</span> y
                             <span class="font-mono">--brand-accent</span>.
+                        </div>
+                        <div class="border-t border-gray-200 p-4">
+                            <div class="grid grid-cols-2 gap-3 text-xs text-gray-600">
+                                <div>
+                                    <div class="font-semibold text-gray-700">Favicon</div>
+                                    <?php if ($brandingFaviconPreview): ?>
+                                        <img src="<?= htmlspecialchars($brandingFaviconPreview, ENT_QUOTES, 'UTF-8') ?>" alt="Favicon" class="mt-2 h-8 w-8 object-contain">
+                                    <?php else: ?>
+                                        <div class="mt-2 text-gray-400">Sin favicon</div>
+                                    <?php endif; ?>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-gray-700">Fondo login</div>
+                                    <?php if ($brandingLoginBgPreview): ?>
+                                        <div class="mt-2 h-12 rounded bg-cover bg-center" style="background-image:url('<?= htmlspecialchars($brandingLoginBgPreview, ENT_QUOTES, 'UTF-8') ?>')"></div>
+                                    <?php else: ?>
+                                        <div class="mt-2 text-gray-400">Sin fondo</div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
