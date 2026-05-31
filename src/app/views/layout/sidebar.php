@@ -23,10 +23,12 @@ $sidebarEsPanelSaas = strpos($sidebarRequestPath, '/admin/saas') === 0;
 $sidebarBranding = (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_context() && function_exists('current_hotel_branding'))
     ? current_hotel_branding()
     : null;
-$sidebarNombreVisual = $sidebarBranding
+$sidebarNombreVisual = $sidebarEsPanelSaas
+    ? 'Panel Medisoft'
+    : ($sidebarBranding
     ? hotel_branding_public_name($sidebarBranding, current_hotel_nombre() ?: 'Medisoft Hoteles')
-    : 'Medisoft Hoteles';
-$sidebarSubtitulo = $sidebarEsPanelSaas ? 'Panel SaaS' : 'Hotel';
+    : 'Medisoft Hoteles');
+$sidebarSubtitulo = $sidebarEsPanelSaas ? 'Admin SaaS' : 'Hotel';
 $sidebarLogoUrl = ($sidebarBranding && function_exists('hotel_branding_asset_url'))
     ? (hotel_branding_asset_url($sidebarBranding['logo_url'] ?? null) ?: hotel_branding_default_logo_url())
     : (function_exists('hotel_branding_default_logo_url') ? hotel_branding_default_logo_url() : asset('img/logo.png'));
@@ -62,6 +64,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
         </div>
     </div>
 
+    <?php if (!$sidebarEsPanelSaas): ?>
     <div class="sidebar-search" style="position:relative;">
         <div class="search-box" style="position:relative;display:flex;align-items:center;isolation:isolate;cursor:text;">
             <i class="fas fa-search search-icon" style="pointer-events:none;"></i>
@@ -88,8 +91,41 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
                     z-index:9999;max-height:420px;overflow-y:auto;">
         </div>
     </div>
+    <?php endif; ?>
 
     <nav class="sidebar-nav">
+        <?php if ($sidebarEsPanelSaas): ?>
+        <div class="nav-section">
+            <div class="nav-section-title">
+                <span>PANEL MEDISOFT</span>
+            </div>
+
+            <a href="<?= url('admin/saas/hoteles') ?>"
+               class="nav-item <?= strpos($sidebarRequestPath, '/admin/saas/hoteles') === 0 && $sidebarRequestPath !== '/admin/saas/hoteles/crear' ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <span class="nav-text">Hoteles / Clientes</span>
+            </a>
+
+            <a href="<?= url('admin/saas/hoteles/crear') ?>"
+               class="nav-item <?= $sidebarRequestPath === '/admin/saas/hoteles/crear' ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <span class="nav-text">Crear hotel</span>
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">
+                <span>GESTION</span>
+            </div>
+            <div style="padding:8px 12px;font-size:0.75rem;color:#6b7280;line-height:1.4;">
+                Los modulos, planes y branding se administran desde el detalle de cada hotel.
+            </div>
+        </div>
+        <?php else: ?>
         <?php if ($mostrarDashboard): ?>
         <div class="nav-section">
             <a href="<?= url('dashboard') ?>"
@@ -241,13 +277,16 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
             <?php endif; ?>
         </div>
         <?php endif; ?>
+        <?php endif; ?>
     </nav>
 
     <div class="sidebar-footer">
+        <?php if (!$sidebarEsPanelSaas): ?>
         <div style="display:flex;align-items:center;gap:8px;padding:6px 12px 2px;opacity:0.85;">
             <span class="pwa-status-dot"></span>
             <span class="pwa-status-label" id="sidebar-net-label">En linea</span>
         </div>
+        <?php endif; ?>
         <div class="user-section">
             <div class="user-avatar">
                 <i class="fas fa-user"></i>
