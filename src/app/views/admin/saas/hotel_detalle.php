@@ -172,7 +172,7 @@ $fila = function ($label, $value) {
                         <input type="text" id="logo_url" name="logo_url"
                                value="<?= $brandingCampo('logo_url') ?>"
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                               placeholder="/img/logo-hotel-san-nicolas2.png">
+                               placeholder="/img/logo.png">
                         <label for="logo_file" class="mt-3 block text-sm font-medium text-gray-700">Subir logo</label>
                         <input type="file" id="logo_file" name="logo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
                                class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800">

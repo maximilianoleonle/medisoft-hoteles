@@ -10,7 +10,9 @@ class ApiController extends Controller {
      * Verificar que sea una petición AJAX
      */
     protected function before() {
-        if (!$this->isAjax()) {
+        $action = $this->route_params['action'] ?? '';
+
+        if ($action !== 'sync' && !$this->isAjax()) {
             View::renderJSON([
                 'success' => false,
                 'message' => 'Acceso no autorizado'
@@ -1156,8 +1158,6 @@ public function vehiculosHuespedAction() {
             View::renderJSON(['success' => false, 'message' => 'Metodo no permitido. Usa POST.'], 405);
             return;
         }
-
-        $this->validateCSRF();
 
         try {
             $this->hotelIdActual();
