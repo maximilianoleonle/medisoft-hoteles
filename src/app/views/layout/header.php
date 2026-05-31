@@ -131,6 +131,22 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
 
     <?php if ($layoutEsPanelSaas): ?>
     <style>
+        /* Override: header móvil usa identidad Medisoft, no hotel */
+        .ms-admin-scope .mobile-header-modern {
+            background: var(--ms-sidebar, #0B1220) !important;
+            border-bottom: 1px solid rgba(148,163,184,0.16) !important;
+            box-shadow: 0 1px 12px rgba(15,23,42,0.22) !important;
+        }
+        .ms-admin-scope .scroll-progress {
+            background: var(--ms-accent, #06B6D4) !important;
+        }
+        .ms-admin-scope .mobile-menu-toggle {
+            background: rgba(255,255,255,0.08) !important;
+            border-color: rgba(148,163,184,0.22) !important;
+        }
+        .ms-admin-scope .mobile-header-logo img {
+            filter: brightness(0) invert(1) !important;
+        }
         .ms-admin-scope {
             --ms-bg: #F6F8FB;
             --ms-surface: #FFFFFF;

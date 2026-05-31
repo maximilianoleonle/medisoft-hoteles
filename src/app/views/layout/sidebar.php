@@ -119,11 +119,11 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
 
         <div class="nav-section saas-nav-section">
             <div class="nav-section-title saas-section-title">
-                <span>Gestión</span>
+                <span>Configuración de cliente</span>
             </div>
             <div class="saas-sidebar-note">
-                <i class="fas fa-sliders-h"></i>
-                <span>Los módulos, planes y branding se administran desde el detalle de cada hotel.</span>
+                <i class="fas fa-circle-info"></i>
+                <span>Branding, plan, módulos y usuarios se gestionan desde el detalle de cada hotel.</span>
             </div>
         </div>
         <?php else: ?>

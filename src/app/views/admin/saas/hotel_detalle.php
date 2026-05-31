@@ -18,12 +18,12 @@ $modulosActivosCount = count(array_filter($modulosHotel, function ($modulo) {
     return !empty($modulo['activo_hotel']);
 }));
 $estadoAuditoria = $auditoriaPlan['estado'] ?? 'sin_plan';
-$estadoClase = [
-    'consistente' => 'bg-green-100 text-green-800',
-    'diferencias' => 'bg-amber-100 text-amber-800',
-    'personalizado' => 'bg-blue-100 text-blue-800',
-    'sin_plan' => 'bg-gray-100 text-gray-700',
-][$estadoAuditoria] ?? 'bg-gray-100 text-gray-700';
+$estadoStyle = [
+    'consistente'   => 'background:rgba(22,163,74,.12);color:var(--ms-success);',
+    'diferencias'   => 'background:rgba(245,158,11,.12);color:var(--ms-warning);',
+    'personalizado' => 'background:rgba(37,99,235,.12);color:var(--ms-primary);',
+    'sin_plan'      => 'background:rgba(100,116,139,.10);color:var(--ms-muted);',
+][$estadoAuditoria] ?? 'background:rgba(100,116,139,.10);color:var(--ms-muted);';
 $estadoTexto = [
     'consistente' => 'Consistente',
     'diferencias' => 'Con diferencias',
@@ -32,6 +32,15 @@ $estadoTexto = [
 ][$estadoAuditoria] ?? 'No disponible';
 $modulosApagados = $auditoriaPlan['modulos_incluidos_apagados'] ?? [];
 $modulosFueraPlan = $auditoriaPlan['modulos_activos_fuera_plan'] ?? [];
+$planBadgeStyle = function (string $clave): string {
+    $map = [
+        'basico'        => 'background:rgba(100,116,139,.12);color:var(--ms-muted);',
+        'pro'           => 'background:rgba(37,99,235,.12);color:var(--ms-primary);',
+        'premium'       => 'background:rgba(6,182,212,.15);color:var(--ms-accent);',
+        'personalizado' => 'border:1px solid var(--ms-border);color:var(--ms-muted);',
+    ];
+    return $map[$clave] ?? 'background:rgba(100,116,139,.10);color:var(--ms-muted);';
+};
 $brandingOld = $_SESSION['old_input'] ?? [];
 $brandingCampo = function ($key, $default = '') use ($brandingOld, $brandingHotel) {
     $value = array_key_exists($key, $brandingOld)
@@ -116,8 +125,8 @@ $fila = function ($label, $value) {
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars($hotel['nombre'] ?? 'Hotel', ENT_QUOTES, 'UTF-8') ?></h1>
-            <p class="mt-2 text-sm text-gray-600">Detalle mínimo para administración SaaS.</p>
+            <h1 class="text-2xl font-bold" style="color:var(--ms-text);"><?= htmlspecialchars($hotel['nombre'] ?? 'Hotel', ENT_QUOTES, 'UTF-8') ?></h1>
+            <p class="mt-1 text-sm" style="color:var(--ms-muted);">Ficha de configuración SaaS del cliente.</p>
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="<?= url('admin/saas/hoteles') ?>" class="px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-white">
@@ -141,41 +150,46 @@ $fila = function ($label, $value) {
         <div class="border-b border-gray-200 px-6 py-4">
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Mapa del panel</p>
             <div class="mt-3 grid grid-cols-2 gap-2 md:grid-cols-5">
-                <a href="#resumen" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Resumen</a>
-                <a href="#branding" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Branding/PWA</a>
-                <a href="#plan" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Plan</a>
-                <a href="#modulos" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Módulos</a>
-                <a href="#usuarios" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Usuarios</a>
+                <a href="#resumen" class="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition hover:bg-slate-50" style="border-color:var(--ms-border);color:var(--ms-text);"><i class="fas fa-circle-info text-[11px]" style="color:var(--ms-muted);"></i>Resumen</a>
+                <a href="#branding" class="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition hover:bg-slate-50" style="border-color:var(--ms-border);color:var(--ms-text);"><i class="fas fa-palette text-[11px]" style="color:var(--ms-muted);"></i>Branding/PWA</a>
+                <a href="#plan" class="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition hover:bg-slate-50" style="border-color:var(--ms-border);color:var(--ms-text);"><i class="fas fa-layer-group text-[11px]" style="color:var(--ms-muted);"></i>Plan</a>
+                <a href="#modulos" class="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition hover:bg-slate-50" style="border-color:var(--ms-border);color:var(--ms-text);"><i class="fas fa-puzzle-piece text-[11px]" style="color:var(--ms-muted);"></i>Módulos</a>
+                <a href="#usuarios" class="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition hover:bg-slate-50" style="border-color:var(--ms-border);color:var(--ms-text);"><i class="fas fa-users text-[11px]" style="color:var(--ms-muted);"></i>Usuarios</a>
             </div>
         </div>
-        <div class="grid grid-cols-1 divide-y divide-gray-100 md:grid-cols-5 md:divide-x md:divide-y-0">
+        <div class="grid grid-cols-1 divide-y md:grid-cols-5 md:divide-x md:divide-y-0" style="border-color:var(--ms-border);">
             <div class="px-5 py-3">
-                <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Estado</div>
+                <div class="text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Estado</div>
                 <div class="mt-1.5">
-                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold <?= $activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700' ?>">
+                    <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold" style="<?= $activo ? 'background:rgba(22,163,74,.12);color:var(--ms-success);' : 'background:rgba(100,116,139,.12);color:var(--ms-muted);' ?>">
                         <?= $activo ? 'Activo' : 'Inactivo' ?>
                     </span>
                 </div>
             </div>
             <div class="px-5 py-3">
-                <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Plan</div>
-                <div class="mt-1.5 text-sm font-semibold text-gray-900"><?= $escapeCopy($planActual['nombre'] ?? 'Sin plan') ?></div>
+                <div class="text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Plan</div>
+                <div class="mt-1.5">
+                    <?php $planClaveStrip = $planActual['clave'] ?? 'sin_plan'; ?>
+                    <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold" style="<?= $planBadgeStyle($planClaveStrip) ?>">
+                        <?= $escapeCopy($planActual['nombre'] ?? 'Sin plan') ?>
+                    </span>
+                </div>
             </div>
             <div class="px-5 py-3">
-                <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Consistencia</div>
+                <div class="text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Consistencia</div>
                 <div class="mt-1.5">
-                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold <?= $estadoClase ?>">
+                    <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold" style="<?= $estadoStyle ?>">
                         <?= htmlspecialchars($estadoTexto, ENT_QUOTES, 'UTF-8') ?>
                     </span>
                 </div>
             </div>
             <div class="px-5 py-3">
-                <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Módulos activos</div>
-                <div class="mt-1.5 text-sm font-semibold text-gray-900"><?= (int) $modulosActivosCount ?> <span class="font-normal text-gray-500">/ <?= count($modulosHotel) ?></span></div>
+                <div class="text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Módulos activos</div>
+                <div class="mt-1.5 text-sm font-semibold" style="color:var(--ms-text);"><?= (int) $modulosActivosCount ?> <span class="font-normal" style="color:var(--ms-muted);">/ <?= count($modulosHotel) ?></span></div>
             </div>
             <div class="px-5 py-3">
-                <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Admins hotel</div>
-                <div class="mt-1.5 text-sm font-semibold text-gray-900"><?= (int) $usuariosAdminCount ?> <span class="font-normal text-gray-500">vinculados</span></div>
+                <div class="text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Admins hotel</div>
+                <div class="mt-1.5 text-sm font-semibold" style="color:var(--ms-text);"><?= (int) $usuariosAdminCount ?> <span class="font-normal" style="color:var(--ms-muted);">vinculados</span></div>
             </div>
         </div>
     </div>
@@ -186,7 +200,7 @@ $fila = function ($label, $value) {
                 <h2 class="text-lg font-semibold text-gray-900">Datos del hotel</h2>
                 <p class="text-sm text-gray-500">ID <?= (int) ($hotel['id'] ?? 0) ?> · Slug <?= htmlspecialchars($hotel['slug'] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
             </div>
-            <span class="inline-flex w-fit rounded-full px-3 py-1 text-sm font-semibold <?= $activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700' ?>">
+            <span class="inline-flex w-fit rounded-full px-3 py-1 text-sm font-semibold" style="<?= $activo ? 'background:rgba(22,163,74,.12);color:var(--ms-success);' : 'background:rgba(100,116,139,.12);color:var(--ms-muted);' ?>">
                 <?= $activo ? 'Activo' : 'Inactivo' ?>
             </span>
         </div>
@@ -217,14 +231,15 @@ $fila = function ($label, $value) {
                 <?= csrf_field() ?>
                 <input type="hidden" name="activo" value="<?= $activo ? '0' : '1' ?>">
                 <button type="submit"
-                        class="px-4 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 <?= $activo ? 'bg-red-700 text-white hover:bg-red-800 focus:ring-red-500' : 'bg-green-700 text-white hover:bg-green-800 focus:ring-green-500' ?>">
+                        class="px-4 py-2 rounded-md text-sm font-semibold text-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                        style="<?= $activo ? 'background:var(--ms-danger);--tw-ring-color:var(--ms-danger);' : 'background:var(--ms-success);--tw-ring-color:var(--ms-success);' ?>">
                     <?= $activo ? 'Suspender hotel' : 'Activar hotel' ?>
                 </button>
             </form>
         </div>
     </div>
 
-    <div id="branding" class="mt-8 scroll-mt-6">
+    <div id="branding" class="mt-6 scroll-mt-6">
         <div class="mb-3">
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Marca y PWA</p>
             <h2 class="text-xl font-semibold text-gray-900">Identidad visual del hotel</h2>
@@ -441,7 +456,7 @@ $fila = function ($label, $value) {
     </div>
     </div>
 
-    <div id="plan" class="mt-8 scroll-mt-6">
+    <div id="plan" class="mt-6 scroll-mt-6">
         <div class="mb-3">
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Comercial</p>
             <h2 class="text-xl font-semibold text-gray-900">Plan contratado y consistencia</h2>
@@ -493,19 +508,24 @@ $fila = function ($label, $value) {
                                 $planId = (int) $plan['id'];
                                 $clavesPlan = array_column($modulosPorPlan[$planId] ?? [], 'clave');
                                 ?>
-                                <div class="rounded-md border border-gray-200 p-4">
+                                <div class="rounded-md border p-4 transition hover:shadow-sm" style="border-color:var(--ms-border);">
                                     <div class="flex items-center justify-between gap-3">
-                                        <h3 class="text-sm font-semibold text-gray-900"><?= $escapeCopy($plan['nombre'] ?? '') ?></h3>
+                                        <div class="flex items-center gap-2">
+                                            <h3 class="text-sm font-semibold" style="color:var(--ms-text);"><?= $escapeCopy($plan['nombre'] ?? '') ?></h3>
+                                            <span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold" style="<?= $planBadgeStyle($plan['clave'] ?? '') ?>">
+                                                <?= htmlspecialchars(ucfirst($plan['clave'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                            </span>
+                                        </div>
                                         <?php if (!empty($planActual['id']) && (int) $planActual['id'] === $planId): ?>
-                                            <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Actual</span>
+                                            <span class="rounded-full px-2 py-0.5 text-[10px] font-semibold" style="background:rgba(22,163,74,.12);color:var(--ms-success);">Actual</span>
                                         <?php endif; ?>
                                     </div>
-                                    <p class="mt-1 text-xs text-gray-500"><?= $escapeCopy($plan['descripcion'] ?? '') ?></p>
+                                    <p class="mt-1 text-xs" style="color:var(--ms-muted);"><?= $escapeCopy($plan['descripcion'] ?? '') ?></p>
                                     <?php if (($plan['clave'] ?? '') === 'personalizado'): ?>
-                                        <p class="mt-3 text-xs text-gray-600">No fuerza módulos. Use la sección manual de módulos activos.</p>
+                                        <p class="mt-3 text-xs" style="color:var(--ms-muted);">No fuerza módulos. Use la sección manual de módulos activos.</p>
                                     <?php else: ?>
-                                        <p class="mt-3 text-xs font-medium text-gray-700">Preset:</p>
-                                        <p class="mt-1 text-xs text-gray-600"><?= htmlspecialchars(implode(', ', $clavesPlan), ENT_QUOTES, 'UTF-8') ?></p>
+                                        <p class="mt-3 text-[11px] font-semibold uppercase tracking-wider" style="color:var(--ms-muted);">Preset</p>
+                                        <p class="mt-1 text-xs font-mono" style="color:var(--ms-text);"><?= htmlspecialchars(implode(', ', $clavesPlan), ENT_QUOTES, 'UTF-8') ?></p>
                                     <?php endif; ?>
                                 </div>
                             <?php endforeach; ?>
@@ -529,7 +549,7 @@ $fila = function ($label, $value) {
                 <h3 class="text-base font-semibold text-gray-900">Consistencia del plan</h3>
                 <p class="text-sm text-gray-500">Auditoría no bloqueante entre el plan comercial y los módulos activos reales.</p>
             </div>
-            <span class="inline-flex w-fit rounded-full px-3 py-1 text-sm font-semibold <?= $estadoClase ?>">
+            <span class="inline-flex w-fit rounded-full px-3 py-1 text-sm font-semibold" style="<?= $estadoStyle ?>">
                 <?= htmlspecialchars($estadoTexto, ENT_QUOTES, 'UTF-8') ?>
             </span>
         </div>
@@ -584,7 +604,7 @@ $fila = function ($label, $value) {
     </div>
     </div>
 
-    <div id="modulos" class="mt-8 scroll-mt-6">
+    <div id="modulos" class="mt-6 scroll-mt-6">
         <div class="mb-3">
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Acceso operativo</p>
             <h2 class="text-xl font-semibold text-gray-900">Módulos activos del hotel</h2>
@@ -638,7 +658,7 @@ $fila = function ($label, $value) {
                                     <td class="px-4 py-3 text-sm text-gray-700"><?= $escapeCopy($modulo['categoria'] ?: '-') ?></td>
                                     <td class="px-4 py-3 text-sm text-gray-700"><?= htmlspecialchars($modulo['ruta_base'] ?: '-', ENT_QUOTES, 'UTF-8') ?></td>
                                     <td class="px-4 py-3 text-sm">
-                                        <span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold <?= $globalActivo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700' ?>">
+                                        <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold" style="<?= $globalActivo ? 'background:rgba(22,163,74,.12);color:var(--ms-success);' : 'background:rgba(100,116,139,.10);color:var(--ms-muted);' ?>">
                                             <?= $globalActivo ? 'Activo' : 'Inactivo' ?>
                                         </span>
                                     </td>
@@ -659,7 +679,7 @@ $fila = function ($label, $value) {
     </div>
     </div>
 
-    <div id="usuarios" class="mt-8 scroll-mt-6">
+    <div id="usuarios" class="mt-6 scroll-mt-6">
         <div class="mb-3">
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Accesos</p>
             <h2 class="text-xl font-semibold text-gray-900">Administradores hoteleros</h2>
@@ -706,7 +726,7 @@ $fila = function ($label, $value) {
                                 <td class="px-4 py-3 text-sm text-gray-700"><?= htmlspecialchars($usuarioHotel['rol_hotel'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
                                 <td class="px-4 py-3 text-sm text-gray-700"><?= htmlspecialchars($usuarioHotel['rol_global'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
                                 <td class="px-4 py-3 text-sm text-gray-700">
-                                    <span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold <?= ($hotelUsuarioActivo && $usuarioActivo) ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700' ?>">
+                                    <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold" style="<?= ($hotelUsuarioActivo && $usuarioActivo) ? 'background:rgba(22,163,74,.12);color:var(--ms-success);' : 'background:rgba(100,116,139,.10);color:var(--ms-muted);' ?>">
                                         <?= ($hotelUsuarioActivo && $usuarioActivo) ? 'Activo' : 'Inactivo' ?>
                                     </span>
                                 </td>
