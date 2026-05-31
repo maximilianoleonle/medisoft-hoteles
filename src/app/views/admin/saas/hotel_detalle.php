@@ -34,6 +34,12 @@ $brandingFaviconPreview = function_exists('hotel_branding_asset_url')
 $brandingLoginBgPreview = function_exists('hotel_branding_asset_url')
     ? hotel_branding_asset_url($brandingHotel['login_background_url'] ?? null)
     : null;
+$brandingPwaIcon192Preview = function_exists('hotel_branding_pwa_icon_asset_url')
+    ? hotel_branding_pwa_icon_asset_url($brandingHotel['pwa_icon_192_url'] ?? null, 192)
+    : null;
+$brandingPwaIcon512Preview = function_exists('hotel_branding_pwa_icon_asset_url')
+    ? hotel_branding_pwa_icon_asset_url($brandingHotel['pwa_icon_512_url'] ?? null, 512)
+    : null;
 $fila = function ($label, $value) {
     $value = $value === null || $value === '' ? '-' : $value;
     ?>
@@ -204,6 +210,30 @@ $fila = function ($label, $value) {
                     </div>
 
                     <div>
+                        <label for="pwa_icon_192_url" class="block text-sm font-medium text-gray-700">Icono PWA 192 URL/ruta</label>
+                        <input type="text" id="pwa_icon_192_url" name="pwa_icon_192_url"
+                               value="<?= $brandingCampo('pwa_icon_192_url') ?>"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
+                               placeholder="/uploads/branding/hotel/pwa-icons/icon-192.png">
+                        <label for="pwa_icon_192_file" class="mt-3 block text-sm font-medium text-gray-700">Subir icono PWA 192x192</label>
+                        <input type="file" id="pwa_icon_192_file" name="pwa_icon_192_file" accept=".png,.webp,image/png,image/webp"
+                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800">
+                        <p class="mt-1 text-xs text-gray-500">PNG o WebP. Exactamente 192x192 px. Maximo 1 MB. No SVG.</p>
+                    </div>
+
+                    <div>
+                        <label for="pwa_icon_512_url" class="block text-sm font-medium text-gray-700">Icono PWA 512 URL/ruta</label>
+                        <input type="text" id="pwa_icon_512_url" name="pwa_icon_512_url"
+                               value="<?= $brandingCampo('pwa_icon_512_url') ?>"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
+                               placeholder="/uploads/branding/hotel/pwa-icons/icon-512.png">
+                        <label for="pwa_icon_512_file" class="mt-3 block text-sm font-medium text-gray-700">Subir icono PWA 512x512</label>
+                        <input type="file" id="pwa_icon_512_file" name="pwa_icon_512_file" accept=".png,.webp,image/png,image/webp"
+                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800">
+                        <p class="mt-1 text-xs text-gray-500">PNG o WebP. Exactamente 512x512 px. Maximo 1 MB. No SVG.</p>
+                    </div>
+
+                    <div>
                         <label for="login_style" class="block text-sm font-medium text-gray-700">Estilo login</label>
                         <select id="login_style" name="login_style"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
@@ -261,6 +291,28 @@ $fila = function ($label, $value) {
                                     <?php endif; ?>
                                 </div>
                             </div>
+                        </div>
+                        <div class="border-t border-gray-200 p-4">
+                            <div class="font-semibold text-gray-700 text-xs">Iconos PWA del manifest</div>
+                            <div class="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-600">
+                                <div>
+                                    <div class="font-medium text-gray-700">192x192</div>
+                                    <?php if ($brandingPwaIcon192Preview): ?>
+                                        <img src="<?= htmlspecialchars($brandingPwaIcon192Preview, ENT_QUOTES, 'UTF-8') ?>" alt="Icono PWA 192" class="mt-2 h-12 w-12 rounded object-contain">
+                                    <?php else: ?>
+                                        <div class="mt-2 text-gray-400">Fallback estatico</div>
+                                    <?php endif; ?>
+                                </div>
+                                <div>
+                                    <div class="font-medium text-gray-700">512x512</div>
+                                    <?php if ($brandingPwaIcon512Preview): ?>
+                                        <img src="<?= htmlspecialchars($brandingPwaIcon512Preview, ENT_QUOTES, 'UTF-8') ?>" alt="Icono PWA 512" class="mt-2 h-12 w-12 rounded object-contain">
+                                    <?php else: ?>
+                                        <div class="mt-2 text-gray-400">Fallback estatico</div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <p class="mt-3 text-xs text-gray-500">El manifest usa iconos del hotel solo cuando existen 192 y 512 validos.</p>
                         </div>
                     </div>
                 </div>

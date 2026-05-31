@@ -11,6 +11,8 @@ class HotelBranding extends Model {
         'logo_url',
         'favicon_url',
         'login_background_url',
+        'pwa_icon_192_url',
+        'pwa_icon_512_url',
         'color_primary',
         'color_secondary',
         'color_accent',
@@ -24,6 +26,8 @@ class HotelBranding extends Model {
         'logo_url' => 'img/logo.png',
         'favicon_url' => null,
         'login_background_url' => null,
+        'pwa_icon_192_url' => null,
+        'pwa_icon_512_url' => null,
         'color_primary' => '#9CA777',
         'color_secondary' => '#7A8B5C',
         'color_accent' => '#D4AF37',
@@ -35,20 +39,7 @@ class HotelBranding extends Model {
     public function obtenerPorHotel($hotelId) {
         try {
             $resultado = $this->query(
-                "SELECT id,
-                        hotel_id,
-                        nombre_visual,
-                        logo_url,
-                        favicon_url,
-                        login_background_url,
-                        color_primary,
-                        color_secondary,
-                        color_accent,
-                        sidebar_style,
-                        login_style,
-                        activo,
-                        created_at,
-                        updated_at
+                "SELECT *
                  FROM {$this->table}
                  WHERE hotel_id = ?
                  LIMIT 1",
@@ -102,14 +93,17 @@ class HotelBranding extends Model {
             $stmt = $this->db->query(
                 "INSERT INTO {$this->table}
                     (hotel_id, nombre_visual, logo_url, favicon_url, login_background_url,
+                     pwa_icon_192_url, pwa_icon_512_url,
                      color_primary, color_secondary, color_accent, sidebar_style, login_style,
                      activo, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
                  ON DUPLICATE KEY UPDATE
                     nombre_visual = VALUES(nombre_visual),
                     logo_url = VALUES(logo_url),
                     favicon_url = VALUES(favicon_url),
                     login_background_url = VALUES(login_background_url),
+                    pwa_icon_192_url = VALUES(pwa_icon_192_url),
+                    pwa_icon_512_url = VALUES(pwa_icon_512_url),
                     color_primary = VALUES(color_primary),
                     color_secondary = VALUES(color_secondary),
                     color_accent = VALUES(color_accent),
@@ -123,6 +117,8 @@ class HotelBranding extends Model {
                     $normalizado['logo_url'],
                     $normalizado['favicon_url'],
                     $normalizado['login_background_url'],
+                    $normalizado['pwa_icon_192_url'],
+                    $normalizado['pwa_icon_512_url'],
                     $normalizado['color_primary'],
                     $normalizado['color_secondary'],
                     $normalizado['color_accent'],
@@ -167,6 +163,18 @@ class HotelBranding extends Model {
             }
         }
 
+        $pwaIcons = [
+            'pwa_icon_192_url' => 'icono PWA 192x192',
+            'pwa_icon_512_url' => 'icono PWA 512x512'
+        ];
+
+        foreach ($pwaIcons as $campo => $label) {
+            $url = trim((string) ($data[$campo] ?? ''));
+            if ($url !== '' && !$this->esUrlPwaIconSegura($url)) {
+                $errores[] = 'La URL de ' . $label . ' debe ser una ruta local segura png o webp.';
+            }
+        }
+
         $sidebarStyle = trim((string) ($data['sidebar_style'] ?? 'default'));
         if (!in_array($sidebarStyle, ['default', 'solid', 'dark'], true)) {
             $errores[] = 'El estilo de sidebar seleccionado no es valido.';
@@ -186,6 +194,8 @@ class HotelBranding extends Model {
             'logo_url' => $this->normalizarUrlAsset($data['logo_url'] ?? null, false),
             'favicon_url' => $this->normalizarUrlAsset($data['favicon_url'] ?? null, true),
             'login_background_url' => $this->normalizarUrlAsset($data['login_background_url'] ?? null, false),
+            'pwa_icon_192_url' => $this->normalizarUrlPwaIcon($data['pwa_icon_192_url'] ?? null),
+            'pwa_icon_512_url' => $this->normalizarUrlPwaIcon($data['pwa_icon_512_url'] ?? null),
             'color_primary' => $this->normalizarHex($data['color_primary'] ?? null),
             'color_secondary' => $this->normalizarHex($data['color_secondary'] ?? null),
             'color_accent' => $this->normalizarHex($data['color_accent'] ?? null),
@@ -234,6 +244,11 @@ class HotelBranding extends Model {
         return $url !== '' && $this->esUrlAssetSegura($url, $permitirIco) ? $url : null;
     }
 
+    private function normalizarUrlPwaIcon($url) {
+        $url = trim((string) $url);
+        return $url !== '' && $this->esUrlPwaIconSegura($url) ? $url : null;
+    }
+
     private function esUrlAssetSegura($url, $permitirIco = false) {
         $url = trim((string) $url);
 
@@ -277,6 +292,32 @@ class HotelBranding extends Model {
         }
 
         return true;
+    }
+
+    private function esUrlPwaIconSegura($url) {
+        $url = trim((string) $url);
+
+        if ($url === '' || preg_match('/[\x00-\x1F<>"\']/', $url)) {
+            return false;
+        }
+
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+        if ($scheme !== null) {
+            return false;
+        }
+
+        $path = parse_url($url, PHP_URL_PATH);
+        if (!$path) {
+            return false;
+        }
+
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        if (!in_array($extension, ['png', 'webp'], true)) {
+            return false;
+        }
+
+        $cleanPath = ltrim($path, '/');
+        return strpos($cleanPath, 'uploads/branding/') === 0 || strpos($cleanPath, 'img/icons/') === 0;
     }
 
     private function normalizarOpcion($valor, array $permitidos, $fallback) {

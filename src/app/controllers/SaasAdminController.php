@@ -435,6 +435,8 @@ class SaasAdminController extends Controller {
             'logo_url' => trim($this->getPost('logo_url', '')),
             'favicon_url' => trim($this->getPost('favicon_url', '')),
             'login_background_url' => trim($this->getPost('login_background_url', '')),
+            'pwa_icon_192_url' => trim($this->getPost('pwa_icon_192_url', '')),
+            'pwa_icon_512_url' => trim($this->getPost('pwa_icon_512_url', '')),
             'color_primary' => trim($this->getPost('color_primary', '')),
             'color_secondary' => trim($this->getPost('color_secondary', '')),
             'color_accent' => trim($this->getPost('color_accent', '')),
@@ -450,6 +452,8 @@ class SaasAdminController extends Controller {
             'logo_file' => ['tipo' => 'logo', 'campo' => 'logo_url'],
             'favicon_file' => ['tipo' => 'favicon', 'campo' => 'favicon_url'],
             'login_background_file' => ['tipo' => 'login_bg', 'campo' => 'login_background_url'],
+            'pwa_icon_192_file' => ['tipo' => 'pwa_icon_192', 'campo' => 'pwa_icon_192_url'],
+            'pwa_icon_512_file' => ['tipo' => 'pwa_icon_512', 'campo' => 'pwa_icon_512_url'],
         ];
 
         foreach ($mapa as $input => $config) {

@@ -47,7 +47,7 @@ class PwaController extends Controller {
             'dir' => 'ltr',
             'categories' => ['business', 'productivity'],
             'prefer_related_applications' => false,
-            'icons' => $this->iconosFallback(),
+            'icons' => $this->iconosManifest($branding),
         ];
 
         $this->renderManifest($manifest);
@@ -127,6 +127,38 @@ class PwaController extends Controller {
         }
 
         return $icons;
+    }
+
+    private function iconosManifest(array $branding) {
+        $icon192 = $this->iconoHotel($branding['pwa_icon_192_url'] ?? null, 192);
+        $icon512 = $this->iconoHotel($branding['pwa_icon_512_url'] ?? null, 512);
+
+        if ($icon192 && $icon512) {
+            return [$icon192, $icon512];
+        }
+
+        return $this->iconosFallback();
+    }
+
+    private function iconoHotel($path, $size) {
+        if (!function_exists('hotel_branding_pwa_icon_asset_url')) {
+            return null;
+        }
+
+        $src = hotel_branding_pwa_icon_asset_url($path, $size);
+        if (!$src) {
+            return null;
+        }
+
+        $extension = strtolower(pathinfo((string) parse_url($src, PHP_URL_PATH), PATHINFO_EXTENSION));
+        $type = $extension === 'webp' ? 'image/webp' : 'image/png';
+
+        return [
+            'src' => $src,
+            'sizes' => (int) $size . 'x' . (int) $size,
+            'type' => $type,
+            'purpose' => 'any maskable',
+        ];
     }
 
     private function renderManifest(array $manifest) {

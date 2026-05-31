@@ -14,6 +14,8 @@ function hotel_branding($hotelId = null, array $hotel = null) {
             'logo_url' => hotel_branding_default_logo_path(),
             'favicon_url' => null,
             'login_background_url' => null,
+            'pwa_icon_192_url' => null,
+            'pwa_icon_512_url' => null,
             'color_primary' => '#9CA777',
             'color_secondary' => '#7A8B5C',
             'color_accent' => '#D4AF37',
@@ -76,6 +78,49 @@ function hotel_branding_asset_url($path) {
     }
 
     return null;
+}
+
+function hotel_branding_pwa_icon_asset_url($path, $size) {
+    $size = (int) $size;
+    if (!in_array($size, [192, 512], true)) {
+        return null;
+    }
+
+    $path = trim((string) $path);
+    if ($path === '' || preg_match('/[\x00-\x1F<>"\']/', $path)) {
+        return null;
+    }
+
+    if (parse_url($path, PHP_URL_SCHEME) !== null) {
+        return null;
+    }
+
+    $urlPath = parse_url($path, PHP_URL_PATH);
+    if (!$urlPath) {
+        return null;
+    }
+
+    $extension = strtolower(pathinfo($urlPath, PATHINFO_EXTENSION));
+    if (!in_array($extension, ['png', 'webp'], true)) {
+        return null;
+    }
+
+    $cleanPath = ltrim($urlPath, '/');
+    if (strpos($cleanPath, 'uploads/branding/') !== 0 && strpos($cleanPath, 'img/icons/') !== 0) {
+        return null;
+    }
+
+    $absolutePath = defined('PUBLIC_PATH') ? PUBLIC_PATH . '/' . $cleanPath : null;
+    if (!$absolutePath || !is_file($absolutePath)) {
+        return null;
+    }
+
+    $imageInfo = @getimagesize($absolutePath);
+    if (!$imageInfo || (int) $imageInfo[0] !== $size || (int) $imageInfo[1] !== $size) {
+        return null;
+    }
+
+    return function_exists('asset') ? asset($cleanPath) : '/' . $cleanPath;
 }
 
 function hotel_branding_css_vars(array $branding = null) {
@@ -155,6 +200,11 @@ function hotel_branding_upload_asset(array $file, $hotelSlug, $tipo) {
     }
 
     [$width, $height] = $imageInfo;
+    if (!empty($config['exact_width']) && !empty($config['exact_height'])
+        && ((int) $width !== (int) $config['exact_width'] || (int) $height !== (int) $config['exact_height'])) {
+        return ['success' => false, 'error' => 'La imagen de ' . $config['label'] . ' debe medir exactamente ' . $config['exact_width'] . 'x' . $config['exact_height'] . ' px.'];
+    }
+
     if ($width < $config['min_width'] || $height < $config['min_height']) {
         return ['success' => false, 'error' => 'La imagen de ' . $config['label'] . ' debe medir al menos ' . $config['min_width'] . 'x' . $config['min_height'] . ' px.'];
     }
@@ -231,6 +281,32 @@ function hotel_branding_upload_config($tipo) {
             'min_height' => 400,
             'max_width' => 6000,
             'max_height' => 6000
+        ],
+        'pwa_icon_192' => [
+            'label' => 'icono PWA 192x192',
+            'dir' => 'pwa-icons',
+            'max_size' => 1024 * 1024,
+            'extensions' => ['png', 'webp'],
+            'mimes' => ['image/png', 'image/webp'],
+            'min_width' => 192,
+            'min_height' => 192,
+            'max_width' => 192,
+            'max_height' => 192,
+            'exact_width' => 192,
+            'exact_height' => 192
+        ],
+        'pwa_icon_512' => [
+            'label' => 'icono PWA 512x512',
+            'dir' => 'pwa-icons',
+            'max_size' => 1024 * 1024,
+            'extensions' => ['png', 'webp'],
+            'mimes' => ['image/png', 'image/webp'],
+            'min_width' => 512,
+            'min_height' => 512,
+            'max_width' => 512,
+            'max_height' => 512,
+            'exact_width' => 512,
+            'exact_height' => 512
         ],
     ];
 
