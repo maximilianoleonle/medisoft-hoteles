@@ -1159,16 +1159,10 @@ public function vehiculosHuespedAction() {
             return;
         }
 
-        try {
-            $this->hotelIdActual();
-        } catch (Throwable $e) {
-            error_log('[API sync] No se pudo resolver hotel actual: ' . $e->getMessage());
-        }
-
         View::renderJSON([
             'success' => false,
             'error' => 'sync_temporarily_disabled',
-            'message' => 'La sincronización offline está temporalmente deshabilitada mientras se asegura el aislamiento multi-hotel.',
+            'message' => 'La sincronización offline está temporalmente deshabilitada por seguridad.',
             'pending_operations_preserved' => true,
         ], 423);
     }
