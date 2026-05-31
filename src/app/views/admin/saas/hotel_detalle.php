@@ -59,6 +59,49 @@ $brandingPwaIcon192Preview = function_exists('hotel_branding_pwa_icon_asset_url'
 $brandingPwaIcon512Preview = function_exists('hotel_branding_pwa_icon_asset_url')
     ? hotel_branding_pwa_icon_asset_url($brandingHotel['pwa_icon_512_url'] ?? null, 512)
     : null;
+$copyVisible = function ($value) {
+    return strtr((string) ($value ?? ''), [
+        'Administracion' => 'Administración',
+        'administracion' => 'administración',
+        'Auditoria' => 'Auditoría',
+        'auditoria' => 'auditoría',
+        'Basico' => 'Básico',
+        'basico' => 'básico',
+        'Catalogo' => 'Catálogo',
+        'catalogo' => 'catálogo',
+        'Codigo' => 'Código',
+        'codigo' => 'código',
+        'Configuracion' => 'Configuración',
+        'configuracion' => 'configuración',
+        'Direccion' => 'Dirección',
+        'direccion' => 'dirección',
+        'Facturacion' => 'Facturación',
+        'facturacion' => 'facturación',
+        'Icono' => 'Ícono',
+        'icono' => 'ícono',
+        'Maximo' => 'Máximo',
+        'maximo' => 'máximo',
+        'Migracion' => 'Migración',
+        'migracion' => 'migración',
+        'Modulo' => 'Módulo',
+        'modulo' => 'módulo',
+        'Modulos' => 'Módulos',
+        'modulos' => 'módulos',
+        'Operacion' => 'Operación',
+        'operacion' => 'operación',
+        'Razon social' => 'Razón social',
+        'Telefono' => 'Teléfono',
+        'contrasena' => 'contraseña',
+        'estatico' => 'estático',
+        'menu' => 'menú',
+        'seccion' => 'sección',
+        'segun' => 'según',
+        'validos' => 'válidos',
+    ]);
+};
+$escapeCopy = function ($value) use ($copyVisible) {
+    return htmlspecialchars($copyVisible($value), ENT_QUOTES, 'UTF-8');
+};
 $fila = function ($label, $value) {
     $value = $value === null || $value === '' ? '-' : $value;
     ?>
@@ -74,13 +117,14 @@ $fila = function ($label, $value) {
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h1 class="text-2xl font-bold text-gray-900"><?= htmlspecialchars($hotel['nombre'] ?? 'Hotel', ENT_QUOTES, 'UTF-8') ?></h1>
-            <p class="mt-2 text-sm text-gray-600">Detalle minimo para administracion SaaS.</p>
+            <p class="mt-2 text-sm text-gray-600">Detalle mínimo para administración SaaS.</p>
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="<?= url('admin/saas/hoteles') ?>" class="px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-white">
                 Volver
             </a>
-            <a href="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/editar') ?>" class="px-4 py-2 rounded-md bg-gray-900 text-white text-sm font-medium hover:bg-gray-800">
+            <a href="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/editar') ?>" class="px-4 py-2 rounded-md text-white text-sm font-medium transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
+               style="background:var(--ms-primary);--tw-ring-color:var(--ms-primary);">
                 Editar
             </a>
         </div>
@@ -100,7 +144,7 @@ $fila = function ($label, $value) {
                 <a href="#resumen" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Resumen</a>
                 <a href="#branding" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Branding/PWA</a>
                 <a href="#plan" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Plan</a>
-                <a href="#modulos" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Modulos</a>
+                <a href="#modulos" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Módulos</a>
                 <a href="#usuarios" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Usuarios</a>
             </div>
         </div>
@@ -115,7 +159,7 @@ $fila = function ($label, $value) {
             </div>
             <div class="px-5 py-3">
                 <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Plan</div>
-                <div class="mt-1.5 text-sm font-semibold text-gray-900"><?= htmlspecialchars($planActual['nombre'] ?? 'Sin plan', ENT_QUOTES, 'UTF-8') ?></div>
+                <div class="mt-1.5 text-sm font-semibold text-gray-900"><?= $escapeCopy($planActual['nombre'] ?? 'Sin plan') ?></div>
             </div>
             <div class="px-5 py-3">
                 <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Consistencia</div>
@@ -126,7 +170,7 @@ $fila = function ($label, $value) {
                 </div>
             </div>
             <div class="px-5 py-3">
-                <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Modulos activos</div>
+                <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Módulos activos</div>
                 <div class="mt-1.5 text-sm font-semibold text-gray-900"><?= (int) $modulosActivosCount ?> <span class="font-normal text-gray-500">/ <?= count($modulosHotel) ?></span></div>
             </div>
             <div class="px-5 py-3">
@@ -151,18 +195,18 @@ $fila = function ($label, $value) {
             <?php
             $fila('Nombre comercial', $hotel['nombre'] ?? null);
             $fila('Slug', $hotel['slug'] ?? null);
-            $fila('Codigo interno', $hotel['codigo'] ?? null);
-            $fila('Razon social', $hotel['razon_social'] ?? null);
+            $fila('Código interno', $hotel['codigo'] ?? null);
+            $fila('Razón social', $hotel['razon_social'] ?? null);
             $fila('RFC', $hotel['rfc'] ?? null);
-            $fila('Telefono', $hotel['telefono'] ?? null);
+            $fila('Teléfono', $hotel['telefono'] ?? null);
             $fila('Email', $hotel['email'] ?? null);
-            $fila('Direccion', $hotel['direccion'] ?? null);
+            $fila('Dirección', $hotel['direccion'] ?? null);
             $fila('Ciudad', $hotel['ciudad'] ?? null);
-            $fila('Estado / region', $hotel['estado'] ?? null);
-            $fila('Pais', $hotel['pais'] ?? null);
+            $fila('Estado / región', $hotel['estado'] ?? null);
+            $fila('País', $hotel['pais'] ?? null);
             $fila('Zona horaria', $hotel['zona_horaria'] ?? null);
             $fila('Moneda', trim(($hotel['moneda_codigo'] ?? '') . ' ' . ($hotel['moneda_simbolo'] ?? '')));
-            $fila('Plan comercial', $planActual['nombre'] ?? 'Sin plan');
+            $fila('Plan comercial', $copyVisible($planActual['nombre'] ?? 'Sin plan'));
             $fila('Creado', $hotel['created_at'] ?? null);
             $fila('Actualizado', $hotel['updated_at'] ?? null);
             ?>
@@ -189,7 +233,7 @@ $fila = function ($label, $value) {
 
     <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-base font-semibold text-gray-900">Configuracion visual</h3>
+            <h3 class="text-base font-semibold text-gray-900">Configuración visual</h3>
             <p class="text-sm text-gray-500">Identidad visual controlada para login y layout hotelero. No permite CSS, HTML ni JavaScript libre.</p>
         </div>
 
@@ -234,7 +278,7 @@ $fila = function ($label, $value) {
                         <label for="sidebar_style" class="block text-sm font-medium text-gray-700">Estilo sidebar</label>
                         <select id="sidebar_style" name="sidebar_style"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
-                            <?php foreach (['default' => 'Default', 'solid' => 'Solido', 'dark' => 'Oscuro'] as $value => $label): ?>
+                            <?php foreach (['default' => 'Default', 'solid' => 'Sólido', 'dark' => 'Oscuro'] as $value => $label): ?>
                                 <option value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>" <?= ($brandingHotel['sidebar_style'] ?? 'default') === $value ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
                                 </option>
@@ -250,8 +294,8 @@ $fila = function ($label, $value) {
                                placeholder="/img/logo.png">
                         <label for="logo_file" class="mt-3 block text-sm font-medium text-gray-700">Subir logo</label>
                         <input type="file" id="logo_file" name="logo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
-                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800">
-                        <p class="mt-1 text-xs text-gray-500">PNG, JPG, JPEG o WebP. Maximo 2 MB. No SVG.</p>
+                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-[var(--ms-primary)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[var(--ms-primary-hover)]">
+                        <p class="mt-1 text-xs text-gray-500">PNG, JPG, JPEG o WebP. Máximo 2 MB. No SVG.</p>
                     </div>
 
                     <div>
@@ -262,8 +306,8 @@ $fila = function ($label, $value) {
                                placeholder="/img/favicon.png">
                         <label for="favicon_file" class="mt-3 block text-sm font-medium text-gray-700">Subir favicon</label>
                         <input type="file" id="favicon_file" name="favicon_file" accept=".ico,.png,image/x-icon,image/vnd.microsoft.icon,image/png"
-                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800">
-                        <p class="mt-1 text-xs text-gray-500">ICO o PNG. Maximo 512 KB.</p>
+                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-[var(--ms-primary)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[var(--ms-primary-hover)]">
+                        <p class="mt-1 text-xs text-gray-500">ICO o PNG. Máximo 512 KB.</p>
                     </div>
 
                     <div>
@@ -274,32 +318,32 @@ $fila = function ($label, $value) {
                                placeholder="/uploads/branding/hotel/fondo.webp">
                         <label for="login_background_file" class="mt-3 block text-sm font-medium text-gray-700">Subir fondo login</label>
                         <input type="file" id="login_background_file" name="login_background_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
-                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800">
-                        <p class="mt-1 text-xs text-gray-500">PNG, JPG, JPEG o WebP. Maximo 4 MB. No SVG.</p>
+                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-[var(--ms-primary)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[var(--ms-primary-hover)]">
+                        <p class="mt-1 text-xs text-gray-500">PNG, JPG, JPEG o WebP. Máximo 4 MB. No SVG.</p>
                     </div>
 
                     <div>
-                        <label for="pwa_icon_192_url" class="block text-sm font-medium text-gray-700">Icono PWA 192 URL/ruta</label>
+                        <label for="pwa_icon_192_url" class="block text-sm font-medium text-gray-700">Ícono PWA 192 URL/ruta</label>
                         <input type="text" id="pwa_icon_192_url" name="pwa_icon_192_url"
                                value="<?= $brandingCampo('pwa_icon_192_url') ?>"
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
                                placeholder="/uploads/branding/hotel/pwa-icons/icon-192.png">
-                        <label for="pwa_icon_192_file" class="mt-3 block text-sm font-medium text-gray-700">Subir icono PWA 192x192</label>
+                        <label for="pwa_icon_192_file" class="mt-3 block text-sm font-medium text-gray-700">Subir ícono PWA 192x192</label>
                         <input type="file" id="pwa_icon_192_file" name="pwa_icon_192_file" accept=".png,.webp,image/png,image/webp"
-                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800">
-                        <p class="mt-1 text-xs text-gray-500">PNG o WebP. Exactamente 192x192 px. Maximo 1 MB. No SVG.</p>
+                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-[var(--ms-primary)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[var(--ms-primary-hover)]">
+                        <p class="mt-1 text-xs text-gray-500">PNG o WebP. Exactamente 192x192 px. Máximo 1 MB. No SVG.</p>
                     </div>
 
                     <div>
-                        <label for="pwa_icon_512_url" class="block text-sm font-medium text-gray-700">Icono PWA 512 URL/ruta</label>
+                        <label for="pwa_icon_512_url" class="block text-sm font-medium text-gray-700">Ícono PWA 512 URL/ruta</label>
                         <input type="text" id="pwa_icon_512_url" name="pwa_icon_512_url"
                                value="<?= $brandingCampo('pwa_icon_512_url') ?>"
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900"
                                placeholder="/uploads/branding/hotel/pwa-icons/icon-512.png">
-                        <label for="pwa_icon_512_file" class="mt-3 block text-sm font-medium text-gray-700">Subir icono PWA 512x512</label>
+                        <label for="pwa_icon_512_file" class="mt-3 block text-sm font-medium text-gray-700">Subir ícono PWA 512x512</label>
                         <input type="file" id="pwa_icon_512_file" name="pwa_icon_512_file" accept=".png,.webp,image/png,image/webp"
-                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800">
-                        <p class="mt-1 text-xs text-gray-500">PNG o WebP. Exactamente 512x512 px. Maximo 1 MB. No SVG.</p>
+                               class="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-[var(--ms-primary)] file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-[var(--ms-primary-hover)]">
+                        <p class="mt-1 text-xs text-gray-500">PNG o WebP. Exactamente 512x512 px. Máximo 1 MB. No SVG.</p>
                     </div>
 
                     <div>
@@ -333,7 +377,7 @@ $fila = function ($label, $value) {
                                 </div>
                             <?php endif; ?>
                             <div class="mt-3 text-sm font-semibold"><?= htmlspecialchars($brandingNombrePreview, ENT_QUOTES, 'UTF-8') ?></div>
-                            <div class="mt-1 text-xs opacity-80">Vista previa basica</div>
+                            <div class="mt-1 text-xs opacity-80">Vista previa básica</div>
                         </div>
                         <div class="p-4 text-xs text-gray-600">
                             Los valores se imprimen como CSS variables sanitizadas:
@@ -362,33 +406,34 @@ $fila = function ($label, $value) {
                             </div>
                         </div>
                         <div class="border-t border-gray-200 p-4">
-                            <div class="font-semibold text-gray-700 text-xs">Iconos PWA del manifest</div>
+                            <div class="font-semibold text-gray-700 text-xs">Íconos PWA del manifest</div>
                             <div class="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-600">
                                 <div>
                                     <div class="font-medium text-gray-700">192x192</div>
                                     <?php if ($brandingPwaIcon192Preview): ?>
-                                        <img src="<?= htmlspecialchars($brandingPwaIcon192Preview, ENT_QUOTES, 'UTF-8') ?>" alt="Icono PWA 192" class="mt-2 h-12 w-12 rounded object-contain">
+                                        <img src="<?= htmlspecialchars($brandingPwaIcon192Preview, ENT_QUOTES, 'UTF-8') ?>" alt="Ícono PWA 192" class="mt-2 h-12 w-12 rounded object-contain">
                                     <?php else: ?>
-                                        <div class="mt-2 text-gray-400">Fallback estatico</div>
+                                        <div class="mt-2 text-gray-400">Fallback estático</div>
                                     <?php endif; ?>
                                 </div>
                                 <div>
                                     <div class="font-medium text-gray-700">512x512</div>
                                     <?php if ($brandingPwaIcon512Preview): ?>
-                                        <img src="<?= htmlspecialchars($brandingPwaIcon512Preview, ENT_QUOTES, 'UTF-8') ?>" alt="Icono PWA 512" class="mt-2 h-12 w-12 rounded object-contain">
+                                        <img src="<?= htmlspecialchars($brandingPwaIcon512Preview, ENT_QUOTES, 'UTF-8') ?>" alt="Ícono PWA 512" class="mt-2 h-12 w-12 rounded object-contain">
                                     <?php else: ?>
-                                        <div class="mt-2 text-gray-400">Fallback estatico</div>
+                                        <div class="mt-2 text-gray-400">Fallback estático</div>
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            <p class="mt-3 text-xs text-gray-500">El manifest usa iconos del hotel solo cuando existen 192 y 512 validos.</p>
+                            <p class="mt-3 text-xs text-gray-500">El manifest usa íconos del hotel solo cuando existen 192 y 512 válidos.</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
-                <button type="submit" class="px-4 py-2 rounded-md bg-gray-900 text-white text-sm font-medium hover:bg-gray-800">
+                <button type="submit" class="px-4 py-2 rounded-md text-white text-sm font-medium transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                        style="background:var(--ms-primary);--tw-ring-color:var(--ms-primary);">
                     Guardar branding
                 </button>
             </div>
@@ -400,21 +445,21 @@ $fila = function ($label, $value) {
         <div class="mb-3">
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Comercial</p>
             <h2 class="text-xl font-semibold text-gray-900">Plan contratado y consistencia</h2>
-            <p class="mt-1 text-sm text-gray-500">El plan sugiere modulos, pero el acceso real sigue en la tabla de modulos activos.</p>
+            <p class="mt-1 text-sm text-gray-500">El plan sugiere módulos, pero el acceso real sigue en la tabla de módulos activos.</p>
         </div>
 
     <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-base font-semibold text-gray-900">Seleccion de plan</h3>
-            <p class="text-sm text-gray-500">El plan define un preset comercial. El acceso real sigue dependiendo de los modulos activos del hotel.</p>
+            <h3 class="text-base font-semibold text-gray-900">Selección de plan</h3>
+            <p class="text-sm text-gray-500">El plan define un preset comercial. El acceso real sigue dependiendo de los módulos activos del hotel.</p>
         </div>
 
         <?php if (empty($planes)): ?>
             <div class="px-6 py-6 text-sm text-gray-600">
-                No hay catalogo de planes disponible. Aplique la migracion de planes antes de configurar esta seccion.
+                No hay catálogo de planes disponible. Aplique la migración de planes antes de configurar esta sección.
             </div>
         <?php else: ?>
-            <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/plan') ?>" onsubmit="var aplicar=this.querySelector('[name=aplicar_modulos]'); if (aplicar && aplicar.checked) { return confirm('Guardar este plan aplicando el preset puede activar o desactivar modulos. Continuar?'); } return true;">
+            <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/plan') ?>" onsubmit="var aplicar=this.querySelector('[name=aplicar_modulos]'); if (aplicar && aplicar.checked) { return confirm('Guardar este plan aplicando el preset puede activar o desactivar módulos. ¿Continuar?'); } return true;">
                 <?= csrf_field() ?>
 
                 <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -433,9 +478,9 @@ $fila = function ($label, $value) {
                             <input type="checkbox" name="aplicar_modulos" value="1"
                                    class="mt-1 rounded border-gray-300 text-gray-900 focus:ring-gray-900">
                             <span>
-                                Aplicar modulos sugeridos por el plan.
+                                Aplicar módulos sugeridos por el plan.
                                 <span class="block text-xs text-amber-700">
-                                    Esto puede activar o desactivar modulos segun el preset seleccionado.
+                                    Esto puede activar o desactivar módulos según el preset seleccionado.
                                 </span>
                             </span>
                         </label>
@@ -450,14 +495,14 @@ $fila = function ($label, $value) {
                                 ?>
                                 <div class="rounded-md border border-gray-200 p-4">
                                     <div class="flex items-center justify-between gap-3">
-                                        <h3 class="text-sm font-semibold text-gray-900"><?= htmlspecialchars($plan['nombre'] ?? '', ENT_QUOTES, 'UTF-8') ?></h3>
+                                        <h3 class="text-sm font-semibold text-gray-900"><?= $escapeCopy($plan['nombre'] ?? '') ?></h3>
                                         <?php if (!empty($planActual['id']) && (int) $planActual['id'] === $planId): ?>
                                             <span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Actual</span>
                                         <?php endif; ?>
                                     </div>
-                                    <p class="mt-1 text-xs text-gray-500"><?= htmlspecialchars($plan['descripcion'] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
+                                    <p class="mt-1 text-xs text-gray-500"><?= $escapeCopy($plan['descripcion'] ?? '') ?></p>
                                     <?php if (($plan['clave'] ?? '') === 'personalizado'): ?>
-                                        <p class="mt-3 text-xs text-gray-600">No fuerza modulos. Use la seccion manual de modulos activos.</p>
+                                        <p class="mt-3 text-xs text-gray-600">No fuerza módulos. Use la sección manual de módulos activos.</p>
                                     <?php else: ?>
                                         <p class="mt-3 text-xs font-medium text-gray-700">Preset:</p>
                                         <p class="mt-1 text-xs text-gray-600"><?= htmlspecialchars(implode(', ', $clavesPlan), ENT_QUOTES, 'UTF-8') ?></p>
@@ -469,7 +514,8 @@ $fila = function ($label, $value) {
                 </div>
 
                 <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
-                    <button type="submit" class="px-4 py-2 rounded-md bg-gray-900 text-white text-sm font-medium hover:bg-gray-800">
+                    <button type="submit" class="px-4 py-2 rounded-md text-white text-sm font-medium transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                            style="background:var(--ms-primary);--tw-ring-color:var(--ms-primary);">
                         Guardar plan
                     </button>
                 </div>
@@ -481,7 +527,7 @@ $fila = function ($label, $value) {
         <div class="px-6 py-4 border-b border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
                 <h3 class="text-base font-semibold text-gray-900">Consistencia del plan</h3>
-                <p class="text-sm text-gray-500">Auditoria no bloqueante entre el plan comercial y los modulos activos reales.</p>
+                <p class="text-sm text-gray-500">Auditoría no bloqueante entre el plan comercial y los módulos activos reales.</p>
             </div>
             <span class="inline-flex w-fit rounded-full px-3 py-1 text-sm font-semibold <?= $estadoClase ?>">
                 <?= htmlspecialchars($estadoTexto, ENT_QUOTES, 'UTF-8') ?>
@@ -491,8 +537,8 @@ $fila = function ($label, $value) {
         <div class="divide-y divide-gray-100 md:grid md:grid-cols-3 md:divide-x md:divide-y-0">
                 <div class="p-5">
                     <div class="text-xs font-semibold uppercase tracking-wider text-gray-500">Plan actual</div>
-                    <div class="mt-1 text-sm font-medium text-gray-900"><?= htmlspecialchars($planActual['nombre'] ?? 'Sin plan', ENT_QUOTES, 'UTF-8') ?></div>
-                    <p class="mt-2 text-xs text-gray-600"><?= htmlspecialchars($auditoriaPlan['mensaje'] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
+                    <div class="mt-1 text-sm font-medium text-gray-900"><?= $escapeCopy($planActual['nombre'] ?? 'Sin plan') ?></div>
+                    <p class="mt-2 text-xs text-gray-600"><?= $escapeCopy($auditoriaPlan['mensaje'] ?? '') ?></p>
                 </div>
 
                 <div class="p-5">
@@ -502,7 +548,7 @@ $fila = function ($label, $value) {
                     <?php else: ?>
                         <ul class="mt-2 space-y-1 text-sm text-gray-800">
                             <?php foreach ($modulosApagados as $modulo): ?>
-                                <li><?= htmlspecialchars($modulo['nombre'] ?? $modulo['clave'] ?? '', ENT_QUOTES, 'UTF-8') ?></li>
+                                <li><?= $escapeCopy($modulo['nombre'] ?? $modulo['clave'] ?? '') ?></li>
                             <?php endforeach; ?>
                         </ul>
                     <?php endif; ?>
@@ -515,7 +561,7 @@ $fila = function ($label, $value) {
                     <?php else: ?>
                         <ul class="mt-2 space-y-1 text-sm text-gray-800">
                             <?php foreach ($modulosFueraPlan as $modulo): ?>
-                                <li><?= htmlspecialchars($modulo['nombre'] ?? $modulo['clave'] ?? '', ENT_QUOTES, 'UTF-8') ?></li>
+                                <li><?= $escapeCopy($modulo['nombre'] ?? $modulo['clave'] ?? '') ?></li>
                             <?php endforeach; ?>
                         </ul>
                     <?php endif; ?>
@@ -524,8 +570,8 @@ $fila = function ($label, $value) {
 
         <?php if ($estadoAuditoria === 'diferencias' && !empty($planActual['id'])): ?>
             <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p class="text-sm text-amber-800">Reaplicar el preset puede activar o desactivar modulos para coincidir con el plan actual.</p>
-                <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/plan') ?>" onsubmit="return confirm('Reaplicar el preset puede activar o desactivar modulos para coincidir con el plan actual. Continuar?');">
+                <p class="text-sm text-amber-800">Reaplicar el preset puede activar o desactivar módulos para coincidir con el plan actual.</p>
+                <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/plan') ?>" onsubmit="return confirm('Reaplicar el preset puede activar o desactivar módulos para coincidir con el plan actual. ¿Continuar?');">
                     <?= csrf_field() ?>
                     <input type="hidden" name="plan_id" value="<?= (int) $planActual['id'] ?>">
                     <input type="hidden" name="aplicar_modulos" value="1">
@@ -541,19 +587,19 @@ $fila = function ($label, $value) {
     <div id="modulos" class="mt-8 scroll-mt-6">
         <div class="mb-3">
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Acceso operativo</p>
-            <h2 class="text-xl font-semibold text-gray-900">Modulos activos del hotel</h2>
-            <p class="mt-1 text-sm text-gray-500">Controla que se muestra en el menu hotelero y que rutas quedan disponibles.</p>
+            <h2 class="text-xl font-semibold text-gray-900">Módulos activos del hotel</h2>
+            <p class="mt-1 text-sm text-gray-500">Controla qué se muestra en el menú hotelero y qué rutas quedan disponibles.</p>
         </div>
 
     <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-base font-semibold text-gray-900">Catalogo de modulos</h3>
+            <h3 class="text-base font-semibold text-gray-900">Catálogo de módulos</h3>
             <p class="text-sm text-gray-500">Base inicial para habilitar o deshabilitar secciones por hotel.</p>
         </div>
 
         <?php if (empty($modulosHotel)): ?>
             <div class="px-6 py-6 text-sm text-gray-600">
-                No hay catalogo de modulos disponible. Aplique la migracion de modulos antes de configurar esta seccion.
+                No hay catálogo de módulos disponible. Aplique la migración de módulos antes de configurar esta sección.
             </div>
         <?php else: ?>
             <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/modulos') ?>">
@@ -564,8 +610,8 @@ $fila = function ($label, $value) {
                         <thead class="bg-gray-50">
                             <tr>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Activo</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Modulo</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Categoria</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Módulo</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Categoría</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ruta base</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Global</th>
                             </tr>
@@ -583,13 +629,13 @@ $fila = function ($label, $value) {
                                                class="rounded border-gray-300 text-gray-900 focus:ring-gray-900">
                                     </td>
                                     <td class="px-4 py-3 text-sm text-gray-900">
-                                        <div class="font-medium"><?= htmlspecialchars($modulo['nombre'] ?? '', ENT_QUOTES, 'UTF-8') ?></div>
+                                        <div class="font-medium"><?= $escapeCopy($modulo['nombre'] ?? '') ?></div>
                                         <div class="text-xs text-gray-500"><?= htmlspecialchars($modulo['clave'] ?? '', ENT_QUOTES, 'UTF-8') ?></div>
                                         <?php if (!empty($modulo['descripcion'])): ?>
-                                            <div class="mt-1 text-xs text-gray-500"><?= htmlspecialchars($modulo['descripcion'], ENT_QUOTES, 'UTF-8') ?></div>
+                                            <div class="mt-1 text-xs text-gray-500"><?= $escapeCopy($modulo['descripcion']) ?></div>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-gray-700"><?= htmlspecialchars($modulo['categoria'] ?: '-', ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td class="px-4 py-3 text-sm text-gray-700"><?= $escapeCopy($modulo['categoria'] ?: '-') ?></td>
                                     <td class="px-4 py-3 text-sm text-gray-700"><?= htmlspecialchars($modulo['ruta_base'] ?: '-', ENT_QUOTES, 'UTF-8') ?></td>
                                     <td class="px-4 py-3 text-sm">
                                         <span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold <?= $globalActivo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700' ?>">
@@ -603,8 +649,9 @@ $fila = function ($label, $value) {
                 </div>
 
                 <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
-                    <button type="submit" class="px-4 py-2 rounded-md bg-gray-900 text-white text-sm font-medium hover:bg-gray-800">
-                        Guardar modulos
+                    <button type="submit" class="px-4 py-2 rounded-md text-white text-sm font-medium transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                            style="background:var(--ms-primary);--tw-ring-color:var(--ms-primary);">
+                        Guardar módulos
                     </button>
                 </div>
             </form>
@@ -641,7 +688,7 @@ $fila = function ($label, $value) {
                     <?php if (empty($usuariosHotel)): ?>
                         <tr>
                             <td colspan="6" class="px-4 py-6 text-sm text-gray-600 text-center">
-                                Este hotel aun no tiene usuarios administradores vinculados.
+                                Este hotel aún no tiene usuarios administradores vinculados.
                             </td>
                         </tr>
                     <?php else: ?>
@@ -664,7 +711,7 @@ $fila = function ($label, $value) {
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-sm text-gray-700">
-                                    <?= !empty($usuarioHotel['es_principal']) ? 'Si' : 'No' ?>
+                                    <?= !empty($usuarioHotel['es_principal']) ? 'Sí' : 'No' ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -682,7 +729,7 @@ $fila = function ($label, $value) {
                     <input type="text" id="nombre_usuario" name="nombre_usuario" required maxlength="80"
                            value="<?= old('nombre_usuario') ?>"
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
-                    <p class="mt-1 text-xs text-gray-500">Si ya existe, se vincula al hotel sin cambiar su contrasena.</p>
+                    <p class="mt-1 text-xs text-gray-500">Si ya existe, se vincula al hotel sin cambiar su contraseña.</p>
                 </div>
 
                 <div>
@@ -709,7 +756,7 @@ $fila = function ($label, $value) {
                 </div>
 
                 <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700">Contrasena temporal</label>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Contraseña temporal</label>
                     <input type="password" id="password" name="password" minlength="10" autocomplete="new-password"
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
                 </div>
@@ -723,13 +770,14 @@ $fila = function ($label, $value) {
                     <label class="inline-flex items-center gap-2 text-sm text-gray-700">
                         <input type="checkbox" name="activo" value="1" <?= old('activo', '1') ? 'checked' : '' ?>
                                class="rounded border-gray-300 text-gray-900 focus:ring-gray-900">
-                        Vinculo activo
+                        Vínculo activo
                     </label>
                 </div>
             </div>
 
             <div class="px-6 py-4 bg-white border-t border-gray-200 flex justify-end">
-                <button type="submit" class="px-4 py-2 rounded-md bg-gray-900 text-white text-sm font-medium hover:bg-gray-800">
+                <button type="submit" class="px-4 py-2 rounded-md text-white text-sm font-medium transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                        style="background:var(--ms-primary);--tw-ring-color:var(--ms-primary);">
                     Crear o vincular administrador
                 </button>
             </div>

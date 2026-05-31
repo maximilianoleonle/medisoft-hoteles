@@ -14,7 +14,7 @@ $valor = function ($campo, $default = '') use ($hotel) {
         <div>
             <h1 class="text-2xl font-bold text-gray-900"><?= $esEdicion ? 'Editar hotel' : 'Crear hotel' ?></h1>
             <p class="mt-2 text-sm text-gray-600">
-                <?= $esEdicion ? 'Actualiza los datos basicos del hotel.' : 'Crea el hotel en estado inactivo para completar configuracion antes de activarlo.' ?>
+                <?= $esEdicion ? 'Actualiza los datos básicos del hotel.' : 'Crea el hotel en estado inactivo para completar configuración antes de activarlo.' ?>
             </p>
         </div>
         <a href="<?= url('admin/saas/hoteles') ?>" class="text-sm font-medium text-gray-700 hover:text-gray-900">
@@ -35,7 +35,7 @@ $valor = function ($campo, $default = '') use ($hotel) {
             <div class="border-b border-gray-200 px-6 py-4">
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Datos principales</p>
                 <h2 class="mt-1 text-base font-semibold text-gray-900">Identidad del cliente</h2>
-                <p class="mt-1 text-sm text-gray-600">Define el nombre visible y la clave interna con la que soporte identificara el hotel.</p>
+                <p class="mt-1 text-sm text-gray-600">Define el nombre visible y la clave interna con la que soporte identificará el hotel.</p>
             </div>
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div class="md:col-span-2">
@@ -51,11 +51,11 @@ $valor = function ($campo, $default = '') use ($hotel) {
                            value="<?= $valor('slug') ?>"
                            placeholder="hotel-ejemplo"
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
-                    <p class="mt-1 text-xs text-gray-500">Solo minusculas, numeros y guiones. No iniciar ni terminar con guion.</p>
+                    <p class="mt-1 text-xs text-gray-500">Solo minúsculas, números y guiones. No iniciar ni terminar con guion.</p>
                 </div>
 
                 <div>
-                    <label for="codigo" class="block text-sm font-medium text-gray-700">Codigo interno</label>
+                    <label for="codigo" class="block text-sm font-medium text-gray-700">Código interno</label>
                     <input type="text" id="codigo" name="codigo" maxlength="50"
                            value="<?= $valor('codigo') ?>"
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
@@ -67,12 +67,12 @@ $valor = function ($campo, $default = '') use ($hotel) {
         <section class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
             <div class="border-b border-gray-200 px-6 py-4">
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Contacto</p>
-                <h2 class="mt-1 text-base font-semibold text-gray-900">Datos de comunicacion</h2>
-                <p class="mt-1 text-sm text-gray-600">Informacion base para seguimiento operativo y administrativo.</p>
+                <h2 class="mt-1 text-base font-semibold text-gray-900">Datos de comunicación</h2>
+                <p class="mt-1 text-sm text-gray-600">Información base para seguimiento operativo y administrativo.</p>
             </div>
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                    <label for="telefono" class="block text-sm font-medium text-gray-700">Telefono</label>
+                    <label for="telefono" class="block text-sm font-medium text-gray-700">Teléfono</label>
                     <input type="text" id="telefono" name="telefono" maxlength="30"
                            value="<?= $valor('telefono') ?>"
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
@@ -90,12 +90,12 @@ $valor = function ($campo, $default = '') use ($hotel) {
         <section class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
             <div class="border-b border-gray-200 px-6 py-4">
                 <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Datos fiscales</p>
-                <h2 class="mt-1 text-base font-semibold text-gray-900">Razon social y direccion</h2>
+                <h2 class="mt-1 text-base font-semibold text-gray-900">Razón social y dirección</h2>
                 <p class="mt-1 text-sm text-gray-600">Campos opcionales para dejar preparado el expediente del cliente.</p>
             </div>
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div class="md:col-span-2">
-                    <label for="razon_social" class="block text-sm font-medium text-gray-700">Razon social</label>
+                    <label for="razon_social" class="block text-sm font-medium text-gray-700">Razón social</label>
                     <input type="text" id="razon_social" name="razon_social" maxlength="180"
                            value="<?= $valor('razon_social') ?>"
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
@@ -109,7 +109,7 @@ $valor = function ($campo, $default = '') use ($hotel) {
                 </div>
 
                 <div>
-                    <label for="direccion" class="block text-sm font-medium text-gray-700">Direccion</label>
+                    <label for="direccion" class="block text-sm font-medium text-gray-700">Dirección</label>
                     <input type="text" id="direccion" name="direccion" maxlength="255"
                            value="<?= $valor('direccion') ?>"
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
@@ -119,9 +119,9 @@ $valor = function ($campo, $default = '') use ($hotel) {
 
         <section class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
             <div class="border-b border-gray-200 px-6 py-4">
-                <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Configuracion regional</p>
-                <h2 class="mt-1 text-base font-semibold text-gray-900">Ubicacion, zona horaria y moneda</h2>
-                <p class="mt-1 text-sm text-gray-600">Valores iniciales para la operacion diaria del hotel.</p>
+                <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Configuración regional</p>
+                <h2 class="mt-1 text-base font-semibold text-gray-900">Ubicación, zona horaria y moneda</h2>
+                <p class="mt-1 text-sm text-gray-600">Valores iniciales para la operación diaria del hotel.</p>
             </div>
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
@@ -132,14 +132,14 @@ $valor = function ($campo, $default = '') use ($hotel) {
                 </div>
 
                 <div>
-                    <label for="estado" class="block text-sm font-medium text-gray-700">Estado / region</label>
+                    <label for="estado" class="block text-sm font-medium text-gray-700">Estado / región</label>
                     <input type="text" id="estado" name="estado" maxlength="100"
                            value="<?= $valor('estado') ?>"
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
                 </div>
 
                 <div>
-                    <label for="pais" class="block text-sm font-medium text-gray-700">Pais</label>
+                    <label for="pais" class="block text-sm font-medium text-gray-700">País</label>
                     <input type="text" id="pais" name="pais" maxlength="100"
                            value="<?= $valor('pais', 'Mexico') ?>"
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
@@ -160,7 +160,7 @@ $valor = function ($campo, $default = '') use ($hotel) {
                 </div>
 
                 <div>
-                    <label for="moneda_simbolo" class="block text-sm font-medium text-gray-700">Simbolo moneda</label>
+                    <label for="moneda_simbolo" class="block text-sm font-medium text-gray-700">Símbolo moneda</label>
                     <input type="text" id="moneda_simbolo" name="moneda_simbolo" maxlength="8"
                            value="<?= $valor('moneda_simbolo', '$') ?>"
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
