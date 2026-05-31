@@ -98,10 +98,10 @@ $fila = function ($label, $value) {
             <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Mapa del panel</p>
             <div class="mt-3 grid grid-cols-2 gap-2 md:grid-cols-5">
                 <a href="#resumen" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Resumen</a>
-                <a href="#usuarios" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Usuarios</a>
-                <a href="#modulos" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Modulos</a>
-                <a href="#plan" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Plan</a>
                 <a href="#branding" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Branding/PWA</a>
+                <a href="#plan" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Plan</a>
+                <a href="#modulos" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Modulos</a>
+                <a href="#usuarios" class="rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Usuarios</a>
             </div>
         </div>
         <div class="grid grid-cols-1 divide-y divide-gray-100 md:grid-cols-4 md:divide-x md:divide-y-0">
@@ -164,11 +164,11 @@ $fila = function ($label, $value) {
         </dl>
 
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
-            <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/estado') ?>">
+            <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/estado') ?>" onsubmit="return confirm('Confirmar <?= $activo ? 'suspender' : 'activar' ?> este hotel?');">
                 <?= csrf_field() ?>
                 <input type="hidden" name="activo" value="<?= $activo ? '0' : '1' ?>">
                 <button type="submit"
-                        class="px-4 py-2 rounded-md text-sm font-medium <?= $activo ? 'bg-gray-700 text-white hover:bg-gray-800' : 'bg-green-700 text-white hover:bg-green-800' ?>">
+                        class="px-4 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 <?= $activo ? 'bg-red-700 text-white hover:bg-red-800 focus:ring-red-500' : 'bg-green-700 text-white hover:bg-green-800 focus:ring-green-500' ?>">
                     <?= $activo ? 'Suspender hotel' : 'Activar hotel' ?>
                 </button>
             </form>
@@ -184,7 +184,7 @@ $fila = function ($label, $value) {
 
     <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Branding basico</h2>
+            <h3 class="text-base font-semibold text-gray-900">Configuracion visual</h3>
             <p class="text-sm text-gray-500">Identidad visual controlada para login y layout hotelero. No permite CSS, HTML ni JavaScript libre.</p>
         </div>
 
@@ -400,7 +400,7 @@ $fila = function ($label, $value) {
 
     <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Plan comercial</h2>
+            <h3 class="text-base font-semibold text-gray-900">Seleccion de plan</h3>
             <p class="text-sm text-gray-500">El plan define un preset comercial. El acceso real sigue dependiendo de los modulos activos del hotel.</p>
         </div>
 
@@ -409,7 +409,7 @@ $fila = function ($label, $value) {
                 No hay catalogo de planes disponible. Aplique la migracion de planes antes de configurar esta seccion.
             </div>
         <?php else: ?>
-            <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/plan') ?>">
+            <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/plan') ?>" onsubmit="var aplicar=this.querySelector('[name=aplicar_modulos]'); if (aplicar && aplicar.checked) { return confirm('Guardar este plan aplicando el preset puede activar o desactivar modulos. Continuar?'); } return true;">
                 <?= csrf_field() ?>
 
                 <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -475,7 +475,7 @@ $fila = function ($label, $value) {
     <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-                <h2 class="text-lg font-semibold text-gray-900">Consistencia del plan</h2>
+                <h3 class="text-base font-semibold text-gray-900">Consistencia del plan</h3>
                 <p class="text-sm text-gray-500">Auditoria no bloqueante entre el plan comercial y los modulos activos reales.</p>
             </div>
             <span class="inline-flex w-fit rounded-full px-3 py-1 text-sm font-semibold <?= $estadoClase ?>">
@@ -522,11 +522,11 @@ $fila = function ($label, $value) {
         <?php if ($estadoAuditoria === 'diferencias' && !empty($planActual['id'])): ?>
             <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p class="text-sm text-amber-800">Reaplicar el preset puede activar o desactivar modulos para coincidir con el plan actual.</p>
-                <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/plan') ?>">
+                <form method="POST" action="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/plan') ?>" onsubmit="return confirm('Reaplicar el preset puede activar o desactivar modulos para coincidir con el plan actual. Continuar?');">
                     <?= csrf_field() ?>
                     <input type="hidden" name="plan_id" value="<?= (int) $planActual['id'] ?>">
                     <input type="hidden" name="aplicar_modulos" value="1">
-                    <button type="submit" class="px-4 py-2 rounded-md bg-gray-900 text-white text-sm font-medium hover:bg-gray-800">
+                    <button type="submit" class="px-4 py-2 rounded-md bg-amber-700 text-white text-sm font-medium hover:bg-amber-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2">
                         Reaplicar preset del plan
                     </button>
                 </form>
@@ -544,7 +544,7 @@ $fila = function ($label, $value) {
 
     <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Modulos activos</h2>
+            <h3 class="text-base font-semibold text-gray-900">Catalogo de modulos</h3>
             <p class="text-sm text-gray-500">Base inicial para habilitar o deshabilitar secciones por hotel.</p>
         </div>
 
@@ -618,7 +618,7 @@ $fila = function ($label, $value) {
 
     <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Usuarios administradores del hotel</h2>
+            <h3 class="text-base font-semibold text-gray-900">Usuarios vinculados</h3>
             <p class="text-sm text-gray-500">Usuarios vinculados a este hotel para acceso hotel-aware.</p>
         </div>
 
