@@ -134,7 +134,7 @@ class FacturacionController extends Controller {
         $estadisticas = $this->obtenerEstadisticas();
         
         View::renderTemplate('facturacion/index', [
-            'title' => 'Facturación - Los Cedros',
+            'title' => 'Facturación - ' . current_hotel_display_name(),
             'solicitudes' => $solicitudes,
             'estadisticas' => $estadisticas,
             'filtro_tipo' => $filtro_tipo,
@@ -191,7 +191,7 @@ class FacturacionController extends Controller {
         $usos_cfdi = $this->getUsosCFDI();
         
         View::renderTemplate('facturacion/detalle', [
-            'title' => 'Factura #' . $id . ' - Los Cedros',
+            'title' => 'Factura #' . $id . ' - ' . current_hotel_display_name(),
             'solicitud' => $solicitud,
             'habitaciones' => $habitaciones,
             'pagos' => $pagos,

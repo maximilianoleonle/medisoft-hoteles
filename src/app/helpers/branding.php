@@ -149,6 +149,19 @@ function hotel_branding_public_name(array $branding = null, $fallback = 'Medisof
     return $nombre !== '' ? $nombre : $fallback;
 }
 
+function current_hotel_display_name($fallback = 'Medisoft Hoteles') {
+    $fallback = trim((string) $fallback) ?: 'Medisoft Hoteles';
+
+    if (!function_exists('current_hotel_id') || !current_hotel_id()) {
+        return $fallback;
+    }
+
+    $nombreSesion = function_exists('current_hotel_nombre') ? trim((string) current_hotel_nombre()) : '';
+    $branding = function_exists('current_hotel_branding') ? current_hotel_branding() : null;
+
+    return hotel_branding_public_name(is_array($branding) ? $branding : null, $nombreSesion !== '' ? $nombreSesion : $fallback);
+}
+
 function hotel_branding_upload_asset(array $file, $hotelSlug, $tipo) {
     $config = hotel_branding_upload_config($tipo);
     if (!$config) {

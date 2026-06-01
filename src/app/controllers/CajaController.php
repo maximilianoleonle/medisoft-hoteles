@@ -40,7 +40,7 @@ class CajaController extends Controller {
     // Si no hay corte abierto, mostrar formulario de apertura
     if (!$corteActual) {
         View::renderTemplate('caja/apertura', [
-            'title' => 'Abrir Caja - Los Cedros',
+            'title' => 'Abrir Caja - ' . current_hotel_display_name(),
             'caja' => $caja
         ]);
         return;
@@ -78,7 +78,7 @@ class CajaController extends Controller {
     );
     
     View::renderTemplate('caja/index', [
-        'title' => 'Caja - Los Cedros',
+        'title' => 'Caja - ' . current_hotel_display_name(),
         'caja' => $caja,
         'corte' => $corteActual,
         'resumen' => $resumen,
@@ -132,7 +132,7 @@ public function reporteMetodosAction() {
     }
     
     View::renderTemplate('caja/reporte_metodos', [
-        'title' => 'Reporte por Métodos de Pago - Los Cedros',
+        'title' => 'Reporte por Métodos de Pago - ' . current_hotel_display_name(),
         'reporte' => $reporte,
         'fecha_inicio' => $fecha_inicio,
         'fecha_fin' => $fecha_fin,
@@ -314,7 +314,7 @@ public function reporteMetodosAction() {
         $categorias = $this->categoriaModel->where(['activa' => 1]);
         
         View::renderTemplate('caja/movimientos', [
-            'title' => 'Movimientos de Caja - Los Cedros',
+            'title' => 'Movimientos de Caja - ' . current_hotel_display_name(),
             'movimientos' => $movimientos,
             'filtros' => $filtros,
             'totales' => $totales,
@@ -357,7 +357,7 @@ public function reporteMetodosAction() {
         ];
         
         View::renderTemplate('caja/corte', [
-            'title' => 'Corte de Caja - Los Cedros',
+            'title' => 'Corte de Caja - ' . current_hotel_display_name(),
             'corte' => $corteActual,
             'resumen' => $resumen,
             'movimientos' => $movimientos,
@@ -626,7 +626,7 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
         $estadisticas = $this->cajaModel->obtenerEstadisticasMes($mes, $año);
         
         View::renderTemplate('caja/historial', [
-            'title' => 'Historial de Cortes - Los Cedros',
+            'title' => 'Historial de Cortes - ' . current_hotel_display_name(),
             'cortes' => $cortesFiltrados,
             'estadisticas' => $estadisticas,
             'mes' => $mes,
@@ -673,7 +673,7 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
         $denominaciones = $stmt->fetchAll();
         
         View::renderTemplate('caja/ver_corte', [
-            'title' => 'Detalle de Corte #' . $id . ' - Los Cedros',
+            'title' => 'Detalle de Corte #' . $id . ' - ' . current_hotel_display_name(),
             'corte' => $corte,
             'movimientos' => $movimientos,
             'denominaciones' => $denominaciones
@@ -690,7 +690,7 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
         $estadisticas = $this->categoriaModel->obtenerEstadisticasUso();
         
         View::renderTemplate('caja/categorias', [
-            'title' => 'Categorías de Movimientos - Los Cedros',
+            'title' => 'Categorías de Movimientos - ' . current_hotel_display_name(),
             'categorias' => $categorias,
             'estadisticas' => $estadisticas,
             'iconos' => CategoriaMovimiento::getIconosDisponibles(),

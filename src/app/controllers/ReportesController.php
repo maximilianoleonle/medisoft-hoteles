@@ -55,7 +55,7 @@ class ReportesController extends Controller {
      */
     public function indexAction() {
         View::renderTemplate('reportes/index', [
-            'title' => 'Reportes - Los Cedros'
+            'title' => 'Reportes - ' . current_hotel_display_name()
         ]);
     }
     
@@ -1674,7 +1674,7 @@ $fecha_inicio = $this->getQuery('fecha_inicio', '2025-01-01'); // Desde enero 20
         $topEstados = array_slice($porEstado, 0, 10);
         
         View::renderTemplate('reportes/procedencia', [
-            'title' => 'Reporte de Procedencia de Huéspedes - Los Cedros',
+            'title' => 'Reporte de Procedencia de Huéspedes - ' . current_hotel_display_name(),
             'porEstado' => $porEstado,
             'topEstados' => $topEstados,
             'porCiudad' => $porCiudad,
@@ -1697,7 +1697,7 @@ $fecha_inicio = $this->getQuery('fecha_inicio', '2025-01-01'); // Desde enero 20
         $ingresosPromedio = $this->reporteModel->obtenerIngresoPromedioPorHabitacion($fecha_inicio, $fecha_fin);
         
         View::renderTemplate('reportes/habitaciones-rentables', [
-            'title' => 'Reporte de Habitaciones más Rentables - Los Cedros',
+            'title' => 'Reporte de Habitaciones más Rentables - ' . current_hotel_display_name(),
             'rentabilidad' => $rentabilidad,
             'ocupacionPorTipo' => $ocupacionPorTipo,
             'ingresosPromedio' => $ingresosPromedio,
@@ -1733,7 +1733,7 @@ $fecha_inicio = $this->getQuery('fecha_inicio', '2025-01-01'); // Desde enero 20
         $ocupacionPorDia = $this->reporteModel->obtenerOcupacionPorDiaSemana($fecha_inicio, $fecha_fin);
         
         View::renderTemplate('reportes/ocupacion', [
-            'title' => 'Reporte de Tasa de Ocupación - Los Cedros',
+            'title' => 'Reporte de Tasa de Ocupación - ' . current_hotel_display_name(),
             'datos' => $datos,
             'estadisticas' => $estadisticas,
             'ocupacionPorDia' => $ocupacionPorDia,
@@ -1758,7 +1758,7 @@ $fecha_inicio = $this->getQuery('fecha_inicio', '2025-01-01'); // Desde enero 20
         $tendenciaMensual = $this->reporteModel->obtenerTendenciaEstancia($fecha_inicio, $fecha_fin);
         
         View::renderTemplate('reportes/estancia', [
-            'title' => 'Reporte de Promedio de Estancia - Los Cedros',
+            'title' => 'Reporte de Promedio de Estancia - ' . current_hotel_display_name(),
             'promedioGeneral' => $promedioGeneral,
             'porTipoHabitacion' => $porTipoHabitacion,
             'porProcedencia' => $porProcedencia,
@@ -1782,7 +1782,7 @@ $fecha_inicio = $this->getQuery('fecha_inicio', '2025-01-01'); // Desde enero 20
         $comparativa = $this->reporteModel->obtenerComparativaEstados($fecha_inicio, $fecha_fin);
         
         View::renderTemplate('reportes/ranking-estados', [
-            'title' => 'Ranking de Estados Visitantes - Los Cedros',
+            'title' => 'Ranking de Estados Visitantes - ' . current_hotel_display_name(),
             'ranking' => $ranking,
             'evolucion' => $evolucion,
             'comparativa' => $comparativa,

@@ -305,7 +305,7 @@ public function logInventarioAction() {
  */
 public function exportarAction() {
     View::renderTemplate('inventario/exportar', [
-        'title' => 'Exportar Inventario - Los Cedros'
+        'title' => 'Exportar Inventario - ' . current_hotel_display_name()
     ]);
 }
 
@@ -760,7 +760,7 @@ public function debugMovimientosDateAction() {
     }
     
     View::renderTemplate('inventario/index', [
-        'title' => 'Inventario - Los Cedros',
+        'title' => 'Inventario - ' . current_hotel_display_name(),
         'productos' => $productos,
         'movimientos_recientes' => $movimientos_recientes
     ]);
@@ -773,7 +773,7 @@ public function debugMovimientosDateAction() {
         $categorias = $this->inventarioModel->getCategorias();
         
         View::renderTemplate('inventario/nuevo', [
-            'title' => 'Nuevo Producto - Los Cedros',
+            'title' => 'Nuevo Producto - ' . current_hotel_display_name(),
             'categorias' => $categorias
         ]);
     }
@@ -867,7 +867,7 @@ public function debugMovimientosDateAction() {
         $productos = $this->inventarioModel->getAllWithCategory();
         
         View::renderTemplate('inventario/entrada', [
-            'title' => 'Entrada de Inventario - Los Cedros',
+            'title' => 'Entrada de Inventario - ' . current_hotel_display_name(),
             'productos' => $productos
         ]);
     }
@@ -944,7 +944,7 @@ public function debugMovimientosDateAction() {
         $habitaciones = $this->inventarioModel->getHabitacionesActivas();
         
         View::renderTemplate('inventario/salida', [
-            'title' => 'Salida de Inventario - Los Cedros',
+            'title' => 'Salida de Inventario - ' . current_hotel_display_name(),
             'productos' => $productos,
             'habitaciones' => $habitaciones
         ]);
@@ -1041,7 +1041,7 @@ public function debugMovimientosDateAction() {
 ];
         
         View::renderTemplate('inventario/configuracion', [
-            'title' => 'Configuración de Descuentos - Los Cedros',
+            'title' => 'Configuración de Descuentos - ' . current_hotel_display_name(),
             'productos_automaticos' => $productos_automaticos,
             'configuracion' => $configuracion,
             'tipos_habitacion' => $tipos_habitacion
@@ -1105,7 +1105,7 @@ public function debugMovimientosDateAction() {
         $categorias = $this->inventarioModel->getCategorias();
         
         View::renderTemplate('inventario/editar', [
-            'title' => 'Editar Producto - Los Cedros',
+            'title' => 'Editar Producto - ' . current_hotel_display_name(),
             'producto' => $producto,
             'categorias' => $categorias
         ]);
@@ -1202,7 +1202,7 @@ public function debugMovimientosDateAction() {
         $productos = $this->inventarioModel->getAllWithCategory();
         
         View::renderTemplate('inventario/ajuste', [
-            'title' => 'Ajuste de Inventario - Los Cedros',
+            'title' => 'Ajuste de Inventario - ' . current_hotel_display_name(),
             'productos' => $productos
         ]);
     }
@@ -1296,7 +1296,7 @@ public function debugMovimientosDateAction() {
         }
         
         View::renderTemplate('inventario/reporte', [
-            'title' => 'Reporte de Inventario - Los Cedros',
+            'title' => 'Reporte de Inventario - ' . current_hotel_display_name(),
             'productos' => $productos,
             'estadisticas' => [
                 'total_productos' => $total_productos,
@@ -1323,7 +1323,7 @@ public function debugMovimientosDateAction() {
         $movimientos = $this->movimientoModel->getMovimientosPorProducto($producto_id);
         
         View::renderTemplate('inventario/historial', [
-            'title' => 'Historial de ' . $producto['nombre'] . ' - Los Cedros',
+            'title' => 'Historial de ' . $producto['nombre'] . ' - ' . current_hotel_display_name(),
             'producto' => $producto,
             'movimientos' => $movimientos
         ]);

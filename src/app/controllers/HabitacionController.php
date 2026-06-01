@@ -169,7 +169,7 @@ public function indexAction() {
     $estados['por_llegar'] = ['label' => 'Por llegar', 'color' => 'purple', 'icon' => 'clock'];
     
     View::renderTemplate('habitaciones/index', [
-        'title' => 'Habitaciones - Los Cedros',
+        'title' => 'Habitaciones - ' . current_hotel_display_name(),
         'habitaciones' => $habitaciones,
         'estadisticas' => $estadisticas,
         'filtros' => $filtros,
@@ -360,7 +360,7 @@ if (!empty($filtros['estado']) && $filtros['estado'] === 'mantenimiento') {
     $estados['ocupada_fecha'] = ['label' => 'Ocupada', 'color' => 'red', 'icon' => 'user'];
     
     View::renderTemplate('habitaciones/index', [
-        'title' => 'Disponibilidad ' . format_date($fecha_consulta) . ' - Los Cedros',
+        'title' => 'Disponibilidad ' . format_date($fecha_consulta) . ' - ' . current_hotel_display_name(),
         'habitaciones' => $habitaciones_procesadas,
         'estadisticas' => $estadisticas,
         'filtros' => $filtros,
@@ -569,7 +569,7 @@ error_log(print_r($ocupacion_actual, true));
     }
     
     View::renderTemplate('habitaciones/ver', [
-        'title' => 'Habitación ' . $habitacion['numero'] . ' - Los Cedros',
+        'title' => 'Habitación ' . $habitacion['numero'] . ' - ' . current_hotel_display_name(),
         'habitacion' => $habitacion,
         'ocupacion_actual' => $ocupacion_actual,
         'proxima_salida' => $proxima_salida,
@@ -589,7 +589,7 @@ error_log(print_r($ocupacion_actual, true));
         $this->requirePermission('habitaciones.create');
         
         View::renderTemplate('habitaciones/crear', [
-            'title' => 'Nueva Habitación - Los Cedros',
+            'title' => 'Nueva Habitación - ' . current_hotel_display_name(),
             'tipos' => Habitacion::getTipos(),
             'pisos' => Habitacion::getPisos()
         ]);
@@ -808,7 +808,7 @@ public function historial() {
         }
         
         View::renderTemplate('habitaciones/editar', [
-            'title' => 'Editar Habitación - Los Cedros',
+            'title' => 'Editar Habitación - ' . current_hotel_display_name(),
             'habitacion' => $habitacion,
             'tipos' => Habitacion::getTipos(),
             'pisos' => Habitacion::getPisos()
@@ -1448,7 +1448,7 @@ public function cancelarMantenimientoProgramadoAction() {
         $habitaciones_disponibles = $this->habitacionModel->disponiblesEnFechas($fecha_entrada, $fecha_salida, $tipo_filtro);
         
         View::renderTemplate('habitaciones/disponibles', [
-            'title' => 'Disponibilidad de Habitaciones - Los Cedros',
+            'title' => 'Disponibilidad de Habitaciones - ' . current_hotel_display_name(),
             'fecha_entrada' => $fecha_entrada,
             'fecha_salida' => $fecha_salida,
             'tipo_filtro' => $tipo_filtro,

@@ -1708,7 +1708,7 @@ public function indexAction() {
     $salidas_hoy = $this->reservacionModel->obtenerSalidasHoy();
     
     View::renderTemplate('reservaciones/index', [
-        'title' => 'Reservaciones - Los Cedros',
+        'title' => 'Reservaciones - ' . current_hotel_display_name(),
         'reservaciones' => $reservaciones,
         'buscar' => $buscar,
         'fecha_filtro' => $fecha,
@@ -2059,7 +2059,7 @@ $notas = $notaModel->obtenerPorReservacion($id);
 $total_notas = count($notas);
         
         View::renderTemplate('reservaciones/ver', [
-    'title' => 'Reservación #' . $id . ' - Los Cedros',
+    'title' => 'Reservación #' . $id . ' - ' . current_hotel_display_name(),
     'reservacion' => $reservacion,
     'huesped' => $huesped,
     'vehiculos' => $vehiculos,
@@ -2868,7 +2868,7 @@ private function validarCancelacion($reservacion) {
     $habitaciones = $this->habitacionModel->where(['activa' => 1]);
     
     View::renderTemplate('reservaciones/crear', [
-        'title' => 'Nueva Reservación - Los Cedros',
+        'title' => 'Nueva Reservación - ' . current_hotel_display_name(),
         'habitaciones' => $habitaciones,
         'huesped_preseleccionado' => $huesped_preseleccionado,
         'metodos_pago' => Reservacion::getMetodosPago(),

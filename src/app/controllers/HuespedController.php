@@ -64,7 +64,7 @@ class HuespedController extends Controller {
     $estadisticas = $this->huespedModel->obtenerEstadisticas();
     
     View::renderTemplate('huespedes/index', [
-        'title' => 'Huéspedes - Los Cedros',
+        'title' => 'Huéspedes - ' . current_hotel_display_name(),
         'huespedes' => $huespedes,
         'buscar' => $buscar,
         'estado_filtro' => $estado,
@@ -301,7 +301,7 @@ foreach ($reservaciones as $reservacion) {
 }
     
     View::renderTemplate('huespedes/ver', [
-        'title' => 'Huésped: ' . $huesped['nombre_completo'] . ' - Los Cedros',
+        'title' => 'Huésped: ' . $huesped['nombre_completo'] . ' - ' . current_hotel_display_name(),
         'huesped' => $huesped,
         'vehiculos' => $vehiculos,
         'reservaciones' => $reservaciones,
@@ -320,7 +320,7 @@ foreach ($reservaciones as $reservacion) {
     error_log("POST params: " . print_r($_POST, true));
     error_log("Session data: " . print_r($_SESSION, true));
         View::renderTemplate('huespedes/crear', [
-            'title' => 'Nuevo Huésped - Los Cedros',
+            'title' => 'Nuevo Huésped - ' . current_hotel_display_name(),
             'estados' => Huesped::getEstados()
         ]);
     }
@@ -639,7 +639,7 @@ if ($return_to == 'reservacion') {
         }
         
         View::renderTemplate('huespedes/editar', [
-            'title' => 'Editar Huésped - Los Cedros',
+            'title' => 'Editar Huésped - ' . current_hotel_display_name(),
             'huesped' => $huesped,
             'estados' => Huesped::getEstados()
         ]);
