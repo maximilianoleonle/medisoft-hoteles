@@ -64,6 +64,72 @@ class Caja extends Model {
         
         return $stmt->fetch();
     }
+
+    /**
+     * Crear caja inicial segura para un hotel cuando no existe ninguna.
+     */
+    public function ensureDefaultCajaForHotel($hotelId) {
+        $hotelId = (int) $hotelId;
+
+        if ($hotelId <= 0) {
+            return false;
+        }
+
+        $ownTransaction = !$this->db->enTransaccion();
+
+        try {
+            if ($ownTransaction) {
+                $this->db->safeBeginTransaction();
+            }
+
+            $stmt = $this->db->query(
+                "SELECT id
+                 FROM cajas
+                 WHERE hotel_id = ?
+                 LIMIT 1
+                 FOR UPDATE",
+                [$hotelId]
+            );
+
+            if ($stmt === false) {
+                throw new Exception('No se pudo revisar si el hotel ya tiene caja.');
+            }
+
+            $cajaExistente = $stmt->fetch();
+
+            if ($cajaExistente) {
+                if ($ownTransaction) {
+                    $this->db->safeCommit();
+                }
+
+                return true;
+            }
+
+            $stmt = $this->db->query(
+                "INSERT INTO cajas
+                    (hotel_id, nombre, ubicacion, monto_inicial, activa)
+                 VALUES (?, ?, ?, ?, ?)",
+                [$hotelId, 'Caja principal', 'Recepción', '0.00', 1]
+            );
+
+            if ($stmt === false) {
+                throw new Exception('No se pudo crear la caja inicial del hotel.');
+            }
+
+            if ($ownTransaction) {
+                $this->db->safeCommit();
+            }
+
+            return true;
+        } catch (Throwable $e) {
+            if ($ownTransaction) {
+                $this->db->safeRollBack();
+            }
+
+            error_log('Error al asegurar caja inicial para hotel ' . $hotelId . ': ' . $e->getMessage());
+            return false;
+        }
+    }
     
     /**
      * Verificar si hay un corte abierto

@@ -142,6 +142,12 @@ class Modulo extends Model {
     }
 
     public function actualizarModulosHotel($hotelId, array $moduloIdsActivos, $enabledBy = null) {
+        $hotelId = (int) $hotelId;
+
+        if ($hotelId <= 0) {
+            return false;
+        }
+
         $modulos = $this->listarGlobales();
         if (empty($modulos)) {
             return false;
@@ -150,18 +156,44 @@ class Modulo extends Model {
         $idsValidos = array_map('intval', array_column($modulos, 'id'));
         $idsActivos = array_values(array_intersect(array_map('intval', $moduloIdsActivos), $idsValidos));
         $idsActivosLookup = array_flip($idsActivos);
+        $ownTransaction = !$this->db->enTransaccion();
 
-        foreach ($idsValidos as $moduloId) {
-            $ok = isset($idsActivosLookup[$moduloId])
-                ? $this->activarModuloParaHotel($hotelId, $moduloId, $enabledBy)
-                : $this->desactivarModuloParaHotel($hotelId, $moduloId, $enabledBy);
-
-            if (!$ok) {
-                return false;
+        try {
+            if ($ownTransaction) {
+                $this->db->safeBeginTransaction();
             }
-        }
 
-        return true;
+            foreach ($idsValidos as $moduloId) {
+                $ok = isset($idsActivosLookup[$moduloId])
+                    ? $this->activarModuloParaHotel($hotelId, $moduloId, $enabledBy)
+                    : $this->desactivarModuloParaHotel($hotelId, $moduloId, $enabledBy);
+
+                if (!$ok) {
+                    throw new Exception('No se pudo actualizar el modulo ' . $moduloId . ' para el hotel.');
+                }
+            }
+
+            if ($this->seleccionIncluyeModuloCaja($modulos, $idsActivosLookup)) {
+                $cajaModel = new Caja();
+
+                if (!$cajaModel->ensureDefaultCajaForHotel($hotelId)) {
+                    throw new Exception('No se pudo asegurar la caja inicial del hotel.');
+                }
+            }
+
+            if ($ownTransaction) {
+                $this->db->safeCommit();
+            }
+
+            return true;
+        } catch (Throwable $e) {
+            if ($ownTransaction) {
+                $this->db->safeRollBack();
+            }
+
+            error_log('Error al actualizar modulos del hotel ' . $hotelId . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
     private function obtenerIdPorClave($clave) {
@@ -174,5 +206,15 @@ class Modulo extends Model {
         );
 
         return !empty($resultado) ? (int) $resultado[0]['id'] : null;
+    }
+
+    private function seleccionIncluyeModuloCaja(array $modulos, array $idsActivosLookup) {
+        foreach ($modulos as $modulo) {
+            if (($modulo['clave'] ?? '') === 'caja' && isset($idsActivosLookup[(int) $modulo['id']])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
