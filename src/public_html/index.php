@@ -5,12 +5,51 @@
  */
 
 // Definir la ruta base del proyecto
-define('ROOT_PATH', dirname(__DIR__));
+$publicParent = dirname(__DIR__);
+$hostingerRoot = $publicParent . '/private/staging';
+$rootPath = (
+    is_dir($hostingerRoot . '/app')
+    && is_dir($hostingerRoot . '/config')
+    && is_dir($hostingerRoot . '/core')
+) ? $hostingerRoot : $publicParent;
+
+define('ROOT_PATH', $rootPath);
 define('APP_PATH', ROOT_PATH . '/app');
 define('CONFIG_PATH', ROOT_PATH . '/config');
 define('CORE_PATH', ROOT_PATH . '/core');
 define('PUBLIC_PATH', __DIR__); // Ajustado para Hostinger
 define('STORAGE_PATH', ROOT_PATH . '/storage');
+
+// Cargar variables de entorno desde ROOT_PATH/.env si el hosting no las inyecta.
+$envPath = ROOT_PATH . '/.env';
+if (is_readable($envPath)) {
+    $envLines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+    foreach ($envLines ?: [] as $envLine) {
+        $envLine = trim($envLine);
+
+        if ($envLine === '' || strpos($envLine, '#') === 0 || strpos($envLine, '=') === false) {
+            continue;
+        }
+
+        [$envKey, $envValue] = explode('=', $envLine, 2);
+        $envKey = trim($envKey);
+
+        if ($envKey === '' || getenv($envKey) !== false) {
+            continue;
+        }
+
+        $envValue = trim($envValue);
+        $quote = $envValue[0] ?? '';
+        if (($quote === '"' || $quote === "'") && substr($envValue, -1) === $quote) {
+            $envValue = substr($envValue, 1, -1);
+        }
+
+        putenv($envKey . '=' . $envValue);
+        $_ENV[$envKey] = $envValue;
+        $_SERVER[$envKey] = $envValue;
+    }
+}
 
 // Reporte de errores: solo al log, nunca al navegador
 ini_set('display_errors', 0);
