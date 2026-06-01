@@ -70,7 +70,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
             <i class="fas fa-search search-icon" style="pointer-events:none;"></i>
             <input type="text"
                    id="buscador-global-input"
-                   placeholder="Buscar huesped, reservacion..."
+                   placeholder="Buscar huésped, reservación..."
                    class="search-input"
                    autocomplete="off"
                    style="padding-right:28px;position:relative;z-index:2;pointer-events:auto;cursor:text;user-select:text;">
@@ -142,7 +142,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
         <?php if ($menuModulosSinConfigurar): ?>
         <div class="nav-section">
             <div style="padding:8px 12px;font-size:0.75rem;color:#6b7280;">
-                Modulos del hotel pendientes de configurar.
+                Módulos del hotel pendientes de configurar.
             </div>
         </div>
         <?php endif; ?>
@@ -150,7 +150,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
         <?php if ($mostrarGestion): ?>
         <div class="nav-section">
             <div class="nav-section-title">
-                <span>GESTION</span>
+                <span>GESTIÓN</span>
             </div>
 
             <?php if ($mostrarHabitaciones): ?>
@@ -191,7 +191,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
                 <div class="nav-icon">
                     <i class="fas fa-users"></i>
                 </div>
-                <span class="nav-text">Huespedes</span>
+                <span class="nav-text">Huéspedes</span>
             </a>
             <?php endif; ?>
         </div>
@@ -235,7 +235,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
                 <div class="nav-icon">
                     <i class="fas fa-file-invoice-dollar"></i>
                 </div>
-                <span class="nav-text">Facturacion</span>
+                <span class="nav-text">Facturación</span>
             </a>
             <?php endif; ?>
         </div>
@@ -244,7 +244,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
         <?php if ($mostrarAdministracion): ?>
         <div class="nav-section">
             <div class="nav-section-title">
-                <span>ADMINISTRACION</span>
+                <span>ADMINISTRACIÓN</span>
             </div>
 
             <?php if ($mostrarReportes): ?>
@@ -273,7 +273,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
                 <div class="nav-icon">
                     <i class="fas fa-tags"></i>
                 </div>
-                <span class="nav-text">Tarifas Dinamicas</span>
+                <span class="nav-text">Tarifas dinámicas</span>
             </a>
             <?php endif; ?>
         </div>
@@ -285,7 +285,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
         <?php if (!$sidebarEsPanelSaas): ?>
         <div style="display:flex;align-items:center;gap:8px;padding:6px 12px 2px;opacity:0.85;">
             <span class="pwa-status-dot"></span>
-            <span class="pwa-status-label" id="sidebar-net-label">En linea</span>
+            <span class="pwa-status-label" id="sidebar-net-label">En línea</span>
         </div>
         <?php endif; ?>
         <div class="user-section">
@@ -318,7 +318,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
                 <?= csrf_field() ?>
                 <button type="submit" class="dropdown-item text-red" style="width:100%;background:none;border:0;text-align:left;cursor:pointer;">
                 <i class="fas fa-sign-out-alt"></i>
-                <span><?= $sidebarEsPanelSaas ? 'Cerrar sesión' : 'Cerrar Sesion' ?></span>
+                <span>Cerrar sesión</span>
                 </button>
             </form>
         </div>

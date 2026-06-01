@@ -167,7 +167,7 @@
                             Centro de Reportes y Análisis
                         </h1>
                     </div>
-                    <p class="text-sm text-white/60 ml-14">Insights detallados para la toma de decisiones estratégicas · Hotel Los Cedros</p>
+                    <p class="text-sm text-white/60 ml-14">Insights detallados para la toma de decisiones estratégicas de tu hotel</p>
                 </div>
                 <div class="flex flex-wrap gap-2 ml-14 lg:ml-0">
                     <span class="gold-tag"><i class="fas fa-crown text-xs"></i> Gerencia</span>

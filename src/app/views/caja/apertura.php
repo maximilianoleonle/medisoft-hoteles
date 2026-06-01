@@ -19,6 +19,9 @@
             <p class="text-gray-600 mt-2">
                 <?= date('l, d \d\e F \d\e Y') ?>
             </p>
+            <p class="text-sm text-gray-500 mt-3 max-w-sm mx-auto">
+                Abre un corte de caja para registrar movimientos de la jornada.
+            </p>
         </div>
         
         <!-- Formulario -->
@@ -65,7 +68,7 @@
                         </div>
                         <p class="text-sm text-gray-500 mt-2">
                             <i class="fas fa-info-circle mr-1"></i>
-                            Ingrese el monto de efectivo con el que inicia la caja
+                            Captura el efectivo inicial con el que comienza este turno.
                         </p>
                     </div>
                     
@@ -89,15 +92,15 @@
                         <ul class="text-sm text-yellow-700 space-y-1">
                             <li class="flex items-start">
                                 <i class="fas fa-check-circle mr-2 mt-0.5 text-yellow-600"></i>
-                                <span>Verifique que el monto inicial sea correcto</span>
+                                <span>Verifica que el monto inicial sea correcto.</span>
                             </li>
                             <li class="flex items-start">
                                 <i class="fas fa-check-circle mr-2 mt-0.5 text-yellow-600"></i>
-                                <span>Una vez abierta, deberá realizar el corte al finalizar</span>
+                                <span>Una vez abierta, realiza el corte al finalizar la jornada.</span>
                             </li>
                             <li class="flex items-start">
                                 <i class="fas fa-check-circle mr-2 mt-0.5 text-yellow-600"></i>
-                                <span>Todos los movimientos quedarán registrados</span>
+                                <span>Todos los ingresos y gastos quedarán registrados en este corte.</span>
                             </li>
                         </ul>
                     </div>

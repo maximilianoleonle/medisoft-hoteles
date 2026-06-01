@@ -869,7 +869,7 @@ function imprimirCalendario() {
     titulo.innerHTML = `
         <h1 style="text-align: center; margin-bottom: 20px;">
             Calendario de Reservaciones - <?= $meses[$mes] ?> <?= $año ?><br>
-            <small>Los Cedros</small>
+            <small><?= htmlspecialchars((function_exists('current_hotel_nombre') && current_hotel_nombre()) ? current_hotel_nombre() : 'Hotel', ENT_QUOTES, 'UTF-8') ?></small>
         </h1>
     `;
     

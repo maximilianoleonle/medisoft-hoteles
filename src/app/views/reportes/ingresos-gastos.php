@@ -773,7 +773,7 @@ select:focus {
         <div class="bg-white rounded-xl shadow-sm p-3 md:p-6 mb-3 md:mb-6 border border-[#E0DDD5]">
             <div class="text-center py-6 md:py-12 text-gray-500">
                 <i class="fas fa-chart-line text-2xl md:text-4xl mb-2 md:mb-4"></i>
-                <p class="text-xs md:text-base">No hay datos para mostrar la gráfica en el período seleccionado</p>
+                <p class="text-xs md:text-base">No hay datos para mostrar la gráfica en este período. Prueba otro rango de fechas o genera actividad demo.</p>
             </div>
         </div>
         <?php endif; ?>
@@ -836,7 +836,7 @@ select:focus {
                     <?php else: ?>
                     <div class="text-center py-6 md:py-8 text-gray-500">
                         <i class="fas fa-info-circle text-3xl md:text-4xl mb-2"></i>
-                        <p class="text-sm md:text-base">No hay ingresos registrados en este período</p>
+                        <p class="text-sm md:text-base">No hay ingresos registrados en este período. Los cobros aparecerán aquí cuando exista actividad.</p>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -898,7 +898,7 @@ select:focus {
                     <?php else: ?>
                     <div class="text-center py-6 md:py-8 text-gray-500">
                         <i class="fas fa-info-circle text-3xl md:text-4xl mb-2"></i>
-                        <p class="text-sm md:text-base">No hay gastos registrados en este período</p>
+                        <p class="text-sm md:text-base">No hay gastos registrados en este período. Los egresos aparecerán aquí cuando se capturen movimientos.</p>
                     </div>
                     <?php endif; ?>
                 </div>

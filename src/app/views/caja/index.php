@@ -537,7 +537,7 @@
                     <?php if (empty($movimientos_categoria['ingresos'])): ?>
                         <div class="text-center py-8 text-gray-400">
                             <i class="fas fa-inbox text-3xl mb-2 opacity-40"></i>
-                            <p class="text-sm">No hay ingresos registrados hoy</p>
+                            <p class="text-sm">No hay ingresos registrados hoy. Cuando captures cobros, aparecerán aquí.</p>
                         </div>
                     <?php else: ?>
                         <div class="space-y-2">
@@ -576,7 +576,7 @@
                     <?php if (empty($movimientos_categoria['gastos'])): ?>
                         <div class="text-center py-8 text-gray-400">
                             <i class="fas fa-inbox text-3xl mb-2 opacity-40"></i>
-                            <p class="text-sm">No hay gastos registrados hoy</p>
+                            <p class="text-sm">No hay gastos registrados hoy. Los gastos de la jornada aparecerán aquí.</p>
                         </div>
                     <?php else: ?>
                         <div class="space-y-2">
@@ -620,7 +620,7 @@
                 <?php if (empty($ultimos_movimientos)): ?>
                     <div class="text-center py-10 text-gray-400">
                         <i class="fas fa-receipt text-3xl mb-2 opacity-40"></i>
-                        <p class="text-sm">No hay movimientos registrados</p>
+                        <p class="text-sm">No hay movimientos registrados en este corte. Registra un ingreso o gasto para ver actividad.</p>
                     </div>
                 <?php else: ?>
                     <?php foreach ($ultimos_movimientos as $mov): ?>

@@ -289,7 +289,7 @@ body{background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:var(
             <div class="ch"><div class="ci"><i class="fas fa-chart-bar"></i></div><h3>Tendencia Mensual</h3></div>
             <div style="padding:1rem;height:265px;position:relative;">
                 <?php if (!empty($tendenciaMensual)): ?><canvas id="chartTend"></canvas>
-                <?php else: ?><div class="empty"><i class="fas fa-chart-bar"></i><p>Sin datos de tendencia</p></div><?php endif; ?>
+                <?php else: ?><div class="empty"><i class="fas fa-chart-bar"></i><p>Aún no hay datos de tendencia para este período.</p></div><?php endif; ?>
             </div>
             <?php if (!empty($porTipo)): ?>
             <div style="padding:.65rem 1.25rem;border-top:1px solid var(--bd);display:flex;flex-wrap:wrap;gap:.4rem;">
@@ -343,7 +343,7 @@ body{background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:var(
                 </div>
                 <?php endforeach; ?>
             </div>
-            <?php else: ?><div class="empty"><i class="fas fa-user-slash"></i><p>Sin datos de responsables</p></div><?php endif; ?>
+            <?php else: ?><div class="empty"><i class="fas fa-user-slash"></i><p>Aún no hay responsables con actividad registrada.</p></div><?php endif; ?>
         </div>
     </div>
     <?php endif; ?>
@@ -438,7 +438,7 @@ body{background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:var(
             </table>
         </div>
         <?php else: ?>
-        <div class="empty"><i class="fas fa-tools"></i><p>No hay registros en el período seleccionado</p></div>
+        <div class="empty"><i class="fas fa-tools"></i><p>No hay registros en el período seleccionado. Cuando existan mantenimientos, aparecerán aquí.</p></div>
         <?php endif; ?>
     </div>
 

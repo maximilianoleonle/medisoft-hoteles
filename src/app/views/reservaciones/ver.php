@@ -7,6 +7,12 @@ header('Content-Type: text/html; charset=UTF-8');
 
 $estado_info = $estados[$reservacion['estado']] ?? ['label' => 'Desconocido', 'color' => 'gray'];
 $pagos = $pagos ?? [];
+$nombreHotelVisible = function_exists('current_hotel_nombre') && current_hotel_nombre()
+    ? current_hotel_nombre()
+    : 'el hotel';
+$nombreHotelTicket = function_exists('mb_strtoupper')
+    ? mb_strtoupper($nombreHotelVisible, 'UTF-8')
+    : strtoupper($nombreHotelVisible);
 
 // Detectar si acaba de hacerse un check-in exitoso para auto-imprimir ticket
 $auto_imprimir_ticket = false;
@@ -851,7 +857,7 @@ endif;
                         $wa_metodo  = strtoupper($reservacion['metodo_pago'] ?? '');
 
                         $msg_confirmacion = urlencode(
-                            "✅ *Confirmación de Reservación - Hotel Los Cedros*\n\n" .
+                            "✅ *Confirmación de Reservación - {$nombreHotelVisible}*\n\n" .
                             "Hola {$wa_nombre}, su reservación ha sido confirmada.\n\n" .
                             "🏨 *Habitación(es):* {$wa_habs}\n" .
                             "📅 *Entrada:* {$wa_entrada}\n" .
@@ -865,7 +871,7 @@ endif;
 
                         $wa_dias_para_llegar = (strtotime($reservacion['fecha_entrada']) - strtotime(date('Y-m-d'))) / 86400;
                         $msg_recordatorio = urlencode(
-                            "⏰ *Recordatorio de llegada - Hotel Los Cedros*\n\n" .
+                            "⏰ *Recordatorio de llegada - {$nombreHotelVisible}*\n\n" .
                             "Hola {$wa_nombre}, le recordamos que su llegada es *mañana " . date('d/m/Y', strtotime($reservacion['fecha_entrada'])) . "*.\n\n" .
                             "🏨 *Habitación(es):* {$wa_habs}\n" .
                             "📅 *Salida:* {$wa_salida}\n" .
@@ -876,7 +882,7 @@ endif;
                         );
 
                         $msg_comprobante = urlencode(
-                            "🧾 *Comprobante de Pago - Hotel Los Cedros*\n\n" .
+                            "🧾 *Comprobante de Pago - {$nombreHotelVisible}*\n\n" .
                             "Hola {$wa_nombre}, gracias por su estancia.\n\n" .
                             "🏨 *Habitación(es):* {$wa_habs}\n" .
                             "📅 *Entrada:* {$wa_entrada}\n" .
@@ -5381,11 +5387,10 @@ function imprimirTicketTermico() {
     </button>
 
     <div class="logo-container">
-        <img src="${logoSrc}" alt="Los Cedros" onerror="this.style.display='none'">
+        <img src="${logoSrc}" alt="<?= htmlspecialchars($nombreHotelVisible, ENT_QUOTES, 'UTF-8') ?>" onerror="this.style.display='none'">
     </div>
-    <div class="hotel-name">HOTEL LOS CEDROS</div>
-    <div class="hotel-sub">Santa Catarina Juquila, Oaxaca</div>
-    <div class="hotel-sub">Tel: (954) 124-7036</div>
+    <div class="hotel-name"><?= htmlspecialchars($nombreHotelTicket, ENT_QUOTES, 'UTF-8') ?></div>
+    <div class="hotel-sub">Sistema de gestión hotelera</div>
     
     <div class="divider-double"></div>
     

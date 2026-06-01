@@ -221,7 +221,7 @@
                         <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 p-6">
                             <h2 class="text-xl font-semibold text-white flex items-center">
                                 <i class="fas fa-list-check mr-3"></i>
-                                Características del Los Cedros
+                                Características de la habitación
                             </h2>
                         </div>
                         
@@ -438,7 +438,7 @@
                         <div class="bg-blue-500/20 rounded-lg p-3">
                             <p class="text-xs flex items-start">
                                 <i class="fas fa-info-circle mr-2 mt-0.5 flex-shrink-0"></i>
-                                Esta habitación pertenece al Los Cedros de Santa Catarina Juquila, Oaxaca.
+                                Esta habitación pertenece al hotel actual.
                             </p>
                         </div>
                     </div>

@@ -430,7 +430,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
                     </div>
                     <div>
                         <h1 style="color:white;font-size:1.2rem;font-weight:800;line-height:1.2;">Nueva Reservación</h1>
-                        <p style="color:rgba(255,255,255,.6);font-size:.75rem;margin-top:2px;">Seleccione habitaciones y configure cortesías · Hotel Los Cedros</p>
+                        <p style="color:rgba(255,255,255,.6);font-size:.75rem;margin-top:2px;">Seleccione habitaciones y configure cortesías del hotel</p>
                     </div>
                 </div>
                 <a href="<?= url('reservaciones') ?>" class="btn-back">
@@ -1027,7 +1027,7 @@ $(document).ready(function() {
                         <i class="fas fa-bed text-2xl" style="color:#A8C4A0;"></i>
                     </div>
                     <h3 class="text-base font-bold mb-1">No hay habitaciones</h3>
-                    <p class="text-sm">No se encontraron habitaciones para estas fechas</p>
+                    <p class="text-sm">No se encontraron habitaciones para estas fechas. Ajusta el rango o revisa disponibilidad.</p>
                 </div>
             `);
             return;

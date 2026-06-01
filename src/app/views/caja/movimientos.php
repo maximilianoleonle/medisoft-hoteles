@@ -192,7 +192,7 @@
             <?php if (empty($movimientos)): ?>
                 <div class="p-8 text-center">
                     <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
-                    <p class="text-gray-500">No se encontraron movimientos con los filtros seleccionados</p>
+                    <p class="text-gray-500">No se encontraron movimientos con los filtros seleccionados. Ajusta el rango de fechas o limpia los filtros para revisar la actividad de caja.</p>
                 </div>
             <?php else: ?>
                 <div class="overflow-x-auto">

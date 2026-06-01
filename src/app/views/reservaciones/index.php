@@ -630,7 +630,7 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
                 </div>
                 <h3 class="text-lg font-bold text-gray-700 mb-2">Sin reservaciones</h3>
                 <p class="text-gray-400 text-sm mb-5">
-                    No hay reservaciones activas para <?= $es_hoy ? 'hoy' : date('d/m/Y', $ts) ?>
+                    No hay reservaciones activas para <?= $es_hoy ? 'hoy' : date('d/m/Y', $ts) ?>. Crea una reservación o revisa otra fecha.
                 </p>
                 <div class="flex gap-3 justify-center flex-wrap">
                     <a href="<?= url('reservaciones/crear') ?>"

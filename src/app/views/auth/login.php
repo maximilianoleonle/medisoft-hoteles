@@ -482,6 +482,7 @@ $loginDisabled = !empty($login_disabled);
             align-items: center;
             justify-content: space-between;
             margin-bottom: 28px;
+            gap: 16px;
         }
 
         .remember-me {
@@ -512,6 +513,9 @@ $loginDisabled = !empty($login_disabled);
             font-weight: 600;
             transition: all 0.3s ease;
             position: relative;
+            line-height: 1.35;
+            text-align: right;
+            white-space: normal;
         }
 
         .forgot-password::after {
@@ -752,6 +756,8 @@ $loginDisabled = !empty($login_disabled);
             .login-wrapper {
                 grid-template-columns: 1fr;
                 grid-template-rows: auto 1fr;
+                width: 100%;
+                max-width: 100vw;
                 margin: 0;
                 border-radius: 0;
                 min-height: 100vh;
@@ -826,7 +832,11 @@ $loginDisabled = !empty($login_disabled);
             .right-panel {
                 padding: 28px 24px 32px;
                 flex: 1;
+                width: 100%;
+                min-width: 0;
+                box-sizing: border-box;
                 overflow-y: auto;
+                overflow-x: hidden;
                 -webkit-overflow-scrolling: touch;
                 align-items: flex-start;
             }
@@ -834,7 +844,9 @@ $loginDisabled = !empty($login_disabled);
             .corner-decoration { display: none; }
 
             .form-container {
-                max-width: 100%;
+                width: calc(100vw - 48px);
+                max-width: calc(100vw - 48px);
+                min-width: 0;
                 animation: none;
             }
 
@@ -852,6 +864,9 @@ $loginDisabled = !empty($login_disabled);
             }
 
             .login-form {
+                width: calc(100vw - 48px);
+                min-width: 0;
+                max-width: calc(100vw - 48px);
                 margin-top: 20px;
             }
 
@@ -865,6 +880,9 @@ $loginDisabled = !empty($login_disabled);
             }
 
             .form-control {
+                width: calc(100vw - 48px);
+                max-width: 100%;
+                box-sizing: border-box;
                 padding: 14px 16px 14px 44px;
                 font-size: 16px; /* Prevent zoom on iOS */
                 border-radius: 12px;
@@ -881,16 +899,26 @@ $loginDisabled = !empty($login_disabled);
             }
 
             .form-options {
-                flex-direction: row;
-                flex-wrap: wrap;
+                display: grid;
+                grid-template-columns: 1fr;
                 margin-bottom: 20px;
-                gap: 8px;
+                gap: 10px 12px;
+                align-items: start;
             }
 
             .remember-me span { font-size: 13px; }
-            .forgot-password { font-size: 13px; }
+            .forgot-password {
+                font-size: 13px;
+                justify-self: start;
+                min-width: 0;
+                max-width: 100%;
+                text-align: left;
+                overflow-wrap: anywhere;
+            }
 
             .submit-btn {
+                width: calc(100vw - 48px);
+                max-width: 100%;
                 padding: 15px;
                 font-size: 15px;
             }
@@ -954,6 +982,11 @@ $loginDisabled = !empty($login_disabled);
             .form-group { margin-bottom: 16px; }
             .form-control { padding: 12px 14px 12px 40px; }
             .input-icon { left: 12px; font-size: 15px; }
+            .form-options { grid-template-columns: 1fr; }
+            .forgot-password {
+                justify-self: start;
+                text-align: left;
+            }
         }
 
         /* ========================================
@@ -1178,13 +1211,6 @@ $loginDisabled = !empty($login_disabled);
                         Iniciar Sesión
                     </button>
                 </form>
-                
-                <!-- Divisor -->
-                <div class="divider">
-                    <div class="divider-line"></div>
-                    <span class="divider-text">o</span>
-                    <div class="divider-line"></div>
-                </div>
                 
                 <!-- Badges de seguridad -->
                 <div class="security-badges">
