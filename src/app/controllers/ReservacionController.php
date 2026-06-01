@@ -152,7 +152,7 @@ class ReservacionController extends Controller {
             if ($noches == 0) $noches = 1;
  
             // ─── Generar PDF ─────────────────────────────────────
-            require_once __DIR__ . '/../../public_html/fdpdf/fpdf.php';
+            require_once PUBLIC_PATH . '/fdpdf/fpdf.php';
  
             $pdf = new FPDF('P', 'mm', 'Letter');
             $pdf->SetAutoPageBreak(true, 25);
@@ -194,7 +194,7 @@ class ReservacionController extends Controller {
             $pdf->SetFillColor($olivo[0], $olivo[1], $olivo[2]);
             $pdf->Rect(0, 38, $pageW, 4, 'F');
  
-            $logoPath = __DIR__ . '/../../public_html/img/logo.png';
+            $logoPath = PUBLIC_PATH . '/img/logo.png';
             if (file_exists($logoPath)) {
                 $pdf->Image($logoPath, $margin, 5, 32, 32);
             }
@@ -3074,7 +3074,7 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             );
 
             // ─── Generar PDF ─────────────────────────────────────
-            require_once __DIR__ . '/../../public_html/fdpdf/fpdf.php';
+            require_once PUBLIC_PATH . '/fdpdf/fpdf.php';
 
             $pdf = new FPDF('P', 'mm', 'Letter'); // 216 x 279 mm
             $pdf->SetAutoPageBreak(true, 25);
@@ -3113,7 +3113,7 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             $pdf->Rect(0, 38, $pageW, 4, 'F');
 
             // Logo
-            $logoPath = __DIR__ . '/../../public_html/img/logo-hotel-san-nicolas2.png';
+            $logoPath = PUBLIC_PATH . '/img/logo-hotel-san-nicolas2.png';
             if (file_exists($logoPath)) {
                 $pdf->Image($logoPath, $margin, 5, 32, 32);
             }
