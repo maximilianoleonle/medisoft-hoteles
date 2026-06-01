@@ -202,12 +202,12 @@ class ReservacionController extends Controller {
             $pdf->SetFont('Helvetica', 'B', 18);
             $pdf->SetTextColor($blanco[0], $blanco[1], $blanco[2]);
             $pdf->SetXY($margin + 36, 8);
-            $pdf->Cell(100, 8, $u('Hotel Los Cedros'), 0, 2, 'L');
+            $pdf->Cell(100, 8, $u(current_hotel_display_name('Medisoft Hoteles')), 0, 2, 'L');
  
             $pdf->SetFont('Helvetica', '', 9);
             $pdf->SetTextColor($gold[0], $gold[1], $gold[2]);
             $pdf->SetX($margin + 36);
-            $pdf->Cell(100, 5, $u('Santa Catarina Juquila, Oaxaca'), 0, 2, 'L');
+            $pdf->Cell(100, 5, $u('Sistema de gestión hotelera'), 0, 2, 'L');
  
             $pdf->SetFont('Helvetica', 'B', 22);
             $pdf->SetTextColor($gold[0], $gold[1], $gold[2]);
@@ -611,7 +611,7 @@ class ReservacionController extends Controller {
             $pdf->SetFont('Helvetica', '', 7);
             $pdf->SetTextColor($grisCla[0], $grisCla[1], $grisCla[2]);
             $pdf->SetX($margin);
-            $pdf->Cell($contentW / 2, 4, $u('Hotel Los Cedros · Santa Catarina Juquila, Oaxaca'), 0, 0, 'L');
+            $pdf->Cell($contentW / 2, 4, $u(current_hotel_display_name('Medisoft Hoteles')), 0, 0, 'L');
             $pdf->Cell($contentW / 2, 4, $u('Documento generado el ' . $hoy), 0, 1, 'R');
  
             // Output
@@ -1608,7 +1608,7 @@ private function generarHTMLReservacionesPersonalizado(
         
         <!-- ═══ PÁGINA 1: Habitaciones Numéricas ═══ -->
         <div class="header">
-            HOTEL LOS CEDROS — CONTROL DE HABITACIONES
+            <?= htmlspecialchars(function_exists('current_hotel_display_name') ? (function_exists('mb_strtoupper') ? mb_strtoupper(current_hotel_display_name('Medisoft Hoteles'), 'UTF-8') : strtoupper(current_hotel_display_name('Medisoft Hoteles'))) : 'MEDISOFT HOTELES', ENT_QUOTES, 'UTF-8') ?> - CONTROL DE HABITACIONES
             <br><small><?= htmlspecialchars($fecha_bonita) ?></small>
         </div>
         
@@ -1624,7 +1624,7 @@ private function generarHTMLReservacionesPersonalizado(
         <?php endif; ?>
         
         <div class="pie">
-            Los Cedros — Santa Catarina Juquila, Oaxaca · Impreso <?= date('d/m/Y H:i') ?> hrs
+            <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?> - Impreso <?= date('d/m/Y H:i') ?> hrs
         </div>
         
         <!-- ═══ PÁGINA 2: Habitaciones de Color ═══ -->
@@ -1632,7 +1632,7 @@ private function generarHTMLReservacionesPersonalizado(
         <div class="page-break"></div>
         
         <div class="header">
-            HOTEL LOS CEDROS — CONTROL DE HABITACIONES
+            <?= htmlspecialchars(function_exists('current_hotel_display_name') ? (function_exists('mb_strtoupper') ? mb_strtoupper(current_hotel_display_name('Medisoft Hoteles'), 'UTF-8') : strtoupper(current_hotel_display_name('Medisoft Hoteles'))) : 'MEDISOFT HOTELES', ENT_QUOTES, 'UTF-8') ?> - CONTROL DE HABITACIONES
             <br><small><?= htmlspecialchars($fecha_bonita) ?></small>
         </div>
         
@@ -1646,7 +1646,7 @@ private function generarHTMLReservacionesPersonalizado(
         <?php $renderTabla($hab_color, 'HABITACIONES DE COLOR (' . count($hab_color) . ')'); ?>
         
         <div class="pie">
-            Los Cedros — Santa Catarina Juquila, Oaxaca · Impreso <?= date('d/m/Y H:i') ?> hrs
+            <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?> - Impreso <?= date('d/m/Y H:i') ?> hrs
         </div>
         <?php endif; ?>
         
@@ -3122,13 +3122,13 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             $pdf->SetFont('Helvetica', 'B', 18);
             $pdf->SetTextColor($blanco[0], $blanco[1], $blanco[2]);
             $pdf->SetXY($margin + 36, 8);
-            $pdf->Cell(100, 8, $u('Hotel Los Cedros'), 0, 2, 'L');
+            $pdf->Cell(100, 8, $u(current_hotel_display_name('Medisoft Hoteles')), 0, 2, 'L');
 
             // Subtítulo
             $pdf->SetFont('Helvetica', '', 9);
             $pdf->SetTextColor($gold[0], $gold[1], $gold[2]);
             $pdf->SetX($margin + 36);
-            $pdf->Cell(100, 5, $u('Santa Catarina Juquila, Oaxaca'), 0, 2, 'L');
+            $pdf->Cell(100, 5, $u('Sistema de gestión hotelera'), 0, 2, 'L');
 
             // Título COTIZACIÓN a la derecha
             $pdf->SetFont('Helvetica', 'B', 22);
@@ -3487,11 +3487,11 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             $pdf->SetFont('Helvetica', '', 7);
             $pdf->SetTextColor($grisCla[0], $grisCla[1], $grisCla[2]);
             $pdf->SetX($margin);
-            $pdf->Cell($contentW / 2, 4, $u('Hotel Los Cedros · Santa Catarina Juquila, Oaxaca'), 0, 0, 'L');
+            $pdf->Cell($contentW / 2, 4, $u(current_hotel_display_name('Medisoft Hoteles')), 0, 0, 'L');
             $pdf->Cell($contentW / 2, 4, $u('Documento generado el ' . $hoy), 0, 1, 'R');
 
             // ─── Output PDF ──────────────────────────────────────
-            $nombreArchivo = 'Cotizacion_LosCedros_' . date('Ymd_His') . '.pdf';
+            $nombreArchivo = 'Cotizacion_Hotel_' . date('Ymd_His') . '.pdf';
             $pdf->Output('I', $nombreArchivo);
             exit;
 

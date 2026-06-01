@@ -877,7 +877,7 @@ endif;
                             "📅 *Salida:* {$wa_salida}\n" .
                             "💰 *Total:* {$wa_precio}\n\n" .
                             "Check-in: 3:00 PM · Check-out: 12:00 PM\n" .
-                            "📍 Santa Catarina Juquila, Oaxaca\n\n" .
+                            "📍 Sistema de gestión hotelera\n\n" .
                             "¡Le esperamos! 🌿"
                         );
 

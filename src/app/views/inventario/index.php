@@ -247,7 +247,7 @@
                     </div>
                     <div>
                         <h1 class="text-lg sm:text-xl font-bold text-[#3D5234] leading-tight">Control de Inventario</h1>
-                        <p class="text-xs text-gray-400 mt-0.5">Gestión y monitoreo de productos · Los Cedros</p>
+                        <p class="text-xs text-gray-400 mt-0.5">Gestión y monitoreo de productos · <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?></p>
                     </div>
                 </div>
 

@@ -159,7 +159,7 @@
                         </div>
                         <h1 class="text-xl sm:text-2xl font-bold text-white">Gestión de Usuarios</h1>
                     </div>
-                    <p class="text-white/55 text-sm ml-14">Control de accesos y permisos del personal · Hotel Los Cedros</p>
+                    <p class="text-white/55 text-sm ml-14">Control de accesos y permisos del personal · <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?></p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3 ml-14 lg:ml-0">
                     <span class="gold-badge"><i class="fas fa-shield-alt text-xs"></i> Administración</span>

@@ -403,7 +403,7 @@ private function generarPdfReporte($movimientos, $productos, $fecha_desde, $fech
     $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8');
     
     // Configuración
-    $pdf->SetCreator('Los Cedros');
+    $pdf->SetCreator(current_hotel_display_name('Medisoft Hoteles'));
     $pdf->SetAuthor('Sistema de Inventario');
     $pdf->SetTitle('Reporte de Inventario');
     
@@ -420,7 +420,7 @@ private function generarPdfReporte($movimientos, $productos, $fecha_desde, $fech
     // Header del reporte con mejor diseño
     $pdf->SetFont('helvetica', 'B', 20);
     $pdf->SetTextColor(107, 68, 35); // Color marrón del hotel
-    $pdf->Cell(0, 12, 'Los Cedros', 0, 1, 'C');
+    $pdf->Cell(0, 12, current_hotel_display_name('Medisoft Hoteles'), 0, 1, 'C');
     
     $pdf->SetFont('helvetica', '', 14);
     $pdf->SetTextColor(80, 80, 80);
@@ -600,7 +600,7 @@ private function generarPdfReporte($movimientos, $productos, $fecha_desde, $fech
     $pdf->SetY(-20);
     $pdf->SetFont('helvetica', 'I', 8);
     $pdf->SetTextColor(150, 150, 150);
-    $pdf->Cell(0, 5, 'Los Cedros - Sistema de Gestión de Inventario', 0, 1, 'C');
+    $pdf->Cell(0, 5, current_hotel_display_name('Medisoft Hoteles') . ' - Sistema de Gestión de Inventario', 0, 1, 'C');
     $pdf->Cell(0, 5, 'Generado el ' . date('d/m/Y H:i:s') . ' por ' . ($_SESSION['usuario_nombre'] ?? 'Sistema'), 0, 1, 'C');
     
     // Salida del PDF

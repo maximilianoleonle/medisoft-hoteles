@@ -29,6 +29,7 @@ class ReporteCortePDF extends TCPDF {
     
     private $corteId = '';
     private $fechaCorta = '';
+    private $nombreHotel = 'Medisoft Hoteles';
     
     // =================================================================
     // HEADER
@@ -46,7 +47,7 @@ class ReporteCortePDF extends TCPDF {
         
         $this->SetFont('helvetica', '', 10);
         $this->SetTextColor(230, 230, 220);
-        $this->Cell(0, 5, $this->fechaCorta . '   —   Los Cedros   —   Corte #' . $this->corteId, 0, 1, 'C');
+        $this->Cell(0, 5, $this->fechaCorta . '   -   ' . $this->nombreHotel . '   -   Corte #' . $this->corteId, 0, 1, 'C');
         
         $this->SetY(30);
     }
@@ -58,7 +59,7 @@ class ReporteCortePDF extends TCPDF {
         $this->SetY(-12);
         $this->SetFont('helvetica', '', 7);
         $this->SetTextColor(160, 160, 160);
-        $this->Cell(95, 5, 'Los Cedros', 0, 0, 'L');
+        $this->Cell(95, 5, $this->nombreHotel, 0, 0, 'L');
         $this->Cell(95, 5, 'Pág. ' . $this->getAliasNumPage() . '/' . $this->getAliasNbPages(), 0, 0, 'R');
     }
     
@@ -114,6 +115,9 @@ class ReporteCortePDF extends TCPDF {
         
         $this->corteId = $corte['id'] ?? '0';
         $this->fechaCorta = date('d/m/Y', strtotime($corte['fecha_apertura'] ?? 'now'));
+        $this->nombreHotel = function_exists('current_hotel_display_name')
+            ? current_hotel_display_name('Medisoft Hoteles')
+            : 'Medisoft Hoteles';
         
         $fecha_apertura = date('d/m/Y H:i', strtotime($corte['fecha_apertura'] ?? 'now'));
         $fecha_cierre = date('d/m/Y H:i', strtotime($corte['fecha_cierre'] ?? 'now'));
@@ -127,7 +131,7 @@ class ReporteCortePDF extends TCPDF {
         $usuario_apertura = $corte['usuario_apertura'] ?? 'N/A';
         $usuario_cierre = $corte['usuario_cierre'] ?? $corte['usuario_apertura'] ?? 'N/A';
         
-        $this->SetCreator('Los Cedros');
+        $this->SetCreator($this->nombreHotel);
         $this->SetTitle('Corte de Caja #' . $this->corteId);
         $this->SetMargins(10, 32, 10);
         $this->SetAutoPageBreak(true, 16);

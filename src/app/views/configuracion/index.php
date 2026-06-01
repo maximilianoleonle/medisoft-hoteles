@@ -41,7 +41,7 @@
                     <h1 class="text-xl font-bold font-playfair flex items-center gap-2">
                         <i class="fas fa-cog text-lg opacity-80"></i>
                         Configuración del Sistema
-                        <span class="text-hotel-gold text-sm font-normal ml-2">Los Cedros</span>
+                        <span class="text-hotel-gold text-sm font-normal ml-2"><?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?></span>
                     </h1>
                 </div>
                 <div class="flex items-center gap-2">
@@ -156,7 +156,7 @@
                                     </span>
                                     <input type="text" 
                                            name="hotel_nombre" 
-                                           value="<?= $config['hotel']['nombre'] ?? 'Los Cedros' ?>"
+                                           value="<?= $config['hotel']['nombre'] ?? (function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles') ?>"
                                            class="form-input w-full pl-8 pr-3 py-1.5 rounded-md text-sm">
                                 </div>
                             </div>

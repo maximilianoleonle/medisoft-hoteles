@@ -378,7 +378,7 @@ $mensaje      = get_mensaje();
                             Facturación
                         </h1>
                         <p style="font-size:.72rem;color:rgba(255,255,255,.6);margin-top:1px;">
-                            Gestión de solicitudes de factura · Hotel Los Cedros
+                            Gestión de solicitudes de factura · <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?>
                         </p>
                     </div>
                 </div>

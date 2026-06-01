@@ -590,7 +590,7 @@ private function exportarIngresosGastosUsuarioPdf() {
     $html = '<table cellpadding="5">
         <tr>
             <td width="100%" style="text-align:center;">
-                <div style="font-size:10pt; font-weight:bold; color:#2C3E50; margin-bottom:8px;">Los Cedros - Sistema de Gestión</div>
+                <div style="font-size:10pt; font-weight:bold; color:#2C3E50; margin-bottom:8px;">' . htmlspecialchars(current_hotel_display_name('Medisoft Hoteles'), ENT_QUOTES, 'UTF-8') . ' - Sistema de Gestión</div>
                 <div style="font-size:9pt; color:#7F8C8D;">
                     Reporte generado el ' . date('d/m/Y') . ' a las ' . date('H:i') . ' hrs<br>
                     Por: ' . (function_exists('usuario_actual') ? usuario_actual('nombre_completo') : 'Sistema')  . '
@@ -1369,7 +1369,7 @@ private function exportarIngresosTotalesPdf() {
     $pdf->Cell(0, 10, 'REPORTE DE INGRESOS TOTALES', 0, 1, 'C');
     
     $pdf->SetFont('helvetica', '', 12);
-    $pdf->Cell(0, 6, 'Los Cedros', 0, 1, 'C');
+    $pdf->Cell(0, 6, current_hotel_display_name('Medisoft Hoteles'), 0, 1, 'C');
     $pdf->SetFont('helvetica', '', 10);
     $pdf->Cell(0, 5, date('d/m/Y', strtotime($fecha_inicio)) . ' - ' . date('d/m/Y', strtotime($fecha_fin)), 0, 1, 'C');
     
@@ -1617,7 +1617,7 @@ private function exportarIngresosTotalesPdf() {
     $html = '<table cellpadding="5">
         <tr>
             <td width="100%" style="text-align:center;">
-                <div style="font-size:10pt; font-weight:bold; color:#2C3E50; margin-bottom:8px;">Los Cedros - Sistema de Gestión</div>
+                <div style="font-size:10pt; font-weight:bold; color:#2C3E50; margin-bottom:8px;">' . htmlspecialchars(current_hotel_display_name('Medisoft Hoteles'), ENT_QUOTES, 'UTF-8') . ' - Sistema de Gestión</div>
                 <div style="font-size:9pt; color:#7F8C8D;">
                     Reporte generado el ' . date('d/m/Y') . ' a las ' . date('H:i') . ' hrs<br>
                     Por: ' . (function_exists('usuario_actual') ? usuario_actual('nombre_completo') : 'Sistema')  . '

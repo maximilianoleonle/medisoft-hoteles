@@ -11,6 +11,7 @@ class ReportePDF extends TCPDF {
     
     private $titulo_reporte;
     private $periodo;
+    private $nombre_hotel;
     
     /**
      * Constructor
@@ -20,9 +21,12 @@ class ReportePDF extends TCPDF {
         
         $this->titulo_reporte = $titulo;
         $this->periodo = $periodo;
+        $this->nombre_hotel = function_exists('current_hotel_display_name')
+            ? current_hotel_display_name('Medisoft Hoteles')
+            : 'Medisoft Hoteles';
         
         // Configuración del documento
-        $this->SetCreator('Los Cedros');
+        $this->SetCreator($this->nombre_hotel);
         $this->SetAuthor('Sistema de Gestión Hotelera');
         $this->SetTitle($titulo);
         
@@ -51,7 +55,7 @@ class ReportePDF extends TCPDF {
         // Título
         $this->SetFont('helvetica', 'B', 16);
         $this->SetX(50);
-        $this->Cell(0, 10, 'Los Cedros', 0, 1, 'L');
+        $this->Cell(0, 10, $this->nombre_hotel, 0, 1, 'L');
         
         $this->SetFont('helvetica', '', 12);
         $this->SetX(50);
