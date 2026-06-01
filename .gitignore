@@ -49,3 +49,6 @@ src/public_html/uploads/temp/
 
 # Migraciones SQL versionadas del proyecto
 !migrations/*.sql
+
+# Paquetes locales de despliegue
+dist/
