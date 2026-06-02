@@ -4551,27 +4551,10 @@ function confirmarCheckOutRespaldo(reservacionId) {
 // MODAL DE SELECCIÓN DE HABITACIONES
 // ========================================
 function mostrarModalCheckOutIndex(reservacionId, habitaciones) {
-    // ✅ DEBUG: Ver estructura de datos (eliminar después de debuggear)
-    console.log('=== DEBUG MODAL CHECKOUT ===');
-    console.log('Habitaciones recibidas:', habitaciones);
-    if (habitaciones.length > 0) {
-        console.log('Primera habitación estructura:', habitaciones[0]);
-        console.log('Propiedades de la primera habitación:', Object.keys(habitaciones[0]));
-    }
-    
     // ✅ CORRECCIÓN: Manejar TODOS los posibles formatos de ID
     let habitacionesHTML = habitaciones.map(hab => {
         // Intentar obtener el ID en este orden de prioridad:
         const habId = hab.reservacion_habitacion_id || hab.habitacion_id || hab.id || hab.rel_id;
-        
-        // DEBUG: Ver qué ID se está usando
-        console.log(`Habitación ${hab.numero || hab.habitacion_numero || 'N/A'}: ID seleccionado = ${habId}`, {
-            reservacion_habitacion_id: hab.reservacion_habitacion_id,
-            habitacion_id: hab.habitacion_id,
-            id: hab.id,
-            rel_id: hab.rel_id,
-            usado: habId
-        });
         
         // Si no hay ID, alertar
         if (!habId || habId === 'undefined') {
@@ -4640,13 +4623,8 @@ function mostrarModalCheckOutIndex(reservacionId, habitaciones) {
                 const valor = cb.value;
                 const numero = parseInt(valor, 10);
                 
-                // DEBUG
-                console.log(`Checkbox value="${valor}" -> parseInt=${numero} (isNaN: ${isNaN(numero)})`);
-                
                 return numero;
             }).filter(id => !isNaN(id) && id > 0); // Filtrar NaN y valores inválidos
-            
-            console.log('IDs seleccionados finales:', seleccionadas);
             
             if (seleccionadas.length === 0) {
                 Swal.showValidationMessage('Debes seleccionar al menos una habitación');
@@ -4657,7 +4635,6 @@ function mostrarModalCheckOutIndex(reservacionId, habitaciones) {
         }
     }).then((result) => {
         if (result.isConfirmed && result.value) {
-            console.log('Enviando check-out con IDs:', result.value);
             ejecutarCheckOutIndex(reservacionId, result.value);
         }
     });
@@ -4861,10 +4838,6 @@ function checkOutDirectoIndex(reservacionId, habitacionInfo) {
 
 // Ejecutar el check-out con las habitaciones seleccionadas
 function ejecutarCheckOutIndex(reservacionId, habitacionesIds) {
-    console.log('=== EJECUTAR CHECK-OUT ===');
-    console.log('Reservación ID:', reservacionId);
-    console.log('Habitaciones IDs:', habitacionesIds);
-    
     Swal.fire({
         title: 'Procesando Check-out...',
         html: 'Registrando salida del huésped',
@@ -4881,37 +4854,22 @@ function ejecutarCheckOutIndex(reservacionId, habitacionesIds) {
     
     // ✅ CORRECCIÓN: Agregar habitaciones de forma más robusta
     if (habitacionesIds && Array.isArray(habitacionesIds) && habitacionesIds.length > 0) {
-        console.log('Agregando habitaciones al FormData:', habitacionesIds);
         habitacionesIds.forEach((id, index) => {
-            console.log(`  habitaciones[${index}] = ${id}`);
             formData.append('habitaciones[]', id);
         });
-    } else {
-        console.log('No hay habitaciones específicas, check-out completo');
-    }
-    
-    // DEBUG: Ver todo lo que se está enviando
-    console.log('FormData contents:');
-    for (let pair of formData.entries()) {
-        console.log(`  ${pair[0]}: ${pair[1]}`);
     }
     
     // Usar el endpoint de check-out parcial
     const endpoint = `<?= url('reservaciones/check-out-parcial/') ?>${reservacionId}`;
-    console.log('Endpoint:', endpoint);
-    
+
     fetch(endpoint, {
         method: 'POST',
         body: formData,
         redirect: 'follow'
     })
     .then(response => {
-        console.log('Response status:', response.status);
-        console.log('Response headers:', response.headers);
-        
         // Siempre quedarse en la misma página (index)
         if (response.redirected) {
-            console.log('Respuesta es redirect, recargando index (sin seguir redirect)');
             window.location.reload();
             return null;
         }
@@ -4922,22 +4880,18 @@ function ejecutarCheckOutIndex(reservacionId, habitacionesIds) {
         
         // Intentar parsear como JSON
         const contentType = response.headers.get('content-type');
-        console.log('Content-Type:', contentType);
-        
+
         if (contentType && contentType.includes('application/json')) {
             return response.json();
         }
         
         // Si no es JSON, es un redirect exitoso o HTML
-        console.log('Respuesta no es JSON, recargando página');
         window.location.reload();
         return null;
     })
     .then(data => {
         if (!data) return; // Ya manejado (redirect)
-        
-        console.log('Respuesta JSON:', data);
-        
+
         if (data.success) {
             let htmlContent = `
                 <div class="text-left mx-auto" style="max-width: 500px;">
@@ -5283,19 +5237,12 @@ function actualizarContadorLimpieza() {
  */
 /**
  * Marcar habitaciones seleccionadas como limpias
- * VERSIÓN CON LOGS PARA DEBUG
  */
 function marcarHabitacionesLimpias() {
-    console.log('=== INICIO marcarHabitacionesLimpias ===');
-    
     const checkboxes = document.querySelectorAll('.checkbox-limpieza:checked');
     const habitacionesIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
-    
-    console.log('Checkboxes seleccionados:', checkboxes.length);
-    console.log('IDs de habitaciones:', habitacionesIds);
-    
+
     if (habitacionesIds.length === 0) {
-        console.warn('No hay habitaciones seleccionadas');
         Swal.fire({
             icon: 'warning',
             title: 'Selecciona habitaciones',
@@ -5323,35 +5270,18 @@ function marcarHabitacionesLimpias() {
         formData.append('habitaciones_ids[]', id);
     });
     
-    // Log del FormData
-    console.log('FormData preparado:');
-    for (let pair of formData.entries()) {
-        console.log(`  ${pair[0]}: ${pair[1]}`);
-    }
-    
     const url = '<?= url('habitaciones/liberar-multiples') ?>';
-    console.log('URL del endpoint:', url);
-    
+
     fetch(url, {
         method: 'POST',
         body: formData
     })
     .then(response => {
-        console.log('Response status:', response.status);
-        console.log('Response headers:', response.headers);
-        console.log('Response ok:', response.ok);
-        console.log('Response content-type:', response.headers.get('content-type'));
-        
         // Obtener el texto completo de la respuesta
         return response.text().then(text => {
-            console.log('Response raw text:', text);
-            console.log('Response text length:', text.length);
-            console.log('First 500 chars:', text.substring(0, 500));
-            
             // Intentar parsear como JSON
             try {
                 const data = JSON.parse(text);
-                console.log('Response parsed as JSON:', data);
                 return { ok: response.ok, status: response.status, data: data };
             } catch (e) {
                 console.error('ERROR: No se pudo parsear como JSON:', e);
@@ -5361,10 +5291,7 @@ function marcarHabitacionesLimpias() {
         });
     })
     .then(result => {
-        console.log('Resultado final:', result);
-        
         if (result.data.success) {
-            console.log('Operación exitosa');
             Swal.fire({
                 icon: 'success',
                 title: '¡Habitaciones Listas!',
@@ -5388,7 +5315,6 @@ function marcarHabitacionesLimpias() {
                 confirmButtonText: 'Entendido',
                 timer: 3000
             }).then(() => {
-                console.log('Recargando página...');
                 location.reload();
             });
             
@@ -5407,8 +5333,6 @@ function marcarHabitacionesLimpias() {
             confirmButtonColor: '#EF4444'
         });
     });
-    
-    console.log('=== FIN marcarHabitacionesLimpias ===');
 }
 <?php 
 $hayLimpieza = false;

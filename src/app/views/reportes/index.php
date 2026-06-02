@@ -179,57 +179,6 @@
 
     <div class="container mx-auto px-5 sm:px-7 py-6 max-w-7xl">
 
-        <!-- Stat Widgets -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-
-            <div class="rep-stat" style="--accent:#5C7A4E">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="rep-stat-icon" style="background:rgba(92,122,78,.1);color:#5C7A4E;">
-                        <i class="fas fa-file-alt"></i>
-                    </div>
-                    <span class="text-2xl font-bold text-[#3D5234]">24</span>
-                </div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Reportes Hoy</p>
-                <div class="flex items-center gap-2 mt-2">
-                    <span class="text-xs font-bold text-emerald-600"><i class="fas fa-arrow-up text-xs mr-1"></i>15%</span>
-                    <span class="text-xs text-gray-400">vs. ayer</span>
-                </div>
-            </div>
-
-            <div class="rep-stat" style="--accent:#10b981">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="rep-stat-icon" style="background:rgba(16,185,129,.1);color:#059669;">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <span class="text-sm font-semibold text-gray-500 bg-emerald-50 px-2 py-0.5 rounded-full">Hace 2h</span>
-                </div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Último Análisis</p>
-                <p class="text-sm font-semibold text-gray-700 mt-1">Reporte de Ocupación</p>
-            </div>
-
-            <div class="rep-stat" style="--accent:#8b5cf6">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="rep-stat-icon" style="background:rgba(139,92,246,.1);color:#7C3AED;">
-                        <i class="fas fa-calendar-check"></i>
-                    </div>
-                    <span class="text-2xl font-bold text-violet-700">5</span>
-                </div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Programados</p>
-                <p class="text-xs text-gray-400 mt-1">Próximo: Mañana 8:00 AM</p>
-            </div>
-
-            <div class="rep-stat" style="--accent:#C8A96A">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="rep-stat-icon" style="background:rgba(200,169,106,.12);color:#B8994A;">
-                        <i class="fas fa-chart-pie"></i>
-                    </div>
-                    <span class="text-2xl font-bold" style="color:#B8994A;">85%</span>
-                </div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Ocupación</p>
-                <p class="text-xs text-gray-400 mt-1">Promedio mensual</p>
-            </div>
-        </div>
-
         <!-- Section title -->
         <div class="flex items-center gap-3 mb-5">
             <div style="width:4px;height:22px;background:linear-gradient(180deg,var(--lc-green),var(--lc-gold));border-radius:2px;"></div>

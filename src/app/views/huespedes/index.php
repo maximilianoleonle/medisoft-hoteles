@@ -14,7 +14,7 @@
     </div>
     
     <!-- Estadísticas rápidas -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div class="bg-white rounded-lg shadow p-4">
             <div class="flex items-center justify-between">
                 <div>
@@ -194,10 +194,10 @@
 </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             <?php if ($huesped['total_reservaciones'] > 0): ?>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $huesped['total_reservaciones'] >= 3 ? 'bg-gold-100 text-gold-800' : 'bg-gray-100 text-gray-800' ?>">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $huesped['total_reservaciones'] >= 3 ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800' ?>">
                                     <?= $huesped['total_reservaciones'] ?>
                                     <?php if ($huesped['total_reservaciones'] >= 3): ?>
-                                        <i class="fas fa-star ml-1 text-gold-600"></i>
+                                        <i class="fas fa-star ml-1 text-amber-500"></i>
                                     <?php endif; ?>
                                 </span>
                             <?php else: ?>

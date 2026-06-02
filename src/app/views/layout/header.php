@@ -546,6 +546,11 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
             .scroll-progress {
                 display: none !important;
             }
+            /* Header desktop sin contenido: se oculta para no mostrar una barra blanca vacía.
+               El page-header con título y acciones se integrará en la microfase 10.4. */
+            header.bg-white {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -655,8 +660,7 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
     <script>
         // Ejecutar cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Iniciando script de auto-hide del header');
-            
+
             // Variables para auto-hide
             let lastScrollTop = 0;
             let ticking = false;
@@ -665,8 +669,7 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
             
             // Verificar que el header existe
             if (mobileHeader) {
-                console.log('Header movil encontrado');
-                
+
                 // Función para manejar el scroll
                 function handleScroll() {
                     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
@@ -685,12 +688,10 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
                             // Scrolling hacia abajo - ocultar y pantalla completa
                             mobileHeader.classList.add('hidden');
                             document.body.classList.add('header-hidden');
-                            console.log('Ocultando header - Pantalla completa activada');
                         } else if (scrollTop < lastScrollTop) {
                             // Scrolling hacia arriba - mostrar
                             mobileHeader.classList.remove('hidden');
                             document.body.classList.remove('header-hidden');
-                            console.log('Mostrando header - Pantalla normal');
                         }
                         
                         // Si estamos en el top, siempre mostrar
@@ -720,18 +721,11 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
                     if (mobileHeader.classList.contains('hidden')) {
                         mobileHeader.classList.remove('hidden');
                         document.body.classList.remove('header-hidden');
-                        console.log('Header mostrado - Pantalla normal');
                     } else {
                         mobileHeader.classList.add('hidden');
                         document.body.classList.add('header-hidden');
-                        console.log('Header oculto - Pantalla completa');
                     }
                 };
-                
-                console.log('TIP: Escribe toggleHeader() en la consola para probar el auto-hide con pantalla completa');
-                
-            } else {
-                console.error('Header móvil no encontrado');
             }
             
             // Asegurar que el header sea visible al cargar
@@ -748,7 +742,6 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
         setTimeout(function() {
             const loadingScreen = document.getElementById('loadingScreen');
             if (loadingScreen && loadingScreen.style.display !== 'none') {
-                console.log('Ocultando pantalla de carga por timeout');
                 loadingScreen.style.display = 'none';
                 document.body.classList.remove('loading');
             }

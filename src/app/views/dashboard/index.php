@@ -13,14 +13,6 @@ $proximas_llegadas = $proximas_llegadas ?? [];
 $proximas_salidas = $proximas_salidas ?? [];
 $graficos = $graficos ?? [];
 
-// Debug temporal
-echo "<!-- DEBUG EGRESOS: ";
-echo "Total: " . ($stats['egresos']['total_dia'] ?? 'NO DEFINIDO') . " | ";
-echo "Efectivo: " . ($stats['egresos']['efectivo_dia'] ?? 'NO DEFINIDO') . " | ";
-echo "Tarjeta: " . ($stats['egresos']['tarjeta_dia'] ?? 'NO DEFINIDO') . " | ";
-echo "Transfer: " . ($stats['egresos']['transferencia_dia'] ?? 'NO DEFINIDO');
-echo " -->";
-
 // Obtener estadísticas de estacionamiento - Solo coches
 function get_vehiculos_activos_hoy() {
     try {
@@ -94,15 +86,12 @@ function get_lista_vehiculos_estacionamiento() {
         ";
         $stmt = $db->query($sql, [$hotel_id]);
         if (!$stmt) {
-            error_log('DEBUG VEHICULOS: query() devolvió false');
             return [];
         }
         $rows = $stmt->fetchAll() ?: [];
-        error_log('DEBUG VEHICULOS: filas obtenidas = ' . count($rows));
         return $rows;
     } catch (Exception $e) {
         error_log('ERROR lista vehiculos estacionamiento: ' . $e->getMessage());
-        echo "<!-- ERROR_VEHICULOS: " . htmlspecialchars($e->getMessage()) . " -->";
         return [];
     }
 }
