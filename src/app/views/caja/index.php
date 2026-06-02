@@ -8,22 +8,24 @@
 <!-- Estilos elegantes Los Cedros -->
 <style>
     :root {
-        --lc-green: #5C7A4E;
-        --lc-green-dark: #4A6340;
-        --lc-green-deeper: #3D5234;
-        --lc-green-light: #7A9B6A;
-        --lc-gold: #C8A96A;
-        --lc-gold-light: #D9BF8A;
-        --lc-cream: #F7F4EE;
-        --lc-cream-dark: #EEE9DE;
+        --lc-green: var(--brand-primary, #2563EB);
+        --lc-green-dark: color-mix(in srgb, var(--lc-green), #000 22%);
+        --lc-green-deeper: color-mix(in srgb, var(--lc-green), #000 42%);
+        --lc-green-light: color-mix(in srgb, var(--lc-green), #fff 24%);
+        --lc-gold: var(--brand-accent, var(--lc-green));
+        --lc-gold-light: color-mix(in srgb, var(--lc-gold), #fff 24%);
+        --lc-cream: color-mix(in srgb, var(--lc-green) 5%, #F8FAFC);
+        --lc-cream-dark: color-mix(in srgb, var(--lc-green) 8%, #EEF2F7);
+        --lc-border: color-mix(in srgb, var(--lc-green) 16%, #E5E7EB);
     }
 
-    .lc-bg { background: linear-gradient(135deg, #F0F4ED 0%, #E8F0E3 50%, #F5F2EC 100%); }
+    .lc-bg { background: linear-gradient(135deg, var(--lc-cream) 0%, #F8FAFC 52%, var(--lc-cream-dark) 100%); }
 
     /* Header card elegante */
     .header-card {
-        background: linear-gradient(135deg, #fff 0%, #FAFDF8 100%);
-        border-left: 4px solid var(--lc-gold);
+        background: linear-gradient(135deg, var(--lc-green-deeper) 0%, var(--lc-green-dark) 48%, var(--lc-green) 100%);
+        border: 1px solid color-mix(in srgb, var(--lc-green) 24%, #fff);
+        color: white;
         position: relative;
         overflow: hidden;
     }
@@ -33,9 +35,19 @@
         top: -30px; right: -30px;
         width: 160px; height: 160px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(92,122,78,0.06) 0%, transparent 70%);
+        background: radial-gradient(circle, rgba(255,255,255,0.16) 0%, transparent 70%);
         pointer-events: none;
     }
+    .cash-header-icon {
+        background: rgba(255,255,255,0.16);
+        color: white;
+    }
+    .cash-meta-pill {
+        background: rgba(255,255,255,0.14);
+        color: rgba(255,255,255,0.82);
+        border: 1px solid rgba(255,255,255,0.16);
+    }
+    .cash-meta-pill i { color: rgba(255,255,255,0.9) !important; }
 
     /* Stat cards con hover elegante */
     .stat-card {
@@ -53,7 +65,7 @@
         opacity: 0;
         transition: opacity 0.25s ease;
     }
-    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(92,122,78,0.12); }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px color-mix(in srgb, var(--lc-green) 12%, transparent); }
     .stat-card:hover::after { opacity: 1; }
     .stat-card.card-inicial::after { background: var(--lc-green-light); }
     .stat-card.card-ingresos::after { background: #10b981; }
@@ -67,7 +79,7 @@
         font-size: 20px;
         flex-shrink: 0;
     }
-    .icon-circle.green-ic { background: rgba(92,122,78,0.12); color: var(--lc-green); }
+    .icon-circle.green-ic { background: color-mix(in srgb, var(--lc-green) 12%, transparent); color: var(--lc-green); }
     .icon-circle.emerald-ic { background: rgba(16,185,129,0.12); color: #059669; }
     .icon-circle.red-ic { background: rgba(239,68,68,0.12); color: #dc2626; }
 
@@ -124,7 +136,7 @@
         display: flex; align-items: center; justify-content: space-between;
         padding: 10px 14px;
         border-radius: 10px;
-        background: #FAFDF8;
+        background: #fff;
         border: 1px solid #EBF3E7;
         transition: background 0.15s ease, border-color 0.15s ease;
     }
@@ -136,7 +148,7 @@
         border-bottom: 1px solid #F0F0EE;
         transition: background 0.15s ease;
     }
-    .mov-item:hover { background: #FAFDF8; }
+    .mov-item:hover { background: var(--lc-cream); }
     .mov-item:last-child { border-bottom: none; }
 
     /* Badge tipos */
@@ -165,20 +177,20 @@
     .btn-gasto:hover { box-shadow: 0 6px 18px rgba(239,68,68,0.3); transform: translateY(-1px); }
 
     .btn-corte {
-        background: linear-gradient(135deg, var(--lc-gold), #B8994A);
-        color: #3D5234; border-radius: 10px; padding: 9px 18px;
+        background: #fff;
+        color: var(--lc-green-deeper); border-radius: 10px; padding: 9px 18px;
         font-weight: 700; font-size: 0.875rem;
         display: inline-flex; align-items: center; gap: 8px;
         transition: box-shadow 0.2s ease, transform 0.2s ease;
         text-decoration: none;
     }
-    .btn-corte:hover { box-shadow: 0 6px 18px rgba(200,169,106,0.35); transform: translateY(-1px); }
+    .btn-corte:hover { box-shadow: 0 6px 18px rgba(15,23,42,0.18); transform: translateY(-1px); }
 
     /* Balance general bar */
     .balance-bar {
-        background: linear-gradient(135deg, #FAFDF8, #F0F4ED);
+        background: linear-gradient(135deg, #fff, var(--lc-cream));
         border-radius: 12px;
-        border: 1px solid #DDE8D5;
+        border: 1px solid var(--lc-border);
         padding: 18px 22px;
     }
 
@@ -187,16 +199,16 @@
         display: flex; align-items: center; gap: 14px;
         padding: 16px 18px;
         border-radius: 12px;
-        background: #FAFDF8;
-        border: 1.5px solid #EAF0E6;
+        background: #fff;
+        border: 1.5px solid var(--lc-border);
         transition: all 0.2s ease;
         text-decoration: none;
     }
     .quick-link:hover {
-        background: #F0F7EC;
-        border-color: #C0D8B6;
+        background: var(--lc-cream);
+        border-color: color-mix(in srgb, var(--lc-green) 28%, #fff);
         transform: translateY(-2px);
-        box-shadow: 0 6px 18px rgba(92,122,78,0.1);
+        box-shadow: 0 6px 18px color-mix(in srgb, var(--lc-green) 10%, transparent);
     }
     .quick-link-icon {
         width: 42px; height: 42px;
@@ -220,7 +232,7 @@
     .modal-input:focus {
         outline: none;
         border-color: var(--lc-green);
-        box-shadow: 0 0 0 3px rgba(92,122,78,0.12);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--lc-green) 14%, transparent);
         background: #fff;
     }
     .modal-input-red:focus {
@@ -231,7 +243,7 @@
         display: block;
         font-size: 0.8rem;
         font-weight: 600;
-        color: #4A6340;
+        color: var(--lc-green-dark);
         margin-bottom: 5px;
         letter-spacing: 0.01em;
     }
@@ -239,8 +251,8 @@
 
     /* Scrollbar elegante */
     .custom-scroll::-webkit-scrollbar { width: 5px; }
-    .custom-scroll::-webkit-scrollbar-track { background: #F0F4ED; border-radius: 10px; }
-    .custom-scroll::-webkit-scrollbar-thumb { background: #A8C4A0; border-radius: 10px; }
+    .custom-scroll::-webkit-scrollbar-track { background: var(--lc-cream); border-radius: 10px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--lc-green), #fff 42%); border-radius: 10px; }
     .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--lc-green); }
 </style>
 
@@ -252,24 +264,24 @@
             <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                 <div>
                     <div class="flex items-center gap-3 mb-2">
-                        <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:rgba(92,122,78,0.12)">
-                            <i class="fas fa-cash-register text-[#5C7A4E]"></i>
+                        <div class="cash-header-icon w-9 h-9 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-cash-register"></i>
                         </div>
-                        <h1 class="text-2xl md:text-3xl font-bold text-[#3D5234] font-playfair tracking-tight">
+                        <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
                             Sistema de Caja
                         </h1>
                     </div>
-                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 ml-12">
-                        <span class="flex items-center gap-1.5 bg-[#F0F4ED] px-2.5 py-1 rounded-full">
-                            <i class="fas fa-store text-[#5C7A4E] text-xs"></i>
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ml-12">
+                        <span class="cash-meta-pill flex items-center gap-1.5 px-2.5 py-1 rounded-full">
+                            <i class="fas fa-store text-xs"></i>
                             <?= htmlspecialchars($caja['nombre'] ?? '') ?>
                         </span>
-                        <span class="flex items-center gap-1.5 bg-[#F0F4ED] px-2.5 py-1 rounded-full">
-                            <i class="fas fa-user text-[#5C7A4E] text-xs"></i>
+                        <span class="cash-meta-pill flex items-center gap-1.5 px-2.5 py-1 rounded-full">
+                            <i class="fas fa-user text-xs"></i>
                             <?= htmlspecialchars($corte['usuario_apertura'] ?? '') ?>
                         </span>
-                        <span class="flex items-center gap-1.5 bg-[#F0F4ED] px-2.5 py-1 rounded-full">
-                            <i class="fas fa-clock text-[#5C7A4E] text-xs"></i>
+                        <span class="cash-meta-pill flex items-center gap-1.5 px-2.5 py-1 rounded-full">
+                            <i class="fas fa-clock text-xs"></i>
                             Abierta: <?= date('d/m/Y H:i', strtotime($corte['fecha_apertura'])) ?>
                         </span>
                     </div>
@@ -306,7 +318,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Monto Inicial</p>
-                        <p class="text-2xl font-bold text-[#3D5234]">
+                        <p class="text-2xl font-bold" style="color:var(--lc-green-deeper);">
                             $<?= number_format($resumen['monto_inicial'], 2) ?>
                         </p>
                     </div>
@@ -367,9 +379,9 @@
         
         <!-- Segunda fila - Desglose por Método de Pago -->
         <div class="bg-white rounded-xl shadow-sm p-5 border border-[#E5EDE0]">
-            <h3 class="text-sm font-bold text-[#3D5234] mb-4 flex items-center gap-2">
+            <h3 class="text-sm font-bold mb-4 flex items-center gap-2" style="color:var(--lc-green-deeper);">
                 <div class="w-7 h-7 rounded-lg bg-[#EEF4EB] flex items-center justify-center">
-                    <i class="fas fa-credit-card text-[#5C7A4E] text-xs"></i>
+                    <i class="fas fa-credit-card text-xs" style="color:var(--lc-green);"></i>
                 </div>
                 Resumen por Método de Pago
             </h3>
@@ -503,7 +515,7 @@
             <div class="mt-4">
                 <div class="balance-bar flex items-center justify-between flex-wrap gap-3">
                     <div>
-                        <h4 class="font-bold text-[#3D5234] text-sm">Balance General</h4>
+                        <h4 class="font-bold text-sm" style="color:var(--lc-green-deeper);">Balance General</h4>
                         <p class="text-xs text-gray-400 mt-0.5">Todos los métodos de pago</p>
                     </div>
                     <div class="text-right">
@@ -666,7 +678,7 @@
                 </div>
                 <?php if ($mov['reservacion_id']): ?>
                     <div class="mt-1.5 text-xs">
-                        <span class="text-[#5C7A4E] font-medium flex items-center gap-1">
+                        <span class="font-medium flex items-center gap-1" style="color:var(--lc-green);">
                             <i class="fas fa-bed text-[10px]"></i>
                             Reserva #<?= $mov['reservacion_id'] ?>
                         </span>
@@ -698,9 +710,9 @@
     <!-- Enlaces Rápidos -->
     <div class="max-w-7xl mx-auto mt-5">
         <div class="bg-white rounded-xl shadow-sm p-5 border border-[#E5EDE0]">
-            <h3 class="text-sm font-bold text-[#3D5234] mb-4 flex items-center gap-2">
+            <h3 class="text-sm font-bold mb-4 flex items-center gap-2" style="color:var(--lc-green-deeper);">
                 <div class="w-7 h-7 rounded-lg bg-[#EEF4EB] flex items-center justify-center">
-                    <i class="fas fa-link text-[#5C7A4E] text-xs"></i>
+                    <i class="fas fa-link text-xs" style="color:var(--lc-green);"></i>
                 </div>
                 Accesos Rápidos
             </h3>
@@ -724,8 +736,8 @@
                     </div>
                 </a>
                 <a href="<?= url('caja/reporte-metodos') ?>" class="quick-link">
-                    <div class="quick-link-icon" style="background: rgba(92,122,78,0.1);">
-                        <i class="fas fa-credit-card text-[#5C7A4E]"></i>
+                    <div class="quick-link-icon" style="background: color-mix(in srgb,var(--lc-green) 10%,transparent);">
+                        <i class="fas fa-credit-card" style="color:var(--lc-green);"></i>
                     </div>
                     <div>
                         <p class="font-semibold text-gray-800 text-sm">Métodos de Pago</p>
@@ -734,8 +746,8 @@
                 </a>
                 <?php if (user_role() == 'gerente'): ?>
                     <a href="<?= url('caja/categorias') ?>" class="quick-link">
-                        <div class="quick-link-icon" style="background: rgba(200,169,106,0.15);">
-                            <i class="fas fa-tags text-[#C8A96A]"></i>
+                        <div class="quick-link-icon" style="background: color-mix(in srgb,var(--lc-gold) 15%,transparent);">
+                            <i class="fas fa-tags" style="color:var(--lc-gold);"></i>
                         </div>
                         <div>
                             <p class="font-semibold text-gray-800 text-sm">Categorías</p>
