@@ -154,12 +154,15 @@ $vehiculos_por_habitacion = get_vehiculos_por_habitacion();
 ?>
 
 <style>
+/* Paleta del dashboard derivada de la marca del hotel (white-label).
+   Si el hotel no define marca, cae al olivo por defecto (#9CA777),
+   manteniendo el look original. */
 :root {
-    --sage: #9CA777;
-    --sage-dark: #7A8B5C;
-    --sage-light: #C5D4A4;
-    --sage-bg: #F4F7EF;
-    --sage-border: #D4DFC4;
+    --sage: var(--brand-primary, #9CA777);
+    --sage-dark: var(--brand-secondary, #7A8B5C);
+    --sage-light: color-mix(in srgb, var(--brand-primary, #9CA777) 45%, #ffffff);
+    --sage-bg: color-mix(in srgb, var(--brand-primary, #9CA777) 8%, #ffffff);
+    --sage-border: color-mix(in srgb, var(--brand-primary, #9CA777) 28%, #ffffff);
 }
 
 .dashboard-sn {
@@ -388,7 +391,7 @@ $vehiculos_por_habitacion = get_vehiculos_por_habitacion();
 
 .parking-bar-bg {
     height: 10px;
-    background: rgba(122, 139, 92, 0.2);
+    background: color-mix(in srgb, var(--sage) 22%, transparent);
     border-radius: 5px;
     overflow: hidden;
 }
@@ -1197,9 +1200,9 @@ body { overflow-x: hidden; }
                             <?= format_money($caja_info['monto_inicial']) ?>
                         </p>
                     </div>
-                    <div class="caja-item" style="background: var(--sage-bg); border: 2px solid var(--sage-border);">
+                    <div class="caja-item" style="background: #ECFDF5; border: 2px solid #A7F3D0;">
                         <p style="font-size: 0.6875rem; color: #6B7280; margin: 0 0 0.25rem; font-weight: 600;">Ingresos</p>
-                        <p style="font-size: 1rem; font-weight: 700; color: var(--sage-dark); margin: 0;">
+                        <p style="font-size: 1rem; font-weight: 700; color: #059669; margin: 0;">
                             +<?= format_money($caja_info['total_ingresos']) ?>
                         </p>
                     </div>
@@ -1228,7 +1231,12 @@ body { overflow-x: hidden; }
 document.addEventListener('DOMContentLoaded', function() {
     Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
     Chart.defaults.font.size = window.innerWidth < 640 ? 10 : 12;
-    
+
+    // Color de marca del hotel (white-label) para las gráficas; fallback olivo
+    const dashRoot = getComputedStyle(document.documentElement);
+    const brandPrimary = (dashRoot.getPropertyValue('--brand-primary') || '#9CA777').trim() || '#9CA777';
+    const brandSecondary = (dashRoot.getPropertyValue('--brand-secondary') || '#7A8B5C').trim() || '#7A8B5C';
+
     // Gráfica de Ocupación Semanal
     const ctxOcupacion = document.getElementById('chartOcupacion').getContext('2d');
     const dataOcupacion = <?= json_encode($graficos['ocupacion_semanal'] ?? []) ?>;
@@ -1241,8 +1249,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 {
                     label: 'Ocupadas',
                     data: dataOcupacion.map(d => d.ocupadas),
-                    backgroundColor: 'rgba(156, 167, 119, 0.85)',
-                    borderColor: '#7A8B5C',
+                    backgroundColor: brandPrimary,
+                    borderColor: brandSecondary,
                     borderWidth: 1,
                     borderRadius: 4
                 },
