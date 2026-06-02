@@ -1569,7 +1569,7 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
 
 .estado-disponible .estado-icon { background: #059669; color: white; }
 .estado-por_llegar .estado-icon { background: #9333ea; color: white; }
-.estado-ocupada .estado-icon { background: #dc2626; color: white; }
+.estado-ocupada .estado-icon { background: #475569; color: white; }
 .estado-mantenimiento .estado-icon { background: #d97706; color: white; }
 .estado-limpieza .estado-icon { background: #2563eb; color: white; }
 .estado-doble .estado-icon { 
@@ -2167,13 +2167,62 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+<style>
+/* Fase habitaciones: acciones brand-aware y ocupacion separada de alertas criticas. */
+.habitaciones-view{
+    --hotel-brand-primary: var(--brand-primary,#2563EB);
+    --hotel-brand-secondary: var(--brand-secondary,#0F172A);
+    --state-occupied:#475569;
+    --state-occupied-dark:#334155;
+    --state-occupied-soft:#E2E8F0;
+}
+.btn-brand{background:var(--hotel-brand-primary)!important;color:#fff!important;border:1px solid transparent!important;box-shadow:0 10px 24px color-mix(in srgb,var(--hotel-brand-primary) 24%,transparent)!important;}
+.btn-brand:hover{filter:brightness(0.94);transform:translateY(-1px)!important;}
+.btn-brand-outline{background:#fff!important;color:var(--hotel-brand-primary)!important;border:1px solid color-mix(in srgb,var(--hotel-brand-primary) 35%,#fff)!important;}
+.btn-brand-outline:hover{background:color-mix(in srgb,var(--hotel-brand-primary) 8%,#fff)!important;}
+.brand-hover-card:hover{border-color:var(--hotel-brand-primary)!important;background:var(--hotel-brand-primary)!important;color:#fff!important;}
+.brand-text{color:var(--hotel-brand-primary)!important;}
+.brand-focus:focus,
+.filter-input:focus,
+.filter-select:focus,
+.filter-date:focus{
+    border-color:var(--hotel-brand-primary)!important;
+    box-shadow:0 0 0 2px color-mix(in srgb,var(--hotel-brand-primary) 28%,transparent)!important;
+    outline:none!important;
+}
+.filter-btn-primary{
+    background:linear-gradient(135deg,var(--hotel-brand-primary),var(--hotel-brand-secondary))!important;
+    color:#fff!important;
+    box-shadow:0 6px 14px color-mix(in srgb,var(--hotel-brand-primary) 20%,transparent)!important;
+}
+.filter-btn-primary:hover{filter:brightness(0.96);box-shadow:0 8px 18px color-mix(in srgb,var(--hotel-brand-primary) 28%,transparent)!important;}
+.filter-btn-today{color:var(--hotel-brand-primary)!important;border-color:color-mix(in srgb,var(--hotel-brand-primary) 28%,#fff)!important;}
+.filter-btn-today:hover{background:color-mix(in srgb,var(--hotel-brand-primary) 8%,#fff)!important;}
+.estado-ocupada,
+.estado-ocupada_fecha{
+    background-image:
+        linear-gradient(145deg,#F1F5F9 0%,#E2E8F0 50%,#CBD5E1 100%),
+        radial-gradient(circle, rgba(71,85,105,0.05) 1px, transparent 1px) !important;
+    background-size: auto, 12px 12px !important;
+    border-left-color:var(--state-occupied) !important;
+    box-shadow:0 2px 4px rgba(71,85,105,0.12) !important;
+}
+.estado-ocupada.flip-card-front::before,
+.estado-ocupada_fecha.flip-card-front::before{background:var(--state-occupied) !important;}
+.estado-ocupada.flip-card-front::after,
+.estado-ocupada_fecha.flip-card-front::after{background:linear-gradient(90deg,var(--state-occupied-dark),#64748B) !important;}
+.estado-ocupada .estado-icon,
+.estado-ocupada_fecha .estado-icon{background:var(--state-occupied) !important;color:#fff!important;}
+.estado-ocupada .estado-icon::after,
+.estado-ocupada_fecha .estado-icon::after{box-shadow:0 0 8px var(--state-occupied) !important;}
+</style>
 <div class="habitaciones-view">
     <!-- Header Moderno y Compacto -->
     <div class="modern-header" id="mainHeader">
         <div class="container mx-auto px-4 py-3">
             <div class="flex flex-col lg:flex-row justify-between items-center gap-3">
                 <div class="flex items-center gap-4">
-                    <div class="bg-gradient-to-br from-[#6B4423] to-[#8B5A2B] p-2 rounded-lg shadow-sm">
+                    <div class="p-2 rounded-lg shadow-sm" style="background: linear-gradient(135deg, var(--brand-primary, #2563EB), var(--brand-secondary, #0F172A));">
                         <i class="fas fa-bed text-white text-lg"></i>
                     </div>
                     <div>
@@ -2200,14 +2249,14 @@ document.addEventListener('DOMContentLoaded', function() {
     </button>
     <?php endif; ?>
     
-    <a href="<?= url('reservaciones/crear') ?>" 
-       class="btn-modern bg-emerald-500 text-white hover:bg-emerald-600">
+    <a href="<?= url('reservaciones/crear') ?>"
+       class="btn-modern btn-brand">
         <i class="fas fa-plus-circle text-sm"></i>
         <span>Nueva Reserva</span>
     </a>
     <?php if (can('habitaciones.create')): ?>
-    <a href="<?= url('habitaciones/create') ?>" 
-       class="btn-modern bg-gradient-to-r from-[#6B4423] to-[#8B5A2B] text-white hover:from-[#8B5A2B] hover:to-[#6B4423]">
+    <a href="<?= url('habitaciones/create') ?>"
+       class="btn-modern btn-brand-outline">
         <span class="hidden sm:inline">Nueva</span>
         <span>Habitación</span>
     </a>
@@ -3032,14 +3081,20 @@ if ($tiene_doble_movimiento) {
                     'disponible'       => '#4A6741',
                     'disponible_fecha' => '#4A6741',
                     'por_llegar'       => '#7C3AED',
-                    'ocupada'          => '#C94444',
-                    'ocupada_fecha'    => '#C94444',
+                    'ocupada'          => '#475569',
+                    'ocupada_fecha'    => '#475569',
                     'mantenimiento'    => '#B07A52',
                     'limpieza'         => '#3366B8',
                     'doble'            => '#7C3AED',
                     'limpieza-por-llegar' => '#3366B8',
                 ];
-                $accentColor = $color_hab ?: ($stateAccentColors[$estado_actual] ?? '#4A6741');
+                if ($es_checkin_vencido) {
+                    $accentColor = '#dc2626';
+                } elseif ($tiene_checkout_vencido) {
+                    $accentColor = '#ea580c';
+                } else {
+                    $accentColor = $color_hab ?: ($stateAccentColors[$estado_actual] ?? '#4A6741');
+                }
                 // Darker shade inline (no function to avoid redeclaration in loop)
                 $hexClean = ltrim($accentColor, '#');
                 $darkerAccent = sprintf('#%02x%02x%02x',
@@ -3507,7 +3562,7 @@ if ($tiene_doble_movimiento) {
                     <h3 class="text-lg font-bold text-gray-700 mb-2">No se encontraron habitaciones</h3>
                     <p class="text-gray-500 mb-4 text-sm">Ajusta los filtros de búsqueda o verifica los criterios.</p>
                     <a href="<?= url('habitaciones') ?>" 
-                       class="btn-modern bg-[#6B4423] text-white hover:bg-[#5A3A1E] mx-auto">
+                       class="btn-modern btn-brand mx-auto">
                         <i class="fas fa-redo"></i>
                         Mostrar todas
                     </a>
@@ -3522,7 +3577,7 @@ if ($tiene_doble_movimiento) {
 <!-- Modal de Vista Rápida -->
 <div id="vistaRapidaModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
-        <div class="bg-gradient-to-r from-[#6B4423] to-[#8B5A2B] text-white p-3 flex justify-between items-center">
+        <div class="text-white p-3 flex justify-between items-center" style="background: linear-gradient(135deg, var(--brand-primary,#2563EB), var(--brand-secondary,#0F172A));">
             <h3 class="text-lg font-bold">Vista Rápida</h3>
             <button onclick="cerrarVistaRapida()" class="text-white hover:text-gray-200 transition-colors p-1">
                 <i class="fas fa-times text-lg"></i>
@@ -3537,8 +3592,8 @@ if ($tiene_doble_movimiento) {
                         'disponible' => 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-emerald-300',
                         'disponible_fecha' => 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-emerald-300',
                         'por_llegar' => 'bg-purple-500 text-white shadow-purple-300',
-                        'ocupada' => 'bg-gradient-to-br from-red-400 to-red-600 text-white shadow-red-300',
-                        'ocupada_fecha' => 'bg-gradient-to-br from-red-400 to-red-600 text-white shadow-red-300',
+                        'ocupada' => 'bg-gradient-to-br from-slate-500 to-slate-700 text-white shadow-slate-300',
+                        'ocupada_fecha' => 'bg-gradient-to-br from-slate-500 to-slate-700 text-white shadow-slate-300',
                         'mantenimiento' => 'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-amber-300',
                         'limpieza' => 'bg-gradient-to-br from-blue-400 to-blue-600 text-white shadow-blue-300'
                     ][$estado_hab] ?? 'bg-gradient-to-br from-gray-400 to-gray-600 text-white shadow-gray-300';
@@ -3608,7 +3663,7 @@ if ($tiene_doble_movimiento) {
                     <span>Por llegar</span>
                 </div>
                 <div class="flex items-center gap-1">
-                    <div class="w-4 h-4 bg-gradient-to-br from-red-400 to-red-600 rounded shadow-sm"></div>
+                    <div class="w-4 h-4 bg-gradient-to-br from-slate-500 to-slate-700 rounded shadow-sm"></div>
                     <span>Ocupada</span>
                 </div>
                 <div class="flex items-center gap-1">
@@ -3803,14 +3858,14 @@ function crearReservacionRapida(habitacionId) {
                 
                 <div class="grid grid-cols-2 gap-4">
                     <button onclick="seleccionarTipoCliente('nuevo', ${habitacionId}, '${fechaEntrada}', '${fechaSalida}', '${horaActual}')" 
-                            class="p-4 border-2 border-gray-300 rounded-lg hover:border-[#D4A574] hover:bg-[#D4A574] hover:text-white transition-all group">
-                        <i class="fas fa-user-plus text-3xl mb-2 block text-[#D4A574] group-hover:text-white"></i>
+                            class="p-4 border-2 border-gray-300 rounded-lg brand-hover-card transition-all group">
+                        <i class="fas fa-user-plus text-3xl mb-2 block brand-text group-hover:text-white"></i>
                         <span class="font-semibold block">Cliente Nuevo</span>
                         <p class="text-xs mt-1 text-gray-500 group-hover:text-white">Primer hospedaje</p>
                     </button>
                     <button onclick="seleccionarTipoCliente('existente', ${habitacionId}, '${fechaEntrada}', '${fechaSalida}', '${horaActual}')" 
-                            class="p-4 border-2 border-gray-300 rounded-lg hover:border-[#6B4423] hover:bg-[#6B4423] hover:text-white transition-all group">
-                        <i class="fas fa-user-check text-3xl mb-2 block text-[#6B4423] group-hover:text-white"></i>
+                            class="p-4 border-2 border-gray-300 rounded-lg brand-hover-card transition-all group">
+                        <i class="fas fa-user-check text-3xl mb-2 block brand-text group-hover:text-white"></i>
                         <span class="font-semibold block">Cliente Existente</span>
                         <p class="text-xs mt-1 text-gray-500 group-hover:text-white">Ya registrado</p>
                     </button>
@@ -4371,7 +4426,7 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
                                    id="horaLlegadaRapida" 
                                    value="" 
                                    placeholder="--:--"
-                                   class="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#6B4423] focus:border-[#6B4423]">
+                                   class="flex-1 px-3 py-2 border rounded-lg brand-focus">
                             <button onclick="document.getElementById('horaLlegadaRapida').value = '${horaActual}'" 
                                     class="px-3 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors"
                                     title="Usar hora actual">
@@ -4385,7 +4440,7 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
         showCancelButton: true,
         confirmButtonText: `Continuar con Cliente ${tipo === 'existente' ? 'Existente' : 'Nuevo'}`,
         cancelButtonText: 'Volver',
-        confirmButtonColor: tipo === 'existente' ? '#6B4423' : '#D4A574',
+        confirmButtonColor: 'var(--brand-primary, #2563EB)',
         preConfirm: () => {
             const horaSeleccionada = document.getElementById('horaLlegadaRapida').value;
             if (!horaSeleccionada) {
