@@ -553,8 +553,11 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
             }
         }
     </style>
+    <?php if (!$layoutEsPanelSaas): ?>
+    <link rel="stylesheet" href="<?= asset('css/hotel-layout-shell.css') ?>">
+    <?php endif; ?>
 </head>
-<body class="bg-gray-100 font-inter loading<?= $layoutEsPanelSaas ? ' ms-admin-scope' : '' ?>">
+<body class="bg-gray-100 font-inter loading<?= $layoutEsPanelSaas ? ' ms-admin-scope' : ' hotel-layout-scope' ?>">
 
   <!-- ── Banner Offline ─────────────────────────────────────────────────── -->
   <div id="pwa-offline-banner" role="alert" aria-live="assertive" hidden>
@@ -577,16 +580,17 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
     <!-- Incluir pantalla de carga -->
     <?php include APP_PATH . '/views/components/loading-screen.php'; ?>
     
-    <!-- HEADER MÓVIL MODERNO CON VERDE OLIVO (Solo aparece en móvil) -->
+    <!-- HEADER MÓVIL MODERNO (Solo aparece en móvil) -->
     <div class="mobile-header-modern" id="mobileHeaderModern">
-        <!-- Botón de menú -->
-        <button id="mobile-menu-toggle" class="mobile-menu-toggle">
+        <button type="button" id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Abrir menú de navegación">
             <i class="fas fa-bars"></i>
         </button>
         
-        <!-- Logo centrado -->
         <div class="mobile-header-logo">
             <img src="<?= htmlspecialchars($layoutLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
+            <?php if (!$layoutEsPanelSaas): ?>
+            <span class="mobile-header-name"><?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?></span>
+            <?php endif; ?>
         </div>
         
         <!-- Acciones: sync + install -->
@@ -616,9 +620,31 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
         <!-- Contenido Principal -->
         <div class="flex-1 flex flex-col overflow-hidden">
             <!-- Header Desktop (solo visible en desktop) -->
-            <header class="bg-white shadow-sm border-b border-gray-200 relative">
-                <div class="px-4 sm:px-6 lg:px-8 py-4">
-                    <!-- Tu contenido del header desktop aquí -->
+            <header class="bg-white shadow-sm border-b border-gray-200 relative hotel-header">
+                <div class="hotel-header-inner">
+                    <div class="hotel-header-brand">
+                        <img src="<?= htmlspecialchars($layoutLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
+                        <div>
+                            <p class="hotel-header-kicker">Hotel activo</p>
+                            <p class="hotel-header-name"><?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?></p>
+                        </div>
+                    </div>
+
+                    <div class="hotel-header-page">
+                        <p class="hotel-header-kicker">Recepción</p>
+                        <h1><?= htmlspecialchars($title ?? 'Panel hotelero', ENT_QUOTES, 'UTF-8') ?></h1>
+                    </div>
+
+                    <div class="hotel-header-actions">
+                        <span class="hotel-header-status">
+                            <span class="hotel-session-dot"></span>
+                            <span>Sesión activa</span>
+                        </span>
+                        <span class="hotel-header-user">
+                            <i class="fas fa-user-circle"></i>
+                            <?= htmlspecialchars(user_name(), ENT_QUOTES, 'UTF-8') ?>
+                        </span>
+                    </div>
                 </div>
             </header>
             

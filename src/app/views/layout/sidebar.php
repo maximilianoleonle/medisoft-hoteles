@@ -35,27 +35,9 @@ $sidebarLogoUrl = ($sidebarBranding && function_exists('hotel_branding_asset_url
 $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_context();
 ?>
 
-<?php if ($sidebarBranding): ?>
-<style>
-    .sidebar-main .logo-title {
-        color: var(--brand-primary, #9CA777);
-    }
-
-    .sidebar-main .nav-item.active,
-    .sidebar-main .nav-item:hover {
-        background: linear-gradient(135deg, var(--brand-primary, #9CA777), var(--brand-secondary, #7A8B5C));
-    }
-
-    .sidebar-main .nav-badge,
-    .sidebar-main .pulse-green {
-        background: var(--brand-accent, #D4AF37);
-    }
-</style>
-<?php endif; ?>
-
-<aside id="sidebar" class="sidebar-main sidebar-fixed <?= $sidebarEsPanelSaas ? 'sidebar-saas' : '' ?>">
-    <div class="sidebar-header">
-        <div class="logo-container">
+<aside id="sidebar" class="sidebar-main sidebar-fixed <?= $sidebarEsPanelSaas ? 'sidebar-saas' : 'hotel-sidebar' ?>">
+    <div class="sidebar-header <?= $sidebarEsPanelSaas ? '' : 'hotel-sidebar-brand' ?>">
+        <div class="logo-container <?= $sidebarEsPanelSaas ? '' : 'hotel-sidebar-brand-inner' ?>">
             <img src="<?= htmlspecialchars($sidebarLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?>" class="logo-img">
             <div class="logo-text">
                 <h2 class="logo-title"><?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?></h2>
@@ -65,7 +47,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
     </div>
 
     <?php if (!$sidebarEsPanelSaas): ?>
-    <div class="sidebar-search" style="position:relative;">
+    <div class="sidebar-search hotel-sidebar-search" style="position:relative;">
         <div class="search-box" style="position:relative;display:flex;align-items:center;isolation:isolate;cursor:text;">
             <i class="fas fa-search search-icon" style="pointer-events:none;"></i>
             <input type="text"
@@ -93,7 +75,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
     </div>
     <?php endif; ?>
 
-    <nav class="sidebar-nav">
+    <nav class="sidebar-nav <?= $sidebarEsPanelSaas ? '' : 'hotel-sidebar-nav' ?>">
         <?php if ($sidebarEsPanelSaas): ?>
         <div class="nav-section saas-nav-section">
             <div class="nav-section-title saas-section-title">
@@ -128,7 +110,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
         </div>
         <?php else: ?>
         <?php if ($mostrarDashboard): ?>
-        <div class="nav-section">
+        <div class="nav-section hotel-nav-section">
             <a href="<?= url('dashboard') ?>"
                class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'dashboard') !== false ? 'active' : '' ?>">
                 <div class="nav-icon">
@@ -140,7 +122,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
         <?php endif; ?>
 
         <?php if ($menuModulosSinConfigurar): ?>
-        <div class="nav-section">
+        <div class="nav-section hotel-nav-section">
             <div style="padding:8px 12px;font-size:0.75rem;color:#6b7280;">
                 Módulos del hotel pendientes de configurar.
             </div>
@@ -148,7 +130,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
         <?php endif; ?>
 
         <?php if ($mostrarGestion): ?>
-        <div class="nav-section">
+        <div class="nav-section hotel-nav-section">
             <div class="nav-section-title">
                 <span>GESTIÓN</span>
             </div>
@@ -198,7 +180,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
         <?php endif; ?>
 
         <?php if ($mostrarOperaciones): ?>
-        <div class="nav-section">
+        <div class="nav-section hotel-nav-section">
             <div class="nav-section-title">
                 <span>OPERACIONES</span>
             </div>
@@ -281,14 +263,14 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
         <?php endif; ?>
     </nav>
 
-    <div class="sidebar-footer">
+    <div class="sidebar-footer <?= $sidebarEsPanelSaas ? '' : 'hotel-sidebar-footer' ?>">
         <?php if (!$sidebarEsPanelSaas): ?>
-        <div style="display:flex;align-items:center;gap:8px;padding:6px 12px 2px;opacity:0.85;">
+        <div class="hotel-sidebar-status" style="display:flex;align-items:center;gap:8px;padding:6px 12px 2px;opacity:0.85;">
             <span class="pwa-status-dot"></span>
             <span class="pwa-status-label" id="sidebar-net-label">En línea</span>
         </div>
         <?php endif; ?>
-        <div class="user-section">
+        <div class="user-section <?= $sidebarEsPanelSaas ? '' : 'hotel-user-menu' ?>">
             <div class="user-avatar">
                 <i class="fas fa-user"></i>
             </div>
@@ -296,7 +278,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
                 <p class="user-name"><?= user_name() ?></p>
                 <p class="user-role"><?= user_role() ?></p>
             </div>
-            <button class="user-menu-btn" id="user-menu-toggle">
+            <button type="button" class="user-menu-btn" id="user-menu-toggle" aria-label="Abrir menú de usuario">
                 <i class="fas fa-ellipsis-v"></i>
             </button>
         </div>
@@ -346,8 +328,6 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
     background: color-mix(in srgb, <?= $sidebarEsPanelSaas ? 'var(--ms-primary, #2563EB)' : 'var(--brand-primary, #9CA777)' ?> 10%, transparent);
 }
 </style>
-
-<link rel="stylesheet" href="<?= asset('css/sidebar-styles.css') ?>">
 
 <?php if ($sidebarEsPanelSaas): ?>
 <style>
@@ -502,35 +482,68 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
 <script src="<?= asset('js/sidebar-scripts.js') ?>"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const userMenuBtn = document.getElementById('user-menu-toggle');
-    const userDropdown = document.getElementById('user-dropdown');
+(() => {
+    function initSidebarInteractions() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
 
-    if (userMenuBtn && userDropdown) {
-        userMenuBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
+        if (sidebar && overlay && mobileMenuToggle && !mobileMenuToggle.dataset.hotelShellBound) {
+            mobileMenuToggle.dataset.hotelShellBound = 'true';
+            mobileMenuToggle.setAttribute('aria-expanded', 'false');
 
-            const isActive = userDropdown.classList.contains('active');
+            mobileMenuToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                sidebar.classList.add('active');
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                mobileMenuToggle.setAttribute('aria-expanded', 'true');
+            });
 
-            if (isActive) {
-                userDropdown.classList.remove('active', 'show');
-            } else {
-                userDropdown.classList.add('active', 'show');
-            }
-        });
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+                mobileMenuToggle.setAttribute('aria-expanded', 'false');
+            });
+        }
 
-        document.addEventListener('click', function(e) {
-            if (!userDropdown.contains(e.target) && !userMenuBtn.contains(e.target)) {
-                userDropdown.classList.remove('active', 'show');
-            }
-        });
+        const userMenuBtn = document.getElementById('user-menu-toggle');
+        const userDropdown = document.getElementById('user-dropdown');
 
-        userDropdown.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
+        if (userMenuBtn && userDropdown) {
+            userMenuBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const isActive = userDropdown.classList.contains('active');
+
+                if (isActive) {
+                    userDropdown.classList.remove('active', 'show');
+                } else {
+                    userDropdown.classList.add('active', 'show');
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!userDropdown.contains(e.target) && !userMenuBtn.contains(e.target)) {
+                    userDropdown.classList.remove('active', 'show');
+                }
+            });
+
+            userDropdown.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
     }
-});
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSidebarInteractions);
+    } else {
+        initSidebarInteractions();
+    }
+})();
 </script>
 
 <style>
