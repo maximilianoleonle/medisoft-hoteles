@@ -15,6 +15,34 @@ foreach ($huespedes as $huesped) {
 
 $huespedesVisibles = count($guestRows);
 $origenesVisibles = count(array_filter(array_unique(array_column($huespedes, 'procedencia_estado'))));
+
+$pagina_actual = max(1, (int) ($pagina_actual ?? 1));
+$total_paginas = max(1, (int) ($total_paginas ?? 1));
+$buscar = $buscar ?? '';
+$estado_filtro = $estado_filtro ?? '';
+
+$guestPaginationPages = [];
+if ($total_paginas > 1) {
+    $candidatePages = [1, $total_paginas, $pagina_actual - 1, $pagina_actual, $pagina_actual + 1];
+
+    if ($pagina_actual <= 3) {
+        $candidatePages = array_merge($candidatePages, [2, 3, 4]);
+    }
+
+    if ($pagina_actual >= $total_paginas - 2) {
+        $candidatePages = array_merge($candidatePages, [$total_paginas - 3, $total_paginas - 2, $total_paginas - 1]);
+    }
+
+    foreach ($candidatePages as $candidatePage) {
+        $candidatePage = (int) $candidatePage;
+        if ($candidatePage >= 1 && $candidatePage <= $total_paginas) {
+            $guestPaginationPages[$candidatePage] = true;
+        }
+    }
+
+    $guestPaginationPages = array_keys($guestPaginationPages);
+    sort($guestPaginationPages);
+}
 ?>
 
 <style>
@@ -29,6 +57,66 @@ $origenesVisibles = count(array_filter(array_unique(array_column($huespedes, 'pr
     --guest-text: #0F172A;
     --guest-muted: #64748B;
     color: var(--guest-text);
+}
+
+.hotel-page {
+    color: var(--guest-text);
+}
+
+.hotel-page-header {
+    position: relative;
+}
+
+.hotel-page-kicker {
+    color: rgba(255,255,255,.72);
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.hotel-page-title {
+    color: rgba(255,255,255,.98);
+    font-weight: 900;
+    letter-spacing: 0;
+}
+
+.hotel-page-subtitle {
+    margin-top: 6px;
+    max-width: 44rem;
+    color: rgba(255,255,255,.92);
+    font-size: .92rem;
+    font-weight: 650;
+    line-height: 1.45;
+    text-wrap: pretty;
+    text-shadow: 0 1px 1px rgba(15,23,42,.22);
+}
+
+.hotel-toolbar,
+.hotel-card,
+.hotel-table,
+.hotel-mobile-card,
+.hotel-empty-state {
+    border-color: var(--guest-border);
+}
+
+.hotel-btn-primary {
+    background: var(--guest-brand);
+    color: #fff;
+}
+
+.hotel-btn-secondary {
+    background: #F1F5F9;
+    color: #475569;
+}
+
+.hotel-badge {
+    background: var(--guest-brand-soft);
+    color: var(--guest-brand-dark);
+}
+
+.hotel-status {
+    color: #334155;
 }
 
 .guest-shell {
@@ -373,14 +461,33 @@ $origenesVisibles = count(array_filter(array_unique(array_column($huespedes, 'pr
 }
 
 .guest-pagination {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+}
+
+.guest-pagination-shell {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
     gap: 6px;
+    padding: 6px;
+    border: 1px solid var(--guest-border);
+    border-radius: 14px;
+    background: rgba(255,255,255,.96);
+    box-shadow: 0 10px 26px rgba(15,23,42,.055);
+}
+
+.guest-page-window {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .guest-page-link,
-.guest-page-current {
+.guest-page-current,
+.guest-page-disabled,
+.guest-page-ellipsis {
     min-width: 36px;
     min-height: 36px;
     display: inline-flex;
@@ -394,10 +501,49 @@ $origenesVisibles = count(array_filter(array_unique(array_column($huespedes, 'pr
     font-weight: 800;
 }
 
+.guest-page-link {
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, color .16s ease;
+}
+
+.guest-page-link:hover {
+    transform: translateY(-1px);
+    border-color: var(--guest-brand);
+    color: var(--guest-brand-dark);
+    background: var(--guest-brand-soft);
+}
+
 .guest-page-current {
     border-color: var(--guest-brand);
     background: var(--guest-brand);
     color: #fff;
+}
+
+.guest-page-disabled {
+    background: #F8FAFC;
+    color: #94A3B8;
+}
+
+.guest-page-ellipsis {
+    min-width: 24px;
+    border-color: transparent;
+    background: transparent;
+    color: #94A3B8;
+}
+
+.guest-page-control {
+    min-width: auto;
+    padding-inline: .75rem;
+    white-space: nowrap;
+}
+
+.guest-page-control-label {
+    margin-inline: .25rem;
+}
+
+.guest-pagination-summary {
+    color: var(--guest-muted);
+    font-size: .76rem;
+    font-weight: 800;
 }
 
 @media (min-width: 768px) {
@@ -450,46 +596,85 @@ $origenesVisibles = count(array_filter(array_unique(array_column($huespedes, 'pr
     .guest-primary-btn {
         width: 100%;
     }
+
+    .hotel-page-subtitle {
+        font-size: .86rem;
+        line-height: 1.42;
+    }
+
+    .guest-pagination {
+        align-items: stretch;
+        justify-items: stretch;
+    }
+
+    .guest-pagination-shell {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .guest-page-window {
+        flex: 0 1 auto;
+        overflow: hidden;
+    }
+
+    .guest-page-link,
+    .guest-page-current,
+    .guest-page-disabled,
+    .guest-page-ellipsis {
+        min-width: 32px;
+        min-height: 34px;
+        border-radius: 9px;
+        font-size: .8rem;
+    }
+
+    .guest-page-control {
+        padding-inline: .62rem;
+    }
+
+    .guest-page-control-label {
+        display: none;
+    }
 }
 </style>
 
-<div class="guests-page p-4 sm:p-6">
+<div class="guests-page hotel-page p-4 sm:p-6">
     <div class="guest-shell">
-        <section class="guest-hero">
+        <section class="guest-hero hotel-page-header">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div class="flex items-start gap-3 min-w-0">
                     <div class="guest-hero-icon">
                         <i class="fas fa-users"></i>
                     </div>
                     <div class="min-w-0">
-                        <h1 class="text-xl md:text-2xl font-extrabold text-white leading-tight">Huéspedes</h1>
-                        <p class="text-white/78 mt-1 text-sm max-w-2xl">Directorio operativo para contacto, origen, visitas y nueva reservación.</p>
+                        <p class="hotel-page-kicker">Operación hotelera</p>
+                        <h1 class="hotel-page-title text-xl md:text-2xl leading-tight">Huéspedes</h1>
+                        <p class="hotel-page-subtitle">Directorio operativo de huéspedes: contacto, procedencia, vehículos e historial de reservas.</p>
                     </div>
                 </div>
 
-                <a href="<?= url('huespedes/create') ?>" class="guest-primary-btn">
+                <a href="<?= url('huespedes/create') ?>" class="guest-primary-btn hotel-btn-primary">
                     <i class="fas fa-user-plus"></i>
                     Nuevo huésped
                 </a>
             </div>
         </section>
 
-        <section class="guest-summary-strip" aria-label="Resumen de huéspedes">
-            <div class="guest-summary-item">
+        <section class="guest-summary-strip hotel-toolbar" aria-label="Resumen de huéspedes">
+            <div class="guest-summary-item hotel-card">
                 <p class="guest-summary-label">Total</p>
                 <p class="guest-summary-value"><?= number_format($total_huespedes) ?></p>
             </div>
-            <div class="guest-summary-item">
+            <div class="guest-summary-item hotel-card">
                 <p class="guest-summary-label">Mostrando</p>
                 <p class="guest-summary-value"><?= number_format($huespedesVisibles) ?></p>
             </div>
-            <div class="guest-summary-item">
+            <div class="guest-summary-item hotel-card">
                 <p class="guest-summary-label">Orígenes</p>
                 <p class="guest-summary-value"><?= number_format($origenesVisibles) ?></p>
             </div>
         </section>
 
-        <section class="guest-panel p-3 md:p-4">
+        <section class="guest-panel hotel-card p-3 md:p-4">
             <form method="GET" action="<?= url('huespedes') ?>" class="guest-filter-form">
                 <div>
                     <label class="block text-xs font-extrabold text-slate-600 uppercase tracking-wide mb-1">Buscar huésped</label>
@@ -516,11 +701,11 @@ $origenesVisibles = count(array_filter(array_unique(array_column($huespedes, 'pr
                 </div>
 
                 <div class="guest-filter-actions flex gap-2">
-                    <button type="submit" class="guest-filter-btn">
+                    <button type="submit" class="guest-filter-btn hotel-btn-primary">
                         <i class="fas fa-filter"></i>
                         Filtrar
                     </button>
-                    <a href="<?= url('huespedes') ?>" class="guest-reset-btn">
+                    <a href="<?= url('huespedes') ?>" class="guest-reset-btn hotel-btn-secondary">
                         <i class="fas fa-times"></i>
                         Limpiar
                     </a>
@@ -529,20 +714,20 @@ $origenesVisibles = count(array_filter(array_unique(array_column($huespedes, 'pr
         </section>
 
         <?php if (!empty($guestRows)): ?>
-        <section class="guest-panel overflow-hidden">
+        <section class="guest-panel hotel-card overflow-hidden">
             <div class="px-4 py-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
                     <h2 class="text-sm font-black text-slate-900">Directorio de huéspedes</h2>
                     <p class="text-xs text-slate-500">Contacto, origen y acciones rápidas para recepción.</p>
                 </div>
-                <span class="guest-count-pill">
+                <span class="guest-count-pill hotel-badge">
                     <i class="fas fa-list"></i>
                     <?= number_format($huespedesVisibles) ?> visibles
                 </span>
             </div>
 
             <div class="guest-desktop-table">
-                <table class="guest-table">
+                <table class="guest-table hotel-table">
                     <colgroup>
                         <col style="width: 28%;">
                         <col style="width: 27%;">
@@ -679,7 +864,7 @@ $origenesVisibles = count(array_filter(array_unique(array_column($huespedes, 'pr
                     $total_vehiculos = $guestRow['total_vehiculos'];
                     $reservas = intval($huesped['total_reservaciones'] ?? 0);
                     ?>
-                    <article class="guest-card">
+                    <article class="guest-card hotel-mobile-card">
                         <div class="guest-card-top">
                             <div class="guest-avatar">
                                 <?= htmlspecialchars(strtoupper(substr(trim($huesped['nombre_completo'] ?? 'H'), 0, 1))) ?>
@@ -757,7 +942,7 @@ $origenesVisibles = count(array_filter(array_unique(array_column($huespedes, 'pr
             </div>
         </section>
         <?php else: ?>
-        <section class="guest-empty text-center py-11 px-4">
+        <section class="guest-empty hotel-empty-state text-center py-11 px-4">
             <div class="guest-empty-icon mx-auto mb-4 w-14 h-14 rounded-2xl" style="background:var(--guest-brand-soft);color:var(--guest-brand);">
                 <i class="fas fa-users text-xl"></i>
             </div>
@@ -772,34 +957,59 @@ $origenesVisibles = count(array_filter(array_unique(array_column($huespedes, 'pr
 
         <?php if ($total_paginas > 1): ?>
         <nav class="guest-pagination mt-2" aria-label="Paginación de huéspedes">
+            <div class="guest-pagination-shell">
             <?php if ($pagina_actual > 1): ?>
                 <a href="?page=<?= $pagina_actual - 1 ?>&buscar=<?= urlencode($buscar ?? '') ?>&estado=<?= urlencode($estado_filtro ?? '') ?>"
-                   class="guest-page-link"
+                   class="guest-page-link guest-page-control"
                    aria-label="Página anterior">
                     <i class="fas fa-chevron-left"></i>
+                    <span class="guest-page-control-label">Anterior</span>
                 </a>
+            <?php else: ?>
+                <span class="guest-page-disabled guest-page-control" aria-disabled="true">
+                    <i class="fas fa-chevron-left"></i>
+                    <span class="guest-page-control-label">Anterior</span>
+                </span>
             <?php endif; ?>
 
-            <?php for ($i = 1; $i <= $total_paginas; $i++): ?>
-                <?php if ($i == $pagina_actual): ?>
-                    <span class="guest-page-current" aria-current="page">
-                        <?= $i ?>
-                    </span>
-                <?php else: ?>
-                    <a href="?page=<?= $i ?>&buscar=<?= urlencode($buscar ?? '') ?>&estado=<?= urlencode($estado_filtro ?? '') ?>"
-                       class="guest-page-link">
-                        <?= $i ?>
-                    </a>
-                <?php endif; ?>
-            <?php endfor; ?>
+            <div class="guest-page-window" aria-label="Páginas disponibles">
+                <?php $lastGuestPage = null; ?>
+                <?php foreach ($guestPaginationPages as $i): ?>
+                    <?php if ($lastGuestPage !== null && $i > $lastGuestPage + 1): ?>
+                        <span class="guest-page-ellipsis" aria-hidden="true">…</span>
+                    <?php endif; ?>
+
+                    <?php if ($i == $pagina_actual): ?>
+                        <span class="guest-page-current" aria-current="page">
+                            <?= $i ?>
+                        </span>
+                    <?php else: ?>
+                        <a href="?page=<?= $i ?>&buscar=<?= urlencode($buscar ?? '') ?>&estado=<?= urlencode($estado_filtro ?? '') ?>"
+                           class="guest-page-link"
+                           aria-label="Ir a página <?= $i ?>">
+                            <?= $i ?>
+                        </a>
+                    <?php endif; ?>
+
+                    <?php $lastGuestPage = $i; ?>
+                <?php endforeach; ?>
+            </div>
 
             <?php if ($pagina_actual < $total_paginas): ?>
                 <a href="?page=<?= $pagina_actual + 1 ?>&buscar=<?= urlencode($buscar ?? '') ?>&estado=<?= urlencode($estado_filtro ?? '') ?>"
-                   class="guest-page-link"
+                   class="guest-page-link guest-page-control"
                    aria-label="Página siguiente">
+                    <span class="guest-page-control-label">Siguiente</span>
                     <i class="fas fa-chevron-right"></i>
                 </a>
+            <?php else: ?>
+                <span class="guest-page-disabled guest-page-control" aria-disabled="true">
+                    <span class="guest-page-control-label">Siguiente</span>
+                    <i class="fas fa-chevron-right"></i>
+                </span>
             <?php endif; ?>
+            </div>
+            <p class="guest-pagination-summary">Página <?= number_format($pagina_actual) ?> de <?= number_format($total_paginas) ?></p>
         </nav>
         <?php endif; ?>
     </div>
