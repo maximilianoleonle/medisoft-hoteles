@@ -38,7 +38,7 @@ $colores_habitacion = [
     'TURQUESA'   => ['bg' => '#30A8A0', 'dark' => '#188880'],
     'MAGENTA'    => ['bg' => '#C030A0', 'dark' => '#A01080'],
 ];
-$color_numerico = ['bg' => '#5C7A4E', 'dark' => '#4A6340'];
+$color_numerico = ['bg' => 'var(--lc-green)', 'dark' => 'var(--lc-green-dark)'];
 
 function obtenerColorHab($numero, $colores, $default) {
     $n = trim(strtoupper($numero));
@@ -46,7 +46,7 @@ function obtenerColorHab($numero, $colores, $default) {
     foreach ($colores as $nombre => $color) {
         if ($n === $nombre || strpos($n, $nombre) !== false) return $color;
     }
-    return ['bg' => '#5C7A4E', 'dark' => '#4A6340'];
+    return ['bg' => 'var(--lc-green)', 'dark' => 'var(--lc-green-dark)'];
 }
 
 $fecha_hoy   = date('Y-m-d');
@@ -63,22 +63,28 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
    Sage green / gold / cream palette
    ══════════════════════════════════════════ */
 :root {
-    --lc-green:      #5C7A4E;
-    --lc-green-dark: #4A6340;
-    --lc-green-deep: #3D5234;
-    --lc-gold:       #C8A96A;
-    --lc-gold-dark:  #B8994A;
-    --lc-cream:      #F7F4EE;
+    /* Fase 10.6 — paleta derivada de la marca del hotel (white-label); fallback azul */
+    --lc-green:      var(--brand-primary, #2563EB);
+    --lc-green-dark: color-mix(in srgb, var(--brand-primary, #2563EB), #000 22%);
+    --lc-green-deep: color-mix(in srgb, var(--brand-primary, #2563EB), #000 42%);
+    --lc-gold:       var(--brand-accent, var(--lc-green));
+    --lc-gold-dark:  color-mix(in srgb, var(--lc-gold), #000 18%);
+    --lc-cream:      color-mix(in srgb, var(--lc-green) 5%, #F8FAFC);
+    --lc-border:     color-mix(in srgb, var(--lc-green) 18%, #E5E7EB);
+    --lc-control:    color-mix(in srgb, var(--lc-green) 4%, #FFFFFF);
     --radius: 12px;
-    --shadow-hover: 0 8px 30px rgba(61,82,52,.12), 0 2px 8px rgba(61,82,52,.06);
+    --shadow-hover: 0 8px 30px color-mix(in srgb, var(--lc-green) 12%, transparent), 0 2px 8px color-mix(in srgb, var(--lc-green) 6%, transparent);
     --transition: all .25s cubic-bezier(.4,0,.2,1);
 }
 
 /* ── Page background ─────────────────────── */
 .res-page {
     min-height: 100vh;
-    background: linear-gradient(145deg, #EFF4EC 0%, #E8EEE3 50%, #F4F1EC 100%);
+    background: linear-gradient(145deg, var(--lc-cream) 0%, #F8FAFC 52%, color-mix(in srgb, var(--lc-green) 7%, #EEF2F7) 100%);
 }
+.res-page .reservation-border { border-color: var(--lc-border) !important; }
+.reservation-arrival-row { background: color-mix(in srgb, var(--lc-green) 5%, #FFFFFF); }
+.reservation-arrival-row:hover { background: color-mix(in srgb, var(--lc-green) 10%, #FFFFFF); }
 
 /* ── Animations ──────────────────────────── */
 @keyframes fadeUp {
@@ -137,7 +143,7 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
 .info-row-card {
     display: flex; align-items: center;
     padding: 5px 0;
-    border-bottom: 1px solid #F0F5ED;
+    border-bottom: 1px solid color-mix(in srgb, var(--lc-green), #fff 92%);
     font-size: .8rem;
 }
 .info-row-card:last-child { border-bottom: none; }
@@ -151,10 +157,10 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
     font-size: .65rem; font-weight: 700; letter-spacing: .3px; text-transform: uppercase;
 }
 .badge-confirmada  { background: #DBEAFE; color: #1E40AF; }
-.badge-checked_in  { background: rgba(92,122,78,.12); color: #3D5234; }
+.badge-checked_in  { background: color-mix(in srgb, var(--lc-green) 12%, transparent); color: var(--lc-green-deep); }
 .badge-checked_out { background: #F3F4F6; color: #6B7280; }
 .badge-cancelada   { background: #FEE2E2; color: #991B1B; }
-.badge-pagado      { background: rgba(200,169,106,.15); color: #92400E; border: 1px solid rgba(200,169,106,.3); }
+.badge-pagado      { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
 .badge-id {
     background: rgba(0,0,0,.18); color: #fff;
     font-size: .68rem; font-weight: 700;
@@ -173,7 +179,7 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
 }
 
 /* Card actions */
-.card-actions { padding: 10px 16px 14px; border-top: 1px solid #F0F5ED; }
+.card-actions { padding: 10px 16px 14px; border-top: 1px solid color-mix(in srgb, var(--lc-green), #fff 92%); }
 .btn-ticket-full {
     display: flex; align-items: center; justify-content: center; gap: 6px;
     width: 100%; padding: 9px 12px; border-radius: 8px;
@@ -181,12 +187,12 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
     background: linear-gradient(135deg, var(--lc-green), var(--lc-green-dark));
     cursor: pointer; border: none; text-decoration: none;
     transition: var(--transition);
-    box-shadow: 0 2px 6px rgba(92,122,78,.22);
+    box-shadow: 0 2px 6px color-mix(in srgb, var(--lc-green) 22%, transparent);
 }
 .btn-ticket-full:hover {
     background: linear-gradient(135deg, var(--lc-green-dark), var(--lc-green-deep));
     transform: scale(1.02);
-    box-shadow: 0 5px 16px rgba(92,122,78,.35);
+    box-shadow: 0 5px 16px color-mix(in srgb, var(--lc-green) 35%, transparent);
     color: #fff;
 }
 
@@ -206,34 +212,34 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
 .search-input {
     width: 100%;
     padding: 10px 14px 10px 40px;
-    border: 1.5px solid #C8D9BE;
+    border: 1.5px solid var(--lc-border);
     border-radius: 10px; font-size: .85rem;
-    background: #FAFDF8; color: #374151;
+    background: var(--lc-control); color: #374151;
     transition: var(--transition);
 }
 .search-input:focus {
     outline: none;
-    border-color: var(--lc-gold);
-    box-shadow: 0 0 0 3px rgba(200,169,106,.15);
+    border-color: var(--lc-green);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--lc-green) 16%, transparent);
     background: white;
 }
-.search-input::placeholder { color: #A8C4A0; }
+.search-input::placeholder { color: color-mix(in srgb, var(--lc-green), #fff 58%); }
 
 /* ── Date picker ─────────────────────────── */
 .date-picker-wrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .date-picker-input {
     padding: 9px 14px;
-    border: 1.5px solid #C8D9BE;
+    border: 1.5px solid var(--lc-border);
     border-radius: 10px; font-size: .85rem; font-weight: 600;
-    color: #374151; background: #FAFDF8; cursor: pointer;
+    color: #374151; background: var(--lc-control); cursor: pointer;
     transition: var(--transition); min-width: 160px;
 }
 .date-picker-input:focus {
     outline: none;
-    border-color: var(--lc-gold);
-    box-shadow: 0 0 0 3px rgba(200,169,106,.15);
+    border-color: var(--lc-green);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--lc-green) 16%, transparent);
 }
-.date-label { font-size: .82rem; font-weight: 600; color: #5C7A4E; white-space: nowrap; }
+.date-label { font-size: .82rem; font-weight: 600; color: var(--lc-green); white-space: nowrap; }
 .btn-hoy {
     padding: 7px 14px; border-radius: 8px;
     font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .3px;
@@ -243,12 +249,12 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
 }
 .btn-hoy:hover { filter: brightness(1.1); }
 .btn-hoy.is-today {
-    background: rgba(92,122,78,.08);
+    background: color-mix(in srgb, var(--lc-green) 8%, transparent);
     color: var(--lc-green-deep);
-    border-color: #A8C4A0;
+    border-color: color-mix(in srgb, var(--lc-green), #fff 58%);
     cursor: default;
 }
-.fecha-bonita { font-size: .78rem; color: #7A9B6A; font-weight: 500; }
+.fecha-bonita { font-size: .78rem; color: var(--lc-green); font-weight: 500; }
 
 /* ── Widgets ─────────────────────────────── */
 .widget-stat {
@@ -265,10 +271,10 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
 /* ── Arrival / Departure panels ──────────── */
 .arrival-departure-scroll {
     max-height: 160px; overflow-y: auto;
-    scrollbar-width: thin; scrollbar-color: #A8C4A0 transparent;
+    scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--lc-green), #fff 58%) transparent;
 }
 .arrival-departure-scroll::-webkit-scrollbar { width: 4px; }
-.arrival-departure-scroll::-webkit-scrollbar-thumb { background: #A8C4A0; border-radius: 4px; }
+.arrival-departure-scroll::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--lc-green), #fff 58%); border-radius: 4px; }
 
 /* ── Filter state buttons ────────────────── */
 .filtro-estado-base {
@@ -286,32 +292,32 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
 .lc-form-input {
     width: 100%;
     padding: 8px 12px;
-    border: 1.5px solid #C8D9BE;
+    border: 1.5px solid var(--lc-border);
     border-radius: 8px; font-size: .85rem;
-    background: #FAFDF8; color: #374151;
+    background: var(--lc-control); color: #374151;
     transition: border-color .2s, box-shadow .2s;
 }
 .lc-form-input:focus {
     outline: none;
-    border-color: var(--lc-gold);
-    box-shadow: 0 0 0 3px rgba(200,169,106,.15);
+    border-color: var(--lc-green);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--lc-green) 16%, transparent);
 }
 .btn-modal-cancel {
     flex: 1; padding: 9px 12px; border-radius: 8px;
-    border: 1.5px solid #D5E4CB;
-    background: rgba(92,122,78,.06); color: #4A6340;
+    border: 1.5px solid color-mix(in srgb, var(--lc-green), #fff 75%);
+    background: color-mix(in srgb, var(--lc-green) 6%, transparent); color: var(--lc-green-dark);
     font-size: .85rem; font-weight: 600; cursor: pointer; transition: background .15s;
 }
-.btn-modal-cancel:hover { background: rgba(92,122,78,.12); }
+.btn-modal-cancel:hover { background: color-mix(in srgb, var(--lc-green) 12%, transparent); }
 .btn-modal-confirm {
     flex: 1; padding: 9px 12px; border-radius: 8px;
     background: linear-gradient(135deg, var(--lc-green), var(--lc-green-dark));
     color: white; font-size: .85rem; font-weight: 700;
     border: none; cursor: pointer;
-    box-shadow: 0 2px 8px rgba(92,122,78,.25);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--lc-green) 25%, transparent);
     transition: box-shadow .2s, transform .2s;
 }
-.btn-modal-confirm:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(92,122,78,.35); }
+.btn-modal-confirm:hover { transform: translateY(-1px); box-shadow: 0 5px 14px color-mix(in srgb, var(--lc-green) 35%, transparent); }
 
 /* ── Misc ────────────────────────────────── */
 .empty-state { animation: fadeIn .5s ease; }
@@ -341,9 +347,9 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
 <div class="res-page">
 
     <!-- ── Header ── -->
-    <div style="background:linear-gradient(135deg,#3D5234,#4A6340,#5C7A4E);position:relative;overflow:hidden;" class="no-print">
+    <div style="background:linear-gradient(135deg,var(--lc-green-deep),var(--lc-green-dark),var(--lc-green));position:relative;overflow:hidden;" class="no-print">
         <!-- Decorative circle -->
-        <div style="position:absolute;top:-35px;right:-35px;width:160px;height:160px;border-radius:50%;background:rgba(200,169,106,.07);pointer-events:none;"></div>
+        <div style="position:absolute;top:-35px;right:-35px;width:160px;height:160px;border-radius:50%;background:color-mix(in srgb,var(--lc-gold) 16%,transparent);pointer-events:none;"></div>
 
         <div class="px-3 sm:px-4 lg:px-6 py-3 relative z-10">
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
@@ -389,7 +395,7 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
                     </button>
                     <a href="<?= url('reservaciones/crear') ?>"
                        class="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-2 text-xs font-bold rounded-lg transition-colors"
-                       style="background:linear-gradient(135deg,var(--lc-gold),var(--lc-gold-dark));color:#3D5234;">
+                       style="background:#fff;color:var(--lc-green-deep);border:1px solid rgba(255,255,255,.82);box-shadow:0 8px 20px rgba(15,23,42,.12);">
                         <i class="fas fa-plus mr-1.5"></i>Nueva
                     </a>
                 </div>
@@ -403,34 +409,34 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
         <div class="grid grid-cols-2 lg:grid-cols-5 gap-2 mb-4">
 
             <!-- Llegadas -->
-            <div class="widget-stat bg-white rounded-xl shadow-sm border border-[#DDE8D5] p-3">
+            <div class="widget-stat bg-white rounded-xl shadow-sm border reservation-border p-3">
                 <div class="flex items-center justify-between mb-1.5">
                     <div style="background:rgba(37,99,235,.1);width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;">
                         <i class="fas fa-plane-arrival text-blue-600 text-xs"></i>
                     </div>
                     <span class="text-lg font-bold text-gray-800"><?= $estadisticas['entradas_hoy'] ?? 0 ?></span>
                 </div>
-                <h3 class="text-xs font-bold uppercase tracking-wide" style="color:#7A9B6A;">Llegadas</h3>
+                <h3 class="text-xs font-bold uppercase tracking-wide" style="color:var(--lc-green);">Llegadas</h3>
                 <p class="text-xs text-blue-500 mt-0.5">Desde 15:00h</p>
             </div>
 
             <!-- Check-ins -->
-            <div class="widget-stat bg-white rounded-xl shadow-sm border border-[#DDE8D5] p-3">
+            <div class="widget-stat bg-white rounded-xl shadow-sm border reservation-border p-3">
                 <div class="flex items-center justify-between mb-1.5">
-                    <div style="background:rgba(92,122,78,.1);width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;">
+                    <div style="background:color-mix(in srgb, var(--lc-green) 10%, transparent);width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;">
                         <i class="fas fa-user-check text-xs" style="color:var(--lc-green);"></i>
                     </div>
                     <span class="text-lg font-bold text-gray-800"><?= $estadisticas['entradas']['completadas'] ?? 0 ?></span>
                 </div>
-                <h3 class="text-xs font-bold uppercase tracking-wide" style="color:#7A9B6A;">Check-ins</h3>
+                <h3 class="text-xs font-bold uppercase tracking-wide" style="color:var(--lc-green);">Check-ins</h3>
                 <?php $te=max($estadisticas['entradas_hoy']??1,1);$co=$estadisticas['entradas']['completadas']??0;$pc=min(($co/$te)*100,100); ?>
                 <div class="w-full bg-gray-200 rounded-full mt-1" style="height:3px;">
-                    <div style="width:<?= $pc ?>%;height:3px;border-radius:9999px;background:linear-gradient(90deg,#5C7A4E,#7A9B6A);"></div>
+                    <div style="width:<?= $pc ?>%;height:3px;border-radius:9999px;background:linear-gradient(90deg,var(--lc-green),var(--lc-green));"></div>
                 </div>
             </div>
 
             <!-- Salidas -->
-            <div class="widget-stat bg-white rounded-xl shadow-sm border border-[#DDE8D5] p-3">
+            <div class="widget-stat bg-white rounded-xl shadow-sm border reservation-border p-3">
                 <div class="flex items-center justify-between mb-1.5">
                     <div style="background:rgba(245,158,11,.1);width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;">
                         <i class="fas fa-plane-departure text-amber-500 text-xs"></i>
@@ -444,19 +450,19 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
                         <?php endif; ?>
                     </div>
                 </div>
-                <h3 class="text-xs font-bold uppercase tracking-wide" style="color:#7A9B6A;">Salidas</h3>
+                <h3 class="text-xs font-bold uppercase tracking-wide" style="color:var(--lc-green);">Salidas</h3>
                 <p class="text-xs text-amber-500 mt-0.5">Hasta 12:00h</p>
             </div>
 
             <!-- Ocupación -->
-            <div class="widget-stat bg-white rounded-xl shadow-sm border border-[#DDE8D5] p-3">
+            <div class="widget-stat bg-white rounded-xl shadow-sm border reservation-border p-3">
                 <div class="flex items-center justify-between mb-1.5">
                     <div style="background:rgba(139,92,246,.1);width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;">
                         <i class="fas fa-bed text-violet-600 text-xs"></i>
                     </div>
                     <span class="text-lg font-bold text-gray-800"><?= $estadisticas['porcentaje_ocupacion'] ?? 0 ?>%</span>
                 </div>
-                <h3 class="text-xs font-bold uppercase tracking-wide" style="color:#7A9B6A;">Ocupación</h3>
+                <h3 class="text-xs font-bold uppercase tracking-wide" style="color:var(--lc-green);">Ocupación</h3>
                 <div class="flex items-center text-xs text-gray-500 mt-0.5">
                     <span class="font-bold text-gray-700"><?= $estadisticas['habitaciones_ocupadas'] ?? 0 ?></span>
                     <span class="mx-0.5">/</span>
@@ -465,13 +471,13 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
             </div>
 
             <!-- Ingresos -->
-            <div class="widget-stat bg-white rounded-xl shadow-sm border border-[#DDE8D5] p-3">
+            <div class="widget-stat bg-white rounded-xl shadow-sm border reservation-border p-3">
                 <div class="flex items-center justify-between mb-1.5">
-                    <div style="background:rgba(92,122,78,.1);width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;">
+                    <div style="background:color-mix(in srgb, var(--lc-green) 10%, transparent);width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;">
                         <i class="fas fa-dollar-sign text-xs" style="color:var(--lc-green);"></i>
                     </div>
                 </div>
-                <h3 class="text-xs font-bold uppercase tracking-wide" style="color:#7A9B6A;">Ingresos</h3>
+                <h3 class="text-xs font-bold uppercase tracking-wide" style="color:var(--lc-green);">Ingresos</h3>
                 <div class="text-sm font-bold mt-0.5" style="color:var(--lc-green-deep);"><?= format_money($estadisticas['ingresos_dia']['total'] ?? 0) ?></div>
                 <div class="text-xs text-gray-400 mt-0.5">Efec: <?= format_money($estadisticas['ingresos_dia']['efectivo'] ?? 0) ?></div>
             </div>
@@ -481,7 +487,7 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
 
             <!-- Llegadas -->
-            <div class="bg-white rounded-xl shadow-sm border border-[#DDE8D5] overflow-hidden">
+            <div class="bg-white rounded-xl shadow-sm border reservation-border overflow-hidden">
                 <div style="background:linear-gradient(135deg,#2563EB,#3B82F6);" class="p-2.5 rounded-t-xl">
                     <h3 class="text-sm font-bold text-white flex items-center">
                         <i class="fas fa-clock mr-2 opacity-80"></i>Llegadas de Hoy
@@ -499,12 +505,12 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
                     <?php else: ?>
                         <div class="space-y-1 arrival-departure-scroll">
                             <?php foreach (array_slice($entradas_hoy, 0, 8) as $entrada): ?>
-                            <div class="flex items-center justify-between p-2 rounded-lg hover:bg-[#F0F5ED] transition-colors" style="background:#F7FCF4;">
+                            <div class="reservation-arrival-row flex items-center justify-between p-2 rounded-lg transition-colors">
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-semibold text-gray-800 truncate"><?= htmlspecialchars($entrada['huesped_nombre'] ?? $entrada['nombre_completo'] ?? 'Sin nombre') ?></p>
                                     <div class="flex items-center gap-2 text-xs mt-0.5">
                                         <?php if (!empty($entrada['habitaciones_numeros'])): ?>
-                                        <span class="px-1.5 py-0.5 rounded font-bold" style="background:rgba(92,122,78,.12);color:#3D5234;font-size:.65rem;">
+                                        <span class="px-1.5 py-0.5 rounded font-bold" style="background:color-mix(in srgb, var(--lc-green) 12%, transparent);color:var(--lc-green-deep);font-size:.65rem;">
                                             <?= htmlspecialchars($entrada['habitaciones_numeros']) ?>
                                         </span>
                                         <?php endif; ?>
@@ -513,7 +519,7 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
                                 </div>
                                 <a href="<?= url('reservaciones/ver/' . $entrada['id']) ?>"
                                    style="color:var(--lc-green);width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;transition:background .15s;"
-                                   onmouseover="this.style.background='rgba(92,122,78,.1)'"
+                                   onmouseover="this.style.background='color-mix(in srgb, var(--lc-green) 10%, transparent)'"
                                    onmouseout="this.style.background='transparent'">
                                     <i class="fas fa-arrow-right text-xs"></i>
                                 </a>
@@ -525,7 +531,7 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
             </div>
 
             <!-- Salidas -->
-            <div class="bg-white rounded-xl shadow-sm border border-[#DDE8D5] overflow-hidden">
+            <div class="bg-white rounded-xl shadow-sm border reservation-border overflow-hidden">
                 <div style="background:linear-gradient(135deg,#D97706,#F59E0B);" class="p-2.5 rounded-t-xl">
                     <h3 class="text-sm font-bold text-white flex items-center">
                         <i class="fas fa-sign-out-alt mr-2 opacity-80"></i>Salidas de Hoy
@@ -570,7 +576,7 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
 
         <!-- ── Search + Date + Filters ── -->
         <div class="mb-4 no-print">
-            <div class="bg-white rounded-xl shadow-sm border border-[#DDE8D5] p-3">
+            <div class="bg-white rounded-xl shadow-sm border reservation-border p-3">
 
                 <!-- Search -->
                 <div class="search-container mb-3">
@@ -608,7 +614,7 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
                         <button onclick="filtrarEstado('checked_in')"
                                 class="filtro-estado flex-1 sm:flex-none filtro-estado-base"
                                 data-estado="checked_in"
-                                style="border-color:#A8C4A0;background:rgba(92,122,78,.07);color:#3D5234;">
+                                style="border-color:color-mix(in srgb, var(--lc-green), #fff 58%);background:color-mix(in srgb, var(--lc-green) 7%, transparent);color:var(--lc-green-deep);">
                             <i class="fas fa-user-check mr-1"></i>Check-in
                         </button>
                         <button onclick="filtrarEstado('confirmada')"
@@ -624,9 +630,9 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
 
         <!-- ── Card grid ── -->
         <?php if (empty($reservaciones)): ?>
-            <div class="empty-state bg-white rounded-xl shadow-sm border border-[#DDE8D5] p-12 text-center">
-                <div style="width:64px;height:64px;border-radius:50%;background:rgba(92,122,78,.08);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-                    <i class="fas fa-calendar-day text-2xl" style="color:#A8C4A0;"></i>
+            <div class="empty-state bg-white rounded-xl shadow-sm border reservation-border p-12 text-center">
+                <div style="width:64px;height:64px;border-radius:50%;background:color-mix(in srgb, var(--lc-green) 8%, transparent);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                    <i class="fas fa-calendar-day text-2xl" style="color:color-mix(in srgb, var(--lc-green), #fff 58%);"></i>
                 </div>
                 <h3 class="text-lg font-bold text-gray-700 mb-2">Sin reservaciones</h3>
                 <p class="text-gray-400 text-sm mb-5">
@@ -641,7 +647,7 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
                     <?php if (!$es_hoy): ?>
                     <a href="<?= url('reservaciones') ?>"
                        class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-bold transition-colors"
-                       style="background:rgba(92,122,78,.08);color:#4A6340;border:1.5px solid #D5E4CB;">
+                       style="background:color-mix(in srgb, var(--lc-green) 8%, transparent);color:var(--lc-green-dark);border:1.5px solid color-mix(in srgb, var(--lc-green), #fff 75%);">
                         <i class="fas fa-calendar-day mr-2"></i>Ver Hoy
                     </a>
                     <?php endif; ?>
@@ -652,7 +658,7 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
             <div id="searchResults" class="hidden mb-3">
                 <p class="text-sm text-gray-400">
                     <i class="fas fa-filter mr-1" style="color:var(--lc-green);"></i>
-                    Mostrando <span id="searchCount" class="font-bold" style="color:#3D5234;">0</span> de <?= $total_reservaciones ?>
+                    Mostrando <span id="searchCount" class="font-bold" style="color:var(--lc-green-deep);">0</span> de <?= $total_reservaciones ?>
                 </p>
             </div>
 
@@ -676,7 +682,7 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
                         ($row['usuario_registro']  ?? '')
                     );
                 ?>
-                <div class="card-reservacion bg-white rounded-xl shadow-sm border border-[#DDE8D5] overflow-hidden"
+                <div class="card-reservacion bg-white rounded-xl shadow-sm border reservation-border overflow-hidden"
                      data-search="<?= htmlspecialchars($search_data) ?>"
                      data-estado="<?= $estado ?>">
 
@@ -707,10 +713,10 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
                     <!-- Body -->
                     <div class="card-body-info">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="badge-fecha" style="background:#F0F5ED;color:#4A6340;">
+                            <span class="badge-fecha" style="background:color-mix(in srgb, var(--lc-green), #fff 92%);color:var(--lc-green-dark);">
                                 <i class="far fa-calendar-alt"></i>
                                 <?= format_date($row['fecha_entrada'], 'd/m/Y') ?>
-                                <span style="color:#A8C4A0;margin:0 1px;">&rarr;</span>
+                                <span style="color:color-mix(in srgb, var(--lc-green), #fff 58%);margin:0 1px;">&rarr;</span>
                                 <?= format_date($row['fecha_salida'], 'd/m/Y') ?>
                             </span>
                         </div>
@@ -734,7 +740,7 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
                         </div>
                         <?php endif; ?>
 
-                        <div class="flex items-center justify-between mt-3 pt-2" style="border-top:1px solid #F0F5ED;">
+                        <div class="flex items-center justify-between mt-3 pt-2" style="border-top:1px solid color-mix(in srgb, var(--lc-green), #fff 92%);">
                             <div>
                                 <?php if ($tiene_pago && $estado == 'checked_in'): ?>
                                     <span class="badge-estado badge-pagado">PAGADO · <?= strtoupper($metodo_pago) ?></span>
@@ -771,18 +777,18 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
             <form id="formCheckInModal" method="POST" action="" class="p-5">
                 <?= csrf_field() ?>
                 <div class="mb-4">
-                    <div style="background:#F0F5ED;border:1px solid #D5E4CB;border-radius:10px;padding:14px;text-align:center;">
-                        <span class="text-xs font-bold uppercase tracking-wide" style="color:#7A9B6A;">Total a cobrar</span>
-                        <div class="text-2xl font-black mt-1" style="color:#3D5234;" id="totalACobrar">$0.00</div>
+                    <div style="background:color-mix(in srgb, var(--lc-green), #fff 92%);border:1px solid color-mix(in srgb, var(--lc-green), #fff 75%);border-radius:10px;padding:14px;text-align:center;">
+                        <span class="text-xs font-bold uppercase tracking-wide" style="color:var(--lc-green);">Total a cobrar</span>
+                        <div class="text-2xl font-black mt-1" style="color:var(--lc-green-deep);" id="totalACobrar">$0.00</div>
                     </div>
                 </div>
                 <div class="space-y-3">
                     <div>
-                        <label class="block text-xs font-bold mb-1.5" style="color:#5C7A4E;text-transform:uppercase;letter-spacing:.04em;">Hora</label>
+                        <label class="block text-xs font-bold mb-1.5" style="color:var(--lc-green);text-transform:uppercase;letter-spacing:.04em;">Hora</label>
                         <input type="time" name="hora_entrada" value="<?= date('H:i') ?>" class="lc-form-input" required>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold mb-1.5" style="color:#5C7A4E;text-transform:uppercase;letter-spacing:.04em;">Método de pago</label>
+                        <label class="block text-xs font-bold mb-1.5" style="color:var(--lc-green);text-transform:uppercase;letter-spacing:.04em;">Método de pago</label>
                         <select name="metodo_pago" required class="lc-form-input">
                             <option value="">Seleccionar...</option>
                             <option value="efectivo">Efectivo</option>
@@ -811,7 +817,7 @@ $fecha_bonita = $dias_semana[date('w',$ts)] . ' ' . date('d',$ts) . ' de ' . $me
             </div>
             <form id="formExportarPDF" class="p-5">
                 <div class="mb-5">
-                    <label class="block text-xs font-bold mb-1.5" style="color:#5C7A4E;text-transform:uppercase;letter-spacing:.04em;">Fecha</label>
+                    <label class="block text-xs font-bold mb-1.5" style="color:var(--lc-green);text-transform:uppercase;letter-spacing:.04em;">Fecha</label>
                     <input type="date" id="fechaExportar" name="fecha" value="<?= date('Y-m-d') ?>" class="lc-form-input">
                     <p class="mt-1.5 text-xs" style="color:#9CA3AF;">Exportará las reservaciones activas de esa fecha</p>
                 </div>
@@ -908,7 +914,7 @@ function filtrarEstado(estado) {
         if (e === estado) {
             b.style.cssText = 'border-color:var(--lc-green);background:linear-gradient(135deg,var(--lc-green),var(--lc-green-dark));color:white;';
         } else {
-            if (e === 'checked_in')  b.style.cssText = 'border-color:#A8C4A0;background:rgba(92,122,78,.07);color:#3D5234;';
+            if (e === 'checked_in')  b.style.cssText = 'border-color:color-mix(in srgb, var(--lc-green), #fff 58%);background:color-mix(in srgb, var(--lc-green) 7%, transparent);color:var(--lc-green-deep);';
             else if (e === 'confirmada') b.style.cssText = 'border-color:#93C5FD;background:#EFF6FF;color:#1E40AF;';
             else b.style.cssText = 'border-color:#E5E7EB;background:white;color:#4B5563;';
         }
@@ -941,7 +947,7 @@ function confirmarCheckOut(id) {
         text: 'Se registrará la salida',
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#5C7A4E',
+        confirmButtonColor: 'var(--lc-green)',
         cancelButtonColor: '#6B7280',
         confirmButtonText: 'Sí, check-out',
         cancelButtonText: 'Cancelar',
@@ -977,7 +983,7 @@ document.getElementById('formExportarPDF')?.addEventListener('submit', function(
     e.preventDefault();
     const f = document.getElementById('fechaExportar').value;
     if (!f) {
-        Swal.fire({ icon: 'error', title: 'Error', text: 'Seleccione una fecha', confirmButtonColor: '#5C7A4E' });
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Seleccione una fecha', confirmButtonColor: 'var(--lc-green)' });
         return;
     }
     window.open(baseUrl + '/reservaciones/exportar-pdf?fecha=' + f, '_blank');
