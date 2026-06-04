@@ -554,7 +554,7 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
         }
     </style>
     <?php if (!$layoutEsPanelSaas): ?>
-    <link rel="stylesheet" href="<?= asset('css/hotel-layout-shell.css') ?>">
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/hotel-layout-shell.css') : asset('css/hotel-layout-shell.css') ?>">
     <?php endif; ?>
 </head>
 <body class="bg-gray-100 font-inter loading<?= $layoutEsPanelSaas ? ' ms-admin-scope' : ' hotel-layout-scope' ?>">

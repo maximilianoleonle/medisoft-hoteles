@@ -133,9 +133,6 @@ function hotel_branding_css_vars(array $branding = null) {
         . '--brand-primary:' . $primary . ';'
         . '--brand-secondary:' . $secondary . ';'
         . '--brand-accent:' . $accent . ';'
-        . '--ms-primary:' . $primary . ';'
-        . '--ms-secondary:' . $secondary . ';'
-        . '--ms-accent:' . $accent . ';'
         . '}</style>';
 }
 

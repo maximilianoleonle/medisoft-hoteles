@@ -37,6 +37,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
 
 <aside id="sidebar" class="sidebar-main sidebar-fixed <?= $sidebarEsPanelSaas ? 'sidebar-saas' : 'hotel-sidebar' ?>">
     <div class="sidebar-header <?= $sidebarEsPanelSaas ? '' : 'hotel-sidebar-brand' ?>">
+        <?php if ($sidebarEsPanelSaas): ?>
         <div class="logo-container <?= $sidebarEsPanelSaas ? '' : 'hotel-sidebar-brand-inner' ?>">
             <img src="<?= htmlspecialchars($sidebarLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?>" class="logo-img">
             <div class="logo-text">
@@ -44,15 +45,34 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
                 <p class="logo-subtitle"><?= htmlspecialchars($sidebarSubtitulo, ENT_QUOTES, 'UTF-8') ?></p>
             </div>
         </div>
+        <?php else: ?>
+        <div class="hotel-boutique-brand" aria-label="<?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
+            <div class="hotel-boutique-mark">
+                <img src="<?= htmlspecialchars($sidebarLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
+            </div>
+            <div class="hotel-boutique-name"><?= htmlspecialchars($sidebarNombreVisual, ENT_QUOTES, 'UTF-8') ?></div>
+            <div class="hotel-boutique-rule">
+                <span></span>
+                <strong>OPERACIÓN HOTELERA</strong>
+                <span></span>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 
     <?php if (!$sidebarEsPanelSaas): ?>
     <div class="sidebar-search hotel-sidebar-search" style="position:relative;">
         <div class="search-box" style="position:relative;display:flex;align-items:center;isolation:isolate;cursor:text;">
-            <i class="fas fa-search search-icon" style="pointer-events:none;"></i>
+            <button type="button"
+                    id="buscador-global-trigger"
+                    class="search-trigger"
+                    title="Buscar huésped o reservación"
+                    aria-label="Buscar huésped o reservación">
+                <i class="fas fa-search"></i>
+            </button>
             <input type="text"
                    id="buscador-global-input"
-                   placeholder="Buscar huésped, reservación..."
+                   placeholder="Buscar huésped o reservación"
                    class="search-input"
                    autocomplete="off"
                    style="padding-right:28px;position:relative;z-index:2;pointer-events:auto;cursor:text;user-select:text;">
@@ -110,7 +130,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
         </div>
         <?php else: ?>
         <?php if ($mostrarDashboard): ?>
-        <div class="nav-section hotel-nav-section">
+        <div class="nav-section hotel-nav-section hotel-dashboard-section">
             <a href="<?= url('dashboard') ?>"
                class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'dashboard') !== false ? 'active' : '' ?>">
                 <div class="nav-icon">
@@ -130,7 +150,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
         <?php endif; ?>
 
         <?php if ($mostrarGestion): ?>
-        <div class="nav-section hotel-nav-section">
+        <div class="nav-section hotel-nav-section hotel-gestion-section">
             <div class="nav-section-title">
                 <span>GESTIÓN</span>
             </div>
@@ -180,7 +200,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
         <?php endif; ?>
 
         <?php if ($mostrarOperaciones): ?>
-        <div class="nav-section hotel-nav-section">
+        <div class="nav-section hotel-nav-section hotel-operaciones-section">
             <div class="nav-section-title">
                 <span>OPERACIONES</span>
             </div>
@@ -189,7 +209,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
             <a href="<?= url('caja') ?>"
                class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'caja') !== false ? 'active' : '' ?>">
                 <div class="nav-icon">
-                    <i class="fas fa-cash-register"></i>
+                    <i class="fas fa-wallet"></i>
                     <?php
                     $caja_abierta = $caja_abierta ?? false;
                     if ($caja_abierta):
@@ -205,7 +225,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
             <a href="<?= url('inventario') ?>"
                class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'inventario') !== false ? 'active' : '' ?>">
                 <div class="nav-icon">
-                    <i class="fas fa-boxes"></i>
+                    <i class="fas fa-box"></i>
                 </div>
                 <span class="nav-text">Inventarios</span>
             </a>
@@ -215,7 +235,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
             <a href="<?= url('facturacion') ?>"
                class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'facturacion') !== false ? 'active' : '' ?>">
                 <div class="nav-icon">
-                    <i class="fas fa-file-invoice-dollar"></i>
+                    <i class="fas fa-file-invoice"></i>
                 </div>
                 <span class="nav-text">Facturación</span>
             </a>
@@ -224,7 +244,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
         <?php endif; ?>
 
         <?php if ($mostrarAdministracion): ?>
-        <div class="nav-section">
+        <div class="nav-section hotel-nav-section hotel-admin-section">
             <div class="nav-section-title">
                 <span>ADMINISTRACIÓN</span>
             </div>
@@ -243,7 +263,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
             <a href="<?= url('usuarios') ?>"
                class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'usuarios') !== false ? 'active' : '' ?>">
                 <div class="nav-icon">
-                    <i class="fas fa-user-cog"></i>
+                    <i class="fas fa-user"></i>
                 </div>
                 <span class="nav-text">Usuarios</span>
             </a>
@@ -267,7 +287,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
         <?php if (!$sidebarEsPanelSaas): ?>
         <div class="hotel-sidebar-status" style="display:flex;align-items:center;gap:8px;padding:6px 12px 2px;opacity:0.85;">
             <span class="pwa-status-dot"></span>
-            <span class="pwa-status-label" id="sidebar-net-label">En línea</span>
+            <span class="pwa-status-label" id="sidebar-net-label">Sesión activa</span>
         </div>
         <?php endif; ?>
         <div class="user-section <?= $sidebarEsPanelSaas ? '' : 'hotel-user-menu' ?>">
@@ -511,6 +531,17 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
 
         const userMenuBtn = document.getElementById('user-menu-toggle');
         const userDropdown = document.getElementById('user-dropdown');
+        const globalSearchTrigger = document.getElementById('buscador-global-trigger');
+        const globalSearchInput = document.getElementById('buscador-global-input');
+
+        if (globalSearchTrigger && globalSearchInput && !globalSearchTrigger.dataset.hotelSearchBound) {
+            globalSearchTrigger.dataset.hotelSearchBound = 'true';
+            globalSearchTrigger.addEventListener('click', function(e) {
+                e.preventDefault();
+                globalSearchInput.focus();
+                globalSearchInput.select();
+            });
+        }
 
         if (userMenuBtn && userDropdown) {
             userMenuBtn.addEventListener('click', function(e) {
