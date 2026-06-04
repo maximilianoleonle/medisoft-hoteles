@@ -18,6 +18,12 @@ $layoutLogoUrl = ($layoutBranding && function_exists('hotel_branding_asset_url')
 $layoutFaviconUrl = ($layoutBranding && function_exists('hotel_branding_asset_url'))
     ? hotel_branding_asset_url($layoutBranding['favicon_url'] ?? null)
     : null;
+$layoutThemeColor = '#1B2746';
+if ($layoutEsPanelSaas) {
+    $layoutThemeColor = '#0B1220';
+} elseif ($layoutBranding && function_exists('hotel_branding_hex')) {
+    $layoutThemeColor = hotel_branding_hex($layoutBranding['color_primary'] ?? null, '#1B2746');
+}
 $layoutManifestHref = asset('manifest.json');
 $layoutHotelSlug = function_exists('current_hotel_slug') ? current_hotel_slug() : null;
 if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $layoutHotelSlug)) {
@@ -34,13 +40,13 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
     
     <!-- PWA Meta Tags -->
     <!-- Color base para la barra de estado -->
-    <meta name="theme-color" content="#9CA777">
+    <meta name="theme-color" content="<?= htmlspecialchars($layoutThemeColor, ENT_QUOTES, 'UTF-8') ?>">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Medisoft Hoteles">
     <meta name="application-name" content="Medisoft Hoteles">
-    <meta name="msapplication-TileColor" content="#9CA777">
+    <meta name="msapplication-TileColor" content="<?= htmlspecialchars($layoutThemeColor, ENT_QUOTES, 'UTF-8') ?>">
     <meta name="msapplication-TileImage" content="<?= asset('img/icons/icon-144x144.png') ?>">
     <meta name="msapplication-config" content="<?= asset('browserconfig.xml') ?>">
     <meta name="format-detection" content="telephone=no">
@@ -106,15 +112,15 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
             theme: {
                 extend: {
                     colors: {
-                        'hotel-brown': '#5D3A1A',
-                        'hotel-brown-light': '#7B4F2F',
-                        'hotel-brown-dark': '#3E2612',
-                        'hotel-gold': '#6B4423',
-                        'hotel-cream': '#FFF8E7',
-                        'hotel-beige': '#F5E6D3',
-                        'hotel-olive': '#9CA777',
-                        'hotel-olive-light': '#B8C49A',
-                        'hotel-olive-dark': '#7A8B5C'
+                        'hotel-brown': 'var(--brand-secondary, #0F172A)',
+                        'hotel-brown-light': 'color-mix(in srgb, var(--brand-secondary, #0F172A) 82%, #FFFFFF)',
+                        'hotel-brown-dark': 'color-mix(in srgb, var(--brand-secondary, #0F172A) 92%, #000000)',
+                        'hotel-gold': 'var(--brand-accent, #BD9441)',
+                        'hotel-cream': 'color-mix(in srgb, var(--brand-accent, #BD9441) 9%, #F8F5ED)',
+                        'hotel-beige': 'color-mix(in srgb, var(--brand-accent, #BD9441) 18%, #F8F5ED)',
+                        'hotel-olive': 'var(--brand-primary, #1B2746)',
+                        'hotel-olive-light': 'color-mix(in srgb, var(--brand-primary, #1B2746) 76%, #FFFFFF)',
+                        'hotel-olive-dark': 'var(--brand-secondary, #0F172A)'
                     },
                     fontFamily: {
                         'playfair': ['Playfair Display', 'serif'],
@@ -407,7 +413,7 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
                 left: 0;
                 right: 0;
                 height: 60px;
-                background: linear-gradient(135deg, var(--brand-primary, #9CA777) 0%, var(--brand-secondary, #7A8B5C) 100%);
+                background: linear-gradient(135deg, var(--brand-primary, #1B2746) 0%, var(--brand-secondary, #0F172A) 100%);
                 box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
                 z-index: 9999;
                 display: flex;
@@ -527,7 +533,7 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
                 left: 0;
                 right: 0;
                 height: 2px;
-            background: var(--brand-accent, #D4AF37);
+            background: var(--brand-accent, #BD9441);
                 transform-origin: left;
                 transform: scaleX(0);
                 z-index: 9998;

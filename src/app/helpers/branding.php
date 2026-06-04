@@ -16,9 +16,9 @@ function hotel_branding($hotelId = null, array $hotel = null) {
             'login_background_url' => null,
             'pwa_icon_192_url' => null,
             'pwa_icon_512_url' => null,
-            'color_primary' => '#9CA777',
-            'color_secondary' => '#7A8B5C',
-            'color_accent' => '#D4AF37',
+            'color_primary' => '#1B2746',
+            'color_secondary' => '#0F172A',
+            'color_accent' => '#BD9441',
             'sidebar_style' => 'default',
             'login_style' => 'default',
             'activo' => 1
@@ -125,9 +125,9 @@ function hotel_branding_pwa_icon_asset_url($path, $size) {
 
 function hotel_branding_css_vars(array $branding = null) {
     $branding = $branding ?: hotel_branding();
-    $primary = hotel_branding_hex($branding['color_primary'] ?? null, '#9CA777');
-    $secondary = hotel_branding_hex($branding['color_secondary'] ?? null, '#7A8B5C');
-    $accent = hotel_branding_hex($branding['color_accent'] ?? null, '#D4AF37');
+    $primary = hotel_branding_hex($branding['color_primary'] ?? null, '#1B2746');
+    $secondary = hotel_branding_hex($branding['color_secondary'] ?? null, '#0F172A');
+    $accent = hotel_branding_hex($branding['color_accent'] ?? null, '#BD9441');
 
     return '<style id="hotel-branding-vars">:root{'
         . '--brand-primary:' . $primary . ';'

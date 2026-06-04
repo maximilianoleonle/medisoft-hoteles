@@ -345,7 +345,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
 }
 
 .user-menu-btn:hover {
-    background: color-mix(in srgb, <?= $sidebarEsPanelSaas ? 'var(--ms-primary, #2563EB)' : 'var(--brand-primary, #9CA777)' ?> 10%, transparent);
+    background: color-mix(in srgb, <?= $sidebarEsPanelSaas ? 'var(--ms-primary, #2563EB)' : 'var(--brand-primary, #1B2746)' ?> 10%, transparent);
 }
 </style>
 
@@ -585,7 +585,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
     right: 0;
     margin-bottom: 0.5rem;
     background: white;
-    border: 1px solid color-mix(in srgb, <?= $sidebarEsPanelSaas ? 'var(--ms-primary, #2563EB)' : 'var(--brand-primary, #9CA777)' ?> 10%, transparent);
+    border: 1px solid color-mix(in srgb, <?= $sidebarEsPanelSaas ? 'var(--ms-primary, #2563EB)' : 'var(--brand-primary, #1B2746)' ?> 10%, transparent);
     border-radius: 6px;
     padding: 0.5rem;
     box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.1);

@@ -207,15 +207,15 @@ $chart_max = max(1, $habitaciones_total);
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 :root {
-    --dash-primary: var(--brand-primary, #2563EB);
+    --dash-primary: var(--brand-primary, #1B2746);
     --dash-secondary: var(--brand-secondary, #0F172A);
-    --dash-accent: var(--brand-accent, #06B6D4);
-    --dash-ivory: color-mix(in srgb, var(--dash-primary) 6%, #F8FAFC);
-    --dash-ivory-2: color-mix(in srgb, var(--dash-accent) 5%, #F8FAFC);
-    --dash-surface: color-mix(in srgb, var(--dash-primary) 2%, #FFFFFF);
-    --dash-surface-warm: color-mix(in srgb, var(--dash-accent) 4%, #FFFFFF);
-    --dash-line: color-mix(in srgb, var(--dash-primary) 16%, #E2E8F0);
-    --dash-line-soft: color-mix(in srgb, var(--dash-primary) 9%, #EEF2F7);
+    --dash-accent: var(--brand-accent, #BD9441);
+    --dash-ivory: color-mix(in srgb, var(--dash-accent) 9%, #F8F5ED);
+    --dash-ivory-2: color-mix(in srgb, var(--dash-accent) 6%, #FBF9F4);
+    --dash-surface: color-mix(in srgb, var(--dash-accent) 2%, #FFFFFF);
+    --dash-surface-warm: color-mix(in srgb, var(--dash-accent) 5%, #FFFFFF);
+    --dash-line: color-mix(in srgb, var(--dash-accent) 22%, #E7DEC9);
+    --dash-line-soft: color-mix(in srgb, var(--dash-accent) 12%, #F0ECE2);
     --dash-navy: var(--dash-secondary);
     --dash-navy-700: color-mix(in srgb, var(--dash-secondary) 86%, var(--dash-primary));
     --dash-ink: var(--dash-secondary);
@@ -361,7 +361,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     overflow: hidden;
     border-radius: 26px;
     background:
-        linear-gradient(90deg, rgba(15,23,42,.86), rgba(15,23,42,.18)),
+        linear-gradient(90deg, color-mix(in srgb, var(--dash-secondary) 86%, transparent), color-mix(in srgb, var(--dash-secondary) 18%, transparent)),
         url("<?= htmlspecialchars($hero_image_url, ENT_QUOTES, 'UTF-8') ?>") center/cover;
     box-shadow: var(--dash-shadow-lg);
 }
@@ -371,8 +371,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     position: absolute;
     inset: 0;
     background:
-        linear-gradient(90deg, rgba(27,39,70,.92) 0%, rgba(27,39,70,.62) 48%, rgba(27,39,70,.24) 100%),
-        radial-gradient(circle at 74% 42%, rgba(194,160,90,.28), transparent 21rem);
+        linear-gradient(90deg, color-mix(in srgb, var(--dash-primary) 92%, transparent) 0%, color-mix(in srgb, var(--dash-primary) 62%, transparent) 48%, color-mix(in srgb, var(--dash-primary) 24%, transparent) 100%),
+        radial-gradient(circle at 74% 42%, color-mix(in srgb, var(--dash-accent) 28%, transparent), transparent 21rem);
 }
 
 .hero-top {

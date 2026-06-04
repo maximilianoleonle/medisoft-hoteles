@@ -1,17 +1,17 @@
 /* Hotel operating shell. Scoped to body.hotel-layout-scope only. */
 body.hotel-layout-scope {
-    --hotel-primary: var(--brand-primary, #2563EB);
+    --hotel-primary: var(--brand-primary, #1B2746);
     --hotel-secondary: var(--brand-secondary, #0F172A);
-    --hotel-accent: var(--brand-accent, #06B6D4);
-    --hotel-bg: color-mix(in srgb, var(--hotel-primary) 6%, #F8FAFC);
-    --hotel-panel: color-mix(in srgb, var(--hotel-primary) 2%, #FFFFFF);
+    --hotel-accent: var(--brand-accent, #BD9441);
+    --hotel-bg: color-mix(in srgb, var(--hotel-accent) 9%, #F8F5ED);
+    --hotel-panel: color-mix(in srgb, var(--hotel-accent) 2%, #FFFFFF);
     --hotel-text: var(--hotel-secondary);
     --hotel-muted: color-mix(in srgb, var(--hotel-secondary) 54%, #94A3B8);
     --hotel-brand: var(--hotel-primary);
     --hotel-brand-dark: var(--hotel-secondary);
-    --hotel-brand-soft: color-mix(in srgb, var(--hotel-primary) 10%, #F8FAFC);
-    --hotel-border: color-mix(in srgb, var(--hotel-primary) 14%, #E2E8F0);
-    --hotel-line: color-mix(in srgb, var(--hotel-primary) 24%, #DBE3EE);
+    --hotel-brand-soft: color-mix(in srgb, var(--hotel-primary) 10%, #F8F5ED);
+    --hotel-border: color-mix(in srgb, var(--hotel-accent) 22%, #E7DEC9);
+    --hotel-line: color-mix(in srgb, var(--hotel-accent) 32%, #E2D6BF);
     --hotel-gold: var(--hotel-accent);
     --sidebar-width: 268px !important;
     --sidebar-collapsed-width: 76px !important;
