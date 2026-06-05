@@ -3791,6 +3791,145 @@ if ($tiene_doble_movimiento) {
     <input type="hidden" name="hora_salida" value="<?= date('H:i:s') ?>">
 </form>
 
+<!-- ════════════════════════════════════════════════════════════════════
+     BOUTIQUE REFINEMENT LAYER — adaptación visual de "habitaciones.html"
+     Solo CSS. Brand-aware (--brand-*). Estados con color semántico fijo.
+     No altera flip-cards, formularios, JS, rutas ni la lógica de estados.
+     Capa scopeada a .habitaciones-view para ganar especificidad sin tocar markup.
+     ════════════════════════════════════════════════════════════════════ -->
+<style id="hb-boutique-refinement">
+.habitaciones-view{
+  /* Identidad del hotel (cae a paleta boutique navy/oro si no hay branding) */
+  --hb-primary: var(--brand-primary, #1B2746);
+  --hb-secondary: var(--brand-secondary, #0F172A);
+  --hb-accent: var(--brand-accent, #BD9441);
+  /* Superficies cálidas */
+  --hb-ivory:#F6F2EA; --hb-ivory-2:#FBF8F2;
+  --hb-surface:#FFFFFF; --hb-surface-warm:#FCFAF5;
+  --hb-line:#E7E1D4; --hb-line-soft:#F0EBE0;
+  --hb-slate-700:#3E4A66; --hb-slate-500:#6C7689; --hb-slate-400:#9AA1B2;
+  /* Estados (significado operativo — NO colapsar a marca) */
+  --c-available:#1E9E63; --bg-available:#E8F3EC;   /* disponible  → verde   */
+  --c-occupied:#5B6B86;  --bg-occupied:#EDEFF3;    /* ocupada     → slate   */
+  --c-arriving:#5A57D2;  --bg-arriving:#ECEBFB;    /* por llegar  → índigo  */
+  --c-cleaning:#2F77E0;  --bg-cleaning:#E7EFFB;    /* limpieza    → azul    */
+  --c-maint:#C2841C;     --bg-maint:#FAF0DA;       /* mantenim.   → ámbar   */
+  --c-critical:#D64539;  --bg-critical:#FBEAE8;    /* vencido/no llegó → rojo*/
+  --hb-radius:16px;
+  --hb-shadow-sm:0 1px 2px rgba(27,39,70,.05), 0 2px 6px rgba(27,39,70,.05);
+  --hb-shadow:0 4px 14px rgba(27,39,70,.07), 0 22px 40px -24px rgba(27,39,70,.30);
+}
+
+/* ── Lienzo: ivory cálido con un sutil lavado de marca ── */
+.habitaciones-view{
+  background:
+    radial-gradient(1100px 460px at 82% -12%, color-mix(in srgb, var(--hb-accent) 9%, transparent), transparent 62%),
+    linear-gradient(180deg, var(--hb-ivory-2), var(--hb-ivory)) !important;
+}
+.habitaciones-view::before{ display:none !important; } /* quita textura verde previa */
+
+/* ── Header ── */
+.habitaciones-view .modern-header{
+  background: color-mix(in srgb, #fff 85%, transparent) !important;
+  border-bottom:1px solid var(--hb-line) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.7) inset, 0 10px 26px -22px rgba(27,39,70,.7) !important;
+}
+.habitaciones-view .modern-header h1{ color:var(--hb-primary)!important; font-weight:700!important; letter-spacing:-.02em!important; }
+
+/* ── Widgets de estadística ── */
+.habitaciones-view .stat-widget{
+  background:var(--hb-surface)!important; border:1px solid var(--hb-line)!important;
+  border-radius:var(--hb-radius)!important; box-shadow:var(--hb-shadow-sm)!important;
+}
+.habitaciones-view .stat-widget:hover{ transform:translateY(-2px)!important; box-shadow:var(--hb-shadow)!important; }
+.habitaciones-view .stat-widget .p-2.rounded-lg{ border-radius:11px!important; }
+.habitaciones-view .stat-widget.bg-blue-50 .bg-blue-500{ background:linear-gradient(150deg,var(--hb-primary),var(--hb-secondary))!important; }
+.habitaciones-view .stat-widget.bg-blue-50 .text-blue-700{ color:var(--hb-primary)!important; }
+.habitaciones-view .stat-widget.bg-emerald-50 .bg-emerald-500{ background:var(--c-available)!important; }
+.habitaciones-view .stat-widget.bg-emerald-50 .text-emerald-700{ color:var(--c-available)!important; }
+.habitaciones-view .stat-widget.bg-purple-50 .bg-purple-500{ background:var(--c-arriving)!important; }
+.habitaciones-view .stat-widget.bg-purple-50 .text-purple-700{ color:var(--c-arriving)!important; }
+.habitaciones-view .stat-widget.bg-gray-50 .bg-gray-600{ background:var(--c-occupied)!important; }
+.habitaciones-view .stat-widget.bg-gray-50 .text-gray-700{ color:var(--c-occupied)!important; }
+
+/* ── Barra de filtros ── */
+.habitaciones-view .filter-input,
+.habitaciones-view .filter-select,
+.habitaciones-view .filter-date{
+  background:var(--hb-surface-warm)!important; border:1px solid var(--hb-line)!important;
+  border-radius:11px!important; color:var(--hb-slate-700)!important; font-weight:600!important;
+}
+.habitaciones-view .filter-input:focus,
+.habitaciones-view .filter-select:focus,
+.habitaciones-view .filter-date:focus{
+  outline:none!important; border-color:var(--hb-accent)!important;
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--hb-accent) 22%, transparent)!important;
+}
+.habitaciones-view .filter-btn{ border-radius:11px!important; font-weight:700!important; }
+.habitaciones-view .filter-btn-primary{
+  background:linear-gradient(150deg,var(--hb-primary),var(--hb-secondary))!important; color:#fff!important; border-color:transparent!important;
+  box-shadow:0 8px 18px -10px color-mix(in srgb,var(--hb-primary) 75%, transparent)!important;
+}
+.habitaciones-view .filter-btn-primary:hover{ transform:translateY(-1px)!important; }
+.habitaciones-view .filter-btn-today{ background:var(--hb-surface)!important; border:1px solid var(--hb-line)!important; color:var(--hb-slate-700)!important; }
+.habitaciones-view .filter-btn-reset{ background:var(--bg-critical)!important; color:var(--c-critical)!important; border-color:transparent!important; }
+
+/* ── Panel de alertas ── */
+.habitaciones-view .alert-panel{
+  background:var(--hb-surface)!important; border:1px solid var(--hb-line)!important;
+  border-left:4px solid var(--c-critical)!important; border-radius:var(--hb-radius)!important; box-shadow:var(--hb-shadow-sm)!important;
+}
+.habitaciones-view .alert-header{ background:linear-gradient(120deg, var(--bg-critical), color-mix(in srgb, var(--bg-critical) 35%, #fff))!important; border-bottom:1px solid var(--hb-line)!important; }
+.habitaciones-view .alert-badge{ background:var(--c-critical)!important; box-shadow:0 6px 14px -6px var(--c-critical)!important; }
+.habitaciones-view .alert-item{ border-radius:12px!important; border:1px solid var(--hb-line)!important; border-left:4px solid!important; }
+.habitaciones-view .alert-critical{ border-left-color:var(--c-critical)!important; background:var(--bg-critical)!important; }
+.habitaciones-view .alert-warning{ border-left-color:var(--c-maint)!important; background:var(--bg-maint)!important; }
+.habitaciones-view .alert-info{ border-left-color:var(--c-cleaning)!important; background:var(--bg-cleaning)!important; }
+.habitaciones-view .btn-alert{ border-radius:10px!important; font-weight:700!important; }
+.habitaciones-view .btn-alert-primary{ background:var(--c-critical)!important; color:#fff!important; }
+.habitaciones-view .btn-alert-warning{ background:var(--c-maint)!important; color:#fff!important; }
+.habitaciones-view .btn-alert-info{ background:var(--c-cleaning)!important; color:#fff!important; }
+
+/* ── Tarjetas de habitación: superficie plana + acento semántico ── */
+.habitaciones-view .room-card-compact{ border-radius:var(--hb-radius)!important; }
+.habitaciones-view .room-card-compact:hover{ box-shadow:var(--hb-shadow)!important; }
+.habitaciones-view .flip-card-front{
+  border-radius:var(--hb-radius)!important; border:1px solid var(--hb-line)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5)!important;
+}
+.habitaciones-view .flip-card-front::before,
+.habitaciones-view .flip-card-front::after{ display:none!important; } /* quita textura/glow/barras decorativas */
+.habitaciones-view .estado-disponible,
+.habitaciones-view .estado-disponible_fecha{ background:var(--bg-available)!important; border-left:4px solid var(--c-available)!important; background-size:auto!important; }
+.habitaciones-view .estado-ocupada,
+.habitaciones-view .estado-ocupada_fecha{ background:var(--bg-occupied)!important; border-left:4px solid var(--c-occupied)!important; background-size:auto!important; }
+.habitaciones-view .estado-por_llegar,
+.habitaciones-view .estado-doble{ background:var(--bg-arriving)!important; border-left:4px solid var(--c-arriving)!important; }
+.habitaciones-view .estado-limpieza,
+.habitaciones-view .estado-limpieza-por-llegar{ background:var(--bg-cleaning)!important; border-left:4px solid var(--c-cleaning)!important; }
+.habitaciones-view .estado-mantenimiento{ background:var(--bg-maint)!important; border-left:4px solid var(--c-maint)!important; }
+/* número de habitación */
+.habitaciones-view .flip-card-front h3{ color:var(--hb-primary)!important; font-weight:700!important; letter-spacing:-.03em!important; font-variant-numeric:tabular-nums; }
+/* icono de estado como tile semántico (sin glow) */
+.habitaciones-view .estado-icon{ width:30px!important; height:30px!important; border-radius:9px!important; display:inline-flex!important; align-items:center; justify-content:center; font-size:.82rem!important; }
+.habitaciones-view .estado-icon::after{ box-shadow:none!important; display:none!important; }
+.habitaciones-view .estado-disponible .estado-icon, .habitaciones-view .estado-disponible_fecha .estado-icon{ background:color-mix(in srgb,var(--c-available) 15%, #fff)!important; color:var(--c-available)!important; }
+.habitaciones-view .estado-ocupada .estado-icon, .habitaciones-view .estado-ocupada_fecha .estado-icon{ background:color-mix(in srgb,var(--c-occupied) 15%, #fff)!important; color:var(--c-occupied)!important; }
+.habitaciones-view .estado-por_llegar .estado-icon, .habitaciones-view .estado-doble .estado-icon{ background:color-mix(in srgb,var(--c-arriving) 15%, #fff)!important; color:var(--c-arriving)!important; }
+.habitaciones-view .estado-limpieza .estado-icon, .habitaciones-view .estado-limpieza-por-llegar .estado-icon{ background:color-mix(in srgb,var(--c-cleaning) 15%, #fff)!important; color:var(--c-cleaning)!important; }
+.habitaciones-view .estado-mantenimiento .estado-icon{ background:color-mix(in srgb,var(--c-maint) 15%, #fff)!important; color:var(--c-maint)!important; }
+/* chip de precio */
+.habitaciones-view .flip-card-front .text-sm.font-bold{ background:rgba(255,255,255,.72)!important; color:var(--hb-primary)!important; border:1px solid var(--hb-line)!important; border-radius:8px!important; padding:2px 8px!important; font-variant-numeric:tabular-nums; }
+
+/* ── Empty state ── */
+.habitaciones-view .p-8.text-center{ background:var(--hb-ivory-2)!important; border:1px dashed var(--hb-line)!important; border-radius:var(--hb-radius)!important; }
+.habitaciones-view .p-8.text-center .bg-gray-100{ background:color-mix(in srgb,var(--hb-accent) 16%, #fff)!important; color:var(--hb-accent)!important; }
+.habitaciones-view .p-8.text-center .text-gray-400{ color:var(--hb-accent)!important; }
+
+/* ── Modales (refinamiento de marco; el contenido conserva su semántica) ── */
+#vistaRapidaModal .bg-white.rounded-xl, #modalLimpieza .bg-white.rounded-xl{ border-radius:18px!important; box-shadow:0 28px 70px -24px rgba(27,39,70,.45)!important; }
+</style>
+
 <!-- JavaScript -->
 <script>
 // Función para hacer flip con clic
