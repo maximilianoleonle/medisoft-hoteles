@@ -2267,64 +2267,38 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     
     <div class="container mx-auto px-4 py-4 max-w-7xl">
-        <!-- Widgets Mejorados y Simplificados -->
-        <div class="bg-white rounded-lg shadow-sm p-3 mb-4">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <!-- Widget Ocupación -->
-                <div class="stat-widget flex flex-col p-4 rounded-lg bg-blue-50 border border-blue-100 relative">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="bg-blue-500 text-white p-2 rounded-lg">
-                            <i class="fas fa-bed text-sm"></i>
-                        </div>
-                        <span class="text-2xl font-bold text-blue-700">
-                            <?= round(($estadisticas['ocupadas'] ?? 0) / max(($estadisticas['total'] ?? 1), 1) * 100) ?>%
-                        </span>
-                    </div>
-                    <p class="text-sm font-medium text-gray-700">Ocupación</p>
-                    <p class="text-xs text-gray-500"><?= $estadisticas['ocupadas'] ?? 0 ?> de <?= $estadisticas['total'] ?? 0 ?> habitaciones</p>
-                </div>
-
-                <!-- Widget Disponibles -->
-                <div class="stat-widget flex flex-col p-4 rounded-lg bg-emerald-50 border border-emerald-100 relative">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="bg-emerald-500 text-white p-2 rounded-lg">
-                            <i class="fas fa-check-circle text-sm"></i>
-                        </div>
-                        <span class="text-2xl font-bold text-emerald-700"><?= $estadisticas['disponibles'] ?? 0 ?></span>
-                    </div>
-                    <p class="text-sm font-medium text-gray-700">Disponibles</p>
-                    <p class="text-xs text-gray-500">Listas para reservar</p>
-                </div>
-
-                <!-- Widget Check-ins Hoy -->
-                <div class="stat-widget flex flex-col p-4 rounded-lg bg-purple-50 border border-purple-100 relative">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="bg-purple-500 text-white p-2 rounded-lg">
-                            <i class="fas fa-sign-in-alt text-sm"></i>
-                        </div>
-                        <span class="text-2xl font-bold text-purple-700"><?= $estadisticas['por_llegar'] ?? 0 ?></span>
-                    </div>
-                    <p class="text-sm font-medium text-gray-700">Por Llegar</p>
-                    <p class="text-xs text-gray-500">Check-ins hoy</p>
-                </div>
-
-                <!-- Widget En Servicio -->
-                <div class="stat-widget flex flex-col p-4 rounded-lg bg-gray-50 border border-gray-200 relative">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="bg-gray-600 text-white p-2 rounded-lg">
-                            <i class="fas fa-tools text-sm"></i>
-                        </div>
-                        <span class="text-2xl font-bold text-gray-700">
-                            <?= ($estadisticas['limpieza'] ?? 0) + ($estadisticas['mantenimiento'] ?? 0) ?>
-                        </span>
-                    </div>
-                    <p class="text-sm font-medium text-gray-700">En Servicio</p>
-                    <div class="flex gap-3 text-xs text-gray-500">
-                        <span><i class="fas fa-broom text-blue-400"></i> <?= $estadisticas['limpieza'] ?? 0 ?></span>
-                        <span><i class="fas fa-wrench text-amber-400"></i> <?= $estadisticas['mantenimiento'] ?? 0 ?></span>
-                    </div>
-                </div>
-            </div>
+        <!-- Widgets de estado (6, semánticos, estilo boutique) -->
+        <div class="hb-stats" id="hbStats">
+            <a class="hb-stat hb-stat--total" href="<?= url('habitaciones') ?>">
+                <span class="hb-stat-ic"><i class="fas fa-door-closed"></i></span>
+                <span class="hb-stat-n"><?= $estadisticas['total'] ?? 0 ?></span>
+                <span class="hb-stat-l">Total</span>
+            </a>
+            <a class="hb-stat hb-stat--available" href="<?= url('habitaciones') ?>?estado=disponible">
+                <span class="hb-stat-ic"><i class="fas fa-check-circle"></i></span>
+                <span class="hb-stat-n"><?= $estadisticas['disponibles'] ?? 0 ?></span>
+                <span class="hb-stat-l">Disponible</span>
+            </a>
+            <a class="hb-stat hb-stat--occupied" href="<?= url('habitaciones') ?>?estado=ocupada">
+                <span class="hb-stat-ic"><i class="fas fa-bed"></i></span>
+                <span class="hb-stat-n"><?= $estadisticas['ocupadas'] ?? 0 ?></span>
+                <span class="hb-stat-l">Ocupada</span>
+            </a>
+            <a class="hb-stat hb-stat--arriving" href="<?= url('habitaciones') ?>?estado=por_llegar">
+                <span class="hb-stat-ic"><i class="fas fa-clock"></i></span>
+                <span class="hb-stat-n"><?= $estadisticas['por_llegar'] ?? 0 ?></span>
+                <span class="hb-stat-l">Por llegar</span>
+            </a>
+            <a class="hb-stat hb-stat--cleaning" href="<?= url('habitaciones') ?>?estado=limpieza">
+                <span class="hb-stat-ic"><i class="fas fa-broom"></i></span>
+                <span class="hb-stat-n"><?= $estadisticas['limpieza'] ?? 0 ?></span>
+                <span class="hb-stat-l">Limpieza</span>
+            </a>
+            <a class="hb-stat hb-stat--maint" href="<?= url('habitaciones') ?>?estado=mantenimiento">
+                <span class="hb-stat-ic"><i class="fas fa-wrench"></i></span>
+                <span class="hb-stat-n"><?= $estadisticas['mantenimiento'] ?? 0 ?></span>
+                <span class="hb-stat-l">Mantenimiento</span>
+            </a>
         </div>
            <?php
         $total_alertas = count($checkouts_vencidos ?? []) + count($checkins_pendientes ?? []) + count($llegadas_tardias ?? []);
@@ -3142,225 +3116,56 @@ if ($tiene_doble_movimiento) {
                             </div>
                             <?php endif; ?>
                             
-                            <!-- Contenido Desktop (oculto en móvil) -->
-                            <div class="hidden sm:block p-3">
-                                <!-- Header Compacto -->
-                                <div class="flex justify-between items-start mb-2">
-                                    <div>
-                                        <h3 class="text-xl font-bold text-gray-800">
-                                            <?= htmlspecialchars($habitacion['numero']) ?>
-                                        </h3>
-                                        <div class="flex items-center gap-2 text-xs text-gray-700 font-medium">
-                                            <span><?= $pisoAbrev ?></span>
-                                            <span>•</span>
-                                            <span><?= $tipos[$habitacion['tipo']] ?? $habitacion['tipo'] ?></span>
-                                        </div>
+                            <!-- Cara frontal (rediseño boutique habitaciones.html) -->
+                            <?php
+                            $faceGuest = ''; $faceMeta = '';
+                            if ($tiene_doble_movimiento) {
+                                $faceGuest = trim(explode(' ', $info_checkout['nombre_completo'])[0] . ' → ' . explode(' ', $info_checkin['nombre_completo'])[0]);
+                                $faceMeta = 'Rotación de huéspedes';
+                            } elseif ($es_checkin_vencido && $info_checkin_vencido) {
+                                $faceGuest = $info_checkin_vencido['nombre'];
+                                $faceMeta = 'No llegó · ' . $info_checkin_vencido['dias_retraso'] . ' día' . ($info_checkin_vencido['dias_retraso'] > 1 ? 's' : '') . ' de retraso';
+                            } elseif ($estado_actual == 'por_llegar' && isset($habitacion['reservacion_pendiente'])) {
+                                $faceGuest = $habitacion['reservacion_pendiente']['nombre_completo'];
+                                $faceMeta = $es_llegada_tardia ? 'Llegada tardía pendiente' : ('Llega ' . date('g:i A', strtotime($habitacion['reservacion_pendiente']['hora_llegada_estimada'])));
+                            } elseif ($habitacion['estado'] == 'ocupada' && isset($habitacion['ocupacion_actual'])) {
+                                $faceGuest = $habitacion['ocupacion_actual']['nombre_completo'];
+                                if ($tiene_checkout_vencido) { $faceMeta = 'Check-out vencido'; }
+                                elseif ($tiene_checkout_hoy) { $faceMeta = 'Sale hoy'; }
+                                else { $faceMeta = 'Sale ' . format_date($habitacion['ocupacion_actual']['fecha_salida']); }
+                            } elseif ($estado_actual == 'ocupada_fecha' && isset($habitacion['info_ocupacion'])) {
+                                $faceGuest = $habitacion['info_ocupacion']['huesped'] ?? 'Ocupada';
+                                $faceMeta = 'No disponible en la fecha';
+                            } elseif ($habitacion['estado'] == 'limpieza') {
+                                $faceMeta = 'Preparando habitación';
+                            } elseif ($habitacion['estado'] == 'mantenimiento') {
+                                $faceMeta = $habitacion['mantenimiento_actual']['tipo_mantenimiento'] ?? 'En mantenimiento';
+                            }
+                            ?>
+                            <div class="rc-face">
+                                <span class="rc-stripe" style="background: <?= htmlspecialchars($accentColor) ?>;"></span>
+                                <div class="rc-top">
+                                    <div class="rc-id">
+                                        <div class="rc-num"><?= htmlspecialchars($habitacion['numero']) ?></div>
+                                        <div class="rc-type"><?= $pisoAbrev ?> · <?= $tipos[$habitacion['tipo']] ?? $habitacion['tipo'] ?></div>
                                     </div>
-                                    <div class="text-right">
-                                        <div class="estado-icon">
-                                            <i class="fas fa-<?= $estadoInfo['icon'] ?>"></i>
-                                        </div>
-                                        <p class="text-sm font-bold text-gray-800 mt-1">
-                                            <?= format_money($habitacion['precio_actual'] ?? $habitacion['precio_base']) ?>
-                                        </p>
-                                    </div>
+                                    <span class="rc-badge"><i class="fas fa-<?= $estadoInfo['icon'] ?>"></i><span><?= $estadoInfo['label'] ?></span></span>
                                 </div>
-                                
-                                <!-- Contenido según estado (Desktop) -->
-                                <?php if ($tiene_doble_movimiento): ?>
-                                    <div class="space-y-1 text-xs">
-                                        <div class="bg-red-500/20 backdrop-blur rounded p-1 flex items-center gap-1 border border-red-300">
-                                            <i class="fas fa-sign-out-alt text-red-700 text-xs"></i>
-                                            <span class="truncate font-medium text-red-900"><?= htmlspecialchars(explode(' ', $info_checkout['nombre_completo'])[0]) ?></span>
-                                        </div>
-                                        <div class="bg-purple-500/20 backdrop-blur rounded p-1 flex items-center gap-1 border border-purple-300">
-                                            <i class="fas fa-sign-in-alt text-purple-700 text-xs"></i>
-                                            <span class="truncate font-medium text-purple-900"><?= htmlspecialchars(explode(' ', $info_checkin['nombre_completo'])[0]) ?></span>
-                                        </div>
-                                    </div>
-                                
-                                <?php elseif ($es_checkin_vencido && $info_checkin_vencido): ?>
-                                    <div class="bg-red-100/80 backdrop-blur rounded p-2 text-xs border-2 border-red-500">
-                                        <p class="font-bold text-red-900 truncate">
-                                            <?= htmlspecialchars($info_checkin_vencido['nombre']) ?>
-                                        </p>
-                                        <p class="text-red-700 flex items-center gap-1 mt-1">
-                                            <i class="fas fa-exclamation-triangle text-red-600"></i>
-                                            <span class="font-bold"><?= $info_checkin_vencido['dias_retraso'] ?> día<?= $info_checkin_vencido['dias_retraso'] > 1 ? 's' : '' ?> de retraso</span>
-                                        </p>
-                                        <p class="text-red-600 text-xs mt-1">
-                                            Debió llegar: <?= date('d/m/Y', strtotime($info_checkin_vencido['fecha_entrada'])) ?>
-                                        </p>
-                                    </div>
-                                
-                                <?php elseif ($estado_actual == 'ocupada_fecha' && isset($habitacion['info_ocupacion'])): ?>
-                                    <div class="bg-white/70 backdrop-blur rounded p-2 text-xs border border-red-200">
-                                        <p class="font-bold text-red-800">No disponible</p>
-                                        <p class="text-gray-700 truncate mt-1">
-                                            <?= htmlspecialchars($habitacion['info_ocupacion']['huesped']) ?>
-                                        </p>
-                                    </div>
-                                    
-                                <?php elseif ($estado_actual == 'disponible_fecha'): ?>
-                                    <div class="text-center py-3">
-                                        <p class="text-xs text-emerald-800 font-bold uppercase tracking-wide">
-                                            <i class="fas fa-calendar-check mr-1"></i>Disponible
-                                        </p>
-                                    </div>
-                                    
-                                <?php elseif ($estado_actual == 'por_llegar' && isset($habitacion['reservacion_pendiente'])): ?>
-                                    <div class="bg-white/70 backdrop-blur rounded p-2 text-xs border border-purple-200">
-                                        <div class="flex items-center justify-between gap-2 mb-1">
-                                            <p class="font-semibold text-gray-800 truncate">
-                                                <?= htmlspecialchars($habitacion['reservacion_pendiente']['nombre_completo']) ?>
-                                            </p>
-                                            <!-- Botón Ver Reservación compacto -->
-                                            <a href="<?= url('reservaciones/ver/' . ($habitacion['reservacion_pendiente']['reservacion_id'] ?? $habitacion['reservacion_pendiente']['id'])) ?>" 
-                                               onclick="event.stopPropagation();"
-                                               class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-[10px] font-semibold transition-colors whitespace-nowrap flex items-center gap-1">
-                                                <i class="fas fa-eye text-[9px]"></i>
-                                                <span>Ver Resevración</span>
-                                            </a>
-                                        </div>
-                                        <p class="text-gray-700 flex items-center gap-1 text-[10px]">
-                                            <?php if ($es_llegada_tardia): ?>
-                                                <i class="fas fa-moon text-purple-600"></i>
-                                                <span class="text-purple-700 font-medium">Pendiente</span>
-                                            <?php else: ?>
-                                                <i class="fas fa-clock text-purple-600"></i>
-                                                <?= date('g:i A', strtotime($habitacion['reservacion_pendiente']['hora_llegada_estimada'])) ?>
-                                            <?php endif; ?>
-                                        </p>
-                                    </div>
-                                    
-                                <?php elseif ($habitacion['estado'] == 'ocupada' && isset($habitacion['ocupacion_actual'])): ?>
-                                    <div class="bg-white/70 backdrop-blur rounded p-2 text-xs border border-red-200">
-                                        <div class="flex items-center justify-between gap-2 mb-1">
-                                            <p class="font-semibold text-gray-800 truncate">
-                                                <?= htmlspecialchars($habitacion['ocupacion_actual']['nombre_completo']) ?>
-                                            </p>
-                                            <!-- Botón Ver Reservación compacto -->
-                                            <a href="<?= url('reservaciones/ver/' . $habitacion['ocupacion_actual']['id']) ?>" 
-                                               onclick="event.stopPropagation();"
-                                               class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-[10px] font-semibold transition-colors whitespace-nowrap flex items-center gap-1">
-                                                <i class="fas fa-eye text-[9px]"></i>
-                                                <span>Ver Reservación</span>
-                                            </a>
-                                        </div>
-                                        <p class="text-gray-700 flex items-center gap-1 text-[10px]">
-                                            <i class="fas fa-calendar text-red-600"></i>
-                                            Sale: <?= format_date($habitacion['ocupacion_actual']['fecha_salida']) ?>
-                                        </p>
-                                    </div>
-                                    
-                                <?php elseif ($habitacion['estado'] == 'limpieza'): ?>
-                                    <div class="text-center py-3">
-                                        <p class="text-xs text-blue-800 font-bold uppercase tracking-wide">En limpieza</p>
-                                    </div>
-                                    
-                                <?php elseif ($habitacion['estado'] == 'disponible'): ?>
-                                    <div class="text-center py-3">
-                                        <p class="text-xs text-emerald-800 font-bold uppercase tracking-wide">
-                                            <i class="fas fa-check-circle mr-1"></i>Disponible
-                                        </p>
-                                    </div>
-                                    
-                                <?php elseif ($habitacion['estado'] == 'mantenimiento'): ?>
-                                    <div class="text-center py-3">
-                                        <p class="text-xs text-amber-800 font-bold uppercase tracking-wide">Mantenimiento</p>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                            
-                            <!-- Contenido Móvil (visible solo en móvil) -->
-                            <div class="sm:hidden mobile-flip-content">
-                                <!-- Header -->
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <h3 class="text-2xl font-bold text-gray-800">
-                                            <?= htmlspecialchars($habitacion['numero']) ?>
-                                        </h3>
-                                        <div class="flex items-center gap-1 text-xs text-gray-700">
-                                            <span><?= $pisoAbrev ?></span>
-                                            <span>•</span>
-                                            <span><?= $tipos[$habitacion['tipo']] ?? $habitacion['tipo'] ?></span>
-                                        </div>
-                                    </div>
-                                    <div class="text-right">
-                                        <div class="estado-icon mobile-estado-icon">
-                                            <i class="fas fa-<?= $estadoInfo['icon'] ?>"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Contenido central -->
-                                <div class="flex-1 flex items-center">
-                                    <?php if ($tiene_doble_movimiento): ?>
-                                        <div class="w-full space-y-1">
-                                            <div class="bg-red-500/20 backdrop-blur rounded p-1 text-xs">
-                                                <i class="fas fa-sign-out-alt text-red-700 mr-1"></i>
-                                                <span class="truncate"><?= htmlspecialchars(explode(' ', $info_checkout['nombre_completo'])[0]) ?></span>
-                                            </div>
-                                            <div class="bg-purple-500/20 backdrop-blur rounded p-1 text-xs">
-                                                <i class="fas fa-sign-in-alt text-purple-700 mr-1"></i>
-                                                <span class="truncate"><?= htmlspecialchars(explode(' ', $info_checkin['nombre_completo'])[0]) ?></span>
-                                            </div>
-                                        </div>
-                                    <?php elseif ($es_checkin_vencido && $info_checkin_vencido): ?>
-                                        <div class="bg-red-100/80 backdrop-blur rounded p-2 text-xs w-full border-2 border-red-500">
-                                            <p class="font-bold truncate text-red-900"><?= htmlspecialchars(explode(' ', $info_checkin_vencido['nombre'])[0]) ?></p>
-                                            <p class="text-red-700">
-                                                <i class="fas fa-exclamation-triangle text-red-600"></i> 
-                                                <span class="font-bold">NO LLEGÓ - <?= $info_checkin_vencido['dias_retraso'] ?> día<?= $info_checkin_vencido['dias_retraso'] > 1 ? 's' : '' ?></span>
-                                            </p>
-                                        </div>
-                                    <?php elseif ($estado_actual == 'por_llegar' && isset($habitacion['reservacion_pendiente'])): ?>
-                                        <div class="bg-white/70 backdrop-blur rounded p-2 text-xs w-full">
-                                            <p class="font-semibold truncate"><?= htmlspecialchars(explode(' ', $habitacion['reservacion_pendiente']['nombre_completo'])[0]) ?></p>
-                                            <p class="text-gray-700">
-                                                <?php if ($es_checkin_vencido): ?>
-                                                    <i class="fas fa-exclamation-triangle text-red-600"></i> 
-                                                    <span class="font-bold text-red-700">NO LLEGÓ</span>
-                                                <?php elseif ($es_llegada_tardia): ?>
-                                                    <i class="fas fa-moon text-purple-600"></i> 
-                                                    <span class="font-semibold text-purple-700">Tardía</span>
-                                                <?php else: ?>
-                                                    <i class="fas fa-clock text-purple-600"></i> <?= date('g:i A', strtotime($habitacion['reservacion_pendiente']['hora_llegada_estimada'])) ?>
-                                                <?php endif; ?>
-                                            </p>
-                                        </div>
-                                    <?php elseif ($habitacion['estado'] == 'ocupada' && isset($habitacion['ocupacion_actual'])): ?>
-                                        <div class="bg-white/70 backdrop-blur rounded p-2 text-xs w-full">
-                                            <p class="font-semibold truncate"><?= htmlspecialchars(explode(' ', $habitacion['ocupacion_actual']['nombre_completo'])[0]) ?></p>
-                                            <p class="text-gray-700">
-                                                <?php if ($tiene_checkout_vencido): ?>
-                                                    <i class="fas fa-exclamation-circle text-orange-600"></i> 
-                                                    <span class="font-bold text-orange-700">VENCIDO</span> - <?= date('d/m', strtotime($habitacion['ocupacion_actual']['fecha_salida'])) ?>
-                                                <?php elseif ($tiene_checkout_hoy): ?>
-                                                    <i class="fas fa-sign-out-alt text-yellow-600"></i> 
-                                                    <span class="font-semibold text-yellow-700">Sale HOY</span>
-                                                <?php else: ?>
-                                                    <i class="fas fa-calendar text-red-600"></i> <?= date('d/m', strtotime($habitacion['ocupacion_actual']['fecha_salida'])) ?>
-                                                <?php endif; ?>
-                                            </p>
-                                        </div>
+                                <div class="rc-mid">
+                                    <?php if ($faceGuest !== ''): ?>
+                                        <div class="rc-guest"><i class="fas fa-user"></i><span><?= htmlspecialchars($faceGuest) ?></span></div>
                                     <?php else: ?>
-                                        <div class="text-center w-full">
-                                            <p class="text-xs font-bold uppercase"><?= $estadoInfo['label'] ?></p>
-                                        </div>
+                                        <div class="rc-guest rc-guest--empty"><i class="fas fa-bed"></i><span>Sin huésped</span></div>
                                     <?php endif; ?>
+                                    <?php if ($faceMeta !== ''): ?><div class="rc-meta"><?= htmlspecialchars($faceMeta) ?></div><?php endif; ?>
                                 </div>
-                                
-                                <!-- Footer con precio -->
-                                <div class="flex justify-between items-end">
-                                    <p class="text-sm font-bold text-gray-800">
-                                        <?= format_money($habitacion['precio_actual'] ?? $habitacion['precio_base']) ?>
-                                    </p>
-                                    
+                                <div class="rc-foot">
+                                    <span class="rc-price"><?= format_money($habitacion['precio_actual'] ?? $habitacion['precio_base']) ?><small>/noche</small></span>
+                                    <span class="rc-hint"><i class="fas fa-hand-pointer"></i><span>Acciones</span></span>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Parte trasera con información adicional -->
                         <div class="flip-card-back <?= $backColorClass ?>"<?= $backStyle ? ' style="' . $backStyle . '"' : '' ?>>
                             <div>
@@ -3798,61 +3603,76 @@ if ($tiene_doble_movimiento) {
      Capa scopeada a .habitaciones-view para ganar especificidad sin tocar markup.
      ════════════════════════════════════════════════════════════════════ -->
 <style id="hb-boutique-refinement">
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap');
+
 .habitaciones-view{
-  /* Identidad del hotel (cae a paleta boutique navy/oro si no hay branding) */
+  /* Identidad del hotel (fallback boutique navy/oro) */
   --hb-primary: var(--brand-primary, #1B2746);
   --hb-secondary: var(--brand-secondary, #0F172A);
   --hb-accent: var(--brand-accent, #BD9441);
-  /* Superficies cálidas */
   --hb-ivory:#F6F2EA; --hb-ivory-2:#FBF8F2;
   --hb-surface:#FFFFFF; --hb-surface-warm:#FCFAF5;
   --hb-line:#E7E1D4; --hb-line-soft:#F0EBE0;
   --hb-slate-700:#3E4A66; --hb-slate-500:#6C7689; --hb-slate-400:#9AA1B2;
-  /* Estados (significado operativo — NO colapsar a marca) */
-  --c-available:#1E9E63; --bg-available:#E8F3EC;   /* disponible  → verde   */
-  --c-occupied:#5B6B86;  --bg-occupied:#EDEFF3;    /* ocupada     → slate   */
-  --c-arriving:#5A57D2;  --bg-arriving:#ECEBFB;    /* por llegar  → índigo  */
-  --c-cleaning:#2F77E0;  --bg-cleaning:#E7EFFB;    /* limpieza    → azul    */
-  --c-maint:#C2841C;     --bg-maint:#FAF0DA;       /* mantenim.   → ámbar   */
-  --c-critical:#D64539;  --bg-critical:#FBEAE8;    /* vencido/no llegó → rojo*/
-  --hb-radius:16px;
-  --hb-shadow-sm:0 1px 2px rgba(27,39,70,.05), 0 2px 6px rgba(27,39,70,.05);
-  --hb-shadow:0 4px 14px rgba(27,39,70,.07), 0 22px 40px -24px rgba(27,39,70,.30);
+  /* Estados (significado fijo) */
+  --c-available:#1E9E63; --bg-available:#E8F3EC;
+  --c-occupied:#5B6B86;  --bg-occupied:#EDEFF3;
+  --c-arriving:#5A57D2;  --bg-arriving:#ECEBFB;
+  --c-cleaning:#2F77E0;  --bg-cleaning:#E7EFFB;
+  --c-maint:#C2841C;     --bg-maint:#FAF0DA;
+  --c-critical:#D64539;  --bg-critical:#FBEAE8;
+  --serif:'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --hb-radius:16px; --hb-radius-lg:20px;
+  --hb-shadow-xs:0 1px 2px rgba(27,39,70,.05);
+  --hb-shadow-sm:0 1px 2px rgba(27,39,70,.05),0 2px 6px rgba(27,39,70,.05);
+  --hb-shadow:0 4px 14px rgba(27,39,70,.07),0 22px 40px -24px rgba(27,39,70,.30);
 }
 
-/* ── Lienzo: ivory cálido con un sutil lavado de marca ── */
+/* ── Lienzo ── */
 .habitaciones-view{
   background:
-    radial-gradient(1100px 460px at 82% -12%, color-mix(in srgb, var(--hb-accent) 9%, transparent), transparent 62%),
+    radial-gradient(1100px 460px at 85% -12%, color-mix(in srgb, var(--hb-accent) 9%, transparent), transparent 60%),
     linear-gradient(180deg, var(--hb-ivory-2), var(--hb-ivory)) !important;
 }
-.habitaciones-view::before{ display:none !important; } /* quita textura verde previa */
+.habitaciones-view::before{ display:none !important; }
 
 /* ── Header ── */
 .habitaciones-view .modern-header{
-  background: color-mix(in srgb, #fff 85%, transparent) !important;
-  border-bottom:1px solid var(--hb-line) !important;
-  box-shadow:0 1px 0 rgba(255,255,255,.7) inset, 0 10px 26px -22px rgba(27,39,70,.7) !important;
+  background:color-mix(in srgb,#fff 86%,transparent)!important;
+  border-bottom:1px solid var(--hb-line)!important;
+  box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 10px 26px -22px rgba(27,39,70,.6)!important;
 }
-.habitaciones-view .modern-header h1{ color:var(--hb-primary)!important; font-weight:700!important; letter-spacing:-.02em!important; }
-
-/* ── Widgets de estadística ── */
-.habitaciones-view .stat-widget{
-  background:var(--hb-surface)!important; border:1px solid var(--hb-line)!important;
-  border-radius:var(--hb-radius)!important; box-shadow:var(--hb-shadow-sm)!important;
+.habitaciones-view .modern-header h1{
+  font-family:var(--serif)!important; font-size:2rem!important; font-weight:600!important;
+  color:var(--hb-primary)!important; letter-spacing:0!important; line-height:1!important;
 }
-.habitaciones-view .stat-widget:hover{ transform:translateY(-2px)!important; box-shadow:var(--hb-shadow)!important; }
-.habitaciones-view .stat-widget .p-2.rounded-lg{ border-radius:11px!important; }
-.habitaciones-view .stat-widget.bg-blue-50 .bg-blue-500{ background:linear-gradient(150deg,var(--hb-primary),var(--hb-secondary))!important; }
-.habitaciones-view .stat-widget.bg-blue-50 .text-blue-700{ color:var(--hb-primary)!important; }
-.habitaciones-view .stat-widget.bg-emerald-50 .bg-emerald-500{ background:var(--c-available)!important; }
-.habitaciones-view .stat-widget.bg-emerald-50 .text-emerald-700{ color:var(--c-available)!important; }
-.habitaciones-view .stat-widget.bg-purple-50 .bg-purple-500{ background:var(--c-arriving)!important; }
-.habitaciones-view .stat-widget.bg-purple-50 .text-purple-700{ color:var(--c-arriving)!important; }
-.habitaciones-view .stat-widget.bg-gray-50 .bg-gray-600{ background:var(--c-occupied)!important; }
-.habitaciones-view .stat-widget.bg-gray-50 .text-gray-700{ color:var(--c-occupied)!important; }
+.habitaciones-view .modern-header p{ color:var(--hb-slate-500)!important; }
+.habitaciones-view .modern-header .p-2.rounded-lg{
+  background:linear-gradient(150deg,var(--hb-primary),var(--hb-secondary))!important; border-radius:12px!important;
+}
 
-/* ── Barra de filtros ── */
+/* ── Widgets (6 semánticos) ── */
+.habitaciones-view .hb-stats{ display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:18px; }
+.habitaciones-view .hb-stat{
+  display:flex; flex-direction:column; text-decoration:none; background:var(--hb-surface);
+  border:1px solid var(--hb-line); border-radius:var(--hb-radius); padding:14px 15px;
+  box-shadow:var(--hb-shadow-sm); position:relative; overflow:hidden; transition:transform .16s, box-shadow .16s; --sc:var(--hb-primary);
+}
+.habitaciones-view .hb-stat::after{ content:''; position:absolute; left:0; right:0; bottom:0; height:3px; background:var(--sc); opacity:0; transition:opacity .2s; }
+.habitaciones-view .hb-stat:hover{ transform:translateY(-2px); box-shadow:var(--hb-shadow); }
+.habitaciones-view .hb-stat:hover::after{ opacity:1; }
+.habitaciones-view .hb-stat-ic{ width:34px; height:34px; border-radius:10px; display:grid; place-items:center; background:color-mix(in srgb,var(--sc) 13%,#fff); color:var(--sc); margin-bottom:10px; }
+.habitaciones-view .hb-stat-ic i{ font-size:.95rem; }
+.habitaciones-view .hb-stat-n{ font-family:var(--serif); font-size:2.05rem; font-weight:700; line-height:1; color:var(--hb-primary); font-variant-numeric:tabular-nums; }
+.habitaciones-view .hb-stat-l{ font-size:.7rem; font-weight:700; letter-spacing:.03em; color:var(--hb-slate-500); margin-top:6px; text-transform:uppercase; }
+.habitaciones-view .hb-stat--total{ --sc:var(--hb-primary); }
+.habitaciones-view .hb-stat--available{ --sc:var(--c-available); }
+.habitaciones-view .hb-stat--occupied{ --sc:var(--c-occupied); }
+.habitaciones-view .hb-stat--arriving{ --sc:var(--c-arriving); }
+.habitaciones-view .hb-stat--cleaning{ --sc:var(--c-cleaning); }
+.habitaciones-view .hb-stat--maint{ --sc:var(--c-maint); }
+
+/* ── Filtros ── */
 .habitaciones-view .filter-input,
 .habitaciones-view .filter-select,
 .habitaciones-view .filter-date{
@@ -3874,11 +3694,8 @@ if ($tiene_doble_movimiento) {
 .habitaciones-view .filter-btn-today{ background:var(--hb-surface)!important; border:1px solid var(--hb-line)!important; color:var(--hb-slate-700)!important; }
 .habitaciones-view .filter-btn-reset{ background:var(--bg-critical)!important; color:var(--c-critical)!important; border-color:transparent!important; }
 
-/* ── Panel de alertas ── */
-.habitaciones-view .alert-panel{
-  background:var(--hb-surface)!important; border:1px solid var(--hb-line)!important;
-  border-left:4px solid var(--c-critical)!important; border-radius:var(--hb-radius)!important; box-shadow:var(--hb-shadow-sm)!important;
-}
+/* ── Alertas ── */
+.habitaciones-view .alert-panel{ background:var(--hb-surface)!important; border:1px solid var(--hb-line)!important; border-left:4px solid var(--c-critical)!important; border-radius:var(--hb-radius)!important; box-shadow:var(--hb-shadow-sm)!important; }
 .habitaciones-view .alert-header{ background:linear-gradient(120deg, var(--bg-critical), color-mix(in srgb, var(--bg-critical) 35%, #fff))!important; border-bottom:1px solid var(--hb-line)!important; }
 .habitaciones-view .alert-badge{ background:var(--c-critical)!important; box-shadow:0 6px 14px -6px var(--c-critical)!important; }
 .habitaciones-view .alert-item{ border-radius:12px!important; border:1px solid var(--hb-line)!important; border-left:4px solid!important; }
@@ -3890,44 +3707,82 @@ if ($tiene_doble_movimiento) {
 .habitaciones-view .btn-alert-warning{ background:var(--c-maint)!important; color:#fff!important; }
 .habitaciones-view .btn-alert-info{ background:var(--c-cleaning)!important; color:#fff!important; }
 
-/* ── Tarjetas de habitación: superficie plana + acento semántico ── */
+/* ── TARJETAS DE HABITACIÓN (rediseño boutique) ── */
+.habitaciones-view #habitaciones-grid{ gap:15px!important; }
 .habitaciones-view .room-card-compact{ border-radius:var(--hb-radius)!important; }
 .habitaciones-view .room-card-compact:hover{ box-shadow:var(--hb-shadow)!important; }
 .habitaciones-view .flip-card-front{
-  border-radius:var(--hb-radius)!important; border:1px solid var(--hb-line)!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.5)!important;
+  border:1px solid var(--hb-line)!important; border-radius:var(--hb-radius)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55)!important; padding:0!important; overflow:hidden!important;
 }
 .habitaciones-view .flip-card-front::before,
-.habitaciones-view .flip-card-front::after{ display:none!important; } /* quita textura/glow/barras decorativas */
-.habitaciones-view .estado-disponible,
-.habitaciones-view .estado-disponible_fecha{ background:var(--bg-available)!important; border-left:4px solid var(--c-available)!important; background-size:auto!important; }
-.habitaciones-view .estado-ocupada,
-.habitaciones-view .estado-ocupada_fecha{ background:var(--bg-occupied)!important; border-left:4px solid var(--c-occupied)!important; background-size:auto!important; }
-.habitaciones-view .estado-por_llegar,
-.habitaciones-view .estado-doble{ background:var(--bg-arriving)!important; border-left:4px solid var(--c-arriving)!important; }
-.habitaciones-view .estado-limpieza,
-.habitaciones-view .estado-limpieza-por-llegar{ background:var(--bg-cleaning)!important; border-left:4px solid var(--c-cleaning)!important; }
+.habitaciones-view .flip-card-front::after{ display:none!important; }
+/* superficie semántica + barra de acento izquierda */
+.habitaciones-view .estado-disponible,.habitaciones-view .estado-disponible_fecha{ background:var(--bg-available)!important; border-left:4px solid var(--c-available)!important; background-size:auto!important; }
+.habitaciones-view .estado-ocupada,.habitaciones-view .estado-ocupada_fecha{ background:var(--bg-occupied)!important; border-left:4px solid var(--c-occupied)!important; background-size:auto!important; }
+.habitaciones-view .estado-por_llegar,.habitaciones-view .estado-doble{ background:var(--bg-arriving)!important; border-left:4px solid var(--c-arriving)!important; }
+.habitaciones-view .estado-limpieza,.habitaciones-view .estado-limpieza-por-llegar{ background:var(--bg-cleaning)!important; border-left:4px solid var(--c-cleaning)!important; }
 .habitaciones-view .estado-mantenimiento{ background:var(--bg-maint)!important; border-left:4px solid var(--c-maint)!important; }
-/* número de habitación */
-.habitaciones-view .flip-card-front h3{ color:var(--hb-primary)!important; font-weight:700!important; letter-spacing:-.03em!important; font-variant-numeric:tabular-nums; }
-/* icono de estado como tile semántico (sin glow) */
-.habitaciones-view .estado-icon{ width:30px!important; height:30px!important; border-radius:9px!important; display:inline-flex!important; align-items:center; justify-content:center; font-size:.82rem!important; }
-.habitaciones-view .estado-icon::after{ box-shadow:none!important; display:none!important; }
-.habitaciones-view .estado-disponible .estado-icon, .habitaciones-view .estado-disponible_fecha .estado-icon{ background:color-mix(in srgb,var(--c-available) 15%, #fff)!important; color:var(--c-available)!important; }
-.habitaciones-view .estado-ocupada .estado-icon, .habitaciones-view .estado-ocupada_fecha .estado-icon{ background:color-mix(in srgb,var(--c-occupied) 15%, #fff)!important; color:var(--c-occupied)!important; }
-.habitaciones-view .estado-por_llegar .estado-icon, .habitaciones-view .estado-doble .estado-icon{ background:color-mix(in srgb,var(--c-arriving) 15%, #fff)!important; color:var(--c-arriving)!important; }
-.habitaciones-view .estado-limpieza .estado-icon, .habitaciones-view .estado-limpieza-por-llegar .estado-icon{ background:color-mix(in srgb,var(--c-cleaning) 15%, #fff)!important; color:var(--c-cleaning)!important; }
-.habitaciones-view .estado-mantenimiento .estado-icon{ background:color-mix(in srgb,var(--c-maint) 15%, #fff)!important; color:var(--c-maint)!important; }
-/* chip de precio */
-.habitaciones-view .flip-card-front .text-sm.font-bold{ background:rgba(255,255,255,.72)!important; color:var(--hb-primary)!important; border:1px solid var(--hb-line)!important; border-radius:8px!important; padding:2px 8px!important; font-variant-numeric:tabular-nums; }
+
+/* layout de la cara */
+.habitaciones-view .rc-face{ position:relative; height:100%; display:flex; flex-direction:column; padding:13px 15px 13px 18px; }
+.habitaciones-view .rc-stripe{ position:absolute; top:14px; left:0; width:5px; height:26px; border-radius:0 3px 3px 0; box-shadow:0 1px 3px rgba(0,0,0,.18); }
+.habitaciones-view .rc-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.habitaciones-view .rc-num{ font-family:var(--serif)!important; font-size:1.95rem!important; font-weight:700!important; line-height:.92!important; color:var(--hb-primary)!important; letter-spacing:0!important; font-variant-numeric:tabular-nums; }
+.habitaciones-view .rc-type{ font-size:.68rem; font-weight:600; color:var(--hb-slate-500); margin-top:3px; text-transform:uppercase; letter-spacing:.03em; }
+.habitaciones-view .rc-badge{ display:inline-flex; align-items:center; gap:5px; font-size:.6rem; font-weight:800; letter-spacing:.03em; text-transform:uppercase; padding:5px 9px; border-radius:999px; color:#fff; white-space:nowrap; background:var(--hb-primary); box-shadow:0 2px 6px -2px rgba(27,39,70,.4); }
+.habitaciones-view .rc-badge i{ font-size:.58rem; }
+.habitaciones-view .estado-disponible .rc-badge,.habitaciones-view .estado-disponible_fecha .rc-badge{ background:var(--c-available); }
+.habitaciones-view .estado-ocupada .rc-badge,.habitaciones-view .estado-ocupada_fecha .rc-badge{ background:var(--c-occupied); }
+.habitaciones-view .estado-por_llegar .rc-badge,.habitaciones-view .estado-doble .rc-badge{ background:var(--c-arriving); }
+.habitaciones-view .estado-limpieza .rc-badge,.habitaciones-view .estado-limpieza-por-llegar .rc-badge{ background:var(--c-cleaning); }
+.habitaciones-view .estado-mantenimiento .rc-badge{ background:var(--c-maint); }
+.habitaciones-view .rc-mid{ margin-top:auto; min-width:0; }
+.habitaciones-view .rc-guest{ display:flex; align-items:center; gap:6px; font-size:.8rem; font-weight:600; color:var(--hb-primary); min-width:0; }
+.habitaciones-view .rc-guest i{ font-size:.68rem; color:var(--hb-slate-400); flex:none; }
+.habitaciones-view .rc-guest span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.habitaciones-view .rc-guest--empty{ color:var(--hb-slate-400); font-weight:500; }
+.habitaciones-view .rc-meta{ font-size:.68rem; color:var(--hb-slate-500); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.habitaciones-view .rc-foot{ display:flex; align-items:center; justify-content:space-between; margin-top:9px; gap:8px; }
+.habitaciones-view .rc-price{ font-size:.82rem; font-weight:800; color:var(--hb-primary); white-space:nowrap; }
+.habitaciones-view .rc-price small{ font-weight:600; color:var(--hb-slate-400); font-size:.6rem; }
+.habitaciones-view .rc-hint{ display:inline-flex; align-items:center; gap:4px; font-size:.6rem; font-weight:700; color:var(--hb-slate-400); white-space:nowrap; }
+
+/* indicadores (esquina) — conservados, refinados */
+.habitaciones-view .checkout-today-indicator,
+.habitaciones-view .checkout-vencido-indicator,
+.habitaciones-view .checkin-vencido-indicator,
+.habitaciones-view .late-arrival-indicator{ border-radius:999px!important; letter-spacing:.03em!important; box-shadow:0 3px 8px -2px rgba(0,0,0,.25)!important; z-index:5; }
+
+/* ── Reverso / hoja de acciones ── */
+.habitaciones-view .flip-card-back{ border-radius:var(--hb-radius)!important; }
+.habitaciones-view .flip-card-back h4{ font-family:var(--serif)!important; font-weight:600!important; font-size:1.25rem!important; }
+.habitaciones-view .flip-card-back .action-buttons{ gap:8px!important; }
+.habitaciones-view .flip-card-back .btn-action{ border-radius:10px!important; font-weight:700!important; backdrop-filter:blur(4px)!important; border:1px solid rgba(255,255,255,.28)!important; background:rgba(255,255,255,.16)!important; }
+.habitaciones-view .flip-card-back .btn-action:hover{ background:rgba(255,255,255,.3)!important; }
+.habitaciones-view .flip-card-back .btn-primary{ background:#fff!important; color:var(--room-accent-color,var(--hb-primary))!important; border:none!important; box-shadow:0 4px 12px -4px rgba(0,0,0,.3)!important; }
 
 /* ── Empty state ── */
 .habitaciones-view .p-8.text-center{ background:var(--hb-ivory-2)!important; border:1px dashed var(--hb-line)!important; border-radius:var(--hb-radius)!important; }
 .habitaciones-view .p-8.text-center .bg-gray-100{ background:color-mix(in srgb,var(--hb-accent) 16%, #fff)!important; color:var(--hb-accent)!important; }
 .habitaciones-view .p-8.text-center .text-gray-400{ color:var(--hb-accent)!important; }
 
-/* ── Modales (refinamiento de marco; el contenido conserva su semántica) ── */
+/* ── Modales ── */
 #vistaRapidaModal .bg-white.rounded-xl, #modalLimpieza .bg-white.rounded-xl{ border-radius:18px!important; box-shadow:0 28px 70px -24px rgba(27,39,70,.45)!important; }
+
+/* ── Responsive ── */
+@media (max-width:1100px){ .habitaciones-view .hb-stats{ grid-template-columns:repeat(3,1fr); } }
+@media (max-width:560px){
+  .habitaciones-view .hb-stats{ grid-template-columns:repeat(2,1fr); gap:10px; }
+  .habitaciones-view .modern-header h1{ font-size:1.6rem!important; }
+  .habitaciones-view .rc-num{ font-size:1.8rem!important; }
+}
+
+/* serif (gana al universal DM Sans via ID specificity) */
+#mainHeader h1{ font-family:var(--serif)!important; }
+#hbStats .hb-stat-n{ font-family:var(--serif)!important; }
+#habitaciones-grid .rc-num{ font-family:var(--serif)!important; }
+#habitaciones-grid .flip-card-back h4{ font-family:var(--serif)!important; }
 </style>
 
 <!-- JavaScript -->
