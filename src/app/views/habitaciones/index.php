@@ -2950,19 +2950,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         ?>
         
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5" id="habitaciones-grid">
-            <?php 
-            // Ordenar: habitaciones de color primero
+        <div id="habitaciones-grid">
+            <?php
+            // Ordenar: habitaciones de color primero (se conserva dentro de cada piso)
             usort($habitaciones, function($a, $b) use ($colores_habitacion) {
                 $a_es_color = isset($colores_habitacion[strtoupper($a['numero'])]);
                 $b_es_color = isset($colores_habitacion[strtoupper($b['numero'])]);
                 if ($a_es_color && !$b_es_color) return -1;
                 if (!$a_es_color && $b_es_color) return 1;
-                // Dentro del mismo grupo, mantener orden original
                 return 0;
             });
+            // Agrupar por piso (conservando el orden anterior dentro de cada piso)
+            $habitaciones_por_piso = [];
+            foreach ($habitaciones as $__hab) { $habitaciones_por_piso[$__hab['piso']][] = $__hab; }
+            ksort($habitaciones_por_piso, SORT_NUMERIC);
             ?>
-            <?php foreach ($habitaciones as $habitacion): ?>
+            <?php foreach ($habitaciones_por_piso as $__piso => $__habs): ?>
+                <section class="floor-section">
+                    <div class="floor-label">
+                        <span class="floor-t"><?= htmlspecialchars($pisos[$__piso] ?? ('Piso ' . $__piso)) ?></span>
+                        <span class="floor-rule"></span>
+                        <span class="floor-ct"><?= count($__habs) ?> <?= count($__habs) == 1 ? 'habitación' : 'habitaciones' ?></span>
+                    </div>
+                    <div class="rgrid">
+                    <?php foreach ($__habs as $habitacion): ?>
                 <?php 
                 $estado_actual = $habitacion['estado_display'] ?? $habitacion['estado'];
                 $estadoInfo = $estados[$estado_actual] ?? ['label' => 'Desconocido', 'color' => 'gray', 'icon' => 'question'];
@@ -3354,9 +3365,12 @@ if ($tiene_doble_movimiento) {
                         </div>
                     </div>
                 </div>
+                    <?php endforeach; ?>
+                    </div>
+                </section>
             <?php endforeach; ?>
         </div>
-        
+
         <!-- Mensaje si no hay habitaciones -->
         <?php if (empty($habitaciones)): ?>
             <div class="bg-white rounded-lg shadow-sm p-8 text-center">
@@ -3783,6 +3797,18 @@ if ($tiene_doble_movimiento) {
 #hbStats .hb-stat-n{ font-family:var(--serif)!important; }
 #habitaciones-grid .rc-num{ font-family:var(--serif)!important; }
 #habitaciones-grid .flip-card-back h4{ font-family:var(--serif)!important; }
+#habitaciones-grid .floor-t{ font-family:var(--serif)!important; }
+
+/* ── Secciones por piso ── */
+.habitaciones-view #habitaciones-grid{ display:block!important; }
+.habitaciones-view .floor-section{ margin-bottom:4px; }
+.habitaciones-view .floor-label{ display:flex; align-items:center; gap:14px; margin:24px 2px 14px; }
+.habitaciones-view .floor-section:first-child .floor-label{ margin-top:4px; }
+.habitaciones-view .floor-t{ font-size:1.35rem; font-weight:600; color:var(--hb-primary); white-space:nowrap; line-height:1; }
+.habitaciones-view .floor-rule{ flex:1; height:1px; background:var(--hb-line); }
+.habitaciones-view .floor-ct{ font-size:.7rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--hb-slate-400); white-space:nowrap; }
+.habitaciones-view .rgrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(216px, 1fr)); gap:15px; }
+@media (max-width:560px){ .habitaciones-view .rgrid{ grid-template-columns:1fr; gap:12px; } }
 </style>
 
 <!-- JavaScript -->
