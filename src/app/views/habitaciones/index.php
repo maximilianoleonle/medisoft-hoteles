@@ -3066,8 +3066,8 @@ if ($tiene_doble_movimiento) {
                     'disponible'       => '#4A6741',
                     'disponible_fecha' => '#4A6741',
                     'por_llegar'       => '#7C3AED',
-                    'ocupada'          => '#475569',
-                    'ocupada_fecha'    => '#475569',
+                    'ocupada'          => '#C2603C',
+                    'ocupada_fecha'    => '#C2603C',
                     'mantenimiento'    => '#B07A52',
                     'limpieza'         => '#3366B8',
                     'doble'            => '#7C3AED',
@@ -3411,8 +3411,8 @@ if ($tiene_doble_movimiento) {
                         'disponible' => 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-emerald-300',
                         'disponible_fecha' => 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-emerald-300',
                         'por_llegar' => 'bg-purple-500 text-white shadow-purple-300',
-                        'ocupada' => 'bg-gradient-to-br from-slate-500 to-slate-700 text-white shadow-slate-300',
-                        'ocupada_fecha' => 'bg-gradient-to-br from-slate-500 to-slate-700 text-white shadow-slate-300',
+                        'ocupada' => 'bg-gradient-to-br from-[#C2603C] to-[#9E4A2E] text-white shadow-orange-200',
+                        'ocupada_fecha' => 'bg-gradient-to-br from-[#C2603C] to-[#9E4A2E] text-white shadow-orange-200',
                         'mantenimiento' => 'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-amber-300',
                         'limpieza' => 'bg-gradient-to-br from-blue-400 to-blue-600 text-white shadow-blue-300'
                     ][$estado_hab] ?? 'bg-gradient-to-br from-gray-400 to-gray-600 text-white shadow-gray-300';
@@ -3630,7 +3630,7 @@ if ($tiene_doble_movimiento) {
   --hb-slate-700:#3E4A66; --hb-slate-500:#6C7689; --hb-slate-400:#9AA1B2;
   /* Estados (significado fijo) */
   --c-available:#1E9E63; --bg-available:#E8F3EC;
-  --c-occupied:#5B6B86;  --bg-occupied:#EDEFF3;
+  --c-occupied:#C2603C;  --bg-occupied:#F8EAE1;   /* OCUPADA = terracota/rojo (override del diseño, "más visible que slate") */
   --c-arriving:#5A57D2;  --bg-arriving:#ECEBFB;
   --c-cleaning:#2F77E0;  --bg-cleaning:#E7EFFB;
   --c-maint:#C2841C;     --bg-maint:#FAF0DA;
@@ -3809,6 +3809,44 @@ if ($tiene_doble_movimiento) {
 .habitaciones-view .floor-ct{ font-size:.7rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--hb-slate-400); white-space:nowrap; }
 .habitaciones-view .rgrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(216px, 1fr)); gap:15px; }
 @media (max-width:560px){ .habitaciones-view .rgrid{ grid-template-columns:1fr; gap:12px; } }
+
+/* ════ Animaciones (adaptadas de habitaciones.html) ════ */
+.habitaciones-view .room-card-compact:not(.flipped):hover{ transform:translateY(-3px)!important; }
+/* Hoja de acciones: el reverso revela info + botones de forma escalonada al voltear */
+@keyframes hbReveal{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+.habitaciones-view .flip-card.flipped .flip-card-back .info-item{ animation:hbReveal .34s cubic-bezier(.22,1,.36,1) backwards; }
+.habitaciones-view .flip-card.flipped .flip-card-back .info-item:nth-child(2){ animation-delay:.05s; }
+.habitaciones-view .flip-card.flipped .flip-card-back .info-item:nth-child(3){ animation-delay:.10s; }
+.habitaciones-view .flip-card.flipped .flip-card-back .info-item:nth-child(4){ animation-delay:.15s; }
+.habitaciones-view .flip-card.flipped .flip-card-back .action-buttons{ animation:hbReveal .36s cubic-bezier(.22,1,.36,1) .18s backwards; }
+/* Modales propios: pop al abrir (vista rápida y limpieza) */
+@keyframes hbModalPop{ from{ opacity:0; transform:translateY(14px) scale(.985); } to{ opacity:1; transform:none; } }
+#vistaRapidaModal:not(.hidden) > .bg-white, #modalLimpieza:not(.hidden) > .bg-white{ animation:hbModalPop .26s cubic-bezier(.22,1,.36,1); }
+/* Tiles de vista rápida: micro-zoom ya existente; respetar reduce-motion */
+@media (prefers-reduced-motion: reduce){
+  .habitaciones-view .room-card-compact, .habitaciones-view .flip-card-back .info-item,
+  .habitaciones-view .flip-card-back .action-buttons,
+  #vistaRapidaModal > .bg-white, #modalLimpieza > .bg-white{ animation:none!important; transition:none!important; }
+  .habitaciones-view .room-card-compact:not(.flipped):hover{ transform:none!important; }
+}
+
+/* ════ Modales — SweetAlert2 + propios (marca, NO --ms-*) ════ */
+/* nivel body: SweetAlert vive fuera de .habitaciones-view → usar --brand-* directo */
+.swal2-popup{ border-radius:20px!important; box-shadow:0 28px 70px -24px rgba(27,39,70,.45)!important; }
+.swal2-title{ color:var(--brand-primary,#1B2746)!important; }
+.swal2-styled.swal2-confirm{ background:var(--brand-primary,#1B2746)!important; border:0!important; border-radius:11px!important; font-weight:700!important; box-shadow:0 10px 22px -12px rgba(27,39,70,.6)!important; }
+.swal2-styled.swal2-confirm:hover{ filter:brightness(1.06); }
+.swal2-styled.swal2-confirm:focus{ box-shadow:0 0 0 3px color-mix(in srgb, var(--brand-primary,#1B2746) 30%, transparent)!important; }
+.swal2-styled.swal2-cancel{ border-radius:11px!important; font-weight:700!important; }
+/* Tarjetas selectoras "Cliente Nuevo / Existente" del flujo Reservar */
+.brand-hover-card{ transition:all .18s ease!important; }
+.brand-hover-card:hover{ background:var(--brand-primary,#1B2746)!important; border-color:var(--brand-primary,#1B2746)!important; color:#fff!important; transform:translateY(-2px); box-shadow:0 12px 24px -12px rgba(27,39,70,.55)!important; }
+.brand-text{ color:var(--brand-primary,#1B2746)!important; }
+/* Modal Limpieza: header + botón primario a marca (como Vista Rápida) */
+#modalLimpieza .bg-gradient-to-r{ background:linear-gradient(135deg, var(--brand-primary,#1B2746), var(--brand-secondary,#0F172A))!important; }
+#modalLimpieza .text-blue-600, #modalLimpieza .text-blue-700{ color:var(--brand-primary,#1B2746)!important; }
+/* Acento dorado de marca para detalles/realces de los modales propios */
+#vistaRapidaModal .vr-accent, #modalLimpieza .vr-accent{ color:var(--brand-accent,#BD9441)!important; }
 </style>
 
 <!-- JavaScript -->
