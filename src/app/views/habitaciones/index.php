@@ -3834,8 +3834,14 @@ if ($tiene_doble_movimiento) {
 /* nivel body: SweetAlert vive fuera de .habitaciones-view → usar --brand-* directo */
 .swal2-popup{ border-radius:20px!important; box-shadow:0 28px 70px -24px rgba(27,39,70,.45)!important; }
 .swal2-title{ color:var(--brand-primary,#1B2746)!important; }
-.swal2-styled.swal2-confirm{ background:var(--brand-primary,#1B2746)!important; border:0!important; border-radius:11px!important; font-weight:700!important; box-shadow:0 10px 22px -12px rgba(27,39,70,.6)!important; }
+.swal2-styled.swal2-confirm{ border:0!important; border-radius:11px!important; font-weight:700!important; box-shadow:0 10px 22px -12px rgba(27,39,70,.45)!important; }
 .swal2-styled.swal2-confirm:hover{ filter:brightness(1.06); }
+/* Íconos decorativos de formularios DENTRO de SweetAlert → marca (el púrpura semántico de "por llegar" en leyendas vive fuera de swal y no se toca) */
+.swal2-popup .text-purple-600{ color:var(--brand-primary,#1B2746)!important; }
+.swal2-popup .text-purple-800{ color:var(--brand-secondary,#0F172A)!important; }
+.swal2-popup .bg-purple-600{ background:var(--brand-primary,#1B2746)!important; }
+/* Reverso / hoja de acciones: encabezado con separador (estilo sheet del diseño) */
+.habitaciones-view .flip-card-back h4{ border-bottom:1px solid rgba(255,255,255,.22)!important; padding-bottom:7px!important; margin-bottom:5px!important; letter-spacing:.01em; }
 .swal2-styled.swal2-confirm:focus{ box-shadow:0 0 0 3px color-mix(in srgb, var(--brand-primary,#1B2746) 30%, transparent)!important; }
 .swal2-styled.swal2-cancel{ border-radius:11px!important; font-weight:700!important; }
 /* Tarjetas selectoras "Cliente Nuevo / Existente" del flujo Reservar */
@@ -3989,7 +3995,7 @@ function entregarRemotoRapido(habitacionId, reservacionId) {
             `,
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#9333EA',
+            confirmButtonColor: 'var(--brand-primary, #1B2746)',
             cancelButtonColor: '#6B7280',
             confirmButtonText: 'Sí, entregar',
             cancelButtonText: 'Cancelar',
@@ -4126,7 +4132,7 @@ function entregarRemotosMultiples(reservacionId, habitaciones) {
             icon: 'info',
             title: 'Sin remotos disponibles',
             text: 'Todos los remotos de esta reservación ya fueron entregados',
-            confirmButtonColor: '#9333EA'
+            confirmButtonColor: 'var(--brand-primary, #1B2746)'
         });
         return;
     }
@@ -4206,7 +4212,7 @@ function entregarRemotosMultiples(reservacionId, habitaciones) {
         `,
         width: '600px',
         showCancelButton: true,
-        confirmButtonColor: '#9333EA',
+        confirmButtonColor: 'var(--brand-primary, #1B2746)',
         cancelButtonColor: '#6B7280',
         confirmButtonText: '<i class="fas fa-hand-holding mr-2"></i>Entregar Remotos',
         cancelButtonText: 'Cancelar',
@@ -4566,7 +4572,7 @@ function hacerCheckInRapido(reservacionId) {
         text: 'Se procederá con el check-in del huésped',
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#9333EA',
+        confirmButtonColor: 'var(--brand-primary, #1B2746)',
         cancelButtonColor: '#6B7280',
         confirmButtonText: '<i class="fas fa-sign-in-alt mr-2"></i>Hacer Check-in',
         cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancelar',
