@@ -2528,13 +2528,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h3 class="text-base font-bold text-gray-800 m-0">Alertas Pendientes</h3>
                     <span class="alert-badge"><?= $total_alertas ?></span>
                 </div>
-                <button onclick="toggleAlertas()" class="alert-collapse" id="alertCollapseBtn">
+                <button onclick="toggleAlertas()" class="alert-collapse collapsed" id="alertCollapseBtn">
                     <i class="fas fa-chevron-down"></i>
                 </button>
             </div>
             
             <!-- Content -->
-            <div class="alert-content" id="alertContent">
+            <div class="alert-content" id="alertContent" style="display: none;">
                 
                 <!-- CHECK-OUTS VENCIDOS -->
                 <?php if (!empty($checkouts_vencidos)): ?>
@@ -3052,38 +3052,32 @@ if ($tiene_doble_movimiento) {
                 
                 <!-- Tarjeta con flip para todas las habitaciones -->
                 <?php
-                // Determine the accent color for this card (room color or state color)
+                // Colores (exactos del diseño): el STRIPE usa el color de la habitación
+                // (Área Confortable) o el del estado; la HOJA (sheet) usa SIEMPRE el color
+                // SEMÁNTICO del ESTADO. Vencido/no llegó = rojo crítico.
                 $stateAccentColors = [
-                    'disponible'       => '#4A6741',
-                    'disponible_fecha' => '#4A6741',
-                    'por_llegar'       => '#7C3AED',
+                    'disponible'       => '#1E9E63',
+                    'disponible_fecha' => '#1E9E63',
+                    'por_llegar'       => '#5A57D2',
                     'ocupada'          => '#C2603C',
                     'ocupada_fecha'    => '#C2603C',
-                    'mantenimiento'    => '#B07A52',
-                    'limpieza'         => '#3366B8',
-                    'doble'            => '#7C3AED',
-                    'limpieza-por-llegar' => '#3366B8',
+                    'mantenimiento'    => '#C2841C',
+                    'limpieza'         => '#2F77E0',
+                    'doble'            => '#5A57D2',
+                    'limpieza-por-llegar' => '#2F77E0',
                 ];
-                if ($es_checkin_vencido) {
-                    $accentColor = '#dc2626';
-                } elseif ($tiene_checkout_vencido) {
-                    $accentColor = '#ea580c';
+                $accentColor = $color_hab ?: ($stateAccentColors[$estado_actual] ?? '#1E9E63');
+                if ($es_checkin_vencido || $tiene_checkout_vencido) {
+                    $sheetColor = '#D64539';
                 } else {
-                    $accentColor = $color_hab ?: ($stateAccentColors[$estado_actual] ?? '#4A6741');
+                    $sheetColor = $stateAccentColors[$estado_actual] ?? '#1E9E63';
                 }
-                // Darker shade inline (no function to avoid redeclaration in loop)
-                $hexClean = ltrim($accentColor, '#');
-                $darkerAccent = sprintf('#%02x%02x%02x',
-                    max(0, hexdec(substr($hexClean,0,2)) - 40),
-                    max(0, hexdec(substr($hexClean,2,2)) - 40),
-                    max(0, hexdec(substr($hexClean,4,2)) - 40)
-                );
-                $backStyle = 'background: linear-gradient(145deg, ' . $darkerAccent . ' 0%, ' . $accentColor . ' 100%) !important; color: white !important;';
+                $backStyle = ''; // el fondo de la hoja lo aplica el CSS vía --sheet-c
                 ?>
                 <div class="flip-card room-card-compact <?= $tiene_checkout_vencido ? 'has-checkout-vencido' : '' ?> <?= $es_checkin_vencido ? 'has-checkin-vencido' : '' ?>" 
                      onclick="toggleFlip(this, event)" 
                      data-habitacion-id="<?= $habitacion['id'] ?>"
-                     style="--room-accent-color: <?= htmlspecialchars($accentColor) ?>">
+                     style="--room-accent-color: <?= htmlspecialchars($accentColor) ?>; --sheet-c: <?= htmlspecialchars($sheetColor) ?>;">
                     <div class="flip-card-inner">
                         <!-- Parte frontal -->
                         <div class="flip-card-front <?= $tiene_doble_movimiento ? 'estado-doble' : ($limpieza_con_por_llegar ? 'estado-limpieza-por-llegar' : 'estado-' . $estado_actual) ?> rounded-lg shadow-sm relative">
@@ -3141,7 +3135,7 @@ if ($tiene_doble_movimiento) {
                             } elseif ($habitacion['estado'] == 'limpieza') {
                                 $faceMeta = 'Preparando habitación';
                             } elseif ($habitacion['estado'] == 'mantenimiento') {
-                                $faceMeta = $habitacion['mantenimiento_actual']['tipo_mantenimiento'] ?? 'En mantenimiento';
+                                $faceMeta = $habitacion['mantenimiento_actual']['tipo_mantenimiento'] ?? 'Mantenimiento';
                             }
                             ?>
                             <div class="rc-face">
@@ -3620,12 +3614,12 @@ if ($tiene_doble_movimiento) {
   --hb-line:#E7E1D4; --hb-line-soft:#F0EBE0;
   --hb-slate-700:#3E4A66; --hb-slate-500:#6C7689; --hb-slate-400:#9AA1B2;
   /* Estados (significado fijo) */
-  --c-available:#1E9E63; --bg-available:#E8F3EC;
-  --c-occupied:#C2603C;  --bg-occupied:#F8EAE1;   /* OCUPADA = terracota/rojo (override del diseño, "más visible que slate") */
+  --c-available:#1E9E63; --bg-available:#E7F4EC;
+  --c-occupied:#C2603C;  --bg-occupied:#F8EAE1;   /* OCUPADA = terracota/rojo (preferencia del usuario sobre el slate del HTML) */
   --c-arriving:#5A57D2;  --bg-arriving:#ECEBFB;
-  --c-cleaning:#2F77E0;  --bg-cleaning:#E7EFFB;
-  --c-maint:#C2841C;     --bg-maint:#FAF0DA;
-  --c-critical:#D64539;  --bg-critical:#FBEAE8;
+  --c-cleaning:#2F77E0;  --bg-cleaning:#E6EFFC;
+  --c-maint:#C2841C;     --bg-maint:#FAF0DC;
+  --c-critical:#D64539;  --bg-critical:#FBE9E7;
   --serif:'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --hb-radius:16px; --hb-radius-lg:20px;
   --hb-shadow-xs:0 1px 2px rgba(27,39,70,.05);
@@ -3736,6 +3730,12 @@ if ($tiene_doble_movimiento) {
 .habitaciones-view .flip-card-back h4{ font-size:1.05rem!important; margin-bottom:6px!important; }
 .habitaciones-view .flip-card-back .info-item{ font-size:.72rem!important; margin-bottom:2px!important; }
 .habitaciones-view .flip-card-back .action-buttons{ margin-top:8px!important; }
+/* Hoja = gradiente del color SEMÁNTICO del estado (igual que el HTML: gradient(--c) → 74% --c + negro) */
+.habitaciones-view .flip-card-back{ background:linear-gradient(160deg, var(--sheet-c, var(--hb-primary)) 0%, color-mix(in srgb, var(--sheet-c, var(--hb-primary)) 74%, #000) 100%)!important; color:#fff!important; }
+.habitaciones-view .flip-card-back .btn-action{ background:rgba(255,255,255,.16)!important; border:1px solid rgba(255,255,255,.28)!important; color:#fff!important; }
+.habitaciones-view .flip-card-back .btn-action:hover{ background:rgba(255,255,255,.3)!important; }
+.habitaciones-view .flip-card-back .btn-primary{ background:#fff!important; color:var(--sheet-c, var(--hb-primary))!important; border-color:#fff!important; }
+.habitaciones-view .flip-card-back .btn-primary:hover{ background:rgba(255,255,255,.92)!important; }
 
 /* ── Alertas ── */
 .habitaciones-view .alert-panel{ background:var(--hb-surface)!important; border:1px solid var(--hb-line)!important; border-left:4px solid var(--c-critical)!important; border-radius:var(--hb-radius)!important; box-shadow:var(--hb-shadow-sm)!important; }
@@ -3803,7 +3803,7 @@ if ($tiene_doble_movimiento) {
 .habitaciones-view .flip-card-back .action-buttons{ gap:8px!important; }
 .habitaciones-view .flip-card-back .btn-action{ border-radius:10px!important; font-weight:700!important; backdrop-filter:blur(4px)!important; border:1px solid rgba(255,255,255,.28)!important; background:rgba(255,255,255,.16)!important; }
 .habitaciones-view .flip-card-back .btn-action:hover{ background:rgba(255,255,255,.3)!important; }
-.habitaciones-view .flip-card-back .btn-primary{ background:#fff!important; color:var(--room-accent-color,var(--hb-primary))!important; border:none!important; box-shadow:0 4px 12px -4px rgba(0,0,0,.3)!important; }
+.habitaciones-view .flip-card-back .btn-primary{ background:#fff!important; color:var(--sheet-c,var(--hb-primary))!important; border:none!important; box-shadow:0 4px 12px -4px rgba(0,0,0,.3)!important; }
 
 /* ── Empty state ── */
 .habitaciones-view .p-8.text-center{ background:var(--hb-ivory-2)!important; border:1px dashed var(--hb-line)!important; border-radius:var(--hb-radius)!important; }
