@@ -2170,7 +2170,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <style>
 /* Fase habitaciones: acciones brand-aware y ocupacion separada de alertas criticas. */
 .habitaciones-view{
-    --hotel-brand-primary: var(--brand-primary,#2563EB);
+    --hotel-brand-primary: var(--brand-primary,#1B2746);
     --hotel-brand-secondary: var(--brand-secondary,#0F172A);
     --state-occupied:#475569;
     --state-occupied-dark:#334155;
@@ -2180,6 +2180,8 @@ document.addEventListener('DOMContentLoaded', function() {
 .btn-brand:hover{filter:brightness(0.94);transform:translateY(-1px)!important;}
 .btn-brand-outline{background:#fff!important;color:var(--hotel-brand-primary)!important;border:1px solid color-mix(in srgb,var(--hotel-brand-primary) 35%,#fff)!important;}
 .btn-brand-outline:hover{background:color-mix(in srgb,var(--hotel-brand-primary) 8%,#fff)!important;}
+.btn-brand-soft{background:color-mix(in srgb,var(--hotel-brand-primary) 12%,#fff)!important;color:var(--hotel-brand-primary)!important;border:1px solid color-mix(in srgb,var(--hotel-brand-primary) 22%,#fff)!important;}
+.btn-brand-soft:hover{background:color-mix(in srgb,var(--hotel-brand-primary) 18%,#fff)!important;transform:translateY(-1px)!important;}
 .brand-hover-card:hover{border-color:var(--hotel-brand-primary)!important;background:var(--hotel-brand-primary)!important;color:#fff!important;}
 .brand-text{color:var(--hotel-brand-primary)!important;}
 .brand-focus:focus,
@@ -2222,7 +2224,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="container mx-auto px-4 py-3">
             <div class="flex flex-col lg:flex-row justify-between items-center gap-3">
                 <div class="flex items-center gap-4">
-                    <div class="p-2 rounded-lg shadow-sm" style="background: linear-gradient(135deg, var(--brand-primary, #2563EB), var(--brand-secondary, #0F172A));">
+                    <div class="p-2 rounded-lg shadow-sm" style="background: linear-gradient(135deg, var(--brand-primary, #1B2746), var(--brand-secondary, #0F172A));">
                         <i class="fas fa-bed text-white text-lg"></i>
                     </div>
                     <div>
@@ -2240,7 +2242,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     <?php if ($tiene_limpieza): ?>
     <button onclick="mostrarModalLimpieza()" 
-            class="btn-modern bg-blue-500 text-white hover:bg-blue-600 relative">
+            class="btn-modern btn-brand-soft relative">
         <i class="fas fa-broom text-sm"></i>
         <span>Limpieza</span>
         <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
@@ -2938,20 +2940,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!$a_es_color && $b_es_color) return 1;
                 return 0;
             });
-            // Agrupar por piso (conservando el orden anterior dentro de cada piso)
-            $habitaciones_por_piso = [];
-            foreach ($habitaciones as $__hab) { $habitaciones_por_piso[$__hab['piso']][] = $__hab; }
-            ksort($habitaciones_por_piso, SORT_NUMERIC);
-            // Ordenar cada piso por numero/abecedario (natural: 101..108, luego AZUL, VERDE...)
-            foreach ($habitaciones_por_piso as &$__grp) {
+            // Agrupar por CATEGORIA (tipo de habitacion), no por nivel/piso
+            $habitaciones_por_cat = [];
+            foreach ($habitaciones as $__hab) {
+                $__catKey = $__hab['tipo'] ?? '_';
+                $habitaciones_por_cat[$__catKey][] = $__hab;
+            }
+            // Ordenar las categorias por su etiqueta legible
+            uksort($habitaciones_por_cat, function($a, $b) use ($tipos){
+                return strcasecmp($tipos[$a] ?? (string)$a, $tipos[$b] ?? (string)$b);
+            });
+            // Dentro de cada categoria, ordenar por numero/abecedario (natural)
+            foreach ($habitaciones_por_cat as &$__grp) {
                 usort($__grp, function($a, $b){ return strnatcasecmp((string)($a['numero'] ?? ''), (string)($b['numero'] ?? '')); });
             }
             unset($__grp);
             ?>
-            <?php foreach ($habitaciones_por_piso as $__piso => $__habs): ?>
+            <?php foreach ($habitaciones_por_cat as $__catKey => $__habs): ?>
                 <section class="floor-section">
                     <div class="floor-label">
-                        <span class="floor-t"><?= htmlspecialchars($pisos[$__piso] ?? ('Piso ' . $__piso)) ?></span>
+                        <span class="floor-t"><?= htmlspecialchars($tipos[$__catKey] ?? ($__catKey !== '' ? $__catKey : 'Otras')) ?></span>
                         <span class="floor-rule"></span>
                         <span class="floor-ct"><?= count($__habs) ?> <?= count($__habs) == 1 ? 'habitación' : 'habitaciones' ?></span>
                     </div>
@@ -3379,7 +3387,7 @@ if ($tiene_doble_movimiento) {
 <!-- Modal de Vista Rápida -->
 <div id="vistaRapidaModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
-        <div class="text-white p-3 flex justify-between items-center" style="background: linear-gradient(135deg, var(--brand-primary,#2563EB), var(--brand-secondary,#0F172A));">
+        <div class="text-white p-3 flex justify-between items-center" style="background: linear-gradient(135deg, var(--brand-primary,#1B2746), var(--brand-secondary,#0F172A));">
             <h3 class="text-lg font-bold">Vista Rápida</h3>
             <button onclick="cerrarVistaRapida()" class="text-white hover:text-gray-200 transition-colors p-1">
                 <i class="fas fa-times text-lg"></i>
@@ -4532,7 +4540,7 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
         showCancelButton: true,
         confirmButtonText: `Continuar con Cliente ${tipo === 'existente' ? 'Existente' : 'Nuevo'}`,
         cancelButtonText: 'Volver',
-        confirmButtonColor: 'var(--brand-primary, #2563EB)',
+        confirmButtonColor: 'var(--brand-primary, #1B2746)',
         preConfirm: () => {
             const horaSeleccionada = document.getElementById('horaLlegadaRapida').value;
             if (!horaSeleccionada) {
