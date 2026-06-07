@@ -3840,6 +3840,13 @@ if ($tiene_doble_movimiento) {
 .swal2-popup .text-purple-600{ color:var(--brand-primary,#1B2746)!important; }
 .swal2-popup .text-purple-800{ color:var(--brand-secondary,#0F172A)!important; }
 .swal2-popup .bg-purple-600{ background:var(--brand-primary,#1B2746)!important; }
+/* Estados interactivos (hover/focus) de los formularios de modales → marca (chrome, no semántica) */
+.swal2-popup [class*="hover:bg-purple-50"]:hover{ background-color:color-mix(in srgb, var(--brand-primary,#1B2746) 7%, #fff)!important; }
+.swal2-popup [class*="hover:bg-purple-100"]:hover{ background-color:color-mix(in srgb, var(--brand-primary,#1B2746) 11%, #fff)!important; }
+.swal2-popup [class*="hover:text-purple-800"]:hover{ color:var(--brand-primary,#1B2746)!important; }
+.swal2-popup [class*="ring-purple"]:focus{ box-shadow:0 0 0 3px color-mix(in srgb, var(--brand-accent,#BD9441) 38%, transparent)!important; }
+#modalLimpieza [class*="ring-blue"]:focus{ box-shadow:0 0 0 3px color-mix(in srgb, var(--brand-accent,#BD9441) 38%, transparent)!important; }
+#modalLimpieza .text-blue-600.checkbox-limpieza, #modalLimpieza input.checkbox-limpieza{ accent-color:var(--brand-primary,#1B2746); }
 /* Reverso / hoja de acciones: encabezado con separador (estilo sheet del diseño) */
 .habitaciones-view .flip-card-back h4{ border-bottom:1px solid rgba(255,255,255,.22)!important; padding-bottom:7px!important; margin-bottom:5px!important; letter-spacing:.01em; }
 .swal2-styled.swal2-confirm:focus{ box-shadow:0 0 0 3px color-mix(in srgb, var(--brand-primary,#1B2746) 30%, transparent)!important; }
