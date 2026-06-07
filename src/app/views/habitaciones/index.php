@@ -2271,36 +2271,36 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="container mx-auto px-4 py-4 max-w-7xl">
         <!-- Widgets de estado (6, semánticos, estilo boutique) -->
         <div class="hb-stats" id="hbStats">
-            <a class="hb-stat hb-stat--total" href="<?= url('habitaciones') ?>">
+            <div class="hb-stat hb-stat--total">
                 <span class="hb-stat-ic"><i class="fas fa-door-closed"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['total'] ?? 0 ?></span>
                 <span class="hb-stat-l">Total</span>
-            </a>
-            <a class="hb-stat hb-stat--available" href="<?= url('habitaciones') ?>?estado=disponible">
+            </div>
+            <div class="hb-stat hb-stat--available">
                 <span class="hb-stat-ic"><i class="fas fa-check-circle"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['disponibles'] ?? 0 ?></span>
                 <span class="hb-stat-l">Disponible</span>
-            </a>
-            <a class="hb-stat hb-stat--occupied" href="<?= url('habitaciones') ?>?estado=ocupada">
+            </div>
+            <div class="hb-stat hb-stat--occupied">
                 <span class="hb-stat-ic"><i class="fas fa-bed"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['ocupadas'] ?? 0 ?></span>
                 <span class="hb-stat-l">Ocupada</span>
-            </a>
-            <a class="hb-stat hb-stat--arriving" href="<?= url('habitaciones') ?>?estado=por_llegar">
+            </div>
+            <div class="hb-stat hb-stat--arriving">
                 <span class="hb-stat-ic"><i class="fas fa-clock"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['por_llegar'] ?? 0 ?></span>
                 <span class="hb-stat-l">Por llegar</span>
-            </a>
-            <a class="hb-stat hb-stat--cleaning" href="<?= url('habitaciones') ?>?estado=limpieza">
+            </div>
+            <div class="hb-stat hb-stat--cleaning">
                 <span class="hb-stat-ic"><i class="fas fa-broom"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['limpieza'] ?? 0 ?></span>
                 <span class="hb-stat-l">Limpieza</span>
-            </a>
-            <a class="hb-stat hb-stat--maint" href="<?= url('habitaciones') ?>?estado=mantenimiento">
+            </div>
+            <div class="hb-stat hb-stat--maint">
                 <span class="hb-stat-ic"><i class="fas fa-wrench"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['mantenimiento'] ?? 0 ?></span>
                 <span class="hb-stat-l">Mantenimiento</span>
-            </a>
+            </div>
         </div>
            <?php
         $total_alertas = count($checkouts_vencidos ?? []) + count($checkins_pendientes ?? []) + count($llegadas_tardias ?? []);
@@ -2670,8 +2670,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <?php endif; ?>
     
-    <form method="GET" action="<?= url('habitaciones') ?>">
-        <?php
+    <?php
         $estadoActual = $filtros['estado'] ?? '';
         $hbChips = [
             ''              => ['Todas',         (int)($estadisticas['total'] ?? 0),         ''],
@@ -2685,44 +2684,29 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="hb-filterbar">
             <div class="hb-search">
                 <i class="fas fa-search"></i>
-                <input type="text" name="buscar" value="<?= htmlspecialchars($filtros['buscar'] ?? '') ?>" placeholder="Buscar nº, tipo o huésped…">
+                <input type="text" id="hbSearch" value="<?= htmlspecialchars($filtros['buscar'] ?? '') ?>" placeholder="Buscar nº, tipo o huésped…" autocomplete="off" oninput="hbApplyFilters()">
             </div>
-            <select name="tipo" class="filter-select" onchange="this.form.submit()">
-                <option value="">Todos los tipos</option>
-                <?php foreach ($tipos as $key => $tipo): ?>
-                    <option value="<?= $key ?>" <?= ($filtros['tipo'] ?? '') == $key ? 'selected' : '' ?>><?= $tipo ?></option>
-                <?php endforeach; ?>
-            </select>
-            <select name="piso" class="filter-select" onchange="this.form.submit()">
-                <option value="">Todos los pisos</option>
-                <?php foreach ($pisos as $value => $label): ?>
-                    <option value="<?= $value ?>" <?= ($filtros['piso'] ?? '') == $value ? 'selected' : '' ?>><?= $label ?></option>
-                <?php endforeach; ?>
-            </select>
             <span class="hb-fdiv"></span>
-            <!-- hidden estado: conserva el filtro al cambiar otros campos; los chips (submit) lo sobreescriben (PHP toma el ultimo valor) -->
-            <input type="hidden" name="estado" value="<?= htmlspecialchars($estadoActual) ?>">
             <div class="hb-chips">
                 <?php foreach ($hbChips as $val => $def): ?>
-                    <button type="submit" name="estado" value="<?= $val ?>"
+                    <button type="button" data-estado="<?= $val ?>" onclick="hbSetEstado(this)"
                             class="hb-chip<?= $estadoActual === $val ? ' is-active' : '' ?><?= $def[2] ? ' chip-'.$def[2] : '' ?>">
                         <?php if ($def[2]): ?><span class="hb-chip-dot"></span><?php endif; ?>
                         <?= $def[0] ?> <span class="hb-chip-ct"><?= $def[1] ?></span>
                     </button>
                 <?php endforeach; ?>
             </div>
-            <div class="hb-filter-right">
+            <form method="GET" action="<?= url('habitaciones') ?>" class="hb-filter-right">
                 <input type="date" name="fecha_consulta" id="fecha_consulta" value="<?= $filtros['fecha_consulta'] ?? '' ?>" class="filter-date" onchange="this.form.submit()" title="Disponibilidad en fecha">
                 <input type="hidden" name="mostrar_disponibilidad" value="1">
                 <a href="<?= url('habitaciones') ?>" class="filter-btn filter-btn-today" title="Volver a hoy">
                     <i class="fas fa-calendar-day"></i><span class="hidden sm:inline">Hoy</span>
                 </a>
-                <a href="<?= url('habitaciones') ?>" class="filter-btn filter-btn-reset" title="Limpiar filtros">
+                <button type="button" class="filter-btn filter-btn-reset" onclick="hbClearFilters()" title="Limpiar filtros">
                     <i class="fas fa-redo-alt"></i><span class="hidden sm:inline">Limpiar</span>
-                </a>
-            </div>
+                </button>
+            </form>
         </div>
-    </form>
 </div>
 
         <!-- Movimientos del día -->
@@ -3073,10 +3057,12 @@ if ($tiene_doble_movimiento) {
                     $sheetColor = $stateAccentColors[$estado_actual] ?? '#1E9E63';
                 }
                 $backStyle = ''; // el fondo de la hoja lo aplica el CSS vía --sheet-c
+                $hbSearchStr = strtolower(trim(($habitacion['numero'] ?? '') . ' ' . ($tipos[$habitacion['tipo']] ?? $habitacion['tipo']) . ' ' . ($habitacion['ocupacion_actual']['nombre_completo'] ?? '') . ' ' . ($habitacion['reservacion_pendiente']['nombre_completo'] ?? '')));
                 ?>
                 <div class="flip-card room-card-compact <?= $tiene_checkout_vencido ? 'has-checkout-vencido' : '' ?> <?= $es_checkin_vencido ? 'has-checkin-vencido' : '' ?>" 
                      onclick="toggleFlip(this, event)" 
                      data-habitacion-id="<?= $habitacion['id'] ?>"
+                     data-estado="<?= htmlspecialchars($estado_actual) ?>" data-tipo="<?= htmlspecialchars($habitacion['tipo']) ?>" data-piso="<?= htmlspecialchars($habitacion['piso']) ?>" data-q="<?= htmlspecialchars($hbSearchStr) ?>"
                      style="--room-accent-color: <?= htmlspecialchars($accentColor) ?>; --sheet-c: <?= htmlspecialchars($sheetColor) ?>;">
                     <div class="flip-card-inner">
                         <!-- Parte frontal -->
@@ -3354,6 +3340,12 @@ if ($tiene_doble_movimiento) {
                     </div>
                 </section>
             <?php endforeach; ?>
+        </div>
+
+        <div id="hbNoResults" style="display:none; text-align:center; padding:44px 20px; background:#FBF8F2; border:1px dashed #E7E1D4; border-radius:16px; margin-top:4px;">
+            <i class="fas fa-filter" style="font-size:1.5rem; color:var(--brand-accent,#BD9441);"></i>
+            <div style="font-weight:700; color:var(--brand-primary,#1B2746); margin-top:10px;">Sin resultados</div>
+            <div style="color:#6C7689; font-size:.85rem; margin-top:4px;">Ninguna habitación coincide con el filtro.</div>
         </div>
 
         <!-- Mensaje si no hay habitaciones -->
@@ -3655,11 +3647,9 @@ if ($tiene_doble_movimiento) {
 .habitaciones-view .hb-stat{
   display:flex; flex-direction:column; text-decoration:none; background:var(--hb-surface);
   border:1px solid var(--hb-line); border-radius:var(--hb-radius); padding:14px 15px;
-  box-shadow:var(--hb-shadow-sm); position:relative; overflow:hidden; transition:transform .16s, box-shadow .16s; --sc:var(--hb-primary);
+  box-shadow:var(--hb-shadow-sm); position:relative; overflow:hidden; --sc:var(--hb-primary);
 }
-.habitaciones-view .hb-stat::after{ content:''; position:absolute; left:0; right:0; bottom:0; height:3px; background:var(--sc); opacity:0; transition:opacity .2s; }
-.habitaciones-view .hb-stat:hover{ transform:translateY(-2px); box-shadow:var(--hb-shadow); }
-.habitaciones-view .hb-stat:hover::after{ opacity:1; }
+.habitaciones-view .hb-stat::after{ content:''; position:absolute; left:0; right:0; bottom:0; height:3px; background:var(--sc); opacity:0; }
 .habitaciones-view .hb-stat-ic{ width:34px; height:34px; border-radius:10px; display:grid; place-items:center; background:color-mix(in srgb,var(--sc) 13%,#fff); color:var(--sc); margin-bottom:10px; }
 .habitaciones-view .hb-stat-ic i{ font-size:.95rem; }
 .habitaciones-view .hb-stat-n{ font-family:var(--serif); font-size:2.05rem; font-weight:700; line-height:1; color:var(--hb-primary); font-variant-numeric:tabular-nums; }
@@ -3889,7 +3879,59 @@ if ($tiene_doble_movimiento) {
 #modalLimpieza .text-blue-600, #modalLimpieza .text-blue-700{ color:var(--brand-primary,#1B2746)!important; }
 /* Acento dorado de marca para detalles/realces de los modales propios */
 #vistaRapidaModal .vr-accent, #modalLimpieza .vr-accent{ color:var(--brand-accent,#BD9441)!important; }
+.habitaciones-view .hb-hidden{ display:none!important; }
+.habitaciones-view #hbNoResults{ grid-column:1/-1; }
 </style>
+
+<script>
+/* Filtro client-side (sin recargar): chips de estado + tipo + piso + búsqueda, con animación */
+(function(){ window.__hbF = { estado:'', tipo:'', piso:'', q:'' }; })();
+function hbApplyFilters(){
+  var f = window.__hbF;
+  var se = document.getElementById('hbSearch'); f.q = (se ? se.value : '').trim().toLowerCase();
+  var t = document.getElementById('hbTipo'); f.tipo = t ? t.value : '';
+  var p = document.getElementById('hbPiso'); f.piso = p ? p.value : '';
+  var grid = document.getElementById('habitaciones-grid'); if(!grid) return;
+  var total = 0;
+  grid.querySelectorAll('.flip-card').forEach(function(card){
+    var show = true;
+    if(f.estado && (card.dataset.estado||'') !== f.estado) show = false;
+    if(f.tipo && (card.dataset.tipo||'') !== f.tipo) show = false;
+    if(f.piso && String(card.dataset.piso||'') !== String(f.piso)) show = false;
+    if(f.q && (card.dataset.q||'').indexOf(f.q) === -1) show = false;
+    card.classList.remove('flipped');
+    card.classList.toggle('hb-hidden', !show);
+    if(show) total++;
+  });
+  grid.querySelectorAll('.floor-section').forEach(function(sec){
+    var vis = sec.querySelectorAll('.flip-card:not(.hb-hidden)').length;
+    sec.classList.toggle('hb-hidden', vis === 0);
+    var ct = sec.querySelector('.floor-ct');
+    if(ct) ct.textContent = vis + ' ' + (vis === 1 ? 'habitaci\u00f3n' : 'habitaciones');
+    var i = 0;
+    sec.querySelectorAll('.flip-card:not(.hb-hidden)').forEach(function(c){
+      try { c.animate([{opacity:0, transform:'translateY(10px) scale(.985)'},{opacity:1, transform:'none'}], {duration:300, delay:i*28, easing:'cubic-bezier(.22,1,.36,1)', fill:'backwards'}); } catch(e){}
+      i++;
+    });
+  });
+  var nr = document.getElementById('hbNoResults'); if(nr) nr.style.display = total === 0 ? '' : 'none';
+}
+function hbSetEstado(btn){
+  window.__hbF.estado = btn.getAttribute('data-estado') || '';
+  document.querySelectorAll('.hb-chip').forEach(function(c){ c.classList.toggle('is-active', c === btn); });
+  hbApplyFilters();
+  var grid = document.getElementById('habitaciones-grid');
+  if(grid){ var y = grid.getBoundingClientRect().top + window.pageYOffset - 88; window.scrollTo({ top: Math.max(0, y), behavior:'smooth' }); }
+}
+function hbClearFilters(){
+  window.__hbF = { estado:'', tipo:'', piso:'', q:'' };
+  var s = document.getElementById('hbSearch'); if(s) s.value = '';
+  var t = document.getElementById('hbTipo'); if(t) t.value = '';
+  var p = document.getElementById('hbPiso'); if(p) p.value = '';
+  document.querySelectorAll('.hb-chip').forEach(function(c){ c.classList.toggle('is-active', (c.getAttribute('data-estado')||'') === ''); });
+  hbApplyFilters();
+}
+</script>
 
 <!-- JavaScript -->
 <script>
