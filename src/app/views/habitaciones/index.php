@@ -2669,78 +2669,56 @@ document.addEventListener('DOMContentLoaded', function() {
     <?php endif; ?>
     
     <form method="GET" action="<?= url('habitaciones') ?>">
-        <div class="flex flex-wrap gap-1.5 sm:gap-2 items-center">
-            <!-- Campo de búsqueda -->
-            <div class="flex-1 min-w-[140px] sm:min-w-[180px]">
-                <div class="relative">
-                    <input type="text" 
-                           name="buscar" 
-                           value="<?= $filtros['buscar'] ?? '' ?>"
-                           placeholder="Buscar..."
-                           class="filter-input w-full pl-7 pr-2">
-                    <i class="fas fa-search absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
-                </div>
+        <?php
+        $estadoActual = $filtros['estado'] ?? '';
+        $hbChips = [
+            ''              => ['Todas',         (int)($estadisticas['total'] ?? 0),         ''],
+            'disponible'    => ['Disponible',    (int)($estadisticas['disponibles'] ?? 0),   'available'],
+            'ocupada'       => ['Ocupada',       (int)($estadisticas['ocupadas'] ?? 0),      'occupied'],
+            'por_llegar'    => ['Por llegar',    (int)($estadisticas['por_llegar'] ?? 0),    'arriving'],
+            'limpieza'      => ['Limpieza',      (int)($estadisticas['limpieza'] ?? 0),      'cleaning'],
+            'mantenimiento' => ['Mantenimiento', (int)($estadisticas['mantenimiento'] ?? 0), 'maint'],
+        ];
+        ?>
+        <div class="hb-filterbar">
+            <div class="hb-search">
+                <i class="fas fa-search"></i>
+                <input type="text" name="buscar" value="<?= htmlspecialchars($filtros['buscar'] ?? '') ?>" placeholder="Buscar nº, tipo o huésped…">
             </div>
-            
-            <!-- Filtros compactos -->
-            <select name="estado" class="filter-select">
-                <option value="">Estado</option>
-                <?php foreach ($estados as $key => $estado): ?>
-                    <?php if ($key !== 'disponible_fecha' && $key !== 'ocupada_fecha'): ?>
-                        <option value="<?= $key ?>" <?= ($filtros['estado'] ?? '') == $key ? 'selected' : '' ?>>
-                            <?= $estado['label'] ?>
-                        </option>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-            </select>
-            
-            <select name="tipo" class="filter-select">
-                <option value="">Tipo</option>
+            <select name="tipo" class="filter-select" onchange="this.form.submit()">
+                <option value="">Todos los tipos</option>
                 <?php foreach ($tipos as $key => $tipo): ?>
-                    <option value="<?= $key ?>" <?= ($filtros['tipo'] ?? '') == $key ? 'selected' : '' ?>>
-                        <?= $tipo ?>
-                    </option>
+                    <option value="<?= $key ?>" <?= ($filtros['tipo'] ?? '') == $key ? 'selected' : '' ?>><?= $tipo ?></option>
                 <?php endforeach; ?>
             </select>
-            
-            <select name="piso" class="filter-select">
-                <option value="">Piso</option>
+            <select name="piso" class="filter-select" onchange="this.form.submit()">
+                <option value="">Todos los pisos</option>
                 <?php foreach ($pisos as $value => $label): ?>
-                    <option value="<?= $value ?>" <?= ($filtros['piso'] ?? '') == $value ? 'selected' : '' ?>>
-                        <?= $label ?>
-                    </option>
+                    <option value="<?= $value ?>" <?= ($filtros['piso'] ?? '') == $value ? 'selected' : '' ?>><?= $label ?></option>
                 <?php endforeach; ?>
             </select>
-            
-            <!-- Contenedor con fecha y botón Hoy -->
-            <div class="flex gap-1">
-                <input type="date" 
-                       name="fecha_consulta" 
-                       id="fecha_consulta"
-                       value="<?= $filtros['fecha_consulta'] ?? '' ?>"
-                       class="filter-date">
-                
-                <a href="<?= url('habitaciones') ?>" 
-                   class="filter-btn filter-btn-today"
-                   title="Volver a hoy (limpiar filtros)">
-                    <i class="fas fa-calendar-day"></i>
-                    <span class="hidden sm:inline">Hoy</span>
+            <span class="hb-fdiv"></span>
+            <!-- hidden estado: conserva el filtro al cambiar otros campos; los chips (submit) lo sobreescriben (PHP toma el ultimo valor) -->
+            <input type="hidden" name="estado" value="<?= htmlspecialchars($estadoActual) ?>">
+            <div class="hb-chips">
+                <?php foreach ($hbChips as $val => $def): ?>
+                    <button type="submit" name="estado" value="<?= $val ?>"
+                            class="hb-chip<?= $estadoActual === $val ? ' is-active' : '' ?><?= $def[2] ? ' chip-'.$def[2] : '' ?>">
+                        <?php if ($def[2]): ?><span class="hb-chip-dot"></span><?php endif; ?>
+                        <?= $def[0] ?> <span class="hb-chip-ct"><?= $def[1] ?></span>
+                    </button>
+                <?php endforeach; ?>
+            </div>
+            <div class="hb-filter-right">
+                <input type="date" name="fecha_consulta" id="fecha_consulta" value="<?= $filtros['fecha_consulta'] ?? '' ?>" class="filter-date" onchange="this.form.submit()" title="Disponibilidad en fecha">
+                <input type="hidden" name="mostrar_disponibilidad" value="1">
+                <a href="<?= url('habitaciones') ?>" class="filter-btn filter-btn-today" title="Volver a hoy">
+                    <i class="fas fa-calendar-day"></i><span class="hidden sm:inline">Hoy</span>
+                </a>
+                <a href="<?= url('habitaciones') ?>" class="filter-btn filter-btn-reset" title="Limpiar filtros">
+                    <i class="fas fa-redo-alt"></i><span class="hidden sm:inline">Limpiar</span>
                 </a>
             </div>
-            
-            <input type="hidden" name="mostrar_disponibilidad" value="1">
-            
-            <!-- Botones de acción más pequeños -->
-            <button type="submit" class="filter-btn filter-btn-primary">
-                <i class="fas fa-filter"></i>
-                <span class="hidden sm:inline">Filtrar</span>
-            </button>
-            
-            <?php if (!empty($filtros['buscar']) || !empty($filtros['estado']) || !empty($filtros['tipo']) || !empty($filtros['piso']) || !empty($filtros['fecha_consulta'])): ?>
-            <a href="<?= url('habitaciones') ?>" class="filter-btn filter-btn-reset" title="Limpiar filtros">
-                <i class="fas fa-times"></i>
-            </a>
-            <?php endif; ?>
         </div>
     </form>
 </div>
@@ -2964,6 +2942,11 @@ document.addEventListener('DOMContentLoaded', function() {
             $habitaciones_por_piso = [];
             foreach ($habitaciones as $__hab) { $habitaciones_por_piso[$__hab['piso']][] = $__hab; }
             ksort($habitaciones_por_piso, SORT_NUMERIC);
+            // Ordenar cada piso por numero/abecedario (natural: 101..108, luego AZUL, VERDE...)
+            foreach ($habitaciones_por_piso as &$__grp) {
+                usort($__grp, function($a, $b){ return strnatcasecmp((string)($a['numero'] ?? ''), (string)($b['numero'] ?? '')); });
+            }
+            unset($__grp);
             ?>
             <?php foreach ($habitaciones_por_piso as $__piso => $__habs): ?>
                 <section class="floor-section">
@@ -3707,6 +3690,27 @@ if ($tiene_doble_movimiento) {
 .habitaciones-view .filter-btn-primary:hover{ transform:translateY(-1px)!important; }
 .habitaciones-view .filter-btn-today{ background:var(--hb-surface)!important; border:1px solid var(--hb-line)!important; color:var(--hb-slate-700)!important; }
 .habitaciones-view .filter-btn-reset{ background:var(--bg-critical)!important; color:var(--c-critical)!important; border-color:transparent!important; }
+/* ── Barra de filtros con chips (como el diseño) ── */
+.habitaciones-view .hb-filterbar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.habitaciones-view .hb-search{ display:inline-flex; align-items:center; gap:8px; background:var(--hb-surface-warm); border:1px solid var(--hb-line); border-radius:11px; padding:8px 12px; flex:1 1 165px; min-width:150px; max-width:260px; }
+.habitaciones-view .hb-search i{ color:var(--hb-slate-400); font-size:.8rem; flex:none; }
+.habitaciones-view .hb-search input{ border:0!important; outline:0!important; background:transparent!important; font-size:.82rem; font-weight:600; color:var(--hb-slate-700); width:100%; }
+.habitaciones-view .hb-search:focus-within{ border-color:var(--hb-accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--hb-accent) 20%, transparent); }
+.habitaciones-view .hb-fdiv{ width:1px; height:22px; background:var(--hb-line); margin:0 2px; }
+.habitaciones-view .hb-chips{ display:flex; gap:7px; flex-wrap:wrap; }
+.habitaciones-view .hb-chip{ display:inline-flex; align-items:center; gap:7px; font-family:inherit; font-size:.78rem; font-weight:600; color:var(--hb-slate-700); background:var(--hb-surface-warm); border:1px solid var(--hb-line); padding:7px 13px; border-radius:999px; cursor:pointer; transition:transform .14s, border-color .14s, background .14s; white-space:nowrap; }
+.habitaciones-view .hb-chip:hover{ border-color:var(--hb-accent); transform:translateY(-1px); }
+.habitaciones-view .hb-chip.is-active{ background:var(--hb-primary); color:#fff; border-color:var(--hb-primary); box-shadow:0 6px 14px -8px color-mix(in srgb, var(--hb-primary) 70%, transparent); }
+.habitaciones-view .hb-chip.is-active .hb-chip-ct{ color:rgba(255,255,255,.72); }
+.habitaciones-view .hb-chip-ct{ color:var(--hb-slate-400); font-weight:700; }
+.habitaciones-view .hb-chip-dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+.habitaciones-view .chip-available .hb-chip-dot{ background:var(--c-available); }
+.habitaciones-view .chip-occupied  .hb-chip-dot{ background:var(--c-occupied); }
+.habitaciones-view .chip-arriving  .hb-chip-dot{ background:var(--c-arriving); }
+.habitaciones-view .chip-cleaning  .hb-chip-dot{ background:var(--c-cleaning); }
+.habitaciones-view .chip-maint     .hb-chip-dot{ background:var(--c-maint); }
+.habitaciones-view .hb-filter-right{ display:flex; align-items:center; gap:6px; margin-left:auto; }
+@media (max-width:760px){ .habitaciones-view .hb-filter-right{ margin-left:0; } .habitaciones-view .hb-search{ max-width:none; } }
 
 /* ── Alertas ── */
 .habitaciones-view .alert-panel{ background:var(--hb-surface)!important; border:1px solid var(--hb-line)!important; border-left:4px solid var(--c-critical)!important; border-radius:var(--hb-radius)!important; box-shadow:var(--hb-shadow-sm)!important; }
