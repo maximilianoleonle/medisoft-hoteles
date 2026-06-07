@@ -3712,6 +3712,23 @@ if ($tiene_doble_movimiento) {
 .habitaciones-view .hb-filter-right{ display:flex; align-items:center; gap:6px; margin-left:auto; }
 @media (max-width:760px){ .habitaciones-view .hb-filter-right{ margin-left:0; } .habitaciones-view .hb-search{ max-width:none; } }
 
+/* ════ Animación "hoja de acciones que sube" (como Medisoft Habitaciones.html) ════
+   La tarjeta NO se expande: queda a altura fija y la hoja (reverso) se desliza
+   por encima de la cara, que permanece detrás. Reusa el toggle .flipped del JS. */
+.habitaciones-view .flip-card,
+.habitaciones-view .flip-card.flipped{ height:186px!important; }
+.habitaciones-view .flip-card.flipped{ border-top-left-radius:22px!important; }
+@media (max-width:768px){ .habitaciones-view .flip-card, .habitaciones-view .flip-card.flipped{ height:192px!important; } }
+@media (max-width:640px){ .habitaciones-view .flip-card, .habitaciones-view .flip-card.flipped{ height:200px!important; } }
+.habitaciones-view .flip-card.flipped .flip-card-front{ opacity:1!important; }
+.habitaciones-view .flip-card-back{ transition:top .42s cubic-bezier(.22,1,.36,1)!important; overflow-y:auto!important; padding:13px 15px!important; }
+.habitaciones-view .flip-card.flipped .flip-card-back{ transition:top .42s cubic-bezier(.22,1,.36,1)!important; }
+.habitaciones-view .flip-card-back::-webkit-scrollbar{ width:0; height:0; }
+/* hoja compacta para que quepa a altura fija */
+.habitaciones-view .flip-card-back h4{ font-size:1.05rem!important; margin-bottom:6px!important; }
+.habitaciones-view .flip-card-back .info-item{ font-size:.72rem!important; margin-bottom:2px!important; }
+.habitaciones-view .flip-card-back .action-buttons{ margin-top:8px!important; }
+
 /* ── Alertas ── */
 .habitaciones-view .alert-panel{ background:var(--hb-surface)!important; border:1px solid var(--hb-line)!important; border-left:4px solid var(--c-critical)!important; border-radius:var(--hb-radius)!important; box-shadow:var(--hb-shadow-sm)!important; }
 .habitaciones-view .alert-header{ background:linear-gradient(120deg, var(--bg-critical), color-mix(in srgb, var(--bg-critical) 35%, #fff))!important; border-bottom:1px solid var(--hb-line)!important; }
