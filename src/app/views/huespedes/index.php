@@ -637,6 +637,107 @@ if ($total_paginas > 1) {
 }
 </style>
 
+<!-- ════ Capa boutique (rediseño huespedes.html): ivory + navy/oro + serif. Solo tema, conserva layout. ════ -->
+<style id="guest-boutique">
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap');
+
+.guests-page {
+    /* Identidad del hotel (fallback boutique navy/oro en vez de azul) */
+    --guest-brand: var(--brand-primary, #1B2746);
+    --guest-brand-2: var(--brand-secondary, #0F172A);
+    --guest-brand-dark: color-mix(in srgb, var(--guest-brand), #000 20%);
+    --guest-brand-soft: color-mix(in srgb, var(--guest-brand) 8%, #FBF8F2);
+    --guest-brand-softer: color-mix(in srgb, var(--guest-brand) 4%, #FFFFFF);
+    --guest-gold: var(--brand-accent, #BD9441);
+    --guest-gold-soft: color-mix(in srgb, var(--guest-gold) 15%, #FFFFFF);
+    --guest-gold-line: color-mix(in srgb, var(--guest-gold) 42%, #E4D4B0);
+    --guest-gold-ink: color-mix(in srgb, var(--guest-gold) 72%, #000);
+    --guest-ivory: #F6F2EA;  --guest-ivory-2: #FBF8F2;
+    --guest-surface: #FFFFFF; --guest-surface-warm: #FCFAF5;
+    --guest-border: color-mix(in srgb, var(--guest-brand) 10%, #E7E1D4);
+    --guest-ring: color-mix(in srgb, var(--guest-gold) 32%, transparent);
+    --guest-text: #1B2746; --guest-muted: #6C7689;
+    --guest-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    /* Semánticos */
+    --g-success:#1E9E63; --g-success-bg:#E7F4EC;
+    --g-warning:#C2841C; --g-warning-bg:#FAF0DC;
+    --g-info:#2F77E0;    --g-info-bg:#E6EFFC;
+    color: var(--guest-text) !important;
+    background:
+        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--guest-gold) 8%, transparent), transparent 60%),
+        linear-gradient(180deg, var(--guest-ivory-2), var(--guest-ivory)) !important;
+}
+
+/* ── Header limpio (sin banner de color) ── */
+.guests-page .guest-hero { background: transparent !important; box-shadow: none !important; border-radius: 0 !important; padding: 2px 2px 4px !important; overflow: visible !important; }
+.guests-page .guest-hero-icon { width: 46px; height: 46px; border-radius: 13px; background: linear-gradient(150deg, var(--guest-brand), var(--guest-brand-2)) !important; color: #fff !important; border: none !important; box-shadow: 0 12px 24px -10px color-mix(in srgb, var(--guest-brand) 55%, transparent) !important; }
+.guests-page .hotel-page-kicker { color: var(--guest-gold-ink) !important; }
+.guests-page .hotel-page-title { font-family: var(--guest-serif) !important; color: var(--guest-brand) !important; font-weight: 600 !important; font-size: clamp(1.9rem, 3.2vw, 2.5rem) !important; line-height: 1 !important; letter-spacing: 0 !important; text-shadow: none !important; }
+.guests-page .hotel-page-subtitle { color: var(--guest-muted) !important; font-weight: 500 !important; text-shadow: none !important; }
+
+/* "Nuevo huésped" = oro (acción destacada del diseño) */
+.guests-page .guest-primary-btn { background: linear-gradient(135deg, var(--guest-gold), color-mix(in srgb, var(--guest-gold) 76%, #000)) !important; color: #fff !important; box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--guest-gold) 58%, transparent) !important; }
+
+/* ── Strip de resumen ── */
+.guests-page .guest-summary-item { background: var(--guest-surface) !important; border: 1px solid var(--guest-border) !important; border-radius: 14px !important; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 24px -18px rgba(27,39,70,.22) !important; }
+.guests-page .guest-summary-value { font-family: var(--guest-serif) !important; font-size: 1.65rem !important; font-weight: 700 !important; color: var(--guest-brand) !important; }
+.guests-page .guest-summary-label { color: var(--guest-muted) !important; }
+
+/* ── Paneles ── */
+.guests-page .guest-panel { background: var(--guest-surface) !important; border: 1px solid var(--guest-border) !important; border-radius: 16px !important; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28) !important; }
+.guests-page .guest-panel .border-slate-100 { border-color: var(--guest-border) !important; }
+.guests-page .guest-panel h2 { color: var(--guest-brand) !important; }
+
+/* ── Filtros ── */
+.guests-page .guest-control { background: var(--guest-surface-warm) !important; border-color: var(--guest-border) !important; border-radius: 11px !important; color: var(--guest-text) !important; font-weight: 600; }
+.guests-page .guest-control:focus { border-color: var(--guest-gold) !important; box-shadow: 0 0 0 3px var(--guest-ring) !important; }
+.guests-page .guest-filter-form label { color: var(--guest-muted) !important; }
+.guests-page .guest-filter-btn { background: linear-gradient(135deg, var(--guest-brand), var(--guest-brand-2)) !important; color: #fff !important; border-radius: 11px !important; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--guest-brand) 60%, transparent) !important; }
+.guests-page .guest-reset-btn { background: var(--guest-surface) !important; border: 1px solid var(--guest-border) !important; color: var(--guest-muted) !important; border-radius: 11px !important; }
+.guests-page .guest-count-pill { background: var(--guest-gold-soft) !important; color: var(--guest-gold-ink) !important; border: 1px solid var(--guest-gold-line) !important; }
+
+/* ── Tabla ── */
+.guests-page .guest-table thead { background: var(--guest-surface-warm) !important; border-bottom: 1px solid var(--guest-border) !important; }
+.guests-page .guest-table th { color: var(--guest-muted) !important; letter-spacing: .07em !important; }
+.guests-page .guest-row { border-bottom: 1px solid var(--guest-border) !important; }
+.guests-page .guest-row:hover { background: var(--guest-ivory-2) !important; }
+.guests-page .guest-name { color: var(--guest-brand) !important; font-weight: 800 !important; }
+.guests-page .guest-id, .guests-page .guest-muted { color: var(--guest-muted) !important; }
+.guests-page .guest-contact-line, .guests-page .guest-meta-line { color: var(--guest-text) !important; }
+
+/* Avatar = degradado de marca (navy) */
+.guests-page .guest-avatar { border-radius: 12px !important; background: linear-gradient(150deg, var(--guest-brand), var(--guest-brand-2)) !important; color: #fff !important; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--guest-brand) 55%, transparent) !important; }
+
+/* Chips */
+.guests-page .guest-chip { background: var(--guest-surface-warm) !important; color: var(--guest-muted) !important; border: 1px solid var(--guest-border) !important; }
+.guests-page .guest-chip-brand { background: var(--guest-brand-soft) !important; color: var(--guest-brand) !important; border-color: color-mix(in srgb, var(--guest-brand) 18%, var(--guest-border)) !important; }
+.guests-page .guest-chip-warning { background: var(--guest-gold-soft) !important; color: var(--guest-gold-ink) !important; border-color: var(--guest-gold-line) !important; }
+
+/* Acciones por fila (semánticas, refinadas) */
+.guests-page .guest-action { background: var(--guest-surface-warm) !important; border: 1px solid var(--guest-border) !important; border-radius: 10px !important; }
+.guests-page .guest-action-view { color: var(--g-info) !important; } .guests-page .guest-action-view:hover { background: var(--g-info-bg) !important; }
+.guests-page .guest-action-edit { color: var(--guest-gold-ink) !important; } .guests-page .guest-action-edit:hover { background: var(--guest-gold-soft) !important; }
+.guests-page .guest-action-book { color: var(--g-success) !important; } .guests-page .guest-action-book:hover { background: var(--g-success-bg) !important; }
+
+/* Cards móviles */
+.guests-page .guest-card { background: var(--guest-surface) !important; border: 1px solid var(--guest-border) !important; border-radius: 16px !important; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 26px -20px rgba(27,39,70,.25) !important; }
+.guests-page .guest-card-action { background: var(--guest-surface-warm) !important; border: 1px solid var(--guest-border) !important; color: var(--guest-text) !important; border-radius: 10px !important; }
+.guests-page .guest-card-action.primary { background: linear-gradient(135deg, var(--guest-brand), var(--guest-brand-2)) !important; border-color: transparent !important; color: #fff !important; }
+
+/* Empty state */
+.guests-page .guest-empty { background: var(--guest-ivory-2) !important; border: 1px dashed var(--guest-border) !important; }
+.guests-page .guest-empty-icon { background: var(--guest-gold-soft) !important; color: var(--guest-gold-ink) !important; }
+.guests-page .guest-empty h2 { color: var(--guest-brand) !important; }
+
+/* Paginación */
+.guests-page .guest-pagination-shell { background: var(--guest-surface) !important; border: 1px solid var(--guest-border) !important; border-radius: 14px !important; }
+.guests-page .guest-page-link, .guests-page .guest-page-current, .guests-page .guest-page-disabled, .guests-page .guest-page-ellipsis { border-color: var(--guest-border) !important; }
+.guests-page .guest-page-link { color: var(--guest-muted) !important; background: var(--guest-surface) !important; }
+.guests-page .guest-page-link:hover { border-color: var(--guest-gold) !important; color: var(--guest-gold-ink) !important; background: var(--guest-gold-soft) !important; }
+.guests-page .guest-page-current { background: var(--guest-brand) !important; border-color: var(--guest-brand) !important; color: #fff !important; }
+.guests-page .guest-pagination-summary { color: var(--guest-muted) !important; }
+</style>
+
 <div class="guests-page hotel-page p-4 sm:p-6">
     <div class="guest-shell">
         <section class="guest-hero hotel-page-header">
