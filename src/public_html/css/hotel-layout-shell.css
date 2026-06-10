@@ -378,10 +378,80 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
     width: 268px !important;
     padding: 30px 18px 18px !important;
     border-right: 1px solid var(--hotel-border) !important;
-    background: linear-gradient(180deg, var(--hotel-panel), color-mix(in srgb, var(--hotel-accent) 4%, var(--hotel-bg))) !important;
-    box-shadow: none !important;
+    background:
+        radial-gradient(circle at 50% -8%, color-mix(in srgb, var(--hotel-accent) 11%, transparent), transparent 150px),
+        linear-gradient(180deg, var(--hotel-panel), color-mix(in srgb, var(--hotel-accent) 4%, var(--hotel-bg))) !important;
+    box-shadow: 18px 0 38px color-mix(in srgb, var(--hotel-secondary) 8%, transparent) !important;
     color: var(--hotel-text) !important;
     font-family: Manrope, Inter, ui-sans-serif, system-ui, sans-serif !important;
+}
+
+/* Shared tonal balance for hotel index views: keep brand color as an accent,
+   and let operational states carry secondary color. */
+body.hotel-layout-scope {
+    --hotel-ink: #111827;
+    --hotel-ink-soft: #334155;
+    --hotel-state-blue: #2563EB;
+    --hotel-state-green: #059669;
+    --hotel-state-amber: #D97706;
+    --hotel-state-red: #DC2626;
+    --hotel-state-violet: #7C3AED;
+}
+
+.hotel-layout-scope .hotel-btn-primary,
+.hotel-layout-scope .guest-filter-btn.hotel-btn-primary,
+.hotel-layout-scope .facturacion-view .filter-actions button[type="submit"],
+.hotel-layout-scope .inv-page .btn-inv.primary {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--hotel-brand) 86%, #111827), var(--hotel-brand-dark)) !important;
+    box-shadow: 0 12px 24px -16px color-mix(in srgb, var(--hotel-brand) 46%, transparent) !important;
+}
+
+.hotel-layout-scope .guest-name,
+.hotel-layout-scope .res-guest-name,
+.hotel-layout-scope .res-room-main,
+.hotel-layout-scope .res-date-main,
+.hotel-layout-scope .facturacion-view td[data-label="Huesped"],
+.hotel-layout-scope .facturacion-view td[data-label="Huésped"],
+.hotel-layout-scope .inv-page .font-semibold,
+.hotel-layout-scope .usuarios-view .font-semibold {
+    color: var(--hotel-ink) !important;
+}
+
+.hotel-layout-scope .hotel-badge,
+.hotel-layout-scope .guest-count-pill,
+.hotel-layout-scope .res-date-chip {
+    background: color-mix(in srgb, var(--hotel-brand) 5%, #F8FAFC) !important;
+    color: var(--hotel-ink-soft) !important;
+    border-color: color-mix(in srgb, var(--hotel-brand) 10%, #E2E8F0) !important;
+}
+
+.hotel-layout-scope .stat-card,
+.hotel-layout-scope .stat-widget,
+.hotel-layout-scope .res-metric,
+.hotel-layout-scope .usr-widget {
+    border-color: color-mix(in srgb, var(--hotel-brand) 8%, #E5E7EB) !important;
+}
+
+.hotel-layout-scope .res-metric.is-primary::after,
+.hotel-layout-scope .stat-card.card-inicial::after,
+.hotel-layout-scope .stat-widget:nth-child(1)::before,
+.hotel-layout-scope .usr-widget:nth-child(1)::before {
+    background: var(--hotel-state-blue) !important;
+}
+
+.hotel-layout-scope .stat-widget:nth-child(2)::before,
+.hotel-layout-scope .usr-widget:nth-child(2)::before {
+    background: var(--hotel-state-green) !important;
+}
+
+.hotel-layout-scope .stat-widget:nth-child(3)::before,
+.hotel-layout-scope .usr-widget:nth-child(3)::before {
+    background: var(--hotel-state-amber) !important;
+}
+
+.hotel-layout-scope .stat-widget:nth-child(4)::before,
+.hotel-layout-scope .usr-widget:nth-child(4)::before {
+    background: var(--hotel-state-red) !important;
 }
 
 .hotel-layout-scope .hotel-sidebar .sidebar-header {
@@ -407,8 +477,8 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
     place-items: center;
     border-radius: 13px;
     border: 1px solid var(--hotel-line);
-    background: color-mix(in srgb, var(--hotel-accent) 12%, #FFFFFF);
-    box-shadow: inset 0 1px 0 #fff, 0 1px 2px color-mix(in srgb, var(--hotel-secondary) 6%, transparent);
+    background: linear-gradient(145deg, color-mix(in srgb, var(--hotel-accent) 18%, #FFFFFF), color-mix(in srgb, var(--hotel-primary) 5%, #FFFFFF));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 10px 24px color-mix(in srgb, var(--hotel-secondary) 9%, transparent);
     line-height: 1;
     overflow: hidden;
 }
@@ -590,7 +660,22 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
     letter-spacing: 0 !important;
     box-shadow: none !important;
     transform: none !important;
+    position: relative !important;
+    isolation: isolate !important;
+    overflow: hidden !important;
     transition: background .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease !important;
+}
+
+.hotel-layout-scope .hotel-sidebar .nav-item::after {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,0));
+    opacity: 0;
+    pointer-events: none;
+    z-index: 0;
+    transition: opacity .18s ease;
 }
 
 .hotel-layout-scope .hotel-sidebar .nav-item:hover {
@@ -600,21 +685,34 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
 }
 
 .hotel-layout-scope .hotel-sidebar .nav-item.active {
-    background: var(--hotel-brand) !important;
+    background: linear-gradient(135deg, var(--hotel-brand), color-mix(in srgb, var(--hotel-brand) 78%, var(--hotel-secondary))) !important;
     color: #fff !important;
-    box-shadow: 0 11px 24px color-mix(in srgb, var(--hotel-primary) 22%, transparent) !important;
+    font-weight: 850 !important;
+    box-shadow:
+        0 13px 28px color-mix(in srgb, var(--hotel-primary) 24%, transparent),
+        inset 0 1px 0 rgba(255,255,255,.18) !important;
+    transform: translateX(3px) !important;
+}
+
+.hotel-layout-scope .hotel-sidebar .nav-item.active::after {
+    display: block !important;
+    opacity: 1;
 }
 
 .hotel-layout-scope .hotel-sidebar .nav-icon {
-    width: 17px !important;
-    height: auto !important;
+    width: 27px !important;
+    height: 27px !important;
     display: grid !important;
     place-items: center !important;
-    flex: 0 0 17px !important;
+    flex: 0 0 27px !important;
     margin: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    color: currentColor !important;
+    border-radius: 9px !important;
+    background: color-mix(in srgb, var(--hotel-primary) 8%, transparent) !important;
+    color: color-mix(in srgb, var(--hotel-secondary) 70%, #64748b) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.55) !important;
+    position: relative !important;
+    z-index: 1 !important;
+    transition: background .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease !important;
 }
 
 .hotel-layout-scope .hotel-sidebar .nav-icon i {
@@ -624,11 +722,52 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
     font-size: 14px !important;
 }
 
+.hotel-layout-scope .hotel-sidebar .nav-item:hover .nav-icon {
+    background: var(--hotel-panel) !important;
+    color: var(--hotel-brand) !important;
+    box-shadow: 0 8px 16px color-mix(in srgb, var(--hotel-secondary) 8%, transparent) !important;
+}
+
+.hotel-layout-scope .hotel-sidebar .nav-item.active .nav-icon {
+    background: rgba(255,255,255,.22) !important;
+    color: #fff !important;
+    box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.18),
+        0 8px 16px color-mix(in srgb, var(--hotel-secondary) 14%, transparent) !important;
+    transform: translateX(-1px) !important;
+}
+
+.hotel-layout-scope .hotel-sidebar .nav-item.active .nav-icon i {
+    color: #fff !important;
+}
+
 .hotel-layout-scope .hotel-sidebar .nav-text {
     color: inherit !important;
     font-size: inherit !important;
     font-weight: inherit !important;
     letter-spacing: 0 !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+.hotel-layout-scope .hotel-sidebar .nav-badge {
+    z-index: 2 !important;
+}
+
+.hotel-layout-scope .hotel-sidebar .nav-item.active .nav-text {
+    color: #fff !important;
+}
+
+.hotel-layout-scope .hotel-sidebar .nav-item.active .nav-badge {
+    background: #fff !important;
+    color: var(--hotel-brand) !important;
+    box-shadow: 0 0 0 2px rgba(255,255,255,.32) !important;
+}
+
+.hotel-layout-scope .hotel-sidebar .nav-item.active .nav-badge.pulse-green,
+.hotel-layout-scope .hotel-sidebar .nav-item.active .pulse-green {
+    background: #fff !important;
+    color: #15803d !important;
 }
 
 .hotel-layout-scope .hotel-sidebar .sidebar-footer {
@@ -669,7 +808,7 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
     border: 1px solid var(--hotel-border) !important;
     border-radius: 15px !important;
     background: var(--hotel-panel) !important;
-    box-shadow: 0 10px 25px color-mix(in srgb, var(--hotel-secondary) 7%, transparent) !important;
+    box-shadow: 0 12px 28px color-mix(in srgb, var(--hotel-secondary) 9%, transparent), inset 0 1px 0 rgba(255,255,255,.8) !important;
 }
 
 .hotel-layout-scope .hotel-sidebar .user-avatar {
@@ -698,4 +837,38 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
     margin-left: auto;
     background: transparent !important;
     color: color-mix(in srgb, var(--hotel-secondary) 42%, #CBD5E1) !important;
+}
+
+/* Keep every hotel module item on the same footprint as Huespedes. */
+.hotel-layout-scope .hotel-sidebar .hotel-operaciones-section .nav-item,
+.hotel-layout-scope .hotel-sidebar .hotel-admin-section .nav-item {
+    width: 100% !important;
+    height: 43px !important;
+    min-height: 43px !important;
+    max-height: 43px !important;
+    box-sizing: border-box !important;
+    padding: 0 16px !important;
+    gap: 13px !important;
+    align-items: center !important;
+}
+
+.hotel-layout-scope .hotel-sidebar .hotel-operaciones-section .nav-item:hover,
+.hotel-layout-scope .hotel-sidebar .hotel-operaciones-section .nav-item.active,
+.hotel-layout-scope .hotel-sidebar .hotel-admin-section .nav-item:hover,
+.hotel-layout-scope .hotel-sidebar .hotel-admin-section .nav-item.active {
+    transform: none !important;
+}
+
+.hotel-layout-scope .hotel-sidebar .hotel-operaciones-section .nav-icon,
+.hotel-layout-scope .hotel-sidebar .hotel-admin-section .nav-icon {
+    width: 27px !important;
+    height: 27px !important;
+    flex: 0 0 27px !important;
+}
+
+.hotel-layout-scope .hotel-sidebar .hotel-operaciones-section .nav-text,
+.hotel-layout-scope .hotel-sidebar .hotel-admin-section .nav-text {
+    min-width: 0 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
 }
