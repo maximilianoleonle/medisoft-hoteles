@@ -233,7 +233,7 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
     <link rel="stylesheet" href="<?= asset('css/custom.css') ?>">
 
     <!-- CSS de la pantalla de carga -->
-    <link rel="stylesheet" href="<?= asset('css/loading-screen.css') ?>">
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/loading-screen.css') : asset('css/loading-screen.css') ?>">
 
     <!-- CSS PWA (offline banner, toasts, install btn) -->
     <link rel="stylesheet" href="<?= asset('css/pwa.css') ?>">
@@ -244,7 +244,7 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
     <?php endif; ?>
     
     <!-- Script de pantalla de carga -->
-    <script src="<?= asset('js/loading-screen.js') ?>"></script>
+    <script src="<?= function_exists('asset_version') ? asset_version('js/loading-screen.js') : asset('js/loading-screen.js') ?>"></script>
 
     <!-- JavaScript Global -->
     <script src="<?= asset('js/app.js') ?>" defer></script>
@@ -563,7 +563,7 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/hotel-layout-shell.css') : asset('css/hotel-layout-shell.css') ?>">
     <?php endif; ?>
 </head>
-<body class="bg-gray-100 font-inter loading<?= $layoutEsPanelSaas ? ' ms-admin-scope' : ' hotel-layout-scope' ?>">
+<body class="bg-gray-100 font-inter<?= $layoutEsPanelSaas ? ' ms-admin-scope' : ' hotel-layout-scope' ?>">
 
   <!-- ── Banner Offline ─────────────────────────────────────────────────── -->
   <div id="pwa-offline-banner" role="alert" aria-live="assertive" hidden>

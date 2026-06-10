@@ -11,7 +11,7 @@ $loadingLogoUrl = $layoutLogoUrl ?? (function_exists('hotel_branding_default_log
 ?>
 
 <!-- Pantalla de Carga Principal -->
-<div id="loadingScreen" class="loading-screen">
+<div id="loadingScreen" class="loading-screen" style="display: none;">
     <div class="loading-content">
         <div class="logo-container">
             <div class="logo-glow"></div>
@@ -37,7 +37,7 @@ $loadingLogoUrl = $layoutLogoUrl ?? (function_exists('hotel_branding_default_log
     window.LoadingConfig = {
         minLoadingTime: 1000,
         showOnNavigation: false, // Desactivar por ahora
-        debugMode: true // Activar para ver logs
+        debugMode: false
     };
     
     // Registrar tiempo de inicio

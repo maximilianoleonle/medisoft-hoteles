@@ -10,13 +10,44 @@
     const config = {
         minLoadingTime: 1000, // Tiempo mínimo de carga en ms
         fadeOutDuration: 500, // Duración del fade out
-        showOnNavigation: true, // Mostrar en navegación entre páginas
+        showOnNavigation: false, // Mostrar en navegación entre páginas
         debugMode: false // Modo debug
     };
+
+    const LOGIN_LOADING_FLAG = 'medisoft_show_login_loading';
 
     // Estado de la aplicación
     let isFirstLoad = true;
     let loadingPromises = [];
+
+    function applyRuntimeConfig() {
+        if (window.LoadingConfig && typeof window.LoadingConfig === 'object') {
+            Object.assign(config, window.LoadingConfig);
+        }
+    }
+
+    function consumeLoginLoadingFlag() {
+        try {
+            const shouldShow = window.sessionStorage.getItem(LOGIN_LOADING_FLAG) === '1';
+            if (shouldShow) {
+                window.sessionStorage.removeItem(LOGIN_LOADING_FLAG);
+            }
+
+            return shouldShow;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function forceHideLoadingScreen() {
+        const loadingScreen = document.getElementById('loadingScreen');
+        if (loadingScreen) {
+            loadingScreen.classList.remove('fade-out');
+            loadingScreen.style.display = 'none';
+        }
+
+        document.body.classList.remove('loading');
+    }
 
     // Función principal para mostrar la pantalla de carga
     function showLoadingScreen(state = 'initial') {
@@ -79,6 +110,8 @@ function hideLoadingScreen() {
 
     // Función para transiciones entre páginas
     function showPageTransition() {
+        if (!config.showOnNavigation) return null;
+
         let transition = document.querySelector('.page-transition');
         
         if (!transition) {
@@ -165,19 +198,25 @@ function hideLoadingScreen() {
 
     // Inicialización cuando el DOM esté listo
     document.addEventListener('DOMContentLoaded', function() {
-    // Guardar tiempo de inicio
-    window.loadStartTime = Date.now();
+        applyRuntimeConfig();
 
-    // ✅ Mostrar siempre al abrir la app
-    showLoadingScreen('initial');
+        if (!consumeLoginLoadingFlag()) {
+            forceHideLoadingScreen();
+            return;
+        }
 
-    // Ocultar hasta que todo cargue + mínimo 2s
-    if (document.readyState === 'complete') {
-        hideLoadingScreen();
-    } else {
-        window.addEventListener('load', hideLoadingScreen);
-    }
-});
+        // Guardar tiempo de inicio solo para la animación posterior al login.
+        window.loadStartTime = Date.now();
+
+        showLoadingScreen('auth');
+
+        // Ocultar hasta que todo cargue + tiempo mínimo configurado.
+        if (document.readyState === 'complete') {
+            hideLoadingScreen();
+        } else {
+            window.addEventListener('load', hideLoadingScreen);
+        }
+    });
 
 
     // Manejar errores de carga

@@ -1263,6 +1263,10 @@ $loginDisabled = !empty($login_disabled);
         // Form submission animation
         // ========================================
         document.getElementById('loginForm').addEventListener('submit', function(e) {
+            try {
+                window.sessionStorage.setItem('medisoft_show_login_loading', '1');
+            } catch (error) {}
+
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Conectando...';
