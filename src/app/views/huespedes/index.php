@@ -49,13 +49,14 @@ if ($total_paginas > 1) {
 .guests-page {
     --guest-brand: var(--brand-primary, #2563EB);
     --guest-brand-dark: color-mix(in srgb, var(--guest-brand), #000 26%);
-    --guest-brand-soft: color-mix(in srgb, var(--guest-brand) 9%, #F8FAFC);
-    --guest-brand-softer: color-mix(in srgb, var(--guest-brand) 5%, #FFFFFF);
+    --guest-brand-soft: color-mix(in srgb, var(--guest-brand) 6%, #F8FAFC);
+    --guest-brand-softer: color-mix(in srgb, var(--guest-brand) 3%, #FFFFFF);
     --guest-accent: var(--brand-accent, #F59E0B);
-    --guest-border: color-mix(in srgb, var(--guest-brand) 14%, #E2E8F0);
-    --guest-ring: color-mix(in srgb, var(--guest-brand) 22%, transparent);
+    --guest-border: color-mix(in srgb, var(--guest-brand) 9%, #E2E8F0);
+    --guest-ring: color-mix(in srgb, var(--guest-brand) 16%, transparent);
     --guest-text: #0F172A;
     --guest-muted: #64748B;
+    --guest-ink: #111827;
     color: var(--guest-text);
 }
 
@@ -154,7 +155,8 @@ if ($total_paginas > 1) {
 .guest-filter-btn,
 .guest-reset-btn,
 .guest-action,
-.guest-card-action {
+.guest-card-action,
+.guest-page-link {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -162,6 +164,8 @@ if ($total_paginas > 1) {
     min-height: 38px;
     border-radius: 10px;
     font-weight: 800;
+    cursor: pointer;
+    text-decoration: none;
     transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
 }
 
@@ -175,9 +179,34 @@ if ($total_paginas > 1) {
 
 .guest-primary-btn:hover,
 .guest-filter-btn:hover,
+.guest-reset-btn:hover,
 .guest-card-action:hover,
-.guest-action:hover {
+.guest-action:hover,
+.guest-page-link:hover {
     transform: translateY(-1px);
+}
+
+.guest-primary-btn:focus-visible,
+.guest-filter-btn:focus-visible,
+.guest-reset-btn:focus-visible,
+.guest-action:focus-visible,
+.guest-card-action:focus-visible,
+.guest-page-link:focus-visible,
+.guest-detail-link:focus-visible,
+.guest-contact-link:focus-visible,
+.guest-chip-link:focus-visible {
+    outline: 2px solid var(--guest-brand);
+    outline-offset: 3px;
+}
+
+.guest-primary-btn:active,
+.guest-filter-btn:active,
+.guest-reset-btn:active,
+.guest-action:active,
+.guest-card-action:active,
+.guest-page-link:active,
+.guest-chip-link:active {
+    transform: translateY(0) scale(.98);
 }
 
 .guest-summary-strip {
@@ -240,6 +269,10 @@ if ($total_paginas > 1) {
     outline: none !important;
 }
 
+select.guest-control {
+    cursor: pointer;
+}
+
 .guest-filter-btn {
     padding: .5rem .8rem;
     background: linear-gradient(135deg, var(--guest-brand), var(--guest-brand-dark));
@@ -296,11 +329,12 @@ if ($total_paginas > 1) {
 
 .guest-row {
     border-bottom: 1px solid #EEF2F7;
-    transition: background .16s ease;
+    transition: background .16s ease, box-shadow .16s ease;
 }
 
 .guest-row:hover {
     background: var(--guest-brand-softer);
+    box-shadow: 0 8px 22px -24px rgba(15, 23, 42, .45);
 }
 
 .guest-id,
@@ -314,6 +348,46 @@ if ($total_paginas > 1) {
     font-size: .9rem;
     font-weight: 900;
     line-height: 1.25;
+}
+
+.guest-detail-link {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    max-width: 100%;
+    gap: .35rem;
+    color: inherit;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: color .16s ease, background .16s ease;
+}
+
+.guest-detail-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.guest-detail-icon {
+    flex-shrink: 0;
+    font-size: .68rem;
+    opacity: 0;
+    transform: translateX(-2px);
+    transition: opacity .16s ease, transform .16s ease;
+}
+
+.guest-detail-link:hover {
+    color: var(--guest-ink);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+}
+
+.guest-detail-link:hover .guest-detail-icon,
+.guest-detail-link:focus-visible .guest-detail-icon {
+    opacity: 1;
+    transform: translateX(0);
 }
 
 .guest-contact-line,
@@ -332,6 +406,24 @@ if ($total_paginas > 1) {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.guest-contact-link {
+    display: inline-flex;
+    min-width: 0;
+    max-width: 100%;
+    align-items: center;
+    color: inherit;
+    border-radius: 7px;
+    text-decoration: none;
+    transition: color .16s ease, background .16s ease;
+}
+
+.guest-contact-link:hover {
+    color: var(--guest-brand-dark);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
 }
 
 .guest-cell-stack {
@@ -356,10 +448,20 @@ if ($total_paginas > 1) {
     font-weight: 800;
 }
 
+.guest-chip-link {
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, color .16s ease;
+}
+
+.guest-chip-link:hover {
+    transform: translateY(-1px);
+}
+
 .guest-chip-brand {
-    background: var(--guest-brand-soft);
-    color: var(--guest-brand-dark);
-    border-color: color-mix(in srgb, var(--guest-brand) 20%, #E2E8F0);
+    background: color-mix(in srgb, var(--guest-brand) 5%, #F8FAFC);
+    color: #334155;
+    border-color: color-mix(in srgb, var(--guest-brand) 12%, #E2E8F0);
 }
 
 .guest-chip-warning {
@@ -372,11 +474,54 @@ if ($total_paginas > 1) {
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: linear-gradient(135deg, var(--guest-brand), var(--guest-brand-dark));
-    color: #fff;
+    background: var(--guest-avatar-bg, #EEF2FF);
+    color: var(--guest-avatar-fg, #3730A3);
     font-size: .95rem;
     font-weight: 900;
-    box-shadow: 0 10px 22px color-mix(in srgb, var(--guest-brand) 18%, transparent);
+    border: 1px solid var(--guest-avatar-border, rgba(99,102,241,.16));
+    box-shadow: none;
+}
+
+.guest-row:nth-child(6n+1) .guest-avatar,
+.guest-mobile-list .guest-card:nth-child(6n+1) .guest-avatar {
+    --guest-avatar-bg: #EEF2FF;
+    --guest-avatar-fg: #3730A3;
+    --guest-avatar-border: #C7D2FE;
+}
+
+.guest-row:nth-child(6n+2) .guest-avatar,
+.guest-mobile-list .guest-card:nth-child(6n+2) .guest-avatar {
+    --guest-avatar-bg: #ECFDF5;
+    --guest-avatar-fg: #047857;
+    --guest-avatar-border: #A7F3D0;
+}
+
+.guest-row:nth-child(6n+3) .guest-avatar,
+.guest-mobile-list .guest-card:nth-child(6n+3) .guest-avatar {
+    --guest-avatar-bg: #FFF7ED;
+    --guest-avatar-fg: #C2410C;
+    --guest-avatar-border: #FED7AA;
+}
+
+.guest-row:nth-child(6n+4) .guest-avatar,
+.guest-mobile-list .guest-card:nth-child(6n+4) .guest-avatar {
+    --guest-avatar-bg: #FDF2F8;
+    --guest-avatar-fg: #BE185D;
+    --guest-avatar-border: #FBCFE8;
+}
+
+.guest-row:nth-child(6n+5) .guest-avatar,
+.guest-mobile-list .guest-card:nth-child(6n+5) .guest-avatar {
+    --guest-avatar-bg: #F0FDFA;
+    --guest-avatar-fg: #0F766E;
+    --guest-avatar-border: #99F6E4;
+}
+
+.guest-row:nth-child(6n+6) .guest-avatar,
+.guest-mobile-list .guest-card:nth-child(6n+6) .guest-avatar {
+    --guest-avatar-bg: #F8FAFC;
+    --guest-avatar-fg: #475569;
+    --guest-avatar-border: #CBD5E1;
 }
 
 .guest-action {
@@ -401,6 +546,13 @@ if ($total_paginas > 1) {
 .guest-card {
     border-radius: 14px;
     padding: 12px;
+    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+
+.guest-card:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--guest-brand) 22%, #E2E8F0);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, .07);
 }
 
 .guest-card-top {
@@ -646,17 +798,17 @@ if ($total_paginas > 1) {
     --guest-brand: var(--brand-primary, #1B2746);
     --guest-brand-2: var(--brand-secondary, #0F172A);
     --guest-brand-dark: color-mix(in srgb, var(--guest-brand), #000 20%);
-    --guest-brand-soft: color-mix(in srgb, var(--guest-brand) 8%, #FBF8F2);
-    --guest-brand-softer: color-mix(in srgb, var(--guest-brand) 4%, #FFFFFF);
+    --guest-brand-soft: color-mix(in srgb, var(--guest-brand) 5%, #FBF8F2);
+    --guest-brand-softer: color-mix(in srgb, var(--guest-brand) 2%, #FFFFFF);
     --guest-gold: var(--brand-accent, #BD9441);
     --guest-gold-soft: color-mix(in srgb, var(--guest-gold) 15%, #FFFFFF);
     --guest-gold-line: color-mix(in srgb, var(--guest-gold) 42%, #E4D4B0);
     --guest-gold-ink: color-mix(in srgb, var(--guest-gold) 72%, #000);
     --guest-ivory: #F6F2EA;  --guest-ivory-2: #FBF8F2;
     --guest-surface: #FFFFFF; --guest-surface-warm: #FCFAF5;
-    --guest-border: color-mix(in srgb, var(--guest-brand) 10%, #E7E1D4);
+    --guest-border: color-mix(in srgb, var(--guest-brand) 7%, #E7E1D4);
     --guest-ring: color-mix(in srgb, var(--guest-gold) 32%, transparent);
-    --guest-text: #1B2746; --guest-muted: #6C7689;
+    --guest-text: #171717; --guest-muted: #667085; --guest-heading: #111827;
     --guest-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
     /* Semánticos */
     --g-success:#1E9E63; --g-success-bg:#E7F4EC;
@@ -680,13 +832,13 @@ if ($total_paginas > 1) {
 
 /* ── Strip de resumen ── */
 .guests-page .guest-summary-item { background: var(--guest-surface) !important; border: 1px solid var(--guest-border) !important; border-radius: 14px !important; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 24px -18px rgba(27,39,70,.22) !important; }
-.guests-page .guest-summary-value { font-family: var(--guest-serif) !important; font-size: 1.65rem !important; font-weight: 700 !important; color: var(--guest-brand) !important; }
+.guests-page .guest-summary-value { font-family: var(--guest-serif) !important; font-size: 1.65rem !important; font-weight: 700 !important; color: var(--guest-heading) !important; }
 .guests-page .guest-summary-label { color: var(--guest-muted) !important; }
 
 /* ── Paneles ── */
 .guests-page .guest-panel { background: var(--guest-surface) !important; border: 1px solid var(--guest-border) !important; border-radius: 16px !important; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28) !important; }
 .guests-page .guest-panel .border-slate-100 { border-color: var(--guest-border) !important; }
-.guests-page .guest-panel h2 { color: var(--guest-brand) !important; }
+.guests-page .guest-panel h2 { color: var(--guest-heading) !important; }
 
 /* ── Filtros ── */
 .guests-page .guest-control { background: var(--guest-surface-warm) !important; border-color: var(--guest-border) !important; border-radius: 11px !important; color: var(--guest-text) !important; font-weight: 600; }
@@ -700,18 +852,76 @@ if ($total_paginas > 1) {
 .guests-page .guest-table thead { background: var(--guest-surface-warm) !important; border-bottom: 1px solid var(--guest-border) !important; }
 .guests-page .guest-table th { color: var(--guest-muted) !important; letter-spacing: .07em !important; }
 .guests-page .guest-row { border-bottom: 1px solid var(--guest-border) !important; }
-.guests-page .guest-row:hover { background: var(--guest-ivory-2) !important; }
-.guests-page .guest-name { color: var(--guest-brand) !important; font-weight: 800 !important; }
+.guests-page .guest-row:hover { background: var(--guest-ivory-2) !important; box-shadow: 0 10px 24px -24px rgba(27,39,70,.48) !important; }
+.guests-page .guest-name { color: var(--guest-heading) !important; font-weight: 800 !important; }
+.guests-page .guest-detail-link { color: var(--guest-heading) !important; }
+.guests-page .guest-detail-link:hover { color: var(--guest-heading) !important; background: color-mix(in srgb, var(--guest-gold) 9%, transparent) !important; text-decoration-color: var(--guest-gold) !important; }
+.guests-page .guest-contact-link:hover { color: var(--guest-heading) !important; text-decoration-color: var(--guest-gold) !important; }
 .guests-page .guest-id, .guests-page .guest-muted { color: var(--guest-muted) !important; }
 .guests-page .guest-contact-line, .guests-page .guest-meta-line { color: var(--guest-text) !important; }
 
-/* Avatar = degradado de marca (navy) */
-.guests-page .guest-avatar { border-radius: 12px !important; background: linear-gradient(150deg, var(--guest-brand), var(--guest-brand-2)) !important; color: #fff !important; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--guest-brand) 55%, transparent) !important; }
+/* Avatar palette keeps the hotel color from saturating every row. */
+.guests-page .guest-avatar {
+    border-radius: 12px !important;
+    background: var(--guest-avatar-bg, #EEF2FF) !important;
+    color: var(--guest-avatar-fg, #3730A3) !important;
+    border: 1px solid var(--guest-avatar-border, #C7D2FE) !important;
+    box-shadow: 0 10px 20px -15px var(--guest-avatar-shadow, rgba(55,48,163,.34)) !important;
+}
+
+.guests-page .guest-row:nth-child(6n+1) .guest-avatar,
+.guests-page .guest-mobile-list .guest-card:nth-child(6n+1) .guest-avatar {
+    --guest-avatar-bg: #EEF2FF;
+    --guest-avatar-fg: #3730A3;
+    --guest-avatar-border: #C7D2FE;
+    --guest-avatar-shadow: rgba(55,48,163,.34);
+}
+
+.guests-page .guest-row:nth-child(6n+2) .guest-avatar,
+.guests-page .guest-mobile-list .guest-card:nth-child(6n+2) .guest-avatar {
+    --guest-avatar-bg: #ECFDF5;
+    --guest-avatar-fg: #047857;
+    --guest-avatar-border: #A7F3D0;
+    --guest-avatar-shadow: rgba(4,120,87,.3);
+}
+
+.guests-page .guest-row:nth-child(6n+3) .guest-avatar,
+.guests-page .guest-mobile-list .guest-card:nth-child(6n+3) .guest-avatar {
+    --guest-avatar-bg: #FFF7ED;
+    --guest-avatar-fg: #C2410C;
+    --guest-avatar-border: #FED7AA;
+    --guest-avatar-shadow: rgba(194,65,12,.3);
+}
+
+.guests-page .guest-row:nth-child(6n+4) .guest-avatar,
+.guests-page .guest-mobile-list .guest-card:nth-child(6n+4) .guest-avatar {
+    --guest-avatar-bg: #FDF2F8;
+    --guest-avatar-fg: #BE185D;
+    --guest-avatar-border: #FBCFE8;
+    --guest-avatar-shadow: rgba(190,24,93,.28);
+}
+
+.guests-page .guest-row:nth-child(6n+5) .guest-avatar,
+.guests-page .guest-mobile-list .guest-card:nth-child(6n+5) .guest-avatar {
+    --guest-avatar-bg: #F0FDFA;
+    --guest-avatar-fg: #0F766E;
+    --guest-avatar-border: #99F6E4;
+    --guest-avatar-shadow: rgba(15,118,110,.28);
+}
+
+.guests-page .guest-row:nth-child(6n+6) .guest-avatar,
+.guests-page .guest-mobile-list .guest-card:nth-child(6n+6) .guest-avatar {
+    --guest-avatar-bg: #F8FAFC;
+    --guest-avatar-fg: #475569;
+    --guest-avatar-border: #CBD5E1;
+    --guest-avatar-shadow: rgba(71,85,105,.25);
+}
 
 /* Chips */
 .guests-page .guest-chip { background: var(--guest-surface-warm) !important; color: var(--guest-muted) !important; border: 1px solid var(--guest-border) !important; }
-.guests-page .guest-chip-brand { background: var(--guest-brand-soft) !important; color: var(--guest-brand) !important; border-color: color-mix(in srgb, var(--guest-brand) 18%, var(--guest-border)) !important; }
+.guests-page .guest-chip-brand { background: var(--guest-brand-soft) !important; color: var(--guest-heading) !important; border-color: color-mix(in srgb, var(--guest-brand) 12%, var(--guest-border)) !important; }
 .guests-page .guest-chip-warning { background: var(--guest-gold-soft) !important; color: var(--guest-gold-ink) !important; border-color: var(--guest-gold-line) !important; }
+.guests-page .guest-chip-link:hover { border-color: var(--guest-gold-line) !important; color: var(--guest-gold-ink) !important; background: var(--guest-gold-soft) !important; }
 
 /* Acciones por fila (semánticas, refinadas) */
 .guests-page .guest-action { background: var(--guest-surface-warm) !important; border: 1px solid var(--guest-border) !important; border-radius: 10px !important; }
@@ -721,8 +931,11 @@ if ($total_paginas > 1) {
 
 /* Cards móviles */
 .guests-page .guest-card { background: var(--guest-surface) !important; border: 1px solid var(--guest-border) !important; border-radius: 16px !important; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 26px -20px rgba(27,39,70,.25) !important; }
+.guests-page .guest-card:hover { border-color: color-mix(in srgb, var(--guest-gold) 38%, var(--guest-border)) !important; box-shadow: 0 2px 4px rgba(27,39,70,.05), 0 16px 32px -22px rgba(27,39,70,.32) !important; }
 .guests-page .guest-card-action { background: var(--guest-surface-warm) !important; border: 1px solid var(--guest-border) !important; color: var(--guest-text) !important; border-radius: 10px !important; }
+.guests-page .guest-card-action:hover { border-color: var(--guest-gold-line) !important; color: var(--guest-gold-ink) !important; background: var(--guest-gold-soft) !important; }
 .guests-page .guest-card-action.primary { background: linear-gradient(135deg, var(--guest-brand), var(--guest-brand-2)) !important; border-color: transparent !important; color: #fff !important; }
+.guests-page .guest-card-action.primary:hover { background: linear-gradient(135deg, color-mix(in srgb, var(--guest-brand) 92%, #fff), var(--guest-brand-2)) !important; color: #fff !important; }
 
 /* Empty state */
 .guests-page .guest-empty { background: var(--guest-ivory-2) !important; border: 1px dashed var(--guest-border) !important; }
@@ -734,7 +947,7 @@ if ($total_paginas > 1) {
 .guests-page .guest-page-link, .guests-page .guest-page-current, .guests-page .guest-page-disabled, .guests-page .guest-page-ellipsis { border-color: var(--guest-border) !important; }
 .guests-page .guest-page-link { color: var(--guest-muted) !important; background: var(--guest-surface) !important; }
 .guests-page .guest-page-link:hover { border-color: var(--guest-gold) !important; color: var(--guest-gold-ink) !important; background: var(--guest-gold-soft) !important; }
-.guests-page .guest-page-current { background: var(--guest-brand) !important; border-color: var(--guest-brand) !important; color: #fff !important; }
+.guests-page .guest-page-current { background: var(--guest-heading) !important; border-color: var(--guest-heading) !important; color: #fff !important; }
 .guests-page .guest-pagination-summary { color: var(--guest-muted) !important; }
 </style>
 
@@ -753,7 +966,7 @@ if ($total_paginas > 1) {
                     </div>
                 </div>
 
-                <a href="<?= url('huespedes/create') ?>" class="guest-primary-btn hotel-btn-primary">
+                <a href="<?= url('huespedes/create') ?>" class="guest-primary-btn hotel-btn-primary" title="Registrar nuevo huesped">
                     <i class="fas fa-user-plus"></i>
                     Nuevo huésped
                 </a>
@@ -783,6 +996,7 @@ if ($total_paginas > 1) {
                         <input type="text"
                                name="buscar"
                                value="<?= htmlspecialchars($buscar ?? '') ?>"
+                               title="Buscar por nombre, telefono, email o placas"
                                placeholder="Nombre, teléfono, email o placas"
                                class="guest-control pl-10 pr-4 py-2 border text-sm">
                         <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
@@ -791,7 +1005,7 @@ if ($total_paginas > 1) {
 
                 <div>
                     <label class="block text-xs font-extrabold text-slate-600 uppercase tracking-wide mb-1">Procedencia</label>
-                    <select name="estado" class="guest-control px-3 py-2 border text-sm">
+                    <select name="estado" class="guest-control px-3 py-2 border text-sm" title="Filtrar por procedencia">
                         <option value="">Todos los estados</option>
                         <?php foreach ($estados as $estado): ?>
                             <option value="<?= $estado ?>" <?= ($estado_filtro ?? '') == $estado ? 'selected' : '' ?>>
@@ -802,11 +1016,11 @@ if ($total_paginas > 1) {
                 </div>
 
                 <div class="guest-filter-actions flex gap-2">
-                    <button type="submit" class="guest-filter-btn hotel-btn-primary">
+                    <button type="submit" class="guest-filter-btn hotel-btn-primary" title="Aplicar filtros">
                         <i class="fas fa-filter"></i>
                         Filtrar
                     </button>
-                    <a href="<?= url('huespedes') ?>" class="guest-reset-btn hotel-btn-secondary">
+                    <a href="<?= url('huespedes') ?>" class="guest-reset-btn hotel-btn-secondary" title="Limpiar filtros">
                         <i class="fas fa-times"></i>
                         Limpiar
                     </a>
@@ -852,6 +1066,9 @@ if ($total_paginas > 1) {
                             $vehiculos = $guestRow['vehiculos'];
                             $total_vehiculos = $guestRow['total_vehiculos'];
                             $reservas = intval($huesped['total_reservaciones'] ?? 0);
+                            $huespedUrl = url('huespedes/' . $huesped['id']);
+                            $huespedEditUrl = url('huespedes/' . $huesped['id'] . '/edit');
+                            $huespedBookUrl = url('reservaciones/crear?huesped_id=' . $huesped['id']);
                             ?>
                             <tr class="guest-row">
                                 <td>
@@ -860,9 +1077,12 @@ if ($total_paginas > 1) {
                                             <?= htmlspecialchars(strtoupper(substr(trim($huesped['nombre_completo'] ?? 'H'), 0, 1))) ?>
                                         </div>
                                         <div class="min-w-0">
-                                            <div class="guest-name truncate">
-                                                <?= htmlspecialchars($huesped['nombre_completo']) ?>
-                                            </div>
+                                            <a href="<?= $huespedUrl ?>"
+                                               class="guest-name guest-detail-link"
+                                               title="Ver detalle de <?= htmlspecialchars($huesped['nombre_completo']) ?>">
+                                                <span class="guest-detail-text"><?= htmlspecialchars($huesped['nombre_completo']) ?></span>
+                                                <i class="fas fa-arrow-right guest-detail-icon" aria-hidden="true"></i>
+                                            </a>
                                             <div class="guest-id">ID <?= $huesped['id'] ?></div>
                                         </div>
                                     </div>
@@ -872,13 +1092,21 @@ if ($total_paginas > 1) {
                                         <?php if (!empty($huesped['telefono'])): ?>
                                             <div class="guest-contact-line">
                                                 <i class="fas fa-phone text-slate-400"></i>
-                                                <span><?= htmlspecialchars($huesped['telefono']) ?></span>
+                                                <a href="tel:<?= htmlspecialchars($huesped['telefono']) ?>"
+                                                   class="guest-contact-link"
+                                                   title="Llamar a <?= htmlspecialchars($huesped['nombre_completo']) ?>">
+                                                    <span><?= htmlspecialchars($huesped['telefono']) ?></span>
+                                                </a>
                                             </div>
                                         <?php endif; ?>
                                         <?php if (!empty($huesped['email'])): ?>
                                             <div class="guest-contact-line">
                                                 <i class="fas fa-envelope text-slate-400"></i>
-                                                <span><?= htmlspecialchars($huesped['email']) ?></span>
+                                                <a href="mailto:<?= htmlspecialchars($huesped['email']) ?>"
+                                                   class="guest-contact-link"
+                                                   title="Enviar correo a <?= htmlspecialchars($huesped['nombre_completo']) ?>">
+                                                    <span><?= htmlspecialchars($huesped['email']) ?></span>
+                                                </a>
                                             </div>
                                         <?php endif; ?>
                                         <?php if (empty($huesped['telefono']) && empty($huesped['email'])): ?>
@@ -919,31 +1147,33 @@ if ($total_paginas > 1) {
                                 </td>
                                 <td class="text-center">
                                     <?php if ($reservas > 0): ?>
-                                        <span class="guest-chip <?= $reservas >= 3 ? 'guest-chip-warning' : 'guest-chip-brand' ?>">
+                                        <a href="<?= $huespedUrl ?>"
+                                           class="guest-chip guest-chip-link <?= $reservas >= 3 ? 'guest-chip-warning' : 'guest-chip-brand' ?>"
+                                           title="Ver historial de reservas de <?= htmlspecialchars($huesped['nombre_completo']) ?>">
                                             <?= $reservas ?>
                                             <?php if ($reservas >= 3): ?>
                                                 <i class="fas fa-star"></i>
                                             <?php endif; ?>
-                                        </span>
+                                        </a>
                                     <?php else: ?>
                                         <span class="guest-muted">0</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
                                     <div class="flex items-center gap-2">
-                                        <a href="<?= url('huespedes/' . $huesped['id']) ?>"
+                                        <a href="<?= $huespedUrl ?>"
                                            class="guest-action guest-action-view"
-                                           title="Ver detalles"
+                                           title="Ver detalle"
                                            aria-label="Ver detalles de <?= htmlspecialchars($huesped['nombre_completo']) ?>">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="<?= url('huespedes/' . $huesped['id'] . '/edit') ?>"
+                                        <a href="<?= $huespedEditUrl ?>"
                                            class="guest-action guest-action-edit"
-                                           title="Editar"
+                                           title="Editar huesped"
                                            aria-label="Editar <?= htmlspecialchars($huesped['nombre_completo']) ?>">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <a href="<?= url('reservaciones/crear?huesped_id=' . $huesped['id']) ?>"
+                                        <a href="<?= $huespedBookUrl ?>"
                                            class="guest-action guest-action-book"
                                            title="Nueva reservación"
                                            aria-label="Crear reservación para <?= htmlspecialchars($huesped['nombre_completo']) ?>">
@@ -964,6 +1194,9 @@ if ($total_paginas > 1) {
                     $vehiculos = $guestRow['vehiculos'];
                     $total_vehiculos = $guestRow['total_vehiculos'];
                     $reservas = intval($huesped['total_reservaciones'] ?? 0);
+                    $huespedUrl = url('huespedes/' . $huesped['id']);
+                    $huespedEditUrl = url('huespedes/' . $huesped['id'] . '/edit');
+                    $huespedBookUrl = url('reservaciones/crear?huesped_id=' . $huesped['id']);
                     ?>
                     <article class="guest-card hotel-mobile-card">
                         <div class="guest-card-top">
@@ -971,26 +1204,50 @@ if ($total_paginas > 1) {
                                 <?= htmlspecialchars(strtoupper(substr(trim($huesped['nombre_completo'] ?? 'H'), 0, 1))) ?>
                             </div>
                             <div class="guest-card-title">
-                                <h3 class="guest-name truncate"><?= htmlspecialchars($huesped['nombre_completo']) ?></h3>
+                                <h3 class="guest-name">
+                                    <a href="<?= $huespedUrl ?>"
+                                       class="guest-detail-link"
+                                       title="Ver detalle de <?= htmlspecialchars($huesped['nombre_completo']) ?>">
+                                        <span class="guest-detail-text"><?= htmlspecialchars($huesped['nombre_completo']) ?></span>
+                                        <i class="fas fa-arrow-right guest-detail-icon" aria-hidden="true"></i>
+                                    </a>
+                                </h3>
                                 <p class="guest-id">ID <?= $huesped['id'] ?></p>
                             </div>
-                            <span class="guest-chip <?= $reservas >= 3 ? 'guest-chip-warning' : 'guest-chip-brand' ?>">
-                                <i class="fas fa-calendar-check"></i>
-                                <?= $reservas ?>
-                            </span>
+                            <?php if ($reservas > 0): ?>
+                                <a href="<?= $huespedUrl ?>"
+                                   class="guest-chip guest-chip-link <?= $reservas >= 3 ? 'guest-chip-warning' : 'guest-chip-brand' ?>"
+                                   title="Ver historial de reservas de <?= htmlspecialchars($huesped['nombre_completo']) ?>">
+                                    <i class="fas fa-calendar-check"></i>
+                                    <?= $reservas ?>
+                                </a>
+                            <?php else: ?>
+                                <span class="guest-chip <?= $reservas >= 3 ? 'guest-chip-warning' : 'guest-chip-brand' ?>">
+                                    <i class="fas fa-calendar-check"></i>
+                                    <?= $reservas ?>
+                                </span>
+                            <?php endif; ?>
                         </div>
 
                         <div class="guest-card-contact">
                             <?php if (!empty($huesped['telefono'])): ?>
                                 <div class="guest-contact-line">
                                     <i class="fas fa-phone text-slate-400"></i>
-                                    <span><?= htmlspecialchars($huesped['telefono']) ?></span>
+                                    <a href="tel:<?= htmlspecialchars($huesped['telefono']) ?>"
+                                       class="guest-contact-link"
+                                       title="Llamar a <?= htmlspecialchars($huesped['nombre_completo']) ?>">
+                                        <span><?= htmlspecialchars($huesped['telefono']) ?></span>
+                                    </a>
                                 </div>
                             <?php endif; ?>
                             <?php if (!empty($huesped['email'])): ?>
                                 <div class="guest-contact-line">
                                     <i class="fas fa-envelope text-slate-400"></i>
-                                    <span><?= htmlspecialchars($huesped['email']) ?></span>
+                                    <a href="mailto:<?= htmlspecialchars($huesped['email']) ?>"
+                                       class="guest-contact-link"
+                                       title="Enviar correo a <?= htmlspecialchars($huesped['nombre_completo']) ?>">
+                                        <span><?= htmlspecialchars($huesped['email']) ?></span>
+                                    </a>
                                 </div>
                             <?php endif; ?>
                             <?php if (empty($huesped['telefono']) && empty($huesped['email'])): ?>
@@ -1025,15 +1282,15 @@ if ($total_paginas > 1) {
                         </div>
 
                         <div class="guest-card-actions">
-                            <a href="<?= url('huespedes/' . $huesped['id']) ?>" class="guest-card-action">
+                            <a href="<?= $huespedUrl ?>" class="guest-card-action" title="Ver detalle">
                                 <i class="fas fa-eye"></i>
                                 Ver
                             </a>
-                            <a href="<?= url('huespedes/' . $huesped['id'] . '/edit') ?>" class="guest-card-action">
+                            <a href="<?= $huespedEditUrl ?>" class="guest-card-action" title="Editar huesped">
                                 <i class="fas fa-edit"></i>
                                 Editar
                             </a>
-                            <a href="<?= url('reservaciones/crear?huesped_id=' . $huesped['id']) ?>" class="guest-card-action primary">
+                            <a href="<?= $huespedBookUrl ?>" class="guest-card-action primary" title="Crear reservacion">
                                 <i class="fas fa-calendar-plus"></i>
                                 Reservar
                             </a>
@@ -1049,7 +1306,7 @@ if ($total_paginas > 1) {
             </div>
             <h2 class="text-lg font-black text-slate-800">No se encontraron huéspedes</h2>
             <p class="text-slate-500 mt-2 max-w-md mx-auto">Aún no hay huéspedes con esos filtros. Crea una reservación o registra un huésped para verlo aquí.</p>
-            <a href="<?= url('huespedes/create') ?>" class="guest-primary-btn mt-5">
+            <a href="<?= url('huespedes/create') ?>" class="guest-primary-btn mt-5" title="Registrar nuevo huesped">
                 <i class="fas fa-user-plus"></i>
                 Nuevo huésped
             </a>
@@ -1062,6 +1319,7 @@ if ($total_paginas > 1) {
             <?php if ($pagina_actual > 1): ?>
                 <a href="?page=<?= $pagina_actual - 1 ?>&buscar=<?= urlencode($buscar ?? '') ?>&estado=<?= urlencode($estado_filtro ?? '') ?>"
                    class="guest-page-link guest-page-control"
+                   title="Cambiar pagina"
                    aria-label="Página anterior">
                     <i class="fas fa-chevron-left"></i>
                     <span class="guest-page-control-label">Anterior</span>
@@ -1087,6 +1345,7 @@ if ($total_paginas > 1) {
                     <?php else: ?>
                         <a href="?page=<?= $i ?>&buscar=<?= urlencode($buscar ?? '') ?>&estado=<?= urlencode($estado_filtro ?? '') ?>"
                            class="guest-page-link"
+                           title="Ir a pagina"
                            aria-label="Ir a página <?= $i ?>">
                             <?= $i ?>
                         </a>
@@ -1099,6 +1358,7 @@ if ($total_paginas > 1) {
             <?php if ($pagina_actual < $total_paginas): ?>
                 <a href="?page=<?= $pagina_actual + 1 ?>&buscar=<?= urlencode($buscar ?? '') ?>&estado=<?= urlencode($estado_filtro ?? '') ?>"
                    class="guest-page-link guest-page-control"
+                   title="Cambiar pagina"
                    aria-label="Página siguiente">
                     <span class="guest-page-control-label">Siguiente</span>
                     <i class="fas fa-chevron-right"></i>
