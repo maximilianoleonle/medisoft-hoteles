@@ -12,12 +12,18 @@ $mostrarCaja = $menuModuloActivo('caja');
 $mostrarInventario = $menuModuloActivo('inventario');
 $mostrarFacturacion = $menuModuloActivo('facturacion');
 $mostrarReportes = $menuModuloActivo('reportes');
+$mostrarUsuariosModulo = $menuModuloActivo('usuarios');
+$mostrarConfiguracionModulo = $menuModuloActivo('configuracion');
+$sidebarRolHotel = function_exists('current_hotel_user_role') ? current_hotel_user_role() : null;
+$sidebarPuedeUsuarios = can('usuarios.view') || in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
+$sidebarPuedeConfiguracion = can('configuracion.view') || in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes;
 $mostrarOperaciones = $mostrarCaja || $mostrarInventario || $mostrarFacturacion;
 $filtrarMenuHotel = function_exists('hotel_menu_should_filter_modules') && hotel_menu_should_filter_modules();
-$mostrarUsuariosAdmin = !$filtrarMenuHotel && can('usuarios.view');
+$mostrarUsuariosAdmin = (!$filtrarMenuHotel && can('usuarios.view')) || ($filtrarMenuHotel && $mostrarUsuariosModulo && $sidebarPuedeUsuarios);
+$mostrarConfiguracion = $mostrarConfiguracionModulo && $sidebarPuedeConfiguracion;
 $mostrarTarifas = !$filtrarMenuHotel && can('usuarios.view');
-$mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarTarifas);
+$mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarConfiguracion || $mostrarTarifas);
 $sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 $sidebarEsPanelSaas = strpos($sidebarRequestPath, '/admin/saas') === 0;
 $sidebarBranding = (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_context() && function_exists('current_hotel_branding'))
@@ -269,6 +275,16 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
             </a>
             <?php endif; ?>
 
+            <?php if ($mostrarConfiguracion): ?>
+            <a href="<?= url('configuracion') ?>"
+               class="nav-item <?= strpos($sidebarRequestPath, '/configuracion') === 0 && strpos($sidebarRequestPath, '/configuracion/tarifas') !== 0 ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <span class="nav-text">Configuración</span>
+            </a>
+            <?php endif; ?>
+
             <?php if ($mostrarTarifas): ?>
             <a href="<?= url('configuracion/tarifas') ?>"
                class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'tarifas') !== false ? 'active' : '' ?>">
@@ -290,6 +306,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
             <span class="pwa-status-label" id="sidebar-net-label">Sesión activa</span>
         </div>
         <?php endif; ?>
+        <div class="user-menu-shell">
         <div class="user-section <?= $sidebarEsPanelSaas ? '' : 'hotel-user-menu' ?>">
             <div class="user-avatar">
                 <i class="fas fa-user"></i>
@@ -323,6 +340,7 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
                 <span>Cerrar sesión</span>
                 </button>
             </form>
+        </div>
         </div>
     </div>
 </aside>
@@ -578,16 +596,23 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
 </script>
 
 <style>
+.user-menu-shell {
+    position: relative;
+    width: 100%;
+}
+
 #user-dropdown {
     position: absolute;
-    bottom: 100%;
+    bottom: calc(100% + 8px);
     left: 0;
     right: 0;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0;
     background: white;
     border: 1px solid color-mix(in srgb, <?= $sidebarEsPanelSaas ? 'var(--ms-primary, #2563EB)' : 'var(--brand-primary, #1B2746)' ?> 10%, transparent);
     border-radius: 6px;
     padding: 0.5rem;
+    max-height: min(240px, calc(100vh - 150px));
+    overflow-y: auto;
     box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.1);
     opacity: 0;
     visibility: hidden;
