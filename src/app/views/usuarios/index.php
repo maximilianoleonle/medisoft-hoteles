@@ -3,6 +3,9 @@
  * Vista de listado de usuarios
  * Paleta hotelera boutique
  */
+$esGestionHotel = $esGestionHotel ?? false;
+$puedeCrearUsuarios = $puedeCrearUsuarios ?? can('usuarios.create');
+$puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
 ?>
 
 <style>
@@ -144,9 +147,6 @@
 .usr-tr { opacity:0; transform:translateX(-8px); }
 .usr-tr.visible { transition:opacity .3s ease, transform .3s ease; opacity:1; transform:translateX(0); }
 </style>
-
-<!-- ═══════════════════ USUARIOS PAGE ══════════════════════ -->
-<div class="usuarios-view usr-bg">
 
 <style id="usuarios-boutique">
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
@@ -882,6 +882,9 @@
 }
 </style>
 
+<!-- ═══════════════════ USUARIOS PAGE ══════════════════════ -->
+<div class="usuarios-view usr-bg">
+
     <!-- Hero Header -->
     <div class="usr-hero">
         <div class="container mx-auto px-5 sm:px-7 py-5 relative z-10">
@@ -891,15 +894,15 @@
                         <div style="background:rgba(255,255,255,.12);width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;">
                             <i class="fas fa-users text-white text-lg"></i>
                         </div>
-                        <h1 class="text-xl sm:text-2xl font-bold text-white">Gestión de Usuarios</h1>
+                        <h1 class="text-xl sm:text-2xl font-bold text-white"><?= $esGestionHotel ? 'Trabajadores del Hotel' : 'Gestión de Usuarios' ?></h1>
                     </div>
-                    <p class="text-white/55 text-sm ml-14">Control de accesos y permisos del personal · <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?></p>
+                    <p class="text-white/55 text-sm ml-14">Control de accesos y roles de trabajadores · <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?></p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3 ml-14 lg:ml-0">
                     <span class="gold-badge"><i class="fas fa-shield-alt text-xs"></i> Administración</span>
-                    <?php if (can('usuarios.create')): ?>
+                    <?php if ($puedeCrearUsuarios): ?>
                     <a href="<?= url('usuarios/create') ?>" class="btn-nuevo">
-                        <i class="fas fa-plus text-xs"></i> Nuevo Usuario
+                        <i class="fas fa-plus text-xs"></i> <?= $esGestionHotel ? 'Nuevo Trabajador' : 'Nuevo Usuario' ?>
                     </a>
                     <?php endif; ?>
                 </div>
@@ -920,12 +923,12 @@
                     </div>
                     <span class="text-2xl font-bold text-[#3D5234]"><?= count($usuarios) ?></span>
                 </div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Usuarios</p>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider"><?= $esGestionHotel ? 'Total Trabajadores' : 'Total Usuarios' ?></p>
                 <div class="flex items-baseline gap-1.5 mt-1.5">
                     <span class="text-lg font-bold text-[#3D5234]">
                         <?= count(array_filter($usuarios, fn($u) => $u['activo'])) ?>
                     </span>
-                    <span class="text-xs text-gray-400">activos en el sistema</span>
+                    <span class="text-xs text-gray-400"><?= $esGestionHotel ? 'activos en el hotel' : 'activos en el sistema' ?></span>
                 </div>
             </div>
 
@@ -960,10 +963,14 @@
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Roles Activos</p>
                 <?php
                 $rolesCounts = array_count_values(array_column($usuarios, 'rol'));
-                $topRole = array_search(max($rolesCounts), $rolesCounts);
+                $topRole = !empty($rolesCounts) ? array_search(max($rolesCounts), $rolesCounts) : null;
                 ?>
                 <p class="text-xs text-gray-400 mt-1.5">
-                    Mayor: <span class="font-semibold text-gray-600"><?= ucfirst($topRole) ?> (<?= $rolesCounts[$topRole] ?>)</span>
+                    <?php if ($topRole): ?>
+                        Mayor: <span class="font-semibold text-gray-600"><?= ucfirst($topRole) ?> (<?= $rolesCounts[$topRole] ?>)</span>
+                    <?php else: ?>
+                        Sin roles registrados
+                    <?php endif; ?>
                 </p>
             </div>
         </div>
@@ -987,10 +994,12 @@
                 <div class="text-center py-16">
                     <i class="fas fa-users text-5xl mb-4" style="color:#D5E4CB"></i>
                     <h3 class="text-base font-bold text-gray-600 mb-1">No hay usuarios registrados</h3>
-                    <p class="text-sm text-gray-400 mb-5">Aún no se han creado usuarios en el sistema.</p>
-                    <a href="<?= url('usuarios/create') ?>" class="btn-nuevo">
-                        <i class="fas fa-plus text-xs"></i> Crear primer usuario
-                    </a>
+                    <p class="text-sm text-gray-400 mb-5"><?= $esGestionHotel ? 'Aún no se han registrado trabajadores para este hotel.' : 'Aún no se han creado usuarios en el sistema.' ?></p>
+                    <?php if ($puedeCrearUsuarios): ?>
+                        <a href="<?= url('usuarios/create') ?>" class="btn-nuevo">
+                            <i class="fas fa-plus text-xs"></i> <?= $esGestionHotel ? 'Crear primer trabajador' : 'Crear primer usuario' ?>
+                        </a>
+                    <?php endif; ?>
                 </div>
             <?php else: ?>
                 <div class="overflow-x-auto lc-scroll">
@@ -1077,6 +1086,7 @@
 
                                 <!-- Actions -->
                                 <td class="px-4 py-3 text-center">
+                                    <?php if ($puedeEditarUsuarios): ?>
                                     <div class="flex items-center justify-center gap-1">
                                         <a href="<?= url("usuarios/{$usuario['id']}/edit") ?>"
                                            class="act-btn act-edit" title="Editar">
@@ -1096,6 +1106,9 @@
                                             <?php endif; ?>
                                         <?php endif; ?>
                                     </div>
+                                    <?php else: ?>
+                                        <span class="text-xs text-gray-300">Solo lectura</span>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>

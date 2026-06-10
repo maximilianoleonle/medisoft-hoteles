@@ -3,6 +3,7 @@
  * Vista de edición de usuario - Versión compacta
  * Vista hotelera
  */
+$esGestionHotel = $esGestionHotel ?? false;
 ?>
 
 <!-- Estilos críticos inline para prevenir FOUC -->
@@ -43,11 +44,11 @@
                 <div>
                     <h1 class="text-xl font-bold font-playfair flex items-center gap-2">
                         <i class="fas fa-user-edit text-lg opacity-80"></i>
-                        Editar Usuario
+                        <?= $esGestionHotel ? 'Editar Trabajador' : 'Editar Usuario' ?>
                         <span class="text-hotel-gold text-sm font-normal ml-2">Modificar información de cuenta</span>
                     </h1>
                 </div>
-                <a href="<?= url('usuarios') ?>" 
+                <a href="<?= url('usuarios') ?>"
                    class="bg-white/10 backdrop-blur text-white px-3 py-1.5 rounded-lg hover:bg-white/20 transition-all duration-300 flex items-center gap-1.5 border border-white/20 text-sm">
                     <i class="fas fa-arrow-left text-xs"></i>
                     <span>Volver al listado</span>
@@ -55,7 +56,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="container mx-auto px-4 py-4 max-w-6xl">
         <!-- Información del usuario actual -->
         <div class="bg-white rounded-lg shadow-sm p-3 mb-4 border border-gray-100">
@@ -94,7 +95,7 @@
         <!-- Formulario principal -->
         <form method="POST" action="<?= url("usuarios/{$usuario['id']}/update") ?>" id="editUserForm">
             <?= csrf_field() ?>
-            
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <!-- Columna 1: Datos de Cuenta -->
                 <div class="lg:col-span-1">
@@ -103,7 +104,7 @@
                             <i class="fas fa-user-circle text-hotel-brown text-sm"></i>
                             Datos de Cuenta
                         </h3>
-                        
+
                         <!-- Nombre de Usuario -->
                         <div class="mb-3">
                             <label for="nombre_usuario" class="block text-xs font-semibold text-gray-700 mb-1">
@@ -113,11 +114,11 @@
                                 <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
                                     <i class="fas fa-at"></i>
                                 </span>
-                                <input type="text" 
-                                       id="nombre_usuario" 
-                                       name="nombre_usuario" 
-                                       value="<?= old('nombre_usuario', $usuario['nombre_usuario']) ?>" 
-                                       required 
+                                <input type="text"
+                                       id="nombre_usuario"
+                                       name="nombre_usuario"
+                                       value="<?= old('nombre_usuario', $usuario['nombre_usuario']) ?>"
+                                       required
                                        minlength="4"
                                        pattern="[a-zA-Z0-9_]+"
                                        title="Solo letras, números y guiones bajos"
@@ -127,7 +128,7 @@
                                 Mínimo 4 caracteres
                             </p>
                         </div>
-                        
+
                         <!-- Contraseña -->
                         <div class="mb-3">
                             <label for="password" class="block text-xs font-semibold text-gray-700 mb-1">
@@ -137,9 +138,9 @@
                                 <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
                                     <i class="fas fa-lock"></i>
                                 </span>
-                                <input type="password" 
-                                       id="password" 
-                                       name="password" 
+                                <input type="password"
+                                       id="password"
+                                       name="password"
                                        minlength="10"
                                        class="form-input w-full pl-8 pr-8 py-1.5 rounded-md text-sm"
                                        placeholder="••••••••">
@@ -152,7 +153,7 @@
                                 Dejar vacío para mantener la contraseña actual
                             </p>
                         </div>
-                        
+
                         <!-- Rol -->
                         <div>
                             <label for="rol" class="block text-xs font-semibold text-gray-700 mb-1">
@@ -164,8 +165,8 @@
                                     <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
                                         <i class="fas fa-user-tag"></i>
                                     </span>
-                                    <input type="text" 
-                                           value="<?= ucfirst($usuario['rol']) ?>" 
+                                    <input type="text"
+                                           value="<?= ucfirst($usuario['rol']) ?>"
                                            disabled
                                            class="form-input w-full pl-8 pr-3 py-1.5 rounded-md text-sm bg-gray-100 cursor-not-allowed">
                                     <input type="hidden" name="rol" value="<?= $usuario['rol'] ?>">
@@ -195,7 +196,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Columna 2: Información Personal y Sistema -->
                 <div class="lg:col-span-1 space-y-4">
                     <!-- Información Personal -->
@@ -204,7 +205,7 @@
                             <i class="fas fa-id-card text-hotel-brown text-sm"></i>
                             Información Personal
                         </h3>
-                        
+
                         <!-- Nombre Completo -->
                         <div class="mb-3">
                             <label for="nombre_completo" class="block text-xs font-semibold text-gray-700 mb-1">
@@ -214,15 +215,15 @@
                                 <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
                                     <i class="fas fa-user"></i>
                                 </span>
-                                <input type="text" 
-                                       id="nombre_completo" 
-                                       name="nombre_completo" 
-                                       value="<?= old('nombre_completo', $usuario['nombre_completo']) ?>" 
+                                <input type="text"
+                                       id="nombre_completo"
+                                       name="nombre_completo"
+                                       value="<?= old('nombre_completo', $usuario['nombre_completo']) ?>"
                                        required
                                        class="form-input w-full pl-8 pr-3 py-1.5 rounded-md text-sm">
                             </div>
                         </div>
-                        
+
                         <!-- Email -->
                         <div class="mb-3">
                             <label for="email" class="block text-xs font-semibold text-gray-700 mb-1">
@@ -232,15 +233,15 @@
                                 <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
                                     <i class="fas fa-envelope"></i>
                                 </span>
-                                <input type="email" 
-                                       id="email" 
-                                       name="email" 
+                                <input type="email"
+                                       id="email"
+                                       name="email"
                                        value="<?= old('email', $usuario['email']) ?>"
                                        class="form-input w-full pl-8 pr-3 py-1.5 rounded-md text-sm"
                                        placeholder="usuario@hotel.com">
                             </div>
                         </div>
-                        
+
                         <!-- Teléfono -->
                         <div>
                             <label for="telefono" class="block text-xs font-semibold text-gray-700 mb-1">
@@ -250,23 +251,23 @@
                                 <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
                                     <i class="fas fa-phone"></i>
                                 </span>
-                                <input type="tel" 
-                                       id="telefono" 
-                                       name="telefono" 
+                                <input type="tel"
+                                       id="telefono"
+                                       name="telefono"
                                        value="<?= old('telefono', $usuario['telefono']) ?>"
                                        class="form-input w-full pl-8 pr-3 py-1.5 rounded-md text-sm"
                                        placeholder="(555) 123-4567">
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Información del Usuario -->
                     <div class="bg-white rounded-lg shadow-sm p-4">
                         <h3 class="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
                             <i class="fas fa-info-circle text-hotel-brown text-sm"></i>
                             Información del Usuario
                         </h3>
-                        
+
                         <div class="space-y-2">
                             <!-- Estado -->
                             <div class="info-item rounded-md px-3 py-2">
@@ -279,7 +280,7 @@
                                     </span>
                                 </div>
                             </div>
-                            
+
                             <!-- Creado -->
                             <div class="info-item rounded-md px-3 py-2">
                                 <div class="flex justify-between items-center">
@@ -291,7 +292,7 @@
                                     </span>
                                 </div>
                             </div>
-                            
+
                             <!-- Último login -->
                             <div class="info-item rounded-md px-3 py-2">
                                 <div class="flex justify-between items-center">
@@ -303,7 +304,7 @@
                                     </span>
                                 </div>
                             </div>
-                            
+
                             <!-- IP último login -->
                             <?php if ($usuario['ip_ultimo_login']): ?>
                             <div class="info-item rounded-md px-3 py-2">
@@ -320,7 +321,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Columna 3: Permisos y Actividad -->
                 <div class="lg:col-span-1 space-y-4">
                     <!-- Permisos del Rol -->
@@ -329,14 +330,14 @@
                             <i class="fas fa-shield-alt text-hotel-brown text-sm"></i>
                             Permisos del Rol
                         </h3>
-                        
+
                         <div id="permisosRol" class="space-y-1.5 text-xs">
                             <!-- Se llenará dinámicamente -->
                         </div>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Botones de acción -->
             <div class="bg-white rounded-lg shadow-sm p-3 mt-4">
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
@@ -344,14 +345,14 @@
                         <i class="fas fa-asterisk text-xs text-red-500"></i>
                         Los campos marcados con asterisco son obligatorios
                     </div>
-                    
+
                     <div class="flex gap-2">
-                        <a href="<?= url('usuarios') ?>" 
+                        <a href="<?= url('usuarios') ?>"
                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-all duration-300 flex items-center gap-2 text-sm font-medium">
                             <i class="fas fa-times text-xs"></i>
                             Cancelar
                         </a>
-                        <button type="submit" 
+                        <button type="submit"
                                 class="px-4 py-2 bg-hotel-brown text-white rounded-md hover:bg-hotel-brown-dark transition-all duration-300 flex items-center gap-2 text-sm font-medium shadow hover:shadow-md">
                             <i class="fas fa-save text-xs"></i>
                             Actualizar Usuario
@@ -369,7 +370,7 @@
 function togglePassword() {
     const passwordInput = document.getElementById('password');
     const toggleIcon = document.getElementById('toggleIcon');
-    
+
     if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
         toggleIcon.classList.remove('fa-eye');
@@ -405,9 +406,9 @@ function actualizarPermisos() {
     const rolSelect = document.getElementById('rol');
     const permisosDiv = document.getElementById('permisosRol');
     const rolActual = rolSelect ? rolSelect.value : '<?= $usuario['rol'] ?>';
-    
+
     permisosDiv.innerHTML = '';
-    
+
     if (permisosPorRol[rolActual]) {
         permisosPorRol[rolActual].forEach(item => {
             const permisoHtml = `
@@ -425,7 +426,7 @@ function actualizarPermisos() {
 document.getElementById('telefono').addEventListener('input', function(e) {
     let value = e.target.value.replace(/\D/g, '');
     let formattedValue = '';
-    
+
     if (value.length > 0) {
         if (value.length <= 3) {
             formattedValue = `(${value}`;
@@ -435,14 +436,14 @@ document.getElementById('telefono').addEventListener('input', function(e) {
             formattedValue = `(${value.slice(0, 3)}) ${value.slice(3, 6)}-${value.slice(6, 10)}`;
         }
     }
-    
+
     e.target.value = formattedValue;
 });
 
 // Validación del formulario
 document.getElementById('editUserForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     Swal.fire({
         title: '¿Guardar cambios?',
         text: 'Se actualizará la información del usuario',
@@ -465,7 +466,7 @@ document.getElementById('editUserForm').addEventListener('submit', function(e) {
                     Swal.showLoading();
                 }
             });
-            
+
             // Enviar formulario
             this.submit();
         }
@@ -479,16 +480,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (view) {
         view.classList.add('loaded');
     }
-    
+
     // Actualizar permisos iniciales
     actualizarPermisos();
-    
+
     // Escuchar cambios en el rol si está habilitado
     const rolSelect = document.getElementById('rol');
     if (rolSelect) {
         rolSelect.addEventListener('change', actualizarPermisos);
     }
-    
+
     // Animar tarjetas
     const cards = document.querySelectorAll('.bg-white');
     cards.forEach((card, index) => {

@@ -3,6 +3,7 @@
  * Vista de creación de usuario - Versión compacta
  * Vista hotelera
  */
+$esGestionHotel = $esGestionHotel ?? false;
 ?>
 
 <!-- Estilos críticos inline para prevenir FOUC -->
@@ -44,11 +45,11 @@
                 <div>
                     <h1 class="text-xl font-bold font-playfair flex items-center gap-2">
                         <i class="fas fa-user-plus text-lg opacity-80"></i>
-                        Nuevo Usuario
+                        <?= $esGestionHotel ? 'Nuevo Trabajador' : 'Nuevo Usuario' ?>
                         <span class="text-hotel-gold text-sm font-normal ml-2">Crear cuenta de acceso</span>
                     </h1>
                 </div>
-                <a href="<?= url('usuarios') ?>" 
+                <a href="<?= url('usuarios') ?>"
                    class="bg-white/10 backdrop-blur text-white px-3 py-1.5 rounded-lg hover:bg-white/20 transition-all duration-300 flex items-center gap-1.5 border border-white/20 text-sm">
                     <i class="fas fa-arrow-left text-xs"></i>
                     <span>Volver</span>
@@ -56,12 +57,12 @@
             </div>
         </div>
     </div>
-    
+
     <div class="container mx-auto px-4 py-4 max-w-6xl">
         <!-- Formulario principal -->
         <form method="POST" action="<?= url('usuarios/store') ?>" id="createUserForm">
             <?= csrf_field() ?>
-            
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <!-- Columna 1: Datos de Cuenta -->
                 <div class="lg:col-span-1">
@@ -70,7 +71,7 @@
                             <i class="fas fa-user-circle text-hotel-brown text-sm"></i>
                             Datos de Cuenta
                         </h3>
-                        
+
                         <!-- Nombre de Usuario -->
                         <div class="mb-3">
                             <label for="nombre_usuario" class="block text-xs font-semibold text-gray-700 mb-1">
@@ -80,11 +81,11 @@
                                 <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
                                     <i class="fas fa-at"></i>
                                 </span>
-                                <input type="text" 
-                                       id="nombre_usuario" 
-                                       name="nombre_usuario" 
-                                       value="<?= old('nombre_usuario') ?>" 
-                                       required 
+                                <input type="text"
+                                       id="nombre_usuario"
+                                       name="nombre_usuario"
+                                       value="<?= old('nombre_usuario') ?>"
+                                       required
                                        minlength="4"
                                        pattern="[a-zA-Z0-9_]+"
                                        class="form-input w-full pl-8 pr-8 py-1.5 rounded-md text-sm"
@@ -96,7 +97,7 @@
                             </div>
                             <p id="availability-message" class="mt-0.5 text-xs hidden"></p>
                         </div>
-                        
+
                         <!-- Contraseña -->
                         <div class="mb-3">
                             <label for="password" class="block text-xs font-semibold text-gray-700 mb-1">
@@ -106,10 +107,10 @@
                                 <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
                                     <i class="fas fa-lock"></i>
                                 </span>
-                                <input type="password" 
-                                       id="password" 
-                                       name="password" 
-                                       required 
+                                <input type="password"
+                                       id="password"
+                                       name="password"
+                                       required
                                        minlength="10"
                                        class="form-input w-full pl-8 pr-8 py-1.5 rounded-md text-sm"
                                        placeholder="••••••••"
@@ -128,7 +129,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Confirmar Contraseña -->
                         <div class="mb-3">
                             <label for="password_confirmation" class="block text-xs font-semibold text-gray-700 mb-1">
@@ -138,10 +139,10 @@
                                 <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
                                     <i class="fas fa-lock"></i>
                                 </span>
-                                <input type="password" 
-                                       id="password_confirmation" 
-                                       name="password_confirmation" 
-                                       required 
+                                <input type="password"
+                                       id="password_confirmation"
+                                       name="password_confirmation"
+                                       required
                                        minlength="10"
                                        class="form-input w-full pl-8 pr-8 py-1.5 rounded-md text-sm"
                                        placeholder="••••••••"
@@ -154,7 +155,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Columna 2: Información Personal y Rol -->
                 <div class="lg:col-span-1 space-y-4">
                     <!-- Información Personal -->
@@ -163,7 +164,7 @@
                             <i class="fas fa-id-card text-hotel-brown text-sm"></i>
                             Información Personal
                         </h3>
-                        
+
                         <!-- Nombre Completo -->
                         <div class="mb-3">
                             <label for="nombre_completo" class="block text-xs font-semibold text-gray-700 mb-1">
@@ -173,17 +174,17 @@
                                 <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
                                     <i class="fas fa-user"></i>
                                 </span>
-                                <input type="text" 
-                                       id="nombre_completo" 
-                                       name="nombre_completo" 
-                                       value="<?= old('nombre_completo') ?>" 
+                                <input type="text"
+                                       id="nombre_completo"
+                                       name="nombre_completo"
+                                       value="<?= old('nombre_completo') ?>"
                                        required
                                        class="form-input w-full pl-8 pr-3 py-1.5 rounded-md text-sm"
                                        placeholder="Juan Pérez García"
                                        onkeyup="actualizarPreview()">
                             </div>
                         </div>
-                        
+
                         <!-- Email -->
                         <div class="mb-3">
                             <label for="email" class="block text-xs font-semibold text-gray-700 mb-1">
@@ -193,15 +194,15 @@
                                 <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
                                     <i class="fas fa-envelope"></i>
                                 </span>
-                                <input type="email" 
-                                       id="email" 
-                                       name="email" 
+                                <input type="email"
+                                       id="email"
+                                       name="email"
                                        value="<?= old('email') ?>"
                                        class="form-input w-full pl-8 pr-3 py-1.5 rounded-md text-sm"
                                        placeholder="usuario@hotel.com">
                             </div>
                         </div>
-                        
+
                         <!-- Teléfono -->
                         <div>
                             <label for="telefono" class="block text-xs font-semibold text-gray-700 mb-1">
@@ -211,23 +212,23 @@
                                 <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
                                     <i class="fas fa-phone"></i>
                                 </span>
-                                <input type="tel" 
-                                       id="telefono" 
-                                       name="telefono" 
+                                <input type="tel"
+                                       id="telefono"
+                                       name="telefono"
                                        value="<?= old('telefono') ?>"
                                        class="form-input w-full pl-8 pr-3 py-1.5 rounded-md text-sm"
                                        placeholder="(555) 123-4567">
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Rol -->
                     <div class="bg-white rounded-lg shadow-sm p-4">
                         <h3 class="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
                             <i class="fas fa-shield-alt text-hotel-brown text-sm"></i>
                             Rol y Permisos
                         </h3>
-                        
+
                         <div class="mb-3">
                             <label for="rol" class="block text-xs font-semibold text-gray-700 mb-1">
                                 Rol *
@@ -251,7 +252,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Columna 3: Vista Previa y Permisos -->
                 <div class="lg:col-span-1 space-y-4">
                     <!-- Vista Previa -->
@@ -260,7 +261,7 @@
                             <i class="fas fa-eye text-hotel-brown text-sm"></i>
                             Vista Previa
                         </h3>
-                        
+
                         <div class="bg-gray-50 rounded-md p-3">
                             <div class="flex items-center gap-3 mb-3">
                                 <div id="preview-avatar" class="h-10 w-10 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
@@ -271,7 +272,7 @@
                                     <p id="preview-usuario" class="text-xs text-gray-500 truncate">@usuario</p>
                                 </div>
                             </div>
-                            
+
                             <div class="space-y-1.5 text-xs">
                                 <div class="flex items-center gap-2">
                                     <i class="fas fa-user-tag text-gray-400 w-3"></i>
@@ -291,7 +292,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Permisos -->
                     <div class="bg-white rounded-lg shadow-sm p-4">
                         <h4 class="text-sm font-semibold text-gray-700 mb-2">
@@ -306,7 +307,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Botones de acción -->
             <div class="bg-white rounded-lg shadow-sm p-3 mt-4">
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
@@ -314,14 +315,14 @@
                         <i class="fas fa-asterisk text-xs text-red-500"></i>
                         Campos obligatorios
                     </div>
-                    
+
                     <div class="flex gap-2">
-                        <a href="<?= url('usuarios') ?>" 
+                        <a href="<?= url('usuarios') ?>"
                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-all duration-300 flex items-center gap-2 text-sm font-medium">
                             <i class="fas fa-times text-xs"></i>
                             Cancelar
                         </a>
-                        <button type="submit" 
+                        <button type="submit"
                                 class="px-4 py-2 bg-hotel-brown text-white rounded-md hover:bg-hotel-brown-dark transition-all duration-300 flex items-center gap-2 text-sm font-medium shadow hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                                 id="submitBtn">
                             <i class="fas fa-user-plus text-xs"></i>
@@ -341,7 +342,7 @@ function togglePassword() {
     const passwordInput = document.getElementById('password');
     const passwordConfirmInput = document.getElementById('password_confirmation');
     const toggleIcon = document.getElementById('toggleIcon');
-    
+
     if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
         passwordConfirmInput.type = 'text';
@@ -362,19 +363,19 @@ function verificarDisponibilidad() {
     const input = document.getElementById('nombre_usuario');
     const icon = document.getElementById('availability-icon');
     const message = document.getElementById('availability-message');
-    
+
     if (input.value.length < 4) {
         icon.classList.add('hidden');
         message.classList.add('hidden');
         return;
     }
-    
+
     checkTimeout = setTimeout(() => {
         const disponible = !['admin', 'user', 'test'].includes(input.value);
-        
+
         icon.classList.remove('hidden');
         message.classList.remove('hidden');
-        
+
         if (disponible) {
             icon.innerHTML = '<i class="fas fa-check-circle text-emerald-500"></i>';
             message.textContent = 'Disponible';
@@ -392,22 +393,22 @@ function checkPasswordStrength() {
     const password = document.getElementById('password').value;
     const strengthBar = document.getElementById('strength-bar');
     const strengthText = document.getElementById('strength-text');
-    
+
     let strength = 0;
     if (password.length >= 8) strength++;
     if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
     if (password.match(/[0-9]/)) strength++;
     if (password.match(/[^a-zA-Z0-9]/)) strength++;
-    
+
     const strengthLevels = [
         { width: '25%', color: 'bg-red-500', text: 'Débil' },
         { width: '50%', color: 'bg-orange-500', text: 'Regular' },
         { width: '75%', color: 'bg-yellow-500', text: 'Buena' },
         { width: '100%', color: 'bg-emerald-500', text: 'Excelente' }
     ];
-    
+
     const level = strengthLevels[strength] || strengthLevels[0];
-    
+
     strengthBar.className = `password-strength ${level.color}`;
     strengthBar.style.width = password.length > 0 ? level.width : '0';
     strengthText.textContent = password.length > 0 ? level.text : '';
@@ -420,16 +421,16 @@ function checkPasswordMatch() {
     const confirmation = document.getElementById('password_confirmation').value;
     const icon = document.getElementById('match-icon');
     const message = document.getElementById('match-message');
-    
+
     if (confirmation.length === 0) {
         icon.classList.add('hidden');
         message.classList.add('hidden');
         return;
     }
-    
+
     icon.classList.remove('hidden');
     message.classList.remove('hidden');
-    
+
     if (password === confirmation) {
         icon.innerHTML = '<i class="fas fa-check-circle text-emerald-500"></i>';
         message.textContent = 'Coinciden';
@@ -465,16 +466,16 @@ function actualizarPermisos() {
     const rolSelect = document.getElementById('rol');
     const permisosDiv = document.getElementById('permisosRol');
     const rolActual = rolSelect.value;
-    
+
     actualizarPreview();
-    
+
     if (!rolActual) {
         permisosDiv.innerHTML = '<p class="text-gray-500 italic"><i class="fas fa-info-circle mr-1"></i>Selecciona un rol</p>';
         return;
     }
-    
+
     permisosDiv.innerHTML = '';
-    
+
     if (permisosPorRol[rolActual]) {
         permisosPorRol[rolActual].forEach(item => {
             permisosDiv.innerHTML += `
@@ -494,7 +495,7 @@ function actualizarPreview() {
     const email = document.getElementById('email').value || '-';
     const telefono = document.getElementById('telefono').value || '-';
     const rol = document.getElementById('rol').value || '-';
-    
+
     // Avatar
     const avatar = document.getElementById('preview-avatar');
     if (nombreCompleto !== 'Nombre del usuario') {
@@ -502,7 +503,7 @@ function actualizarPreview() {
         avatar.innerHTML = `<span class="text-hotel-brown-dark font-bold text-sm">${iniciales}</span>`;
         avatar.className = 'h-10 w-10 bg-hotel-gold rounded-full flex items-center justify-center flex-shrink-0';
     }
-    
+
     document.getElementById('preview-nombre').textContent = nombreCompleto;
     document.getElementById('preview-usuario').textContent = '@' + nombreUsuario;
     document.getElementById('preview-email').textContent = email;
@@ -514,7 +515,7 @@ function actualizarPreview() {
 document.getElementById('telefono').addEventListener('input', function(e) {
     let value = e.target.value.replace(/\D/g, '');
     let formattedValue = '';
-    
+
     if (value.length > 0) {
         if (value.length <= 3) {
             formattedValue = `(${value}`;
@@ -524,7 +525,7 @@ document.getElementById('telefono').addEventListener('input', function(e) {
             formattedValue = `(${value.slice(0, 3)}) ${value.slice(3, 6)}-${value.slice(6, 10)}`;
         }
     }
-    
+
     e.target.value = formattedValue;
     actualizarPreview();
 });
@@ -532,10 +533,10 @@ document.getElementById('telefono').addEventListener('input', function(e) {
 // Validación del formulario
 document.getElementById('createUserForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const password = document.getElementById('password').value;
     const confirmation = document.getElementById('password_confirmation').value;
-    
+
     if (password !== confirmation) {
         Swal.fire({
             title: 'Error',
@@ -545,11 +546,11 @@ document.getElementById('createUserForm').addEventListener('submit', function(e)
         });
         return;
     }
-    
+
     const nombreCompleto = document.getElementById('nombre_completo').value;
     const nombreUsuario = document.getElementById('nombre_usuario').value;
     const rol = document.getElementById('rol').value;
-    
+
     Swal.fire({
         title: '¿Crear usuario?',
         html: `<div class="text-left text-sm">
@@ -575,9 +576,9 @@ document.getElementById('createUserForm').addEventListener('submit', function(e)
 document.addEventListener('DOMContentLoaded', function() {
     const view = document.querySelector('.create-usuario-view');
     if (view) view.classList.add('loaded');
-    
+
     if (document.getElementById('rol').value) actualizarPermisos();
-    
+
     actualizarPreview();
 });
 
