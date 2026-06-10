@@ -254,15 +254,558 @@ input.toggle-activo:checked ~ div {
 .lc-scroll::-webkit-scrollbar-thumb:hover { background:var(--lc-green); }
 
 /* Toast overrides */
-.toast-success { background-color:#ECFDF5 !important; color:#065F46 !important; border-left:3px solid #10b981 !important; }
-.toast-error   { background-color:#FEF2F2 !important; color:#991B1B !important; border-left:3px solid #EF4444 !important; }
-.toast-info    { background-color:#EFF6FF !important; color:#1E40AF !important; border-left:3px solid #3B82F6 !important; }
+.toast-success { background-color:#ECFDF5 !important; color:#065F46 !important; border:1px solid rgba(16,185,129,.24) !important; }
+.toast-error   { background-color:#FEF2F2 !important; color:#991B1B !important; border:1px solid rgba(239,68,68,.24) !important; }
+.toast-info    { background-color:#EFF6FF !important; color:#1E40AF !important; border:1px solid rgba(59,130,246,.24) !important; }
 
 /* Disable Bootstrap overriding Tailwind gradients */
 .bg-gradient-to-br { background-image:none !important; }
 </style>
 
 <!-- ════════════════ TARIFAS PAGE ══════════════════════════ -->
+<style id="tarifas-boutique">
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+.tar-page {
+    --tar-brand: var(--brand-primary, #1B2746);
+    --tar-brand-2: var(--brand-secondary, #0F172A);
+    --tar-accent: var(--brand-accent, #BD9441);
+    --tar-accent-dark: color-mix(in srgb, var(--tar-accent) 72%, #3F2E12);
+    --tar-accent-soft: color-mix(in srgb, var(--tar-accent) 14%, #FFFFFF);
+    --tar-accent-line: color-mix(in srgb, var(--tar-accent) 34%, #E8DDCA);
+    --tar-bg: #F6F2EA;
+    --tar-bg-2: #FBF8F2;
+    --tar-surface: rgba(255,255,255,.96);
+    --tar-surface-warm: #FCFAF5;
+    --tar-border: color-mix(in srgb, var(--tar-brand) 11%, #E7E1D4);
+    --tar-text: #1B2746;
+    --tar-muted: #6C7689;
+    --tar-success: #1E9E63;
+    --tar-success-soft: #E8F4ED;
+    --tar-danger: #B42318;
+    --tar-danger-soft: #FDECEC;
+    --tar-info: #2F77E0;
+    --tar-info-soft: #E8F0FC;
+    --tar-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --tar-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    color: var(--tar-text);
+    font-family: var(--tar-sans);
+    background:
+        linear-gradient(135deg, rgba(255,255,255,.34) 0 25%, transparent 25% 50%) 0 0 / 22px 22px,
+        linear-gradient(180deg, var(--tar-bg-2), var(--tar-bg)) !important;
+}
+
+.tar-topbar {
+    background: transparent !important;
+    border-bottom: 1px solid var(--tar-border) !important;
+}
+.tar-topbar::after {
+    content: none !important;
+}
+.tar-topbar > div,
+.tar-page > .px-3 {
+    max-width: 1680px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.tar-topbar .flex.items-center.gap-3 > div[style] {
+    width: 46px !important;
+    height: 46px !important;
+    border-radius: 13px !important;
+    background: linear-gradient(150deg, var(--tar-brand), var(--tar-brand-2)) !important;
+    box-shadow: 0 12px 24px -10px color-mix(in srgb, var(--tar-brand) 58%, transparent) !important;
+}
+.tar-topbar .flex.items-center.gap-3 > div[style] i {
+    color: #FFFFFF !important;
+}
+.tar-topbar h1 {
+    color: var(--tar-brand) !important;
+    font-family: var(--tar-serif);
+    font-size: clamp(2rem, 3vw, 2.6rem) !important;
+    font-weight: 700 !important;
+    letter-spacing: 0;
+    line-height: 1 !important;
+}
+.tar-topbar p {
+    color: var(--tar-muted) !important;
+    font-weight: 500;
+}
+
+.btn-tar {
+    min-height: 42px;
+    border-radius: 11px !important;
+    font-weight: 800 !important;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease !important;
+}
+.btn-tar:focus-visible,
+.btn-reset:focus-visible,
+.icn-btn:focus-visible,
+.filter-select:focus,
+.date-input:focus,
+.dataTables_filter input:focus {
+    outline: 3px solid color-mix(in srgb, var(--tar-accent) 34%, transparent) !important;
+    outline-offset: 2px;
+}
+.btn-tar.calc {
+    background: linear-gradient(135deg, var(--tar-brand), var(--tar-brand-2)) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 12px 24px -12px color-mix(in srgb, var(--tar-brand) 66%, transparent);
+}
+.btn-tar.new {
+    background: linear-gradient(135deg, var(--tar-accent), var(--tar-accent-dark)) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 12px 24px -12px color-mix(in srgb, var(--tar-accent) 70%, transparent);
+}
+.btn-tar.calc:hover,
+.btn-tar.new:hover {
+    color: #FFFFFF !important;
+    box-shadow: 0 16px 30px -14px rgba(27,39,70,.32);
+}
+
+.tar-page .grid > .tar-stat:nth-child(1) { --ws: var(--tar-brand) !important; }
+.tar-page .grid > .tar-stat:nth-child(2) { --ws: var(--tar-success) !important; }
+.tar-page .grid > .tar-stat:nth-child(3) { --ws: var(--tar-info) !important; }
+.tar-page .grid > .tar-stat:nth-child(4) { --ws: var(--tar-accent) !important; }
+.tar-stat,
+.tar-filters,
+.tar-panel {
+    background: var(--tar-surface) !important;
+    border: 1px solid var(--tar-border) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28);
+}
+.tar-stat {
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease !important;
+}
+.tar-stat::after {
+    height: 1px !important;
+    background: color-mix(in srgb, var(--ws, var(--tar-brand)) 44%, var(--tar-border)) !important;
+}
+.tar-stat:hover {
+    border-color: color-mix(in srgb, var(--ws, var(--tar-brand)) 28%, var(--tar-border)) !important;
+    box-shadow: 0 16px 34px -24px color-mix(in srgb, var(--ws, var(--tar-brand)) 58%, #172033) !important;
+}
+.tar-stat-icon {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 12px !important;
+    background: color-mix(in srgb, var(--ws, var(--tar-brand)) 12%, #FFFFFF) !important;
+    color: var(--ws, var(--tar-brand)) !important;
+}
+.tar-stat > div:first-child > span {
+    color: var(--tar-brand) !important;
+    font-family: var(--tar-serif);
+    font-size: 1.75rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0;
+}
+.tar-stat p,
+.tar-page .text-gray-400,
+.tar-page .text-gray-500,
+.tar-page .text-gray-300 {
+    color: var(--tar-muted) !important;
+}
+.tar-page .text-gray-800,
+.tar-page .text-gray-700,
+.tar-page .text-gray-600 {
+    color: var(--tar-text) !important;
+}
+
+.tar-filters-hd {
+    background: var(--tar-surface-warm) !important;
+    border-bottom: 1px solid var(--tar-border) !important;
+}
+.tar-filters-hd div[style] {
+    background: var(--tar-accent-soft) !important;
+    border: 1px solid var(--tar-accent-line);
+}
+.tar-filters-hd div[style] i,
+.tar-filters-hd span {
+    color: var(--tar-brand) !important;
+}
+.btn-reset {
+    color: var(--tar-muted) !important;
+    font-weight: 800;
+}
+.btn-reset:hover {
+    color: var(--tar-accent-dark) !important;
+}
+.filter-label {
+    color: var(--tar-brand) !important;
+    font-weight: 800 !important;
+    letter-spacing: .07em;
+}
+.filter-select,
+.date-input,
+.dataTables_filter input {
+    background: var(--tar-surface-warm) !important;
+    border: 1px solid var(--tar-border) !important;
+    border-radius: 11px !important;
+    color: var(--tar-text) !important;
+    font-weight: 600;
+    box-shadow: none !important;
+}
+.filter-select:focus,
+.date-input:focus,
+.dataTables_filter input:focus {
+    border-color: var(--tar-accent) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tar-accent) 24%, transparent) !important;
+}
+
+.tar-panel-body {
+    padding: 18px !important;
+}
+#tablaTarifas thead tr th,
+.tar-panel table thead th {
+    background: var(--tar-surface-warm) !important;
+    color: var(--tar-muted) !important;
+    border-bottom: 1px solid var(--tar-border) !important;
+    font-weight: 800 !important;
+}
+#tablaTarifas tbody tr,
+.tar-panel table tbody tr {
+    border-bottom: 1px solid var(--tar-border) !important;
+}
+#tablaTarifas tbody tr:hover,
+.tar-panel table tbody tr:hover {
+    background: var(--tar-bg-2) !important;
+}
+#tablaTarifas tbody td {
+    color: var(--tar-text);
+}
+
+.prio-badge,
+.val-badge,
+.scope-badge,
+.vig-badge {
+    border-radius: 999px !important;
+    font-weight: 800 !important;
+}
+.prio-badge {
+    background: var(--tar-surface-warm) !important;
+    border: 1px solid var(--tar-border) !important;
+    color: var(--tar-brand) !important;
+}
+.val-badge {
+    background: var(--tar-success-soft) !important;
+    border: 1px solid color-mix(in srgb, var(--tar-success) 24%, #FFFFFF) !important;
+    color: color-mix(in srgb, var(--tar-success) 68%, #123322) !important;
+}
+.scope-global,
+.vig-futuro {
+    background: var(--tar-info-soft) !important;
+    border: 1px solid color-mix(in srgb, var(--tar-info) 24%, #FFFFFF) !important;
+    color: var(--tar-info) !important;
+}
+.scope-tipo,
+.vig-perm {
+    background: var(--tar-accent-soft) !important;
+    border: 1px solid var(--tar-accent-line) !important;
+    color: var(--tar-accent-dark) !important;
+}
+.scope-hab {
+    background: var(--tar-bg-2) !important;
+    border: 1px solid var(--tar-border) !important;
+    color: var(--tar-brand) !important;
+}
+.vig-vigente {
+    background: var(--tar-success-soft) !important;
+    border: 1px solid color-mix(in srgb, var(--tar-success) 24%, #FFFFFF) !important;
+    color: color-mix(in srgb, var(--tar-success) 68%, #123322) !important;
+}
+.vig-pasado {
+    background: #F1F3F5 !important;
+    border: 1px solid #E2E6EA !important;
+    color: var(--tar-muted) !important;
+}
+
+input.toggle-activo:checked ~ div {
+    background-image: linear-gradient(to right, var(--tar-brand), var(--tar-brand-2)) !important;
+}
+.toggle-activo ~ div {
+    border: 1px solid var(--tar-border);
+}
+.toggle-activo ~ span {
+    color: var(--tar-muted) !important;
+    font-weight: 800;
+}
+.toggle-activo:checked ~ span {
+    color: var(--tar-brand) !important;
+}
+
+.icn-btn {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 10px !important;
+    background: var(--tar-surface-warm) !important;
+    border: 1px solid var(--tar-border) !important;
+    transition: transform .16s ease, background .16s ease, border-color .16s ease !important;
+}
+.icn-btn:hover {
+    transform: translateY(-1px);
+}
+.icn-edit {
+    color: var(--tar-accent-dark) !important;
+}
+.icn-edit:hover {
+    background: var(--tar-accent-soft) !important;
+    border-color: var(--tar-accent-line) !important;
+}
+.icn-view {
+    color: var(--tar-info) !important;
+}
+.icn-view:hover {
+    background: var(--tar-info-soft) !important;
+    border-color: color-mix(in srgb, var(--tar-info) 24%, #FFFFFF) !important;
+}
+.icn-del {
+    color: var(--tar-danger) !important;
+}
+.icn-del:hover {
+    background: var(--tar-danger-soft) !important;
+    border-color: color-mix(in srgb, var(--tar-danger) 20%, #FFFFFF) !important;
+}
+.icn-btn:disabled {
+    opacity: .36 !important;
+    transform: none !important;
+}
+
+.empty-state {
+    background: var(--tar-bg-2);
+    border: 1px dashed var(--tar-border);
+    border-radius: 14px;
+}
+.empty-state h3 {
+    color: var(--tar-brand) !important;
+}
+.empty-state div[style] {
+    background: var(--tar-accent-soft) !important;
+    border: 1px solid var(--tar-accent-line);
+}
+.empty-state div[style] i {
+    color: var(--tar-accent-dark) !important;
+}
+
+.modal-content {
+    border: 1px solid var(--tar-border) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 26px 70px -34px rgba(27,39,70,.55) !important;
+}
+.modal-header {
+    background: linear-gradient(135deg, var(--tar-brand), var(--tar-brand-2)) !important;
+}
+.modal-header .modal-title {
+    color: #FFFFFF !important;
+    font-weight: 800 !important;
+}
+.modal-body {
+    background: var(--tar-bg-2);
+}
+.detail-field {
+    background: var(--tar-surface) !important;
+    border: 1px solid var(--tar-border) !important;
+    border-radius: 12px !important;
+}
+.detail-field-label {
+    color: var(--tar-muted) !important;
+    font-weight: 800 !important;
+}
+.detail-field-val {
+    color: var(--tar-text) !important;
+}
+
+.dataTables_wrapper .dataTables_info {
+    color: var(--tar-muted) !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    border-radius: 9px !important;
+    color: var(--tar-muted) !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover:not(.disabled) {
+    background: var(--tar-accent-soft) !important;
+    color: var(--tar-accent-dark) !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background: var(--tar-brand) !important;
+    color: #FFFFFF !important;
+}
+.toast-success,
+.toast-error,
+.toast-info {
+    border-radius: 12px !important;
+    box-shadow: 0 16px 34px -24px rgba(27,39,70,.42) !important;
+}
+
+.lc-scroll::-webkit-scrollbar-track { background: var(--tar-bg-2) !important; }
+.lc-scroll::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--tar-brand) 24%, #D7CCBA) !important; }
+.lc-scroll::-webkit-scrollbar-thumb:hover { background: var(--tar-brand) !important; }
+
+/* Layout upgrade: pricing rules as a control board. */
+.tar-page .tar-topbar > div {
+    padding-bottom: 18px !important;
+}
+
+.tar-page > .px-3 > .grid.grid-cols-2.lg\:grid-cols-4 {
+    grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+}
+
+.tar-page > .px-3 > .grid.grid-cols-2.lg\:grid-cols-4 > .tar-stat {
+    grid-column: span 3;
+    min-height: 146px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    position: relative;
+}
+
+.tar-page .tar-stat::before {
+    content: '';
+    position: absolute;
+    inset: 12px 12px auto auto;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--ws, var(--tar-brand)) 11%, transparent);
+    pointer-events: none;
+}
+
+.tar-page .tar-stat > * {
+    position: relative;
+    z-index: 1;
+}
+
+.tar-page .tar-filters {
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+
+.tar-page .tar-filters-hd {
+    min-height: 50px;
+    padding: 14px 16px !important;
+}
+
+.tar-page .tar-filters > .p-4 {
+    grid-template-columns: repeat(3, minmax(180px, 1fr)) !important;
+    gap: 12px !important;
+}
+
+.tar-page .filter-select,
+.tar-page .date-input {
+    min-height: 42px;
+}
+
+.tar-page .tar-panel {
+    overflow: hidden;
+}
+
+.tar-page .tar-panel-body {
+    padding: 16px !important;
+}
+
+.tar-page #tablaTarifas,
+.tar-page .tar-panel table {
+    border-collapse: separate !important;
+    border-spacing: 0 8px;
+}
+
+.tar-page #tablaTarifas thead tr,
+.tar-page .tar-panel table thead tr {
+    transform: translateY(4px);
+}
+
+.tar-page #tablaTarifas tbody tr,
+.tar-page .tar-panel table tbody tr {
+    background: var(--tar-surface) !important;
+    box-shadow: 0 1px 2px rgba(27,39,70,.04);
+}
+
+.tar-page #tablaTarifas tbody td,
+.tar-page .tar-panel table tbody td {
+    border-top: 1px solid color-mix(in srgb, var(--tar-border) 76%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--tar-border) 76%, transparent);
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+}
+
+.tar-page #tablaTarifas tbody td:first-child,
+.tar-page .tar-panel table tbody td:first-child {
+    border-left: 1px solid color-mix(in srgb, var(--tar-border) 76%, transparent);
+    border-radius: 14px 0 0 14px;
+    padding-left: 12px !important;
+}
+
+.tar-page #tablaTarifas tbody td:last-child,
+.tar-page .tar-panel table tbody td:last-child {
+    border-right: 1px solid color-mix(in srgb, var(--tar-border) 76%, transparent);
+    border-radius: 0 14px 14px 0;
+    padding-right: 12px !important;
+}
+
+.tar-page #tablaTarifas tbody tr:hover td,
+.tar-page .tar-panel table tbody tr:hover td {
+    border-color: color-mix(in srgb, var(--tar-accent) 30%, var(--tar-border));
+}
+
+.tar-page #tablaTarifas tbody td:nth-child(2) p:first-child {
+    font-size: .84rem !important;
+    font-weight: 800 !important;
+}
+
+.tar-page .prio-badge {
+    min-width: 34px;
+    justify-content: center;
+}
+
+.tar-page .val-badge,
+.tar-page .scope-badge,
+.tar-page .vig-badge {
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 9px !important;
+}
+
+.tar-page .dataTables_wrapper .dataTables_filter input {
+    min-height: 38px;
+    margin-left: 8px;
+}
+
+.tar-page .modal-content {
+    overflow: hidden;
+}
+
+@media (max-width: 640px) {
+    .tar-topbar h1 {
+        font-size: 1.9rem !important;
+    }
+    .tar-page > .px-3 {
+        padding-left: .875rem;
+        padding-right: .875rem;
+    }
+    .tar-panel-body {
+        padding: 12px !important;
+    }
+
+    .tar-page > .px-3 > .grid.grid-cols-2.lg\:grid-cols-4,
+    .tar-page .tar-filters > .p-4 {
+        grid-template-columns: 1fr !important;
+    }
+
+    .tar-page > .px-3 > .grid.grid-cols-2.lg\:grid-cols-4 > .tar-stat {
+        grid-column: span 1;
+    }
+
+    .tar-page #tablaTarifas,
+    .tar-page .tar-panel table {
+        border-spacing: 0;
+    }
+}
+</style>
+
 <div class="tar-page">
 
     <!-- Top Bar -->
