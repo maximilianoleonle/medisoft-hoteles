@@ -1,13 +1,13 @@
 <?php
 /**
  * Vista de listado de usuarios
- * Los Cedros — Paleta sage green / gold / cream
+ * Paleta hotelera boutique
  */
 ?>
 
 <style>
 /* ══════════════════════════════════════════
-   LOS CEDROS · Gestión de Usuarios
+   Gestión de Usuarios
    ══════════════════════════════════════════ */
 :root {
     --lc-green:       #5C7A4E;

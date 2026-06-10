@@ -2,7 +2,7 @@
 header('Content-Type: text/html; charset=UTF-8');
 /**
  * Vista Principal de Facturación
- * Los Cedros — Paleta sage green / gold / cream
+ * Paleta hotelera boutique
  */
 
 $solicitudes  = $solicitudes  ?? [];
@@ -12,7 +12,7 @@ $mensaje      = get_mensaje();
 
 <style>
 /* ══════════════════════════════════════════
-   LOS CEDROS · Facturación
+   Facturación
    Sage green / gold / cream palette
    ══════════════════════════════════════════ */
 :root {

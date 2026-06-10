@@ -2,7 +2,7 @@
 header('Content-Type: text/html; charset=UTF-8');
 /**
  * Vista de Detalle de Reservación - Diseño Moderno y Colorido
- * Hotel Los Cedros
+ * Vista hotelera
  */
 
 $estado_info = $estados[$reservacion['estado']] ?? ['label' => 'Desconocido', 'color' => 'gray'];
@@ -3649,48 +3649,12 @@ endif;
 <!-- Scripts -->
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<!-- ═══════════════════════════════════════════════════════════════
-     CAMBIOS PARA ver.php — Botón Cotización con Modal de Anticipo
-     ═══════════════════════════════════════════════════════════════
-
-     4 pasos:
-     1. Botón en Acciones Desktop (línea ~819)
-     2. Botón en Acciones Móvil (línea ~2430)
-     3. Modal HTML (antes de "Formularios ocultos", línea ~3403)
-     4. JavaScript (dentro del <script> principal, después de línea ~3414)
-     
-═══════════════════════════════════════════════════════════════════ -->
 
 
-<!-- ─────────────────────────────────────────────────────────────
-     PASO 1: BOTÓN DESKTOP
-     
-     Buscar (aprox. línea 819):
-     
-         <button onclick="window.print()" 
-                 class="btn-action bg-white text-gray-700 hover:bg-gray-100">
-             <i class="fas fa-print"></i>
-             Imprimir
-         </button>
-     
-     AGREGAR ANTES de ese botón de Imprimir:
-────────────────────────────────────────────────────────────────── -->
 
           
 
 
-<!-- ─────────────────────────────────────────────────────────────
-     PASO 2: BOTÓN MÓVIL
-     
-     Buscar (aprox. línea 2430):
-     
-         <button onclick="window.print()" 
-                 class="btn-action bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs justify-center">
-             <i class="fas fa-print"></i> Imprimir
-         </button>
-     
-     AGREGAR ANTES de ese botón de Imprimir:
-────────────────────────────────────────────────────────────────── -->
 
   
 
@@ -3814,12 +3778,6 @@ endif;
 </form>
 
 
-<!-- ─────────────────────────────────────────────────────────────
-     PASO 4: JAVASCRIPT
-     
-     Agregar dentro del bloque <script> principal
-     (después de la línea "let vehiculosHuesped = [];", aprox. 3417)
-────────────────────────────────────────────────────────────────── -->
 
 <script>
 // =============================================

@@ -1,7 +1,7 @@
 <?php
 /**
  * Controlador de Configuración
- * Los Cedros
+ * Sistema hotelero
  */
 
 class ConfiguracionController extends Controller {

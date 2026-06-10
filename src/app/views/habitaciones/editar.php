@@ -1,4 +1,4 @@
-<!-- Vista Editar Habitación - ACTUALIZADA PARA Los Cedros -->
+<!-- Vista Editar Habitación -->
 <div class="min-h-screen bg-gradient-to-br from-hotel-cream to-white p-6">
     <!-- Header elegante -->
     <div class="max-w-7xl mx-auto mb-8">
@@ -530,7 +530,7 @@
     </div>
 </div>
 
-<!-- Script mejorado para Los Cedros -->
+<!-- Script de la vista hotelera -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Tipos de habitación con información - ACTUALIZADO

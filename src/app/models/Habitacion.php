@@ -1,8 +1,8 @@
 <?php
 /**
- * Modelo de Habitación - ACTUALIZADO PARA Los Cedros
+ * Modelo de Habitación
  * 66 Habitaciones Reales con nuevos tipos
- * Los Cedros - Santa Catarina Juquila, Oaxaca
+ * Sistema hotelero
  */
 
 require_once __DIR__ . '/../helpers/hotel_config.php';

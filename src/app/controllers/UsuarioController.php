@@ -1,7 +1,7 @@
 <?php
 /**
  * Controlador de Usuarios
- * Los Cedros
+ * Sistema hotelero
  */
 
 class UsuarioController extends Controller {

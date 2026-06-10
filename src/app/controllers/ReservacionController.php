@@ -1,7 +1,7 @@
 <?php
 /**
  * Controlador de Reservaciones - Versión Completa Corregida
- * Los Cedros
+ * Sistema hotelero
  */
 require_once __DIR__ . '/../../core/Controller.php';
 require_once __DIR__ . '/../../core/Database.php';

@@ -2,7 +2,7 @@
 
 <style>
 /* ══════════════════════════════════════════
-   LOS CEDROS · Control de Inventario
+   Control de Inventario
    Sage green / gold / warm cream palette
    ══════════════════════════════════════════ */
 :root {

@@ -1,7 +1,7 @@
 <?php
 /**
  * Controlador de Reportes
- * Los Cedros
+ * Sistema hotelero
  */
 
 require_once __DIR__ . '/../../core/Controller.php';

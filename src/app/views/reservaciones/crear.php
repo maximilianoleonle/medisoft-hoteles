@@ -3,7 +3,7 @@
 date_default_timezone_set('America/Mexico_City');
 /**
  * Vista de Crear Reservación - CON SELECCIÓN MANUAL DE CORTESÍAS
- * Los Cedros — Paleta sage green / gold / cream
+ * Paleta hotelera boutique
  */
  
 $habitacion_preseleccionada = $_GET['habitacion_id'] ?? null;
@@ -15,7 +15,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
 
 <style>
 /* ══════════════════════════════════════════
-   LOS CEDROS · Nueva Reservación
+   Nueva Reservación
    Sage green / gold / cream palette
    ══════════════════════════════════════════ */
 :root {

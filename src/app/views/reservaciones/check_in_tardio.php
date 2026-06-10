@@ -1,7 +1,7 @@
 <?php
 /**
  * Vista: Check-in Tardío / Proceso Express - SIEMPRE CON PAGOS
- * Los Cedros
+ * Vista hotelera
  */
 
 $es_express = $verificacion['tipo'] == 'express';

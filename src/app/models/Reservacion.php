@@ -1,7 +1,7 @@
 <?php
 /**
  * Modelo de Reservación - COMPLETO CON TODOS LOS MÉTODOS
- * Los Cedros
+ * Sistema hotelero
  */
 
 require_once __DIR__ . '/../helpers/hotel_config.php';
@@ -192,7 +192,7 @@ public function indexAction() {
     $salidas_hoy = $this->reservacionModel->obtenerSalidasHoy();
     
     View::renderTemplate('reservaciones/index', [
-        'title' => 'Reservaciones - Los Cedros',
+        'title' => 'Reservaciones',
         'reservaciones' => $reservaciones,
         'buscar' => $buscar,
         'fecha_filtro' => $fecha,           // ← NUEVO: se pasa la fecha a la vista

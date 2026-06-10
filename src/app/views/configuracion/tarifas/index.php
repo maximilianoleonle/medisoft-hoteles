@@ -15,7 +15,7 @@
 
 <style>
 /* ══════════════════════════════════════════
-   LOS CEDROS · Tarifas Dinámicas
+   Tarifas Dinámicas
    Sage green / gold / cream palette
    ══════════════════════════════════════════ */
 :root {

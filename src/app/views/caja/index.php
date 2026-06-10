@@ -1,11 +1,11 @@
 <?php
 /**
  * Vista Principal de Caja
- * Los Cedros
+ * Vista hotelera
  */
 ?>
 
-<!-- Estilos elegantes Los Cedros -->
+<!-- Sistema de diseño "Caja boutique" -->
 <style>
     :root {
         --lc-green: var(--brand-primary, #2563EB);

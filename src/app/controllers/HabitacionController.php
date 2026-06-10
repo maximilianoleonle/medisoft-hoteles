@@ -1,8 +1,8 @@
 <?php require_once __DIR__ . '/../models/IncrementoTarifa.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
 /**
- * Controlador de Habitaciones - COMPLETO PARA Los Cedros
- * Los Cedros - Santa Catarina Juquila, Oaxaca
+ * Controlador de Habitaciones
+ * Sistema hotelero
  */
 
 class HabitacionController extends Controller {

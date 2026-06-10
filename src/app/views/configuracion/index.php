@@ -1,7 +1,7 @@
 <?php
 /**
  * Vista de configuración - Versión compacta
- * Los Cedros
+ * Vista hotelera
  */
 ?>
 

@@ -1,5 +1,5 @@
 /**
- * Scripts para el sidebar del Los Cedros
+ * Scripts para el sidebar del sistema hotelero
  * Versión: 1.1.0
  * Descripción: Maneja la funcionalidad del sidebar, menú de usuario y respuesta móvil
  * Modificado: Se eliminó la funcionalidad de colapso del sidebar

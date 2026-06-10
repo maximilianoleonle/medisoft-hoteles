@@ -1,7 +1,7 @@
 <?php
 /**
  * Vista de Editar Habitaciones de Reservación - Versión Limpia y Funcional
- * Los Cedros
+ * Vista hotelera
  */
 
 // Validar que tenemos los datos necesarios

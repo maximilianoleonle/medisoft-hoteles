@@ -1,7 +1,7 @@
 <?php
 /**
  * Modelo de Usuario
- * Los Cedros
+ * Sistema hotelero
  */
 
 class Usuario extends Model {

@@ -1,7 +1,7 @@
 <?php
 /**
  * Vista de Apertura de Caja
- * Los Cedros
+ * Vista hotelera
  */
 ?>
 

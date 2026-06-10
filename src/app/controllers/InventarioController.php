@@ -1,7 +1,7 @@
 <?php
 /**
  * Controlador de Inventario
- * Los Cedros
+ * Sistema hotelero
  */
 require_once __DIR__ . '/../../core/Controller.php';
 require_once __DIR__ . '/../../core/Database.php';
