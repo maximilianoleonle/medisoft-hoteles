@@ -148,6 +148,740 @@
 <!-- ═══════════════════ USUARIOS PAGE ══════════════════════ -->
 <div class="usuarios-view usr-bg">
 
+<style id="usuarios-boutique">
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+.usuarios-view {
+    --user-brand: var(--brand-primary, #1B2746);
+    --user-brand-2: var(--brand-secondary, #0F172A);
+    --user-accent: var(--brand-accent, #BD9441);
+    --user-accent-dark: color-mix(in srgb, var(--user-accent) 72%, #3F2E12);
+    --user-accent-soft: color-mix(in srgb, var(--user-accent) 14%, #FFFFFF);
+    --user-accent-line: color-mix(in srgb, var(--user-accent) 34%, #E8DDCA);
+    --user-bg: #F6F2EA;
+    --user-bg-2: #FBF8F2;
+    --user-surface: rgba(255,255,255,.96);
+    --user-surface-warm: #FCFAF5;
+    --user-border: color-mix(in srgb, var(--user-brand) 11%, #E7E1D4);
+    --user-text: #1B2746;
+    --user-muted: #6C7689;
+    --user-success: #1E9E63;
+    --user-success-soft: #E8F4ED;
+    --user-danger: #B42318;
+    --user-danger-soft: #FDECEC;
+    --user-info: #2F77E0;
+    --user-info-soft: #E8F0FC;
+    --user-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --user-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--user-text);
+    font-family: var(--user-sans);
+}
+
+.usr-bg {
+    background:
+        linear-gradient(135deg, rgba(255,255,255,.34) 0 25%, transparent 25% 50%) 0 0 / 22px 22px,
+        linear-gradient(180deg, var(--user-bg-2), var(--user-bg)) !important;
+}
+
+.usr-hero {
+    background: transparent !important;
+    border-bottom: 1px solid var(--user-border);
+    overflow: visible !important;
+}
+.usr-hero::before,
+.usr-hero::after {
+    content: none !important;
+}
+.usr-hero .container {
+    max-width: 1680px;
+    padding-top: 1.55rem;
+    padding-bottom: 1.25rem;
+}
+.usr-hero div[style] {
+    width: 46px !important;
+    height: 46px !important;
+    border-radius: 13px !important;
+    background: linear-gradient(150deg, var(--user-brand), var(--user-brand-2)) !important;
+    box-shadow: 0 12px 24px -10px color-mix(in srgb, var(--user-brand) 58%, transparent) !important;
+}
+.usr-hero h1 {
+    color: var(--user-brand) !important;
+    font-family: var(--user-serif);
+    font-size: clamp(2rem, 3vw, 2.6rem);
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1;
+}
+.usr-hero p {
+    color: var(--user-muted) !important;
+    font-weight: 500;
+}
+.gold-badge {
+    background: var(--user-accent-soft) !important;
+    border: 1px solid var(--user-accent-line) !important;
+    color: var(--user-accent-dark) !important;
+    border-radius: 999px !important;
+    padding: 6px 11px !important;
+    font-weight: 800 !important;
+}
+
+.btn-nuevo {
+    min-height: 42px;
+    border-radius: 11px !important;
+    background: linear-gradient(135deg, var(--user-accent), var(--user-accent-dark)) !important;
+    color: #FFFFFF !important;
+    font-weight: 800 !important;
+    box-shadow: 0 12px 24px -12px color-mix(in srgb, var(--user-accent) 70%, transparent) !important;
+}
+.btn-nuevo:hover {
+    color: #FFFFFF !important;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 30px -14px color-mix(in srgb, var(--user-accent) 72%, transparent) !important;
+}
+.btn-nuevo:focus-visible,
+.act-btn:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--user-accent) 36%, transparent);
+    outline-offset: 3px;
+}
+
+.usuarios-view .container.max-w-none {
+    max-width: 1680px;
+}
+.usuarios-view .grid > .usr-widget:nth-child(1) { --w-accent: var(--user-brand) !important; }
+.usuarios-view .grid > .usr-widget:nth-child(2) { --w-accent: var(--user-success) !important; }
+.usuarios-view .grid > .usr-widget:nth-child(3) { --w-accent: var(--user-accent) !important; }
+.usr-widget {
+    background: var(--user-surface) !important;
+    border: 1px solid var(--user-border) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28);
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease !important;
+}
+.usr-widget::after {
+    height: 1px !important;
+    background: color-mix(in srgb, var(--w-accent, var(--user-brand)) 44%, var(--user-border)) !important;
+}
+.usr-widget:hover {
+    border-color: color-mix(in srgb, var(--w-accent, var(--user-brand)) 28%, var(--user-border)) !important;
+    box-shadow: 0 16px 34px -24px color-mix(in srgb, var(--w-accent, var(--user-brand)) 58%, #172033) !important;
+}
+.usr-widget .w-icon {
+    background: color-mix(in srgb, var(--w-accent, var(--user-brand)) 12%, #FFFFFF) !important;
+    color: var(--w-accent, var(--user-brand)) !important;
+}
+.usr-widget > div:first-child > span {
+    color: var(--user-brand) !important;
+    font-family: var(--user-serif);
+    font-size: 1.9rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0;
+}
+.usr-widget p {
+    color: var(--user-muted) !important;
+}
+.usr-widget p:first-of-type {
+    color: var(--user-muted) !important;
+    letter-spacing: .07em;
+}
+.usr-widget p span {
+    color: var(--user-brand) !important;
+}
+
+.usr-panel {
+    background: var(--user-surface) !important;
+    border: 1px solid var(--user-border) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 16px 36px -26px rgba(27,39,70,.32);
+}
+.usr-panel-hd {
+    background: var(--user-surface-warm) !important;
+    border-bottom: 1px solid var(--user-border);
+    padding: 15px 18px !important;
+}
+.usr-panel-hd div[style] {
+    background: linear-gradient(150deg, var(--user-brand), var(--user-brand-2)) !important;
+}
+.usr-panel-hd h3 {
+    color: var(--user-brand) !important;
+    font-weight: 800 !important;
+}
+.usr-panel-hd .text-white {
+    color: var(--user-brand) !important;
+}
+.usr-panel-hd div[style] .text-white {
+    color: #FFFFFF !important;
+}
+.usr-panel-hd > span {
+    background: var(--user-accent-soft) !important;
+    border: 1px solid var(--user-accent-line);
+    color: var(--user-accent-dark) !important;
+}
+
+.usr-th {
+    color: var(--user-muted) !important;
+    background: var(--user-surface-warm);
+    border-bottom: 1px solid var(--user-border);
+    font-weight: 800 !important;
+}
+.usr-tr {
+    border-bottom: 1px solid var(--user-border) !important;
+    opacity: 1 !important;
+    transform: none !important;
+}
+.usr-tr.visible {
+    transition: background .16s ease !important;
+    opacity: 1 !important;
+    transform: none !important;
+}
+.usr-tr:hover {
+    background: var(--user-bg-2) !important;
+}
+.usuarios-view .text-gray-800,
+.usuarios-view .text-gray-600 {
+    color: var(--user-text) !important;
+}
+.usuarios-view .text-gray-400,
+.usuarios-view .text-gray-300 {
+    color: var(--user-muted) !important;
+}
+
+.usr-avatar {
+    background: linear-gradient(150deg, var(--user-brand), var(--user-brand-2)) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--user-brand) 58%, transparent);
+}
+
+.rol-badge,
+.status-on,
+.status-off {
+    border-radius: 999px !important;
+    font-weight: 800 !important;
+    letter-spacing: .01em;
+}
+.rol-admin {
+    background: var(--user-accent-soft) !important;
+    border: 1px solid var(--user-accent-line) !important;
+    color: var(--user-accent-dark) !important;
+}
+.rol-recepcion {
+    background: var(--user-info-soft) !important;
+    border: 1px solid color-mix(in srgb, var(--user-info) 24%, #FFFFFF) !important;
+    color: var(--user-info) !important;
+}
+.rol-limpieza {
+    background: var(--user-success-soft) !important;
+    border: 1px solid color-mix(in srgb, var(--user-success) 24%, #FFFFFF) !important;
+    color: color-mix(in srgb, var(--user-success) 72%, #123322) !important;
+}
+.rol-mantenimiento {
+    background: #FAF0DC !important;
+    border: 1px solid color-mix(in srgb, var(--user-accent) 30%, #FFFFFF) !important;
+    color: var(--user-accent-dark) !important;
+}
+.rol-contador {
+    background: var(--user-danger-soft) !important;
+    border: 1px solid color-mix(in srgb, var(--user-danger) 20%, #FFFFFF) !important;
+    color: var(--user-danger) !important;
+}
+.status-on {
+    background: var(--user-success-soft) !important;
+    border: 1px solid color-mix(in srgb, var(--user-success) 24%, #FFFFFF) !important;
+    color: color-mix(in srgb, var(--user-success) 68%, #123322) !important;
+}
+.status-off {
+    background: var(--user-danger-soft) !important;
+    border: 1px solid color-mix(in srgb, var(--user-danger) 20%, #FFFFFF) !important;
+    color: var(--user-danger) !important;
+}
+
+.act-btn {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 10px !important;
+    background: var(--user-surface-warm) !important;
+    border: 1px solid var(--user-border) !important;
+    transition: transform .16s ease, background .16s ease, border-color .16s ease !important;
+}
+.act-btn:hover {
+    transform: translateY(-1px);
+}
+.act-edit {
+    color: var(--user-accent-dark) !important;
+}
+.act-edit:hover {
+    background: var(--user-accent-soft) !important;
+    border-color: var(--user-accent-line) !important;
+}
+.act-deact {
+    color: var(--user-danger) !important;
+}
+.act-deact:hover {
+    background: var(--user-danger-soft) !important;
+    border-color: color-mix(in srgb, var(--user-danger) 22%, #FFFFFF) !important;
+}
+.act-act {
+    color: var(--user-success) !important;
+}
+.act-act:hover {
+    background: var(--user-success-soft) !important;
+    border-color: color-mix(in srgb, var(--user-success) 24%, #FFFFFF) !important;
+}
+
+.usuarios-view .text-center.py-16 {
+    background: var(--user-bg-2);
+    border: 1px dashed var(--user-border);
+    border-radius: 14px;
+    margin: 18px;
+}
+.usuarios-view .text-center.py-16 h3 {
+    color: var(--user-brand) !important;
+}
+
+.lc-scroll::-webkit-scrollbar-track { background: var(--user-bg-2) !important; }
+.lc-scroll::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--user-brand) 24%, #D7CCBA) !important; }
+.lc-scroll::-webkit-scrollbar-thumb:hover { background: var(--user-brand) !important; }
+
+/* Layout upgrade: staff directory with card-like rows and clearer access states. */
+.usuarios-view .usr-hero {
+    margin-bottom: 2px;
+}
+
+.usuarios-view .usr-hero .flex.flex-col.lg\:flex-row {
+    align-items: flex-start !important;
+}
+
+.usuarios-view .container.mx-auto.px-5 > .grid:first-child {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, .9fr) minmax(0, .9fr) !important;
+    align-items: stretch;
+}
+
+.usuarios-view .usr-widget {
+    min-height: 142px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    position: relative;
+}
+
+.usuarios-view .usr-widget::before {
+    content: '';
+    position: absolute;
+    inset: 12px 12px auto auto;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--w-accent, var(--user-brand)) 11%, transparent);
+    pointer-events: none;
+}
+
+.usuarios-view .usr-widget > * {
+    position: relative;
+    z-index: 1;
+}
+
+.usuarios-view .usr-panel {
+    overflow: hidden;
+}
+
+.usuarios-view .usr-panel-hd {
+    min-height: 52px;
+}
+
+.usuarios-view .usr-panel-hd > div:first-child > div {
+    background: color-mix(in srgb, var(--user-accent) 14%, var(--user-surface)) !important;
+    border: 1px solid var(--user-border);
+}
+
+.usuarios-view .usr-panel-hd > div:first-child > div i {
+    color: var(--user-accent-dark) !important;
+}
+
+.usuarios-view table {
+    border-collapse: separate !important;
+    border-spacing: 0 8px;
+}
+
+.usuarios-view thead tr {
+    transform: translateY(4px);
+}
+
+.usuarios-view .usr-tr {
+    background: var(--user-surface) !important;
+    box-shadow: 0 1px 2px rgba(27,39,70,.04);
+}
+
+.usuarios-view .usr-tr td {
+    border-top: 1px solid color-mix(in srgb, var(--user-border) 76%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--user-border) 76%, transparent);
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+}
+
+.usuarios-view .usr-tr td:first-child {
+    border-left: 1px solid color-mix(in srgb, var(--user-border) 76%, transparent);
+    border-radius: 14px 0 0 14px;
+}
+
+.usuarios-view .usr-tr td:last-child {
+    border-right: 1px solid color-mix(in srgb, var(--user-border) 76%, transparent);
+    border-radius: 0 14px 14px 0;
+}
+
+.usuarios-view .usr-tr:hover td {
+    border-color: color-mix(in srgb, var(--user-accent) 30%, var(--user-border));
+}
+
+.usuarios-view .usr-avatar {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 12px !important;
+    font-size: .76rem !important;
+    letter-spacing: .03em;
+}
+
+.usuarios-view .usr-tr td:first-child p:first-of-type {
+    font-size: .84rem !important;
+    font-weight: 800 !important;
+}
+
+.usuarios-view .rol-badge,
+.usuarios-view .status-on,
+.usuarios-view .status-off {
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 9px !important;
+}
+
+.usuarios-view .act-btn {
+    box-shadow: 0 1px 2px rgba(27,39,70,.05);
+}
+
+/* Color balance: neutral user data, varied initials, hotel brand as accent. */
+.usuarios-view {
+    --user-heading: #111827;
+    --user-text: #1F2937;
+    --user-muted: #667085;
+    --user-bg: #F8F5ED;
+    --user-bg-2: #FBFAF6;
+    --user-surface: #FFFFFF;
+    --user-surface-warm: color-mix(in srgb, var(--user-accent) 3%, #FFFFFF);
+    --user-border: color-mix(in srgb, var(--user-brand) 6%, #E7E1D4);
+    --user-shadow: 0 1px 2px rgba(17,24,39,.035), 0 14px 30px -24px rgba(17,24,39,.34);
+    color: var(--user-text);
+}
+
+.usr-bg {
+    background:
+        radial-gradient(circle at 9% 0%, color-mix(in srgb, var(--user-accent) 6%, transparent) 0, transparent 26%),
+        radial-gradient(circle at 92% 2%, color-mix(in srgb, var(--user-brand) 4%, transparent) 0, transparent 24%),
+        linear-gradient(180deg, var(--user-bg-2), #FFFFFF 46%, var(--user-bg)) !important;
+}
+
+.usuarios-view .usr-hero h1,
+.usuarios-view .usr-panel-hd h3,
+.usuarios-view .usr-widget > div:first-child > span,
+.usuarios-view .usr-widget p span,
+.usuarios-view .usr-tr td:first-child p:first-of-type,
+.usuarios-view .usr-tr td:nth-child(2) p:first-child,
+.usuarios-view .usr-tr td:nth-child(5) p:first-child,
+.usuarios-view .text-gray-800,
+.usuarios-view .text-gray-600 {
+    color: var(--user-heading) !important;
+}
+
+.usuarios-view .usr-hero div[style],
+.usuarios-view .usr-panel-hd div[style] {
+    background: linear-gradient(150deg, var(--user-heading), color-mix(in srgb, var(--user-brand) 32%, #111827)) !important;
+    box-shadow: 0 14px 24px -18px rgba(17,24,39,.72) !important;
+}
+
+.usuarios-view .gold-badge,
+.usuarios-view .usr-panel-hd > span {
+    background: var(--user-surface) !important;
+    border-color: var(--user-border) !important;
+    color: var(--user-heading) !important;
+    box-shadow: 0 10px 22px -20px rgba(17,24,39,.45);
+}
+
+.usuarios-view .btn-nuevo {
+    background: var(--user-heading) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 12px 22px -18px rgba(17,24,39,.7) !important;
+}
+
+.usuarios-view .btn-nuevo:hover {
+    box-shadow: 0 14px 26px -18px color-mix(in srgb, var(--user-accent) 48%, #111827) !important;
+}
+
+.usuarios-view .usr-widget,
+.usuarios-view .usr-panel,
+.usuarios-view .usr-tr {
+    background: var(--user-surface) !important;
+    border-color: var(--user-border) !important;
+    box-shadow: var(--user-shadow) !important;
+}
+
+.usuarios-view .usr-widget::after {
+    background: color-mix(in srgb, var(--w-accent, var(--user-brand)) 24%, var(--user-border)) !important;
+}
+
+.usuarios-view .usr-widget::before {
+    background: color-mix(in srgb, var(--w-accent, var(--user-brand)) 7%, transparent) !important;
+}
+
+.usuarios-view .usr-widget .w-icon {
+    background: color-mix(in srgb, var(--w-accent, var(--user-brand)) 8%, #FFFFFF) !important;
+    border: 1px solid color-mix(in srgb, var(--w-accent, var(--user-brand)) 16%, var(--user-border));
+    color: color-mix(in srgb, var(--w-accent, var(--user-brand)) 78%, #111827) !important;
+}
+
+.usuarios-view .usr-panel-hd,
+.usuarios-view .usr-th {
+    background: linear-gradient(180deg, var(--user-surface), var(--user-surface-warm)) !important;
+}
+
+.usuarios-view .usr-tr:hover {
+    background: color-mix(in srgb, var(--user-accent) 4%, #FFFFFF) !important;
+}
+
+.usuarios-view .usr-tr:hover td {
+    border-color: color-mix(in srgb, var(--user-accent) 20%, var(--user-border)) !important;
+}
+
+.usuarios-view .usr-avatar {
+    background: #EAF1F8 !important;
+    color: #234C78 !important;
+    border: 1px solid color-mix(in srgb, #3B6EA8 16%, #FFFFFF);
+    box-shadow: none !important;
+}
+.usuarios-view .usr-tr:nth-child(2n) .usr-avatar {
+    background: #E8F4ED !important;
+    color: #276749 !important;
+    border-color: color-mix(in srgb, #2F855A 16%, #FFFFFF);
+}
+.usuarios-view .usr-tr:nth-child(3n) .usr-avatar {
+    background: #F8F0DC !important;
+    color: #7C4A03 !important;
+    border-color: color-mix(in srgb, #A16207 16%, #FFFFFF);
+}
+.usuarios-view .usr-tr:nth-child(4n) .usr-avatar {
+    background: #EEF1F4 !important;
+    color: #334155 !important;
+    border-color: color-mix(in srgb, #64748B 18%, #FFFFFF);
+}
+.usuarios-view .usr-tr:nth-child(5n) .usr-avatar {
+    background: color-mix(in srgb, var(--user-accent) 9%, #FFFFFF) !important;
+    color: var(--user-accent-dark) !important;
+    border-color: color-mix(in srgb, var(--user-accent) 16%, #FFFFFF);
+}
+
+.usuarios-view .rol-admin {
+    background: #F3F0FA !important;
+    color: #5B4A8F !important;
+    border-color: #DED7F0 !important;
+}
+.usuarios-view .rol-gerente,
+.usuarios-view .rol-administrador {
+    background: #F3F0FA !important;
+    color: #5B4A8F !important;
+    border-color: #DED7F0 !important;
+}
+.usuarios-view .rol-recepcion {
+    background: #EAF1F8 !important;
+    color: #234C78 !important;
+    border-color: #D6E2EF !important;
+}
+.usuarios-view .rol-recepcionista {
+    background: #EAF1F8 !important;
+    color: #234C78 !important;
+    border-color: #D6E2EF !important;
+}
+.usuarios-view .rol-limpieza {
+    background: #E8F4ED !important;
+    color: #276749 !important;
+    border-color: #D4E8DC !important;
+}
+.usuarios-view .rol-mantenimiento {
+    background: #F8F0DC !important;
+    color: #7C4A03 !important;
+    border-color: #EFE1BA !important;
+}
+.usuarios-view .rol-contador {
+    background: #F9ECEB !important;
+    color: #9D3028 !important;
+    border-color: #EFD1CE !important;
+}
+
+.usuarios-view .status-on {
+    background: #E8F4ED !important;
+    color: #276749 !important;
+    border-color: #D4E8DC !important;
+}
+.usuarios-view .status-off {
+    background: #F7F7F8 !important;
+    color: #667085 !important;
+    border-color: #E4E7EC !important;
+}
+
+.usuarios-view .act-edit {
+    color: var(--user-heading) !important;
+}
+.usuarios-view .act-edit:hover {
+    background: color-mix(in srgb, var(--user-accent) 8%, #FFFFFF) !important;
+    border-color: color-mix(in srgb, var(--user-accent) 18%, var(--user-border)) !important;
+}
+
+.usuarios-view .lc-scroll::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--user-brand) 42%, #667085) !important;
+}
+
+/* Stats cards redesign: compact operational tiles. */
+.usuarios-view .container.mx-auto.px-5 > .grid:first-child {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+    margin-bottom: 1.35rem !important;
+}
+
+.usuarios-view .usr-widget {
+    min-height: 148px;
+    padding: 18px 19px 22px !important;
+    border-radius: 18px !important;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--w-accent, var(--user-brand)) 7%, #FFFFFF) 0%, #FFFFFF 48%),
+        #FFFFFF !important;
+    border: 1px solid color-mix(in srgb, var(--w-accent, var(--user-brand)) 16%, var(--user-border)) !important;
+    box-shadow: 0 1px 2px rgba(17,24,39,.035), 0 18px 36px -30px rgba(17,24,39,.5) !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 0;
+}
+
+.usuarios-view .usr-widget::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 5px;
+    height: auto;
+    border-radius: 18px 0 0 18px;
+    background: linear-gradient(180deg, var(--w-accent, var(--user-brand)), color-mix(in srgb, var(--w-accent, var(--user-brand)) 42%, #FFFFFF));
+    opacity: .95;
+}
+
+.usuarios-view .usr-widget::after {
+    content: '';
+    position: absolute;
+    left: 19px;
+    right: 19px;
+    bottom: 12px;
+    height: 3px !important;
+    border-radius: 999px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--w-accent, var(--user-brand)) 74%, #FFFFFF), color-mix(in srgb, var(--w-accent, var(--user-brand)) 16%, transparent) 72%, transparent) !important;
+    opacity: .68;
+}
+
+.usuarios-view .usr-widget:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--w-accent, var(--user-brand)) 28%, var(--user-border)) !important;
+    box-shadow: 0 3px 8px rgba(17,24,39,.045), 0 22px 42px -30px color-mix(in srgb, var(--w-accent, var(--user-brand)) 45%, #111827) !important;
+}
+
+.usuarios-view .usr-widget:hover::after {
+    opacity: .9;
+}
+
+.usuarios-view .usr-widget > div:first-child {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 16px;
+    margin: 0 !important;
+}
+
+.usuarios-view .usr-widget .w-icon {
+    width: 42px !important;
+    height: 42px !important;
+    flex: 0 0 42px;
+    border-radius: 13px !important;
+    background: color-mix(in srgb, var(--w-accent, var(--user-brand)) 10%, #FFFFFF) !important;
+    border: 1px solid color-mix(in srgb, var(--w-accent, var(--user-brand)) 20%, var(--user-border)) !important;
+    color: color-mix(in srgb, var(--w-accent, var(--user-brand)) 82%, #111827) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.85);
+    font-size: 16px !important;
+}
+
+.usuarios-view .usr-widget > div:first-child > span {
+    color: color-mix(in srgb, var(--w-accent, var(--user-brand)) 86%, #111827) !important;
+    font-family: var(--user-serif);
+    font-size: clamp(2.2rem, 3vw, 2.85rem) !important;
+    line-height: .9;
+    font-weight: 800 !important;
+    letter-spacing: 0;
+}
+
+.usuarios-view .usr-widget > p:first-of-type {
+    margin: 16px 0 0 !important;
+    color: var(--user-heading) !important;
+    font-size: .72rem !important;
+    line-height: 1.05;
+    font-weight: 900 !important;
+    letter-spacing: .115em !important;
+}
+
+.usuarios-view .usr-widget > div:last-child,
+.usuarios-view .usr-widget > p:last-child {
+    margin-top: 9px !important;
+    padding-top: 9px;
+    border-top: 1px solid color-mix(in srgb, var(--w-accent, var(--user-brand)) 13%, var(--user-border));
+    color: var(--user-muted) !important;
+    font-size: .78rem !important;
+    line-height: 1.45;
+}
+
+.usuarios-view .usr-widget > div:last-child > span:first-child {
+    color: color-mix(in srgb, var(--w-accent, var(--user-brand)) 82%, #111827) !important;
+    font-size: 1.05rem !important;
+    font-weight: 900 !important;
+}
+
+.usuarios-view .usr-widget > div:last-child > span:last-child,
+.usuarios-view .usr-widget > p:last-child {
+    color: var(--user-muted) !important;
+}
+
+.usuarios-view .usr-widget > p:last-child span {
+    color: var(--user-heading) !important;
+    font-weight: 800 !important;
+}
+
+@media (max-width: 640px) {
+    .usr-hero .container {
+        padding-top: 1.15rem;
+    }
+    .usr-hero p,
+    .usr-hero .ml-14 {
+        margin-left: 0 !important;
+    }
+    .usr-hero h1 {
+        font-size: 2rem;
+    }
+    .usr-panel {
+        border-radius: 14px !important;
+    }
+
+    .usuarios-view .container.mx-auto.px-5 > .grid:first-child {
+        grid-template-columns: 1fr !important;
+    }
+
+    .usuarios-view table {
+        border-spacing: 0;
+    }
+}
+</style>
+
     <!-- Hero Header -->
     <div class="usr-hero">
         <div class="container mx-auto px-5 sm:px-7 py-5 relative z-10">
