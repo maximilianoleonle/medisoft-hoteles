@@ -5,9 +5,9 @@ date_default_timezone_set('America/Mexico_City');
  * Vista de Crear Reservación - CON SELECCIÓN MANUAL DE CORTESÍAS
  * Paleta hotelera boutique
  */
- 
+
 $habitacion_preseleccionada = $_GET['habitacion_id'] ?? null;
-$fecha_entrada_pre = $_GET['fecha_entrada'] ?? null; 
+$fecha_entrada_pre = $_GET['fecha_entrada'] ?? null;
 $fecha_salida_pre = $_GET['fecha_salida'] ?? null;
 $hora_llegada_pre = $_GET['hora_llegada'] ?? null;
 $es_preseleccion = $_GET['preseleccion'] ?? null;
@@ -402,6 +402,1091 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
 }
 </style>
 
+<style id="reservation-create-boutique">
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+.vista-reservacion {
+    --rc-brand: var(--brand-primary, #1B2746);
+    --rc-brand-2: var(--brand-secondary, #0F172A);
+    --rc-accent: var(--brand-accent, #BD9441);
+    --rc-accent-dark: color-mix(in srgb, var(--rc-accent) 72%, #3F2E12);
+    --rc-accent-soft: color-mix(in srgb, var(--rc-accent) 12%, #FFFFFF);
+    --rc-accent-line: color-mix(in srgb, var(--rc-accent) 30%, #E8DDCA);
+    --rc-ivory: color-mix(in srgb, var(--rc-accent) 8%, #F8F5ED);
+    --rc-ivory-2: color-mix(in srgb, var(--rc-accent) 5%, #FCFAF5);
+    --rc-surface: color-mix(in srgb, var(--rc-accent) 2%, #FFFFFF);
+    --rc-surface-warm: color-mix(in srgb, var(--rc-accent) 5%, #FFFFFF);
+    --rc-line: color-mix(in srgb, var(--rc-accent) 19%, #E7DEC9);
+    --rc-line-soft: color-mix(in srgb, var(--rc-accent) 11%, #F0ECE2);
+    --rc-muted: color-mix(in srgb, var(--rc-brand-2) 48%, #94A3B8);
+    --rc-text: var(--rc-brand-2);
+    --rc-success: #1E9E63;
+    --rc-success-soft: #E7F4EC;
+    --rc-warning: #C47B18;
+    --rc-warning-soft: #FFF6E5;
+    --rc-danger: #D64539;
+    --rc-danger-soft: #FBE9E7;
+    --rc-info: #2F77E0;
+    --rc-info-soft: #E6EFFC;
+    --rc-serif: 'Cormorant Garamond', Georgia, serif;
+    --rc-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    background:
+        repeating-linear-gradient(135deg, color-mix(in srgb, var(--rc-accent) 3%, transparent) 0 1px, transparent 1px 22px),
+        linear-gradient(180deg, var(--rc-ivory-2), var(--rc-ivory) 58%, #F7F2EA);
+    color: var(--rc-text);
+    font-family: var(--rc-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+.vista-reservacion *,
+.vista-reservacion *::before,
+.vista-reservacion *::after {
+    box-sizing: border-box;
+}
+
+.vista-reservacion :where(p, span, a, button, input, select, textarea, label) {
+    font-family: var(--rc-sans);
+}
+
+.vista-reservacion > div:first-of-type {
+    background: transparent !important;
+    overflow: visible !important;
+}
+
+.vista-reservacion > div:first-of-type > div[style*="position:absolute"] {
+    display: none !important;
+}
+
+.vista-reservacion > div:first-of-type > .px-5,
+.vista-reservacion > .px-5 {
+    width: min(100%, 1280px);
+    margin: 0 auto;
+}
+
+.vista-reservacion > div:first-of-type > .px-5 {
+    padding: 26px 18px 0 !important;
+}
+
+.vista-reservacion > .px-5 {
+    padding: 18px 18px 112px !important;
+}
+
+.vista-reservacion > .pt-4 {
+    width: min(100%, 1280px);
+    margin: 0 auto;
+    padding: 14px 18px 0 !important;
+}
+
+.vista-reservacion > div:first-of-type .flex.items-center.text-xs.mb-3 {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 9px !important;
+    color: var(--rc-muted) !important;
+    font-size: .78rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 18px !important;
+}
+
+.vista-reservacion > div:first-of-type .flex.items-center.text-xs.mb-3 a {
+    color: var(--rc-brand) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    transition: color .18s ease, transform .18s ease !important;
+}
+
+.vista-reservacion > div:first-of-type .flex.items-center.text-xs.mb-3 a:hover {
+    color: var(--rc-accent-dark) !important;
+    transform: translateY(-1px);
+}
+
+.vista-reservacion > div:first-of-type .flex.items-center.text-xs.mb-3 span,
+.vista-reservacion > div:first-of-type .flex.items-center.text-xs.mb-3 i {
+    color: var(--rc-muted) !important;
+}
+
+.vista-reservacion > div:first-of-type .flex.items-center.justify-between.gap-3 {
+    align-items: flex-start !important;
+    gap: 18px !important;
+}
+
+.vista-reservacion > div:first-of-type .flex.items-center.gap-3 {
+    align-items: flex-start !important;
+    min-width: 0;
+}
+
+.vista-reservacion > div:first-of-type .flex.items-center.gap-3 > div[style*="width:46px"] {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 14px !important;
+    background: linear-gradient(150deg, var(--rc-brand), var(--rc-brand-2)) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 12px 24px -10px color-mix(in srgb, var(--rc-brand) 58%, transparent);
+}
+
+.vista-reservacion > div:first-of-type h1 {
+    color: var(--rc-brand) !important;
+    font-family: var(--rc-serif) !important;
+    font-size: clamp(2rem, 3.6vw, 2.75rem) !important;
+    font-weight: 650 !important;
+    letter-spacing: 0 !important;
+    line-height: .96 !important;
+    text-wrap: balance;
+}
+
+.vista-reservacion > div:first-of-type h1 + p {
+    max-width: 62ch;
+    margin: 8px 0 0 !important;
+    color: var(--rc-muted) !important;
+    font-size: .88rem !important;
+    font-weight: 600 !important;
+    line-height: 1.55 !important;
+}
+
+.vista-reservacion .btn-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 8px 12px;
+    border: 1px solid var(--rc-accent-line);
+    border-radius: 999px;
+    background: var(--rc-accent-soft);
+    color: var(--rc-accent-dark);
+    font-size: .76rem;
+    font-weight: 800;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: transform .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.vista-reservacion .btn-back:hover {
+    color: var(--rc-accent-dark);
+    background: color-mix(in srgb, var(--rc-accent) 17%, #FFFFFF);
+    transform: translateY(-1px);
+}
+
+.vista-reservacion .alert-presel {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    margin: 0;
+    padding: 13px 15px;
+    border: 1px solid color-mix(in srgb, var(--rc-info) 22%, var(--rc-line)) !important;
+    border-left-width: 1px !important;
+    border-radius: 15px !important;
+    background: color-mix(in srgb, var(--rc-info) 8%, var(--rc-surface)) !important;
+    color: var(--rc-brand);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--rc-brand-2) 4%, transparent);
+}
+
+.vista-reservacion .alert-presel i {
+    color: var(--rc-info) !important;
+    margin-top: 2px;
+}
+
+.vista-reservacion #formReservacion > .grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(286px, 318px) !important;
+    gap: 18px !important;
+    align-items: start;
+}
+
+.vista-reservacion #formReservacion > .grid > .xl\:col-span-3,
+.vista-reservacion #formReservacion > .grid > .xl\:col-span-1 {
+    grid-column: auto !important;
+    min-width: 0;
+}
+
+.vista-reservacion #formReservacion > .grid > .xl\:col-span-3 {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.vista-reservacion #formReservacion > .grid > .xl\:col-span-1 {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.vista-reservacion .card-animate,
+.vista-reservacion #formReservacion > .grid > .xl\:col-span-1 > .bg-white,
+.vista-reservacion .info-card {
+    border: 1px solid var(--rc-line) !important;
+    border-radius: 18px !important;
+    background: var(--rc-surface) !important;
+    box-shadow:
+        0 1px 2px color-mix(in srgb, var(--rc-brand-2) 4%, transparent),
+        0 14px 32px -24px color-mix(in srgb, var(--rc-brand-2) 34%, transparent) !important;
+    overflow: hidden;
+    min-width: 0;
+}
+
+.vista-reservacion .card-animate:hover,
+.vista-reservacion #formReservacion > .grid > .xl\:col-span-1 > .bg-white:hover,
+.vista-reservacion .info-card:hover {
+    transform: translateY(-1px);
+    box-shadow:
+        0 2px 4px color-mix(in srgb, var(--rc-brand-2) 5%, transparent),
+        0 18px 38px -26px color-mix(in srgb, var(--rc-brand-2) 38%, transparent) !important;
+}
+
+.vista-reservacion .panel-hd-guest,
+.vista-reservacion .panel-hd-dates,
+.vista-reservacion .panel-hd-rooms,
+.vista-reservacion .panel-hd-notes,
+.vista-reservacion .panel-hd-summary {
+    min-height: 62px;
+    padding: 15px 17px !important;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--rc-accent) 7%, #FFFFFF), color-mix(in srgb, var(--rc-accent) 3%, #FFFFFF)) !important;
+    border-bottom: 1px solid var(--rc-line-soft);
+}
+
+.vista-reservacion .panel-hd-guest h2,
+.vista-reservacion .panel-hd-dates h2,
+.vista-reservacion .panel-hd-rooms h2,
+.vista-reservacion .panel-hd-notes h2,
+.vista-reservacion .panel-hd-summary h3 {
+    color: var(--rc-brand) !important;
+    font-size: .95rem !important;
+    font-weight: 850 !important;
+    letter-spacing: 0 !important;
+    line-height: 1.2;
+}
+
+.vista-reservacion .panel-hd-guest h2 i,
+.vista-reservacion .panel-hd-dates h2 i,
+.vista-reservacion .panel-hd-rooms h2 i,
+.vista-reservacion .panel-hd-notes h2 i,
+.vista-reservacion .panel-hd-summary h3 i {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    background: var(--rc-accent-soft);
+    color: var(--rc-accent-dark) !important;
+    opacity: 1 !important;
+    font-size: .82rem;
+}
+
+.vista-reservacion .card-animate > .p-5,
+.vista-reservacion #formReservacion > .grid > .xl\:col-span-1 > .bg-white .p-4 {
+    padding: 18px !important;
+}
+
+.vista-reservacion label {
+    color: var(--rc-brand) !important;
+    font-size: .77rem !important;
+    font-weight: 850 !important;
+    letter-spacing: .04em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.vista-reservacion label i {
+    color: var(--rc-accent-dark) !important;
+}
+
+.vista-reservacion .lc-input,
+.vista-reservacion .input-busqueda {
+    width: 100% !important;
+    min-height: 44px !important;
+    border: 1px solid var(--rc-line) !important;
+    border-radius: 13px !important;
+    background: var(--rc-surface-warm) !important;
+    color: var(--rc-text) !important;
+    box-shadow: 0 1px 0 rgba(255,255,255,.75) inset !important;
+    font-size: .9rem !important;
+    font-weight: 650 !important;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease !important;
+}
+
+.vista-reservacion .lc-input:focus,
+.vista-reservacion .input-busqueda:focus {
+    border-color: var(--rc-accent) !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--rc-accent) 24%, transparent) !important;
+    outline: none !important;
+}
+
+.vista-reservacion textarea.lc-input {
+    min-height: 104px !important;
+    line-height: 1.55;
+}
+
+.vista-reservacion .select2-container {
+    width: 100% !important;
+}
+
+.vista-reservacion .select2-container--default .select2-selection--single {
+    min-height: 44px !important;
+    height: 44px !important;
+    border: 1px solid var(--rc-line) !important;
+    border-radius: 13px !important;
+    background: var(--rc-surface-warm) !important;
+}
+
+.vista-reservacion .select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: var(--rc-text) !important;
+    line-height: 42px !important;
+    padding-left: 13px !important;
+    padding-right: 34px !important;
+    font-size: .9rem;
+    font-weight: 650;
+}
+
+.vista-reservacion .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 42px !important;
+    right: 8px !important;
+}
+
+.vista-reservacion .select2-container--default.select2-container--focus .select2-selection--single {
+    border-color: var(--rc-accent) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--rc-accent) 24%, transparent) !important;
+}
+
+.select2-dropdown {
+    border: 1px solid var(--brand-accent, #BD9441) !important;
+    border-radius: 13px !important;
+    overflow: hidden;
+    box-shadow: 0 18px 38px -22px rgba(15,23,42,.35) !important;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: var(--brand-primary, #1B2746) !important;
+}
+
+.vista-reservacion .btn-gold,
+.vista-reservacion .btn-hour,
+.vista-reservacion .btn-save,
+.vista-reservacion .btn-cotizacion,
+.vista-reservacion .btn-cancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    border-radius: 13px;
+    font-size: .84rem;
+    font-weight: 850;
+    text-decoration: none;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease, opacity .18s ease;
+}
+
+.vista-reservacion .btn-gold,
+.vista-reservacion .btn-hour {
+    border: 1px solid var(--rc-accent-line);
+    background: var(--rc-accent-soft);
+    color: var(--rc-accent-dark);
+    padding: 10px 14px;
+}
+
+.vista-reservacion .btn-save {
+    width: 100%;
+    border: 1px solid color-mix(in srgb, var(--rc-accent) 32%, transparent);
+    background: linear-gradient(135deg, var(--rc-brand), var(--rc-brand-2));
+    color: #FFFFFF;
+    box-shadow: 0 12px 26px -12px color-mix(in srgb, var(--rc-brand) 60%, transparent);
+}
+
+.vista-reservacion .btn-cotizacion {
+    width: 100%;
+    border: 1px solid var(--rc-accent-line);
+    background: var(--rc-accent-soft);
+    color: var(--rc-accent-dark);
+}
+
+.vista-reservacion .btn-cancel {
+    width: 100%;
+    border: 1px solid var(--rc-line);
+    background: var(--rc-surface-warm);
+    color: var(--rc-muted);
+}
+
+.vista-reservacion .btn-gold:hover,
+.vista-reservacion .btn-hour:hover,
+.vista-reservacion .btn-save:hover,
+.vista-reservacion .btn-cotizacion:hover,
+.vista-reservacion .btn-cancel:hover {
+    transform: translateY(-1px);
+}
+
+.vista-reservacion .btn-save:disabled,
+.vista-reservacion .btn-cotizacion:disabled {
+    cursor: not-allowed;
+    filter: saturate(.45);
+    opacity: .58;
+    transform: none;
+}
+
+.vista-reservacion .guest-info-box,
+.vista-reservacion .info-card,
+.vista-reservacion .seccion-cortesias {
+    border: 1px solid var(--rc-line) !important;
+    border-radius: 15px !important;
+    background: var(--rc-surface-warm) !important;
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--rc-brand-2) 4%, transparent);
+}
+
+.vista-reservacion .guest-info-box {
+    padding: 14px !important;
+}
+
+.vista-reservacion .guest-info-box p,
+.vista-reservacion .info-card p,
+.vista-reservacion .info-card span,
+.vista-reservacion .info-card li {
+    color: var(--rc-muted) !important;
+}
+
+.vista-reservacion .guest-info-box .font-bold,
+.vista-reservacion .info-card h4 {
+    color: var(--rc-brand) !important;
+}
+
+.vista-reservacion .buscador-habitaciones {
+    position: sticky;
+    top: 10px;
+    z-index: 8;
+    margin-bottom: 16px !important;
+    padding: 14px !important;
+    border: 1px solid var(--rc-line);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--rc-surface-warm) 88%, #FFFFFF);
+    box-shadow: 0 10px 24px -22px color-mix(in srgb, var(--rc-brand-2) 42%, transparent);
+}
+
+.vista-reservacion .icono-busqueda {
+    color: var(--rc-accent-dark) !important;
+}
+
+.vista-reservacion .room-stats-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 14px;
+    padding: 12px 13px;
+    border: 1px solid var(--rc-line);
+    border-radius: 15px;
+    background: var(--rc-surface-warm);
+}
+
+.vista-reservacion .contador-habitaciones {
+    display: inline-grid;
+    place-items: center;
+    min-width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    background: var(--rc-brand);
+    color: #FFFFFF !important;
+    font-weight: 900;
+}
+
+.vista-reservacion .habitacion-card > div {
+    border: 1px solid var(--rc-line) !important;
+    border-radius: 15px !important;
+    background: #FFFFFF !important;
+    box-shadow:
+        0 1px 2px color-mix(in srgb, var(--rc-brand-2) 5%, transparent),
+        0 12px 24px -24px color-mix(in srgb, var(--rc-brand-2) 36%, transparent);
+}
+
+.vista-reservacion .habitacion-card.disponible {
+    cursor: pointer;
+}
+
+.vista-reservacion .habitacion-card.disponible > div {
+    border-color: var(--rc-line) !important;
+    background: #FFFFFF !important;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease, color .18s ease !important;
+}
+
+.vista-reservacion .habitacion-card.disponible:hover > div {
+    border-color: color-mix(in srgb, var(--rc-success) 34%, var(--rc-line)) !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 16px 30px -26px color-mix(in srgb, var(--rc-success) 45%, transparent);
+    transform: translateY(-1px);
+}
+
+.vista-reservacion .habitacion-card.ocupada:not(.en-mantenimiento) > div {
+    border-color: color-mix(in srgb, var(--rc-danger) 52%, var(--rc-line)) !important;
+    background:
+        linear-gradient(135deg,
+            color-mix(in srgb, var(--rc-danger) 15%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--rc-danger) 9%, #FFFFFF) 56%,
+            #FFFFFF 100%) !important;
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--rc-danger) 16%, transparent),
+        0 14px 28px -25px color-mix(in srgb, var(--rc-danger) 58%, transparent);
+}
+
+.vista-reservacion .habitacion-card.en-mantenimiento > div {
+    border-color: color-mix(in srgb, var(--rc-warning) 54%, var(--rc-line)) !important;
+    background:
+        linear-gradient(135deg,
+            color-mix(in srgb, var(--rc-warning) 18%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--rc-warning) 11%, #FFFFFF) 58%,
+            #FFFFFF 100%) !important;
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--rc-warning) 18%, transparent),
+        0 14px 28px -25px color-mix(in srgb, var(--rc-warning) 60%, transparent);
+}
+
+.vista-reservacion .habitacion-card h5 {
+    color: var(--rc-brand) !important;
+    letter-spacing: 0 !important;
+}
+
+.vista-reservacion .habitacion-card h5 i {
+    color: var(--rc-accent-dark) !important;
+}
+
+.vista-reservacion .habitacion-card .w-4.h-4 {
+    border-color: var(--rc-line) !important;
+    background: var(--rc-surface-warm);
+}
+
+.vista-reservacion .habitacion-card.selected .w-4.h-4 {
+    border-color: var(--rc-success) !important;
+    background: var(--rc-success) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--rc-success) 16%, transparent);
+}
+
+.vista-reservacion .badge-cortesia {
+    border-radius: 0 0 10px 10px !important;
+    background: color-mix(in srgb, var(--rc-warning) 86%, #FFFFFF) !important;
+    box-shadow: 0 8px 16px -14px color-mix(in srgb, var(--rc-warning) 70%, transparent);
+}
+
+.vista-reservacion .habitacion-card.es-cortesia > div {
+    border-color: color-mix(in srgb, var(--rc-warning) 38%, var(--rc-line)) !important;
+    background: color-mix(in srgb, var(--rc-warning) 5%, #FFFFFF) !important;
+}
+
+.vista-reservacion .info-ocupacion {
+    border: 1px solid color-mix(in srgb, var(--rc-danger) 26%, var(--rc-line)) !important;
+    border-radius: 12px !important;
+    background: color-mix(in srgb, var(--rc-danger) 5%, #FFFFFF) !important;
+}
+
+.vista-reservacion .habitacion-card.selected > div,
+.vista-reservacion .habitacion-card.selected.es-cortesia > div {
+    border-color: color-mix(in srgb, var(--rc-success) 66%, var(--rc-brand)) !important;
+    background: color-mix(in srgb, var(--rc-success) 22%, #FFFFFF) !important;
+    box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--rc-success) 12%, transparent),
+        0 14px 26px -24px color-mix(in srgb, var(--rc-success) 56%, transparent) !important;
+    transform: none !important;
+}
+
+.vista-reservacion .habitacion-card.selected > div .border-t {
+    border-color: color-mix(in srgb, var(--rc-success) 20%, var(--rc-line)) !important;
+}
+
+.vista-reservacion .habitacion-card.selected .w-4.h-4 i {
+    color: #FFFFFF !important;
+    opacity: 1 !important;
+}
+
+.vista-reservacion .rc-room-card {
+    min-height: 166px;
+    padding: 15px !important;
+    display: flex;
+    flex-direction: column;
+}
+
+.vista-reservacion .rc-room-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "number price"
+        "meta meta";
+    align-items: start;
+    gap: 11px 14px;
+    min-width: 0;
+}
+
+.vista-reservacion .rc-room-number {
+    grid-area: number;
+    min-height: 0;
+    min-width: 0;
+    display: grid;
+    align-content: start;
+    justify-items: start;
+    gap: 4px;
+}
+
+.vista-reservacion .rc-room-label {
+    color: var(--rc-muted);
+    font-size: .62rem;
+    font-weight: 850;
+    letter-spacing: .08em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.vista-reservacion .rc-room-number strong {
+    color: var(--rc-brand);
+    font-family: var(--rc-serif);
+    max-width: 100%;
+    font-size: clamp(1.55rem, 4vw, 2.05rem);
+    font-weight: 700;
+    line-height: .94;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+.vista-reservacion .rc-room-meta {
+    grid-area: meta;
+    min-width: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.vista-reservacion .rc-room-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 7px;
+    min-width: 0;
+}
+
+.vista-reservacion .rc-room-chip {
+    max-width: 100%;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 23px;
+    padding: 4px 8px;
+    border: 1px solid var(--rc-line);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rc-accent) 4%, #FFFFFF);
+    color: var(--rc-muted);
+    font-size: .68rem;
+    font-weight: 850;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.vista-reservacion .rc-room-chip--available {
+    border-color: color-mix(in srgb, var(--rc-success) 28%, var(--rc-line));
+    background: color-mix(in srgb, var(--rc-success) 8%, #FFFFFF);
+    color: color-mix(in srgb, var(--rc-success) 72%, #123B2B);
+}
+
+.vista-reservacion .rc-room-chip--occupied {
+    border-color: color-mix(in srgb, var(--rc-danger) 48%, var(--rc-line));
+    background: color-mix(in srgb, var(--rc-danger) 16%, #FFFFFF);
+    color: color-mix(in srgb, var(--rc-danger) 88%, #5A1713);
+}
+
+.vista-reservacion .rc-room-chip--maintenance,
+.vista-reservacion .rc-room-chip--courtesy {
+    border-color: color-mix(in srgb, var(--rc-warning) 50%, var(--rc-line));
+    background: color-mix(in srgb, var(--rc-warning) 18%, #FFFFFF);
+    color: color-mix(in srgb, var(--rc-warning) 88%, #5C2C05);
+}
+
+.vista-reservacion .rc-room-chip--info {
+    border-color: color-mix(in srgb, var(--rc-info) 24%, var(--rc-line));
+    background: color-mix(in srgb, var(--rc-info) 7%, #FFFFFF);
+    color: color-mix(in srgb, var(--rc-info) 72%, var(--rc-brand));
+}
+
+.vista-reservacion .rc-room-floor,
+.vista-reservacion .rc-room-features {
+    color: var(--rc-muted);
+    font-size: .78rem;
+    font-weight: 650;
+    line-height: 1.35;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.vista-reservacion .rc-room-floor i,
+.vista-reservacion .rc-room-features i {
+    color: var(--rc-accent-dark);
+    margin-right: 5px;
+}
+
+.vista-reservacion .rc-room-price {
+    grid-area: price;
+    min-width: 104px;
+    max-width: 132px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.vista-reservacion .rc-room-price strong {
+    display: block;
+    color: var(--rc-brand);
+    font-size: 1.02rem;
+    font-weight: 900;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+}
+
+.vista-reservacion .rc-room-price span {
+    color: var(--rc-muted);
+    font-size: .68rem;
+    font-weight: 750;
+}
+
+.vista-reservacion .rc-room-price.is-muted strong {
+    color: color-mix(in srgb, var(--rc-muted) 76%, #FFFFFF);
+    text-decoration: line-through;
+}
+
+.vista-reservacion .rc-room-detail {
+    margin-top: 12px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.vista-reservacion .rc-room-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--rc-line-soft);
+}
+
+.vista-reservacion .rc-room-action-text {
+    color: var(--rc-muted);
+    font-size: .72rem;
+    font-weight: 800;
+}
+
+.vista-reservacion .rc-room-check {
+    flex: 0 0 auto;
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 999px !important;
+}
+
+.vista-reservacion .habitacion-card.selected .rc-room-number strong,
+.vista-reservacion .habitacion-card.selected .rc-room-price strong {
+    color: color-mix(in srgb, var(--rc-success) 76%, var(--rc-brand)) !important;
+}
+
+.vista-reservacion .habitacion-card.selected .rc-room-action-text {
+    color: color-mix(in srgb, var(--rc-success) 78%, var(--rc-brand));
+}
+
+@media (max-width: 560px) {
+    .vista-reservacion .rc-room-main {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "number"
+            "price"
+            "meta";
+        gap: 9px;
+    }
+
+    .vista-reservacion .rc-room-price {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        min-width: 0;
+        max-width: none;
+        padding-top: 8px;
+        border-top: 1px solid var(--rc-line-soft);
+        text-align: left;
+    }
+}
+
+@media (min-width: 1180px) and (max-width: 1360px) {
+    .vista-reservacion .rc-room-main {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "number"
+            "price"
+            "meta";
+    }
+
+    .vista-reservacion .rc-room-price {
+        min-width: 0;
+        max-width: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding-top: 8px;
+        border-top: 1px solid var(--rc-line-soft);
+        text-align: left;
+    }
+}
+
+.vista-reservacion .seccion-cortesias {
+    margin-top: 16px !important;
+    padding: 15px !important;
+    background: var(--rc-warning-soft) !important;
+}
+
+.vista-reservacion .titulo-cortesias {
+    color: color-mix(in srgb, var(--rc-warning) 72%, #5C2C05) !important;
+}
+
+.vista-reservacion .item-cortesia {
+    border: 1px solid color-mix(in srgb, var(--rc-warning) 22%, var(--rc-line)) !important;
+    border-radius: 13px !important;
+    background: #FFFFFF !important;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.vista-reservacion .item-cortesia.activa {
+    border-color: var(--rc-warning) !important;
+    background: color-mix(in srgb, var(--rc-warning) 8%, #FFFFFF) !important;
+}
+
+.vista-reservacion .total-box {
+    border: 1px solid var(--rc-accent-line) !important;
+    border-radius: 14px !important;
+    background: var(--rc-accent-soft) !important;
+}
+
+.vista-reservacion .resumen-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--rc-accent), #fff 34%) transparent;
+}
+
+.vista-reservacion .xl\:col-span-1 > .bg-white.sticky {
+    top: 14px !important;
+}
+
+.vista-reservacion .xl\:col-span-1 .border-t {
+    border-color: var(--rc-line-soft) !important;
+    background: transparent !important;
+}
+
+.resumen-flotante {
+    border: 1px solid var(--brand-accent, #BD9441) !important;
+    border-radius: 18px 18px 0 0 !important;
+    background: color-mix(in srgb, var(--brand-accent, #BD9441) 3%, #FFFFFF) !important;
+    box-shadow: 0 -18px 40px -24px rgba(15,23,42,.38) !important;
+}
+
+.resumen-flotante h4 {
+    color: var(--brand-primary, #1B2746) !important;
+}
+
+.vista-reservacion ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.vista-reservacion ::-webkit-scrollbar-track {
+    background: var(--rc-ivory);
+}
+
+.vista-reservacion ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--rc-accent), #fff 34%);
+    border-radius: 999px;
+}
+
+@media (min-width: 1440px) {
+    .vista-reservacion > div:first-of-type > .px-5,
+    .vista-reservacion > .px-5,
+    .vista-reservacion > .pt-4 {
+        width: min(100%, 1360px);
+    }
+
+    .vista-reservacion #formReservacion > .grid {
+        grid-template-columns: minmax(0, 1fr) 330px !important;
+        gap: 22px !important;
+    }
+
+    .vista-reservacion .card-animate > .p-5,
+    .vista-reservacion #formReservacion > .grid > .xl\:col-span-1 > .bg-white .p-4 {
+        padding: 19px !important;
+    }
+}
+
+@media (max-width: 1180px) {
+    .vista-reservacion > div:first-of-type > .px-5,
+    .vista-reservacion > .px-5,
+    .vista-reservacion > .pt-4 {
+        width: min(100%, 1100px);
+    }
+
+    .vista-reservacion #formReservacion > .grid {
+        grid-template-columns: minmax(0, 1fr) 284px !important;
+        gap: 16px !important;
+    }
+}
+
+@media (max-width: 1024px) {
+    .vista-reservacion #formReservacion > .grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .vista-reservacion #formReservacion > .grid > .xl\:col-span-1 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .vista-reservacion .xl\:col-span-1 > .bg-white.sticky,
+    .vista-reservacion .buscador-habitaciones {
+        position: static !important;
+    }
+}
+
+@media (max-width: 860px) {
+    .vista-reservacion > div:first-of-type .flex.items-center.justify-between.gap-3 {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+
+    .vista-reservacion .btn-back {
+        align-self: flex-start;
+    }
+
+    .vista-reservacion #formReservacion > .grid > .xl\:col-span-1 {
+        grid-template-columns: 1fr;
+    }
+
+    .vista-reservacion .room-stats-bar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 700px) {
+    .vista-reservacion > div:first-of-type > .px-5 {
+        padding: 18px 14px 0 !important;
+    }
+
+    .vista-reservacion > .px-5 {
+        padding: 16px 14px 116px !important;
+    }
+
+    .vista-reservacion > .pt-4 {
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+    }
+
+    .vista-reservacion > div:first-of-type .flex.items-center.gap-3 {
+        gap: 11px !important;
+    }
+
+    .vista-reservacion .card-animate > .p-5,
+    .vista-reservacion #formReservacion > .grid > .xl\:col-span-1 > .bg-white .p-4,
+    .vista-reservacion .info-card {
+        padding: 14px !important;
+    }
+
+    .vista-reservacion .panel-hd-guest,
+    .vista-reservacion .panel-hd-dates,
+    .vista-reservacion .panel-hd-rooms,
+    .vista-reservacion .panel-hd-notes,
+    .vista-reservacion .panel-hd-summary {
+        min-height: auto;
+        padding: 14px !important;
+    }
+
+    .vista-reservacion .lc-input,
+    .vista-reservacion .input-busqueda,
+    .vista-reservacion .select2-container--default .select2-selection--single {
+        font-size: 16px !important;
+    }
+
+    .vista-reservacion .btn-gold,
+    .vista-reservacion .btn-hour,
+    .vista-reservacion .btn-save,
+    .vista-reservacion .btn-cotizacion,
+    .vista-reservacion .btn-cancel {
+        min-height: 46px;
+    }
+}
+
+@media (max-width: 480px) {
+    .vista-reservacion > div:first-of-type > .px-5,
+    .vista-reservacion > .px-5,
+    .vista-reservacion > .pt-4 {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+
+    .vista-reservacion > div:first-of-type .flex.items-center.text-xs.mb-3 {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        white-space: nowrap;
+    }
+
+    .vista-reservacion > div:first-of-type .flex.items-center.gap-3 > div[style*="width:46px"] {
+        width: 42px !important;
+        height: 42px !important;
+        border-radius: 12px !important;
+    }
+
+    .vista-reservacion > div:first-of-type h1 {
+        font-size: 2rem !important;
+    }
+
+    .vista-reservacion > div:first-of-type h1 + p {
+        font-size: .84rem !important;
+    }
+
+    .vista-reservacion .panel-hd-guest h2 i,
+    .vista-reservacion .panel-hd-dates h2 i,
+    .vista-reservacion .panel-hd-rooms h2 i,
+    .vista-reservacion .panel-hd-notes h2 i,
+    .vista-reservacion .panel-hd-summary h3 i {
+        width: 31px;
+        height: 31px;
+        border-radius: 10px;
+    }
+
+    .vista-reservacion .res-guest-search-row {
+        flex-direction: column;
+    }
+
+    .vista-reservacion .btn-gold {
+        width: 100%;
+    }
+}
+
+@media (max-width: 360px) {
+    .vista-reservacion > div:first-of-type > .px-5,
+    .vista-reservacion > .px-5,
+    .vista-reservacion > .pt-4 {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+
+    .vista-reservacion > div:first-of-type .flex.items-center.gap-3 {
+        flex-direction: column;
+    }
+
+    .vista-reservacion .btn-back,
+    .vista-reservacion .btn-gold,
+    .vista-reservacion .btn-hour,
+    .vista-reservacion .btn-save,
+    .vista-reservacion .btn-cotizacion,
+    .vista-reservacion .btn-cancel {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vista-reservacion *,
+    .vista-reservacion *::before,
+    .vista-reservacion *::after {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+</style>
+
 <!-- ═══════════════════ NUEVA RESERVACIÓN ════════════════════ -->
 <div class="vista-reservacion">
 
@@ -507,7 +1592,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
                                         <label class="block text-sm font-bold mb-2" style="color:#4A6340;">
                                             Buscar Huésped <span class="text-red-500">*</span>
                                         </label>
-                                        <div class="flex gap-3">
+                                        <div class="flex gap-3 res-guest-search-row">
                                             <select name="huesped_id" id="huesped_id" class="flex-1" required>
                                                 <option value="">-- Buscar por nombre o teléfono --</option>
                                             </select>
@@ -777,19 +1862,23 @@ $(document).ready(function() {
     let habitacionesOcupadas = [];
     let busquedaActiva = '';
     const HUESPED_PRESELECCIONADO = <?= json_encode($huesped_preseleccionado ?? null, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const RESERVA_URL_PARAMS = new URLSearchParams(window.location.search);
+    const ES_RESERVACION_RAPIDA = !!(RESERVA_URL_PARAMS.get('habitacion_id') || RESERVA_URL_PARAMS.get('preseleccion'));
 
     // Boot
     $('.vista-reservacion').addClass('loaded');
+    if (ES_RESERVACION_RAPIDA) {
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
     inicializarReservacionRapida();
 
     function inicializarReservacionRapida() {
         const fechaEntrada = $('#fecha_entrada').val();
         const fechaSalida  = $('#fecha_salida').val();
-        const urlParams    = new URLSearchParams(window.location.search);
-        const esPresel     = urlParams.get('preseleccion');
-        const habitacionId = urlParams.get('habitacion_id');
+        const habitacionId = RESERVA_URL_PARAMS.get('habitacion_id');
 
-        if (fechaEntrada && fechaSalida && (esPresel || habitacionId)) {
+        if (fechaEntrada && fechaSalida && ES_RESERVACION_RAPIDA) {
             $('#contenedorHabitaciones').html(spinnerHtml('Preparando reservación rápida...'));
 
             setTimeout(function() {
@@ -805,7 +1894,6 @@ $(document).ready(function() {
                             const card = checkbox.closest('.habitacion-card');
                             if (card.length > 0) {
                                 setTimeout(function() {
-                                    card[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
                                     card.addClass('pulse-selection');
                                     if (!card.hasClass('selected')) card.addClass('selected');
 
@@ -881,6 +1969,9 @@ $(document).ready(function() {
             </div>
         `);
         verificarFormularioCompleto();
+        if (!ES_RESERVACION_RAPIDA) {
+            window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        }
     });
     <?php else: ?>
     verificarFormularioCompleto();
@@ -1095,34 +2186,40 @@ $(document).ready(function() {
             const enMant    = hab.en_mantenimiento || hab.estado === 'mantenimiento';
             const ocupada   = (hab.ocupada || false) && !enMant;
             const cortesia  = habitacionesCortesiaSeleccionadas.includes(hab.id.toString());
-            const jacBadge  = jacuzzi ? `<div class="absolute top-0 right-0 text-white px-3 py-1 rounded-bl-lg text-xs font-semibold z-10" style="background:linear-gradient(135deg,#2563EB,#3B82F6);"><i class="fas fa-hot-tub mr-1"></i>Jacuzzi</div>` : '';
-            const topPad    = jacuzzi || cortesia ? 'mt-6' : '';
+            const jacBadge  = jacuzzi ? `<span class="rc-room-chip rc-room-chip--info"><i class="fas fa-hot-tub"></i>Jacuzzi</span>` : '';
+            const precioBase = parseFloat(hab.precio_base).toLocaleString();
 
             if (enMant) {
                 html += `
-                    <div class="habitacion-card ocupada block relative">
-                        <div class="border-2 rounded-xl p-4 relative overflow-hidden" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);border-color:#F59E0B;">
-                            ${jacBadge}
-                            <div class="flex justify-between items-start mb-3 ${topPad}">
-                                <div>
-                                    <h5 class="font-bold text-lg text-gray-800 flex items-center gap-2">
-                                        <i class="fas fa-tools text-yellow-600"></i>Hab. ${hab.numero}
-                                    </h5>
-                                    <p class="text-sm text-gray-500"><i class="fas fa-layer-group mr-1"></i>${piso}</p>
+                    <div class="habitacion-card ocupada en-mantenimiento block relative">
+                        <div class="rc-room-card rc-room-card--maintenance relative overflow-hidden">
+                            <div class="rc-room-main">
+                                <div class="rc-room-number">
+                                    <span class="rc-room-label">Habitación</span>
+                                    <strong>${hab.numero}</strong>
                                 </div>
-                                <div class="text-right">
-                                    <p class="font-bold text-xl text-gray-400 line-through">$${parseFloat(hab.precio_base).toLocaleString()}</p>
-                                    <p class="text-xs font-bold text-yellow-700"><i class="fas fa-tools mr-1"></i>${hab.info_mantenimiento?.programado ? 'MANT. PROGRAMADO' : 'MANTENIMIENTO'}</p>
+                                <div class="rc-room-meta">
+                                    <div class="rc-room-chips">
+                                        <span class="rc-room-chip rc-room-chip--maintenance">
+                                            <i class="fas fa-tools"></i>${hab.info_mantenimiento?.programado ? 'Programado' : 'Mantenimiento'}
+                                        </span>
+                                        ${jacBadge}
+                                    </div>
+                                    <p class="rc-room-floor"><i class="fas fa-layer-group"></i>${piso}</p>
+                                </div>
+                                <div class="rc-room-price is-muted">
+                                    <strong>$${precioBase}</strong>
+                                    <span>No disponible</span>
                                 </div>
                             </div>
-                            <div style="background:white;border:1px solid #F59E0B;border-radius:6px;padding:8px;font-size:11px;">
+                            <div class="rc-room-detail info-ocupacion">
                                 ${hab.info_mantenimiento ? `
-                                    <div style="font-weight:600;color:#92400E;margin-bottom:2px;">
+                                    <div class="huesped-nombre">
                                         <i class="fas fa-calendar-alt mr-1"></i>${hab.info_mantenimiento.programado ? 'Programado' : 'En proceso'}
                                     </div>
-                                    ${hab.info_mantenimiento.fecha_programada ? `<div style="color:#6B7280;font-size:10px;"><i class="fas fa-clock mr-1"></i>Desde: ${hab.info_mantenimiento.fecha_programada}${hab.info_mantenimiento.fecha_programada_fin ? ' hasta: '+hab.info_mantenimiento.fecha_programada_fin : ''}</div>` : ''}
-                                    ${hab.info_mantenimiento.motivo ? `<div style="color:#6B7280;font-size:10px;margin-top:2px;"><i class="fas fa-wrench mr-1"></i>${hab.info_mantenimiento.motivo}</div>` : ''}
-                                ` : `<div style="font-weight:600;color:#92400E;"><i class="fas fa-exclamation-triangle mr-1"></i>No disponible</div>`}
+                                    ${hab.info_mantenimiento.fecha_programada ? `<div class="fechas"><i class="fas fa-clock mr-1"></i>Desde: ${hab.info_mantenimiento.fecha_programada}${hab.info_mantenimiento.fecha_programada_fin ? ' hasta: '+hab.info_mantenimiento.fecha_programada_fin : ''}</div>` : ''}
+                                    ${hab.info_mantenimiento.motivo ? `<div class="fechas mt-1"><i class="fas fa-wrench mr-1"></i>${hab.info_mantenimiento.motivo}</div>` : ''}
+                                ` : `<div class="huesped-nombre"><i class="fas fa-exclamation-triangle mr-1"></i>No disponible</div>`}
                             </div>
                         </div>
                     </div>
@@ -1130,22 +2227,26 @@ $(document).ready(function() {
             } else if (ocupada) {
                 html += `
                     <div class="habitacion-card ocupada block relative">
-                        <div class="border-2 rounded-xl p-4 relative overflow-hidden">
-                            ${jacBadge}
-                            <div class="flex justify-between items-start mb-3 ${topPad}">
-                                <div>
-                                    <h5 class="font-bold text-lg text-gray-800 flex items-center gap-2">
-                                        <i class="fas fa-door-closed text-red-500"></i>Hab. ${hab.numero}
-                                    </h5>
-                                    <p class="text-sm text-gray-500"><i class="fas fa-layer-group mr-1"></i>${piso}</p>
+                        <div class="rc-room-card rc-room-card--occupied relative overflow-hidden">
+                            <div class="rc-room-main">
+                                <div class="rc-room-number">
+                                    <span class="rc-room-label">Habitación</span>
+                                    <strong>${hab.numero}</strong>
                                 </div>
-                                <div class="text-right">
-                                    <p class="font-bold text-xl text-gray-400 line-through">$${parseFloat(hab.precio_base).toLocaleString()}</p>
-                                    <p class="text-xs font-bold text-red-600">OCUPADA</p>
+                                <div class="rc-room-meta">
+                                    <div class="rc-room-chips">
+                                        <span class="rc-room-chip rc-room-chip--occupied"><i class="fas fa-door-closed"></i>Ocupada</span>
+                                        ${jacBadge}
+                                    </div>
+                                    <p class="rc-room-floor"><i class="fas fa-layer-group"></i>${piso}</p>
+                                </div>
+                                <div class="rc-room-price is-muted">
+                                    <strong>$${precioBase}</strong>
+                                    <span>No disponible</span>
                                 </div>
                             </div>
                             ${hab.info_ocupacion ? `
-                                <div class="info-ocupacion">
+                                <div class="rc-room-detail info-ocupacion">
                                     <div class="huesped-nombre"><i class="fas fa-user mr-1"></i>${hab.info_ocupacion.huesped_nombre || 'Huésped'}</div>
                                     <div class="fechas">${hab.info_ocupacion.estado === 'checked_in' ? '<span style="color:#16a34a;"><i class="fas fa-check-circle mr-1"></i>Check-in realizado</span>' : '<span style="color:#2563eb;"><i class="fas fa-calendar-check mr-1"></i>Reservada</span>'}</div>
                                     ${hab.info_ocupacion.noches_ocupadas && hab.info_ocupacion.fechas_ocupadas ? `
@@ -1175,42 +2276,35 @@ $(document).ready(function() {
 
                         ${cortesia ? `<div class="badge-cortesia"><i class="fas fa-gift"></i>CORTESÍA</div>` : ''}
 
-                        <div class="border-2 border-gray-200 rounded-xl p-4 relative overflow-hidden bg-white transition-all duration-300">
-                            ${jacBadge}
-
-                            <div class="flex justify-between items-start mb-3 ${topPad}">
-                                <div>
-                                    <h5 class="font-bold text-lg text-gray-800 flex items-center gap-2">
-                                        <i class="fas fa-door-open" style="color:var(--lc-green);"></i>
-                                        Hab. ${hab.numero}
-                                    </h5>
-                                    <p class="text-sm text-gray-500"><i class="fas fa-layer-group mr-1"></i>${piso}</p>
+                        <div class="rc-room-card relative overflow-hidden transition-all duration-300">
+                            <div class="rc-room-main">
+                                <div class="rc-room-number">
+                                    <span class="rc-room-label">Habitación</span>
+                                    <strong>${hab.numero}</strong>
                                 </div>
-                                <div class="text-right">
-                                    <p class="font-bold text-xl ${cortesia ? 'line-through text-amber-600' : ''}" style="${cortesia ? '' : 'color:var(--lc-green);'}">$${parseFloat(hab.precio_base).toLocaleString()}</p>
-                                    <p class="text-xs text-gray-400">${cortesia ? 'GRATIS' : 'por noche'}</p>
+                                <div class="rc-room-meta">
+                                    <div class="rc-room-chips">
+                                        <span class="rc-room-chip ${cortesia ? 'rc-room-chip--courtesy' : 'rc-room-chip--available'}">
+                                            <i class="fas ${cortesia ? 'fa-gift' : 'fa-door-open'}"></i>${cortesia ? 'Cortesía' : 'Disponible'}
+                                        </span>
+                                        ${jacBadge}
+                                    </div>
+                                    <p class="rc-room-floor"><i class="fas fa-layer-group"></i>${piso}</p>
+                                </div>
+                                <div class="rc-room-price ${cortesia ? 'is-muted' : ''}">
+                                    <strong>$${precioBase}</strong>
+                                    <span>${cortesia ? 'gratis' : 'por noche'}</span>
                                 </div>
                             </div>
 
                             ${hab.caracteristicas ? `
-                                <div class="mt-3 pt-3 border-t border-gray-100">
-                                    <p class="text-xs text-gray-500 italic flex items-center gap-1">
-                                        <i class="fas fa-star" style="color:var(--lc-gold);"></i>
-                                        ${hab.caracteristicas}
-                                    </p>
-                                </div>
+                                <p class="rc-room-features"><i class="fas fa-star"></i>${hab.caracteristicas}</p>
                             ` : ''}
 
-                            <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-                                <span class="text-xs text-gray-400 font-medium flex items-center gap-1.5">
-                                    <i class="fas fa-circle text-xs ${cortesia ? 'text-amber-500' : ''}" style="${cortesia ? '' : 'color:var(--lc-green);'}"></i>
-                                    ${cortesia ? 'Cortesía' : 'Disponible'}
-                                </span>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs text-gray-300">Toque para seleccionar</span>
-                                    <div class="w-4 h-4 border-2 border-gray-300 rounded-full transition-all duration-300 flex items-center justify-center">
-                                        <i class="fas fa-check text-white text-xs opacity-0 transition-opacity duration-300"></i>
-                                    </div>
+                            <div class="rc-room-footer">
+                                <span class="rc-room-action-text">${checked ? 'Seleccionada' : 'Toca para seleccionar'}</span>
+                                <div class="rc-room-check w-4 h-4 border-2 border-gray-300 rounded-full transition-all duration-300 flex items-center justify-center">
+                                    <i class="fas fa-check text-white text-xs opacity-0 transition-opacity duration-300"></i>
                                 </div>
                             </div>
                         </div>
@@ -1232,6 +2326,7 @@ $(document).ready(function() {
                 card.addClass('selected pulse-selection');
                 setTimeout(() => card.removeClass('pulse-selection'), 1000);
                 card.find('.w-4.h-4').addClass('bg-green-600 border-green-600');
+                card.find('.rc-room-action-text').text('Seleccionada');
                 indicator.removeClass('opacity-0');
                 contador.addClass('animate');
                 setTimeout(() => contador.removeClass('animate'), 300);
@@ -1240,6 +2335,7 @@ $(document).ready(function() {
                 card.removeClass('selected pulse-selection es-cortesia');
                 card.find('.badge-cortesia').remove();
                 card.find('.w-4.h-4').removeClass('bg-green-600 border-green-600');
+                card.find('.rc-room-action-text').text('Toca para seleccionar');
                 indicator.addClass('opacity-0');
 
                 const habId = $(this).val();
