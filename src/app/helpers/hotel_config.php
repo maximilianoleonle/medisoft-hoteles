@@ -6,6 +6,82 @@
  * Estan listos para integrarse gradualmente cuando exista TenantContext activo.
  */
 
+if (!function_exists('hotel_setting')) {
+    function hotel_setting($key, $default = null)
+    {
+        try {
+            if (class_exists('ConfiguracionHotelRegistry')) {
+                if (func_num_args() < 2) {
+                    return ConfiguracionHotelRegistry::get((string) $key);
+                }
+
+                return ConfiguracionHotelRegistry::get((string) $key, $default);
+            }
+        } catch (Throwable $e) {
+            error_log('Error en helper hotel_setting: ' . $e->getMessage());
+        }
+
+        return $default;
+    }
+}
+
+if (!function_exists('hotel_setting_bool')) {
+    function hotel_setting_bool($key, $default = false)
+    {
+        try {
+            if (class_exists('ConfiguracionHotelRegistry')) {
+                if (func_num_args() < 2) {
+                    return ConfiguracionHotelRegistry::getBool((string) $key);
+                }
+
+                return ConfiguracionHotelRegistry::getBool((string) $key, (bool) $default);
+            }
+        } catch (Throwable $e) {
+            error_log('Error en helper hotel_setting_bool: ' . $e->getMessage());
+        }
+
+        return (bool) $default;
+    }
+}
+
+if (!function_exists('hotel_setting_int')) {
+    function hotel_setting_int($key, $default = 0)
+    {
+        try {
+            if (class_exists('ConfiguracionHotelRegistry')) {
+                if (func_num_args() < 2) {
+                    return ConfiguracionHotelRegistry::getInt((string) $key);
+                }
+
+                return ConfiguracionHotelRegistry::getInt((string) $key, (int) $default);
+            }
+        } catch (Throwable $e) {
+            error_log('Error en helper hotel_setting_int: ' . $e->getMessage());
+        }
+
+        return (int) $default;
+    }
+}
+
+if (!function_exists('hotel_setting_json')) {
+    function hotel_setting_json($key, $default = [])
+    {
+        try {
+            if (class_exists('ConfiguracionHotelRegistry')) {
+                if (func_num_args() < 2) {
+                    return ConfiguracionHotelRegistry::getJson((string) $key);
+                }
+
+                return ConfiguracionHotelRegistry::getJson((string) $key, is_array($default) ? $default : []);
+            }
+        } catch (Throwable $e) {
+            error_log('Error en helper hotel_setting_json: ' . $e->getMessage());
+        }
+
+        return is_array($default) ? $default : [];
+    }
+}
+
 if (!function_exists('hotel_config_get')) {
     function hotel_config_get($clave, $default = null, $hotelId = null)
     {
