@@ -1,282 +1,1210 @@
-<!-- Reemplazar la sección de Vehículo en editar.php con esta nueva sección -->
-<!-- Editar Huésped -->
-<div class="min-h-screen bg-gradient-to-br from-hotel-cream to-white p-6">
-    <!-- Header -->
-    <div class="max-w-4xl mx-auto mb-8">
-        <div class="flex items-center text-sm text-gray-600 mb-4">
-            <a href="<?= url('huespedes') ?>" class="hover:text-hotel-brown">
-                <i class="fas fa-users mr-1"></i>Huéspedes
+<?php
+/**
+ * Vista para editar huesped.
+ * Redisenada como expediente editable sin cambiar contrato del formulario.
+ */
+
+$huesped = $huesped ?? [];
+$estados = $estados ?? [];
+$huesped_id = (int)($huesped['id'] ?? 0);
+$nombre_huesped = trim((string)($huesped['nombre_completo'] ?? 'Huesped'));
+$telefono_huesped = trim((string)($huesped['telefono'] ?? ''));
+$email_huesped = trim((string)($huesped['email'] ?? ''));
+$procedencia_estado = trim((string)($huesped['procedencia_estado'] ?? ''));
+$procedencia_ciudad = trim((string)($huesped['procedencia_ciudad'] ?? ''));
+$notas_huesped = (string)($huesped['notas'] ?? '');
+$inicial_huesped = function_exists('mb_substr') && function_exists('mb_strtoupper')
+    ? mb_strtoupper(mb_substr($nombre_huesped !== '' ? $nombre_huesped : 'H', 0, 1, 'UTF-8'), 'UTF-8')
+    : strtoupper(substr($nombre_huesped !== '' ? $nombre_huesped : 'H', 0, 1));
+$procedencia_label = $procedencia_estado !== '' ? $procedencia_estado : 'Sin procedencia';
+if ($procedencia_ciudad !== '') {
+    $procedencia_label .= ' - ' . $procedencia_ciudad;
+}
+$contacto_label = $telefono_huesped !== '' || $email_huesped !== '' ? 'Contacto disponible' : 'Contacto pendiente';
+$fecha_registro = !empty($huesped['created_at']) ? format_date($huesped['created_at']) : 'Sin registro';
+$fecha_actualizacion = !empty($huesped['updated_at']) ? format_datetime($huesped['updated_at']) : 'Sin actualizacion';
+
+if (!function_exists('guest_edit_safe')) {
+    function guest_edit_safe($value, $fallback = '-') {
+        $text = trim((string)($value ?? ''));
+        return htmlspecialchars($text !== '' ? $text : $fallback, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+$vehiculos = [];
+$estacionamientos = [];
+if (class_exists('HuespedVehiculo')) {
+    $vehiculoModel = new HuespedVehiculo();
+    $vehiculos = $vehiculoModel->porHuesped($huesped_id);
+    $estacionamientos = HuespedVehiculo::getEstacionamientos();
+}
+$vehiculos_count = count($vehiculos);
+?>
+
+<style id="guest-edit-redesign">
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+.guest-edit-page {
+    --ge-brand: var(--brand-primary, #1B2746);
+    --ge-brand-dark: var(--brand-secondary, #0F172A);
+    --ge-accent: var(--brand-accent, #BD9441);
+    --ge-accent-deep: color-mix(in srgb, var(--ge-accent) 72%, #392D16);
+    --ge-bg: color-mix(in srgb, var(--ge-accent) 8%, #F8F3EA);
+    --ge-bg-soft: color-mix(in srgb, var(--ge-accent) 4%, #FFFCF6);
+    --ge-panel: color-mix(in srgb, var(--ge-accent) 2%, #FFFDF8);
+    --ge-panel-warm: color-mix(in srgb, var(--ge-accent) 7%, #FFFDF8);
+    --ge-line: color-mix(in srgb, var(--ge-brand) 14%, #E9DDCB);
+    --ge-line-strong: color-mix(in srgb, var(--ge-accent) 36%, #D8C4A4);
+    --ge-muted: color-mix(in srgb, var(--ge-brand-dark) 50%, #94A3B8);
+    --ge-text: #182033;
+    --ge-success: #157A52;
+    --ge-danger: #B9463D;
+    --ge-info: #2E6EA8;
+    --ge-serif: 'Cormorant Garamond', Georgia, serif;
+    --ge-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 90% 4%, color-mix(in srgb, var(--ge-accent) 22%, transparent), transparent 30rem),
+        linear-gradient(90deg, color-mix(in srgb, var(--ge-brand) 5%, transparent) 0 1px, transparent 1px 34px),
+        linear-gradient(180deg, var(--ge-bg-soft), var(--ge-bg) 58%, #F4EBDC);
+    color: var(--ge-text);
+    font-family: var(--ge-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+.guest-edit-page *,
+.guest-edit-page *::before,
+.guest-edit-page *::after {
+    box-sizing: border-box;
+}
+
+.guest-edit-page :where(a, button, input, textarea, select, label, span, p) {
+    font-family: var(--ge-sans);
+}
+
+.ge-shell {
+    width: min(1460px, calc(100% - 30px));
+    margin: 0 auto;
+    padding: 26px 0 42px;
+}
+
+.ge-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 14px;
+    color: var(--ge-muted);
+    font-size: .8rem;
+    font-weight: 800;
+}
+
+.ge-breadcrumb a {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--ge-brand);
+    transition: color .18s ease, transform .18s ease;
+}
+
+.ge-breadcrumb a:hover {
+    color: var(--ge-accent-deep);
+    transform: translateY(-1px);
+}
+
+.ge-hero {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 22px;
+    align-items: stretch;
+    margin-bottom: 18px;
+    border: 1px solid color-mix(in srgb, var(--ge-accent) 28%, transparent);
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--ge-accent) 24%, transparent), transparent 18rem),
+        linear-gradient(135deg, rgba(255,253,248,.98), rgba(248,240,226,.92));
+    box-shadow: 0 28px 74px -58px rgba(15, 23, 42, .72);
+    padding: clamp(20px, 3vw, 32px);
+}
+
+.ge-hero::after {
+    content: "";
+    position: absolute;
+    inset: auto 26px 0 auto;
+    width: min(260px, 42vw);
+    height: 3px;
+    border-radius: 999px 999px 0 0;
+    background: linear-gradient(90deg, transparent, var(--ge-accent), var(--ge-brand));
+    opacity: .72;
+}
+
+.ge-identity {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 18px;
+    align-items: center;
+    min-width: 0;
+}
+
+.ge-avatar {
+    width: clamp(72px, 9vw, 112px);
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    border-radius: 26px;
+    background:
+        linear-gradient(145deg, var(--ge-brand), color-mix(in srgb, var(--ge-brand) 76%, #07111F));
+    color: #FFFDF8;
+    font-family: var(--ge-serif);
+    font-size: clamp(2.4rem, 5vw, 4.5rem);
+    font-weight: 700;
+    box-shadow: 0 22px 46px -30px rgba(15, 23, 42, .82);
+}
+
+.ge-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    color: color-mix(in srgb, var(--ge-accent) 78%, var(--ge-brand));
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.ge-title {
+    margin: 0;
+    color: var(--ge-brand);
+    font-family: var(--ge-serif);
+    font-size: clamp(2.2rem, 5vw, 4.6rem);
+    line-height: .9;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-wrap: balance;
+}
+
+.ge-subtitle {
+    max-width: 70ch;
+    margin: 10px 0 0;
+    color: var(--ge-muted);
+    font-size: .94rem;
+    font-weight: 650;
+    line-height: 1.58;
+}
+
+.ge-hero-actions {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+}
+
+.ge-btn,
+.ge-link-btn {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    border-radius: 14px;
+    padding: 10px 14px;
+    font-size: .82rem;
+    font-weight: 900;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.ge-btn:active,
+.ge-link-btn:active {
+    transform: translateY(1px) scale(.99);
+}
+
+.ge-btn:focus-visible,
+.ge-link-btn:focus-visible,
+.ge-control:focus-visible,
+.ge-vehicle-link:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--ge-accent) 42%, transparent);
+    outline-offset: 2px;
+}
+
+.ge-link-btn {
+    border: 1px solid var(--ge-line);
+    background: rgba(255,253,248,.82);
+    color: var(--ge-brand);
+}
+
+.ge-link-btn:hover {
+    border-color: var(--ge-line-strong);
+    background: var(--ge-panel);
+    box-shadow: 0 16px 36px -28px rgba(15, 23, 42, .58);
+}
+
+.ge-btn-primary {
+    border: 1px solid color-mix(in srgb, var(--ge-brand) 78%, #000000);
+    background: linear-gradient(145deg, var(--ge-brand), var(--ge-brand-dark));
+    color: #FFFDF8;
+    box-shadow: 0 18px 34px -24px color-mix(in srgb, var(--ge-brand) 72%, transparent);
+}
+
+.ge-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 20px 42px -24px color-mix(in srgb, var(--ge-brand) 76%, transparent);
+}
+
+.ge-btn-secondary {
+    border: 1px solid var(--ge-line);
+    background: var(--ge-panel);
+    color: var(--ge-brand);
+}
+
+.ge-btn-secondary:hover {
+    border-color: var(--ge-line-strong);
+    background: var(--ge-panel-warm);
+}
+
+.ge-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(290px, 350px);
+    gap: 18px;
+    align-items: start;
+}
+
+.ge-main,
+.ge-side {
+    min-width: 0;
+}
+
+.ge-main {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.ge-side {
+    position: sticky;
+    top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.ge-panel,
+.ge-side-card,
+.ge-actions {
+    border: 1px solid var(--ge-line);
+    border-radius: 22px;
+    background: var(--ge-panel);
+    box-shadow:
+        0 1px 2px color-mix(in srgb, var(--ge-brand-dark) 4%, transparent),
+        0 18px 42px -34px rgba(15, 23, 42, .56);
+}
+
+.ge-panel {
+    overflow: hidden;
+}
+
+.ge-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 17px 18px;
+    border-bottom: 1px solid var(--ge-line);
+    background:
+        linear-gradient(90deg, var(--ge-panel-warm), var(--ge-panel));
+}
+
+.ge-panel-title {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    min-width: 0;
+}
+
+.ge-icon-box {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    border: 1px solid var(--ge-line);
+    background: color-mix(in srgb, var(--ge-accent) 12%, #FFFDF8);
+    color: var(--ge-accent-deep);
+}
+
+.ge-panel h2,
+.ge-side-card h3 {
+    margin: 0;
+    color: var(--ge-brand);
+    font-size: 1rem;
+    font-weight: 900;
+    line-height: 1.2;
+}
+
+.ge-panel p,
+.ge-side-card p {
+    margin: 5px 0 0;
+    color: var(--ge-muted);
+    font-size: .79rem;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.ge-panel-body {
+    padding: 18px;
+}
+
+.ge-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.ge-field {
+    min-width: 0;
+}
+
+.ge-field-full {
+    grid-column: 1 / -1;
+}
+
+.ge-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 7px;
+    color: color-mix(in srgb, var(--ge-brand) 88%, #27364D);
+    font-size: .76rem;
+    font-weight: 900;
+}
+
+.ge-required {
+    color: var(--ge-danger);
+}
+
+.ge-input-wrap {
+    position: relative;
+}
+
+.ge-input-wrap i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: color-mix(in srgb, var(--ge-brand) 42%, #94A3B8);
+    pointer-events: none;
+}
+
+.ge-control {
+    width: 100%;
+    min-height: 46px;
+    border: 1px solid var(--ge-line);
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--ge-accent) 2%, #FFFEFB);
+    color: var(--ge-text);
+    padding: 11px 13px;
+    font-size: .9rem;
+    font-weight: 700;
+    line-height: 1.4;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease, transform .18s ease;
+}
+
+.ge-control.has-icon {
+    padding-left: 42px;
+}
+
+.ge-control:hover {
+    border-color: var(--ge-line-strong);
+}
+
+.ge-control:focus {
+    border-color: color-mix(in srgb, var(--ge-accent) 72%, var(--ge-brand));
+    background: #FFFDF8;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--ge-accent) 17%, transparent);
+}
+
+.ge-control::placeholder {
+    color: color-mix(in srgb, var(--ge-muted) 65%, #CBD5E1);
+    font-weight: 650;
+}
+
+textarea.ge-control {
+    min-height: 126px;
+    resize: vertical;
+}
+
+.ge-context-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    padding: 13px 14px;
+    border-radius: 17px;
+    border: 1px solid color-mix(in srgb, var(--ge-info) 22%, var(--ge-line));
+    background: color-mix(in srgb, var(--ge-info) 7%, var(--ge-panel));
+    color: var(--ge-brand);
+}
+
+.ge-context-note i {
+    color: var(--ge-info);
+    margin-top: 2px;
+}
+
+.ge-context-note strong {
+    display: block;
+    color: var(--ge-brand);
+    font-size: .84rem;
+    font-weight: 900;
+}
+
+.ge-context-note span {
+    display: block;
+    margin-top: 2px;
+    color: var(--ge-muted);
+    font-size: .78rem;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.ge-vehicle-list {
+    display: grid;
+    gap: 11px;
+    margin-top: 14px;
+}
+
+.ge-vehicle-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 13px;
+    border: 1px solid var(--ge-line);
+    border-radius: 17px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--ge-accent) 5%, #FFFDF8), color-mix(in srgb, var(--ge-brand) 3%, #FFFDF8));
+}
+
+.ge-vehicle-main {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+}
+
+.ge-vehicle-icon {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--ge-brand) 9%, #FFFDF8);
+    color: var(--ge-brand);
+}
+
+.ge-vehicle-card strong {
+    display: block;
+    color: var(--ge-brand);
+    font-size: .92rem;
+    font-weight: 900;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ge-vehicle-card span {
+    display: block;
+    margin-top: 2px;
+    color: var(--ge-muted);
+    font-size: .76rem;
+    font-weight: 750;
+}
+
+.ge-parking-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ge-accent) 13%, #FFFDF8);
+    color: var(--ge-accent-deep);
+    font-size: .72rem;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.ge-empty {
+    display: grid;
+    place-items: center;
+    gap: 8px;
+    padding: 24px 14px;
+    border: 1px dashed var(--ge-line-strong);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--ge-accent) 5%, transparent);
+    text-align: center;
+    color: var(--ge-muted);
+}
+
+.ge-empty i {
+    color: color-mix(in srgb, var(--ge-accent) 70%, var(--ge-brand));
+    font-size: 1.8rem;
+}
+
+.ge-empty strong {
+    color: var(--ge-brand);
+    font-size: .96rem;
+    font-weight: 900;
+}
+
+.ge-vehicle-link {
+    width: 100%;
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 10px 12px;
+    border: 1px solid var(--ge-line);
+    border-radius: 15px;
+    background: var(--ge-panel);
+    color: var(--ge-brand);
+    font-size: .82rem;
+    font-weight: 900;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.ge-vehicle-link:hover {
+    transform: translateY(-1px);
+    border-color: var(--ge-line-strong);
+    background: var(--ge-panel-warm);
+}
+
+.ge-side-card {
+    padding: 16px;
+}
+
+.ge-preview {
+    position: relative;
+    overflow: hidden;
+    padding: 18px;
+    border-color: color-mix(in srgb, var(--ge-accent) 32%, var(--ge-line));
+    background:
+        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--ge-accent) 20%, transparent), transparent 15rem),
+        linear-gradient(145deg, var(--ge-brand), var(--ge-brand-dark));
+    color: #FFFDF8;
+}
+
+.ge-preview h3,
+.ge-preview p {
+    color: #FFFDF8;
+}
+
+.ge-preview p {
+    opacity: .74;
+}
+
+.ge-preview-avatar {
+    width: 56px;
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    margin-bottom: 16px;
+    border: 1px solid rgba(255,253,248,.22);
+    border-radius: 18px;
+    background: rgba(255,253,248,.12);
+    font-family: var(--ge-serif);
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.ge-preview-name {
+    margin: 0;
+    color: #FFFDF8;
+    font-family: var(--ge-serif);
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    line-height: .96;
+    font-weight: 700;
+    text-wrap: balance;
+}
+
+.ge-preview-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.ge-preview-tags span,
+.ge-meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 30px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 900;
+}
+
+.ge-preview-tags span {
+    background: rgba(255,253,248,.12);
+    color: #FFFDF8;
+}
+
+.ge-meta-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 13px;
+}
+
+.ge-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 0;
+    border-top: 1px solid var(--ge-line);
+}
+
+.ge-meta-row:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.ge-meta-row span {
+    color: var(--ge-muted);
+    font-size: .76rem;
+    font-weight: 800;
+}
+
+.ge-meta-row strong {
+    color: var(--ge-brand);
+    font-size: .8rem;
+    font-weight: 950;
+    text-align: right;
+}
+
+.ge-tips {
+    display: grid;
+    gap: 10px;
+    margin-top: 13px;
+}
+
+.ge-tips span {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    color: var(--ge-muted);
+    font-size: .78rem;
+    font-weight: 750;
+    line-height: 1.42;
+}
+
+.ge-tips i {
+    color: var(--ge-success);
+    margin-top: 2px;
+}
+
+.ge-actions {
+    position: sticky;
+    bottom: 12px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 13px;
+    background: color-mix(in srgb, var(--ge-panel) 92%, transparent);
+    backdrop-filter: blur(12px);
+}
+
+.ge-actions-copy {
+    min-width: 0;
+}
+
+.ge-actions-copy strong {
+    display: block;
+    color: var(--ge-brand);
+    font-size: .88rem;
+    font-weight: 950;
+}
+
+.ge-actions-copy span {
+    display: block;
+    margin-top: 2px;
+    color: var(--ge-muted);
+    font-size: .76rem;
+    font-weight: 750;
+}
+
+.ge-actions-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex: 0 0 auto;
+}
+
+@media (max-width: 1100px) {
+    .ge-hero,
+    .ge-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .ge-side {
+        position: static;
+        order: -1;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ge-preview {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 720px) {
+    .ge-shell {
+        width: min(100% - 22px, 1460px);
+        padding: 18px 0 30px;
+    }
+
+    .ge-hero,
+    .ge-panel,
+    .ge-side-card,
+    .ge-actions {
+        border-radius: 20px;
+    }
+
+    .ge-hero {
+        grid-template-columns: 1fr;
+        padding: 18px;
+    }
+
+    .ge-identity {
+        grid-template-columns: 1fr;
+    }
+
+    .ge-avatar {
+        width: 72px;
+        border-radius: 21px;
+    }
+
+    .ge-title {
+        font-size: clamp(2.05rem, 12vw, 3.3rem);
+    }
+
+    .ge-hero-actions,
+    .ge-actions,
+    .ge-actions-buttons {
+        width: 100%;
+    }
+
+    .ge-hero-actions,
+    .ge-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .ge-grid,
+    .ge-side {
+        grid-template-columns: 1fr;
+    }
+
+    .ge-panel-head,
+    .ge-panel-body {
+        padding: 15px;
+    }
+
+    .ge-vehicle-card {
+        grid-template-columns: 1fr;
+    }
+
+    .ge-parking-badge {
+        justify-self: start;
+    }
+
+    .ge-actions-buttons {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .ge-btn,
+    .ge-link-btn {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .guest-edit-page *,
+    .guest-edit-page *::before,
+    .guest-edit-page *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+</style>
+
+<div class="guest-edit-page">
+    <div class="ge-shell">
+        <nav class="ge-breadcrumb" aria-label="Ruta de navegacion">
+            <a href="<?= url('huespedes') ?>">
+                <i class="fas fa-users"></i>
+                Hu&eacute;spedes
             </a>
-            <i class="fas fa-chevron-right mx-2 text-xs"></i>
-            <a href="<?= url('huespedes/' . $huesped['id']) ?>" class="hover:text-hotel-brown">
-                <?= htmlspecialchars($huesped['nombre_completo']) ?>
+            <i class="fas fa-chevron-right"></i>
+            <a href="<?= url('huespedes/' . $huesped_id) ?>">
+                <?= guest_edit_safe($nombre_huesped) ?>
             </a>
-            <i class="fas fa-chevron-right mx-2 text-xs"></i>
+            <i class="fas fa-chevron-right"></i>
             <span>Editar</span>
-        </div>
-        
-        <div class="bg-white rounded-2xl shadow-xl p-8 border-l-8 border-hotel-gold">
-            <div class="flex items-center justify-between">
+        </nav>
+
+        <header class="ge-hero">
+            <div class="ge-identity">
+                <div class="ge-avatar" id="guestEditAvatar" aria-hidden="true"><?= guest_edit_safe($inicial_huesped, 'H') ?></div>
                 <div>
-                    <h1 class="text-4xl font-bold text-hotel-brown font-playfair mb-2">
-                        Editar Huésped
-                    </h1>
-                    <p class="text-gray-600">Actualice la información de <?= htmlspecialchars($huesped['nombre_completo']) ?></p>
-                </div>
-                <div class="hidden lg:block">
-                    <div class="bg-hotel-cream p-6 rounded-full">
-                        <i class="fas fa-user-edit text-5xl text-hotel-brown"></i>
+                    <div class="ge-kicker">
+                        <i class="fas fa-pen-to-square"></i>
+                        Expediente editable
                     </div>
+                    <h1 class="ge-title">Editar hu&eacute;sped</h1>
+                    <p class="ge-subtitle">
+                        Actualiza los datos principales de <?= guest_edit_safe($nombre_huesped) ?> sin salir del flujo operativo del hotel.
+                    </p>
                 </div>
             </div>
-        </div>
-    </div>
-    
-    <!-- Formulario -->
-    <div class="max-w-4xl mx-auto">
-        <form method="POST" action="<?= url('huespedes/' . $huesped['id'] . '/update') ?>" class="space-y-6">
-            <?= csrf_field() ?>
-            
-            <!-- Información Personal -->
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-                <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-6">
-                    <h2 class="text-xl font-semibold text-white flex items-center">
-                        <i class="fas fa-user mr-3"></i>
-                        Información Personal
-                    </h2>
-                </div>
-                
-                <div class="p-6 space-y-4">
-                    <!-- Nombre Completo -->
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Nombre Completo <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" 
-                               name="nombre_completo" 
-                               value="<?= htmlspecialchars($huesped['nombre_completo']) ?>"
-                               required
-                               placeholder="Ingrese el nombre completo del huésped"
-                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Teléfono -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                Teléfono
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                                    <i class="fas fa-phone text-gray-400"></i>
-                                </div>
-                                <input type="tel" 
-                                       name="telefono" 
-                                       value="<?= htmlspecialchars($huesped['telefono']) ?>"
-                                       placeholder="10 dígitos"
-                                       class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
-                            </div>
-                        </div>
-                        
-                        <!-- Email -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                Email
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                                    <i class="fas fa-envelope text-gray-400"></i>
-                                </div>
-                                <input type="email" 
-                                       name="email" 
-                                       value="<?= htmlspecialchars($huesped['email']) ?>"
-                                       placeholder="correo@ejemplo.com"
-                                       class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Procedencia -->
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-                <div class="bg-gradient-to-r from-green-600 to-green-700 p-6">
-                    <h2 class="text-xl font-semibold text-white flex items-center">
-                        <i class="fas fa-map-marked-alt mr-3"></i>
-                        Procedencia
-                    </h2>
-                </div>
-                
-                <div class="p-6 space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Estado -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                Estado
-                            </label>
-                            <select name="procedencia_estado" 
-                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all">
-                                <option value="">Seleccione un estado</option>
-                                <?php foreach ($estados as $estado): ?>
-                                    <option value="<?= $estado ?>" <?= $huesped['procedencia_estado'] == $estado ? 'selected' : '' ?>>
-                                        <?= $estado ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
-                        <!-- Ciudad -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                Ciudad
-                            </label>
-                            <input type="text" 
-                                   name="procedencia_ciudad" 
-                                   value="<?= htmlspecialchars($huesped['procedencia_ciudad']) ?>"
-                                   placeholder="Ciudad de origen"
-                                   class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-         <!-- Vehículos -->
-<div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-    <div class="bg-gradient-to-r from-purple-600 to-purple-700 p-6">
-        <h2 class="text-xl font-semibold text-white flex items-center">
-            <i class="fas fa-car mr-3"></i>
-            Vehículos
-        </h2>
-    </div>
-    
-    <div class="p-6">
-        <!-- Información importante -->
-        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-            <p class="text-sm text-yellow-800">
-                <i class="fas fa-info-circle mr-2"></i>
-                Los vehículos se gestionan desde la vista de detalle del huésped. Aquí puede ver los vehículos actuales.
-            </p>
-        </div>
-        
-        <!-- Lista de vehículos actuales -->
-        <?php
-        $vehiculoModel = new HuespedVehiculo();
-        $vehiculos = $vehiculoModel->porHuesped($huesped['id']);
-        ?>
-        
-        <?php if (!empty($vehiculos)): ?>
-            <div class="space-y-3">
-                <h4 class="font-semibold text-gray-700 mb-2">Vehículos registrados:</h4>
-                <?php foreach ($vehiculos as $vehiculo): ?>
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div class="flex items-center">
-                            <i class="fas fa-car text-purple-600 mr-3"></i>
-                            <div>
-                                <p class="font-medium">
-                                    <?= htmlspecialchars($vehiculo['marca']) ?> 
-                                    <?= htmlspecialchars($vehiculo['modelo'] ?? '') ?>
-                                </p>
-                                <p class="text-sm text-gray-600">
-                                    Placas: <span class="font-mono"><?= htmlspecialchars($vehiculo['placas']) ?></span>
-                                    <?php if ($vehiculo['color']): ?>
-                                        • Color: <?= htmlspecialchars($vehiculo['color']) ?>
-                                    <?php endif; ?>
-                                </p>
-                            </div>
-                        </div>
-                        <div>
-                            <?php
-                            $estacionamientos = HuespedVehiculo::getEstacionamientos();
-                            $ubicacion = $estacionamientos[$vehiculo['estacionamiento']] ?? 'No especificado';
-                            ?>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                <?= $ubicacion ?>
-                            </span>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php else: ?>
-            <p class="text-gray-500 text-center py-4">
-                <i class="fas fa-car-side text-4xl text-gray-300 mb-2 block"></i>
-                No hay vehículos registrados
-            </p>
-        <?php endif; ?>
-        
-        <div class="mt-4 pt-4 border-t">
-            <a href="<?= url('huespedes/' . $huesped['id']) ?>#vehiculos" 
-               class="text-purple-600 hover:text-purple-800 font-medium text-sm">
-                <i class="fas fa-cog mr-1"></i>
-                Gestionar vehículos desde la vista de detalle
-            </a>
-        </div>
-    </div>
-</div>
-            
-            <!-- Notas -->
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-                <div class="bg-gradient-to-r from-gray-600 to-gray-700 p-6">
-                    <h2 class="text-xl font-semibold text-white flex items-center">
-                        <i class="fas fa-sticky-note mr-3"></i>
-                        Notas Adicionales
-                    </h2>
-                </div>
-                
-                <div class="p-6">
-                    <textarea name="notas" 
-                              rows="3"
-                              placeholder="Cualquier información adicional sobre el huésped..."
-                              class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-gray-500/20 focus:border-gray-500 transition-all"><?= htmlspecialchars($huesped['notas']) ?></textarea>
-                </div>
-            </div>
-            
-            <!-- Información del sistema (solo lectura) -->
-            <div class="bg-gray-50 rounded-2xl p-6">
-                <h3 class="font-semibold text-gray-700 mb-3">Información del Sistema</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                        <p class="text-gray-600">ID del Huésped</p>
-                        <p class="font-mono font-semibold">#<?= $huesped['id'] ?></p>
-                    </div>
-                    <div>
-                        <p class="text-gray-600">Fecha de Registro</p>
-                        <p class="font-semibold"><?= format_date($huesped['created_at']) ?></p>
-                    </div>
-                    <div>
-                        <p class="text-gray-600">Última Actualización</p>
-                        <p class="font-semibold"><?= format_datetime($huesped['updated_at']) ?></p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Botones -->
-            <div class="flex justify-end gap-3">
-                <a href="<?= url('huespedes/' . $huesped['id']) ?>" 
-                   class="px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all">
-                    Cancelar
+
+            <div class="ge-hero-actions">
+                <a href="<?= url('huespedes/' . $huesped_id) ?>" class="ge-link-btn">
+                    <i class="fas fa-eye"></i>
+                    Ver expediente
                 </a>
-                <button type="submit" 
-                        class="px-6 py-3 bg-gradient-to-r from-hotel-brown to-hotel-brown-dark text-white font-semibold rounded-xl hover:shadow-xl transform hover:scale-105 transition-all">
-                    <i class="fas fa-save mr-2"></i>
-                    Guardar Cambios
-                </button>
+                <a href="<?= url('huespedes') ?>" class="ge-link-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    Directorio
+                </a>
+            </div>
+        </header>
+
+        <form method="POST" action="<?= url('huespedes/' . $huesped_id . '/update') ?>" class="ge-form" id="guestEditForm">
+            <?= csrf_field() ?>
+
+            <div class="ge-layout">
+                <main class="ge-main">
+                    <section class="ge-panel">
+                        <div class="ge-panel-head">
+                            <div class="ge-panel-title">
+                                <span class="ge-icon-box"><i class="fas fa-user"></i></span>
+                                <div>
+                                    <h2>Identidad y contacto</h2>
+                                    <p>Datos visibles para recepci&oacute;n, b&uacute;squeda y confirmaciones.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ge-panel-body">
+                            <div class="ge-grid">
+                                <div class="ge-field ge-field-full">
+                                    <label class="ge-label" for="nombre_completo">
+                                        Nombre completo <span class="ge-required">*</span>
+                                    </label>
+                                    <input type="text"
+                                           id="nombre_completo"
+                                           name="nombre_completo"
+                                           value="<?= guest_edit_safe($huesped['nombre_completo'] ?? '', '') ?>"
+                                           required
+                                           autocomplete="name"
+                                           placeholder="Ingrese el nombre completo del hu&eacute;sped"
+                                           class="ge-control">
+                                </div>
+
+                                <div class="ge-field">
+                                    <label class="ge-label" for="telefono">Tel&eacute;fono</label>
+                                    <div class="ge-input-wrap">
+                                        <i class="fas fa-phone"></i>
+                                        <input type="tel"
+                                               id="telefono"
+                                               name="telefono"
+                                               value="<?= guest_edit_safe($huesped['telefono'] ?? '', '') ?>"
+                                               autocomplete="tel"
+                                               placeholder="10 d&iacute;gitos"
+                                               class="ge-control has-icon">
+                                    </div>
+                                </div>
+
+                                <div class="ge-field">
+                                    <label class="ge-label" for="email">Email</label>
+                                    <div class="ge-input-wrap">
+                                        <i class="fas fa-envelope"></i>
+                                        <input type="email"
+                                               id="email"
+                                               name="email"
+                                               value="<?= guest_edit_safe($huesped['email'] ?? '', '') ?>"
+                                               autocomplete="email"
+                                               placeholder="correo@ejemplo.com"
+                                               class="ge-control has-icon">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="ge-panel">
+                        <div class="ge-panel-head">
+                            <div class="ge-panel-title">
+                                <span class="ge-icon-box"><i class="fas fa-map-location-dot"></i></span>
+                                <div>
+                                    <h2>Procedencia</h2>
+                                    <p>Origen del hu&eacute;sped para reportes y lectura comercial.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ge-panel-body">
+                            <div class="ge-grid">
+                                <div class="ge-field">
+                                    <label class="ge-label" for="procedencia_estado">Estado</label>
+                                    <select id="procedencia_estado"
+                                            name="procedencia_estado"
+                                            class="ge-control">
+                                        <option value="">Seleccione un estado</option>
+                                        <?php foreach ($estados as $estado): ?>
+                                            <option value="<?= guest_edit_safe($estado, '') ?>" <?= $procedencia_estado === $estado ? 'selected' : '' ?>>
+                                                <?= guest_edit_safe($estado) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+
+                                <div class="ge-field">
+                                    <label class="ge-label" for="procedencia_ciudad">Ciudad</label>
+                                    <input type="text"
+                                           id="procedencia_ciudad"
+                                           name="procedencia_ciudad"
+                                           value="<?= guest_edit_safe($huesped['procedencia_ciudad'] ?? '', '') ?>"
+                                           placeholder="Ciudad de origen"
+                                           class="ge-control">
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="ge-panel">
+                        <div class="ge-panel-head">
+                            <div class="ge-panel-title">
+                                <span class="ge-icon-box"><i class="fas fa-car-side"></i></span>
+                                <div>
+                                    <h2>Veh&iacute;culos vinculados</h2>
+                                    <p>Consulta r&aacute;pida. La administraci&oacute;n completa vive en el expediente.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ge-panel-body">
+                            <div class="ge-context-note">
+                                <i class="fas fa-circle-info"></i>
+                                <div>
+                                    <strong>Los veh&iacute;culos se gestionan desde la vista de detalle.</strong>
+                                    <span>Esto evita cambiar informaci&oacute;n de estacionamiento mientras se edita el perfil principal.</span>
+                                </div>
+                            </div>
+
+                            <?php if (!empty($vehiculos)): ?>
+                                <div class="ge-vehicle-list">
+                                    <?php foreach ($vehiculos as $vehiculo): ?>
+                                        <?php
+                                            $vehiculo_nombre = trim(($vehiculo['marca'] ?? '') . ' ' . ($vehiculo['modelo'] ?? ''));
+                                            $vehiculo_placas = trim((string)($vehiculo['placas'] ?? ''));
+                                            $vehiculo_color = trim((string)($vehiculo['color'] ?? ''));
+                                            $ubicacion = $estacionamientos[$vehiculo['estacionamiento'] ?? ''] ?? 'No especificado';
+                                        ?>
+                                        <article class="ge-vehicle-card">
+                                            <div class="ge-vehicle-main">
+                                                <span class="ge-vehicle-icon"><i class="fas fa-car"></i></span>
+                                                <div>
+                                                    <strong><?= guest_edit_safe($vehiculo_nombre, 'Vehiculo') ?></strong>
+                                                    <span>
+                                                        Placas: <?= guest_edit_safe($vehiculo_placas, 'Sin placas') ?>
+                                                        <?php if ($vehiculo_color !== ''): ?>
+                                                            &middot; Color: <?= guest_edit_safe($vehiculo_color) ?>
+                                                        <?php endif; ?>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <span class="ge-parking-badge"><?= guest_edit_safe($ubicacion) ?></span>
+                                        </article>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php else: ?>
+                                <div class="ge-empty">
+                                    <i class="fas fa-car-rear"></i>
+                                    <strong>Sin veh&iacute;culos registrados</strong>
+                                    <span>Puede agregarlos desde el expediente del hu&eacute;sped.</span>
+                                </div>
+                            <?php endif; ?>
+
+                            <a href="<?= url('huespedes/' . $huesped_id) ?>#vehiculos" class="ge-vehicle-link">
+                                <span><i class="fas fa-screwdriver-wrench"></i> Gestionar veh&iacute;culos</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </section>
+
+                    <section class="ge-panel">
+                        <div class="ge-panel-head">
+                            <div class="ge-panel-title">
+                                <span class="ge-icon-box"><i class="fas fa-note-sticky"></i></span>
+                                <div>
+                                    <h2>Notas internas</h2>
+                                    <p>Observaciones &uacute;tiles para futuras estancias y recepci&oacute;n.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ge-panel-body">
+                            <label class="ge-label" for="notas">Notas</label>
+                            <textarea id="notas"
+                                      name="notas"
+                                      rows="4"
+                                      placeholder="Cualquier informaci&oacute;n adicional sobre el hu&eacute;sped..."
+                                      class="ge-control"><?= guest_edit_safe($notas_huesped, '') ?></textarea>
+                        </div>
+                    </section>
+
+                    <div class="ge-actions">
+                        <div class="ge-actions-copy">
+                            <strong>Guardar cambios del expediente</strong>
+                            <span>Se actualizar&aacute;n solo los datos principales del hu&eacute;sped.</span>
+                        </div>
+                        <div class="ge-actions-buttons">
+                            <a href="<?= url('huespedes/' . $huesped_id) ?>" class="ge-btn ge-btn-secondary">
+                                <i class="fas fa-times"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="ge-btn ge-btn-primary">
+                                <i class="fas fa-save"></i>
+                                Guardar cambios
+                            </button>
+                        </div>
+                    </div>
+                </main>
+
+                <aside class="ge-side" aria-label="Resumen del huesped">
+                    <section class="ge-side-card ge-preview">
+                        <div class="ge-preview-avatar" id="guestEditPreviewAvatar" aria-hidden="true"><?= guest_edit_safe($inicial_huesped, 'H') ?></div>
+                        <h2 class="ge-preview-name" id="guestEditPreviewName"><?= guest_edit_safe($nombre_huesped) ?></h2>
+                        <p>Vista previa del expediente tal como lo vera recepci&oacute;n al consultar al hu&eacute;sped.</p>
+                        <div class="ge-preview-tags">
+                            <span id="guestEditPreviewContact"><i class="fas fa-address-book"></i> <?= guest_edit_safe($contacto_label) ?></span>
+                            <span id="guestEditPreviewOrigin"><i class="fas fa-location-dot"></i> <?= guest_edit_safe($procedencia_label) ?></span>
+                            <span><i class="fas fa-car"></i> <?= number_format($vehiculos_count) ?> veh&iacute;culo<?= $vehiculos_count === 1 ? '' : 's' ?></span>
+                        </div>
+                    </section>
+
+                    <section class="ge-side-card">
+                        <h3>Informaci&oacute;n del sistema</h3>
+                        <p>Datos de referencia. No se modifican desde este formulario.</p>
+                        <div class="ge-meta-list">
+                            <div class="ge-meta-row">
+                                <span>ID del hu&eacute;sped</span>
+                                <strong>#<?= $huesped_id ?></strong>
+                            </div>
+                            <div class="ge-meta-row">
+                                <span>Registro</span>
+                                <strong><?= guest_edit_safe($fecha_registro) ?></strong>
+                            </div>
+                            <div class="ge-meta-row">
+                                <span>Ultima actualizaci&oacute;n</span>
+                                <strong><?= guest_edit_safe($fecha_actualizacion) ?></strong>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="ge-side-card">
+                        <h3>Antes de guardar</h3>
+                        <div class="ge-tips">
+                            <span><i class="fas fa-check-circle"></i> El nombre completo es el &uacute;nico dato obligatorio.</span>
+                            <span><i class="fas fa-check-circle"></i> Tel&eacute;fono y correo ayudan a localizar reservaciones m&aacute;s r&aacute;pido.</span>
+                            <span><i class="fas fa-check-circle"></i> La procedencia alimenta reportes sin cambiar reservas existentes.</span>
+                        </div>
+                    </section>
+                </aside>
             </div>
         </form>
     </div>
 </div>
 
 <script>
-// Formatear teléfono mientras se escribe
-document.querySelector('input[name="telefono"]').addEventListener('input', function(e) {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 10) {
-        value = value.slice(0, 10);
-    }
-    e.target.value = value;
-});
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('guestEditForm');
+    const nombreInput = form?.querySelector('input[name="nombre_completo"]');
+    const telefonoInput = form?.querySelector('input[name="telefono"]');
+    const emailInput = form?.querySelector('input[name="email"]');
+    const estadoInput = form?.querySelector('select[name="procedencia_estado"]');
+    const ciudadInput = form?.querySelector('input[name="procedencia_ciudad"]');
+    const previewName = document.getElementById('guestEditPreviewName');
+    const previewAvatar = document.getElementById('guestEditPreviewAvatar');
+    const heroAvatar = document.getElementById('guestEditAvatar');
+    const previewContact = document.getElementById('guestEditPreviewContact');
+    const previewOrigin = document.getElementById('guestEditPreviewOrigin');
 
-// Convertir placas a mayúsculas
-document.querySelector('input[name="vehiculo_placas"]').addEventListener('input', function(e) {
-    e.target.value = e.target.value.toUpperCase();
+    function safeText(value, fallback) {
+        const text = (value || '').trim();
+        return text || fallback;
+    }
+
+    function setPreviewChip(element, iconClass, text) {
+        if (!element) {
+            return;
+        }
+
+        const icon = document.createElement('i');
+        icon.className = iconClass;
+        element.replaceChildren(icon, ' ' + text);
+    }
+
+    function updatePreview() {
+        const nombre = safeText(nombreInput?.value, 'Huesped');
+        const initial = nombre.charAt(0).toUpperCase();
+        const hasContact = Boolean(safeText(telefonoInput?.value, '') || safeText(emailInput?.value, ''));
+        const estado = safeText(estadoInput?.value, '');
+        const ciudad = safeText(ciudadInput?.value, '');
+        let procedencia = estado || 'Sin procedencia';
+
+        if (ciudad) {
+            procedencia += ' - ' + ciudad;
+        }
+
+        if (previewName) previewName.textContent = nombre;
+        if (previewAvatar) previewAvatar.textContent = initial;
+        if (heroAvatar) heroAvatar.textContent = initial;
+        setPreviewChip(previewContact, 'fas fa-address-book', hasContact ? 'Contacto disponible' : 'Contacto pendiente');
+        setPreviewChip(previewOrigin, 'fas fa-location-dot', procedencia);
+    }
+
+    telefonoInput?.addEventListener('input', function(event) {
+        let value = event.target.value.replace(/\D/g, '');
+        if (value.length > 10) {
+            value = value.slice(0, 10);
+        }
+        event.target.value = value;
+        updatePreview();
+    });
+
+    [nombreInput, emailInput, estadoInput, ciudadInput].forEach(function(input) {
+        input?.addEventListener('input', updatePreview);
+        input?.addEventListener('change', updatePreview);
+    });
+
+    updatePreview();
 });
 </script>
