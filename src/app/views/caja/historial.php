@@ -1,510 +1,1200 @@
 <?php
 /**
  * Vista de Historial de Cortes de Caja
- * Los Cedros
+ * Rediseño operativo tipo bitácora financiera.
  */
+
+$cortes = $cortes ?? [];
+$estadisticas = $estadisticas ?? [];
+$mes = (int)($mes ?? date('m'));
+$año = (int)($año ?? date('Y'));
+
+if (!function_exists('obtener_nombre_mes')) {
+    function obtener_nombre_mes($mes) {
+        $meses = [
+            1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
+            5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
+            9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
+        ];
+        return $meses[(int)$mes] ?? '';
+    }
+}
+
+if (!function_exists('caja_hist_money')) {
+    function caja_hist_money($amount, $signed = false) {
+        $amount = (float)($amount ?? 0);
+        $prefix = '';
+        if ($amount < 0) {
+            $prefix = '-';
+            $amount = abs($amount);
+        } elseif ($signed && $amount > 0) {
+            $prefix = '+';
+        }
+        return $prefix . '$' . number_format($amount, 2);
+    }
+}
+
+if (!function_exists('caja_hist_date')) {
+    function caja_hist_date($date, $format = 'd/m/Y') {
+        if (empty($date)) {
+            return '-';
+        }
+        $timestamp = strtotime((string)$date);
+        return $timestamp ? date($format, $timestamp) : '-';
+    }
+}
+
+if (!function_exists('caja_hist_duration')) {
+    function caja_hist_duration($inicio, $fin) {
+        if (empty($inicio) || empty($fin)) {
+            return 'En curso';
+        }
+
+        $seconds = max(0, strtotime((string)$fin) - strtotime((string)$inicio));
+        $hours = floor($seconds / 3600);
+        $minutes = floor(($seconds % 3600) / 60);
+
+        return $hours . 'h ' . $minutes . 'm';
+    }
+}
+
+if (!function_exists('caja_hist_safe')) {
+    function caja_hist_safe($value, $fallback = 'N/A') {
+        $text = trim((string)($value ?? ''));
+        return htmlspecialchars($text !== '' ? $text : $fallback, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+$periodo_label = obtener_nombre_mes($mes) . ' ' . $año;
+$total_cortes = count($cortes);
+$ingresos_mes = (float)($estadisticas['total_ingresos'] ?? 0);
+$gastos_mes = (float)($estadisticas['total_gastos'] ?? 0);
+$balance_mes = $ingresos_mes - $gastos_mes;
+$sobrantes_mes = (float)($estadisticas['sobrantes'] ?? 0);
+$faltantes_mes = (float)($estadisticas['faltantes'] ?? 0);
+$flujo_total = max(1, $ingresos_mes + $gastos_mes);
+$ingresos_pct = min(100, max(0, round(($ingresos_mes / $flujo_total) * 100)));
+$gastos_pct = min(100, max(0, 100 - $ingresos_pct));
+
+$cortes_abiertos = 0;
+$cortes_cerrados = 0;
+$cortes_con_diferencia = 0;
+foreach ($cortes as $corte_resumen) {
+    $estado_resumen = $corte_resumen['estado'] ?? 'abierto';
+    if ($estado_resumen === 'abierto') {
+        $cortes_abiertos++;
+    } else {
+        $cortes_cerrados++;
+    }
+
+    if ((float)($corte_resumen['diferencia'] ?? 0) != 0.0) {
+        $cortes_con_diferencia++;
+    }
+}
+
+$totales_metodo = [
+    'efectivo' => ['label' => 'Efectivo', 'icon' => 'fa-money-bill-wave', 'ingresos' => 0, 'gastos' => 0, 'color' => 'green'],
+    'tarjeta' => ['label' => 'Tarjeta', 'icon' => 'fa-credit-card', 'ingresos' => 0, 'gastos' => 0, 'color' => 'blue'],
+    'transferencia' => ['label' => 'Transferencia', 'icon' => 'fa-exchange-alt', 'ingresos' => 0, 'gastos' => 0, 'color' => 'violet'],
+];
+
+foreach ($cortes as $corte_metodo) {
+    if (($corte_metodo['estado'] ?? '') !== 'cerrado') {
+        continue;
+    }
+
+    $totales_metodo['efectivo']['ingresos'] += (float)($corte_metodo['total_ingresos_efectivo'] ?? 0);
+    $totales_metodo['efectivo']['gastos'] += (float)($corte_metodo['total_gastos_efectivo'] ?? 0);
+    $totales_metodo['tarjeta']['ingresos'] += (float)($corte_metodo['total_ingresos_tarjeta'] ?? 0);
+    $totales_metodo['tarjeta']['gastos'] += (float)($corte_metodo['total_gastos_tarjeta'] ?? 0);
+    $totales_metodo['transferencia']['ingresos'] += (float)($corte_metodo['total_ingresos_transferencia'] ?? 0);
+    $totales_metodo['transferencia']['gastos'] += (float)($corte_metodo['total_gastos_transferencia'] ?? 0);
+}
 ?>
 
 <style>
-    .corte-card {
-        background: #fff;
-        border-bottom: 1px solid #eef0f3;
-        padding: 16px;
+.cash-history-view {
+    --ch-primary: var(--brand-primary, #1B2746);
+    --ch-secondary: var(--brand-secondary, #0F172A);
+    --ch-accent: var(--brand-accent, #BD9441);
+    --ch-bg: color-mix(in srgb, var(--ch-accent) 8%, #F6F1E8);
+    --ch-surface: color-mix(in srgb, var(--ch-accent) 3%, #FFFDF8);
+    --ch-surface-strong: color-mix(in srgb, var(--ch-primary) 5%, #FFFDF8);
+    --ch-line: color-mix(in srgb, var(--ch-primary) 13%, #E8DCCC);
+    --ch-line-soft: color-mix(in srgb, var(--ch-primary) 8%, #EFE7DB);
+    --ch-text: #17233E;
+    --ch-muted: #748096;
+    --ch-income: #16824E;
+    --ch-expense: #B93A32;
+    --ch-warning: #B7791F;
+    --ch-info: #2563A7;
+    min-height: 100vh;
+    background:
+        linear-gradient(120deg, color-mix(in srgb, var(--ch-accent) 5%, transparent) 0 1px, transparent 1px 26px),
+        radial-gradient(circle at 84% 6%, color-mix(in srgb, var(--ch-accent) 22%, transparent), transparent 31rem),
+        linear-gradient(180deg, var(--ch-bg), #FBFAF7 55%, #F2ECE3);
+    color: var(--ch-text);
+}
+
+.cash-history-shell {
+    width: min(1480px, calc(100% - 28px));
+    margin: 0 auto;
+    padding: 28px 0 46px;
+}
+
+.cash-history-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+    gap: 22px;
+    align-items: stretch;
+    margin-bottom: 18px;
+}
+
+.cash-history-title {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(22px, 3vw, 34px);
+    border: 1px solid color-mix(in srgb, var(--ch-accent) 24%, transparent);
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at 88% 14%, color-mix(in srgb, var(--ch-accent) 34%, transparent), transparent 20rem),
+        linear-gradient(135deg, color-mix(in srgb, var(--ch-primary) 94%, #0A0F1C), var(--ch-secondary));
+    box-shadow: 0 30px 74px -48px rgba(15, 23, 42, .7);
+}
+
+.cash-history-title::after {
+    content: "";
+    position: absolute;
+    inset: auto -8% -54% 48%;
+    height: 210px;
+    background: radial-gradient(circle, color-mix(in srgb, var(--ch-accent) 42%, transparent), transparent 68%);
+    pointer-events: none;
+}
+
+.cash-history-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    color: color-mix(in srgb, var(--ch-accent) 82%, #FFFDF8);
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.cash-history-title h1 {
+    max-width: 10ch;
+    margin: 12px 0 14px;
+    color: #FFFDF8;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(2.35rem, 5vw, 5rem);
+    line-height: .9;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.cash-history-title p {
+    max-width: 62ch;
+    margin: 0;
+    color: rgba(255, 255, 255, .74);
+    font-weight: 650;
+    line-height: 1.6;
+}
+
+.cash-period-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 20px;
+    border: 1px solid var(--ch-line);
+    border-radius: 22px;
+    background: var(--ch-surface);
+    box-shadow: 0 18px 46px -38px rgba(15, 23, 42, .48);
+}
+
+.cash-period-label,
+.cash-section-label,
+.cash-metric-label,
+.cash-method-label {
+    color: var(--ch-muted);
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.cash-period-value {
+    margin-top: 6px;
+    color: var(--ch-primary);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(1.85rem, 3vw, 2.6rem);
+    line-height: 1;
+    font-weight: 700;
+}
+
+.cash-history-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(90px, .55fr);
+    gap: 10px;
+}
+
+.cash-history-form select,
+.cash-history-form button,
+.cash-history-link,
+.cash-action-icon {
+    min-height: 42px;
+    border-radius: 13px;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+.cash-history-form select {
+    width: 100%;
+    border: 1px solid var(--ch-line);
+    background: color-mix(in srgb, var(--ch-accent) 3%, #FFFDF8);
+    color: var(--ch-primary);
+    font-weight: 800;
+    outline: none;
+}
+
+.cash-history-form select:focus {
+    border-color: color-mix(in srgb, var(--ch-accent) 62%, var(--ch-line));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ch-accent) 22%, transparent);
+}
+
+.cash-history-form button,
+.cash-history-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 15px;
+    font-weight: 900;
+}
+
+.cash-history-form button {
+    grid-column: 1 / -1;
+    border: 1px solid color-mix(in srgb, var(--ch-accent) 48%, var(--ch-primary));
+    background: var(--ch-primary);
+    color: #FFFDF8;
+}
+
+.cash-history-link {
+    border: 1px solid var(--ch-line);
+    background: color-mix(in srgb, var(--ch-primary) 4%, #FFFDF8);
+    color: var(--ch-primary);
+    text-decoration: none;
+}
+
+.cash-history-form button:hover,
+.cash-history-link:hover,
+.cash-action-icon:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 28px -24px rgba(15, 23, 42, .55);
+}
+
+.cash-quick-states {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.cash-quick-state {
+    padding: 12px;
+    border: 1px solid var(--ch-line-soft);
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--ch-accent) 4%, #FFFDF8);
+}
+
+.cash-quick-state strong {
+    display: block;
+    color: var(--ch-primary);
+    font-size: 1.18rem;
+    font-weight: 950;
+    line-height: 1;
+}
+
+.cash-quick-state span {
+    display: block;
+    margin-top: 5px;
+    color: var(--ch-muted);
+    font-size: .72rem;
+    font-weight: 800;
+}
+
+.cash-summary-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 1.25fr) repeat(4, minmax(150px, .75fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.cash-balance-card,
+.cash-metric-card,
+.cash-section-card,
+.cash-cuts-panel {
+    border: 1px solid var(--ch-line);
+    background: var(--ch-surface);
+    box-shadow: 0 16px 40px -34px rgba(15, 23, 42, .5);
+}
+
+.cash-balance-card,
+.cash-metric-card {
+    min-width: 0;
+    border-radius: 20px;
+}
+
+.cash-balance-card {
+    padding: 20px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--ch-accent) 10%, #FFFDF8), var(--ch-surface));
+}
+
+.cash-balance-amount {
+    margin: 8px 0 12px;
+    color: var(--ch-primary);
+    font-size: clamp(1.65rem, 3vw, 2.25rem);
+    font-weight: 950;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.cash-balance-amount.is-income {
+    color: var(--ch-income);
+}
+
+.cash-balance-amount.is-expense {
+    color: var(--ch-expense);
+}
+
+.cash-flow-bars {
+    display: grid;
+    grid-template-columns: minmax(0, <?= $ingresos_pct ?>fr) minmax(0, <?= $gastos_pct ?>fr);
+    gap: 6px;
+    height: 9px;
+}
+
+.cash-flow-bars span {
+    border-radius: 999px;
+}
+
+.cash-flow-bars span:first-child {
+    background: var(--ch-income);
+}
+
+.cash-flow-bars span:last-child {
+    background: var(--ch-expense);
+}
+
+.cash-metric-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 132px;
+    padding: 17px;
+}
+
+.cash-metric-card i {
+    color: color-mix(in srgb, var(--ch-accent) 74%, var(--ch-primary));
+}
+
+.cash-metric-value {
+    margin-top: 10px;
+    color: var(--ch-primary);
+    font-size: 1.38rem;
+    font-weight: 950;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.cash-metric-value.is-income,
+.cash-row-money.is-income {
+    color: var(--ch-income);
+}
+
+.cash-metric-value.is-expense,
+.cash-row-money.is-expense {
+    color: var(--ch-expense);
+}
+
+.cash-metric-note {
+    margin-top: 8px;
+    color: var(--ch-muted);
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.cash-activity-strip {
+    margin-bottom: 18px;
+    padding: 16px;
+    border: 1px solid var(--ch-line);
+    border-radius: 20px;
+    background: color-mix(in srgb, var(--ch-accent) 4%, #FFFDF8);
+}
+
+.cash-top-days {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.cash-day-pill {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    padding: 11px;
+    border: 1px solid var(--ch-line-soft);
+    border-radius: 15px;
+    background: var(--ch-surface);
+}
+
+.cash-day-rank {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--ch-accent) 18%, #FFFDF8);
+    color: var(--ch-primary);
+    font-weight: 950;
+}
+
+.cash-day-pill strong,
+.cash-method-balance {
+    display: block;
+    color: var(--ch-primary);
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.cash-day-pill span {
+    display: block;
+    color: var(--ch-muted);
+    font-size: .76rem;
+    font-weight: 750;
+}
+
+.cash-section-card,
+.cash-cuts-panel {
+    border-radius: 22px;
+    overflow: hidden;
+}
+
+.cash-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--ch-line-soft);
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--ch-accent) 6%, #FFFDF8), var(--ch-surface));
+}
+
+.cash-section-head h2,
+.cash-section-head h3 {
+    margin: 0;
+    color: var(--ch-primary);
+    font-size: 1.04rem;
+    font-weight: 950;
+}
+
+.cash-section-body {
+    padding: 18px 20px 20px;
+}
+
+.cash-empty-state {
+    display: grid;
+    place-items: center;
+    min-height: 280px;
+    padding: 36px;
+    text-align: center;
+}
+
+.cash-empty-icon {
+    width: 74px;
+    height: 74px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    border-radius: 24px;
+    background: color-mix(in srgb, var(--ch-accent) 12%, #FFFDF8);
+    color: color-mix(in srgb, var(--ch-accent) 78%, var(--ch-primary));
+    font-size: 1.8rem;
+}
+
+.cash-mobile-list {
+    display: none;
+}
+
+.cash-cut-card {
+    position: relative;
+    padding: 16px;
+    border-bottom: 1px solid var(--ch-line-soft);
+    background: var(--ch-surface);
+}
+
+.cash-cut-card:last-child {
+    border-bottom: 0;
+}
+
+.cash-cut-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: start;
+}
+
+.cash-cut-id {
+    margin: 0;
+    color: var(--ch-primary);
+    font-size: 1.05rem;
+    font-weight: 950;
+}
+
+.cash-meta-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin-top: 8px;
+    color: var(--ch-muted);
+    font-size: .78rem;
+    font-weight: 750;
+}
+
+.cash-cut-actions {
+    display: flex;
+    gap: 7px;
+}
+
+.cash-action-icon {
+    width: 39px;
+    height: 39px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--ch-line);
+    background: color-mix(in srgb, var(--ch-primary) 4%, #FFFDF8);
+    color: var(--ch-primary);
+    text-decoration: none;
+}
+
+.cash-action-icon.is-pdf {
+    color: var(--ch-expense);
+}
+
+.cash-action-icon.is-excel {
+    color: var(--ch-income);
+}
+
+.cash-status,
+.cash-difference {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 26px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.cash-status.is-open {
+    background: color-mix(in srgb, var(--ch-warning) 13%, #FFFDF8);
+    color: color-mix(in srgb, var(--ch-warning) 84%, var(--ch-primary));
+}
+
+.cash-status.is-closed {
+    background: color-mix(in srgb, var(--ch-primary) 8%, #FFFDF8);
+    color: var(--ch-primary);
+}
+
+.cash-difference.is-balanced {
+    background: color-mix(in srgb, var(--ch-income) 11%, #FFFDF8);
+    color: color-mix(in srgb, var(--ch-income) 86%, var(--ch-primary));
+}
+
+.cash-difference.is-surplus {
+    background: color-mix(in srgb, var(--ch-info) 11%, #FFFDF8);
+    color: color-mix(in srgb, var(--ch-info) 84%, var(--ch-primary));
+}
+
+.cash-difference.is-short {
+    background: color-mix(in srgb, var(--ch-warning) 15%, #FFFDF8);
+    color: color-mix(in srgb, var(--ch-warning) 86%, #50310C);
+}
+
+.cash-card-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    margin-top: 14px;
+}
+
+.cash-card-metric {
+    min-width: 0;
+    padding: 11px;
+    border: 1px solid var(--ch-line-soft);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--ch-primary) 3%, #FFFDF8);
+}
+
+.cash-card-metric span,
+.cash-method-row span {
+    display: block;
+    color: var(--ch-muted);
+    font-size: .69rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.cash-card-metric strong {
+    display: block;
+    margin-top: 5px;
+    color: var(--ch-primary);
+    font-size: .95rem;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.cash-method-mini {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+    color: var(--ch-muted);
+    font-size: .74rem;
+    font-weight: 800;
+}
+
+.cash-desktop-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.cash-desktop-table th {
+    padding: 13px 12px;
+    border-bottom: 1px solid var(--ch-line);
+    color: var(--ch-muted);
+    font-size: .68rem;
+    font-weight: 950;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.cash-desktop-table td {
+    padding: 15px 12px;
+    border-bottom: 1px solid var(--ch-line-soft);
+    vertical-align: top;
+}
+
+.cash-desktop-table tbody tr {
+    transition: background .18s ease;
+}
+
+.cash-desktop-table tbody tr:hover {
+    background: color-mix(in srgb, var(--ch-accent) 5%, #FFFDF8);
+}
+
+.cash-row-title {
+    color: var(--ch-primary);
+    font-weight: 950;
+}
+
+.cash-row-sub {
+    margin-top: 4px;
+    color: var(--ch-muted);
+    font-size: .76rem;
+    font-weight: 750;
+}
+
+.cash-row-money {
+    color: var(--ch-primary);
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.cash-row-breakdown {
+    margin-top: 5px;
+    color: var(--ch-muted);
+    font-size: .7rem;
+    font-weight: 750;
+    line-height: 1.45;
+}
+
+.cash-analytics-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.28fr) minmax(320px, .72fr);
+    gap: 18px;
+    margin-top: 18px;
+}
+
+.cash-chart-frame {
+    position: relative;
+    height: 320px;
+}
+
+.cash-method-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.cash-method-card {
+    padding: 14px;
+    border: 1px solid var(--ch-line-soft);
+    border-radius: 17px;
+    background: color-mix(in srgb, var(--ch-accent) 3%, #FFFDF8);
+}
+
+.cash-method-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 11px;
+}
+
+.cash-method-icon {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--ch-accent) 13%, #FFFDF8);
+    color: color-mix(in srgb, var(--ch-accent) 80%, var(--ch-primary));
+}
+
+.cash-method-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    padding: 8px 0;
+    border-top: 1px solid var(--ch-line-soft);
+}
+
+.cash-method-row strong {
+    color: var(--ch-primary);
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1180px) {
+    .cash-history-hero,
+    .cash-analytics-grid {
+        grid-template-columns: 1fr;
     }
 
-    .corte-card:last-child {
-        border-bottom: 0;
+    .cash-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .corte-card__metric {
-        border: 1px solid #eef0f3;
-        border-radius: 10px;
-        padding: 10px 12px;
-        background: #fafafa;
-        min-width: 0;
+    .cash-balance-card {
+        grid-column: 1 / -1;
     }
 
-    .cortes-desktop-table th,
-    .cortes-desktop-table td {
-        padding-left: 12px;
-        padding-right: 12px;
+    .cash-top-days {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .cortes-desktop-table {
-        table-layout: fixed;
+    .cash-desktop-wrap {
+        display: none;
     }
+
+    .cash-mobile-list {
+        display: block;
+    }
+}
+
+@media (max-width: 700px) {
+    .cash-history-shell {
+        width: min(100% - 20px, 1480px);
+        padding: 18px 0 30px;
+    }
+
+    .cash-history-title,
+    .cash-period-card,
+    .cash-balance-card,
+    .cash-metric-card,
+    .cash-section-card,
+    .cash-cuts-panel {
+        border-radius: 18px;
+    }
+
+    .cash-history-title h1 {
+        max-width: 9ch;
+        font-size: clamp(2.1rem, 15vw, 3.4rem);
+    }
+
+    .cash-history-form,
+    .cash-summary-grid,
+    .cash-top-days,
+    .cash-card-metrics,
+    .cash-quick-states {
+        grid-template-columns: 1fr;
+    }
+
+    .cash-cut-top {
+        grid-template-columns: 1fr;
+    }
+
+    .cash-cut-actions {
+        justify-content: flex-start;
+    }
+
+    .cash-section-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .cash-chart-frame {
+        height: 260px;
+    }
+}
 </style>
 
-<!-- Historial de Cortes de Caja -->
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
-    <!-- Header Principal -->
-    <div class="max-w-7xl mx-auto mb-6">
-        <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8 border-t-4 border-hotel-gold">
-            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+<div class="cash-history-view">
+    <div class="cash-history-shell">
+        <section class="cash-history-hero">
+            <div class="cash-history-title">
+                <span class="cash-history-kicker">
+                    <i class="fas fa-archive"></i>
+                    Bitácora de caja
+                </span>
+                <h1>Historial de cortes</h1>
+                <p>
+                    Consulta cada apertura y cierre del mes, revisa diferencias de efectivo y descarga los comprobantes de cada corte cerrado.
+                </p>
+            </div>
+
+            <aside class="cash-period-card">
                 <div>
-                    <h1 class="text-3xl md:text-4xl font-bold text-hotel-brown font-playfair mb-2">
-                        Historial de Cortes de Caja
-                    </h1>
-                    <div class="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-                        <span class="flex items-center">
-                            <i class="fas fa-calendar-alt mr-2"></i>
-                            <?= obtener_nombre_mes($mes) ?> <?= $año ?>
-                        </span>
-                        <span class="text-gray-400">•</span>
-                        <span class="flex items-center">
-                            <i class="fas fa-cut mr-2"></i>
-                            <?= count($cortes) ?> cortes realizados
-                        </span>
+                    <span class="cash-period-label">Periodo consultado</span>
+                    <div class="cash-period-value"><?= caja_hist_safe($periodo_label) ?></div>
+                </div>
+
+                <form method="GET" action="<?= url('caja/historial') ?>" class="cash-history-form">
+                    <select name="mes" aria-label="Mes">
+                        <?php for ($m = 1; $m <= 12; $m++): ?>
+                            <option value="<?= $m ?>" <?= $m == $mes ? 'selected' : '' ?>>
+                                <?= obtener_nombre_mes($m) ?>
+                            </option>
+                        <?php endfor; ?>
+                    </select>
+                    <select name="año" aria-label="Año">
+                        <?php for ($y = date('Y'); $y >= date('Y') - 5; $y--): ?>
+                            <option value="<?= $y ?>" <?= $y == $año ? 'selected' : '' ?>>
+                                <?= $y ?>
+                            </option>
+                        <?php endfor; ?>
+                    </select>
+                    <button type="submit">
+                        <i class="fas fa-filter"></i>
+                        Filtrar cortes
+                    </button>
+                </form>
+
+                <a href="<?= url('caja') ?>" class="cash-history-link">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver a caja
+                </a>
+
+                <div class="cash-quick-states">
+                    <div class="cash-quick-state">
+                        <strong><?= number_format($total_cortes) ?></strong>
+                        <span>Cortes</span>
+                    </div>
+                    <div class="cash-quick-state">
+                        <strong><?= number_format($cortes_cerrados) ?></strong>
+                        <span>Cerrados</span>
+                    </div>
+                    <div class="cash-quick-state">
+                        <strong><?= number_format($cortes_abiertos) ?></strong>
+                        <span>Abiertos</span>
                     </div>
                 </div>
-                
-                <!-- Controles de navegación -->
-                <div class="flex flex-wrap gap-2">
-                    <!-- Selector de mes/año -->
-                    <form method="GET" action="<?= url('caja/historial') ?>" class="flex gap-2">
-                        <select name="mes" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-gold focus:border-transparent">
-                            <?php for($m = 1; $m <= 12; $m++): ?>
-                                <option value="<?= $m ?>" <?= $m == $mes ? 'selected' : '' ?>>
-                                    <?= obtener_nombre_mes($m) ?>
-                                </option>
-                            <?php endfor; ?>
-                        </select>
-                        <select name="año" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-gold focus:border-transparent">
-                            <?php for($y = date('Y'); $y >= date('Y') - 5; $y--): ?>
-                                <option value="<?= $y ?>" <?= $y == $año ? 'selected' : '' ?>>
-                                    <?= $y ?>
-                                </option>
-                            <?php endfor; ?>
-                        </select>
-                        <button type="submit" class="px-4 py-2 bg-hotel-brown text-white rounded-lg hover:bg-hotel-brown-dark transition">
-                            <i class="fas fa-filter mr-2"></i>
-                            Filtrar
-                        </button>
-                    </form>
-                    
-                    <!-- Botón volver -->
-                    <a href="<?= url('caja') ?>" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2">
-                        <i class="fas fa-arrow-left"></i>
-                        <span class="hidden sm:inline">Volver a Caja</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Estadísticas del Mes -->
-    <?php if (!empty($estadisticas)): ?>
-    <div class="max-w-7xl mx-auto mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-            <!-- Total Cortes -->
-            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Cortes Realizados</p>
-                        <p class="text-2xl font-bold text-gray-800">
-                            <?= number_format($estadisticas['total_cortes'] ?? 0) ?>
-                        </p>
+            </aside>
+        </section>
+
+        <?php if (!empty($estadisticas)): ?>
+            <section class="cash-summary-grid">
+                <article class="cash-balance-card">
+                    <span class="cash-metric-label">Balance del mes</span>
+                    <div class="cash-balance-amount <?= $balance_mes >= 0 ? 'is-income' : 'is-expense' ?>">
+                        <?= caja_hist_money($balance_mes, true) ?>
                     </div>
-                    <div class="bg-purple-100 p-3 rounded-full">
-                        <i class="fas fa-cut text-xl text-purple-600"></i>
+                    <div class="cash-flow-bars" aria-label="Distribución de ingresos y gastos">
+                        <span style="width:100%"></span>
+                        <span style="width:100%"></span>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Total Ingresos -->
-            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Total Ingresos</p>
-                        <p class="text-2xl font-bold text-green-600">
-                            $<?= number_format($estadisticas['total_ingresos'] ?? 0, 2) ?>
-                        </p>
+                    <p class="cash-metric-note">
+                        <?= $ingresos_pct ?>% ingresos, <?= $gastos_pct ?>% gastos del flujo mensual.
+                    </p>
+                </article>
+
+                <article class="cash-metric-card">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="cash-metric-label">Ingresos</span>
+                        <i class="fas fa-arrow-down"></i>
                     </div>
-                    <div class="bg-green-100 p-3 rounded-full">
-                        <i class="fas fa-arrow-down text-xl text-green-600"></i>
+                    <div class="cash-metric-value is-income"><?= caja_hist_money($ingresos_mes) ?></div>
+                    <p class="cash-metric-note">Total registrado en cortes.</p>
+                </article>
+
+                <article class="cash-metric-card">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="cash-metric-label">Gastos</span>
+                        <i class="fas fa-arrow-up"></i>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Total Gastos -->
-            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Total Gastos</p>
-                        <p class="text-2xl font-bold text-red-600">
-                            $<?= number_format($estadisticas['total_gastos'] ?? 0, 2) ?>
-                        </p>
+                    <div class="cash-metric-value is-expense"><?= caja_hist_money($gastos_mes) ?></div>
+                    <p class="cash-metric-note">Salidas acumuladas.</p>
+                </article>
+
+                <article class="cash-metric-card">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="cash-metric-label">Sobrantes</span>
+                        <i class="fas fa-plus"></i>
                     </div>
-                    <div class="bg-red-100 p-3 rounded-full">
-                        <i class="fas fa-arrow-up text-xl text-red-600"></i>
+                    <div class="cash-metric-value"><?= caja_hist_money($sobrantes_mes) ?></div>
+                    <p class="cash-metric-note">Diferencias positivas.</p>
+                </article>
+
+                <article class="cash-metric-card">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="cash-metric-label">Faltantes</span>
+                        <i class="fas fa-minus"></i>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Balance del Mes -->
-            <?php 
-            $balance_mes = ($estadisticas['total_ingresos'] ?? 0) - ($estadisticas['total_gastos'] ?? 0);
-            ?>
-            <div class="bg-gradient-to-br from-hotel-gold to-yellow-600 rounded-xl shadow-lg p-6 text-white">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm opacity-90 mb-1">Balance del Mes</p>
-                        <p class="text-2xl font-bold">
-                            <?= $balance_mes >= 0 ? '+' : '' ?>$<?= number_format($balance_mes, 2) ?>
-                        </p>
+                    <div class="cash-metric-value"><?= caja_hist_money($faltantes_mes) ?></div>
+                    <p class="cash-metric-note"><?= number_format($cortes_con_diferencia) ?> cortes con diferencia.</p>
+                </article>
+            </section>
+
+            <?php if (!empty($estadisticas['dias_top'])): ?>
+                <section class="cash-activity-strip">
+                    <span class="cash-section-label">Días con mayor actividad</span>
+                    <div class="cash-top-days">
+                        <?php foreach ($estadisticas['dias_top'] as $index => $dia): ?>
+                            <article class="cash-day-pill">
+                                <div class="cash-day-rank"><?= $index + 1 ?></div>
+                                <div class="min-w-0">
+                                    <strong><?= caja_hist_money($dia['ingresos_dia'] ?? 0) ?></strong>
+                                    <span><?= caja_hist_date($dia['fecha'] ?? null, 'd/m') ?> · <?= number_format($dia['total_movimientos'] ?? 0) ?> movimientos</span>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
                     </div>
-                    <div class="bg-white/20 p-3 rounded-full">
-                        <i class="fas fa-balance-scale text-xl"></i>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Sobrantes -->
-            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Total Sobrantes</p>
-                        <p class="text-2xl font-bold text-blue-600">
-                            $<?= number_format($estadisticas['sobrantes'] ?? 0, 2) ?>
-                        </p>
-                    </div>
-                    <div class="bg-blue-100 p-3 rounded-full">
-                        <i class="fas fa-plus text-xl text-blue-600"></i>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Faltantes -->
-            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Total Faltantes</p>
-                        <p class="text-2xl font-bold text-orange-600">
-                            $<?= number_format($estadisticas['faltantes'] ?? 0, 2) ?>
-                        </p>
-                    </div>
-                    <div class="bg-orange-100 p-3 rounded-full">
-                        <i class="fas fa-minus text-xl text-orange-600"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Días con más movimiento -->
-        <?php if (!empty($estadisticas['dias_top'])): ?>
-        <div class="bg-white rounded-xl shadow-lg p-6 mt-4">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <i class="fas fa-trophy mr-2 text-yellow-500"></i>
-                Días con Mayor Actividad
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
-                <?php foreach ($estadisticas['dias_top'] as $index => $dia): ?>
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                            <p class="font-medium text-gray-800">
-                                <?= date('d M', strtotime($dia['fecha'])) ?>
-                            </p>
-                            <p class="text-xs text-gray-500">
-                                <?= $dia['total_movimientos'] ?> movimientos
-                            </p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-semibold text-green-600">
-                                $<?= number_format($dia['ingresos_dia'], 2) ?>
-                            </p>
-                            <?php if ($index == 0): ?>
-                                <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                                    TOP
-                                </span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
+                </section>
+            <?php endif; ?>
         <?php endif; ?>
-    </div>
-    <?php endif; ?>
-    
-    <!-- Tabla de Cortes -->
-    <div class="max-w-7xl mx-auto">
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div class="bg-gradient-to-r from-purple-500 to-purple-600 p-4">
-                <h2 class="text-lg font-semibold text-white flex items-center">
-                    <i class="fas fa-list mr-2"></i>
-                    Listado de Cortes de Caja
-                </h2>
+
+        <section class="cash-cuts-panel">
+            <div class="cash-section-head">
+                <div>
+                    <span class="cash-section-label">Cortes del periodo</span>
+                    <h2>Listado de cortes de caja</h2>
+                </div>
+                <span class="cash-status is-closed">
+                    <i class="fas fa-list"></i>
+                    <?= number_format($total_cortes) ?> registros
+                </span>
             </div>
-            
+
             <?php if (empty($cortes)): ?>
-                <div class="p-8 text-center">
-                    <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
-                    <p class="text-gray-500 text-lg">No hay cortes registrados en este período</p>
+                <div class="cash-empty-state">
+                    <div>
+                        <div class="cash-empty-icon">
+                            <i class="fas fa-inbox"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-slate-800 mb-2">No hay cortes registrados</h3>
+                        <p class="text-sm text-slate-500">Cambia el periodo o vuelve a caja para revisar la operación actual.</p>
+                    </div>
                 </div>
             <?php else: ?>
-                <div class="xl:hidden">
+                <div class="cash-mobile-list">
                     <?php foreach ($cortes as $corte): ?>
                         <?php
-                        $diferencia = $corte['diferencia'] ?? 0;
+                        $diferencia = (float)($corte['diferencia'] ?? 0);
                         $estado = $corte['estado'] ?? 'abierto';
-                        $totalIngresos = $corte['total_ingresos'] ?? 0;
-                        $totalGastos = $corte['total_gastos'] ?? 0;
+                        $is_open = $estado === 'abierto';
+                        $difference_class = $diferencia == 0 ? 'is-balanced' : ($diferencia > 0 ? 'is-surplus' : 'is-short');
                         ?>
-                        <article class="corte-card">
-                            <div class="flex items-start justify-between gap-3 mb-3">
+                        <article class="cash-cut-card">
+                            <div class="cash-cut-top">
                                 <div class="min-w-0">
-                                    <div class="flex flex-wrap items-center gap-2 mb-1">
-                                        <h3 class="text-lg font-bold text-gray-900">
-                                            Corte #<?= str_pad($corte['id'], 6, '0', STR_PAD_LEFT) ?>
-                                        </h3>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                            <?= $estado == 'abierto' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800' ?>">
-                                            <i class="fas fa-<?= $estado == 'abierto' ? 'lock-open' : 'lock' ?> mr-1"></i>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <h3 class="cash-cut-id">Corte #<?= str_pad((string)$corte['id'], 6, '0', STR_PAD_LEFT) ?></h3>
+                                        <span class="cash-status <?= $is_open ? 'is-open' : 'is-closed' ?>">
+                                            <i class="fas fa-<?= $is_open ? 'lock-open' : 'lock' ?>"></i>
                                             <?= ucfirst($estado) ?>
                                         </span>
                                     </div>
-                                    <p class="text-sm text-gray-600">
-                                        <i class="fas fa-calendar-alt mr-1 text-gray-400"></i>
-                                        <?= date('d/m/Y', strtotime($corte['fecha_apertura'])) ?>
-                                    </p>
-                                    <p class="text-xs text-gray-500 mt-0.5">
-                                        Apertura: <?= date('H:i', strtotime($corte['fecha_apertura'])) ?>
-                                        <?php if ($corte['fecha_cierre']): ?>
-                                            · Cierre: <?= date('H:i', strtotime($corte['fecha_cierre'])) ?>
-                                        <?php endif; ?>
-                                    </p>
+                                    <div class="cash-meta-line">
+                                        <span><i class="fas fa-calendar-alt"></i> <?= caja_hist_date($corte['fecha_apertura'] ?? null) ?></span>
+                                        <span><i class="fas fa-clock"></i> <?= caja_hist_date($corte['fecha_apertura'] ?? null, 'H:i') ?><?= !empty($corte['fecha_cierre']) ? ' - ' . caja_hist_date($corte['fecha_cierre'], 'H:i') : '' ?></span>
+                                        <span><?= caja_hist_duration($corte['fecha_apertura'] ?? null, $corte['fecha_cierre'] ?? null) ?></span>
+                                    </div>
                                 </div>
 
-                                <div class="flex items-center gap-3 shrink-0">
-                                    <a href="<?= url('caja/corte/' . $corte['id']) ?>"
-                                       class="w-9 h-9 inline-flex items-center justify-center rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
-                                       title="Ver detalle">
+                                <div class="cash-cut-actions">
+                                    <a href="<?= url('caja/corte/' . $corte['id']) ?>" class="cash-action-icon" title="Ver detalle">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     <?php if ($estado == 'cerrado'): ?>
-                                        <a href="<?= url('caja/descargar-pdf/' . $corte['id']) ?>"
-                                           class="w-9 h-9 inline-flex items-center justify-center rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition"
-                                           title="Descargar PDF">
+                                        <a href="<?= url('caja/descargar-pdf/' . $corte['id']) ?>" class="cash-action-icon is-pdf" title="Descargar PDF">
                                             <i class="fas fa-file-pdf"></i>
                                         </a>
-                                        <button onclick="exportarCorte(<?= $corte['id'] ?>)"
-                                                class="w-9 h-9 inline-flex items-center justify-center rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition"
-                                                title="Exportar Excel">
+                                        <button type="button" onclick="exportarCorte(<?= $corte['id'] ?>)" class="cash-action-icon is-excel" title="Exportar Excel">
                                             <i class="fas fa-file-excel"></i>
                                         </button>
                                     <?php endif; ?>
                                 </div>
                             </div>
 
-                            <div class="flex items-center gap-2 text-sm text-gray-700 mb-3">
-                                <i class="fas fa-user text-gray-400 text-xs"></i>
-                                <span class="font-medium truncate"><?= htmlspecialchars($corte['usuario_apertura'] ?? 'N/A') ?></span>
-                                <?php if ($corte['usuario_cierre'] && $corte['usuario_cierre'] != $corte['usuario_apertura']): ?>
-                                    <span class="text-gray-400">·</span>
-                                    <span class="text-xs text-gray-500 truncate">Cerró: <?= htmlspecialchars($corte['usuario_cierre']) ?></span>
+                            <div class="cash-meta-line">
+                                <span><i class="fas fa-user"></i> <?= caja_hist_safe($corte['usuario_apertura'] ?? null) ?></span>
+                                <?php if (!empty($corte['usuario_cierre']) && $corte['usuario_cierre'] != ($corte['usuario_apertura'] ?? null)): ?>
+                                    <span>Cerró: <?= caja_hist_safe($corte['usuario_cierre']) ?></span>
                                 <?php endif; ?>
                             </div>
 
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                <div class="corte-card__metric">
-                                    <p class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">Ingresos</p>
-                                    <p class="text-sm font-bold text-green-600">+$<?= number_format($totalIngresos, 2) ?></p>
+                            <div class="cash-card-metrics">
+                                <div class="cash-card-metric">
+                                    <span>Ingresos</span>
+                                    <strong class="cash-row-money is-income"><?= caja_hist_money($corte['total_ingresos'] ?? 0, true) ?></strong>
                                 </div>
-                                <div class="corte-card__metric">
-                                    <p class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">Gastos</p>
-                                    <p class="text-sm font-bold text-red-600">-$<?= number_format($totalGastos, 2) ?></p>
+                                <div class="cash-card-metric">
+                                    <span>Gastos</span>
+                                    <strong class="cash-row-money is-expense">-<?= caja_hist_money(abs((float)($corte['total_gastos'] ?? 0))) ?></strong>
                                 </div>
-                                <div class="corte-card__metric">
-                                    <p class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">Esperado</p>
-                                    <p class="text-sm font-bold text-gray-900">$<?= number_format($corte['efectivo_esperado'] ?? 0, 2) ?></p>
+                                <div class="cash-card-metric">
+                                    <span>Esperado</span>
+                                    <strong><?= caja_hist_money($corte['efectivo_esperado'] ?? 0) ?></strong>
                                 </div>
-                                <div class="corte-card__metric">
-                                    <p class="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">Contado</p>
-                                    <p class="text-sm font-bold text-gray-900">$<?= number_format($corte['efectivo_contado'] ?? 0, 2) ?></p>
+                                <div class="cash-card-metric">
+                                    <span>Contado</span>
+                                    <strong><?= $corte['efectivo_contado'] !== null ? caja_hist_money($corte['efectivo_contado']) : '-' ?></strong>
                                 </div>
                             </div>
 
                             <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
-                                <div class="text-xs text-gray-500">
-                                    <span title="Ingresos efectivo">IE: $<?= number_format($corte['total_ingresos_efectivo'] ?? 0, 2) ?></span>
-                                    <span class="mx-1 text-gray-300">|</span>
-                                    <span title="Ingresos tarjeta">IT: $<?= number_format($corte['total_ingresos_tarjeta'] ?? 0, 2) ?></span>
-                                    <span class="mx-1 text-gray-300">|</span>
-                                    <span title="Ingresos transferencia">ITr: $<?= number_format($corte['total_ingresos_transferencia'] ?? 0, 2) ?></span>
+                                <div class="cash-method-mini">
+                                    <span>E: <?= caja_hist_money($corte['total_ingresos_efectivo'] ?? 0) ?></span>
+                                    <span>T: <?= caja_hist_money($corte['total_ingresos_tarjeta'] ?? 0) ?></span>
+                                    <span>Tr: <?= caja_hist_money($corte['total_ingresos_transferencia'] ?? 0) ?></span>
                                 </div>
-                                <?php if ($diferencia != 0): ?>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                        <?= $diferencia > 0 ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800' ?>">
-                                        <i class="fas fa-<?= $diferencia > 0 ? 'plus' : 'minus' ?> mr-1"></i>
-                                        Diferencia $<?= number_format(abs($diferencia), 2) ?>
-                                    </span>
-                                <?php else: ?>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        <i class="fas fa-check mr-1"></i>
-                                        Cuadrado
-                                    </span>
-                                <?php endif; ?>
+                                <span class="cash-difference <?= $difference_class ?>">
+                                    <i class="fas fa-<?= $diferencia == 0 ? 'check' : ($diferencia > 0 ? 'plus' : 'minus') ?>"></i>
+                                    <?= $diferencia == 0 ? 'Cuadrado' : caja_hist_money(abs($diferencia)) ?>
+                                </span>
                             </div>
                         </article>
                     <?php endforeach; ?>
                 </div>
 
-                <div class="hidden xl:block">
-                    <table class="w-full cortes-desktop-table">
+                <div class="cash-desktop-wrap">
+                    <table class="cash-desktop-table">
                         <colgroup>
-                            <col style="width: 8%;">
-                            <col style="width: 12%;">
-                            <col style="width: 12%;">
+                            <col style="width: 10%;">
+                            <col style="width: 15%;">
+                            <col style="width: 13%;">
+                            <col style="width: 13%;">
                             <col style="width: 13%;">
                             <col style="width: 11%;">
                             <col style="width: 11%;">
-                            <col style="width: 10%;">
-                            <col style="width: 9%;">
-                            <col style="width: 7%;">
-                            <col style="width: 7%;">
+                            <col style="width: 8%;">
+                            <col style="width: 6%;">
                         </colgroup>
-                        <thead class="bg-gray-50 border-b">
+                        <thead>
                             <tr>
-                                <th class="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Corte #
-                                </th>
-                                <th class="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Fecha/Hora
-                                </th>
-                                <th class="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Usuario
-                                </th>
-                                <th class="py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Ingresos
-                                </th>
-                                <th class="py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Gastos
-                                </th>
-                                <th class="py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Efectivo Esperado
-                                </th>
-                                <th class="py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Efectivo Contado
-                                </th>
-                                <th class="py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Diferencia
-                                </th>
-                                <th class="py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Estado
-                                </th>
-                                <th class="py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Acciones
-                                </th>
+                                <th class="text-left">Corte</th>
+                                <th class="text-left">Periodo</th>
+                                <th class="text-left">Usuario</th>
+                                <th class="text-right">Ingresos</th>
+                                <th class="text-right">Gastos</th>
+                                <th class="text-right">Esperado</th>
+                                <th class="text-right">Contado</th>
+                                <th class="text-center">Diferencia</th>
+                                <th class="text-center">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody>
                             <?php foreach ($cortes as $corte): ?>
-                                <?php 
-                                $diferencia = $corte['diferencia'] ?? 0;
+                                <?php
+                                $diferencia = (float)($corte['diferencia'] ?? 0);
                                 $estado = $corte['estado'] ?? 'abierto';
+                                $is_open = $estado === 'abierto';
+                                $difference_class = $diferencia == 0 ? 'is-balanced' : ($diferencia > 0 ? 'is-surplus' : 'is-short');
                                 ?>
-                                <tr class="hover:bg-gray-50 transition-colors">
-                                    <td class="py-4 align-top">
-                                        <span class="text-sm font-semibold text-gray-900">
-                                            #<?= str_pad($corte['id'], 6, '0', STR_PAD_LEFT) ?>
-                                        </span>
-                                    </td>
-                                    <td class="py-4 align-top">
-                                        <div>
-                                            <p class="text-sm font-medium text-gray-900">
-                                                <?= date('d/m/Y', strtotime($corte['fecha_apertura'])) ?>
-                                            </p>
-                                            <p class="text-xs text-gray-500">
-                                                Apertura: <?= date('H:i', strtotime($corte['fecha_apertura'])) ?>
-                                                <?php if ($corte['fecha_cierre']): ?>
-                                                    - Cierre: <?= date('H:i', strtotime($corte['fecha_cierre'])) ?>
-                                                <?php endif; ?>
-                                            </p>
-                                        </div>
-                                    </td>
-                                    <td class="py-4 align-top">
-                                        <div>
-                                            <p class="text-sm font-medium text-gray-900">
-                                                <?= htmlspecialchars($corte['usuario_apertura'] ?? 'N/A') ?>
-                                            </p>
-                                            <?php if ($corte['usuario_cierre'] && $corte['usuario_cierre'] != $corte['usuario_apertura']): ?>
-                                                <p class="text-xs text-gray-500">
-                                                    Cerró: <?= htmlspecialchars($corte['usuario_cierre']) ?>
-                                                </p>
-                                            <?php endif; ?>
-                                        </div>
-                                    </td>
-                                    <td class="py-4 text-center align-top">
-                                        <div>
-                                            <p class="text-sm font-semibold text-green-600">
-                                                $<?= number_format($corte['total_ingresos'] ?? 0, 2) ?>
-                                            </p>
-                                            <div class="text-xs text-gray-500">
-                                                <span title="Efectivo">E: $<?= number_format($corte['total_ingresos_efectivo'] ?? 0, 2) ?></span> |
-                                                <span title="Tarjeta">T: $<?= number_format($corte['total_ingresos_tarjeta'] ?? 0, 2) ?></span> |
-                                                <span title="Transferencia">Tr: $<?= number_format($corte['total_ingresos_transferencia'] ?? 0, 2) ?></span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="py-4 text-center align-top">
-                                        <div>
-                                            <p class="text-sm font-semibold text-red-600">
-                                                $<?= number_format($corte['total_gastos'] ?? 0, 2) ?>
-                                            </p>
-                                            <div class="text-xs text-gray-500">
-                                                <span title="Efectivo">E: $<?= number_format($corte['total_gastos_efectivo'] ?? 0, 2) ?></span> |
-                                                <span title="Tarjeta">T: $<?= number_format($corte['total_gastos_tarjeta'] ?? 0, 2) ?></span> |
-                                                <span title="Transferencia">Tr: $<?= number_format($corte['total_gastos_transferencia'] ?? 0, 2) ?></span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="py-4 text-center align-top">
-                                        <p class="text-sm font-medium text-gray-900">
-                                            $<?= number_format($corte['efectivo_esperado'] ?? 0, 2) ?>
-                                        </p>
-                                    </td>
-                                    <td class="py-4 text-center align-top">
-                                        <p class="text-sm font-medium text-gray-900">
-                                            $<?= number_format($corte['efectivo_contado'] ?? 0, 2) ?>
-                                        </p>
-                                    </td>
-                                    <td class="py-4 text-center align-top">
-                                        <?php if ($diferencia != 0): ?>
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                                <?= $diferencia > 0 ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800' ?>">
-                                                <i class="fas fa-<?= $diferencia > 0 ? 'plus' : 'minus' ?> mr-1"></i>
-                                                $<?= number_format(abs($diferencia), 2) ?>
+                                <tr>
+                                    <td>
+                                        <div class="cash-row-title">#<?= str_pad((string)$corte['id'], 6, '0', STR_PAD_LEFT) ?></div>
+                                        <div class="cash-row-sub">
+                                            <span class="cash-status <?= $is_open ? 'is-open' : 'is-closed' ?>">
+                                                <i class="fas fa-<?= $is_open ? 'lock-open' : 'lock' ?>"></i>
+                                                <?= ucfirst($estado) ?>
                                             </span>
-                                        <?php else: ?>
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                <i class="fas fa-check mr-1"></i>
-                                                Cuadrado
-                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="cash-row-title"><?= caja_hist_date($corte['fecha_apertura'] ?? null) ?></div>
+                                        <div class="cash-row-sub">
+                                            <?= caja_hist_date($corte['fecha_apertura'] ?? null, 'H:i') ?>
+                                            <?= !empty($corte['fecha_cierre']) ? ' - ' . caja_hist_date($corte['fecha_cierre'], 'H:i') : ' - abierta' ?>
+                                            · <?= caja_hist_duration($corte['fecha_apertura'] ?? null, $corte['fecha_cierre'] ?? null) ?>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="cash-row-title"><?= caja_hist_safe($corte['usuario_apertura'] ?? null) ?></div>
+                                        <?php if (!empty($corte['usuario_cierre']) && $corte['usuario_cierre'] != ($corte['usuario_apertura'] ?? null)): ?>
+                                            <div class="cash-row-sub">Cerró: <?= caja_hist_safe($corte['usuario_cierre']) ?></div>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="py-4 text-center align-top">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                            <?= $estado == 'abierto' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800' ?>">
-                                            <i class="fas fa-<?= $estado == 'abierto' ? 'lock-open' : 'lock' ?> mr-1"></i>
-                                            <?= ucfirst($estado) ?>
+                                    <td class="text-right">
+                                        <div class="cash-row-money is-income"><?= caja_hist_money($corte['total_ingresos'] ?? 0, true) ?></div>
+                                        <div class="cash-row-breakdown">
+                                            E <?= caja_hist_money($corte['total_ingresos_efectivo'] ?? 0) ?> ·
+                                            T <?= caja_hist_money($corte['total_ingresos_tarjeta'] ?? 0) ?> ·
+                                            Tr <?= caja_hist_money($corte['total_ingresos_transferencia'] ?? 0) ?>
+                                        </div>
+                                    </td>
+                                    <td class="text-right">
+                                        <div class="cash-row-money is-expense">-<?= caja_hist_money(abs((float)($corte['total_gastos'] ?? 0))) ?></div>
+                                        <div class="cash-row-breakdown">
+                                            E <?= caja_hist_money($corte['total_gastos_efectivo'] ?? 0) ?> ·
+                                            T <?= caja_hist_money($corte['total_gastos_tarjeta'] ?? 0) ?> ·
+                                            Tr <?= caja_hist_money($corte['total_gastos_transferencia'] ?? 0) ?>
+                                        </div>
+                                    </td>
+                                    <td class="text-right">
+                                        <div class="cash-row-money"><?= caja_hist_money($corte['efectivo_esperado'] ?? 0) ?></div>
+                                    </td>
+                                    <td class="text-right">
+                                        <div class="cash-row-money"><?= $corte['efectivo_contado'] !== null ? caja_hist_money($corte['efectivo_contado']) : '-' ?></div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="cash-difference <?= $difference_class ?>">
+                                            <i class="fas fa-<?= $diferencia == 0 ? 'check' : ($diferencia > 0 ? 'plus' : 'minus') ?>"></i>
+                                            <?= $diferencia == 0 ? 'Cuadrado' : caja_hist_money(abs($diferencia)) ?>
                                         </span>
                                     </td>
-                                    <td class="py-4 text-center align-top">
+                                    <td class="text-center">
                                         <div class="flex items-center justify-center gap-2">
-                                            <a href="<?= url('caja/corte/' . $corte['id']) ?>" 
-                                               class="text-blue-600 hover:text-blue-800 transition"
-                                               title="Ver detalle">
+                                            <a href="<?= url('caja/corte/' . $corte['id']) ?>" class="cash-action-icon" title="Ver detalle">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             <?php if ($estado == 'cerrado'): ?>
-                                                <a href="<?= url('caja/descargar-pdf/' . $corte['id']) ?>" 
-   class="text-red-600 hover:text-red-800 transition"
-   title="Descargar PDF">
-    <i class="fas fa-file-pdf"></i>
-</a>
-                                                <button onclick="exportarCorte(<?= $corte['id'] ?>)" 
-                                                        class="text-green-600 hover:text-green-800 transition"
-                                                        title="Exportar Excel">
+                                                <a href="<?= url('caja/descargar-pdf/' . $corte['id']) ?>" class="cash-action-icon is-pdf" title="Descargar PDF">
+                                                    <i class="fas fa-file-pdf"></i>
+                                                </a>
+                                                <button type="button" onclick="exportarCorte(<?= $corte['id'] ?>)" class="cash-action-icon is-excel" title="Exportar Excel">
                                                     <i class="fas fa-file-excel"></i>
                                                 </button>
                                             <?php endif; ?>
@@ -516,258 +1206,184 @@
                     </table>
                 </div>
             <?php endif; ?>
-        </div>
-    </div>
-    
-    <!-- Gráfica de Tendencias del Mes -->
-    <?php if (!empty($cortes)): ?>
-    <div class="max-w-7xl mx-auto mt-6">
-        <div class="bg-white rounded-xl shadow-lg p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <i class="fas fa-chart-line mr-2 text-blue-600"></i>
-                Tendencia de Ingresos y Gastos del Mes
-            </h3>
-            <div style="position: relative; height: 300px;">
-                <canvas id="chartTendencias"></canvas>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
-    
-    <!-- Resumen por Método de Pago -->
-    <?php if (!empty($cortes)): ?>
-    <div class="max-w-7xl mx-auto mt-6">
-        <div class="bg-white rounded-xl shadow-lg p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                <i class="fas fa-credit-card mr-2 text-purple-600"></i>
-                Resumen del Mes por Método de Pago
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <?php 
-                // Calcular totales por método
-                $totales_metodo = [
-                    'efectivo' => ['ingresos' => 0, 'gastos' => 0],
-                    'tarjeta' => ['ingresos' => 0, 'gastos' => 0],
-                    'transferencia' => ['ingresos' => 0, 'gastos' => 0]
-                ];
-                
-                foreach ($cortes as $corte) {
-                    if ($corte['estado'] == 'cerrado') {
-                        $totales_metodo['efectivo']['ingresos'] += $corte['total_ingresos_efectivo'] ?? 0;
-                        $totales_metodo['efectivo']['gastos'] += $corte['total_gastos_efectivo'] ?? 0;
-                        $totales_metodo['tarjeta']['ingresos'] += $corte['total_ingresos_tarjeta'] ?? 0;
-                        $totales_metodo['tarjeta']['gastos'] += $corte['total_gastos_tarjeta'] ?? 0;
-                        $totales_metodo['transferencia']['ingresos'] += $corte['total_ingresos_transferencia'] ?? 0;
-                        $totales_metodo['transferencia']['gastos'] += $corte['total_gastos_transferencia'] ?? 0;
-                    }
-                }
-                ?>
-                
-                <!-- Efectivo -->
-                <div class="border-2 border-green-200 rounded-xl p-4 bg-green-50">
-                    <h4 class="font-semibold text-gray-700 flex items-center mb-3">
-                        <i class="fas fa-money-bill-wave mr-2 text-green-600"></i>
-                        Efectivo
-                    </h4>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Ingresos:</span>
-                            <span class="font-semibold text-green-600">
-                                +$<?= number_format($totales_metodo['efectivo']['ingresos'], 2) ?>
-                            </span>
+        </section>
+
+        <?php if (!empty($cortes)): ?>
+            <section class="cash-analytics-grid">
+                <article class="cash-section-card">
+                    <div class="cash-section-head">
+                        <div>
+                            <span class="cash-section-label">Tendencia mensual</span>
+                            <h3>Ingresos y gastos por día</h3>
                         </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Gastos:</span>
-                            <span class="font-semibold text-red-600">
-                                -$<?= number_format($totales_metodo['efectivo']['gastos'], 2) ?>
-                            </span>
-                        </div>
-                        <div class="border-t pt-2">
-                            <div class="flex justify-between items-center">
-                                <span class="font-semibold text-gray-700">Balance:</span>
-                                <?php $balance_efectivo = $totales_metodo['efectivo']['ingresos'] - $totales_metodo['efectivo']['gastos']; ?>
-                                <span class="font-bold text-lg <?= $balance_efectivo >= 0 ? 'text-green-600' : 'text-red-600' ?>">
-                                    <?= $balance_efectivo >= 0 ? '+' : '' ?>$<?= number_format($balance_efectivo, 2) ?>
-                                </span>
-                            </div>
+                        <span class="cash-status is-closed">
+                            <i class="fas fa-chart-line"></i>
+                            <?= caja_hist_safe($periodo_label) ?>
+                        </span>
+                    </div>
+                    <div class="cash-section-body">
+                        <div class="cash-chart-frame">
+                            <canvas id="chartTendencias"></canvas>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Tarjeta -->
-                <div class="border-2 border-blue-200 rounded-xl p-4 bg-blue-50">
-                    <h4 class="font-semibold text-gray-700 flex items-center mb-3">
-                        <i class="fas fa-credit-card mr-2 text-blue-600"></i>
-                        Tarjeta
-                    </h4>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Ingresos:</span>
-                            <span class="font-semibold text-green-600">
-                                +$<?= number_format($totales_metodo['tarjeta']['ingresos'], 2) ?>
-                            </span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Gastos:</span>
-                            <span class="font-semibold text-red-600">
-                                -$<?= number_format($totales_metodo['tarjeta']['gastos'], 2) ?>
-                            </span>
-                        </div>
-                        <div class="border-t pt-2">
-                            <div class="flex justify-between items-center">
-                                <span class="font-semibold text-gray-700">Balance:</span>
-                                <?php $balance_tarjeta = $totales_metodo['tarjeta']['ingresos'] - $totales_metodo['tarjeta']['gastos']; ?>
-                                <span class="font-bold text-lg <?= $balance_tarjeta >= 0 ? 'text-green-600' : 'text-red-600' ?>">
-                                    <?= $balance_tarjeta >= 0 ? '+' : '' ?>$<?= number_format($balance_tarjeta, 2) ?>
-                                </span>
-                            </div>
+                </article>
+
+                <article class="cash-section-card">
+                    <div class="cash-section-head">
+                        <div>
+                            <span class="cash-section-label">Métodos de pago</span>
+                            <h3>Resumen de cortes cerrados</h3>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Transferencia -->
-                <div class="border-2 border-purple-200 rounded-xl p-4 bg-purple-50">
-                    <h4 class="font-semibold text-gray-700 flex items-center mb-3">
-                        <i class="fas fa-exchange-alt mr-2 text-purple-600"></i>
-                        Transferencia
-                    </h4>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Ingresos:</span>
-                            <span class="font-semibold text-green-600">
-                                +$<?= number_format($totales_metodo['transferencia']['ingresos'], 2) ?>
-                            </span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Gastos:</span>
-                            <span class="font-semibold text-red-600">
-                                -$<?= number_format($totales_metodo['transferencia']['gastos'], 2) ?>
-                            </span>
-                        </div>
-                        <div class="border-t pt-2">
-                            <div class="flex justify-between items-center">
-                                <span class="font-semibold text-gray-700">Balance:</span>
-                                <?php $balance_transferencia = $totales_metodo['transferencia']['ingresos'] - $totales_metodo['transferencia']['gastos']; ?>
-                                <span class="font-bold text-lg <?= $balance_transferencia >= 0 ? 'text-green-600' : 'text-red-600' ?>">
-                                    <?= $balance_transferencia >= 0 ? '+' : '' ?>$<?= number_format($balance_transferencia, 2) ?>
-                                </span>
-                            </div>
+                    <div class="cash-section-body">
+                        <div class="cash-method-grid">
+                            <?php foreach ($totales_metodo as $metodo): ?>
+                                <?php $balance_metodo = $metodo['ingresos'] - $metodo['gastos']; ?>
+                                <article class="cash-method-card">
+                                    <div class="cash-method-head">
+                                        <div>
+                                            <span class="cash-method-label"><?= caja_hist_safe($metodo['label']) ?></span>
+                                            <strong class="cash-method-balance"><?= caja_hist_money($balance_metodo, true) ?></strong>
+                                        </div>
+                                        <div class="cash-method-icon">
+                                            <i class="fas <?= caja_hist_safe($metodo['icon']) ?>"></i>
+                                        </div>
+                                    </div>
+                                    <div class="cash-method-row">
+                                        <span>Ingresos</span>
+                                        <strong class="cash-row-money is-income"><?= caja_hist_money($metodo['ingresos'], true) ?></strong>
+                                    </div>
+                                    <div class="cash-method-row">
+                                        <span>Gastos</span>
+                                        <strong class="cash-row-money is-expense">-<?= caja_hist_money(abs((float)$metodo['gastos'])) ?></strong>
+                                    </div>
+                                </article>
+                            <?php endforeach; ?>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
+                </article>
+            </section>
+        <?php endif; ?>
     </div>
-    <?php endif; ?>
 </div>
 
-<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-// Gráfica de tendencias
 <?php if (!empty($cortes)): ?>
-    // Preparar datos para la gráfica
     const cortesData = <?= json_encode($cortes) ?>;
-    
-    // Agrupar por día
     const datosPorDia = {};
+
     cortesData.forEach(corte => {
-        const fecha = corte.fecha_apertura.split(' ')[0];
-        if (!datosPorDia[fecha]) {
-            datosPorDia[fecha] = {
-                ingresos: 0,
-                gastos: 0
-            };
+        const fecha = (corte.fecha_apertura || '').split(' ')[0];
+        if (!fecha) {
+            return;
         }
+
+        if (!datosPorDia[fecha]) {
+            datosPorDia[fecha] = { ingresos: 0, gastos: 0 };
+        }
+
         datosPorDia[fecha].ingresos += parseFloat(corte.total_ingresos || 0);
         datosPorDia[fecha].gastos += parseFloat(corte.total_gastos || 0);
     });
-    
+
     const fechasOrdenadas = Object.keys(datosPorDia).sort();
     const ingresosPorDia = fechasOrdenadas.map(fecha => datosPorDia[fecha].ingresos);
     const gastosPorDia = fechasOrdenadas.map(fecha => datosPorDia[fecha].gastos);
     const etiquetas = fechasOrdenadas.map(fecha => {
-        const [año, mes, dia] = fecha.split('-');
-        return `${dia}/${mes}`;
+        const [year, month, day] = fecha.split('-');
+        return `${day}/${month}`;
     });
-    
-    const ctx = document.getElementById('chartTendencias').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: etiquetas,
-            datasets: [{
-                label: 'Ingresos',
-                data: ingresosPorDia,
-                borderColor: 'rgb(34, 197, 94)',
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                tension: 0.3,
-                fill: true
-            }, {
-                label: 'Gastos',
-                data: gastosPorDia,
-                borderColor: 'rgb(239, 68, 68)',
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                tension: 0.3,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                tooltip: {
+
+    const chartCanvas = document.getElementById('chartTendencias');
+    if (chartCanvas) {
+        const styles = getComputedStyle(document.querySelector('.cash-history-view'));
+        const incomeColor = styles.getPropertyValue('--ch-income').trim() || '#16824E';
+        const expenseColor = styles.getPropertyValue('--ch-expense').trim() || '#B93A32';
+        const textColor = styles.getPropertyValue('--ch-text').trim() || '#17233E';
+        const lineColor = styles.getPropertyValue('--ch-line-soft').trim() || '#E8DCCC';
+
+        new Chart(chartCanvas.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: etiquetas,
+                datasets: [{
+                    label: 'Ingresos',
+                    data: ingresosPorDia,
+                    borderColor: incomeColor,
+                    backgroundColor: 'rgba(22, 130, 78, 0.10)',
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    tension: 0.36,
+                    fill: true
+                }, {
+                    label: 'Gastos',
+                    data: gastosPorDia,
+                    borderColor: expenseColor,
+                    backgroundColor: 'rgba(185, 58, 50, 0.08)',
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    tension: 0.36,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
                     mode: 'index',
-                    intersect: false,
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: textColor,
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            font: { weight: '700' }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(23, 35, 62, .94)',
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.dataset.label ? context.dataset.label + ': ' : '';
+                                return label + '$' + new Intl.NumberFormat('es-MX').format(context.parsed.y);
                             }
-                            label += '$' + new Intl.NumberFormat('es-MX').format(context.parsed.y);
-                            return label;
                         }
                     }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '$' + new Intl.NumberFormat('es-MX').format(value);
-                        }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: textColor, font: { weight: '700' } },
+                        grid: { display: false }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: textColor,
+                            callback: function(value) {
+                                return '$' + new Intl.NumberFormat('es-MX').format(value);
+                            }
+                        },
+                        grid: { color: lineColor }
                     }
                 }
             }
-        }
-    });
+        });
+    }
 <?php endif; ?>
 
-// Función para imprimir corte
 function imprimirCorte(id) {
     window.open('<?= url('caja/corte/') ?>' + id + '?print=1', '_blank');
 }
 
-// Función para exportar corte
 function exportarCorte(id) {
     window.location.href = '<?= url('caja/exportar?formato=excel&corte_id=') ?>' + id;
 }
-
-// Función auxiliar para obtener nombre del mes
-<?php
-function obtener_nombre_mes($mes) {
-    $meses = [
-        1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
-        5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
-        9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
-    ];
-    return $meses[$mes] ?? '';
-}
-?>
 </script>
