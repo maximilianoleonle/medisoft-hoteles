@@ -1,4 +1,42 @@
 <!-- Vista Editar Habitación -->
+<?php
+$tiposHabitacion = is_array($tipos ?? null) && !empty($tipos) ? $tipos : Habitacion::getTipos();
+if (!isset($tiposHabitacion[$habitacion['tipo']])) {
+    $tiposHabitacion[$habitacion['tipo']] = function_exists('get_tipo_habitacion')
+        ? get_tipo_habitacion($habitacion['tipo'])
+        : ucfirst(str_replace('_', ' ', (string) $habitacion['tipo']));
+}
+
+$pisosHabitacion = is_array($pisos ?? null) && !empty($pisos) ? $pisos : Habitacion::getPisos();
+if (!isset($pisosHabitacion[(int) $habitacion['piso']])) {
+    $pisosHabitacion[(int) $habitacion['piso']] = 'Piso ' . (int) $habitacion['piso'];
+}
+
+$amenidadesHabitacion = is_array($amenidades ?? null) && !empty($amenidades)
+    ? $amenidades
+    : [
+        'pantalla' => 'Pantalla',
+        'balcon' => 'Balcon',
+        'jacuzzi' => 'Jacuzzi',
+        'amplia' => 'Mas amplia',
+    ];
+
+$rangosHabitacion = Habitacion::getRangoPrecios();
+if (function_exists('hotel_room_catalog_type_rows')) {
+    foreach (hotel_room_catalog_type_rows(null, true) as $catalogTypeRow) {
+        $catalogTypeCode = (string) ($catalogTypeRow['codigo'] ?? '');
+        $catalogTypePrice = (float) ($catalogTypeRow['precio_base_default'] ?? 0);
+
+        if ($catalogTypeCode !== '' && $catalogTypePrice > 0 && !isset($rangosHabitacion[$catalogTypeCode])) {
+            $rangosHabitacion[$catalogTypeCode] = [
+                'min' => $catalogTypePrice,
+                'max' => $catalogTypePrice,
+            ];
+        }
+    }
+}
+?>
+
 <style id="edit-room-redesign">
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
@@ -357,16 +395,7 @@
                     </h1>
                     <p class="text-gray-600">
                         <?php
-                        // Mostrar información del tipo actual
-                        $tiposInfo = [
-                            'sencilla' => '1 cama matrimonial (2 personas)',
-                            'doble' => '2 camas matrimoniales (4 personas)',
-                            'triple' => '3 camas matrimoniales (6 personas)',
-                            'cuadruple' => '4 camas matrimoniales (8 personas)',
-                            'doble_jacuzzi' => '2 camas matrimoniales con jacuzzi (4 personas)',
-                            'sencilla_jacuzzi' => '1 cama matrimonial con jacuzzi (2 personas)'
-                        ];
-                        echo $tiposInfo[$habitacion['tipo']] ?? 'Tipo especial';
+                        echo htmlspecialchars((string) ($tiposHabitacion[$habitacion['tipo']] ?? 'Tipo especial'), ENT_QUOTES, 'UTF-8');
                         ?>
                     </p>
                 </div>
@@ -443,9 +472,9 @@
                                         <select name="tipo"
                                                 required
                                                 class="w-full pl-4 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all appearance-none">
-                                            <?php foreach (Habitacion::getTipos() as $key => $tipo): ?>
+                                            <?php foreach ($tiposHabitacion as $key => $tipo): ?>
                                                 <option value="<?= $key ?>" <?= $habitacion['tipo'] == $key ? 'selected' : '' ?>>
-                                                    <?= $tipo ?>
+                                                    <?= htmlspecialchars((string) $tipo, ENT_QUOTES, 'UTF-8') ?>
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
@@ -464,12 +493,23 @@
                                         Ubicación - Piso <span class="text-red-500">*</span>
                                     </label>
                                     <div class="space-y-3">
+                                        <?php
+                                        $pisosAbajo = [];
+                                        $pisosArriba = [];
+                                        foreach ($pisosHabitacion as $pisoCatalogoNumero => $pisoCatalogoLabel) {
+                                            if ((int) $pisoCatalogoNumero < 0) {
+                                                $pisosAbajo[(int) $pisoCatalogoNumero] = $pisoCatalogoLabel;
+                                            } else {
+                                                $pisosArriba[(int) $pisoCatalogoNumero] = $pisoCatalogoLabel;
+                                            }
+                                        }
+                                        ?>
                                         <!-- Sótanos -->
                                         <div class="border-2 border-gray-200 rounded-xl p-4">
                                             <p class="text-xs font-medium text-gray-600 mb-2">Niveles abajo</p>
                                             <div class="grid grid-cols-3 gap-2">
                                                 <?php
-                                                $sotanos = [-4 => '4 abajo', -2 => '2 abajo', -1 => '1 abajo'];
+                                                $sotanos = $pisosAbajo;
                                                 foreach ($sotanos as $piso_num => $label):
                                                 ?>
                                                 <label class="relative">
@@ -481,7 +521,7 @@
                                                            class="sr-only peer">
                                                     <div class="flex flex-col items-center justify-center p-3 border-2 border-gray-200 rounded-xl cursor-pointer transition-all peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-checked:text-white hover:border-gray-300">
                                                         <i class="fas fa-arrow-down text-lg mb-1"></i>
-                                                        <span class="text-xs font-medium"><?= $label ?></span>
+                                                        <span class="text-xs font-medium"><?= htmlspecialchars((string) $label, ENT_QUOTES, 'UTF-8') ?></span>
                                                     </div>
                                                 </label>
                                                 <?php endforeach; ?>
@@ -493,7 +533,7 @@
                                             <p class="text-xs font-medium text-gray-600 mb-2">Pisos Superiores</p>
                                             <div class="grid grid-cols-3 gap-2">
                                                 <?php
-                                                $pisos_sup = [1 => 'Nivel piso', 2 => '2° Nivel', 3 => '3° Nivel'];
+                                                $pisos_sup = $pisosArriba;
                                                 foreach ($pisos_sup as $piso_num => $label):
                                                 ?>
                                                 <label class="relative">
@@ -505,7 +545,7 @@
                                                            class="sr-only peer">
                                                     <div class="flex flex-col items-center justify-center p-3 border-2 border-gray-200 rounded-xl cursor-pointer transition-all peer-checked:border-hotel-brown peer-checked:bg-hotel-brown peer-checked:text-white hover:border-gray-300">
                                                         <i class="fas fa-building text-lg mb-1"></i>
-                                                        <span class="text-xs font-medium"><?= $label ?></span>
+                                                        <span class="text-xs font-medium"><?= htmlspecialchars((string) $label, ENT_QUOTES, 'UTF-8') ?></span>
                                                     </div>
                                                 </label>
                                                 <?php endforeach; ?>
@@ -521,7 +561,7 @@
                                     </label>
                                     <?php
                                     // Mostrar rango sugerido según el tipo actual
-                                    $rangos = Habitacion::getRangoPrecios();
+                                    $rangos = $rangosHabitacion;
                                     $rango_actual = $rangos[$habitacion['tipo']] ?? ['min' => 500, 'max' => 1600];
                                     ?>
                                     <div class="mb-2">
@@ -590,35 +630,50 @@
                                 <p class="text-sm font-medium text-gray-700 mb-3">Características especiales:</p>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <?php
-                                    $caracteristicas_especiales = [
-                                        'pantalla' => ['icon' => 'tv', 'label' => 'Pantalla (en lugar de TV normal)', 'color' => 'purple'],
-                                        'balcon' => ['icon' => 'home', 'label' => 'Balcón', 'color' => 'green'],
-                                        'jacuzzi' => ['icon' => 'bath', 'label' => 'Jacuzzi', 'color' => 'blue', 'disabled_for' => ['doble_jacuzzi', 'sencilla_jacuzzi']],
-                                        'amplia' => ['icon' => 'expand-arrows-alt', 'label' => 'Habitación más amplia', 'color' => 'yellow']
+                                    $amenidadIconos = [
+                                        'pantalla' => ['icon' => 'tv', 'color' => 'purple'],
+                                        'balcon' => ['icon' => 'home', 'color' => 'green'],
+                                        'jacuzzi' => ['icon' => 'bath', 'color' => 'blue', 'disabled_for' => ['doble_jacuzzi', 'sencilla_jacuzzi']],
+                                        'amplia' => ['icon' => 'expand-arrows-alt', 'color' => 'yellow']
                                     ];
+                                    $caracteristicas_especiales = [];
+                                    foreach ($amenidadesHabitacion as $amenidadKey => $amenidadLabel) {
+                                        $meta = $amenidadIconos[$amenidadKey] ?? ['icon' => 'check-circle', 'color' => 'blue'];
+                                        $meta['label'] = $amenidadLabel;
+                                        $caracteristicas_especiales[$amenidadKey] = $meta;
+                                    }
 
                                     // Parsear características existentes
                                     $caracteristicas_actuales = strtolower($habitacion['caracteristicas'] ?? '');
+                                    $caracteristicas_actuales = strtr($caracteristicas_actuales, [
+                                        'á' => 'a',
+                                        'é' => 'e',
+                                        'í' => 'i',
+                                        'ó' => 'o',
+                                        'ú' => 'u',
+                                        'ñ' => 'n',
+                                    ]);
 
                                     foreach ($caracteristicas_especiales as $key => $especial):
                                         $keywords = [
                                             'pantalla' => 'pantalla',
-                                            'balcon' => 'balcón',
+                                            'balcon' => 'balcon',
                                             'jacuzzi' => 'jacuzzi',
-                                            'amplia' => 'más amplia'
+                                            'amplia' => 'amplia'
                                         ];
-                                        $isChecked = strpos($caracteristicas_actuales, $keywords[$key]) !== false;
+                                        $keyword = $keywords[$key] ?? strtolower((string) $especial['label']);
+                                        $isChecked = strpos($caracteristicas_actuales, $keyword) !== false;
                                         $isDisabled = isset($especial['disabled_for']) && in_array($habitacion['tipo'], $especial['disabled_for']);
                                     ?>
                                     <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-<?= $especial['color'] ?>-300 hover:bg-<?= $especial['color'] ?>-50 transition-all group <?= $isDisabled ? 'opacity-50 cursor-not-allowed' : '' ?>">
                                         <input type="checkbox"
                                                name="caracteristicas_especiales[]"
-                                               value="<?= $key ?>"
+                                               value="<?= htmlspecialchars((string) $key, ENT_QUOTES, 'UTF-8') ?>"
                                                <?= $isChecked ? 'checked' : '' ?>
                                                <?= $isDisabled ? 'disabled' : '' ?>
                                                class="mr-3 w-4 h-4 text-<?= $especial['color'] ?>-600 focus:ring-<?= $especial['color'] ?>-500 rounded">
                                         <i class="fas fa-<?= $especial['icon'] ?> mr-2 text-gray-600 group-hover:text-<?= $especial['color'] ?>-600"></i>
-                                        <span class="text-sm font-medium"><?= $especial['label'] ?></span>
+                                        <span class="text-sm font-medium"><?= htmlspecialchars((string) $especial['label'], ENT_QUOTES, 'UTF-8') ?></span>
                                         <?php if ($isDisabled): ?>
                                             <span class="ml-2 text-xs text-gray-500">(incluido en el tipo)</span>
                                         <?php endif; ?>
@@ -757,7 +812,7 @@
                             <div class="flex items-center justify-between mb-3">
                                 <span class="text-sm opacity-80">Ubicación:</span>
                                 <span class="font-medium">
-                                    <?= Habitacion::getNombrePiso($habitacion['piso']) ?>
+                                    <?= htmlspecialchars((string) ($pisosHabitacion[(int) $habitacion['piso']] ?? ('Piso ' . (int) $habitacion['piso'])), ENT_QUOTES, 'UTF-8') ?>
                                 </span>
                             </div>
 
@@ -797,7 +852,7 @@
                                 <div class="text-right">
                                     <p class="text-xs text-gray-500">Ubicación</p>
                                     <p class="text-lg font-bold text-gray-800" id="preview-piso">
-                                        <?= Habitacion::getNombrePiso($habitacion['piso']) ?>
+                                        <?= htmlspecialchars((string) ($pisosHabitacion[(int) $habitacion['piso']] ?? ('Piso ' . (int) $habitacion['piso'])), ENT_QUOTES, 'UTF-8') ?>
                                     </p>
                                 </div>
                             </div>
@@ -867,35 +922,10 @@
 <!-- Script de la vista hotelera -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Tipos de habitación con información - ACTUALIZADO
-    const tiposInfo = {
-        'sencilla': 'Sencilla',
-        'doble': 'Doble',
-        'triple': 'Triple',
-        'cuadruple': 'Cuádruple',
-        'doble_jacuzzi': 'Doble con Jacuzzi',
-        'sencilla_jacuzzi': 'Sencilla con Jacuzzi'
-    };
-
-    // Información de pisos - ACTUALIZADO
-    const pisosInfo = {
-        '-4': '4 niveles abajo',
-        '-2': '2 niveles abajo',
-        '-1': 'Un nivel abajo',
-        '1': 'Nivel de piso',
-        '2': '2º Nivel',
-        '3': '3º Nivel'
-    };
-
-    // Rangos de precio por tipo - ACTUALIZADO
-    const rangosPrecio = {
-        'sencilla': {min: 550, max: 550},
-        'doble': {min: 700, max: 1000},
-        'triple': {min: 1100, max: 1200},
-        'cuadruple': {min: 1400, max: 1400},
-        'doble_jacuzzi': {min: 1600, max: 1600},
-        'sencilla_jacuzzi': {min: 1000, max: 1000}
-    };
+    const tiposInfo = <?= json_encode($tiposHabitacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const pisosInfo = <?= json_encode($pisosHabitacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const rangosPrecio = <?= json_encode($rangosHabitacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK) ?>;
+    const amenidadesInfo = <?= json_encode($amenidadesHabitacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 
     // Preview en tiempo real
     const numeroInput = document.querySelector('input[name="numero"]');
@@ -947,13 +977,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const caracteristicasSeleccionadas = [];
         caracteristicasCheckboxes.forEach(checkbox => {
             if (checkbox.checked && !checkbox.disabled) {
-                const labels = {
-                    'pantalla': 'Pantalla',
-                    'balcon': 'Balcón',
-                    'jacuzzi': 'Jacuzzi',
-                    'amplia': 'Más Amplia'
-                };
-                caracteristicasSeleccionadas.push(labels[checkbox.value] || checkbox.value);
+                caracteristicasSeleccionadas.push(amenidadesInfo[checkbox.value] || checkbox.value);
             }
         });
 

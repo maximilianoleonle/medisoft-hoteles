@@ -24,10 +24,15 @@ class PwaController extends Controller {
             ])
             : [];
 
+        $nombreConfig = function_exists('hotel_config_get')
+            ? hotel_config_get('pwa.nombre_app', '', (int) $hotel['id'])
+            : '';
+        $nombreFallback = function_exists('hotel_branding_public_name')
+            ? hotel_branding_public_name($branding, $hotel['nombre'] ?? 'Medisoft Hoteles')
+            : ($branding['nombre_visual'] ?? $hotel['nombre'] ?? 'Medisoft Hoteles');
+
         $nombre = $this->textoSeguro(
-            function_exists('hotel_branding_public_name')
-                ? hotel_branding_public_name($branding, $hotel['nombre'] ?? 'Medisoft Hoteles')
-                : ($branding['nombre_visual'] ?? $hotel['nombre'] ?? 'Medisoft Hoteles'),
+            trim((string) $nombreConfig) !== '' ? $nombreConfig : $nombreFallback,
             'Medisoft Hoteles',
             80
         );

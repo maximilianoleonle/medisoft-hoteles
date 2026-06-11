@@ -1,4 +1,25 @@
 <?php require_once APP_PATH . '/views/layout/header.php'; ?>
+<?php
+$unidadesMedida = is_array($unidadesMedida ?? null) && !empty($unidadesMedida)
+    ? $unidadesMedida
+    : [
+        'pieza' => 'Pieza',
+        'rollo' => 'Rollo',
+        'caja' => 'Caja',
+        'paquete' => 'Paquete',
+        'litro' => 'Litro',
+        'kilogramo' => 'Kilogramo',
+        'unidad' => 'Unidad',
+    ];
+
+$unidadSeleccionada = (string) ($_SESSION['old_input']['unidad_medida'] ?? 'pieza');
+if (!array_key_exists($unidadSeleccionada, $unidadesMedida)) {
+    foreach ($unidadesMedida as $unidadKey => $unidadLabel) {
+        $unidadSeleccionada = (string) $unidadKey;
+        break;
+    }
+}
+?>
 
 <!-- CSS crítico inline para prevenir FOUC -->
 <style>
@@ -91,13 +112,12 @@
                                 </label>
                                 <select name="unidad_medida" 
                                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown">
-                                    <option value="pieza">Pieza</option>
-                                    <option value="rollo">Rollo</option>
-                                    <option value="caja">Caja</option>
-                                    <option value="paquete">Paquete</option>
-                                    <option value="litro">Litro</option>
-                                    <option value="kilogramo">Kilogramo</option>
-                                    <option value="unidad">Unidad</option>
+                                    <?php foreach ($unidadesMedida as $unidadKey => $unidadLabel): ?>
+                                        <?php $unidadKey = (string) $unidadKey; ?>
+                                        <option value="<?= htmlspecialchars($unidadKey, ENT_QUOTES, 'UTF-8') ?>" <?= $unidadSeleccionada === $unidadKey ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars((string) $unidadLabel, ENT_QUOTES, 'UTF-8') ?>
+                                        </option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                         </div>

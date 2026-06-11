@@ -418,22 +418,28 @@
                             <div class="mb-6">
                                 <p class="text-sm font-medium text-gray-700 mb-3">Características especiales:</p>
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition-all">
-                                        <input type="checkbox" name="caracteristicas_especiales[]" value="pantalla" class="mr-3">
-                                        <span class="text-sm font-medium">Pantalla</span>
-                                    </label>
-                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition-all">
-                                        <input type="checkbox" name="caracteristicas_especiales[]" value="balcon" class="mr-3">
-                                        <span class="text-sm font-medium">Balcón</span>
-                                    </label>
-                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition-all">
-                                        <input type="checkbox" name="caracteristicas_especiales[]" value="jacuzzi" class="mr-3">
-                                        <span class="text-sm font-medium">Jacuzzi</span>
-                                    </label>
-                                    <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition-all">
-                                        <input type="checkbox" name="caracteristicas_especiales[]" value="amplia" class="mr-3">
-                                        <span class="text-sm font-medium">Más Amplia</span>
-                                    </label>
+                                    <?php
+                                    $amenidadesHabitacion = is_array($amenidades ?? null) && !empty($amenidades)
+                                        ? $amenidades
+                                        : [
+                                            'pantalla' => 'Pantalla',
+                                            'balcon' => 'Balcon',
+                                            'jacuzzi' => 'Jacuzzi',
+                                            'amplia' => 'Mas amplia',
+                                        ];
+                                    $oldEspeciales = $_SESSION['old_input']['caracteristicas_especiales'] ?? [];
+                                    $oldEspeciales = is_array($oldEspeciales) ? $oldEspeciales : [];
+                                    ?>
+                                    <?php foreach ($amenidadesHabitacion as $amenidadKey => $amenidadLabel): ?>
+                                        <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition-all">
+                                            <input type="checkbox"
+                                                   name="caracteristicas_especiales[]"
+                                                   value="<?= htmlspecialchars((string) $amenidadKey, ENT_QUOTES, 'UTF-8') ?>"
+                                                   <?= in_array((string) $amenidadKey, $oldEspeciales, true) ? 'checked' : '' ?>
+                                                   class="mr-3">
+                                            <span class="text-sm font-medium"><?= htmlspecialchars((string) $amenidadLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
                                 </div>
                             </div>
 

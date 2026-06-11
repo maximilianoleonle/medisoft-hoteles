@@ -8,6 +8,7 @@ require_once __DIR__ . '/../../core/Database.php';
 require_once __DIR__ . '/../../core/View.php';
 require_once __DIR__ . '/../models/Inventario.php';
 require_once __DIR__ . '/../models/MovimientoInventario.php';
+require_once __DIR__ . '/../helpers/hotel_config.php';
 
 class InventarioController extends Controller {
     
@@ -774,7 +775,8 @@ public function debugMovimientosDateAction() {
         
         View::renderTemplate('inventario/nuevo', [
             'title' => 'Nuevo Producto - ' . current_hotel_display_name(),
-            'categorias' => $categorias
+            'categorias' => $categorias,
+            'unidadesMedida' => function_exists('hotel_general_catalog_units') ? hotel_general_catalog_units() : []
         ]);
     }
     
@@ -1107,7 +1109,8 @@ public function debugMovimientosDateAction() {
         View::renderTemplate('inventario/editar', [
             'title' => 'Editar Producto - ' . current_hotel_display_name(),
             'producto' => $producto,
-            'categorias' => $categorias
+            'categorias' => $categorias,
+            'unidadesMedida' => function_exists('hotel_general_catalog_units') ? hotel_general_catalog_units() : []
         ]);
     }
     

@@ -19,14 +19,20 @@ class ConfiguracionController extends Controller {
     protected function before() {
         $this->requireAuth();
         
-        // Solo el gerente puede acceder a configuración
-        if (!is_gerente()) {
+        // Acceso administrativo del hotel actual.
+        if (!$this->puedeGestionarConfiguracionHotel()) {
             set_mensaje('No tiene permisos para acceder a esta sección', 'error');
             $this->redirect('dashboard');
             return false;
         }
         
         return true;
+    }
+
+    private function puedeGestionarConfiguracionHotel() {
+        $rolHotel = function_exists('current_hotel_user_role') ? current_hotel_user_role() : null;
+
+        return is_gerente() || in_array($rolHotel, ['gerente', 'administrador'], true);
     }
     
     /**
@@ -65,11 +71,25 @@ class ConfiguracionController extends Controller {
             'libre' => disk_free_space(STORAGE_PATH),
             'usado' => disk_total_space(STORAGE_PATH) - disk_free_space(STORAGE_PATH)
         ];
+
+        $hotelSettingDefinitions = function_exists('hotel_config_editable_definitions') ? hotel_config_editable_definitions() : [];
+        $hotelSettings = function_exists('hotel_config_editable_values') ? hotel_config_editable_values() : [];
+        $hotelSettings = $this->aplicarFallbackLegacyHotelSettings($hotelSettings, $config['hotel']);
+        $hotelId = function_exists('current_hotel_id') ? current_hotel_id() : ($_SESSION['hotel_id'] ?? null);
         
         // CAMBIAR View::render por View::renderTemplate
         View::renderTemplate('configuracion/index', [
             'title' => 'Configuración del Sistema',
             'config' => $config,
+            'hotelSettingDefinitions' => $hotelSettingDefinitions,
+            'hotelSettings' => $hotelSettings,
+            'hotelBranding' => function_exists('current_hotel_branding') ? current_hotel_branding() : [],
+            'roomTypeCatalog' => function_exists('hotel_room_catalog_type_rows') ? hotel_room_catalog_type_rows($hotelId, true) : [],
+            'roomFloorCatalog' => function_exists('hotel_room_catalog_floor_rows') ? hotel_room_catalog_floor_rows($hotelId, true) : [],
+            'roomAmenityCatalog' => function_exists('hotel_room_catalog_amenity_rows') ? hotel_room_catalog_amenity_rows($hotelId, true) : [],
+            'generalZoneCatalog' => function_exists('hotel_general_catalog_zone_rows') ? hotel_general_catalog_zone_rows($hotelId, true) : [],
+            'generalParkingCatalog' => function_exists('hotel_general_catalog_parking_rows') ? hotel_general_catalog_parking_rows($hotelId, true) : [],
+            'generalUnitCatalog' => function_exists('hotel_general_catalog_unit_rows') ? hotel_general_catalog_unit_rows($hotelId, true) : [],
             'ultimo_backup' => $ultimo_backup,
             'espacio' => $espacio
         ]);
@@ -84,16 +104,100 @@ class ConfiguracionController extends Controller {
         }
         
         $this->validateCSRF();
-        
+
+        $hotelConfigValues = [];
+        $hotelConfigPayload = $_POST['hotel_config'] ?? null;
+
+        if (is_array($hotelConfigPayload) && function_exists('hotel_config_normalize_editable_payload')) {
+            $hotelConfigResult = hotel_config_normalize_editable_payload($hotelConfigPayload);
+
+            if (!empty($hotelConfigResult['errors'])) {
+                set_mensaje(implode(' ', $hotelConfigResult['errors']), 'error');
+                $this->redirect('configuracion');
+                return;
+            }
+
+            $hotelConfigValues = $hotelConfigResult['values'];
+        }
+
+        $roomCatalogValues = null;
+        $roomCatalogPayload = $_POST['room_catalog'] ?? null;
+
+        if (is_array($roomCatalogPayload) && function_exists('hotel_room_catalog_normalize_payload')) {
+            $roomCatalogResult = hotel_room_catalog_normalize_payload($roomCatalogPayload);
+
+            if (!empty($roomCatalogResult['errors'])) {
+                set_mensaje(implode('<br>', $roomCatalogResult['errors']), 'error');
+                $this->redirect('configuracion');
+                return;
+            }
+
+            $roomCatalogValues = $roomCatalogResult['values'];
+        }
+
+        $generalCatalogValues = null;
+        $generalCatalogPayload = $_POST['general_catalog'] ?? null;
+
+        if (is_array($generalCatalogPayload) && function_exists('hotel_general_catalog_normalize_payload')) {
+            $generalCatalogResult = hotel_general_catalog_normalize_payload($generalCatalogPayload);
+
+            if (!empty($generalCatalogResult['errors'])) {
+                set_mensaje(implode('<br>', $generalCatalogResult['errors']), 'error');
+                $this->redirect('configuracion');
+                return;
+            }
+
+            $generalCatalogValues = $generalCatalogResult['values'];
+        }
+
+        $brandingValues = null;
+        $brandingPayload = $_POST['hotel_branding'] ?? null;
+        $brandingContext = $this->hotelActualParaBranding();
+
+        if (is_array($brandingPayload)) {
+            $brandingValues = $this->datosBrandingHotelDesdePayload($brandingPayload);
+            $brandingErrors = [];
+
+            if (empty($brandingContext['id'])) {
+                $brandingErrors[] = 'No se pudo resolver el hotel activo para guardar la marca.';
+            } elseif (!class_exists('HotelBranding')) {
+                $brandingErrors[] = 'El modulo de branding no esta disponible.';
+            } else {
+                $brandingErrors = array_merge(
+                    $this->procesarUploadsBrandingHotel($brandingContext, $brandingValues),
+                    (new HotelBranding())->validarDatos($brandingValues)
+                );
+            }
+
+            if (!empty($brandingErrors)) {
+                set_mensaje(implode('<br>', $brandingErrors), 'error');
+                $this->redirect('configuracion');
+                return;
+            }
+        }
+
         try {
             // Hotel
-            $this->configuracionModel->set('hotel.nombre', $this->getPost('hotel_nombre'));
-            $this->configuracionModel->set('hotel.direccion', $this->getPost('hotel_direccion'));
-            $this->configuracionModel->set('hotel.telefono', $this->getPost('hotel_telefono'));
-            $this->configuracionModel->set('hotel.email', $this->getPost('hotel_email'));
-            $this->configuracionModel->set('hotel.check_in_time', $this->getPost('hotel_check_in_time'));
-            $this->configuracionModel->set('hotel.check_out_time', $this->getPost('hotel_check_out_time'));
+            $hotelNombre = trim((string) $this->getPost('hotel_nombre'));
+            if (is_array($brandingValues) && trim((string) ($brandingValues['nombre_visual'] ?? '')) !== '') {
+                $hotelNombre = trim((string) $brandingValues['nombre_visual']);
+            }
+
+            $hotelDireccion = $hotelConfigValues['contacto.direccion'] ?? $this->getPost('hotel_direccion');
+            $hotelTelefono = $hotelConfigValues['contacto.telefono'] ?? $this->getPost('hotel_telefono');
+            $hotelEmail = $hotelConfigValues['contacto.email'] ?? $this->getPost('hotel_email');
+            $hotelCheckIn = $hotelConfigValues['operacion.checkin_hora'] ?? $this->getPost('hotel_check_in_time');
+            $hotelCheckOut = $hotelConfigValues['operacion.checkout_hora'] ?? $this->getPost('hotel_check_out_time');
+
+            $this->configuracionModel->set('hotel.nombre', $hotelNombre);
+            $this->configuracionModel->set('hotel.direccion', $hotelDireccion);
+            $this->configuracionModel->set('hotel.telefono', $hotelTelefono);
+            $this->configuracionModel->set('hotel.email', $hotelEmail);
+            $this->configuracionModel->set('hotel.check_in_time', $hotelCheckIn);
+            $this->configuracionModel->set('hotel.check_out_time', $hotelCheckOut);
             $this->configuracionModel->set('hotel.horas_estancia', $this->getPost('hotel_horas_estancia'), 'integer');
+
+            $_SESSION['hotel_nombre'] = $hotelNombre;
             
             // Tarifas
             $this->configuracionModel->set('tarifas.incremento_fin_semana', $this->getPost('tarifas_incremento_fin_semana'), 'float');
@@ -109,6 +213,26 @@ class ConfiguracionController extends Controller {
             $this->configuracionModel->set('sistema.backup_enabled', $this->getPost('sistema_backup_enabled') ? 1 : 0, 'boolean');
             $this->configuracionModel->set('sistema.backup_frequency', $this->getPost('sistema_backup_frequency'));
             $this->configuracionModel->set('sistema.backup_keep_last', $this->getPost('sistema_backup_keep_last'), 'integer');
+
+            if (!empty($hotelConfigValues) && function_exists('hotel_config_save_editable_values')) {
+                hotel_config_save_editable_values($hotelConfigValues);
+            }
+
+            if (is_array($roomCatalogValues) && function_exists('hotel_room_catalog_save_values')) {
+                hotel_room_catalog_save_values($roomCatalogValues);
+            }
+
+            if (is_array($generalCatalogValues) && function_exists('hotel_general_catalog_save_values')) {
+                hotel_general_catalog_save_values($generalCatalogValues);
+            }
+
+            if (is_array($brandingValues) && !empty($brandingContext['id'])) {
+                $brandingModel = new HotelBranding();
+
+                if (!$brandingModel->guardarParaHotel((int) $brandingContext['id'], $brandingValues)) {
+                    throw new RuntimeException('No se pudo guardar el branding del hotel.');
+                }
+            }
             
             // Registrar en log
             $this->registrarAccion('actualizar_configuracion', 'Configuración del sistema actualizada');
@@ -280,8 +404,85 @@ class ConfiguracionController extends Controller {
     }
     
     /**
-     * Registrar acción en log
+     * Completa valores editables con la configuracion legacy cuando el hotel aun no tiene filas propias.
      */
+    private function aplicarFallbackLegacyHotelSettings(array $hotelSettings, array $configHotel) {
+        $fallbacks = [
+            'contacto.telefono' => $configHotel['telefono'] ?? '',
+            'contacto.email' => $configHotel['email'] ?? '',
+            'contacto.direccion' => $configHotel['direccion'] ?? '',
+            'operacion.checkin_hora' => $configHotel['check_in_time'] ?? '15:00',
+            'operacion.checkout_hora' => $configHotel['check_out_time'] ?? '12:00',
+        ];
+
+        foreach ($fallbacks as $key => $value) {
+            if (!array_key_exists($key, $hotelSettings) || trim((string) $hotelSettings[$key]) === '') {
+                $hotelSettings[$key] = $value;
+            }
+        }
+
+        return $hotelSettings;
+    }
+
+    private function hotelActualParaBranding() {
+        return [
+            'id' => function_exists('current_hotel_id') ? current_hotel_id() : ($_SESSION['hotel_id'] ?? null),
+            'slug' => function_exists('current_hotel_slug') ? current_hotel_slug() : ($_SESSION['hotel_slug'] ?? null),
+            'nombre' => function_exists('current_hotel_nombre') ? current_hotel_nombre() : ($_SESSION['hotel_nombre'] ?? null),
+        ];
+    }
+
+    private function datosBrandingHotelDesdePayload(array $payload) {
+        return [
+            'nombre_visual' => trim((string) ($payload['nombre_visual'] ?? '')),
+            'logo_url' => trim((string) ($payload['logo_url'] ?? '')),
+            'favicon_url' => trim((string) ($payload['favicon_url'] ?? '')),
+            'login_background_url' => trim((string) ($payload['login_background_url'] ?? '')),
+            'pwa_icon_192_url' => trim((string) ($payload['pwa_icon_192_url'] ?? '')),
+            'pwa_icon_512_url' => trim((string) ($payload['pwa_icon_512_url'] ?? '')),
+            'color_primary' => trim((string) ($payload['color_primary'] ?? '')),
+            'color_secondary' => trim((string) ($payload['color_secondary'] ?? '')),
+            'color_accent' => trim((string) ($payload['color_accent'] ?? '')),
+            'sidebar_style' => trim((string) ($payload['sidebar_style'] ?? 'default')),
+            'login_style' => trim((string) ($payload['login_style'] ?? 'default')),
+            'activo' => 1,
+        ];
+    }
+
+    private function procesarUploadsBrandingHotel(array $hotel, array &$data) {
+        $errores = [];
+        $mapa = [
+            'logo_file' => ['tipo' => 'logo', 'campo' => 'logo_url'],
+            'favicon_file' => ['tipo' => 'favicon', 'campo' => 'favicon_url'],
+            'login_background_file' => ['tipo' => 'login_bg', 'campo' => 'login_background_url'],
+            'pwa_icon_192_file' => ['tipo' => 'pwa_icon_192', 'campo' => 'pwa_icon_192_url'],
+            'pwa_icon_512_file' => ['tipo' => 'pwa_icon_512', 'campo' => 'pwa_icon_512_url'],
+        ];
+
+        foreach ($mapa as $input => $config) {
+            if (empty($_FILES[$input]) || ($_FILES[$input]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+
+            if (!function_exists('hotel_branding_upload_asset')) {
+                $errores[] = 'El helper de upload de branding no esta disponible.';
+                continue;
+            }
+
+            $resultado = hotel_branding_upload_asset($_FILES[$input], $hotel['slug'] ?? '', $config['tipo']);
+            if (empty($resultado['success'])) {
+                $errores[] = $resultado['error'] ?? 'No se pudo subir el asset de branding.';
+                continue;
+            }
+
+            if (!empty($resultado['uploaded']) && !empty($resultado['path'])) {
+                $data[$config['campo']] = $resultado['path'];
+            }
+        }
+
+        return $errores;
+    }
+
     private function registrarAccion($tipo, $descripcion) {
         $db = Database::getInstance();
         $db->query(

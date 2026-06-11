@@ -427,21 +427,27 @@ if (!function_exists('guest_detail_json_attr')) {
 
 .guest-vehicle-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
     gap: 12px;
 }
 
 .guest-vehicle-card {
-    border: 1px solid var(--gd-line-soft);
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(220px, .8fr);
+    gap: 14px;
+    align-items: stretch;
+    border: 1px solid color-mix(in srgb, var(--gd-primary) 12%, var(--gd-line-soft));
     border-radius: 18px;
-    background: #FFFFFF;
+    background:
+        linear-gradient(135deg, #FFFFFF, color-mix(in srgb, var(--gd-accent) 4%, #FFFFFF));
     padding: 15px;
-    transition: transform .18s ease, border-color .18s ease;
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
 
 .guest-vehicle-card:hover {
     transform: translateY(-1px);
     border-color: color-mix(in srgb, var(--gd-accent) 36%, var(--gd-line));
+    box-shadow: 0 18px 34px -30px rgba(15,23,42,.48);
 }
 
 .guest-vehicle-top {
@@ -454,12 +460,14 @@ if (!function_exists('guest_detail_json_attr')) {
 .guest-vehicle-title {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    min-width: 0;
 }
 
 .guest-vehicle-icon {
-    width: 42px;
-    height: 42px;
+    width: 48px;
+    height: 48px;
+    flex: none;
     display: grid;
     place-items: center;
     border-radius: 14px;
@@ -471,24 +479,33 @@ if (!function_exists('guest_detail_json_attr')) {
     display: block;
     color: var(--gd-text);
     font-weight: 950;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
 }
 
 .guest-vehicle-title span {
-    display: block;
-    margin-top: 2px;
+    width: fit-content;
+    display: inline-flex;
+    margin-top: 7px;
+    border: 1px solid var(--gd-line-soft);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--gd-primary) 5%, #FFFFFF);
     color: var(--gd-muted);
-    font-size: .8rem;
-    font-weight: 750;
+    padding: 4px 8px;
+    font-size: .78rem;
+    font-weight: 850;
+    font-variant-numeric: tabular-nums;
 }
 
 .guest-mini-actions {
     display: flex;
     gap: 7px;
+    flex: none;
 }
 
 .guest-icon-btn {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     display: grid;
     place-items: center;
     border: 1px solid var(--gd-line-soft);
@@ -510,8 +527,12 @@ if (!function_exists('guest_detail_json_attr')) {
 
 .guest-vehicle-details {
     display: grid;
-    gap: 7px;
-    margin-top: 14px;
+    gap: 9px;
+    margin-top: 0;
+    padding: 12px;
+    border: 1px solid var(--gd-line-soft);
+    border-radius: 15px;
+    background: rgba(255,255,255,.72);
 }
 
 .guest-detail-row {
@@ -527,6 +548,7 @@ if (!function_exists('guest_detail_json_attr')) {
     color: var(--gd-text);
     font-weight: 900;
     text-align: right;
+    overflow-wrap: anywhere;
 }
 
 .guest-parking-badge,
@@ -572,6 +594,41 @@ if (!function_exists('guest_detail_json_attr')) {
     color: var(--gd-primary);
     font-size: 1.05rem;
     margin-bottom: 5px;
+}
+
+.guest-history-empty {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: center;
+    padding: 22px;
+    text-align: left;
+}
+
+.guest-history-empty i {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    margin: 0;
+}
+
+.guest-history-empty strong {
+    grid-column: 2;
+    grid-row: 1;
+    margin-bottom: 4px;
+}
+
+.guest-history-empty p {
+    grid-column: 2;
+    grid-row: 2;
+    margin: 0;
+    max-width: 54ch;
+}
+
+.guest-history-empty .guest-panel-action {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    width: max-content;
+    white-space: nowrap;
 }
 
 .guest-reservation-list {
@@ -1006,6 +1063,14 @@ if (!function_exists('guest_detail_json_attr')) {
         grid-template-columns: 1fr;
         gap: 10px;
     }
+
+    .guest-vehicle-card {
+        grid-template-columns: 1fr;
+    }
+
+    .guest-vehicle-details {
+        margin-top: 0;
+    }
 }
 
 @media (max-width: 620px) {
@@ -1039,6 +1104,35 @@ if (!function_exists('guest_detail_json_attr')) {
     .guest-action,
     .guest-side-action {
         width: 100%;
+    }
+
+    .guest-vehicle-top {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+    }
+
+    .guest-vehicle-title {
+        align-items: flex-start;
+    }
+
+    .guest-history-empty {
+        grid-template-columns: 1fr;
+        text-align: center;
+        justify-items: center;
+    }
+
+    .guest-history-empty i,
+    .guest-history-empty strong,
+    .guest-history-empty p,
+    .guest-history-empty .guest-panel-action {
+        grid-column: auto;
+        grid-row: auto;
+    }
+
+    .guest-history-empty .guest-panel-action {
+        width: 100%;
+        margin-top: 8px;
     }
 
     .guest-form-grid,
@@ -1192,7 +1286,7 @@ if (!function_exists('guest_detail_json_attr')) {
                     </div>
                 </section>
 
-                <section id="vehiculos" class="guest-panel">
+                <section id="vehiculos" class="guest-panel guest-vehicles-panel">
                     <div class="guest-panel-head">
                         <div>
                             <h2>Vehículos registrados</h2>
@@ -1265,7 +1359,7 @@ if (!function_exists('guest_detail_json_attr')) {
                     </div>
                 </section>
 
-                <section class="guest-panel">
+                <section class="guest-panel guest-history-panel">
                     <div class="guest-panel-head">
                         <div>
                             <h2>Historial de reservaciones</h2>
@@ -1322,11 +1416,11 @@ if (!function_exists('guest_detail_json_attr')) {
                                 <?php endforeach; ?>
                             </div>
                         <?php else: ?>
-                            <div class="guest-empty">
+                            <div class="guest-empty guest-history-empty">
                                 <i class="fas fa-calendar-times"></i>
                                 <strong>Sin reservaciones registradas</strong>
                                 <p>Este huésped aún no tiene reservaciones en el sistema.</p>
-                                <a href="<?= url('reservaciones/crear?huesped_id=' . ($huesped['id'] ?? 0)) ?>" class="guest-panel-action" style="margin-top: 14px;">
+                                <a href="<?= url('reservaciones/crear?huesped_id=' . ($huesped['id'] ?? 0)) ?>" class="guest-panel-action">
                                     <i class="fas fa-calendar-plus"></i>
                                     Crear primera reservación
                                 </a>

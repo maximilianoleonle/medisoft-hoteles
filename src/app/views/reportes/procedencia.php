@@ -3,7 +3,7 @@ $porEstado = $porEstado ?? [];
 $topEstados = $topEstados ?? array_slice($porEstado, 0, 10);
 $porCiudad = $porCiudad ?? [];
 $evolucionMensual = $evolucionMensual ?? [];
-$fecha_inicio = !empty($fecha_inicio) ? $fecha_inicio : date('Y-m-01');
+$fecha_inicio = !empty($fecha_inicio) ? $fecha_inicio : date('Y-m-d', strtotime('-1 month'));
 $fecha_fin = !empty($fecha_fin) ? $fecha_fin : date('Y-m-d');
 
 if (!function_exists('proc_geo_money')) {

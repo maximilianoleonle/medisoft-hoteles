@@ -949,6 +949,22 @@ select.guest-control {
 .guests-page .guest-page-link:hover { border-color: var(--guest-gold) !important; color: var(--guest-gold-ink) !important; background: var(--guest-gold-soft) !important; }
 .guests-page .guest-page-current { background: var(--guest-heading) !important; border-color: var(--guest-heading) !important; color: #fff !important; }
 .guests-page .guest-pagination-summary { color: var(--guest-muted) !important; }
+.guests-page [data-guest-results-region] {
+    transition: opacity .18s ease, filter .18s ease;
+}
+.guests-page [data-guest-results-region].is-updating {
+    opacity: .58;
+    filter: saturate(.88);
+    pointer-events: none;
+}
+.guests-page .guest-filter-form.is-searching [data-guest-search-icon] {
+    color: var(--guest-brand) !important;
+    animation: guest-live-search-pulse .72s ease-in-out infinite;
+}
+@keyframes guest-live-search-pulse {
+    0%, 100% { transform: translateY(-50%) scale(1); opacity: .62; }
+    50% { transform: translateY(-50%) scale(1.12); opacity: 1; }
+}
 </style>
 
 <div class="guests-page hotel-page p-4 sm:p-6">
@@ -973,7 +989,7 @@ select.guest-control {
             </div>
         </section>
 
-        <section class="guest-summary-strip hotel-toolbar" aria-label="Resumen de huéspedes">
+        <section class="guest-summary-strip hotel-toolbar" aria-label="Resumen de huéspedes" data-guest-summary>
             <div class="guest-summary-item hotel-card">
                 <p class="guest-summary-label">Total</p>
                 <p class="guest-summary-value"><?= number_format($total_huespedes) ?></p>
@@ -989,17 +1005,20 @@ select.guest-control {
         </section>
 
         <section class="guest-panel hotel-card p-3 md:p-4">
-            <form method="GET" action="<?= url('huespedes') ?>" class="guest-filter-form">
+            <form method="GET" action="<?= url('huespedes') ?>" class="guest-filter-form" data-guest-live-search-form>
                 <div>
                     <label class="block text-xs font-extrabold text-slate-600 uppercase tracking-wide mb-1">Buscar huésped</label>
                     <div class="relative">
                         <input type="text"
                                name="buscar"
+                               autocomplete="off"
+                               inputmode="search"
+                               data-guest-live-search-input
                                value="<?= htmlspecialchars($buscar ?? '') ?>"
                                title="Buscar por nombre, telefono, email o placas"
                                placeholder="Nombre, teléfono, email o placas"
                                class="guest-control pl-10 pr-4 py-2 border text-sm">
-                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" data-guest-search-icon></i>
                     </div>
                 </div>
 
@@ -1028,6 +1047,7 @@ select.guest-control {
             </form>
         </section>
 
+        <div data-guest-results-region aria-live="polite" aria-busy="false">
         <?php if (!empty($guestRows)): ?>
         <section class="guest-panel hotel-card overflow-hidden">
             <div class="px-4 py-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -1373,5 +1393,182 @@ select.guest-control {
             <p class="guest-pagination-summary">Página <?= number_format($pagina_actual) ?> de <?= number_format($total_paginas) ?></p>
         </nav>
         <?php endif; ?>
+        </div>
     </div>
 </div>
+
+<script>
+(() => {
+    const form = document.querySelector('[data-guest-live-search-form]');
+    const input = document.querySelector('[data-guest-live-search-input]');
+    const searchIcon = document.querySelector('[data-guest-search-icon]');
+
+    if (!form || !input) return;
+
+    let liveSearchTimer = null;
+    let isComposing = false;
+    let lastQuery = input.value.trim();
+    let activeRequest = null;
+    const parser = new DOMParser();
+    const delay = 280;
+
+    const getResultsRegion = () => document.querySelector('[data-guest-results-region]');
+    const getSummary = () => document.querySelector('[data-guest-summary]');
+
+    const setSearching = (isSearching) => {
+        form.classList.toggle('is-searching', isSearching);
+        getResultsRegion()?.classList.toggle('is-updating', isSearching);
+        getResultsRegion()?.setAttribute('aria-busy', isSearching ? 'true' : 'false');
+        if (searchIcon) {
+            searchIcon.classList.toggle('fa-search', !isSearching);
+            searchIcon.classList.toggle('fa-circle-notch', isSearching);
+            searchIcon.classList.toggle('fa-spin', isSearching);
+        }
+    };
+
+    const buildSearchUrl = (targetUrl = null) => {
+        const url = targetUrl ? new URL(targetUrl, window.location.origin) : new URL(form.action, window.location.origin);
+        const data = new FormData(form);
+
+        for (const [key, value] of data.entries()) {
+            const normalizedValue = String(value || '').trim();
+            if (normalizedValue) {
+                url.searchParams.set(key, normalizedValue);
+            } else {
+                url.searchParams.delete(key);
+            }
+        }
+
+        if (!targetUrl) {
+            url.searchParams.delete('page');
+        }
+
+        return url;
+    };
+
+    const updateFromDocument = (doc) => {
+        const incomingSummary = doc.querySelector('[data-guest-summary]');
+        const currentSummary = getSummary();
+        if (incomingSummary && currentSummary) {
+            currentSummary.innerHTML = incomingSummary.innerHTML;
+        }
+
+        const incomingRegion = doc.querySelector('[data-guest-results-region]');
+        const currentRegion = getResultsRegion();
+        if (incomingRegion && currentRegion) {
+            currentRegion.replaceWith(incomingRegion);
+        }
+    };
+
+    const fetchResults = async (url, { pushState = true } = {}) => {
+        if (activeRequest) {
+            activeRequest.abort();
+        }
+
+        const controller = new AbortController();
+        activeRequest = controller;
+        setSearching(true);
+
+        try {
+            const response = await fetch(url.toString(), {
+                credentials: 'same-origin',
+                signal: controller.signal,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('No se pudo cargar la busqueda');
+            }
+
+            const html = await response.text();
+            const doc = parser.parseFromString(html, 'text/html');
+            updateFromDocument(doc);
+
+            if (pushState) {
+                window.history.replaceState({}, '', url.pathname + url.search);
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error('Error en busqueda de huespedes:', error);
+                HTMLFormElement.prototype.submit.call(form);
+            }
+        } finally {
+            if (activeRequest === controller) {
+                activeRequest = null;
+                setSearching(false);
+            }
+        }
+    };
+
+    const submitLiveSearch = () => {
+        const currentSearch = input.value.trim();
+        if (currentSearch === lastQuery) return;
+        lastQuery = currentSearch;
+
+        fetchResults(buildSearchUrl());
+    };
+
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        lastQuery = input.value.trim();
+        fetchResults(buildSearchUrl());
+    });
+
+    form.querySelector('[name="estado"]')?.addEventListener('change', () => {
+        lastQuery = input.value.trim();
+        fetchResults(buildSearchUrl());
+    });
+
+    form.querySelector('.guest-reset-btn')?.addEventListener('click', (event) => {
+        event.preventDefault();
+        input.value = '';
+
+        const estado = form.querySelector('[name="estado"]');
+        if (estado) {
+            estado.value = '';
+        }
+
+        lastQuery = '';
+        fetchResults(new URL(event.currentTarget.href, window.location.origin));
+        input.focus();
+    });
+
+    document.addEventListener('click', (event) => {
+        const link = event.target.closest('[data-guest-results-region] .guest-pagination a');
+        if (!link || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+
+        fetchResults(buildSearchUrl(link.href));
+    });
+
+    window.addEventListener('popstate', () => {
+        const params = new URLSearchParams(window.location.search);
+        input.value = params.get('buscar') || '';
+        const estado = form.querySelector('[name="estado"]');
+        if (estado) {
+            estado.value = params.get('estado') || '';
+        }
+
+        lastQuery = input.value.trim();
+        fetchResults(new URL(window.location.href), { pushState: false });
+    });
+
+    input.addEventListener('compositionstart', () => {
+        isComposing = true;
+    });
+
+    input.addEventListener('compositionend', () => {
+        isComposing = false;
+        window.clearTimeout(liveSearchTimer);
+        liveSearchTimer = window.setTimeout(submitLiveSearch, delay);
+    });
+
+    input.addEventListener('input', () => {
+        if (isComposing) return;
+        window.clearTimeout(liveSearchTimer);
+        liveSearchTimer = window.setTimeout(submitLiveSearch, delay);
+    });
+})();
+</script>

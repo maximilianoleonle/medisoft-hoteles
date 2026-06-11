@@ -173,9 +173,9 @@ public function indexAction() {
         'habitaciones' => $habitaciones,
         'estadisticas' => $estadisticas,
         'filtros' => $filtros,
-        'tipos' => Habitacion::getTipos(),
+        'tipos' => $this->catalogoTiposHabitacion(),
         'estados' => $estados,
-        'pisos' => Habitacion::getPisos()
+        'pisos' => $this->catalogoPisosHabitacion()
     ]);
 }
 
@@ -364,9 +364,9 @@ if (!empty($filtros['estado']) && $filtros['estado'] === 'mantenimiento') {
         'habitaciones' => $habitaciones_procesadas,
         'estadisticas' => $estadisticas,
         'filtros' => $filtros,
-        'tipos' => Habitacion::getTipos(),
+        'tipos' => $this->catalogoTiposHabitacion(),
         'estados' => $estados,
-        'pisos' => Habitacion::getPisos(),
+        'pisos' => $this->catalogoPisosHabitacion(),
         'mostrar_disponibilidad_fecha' => true,
         'fecha_consultada' => $fecha_consulta
     ]);
@@ -578,7 +578,7 @@ error_log(print_r($ocupacion_actual, true));
         'mantenimientos_programados' => $mantenimientos_programados ?? [],
         'reservacion_pendiente' => $reservacion_pendiente,
         'estados' => Habitacion::getEstados(),
-        'tipos' => Habitacion::getTipos()
+        'tipos' => $this->catalogoTiposHabitacion()
     ]);
 }
     
@@ -590,8 +590,9 @@ error_log(print_r($ocupacion_actual, true));
         
         View::renderTemplate('habitaciones/crear', [
             'title' => 'Nueva Habitación - ' . current_hotel_display_name(),
-            'tipos' => Habitacion::getTipos(),
-            'pisos' => Habitacion::getPisos()
+            'tipos' => $this->catalogoTiposHabitacion(),
+            'pisos' => $this->catalogoPisosHabitacion(),
+            'amenidades' => $this->catalogoAmenidadesHabitacion()
         ]);
     }
     
@@ -626,8 +627,8 @@ error_log(print_r($ocupacion_actual, true));
             $data['caracteristicas'] = $this->generarDescripcionCaracteristicas($data['tipo'], $caracteristicas_especiales);
         }
         
-        // Validar datos
-        $errores = $this->habitacionModel->validar($data);
+        // Validar datos contra los catalogos configurables del hotel
+        $errores = $this->validarHabitacionConCatalogos($data);
         
         // Verificar número único
         if ($this->habitacionModel->exists(['numero' => $data['numero']])) {
@@ -790,7 +791,7 @@ public function historial() {
         'title' => 'Historial Completo - Habitación ' . $habitacion['numero'],
         'habitacion' => $habitacion,
         'historial' => $historial,
-        'tipos' => Habitacion::getTipos()
+        'tipos' => $this->catalogoTiposHabitacion()
     ]);
 }
     /**
@@ -810,8 +811,9 @@ public function historial() {
         View::renderTemplate('habitaciones/editar', [
             'title' => 'Editar Habitación - ' . current_hotel_display_name(),
             'habitacion' => $habitacion,
-            'tipos' => Habitacion::getTipos(),
-            'pisos' => Habitacion::getPisos()
+            'tipos' => $this->catalogoTiposHabitacion(),
+            'pisos' => $this->catalogoPisosHabitacion(),
+            'amenidades' => $this->catalogoAmenidadesHabitacion()
         ]);
     }
     
@@ -852,8 +854,8 @@ public function historial() {
             $data['caracteristicas'] = $this->generarDescripcionCaracteristicas($data['tipo'], $caracteristicas_especiales);
         }
         
-        // Validar datos
-        $errores = $this->habitacionModel->validar($data);
+        // Validar datos contra los catalogos configurables del hotel
+        $errores = $this->validarHabitacionConCatalogos($data);
         
         // Verificar número único (excluyendo la habitación actual)
         $sql = "SELECT COUNT(*) as total FROM habitaciones WHERE numero = ? AND id != ? AND hotel_id = ?";
@@ -1453,11 +1455,71 @@ public function cancelarMantenimientoProgramadoAction() {
             'fecha_salida' => $fecha_salida,
             'tipo_filtro' => $tipo_filtro,
             'habitaciones_disponibles' => $habitaciones_disponibles,
-            'tipos' => Habitacion::getTipos()
+            'tipos' => $this->catalogoTiposHabitacion()
         ]);
     }
     
     // ==================== MÉTODOS PRIVADOS ====================
+
+    private function catalogoTiposHabitacion()
+    {
+        $tipos = function_exists('hotel_room_catalog_types')
+            ? hotel_room_catalog_types($this->hotelIdActual())
+            : [];
+
+        return !empty($tipos) ? $tipos : Habitacion::getTipos();
+    }
+
+    private function catalogoPisosHabitacion()
+    {
+        $pisos = function_exists('hotel_room_catalog_floors')
+            ? hotel_room_catalog_floors($this->hotelIdActual())
+            : [];
+
+        return !empty($pisos) ? $pisos : Habitacion::getPisos();
+    }
+
+    private function catalogoAmenidadesHabitacion()
+    {
+        $amenidades = function_exists('hotel_room_catalog_amenities')
+            ? hotel_room_catalog_amenities($this->hotelIdActual())
+            : [];
+
+        return !empty($amenidades) ? $amenidades : [
+            'pantalla' => 'Pantalla',
+            'balcon' => 'Balcon',
+            'jacuzzi' => 'Jacuzzi',
+            'amplia' => 'Mas amplia',
+        ];
+    }
+
+    private function validarHabitacionConCatalogos(array $data)
+    {
+        $errores = [];
+
+        if (empty($data['numero'])) {
+            $errores[] = 'El numero de habitacion es obligatorio';
+        } elseif (strlen((string) $data['numero']) > 10) {
+            $errores[] = 'El numero de habitacion no puede exceder 10 caracteres';
+        }
+
+        $tiposValidos = $this->catalogoTiposHabitacion();
+        if (empty($data['tipo']) || !array_key_exists((string) $data['tipo'], $tiposValidos)) {
+            $errores[] = 'Debe seleccionar un tipo de habitacion valido';
+        }
+
+        if (!is_numeric($data['precio_base']) || $data['precio_base'] <= 0) {
+            $errores[] = 'El precio debe ser un numero mayor a cero';
+        }
+
+        $pisosValidos = $this->catalogoPisosHabitacion();
+        $piso = (int) ($data['piso'] ?? 0);
+        if (!is_numeric($data['piso'] ?? null) || !array_key_exists($piso, $pisosValidos)) {
+            $errores[] = 'Debe seleccionar un piso valido del catalogo.';
+        }
+
+        return $errores;
+    }
 
     private function hotelIdActual()
     {
@@ -1793,52 +1855,68 @@ public function liberarMultiples() {
      * Generar descripción automática de características
      */
     private function generarDescripcionCaracteristicas($tipo, $especiales = []) {
-        // Información base por tipo
+        $especiales = is_array($especiales) ? $especiales : [];
+
+        // Informacion base por tipo conocido
         $camas_info = [
             'sencilla' => '1 cama matrimonial',
             'doble' => '2 camas matrimoniales',
             'triple' => '3 camas matrimoniales',
-            'suite' => '4 camas matrimoniales',
-            'premium' => '2 camas matrimoniales'
+            'cuadruple' => '4 camas matrimoniales',
+            'doble_jacuzzi' => '2 camas matrimoniales',
+            'sencilla_jacuzzi' => '1 cama matrimonial'
         ];
-        
-        $descripcion = [$camas_info[$tipo] ?? '2 camas matrimoniales'];
-        
-        // Agregar especiales en orden de importancia
-        $orden_especiales = ['jacuzzi', 'pantalla', 'balcon', 'amplia'];
-        foreach ($orden_especiales as $especial) {
-            if (in_array($especial, $especiales)) {
-                switch ($especial) {
-                    case 'jacuzzi':
-                        $descripcion[] = 'jacuzzi';
-                        // Para jacuzzi premium, cambiar a 1 cama
-                        if ($tipo === 'premium') {
-                            $descripcion[0] = '1 cama matrimonial';
-                        }
-                        break;
-                    case 'pantalla':
-                        $descripcion[] = 'pantalla';
-                        break;
-                    case 'balcon':
-                        $descripcion[] = 'balcón';
-                        break;
-                    case 'amplia':
-                        $descripcion[] = 'habitación más amplia';
-                        break;
+
+        $baseTipo = $camas_info[$tipo] ?? '';
+
+        if ($baseTipo === '' && function_exists('hotel_room_catalog_type_rows')) {
+            foreach (hotel_room_catalog_type_rows($this->hotelIdActual(), true) as $row) {
+                if (($row['codigo'] ?? '') !== $tipo) {
+                    continue;
                 }
+
+                $baseTipo = trim((string) ($row['descripcion'] ?? ''));
+                if ($baseTipo === '') {
+                    $baseTipo = trim((string) ($row['nombre'] ?? ''));
+                }
+                break;
             }
         }
-        
-        // Características base del hotel
-        $base = ['baño', 'ventilador', 'agua caliente', 'Wifi', 'Cablevisión', 'estacionamiento'];
-        
-        // TV según si tiene pantalla
-        if (!in_array('pantalla', $especiales)) {
+
+        $descripcion = [$baseTipo !== '' ? $baseTipo : 'Habitacion'];
+
+        if (strpos((string) $tipo, 'jacuzzi') !== false && !in_array('jacuzzi', $especiales, true)) {
+            $descripcion[] = 'jacuzzi';
+        }
+
+        $amenidades = $this->catalogoAmenidadesHabitacion();
+        $orden_especiales = array_values(array_unique(array_merge(
+            ['jacuzzi', 'pantalla', 'balcon', 'amplia'],
+            array_keys($amenidades)
+        )));
+
+        foreach ($orden_especiales as $especial) {
+            if (!in_array($especial, $especiales, true)) {
+                continue;
+            }
+
+            if ($especial === 'jacuzzi' && strpos((string) $tipo, 'jacuzzi') !== false) {
+                continue;
+            }
+
+            if (isset($amenidades[$especial])) {
+                $descripcion[] = $amenidades[$especial];
+            }
+        }
+
+        $base = ['bano', 'ventilador', 'agua caliente', 'Wifi', 'Cablevision', 'estacionamiento'];
+
+        if (!in_array('pantalla', $especiales, true)) {
             array_unshift($base, 'TV normal');
         }
-        
+
         $descripcion = array_merge($descripcion, $base);
-        
+
         return implode(', ', $descripcion);
     }
     

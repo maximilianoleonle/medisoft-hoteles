@@ -1271,7 +1271,7 @@
     .cash-command-page .stat-card,
     .cash-command-page .card-efectivo {
         position: relative;
-        min-height: 144px !important;
+        min-height: 128px !important;
         border-radius: var(--cash-radius-md) !important;
         border: 1px solid var(--cash-line) !important;
         box-shadow: none !important;
@@ -1279,7 +1279,7 @@
     }
 
     .cash-command-page .stat-card {
-        padding: 17px !important;
+        padding: 18px 18px 17px !important;
         background: rgba(255,255,255,.86) !important;
     }
 
@@ -1297,8 +1297,16 @@
     }
 
     .cash-command-page .stat-card .flex {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) 48px;
+        gap: 16px !important;
         height: 100%;
-        align-items: flex-start !important;
+        align-items: center !important;
+    }
+
+    .cash-command-page .stat-card .flex > div:first-child,
+    .cash-command-page .card-efectivo .flex > div:first-child {
+        min-width: 0;
     }
 
     .cash-command-page .stat-card p:first-child,
@@ -1312,26 +1320,41 @@
     .cash-command-page .card-efectivo p.text-3xl {
         margin-top: 5px;
         font-family: var(--cash-sans);
-        font-size: clamp(1.6rem, 2vw, 2.2rem) !important;
+        font-size: clamp(1.55rem, 1.9vw, 2.05rem) !important;
         font-weight: 950 !important;
         line-height: 1 !important;
         letter-spacing: 0 !important;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
     }
 
     .cash-command-page .stat-help {
         max-width: 26ch;
-        margin-top: 12px !important;
+        margin-top: 10px !important;
         color: var(--cash-muted) !important;
-        font-size: .76rem !important;
+        font-size: .72rem !important;
         line-height: 1.35 !important;
     }
 
     .cash-command-page .icon-circle,
     .cash-command-page .card-efectivo .bg-white\/15 {
-        width: 42px !important;
-        height: 42px !important;
-        border-radius: 11px !important;
+        width: 46px !important;
+        height: 46px !important;
+        min-width: 46px !important;
+        min-height: 46px !important;
+        border-radius: 12px !important;
+        display: inline-grid !important;
+        place-items: center !important;
+        align-self: center !important;
+        justify-self: end !important;
         box-shadow: none !important;
+    }
+
+    .cash-command-page .icon-circle i,
+    .cash-command-page .card-efectivo .bg-white\/15 i {
+        display: block !important;
+        line-height: 1 !important;
+        transform: translateY(.5px);
     }
 
     .cash-command-page .icon-circle.green-ic {
@@ -1372,8 +1395,11 @@
     }
 
     .cash-command-page .card-efectivo > .flex {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) 48px;
+        gap: 16px !important;
         width: 100%;
-        align-items: flex-start !important;
+        align-items: center !important;
     }
 
     .cash-command-page .cash-summary-wrap > .bg-white {
@@ -1456,7 +1482,7 @@
 
     .cash-command-page .cash-activity-wrap {
         display: grid !important;
-        grid-template-columns: minmax(0, 1.18fr) minmax(360px, .82fr) !important;
+        grid-template-columns: minmax(0, 1.28fr) minmax(360px, .72fr) !important;
         gap: 16px !important;
         align-items: start !important;
     }
@@ -1466,6 +1492,11 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 16px !important;
         grid-column: auto !important;
+        align-items: stretch !important;
+    }
+
+    .cash-command-page .cash-activity-wrap > .lg\:col-span-2 > * {
+        margin-top: 0 !important;
     }
 
     .cash-command-page .cash-activity-wrap > .bg-white,
@@ -1475,6 +1506,30 @@
         background: rgba(255,255,255,.92) !important;
         border: 1px solid var(--cash-line) !important;
         box-shadow: var(--cash-command-shadow) !important;
+    }
+
+    .cash-command-page .cash-activity-wrap > .lg\:col-span-2 > .bg-white {
+        min-height: 0 !important;
+        height: 100%;
+        display: flex !important;
+        flex-direction: column;
+    }
+
+    .cash-command-page .cash-activity-wrap > .lg\:col-span-2 > .bg-white > .p-4 {
+        padding: 16px !important;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .cash-command-page .cash-activity-wrap > .lg\:col-span-2 > .bg-white .text-center.py-8 {
+        flex: 1;
+        min-height: 128px;
+        padding-top: 26px !important;
+        padding-bottom: 24px !important;
+        display: grid;
+        place-items: center;
+        align-content: center;
     }
 
     .cash-command-page .section-header,
@@ -1532,7 +1587,7 @@
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center !important;
         gap: 12px !important;
-        padding: 13px !important;
+        padding: 12px !important;
         border-radius: 10px !important;
         background: #fff !important;
         border: 1px solid var(--cash-soft-line) !important;
@@ -1605,7 +1660,7 @@
 
     .cash-command-page .cash-shortcuts-wrap h3 {
         margin: 0 !important;
-        padding: 16px 18px !important;
+        padding: 14px 18px !important;
         border-bottom: 1px solid var(--cash-soft-line);
     }
 
@@ -1620,24 +1675,54 @@
 
     .cash-command-page .cash-shortcuts-wrap .grid {
         padding: 14px !important;
-        gap: 10px !important;
+        gap: 12px !important;
+        align-items: stretch !important;
     }
 
     .cash-command-page .quick-link {
-        min-height: 76px;
-        padding: 13px !important;
+        height: auto !important;
+        min-height: 86px !important;
+        padding: 14px !important;
         border-radius: 10px !important;
         background: #fff !important;
         border: 1px solid var(--cash-soft-line) !important;
         box-shadow: none !important;
+        display: grid !important;
+        grid-template-columns: 44px minmax(0, 1fr) auto;
+        align-items: center !important;
+        gap: 12px !important;
     }
 
     .cash-command-page .quick-link-icon {
-        width: 42px !important;
-        height: 42px !important;
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
         border-radius: 10px !important;
         background: color-mix(in srgb, var(--cash-gold) 10%, #fff) !important;
         border: 1px solid var(--cash-soft-line) !important;
+        display: grid !important;
+        place-items: center !important;
+        align-self: center !important;
+    }
+
+    .cash-command-page .quick-link-icon i {
+        line-height: 1 !important;
+    }
+
+    .cash-command-page .quick-link > div:nth-child(2) {
+        min-width: 0;
+    }
+
+    .cash-command-page .quick-link p {
+        margin: 0 !important;
+        line-height: 1.25 !important;
+    }
+
+    .cash-command-page .quick-link p:first-child {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     #modalIngreso,

@@ -1410,6 +1410,84 @@ if (isset($_SESSION['flash_message']) &&
     box-shadow: 0 12px 24px -18px color-mix(in srgb, var(--rd-brand) 68%, transparent);
 }
 
+.reservation-detail-v2 .rd-related-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: -6px 0 16px;
+}
+
+.reservation-detail-v2 .rd-related-links a,
+.reservation-detail-v2 .rd-inline-link,
+.reservation-detail-v2 .rd-room-link,
+.reservation-detail-v2 .rd-mini-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    color: var(--rd-brand);
+    text-decoration: none;
+    border-radius: 11px;
+    transition: color .18s ease, background .18s ease, border-color .18s ease, transform .18s ease;
+}
+
+.reservation-detail-v2 .rd-related-links a {
+    min-height: 36px;
+    padding: 8px 11px;
+    border: 1px solid color-mix(in srgb, var(--rd-accent) 22%, var(--rd-line));
+    background: color-mix(in srgb, var(--rd-accent) 5%, #FDFBF7);
+    color: var(--rd-brand);
+    font-size: .75rem;
+    font-weight: 850;
+}
+
+.reservation-detail-v2 .rd-related-links a:hover,
+.reservation-detail-v2 .rd-related-links a:focus-visible,
+.reservation-detail-v2 .rd-inline-link:hover,
+.reservation-detail-v2 .rd-inline-link:focus-visible,
+.reservation-detail-v2 .rd-room-link:hover,
+.reservation-detail-v2 .rd-room-link:focus-visible,
+.reservation-detail-v2 .rd-mini-link:hover,
+.reservation-detail-v2 .rd-mini-link:focus-visible {
+    color: color-mix(in srgb, var(--rd-accent) 70%, var(--rd-brand));
+    border-color: color-mix(in srgb, var(--rd-accent) 42%, var(--rd-line));
+    background: color-mix(in srgb, var(--rd-accent) 8%, #FDFBF7);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.reservation-detail-v2 .rd-inline-link {
+    justify-content: flex-end;
+    max-width: 100%;
+    padding: 4px 7px;
+    margin: -4px -7px;
+    font-weight: 950;
+}
+
+.reservation-detail-v2 .rd-room-link {
+    padding: 4px 7px;
+    margin: -4px -7px;
+    color: var(--rd-brand) !important;
+    font-weight: 950;
+}
+
+.reservation-detail-v2 .rd-mini-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 10px;
+}
+
+.reservation-detail-v2 .rd-mini-link {
+    min-height: 30px;
+    padding: 6px 9px;
+    border: 1px solid var(--rd-line-soft);
+    background: #FDFBF7;
+    color: var(--rd-muted);
+    font-size: .7rem;
+    font-weight: 850;
+}
+
 .reservation-detail-v2 .rd-section-card {
     scroll-margin-top: 145px;
     position: relative;
@@ -1600,6 +1678,23 @@ if (isset($_SESSION['flash_message']) &&
         flex: 0 0 auto;
         scroll-snap-align: start;
         white-space: nowrap;
+    }
+
+    .reservation-detail-v2 .rd-related-links {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px;
+    }
+
+    .reservation-detail-v2 .rd-related-links a {
+        justify-content: center;
+        text-align: center;
+        min-height: 38px;
+    }
+
+    .reservation-detail-v2 .rd-inline-link {
+        justify-content: flex-start;
+        margin-left: -7px;
     }
 
     .reservation-detail-v2 .card-header {
@@ -2042,6 +2137,47 @@ if ($puede_checkin): ?>
         </a>
     </nav>
 
+    <?php
+    $rd_reservacion_id = (int)($reservacion['id'] ?? 0);
+    $rd_huesped_id = (int)($huesped['id'] ?? ($reservacion['huesped_id'] ?? 0));
+    $rd_busqueda_reservacion = urlencode((string)$rd_reservacion_id);
+    $rd_busqueda_caja = urlencode((string)$rd_reservacion_id);
+    ?>
+    <div class="rd-related-links no-print" aria-label="Accesos relacionados">
+        <?php if ($rd_huesped_id > 0): ?>
+            <a href="<?= url('huespedes/' . $rd_huesped_id) ?>" title="Abrir el perfil completo del huesped">
+                <i class="fas fa-user-circle"></i>
+                Perfil del huesped
+            </a>
+            <a href="<?= url('huespedes/' . $rd_huesped_id . '#vehiculos') ?>" title="Ver vehiculos registrados del huesped">
+                <i class="fas fa-car"></i>
+                Vehiculos
+            </a>
+        <?php endif; ?>
+        <?php if ($rd_reservacion_id > 0): ?>
+            <?php if (in_array(($reservacion['estado'] ?? ''), ['confirmada', 'checked_in'], true)): ?>
+                <a href="<?= url('reservaciones/editar/' . $rd_reservacion_id) ?>" title="Editar datos de la reservacion">
+                    <i class="fas fa-pen"></i>
+                    Editar reservacion
+                </a>
+            <?php endif; ?>
+            <?php if ($reservacion['estado'] == 'confirmada'): ?>
+                <a href="<?= url('reservaciones/editar-habitaciones/' . $rd_reservacion_id) ?>" title="Modificar habitaciones de esta reservacion">
+                    <i class="fas fa-bed"></i>
+                    Modificar habitaciones
+                </a>
+            <?php endif; ?>
+            <a href="<?= url('facturacion?buscar=' . $rd_busqueda_reservacion) ?>" title="Buscar solicitudes de factura de esta reservacion">
+                <i class="fas fa-file-invoice-dollar"></i>
+                Facturacion
+            </a>
+            <a href="<?= url('caja/movimientos?buscar=' . $rd_busqueda_caja) ?>" title="Buscar movimientos de caja de esta reservacion">
+                <i class="fas fa-cash-register"></i>
+                Movimientos de caja
+            </a>
+        <?php endif; ?>
+    </div>
+
     <!-- Grid Principal -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <!-- Columna Principal -->
@@ -2127,6 +2263,20 @@ if ($puede_checkin): ?>
                     Cambiar Método de Pago
                 </button>
             </div>
+            <div class="rd-mini-actions no-print" style="justify-content:center;">
+                <a href="<?= url('caja/movimientos?buscar=' . $rd_busqueda_caja) ?>"
+                   class="rd-mini-link"
+                   title="Buscar movimientos de caja de esta reservacion">
+                    <i class="fas fa-cash-register"></i>
+                    Caja
+                </a>
+                <a href="<?= url('facturacion?buscar=' . $rd_busqueda_reservacion) ?>"
+                   class="rd-mini-link"
+                   title="Buscar solicitudes de factura de esta reservacion">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    Facturacion
+                </a>
+            </div>
         </div>
     <?php endif; ?>
 </div>
@@ -2192,8 +2342,18 @@ if ($puede_checkin): ?>
                                 <div class="flex justify-between items-start">
                                     <div class="min-w-0">
                                         <h4 class="font-bold text-gray-800">
+                                            <?php if (!empty($hab['habitacion_id'])): ?>
+                                                <a href="<?= url('habitaciones/' . (int)$hab['habitacion_id']) ?>"
+                                                   class="rd-room-link"
+                                                   onclick="event.stopPropagation();"
+                                                   title="Ver detalle de la habitacion <?= htmlspecialchars($hab['numero'] ?? '') ?>">
+                                            <?php endif; ?>
                                             <i class="fas fa-door-open mr-1 text-purple-500"></i>
                                             Habitación <?= htmlspecialchars($hab['numero'] ?? '') ?>
+                                            <?php if (!empty($hab['habitacion_id'])): ?>
+                                                    <i class="fas fa-arrow-up-right-from-square text-[10px] opacity-60"></i>
+                                                </a>
+                                            <?php endif; ?>
                                         </h4>
                                         <p class="text-xs text-gray-600 mt-1">
                                             <?= htmlspecialchars($hab['tipo'] ?? '') ?> • Piso <?= htmlspecialchars($hab['piso'] ?? '') ?>
@@ -2215,6 +2375,24 @@ if ($puede_checkin): ?>
                                         <?= $es_cortesia_habitacion ? 'Cortes&iacute;a' : format_money($precio_habitacion_pagado) ?>
                                     </span>
                                 </div>
+                                <?php if (!empty($hab['habitacion_id'])): ?>
+                                    <div class="rd-mini-actions no-print">
+                                        <a href="<?= url('habitaciones/' . (int)$hab['habitacion_id']) ?>"
+                                           class="rd-mini-link"
+                                           onclick="event.stopPropagation();"
+                                           title="Abrir detalle de habitacion">
+                                            <i class="fas fa-eye"></i>
+                                            Ver detalle
+                                        </a>
+                                        <a href="<?= url('habitaciones/' . (int)$hab['habitacion_id'] . '/historial') ?>"
+                                           class="rd-mini-link"
+                                           onclick="event.stopPropagation();"
+                                           title="Ver historial de la habitacion">
+                                            <i class="fas fa-clock-rotate-left"></i>
+                                            Historial
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -2233,28 +2411,59 @@ if ($puede_checkin): ?>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div class="info-row">
                             <span class="info-label">Nombre completo</span>
-                            <span class="info-value"><?= htmlspecialchars($huesped['nombre_completo'] ?? 'No especificado') ?></span>
+                            <span class="info-value">
+                                <?php if (!empty($huesped['id'])): ?>
+                                    <a href="<?= url('huespedes/' . (int)$huesped['id']) ?>"
+                                       class="rd-inline-link"
+                                       title="Ver perfil completo del huesped">
+                                        <?= htmlspecialchars($huesped['nombre_completo'] ?? 'No especificado') ?>
+                                        <i class="fas fa-arrow-up-right-from-square text-[10px] opacity-60"></i>
+                                    </a>
+                                <?php else: ?>
+                                    <?= htmlspecialchars($huesped['nombre_completo'] ?? 'No especificado') ?>
+                                <?php endif; ?>
+                            </span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">Teléfono</span>
                             <span class="info-value">
                                 <i class="fas fa-phone text-xs text-green-500 mr-1"></i>
-                                <?= htmlspecialchars($huesped['telefono'] ?: '-') ?>
+                                <?php if (!empty($huesped['telefono'])): ?>
+                                    <a href="tel:<?= htmlspecialchars(preg_replace('/\D+/', '', (string)$huesped['telefono'])) ?>"
+                                       class="rd-inline-link"
+                                       title="Llamar al huesped">
+                                        <?= htmlspecialchars($huesped['telefono']) ?>
+                                    </a>
+                                <?php else: ?>
+                                    -
+                                <?php endif; ?>
                             </span>
                         </div>
                         <div class="info-row md:col-span-2">
                             <span class="info-label">Email</span>
                             <span class="info-value text-sm">
                                 <i class="fas fa-envelope text-xs text-green-500 mr-1"></i>
-                                <?= htmlspecialchars($huesped['email'] ?: '-') ?>
+                                <?php if (!empty($huesped['email'])): ?>
+                                    <a href="mailto:<?= htmlspecialchars($huesped['email']) ?>"
+                                       class="rd-inline-link"
+                                       title="Enviar correo al huesped">
+                                        <?= htmlspecialchars($huesped['email']) ?>
+                                    </a>
+                                <?php else: ?>
+                                    -
+                                <?php endif; ?>
                             </span>
                         </div>
                         <div class="info-row md:col-span-2">
                             <span class="info-label">Procedencia</span>
                             <span class="info-value">
                                 <i class="fas fa-map-marker-alt text-xs text-green-500 mr-1"></i>
-                                <?= htmlspecialchars($huesped['procedencia_ciudad'] ?: '-') ?>,
-                                <?= htmlspecialchars($huesped['procedencia_estado'] ?: '-') ?>
+                                <a href="<?= url('reportes/procedencia') ?>"
+                                   class="rd-inline-link"
+                                   title="Abrir reporte de procedencia geografica">
+                                    <?= htmlspecialchars($huesped['procedencia_ciudad'] ?: '-') ?>,
+                                    <?= htmlspecialchars($huesped['procedencia_estado'] ?: '-') ?>
+                                </a>
                             </span>
                         </div>
                     </div>
@@ -3343,7 +3552,7 @@ document.getElementById('formRecibirLlave').addEventListener('submit', function(
 });
 </script>
                     <div class="mt-4 flex justify-end">
-                        <a href="/huespedes/<?= htmlspecialchars($huesped['id'] ?? '') ?>"
+                        <a href="<?= url('huespedes/' . (int)($huesped['id'] ?? 0)) ?>"
                            class="btn-action btn-primary">
                             <i class="fas fa-user-circle"></i>
                             Ver perfil completo

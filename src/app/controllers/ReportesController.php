@@ -1662,8 +1662,8 @@ public function mantenimientoAction() {
      * Reporte de Procedencia de Huéspedes
      */
     public function procedenciaAction() {
-$fecha_inicio = $this->getQuery('fecha_inicio', '2025-01-01'); // Desde enero 2025
-    $fecha_fin = $this->getQuery('fecha_fin', '2025-12-31'); // Hasta diciembre 2025
+        $fecha_inicio = $this->getQuery('fecha_inicio', date('Y-m-d', strtotime('-1 month')));
+        $fecha_fin = $this->getQuery('fecha_fin', date('Y-m-d'));
         
         // Obtener datos
         $porEstado = $this->reporteModel->obtenerProcedenciaPorEstado($fecha_inicio, $fecha_fin);
@@ -1806,7 +1806,8 @@ $fecha_inicio = $this->getQuery('fecha_inicio', '2025-01-01'); // Desde enero 20
         }
         
         $tipo = $this->getQuery('tipo');
-        $fecha_inicio = $this->getQuery('fecha_inicio', date('Y-m-01'));
+        $default_fecha_inicio = $tipo === 'procedencia' ? date('Y-m-d', strtotime('-1 month')) : date('Y-m-01');
+        $fecha_inicio = $this->getQuery('fecha_inicio', $default_fecha_inicio);
         $fecha_fin = $this->getQuery('fecha_fin', date('Y-m-d'));
         
         $datos = [];

@@ -726,6 +726,17 @@ function is_valid_email($email) {
  * Obtener tipo de habitación formateado
  */
 function get_tipo_habitacion($tipo) {
+    if (function_exists('hotel_room_catalog_types')) {
+        try {
+            $tiposCatalogo = hotel_room_catalog_types();
+            if (isset($tiposCatalogo[$tipo])) {
+                return $tiposCatalogo[$tipo];
+            }
+        } catch (Throwable $e) {
+            error_log('Error consultando catalogo de tipos de habitacion: ' . $e->getMessage());
+        }
+    }
+
     $tipos = [
         'sencilla' => 'Sencilla',
         'doble' => 'Doble',

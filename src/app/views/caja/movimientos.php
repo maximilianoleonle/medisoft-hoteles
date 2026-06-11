@@ -1171,6 +1171,251 @@ $balance_es_positivo = $balance_total >= 0;
         .cash-workspace { grid-template-columns: 1fr; }
         .cash-sidebar-panel { position: static; }
     }
+
+/* === Ajuste estructural: movimientos de caja === */
+.cash-movements-view .cash-shell {
+    width: min(1760px, calc(100% - 42px));
+    padding-top: 22px;
+}
+
+.cash-movements-view .cash-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(248px, 304px);
+    align-items: start;
+    gap: 20px;
+    padding: clamp(22px, 2.25vw, 30px);
+}
+
+.cash-movements-view .cash-hero h1 {
+    max-width: 22ch;
+    margin-bottom: 10px;
+    font-size: clamp(2.55rem, 3.35vw, 4.05rem);
+    line-height: .98;
+}
+
+.cash-movements-view .cash-hero p {
+    max-width: 76ch;
+}
+
+.cash-movements-view .cash-hero-insight {
+    max-width: 850px;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.cash-movements-view .cash-hero-insight span {
+    min-width: 112px;
+    padding: 9px 11px;
+}
+
+.cash-movements-view .cash-hero-actions {
+    align-self: center;
+    min-height: 0;
+    gap: 9px;
+    padding: 12px;
+}
+
+.cash-movements-view .cash-action {
+    min-height: 44px;
+}
+
+.cash-movements-view .cash-balance-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin: 16px 0 18px;
+}
+
+.cash-movements-view .cash-stat {
+    min-height: 124px;
+    padding: 18px 20px;
+}
+
+.cash-movements-view .cash-flow-bar {
+    height: 8px;
+    margin: -3px 4px 0;
+}
+
+.cash-movements-view .cash-filter-dock {
+    margin: 0 0 18px;
+}
+
+.cash-movements-view .cash-filter-form {
+    grid-template-columns: repeat(24, minmax(0, 1fr));
+    align-items: end;
+}
+
+.cash-movements-view .cash-field {
+    grid-column: span 4;
+}
+
+.cash-movements-view .cash-field.wide {
+    grid-column: span 6;
+}
+
+.cash-movements-view .cash-filter-actions {
+    grid-column: span 6;
+}
+
+.cash-movements-view .cash-workspace {
+    grid-template-columns: minmax(252px, 292px) minmax(0, 1fr);
+    gap: 16px;
+}
+
+.cash-movements-view .cash-sidebar-panel {
+    padding: 16px;
+}
+
+.cash-movements-view .cash-audit-item {
+    min-height: 58px;
+}
+
+.cash-movements-view .cash-ledger-panel {
+    min-width: 0;
+}
+
+.cash-movements-view .cash-ledger-head {
+    margin-bottom: 12px;
+    padding: 16px 18px;
+}
+
+.cash-movements-view .cash-ledger-columns,
+.cash-movements-view .cash-move-row {
+    grid-template-columns: 96px minmax(250px, 1.35fr) minmax(135px, .72fr) minmax(122px, .62fr) minmax(106px, .54fr) minmax(188px, .9fr) 46px;
+}
+
+.cash-movements-view .cash-ledger-columns {
+    align-items: center;
+    padding: 0 18px 9px;
+}
+
+.cash-movements-view .cash-move-row {
+    gap: 14px;
+    align-items: center;
+    padding: 15px 16px;
+}
+
+.cash-movements-view .cash-move-main {
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+}
+
+.cash-movements-view .cash-type-mark {
+    width: 40px;
+    height: 40px;
+}
+
+.cash-movements-view .cash-amount-cell {
+    min-width: 0;
+}
+
+.cash-movements-view .cash-reserve-link {
+    align-items: center;
+    max-width: 100%;
+}
+
+.cash-movements-view .cash-room-detail {
+    max-width: 28ch;
+    margin-left: auto;
+}
+
+.cash-movements-view .cash-row-actions {
+    justify-content: flex-end;
+}
+
+.cash-movements-view .cash-icon-btn {
+    width: 34px;
+    height: 34px;
+}
+
+@media (max-width: 1560px) {
+    .cash-movements-view .cash-shell {
+        width: min(100% - 30px, 1540px);
+    }
+
+    .cash-movements-view .cash-workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .cash-movements-view .cash-sidebar-panel {
+        position: static;
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(240px, .75fr);
+        gap: 16px;
+        align-items: start;
+    }
+
+    .cash-movements-view .cash-active-filters {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: 0;
+    }
+}
+
+@media (max-width: 1180px) {
+    .cash-movements-view .cash-ledger-columns {
+        display: none;
+    }
+
+    .cash-movements-view .cash-move-row {
+        grid-template-columns: 1fr;
+        gap: 11px;
+    }
+
+    .cash-movements-view .cash-user {
+        display: block;
+    }
+
+    .cash-movements-view .cash-amount-cell,
+    .cash-movements-view .cash-row-actions {
+        text-align: left;
+        justify-content: flex-start;
+    }
+
+    .cash-movements-view .cash-room-detail {
+        max-width: none;
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 900px) {
+    .cash-movements-view .cash-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .cash-movements-view .cash-hero h1 {
+        max-width: 14ch;
+    }
+
+    .cash-movements-view .cash-hero-actions {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .cash-movements-view .cash-balance-strip,
+    .cash-movements-view .cash-sidebar-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .cash-movements-view .cash-filter-form {
+        grid-template-columns: 1fr;
+    }
+
+    .cash-movements-view .cash-field,
+    .cash-movements-view .cash-field.wide,
+    .cash-movements-view .cash-filter-actions {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 620px) {
+    .cash-movements-view .cash-shell {
+        width: min(100% - 18px, 1540px);
+    }
+
+    .cash-movements-view .cash-hero-actions {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
 
 <div class="cash-movements-view">
