@@ -1,64 +1,9 @@
-<!-- Crear Nuevo Huésped - Diseño Moderno -->
-
 <?php
-// Verificar si viene de reservación rápida
+// Verificar si viene de reservacion rapida
 $return_to = $_GET['return_to'] ?? null;
 $es_reservacion_rapida = $return_to === 'reservacion_rapida';
-?>
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
-<div class="min-h-screen bg-gray-50">
-    <!-- Header -->
-    <div class="bg-gradient-to-r from-blue-600 to-blue-700 shadow-sm">
-        <div class="px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
-            <!-- Breadcrumb -->
-            <div class="flex items-center text-xs text-blue-100 mb-3">
-                <a href="<?= url('huespedes') ?>" class="hover:text-white flex items-center transition-colors">
-                    <i class="fas fa-users mr-1"></i>
-                    Huéspedes
-                </a>
-                <i class="fas fa-chevron-right mx-2 text-blue-200"></i>
-                <span class="text-white font-medium">Nuevo Registro</span>
-            </div>
-            
-            <!-- Header Principal -->
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <!-- Logo y Título -->
-                <div class="flex items-center space-x-3">
-                    <div class="bg-white/20 backdrop-blur-sm p-2.5 rounded-lg">
-                        <i class="fas fa-user-plus text-white text-lg"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-lg sm:text-xl font-semibold text-white">
-                            Registrar Nuevo Huésped
-                        </h1>
-                        <p class="text-xs text-blue-100">
-                            Complete la información del huésped
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Mensaje informativo si viene de reservación rápida -->
-    <?php if ($es_reservacion_rapida): ?>
-    <div class="px-3 sm:px-4 lg:px-6 mt-4">
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div class="flex items-center">
-                <i class="fas fa-info-circle text-blue-600 mr-2"></i>
-                <p class="text-sm text-blue-800">
-                    Registre el nuevo huésped. Al guardar, continuará con la reservación de la habitación seleccionada.
-                </p>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
-    
-    <!-- Contenido Principal -->
-    <div class="px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-5xl mx-auto">
-<?php
-// Recuperar datos de reservación rápida si existen
+// Recuperar datos de reservacion rapida si existen
 $reservacion_rapida_params = '';
 if ($es_reservacion_rapida) {
     $params_to_pass = [];
@@ -66,436 +11,612 @@ if ($es_reservacion_rapida) {
     if (isset($_GET['fecha_entrada'])) $params_to_pass['fecha_entrada'] = $_GET['fecha_entrada'];
     if (isset($_GET['fecha_salida'])) $params_to_pass['fecha_salida'] = $_GET['fecha_salida'];
     if (isset($_GET['hora_llegada'])) $params_to_pass['hora_llegada'] = $_GET['hora_llegada'];
-    
+
     if (!empty($params_to_pass)) {
         $reservacion_rapida_params = '&' . http_build_query($params_to_pass);
     }
 }
+
+$cancel_url = url('huespedes');
+if ($return_to === 'reservacion') {
+    $cancel_url = url('reservaciones/crear');
+} elseif ($return_to === 'reservacion_rapida') {
+    $cancel_url = url('habitaciones');
+}
 ?>
-<form method="POST" action="<?= url('huespedes/store') . ($return_to ? '?return_to=' . urlencode($return_to) . $reservacion_rapida_params : '') ?>" class="space-y-4">
-            <?= csrf_field() ?>
-            
-            <!-- Información Personal -->
-            <div class="bg-white rounded-xl shadow-sm border border-blue-100 overflow-hidden">
-                <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-4">
-                    <h2 class="text-sm font-semibold text-white flex items-center">
-                        <div class="bg-white/20 p-1.5 rounded mr-2">
-                            <i class="fas fa-user text-white text-xs"></i>
-                        </div>
-                        Información Personal
-                    </h2>
-                </div>
-                
-                <div class="p-4 space-y-4 bg-gradient-to-br from-blue-50 to-white">
-                    <!-- Nombre Completo -->
-                    <div>
-                        <label class="block text-xs font-medium text-blue-700 mb-1.5">
-                            Nombre Completo <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" 
-                               name="nombre_completo" 
-                               value="<?= old('nombre_completo') ?>"
-                               required
-                               placeholder="Ingrese el nombre completo del huésped"
-                               class="w-full px-3 py-2 text-sm border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white">
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Teléfono -->
-                        <div>
-                            <label class="block text-xs font-medium text-blue-700 mb-1.5">
-                                Teléfono
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                    <i class="fas fa-phone text-blue-400 text-xs"></i>
-                                </div>
-                                <input type="tel" 
-                                       name="telefono" 
-                                       value="<?= old('telefono') ?>"
-                                       placeholder="10 dígitos"
-                                       class="w-full pl-9 pr-3 py-2 text-sm border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white">
-                            </div>
-                        </div>
-                        
-                        <!-- Email -->
-                        <div>
-                            <label class="block text-xs font-medium text-blue-700 mb-1.5">
-                                Email
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                    <i class="fas fa-envelope text-blue-400 text-xs"></i>
-                                </div>
-                                <input type="email" 
-                                       name="email" 
-                                       value="<?= old('email') ?>"
-                                       placeholder="correo@ejemplo.com"
-                                       class="w-full pl-9 pr-3 py-2 text-sm border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Procedencia -->
-            <div class="bg-white rounded-xl shadow-sm border border-green-100 overflow-hidden">
-                <div class="bg-gradient-to-r from-green-500 to-green-600 p-4">
-                    <h2 class="text-sm font-semibold text-white flex items-center">
-                        <div class="bg-white/20 p-1.5 rounded mr-2">
-                            <i class="fas fa-map-marked-alt text-white text-xs"></i>
-                        </div>
-                        Procedencia
-                    </h2>
-                </div>
-                
-                <div class="p-4 bg-gradient-to-br from-green-50 to-white">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Estado -->
-                        <div>
-                            <label class="block text-xs font-medium text-green-700 mb-1.5">
-                                Estado
-                            </label>
-                            <select name="procedencia_estado" 
-                                    class="w-full px-3 py-2 text-sm border border-green-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white">
-                                <option value="">Seleccione un estado</option>
-                                <?php foreach ($estados as $estado): ?>
-                                    <option value="<?= $estado ?>" <?= old('procedencia_estado') == $estado ? 'selected' : '' ?>>
-                                        <?= $estado ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
-                        <!-- Ciudad -->
-                        <div>
-                            <label class="block text-xs font-medium text-green-700 mb-1.5">
-                                Ciudad
-                            </label>
-                            <input type="text" 
-                                   name="procedencia_ciudad" 
-                                   value="<?= old('procedencia_ciudad') ?>"
-                                   placeholder="Ciudad de origen"
-                                   class="w-full px-3 py-2 text-sm border border-green-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-white">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Vehículos -->
-            <div class="bg-white rounded-xl shadow-sm border border-purple-100 overflow-hidden">
-                <div class="bg-gradient-to-r from-purple-500 to-purple-600 p-4">
-                    <h2 class="text-sm font-semibold text-white flex items-center">
-                        <div class="bg-white/20 p-1.5 rounded mr-2">
-                            <i class="fas fa-car text-white text-xs"></i>
-                        </div>
-                        Vehículos
-                    </h2>
-                </div>
-                
-                <div class="p-4 bg-gradient-to-br from-purple-50 to-white">
-                    <div id="vehiculos-container">
-                        <!-- Plantilla de vehículo inicial -->
-                        <div class="vehiculo-item bg-gradient-to-r from-purple-100 to-purple-50 rounded-lg p-4 mb-3 border border-purple-200">
-                            <div class="flex justify-between items-center mb-3">
-                                <h4 class="text-sm font-medium text-purple-800">Vehículo 1</h4>
-                                <button type="button" onclick="eliminarVehiculo(this)" class="text-red-500 hover:text-red-700 text-sm hidden">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-purple-700 mb-1">
-                                        Marca
-                                    </label>
-                                    <input type="text" 
-                                           name="vehiculos[0][marca]" 
-                                           placeholder="Ej: Toyota, Nissan, etc."
-                                           class="w-full px-2.5 py-1.5 text-sm border border-purple-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-xs font-medium text-purple-700 mb-1">
-                                        Modelo
-                                    </label>
-                                    <input type="text" 
-                                           name="vehiculos[0][modelo]" 
-                                           placeholder="Ej: Corolla, Sentra, etc."
-                                           class="w-full px-2.5 py-1.5 text-sm border border-purple-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-xs font-medium text-purple-700 mb-1">
-                                        Placas
-                                    </label>
-                                    <input type="text" 
-                                           name="vehiculos[0][placas]" 
-                                           placeholder="ABC-123"
-                                           style="text-transform: uppercase"
-                                           class="w-full px-2.5 py-1.5 text-sm border border-purple-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all font-mono bg-white">
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-xs font-medium text-purple-700 mb-1">
-                                        Color
-                                    </label>
-                                    <input type="text" 
-                                           name="vehiculos[0][color]" 
-                                           placeholder="Ej: Rojo, Azul, etc."
-                                           class="w-full px-2.5 py-1.5 text-sm border border-purple-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white">
-                                </div>
-                                
-                                <!-- Sección de estacionamiento actualizada para crear.php -->
-<div class="md:col-span-2">
-    <label class="block text-xs font-medium text-purple-700 mb-2">
-        Estacionamiento <span class="text-red-500">*</span>
-    </label>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <label class="relative cursor-pointer">
-            <input type="radio" 
-                   name="vehiculos[0][estacionamiento]" 
-                   value="coches"
-                   class="peer sr-only" 
-                   checked>
-            <div class="px-3 py-2.5 border-2 rounded-lg text-center transition-all text-xs bg-white
-                        border-purple-300 hover:border-purple-500
-                        peer-checked:border-purple-500 peer-checked:bg-purple-500 peer-checked:text-white">
-                <i class="fas fa-car text-base mb-0.5 block"></i>
-                <p class="font-medium">Coches</p>
-            </div>
-        </label>
-        
-        
-        
-       
-    </div>
-</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <button type="button" onclick="agregarVehiculo()" 
-                            class="mt-3 w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-2.5 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all flex items-center justify-center text-sm font-medium shadow-sm">
-                        <i class="fas fa-plus-circle mr-2"></i>
-                        Agregar otro vehículo
-                    </button>
-                    
-                    <p class="text-xs text-purple-600 mt-2 bg-purple-50 p-2 rounded-lg">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        Puede registrar múltiples vehículos por huésped. Si no tiene vehículo, deje los campos en blanco.
-                    </p>
-                </div>
-            </div>
-            
-            <!-- Notas -->
-            <div class="bg-white rounded-xl shadow-sm border border-amber-100 overflow-hidden">
-                <div class="bg-gradient-to-r from-amber-500 to-amber-600 p-4">
-                    <h2 class="text-sm font-semibold text-white flex items-center">
-                        <div class="bg-white/20 p-1.5 rounded mr-2">
-                            <i class="fas fa-sticky-note text-white text-xs"></i>
-                        </div>
-                        Notas Adicionales
-                    </h2>
-                </div>
-                
-                <div class="p-4 bg-gradient-to-br from-amber-50 to-white">
-                    <textarea name="notas" 
-                              rows="3"
-                              placeholder="Cualquier información adicional sobre el huésped..."
-                              class="w-full px-3 py-2 text-sm border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all bg-white"><?= old('notas') ?></textarea>
-                </div>
-            </div>
-            
-            <!-- Botones -->
-           <!-- Botones -->
-<div class="flex justify-end gap-3">
-    <a href="<?= $return_to === 'reservacion_rapida' ? url('habitaciones') : url('huespedes') ?>" 
-       class="px-4 py-2.5 border-2 border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all">
-        <i class="fas fa-times mr-2"></i>
-        Cancelar
-    </a>
-    <button type="submit" 
-            class="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all flex items-center shadow-md hover:shadow-lg transform hover:scale-105">
-        <i class="fas fa-save mr-2"></i>
-        <?= $es_reservacion_rapida ? 'Guardar y Continuar' : 'Registrar Huésped' ?>
-    </button>
-</div>
-        </form>
-    </div>
-</div>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
-<script>
-let vehiculoIndex = 1;
+<style id="guest-create-boutique">
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
-// Función para agregar vehículo
-function agregarVehiculo() {
-    const container = document.getElementById('vehiculos-container');
-    const vehiculoHtml = `
-        <div class="vehiculo-item bg-gradient-to-r from-purple-100 to-purple-50 rounded-lg p-4 mb-3 animate-fadeIn border border-purple-200">
-            <div class="flex justify-between items-center mb-3">
-                <h4 class="text-sm font-medium text-purple-800">Vehículo ${vehiculoIndex + 1}</h4>
-                <button type="button" onclick="eliminarVehiculo(this)" class="text-red-500 hover:text-red-700 text-sm">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-medium text-purple-700 mb-1">
-                        Marca
-                    </label>
-                    <input type="text" 
-                           name="vehiculos[${vehiculoIndex}][marca]" 
-                           placeholder="Ej: Toyota, Nissan, etc."
-                           class="w-full px-2.5 py-1.5 text-sm border border-purple-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white">
-                </div>
-                
-                <div>
-                    <label class="block text-xs font-medium text-purple-700 mb-1">
-                        Modelo
-                    </label>
-                    <input type="text" 
-                           name="vehiculos[${vehiculoIndex}][modelo]" 
-                           placeholder="Ej: Corolla, Sentra, etc."
-                           class="w-full px-2.5 py-1.5 text-sm border border-purple-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white">
-                </div>
-                
-                <div>
-                    <label class="block text-xs font-medium text-purple-700 mb-1">
-                        Placas
-                    </label>
-                    <input type="text" 
-                           name="vehiculos[${vehiculoIndex}][placas]" 
-                           placeholder="ABC-123"
-                           style="text-transform: uppercase"
-                           onchange="this.value = this.value.toUpperCase()"
-                           class="w-full px-2.5 py-1.5 text-sm border border-purple-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all font-mono bg-white">
-                </div>
-                
-                <div>
-                    <label class="block text-xs font-medium text-purple-700 mb-1">
-                        Color
-                    </label>
-                    <input type="text" 
-                           name="vehiculos[${vehiculoIndex}][color]" 
-                           placeholder="Ej: Rojo, Azul, etc."
-                           class="w-full px-2.5 py-1.5 text-sm border border-purple-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white">
-                </div>
-                
-                <div class="md:col-span-2">
-                    <label class="block text-xs font-medium text-purple-700 mb-2">
-                        Estacionamiento <span class="text-red-500">*</span>
-                    </label>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        <label class="relative cursor-pointer">
-                            <input type="radio" 
-                                   name="vehiculos[${vehiculoIndex}][estacionamiento]" 
-                                   value="coches"
-                                   class="peer sr-only" 
-                                   checked>
-                            <div class="px-3 py-2.5 border-2 rounded-lg text-center transition-all text-xs bg-white
-                                        border-purple-300 hover:border-purple-500
-                                        peer-checked:border-purple-500 peer-checked:bg-purple-500 peer-checked:text-white">
-                                <i class="fas fa-car text-base mb-0.5 block"></i>
-                                <p class="font-medium">Coches</p>
-                            </div>
-                        </label>
-                        
-                        
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    container.insertAdjacentHTML('beforeend', vehiculoHtml);
-    vehiculoIndex++;
-    
-    // Mostrar botón de eliminar en el primer vehículo si hay más de uno
-    const vehiculos = container.querySelectorAll('.vehiculo-item');
-    if (vehiculos.length > 1) {
-        vehiculos[0].querySelector('button').classList.remove('hidden');
-    }
+.guest-create-page {
+    --gc-brand: var(--brand-primary, #1B2746);
+    --gc-brand-2: var(--brand-secondary, #0F172A);
+    --gc-accent: var(--brand-accent, #BD9441);
+    --gc-accent-dark: color-mix(in srgb, var(--gc-accent) 72%, #3F2E12);
+    --gc-accent-soft: color-mix(in srgb, var(--gc-accent) 13%, #FFFFFF);
+    --gc-accent-line: color-mix(in srgb, var(--gc-accent) 32%, #E8DDCA);
+    --gc-ivory: color-mix(in srgb, var(--gc-accent) 8%, #F8F5ED);
+    --gc-ivory-2: color-mix(in srgb, var(--gc-accent) 5%, #FCFAF5);
+    --gc-surface: color-mix(in srgb, var(--gc-accent) 2%, #FFFFFF);
+    --gc-surface-warm: color-mix(in srgb, var(--gc-accent) 5%, #FFFFFF);
+    --gc-line: color-mix(in srgb, var(--gc-accent) 20%, #E7DEC9);
+    --gc-line-soft: color-mix(in srgb, var(--gc-accent) 11%, #F0ECE2);
+    --gc-muted: color-mix(in srgb, var(--gc-brand-2) 48%, #94A3B8);
+    --gc-text: var(--gc-brand-2);
+    --gc-success: #1E9E63;
+    --gc-success-bg: #E7F4EC;
+    --gc-info: #2F77E0;
+    --gc-info-bg: #E6EFFC;
+    --gc-danger: #D64539;
+    --gc-danger-bg: #FBE9E7;
+    --gc-serif: 'Cormorant Garamond', Georgia, serif;
+    --gc-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    background:
+        repeating-linear-gradient(135deg, color-mix(in srgb, var(--gc-accent) 3%, transparent) 0 1px, transparent 1px 22px),
+        linear-gradient(180deg, var(--gc-ivory-2), var(--gc-ivory) 58%, #F7F2EA);
+    color: var(--gc-text);
+    font-family: var(--gc-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
 
-// Función para eliminar vehículo
-function eliminarVehiculo(button) {
-    const vehiculoItem = button.closest('.vehiculo-item');
-    vehiculoItem.style.opacity = '0';
-    vehiculoItem.style.transform = 'scale(0.9)';
-    setTimeout(() => {
-        vehiculoItem.remove();
-        
-        // Actualizar numeración
-        const vehiculos = document.querySelectorAll('.vehiculo-item');
-        vehiculos.forEach((vehiculo, index) => {
-            vehiculo.querySelector('h4').textContent = `Vehículo ${index + 1}`;
-        });
-        
-        // Ocultar botón de eliminar si solo queda un vehículo
-        if (vehiculos.length === 1) {
-            vehiculos[0].querySelector('button').classList.add('hidden');
-        }
-    }, 300);
+.guest-create-page *,
+.guest-create-page *::before,
+.guest-create-page *::after {
+    box-sizing: border-box;
 }
 
-// Formatear teléfono mientras se escribe
-document.querySelector('input[name="telefono"]').addEventListener('input', function(e) {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 10) {
-        value = value.slice(0, 10);
-    }
-    e.target.value = value;
-});
+.guest-create-page :where(p, span, a, button, input, select, textarea, label) {
+    font-family: var(--gc-sans);
+}
 
-// Convertir placas a mayúsculas en todos los campos
-document.addEventListener('input', function(e) {
-    if (e.target.name && e.target.name.includes('[placas]')) {
-        e.target.value = e.target.value.toUpperCase();
-    }
-});
+.gc-wrap {
+    width: min(100%, 1280px);
+    margin: 0 auto;
+    padding: 26px 18px 34px;
+}
 
-// Validación del formulario
-document.querySelector('form').addEventListener('submit', function(e) {
-    // Verificar si hay al menos un vehículo con datos completos
-    const vehiculos = document.querySelectorAll('.vehiculo-item');
-    let hayVehiculoCompleto = false;
-    
-    vehiculos.forEach(vehiculo => {
-        const marca = vehiculo.querySelector('input[name*="[marca]"]').value;
-        const placas = vehiculo.querySelector('input[name*="[placas]"]').value;
-        
-        if (marca && placas) {
-            hayVehiculoCompleto = true;
-        }
-    });
-    
-    // Si hay datos parciales en algún vehículo, mostrar advertencia
-    vehiculos.forEach(vehiculo => {
-        const inputs = vehiculo.querySelectorAll('input[type="text"]');
-        let hayDatosParciales = false;
-        let camposLlenos = 0;
-        
-        inputs.forEach(input => {
-            if (input.value.trim()) camposLlenos++;
-        });
-        
-        if (camposLlenos > 0 && camposLlenos < 4) {
-            vehiculo.style.border = '2px solid #ef4444';
-            setTimeout(() => {
-                vehiculo.style.border = '';
-            }, 3000);
-        }
-    });
-});
-</script>
+.gc-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--gc-muted);
+    font-size: .78rem;
+    font-weight: 700;
+    margin-bottom: 18px;
+}
 
-<style>
+.gc-breadcrumb a {
+    color: var(--gc-brand);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: color .18s ease, transform .18s ease;
+}
+
+.gc-breadcrumb a:hover {
+    color: var(--gc-accent-dark);
+    transform: translateY(-1px);
+}
+
+.gc-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.gc-hero-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.gc-hero-icon,
+.gc-section-icon,
+.gc-side-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+}
+
+.gc-hero-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: linear-gradient(150deg, var(--gc-brand), var(--gc-brand-2));
+    color: #FFFFFF;
+    box-shadow: 0 12px 24px -10px color-mix(in srgb, var(--gc-brand) 58%, transparent);
+}
+
+.gc-kicker {
+    margin: 0 0 4px;
+    color: var(--gc-accent-dark);
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.gc-title {
+    margin: 0;
+    color: var(--gc-brand);
+    font-family: var(--gc-serif);
+    font-size: clamp(2rem, 3.6vw, 2.75rem);
+    font-weight: 650;
+    letter-spacing: 0;
+    line-height: .96;
+    text-wrap: balance;
+}
+
+.gc-subtitle {
+    max-width: 62ch;
+    margin: 8px 0 0;
+    color: var(--gc-muted);
+    font-size: .88rem;
+    font-weight: 600;
+    line-height: 1.55;
+}
+
+.gc-flow-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 8px 12px;
+    border: 1px solid var(--gc-accent-line);
+    border-radius: 999px;
+    background: var(--gc-accent-soft);
+    color: var(--gc-accent-dark);
+    font-size: .76rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.gc-fast-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    margin: 0 0 18px;
+    padding: 13px 15px;
+    border: 1px solid color-mix(in srgb, var(--gc-info) 22%, var(--gc-line));
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--gc-info) 8%, var(--gc-surface));
+    color: var(--gc-brand);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--gc-brand-2) 4%, transparent);
+}
+
+.gc-fast-note i {
+    color: var(--gc-info);
+    margin-top: 2px;
+}
+
+.gc-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(286px, 318px);
+    gap: 18px;
+    align-items: start;
+}
+
+.gc-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    min-width: 0;
+}
+
+.gc-section,
+.gc-side-card,
+.gc-actions {
+    border: 1px solid var(--gc-line);
+    border-radius: 18px;
+    background: var(--gc-surface);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--gc-brand-2) 4%, transparent), 0 14px 32px -24px color-mix(in srgb, var(--gc-brand-2) 34%, transparent);
+    min-width: 0;
+}
+
+.gc-section {
+    overflow: hidden;
+}
+
+.gc-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 58px;
+    padding: 14px 17px;
+    border-bottom: 1px solid var(--gc-line);
+    background: var(--gc-surface-warm);
+    min-width: 0;
+}
+
+.gc-section-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.gc-section-icon,
+.gc-side-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    border: 1px solid var(--gc-line);
+    background: color-mix(in srgb, var(--gc-accent) 13%, #FFFFFF);
+    color: var(--gc-accent-dark);
+}
+
+.gc-section h2,
+.gc-side-card h3 {
+    margin: 0;
+    color: var(--gc-brand);
+    font-size: .92rem;
+    font-weight: 850;
+    letter-spacing: 0;
+    text-wrap: balance;
+}
+
+.gc-section-sub {
+    margin: 2px 0 0;
+    color: var(--gc-muted);
+    font-size: .72rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.gc-section-body {
+    padding: 17px;
+}
+
+.gc-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    min-width: 0;
+}
+
+.gc-field {
+    min-width: 0;
+}
+
+.gc-field-full {
+    grid-column: 1 / -1;
+}
+
+.gc-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 7px;
+    color: var(--gc-muted);
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.gc-required {
+    color: var(--gc-danger);
+}
+
+.gc-input-wrap {
+    position: relative;
+}
+
+.gc-input-wrap i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: color-mix(in srgb, var(--gc-brand) 42%, var(--gc-muted));
+    font-size: .78rem;
+    pointer-events: none;
+}
+
+.gc-control {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid var(--gc-line);
+    border-radius: 12px;
+    background: var(--gc-surface-warm);
+    color: var(--gc-text);
+    font-size: .88rem;
+    font-weight: 650;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    min-width: 0;
+}
+
+.gc-control.has-icon {
+    padding-left: 36px;
+}
+
+.gc-control::placeholder {
+    color: color-mix(in srgb, var(--gc-muted) 72%, #CBD5E1);
+    font-weight: 500;
+}
+
+.gc-control:focus {
+    border-color: var(--gc-accent);
+    background: #FFFFFF;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--gc-accent) 22%, transparent);
+}
+
+.gc-note {
+    margin: 12px 0 0;
+    padding: 11px 12px;
+    border: 1px solid var(--gc-line);
+    border-radius: 13px;
+    background: var(--gc-ivory-2);
+    color: var(--gc-muted);
+    font-size: .78rem;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.gc-note i {
+    color: var(--gc-accent-dark);
+    margin-right: 6px;
+}
+
+.vehiculo-item {
+    border: 1px solid var(--gc-line);
+    border-radius: 16px;
+    background: var(--gc-ivory-2);
+    padding: 15px;
+    margin-bottom: 12px;
+    transition: opacity .22s ease, transform .22s ease, border-color .18s ease, box-shadow .18s ease;
+    min-width: 0;
+}
+
+.vehiculo-item:hover {
+    border-color: color-mix(in srgb, var(--gc-accent) 35%, var(--gc-line));
+    box-shadow: 0 10px 26px -24px color-mix(in srgb, var(--gc-brand) 45%, transparent);
+}
+
+.gc-vehicle-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 13px;
+}
+
+.gc-vehicle-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--gc-brand);
+    font-size: .84rem;
+    font-weight: 850;
+}
+
+.gc-vehicle-title i {
+    color: var(--gc-accent-dark);
+}
+
+.gc-delete-vehicle {
+    display: inline-grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid color-mix(in srgb, var(--gc-danger) 22%, #F3D7D4);
+    border-radius: 10px;
+    background: var(--gc-danger-bg);
+    color: var(--gc-danger);
+    transition: transform .16s ease, filter .16s ease;
+}
+
+.gc-delete-vehicle:hover {
+    transform: translateY(-1px);
+    filter: brightness(.98);
+}
+
+.gc-radio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    gap: 9px;
+}
+
+.gc-radio-card {
+    min-height: 68px;
+    display: grid;
+    place-items: center;
+    gap: 4px;
+    border: 1px solid var(--gc-line);
+    border-radius: 13px;
+    background: var(--gc-surface);
+    color: var(--gc-brand);
+    text-align: center;
+    font-size: .78rem;
+    font-weight: 800;
+    transition: border-color .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease;
+    overflow: hidden;
+}
+
+.gc-radio-card i {
+    font-size: 1rem;
+}
+
+.peer:checked ~ .gc-radio-card {
+    border-color: var(--gc-brand);
+    background: var(--gc-brand);
+    color: #FFFFFF;
+    box-shadow: 0 10px 22px -14px color-mix(in srgb, var(--gc-brand) 68%, transparent);
+}
+
+.peer:focus ~ .gc-radio-card {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--gc-accent) 24%, transparent);
+}
+
+.gc-add-vehicle {
+    width: 100%;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid var(--gc-line);
+    border-radius: 13px;
+    background: var(--gc-surface-warm);
+    color: var(--gc-brand);
+    font-size: .86rem;
+    font-weight: 850;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.gc-add-vehicle:hover {
+    transform: translateY(-1px);
+    border-color: var(--gc-accent-line);
+    background: var(--gc-accent-soft);
+    color: var(--gc-accent-dark);
+}
+
+.gc-side {
+    position: sticky;
+    top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+    min-width: 0;
+}
+
+.gc-side-card {
+    padding: 16px;
+}
+
+.gc-side-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 11px;
+}
+
+.gc-check-list {
+    display: grid;
+    gap: 9px;
+}
+
+.gc-check-list span {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: var(--gc-muted);
+    font-size: .78rem;
+    font-weight: 650;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.gc-check-list i {
+    color: var(--gc-success);
+    margin-top: 2px;
+}
+
+.gc-mini-card {
+    padding: 13px;
+    border: 1px solid var(--gc-line-soft);
+    border-radius: 14px;
+    background: var(--gc-surface-warm);
+}
+
+.gc-mini-label {
+    margin: 0 0 4px;
+    color: var(--gc-muted);
+    font-size: .68rem;
+    font-weight: 850;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.gc-mini-text {
+    margin: 0;
+    color: var(--gc-brand);
+    font-size: .82rem;
+    font-weight: 750;
+    line-height: 1.45;
+}
+
+.gc-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px;
+    position: sticky;
+    bottom: 12px;
+    z-index: 3;
+    align-items: center;
+}
+
+.gc-btn {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 12px;
+    padding: 10px 15px;
+    font-size: .86rem;
+    font-weight: 850;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+    white-space: nowrap;
+}
+
+.gc-btn:hover {
+    transform: translateY(-1px);
+}
+
+.gc-btn-secondary {
+    border: 1px solid var(--gc-line);
+    background: var(--gc-surface-warm);
+    color: var(--gc-muted);
+}
+
+.gc-btn-secondary:hover {
+    border-color: var(--gc-accent-line);
+    color: var(--gc-accent-dark);
+    background: var(--gc-accent-soft);
+}
+
+.gc-btn-primary {
+    border: 1px solid color-mix(in srgb, var(--gc-accent) 32%, transparent);
+    background: linear-gradient(135deg, var(--gc-brand), var(--gc-brand-2));
+    color: #FFFFFF;
+    box-shadow: 0 12px 26px -12px color-mix(in srgb, var(--gc-brand) 60%, transparent);
+}
+
+.gc-btn-primary:hover {
+    color: #FFFFFF;
+    box-shadow: 0 16px 30px -14px color-mix(in srgb, var(--gc-brand) 66%, transparent);
+}
+
+.gc-btn:active,
+.gc-add-vehicle:active,
+.gc-delete-vehicle:active {
+    transform: translateY(0) scale(.99);
+}
+
+.gc-btn:focus-visible,
+.gc-add-vehicle:focus-visible,
+.gc-delete-vehicle:focus-visible,
+.gc-breadcrumb a:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--gc-accent) 28%, transparent);
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(-10px);
+        transform: translateY(-8px);
     }
     to {
         opacity: 1;
@@ -504,53 +625,662 @@ document.querySelector('form').addEventListener('submit', function(e) {
 }
 
 .animate-fadeIn {
-    animation: fadeIn 0.3s ease-out;
+    animation: fadeIn .28s cubic-bezier(.22,1,.36,1);
 }
 
-/* Mejorar la apariencia de los radio buttons personalizados */
-.peer:checked ~ div {
-    border-color: #a855f7;
-    background-color: #faf5ff;
-}
-
-.peer:focus ~ div {
-    outline: 2px solid transparent;
-    outline-offset: 2px;
-    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
-}
-
-/* Transiciones suaves */
-input, select, textarea {
-    transition: all 0.2s ease-in-out;
-}
-
-/* Scrollbar personalizada */
-::-webkit-scrollbar {
+.guest-create-page ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
 }
 
-::-webkit-scrollbar-track {
-    background: #f3f4f6;
+.guest-create-page ::-webkit-scrollbar-track {
+    background: var(--gc-ivory);
 }
 
-::-webkit-scrollbar-thumb {
-    background: #d1d5db;
-    border-radius: 3px;
+.guest-create-page ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--gc-accent), #fff 34%);
+    border-radius: 999px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: #9ca3af;
-}
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-    .vehiculo-item {
-        padding: 0.75rem;
+@media (min-width: 1440px) {
+    .gc-wrap {
+        width: min(100%, 1360px);
     }
-    
-    input, select, textarea {
-        font-size: 16px; /* Prevenir zoom en iOS */
+
+    .gc-layout {
+        grid-template-columns: minmax(0, 1fr) 330px;
+        gap: 22px;
+    }
+
+    .gc-section-body {
+        padding: 19px;
+    }
+}
+
+@media (max-width: 1180px) {
+    .gc-wrap {
+        width: min(100%, 1100px);
+    }
+
+    .gc-layout {
+        grid-template-columns: minmax(0, 1fr) 284px;
+        gap: 16px;
+    }
+
+    .gc-grid {
+        gap: 12px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .gc-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .gc-side {
+        position: static;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .gc-actions {
+        bottom: 10px;
+    }
+}
+
+@media (max-width: 860px) {
+    .gc-hero {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .gc-flow-pill {
+        align-self: flex-start;
+        white-space: normal;
+    }
+
+    .gc-side {
+        grid-template-columns: 1fr;
+    }
+
+    .gc-section-head {
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 700px) {
+    .gc-wrap {
+        padding: 18px 14px 26px;
+    }
+
+    .gc-hero {
+        gap: 12px;
+    }
+
+    .gc-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .gc-flow-pill {
+        white-space: normal;
+    }
+
+    .gc-section-head,
+    .gc-section-body,
+    .gc-side-card {
+        padding: 14px;
+    }
+
+    .gc-section-title-wrap {
+        align-items: flex-start;
+    }
+
+    .gc-actions {
+        position: static;
+        flex-direction: column-reverse;
+    }
+
+    .gc-btn {
+        width: 100%;
+        white-space: normal;
+        min-height: 46px;
+    }
+
+    .gc-control {
+        font-size: 16px;
+    }
+
+    .vehiculo-item {
+        padding: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .gc-wrap {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .gc-breadcrumb {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        white-space: nowrap;
+    }
+
+    .gc-hero-main {
+        gap: 11px;
+    }
+
+    .gc-hero-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+    }
+
+    .gc-title {
+        font-size: 2rem;
+    }
+
+    .gc-subtitle {
+        font-size: .84rem;
+    }
+
+    .gc-section-head {
+        min-height: auto;
+    }
+
+    .gc-section-icon,
+    .gc-side-icon {
+        width: 31px;
+        height: 31px;
+        border-radius: 10px;
+    }
+
+    .gc-label {
+        letter-spacing: .035em;
+    }
+
+    .gc-radio-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .gc-actions {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 360px) {
+    .gc-wrap {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .gc-hero-main {
+        flex-direction: column;
+    }
+
+    .gc-flow-pill {
+        width: 100%;
+    }
+
+    .gc-flow-pill,
+    .gc-btn,
+    .gc-add-vehicle {
+        justify-content: center;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .guest-create-page *,
+    .guest-create-page *::before,
+    .guest-create-page *::after {
+        transition: none !important;
+        animation: none !important;
     }
 }
 </style>
+
+<div class="guest-create-page">
+    <div class="gc-wrap">
+        <div class="gc-breadcrumb">
+            <a href="<?= url('huespedes') ?>">
+                <i class="fas fa-users"></i>
+                Huespedes
+            </a>
+            <i class="fas fa-chevron-right"></i>
+            <span>Nuevo registro</span>
+        </div>
+
+        <header class="gc-hero">
+            <div class="gc-hero-main">
+                <div class="gc-hero-icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <div>
+                    <p class="gc-kicker">Registro de huesped</p>
+                    <h1 class="gc-title">Crear nuevo huesped</h1>
+                    <p class="gc-subtitle">
+                        Captura los datos principales del huesped, su procedencia y vehiculos para dejar listo el expediente operativo.
+                    </p>
+                </div>
+            </div>
+            <span class="gc-flow-pill">
+                <i class="fas fa-clipboard-check"></i>
+                <?= $es_reservacion_rapida ? 'Continuara a reservacion rapida' : 'Alta directa de huesped' ?>
+            </span>
+        </header>
+
+        <?php if ($es_reservacion_rapida): ?>
+            <div class="gc-fast-note">
+                <i class="fas fa-info-circle"></i>
+                <p class="text-sm font-semibold leading-relaxed">
+                    Registre el nuevo huesped. Al guardar, continuara con la reservacion de la habitacion seleccionada.
+                </p>
+            </div>
+        <?php endif; ?>
+
+        <form method="POST" action="<?= url('huespedes/store') . ($return_to ? '?return_to=' . urlencode($return_to) . $reservacion_rapida_params : '') ?>" class="gc-form">
+            <?= csrf_field() ?>
+
+            <div class="gc-layout">
+                <main class="gc-form">
+                    <section class="gc-section">
+                        <div class="gc-section-head">
+                            <div class="gc-section-title-wrap">
+                                <span class="gc-section-icon"><i class="fas fa-user"></i></span>
+                                <div>
+                                    <h2>Informacion personal</h2>
+                                    <p class="gc-section-sub">Datos de contacto y nombre legal para el expediente.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="gc-section-body">
+                            <div class="gc-grid">
+                                <div class="gc-field gc-field-full">
+                                    <label class="gc-label">
+                                        Nombre completo <span class="gc-required">*</span>
+                                    </label>
+                                    <input type="text"
+                                           name="nombre_completo"
+                                           value="<?= old('nombre_completo') ?>"
+                                           required
+                                           placeholder="Ingrese el nombre completo del huesped"
+                                           class="gc-control">
+                                </div>
+
+                                <div class="gc-field">
+                                    <label class="gc-label">Telefono</label>
+                                    <div class="gc-input-wrap">
+                                        <i class="fas fa-phone"></i>
+                                        <input type="tel"
+                                               name="telefono"
+                                               value="<?= old('telefono') ?>"
+                                               placeholder="10 digitos"
+                                               class="gc-control has-icon">
+                                    </div>
+                                </div>
+
+                                <div class="gc-field">
+                                    <label class="gc-label">Email</label>
+                                    <div class="gc-input-wrap">
+                                        <i class="fas fa-envelope"></i>
+                                        <input type="email"
+                                               name="email"
+                                               value="<?= old('email') ?>"
+                                               placeholder="correo@ejemplo.com"
+                                               class="gc-control has-icon">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="gc-section">
+                        <div class="gc-section-head">
+                            <div class="gc-section-title-wrap">
+                                <span class="gc-section-icon"><i class="fas fa-map-marked-alt"></i></span>
+                                <div>
+                                    <h2>Procedencia</h2>
+                                    <p class="gc-section-sub">Origen del huesped para reportes y seguimiento.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="gc-section-body">
+                            <div class="gc-grid">
+                                <div class="gc-field">
+                                    <label class="gc-label">Estado</label>
+                                    <select name="procedencia_estado"
+                                            class="gc-control">
+                                        <option value="">Seleccione un estado</option>
+                                        <?php foreach ($estados as $estado): ?>
+                                            <option value="<?= $estado ?>" <?= old('procedencia_estado') == $estado ? 'selected' : '' ?>>
+                                                <?= $estado ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+
+                                <div class="gc-field">
+                                    <label class="gc-label">Ciudad</label>
+                                    <input type="text"
+                                           name="procedencia_ciudad"
+                                           value="<?= old('procedencia_ciudad') ?>"
+                                           placeholder="Ciudad de origen"
+                                           class="gc-control">
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="gc-section">
+                        <div class="gc-section-head">
+                            <div class="gc-section-title-wrap">
+                                <span class="gc-section-icon"><i class="fas fa-car"></i></span>
+                                <div>
+                                    <h2>Vehiculos</h2>
+                                    <p class="gc-section-sub">Autos asociados al huesped para control de estacionamiento.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="gc-section-body">
+                            <div id="vehiculos-container">
+                                <div class="vehiculo-item">
+                                    <div class="gc-vehicle-head">
+                                        <h4 class="gc-vehicle-title">
+                                            <i class="fas fa-car-side"></i>
+                                            Vehiculo 1
+                                        </h4>
+                                        <button type="button" onclick="eliminarVehiculo(this)" class="gc-delete-vehicle hidden" title="Eliminar vehiculo">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+
+                                    <div class="gc-grid">
+                                        <div class="gc-field">
+                                            <label class="gc-label">Marca</label>
+                                            <input type="text"
+                                                   name="vehiculos[0][marca]"
+                                                   placeholder="Ej: Toyota, Nissan, etc."
+                                                   class="gc-control">
+                                        </div>
+
+                                        <div class="gc-field">
+                                            <label class="gc-label">Modelo</label>
+                                            <input type="text"
+                                                   name="vehiculos[0][modelo]"
+                                                   placeholder="Ej: Corolla, Sentra, etc."
+                                                   class="gc-control">
+                                        </div>
+
+                                        <div class="gc-field">
+                                            <label class="gc-label">Placas</label>
+                                            <input type="text"
+                                                   name="vehiculos[0][placas]"
+                                                   placeholder="ABC-123"
+                                                   style="text-transform: uppercase"
+                                                   class="gc-control font-mono">
+                                        </div>
+
+                                        <div class="gc-field">
+                                            <label class="gc-label">Color</label>
+                                            <input type="text"
+                                                   name="vehiculos[0][color]"
+                                                   placeholder="Ej: Rojo, Azul, etc."
+                                                   class="gc-control">
+                                        </div>
+
+                                        <div class="gc-field gc-field-full">
+                                            <label class="gc-label">
+                                                Estacionamiento <span class="gc-required">*</span>
+                                            </label>
+                                            <div class="gc-radio-grid">
+                                                <label class="relative cursor-pointer">
+                                                    <input type="radio"
+                                                           name="vehiculos[0][estacionamiento]"
+                                                           value="coches"
+                                                           class="peer sr-only"
+                                                           checked>
+                                                    <div class="gc-radio-card">
+                                                        <i class="fas fa-car"></i>
+                                                        <p>Coches</p>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="button" onclick="agregarVehiculo()" class="gc-add-vehicle">
+                                <i class="fas fa-plus-circle"></i>
+                                Agregar otro vehiculo
+                            </button>
+
+                            <p class="gc-note">
+                                <i class="fas fa-info-circle"></i>
+                                Puede registrar multiples vehiculos por huesped. Si no tiene vehiculo, deje los campos en blanco.
+                            </p>
+                        </div>
+                    </section>
+
+                    <section class="gc-section">
+                        <div class="gc-section-head">
+                            <div class="gc-section-title-wrap">
+                                <span class="gc-section-icon"><i class="fas fa-sticky-note"></i></span>
+                                <div>
+                                    <h2>Notas adicionales</h2>
+                                    <p class="gc-section-sub">Observaciones utiles para recepcion y futuras reservaciones.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="gc-section-body">
+                            <label class="gc-label">Notas</label>
+                            <textarea name="notas"
+                                      rows="4"
+                                      placeholder="Cualquier informacion adicional sobre el huesped..."
+                                      class="gc-control"><?= old('notas') ?></textarea>
+                        </div>
+                    </section>
+                </main>
+
+                <aside class="gc-side">
+                    <div class="gc-side-card">
+                        <h3>
+                            <span class="gc-side-icon"><i class="fas fa-list-check"></i></span>
+                            Registro limpio
+                        </h3>
+                        <div class="gc-check-list">
+                            <span><i class="fas fa-check-circle"></i> El nombre completo es el unico dato obligatorio del huesped.</span>
+                            <span><i class="fas fa-check-circle"></i> Telefono y correo ayudan a recuperar reservaciones mas rapido.</span>
+                            <span><i class="fas fa-check-circle"></i> Los vehiculos pueden quedarse vacios si no aplican.</span>
+                        </div>
+                    </div>
+
+                    <div class="gc-side-card">
+                        <div class="gc-mini-card">
+                            <p class="gc-mini-label">Flujo actual</p>
+                            <p class="gc-mini-text">
+                                <?= $es_reservacion_rapida ? 'Despues de guardar volveras al flujo de habitacion seleccionada.' : 'Despues de guardar quedara disponible para reservar.' ?>
+                            </p>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+
+            <div class="gc-actions">
+                <a href="<?= $cancel_url ?>"
+                   class="gc-btn gc-btn-secondary">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </a>
+                <button type="submit"
+                        class="gc-btn gc-btn-primary">
+                    <i class="fas fa-save"></i>
+                    <?= $es_reservacion_rapida ? 'Guardar y Continuar' : 'Registrar Huesped' ?>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let vehiculoIndex = 1;
+
+// Funcion para agregar vehiculo
+function agregarVehiculo() {
+    const container = document.getElementById('vehiculos-container');
+    const vehiculoHtml = `
+        <div class="vehiculo-item animate-fadeIn">
+            <div class="gc-vehicle-head">
+                <h4 class="gc-vehicle-title">
+                    <i class="fas fa-car-side"></i>
+                    Vehiculo ${vehiculoIndex + 1}
+                </h4>
+                <button type="button" onclick="eliminarVehiculo(this)" class="gc-delete-vehicle" title="Eliminar vehiculo">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+
+            <div class="gc-grid">
+                <div class="gc-field">
+                    <label class="gc-label">Marca</label>
+                    <input type="text"
+                           name="vehiculos[${vehiculoIndex}][marca]"
+                           placeholder="Ej: Toyota, Nissan, etc."
+                           class="gc-control">
+                </div>
+
+                <div class="gc-field">
+                    <label class="gc-label">Modelo</label>
+                    <input type="text"
+                           name="vehiculos[${vehiculoIndex}][modelo]"
+                           placeholder="Ej: Corolla, Sentra, etc."
+                           class="gc-control">
+                </div>
+
+                <div class="gc-field">
+                    <label class="gc-label">Placas</label>
+                    <input type="text"
+                           name="vehiculos[${vehiculoIndex}][placas]"
+                           placeholder="ABC-123"
+                           style="text-transform: uppercase"
+                           onchange="this.value = this.value.toUpperCase()"
+                           class="gc-control font-mono">
+                </div>
+
+                <div class="gc-field">
+                    <label class="gc-label">Color</label>
+                    <input type="text"
+                           name="vehiculos[${vehiculoIndex}][color]"
+                           placeholder="Ej: Rojo, Azul, etc."
+                           class="gc-control">
+                </div>
+
+                <div class="gc-field gc-field-full">
+                    <label class="gc-label">
+                        Estacionamiento <span class="gc-required">*</span>
+                    </label>
+                    <div class="gc-radio-grid">
+                        <label class="relative cursor-pointer">
+                            <input type="radio"
+                                   name="vehiculos[${vehiculoIndex}][estacionamiento]"
+                                   value="coches"
+                                   class="peer sr-only"
+                                   checked>
+                            <div class="gc-radio-card">
+                                <i class="fas fa-car"></i>
+                                <p>Coches</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', vehiculoHtml);
+    vehiculoIndex++;
+
+    // Mostrar boton de eliminar en el primer vehiculo si hay mas de uno
+    const vehiculos = container.querySelectorAll('.vehiculo-item');
+    if (vehiculos.length > 1) {
+        vehiculos[0].querySelector('button').classList.remove('hidden');
+    }
+}
+
+// Funcion para eliminar vehiculo
+function eliminarVehiculo(button) {
+    const vehiculoItem = button.closest('.vehiculo-item');
+    vehiculoItem.style.opacity = '0';
+    vehiculoItem.style.transform = 'scale(0.98)';
+    setTimeout(() => {
+        vehiculoItem.remove();
+
+        // Actualizar numeracion
+        const vehiculos = document.querySelectorAll('.vehiculo-item');
+        vehiculos.forEach((vehiculo, index) => {
+            vehiculo.querySelector('h4').innerHTML = `<i class="fas fa-car-side"></i> Vehiculo ${index + 1}`;
+        });
+
+        // Ocultar boton de eliminar si solo queda un vehiculo
+        if (vehiculos.length === 1) {
+            vehiculos[0].querySelector('button').classList.add('hidden');
+        }
+    }, 300);
+}
+
+// Formatear telefono mientras se escribe
+document.querySelector('input[name="telefono"]').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 10) {
+        value = value.slice(0, 10);
+    }
+    e.target.value = value;
+});
+
+// Convertir placas a mayusculas en todos los campos
+document.addEventListener('input', function(e) {
+    if (e.target.name && e.target.name.includes('[placas]')) {
+        e.target.value = e.target.value.toUpperCase();
+    }
+});
+
+// Validacion del formulario
+document.querySelector('form').addEventListener('submit', function(e) {
+    // Verificar si hay al menos un vehiculo con datos completos
+    const vehiculos = document.querySelectorAll('.vehiculo-item');
+    let hayVehiculoCompleto = false;
+
+    vehiculos.forEach(vehiculo => {
+        const marca = vehiculo.querySelector('input[name*="[marca]"]').value;
+        const placas = vehiculo.querySelector('input[name*="[placas]"]').value;
+
+        if (marca && placas) {
+            hayVehiculoCompleto = true;
+        }
+    });
+
+    // Si hay datos parciales en algun vehiculo, mostrar advertencia
+    vehiculos.forEach(vehiculo => {
+        const inputs = vehiculo.querySelectorAll('input[type="text"]');
+        let hayDatosParciales = false;
+        let camposLlenos = 0;
+
+        inputs.forEach(input => {
+            if (input.value.trim()) camposLlenos++;
+        });
+
+        if (camposLlenos > 0 && camposLlenos < 4) {
+            vehiculo.style.border = '2px solid #D64539';
+            setTimeout(() => {
+                vehiculo.style.border = '';
+            }, 3000);
+        }
+    });
+});
+</script>
