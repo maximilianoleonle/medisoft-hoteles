@@ -23,6 +23,45 @@ $configHotelColors = [
     ['Secundario', function_exists('hotel_branding_hex') ? hotel_branding_hex($configBranding['color_secondary'] ?? null, '#0F172A') : ($configBranding['color_secondary'] ?? '#0F172A')],
     ['Acento', function_exists('hotel_branding_hex') ? hotel_branding_hex($configBranding['color_accent'] ?? null, '#BD9441') : ($configBranding['color_accent'] ?? '#BD9441')],
 ];
+$configReadHotelSetting = function ($key, $default) {
+    return function_exists('hotel_setting') ? hotel_setting($key, $default) : $default;
+};
+$configDisplayValue = function ($value) {
+    $value = trim((string) $value);
+    return $value !== '' ? $value : 'No configurado';
+};
+$configOperativaHotel = [
+    [
+        'label' => 'Hora de check-in',
+        'icon' => 'fas fa-sign-in-alt',
+        'value' => $configDisplayValue($configReadHotelSetting('operacion.checkin_hora', '15:00')),
+    ],
+    [
+        'label' => 'Hora de check-out',
+        'icon' => 'fas fa-sign-out-alt',
+        'value' => $configDisplayValue($configReadHotelSetting('operacion.checkout_hora', '12:00')),
+    ],
+    [
+        'label' => 'Moneda',
+        'icon' => 'fas fa-coins',
+        'value' => $configDisplayValue($configReadHotelSetting('operacion.moneda', 'MXN')),
+    ],
+    [
+        'label' => 'Telefono',
+        'icon' => 'fas fa-phone-alt',
+        'value' => $configDisplayValue($configReadHotelSetting('contacto.telefono', '')),
+    ],
+    [
+        'label' => 'Direccion',
+        'icon' => 'fas fa-map-marker-alt',
+        'value' => $configDisplayValue($configReadHotelSetting('contacto.direccion', '')),
+    ],
+    [
+        'label' => 'Nombre app/PWA',
+        'icon' => 'fas fa-mobile-alt',
+        'value' => $configDisplayValue($configReadHotelSetting('pwa.nombre_app', 'Medisoft Hoteles')),
+    ],
+];
 ?>
 
 <!-- Estilos críticos inline para prevenir FOUC -->
@@ -401,6 +440,46 @@ $configHotelColors = [
                     <p class="text-xs text-gray-500 mb-1">Check-out</p>
                     <p class="text-sm font-semibold text-gray-800"><?= htmlspecialchars($configHotel['check_out_time'] ?? '12:00', ENT_QUOTES, 'UTF-8') ?></p>
                 </div>
+            </div>
+        </div>
+
+        <!-- Configuracion operativa tenant-safe de solo lectura -->
+        <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
+                <div>
+                    <p class="text-xs uppercase tracking-wide text-gray-500 font-semibold">Solo lectura</p>
+                    <h3 class="text-base font-semibold text-gray-900 mt-0.5 flex items-center gap-2 config-section pl-3">
+                        <i class="fas fa-sliders-h text-hotel-brown text-sm"></i>
+                        Configuracion operativa del hotel
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Valores leidos desde la capa tenant-safe. Todavia no se editan desde esta pantalla.
+                    </p>
+                </div>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-medium self-start">
+                    <i class="fas fa-lock text-gray-400"></i>
+                    Registry hotel_configuracion
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <?php foreach ($configOperativaHotel as $item): ?>
+                    <div class="rounded-lg bg-gray-50 border border-gray-200 p-3">
+                        <div class="flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0">
+                                <i class="<?= htmlspecialchars($item['icon'], ENT_QUOTES, 'UTF-8') ?> text-hotel-brown text-sm"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-xs text-gray-500 mb-1">
+                                    <?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?>
+                                </p>
+                                <p class="text-sm font-semibold text-gray-800 break-words">
+                                    <?= htmlspecialchars($item['value'], ENT_QUOTES, 'UTF-8') ?>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             </div>
         </div>
 
