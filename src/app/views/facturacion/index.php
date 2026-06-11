@@ -237,9 +237,9 @@ $mensaje      = get_mensaje();
     from { opacity: 0; transform: translateY(-8px); }
     to   { opacity: 1; transform: translateY(0); }
 }
-.flash-success { background: rgba(92,122,78,.08);   color: #3D5234; border: 1.5px solid rgba(92,122,78,.3); border-left: 4px solid var(--lc-green); }
-.flash-error   { background: #FEF2F2;                color: #991B1B; border: 1.5px solid #FCA5A5;           border-left: 4px solid #EF4444; }
-.flash-info    { background: #EFF6FF;                color: #1E40AF; border: 1.5px solid #93C5FD;           border-left: 4px solid #3B82F6; }
+.flash-success { background: rgba(92,122,78,.08);   color: #3D5234; border: 1.5px solid rgba(92,122,78,.3); }
+.flash-error   { background: #FEF2F2;                color: #991B1B; border: 1.5px solid #FCA5A5; }
+.flash-info    { background: #EFF6FF;                color: #1E40AF; border: 1.5px solid #93C5FD; }
 
 /* ── Empty state ─────────────────────────── */
 .empty-state {
@@ -354,6 +354,1018 @@ $mensaje      = get_mensaje();
 @media (max-width: 380px) {
     .stats-grid { grid-template-columns: 1fr !important; }
     .fact-header h1 { font-size: .9rem !important; }
+}
+</style>
+
+<style id="facturacion-boutique">
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+.facturacion-view {
+    --fact-brand: var(--brand-primary, #1B2746);
+    --fact-brand-2: var(--brand-secondary, #0F172A);
+    --fact-accent: var(--brand-accent, #BD9441);
+    --fact-ivory: color-mix(in srgb, var(--fact-accent) 8%, #F8F5ED);
+    --fact-ivory-2: color-mix(in srgb, var(--fact-accent) 6%, #FBF9F4);
+    --fact-surface: color-mix(in srgb, var(--fact-accent) 2%, #FFFFFF);
+    --fact-surface-warm: color-mix(in srgb, var(--fact-accent) 5%, #FFFFFF);
+    --fact-line: color-mix(in srgb, var(--fact-accent) 24%, #E7DEC9);
+    --fact-line-soft: color-mix(in srgb, var(--fact-accent) 13%, #F0ECE2);
+    --fact-muted: color-mix(in srgb, var(--fact-brand-2) 48%, #94A3B8);
+    --fact-success: #1E9E63;
+    --fact-success-bg: #E7F4EC;
+    --fact-warning: #C2841C;
+    --fact-warning-bg: #FAF0DC;
+    --fact-danger: #D64539;
+    --fact-danger-bg: #FBE9E7;
+    --fact-info: #2F77E0;
+    --fact-info-bg: #E6EFFC;
+    --fact-purple: #6F5FD2;
+    --fact-purple-bg: #EFECFB;
+    --fact-shadow: 0 2px 8px color-mix(in srgb, var(--fact-brand-2) 6%, transparent), 0 12px 28px color-mix(in srgb, var(--fact-brand-2) 7%, transparent);
+    --fact-shadow-lg: 0 18px 48px color-mix(in srgb, var(--fact-brand-2) 14%, transparent);
+    --fact-serif: 'Cormorant Garamond', Georgia, serif;
+    --fact-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    background:
+        repeating-linear-gradient(135deg, color-mix(in srgb, var(--fact-accent) 3%, transparent) 0 1px, transparent 1px 22px),
+        linear-gradient(180deg, var(--fact-ivory-2), var(--fact-ivory) 56%, #F7F2EA) !important;
+    color: var(--fact-brand-2);
+    font-family: var(--fact-sans);
+    animation: none !important;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+.facturacion-view *,
+.facturacion-view *::before,
+.facturacion-view *::after {
+    box-sizing: border-box;
+}
+
+.facturacion-view :where(p, span, a, button, input, select, textarea, th, td, label) {
+    font-family: var(--fact-sans);
+}
+
+.facturacion-view > .container,
+.facturacion-view .fact-header .container {
+    max-width: 1440px !important;
+}
+
+.facturacion-view .fact-header {
+    position: relative !important;
+    top: auto !important;
+    padding: 26px 0 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--fact-brand-2) !important;
+}
+
+.facturacion-view .fact-header::before {
+    display: none !important;
+}
+
+.facturacion-view .fact-header h1 {
+    color: var(--fact-brand) !important;
+    font-family: var(--fact-serif);
+    font-size: clamp(2rem, 3.2vw, 2.6rem) !important;
+    font-weight: 650 !important;
+    line-height: .95 !important;
+    letter-spacing: 0 !important;
+}
+
+.facturacion-view .fact-header h1 i {
+    color: var(--fact-accent) !important;
+}
+
+.facturacion-view .fact-header h1 + p {
+    display: block !important;
+    margin-top: 8px !important;
+    color: var(--fact-muted) !important;
+    font-weight: 600;
+}
+
+.facturacion-view .fact-header a[style] {
+    background: linear-gradient(150deg, var(--fact-brand), var(--fact-brand-2)) !important;
+    color: #FFFFFF !important;
+    border: 1px solid color-mix(in srgb, var(--fact-accent) 22%, transparent);
+    box-shadow: 0 12px 24px -10px color-mix(in srgb, var(--fact-brand) 55%, transparent);
+}
+
+.facturacion-view .fact-header a[style] i {
+    color: #FFFFFF !important;
+}
+
+.facturacion-view .fact-header div[style*="width:1px"] {
+    background: var(--fact-line) !important;
+}
+
+.facturacion-view .fact-header span[style*="display:flex"] {
+    background: var(--fact-surface) !important;
+    border: 1px solid var(--fact-line) !important;
+    color: color-mix(in srgb, var(--fact-accent) 72%, #000) !important;
+    box-shadow: var(--fact-shadow);
+}
+
+.facturacion-view .stat-card,
+.facturacion-view .filter-card {
+    background: var(--fact-surface) !important;
+    border: 1px solid var(--fact-line) !important;
+    border-radius: 16px !important;
+    box-shadow: var(--fact-shadow) !important;
+}
+
+.facturacion-view .stat-card {
+    transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease !important;
+}
+
+.facturacion-view .stat-card::after {
+    opacity: .9 !important;
+    height: 3px !important;
+}
+
+.facturacion-view .stat-card:hover,
+.facturacion-view .filter-card:hover {
+    transform: translateY(-1px) !important;
+    border-color: color-mix(in srgb, var(--fact-accent) 42%, var(--fact-line)) !important;
+    box-shadow: 0 16px 34px color-mix(in srgb, var(--fact-brand-2) 10%, transparent) !important;
+}
+
+.facturacion-view .stat-icon {
+    border-radius: 12px !important;
+    border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.facturacion-view .stat-card p[style*="font-size:2rem"],
+.facturacion-view .stat-card p[style*="font-size:1.5rem"],
+.facturacion-view .id-badge,
+.facturacion-view .rfc-badge,
+.facturacion-view td[data-label="Monto"] span {
+    font-variant-numeric: tabular-nums;
+}
+
+.facturacion-view .filter-hd {
+    background: var(--fact-surface-warm) !important;
+    border-bottom: 1px solid var(--fact-line) !important;
+}
+
+.facturacion-view .filter-hd h3,
+.facturacion-view .filter-hd h3[style] {
+    color: var(--fact-brand-2) !important;
+}
+
+.facturacion-view .filter-hd h3 div,
+.facturacion-view .filter-hd h3 div[style] {
+    background: color-mix(in srgb, var(--fact-accent) 14%, #FFFFFF) !important;
+    border: 1px solid var(--fact-line);
+}
+
+.facturacion-view .filter-hd h3 i {
+    color: color-mix(in srgb, var(--fact-accent) 72%, #000) !important;
+}
+
+.facturacion-view .lc-input {
+    min-height: 40px;
+    background: var(--fact-surface-warm) !important;
+    border: 1px solid var(--fact-line) !important;
+    border-radius: 11px !important;
+    color: var(--fact-brand-2) !important;
+    font-weight: 650;
+}
+
+.facturacion-view .lc-input:focus {
+    border-color: var(--fact-accent) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--fact-accent) 24%, transparent) !important;
+    background: #FFFFFF !important;
+}
+
+.facturacion-view .filter-label {
+    color: var(--fact-muted) !important;
+    letter-spacing: .07em !important;
+}
+
+.facturacion-view .btn-filter,
+.facturacion-view .btn-ver,
+.facturacion-view .btn-clear,
+.facturacion-view .page-btn,
+.facturacion-view .filter-toggle-btn {
+    min-height: 38px;
+    border-radius: 11px !important;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease, color .18s ease !important;
+}
+
+.facturacion-view .btn-filter,
+.facturacion-view .btn-ver,
+.facturacion-view .page-btn.active {
+    background: linear-gradient(135deg, var(--fact-brand), var(--fact-brand-2)) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 12px 26px -12px color-mix(in srgb, var(--fact-brand) 58%, transparent) !important;
+}
+
+.facturacion-view .btn-clear,
+.facturacion-view .page-btn,
+.facturacion-view .filter-toggle-btn {
+    background: var(--fact-surface-warm) !important;
+    border: 1px solid var(--fact-line) !important;
+    color: var(--fact-brand-2) !important;
+}
+
+.facturacion-view .btn-filter:hover,
+.facturacion-view .btn-ver:hover,
+.facturacion-view .btn-clear:hover,
+.facturacion-view .page-btn:hover,
+.facturacion-view .filter-toggle-btn:hover {
+    transform: translateY(-1px) !important;
+    border-color: color-mix(in srgb, var(--fact-accent) 42%, var(--fact-line)) !important;
+}
+
+.facturacion-view .filter-card > div[style*="background:linear-gradient(135deg,#5C7A4E"] {
+    background: linear-gradient(135deg, var(--fact-brand), var(--fact-brand-2)) !important;
+    border-bottom: 1px solid rgba(255,255,255,.14) !important;
+}
+
+.facturacion-view .filter-card > div[style*="background:linear-gradient(135deg,#5C7A4E"] div[style*="background:rgba"] {
+    background: color-mix(in srgb, var(--fact-accent) 28%, rgba(255,255,255,.12)) !important;
+    border: 1px solid rgba(255,255,255,.2);
+}
+
+.facturacion-view .fact-table thead th {
+    background: var(--fact-surface-warm) !important;
+    border-bottom: 1px solid var(--fact-line) !important;
+    color: var(--fact-muted) !important;
+    letter-spacing: .07em !important;
+}
+
+.facturacion-view .fact-table tbody tr {
+    border-bottom: 1px solid var(--fact-line-soft) !important;
+}
+
+.facturacion-view .fact-table tbody tr:hover {
+    background: var(--fact-surface-warm) !important;
+}
+
+.facturacion-view .fact-table tbody td {
+    color: var(--fact-brand-2) !important;
+}
+
+.facturacion-view .badge {
+    border-radius: 999px !important;
+    font-variant-numeric: tabular-nums;
+}
+
+.facturacion-view .badge-cliente,
+.facturacion-view .badge-en-proceso {
+    background: var(--fact-info-bg) !important;
+    color: #1F5CA8 !important;
+    border-color: color-mix(in srgb, var(--fact-info) 28%, #DDEAFB) !important;
+}
+
+.facturacion-view .badge-uso-interno {
+    background: var(--fact-purple-bg) !important;
+    color: #5145A8 !important;
+    border-color: color-mix(in srgb, var(--fact-purple) 28%, #E4DFF8) !important;
+}
+
+.facturacion-view .badge-pendiente {
+    background: var(--fact-warning-bg) !important;
+    color: #8A5A12 !important;
+    border-color: color-mix(in srgb, var(--fact-warning) 28%, #F1DFC0) !important;
+}
+
+.facturacion-view .badge-completada {
+    background: var(--fact-success-bg) !important;
+    color: #0F7048 !important;
+    border-color: color-mix(in srgb, var(--fact-success) 28%, #D8EFE4) !important;
+}
+
+.facturacion-view .badge-cancelada {
+    background: color-mix(in srgb, var(--fact-brand-2) 6%, #FFFFFF) !important;
+    color: var(--fact-muted) !important;
+    border-color: var(--fact-line) !important;
+}
+
+.facturacion-view .rfc-badge,
+.facturacion-view .id-badge {
+    background: var(--fact-surface-warm) !important;
+    border-color: var(--fact-line) !important;
+    color: var(--fact-brand) !important;
+}
+
+.facturacion-view .res-link {
+    color: var(--fact-info) !important;
+}
+
+.facturacion-view .empty-state {
+    background: var(--fact-ivory-2);
+    border: 1px dashed var(--fact-line);
+    border-radius: 16px;
+    margin: 16px;
+}
+
+.facturacion-view .empty-state-icon {
+    border-radius: 16px !important;
+    background: color-mix(in srgb, var(--fact-accent) 15%, #FFFFFF) !important;
+    color: color-mix(in srgb, var(--fact-accent) 72%, #000) !important;
+}
+
+.facturacion-view .flash-msg {
+    border-width: 1px !important;
+    border-left-width: 1px !important;
+    box-shadow: var(--fact-shadow);
+    animation: none !important;
+}
+
+.facturacion-view .flash-success {
+    background: var(--fact-success-bg) !important;
+    color: #0F7048 !important;
+    border-color: color-mix(in srgb, var(--fact-success) 28%, #D8EFE4) !important;
+}
+
+.facturacion-view .flash-error {
+    background: var(--fact-danger-bg) !important;
+    color: #9D3028 !important;
+    border-color: color-mix(in srgb, var(--fact-danger) 28%, #F3D7D4) !important;
+}
+
+.facturacion-view .flash-info {
+    background: var(--fact-info-bg) !important;
+    color: #1F5CA8 !important;
+    border-color: color-mix(in srgb, var(--fact-info) 28%, #DDEAFB) !important;
+}
+
+.facturacion-view .lc-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+.facturacion-view .lc-scroll::-webkit-scrollbar-track { background: var(--fact-ivory); border-radius: 10px; }
+.facturacion-view .lc-scroll::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--fact-accent), #fff 34%); border-radius: 10px; }
+.facturacion-view .lc-scroll::-webkit-scrollbar-thumb:hover { background: var(--fact-accent); }
+
+.facturacion-view a:focus-visible,
+.facturacion-view button:focus-visible,
+.facturacion-view input:focus-visible,
+.facturacion-view select:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--fact-accent) 30%, transparent) !important;
+}
+
+/* Layout upgrade: document workflow, compact but visibly structured. */
+.facturacion-view .fact-header {
+    margin-bottom: 6px;
+}
+
+.facturacion-view .fact-header .container {
+    padding-bottom: 10px;
+}
+
+.facturacion-view .fact-header .flex.items-center.justify-between {
+    align-items: flex-start;
+}
+
+.facturacion-view .fact-header a[style] {
+    margin-top: 3px;
+}
+
+.facturacion-view > .container {
+    max-width: 1320px !important;
+}
+
+.facturacion-view .stats-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+    align-items: stretch;
+}
+
+.facturacion-view .stats-grid > .stat-card {
+    grid-column: span 3;
+    min-height: 146px;
+    overflow: hidden;
+    position: relative;
+}
+
+.facturacion-view .stats-grid > .stat-card::before {
+    content: '';
+    position: absolute;
+    inset: 12px 12px auto auto;
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--sc-accent, var(--fact-accent)) 12%, transparent);
+    pointer-events: none;
+}
+
+.facturacion-view .stats-grid > .stat-card > div {
+    position: relative;
+    z-index: 1;
+}
+
+.facturacion-view .stat-card p[style*="font-size:2rem"],
+.facturacion-view .stat-card p[style*="font-size:1.5rem"] {
+    font-family: var(--fact-serif);
+    letter-spacing: 0;
+    line-height: .95 !important;
+}
+
+.facturacion-view .filter-card {
+    overflow: hidden;
+}
+
+.facturacion-view .filter-hd {
+    min-height: 50px;
+    padding: 14px 18px !important;
+}
+
+.facturacion-view .filter-form .filter-grid {
+    grid-template-columns: minmax(220px, 1.35fr) repeat(3, minmax(132px, 1fr)) auto !important;
+    gap: 12px !important;
+}
+
+.facturacion-view .filter-actions {
+    align-items: stretch;
+}
+
+.facturacion-view .btn-filter,
+.facturacion-view .btn-clear {
+    min-height: 42px;
+}
+
+.facturacion-view .filter-card > div[style*="padding:12px 18px"] {
+    background: var(--fact-surface-warm) !important;
+    border-bottom: 1px solid var(--fact-line) !important;
+    min-height: 52px;
+}
+
+.facturacion-view .filter-card > div[style*="padding:12px 18px"] h3 {
+    color: var(--fact-brand) !important;
+}
+
+.facturacion-view .filter-card > div[style*="padding:12px 18px"] h3 div {
+    background: color-mix(in srgb, var(--fact-accent) 14%, var(--fact-surface)) !important;
+    border: 1px solid var(--fact-line);
+}
+
+.facturacion-view .filter-card > div[style*="padding:12px 18px"] h3 i {
+    color: color-mix(in srgb, var(--fact-accent) 76%, #3F2E12) !important;
+}
+
+.facturacion-view .filter-card > div[style*="padding:12px 18px"] > span {
+    background: var(--fact-surface) !important;
+    border: 1px solid var(--fact-line);
+    color: var(--fact-brand) !important;
+}
+
+.facturacion-view .fact-table {
+    border-collapse: separate !important;
+    border-spacing: 0 9px;
+    min-width: 100%;
+}
+
+.facturacion-view .fact-table thead tr {
+    transform: translateY(4px);
+}
+
+.facturacion-view .fact-table tbody tr {
+    background: var(--fact-surface) !important;
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--fact-brand-2) 4%, transparent);
+}
+
+.facturacion-view .fact-table tbody td {
+    border-top: 1px solid var(--fact-line-soft);
+    border-bottom: 1px solid var(--fact-line-soft);
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+}
+
+.facturacion-view .fact-table tbody td:first-child {
+    border-left: 1px solid var(--fact-line-soft);
+    border-radius: 14px 0 0 14px;
+}
+
+.facturacion-view .fact-table tbody td:last-child {
+    border-right: 1px solid var(--fact-line-soft);
+    border-radius: 0 14px 14px 0;
+}
+
+.facturacion-view .fact-table tbody tr:hover td {
+    border-color: color-mix(in srgb, var(--fact-accent) 30%, var(--fact-line));
+}
+
+.facturacion-view .id-badge {
+    min-width: 38px;
+    justify-content: center;
+}
+
+.facturacion-view .btn-ver {
+    padding-left: 13px !important;
+    padding-right: 13px !important;
+}
+
+/* Color balance: fiscal data in neutral ink, hotel color as accent. */
+.facturacion-view {
+    --fact-heading: #111827;
+    --fact-body: #1F2937;
+    --fact-muted: #667085;
+    --fact-ivory: color-mix(in srgb, var(--fact-accent) 4%, #F8F5ED);
+    --fact-ivory-2: color-mix(in srgb, var(--fact-accent) 3%, #FBF9F4);
+    --fact-surface: #FFFFFF;
+    --fact-surface-warm: color-mix(in srgb, var(--fact-accent) 3%, #FFFFFF);
+    --fact-line: color-mix(in srgb, var(--fact-brand) 6%, #E7DEC9);
+    --fact-line-soft: color-mix(in srgb, var(--fact-brand) 4%, #F0ECE2);
+    --fact-shadow: 0 1px 2px rgba(17, 24, 39, .04), 0 14px 30px -24px rgba(17, 24, 39, .34);
+    color: var(--fact-body);
+    background:
+        radial-gradient(circle at 12% 5%, color-mix(in srgb, var(--fact-accent) 7%, transparent) 0, transparent 28%),
+        radial-gradient(circle at 88% 2%, color-mix(in srgb, var(--fact-brand) 5%, transparent) 0, transparent 26%),
+        linear-gradient(180deg, var(--fact-ivory), #FFFFFF 44%, var(--fact-ivory-2)) !important;
+}
+
+.facturacion-view .fact-header h1,
+.facturacion-view .filter-hd h3,
+.facturacion-view .filter-card > div[style*="padding:12px 18px"] h3,
+.facturacion-view .stat-card p[style*="font-size:2rem"],
+.facturacion-view .stat-card p[style*="font-size:1.5rem"],
+.facturacion-view .fact-table tbody td,
+.facturacion-view .fact-table tbody td span[style*="font-weight:600"],
+.facturacion-view td[data-label="Monto"] span,
+.facturacion-view .id-badge,
+.facturacion-view .rfc-badge {
+    color: var(--fact-heading) !important;
+}
+
+.facturacion-view .fact-header {
+    background: transparent !important;
+}
+
+.facturacion-view .stat-card,
+.facturacion-view .filter-card {
+    background: var(--fact-surface) !important;
+    border-color: var(--fact-line) !important;
+    box-shadow: var(--fact-shadow) !important;
+}
+
+.facturacion-view .stats-grid > .stat-card::before {
+    background: color-mix(in srgb, var(--sc-accent, var(--fact-accent)) 8%, transparent);
+}
+
+.facturacion-view .stat-card h3,
+.facturacion-view .filter-label,
+.facturacion-view .fact-table tbody td::before {
+    color: var(--fact-muted) !important;
+}
+
+.facturacion-view .filter-card > div[style*="padding:12px 18px"] {
+    background: linear-gradient(180deg, var(--fact-surface), var(--fact-surface-warm)) !important;
+}
+
+.facturacion-view .filter-card > div[style*="padding:12px 18px"] > span,
+.facturacion-view .id-badge,
+.facturacion-view .rfc-badge {
+    background: color-mix(in srgb, var(--fact-brand) 4%, #FFFFFF) !important;
+    border-color: var(--fact-line) !important;
+}
+
+.facturacion-view .btn-filter,
+.facturacion-view .page-btn.active {
+    background: var(--fact-heading) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 12px 22px -18px rgba(17, 24, 39, .65) !important;
+}
+
+.facturacion-view .btn-ver {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--fact-brand) 86%, #111827), color-mix(in srgb, var(--fact-brand-2) 84%, #111827)) !important;
+    box-shadow: 0 10px 18px -16px color-mix(in srgb, var(--fact-brand) 60%, #111827) !important;
+}
+
+.facturacion-view .btn-ver:hover,
+.facturacion-view .btn-filter:hover,
+.facturacion-view .page-btn.active:hover {
+    box-shadow: 0 14px 24px -18px color-mix(in srgb, var(--fact-accent) 52%, #111827) !important;
+}
+
+.facturacion-view .fact-table tbody tr {
+    background: var(--fact-surface) !important;
+    box-shadow: 0 1px 2px rgba(17, 24, 39, .035);
+}
+
+.facturacion-view .fact-table tbody tr:hover {
+    background: color-mix(in srgb, var(--fact-accent) 5%, #FFFFFF) !important;
+}
+
+.facturacion-view .fact-table tbody tr:hover td {
+    border-color: color-mix(in srgb, var(--fact-accent) 22%, var(--fact-line)) !important;
+}
+
+.facturacion-view .badge-cliente,
+.facturacion-view .badge-en-proceso {
+    background: color-mix(in srgb, var(--fact-info) 8%, #FFFFFF) !important;
+    color: #1F5CA8 !important;
+    border-color: color-mix(in srgb, var(--fact-info) 18%, #D9E5F8) !important;
+}
+
+.facturacion-view .badge-uso-interno {
+    background: color-mix(in srgb, var(--fact-purple) 8%, #FFFFFF) !important;
+    color: #5145A8 !important;
+    border-color: color-mix(in srgb, var(--fact-purple) 18%, #E1DDF7) !important;
+}
+
+.facturacion-view .badge-pendiente {
+    background: color-mix(in srgb, var(--fact-warning) 10%, #FFFFFF) !important;
+    color: #8A5A12 !important;
+    border-color: color-mix(in srgb, var(--fact-warning) 18%, #F4E0AF) !important;
+}
+
+.facturacion-view .badge-completada {
+    background: color-mix(in srgb, var(--fact-success) 8%, #FFFFFF) !important;
+    color: #0F7048 !important;
+    border-color: color-mix(in srgb, var(--fact-success) 18%, #CFE9DC) !important;
+}
+
+.facturacion-view .badge-cancelada {
+    background: #F7F7F8 !important;
+    color: var(--fact-muted) !important;
+    border-color: #E4E7EC !important;
+}
+
+.facturacion-view .res-link {
+    color: color-mix(in srgb, var(--fact-info) 86%, #111827) !important;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+}
+
+.facturacion-view .res-link:hover {
+    color: color-mix(in srgb, var(--fact-info) 70%, var(--fact-heading)) !important;
+    text-decoration: underline !important;
+}
+
+.facturacion-view .lc-input:focus,
+.facturacion-view .page-btn:focus-visible,
+.facturacion-view .btn-ver:focus-visible,
+.facturacion-view .btn-filter:focus-visible,
+.facturacion-view .res-link:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--fact-accent) 22%, transparent) !important;
+    outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+    .facturacion-view .fact-header .container,
+    .facturacion-view > .container {
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+    }
+
+    .facturacion-view .fact-header h1 {
+        font-size: 2rem !important;
+    }
+
+    .facturacion-view .fact-header h1 + p {
+        display: block !important;
+        font-size: .75rem !important;
+    }
+
+    .facturacion-view .stats-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+    }
+
+    .facturacion-view .stat-card {
+        padding: 14px !important;
+    }
+
+    .facturacion-view .filter-form[style] {
+        padding: 12px !important;
+    }
+
+    .facturacion-view .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .facturacion-view .stats-grid > .stat-card {
+        grid-column: span 1;
+    }
+
+    .facturacion-view .filter-form .filter-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .facturacion-view .filter-actions {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 640px) {
+    .facturacion-view .fact-table tbody tr {
+        background: var(--fact-surface) !important;
+        border: 1px solid var(--fact-line) !important;
+        border-radius: 14px !important;
+        box-shadow: var(--fact-shadow) !important;
+    }
+
+    .facturacion-view .fact-table tbody td {
+        border-bottom-color: var(--fact-line-soft) !important;
+    }
+
+    .facturacion-view .fact-table tbody td::before {
+        color: var(--fact-muted) !important;
+    }
+
+    .facturacion-view .fact-table {
+        border-spacing: 0;
+    }
+
+    .facturacion-view .fact-table tbody td:first-child,
+    .facturacion-view .fact-table tbody td:last-child {
+        border-left: 0;
+        border-right: 0;
+        border-radius: 0;
+    }
+}
+
+@media (max-width: 420px) {
+    .facturacion-view .stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .facturacion-view *,
+    .facturacion-view *::before,
+    .facturacion-view *::after {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* Full-width command desk redesign. */
+.facturacion-view {
+    min-height: 100dvh;
+    background:
+        radial-gradient(circle at 18% -8%, color-mix(in srgb, var(--fact-accent) 18%, transparent) 0, transparent 34%),
+        radial-gradient(circle at 94% 4%, color-mix(in srgb, var(--fact-brand) 11%, transparent) 0, transparent 30%),
+        linear-gradient(180deg, color-mix(in srgb, var(--fact-accent) 5%, #FBF8F2), #FFFFFF 42%, color-mix(in srgb, var(--fact-accent) 7%, #F7F2EA)) !important;
+}
+
+.facturacion-view .fact-header .container,
+.facturacion-view > .container {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: clamp(22px, 2.8vw, 46px) !important;
+    padding-right: clamp(22px, 2.8vw, 46px) !important;
+}
+
+.facturacion-view .fact-header {
+    padding: 22px 0 0 !important;
+    margin-bottom: 2px !important;
+}
+
+.facturacion-view .fact-header .flex.items-center.justify-between {
+    width: 100%;
+    min-height: 112px;
+    align-items: center !important;
+    padding: clamp(18px, 2vw, 26px) clamp(18px, 2.4vw, 30px);
+    border: 1px solid color-mix(in srgb, var(--fact-accent) 22%, rgba(255,255,255,.22));
+    border-radius: 24px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--fact-brand) 86%, #13201D), color-mix(in srgb, var(--fact-brand-2) 72%, var(--fact-brand)) 62%, color-mix(in srgb, var(--fact-accent) 24%, var(--fact-brand)) 100%);
+    box-shadow: 0 22px 48px -34px color-mix(in srgb, var(--fact-brand) 70%, #000000);
+    overflow: hidden;
+    position: relative;
+}
+
+.facturacion-view .fact-header .flex.items-center.justify-between::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(115deg, rgba(255,255,255,.11) 0 1px, transparent 1px 28px),
+        radial-gradient(circle at 78% -20%, rgba(255,255,255,.22), transparent 34%);
+    opacity: .72;
+    pointer-events: none;
+}
+
+.facturacion-view .fact-header .flex.items-center.justify-between > * {
+    position: relative;
+    z-index: 1;
+}
+
+.facturacion-view .fact-header h1 {
+    color: #FFFFFF !important;
+    text-shadow: 0 1px 0 rgba(0,0,0,.12);
+}
+
+.facturacion-view .fact-header h1 i {
+    color: color-mix(in srgb, var(--fact-accent) 92%, #FFFFFF) !important;
+}
+
+.facturacion-view .fact-header h1 + p {
+    max-width: 680px;
+    color: rgba(255,255,255,.72) !important;
+}
+
+.facturacion-view .fact-header a[style] {
+    background: rgba(255,255,255,.13) !important;
+    border-color: rgba(255,255,255,.22) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 12px 26px -18px rgba(0,0,0,.55) !important;
+}
+
+.facturacion-view .fact-header a[style]:hover {
+    background: rgba(255,255,255,.2) !important;
+    transform: translateY(-1px);
+}
+
+.facturacion-view .fact-header div[style*="width:1px"] {
+    background: rgba(255,255,255,.2) !important;
+}
+
+.facturacion-view .fact-header span[style*="display:flex"] {
+    background: rgba(255,255,255,.14) !important;
+    border-color: rgba(255,255,255,.22) !important;
+    color: #FFFFFF !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16) !important;
+    backdrop-filter: blur(10px);
+}
+
+.facturacion-view > .container {
+    padding-top: 22px !important;
+    padding-bottom: 36px !important;
+}
+
+.facturacion-view .stats-grid {
+    width: 100%;
+    grid-template-columns: repeat(4, minmax(210px, 1fr)) !important;
+    gap: clamp(14px, 1.5vw, 22px) !important;
+    margin-bottom: clamp(18px, 1.8vw, 26px) !important;
+}
+
+.facturacion-view .stats-grid > .stat-card {
+    grid-column: auto !important;
+    min-height: 142px;
+    padding: 18px 19px 20px !important;
+    border-radius: 20px !important;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--sc-accent, var(--fact-accent)) 9%, #FFFFFF), #FFFFFF 48%),
+        #FFFFFF !important;
+    border-color: color-mix(in srgb, var(--sc-accent, var(--fact-accent)) 18%, var(--fact-line)) !important;
+    box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 20px 42px -34px color-mix(in srgb, var(--sc-accent, var(--fact-brand)) 44%, #111827) !important;
+    isolation: isolate;
+}
+
+.facturacion-view .stats-grid > .stat-card::before {
+    inset: auto -34px -54px auto;
+    width: 136px;
+    height: 136px;
+    border-radius: 999px;
+    background: radial-gradient(circle, color-mix(in srgb, var(--sc-accent, var(--fact-accent)) 18%, transparent), transparent 68%) !important;
+    opacity: 1;
+}
+
+.facturacion-view .stats-grid > .stat-card::after {
+    inset: 0 auto 0 0;
+    width: 5px;
+    height: auto !important;
+    border-radius: 20px 0 0 20px;
+    background: linear-gradient(180deg, var(--sc-accent, var(--fact-accent)), color-mix(in srgb, var(--sc-accent, var(--fact-accent)) 34%, #FFFFFF)) !important;
+    opacity: 1 !important;
+}
+
+.facturacion-view .stats-grid > .stat-card:hover {
+    transform: translateY(-3px) !important;
+    border-color: color-mix(in srgb, var(--sc-accent, var(--fact-accent)) 32%, var(--fact-line)) !important;
+    box-shadow: 0 4px 12px rgba(17,24,39,.05), 0 24px 48px -34px color-mix(in srgb, var(--sc-accent, var(--fact-brand)) 52%, #111827) !important;
+}
+
+.facturacion-view .stat-icon {
+    width: 46px !important;
+    height: 46px !important;
+    border-radius: 14px !important;
+    background: color-mix(in srgb, var(--sc-accent, var(--fact-accent)) 13%, #FFFFFF) !important;
+    color: color-mix(in srgb, var(--sc-accent, var(--fact-accent)) 84%, #111827) !important;
+    border-color: color-mix(in srgb, var(--sc-accent, var(--fact-accent)) 22%, var(--fact-line)) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.85);
+}
+
+.facturacion-view .stat-card p[style*="font-size:.67rem"] {
+    color: color-mix(in srgb, var(--sc-accent, var(--fact-accent)) 74%, #111827) !important;
+    letter-spacing: .08em !important;
+}
+
+.facturacion-view .stat-card p[style*="font-size:2rem"],
+.facturacion-view .stat-card p[style*="font-size:1.5rem"] {
+    color: var(--fact-heading) !important;
+}
+
+.facturacion-view .filter-card {
+    width: 100%;
+    border-radius: 22px !important;
+    border-color: color-mix(in srgb, var(--fact-brand) 9%, var(--fact-line)) !important;
+    box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 22px 46px -36px rgba(17,24,39,.46) !important;
+}
+
+.facturacion-view .filter-card + .filter-card {
+    margin-top: 18px;
+}
+
+.facturacion-view .filter-hd,
+.facturacion-view .filter-card > div[style*="padding:12px 18px"] {
+    min-height: 58px;
+    padding: 16px 20px !important;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--fact-accent) 5%, #FFFFFF), #FFFFFF) !important;
+}
+
+.facturacion-view .filter-hd h3,
+.facturacion-view .filter-card > div[style*="padding:12px 18px"] h3 {
+    font-size: .9rem !important;
+}
+
+.facturacion-view .filter-form[style] {
+    padding: 18px 20px 20px !important;
+}
+
+.facturacion-view .filter-form .filter-grid {
+    grid-template-columns: minmax(320px, 1.8fr) minmax(170px, .85fr) minmax(170px, .85fr) minmax(180px, .85fr) auto !important;
+    gap: 14px !important;
+    align-items: end !important;
+}
+
+.facturacion-view .lc-input {
+    min-height: 46px;
+    border-radius: 13px !important;
+    background: color-mix(in srgb, var(--fact-accent) 2%, #FFFFFF) !important;
+}
+
+.facturacion-view .btn-filter,
+.facturacion-view .btn-clear {
+    min-height: 46px;
+    border-radius: 13px !important;
+}
+
+.facturacion-view .fact-table {
+    width: 100%;
+    min-width: 980px;
+    border-spacing: 0 10px !important;
+}
+
+.facturacion-view .fact-table thead th {
+    padding: 13px 16px !important;
+    background: transparent !important;
+    border-bottom: 1px solid var(--fact-line) !important;
+    color: var(--fact-muted) !important;
+}
+
+.facturacion-view .fact-table tbody td {
+    padding: 15px 16px !important;
+}
+
+.facturacion-view .fact-table tbody tr {
+    box-shadow: 0 1px 2px rgba(17,24,39,.035), 0 12px 28px -26px rgba(17,24,39,.42) !important;
+}
+
+.facturacion-view .btn-ver {
+    min-height: 38px;
+    border-radius: 12px !important;
+}
+
+@media (min-width: 1600px) {
+    .facturacion-view .fact-table tbody td,
+    .facturacion-view .fact-table thead th {
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+    }
+}
+
+@media (max-width: 1100px) {
+    .facturacion-view .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .facturacion-view .filter-form .filter-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .facturacion-view .filter-actions {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 640px) {
+    .facturacion-view .fact-header .container,
+    .facturacion-view > .container {
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+    }
+
+    .facturacion-view .fact-header .flex.items-center.justify-between {
+        min-height: auto;
+        padding: 16px;
+        border-radius: 18px;
+        align-items: flex-start !important;
+    }
+
+    .facturacion-view .stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .facturacion-view .filter-form .filter-grid {
+        grid-template-columns: 1fr !important;
+    }
 }
 </style>
 
@@ -577,7 +1589,7 @@ $mensaje      = get_mensaje();
                                 <th>Tipo</th>
                                 <th>Estatus</th>
                                 <th>Monto</th>
-                                
+
                                 <th>RFC</th>
                                 <th>Fecha</th>
                                 <th style="text-align:center;">Acción</th>
