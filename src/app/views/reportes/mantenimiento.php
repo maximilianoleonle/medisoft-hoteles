@@ -1,467 +1,1712 @@
 <?php include __DIR__ . '/../layout/header.php'; ?>
 <?php
-// ── Valores seguros ────────────────────────────────────────────────────────
 $estadisticas = $estadisticas ?? [];
-$total        = intval($estadisticas['total_mantenimientos']    ?? 0);
-$completados  = intval($estadisticas['completados']             ?? 0);
-$en_proceso   = intval($estadisticas['en_proceso']              ?? 0);
-$cancelados   = intval($estadisticas['cancelados']              ?? 0);
-$programados  = intval($estadisticas['programados']             ?? 0);
-$costo_total  = floatval($estadisticas['costo_total']           ?? 0);
-$costo_prom   = floatval($estadisticas['costo_promedio']        ?? 0);
-$dur_prom_h   = floatval($estadisticas['duracion_promedio_horas'] ?? 0);
-
-$tasa = $total > 0 ? round(($completados / $total) * 100) : 0;
-
-$porTipo               = $porTipo               ?? [];
-$porPrioridad          = $porPrioridad          ?? [];
-$habitacionesMasMant   = $habitacionesMasMantenimiento ?? [];
+$porTipo = $porTipo ?? [];
+$porPrioridad = $porPrioridad ?? [];
+$habitacionesMasMant = $habitacionesMasMantenimiento ?? [];
 $ultimosMantenimientos = $ultimosMantenimientos ?? [];
-$tendenciaMensual      = $tendenciaMensual      ?? [];
-$realizadoPorTop       = $realizadoPorTop       ?? [];
+$tendenciaMensual = $tendenciaMensual ?? [];
+$realizadoPorTop = $realizadoPorTop ?? [];
+$fecha_inicio = !empty($fecha_inicio) ? $fecha_inicio : date('Y-m-01');
+$fecha_fin = !empty($fecha_fin) ? $fecha_fin : date('Y-m-d');
+$tipoSeleccionado = $tipo_filtro ?? ($_GET['tipo'] ?? '');
+
+if (!function_exists('mant_safe')) {
+    function mant_safe($value, $fallback = '-') {
+        $text = trim((string)($value ?? ''));
+        return htmlspecialchars($text !== '' ? $text : $fallback, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+if (!function_exists('mant_money')) {
+    function mant_money($amount, $decimals = 0) {
+        return '$' . number_format((float)($amount ?? 0), $decimals);
+    }
+}
+
+if (!function_exists('mant_date')) {
+    function mant_date($date, $format = 'd/m/Y') {
+        if (empty($date)) {
+            return '-';
+        }
+
+        $timestamp = strtotime((string)$date);
+        return $timestamp ? date($format, $timestamp) : '-';
+    }
+}
+
+if (!function_exists('mant_duration')) {
+    function mant_duration($hours) {
+        $hours = (float)($hours ?? 0);
+        if ($hours >= 24) {
+            return number_format($hours / 24, 1) . ' d';
+        }
+        return number_format($hours, 1) . ' h';
+    }
+}
+
+$total = (int)($estadisticas['total_mantenimientos'] ?? 0);
+$completados = (int)($estadisticas['completados'] ?? 0);
+$en_proceso = (int)($estadisticas['en_proceso'] ?? 0);
+$cancelados = (int)($estadisticas['cancelados'] ?? 0);
+$programados = (int)($estadisticas['programados'] ?? 0);
+$costo_total = (float)($estadisticas['costo_total'] ?? 0);
+$costo_prom = (float)($estadisticas['costo_promedio'] ?? 0);
+$dur_prom_h = (float)($estadisticas['duracion_promedio_horas'] ?? 0);
+$tasa = $total > 0 ? round(($completados / $total) * 100) : 0;
+$pendientes = $en_proceso + $programados;
+$periodo_texto = mant_date($fecha_inicio, 'd/m') . ' - ' . mant_date($fecha_fin);
 
 $tipoConfig = [
-    'preventivo'       => ['color'=>'#5C7A4E', 'bg'=>'#EBF2E6', 'icon'=>'fa-shield-alt',            'label'=>'Preventivo'],
-    'correctivo'       => ['color'=>'#D97706', 'bg'=>'#FEF3C7', 'icon'=>'fa-wrench',                'label'=>'Correctivo'],
-    'emergencia'       => ['color'=>'#DC2626', 'bg'=>'#FEE2E2', 'icon'=>'fa-exclamation-triangle',   'label'=>'Emergencia'],
-    'limpieza_profunda'=> ['color'=>'#0891B2', 'bg'=>'#CFFAFE', 'icon'=>'fa-broom',                 'label'=>'Lim. Profunda'],
+    'preventivo' => ['color' => '#16824E', 'bg' => '#EAF6EF', 'icon' => 'fa-shield-alt', 'label' => 'Preventivo'],
+    'correctivo' => ['color' => '#B7791F', 'bg' => '#FFF4D8', 'icon' => 'fa-wrench', 'label' => 'Correctivo'],
+    'emergencia' => ['color' => '#B94A48', 'bg' => '#FDE9E7', 'icon' => 'fa-exclamation-triangle', 'label' => 'Emergencia'],
+    'limpieza_profunda' => ['color' => '#3B83BD', 'bg' => '#E8F3FA', 'icon' => 'fa-broom', 'label' => 'Limpieza profunda'],
 ];
+
 $prioridadColor = [
-    'baja'    => ['dot'=>'#86EFAC', 'bg'=>'#F0FDF4', 'text'=>'#166534'],
-    'media'   => ['dot'=>'#FCD34D', 'bg'=>'#FFFBEB', 'text'=>'#92400E'],
-    'alta'    => ['dot'=>'#FCA5A5', 'bg'=>'#FFF1F1', 'text'=>'#991B1B'],
-    'urgente' => ['dot'=>'#C084FC', 'bg'=>'#FAF5FF', 'text'=>'#6B21A8'],
+    'baja' => ['dot' => '#16824E', 'bg' => '#EAF6EF', 'text' => '#166534', 'label' => 'Baja'],
+    'media' => ['dot' => '#BD9441', 'bg' => '#FFF7DF', 'text' => '#76520E', 'label' => 'Media'],
+    'alta' => ['dot' => '#C97362', 'bg' => '#FDEDEA', 'text' => '#9B2C2C', 'label' => 'Alta'],
+    'urgente' => ['dot' => '#8B5CF6', 'bg' => '#F1EBFF', 'text' => '#5B21B6', 'label' => 'Urgente'],
 ];
+
 $estadoConfig = [
-    'en_proceso' => ['bg'=>'#DBEAFE','text'=>'#1D4ED8','dot'=>'#3B82F6','label'=>'En Proceso'],
-    'completado' => ['bg'=>'#DCFCE7','text'=>'#15803D','dot'=>'#22C55E','label'=>'Completado'],
-    'cancelado'  => ['bg'=>'#FEE2E2','text'=>'#B91C1C','dot'=>'#EF4444','label'=>'Cancelado'],
-    'programado' => ['bg'=>'#F1F5F9','text'=>'#475569','dot'=>'#94A3B8','label'=>'Programado'],
+    'en_proceso' => ['bg' => '#E8F3FA', 'text' => '#1D5F8C', 'dot' => '#3B83BD', 'label' => 'En proceso'],
+    'completado' => ['bg' => '#EAF6EF', 'text' => '#166534', 'dot' => '#16824E', 'label' => 'Completado'],
+    'cancelado' => ['bg' => '#FDE9E7', 'text' => '#9B2C2C', 'dot' => '#B94A48', 'label' => 'Cancelado'],
+    'programado' => ['bg' => '#F1E8DA', 'text' => '#6B5634', 'dot' => '#BD9441', 'label' => 'Programado'],
 ];
 
-$maxHab   = !empty($habitacionesMasMant) ? max(array_column($habitacionesMasMant, 'total_mantenimientos')) : 1;
-$maxPrio  = !empty($porPrioridad)        ? max(array_column($porPrioridad, 'cantidad')) : 1;
+$maxHabitaciones = !empty($habitacionesMasMant) ? max(array_map(fn($h) => (int)($h['total_mantenimientos'] ?? 0), $habitacionesMasMant)) : 1;
+$maxPrioridad = !empty($porPrioridad) ? max(array_map(fn($p) => (int)($p['cantidad'] ?? 0), $porPrioridad)) : 1;
+$maxResponsables = !empty($realizadoPorTop) ? max(array_map(fn($r) => (int)($r['cantidad'] ?? 0), $realizadoPorTop)) : 1;
 
-$tiposLabels = array_map(fn($t) => $tipoConfig[$t['tipo_mantenimiento'] ?? $t['tipo'] ?? '']['label'] ?? ucfirst($t['tipo_mantenimiento'] ?? $t['tipo'] ?? ''), $porTipo);
-$tiposData   = array_column($porTipo, 'cantidad');
-$tiposColors = array_map(fn($t) => $tipoConfig[$t['tipo_mantenimiento'] ?? $t['tipo'] ?? '']['color'] ?? '#888', $porTipo);
-$mesLabels   = array_column($tendenciaMensual, 'mes_label');
-$mesData     = array_map('intval', array_column($tendenciaMensual, 'cantidad'));
+$tiposLabels = array_map(function($tipo) use ($tipoConfig) {
+    $key = $tipo['tipo_mantenimiento'] ?? $tipo['tipo'] ?? '';
+    return $tipoConfig[$key]['label'] ?? ucfirst(str_replace('_', ' ', $key));
+}, $porTipo);
+$tiposData = array_map(fn($tipo) => (int)($tipo['cantidad'] ?? 0), $porTipo);
+$tiposColors = array_map(function($tipo) use ($tipoConfig) {
+    $key = $tipo['tipo_mantenimiento'] ?? $tipo['tipo'] ?? '';
+    return $tipoConfig[$key]['color'] ?? '#748096';
+}, $porTipo);
+$mesLabels = array_map(fn($mes) => (string)($mes['mes_label'] ?? $mes['mes'] ?? ''), $tendenciaMensual);
+$mesData = array_map(fn($mes) => (int)($mes['cantidad'] ?? 0), $tendenciaMensual);
+$mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMensual);
 ?>
+
 <style>
-:root{
-    --gd:#2D4A2D;--gm:#3D6B3D;--gl:#5C7A4E;--gs:#8EB07A;--gp:#EBF2E6;
-    --bg:#F2F4EF;--wh:#FFFFFF;--bd:#E2E8DC;
-    --t1:#1A2A1A;--t2:#4A6145;--t3:#8AA080;
-    --r:10px;
-    --ss:0 1px 3px rgba(45,74,45,.07),0 1px 2px rgba(45,74,45,.05);
-    --sm:0 4px 14px rgba(45,74,45,.09);
+.mant-report-view {
+    --mant-primary: var(--brand-primary, #1B2746);
+    --mant-secondary: var(--brand-secondary, #0F172A);
+    --mant-accent: var(--brand-accent, #BD9441);
+    --mant-bg: color-mix(in srgb, var(--mant-accent) 8%, #F6F1E8);
+    --mant-surface: color-mix(in srgb, var(--mant-accent) 3%, #FFFDF8);
+    --mant-soft: color-mix(in srgb, var(--mant-primary) 5%, #FFFDF8);
+    --mant-line: color-mix(in srgb, var(--mant-primary) 13%, #E8DCCA);
+    --mant-line-soft: color-mix(in srgb, var(--mant-primary) 8%, #F1E8DA);
+    --mant-text: #17233E;
+    --mant-muted: #748096;
+    --mant-good: #16824E;
+    --mant-warn: #B7791F;
+    --mant-bad: #B94A48;
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 14% 8%, color-mix(in srgb, var(--mant-accent) 22%, transparent), transparent 28rem),
+        linear-gradient(135deg, color-mix(in srgb, var(--mant-primary) 6%, transparent) 0 1px, transparent 1px 30px),
+        linear-gradient(180deg, var(--mant-bg), #FBFAF7 54%, #F1EAE0);
+    color: var(--mant-text);
+    opacity: 0;
+    transition: opacity .24s ease;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:var(--t1)}
-.rpt{width:100%;padding:1.25rem 1.5rem}
 
-/* top bar */
-.rpt-bar{background:linear-gradient(135deg,var(--gd),var(--gm));border-radius:var(--r);padding:1.25rem 1.75rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.25rem;box-shadow:var(--sm);position:relative;overflow:hidden}
-.rpt-bar::after{content:'';position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.04)}
-.rpt-bar h1{color:#fff;font-size:1.2rem;font-weight:700;display:flex;align-items:center;gap:.5rem}
-.rpt-bar p{color:rgba(255,255,255,.65);font-size:.78rem;margin-top:.2rem}
-.btns-top{display:flex;gap:.5rem;z-index:1}
-.btn-top{display:inline-flex;align-items:center;gap:.4rem;padding:.42rem .95rem;border-radius:7px;font-size:.78rem;font-weight:600;cursor:pointer;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.18);text-decoration:none;transition:background .2s}
-.btn-top:hover{background:rgba(255,255,255,.22)}
+.mant-report-view.loaded {
+    opacity: 1;
+}
 
-/* filtros */
-.rpt-f{background:var(--wh);border-radius:var(--r);border:1px solid var(--bd);padding:.875rem 1.25rem;display:flex;flex-wrap:wrap;gap:.875rem;align-items:flex-end;margin-bottom:1.25rem;box-shadow:var(--ss)}
-.fg{display:flex;flex-direction:column;gap:.28rem;flex:1;min-width:160px}
-.fg label{font-size:.68rem;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.05em}
-.fg input,.fg select{padding:.45rem .7rem;border:1.5px solid var(--bd);border-radius:7px;font-size:.83rem;color:var(--t1);background:var(--bg);transition:border-color .2s}
-.fg input:focus,.fg select:focus{outline:none;border-color:var(--gl);background:#fff}
-.btn-f{display:inline-flex;align-items:center;gap:.4rem;padding:.48rem 1.25rem;border-radius:7px;font-size:.83rem;font-weight:700;background:var(--gl);color:#fff;border:none;cursor:pointer;white-space:nowrap;transition:background .15s}
-.btn-f:hover{background:var(--gm)}
+.mant-shell {
+    width: min(1500px, calc(100% - 28px));
+    margin: 0 auto;
+    padding: 28px 0 48px;
+}
 
-/* kpi */
-.kpi-grid{display:grid;gap:.875rem;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));margin-bottom:1.25rem}
-.kpi{background:var(--wh);border-radius:var(--r);border:1px solid var(--bd);padding:1.1rem 1.25rem;box-shadow:var(--ss);position:relative;overflow:hidden;animation:kpiin .45s ease both;transition:transform .2s,box-shadow .2s}
-.kpi:hover{transform:translateY(-2px);box-shadow:var(--sm)}
-.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kl,var(--gl));border-radius:var(--r) var(--r) 0 0}
-@keyframes kpiin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.kpi:nth-child(1){animation-delay:.04s}.kpi:nth-child(2){animation-delay:.08s}.kpi:nth-child(3){animation-delay:.12s}
-.kpi:nth-child(4){animation-delay:.16s}.kpi:nth-child(5){animation-delay:.20s}.kpi:nth-child(6){animation-delay:.24s}
-.kpi-ic{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem;margin-bottom:.65rem}
-.kpi-v{font-size:1.75rem;font-weight:800;line-height:1;color:var(--t1)}
-.kpi-l{font-size:.68rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-top:.28rem}
-.kpi-s{font-size:.7rem;color:var(--t3);margin-top:.2rem}
+.mant-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.16fr) minmax(330px, .84fr);
+    gap: 18px;
+    margin-bottom: 18px;
+}
 
-/* card */
-.card{background:var(--wh);border-radius:var(--r);border:1px solid var(--bd);box-shadow:var(--ss);overflow:hidden}
-.ch{display:flex;align-items:center;gap:.55rem;padding:.85rem 1.25rem;border-bottom:1px solid var(--bd)}
-.ch h3{font-size:.88rem;font-weight:700;color:var(--t1)}
-.ci{width:28px;height:28px;border-radius:7px;font-size:.75rem;display:flex;align-items:center;justify-content:center;background:var(--gp);color:var(--gl)}
-.ch-extra{margin-left:auto;font-size:.72rem;color:var(--t3)}
+.mant-hero-main,
+.mant-filter-panel,
+.mant-metric,
+.mant-panel,
+.mant-type-card,
+.mant-insight {
+    border: 1px solid var(--mant-line);
+    background: var(--mant-surface);
+    box-shadow: 0 20px 54px -42px rgba(15, 23, 42, .5);
+}
 
-/* layouts */
-.row2{display:grid;grid-template-columns:1fr 2fr;gap:.875rem;margin-bottom:.875rem}
-.row2x{display:grid;grid-template-columns:1fr 1fr;gap:.875rem;margin-bottom:.875rem}
+.mant-hero-main {
+    position: relative;
+    min-height: 330px;
+    overflow: hidden;
+    border-radius: 28px;
+    padding: clamp(24px, 4vw, 44px);
+    border-color: color-mix(in srgb, var(--mant-accent) 28%, transparent);
+    background:
+        radial-gradient(circle at 86% 17%, color-mix(in srgb, var(--mant-accent) 32%, transparent), transparent 22rem),
+        linear-gradient(135deg, color-mix(in srgb, var(--mant-primary) 96%, #0B1020), var(--mant-secondary));
+}
 
-/* gauge */
-.gw{display:flex;flex-direction:column;align-items:center;padding:1.25rem 1rem .75rem}
-.gr{width:120px;height:120px;position:relative}
-.gs-svg{width:100%;height:100%;transform:rotate(-90deg)}
-.gb{fill:none;stroke:#EBF2E6;stroke-width:11}
-.gf{fill:none;stroke:var(--gl);stroke-width:11;stroke-linecap:round;transition:stroke-dashoffset 1.1s ease}
-.gt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.gp2{font-size:1.5rem;font-weight:800;color:var(--gd);line-height:1}
-.gs2{font-size:.6rem;color:var(--t3);font-weight:600}
-.gl2{font-size:.72rem;font-weight:700;color:var(--t2);margin-top:.6rem}
-.gm{display:flex;gap:1.2rem;margin-top:.875rem;justify-content:center}
-.gm .v{font-size:.95rem;font-weight:800}
-.gm .l{font-size:.62rem;color:var(--t3);text-transform:uppercase;letter-spacing:.04em}
+.mant-hero-main::after {
+    content: "";
+    position: absolute;
+    inset: auto -10% -44% 40%;
+    height: 250px;
+    background: radial-gradient(circle, color-mix(in srgb, var(--mant-accent) 42%, transparent), transparent 67%);
+    pointer-events: none;
+}
 
-/* prio */
-.prio-list{padding:.6rem 1.1rem .9rem;display:flex;flex-direction:column;gap:.55rem}
-.prio-row{display:flex;align-items:center;gap:.65rem}
-.prio-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.prio-name{font-size:.78rem;font-weight:600;color:var(--t2);flex:1;text-transform:capitalize}
-.prio-bg{flex:2;height:5px;background:#EBF2E6;border-radius:99px;overflow:hidden}
-.prio-bar{height:100%;border-radius:99px;transition:width 1s ease}
-.prio-cnt{font-size:.78rem;font-weight:700;color:var(--t1);min-width:24px;text-align:right}
+.mant-back,
+.mant-btn,
+.mant-period-btn,
+.mant-print {
+    transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
 
-/* chips */
-.chip{display:inline-flex;align-items:center;gap:.28rem;padding:.18rem .55rem;border-radius:6px;font-size:.7rem;font-weight:700}
-.pill{display:inline-flex;align-items:center;gap:.28rem;padding:.18rem .55rem;border-radius:99px;font-size:.68rem;font-weight:700}
-.sd{width:5px;height:5px;border-radius:50%}
+.mant-back,
+.mant-print {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 38px;
+    padding: 0 13px;
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 13px;
+    background: rgba(255, 255, 255, .09);
+    color: #FFFDF8;
+    font-weight: 850;
+    text-decoration: none;
+}
 
-/* tabla */
-.rtbl{width:100%;border-collapse:collapse}
-.rtbl thead th{background:#F7FAF5;font-size:.68rem;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;padding:.65rem 1rem;text-align:left;border-bottom:1px solid var(--bd);white-space:nowrap}
-.rtbl tbody tr{transition:background .12s}
-.rtbl tbody tr:hover{background:#F7FAF5}
-.rtbl tbody td{padding:.7rem 1rem;font-size:.8rem;border-bottom:1px solid var(--bd)}
-.rtbl tbody tr:last-child td{border-bottom:none}
-.hab-p{display:inline-flex;align-items:center;padding:.2rem .55rem;border-radius:6px;background:var(--gp);color:var(--gd);font-size:.75rem;font-weight:800;white-space:nowrap}
+.mant-print {
+    cursor: pointer;
+}
 
-/* hab cards */
-.hab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:.75rem;padding:1.1rem}
-.hc{padding:.875rem;border-radius:8px;border:1.5px solid var(--bd);background:#FAFCF8;transition:border-color .2s,transform .2s}
-.hc:hover{border-color:var(--gs);transform:translateY(-2px)}
-.hct{display:flex;align-items:center;justify-content:space-between;margin-bottom:.45rem}
-.hcn{font-size:1rem;font-weight:800;color:var(--gd)}
-.hctp{font-size:.68rem;color:var(--t3);font-weight:600;text-transform:capitalize;margin-top:.1rem}
-.hcc{font-size:1.2rem;font-weight:800;color:var(--gl)}
-.hccl{font-size:.62rem;color:var(--t3)}
-.hbb{width:100%;height:4px;background:#DDE8D6;border-radius:99px;overflow:hidden;margin:.45rem 0}
-.hbf{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gs),var(--gd));transition:width 1s ease}
-.hst{display:flex;gap:.875rem}
-.hs .v{font-size:.78rem;font-weight:700}
-.hs .l{font-size:.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:.03em}
+.mant-back:hover,
+.mant-print:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, .32);
+    background: rgba(255, 255, 255, .14);
+}
 
-/* realizadores */
-.rl{padding:.7rem 1.25rem;display:flex;flex-direction:column;gap:.5rem}
-.rr{display:flex;align-items:center;gap:.65rem}
-.ra{width:30px;height:30px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--gs),var(--gd));color:#fff;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center}
-.rn{font-size:.8rem;font-weight:600;color:var(--t1);flex:1}
-.rc{font-size:.78rem;font-weight:700;color:var(--t2);white-space:nowrap}
+.mant-kicker,
+.mant-label,
+.mant-section-kicker,
+.mant-table th,
+.mant-mini-label {
+    color: var(--mant-muted);
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+}
 
-/* empty */
-.empty{text-align:center;padding:2.5rem 1.5rem}
-.empty i{font-size:2rem;color:#C8D8BF;margin-bottom:.6rem;display:block}
-.empty p{color:var(--t3);font-size:.85rem}
+.mant-kicker {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 26px;
+    color: color-mix(in srgb, var(--mant-accent) 82%, #FFFDF8);
+}
 
-@media(max-width:768px){.row2,.row2x{grid-template-columns:1fr}.rpt-bar{flex-direction:column;align-items:flex-start}.btns-top{width:100%}}
-@media print{body{background:#fff!important}.btns-top,.rpt-f{display:none!important}.card,.kpi{box-shadow:none!important;border:1px solid #ddd!important}}
+.mant-hero-main h1 {
+    position: relative;
+    z-index: 1;
+    max-width: 12ch;
+    margin: 14px 0 14px;
+    color: #FFFDF8;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(2.45rem, 5vw, 5.3rem);
+    font-weight: 700;
+    line-height: .9;
+    letter-spacing: 0;
+    text-wrap: balance;
+}
+
+.mant-hero-main p {
+    position: relative;
+    z-index: 1;
+    max-width: 68ch;
+    margin: 0;
+    color: rgba(255, 255, 255, .72);
+    font-weight: 650;
+    line-height: 1.6;
+}
+
+.mant-hero-actions {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.mant-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 42px;
+    padding: 0 16px;
+    border: 1px solid color-mix(in srgb, var(--mant-accent) 45%, var(--mant-primary));
+    border-radius: 13px;
+    background: var(--mant-primary);
+    color: #FFFDF8;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.mant-btn.is-accent {
+    background: color-mix(in srgb, var(--mant-accent) 88%, #FFFDF8);
+    color: color-mix(in srgb, var(--mant-primary) 88%, #000);
+}
+
+.mant-btn.is-soft {
+    border-color: rgba(255, 255, 255, .22);
+    background: rgba(255, 255, 255, .1);
+    color: #FFFDF8;
+}
+
+.mant-btn:hover,
+.mant-period-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 32px -25px rgba(15, 23, 42, .58);
+}
+
+.mant-filter-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 18px;
+    border-radius: 25px;
+    padding: 20px;
+}
+
+.mant-filter-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.mant-period-value {
+    margin-top: 7px;
+    color: var(--mant-primary);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(1.5rem, 3vw, 2.35rem);
+    font-weight: 700;
+    line-height: 1;
+}
+
+.mant-filter-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 11px;
+}
+
+.mant-field label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--mant-primary);
+    font-size: .75rem;
+    font-weight: 900;
+}
+
+.mant-field input,
+.mant-field select {
+    width: 100%;
+    min-height: 43px;
+    border: 1px solid var(--mant-line);
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--mant-accent) 3%, #FFFDF8);
+    color: var(--mant-primary);
+    font-size: .92rem;
+    font-weight: 800;
+    outline: none;
+    transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.mant-field input:focus,
+.mant-field select:focus {
+    border-color: color-mix(in srgb, var(--mant-accent) 62%, var(--mant-line));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mant-accent) 22%, transparent);
+}
+
+.mant-field.is-full,
+.mant-filter-form .mant-btn {
+    grid-column: 1 / -1;
+}
+
+.mant-periods {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.mant-period-btn {
+    min-height: 40px;
+    border: 1px solid var(--mant-line-soft);
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--mant-primary) 4%, #FFFDF8);
+    color: var(--mant-primary);
+    font-size: .76rem;
+    font-weight: 900;
+}
+
+.mant-metrics {
+    display: grid;
+    grid-template-columns: minmax(250px, 1.15fr) repeat(5, minmax(145px, .88fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.mant-metric {
+    min-width: 0;
+    overflow: hidden;
+    border-radius: 21px;
+    padding: 18px;
+}
+
+.mant-metric.is-featured {
+    background:
+        radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--mant-accent) 18%, transparent), transparent 12rem),
+        linear-gradient(135deg, color-mix(in srgb, var(--mant-accent) 10%, #FFFDF8), var(--mant-surface));
+}
+
+.mant-metric-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.mant-icon {
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--mant-accent) 13%, #FFFDF8);
+    color: color-mix(in srgb, var(--mant-accent) 82%, var(--mant-primary));
+}
+
+.mant-value {
+    margin-top: 13px;
+    color: var(--mant-primary);
+    font-size: clamp(1.35rem, 2.4vw, 2.1rem);
+    font-weight: 950;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.mant-note {
+    margin-top: 9px;
+    color: var(--mant-muted);
+    font-size: .8rem;
+    font-weight: 750;
+}
+
+.mant-layout {
+    display: grid;
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+    gap: 18px;
+    align-items: start;
+    margin-bottom: 18px;
+}
+
+.mant-panel {
+    border-radius: 22px;
+    overflow: hidden;
+}
+
+.mant-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--mant-line-soft);
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--mant-accent) 6%, #FFFDF8), var(--mant-surface));
+}
+
+.mant-section-head h2,
+.mant-section-head h3 {
+    margin: 0;
+    color: var(--mant-primary);
+    font-size: 1.05rem;
+    font-weight: 950;
+}
+
+.mant-section-body {
+    padding: 18px 20px 20px;
+}
+
+.mant-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--mant-primary) 7%, #FFFDF8);
+    color: var(--mant-primary);
+    font-size: .73rem;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.mant-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+}
+
+.mant-gauge-wrap {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 18px;
+    align-items: center;
+}
+
+.mant-gauge {
+    position: relative;
+    width: 154px;
+    height: 154px;
+}
+
+.mant-gauge svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.mant-gauge-bg {
+    fill: none;
+    stroke: color-mix(in srgb, var(--mant-primary) 8%, #FFFDF8);
+    stroke-width: 12;
+}
+
+.mant-gauge-fill {
+    fill: none;
+    stroke: var(--mant-good);
+    stroke-width: 12;
+    stroke-linecap: round;
+    transition: stroke-dashoffset .8s ease;
+}
+
+.mant-gauge-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.mant-gauge-center strong {
+    color: var(--mant-primary);
+    font-size: 2rem;
+    font-weight: 950;
+    line-height: 1;
+}
+
+.mant-gauge-center span {
+    color: var(--mant-muted);
+    font-size: .76rem;
+    font-weight: 800;
+}
+
+.mant-status-stack,
+.mant-priority-stack,
+.mant-room-stack,
+.mant-people-stack {
+    display: grid;
+    gap: 10px;
+}
+
+.mant-status-row,
+.mant-priority-row,
+.mant-room-row,
+.mant-person-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 11px;
+    padding: 11px 12px;
+    border: 1px solid var(--mant-line-soft);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--mant-accent) 3%, #FFFDF8);
+}
+
+.mant-status-row strong,
+.mant-priority-row strong,
+.mant-room-row strong,
+.mant-person-row strong {
+    display: block;
+    color: var(--mant-primary);
+    font-weight: 950;
+}
+
+.mant-status-row span,
+.mant-priority-row span,
+.mant-room-row span,
+.mant-person-row span {
+    display: block;
+    color: var(--mant-muted);
+    font-size: .78rem;
+    font-weight: 750;
+}
+
+.mant-row-value {
+    color: var(--mant-primary);
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.mant-progress {
+    height: 7px;
+    margin-top: 7px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--mant-primary) 8%, #FFFDF8);
+}
+
+.mant-progress span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--mant-accent);
+    transition: width .75s ease;
+}
+
+.mant-chart-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, .72fr);
+    gap: 14px;
+}
+
+.mant-chart-box {
+    min-height: 330px;
+    padding: 16px;
+    border: 1px solid var(--mant-line-soft);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--mant-primary) 3%, #FFFDF8);
+}
+
+.mant-chart-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.mant-chart-title strong {
+    color: var(--mant-primary);
+    font-size: .94rem;
+    font-weight: 950;
+}
+
+.mant-chart-canvas {
+    position: relative;
+    height: 270px;
+}
+
+.mant-type-grid,
+.mant-insights-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.mant-type-card,
+.mant-insight {
+    min-width: 0;
+    border-radius: 20px;
+    padding: 17px;
+}
+
+.mant-type-card {
+    border-color: var(--type-color, var(--mant-line));
+    background:
+        radial-gradient(circle at 95% 8%, color-mix(in srgb, var(--type-color, var(--mant-accent)) 14%, transparent), transparent 9rem),
+        var(--mant-surface);
+}
+
+.mant-type-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.mant-type-head h4,
+.mant-insight h4 {
+    margin: 0;
+    color: var(--mant-primary);
+    font-size: .98rem;
+    font-weight: 950;
+}
+
+.mant-mini-value {
+    display: block;
+    margin-top: 4px;
+    color: var(--mant-primary);
+    font-size: 1rem;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.mant-type-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 11px;
+}
+
+.mant-table-wrap {
+    overflow-x: auto;
+    max-height: 560px;
+}
+
+.mant-table {
+    width: 100%;
+    min-width: 1080px;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.mant-table th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 12px 11px;
+    border-bottom: 1px solid var(--mant-line);
+    background: color-mix(in srgb, var(--mant-accent) 7%, #FFFDF8);
+    text-align: left;
+}
+
+.mant-table td {
+    padding: 13px 11px;
+    border-bottom: 1px solid var(--mant-line-soft);
+    color: var(--mant-text);
+    font-size: .86rem;
+    vertical-align: top;
+}
+
+.mant-table tbody tr {
+    transition: background .18s ease;
+}
+
+.mant-table tbody tr:hover {
+    background: color-mix(in srgb, var(--mant-accent) 5%, #FFFDF8);
+}
+
+.mant-room-badge,
+.mant-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 30px;
+    padding: 0 10px;
+    border-radius: 12px;
+    font-size: .75rem;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.mant-room-badge {
+    background: var(--mant-primary);
+    color: #FFFDF8;
+}
+
+.mant-chip {
+    background: color-mix(in srgb, var(--mant-primary) 6%, #FFFDF8);
+    color: var(--mant-primary);
+}
+
+.mant-description {
+    max-width: 270px;
+}
+
+.mant-description strong {
+    display: block;
+    max-width: 270px;
+    color: var(--mant-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mant-description span {
+    display: block;
+    max-width: 270px;
+    margin-top: 3px;
+    color: var(--mant-muted);
+    font-size: .76rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mant-person-avatar {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 13px;
+    background: linear-gradient(135deg, var(--mant-accent), var(--mant-primary));
+    color: #FFFDF8;
+    font-size: .75rem;
+    font-weight: 950;
+}
+
+.mant-insight {
+    background:
+        radial-gradient(circle at 92% 12%, color-mix(in srgb, var(--mant-accent) 13%, transparent), transparent 10rem),
+        var(--mant-surface);
+}
+
+.mant-insight p {
+    margin: 10px 0 0;
+    color: var(--mant-muted);
+    font-size: .88rem;
+    font-weight: 750;
+    line-height: 1.55;
+}
+
+.mant-empty {
+    display: grid;
+    place-items: center;
+    min-height: 220px;
+    padding: 32px;
+    color: var(--mant-muted);
+    text-align: center;
+}
+
+.mant-empty i {
+    width: 64px;
+    height: 64px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    border-radius: 22px;
+    background: color-mix(in srgb, var(--mant-accent) 12%, #FFFDF8);
+    color: color-mix(in srgb, var(--mant-accent) 80%, var(--mant-primary));
+    font-size: 1.55rem;
+}
+
+.mant-empty strong {
+    display: block;
+    color: var(--mant-primary);
+    font-size: 1rem;
+    font-weight: 950;
+}
+
+@media (max-width: 1320px) {
+    .mant-metrics {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .mant-metric.is-featured {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 1180px) {
+    .mant-hero,
+    .mant-layout,
+    .mant-chart-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mant-type-grid,
+    .mant-insights-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .mant-shell {
+        width: min(100% - 20px, 1500px);
+        padding: 18px 0 34px;
+    }
+
+    .mant-hero-main,
+    .mant-filter-panel,
+    .mant-metric,
+    .mant-panel,
+    .mant-type-card,
+    .mant-insight {
+        border-radius: 18px;
+    }
+
+    .mant-hero-main {
+        min-height: auto;
+        padding: 22px;
+    }
+
+    .mant-kicker {
+        margin-top: 20px;
+    }
+
+    .mant-hero-main h1 {
+        max-width: 10ch;
+        font-size: clamp(2.1rem, 14vw, 3.55rem);
+    }
+
+    .mant-filter-form,
+    .mant-periods,
+    .mant-metrics,
+    .mant-type-grid,
+    .mant-insights-grid,
+    .mant-type-stats,
+    .mant-gauge-wrap {
+        grid-template-columns: 1fr;
+    }
+
+    .mant-metric.is-featured {
+        grid-column: auto;
+    }
+
+    .mant-section-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .mant-gauge {
+        margin: 0 auto;
+    }
+
+    .mant-chart-canvas {
+        height: 245px;
+    }
+
+    .mant-table {
+        min-width: 960px;
+    }
+}
+
+@media print {
+    .mant-report-view {
+        background: #fff !important;
+    }
+
+    .mant-filter-panel,
+    .mant-hero-actions,
+    .mant-back,
+    .mant-report-view button {
+        display: none !important;
+    }
+
+    .mant-shell {
+        width: 100%;
+        padding: 0;
+    }
+
+    .mant-panel,
+    .mant-metric {
+        box-shadow: none !important;
+    }
+}
 </style>
 
-<div class="rpt">
+<div class="mant-report-view">
+    <main class="mant-shell">
+        <section class="mant-hero">
+            <div class="mant-hero-main">
+                <a href="<?= url('reportes') ?>" class="mant-back">
+                    <i class="fas fa-arrow-left"></i>
+                    Reportes
+                </a>
 
-    <div class="rpt-bar">
-        <div>
-            <h1><i class="fas fa-hard-hat"></i> Reporte de Mantenimiento</h1>
-            <p><?= date('d M Y', strtotime($fecha_inicio)) ?> → <?= date('d M Y', strtotime($fecha_fin)) ?></p>
-        </div>
-        <div class="btns-top">
-            <a href="<?= url('reportes') ?>" class="btn-top"><i class="fas fa-arrow-left"></i> Volver</a>
-            <button onclick="window.print()" class="btn-top"><i class="fas fa-print"></i> Imprimir</button>
-        </div>
-    </div>
-
-    <div class="rpt-f">
-        <form method="GET" action="<?= url('reportes/mantenimiento') ?>" style="display:contents;">
-            <div class="fg">
-                <label>Fecha inicio</label>
-                <input type="date" name="fecha_inicio" value="<?= htmlspecialchars($fecha_inicio) ?>" max="<?= date('Y-m-d') ?>">
-            </div>
-            <div class="fg">
-                <label>Fecha fin</label>
-                <input type="date" name="fecha_fin" value="<?= htmlspecialchars($fecha_fin) ?>" max="<?= date('Y-m-d') ?>">
-            </div>
-            <div class="fg" style="max-width:175px;">
-                <label>Tipo</label>
-                <select name="tipo">
-                    <option value="">Todos</option>
-                    <?php foreach ($tipoConfig as $k=>$tc): ?>
-                    <option value="<?= $k ?>" <?= (($_GET['tipo']??'')===$k)?'selected':'' ?>><?= $tc['label'] ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <button type="submit" class="btn-f"><i class="fas fa-filter"></i> Filtrar</button>
-        </form>
-    </div>
-
-    <!-- KPIs -->
-    <div class="kpi-grid">
-        <div class="kpi" style="--kl:#5C7A4E;">
-            <div class="kpi-ic" style="background:#EBF2E6;color:#3D6B3D;"><i class="fas fa-clipboard-list"></i></div>
-            <div class="kpi-v"><?= number_format($total) ?></div>
-            <div class="kpi-l">Total</div><div class="kpi-s">Período analizado</div>
-        </div>
-        <div class="kpi" style="--kl:#22C55E;">
-            <div class="kpi-ic" style="background:#DCFCE7;color:#15803D;"><i class="fas fa-check-circle"></i></div>
-            <div class="kpi-v"><?= number_format($completados) ?></div>
-            <div class="kpi-l">Completados</div><div class="kpi-s"><?= $tasa ?>% del total</div>
-        </div>
-        <div class="kpi" style="--kl:#3B82F6;">
-            <div class="kpi-ic" style="background:#DBEAFE;color:#1D4ED8;"><i class="fas fa-spinner"></i></div>
-            <div class="kpi-v"><?= number_format($en_proceso) ?></div>
-            <div class="kpi-l">En Proceso</div><div class="kpi-s">Activos ahora</div>
-        </div>
-        <div class="kpi" style="--kl:#8B5CF6;">
-            <div class="kpi-ic" style="background:#EDE9FE;color:#6D28D9;"><i class="fas fa-calendar-alt"></i></div>
-            <div class="kpi-v"><?= number_format($programados) ?></div>
-            <div class="kpi-l">Programados</div><div class="kpi-s">Pendientes de iniciar</div>
-        </div>
-        <div class="kpi" style="--kl:#059669;">
-            <div class="kpi-ic" style="background:#D1FAE5;color:#047857;"><i class="fas fa-dollar-sign"></i></div>
-            <div class="kpi-v">$<?= number_format($costo_total, 0) ?></div>
-            <div class="kpi-l">Costo Total</div><div class="kpi-s">Prom. $<?= number_format($costo_prom, 0) ?></div>
-        </div>
-        <div class="kpi" style="--kl:#F59E0B;">
-            <div class="kpi-ic" style="background:#FEF3C7;color:#B45309;"><i class="fas fa-clock"></i></div>
-            <div class="kpi-v">
-                <?php if ($dur_prom_h>=24): ?><?= round($dur_prom_h/24,1) ?><span style="font-size:.95rem;font-weight:600;">d</span>
-                <?php else: ?><?= round($dur_prom_h,1) ?><span style="font-size:.95rem;font-weight:600;">h</span><?php endif; ?>
-            </div>
-            <div class="kpi-l">Duración Prom.</div><div class="kpi-s">Por trabajo completado</div>
-        </div>
-    </div>
-
-    <!-- Gauge + Tendencia -->
-    <div class="row2">
-        <div class="card" style="display:flex;flex-direction:column;">
-            <div class="ch"><div class="ci"><i class="fas fa-chart-pie"></i></div><h3>Tasa de Completitud</h3></div>
-            <div class="gw">
-                <div class="gr">
-                    <svg class="gs-svg" viewBox="0 0 100 100">
-                        <circle class="gb" cx="50" cy="50" r="42"/>
-                        <circle class="gf" cx="50" cy="50" r="42"
-                            stroke-dasharray="<?= round(2*M_PI*42,2) ?>"
-                            stroke-dashoffset="<?= round(2*M_PI*42*(1-$tasa/100),2) ?>" id="gaugeFill"/>
-                    </svg>
-                    <div class="gt"><span class="gp2"><?= $tasa ?>%</span><span class="gs2">completado</span></div>
+                <div class="mant-kicker">
+                    <i class="fas fa-hard-hat"></i>
+                    Reporte de mantenimiento
                 </div>
-                <div class="gl2">Efectividad del período</div>
-                <div class="gm">
-                    <div><div class="v" style="color:#22C55E;"><?= $completados ?></div><div class="l">Completados</div></div>
-                    <div><div class="v" style="color:#EF4444;"><?= $cancelados ?></div><div class="l">Cancelados</div></div>
-                    <div><div class="v" style="color:#3B82F6;"><?= $en_proceso ?></div><div class="l">En proceso</div></div>
+
+                <h1>Bitácora técnica del hotel</h1>
+                <p>
+                    Vista operativa para revisar volumen, costos, prioridad, tiempos y habitaciones que más requieren atención en el periodo seleccionado.
+                </p>
+
+                <div class="mant-hero-actions">
+                    <button type="button" onclick="window.print()" class="mant-btn is-accent">
+                        <i class="fas fa-print"></i>
+                        Imprimir
+                    </button>
+                    <a href="#registroMantenimiento" class="mant-btn is-soft">
+                        <i class="fas fa-list-ul"></i>
+                        Ver registro
+                    </a>
                 </div>
             </div>
-            <?php if (!empty($porPrioridad)): ?>
-            <div style="border-top:1px solid var(--bd);padding:.55rem 1.1rem .3rem;">
-                <p style="font-size:.65rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;"><i class="fas fa-flag" style="margin-right:.3rem;"></i>Por Prioridad</p>
-            </div>
-            <div class="prio-list">
-                <?php foreach ($porPrioridad as $p):
-                    $pc = $prioridadColor[$p['prioridad']] ?? ['dot'=>'#ccc','bg'=>'#f9f9f9','text'=>'#333'];
-                    $pp = $maxPrio>0 ? round(($p['cantidad']/$maxPrio)*100) : 0;
-                ?>
-                <div class="prio-row">
-                    <div class="prio-dot" style="background:<?= $pc['dot'] ?>;"></div>
-                    <span class="prio-name"><?= ucfirst($p['prioridad']) ?></span>
-                    <div class="prio-bg"><div class="prio-bar" style="width:<?= $pp ?>%;background:<?= $pc['dot'] ?>;"></div></div>
-                    <span class="prio-cnt"><?= $p['cantidad'] ?></span>
-                </div>
-                <?php endforeach; ?>
-            </div>
-            <?php endif; ?>
-        </div>
 
-        <div class="card">
-            <div class="ch"><div class="ci"><i class="fas fa-chart-bar"></i></div><h3>Tendencia Mensual</h3></div>
-            <div style="padding:1rem;height:265px;position:relative;">
-                <?php if (!empty($tendenciaMensual)): ?><canvas id="chartTend"></canvas>
-                <?php else: ?><div class="empty"><i class="fas fa-chart-bar"></i><p>Aún no hay datos de tendencia para este período.</p></div><?php endif; ?>
-            </div>
-            <?php if (!empty($porTipo)): ?>
-            <div style="padding:.65rem 1.25rem;border-top:1px solid var(--bd);display:flex;flex-wrap:wrap;gap:.4rem;">
-                <?php foreach ($porTipo as $t):
-                    $tkey = $t['tipo_mantenimiento'] ?? $t['tipo'] ?? ''; $tc = $tipoConfig[$tkey] ?? ['color'=>'#888','label'=>ucfirst($tkey)];
-                ?>
-                <span style="display:inline-flex;align-items:center;gap:.3rem;background:#F7FAF5;padding:.25rem .65rem;border-radius:99px;border:1px solid var(--bd);font-size:.72rem;">
-                    <span style="width:7px;height:7px;border-radius:50%;background:<?= $tc['color'] ?>;display:inline-block;"></span>
-                    <span style="font-weight:600;color:var(--t2);"><?= $tc['label'] ?></span>
-                    <span style="font-weight:800;color:var(--t1);"><?= $t['cantidad'] ?></span>
-                </span>
-                <?php endforeach; ?>
-            </div>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <!-- Dona + Realizadores -->
-    <?php if (!empty($porTipo) || !empty($realizadoPorTop)): ?>
-    <div class="row2x">
-        <?php if (!empty($porTipo)): ?>
-        <div class="card">
-            <div class="ch"><div class="ci"><i class="fas fa-tools"></i></div><h3>Distribución por Tipo</h3></div>
-            <div style="padding:1.1rem;display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;">
-                <div style="width:150px;height:150px;flex-shrink:0;position:relative;"><canvas id="chartDonut"></canvas></div>
-                <div style="flex:1;min-width:130px;">
-                    <?php foreach ($porTipo as $t):
-                        $tkey = $t['tipo_mantenimiento'] ?? $t['tipo'] ?? ''; $tc = $tipoConfig[$tkey] ?? ['color'=>'#888','label'=>ucfirst($tkey)];
-                        $pct = $total>0 ? round(($t['cantidad']/$total)*100) : 0; // pct ok
-                    ?>
-                    <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.6rem;">
-                        <span style="width:9px;height:9px;border-radius:2px;background:<?= $tc['color'] ?>;flex-shrink:0;"></span>
-                        <span style="font-size:.76rem;font-weight:600;color:var(--t2);flex:1;"><?= $tc['label'] ?></span>
-                        <span style="font-size:.76rem;font-weight:800;color:var(--t1);"><?= $t['cantidad'] ?></span>
-                        <span style="font-size:.68rem;color:var(--t3);">(<?= $pct ?>%)</span>
+            <aside class="mant-filter-panel">
+                <div class="mant-filter-top">
+                    <div>
+                        <span class="mant-label">Periodo revisado</span>
+                        <div class="mant-period-value"><?= $periodo_texto ?></div>
                     </div>
-                    <?php endforeach; ?>
+                    <span class="mant-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </span>
                 </div>
-            </div>
-        </div>
-        <?php endif; ?>
-        <div class="card">
-            <div class="ch"><div class="ci" style="background:#EDE9FE;color:#6D28D9;"><i class="fas fa-user-cog"></i></div><h3>Realizados por</h3></div>
-            <?php if (!empty($realizadoPorTop)): ?>
-            <div class="rl">
-                <?php foreach ($realizadoPorTop as $r): $ini=strtoupper(substr($r['realizado_por']??'NN',0,2)); ?>
-                <div class="rr">
-                    <div class="ra"><?= $ini ?></div>
-                    <span class="rn"><?= htmlspecialchars($r['realizado_por']??'Sin asignar') ?></span>
-                    <span class="rc"><?= $r['cantidad'] ?> trabajos</span>
-                </div>
-                <?php endforeach; ?>
-            </div>
-            <?php else: ?><div class="empty"><i class="fas fa-user-slash"></i><p>Aún no hay responsables con actividad registrada.</p></div><?php endif; ?>
-        </div>
-    </div>
-    <?php endif; ?>
 
-    <!-- Habitaciones top -->
-    <?php if (!empty($habitacionesMasMant)): ?>
-    <div class="card" style="margin-bottom:.875rem;">
-        <div class="ch">
-            <div class="ci" style="background:#FEF3C7;color:#B45309;"><i class="fas fa-door-open"></i></div>
-            <h3>Habitaciones con Más Mantenimientos</h3>
-            <span class="ch-extra">Top <?= count($habitacionesMasMant) ?></span>
-        </div>
-        <div class="hab-grid">
-            <?php foreach ($habitacionesMasMant as $h):
-                $pct3 = $maxHab>0 ? round(($h['total_mantenimientos']/$maxHab)*100) : 0;
-                $tas3 = $h['total_mantenimientos']>0 ? round((intval($h['completados'] ?? 0)/max(intval($h['total_mantenimientos']),1))*100) : 0;
-                $otr  = intval($h['total_mantenimientos'] ?? 0)-intval($h['completados'] ?? 0);
-            ?>
-            <div class="hc">
-                <div class="hct">
-                    <div><div class="hcn">Hab. <?= htmlspecialchars($h['numero']) ?></div><div class="hctp"><?= ucfirst($h['tipo']??'') ?></div></div>
-                    <div style="text-align:right;"><div class="hcc"><?= $h['total_mantenimientos'] ?></div><div class="hccl">trabajos</div></div>
-                </div>
-                <div class="hbb"><div class="hbf" style="width:<?= $pct3 ?>%;"></div></div>
-                <div class="hst">
-                    
-                </div>
-            </div>
-            <?php endforeach; ?>
-        </div>
-    </div>
-    <?php endif; ?>
+                <form method="GET" action="<?= url('reportes/mantenimiento') ?>" class="mant-filter-form" id="mantFiltrosForm">
+                    <div class="mant-field">
+                        <label for="fecha_inicio">Fecha inicio</label>
+                        <input type="date"
+                               id="fecha_inicio"
+                               name="fecha_inicio"
+                               value="<?= mant_safe($fecha_inicio, '') ?>"
+                               max="<?= date('Y-m-d') ?>">
+                    </div>
 
-    <!-- Registro -->
-    <div class="card" style="margin-bottom:1.5rem;">
-        <div class="ch">
-            <div class="ci" style="background:#FEE2E2;color:#B91C1C;"><i class="fas fa-list-ul"></i></div>
-            <h3>Registro de Mantenimientos</h3>
-            <?php if (!empty($ultimosMantenimientos)): ?>
-            <span class="ch-extra"><?= count($ultimosMantenimientos) ?> registros</span>
-            <?php endif; ?>
-        </div>
-        <?php if (!empty($ultimosMantenimientos)): ?>
-        <div style="overflow-x:auto;">
-            <table class="rtbl">
-                <thead><tr>
-                    <th>Habitación</th><th>Tipo</th><th>Motivo / Descripción</th>
-                    <th>Prioridad</th><th>Inicio</th><th>Fin</th>
-                    <th>Duración</th><th>Realizado por</th><th>Costo</th><th>Estado</th>
-                </tr></thead>
-                <tbody>
-                    <?php foreach ($ultimosMantenimientos as $m):
-                        $tc  = $tipoConfig[$m['tipo_mantenimiento']]  ?? ['color'=>'#888','bg'=>'#f9f9f9','icon'=>'fa-tools','label'=>ucfirst($m['tipo_mantenimiento']??'')];
-                        $prc = $prioridadColor[$m['prioridad']]        ?? ['dot'=>'#ccc','bg'=>'#f9f9f9','text'=>'#555'];
-                        $ec  = $estadoConfig[$m['estado']]             ?? ['bg'=>'#F1F5F9','text'=>'#475569','dot'=>'#94A3B8','label'=>ucfirst($m['estado']??'')];
+                    <div class="mant-field">
+                        <label for="fecha_fin">Fecha fin</label>
+                        <input type="date"
+                               id="fecha_fin"
+                               name="fecha_fin"
+                               value="<?= mant_safe($fecha_fin, '') ?>"
+                               max="<?= date('Y-m-d') ?>">
+                    </div>
 
-                        $dur = '—';
-                        if (!empty($m['fecha_inicio']) && !empty($m['fecha_fin'])) {
-                            $dh = (strtotime($m['fecha_fin']) - strtotime($m['fecha_inicio'])) / 3600;
-                            if ($dh>=24)     $dur = round($dh/24,1).' días';
-                            elseif ($dh>=1)  $dur = round($dh,1).' h';
-                            else             $dur = round($dh*60).' min';
-                        } elseif (($m['estado']==='en_proceso') && !empty($m['fecha_inicio'])) {
-                            $dh = (time()-strtotime($m['fecha_inicio']))/3600;
-                            $dur = round($dh,1).'h <span style="color:#3B82F6;font-size:.62rem;">en curso</span>';
-                        }
-                        $resp = !empty($m['realizado_por']) ? $m['realizado_por'] : ($m['usuario_nombre'] ?? '—');
-                    ?>
-                    <tr>
-                        <td><span class="hab-p"><?= htmlspecialchars($m['habitacion_numero']??'—') ?></span></td>
-                        <td><span class="chip" style="background:<?= $tc['bg'] ?>;color:<?= $tc['color'] ?>;"><i class="fas <?= $tc['icon'] ?>"></i><?= $tc['label'] ?></span></td>
-                        <td style="max-width:200px;">
-                            <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;" title="<?= htmlspecialchars($m['motivo']??'') ?>">
-                                <?= htmlspecialchars($m['motivo']??'—') ?>
+                    <div class="mant-field is-full">
+                        <label for="tipo">Tipo de mantenimiento</label>
+                        <select id="tipo" name="tipo">
+                            <option value="">Todos los tipos</option>
+                            <?php foreach ($tipoConfig as $key => $config): ?>
+                                <option value="<?= mant_safe($key) ?>" <?= $tipoSeleccionado === $key ? 'selected' : '' ?>>
+                                    <?= mant_safe($config['label']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="mant-btn">
+                        <i class="fas fa-filter"></i>
+                        Aplicar filtros
+                    </button>
+                </form>
+
+                <div class="mant-periods">
+                    <button type="button" onclick="setMantPeriodo(30)" class="mant-period-btn">1M</button>
+                    <button type="button" onclick="setMantPeriodo(90)" class="mant-period-btn">3M</button>
+                    <button type="button" onclick="setMantPeriodo(180)" class="mant-period-btn">6M</button>
+                    <button type="button" onclick="setMantPeriodo(365)" class="mant-period-btn">1A</button>
+                </div>
+            </aside>
+        </section>
+
+        <section class="mant-metrics" aria-label="Resumen de mantenimiento">
+            <article class="mant-metric is-featured">
+                <div class="mant-metric-head">
+                    <span class="mant-label">Trabajos registrados</span>
+                    <span class="mant-icon"><i class="fas fa-clipboard-list"></i></span>
+                </div>
+                <div class="mant-value"><?= number_format($total) ?></div>
+                <div class="mant-note"><?= $tasa ?>% completado · <?= number_format($pendientes) ?> pendientes o activos.</div>
+            </article>
+
+            <article class="mant-metric">
+                <div class="mant-metric-head">
+                    <span class="mant-label">Completados</span>
+                    <span class="mant-icon"><i class="fas fa-check-circle"></i></span>
+                </div>
+                <div class="mant-value"><?= number_format($completados) ?></div>
+                <div class="mant-note">Cierres del periodo.</div>
+            </article>
+
+            <article class="mant-metric">
+                <div class="mant-metric-head">
+                    <span class="mant-label">En proceso</span>
+                    <span class="mant-icon"><i class="fas fa-spinner"></i></span>
+                </div>
+                <div class="mant-value"><?= number_format($en_proceso) ?></div>
+                <div class="mant-note">Trabajos activos.</div>
+            </article>
+
+            <article class="mant-metric">
+                <div class="mant-metric-head">
+                    <span class="mant-label">Programados</span>
+                    <span class="mant-icon"><i class="fas fa-calendar-check"></i></span>
+                </div>
+                <div class="mant-value"><?= number_format($programados) ?></div>
+                <div class="mant-note">Pendientes de iniciar.</div>
+            </article>
+
+            <article class="mant-metric">
+                <div class="mant-metric-head">
+                    <span class="mant-label">Costo total</span>
+                    <span class="mant-icon"><i class="fas fa-dollar-sign"></i></span>
+                </div>
+                <div class="mant-value"><?= mant_money($costo_total) ?></div>
+                <div class="mant-note">Promedio <?= mant_money($costo_prom) ?> por trabajo.</div>
+            </article>
+
+            <article class="mant-metric">
+                <div class="mant-metric-head">
+                    <span class="mant-label">Duración prom.</span>
+                    <span class="mant-icon"><i class="fas fa-clock"></i></span>
+                </div>
+                <div class="mant-value"><?= mant_duration($dur_prom_h) ?></div>
+                <div class="mant-note">Sobre trabajos completados.</div>
+            </article>
+        </section>
+
+        <section class="mant-layout">
+            <article class="mant-panel">
+                <div class="mant-section-head">
+                    <div>
+                        <span class="mant-section-kicker">Estado general</span>
+                        <h2>Tasa de completitud</h2>
+                    </div>
+                    <span class="mant-pill"><?= $tasa ?>%</span>
+                </div>
+                <div class="mant-section-body">
+                    <div class="mant-gauge-wrap">
+                        <div class="mant-gauge">
+                            <?php $circumference = round(2 * M_PI * 42, 2); ?>
+                            <svg viewBox="0 0 100 100" aria-hidden="true">
+                                <circle class="mant-gauge-bg" cx="50" cy="50" r="42"></circle>
+                                <circle class="mant-gauge-fill"
+                                        cx="50"
+                                        cy="50"
+                                        r="42"
+                                        stroke-dasharray="<?= $circumference ?>"
+                                        stroke-dashoffset="<?= round($circumference * (1 - ($tasa / 100)), 2) ?>"
+                                        id="mantGaugeFill"></circle>
+                            </svg>
+                            <div class="mant-gauge-center">
+                                <strong><?= $tasa ?>%</strong>
+                                <span>completado</span>
                             </div>
-                            <?php if (!empty($m['descripcion'])): ?>
-                            <div style="font-size:.68rem;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">
-                                <?= htmlspecialchars(mb_substr($m['descripcion'],0,60)) ?>
+                        </div>
+
+                        <div class="mant-status-stack">
+                            <?php
+                            $statusRows = [
+                                ['key' => 'completado', 'label' => 'Completados', 'value' => $completados, 'note' => 'Cerrados correctamente'],
+                                ['key' => 'en_proceso', 'label' => 'En proceso', 'value' => $en_proceso, 'note' => 'Activos ahora'],
+                                ['key' => 'programado', 'label' => 'Programados', 'value' => $programados, 'note' => 'Pendientes de iniciar'],
+                                ['key' => 'cancelado', 'label' => 'Cancelados', 'value' => $cancelados, 'note' => 'Sin cierre operativo'],
+                            ];
+                            ?>
+                            <?php foreach ($statusRows as $row): ?>
+                                <?php $config = $estadoConfig[$row['key']]; ?>
+                                <div class="mant-status-row">
+                                    <span class="mant-status-dot" style="background: <?= $config['dot'] ?>;"></span>
+                                    <div>
+                                        <strong><?= mant_safe($row['label']) ?></strong>
+                                        <span><?= mant_safe($row['note']) ?></span>
+                                    </div>
+                                    <span class="mant-row-value"><?= number_format($row['value']) ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="mant-panel">
+                <div class="mant-section-head">
+                    <div>
+                        <span class="mant-section-kicker">Actividad</span>
+                        <h2>Tendencia y mezcla</h2>
+                    </div>
+                    <span class="mant-pill">Chart.js</span>
+                </div>
+                <div class="mant-section-body">
+                    <div class="mant-chart-grid">
+                        <div class="mant-chart-box">
+                            <div class="mant-chart-title">
+                                <strong>Tendencia mensual</strong>
+                                <span class="mant-mini-label">trabajos</span>
                             </div>
+                            <div class="mant-chart-canvas">
+                                <?php if (!empty($tendenciaMensual)): ?>
+                                    <canvas id="chartTend"></canvas>
+                                <?php else: ?>
+                                    <div class="mant-empty">
+                                        <div>
+                                            <i class="fas fa-chart-bar"></i>
+                                            <strong>Sin tendencia disponible</strong>
+                                            <p>Aún no hay datos para graficar este periodo.</p>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <div class="mant-chart-box">
+                            <div class="mant-chart-title">
+                                <strong>Distribución por tipo</strong>
+                                <span class="mant-mini-label">mix</span>
+                            </div>
+                            <div class="mant-chart-canvas">
+                                <?php if (!empty($porTipo)): ?>
+                                    <canvas id="chartDonut"></canvas>
+                                <?php else: ?>
+                                    <div class="mant-empty">
+                                        <div>
+                                            <i class="fas fa-tools"></i>
+                                            <strong>Sin desglose por tipo</strong>
+                                            <p>Cuando existan trabajos aparecerá la distribución.</p>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <section class="mant-panel">
+            <div class="mant-section-head">
+                <div>
+                    <span class="mant-section-kicker">Clasificación</span>
+                    <h2>Tipos y prioridades</h2>
+                </div>
+                <span class="mant-pill"><?= number_format(count($porTipo)) ?> tipos</span>
+            </div>
+            <div class="mant-section-body">
+                <?php if (!empty($porTipo) || !empty($porPrioridad)): ?>
+                    <?php if (!empty($porTipo)): ?>
+                        <div class="mant-type-grid" style="margin-bottom: 14px;">
+                            <?php foreach ($porTipo as $tipo): ?>
+                                <?php
+                                $typeKey = $tipo['tipo_mantenimiento'] ?? $tipo['tipo'] ?? '';
+                                $config = $tipoConfig[$typeKey] ?? ['color' => '#748096', 'bg' => '#F1F5F9', 'icon' => 'fa-tools', 'label' => ucfirst(str_replace('_', ' ', $typeKey))];
+                                $cantidad = (int)($tipo['cantidad'] ?? 0);
+                                $porcentaje = $total > 0 ? round(($cantidad / $total) * 100, 1) : 0;
+                                ?>
+                                <article class="mant-type-card" style="--type-color: <?= $config['color'] ?>;">
+                                    <div class="mant-type-head">
+                                        <div>
+                                            <span class="mant-icon" style="background: <?= $config['bg'] ?>; color: <?= $config['color'] ?>;">
+                                                <i class="fas <?= $config['icon'] ?>"></i>
+                                            </span>
+                                            <h4 style="margin-top: 10px;"><?= mant_safe($config['label']) ?></h4>
+                                        </div>
+                                        <span class="mant-pill"><?= number_format($cantidad) ?></span>
+                                    </div>
+                                    <div class="mant-type-stats">
+                                        <div>
+                                            <span class="mant-mini-label">Participación</span>
+                                            <strong class="mant-mini-value"><?= number_format($porcentaje, 1) ?>%</strong>
+                                        </div>
+                                        <div>
+                                            <span class="mant-mini-label">Costo</span>
+                                            <strong class="mant-mini-value"><?= mant_money($tipo['costo_total'] ?? 0) ?></strong>
+                                        </div>
+                                        <div>
+                                            <span class="mant-mini-label">Completados</span>
+                                            <strong class="mant-mini-value"><?= number_format((int)($tipo['completados'] ?? 0)) ?></strong>
+                                        </div>
+                                        <div>
+                                            <span class="mant-mini-label">Duración</span>
+                                            <strong class="mant-mini-value"><?= mant_duration($tipo['duracion_promedio'] ?? 0) ?></strong>
+                                        </div>
+                                    </div>
+                                </article>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($porPrioridad)): ?>
+                        <div class="mant-priority-stack">
+                            <?php foreach ($porPrioridad as $prioridad): ?>
+                                <?php
+                                $key = $prioridad['prioridad'] ?? '';
+                                $config = $prioridadColor[$key] ?? ['dot' => '#748096', 'bg' => '#F1F5F9', 'text' => '#475569', 'label' => ucfirst($key)];
+                                $cantidad = (int)($prioridad['cantidad'] ?? 0);
+                                $width = $maxPrioridad > 0 ? round(($cantidad / $maxPrioridad) * 100) : 0;
+                                ?>
+                                <div class="mant-priority-row">
+                                    <span class="mant-status-dot" style="background: <?= $config['dot'] ?>;"></span>
+                                    <div>
+                                        <strong><?= mant_safe($config['label']) ?></strong>
+                                        <span><?= number_format((float)($prioridad['tasa_completitud'] ?? 0), 1) ?>% completitud · <?= mant_duration($prioridad['duracion_promedio'] ?? 0) ?></span>
+                                        <div class="mant-progress">
+                                            <span style="width: <?= $width ?>%; background: <?= $config['dot'] ?>;"></span>
+                                        </div>
+                                    </div>
+                                    <span class="mant-row-value"><?= number_format($cantidad) ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <div class="mant-empty">
+                        <div>
+                            <i class="fas fa-layer-group"></i>
+                            <strong>Sin clasificación disponible</strong>
+                            <p>Los tipos y prioridades aparecerán cuando existan mantenimientos en el periodo.</p>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </section>
+
+        <section class="mant-layout">
+            <article class="mant-panel">
+                <div class="mant-section-head">
+                    <div>
+                        <span class="mant-section-kicker">Habitaciones</span>
+                        <h2>Mayor carga de mantenimiento</h2>
+                    </div>
+                    <span class="mant-pill">Top <?= number_format(count($habitacionesMasMant)) ?></span>
+                </div>
+                <div class="mant-section-body">
+                    <?php if (!empty($habitacionesMasMant)): ?>
+                        <div class="mant-room-stack">
+                            <?php foreach ($habitacionesMasMant as $habitacion): ?>
+                                <?php
+                                $totalHab = (int)($habitacion['total_mantenimientos'] ?? 0);
+                                $width = $maxHabitaciones > 0 ? round(($totalHab / $maxHabitaciones) * 100) : 0;
+                                ?>
+                                <div class="mant-room-row">
+                                    <span class="mant-room-badge">Hab. <?= mant_safe($habitacion['numero']) ?></span>
+                                    <div>
+                                        <strong><?= mant_safe($habitacion['tipo']) ?> · Piso <?= mant_safe($habitacion['piso']) ?></strong>
+                                        <span><?= number_format((int)($habitacion['emergencias'] ?? 0)) ?> emergencias · <?= mant_money($habitacion['costo_total'] ?? 0) ?> costo</span>
+                                        <div class="mant-progress">
+                                            <span style="width: <?= $width ?>%;"></span>
+                                        </div>
+                                    </div>
+                                    <span class="mant-row-value"><?= number_format($totalHab) ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="mant-empty">
+                            <div>
+                                <i class="fas fa-door-open"></i>
+                                <strong>Sin habitaciones destacadas</strong>
+                                <p>No hay habitaciones con mantenimientos en el periodo seleccionado.</p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </article>
+
+            <article class="mant-panel">
+                <div class="mant-section-head">
+                    <div>
+                        <span class="mant-section-kicker">Equipo</span>
+                        <h2>Responsables con actividad</h2>
+                    </div>
+                    <span class="mant-pill"><?= number_format(count($realizadoPorTop)) ?> personas</span>
+                </div>
+                <div class="mant-section-body">
+                    <?php if (!empty($realizadoPorTop)): ?>
+                        <div class="mant-people-stack">
+                            <?php foreach ($realizadoPorTop as $responsable): ?>
+                                <?php
+                                $nombre = $responsable['realizado_por'] ?? 'Sin asignar';
+                                $cantidad = (int)($responsable['cantidad'] ?? 0);
+                                $width = $maxResponsables > 0 ? round(($cantidad / $maxResponsables) * 100) : 0;
+                                $iniciales = strtoupper(mb_substr($nombre, 0, 2));
+                                ?>
+                                <div class="mant-person-row">
+                                    <span class="mant-person-avatar"><?= mant_safe($iniciales) ?></span>
+                                    <div>
+                                        <strong><?= mant_safe($nombre) ?></strong>
+                                        <span><?= number_format($cantidad) ?> trabajos registrados</span>
+                                        <div class="mant-progress">
+                                            <span style="width: <?= $width ?>%; background: var(--mant-primary);"></span>
+                                        </div>
+                                    </div>
+                                    <span class="mant-row-value"><?= number_format($cantidad) ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="mant-empty">
+                            <div>
+                                <i class="fas fa-user-slash"></i>
+                                <strong>Sin responsables registrados</strong>
+                                <p>Cuando se asignen trabajos, aparecerá el ranking del equipo.</p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </article>
+        </section>
+
+        <section class="mant-panel">
+            <div class="mant-section-head">
+                <div>
+                    <span class="mant-section-kicker">Lectura ejecutiva</span>
+                    <h2>Hallazgos del periodo</h2>
+                </div>
+                <span class="mant-pill">Operación</span>
+            </div>
+            <div class="mant-section-body">
+                <div class="mant-insights-grid">
+                    <article class="mant-insight">
+                        <span class="mant-icon"><i class="fas fa-check-double"></i></span>
+                        <h4>Cierre operativo</h4>
+                        <p>
+                            Se completó <strong><?= $tasa ?>%</strong> de los trabajos registrados, con
+                            <strong><?= number_format($pendientes) ?></strong> mantenimientos pendientes o en proceso.
+                        </p>
+                    </article>
+
+                    <article class="mant-insight">
+                        <span class="mant-icon"><i class="fas fa-coins"></i></span>
+                        <h4>Costo promedio</h4>
+                        <p>
+                            El costo promedio por trabajo es de <strong><?= mant_money($costo_prom) ?></strong>,
+                            sobre un total de <strong><?= mant_money($costo_total) ?></strong>.
+                        </p>
+                    </article>
+
+                    <article class="mant-insight">
+                        <span class="mant-icon"><i class="fas fa-clock"></i></span>
+                        <h4>Tiempo de solución</h4>
+                        <p>
+                            Los trabajos completados tardan en promedio <strong><?= mant_duration($dur_prom_h) ?></strong>.
+                        </p>
+                    </article>
+
+                    <article class="mant-insight">
+                        <span class="mant-icon"><i class="fas fa-door-open"></i></span>
+                        <h4>Habitación más sensible</h4>
+                        <p>
+                            <?php if (!empty($habitacionesMasMant)): ?>
+                                <strong>Hab. <?= mant_safe($habitacionesMasMant[0]['numero']) ?></strong>
+                                registra <strong><?= number_format((int)($habitacionesMasMant[0]['total_mantenimientos'] ?? 0)) ?></strong> trabajos.
+                            <?php else: ?>
+                                No hay habitaciones con carga destacada en este periodo.
                             <?php endif; ?>
-                        </td>
-                        <td><span class="chip" style="background:<?= $prc['bg'] ?>;color:<?= $prc['text'] ?>;"><?= ucfirst($m['prioridad']??'—') ?></span></td>
-                        <td style="color:var(--t2);white-space:nowrap;font-size:.78rem;"><?= !empty($m['fecha_inicio']) ? date('d/m/y H:i',strtotime($m['fecha_inicio'])) : '—' ?></td>
-                        <td style="color:var(--t2);white-space:nowrap;font-size:.78rem;"><?= !empty($m['fecha_fin']) ? date('d/m/y H:i',strtotime($m['fecha_fin'])) : '—' ?></td>
-                        <td style="white-space:nowrap;font-size:.78rem;"><?= $dur ?></td>
-                        <td style="color:var(--t2);font-size:.78rem;white-space:nowrap;"><?= htmlspecialchars($resp) ?></td>
-                        <td style="font-weight:700;font-size:.8rem;white-space:nowrap;"><?= isset($m['costo'])&&$m['costo']!==null ? '$'.number_format($m['costo'],2) : '—' ?></td>
-                        <td><span class="pill" style="background:<?= $ec['bg'] ?>;color:<?= $ec['text'] ?>;"><span class="sd" style="background:<?= $ec['dot'] ?>;"></span><?= $ec['label'] ?></span></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-        <?php else: ?>
-        <div class="empty"><i class="fas fa-tools"></i><p>No hay registros en el período seleccionado. Cuando existan mantenimientos, aparecerán aquí.</p></div>
-        <?php endif; ?>
-    </div>
+                        </p>
+                    </article>
+                </div>
+            </div>
+        </section>
 
+        <section class="mant-panel" id="registroMantenimiento">
+            <div class="mant-section-head">
+                <div>
+                    <span class="mant-section-kicker">Bitácora</span>
+                    <h2>Registro de mantenimientos</h2>
+                </div>
+                <span class="mant-pill"><?= number_format(count($ultimosMantenimientos)) ?> registros</span>
+            </div>
+            <div class="mant-section-body">
+                <?php if (!empty($ultimosMantenimientos)): ?>
+                    <div class="mant-table-wrap">
+                        <table class="mant-table">
+                            <thead>
+                                <tr>
+                                    <th>Habitación</th>
+                                    <th>Tipo</th>
+                                    <th>Motivo / descripción</th>
+                                    <th>Prioridad</th>
+                                    <th>Inicio</th>
+                                    <th>Fin</th>
+                                    <th>Duración</th>
+                                    <th>Responsable</th>
+                                    <th>Costo</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($ultimosMantenimientos as $mantenimiento): ?>
+                                    <?php
+                                    $typeKey = $mantenimiento['tipo_mantenimiento'] ?? '';
+                                    $type = $tipoConfig[$typeKey] ?? ['color' => '#748096', 'bg' => '#F1F5F9', 'icon' => 'fa-tools', 'label' => ucfirst(str_replace('_', ' ', $typeKey))];
+                                    $priorityKey = $mantenimiento['prioridad'] ?? '';
+                                    $priority = $prioridadColor[$priorityKey] ?? ['dot' => '#748096', 'bg' => '#F1F5F9', 'text' => '#475569', 'label' => ucfirst($priorityKey)];
+                                    $stateKey = $mantenimiento['estado'] ?? '';
+                                    $state = $estadoConfig[$stateKey] ?? ['bg' => '#F1F5F9', 'text' => '#475569', 'dot' => '#94A3B8', 'label' => ucfirst(str_replace('_', ' ', $stateKey))];
+
+                                    $duracion = '-';
+                                    if (!empty($mantenimiento['fecha_inicio']) && !empty($mantenimiento['fecha_fin'])) {
+                                        $hours = (strtotime($mantenimiento['fecha_fin']) - strtotime($mantenimiento['fecha_inicio'])) / 3600;
+                                        if ($hours >= 24) {
+                                            $duracion = number_format($hours / 24, 1) . ' días';
+                                        } elseif ($hours >= 1) {
+                                            $duracion = number_format($hours, 1) . ' h';
+                                        } else {
+                                            $duracion = number_format(max($hours * 60, 0), 0) . ' min';
+                                        }
+                                    } elseif ($stateKey === 'en_proceso' && !empty($mantenimiento['fecha_inicio'])) {
+                                        $hours = (time() - strtotime($mantenimiento['fecha_inicio'])) / 3600;
+                                        $duracion = number_format(max($hours, 0), 1) . ' h en curso';
+                                    }
+
+                                    $responsable = !empty($mantenimiento['realizado_por'])
+                                        ? $mantenimiento['realizado_por']
+                                        : ($mantenimiento['usuario_nombre'] ?? 'Sin asignar');
+                                    ?>
+                                    <tr>
+                                        <td>
+                                            <span class="mant-room-badge">
+                                                Hab. <?= mant_safe($mantenimiento['habitacion_numero'] ?? '-') ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="mant-chip" style="background: <?= $type['bg'] ?>; color: <?= $type['color'] ?>;">
+                                                <i class="fas <?= $type['icon'] ?>"></i>
+                                                <?= mant_safe($type['label']) ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="mant-description">
+                                                <strong title="<?= mant_safe($mantenimiento['motivo'] ?? '') ?>">
+                                                    <?= mant_safe($mantenimiento['motivo'] ?? '-') ?>
+                                                </strong>
+                                                <?php if (!empty($mantenimiento['descripcion'])): ?>
+                                                    <span title="<?= mant_safe($mantenimiento['descripcion']) ?>">
+                                                        <?= mant_safe(mb_substr($mantenimiento['descripcion'], 0, 80)) ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="mant-chip" style="background: <?= $priority['bg'] ?>; color: <?= $priority['text'] ?>;">
+                                                <span class="mant-status-dot" style="background: <?= $priority['dot'] ?>;"></span>
+                                                <?= mant_safe($priority['label']) ?>
+                                            </span>
+                                        </td>
+                                        <td><?= mant_safe(!empty($mantenimiento['fecha_inicio']) ? date('d/m/y H:i', strtotime($mantenimiento['fecha_inicio'])) : '-') ?></td>
+                                        <td><?= mant_safe(!empty($mantenimiento['fecha_fin']) ? date('d/m/y H:i', strtotime($mantenimiento['fecha_fin'])) : '-') ?></td>
+                                        <td><?= mant_safe($duracion) ?></td>
+                                        <td><?= mant_safe($responsable) ?></td>
+                                        <td><strong><?= isset($mantenimiento['costo']) && $mantenimiento['costo'] !== null ? mant_money($mantenimiento['costo'], 2) : '-' ?></strong></td>
+                                        <td>
+                                            <span class="mant-chip" style="background: <?= $state['bg'] ?>; color: <?= $state['text'] ?>;">
+                                                <span class="mant-status-dot" style="background: <?= $state['dot'] ?>;"></span>
+                                                <?= mant_safe($state['label']) ?>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php else: ?>
+                    <div class="mant-empty">
+                        <div>
+                            <i class="fas fa-tools"></i>
+                            <strong>No hay registros en el periodo seleccionado</strong>
+                            <p>Cuando existan mantenimientos, aparecerán aquí.</p>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </section>
+    </main>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
-<?php if (!empty($porTipo)): ?>
-(function(){
-    const c=document.getElementById('chartDonut'); if(!c) return;
-    new Chart(c,{type:'doughnut',data:{labels:<?= json_encode($tiposLabels) ?>,datasets:[{data:<?= json_encode($tiposData) ?>,backgroundColor:<?= json_encode($tiposColors) ?>,borderWidth:2,borderColor:'#fff',hoverOffset:5}]},options:{cutout:'65%',plugins:{legend:{display:false}}}});
-})();
-<?php endif; ?>
-<?php if (!empty($tendenciaMensual)): ?>
-(function(){
-    const c=document.getElementById('chartTend'); if(!c) return;
-    new Chart(c,{type:'bar',data:{labels:<?= json_encode($mesLabels) ?>,datasets:[{label:'Mantenimientos',data:<?= json_encode($mesData) ?>,backgroundColor:'rgba(92,122,78,.75)',borderWidth:0,borderRadius:5,hoverBackgroundColor:'#8EB07A'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#8AA080'}},y:{grid:{color:'#EBF2E6'},ticks:{font:{size:11},color:'#8AA080',stepSize:1},beginAtZero:true}}}});
-})();
-<?php endif; ?>
-document.addEventListener('DOMContentLoaded',function(){
-    const f=document.getElementById('gaugeFill');
-    if(f){const c=parseFloat(f.getAttribute('stroke-dasharray'));f.style.strokeDashoffset=c*(1-<?= $tasa ?>/100);}
+const mantTipoLabels = <?= json_encode($tiposLabels, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+const mantTipoData = <?= json_encode($tiposData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+const mantTipoColors = <?= json_encode($tiposColors, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+const mantMesLabels = <?= json_encode($mesLabels, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+const mantMesData = <?= json_encode($mesData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+const mantMesCostos = <?= json_encode($mesCostos, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+const mantIsMobile = window.innerWidth < 768;
+
+function mantMoney(value) {
+    return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(Number(value || 0));
+}
+
+function mantSetPeriodo(days) {
+    const fechaFin = new Date();
+    const fechaInicio = new Date();
+    fechaInicio.setDate(fechaInicio.getDate() - days);
+
+    document.getElementById('fecha_inicio').value = fechaInicio.toISOString().split('T')[0];
+    document.getElementById('fecha_fin').value = fechaFin.toISOString().split('T')[0];
+
+    const form = document.getElementById('mantFiltrosForm') || document.querySelector('form');
+    if (form) {
+        form.submit();
+    }
+}
+
+function setMantPeriodo(days) {
+    mantSetPeriodo(days);
+}
+
+function mantChartBase(extraOptions = {}) {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: {
+                    boxWidth: 10,
+                    boxHeight: 10,
+                    usePointStyle: true,
+                    color: '#475569',
+                    font: { size: mantIsMobile ? 10 : 11, weight: '700' }
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(15, 23, 42, .94)',
+                padding: 11,
+                cornerRadius: 10,
+                titleFont: { size: mantIsMobile ? 11 : 12, weight: '800' },
+                bodyFont: { size: mantIsMobile ? 10 : 11, weight: '650' }
+            }
+        },
+        ...extraOptions
+    };
+}
+
+function mantCreateCharts() {
+    if (typeof Chart === 'undefined') {
+        return;
+    }
+
+    Chart.defaults.font.family = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    Chart.defaults.color = '#64748B';
+    Chart.defaults.borderColor = 'rgba(27, 39, 70, .08)';
+
+    const trendCanvas = document.getElementById('chartTend');
+    if (trendCanvas) {
+        new Chart(trendCanvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: mantMesLabels,
+                datasets: [{
+                    label: 'Mantenimientos',
+                    data: mantMesData,
+                    backgroundColor: 'rgba(189, 148, 65, .82)',
+                    borderRadius: 9,
+                    maxBarThickness: 44
+                }, {
+                    label: 'Costo',
+                    data: mantMesCostos,
+                    type: 'line',
+                    yAxisID: 'costos',
+                    borderColor: '#16824E',
+                    backgroundColor: 'rgba(22, 130, 78, .14)',
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    tension: .36
+                }]
+            },
+            options: mantChartBase({
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(27, 39, 70, .07)' },
+                        ticks: { precision: 0 }
+                    },
+                    costos: {
+                        beginAtZero: true,
+                        position: 'right',
+                        grid: { display: false },
+                        ticks: { callback: mantMoney }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { maxRotation: mantIsMobile ? 35 : 0 }
+                    }
+                }
+            })
+        });
+    }
+
+    const donutCanvas = document.getElementById('chartDonut');
+    if (donutCanvas) {
+        new Chart(donutCanvas.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: mantTipoLabels,
+                datasets: [{
+                    data: mantTipoData,
+                    backgroundColor: mantTipoColors,
+                    borderWidth: 0,
+                    hoverOffset: 5
+                }]
+            },
+            options: mantChartBase({
+                cutout: '64%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 10,
+                            boxHeight: 10,
+                            usePointStyle: true,
+                            color: '#475569',
+                            font: { size: mantIsMobile ? 10 : 11, weight: '700' }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, .94)',
+                        padding: 11,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((sum, item) => sum + Number(item || 0), 0);
+                                const value = Number(context.parsed || 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                                return context.label + ': ' + value.toLocaleString('es-MX') + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            })
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const view = document.querySelector('.mant-report-view');
+    if (view) {
+        requestAnimationFrame(() => view.classList.add('loaded'));
+    }
+
+    setTimeout(() => {
+        document.querySelectorAll('.mant-progress span').forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0';
+            requestAnimationFrame(() => {
+                bar.style.width = width;
+            });
+        });
+    }, 220);
+
+    mantCreateCharts();
 });
 </script>
+
 <?php include __DIR__ . '/../layout/footer.php'; ?>

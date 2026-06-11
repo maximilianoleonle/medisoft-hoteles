@@ -1,1304 +1,1436 @@
 <?php include __DIR__ . '/../layout/header.php'; ?>
-<?php  
-// Necesitamos que el controlador nos pase también los datos por método de pago
-// Esto debería venir del ReportesController
+<?php
 $metodosPago = $metodosPago ?? [
     'efectivo' => ['ingresos' => 0, 'gastos' => 0, 'balance' => 0],
     'tarjeta' => ['ingresos' => 0, 'gastos' => 0, 'balance' => 0],
     'transferencia' => ['ingresos' => 0, 'gastos' => 0, 'balance' => 0]
 ];
+
+$datos = $datos ?? ['ingresos' => [], 'gastos' => []];
+$totales = $totales ?? ['ingresos' => 0, 'gastos' => 0, 'utilidad' => 0];
+$resumenDiario = $resumenDiario ?? [];
+$usuarios = $usuarios ?? [];
+$fecha_inicio = !empty($fecha_inicio) ? $fecha_inicio : date('Y-m-01');
+$fecha_fin = !empty($fecha_fin) ? $fecha_fin : date('Y-m-d');
+
+if (!function_exists('rep_ig_money')) {
+    function rep_ig_money($amount, $signed = false) {
+        $amount = (float)($amount ?? 0);
+        $prefix = '';
+        if ($amount < 0) {
+            $prefix = '-';
+            $amount = abs($amount);
+        } elseif ($signed && $amount > 0) {
+            $prefix = '+';
+        }
+
+        return $prefix . format_currency($amount);
+    }
+}
+
+if (!function_exists('rep_ig_date')) {
+    function rep_ig_date($date, $format = 'd/m/Y') {
+        if (empty($date)) {
+            return '-';
+        }
+
+        $timestamp = strtotime((string)$date);
+        return $timestamp ? date($format, $timestamp) : '-';
+    }
+}
+
+if (!function_exists('rep_ig_safe')) {
+    function rep_ig_safe($value, $fallback = '-') {
+        $text = trim((string)($value ?? ''));
+        return htmlspecialchars($text !== '' ? $text : $fallback, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+if (!function_exists('rep_ig_percent')) {
+    function rep_ig_percent($value, $total) {
+        $total = (float)($total ?? 0);
+        if ($total <= 0) {
+            return 0;
+        }
+
+        return round(((float)$value / $total) * 100, 1);
+    }
+}
+
+$total_ingresos = (float)($totales['ingresos'] ?? 0);
+$total_gastos = (float)($totales['gastos'] ?? 0);
+$utilidad_neta = (float)($totales['utilidad'] ?? ($total_ingresos - $total_gastos));
+$dias_periodo = max(count($resumenDiario), 1);
+$promedio_ingresos = $total_ingresos / $dias_periodo;
+$promedio_gastos = $total_gastos / $dias_periodo;
+$promedio_utilidad = $utilidad_neta / $dias_periodo;
+$margen_utilidad = $total_ingresos > 0 ? round(($utilidad_neta / $total_ingresos) * 100, 2) : 0;
+$flujo_total = max(1, $total_ingresos + $total_gastos);
+$ingresos_ratio = min(100, max(0, round(($total_ingresos / $flujo_total) * 100)));
+$gastos_ratio = min(100, max(0, 100 - $ingresos_ratio));
+
+$maxIngreso = !empty($datos['ingresos'])
+    ? array_reduce($datos['ingresos'], function($carry, $item) {
+        return (!$carry || ($item['total'] ?? 0) > ($carry['total'] ?? 0)) ? $item : $carry;
+    })
+    : null;
+
+$maxGasto = !empty($datos['gastos'])
+    ? array_reduce($datos['gastos'], function($carry, $item) {
+        return (!$carry || ($item['total'] ?? 0) > ($carry['total'] ?? 0)) ? $item : $carry;
+    })
+    : null;
+
+$mejorDia = !empty($resumenDiario)
+    ? array_reduce($resumenDiario, function($carry, $item) {
+        return (!$carry || ($item['utilidad'] ?? 0) > ($carry['utilidad'] ?? 0)) ? $item : $carry;
+    })
+    : null;
+
+$metodoMeta = [
+    'efectivo' => ['label' => 'Efectivo', 'icon' => 'fa-money-bill-wave'],
+    'tarjeta' => ['label' => 'Tarjeta', 'icon' => 'fa-credit-card'],
+    'transferencia' => ['label' => 'Transferencia', 'icon' => 'fa-exchange-alt'],
+];
 ?>
 
-<!-- Estilos específicos para el reporte -->
 <style>
-:root {
-    --hotel-green: #5C7A4E;
-    --hotel-green-dark: #4A6340;
-    --hotel-green-light: #7A9B6A;
-    --hotel-gold: #C8A96A;
-    --hotel-cream: #F7F4EE;
-    --hotel-brown: #5C7A4E;
-    --hotel-brown-dark: #4A6340;
+.profit-report-view,
+.profit-modal-overlay {
+    --pr-primary: var(--brand-primary, #1B2746);
+    --pr-secondary: var(--brand-secondary, #0F172A);
+    --pr-accent: var(--brand-accent, #BD9441);
+    --pr-bg: color-mix(in srgb, var(--pr-accent) 8%, #F7F2EA);
+    --pr-surface: color-mix(in srgb, var(--pr-accent) 3%, #FFFDF8);
+    --pr-soft: color-mix(in srgb, var(--pr-primary) 5%, #FFFDF8);
+    --pr-line: color-mix(in srgb, var(--pr-primary) 13%, #E8DCCC);
+    --pr-line-soft: color-mix(in srgb, var(--pr-primary) 8%, #F0E7DB);
+    --pr-text: #17233E;
+    --pr-muted: #748096;
+    --pr-income: #16824E;
+    --pr-expense: #B93A32;
+    --pr-info: #2563A7;
+    --pr-warning: #B7791F;
+    color: var(--pr-text);
 }
 
-.reporte-view { opacity: 0; transition: opacity 0.3s ease; }
-.reporte-view.loaded { opacity: 1; }
-
-/* Animaciones */
-@keyframes slideIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-}
-
-.stat-card {
-    animation: slideIn 0.5s ease forwards;
+.profit-report-view {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 90% 7%, color-mix(in srgb, var(--pr-accent) 22%, transparent), transparent 28rem),
+        linear-gradient(120deg, color-mix(in srgb, var(--pr-primary) 5%, transparent) 0 1px, transparent 1px 28px),
+        linear-gradient(180deg, var(--pr-bg), #FBFAF7 56%, #F3EDE4);
     opacity: 0;
+    transition: opacity .24s ease;
 }
 
-.stat-card:nth-child(1) { animation-delay: 0.1s; }
-.stat-card:nth-child(2) { animation-delay: 0.2s; }
-.stat-card:nth-child(3) { animation-delay: 0.3s; }
-
-/* Efectos hover para cards */
-.hover-lift {
-    transition: all 0.3s ease;
+.profit-report-view.loaded {
+    opacity: 1;
 }
 
-.hover-lift:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(92,122,78,0.12);
+.profit-shell {
+    width: min(1500px, calc(100% - 28px));
+    margin: 0 auto;
+    padding: 28px 0 48px;
 }
 
-/* Tablas estilizadas */
-.styled-table {
-    border-collapse: separate;
-    border-spacing: 0;
-    width: 100%;
+.profit-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr);
+    gap: 18px;
+    align-items: stretch;
+    margin-bottom: 18px;
 }
 
-.styled-table th {
-    background: linear-gradient(135deg, var(--hotel-green), var(--hotel-green-dark));
-    color: white;
-    font-weight: 600;
-    text-align: left;
-    padding: 1rem;
-    position: sticky;
-    top: 0;
-    z-index: 10;
+.profit-hero-main,
+.profit-period-panel,
+.profit-card,
+.profit-section {
+    border: 1px solid var(--pr-line);
+    background: var(--pr-surface);
+    box-shadow: 0 18px 48px -38px rgba(15, 23, 42, .48);
 }
 
-.styled-table tbody tr {
-    transition: all 0.2s ease;
-}
-
-.styled-table tbody tr:hover {
-    background-color: #f0f4ee;
-    transform: scale(1.01);
-    box-shadow: 0 2px 5px rgba(92,122,78,0.08);
-}
-
-.styled-table tbody tr:nth-child(even) {
-    background-color: #f8faf6;
-}
-
-/* Indicadores de porcentaje */
-.percentage-bar {
-    height: 4px;
-    background-color: #e5e7eb;
-    border-radius: 2px;
-    overflow: hidden;
-    margin-top: 4px;
-}
-
-.percentage-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--hotel-gold), var(--hotel-green));
-    transition: width 1s ease;
-}
-
-/* Botones de período rápido */
-.period-btn {
+.profit-hero-main {
     position: relative;
     overflow: hidden;
-    background-color: #eef2eb !important;
-    color: #4A6340 !important;
-    border: 1px solid #d4dece;
-    transition: all 0.2s ease;
+    min-height: 310px;
+    padding: clamp(24px, 4vw, 42px);
+    border-color: color-mix(in srgb, var(--pr-accent) 24%, transparent);
+    border-radius: 26px;
+    background:
+        radial-gradient(circle at 88% 14%, color-mix(in srgb, var(--pr-accent) 34%, transparent), transparent 21rem),
+        linear-gradient(135deg, color-mix(in srgb, var(--pr-primary) 95%, #0A0F1C), var(--pr-secondary));
 }
 
-.period-btn:hover {
-    background-color: #dce8d5 !important;
-    border-color: #5C7A4E;
-}
-
-.period-btn::before {
-    content: '';
+.profit-hero-main::after {
+    content: "";
     position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.3);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-}
-
-.period-btn:hover::before {
-    width: 300px;
-    height: 300px;
-}
-
-/* Animación para números */
-@keyframes countUp {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-.count-up {
-    animation: countUp 0.5s ease forwards;
-}
-
-/* Estilos para botones de toggle de datasets */
-.dataset-toggle-btn {
-    position: relative;
-    transition: all 0.3s ease;
-}
-
-.dataset-toggle-btn.dataset-hidden {
-    opacity: 0.6;
-    background-color: #f3f4f6 !important;
-    color: #9ca3af !important;
-}
-
-.dataset-toggle-btn.dataset-hidden::after {
-    content: '';
-    position: absolute;
-    left: 10%;
-    right: 10%;
-    top: 50%;
-    height: 2px;
-    background-color: currentColor;
-    transform: rotate(-5deg);
+    inset: auto -8% -54% 44%;
+    height: 220px;
+    background: radial-gradient(circle, color-mix(in srgb, var(--pr-accent) 42%, transparent), transparent 68%);
     pointer-events: none;
 }
 
-.dataset-toggle-btn .toggle-icon {
-    transition: transform 0.3s ease;
+.profit-kicker,
+.profit-label,
+.profit-section-kicker,
+.profit-table th,
+.profit-mini-label {
+    color: var(--pr-muted);
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .07em;
+    text-transform: uppercase;
 }
 
-.dataset-toggle-btn.dataset-hidden .toggle-icon {
-    transform: rotate(45deg);
+.profit-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    color: color-mix(in srgb, var(--pr-accent) 82%, #FFFDF8);
 }
 
-/* Filtro card con toque crema */
-.filter-card {
-    background: #FDFCF9;
-    border: 1px solid #E8E2D6;
+.profit-hero-main h1 {
+    max-width: 11ch;
+    margin: 14px 0 14px;
+    color: #FFFDF8;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(2.45rem, 5vw, 5.2rem);
+    line-height: .9;
+    font-weight: 700;
+    letter-spacing: 0;
 }
 
-/* Inputs con estilo Los Cedros */
-input[type="date"]:focus,
-select:focus {
-    border-color: var(--hotel-green) !important;
-    box-shadow: 0 0 0 3px rgba(92,122,78,0.15) !important;
+.profit-hero-main p {
+    max-width: 66ch;
+    margin: 0;
+    color: rgba(255, 255, 255, .74);
+    font-weight: 650;
+    line-height: 1.6;
+}
+
+.profit-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.profit-btn,
+.profit-icon-btn,
+.profit-period-btn {
+    min-height: 42px;
+    border-radius: 13px;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+.profit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 0 16px;
+    border: 1px solid color-mix(in srgb, var(--pr-accent) 46%, var(--pr-primary));
+    background: var(--pr-primary);
+    color: #FFFDF8;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.profit-btn.is-soft {
+    border-color: rgba(255, 255, 255, .22);
+    background: rgba(255, 255, 255, .10);
+    color: #FFFDF8;
+}
+
+.profit-btn.is-accent {
+    background: color-mix(in srgb, var(--pr-accent) 88%, #FFFDF8);
+    color: color-mix(in srgb, var(--pr-primary) 88%, #000);
+}
+
+.profit-btn:hover,
+.profit-period-btn:hover,
+.profit-icon-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 30px -24px rgba(15, 23, 42, .55);
+}
+
+.profit-period-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 17px;
+    justify-content: space-between;
+    padding: 20px;
+    border-radius: 24px;
+}
+
+.profit-period-value {
+    margin-top: 7px;
+    color: var(--pr-primary);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(1.45rem, 3vw, 2.3rem);
+    font-weight: 700;
+    line-height: 1;
+}
+
+.profit-filter-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 11px;
+}
+
+.profit-field label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--pr-primary);
+    font-size: .75rem;
+    font-weight: 900;
+}
+
+.profit-field input,
+.profit-modal select,
+.profit-modal input {
+    width: 100%;
+    min-height: 43px;
+    border: 1px solid var(--pr-line);
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--pr-accent) 3%, #FFFDF8);
+    color: var(--pr-primary);
+    font-weight: 800;
     outline: none;
+    transition: border-color .18s ease, box-shadow .18s ease;
 }
 
-/* Estilos Responsive Mejorados */
-@media (max-width: 768px) {
-    /* Ajuste de padding general más agresivo */
-    .container {
-        padding-left: 0.75rem !important;
-        padding-right: 0.75rem !important;
+.profit-field input:focus,
+.profit-modal select:focus,
+.profit-modal input:focus {
+    border-color: color-mix(in srgb, var(--pr-accent) 62%, var(--pr-line));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pr-accent) 22%, transparent);
+}
+
+.profit-filter-form .profit-btn {
+    grid-column: 1 / -1;
+}
+
+.profit-periods {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.profit-period-btn {
+    border: 1px solid var(--pr-line-soft);
+    background: color-mix(in srgb, var(--pr-primary) 4%, #FFFDF8);
+    color: var(--pr-primary);
+    font-size: .76rem;
+    font-weight: 900;
+}
+
+.profit-metric-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 1.25fr) repeat(3, minmax(180px, .9fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.profit-card {
+    min-width: 0;
+    padding: 18px;
+    border-radius: 20px;
+}
+
+.profit-card.is-main {
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--pr-accent) 11%, #FFFDF8), var(--pr-surface));
+}
+
+.profit-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.profit-card-icon {
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--pr-accent) 13%, #FFFDF8);
+    color: color-mix(in srgb, var(--pr-accent) 82%, var(--pr-primary));
+}
+
+.profit-value {
+    margin-top: 13px;
+    color: var(--pr-primary);
+    font-size: clamp(1.45rem, 2.8vw, 2.2rem);
+    font-weight: 950;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.profit-value.is-income,
+.profit-money.is-income {
+    color: var(--pr-income);
+}
+
+.profit-value.is-expense,
+.profit-money.is-expense {
+    color: var(--pr-expense);
+}
+
+.profit-note {
+    margin-top: 9px;
+    color: var(--pr-muted);
+    font-size: .8rem;
+    font-weight: 750;
+}
+
+.profit-flow {
+    display: grid;
+    grid-template-columns: minmax(0, <?= $ingresos_ratio ?>fr) minmax(0, <?= $gastos_ratio ?>fr);
+    gap: 7px;
+    height: 10px;
+    margin-top: 15px;
+}
+
+.profit-flow span {
+    border-radius: 999px;
+}
+
+.profit-flow span:first-child {
+    background: var(--pr-income);
+}
+
+.profit-flow span:last-child {
+    background: var(--pr-expense);
+}
+
+.profit-methods {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.profit-method {
+    padding: 16px;
+    border: 1px solid var(--pr-line);
+    border-radius: 20px;
+    background: var(--pr-surface);
+}
+
+.profit-method-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.profit-method h3 {
+    margin: 4px 0 0;
+    color: var(--pr-primary);
+    font-weight: 950;
+}
+
+.profit-method-balance {
+    color: var(--pr-primary);
+    font-size: 1.22rem;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.profit-method-balance.is-income {
+    color: var(--pr-income);
+}
+
+.profit-method-balance.is-expense {
+    color: var(--pr-expense);
+}
+
+.profit-method-line {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    padding: 9px 0;
+    border-top: 1px solid var(--pr-line-soft);
+}
+
+.profit-method-line span {
+    color: var(--pr-muted);
+    font-size: .78rem;
+    font-weight: 800;
+}
+
+.profit-method-line strong,
+.profit-money {
+    color: var(--pr-primary);
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.profit-section {
+    border-radius: 22px;
+    overflow: hidden;
+    margin-bottom: 18px;
+}
+
+.profit-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--pr-line-soft);
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--pr-accent) 6%, #FFFDF8), var(--pr-surface));
+}
+
+.profit-section-head h2,
+.profit-section-head h3 {
+    margin: 0;
+    color: var(--pr-primary);
+    font-size: 1.05rem;
+    font-weight: 950;
+}
+
+.profit-section-body {
+    padding: 18px 20px 20px;
+}
+
+.profit-chart-shell {
+    height: 320px;
+    position: relative;
+}
+
+.profit-toggle-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.dataset-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 34px;
+    padding: 0 11px;
+    border: 1px solid var(--pr-line);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--pr-primary) 4%, #FFFDF8);
+    color: var(--pr-primary);
+    font-size: .75rem;
+    font-weight: 900;
+    transition: opacity .18s ease, transform .18s ease, background .18s ease;
+}
+
+.dataset-toggle-btn:hover {
+    transform: translateY(-1px);
+}
+
+.dataset-toggle-btn.dataset-hidden {
+    opacity: .52;
+    text-decoration: line-through;
+}
+
+.profit-two-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.profit-table-wrap {
+    overflow-x: auto;
+}
+
+.profit-table {
+    width: 100%;
+    min-width: 560px;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.profit-table th {
+    padding: 12px 11px;
+    border-bottom: 1px solid var(--pr-line);
+    text-align: left;
+}
+
+.profit-table td {
+    padding: 13px 11px;
+    border-bottom: 1px solid var(--pr-line-soft);
+    color: var(--pr-text);
+    font-size: .86rem;
+}
+
+.profit-table tbody tr {
+    transition: background .18s ease;
+}
+
+.profit-table tbody tr:hover {
+    background: color-mix(in srgb, var(--pr-accent) 5%, #FFFDF8);
+}
+
+.profit-table tfoot td {
+    background: color-mix(in srgb, var(--pr-primary) 5%, #FFFDF8);
+    color: var(--pr-primary);
+    font-weight: 950;
+}
+
+.profit-bar {
+    height: 7px;
+    margin-top: 6px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--pr-primary) 8%, #FFFDF8);
+}
+
+.profit-bar span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    transform-origin: left center;
+    transition: transform .7s ease;
+}
+
+.profit-bar.is-income span {
+    background: var(--pr-income);
+}
+
+.profit-bar.is-expense span {
+    background: var(--pr-expense);
+}
+
+.profit-empty {
+    display: grid;
+    place-items: center;
+    min-height: 220px;
+    padding: 30px;
+    text-align: center;
+    color: var(--pr-muted);
+}
+
+.profit-empty i {
+    width: 64px;
+    height: 64px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    border-radius: 22px;
+    background: color-mix(in srgb, var(--pr-accent) 12%, #FFFDF8);
+    color: color-mix(in srgb, var(--pr-accent) 80%, var(--pr-primary));
+    font-size: 1.55rem;
+}
+
+.profit-daily-list {
+    display: grid;
+    gap: 9px;
+    max-height: 410px;
+    overflow: auto;
+    padding-right: 4px;
+}
+
+.profit-day-row {
+    display: grid;
+    grid-template-columns: minmax(120px, .9fr) repeat(3, minmax(110px, 1fr));
+    gap: 12px;
+    align-items: center;
+    padding: 13px;
+    border: 1px solid var(--pr-line-soft);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--pr-accent) 2%, #FFFDF8);
+}
+
+.profit-day-row.is-weekend {
+    background: color-mix(in srgb, var(--pr-accent) 8%, #FFFDF8);
+}
+
+.profit-day-date {
+    color: var(--pr-primary);
+    font-weight: 950;
+}
+
+.profit-day-week {
+    color: var(--pr-muted);
+    font-size: .76rem;
+    font-weight: 800;
+}
+
+.profit-insights {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.profit-insight {
+    padding: 15px;
+    border: 1px solid var(--pr-line-soft);
+    border-radius: 17px;
+    background: color-mix(in srgb, var(--pr-accent) 4%, #FFFDF8);
+}
+
+.profit-insight strong {
+    color: var(--pr-primary);
+    font-weight: 950;
+}
+
+.profit-insight p {
+    margin: 8px 0 0;
+    color: var(--pr-muted);
+    font-size: .82rem;
+    font-weight: 700;
+    line-height: 1.55;
+}
+
+.profit-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(15, 23, 42, .62);
+}
+
+.profit-modal-overlay.hidden {
+    display: none;
+}
+
+.profit-modal {
+    width: min(100%, 480px);
+    border: 1px solid var(--pr-line);
+    border-radius: 22px;
+    background: var(--pr-surface);
+    box-shadow: 0 32px 80px -38px rgba(15, 23, 42, .82);
+    overflow: hidden;
+}
+
+.profit-modal-head {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--pr-line-soft);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--pr-accent) 7%, #FFFDF8), var(--pr-surface));
+}
+
+.profit-modal-head h3 {
+    margin: 0;
+    color: var(--pr-primary);
+    font-size: 1.05rem;
+    font-weight: 950;
+}
+
+.profit-modal-body {
+    display: grid;
+    gap: 13px;
+    padding: 18px 20px 20px;
+}
+
+.profit-modal label {
+    color: var(--pr-primary);
+    font-size: .8rem;
+    font-weight: 900;
+}
+
+.profit-modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding-top: 6px;
+}
+
+.profit-check-list {
+    display: grid;
+    gap: 9px;
+}
+
+.profit-check-list label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+    padding: 10px 12px;
+    border: 1px solid var(--pr-line-soft);
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--pr-primary) 3%, #FFFDF8);
+}
+
+.profit-check-list input {
+    min-height: auto;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--pr-primary);
+}
+
+@media (max-width: 1180px) {
+    .profit-hero,
+    .profit-two-columns {
+        grid-template-columns: 1fr;
     }
-    
-    /* Header super compacto */
-    .font-playfair {
-        font-size: 1.125rem !important;
-        line-height: 1.2 !important;
+
+    .profit-metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    
-    /* Cards de resumen - diseño más compacto */
-    .stat-card {
-        margin-bottom: 0.75rem;
+
+    .profit-card.is-main {
+        grid-column: 1 / -1;
     }
-    
-    .stat-card .p-4,
-    .stat-card .p-6 {
-        padding: 0.75rem !important;
+
+    .profit-methods,
+    .profit-insights {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    
-    .stat-card .text-2xl,
-    .stat-card .text-3xl {
-        font-size: 1.25rem !important;
-        line-height: 1.2 !important;
-    }
-    
-    .stat-card .bg-white\/20 {
-        padding: 0.5rem !important;
-    }
-    
-    .stat-card .text-xl,
-    .stat-card .text-2xl {
-        font-size: 1rem !important;
-    }
-    
-    /* Texto más pequeño en cards */
-    .stat-card .text-xs {
-        font-size: 0.65rem !important;
-    }
-    
-    .stat-card .text-sm {
-        font-size: 0.75rem !important;
-    }
-    
-    /* Tablas super responsive */
-    .styled-table {
-        font-size: 0.75rem;
-    }
-    
-    .styled-table th,
-    .styled-table td {
-        padding: 0.375rem !important;
-        white-space: nowrap;
-    }
-    
-    /* Simplificar tablas en móvil */
-    .styled-table th:nth-child(2),
-    .styled-table td:nth-child(2),
-    .styled-table tfoot td:nth-child(2) {
-        display: none;
-    }
-    
-    /* Barras de porcentaje ocultas en móvil */
-    .percentage-bar {
-        display: none !important;
-    }
-    
-    /* Hacer tablas más compactas */
-    .table-container {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    /* Botones de período super compactos */
-    .period-btn {
-        padding: 0.375rem 0.5rem !important;
-        font-size: 0.65rem !important;
-        white-space: nowrap;
-        background-color: #eef2eb !important;
-        color: #4A6340 !important;
-    }
-    
-    /* Filtros de fecha más compactos */
-    .flex-1.min-w-full {
-        min-width: 100% !important;
-    }
-    
-    /* Labels más pequeños */
-    label {
-        font-size: 0.75rem !important;
-    }
-    
-    /* Gráfica optimizada para móvil */
-    #graficaEvolucion {
-        height: 200px !important;
-    }
-    
-    /* Botones de toggle más pequeños */
-    .dataset-toggle-btn {
-        padding: 0.25rem 0.5rem !important;
-        font-size: 0.65rem !important;
-    }
-    
-    /* Insights más compactos */
-    .grid.md\:grid-cols-2 {
-        grid-template-columns: 1fr !important;
-        gap: 0.5rem !important;
-    }
-    
-    /* Cards de insights más pequeñas */
-    .bg-white\/80.backdrop-blur {
-        padding: 0.75rem !important;
-    }
-    
-    /* Modal más compacta */
-    .max-w-md {
-        max-width: calc(100vw - 1rem) !important;
-    }
-    
-    /* Desglose métodos de pago más compacto */
-    .border.rounded-lg.p-3,
-    .border.rounded-lg.p-4 {
-        padding: 0.75rem !important;
-    }
-    
-    /* Íconos más pequeños */
-    .text-lg {
-        font-size: 0.875rem !important;
-    }
-    
-    .text-xl {
-        font-size: 1rem !important;
-    }
-    
-    /* Espaciados reducidos */
-    .gap-4 {
-        gap: 0.5rem !important;
-    }
-    
-    .gap-6 {
-        gap: 0.75rem !important;
-    }
-    
-    .mb-4 {
-        margin-bottom: 0.75rem !important;
-    }
-    
-    .mb-6 {
-        margin-bottom: 1rem !important;
-    }
-    
-    /* Botones de acción principales más compactos */
-    .px-4.py-2\.5 {
-        padding: 0.5rem 0.75rem !important;
-    }
-    
-    /* Hover effects deshabilitados en móvil */
-    @media (hover: none) {
-        .hover-lift:hover {
-            transform: none;
-            box-shadow: none;
-        }
-        
-        .styled-table tbody tr:hover {
-            transform: none;
-            background-color: inherit;
-        }
+
+    .profit-day-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
-/* Tablets (768px - 1024px) */
-@media (min-width: 768px) and (max-width: 1024px) {
-    .container {
-        max-width: 100% !important;
-        padding-left: 1.5rem !important;
-        padding-right: 1.5rem !important;
+@media (max-width: 720px) {
+    .profit-shell {
+        width: min(100% - 20px, 1500px);
+        padding: 18px 0 34px;
     }
-    
-    /* Grid de 2 columnas para tablets */
-    .grid.lg\:grid-cols-3 {
-        grid-template-columns: repeat(2, 1fr) !important;
-    }
-    
-    .grid.lg\:grid-cols-3 > :last-child {
-        grid-column: span 2;
-    }
-}
 
-/* Mejoras de accesibilidad móvil */
-@media (max-width: 640px) {
-    /* Botones con altura mínima para toque */
-    button {
-        min-height: 40px;
+    .profit-hero-main,
+    .profit-period-panel,
+    .profit-card,
+    .profit-section,
+    .profit-modal {
+        border-radius: 18px;
     }
-    
-    /* Inputs más grandes */
-    input[type="date"],
-    select {
-        min-height: 40px;
-        font-size: 16px; /* Previene zoom en iOS */
-    }
-    
-    /* Título principal más pequeño */
-    h1 {
-        font-size: 1rem !important;
-    }
-    
-    /* Subtítulos más pequeños */
-    h2, h3 {
-        font-size: 0.875rem !important;
-    }
-    
-    /* Párrafos y texto general */
-    p {
-        font-size: 0.75rem !important;
-    }
-}
 
-/* Mejoras para pantallas muy pequeñas */
-@media (max-width: 380px) {
-    /* Contenedor con menos padding */
-    .container {
-        padding-left: 0.5rem !important;
-        padding-right: 0.5rem !important;
+    .profit-hero-main {
+        min-height: auto;
     }
-    
-    /* Texto aún más pequeño */
-    .text-lg {
-        font-size: 0.75rem !important;
+
+    .profit-hero-main h1 {
+        max-width: 9ch;
+        font-size: clamp(2.05rem, 14vw, 3.5rem);
     }
-    
-    .text-base {
-        font-size: 0.7rem !important;
+
+    .profit-filter-form,
+    .profit-periods,
+    .profit-metric-grid,
+    .profit-methods,
+    .profit-insights,
+    .profit-day-row,
+    .profit-modal-actions {
+        grid-template-columns: 1fr;
     }
-    
-    .text-sm {
-        font-size: 0.65rem !important;
-    }
-    
-    .text-xs {
-        font-size: 0.6rem !important;
-    }
-    
-    /* Stack de botones en vertical */
-    .flex.gap-2:not(.flex-wrap) {
+
+    .profit-section-head {
+        align-items: flex-start;
         flex-direction: column;
-        width: 100%;
     }
-    
-    .flex.gap-2:not(.flex-wrap) button {
-        width: 100%;
-    }
-    
-    /* Cards de resumen ultra compactas */
-    .stat-card .count-up {
-        font-size: 1rem !important;
-    }
-    
-    /* Ocultar textos secundarios */
-    .stat-card .mt-3,
-    .stat-card .mt-4 {
-        display: none;
-    }
-    
-    /* Período del reporte más compacto */
-    .text-hotel-gold {
-        font-size: 0.6rem !important;
+
+    .profit-chart-shell {
+        height: 270px;
     }
 }
 </style>
 
-<div class="reporte-view min-h-screen bg-gradient-to-br from-[#F7F4EE] to-[#EEF2EB] py-2 md:py-4">
-    <!-- Header del Reporte -->
-    <div class="bg-gradient-to-r from-[#4A6340] to-[#3D5234] text-white shadow-xl">
-        <div class="container mx-auto px-3 md:px-6 py-2 md:py-4">
-            <div class="flex flex-col lg:flex-row justify-between items-center gap-2 md:gap-4">
-                <div class="text-center lg:text-left w-full lg:w-auto">
-                    <div class="flex items-center gap-2 md:gap-3 mb-1 md:mb-2 justify-center lg:justify-start">
-                        <a href="<?= url('reportes') ?>" 
-                           class="bg-white/10 backdrop-blur hover:bg-white/20 p-1.5 md:p-2 rounded-lg transition-colors">
-                            <i class="fas fa-arrow-left text-xs md:text-base"></i>
-                        </a>
-                        <h1 class="text-sm md:text-2xl font-bold font-playfair flex items-center gap-1 md:gap-2">
-                            <i class="fas fa-balance-scale text-sm md:text-xl opacity-80 hidden md:inline"></i>
-                            <span class="block md:inline">Ingresos vs Gastos</span>
-                        </h1>
-                    </div>
-                    <p class="text-[#C8A96A] text-xs md:text-sm ml-0 md:ml-12">
-                        <?= date('d/m', strtotime($fecha_inicio)) ?> - <?= date('d/m/Y', strtotime($fecha_fin)) ?>
+<div class="profit-report-view reporte-view">
+    <main class="profit-shell">
+        <section class="profit-hero">
+            <div class="profit-hero-main">
+                <a href="<?= url('reportes') ?>" class="profit-btn is-soft">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver a reportes
+                </a>
+                <div class="mt-6">
+                    <span class="profit-kicker">
+                        <i class="fas fa-balance-scale"></i>
+                        Laboratorio de rentabilidad
+                    </span>
+                    <h1>Ingresos vs gastos</h1>
+                    <p>
+                        Lee el periodo como una fotografía financiera: flujo, margen, categorías, métodos de pago y utilidad diaria en una sola vista operativa.
                     </p>
+                    <div class="profit-hero-actions">
+                        <button type="button" onclick="exportarPDF()" class="profit-btn is-accent">
+                            <i class="fas fa-file-pdf"></i>
+                            Exportar PDF
+                        </button>
+                        <button type="button" onclick="abrirModalReporteUsuario()" class="profit-btn is-soft">
+                            <i class="fas fa-users"></i>
+                            Por usuario
+                        </button>
+                        <button type="button" onclick="abrirModalReporteIngresos()" class="profit-btn is-soft">
+                            <i class="fas fa-chart-bar"></i>
+                            Ingresos totales
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div class="container mx-auto px-3 md:px-6 py-3 md:py-6 max-w-7xl">
-        <!-- Filtros de Fecha Mejorados -->
-        <div class="bg-[#FDFCF9] rounded-xl shadow-sm p-3 md:p-6 mb-3 md:mb-6 border border-[#E8E2D6]">
-            <form method="get" action="<?= url('reportes/ingresos-gastos') ?>" class="flex flex-col md:flex-row flex-wrap items-stretch md:items-end gap-2 md:gap-4">
-                <div class="flex-1 min-w-full md:min-w-[200px]">
-                    <label for="fecha_inicio" class="block text-xs md:text-sm font-semibold text-[#4A6340] mb-1">
-                        <i class="fas fa-calendar-alt mr-1 text-xs"></i>Desde
-                    </label>
-                    <input type="date" 
-                           id="fecha_inicio" 
-                           name="fecha_inicio" 
-                           value="<?= $fecha_inicio ?>" 
-                           max="<?= date('Y-m-d') ?>"
-                           class="w-full px-2 md:px-4 py-2 border border-[#C8D9BE] rounded-lg focus:ring-2 focus:ring-[#5C7A4E]/20 focus:border-[#5C7A4E] transition-all text-sm md:text-base bg-white">
+            <aside class="profit-period-panel">
+                <div>
+                    <span class="profit-label">Periodo consultado</span>
+                    <div class="profit-period-value">
+                        <?= rep_ig_date($fecha_inicio, 'd/m') ?> - <?= rep_ig_date($fecha_fin) ?>
+                    </div>
+                    <p class="profit-note"><?= number_format($dias_periodo) ?> día<?= $dias_periodo === 1 ? '' : 's' ?> con lectura financiera.</p>
                 </div>
-                
-                <div class="flex-1 min-w-full md:min-w-[200px]">
-                    <label for="fecha_fin" class="block text-xs md:text-sm font-semibold text-[#4A6340] mb-1">
-                        <i class="fas fa-calendar-check mr-1 text-xs"></i>Hasta
-                    </label>
-                    <input type="date" 
-                           id="fecha_fin" 
-                           name="fecha_fin" 
-                           value="<?= $fecha_fin ?>" 
-                           max="<?= date('Y-m-d') ?>"
-                           class="w-full px-2 md:px-4 py-2 border border-[#C8D9BE] rounded-lg focus:ring-2 focus:ring-[#5C7A4E]/20 focus:border-[#5C7A4E] transition-all text-sm md:text-base bg-white">
-                </div>
-                
-                <div class="flex gap-2 w-full md:w-auto">
-                    <button type="submit" 
-                            class="bg-[#5C7A4E] text-white px-4 py-2 rounded-lg hover:bg-[#4A6340] transition-all duration-300 flex items-center justify-center gap-2 shadow hover:shadow-md w-full md:w-auto text-sm">
-                        <i class="fas fa-sync-alt text-xs"></i>
-                        <span>Actualizar</span>
+
+                <form method="get" action="<?= url('reportes/ingresos-gastos') ?>" class="profit-filter-form" id="reporteFiltrosForm">
+                    <div class="profit-field">
+                        <label for="fecha_inicio">Desde</label>
+                        <input type="date"
+                               id="fecha_inicio"
+                               name="fecha_inicio"
+                               value="<?= rep_ig_safe($fecha_inicio, '') ?>"
+                               max="<?= date('Y-m-d') ?>">
+                    </div>
+                    <div class="profit-field">
+                        <label for="fecha_fin">Hasta</label>
+                        <input type="date"
+                               id="fecha_fin"
+                               name="fecha_fin"
+                               value="<?= rep_ig_safe($fecha_fin, '') ?>"
+                               max="<?= date('Y-m-d') ?>">
+                    </div>
+                    <button type="submit" class="profit-btn">
+                        <i class="fas fa-sync-alt"></i>
+                        Actualizar reporte
                     </button>
-                </div>
-            </form>
-            
-            <!-- Botones de Período Rápido - Mejorados para móvil -->
-            <div class="mt-3 pt-3 border-t border-[#E0DAD0]">
-                <div class="text-xs font-medium text-[#5C7A4E] mb-2">Períodos rápidos:</div>
-                <div class="grid grid-cols-3 sm:flex sm:flex-wrap gap-1.5 md:gap-2">
-                    <button onclick="setPeriodo(7)" class="period-btn px-2 py-1.5 rounded-lg text-xs transition-all text-center">
-                        7 días
-                    </button>
-                    <button onclick="setPeriodo(30)" class="period-btn px-2 py-1.5 rounded-lg text-xs transition-all text-center">
-                        30 días
-                    </button>
-                    <button onclick="setPeriodo(90)" class="period-btn px-2 py-1.5 rounded-lg text-xs transition-all text-center">
-                        90 días
-                    </button>
-                    <button onclick="setMesActual()" class="period-btn px-2 py-1.5 rounded-lg text-xs transition-all text-center">
-                        Este mes
-                    </button>
-                    <button onclick="setAnioActual()" class="period-btn px-2 py-1.5 rounded-lg text-xs transition-all text-center col-span-2 sm:col-span-1">
-                        Este año
-                    </button>
-                </div>
-            </div>
-        </div>
+                </form>
 
-        <!-- Botones de Reportes Adicionales -->
-        <div class="flex flex-col sm:flex-row gap-2 md:gap-4 mb-3 md:mb-6">
-            <button onclick="abrirModalReporteUsuario()" 
-                    class="bg-[#5C7A4E] text-white px-3 py-2 rounded-lg hover:bg-[#4A6340] transition-all duration-300 flex items-center justify-center gap-2 shadow hover:shadow-lg text-xs md:text-base">
-                <i class="fas fa-users text-xs md:text-sm"></i>
-                <span>Por Usuario</span>
-            </button>
-            
-            <button onclick="abrirModalReporteIngresos()" 
-                    class="bg-[#C8A96A] text-[#3D5234] px-3 py-2 rounded-lg hover:bg-[#B8994A] transition-all duration-300 flex items-center justify-center gap-2 shadow hover:shadow-lg font-semibold text-xs md:text-base">
-                <i class="fas fa-chart-bar text-xs md:text-sm"></i>
-                <span>Ingresos Totales</span>
-            </button>
-        </div>
-
-        <!-- Cards de Resumen - Estilo mejorado para móviles -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 mb-4 md:mb-8">
-            <!-- Card Ingresos -->
-            <div class="stat-card hover-lift bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 p-3 md:p-6 text-white">
-                    <div class="flex items-center justify-between">
-                        <div class="flex-1">
-                            <p class="text-emerald-100 text-xs md:text-sm font-medium uppercase tracking-wider mb-1">Total Ingresos</p>
-                            <p class="text-xl md:text-3xl font-bold count-up truncate">
-                                <?= format_currency($totales['ingresos']) ?>
-                            </p>
-                            <div class="mt-2 flex items-center text-xs md:text-sm">
-                                <i class="fas fa-chart-line mr-1 text-xs"></i>
-                                <span><?= count($datos['ingresos'] ?? []) ?> cat.</span>
-                            </div>
-                        </div>
-                        <div class="bg-white/20 p-2 md:p-4 rounded-full ml-2">
-                            <i class="fas fa-arrow-up text-base md:text-2xl"></i>
-                        </div>
+                <div>
+                    <span class="profit-label">Periodos rápidos</span>
+                    <div class="profit-periods mt-2">
+                        <button type="button" onclick="setPeriodo(7)" class="profit-period-btn">7 días</button>
+                        <button type="button" onclick="setPeriodo(30)" class="profit-period-btn">30 días</button>
+                        <button type="button" onclick="setPeriodo(90)" class="profit-period-btn">90 días</button>
+                        <button type="button" onclick="setMesActual()" class="profit-period-btn">Mes</button>
+                        <button type="button" onclick="setAnioActual()" class="profit-period-btn">Año</button>
                     </div>
                 </div>
-                <div class="p-2 md:p-4 bg-emerald-50">
-                    <div class="text-xs text-emerald-700 font-medium truncate">
-                        Promedio: <?= format_currency($totales['ingresos'] / max(count($resumenDiario ?? []), 1)) ?>/día
-                    </div>
-                </div>
-            </div>
+            </aside>
+        </section>
 
-            <!-- Card Gastos -->
-            <div class="stat-card hover-lift bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="bg-gradient-to-br from-red-500 to-red-600 p-3 md:p-6 text-white">
-                    <div class="flex items-center justify-between">
-                        <div class="flex-1">
-                            <p class="text-red-100 text-xs md:text-sm font-medium uppercase tracking-wider mb-1">Total Gastos</p>
-                            <p class="text-xl md:text-3xl font-bold count-up truncate">
-                                <?= format_currency($totales['gastos']) ?>
-                            </p>
-                            <div class="mt-2 flex items-center text-xs md:text-sm">
-                                <i class="fas fa-receipt mr-1 text-xs"></i>
-                                <span><?= count($datos['gastos'] ?? []) ?> cat.</span>
-                            </div>
-                        </div>
-                        <div class="bg-white/20 p-2 md:p-4 rounded-full ml-2">
-                            <i class="fas fa-arrow-down text-base md:text-2xl"></i>
-                        </div>
-                    </div>
+        <section class="profit-metric-grid">
+            <article class="profit-card is-main">
+                <div class="profit-card-head">
+                    <span class="profit-label">Utilidad neta</span>
+                    <span class="profit-card-icon">
+                        <i class="fas <?= $utilidad_neta >= 0 ? 'fa-check-circle' : 'fa-exclamation-triangle' ?>"></i>
+                    </span>
                 </div>
-                <div class="p-2 md:p-4 bg-red-50">
-                    <div class="text-xs text-red-700 font-medium truncate">
-                        Promedio: <?= format_currency($totales['gastos'] / max(count($resumenDiario ?? []), 1)) ?>/día
-                    </div>
+                <div class="profit-value <?= $utilidad_neta >= 0 ? 'is-income' : 'is-expense' ?>">
+                    <?= rep_ig_money($utilidad_neta, true) ?>
                 </div>
-            </div>
-
-            <!-- Card Utilidad -->
-            <div class="stat-card hover-lift bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden md:col-span-2 lg:col-span-1">
-                <div class="bg-gradient-to-br <?= $totales['utilidad'] >= 0 ? 'from-[#5C7A4E] to-[#4A6340]' : 'from-gray-500 to-gray-600' ?> p-3 md:p-6 text-white">
-                    <div class="flex items-center justify-between">
-                        <div class="flex-1">
-                            <p class="text-white/90 text-xs md:text-sm font-medium uppercase tracking-wider mb-1">Utilidad Neta</p>
-                            <p class="text-xl md:text-3xl font-bold count-up truncate">
-                                <?= format_currency($totales['utilidad']) ?>
-                            </p>
-                            <div class="mt-2 flex items-center justify-between text-xs md:text-sm">
-                                <span>Margen:</span>
-                                <span class="font-bold">
-                                    <?= $totales['ingresos'] > 0 ? round(($totales['utilidad'] / $totales['ingresos']) * 100, 2) : 0 ?>%
-                                </span>
-                            </div>
-                        </div>
-                        <div class="bg-white/20 p-2 md:p-4 rounded-full ml-2">
-                            <i class="fas <?= $totales['utilidad'] >= 0 ? 'fa-check-circle' : 'fa-exclamation-triangle' ?> text-base md:text-2xl"></i>
-                        </div>
-                    </div>
+                <div class="profit-flow" aria-label="Relación ingresos gastos">
+                    <span></span>
+                    <span></span>
                 </div>
-                <div class="p-2 md:p-4 <?= $totales['utilidad'] >= 0 ? 'bg-[#EEF4EB]' : 'bg-gray-50' ?>">
-                    <div class="flex items-center justify-center text-xs <?= $totales['utilidad'] >= 0 ? 'text-[#4A6340]' : 'text-gray-700' ?> font-medium">
-                        <i class="fas <?= $totales['utilidad'] >= 0 ? 'fa-smile' : 'fa-meh' ?> mr-1 text-xs"></i>
-                        <?= $totales['utilidad'] >= 0 ? 'Resultado positivo' : 'Requiere atención' ?>
-                    </div>
+                <p class="profit-note">
+                    Margen <?= $margen_utilidad ?>%, <?= $ingresos_ratio ?>% ingresos y <?= $gastos_ratio ?>% gastos del flujo.
+                </p>
+            </article>
+
+            <article class="profit-card">
+                <div class="profit-card-head">
+                    <span class="profit-label">Total ingresos</span>
+                    <span class="profit-card-icon"><i class="fas fa-arrow-up"></i></span>
                 </div>
-            </div>
-        </div>
+                <div class="profit-value is-income count-up"><?= format_currency($total_ingresos) ?></div>
+                <p class="profit-note"><?= count($datos['ingresos'] ?? []) ?> categorías, promedio <?= format_currency($promedio_ingresos) ?>/día.</p>
+            </article>
 
-        <!-- Desglose por Método de Pago -->
-        <div class="bg-white rounded-xl shadow-sm border border-[#E0DDD5] overflow-hidden mb-3 md:mb-6">
-            <div class="bg-gradient-to-r from-[#5C7A4E] to-[#4A6340] px-3 md:px-6 py-2.5 md:py-4">
-                <h3 class="text-sm md:text-lg font-bold text-white flex items-center gap-2">
-                    <i class="fas fa-credit-card text-xs md:text-base"></i>
-                    <span class="text-xs md:text-base">Desglose por Método de Pago</span>
-                </h3>
-            </div>
-            <div class="p-3 md:p-6">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
-                    <!-- Efectivo -->
-                    <div class="border rounded-lg p-2.5 md:p-4 hover:shadow-md transition-shadow">
-                        <div class="flex items-center justify-between mb-2 md:mb-4">
-                            <div class="flex items-center gap-1.5 md:gap-2">
-                                <i class="fas fa-money-bill-wave text-green-600 text-sm md:text-xl"></i>
-                                <h4 class="font-semibold text-gray-800 text-xs md:text-base">Efectivo</h4>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs text-gray-500 mb-0.5">Balance</p>
-                                <p class="text-sm md:text-lg font-bold <?= ($metodosPago['efectivo']['balance'] >= 0) ? 'text-green-600' : 'text-red-600' ?>">
-                                    <?= format_currency($metodosPago['efectivo']['balance'] ?? 0) ?>
-                                </p>
-                            </div>
-                        </div>
-                        <div class="space-y-1 text-xs md:text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Ingresos:</span>
-                                <span class="text-green-700 font-medium"><?= format_currency($metodosPago['efectivo']['ingresos'] ?? 0) ?></span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Gastos:</span>
-                                <span class="text-red-700 font-medium"><?= format_currency($metodosPago['efectivo']['gastos'] ?? 0) ?></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tarjeta -->
-                    <div class="border rounded-lg p-2.5 md:p-4 hover:shadow-md transition-shadow">
-                        <div class="flex items-center justify-between mb-2 md:mb-4">
-                            <div class="flex items-center gap-1.5 md:gap-2">
-                                <i class="fas fa-credit-card text-blue-600 text-sm md:text-xl"></i>
-                                <h4 class="font-semibold text-gray-800 text-xs md:text-base">Tarjeta</h4>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs text-gray-500 mb-0.5">Balance</p>
-                                <p class="text-sm md:text-lg font-bold <?= ($metodosPago['tarjeta']['balance'] >= 0) ? 'text-green-600' : 'text-red-600' ?>">
-                                    <?= format_currency($metodosPago['tarjeta']['balance'] ?? 0) ?>
-                                </p>
-                            </div>
-                        </div>
-                        <div class="space-y-1 text-xs md:text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Ingresos:</span>
-                                <span class="text-green-700 font-medium"><?= format_currency($metodosPago['tarjeta']['ingresos'] ?? 0) ?></span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Gastos:</span>
-                                <span class="text-red-700 font-medium"><?= format_currency($metodosPago['tarjeta']['gastos'] ?? 0) ?></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Transferencia -->
-                    <div class="border rounded-lg p-2.5 md:p-4 hover:shadow-md transition-shadow sm:col-span-2 lg:col-span-1">
-                        <div class="flex items-center justify-between mb-2 md:mb-4">
-                            <div class="flex items-center gap-1.5 md:gap-2">
-                                <i class="fas fa-exchange-alt text-purple-600 text-sm md:text-xl"></i>
-                                <h4 class="font-semibold text-gray-800 text-xs md:text-base">Transferencia</h4>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs text-gray-500 mb-0.5">Balance</p>
-                                <p class="text-sm md:text-lg font-bold <?= ($metodosPago['transferencia']['balance'] >= 0) ? 'text-green-600' : 'text-red-600' ?>">
-                                    <?= format_currency($metodosPago['transferencia']['balance'] ?? 0) ?>
-                                </p>
-                            </div>
-                        </div>
-                        <div class="space-y-1 text-xs md:text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Ingresos:</span>
-                                <span class="text-green-700 font-medium"><?= format_currency($metodosPago['transferencia']['ingresos'] ?? 0) ?></span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Gastos:</span>
-                                <span class="text-red-700 font-medium"><?= format_currency($metodosPago['transferencia']['gastos'] ?? 0) ?></span>
-                            </div>
-                        </div>
-                    </div>
+            <article class="profit-card">
+                <div class="profit-card-head">
+                    <span class="profit-label">Total gastos</span>
+                    <span class="profit-card-icon"><i class="fas fa-arrow-down"></i></span>
                 </div>
-            </div>
-        </div>
+                <div class="profit-value is-expense count-up"><?= format_currency($total_gastos) ?></div>
+                <p class="profit-note"><?= count($datos['gastos'] ?? []) ?> categorías, promedio <?= format_currency($promedio_gastos) ?>/día.</p>
+            </article>
 
-        <!-- Gráfica de Evolución - Contenedor mejorado -->
-        <?php if (!empty($resumenDiario)): ?>
-        <div class="bg-white rounded-xl shadow-sm p-3 md:p-6 mb-3 md:mb-6 border border-[#E0DDD5]">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 md:mb-4 gap-3">
-                <h2 class="text-base md:text-xl font-bold text-[#3D5234] flex items-center gap-2">
-                    <i class="fas fa-chart-line text-[#5C7A4E] text-sm md:text-base"></i>
-                    <span class="text-sm md:text-base">Evolución Diaria</span>
-                </h2>
-                <div class="flex gap-1.5 md:gap-2 flex-wrap">
-                    <button id="toggleIngresos" onclick="toggleDataset(0)" 
-                            class="dataset-toggle-btn px-2 md:px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs md:text-sm hover:bg-emerald-200 transition-all flex items-center gap-1">
-                        <i class="fas fa-eye toggle-icon text-xs"></i>
+            <article class="profit-card">
+                <div class="profit-card-head">
+                    <span class="profit-label">Promedio utilidad</span>
+                    <span class="profit-card-icon"><i class="fas fa-calendar-day"></i></span>
+                </div>
+                <div class="profit-value <?= $promedio_utilidad >= 0 ? 'is-income' : 'is-expense' ?>"><?= rep_ig_money($promedio_utilidad, true) ?></div>
+                <p class="profit-note">Resultado diario promedio del rango.</p>
+            </article>
+        </section>
+
+        <section class="profit-methods">
+            <?php foreach ($metodoMeta as $metodoKey => $meta): ?>
+                <?php $metodo = $metodosPago[$metodoKey] ?? ['ingresos' => 0, 'gastos' => 0, 'balance' => 0]; ?>
+                <article class="profit-method">
+                    <div class="profit-method-top">
+                        <div>
+                            <span class="profit-label">Método de pago</span>
+                            <h3><i class="fas <?= $meta['icon'] ?> mr-2"></i><?= $meta['label'] ?></h3>
+                        </div>
+                        <div class="profit-method-balance <?= ((float)($metodo['balance'] ?? 0)) >= 0 ? 'is-income' : 'is-expense' ?>">
+                            <?= rep_ig_money($metodo['balance'] ?? 0, true) ?>
+                        </div>
+                    </div>
+                    <div class="profit-method-line">
                         <span>Ingresos</span>
-                    </button>
-                    <button id="toggleGastos" onclick="toggleDataset(1)" 
-                            class="dataset-toggle-btn px-2 md:px-3 py-1 bg-red-100 text-red-700 rounded-lg text-xs md:text-sm hover:bg-red-200 transition-all flex items-center gap-1">
-                        <i class="fas fa-eye toggle-icon text-xs"></i>
+                        <strong class="profit-money is-income"><?= rep_ig_money($metodo['ingresos'] ?? 0, true) ?></strong>
+                    </div>
+                    <div class="profit-method-line">
                         <span>Gastos</span>
-                    </button>
-                    <button id="toggleUtilidad" onclick="toggleDataset(2)" 
-                            class="dataset-toggle-btn px-2 md:px-3 py-1 bg-[#EEF4EB] text-[#4A6340] rounded-lg text-xs md:text-sm hover:bg-[#DCE9D5] transition-all flex items-center gap-1">
-                        <i class="fas fa-eye toggle-icon text-xs"></i>
-                        <span>Utilidad</span>
-                    </button>
-                </div>
-            </div>
-            <div class="relative" style="height: 200px;">
-                <canvas id="graficaEvolucion"></canvas>
-            </div>
-        </div>
-        <?php else: ?>
-        <div class="bg-white rounded-xl shadow-sm p-3 md:p-6 mb-3 md:mb-6 border border-[#E0DDD5]">
-            <div class="text-center py-6 md:py-12 text-gray-500">
-                <i class="fas fa-chart-line text-2xl md:text-4xl mb-2 md:mb-4"></i>
-                <p class="text-xs md:text-base">No hay datos para mostrar la gráfica en este período. Prueba otro rango de fechas o genera actividad demo.</p>
-            </div>
-        </div>
-        <?php endif; ?>
+                        <strong class="profit-money is-expense">-<?= format_currency(abs((float)($metodo['gastos'] ?? 0))) ?></strong>
+                    </div>
+                </article>
+            <?php endforeach; ?>
+        </section>
 
-        <!-- Tablas de Detalle - Grid responsivo -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
-            <!-- Ingresos por Categoría -->
-            <div class="bg-white rounded-xl shadow-sm border border-[#E0DDD5] overflow-hidden">
-                <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 md:px-6 py-3 md:py-4">
-                    <h3 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
-                        <i class="fas fa-arrow-up"></i>
-                        Ingresos por Categoría
-                    </h3>
+        <section class="profit-section">
+            <div class="profit-section-head">
+                <div>
+                    <span class="profit-section-kicker">Evolución diaria</span>
+                    <h2>Flujo del periodo</h2>
                 </div>
-                <div class="p-4 md:p-6 table-container">
+                <?php if (!empty($resumenDiario)): ?>
+                    <div class="profit-toggle-group">
+                        <button id="toggleIngresos" type="button" onclick="toggleDataset(0)" class="dataset-toggle-btn">
+                            <i class="fas fa-eye toggle-icon"></i>
+                            Ingresos
+                        </button>
+                        <button id="toggleGastos" type="button" onclick="toggleDataset(1)" class="dataset-toggle-btn">
+                            <i class="fas fa-eye toggle-icon"></i>
+                            Gastos
+                        </button>
+                        <button id="toggleUtilidad" type="button" onclick="toggleDataset(2)" class="dataset-toggle-btn">
+                            <i class="fas fa-eye toggle-icon"></i>
+                            Utilidad
+                        </button>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <div class="profit-section-body">
+                <?php if (!empty($resumenDiario)): ?>
+                    <div class="profit-chart-shell">
+                        <canvas id="graficaEvolucion"></canvas>
+                    </div>
+                <?php else: ?>
+                    <div class="profit-empty">
+                        <div>
+                            <i class="fas fa-chart-line"></i>
+                            <p>No hay datos para mostrar la gráfica en este periodo. Prueba otro rango de fechas o genera actividad demo.</p>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </section>
+
+        <section class="profit-two-columns">
+            <article class="profit-section">
+                <div class="profit-section-head">
+                    <div>
+                        <span class="profit-section-kicker">Entrada de dinero</span>
+                        <h3>Ingresos por categoría</h3>
+                    </div>
+                    <span class="profit-money is-income"><?= format_currency($total_ingresos) ?></span>
+                </div>
+                <div class="profit-section-body">
                     <?php if (!empty($datos['ingresos'])): ?>
-                    <div class="overflow-x-auto">
-                        <table class="styled-table min-w-full">
-                            <thead>
-                                <tr>
-                                    <th class="rounded-tl-lg text-xs md:text-sm">Categoría</th>
-                                    <th class="text-center text-xs md:text-sm hidden md:table-cell">Cantidad</th>
-                                    <th class="text-right text-xs md:text-sm">Total</th>
-                                    <th class="text-center rounded-tr-lg text-xs md:text-sm">%</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($datos['ingresos'] as $ingreso): ?>
-                                <?php $porcentaje = $totales['ingresos'] > 0 ? round(($ingreso['total'] / $totales['ingresos']) * 100, 1) : 0; ?>
-                                <tr>
-                                    <td class="px-3 md:px-4 py-2 md:py-3 font-medium text-gray-800 text-xs md:text-sm">
-                                        <i class="fas fa-tag text-emerald-500 mr-1 md:mr-2 text-xs"></i>
-                                        <?= $ingreso['categoria'] ?>
-                                    </td>
-                                    <td class="px-3 md:px-4 py-2 md:py-3 text-center text-gray-600 text-xs md:text-sm hidden md:table-cell">
-                                        <?= number_format($ingreso['cantidad']) ?>
-                                    </td>
-                                    <td class="px-3 md:px-4 py-2 md:py-3 text-right font-semibold text-emerald-700 text-xs md:text-sm">
-                                        <?= format_currency($ingreso['total']) ?>
-                                    </td>
-                                    <td class="px-3 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm">
-                                        <span class="font-medium text-gray-700"><?= $porcentaje ?>%</span>
-                                        <div class="percentage-bar hidden md:block">
-                                            <div class="percentage-fill" style="width: <?= $porcentaje ?>%"></div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                            <tfoot>
-                                <tr class="bg-emerald-50 font-bold text-xs md:text-sm">
-                                    <td class="px-3 md:px-4 py-2 md:py-3">Total</td>
-                                    <td class="px-3 md:px-4 py-2 md:py-3 text-center hidden md:table-cell"><?= number_format(array_sum(array_column($datos['ingresos'], 'cantidad'))) ?></td>
-                                    <td class="px-3 md:px-4 py-2 md:py-3 text-right text-emerald-700"><?= format_currency($totales['ingresos']) ?></td>
-                                    <td class="px-3 md:px-4 py-2 md:py-3 text-center">100%</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                        <div class="profit-table-wrap">
+                            <table class="profit-table">
+                                <thead>
+                                    <tr>
+                                        <th>Categoría</th>
+                                        <th class="text-center">Cantidad</th>
+                                        <th class="text-right">Total</th>
+                                        <th class="text-center">%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($datos['ingresos'] as $ingreso): ?>
+                                        <?php $porcentaje = rep_ig_percent($ingreso['total'] ?? 0, $total_ingresos); ?>
+                                        <tr>
+                                            <td>
+                                                <strong><?= rep_ig_safe($ingreso['categoria'] ?? '') ?></strong>
+                                                <div class="profit-bar is-income">
+                                                    <span class="percentage-fill" style="width: <?= $porcentaje ?>%"></span>
+                                                </div>
+                                            </td>
+                                            <td class="text-center"><?= number_format($ingreso['cantidad'] ?? 0) ?></td>
+                                            <td class="text-right profit-money is-income"><?= format_currency($ingreso['total'] ?? 0) ?></td>
+                                            <td class="text-center"><?= $porcentaje ?>%</td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td>Total</td>
+                                        <td class="text-center"><?= number_format(array_sum(array_column($datos['ingresos'], 'cantidad'))) ?></td>
+                                        <td class="text-right"><?= format_currency($total_ingresos) ?></td>
+                                        <td class="text-center">100%</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                     <?php else: ?>
-                    <div class="text-center py-6 md:py-8 text-gray-500">
-                        <i class="fas fa-info-circle text-3xl md:text-4xl mb-2"></i>
-                        <p class="text-sm md:text-base">No hay ingresos registrados en este período. Los cobros aparecerán aquí cuando exista actividad.</p>
-                    </div>
+                        <div class="profit-empty">
+                            <div>
+                                <i class="fas fa-info-circle"></i>
+                                <p>No hay ingresos registrados en este periodo. Los cobros aparecerán aquí cuando exista actividad.</p>
+                            </div>
+                        </div>
                     <?php endif; ?>
                 </div>
-            </div>
+            </article>
 
-            <!-- Gastos por Categoría -->
-            <div class="bg-white rounded-xl shadow-sm border border-[#E0DDD5] overflow-hidden">
-                <div class="bg-gradient-to-r from-red-500 to-red-600 px-4 md:px-6 py-3 md:py-4">
-                    <h3 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
-                        <i class="fas fa-arrow-down"></i>
-                        Gastos por Categoría
-                    </h3>
+            <article class="profit-section">
+                <div class="profit-section-head">
+                    <div>
+                        <span class="profit-section-kicker">Salida de dinero</span>
+                        <h3>Gastos por categoría</h3>
+                    </div>
+                    <span class="profit-money is-expense"><?= format_currency($total_gastos) ?></span>
                 </div>
-                <div class="p-4 md:p-6 table-container">
+                <div class="profit-section-body">
                     <?php if (!empty($datos['gastos'])): ?>
-                    <div class="overflow-x-auto">
-                        <table class="styled-table min-w-full">
-                            <thead>
-                                <tr>
-                                    <th class="rounded-tl-lg text-xs md:text-sm">Categoría</th>
-                                    <th class="text-center text-xs md:text-sm hidden md:table-cell">Cantidad</th>
-                                    <th class="text-right text-xs md:text-sm">Total</th>
-                                    <th class="text-center rounded-tr-lg text-xs md:text-sm">%</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($datos['gastos'] as $gasto): ?>
-                                <?php $porcentaje = $totales['gastos'] > 0 ? round(($gasto['total'] / $totales['gastos']) * 100, 1) : 0; ?>
-                                <tr>
-                                    <td class="px-3 md:px-4 py-2 md:py-3 font-medium text-gray-800 text-xs md:text-sm">
-                                        <i class="fas fa-tag text-red-500 mr-1 md:mr-2 text-xs"></i>
-                                        <?= $gasto['categoria'] ?>
-                                    </td>
-                                    <td class="px-3 md:px-4 py-2 md:py-3 text-center text-gray-600 text-xs md:text-sm hidden md:table-cell">
-                                        <?= number_format($gasto['cantidad']) ?>
-                                    </td>
-                                    <td class="px-3 md:px-4 py-2 md:py-3 text-right font-semibold text-red-700 text-xs md:text-sm">
-                                        <?= format_currency($gasto['total']) ?>
-                                    </td>
-                                    <td class="px-3 md:px-4 py-2 md:py-3 text-center text-xs md:text-sm">
-                                        <span class="font-medium text-gray-700"><?= $porcentaje ?>%</span>
-                                        <div class="percentage-bar hidden md:block">
-                                            <div class="percentage-fill bg-gradient-to-r from-red-400 to-red-600" style="width: <?= $porcentaje ?>%"></div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                            <tfoot>
-                                <tr class="bg-red-50 font-bold text-xs md:text-sm">
-                                    <td class="px-3 md:px-4 py-2 md:py-3">Total</td>
-                                    <td class="px-3 md:px-4 py-2 md:py-3 text-center hidden md:table-cell"><?= number_format(array_sum(array_column($datos['gastos'], 'cantidad'))) ?></td>
-                                    <td class="px-3 md:px-4 py-2 md:py-3 text-right text-red-700"><?= format_currency($totales['gastos']) ?></td>
-                                    <td class="px-3 md:px-4 py-2 md:py-3 text-center">100%</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                        <div class="profit-table-wrap">
+                            <table class="profit-table">
+                                <thead>
+                                    <tr>
+                                        <th>Categoría</th>
+                                        <th class="text-center">Cantidad</th>
+                                        <th class="text-right">Total</th>
+                                        <th class="text-center">%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($datos['gastos'] as $gasto): ?>
+                                        <?php $porcentaje = rep_ig_percent($gasto['total'] ?? 0, $total_gastos); ?>
+                                        <tr>
+                                            <td>
+                                                <strong><?= rep_ig_safe($gasto['categoria'] ?? '') ?></strong>
+                                                <div class="profit-bar is-expense">
+                                                    <span class="percentage-fill" style="width: <?= $porcentaje ?>%"></span>
+                                                </div>
+                                            </td>
+                                            <td class="text-center"><?= number_format($gasto['cantidad'] ?? 0) ?></td>
+                                            <td class="text-right profit-money is-expense"><?= format_currency($gasto['total'] ?? 0) ?></td>
+                                            <td class="text-center"><?= $porcentaje ?>%</td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td>Total</td>
+                                        <td class="text-center"><?= number_format(array_sum(array_column($datos['gastos'], 'cantidad'))) ?></td>
+                                        <td class="text-right"><?= format_currency($total_gastos) ?></td>
+                                        <td class="text-center">100%</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                     <?php else: ?>
-                    <div class="text-center py-6 md:py-8 text-gray-500">
-                        <i class="fas fa-info-circle text-3xl md:text-4xl mb-2"></i>
-                        <p class="text-sm md:text-base">No hay gastos registrados en este período. Los egresos aparecerán aquí cuando se capturen movimientos.</p>
-                    </div>
+                        <div class="profit-empty">
+                            <div>
+                                <i class="fas fa-info-circle"></i>
+                                <p>No hay gastos registrados en este periodo. Los egresos aparecerán aquí cuando se capturen movimientos.</p>
+                            </div>
+                        </div>
                     <?php endif; ?>
                 </div>
-            </div>
-        </div>
+            </article>
+        </section>
 
-        <!-- Resumen Diario - Tabla scrollable mejorada -->
         <?php if (!empty($resumenDiario)): ?>
-        <div class="bg-white rounded-xl shadow-sm border border-[#E0DDD5] overflow-hidden">
-            <div class="bg-gradient-to-r from-[#5C7A4E] to-[#4A6340] px-4 md:px-6 py-3 md:py-4">
-                <h3 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
-                    <i class="fas fa-calendar-day"></i>
-                    Detalle Diario
-                </h3>
-            </div>
-            <div class="p-4 md:p-6">
-                <div class="overflow-x-auto max-h-64 md:max-h-96 overflow-y-auto">
-                    <table class="styled-table min-w-full">
-                        <thead>
-                            <tr>
-                                <th class="rounded-tl-lg text-xs md:text-sm sticky left-0 bg-gradient-to-r from-[#5C7A4E] to-[#4A6340]">Fecha</th>
-                                <th class="text-xs md:text-sm hidden sm:table-cell">Día</th>
-                                <th class="text-right text-xs md:text-sm">Ingresos</th>
-                                <th class="text-right text-xs md:text-sm">Gastos</th>
-                                <th class="text-right rounded-tr-lg text-xs md:text-sm">Utilidad</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($resumenDiario as $dia): ?>
-                            <?php 
+            <section class="profit-section">
+                <div class="profit-section-head">
+                    <div>
+                        <span class="profit-section-kicker">Bitácora diaria</span>
+                        <h3>Detalle por día</h3>
+                    </div>
+                    <span class="profit-money"><?= number_format(count($resumenDiario)) ?> días</span>
+                </div>
+                <div class="profit-section-body">
+                    <div class="profit-daily-list">
+                        <?php foreach ($resumenDiario as $dia): ?>
+                            <?php
                             $fecha = strtotime($dia['fecha']);
                             $diaSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][date('w', $fecha)];
                             $esFinSemana = in_array(date('w', $fecha), [0, 6]);
                             ?>
-                            <tr class="<?= $esFinSemana ? 'bg-[#EEF5EB]' : '' ?>">
-                                <td class="px-3 md:px-4 py-2 md:py-3 font-medium text-xs md:text-sm sticky left-0 <?= $esFinSemana ? 'bg-[#EEF5EB]' : 'bg-white' ?>">
-                                    <?= date('d/m/Y', $fecha) ?>
-                                </td>
-                                <td class="px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm hidden sm:table-cell">
-                                    <span class="<?= $esFinSemana ? 'text-[#5C7A4E] font-semibold' : 'text-gray-600' ?>">
-                                        <?= $diaSemana ?>
-                                    </span>
-                                </td>
-                                <td class="px-3 md:px-4 py-2 md:py-3 text-right text-emerald-700 font-semibold text-xs md:text-sm">
-                                    <?= format_currency($dia['ingresos']) ?>
-                                </td>
-                                <td class="px-3 md:px-4 py-2 md:py-3 text-right text-red-700 font-semibold text-xs md:text-sm">
-                                    <?= format_currency($dia['gastos']) ?>
-                                </td>
-                                <td class="px-3 md:px-4 py-2 md:py-3 text-right font-bold <?= $dia['utilidad'] >= 0 ? 'text-[#5C7A4E]' : 'text-gray-700' ?> text-xs md:text-sm">
-                                    <span class="inline-flex items-center gap-1">
-                                        <i class="fas <?= $dia['utilidad'] >= 0 ? 'fa-caret-up' : 'fa-caret-down' ?> text-xs"></i>
-                                        <?= format_currency($dia['utilidad']) ?>
-                                    </span>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                            <article class="profit-day-row <?= $esFinSemana ? 'is-weekend' : '' ?>">
+                                <div>
+                                    <div class="profit-day-date"><?= date('d/m/Y', $fecha) ?></div>
+                                    <div class="profit-day-week"><?= $diaSemana ?><?= $esFinSemana ? ' · fin de semana' : '' ?></div>
+                                </div>
+                                <div>
+                                    <span class="profit-mini-label">Ingresos</span>
+                                    <strong class="profit-money is-income"><?= format_currency($dia['ingresos'] ?? 0) ?></strong>
+                                </div>
+                                <div>
+                                    <span class="profit-mini-label">Gastos</span>
+                                    <strong class="profit-money is-expense"><?= format_currency($dia['gastos'] ?? 0) ?></strong>
+                                </div>
+                                <div>
+                                    <span class="profit-mini-label">Utilidad</span>
+                                    <strong class="profit-money <?= ($dia['utilidad'] ?? 0) >= 0 ? 'is-income' : 'is-expense' ?>">
+                                        <?= rep_ig_money($dia['utilidad'] ?? 0, true) ?>
+                                    </strong>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </section>
         <?php endif; ?>
 
-        <!-- Insights y Recomendaciones -->
         <?php if (!empty($datos['ingresos']) || !empty($datos['gastos'])): ?>
-        <div class="mt-6 md:mt-8 bg-gradient-to-br from-[#C8A96A]/15 to-[#5C7A4E]/10 rounded-xl p-4 md:p-6 border border-[#C8A96A]/25">
-            <h3 class="text-base md:text-lg font-bold text-[#3D5234] mb-3 md:mb-4 flex items-center gap-2">
-                <i class="fas fa-lightbulb text-[#C8A96A]"></i>
-                Insights y Recomendaciones
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                <?php if (!empty($datos['ingresos'])): ?>
-                <div class="bg-white/80 backdrop-blur rounded-lg p-3 md:p-4">
-                    <h4 class="font-semibold text-gray-800 mb-1.5 md:mb-2 text-sm md:text-base">
-                        <i class="fas fa-chart-pie text-emerald-600 mr-1 md:mr-2"></i>
-                        Mayor fuente de ingresos
-                    </h4>
-                    <p class="text-xs md:text-sm text-gray-600">
-                        <?php 
-                        $maxIngreso = array_reduce($datos['ingresos'], function($carry, $item) {
-                            return (!$carry || $item['total'] > $carry['total']) ? $item : $carry;
-                        });
-                        ?>
-                        <strong><?= $maxIngreso['categoria'] ?></strong> representa el 
-                        <strong><?= round(($maxIngreso['total'] / $totales['ingresos']) * 100, 1) ?>%</strong>
-                        de los ingresos totales.
-                    </p>
+            <section class="profit-section">
+                <div class="profit-section-head">
+                    <div>
+                        <span class="profit-section-kicker">Lecturas rápidas</span>
+                        <h3>Insights del periodo</h3>
+                    </div>
                 </div>
-                <?php endif; ?>
-                
-                <?php if (!empty($datos['gastos'])): ?>
-                <div class="bg-white/80 backdrop-blur rounded-lg p-3 md:p-4">
-                    <h4 class="font-semibold text-gray-800 mb-1.5 md:mb-2 text-sm md:text-base">
-                        <i class="fas fa-exclamation-triangle text-red-600 mr-1 md:mr-2"></i>
-                        Mayor gasto
-                    </h4>
-                    <p class="text-xs md:text-sm text-gray-600">
-                        <?php 
-                        $maxGasto = array_reduce($datos['gastos'], function($carry, $item) {
-                            return (!$carry || $item['total'] > $carry['total']) ? $item : $carry;
-                        });
-                        ?>
-                        <strong><?= $maxGasto['categoria'] ?? 'N/A' ?></strong> representa el 
-                        <strong><?= $totales['gastos'] > 0 ? round(($maxGasto['total'] / $totales['gastos']) * 100, 1) : 0 ?>%</strong>
-                        de los gastos totales.
-                    </p>
+                <div class="profit-section-body">
+                    <div class="profit-insights">
+                        <?php if ($maxIngreso): ?>
+                            <article class="profit-insight">
+                                <span class="profit-label">Mayor ingreso</span>
+                                <p><strong><?= rep_ig_safe($maxIngreso['categoria'] ?? '') ?></strong> representa <strong><?= rep_ig_percent($maxIngreso['total'] ?? 0, $total_ingresos) ?>%</strong> de los ingresos.</p>
+                            </article>
+                        <?php endif; ?>
+
+                        <?php if ($maxGasto): ?>
+                            <article class="profit-insight">
+                                <span class="profit-label">Mayor gasto</span>
+                                <p><strong><?= rep_ig_safe($maxGasto['categoria'] ?? '') ?></strong> concentra <strong><?= rep_ig_percent($maxGasto['total'] ?? 0, $total_gastos) ?>%</strong> de los gastos.</p>
+                            </article>
+                        <?php endif; ?>
+
+                        <?php if ($mejorDia): ?>
+                            <article class="profit-insight">
+                                <span class="profit-label">Mejor día</span>
+                                <p><strong><?= rep_ig_date($mejorDia['fecha'] ?? null) ?></strong> cerró con utilidad de <strong><?= rep_ig_money($mejorDia['utilidad'] ?? 0, true) ?></strong>.</p>
+                            </article>
+                        <?php endif; ?>
+
+                        <article class="profit-insight">
+                            <span class="profit-label">Promedio diario</span>
+                            <p>La utilidad promedio del rango fue <strong><?= rep_ig_money($promedio_utilidad, true) ?></strong> por día.</p>
+                        </article>
+                    </div>
                 </div>
-                <?php endif; ?>
-                
-                <?php if (!empty($resumenDiario)): ?>
-                <div class="bg-white/80 backdrop-blur rounded-lg p-3 md:p-4">
-                    <h4 class="font-semibold text-gray-800 mb-1.5 md:mb-2 text-sm md:text-base">
-                        <i class="fas fa-calendar-check text-blue-600 mr-1 md:mr-2"></i>
-                        Mejor día
-                    </h4>
-                    <p class="text-xs md:text-sm text-gray-600">
-                        <?php 
-                        $mejorDia = array_reduce($resumenDiario, function($carry, $item) {
-                            return (!$carry || $item['utilidad'] > $carry['utilidad']) ? $item : $carry;
-                        });
-                        ?>
-                        El <strong><?= date('d/m/Y', strtotime($mejorDia['fecha'])) ?></strong>
-                        con una utilidad de <strong><?= format_currency($mejorDia['utilidad']) ?></strong>
-                    </p>
-                </div>
-                <?php endif; ?>
-                
-                <div class="bg-white/80 backdrop-blur rounded-lg p-3 md:p-4">
-                    <h4 class="font-semibold text-gray-800 mb-1.5 md:mb-2 text-sm md:text-base">
-                        <i class="fas fa-info-circle text-purple-600 mr-1 md:mr-2"></i>
-                        Promedio diario
-                    </h4>
-                    <p class="text-xs md:text-sm text-gray-600">
-                        Utilidad promedio: 
-                        <strong class="<?= ($totales['utilidad'] / max(count($resumenDiario ?? []), 1)) >= 0 ? 'text-[#5C7A4E]' : 'text-red-700' ?>">
-                            <?= format_currency($totales['utilidad'] / max(count($resumenDiario ?? []), 1)) ?>
-                        </strong> por día
-                    </p>
-                </div>
-            </div>
-        </div>
+            </section>
         <?php endif; ?>
-    </div>
+    </main>
 </div>
 
-<!-- Modal Reporte por Usuario -->
-<div id="modalReporteUsuario" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl p-4 md:p-6 max-w-md w-full mx-auto shadow-2xl border border-[#E0DDD5]">
-        <h3 class="text-base md:text-lg font-bold text-[#3D5234] mb-4">Reporte de Ingresos y Gastos por Usuario</h3>
-        <form id="formReporteUsuario" class="space-y-3 md:space-y-4">
-            <div>
-                <label class="block text-xs md:text-sm font-medium text-[#4A6340] mb-1 md:mb-2">Usuario</label>
-                <select name="usuario_id" required class="w-full px-3 py-2 border border-[#C8D9BE] rounded-lg focus:ring-2 focus:ring-[#5C7A4E]/20 focus:border-[#5C7A4E] text-sm md:text-base">
-                    <option value="">Seleccione un usuario</option>
-                    <?php foreach ($usuarios ?? [] as $usuario): ?>
-                        <option value="<?= $usuario['id'] ?>"><?= htmlspecialchars($usuario['nombre_completo']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs md:text-sm font-medium text-[#4A6340] mb-1 md:mb-2">Fecha Inicio</label>
-                <input type="date" name="fecha_inicio" required value="<?= date('Y-m-01') ?>" 
-                       class="w-full px-3 py-2 border border-[#C8D9BE] rounded-lg focus:ring-2 focus:ring-[#5C7A4E]/20 focus:border-[#5C7A4E] text-sm md:text-base">
-            </div>
-            <div>
-                <label class="block text-xs md:text-sm font-medium text-[#4A6340] mb-1 md:mb-2">Fecha Fin</label>
-                <input type="date" name="fecha_fin" required value="<?= date('Y-m-d') ?>" 
-                       class="w-full px-3 py-2 border border-[#C8D9BE] rounded-lg focus:ring-2 focus:ring-[#5C7A4E]/20 focus:border-[#5C7A4E] text-sm md:text-base">
-            </div>
-            <div class="flex flex-col sm:flex-row gap-2 pt-3 md:pt-4">
-                <button type="submit" class="flex-1 bg-[#5C7A4E] text-white px-4 py-2.5 rounded-lg hover:bg-[#4A6340] transition-colors text-sm md:text-base">
-                    Generar Reporte
-                </button>
-                <button type="button" onclick="cerrarModalReporteUsuario()" 
-                        class="flex-1 bg-gray-100 text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-200 transition-colors text-sm md:text-base border border-gray-200">
-                    Cancelar
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Modal Reporte de Ingresos Totales -->
-<div id="modalReporteIngresos" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl p-4 md:p-6 max-w-md w-full mx-auto shadow-2xl border border-[#E0DDD5]">
-        <h3 class="text-base md:text-lg font-bold text-[#3D5234] mb-4">Reporte de Ingresos Totales</h3>
-        <form id="formReporteIngresos" class="space-y-3 md:space-y-4">
-            <div>
-                <label class="block text-xs md:text-sm font-medium text-[#4A6340] mb-1 md:mb-2">Fecha Inicio</label>
-                <input type="date" name="fecha_inicio" required value="<?= date('Y-m-01') ?>" 
-                       class="w-full px-3 py-2 border border-[#C8D9BE] rounded-lg focus:ring-2 focus:ring-[#5C7A4E]/20 focus:border-[#5C7A4E] text-sm md:text-base">
-            </div>
-            <div>
-                <label class="block text-xs md:text-sm font-medium text-[#4A6340] mb-1 md:mb-2">Fecha Fin</label>
-                <input type="date" name="fecha_fin" required value="<?= date('Y-m-d') ?>" 
-                       class="w-full px-3 py-2 border border-[#C8D9BE] rounded-lg focus:ring-2 focus:ring-[#5C7A4E]/20 focus:border-[#5C7A4E] text-sm md:text-base">
-            </div>
-            <div>
-                <label class="block text-xs md:text-sm font-medium text-[#4A6340] mb-1 md:mb-2">Incluir detalles por</label>
-                <div class="space-y-2">
-                    <label class="flex items-center text-sm">
-                        <input type="checkbox" name="desglose[]" value="categoria" checked 
-                               class="rounded text-[#5C7A4E] focus:ring-[#5C7A4E] mr-2">
-                        <span>Categoría</span>
-                    </label>
-                    <label class="flex items-center text-sm">
-                        <input type="checkbox" name="desglose[]" value="metodo_pago" checked 
-                               class="rounded text-[#5C7A4E] focus:ring-[#5C7A4E] mr-2">
-                        <span>Método de pago</span>
-                    </label>
-                    <label class="flex items-center text-sm">
-                        <input type="checkbox" name="desglose[]" value="diario" 
-                               class="rounded text-[#5C7A4E] focus:ring-[#5C7A4E] mr-2">
-                        <span>Detalle diario</span>
-                    </label>
+<div id="modalReporteUsuario" class="profit-modal-overlay hidden">
+    <div class="profit-modal">
+        <div class="profit-modal-head">
+            <span class="profit-section-kicker">Exportación por usuario</span>
+            <h3>Reporte de ingresos y gastos por usuario</h3>
+        </div>
+        <form id="formReporteUsuario">
+            <div class="profit-modal-body">
+                <div>
+                    <label>Usuario</label>
+                    <select name="usuario_id" required>
+                        <option value="">Seleccione un usuario</option>
+                        <?php foreach ($usuarios as $usuario): ?>
+                            <option value="<?= $usuario['id'] ?>"><?= rep_ig_safe($usuario['nombre_completo'] ?? '') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <label>Fecha inicio</label>
+                    <input type="date" name="fecha_inicio" required value="<?= date('Y-m-01') ?>">
+                </div>
+                <div>
+                    <label>Fecha fin</label>
+                    <input type="date" name="fecha_fin" required value="<?= date('Y-m-d') ?>">
+                </div>
+                <div class="profit-modal-actions">
+                    <button type="submit" class="profit-btn">Generar reporte</button>
+                    <button type="button" onclick="cerrarModalReporteUsuario()" class="profit-btn is-soft" style="color: var(--pr-primary); border-color: var(--pr-line); background: var(--pr-soft);">Cancelar</button>
                 </div>
             </div>
-            <div class="flex flex-col sm:flex-row gap-2 pt-3 md:pt-4">
-                <button type="submit" class="flex-1 bg-[#C8A96A] text-[#3D5234] px-4 py-2.5 rounded-lg hover:bg-[#B8994A] transition-colors font-semibold text-sm md:text-base">
-                    Generar Reporte
-                </button>
-                <button type="button" onclick="cerrarModalReporteIngresos()" 
-                        class="flex-1 bg-gray-100 text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-200 transition-colors text-sm md:text-base border border-gray-200">
-                    Cancelar
-                </button>
+        </form>
+    </div>
+</div>
+
+<div id="modalReporteIngresos" class="profit-modal-overlay hidden">
+    <div class="profit-modal">
+        <div class="profit-modal-head">
+            <span class="profit-section-kicker">Exportación de ingresos</span>
+            <h3>Reporte de ingresos totales</h3>
+        </div>
+        <form id="formReporteIngresos">
+            <div class="profit-modal-body">
+                <div>
+                    <label>Fecha inicio</label>
+                    <input type="date" name="fecha_inicio" required value="<?= date('Y-m-01') ?>">
+                </div>
+                <div>
+                    <label>Fecha fin</label>
+                    <input type="date" name="fecha_fin" required value="<?= date('Y-m-d') ?>">
+                </div>
+                <div>
+                    <label>Incluir detalles por</label>
+                    <div class="profit-check-list">
+                        <label>
+                            <input type="checkbox" name="desglose[]" value="categoria" checked>
+                            <span>Categoría</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" name="desglose[]" value="metodo_pago" checked>
+                            <span>Método de pago</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" name="desglose[]" value="diario">
+                            <span>Detalle diario</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="profit-modal-actions">
+                    <button type="submit" class="profit-btn is-accent">Generar reporte</button>
+                    <button type="button" onclick="cerrarModalReporteIngresos()" class="profit-btn is-soft" style="color: var(--pr-primary); border-color: var(--pr-line); background: var(--pr-soft);">Cancelar</button>
+                </div>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Datos para la gráfica
-const datosGrafica = <?= json_encode($resumenDiario ?? []) ?>;
+const datosGrafica = <?= json_encode($resumenDiario) ?>;
+let myChart = null;
 
-// Solo crear gráfica si hay datos
 if (datosGrafica && datosGrafica.length > 0) {
-    const ctx = document.getElementById('graficaEvolucion').getContext('2d');
-    const chartConfig = {
-        type: 'line',
-        data: {
-            labels: datosGrafica.map(d => {
-                const fecha = new Date(d.fecha);
-                return fecha.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
-            }),
-            datasets: [{
-                label: 'Ingresos',
-                data: datosGrafica.map(d => d.ingresos),
-                borderColor: 'rgb(16, 185, 129)',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                tension: 0.3,
-                borderWidth: 3,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: 'rgb(16, 185, 129)',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2
-            }, {
-                label: 'Gastos',
-                data: datosGrafica.map(d => d.gastos),
-                borderColor: 'rgb(239, 68, 68)',
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                tension: 0.3,
-                borderWidth: 3,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: 'rgb(239, 68, 68)',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2
-            }, {
-                label: 'Utilidad',
-                data: datosGrafica.map(d => d.utilidad),
-                borderColor: 'rgb(59, 130, 246)',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                tension: 0.3,
-                borderWidth: 3,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: 'rgb(59, 130, 246)',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
+    const canvas = document.getElementById('graficaEvolucion');
+    if (canvas) {
+        const styles = getComputedStyle(document.querySelector('.profit-report-view'));
+        const incomeColor = styles.getPropertyValue('--pr-income').trim() || '#16824E';
+        const expenseColor = styles.getPropertyValue('--pr-expense').trim() || '#B93A32';
+        const infoColor = styles.getPropertyValue('--pr-info').trim() || '#2563A7';
+        const textColor = styles.getPropertyValue('--pr-text').trim() || '#17233E';
+        const gridColor = styles.getPropertyValue('--pr-line-soft').trim() || '#F0E7DB';
+
+        myChart = new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: datosGrafica.map(d => {
+                    const fecha = new Date(d.fecha);
+                    return fecha.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
+                }),
+                datasets: [{
+                    label: 'Ingresos',
+                    data: datosGrafica.map(d => d.ingresos),
+                    borderColor: incomeColor,
+                    backgroundColor: 'rgba(22, 130, 78, 0.10)',
+                    tension: 0.36,
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    fill: true
+                }, {
+                    label: 'Gastos',
+                    data: datosGrafica.map(d => d.gastos),
+                    borderColor: expenseColor,
+                    backgroundColor: 'rgba(185, 58, 50, 0.08)',
+                    tension: 0.36,
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    fill: true
+                }, {
+                    label: 'Utilidad',
+                    data: datosGrafica.map(d => d.utilidad),
+                    borderColor: infoColor,
+                    backgroundColor: 'rgba(37, 99, 167, 0.08)',
+                    tension: 0.36,
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    fill: false
+                }]
             },
-            plugins: {
-                title: {
-                    display: false
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
                 },
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 10,
-                        usePointStyle: true,
-                        font: {
-                            size: window.innerWidth < 768 ? 10 : 12,
-                            family: "'Inter', sans-serif"
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: textColor,
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            font: { weight: '700' }
                         }
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    padding: 8,
-                    cornerRadius: 8,
-                    titleFont: {
-                        size: 12,
-                        weight: 'bold'
                     },
-                    bodyFont: {
-                        size: 11
-                    },
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
+                    tooltip: {
+                        backgroundColor: 'rgba(23, 35, 62, .94)',
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.dataset.label ? context.dataset.label + ': ' : '';
+                                return label + '$' + Number(context.parsed.y || 0).toLocaleString('es-MX');
                             }
-                            if (context.parsed.y !== null) {
-                                label += '$' + context.parsed.y.toLocaleString('es-MX');
-                            }
-                            return label;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)',
-                        drawBorder: false
-                    },
-                    ticks: {
-                        padding: 5,
-                        callback: function(value) {
-                            return '$' + value.toLocaleString('es-MX');
-                        },
-                        font: {
-                            size: window.innerWidth < 768 ? 9 : 11
                         }
                     }
                 },
-                x: {
-                    grid: {
-                        display: false
+                scales: {
+                    x: {
+                        ticks: { color: textColor, font: { weight: '700' }, maxRotation: 0 },
+                        grid: { display: false }
                     },
-                    ticks: {
-                        padding: 5,
-                        font: {
-                            size: window.innerWidth < 768 ? 9 : 11
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: textColor,
+                            callback: function(value) {
+                                return '$' + Number(value || 0).toLocaleString('es-MX');
+                            }
                         },
-                        maxRotation: 45,
-                        minRotation: 45
+                        grid: { color: gridColor }
                     }
                 }
             }
-        }
-    };
+        });
 
-    const myChart = new Chart(ctx, chartConfig);
-    
-    // Función mejorada para alternar datasets con efecto visual
-    window.toggleDataset = function(index) {
-        const dataset = myChart.data.datasets[index];
-        dataset.hidden = !dataset.hidden;
-        myChart.update();
-        
-        // Actualizar el botón correspondiente
-        const buttons = ['toggleIngresos', 'toggleGastos', 'toggleUtilidad'];
-        const button = document.getElementById(buttons[index]);
-        const icon = button.querySelector('.toggle-icon');
-        
-        if (dataset.hidden) {
-            button.classList.add('dataset-hidden');
-            icon.classList.remove('fa-eye');
-            icon.classList.add('fa-eye-slash');
-        } else {
-            button.classList.remove('dataset-hidden');
-            icon.classList.remove('fa-eye-slash');
-            icon.classList.add('fa-eye');
-        }
+        window.toggleDataset = function(index) {
+            const dataset = myChart.data.datasets[index];
+            dataset.hidden = !dataset.hidden;
+            myChart.update();
+
+            const buttons = ['toggleIngresos', 'toggleGastos', 'toggleUtilidad'];
+            const button = document.getElementById(buttons[index]);
+            if (!button) return;
+
+            const icon = button.querySelector('.toggle-icon');
+            if (dataset.hidden) {
+                button.classList.add('dataset-hidden');
+                if (icon) {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                }
+            } else {
+                button.classList.remove('dataset-hidden');
+                if (icon) {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            }
+        };
     }
-    
-    // Actualizar el tamaño de fuente cuando cambie el tamaño de ventana
-    window.addEventListener('resize', function() {
-        myChart.options.plugins.legend.labels.font.size = window.innerWidth < 768 ? 10 : 12;
-        myChart.options.scales.y.ticks.font.size = window.innerWidth < 768 ? 9 : 11;
-        myChart.options.scales.x.ticks.font.size = window.innerWidth < 768 ? 9 : 11;
-        myChart.update();
-    });
 }
 
-// Exportar a PDF
 function exportarPDF() {
     const url = '<?= url('reportes/exportar-pdf') ?>?tipo=ingresos-gastos' +
                 '&fecha_inicio=<?= $fecha_inicio ?>' +
@@ -1306,89 +1438,84 @@ function exportarPDF() {
     window.open(url, '_blank');
 }
 
-// Funciones para períodos rápidos
+function enviarFiltroReporte() {
+    const form = document.getElementById('reporteFiltrosForm');
+    if (form) {
+        form.submit();
+    }
+}
+
 function setPeriodo(dias) {
     const fechaFin = new Date();
     const fechaInicio = new Date();
     fechaInicio.setDate(fechaInicio.getDate() - dias);
-    
+
     document.getElementById('fecha_inicio').value = fechaInicio.toISOString().split('T')[0];
     document.getElementById('fecha_fin').value = fechaFin.toISOString().split('T')[0];
-    document.querySelector('form').submit();
+    enviarFiltroReporte();
 }
 
 function setMesActual() {
     const fecha = new Date();
     const primerDia = new Date(fecha.getFullYear(), fecha.getMonth(), 1);
     const ultimoDia = new Date(fecha.getFullYear(), fecha.getMonth() + 1, 0);
-    
+
     document.getElementById('fecha_inicio').value = primerDia.toISOString().split('T')[0];
     document.getElementById('fecha_fin').value = ultimoDia.toISOString().split('T')[0];
-    document.querySelector('form').submit();
+    enviarFiltroReporte();
 }
 
 function setAnioActual() {
     const fecha = new Date();
     const primerDia = new Date(fecha.getFullYear(), 0, 1);
-    
+
     document.getElementById('fecha_inicio').value = primerDia.toISOString().split('T')[0];
     document.getElementById('fecha_fin').value = fecha.toISOString().split('T')[0];
-    document.querySelector('form').submit();
+    enviarFiltroReporte();
 }
 
-// Reemplazar las funciones de apertura y cierre de modales con estas versiones actualizadas:
-
 function abrirModalReporteUsuario() {
-    // Ocultar sidebar
     const sidebar = document.getElementById('sidebar');
     if (sidebar) {
         sidebar.style.display = 'none';
     }
-    
-    // Mostrar modal
+
     document.getElementById('modalReporteUsuario').classList.remove('hidden');
     document.body.classList.add('overflow-hidden');
 }
 
 function cerrarModalReporteUsuario() {
-    // Restaurar sidebar
     const sidebar = document.getElementById('sidebar');
     if (sidebar) {
         sidebar.style.display = '';
     }
-    
-    // Ocultar modal
+
     document.getElementById('modalReporteUsuario').classList.add('hidden');
     document.body.classList.remove('overflow-hidden');
     document.getElementById('modalReporteUsuario').querySelector('form').reset();
 }
 
 function abrirModalReporteIngresos() {
-    // Ocultar sidebar
     const sidebar = document.getElementById('sidebar');
     if (sidebar) {
         sidebar.style.display = 'none';
     }
-    
-    // Mostrar modal
+
     document.getElementById('modalReporteIngresos').classList.remove('hidden');
     document.body.classList.add('overflow-hidden');
 }
 
 function cerrarModalReporteIngresos() {
-    // Restaurar sidebar
     const sidebar = document.getElementById('sidebar');
     if (sidebar) {
         sidebar.style.display = '';
     }
-    
-    // Ocultar modal
+
     document.getElementById('modalReporteIngresos').classList.add('hidden');
     document.body.classList.remove('overflow-hidden');
     document.getElementById('modalReporteIngresos').querySelector('form').reset();
 }
 
-// Manejar envío de formularios
 document.getElementById('formReporteUsuario').addEventListener('submit', function(e) {
     e.preventDefault();
     const formData = new FormData(this);
@@ -1405,49 +1532,36 @@ document.getElementById('formReporteIngresos').addEventListener('submit', functi
     cerrarModalReporteIngresos();
 });
 
-// Animación de carga
 document.addEventListener('DOMContentLoaded', function() {
     const view = document.querySelector('.reporte-view');
     if (view) {
-        setTimeout(() => {
-            view.classList.add('loaded');
-        }, 100);
+        requestAnimationFrame(() => view.classList.add('loaded'));
     }
-    
-    // Animar barras de porcentaje
+
     setTimeout(() => {
         document.querySelectorAll('.percentage-fill').forEach(bar => {
             const width = bar.style.width;
             bar.style.width = '0';
-            setTimeout(() => {
+            requestAnimationFrame(() => {
                 bar.style.width = width;
-            }, 100);
+            });
         });
-    }, 500);
-    
-    // Efecto de conteo para números grandes
-    document.querySelectorAll('.count-up').forEach(element => {
-        const finalText = element.textContent;
-        element.textContent = '$0';
-        setTimeout(() => {
-            element.textContent = finalText;
-        }, 300);
-    });
+    }, 250);
 });
 
-// Print styles
-if (window.myChart) {
-    window.addEventListener('beforeprint', function() {
+window.addEventListener('beforeprint', function() {
+    if (myChart) {
         myChart.resize(800, 400);
-    });
+    }
+});
 
-    window.addEventListener('afterprint', function() {
+window.addEventListener('afterprint', function() {
+    if (myChart) {
         myChart.resize();
-    });
-}
+    }
+});
 </script>
 
-<!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <?php include __DIR__ . '/../layout/footer.php'; ?>

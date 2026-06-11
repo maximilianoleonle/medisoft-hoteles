@@ -1,471 +1,1130 @@
 <?php require_once APP_PATH . '/views/layout/header.php'; ?>
+<?php
+$productos_automaticos = $productos_automaticos ?? [];
+$configuracion = $configuracion ?? [];
+$tipos_habitacion = $tipos_habitacion ?? [];
+$iconos = $iconos ?? [
+    'sencilla' => 'fa-bed',
+    'doble' => 'fa-bed',
+    'triple' => 'fa-bed',
+    'cuadruple' => 'fa-bed',
+    'sencilla_manolo' => 'fa-bed',
+    'doble_manolo' => 'fa-bed',
+    'doble_jacuzzi' => 'fa-hot-tub',
+    'sencilla_jacuzzi' => 'fa-hot-tub',
+];
+
+if (!function_exists('discount_safe')) {
+    function discount_safe($value, $fallback = '-') {
+        $text = trim((string)($value ?? ''));
+        return htmlspecialchars($text !== '' ? $text : $fallback, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+$tipoEstilos = [
+    'sencilla' => ['color' => '#3B83BD', 'bg' => '#E8F3FA', 'label' => 'Sencilla'],
+    'doble' => ['color' => '#16824E', 'bg' => '#EAF6EF', 'label' => 'Doble'],
+    'triple' => ['color' => '#8B5CF6', 'bg' => '#F1EBFF', 'label' => 'Triple'],
+    'cuadruple' => ['color' => '#B7791F', 'bg' => '#FFF4D8', 'label' => 'Cuádruple'],
+    'sencilla_manolo' => ['color' => '#0F766E', 'bg' => '#E6FFFA', 'label' => 'Sencilla Manolo'],
+    'doble_manolo' => ['color' => '#0891B2', 'bg' => '#E8F7FB', 'label' => 'Doble Manolo'],
+    'doble_jacuzzi' => ['color' => '#BE5B8D', 'bg' => '#FDF2F8', 'label' => 'Doble jacuzzi'],
+    'sencilla_jacuzzi' => ['color' => '#4F46E5', 'bg' => '#EEF2FF', 'label' => 'Sencilla jacuzzi'],
+];
+
+$configIndex = [];
+$totalConfigurado = 0;
+foreach ($configuracion as $tipo => $configs) {
+    foreach ((array)$configs as $config) {
+        $productoId = (int)($config['producto_id'] ?? 0);
+        $cantidad = (int)($config['cantidad_descontar'] ?? 0);
+        $configIndex[$tipo][$productoId] = $cantidad;
+        $totalConfigurado += $cantidad;
+    }
+}
+
+$productosCount = count($productos_automaticos);
+$tiposCount = count($tipos_habitacion);
+$stockTotal = array_sum(array_map(fn($producto) => (int)($producto['stock_actual'] ?? 0), $productos_automaticos));
+$reglasActivas = 0;
+foreach ($configIndex as $configs) {
+    foreach ($configs as $cantidad) {
+        if ((int)$cantidad > 0) {
+            $reglasActivas++;
+        }
+    }
+}
+
+$hotelNombre = function_exists('current_hotel_display_name')
+    ? current_hotel_display_name('Medisoft Hoteles')
+    : 'Medisoft Hoteles';
+?>
 
 <style>
-/* ══════════════════════════════════════════
-   LOS CEDROS · Configuración Inventario
-   Sage green / gold / warm cream palette
-   ══════════════════════════════════════════ */
-:root {
-    --lc-green:        #5C7A4E;
-    --lc-green-dark:   #4A6340;
-    --lc-green-deep:   #3D5234;
-    --lc-green-light:  #7A9B6A;
-    --lc-gold:         #C8A96A;
-    --lc-gold-light:   #D9BF8A;
-    --lc-cream:        #F7F4EE;
-    --lc-cream-mid:    #EEE9DE;
+.discount-config-view {
+    --disc-primary: var(--brand-primary, #1B2746);
+    --disc-secondary: var(--brand-secondary, #0F172A);
+    --disc-accent: var(--brand-accent, #BD9441);
+    --disc-bg: color-mix(in srgb, var(--disc-accent) 8%, #F6F1E8);
+    --disc-surface: color-mix(in srgb, var(--disc-accent) 3%, #FFFDF8);
+    --disc-soft: color-mix(in srgb, var(--disc-primary) 5%, #FFFDF8);
+    --disc-line: color-mix(in srgb, var(--disc-primary) 13%, #E8DCCA);
+    --disc-line-soft: color-mix(in srgb, var(--disc-primary) 8%, #F1E8DA);
+    --disc-text: #17233E;
+    --disc-muted: #748096;
+    --disc-good: #16824E;
+    --disc-warn: #B7791F;
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 12% 7%, color-mix(in srgb, var(--disc-accent) 22%, transparent), transparent 28rem),
+        linear-gradient(135deg, color-mix(in srgb, var(--disc-primary) 6%, transparent) 0 1px, transparent 1px 30px),
+        linear-gradient(180deg, var(--disc-bg), #FBFAF7 54%, #F1EAE0);
+    color: var(--disc-text);
+    opacity: 0;
+    transition: opacity .24s ease;
 }
 
-.config-page {
-    background: linear-gradient(145deg,#EFF4EC 0%,#E8EFE3 45%,#F4F1EB 100%);
-    min-height:100vh;
+.discount-config-view.loaded {
+    opacity: 1;
 }
 
-/* ── Top bar ─────────────────────────────── */
-.cfg-topbar {
-    background: #fff;
-    border-bottom: 1px solid #DDE8D5;
+.disc-shell {
+    width: min(1500px, calc(100% - 28px));
+    margin: 0 auto;
+    padding: 28px 0 48px;
+}
+
+.disc-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.16fr) minmax(330px, .84fr);
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.disc-hero-main,
+.disc-side-panel,
+.disc-metric,
+.disc-panel,
+.disc-preview-card,
+.disc-empty {
+    border: 1px solid var(--disc-line);
+    background: var(--disc-surface);
+    box-shadow: 0 20px 54px -42px rgba(15, 23, 42, .5);
+}
+
+.disc-hero-main {
     position: relative;
-}
-.cfg-topbar::after {
-    content:''; position:absolute; bottom:0; left:0; right:0; height:2px;
-    background: linear-gradient(90deg, var(--lc-green-deep), var(--lc-gold), var(--lc-green-deep));
-}
-
-/* ── Panels ──────────────────────────────── */
-.cfg-panel {
-    background:#fff; border-radius:14px;
-    border:1px solid #DDE8D5; overflow:hidden;
-}
-.cfg-panel-hd {
-    background:linear-gradient(135deg,var(--lc-green),var(--lc-green-dark));
-    padding:12px 16px;
-    display:flex; align-items:center; justify-content:space-between;
-}
-.cfg-panel-hd-icon {
-    width:28px; height:28px; border-radius:8px;
-    background:rgba(255,255,255,.18);
-    display:flex; align-items:center; justify-content:center;
+    min-height: 325px;
+    overflow: hidden;
+    border-radius: 28px;
+    padding: clamp(24px, 4vw, 44px);
+    border-color: color-mix(in srgb, var(--disc-accent) 28%, transparent);
+    background:
+        radial-gradient(circle at 86% 18%, color-mix(in srgb, var(--disc-accent) 34%, transparent), transparent 22rem),
+        linear-gradient(135deg, color-mix(in srgb, var(--disc-primary) 96%, #0B1020), var(--disc-secondary));
 }
 
-/* ── Info box ────────────────────────────── */
-.cfg-info {
-    background:linear-gradient(135deg,#F0F5ED,#E8EFE3);
-    border:1px solid #D5E4CB;
-    border-radius:12px;
-    padding:14px;
-}
-.cfg-info-item {
-    display:flex; align-items:center; gap:6px;
-    font-size:.72rem; color:#4A6340; font-weight:500;
-}
-.cfg-info-item i { font-size:.65rem; }
-
-/* ── Table config ────────────────────────── */
-.cfg-th {
-    font-size:.63rem; font-weight:700; letter-spacing:.04em;
-    text-transform:uppercase; color:#7A9B6A;
-    padding:8px 6px; white-space:nowrap;
-}
-.cfg-td {
-    padding:8px 4px;
-    border-bottom:1px solid #F0F5ED;
-    transition: background .15s;
-}
-.cfg-tr:hover .cfg-td { background:#F7FCF4; }
-
-.cfg-tipo-badge {
-    display:inline-flex; align-items:center; gap:5px;
-    padding:3px 8px; border-radius:6px;
-    font-size:.72rem; font-weight:600;
+.disc-hero-main::after {
+    content: "";
+    position: absolute;
+    inset: auto -11% -42% 42%;
+    height: 250px;
+    background: radial-gradient(circle, color-mix(in srgb, var(--disc-accent) 42%, transparent), transparent 67%);
+    pointer-events: none;
 }
 
-/* ── Counter ─────────────────────────────── */
-.cfg-counter {
-    display:inline-flex; align-items:center;
-    background:#F0F5ED; border:1px solid #D5E4CB;
-    border-radius:8px; overflow:hidden;
-}
-.cfg-counter button {
-    width:28px; height:28px; border:none; background:transparent;
-    color:#5C7A4E; font-size:.7rem; cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-    transition: background .15s;
-}
-.cfg-counter button:hover { background:#E5EDE0; }
-.cfg-counter button:active { background:#D5E4CB; }
-.cfg-counter input {
-    width:32px; text-align:center; border:none; background:transparent;
-    font-size:.8rem; font-weight:700; color:#3D5234;
-    -moz-appearance:textfield;
-}
-.cfg-counter input::-webkit-outer-spin-button,
-.cfg-counter input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
-
-/* ── Total badge ─────────────────────────── */
-.cfg-total {
-    display:inline-flex; align-items:center;
-    background:rgba(92,122,78,.1); color:#3D5234;
-    border:1px solid rgba(92,122,78,.22);
-    padding:2px 10px; border-radius:20px;
-    font-size:.72rem; font-weight:700;
+.disc-back,
+.disc-btn,
+.disc-counter button {
+    transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
 }
 
-/* ── Buttons ─────────────────────────────── */
-.btn-cfg {
-    display:inline-flex; align-items:center; justify-content:center;
-    gap:6px; padding:8px 16px; border-radius:9px;
-    font-size:.78rem; font-weight:700;
-    transition: transform .2s, box-shadow .2s;
-    text-decoration:none; border:none; cursor:pointer;
-}
-.btn-cfg:hover { transform:translateY(-1px); }
-.btn-cfg.save {
-    background:linear-gradient(135deg,#5C7A4E,#4A6340); color:#fff;
-}
-.btn-cfg.save:hover { box-shadow: 0 6px 16px rgba(74,99,64,.3); }
-.btn-cfg.reset {
-    background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff;
-}
-.btn-cfg.reset:hover { box-shadow: 0 6px 16px rgba(245,158,11,.3); }
-.btn-cfg.back {
-    background:#F0F5ED; color:#4A6340; border:1px solid #C8D8BE;
-}
-.btn-cfg.back:hover { background:#E5EDE0; box-shadow: 0 3px 10px rgba(92,122,78,.12); }
-
-/* ── Product preview cards ───────────────── */
-.cfg-preview-card {
-    background:#fff; border:1px solid #E0EBD8;
-    border-radius:10px; padding:12px;
-    transition: transform .2s, box-shadow .2s;
-}
-.cfg-preview-card:hover {
-    transform:translateY(-2px);
-    box-shadow: 0 6px 16px rgba(92,122,78,.1);
+.disc-back {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 38px;
+    padding: 0 13px;
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 13px;
+    background: rgba(255, 255, 255, .09);
+    color: #FFFDF8;
+    font-weight: 850;
+    text-decoration: none;
 }
 
-/* ── Mobile: card-based config ───────────── */
-.cfg-mobile-card {
-    background:#fff; border:1px solid #E0EBD8;
-    border-radius:10px; padding:10px 12px;
-    margin-bottom:8px;
-}
-.cfg-mobile-card .tipo-label {
-    display:flex; align-items:center; gap:6px;
-    font-size:.78rem; font-weight:600; color:#3D5234;
-    margin-bottom:8px; padding-bottom:6px;
-    border-bottom:1px solid #F0F5ED;
-}
-.cfg-mobile-card .tipo-label i { font-size:.7rem; }
-.cfg-mobile-row {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:4px 0;
-}
-.cfg-mobile-row + .cfg-mobile-row { border-top:1px solid #FAFDF8; }
-.cfg-mobile-row .prod-name {
-    font-size:.72rem; color:#4A6340; font-weight:500;
-    flex:1; min-width:0;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    margin-right:8px;
+.disc-back:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, .32);
+    background: rgba(255, 255, 255, .14);
 }
 
-/* Show/hide based on screen */
-@media (max-width: 639px) {
-    .cfg-table-desktop { display:none !important; }
-    .cfg-cards-mobile  { display:block !important; }
-}
-@media (min-width: 640px) {
-    .cfg-cards-mobile  { display:none !important; }
+.disc-kicker,
+.disc-label,
+.disc-section-kicker,
+.disc-table th,
+.disc-mini-label {
+    color: var(--disc-muted);
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .07em;
+    text-transform: uppercase;
 }
 
-/* ── Custom scrollbar ────────────────────── */
-.lc-scroll::-webkit-scrollbar { width:4px; height:4px; }
-.lc-scroll::-webkit-scrollbar-track { background:#F0F5ED; border-radius:4px; }
-.lc-scroll::-webkit-scrollbar-thumb { background:#A8C4A0; border-radius:4px; }
-.lc-scroll::-webkit-scrollbar-thumb:hover { background:var(--lc-green); }
+.disc-kicker {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 26px;
+    color: color-mix(in srgb, var(--disc-accent) 82%, #FFFDF8);
+}
 
-/* ── Prevent FOUC ────────────────────────── */
-.config-view { opacity:0; transition:opacity .3s ease; }
-.config-view.loaded { opacity:1; }
+.disc-hero-main h1 {
+    position: relative;
+    z-index: 1;
+    max-width: 12ch;
+    margin: 14px 0 14px;
+    color: #FFFDF8;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(2.4rem, 5vw, 5.15rem);
+    font-weight: 700;
+    line-height: .9;
+    letter-spacing: 0;
+    text-wrap: balance;
+}
+
+.disc-hero-main p {
+    position: relative;
+    z-index: 1;
+    max-width: 68ch;
+    margin: 0;
+    color: rgba(255, 255, 255, .73);
+    font-weight: 650;
+    line-height: 1.6;
+}
+
+.disc-hero-actions {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.disc-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 42px;
+    padding: 0 16px;
+    border: 1px solid color-mix(in srgb, var(--disc-accent) 45%, var(--disc-primary));
+    border-radius: 13px;
+    background: var(--disc-primary);
+    color: #FFFDF8;
+    font-weight: 900;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.disc-btn.is-accent {
+    background: color-mix(in srgb, var(--disc-accent) 88%, #FFFDF8);
+    color: color-mix(in srgb, var(--disc-primary) 88%, #000);
+}
+
+.disc-btn.is-soft {
+    border-color: rgba(255, 255, 255, .22);
+    background: rgba(255, 255, 255, .1);
+    color: #FFFDF8;
+}
+
+.disc-btn.is-warning {
+    border-color: color-mix(in srgb, var(--disc-warn) 44%, var(--disc-line));
+    background: color-mix(in srgb, var(--disc-warn) 88%, #FFFDF8);
+    color: #3D2A0A;
+}
+
+.disc-btn:hover,
+.disc-counter button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 32px -25px rgba(15, 23, 42, .58);
+}
+
+.disc-side-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 18px;
+    border-radius: 25px;
+    padding: 20px;
+}
+
+.disc-side-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.disc-side-title {
+    margin-top: 7px;
+    color: var(--disc-primary);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(1.5rem, 3vw, 2.35rem);
+    font-weight: 700;
+    line-height: 1;
+}
+
+.disc-icon {
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--disc-accent) 13%, #FFFDF8);
+    color: color-mix(in srgb, var(--disc-accent) 82%, var(--disc-primary));
+}
+
+.disc-flow {
+    display: grid;
+    gap: 10px;
+}
+
+.disc-flow-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 11px;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid var(--disc-line-soft);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--disc-accent) 3%, #FFFDF8);
+}
+
+.disc-flow-item strong {
+    display: block;
+    color: var(--disc-primary);
+    font-weight: 950;
+}
+
+.disc-flow-item span {
+    display: block;
+    color: var(--disc-muted);
+    font-size: .78rem;
+    font-weight: 750;
+}
+
+.disc-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.disc-metric {
+    min-width: 0;
+    overflow: hidden;
+    border-radius: 21px;
+    padding: 18px;
+}
+
+.disc-metric-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.disc-value {
+    margin-top: 13px;
+    color: var(--disc-primary);
+    font-size: clamp(1.45rem, 2.8vw, 2.2rem);
+    font-weight: 950;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.disc-note {
+    margin-top: 9px;
+    color: var(--disc-muted);
+    font-size: .8rem;
+    font-weight: 750;
+}
+
+.disc-panel {
+    border-radius: 22px;
+    overflow: hidden;
+    margin-bottom: 18px;
+}
+
+.disc-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--disc-line-soft);
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--disc-accent) 6%, #FFFDF8), var(--disc-surface));
+}
+
+.disc-section-head h2,
+.disc-section-head h3 {
+    margin: 0;
+    color: var(--disc-primary);
+    font-size: 1.05rem;
+    font-weight: 950;
+}
+
+.disc-section-body {
+    padding: 18px 20px 20px;
+}
+
+.disc-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--disc-primary) 7%, #FFFDF8);
+    color: var(--disc-primary);
+    font-size: .73rem;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.disc-table-wrap {
+    overflow-x: auto;
+}
+
+.disc-table {
+    width: 100%;
+    min-width: max(920px, 100%);
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.disc-table th {
+    padding: 13px 10px;
+    border-bottom: 1px solid var(--disc-line);
+    background: color-mix(in srgb, var(--disc-accent) 7%, #FFFDF8);
+    text-align: center;
+    vertical-align: top;
+}
+
+.disc-table th:first-child,
+.disc-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    text-align: left;
+    background: var(--disc-surface);
+}
+
+.disc-table th:first-child {
+    z-index: 3;
+    background: color-mix(in srgb, var(--disc-accent) 7%, #FFFDF8);
+}
+
+.disc-table td {
+    padding: 13px 10px;
+    border-bottom: 1px solid var(--disc-line-soft);
+    text-align: center;
+}
+
+.disc-table tbody tr {
+    transition: background .18s ease;
+}
+
+.disc-table tbody tr:hover {
+    background: color-mix(in srgb, var(--disc-accent) 5%, #FFFDF8);
+}
+
+.disc-product-head strong {
+    display: block;
+    max-width: 145px;
+    margin: 0 auto;
+    color: var(--disc-primary);
+    font-size: .78rem;
+    font-weight: 950;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.disc-product-head span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 6px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--disc-good) 10%, #FFFDF8);
+    color: var(--disc-good);
+    font-size: .66rem;
+    font-weight: 900;
+}
+
+.disc-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 0 11px;
+    border-radius: 13px;
+    font-size: .82rem;
+    font-weight: 950;
+    white-space: nowrap;
+}
+
+.disc-type-icon {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(255,255,255,.62);
+    font-size: .72rem;
+}
+
+.disc-counter {
+    width: 104px;
+    display: inline-grid;
+    grid-template-columns: 30px 44px 30px;
+    align-items: center;
+    overflow: hidden;
+    border: 1px solid var(--disc-line);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--disc-accent) 3%, #FFFDF8);
+}
+
+.disc-counter button {
+    width: 30px;
+    height: 34px;
+    border: 0;
+    background: transparent;
+    color: var(--disc-primary);
+    cursor: pointer;
+}
+
+.disc-counter button:hover {
+    background: color-mix(in srgb, var(--disc-accent) 10%, #FFFDF8);
+}
+
+.disc-counter input {
+    width: 44px;
+    height: 34px;
+    border: 0;
+    background: transparent;
+    color: var(--disc-primary);
+    font-size: .9rem;
+    font-weight: 950;
+    text-align: center;
+    outline: none;
+    font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield;
+}
+
+.disc-counter input::-webkit-outer-spin-button,
+.disc-counter input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.disc-total {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    min-height: 30px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--disc-accent) 15%, #FFFDF8);
+    color: var(--disc-primary);
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.disc-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--disc-line-soft);
+    background: color-mix(in srgb, var(--disc-accent) 3%, #FFFDF8);
+}
+
+.disc-mobile-grid {
+    display: none;
+    gap: 12px;
+}
+
+.disc-mobile-card {
+    border: 1px solid var(--disc-line-soft);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--disc-primary) 3%, #FFFDF8);
+    overflow: hidden;
+}
+
+.disc-mobile-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px;
+    border-bottom: 1px solid var(--disc-line-soft);
+}
+
+.disc-mobile-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 13px;
+    border-top: 1px solid var(--disc-line-soft);
+}
+
+.disc-mobile-row:first-of-type {
+    border-top: 0;
+}
+
+.disc-mobile-row strong {
+    color: var(--disc-primary);
+    font-size: .86rem;
+    font-weight: 850;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.disc-mobile-row span {
+    display: block;
+    color: var(--disc-muted);
+    font-size: .72rem;
+    font-weight: 750;
+}
+
+.disc-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+    gap: 14px;
+}
+
+.disc-preview-card {
+    border-radius: 20px;
+    padding: 17px;
+    transition: transform .2s ease, border-color .2s ease, background .2s ease;
+}
+
+.disc-preview-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--disc-accent) 34%, var(--disc-line));
+    background: color-mix(in srgb, var(--disc-accent) 4%, var(--disc-surface));
+}
+
+.disc-preview-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 13px;
+}
+
+.disc-preview-head strong {
+    display: block;
+    color: var(--disc-primary);
+    font-size: .96rem;
+    font-weight: 950;
+}
+
+.disc-preview-head span {
+    display: block;
+    margin-top: 3px;
+    color: var(--disc-muted);
+    font-size: .76rem;
+    font-weight: 750;
+}
+
+.disc-consumo {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    color: var(--disc-primary);
+}
+
+.disc-consumo strong {
+    font-size: 2rem;
+    line-height: 1;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.disc-progress {
+    height: 8px;
+    overflow: hidden;
+    margin: 14px 0 11px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--disc-primary) 8%, #FFFDF8);
+}
+
+.disc-progress span {
+    display: block;
+    width: var(--progress, 0%);
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--disc-good), color-mix(in srgb, var(--disc-accent) 78%, #FFFDF8));
+    transition: width .25s ease;
+}
+
+.disc-empty {
+    display: grid;
+    place-items: center;
+    min-height: 360px;
+    border-radius: 24px;
+    padding: 42px 20px;
+    text-align: center;
+}
+
+.disc-empty i {
+    width: 70px;
+    height: 70px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    border-radius: 24px;
+    background: color-mix(in srgb, var(--disc-accent) 13%, #FFFDF8);
+    color: color-mix(in srgb, var(--disc-accent) 82%, var(--disc-primary));
+    font-size: 1.8rem;
+}
+
+.disc-empty h2 {
+    margin: 0;
+    color: var(--disc-primary);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(1.7rem, 4vw, 2.6rem);
+    line-height: 1;
+}
+
+.disc-empty p {
+    max-width: 520px;
+    margin: 12px auto 22px;
+    color: var(--disc-muted);
+    font-weight: 750;
+    line-height: 1.55;
+}
+
+@media (max-width: 1180px) {
+    .disc-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .disc-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .disc-shell {
+        width: min(100% - 20px, 1500px);
+        padding: 18px 0 34px;
+    }
+
+    .disc-hero-main,
+    .disc-side-panel,
+    .disc-metric,
+    .disc-panel,
+    .disc-preview-card {
+        border-radius: 18px;
+    }
+
+    .disc-hero-main {
+        min-height: auto;
+        padding: 22px;
+    }
+
+    .disc-kicker {
+        margin-top: 20px;
+    }
+
+    .disc-hero-main h1 {
+        max-width: 10ch;
+        font-size: clamp(2.1rem, 14vw, 3.55rem);
+    }
+
+    .disc-metrics,
+    .disc-actions {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+    }
+
+    .disc-section-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .disc-table-desktop {
+        display: none;
+    }
+
+    .disc-mobile-grid {
+        display: grid;
+    }
+}
+
+@media print {
+    .discount-config-view {
+        background: #fff !important;
+    }
+
+    .disc-hero-actions,
+    .disc-back,
+    .disc-actions,
+    .discount-config-view button {
+        display: none !important;
+    }
+
+    .disc-shell {
+        width: 100%;
+        padding: 0;
+    }
+
+    .disc-panel,
+    .disc-metric {
+        box-shadow: none !important;
+    }
+}
 </style>
 
-<div class="config-view config-page">
-
-    <!-- Top Bar -->
-    <div class="cfg-topbar">
-        <div class="px-4 sm:px-5 lg:px-8 py-4">
-            <div class="flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
-                    <div style="width:40px;height:40px;border-radius:11px;background:rgba(92,122,78,.12);color:#5C7A4E;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">
-                        <i class="fas fa-cog"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-base sm:text-lg font-bold text-[#3D5234] leading-tight">Configuración de Descuentos</h1>
-                        <p class="text-xs text-gray-400 mt-0.5">Descuento automático al check-in · <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?></p>
-                    </div>
-                </div>
-                <a href="<?= url('inventario') ?>" class="btn-cfg back">
-                    <i class="fas fa-arrow-left text-xs"></i>
-                    <span class="hidden sm:inline">Volver</span>
+<div class="discount-config-view config-view">
+    <main class="disc-shell">
+        <section class="disc-hero">
+            <div class="disc-hero-main">
+                <a href="<?= url('inventario') ?>" class="disc-back">
+                    <i class="fas fa-arrow-left"></i>
+                    Inventario
                 </a>
-            </div>
-        </div>
-    </div>
 
-    <!-- Content -->
-    <div class="px-4 sm:px-5 lg:px-8 py-5">
+                <div class="disc-kicker">
+                    <i class="fas fa-layer-group"></i>
+                    Configuración de descuentos
+                </div>
 
-        <!-- Info Box -->
-        <div class="cfg-info mb-4">
-            <div class="flex items-start gap-3 mb-2">
-                <i class="fas fa-info-circle text-[#5C7A4E] mt-0.5 flex-shrink-0"></i>
-                <p class="text-xs text-[#3D5234]">
-                    <strong>¿Cómo funciona?</strong> Configure cuántas unidades de cada producto se descuentan al hacer check-in, según el tipo de habitación.
+                <h1>Matriz de consumo automático</h1>
+                <p>
+                    Define cuántas unidades se descuentan al check-in según el tipo de habitación. La configuración se guarda como reglas operativas para el hotel.
                 </p>
-            </div>
-            <div class="flex flex-wrap gap-2 ml-6">
-                <div class="cfg-info-item"><i class="fas fa-check-circle"></i>Solo productos con auto-descuento</div>
-                <div class="cfg-info-item"><i class="fas fa-sign-in-alt"></i>Se aplica una vez al check-in</div>
-                <div class="cfg-info-item"><i class="fas fa-exclamation-triangle"></i>Sin stock = sin descuento</div>
-            </div>
-        </div>
 
-        <?php if (empty($productos_automaticos)): ?>
-            <div class="cfg-panel">
-                <div class="text-center py-12 px-4">
-                    <i class="fas fa-exclamation-triangle text-3xl mb-2" style="color:#D5E4CB"></i>
-                    <p class="text-gray-500 text-sm mb-1 font-semibold">No hay productos configurados</p>
-                    <p class="text-gray-400 text-xs mb-4">No hay productos marcados para descuento automático.</p>
-                    <a href="<?= url('inventario') ?>" class="btn-cfg save text-xs">
-                        <i class="fas fa-cog"></i> Configurar productos
+                <div class="disc-hero-actions">
+                    <?php if (!empty($productos_automaticos)): ?>
+                        <a href="#matrizDescuentos" class="disc-btn is-accent">
+                            <i class="fas fa-sliders-h"></i>
+                            Configurar matriz
+                        </a>
+                    <?php endif; ?>
+                    <a href="<?= url('inventario') ?>" class="disc-btn is-soft">
+                        <i class="fas fa-boxes"></i>
+                        Ver inventario
                     </a>
                 </div>
             </div>
-        <?php else: ?>
 
-        <form method="POST" action="<?= url('inventario/guardarConfiguracion') ?>" id="formConfiguracion">
-            <?= csrf_field() ?>
-
-            <!-- Config Panel -->
-            <div class="cfg-panel mb-4">
-                <div class="cfg-panel-hd">
-                    <div class="flex items-center gap-2.5">
-                        <div class="cfg-panel-hd-icon"><i class="fas fa-th text-white text-xs"></i></div>
-                        <h3 class="text-sm font-bold text-white">Cantidad por Tipo de Habitación</h3>
+            <aside class="disc-side-panel">
+                <div class="disc-side-top">
+                    <div>
+                        <span class="disc-label">Hotel activo</span>
+                        <div class="disc-side-title"><?= discount_safe($hotelNombre, 'Medisoft Hoteles') ?></div>
                     </div>
+                    <span class="disc-icon">
+                        <i class="fas fa-hotel"></i>
+                    </span>
                 </div>
 
-                <!-- ═══ DESKTOP TABLE ═══ -->
-                <div class="cfg-table-desktop">
-                    <div class="overflow-x-auto lc-scroll">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="border-b border-[#EAF0E5]">
-                                    <th class="cfg-th text-left pl-4 sticky left-0 bg-white z-10">Tipo Habitación</th>
-                                    <?php foreach ($productos_automaticos as $producto): ?>
-                                    <th class="cfg-th text-center" style="min-width:110px;">
-                                        <div class="font-bold text-gray-600 text-[.65rem]"><?= htmlspecialchars($producto['nombre']) ?></div>
-                                        <span class="inline-block mt-1 text-[.58rem] font-normal px-1.5 py-0.5 rounded-full bg-[#F0F5ED] text-[#5C7A4E]">
-                                            Stock: <?= $producto['stock_actual'] ?>
-                                        </span>
-                                    </th>
-                                    <?php endforeach; ?>
-                                    <th class="cfg-th text-center">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php 
-                                $colores_tipo = [
-                                    'sencilla' => ['bg'=>'#EFF6FF','color'=>'#2563EB','icon'=>'fa-bed'],
-                                    'doble' => ['bg'=>'#F0FDF4','color'=>'#16A34A','icon'=>'fa-bed'],
-                                    'triple' => ['bg'=>'#FAF5FF','color'=>'#9333EA','icon'=>'fa-bed'],
-                                    'cuadruple' => ['bg'=>'#FFF7ED','color'=>'#EA580C','icon'=>'fa-bed'],
-                                    'sencilla_manolo' => ['bg'=>'#F0FDFA','color'=>'#0D9488','icon'=>'fa-bed'],
-                                    'doble_manolo' => ['bg'=>'#ECFEFF','color'=>'#0891B2','icon'=>'fa-bed'],
-                                    'doble_jacuzzi' => ['bg'=>'#FDF2F8','color'=>'#DB2777','icon'=>'fa-hot-tub'],
-                                    'sencilla_jacuzzi' => ['bg'=>'#EEF2FF','color'=>'#4F46E5','icon'=>'fa-hot-tub'],
-                                ];
-                                foreach ($tipos_habitacion as $tipo_key => $tipo_nombre): 
-                                    $tc = $colores_tipo[$tipo_key] ?? ['bg'=>'#F3F4F6','color'=>'#6B7280','icon'=>'fa-bed'];
-                                ?>
-                                <tr class="cfg-tr">
-                                    <td class="cfg-td pl-4 sticky left-0 bg-white z-10">
-                                        <span class="cfg-tipo-badge" style="background:<?= $tc['bg'] ?>;color:<?= $tc['color'] ?>">
-                                            <i class="fas <?= $iconos[$tipo_key] ?? $tc['icon'] ?> text-[.65rem]"></i>
-                                            <?= $tipo_nombre ?>
-                                        </span>
-                                    </td>
-                                    <?php foreach ($productos_automaticos as $producto): ?>
-                                        <?php
-                                        $cantidad_actual = 0;
-                                        if (isset($configuracion[$tipo_key])) {
-                                            foreach ($configuracion[$tipo_key] as $config) {
-                                                if ($config['producto_id'] == $producto['id']) {
-                                                    $cantidad_actual = $config['cantidad_descontar'];
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        ?>
-                                        <td class="cfg-td text-center">
-                                            <div class="cfg-counter mx-auto">
-                                                <button type="button" class="btn-decrease"
-                                                        data-tipo="<?= $tipo_key ?>" data-producto="<?= $producto['id'] ?>">
-                                                    <i class="fas fa-minus"></i>
-                                                </button>
-                                                <input type="number"
-                                                       class="cantidad-input"
-                                                       name="config[<?= $tipo_key ?>][<?= $producto['id'] ?>]"
-                                                       value="<?= $cantidad_actual ?>"
-                                                       min="0" max="10"
-                                                       data-tipo="<?= $tipo_key ?>"
-                                                       data-producto="<?= $producto['id'] ?>">
-                                                <button type="button" class="btn-increase"
-                                                        data-tipo="<?= $tipo_key ?>" data-producto="<?= $producto['id'] ?>">
-                                                    <i class="fas fa-plus"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    <?php endforeach; ?>
-                                    <td class="cfg-td text-center">
-                                        <span class="cfg-total total-row" data-tipo="<?= $tipo_key ?>">0</span>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Action buttons desktop -->
-                    <div class="px-4 py-3 border-t border-[#EAF0E5] flex justify-between gap-3">
-                        <button type="button" class="btn-cfg reset" id="btnReset">
-                            <i class="fas fa-undo text-xs"></i> Restablecer a 0
-                        </button>
-                        <button type="submit" class="btn-cfg save">
-                            <i class="fas fa-save text-xs"></i> Guardar Configuración
-                        </button>
-                    </div>
-                </div>
-
-                <!-- ═══ MOBILE CARDS ═══ -->
-                <div class="cfg-cards-mobile p-3" style="display:none;">
-                    <?php 
-                    foreach ($tipos_habitacion as $tipo_key => $tipo_nombre): 
-                        $tc = $colores_tipo[$tipo_key] ?? ['bg'=>'#F3F4F6','color'=>'#6B7280','icon'=>'fa-bed'];
-                    ?>
-                    <div class="cfg-mobile-card">
-                        <div class="tipo-label">
-                            <span style="width:22px;height:22px;border-radius:6px;background:<?= $tc['bg'] ?>;color:<?= $tc['color'] ?>;display:inline-flex;align-items:center;justify-content:center;font-size:.6rem;flex-shrink:0;">
-                                <i class="fas <?= $iconos[$tipo_key] ?? $tc['icon'] ?>"></i>
-                            </span>
-                            <?= $tipo_nombre ?>
-                            <span class="cfg-total total-row ml-auto" data-tipo="<?= $tipo_key ?>">0</span>
+                <div class="disc-flow">
+                    <div class="disc-flow-item">
+                        <span class="disc-icon"><i class="fas fa-check-circle"></i></span>
+                        <div>
+                            <strong>Productos elegibles</strong>
+                            <span>Solo aparecen productos con descuento automático activo.</span>
                         </div>
-                        <?php foreach ($productos_automaticos as $producto): ?>
-                            <?php
-                            $cantidad_actual = 0;
-                            if (isset($configuracion[$tipo_key])) {
-                                foreach ($configuracion[$tipo_key] as $config) {
-                                    if ($config['producto_id'] == $producto['id']) {
-                                        $cantidad_actual = $config['cantidad_descontar'];
-                                        break;
-                                    }
-                                }
-                            }
-                            ?>
-                            <div class="cfg-mobile-row">
-                                <span class="prod-name"><?= htmlspecialchars($producto['nombre']) ?></span>
-                                <div class="cfg-counter">
-                                    <button type="button" class="btn-decrease"
-                                            data-tipo="<?= $tipo_key ?>" data-producto="<?= $producto['id'] ?>">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
-                                    <input type="number"
-                                           class="cantidad-input"
-                                           name="config_m[<?= $tipo_key ?>][<?= $producto['id'] ?>]"
-                                           value="<?= $cantidad_actual ?>"
-                                           min="0" max="10"
-                                           data-tipo="<?= $tipo_key ?>"
-                                           data-producto="<?= $producto['id'] ?>">
-                                    <button type="button" class="btn-increase"
-                                            data-tipo="<?= $tipo_key ?>" data-producto="<?= $producto['id'] ?>">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
+                    </div>
+                    <div class="disc-flow-item">
+                        <span class="disc-icon"><i class="fas fa-sign-in-alt"></i></span>
+                        <div>
+                            <strong>Aplicación al check-in</strong>
+                            <span>El descuento se ejecuta una vez al iniciar la estancia.</span>
+                        </div>
+                    </div>
+                    <div class="disc-flow-item">
+                        <span class="disc-icon"><i class="fas fa-exclamation-triangle"></i></span>
+                        <div>
+                            <strong>Control de stock</strong>
+                            <span>Si no hay stock disponible, no se descuenta inventario.</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </section>
+
+        <section class="disc-metrics" aria-label="Resumen de descuentos automáticos">
+            <article class="disc-metric">
+                <div class="disc-metric-head">
+                    <span class="disc-label">Productos</span>
+                    <span class="disc-icon"><i class="fas fa-box"></i></span>
+                </div>
+                <div class="disc-value"><?= number_format($productosCount) ?></div>
+                <div class="disc-note">Con auto-descuento activo.</div>
+            </article>
+
+            <article class="disc-metric">
+                <div class="disc-metric-head">
+                    <span class="disc-label">Tipos</span>
+                    <span class="disc-icon"><i class="fas fa-door-open"></i></span>
+                </div>
+                <div class="disc-value"><?= number_format($tiposCount) ?></div>
+                <div class="disc-note">Tipos de habitación configurables.</div>
+            </article>
+
+            <article class="disc-metric">
+                <div class="disc-metric-head">
+                    <span class="disc-label">Reglas activas</span>
+                    <span class="disc-icon"><i class="fas fa-sliders-h"></i></span>
+                </div>
+                <div class="disc-value"><?= number_format($reglasActivas) ?></div>
+                <div class="disc-note"><?= number_format($totalConfigurado) ?> unidades configuradas.</div>
+            </article>
+
+            <article class="disc-metric">
+                <div class="disc-metric-head">
+                    <span class="disc-label">Stock visible</span>
+                    <span class="disc-icon"><i class="fas fa-warehouse"></i></span>
+                </div>
+                <div class="disc-value"><?= number_format($stockTotal) ?></div>
+                <div class="disc-note">Unidades en productos elegibles.</div>
+            </article>
+        </section>
+
+        <?php if (empty($productos_automaticos)): ?>
+            <section class="disc-empty">
+                <div>
+                    <i class="fas fa-box-open"></i>
+                    <h2>No hay productos configurados</h2>
+                    <p>
+                        Todavía no hay productos marcados para descuento automático. Activa esa opción desde inventario para poder definir consumos por tipo de habitación.
+                    </p>
+                    <a href="<?= url('inventario') ?>" class="disc-btn is-accent">
+                        <i class="fas fa-cog"></i>
+                        Configurar productos
+                    </a>
+                </div>
+            </section>
+        <?php else: ?>
+            <form method="POST" action="<?= url('inventario/guardarConfiguracion') ?>" id="formConfiguracion">
+                <?= csrf_field() ?>
+
+                <section class="disc-panel" id="matrizDescuentos">
+                    <div class="disc-section-head">
+                        <div>
+                            <span class="disc-section-kicker">Matriz por habitación</span>
+                            <h2>Cantidad a descontar por check-in</h2>
+                        </div>
+                        <span class="disc-pill"><?= number_format($productosCount) ?> productos · <?= number_format($tiposCount) ?> tipos</span>
+                    </div>
+
+                    <div class="disc-table-desktop">
+                        <div class="disc-table-wrap">
+                            <table class="disc-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tipo de habitación</th>
+                                        <?php foreach ($productos_automaticos as $producto): ?>
+                                            <th>
+                                                <div class="disc-product-head">
+                                                    <strong title="<?= discount_safe($producto['nombre']) ?>"><?= discount_safe($producto['nombre']) ?></strong>
+                                                    <span><i class="fas fa-box"></i> Stock <?= number_format((int)($producto['stock_actual'] ?? 0)) ?></span>
+                                                </div>
+                                            </th>
+                                        <?php endforeach; ?>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($tipos_habitacion as $tipo_key => $tipo_nombre): ?>
+                                        <?php $tipoStyle = $tipoEstilos[$tipo_key] ?? ['color' => '#64748B', 'bg' => '#F1F5F9', 'label' => $tipo_nombre]; ?>
+                                        <tr>
+                                            <td>
+                                                <span class="disc-type-badge" style="background: <?= $tipoStyle['bg'] ?>; color: <?= $tipoStyle['color'] ?>;">
+                                                    <span class="disc-type-icon">
+                                                        <i class="fas <?= discount_safe($iconos[$tipo_key] ?? 'fa-bed') ?>"></i>
+                                                    </span>
+                                                    <?= discount_safe($tipo_nombre) ?>
+                                                </span>
+                                            </td>
+                                            <?php foreach ($productos_automaticos as $producto): ?>
+                                                <?php
+                                                $productoId = (int)($producto['id'] ?? 0);
+                                                $cantidad_actual = (int)($configIndex[$tipo_key][$productoId] ?? 0);
+                                                ?>
+                                                <td>
+                                                    <div class="disc-counter">
+                                                        <button type="button" class="btn-decrease"
+                                                                data-tipo="<?= discount_safe($tipo_key) ?>"
+                                                                data-producto="<?= $productoId ?>"
+                                                                aria-label="Restar">
+                                                            <i class="fas fa-minus"></i>
+                                                        </button>
+                                                        <input type="number"
+                                                               class="cantidad-input"
+                                                               name="config[<?= discount_safe($tipo_key) ?>][<?= $productoId ?>]"
+                                                               value="<?= $cantidad_actual ?>"
+                                                               min="0"
+                                                               max="10"
+                                                               data-tipo="<?= discount_safe($tipo_key) ?>"
+                                                               data-producto="<?= $productoId ?>">
+                                                        <button type="button" class="btn-increase"
+                                                                data-tipo="<?= discount_safe($tipo_key) ?>"
+                                                                data-producto="<?= $productoId ?>"
+                                                                aria-label="Sumar">
+                                                            <i class="fas fa-plus"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            <?php endforeach; ?>
+                                            <td>
+                                                <span class="disc-total total-row" data-tipo="<?= discount_safe($tipo_key) ?>">0</span>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="disc-mobile-grid disc-section-body">
+                        <?php foreach ($tipos_habitacion as $tipo_key => $tipo_nombre): ?>
+                            <?php $tipoStyle = $tipoEstilos[$tipo_key] ?? ['color' => '#64748B', 'bg' => '#F1F5F9', 'label' => $tipo_nombre]; ?>
+                            <article class="disc-mobile-card">
+                                <div class="disc-mobile-head">
+                                    <span class="disc-type-badge" style="background: <?= $tipoStyle['bg'] ?>; color: <?= $tipoStyle['color'] ?>;">
+                                        <span class="disc-type-icon">
+                                            <i class="fas <?= discount_safe($iconos[$tipo_key] ?? 'fa-bed') ?>"></i>
+                                        </span>
+                                        <?= discount_safe($tipo_nombre) ?>
+                                    </span>
+                                    <span class="disc-total total-row" data-tipo="<?= discount_safe($tipo_key) ?>">0</span>
                                 </div>
-                            </div>
+
+                                <?php foreach ($productos_automaticos as $producto): ?>
+                                    <?php
+                                    $productoId = (int)($producto['id'] ?? 0);
+                                    $cantidad_actual = (int)($configIndex[$tipo_key][$productoId] ?? 0);
+                                    ?>
+                                    <div class="disc-mobile-row">
+                                        <div>
+                                            <strong><?= discount_safe($producto['nombre']) ?></strong>
+                                            <span>Stock <?= number_format((int)($producto['stock_actual'] ?? 0)) ?> unidades</span>
+                                        </div>
+                                        <div class="disc-counter">
+                                            <button type="button" class="btn-decrease"
+                                                    data-tipo="<?= discount_safe($tipo_key) ?>"
+                                                    data-producto="<?= $productoId ?>"
+                                                    aria-label="Restar">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <input type="number"
+                                                   class="cantidad-input"
+                                                   name="config_m[<?= discount_safe($tipo_key) ?>][<?= $productoId ?>]"
+                                                   value="<?= $cantidad_actual ?>"
+                                                   min="0"
+                                                   max="10"
+                                                   data-tipo="<?= discount_safe($tipo_key) ?>"
+                                                   data-producto="<?= $productoId ?>">
+                                            <button type="button" class="btn-increase"
+                                                    data-tipo="<?= discount_safe($tipo_key) ?>"
+                                                    data-producto="<?= $productoId ?>"
+                                                    aria-label="Sumar">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </article>
                         <?php endforeach; ?>
                     </div>
-                    <?php endforeach; ?>
 
-                    <!-- Action buttons mobile -->
-                    <div class="flex gap-2 mt-3">
-                        <button type="button" class="btn-cfg reset flex-1" id="btnResetMobile">
-                            <i class="fas fa-undo text-xs"></i> Restablecer
+                    <div class="disc-actions">
+                        <button type="button" class="disc-btn is-warning" id="btnReset">
+                            <i class="fas fa-undo"></i>
+                            Restablecer a 0
                         </button>
-                        <button type="submit" class="btn-cfg save flex-1">
-                            <i class="fas fa-save text-xs"></i> Guardar
+                        <button type="submit" class="disc-btn is-accent">
+                            <i class="fas fa-save"></i>
+                            Guardar configuración
+                        </button>
+                        <button type="button" class="disc-btn is-warning" id="btnResetMobile" style="display:none;">
+                            <i class="fas fa-undo"></i>
+                            Restablecer
                         </button>
                     </div>
-                </div>
-            </div>
-        </form>
+                </section>
+            </form>
 
-        <!-- Preview Panel -->
-        <div class="cfg-panel">
-            <div class="cfg-panel-hd">
-                <div class="flex items-center gap-2.5">
-                    <div class="cfg-panel-hd-icon"><i class="fas fa-eye text-white text-xs"></i></div>
-                    <h3 class="text-sm font-bold text-white">Vista Previa de Consumo</h3>
+            <section class="disc-panel">
+                <div class="disc-section-head">
+                    <div>
+                        <span class="disc-section-kicker">Vista previa</span>
+                        <h2>Consumo estimado por producto</h2>
+                    </div>
+                    <span class="disc-pill">Estimación diaria</span>
                 </div>
-            </div>
-            <div class="p-3 sm:p-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    <?php foreach ($productos_automaticos as $producto): ?>
-                    <div class="cfg-preview-card">
-                        <div class="flex items-center justify-between mb-2">
-                            <p class="text-xs font-semibold text-gray-800 truncate"><?= htmlspecialchars($producto['nombre']) ?></p>
-                            <div style="width:26px;height:26px;border-radius:7px;background:rgba(92,122,78,.12);color:#5C7A4E;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;">
-                                <i class="fas fa-box"></i>
-                            </div>
-                        </div>
-                        <div class="mb-2">
-                            <p class="text-[.6rem] text-gray-400 uppercase tracking-wider mb-0.5">Consumo diario estimado</p>
-                            <div class="flex items-baseline gap-1">
-                                <span class="text-xl font-bold text-[#3D5234] consumo-diario" data-producto="<?= $producto['id'] ?>">0</span>
-                                <span class="text-[.65rem] text-gray-400">uds</span>
-                            </div>
-                        </div>
-                        <div class="mb-2">
+                <div class="disc-section-body">
+                    <div class="disc-preview-grid">
+                        <?php foreach ($productos_automaticos as $producto): ?>
                             <?php
-                            $porcentaje_consumo = $producto['stock_actual'] > 0 ? 20 : 0;
+                            $productoId = (int)($producto['id'] ?? 0);
+                            $stock = (int)($producto['stock_actual'] ?? 0);
+                            $progress = $stock > 0 ? min(100, max(7, 20)) : 0;
                             ?>
-                            <div class="w-full bg-[#E5EDE0] rounded-full h-1.5 overflow-hidden">
-                                <div class="bg-gradient-to-r from-[#5C7A4E] to-[#7A9B6A] h-1.5 rounded-full transition-all duration-300"
-                                     style="width:<?= $porcentaje_consumo ?>%"></div>
-                            </div>
-                        </div>
-                        <div class="flex justify-between items-center text-[.65rem]">
-                            <span class="text-gray-400">Stock actual:</span>
-                            <span class="font-semibold text-[#4A6340]"><?= $producto['stock_actual'] ?> uds</span>
-                        </div>
+                            <article class="disc-preview-card">
+                                <div class="disc-preview-head">
+                                    <div>
+                                        <strong><?= discount_safe($producto['nombre']) ?></strong>
+                                        <span>Producto con descuento automático</span>
+                                    </div>
+                                    <span class="disc-icon"><i class="fas fa-box"></i></span>
+                                </div>
+                                <div class="disc-consumo">
+                                    <strong class="consumo-diario" data-producto="<?= $productoId ?>">0</strong>
+                                    <span class="disc-mini-label">uds/día</span>
+                                </div>
+                                <div class="disc-progress">
+                                    <span style="--progress: <?= $progress ?>%;"></span>
+                                </div>
+                                <div class="disc-note">Stock actual: <strong><?= number_format($stock) ?> uds</strong></div>
+                            </article>
+                        <?php endforeach; ?>
                     </div>
-                    <?php endforeach; ?>
                 </div>
-            </div>
-        </div>
-
+            </section>
         <?php endif; ?>
-    </div>
+    </main>
 </div>
 
-<!-- JavaScript -->
 <script>
-// Sync mobile/desktop inputs
 function syncInputs(tipo, productoId, value) {
-    document.querySelectorAll(`input[data-tipo="${tipo}"][data-producto="${productoId}"]`).forEach(inp => {
-        inp.value = value;
+    document.querySelectorAll(`input[data-tipo="${tipo}"][data-producto="${productoId}"]`).forEach(input => {
+        input.value = value;
     });
-    // Also sync the name-based mobile inputs
+
     const mobileInput = document.querySelector(`input[name="config_m[${tipo}][${productoId}]"]`);
     const desktopInput = document.querySelector(`input[name="config[${tipo}][${productoId}]"]`);
     if (mobileInput && desktopInput) {
@@ -473,47 +1132,49 @@ function syncInputs(tipo, productoId, value) {
     }
 }
 
-// Before submit: sync mobile values to desktop names
-document.getElementById('formConfiguracion')?.addEventListener('submit', function(e) {
-    // Copy mobile values to desktop inputs
-    document.querySelectorAll('input[name^="config_m["]').forEach(mInput => {
-        const name = mInput.name.replace('config_m[', 'config[');
-        const dInput = document.querySelector(`input[name="${name}"]`);
-        if (dInput) dInput.value = mInput.value;
+document.getElementById('formConfiguracion')?.addEventListener('submit', function(event) {
+    document.querySelectorAll('input[name^="config_m["]').forEach(mobileInput => {
+        const name = mobileInput.name.replace('config_m[', 'config[');
+        const desktopInput = document.querySelector(`input[name="${name}"]`);
+        if (desktopInput) {
+            desktopInput.value = mobileInput.value;
+        }
     });
 
     let hayConfiguracion = false;
     document.querySelectorAll('input[name^="config["]').forEach(input => {
-        if (parseInt(input.value) > 0) hayConfiguracion = true;
+        if ((parseInt(input.value, 10) || 0) > 0) {
+            hayConfiguracion = true;
+        }
     });
 
     if (!hayConfiguracion) {
-        e.preventDefault();
-        if (!confirm('No hay ninguna configuración establecida. ¿Desea continuar?')) return false;
-        this.submit();
+        event.preventDefault();
+        if (confirm('No hay ninguna configuración establecida. ¿Desea continuar?')) {
+            this.submit();
+        }
     }
 });
 
-// Decrease / increase buttons
-document.querySelectorAll('.btn-decrease').forEach(btn => {
-    btn.addEventListener('click', function() {
+document.querySelectorAll('.btn-decrease').forEach(button => {
+    button.addEventListener('click', function() {
         const input = this.parentElement.querySelector('input');
-        const value = parseInt(input.value) || 0;
+        const value = parseInt(input.value, 10) || 0;
         if (value > 0) {
-            const newVal = value - 1;
-            syncInputs(input.dataset.tipo, input.dataset.producto, newVal);
+            const newValue = value - 1;
+            syncInputs(input.dataset.tipo, input.dataset.producto, newValue);
             actualizarTotales();
         }
     });
 });
 
-document.querySelectorAll('.btn-increase').forEach(btn => {
-    btn.addEventListener('click', function() {
+document.querySelectorAll('.btn-increase').forEach(button => {
+    button.addEventListener('click', function() {
         const input = this.parentElement.querySelector('input');
-        const value = parseInt(input.value) || 0;
+        const value = parseInt(input.value, 10) || 0;
         if (value < 10) {
-            const newVal = value + 1;
-            syncInputs(input.dataset.tipo, input.dataset.producto, newVal);
+            const newValue = value + 1;
+            syncInputs(input.dataset.tipo, input.dataset.producto, newValue);
             actualizarTotales();
         }
     });
@@ -524,6 +1185,7 @@ document.querySelectorAll('.cantidad-input').forEach(input => {
         syncInputs(this.dataset.tipo, this.dataset.producto, this.value);
         actualizarTotales();
     });
+
     input.addEventListener('input', function() {
         syncInputs(this.dataset.tipo, this.dataset.producto, this.value);
         actualizarTotales();
@@ -532,12 +1194,12 @@ document.querySelectorAll('.cantidad-input').forEach(input => {
 
 function actualizarTotales() {
     <?php foreach ($tipos_habitacion as $tipo_key => $tipo_nombre): ?>
-    let total_<?= $tipo_key ?> = 0;
-    document.querySelectorAll(`input[data-tipo="<?= $tipo_key ?>"][name^="config["]`).forEach(input => {
-        total_<?= $tipo_key ?> += parseInt(input.value) || 0;
+    let total_<?= preg_replace('/[^a-zA-Z0-9_]/', '_', $tipo_key) ?> = 0;
+    document.querySelectorAll(`input[data-tipo="<?= discount_safe($tipo_key) ?>"][name^="config["]`).forEach(input => {
+        total_<?= preg_replace('/[^a-zA-Z0-9_]/', '_', $tipo_key) ?> += parseInt(input.value, 10) || 0;
     });
-    document.querySelectorAll(`.total-row[data-tipo="<?= $tipo_key ?>"]`).forEach(el => {
-        el.textContent = total_<?= $tipo_key ?>;
+    document.querySelectorAll(`.total-row[data-tipo="<?= discount_safe($tipo_key) ?>"]`).forEach(element => {
+        element.textContent = total_<?= preg_replace('/[^a-zA-Z0-9_]/', '_', $tipo_key) ?>;
     });
     <?php endforeach; ?>
 
@@ -546,20 +1208,22 @@ function actualizarTotales() {
 
 function actualizarConsumoDiario() {
     <?php foreach ($productos_automaticos as $producto): ?>
-    let consumo_<?= $producto['id'] ?> = 0;
-    document.querySelectorAll(`input[data-producto="<?= $producto['id'] ?>"][name^="config["]`).forEach(input => {
-        consumo_<?= $producto['id'] ?> += parseInt(input.value) || 0;
+    let consumo_<?= (int)$producto['id'] ?> = 0;
+    document.querySelectorAll(`input[data-producto="<?= (int)$producto['id'] ?>"][name^="config["]`).forEach(input => {
+        consumo_<?= (int)$producto['id'] ?> += parseInt(input.value, 10) || 0;
     });
-    consumo_<?= $producto['id'] ?> = Math.round(consumo_<?= $producto['id'] ?> * 0.5);
-    document.querySelectorAll(`.consumo-diario[data-producto="<?= $producto['id'] ?>"]`).forEach(el => {
-        el.textContent = consumo_<?= $producto['id'] ?>;
+    consumo_<?= (int)$producto['id'] ?> = Math.round(consumo_<?= (int)$producto['id'] ?> * 0.5);
+    document.querySelectorAll(`.consumo-diario[data-producto="<?= (int)$producto['id'] ?>"]`).forEach(element => {
+        element.textContent = consumo_<?= (int)$producto['id'] ?>;
     });
     <?php endforeach; ?>
 }
 
 function resetAll() {
     if (confirm('¿Está seguro de restablecer toda la configuración a 0?')) {
-        document.querySelectorAll('.cantidad-input').forEach(input => { input.value = 0; });
+        document.querySelectorAll('.cantidad-input').forEach(input => {
+            input.value = 0;
+        });
         actualizarTotales();
     }
 }
@@ -567,10 +1231,11 @@ function resetAll() {
 document.getElementById('btnReset')?.addEventListener('click', resetAll);
 document.getElementById('btnResetMobile')?.addEventListener('click', resetAll);
 
-// Init
 document.addEventListener('DOMContentLoaded', function() {
     const view = document.querySelector('.config-view');
-    if (view) view.classList.add('loaded');
+    if (view) {
+        requestAnimationFrame(() => view.classList.add('loaded'));
+    }
     actualizarTotales();
 });
 </script>

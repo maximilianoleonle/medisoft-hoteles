@@ -1,1080 +1,2716 @@
-<!-- app/views/habitaciones/ver.php - Versión Mejorada y Sin Restricciones -->
-<style>
-/* CSS crítico inline para carga rápida */
-:root {
-    --hotel-purple: #8B5CF6;
-    --hotel-purple-dark: #7C3AED;
-    --hotel-purple-light: #A78BFA;
-    --hotel-emerald: #10B981;
-    --hotel-blue: #3B82F6;
-    --hotel-rose: #F43F5E;
+<?php
+/**
+ * Vista de detalles de habitacion.
+ * Redisenada como centro operativo de habitacion sin cambiar rutas ni formularios.
+ */
+
+$habitacion = $habitacion ?? [];
+$ocupacion_actual = $ocupacion_actual ?? null;
+$proxima_salida = $proxima_salida ?? null;
+$historial_reciente = is_array($historial_reciente ?? null) ? $historial_reciente : [];
+$mantenimiento_actual = $mantenimiento_actual ?? null;
+$mantenimientos_programados = is_array($mantenimientos_programados ?? null) ? $mantenimientos_programados : [];
+$reservacion_pendiente = $reservacion_pendiente ?? null;
+$estados = $estados ?? [];
+$tipos = $tipos ?? [];
+
+$habitacion_id = (int)($habitacion['id'] ?? 0);
+$habitacion_numero = (string)($habitacion['numero'] ?? '');
+$habitacion_tipo = (string)($habitacion['tipo'] ?? '');
+$habitacion_estado = (string)($habitacion['estado'] ?? 'desconocido');
+$estado_actual = (string)($habitacion['estado_display'] ?? $habitacion_estado);
+$tipo_label = $tipos[$habitacion_tipo] ?? (function_exists('get_tipo_habitacion') ? get_tipo_habitacion($habitacion_tipo) : ucfirst($habitacion_tipo));
+$piso_label = class_exists('Habitacion') ? Habitacion::getNombrePiso($habitacion['piso'] ?? '') : ('Piso ' . ($habitacion['piso'] ?? '-'));
+$capacidad = (int)($habitacion['capacidad_personas'] ?? 0);
+$caracteristicas = trim((string)($habitacion['caracteristicas'] ?? ''));
+$precio_actual = (float)($habitacion['precio_actual'] ?? $habitacion['precio_base'] ?? 0);
+$precio_base = (float)($habitacion['precio_base'] ?? 0);
+$precio_base_original = (float)($habitacion['precio_base_original'] ?? $precio_base);
+$incremento_total = (float)($habitacion['incremento_total'] ?? 0);
+$tiene_incremento = !empty($habitacion['tiene_incremento']);
+$activa = !empty($habitacion['activa']);
+
+if (!function_exists('room_detail_safe')) {
+    function room_detail_safe($value, $fallback = '-') {
+        $text = trim((string)($value ?? ''));
+        return htmlspecialchars($text !== '' ? $text : $fallback, ENT_QUOTES, 'UTF-8');
+    }
 }
 
-.vista-habitacion { 
-    opacity: 0; 
-    transition: opacity 0.4s ease;
+if (!function_exists('room_detail_status_meta')) {
+    function room_detail_status_meta($estado, $estadoInfo = []) {
+        $map = [
+            'disponible' => ['label' => 'Disponible', 'icon' => 'check-circle', 'color' => '#157A52', 'soft' => '#E8F6ED'],
+            'ocupada' => ['label' => 'Ocupada', 'icon' => 'user-lock', 'color' => '#B9463D', 'soft' => '#FFF0EF'],
+            'mantenimiento' => ['label' => 'Mantenimiento', 'icon' => 'tools', 'color' => '#B66A00', 'soft' => '#FFF4D8'],
+            'limpieza' => ['label' => 'Limpieza', 'icon' => 'broom', 'color' => '#2F6EA8', 'soft' => '#EAF3FF'],
+            'por_llegar' => ['label' => 'Por llegar', 'icon' => 'clock', 'color' => '#7A4A12', 'soft' => '#F8ECD9'],
+        ];
+
+        $meta = $map[$estado] ?? ['label' => ucfirst((string)$estado), 'icon' => 'circle', 'color' => '#64748B', 'soft' => '#F1F5F9'];
+
+        if (!empty($estadoInfo['label'])) {
+            $meta['label'] = $estadoInfo['label'];
+        }
+
+        if (!empty($estadoInfo['icon'])) {
+            $meta['icon'] = $estadoInfo['icon'];
+        }
+
+        return $meta;
+    }
+}
+
+if (!function_exists('room_detail_relative_exit')) {
+    function room_detail_relative_exit($days) {
+        $days = (int)$days;
+        if ($days === 0) return 'Salio hoy';
+        if ($days === 1) return 'Ayer';
+        if ($days < 7) return 'Hace ' . $days . ' dias';
+        if ($days < 30) {
+            $weeks = (int)floor($days / 7);
+            return 'Hace ' . $weeks . ' ' . ($weeks === 1 ? 'semana' : 'semanas');
+        }
+        if ($days < 365) {
+            $months = (int)floor($days / 30);
+            return 'Hace ' . $months . ' ' . ($months === 1 ? 'mes' : 'meses');
+        }
+        $years = (int)floor($days / 365);
+        return 'Hace ' . $years . ' ' . ($years === 1 ? 'ano' : 'anos');
+    }
+}
+
+$estados_completos = $estados;
+$estados_completos['por_llegar'] = ['label' => 'Por llegar', 'color' => 'amber', 'icon' => 'clock'];
+$estado_info = $estados_completos[$estado_actual] ?? [];
+$status_meta = room_detail_status_meta($estado_actual, $estado_info);
+
+$imagenes = [];
+if (class_exists('HabitacionImagen')) {
+    $habitacionImagenModel = new HabitacionImagen();
+    $imagenes = $habitacionImagenModel->porHabitacion($habitacion_id);
+}
+
+$tiene_imagenes = !empty($imagenes);
+$imagen_principal = null;
+if ($tiene_imagenes) {
+    $imagen_principal = $imagenes[0];
+    foreach ($imagenes as $img) {
+        if (!empty($img['es_principal'])) {
+            $imagen_principal = $img;
+            break;
+        }
+    }
+}
+
+$hoy = date('Y-m-d');
+$proxima_destacada = null;
+$ultima_destacada = null;
+
+if (!empty($historial_reciente)) {
+    $menor_dias_proxima = PHP_INT_MAX;
+    $menor_dias_ultima = PHP_INT_MAX;
+
+    foreach ($historial_reciente as $res) {
+        if (!isset($res['estado']) || empty($res['fecha_entrada']) || empty($res['fecha_salida'])) {
+            continue;
+        }
+
+        if ($res['estado'] === 'confirmada' && $res['fecha_entrada'] >= $hoy) {
+            $dias_hasta = (strtotime($res['fecha_entrada']) - strtotime($hoy)) / 86400;
+            if ($dias_hasta < $menor_dias_proxima) {
+                $menor_dias_proxima = $dias_hasta;
+                $proxima_destacada = $res;
+            }
+        }
+
+        if ($res['estado'] === 'checked_out' && $res['fecha_salida'] < $hoy) {
+            $dias_desde = (strtotime($hoy) - strtotime($res['fecha_salida'])) / 86400;
+            if ($dias_desde < $menor_dias_ultima) {
+                $menor_dias_ultima = $dias_desde;
+                $ultima_destacada = $res;
+            }
+        }
+    }
+
+    usort($historial_reciente, function($a, $b) {
+        $fechaA = strtotime($a['fecha_salida'] ?? '1970-01-01');
+        $fechaB = strtotime($b['fecha_salida'] ?? '1970-01-01');
+        return $fechaB - $fechaA;
+    });
+}
+
+$historial_count = count($historial_reciente);
+$mantenimientos_count = count($mantenimientos_programados);
+?>
+
+<style id="room-detail-redesign">
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+.vista-habitacion.room-detail-page {
+    --rd-brand: var(--brand-primary, #1B2746);
+    --rd-brand-dark: var(--brand-secondary, #0F172A);
+    --rd-accent: var(--brand-accent, #BD9441);
+    --rd-accent-deep: color-mix(in srgb, var(--rd-accent) 74%, #3B2D12);
+    --rd-bg: color-mix(in srgb, var(--rd-accent) 8%, #F8F3EA);
+    --rd-bg-soft: color-mix(in srgb, var(--rd-accent) 4%, #FFFCF6);
+    --rd-panel: color-mix(in srgb, var(--rd-accent) 2%, #FFFDF8);
+    --rd-panel-warm: color-mix(in srgb, var(--rd-accent) 7%, #FFFDF8);
+    --rd-line: color-mix(in srgb, var(--rd-brand) 14%, #E8DCCA);
+    --rd-line-strong: color-mix(in srgb, var(--rd-accent) 36%, #D7C3A2);
+    --rd-muted: color-mix(in srgb, var(--rd-brand-dark) 50%, #94A3B8);
+    --rd-text: #182033;
+    --rd-success: #157A52;
+    --rd-danger: #B9463D;
+    --rd-warning: #B66A00;
+    --rd-info: #2F6EA8;
+    --rd-serif: 'Cormorant Garamond', Georgia, serif;
+    --rd-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100vh;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-}
-.vista-habitacion.loaded { opacity: 1; }
-
-/* Estados mejorados y más vibrantes */
-.estado-disponible { 
-    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%) !important;
-    border-left: 5px solid #10B981;
-    box-shadow: 0 4px 6px rgba(16, 185, 129, 0.1);
-}
-
-.estado-por-llegar { 
-    background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%) !important;
-    border-left: 5px solid #8B5CF6 !important;
-    box-shadow: 0 4px 6px rgba(139, 92, 246, 0.1);
+    opacity: 0;
+    background:
+        radial-gradient(circle at 92% 5%, color-mix(in srgb, var(--rd-accent) 22%, transparent), transparent 30rem),
+        linear-gradient(90deg, color-mix(in srgb, var(--rd-brand) 5%, transparent) 0 1px, transparent 1px 34px),
+        linear-gradient(180deg, var(--rd-bg-soft), var(--rd-bg) 58%, #F4EBDC);
+    color: var(--rd-text);
+    font-family: var(--rd-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    transition: opacity .32s ease;
 }
 
-.estado-ocupada { 
-    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%) !important;
-    border-left: 5px solid #EF4444;
-    box-shadow: 0 4px 6px rgba(239, 68, 68, 0.1);
+.vista-habitacion.room-detail-page.loaded {
+    opacity: 1;
 }
 
-.estado-mantenimiento { 
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
-    border-left: 5px solid #F59E0B;
-    box-shadow: 0 4px 6px rgba(245, 158, 11, 0.1);
+.room-detail-page *,
+.room-detail-page *::before,
+.room-detail-page *::after {
+    box-sizing: border-box;
 }
 
-.estado-limpieza { 
-    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%) !important;
-    border-left: 5px solid #3B82F6;
-    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.1);
+.room-detail-page :where(a, button, input, textarea, select, label, span, p) {
+    font-family: var(--rd-sans);
 }
 
-/* Cards con mejor diseño */
-.info-card {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-    background: white;
-    border-radius: 0.75rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-.info-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+.room-detail-page i[class*="fa-"],
+.room-detail-page .fas,
+.room-detail-page .far,
+.room-detail-page .fab {
+    font-family: "Font Awesome 5 Free", "Font Awesome 5 Brands", "FontAwesome" !important;
+    font-style: normal;
 }
 
-/* Botones modernos y atractivos */
-.btn-modern {
-    border: none;
-    font-weight: 600;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    padding: 0.625rem 1.25rem;
-    border-radius: 0.625rem;
-    font-size: 0.875rem;
+.room-detail-page .fas {
+    font-weight: 900;
+}
+
+.rd-shell {
+    width: min(1500px, calc(100% - 30px));
+    margin: 0 auto;
+    padding: 26px 0 46px;
+}
+
+.rd-breadcrumb {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    gap: 9px;
+    margin-bottom: 14px;
+    color: var(--rd-muted);
+    font-size: .8rem;
+    font-weight: 800;
 }
-.btn-modern:hover {
+
+.rd-breadcrumb a {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--rd-brand);
+    transition: color .18s ease, transform .18s ease;
+}
+
+.rd-breadcrumb a:hover {
+    color: var(--rd-accent-deep);
+    transform: translateY(-1px);
+}
+
+.rd-hero {
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(340px, .92fr);
+    gap: 0;
+    border: 1px solid color-mix(in srgb, var(--rd-accent) 28%, transparent);
+    border-radius: 30px;
+    background:
+        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--rd-accent) 22%, transparent), transparent 18rem),
+        linear-gradient(135deg, rgba(255,253,248,.98), rgba(248,240,226,.92));
+    box-shadow: 0 30px 78px -58px rgba(15, 23, 42, .76);
+}
+
+.rd-hero-copy {
+    position: relative;
+    min-width: 0;
+    padding: clamp(22px, 3.8vw, 42px);
+}
+
+.rd-hero-copy::after {
+    content: "";
+    position: absolute;
+    inset: auto 28px 0 auto;
+    width: min(260px, 46vw);
+    height: 3px;
+    border-radius: 999px 999px 0 0;
+    background: linear-gradient(90deg, transparent, var(--rd-accent), var(--rd-brand));
+    opacity: .72;
+}
+
+.rd-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 11px;
+    color: color-mix(in srgb, var(--rd-accent) 78%, var(--rd-brand));
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.rd-title {
+    margin: 0;
+    color: var(--rd-brand);
+    font-family: var(--rd-serif);
+    font-size: clamp(3.2rem, 8vw, 7.5rem);
+    line-height: .82;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-wrap: balance;
+}
+
+.rd-title span {
+    display: block;
+    color: var(--rd-muted);
+    font-family: var(--rd-sans);
+    font-size: clamp(.86rem, 1.3vw, 1rem);
+    line-height: 1.4;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.rd-subtitle {
+    max-width: 68ch;
+    margin: 14px 0 0;
+    color: var(--rd-muted);
+    font-size: .95rem;
+    font-weight: 700;
+    line-height: 1.58;
+}
+
+.rd-hero-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 18px;
+}
+
+.rd-chip,
+.rd-status-pill,
+.rd-price-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 8px 11px;
+    border-radius: 999px;
+    font-size: .76rem;
+    font-weight: 900;
+}
+
+.rd-chip {
+    border: 1px solid var(--rd-line);
+    background: color-mix(in srgb, var(--rd-accent) 6%, #FFFDF8);
+    color: var(--rd-brand);
+}
+
+.rd-status-pill {
+    background: var(--status-soft);
+    color: var(--status-color);
+    border: 1px solid color-mix(in srgb, var(--status-color) 24%, transparent);
+}
+
+.rd-hero-media {
+    position: relative;
+    min-height: 340px;
+    background:
+        linear-gradient(145deg, color-mix(in srgb, var(--rd-brand) 94%, #000000), var(--rd-brand-dark));
+}
+
+.rd-hero-media img {
+    width: 100%;
+    height: 100%;
+    min-height: 340px;
+    object-fit: cover;
+    display: block;
+    cursor: zoom-in;
+}
+
+.rd-hero-media::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent 30%, rgba(15,23,42,.24));
+}
+
+.rd-media-placeholder {
+    height: 100%;
+    min-height: 340px;
+    display: grid;
+    place-items: center;
+    color: rgba(255,253,248,.92);
+    text-align: center;
+    padding: 24px;
+}
+
+.rd-media-placeholder i {
+    display: block;
+    font-size: 3rem;
+    margin-bottom: 12px;
+    opacity: .72;
+}
+
+.rd-media-placeholder strong {
+    display: block;
+    font-family: var(--rd-serif);
+    font-size: clamp(2.4rem, 7vw, 5rem);
+    line-height: .9;
+}
+
+.rd-floating-price {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    z-index: 1;
+    min-width: 190px;
+    padding: 14px 16px;
+    border: 1px solid rgba(255,253,248,.28);
+    border-radius: 20px;
+    background: rgba(15, 23, 42, .72);
+    color: #FFFDF8;
+    backdrop-filter: blur(14px);
+}
+
+.rd-floating-price span {
+    display: block;
+    opacity: .78;
+    font-size: .72rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.rd-floating-price strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 1.45rem;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.rd-floating-price small {
+    display: block;
+    margin-top: 2px;
+    opacity: .74;
+    font-size: .76rem;
+    font-weight: 800;
+}
+
+.rd-alert {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    margin-top: 16px;
+    padding: 15px;
+    border: 1px solid color-mix(in srgb, var(--rd-accent) 34%, transparent);
+    border-radius: 22px;
+    background: color-mix(in srgb, var(--rd-accent) 12%, #FFFDF8);
+}
+
+.rd-alert-icon {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 15px;
+    background: var(--rd-brand);
+    color: #FFFDF8;
+}
+
+.rd-alert strong {
+    display: block;
+    color: var(--rd-brand);
+    font-size: .96rem;
+    font-weight: 950;
+}
+
+.rd-alert span {
+    display: block;
+    margin-top: 2px;
+    color: var(--rd-muted);
+    font-size: .8rem;
+    font-weight: 750;
+}
+
+.rd-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(305px, 360px);
+    gap: 18px;
+    align-items: start;
+    margin-top: 18px;
+}
+
+.rd-main,
+.rd-side {
+    min-width: 0;
+}
+
+.rd-main {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.rd-side {
+    position: sticky;
+    top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.rd-panel,
+.rd-side-card {
+    border: 1px solid var(--rd-line);
+    border-radius: 23px;
+    background: var(--rd-panel);
+    box-shadow:
+        0 1px 2px color-mix(in srgb, var(--rd-brand-dark) 4%, transparent),
+        0 18px 42px -34px rgba(15, 23, 42, .56);
+    overflow: hidden;
+}
+
+.rd-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 17px 18px;
+    border-bottom: 1px solid var(--rd-line);
+    background: linear-gradient(90deg, var(--rd-panel-warm), var(--rd-panel));
+}
+
+.rd-panel-title {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 0;
+}
+
+.rd-icon-box {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    border: 1px solid var(--rd-line);
+    background: color-mix(in srgb, var(--rd-accent) 12%, #FFFDF8);
+    color: var(--rd-accent-deep);
+}
+
+.rd-panel h2,
+.rd-side-card h3 {
+    margin: 0;
+    color: var(--rd-brand);
+    font-size: 1rem;
+    font-weight: 950;
+    line-height: 1.2;
+}
+
+.rd-panel p,
+.rd-side-card p {
+    margin: 5px 0 0;
+    color: var(--rd-muted);
+    font-size: .79rem;
+    font-weight: 730;
+    line-height: 1.45;
+}
+
+.rd-panel-body {
+    padding: 18px;
+}
+
+.rd-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.rd-stat {
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--rd-line);
+    border-radius: 17px;
+    background: color-mix(in srgb, var(--rd-accent) 4%, #FFFDF8);
+}
+
+.rd-stat span {
+    display: block;
+    color: var(--rd-muted);
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.rd-stat strong {
+    display: block;
+    margin-top: 6px;
+    color: var(--rd-brand);
+    font-size: 1rem;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.rd-actions {
+    display: grid;
+    gap: 10px;
+}
+
+.rd-action-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.rd-btn,
+.rd-action {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    border: 1px solid var(--rd-line);
+    border-radius: 15px;
+    padding: 10px 13px;
+    font-size: .82rem;
+    font-weight: 950;
+    line-height: 1.1;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.rd-btn:active,
+.rd-action:active {
+    transform: translateY(1px) scale(.99);
+}
+
+.rd-btn:focus-visible,
+.rd-action:focus-visible,
+.rd-control:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--rd-accent) 42%, transparent);
+    outline-offset: 2px;
+}
+
+.rd-action {
+    background: var(--rd-panel);
+    color: var(--rd-brand);
+}
+
+.rd-action:hover {
+    transform: translateY(-1px);
+    border-color: var(--rd-line-strong);
+    background: var(--rd-panel-warm);
+    box-shadow: 0 18px 36px -30px rgba(15, 23, 42, .58);
+}
+
+.rd-btn-primary {
+    border-color: color-mix(in srgb, var(--rd-brand) 78%, #000000);
+    background: linear-gradient(145deg, var(--rd-brand), var(--rd-brand-dark));
+    color: #FFFDF8;
+    box-shadow: 0 18px 34px -24px color-mix(in srgb, var(--rd-brand) 72%, transparent);
+}
+
+.rd-btn-success {
+    border-color: color-mix(in srgb, var(--rd-success) 45%, transparent);
+    background: color-mix(in srgb, var(--rd-success) 12%, #FFFDF8);
+    color: var(--rd-success);
+}
+
+.rd-btn-warning {
+    border-color: color-mix(in srgb, var(--rd-warning) 35%, transparent);
+    background: color-mix(in srgb, var(--rd-warning) 12%, #FFFDF8);
+    color: var(--rd-warning);
+}
+
+.rd-btn-danger {
+    border-color: color-mix(in srgb, var(--rd-danger) 35%, transparent);
+    background: color-mix(in srgb, var(--rd-danger) 9%, #FFFDF8);
+    color: var(--rd-danger);
+}
+
+.rd-btn-info {
+    border-color: color-mix(in srgb, var(--rd-info) 35%, transparent);
+    background: color-mix(in srgb, var(--rd-info) 10%, #FFFDF8);
+    color: var(--rd-info);
+}
+
+.rd-empty-action {
+    padding: 14px;
+    border: 1px dashed var(--rd-line-strong);
+    border-radius: 17px;
+    color: var(--rd-muted);
+    background: color-mix(in srgb, var(--rd-accent) 5%, transparent);
+    font-size: .8rem;
+    font-weight: 750;
+    line-height: 1.45;
+}
+
+.rd-guest-card {
+    border: 1px solid color-mix(in srgb, var(--rd-danger) 22%, var(--rd-line));
+    background: color-mix(in srgb, var(--rd-danger) 6%, var(--rd-panel));
+}
+
+.rd-guest-grid,
+.rd-maint-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.rd-info-tile {
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--rd-line);
+    border-radius: 16px;
+    background: rgba(255,253,248,.72);
+}
+
+.rd-info-tile span {
+    display: block;
+    color: var(--rd-muted);
+    font-size: .7rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.rd-info-tile strong {
+    display: block;
+    margin-top: 5px;
+    color: var(--rd-brand);
+    font-size: .9rem;
+    font-weight: 950;
+    line-height: 1.3;
+}
+
+.rd-vehicle-list {
+    display: grid;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.rd-vehicle-list span {
+    color: var(--rd-brand);
+    font-size: .78rem;
+    font-weight: 850;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.rd-gallery-main {
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
+    background: color-mix(in srgb, var(--rd-brand) 10%, var(--rd-panel));
+}
+
+.rd-gallery-main img {
+    width: 100%;
+    height: clamp(260px, 42vw, 480px);
+    object-fit: cover;
+    display: block;
+    cursor: zoom-in;
+    transition: transform .5s ease;
+}
+
+.rd-gallery-main:hover img {
+    transform: scale(1.025);
+}
+
+.rd-photo-count,
+.rd-expand-btn {
+    position: absolute;
+    z-index: 1;
+    border: 1px solid rgba(255,253,248,.26);
+    background: rgba(15, 23, 42, .72);
+    color: #FFFDF8;
+    backdrop-filter: blur(12px);
+}
+
+.rd-photo-count {
+    left: 14px;
+    bottom: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 11px;
+    border-radius: 999px;
+    font-size: .76rem;
+    font-weight: 900;
+}
+
+.rd-expand-btn {
+    right: 14px;
+    top: 14px;
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    transition: transform .18s ease, background .18s ease;
+}
+
+.rd-expand-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(15, 23, 42, .84);
+}
+
+.rd-thumb-strip {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 12px 2px 2px;
+    scrollbar-width: thin;
+}
+
+.rd-thumb-strip img {
+    width: 92px;
+    height: 78px;
+    flex: 0 0 auto;
+    object-fit: cover;
+    border: 2px solid transparent;
+    border-radius: 15px;
+    cursor: pointer;
+    opacity: .72;
+    transition: transform .18s ease, opacity .18s ease, border-color .18s ease;
+}
+
+.rd-thumb-strip img:hover,
+.rd-thumb-strip img.thumb-active {
+    opacity: 1;
     transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    border-color: var(--rd-accent);
 }
 
-.btn-modern:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+.rd-empty {
+    display: grid;
+    place-items: center;
+    min-height: 220px;
+    text-align: center;
+    gap: 8px;
+    border: 1px dashed var(--rd-line-strong);
+    border-radius: 20px;
+    background: color-mix(in srgb, var(--rd-accent) 5%, transparent);
+    color: var(--rd-muted);
 }
 
-/* Gallery thumbnail activa */
-.thumb-active {
-    border: 3px solid #8B5CF6 !important;
-    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.3);
-    transform: scale(1.05);
+.rd-empty i {
+    font-size: 2.2rem;
+    color: color-mix(in srgb, var(--rd-accent) 72%, var(--rd-brand));
 }
 
-/* Animación de pulso para elementos importantes */
-@keyframes pulse-soft {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
+.rd-empty strong {
+    color: var(--rd-brand);
+    font-size: 1rem;
+    font-weight: 950;
 }
 
-.pulse-soft {
-    animation: pulse-soft 2s ease-in-out infinite;
+.rd-maint-card {
+    border-color: color-mix(in srgb, var(--rd-warning) 26%, var(--rd-line));
+    background: color-mix(in srgb, var(--rd-warning) 7%, var(--rd-panel));
 }
 
-/* Gradientes de fondo mejorados */
-.bg-gradient-modern {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.rd-scheduled-list {
+    display: grid;
+    gap: 10px;
 }
 
-.bg-gradient-emerald {
-    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+.rd-scheduled-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 13px;
+    border: 1px solid color-mix(in srgb, var(--rd-warning) 24%, var(--rd-line));
+    border-radius: 17px;
+    background: rgba(255,253,248,.76);
 }
 
-.bg-gradient-purple {
-    background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+.rd-scheduled-item strong {
+    display: block;
+    color: var(--rd-brand);
+    font-size: .9rem;
+    font-weight: 950;
 }
 
-.bg-gradient-rose {
-    background: linear-gradient(135deg, #F43F5E 0%, #E11D48 100%);
+.rd-scheduled-item span {
+    display: block;
+    margin-top: 3px;
+    color: var(--rd-muted);
+    font-size: .76rem;
+    font-weight: 760;
 }
 
-.bg-gradient-amber {
-    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+.rd-focus-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
 }
 
-/* Sombras personalizadas */
-.shadow-modern {
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 6px 10px rgba(0,0,0,0.08);
+.rd-focus-card {
+    min-width: 0;
+    border: 1px solid var(--rd-line);
+    border-radius: 20px;
+    background: var(--rd-panel);
+    overflow: hidden;
 }
 
-/* Efecto glass morphism */
-.glass-effect {
-    background: rgba(255, 255, 255, 0.8);
+.rd-focus-card header {
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--rd-line);
+    background: var(--rd-panel-warm);
+}
+
+.rd-focus-card header strong {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--rd-brand);
+    font-size: .9rem;
+    font-weight: 950;
+}
+
+.rd-focus-card .rd-focus-body {
+    padding: 14px;
+}
+
+.rd-focus-card h3 {
+    margin: 0 0 10px;
+    color: var(--rd-brand);
+    font-size: 1.08rem;
+    font-weight: 950;
+}
+
+.rd-date-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    margin: 10px 0;
+}
+
+.rd-date-box {
+    padding: 10px;
+    border: 1px solid var(--rd-line);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--rd-accent) 4%, #FFFDF8);
+}
+
+.rd-date-box span {
+    display: block;
+    color: var(--rd-muted);
+    font-size: .68rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.rd-date-box strong {
+    display: block;
+    margin-top: 4px;
+    color: var(--rd-brand);
+    font-size: .86rem;
+    font-weight: 950;
+}
+
+.rd-mini-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.rd-mini-tags span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 6px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rd-brand) 6%, #FFFDF8);
+    color: var(--rd-brand);
+    font-size: .72rem;
+    font-weight: 850;
+}
+
+.rd-history-list {
+    display: grid;
+    gap: 10px;
+}
+
+.rd-history-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px;
+    border: 1px solid var(--rd-line);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--rd-accent) 3%, #FFFDF8);
+    transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.rd-history-item:hover {
+    transform: translateY(-1px);
+    border-color: var(--rd-line-strong);
+    background: var(--rd-panel);
+}
+
+.rd-history-name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.rd-history-name strong {
+    color: var(--rd-brand);
+    font-size: .95rem;
+    font-weight: 950;
+}
+
+.rd-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 24px;
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rd-accent) 12%, #FFFDF8);
+    color: var(--rd-accent-deep);
+    font-size: .68rem;
+    font-weight: 900;
+}
+
+.rd-history-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 9px;
+}
+
+.rd-history-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 27px;
+    padding: 6px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rd-brand) 5%, #FFFDF8);
+    color: var(--rd-muted);
+    font-size: .72rem;
+    font-weight: 800;
+}
+
+.rd-side-card {
+    padding: 16px;
+}
+
+.rd-rate-card {
+    color: #FFFDF8;
+    border-color: color-mix(in srgb, var(--rd-brand) 72%, #000000);
+    background:
+        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--rd-accent) 24%, transparent), transparent 13rem),
+        linear-gradient(145deg, var(--rd-brand), var(--rd-brand-dark));
+}
+
+.rd-rate-card h3,
+.rd-rate-card p {
+    color: #FFFDF8;
+}
+
+.rd-rate-card p {
+    opacity: .75;
+}
+
+.rd-rate-value {
+    display: block;
+    margin-top: 13px;
+    font-size: 2rem;
+    font-weight: 950;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.rd-rate-value small {
+    font-size: .82rem;
+    opacity: .78;
+}
+
+.rd-rate-old {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 7px 9px;
+    border-radius: 999px;
+    background: rgba(255,253,248,.12);
+    color: rgba(255,253,248,.78);
+    font-size: .74rem;
+    font-weight: 850;
+}
+
+.rd-side-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 13px;
+}
+
+.rd-side-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid var(--rd-line);
+}
+
+.rd-side-row:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.rd-side-row span {
+    color: var(--rd-muted);
+    font-size: .76rem;
+    font-weight: 850;
+}
+
+.rd-side-row strong {
+    color: var(--rd-brand);
+    font-size: .82rem;
+    font-weight: 950;
+    text-align: right;
+}
+
+.rd-modal,
+.rd-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(15, 23, 42, .72);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.rd-modal.hidden,
+.rd-lightbox.hidden {
+    display: none !important;
+}
+
+.rd-modal-card {
+    width: min(100%, 480px);
+    max-height: calc(100vh - 36px);
+    overflow: auto;
+    border: 1px solid var(--rd-line);
+    border-radius: 24px;
+    background: var(--rd-panel);
+    box-shadow: 0 34px 90px -40px rgba(15, 23, 42, .92);
+    transform: scale(.96);
+    opacity: 0;
+    transition: transform .24s ease, opacity .24s ease;
+}
+
+.rd-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 17px 18px;
+    border-bottom: 1px solid var(--rd-line);
+    background: linear-gradient(90deg, var(--rd-panel-warm), var(--rd-panel));
+}
+
+.rd-modal-head h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    color: var(--rd-brand);
+    font-size: 1rem;
+    font-weight: 950;
+}
+
+.rd-modal-close {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--rd-line);
+    border-radius: 13px;
+    background: var(--rd-panel);
+    color: var(--rd-brand);
+}
+
+.rd-modal-form {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+}
+
+.rd-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.rd-field {
+    min-width: 0;
+}
+
+.rd-field-full {
+    grid-column: 1 / -1;
+}
+
+.rd-label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--rd-brand);
+    font-size: .76rem;
+    font-weight: 900;
+}
+
+.rd-control {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid var(--rd-line);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--rd-accent) 2%, #FFFEFB);
+    color: var(--rd-text);
+    padding: 10px 12px;
+    font-size: .88rem;
+    font-weight: 750;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.rd-control:focus {
+    border-color: color-mix(in srgb, var(--rd-accent) 72%, var(--rd-brand));
+    background: #FFFDF8;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--rd-accent) 17%, transparent);
+}
+
+.rd-modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding-top: 2px;
+}
+
+.rd-note {
+    padding: 12px;
+    border: 1px solid color-mix(in srgb, var(--rd-info) 22%, var(--rd-line));
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--rd-info) 7%, var(--rd-panel));
+    color: var(--rd-brand);
+    font-size: .78rem;
+    font-weight: 740;
+    line-height: 1.45;
+}
+
+.rd-lightbox {
+    z-index: 90;
+    background: rgba(4, 8, 15, .94);
+}
+
+.rd-lightbox-frame {
+    position: relative;
+    width: min(1120px, 100%);
+    max-height: 100%;
+    display: grid;
+    place-items: center;
+}
+
+.rd-lightbox-frame img#lightbox-img {
+    max-width: 100%;
+    max-height: min(78vh, 780px);
+    object-fit: contain;
+    border-radius: 18px;
+    box-shadow: 0 28px 80px -30px rgba(0,0,0,.9);
+}
+
+.rd-lightbox-btn,
+.rd-lightbox-close {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255,253,248,.16);
+    background: rgba(255,253,248,.10);
+    color: #FFFDF8;
+    backdrop-filter: blur(10px);
+    transition: transform .18s ease, background .18s ease;
+}
+
+.rd-lightbox-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.rd-lightbox-btn:hover {
+    background: rgba(255,253,248,.18);
+}
+
+.rd-lightbox-prev {
+    left: 14px;
+}
+
+.rd-lightbox-next {
+    right: 14px;
+}
+
+.rd-lightbox-close {
+    width: 44px;
+    height: 44px;
+    border-radius: 15px;
+    top: 14px;
+    right: 14px;
+}
+
+.rd-lightbox-count {
+    position: absolute;
+    left: 50%;
+    bottom: 14px;
+    transform: translateX(-50%);
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(255,253,248,.12);
+    color: #FFFDF8;
+    font-size: .78rem;
+    font-weight: 950;
+    backdrop-filter: blur(10px);
+}
+
+.rd-lightbox-thumbs {
+    position: absolute;
+    left: 50%;
+    bottom: 58px;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    max-width: min(92vw, 720px);
+    overflow-x: auto;
+    padding: 4px;
+}
+
+.rd-lightbox-thumbs img {
+    width: 66px;
+    height: 58px;
+    object-fit: cover;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    opacity: .62;
+    transition: opacity .18s ease, transform .18s ease, border-color .18s ease;
+}
+
+.rd-lightbox-thumbs img.is-active,
+.rd-lightbox-thumbs img:hover {
+    opacity: 1;
+    transform: translateY(-2px);
+    border-color: #FFFDF8;
+}
+
+/* Paleta viva: el branding del hotel queda como firma, no como color dominante. */
+.vista-habitacion.room-detail-page {
+    --rd-brand-soft: color-mix(in srgb, var(--rd-brand) 7%, #F7FAFC);
+    --rd-accent-soft: color-mix(in srgb, var(--rd-accent) 12%, #FFF8EA);
+    --rd-sage: #5E7F69;
+    --rd-sage-soft: #EDF5EE;
+    --rd-sky: #477CA8;
+    --rd-sky-soft: #EAF3FA;
+    --rd-clay: #B86A54;
+    --rd-clay-soft: #FFF0EA;
+    --rd-sun: #C18A28;
+    --rd-sun-soft: #FFF5D9;
+    --rd-ink: #1C2635;
+    --rd-bg: #F2F5F2;
+    --rd-bg-soft: #FBFAF5;
+    --rd-panel: rgba(255, 255, 252, .9);
+    --rd-panel-warm: #FFF8EA;
+    --rd-line: rgba(45, 62, 80, .12);
+    --rd-line-strong: rgba(154, 119, 59, .24);
+    --rd-muted: #687586;
+    --rd-text: var(--rd-ink);
+    background:
+        radial-gradient(circle at 5% 8%, color-mix(in srgb, var(--rd-sky) 18%, transparent), transparent 26rem),
+        radial-gradient(circle at 92% 4%, color-mix(in srgb, var(--rd-accent) 16%, transparent), transparent 24rem),
+        radial-gradient(circle at 78% 78%, color-mix(in srgb, var(--rd-sage) 15%, transparent), transparent 28rem),
+        linear-gradient(180deg, #FBFAF5 0%, #F4F6F1 42%, #EEF5F6 100%);
+}
+
+.room-detail-page :where(.rd-title, .rd-panel h2, .rd-side-card h3, .rd-stat strong, .rd-info-tile strong, .rd-side-row strong, .rd-history-name strong, .rd-focus-card h3, .rd-date-box strong, .rd-empty strong, .rd-modal-head h3, .rd-label) {
+    color: var(--rd-ink);
+}
+
+.rd-breadcrumb a {
+    color: color-mix(in srgb, var(--rd-brand) 62%, var(--rd-ink));
+}
+
+.rd-breadcrumb a:hover {
+    color: var(--rd-clay);
+}
+
+.rd-hero {
+    position: relative;
+    border-color: rgba(150, 121, 75, .2);
+    background:
+        radial-gradient(circle at 9% 12%, color-mix(in srgb, var(--rd-sky) 15%, transparent), transparent 18rem),
+        radial-gradient(circle at 89% 8%, color-mix(in srgb, var(--rd-sun) 17%, transparent), transparent 17rem),
+        linear-gradient(135deg, rgba(255,255,252,.96), rgba(244,249,247,.92));
+    box-shadow: 0 26px 74px -56px rgba(28, 38, 53, .62);
+}
+
+.rd-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 6px;
+    background: linear-gradient(180deg, var(--rd-sky), var(--rd-sage) 42%, var(--rd-accent) 72%, var(--rd-clay));
+    z-index: 1;
+}
+
+.rd-hero-copy::after {
+    background: linear-gradient(90deg, transparent, var(--rd-sky), var(--rd-sage), var(--rd-accent), var(--rd-clay));
+    opacity: .58;
+}
+
+.rd-kicker {
+    color: var(--rd-clay);
+}
+
+.rd-subtitle,
+.rd-panel p,
+.rd-side-card p,
+.rd-alert span,
+.rd-history-meta span {
+    color: var(--rd-muted);
+}
+
+.rd-chip {
+    color: var(--rd-ink);
+    background: var(--rd-brand-soft);
+}
+
+.rd-hero-tags .rd-chip:nth-child(3) {
+    border-color: color-mix(in srgb, var(--rd-sky) 25%, transparent);
+    background: var(--rd-sky-soft);
+    color: color-mix(in srgb, var(--rd-sky) 78%, var(--rd-ink));
+}
+
+.rd-hero-tags .rd-chip:nth-child(4) {
+    border-color: color-mix(in srgb, var(--rd-sage) 26%, transparent);
+    background: var(--rd-sage-soft);
+    color: color-mix(in srgb, var(--rd-sage) 80%, var(--rd-ink));
+}
+
+.rd-hero-tags .rd-chip:nth-child(5),
+.rd-hero-tags .rd-chip:nth-child(6) {
+    border-color: color-mix(in srgb, var(--rd-sun) 26%, transparent);
+    background: var(--rd-sun-soft);
+    color: color-mix(in srgb, var(--rd-sun) 78%, var(--rd-ink));
+}
+
+.rd-hero-media {
+    background:
+        radial-gradient(circle at 32% 15%, color-mix(in srgb, var(--rd-sky) 22%, transparent), transparent 18rem),
+        linear-gradient(150deg, #223044, #31484B 52%, #5E4A34);
+}
+
+.rd-floating-price,
+.rd-photo-count,
+.rd-expand-btn {
+    background: rgba(28, 38, 53, .72);
+    box-shadow: 0 18px 44px -30px rgba(28, 38, 53, .85);
+}
+
+.rd-alert {
+    border-color: color-mix(in srgb, var(--rd-sun) 34%, transparent);
+    background: linear-gradient(135deg, var(--rd-sun-soft), rgba(255,255,252,.86));
+}
+
+.rd-alert-icon {
+    background: linear-gradient(145deg, var(--rd-sun), var(--rd-clay));
+}
+
+.rd-alert strong {
+    color: var(--rd-ink);
+}
+
+.rd-panel,
+.rd-side-card,
+.rd-focus-card {
+    background: var(--rd-panel);
+    border-color: var(--rd-line);
+    box-shadow: 0 1px 2px rgba(28, 38, 53, .04), 0 20px 44px -36px rgba(28, 38, 53, .42);
+}
+
+.rd-panel-head,
+.rd-focus-card header,
+.rd-modal-head {
+    background: linear-gradient(90deg, rgba(255,248,234,.86), rgba(246,250,252,.84));
+}
+
+.rd-icon-box {
+    border-color: color-mix(in srgb, var(--rd-sky) 21%, transparent);
+    background: linear-gradient(145deg, var(--rd-sky-soft), rgba(255,255,252,.94));
+    color: color-mix(in srgb, var(--rd-sky) 78%, var(--rd-ink));
+}
+
+.rd-main > .rd-panel:nth-child(3n + 1) .rd-icon-box {
+    border-color: color-mix(in srgb, var(--rd-sage) 22%, transparent);
+    background: linear-gradient(145deg, var(--rd-sage-soft), rgba(255,255,252,.94));
+    color: color-mix(in srgb, var(--rd-sage) 78%, var(--rd-ink));
+}
+
+.rd-main > .rd-panel:nth-child(3n + 2) .rd-icon-box {
+    border-color: color-mix(in srgb, var(--rd-sun) 24%, transparent);
+    background: linear-gradient(145deg, var(--rd-sun-soft), rgba(255,255,252,.94));
+    color: color-mix(in srgb, var(--rd-sun) 78%, var(--rd-ink));
+}
+
+.rd-stat {
+    background: rgba(255,255,252,.72);
+}
+
+.rd-stat:nth-child(1) {
+    border-color: color-mix(in srgb, var(--status-color, var(--rd-sage)) 22%, transparent);
+    background: color-mix(in srgb, var(--status-soft, var(--rd-sage-soft)) 58%, rgba(255,255,252,.9));
+}
+
+.rd-stat:nth-child(2) {
+    border-color: color-mix(in srgb, var(--rd-sky) 18%, transparent);
+    background: var(--rd-sky-soft);
+}
+
+.rd-stat:nth-child(3) {
+    border-color: color-mix(in srgb, var(--rd-sage) 18%, transparent);
+    background: var(--rd-sage-soft);
+}
+
+.rd-stat:nth-child(4) {
+    border-color: color-mix(in srgb, var(--rd-sun) 20%, transparent);
+    background: var(--rd-sun-soft);
+}
+
+.rd-action {
+    color: var(--rd-ink);
+    background: rgba(255,255,252,.82);
+}
+
+.rd-action:hover {
+    border-color: color-mix(in srgb, var(--rd-sky) 26%, transparent);
+    background: linear-gradient(135deg, rgba(234,243,250,.92), rgba(255,255,252,.96));
+}
+
+.rd-btn-primary {
+    border-color: color-mix(in srgb, var(--rd-brand) 42%, transparent);
+    background: linear-gradient(145deg, color-mix(in srgb, var(--rd-brand) 82%, #263247), #263247);
+    box-shadow: 0 18px 34px -26px color-mix(in srgb, var(--rd-brand) 52%, transparent);
+}
+
+.rd-guest-card {
+    border-color: color-mix(in srgb, var(--rd-clay) 20%, var(--rd-line));
+    background: linear-gradient(135deg, color-mix(in srgb, var(--rd-clay-soft) 58%, rgba(255,255,252,.92)), rgba(255,255,252,.9));
+}
+
+.rd-maint-card {
+    border-color: color-mix(in srgb, var(--rd-sun) 25%, var(--rd-line));
+    background: linear-gradient(135deg, color-mix(in srgb, var(--rd-sun-soft) 62%, rgba(255,255,252,.92)), rgba(255,255,252,.9));
+}
+
+.rd-info-tile,
+.rd-scheduled-item,
+.rd-date-box {
+    background: rgba(255,255,252,.76);
+}
+
+.rd-gallery-main {
+    background: linear-gradient(145deg, var(--rd-sky-soft), var(--rd-sage-soft));
+}
+
+.rd-thumb-strip img:hover,
+.rd-thumb-strip img.thumb-active {
+    border-color: var(--rd-clay);
+}
+
+.rd-empty,
+.rd-empty-action {
+    background: linear-gradient(135deg, rgba(234,243,250,.58), rgba(255,248,234,.55));
+}
+
+.rd-empty i {
+    color: var(--rd-sky);
+}
+
+.rd-focus-card:nth-child(odd) {
+    border-color: color-mix(in srgb, var(--rd-sky) 22%, var(--rd-line));
+}
+
+.rd-focus-card:nth-child(even) {
+    border-color: color-mix(in srgb, var(--rd-sage) 22%, var(--rd-line));
+}
+
+.rd-mini-tags span,
+.rd-history-meta span {
+    background: rgba(255,255,252,.74);
+}
+
+.rd-mini-tags span:nth-child(3n + 1),
+.rd-history-meta span:nth-child(3n + 1) {
+    color: color-mix(in srgb, var(--rd-sky) 72%, var(--rd-ink));
+    background: var(--rd-sky-soft);
+}
+
+.rd-mini-tags span:nth-child(3n + 2),
+.rd-history-meta span:nth-child(3n + 2) {
+    color: color-mix(in srgb, var(--rd-sage) 72%, var(--rd-ink));
+    background: var(--rd-sage-soft);
+}
+
+.rd-mini-tags span:nth-child(3n + 3),
+.rd-history-meta span:nth-child(3n + 3) {
+    color: color-mix(in srgb, var(--rd-sun) 74%, var(--rd-ink));
+    background: var(--rd-sun-soft);
+}
+
+.rd-history-item {
+    background: rgba(255,255,252,.82);
+}
+
+.rd-badge {
+    background: var(--rd-accent-soft);
+    color: color-mix(in srgb, var(--rd-accent) 72%, var(--rd-ink));
+}
+
+.rd-rate-card {
+    position: relative;
+    overflow: hidden;
+    color: var(--rd-ink);
+    border-color: color-mix(in srgb, var(--rd-accent) 24%, var(--rd-line));
+    background:
+        radial-gradient(circle at 102% 2%, color-mix(in srgb, var(--rd-accent) 18%, transparent), transparent 12rem),
+        radial-gradient(circle at 0% 100%, color-mix(in srgb, var(--rd-sage) 15%, transparent), transparent 12rem),
+        linear-gradient(145deg, rgba(255,255,252,.96), rgba(246,250,252,.9));
+}
+
+.rd-rate-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 5px;
+    background: linear-gradient(90deg, var(--rd-sky), var(--rd-sage), var(--rd-accent), var(--rd-clay));
+}
+
+.rd-rate-card h3,
+.rd-rate-card p {
+    color: var(--rd-ink);
+}
+
+.rd-rate-card p {
+    opacity: .68;
+}
+
+.rd-rate-value {
+    color: color-mix(in srgb, var(--rd-brand) 70%, var(--rd-ink));
+}
+
+.rd-rate-old {
+    background: var(--rd-accent-soft);
+    color: color-mix(in srgb, var(--rd-accent) 72%, var(--rd-ink));
+}
+
+.rd-control {
+    background: rgba(255,255,252,.88);
+}
+
+.room-detail-page .rd-title,
+.room-detail-page .rd-panel h2,
+.room-detail-page .rd-side-card h3,
+.room-detail-page .rd-stat strong,
+.room-detail-page .rd-info-tile strong,
+.room-detail-page .rd-side-row strong,
+.room-detail-page .rd-history-name strong,
+.room-detail-page .rd-focus-card h3,
+.room-detail-page .rd-date-box strong,
+.room-detail-page .rd-empty strong,
+.room-detail-page .rd-modal-head h3,
+.room-detail-page .rd-label {
+    color: var(--rd-ink);
+}
+
+.room-detail-page .rd-hero-media {
+    background:
+        radial-gradient(circle at 28% 20%, color-mix(in srgb, var(--rd-sky) 24%, transparent), transparent 18rem),
+        radial-gradient(circle at 78% 80%, color-mix(in srgb, var(--rd-sun) 18%, transparent), transparent 18rem),
+        linear-gradient(145deg, #F8FBFA, #EAF3F2 58%, #FFF5DF);
+}
+
+.room-detail-page .rd-hero-media::after {
+    background: linear-gradient(180deg, transparent 45%, rgba(28, 38, 53, .08));
+}
+
+.room-detail-page .rd-media-placeholder {
+    color: var(--rd-ink);
+    padding: 24px 24px 132px;
+}
+
+.room-detail-page .rd-media-placeholder i {
+    width: 54px;
+    height: 54px;
+    display: grid;
+    place-items: center;
+    margin: 0 auto 14px;
+    border-radius: 18px;
+    background: rgba(255,255,252,.74);
+    color: var(--rd-sky);
+    box-shadow: 0 14px 34px -28px rgba(28, 38, 53, .7);
+}
+
+.room-detail-page .rd-media-placeholder strong {
+    color: var(--rd-ink);
+}
+
+.room-detail-page .rd-media-placeholder span {
+    color: var(--rd-muted);
+    font-weight: 800;
+}
+
+.room-detail-page .rd-rate-value {
+    color: color-mix(in srgb, var(--rd-clay) 74%, var(--rd-ink));
+}
+
+/* Secciones con lectura clara: superficies neutras, acentos por funcion. */
+.room-detail-page .rd-main {
+    gap: 20px;
+}
+
+.room-detail-page .rd-panel,
+.room-detail-page .rd-side-card,
+.room-detail-page .rd-focus-card {
+    background: rgba(255, 255, 255, .94);
+    border-color: rgba(28, 38, 53, .12);
+    box-shadow:
+        0 1px 0 rgba(255,255,255,.82) inset,
+        0 20px 44px -38px rgba(28, 38, 53, .55);
+}
+
+.room-detail-page .rd-panel {
+    position: relative;
+}
+
+.room-detail-page .rd-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 5px;
+    background: var(--rd-section-accent, var(--rd-sky));
+    opacity: .76;
+}
+
+.room-detail-page .rd-section-overview {
+    --rd-section-accent: var(--rd-sky);
+}
+
+.room-detail-page .rd-section-guest {
+    --rd-section-accent: var(--rd-clay);
+}
+
+.room-detail-page .rd-section-gallery {
+    --rd-section-accent: var(--rd-sage);
+}
+
+.room-detail-page .rd-section-maint {
+    --rd-section-accent: var(--rd-sun);
+}
+
+.room-detail-page .rd-section-movement {
+    --rd-section-accent: color-mix(in srgb, var(--rd-brand) 62%, var(--rd-sky));
+}
+
+.room-detail-page .rd-section-history {
+    --rd-section-accent: var(--rd-clay);
+}
+
+.room-detail-page .rd-panel-head,
+.room-detail-page .rd-focus-card header,
+.room-detail-page .rd-modal-head {
+    background: linear-gradient(90deg, rgba(255,255,255,.98), rgba(247,249,248,.94));
+    border-bottom-color: rgba(28, 38, 53, .1);
+}
+
+.room-detail-page .rd-panel-title {
+    align-items: center;
+}
+
+.room-detail-page .rd-panel-title::after {
+    content: "";
+    align-self: center;
+    width: 42px;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--rd-section-accent, var(--rd-sky));
+    opacity: .42;
+}
+
+.room-detail-page .rd-icon-box {
+    border-color: color-mix(in srgb, var(--rd-section-accent, var(--rd-sky)) 22%, transparent);
+    background: color-mix(in srgb, var(--rd-section-accent, var(--rd-sky)) 10%, #FFFFFF);
+    color: color-mix(in srgb, var(--rd-section-accent, var(--rd-sky)) 76%, var(--rd-ink));
+}
+
+.room-detail-page .rd-guest-card,
+.room-detail-page .rd-maint-card {
+    background: rgba(255,255,255,.94);
+}
+
+.room-detail-page .rd-stat,
+.room-detail-page .rd-stat:nth-child(1),
+.room-detail-page .rd-stat:nth-child(2),
+.room-detail-page .rd-stat:nth-child(3),
+.room-detail-page .rd-stat:nth-child(4),
+.room-detail-page .rd-info-tile,
+.room-detail-page .rd-date-box,
+.room-detail-page .rd-scheduled-item,
+.room-detail-page .rd-history-item {
+    background: #FFFFFF;
+    border-color: rgba(28, 38, 53, .1);
+}
+
+.room-detail-page .rd-stat {
+    border-left: 4px solid var(--rd-section-accent, var(--rd-sky));
+}
+
+.room-detail-page .rd-stat:nth-child(1) {
+    border-left-color: var(--status-color, var(--rd-sage));
+}
+
+.room-detail-page .rd-stat:nth-child(2) {
+    border-left-color: var(--rd-sky);
+}
+
+.room-detail-page .rd-stat:nth-child(3) {
+    border-left-color: var(--rd-sage);
+}
+
+.room-detail-page .rd-stat:nth-child(4) {
+    border-left-color: var(--rd-sun);
+}
+
+.room-detail-page .rd-gallery-main,
+.room-detail-page .rd-empty,
+.room-detail-page .rd-empty-action {
+    background: linear-gradient(135deg, #FFFFFF, rgba(247,249,248,.92));
+}
+
+.room-detail-page .rd-focus-grid {
+    align-items: stretch;
+}
+
+.room-detail-page .rd-focus-card {
+    --focus-accent: var(--rd-sky);
+    position: relative;
+    overflow: hidden;
+}
+
+.room-detail-page .rd-focus-card:only-child {
+    grid-column: 1 / -1;
+}
+
+.room-detail-page .rd-focus-card:only-child .rd-focus-title span {
+    white-space: nowrap;
+}
+
+.room-detail-page .rd-next-card {
+    --focus-accent: color-mix(in srgb, var(--rd-brand) 58%, var(--rd-sky));
+}
+
+.room-detail-page .rd-last-card {
+    --focus-accent: var(--rd-sage);
+}
+
+.room-detail-page .rd-focus-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: var(--focus-accent);
+}
+
+.room-detail-page .rd-focus-card header {
+    min-height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 16px 13px;
+}
+
+.room-detail-page .rd-focus-title {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    color: var(--rd-ink);
+    line-height: 1.12;
+}
+
+.room-detail-page .rd-focus-title i {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--focus-accent) 12%, #FFFFFF);
+    color: color-mix(in srgb, var(--focus-accent) 78%, var(--rd-ink));
+}
+
+.room-detail-page .rd-focus-title span {
+    display: block;
+    font-size: .96rem;
+    font-weight: 950;
+    line-height: 1.12;
+    text-wrap: balance;
+}
+
+.room-detail-page .rd-focus-kind {
+    flex: 0 0 auto;
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 9px;
+    border: 1px solid color-mix(in srgb, var(--focus-accent) 24%, transparent);
+    border-radius: 999px;
+    background: #FFFFFF;
+    color: color-mix(in srgb, var(--focus-accent) 76%, var(--rd-ink));
+    font-size: .68rem;
+    font-weight: 950;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.room-detail-page .rd-focus-body {
+    background: #FFFFFF;
+}
+
+.room-detail-page .rd-mini-tags span,
+.room-detail-page .rd-history-meta span {
+    border: 1px solid rgba(28, 38, 53, .08);
+    background: #FFFFFF;
+}
+
+@media (max-width: 1160px) {
+    .rd-hero,
+    .rd-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .rd-side {
+        position: static;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .rd-rate-card,
+    .rd-side-card:last-child {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 780px) {
+    .rd-shell {
+        width: min(100% - 22px, 1500px);
+        padding: 18px 0 32px;
+    }
+
+    .rd-hero,
+    .rd-panel,
+    .rd-side-card {
+        border-radius: 21px;
+    }
+
+    .rd-hero-copy,
+    .rd-panel-body,
+    .rd-panel-head {
+        padding: 15px;
+    }
+
+    .rd-hero-media,
+    .rd-hero-media img,
+    .rd-media-placeholder {
+        min-height: 250px;
+    }
+
+    .rd-title {
+        font-size: clamp(2.8rem, 18vw, 5.2rem);
+    }
+
+    .rd-alert,
+    .rd-history-item,
+    .rd-scheduled-item {
+        grid-template-columns: 1fr;
+    }
+
+    .rd-stat-grid,
+    .rd-guest-grid,
+    .rd-maint-grid,
+    .rd-focus-grid,
+    .rd-action-grid,
+    .rd-side,
+    .rd-form-grid,
+    .rd-modal-actions,
+    .rd-date-pair {
+        grid-template-columns: 1fr;
+    }
+
+    .rd-floating-price {
+        position: static;
+        margin: 12px;
+    }
+
+    .rd-lightbox-btn {
+        width: 42px;
+        height: 42px;
+    }
+
+    .room-detail-page .rd-focus-card:only-child .rd-focus-title span {
+        white-space: normal;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .room-detail-page *,
+    .room-detail-page *::before,
+    .room-detail-page *::after {
+        animation: none !important;
+        transition: none !important;
+    }
 }
 </style>
 
-<div class="vista-habitacion">
-    <!-- Header Mejorado -->
-    <div class="bg-white shadow-modern border-b sticky top-0 z-30">
-        <div class="container mx-auto px-4 py-4">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                <div class="flex items-center gap-3">
-                    <a href="<?= url('habitaciones') ?>" 
-                       class="text-purple-600 hover:text-purple-800 transition-all hover:scale-110">
-                        <i class="fas fa-arrow-left text-xl"></i>
-                    </a>
-                    <div>
-                        <h1 class="text-3xl font-bold text-gray-800">
-                            Habitación <?= htmlspecialchars($habitacion['numero']) ?>
-                        </h1>
-                        <p class="text-sm text-gray-600 mt-1">
-                            <i class="fas fa-door-open mr-1 text-purple-500"></i>
-                            <?= isset($tipos[$habitacion['tipo']]) ? $tipos[$habitacion['tipo']] : ucfirst($habitacion['tipo']) ?> • 
-                            <?= Habitacion::getNombrePiso($habitacion['piso']) ?>
-                        </p>
-                    </div>
-                </div>
-                
-                <div class="flex gap-2">
-                    <a href="<?= url('habitaciones/' . $habitacion['id'] . '/edit') ?>"
-                       class="btn-modern bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300">
-                        <i class="fas fa-edit"></i>
-                        <span class="hidden sm:inline">Editar</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="vista-habitacion room-detail-page">
+    <div class="rd-shell">
+        <nav class="rd-breadcrumb" aria-label="Ruta de navegacion">
+            <a href="<?= url('habitaciones') ?>">
+                <i class="fas fa-bed"></i>
+                Habitaciones
+            </a>
+            <i class="fas fa-chevron-right"></i>
+            <span>Habitaci&oacute;n <?= room_detail_safe($habitacion_numero) ?></span>
+        </nav>
 
-    <div class="container mx-auto px-4 py-4 max-w-6xl">
-        <!-- Alerta de Reservación Pendiente Mejorada -->
-        <?php if (isset($reservacion_pendiente) && $reservacion_pendiente): ?>
-        <div class="mb-4 bg-gradient-purple rounded-xl shadow-modern p-5 transform hover:scale-102 transition-transform">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="bg-white/20 text-white p-3 rounded-xl pulse-soft">
-                        <i class="fas fa-clock text-2xl"></i>
-                    </div>
-                    <div>
-                        <p class="font-bold text-white text-lg">
-                            <?= htmlspecialchars($reservacion_pendiente['nombre_completo']) ?> - Llegada pendiente
-                        </p>
-                        <p class="text-sm text-purple-100 mt-1">
-                            <i class="fas fa-clock mr-1"></i>
-                            Hora estimada: <?= date('g:i A', strtotime($reservacion_pendiente['hora_llegada_estimada'])) ?>
-                            <?php if ($reservacion_pendiente['total_habitaciones'] > 1): ?>
-                            • <i class="fas fa-users mr-1"></i>Grupo de <?= $reservacion_pendiente['total_habitaciones'] ?> habitaciones
-                            <?php endif; ?>
-                        </p>
-                    </div>
+        <header class="rd-hero">
+            <section class="rd-hero-copy">
+                <div class="rd-kicker">
+                    <i class="fas fa-door-open"></i>
+                    Detalles de habitaci&oacute;n
                 </div>
-                <a href="<?= url('reservaciones/ver/' . $reservacion_pendiente['reservacion_id']) ?>" 
-                   class="btn-modern bg-white text-purple-600 hover:bg-purple-50 font-bold">
+                <h1 class="rd-title">
+                    <span>Habitaci&oacute;n</span>
+                    <?= room_detail_safe($habitacion_numero) ?>
+                </h1>
+                <p class="rd-subtitle">
+                    Control operativo de estado, precio, hu&eacute;sped actual, mantenimiento, fotograf&iacute;as e historial reciente.
+                </p>
+
+                <div class="rd-hero-tags">
+                    <span class="rd-status-pill" style="--status-color: <?= room_detail_safe($status_meta['color']) ?>; --status-soft: <?= room_detail_safe($status_meta['soft']) ?>;">
+                        <i class="fas fa-<?= room_detail_safe($status_meta['icon'], 'circle') ?>"></i>
+                        <?= room_detail_safe($status_meta['label']) ?>
+                    </span>
+                    <span class="rd-chip"><i class="fas fa-layer-group"></i><?= room_detail_safe($tipo_label) ?></span>
+                    <span class="rd-chip"><i class="fas fa-building"></i><?= room_detail_safe($piso_label) ?></span>
+                    <?php if ($capacidad > 0): ?>
+                        <span class="rd-chip"><i class="fas fa-user-group"></i><?= number_format($capacidad) ?> personas</span>
+                    <?php endif; ?>
+                    <span class="rd-chip"><i class="fas fa-circle"></i><?= $activa ? 'Activa' : 'Inactiva' ?></span>
+                </div>
+            </section>
+
+            <section class="rd-hero-media" aria-label="Fotografia principal">
+                <?php if ($imagen_principal): ?>
+                    <img src="<?= image_url($imagen_principal['url']) ?>"
+                         alt="Habitaci&oacute;n <?= room_detail_safe($habitacion_numero) ?>"
+                         onclick="abrirLightbox(this.src)">
+                <?php else: ?>
+                    <div class="rd-media-placeholder">
+                        <div>
+                            <i class="fas fa-image"></i>
+                            <strong><?= room_detail_safe($habitacion_numero) ?></strong>
+                            <span>Sin fotograf&iacute;a principal</span>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <div class="rd-floating-price">
+                    <span>Tarifa vigente</span>
+                    <strong><?= format_money($precio_actual) ?></strong>
+                    <small>por noche</small>
+                    <?php if ($tiene_incremento): ?>
+                        <small>Base: <?= format_money($precio_base_original) ?>, incremento: <?= format_money($incremento_total) ?></small>
+                    <?php endif; ?>
+                </div>
+            </section>
+        </header>
+
+        <?php if ($reservacion_pendiente): ?>
+            <section class="rd-alert">
+                <div class="rd-alert-icon"><i class="fas fa-clock"></i></div>
+                <div>
+                    <strong><?= room_detail_safe($reservacion_pendiente['nombre_completo'] ?? '') ?> - llegada pendiente</strong>
+                    <span>
+                        Hora estimada: <?= date('g:i A', strtotime($reservacion_pendiente['hora_llegada_estimada'])) ?>
+                        <?php if (($reservacion_pendiente['total_habitaciones'] ?? 0) > 1): ?>
+                            · Grupo de <?= (int)$reservacion_pendiente['total_habitaciones'] ?> habitaciones
+                        <?php endif; ?>
+                    </span>
+                </div>
+                <a href="<?= url('reservaciones/ver/' . $reservacion_pendiente['reservacion_id']) ?>" class="rd-btn rd-btn-primary">
                     <i class="fas fa-sign-in-alt"></i>
                     Check-in
                 </a>
-            </div>
-        </div>
+            </section>
         <?php endif; ?>
 
-        <!-- Layout Principal -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <!-- Columna Principal (2/3) -->
-            <div class="lg:col-span-2 space-y-4">
-                
-                <!-- Estado y Precio Mejorado -->
-                <div class="info-card p-4">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <div>
-                            <h2 class="text-base font-bold text-gray-800 mb-2 flex items-center gap-2">
-                                <i class="fas fa-info-circle text-purple-500"></i>
-                                Estado Actual
-                            </h2>
-                            <?php 
-                            $estado_actual = $habitacion['estado_display'] ?? $habitacion['estado'];
-                            $estados_completos = $estados;
-                            $estados_completos['por_llegar'] = ['label' => 'Por llegar', 'color' => 'purple', 'icon' => 'clock'];
-                            $estadoInfo = $estados_completos[$estado_actual];
-                            $colorClasses = [
-                                'disponible' => 'bg-gradient-emerald',
-                                'ocupada' => 'bg-gradient-rose',
-                                'mantenimiento' => 'bg-gradient-amber',
-                                'limpieza' => 'bg-blue-500',
-                                'por_llegar' => 'bg-gradient-purple'
-                            ][$estado_actual] ?? 'bg-gray-500';
-                            ?>
-                            <div class="inline-flex items-center gap-2 <?= $colorClasses ?> text-white px-4 py-2 rounded-lg shadow-lg">
-                                <i class="fas fa-<?= $estadoInfo['icon'] ?>"></i>
-                                <span class="font-bold"><?= $estadoInfo['label'] ?></span>
+        <div class="rd-layout">
+            <main class="rd-main">
+                <section class="rd-panel rd-section-overview">
+                    <div class="rd-panel-head">
+                        <div class="rd-panel-title">
+                            <span class="rd-icon-box"><i class="fas fa-gauge-high"></i></span>
+                            <div>
+                                <h2>Lectura operativa</h2>
+                                <p>Resumen r&aacute;pido para recepci&oacute;n y mantenimiento.</p>
                             </div>
                         </div>
-                        
-                        <div class="text-right">
-                            <?php if ($habitacion['tiene_incremento']): ?>
-                                <div class="text-2xl font-bold text-purple-600">
-                                    <?= format_money($habitacion['precio_actual']) ?>
+                    </div>
+                    <div class="rd-panel-body">
+                        <div class="rd-stat-grid">
+                            <article class="rd-stat">
+                                <span>Estado</span>
+                                <strong><?= room_detail_safe($status_meta['label']) ?></strong>
+                            </article>
+                            <article class="rd-stat">
+                                <span>Tipo</span>
+                                <strong><?= room_detail_safe($tipo_label) ?></strong>
+                            </article>
+                            <article class="rd-stat">
+                                <span>Piso</span>
+                                <strong><?= room_detail_safe($piso_label) ?></strong>
+                            </article>
+                            <article class="rd-stat">
+                                <span>Historial</span>
+                                <strong><?= number_format($historial_count) ?> reservas</strong>
+                            </article>
+                        </div>
+                    </div>
+                </section>
+
+                <?php if ($ocupacion_actual): ?>
+                    <section class="rd-panel rd-guest-card rd-section-guest">
+                        <div class="rd-panel-head">
+                            <div class="rd-panel-title">
+                                <span class="rd-icon-box"><i class="fas fa-user-check"></i></span>
+                                <div>
+                                    <h2>Hu&eacute;sped actual</h2>
+                                    <p>Reservaci&oacute;n activa vinculada a esta habitaci&oacute;n.</p>
                                 </div>
-                                <div class="text-sm text-gray-500 line-through">
-                                    <?= format_money($habitacion['precio_base_original']) ?>
-                                </div>
-                                <div class="text-xs text-rose-600 font-bold mt-1">
-                                    <i class="fas fa-arrow-up mr-1"></i>
-                                    +<?= format_money($habitacion['incremento_total']) ?> tarifa dinámica
-                                </div>
-                            <?php else: ?>
-                                <div class="text-2xl font-bold text-purple-600">
-                                    <?= format_money($habitacion['precio_base']) ?>
-                                </div>
-                                <div class="text-xs text-gray-500">por noche</div>
+                            </div>
+                            <?php if (($ocupacion_actual['fecha_salida'] ?? '') == date('Y-m-d')): ?>
+                                <span class="rd-badge"><i class="fas fa-calendar-day"></i>Sale hoy</span>
                             <?php endif; ?>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Acciones Rápidas (SIN RESTRICCIONES) -->
-                <div class="info-card p-4">
-                    <h3 class="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
-                        <i class="fas fa-bolt text-yellow-500"></i>
-                        Acciones Rápidas
-                    </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <?php if ($habitacion['estado'] == 'disponible'): ?>
-                            <button onclick="mostrarModalMantenimiento()" 
-                                    class="btn-modern bg-gradient-amber text-white hover:shadow-xl w-full justify-center">
-                                <i class="fas fa-tools"></i>
-                                Iniciar Mantenimiento
-                            </button>
-                            
-                            <a href="<?= url('reservaciones/crear?habitacion=' . $habitacion['id']) ?>"
-                               class="btn-modern bg-gradient-emerald text-white hover:shadow-xl w-full justify-center">
-                                <i class="fas fa-calendar-plus"></i>
-                                Nueva Reservación
-                            </a>
-                            
-                            <button onclick="mostrarModalProgramarMantenimiento()" 
-                                    class="btn-modern bg-gradient-to-r from-yellow-400 to-orange-400 text-white hover:shadow-xl w-full justify-center">
-                                <i class="fas fa-calendar-check"></i>
-                                Programar Mantenimiento
-                            </button>
-                        <?php endif; ?>
-                        
-                        <?php if ($habitacion['estado'] == 'limpieza'): ?>
-                        <form method="POST" action="<?= url('habitaciones/limpieza/' . $habitacion['id']) ?>" class="w-full">
-                            <?= csrf_field() ?>
-                            <input type="hidden" name="accion" value="finalizar">
-                            <button type="submit" class="btn-modern bg-gradient-emerald text-white hover:shadow-xl w-full justify-center">
-                                <i class="fas fa-check-circle"></i>
-                                Finalizar Limpieza
-                            </button>
-                        </form>
-                        <?php endif; ?>
-                    </div>
-                </div>
+                        <div class="rd-panel-body">
+                            <div class="rd-guest-grid">
+                                <article class="rd-info-tile">
+                                    <span>Hu&eacute;sped</span>
+                                    <strong><?= room_detail_safe($ocupacion_actual['nombre_completo'] ?? '') ?></strong>
+                                </article>
+                                <article class="rd-info-tile">
+                                    <span>Salida</span>
+                                    <strong><?= format_date($ocupacion_actual['fecha_salida'] ?? '') ?></strong>
+                                </article>
+                                <article class="rd-info-tile">
+                                    <span>Tel&eacute;fono</span>
+                                    <strong><?= room_detail_safe($ocupacion_actual['telefono'] ?? '', 'No registrado') ?></strong>
+                                </article>
+                                <article class="rd-info-tile">
+                                    <span>Veh&iacute;culos</span>
+                                    <?php
+                                    if (class_exists('HuespedVehiculo') && isset($ocupacion_actual['huesped_id'])) {
+                                        $vehiculoModel = new HuespedVehiculo();
+                                        $vehiculos_ocupacion = $vehiculoModel->porHuesped($ocupacion_actual['huesped_id']);
+                                        if (!empty($vehiculos_ocupacion)): ?>
+                                            <div class="rd-vehicle-list">
+                                                <?php foreach ($vehiculos_ocupacion as $vehiculo): ?>
+                                                    <span>
+                                                        <i class="fas fa-car"></i>
+                                                        <?= room_detail_safe(trim(($vehiculo['marca'] ?? '') . ' ' . ($vehiculo['modelo'] ?? '')), 'Vehiculo') ?>
+                                                        (<?= room_detail_safe($vehiculo['placas'] ?? '', 'sin placas') ?>)
+                                                    </span>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <strong>Sin veh&iacute;culos registrados</strong>
+                                        <?php endif;
+                                    } elseif (isset($ocupacion_actual['huesped_id'])) { ?>
+                                        <strong><?= room_detail_safe(get_resumen_vehiculos_huesped($ocupacion_actual['huesped_id']) ?? '', 'Sin vehiculos') ?></strong>
+                                    <?php } else { ?>
+                                        <strong>Sin veh&iacute;culos registrados</strong>
+                                    <?php } ?>
+                                </article>
+                            </div>
 
-                <!-- INFORMACIÓN DEL HUÉSPED ACTUAL (SIEMPRE QUE EXISTA) -->
-<?php if ($ocupacion_actual): ?>
-<div class="estado-ocupada rounded-lg p-4">
-    <h3 class="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
-        <i class="fas fa-user-check text-red-600"></i>
-        Información del Huésped Actual
-    </h3>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-        <div class="bg-white/60 rounded-lg p-2">
-            <p class="text-xs text-gray-600 mb-1 font-semibold uppercase">Huésped</p>
-            <p class="font-bold text-gray-900"><?= htmlspecialchars($ocupacion_actual['nombre_completo'] ?? '') ?></p>
-        </div>
-        <div class="bg-white/60 rounded-lg p-2">
-            <p class="text-xs text-gray-600 mb-1 font-semibold uppercase">Salida</p>
-            <p class="font-bold text-red-700">
-                <?= format_date($ocupacion_actual['fecha_salida'] ?? '') ?>
-                <?php if (($ocupacion_actual['fecha_salida'] ?? '') == date('Y-m-d')): ?>
-                <span class="text-xs bg-yellow-500 text-white px-2 py-1 rounded-full ml-2">HOY</span>
+                            <?php $reservacion_id = $ocupacion_actual['id'] ?? 0; ?>
+                            <div style="margin-top: 12px;">
+                                <a href="<?= url('reservaciones/ver/' . $reservacion_id) ?>" class="rd-btn rd-btn-info">
+                                    <i class="fas fa-eye"></i>
+                                    Ver reservaci&oacute;n completa
+                                </a>
+                            </div>
+                        </div>
+                    </section>
                 <?php endif; ?>
-            </p>
-        </div>
-        <div class="bg-white/60 rounded-lg p-2">
-            <p class="text-xs text-gray-600 mb-1 font-semibold uppercase">Teléfono</p>
-            <p class="font-bold text-gray-700 text-sm">
-                <i class="fas fa-phone text-gray-400 mr-1"></i>
-                <?= htmlspecialchars($ocupacion_actual['telefono'] ?? 'No registrado') ?>
-            </p>
-        </div>
-        <div class="bg-white/60 rounded-lg p-2">
-            <p class="text-xs text-gray-600 mb-1 font-semibold uppercase">Vehículos</p>
-            <?php 
-            // Obtener vehículos detallados del huésped
-            if (class_exists('HuespedVehiculo') && isset($ocupacion_actual['huesped_id'])) {
-                $vehiculoModel = new HuespedVehiculo();
-                $vehiculos = $vehiculoModel->porHuesped($ocupacion_actual['huesped_id']);
-                
-                if (!empty($vehiculos)): ?>
-                    <div class="space-y-1">
-                        <?php foreach ($vehiculos as $vehiculo): ?>
-                            <div class="text-xs">
-                                <span class="font-bold text-gray-700">
-                                    <i class="fas fa-car text-gray-400 mr-1"></i>
-                                    <?= htmlspecialchars(($vehiculo['marca'] ?? '') . ' ' . ($vehiculo['modelo'] ?? '')) ?>
-                                </span>
-                                <span class="text-gray-600">(<?= htmlspecialchars($vehiculo['placas'] ?? '') ?>)</span>
-                                <?php if (!empty($vehiculo['estacionamiento'])): ?>
-                                    <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium <?= get_estacionamiento_badge_class($vehiculo['estacionamiento']) ?>">
-                                        <i class="fas <?= get_estacionamiento_icon($vehiculo['estacionamiento']) ?> mr-1"></i>
-                                        <?= ucfirst(str_replace('_', ' ', $vehiculo['estacionamiento'])) ?>
-                                    </span>
+
+                <section class="rd-panel rd-section-gallery">
+                    <div class="rd-panel-head">
+                        <div class="rd-panel-title">
+                            <span class="rd-icon-box"><i class="fas fa-images"></i></span>
+                            <div>
+                                <h2>Galer&iacute;a de la habitaci&oacute;n</h2>
+                                <p>Fotograf&iacute;as disponibles para revisi&oacute;n visual.</p>
+                            </div>
+                        </div>
+                        <?php if ($tiene_imagenes): ?>
+                            <span class="rd-badge"><i class="fas fa-camera"></i><?= count($imagenes) ?> fotos</span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="rd-panel-body">
+                        <?php if ($tiene_imagenes): ?>
+                            <div class="rd-gallery-main">
+                                <img id="imagen-principal"
+                                     src="<?= image_url($imagen_principal['url']) ?>"
+                                     alt="Habitaci&oacute;n <?= room_detail_safe($habitacion_numero) ?>"
+                                     onclick="abrirLightbox(this.src)">
+
+                                <?php if (count($imagenes) > 1): ?>
+                                    <div class="rd-photo-count">
+                                        <i class="fas fa-images"></i>
+                                        <span id="contador"><?= count($imagenes) ?> fotos</span>
+                                    </div>
+                                <?php endif; ?>
+
+                                <button type="button"
+                                        onclick="abrirLightbox(document.getElementById('imagen-principal').src)"
+                                        class="rd-expand-btn"
+                                        aria-label="Abrir fotografia">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                            </div>
+
+                            <?php if (count($imagenes) > 1): ?>
+                                <div class="rd-thumb-strip" aria-label="Miniaturas de habitacion">
+                                    <?php foreach ($imagenes as $index => $imagen): ?>
+                                        <img src="<?= image_url($imagen['url']) ?>"
+                                             alt="Foto <?= $index + 1 ?> de habitaci&oacute;n <?= room_detail_safe($habitacion_numero) ?>"
+                                             class="room-thumb <?= $index === 0 ? 'thumb-active' : '' ?>"
+                                             onclick="cambiarImagen(<?= htmlspecialchars(json_encode(image_url($imagen['url'])), ENT_QUOTES, 'UTF-8') ?>, <?= $index ?>)">
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <div class="rd-empty">
+                                <i class="fas fa-images"></i>
+                                <strong>Sin im&aacute;genes disponibles</strong>
+                                <span>Agrega fotograf&iacute;as para documentar esta habitaci&oacute;n.</span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </section>
+
+                <?php if ($habitacion_estado == 'mantenimiento' && $mantenimiento_actual): ?>
+                    <section class="rd-panel rd-maint-card rd-section-maint">
+                        <div class="rd-panel-head">
+                            <div class="rd-panel-title">
+                                <span class="rd-icon-box"><i class="fas fa-tools"></i></span>
+                                <div>
+                                    <h2>Mantenimiento en progreso</h2>
+                                    <p>Trabajo activo registrado para esta habitaci&oacute;n.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rd-panel-body">
+                            <div class="rd-maint-grid">
+                                <article class="rd-info-tile">
+                                    <span>Tipo</span>
+                                    <strong><?= room_detail_safe(ucfirst(str_replace('_', ' ', $mantenimiento_actual['tipo_mantenimiento'] ?? 'No especificado'))) ?></strong>
+                                </article>
+                                <article class="rd-info-tile">
+                                    <span>Prioridad</span>
+                                    <strong><?= room_detail_safe(ucfirst($mantenimiento_actual['prioridad'] ?? 'media')) ?></strong>
+                                </article>
+                                <article class="rd-info-tile" style="grid-column: 1 / -1;">
+                                    <span>Motivo</span>
+                                    <strong><?= room_detail_safe($mantenimiento_actual['motivo'] ?? '', 'No especificado') ?></strong>
+                                </article>
+                            </div>
+                            <form method="POST" action="<?= url('habitaciones/' . $habitacion_id . '/mantenimiento') ?>" style="margin-top: 12px;">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="accion" value="finalizar">
+                                <button type="submit" class="rd-btn rd-btn-success" style="width: 100%;">
+                                    <i class="fas fa-check-circle"></i>
+                                    Finalizar mantenimiento
+                                </button>
+                            </form>
+                        </div>
+                    </section>
+                <?php endif; ?>
+
+                <?php if (!empty($mantenimientos_programados)): ?>
+                    <section class="rd-panel rd-maint-card rd-section-maint">
+                        <div class="rd-panel-head">
+                            <div class="rd-panel-title">
+                                <span class="rd-icon-box"><i class="fas fa-calendar-check"></i></span>
+                                <div>
+                                    <h2>Mantenimientos programados</h2>
+                                    <p>Intervenciones futuras bloqueadas para esta habitaci&oacute;n.</p>
+                                </div>
+                            </div>
+                            <span class="rd-badge"><?= number_format($mantenimientos_count) ?></span>
+                        </div>
+                        <div class="rd-panel-body">
+                            <div class="rd-scheduled-list">
+                                <?php foreach ($mantenimientos_programados as $mp): ?>
+                                    <article class="rd-scheduled-item">
+                                        <div>
+                                            <strong>
+                                                <i class="fas fa-wrench"></i>
+                                                <?= room_detail_safe(ucfirst(str_replace('_', ' ', $mp['tipo_mantenimiento'] ?? 'Mantenimiento'))) ?>
+                                            </strong>
+                                            <span>
+                                                <?= date('d/m/Y', strtotime($mp['fecha_programada'])) ?>
+                                                <?php if (!empty($mp['fecha_programada_fin'])): ?>
+                                                    al <?= date('d/m/Y', strtotime($mp['fecha_programada_fin'])) ?>
+                                                <?php endif; ?>
+                                                · Prioridad <?= room_detail_safe(ucfirst($mp['prioridad'] ?? 'media')) ?>
+                                            </span>
+                                            <?php if (!empty($mp['motivo'])): ?>
+                                                <span><?= room_detail_safe($mp['motivo']) ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <form method="POST"
+                                              action="<?= url('habitaciones/cancelar-mantenimiento-programado/' . $mp['id']) ?>"
+                                              onsubmit="return confirm('¿Cancelar este mantenimiento programado?')">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="motivo_cancelacion" value="Cancelado manualmente">
+                                            <button type="submit" class="rd-btn rd-btn-danger" title="Cancelar">
+                                                <i class="fas fa-times"></i>
+                                                Cancelar
+                                            </button>
+                                        </form>
+                                    </article>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </section>
+                <?php endif; ?>
+
+                <?php if ($proxima_destacada || $ultima_destacada): ?>
+                    <section class="rd-panel rd-section-movement">
+                        <div class="rd-panel-head">
+                            <div class="rd-panel-title">
+                                <span class="rd-icon-box"><i class="fas fa-calendar-days"></i></span>
+                                <div>
+                                    <h2>Movimiento destacado</h2>
+                                    <p>Pr&oacute;xima llegada y &uacute;ltima ocupaci&oacute;n detectadas.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rd-panel-body">
+                            <div class="rd-focus-grid">
+                                <?php if ($proxima_destacada): ?>
+                                    <?php
+                                    $fecha_entrada_prox = new DateTime($proxima_destacada['fecha_entrada']);
+                                    $fecha_salida_prox = new DateTime($proxima_destacada['fecha_salida']);
+                                    $duracion_prox = $fecha_entrada_prox->diff($fecha_salida_prox)->days;
+                                    $hoy_dt = new DateTime();
+                                    $dias_hasta_entrada = $hoy_dt->diff($fecha_entrada_prox)->days;
+                                    ?>
+                                    <article class="rd-focus-card rd-next-card">
+                                        <header>
+                                            <strong class="rd-focus-title">
+                                                <i class="fas fa-calendar-check"></i>
+                                                <span>Pr&oacute;xima reservaci&oacute;n</span>
+                                            </strong>
+                                            <span class="rd-focus-kind">Llegada</span>
+                                        </header>
+                                        <div class="rd-focus-body">
+                                            <h3><?= room_detail_safe($proxima_destacada['nombre_huesped'] ?? '') ?></h3>
+                                            <div class="rd-date-pair">
+                                                <div class="rd-date-box">
+                                                    <span>Entrada</span>
+                                                    <strong><?= $fecha_entrada_prox->format('d/m/Y') ?></strong>
+                                                </div>
+                                                <div class="rd-date-box">
+                                                    <span>Salida</span>
+                                                    <strong><?= $fecha_salida_prox->format('d/m/Y') ?></strong>
+                                                </div>
+                                            </div>
+                                            <div class="rd-mini-tags">
+                                                <span><i class="fas fa-clock"></i><?= $dias_hasta_entrada == 0 ? 'Llega hoy' : ($dias_hasta_entrada == 1 ? 'Llega manana' : 'En ' . $dias_hasta_entrada . ' dias') ?></span>
+                                                <span><i class="fas fa-moon"></i><?= $duracion_prox ?> <?= $duracion_prox == 1 ? 'noche' : 'noches' ?></span>
+                                                <?php if (($proxima_destacada['precio_total'] ?? 0) > 0): ?>
+                                                    <span><i class="fas fa-dollar-sign"></i><?= format_money($proxima_destacada['precio_total']) ?></span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div style="margin-top: 12px;">
+                                                <a href="<?= url('/reservaciones/ver/' . $proxima_destacada['id']) ?>" class="rd-btn rd-btn-info">
+                                                    <i class="fas fa-eye"></i>
+                                                    Ver
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </article>
+                                <?php endif; ?>
+
+                                <?php if ($ultima_destacada): ?>
+                                    <?php
+                                    $fecha_entrada_ult = new DateTime($ultima_destacada['fecha_entrada']);
+                                    $fecha_salida_ult = new DateTime($ultima_destacada['fecha_salida']);
+                                    $duracion_ult = $fecha_entrada_ult->diff($fecha_salida_ult)->days;
+                                    $hoy_dt = new DateTime();
+                                    $dias_desde_salida = $fecha_salida_ult->diff($hoy_dt)->days;
+                                    ?>
+                                    <article class="rd-focus-card rd-last-card">
+                                        <header>
+                                            <strong class="rd-focus-title">
+                                                <i class="fas fa-history"></i>
+                                                <span>&Uacute;ltima ocupaci&oacute;n</span>
+                                            </strong>
+                                            <span class="rd-focus-kind">Historial</span>
+                                        </header>
+                                        <div class="rd-focus-body">
+                                            <h3><?= room_detail_safe($ultima_destacada['nombre_huesped'] ?? '') ?></h3>
+                                            <div class="rd-date-pair">
+                                                <div class="rd-date-box">
+                                                    <span>Entrada</span>
+                                                    <strong><?= $fecha_entrada_ult->format('d/m/Y') ?></strong>
+                                                </div>
+                                                <div class="rd-date-box">
+                                                    <span>Salida</span>
+                                                    <strong><?= $fecha_salida_ult->format('d/m/Y') ?></strong>
+                                                </div>
+                                            </div>
+                                            <div class="rd-mini-tags">
+                                                <span><i class="fas fa-calendar-alt"></i><?= room_detail_relative_exit($dias_desde_salida) ?></span>
+                                                <span><i class="fas fa-moon"></i><?= $duracion_ult ?> <?= $duracion_ult == 1 ? 'noche' : 'noches' ?></span>
+                                                <?php if (($ultima_destacada['precio_total'] ?? 0) > 0): ?>
+                                                    <span><i class="fas fa-dollar-sign"></i><?= format_money($ultima_destacada['precio_total']) ?></span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div style="margin-top: 12px;">
+                                                <a href="<?= url('/reservaciones/ver/' . $ultima_destacada['id']) ?>" class="rd-btn rd-btn-info">
+                                                    <i class="fas fa-eye"></i>
+                                                    Ver
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </article>
                                 <?php endif; ?>
                             </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php else: ?>
-                    <p class="font-bold text-gray-700 text-sm">
-                        <i class="fas fa-car text-gray-400 mr-1"></i>
-                        Sin vehículos registrados
-                    </p>
-                <?php endif;
-            } else if (isset($ocupacion_actual['huesped_id'])) { ?>
-                <p class="font-bold text-gray-700 text-sm">
-                    <i class="fas fa-car text-gray-400 mr-1"></i>
-                    <?= htmlspecialchars(get_resumen_vehiculos_huesped($ocupacion_actual['huesped_id']) ?? 'Sin vehículos') ?>
-                </p>
-            <?php } else { ?>
-                <p class="font-bold text-gray-700 text-sm">
-                    <i class="fas fa-car text-gray-400 mr-1"></i>
-                    Sin vehículos registrados
-                </p>
-            <?php } ?>
-        </div>
-    </div>
-    <div class="flex gap-2">
-        <?php 
-        // IMPORTANTE: Usar 'id' del array $ocupacion_actual que corresponde a r.id (reservacion_id)
-        $reservacion_id = $ocupacion_actual['id'] ?? 0;
-        ?>
-        <a href="<?= url('reservaciones/ver/' . $reservacion_id) ?>"
-           class="btn-modern bg-blue-500 text-white hover:bg-blue-600 w-full justify-center">
-            <i class="fas fa-eye"></i>Ver Reservación Completa
-        </a>
-    </div>
-</div>
-<?php endif; ?>
-
-                <!-- Galería de Imágenes Mejorada -->
-                <?php 
-                $habitacionImagenModel = new HabitacionImagen();
-                $imagenes = $habitacionImagenModel->porHabitacion($habitacion['id']);
-                $tiene_imagenes = !empty($imagenes);
-                ?>
-
-                <?php if ($tiene_imagenes): ?>
-                <div class="info-card overflow-hidden">
-                    <div class="relative">
-                        <?php 
-                        $imagen_principal = $imagenes[0];
-                        foreach ($imagenes as $img) {
-                            if ($img['es_principal']) {
-                                $imagen_principal = $img;
-                                break;
-                            }
-                        }
-                        ?>
-                        <img id="imagen-principal"
-                             src="<?= image_url($imagen_principal['url']) ?>" 
-                             alt="Habitación <?= htmlspecialchars($habitacion['numero']) ?>"
-                             class="w-full h-56 sm:h-72 object-cover cursor-pointer hover:scale-105 transition-transform duration-500"
-                             onclick="abrirLightbox(this.src)">
-                        
-                        <?php if (count($imagenes) > 1): ?>
-                        <div class="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-2 rounded-lg text-sm backdrop-blur-sm">
-                            <i class="fas fa-images mr-2"></i>
-                            <span id="contador"><?= count($imagenes) ?> fotos</span>
                         </div>
-                        <?php endif; ?>
-                        
-                        <button onclick="abrirLightbox(document.getElementById('imagen-principal').src)" 
-                                class="absolute top-4 right-4 bg-white/90 hover:bg-white text-gray-800 p-3 rounded-lg shadow-lg transition-all hover:scale-110">
-                            <i class="fas fa-expand text-lg"></i>
-                        </button>
-                    </div>
-                    
-                    <?php if (count($imagenes) > 1): ?>
-                    <div class="p-4 bg-gray-50">
-                        <div class="flex overflow-x-auto gap-3 pb-2">
-                            <?php foreach ($imagenes as $index => $imagen): ?>
-                            <img src="<?= image_url($imagen['url']) ?>"
-                                 class="w-24 h-24 object-cover rounded-lg cursor-pointer transition-all hover:scale-110 <?= $index === 0 ? 'thumb-active' : '' ?>"
-                                 onclick="cambiarImagen('<?= image_url($imagen['url']) ?>', <?= $index ?>)">
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-                </div>
-                <?php else: ?>
-                <div class="info-card p-12 text-center">
-                    <i class="fas fa-images text-5xl text-gray-300 mb-4"></i>
-                    <p class="text-gray-500 font-medium text-lg">No hay imágenes disponibles</p>
-                    <p class="text-sm text-gray-400 mt-2">Agrega fotos para mostrar esta habitación</p>
-                </div>
+                    </section>
                 <?php endif; ?>
 
-                <!-- INFORMACIÓN DE MANTENIMIENTO (SI APLICA) -->
-                <?php if ($habitacion['estado'] == 'mantenimiento' && isset($mantenimiento_actual) && $mantenimiento_actual): ?>
-                <div class="estado-mantenimiento rounded-lg p-4">
-                    <h3 class="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
-                        <i class="fas fa-tools text-amber-600"></i>
-                        Mantenimiento en Progreso
-                    </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                        <div class="bg-white/60 rounded-lg p-2">
-                            <span class="text-xs text-gray-600 font-semibold uppercase block mb-1">Tipo:</span>
-                            <span class="font-bold text-black">
-                                <?= isset($mantenimiento_actual['tipo_mantenimiento']) 
-                                    ? ucfirst(str_replace('_', ' ', $mantenimiento_actual['tipo_mantenimiento']))
-                                    : 'No especificado' ?>
-                            </span>
-                        </div>
-                        <div class="bg-white/60 rounded-lg p-2">
-                            <span class="text-xs text-gray-600 font-semibold uppercase block mb-1">Prioridad:</span>
-                            <?php 
-                            $prioridad = isset($mantenimiento_actual['prioridad']) ? $mantenimiento_actual['prioridad'] : 'media';
-                            $colorPrioridad = $prioridad == 'urgente' ? 'red' : ($prioridad == 'alta' ? 'orange' : 'gray');
-                            ?>
-                            <span class="font-bold text-<?= $colorPrioridad ?>-700">
-                                <?= ucfirst($prioridad) ?>
-                            </span>
-                        </div>
-                        <div class="col-span-full bg-white/60 rounded-lg p-2">
-                            <span class="text-xs text-gray-600 font-semibold uppercase block mb-1">Motivo:</span>
-                            <span class="font-bold text-black">
-                                <?= isset($mantenimiento_actual['motivo']) 
-                                    ? htmlspecialchars($mantenimiento_actual['motivo']) 
-                                    : 'No especificado' ?>
-                            </span>
-                        </div>
-                    </div>
-                    <form method="POST" action="<?= url('habitaciones/' . $habitacion['id'] . '/mantenimiento') ?>">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="accion" value="finalizar">
-                        <button type="submit" class="btn-modern bg-gradient-emerald text-white hover:shadow-xl w-full justify-center">
-                            <i class="fas fa-check-circle"></i>Finalizar Mantenimiento
-                        </button>
-                    </form>
-                </div>
-                <?php endif; ?>
-
-                <!-- MANTENIMIENTOS PROGRAMADOS -->
-                <?php if (!empty($mantenimientos_programados)): ?>
-                <div class="info-card p-4" style="border: 2px solid #F59E0B; background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);">
-                    <h3 class="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
-                        <i class="fas fa-calendar-check text-amber-600"></i>
-                        Mantenimientos Programados
-                        <span class="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full"><?= count($mantenimientos_programados) ?></span>
-                    </h3>
-                    <div class="space-y-3">
-                        <?php foreach ($mantenimientos_programados as $mp): ?>
-                        <div class="bg-white rounded-lg p-3 border border-amber-200">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <p class="font-bold text-amber-800 text-sm">
-                                        <i class="fas fa-wrench mr-1"></i>
-                                        <?= ucfirst(str_replace('_', ' ', $mp['tipo_mantenimiento'])) ?>
-                                        <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full ml-1">
-                                            <?= ucfirst($mp['prioridad'] ?? 'media') ?>
-                                        </span>
-                                    </p>
-                                    <p class="text-xs text-gray-600 mt-1">
-                                        <i class="fas fa-calendar mr-1"></i>
-                                        <?= date('d/m/Y', strtotime($mp['fecha_programada'])) ?>
-                                        <?php if (!empty($mp['fecha_programada_fin'])): ?>
-                                            al <?= date('d/m/Y', strtotime($mp['fecha_programada_fin'])) ?>
-                                        <?php endif; ?>
-                                    </p>
-                                    <?php if (!empty($mp['motivo'])): ?>
-                                    <p class="text-xs text-gray-500 mt-1">
-                                        <i class="fas fa-comment mr-1"></i><?= htmlspecialchars($mp['motivo']) ?>
-                                    </p>
-                                    <?php endif; ?>
-                                </div>
-                                <form method="POST" action="<?= url('habitaciones/cancelar-mantenimiento-programado/' . $mp['id']) ?>" 
-                                      onsubmit="return confirm('¿Cancelar este mantenimiento programado?')">
-                                    <?= csrf_field() ?>
-                                    <input type="hidden" name="motivo_cancelacion" value="Cancelado manualmente">
-                                    <button type="submit" class="text-red-500 hover:text-red-700 text-xs font-medium hover:bg-red-50 px-2 py-1 rounded transition-all" title="Cancelar">
-                                        <i class="fas fa-times"></i> Cancelar
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <!-- OCUPACIÓN DESTACADA - PRÓXIMA ARRIBA, ÚLTIMA ABAJO -->
-                <?php 
-                $proxima_destacada = null;
-                $ultima_destacada = null;
-                
-                $hoy = date('Y-m-d'); // Fecha de hoy en formato string
-                
-                if (!empty($historial_reciente)) {
-                    $menor_dias_proxima = PHP_INT_MAX;
-                    $menor_dias_ultima = PHP_INT_MAX;
-                    
-                    foreach ($historial_reciente as $res) {
-                        // SOLO procesar si tiene estado definido
-                        if (!isset($res['estado']) || empty($res['fecha_entrada']) || empty($res['fecha_salida'])) {
-                            continue;
-                        }
-                        
-                        // PRÓXIMA: confirmada Y fecha_entrada >= hoy
-                        if ($res['estado'] === 'confirmada' && $res['fecha_entrada'] >= $hoy) {
-                            $dias_hasta = (strtotime($res['fecha_entrada']) - strtotime($hoy)) / 86400;
-                            if ($dias_hasta < $menor_dias_proxima) {
-                                $menor_dias_proxima = $dias_hasta;
-                                $proxima_destacada = $res;
-                            }
-                        }
-                        
-                        // ÚLTIMA: checked_out Y fecha_salida < hoy
-                        if ($res['estado'] === 'checked_out' && $res['fecha_salida'] < $hoy) {
-                            $dias_desde = (strtotime($hoy) - strtotime($res['fecha_salida'])) / 86400;
-                            if ($dias_desde < $menor_dias_ultima) {
-                                $menor_dias_ultima = $dias_desde;
-                                $ultima_destacada = $res;
-                            }
-                        }
-                    }
-                }
-                ?>
-                
-                <!-- PRÓXIMA RESERVACIÓN (PRIMERO) -->
-                <?php if ($proxima_destacada): ?>
-                <div class="info-card overflow-hidden">
-                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3">
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-calendar-check text-xl"></i>
+                <section class="rd-panel rd-section-history">
+                    <div class="rd-panel-head">
+                        <div class="rd-panel-title">
+                            <span class="rd-icon-box"><i class="fas fa-timeline"></i></span>
                             <div>
-                                <h3 class="font-bold">Próxima Reservación</h3>
-                                <p class="text-xs opacity-90">Check-in programado</p>
+                                <h2>Historial de reservaciones</h2>
+                                <p>&Uacute;ltimos movimientos asociados a esta habitaci&oacute;n.</p>
                             </div>
                         </div>
+                        <span class="rd-badge"><i class="fas fa-calendar-check"></i><?= min(10, $historial_count) ?> visibles</span>
                     </div>
-                    
-                    <div class="p-4 bg-blue-50">
-                        <?php 
-                        $fecha_entrada_prox = new DateTime($proxima_destacada['fecha_entrada']);
-                        $fecha_salida_prox = new DateTime($proxima_destacada['fecha_salida']);
-                        $duracion_prox = $fecha_entrada_prox->diff($fecha_salida_prox)->days;
-                        $hoy_dt = new DateTime();
-                        $dias_hasta_entrada = $hoy_dt->diff($fecha_entrada_prox)->days;
-                        
-                        $total_pagado_prox = $proxima_destacada['precio_total'] ?? 0;
-                        ?>
-                        
-                        <div class="flex items-start justify-between gap-3 mb-3">
-                            <div class="flex-1">
-                                <h4 class="font-bold text-gray-900 text-lg mb-2">
-                                    <?= htmlspecialchars($proxima_destacada['nombre_huesped']) ?>
-                                </h4>
-                                
-                                <div class="grid grid-cols-2 gap-2 mb-3">
-                                    <div class="bg-white rounded-lg p-2 border-2 border-blue-300">
-                                        <div class="text-xs text-gray-600 font-semibold mb-1">
-                                            <i class="fas fa-sign-in-alt text-green-600 mr-1"></i>Check-in
-                                        </div>
-                                        <div class="font-bold text-gray-900"><?= $fecha_entrada_prox->format('d/m/Y') ?></div>
-                                    </div>
-                                    <div class="bg-white rounded-lg p-2 border-2 border-blue-300">
-                                        <div class="text-xs text-gray-600 font-semibold mb-1">
-                                            <i class="fas fa-sign-out-alt text-red-600 mr-1"></i>Check-out
-                                        </div>
-                                        <div class="font-bold text-gray-900"><?= $fecha_salida_prox->format('d/m/Y') ?></div>
-                                    </div>
-                                </div>
-                                
-                                <div class="flex flex-wrap gap-2">
-                                    <div class="flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">
-                                        <i class="fas fa-clock"></i>
-                                        <span>
-                                            <?php if ($dias_hasta_entrada == 0): ?>
-                                                Llega HOY
-                                            <?php elseif ($dias_hasta_entrada == 1): ?>
-                                                Llega MAÑANA
-                                            <?php else: ?>
-                                                En <?= $dias_hasta_entrada ?> días
-                                            <?php endif; ?>
-                                        </span>
-                                    </div>
-                                    
-                                    <div class="flex items-center gap-1 text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded font-semibold">
-                                        <i class="fas fa-moon"></i>
-                                        <span><?= $duracion_prox ?> <?= $duracion_prox == 1 ? 'noche' : 'noches' ?></span>
-                                    </div>
-                                    
-                                    <?php if ($total_pagado_prox > 0): ?>
-                                    <div class="flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">
-                                        <i class="fas fa-dollar-sign"></i>
-                                        <span><?= format_money($total_pagado_prox) ?></span>
-                                    </div>
-                                    <?php endif; ?>
-                                    
-                                    <?php if (!empty($proxima_destacada['telefono'])): ?>
-                                    <div class="flex items-center gap-1 text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded font-semibold">
-                                        <i class="fas fa-phone"></i>
-                                        <span><?= htmlspecialchars($proxima_destacada['telefono']) ?></span>
-                                    </div>
-                                    <?php endif; ?>
-                                    
-                                    <?php if (isset($proxima_destacada['total_habitaciones']) && $proxima_destacada['total_habitaciones'] > 1): ?>
-                                    <div class="flex items-center gap-1 text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded font-bold">
-                                        <i class="fas fa-users"></i>
-                                        <span>Grupo (<?= $proxima_destacada['total_habitaciones'] ?> hab.)</span>
-                                    </div>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <a href="<?= url('/reservaciones/ver/' . $proxima_destacada['id']) ?>"  
-                                   class="btn-modern bg-purple-600 text-white hover:bg-purple-700 text-xs px-3 py-2">
-                                    <i class="fas fa-eye"></i>
-                                    Ver
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <!-- ÚLTIMA OCUPACIÓN (SEGUNDO) -->
-                <?php if ($ultima_destacada): ?>
-                <div class="info-card overflow-hidden">
-                    <div class="bg-gradient-to-r from-gray-600 to-gray-700 text-white p-3">
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-history text-xl"></i>
-                            <div>
-                                <h3 class="font-bold">Última Ocupación</h3>
-                                <p class="text-xs opacity-90">Reservación más reciente</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="p-4 bg-gray-50">
-                        <?php 
-                        $fecha_entrada_ult = new DateTime($ultima_destacada['fecha_entrada']);
-                        $fecha_salida_ult = new DateTime($ultima_destacada['fecha_salida']);
-                        $duracion_ult = $fecha_entrada_ult->diff($fecha_salida_ult)->days;
-                        $hoy_dt = new DateTime();
-                        $dias_desde_salida = $fecha_salida_ult->diff($hoy_dt)->days;
-                        
-                        $total_pagado_ult = $ultima_destacada['precio_total'] ?? 0;
-                        ?>
-                        
-                        <div class="flex items-start justify-between gap-3 mb-3">
-                            <div class="flex-1">
-                                <h4 class="font-bold text-gray-900 text-lg mb-2">
-                                    <?= htmlspecialchars($ultima_destacada['nombre_huesped']) ?>
-                                </h4>
-                                
-                                <div class="grid grid-cols-2 gap-2 mb-3">
-                                    <div class="bg-white rounded-lg p-2 border-2 border-gray-300">
-                                        <div class="text-xs text-gray-600 font-semibold mb-1">
-                                            <i class="fas fa-sign-in-alt text-green-600 mr-1"></i>Check-in
-                                        </div>
-                                        <div class="font-bold text-gray-900"><?= $fecha_entrada_ult->format('d/m/Y') ?></div>
-                                    </div>
-                                    <div class="bg-white rounded-lg p-2 border-2 border-gray-300">
-                                        <div class="text-xs text-gray-600 font-semibold mb-1">
-                                            <i class="fas fa-sign-out-alt text-red-600 mr-1"></i>Check-out
-                                        </div>
-                                        <div class="font-bold text-gray-900"><?= $fecha_salida_ult->format('d/m/Y') ?></div>
-                                    </div>
-                                </div>
-                                
-                                <div class="flex flex-wrap gap-2">
-                                    <div class="flex items-center gap-1 text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded font-bold">
-                                        <i class="fas fa-calendar-alt"></i>
-                                        <span>
-                                            <?php if ($dias_desde_salida == 0): ?>
-                                                Salió hoy
-                                            <?php elseif ($dias_desde_salida == 1): ?>
-                                                Ayer
-                                            <?php elseif ($dias_desde_salida < 7): ?>
-                                                Hace <?= $dias_desde_salida ?> días
-                                            <?php else: ?>
-                                                Hace <?= floor($dias_desde_salida / 7) ?> semanas
-                                            <?php endif; ?>
-                                        </span>
-                                    </div>
-                                    
-                                    <div class="flex items-center gap-1 text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded font-semibold">
-                                        <i class="fas fa-moon"></i>
-                                        <span><?= $duracion_ult ?> <?= $duracion_ult == 1 ? 'noche' : 'noches' ?></span>
-                                    </div>
-                                    
-                                    <?php if ($total_pagado_ult > 0): ?>
-                                    <div class="flex items-center gap-1 text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded font-bold">
-                                        <i class="fas fa-dollar-sign"></i>
-                                        <span><?= format_money($total_pagado_ult) ?></span>
-                                    </div>
-                                    <?php endif; ?>
-                                    
-                                    <?php if (!empty($ultima_destacada['telefono'])): ?>
-                                    <div class="flex items-center gap-1 text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded font-semibold">
-                                        <i class="fas fa-phone"></i>
-                                        <span><?= htmlspecialchars($ultima_destacada['telefono']) ?></span>
-                                    </div>
-                                    <?php endif; ?>
-                                    
-                                    <?php if (isset($ultima_destacada['total_habitaciones']) && $ultima_destacada['total_habitaciones'] > 1): ?>
-                                    <div class="flex items-center gap-1 text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded font-bold">
-                                        <i class="fas fa-users"></i>
-                                        <span>Grupo (<?= $ultima_destacada['total_habitaciones'] ?> hab.)</span>
-                                    </div>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <a href="<?= url('/reservaciones/ver/' . $ultima_destacada['id']) ?>"  
-                                   class="btn-modern bg-purple-600 text-white hover:bg-purple-700 text-xs px-3 py-2">
-                                    <i class="fas fa-eye"></i>
-                                    Ver
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <!-- HISTORIAL DE RESERVACIONES - ORDENADO POR FECHA MÁS RECIENTE -->
-                <?php 
-                // ORDENAR RESERVACIONES POR FECHA MÁS RECIENTE PRIMERO
-                if (!empty($historial_reciente)) {
-                    usort($historial_reciente, function($a, $b) {
-                        $fechaA = strtotime($a['fecha_salida'] ?? '1970-01-01');
-                        $fechaB = strtotime($b['fecha_salida'] ?? '1970-01-01');
-                        return $fechaB - $fechaA; // Orden descendente (más reciente primero)
-                    });
-                }
-                ?>
-                
-                <?php if (!empty($historial_reciente)): ?>
-                <div class="info-card">
-                    <div class="p-3 border-b bg-gradient-to-r from-purple-50 to-white">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
-                                <i class="fas fa-history text-purple-600"></i>
-                                Historial de Reservaciones
-                            </h3>
-                            <span class="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full font-bold">
-                                <i class="fas fa-calendar-check mr-1"></i>
-                                Últimas <?= min(10, count($historial_reciente)) ?>
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <div class="divide-y divide-gray-100">
-                        <?php 
-                        $hoy = new DateTime();
-                        foreach (array_slice($historial_reciente, 0, 10) as $index => $reservacion): 
-                            $fecha_entrada = new DateTime($reservacion['fecha_entrada']);
-                            $fecha_salida = new DateTime($reservacion['fecha_salida']);
-                            $duracion = $fecha_entrada->diff($fecha_salida)->days;
-                            $dias_desde_salida = $fecha_salida->diff($hoy)->days;
-                            
-                            $es_reciente = $dias_desde_salida <= 7;
-                            
-                            $total_pagado = null;
-                            if (isset($reservacion['precio_total']) && $reservacion['precio_total'] > 0) {
-                                $total_pagado = $reservacion['precio_total'];
-                            } elseif (isset($reservacion['total']) && $reservacion['total'] > 0) {
-                                $total_pagado = $reservacion['total'];
-                            }
-                            
-                            $procedencia = '';
-                            if (!empty($reservacion['procedencia'])) {
-                                $procedencia = $reservacion['procedencia'];
-                            } elseif (!empty($reservacion['estado_procedencia'])) {
-                                $procedencia = $reservacion['estado_procedencia'];
-                            }
-                        ?>
-                        <div class="p-3 hover:bg-gradient-to-r hover:from-purple-50 hover:to-transparent transition-all group">
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="flex-1">
-                                    <div class="flex items-start gap-2 mb-2">
-                                        <h4 class="font-bold text-gray-900">
-                                            <?= htmlspecialchars($reservacion['nombre_huesped']) ?>
-                                        </h4>
-                                        <?php if ($es_reciente): ?>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-800 font-bold">
-                                            <i class="fas fa-star mr-1"></i>
-                                            Reciente
-                                        </span>
-                                        <?php endif; ?>
-                                        <?php if (isset($reservacion['total_habitaciones']) && $reservacion['total_habitaciones'] > 1): ?>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800 font-bold">
-                                            <i class="fas fa-users mr-1"></i>
-                                            Grupo (<?= $reservacion['total_habitaciones'] ?>)
-                                        </span>
-                                        <?php endif; ?>
-                                    </div>
-                                    
-                                    <div class="grid grid-cols-2 gap-2 mb-2">
-                                        <div class="flex items-center gap-1 bg-green-50 rounded p-1.5 text-xs">
-                                            <i class="fas fa-sign-in-alt text-green-600"></i>
-                                            <span class="text-gray-700 font-semibold">
-                                                <?= $fecha_entrada->format('d/m/Y') ?>
-                                            </span>
-                                        </div>
-                                        <div class="flex items-center gap-1 bg-red-50 rounded p-1.5 text-xs">
-                                            <i class="fas fa-sign-out-alt text-red-600"></i>
-                                            <span class="text-gray-700 font-semibold">
-                                                <?= $fecha_salida->format('d/m/Y') ?>
-                                            </span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="flex flex-wrap gap-2">
-                                        <div class="flex items-center gap-1 text-xs text-gray-600 bg-blue-50 px-2 py-1 rounded">
-                                            <i class="fas fa-moon text-blue-600"></i>
-                                            <span class="font-semibold">
-                                                <?= $duracion ?> <?= $duracion == 1 ? 'noche' : 'noches' ?>
-                                            </span>
-                                        </div>
-                                        
-                                        <div class="flex items-center gap-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                                            <i class="fas fa-calendar-alt text-gray-500"></i>
-                                            <span class="font-semibold">
-                                                <?php if ($dias_desde_salida == 0): ?>
-                                                    Salió hoy
-                                                <?php elseif ($dias_desde_salida == 1): ?>
-                                                    Ayer
-                                                <?php elseif ($dias_desde_salida < 7): ?>
-                                                    Hace <?= $dias_desde_salida ?> días
-                                                <?php elseif ($dias_desde_salida < 30): ?>
-                                                    Hace <?= floor($dias_desde_salida / 7) ?> <?= floor($dias_desde_salida / 7) == 1 ? 'semana' : 'semanas' ?>
-                                                <?php elseif ($dias_desde_salida < 365): ?>
-                                                    Hace <?= floor($dias_desde_salida / 30) ?> <?= floor($dias_desde_salida / 30) == 1 ? 'mes' : 'meses' ?>
-                                                <?php else: ?>
-                                                    Hace <?= floor($dias_desde_salida / 365) ?> <?= floor($dias_desde_salida / 365) == 1 ? 'año' : 'años' ?>
+                    <div class="rd-panel-body">
+                        <?php if (!empty($historial_reciente)): ?>
+                            <div class="rd-history-list">
+                                <?php
+                                $hoy_dt = new DateTime();
+                                foreach (array_slice($historial_reciente, 0, 10) as $reservacion):
+                                    $fecha_entrada = new DateTime($reservacion['fecha_entrada']);
+                                    $fecha_salida = new DateTime($reservacion['fecha_salida']);
+                                    $duracion = $fecha_entrada->diff($fecha_salida)->days;
+                                    $dias_desde_salida = $fecha_salida->diff($hoy_dt)->days;
+                                    $es_reciente = $dias_desde_salida <= 7;
+                                    $total_pagado = null;
+                                    if (isset($reservacion['precio_total']) && $reservacion['precio_total'] > 0) {
+                                        $total_pagado = $reservacion['precio_total'];
+                                    } elseif (isset($reservacion['total']) && $reservacion['total'] > 0) {
+                                        $total_pagado = $reservacion['total'];
+                                    }
+                                    $procedencia = '';
+                                    if (!empty($reservacion['procedencia'])) {
+                                        $procedencia = $reservacion['procedencia'];
+                                    } elseif (!empty($reservacion['estado_procedencia'])) {
+                                        $procedencia = $reservacion['estado_procedencia'];
+                                    }
+                                ?>
+                                    <article class="rd-history-item">
+                                        <div>
+                                            <div class="rd-history-name">
+                                                <strong><?= room_detail_safe($reservacion['nombre_huesped'] ?? '') ?></strong>
+                                                <?php if ($es_reciente): ?>
+                                                    <span class="rd-badge"><i class="fas fa-star"></i>Reciente</span>
                                                 <?php endif; ?>
-                                            </span>
+                                                <?php if (($reservacion['total_habitaciones'] ?? 0) > 1): ?>
+                                                    <span class="rd-badge"><i class="fas fa-users"></i>Grupo <?= (int)$reservacion['total_habitaciones'] ?></span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="rd-history-meta">
+                                                <span><i class="fas fa-sign-in-alt"></i><?= $fecha_entrada->format('d/m/Y') ?></span>
+                                                <span><i class="fas fa-sign-out-alt"></i><?= $fecha_salida->format('d/m/Y') ?></span>
+                                                <span><i class="fas fa-moon"></i><?= $duracion ?> <?= $duracion == 1 ? 'noche' : 'noches' ?></span>
+                                                <span><i class="fas fa-calendar-alt"></i><?= room_detail_relative_exit($dias_desde_salida) ?></span>
+                                                <?php if ($total_pagado): ?>
+                                                    <span><i class="fas fa-dollar-sign"></i><?= format_money($total_pagado) ?></span>
+                                                <?php endif; ?>
+                                                <?php if ($procedencia !== ''): ?>
+                                                    <span><i class="fas fa-map-marker-alt"></i><?= room_detail_safe($procedencia) ?></span>
+                                                <?php endif; ?>
+                                                <?php if (!empty($reservacion['telefono'])): ?>
+                                                    <span><i class="fas fa-phone"></i><?= room_detail_safe($reservacion['telefono']) ?></span>
+                                                <?php endif; ?>
+                                                <?php if (!empty($reservacion['vehiculos']) && $reservacion['vehiculos'] > 0): ?>
+                                                    <span><i class="fas fa-car"></i><?= $reservacion['vehiculos'] > 1 ? (int)$reservacion['vehiculos'] . ' veh.' : '1 veh.' ?></span>
+                                                <?php endif; ?>
+                                                <?php if (!empty($reservacion['observaciones'])): ?>
+                                                    <span title="<?= room_detail_safe($reservacion['observaciones']) ?>"><i class="fas fa-sticky-note"></i>Obs.</span>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
-                                        
-                                        <?php if ($total_pagado): ?>
-                                        <div class="flex items-center gap-1 text-xs text-gray-700 bg-emerald-50 px-2 py-1 rounded">
-                                            <i class="fas fa-dollar-sign text-emerald-600"></i>
-                                            <span class="font-bold"><?= format_money($total_pagado) ?></span>
-                                        </div>
-                                        <?php endif; ?>
-                                        
-                                        <?php if (!empty($procedencia)): ?>
-                                        <div class="flex items-center gap-1 text-xs text-gray-600 bg-orange-50 px-2 py-1 rounded">
-                                            <i class="fas fa-map-marker-alt text-orange-500"></i>
-                                            <span class="font-semibold"><?= htmlspecialchars($procedencia) ?></span>
-                                        </div>
-                                        <?php endif; ?>
-                                        
-                                        <?php if (!empty($reservacion['telefono'])): ?>
-                                        <div class="flex items-center gap-1 text-xs text-gray-600 bg-purple-50 px-2 py-1 rounded">
-                                            <i class="fas fa-phone text-purple-500"></i>
-                                            <span class="font-semibold"><?= htmlspecialchars($reservacion['telefono']) ?></span>
-                                        </div>
-                                        <?php endif; ?>
-                                    </div>
-                                    
-                                    <?php if (!empty($reservacion['observaciones']) || !empty($reservacion['vehiculos']) || !empty($reservacion['folio'])): ?>
-                                    <div class="mt-2 flex flex-wrap gap-1.5">
-                                        <?php if (!empty($reservacion['folio'])): ?>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-700 font-bold">
-                                            <i class="fas fa-hashtag mr-1"></i>
-                                            <?= htmlspecialchars($reservacion['folio']) ?>
-                                        </span>
-                                        <?php endif; ?>
-                                        
-                                        <?php if (!empty($reservacion['vehiculos']) && $reservacion['vehiculos'] > 0): ?>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-200 text-gray-700 font-bold">
-                                            <i class="fas fa-car mr-1"></i>
-                                            <?= $reservacion['vehiculos'] > 1 ? $reservacion['vehiculos'] . ' veh.' : '1 veh.' ?>
-                                        </span>
-                                        <?php endif; ?>
-                                        
-                                        <?php if (!empty($reservacion['observaciones'])): ?>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-yellow-100 text-yellow-700 font-bold" 
-                                              title="<?= htmlspecialchars($reservacion['observaciones']) ?>">
-                                            <i class="fas fa-sticky-note mr-1"></i>
-                                            Obs.
-                                        </span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <?php endif; ?>
-                                </div>
-                                
-                                <div class="ml-3">
-                                    <a href="<?= url('/reservaciones/ver/' . $reservacion['id']) ?>"  
-                                       class="btn-modern bg-purple-600 text-white hover:bg-purple-700 text-xs px-2 py-1.5">
-                                        <i class="fas fa-eye"></i>
-                                        Ver detalles
+                                        <a href="<?= url('/reservaciones/ver/' . $reservacion['id']) ?>" class="rd-btn rd-btn-info">
+                                            <i class="fas fa-eye"></i>
+                                            Ver
+                                        </a>
+                                    </article>
+                                <?php endforeach; ?>
+                            </div>
+
+                            <?php if ($historial_count > 10): ?>
+                                <div style="margin-top: 14px;">
+                                    <a href="<?= url('/habitaciones/' . $habitacion_id . '/historial') ?>" class="rd-action">
+                                        <i class="fas fa-history"></i>
+                                        Ver historial completo (<?= number_format($historial_count) ?>)
+                                        <i class="fas fa-arrow-right"></i>
                                     </a>
                                 </div>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <div class="rd-empty">
+                                <i class="fas fa-inbox"></i>
+                                <strong>Sin reservaciones previas</strong>
+                                <span>Esta habitaci&oacute;n todav&iacute;a no tiene historial de hu&eacute;spedes.</span>
                             </div>
-                        </div>
-                        <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
-                    
-                    <?php if (count($historial_reciente) > 10): ?>
-                    <div class="p-3 border-t bg-gradient-to-r from-gray-50 to-white">
-                        <a href="<?= url('/habitaciones/' . $habitacion['id'] . '/historial') ?>" 
-                           class="inline-flex items-center gap-2 text-sm text-purple-600 hover:text-purple-700 font-bold hover:gap-3 transition-all">
-                            <i class="fas fa-history"></i>
-                            Ver historial completo (<?= count($historial_reciente) ?>)
+                </section>
+            </main>
+
+            <aside class="rd-side" aria-label="Panel operativo">
+                <section class="rd-side-card rd-rate-card">
+                    <h3>Tarifa y estado</h3>
+                    <p>Precio calculado para la fecha actual.</p>
+                    <strong class="rd-rate-value"><?= format_money($precio_actual) ?> <small>/ noche</small></strong>
+                    <?php if ($tiene_incremento): ?>
+                        <span class="rd-rate-old">
+                            Base <?= format_money($precio_base_original) ?>
+                            +<?= format_money($incremento_total) ?>
+                        </span>
+                    <?php endif; ?>
+                </section>
+
+                <section class="rd-side-card">
+                    <h3>Acciones r&aacute;pidas</h3>
+                    <p>Operaciones disponibles seg&uacute;n el estado actual.</p>
+                    <div class="rd-actions" style="margin-top: 13px;">
+                        <a href="<?= url('habitaciones/' . $habitacion_id . '/edit') ?>" class="rd-action">
+                            <span><i class="fas fa-edit"></i>Editar habitaci&oacute;n</span>
                             <i class="fas fa-arrow-right"></i>
                         </a>
+
+                        <?php if ($habitacion_estado == 'disponible'): ?>
+                            <div class="rd-action-grid">
+                                <button type="button" onclick="mostrarModalMantenimiento()" class="rd-btn rd-btn-warning">
+                                    <i class="fas fa-tools"></i>
+                                    Iniciar mantenimiento
+                                </button>
+                                <a href="<?= url('reservaciones/crear?habitacion=' . $habitacion_id) ?>" class="rd-btn rd-btn-success">
+                                    <i class="fas fa-calendar-plus"></i>
+                                    Nueva reservaci&oacute;n
+                                </a>
+                                <button type="button" onclick="mostrarModalProgramarMantenimiento()" class="rd-btn rd-btn-warning" style="grid-column: 1 / -1;">
+                                    <i class="fas fa-calendar-check"></i>
+                                    Programar mantenimiento
+                                </button>
+                            </div>
+                        <?php elseif ($habitacion_estado == 'limpieza'): ?>
+                            <form method="POST" action="<?= url('habitaciones/limpieza/' . $habitacion_id) ?>">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="accion" value="finalizar">
+                                <button type="submit" class="rd-btn rd-btn-success" style="width: 100%;">
+                                    <i class="fas fa-check-circle"></i>
+                                    Finalizar limpieza
+                                </button>
+                            </form>
+                        <?php else: ?>
+                            <div class="rd-empty-action">
+                                No hay acciones de cambio de estado disponibles para este estado. Puedes revisar el expediente o editar la habitaci&oacute;n.
+                            </div>
+                        <?php endif; ?>
                     </div>
-                    <?php endif; ?>
-                </div>
-                <?php else: ?>
-                <div class="info-card">
-                    <div class="p-3 border-b bg-gradient-to-r from-purple-50 to-white">
-                        <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
-                            <i class="fas fa-history text-purple-600"></i>
-                            Historial de Reservaciones
-                        </h3>
-                    </div>
-                    <div class="p-8 text-center">
-                        <div class="inline-flex items-center justify-center w-20 h-20 bg-purple-100 rounded-full mb-4">
-                            <i class="fas fa-inbox text-3xl text-purple-400"></i>
+                </section>
+
+                <section class="rd-side-card">
+                    <h3>Datos de habitaci&oacute;n</h3>
+                    <div class="rd-side-list">
+                        <div class="rd-side-row">
+                            <span>ID</span>
+                            <strong>#<?= $habitacion_id ?></strong>
                         </div>
-                        <p class="text-gray-700 font-bold text-lg">Sin reservaciones previas</p>
-                        <p class="text-sm text-gray-500 mt-2">Esta habitación no tiene historial de huéspedes</p>
+                        <div class="rd-side-row">
+                            <span>Tipo</span>
+                            <strong><?= room_detail_safe($tipo_label) ?></strong>
+                        </div>
+                        <div class="rd-side-row">
+                            <span>Piso</span>
+                            <strong><?= room_detail_safe($piso_label) ?></strong>
+                        </div>
+                        <div class="rd-side-row">
+                            <span>Capacidad</span>
+                            <strong><?= $capacidad > 0 ? number_format($capacidad) . ' personas' : 'No definida' ?></strong>
+                        </div>
+                        <div class="rd-side-row">
+                            <span>Estado sistema</span>
+                            <strong><?= $activa ? 'Activa' : 'Inactiva' ?></strong>
+                        </div>
                     </div>
-                </div>
+                    <?php if ($caracteristicas !== ''): ?>
+                        <p style="margin-top: 13px;"><?= nl2br(room_detail_safe($caracteristicas)) ?></p>
+                    <?php endif; ?>
+                </section>
+
+                <?php if ($proxima_salida): ?>
+                    <section class="rd-side-card">
+                        <h3>Pr&oacute;xima salida</h3>
+                        <div class="rd-side-list">
+                            <div class="rd-side-row">
+                                <span>Fecha</span>
+                                <strong><?= format_date($proxima_salida['fecha_salida'] ?? '') ?></strong>
+                            </div>
+                            <?php if (!empty($proxima_salida['nombre_completo'])): ?>
+                                <div class="rd-side-row">
+                                    <span>Hu&eacute;sped</span>
+                                    <strong><?= room_detail_safe($proxima_salida['nombre_completo']) ?></strong>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </section>
                 <?php endif; ?>
 
-            </div>
-
-            <!-- Columna lateral (1/3) -->
-            <div class="lg:col-span-1">
-                <!-- Información adicional de la habitación aquí si es necesario -->
-            </div>
-        </div>
-        
-        <!-- Botón de Ver Historial Completo - Siempre visible -->
-        <div class="mt-6 mb-4">
-            <div class="bg-white rounded-xl shadow-lg border-2 border-purple-200 overflow-hidden hover:shadow-2xl transition-all">
-                <div class="bg-gradient-to-r from-purple-50 to-white p-4 border-b border-purple-100">
-                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                        <i class="fas fa-history text-purple-600"></i>
-                        Historial Completo
-                    </h3>
-                </div>
-                <div class="p-6 text-center">
-                    <div class="mb-4">
-                        <div class="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-3">
-                            <i class="fas fa-calendar-alt text-3xl text-purple-600"></i>
-                        </div>
-                        <p class="text-gray-700 font-semibold text-lg mb-1">
-                            Ver todas las reservaciones
-                        </p>
-                        <p class="text-sm text-gray-500">
-                            Accede al historial completo con estadísticas detalladas
-                        </p>
-                    </div>
-                    <a href="<?= url('/habitaciones/' . $habitacion['id'] . '/historial') ?>" 
-                       class="btn-modern bg-gradient-purple text-white hover:from-purple-700 hover:to-purple-800 px-6 py-3 text-base font-bold shadow-lg">
-                        <i class="fas fa-history"></i>
-                        Ver Historial Completo
+                <section class="rd-side-card">
+                    <h3>Historial completo</h3>
+                    <p>Accede a todas las reservaciones y estad&iacute;sticas detalladas.</p>
+                    <a href="<?= url('/habitaciones/' . $habitacion_id . '/historial') ?>" class="rd-action" style="margin-top: 13px;">
+                        <span><i class="fas fa-history"></i>Ver historial completo</span>
                         <i class="fas fa-arrow-right"></i>
                     </a>
-                </div>
-            </div>
+                </section>
+            </aside>
         </div>
     </div>
 </div>
 
-<!-- Modal de Mantenimiento Mejorado -->
-<div id="modalMantenimiento" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform scale-95 opacity-0 transition-all duration-300" id="modalContent">
-        <div class="bg-gradient-amber text-white p-4 rounded-t-xl flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <i class="fas fa-tools text-xl"></i>
-                <span class="font-bold text-lg">Iniciar Mantenimiento</span>
-            </div>
-            <button onclick="cerrarModalMantenimiento()" class="text-white/80 hover:text-white hover:scale-110 transition-all">
-                <i class="fas fa-times text-xl"></i>
+<div id="modalMantenimiento" class="rd-modal hidden">
+    <div class="rd-modal-card" id="modalContent">
+        <div class="rd-modal-head">
+            <h3><i class="fas fa-tools"></i>Iniciar mantenimiento</h3>
+            <button type="button" onclick="cerrarModalMantenimiento()" class="rd-modal-close" aria-label="Cerrar">
+                <i class="fas fa-times"></i>
             </button>
         </div>
-        
-        <form method="POST" action="<?= url('habitaciones/' . $habitacion['id'] . '/mantenimiento') ?>" class="p-6 space-y-4">
+
+        <form method="POST" action="<?= url('habitaciones/' . $habitacion_id . '/mantenimiento') ?>" class="rd-modal-form">
             <?= csrf_field() ?>
             <input type="hidden" name="accion" value="iniciar">
-            
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">
-                    <i class="fas fa-wrench mr-1 text-amber-500"></i>
-                    Tipo de Mantenimiento
-                </label>
-                <select name="tipo_mantenimiento" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all">
+
+            <div class="rd-field">
+                <label class="rd-label">Tipo de mantenimiento</label>
+                <select name="tipo_mantenimiento" required class="rd-control">
                     <option value="">Seleccione...</option>
                     <option value="preventivo">Preventivo</option>
                     <option value="correctivo">Correctivo</option>
                     <option value="emergencia">Emergencia</option>
-                    <option value="limpieza_profunda">Limpieza Profunda</option>
+                    <option value="limpieza_profunda">Limpieza profunda</option>
                 </select>
             </div>
-            
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">
-                    <i class="fas fa-exclamation-triangle mr-1 text-amber-500"></i>
-                    Prioridad
-                </label>
-                <select name="prioridad" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all">
+
+            <div class="rd-field">
+                <label class="rd-label">Prioridad</label>
+                <select name="prioridad" required class="rd-control">
                     <option value="baja">Baja</option>
                     <option value="media" selected>Media</option>
                     <option value="alta">Alta</option>
                     <option value="urgente">Urgente</option>
                 </select>
             </div>
-            
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">
-                    <i class="fas fa-comment mr-1 text-amber-500"></i>
-                    Motivo
-                </label>
-                <input type="text" name="motivo" required placeholder="Describe el motivo del mantenimiento..." class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all">
+
+            <div class="rd-field">
+                <label class="rd-label">Motivo</label>
+                <input type="text" name="motivo" required placeholder="Describe el motivo del mantenimiento..." class="rd-control">
             </div>
-            
-            <div class="flex gap-3 pt-2">
-                <button type="button" onclick="cerrarModalMantenimiento()" 
-                        class="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-bold transition-all hover:scale-105">
-                    Cancelar
-                </button>
-                <button type="submit" 
-                        class="flex-1 px-4 py-3 bg-gradient-amber text-white rounded-lg text-sm font-bold transition-all hover:scale-105 hover:shadow-lg">
-                    <i class="fas fa-check mr-1"></i>
+
+            <div class="rd-modal-actions">
+                <button type="button" onclick="cerrarModalMantenimiento()" class="rd-btn">Cancelar</button>
+                <button type="submit" class="rd-btn rd-btn-warning">
+                    <i class="fas fa-check"></i>
                     Iniciar
                 </button>
             </div>
@@ -1082,312 +2718,195 @@
     </div>
 </div>
 
-<!-- Modal Programar Mantenimiento -->
-<div id="modalProgramarMantenimiento" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform scale-95 opacity-0 transition-all duration-300" id="modalProgramarContent">
-        <div class="text-white p-4 rounded-t-xl flex items-center justify-between" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
-            <div class="flex items-center gap-2">
-                <i class="fas fa-calendar-check text-xl"></i>
-                <span class="font-bold text-lg">Programar Mantenimiento</span>
-            </div>
-            <button onclick="cerrarModalProgramarMantenimiento()" class="text-white/80 hover:text-white hover:scale-110 transition-all">
-                <i class="fas fa-times text-xl"></i>
+<div id="modalProgramarMantenimiento" class="rd-modal hidden">
+    <div class="rd-modal-card" id="modalProgramarContent">
+        <div class="rd-modal-head">
+            <h3><i class="fas fa-calendar-check"></i>Programar mantenimiento</h3>
+            <button type="button" onclick="cerrarModalProgramarMantenimiento()" class="rd-modal-close" aria-label="Cerrar">
+                <i class="fas fa-times"></i>
             </button>
         </div>
-        
-        <form method="POST" action="<?= url('habitaciones/' . $habitacion['id'] . '/programar-mantenimiento') ?>" class="p-6 space-y-4">
+
+        <form method="POST" action="<?= url('habitaciones/' . $habitacion_id . '/programar-mantenimiento') ?>" class="rd-modal-form">
             <?= csrf_field() ?>
-            
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p class="text-xs text-blue-800">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    La habitación seguirá disponible hasta la fecha programada, pero no se podrán hacer reservaciones que conflicten con las fechas del mantenimiento.
-                </p>
+
+            <div class="rd-note">
+                La habitaci&oacute;n seguir&aacute; disponible hasta la fecha programada, pero no se podr&aacute;n hacer reservaciones que conflicten con el mantenimiento.
             </div>
-            
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">
-                        <i class="fas fa-calendar mr-1 text-amber-500"></i>Fecha Inicio *
-                    </label>
-                    <input type="date" name="fecha_programada" required min="<?= date('Y-m-d') ?>"
-                           class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all">
+
+            <div class="rd-form-grid">
+                <div class="rd-field">
+                    <label class="rd-label">Fecha inicio *</label>
+                    <input type="date" name="fecha_programada" required min="<?= date('Y-m-d') ?>" class="rd-control">
                 </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">
-                        <i class="fas fa-calendar-times mr-1 text-amber-500"></i>Fecha Fin
-                    </label>
-                    <input type="date" name="fecha_programada_fin" min="<?= date('Y-m-d') ?>"
-                           class="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all">
-                    <p class="text-xs text-gray-400 mt-1">Opcional</p>
+                <div class="rd-field">
+                    <label class="rd-label">Fecha fin</label>
+                    <input type="date" name="fecha_programada_fin" min="<?= date('Y-m-d') ?>" class="rd-control">
                 </div>
             </div>
-            
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">
-                    <i class="fas fa-wrench mr-1 text-amber-500"></i>Tipo de Mantenimiento
-                </label>
-                <select name="tipo_mantenimiento" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all">
+
+            <div class="rd-field">
+                <label class="rd-label">Tipo de mantenimiento</label>
+                <select name="tipo_mantenimiento" required class="rd-control">
                     <option value="">Seleccione...</option>
                     <option value="preventivo">Preventivo</option>
                     <option value="correctivo">Correctivo</option>
                     <option value="emergencia">Emergencia</option>
-                    <option value="limpieza_profunda">Limpieza Profunda</option>
+                    <option value="limpieza_profunda">Limpieza profunda</option>
                 </select>
             </div>
-            
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">
-                    <i class="fas fa-exclamation-triangle mr-1 text-amber-500"></i>Prioridad
-                </label>
-                <select name="prioridad" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all">
+
+            <div class="rd-field">
+                <label class="rd-label">Prioridad</label>
+                <select name="prioridad" required class="rd-control">
                     <option value="baja">Baja</option>
                     <option value="media" selected>Media</option>
                     <option value="alta">Alta</option>
                     <option value="urgente">Urgente</option>
                 </select>
             </div>
-            
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2">
-                    <i class="fas fa-comment mr-1 text-amber-500"></i>Motivo
-                </label>
-                <input type="text" name="motivo" required placeholder="Describe el motivo del mantenimiento..." 
-                       class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all">
+
+            <div class="rd-field">
+                <label class="rd-label">Motivo</label>
+                <input type="text" name="motivo" required placeholder="Describe el motivo del mantenimiento..." class="rd-control">
             </div>
-            
-            <div class="flex gap-3 pt-2">
-                <button type="button" onclick="cerrarModalProgramarMantenimiento()" 
-                        class="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-bold transition-all hover:scale-105">
-                    Cancelar
-                </button>
-                <button type="submit" 
-                        class="flex-1 px-4 py-3 text-white rounded-lg text-sm font-bold transition-all hover:scale-105 hover:shadow-lg"
-                        style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
-                    <i class="fas fa-calendar-check mr-1"></i>Programar
+
+            <div class="rd-modal-actions">
+                <button type="button" onclick="cerrarModalProgramarMantenimiento()" class="rd-btn">Cancelar</button>
+                <button type="submit" class="rd-btn rd-btn-warning">
+                    <i class="fas fa-calendar-check"></i>
+                    Programar
                 </button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Lightbox Mejorado con Navegación -->
-<div id="lightbox" class="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" onclick="cerrarLightbox()">
-    <div class="relative max-w-6xl max-h-full w-full" onclick="event.stopPropagation()">
-        <img id="lightbox-img" src="" class="max-w-full max-h-[90vh] mx-auto object-contain rounded-lg shadow-2xl">
-        
+<div id="lightbox" class="rd-lightbox hidden" onclick="cerrarLightbox()">
+    <div class="rd-lightbox-frame" onclick="event.stopPropagation()">
+        <img id="lightbox-img" src="" alt="Fotografia ampliada de habitacion">
+
         <?php if (count($imagenes ?? []) > 1): ?>
-        <button onclick="navegarLightbox(-1)" 
-                class="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full p-4 transition-all hover:scale-110">
-            <i class="fas fa-chevron-left text-2xl"></i>
-        </button>
-        <button onclick="navegarLightbox(1)" 
-                class="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full p-4 transition-all hover:scale-110">
-            <i class="fas fa-chevron-right text-2xl"></i>
-        </button>
-        
-        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-sm text-white px-4 py-2 rounded-full font-bold">
-            <span id="lightbox-counter">1 / <?= count($imagenes) ?></span>
-        </div>
-        
-        <div class="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-2 max-w-full overflow-x-auto p-2">
-            <?php foreach ($imagenes as $index => $imagen): ?>
-            <img src="<?= image_url($imagen['url']) ?>"
-                 class="w-20 h-20 object-cover rounded-lg cursor-pointer opacity-60 hover:opacity-100 transition-all hover:scale-110 lightbox-thumb"
-                 onclick="cambiarImagenLightbox(<?= $index ?>)"
-                 data-index="<?= $index ?>">
-            <?php endforeach; ?>
-        </div>
+            <button type="button" onclick="navegarLightbox(-1)" class="rd-lightbox-btn rd-lightbox-prev" aria-label="Foto anterior">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button type="button" onclick="navegarLightbox(1)" class="rd-lightbox-btn rd-lightbox-next" aria-label="Foto siguiente">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+
+            <div class="rd-lightbox-count">
+                <span id="lightbox-counter">1 / <?= count($imagenes) ?></span>
+            </div>
+
+            <div class="rd-lightbox-thumbs">
+                <?php foreach ($imagenes as $index => $imagen): ?>
+                    <img src="<?= image_url($imagen['url']) ?>"
+                         alt="Miniatura <?= $index + 1 ?>"
+                         class="lightbox-thumb"
+                         onclick="cambiarImagenLightbox(<?= $index ?>)"
+                         data-index="<?= $index ?>">
+                <?php endforeach; ?>
+            </div>
         <?php endif; ?>
-        
-        <button onclick="cerrarLightbox()" 
-                class="absolute top-4 right-4 text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full p-4 transition-all hover:scale-110">
-            <i class="fas fa-times text-2xl"></i>
+
+        <button type="button" onclick="cerrarLightbox()" class="rd-lightbox-close" aria-label="Cerrar">
+            <i class="fas fa-times"></i>
         </button>
     </div>
 </div>
 
-<style>
-/* Animación suave para hover en las cards */
-.group:hover {
-    background: linear-gradient(to right, #fafafa, #ffffff);
-}
-
-/* Mejora visual para los iconos */
-.fas {
-    width: 1em;
-    text-align: center;
-}
-
-/* Tooltip mejorado para observaciones */
-[title] {
-    position: relative;
-    cursor: help;
-}
-
-[title]:hover::after {
-    content: attr(title);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 0.75rem;
-    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-    color: white;
-    font-size: 0.75rem;
-    border-radius: 0.5rem;
-    white-space: normal;
-    max-width: 300px;
-    word-wrap: break-word;
-    z-index: 10;
-    margin-bottom: 0.5rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-}
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-    .grid-cols-2 {
-        grid-template-columns: 1fr;
-        gap: 0.75rem;
-    }
-    
-    .btn-modern {
-        padding: 0.5rem 0.875rem;
-        gap: 0.375rem;
-    }
-    
-    .flex-wrap {
-        font-size: 0.75rem;
-    }
-    
-    .text-xs {
-        font-size: 0.65rem;
-    }
-}
-
-/* Animación de entrada suave */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.info-card {
-    animation: fadeInUp 0.5s ease-out;
-}
-</style>
-
 <script>
-// Variables globales
 let currentIndex = 0;
 let lightboxIndex = 0;
 const imagenes = <?= json_encode(array_map(function($img) { return image_url($img['url']); }, $imagenes ?? [])) ?>;
 
-// Inicialización
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('.vista-habitacion')?.classList.add('loaded');
-    
-    // Eventos de teclado para lightbox
     document.addEventListener('keydown', handleKeyPress);
-    
-    // Touch events para swipe en móvil
+
     let touchStartX = 0;
     let touchEndX = 0;
-    
     const lightbox = document.getElementById('lightbox');
+
     if (lightbox) {
         lightbox.addEventListener('touchstart', e => {
             touchStartX = e.changedTouches[0].screenX;
         });
-        
+
         lightbox.addEventListener('touchend', e => {
             touchEndX = e.changedTouches[0].screenX;
-            handleSwipe();
-        });
-    }
-    
-    function handleSwipe() {
-        const swipeThreshold = 50;
-        const diff = touchStartX - touchEndX;
-        
-        if (Math.abs(diff) > swipeThreshold) {
-            if (diff > 0) {
-                navegarLightbox(1); // Swipe izquierda = siguiente
-            } else {
-                navegarLightbox(-1); // Swipe derecha = anterior
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                navegarLightbox(diff > 0 ? 1 : -1);
             }
-        }
+        });
     }
 });
 
-// Cambiar imagen principal
 function cambiarImagen(url, index) {
     const imgPrincipal = document.getElementById('imagen-principal');
-    if (imgPrincipal) {
-        imgPrincipal.src = url;
-        currentIndex = index;
-        
-        // Actualizar contador
-        const contador = document.getElementById('contador');
-        if (contador) {
-            contador.textContent = `${index + 1} / ${imagenes.length}`;
-        }
-        
-        // Actualizar thumbnails activos
-        document.querySelectorAll('.overflow-x-auto img').forEach((img, i) => {
-            if (i === index) {
-                img.classList.add('thumb-active');
-            } else {
-                img.classList.remove('thumb-active');
-            }
-        });
+    if (!imgPrincipal) return;
+
+    imgPrincipal.src = url;
+    currentIndex = index;
+
+    const contador = document.getElementById('contador');
+    if (contador) {
+        contador.textContent = `${index + 1} / ${imagenes.length}`;
     }
+
+    document.querySelectorAll('.room-thumb').forEach((img, i) => {
+        img.classList.toggle('thumb-active', i === index);
+    });
 }
 
-// Lightbox con ocultación de sidebar
-function abrirLightbox(url) {
+function hideSidebar() {
     const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-        sidebar.style.display = 'none';
-    }
-    
+    if (sidebar) sidebar.style.display = 'none';
+}
+
+function showSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.style.display = '';
+}
+
+function lockPage() {
+    document.body.style.overflow = 'hidden';
+}
+
+function unlockPage() {
+    document.body.style.overflow = '';
+}
+
+function abrirLightbox(url) {
     const lightbox = document.getElementById('lightbox');
     const img = document.getElementById('lightbox-img');
-    
-    if (lightbox && img) {
-        lightboxIndex = imagenes.indexOf(url);
-        if (lightboxIndex === -1) lightboxIndex = 0;
-        
-        img.src = url;
-        lightbox.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        
-        actualizarLightbox();
-    }
+
+    if (!lightbox || !img) return;
+
+    hideSidebar();
+    lightboxIndex = imagenes.indexOf(url);
+    if (lightboxIndex === -1) lightboxIndex = currentIndex || 0;
+
+    img.src = url;
+    lightbox.classList.remove('hidden');
+    lockPage();
+    actualizarLightbox();
 }
 
 function cerrarLightbox() {
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-        sidebar.style.display = '';
-    }
-    
     const lightbox = document.getElementById('lightbox');
     if (lightbox) {
         lightbox.classList.add('hidden');
-        document.body.style.overflow = '';
     }
+    showSidebar();
+    unlockPage();
 }
 
-// Navegación en lightbox
 function navegarLightbox(direccion) {
     if (imagenes.length <= 1) return;
-    
     lightboxIndex = (lightboxIndex + direccion + imagenes.length) % imagenes.length;
     actualizarLightbox();
 }
@@ -1399,106 +2918,76 @@ function cambiarImagenLightbox(index) {
 
 function actualizarLightbox() {
     const imgLightbox = document.getElementById('lightbox-img');
-    if (imgLightbox) {
+    if (imgLightbox && imagenes[lightboxIndex]) {
         imgLightbox.src = imagenes[lightboxIndex];
     }
-    
+
     const counter = document.getElementById('lightbox-counter');
     if (counter) {
         counter.textContent = `${lightboxIndex + 1} / ${imagenes.length}`;
     }
-    
+
     document.querySelectorAll('.lightbox-thumb').forEach((thumb, index) => {
-        if (index === lightboxIndex) {
-            thumb.classList.remove('opacity-60');
-            thumb.classList.add('opacity-100', 'ring-4', 'ring-white', 'scale-110');
-        } else {
-            thumb.classList.add('opacity-60');
-            thumb.classList.remove('opacity-100', 'ring-4', 'ring-white', 'scale-110');
-        }
+        thumb.classList.toggle('is-active', index === lightboxIndex);
     });
 }
 
-// Manejo de teclado
 function handleKeyPress(e) {
     const lightbox = document.getElementById('lightbox');
-    if (lightbox && lightbox.classList.contains('hidden')) return;
-    
-    switch(e.key) {
-        case 'Escape':
-            cerrarLightbox();
-            break;
-        case 'ArrowLeft':
-            navegarLightbox(-1);
-            break;
-        case 'ArrowRight':
-            navegarLightbox(1);
-            break;
-    }
+    if (!lightbox || lightbox.classList.contains('hidden')) return;
+
+    if (e.key === 'Escape') cerrarLightbox();
+    if (e.key === 'ArrowLeft') navegarLightbox(-1);
+    if (e.key === 'ArrowRight') navegarLightbox(1);
 }
 
-// Modal de mantenimiento con ocultación de sidebar
 function mostrarModalMantenimiento() {
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-        sidebar.style.display = 'none';
-    }
-    
     const modal = document.getElementById('modalMantenimiento');
     const content = document.getElementById('modalContent');
-    
-    if (modal && content) {
-        modal.classList.remove('hidden');
-        document.body.classList.add('overflow-hidden');
-        
-        setTimeout(() => {
-            content.style.transform = 'scale(1)';
-            content.style.opacity = '1';
-        }, 10);
-    }
+    if (!modal || !content) return;
+
+    hideSidebar();
+    modal.classList.remove('hidden');
+    lockPage();
+    setTimeout(() => {
+        content.style.transform = 'scale(1)';
+        content.style.opacity = '1';
+    }, 10);
 }
 
 function cerrarModalMantenimiento() {
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-        sidebar.style.display = '';
-    }
-    
     const modal = document.getElementById('modalMantenimiento');
     const content = document.getElementById('modalContent');
-    
-    if (modal && content) {
-        content.style.transform = 'scale(0.95)';
-        content.style.opacity = '0';
-        document.body.classList.remove('overflow-hidden');
-        
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            const form = modal.querySelector('form');
-            if (form) form.reset();
-        }, 300);
-    }
+    if (!modal || !content) return;
+
+    content.style.transform = 'scale(0.96)';
+    content.style.opacity = '0';
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        const form = modal.querySelector('form');
+        if (form) form.reset();
+        showSidebar();
+        unlockPage();
+    }, 240);
 }
 
-// Checkout
 function realizarCheckout(reservacionId) {
-    if (confirm('¿Realizar check-out de esta habitación?')) {
+    if (confirm('¿Realizar check-out de esta habitacion?')) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '<?= url('reservaciones/check-out/') ?>' + reservacionId;
-        
+
         const csrfField = document.createElement('input');
         csrfField.type = 'hidden';
         csrfField.name = 'csrf_token';
         csrfField.value = '<?= csrf_token() ?>';
         form.appendChild(csrfField);
-        
+
         document.body.appendChild(form);
         form.submit();
     }
 }
 
-// Cerrar modal al hacer clic fuera
 const modalMantenimiento = document.getElementById('modalMantenimiento');
 if (modalMantenimiento) {
     modalMantenimiento.addEventListener('click', function(e) {
@@ -1506,41 +2995,34 @@ if (modalMantenimiento) {
     });
 }
 
-// Modal Programar Mantenimiento
 function mostrarModalProgramarMantenimiento() {
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar) sidebar.style.display = 'none';
-    
     const modal = document.getElementById('modalProgramarMantenimiento');
     const content = document.getElementById('modalProgramarContent');
-    
-    if (modal && content) {
-        modal.classList.remove('hidden');
-        document.body.classList.add('overflow-hidden');
-        setTimeout(() => {
-            content.style.transform = 'scale(1)';
-            content.style.opacity = '1';
-        }, 10);
-    }
+    if (!modal || !content) return;
+
+    hideSidebar();
+    modal.classList.remove('hidden');
+    lockPage();
+    setTimeout(() => {
+        content.style.transform = 'scale(1)';
+        content.style.opacity = '1';
+    }, 10);
 }
 
 function cerrarModalProgramarMantenimiento() {
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar) sidebar.style.display = '';
-    
     const modal = document.getElementById('modalProgramarMantenimiento');
     const content = document.getElementById('modalProgramarContent');
-    
-    if (modal && content) {
-        content.style.transform = 'scale(0.95)';
-        content.style.opacity = '0';
-        document.body.classList.remove('overflow-hidden');
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            const form = modal.querySelector('form');
-            if (form) form.reset();
-        }, 300);
-    }
+    if (!modal || !content) return;
+
+    content.style.transform = 'scale(0.96)';
+    content.style.opacity = '0';
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        const form = modal.querySelector('form');
+        if (form) form.reset();
+        showSidebar();
+        unlockPage();
+    }, 240);
 }
 
 const modalProgramar = document.getElementById('modalProgramarMantenimiento');
