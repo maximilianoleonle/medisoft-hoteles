@@ -1,8 +1,342 @@
 <!-- Vista Editar Habitación -->
-<div class="min-h-screen bg-gradient-to-br from-hotel-cream to-white p-6">
+<style id="edit-room-redesign">
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+.edit-room-page {
+    --er-brand: var(--brand-primary, #1B2746);
+    --er-brand-dark: var(--brand-secondary, #0F172A);
+    --er-accent: var(--brand-accent, #BD9441);
+    --er-ink: #1C2635;
+    --er-muted: #687586;
+    --er-sky: #477CA8;
+    --er-sage: #5E7F69;
+    --er-clay: #B86A54;
+    --er-sun: #C18A28;
+    --er-line: rgba(28, 38, 53, .12);
+    --er-panel: rgba(255, 255, 255, .94);
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 6% 8%, color-mix(in srgb, var(--er-sky) 16%, transparent), transparent 24rem),
+        radial-gradient(circle at 92% 5%, color-mix(in srgb, var(--er-accent) 14%, transparent), transparent 25rem),
+        radial-gradient(circle at 74% 86%, color-mix(in srgb, var(--er-sage) 13%, transparent), transparent 28rem),
+        linear-gradient(180deg, #FBFAF5 0%, #F4F6F1 44%, #EEF5F6 100%);
+    color: var(--er-ink);
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.edit-room-page * {
+    box-sizing: border-box;
+}
+
+.edit-room-page :where(a, button, input, textarea, select, label, span, p) {
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.edit-room-page .edit-room-breadcrumb {
+    color: var(--er-muted);
+    font-weight: 800;
+}
+
+.edit-room-page .edit-room-breadcrumb a {
+    color: color-mix(in srgb, var(--er-brand) 62%, var(--er-ink));
+    transition: color .18s ease, transform .18s ease;
+}
+
+.edit-room-page .edit-room-breadcrumb a:hover {
+    color: var(--er-clay);
+    transform: translateY(-1px);
+}
+
+.edit-room-page .edit-room-hero-card,
+.edit-room-page .edit-room-card,
+.edit-room-page .edit-room-status-card,
+.edit-room-page .edit-room-preview-card,
+.edit-room-page .edit-room-active-card {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--er-line);
+    border-radius: 24px;
+    background: var(--er-panel);
+    box-shadow:
+        0 1px 0 rgba(255,255,255,.82) inset,
+        0 22px 48px -38px rgba(28, 38, 53, .58);
+}
+
+.edit-room-page .edit-room-hero-card {
+    border-left: 0;
+    padding: clamp(22px, 3vw, 32px) !important;
+    background:
+        radial-gradient(circle at 95% 6%, color-mix(in srgb, var(--er-sun) 16%, transparent), transparent 16rem),
+        linear-gradient(135deg, rgba(255,255,255,.98), rgba(247,250,248,.92));
+}
+
+.edit-room-page .edit-room-hero-card::before,
+.edit-room-page .edit-room-card::before,
+.edit-room-page .edit-room-status-card::before,
+.edit-room-page .edit-room-preview-card::before,
+.edit-room-page .edit-room-active-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 5px;
+    background: var(--er-section-accent, var(--er-sky));
+    opacity: .78;
+}
+
+.edit-room-page .edit-room-hero-card::before {
+    background: linear-gradient(180deg, var(--er-sky), var(--er-sage) 42%, var(--er-accent) 72%, var(--er-clay));
+}
+
+.edit-room-page h1 {
+    color: var(--er-ink) !important;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(3.2rem, 6vw, 5.6rem) !important;
+    line-height: .88;
+    letter-spacing: 0;
+}
+
+.edit-room-page .edit-room-title-kicker {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--er-muted);
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: clamp(.84rem, 1.2vw, .98rem);
+    font-weight: 950;
+    letter-spacing: .08em;
+    line-height: 1.25;
+    text-transform: uppercase;
+}
+
+.edit-room-page h1 + p {
+    color: var(--er-muted) !important;
+    font-weight: 760;
+}
+
+.edit-room-page .edit-room-hero-icon {
+    background: linear-gradient(145deg, #FFFFFF, #EAF3FA) !important;
+    box-shadow: 0 16px 34px -30px rgba(28, 38, 53, .72);
+}
+
+.edit-room-page .edit-room-hero-icon i {
+    color: color-mix(in srgb, var(--er-sky) 72%, var(--er-ink)) !important;
+}
+
+.edit-room-page .edit-room-card {
+    --er-section-accent: var(--er-sky);
+}
+
+.edit-room-page .edit-section-features {
+    --er-section-accent: var(--er-sage);
+}
+
+.edit-room-page .edit-section-photos {
+    --er-section-accent: var(--er-clay);
+}
+
+.edit-room-page .edit-room-status-card {
+    --er-section-accent: color-mix(in srgb, var(--er-brand) 58%, var(--er-sky));
+}
+
+.edit-room-page .edit-room-preview-card {
+    --er-section-accent: var(--er-sun);
+}
+
+.edit-room-page .edit-room-active-card {
+    --er-section-accent: var(--er-clay);
+}
+
+.edit-room-page .edit-room-card > div:first-child {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 18px 20px !important;
+    border-bottom: 1px solid rgba(28, 38, 53, .1);
+    background: linear-gradient(90deg, rgba(255,255,255,.98), rgba(247,249,248,.94)) !important;
+}
+
+.edit-room-page .edit-room-card > div:first-child h2 {
+    margin: 0;
+    color: var(--er-ink) !important;
+    font-size: 1.04rem !important;
+    font-weight: 950;
+}
+
+.edit-room-page .edit-room-card > div:first-child h2 i {
+    width: 38px;
+    height: 38px;
+    display: inline-grid;
+    place-items: center;
+    margin-right: 10px !important;
+    border: 1px solid color-mix(in srgb, var(--er-section-accent) 22%, transparent);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--er-section-accent) 10%, #FFFFFF);
+    color: color-mix(in srgb, var(--er-section-accent) 76%, var(--er-ink)) !important;
+}
+
+.edit-room-page .edit-room-card > div:first-child h2::after {
+    content: "";
+    display: inline-block;
+    width: 42px;
+    height: 2px;
+    margin-left: 14px;
+    border-radius: 999px;
+    background: var(--er-section-accent);
+    opacity: .42;
+    vertical-align: middle;
+}
+
+.edit-room-page .edit-room-card > div:last-child,
+.edit-room-page .edit-room-status-card,
+.edit-room-page .edit-room-preview-card,
+.edit-room-page .edit-room-active-card {
+    background: rgba(255,255,255,.94) !important;
+}
+
+.edit-room-page :where(input[type="text"], input[type="number"], textarea, select) {
+    border: 1px solid rgba(28, 38, 53, .14) !important;
+    background: #FFFFFF !important;
+    color: var(--er-ink) !important;
+    box-shadow: 0 1px 0 rgba(255,255,255,.9) inset;
+}
+
+.edit-room-page :where(input[type="text"], input[type="number"], textarea, select):focus {
+    border-color: color-mix(in srgb, var(--er-section-accent, var(--er-sky)) 62%, var(--er-brand)) !important;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--er-section-accent, var(--er-sky)) 16%, transparent) !important;
+    outline: none;
+}
+
+.edit-room-page label,
+.edit-room-page h3,
+.edit-room-page h4 {
+    color: var(--er-ink) !important;
+}
+
+.edit-room-page .text-gray-500,
+.edit-room-page .text-gray-600,
+.edit-room-page .text-gray-700 {
+    color: var(--er-muted) !important;
+}
+
+.edit-room-page .edit-room-card .border-2,
+.edit-room-page .edit-room-preview-card .border-2 {
+    border-width: 1px !important;
+    border-color: rgba(28, 38, 53, .1) !important;
+    background: #FFFFFF;
+}
+
+.edit-room-page input[type="radio"]:checked + div {
+    border-color: color-mix(in srgb, var(--er-section-accent, var(--er-sky)) 34%, transparent) !important;
+    background: color-mix(in srgb, var(--er-section-accent, var(--er-sky)) 10%, #FFFFFF) !important;
+    color: color-mix(in srgb, var(--er-section-accent, var(--er-sky)) 78%, var(--er-ink)) !important;
+}
+
+.edit-room-page input[type="checkbox"] {
+    accent-color: var(--er-section-accent, var(--er-sun));
+}
+
+.edit-room-page .edit-room-status-card {
+    color: var(--er-ink) !important;
+}
+
+.edit-room-page .edit-room-status-card > div,
+.edit-room-page .edit-room-status-card .bg-white\/10,
+.edit-room-page .edit-room-status-card .bg-blue-500\/20 {
+    border: 1px solid rgba(28, 38, 53, .1);
+    background: #FFFFFF !important;
+    color: var(--er-ink) !important;
+    backdrop-filter: none;
+}
+
+.edit-room-page .edit-room-preview-inner {
+    border-color: rgba(28, 38, 53, .1) !important;
+    background: linear-gradient(135deg, #FFFFFF, rgba(247,249,248,.94)) !important;
+}
+
+.edit-room-page #preview-numero,
+.edit-room-page #preview-precio {
+    color: color-mix(in srgb, var(--er-clay) 74%, var(--er-ink)) !important;
+}
+
+.edit-room-page .edit-room-active-card {
+    border-color: rgba(28, 38, 53, .12) !important;
+}
+
+.edit-room-page .edit-room-actions button[type="submit"] {
+    background: linear-gradient(145deg, color-mix(in srgb, var(--er-brand) 82%, #263247), #263247) !important;
+    box-shadow: 0 18px 34px -26px color-mix(in srgb, var(--er-brand) 52%, transparent);
+}
+
+.edit-room-page .edit-room-actions a,
+.edit-room-page .edit-room-actions button {
+    transform: none !important;
+}
+
+.edit-room-page .edit-room-actions a:hover,
+.edit-room-page .edit-room-actions button:hover {
+    transform: translateY(-1px) !important;
+}
+
+.edit-room-page .edit-room-form-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(305px, 360px) !important;
+    gap: 20px !important;
+    align-items: start;
+}
+
+.edit-room-page .edit-room-main,
+.edit-room-page .edit-room-side {
+    grid-column: auto !important;
+    min-width: 0;
+}
+
+.edit-room-page .edit-room-side {
+    position: sticky;
+    top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.edit-room-page .bg-purple-50,
+.edit-room-page .bg-yellow-50,
+.edit-room-page .bg-gray-50,
+.edit-room-page .bg-gray-100 {
+    background: linear-gradient(135deg, #FFFFFF, rgba(247,249,248,.94)) !important;
+}
+
+.edit-room-page .text-purple-600,
+.edit-room-page .text-purple-700,
+.edit-room-page .text-purple-800 {
+    color: color-mix(in srgb, var(--er-clay) 70%, var(--er-ink)) !important;
+}
+
+@media (max-width: 780px) {
+    .edit-room-page {
+        padding: 18px 12px !important;
+    }
+
+    .edit-room-page h1 {
+        font-size: clamp(2.6rem, 16vw, 4rem) !important;
+    }
+
+    .edit-room-page .edit-room-card > div:first-child h2::after {
+        display: none;
+    }
+
+    .edit-room-page .edit-room-form-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .edit-room-page .edit-room-side {
+        position: static;
+    }
+}
+</style>
+
+<div class="edit-room-page min-h-screen bg-gradient-to-br from-hotel-cream to-white p-6">
     <!-- Header elegante -->
     <div class="max-w-7xl mx-auto mb-8">
-        <div class="flex items-center text-sm text-gray-600 mb-4">
+        <div class="edit-room-breadcrumb flex items-center text-sm text-gray-600 mb-4">
             <a href="<?= url('habitaciones') ?>" class="hover:text-hotel-brown">
                 <i class="fas fa-bed mr-1"></i>Habitaciones
             </a>
@@ -13,19 +347,20 @@
             <i class="fas fa-chevron-right mx-2 text-xs"></i>
             <span>Editar</span>
         </div>
-        
-        <div class="bg-white rounded-2xl shadow-xl p-8 border-l-8 border-hotel-gold">
+
+        <div class="edit-room-hero-card bg-white rounded-2xl shadow-xl p-8 border-l-8 border-hotel-gold">
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-4xl font-bold text-hotel-brown font-playfair mb-2">
-                        Editar Habitación <?= htmlspecialchars($habitacion['numero']) ?>
+                        <span class="edit-room-title-kicker">Editar habitación</span>
+                        <?= htmlspecialchars($habitacion['numero']) ?>
                     </h1>
                     <p class="text-gray-600">
                         <?php
                         // Mostrar información del tipo actual
                         $tiposInfo = [
                             'sencilla' => '1 cama matrimonial (2 personas)',
-                            'doble' => '2 camas matrimoniales (4 personas)', 
+                            'doble' => '2 camas matrimoniales (4 personas)',
                             'triple' => '3 camas matrimoniales (6 personas)',
                             'cuadruple' => '4 camas matrimoniales (8 personas)',
                             'doble_jacuzzi' => '2 camas matrimoniales con jacuzzi (4 personas)',
@@ -37,11 +372,11 @@
                 </div>
                 <div class="hidden lg:block">
                     <div class="relative">
-                        <div class="bg-hotel-cream p-6 rounded-full">
+                        <div class="edit-room-hero-icon bg-hotel-cream p-6 rounded-full">
                             <i class="fas fa-edit text-5xl text-hotel-brown"></i>
                         </div>
                         <!-- Estado actual badge -->
-                        <?php 
+                        <?php
                         $estados = Habitacion::getEstados();
                         $estadoActual = $estados[$habitacion['estado']] ?? ['label' => 'Desconocido', 'color' => 'gray'];
                         $badgeColors = [
@@ -59,25 +394,25 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Formulario con diseño moderno -->
     <div class="max-w-7xl mx-auto">
-        <form method="POST" action="<?= url('habitaciones/' . $habitacion['id'] . '/update') ?>" 
+        <form method="POST" action="<?= url('habitaciones/' . $habitacion['id'] . '/update') ?>"
               enctype="multipart/form-data" class="space-y-8">
             <?= csrf_field() ?>
-            
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <div class="edit-room-form-grid grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Columna principal (2/3) -->
-                <div class="lg:col-span-2 space-y-6">
+                <div class="edit-room-main lg:col-span-2 space-y-6">
                     <!-- Card de Información Básica -->
-                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:shadow-xl transition-shadow duration-300">
+                    <div class="edit-room-card edit-section-basic bg-white rounded-2xl shadow-lg overflow-hidden transform hover:shadow-xl transition-shadow duration-300">
                         <div class="bg-gradient-to-r from-hotel-brown to-hotel-brown-dark p-6">
                             <h2 class="text-xl font-semibold text-white flex items-center">
                                 <i class="fas fa-info-circle mr-3"></i>
                                 Información Básica
                             </h2>
                         </div>
-                        
+
                         <div class="p-6 space-y-6">
                             <!-- Número y Tipo en grid -->
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -90,22 +425,22 @@
                                         <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                                             <i class="fas fa-hashtag text-gray-400"></i>
                                         </div>
-                                        <input type="text" 
-                                               name="numero" 
+                                        <input type="text"
+                                               name="numero"
                                                value="<?= htmlspecialchars($habitacion['numero']) ?>"
                                                required
                                                class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
                                     </div>
-                                    
+
                                 </div>
-                                
+
                                 <!-- Tipo de habitación - ACTUALIZADO -->
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                                         Tipo de Habitación <span class="text-red-500">*</span>
                                     </label>
                                     <div class="relative">
-                                        <select name="tipo" 
+                                        <select name="tipo"
                                                 required
                                                 class="w-full pl-4 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all appearance-none">
                                             <?php foreach (Habitacion::getTipos() as $key => $tipo): ?>
@@ -120,7 +455,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Piso y Precio en grid - ACTUALIZADO PARA SÓTANOS -->
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <!-- Piso con selección ACTUALIZADA para incluir sótanos -->
@@ -133,14 +468,14 @@
                                         <div class="border-2 border-gray-200 rounded-xl p-4">
                                             <p class="text-xs font-medium text-gray-600 mb-2">Niveles abajo</p>
                                             <div class="grid grid-cols-3 gap-2">
-                                                <?php 
+                                                <?php
                                                 $sotanos = [-4 => '4 abajo', -2 => '2 abajo', -1 => '1 abajo'];
-                                                foreach ($sotanos as $piso_num => $label): 
+                                                foreach ($sotanos as $piso_num => $label):
                                                 ?>
                                                 <label class="relative">
-                                                    <input type="radio" 
-                                                           name="piso" 
-                                                           value="<?= $piso_num ?>" 
+                                                    <input type="radio"
+                                                           name="piso"
+                                                           value="<?= $piso_num ?>"
                                                            <?= $habitacion['piso'] == $piso_num ? 'checked' : '' ?>
                                                            required
                                                            class="sr-only peer">
@@ -152,19 +487,19 @@
                                                 <?php endforeach; ?>
                                             </div>
                                         </div>
-                                        
+
                                         <!-- Pisos superiores -->
                                         <div class="border-2 border-gray-200 rounded-xl p-4">
                                             <p class="text-xs font-medium text-gray-600 mb-2">Pisos Superiores</p>
                                             <div class="grid grid-cols-3 gap-2">
-                                                <?php 
+                                                <?php
                                                 $pisos_sup = [1 => 'Nivel piso', 2 => '2° Nivel', 3 => '3° Nivel'];
-                                                foreach ($pisos_sup as $piso_num => $label): 
+                                                foreach ($pisos_sup as $piso_num => $label):
                                                 ?>
                                                 <label class="relative">
-                                                    <input type="radio" 
-                                                           name="piso" 
-                                                           value="<?= $piso_num ?>" 
+                                                    <input type="radio"
+                                                           name="piso"
+                                                           value="<?= $piso_num ?>"
                                                            <?= $habitacion['piso'] == $piso_num ? 'checked' : '' ?>
                                                            required
                                                            class="sr-only peer">
@@ -178,7 +513,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Precio con rangos por tipo -->
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -191,7 +526,7 @@
                                     ?>
                                     <div class="mb-2">
                                         <span class="text-xs text-gray-500" id="rango-precio">
-                                            Rango sugerido para <?= get_tipo_habitacion($habitacion['tipo']) ?>: 
+                                            Rango sugerido para <?= get_tipo_habitacion($habitacion['tipo']) ?>:
                                             $<?= number_format($rango_actual['min']) ?> - $<?= number_format($rango_actual['max']) ?>
                                         </span>
                                     </div>
@@ -199,8 +534,8 @@
                                         <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                                             <span class="text-xl font-bold text-hotel-gold">$</span>
                                         </div>
-                                        <input type="number" 
-                                               name="precio_base" 
+                                        <input type="number"
+                                               name="precio_base"
                                                value="<?= $habitacion['precio_base'] ?>"
                                                min="<?= $rango_actual['min'] ?>"
                                                max="<?= $rango_actual['max'] + 500 ?>"
@@ -215,22 +550,22 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Card de Características - ACTUALIZADO -->
-                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:shadow-xl transition-shadow duration-300">
+                    <div class="edit-room-card edit-section-features bg-white rounded-2xl shadow-lg overflow-hidden transform hover:shadow-xl transition-shadow duration-300">
                         <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 p-6">
                             <h2 class="text-xl font-semibold text-white flex items-center">
                                 <i class="fas fa-list-check mr-3"></i>
                                 Características de la habitación
                             </h2>
                         </div>
-                        
+
                         <div class="p-6">
                             <!-- Características estándar del hotel -->
                             <div class="mb-6">
                                 <p class="text-sm font-medium text-gray-700 mb-3">Características incluidas en todas las habitaciones:</p>
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                    <?php 
+                                    <?php
                                     $caracteristicas_base = [
                                         ['icon' => 'wifi', 'label' => 'Wi-Fi', 'color' => 'blue'],
                                         ['icon' => 'tv', 'label' => 'Cablevisión', 'color' => 'purple'],
@@ -239,8 +574,8 @@
                                         ['icon' => 'shower', 'label' => 'Agua Caliente', 'color' => 'red'],
                                         ['icon' => 'fan', 'label' => 'Ventilador', 'color' => 'cyan']
                                     ];
-                                    
-                                    foreach ($caracteristicas_base as $caract): 
+
+                                    foreach ($caracteristicas_base as $caract):
                                     ?>
                                     <div class="flex items-center p-2 bg-gray-50 rounded-lg">
                                         <i class="fas fa-<?= $caract['icon'] ?> mr-2 text-<?= $caract['color'] ?>-600"></i>
@@ -249,23 +584,23 @@
                                     <?php endforeach; ?>
                                 </div>
                             </div>
-                            
+
                             <!-- Características especiales con checkboxes -->
                             <div class="mb-6">
                                 <p class="text-sm font-medium text-gray-700 mb-3">Características especiales:</p>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <?php 
+                                    <?php
                                     $caracteristicas_especiales = [
                                         'pantalla' => ['icon' => 'tv', 'label' => 'Pantalla (en lugar de TV normal)', 'color' => 'purple'],
                                         'balcon' => ['icon' => 'home', 'label' => 'Balcón', 'color' => 'green'],
                                         'jacuzzi' => ['icon' => 'bath', 'label' => 'Jacuzzi', 'color' => 'blue', 'disabled_for' => ['doble_jacuzzi', 'sencilla_jacuzzi']],
                                         'amplia' => ['icon' => 'expand-arrows-alt', 'label' => 'Habitación más amplia', 'color' => 'yellow']
                                     ];
-                                    
+
                                     // Parsear características existentes
                                     $caracteristicas_actuales = strtolower($habitacion['caracteristicas'] ?? '');
-                                    
-                                    foreach ($caracteristicas_especiales as $key => $especial): 
+
+                                    foreach ($caracteristicas_especiales as $key => $especial):
                                         $keywords = [
                                             'pantalla' => 'pantalla',
                                             'balcon' => 'balcón',
@@ -276,8 +611,8 @@
                                         $isDisabled = isset($especial['disabled_for']) && in_array($habitacion['tipo'], $especial['disabled_for']);
                                     ?>
                                     <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-<?= $especial['color'] ?>-300 hover:bg-<?= $especial['color'] ?>-50 transition-all group <?= $isDisabled ? 'opacity-50 cursor-not-allowed' : '' ?>">
-                                        <input type="checkbox" 
-                                               name="caracteristicas_especiales[]" 
+                                        <input type="checkbox"
+                                               name="caracteristicas_especiales[]"
                                                value="<?= $key ?>"
                                                <?= $isChecked ? 'checked' : '' ?>
                                                <?= $isDisabled ? 'disabled' : '' ?>
@@ -291,13 +626,13 @@
                                     <?php endforeach; ?>
                                 </div>
                             </div>
-                            
+
                             <!-- Descripción completa (solo lectura mejorada) -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     Descripción completa de características
                                 </label>
-                                <textarea name="caracteristicas" 
+                                <textarea name="caracteristicas"
                                           rows="4"
                                           placeholder="Ejemplo: 2 camas matrimoniales, pantalla, balcón, baño, ventilador, agua caliente, Wifi, Cablevisión, estacionamiento"
                                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"><?= htmlspecialchars($habitacion['caracteristicas']) ?></textarea>
@@ -307,31 +642,31 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Card de Imágenes MÚLTIPLES -->
-                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:shadow-xl transition-shadow duration-300">
+                    <div class="edit-room-card edit-section-photos bg-white rounded-2xl shadow-lg overflow-hidden transform hover:shadow-xl transition-shadow duration-300">
                         <div class="bg-gradient-to-r from-purple-600 to-purple-700 p-6">
                             <h2 class="text-xl font-semibold text-white flex items-center">
                                 <i class="fas fa-images mr-3"></i>
                                 Fotografías de la Habitación
                             </h2>
                         </div>
-                        
+
                         <div class="p-6">
-                            <?php 
+                            <?php
                             // Obtener imágenes existentes
                             $habitacionImagenModel = new HabitacionImagen();
                             $imagenes_existentes = $habitacionImagenModel->porHabitacion($habitacion['id']);
                             $total_imagenes = count($imagenes_existentes);
                             ?>
-                            
+
                             <!-- Imágenes actuales -->
                             <!-- Encabezado de imágenes con enlace de gestión siempre visible -->
 <div class="flex justify-between items-center mb-4">
     <h4 class="text-sm font-semibold text-gray-700">
         Imágenes de la habitación (<?= $total_imagenes ?>/10)
     </h4>
-    <a href="<?= url('habitaciones/' . $habitacion['id'] . '/imagenes') ?>" 
+    <a href="<?= url('habitaciones/' . $habitacion['id'] . '/imagenes') ?>"
        class="text-sm text-purple-600 hover:underline">
         <i class="fas fa-cog mr-1"></i>Gestionar imágenes
     </a>
@@ -340,11 +675,11 @@
 <!-- Imágenes actuales -->
 <?php if ($total_imagenes > 0): ?>
 <div class="mb-6">
-                                
+
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     <?php foreach (array_slice($imagenes_existentes, 0, 4) as $index => $imagen): ?>
                                     <div class="relative group">
-                                        <img src="<?= image_url($imagen['url']) ?>" 
+                                        <img src="<?= image_url($imagen['url']) ?>"
                                              alt="Imagen <?= $index + 1 ?>"
                                              class="w-full h-24 object-cover rounded-lg shadow">
                                         <?php if ($imagen['es_principal']): ?>
@@ -354,7 +689,7 @@
                                         <?php endif; ?>
                                     </div>
                                     <?php endforeach; ?>
-                                    
+
                                     <?php if ($total_imagenes > 4): ?>
                                     <div class="flex items-center justify-center bg-gray-100 rounded-lg h-24">
                                         <span class="text-gray-600 text-sm">+<?= $total_imagenes - 4 ?> más</span>
@@ -363,11 +698,11 @@
                                 </div>
                             </div>
                             <?php endif; ?>
-                            
+
                             <!-- Upload de nuevas imágenes -->
                             <?php if ($total_imagenes < 10): ?>
-                            
-                                
+
+
                                 <!-- Vista previa de nuevas imágenes -->
                                 <div id="preview-container" class="mt-4 hidden">
                                     <h5 class="text-sm font-medium text-gray-700 mb-2">Nuevas imágenes a agregar:</h5>
@@ -384,7 +719,7 @@
                                 </p>
                             </div>
                             <?php endif; ?>
-                            
+
                             <!-- Información -->
                             <div class="mt-4 bg-purple-50 rounded-lg p-4">
                                 <h4 class="text-sm font-semibold text-purple-800 mb-2">
@@ -400,17 +735,16 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                
+
                 <!-- Columna lateral (1/3) -->
-                <div class="space-y-6">
+                <div class="edit-room-side space-y-6">
                     <!-- Card de Estado Actual con información del hotel -->
-                    <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-xl p-6 text-white">
+                    <div class="edit-room-status-card bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-xl p-6 text-white">
                         <h3 class="text-lg font-semibold mb-4 flex items-center">
                             <i class="fas fa-info-circle mr-2"></i>
                             Información de la Habitación
                         </h3>
-                        
+
                         <div class="bg-white/10 backdrop-blur rounded-xl p-4 mb-4">
                             <div class="flex items-center justify-between mb-3">
                                 <span class="text-sm opacity-80">Estado:</span>
@@ -419,14 +753,14 @@
                                     <?= $estadoActual['label'] ?>
                                 </span>
                             </div>
-                            
+
                             <div class="flex items-center justify-between mb-3">
                                 <span class="text-sm opacity-80">Ubicación:</span>
                                 <span class="font-medium">
                                     <?= Habitacion::getNombrePiso($habitacion['piso']) ?>
                                 </span>
                             </div>
-                            
+
                             <div class="flex items-center justify-between">
                                 <span class="text-sm opacity-80">Capacidad:</span>
                                 <span class="font-medium">
@@ -434,7 +768,7 @@
                                 </span>
                             </div>
                         </div>
-                        
+
                         <div class="bg-blue-500/20 rounded-lg p-3">
                             <p class="text-xs flex items-start">
                                 <i class="fas fa-info-circle mr-2 mt-0.5 flex-shrink-0"></i>
@@ -442,15 +776,15 @@
                             </p>
                         </div>
                     </div>
-                    
+
                     <!-- Preview en tiempo real MEJORADO -->
-                    <div class="bg-white rounded-2xl shadow-xl p-6 sticky top-6">
+                    <div class="edit-room-preview-card bg-white rounded-2xl shadow-xl p-6 sticky top-6">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                             <i class="fas fa-eye mr-2 text-hotel-brown"></i>
                             Vista Previa
                         </h3>
-                        
-                        <div class="bg-gradient-to-br from-hotel-cream to-white rounded-xl p-4 border-2 border-hotel-brown/20">
+
+                        <div class="edit-room-preview-inner bg-gradient-to-br from-hotel-cream to-white rounded-xl p-4 border-2 border-hotel-brown/20">
                             <div class="flex justify-between items-start mb-3">
                                 <div>
                                     <p class="text-2xl font-bold text-hotel-brown" id="preview-numero">
@@ -473,7 +807,7 @@
                                     $<?= number_format($habitacion['precio_base'], 0) ?>
                                 </p>
                             </div>
-                            
+
                             <!-- Características especiales en el preview -->
                             <div class="mt-3 pt-3 border-t" id="preview-caracteristicas">
                                 <p class="text-xs text-gray-500 mb-1">Características especiales:</p>
@@ -483,12 +817,12 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Estado Activo/Inactivo -->
-                    <div class="bg-yellow-50 rounded-2xl p-6 border-2 border-yellow-200">
+                    <div class="edit-room-active-card bg-yellow-50 rounded-2xl p-6 border-2 border-yellow-200">
                         <label class="flex items-start cursor-pointer">
-                            <input type="checkbox" 
-                                   name="activa" 
+                            <input type="checkbox"
+                                   name="activa"
                                    value="1"
                                    <?= $habitacion['activa'] ? 'checked' : '' ?>
                                    class="mt-1 mr-3 w-5 h-5 text-yellow-600 focus:ring-yellow-500 rounded">
@@ -500,23 +834,23 @@
                             </div>
                         </label>
                     </div>
-                    
+
                     <!-- Botones de acción -->
-                    <div class="space-y-3">
-                        <button type="submit" 
+                    <div class="edit-room-actions space-y-3">
+                        <button type="submit"
                                 class="w-full bg-gradient-to-r from-hotel-brown to-hotel-brown-dark text-white font-semibold py-4 px-6 rounded-xl hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center">
                             <i class="fas fa-save mr-3"></i>
                             Guardar Cambios
                         </button>
-                        
-                        <a href="<?= url('habitaciones/' . $habitacion['id']) ?>" 
+
+                        <a href="<?= url('habitaciones/' . $habitacion['id']) ?>"
                            class="w-full bg-white border-2 border-gray-300 text-gray-700 font-semibold py-4 px-6 rounded-xl hover:bg-gray-50 transition-all duration-200 flex items-center justify-center">
                             <i class="fas fa-times mr-3"></i>
                             Cancelar
                         </a>
-                        
+
                         <?php if (can('habitaciones.delete') && $habitacion['estado'] == 'disponible'): ?>
-                        <button type="button" 
+                        <button type="button"
                                 onclick="confirmarEliminacion()"
                                 class="w-full bg-red-50 border-2 border-red-200 text-red-600 font-semibold py-4 px-6 rounded-xl hover:bg-red-100 transition-all duration-200 flex items-center justify-center">
                             <i class="fas fa-trash-alt mr-3"></i>
@@ -542,7 +876,7 @@ document.addEventListener('DOMContentLoaded', function() {
         'doble_jacuzzi': 'Doble con Jacuzzi',
         'sencilla_jacuzzi': 'Sencilla con Jacuzzi'
     };
-    
+
     // Información de pisos - ACTUALIZADO
     const pisosInfo = {
         '-4': '4 niveles abajo',
@@ -552,7 +886,7 @@ document.addEventListener('DOMContentLoaded', function() {
         '2': '2º Nivel',
         '3': '3º Nivel'
     };
-    
+
     // Rangos de precio por tipo - ACTUALIZADO
     const rangosPrecio = {
         'sencilla': {min: 550, max: 550},
@@ -562,30 +896,30 @@ document.addEventListener('DOMContentLoaded', function() {
         'doble_jacuzzi': {min: 1600, max: 1600},
         'sencilla_jacuzzi': {min: 1000, max: 1000}
     };
-    
+
     // Preview en tiempo real
     const numeroInput = document.querySelector('input[name="numero"]');
     const tipoSelect = document.querySelector('select[name="tipo"]');
     const pisoInputs = document.querySelectorAll('input[name="piso"]');
     const precioInput = document.querySelector('input[name="precio_base"]');
     const caracteristicasCheckboxes = document.querySelectorAll('input[name="caracteristicas_especiales[]"]');
-    
+
     // Elementos del preview
     const previewNumero = document.getElementById('preview-numero');
     const previewTipo = document.getElementById('preview-tipo');
     const previewPiso = document.getElementById('preview-piso');
     const previewPrecio = document.getElementById('preview-precio');
     const previewBadges = document.getElementById('preview-badges');
-    
+
     // Actualizar preview
     function updatePreview() {
         // Número
         previewNumero.textContent = numeroInput.value || '---';
-        
+
         // Tipo
         const tipoSeleccionado = tipoSelect.value;
         previewTipo.textContent = tiposInfo[tipoSeleccionado] || 'Sin tipo';
-        
+
         // Piso
         const pisoSeleccionado = document.querySelector('input[name="piso"]:checked');
         if (pisoSeleccionado) {
@@ -593,21 +927,21 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             previewPiso.textContent = 'Sin definir';
         }
-        
+
         // Precio
         const precio = parseFloat(precioInput.value) || 0;
         previewPrecio.textContent = '$' + precio.toLocaleString('es-MX');
-        
+
         // Características especiales
         updateCaracteristicasBadges();
-        
+
         // Actualizar rango de precio sugerido
         updateRangoPrecio(tipoSeleccionado);
-        
+
         // Manejar checkboxes especiales para tipos con jacuzzi
         manejarJacuzziCheckbox(tipoSeleccionado);
     }
-    
+
     // Actualizar badges de características
     function updateCaracteristicasBadges() {
         const caracteristicasSeleccionadas = [];
@@ -622,13 +956,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 caracteristicasSeleccionadas.push(labels[checkbox.value] || checkbox.value);
             }
         });
-        
+
         // Agregar jacuzzi automáticamente si es tipo con jacuzzi
         const tipoSeleccionado = tipoSelect.value;
         if ((tipoSeleccionado === 'doble_jacuzzi' || tipoSeleccionado === 'sencilla_jacuzzi') && !caracteristicasSeleccionadas.includes('Jacuzzi')) {
             caracteristicasSeleccionadas.unshift('Jacuzzi');
         }
-        
+
         previewBadges.innerHTML = '';
         if (caracteristicasSeleccionadas.length > 0) {
             caracteristicasSeleccionadas.forEach(caract => {
@@ -641,14 +975,14 @@ document.addEventListener('DOMContentLoaded', function() {
             previewBadges.innerHTML = '<span class="text-xs text-gray-500">Ninguna especial</span>';
         }
     }
-    
+
     // Actualizar rango de precio sugerido
     function updateRangoPrecio(tipo) {
         const rango = rangosPrecio[tipo];
         if (rango) {
             precioInput.min = rango.min;
             precioInput.max = rango.max + 500;
-            
+
             // Buscar el elemento de rango sugerido y actualizarlo
             const rangoTexto = document.getElementById('rango-precio');
             if (rangoTexto) {
@@ -656,7 +990,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-    
+
     // Manejar checkbox de jacuzzi para tipos con jacuzzi incluido
     function manejarJacuzziCheckbox(tipo) {
         const jacuzziCheckbox = document.querySelector('input[name="caracteristicas_especiales[]"][value="jacuzzi"]');
@@ -672,14 +1006,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-    
+
     // Event listeners
     numeroInput.addEventListener('input', updatePreview);
     tipoSelect.addEventListener('change', updatePreview);
     pisoInputs.forEach(input => input.addEventListener('change', updatePreview));
     precioInput.addEventListener('input', updatePreview);
     caracteristicasCheckboxes.forEach(checkbox => checkbox.addEventListener('change', updatePreview));
-    
+
     // Formatear precio al perder foco
     precioInput.addEventListener('blur', function() {
         if (this.value) {
@@ -690,7 +1024,7 @@ document.addEventListener('DOMContentLoaded', function() {
             updatePreview();
         }
     });
-    
+
     // Inicializar preview
     updatePreview();
 });
@@ -713,13 +1047,13 @@ function confirmarEliminacion() {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '<?= url('habitaciones/' . $habitacion['id'] . '/delete') ?>';
-            
+
             const csrfField = document.createElement('input');
             csrfField.type = 'hidden';
             csrfField.name = 'csrf_token';
             csrfField.value = '<?= csrf_token() ?>';
             form.appendChild(csrfField);
-            
+
             document.body.appendChild(form);
             form.submit();
         }
@@ -732,52 +1066,52 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewContainer = document.getElementById('preview-container');
     const previewGrid = document.getElementById('preview-grid');
     const dropZone = document.getElementById('drop-zone');
-    
+
     if (!fotosInput) return;
-    
+
     let selectedFiles = [];
     const maxFiles = <?= 10 - $total_imagenes ?>;
     const maxSize = 5 * 1024 * 1024; // 5MB
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    
+
     // Manejar selección de archivos
     fotosInput.addEventListener('change', function(e) {
         handleFiles(e.target.files);
     });
-    
+
     // Drag and drop
     if (dropZone) {
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
             dropZone.addEventListener(eventName, preventDefaults, false);
         });
-        
+
         function preventDefaults(e) {
             e.preventDefault();
             e.stopPropagation();
         }
-        
+
         ['dragenter', 'dragover'].forEach(eventName => {
             dropZone.addEventListener(eventName, () => {
                 dropZone.classList.add('border-purple-400', 'bg-purple-50');
             }, false);
         });
-        
+
         ['dragleave', 'drop'].forEach(eventName => {
             dropZone.addEventListener(eventName, () => {
                 dropZone.classList.remove('border-purple-400', 'bg-purple-50');
             }, false);
         });
-        
+
         dropZone.addEventListener('drop', function(e) {
             const dt = e.dataTransfer;
             const files = dt.files;
             handleFiles(files);
         }, false);
     }
-    
+
     function handleFiles(files) {
         const newFiles = Array.from(files);
-        
+
         // Validar cantidad
         if (newFiles.length > maxFiles) {
             Swal.fire({
@@ -788,7 +1122,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             return;
         }
-        
+
         // Validar cada archivo
         selectedFiles = [];
         for (let file of newFiles) {
@@ -796,41 +1130,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 showError(`${file.name} no es una imagen válida`);
                 continue;
             }
-            
+
             if (file.size > maxSize) {
                 showError(`${file.name} excede el tamaño máximo de 5MB`);
                 continue;
             }
-            
+
             selectedFiles.push(file);
         }
-        
+
         updatePreview();
         updateFileInput();
     }
-    
+
     function updatePreview() {
         if (!previewGrid || !previewContainer) return;
-        
+
         previewGrid.innerHTML = '';
-        
+
         if (selectedFiles.length === 0) {
             previewContainer.classList.add('hidden');
             return;
         }
-        
+
         previewContainer.classList.remove('hidden');
-        
+
         selectedFiles.forEach((file, index) => {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const div = document.createElement('div');
                 div.className = 'relative group';
                 div.innerHTML = `
-                    <img src="${e.target.result}" 
-                         alt="${file.name}" 
+                    <img src="${e.target.result}"
+                         alt="${file.name}"
                          class="w-full h-24 object-cover rounded-lg shadow">
-                    <button type="button" 
+                    <button type="button"
                             onclick="removeNewImage(${index})"
                             class="absolute top-1 right-1 bg-red-500 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                         <i class="fas fa-times text-xs"></i>
@@ -842,13 +1176,13 @@ document.addEventListener('DOMContentLoaded', function() {
             reader.readAsDataURL(file);
         });
     }
-    
+
     window.removeNewImage = function(index) {
         selectedFiles.splice(index, 1);
         updatePreview();
         updateFileInput();
     };
-    
+
     function updateFileInput() {
         const dataTransfer = new DataTransfer();
         selectedFiles.forEach(file => {
@@ -856,7 +1190,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         fotosInput.files = dataTransfer.files;
     }
-    
+
     function showError(message) {
         Swal.fire({
             icon: 'error',
