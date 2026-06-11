@@ -1,29 +1,30 @@
 <?php
+$hotel_id_actual = obtenerHotelIdActualCompat();
 if (!isset($checkins_pendientes) || !isset($checkouts_vencidos)) {
-    
+
     // Cargar el modelo si no está cargado
     if (!class_exists('Reservacion')) {
         require_once __DIR__ . '/../../models/Reservacion.php';
     }
-    
+
     try {
         // Crear instancia del modelo
         $reservacionTemp = new Reservacion();
-        
+
         // Obtener check-ins pendientes
         $checkins_pendientes = $reservacionTemp->getCheckInsPendientes();
-        
+
         // Obtener check-outs vencidos
         $checkouts_vencidos = $reservacionTemp->getCheckOutsPendientes();
-        
+
         // Placeholder para llegadas tardías (implementación futura)
         $llegadas_tardias = [];
-        
+
         // Log para debug (opcional - puedes comentar estas líneas)
         error_log("Reservaciones pendientes cargadas directamente en la vista");
         error_log("Check-ins pendientes: " . count($checkins_pendientes));
         error_log("Check-outs vencidos: " . count($checkouts_vencidos));
-        
+
     } catch (Exception $e) {
         // Si hay error, inicializar como arrays vacíos
         error_log("Error al cargar reservaciones pendientes: " . $e->getMessage());
@@ -533,7 +534,7 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
 
 /* Subtle diagonal pattern on disponible cards */
 .estado-disponible {
-    background-image: 
+    background-image:
         linear-gradient(145deg, #E8F5E4 0%, #D4EDCF 50%, #C5E4BF 100%),
         repeating-linear-gradient(
             45deg,
@@ -620,13 +621,13 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
 
 /* Staggered card entrance animation */
 @keyframes cardSlideUp {
-    from { 
-        opacity: 0; 
-        transform: translateY(20px) scale(0.97); 
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.97);
     }
-    to { 
-        opacity: 1; 
-        transform: translateY(0) scale(1); 
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
     }
 }
 
@@ -1009,11 +1010,11 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
     .modern-header {
         padding: 0.5rem 0 !important;
     }
-    
+
     .stat-widget {
         border-radius: var(--radius-md) !important;
     }
-    
+
     .bg-white.rounded-lg.shadow-sm.p-3.mb-4 {
         border-radius: var(--radius-lg) !important;
         padding: 0.75rem !important;
@@ -1089,7 +1090,7 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
 
 /* Sombra mejorada para el tooltip */
 .room-tooltip {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
                 0 2px 4px -1px rgba(0, 0, 0, 0.06),
                 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     border: 1px solid rgba(0, 0, 0, 0.05);
@@ -1111,8 +1112,8 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
     color: #1f2937 !important;
 }
 /* CSS crítico */
-.habitaciones-view { 
-    opacity: 0; 
+.habitaciones-view {
+    opacity: 0;
     transition: opacity 0.3s ease;
     min-height: 100vh;
     background: #f8f9fa;
@@ -1150,11 +1151,11 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
     .modern-header .container {
         padding: 0.75rem;
     }
-    
+
     .modern-header h1 {
         font-size: 1.125rem;
     }
-    
+
     .modern-header .btn-modern {
         padding: 0.375rem 0.625rem;
         font-size: 0.75rem;
@@ -1280,11 +1281,11 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
         font-size: 0.8125rem;
         height: 36px;
     }
-    
+
     .filter-input {
         padding-left: 1.75rem;
     }
-    
+
     .filter-select,
     .filter-date {
         min-width: 0;
@@ -1293,14 +1294,14 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
 }
 
 /* Tarjetas compactas */
-.room-card-compact { 
+.room-card-compact {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     cursor: pointer;
     height: 100%;
 }
-.room-card-compact:hover { 
-    transform: scale(1.02); 
-    box-shadow: 0 8px 16px rgba(0,0,0,0.12); 
+.room-card-compact:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.12);
 }
 
 
@@ -1429,11 +1430,11 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
 
 /* Animación de pulso más intensa para alertas críticas */
 @keyframes alertPulse {
-    0%, 100% { 
+    0%, 100% {
         opacity: 1;
         transform: scale(1);
     }
-    50% { 
+    50% {
         opacity: 0.7;
         transform: scale(1.05);
     }
@@ -1452,7 +1453,7 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
 }
 
 /* Estados con colores distintivos */
-.estado-disponible { 
+.estado-disponible {
     background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%) !important;
     border-left: 4px solid #059669;
     box-shadow: 0 2px 4px rgba(5, 150, 105, 0.1);
@@ -1474,10 +1475,10 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
 
 /* Animación de borde pulsante para alertas */
 @keyframes borderPulse {
-    0%, 100% { 
+    0%, 100% {
         box-shadow: 0 0 20px rgba(220, 38, 38, 0.4), 0 4px 8px rgba(0,0,0,0.1);
     }
-    50% { 
+    50% {
         box-shadow: 0 0 30px rgba(220, 38, 38, 0.6), 0 6px 12px rgba(0,0,0,0.15);
     }
 }
@@ -1492,12 +1493,12 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
         padding: 2px 5px;
         gap: 2px;
     }
-    
+
     .checkin-vencido-indicator i,
     .checkout-vencido-indicator i {
         font-size: 8px;
     }
-    
+
     /* Mantener bordes pulsantes visibles en móvil */
     .flip-card.has-checkin-vencido .flip-card-front,
     .flip-card.has-checkout-vencido .flip-card-front {
@@ -1505,38 +1506,38 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
     }
 }
 
-.estado-por_llegar { 
+.estado-por_llegar {
     background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%) !important;
     border-left: 4px solid #9333ea;
     box-shadow: 0 2px 4px rgba(147, 51, 234, 0.15);
 }
 
-.estado-ocupada { 
+.estado-ocupada {
     background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%) !important;
     border-left: 4px solid #dc2626;
     box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1);
 }
 
-.estado-mantenimiento { 
+.estado-mantenimiento {
     background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
     border-left: 4px solid #d97706;
     box-shadow: 0 2px 4px rgba(217, 119, 6, 0.1);
 }
 
-.estado-limpieza { 
+.estado-limpieza {
     background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%) !important;
     border-left: 4px solid #2563eb;
     box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
 }
 /* NUEVO: Estado combinado - Limpieza + Por Llegar (degradado azul a morado) */
-.estado-limpieza-por-llegar { 
+.estado-limpieza-por-llegar {
     background: linear-gradient(45deg, #dbeafe 0%, #dbeafe 45%, #e9d5ff 55%, #e9d5ff 100%) !important;
     border-left: 4px solid;
     border-image: linear-gradient(to bottom, #2563eb 0%, #9333ea 100%) 1;
     box-shadow: 0 2px 4px rgba(107, 114, 128, 0.15);
 }
 
-.estado-doble { 
+.estado-doble {
     background: linear-gradient(45deg, #fee2e2 0%, #fee2e2 45%, #e9d5ff 55%, #e9d5ff 100%) !important;
     border-left: 4px solid;
     border-image: linear-gradient(to bottom, #dc2626 0%, #7c3aed 100%) 1;
@@ -1569,18 +1570,18 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
 
 .estado-disponible .estado-icon { background: #059669; color: white; }
 .estado-por_llegar .estado-icon { background: #9333ea; color: white; }
-.estado-ocupada .estado-icon { background: #475569; color: white; }
+.estado-ocupada .estado-icon { background: #C2603C; color: white; }
 .estado-mantenimiento .estado-icon { background: #d97706; color: white; }
 .estado-limpieza .estado-icon { background: #2563eb; color: white; }
-.estado-doble .estado-icon { 
-    background: linear-gradient(45deg, #dc2626 50%, #9333ea 50%); 
-    color: white; 
+.estado-doble .estado-icon {
+    background: linear-gradient(45deg, #dc2626 50%, #9333ea 50%);
+    color: white;
 }
 
 /* NUEVO: Icono para estado combinado limpieza + por llegar */
-.estado-limpieza-por-llegar .estado-icon { 
-    background: linear-gradient(45deg, #2563eb 50%, #9333ea 50%); 
-    color: white; 
+.estado-limpieza-por-llegar .estado-icon {
+    background: linear-gradient(45deg, #2563eb 50%, #9333ea 50%);
+    color: white;
 }
 
 /* Widgets simplificados */
@@ -1965,25 +1966,25 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
     .flip-card-front {
         padding: 10px;
     }
-    
+
     .flip-card-back {
         padding: 10px;
     }
-    
+
     .estado-icon {
         width: 26px;
         height: 26px;
         font-size: 13px;
     }
-    
+
     .flip-card-front h3 {
         font-size: 1.125rem;
     }
-    
+
     .flip-card-back h4 {
         font-size: 0.8125rem;
     }
-    
+
     .flip-card-back .info-item {
         font-size: 0.625rem;
     }
@@ -1995,21 +1996,21 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
         padding-left: 0.75rem;
         padding-right: 0.75rem;
     }
-    
+
     /* Widgets más compactos */
     .stat-widget {
         padding: 0.625rem;
     }
-    
+
     .stat-widget .text-lg {
         font-size: 1rem;
     }
-    
+
     /* Ocultar contenido desktop */
     .flip-card-front > .hidden.sm\:block {
         display: none !important;
     }
-    
+
     /* Mostrar contenido móvil */
     .flip-card-front {
         padding: 8px;
@@ -2017,34 +2018,34 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
         flex-direction: column;
         justify-content: space-between;
     }
-    
+
     .mobile-flip-content {
         display: flex !important;
         flex-direction: column;
         height: 100%;
         justify-content: space-between;
     }
-    
+
     /* Ajustes de tamaño para móvil */
     .mobile-flip-content h3 {
         font-size: 1.5rem;
         line-height: 1.2;
     }
-    
+
     .mobile-flip-content .text-xs {
         font-size: 0.625rem;
     }
-    
+
     .mobile-flip-content .text-sm {
         font-size: 0.75rem;
     }
-    
+
     .mobile-estado-icon {
         width: 22px !important;
         height: 22px !important;
         font-size: 11px !important;
     }
-    
+
     /* Indicador de flip más visible */
     .mobile-flip-indicator {
         background: rgba(0, 0, 0, 0.2);
@@ -2057,42 +2058,42 @@ div[class*="bg-white rounded-xl shadow-sm"][class*="mb-4"] {
         gap: 3px;
         color: rgba(0, 0, 0, 0.8);
     }
-    
+
     .mobile-flip-indicator::after {
         content: "→";
         font-weight: bold;
     }
-    
+
     /* Ajustar reverso para móvil */
     .flip-card-back {
         padding: 8px;
     }
-    
+
     .flip-card-back h4 {
         font-size: 0.75rem;
         margin-bottom: 0.375rem;
     }
-    
+
     .flip-card-back .info-item {
         font-size: 0.625rem;
         margin-bottom: 0.125rem;
     }
-    
+
     .flip-card-back .info-item i {
         font-size: 0.625rem;
         width: 12px;
     }
-    
+
     .flip-card-back .action-buttons {
         gap: 0.375rem;
         margin-top: 0.375rem;
     }
-    
+
     .flip-card-back .btn-action {
         font-size: 0.625rem;
         padding: 0.25rem 0.5rem;
     }
-    
+
     /* Forzar color morado en móvil */
     .estado-por_llegar,
     .flip-card-front.estado-por_llegar {
@@ -2145,17 +2146,17 @@ document.addEventListener('DOMContentLoaded', function() {
     if (view) {
         view.classList.add('loaded');
     }
-    
+
     // Animación de entrada escalonada
     const cards = document.querySelectorAll('.room-card-compact');
     cards.forEach((card, index) => {
         card.style.animationDelay = `${index * 20}ms`;
     });
-    
+
     // Prevenir submit si no hay fecha seleccionada
     const form = document.querySelector('form');
     const fechaInput = document.querySelector('input[name="fecha_consulta"]');
-    
+
     if (form && fechaInput) {
         form.addEventListener('submit', function(e) {
             const mostrarDisp = document.querySelector('input[name="mostrar_disponibilidad"]');
@@ -2172,9 +2173,9 @@ document.addEventListener('DOMContentLoaded', function() {
 .habitaciones-view{
     --hotel-brand-primary: var(--brand-primary,#1B2746);
     --hotel-brand-secondary: var(--brand-secondary,#0F172A);
-    --state-occupied:#475569;
-    --state-occupied-dark:#334155;
-    --state-occupied-soft:#E2E8F0;
+    --state-occupied:#C2603C;
+    --state-occupied-dark:#9E4A2E;
+    --state-occupied-soft:#F8EAE1;
 }
 .btn-brand{background:var(--hotel-brand-primary)!important;color:#fff!important;border:1px solid transparent!important;box-shadow:0 10px 24px color-mix(in srgb,var(--hotel-brand-primary) 24%,transparent)!important;}
 .btn-brand:hover{filter:brightness(0.94);transform:translateY(-1px)!important;}
@@ -2203,16 +2204,16 @@ document.addEventListener('DOMContentLoaded', function() {
 .estado-ocupada,
 .estado-ocupada_fecha{
     background-image:
-        linear-gradient(145deg,#F1F5F9 0%,#E2E8F0 50%,#CBD5E1 100%),
-        radial-gradient(circle, rgba(71,85,105,0.05) 1px, transparent 1px) !important;
+        linear-gradient(145deg,#FFF7F3 0%,#F8EAE1 52%,#F2D4C5 100%),
+        radial-gradient(circle, rgba(194,96,60,0.06) 1px, transparent 1px) !important;
     background-size: auto, 12px 12px !important;
     border-left-color:var(--state-occupied) !important;
-    box-shadow:0 2px 4px rgba(71,85,105,0.12) !important;
+    box-shadow:0 2px 4px rgba(194,96,60,0.14) !important;
 }
 .estado-ocupada.flip-card-front::before,
 .estado-ocupada_fecha.flip-card-front::before{background:var(--state-occupied) !important;}
 .estado-ocupada.flip-card-front::after,
-.estado-ocupada_fecha.flip-card-front::after{background:linear-gradient(90deg,var(--state-occupied-dark),#64748B) !important;}
+.estado-ocupada_fecha.flip-card-front::after{background:linear-gradient(90deg,var(--state-occupied-dark),#D97750) !important;}
 .estado-ocupada .estado-icon,
 .estado-ocupada_fecha .estado-icon{background:var(--state-occupied) !important;color:#fff!important;}
 .estado-ocupada .estado-icon::after,
@@ -2228,20 +2229,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="fas fa-bed text-white text-lg"></i>
                     </div>
                     <div>
-                        <h1 class="text-xl font-bold text-gray-800">Gestión de Habitaciones</h1>
+                        <h1 class="text-xl font-bold text-gray-800"><span class="hb-title-prefix">Gesti&oacute;n de </span>Habitaciones</h1>
                         <p class="text-xs text-gray-500 hidden sm:block">Control en tiempo real</p>
                     </div>
                 </div>
-                
+
                 <div class="flex flex-wrap gap-2">
-    <button onclick="mostrarVistaRapida()" 
+    <button onclick="mostrarVistaRapida()"
+            title="Abrir vista rápida de habitaciones"
             class="btn-modern bg-gray-100 text-gray-700 hover:bg-gray-200">
         <i class="fas fa-th text-sm"></i>
         <span class="hidden sm:inline">Vista Rápida</span>
     </button>
-    
+
     <?php if ($tiene_limpieza): ?>
-    <button onclick="mostrarModalLimpieza()" 
+    <button onclick="mostrarModalLimpieza()"
+            title="Marcar habitaciones en limpieza"
             class="btn-modern btn-brand-soft relative">
         <i class="fas fa-broom text-sm"></i>
         <span>Limpieza</span>
@@ -2250,14 +2253,17 @@ document.addEventListener('DOMContentLoaded', function() {
         </span>
     </button>
     <?php endif; ?>
-    
+
     <a href="<?= url('reservaciones/crear') ?>"
+       onclick="return abrirSelectorNuevaReserva(event)"
+       title="Crear una nueva reservación"
        class="btn-modern btn-brand">
         <i class="fas fa-plus-circle text-sm"></i>
         <span>Nueva Reserva</span>
     </a>
     <?php if (can('habitaciones.create')): ?>
     <a href="<?= url('habitaciones/create') ?>"
+       title="Registrar una habitación nueva"
        class="btn-modern btn-brand-outline">
         <span class="hidden sm:inline">Nueva</span>
         <span>Habitación</span>
@@ -2267,46 +2273,89 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         </div>
     </div>
-    
+
     <div class="container mx-auto px-4 py-4 max-w-7xl">
         <!-- Widgets de estado (6, semánticos, estilo boutique) -->
         <div class="hb-stats" id="hbStats">
-            <div class="hb-stat hb-stat--total">
+            <div class="hb-stat hb-stat--total" data-estado="" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="Mostrar todas las habitaciones">
                 <span class="hb-stat-ic"><i class="fas fa-door-closed"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['total'] ?? 0 ?></span>
                 <span class="hb-stat-l">Total</span>
+                <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
-            <div class="hb-stat hb-stat--available">
+            <div class="hb-stat hb-stat--available" data-estado="disponible" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="Filtrar habitaciones disponibles">
                 <span class="hb-stat-ic"><i class="fas fa-check-circle"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['disponibles'] ?? 0 ?></span>
                 <span class="hb-stat-l">Disponible</span>
+                <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
-            <div class="hb-stat hb-stat--occupied">
+            <div class="hb-stat hb-stat--occupied" data-estado="ocupada" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="Filtrar habitaciones ocupadas">
                 <span class="hb-stat-ic"><i class="fas fa-bed"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['ocupadas'] ?? 0 ?></span>
                 <span class="hb-stat-l">Ocupada</span>
+                <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
-            <div class="hb-stat hb-stat--arriving">
+            <div class="hb-stat hb-stat--arriving" data-estado="por_llegar" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="Filtrar habitaciones por llegar">
                 <span class="hb-stat-ic"><i class="fas fa-clock"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['por_llegar'] ?? 0 ?></span>
                 <span class="hb-stat-l">Por llegar</span>
+                <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
-            <div class="hb-stat hb-stat--cleaning">
+            <div class="hb-stat hb-stat--cleaning" data-estado="limpieza" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="Filtrar habitaciones en limpieza">
                 <span class="hb-stat-ic"><i class="fas fa-broom"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['limpieza'] ?? 0 ?></span>
                 <span class="hb-stat-l">Limpieza</span>
+                <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
             </div>
-            <div class="hb-stat hb-stat--maint">
+            <div class="hb-stat hb-stat--maint" data-estado="mantenimiento" role="button" tabindex="0" onclick="hbSetEstado(this)" onkeydown="hbStatKey(event, this)" title="Filtrar habitaciones en mantenimiento">
                 <span class="hb-stat-ic"><i class="fas fa-wrench"></i></span>
                 <span class="hb-stat-n"><?= $estadisticas['mantenimiento'] ?? 0 ?></span>
                 <span class="hb-stat-l">Mantenimiento</span>
+                <span class="hb-stat-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
+            </div>
+        </div>
+        <?php
+        $estadoActual = $filtros['estado'] ?? '';
+        $hbMobileSegments = [
+            ['Disponible', (int)($estadisticas['disponibles'] ?? 0), 'var(--c-available)', 'disponible'],
+            ['Ocupada', (int)($estadisticas['ocupadas'] ?? 0), 'var(--c-occupied)', 'ocupada'],
+            ['Por llegar', (int)($estadisticas['por_llegar'] ?? 0), 'var(--c-arriving)', 'por_llegar'],
+            ['Limpieza', (int)($estadisticas['limpieza'] ?? 0), 'var(--c-cleaning)', 'limpieza'],
+            ['Mantenimiento', (int)($estadisticas['mantenimiento'] ?? 0), 'var(--c-maint)', 'mantenimiento'],
+        ];
+        $hbMobileTotalBar = 0;
+        foreach ($hbMobileSegments as $hbMobileSeg) {
+            $hbMobileTotalBar += $hbMobileSeg[1];
+        }
+        $hbMobileTotalBar = max(1, $hbMobileTotalBar);
+        ?>
+        <div class="hb-mobile-occupancy" aria-label="Resumen movil de ocupacion">
+            <div class="hb-mobile-occupancy-head">
+                <span>Ocupacion</span>
+                <strong><?= (int)($estadisticas['ocupadas'] ?? 0) ?> / <?= (int)($estadisticas['total'] ?? 0) ?></strong>
+            </div>
+            <div class="hb-mobile-occbar">
+                <?php foreach ($hbMobileSegments as $hbMobileSeg): ?>
+                    <?php if ($hbMobileSeg[1] > 0): ?>
+                        <span style="width: <?= round(($hbMobileSeg[1] / $hbMobileTotalBar) * 100, 3) ?>%; background: <?= $hbMobileSeg[2] ?>;"></span>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
+            <div class="hb-mobile-legend">
+                <?php foreach ($hbMobileSegments as $hbMobileSeg): ?>
+                    <button type="button" data-estado="<?= $hbMobileSeg[3] ?>" onclick="hbSetEstado(this)" class="hb-mobile-lg<?= $estadoActual === $hbMobileSeg[3] ? ' is-active' : '' ?>" title="Filtrar habitaciones: <?= htmlspecialchars($hbMobileSeg[0]) ?>">
+                        <span class="hb-mobile-dot" style="background: <?= $hbMobileSeg[2] ?>;"></span>
+                        <span><?= $hbMobileSeg[0] ?></span>
+                        <b><?= $hbMobileSeg[1] ?></b>
+                    </button>
+                <?php endforeach; ?>
             </div>
         </div>
            <?php
         $total_alertas = count($checkouts_vencidos ?? []) + count($checkins_pendientes ?? []) + count($llegadas_tardias ?? []);
         if ($total_alertas > 0):
         ?>
-        
+
         <style>
         /* Estilos del panel de alertas */
         .alert-panel {
@@ -2319,7 +2368,7 @@ document.addEventListener('DOMContentLoaded', function() {
             border: 1px solid rgba(212, 91, 91, 0.1);
             border-left: 5px solid #D45B5B;
         }
-        
+
         .alert-header {
             background: linear-gradient(135deg, #FFF5F4 0%, #FFECEB 100%);
             padding: 1rem 1.25rem;
@@ -2328,7 +2377,7 @@ document.addEventListener('DOMContentLoaded', function() {
             justify-content: space-between;
             align-items: center;
         }
-        
+
         .alert-badge {
             background: linear-gradient(135deg, #D45B5B 0%, #E07070 100%);
             color: white;
@@ -2340,19 +2389,19 @@ document.addEventListener('DOMContentLoaded', function() {
             text-align: center;
             box-shadow: 0 2px 6px rgba(212, 91, 91, 0.3);
         }
-        
+
         .alert-content {
             padding: 1rem 1.25rem;
         }
-        
+
         .alert-section {
             margin-bottom: 1.5rem;
         }
-        
+
         .alert-section:last-child {
             margin-bottom: 0;
         }
-        
+
         .alert-section-title {
             display: flex;
             align-items: center;
@@ -2361,7 +2410,7 @@ document.addEventListener('DOMContentLoaded', function() {
             font-weight: 600;
             font-size: 0.95rem;
         }
-        
+
         .alert-item {
             background: white;
             border: 1px solid #e5e7eb;
@@ -2374,54 +2423,54 @@ document.addEventListener('DOMContentLoaded', function() {
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             border-left: 4px solid;
         }
-        
+
         .alert-item:hover {
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             transform: translateX(3px);
         }
-        
+
         .alert-item:last-child {
             margin-bottom: 0;
         }
-        
+
         .alert-critical {
             border-left-color: #f44336;
             background: #fff5f5;
         }
-        
+
         .alert-warning {
             border-left-color: #ff9800;
             background: #fffbf5;
         }
-        
+
         .alert-info {
             border-left-color: #2196f3;
             background: #f5f9ff;
         }
-        
+
         .alert-info-text {
             flex: 1;
         }
-        
+
         .alert-info-text strong {
             display: block;
             color: #1f2937;
             margin-bottom: 0.25rem;
             font-size: 0.95rem;
         }
-        
+
         .alert-info-text small {
             color: #6b7280;
             font-size: 0.8rem;
             line-height: 1.4;
         }
-        
+
         .alert-actions {
             display: flex;
             gap: 0.5rem;
             flex-shrink: 0;
         }
-        
+
         .btn-alert {
             padding: 0.5rem 1rem;
             border-radius: 10px;
@@ -2436,49 +2485,49 @@ document.addEventListener('DOMContentLoaded', function() {
             align-items: center;
             gap: 0.25rem;
         }
-        
+
         .btn-alert-primary {
             background: linear-gradient(135deg, #D45B5B 0%, #E07070 100%);
             color: white;
             box-shadow: 0 2px 6px rgba(212, 91, 91, 0.25);
         }
-        
+
         .btn-alert-primary:hover {
             box-shadow: 0 4px 12px rgba(212, 91, 91, 0.35);
             transform: translateY(-1px);
         }
-        
+
         .btn-alert-warning {
             background: linear-gradient(135deg, #E89E40 0%, #F0B060 100%);
             color: white;
             box-shadow: 0 2px 6px rgba(232, 158, 64, 0.25);
         }
-        
+
         .btn-alert-warning:hover {
             box-shadow: 0 4px 12px rgba(232, 158, 64, 0.35);
             transform: translateY(-1px);
         }
-        
+
         .btn-alert-info {
             background: linear-gradient(135deg, #3B7DD8 0%, #5B93E0 100%);
             color: white;
             box-shadow: 0 2px 6px rgba(59, 125, 216, 0.25);
         }
-        
+
         .btn-alert-info:hover {
             box-shadow: 0 4px 12px rgba(59, 125, 216, 0.35);
             transform: translateY(-1px);
         }
-        
+
         .btn-alert-secondary {
             background: linear-gradient(135deg, #7A8B7A 0%, #8A9B8A 100%);
             color: white;
         }
-        
+
         .btn-alert-secondary:hover {
             background: #757575;
         }
-        
+
         .alert-collapse {
             cursor: pointer;
             user-select: none;
@@ -2487,31 +2536,31 @@ document.addEventListener('DOMContentLoaded', function() {
             padding: 0.5rem;
             color: #6b7280;
         }
-        
+
         .alert-collapse:hover {
             color: #1f2937;
         }
-        
+
         .alert-collapse i {
             transition: transform 0.2s;
         }
-        
+
         .alert-collapse.collapsed i {
             transform: rotate(-90deg);
         }
-        
+
         @media (max-width: 640px) {
             .alert-item {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 0.75rem;
             }
-            
+
             .alert-actions {
                 width: 100%;
                 flex-direction: column;
             }
-            
+
             .btn-alert {
                 width: 100%;
                 text-align: center;
@@ -2519,7 +2568,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         </style>
-        
+
         <div class="alert-panel">
             <!-- Header -->
             <div class="alert-header">
@@ -2528,14 +2577,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h3 class="text-base font-bold text-gray-800 m-0">Alertas Pendientes</h3>
                     <span class="alert-badge"><?= $total_alertas ?></span>
                 </div>
-                <button onclick="toggleAlertas()" class="alert-collapse collapsed" id="alertCollapseBtn">
+                <button onclick="toggleAlertas()" class="alert-collapse collapsed" id="alertCollapseBtn" title="Mostrar u ocultar alertas pendientes" aria-label="Mostrar u ocultar alertas pendientes">
                     <i class="fas fa-chevron-down"></i>
                 </button>
             </div>
-            
+
             <!-- Content -->
             <div class="alert-content" id="alertContent" style="display: none;">
-                
+
                 <!-- CHECK-OUTS VENCIDOS -->
                 <?php if (!empty($checkouts_vencidos)): ?>
                 <div class="alert-section">
@@ -2543,7 +2592,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="fas fa-door-open"></i>
                         <span>Check-outs Vencidos (<?= count($checkouts_vencidos) ?>)</span>
                     </div>
-                    
+
                     <?php foreach ($checkouts_vencidos as $checkout): ?>
                     <div class="alert-item alert-critical">
                         <div class="alert-info-text">
@@ -2555,7 +2604,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             </small>
                         </div>
                         <div class="alert-actions">
-                            <button onclick="confirmarCheckOut(<?= $checkout['id'] ?>)" 
+                            <button onclick="confirmarCheckOut(<?= $checkout['id'] ?>)"
+                               title="Realizar check-out de esta reservación"
                                class="btn-alert btn-alert-primary" style="border: none; cursor: pointer;">
                                 <i class="fas fa-sign-out-alt"></i> <span>Check-out</span>
                             </button>
@@ -2564,7 +2614,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <?php endforeach; ?>
                 </div>
                 <?php endif; ?>
-                
+
                 <!-- CHECK-INS PENDIENTES -->
                 <?php if (!empty($checkins_pendientes)): ?>
                 <div class="alert-section">
@@ -2572,7 +2622,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="fas fa-user-clock"></i>
                         <span>Check-ins Pendientes (<?= count($checkins_pendientes) ?>)</span>
                     </div>
-                    
+
                     <?php foreach ($checkins_pendientes as $checkin): ?>
                     <div class="alert-item alert-warning">
                         <div class="alert-info-text">
@@ -2587,7 +2637,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             </small>
                         </div>
                         <div class="alert-actions">
-                            <a href="<?= url('reservaciones/ver/' . $checkin['id']) ?>" 
+                            <a href="<?= url('reservaciones/ver/' . $checkin['id']) ?>"
+                               title="Abrir reservación para hacer check-in"
                                class="btn-alert btn-alert-warning">
                                 <i class="fas fa-sign-in-alt"></i> <span>Check-in</span>
                             </a>
@@ -2596,7 +2647,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <?php endforeach; ?>
                 </div>
                 <?php endif; ?>
-                
+
                 <!-- LLEGADAS TARDÍAS HOY -->
                 <?php if (!empty($llegadas_tardias)): ?>
                 <div class="alert-section">
@@ -2604,7 +2655,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="fas fa-phone-alt"></i>
                         <span>Llegadas Tardías Hoy (<?= count($llegadas_tardias) ?>)</span>
                     </div>
-                    
+
                     <?php foreach ($llegadas_tardias as $tardio): ?>
                     <div class="alert-item alert-info">
                         <div class="alert-info-text">
@@ -2618,7 +2669,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             </small>
                         </div>
                         <div class="alert-actions">
-                            <a href="<?= url('reservaciones/ver/' . $tardio['id']) ?>" 
+                            <a href="<?= url('reservaciones/ver/' . $tardio['id']) ?>"
+                               title="Ver detalle de la reservación"
                                class="btn-alert btn-alert-info">
                                 <i class="fas fa-eye"></i> <span>Ver</span>
                             </a>
@@ -2627,15 +2679,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     <?php endforeach; ?>
                 </div>
                 <?php endif; ?>
-                
+
             </div>
         </div>
-        
+
         <script>
         function toggleAlertas() {
             const content = document.getElementById('alertContent');
             const btn = document.getElementById('alertCollapseBtn');
-            
+
             if (content.style.display === 'none') {
                 content.style.display = 'block';
                 btn.classList.remove('collapsed');
@@ -2644,18 +2696,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 btn.classList.add('collapsed');
             }
         }
-        
+
         // Auto-collapse en móvil si hay muchas alertas
         if (window.innerWidth < 768 && <?= $total_alertas ?> > 3) {
             document.getElementById('alertContent').style.display = 'none';
             document.getElementById('alertCollapseBtn').classList.add('collapsed');
         }
         </script>
-        
+
         <?php endif; ?>
         <!-- Barra de Filtros Compacta -->
         <!-- Reemplazar toda la sección de "Barra de Filtros Compacta" con esto: -->
-<div class="bg-white rounded-xl shadow-sm p-2 sm:p-3 mb-4">
+<div class="bg-white rounded-xl shadow-sm p-2 sm:p-3 mb-4 hb-filter-panel">
     <?php if (!empty($filtros['fecha_consulta']) && !empty($filtros['mostrar_disponibilidad'])): ?>
     <div class="bg-blue-50 border border-blue-200 rounded-lg p-2 mb-2 flex items-center justify-between">
         <div class="flex items-center flex-1">
@@ -2664,14 +2716,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 Disponibilidad: <?= format_date($filtros['fecha_consulta']) ?>
             </span>
         </div>
-        <a href="<?= url('habitaciones') ?>" class="text-blue-600 hover:text-blue-800 text-xs p-1">
+        <a href="<?= url('habitaciones') ?>" class="text-blue-600 hover:text-blue-800 text-xs p-1" title="Quitar filtro de fecha" aria-label="Quitar filtro de fecha">
             <i class="fas fa-times"></i>
         </a>
     </div>
     <?php endif; ?>
-    
+
     <?php
-        $estadoActual = $filtros['estado'] ?? '';
         $hbChips = [
             ''              => ['Todas',         (int)($estadisticas['total'] ?? 0),         ''],
             'disponible'    => ['Disponible',    (int)($estadisticas['disponibles'] ?? 0),   'available'],
@@ -2689,7 +2740,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <span class="hb-fdiv"></span>
             <div class="hb-chips">
                 <?php foreach ($hbChips as $val => $def): ?>
-                    <button type="button" data-estado="<?= $val ?>" onclick="hbSetEstado(this)"
+                    <button type="button" data-estado="<?= $val ?>" onclick="hbSetEstado(this)" title="Filtrar habitaciones: <?= htmlspecialchars($def[0]) ?>"
                             class="hb-chip<?= $estadoActual === $val ? ' is-active' : '' ?><?= $def[2] ? ' chip-'.$def[2] : '' ?>">
                         <?php if ($def[2]): ?><span class="hb-chip-dot"></span><?php endif; ?>
                         <?= $def[0] ?> <span class="hb-chip-ct"><?= $def[1] ?></span>
@@ -2710,7 +2761,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
         <!-- Movimientos del día -->
-        <?php 
+        <?php
         $fecha_consulta = !empty($filtros['fecha_consulta']) ? $filtros['fecha_consulta'] : date('Y-m-d');
         $mostrar_movimientos = !empty($filtros['mostrar_disponibilidad']) || !empty($filtros['fecha_consulta']) || $fecha_consulta == date('Y-m-d');
         $es_filtro_fecha = !empty($filtros['fecha_consulta']) && $filtros['fecha_consulta'] != date('Y-m-d');
@@ -2720,21 +2771,22 @@ document.addEventListener('DOMContentLoaded', function() {
             $db = Database::getInstance();
             // Establecer zona horaria de MySQL a México
             $db->query("SET time_zone = '-06:00'");
-            
+
             // Check-ins del día
             $sql_checkins = "SELECT r.*, h.nombre_completo, h.telefono,
                             GROUP_CONCAT(hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones_numeros,
                             GROUP_CONCAT(hab.id ORDER BY hab.numero SEPARATOR ',') as habitaciones_ids
                             FROM reservaciones r
                             INNER JOIN huespedes h ON r.huesped_id = h.id
-                            INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                            INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id
-                            WHERE DATE(r.fecha_entrada) = ?
+                            INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+                            INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
+                            WHERE r.hotel_id = ?
+                            AND DATE(r.fecha_entrada) = ?
                             AND r.estado = 'confirmada'
                             GROUP BY r.id
                             ORDER BY r.hora_llegada_estimada";
-            $stmt = $db->query($sql_checkins, [$fecha_consulta]);
-            $checkins_dia = $stmt->fetchAll();            
+            $stmt = $db->query($sql_checkins, [$hotel_id_actual, $fecha_consulta]);
+            $checkins_dia = $stmt->fetchAll();
             // Check-outs del día - Solo si NO es un filtro de fecha (solo para día actual)
             $checkouts_dia = [];
             if (!$es_filtro_fecha) {
@@ -2743,16 +2795,17 @@ document.addEventListener('DOMContentLoaded', function() {
                                  GROUP_CONCAT(hab.id ORDER BY hab.numero SEPARATOR ',') as habitaciones_ids
                                  FROM reservaciones r
                                  INNER JOIN huespedes h ON r.huesped_id = h.id
-                                 INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                                 INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id
-                                 WHERE DATE(r.fecha_salida) = ?
+                                 INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+                                 INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
+                                 WHERE r.hotel_id = ?
+                                 AND DATE(r.fecha_salida) = ?
                                  AND r.estado IN ('checked_in', 'confirmada')
                                  GROUP BY r.id
                                  ORDER BY r.hora_entrada";
-                $stmt = $db->query($sql_checkouts, [$fecha_consulta]);
+                $stmt = $db->query($sql_checkouts, [$hotel_id_actual, $fecha_consulta]);
                 $checkouts_dia = $stmt->fetchAll();
             }
-            
+
             // Crear mapa de habitaciones con doble movimiento
             $habitaciones_doble_movimiento = [];
             foreach ($checkouts_dia as $checkout) {
@@ -2768,12 +2821,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             ?>
-            
+
             <?php if (count($checkins_dia) > 0 || count($checkouts_dia) > 0): ?>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4 hb-movements">
                 <!-- Panel de Check-ins -->
-                <div class="bg-white rounded-lg shadow-sm">
-                    <div class="bg-purple-50 p-3 rounded-t-lg border-b border-purple-100">
+                <div class="bg-white rounded-lg shadow-sm hb-move-card hb-move-card--in">
+                    <div class="bg-purple-50 p-3 rounded-t-lg border-b border-purple-100 hb-move-head hb-move-head--in">
                         <h3 class="text-sm font-semibold text-purple-800 flex items-center justify-between">
                             <span><i class="fas fa-sign-in-alt mr-2"></i>Check-ins - <?= format_date($fecha_consulta) ?></span>
                             <span class="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">
@@ -2781,13 +2834,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             </span>
                         </h3>
                     </div>
-                    <div class="p-2 max-h-48 overflow-y-auto">
+                    <div class="p-2 max-h-48 overflow-y-auto hb-move-body">
                         <?php if (empty($checkins_dia)): ?>
-                            <p class="text-gray-500 text-center py-3 text-sm">No hay check-ins programados</p>
+                            <p class="text-gray-500 text-center py-3 text-sm hb-move-empty">No hay check-ins programados</p>
                         <?php else: ?>
                             <div class="space-y-1">
                                 <?php foreach ($checkins_dia as $checkin): ?>
-                                    <div class="flex items-center justify-between p-2 bg-purple-50 rounded hover:bg-purple-100 transition-colors">
+                                    <div class="flex items-center justify-between p-2 bg-purple-50 rounded hover:bg-purple-100 transition-colors hb-move-item hb-move-item--in">
                                         <div class="flex-1 min-w-0">
                                             <p class="font-medium text-sm text-gray-800 truncate">
                                                 <?= htmlspecialchars($checkin['nombre_completo']) ?>
@@ -2797,8 +2850,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 • <?= substr($checkin['hora_llegada_estimada'], 0, 5) ?>
                                             </p>
                                         </div>
-                                        <a href="<?= url('reservaciones/ver/' . $checkin['id']) ?>" 
-                                           class="text-purple-600 hover:text-purple-800 ml-2">
+                                        <a href="<?= url('reservaciones/ver/' . $checkin['id']) ?>"
+                                           class="text-purple-600 hover:text-purple-800 ml-2 hb-move-action">
                                             <i class="fas fa-arrow-right text-sm"></i>
                                         </a>
                                     </div>
@@ -2807,10 +2860,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         <?php endif; ?>
                     </div>
                 </div>
-                
+
                 <!-- Panel de Check-outs -->
-                 <div class="bg-white rounded-lg shadow-sm">
-                    <div class="bg-yellow-50 p-3 rounded-t-lg border-b border-yellow-100">
+                 <div class="bg-white rounded-lg shadow-sm hb-move-card hb-move-card--out">
+                    <div class="bg-yellow-50 p-3 rounded-t-lg border-b border-yellow-100 hb-move-head hb-move-head--out">
                         <h3 class="text-sm font-semibold text-yellow-800 flex items-center justify-between">
                             <span><i class="fas fa-sign-out-alt mr-2"></i>Check-outs - <?= format_date($fecha_consulta) ?></span>
                             <span class="bg-yellow-600 text-white text-xs px-2 py-0.5 rounded-full">
@@ -2818,13 +2871,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             </span>
                         </h3>
                     </div>
-                    <div class="p-2 max-h-48 overflow-y-auto">
+                    <div class="p-2 max-h-48 overflow-y-auto hb-move-body">
                         <?php if (empty($checkouts_dia)): ?>
-                            <p class="text-gray-500 text-center py-3 text-sm">No hay check-outs programados</p>
+                            <p class="text-gray-500 text-center py-3 text-sm hb-move-empty">No hay check-outs programados</p>
                         <?php else: ?>
                             <div class="space-y-1">
                                 <?php foreach ($checkouts_dia as $checkout): ?>
-                                    <div class="flex items-center justify-between p-2 bg-yellow-50 rounded hover:bg-yellow-100 transition-colors">
+                                    <div class="flex items-center justify-between p-2 bg-yellow-50 rounded hover:bg-yellow-100 transition-colors hb-move-item hb-move-item--out">
                                         <div class="flex-1 min-w-0">
                                             <p class="font-medium text-sm text-gray-800 truncate">
                                                 <?= htmlspecialchars($checkout['nombre_completo']) ?>
@@ -2835,7 +2888,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             </p>
                                         </div>
                                         <?php if ($checkout['estado'] == 'checked_in'): ?>
-                                            <button onclick="confirmarCheckOut(<?= $checkout['id'] ?>)" 
+                                            <button onclick="confirmarCheckOut(<?= $checkout['id'] ?>)"
                                                     class="bg-yellow-500 text-white px-2 py-1 rounded text-xs hover:bg-yellow-600 transition-colors ml-2">
                                                 Check-out
                                             </button>
@@ -2849,7 +2902,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <?php endif; ?>
         <?php endif; ?>
-        
+
         <!-- Grid de Habitaciones Compacto -->
         <?php
         // Obtener check-ins vencidos para alertas
@@ -2861,28 +2914,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     DATEDIFF(CURDATE(), r.fecha_entrada) as dias_retraso
                     FROM reservaciones r
                     INNER JOIN huespedes h ON r.huesped_id = h.id
-                    INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                    INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id
-                    WHERE r.fecha_entrada < CURDATE()
+                    INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+                    INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
+                    WHERE r.hotel_id = ?
+                    AND r.fecha_entrada < CURDATE()
                     AND r.estado = 'confirmada'
                     GROUP BY r.id
                     ORDER BY r.fecha_entrada";
-        $stmt = $db->query($sql_checkins_vencidos);
+        $stmt = $db->query($sql_checkins_vencidos, [$hotel_id_actual]);
         $checkins_vencidos_real = $stmt->fetchAll();
-        
+
         // Crear array para mapeo rápido de check-ins vencidos
         $habitaciones_con_checkin_vencido = [];
         foreach ($checkins_vencidos_real as $cv) {
             $hab_ids = explode(',', $cv['habitaciones_ids']);
             foreach ($hab_ids as $hab_id) {
                 $habitaciones_con_checkin_vencido[trim($hab_id)] = [
+                    'reservacion_id' => $cv['id'],
                     'nombre' => $cv['nombre_completo'],
                     'fecha_entrada' => $cv['fecha_entrada'],
                     'dias_retraso' => $cv['dias_retraso']
                 ];
             }
         }
-        
+
         // Obtener check-outs vencidos para alertas
         $sql_checkouts_vencidos = "SELECT r.*, h.nombre_completo, h.telefono,
                     GROUP_CONCAT(hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones_numeros,
@@ -2890,15 +2945,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     DATEDIFF(CURDATE(), r.fecha_salida) as dias_retraso
                     FROM reservaciones r
                     INNER JOIN huespedes h ON r.huesped_id = h.id
-                    INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-                    INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id
-                    WHERE r.fecha_salida < CURDATE()
+                    INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+                    INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
+                    WHERE r.hotel_id = ?
+                    AND r.fecha_salida < CURDATE()
                     AND r.estado = 'checked_in'
                     GROUP BY r.id
                     ORDER BY r.fecha_salida";
-        $stmt = $db->query($sql_checkouts_vencidos);
+        $stmt = $db->query($sql_checkouts_vencidos, [$hotel_id_actual]);
         $checkouts_vencidos_real = $stmt->fetchAll();
-        
+
         // Crear array para mapeo rápido de check-outs vencidos
         $habitaciones_con_checkout_vencido = [];
         foreach ($checkouts_vencidos_real as $co) {
@@ -2913,7 +2969,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         ?>
-        
+
         <div id="habitaciones-grid">
             <?php
             // Ordenar: habitaciones de color primero (se conserva dentro de cada piso)
@@ -2949,10 +3005,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="rgrid">
                     <?php foreach ($__habs as $habitacion): ?>
-                <?php 
+                <?php
                 $estado_actual = $habitacion['estado_display'] ?? $habitacion['estado'];
                 $estadoInfo = $estados[$estado_actual] ?? ['label' => 'Desconocido', 'color' => 'gray', 'icon' => 'question'];
-                
+
                 // Verificar si tiene doble movimiento
                 $tiene_doble_movimiento = false;
                 // NUEVO: Verificar si está en limpieza Y tiene reservación por llegar
@@ -2963,21 +3019,21 @@ if ($habitacion['estado'] == 'limpieza' && isset($habitacion['reservacion_pendie
 }
                 $info_checkout = null;
                 $info_checkin = null;
-                
+
                 if ($mostrar_movimientos && isset($habitaciones_doble_movimiento[$habitacion['id']])) {
-                    if (isset($habitaciones_doble_movimiento[$habitacion['id']]['checkout']) && 
+                    if (isset($habitaciones_doble_movimiento[$habitacion['id']]['checkout']) &&
                         isset($habitaciones_doble_movimiento[$habitacion['id']]['checkin'])) {
                         $tiene_doble_movimiento = true;
                         $info_checkout = $habitaciones_doble_movimiento[$habitacion['id']]['checkout'];
                         $info_checkin = $habitaciones_doble_movimiento[$habitacion['id']]['checkin'];
                     }
                 }
-                
+
                 // Verificar si tiene check-out hoy o vencido usando el array mapeado
                 $tiene_checkout_hoy = false;
                 $tiene_checkout_vencido = false;
                 $info_checkout_vencido = null;
-                
+
                 // Primero verificar si está en el array de check-outs vencidos
                 if (isset($habitaciones_con_checkout_vencido[$habitacion['id']])) {
                     $tiene_checkout_vencido = true;
@@ -2989,12 +3045,12 @@ if ($habitacion['estado'] == 'limpieza' && isset($habitacion['reservacion_pendie
                         $tiene_checkout_hoy = true;
                     }
                 }
-                
+
                 // Verificar si es llegada tardía o check-in vencido usando el array mapeado
                 $es_llegada_tardia = false;
                 $es_checkin_vencido = false;
                 $info_checkin_vencido = null;
-                
+
                 // Primero verificar si está en el array de check-ins vencidos
                 if (isset($habitaciones_con_checkin_vencido[$habitacion['id']])) {
                     $es_checkin_vencido = true;
@@ -3010,12 +3066,12 @@ if ($habitacion['estado'] == 'limpieza' && isset($habitacion['reservacion_pendie
                         }
                     }
                 }
-                
+
                 $nombrePiso = $pisos[$habitacion['piso']] ?? 'Piso ' . $habitacion['piso'];
-                $pisoAbrev = $habitacion['piso'] == 1 ? 'PB' : 
-                            ($habitacion['piso'] > 0 ? 'P' . $habitacion['piso'] : 
+                $pisoAbrev = $habitacion['piso'] == 1 ? 'PB' :
+                            ($habitacion['piso'] > 0 ? 'P' . $habitacion['piso'] :
                             'S' . abs($habitacion['piso']));
-                
+
                 // Determinar clase de color para el reverso
                 // Determinar clase de color para el reverso
 if ($tiene_doble_movimiento) {
@@ -3029,11 +3085,11 @@ if ($tiene_doble_movimiento) {
 } else {
     $backColorClass = 'back-' . $estado_actual;
 }
-                
+
                 // Color de habitación (Área Confortable)
                 $color_hab = $colores_habitacion[strtoupper($habitacion['numero'])] ?? null;
                 ?>
-                
+
                 <!-- Tarjeta con flip para todas las habitaciones -->
                 <?php
                 // Colores (exactos del diseño): el STRIPE usa el color de la habitación
@@ -3058,46 +3114,64 @@ if ($tiene_doble_movimiento) {
                 }
                 $backStyle = ''; // el fondo de la hoja lo aplica el CSS vía --sheet-c
                 $hbSearchStr = strtolower(trim(($habitacion['numero'] ?? '') . ' ' . ($tipos[$habitacion['tipo']] ?? $habitacion['tipo']) . ' ' . ($habitacion['ocupacion_actual']['nombre_completo'] ?? '') . ' ' . ($habitacion['reservacion_pendiente']['nombre_completo'] ?? '')));
+                $reservacion_detalle_id = null;
+                if ($es_checkin_vencido && $info_checkin_vencido) {
+                    $reservacion_detalle_id = $info_checkin_vencido['reservacion_id'] ?? null;
+                } elseif ($tiene_checkout_vencido && $info_checkout_vencido) {
+                    $reservacion_detalle_id = $info_checkout_vencido['reservacion_id'] ?? null;
+                } elseif ($estado_actual == 'por_llegar' && isset($habitacion['reservacion_pendiente'])) {
+                    $reservacion_detalle_id = $habitacion['reservacion_pendiente']['reservacion_id'] ?? ($habitacion['reservacion_pendiente']['id'] ?? null);
+                } elseif ($habitacion['estado'] == 'ocupada' && isset($habitacion['ocupacion_actual'])) {
+                    $reservacion_detalle_id = $habitacion['ocupacion_actual']['id'] ?? ($habitacion['ocupacion_actual']['reservacion_id'] ?? null);
+                } elseif ($estado_actual == 'ocupada_fecha' && isset($habitacion['info_ocupacion']['reservacion_id'])) {
+                    $reservacion_detalle_id = $habitacion['info_ocupacion']['reservacion_id'];
+                }
+                $reservacion_detalle_id = $reservacion_detalle_id && (int) $reservacion_detalle_id > 0 ? (int) $reservacion_detalle_id : null;
                 ?>
-                <div class="flip-card room-card-compact <?= $tiene_checkout_vencido ? 'has-checkout-vencido' : '' ?> <?= $es_checkin_vencido ? 'has-checkin-vencido' : '' ?>" 
-                     onclick="toggleFlip(this, event)" 
-                     data-habitacion-id="<?= $habitacion['id'] ?>"
-                     data-estado="<?= htmlspecialchars($estado_actual) ?>" data-tipo="<?= htmlspecialchars($habitacion['tipo']) ?>" data-piso="<?= htmlspecialchars($habitacion['piso']) ?>" data-q="<?= htmlspecialchars($hbSearchStr) ?>"
-                     style="--room-accent-color: <?= htmlspecialchars($accentColor) ?>; --sheet-c: <?= htmlspecialchars($sheetColor) ?>;">
+                <div class="flip-card room-card-compact <?= $tiene_checkout_vencido ? 'has-checkout-vencido' : '' ?> <?= $es_checkin_vencido ? 'has-checkin-vencido' : '' ?>"
+                      onclick="toggleFlip(this, event)"
+                      onkeydown="hbCardKey(event, this)"
+                      role="button"
+                      tabindex="0"
+                      title="Abrir acciones de la habitación <?= htmlspecialchars($habitacion['numero']) ?>"
+                      aria-label="Abrir acciones de la habitación <?= htmlspecialchars($habitacion['numero']) ?>"
+                      data-habitacion-id="<?= $habitacion['id'] ?>"
+                      data-estado="<?= htmlspecialchars($estado_actual) ?>" data-tipo="<?= htmlspecialchars($habitacion['tipo']) ?>" data-piso="<?= htmlspecialchars($habitacion['piso']) ?>" data-q="<?= htmlspecialchars($hbSearchStr) ?>"
+                      style="--room-accent-color: <?= htmlspecialchars($accentColor) ?>; --sheet-c: <?= htmlspecialchars($sheetColor) ?>;">
                     <div class="flip-card-inner">
                         <!-- Parte frontal -->
                         <div class="flip-card-front <?= $tiene_doble_movimiento ? 'estado-doble' : ($limpieza_con_por_llegar ? 'estado-limpieza-por-llegar' : 'estado-' . $estado_actual) ?> rounded-lg shadow-sm relative">
-                            
-                            
-                            
+
+
+
                             <?php if ($tiene_checkout_hoy): ?>
                             <div class="checkout-today-indicator">
                                 <i class="fas fa-sign-out-alt" style="font-size: 9px;"></i>
                                 <span>HOY</span>
                             </div>
                             <?php endif; ?>
-                            
+
                             <?php if ($tiene_checkout_vencido): ?>
                             <div class="checkout-vencido-indicator">
                                 <i class="fas fa-exclamation-circle" style="font-size: 10px;"></i>
                                 <span class="font-bold">VENCIDO</span>
                             </div>
                             <?php endif; ?>
-                            
+
                             <?php if ($es_checkin_vencido): ?>
                             <div class="checkin-vencido-indicator">
                                 <i class="fas fa-exclamation-triangle" style="font-size: 10px;"></i>
                                 <span class="font-bold">NO LLEGÓ</span>
                             </div>
                             <?php endif; ?>
-                            
+
                             <?php if ($es_llegada_tardia && !$es_checkin_vencido): ?>
                             <div class="late-arrival-indicator">
                                 <i class="fas fa-moon" style="font-size: 9px;"></i>
                                 <span>TARDÍA</span>
                             </div>
                             <?php endif; ?>
-                            
+
                             <!-- Cara frontal (rediseño boutique habitaciones.html) -->
                             <?php
                             $faceGuest = ''; $faceMeta = '';
@@ -3152,7 +3226,7 @@ if ($tiene_doble_movimiento) {
                         <div class="flip-card-back <?= $backColorClass ?>"<?= $backStyle ? ' style="' . $backStyle . '"' : '' ?>>
                             <div>
                                 <h4>Hab. <?= htmlspecialchars($habitacion['numero']) ?></h4>
-                                
+
                                 <?php if ($tiene_doble_movimiento): ?>
                                     <div class="info-item">
                                         <i class="fas fa-exchange-alt"></i>
@@ -3166,7 +3240,7 @@ if ($tiene_doble_movimiento) {
                                         <i class="fas fa-sign-in-alt"></i>
                                         <span>Entra: <?= htmlspecialchars(explode(' ', $info_checkin['nombre_completo'])[0]) ?></span>
                                     </div>
-                                    
+
                                 <?php elseif ($es_checkin_vencido && $info_checkin_vencido): ?>
                                     <div class="info-item">
                                         <i class="fas fa-exclamation-triangle"></i>
@@ -3184,7 +3258,7 @@ if ($tiene_doble_movimiento) {
                                         <i class="fas fa-clock"></i>
                                         <span><?= $info_checkin_vencido['dias_retraso'] ?> día<?= $info_checkin_vencido['dias_retraso'] > 1 ? 's' : '' ?> de retraso</span>
                                     </div>
-                                    
+
                                 <?php elseif ($tiene_checkout_vencido && $info_checkout_vencido): ?>
                                     <div class="info-item">
                                         <i class="fas fa-exclamation-circle"></i>
@@ -3202,7 +3276,7 @@ if ($tiene_doble_movimiento) {
                                         <i class="fas fa-clock"></i>
                                         <span><?= $info_checkout_vencido['dias_retraso'] ?> día<?= $info_checkout_vencido['dias_retraso'] > 1 ? 's' : '' ?> de retraso</span>
                                     </div>
-                                    
+
                                 <?php elseif ($estado_actual == 'disponible' || $estado_actual == 'disponible_fecha'): ?>
                                     <div class="info-item">
                                         <i class="fas fa-check-circle"></i>
@@ -3216,7 +3290,7 @@ if ($tiene_doble_movimiento) {
                                         <i class="fas fa-tag"></i>
                                         <span><?= format_money($habitacion['precio_actual'] ?? $habitacion['precio_base']) ?>/noche</span>
                                     </div>
-                                    
+
                                 <?php elseif ($estado_actual == 'por_llegar' && isset($habitacion['reservacion_pendiente'])): ?>
                                     <div class="info-item">
                                         <i class="fas fa-user"></i>
@@ -3241,7 +3315,7 @@ if ($tiene_doble_movimiento) {
                                             <span>Check-in pendiente</span>
                                         </div>
                                     <?php endif; ?>
-                                    
+
                                 <?php elseif ($habitacion['estado'] == 'ocupada' && isset($habitacion['ocupacion_actual'])): ?>
                                     <div class="info-item">
                                         <i class="fas fa-user"></i>
@@ -3255,7 +3329,7 @@ if ($tiene_doble_movimiento) {
                                         <i class="fas fa-calendar-times"></i>
                                         <span>Salida: <?= format_date($habitacion['ocupacion_actual']['fecha_salida']) ?></span>
                                     </div>
-                                    
+
                                 <?php elseif ($habitacion['estado'] == 'limpieza'): ?>
                                     <div class="info-item">
                                         <i class="fas fa-broom"></i>
@@ -3265,7 +3339,7 @@ if ($tiene_doble_movimiento) {
                                         <i class="fas fa-clock"></i>
                                         <span>Tiempo estimado: 30 min</span>
                                     </div>
-                                    
+
                                 <?php elseif ($habitacion['estado'] == 'mantenimiento'): ?>
                                     <div class="info-item">
                                         <i class="fas fa-tools"></i>
@@ -3276,59 +3350,63 @@ if ($tiene_doble_movimiento) {
                                         <span>Trabajo en progreso</span>
                                     </div>
                                 <?php endif; ?>
-                                
+
                                 <div class="info-item">
                                     <i class="fas fa-layer-group"></i>
                                     <span><?= $nombrePiso ?></span>
                                 </div>
                             </div>
-                            
+
                             <div class="action-buttons">
     <?php if ($estado_actual == 'ocupada_fecha' && isset($habitacion['info_ocupacion']['reservacion_id'])): ?>
         <!-- Botón Ver Reservación cuando hay filtro de fecha -->
-        <a href="<?= url('reservaciones/ver/' . $habitacion['info_ocupacion']['reservacion_id']) ?>" class="btn-action btn-primary" onclick="event.stopPropagation();">
+        <a href="<?= url('reservaciones/ver/' . $habitacion['info_ocupacion']['reservacion_id']) ?>" class="btn-action btn-primary" onclick="event.stopPropagation();" title="Ver detalle de la reservación">
             <i class="fas fa-eye mr-1"></i>Ver Reservación
         </a>
     <?php else: ?>
         <!-- Botón Detalles normal -->
-        <a href="<?= url('habitaciones/' . $habitacion['id']) ?>" class="btn-action" onclick="event.stopPropagation();">
-            Detalles
+        <a href="<?= url('habitaciones/' . $habitacion['id']) ?>" class="btn-action" onclick="event.stopPropagation();" title="Ver detalle de la habitación">
+            <i class="fas fa-eye mr-1"></i>Detalles
+        </a>
+     <?php endif; ?>
+
+    <?php if ($reservacion_detalle_id && !($estado_actual == 'ocupada_fecha' && isset($habitacion['info_ocupacion']['reservacion_id']))): ?>
+        <a href="<?= url('reservaciones/ver/' . $reservacion_detalle_id) ?>" class="btn-action" onclick="event.stopPropagation();" title="Ver detalle de la reservación">
+            <i class="fas fa-file-alt mr-1"></i>Reservacion
         </a>
     <?php endif; ?>
-                                
-                                <?php if ($estado_actual == 'disponible' || $estado_actual == 'disponible_fecha'): ?>
+
+                                 <?php if ($estado_actual == 'disponible' || $estado_actual == 'disponible_fecha'): ?>
                                     <?php if ($estado_actual == 'disponible_fecha'): ?>
-                                        <a href="javascript:void(0)" onclick="event.stopPropagation(); crearReservacionConFecha(<?= $habitacion['id'] ?>, '<?= $filtros['fecha_consulta'] ?>')" class="btn-action btn-primary">
+                                        <a href="javascript:void(0)" onclick="event.stopPropagation(); crearReservacionConFecha(<?= $habitacion['id'] ?>, '<?= $filtros['fecha_consulta'] ?>')" class="btn-action btn-primary" title="Reservar esta habitación en la fecha seleccionada">
                                             <i class="fas fa-plus mr-1"></i>Reservar
                                         </a>
                                     <?php else: ?>
-                                        <a href="javascript:void(0)" onclick="event.stopPropagation(); crearReservacionRapida(<?= $habitacion['id'] ?>)" class="btn-action btn-primary">
+                                        <a href="javascript:void(0)" onclick="event.stopPropagation(); crearReservacionRapida(<?= $habitacion['id'] ?>)" class="btn-action btn-primary" title="Crear reservación rápida para esta habitación">
                                             <i class="fas fa-plus mr-1"></i>Reservar
                                         </a>
                                     <?php endif; ?>
-                                    
+
                                 <?php elseif ($tiene_checkout_vencido && $info_checkout_vencido): ?>
-                                    <a href="javascript:void(0)" onclick="event.stopPropagation(); confirmarCheckOut(<?= $info_checkout_vencido['reservacion_id'] ?>)" class="btn-action btn-primary">
+                                    <a href="javascript:void(0)" onclick="event.stopPropagation(); confirmarCheckOut(<?= $info_checkout_vencido['reservacion_id'] ?>)" class="btn-action btn-primary" title="Realizar check-out de esta reservación">
                                         <i class="fas fa-sign-out-alt mr-1"></i>Check-out
                                     </a>
-                                    
+
                                 <?php elseif ($es_checkin_vencido && $info_checkin_vencido): ?>
-                                    <a href="<?= url('habitaciones/' . $habitacion['id']) ?>" onclick="event.stopPropagation();" class="btn-action btn-primary">
-                                        <i class="fas fa-eye mr-1"></i>Ver Detalle
-                                    </a>
-                                    
+                                    <?php /* Accion duplicada omitida: ya existen Detalles/Reservacion en esta hoja. */ ?>
+
                                 <?php elseif ($estado_actual == 'por_llegar' && isset($habitacion['reservacion_pendiente']) && can('reservaciones.checkin')): ?>
-                                    <a href="javascript:void(0)" onclick="event.stopPropagation(); hacerCheckInRapido(<?= $habitacion['reservacion_pendiente']['reservacion_id'] ?? $habitacion['reservacion_pendiente']['id'] ?>)" class="btn-action btn-primary">
+                                    <a href="javascript:void(0)" onclick="event.stopPropagation(); hacerCheckInRapido(<?= $habitacion['reservacion_pendiente']['reservacion_id'] ?? $habitacion['reservacion_pendiente']['id'] ?>)" class="btn-action btn-primary" title="Hacer check-in de la reservación pendiente">
                                         <i class="fas fa-sign-in-alt mr-1"></i>Check-in
                                     </a>
-                                    
+
                                 <?php elseif ($habitacion['estado'] == 'limpieza'): ?>
-                                    <a href="javascript:void(0)" onclick="event.stopPropagation(); liberarHabitacion(<?= $habitacion['id'] ?>)" class="btn-action btn-primary">
+                                    <a href="javascript:void(0)" onclick="event.stopPropagation(); liberarHabitacion(<?= $habitacion['id'] ?>)" class="btn-action btn-primary" title="Marcar esta habitación como limpia">
                                         <i class="fas fa-check mr-1"></i>Limpia
                                     </a>
-                                    
+
                                 <?php elseif ($habitacion['estado'] == 'mantenimiento'): ?>
-                                    <a href="javascript:void(0)" onclick="event.stopPropagation(); finalizarMantenimiento(<?= $habitacion['id'] ?>)" class="btn-action btn-primary">
+                                    <a href="javascript:void(0)" onclick="event.stopPropagation(); finalizarMantenimiento(<?= $habitacion['id'] ?>)" class="btn-action btn-primary" title="Finalizar mantenimiento de esta habitación">
                                         <i class="fas fa-check mr-1"></i>Finalizar
                                     </a>
                                 <?php endif; ?>
@@ -3357,7 +3435,7 @@ if ($tiene_doble_movimiento) {
                     </div>
                     <h3 class="text-lg font-bold text-gray-700 mb-2">No se encontraron habitaciones</h3>
                     <p class="text-gray-500 mb-4 text-sm">Ajusta los filtros de búsqueda o verifica los criterios.</p>
-                    <a href="<?= url('habitaciones') ?>" 
+                    <a href="<?= url('habitaciones') ?>"
                        class="btn-modern btn-brand mx-auto">
                         <i class="fas fa-redo"></i>
                         Mostrar todas
@@ -3365,24 +3443,557 @@ if ($tiene_doble_movimiento) {
                 </div>
             </div>
         <?php endif; ?>
-        
+
+        <div id="hbMobileSheetBack" class="hb-mobile-sheet-back" onclick="hbCloseMobileRoomSheet()" aria-hidden="true"></div>
+        <div id="hbMobileRoomSheet" class="hb-mobile-room-sheet" aria-hidden="true">
+            <div class="hb-mobile-sheet-grab"></div>
+            <div id="hbMobileSheetContent" class="hb-mobile-sheet-content"></div>
+        </div>
+
         <!-- Resumen compacto de disponibilidad -->
-       
+
 
 <!-- Modal de Vista Rápida -->
 <!-- Modal de Vista Rápida -->
-<div id="vistaRapidaModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
-        <div class="text-white p-3 flex justify-between items-center" style="background: linear-gradient(135deg, var(--brand-primary,#1B2746), var(--brand-secondary,#0F172A));">
-            <h3 class="text-lg font-bold">Vista Rápida</h3>
-            <button onclick="cerrarVistaRapida()" class="text-white hover:text-gray-200 transition-colors p-1">
+<style id="hb-quick-view-command-redesign">
+    #vistaRapidaModal.hb-quick-modal {
+        --qv-primary: var(--brand-primary, var(--hb-primary, #1B2746));
+        --qv-secondary: var(--brand-secondary, var(--hb-primary-2, #0F172A));
+        --qv-accent: var(--brand-accent, var(--hb-accent, #BD9441));
+        --qv-paper: color-mix(in srgb, var(--qv-accent) 7%, #fbfaf6);
+        --qv-panel: rgba(255,255,255,.95);
+        --qv-ink: #172033;
+        --qv-muted: #687386;
+        --qv-line: color-mix(in srgb, var(--qv-primary) 11%, #eadfca);
+        --qv-green: #149A62;
+        --qv-occupied: #B75638;
+        --qv-purple: #6D5BD0;
+        --qv-blue: #2F77D9;
+        --qv-amber: #C98B18;
+        background:
+            radial-gradient(860px 360px at 84% 8%, color-mix(in srgb, var(--qv-accent) 18%, transparent), transparent 62%),
+            rgba(13, 18, 29, .66) !important;
+        backdrop-filter: blur(12px);
+        padding: clamp(12px, 2vw, 28px) !important;
+    }
+
+    #vistaRapidaModal.hb-quick-modal .hb-quick-dialog {
+        width: min(1180px, calc(100vw - 28px)) !important;
+        max-height: min(88vh, 820px) !important;
+        border-radius: 18px !important;
+        overflow: hidden !important;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.9)),
+            var(--qv-paper) !important;
+        border: 1px solid color-mix(in srgb, var(--qv-accent) 26%, rgba(255,255,255,.22)) !important;
+        box-shadow: 0 34px 90px -44px rgba(0,0,0,.76) !important;
+    }
+
+    #vistaRapidaModal .hb-quick-header {
+        position: relative;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 18px;
+        align-items: center;
+        min-height: 124px;
+        padding: clamp(18px, 2.1vw, 28px) !important;
+        color: #fff !important;
+        background:
+            linear-gradient(135deg, color-mix(in srgb, var(--qv-secondary) 94%, #000), color-mix(in srgb, var(--qv-primary) 82%, var(--qv-secondary))) !important;
+        isolation: isolate;
+    }
+
+    #vistaRapidaModal .hb-quick-header::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background:
+            linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px),
+            linear-gradient(180deg, rgba(255,255,255,.07) 1px, transparent 1px);
+        background-size: 26px 26px;
+        opacity: .36;
+        pointer-events: none;
+    }
+
+    #vistaRapidaModal .hb-quick-title-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+    }
+
+    #vistaRapidaModal .hb-quick-mark {
+        width: 46px;
+        height: 46px;
+        display: grid;
+        place-items: center;
+        flex: none;
+        border-radius: 13px;
+        color: #fff;
+        background: color-mix(in srgb, var(--qv-accent) 28%, rgba(255,255,255,.1));
+        border: 1px solid rgba(255,255,255,.2);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.18);
+    }
+
+    #vistaRapidaModal .hb-quick-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 6px;
+        font-size: .68rem;
+        font-weight: 900;
+        letter-spacing: .09em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,.68);
+    }
+
+    #vistaRapidaModal .hb-quick-eyebrow::before {
+        content: '';
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: var(--qv-green);
+        box-shadow: 0 0 0 5px rgba(20,154,98,.15);
+    }
+
+    #vistaRapidaModal .hb-quick-title {
+        margin: 0;
+        color: #fff !important;
+        font-family: 'Outfit', 'DM Sans', system-ui, sans-serif;
+        font-size: clamp(1.55rem, 2.2vw, 2.55rem) !important;
+        font-weight: 900 !important;
+        line-height: .95;
+        letter-spacing: 0;
+        text-wrap: balance;
+    }
+
+    #vistaRapidaModal .hb-quick-subtitle {
+        margin-top: 9px;
+        max-width: 64ch;
+        color: rgba(255,255,255,.72);
+        font-size: .88rem;
+        line-height: 1.5;
+    }
+
+    #vistaRapidaModal .hb-quick-close {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        color: #fff !important;
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.18);
+        transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+
+    #vistaRapidaModal .hb-quick-close:hover,
+    #vistaRapidaModal .hb-quick-close:focus-visible {
+        transform: translateY(-1px);
+        background: rgba(255,255,255,.2);
+        border-color: rgba(255,255,255,.32);
+        outline: none;
+    }
+
+    #vistaRapidaModal .hb-quick-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 270px;
+        gap: 0;
+        max-height: calc(88vh - 124px) !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        background:
+            linear-gradient(90deg, color-mix(in srgb, var(--qv-primary) 4%, transparent) 1px, transparent 1px),
+            linear-gradient(180deg, #fffdfa, var(--qv-paper)) !important;
+        background-size: 28px 28px, auto;
+    }
+
+    #vistaRapidaModal .hb-quick-map {
+        min-width: 0;
+        padding: clamp(16px, 2vw, 24px);
+        overflow: auto;
+    }
+
+    #vistaRapidaModal .hb-quick-map-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 16px;
+    }
+
+    #vistaRapidaModal .hb-quick-map-head h4 {
+        margin: 0;
+        color: var(--qv-ink);
+        font-family: 'Outfit', 'DM Sans', system-ui, sans-serif;
+        font-size: 1.05rem;
+        font-weight: 900;
+    }
+
+    #vistaRapidaModal .hb-quick-map-head p {
+        margin: 4px 0 0;
+        color: var(--qv-muted);
+        font-size: .8rem;
+    }
+
+    #vistaRapidaModal .hb-quick-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+        padding: 9px 11px;
+        border-radius: 10px;
+        color: var(--qv-ink);
+        background: rgba(255,255,255,.78);
+        border: 1px solid var(--qv-line);
+        font-size: .8rem;
+        font-weight: 900;
+        font-variant-numeric: tabular-nums;
+    }
+
+    #vistaRapidaModal .hb-quick-grid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)) !important;
+        gap: 10px !important;
+    }
+
+    #vistaRapidaContainer .room-quick-view.hb-quick-room {
+        --qv-room: #7b8496;
+        position: relative;
+        display: grid;
+        align-content: space-between;
+        min-height: 86px;
+        padding: 11px 10px !important;
+        border-radius: 13px !important;
+        overflow: hidden;
+        isolation: isolate;
+        color: var(--qv-ink) !important;
+        text-align: left !important;
+        background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.88)) !important;
+        border: 1px solid color-mix(in srgb, var(--qv-room) 30%, var(--qv-line)) !important;
+        box-shadow: 0 10px 22px -19px color-mix(in srgb, var(--qv-room) 70%, transparent) !important;
+        transform: none !important;
+        transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease !important;
+    }
+
+    #vistaRapidaContainer .room-quick-view.hb-quick-room::before {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 5px;
+        background: var(--qv-room);
+        z-index: -1;
+    }
+
+    #vistaRapidaContainer .room-quick-view.hb-quick-room::after {
+        content: '';
+        position: absolute;
+        right: 9px;
+        top: 9px;
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--qv-room);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--qv-room) 14%, transparent);
+        opacity: 1;
+        transform: none;
+    }
+
+    #vistaRapidaContainer .room-quick-view.hb-quick-room:hover,
+    #vistaRapidaContainer .room-quick-view.hb-quick-room:focus-visible {
+        transform: translateY(-2px) !important;
+        border-color: color-mix(in srgb, var(--qv-room) 54%, var(--qv-line)) !important;
+        box-shadow: 0 18px 32px -24px color-mix(in srgb, var(--qv-room) 82%, transparent) !important;
+        outline: none;
+    }
+
+    #vistaRapidaContainer .room-quick-view.hb-quick-room:active {
+        transform: translateY(0) scale(.99) !important;
+    }
+
+    #vistaRapidaModal .hb-quick-room.qv-state-disponible,
+    #vistaRapidaModal .hb-quick-room.qv-state-disponible_fecha { --qv-room: var(--qv-green); }
+    #vistaRapidaModal .hb-quick-room.qv-state-ocupada,
+    #vistaRapidaModal .hb-quick-room.qv-state-ocupada_fecha { --qv-room: var(--qv-occupied); }
+    #vistaRapidaModal .hb-quick-room.qv-state-por_llegar { --qv-room: var(--qv-purple); }
+    #vistaRapidaModal .hb-quick-room.qv-state-limpieza { --qv-room: var(--qv-blue); }
+    #vistaRapidaModal .hb-quick-room.qv-state-mantenimiento { --qv-room: var(--qv-amber); }
+
+    #vistaRapidaModal .qv-room-num {
+        display: block;
+        max-width: calc(100% - 14px);
+        color: color-mix(in srgb, var(--qv-room) 42%, var(--qv-ink));
+        font-family: 'Outfit', 'DM Sans', system-ui, sans-serif;
+        font-size: clamp(1rem, 1vw, 1.25rem);
+        font-weight: 950;
+        line-height: 1;
+        letter-spacing: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #vistaRapidaModal .qv-room-meta {
+        display: block;
+        margin-top: 7px;
+        color: var(--qv-muted);
+        font-size: .68rem;
+        font-weight: 900;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+
+    #vistaRapidaModal .qv-room-state {
+        display: block;
+        margin-top: 7px;
+        color: color-mix(in srgb, var(--qv-room) 68%, var(--qv-ink));
+        font-size: .68rem;
+        font-weight: 850;
+        line-height: 1.15;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #vistaRapidaModal .hb-quick-aside {
+        min-width: 0;
+        padding: clamp(16px, 1.8vw, 22px);
+        background:
+            linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,.44)),
+            color-mix(in srgb, var(--qv-accent) 7%, #fff);
+        border-left: 1px solid var(--qv-line);
+        overflow: auto;
+    }
+
+    #vistaRapidaModal .hb-quick-aside-title {
+        margin: 0 0 13px;
+        color: var(--qv-ink);
+        font-family: 'Outfit', 'DM Sans', system-ui, sans-serif;
+        font-size: .92rem;
+        font-weight: 950;
+    }
+
+    #vistaRapidaModal .hb-quick-legend {
+        display: grid !important;
+        gap: 9px !important;
+        color: var(--qv-ink);
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        justify-content: stretch !important;
+    }
+
+    #vistaRapidaModal .hb-quick-legend-item {
+        --legend-color: #7b8496;
+        display: grid !important;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 9px !important;
+        min-height: 42px;
+        padding: 9px 10px;
+        border-radius: 11px;
+        background: rgba(255,255,255,.72);
+        border: 1px solid color-mix(in srgb, var(--legend-color) 20%, var(--qv-line));
+    }
+
+    #vistaRapidaModal .hb-quick-legend-swatch {
+        width: 12px !important;
+        height: 28px !important;
+        border-radius: 999px !important;
+        background: var(--legend-color) !important;
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--legend-color) 11%, transparent) !important;
+    }
+
+    #vistaRapidaModal .hb-quick-legend-name {
+        min-width: 0;
+        font-size: .78rem;
+        font-weight: 900;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #vistaRapidaModal .hb-quick-legend-count {
+        padding: 5px 8px;
+        border-radius: 8px;
+        color: color-mix(in srgb, var(--legend-color) 72%, var(--qv-ink));
+        background: color-mix(in srgb, var(--legend-color) 8%, #fff);
+        border: 1px solid color-mix(in srgb, var(--legend-color) 18%, var(--qv-line));
+        font-size: .76rem;
+        font-weight: 950;
+        font-variant-numeric: tabular-nums;
+    }
+
+    #vistaRapidaModal .hb-quick-hint {
+        margin-top: 16px;
+        padding: 13px;
+        border-radius: 12px;
+        color: var(--qv-muted);
+        background: rgba(255,255,255,.62);
+        border: 1px dashed var(--qv-line);
+        font-size: .78rem;
+        line-height: 1.42;
+    }
+
+    #vistaRapidaModal .hb-quick-hint strong {
+        display: block;
+        margin-bottom: 3px;
+        color: var(--qv-ink);
+        font-weight: 950;
+    }
+
+    #vistaRapidaModal #roomTooltip.room-tooltip {
+        border-radius: 13px !important;
+        border: 1px solid color-mix(in srgb, var(--qv-accent) 28%, rgba(255,255,255,.2)) !important;
+        box-shadow: 0 22px 46px -26px rgba(0,0,0,.58) !important;
+    }
+
+    @media (max-width: 940px) {
+        #vistaRapidaModal.hb-quick-modal {
+            align-items: flex-end !important;
+            padding: 10px !important;
+        }
+
+        #vistaRapidaModal.hb-quick-modal .hb-quick-dialog {
+            width: 100% !important;
+            max-height: 92dvh !important;
+            border-radius: 18px 18px 12px 12px !important;
+        }
+
+        #vistaRapidaModal .hb-quick-header {
+            grid-template-columns: 1fr auto;
+            min-height: 112px;
+            padding: 16px !important;
+        }
+
+        #vistaRapidaModal .hb-quick-mark {
+            width: 40px;
+            height: 40px;
+        }
+
+        #vistaRapidaModal .hb-quick-subtitle {
+            display: none;
+        }
+
+        #vistaRapidaModal .hb-quick-body {
+            grid-template-columns: 1fr;
+            max-height: calc(92dvh - 112px) !important;
+            overflow: auto !important;
+        }
+
+        #vistaRapidaModal .hb-quick-map {
+            overflow: visible;
+            padding: 14px;
+        }
+
+        #vistaRapidaModal .hb-quick-map-head {
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        #vistaRapidaModal .hb-quick-grid {
+            grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)) !important;
+            gap: 8px !important;
+        }
+
+        #vistaRapidaContainer .room-quick-view.hb-quick-room {
+            min-height: 78px;
+            padding: 10px 9px !important;
+        }
+
+        #vistaRapidaModal .hb-quick-aside {
+            border-left: 0;
+            border-top: 1px solid var(--qv-line);
+            padding: 14px;
+            overflow: visible;
+        }
+
+        #vistaRapidaModal .hb-quick-legend {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 520px) {
+        #vistaRapidaModal .hb-quick-title-row {
+            gap: 10px;
+        }
+
+        #vistaRapidaModal .hb-quick-title {
+            font-size: 1.34rem !important;
+        }
+
+        #vistaRapidaModal .hb-quick-map-head {
+            display: grid;
+            gap: 9px;
+        }
+
+        #vistaRapidaModal .hb-quick-count {
+            justify-self: start;
+        }
+
+        #vistaRapidaModal .hb-quick-grid {
+            grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)) !important;
+        }
+
+        #vistaRapidaContainer .room-quick-view.hb-quick-room {
+            min-height: 74px;
+        }
+
+        #vistaRapidaModal .qv-room-num {
+            font-size: .98rem;
+        }
+
+        #vistaRapidaModal .qv-room-state {
+            display: none;
+        }
+
+        #vistaRapidaModal .hb-quick-legend {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #vistaRapidaModal *,
+        #vistaRapidaContainer .room-quick-view.hb-quick-room {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+</style>
+
+<div id="vistaRapidaModal" class="hb-quick-modal fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="hb-quick-dialog bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+        <div class="hb-quick-header text-white p-3 flex justify-between items-center">
+            <div class="hb-quick-title-row">
+                <div class="hb-quick-mark" aria-hidden="true">
+                    <i class="fas fa-th-large"></i>
+                </div>
+                <div>
+                    <span class="hb-quick-eyebrow">Mapa operativo</span>
+                    <h3 class="hb-quick-title text-lg font-bold">Vista Rápida de Habitaciones</h3>
+                    <p class="hb-quick-subtitle">Consulta estados y abre la acción principal de cada habitación sin salir del tablero.</p>
+                </div>
+            </div>
+            <button onclick="cerrarVistaRapida()" class="hb-quick-close text-white hover:text-gray-200 transition-colors p-1" title="Cerrar vista rápida" aria-label="Cerrar vista rápida">
                 <i class="fas fa-times text-lg"></i>
             </button>
         </div>
-        <div class="p-4 overflow-y-auto max-h-[calc(90vh-60px)]" id="vistaRapidaContainer">
-            <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+        <div class="hb-quick-body p-4 overflow-y-auto max-h-[calc(90vh-60px)]" id="vistaRapidaContainer">
+            <div class="hb-quick-map">
+                <div class="hb-quick-map-head">
+                    <div>
+                        <h4>Habitaciones del hotel</h4>
+                        <p>Da clic en una celda para reservar o abrir su detalle.</p>
+                    </div>
+                    <span class="hb-quick-count">
+                        <i class="fas fa-door-open" aria-hidden="true"></i>
+                        <?= (int)($estadisticas['total'] ?? count($habitaciones)) ?> habitaciones
+                    </span>
+                </div>
+            <div class="hb-quick-grid grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
                 <?php foreach ($habitaciones as $hab): ?>
-                    <?php 
+                    <?php
                     $estado_hab = $hab['estado_display'] ?? $hab['estado'];
                     $colorRapido = [
                         'disponible' => 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-emerald-300',
@@ -3393,11 +4004,11 @@ if ($tiene_doble_movimiento) {
                         'mantenimiento' => 'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-amber-300',
                         'limpieza' => 'bg-gradient-to-br from-blue-400 to-blue-600 text-white shadow-blue-300'
                     ][$estado_hab] ?? 'bg-gradient-to-br from-gray-400 to-gray-600 text-white shadow-gray-300';
-                    
-                    $pisoCortado = $hab['piso'] == 1 ? 'PB' : 
-                                  ($hab['piso'] > 0 ? 'P' . $hab['piso'] : 
+
+                    $pisoCortado = $hab['piso'] == 1 ? 'PB' :
+                                  ($hab['piso'] > 0 ? 'P' . $hab['piso'] :
                                   'S' . abs($hab['piso']));
-                    
+
                     // Preparar datos para el tooltip
                     $tooltipData = [
                         'numero' => $hab['numero'],
@@ -3411,12 +4022,12 @@ if ($tiene_doble_movimiento) {
                         'telefono' => null,
                         'hora_llegada' => null
                     ];
-                    
+
                     if ($estado_hab == 'ocupada' && isset($hab['ocupacion_actual'])) {
                         $tooltipData['huesped'] = $hab['ocupacion_actual']['nombre_completo'] ?? 'Huésped';
                         $entrada = $hab['ocupacion_actual']['fecha_entrada'] ?? null;
                         $salida = $hab['ocupacion_actual']['fecha_salida'] ?? null;
-                        
+
                         if ($entrada && $salida) {
                             $tooltipData['fechas'] = format_date($entrada) . ' - ' . format_date($salida);
                             try {
@@ -3428,7 +4039,7 @@ if ($tiene_doble_movimiento) {
                             }
                         }
                         $tooltipData['telefono'] = $hab['ocupacion_actual']['telefono'] ?? null;
-                        
+
                     } elseif ($estado_hab == 'por_llegar' && isset($hab['reservacion_pendiente'])) {
                         $tooltipData['huesped'] = $hab['reservacion_pendiente']['nombre_completo'] ?? 'Huésped';
                         $fecha_entrada = $hab['reservacion_pendiente']['fecha_entrada'] ?? null;
@@ -3439,41 +4050,51 @@ if ($tiene_doble_movimiento) {
                         $tooltipData['telefono'] = $hab['reservacion_pendiente']['telefono'] ?? null;
                     }
                     ?>
-                    <div class="<?= $colorRapido ?> rounded-lg p-2 text-center cursor-pointer transition-all hover:scale-105 shadow-md room-quick-view"
-                         onclick="<?= ($estado_hab == 'disponible' || $estado_hab == 'disponible_fecha') ? 'crearReservacionRapida(' . $hab['id'] . ')' : 'window.location.href=\'' . url('habitaciones/' . $hab['id']) . '\'' ?>"
-                         data-tooltip='<?= htmlspecialchars(json_encode($tooltipData), ENT_QUOTES, 'UTF-8') ?>'>
-                        <div class="font-bold text-sm"><?= $hab['numero'] ?></div>
-                        <div class="text-xs opacity-90"><?= $pisoCortado ?></div>
+                    <div class="<?= $colorRapido ?> qv-state-<?= htmlspecialchars($estado_hab) ?> rounded-lg p-2 text-center cursor-pointer transition-all hover:scale-105 shadow-md room-quick-view hb-quick-room"
+                         role="button"
+                         tabindex="0"
+                         onkeydown="hbPressClick(event, this)"
+                         data-estado="<?= htmlspecialchars($estado_hab) ?>"
+                         title="<?= ($estado_hab == 'disponible' || $estado_hab == 'disponible_fecha') ? 'Crear reservación para habitación ' : 'Ver detalle de habitación ' ?><?= htmlspecialchars($hab['numero']) ?>"
+                          onclick="<?= ($estado_hab == 'disponible' || $estado_hab == 'disponible_fecha') ? 'crearReservacionRapida(' . $hab['id'] . ')' : 'window.location.href=\'' . url('habitaciones/' . $hab['id']) . '\'' ?>"
+                          data-tooltip='<?= htmlspecialchars(json_encode($tooltipData), ENT_QUOTES, 'UTF-8') ?>'>
+                        <span class="qv-room-num font-bold text-sm"><?= htmlspecialchars($hab['numero']) ?></span>
+                        <span class="qv-room-meta text-xs opacity-90"><?= htmlspecialchars($pisoCortado) ?></span>
+                        <span class="qv-room-state"><?= htmlspecialchars($estados[$estado_hab]['label'] ?? 'Desconocido') ?></span>
                     </div>
                 <?php endforeach; ?>
             </div>
-            
-            <!-- Leyenda -->
-            <div class="mt-4 pt-4 border-t flex flex-wrap gap-3 justify-center text-xs">
-                <div class="flex items-center gap-1">
-                    <div class="w-4 h-4 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded shadow-sm"></div>
-                    <span>Disponible</span>
-                </div>
-                <div class="flex items-center gap-1">
-                    <div class="w-4 h-4 bg-gradient-to-br from-purple-400 to-purple-600 rounded shadow-sm"></div>
-                    <span>Por llegar</span>
-                </div>
-                <div class="flex items-center gap-1">
-                    <div class="w-4 h-4 bg-gradient-to-br from-slate-500 to-slate-700 rounded shadow-sm"></div>
-                    <span>Ocupada</span>
-                </div>
-                <div class="flex items-center gap-1">
-                    <div class="w-4 h-4 bg-gradient-to-br from-blue-400 to-blue-600 rounded shadow-sm"></div>
-                    <span>Limpieza</span>
-                </div>
-                <div class="flex items-center gap-1">
-                    <div class="w-4 h-4 bg-gradient-to-br from-amber-400 to-amber-600 rounded shadow-sm"></div>
-                    <span>Mantenimiento</span>
-                </div>
             </div>
+
+            <!-- Leyenda -->
+            <aside class="hb-quick-aside">
+                <h4 class="hb-quick-aside-title">Estados</h4>
+                <?php
+                $quickLegend = [
+                    ['Disponible', (int)($estadisticas['disponibles'] ?? 0), 'var(--qv-green)'],
+                    ['Por llegar', (int)($estadisticas['por_llegar'] ?? 0), 'var(--qv-purple)'],
+                    ['Ocupada', (int)($estadisticas['ocupadas'] ?? 0), 'var(--qv-occupied)'],
+                    ['Limpieza', (int)($estadisticas['limpieza'] ?? 0), 'var(--qv-blue)'],
+                    ['Mantenimiento', (int)($estadisticas['mantenimiento'] ?? 0), 'var(--qv-amber)'],
+                ];
+                ?>
+                <div class="hb-quick-legend mt-4 pt-4 border-t flex flex-wrap gap-3 justify-center text-xs">
+                    <?php foreach ($quickLegend as $legendItem): ?>
+                        <div class="hb-quick-legend-item flex items-center gap-1" style="--legend-color: <?= $legendItem[2] ?>;">
+                            <span class="hb-quick-legend-swatch w-4 h-4 rounded shadow-sm" aria-hidden="true"></span>
+                            <span class="hb-quick-legend-name"><?= htmlspecialchars($legendItem[0]) ?></span>
+                            <span class="hb-quick-legend-count"><?= $legendItem[1] ?></span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <div class="hb-quick-hint">
+                    <strong>Acción rápida</strong>
+                    Las habitaciones disponibles inician reservación; las demás abren su detalle.
+                </div>
+            </aside>
         </div>
     </div>
-    
+
     <!-- Tooltip container -->
     <div id="roomTooltip" class="room-tooltip"></div>
 </div>
@@ -3491,12 +4112,12 @@ if ($tiene_doble_movimiento) {
                     <p class="text-xs text-blue-100">Selecciona las habitaciones que ya están listas</p>
                 </div>
             </div>
-            <button onclick="cerrarModalLimpieza()" 
+            <button onclick="cerrarModalLimpieza()"
                     class="text-white hover:text-blue-100 transition-colors p-2 hover:bg-white/10 rounded-lg">
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
-        
+
         <!-- Contenido del modal -->
         <div class="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
             <!-- Contador y botones de selección -->
@@ -3508,23 +4129,23 @@ if ($tiene_doble_movimiento) {
                     <span> habitaciones seleccionadas</span>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="seleccionarTodasLimpieza(true)" 
+                    <button onclick="seleccionarTodasLimpieza(true)"
                             class="text-xs px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium">
                         <i class="fas fa-check-square mr-1"></i>Todas
                     </button>
-                    <button onclick="seleccionarTodasLimpieza(false)" 
+                    <button onclick="seleccionarTodasLimpieza(false)"
                             class="text-xs px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium">
                         <i class="fas fa-square mr-1"></i>Ninguna
                     </button>
                 </div>
             </div>
-            
+
             <!-- Lista de habitaciones -->
             <div class="space-y-2" id="listaHabitacionesLimpieza">
                 <?php foreach ($habitaciones_limpieza as $hab): ?>
                 <label class="flex items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg cursor-pointer border-2 border-transparent hover:border-blue-400 transition-all group">
-                    <input 
-                        type="checkbox" 
+                    <input
+                        type="checkbox"
                         value="<?= $hab['id'] ?>"
                         class="checkbox-limpieza w-5 h-5 text-blue-600 rounded focus:ring-blue-500 mr-4"
                         onchange="actualizarContadorLimpieza()"
@@ -3556,7 +4177,7 @@ if ($tiene_doble_movimiento) {
                 </label>
                 <?php endforeach; ?>
             </div>
-            
+
             <?php if (empty($habitaciones_limpieza)): ?>
             <div class="text-center py-8 text-gray-500">
                 <i class="fas fa-check-circle text-4xl mb-3 text-green-500"></i>
@@ -3565,14 +4186,14 @@ if ($tiene_doble_movimiento) {
             </div>
             <?php endif; ?>
         </div>
-        
+
         <!-- Footer con botones -->
         <div class="bg-gray-50 px-6 py-4 flex justify-between items-center border-t">
-            <button onclick="cerrarModalLimpieza()" 
+            <button onclick="cerrarModalLimpieza()"
                     class="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors font-medium">
                 <i class="fas fa-times mr-2"></i>Cancelar
             </button>
-            <button onclick="marcarHabitacionesLimpias()" 
+            <button onclick="marcarHabitacionesLimpias()"
                     id="btnMarcarLimpias"
                     class="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-bold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled>
@@ -3649,7 +4270,27 @@ if ($tiene_doble_movimiento) {
   border:1px solid var(--hb-line); border-radius:var(--hb-radius); padding:14px 15px;
   box-shadow:var(--hb-shadow-sm); position:relative; overflow:hidden; --sc:var(--hb-primary);
 }
-.habitaciones-view .hb-stat::after{ content:''; position:absolute; left:0; right:0; bottom:0; height:3px; background:var(--sc); opacity:0; }
+.habitaciones-view .hb-stat::before,
+.habitaciones-view .hb-stat::after{
+  content:''; position:absolute; pointer-events:none; opacity:0; transition:opacity .18s ease;
+}
+.habitaciones-view .hb-stat::before{
+  inset:9px 0 8px; border-radius:inherit;
+  background:
+    linear-gradient(90deg, color-mix(in srgb,var(--sc) 82%,transparent), transparent 4px),
+    linear-gradient(270deg, color-mix(in srgb,var(--sc) 82%,transparent), transparent 4px);
+}
+.habitaciones-view .hb-stat::after{
+  left:12px; right:12px; bottom:0; height:2px; border-radius:999px;
+  background:linear-gradient(90deg, transparent, color-mix(in srgb,var(--sc) 72%,transparent) 14%, var(--sc) 50%, color-mix(in srgb,var(--sc) 72%,transparent) 86%, transparent);
+}
+.habitaciones-view .hb-stat.is-filter-active{
+  border-color:color-mix(in srgb, var(--sc) 34%, var(--hb-line));
+  background:linear-gradient(90deg, color-mix(in srgb, var(--sc) 7%, #fff) 0%, var(--hb-surface) 20%, var(--hb-surface) 80%, color-mix(in srgb, var(--sc) 7%, #fff) 100%);
+  box-shadow:var(--hb-shadow-sm), inset 0 -1px 0 color-mix(in srgb,var(--sc) 45%,transparent);
+}
+.habitaciones-view .hb-stat.is-filter-active::before{ opacity:.9; }
+.habitaciones-view .hb-stat.is-filter-active::after{ opacity:.72; }
 .habitaciones-view .hb-stat-ic{ width:34px; height:34px; border-radius:10px; display:grid; place-items:center; background:color-mix(in srgb,var(--sc) 13%,#fff); color:var(--sc); margin-bottom:10px; }
 .habitaciones-view .hb-stat-ic i{ font-size:.95rem; }
 .habitaciones-view .hb-stat-n{ font-family:var(--serif); font-size:2.05rem; font-weight:700; line-height:1; color:var(--hb-primary); font-variant-numeric:tabular-nums; }
@@ -3870,22 +4511,2190 @@ if ($tiene_doble_movimiento) {
 .habitaciones-view .flip-card-back h4{ border-bottom:1px solid rgba(255,255,255,.22)!important; padding-bottom:7px!important; margin-bottom:5px!important; letter-spacing:.01em; }
 .swal2-styled.swal2-confirm:focus{ box-shadow:0 0 0 3px color-mix(in srgb, var(--brand-primary,#1B2746) 30%, transparent)!important; }
 .swal2-styled.swal2-cancel{ border-radius:11px!important; font-weight:700!important; }
+.swal2-popup.hb-swal-checkin{
+  width:min(430px,calc(100vw - 28px))!important;
+  padding:0!important;
+  border:1px solid color-mix(in srgb,var(--brand-accent,#BD9441) 24%,#E7DDCA)!important;
+  border-radius:24px!important;
+  overflow:hidden!important;
+  background:#FFFCF7!important;
+  box-shadow:0 32px 82px -28px rgba(12,18,32,.66)!important;
+}
+.hb-swal-checkin::before{
+  content:'';
+  display:block;
+  height:9px;
+  background:linear-gradient(90deg,var(--brand-primary,#1B2746),color-mix(in srgb,var(--brand-accent,#BD9441) 72%,#fff));
+}
+.hb-swal-checkin .swal2-icon{
+  margin:22px auto 8px!important;
+  border-color:color-mix(in srgb,#148653 52%,#D7DEE8)!important;
+  color:#148653!important;
+}
+.hb-swal-checkin .swal2-title{
+  padding:0 24px!important;
+  color:var(--brand-secondary,#0F172A)!important;
+  font-size:1.15rem!important;
+  line-height:1.18!important;
+  font-weight:900!important;
+  letter-spacing:0!important;
+}
+.hb-swal-checkin .swal2-html-container{
+  margin:8px 24px 0!important;
+  color:#667085!important;
+  font-size:.88rem!important;
+  font-weight:700!important;
+  line-height:1.45!important;
+}
+.hb-swal-checkin .swal2-actions{
+  width:100%!important;
+  margin:20px 0 0!important;
+  padding:16px!important;
+  display:grid!important;
+  grid-template-columns:1fr 1.18fr;
+  gap:10px!important;
+  background:color-mix(in srgb,var(--brand-primary,#1B2746) 4%,#fff)!important;
+  border-top:1px solid color-mix(in srgb,var(--brand-primary,#1B2746) 10%,#E7DDCA)!important;
+}
+.hb-swal-checkin .hb-swal-cancel,
+.hb-swal-checkin .hb-swal-confirm{
+  width:100%!important;
+  min-height:44px!important;
+  margin:0!important;
+  border-radius:14px!important;
+  font-weight:900!important;
+  box-shadow:none!important;
+}
+.hb-swal-checkin .hb-swal-cancel{
+  border:1px solid color-mix(in srgb,var(--brand-primary,#1B2746) 12%,#D7DEE8)!important;
+  background:#fff!important;
+  color:var(--brand-secondary,#0F172A)!important;
+}
+.hb-swal-checkin .hb-swal-confirm{
+  border:0!important;
+  background:linear-gradient(135deg,#148653,#0F6F49)!important;
+  color:#fff!important;
+  box-shadow:0 16px 32px -20px rgba(20,134,83,.9)!important;
+}
+@media (max-width:420px){
+  .hb-swal-checkin .swal2-actions{ grid-template-columns:1fr; }
+}
 /* Tarjetas selectoras "Cliente Nuevo / Existente" del flujo Reservar */
 .brand-hover-card{ transition:all .18s ease!important; }
 .brand-hover-card:hover{ background:var(--brand-primary,#1B2746)!important; border-color:var(--brand-primary,#1B2746)!important; color:#fff!important; transform:translateY(-2px); box-shadow:0 12px 24px -12px rgba(27,39,70,.55)!important; }
 .brand-text{ color:var(--brand-primary,#1B2746)!important; }
+/* Flujo de reservacion rapida: selector de cliente + hora de llegada */
+.hb-swal .swal2-title{
+  padding:0!important;
+  font-size:1.18rem!important;
+  letter-spacing:0!important;
+  line-height:1.18!important;
+}
+.hb-swal{
+  position:relative!important;
+  border:1px solid color-mix(in srgb,var(--brand-accent,#BD9441) 18%,#E7DDCA)!important;
+  background:color-mix(in srgb,var(--brand-accent,#BD9441) 6%,#FFFFFF)!important;
+}
+.hb-swal-client{
+  width:min(460px,calc(100vw - 28px))!important;
+}
+.hb-swal .swal2-actions{
+  gap:10px!important;
+}
+.hb-swal .swal2-styled{
+  min-height:42px!important;
+  padding:0 18px!important;
+}
+.hb-swal-html{
+  overflow:visible!important;
+}
+.hb-quick-client{
+  text-align:left;
+}
+.hb-quick-client__copy{
+  margin:0 0 14px;
+  color:var(--hb-slate-500,#64748B);
+  font-size:.88rem;
+  line-height:1.45;
+  text-align:left;
+}
+.hb-quick-client__grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+}
+.hb-client-card{
+  appearance:none;
+  position:relative;
+  overflow:hidden;
+  width:100%;
+  min-height:76px;
+  padding:13px 14px;
+  border:1px solid color-mix(in srgb,var(--brand-accent,#BD9441) 18%,#E7DDCA);
+  border-radius:15px;
+  background:color-mix(in srgb,var(--brand-accent,#BD9441) 3%,#fff);
+  color:var(--brand-primary,#1B2746);
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr) 18px;
+  align-items:center;
+  gap:12px;
+  text-align:left;
+  box-shadow:0 1px 2px rgba(27,39,70,.05);
+  cursor:pointer;
+  transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.hb-client-card:hover,
+.hb-client-card:focus-visible{
+  transform:translateY(-1px);
+  border-color:color-mix(in srgb,var(--brand-primary,#1B2746) 34%,var(--brand-accent,#BD9441));
+  background:color-mix(in srgb,var(--brand-accent,#BD9441) 6%,#fff);
+  box-shadow:0 14px 28px -24px rgba(27,39,70,.45);
+  outline:none;
+}
+.hb-client-card__icon{
+  width:42px;
+  height:42px;
+  border-radius:13px;
+  display:grid;
+  place-items:center;
+  color:var(--brand-primary,#1B2746);
+  background:#fff;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--brand-accent,#BD9441) 22%,transparent);
+}
+.hb-client-card--existing .hb-client-card__icon{
+  color:var(--brand-primary,#1B2746);
+  background:#fff;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--brand-primary,#1B2746) 14%,transparent);
+}
+.hb-client-card__icon i{
+  font-size:.98rem;
+}
+.hb-client-card__body{
+  display:grid;
+  gap:3px;
+  min-width:0;
+}
+.hb-client-card__label{
+  color:var(--brand-primary,#1B2746);
+  font-size:.95rem;
+  font-weight:900;
+  line-height:1.1;
+}
+.hb-client-card__hint{
+  color:var(--hb-slate-500,#64748B);
+  font-size:.75rem;
+  font-weight:700;
+  line-height:1.25;
+}
+.hb-client-card__arrow{
+  position:static;
+  justify-self:end;
+  color:color-mix(in srgb,var(--brand-primary,#1B2746) 50%,#fff);
+  font-size:.76rem;
+  transition:transform .18s ease;
+}
+.hb-client-card:hover .hb-client-card__arrow,
+.hb-client-card:focus-visible .hb-client-card__arrow{
+  transform:translateX(3px);
+}
+.swal2-popup.hb-swal-client{
+  width:min(640px,calc(100vw - 28px))!important;
+  padding:0!important;
+  border:1px solid color-mix(in srgb,var(--brand-accent,#BD9441) 24%,#E7DDCA)!important;
+  border-radius:24px!important;
+  overflow:hidden!important;
+  background:#FFFCF7!important;
+  box-shadow:0 32px 82px -28px rgba(12,18,32,.66)!important;
+}
+.hb-swal-client .swal2-title{
+  display:none!important;
+}
+.hb-swal-client .swal2-html-container{
+  margin:0!important;
+  padding:0!important;
+  overflow:visible!important;
+}
+.swal2-container.hb-swal-sheet-container.swal2-backdrop-show,
+.swal2-container.hb-swal-sheet-container.swal2-noanimation{
+  background:linear-gradient(180deg,rgba(12,17,28,.78),rgba(12,17,28,.70))!important;
+  backdrop-filter:blur(5px);
+}
+.hb-swal-client .swal2-close{
+  width:38px!important;
+  height:38px!important;
+  margin:10px 10px 0 0!important;
+  border:1px solid color-mix(in srgb,var(--brand-primary,#1B2746) 12%,#E7DDCA)!important;
+  border-radius:12px!important;
+  color:var(--brand-primary,#1B2746)!important;
+  background:#FFFFFF!important;
+  box-shadow:0 10px 20px -18px rgba(27,39,70,.45)!important;
+}
+.hb-swal-client .swal2-actions{
+  width:100%!important;
+  margin:0!important;
+  padding:0 18px 18px!important;
+  justify-content:stretch!important;
+}
+.hb-swal-client .hb-swal-cancel{
+  width:100%!important;
+  min-height:44px!important;
+  margin:0!important;
+  border:1px solid color-mix(in srgb,var(--brand-primary,#1B2746) 12%,#D7DEE8)!important;
+  border-radius:14px!important;
+  background:color-mix(in srgb,var(--brand-primary,#1B2746) 6%,#FFFFFF)!important;
+  color:var(--brand-primary,#1B2746)!important;
+  font-size:.86rem!important;
+  font-weight:900!important;
+  box-shadow:none!important;
+}
+.hb-client-choice{
+  display:grid;
+  gap:0;
+  background:#FFFCF7;
+  text-align:left;
+}
+.hb-client-choice__head{
+  display:grid;
+  grid-template-columns:52px minmax(0,1fr);
+  align-items:center;
+  gap:14px;
+  padding:24px 24px 18px;
+  border-bottom:1px solid color-mix(in srgb,var(--brand-accent,#BD9441) 18%,#E7DDCA);
+  background:
+    linear-gradient(135deg,color-mix(in srgb,var(--brand-accent,#BD9441) 12%,#FFFFFF),#FFFFFF 66%);
+}
+.hb-client-choice__mark{
+  width:52px;
+  height:52px;
+  border-radius:16px;
+  display:grid;
+  place-items:center;
+  color:#FFFFFF;
+  background:linear-gradient(145deg,var(--brand-primary,#1B2746),var(--brand-secondary,#0F172A));
+  box-shadow:0 14px 26px -16px rgba(27,39,70,.55);
+}
+.hb-client-choice__mark i{
+  font-size:1.05rem;
+}
+.hb-client-choice__eyebrow{
+  display:block;
+  margin-bottom:5px;
+  color:color-mix(in srgb,var(--brand-primary,#1B2746) 58%,var(--brand-accent,#BD9441));
+  font-size:.68rem;
+  font-weight:900;
+  letter-spacing:.09em;
+  line-height:1;
+  text-transform:uppercase;
+}
+.hb-client-choice h3{
+  margin:0;
+  color:var(--brand-primary,#1B2746);
+  font-size:clamp(1.18rem,2.7vw,1.46rem);
+  font-weight:900;
+  line-height:1.12;
+  letter-spacing:0;
+}
+.hb-client-choice__head p{
+  margin:7px 0 0;
+  color:var(--hb-slate-500,#64748B);
+  font-size:.86rem;
+  line-height:1.42;
+}
+.hb-client-choice__options{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  padding:18px;
+}
+.hb-client-option{
+  appearance:none;
+  position:relative;
+  width:100%;
+  min-height:188px;
+  padding:16px;
+  border:1px solid color-mix(in srgb,var(--brand-primary,#1B2746) 11%,#E7DDCA);
+  border-radius:18px;
+  background:#fff;
+  color:var(--brand-primary,#1B2746);
+  display:flex;
+  flex-direction:column;
+  gap:13px;
+  text-align:left;
+  cursor:pointer;
+  box-shadow:0 1px 2px rgba(27,39,70,.05), 0 16px 34px -30px rgba(27,39,70,.42);
+  transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.hb-client-option::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  border-radius:inherit;
+  background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,0));
+}
+.hb-client-option:hover,
+.hb-client-option:focus-visible{
+  transform:translateY(-2px);
+  border-color:color-mix(in srgb,var(--brand-primary,#1B2746) 36%,var(--brand-accent,#BD9441));
+  background:color-mix(in srgb,var(--brand-accent,#BD9441) 6%,#fff);
+  box-shadow:0 18px 36px -26px rgba(27,39,70,.44);
+  outline:none;
+}
+.hb-client-option__top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.hb-client-option__icon{
+  width:42px;
+  height:42px;
+  border-radius:13px;
+  display:grid;
+  place-items:center;
+  color:var(--brand-primary,#1B2746);
+  background:color-mix(in srgb,var(--brand-accent,#BD9441) 14%,#fff);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--brand-accent,#BD9441) 28%,transparent);
+}
+.hb-client-option--existing .hb-client-option__icon{
+  background:color-mix(in srgb,var(--brand-primary,#1B2746) 7%,#fff);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--brand-primary,#1B2746) 18%,transparent);
+}
+.hb-client-option__tag{
+  min-height:24px;
+  padding:5px 9px;
+  border-radius:999px;
+  color:color-mix(in srgb,var(--brand-primary,#1B2746) 68%,var(--brand-accent,#BD9441));
+  background:color-mix(in srgb,var(--brand-accent,#BD9441) 9%,#fff);
+  font-size:.66rem;
+  font-weight:900;
+  line-height:1;
+}
+.hb-client-option__body{
+  display:grid;
+  gap:7px;
+  position:relative;
+  z-index:1;
+}
+.hb-client-option__body strong{
+  color:var(--brand-primary,#1B2746);
+  font-size:1.03rem;
+  font-weight:900;
+  line-height:1.08;
+}
+.hb-client-option__body span{
+  color:var(--hb-slate-500,#64748B);
+  font-size:.8rem;
+  font-weight:650;
+  line-height:1.42;
+}
+.hb-client-option__cta{
+  position:relative;
+  z-index:1;
+  margin-top:auto;
+  padding-top:11px;
+  border-top:1px solid color-mix(in srgb,var(--brand-accent,#BD9441) 15%,#ECE5D8);
+  color:var(--brand-primary,#1B2746);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  font-size:.78rem;
+  font-weight:900;
+}
+.hb-client-option__cta i{
+  transition:transform .18s ease;
+}
+.hb-client-option:hover .hb-client-option__cta i,
+.hb-client-option:focus-visible .hb-client-option__cta i{
+  transform:translateX(3px);
+}
+@media (max-width:640px){
+  .swal2-popup.hb-swal-client{
+    width:calc(100vw - 22px)!important;
+    border-radius:22px!important;
+  }
+  .hb-client-choice__head{
+    grid-template-columns:46px minmax(0,1fr);
+    gap:12px;
+    padding:20px 18px 16px;
+  }
+  .hb-client-choice__mark{
+    width:46px;
+    height:46px;
+    border-radius:14px;
+  }
+  .hb-client-choice__options{
+    grid-template-columns:1fr;
+    padding:14px;
+    gap:10px;
+  }
+  .hb-client-option{
+    min-height:0;
+    padding:14px;
+    display:grid;
+    grid-template-columns:1fr;
+    gap:11px;
+  }
+  .hb-client-option__body strong{
+    font-size:.98rem;
+  }
+  .hb-client-option__body span{
+    font-size:.76rem;
+  }
+  .hb-client-option__cta{
+    padding-top:10px;
+  }
+  .hb-swal-client .swal2-actions{
+    padding:0 14px 14px!important;
+  }
+}
+.hb-reservation-step{
+  text-align:left;
+}
+.hb-reservation-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin:0 auto 14px;
+  padding:9px 13px;
+  border-radius:999px;
+  color:var(--brand-primary,#1B2746);
+  background:color-mix(in srgb,var(--brand-accent,#BD9441) 12%,#fff);
+  font-size:.83rem;
+  font-weight:900;
+}
+.hb-reservation-pill--existing{
+  color:#047857;
+  background:color-mix(in srgb,#10B981 13%,#fff);
+}
+.hb-reservation-summary{
+  padding:14px;
+  border:1px solid color-mix(in srgb,var(--brand-primary,#1B2746) 10%,#E7DDCA);
+  border-radius:18px;
+  background:linear-gradient(180deg,#fff,color-mix(in srgb,var(--brand-accent,#BD9441) 5%,#fff));
+}
+.hb-reservation-dates{
+  display:grid;
+  gap:8px;
+  margin-bottom:13px;
+}
+.hb-date-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:8px 0;
+  border-bottom:1px solid color-mix(in srgb,var(--brand-primary,#1B2746) 7%,transparent);
+}
+.hb-date-row:last-child{
+  border-bottom:0;
+}
+.hb-date-row span{
+  color:var(--hb-slate-500,#64748B);
+  font-size:.78rem;
+  font-weight:800;
+}
+.hb-date-row strong{
+  color:var(--brand-primary,#1B2746);
+  font-size:.9rem;
+  font-weight:900;
+}
+.hb-arrival-card{
+  padding-top:14px;
+  border-top:1px solid color-mix(in srgb,var(--brand-primary,#1B2746) 10%,#E7DDCA);
+}
+.hb-arrival-label{
+  display:block;
+  margin-bottom:3px;
+  color:var(--brand-primary,#1B2746);
+  font-size:.92rem;
+  font-weight:900;
+}
+.hb-arrival-copy{
+  margin:0 0 10px;
+  color:var(--hb-slate-500,#64748B);
+  font-size:.78rem;
+  line-height:1.35;
+}
+.hb-arrival-control{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+}
+.hb-arrival-input{
+  width:100%;
+  min-width:0;
+  height:52px;
+  padding:0 13px;
+  border:1px solid color-mix(in srgb,var(--brand-primary,#1B2746) 15%,#E7DDCA);
+  border-radius:14px;
+  background:#fff;
+  color:var(--brand-primary,#1B2746);
+  font-size:16px;
+  font-weight:850;
+  outline:none;
+}
+.hb-arrival-input:focus{
+  border-color:var(--brand-accent,#BD9441);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--brand-accent,#BD9441) 28%,transparent);
+}
+.hb-arrival-now{
+  min-width:88px;
+  height:52px;
+  padding:0 14px;
+  border:1px solid color-mix(in srgb,var(--brand-primary,#1B2746) 14%,#E7DDCA);
+  border-radius:14px;
+  background:var(--brand-primary,#1B2746);
+  color:#fff;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  font-size:.82rem;
+  font-weight:900;
+  transition:transform .16s ease, filter .16s ease;
+}
+.hb-arrival-now:hover,
+.hb-arrival-now:focus-visible{
+  filter:brightness(1.08);
+  outline:none;
+}
+.hb-arrival-now:active{
+  transform:scale(.98);
+}
 /* Modal Limpieza: header + botón primario a marca (como Vista Rápida) */
 #modalLimpieza .bg-gradient-to-r{ background:linear-gradient(135deg, var(--brand-primary,#1B2746), var(--brand-secondary,#0F172A))!important; }
 #modalLimpieza .text-blue-600, #modalLimpieza .text-blue-700{ color:var(--brand-primary,#1B2746)!important; }
 /* Acento dorado de marca para detalles/realces de los modales propios */
 #vistaRapidaModal .vr-accent, #modalLimpieza .vr-accent{ color:var(--brand-accent,#BD9441)!important; }
+/* Modales propios: pulido visual sin cambiar callbacks */
+#vistaRapidaModal,
+#modalLimpieza{ background:rgba(18,22,34,.52)!important; backdrop-filter:blur(10px); }
+#vistaRapidaModal > .bg-white,
+#modalLimpieza > .bg-white{
+  border:1px solid var(--hb-line)!important;
+  background:var(--hb-surface)!important;
+  box-shadow:0 28px 70px -24px rgba(18,22,34,.5)!important;
+}
+#vistaRapidaModal > .bg-white > div:first-child,
+#modalLimpieza > .bg-white > div:first-child{
+  border-bottom:1px solid rgba(255,255,255,.16)!important;
+}
+#vistaRapidaContainer .room-quick-view{
+  border-radius:12px!important;
+  border:1px solid var(--hb-line)!important;
+}
+#modalLimpieza .checkbox-limpieza{ accent-color:var(--brand-primary,#1B2746); }
+#modalLimpieza label{
+  border-color:var(--hb-line)!important;
+  background:var(--hb-surface-warm)!important;
+}
+#modalLimpieza label:hover{
+  border-color:color-mix(in srgb,var(--brand-primary,#1B2746) 28%,var(--hb-line))!important;
+  background:color-mix(in srgb,var(--brand-primary,#1B2746) 5%,var(--hb-surface-warm))!important;
+}
+.swal2-popup{
+  border:1px solid var(--hb-line,#E7DDCA)!important;
+  background:var(--hb-surface,#FFFFFF)!important;
+}
+.swal2-html-container{
+  color:var(--hb-slate-500,#64748B)!important;
+}
 .habitaciones-view .hb-hidden{ display:none!important; }
 .habitaciones-view #hbNoResults{ grid-column:1/-1; }
+
+/* Mobile fusion: inspirado en el prototipo enviado, sin afectar desktop */
+.habitaciones-view .hb-mobile-occupancy{ display:none; }
+.habitaciones-view .hb-mobile-sheet-back,
+.habitaciones-view .hb-mobile-room-sheet{ display:none; }
+body.hb-mobile-sheet-open{ overflow:hidden; }
+
+@media (max-width:640px){
+  .habitaciones-view{
+    min-height:100dvh;
+    background:
+      radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--brand-accent,#BD9441) 13%, transparent) 0 220px, transparent 221px),
+      linear-gradient(180deg, var(--hb-ivory) 0%, var(--hb-ivory-strong) 100%);
+  }
+
+  .habitaciones-view .modern-header{
+    position:sticky;
+    top:0;
+    z-index:35;
+    border-bottom:1px solid var(--hb-line);
+    background:color-mix(in srgb, var(--hb-ivory) 94%, #fff 6%)!important;
+    box-shadow:0 10px 28px -24px rgba(18,22,34,.45)!important;
+  }
+  .habitaciones-view .modern-header .container{ padding:10px 13px 11px!important; }
+  .habitaciones-view .modern-header .container > .flex{ align-items:stretch!important; gap:10px!important; }
+  .habitaciones-view .modern-header .container > .flex > .flex.items-center{ width:100%; justify-content:flex-start; gap:10px!important; }
+  .habitaciones-view .modern-header .p-2.rounded-lg{
+    width:30px!important;
+    height:40px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+  }
+  .habitaciones-view .modern-header .p-2.rounded-lg i{
+    color:var(--hb-primary)!important;
+    font-size:1.15rem!important;
+  }
+  .habitaciones-view .modern-header h1{
+    font-size:1.48rem!important;
+    line-height:.95!important;
+    letter-spacing:0!important;
+    white-space:nowrap;
+  }
+  .habitaciones-view .modern-header .hb-title-prefix{ display:none; }
+  .habitaciones-view .modern-header p{
+    display:block!important;
+    margin-top:3px!important;
+    color:var(--hb-slate-500)!important;
+    font-size:.68rem!important;
+    line-height:1.1!important;
+  }
+  .habitaciones-view .modern-header .flex.flex-wrap.gap-2{
+    width:100%;
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:7px!important;
+  }
+  .habitaciones-view .modern-header .btn-modern{
+    min-width:0;
+    min-height:41px;
+    padding:7px 6px!important;
+    border-radius:12px!important;
+    display:flex!important;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    font-size:.62rem!important;
+    line-height:1.05!important;
+    box-shadow:var(--hb-shadow-xs)!important;
+  }
+  .habitaciones-view .modern-header .btn-modern i{ margin:0!important; font-size:.88rem!important; }
+  .habitaciones-view .modern-header .btn-modern span{
+    display:inline!important;
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .habitaciones-view > .container{ max-width:none!important; padding:12px 12px 24px!important; }
+  .habitaciones-view .hb-stats{ display:none!important; }
+  .habitaciones-view .hb-mobile-occupancy{
+    display:block;
+    margin:0 0 10px;
+    padding:11px 12px 12px;
+    border:1px solid var(--hb-line);
+    border-radius:16px;
+    background:var(--hb-surface-warm);
+    box-shadow:var(--hb-shadow-xs);
+  }
+  .habitaciones-view .hb-mobile-occupancy-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:9px;
+    color:var(--hb-primary);
+  }
+  .habitaciones-view .hb-mobile-occupancy-head span{
+    color:var(--hb-slate-400);
+    font-size:.72rem;
+    font-weight:850;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+  }
+  .habitaciones-view .hb-mobile-occupancy-head strong{
+    font-size:.84rem;
+    font-weight:900;
+    font-variant-numeric:tabular-nums;
+  }
+  .habitaciones-view .hb-mobile-occbar{
+    display:flex;
+    gap:3px;
+    height:13px;
+    border-radius:999px;
+    overflow:hidden;
+    background:var(--hb-line-soft);
+  }
+  .habitaciones-view .hb-mobile-occbar span{ display:block; min-width:3px; }
+  .habitaciones-view .hb-mobile-legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:7px 12px;
+    margin-top:10px;
+  }
+  .habitaciones-view .hb-mobile-lg{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    border:0;
+    padding:0;
+    background:transparent;
+    color:var(--hb-slate-500);
+    font-size:.68rem;
+    font-weight:750;
+    line-height:1.1;
+  }
+  .habitaciones-view .hb-mobile-dot{ width:8px; height:8px; border-radius:999px; flex:none; }
+  .habitaciones-view .hb-mobile-lg b{ color:var(--hb-primary); font-weight:900; }
+  .habitaciones-view .hb-mobile-lg.is-active{ color:var(--hb-primary); }
+
+  .habitaciones-view .alert-panel{
+    margin:0 0 10px!important;
+    border:1px solid color-mix(in srgb,var(--c-critical) 22%,var(--hb-line))!important;
+    border-left-width:1px!important;
+    border-radius:15px!important;
+    overflow:hidden;
+  }
+  .habitaciones-view .alert-header{ padding:11px 12px!important; }
+  .habitaciones-view .alert-header h3{ font-size:.88rem!important; }
+
+  .habitaciones-view .hb-filter-panel{
+    padding:0!important;
+    margin:0 0 14px!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    overflow:visible;
+  }
+  .habitaciones-view .hb-filter-panel > .bg-blue-50{ margin:10px 10px 0!important; border-radius:12px!important; }
+  .habitaciones-view .hb-filterbar{
+    display:grid!important;
+    grid-template-columns:1fr;
+    gap:10px!important;
+    padding:0!important;
+  }
+  .habitaciones-view .hb-search{
+    width:100%;
+    max-width:none!important;
+    min-height:46px;
+    padding:10px 14px!important;
+    border:1px solid color-mix(in srgb,var(--hb-primary) 10%,var(--hb-line))!important;
+    border-radius:16px!important;
+    background:color-mix(in srgb,var(--hb-surface) 78%,var(--hb-ivory))!important;
+    box-shadow:0 12px 26px -24px rgba(18,22,34,.34)!important;
+  }
+  .habitaciones-view .hb-search i{ color:color-mix(in srgb,var(--hb-primary) 48%,var(--hb-slate-400))!important; }
+  .habitaciones-view .hb-search input{ font-size:16px!important; }
+  .habitaciones-view .hb-fdiv{ display:none!important; }
+  .habitaciones-view .hb-chips{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    gap:7px!important;
+    margin:0 -10px;
+    padding:0 10px 2px;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .habitaciones-view .hb-chips::-webkit-scrollbar{ width:0; height:0; }
+  .habitaciones-view .hb-chip{
+    flex:0 0 auto;
+    padding:8px 13px!important;
+    border-radius:999px!important;
+    border-color:transparent!important;
+    background:transparent!important;
+    color:var(--hb-primary)!important;
+    font-size:.72rem!important;
+    font-weight:800!important;
+  }
+  .habitaciones-view .hb-chip.is-active{
+    border-color:var(--hb-primary)!important;
+    background:var(--hb-primary)!important;
+    color:#FDFBF6!important;
+    box-shadow:0 10px 20px -16px rgba(27,39,70,.65)!important;
+  }
+  .habitaciones-view .hb-filter-right{
+    width:100%;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 42px 42px;
+    gap:7px!important;
+  }
+  .habitaciones-view .filter-date,
+  .habitaciones-view .filter-btn{
+    width:100%!important;
+    min-height:42px!important;
+    border-radius:14px!important;
+    background:color-mix(in srgb,var(--hb-surface) 72%,var(--hb-ivory))!important;
+    border-color:color-mix(in srgb,var(--hb-primary) 12%,var(--hb-line))!important;
+  }
+  .habitaciones-view .filter-btn span{ display:none!important; }
+
+  .habitaciones-view .hb-movements{
+    display:grid!important;
+    gap:10px!important;
+    margin:2px 0 15px!important;
+  }
+  .habitaciones-view .hb-move-card{
+    border:1px solid var(--hb-line)!important;
+    border-radius:18px!important;
+    background:color-mix(in srgb,var(--hb-surface) 82%,var(--hb-ivory))!important;
+    box-shadow:0 16px 34px -28px rgba(18,22,34,.38)!important;
+    overflow:hidden;
+  }
+  .habitaciones-view .hb-move-head{
+    padding:12px 13px!important;
+    border:0!important;
+    border-bottom:1px solid var(--hb-line)!important;
+    border-radius:0!important;
+    background:transparent!important;
+  }
+  .habitaciones-view .hb-move-head h3{
+    color:var(--hb-primary)!important;
+    font-size:.78rem!important;
+    line-height:1.1!important;
+  }
+  .habitaciones-view .hb-move-head h3 > span:first-child{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    min-width:0;
+  }
+  .habitaciones-view .hb-move-head h3 i{ margin:0!important; }
+  .habitaciones-view .hb-move-head--in h3 i{ color:var(--c-arriving)!important; }
+  .habitaciones-view .hb-move-head--out h3 i{ color:var(--c-maint)!important; }
+  .habitaciones-view .hb-move-head h3 > span:last-child{
+    min-width:24px;
+    height:24px;
+    display:inline-grid;
+    place-items:center;
+    padding:0!important;
+    border-radius:999px!important;
+    font-size:.7rem!important;
+    font-weight:900!important;
+  }
+  .habitaciones-view .hb-move-head--in h3 > span:last-child{ background:color-mix(in srgb,var(--c-arriving) 70%,#fff)!important; }
+  .habitaciones-view .hb-move-head--out h3 > span:last-child{ background:color-mix(in srgb,var(--c-maint) 70%,#fff)!important; }
+  .habitaciones-view .hb-move-body{
+    max-height:210px!important;
+    padding:8px!important;
+  }
+  .habitaciones-view .hb-move-item{
+    align-items:center!important;
+    gap:10px!important;
+    padding:10px!important;
+    border:1px solid transparent!important;
+    border-radius:14px!important;
+    background:var(--hb-surface-warm)!important;
+  }
+  .habitaciones-view .hb-move-item--in{ border-color:color-mix(in srgb,var(--c-arriving) 18%,transparent)!important; }
+  .habitaciones-view .hb-move-item--out{ border-color:color-mix(in srgb,var(--c-maint) 18%,transparent)!important; }
+  .habitaciones-view .hb-move-item p:first-child{
+    color:var(--hb-primary)!important;
+    font-size:.78rem!important;
+  }
+  .habitaciones-view .hb-move-item p:last-child{
+    color:var(--hb-slate-500)!important;
+    font-size:.66rem!important;
+    line-height:1.25!important;
+  }
+  .habitaciones-view .hb-move-action{
+    width:30px;
+    height:30px;
+    display:grid!important;
+    place-items:center;
+    margin-left:4px!important;
+    border-radius:999px;
+    background:color-mix(in srgb,var(--c-arriving) 12%,var(--hb-surface))!important;
+    color:var(--c-arriving)!important;
+  }
+  .habitaciones-view .hb-move-item--out button{
+    min-height:30px!important;
+    padding:6px 10px!important;
+    border-radius:999px!important;
+    background:var(--c-maint)!important;
+    color:#fff!important;
+    font-size:.64rem!important;
+    font-weight:850!important;
+    box-shadow:0 10px 18px -14px var(--c-maint)!important;
+  }
+  .habitaciones-view .hb-move-empty{
+    margin:0!important;
+    padding:22px 10px!important;
+    color:var(--hb-slate-400)!important;
+    font-size:.78rem!important;
+  }
+
+  .habitaciones-view #habitaciones-grid{ margin-top:2px; }
+  .habitaciones-view .floor-section{ margin-bottom:8px!important; }
+  .habitaciones-view .floor-label{ gap:10px!important; margin:14px 2px 9px!important; }
+  .habitaciones-view .floor-t{
+    color:var(--hb-slate-400)!important;
+    font-family:var(--hb-sans,'DM Sans',system-ui,sans-serif)!important;
+    font-size:.68rem!important;
+    font-weight:900!important;
+    letter-spacing:.08em!important;
+    line-height:1!important;
+    text-transform:uppercase;
+  }
+  .habitaciones-view .floor-rule{ background:var(--hb-line)!important; }
+  .habitaciones-view .floor-ct{ font-size:.62rem!important; letter-spacing:.04em!important; }
+  .habitaciones-view .rgrid{ grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:10px!important; }
+  .habitaciones-view .flip-card,
+  .habitaciones-view .flip-card.flipped{
+    height:148px!important;
+    border-radius:15px!important;
+    animation:none!important;
+  }
+  .habitaciones-view .room-card-compact:not(.flipped):hover{ transform:none!important; }
+  .habitaciones-view .flip-card-inner,
+  .habitaciones-view .flip-card-front{ border-radius:15px!important; }
+  .habitaciones-view .flip-card-front{
+    width:100%!important;
+    height:100%!important;
+    top:0!important;
+    left:0!important;
+    border:1px solid var(--hb-line)!important;
+    border-left:1px solid var(--hb-line)!important;
+    background:var(--hb-surface)!important;
+    box-shadow:var(--hb-shadow-xs)!important;
+  }
+  .habitaciones-view .estado-disponible,
+  .habitaciones-view .estado-disponible_fecha,
+  .habitaciones-view .estado-ocupada,
+  .habitaciones-view .estado-ocupada_fecha,
+  .habitaciones-view .estado-por_llegar,
+  .habitaciones-view .estado-doble,
+  .habitaciones-view .estado-limpieza,
+  .habitaciones-view .estado-limpieza-por-llegar,
+  .habitaciones-view .estado-mantenimiento{
+    border-left-width:1px!important;
+    background:var(--hb-surface)!important;
+  }
+  .habitaciones-view .rc-face{ padding:11px 10px 10px 14px!important; }
+  .habitaciones-view .rc-stripe{
+    top:0!important;
+    left:0!important;
+    bottom:0!important;
+    width:5px!important;
+    height:auto!important;
+    border-radius:15px 0 0 15px!important;
+    box-shadow:none!important;
+  }
+  .habitaciones-view .rc-top{ gap:6px!important; }
+  .habitaciones-view .rc-num{ font-size:1.62rem!important; font-weight:650!important; line-height:.9!important; }
+  .habitaciones-view .rc-type{
+    max-width:82px;
+    margin-top:2px!important;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:.58rem!important;
+    letter-spacing:.02em!important;
+  }
+  .habitaciones-view .rc-badge{
+    max-width:70px;
+    min-height:21px;
+    padding:4px 7px!important;
+    border:1px solid color-mix(in srgb,var(--sheet-c,var(--hb-primary)) 24%,var(--hb-line))!important;
+    border-radius:999px!important;
+    background:var(--hb-surface-warm)!important;
+    box-shadow:none!important;
+    color:var(--sheet-c,var(--hb-primary))!important;
+    font-size:0!important;
+  }
+  .habitaciones-view .rc-badge i{ display:none!important; }
+  .habitaciones-view .rc-badge span{
+    display:block;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:.55rem!important;
+  }
+  .habitaciones-view .rc-mid{ margin-top:auto!important; }
+  .habitaciones-view .rc-guest{ gap:5px!important; font-size:.68rem!important; line-height:1.15!important; }
+  .habitaciones-view .rc-guest i{ font-size:.58rem!important; }
+  .habitaciones-view .rc-meta{ display:none!important; }
+  .habitaciones-view .rc-foot{ margin-top:7px!important; gap:5px!important; }
+  .habitaciones-view .rc-price{ font-size:.68rem!important; }
+  .habitaciones-view .rc-price small{ display:none!important; }
+  .habitaciones-view .rc-hint{
+    width:22px;
+    height:22px;
+    border:1px solid var(--hb-line);
+    border-radius:999px;
+    justify-content:center;
+    background:var(--hb-surface-warm);
+    color:var(--hb-slate-400);
+    font-size:0!important;
+  }
+  .habitaciones-view .rc-hint i{ font-size:.68rem!important; }
+  .habitaciones-view .rc-hint span{ display:none!important; }
+  .habitaciones-view .checkout-today-indicator,
+  .habitaciones-view .checkout-vencido-indicator,
+  .habitaciones-view .checkin-vencido-indicator,
+  .habitaciones-view .late-arrival-indicator{
+    top:6px!important;
+    right:6px!important;
+    min-height:18px!important;
+    padding:3px 6px!important;
+    font-size:.5rem!important;
+  }
+
+  .habitaciones-view .room-card-compact.flipped{
+    height:148px!important;
+    z-index:auto!important;
+    grid-column:auto!important;
+  }
+  .habitaciones-view .room-card-compact.flipped .flip-card-front{
+    opacity:1!important;
+    pointer-events:auto!important;
+  }
+  .habitaciones-view .room-card-compact .flip-card-back{
+    top:100%!important;
+    pointer-events:none!important;
+  }
+
+  .habitaciones-view .hb-mobile-sheet-back{
+    display:block;
+    position:fixed;
+    inset:0;
+    z-index:90;
+    background:rgba(18,22,34,.46);
+    opacity:0;
+    visibility:hidden;
+    transition:opacity .25s ease, visibility .25s ease;
+  }
+  .habitaciones-view .hb-mobile-sheet-back.is-open{ opacity:1; visibility:visible; }
+  .habitaciones-view .hb-mobile-room-sheet{
+    display:flex;
+    position:fixed;
+    left:0;
+    right:0;
+    bottom:0;
+    z-index:91;
+    max-height:86dvh;
+    border-radius:24px 24px 0 0;
+    background:var(--hb-surface);
+    box-shadow:0 -12px 40px rgba(18,22,34,.2);
+    transform:translateY(102%);
+    transition:transform .36s cubic-bezier(.22,1,.36,1);
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .habitaciones-view .hb-mobile-room-sheet.is-open{ transform:none; }
+  .habitaciones-view .hb-mobile-sheet-grab{
+    width:40px;
+    height:5px;
+    border-radius:999px;
+    background:var(--hb-line);
+    margin:10px auto 0;
+    flex:none;
+  }
+  .habitaciones-view .hb-mobile-sheet-content{
+    min-height:0;
+    overflow-y:auto;
+    scrollbar-width:none;
+  }
+  .habitaciones-view .hb-mobile-sheet-content::-webkit-scrollbar{ width:0; height:0; }
+  .habitaciones-view .hb-mobile-sheet-content .flip-card-back{
+    position:static!important;
+    inset:auto!important;
+    width:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:flex-start!important;
+    gap:0!important;
+    padding:14px 20px 24px!important;
+    border-radius:0!important;
+    overflow:visible!important;
+    background:transparent!important;
+    color:var(--hb-primary)!important;
+    box-shadow:none!important;
+    animation:none!important;
+    pointer-events:auto!important;
+  }
+  .habitaciones-view .hb-mobile-sheet-content .flip-card-back::before,
+  .habitaciones-view .hb-mobile-sheet-content .flip-card-back::after{ display:none!important; }
+  .habitaciones-view .hb-mobile-sheet-content .flip-card-back h4{
+    margin:0 0 12px!important;
+    padding:0 0 14px!important;
+    border-bottom:1px solid var(--hb-line-soft)!important;
+    color:var(--hb-primary)!important;
+    font-size:1.9rem!important;
+    line-height:.95!important;
+    letter-spacing:0!important;
+  }
+  .habitaciones-view .hb-mobile-sheet-content .info-item{
+    min-height:40px!important;
+    margin:0 0 9px!important;
+    padding:9px 10px!important;
+    border:1px solid var(--hb-line-soft);
+    border-radius:12px;
+    background:var(--hb-surface-warm);
+    color:var(--hb-primary)!important;
+    font-size:.82rem!important;
+    text-shadow:none!important;
+  }
+  .habitaciones-view .hb-mobile-sheet-content .info-item i{
+    width:26px;
+    height:26px;
+    display:inline-grid;
+    place-items:center;
+    border-radius:9px;
+    background:var(--hb-ivory-2);
+    color:var(--sheet-c,var(--hb-primary))!important;
+    text-shadow:none!important;
+  }
+  .habitaciones-view .hb-mobile-sheet-content .action-buttons{
+    display:grid!important;
+    grid-template-columns:1fr 1fr;
+    gap:9px!important;
+    margin-top:12px!important;
+  }
+  .habitaciones-view .hb-mobile-sheet-content .btn-action{
+    min-height:44px!important;
+    padding:11px 12px!important;
+    border:1px solid var(--hb-line)!important;
+    border-radius:13px!important;
+    background:var(--hb-surface-warm)!important;
+    color:var(--hb-primary)!important;
+    box-shadow:none!important;
+    font-size:.78rem!important;
+    font-weight:800!important;
+    text-shadow:none!important;
+  }
+  .habitaciones-view .hb-mobile-sheet-content .btn-action:active{ transform:scale(.97)!important; }
+  .habitaciones-view .hb-mobile-sheet-content .btn-primary{
+    grid-column:1 / -1;
+    border-color:transparent!important;
+    background:var(--sheet-c,var(--hb-primary))!important;
+    color:#fff!important;
+  }
+
+  #vistaRapidaModal,
+  #modalLimpieza{
+    align-items:flex-end!important;
+    justify-content:center!important;
+    padding:0!important;
+  }
+  #vistaRapidaModal > .bg-white,
+  #modalLimpieza > .bg-white{
+    position:relative;
+    width:100%!important;
+    max-width:none!important;
+    max-height:92dvh!important;
+    border-radius:24px 24px 0 0!important;
+    animation:hbModalSheetIn .36s cubic-bezier(.22,1,.36,1)!important;
+  }
+  #vistaRapidaModal > .bg-white::before,
+  #modalLimpieza > .bg-white::before{
+    content:'';
+    position:absolute;
+    top:9px;
+    left:50%;
+    width:40px;
+    height:5px;
+    border-radius:999px;
+    background:rgba(255,255,255,.38);
+    transform:translateX(-50%);
+    z-index:2;
+  }
+  #vistaRapidaModal > .bg-white > div:first-child,
+  #modalLimpieza > .bg-white > div:first-child{
+    padding-top:24px!important;
+    border-radius:24px 24px 0 0!important;
+  }
+  #vistaRapidaModal h3,
+  #modalLimpieza h3{
+    font-size:1rem!important;
+    line-height:1.1!important;
+  }
+  #vistaRapidaContainer{
+    max-height:calc(92dvh - 72px)!important;
+    padding:13px!important;
+  }
+  #vistaRapidaContainer .grid{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+  #modalLimpieza .p-6.overflow-y-auto{
+    max-height:calc(92dvh - 168px)!important;
+    padding:14px!important;
+  }
+  #modalLimpieza .bg-gray-50{
+    padding:12px 14px!important;
+    gap:10px!important;
+    background:var(--hb-surface-warm)!important;
+  }
+  #modalLimpieza .bg-gray-50 button{
+    min-height:42px;
+    border-radius:13px!important;
+  }
+  .swal2-popup{
+    width:calc(100vw - 24px)!important;
+    max-width:calc(100vw - 24px)!important;
+    border-radius:18px!important;
+    padding:1rem!important;
+  }
+  .swal2-html-container{
+    max-height:70dvh;
+    overflow-y:auto;
+    margin:.75rem 0!important;
+  }
+  .swal2-container.hb-swal-sheet-container{
+    align-items:flex-end!important;
+    padding:0!important;
+  }
+  .swal2-container.hb-swal-sheet-container .hb-swal{
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    border-radius:24px 24px 0 0!important;
+    padding:24px 14px calc(16px + env(safe-area-inset-bottom))!important;
+    animation:hbModalSheetIn .36s cubic-bezier(.22,1,.36,1)!important;
+  }
+  .swal2-container.hb-swal-sheet-container .hb-swal::before{
+    content:'';
+    position:absolute;
+    top:9px;
+    left:50%;
+    width:40px;
+    height:5px;
+    border-radius:999px;
+    background:color-mix(in srgb,var(--brand-primary,#1B2746) 18%,transparent);
+    transform:translateX(-50%);
+  }
+  .swal2-container.hb-swal-sheet-container .swal2-title{
+    padding:0 30px!important;
+    font-size:1.08rem!important;
+    line-height:1.16!important;
+  }
+  .swal2-container.hb-swal-sheet-container .hb-swal-html{
+    max-height:min(70dvh,540px);
+    overflow-y:auto!important;
+    margin:.75rem 0 .45rem!important;
+  }
+  .hb-quick-client__copy{
+    margin-bottom:12px;
+    font-size:.86rem;
+    text-align:left;
+  }
+  .hb-quick-client__grid{
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+  .hb-client-card{
+    min-height:72px;
+    padding:13px;
+    border-radius:16px;
+    grid-template-columns:46px minmax(0,1fr) 22px;
+    align-items:center;
+    align-content:center;
+    gap:11px;
+  }
+  .hb-client-card__icon{
+    width:44px;
+    height:44px;
+  }
+  .hb-client-card__body{
+    min-width:0;
+  }
+  .hb-client-card__label{
+    font-size:.98rem;
+  }
+  .hb-client-card__hint{
+    font-size:.74rem;
+  }
+  .hb-client-card__arrow{
+    position:static;
+    justify-self:end;
+  }
+  .hb-client-choice{
+    gap:0;
+  }
+  .hb-client-choice__head{
+    grid-template-columns:44px minmax(0,1fr);
+    gap:11px;
+    padding:18px 16px 15px;
+  }
+  .hb-client-choice__mark{
+    width:44px;
+    height:44px;
+    border-radius:13px;
+  }
+  .hb-client-choice h3{
+    font-size:1.08rem;
+  }
+  .hb-client-choice__head p{
+    margin-top:5px;
+    font-size:.78rem;
+    line-height:1.35;
+  }
+  .hb-client-choice__options{
+    grid-template-columns:1fr;
+    gap:10px;
+    padding:13px;
+  }
+  .hb-client-option{
+    min-height:0;
+    padding:13px;
+    border-radius:15px;
+    gap:10px;
+  }
+  .hb-client-option__top{
+    align-items:flex-start;
+  }
+  .hb-client-option__icon{
+    width:38px;
+    height:38px;
+    border-radius:12px;
+  }
+  .hb-client-option__body strong{
+    font-size:.94rem;
+  }
+  .hb-client-option__body span{
+    font-size:.74rem;
+  }
+  .hb-client-option__cta{
+    padding-top:9px;
+  }
+  .hb-reservation-pill{
+    width:100%;
+    justify-content:center;
+    margin-bottom:10px;
+  }
+  .hb-reservation-summary{
+    padding:12px;
+    border-radius:16px;
+  }
+  .hb-reservation-dates{
+    gap:0;
+    margin-bottom:10px;
+  }
+  .hb-date-row{
+    padding:10px 0;
+  }
+  .hb-date-row span{
+    font-size:.75rem;
+  }
+  .hb-date-row strong{
+    font-size:.86rem;
+  }
+  .hb-arrival-card{
+    padding-top:12px;
+  }
+  .hb-arrival-copy{
+    font-size:.75rem;
+  }
+  .hb-arrival-control{
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .hb-arrival-input,
+  .hb-arrival-now{
+    height:50px;
+    border-radius:13px;
+  }
+  .hb-arrival-now{
+    width:100%;
+  }
+  .hb-swal .swal2-actions{
+    width:100%!important;
+    display:grid!important;
+    grid-template-columns:1fr;
+    gap:8px!important;
+    margin-top:10px!important;
+  }
+  .hb-swal .swal2-styled{
+    width:100%!important;
+    margin:0!important;
+    min-height:44px!important;
+    white-space:normal!important;
+  }
+  @keyframes hbModalSheetIn{
+    from{ transform:translateY(102%); }
+    to{ transform:translateY(0); }
+  }
+}
+
+@media (max-width:380px){
+  .habitaciones-view .modern-header .flex.flex-wrap.gap-2{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .habitaciones-view .rgrid{ gap:8px!important; }
+  .habitaciones-view .flip-card,
+  .habitaciones-view .flip-card.flipped{ height:144px!important; }
+  .habitaciones-view .room-card-compact.flipped{ height:144px!important; }
+  .habitaciones-view .rc-num{ font-size:1.48rem!important; }
+  .habitaciones-view .rc-badge{ max-width:62px; }
+}
+
+/* Affordance layer: senales claras sin cambiar la estructura visual. */
+.habitaciones-view .btn-modern,
+.habitaciones-view .filter-btn,
+.habitaciones-view .hb-chip,
+.habitaciones-view .hb-mobile-lg,
+.habitaciones-view .room-card-compact,
+.habitaciones-view .room-quick-view,
+.habitaciones-view .alert-collapse,
+.habitaciones-view .btn-alert,
+.habitaciones-view .flip-card-back .btn-action,
+.habitaciones-view .hb-stat[role="button"]{
+  -webkit-tap-highlight-color:transparent;
+}
+.habitaciones-view .btn-modern:focus-visible,
+.habitaciones-view .filter-btn:focus-visible,
+.habitaciones-view .hb-chip:focus-visible,
+.habitaciones-view .hb-mobile-lg:focus-visible,
+.habitaciones-view .room-card-compact:focus-visible,
+.habitaciones-view .room-quick-view:focus-visible,
+.habitaciones-view .alert-collapse:focus-visible,
+.habitaciones-view .btn-alert:focus-visible,
+.habitaciones-view .flip-card-back .btn-action:focus-visible,
+.habitaciones-view .hb-stat[role="button"]:focus-visible{
+  outline:2px solid color-mix(in srgb,var(--hb-accent) 72%,#fff);
+  outline-offset:3px;
+}
+.habitaciones-view .hb-stat[role="button"]{
+  cursor:pointer;
+  transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.habitaciones-view .hb-stat[role="button"]:hover,
+.habitaciones-view .hb-stat[role="button"]:focus-visible{
+  transform:translateY(-2px);
+  border-color:color-mix(in srgb,var(--sc) 44%,var(--hb-line));
+  box-shadow:var(--hb-shadow);
+}
+.habitaciones-view .hb-stat[role="button"]:active,
+.habitaciones-view .hb-chip:active,
+.habitaciones-view .hb-mobile-lg:active,
+.habitaciones-view .room-card-compact:active,
+.habitaciones-view .room-quick-view:active{
+  transform:translateY(0) scale(.99)!important;
+}
+.habitaciones-view .hb-stat-go{
+  position:absolute;
+  top:12px;
+  right:12px;
+  width:24px;
+  height:24px;
+  display:grid;
+  place-items:center;
+  border:1px solid color-mix(in srgb,var(--sc) 20%,var(--hb-line));
+  border-radius:999px;
+  color:var(--sc);
+  background:color-mix(in srgb,var(--sc) 6%,#fff);
+  font-size:.62rem;
+  opacity:.58;
+  transition:opacity .18s ease, transform .18s ease, background .18s ease;
+}
+.habitaciones-view .hb-stat[role="button"]:hover .hb-stat-go,
+.habitaciones-view .hb-stat[role="button"]:focus-visible .hb-stat-go{
+  opacity:1;
+  transform:translateX(2px);
+  background:#fff;
+}
+.habitaciones-view .hb-chip:hover .hb-chip-ct,
+.habitaciones-view .hb-chip:focus-visible .hb-chip-ct,
+.habitaciones-view .hb-mobile-lg:hover b,
+.habitaciones-view .hb-mobile-lg:focus-visible b{
+  color:var(--hb-primary);
+}
+.habitaciones-view .room-card-compact:not(.flipped):hover .rc-num,
+.habitaciones-view .room-card-compact:not(.flipped):focus-visible .rc-num{
+  color:color-mix(in srgb,var(--room-accent-color) 54%,var(--hb-primary))!important;
+}
+.habitaciones-view .room-card-compact:not(.flipped):hover .rc-hint,
+.habitaciones-view .room-card-compact:not(.flipped):focus-visible .rc-hint{
+  color:var(--room-accent-color);
+}
+.habitaciones-view .room-card-compact:not(.flipped):hover .rc-hint i,
+.habitaciones-view .room-card-compact:not(.flipped):focus-visible .rc-hint i{
+  transform:translateY(-1px);
+}
+.habitaciones-view .flip-card-back .btn-action:active,
+.habitaciones-view .btn-modern:active,
+.habitaciones-view .filter-btn:active,
+.habitaciones-view .btn-alert:active{
+  transform:translateY(0) scale(.99)!important;
+}
+.habitaciones-view .flip-card-back .btn-action i,
+.habitaciones-view .btn-alert i,
+.habitaciones-view .btn-modern i{
+  transition:transform .18s ease;
+}
+.habitaciones-view .flip-card-back .btn-action:hover i,
+.habitaciones-view .flip-card-back .btn-action:focus-visible i,
+.habitaciones-view .btn-alert:hover i,
+.habitaciones-view .btn-alert:focus-visible i{
+  transform:translateX(1px);
+}
+#vistaRapidaContainer .room-quick-view{
+  position:relative;
+}
+#vistaRapidaContainer .room-quick-view::after{
+  content:"";
+  position:absolute;
+  inset:auto 8px 7px auto;
+  width:5px;
+  height:5px;
+  border-right:2px solid rgba(255,255,255,.85);
+  border-bottom:2px solid rgba(255,255,255,.85);
+  transform:rotate(-45deg);
+  opacity:.66;
+  transition:opacity .18s ease, transform .18s ease;
+}
+#vistaRapidaContainer .room-quick-view:hover::after,
+#vistaRapidaContainer .room-quick-view:focus-visible::after{
+  opacity:1;
+  transform:translateX(2px) rotate(-45deg);
+}
+.habitaciones-view .alert-info-text a{
+  font-weight:800;
+  text-underline-offset:3px;
+}
+.habitaciones-view .alert-info-text a:hover,
+.habitaciones-view .alert-info-text a:focus-visible{
+  text-decoration:underline;
+}
+
+/* Estado "No llego": alerta clara sin borde griton ni datos encimados. */
+.habitaciones-view .room-card-compact.has-checkin-vencido{
+  --hb-late:#C9322B;
+  --hb-late-dark:#8F1F1B;
+  --hb-late-soft:#FFF0EC;
+  --hb-late-line:#F2B8AE;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido .flip-card-front{
+  border:1px solid color-mix(in srgb,var(--hb-late) 38%,var(--hb-line))!important;
+  border-left:0!important;
+  background:
+    radial-gradient(circle at 96% 8%, color-mix(in srgb,var(--hb-late) 18%,transparent), transparent 4.8rem),
+    linear-gradient(135deg,#FFFDFC 0%,var(--hb-late-soft) 55%,color-mix(in srgb,var(--hb-accent) 8%,#FFF7F2) 100%)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.74),
+    0 16px 32px -26px color-mix(in srgb,var(--hb-late) 72%,#111827)!important;
+  animation:none!important;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido .flip-card-front::before{
+  content:"";
+  display:block!important;
+  position:absolute;
+  inset:0 auto 0 0;
+  width:6px;
+  height:auto;
+  border-radius:var(--hb-radius) 0 0 var(--hb-radius);
+  background:linear-gradient(180deg,var(--hb-late),var(--hb-late-dark));
+  opacity:1;
+  pointer-events:none;
+  z-index:2;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido .rc-face{
+  padding-top:38px!important;
+  padding-left:21px!important;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido .rc-stripe{
+  display:none!important;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido .checkin-vencido-indicator{
+  top:11px!important;
+  left:16px!important;
+  right:auto!important;
+  min-height:23px!important;
+  padding:4px 9px 4px 8px!important;
+  border:1px solid color-mix(in srgb,var(--hb-late) 22%,#fff)!important;
+  border-radius:999px!important;
+  background:linear-gradient(135deg,var(--hb-late),var(--hb-late-dark))!important;
+  color:#fff!important;
+  font-size:.6rem!important;
+  font-weight:900!important;
+  letter-spacing:.04em!important;
+  line-height:1!important;
+  box-shadow:0 9px 18px -13px color-mix(in srgb,var(--hb-late) 80%,#111827)!important;
+  text-shadow:none!important;
+  animation:none!important;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido .checkin-vencido-indicator i{
+  animation:none!important;
+  font-size:.62rem!important;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido .rc-num{
+  color:color-mix(in srgb,var(--hb-late-dark) 58%,var(--hb-primary))!important;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido .rc-badge{
+  border:1px solid color-mix(in srgb,var(--c-available) 20%,#fff)!important;
+  background:#fff!important;
+  color:#157A52!important;
+  box-shadow:0 8px 18px -16px rgba(21,122,82,.55)!important;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido .rc-guest{
+  width:100%;
+  padding:7px 9px;
+  border:1px solid color-mix(in srgb,var(--hb-late) 18%,#fff);
+  border-radius:12px;
+  background:rgba(255,255,255,.64);
+  color:color-mix(in srgb,var(--hb-late-dark) 58%,var(--hb-primary))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.78);
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido .rc-guest i{
+  color:var(--hb-late)!important;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido .rc-meta{
+  display:block!important;
+  margin-top:5px!important;
+  color:color-mix(in srgb,var(--hb-late-dark) 58%,var(--hb-slate-500))!important;
+  font-weight:750!important;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido .rc-price{
+  color:color-mix(in srgb,var(--hb-late-dark) 48%,var(--hb-primary))!important;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido .rc-hint{
+  color:color-mix(in srgb,var(--hb-late) 70%,var(--hb-slate-400))!important;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped):hover .flip-card-front,
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped):focus-visible .flip-card-front{
+  border-color:color-mix(in srgb,var(--hb-late) 52%,var(--hb-line))!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.78),
+    0 20px 42px -28px color-mix(in srgb,var(--hb-late) 78%,#111827)!important;
+}
+
+@media (max-width:640px){
+  .habitaciones-view .room-card-compact.has-checkin-vencido,
+  .habitaciones-view .room-card-compact.has-checkin-vencido.flipped{
+    height:166px!important;
+  }
+  .habitaciones-view .room-card-compact.has-checkin-vencido .flip-card-front{
+    background:
+      radial-gradient(circle at 100% 0%, color-mix(in srgb,var(--hb-late) 13%,transparent), transparent 4.2rem),
+      linear-gradient(135deg,#FFFDFC 0%,var(--hb-late-soft) 100%)!important;
+  }
+  .habitaciones-view .room-card-compact.has-checkin-vencido .flip-card-front::before{
+    border-radius:15px 0 0 15px;
+  }
+  .habitaciones-view .room-card-compact.has-checkin-vencido .rc-face{
+    padding:33px 9px 10px 15px!important;
+  }
+  .habitaciones-view .room-card-compact.has-checkin-vencido .checkin-vencido-indicator{
+    top:8px!important;
+    left:11px!important;
+    right:auto!important;
+    min-height:20px!important;
+    padding:4px 7px!important;
+    font-size:.5rem!important;
+  }
+  .habitaciones-view .room-card-compact.has-checkin-vencido .rc-num{
+    font-size:1.46rem!important;
+  }
+  .habitaciones-view .room-card-compact.has-checkin-vencido .rc-type{
+    max-width:92px!important;
+  }
+  .habitaciones-view .room-card-compact.has-checkin-vencido .rc-badge{
+    max-width:75px!important;
+    min-height:20px!important;
+  }
+  .habitaciones-view .room-card-compact.has-checkin-vencido .rc-guest{
+    padding:5px 7px!important;
+    border-radius:10px!important;
+    font-size:.64rem!important;
+  }
+  .habitaciones-view .room-card-compact.has-checkin-vencido .rc-meta{
+    display:block!important;
+    max-width:100%;
+    margin-top:4px!important;
+    font-size:.56rem!important;
+    line-height:1.15!important;
+  }
+  .habitaciones-view .room-card-compact.has-checkin-vencido .rc-foot{
+    margin-top:6px!important;
+  }
+}
+
+@media (max-width:380px){
+  .habitaciones-view .room-card-compact.has-checkin-vencido,
+  .habitaciones-view .room-card-compact.has-checkin-vencido.flipped{
+    height:158px!important;
+  }
+  .habitaciones-view .room-card-compact.has-checkin-vencido .rc-face{
+    padding-top:30px!important;
+  }
+  .habitaciones-view .room-card-compact.has-checkin-vencido .rc-meta{
+    display:none!important;
+  }
+}
+
+/* Hoja de acciones del estado "No llego": completa y legible al abrir. */
+.habitaciones-view .flip-card-back > div:first-child{
+  min-width:0;
+}
+.habitaciones-view .flip-card-back .info-item span,
+.habitaciones-view .flip-card-back .btn-action{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.habitaciones-view .flip-card-back .info-item span{
+  white-space:nowrap;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido.flipped{
+  height:238px!important;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-front{
+  opacity:1!important;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back{
+  top:3px!important;
+  bottom:3px!important;
+  padding:13px!important;
+  border:1px solid color-mix(in srgb,var(--hb-late) 28%,rgba(255,255,255,.28))!important;
+  border-radius:var(--hb-radius)!important;
+  background:
+    radial-gradient(circle at 98% 4%, rgba(255,255,255,.18), transparent 4.8rem),
+    linear-gradient(155deg,var(--hb-late) 0%,var(--hb-late-dark) 100%)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    0 18px 36px -28px color-mix(in srgb,var(--hb-late-dark) 84%,#000)!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:flex-start!important;
+  gap:0!important;
+  overflow:hidden!important;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back > div:first-child{
+  min-height:0;
+  overflow-y:auto;
+  padding-right:2px;
+  scrollbar-width:none;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back > div:first-child::-webkit-scrollbar{
+  width:0;
+  height:0;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back h4{
+  margin:0 0 8px!important;
+  padding:0 0 8px!important;
+  border-bottom:1px solid rgba(255,255,255,.22)!important;
+  color:#fff!important;
+  font-size:1.08rem!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  text-shadow:none!important;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back .info-item{
+  min-height:27px!important;
+  margin:0 0 5px!important;
+  padding:6px 8px!important;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:10px;
+  background:rgba(255,255,255,.12);
+  color:rgba(255,255,255,.94)!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:7px!important;
+  font-size:.68rem!important;
+  font-weight:750!important;
+  line-height:1.15!important;
+  text-shadow:none!important;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back .info-item i{
+  width:19px!important;
+  height:19px;
+  display:inline-grid;
+  place-items:center;
+  border-radius:7px;
+  background:rgba(255,255,255,.15);
+  color:#fff!important;
+  flex:none;
+  font-size:.62rem!important;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back .info-item span{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back .action-buttons{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px!important;
+  margin-top:8px!important;
+  padding-top:8px!important;
+  border-top:1px solid rgba(255,255,255,.18);
+  flex:none;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back .btn-action{
+  min-width:0;
+  min-height:34px!important;
+  padding:8px 9px!important;
+  border-radius:11px!important;
+  background:rgba(255,255,255,.14)!important;
+  color:#fff!important;
+  font-size:.66rem!important;
+  font-weight:850!important;
+  line-height:1!important;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back .btn-primary{
+  background:#fff!important;
+  color:var(--hb-late-dark)!important;
+}
+
+@media (max-width:640px){
+  .habitaciones-view .hb-mobile-sheet-content .flip-card-back.back-checkin-vencido{
+    --hb-late:#C9322B;
+    --hb-late-dark:#8F1F1B;
+    --hb-late-soft:#FFF0EC;
+    color:var(--hb-primary)!important;
+  }
+  .habitaciones-view .hb-mobile-sheet-content .flip-card-back.back-checkin-vencido h4{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:10px!important;
+    font-size:1.72rem!important;
+  }
+  .habitaciones-view .hb-mobile-sheet-content .flip-card-back.back-checkin-vencido h4::after{
+    content:"No llego";
+    flex:none;
+    padding:7px 9px;
+    border-radius:999px;
+    background:linear-gradient(135deg,var(--hb-late),var(--hb-late-dark));
+    color:#fff;
+    font-family:var(--hb-sans,'DM Sans',system-ui,sans-serif);
+    font-size:.62rem;
+    font-weight:900;
+    letter-spacing:.05em;
+    line-height:1;
+    text-transform:uppercase;
+  }
+  .habitaciones-view .hb-mobile-sheet-content .flip-card-back.back-checkin-vencido .info-item{
+    border-color:color-mix(in srgb,var(--hb-late) 14%,var(--hb-line-soft))!important;
+    background:color-mix(in srgb,var(--hb-late-soft) 42%,var(--hb-surface-warm))!important;
+  }
+  .habitaciones-view .hb-mobile-sheet-content .flip-card-back.back-checkin-vencido .info-item span{
+    min-width:0;
+    overflow-wrap:anywhere;
+    white-space:normal;
+  }
+  .habitaciones-view .hb-mobile-sheet-content .flip-card-back.back-checkin-vencido .info-item i{
+    color:var(--hb-late)!important;
+  }
+  .habitaciones-view .hb-mobile-sheet-content .flip-card-back.back-checkin-vencido .btn-primary{
+    background:linear-gradient(135deg,var(--hb-late),var(--hb-late-dark))!important;
+  }
+}
+
+/* Color balance: hotel color as accent, operational data in neutral ink. */
+.habitaciones-view{
+  --hb-heading:#111827;
+  --hb-body:#1F2937;
+  --hb-muted:#667085;
+  --hb-line:#E7E1D4;
+  --hb-line-soft:#F3EEE4;
+  --bg-available:#F0F8F3;
+  --bg-occupied:#F8EAE1;
+  --bg-arriving:#F3F2FC;
+  --bg-cleaning:#EFF6FC;
+  --bg-maint:#FBF3E3;
+  --c-occupied:#C2603C;
+  --c-occupied-dark:#9E4A2E;
+}
+
+.habitaciones-view .modern-header h1,
+.habitaciones-view .hb-stat-n,
+.habitaciones-view .rc-num,
+.habitaciones-view .rc-price,
+.habitaciones-view .rc-guest,
+.habitaciones-view .hb-mobile-occupancy-head strong,
+.habitaciones-view .hb-mobile-lg b{
+  color:var(--hb-heading)!important;
+}
+
+.habitaciones-view .modern-header .p-2.rounded-lg{
+  background:linear-gradient(150deg,color-mix(in srgb,var(--hb-primary) 82%,#111827),var(--hb-secondary))!important;
+  box-shadow:0 10px 24px -18px color-mix(in srgb,var(--hb-primary) 72%,transparent)!important;
+}
+
+.habitaciones-view .btn-brand{
+  background:linear-gradient(135deg,var(--hb-primary),var(--hb-secondary))!important;
+  box-shadow:0 10px 22px -14px color-mix(in srgb,var(--hb-primary) 62%,transparent)!important;
+}
+
+.habitaciones-view .btn-brand-outline{
+  color:var(--hb-heading)!important;
+  border-color:color-mix(in srgb,var(--hb-primary) 14%,var(--hb-line))!important;
+}
+
+.habitaciones-view .btn-brand-outline:hover,
+.habitaciones-view .btn-brand-soft:hover,
+.habitaciones-view .filter-btn-today:hover{
+  color:var(--hb-heading)!important;
+  border-color:color-mix(in srgb,var(--hb-accent) 38%,var(--hb-line))!important;
+  background:color-mix(in srgb,var(--hb-accent) 8%,#fff)!important;
+}
+
+.habitaciones-view .btn-brand-soft,
+.habitaciones-view .filter-btn-today{
+  color:var(--hb-heading)!important;
+  background:color-mix(in srgb,var(--hb-primary) 5%,#fff)!important;
+  border-color:color-mix(in srgb,var(--hb-primary) 12%,var(--hb-line))!important;
+}
+
+.habitaciones-view .filter-btn-primary{
+  background:linear-gradient(135deg,var(--hb-primary),var(--hb-secondary))!important;
+  box-shadow:0 8px 18px -12px color-mix(in srgb,var(--hb-primary) 58%,transparent)!important;
+}
+
+.habitaciones-view .hb-stat{
+  border-color:color-mix(in srgb,var(--sc) 9%,var(--hb-line))!important;
+}
+
+.habitaciones-view .hb-stat-ic{
+  background:color-mix(in srgb,var(--sc) 10%,#fff)!important;
+  color:color-mix(in srgb,var(--sc) 82%,var(--hb-heading))!important;
+}
+
+.habitaciones-view .hb-stat.is-filter-active{
+  background:linear-gradient(180deg,#fff,color-mix(in srgb,var(--sc) 5%,#fff))!important;
+  border-color:color-mix(in srgb,var(--sc) 26%,var(--hb-line))!important;
+}
+
+.habitaciones-view .hb-chip.is-active,
+.habitaciones-view .hb-mobile-lg.is-active{
+  background:var(--hb-heading)!important;
+  border-color:var(--hb-heading)!important;
+  color:#fff!important;
+}
+
+.habitaciones-view .hb-mobile-lg.is-active b{
+  color:#fff!important;
+}
+
+.habitaciones-view .flip-card-front{
+  color:var(--hb-body)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 10px 24px -22px rgba(17,24,39,.35)!important;
+}
+
+.habitaciones-view .estado-disponible,
+.habitaciones-view .estado-disponible_fecha{
+  background:linear-gradient(145deg,#F7FCF8,var(--bg-available))!important;
+}
+
+.habitaciones-view .estado-ocupada,
+.habitaciones-view .estado-ocupada_fecha{
+  background:linear-gradient(145deg,#FFF7F3,var(--bg-occupied))!important;
+}
+
+.habitaciones-view .estado-por_llegar,
+.habitaciones-view .estado-doble{
+  background:linear-gradient(145deg,#FBFAFF,var(--bg-arriving))!important;
+}
+
+.habitaciones-view .estado-limpieza,
+.habitaciones-view .estado-limpieza-por-llegar{
+  background:linear-gradient(145deg,#FAFDFF,var(--bg-cleaning))!important;
+}
+
+.habitaciones-view .estado-mantenimiento{
+  background:linear-gradient(145deg,#FFFDF8,var(--bg-maint))!important;
+}
+
+.habitaciones-view .rc-badge{
+  box-shadow:none!important;
+}
+
+.habitaciones-view .rc-guest i,
+.habitaciones-view .rc-hint,
+.habitaciones-view .rc-meta,
+.habitaciones-view .rc-type{
+  color:var(--hb-muted)!important;
+}
+
+.habitaciones-view .flip-card-back{
+  background:
+    radial-gradient(circle at 18% 12%,rgba(255,255,255,.16),transparent 34%),
+    linear-gradient(160deg,color-mix(in srgb,var(--sheet-c,var(--hb-primary)) 76%,#172033),color-mix(in srgb,var(--sheet-c,var(--hb-primary)) 46%,#111827))!important;
+}
+
+.habitaciones-view .flip-card-back .btn-primary{
+  color:var(--hb-heading)!important;
+}
+
+.habitaciones-view .room-card-compact:not(.flipped):hover .rc-num,
+.habitaciones-view .room-card-compact:not(.flipped):focus-visible .rc-num{
+  color:var(--hb-heading)!important;
+}
+
+.habitaciones-view .room-card-compact:not(.flipped):hover .rc-hint,
+.habitaciones-view .room-card-compact:not(.flipped):focus-visible .rc-hint{
+  color:color-mix(in srgb,var(--hb-accent) 74%,var(--hb-heading))!important;
+}
+</style>
+
+<style id="hb-quick-view-final-override">
+    #vistaRapidaModal.hb-quick-modal {
+        background:
+            radial-gradient(860px 360px at 84% 8%, color-mix(in srgb, var(--brand-accent, #BD9441) 18%, transparent), transparent 62%),
+            rgba(13, 18, 29, .66) !important;
+        backdrop-filter: blur(12px) !important;
+    }
+
+    #vistaRapidaModal.hb-quick-modal > .hb-quick-dialog.bg-white {
+        width: min(1180px, calc(100vw - 28px)) !important;
+        max-width: none !important;
+        max-height: min(88vh, 820px) !important;
+        border-radius: 18px !important;
+        overflow: hidden !important;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.9)),
+            color-mix(in srgb, var(--brand-accent, #BD9441) 7%, #fbfaf6) !important;
+        border: 1px solid color-mix(in srgb, var(--brand-accent, #BD9441) 26%, rgba(255,255,255,.22)) !important;
+        box-shadow: 0 34px 90px -44px rgba(0,0,0,.76) !important;
+    }
+
+    #vistaRapidaModal.hb-quick-modal > .hb-quick-dialog > .hb-quick-header {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        min-height: 124px !important;
+        padding: clamp(18px, 2.1vw, 28px) !important;
+        border-radius: 0 !important;
+        background:
+            linear-gradient(135deg, color-mix(in srgb, var(--brand-secondary, #0F172A) 94%, #000), color-mix(in srgb, var(--brand-primary, #1B2746) 82%, var(--brand-secondary, #0F172A))) !important;
+        border-bottom: 0 !important;
+    }
+
+    #vistaRapidaModal.hb-quick-modal h3.hb-quick-title {
+        font-size: clamp(1.55rem, 2.2vw, 2.55rem) !important;
+        line-height: .95 !important;
+        color: #fff !important;
+    }
+
+    #vistaRapidaModal.hb-quick-modal #vistaRapidaContainer.hb-quick-body {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) 270px !important;
+        max-height: calc(88vh - 124px) !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        background:
+            linear-gradient(90deg, color-mix(in srgb, var(--brand-primary, #1B2746) 4%, transparent) 1px, transparent 1px),
+            linear-gradient(180deg, #fffdfa, color-mix(in srgb, var(--brand-accent, #BD9441) 7%, #fbfaf6)) !important;
+        background-size: 28px 28px, auto !important;
+    }
+
+    #vistaRapidaModal.hb-quick-modal #vistaRapidaContainer .hb-quick-grid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)) !important;
+        gap: 10px !important;
+    }
+
+    #vistaRapidaModal.hb-quick-modal #vistaRapidaContainer .room-quick-view.hb-quick-room {
+        background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.88)) !important;
+        color: var(--qv-ink, #172033) !important;
+        border-color: color-mix(in srgb, var(--qv-room) 30%, var(--qv-line, #eadfca)) !important;
+        transform: none !important;
+    }
+
+    #vistaRapidaModal.hb-quick-modal .hb-quick-aside {
+        display: block !important;
+    }
+
+    @media (max-width: 940px) {
+        #vistaRapidaModal.hb-quick-modal {
+            align-items: flex-end !important;
+            padding: 10px !important;
+        }
+
+        #vistaRapidaModal.hb-quick-modal > .hb-quick-dialog.bg-white {
+            width: 100% !important;
+            max-width: none !important;
+            max-height: 92dvh !important;
+            border-radius: 18px 18px 12px 12px !important;
+        }
+
+        #vistaRapidaModal.hb-quick-modal > .hb-quick-dialog > .hb-quick-header {
+            min-height: 112px !important;
+            padding: 16px !important;
+            border-radius: 18px 18px 0 0 !important;
+        }
+
+        #vistaRapidaModal.hb-quick-modal #vistaRapidaContainer.hb-quick-body {
+            grid-template-columns: 1fr !important;
+            max-height: calc(92dvh - 112px) !important;
+            overflow: auto !important;
+            padding: 0 !important;
+        }
+
+        #vistaRapidaModal.hb-quick-modal #vistaRapidaContainer .hb-quick-grid {
+            grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)) !important;
+            gap: 8px !important;
+        }
+    }
+
+    @media (max-width: 520px) {
+        #vistaRapidaModal.hb-quick-modal h3.hb-quick-title {
+            font-size: 1.34rem !important;
+        }
+
+        #vistaRapidaModal.hb-quick-modal #vistaRapidaContainer .hb-quick-grid {
+            grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)) !important;
+        }
+    }
 </style>
 
 <script>
 /* Filtro client-side (sin recargar): chips de estado + tipo + piso + búsqueda, con animación */
-(function(){ window.__hbF = { estado:'', tipo:'', piso:'', q:'' }; })();
+(function(){
+  window.__hbF = { estado:<?= json_encode((string) $estadoActual) ?>, tipo:'', piso:'', q:'' };
+  window.__hbLastHistoryUrl = window.location.href;
+})();
+function hbSyncStats(){
+  var estado = window.__hbF && window.__hbF.estado ? window.__hbF.estado : '';
+  document.querySelectorAll('#hbStats .hb-stat').forEach(function(stat){
+    stat.classList.toggle('is-filter-active', !!estado && (stat.dataset.estado || '') === estado);
+  });
+}
+function hbFilterEstado(estado){
+  if (estado === 'disponible_fecha') return 'disponible';
+  if (estado === 'ocupada_fecha') return 'ocupada';
+  return estado;
+}
+function hbSyncEstadoUrl(estado){
+  if (!window.history || !window.URL || !window.URLSearchParams) return;
+  var url = new URL(window.location.href);
+  if (estado) {
+    url.searchParams.set('estado', estado);
+  } else {
+    url.searchParams.delete('estado');
+  }
+  var nextUrl = url.toString();
+  if (nextUrl === window.__hbLastHistoryUrl) return;
+
+  try {
+    window.history.pushState({ hbEstado: estado || '' }, '', nextUrl);
+    window.__hbLastHistoryUrl = nextUrl;
+  } catch(e) {
+    try {
+      window.history.replaceState({ hbEstado: estado || '' }, '', nextUrl);
+      window.__hbLastHistoryUrl = nextUrl;
+    } catch(_) {}
+  }
+}
+function hbEstadoDesdeUrl(){
+  try {
+    return new URL(window.location.href).searchParams.get('estado') || '';
+  } catch(e) {
+    return '';
+  }
+}
+function hbMarcarEstadoActivo(){
+  document.querySelectorAll('.hb-chip, .hb-mobile-lg').forEach(function(c){
+    c.classList.toggle('is-active', (c.getAttribute('data-estado') || '') === window.__hbF.estado);
+  });
+}
 function hbApplyFilters(){
   var f = window.__hbF;
   var se = document.getElementById('hbSearch'); f.q = (se ? se.value : '').trim().toLowerCase();
@@ -3895,7 +6704,8 @@ function hbApplyFilters(){
   var total = 0;
   grid.querySelectorAll('.flip-card').forEach(function(card){
     var show = true;
-    if(f.estado && (card.dataset.estado||'') !== f.estado) show = false;
+    var cardEstado = hbFilterEstado(card.dataset.estado || '');
+    if(f.estado && cardEstado !== f.estado) show = false;
     if(f.tipo && (card.dataset.tipo||'') !== f.tipo) show = false;
     if(f.piso && String(card.dataset.piso||'') !== String(f.piso)) show = false;
     if(f.q && (card.dataset.q||'').indexOf(f.q) === -1) show = false;
@@ -3915,28 +6725,122 @@ function hbApplyFilters(){
     });
   });
   var nr = document.getElementById('hbNoResults'); if(nr) nr.style.display = total === 0 ? '' : 'none';
+  hbSyncStats();
 }
 function hbSetEstado(btn){
   window.__hbF.estado = btn.getAttribute('data-estado') || '';
-  document.querySelectorAll('.hb-chip').forEach(function(c){ c.classList.toggle('is-active', c === btn); });
+  hbSyncEstadoUrl(window.__hbF.estado);
+  hbMarcarEstadoActivo();
   hbApplyFilters();
   var grid = document.getElementById('habitaciones-grid');
   if(grid){ var y = grid.getBoundingClientRect().top + window.pageYOffset - 88; window.scrollTo({ top: Math.max(0, y), behavior:'smooth' }); }
 }
 function hbClearFilters(){
   window.__hbF = { estado:'', tipo:'', piso:'', q:'' };
+  hbSyncEstadoUrl('');
   var s = document.getElementById('hbSearch'); if(s) s.value = '';
   var t = document.getElementById('hbTipo'); if(t) t.value = '';
   var p = document.getElementById('hbPiso'); if(p) p.value = '';
-  document.querySelectorAll('.hb-chip').forEach(function(c){ c.classList.toggle('is-active', (c.getAttribute('data-estado')||'') === ''); });
+  hbMarcarEstadoActivo();
   hbApplyFilters();
 }
+window.addEventListener('popstate', function(){
+  if (!window.__hbF) return;
+  window.__hbF.estado = hbEstadoDesdeUrl();
+  hbMarcarEstadoActivo();
+  hbApplyFilters();
+  window.__hbLastHistoryUrl = window.location.href;
+});
+document.addEventListener('DOMContentLoaded', function(){
+  if (window.history && window.history.replaceState) {
+    try {
+      window.history.replaceState({ hbEstado: hbEstadoDesdeUrl() }, '', window.location.href);
+    } catch(e) {}
+  }
+  hbApplyFilters();
+});
 </script>
 
 <!-- JavaScript -->
 <script>
 // Función para hacer flip con clic
 // Reemplazar la función toggleFlip con esta versión mejorada
+function hbIsActivationKey(event) {
+    return event && (event.key === 'Enter' || event.key === ' ');
+}
+
+function hbStatKey(event, element) {
+    if (!hbIsActivationKey(event)) return;
+    event.preventDefault();
+    hbSetEstado(element);
+}
+
+function hbCardKey(event, card) {
+    if (!hbIsActivationKey(event)) return;
+    event.preventDefault();
+    toggleFlip(card, event);
+}
+
+function hbPressClick(event, element) {
+    if (!hbIsActivationKey(event)) return;
+    event.preventDefault();
+    element.click();
+}
+
+function hbIsMobileRooms() {
+    return window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
+}
+
+function hbOpenMobileRoomSheet(card) {
+    const back = card.querySelector('.flip-card-back');
+    const sheet = document.getElementById('hbMobileRoomSheet');
+    const backdrop = document.getElementById('hbMobileSheetBack');
+    const content = document.getElementById('hbMobileSheetContent');
+    if (!back || !sheet || !backdrop || !content) return;
+
+    document.querySelectorAll('.flip-card.flipped').forEach(function(openCard) {
+        openCard.classList.remove('flipped');
+    });
+
+    const cardStyles = window.getComputedStyle(card);
+    const sheetColor = (cardStyles.getPropertyValue('--sheet-c') || '').trim();
+    const accentColor = (cardStyles.getPropertyValue('--room-accent-color') || '').trim();
+    sheet.style.setProperty('--sheet-c', sheetColor || accentColor || 'var(--brand-primary,#1B2746)');
+
+    content.innerHTML = '';
+    content.appendChild(back.cloneNode(true));
+    backdrop.classList.add('is-open');
+    sheet.classList.add('is-open');
+    backdrop.setAttribute('aria-hidden', 'false');
+    sheet.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('hb-mobile-sheet-open');
+}
+
+function hbCloseMobileRoomSheet() {
+    const sheet = document.getElementById('hbMobileRoomSheet');
+    const backdrop = document.getElementById('hbMobileSheetBack');
+    const content = document.getElementById('hbMobileSheetContent');
+    if (!sheet || !backdrop) return;
+
+    sheet.classList.remove('is-open');
+    backdrop.classList.remove('is-open');
+    backdrop.setAttribute('aria-hidden', 'true');
+    sheet.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('hb-mobile-sheet-open');
+    window.setTimeout(function() {
+        if (content && !sheet.classList.contains('is-open')) {
+            content.innerHTML = '';
+        }
+    }, 380);
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') hbCloseMobileRoomSheet();
+});
+window.addEventListener('resize', function() {
+    if (!hbIsMobileRooms()) hbCloseMobileRoomSheet();
+});
+
 function toggleFlip(card, event) {
     // Prevenir propagación si se hace clic en un enlace o botón
     if (event) {
@@ -3946,9 +6850,21 @@ function toggleFlip(card, event) {
             return;
         }
     }
-    
-    // Hacer flip en todos los dispositivos
-    card.classList.toggle('flipped');
+
+    if (hbIsMobileRooms()) {
+        if (event) event.preventDefault();
+        hbOpenMobileRoomSheet(card);
+        return;
+    }
+
+    // Mantener una sola habitacion abierta evita solapes en movil.
+    const wasFlipped = card.classList.contains('flipped');
+    document.querySelectorAll('.flip-card.flipped').forEach(function(openCard) {
+        if (openCard !== card) {
+            openCard.classList.remove('flipped');
+        }
+    });
+    card.classList.toggle('flipped', !wasFlipped);
 }
 
 function crearReservacionConFecha(habitacionId, fecha) {
@@ -3956,7 +6872,7 @@ function crearReservacionConFecha(habitacionId, fecha) {
     const fechaEntrada = new Date(fecha + 'T00:00:00');
     const fechaSalida = new Date(fechaEntrada);
     fechaSalida.setDate(fechaSalida.getDate() + 1);
-    
+
     // Función auxiliar para formatear fecha en formato local YYYY-MM-DD
     function formatearFechaLocal(fecha) {
         const año = fecha.getFullYear();
@@ -3964,21 +6880,20 @@ function crearReservacionConFecha(habitacionId, fecha) {
         const dia = String(fecha.getDate()).padStart(2, '0');
         return `${año}-${mes}-${dia}`;
     }
-    
+
     const fechaSalidaStr = formatearFechaLocal(fechaSalida);
-    
-    window.location.href = '<?= url('reservaciones/crear') ?>?' + 
-        'habitacion_id=' + habitacionId + 
+
+    window.location.href = '<?= url('reservaciones/crear') ?>?' +
+        'habitacion_id=' + habitacionId +
         '&fecha_entrada=' + fecha +
         '&fecha_salida=' + fechaSalidaStr;
 }
 
-function crearReservacionRapida(habitacionId) {
-    // Obtener fechas actuales
+function obtenerDatosReservaDefault() {
     const hoy = new Date();
     const manana = new Date(hoy);
     manana.setDate(manana.getDate() + 1);
-    
+
     // Función auxiliar para formatear fecha en formato local YYYY-MM-DD
     function formatearFechaLocal(fecha) {
         const año = fecha.getFullYear();
@@ -3986,39 +6901,105 @@ function crearReservacionRapida(habitacionId) {
         const dia = String(fecha.getDate()).padStart(2, '0');
         return `${año}-${mes}-${dia}`;
     }
-    
-    const fechaEntrada = formatearFechaLocal(hoy);
-    const fechaSalida = formatearFechaLocal(manana);
-    const horaActual = hoy.toTimeString().slice(0, 5);
-    
-    // PRIMER MODAL: Selección de tipo de cliente
+
+    return {
+        fechaEntrada: formatearFechaLocal(hoy),
+        fechaSalida: formatearFechaLocal(manana),
+        horaActual: hoy.toTimeString().slice(0, 5)
+    };
+}
+
+function abrirSelectorNuevaReserva(event) {
+    if (typeof Swal === 'undefined') {
+        return true;
+    }
+
+    if (event) event.preventDefault();
+    mostrarSelectorTipoCliente(null, obtenerDatosReservaDefault());
+    return false;
+}
+
+function crearReservacionRapida(habitacionId) {
+    mostrarSelectorTipoCliente(habitacionId, obtenerDatosReservaDefault());
+}
+
+function mostrarSelectorTipoCliente(habitacionId, datosReserva) {
+    const tieneHabitacion = habitacionId !== null && habitacionId !== undefined && habitacionId !== '';
+    const habitacionArg = tieneHabitacion ? parseInt(habitacionId, 10) : 'null';
+    const fechaEntrada = datosReserva.fechaEntrada;
+    const fechaSalida = datosReserva.fechaSalida;
+    const horaActual = datosReserva.horaActual;
+    const textoAyuda = tieneHabitacion
+        ? 'Elige cómo quieres continuar con la habitación seleccionada.'
+        : 'Elige cómo quieres iniciar esta nueva reservación.';
+
     Swal.fire({
-        title: 'Tipo de Cliente',
+        title: '',
         html: `
-            <div class="text-center">
-                <p class="mb-6 text-gray-600">Seleccione el tipo de cliente para la reservación</p>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <button onclick="seleccionarTipoCliente('nuevo', ${habitacionId}, '${fechaEntrada}', '${fechaSalida}', '${horaActual}')" 
-                            class="p-4 border-2 border-gray-300 rounded-lg brand-hover-card transition-all group">
-                        <i class="fas fa-user-plus text-3xl mb-2 block brand-text group-hover:text-white"></i>
-                        <span class="font-semibold block">Cliente Nuevo</span>
-                        <p class="text-xs mt-1 text-gray-500 group-hover:text-white">Primer hospedaje</p>
+            <div class="hb-client-choice">
+                <div class="hb-client-choice__head">
+                    <span class="hb-client-choice__mark">
+                        <i class="fas fa-calendar-plus"></i>
+                    </span>
+                    <div>
+                        <span class="hb-client-choice__eyebrow">Nueva reservación</span>
+                        <h3>Selecciona el tipo de cliente</h3>
+                        <p>${textoAyuda}</p>
+                    </div>
+                </div>
+
+                <div class="hb-client-choice__options" role="group" aria-label="Tipo de cliente">
+                    <button onclick="seleccionarTipoCliente('nuevo', ${habitacionArg}, '${fechaEntrada}', '${fechaSalida}', '${horaActual}')"
+                            type="button"
+                            class="hb-client-option hb-client-option--new">
+                        <span class="hb-client-option__top">
+                            <span class="hb-client-option__icon">
+                                <i class="fas fa-user-plus"></i>
+                            </span>
+                            <span class="hb-client-option__tag">Registro</span>
+                        </span>
+                        <span class="hb-client-option__body">
+                            <strong>Cliente nuevo</strong>
+                            <span>${tieneHabitacion ? 'Crea el huésped y regresa al flujo de esta habitación.' : 'Registra al huésped antes de armar la reserva.'}</span>
+                        </span>
+                        <span class="hb-client-option__cta">
+                            Continuar
+                            <i class="fas fa-arrow-right"></i>
+                        </span>
                     </button>
-                    <button onclick="seleccionarTipoCliente('existente', ${habitacionId}, '${fechaEntrada}', '${fechaSalida}', '${horaActual}')" 
-                            class="p-4 border-2 border-gray-300 rounded-lg brand-hover-card transition-all group">
-                        <i class="fas fa-user-check text-3xl mb-2 block brand-text group-hover:text-white"></i>
-                        <span class="font-semibold block">Cliente Existente</span>
-                        <p class="text-xs mt-1 text-gray-500 group-hover:text-white">Ya registrado</p>
+                    <button onclick="seleccionarTipoCliente('existente', ${habitacionArg}, '${fechaEntrada}', '${fechaSalida}', '${horaActual}')"
+                            type="button"
+                            class="hb-client-option hb-client-option--existing">
+                        <span class="hb-client-option__top">
+                            <span class="hb-client-option__icon">
+                                <i class="fas fa-user-check"></i>
+                            </span>
+                            <span class="hb-client-option__tag">Disponible</span>
+                        </span>
+                        <span class="hb-client-option__body">
+                            <strong>Cliente registrado</strong>
+                            <span>${tieneHabitacion ? 'Usa un huésped ya creado y completa los datos de llegada.' : 'Busca un huésped existente desde nueva reservación.'}</span>
+                        </span>
+                        <span class="hb-client-option__cta">
+                            Continuar
+                            <i class="fas fa-arrow-right"></i>
+                        </span>
                     </button>
                 </div>
             </div>
         `,
         showConfirmButton: false,
         showCancelButton: true,
+        showCloseButton: true,
         cancelButtonText: 'Cancelar',
         cancelButtonColor: '#6B7280',
-        width: '500px'
+        width: '500px',
+        customClass: {
+            container: 'hb-swal-sheet-container',
+            popup: 'hb-swal hb-swal-client',
+            htmlContainer: 'hb-swal-html',
+            cancelButton: 'hb-swal-cancel'
+        }
     });
 }
 
@@ -4060,9 +7041,9 @@ function entregarRemotoRapido(habitacionId, reservacionId) {
                             <i class="fas fa-user mr-1"></i>
                             Nombre del propietario de la identificación:
                         </p>
-                        <input type="text" 
-                               id="nombre_propietario_ine_rapido" 
-                               class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                        <input type="text"
+                               id="nombre_propietario_ine_rapido"
+                               class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                placeholder="Ej: Juan Pérez García">
                         <p class="text-xs text-gray-500 mt-1">
                             <i class="fas fa-info-circle mr-1"></i>
@@ -4083,13 +7064,13 @@ function entregarRemotoRapido(habitacionId, reservacionId) {
                     Swal.showValidationMessage('Debe seleccionar el tipo de identificación');
                     return false;
                 }
-                
+
                 const nombrePropietario = document.getElementById('nombre_propietario_ine_rapido').value.trim();
                 if (!nombrePropietario) {
                     Swal.showValidationMessage('Debe ingresar el nombre del propietario de la identificación');
                     return false;
                 }
-                
+
                 return {
                     tipo_identificacion: tipoId.value,
                     nombre_propietario: nombrePropietario
@@ -4101,49 +7082,49 @@ function entregarRemotoRapido(habitacionId, reservacionId) {
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '<?= url("reservaciones/entregar-remoto") ?>';
-                
+
                 // CSRF token
                 const csrfInput = document.createElement('input');
                 csrfInput.type = 'hidden';
                 csrfInput.name = 'csrf_token';
                 csrfInput.value = '<?= csrf_token() ?>';
                 form.appendChild(csrfInput);
-                
+
                 // Habitación ID
                 const habInput = document.createElement('input');
                 habInput.type = 'hidden';
                 habInput.name = 'habitacion_id';
                 habInput.value = habitacionId;
                 form.appendChild(habInput);
-                
+
                 // Reservación ID
                 const resInput = document.createElement('input');
                 resInput.type = 'hidden';
                 resInput.name = 'reservacion_id';
                 resInput.value = reservacionId;
                 form.appendChild(resInput);
-                
+
                 // Tipo entrega
                 const tipoInput = document.createElement('input');
                 tipoInput.type = 'hidden';
                 tipoInput.name = 'tipo_entrega';
                 tipoInput.value = 'usuario_actual';
                 form.appendChild(tipoInput);
-                
+
                 // Tipo identificación
                 const tipoIdInput = document.createElement('input');
                 tipoIdInput.type = 'hidden';
                 tipoIdInput.name = 'tipo_identificacion';
                 tipoIdInput.value = result.value.tipo_identificacion;
                 form.appendChild(tipoIdInput);
-                
+
                 // Nombre del propietario de la INE (NUEVO campo v2.0)
                 const nombreInput = document.createElement('input');
                 nombreInput.type = 'hidden';
                 nombreInput.name = 'nombre_propietario_ine';
                 nombreInput.value = result.value.nombre_propietario;
                 form.appendChild(nombreInput);
-                
+
                 document.body.appendChild(form);
                 form.submit();
             }
@@ -4157,17 +7138,17 @@ function entregarRemotoRapido(habitacionId, reservacionId) {
                 case '1': tipoIdentificacion = 'ine'; break;
                 case '2': tipoIdentificacion = 'licencia'; break;
                 case '3': tipoIdentificacion = 'otro'; break;
-                default: 
+                default:
                     alert('Opción inválida');
                     return;
             }
-            
+
             const nombrePropietario = prompt('Ingrese el nombre del propietario de la identificación:');
             if (!nombrePropietario) {
                 alert('Debe ingresar el nombre del propietario');
                 return;
             }
-            
+
             if (confirm('¿Entregar control remoto con ' + tipoIdentificacion + '?')) {
                 const form = document.createElement('form');
                 form.method = 'POST';
@@ -4191,7 +7172,7 @@ function entregarRemotoRapido(habitacionId, reservacionId) {
  /**
  * NUEVA: Entregar controles remotos a múltiples habitaciones
  * Permite entregar remotos a varias habitaciones con una sola INE
- * 
+ *
  * @param {number} reservacionId - ID de la reservación
  * @param {array} habitaciones - Array de objetos con {id, numero} de las habitaciones de la reservación
  */
@@ -4204,7 +7185,7 @@ function entregarRemotosMultiples(reservacionId, habitaciones) {
     // Filtrar solo habitaciones que el hotel tiene el remoto (disponibles para entregar)
     // Esto debería venir del backend, pero lo dejamos como ejemplo
     const habitacionesDisponibles = habitaciones.filter(h => h.hotel_tiene_remoto);
-    
+
     if (habitacionesDisponibles.length === 0) {
         Swal.fire({
             icon: 'info',
@@ -4240,7 +7221,7 @@ function entregarRemotosMultiples(reservacionId, habitaciones) {
                     <div class="max-h-40 overflow-y-auto border rounded-lg p-2">
                         ${habitacionesHTML}
                     </div>
-                    <button type="button" onclick="document.querySelectorAll('input[name=habitaciones_sel]').forEach(cb => cb.checked = true)" 
+                    <button type="button" onclick="document.querySelectorAll('input[name=habitaciones_sel]').forEach(cb => cb.checked = true)"
                             class="mt-2 text-xs text-purple-600 hover:text-purple-800">
                         <i class="fas fa-check-square mr-1"></i>Seleccionar todas
                     </button>
@@ -4277,9 +7258,9 @@ function entregarRemotosMultiples(reservacionId, habitaciones) {
                         <i class="fas fa-user mr-1"></i>
                         Nombre del propietario de la identificación:
                     </p>
-                    <input type="text" 
-                           id="nombre_propietario_ine_multiple" 
-                           class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                    <input type="text"
+                           id="nombre_propietario_ine_multiple"
+                           class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                            placeholder="Ej: Juan Pérez García">
                     <p class="text-xs text-gray-500 mt-1">
                         <i class="fas fa-info-circle mr-1"></i>
@@ -4299,7 +7280,7 @@ function entregarRemotosMultiples(reservacionId, habitaciones) {
             const habitacionesSeleccionadas = Array.from(
                 document.querySelectorAll('input[name="habitaciones_sel"]:checked')
             ).map(cb => cb.value);
-            
+
             if (habitacionesSeleccionadas.length === 0) {
                 Swal.showValidationMessage('Debe seleccionar al menos una habitación');
                 return false;
@@ -4331,21 +7312,21 @@ function entregarRemotosMultiples(reservacionId, habitaciones) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '<?= url("reservaciones/entregar-remotos-multiples") ?>';
-            
+
             // CSRF token
             const csrfInput = document.createElement('input');
             csrfInput.type = 'hidden';
             csrfInput.name = 'csrf_token';
             csrfInput.value = '<?= csrf_token() ?>';
             form.appendChild(csrfInput);
-            
+
             // Reservación ID
             const resInput = document.createElement('input');
             resInput.type = 'hidden';
             resInput.name = 'reservacion_id';
             resInput.value = reservacionId;
             form.appendChild(resInput);
-            
+
             // Habitaciones seleccionadas (como array)
             result.value.habitaciones.forEach(habId => {
                 const habInput = document.createElement('input');
@@ -4354,28 +7335,28 @@ function entregarRemotosMultiples(reservacionId, habitaciones) {
                 habInput.value = habId;
                 form.appendChild(habInput);
             });
-            
+
             // Tipo entrega
             const tipoInput = document.createElement('input');
             tipoInput.type = 'hidden';
             tipoInput.name = 'tipo_entrega';
             tipoInput.value = 'usuario_actual';
             form.appendChild(tipoInput);
-            
+
             // Tipo identificación
             const tipoIdInput = document.createElement('input');
             tipoIdInput.type = 'hidden';
             tipoIdInput.name = 'tipo_identificacion';
             tipoIdInput.value = result.value.tipo_identificacion;
             form.appendChild(tipoIdInput);
-            
+
             // Nombre del propietario de la INE (NUEVO campo v2.0)
             const nombreInput = document.createElement('input');
             nombreInput.type = 'hidden';
             nombreInput.name = 'nombre_propietario_ine';
             nombreInput.value = result.value.nombre_propietario;
             form.appendChild(nombreInput);
-            
+
             document.body.appendChild(form);
             form.submit();
         }
@@ -4385,7 +7366,7 @@ function entregarRemotosMultiples(reservacionId, habitaciones) {
 /**
  * Función para recibir control remoto de MÚLTIPLES habitaciones de una reservación
  * Esta función muestra un modal para seleccionar habitaciones
- * 
+ *
  * @param {number} reservacionId - ID de la reservación
  * @param {array} habitaciones - Array de objetos con {id, numero} de las habitaciones de la reservación
  */
@@ -4398,7 +7379,7 @@ function recibirRemotosMultiples(reservacionId, habitaciones) {
     // Filtrar solo habitaciones que tienen el remoto con el huésped (disponibles para recibir)
     // Esto debería venir del backend, pero lo dejamos como ejemplo
     const habitacionesConRemoto = habitaciones.filter(h => !h.hotel_tiene_remoto);
-    
+
     if (habitacionesConRemoto.length === 0) {
         Swal.fire({
             icon: 'info',
@@ -4434,7 +7415,7 @@ function recibirRemotosMultiples(reservacionId, habitaciones) {
                     <div class="max-h-40 overflow-y-auto border rounded-lg p-2">
                         ${habitacionesHTML}
                     </div>
-                    <button type="button" onclick="document.querySelectorAll('input[name=habitaciones_recibir]').forEach(cb => cb.checked = true)" 
+                    <button type="button" onclick="document.querySelectorAll('input[name=habitaciones_recibir]').forEach(cb => cb.checked = true)"
                             class="mt-2 text-xs text-green-600 hover:text-green-800">
                         <i class="fas fa-check-square mr-1"></i>Seleccionar todas
                     </button>
@@ -4446,8 +7427,8 @@ function recibirRemotosMultiples(reservacionId, habitaciones) {
                         <i class="fas fa-sticky-note mr-1"></i>
                         Notas (opcional):
                     </p>
-                    <textarea id="notas_recepcion_multiple" 
-                              class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" 
+                    <textarea id="notas_recepcion_multiple"
+                              class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                               rows="3"
                               placeholder="Ej: Remotos en buen estado"></textarea>
                 </div>
@@ -4471,7 +7452,7 @@ function recibirRemotosMultiples(reservacionId, habitaciones) {
             const habitacionesSeleccionadas = Array.from(
                 document.querySelectorAll('input[name="habitaciones_recibir"]:checked')
             ).map(cb => cb.value);
-            
+
             if (habitacionesSeleccionadas.length === 0) {
                 Swal.showValidationMessage('Debe seleccionar al menos una habitación');
                 return false;
@@ -4490,21 +7471,21 @@ function recibirRemotosMultiples(reservacionId, habitaciones) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '<?= url("reservaciones/recibir-remotos-multiples") ?>';
-            
+
             // CSRF token
             const csrfInput = document.createElement('input');
             csrfInput.type = 'hidden';
             csrfInput.name = 'csrf_token';
             csrfInput.value = '<?= csrf_token() ?>';
             form.appendChild(csrfInput);
-            
+
             // Reservación ID
             const resInput = document.createElement('input');
             resInput.type = 'hidden';
             resInput.name = 'reservacion_id';
             resInput.value = reservacionId;
             form.appendChild(resInput);
-            
+
             // Habitaciones seleccionadas (como array)
             result.value.habitaciones.forEach(habId => {
                 const habInput = document.createElement('input');
@@ -4513,21 +7494,21 @@ function recibirRemotosMultiples(reservacionId, habitaciones) {
                 habInput.value = habId;
                 form.appendChild(habInput);
             });
-            
+
             // Tipo recepción
             const tipoInput = document.createElement('input');
             tipoInput.type = 'hidden';
             tipoInput.name = 'tipo_recepcion';
             tipoInput.value = 'usuario_actual';
             form.appendChild(tipoInput);
-            
+
             // Notas
             const notasInput = document.createElement('input');
             notasInput.type = 'hidden';
             notasInput.name = 'notas';
             notasInput.value = result.value.notas;
             form.appendChild(notasInput);
-            
+
             document.body.appendChild(form);
             form.submit();
         }
@@ -4536,43 +7517,57 @@ function recibirRemotosMultiples(reservacionId, habitaciones) {
 
 
 function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, horaActual) {
+    const tieneHabitacion = habitacionId !== null && habitacionId !== undefined && habitacionId !== '';
+
+    if (!tieneHabitacion) {
+        Swal.close();
+        if (tipo === 'nuevo') {
+            window.location.href = '<?= url('huespedes/create?return_to=reservacion') ?>';
+        } else {
+            window.location.href = '<?= url('reservaciones/crear') ?>';
+        }
+        return;
+    }
+
     Swal.fire({
         title: 'Datos de la Reservación',
         html: `
-            <div class="text-center">
-                <div class="mb-4">
-                    <div class="inline-flex items-center px-4 py-2 rounded-lg ${tipo === 'existente' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
-                        <i class="fas ${tipo === 'existente' ? 'fa-user-check' : 'fa-user-plus'} mr-2"></i>
-                        <span class="font-semibold">Cliente ${tipo === 'existente' ? 'Existente' : 'Nuevo'}</span>
-                    </div>
+            <div class="hb-reservation-step">
+                <div class="hb-reservation-pill ${tipo === 'existente' ? 'hb-reservation-pill--existing' : 'hb-reservation-pill--new'}">
+                    <i class="fas ${tipo === 'existente' ? 'fa-user-check' : 'fa-user-plus'}"></i>
+                    <span>Cliente ${tipo === 'existente' ? 'Existente' : 'Nuevo'}</span>
                 </div>
-                
-                <div class="bg-gray-50 rounded-lg p-4 text-left text-sm">
-                    <div class="space-y-2 mb-3">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Check-in:</span>
-                            <span class="font-medium">${formatearFechaCorta(new Date(fechaEntrada + 'T00:00:00'))}</span>
+
+                <div class="hb-reservation-summary">
+                    <div class="hb-reservation-dates">
+                        <div class="hb-date-row">
+                            <span>Check-in</span>
+                            <strong>${formatearFechaCorta(new Date(fechaEntrada + 'T00:00:00'))}</strong>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Check-out:</span>
-                            <span class="font-medium">${formatearFechaCorta(new Date(fechaSalida + 'T00:00:00'))}</span>
+                        <div class="hb-date-row">
+                            <span>Check-out</span>
+                            <strong>${formatearFechaCorta(new Date(fechaSalida + 'T00:00:00'))}</strong>
                         </div>
                     </div>
-                    
-                    <div class="pt-3 border-t">
-                        <label class="block text-gray-700 font-medium mb-2">
-                            Hora llegada:
+
+                    <div class="hb-arrival-card">
+                        <label for="horaLlegadaRapida" class="hb-arrival-label">
+                            Hora de llegada
                         </label>
-                        <div class="flex gap-2">
-                            <input type="time" 
-                                   id="horaLlegadaRapida" 
-                                   value="" 
+                        <p class="hb-arrival-copy">Define la hora estimada para preparar la habitación.</p>
+                        <div class="hb-arrival-control">
+                            <input type="time"
+                                   id="horaLlegadaRapida"
+                                   value=""
                                    placeholder="--:--"
-                                   class="flex-1 px-3 py-2 border rounded-lg brand-focus">
-                            <button onclick="document.getElementById('horaLlegadaRapida').value = '${horaActual}'" 
-                                    class="px-3 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors"
+                                   class="hb-arrival-input brand-focus">
+                            <button onclick="document.getElementById('horaLlegadaRapida').value = '${horaActual}'"
+                                    type="button"
+                                    class="hb-arrival-now"
+                                    aria-label="Usar hora actual"
                                     title="Usar hora actual">
-                                <i class="fas fa-clock text-gray-600"></i>
+                                <i class="fas fa-clock"></i>
+                                <span>Ahora</span>
                             </button>
                         </div>
                     </div>
@@ -4583,6 +7578,13 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
         confirmButtonText: `Continuar con Cliente ${tipo === 'existente' ? 'Existente' : 'Nuevo'}`,
         cancelButtonText: 'Volver',
         confirmButtonColor: 'var(--brand-primary, #1B2746)',
+        customClass: {
+            container: 'hb-swal-sheet-container',
+            popup: 'hb-swal hb-swal-arrival',
+            htmlContainer: 'hb-swal-html',
+            confirmButton: 'hb-swal-confirm',
+            cancelButton: 'hb-swal-cancel'
+        },
         preConfirm: () => {
             const horaSeleccionada = document.getElementById('horaLlegadaRapida').value;
             if (!horaSeleccionada) {
@@ -4594,7 +7596,7 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
     }).then((result) => {
         if (result.isConfirmed) {
             const horaSeleccionada = result.value;
-            
+
             // Guardar datos en sessionStorage como respaldo
             const datosReservacion = {
                 habitacionId: habitacionId,
@@ -4602,9 +7604,9 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
                 fechaSalida: fechaSalida,
                 horaLlegada: horaSeleccionada
             };
-            
+
             sessionStorage.setItem('reservacionRapida', JSON.stringify(datosReservacion));
-            
+
             if (tipo === 'nuevo') {
                 // MODIFICADO: Pasar los parámetros por URL para cliente nuevo
                 const params = new URLSearchParams({
@@ -4614,7 +7616,7 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
                     'fecha_salida': fechaSalida,
                     'hora_llegada': horaSeleccionada
                 });
-                
+
                 window.location.href = '<?= url('huespedes/create') ?>?' + params.toString();
             } else {
                 // Cliente existente - ir directo a crear reservación
@@ -4625,7 +7627,7 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
                     hora_llegada: horaSeleccionada,
                     preseleccion: 'true'
                 });
-                
+
                 window.location.href = '<?= url('reservaciones/crear') ?>?' + params.toString();
             }
         } else if (result.dismiss === Swal.DismissReason.cancel) {
@@ -4654,7 +7656,12 @@ function hacerCheckInRapido(reservacionId) {
         cancelButtonColor: '#6B7280',
         confirmButtonText: '<i class="fas fa-sign-in-alt mr-2"></i>Hacer Check-in',
         cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancelar',
-        reverseButtons: true
+        reverseButtons: true,
+        customClass: {
+            popup: 'hb-swal-checkin',
+            confirmButton: 'hb-swal-confirm',
+            cancelButton: 'hb-swal-cancel'
+        }
     }).then((result) => {
         if (result.isConfirmed) {
             window.location.href = '<?= url('reservaciones/ver/') ?>' + reservacionId + '#checkin';
@@ -4677,7 +7684,7 @@ function confirmarCheckOut(reservacionId) {
             Swal.showLoading();
         }
     });
-    
+
     // NUEVA FORMA: Obtener las habitaciones desde el servidor con sus IDs reales
     fetch(`<?= url('api/reservaciones/') ?>${reservacionId}/habitaciones`, {
         method: 'GET',
@@ -4689,7 +7696,7 @@ function confirmarCheckOut(reservacionId) {
     .then(response => response.json())
     .then(data => {
         Swal.close();
-        
+
         if (!data.success || !data.habitaciones || data.habitaciones.length === 0) {
             Swal.fire({
                 icon: 'error',
@@ -4698,9 +7705,9 @@ function confirmarCheckOut(reservacionId) {
             });
             return;
         }
-        
+
         const habitaciones = data.habitaciones;
-        
+
         // Si solo hay 1 habitación, hacer check-out directo
         if (habitaciones.length === 1) {
             checkOutDirectoIndex(reservacionId, habitaciones[0]);
@@ -4712,7 +7719,7 @@ function confirmarCheckOut(reservacionId) {
     .catch(error => {
         console.error('Error al obtener habitaciones:', error);
         Swal.close();
-        
+
         // Si falla el API, usar método de respaldo
         confirmarCheckOutRespaldo(reservacionId);
     });
@@ -4752,16 +7759,16 @@ function mostrarModalCheckOutIndex(reservacionId, habitaciones) {
     let habitacionesHTML = habitaciones.map(hab => {
         // Intentar obtener el ID en este orden de prioridad:
         const habId = hab.reservacion_habitacion_id || hab.habitacion_id || hab.id || hab.rel_id;
-        
+
         // Si no hay ID, alertar
         if (!habId || habId === 'undefined') {
             console.error('⚠️ Habitación sin ID válido:', hab);
         }
-        
+
         return `
         <label class="flex items-center p-3 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer border-2 border-transparent hover:border-orange-400 transition-all">
-            <input 
-                type="checkbox" 
+            <input
+                type="checkbox"
                 value="${habId}"
                 class="checkbox-habitacion-index mr-3 w-5 h-5 text-orange-600 rounded focus:ring-orange-500"
                 checked
@@ -4774,7 +7781,7 @@ function mostrarModalCheckOutIndex(reservacionId, habitaciones) {
         </label>
         `;
     }).join('');
-    
+
     Swal.fire({
         title: 'Seleccionar Habitaciones',
         html: `
@@ -4786,12 +7793,12 @@ function mostrarModalCheckOutIndex(reservacionId, habitaciones) {
                     ${habitacionesHTML}
                 </div>
                 <div class="flex gap-2 mb-4">
-                    <button 
+                    <button
                         onclick="document.querySelectorAll('.checkbox-habitacion-index').forEach(cb => cb.checked = true)"
                         class="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
                         Todas
                     </button>
-                    <button 
+                    <button
                         onclick="document.querySelectorAll('.checkbox-habitacion-index').forEach(cb => cb.checked = false)"
                         class="text-xs px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">
                         Ninguna
@@ -4819,15 +7826,15 @@ function mostrarModalCheckOutIndex(reservacionId, habitaciones) {
             const seleccionadas = Array.from(checkboxes).map(cb => {
                 const valor = cb.value;
                 const numero = parseInt(valor, 10);
-                
+
                 return numero;
             }).filter(id => !isNaN(id) && id > 0); // Filtrar NaN y valores inválidos
-            
+
             if (seleccionadas.length === 0) {
                 Swal.showValidationMessage('Debes seleccionar al menos una habitación');
                 return false;
             }
-            
+
             return seleccionadas;
         }
     }).then((result) => {
@@ -4854,13 +7861,13 @@ function ejecutarCheckOutRapido(reservacionId) {
             Swal.showLoading();
         }
     });
-    
+
     const formData = new FormData();
     formData.append('csrf_token', '<?= csrf_token() ?>');
     formData.append('hora_salida', new Date().toTimeString().slice(0, 8));
-    
+
     const endpoint = `<?= url('reservaciones/check-out-rapido/') ?>${reservacionId}`;
-    
+
     fetch(endpoint, {
         method: 'POST',
         body: formData,
@@ -4873,20 +7880,20 @@ function ejecutarCheckOutRapido(reservacionId) {
             window.location.reload();
             return null;
         }
-        
+
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
             return response.json();
         }
-        
+
         window.location.reload();
         return null;
     })
     .then(data => {
         if (data === null) return;
-        
+
         Swal.close();
-        
+
         if (data.success) {
             Swal.fire({
                 icon: 'success',
@@ -4922,7 +7929,7 @@ function obtenerInfoReservacion(reservacionId) {
             Swal.showLoading();
         }
     });
-    
+
     // Hacer petición para obtener las habitaciones de la reservación
     fetch(`<?= url('reservaciones/ver/') ?>${reservacionId}`)
         .then(response => response.text())
@@ -4930,10 +7937,10 @@ function obtenerInfoReservacion(reservacionId) {
             // Parsear el HTML para extraer información de habitaciones
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
-            
+
             // Buscar información de habitaciones en el HTML
             const habitacionesInfo = extraerHabitacionesDelHTML(doc, reservacionId);
-            
+
             if (habitacionesInfo.length === 0) {
                 Swal.fire({
                     icon: 'error',
@@ -4942,7 +7949,7 @@ function obtenerInfoReservacion(reservacionId) {
                 });
                 return;
             }
-            
+
             // Si solo hay 1 habitación, hacer check-out directo
             if (habitacionesInfo.length === 1) {
                 checkOutDirectoIndex(reservacionId, habitacionesInfo[0]);
@@ -4961,16 +7968,16 @@ function obtenerInfoReservacion(reservacionId) {
 // Extraer información de habitaciones del HTML
 function extraerHabitacionesDelHTML(doc, reservacionId) {
     const habitaciones = [];
-    
+
     // Buscar en la tabla o lista de habitaciones
     const habitacionesElements = doc.querySelectorAll('[data-habitacion-id], .habitacion-item, tr[data-habitacion]');
-    
+
     if (habitacionesElements.length > 0) {
         habitacionesElements.forEach((el, index) => {
             const id = el.dataset.habitacionId || el.dataset.habitacion || (index + 1);
             const numero = el.textContent.match(/\d+/)?.[0] || (index + 1);
             const tipo = el.textContent.match(/(Sencilla|Doble|Triple|Suite|Cuádruple)/i)?.[0] || 'Standard';
-            
+
             habitaciones.push({
                 id: parseInt(id),
                 numero: numero,
@@ -4978,7 +7985,7 @@ function extraerHabitacionesDelHTML(doc, reservacionId) {
             });
         });
     }
-    
+
     // Si no encontramos habitaciones en el HTML, usar datos del checkout actual
     if (habitaciones.length === 0) {
         // Buscar en los datos de checkout del día
@@ -4987,7 +7994,7 @@ function extraerHabitacionesDelHTML(doc, reservacionId) {
             const parent = checkoutElement.closest('.p-2, .flex');
             const habitacionesText = parent?.querySelector('.text-xs')?.textContent || '';
             const numeros = habitacionesText.match(/\d+/g) || [];
-            
+
             numeros.forEach((num, index) => {
                 habitaciones.push({
                     id: index + 1, // ID temporal
@@ -4997,15 +8004,15 @@ function extraerHabitacionesDelHTML(doc, reservacionId) {
             });
         }
     }
-    
+
     return habitaciones;
 }
 
 function checkOutDirectoIndex(reservacionId, habitacionInfo) {
-    const mensajeHabitacion = habitacionInfo 
+    const mensajeHabitacion = habitacionInfo
         ? `<p class="mb-2">Habitación: <strong>${habitacionInfo.numero || habitacionInfo.habitacion_numero}</strong></p>`
         : '';
-    
+
     Swal.fire({
         title: '¿Realizar Check-out?',
         html: `
@@ -5044,18 +8051,18 @@ function ejecutarCheckOutIndex(reservacionId, habitacionesIds) {
             Swal.showLoading();
         }
     });
-    
+
     const formData = new FormData();
     formData.append('csrf_token', '<?= csrf_token() ?>');
     formData.append('hora_salida', new Date().toTimeString().slice(0, 8));
-    
+
     // ✅ CORRECCIÓN: Agregar habitaciones de forma más robusta
     if (habitacionesIds && Array.isArray(habitacionesIds) && habitacionesIds.length > 0) {
         habitacionesIds.forEach((id, index) => {
             formData.append('habitaciones[]', id);
         });
     }
-    
+
     // Usar el endpoint de check-out parcial
     const endpoint = `<?= url('reservaciones/check-out-parcial/') ?>${reservacionId}`;
 
@@ -5070,18 +8077,18 @@ function ejecutarCheckOutIndex(reservacionId, habitacionesIds) {
             window.location.reload();
             return null;
         }
-        
+
         if (!response.ok) {
             throw new Error(`Error HTTP ${response.status}`);
         }
-        
+
         // Intentar parsear como JSON
         const contentType = response.headers.get('content-type');
 
         if (contentType && contentType.includes('application/json')) {
             return response.json();
         }
-        
+
         // Si no es JSON, es un redirect exitoso o HTML
         window.location.reload();
         return null;
@@ -5106,7 +8113,7 @@ function ejecutarCheckOutIndex(reservacionId, habitacionesIds) {
                     </div>
                 </div>
             `;
-            
+
             Swal.fire({
                 icon: 'success',
                 title: 'Check-out Exitoso',
@@ -5154,7 +8161,7 @@ function liberarHabitacion(id) {
                     Swal.showLoading();
                 }
             });
-            
+
             // Hacer la petición AJAX
             fetch('<?= url('habitaciones/') ?>' + id + '/liberar', {
                 method: 'POST',
@@ -5218,19 +8225,19 @@ function finalizarMantenimiento(id) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '<?= url('habitaciones/') ?>' + id + '/mantenimiento';
-            
+
             const csrfToken = document.createElement('input');
             csrfToken.type = 'hidden';
             csrfToken.name = 'csrf_token';
             csrfToken.value = '<?= csrf_token() ?>';
             form.appendChild(csrfToken);
-            
+
             const accion = document.createElement('input');
             accion.type = 'hidden';
             accion.name = 'accion';
             accion.value = 'finalizar';
             form.appendChild(accion);
-            
+
             document.body.appendChild(form);
             form.submit();
         }
@@ -5268,42 +8275,42 @@ function recibirRemotoRapido(habitacionId, reservacionId) {
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '<?= url("reservaciones/recibir-remoto") ?>';
-                
+
                 // CSRF token
                 const csrfInput = document.createElement('input');
                 csrfInput.type = 'hidden';
                 csrfInput.name = 'csrf_token';
                 csrfInput.value = '<?= csrf_token() ?>';
                 form.appendChild(csrfInput);
-                
+
                 // Habitación ID
                 const habInput = document.createElement('input');
                 habInput.type = 'hidden';
                 habInput.name = 'habitacion_id';
                 habInput.value = habitacionId;
                 form.appendChild(habInput);
-                
+
                 // Reservación ID
                 const resInput = document.createElement('input');
                 resInput.type = 'hidden';
                 resInput.name = 'reservacion_id';
                 resInput.value = reservacionId;
                 form.appendChild(resInput);
-                
+
                 // Tipo recepción
                 const tipoInput = document.createElement('input');
                 tipoInput.type = 'hidden';
                 tipoInput.name = 'tipo_recepcion';
                 tipoInput.value = 'usuario_actual';
                 form.appendChild(tipoInput);
-                
+
                 // Notas
                 const notasInput = document.createElement('input');
                 notasInput.type = 'hidden';
                 notasInput.name = 'notas';
                 notasInput.value = 'Devolución rápida desde índice';
                 form.appendChild(notasInput);
-                
+
                 document.body.appendChild(form);
                 form.submit();
             }
@@ -5341,14 +8348,14 @@ function entregarLlaveRapida(habitacionId, reservacionId) {
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '<?= url("reservaciones/entregar-llave") ?>';
-                
+
                 form.innerHTML = `
                     <?= csrf_field() ?>
                     <input type="hidden" name="habitacion_id" value="${habitacionId}">
                     <input type="hidden" name="reservacion_id" value="${reservacionId}">
                     <input type="hidden" name="tipo_entrega" value="usuario_actual">
                 `;
-                
+
                 document.body.appendChild(form);
                 form.submit();
             }
@@ -5409,13 +8416,13 @@ function seleccionarTodasLimpieza(seleccionar) {
 function actualizarContadorLimpieza() {
     const checkboxes = document.querySelectorAll('.checkbox-limpieza:checked');
     const contador = checkboxes.length;
-    
+
     // ✅ VALIDAR que el elemento existe antes de modificarlo
     const contadorElement = document.getElementById('contadorSeleccionadas');
     if (contadorElement) {
         contadorElement.textContent = contador;
     }
-    
+
     // Habilitar/deshabilitar botón de confirmar
     const btnMarcar = document.getElementById('btnMarcarLimpias');
     if (btnMarcar) {
@@ -5448,7 +8455,7 @@ function marcarHabitacionesLimpias() {
         });
         return;
     }
-    
+
     // Mostrar loading
     Swal.fire({
         title: 'Procesando...',
@@ -5459,14 +8466,14 @@ function marcarHabitacionesLimpias() {
             Swal.showLoading();
         }
     });
-    
+
     // Enviar petición al servidor
     const formData = new FormData();
     formData.append('csrf_token', '<?= csrf_token() ?>');
     habitacionesIds.forEach(id => {
         formData.append('habitaciones_ids[]', id);
     });
-    
+
     const url = '<?= url('habitaciones/liberar-multiples') ?>';
 
     fetch(url, {
@@ -5498,7 +8505,7 @@ function marcarHabitacionesLimpias() {
                             <i class="fas fa-check-circle text-4xl text-green-600"></i>
                         </div>
                         <p class="text-lg mb-2">
-                            <strong>${result.data.actualizadas}</strong> habitación${result.data.actualizadas > 1 ? 'es' : ''} 
+                            <strong>${result.data.actualizadas}</strong> habitación${result.data.actualizadas > 1 ? 'es' : ''}
                             marcada${result.data.actualizadas > 1 ? 's' : ''} como disponible${result.data.actualizadas > 1 ? 's' : ''}
                         </p>
                         ${result.data.habitaciones ? `
@@ -5514,7 +8521,7 @@ function marcarHabitacionesLimpias() {
             }).then(() => {
                 location.reload();
             });
-            
+
             cerrarModalLimpieza();
         } else {
             throw new Error(result.data.message || 'Error desconocido en el servidor');
@@ -5531,7 +8538,7 @@ function marcarHabitacionesLimpias() {
         });
     });
 }
-<?php 
+<?php
 $hayLimpieza = false;
 foreach ($habitaciones as $h) {
     if ($h['estado'] == 'limpieza') {
@@ -5560,18 +8567,18 @@ const countdown = setInterval(() => {
 document.addEventListener('DOMContentLoaded', function() {
     let tooltipTimeout;
     const tooltip = document.getElementById('roomTooltip');
-    
+
     // Solo inicializar si existe el tooltip
     if (!tooltip) return;
-    
+
     // Añadir eventos a todas las habitaciones de vista rápida
     document.querySelectorAll('.room-quick-view').forEach(room => {
         room.addEventListener('mouseenter', function(e) {
             clearTimeout(tooltipTimeout);
-            
+
             try {
                 const data = JSON.parse(this.getAttribute('data-tooltip'));
-                
+
                 // Construir contenido del tooltip con más información
                 let tooltipContent = `
                     <div class="tooltip-header">
@@ -5595,7 +8602,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span class="text-green-600 font-bold">${data.precio}</span>
                     </div>
                 `;
-                
+
                 // Información adicional según el estado
                 if (data.huesped) {
                     tooltipContent += `
@@ -5605,7 +8612,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <div class="font-semibold">${data.huesped}</div>
                             </div>
                     `;
-                    
+
                     if (data.telefono) {
                         tooltipContent += `
                             <div class="text-xs flex items-center gap-1 mt-1">
@@ -5614,7 +8621,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         `;
                     }
-                    
+
                     if (data.fechas) {
                         tooltipContent += `
                             <div class="text-xs mt-1 flex items-center gap-1">
@@ -5623,7 +8630,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         `;
                     }
-                    
+
                     if (data.hora_llegada) {
                         tooltipContent += `
                             <div class="text-xs mt-1 flex items-center gap-1">
@@ -5632,7 +8639,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         `;
                     }
-                    
+
                     if (data.noches) {
                         tooltipContent += `
                             <div class="text-xs text-gray-500 mt-1">
@@ -5640,10 +8647,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         `;
                     }
-                    
+
                     tooltipContent += `</div>`;
                 }
-                
+
                 // Indicadores especiales
                 if (data.estado === 'Limpieza') {
                     tooltipContent += `
@@ -5652,7 +8659,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     `;
                 }
-                
+
                 if (data.estado === 'Mantenimiento') {
                     tooltipContent += `
                         <div class="text-xs text-amber-600 mt-2 font-medium">
@@ -5660,52 +8667,52 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     `;
                 }
-                
+
                 tooltip.innerHTML = tooltipContent;
-                
+
                 // Posicionar tooltip
                 const rect = this.getBoundingClientRect();
-                
+
                 // Calcular posición inicial
                 let top = rect.top - 10;
                 let left = rect.left + (rect.width / 2);
-                
+
                 // Mostrar temporalmente para obtener dimensiones
                 tooltip.style.opacity = '0';
                 tooltip.style.display = 'block';
-                
+
                 const tooltipRect = tooltip.getBoundingClientRect();
-                
+
                 // Ajustar posición final
                 top = rect.top - tooltipRect.height - 10;
                 left = left - (tooltipRect.width / 2);
-                
+
                 // Verificar límites de pantalla
                 if (top < 10) {
                     top = rect.bottom + 10;
                 }
-                
+
                 if (left < 10) {
                     left = 10;
                 } else if (left + tooltipRect.width > window.innerWidth - 10) {
                     left = window.innerWidth - tooltipRect.width - 10;
                 }
-                
+
                 tooltip.style.top = top + 'px';
                 tooltip.style.left = left + 'px';
                 tooltip.style.display = '';
                 tooltip.style.opacity = '';
-                
+
                 // Mostrar tooltip con animación
                 tooltipTimeout = setTimeout(() => {
                     tooltip.classList.add('show');
                 }, 50);
-                
+
             } catch (error) {
                 console.error('Error al procesar tooltip:', error);
             }
         });
-        
+
         room.addEventListener('mouseleave', function() {
             clearTimeout(tooltipTimeout);
             if (tooltip) {
