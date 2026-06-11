@@ -1,542 +1,1608 @@
-<!-- Detalle de Huésped -->
-<div class="p-6">
-    
-    <!-- Agregar antes de la sección de habitaciones -->
-<?php 
-echo "<!-- DEBUG HABITACIONES: ";
-echo "Count: " . count($habitaciones ?? []);
-echo " | Data: ";
-var_dump($habitaciones);
-echo " -->";
+<?php
+/**
+ * Vista de detalle de huesped.
+ * Rediseño operativo tipo expediente del huésped.
+ */
+
+$huesped = $huesped ?? [];
+$vehiculos = $vehiculos ?? [];
+$reservaciones = $reservaciones ?? [];
+$total_reservaciones = (int)($total_reservaciones ?? 0);
+$total_gastado = (float)($total_gastado ?? 0);
+$gasto_promedio = $total_reservaciones > 0 ? $total_gastado / $total_reservaciones : 0;
+$vehiculos_count = count($vehiculos);
+$reservaciones_count = count($reservaciones);
+$nombre_huesped = trim((string)($huesped['nombre_completo'] ?? 'Huesped'));
+$inicial_huesped = function_exists('mb_substr') && function_exists('mb_strtoupper')
+    ? mb_strtoupper(mb_substr($nombre_huesped !== '' ? $nombre_huesped : 'H', 0, 1, 'UTF-8'), 'UTF-8')
+    : strtoupper(substr($nombre_huesped !== '' ? $nombre_huesped : 'H', 0, 1));
+$procedencia_estado = trim((string)($huesped['procedencia_estado'] ?? ''));
+$procedencia_ciudad = trim((string)($huesped['procedencia_ciudad'] ?? ''));
+$procedencia_label = $procedencia_estado !== '' ? $procedencia_estado : 'No especificada';
+if ($procedencia_ciudad !== '') {
+    $procedencia_label .= ' · ' . $procedencia_ciudad;
+}
+$telefono = trim((string)($huesped['telefono'] ?? ''));
+$email = trim((string)($huesped['email'] ?? ''));
+$contacto_label = $telefono !== '' || $email !== '' ? 'Contacto disponible' : 'Contacto incompleto';
+$ultima_visita_label = $ultima_visita ? format_date($ultima_visita) : 'Sin visitas completadas';
+$es_cliente_frecuente = $total_reservaciones >= 3;
+$estacionamientos = class_exists('HuespedVehiculo') ? HuespedVehiculo::getEstacionamientos() : ['coches' => 'Coches'];
+
+if (!function_exists('guest_detail_safe')) {
+    function guest_detail_safe($value, $fallback = '-') {
+        $text = trim((string)($value ?? ''));
+        return htmlspecialchars($text !== '' ? $text : $fallback, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+if (!function_exists('guest_detail_status')) {
+    function guest_detail_status($estado) {
+        $map = [
+            'confirmada' => ['label' => 'Confirmada', 'color' => '#2563EB', 'soft' => '#EEF4FF'],
+            'checked_in' => ['label' => 'Check-in', 'color' => '#148653', 'soft' => '#E8F7EF'],
+            'checked_out' => ['label' => 'Check-out', 'color' => '#64748B', 'soft' => '#F1F5F9'],
+            'completada' => ['label' => 'Completada', 'color' => '#148653', 'soft' => '#E8F7EF'],
+            'cancelada' => ['label' => 'Cancelada', 'color' => '#B83D35', 'soft' => '#FFF0EF'],
+        ];
+        return $map[$estado] ?? ['label' => 'Sin estado', 'color' => '#64748B', 'soft' => '#F1F5F9'];
+    }
+}
+
+if (!function_exists('guest_detail_json_attr')) {
+    function guest_detail_json_attr($value) {
+        return htmlspecialchars(json_encode($value, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8');
+    }
+}
 ?>
-    <!-- Header con navegación -->
-    <div class="mb-6">
-        <div class="flex items-center text-sm text-gray-600 mb-2">
-            <a href="<?= url('huespedes') ?>" class="hover:text-hotel-brown">Huéspedes</a>
-            <i class="fas fa-chevron-right mx-2 text-xs"></i>
-            <span><?= htmlspecialchars($huesped['nombre_completo']) ?></span>
-        </div>
-        
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <h1 class="text-3xl font-bold text-gray-800 font-playfair">
-                <?= htmlspecialchars($huesped['nombre_completo']) ?>
-            </h1>
-            
-            <div class="flex gap-2">
-                <a href="<?= url('huespedes/' . $huesped['id'] . '/edit') ?>" 
-                   class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition duration-200">
-                    <i class="fas fa-edit mr-2"></i>Editar
-                </a>
-              <!-- Botón para nueva reservación con huésped preseleccionado -->
-<a href="<?= url('reservaciones/crear?huesped_id=' . $huesped['id']) ?>" 
-   class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-hotel-gold to-yellow-600 text-white font-semibold rounded-xl hover:shadow-lg transform hover:scale-105 transition-all">
-    <i class="fas fa-calendar-plus mr-2"></i>
-    Nueva Reservación
-</a>
-                <a href="<?= url('huespedes') ?>" 
-                   class="bg-hotel-brown text-white px-4 py-2 rounded-lg hover:bg-hotel-brown-dark transition duration-200">
-                    <i class="fas fa-arrow-left mr-2"></i>Volver
-                </a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Columna principal - Información y Reservaciones -->
-        <div class="lg:col-span-2 space-y-6">
-            <!-- Información del Huésped -->
-            <div class="bg-white rounded-lg shadow-lg p-6">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <i class="fas fa-user mr-2 text-hotel-brown"></i>
-                    Información Personal
-                </h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Contacto -->
-                    <div>
-                        <h3 class="font-semibold text-gray-700 mb-3">Contacto</h3>
-                        <div class="space-y-2">
-                            <div class="flex items-center">
-                                <i class="fas fa-phone text-gray-400 w-5"></i>
-                                <span class="ml-3">
-                                    <?= htmlspecialchars($huesped['telefono'] ?: 'No registrado') ?>
-                                </span>
-                            </div>
-                            <div class="flex items-center">
-                                <i class="fas fa-envelope text-gray-400 w-5"></i>
-                                <span class="ml-3">
-                                    <?= htmlspecialchars($huesped['email'] ?: 'No registrado') ?>
-                                </span>
-                            </div>
-                        </div>
+
+<style>
+.guest-detail-view {
+    --gd-primary: var(--brand-primary, #1B2746);
+    --gd-secondary: var(--brand-secondary, #0F172A);
+    --gd-accent: var(--brand-accent, #BD9441);
+    --gd-bg: color-mix(in srgb, var(--gd-accent) 9%, #F7F2EA);
+    --gd-surface: rgba(255, 253, 248, .92);
+    --gd-surface-solid: #FFFDF8;
+    --gd-line: color-mix(in srgb, var(--gd-primary) 13%, #E9DDCF);
+    --gd-line-soft: color-mix(in srgb, var(--gd-primary) 8%, #EFE6DA);
+    --gd-text: #172033;
+    --gd-muted: #728096;
+    --gd-success: #148653;
+    --gd-danger: #B83D35;
+    min-height: 100vh;
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--gd-primary) 5%, transparent) 0 1px, transparent 1px 30px),
+        radial-gradient(circle at 88% 7%, color-mix(in srgb, var(--gd-accent) 22%, transparent), transparent 30rem),
+        linear-gradient(180deg, var(--gd-bg), #FBFAF6 48%, #F3ECE2);
+    color: var(--gd-text);
+}
+
+.guest-detail-shell {
+    width: min(1500px, calc(100% - 30px));
+    margin: 0 auto;
+    padding: 26px 0 46px;
+}
+
+.guest-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 12px;
+    color: var(--gd-muted);
+    font-size: .84rem;
+    font-weight: 800;
+}
+
+.guest-breadcrumb a {
+    color: var(--gd-primary);
+}
+
+.guest-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(270px, 360px);
+    gap: 18px;
+    align-items: stretch;
+    margin-bottom: 16px;
+}
+
+.guest-identity-card {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 18px;
+    align-items: center;
+    border: 1px solid color-mix(in srgb, var(--gd-accent) 26%, transparent);
+    border-radius: 26px;
+    background:
+        radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--gd-accent) 26%, transparent), transparent 18rem),
+        linear-gradient(135deg, rgba(255,253,248,.97), rgba(248,241,230,.92));
+    box-shadow: 0 26px 72px -52px rgba(15, 23, 42, .68);
+    padding: clamp(20px, 3vw, 32px);
+}
+
+.guest-identity-card::after {
+    content: "";
+    position: absolute;
+    inset: auto 24px 0 auto;
+    width: 220px;
+    height: 3px;
+    border-radius: 999px 999px 0 0;
+    background: linear-gradient(90deg, transparent, var(--gd-accent), var(--gd-primary));
+    opacity: .72;
+}
+
+.guest-avatar {
+    width: clamp(76px, 10vw, 118px);
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    border-radius: 24px;
+    background:
+        linear-gradient(145deg, var(--gd-primary), color-mix(in srgb, var(--gd-primary) 78%, #000000));
+    color: #FFFDF8;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(2.1rem, 5vw, 4.4rem);
+    font-weight: 800;
+    box-shadow: 0 20px 44px -28px rgba(15, 23, 42, .72);
+}
+
+.guest-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: color-mix(in srgb, var(--gd-accent) 76%, var(--gd-primary));
+    font-size: .72rem;
+    font-weight: 950;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.guest-identity-card h1 {
+    margin: 9px 0 8px;
+    color: var(--gd-primary);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(2.25rem, 5vw, 5rem);
+    line-height: .91;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-wrap: balance;
+}
+
+.guest-identity-card p {
+    max-width: 68ch;
+    margin: 0;
+    color: var(--gd-muted);
+    font-weight: 700;
+    line-height: 1.55;
+}
+
+.guest-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.guest-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid color-mix(in srgb, var(--gd-primary) 12%, transparent);
+    border-radius: 12px;
+    background: rgba(255,255,255,.68);
+    color: var(--gd-primary);
+    padding: 8px 10px;
+    font-size: .8rem;
+    font-weight: 900;
+}
+
+.guest-action-rail {
+    display: grid;
+    gap: 10px;
+    align-content: center;
+    border: 1px solid var(--gd-line);
+    border-radius: 22px;
+    background: rgba(255,253,248,.88);
+    box-shadow: 0 20px 54px -42px rgba(15, 23, 42, .58);
+    padding: 16px;
+}
+
+.guest-action {
+    min-height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border: 1px solid var(--gd-line);
+    border-radius: 14px;
+    background: #FFFFFF;
+    color: var(--gd-primary);
+    padding: 0 14px;
+    font-weight: 900;
+    transition: transform .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.guest-action i:last-child {
+    color: color-mix(in srgb, var(--gd-primary) 38%, #FFFFFF);
+}
+
+.guest-action:hover {
+    transform: translateY(-1px);
+    background: color-mix(in srgb, var(--gd-accent) 8%, #FFFFFF);
+    border-color: color-mix(in srgb, var(--gd-accent) 36%, var(--gd-line));
+}
+
+.guest-action.primary {
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--gd-primary), color-mix(in srgb, var(--gd-primary) 78%, #000000));
+    color: #FFFFFF;
+}
+
+.guest-action.primary i:last-child {
+    color: rgba(255,255,255,.7);
+}
+
+.guest-metrics-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.guest-metric {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--gd-line);
+    border-radius: 18px;
+    background: #FFFFFF;
+    padding: 16px;
+    box-shadow: 0 14px 34px -30px rgba(15,23,42,.46);
+}
+
+.guest-metric::after {
+    content: "";
+    position: absolute;
+    inset: auto 16px 0;
+    height: 3px;
+    border-radius: 999px 999px 0 0;
+    background: var(--metric-color, var(--gd-accent));
+    opacity: .78;
+}
+
+.guest-metric span,
+.guest-section-label,
+.guest-info-label,
+.guest-system-list span {
+    display: block;
+    color: var(--gd-muted);
+    font-size: .72rem;
+    font-weight: 950;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+}
+
+.guest-metric strong {
+    display: block;
+    margin-top: 8px;
+    color: var(--gd-primary);
+    font-size: clamp(1.45rem, 2.6vw, 2.25rem);
+    line-height: 1;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.guest-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 350px);
+    gap: 16px;
+    align-items: start;
+}
+
+.guest-main-stack,
+.guest-side-stack {
+    display: grid;
+    gap: 16px;
+}
+
+.guest-side-stack {
+    position: sticky;
+    top: 18px;
+}
+
+.guest-panel {
+    border: 1px solid var(--gd-line);
+    border-radius: 22px;
+    background: var(--gd-surface);
+    box-shadow: 0 18px 48px -38px rgba(15,23,42,.45);
+    overflow: hidden;
+}
+
+.guest-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--gd-line-soft);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--gd-accent) 7%, #FFFFFF), #FFFFFF);
+}
+
+.guest-panel-head h2,
+.guest-side-card h2 {
+    margin: 0;
+    color: var(--gd-primary);
+    font-size: 1.04rem;
+    font-weight: 950;
+}
+
+.guest-panel-head p {
+    margin: 3px 0 0;
+    color: var(--gd-muted);
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.guest-panel-body {
+    padding: 18px;
+}
+
+.guest-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.guest-info-card {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    border: 1px solid var(--gd-line-soft);
+    border-radius: 16px;
+    background: #FFFFFF;
+    padding: 14px;
+}
+
+.guest-info-card i {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--gd-accent) 12%, #FFFFFF);
+    color: var(--gd-primary);
+}
+
+.guest-info-card strong {
+    display: block;
+    margin-top: 4px;
+    color: var(--gd-text);
+    font-size: .96rem;
+    font-weight: 900;
+    overflow-wrap: anywhere;
+}
+
+.guest-note {
+    margin-top: 12px;
+    border: 1px solid color-mix(in srgb, var(--gd-accent) 24%, transparent);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--gd-accent) 8%, #FFFFFF);
+    padding: 14px;
+}
+
+.guest-note strong {
+    display: block;
+    color: var(--gd-primary);
+    margin-bottom: 6px;
+}
+
+.guest-note p {
+    margin: 0;
+    color: var(--gd-muted);
+    line-height: 1.6;
+}
+
+.guest-panel-action {
+    min-height: 40px;
+    border: 0;
+    border-radius: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--gd-primary);
+    color: #FFFFFF;
+    padding: 0 13px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.guest-panel-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px -18px rgba(15,23,42,.58);
+}
+
+.guest-vehicle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 12px;
+}
+
+.guest-vehicle-card {
+    border: 1px solid var(--gd-line-soft);
+    border-radius: 18px;
+    background: #FFFFFF;
+    padding: 15px;
+    transition: transform .18s ease, border-color .18s ease;
+}
+
+.guest-vehicle-card:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--gd-accent) 36%, var(--gd-line));
+}
+
+.guest-vehicle-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.guest-vehicle-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.guest-vehicle-icon {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--gd-primary) 8%, #FFFFFF);
+    color: var(--gd-primary);
+}
+
+.guest-vehicle-title strong {
+    display: block;
+    color: var(--gd-text);
+    font-weight: 950;
+}
+
+.guest-vehicle-title span {
+    display: block;
+    margin-top: 2px;
+    color: var(--gd-muted);
+    font-size: .8rem;
+    font-weight: 750;
+}
+
+.guest-mini-actions {
+    display: flex;
+    gap: 7px;
+}
+
+.guest-icon-btn {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--gd-line-soft);
+    border-radius: 11px;
+    background: #FFFFFF;
+    color: var(--gd-primary);
+    cursor: pointer;
+    transition: transform .18s ease, background .18s ease;
+}
+
+.guest-icon-btn:hover {
+    transform: translateY(-1px);
+    background: color-mix(in srgb, var(--gd-primary) 7%, #FFFFFF);
+}
+
+.guest-icon-btn.danger {
+    color: var(--gd-danger);
+}
+
+.guest-vehicle-details {
+    display: grid;
+    gap: 7px;
+    margin-top: 14px;
+}
+
+.guest-detail-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--gd-muted);
+    font-size: .83rem;
+    font-weight: 750;
+}
+
+.guest-detail-row strong {
+    color: var(--gd-text);
+    font-weight: 900;
+    text-align: right;
+}
+
+.guest-parking-badge,
+.guest-status-badge {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border-radius: 12px;
+    padding: 6px 9px;
+    font-size: .76rem;
+    font-weight: 900;
+}
+
+.guest-parking-badge {
+    background: color-mix(in srgb, var(--gd-accent) 12%, #FFFFFF);
+    color: var(--gd-primary);
+}
+
+.guest-empty {
+    border: 1px dashed color-mix(in srgb, var(--gd-primary) 18%, transparent);
+    border-radius: 18px;
+    background: rgba(255,255,255,.62);
+    padding: 28px 18px;
+    text-align: center;
+    color: var(--gd-muted);
+}
+
+.guest-empty i {
+    width: 60px;
+    height: 60px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--gd-primary) 7%, #FFFFFF);
+    color: color-mix(in srgb, var(--gd-primary) 60%, #FFFFFF);
+    font-size: 1.45rem;
+    margin-bottom: 12px;
+}
+
+.guest-empty strong {
+    display: block;
+    color: var(--gd-primary);
+    font-size: 1.05rem;
+    margin-bottom: 5px;
+}
+
+.guest-reservation-list {
+    display: grid;
+    gap: 10px;
+}
+
+.guest-reservation-card {
+    display: grid;
+    grid-template-columns: minmax(230px, 1.3fr) repeat(3, minmax(120px, .72fr)) auto;
+    gap: 12px;
+    align-items: center;
+    border: 1px solid color-mix(in srgb, var(--status-color) 22%, var(--gd-line));
+    border-radius: 17px;
+    background: #FFFFFF;
+    box-shadow: inset 4px 0 0 var(--status-color);
+    padding: 14px;
+}
+
+.guest-reservation-main strong {
+    display: block;
+    color: var(--gd-text);
+    font-weight: 950;
+    overflow-wrap: anywhere;
+}
+
+.guest-reservation-main span,
+.guest-reservation-meta span {
+    display: block;
+    margin-top: 4px;
+    color: var(--gd-muted);
+    font-size: .8rem;
+    font-weight: 750;
+}
+
+.guest-reservation-meta strong {
+    display: block;
+    color: var(--gd-primary);
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.guest-status-badge {
+    background: var(--status-soft);
+    color: var(--status-color);
+}
+
+.guest-reservation-link {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border-radius: 12px;
+    background: var(--gd-primary);
+    color: #FFFFFF;
+    padding: 0 11px;
+    font-size: .82rem;
+    font-weight: 900;
+}
+
+.guest-side-card {
+    border: 1px solid var(--gd-line);
+    border-radius: 20px;
+    background: var(--gd-surface);
+    padding: 18px;
+    box-shadow: 0 18px 48px -38px rgba(15,23,42,.45);
+}
+
+.guest-score-card {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--gd-accent) 28%, transparent), transparent 14rem),
+        linear-gradient(145deg, var(--gd-primary), var(--gd-secondary));
+    color: #FFFFFF;
+}
+
+.guest-score-card h2 {
+    color: #FFFFFF;
+}
+
+.guest-score-number {
+    margin: 15px 0 5px;
+    font-size: clamp(2.1rem, 4vw, 3.2rem);
+    font-weight: 950;
+    line-height: 1;
+}
+
+.guest-score-card p {
+    margin: 0;
+    color: rgba(255,255,255,.7);
+    font-weight: 700;
+}
+
+.guest-score-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,.16);
+}
+
+.guest-score-list div,
+.guest-system-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: center;
+}
+
+.guest-score-list span {
+    color: rgba(255,255,255,.64);
+    font-size: .82rem;
+    font-weight: 750;
+}
+
+.guest-score-list strong {
+    color: #FFFFFF;
+    font-weight: 950;
+    text-align: right;
+}
+
+.guest-quick-actions {
+    display: grid;
+    gap: 9px;
+    margin-top: 14px;
+}
+
+.guest-side-action {
+    min-height: 42px;
+    border: 1px solid var(--gd-line);
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: #FFFFFF;
+    color: var(--gd-primary);
+    padding: 0 12px;
+    font-weight: 900;
+}
+
+.guest-side-action:hover {
+    background: color-mix(in srgb, var(--gd-accent) 7%, #FFFFFF);
+}
+
+.guest-system-list {
+    display: grid;
+    gap: 10px;
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.guest-system-list strong {
+    color: var(--gd-text);
+    font-weight: 900;
+    text-align: right;
+}
+
+.guest-modal {
+    --gd-primary: color-mix(in srgb, var(--brand-primary, #1B2746) 34%, #243044);
+    --gd-secondary: #121A2A;
+    --gd-accent: color-mix(in srgb, var(--brand-accent, #BD9441) 62%, #B98B3E);
+    --gd-line: rgba(67, 78, 94, .18);
+    --gd-line-soft: rgba(67, 78, 94, .1);
+    --gd-text: #182032;
+    --gd-muted: #6B7586;
+    position: fixed;
+    inset: 0;
+    z-index: 13000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background:
+        radial-gradient(circle at 50% 15%, color-mix(in srgb, var(--gd-accent) 20%, transparent), transparent 24rem),
+        rgba(10, 15, 25, .76);
+    -webkit-backdrop-filter: blur(12px) saturate(1.05);
+    backdrop-filter: blur(12px) saturate(1.05);
+}
+
+.guest-modal.hidden {
+    display: none !important;
+}
+
+.guest-modal-card {
+    width: min(560px, 100%);
+    max-height: 92dvh;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--gd-accent) 34%, rgba(255,255,255,.16));
+    border-radius: 24px;
+    background:
+        linear-gradient(180deg, #FFF8ED 0%, #F5ECDD 100%);
+    box-shadow:
+        0 34px 90px -36px rgba(0,0,0,.9),
+        inset 0 1px 0 rgba(255,255,255,.86);
+}
+
+.guest-modal-head {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 20px 22px;
+    color: #FFFFFF;
+    background:
+        radial-gradient(circle at 86% 0%, color-mix(in srgb, var(--gd-accent) 36%, transparent), transparent 12rem),
+        linear-gradient(135deg, #182238 0%, var(--gd-primary) 48%, #111827 100%);
+}
+
+.guest-modal-head::after {
+    content: "";
+    position: absolute;
+    left: 22px;
+    right: 22px;
+    bottom: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--gd-accent) 72%, #FFFFFF), transparent);
+}
+
+.guest-modal-head h3 {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.08rem;
+    font-weight: 950;
+}
+
+.guest-modal-head h3 i {
+    width: 38px;
+    height: 38px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 13px;
+    background: rgba(255,255,255,.12);
+    color: color-mix(in srgb, var(--gd-accent) 72%, #FFFFFF);
+}
+
+.guest-modal-close {
+    position: relative;
+    z-index: 1;
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 12px;
+    background: rgba(255,255,255,.13);
+    color: #FFFFFF;
+    cursor: pointer;
+    transition: transform .18s ease, background .18s ease;
+}
+
+.guest-modal-close:hover {
+    transform: translateY(-1px);
+    background: rgba(255,255,255,.22);
+}
+
+.guest-vehicle-form {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    max-height: calc(92dvh - 74px);
+    overflow-y: auto;
+    background:
+        radial-gradient(circle at 9% 8%, rgba(189, 148, 65, .14), transparent 13rem),
+        linear-gradient(180deg, #FFF8ED, #F5ECDD);
+}
+
+.guest-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.guest-form-field,
+.guest-radio-group {
+    border: 1px solid var(--gd-line-soft);
+    border-radius: 16px;
+    background: rgba(255,255,255,.54);
+    padding: 12px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.64);
+}
+
+.guest-form-field label,
+.guest-radio-group > label {
+    display: block;
+    margin-bottom: 7px;
+    color: #263246;
+    font-size: .74rem;
+    font-weight: 950;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+}
+
+.guest-form-field input {
+    width: 100%;
+    min-height: 43px;
+    border: 1px solid rgba(44, 55, 75, .24);
+    border-radius: 12px;
+    background: rgba(255,255,255,.96);
+    color: var(--gd-text);
+    outline: none;
+    padding: 9px 12px;
+    font-weight: 750;
+    transition: border-color .18s ease, box-shadow .18s ease;
+    box-shadow: 0 1px 0 rgba(255,255,255,.75);
+}
+
+.guest-form-field input:focus {
+    border-color: color-mix(in srgb, var(--gd-accent) 68%, var(--gd-primary));
+    box-shadow:
+        0 0 0 4px color-mix(in srgb, var(--gd-accent) 18%, transparent),
+        0 10px 22px rgba(28, 35, 49, .08);
+}
+
+.guest-radio-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.guest-radio-card {
+    cursor: pointer;
+}
+
+.guest-radio-card input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.guest-radio-card span {
+    min-height: 58px;
+    display: grid;
+    place-items: center;
+    gap: 5px;
+    border: 1px solid rgba(44, 55, 75, .2);
+    border-radius: 14px;
+    background: rgba(255,255,255,.8);
+    color: #263246;
+    font-size: .82rem;
+    font-weight: 900;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+.guest-radio-card span:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--gd-accent) 42%, rgba(44,55,75,.2));
+    background: rgba(255,255,255,.95);
+}
+
+.guest-radio-card input:checked + span {
+    border-color: color-mix(in srgb, var(--gd-accent) 72%, var(--gd-primary));
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--gd-accent) 18%, #FFFFFF), rgba(255,255,255,.92));
+    box-shadow: 0 12px 24px rgba(55, 43, 25, .12);
+}
+
+.guest-radio-card input:checked + span i {
+    color: color-mix(in srgb, var(--gd-accent) 74%, var(--gd-primary));
+}
+
+.guest-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin: 2px -18px -18px;
+    padding: 14px 18px 18px;
+    border-top: 1px solid rgba(44, 55, 75, .12);
+    background: rgba(255,255,255,.46);
+}
+
+.guest-cancel,
+.guest-save {
+    min-height: 42px;
+    border-radius: 12px;
+    padding: 0 15px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.guest-cancel {
+    border: 1px solid rgba(44, 55, 75, .18);
+    background: rgba(255,255,255,.78);
+    color: #263246;
+}
+
+.guest-save {
+    border: 0;
+    background: linear-gradient(135deg, #263246, var(--gd-primary));
+    color: #FFFFFF;
+    box-shadow: 0 14px 26px rgba(28, 35, 49, .22);
+}
+
+.guest-cancel:hover,
+.guest-save:hover {
+    transform: translateY(-1px);
+}
+
+@media (max-width: 1180px) {
+    .guest-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .guest-side-stack {
+        position: static;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .guest-hero,
+    .guest-identity-card {
+        grid-template-columns: 1fr;
+    }
+
+    .guest-action-rail,
+    .guest-side-stack,
+    .guest-metrics-strip,
+    .guest-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .guest-reservation-card {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 620px) {
+    .guest-detail-shell {
+        width: min(100% - 18px, 1500px);
+        padding-top: 14px;
+    }
+
+    .guest-identity-card,
+    .guest-action-rail,
+    .guest-panel,
+    .guest-side-card {
+        border-radius: 18px;
+    }
+
+    .guest-avatar {
+        width: 76px;
+        border-radius: 18px;
+    }
+
+    .guest-identity-card h1 {
+        font-size: clamp(2.1rem, 13vw, 3.1rem);
+    }
+
+    .guest-panel-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .guest-panel-action,
+    .guest-action,
+    .guest-side-action {
+        width: 100%;
+    }
+
+    .guest-form-grid,
+    .guest-radio-options {
+        grid-template-columns: 1fr;
+    }
+
+    .guest-modal-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<div class="guest-detail-view">
+    <div class="guest-detail-shell">
+        <nav class="guest-breadcrumb" aria-label="Ruta de navegacion">
+            <a href="<?= url('huespedes') ?>">Huespedes</a>
+            <i class="fas fa-chevron-right"></i>
+            <span><?= guest_detail_safe($nombre_huesped) ?></span>
+        </nav>
+
+        <header class="guest-hero">
+            <section class="guest-identity-card">
+                <div class="guest-avatar" aria-hidden="true"><?= guest_detail_safe($inicial_huesped) ?></div>
+                <div>
+                    <div class="guest-kicker">
+                        <i class="fas fa-id-badge"></i>
+                        Expediente de huésped
                     </div>
-                    
-                    <!-- Procedencia -->
-                    <div>
-                        <h3 class="font-semibold text-gray-700 mb-3">Procedencia</h3>
-                        <div class="space-y-2">
-                            <div class="flex items-center">
-                                <i class="fas fa-map-marker-alt text-gray-400 w-5"></i>
-                                <span class="ml-3">
-                                    <?= htmlspecialchars($huesped['procedencia_estado'] ?: 'No especificado') ?>
-                                </span>
-                            </div>
-                            <?php if ($huesped['procedencia_ciudad']): ?>
-                            <div class="flex items-center">
-                                <i class="fas fa-city text-gray-400 w-5"></i>
-                                <span class="ml-3">
-                                    <?= htmlspecialchars($huesped['procedencia_ciudad']) ?>
-                                </span>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    
-                    <!-- Vehículo -->
-                    <?php if ($huesped['vehiculo_marca'] || $huesped['vehiculo_placas']): ?>
-                    <div>
-                        <h3 class="font-semibold text-gray-700 mb-3">Vehículo</h3>
-                        <div class="space-y-2">
-                            <?php if ($huesped['vehiculo_marca']): ?>
-                            <div class="flex items-center">
-                                <i class="fas fa-car text-gray-400 w-5"></i>
-                                <span class="ml-3">
-                                    <?= htmlspecialchars($huesped['vehiculo_marca']) ?>
-                                </span>
-                            </div>
-                            <?php endif; ?>
-                            <?php if ($huesped['vehiculo_placas']): ?>
-                            <div class="flex items-center">
-                                <i class="fas fa-id-card text-gray-400 w-5"></i>
-                                <span class="ml-3 font-mono">
-                                    <?= htmlspecialchars($huesped['vehiculo_placas']) ?>
-                                </span>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <!-- Fechas -->
-                    <div>
-                        <h3 class="font-semibold text-gray-700 mb-3">Registro</h3>
-                        <div class="space-y-2">
-                            <div class="flex items-center">
-                                <i class="fas fa-calendar-plus text-gray-400 w-5"></i>
-                                <span class="ml-3 text-sm">
-                                    Registrado el <?= format_date($huesped['created_at']) ?>
-                                </span>
-                            </div>
-                            <?php if ($ultima_visita): ?>
-                            <div class="flex items-center">
-                                <i class="fas fa-clock text-gray-400 w-5"></i>
-                                <span class="ml-3 text-sm">
-                                    Última visita: <?= format_date($ultima_visita) ?>
-                                </span>
-                            </div>
-                            <?php endif; ?>
-                        </div>
+                    <h1><?= guest_detail_safe($nombre_huesped) ?></h1>
+                    <p>
+                        Perfil operativo para revisar contacto, procedencia, vehículos, historial de reservaciones y acciones rápidas del huésped.
+                    </p>
+                    <div class="guest-hero-meta">
+                        <span class="guest-chip">
+                            <i class="fas fa-hashtag"></i>
+                            ID <?= (int)($huesped['id'] ?? 0) ?>
+                        </span>
+                        <span class="guest-chip">
+                            <i class="fas fa-location-dot"></i>
+                            <?= guest_detail_safe($procedencia_label) ?>
+                        </span>
+                        <span class="guest-chip">
+                            <i class="fas fa-address-book"></i>
+                            <?= guest_detail_safe($contacto_label) ?>
+                        </span>
+                        <?php if ($es_cliente_frecuente): ?>
+                            <span class="guest-chip">
+                                <i class="fas fa-star"></i>
+                                Cliente frecuente
+                            </span>
+                        <?php endif; ?>
                     </div>
                 </div>
-                
-                <?php if ($huesped['notas']): ?>
-                <div class="mt-6 pt-6 border-t">
-                    <h3 class="font-semibold text-gray-700 mb-2">Notas</h3>
-                    <p class="text-gray-600"><?= nl2br(htmlspecialchars($huesped['notas'])) ?></p>
-                </div>
-                <?php endif; ?>
-            </div>
-            <!-- Vehículos del Huésped -->
-<!-- Vehículos del Huésped -->
-<div class="bg-white rounded-lg shadow-lg p-6">
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-semibold text-gray-800 flex items-center">
-            <i class="fas fa-car mr-2 text-hotel-brown"></i>
-            Vehículos Registrados
-        </h2>
-        <button type="button" onclick="abrirModalAgregarVehiculo()" 
-                class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition duration-200 text-sm">
-            <i class="fas fa-plus mr-2"></i>Agregar Vehículo
-        </button>
-    </div>
-    
-    <?php if (!empty($vehiculos)): ?>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <?php foreach ($vehiculos as $vehiculo): ?>
-                <div class="border-2 border-gray-200 rounded-xl p-4 hover:border-purple-300 transition-colors">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <div class="flex items-center mb-2">
-                                <i class="fas fa-car text-purple-600 mr-2"></i>
-                                <h4 class="font-semibold text-gray-800">
-                                    <?= htmlspecialchars($vehiculo['marca']) ?>
-                                    <?php if ($vehiculo['modelo']): ?>
-                                        <?= htmlspecialchars($vehiculo['modelo']) ?>
-                                    <?php endif; ?>
-                                </h4>
+            </section>
+
+            <aside class="guest-action-rail" aria-label="Acciones principales">
+                <a href="<?= url('reservaciones/crear?huesped_id=' . ($huesped['id'] ?? 0)) ?>" class="guest-action primary">
+                    <span><i class="fas fa-calendar-plus"></i> Nueva reservación</span>
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+                <a href="<?= url('huespedes/' . ($huesped['id'] ?? 0) . '/edit') ?>" class="guest-action">
+                    <span><i class="fas fa-pen"></i> Editar información</span>
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+                <a href="<?= url('huespedes') ?>" class="guest-action">
+                    <span><i class="fas fa-arrow-left"></i> Volver al directorio</span>
+                    <i class="fas fa-list"></i>
+                </a>
+            </aside>
+        </header>
+
+        <section class="guest-metrics-strip" aria-label="Resumen del huésped">
+            <article class="guest-metric" style="--metric-color: var(--gd-primary);">
+                <span>Visitas válidas</span>
+                <strong><?= number_format($total_reservaciones) ?></strong>
+            </article>
+            <article class="guest-metric" style="--metric-color: var(--gd-accent);">
+                <span>Total gastado</span>
+                <strong><?= format_money($total_gastado) ?></strong>
+            </article>
+            <article class="guest-metric" style="--metric-color: var(--gd-success);">
+                <span>Promedio</span>
+                <strong><?= format_money($gasto_promedio) ?></strong>
+            </article>
+            <article class="guest-metric" style="--metric-color: #64748B;">
+                <span>Vehículos</span>
+                <strong><?= number_format($vehiculos_count) ?></strong>
+            </article>
+        </section>
+
+        <div class="guest-layout">
+            <main class="guest-main-stack">
+                <section class="guest-panel">
+                    <div class="guest-panel-head">
+                        <div>
+                            <h2>Datos del huésped</h2>
+                            <p>Contacto, procedencia y datos de registro.</p>
+                        </div>
+                    </div>
+                    <div class="guest-panel-body">
+                        <div class="guest-info-grid">
+                            <article class="guest-info-card">
+                                <i class="fas fa-phone"></i>
+                                <div>
+                                    <span class="guest-info-label">Teléfono</span>
+                                    <strong><?= guest_detail_safe($telefono, 'No registrado') ?></strong>
+                                </div>
+                            </article>
+                            <article class="guest-info-card">
+                                <i class="fas fa-envelope"></i>
+                                <div>
+                                    <span class="guest-info-label">Email</span>
+                                    <strong><?= guest_detail_safe($email, 'No registrado') ?></strong>
+                                </div>
+                            </article>
+                            <article class="guest-info-card">
+                                <i class="fas fa-map-location-dot"></i>
+                                <div>
+                                    <span class="guest-info-label">Procedencia</span>
+                                    <strong><?= guest_detail_safe($procedencia_label) ?></strong>
+                                </div>
+                            </article>
+                            <article class="guest-info-card">
+                                <i class="fas fa-clock"></i>
+                                <div>
+                                    <span class="guest-info-label">Última visita</span>
+                                    <strong><?= guest_detail_safe($ultima_visita_label) ?></strong>
+                                </div>
+                            </article>
+                            <?php if (!empty($huesped['vehiculo_marca']) || !empty($huesped['vehiculo_placas'])): ?>
+                                <article class="guest-info-card">
+                                    <i class="fas fa-car-side"></i>
+                                    <div>
+                                        <span class="guest-info-label">Vehículo anterior</span>
+                                        <strong>
+                                            <?= guest_detail_safe(trim(($huesped['vehiculo_marca'] ?? '') . ' ' . ($huesped['vehiculo_placas'] ?? ''))) ?>
+                                        </strong>
+                                    </div>
+                                </article>
+                            <?php endif; ?>
+                        </div>
+
+                        <?php if (!empty($huesped['notas'])): ?>
+                            <div class="guest-note">
+                                <strong>Notas internas</strong>
+                                <p><?= nl2br(guest_detail_safe($huesped['notas'])) ?></p>
                             </div>
-                            
-                            <div class="space-y-1 text-sm">
-                                <div class="flex items-center">
-                                    <span class="text-gray-500 w-20">Placas:</span>
-                                    <span class="font-mono font-semibold"><?= htmlspecialchars($vehiculo['placas']) ?></span>
-                                </div>
-                                <?php if ($vehiculo['color']): ?>
-                                <div class="flex items-center">
-                                    <span class="text-gray-500 w-20">Color:</span>
-                                    <span><?= htmlspecialchars($vehiculo['color']) ?></span>
-                                </div>
-                                <?php endif; ?>
-                                <div class="flex items-center">
-                                    <span class="text-gray-500 w-20">Ubicación:</span>
+                        <?php endif; ?>
+                    </div>
+                </section>
+
+                <section id="vehiculos" class="guest-panel">
+                    <div class="guest-panel-head">
+                        <div>
+                            <h2>Vehículos registrados</h2>
+                            <p>Control de placas, color y estacionamiento.</p>
+                        </div>
+                        <button type="button" onclick="abrirModalAgregarVehiculo()" class="guest-panel-action">
+                            <i class="fas fa-plus"></i>
+                            Agregar vehículo
+                        </button>
+                    </div>
+                    <div class="guest-panel-body">
+                        <?php if (!empty($vehiculos)): ?>
+                            <div class="guest-vehicle-grid">
+                                <?php foreach ($vehiculos as $vehiculo): ?>
                                     <?php
-                                    $estacionamientos = HuespedVehiculo::getEstacionamientos();
-                                    $ubicacion = $estacionamientos[$vehiculo['estacionamiento']] ?? 'No especificado';
-                                    $iconos = [
-    'coches' => 'fa-car'
-];
-$icono = $iconos[$vehiculo['estacionamiento']] ?? 'fa-question';
+                                        $ubicacion = $estacionamientos[$vehiculo['estacionamiento'] ?? ''] ?? 'No especificado';
+                                        $icono = ($vehiculo['estacionamiento'] ?? '') === 'coches' ? 'fa-car' : 'fa-square-parking';
+                                        $vehiculo_nombre = trim(($vehiculo['marca'] ?? '') . ' ' . ($vehiculo['modelo'] ?? ''));
+                                        $vehiculo_desc = trim(($vehiculo['marca'] ?? '') . ' - ' . ($vehiculo['placas'] ?? ''));
                                     ?>
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                        <i class="fas <?= $icono ?> mr-1"></i>
-                                        <?= $ubicacion ?>
-                                    </span>
-                                </div>
+                                    <article class="guest-vehicle-card">
+                                        <div class="guest-vehicle-top">
+                                            <div class="guest-vehicle-title">
+                                                <span class="guest-vehicle-icon">
+                                                    <i class="fas <?= guest_detail_safe($icono) ?>"></i>
+                                                </span>
+                                                <div>
+                                                    <strong><?= guest_detail_safe($vehiculo_nombre, 'Vehículo') ?></strong>
+                                                    <span><?= guest_detail_safe($vehiculo['placas'] ?? '', 'Sin placas') ?></span>
+                                                </div>
+                                            </div>
+                                            <div class="guest-mini-actions">
+                                                <button type="button"
+                                                        onclick='editarVehiculo(<?= guest_detail_json_attr($vehiculo) ?>)'
+                                                        class="guest-icon-btn"
+                                                        title="Editar vehículo">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button"
+                                                        onclick='confirmarEliminarVehiculo(<?= (int)($vehiculo['id'] ?? 0) ?>, <?= guest_detail_json_attr($vehiculo_desc) ?>)'
+                                                        class="guest-icon-btn danger"
+                                                        title="Eliminar vehículo">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="guest-vehicle-details">
+                                            <div class="guest-detail-row">
+                                                <span>Color</span>
+                                                <strong><?= guest_detail_safe($vehiculo['color'] ?? '', 'No especificado') ?></strong>
+                                            </div>
+                                            <div class="guest-detail-row">
+                                                <span>Ubicación</span>
+                                                <strong class="guest-parking-badge">
+                                                    <i class="fas <?= guest_detail_safe($icono) ?>"></i>
+                                                    <?= guest_detail_safe($ubicacion) ?>
+                                                </strong>
+                                            </div>
+                                        </div>
+                                    </article>
+                                <?php endforeach; ?>
                             </div>
-                        </div>
-                        
-                        <div class="flex gap-2 ml-2">
-                            <button onclick='editarVehiculo(<?= json_encode($vehiculo) ?>)' 
-                                    class="text-blue-500 hover:text-blue-700" title="Editar vehículo">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="confirmarEliminarVehiculo(<?= $vehiculo['id'] ?>, '<?= htmlspecialchars($vehiculo['marca']) ?> - <?= htmlspecialchars($vehiculo['placas']) ?>')" 
-                                    class="text-red-500 hover:text-red-700" title="Eliminar vehículo">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                        <?php else: ?>
+                            <div class="guest-empty">
+                                <i class="fas fa-car-side"></i>
+                                <strong>Sin vehículos registrados</strong>
+                                <p>Agrega un vehículo para llevar control del estacionamiento.</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </section>
+
+                <section class="guest-panel">
+                    <div class="guest-panel-head">
+                        <div>
+                            <h2>Historial de reservaciones</h2>
+                            <p><?= number_format($reservaciones_count) ?> registros asociados a este huésped.</p>
                         </div>
                     </div>
-                </div>
-            <?php endforeach; ?>
+                    <div class="guest-panel-body">
+                        <?php if (!empty($reservaciones)): ?>
+                            <div class="guest-reservation-list">
+                                <?php foreach ($reservaciones as $reservacion): ?>
+                                    <?php
+                                        $estado = $reservacion['estado'] ?? 'desconocido';
+                                        $estadoReserva = guest_detail_status($estado);
+                                        $habitaciones_total = (int)($reservacion['total_habitaciones'] ?? 0);
+                                    ?>
+                                    <article class="guest-reservation-card"
+                                             style="--status-color: <?= guest_detail_safe($estadoReserva['color']) ?>; --status-soft: <?= guest_detail_safe($estadoReserva['soft']) ?>;">
+                                        <div class="guest-reservation-main">
+                                            <strong><?= guest_detail_safe($reservacion['habitaciones_numeros'] ?? '', 'Sin habitaciones') ?></strong>
+                                            <span>
+                                                <?= $habitaciones_total ?> <?= $habitaciones_total === 1 ? 'habitación' : 'habitaciones' ?>
+                                                <?php if (!empty($reservacion['habitaciones_cortesia'])): ?>
+                                                    · <?= (int)$reservacion['habitaciones_cortesia'] ?> cortesía
+                                                <?php endif; ?>
+                                            </span>
+                                            <?php if (!empty($reservacion['tipos_habitacion'])): ?>
+                                                <span><?= guest_detail_safe($reservacion['tipos_habitacion']) ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="guest-reservation-meta">
+                                            <span>Entrada</span>
+                                            <strong><?= format_date($reservacion['fecha_entrada'] ?? '') ?></strong>
+                                        </div>
+                                        <div class="guest-reservation-meta">
+                                            <span>Salida</span>
+                                            <strong><?= format_date($reservacion['fecha_salida'] ?? '') ?></strong>
+                                        </div>
+                                        <div class="guest-reservation-meta">
+                                            <span>Total</span>
+                                            <strong><?= format_money($reservacion['precio_total'] ?? 0) ?></strong>
+                                            <span><?= guest_detail_safe(ucfirst($reservacion['metodo_pago'] ?? 'No especificado')) ?></span>
+                                        </div>
+                                        <div>
+                                            <span class="guest-status-badge">
+                                                <i class="fas fa-circle"></i>
+                                                <?= guest_detail_safe($estadoReserva['label']) ?>
+                                            </span>
+                                        </div>
+                                        <a href="<?= url('reservaciones/ver/' . ($reservacion['id'] ?? 0)) ?>" class="guest-reservation-link">
+                                            <i class="fas fa-eye"></i>
+                                            Ver
+                                        </a>
+                                    </article>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="guest-empty">
+                                <i class="fas fa-calendar-times"></i>
+                                <strong>Sin reservaciones registradas</strong>
+                                <p>Este huésped aún no tiene reservaciones en el sistema.</p>
+                                <a href="<?= url('reservaciones/crear?huesped_id=' . ($huesped['id'] ?? 0)) ?>" class="guest-panel-action" style="margin-top: 14px;">
+                                    <i class="fas fa-calendar-plus"></i>
+                                    Crear primera reservación
+                                </a>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </section>
+            </main>
+
+            <aside class="guest-side-stack">
+                <section class="guest-side-card guest-score-card">
+                    <h2>Perfil de actividad</h2>
+                    <div class="guest-score-number"><?= number_format($total_reservaciones) ?></div>
+                    <p><?= $es_cliente_frecuente ? 'Cliente frecuente con historial activo.' : 'Historial en crecimiento.' ?></p>
+                    <div class="guest-score-list">
+                        <div>
+                            <span>Total gastado</span>
+                            <strong><?= format_money($total_gastado) ?></strong>
+                        </div>
+                        <div>
+                            <span>Gasto promedio</span>
+                            <strong><?= format_money($gasto_promedio) ?></strong>
+                        </div>
+                        <div>
+                            <span>Vehículos</span>
+                            <strong><?= number_format($vehiculos_count) ?></strong>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="guest-side-card">
+                    <h2>Acciones rápidas</h2>
+                    <div class="guest-quick-actions">
+                        <a href="<?= url('reservaciones/crear?huesped_id=' . ($huesped['id'] ?? 0)) ?>" class="guest-side-action">
+                            <span><i class="fas fa-calendar-plus"></i> Nueva reservación</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                        <a href="<?= url('huespedes/' . ($huesped['id'] ?? 0) . '/edit') ?>" class="guest-side-action">
+                            <span><i class="fas fa-pen"></i> Editar información</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                        <?php if ($telefono !== ''): ?>
+                            <a href="tel:<?= guest_detail_safe($telefono) ?>" class="guest-side-action">
+                                <span><i class="fas fa-phone"></i> Llamar</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        <?php endif; ?>
+                        <?php if ($email !== ''): ?>
+                            <a href="mailto:<?= guest_detail_safe($email) ?>" class="guest-side-action">
+                                <span><i class="fas fa-envelope"></i> Enviar email</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </section>
+
+                <section class="guest-side-card">
+                    <h2>Información del sistema</h2>
+                    <ul class="guest-system-list">
+                        <li>
+                            <span>ID</span>
+                            <strong>#<?= (int)($huesped['id'] ?? 0) ?></strong>
+                        </li>
+                        <li>
+                            <span>Registrado</span>
+                            <strong><?= format_datetime($huesped['created_at'] ?? '') ?></strong>
+                        </li>
+                        <li>
+                            <span>Actualizado</span>
+                            <strong><?= format_datetime($huesped['updated_at'] ?? '') ?></strong>
+                        </li>
+                    </ul>
+                </section>
+            </aside>
         </div>
-    <?php else: ?>
-        <div class="text-center py-8">
-            <i class="fas fa-car-side text-6xl text-gray-300 mb-4"></i>
-            <p class="text-gray-500 text-lg">Sin vehículos registrados</p>
-            <p class="text-gray-400 mt-2">Agregue vehículos para llevar control del estacionamiento</p>
-        </div>
-    <?php endif; ?>
+    </div>
 </div>
 
-<!-- Modal para agregar vehículo -->
-<div id="modalAgregarVehiculo" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full">
-        <form id="formAgregarVehiculo">
-            <input type="hidden" name="huesped_id" value="<?= $huesped['id'] ?>">
+<div id="modalAgregarVehiculo" class="guest-modal hidden">
+    <div class="guest-modal-card">
+        <div class="guest-modal-head">
+            <h3>
+                <i class="fas fa-car"></i>
+                Agregar vehículo
+            </h3>
+            <button type="button" onclick="cerrarModalAgregarVehiculo()" class="guest-modal-close" aria-label="Cerrar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <form id="formAgregarVehiculo" class="guest-vehicle-form">
+            <input type="hidden" name="huesped_id" value="<?= (int)($huesped['id'] ?? 0) ?>">
             <?= csrf_field() ?>
-            
-            <div class="p-6 border-b border-gray-200">
-                <h3 class="text-xl font-bold text-gray-800 flex items-center">
-                    <i class="fas fa-car mr-3 text-purple-600"></i>
-                    Agregar Nuevo Vehículo
-                </h3>
-            </div>
-            
-            <div class="p-6 space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Marca <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" name="marca" required
-                               class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Modelo
-                        </label>
-                        <input type="text" name="modelo"
-                               class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500">
-                    </div>
+
+            <div class="guest-form-grid">
+                <div class="guest-form-field">
+                    <label>Marca <span class="text-red-500">*</span></label>
+                    <input type="text" name="marca" required>
                 </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Placas
-                        </label>
-                        <input type="text" name="placas" style="text-transform: uppercase"
-                               class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 font-mono">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Color
-                        </label>
-                        <input type="text" name="color"
-                               class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500">
-                    </div>
+                <div class="guest-form-field">
+                    <label>Modelo</label>
+                    <input type="text" name="modelo">
                 </div>
-                
-                <div>
-    <label class="block text-sm font-semibold text-gray-700 mb-2">
-        Estacionamiento <span class="text-red-500">*</span>
-    </label>
-    <div class="grid grid-cols-2 gap-3">
-        <label class="relative cursor-pointer">
-            <input type="radio" name="estacionamiento" value="coches"
-                   class="peer sr-only" checked>
-            <div class="px-3 py-2 border-2 rounded-lg text-center transition-all text-sm
-                        border-gray-200 hover:border-purple-500
-                        peer-checked:border-purple-500 peer-checked:bg-purple-50">
-                <i class="fas fa-car text-lg mb-1"></i>
-                <p class="text-xs font-medium">Coches</p>
             </div>
-        </label>
-        
-        
-    </div>
-</div>
+
+            <div class="guest-form-grid">
+                <div class="guest-form-field">
+                    <label>Placas</label>
+                    <input type="text" name="placas" style="text-transform: uppercase" class="font-mono">
+                </div>
+                <div class="guest-form-field">
+                    <label>Color</label>
+                    <input type="text" name="color">
+                </div>
             </div>
-            
-            <div class="p-6 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 rounded-b-2xl">
-                <button type="button" onclick="cerrarModalAgregarVehiculo()" 
-                        class="px-6 py-2 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-100 transition-all">
-                    Cancelar
-                </button>
-                <button type="submit" 
-                        class="px-6 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold rounded-xl hover:shadow-lg transition-all">
-                    <i class="fas fa-save mr-2"></i> Guardar Vehículo
+
+            <div class="guest-radio-group">
+                <label>Estacionamiento <span class="text-red-500">*</span></label>
+                <div class="guest-radio-options">
+                    <label class="guest-radio-card">
+                        <input type="radio" name="estacionamiento" value="coches" checked>
+                        <span>
+                            <i class="fas fa-car"></i>
+                            Coches
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="guest-modal-actions">
+                <button type="button" onclick="cerrarModalAgregarVehiculo()" class="guest-cancel">Cancelar</button>
+                <button type="submit" class="guest-save">
+                    <i class="fas fa-save"></i>
+                    Guardar vehículo
                 </button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Modal para editar vehículo -->
-<div id="modalEditarVehiculo" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full">
-        <form id="formEditarVehiculo">
+<div id="modalEditarVehiculo" class="guest-modal hidden">
+    <div class="guest-modal-card">
+        <div class="guest-modal-head">
+            <h3>
+                <i class="fas fa-pen-to-square"></i>
+                Editar vehículo
+            </h3>
+            <button type="button" onclick="cerrarModalEditarVehiculo()" class="guest-modal-close" aria-label="Cerrar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <form id="formEditarVehiculo" class="guest-vehicle-form">
             <input type="hidden" name="vehiculo_id" id="edit_vehiculo_id">
             <?= csrf_field() ?>
-            
-            <div class="p-6 border-b border-gray-200">
-                <h3 class="text-xl font-bold text-gray-800 flex items-center">
-                    <i class="fas fa-car mr-3 text-blue-600"></i>
-                    Editar Vehículo
-                </h3>
-            </div>
-            
-            <div class="p-6 space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Marca <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" name="marca" id="edit_marca" required
-                               class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Modelo
-                        </label>
-                        <input type="text" name="modelo" id="edit_modelo"
-                               class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-                    </div>
+
+            <div class="guest-form-grid">
+                <div class="guest-form-field">
+                    <label>Marca <span class="text-red-500">*</span></label>
+                    <input type="text" name="marca" id="edit_marca" required>
                 </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Placas
-                        </label>
-                        <input type="text" name="placas" id="edit_placas" style="text-transform: uppercase"
-                               class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            Color
-                        </label>
-                        <input type="text" name="color" id="edit_color"
-                               class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-                    </div>
+                <div class="guest-form-field">
+                    <label>Modelo</label>
+                    <input type="text" name="modelo" id="edit_modelo">
                 </div>
-                
-                <div>
-    <label class="block text-sm font-semibold text-gray-700 mb-2">
-        Estacionamiento <span class="text-red-500">*</span>
-    </label>
-    <div class="grid grid-cols-2 gap-3">
-        <label class="relative cursor-pointer">
-            <input type="radio" name="estacionamiento" value="coches"
-                   class="peer sr-only" checked>
-            <div class="px-3 py-2 border-2 rounded-lg text-center transition-all text-sm
-                        border-gray-200 hover:border-purple-500
-                        peer-checked:border-purple-500 peer-checked:bg-purple-50">
-                <i class="fas fa-car text-lg mb-1"></i>
-                <p class="text-xs font-medium">Coches</p>
             </div>
-        </label>
-        
-       
-    </div>
-</div>
+
+            <div class="guest-form-grid">
+                <div class="guest-form-field">
+                    <label>Placas</label>
+                    <input type="text" name="placas" id="edit_placas" style="text-transform: uppercase" class="font-mono">
+                </div>
+                <div class="guest-form-field">
+                    <label>Color</label>
+                    <input type="text" name="color" id="edit_color">
+                </div>
             </div>
-            
-            <div class="p-6 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 rounded-b-2xl">
-                <button type="button" onclick="cerrarModalEditarVehiculo()" 
-                        class="px-6 py-2 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-100 transition-all">
-                    Cancelar
-                </button>
-                <button type="submit" 
-                        class="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:shadow-lg transition-all">
-                    <i class="fas fa-save mr-2"></i> Actualizar Vehículo
+
+            <div class="guest-radio-group">
+                <label>Estacionamiento <span class="text-red-500">*</span></label>
+                <div class="guest-radio-options">
+                    <label class="guest-radio-card">
+                        <input type="radio" name="estacionamiento" value="coches" class="edit-estacionamiento" checked>
+                        <span>
+                            <i class="fas fa-car"></i>
+                            Coches
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="guest-modal-actions">
+                <button type="button" onclick="cerrarModalEditarVehiculo()" class="guest-cancel">Cancelar</button>
+                <button type="submit" class="guest-save">
+                    <i class="fas fa-save"></i>
+                    Actualizar vehículo
                 </button>
             </div>
         </form>
     </div>
 </div>
-<!-- Agregar antes de los scripts -->
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-// Funciones para el modal de agregar
+function guestSetModalState(modalId, isOpen) {
+    const modal = document.getElementById(modalId);
+    const sidebar = document.getElementById('sidebar');
+    if (!modal) return;
+
+    modal.classList.toggle('hidden', !isOpen);
+    document.body.classList.toggle('overflow-hidden', isOpen);
+    if (sidebar) {
+        sidebar.style.display = isOpen ? 'none' : '';
+    }
+}
+
 function abrirModalAgregarVehiculo() {
-    document.getElementById('modalAgregarVehiculo').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
+    guestSetModalState('modalAgregarVehiculo', true);
 }
 
 function cerrarModalAgregarVehiculo() {
-    document.getElementById('modalAgregarVehiculo').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-    document.getElementById('formAgregarVehiculo').reset();
+    guestSetModalState('modalAgregarVehiculo', false);
+    const form = document.getElementById('formAgregarVehiculo');
+    if (form) form.reset();
 }
 
-// Funciones para el modal de editar
 function abrirModalEditarVehiculo() {
-    document.getElementById('modalEditarVehiculo').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
+    guestSetModalState('modalEditarVehiculo', true);
 }
 
 function cerrarModalEditarVehiculo() {
-    document.getElementById('modalEditarVehiculo').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-    document.getElementById('formEditarVehiculo').reset();
+    guestSetModalState('modalEditarVehiculo', false);
+    const form = document.getElementById('formEditarVehiculo');
+    if (form) form.reset();
 }
 
-// Reemplazar tus funciones originales con estas
-function mostrarModalIngreso() {
-    document.getElementById('sidebar').style.display = 'none';
-    document.getElementById('modalIngreso').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
-}
-
-function cerrarModalIngreso() {
-    document.getElementById('sidebar').style.display = '';
-    document.getElementById('modalIngreso').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-    document.getElementById('modalIngreso').querySelector('form').reset();
-}
-
-function mostrarModalGasto() {
-    document.getElementById('sidebar').style.display = 'none';
-    document.getElementById('modalGasto').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
-}
-
-function cerrarModalGasto() {
-    document.getElementById('sidebar').style.display = '';
-    document.getElementById('modalGasto').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-    document.getElementById('modalGasto').querySelector('form').reset();
-}
-
-// Modal agregar vehículo
-function abrirModalAgregarVehiculo() {
-    document.getElementById('sidebar').style.display = 'none'; // Oculta sidebar
-    document.getElementById('modalAgregarVehiculo').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
-}
-
-function cerrarModalAgregarVehiculo() {
-    document.getElementById('sidebar').style.display = ''; // Muestra sidebar
-    document.getElementById('modalAgregarVehiculo').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-    document.getElementById('formAgregarVehiculo').reset();
-}
-
-// Modal editar vehículo
-function abrirModalEditarVehiculo() {
-    document.getElementById('sidebar').style.display = 'none'; // Oculta sidebar
-    document.getElementById('modalEditarVehiculo').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
-}
-
-function cerrarModalEditarVehiculo() {
-    document.getElementById('sidebar').style.display = ''; // Muestra sidebar
-    document.getElementById('modalEditarVehiculo').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-    document.getElementById('formEditarVehiculo').reset();
-}
-
-
-// Función para editar vehículo
 function editarVehiculo(vehiculo) {
-    // Llenar el formulario con los datos del vehículo
-    document.getElementById('edit_vehiculo_id').value = vehiculo.id;
-    document.getElementById('edit_marca').value = vehiculo.marca;
+    document.getElementById('edit_vehiculo_id').value = vehiculo.id || '';
+    document.getElementById('edit_marca').value = vehiculo.marca || '';
     document.getElementById('edit_modelo').value = vehiculo.modelo || '';
     document.getElementById('edit_placas').value = vehiculo.placas || '';
     document.getElementById('edit_color').value = vehiculo.color || '';
-    
-    // Seleccionar el radio button correcto para estacionamiento
-    const radios = document.querySelectorAll('.edit-estacionamiento');
-    radios.forEach(radio => {
-        if (radio.value === vehiculo.estacionamiento) {
-            radio.checked = true;
-        }
+
+    document.querySelectorAll('.edit-estacionamiento').forEach(radio => {
+        radio.checked = radio.value === (vehiculo.estacionamiento || 'coches');
     });
-    
-    // Abrir el modal
+
     abrirModalEditarVehiculo();
 }
 
-// Cerrar modales al hacer clic fuera
-document.getElementById('modalAgregarVehiculo').addEventListener('click', function(e) {
-    if (e.target === this) {
-        cerrarModalAgregarVehiculo();
-    }
+document.getElementById('modalAgregarVehiculo')?.addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalAgregarVehiculo();
 });
 
-document.getElementById('modalEditarVehiculo').addEventListener('click', function(e) {
-    if (e.target === this) {
-        cerrarModalEditarVehiculo();
-    }
+document.getElementById('modalEditarVehiculo')?.addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalEditarVehiculo();
 });
 
-// Convertir placas a mayúsculas en ambos formularios
-document.querySelector('input[name="placas"]').addEventListener('input', function(e) {
+document.querySelector('#formAgregarVehiculo input[name="placas"]')?.addEventListener('input', function(e) {
     e.target.value = e.target.value.toUpperCase();
 });
 
-document.getElementById('edit_placas').addEventListener('input', function(e) {
+document.getElementById('edit_placas')?.addEventListener('input', function(e) {
     e.target.value = e.target.value.toUpperCase();
 });
 
-// Manejar envío del formulario de agregar
-// Manejar envío del formulario de agregar
-document.getElementById('formAgregarVehiculo').addEventListener('submit', function(e) {
+document.getElementById('formAgregarVehiculo')?.addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const formData = new FormData(this);
-    
+
     fetch('<?= url('huespedes/agregar-vehiculo') ?>', {
         method: 'POST',
         body: formData,
         headers: {
-            'X-Requested-With': 'XMLHttpRequest' // Agregar este header
+            'X-Requested-With': 'XMLHttpRequest'
         }
     })
     .then(response => response.json())
@@ -546,7 +1612,7 @@ document.getElementById('formAgregarVehiculo').addEventListener('submit', functi
                 icon: 'success',
                 title: 'Éxito',
                 text: data.message,
-                confirmButtonColor: '#5D3A1A'
+                confirmButtonColor: '#1B2746'
             }).then(() => {
                 location.reload();
             });
@@ -555,41 +1621,33 @@ document.getElementById('formAgregarVehiculo').addEventListener('submit', functi
                 icon: 'error',
                 title: 'Error',
                 text: data.message,
-                confirmButtonColor: '#5D3A1A'
+                confirmButtonColor: '#1B2746'
             });
         }
     })
-    .catch(error => {
+    .catch(() => {
         Swal.fire({
             icon: 'error',
             title: 'Error',
             text: 'Ocurrió un error al agregar el vehículo',
-            confirmButtonColor: '#5D3A1A'
+            confirmButtonColor: '#1B2746'
         });
     });
 });
 
-// Manejar envío del formulario de editar
-document.getElementById('formEditarVehiculo').addEventListener('submit', function(e) {
+document.getElementById('formEditarVehiculo')?.addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const formData = new FormData(this);
-    
-    // Debug: ver qué datos se están enviando
-    console.log('Datos enviados:');
-    for (let pair of formData.entries()) {
-        console.log(pair[0] + ': ' + pair[1]);
-    }
-    
+
     fetch('<?= url('huespedes/actualizar-vehiculo') ?>', {
         method: 'POST',
         body: formData,
         headers: {
-            'X-Requested-With': 'XMLHttpRequest' // Asegurar que se detecte como AJAX
+            'X-Requested-With': 'XMLHttpRequest'
         }
     })
     .then(response => {
-        console.log('Status:', response.status);
         if (!response.ok) {
             throw new Error('Error en la respuesta del servidor');
         }
@@ -601,7 +1659,7 @@ document.getElementById('formEditarVehiculo').addEventListener('submit', functio
                 icon: 'success',
                 title: 'Éxito',
                 text: data.message,
-                confirmButtonColor: '#5D3A1A'
+                confirmButtonColor: '#1B2746'
             }).then(() => {
                 location.reload();
             });
@@ -610,30 +1668,27 @@ document.getElementById('formEditarVehiculo').addEventListener('submit', functio
                 icon: 'error',
                 title: 'Error',
                 text: data.message || 'Error al actualizar el vehículo',
-                confirmButtonColor: '#5D3A1A'
+                confirmButtonColor: '#1B2746'
             });
         }
     })
-    .catch(error => {
-        console.error('Error completo:', error);
+    .catch(() => {
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Ocurrió un error al actualizar el vehículo. Por favor, intente nuevamente.',
-            confirmButtonColor: '#5D3A1A'
+            text: 'Ocurrió un error al actualizar el vehículo. Intente nuevamente.',
+            confirmButtonColor: '#1B2746'
         });
     });
 });
 
-// Función para eliminar vehículo
-// Función para eliminar vehículo - VERSIÓN CORREGIDA
 function confirmarEliminarVehiculo(vehiculoId, descripcion) {
     Swal.fire({
         title: '¿Eliminar vehículo?',
         text: `Se eliminará el vehículo: ${descripcion}`,
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#DC2626',
+        confirmButtonColor: '#B83D35',
         cancelButtonColor: '#6B7280',
         confirmButtonText: '<i class="fas fa-trash mr-2"></i>Sí, eliminar',
         cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancelar'
@@ -642,12 +1697,12 @@ function confirmarEliminarVehiculo(vehiculoId, descripcion) {
             const formData = new FormData();
             formData.append('vehiculo_id', vehiculoId);
             formData.append('csrf_token', '<?= csrf_token() ?>');
-            
+
             fetch('<?= url('huespedes/eliminar-vehiculo') ?>', {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'  // ← ESTE HEADER ES CRUCIAL
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
             })
             .then(response => {
@@ -662,7 +1717,7 @@ function confirmarEliminarVehiculo(vehiculoId, descripcion) {
                         icon: 'success',
                         title: 'Eliminado',
                         text: data.message,
-                        confirmButtonColor: '#5D3A1A'
+                        confirmButtonColor: '#1B2746'
                     }).then(() => {
                         location.reload();
                     });
@@ -671,198 +1726,26 @@ function confirmarEliminarVehiculo(vehiculoId, descripcion) {
                         icon: 'error',
                         title: 'Error',
                         text: data.message,
-                        confirmButtonColor: '#5D3A1A'
+                        confirmButtonColor: '#1B2746'
                     });
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
+            .catch(() => {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error de conexión',
                     text: 'No se pudo eliminar el vehículo. Intente nuevamente.',
-                    confirmButtonColor: '#5D3A1A'
+                    confirmButtonColor: '#1B2746'
                 });
             });
         }
     });
 }
-</script>
 
-<!-- Historial de Reservaciones -->
-<div class="bg-white rounded-lg shadow-lg p-6">
-    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-        <i class="fas fa-history mr-2 text-hotel-brown"></i>
-        Historial de Reservaciones
-    </h2>
-    
-    <?php if (!empty($reservaciones)): ?>
-    <div class="overflow-x-auto">
-        <table class="w-full">
-            <thead>
-                <tr class="text-left text-sm text-gray-600 border-b">
-                    <th class="pb-3">Habitaciones</th>
-                    <th class="pb-3">Entrada</th>
-                    <th class="pb-3">Salida</th>
-                    <th class="pb-3">Total</th>
-                    <th class="pb-3">Estado</th>
-                    <th class="pb-3">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($reservaciones as $reservacion): ?>
-                <tr class="border-b hover:bg-gray-50">
-                    <td class="py-3">
-                        <div>
-                            <p class="font-medium">
-                                <?= htmlspecialchars($reservacion['habitaciones_numeros'] ?? 'Sin habitaciones') ?>
-                            </p>
-                            <p class="text-sm text-gray-500">
-                                <?= intval($reservacion['total_habitaciones'] ?? 0) ?> <?= (intval($reservacion['total_habitaciones'] ?? 0) == 1) ? 'habitación' : 'habitaciones' ?>
-                                <?php if (isset($reservacion['habitaciones_cortesia']) && $reservacion['habitaciones_cortesia'] > 0): ?>
-                                    <span class="text-green-600 font-semibold">
-                                        (<?= $reservacion['habitaciones_cortesia'] ?> gratis)
-                                    </span>
-                                <?php endif; ?>
-                            </p>
-                            <?php if (!empty($reservacion['tipos_habitacion'])): ?>
-                            <p class="text-xs text-gray-400 capitalize">
-                                <?= htmlspecialchars($reservacion['tipos_habitacion']) ?>
-                            </p>
-                            <?php endif; ?>
-                        </div>
-                    </td>
-                    <td class="py-3 text-sm"><?= format_date($reservacion['fecha_entrada'] ?? '') ?></td>
-                    <td class="py-3 text-sm"><?= format_date($reservacion['fecha_salida'] ?? '') ?></td>
-                    <td class="py-3">
-                        <p class="font-semibold"><?= format_money($reservacion['precio_total'] ?? 0) ?></p>
-                        <p class="text-xs text-gray-500"><?= ucfirst($reservacion['metodo_pago'] ?? 'No especificado') ?></p>
-                    </td>
-                    <td class="py-3">
-                        <?php
-                        $estado = $reservacion['estado'] ?? 'desconocido';
-                        $estadoReserva = [
-                            'confirmada' => ['label' => 'Confirmada', 'color' => 'blue'],
-                            'checked_in' => ['label' => 'Check-in', 'color' => 'green'],
-                            'checked_out' => ['label' => 'Check-out', 'color' => 'gray'],
-                            'cancelada' => ['label' => 'Cancelada', 'color' => 'red']
-                        ][$estado] ?? ['label' => 'Desconocido', 'color' => 'gray'];
-                        ?>
-                        <span class="inline-flex px-2 py-1 text-xs rounded-full bg-<?= $estadoReserva['color'] ?>-100 text-<?= $estadoReserva['color'] ?>-800">
-                            <?= $estadoReserva['label'] ?>
-                        </span>
-                    </td>
-                    <td class="py-3">
-                        <a href="<?= url('reservaciones/ver/' . $reservacion['id']) ?>" 
-                           class="bg-gradient-to-r from-hotel-brown to-hotel-brown-dark text-white px-3 py-1 rounded-lg text-xs hover:shadow-md transition-all inline-flex items-center">
-                            <i class="fas fa-eye mr-1"></i>Ver
-                        </a>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-    <?php else: ?>
-    <div class="text-center py-8">
-        <i class="fas fa-calendar-times text-6xl text-gray-300 mb-4"></i>
-        <p class="text-xl text-gray-600">Sin reservaciones registradas</p>
-        <p class="text-gray-500 mt-2">Este huésped no ha realizado ninguna reservación</p>
-        <a href="<?= url('reservaciones/crear?huesped_id=' . $huesped['id']) ?>" 
-           class="inline-flex items-center mt-4 bg-gradient-to-r from-hotel-gold to-yellow-600 text-white px-4 py-3 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all">
-            <i class="fas fa-calendar-plus mr-2"></i>Crear primera reservación
-        </a>
-    </div>
-    <?php endif; ?>
-</div>
-        <!-- Columna lateral - Estadísticas -->
-        <div class="space-y-6">
-            <!-- Tarjeta de Estadísticas -->
-            <div class="bg-gradient-to-br from-hotel-brown to-hotel-brown-dark rounded-lg shadow-lg p-6 text-white">
-                <h3 class="text-lg font-semibold mb-4">Estadísticas del Huésped</h3>
-                
-                <div class="space-y-4">
-                    <div>
-                        <p class="text-3xl font-bold"><?= $total_reservaciones ?></p>
-                        <p class="text-sm opacity-80">Total de visitas</p>
-                    </div>
-                    
-                    <div class="pt-4 border-t border-white/20">
-                        <p class="text-2xl font-bold"><?= format_money($total_gastado) ?></p>
-                        <p class="text-sm opacity-80">Total gastado</p>
-                    </div>
-                    
-                    <?php if ($total_reservaciones > 0): ?>
-                    <div class="pt-4 border-t border-white/20">
-                        <p class="text-xl font-bold"><?= format_money($total_gastado / $total_reservaciones) ?></p>
-                        <p class="text-sm opacity-80">Gasto promedio por visita</p>
-                    </div>
-                    <?php endif; ?>
-                </div>
-                
-                <?php if ($total_reservaciones >= 3): ?>
-                <div class="mt-4 bg-yellow-400/20 rounded-lg p-3">
-                    <p class="text-sm flex items-center">
-                        <i class="fas fa-star mr-2"></i>
-                        Cliente frecuente
-                    </p>
-                </div>
-                <?php endif; ?>
-            </div>
-            
-            <!-- Acciones Rápidas -->
-            <div class="bg-white rounded-lg shadow-lg p-6">
-                <h3 class="font-semibold text-gray-800 mb-4">Acciones Rápidas</h3>
-                
-                <div class="space-y-3">
-                    <a href="<?= url('reservaciones/crear?huesped_id=' . $huesped['id']) ?>" 
-                       class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200 flex items-center justify-center">
-                        <i class="fas fa-calendar-plus mr-2"></i>
-                        Nueva Reservación
-                    </a>
-                    
-                    <a href="<?= url('huespedes/' . $huesped['id'] . '/edit') ?>" 
-                       class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200 flex items-center justify-center">
-                        <i class="fas fa-edit mr-2"></i>
-                        Editar Información
-                    </a>
-                    
-                    <?php if ($huesped['telefono']): ?>
-                    <a href="tel:<?= $huesped['telefono'] ?>" 
-                       class="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition duration-200 flex items-center justify-center">
-                        <i class="fas fa-phone mr-2"></i>
-                        Llamar
-                    </a>
-                    <?php endif; ?>
-                    
-                    <?php if ($huesped['email']): ?>
-                    <a href="mailto:<?= $huesped['email'] ?>" 
-                       class="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition duration-200 flex items-center justify-center">
-                        <i class="fas fa-envelope mr-2"></i>
-                        Enviar Email
-                    </a>
-                    <?php endif; ?>
-                </div>
-            </div>
-            
-            <!-- Información del Sistema -->
-            <div class="bg-gray-50 rounded-lg p-6">
-                <h3 class="font-semibold text-gray-800 mb-3">Información del Sistema</h3>
-                <ul class="space-y-2 text-sm">
-                    <li class="flex justify-between">
-                        <span class="text-gray-600">ID:</span>
-                        <span class="font-mono">#<?= $huesped['id'] ?></span>
-                    </li>
-                    <li class="flex justify-between">
-                        <span class="text-gray-600">Registrado:</span>
-                        <span><?= format_datetime($huesped['created_at']) ?></span>
-                    </li>
-                    <li class="flex justify-between">
-                        <span class="text-gray-600">Actualizado:</span>
-                        <span><?= format_datetime($huesped['updated_at']) ?></span>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarModalAgregarVehiculo();
+        cerrarModalEditarVehiculo();
+    }
+});
+</script>
