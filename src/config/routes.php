@@ -192,6 +192,18 @@ $router->get('/dashboard', ['controller' => 'Dashboard', 'action' => 'index']);
 $router->get('/dashboard/stats', ['controller' => 'Dashboard', 'action' => 'stats']);
 $router->get('/dashboard/charts', ['controller' => 'Dashboard', 'action' => 'charts']);
 
+// Centro de notificaciones
+$router->get('/notificaciones', ['controller' => 'Notificacion', 'action' => 'index']);
+$router->get('/notificaciones/{id:[0-9]+}/abrir', ['controller' => 'Notificacion', 'action' => 'abrir']);
+$router->post('/notificaciones/marcar-todas-leidas', ['controller' => 'Notificacion', 'action' => 'marcarTodasLeidas']);
+$router->post('/notificaciones/{id:[0-9]+}/leer', ['controller' => 'Notificacion', 'action' => 'marcarLeida']);
+$router->post('/notificaciones/{id:[0-9]+}/resolver', ['controller' => 'Notificacion', 'action' => 'resolver']);
+$router->post('/notificaciones/{id:[0-9]+}/descartar', ['controller' => 'Notificacion', 'action' => 'descartar']);
+$router->get('/api/pwa-push/public-key', ['controller' => 'PwaPush', 'action' => 'publicKey']);
+$router->post('/api/pwa-push/subscribe', ['controller' => 'PwaPush', 'action' => 'subscribe']);
+$router->post('/api/pwa-push/unsubscribe', ['controller' => 'PwaPush', 'action' => 'unsubscribe']);
+$router->post('/api/pwa-push/test', ['controller' => 'PwaPush', 'action' => 'test']);
+
 // Panel Medisoft interno SaaS
 $router->get('/admin/saas/hoteles', ['controller' => 'SaasAdmin', 'action' => 'hoteles']);
 $router->get('/admin/saas/hoteles/crear', ['controller' => 'SaasAdmin', 'action' => 'crearHotel']);
@@ -343,6 +355,13 @@ $router->post('/inventario/generarPdfMovimientos', ['controller' => 'Inventario'
 
 // Página principal de reportes
 $router->get('/reportes', ['controller' => 'Reportes', 'action' => 'index']);
+$router->get('/reportes/gerencial-diario', ['controller' => 'Reportes', 'action' => 'gerencialDiario']);
+$router->get('/reportes/gerencial-diario/pdf', ['controller' => 'Reportes', 'action' => 'gerencialDiarioPdf']);
+$router->get('/reportes/links', ['controller' => 'ReporteLink', 'action' => 'historial']);
+$router->get('/reportes/links/{id:[0-9]+}/descargar', ['controller' => 'ReporteLink', 'action' => 'descargarInterno']);
+$router->post('/reportes/links/{id:[0-9]+}/enviar-correo', ['controller' => 'ReporteLink', 'action' => 'enviarCorreo']);
+$router->post('/reportes/links/{id:[0-9]+}/revocar', ['controller' => 'ReporteLink', 'action' => 'revocar']);
+$router->get('/reportes/link/{token:[a-f0-9]+}', ['controller' => 'ReporteLink', 'action' => 'descargarPublico']);
 
 // Reportes individuales
 $router->get('/reportes/ingresos-gastos', ['controller' => 'Reportes', 'action' => 'ingresosGastos']);
@@ -381,6 +400,7 @@ $router->get('/api/habitaciones/{id:[0-9]+}/imagen-info', ['controller' => 'Api'
 // Configuración (solo gerente)
 $router->get('/configuracion', ['controller' => 'Configuracion', 'action' => 'index']);
 $router->post('/configuracion/update', ['controller' => 'Configuracion', 'action' => 'actualizar']);
+$router->post('/configuracion/pwa-push/{id:[0-9]+}/revocar', ['controller' => 'PwaPush', 'action' => 'revocarDispositivo']);
 $router->get('/configuracion/backup', ['controller' => 'Configuracion', 'action' => 'backup']);
 $router->post('/configuracion/backup/create', ['controller' => 'Configuracion', 'action' => 'crearBackup']);
 $router->get('/configuracion/tarifas', ['controller' => 'Tarifas', 'action' => 'index']);

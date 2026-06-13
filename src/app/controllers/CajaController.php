@@ -4,6 +4,9 @@
  * Los Cedros
  */
 
+require_once __DIR__ . '/../services/ReporteEntregaService.php';
+require_once __DIR__ . '/../services/NotificacionService.php';
+
 class CajaController extends Controller {
     private $cajaModel;
     private $movimientoModel;
@@ -415,15 +418,17 @@ public function cerrarCorteAction() {
             );
         }
         
-        // === GENERAR PDF Y ENVIAR POR WHATSAPP ===
+        // === GENERAR PDF, LINK SEGURO Y CORREO CONFIGURADO ===
         try {
             $this->generarYEnviarReporteCorte($corte_id, $efectivo_contado, $observaciones);
-            $mensaje .= ' | Reporte enviado por WhatsApp.';
+            $mensaje .= ' | Reporte preparado con link seguro y correo segun configuracion.';
         } catch (Exception $e) {
             error_log("Error generando/enviando reporte: " . $e->getMessage());
-            $mensaje .= ' | No se pudo enviar el reporte por WhatsApp.';
+            $mensaje .= ' | No se pudo preparar el envio del reporte.';
         }
         // === FIN GENERAR PDF ===
+
+        $this->registrarNotificacionCorteCerrado($corte_id, $resultado);
         
         set_mensaje($mensaje, 'success');
         
@@ -434,8 +439,33 @@ public function cerrarCorteAction() {
     $this->redirect('caja');
 }
 
+private function registrarNotificacionCorteCerrado($corte_id, array $resultado) {
+    $diferencia = (float)($resultado['diferencia'] ?? 0);
+    $severidad = abs($diferencia) > 0 ? 'alta' : 'info';
+    $mensaje = 'El corte de caja fue cerrado correctamente.';
+
+    if ($diferencia != 0.0) {
+        $tipo = $diferencia > 0 ? 'sobrante' : 'faltante';
+        $mensaje .= ' Hay un ' . $tipo . ' de $' . number_format(abs($diferencia), 2) . '.';
+    }
+
+    NotificacionService::crear([
+        'hotel_id' => obtenerHotelIdActualCompat(),
+        'modulo' => 'caja',
+        'tipo' => 'corte_cerrado',
+        'severidad' => $severidad,
+        'titulo' => 'Corte de caja #' . (int)$corte_id . ' cerrado',
+        'mensaje' => $mensaje,
+        'entidad_tipo' => 'corte_caja',
+        'entidad_id' => (int)$corte_id,
+        'url' => 'caja/corte/' . (int)$corte_id,
+        'dedupe_key' => 'caja.corte_cerrado.' . (int)$corte_id,
+        'creada_por' => function_exists('user_id') ? user_id() : null,
+    ]);
+}
+
 /**
- * Generar PDF del corte y enviarlo por WhatsApp
+ * Generar PDF del corte y enviarlo por correo con link seguro
  */
 private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $observaciones) {
     // Obtener datos completos del corte
@@ -485,30 +515,24 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
     
     error_log("PDF generado en: $rutaPDF");
     
-    // Enviar por WhatsApp
-    require_once ROOT_PATH . '/includes/WhatsAppService.php';
-    $whatsapp = new WhatsAppService();
-    
-    if ($whatsapp->estaConfigurado()) {
-        $balance = ($resumen['ingresos']['total'] ?? 0) - ($resumen['gastos']['total'] ?? 0);
-        
-        $caption = $whatsapp->prepararMensajeCorte([
-            'fecha' => date('d/m/Y', strtotime($corte['fecha_apertura'])),
-            'hora' => date('H:i'),
-            'balance' => $balance
-        ]);
-        
-        $nombrePDF = 'Corte_' . date('d-m-Y', strtotime($corte['fecha_apertura'])) . '.pdf';
-        
-        $resultadoWA = $whatsapp->enviarPDF($rutaPDF, $nombrePDF, $caption);
-        
-        if ($resultadoWA['success']) {
-            error_log("WhatsApp: PDF enviado exitosamente");
-        } else {
-            error_log("WhatsApp: Error - " . $resultadoWA['message']);
-        }
-    } else {
-        error_log("WhatsApp: Servicio no configurado, PDF solo fue guardado localmente");
+    $nombrePDF = 'Corte_' . date('d-m-Y', strtotime($corte['fecha_apertura'])) . '_#' . (int)$corte_id . '.pdf';
+    $entrega = new ReporteEntregaService();
+    $registro = $entrega->registrarArchivoExistenteYEnviar($rutaPDF, [
+        'hotel_id' => $hotel_id,
+        'tipo_reporte' => 'corte-caja',
+        'titulo' => 'Corte de caja #' . (int)$corte_id,
+        'descripcion' => 'Reporte PDF generado al cerrar caja.',
+        'archivo_nombre' => $nombrePDF,
+        'parametros' => [
+            'corte_id' => (int)$corte_id,
+            'caja_id' => (int)($corte['caja_id'] ?? 0),
+            'fecha_apertura' => $corte['fecha_apertura'] ?? null,
+            'fecha_cierre' => $corte['fecha_cierre'] ?? null,
+        ],
+    ]);
+
+    if (!$registro) {
+        error_log('No se pudo registrar link seguro para corte de caja #' . (int)$corte_id);
     }
 }
     

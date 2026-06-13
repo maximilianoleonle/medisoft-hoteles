@@ -1314,32 +1314,60 @@ if (isset($_SESSION['flash_message']) &&
 }
 
 .reservation-detail-v2 .rd-reservation-hero-strip {
+    position: relative;
+    overflow: hidden;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
-    margin: 0 0 14px;
-    padding: 12px;
-    border: 1px solid color-mix(in srgb, var(--rd-brand) 13%, #E6D7BF);
-    border-radius: 20px;
+    gap: 12px;
+    margin: 0 0 16px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, var(--rd-brand) 10%, #E5E7EB);
+    border-radius: 22px;
     background:
-        linear-gradient(135deg, color-mix(in srgb, var(--rd-brand) 96%, #111827), color-mix(in srgb, var(--rd-accent) 20%, var(--rd-brand)));
-    box-shadow: 0 22px 44px -32px color-mix(in srgb, var(--rd-brand) 62%, transparent);
+        linear-gradient(135deg, rgba(255,255,255,.98), color-mix(in srgb, var(--rd-accent) 5%, #FFFFFF)),
+        #FFFFFF;
+    box-shadow: 0 20px 44px -34px rgba(15, 23, 42, .38);
+}
+
+.reservation-detail-v2 .rd-reservation-hero-strip::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg,
+        color-mix(in srgb, var(--rd-brand) 62%, #1F2937),
+        color-mix(in srgb, var(--rd-accent) 60%, #FFFFFF),
+        color-mix(in srgb, var(--rd-brand) 18%, #FFFFFF));
+    opacity: .78;
 }
 
 .reservation-detail-v2 .rd-strip-item {
+    position: relative;
+    overflow: hidden;
     min-height: 74px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     gap: 6px;
     padding: 12px;
-    border: 1px solid rgba(255,255,255,.14);
+    border: 1px solid color-mix(in srgb, var(--rd-brand) 9%, #E5E7EB);
     border-radius: 16px;
-    background: rgba(255,255,255,.08);
+    background: rgba(255,255,255,.86);
+    box-shadow: 0 1px 0 rgba(255,255,255,.9) inset;
+}
+
+.reservation-detail-v2 .rd-strip-item::before {
+    content: "";
+    position: absolute;
+    inset: 12px auto 12px 0;
+    width: 3px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rd-brand) 52%, #CBD5E1);
+    opacity: .64;
 }
 
 .reservation-detail-v2 .rd-strip-item span {
-    color: color-mix(in srgb, #FDFBF7 70%, var(--rd-accent));
+    color: #647084;
     font-size: .7rem;
     font-weight: 850;
     text-transform: uppercase;
@@ -1347,19 +1375,25 @@ if (isset($_SESSION['flash_message']) &&
 }
 
 .reservation-detail-v2 .rd-strip-item strong {
-    color: #FDFBF7;
+    color: #182033;
     font-size: 1rem;
     font-weight: 950;
     line-height: 1.05;
+    font-variant-numeric: tabular-nums;
 }
 
 .reservation-detail-v2 .rd-strip-item.is-total {
-    background: color-mix(in srgb, var(--rd-accent) 18%, rgba(255,255,255,.08));
-    border-color: color-mix(in srgb, var(--rd-accent) 40%, rgba(255,255,255,.18));
+    background: linear-gradient(135deg, color-mix(in srgb, var(--rd-accent) 9%, #FFFFFF), #FFFFFF);
+    border-color: color-mix(in srgb, var(--rd-accent) 22%, #E5E7EB);
+}
+
+.reservation-detail-v2 .rd-strip-item.is-total::before {
+    background: color-mix(in srgb, var(--rd-accent) 62%, #A16207);
+    opacity: .78;
 }
 
 .reservation-detail-v2 .rd-strip-item.is-total strong {
-    color: color-mix(in srgb, var(--rd-accent) 72%, #FDFBF7);
+    color: #182033;
     font-size: 1.22rem;
 }
 
@@ -1595,6 +1629,35 @@ if (isset($_SESSION['flash_message']) &&
 .reservation-detail-v2 .wa-menu-open {
     border-color: color-mix(in srgb, #25D366 30%, transparent) !important;
     background: color-mix(in srgb, #25D366 12%, #FDFBF7) !important;
+}
+
+/* Mantener textos principales en negro, sin usar el color primario del hotel. */
+.reservation-detail-v2 .info-value,
+.reservation-detail-v2 .precio-total,
+.reservation-detail-v2 .room-card h4,
+.reservation-detail-v2 .room-paid-summary strong,
+.reservation-detail-v2 .room-price-value,
+.reservation-detail-v2 textarea,
+.reservation-detail-v2 input:not([type="checkbox"]):not([type="radio"]),
+.reservation-detail-v2 select,
+.reservation-detail-v2 .rd-quick-nav a:not(.is-active),
+.reservation-detail-v2 .rd-quick-nav a:not(.is-active):hover,
+.reservation-detail-v2 .rd-quick-nav a:not(.is-active):focus-visible,
+.reservation-detail-v2 .rd-related-links a,
+.reservation-detail-v2 .rd-inline-link,
+.reservation-detail-v2 .rd-room-link,
+.reservation-detail-v2 .rd-mini-link,
+.reservation-detail-v2 .rd-related-links a:hover,
+.reservation-detail-v2 .rd-related-links a:focus-visible,
+.reservation-detail-v2 .rd-inline-link:hover,
+.reservation-detail-v2 .rd-inline-link:focus-visible,
+.reservation-detail-v2 .rd-room-link:hover,
+.reservation-detail-v2 .rd-room-link:focus-visible,
+.reservation-detail-v2 .rd-mini-link:hover,
+.reservation-detail-v2 .rd-mini-link:focus-visible,
+.reservation-detail-v2 .info-row:hover .info-label,
+.reservation-detail-v2 .info-row:hover .info-value {
+    color: #111827 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -7748,7 +7811,7 @@ function mostrarPreviewMDD(tipo, html) {
 #modalCheckIn .rv-field-label {
     display: block;
     margin-bottom: 7px;
-    color: var(--brand-primary, #1B2746);
+    color: #111827;
     font-size: .72rem;
     font-weight: 900;
     letter-spacing: .05em;
@@ -7780,7 +7843,7 @@ function mostrarPreviewMDD(tipo, html) {
 #modalCheckIn .rv-pay-option label[style*="font-size: 0.75rem"] {
     display: block !important;
     margin-bottom: 7px !important;
-    color: var(--brand-primary, #1B2746) !important;
+    color: #111827 !important;
     font-size: .72rem !important;
     font-weight: 900 !important;
     letter-spacing: .05em !important;

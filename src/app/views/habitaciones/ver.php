@@ -1934,6 +1934,264 @@ $mantenimientos_count = count($mantenimientos_programados);
     background: #FFFFFF;
 }
 
+.room-detail-page .rd-maint-modal {
+    padding: clamp(14px, 4vw, 28px);
+    background:
+        radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--rd-brand) 18%, transparent), transparent 22rem),
+        radial-gradient(circle at 88% 78%, color-mix(in srgb, var(--rd-accent) 16%, transparent), transparent 24rem),
+        color-mix(in srgb, var(--rd-brand-dark) 82%, rgba(8, 13, 24, .72));
+    backdrop-filter: blur(16px) saturate(118%);
+}
+
+.room-detail-page .rd-maint-modal-card {
+    width: min(100%, 590px);
+    border: 1px solid color-mix(in srgb, var(--rd-brand) 16%, rgba(255,255,255,.72));
+    border-radius: 26px;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.98), rgba(250,250,247,.96)),
+        var(--rd-panel);
+    box-shadow:
+        0 30px 80px -44px rgba(7, 12, 22, .9),
+        0 0 0 1px rgba(255,255,255,.62) inset;
+    overflow: hidden;
+}
+
+.room-detail-page .rd-maint-modal-card::before {
+    content: "";
+    display: block;
+    height: 5px;
+    background: linear-gradient(90deg,
+        color-mix(in srgb, var(--rd-brand) 78%, #111827),
+        color-mix(in srgb, var(--rd-accent) 74%, var(--rd-brand)),
+        color-mix(in srgb, var(--rd-brand) 46%, #FFFFFF));
+}
+
+.room-detail-page .rd-maint-modal .rd-modal-head {
+    align-items: flex-start;
+    padding: 20px 20px 17px;
+    border-bottom: 1px solid rgba(28, 38, 53, .09);
+    background:
+        radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--rd-brand) 9%, transparent), transparent 14rem),
+        linear-gradient(135deg, #FFFFFF, color-mix(in srgb, var(--rd-accent) 5%, #F9FAFB));
+}
+
+.room-detail-page .rd-maint-title {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+}
+
+.room-detail-page .rd-maint-icon {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--rd-brand) 18%, transparent);
+    border-radius: 16px;
+    background:
+        linear-gradient(145deg, color-mix(in srgb, var(--rd-brand) 11%, #FFFFFF), #FFFFFF);
+    color: color-mix(in srgb, var(--rd-brand) 82%, #111827);
+    box-shadow: 0 14px 30px -24px color-mix(in srgb, var(--rd-brand) 70%, transparent);
+}
+
+.room-detail-page .rd-maint-kicker {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    margin-bottom: 5px;
+    padding: 4px 8px;
+    border: 1px solid color-mix(in srgb, var(--rd-accent) 18%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rd-accent) 8%, #FFFFFF);
+    color: color-mix(in srgb, var(--rd-brand-dark) 74%, #334155);
+    font-size: .66rem;
+    font-weight: 950;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.room-detail-page .rd-maint-modal .rd-modal-head h3 {
+    display: block;
+    margin: 0;
+    color: #182033;
+    font-size: clamp(1.05rem, 2vw, 1.22rem);
+    line-height: 1.1;
+}
+
+.room-detail-page .rd-maint-modal .rd-modal-head p {
+    margin: 6px 0 0;
+    max-width: 38rem;
+    color: #647084;
+    font-size: .82rem;
+    font-weight: 720;
+    line-height: 1.38;
+}
+
+.room-detail-page .rd-maint-modal .rd-modal-close {
+    flex: 0 0 auto;
+    border-color: rgba(28, 38, 53, .11);
+    background: #FFFFFF;
+    color: #334155;
+    box-shadow: 0 10px 24px -20px rgba(15, 23, 42, .62);
+}
+
+.room-detail-page .rd-maint-modal .rd-modal-form {
+    gap: 16px;
+    padding: 18px 20px 20px;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.72), rgba(247,249,248,.62));
+}
+
+.room-detail-page .rd-maint-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid rgba(28, 38, 53, .09);
+    border-radius: 18px;
+    background: #FFFFFF;
+}
+
+.room-detail-page .rd-maint-summary span {
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--rd-brand) 5%, #F8FAFC);
+    color: #263247;
+    font-size: .76rem;
+    font-weight: 900;
+    line-height: 1.1;
+}
+
+.room-detail-page .rd-maint-summary i {
+    color: color-mix(in srgb, var(--rd-brand) 78%, #111827);
+}
+
+.room-detail-page .rd-maint-field-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.room-detail-page .rd-maint-modal .rd-label {
+    color: #273244;
+    font-size: .72rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.room-detail-page .rd-maint-modal .rd-control {
+    min-height: 48px;
+    border-color: rgba(28, 38, 53, .12);
+    border-radius: 16px;
+    background: #FFFFFF;
+    color: #182033;
+    box-shadow: 0 1px 0 rgba(255,255,255,.72) inset;
+}
+
+.room-detail-page .rd-maint-modal .rd-control:focus {
+    border-color: color-mix(in srgb, var(--rd-brand) 56%, #CBD5E1);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--rd-brand) 13%, transparent);
+}
+
+.room-detail-page .rd-maint-note {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    border-color: color-mix(in srgb, var(--rd-accent) 22%, rgba(28,38,53,.12));
+    background: color-mix(in srgb, var(--rd-accent) 8%, #FFFFFF);
+    color: #364153;
+}
+
+.room-detail-page .rd-maint-note i {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: #FFFFFF;
+    color: color-mix(in srgb, var(--rd-accent) 76%, #111827);
+}
+
+.room-detail-page .rd-maint-modal .rd-modal-actions {
+    gap: 12px;
+    padding-top: 4px;
+}
+
+.room-detail-page .rd-btn-maint-cancel,
+.room-detail-page .rd-btn-maint-primary {
+    min-height: 46px;
+    border-radius: 16px;
+}
+
+.room-detail-page .rd-btn-maint-cancel {
+    border-color: rgba(28, 38, 53, .12);
+    background: #FFFFFF;
+    color: #334155;
+}
+
+.room-detail-page .rd-btn-maint-primary {
+    border-color: color-mix(in srgb, var(--rd-brand) 56%, #111827);
+    background: linear-gradient(145deg,
+        color-mix(in srgb, var(--rd-brand) 84%, #111827),
+        color-mix(in srgb, var(--rd-brand) 58%, #111827));
+    color: #FFFFFF;
+    box-shadow: 0 18px 34px -24px color-mix(in srgb, var(--rd-brand) 74%, #111827);
+}
+
+.room-detail-page .rd-btn-maint-primary:hover,
+.room-detail-page .rd-btn-maint-cancel:hover {
+    transform: translateY(-1px);
+}
+
+@media (max-width: 780px) {
+    .room-detail-page .rd-maint-modal {
+        align-items: flex-end;
+        padding: 10px;
+    }
+
+    .room-detail-page .rd-maint-modal-card {
+        width: 100%;
+        max-height: calc(100dvh - 20px);
+        border-radius: 22px;
+    }
+
+    .room-detail-page .rd-maint-modal .rd-modal-head {
+        padding: 17px 16px 14px;
+    }
+
+    .room-detail-page .rd-maint-title {
+        grid-template-columns: 40px minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .room-detail-page .rd-maint-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 14px;
+    }
+
+    .room-detail-page .rd-maint-modal .rd-modal-form {
+        padding: 15px;
+    }
+
+    .room-detail-page .rd-maint-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .room-detail-page .rd-maint-field-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .room-detail-page .rd-btn-maint-primary {
+        order: -1;
+    }
+}
+
 @media (max-width: 1160px) {
     .rd-hero,
     .rd-layout {
@@ -2668,10 +2926,17 @@ $mantenimientos_count = count($mantenimientos_programados);
     </div>
 </div>
 
-<div id="modalMantenimiento" class="rd-modal hidden">
-    <div class="rd-modal-card" id="modalContent">
+<div id="modalMantenimiento" class="rd-modal rd-maint-modal hidden">
+    <div class="rd-modal-card rd-maint-modal-card" id="modalContent">
         <div class="rd-modal-head">
-            <h3><i class="fas fa-tools"></i>Iniciar mantenimiento</h3>
+            <div class="rd-maint-title">
+                <span class="rd-maint-icon"><i class="fas fa-tools"></i></span>
+                <div>
+                    <span class="rd-maint-kicker">Cambio inmediato</span>
+                    <h3>Iniciar mantenimiento</h3>
+                    <p>Registra el trabajo y cambia la habitaci&oacute;n a mantenimiento desde este momento.</p>
+                </div>
+            </div>
             <button type="button" onclick="cerrarModalMantenimiento()" class="rd-modal-close" aria-label="Cerrar">
                 <i class="fas fa-times"></i>
             </button>
@@ -2681,25 +2946,33 @@ $mantenimientos_count = count($mantenimientos_programados);
             <?= csrf_field() ?>
             <input type="hidden" name="accion" value="iniciar">
 
-            <div class="rd-field">
-                <label class="rd-label">Tipo de mantenimiento</label>
-                <select name="tipo_mantenimiento" required class="rd-control">
-                    <option value="">Seleccione...</option>
-                    <option value="preventivo">Preventivo</option>
-                    <option value="correctivo">Correctivo</option>
-                    <option value="emergencia">Emergencia</option>
-                    <option value="limpieza_profunda">Limpieza profunda</option>
-                </select>
+            <div class="rd-maint-summary">
+                <span><i class="fas fa-door-open"></i>Hab. <?= room_detail_safe($habitacion_numero) ?></span>
+                <span><i class="fas fa-bed"></i><?= room_detail_safe($tipo_label) ?></span>
+                <span><i class="fas fa-circle"></i><?= room_detail_safe($status_meta['label'] ?? $estado_actual) ?></span>
             </div>
 
-            <div class="rd-field">
-                <label class="rd-label">Prioridad</label>
-                <select name="prioridad" required class="rd-control">
-                    <option value="baja">Baja</option>
-                    <option value="media" selected>Media</option>
-                    <option value="alta">Alta</option>
-                    <option value="urgente">Urgente</option>
-                </select>
+            <div class="rd-form-grid rd-maint-field-grid">
+                <div class="rd-field">
+                    <label class="rd-label">Tipo de mantenimiento</label>
+                    <select name="tipo_mantenimiento" required class="rd-control">
+                        <option value="">Seleccione...</option>
+                        <option value="preventivo">Preventivo</option>
+                        <option value="correctivo">Correctivo</option>
+                        <option value="emergencia">Emergencia</option>
+                        <option value="limpieza_profunda">Limpieza profunda</option>
+                    </select>
+                </div>
+
+                <div class="rd-field">
+                    <label class="rd-label">Prioridad</label>
+                    <select name="prioridad" required class="rd-control">
+                        <option value="baja">Baja</option>
+                        <option value="media" selected>Media</option>
+                        <option value="alta">Alta</option>
+                        <option value="urgente">Urgente</option>
+                    </select>
+                </div>
             </div>
 
             <div class="rd-field">
@@ -2708,8 +2981,8 @@ $mantenimientos_count = count($mantenimientos_programados);
             </div>
 
             <div class="rd-modal-actions">
-                <button type="button" onclick="cerrarModalMantenimiento()" class="rd-btn">Cancelar</button>
-                <button type="submit" class="rd-btn rd-btn-warning">
+                <button type="button" onclick="cerrarModalMantenimiento()" class="rd-btn rd-btn-maint-cancel">Cancelar</button>
+                <button type="submit" class="rd-btn rd-btn-maint-primary">
                     <i class="fas fa-check"></i>
                     Iniciar
                 </button>
@@ -2718,10 +2991,17 @@ $mantenimientos_count = count($mantenimientos_programados);
     </div>
 </div>
 
-<div id="modalProgramarMantenimiento" class="rd-modal hidden">
-    <div class="rd-modal-card" id="modalProgramarContent">
+<div id="modalProgramarMantenimiento" class="rd-modal rd-maint-modal hidden">
+    <div class="rd-modal-card rd-maint-modal-card" id="modalProgramarContent">
         <div class="rd-modal-head">
-            <h3><i class="fas fa-calendar-check"></i>Programar mantenimiento</h3>
+            <div class="rd-maint-title">
+                <span class="rd-maint-icon"><i class="fas fa-calendar-check"></i></span>
+                <div>
+                    <span class="rd-maint-kicker">Mantenimiento futuro</span>
+                    <h3>Programar mantenimiento</h3>
+                    <p>Agenda un bloqueo preventivo para evitar reservaciones que choquen con el trabajo.</p>
+                </div>
+            </div>
             <button type="button" onclick="cerrarModalProgramarMantenimiento()" class="rd-modal-close" aria-label="Cerrar">
                 <i class="fas fa-times"></i>
             </button>
@@ -2730,8 +3010,15 @@ $mantenimientos_count = count($mantenimientos_programados);
         <form method="POST" action="<?= url('habitaciones/' . $habitacion_id . '/programar-mantenimiento') ?>" class="rd-modal-form">
             <?= csrf_field() ?>
 
-            <div class="rd-note">
-                La habitaci&oacute;n seguir&aacute; disponible hasta la fecha programada, pero no se podr&aacute;n hacer reservaciones que conflicten con el mantenimiento.
+            <div class="rd-maint-summary">
+                <span><i class="fas fa-door-open"></i>Hab. <?= room_detail_safe($habitacion_numero) ?></span>
+                <span><i class="fas fa-bed"></i><?= room_detail_safe($tipo_label) ?></span>
+                <span><i class="fas fa-circle"></i><?= room_detail_safe($status_meta['label'] ?? $estado_actual) ?></span>
+            </div>
+
+            <div class="rd-note rd-maint-note">
+                <i class="fas fa-info"></i>
+                <span>La habitaci&oacute;n seguir&aacute; disponible hasta la fecha programada, pero no se podr&aacute;n hacer reservaciones que conflicten con el mantenimiento.</span>
             </div>
 
             <div class="rd-form-grid">
@@ -2745,25 +3032,27 @@ $mantenimientos_count = count($mantenimientos_programados);
                 </div>
             </div>
 
-            <div class="rd-field">
-                <label class="rd-label">Tipo de mantenimiento</label>
-                <select name="tipo_mantenimiento" required class="rd-control">
-                    <option value="">Seleccione...</option>
-                    <option value="preventivo">Preventivo</option>
-                    <option value="correctivo">Correctivo</option>
-                    <option value="emergencia">Emergencia</option>
-                    <option value="limpieza_profunda">Limpieza profunda</option>
-                </select>
-            </div>
+            <div class="rd-form-grid rd-maint-field-grid">
+                <div class="rd-field">
+                    <label class="rd-label">Tipo de mantenimiento</label>
+                    <select name="tipo_mantenimiento" required class="rd-control">
+                        <option value="">Seleccione...</option>
+                        <option value="preventivo">Preventivo</option>
+                        <option value="correctivo">Correctivo</option>
+                        <option value="emergencia">Emergencia</option>
+                        <option value="limpieza_profunda">Limpieza profunda</option>
+                    </select>
+                </div>
 
-            <div class="rd-field">
-                <label class="rd-label">Prioridad</label>
-                <select name="prioridad" required class="rd-control">
-                    <option value="baja">Baja</option>
-                    <option value="media" selected>Media</option>
-                    <option value="alta">Alta</option>
-                    <option value="urgente">Urgente</option>
-                </select>
+                <div class="rd-field">
+                    <label class="rd-label">Prioridad</label>
+                    <select name="prioridad" required class="rd-control">
+                        <option value="baja">Baja</option>
+                        <option value="media" selected>Media</option>
+                        <option value="alta">Alta</option>
+                        <option value="urgente">Urgente</option>
+                    </select>
+                </div>
             </div>
 
             <div class="rd-field">
@@ -2772,8 +3061,8 @@ $mantenimientos_count = count($mantenimientos_programados);
             </div>
 
             <div class="rd-modal-actions">
-                <button type="button" onclick="cerrarModalProgramarMantenimiento()" class="rd-btn">Cancelar</button>
-                <button type="submit" class="rd-btn rd-btn-warning">
+                <button type="button" onclick="cerrarModalProgramarMantenimiento()" class="rd-btn rd-btn-maint-cancel">Cancelar</button>
+                <button type="submit" class="rd-btn rd-btn-maint-primary">
                     <i class="fas fa-calendar-check"></i>
                     Programar
                 </button>

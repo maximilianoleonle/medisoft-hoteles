@@ -1,6 +1,6 @@
 <?php
 $hotel_id_actual = obtenerHotelIdActualCompat();
-if (!isset($checkins_pendientes) || !isset($checkouts_vencidos)) {
+if (false && (!isset($checkins_pendientes) || !isset($checkouts_vencidos))) {
 
     // Cargar el modelo si no está cargado
     if (!class_exists('Reservacion')) {
@@ -34,6 +34,9 @@ if (!isset($checkins_pendientes) || !isset($checkouts_vencidos)) {
     }
 }
 // Mapeo de colores de habitación (Área Confortable)
+$checkins_pendientes = isset($checkins_pendientes) && is_array($checkins_pendientes) ? $checkins_pendientes : [];
+$checkouts_vencidos = isset($checkouts_vencidos) && is_array($checkouts_vencidos) ? $checkouts_vencidos : [];
+$llegadas_tardias = isset($llegadas_tardias) && is_array($llegadas_tardias) ? $llegadas_tardias : [];
 $colores_habitacion = [
     'MOKA'      => '#6F4E37',
     'PURPURA'   => '#800080',
@@ -5919,6 +5922,162 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
   }
 }
 
+/* Selector de huesped y hora de llegada: capa adaptable al branding de cada hotel. */
+.swal2-container.hb-swal-sheet-container.swal2-backdrop-show,
+.swal2-container.hb-swal-sheet-container.swal2-noanimation{
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb,var(--brand-primary,#1B2746) 20%, transparent), transparent 34%),
+    color-mix(in srgb,var(--brand-primary,#1B2746) 40%, rgba(15,23,42,.78))!important;
+  backdrop-filter:blur(8px);
+}
+.swal2-popup.hb-swal-client,
+.swal2-popup.hb-swal-arrival{
+  --hb-modal-primary:var(--brand-primary,#1B2746);
+  --hb-modal-secondary:var(--brand-secondary,#0F172A);
+  --hb-modal-ink:#111827;
+  --hb-modal-muted:#64748B;
+  --hb-modal-line:color-mix(in srgb,var(--hb-modal-primary) 14%,#E7DDCA);
+  --hb-modal-soft:color-mix(in srgb,var(--hb-modal-primary) 7%,#FFFFFF);
+  --hb-modal-softer:color-mix(in srgb,var(--hb-modal-primary) 4%,#FFFFFF);
+  border:1px solid var(--hb-modal-line)!important;
+  background:linear-gradient(180deg,#FFFFFF,color-mix(in srgb,var(--hb-modal-primary) 3%,#FFFCF7))!important;
+  color:var(--hb-modal-ink)!important;
+  box-shadow:0 34px 86px -30px color-mix(in srgb,var(--hb-modal-primary) 42%, rgba(12,18,32,.78))!important;
+}
+.swal2-popup.hb-swal-client{
+  width:min(660px,calc(100vw - 28px))!important;
+}
+.swal2-popup.hb-swal-arrival{
+  width:min(520px,calc(100vw - 28px))!important;
+  padding:22px!important;
+  border-radius:24px!important;
+}
+.hb-swal-arrival .swal2-title{
+  color:var(--hb-modal-ink)!important;
+  font-size:1.22rem!important;
+  font-weight:900!important;
+  line-height:1.12!important;
+  padding:0!important;
+}
+.hb-swal-arrival .swal2-html-container{
+  margin:14px 0 0!important;
+}
+.hb-client-choice{
+  background:transparent!important;
+}
+.hb-client-choice__head{
+  border-bottom:1px solid var(--hb-modal-line)!important;
+  background:
+    radial-gradient(circle at 88% 0%, color-mix(in srgb,var(--hb-modal-primary) 13%, transparent), transparent 34%),
+    linear-gradient(180deg,#FFFFFF,var(--hb-modal-softer))!important;
+}
+.hb-client-choice__mark{
+  color:#FFFFFF!important;
+  background:linear-gradient(145deg,var(--hb-modal-primary),var(--hb-modal-secondary))!important;
+  box-shadow:0 16px 30px -18px color-mix(in srgb,var(--hb-modal-primary) 72%, transparent)!important;
+}
+.hb-client-choice__eyebrow{
+  color:color-mix(in srgb,var(--hb-modal-primary) 78%, var(--hb-modal-ink))!important;
+}
+.hb-client-choice h3,
+.hb-client-option__body strong,
+.hb-date-row strong,
+.hb-arrival-label{
+  color:var(--hb-modal-ink)!important;
+}
+.hb-client-choice__head p,
+.hb-client-option__body span,
+.hb-arrival-copy,
+.hb-date-row span{
+  color:var(--hb-modal-muted)!important;
+}
+.hb-client-option{
+  border-color:var(--hb-modal-line)!important;
+  background:#FFFFFF!important;
+  color:var(--hb-modal-ink)!important;
+  box-shadow:0 1px 2px rgba(17,24,39,.04), 0 18px 38px -32px color-mix(in srgb,var(--hb-modal-primary) 45%, transparent)!important;
+}
+.hb-client-option:hover,
+.hb-client-option:focus-visible{
+  border-color:color-mix(in srgb,var(--hb-modal-primary) 36%,#D9CDBA)!important;
+  background:var(--hb-modal-soft)!important;
+  box-shadow:0 20px 42px -30px color-mix(in srgb,var(--hb-modal-primary) 58%, transparent)!important;
+}
+.hb-client-option__icon,
+.hb-client-option--existing .hb-client-option__icon{
+  color:var(--hb-modal-primary)!important;
+  background:var(--hb-modal-soft)!important;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hb-modal-primary) 18%, transparent)!important;
+}
+.hb-client-option__tag{
+  color:color-mix(in srgb,var(--hb-modal-primary) 78%, var(--hb-modal-ink))!important;
+  background:var(--hb-modal-soft)!important;
+}
+.hb-client-option__cta{
+  border-top:1px solid color-mix(in srgb,var(--hb-modal-primary) 12%,#ECE5D8)!important;
+  color:var(--hb-modal-primary)!important;
+}
+.hb-reservation-pill,
+.hb-reservation-pill--existing{
+  color:color-mix(in srgb,var(--brand-primary,#1B2746) 82%,#111827)!important;
+  background:color-mix(in srgb,var(--brand-primary,#1B2746) 8%,#FFFFFF)!important;
+  border:1px solid color-mix(in srgb,var(--brand-primary,#1B2746) 14%,#E7DDCA)!important;
+}
+.hb-reservation-summary{
+  border-color:color-mix(in srgb,var(--brand-primary,#1B2746) 12%,#E7DDCA)!important;
+  background:linear-gradient(180deg,#FFFFFF,color-mix(in srgb,var(--brand-primary,#1B2746) 4%,#FFFFFF))!important;
+}
+.hb-date-row{
+  border-bottom-color:color-mix(in srgb,var(--brand-primary,#1B2746) 9%,transparent)!important;
+}
+.hb-arrival-card{
+  border-top-color:color-mix(in srgb,var(--brand-primary,#1B2746) 12%,#E7DDCA)!important;
+}
+.hb-arrival-input{
+  border-color:color-mix(in srgb,var(--brand-primary,#1B2746) 16%,#E7DDCA)!important;
+  color:#111827!important;
+}
+.hb-arrival-input:focus{
+  border-color:var(--brand-primary,#1B2746)!important;
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--brand-primary,#1B2746) 14%,transparent)!important;
+}
+.hb-arrival-now,
+.hb-swal-arrival .hb-swal-confirm{
+  border:0!important;
+  background:linear-gradient(135deg,var(--brand-primary,#1B2746),var(--brand-secondary,#0F172A))!important;
+  color:#FFFFFF!important;
+  box-shadow:0 16px 30px -18px color-mix(in srgb,var(--brand-primary,#1B2746) 70%, transparent)!important;
+}
+.hb-swal-arrival .hb-swal-confirm:hover,
+.hb-arrival-now:hover{
+  filter:brightness(1.05);
+}
+.hb-swal-client .hb-swal-cancel,
+.hb-swal-arrival .hb-swal-cancel{
+  border:1px solid color-mix(in srgb,var(--brand-primary,#1B2746) 13%,#D7DEE8)!important;
+  background:#FFFFFF!important;
+  color:#111827!important;
+  box-shadow:none!important;
+}
+.hb-swal-client .hb-swal-cancel:hover,
+.hb-swal-arrival .hb-swal-cancel:hover{
+  background:color-mix(in srgb,var(--brand-primary,#1B2746) 5%,#FFFFFF)!important;
+}
+@media (max-width:640px){
+  .swal2-popup.hb-swal-client,
+  .swal2-popup.hb-swal-arrival{
+    width:100%!important;
+    max-width:none!important;
+    border-radius:24px 24px 0 0!important;
+  }
+  .swal2-popup.hb-swal-arrival{
+    padding:24px 14px calc(16px + env(safe-area-inset-bottom))!important;
+  }
+  .hb-client-choice__head{
+    padding-top:22px!important;
+  }
+}
+
 @media (max-width:380px){
   .habitaciones-view .modern-header .flex.flex-wrap.gap-2{ grid-template-columns:repeat(2,minmax(0,1fr)); }
   .habitaciones-view .rgrid{ gap:8px!important; }
@@ -6992,7 +7151,6 @@ function mostrarSelectorTipoCliente(habitacionId, datosReserva) {
         showCancelButton: true,
         showCloseButton: true,
         cancelButtonText: 'Cancelar',
-        cancelButtonColor: '#6B7280',
         width: '500px',
         customClass: {
             container: 'hb-swal-sheet-container',
@@ -7577,7 +7735,6 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
         showCancelButton: true,
         confirmButtonText: `Continuar con Cliente ${tipo === 'existente' ? 'Existente' : 'Nuevo'}`,
         cancelButtonText: 'Volver',
-        confirmButtonColor: 'var(--brand-primary, #1B2746)',
         customClass: {
             container: 'hb-swal-sheet-container',
             popup: 'hb-swal hb-swal-arrival',

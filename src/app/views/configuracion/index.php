@@ -28,6 +28,37 @@ $configHotelSettingDefinitions = is_array($hotelSettingDefinitions ?? null)
 $configHotelSettings = is_array($hotelSettings ?? null)
     ? $hotelSettings
     : (function_exists('hotel_config_editable_values') ? hotel_config_editable_values() : []);
+$configNotificationSettingDefinitions = [];
+foreach ($configHotelSettingDefinitions as $settingKey => $settingDefinition) {
+    if (($settingDefinition['grupo'] ?? '') === 'notificaciones') {
+        $configNotificationSettingDefinitions[$settingKey] = $settingDefinition;
+        unset($configHotelSettingDefinitions[$settingKey]);
+    }
+}
+$configNotificationGlobalKeys = [
+    'notificaciones.automaticas_activas',
+    'notificaciones.pwa_push_activo',
+    'notificaciones.pwa_push_solo_prioritarias',
+    'notificaciones.pwa_push_automaticas',
+    'notificaciones.pwa_push_eventos',
+];
+$configNotificationRuleKeys = [
+    'notificaciones.regla_checkins_pendientes',
+    'notificaciones.regla_checkouts_pendientes',
+    'notificaciones.regla_facturas_pendientes',
+    'notificaciones.regla_mantenimiento_activo',
+    'notificaciones.regla_habitaciones_limpieza',
+    'notificaciones.regla_caja_abierta_prolongada',
+    'notificaciones.regla_inventario_bajo',
+    'notificaciones.regla_reporte_gerencial_diario',
+];
+$configNotificationThresholdKeys = [
+    'notificaciones.umbral_retraso_alta_dias',
+    'notificaciones.umbral_facturas_alta',
+    'notificaciones.umbral_limpieza_media',
+    'notificaciones.umbral_caja_horas_media',
+    'notificaciones.umbral_caja_horas_alta',
+];
 $configRoomTypeRows = is_array($roomTypeCatalog ?? null)
     ? array_values($roomTypeCatalog)
     : (function_exists('hotel_room_catalog_type_rows') ? hotel_room_catalog_type_rows(null, true) : []);
@@ -46,6 +77,47 @@ $configGeneralParkingRows = is_array($generalParkingCatalog ?? null)
 $configGeneralUnitRows = is_array($generalUnitCatalog ?? null)
     ? array_values($generalUnitCatalog)
     : (function_exists('hotel_general_catalog_unit_rows') ? hotel_general_catalog_unit_rows(null, true) : []);
+$configPwaPushDevices = is_array($pwaPushDevices ?? null) ? array_values($pwaPushDevices) : [];
+
+$configPwaDeviceName = function (array $device) {
+    $agent = (string)($device['navegador'] ?? '');
+    $agentLower = strtolower($agent);
+    $browser = 'Navegador';
+    $platform = 'Dispositivo';
+
+    if (strpos($agentLower, 'edg/') !== false) {
+        $browser = 'Microsoft Edge';
+    } elseif (strpos($agentLower, 'chrome/') !== false && strpos($agentLower, 'chromium') === false) {
+        $browser = 'Chrome';
+    } elseif (strpos($agentLower, 'safari/') !== false && strpos($agentLower, 'chrome/') === false) {
+        $browser = 'Safari';
+    } elseif (strpos($agentLower, 'firefox/') !== false) {
+        $browser = 'Firefox';
+    }
+
+    if (strpos($agentLower, 'iphone') !== false) {
+        $platform = 'iPhone';
+    } elseif (strpos($agentLower, 'ipad') !== false) {
+        $platform = 'iPad';
+    } elseif (strpos($agentLower, 'android') !== false) {
+        $platform = 'Android';
+    } elseif (strpos($agentLower, 'windows') !== false) {
+        $platform = 'Windows';
+    } elseif (strpos($agentLower, 'mac os') !== false || strpos($agentLower, 'macintosh') !== false) {
+        $platform = 'Mac';
+    }
+
+    return trim($browser . ' - ' . $platform);
+};
+
+$configPwaDate = function ($value) {
+    if (!$value) {
+        return 'Sin fecha';
+    }
+
+    $timestamp = strtotime((string)$value);
+    return $timestamp ? date('d/m/Y H:i', $timestamp) : 'Sin fecha';
+};
 
 $configAppendBlankRows = function (array $rows, $count = 1) {
     for ($i = 0; $i < $count; $i++) {
@@ -80,6 +152,58 @@ $configLegacyDireccion = $configHotelSettings['contacto.direccion'] ?? ($configH
 $configLegacyEmail = $configHotelSettings['contacto.email'] ?? ($configHotel['email'] ?? '');
 $configLegacyCheckIn = $configHotelSettings['operacion.checkin_hora'] ?? ($configHotel['check_in_time'] ?? '15:00');
 $configLegacyCheckOut = $configHotelSettings['operacion.checkout_hora'] ?? ($configHotel['check_out_time'] ?? '12:00');
+$configHotelSetting = function ($key, $default = '') {
+    return function_exists('hotel_setting') ? hotel_setting($key, $default) : $default;
+};
+$configOperationalDisplay = function ($value) {
+    $text = trim((string) ($value ?? ''));
+
+    return htmlspecialchars($text !== '' ? $text : 'No configurado', ENT_QUOTES, 'UTF-8');
+};
+$configOperationalReadOnly = [
+    [
+        'label' => 'Hora de check-in',
+        'value' => $configHotelSetting('operacion.checkin_hora', '15:00'),
+        'detail' => 'Inicio operativo para llegadas.',
+        'icon' => 'fa-door-open',
+        'featured' => true,
+    ],
+    [
+        'label' => 'Hora de check-out',
+        'value' => $configHotelSetting('operacion.checkout_hora', '12:00'),
+        'detail' => 'Hora base de salida.',
+        'icon' => 'fa-door-closed',
+        'featured' => true,
+    ],
+    [
+        'label' => 'Moneda',
+        'value' => $configHotelSetting('operacion.moneda', 'MXN'),
+        'detail' => 'Moneda mostrada al hotel.',
+        'icon' => 'fa-coins',
+        'featured' => false,
+    ],
+    [
+        'label' => 'Telefono',
+        'value' => $configHotelSetting('contacto.telefono', ''),
+        'detail' => 'Contacto visible del hotel.',
+        'icon' => 'fa-phone',
+        'featured' => false,
+    ],
+    [
+        'label' => 'Direccion',
+        'value' => $configHotelSetting('contacto.direccion', ''),
+        'detail' => 'Domicilio operativo registrado.',
+        'icon' => 'fa-map-marker-alt',
+        'featured' => false,
+    ],
+    [
+        'label' => 'Nombre app/PWA',
+        'value' => $configHotelSetting('pwa.nombre_app', 'Medisoft Hoteles'),
+        'detail' => 'Nombre visible en la app instalada.',
+        'icon' => 'fa-mobile-alt',
+        'featured' => false,
+    ],
+];
 
 ?>
 
@@ -905,6 +1029,839 @@ textarea.form-input {
         width: 100%;
     }
 }
+/* Redisenio integral de Configuracion: visual nuevo sin alterar contratos del formulario. */
+.config-view {
+    --cfg-ink: #111827;
+    --cfg-ink-2: #273244;
+    --cfg-ink-3: #475569;
+    --cfg-paper-2: #F8F2E8;
+    --cfg-paper-3: #EFE7DA;
+    --cfg-brand-readable: color-mix(in srgb, var(--cfg-brand) 78%, #111827);
+    --cfg-accent-readable: color-mix(in srgb, var(--cfg-accent) 66%, #3B2D12);
+    background:
+        radial-gradient(circle at 7% 8%, color-mix(in srgb, var(--cfg-accent) 18%, transparent), transparent 26rem),
+        radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--cfg-brand) 10%, transparent), transparent 30rem),
+        linear-gradient(135deg, rgba(255, 255, 255, .32) 0 25%, transparent 25% 50%) 0 0 / 30px 30px,
+        linear-gradient(180deg, #FFFCF6 0%, var(--cfg-paper-2) 56%, var(--cfg-paper-3) 100%);
+    color: var(--cfg-ink);
+}
+
+.config-shell {
+    width: min(1620px, calc(100% - 32px));
+    padding: 30px 0 54px;
+}
+
+.config-hero {
+    position: relative;
+    overflow: hidden;
+    grid-template-columns: minmax(0, 1fr) minmax(330px, 430px);
+    gap: 18px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+}
+
+.config-hero-main,
+.config-hero-card,
+.config-panel,
+.config-actions {
+    border: 1px solid color-mix(in srgb, var(--cfg-accent) 18%, #DFD4C3);
+    box-shadow: 0 1px 0 rgba(255,255,255,.8), 0 28px 72px -58px rgba(17,24,39,.72);
+}
+
+.config-hero-main {
+    position: relative;
+    overflow: hidden;
+    min-height: 282px;
+    border-radius: 28px;
+    padding: clamp(24px, 3vw, 38px);
+    background:
+        radial-gradient(circle at 86% 4%, color-mix(in srgb, var(--cfg-accent) 24%, transparent), transparent 18rem),
+        linear-gradient(135deg, rgba(255,253,248,.98), rgba(246,239,226,.92));
+    color: var(--cfg-ink);
+}
+
+.config-hero-main::before {
+    content: "";
+    position: absolute;
+    inset: 18px auto 18px 0;
+    width: 5px;
+    border-radius: 0 999px 999px 0;
+    background: linear-gradient(180deg, var(--cfg-accent), color-mix(in srgb, var(--cfg-brand) 70%, var(--cfg-accent)));
+}
+
+.config-hero-main .config-kicker,
+.config-section-kicker {
+    color: var(--cfg-accent-readable);
+}
+
+.config-title {
+    max-width: 780px;
+    color: var(--cfg-ink);
+    font-size: clamp(2.7rem, 5.2vw, 5.7rem);
+    line-height: .88;
+    text-wrap: balance;
+}
+
+.config-subtitle {
+    max-width: 68ch;
+    color: var(--cfg-ink-3);
+    font-size: 1rem;
+}
+
+.config-tag {
+    min-height: 34px;
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--cfg-accent) 24%, #E5DAC9);
+    background: rgba(255,255,255,.72);
+    color: var(--cfg-ink-2);
+}
+
+.config-hero-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 28px;
+    padding: 22px;
+    background:
+        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--cfg-accent) 24%, transparent), transparent 16rem),
+        linear-gradient(145deg, #FFFFFF, color-mix(in srgb, var(--cfg-accent) 7%, #FFFFFF));
+}
+
+.config-hero-card::after {
+    content: "";
+    position: absolute;
+    left: 22px;
+    right: 22px;
+    bottom: 0;
+    height: 4px;
+    border-radius: 999px 999px 0 0;
+    background: linear-gradient(90deg, var(--cfg-accent), color-mix(in srgb, var(--cfg-brand) 68%, var(--cfg-accent)));
+}
+
+.config-logo {
+    width: 74px;
+    height: 74px;
+    border-radius: 20px;
+    border-color: color-mix(in srgb, var(--cfg-accent) 22%, var(--cfg-line));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+.config-hotel-name,
+.config-panel-title,
+.config-settings-group-title,
+.config-catalog-title {
+    color: var(--cfg-ink);
+}
+
+.config-hotel-note,
+.config-panel-copy,
+.config-settings-group-copy,
+.config-field-hint,
+.config-status-detail,
+.config-oper-detail {
+    color: var(--cfg-ink-3);
+}
+
+.config-backup-link {
+    background: #111827;
+    box-shadow: none;
+}
+
+.config-nav-strip {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    margin: 16px 0;
+}
+
+.config-nav-link {
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    border: 1px solid color-mix(in srgb, var(--cfg-accent) 18%, #DFD4C3);
+    border-radius: 18px;
+    background: rgba(255,255,255,.82);
+    color: var(--cfg-ink-2);
+    padding: 10px 12px;
+    font-weight: 900;
+    text-decoration: none;
+    box-shadow: 0 16px 42px -36px rgba(17,24,39,.45);
+    transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.config-nav-link i {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--cfg-accent) 11%, #FFFFFF);
+    color: var(--cfg-accent-readable);
+    border: 1px solid color-mix(in srgb, var(--cfg-accent) 18%, #E6DAC9);
+    flex: 0 0 auto;
+}
+
+.config-nav-link span {
+    display: block;
+    color: var(--cfg-muted);
+    font-size: .72rem;
+    font-weight: 800;
+    margin-top: 2px;
+}
+
+.config-nav-link:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--cfg-accent) 42%, #DFD4C3);
+    background: #FFFFFF;
+}
+
+.config-panel {
+    border-radius: 24px;
+    padding: clamp(18px, 2vw, 24px);
+    background: linear-gradient(180deg, rgba(255,255,255,.94), rgba(255,253,248,.9));
+}
+
+.config-intro-panel {
+    background:
+        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--cfg-accent) 12%, transparent), transparent 12rem),
+        rgba(255,255,255,.86);
+}
+
+.config-panel-header {
+    align-items: center;
+    padding-bottom: 14px;
+    border-bottom: 1px solid color-mix(in srgb, var(--cfg-accent) 16%, #E6DAC9);
+    margin-bottom: 18px;
+}
+
+.config-panel-title {
+    font-size: clamp(1.05rem, 1.35vw, 1.35rem);
+}
+
+.config-section-icon,
+.config-settings-group-icon,
+.config-oper-icon,
+.config-status-icon {
+    background: color-mix(in srgb, var(--cfg-accent) 10%, #FFFFFF);
+    color: var(--cfg-accent-readable);
+    border-color: color-mix(in srgb, var(--cfg-accent) 22%, var(--cfg-line));
+}
+
+.config-readonly-badge {
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--cfg-good) 9%, #FFFFFF);
+}
+
+.config-oper-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.config-oper-item {
+    grid-column: span 2;
+    min-height: 146px;
+    border-radius: 20px;
+    background: #FFFFFF;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.7);
+}
+
+.config-oper-item.is-featured {
+    grid-column: span 3;
+    background:
+        radial-gradient(circle at 95% 0%, color-mix(in srgb, var(--cfg-accent) 18%, transparent), transparent 12rem),
+        #FFFFFF;
+}
+
+.config-oper-value,
+.config-status-value,
+.config-info-value,
+.config-color-value,
+.config-system-value {
+    color: var(--cfg-ink);
+}
+
+.config-field-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+    gap: 14px;
+}
+
+.config-field label,
+.config-field-label,
+.config-catalog-cell label,
+.config-toggle-label {
+    color: var(--cfg-ink-2);
+}
+
+.config-field-icon {
+    color: color-mix(in srgb, var(--cfg-accent) 50%, var(--cfg-muted));
+}
+
+.form-input {
+    min-height: 46px;
+    border-radius: 14px;
+    border-color: color-mix(in srgb, var(--cfg-accent) 18%, #E1D7C8);
+    background: rgba(255,255,255,.94);
+    color: var(--cfg-ink);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+}
+
+.form-input:hover {
+    border-color: color-mix(in srgb, var(--cfg-accent) 34%, #D7C9B8);
+}
+
+.form-input:focus {
+    border-color: color-mix(in srgb, var(--cfg-accent) 62%, var(--cfg-line));
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--cfg-accent) 16%, transparent);
+}
+
+.config-catalog-stack {
+    gap: 18px;
+}
+
+.config-catalog-box {
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,253,248,.76));
+    padding: 16px;
+}
+
+.config-catalog-head {
+    padding-bottom: 12px;
+    border-bottom: 1px solid color-mix(in srgb, var(--cfg-accent) 14%, #E7DCCB);
+}
+
+.config-catalog-row {
+    border-radius: 16px;
+    padding: 12px;
+    background: #FFFFFF;
+    border-color: color-mix(in srgb, var(--cfg-accent) 15%, var(--cfg-line));
+}
+
+.config-catalog-row.is-type {
+    grid-template-columns: minmax(110px, .72fr) minmax(145px, 1fr) 88px 120px minmax(160px, 1.2fr) 86px;
+}
+
+.config-catalog-add {
+    min-height: 38px;
+    border-radius: 13px;
+    background: #111827;
+    border-color: #111827;
+    color: #FFFFFF;
+}
+
+.config-catalog-add:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px -22px rgba(17,24,39,.7);
+}
+
+.config-brand-grid {
+    grid-template-columns: minmax(320px, .78fr) minmax(0, 1.22fr);
+    gap: 18px;
+}
+
+.config-brand-preview {
+    min-height: 310px;
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--cfg-accent) 26%, transparent), transparent 16rem),
+        linear-gradient(145deg, #111827, color-mix(in srgb, var(--cfg-brand) 70%, #111827));
+}
+
+.config-brand-logo {
+    border-radius: 22px;
+}
+
+.config-chip {
+    min-height: 36px;
+    border-radius: 12px;
+    color: var(--cfg-ink-2);
+}
+
+.config-upload-row {
+    grid-template-columns: 62px minmax(0, 1fr);
+    gap: 12px;
+}
+
+.config-upload-thumb {
+    width: 62px;
+    height: 62px;
+    border-radius: 17px;
+    background: #FFFFFF;
+}
+
+.config-actions {
+    bottom: 16px;
+    border-radius: 22px;
+    padding: 14px;
+    background: rgba(255,253,248,.88);
+    backdrop-filter: blur(16px) saturate(1.05);
+}
+
+.config-actions-note {
+    color: var(--cfg-ink-3);
+}
+
+.config-cancel-link,
+.config-submit-btn {
+    min-height: 46px;
+    border-radius: 14px;
+}
+
+.config-submit-btn {
+    background: linear-gradient(135deg, var(--cfg-brand-readable), #111827);
+}
+
+.config-backup-link:hover,
+.config-submit-btn:hover,
+.config-cancel-link:hover,
+.config-catalog-add:hover {
+    transform: translateY(-1px);
+}
+
+@media (max-width: 1180px) {
+    .config-nav-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .config-oper-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .config-oper-item,
+    .config-oper-item.is-featured {
+        grid-column: auto;
+    }
+}
+
+@media (max-width: 760px) {
+    .config-shell {
+        width: min(100% - 20px, 1620px);
+        padding: 18px 0 34px;
+    }
+
+    .config-hero-main,
+    .config-hero-card,
+    .config-panel {
+        border-radius: 20px;
+    }
+
+    .config-title {
+        font-size: clamp(2.25rem, 12vw, 3.25rem);
+    }
+
+    .config-nav-strip,
+    .config-oper-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .config-nav-link {
+        min-height: 52px;
+    }
+
+    .config-actions {
+        position: static;
+    }
+}
+
+/* Propuesta 2: workspace real para configuracion, mas visible y facil de navegar. */
+.config-workspace {
+    display: grid;
+    grid-template-columns: minmax(260px, 310px) minmax(0, 1fr);
+    gap: 22px;
+    align-items: start;
+    margin-top: 18px;
+}
+
+.config-command-panel {
+    position: sticky;
+    top: 18px;
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+}
+
+.config-command-card,
+.config-command-help {
+    border: 1px solid color-mix(in srgb, var(--cfg-accent) 18%, #DFD4C3);
+    border-radius: 24px;
+    box-shadow: 0 22px 60px -48px rgba(17,24,39,.72);
+}
+
+.config-command-card {
+    overflow: hidden;
+    padding: 18px;
+    background:
+        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--cfg-accent) 28%, transparent), transparent 12rem),
+        linear-gradient(145deg, #111827, color-mix(in srgb, var(--cfg-brand) 58%, #111827));
+    color: #FFFFFF;
+}
+
+.config-command-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.config-command-logo {
+    width: 56px;
+    height: 56px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 18px;
+    background: rgba(255,255,255,.94);
+    color: var(--cfg-brand-readable);
+    overflow: hidden;
+}
+
+.config-command-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 8px;
+}
+
+.config-command-brand strong {
+    display: block;
+    margin-top: 2px;
+    color: #FFFFFF;
+    font-size: 1rem;
+    line-height: 1.15;
+    font-weight: 950;
+}
+
+.config-command-card .config-section-kicker {
+    color: color-mix(in srgb, var(--cfg-accent) 72%, #FFFFFF);
+}
+
+.config-command-card p {
+    margin: 16px 0 0;
+    color: rgba(255,255,255,.72);
+    font-size: .84rem;
+    line-height: 1.45;
+    font-weight: 700;
+}
+
+.config-command-panel .config-nav-strip {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin: 0;
+}
+
+.config-command-panel .config-nav-link {
+    min-height: 62px;
+    align-items: center;
+    border-radius: 18px;
+    background: rgba(255,255,255,.92);
+    box-shadow: none;
+}
+
+.config-command-panel .config-nav-link strong {
+    color: var(--cfg-ink);
+    line-height: 1.12;
+}
+
+.config-command-panel .config-nav-link:hover {
+    transform: translateX(4px);
+}
+
+.config-command-help {
+    display: grid;
+    gap: 9px;
+    padding: 14px;
+    background: rgba(255,253,248,.82);
+}
+
+.config-command-help span {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    color: var(--cfg-ink-3);
+    font-size: .78rem;
+    line-height: 1.35;
+    font-weight: 750;
+}
+
+.config-command-help i {
+    color: var(--cfg-accent-readable);
+    margin-top: 2px;
+}
+
+.config-content-flow {
+    display: grid;
+    gap: 18px;
+    min-width: 0;
+}
+
+.config-content-flow > .config-section,
+.config-content-flow > form.config-section {
+    margin-top: 0;
+}
+
+.config-content-flow > form.config-section {
+    display: grid;
+    gap: 18px;
+}
+
+.config-content-flow > form.config-section > .config-section,
+.config-content-flow > form.config-section > .config-panel {
+    margin-top: 0;
+}
+
+.config-content-flow .config-panel {
+    position: relative;
+    overflow: hidden;
+}
+
+.config-device-list {
+    display: grid;
+    gap: 10px;
+}
+
+.config-device-row {
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, var(--cfg-accent) 16%, #E7DCCB);
+    border-radius: 18px;
+    background: rgba(255,255,255,.9);
+}
+
+.config-device-icon {
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border-radius: 16px;
+    color: var(--cfg-accent-readable);
+    background: color-mix(in srgb, var(--cfg-accent) 10%, #FFFFFF);
+}
+
+.config-device-title {
+    display: block;
+    color: var(--cfg-ink);
+    font-weight: 950;
+    line-height: 1.2;
+}
+
+.config-device-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin-top: 5px;
+    color: var(--cfg-ink-3);
+    font-size: .78rem;
+    font-weight: 750;
+}
+
+.config-device-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 0 9px;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 950;
+}
+
+.config-device-status.is-active {
+    background: #DCFCE7;
+    color: #166534;
+}
+
+.config-device-status.is-inactive {
+    background: #F3F4F6;
+    color: #4B5563;
+}
+
+.config-device-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.config-device-revoke {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 12px;
+    border: 1px solid #FECACA;
+    border-radius: 12px;
+    background: #FEF2F2;
+    color: #991B1B;
+    font-size: .78rem;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.config-device-empty {
+    padding: 24px;
+    border: 1px dashed color-mix(in srgb, var(--cfg-accent) 26%, #D9CDBB);
+    border-radius: 18px;
+    background: rgba(255,255,255,.72);
+    color: var(--cfg-ink-3);
+    font-weight: 750;
+    text-align: center;
+}
+
+@media (max-width: 720px) {
+    .config-device-row {
+        grid-template-columns: 42px minmax(0, 1fr);
+    }
+
+    .config-device-actions {
+        grid-column: 1 / -1;
+        justify-content: stretch;
+    }
+
+    .config-device-form,
+    .config-device-revoke {
+        width: 100%;
+    }
+}
+
+.config-content-flow .config-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 5px;
+    background: linear-gradient(180deg, var(--cfg-accent), color-mix(in srgb, var(--cfg-brand) 62%, var(--cfg-accent)));
+    opacity: .82;
+}
+
+.config-content-flow .config-panel-header,
+.config-content-flow .config-panel > :not(.config-panel-header) {
+    position: relative;
+    z-index: 1;
+}
+
+.config-intro-panel {
+    background:
+        radial-gradient(circle at 94% 8%, color-mix(in srgb, var(--cfg-accent) 18%, transparent), transparent 14rem),
+        linear-gradient(135deg, #FFFFFF, color-mix(in srgb, var(--cfg-accent) 5%, #FFFFFF));
+}
+
+.config-start-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.config-start-card {
+    min-height: 150px;
+    display: grid;
+    align-content: start;
+    gap: 9px;
+    border: 1px solid color-mix(in srgb, var(--cfg-accent) 16%, #E4D8C8);
+    border-radius: 18px;
+    background: rgba(255,255,255,.82);
+    padding: 15px;
+}
+
+.config-start-card.is-primary {
+    background:
+        radial-gradient(circle at 96% 0%, color-mix(in srgb, var(--cfg-accent) 20%, transparent), transparent 10rem),
+        #111827;
+    color: #FFFFFF;
+}
+
+.config-start-card span {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--cfg-accent) 12%, #FFFFFF);
+    color: var(--cfg-accent-readable);
+}
+
+.config-start-card.is-primary span {
+    background: rgba(255,255,255,.12);
+    color: color-mix(in srgb, var(--cfg-accent) 72%, #FFFFFF);
+    border: 1px solid rgba(255,255,255,.15);
+}
+
+.config-start-card strong {
+    color: var(--cfg-ink);
+    font-size: .94rem;
+    font-weight: 950;
+    line-height: 1.2;
+}
+
+.config-start-card.is-primary strong {
+    color: #FFFFFF;
+}
+
+.config-start-card p {
+    margin: 0;
+    color: var(--cfg-ink-3);
+    font-size: .8rem;
+    line-height: 1.45;
+    font-weight: 700;
+}
+
+.config-start-card.is-primary p {
+    color: rgba(255,255,255,.72);
+}
+
+.config-settings-stack {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+    gap: 14px;
+}
+
+.config-settings-group {
+    border: 1px solid color-mix(in srgb, var(--cfg-accent) 15%, var(--cfg-line));
+    border-radius: 20px;
+    background: rgba(255,255,255,.78);
+    padding: 18px;
+}
+
+.config-settings-group:last-child {
+    padding-bottom: 18px;
+    border-bottom: 1px solid color-mix(in srgb, var(--cfg-accent) 15%, var(--cfg-line));
+}
+
+@media (max-width: 1280px) {
+    .config-workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .config-command-panel {
+        position: static;
+    }
+
+    .config-command-panel .config-nav-strip {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 940px) {
+    .config-start-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .config-command-panel .config-nav-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .config-start-grid,
+    .config-command-panel .config-nav-strip {
+        grid-template-columns: 1fr;
+    }
+
+    .config-workspace {
+        gap: 14px;
+    }
+}
 </style>
 
 <div class="config-view">
@@ -963,21 +1920,144 @@ textarea.form-input {
             </aside>
         </section>
 
+        <div class="config-workspace">
+            <aside class="config-command-panel" aria-label="Indice de configuracion">
+                <section class="config-command-card">
+                    <div class="config-command-brand">
+                        <span class="config-command-logo">
+                            <?php if ($configHotelLogo): ?>
+                                <img src="<?= htmlspecialchars($configHotelLogo, ENT_QUOTES, 'UTF-8') ?>"
+                                     alt="<?= htmlspecialchars($configHotelNombre, ENT_QUOTES, 'UTF-8') ?>">
+                            <?php else: ?>
+                                <i class="fas fa-hotel"></i>
+                            <?php endif; ?>
+                        </span>
+                        <div>
+                            <p class="config-section-kicker">Centro de control</p>
+                            <strong><?= htmlspecialchars($configHotelNombre, ENT_QUOTES, 'UTF-8') ?></strong>
+                        </div>
+                    </div>
+                    <p>Usa este panel para moverte entre ajustes sin perder el boton de guardado.</p>
+                </section>
+
+        <nav class="config-nav-strip" aria-label="Secciones de configuracion">
+            <a href="#config-operational-readonly-title" class="config-nav-link">
+                <i class="fas fa-clipboard-check"></i>
+                <strong>Operacion <span>Horarios y contacto</span></strong>
+            </a>
+            <a href="#config-hotel-settings-title" class="config-nav-link">
+                <i class="fas fa-sliders-h"></i>
+                <strong>Ajustes <span>Valores por hotel</span></strong>
+            </a>
+            <?php if (!empty($configNotificationSettingDefinitions)): ?>
+                <a href="#config-notifications-title" class="config-nav-link">
+                    <i class="fas fa-bell"></i>
+                    <strong>Notificaciones <span>Reglas y umbrales</span></strong>
+                </a>
+                <a href="#config-pwa-devices-title" class="config-nav-link">
+                    <i class="fas fa-mobile-screen-button"></i>
+                    <strong>Dispositivos <span>Push PWA activos</span></strong>
+                </a>
+            <?php endif; ?>
+            <a href="#config-room-catalog-title" class="config-nav-link">
+                <i class="fas fa-bed"></i>
+                <strong>Habitaciones <span>Tipos y amenidades</span></strong>
+            </a>
+            <a href="#config-general-catalog-title" class="config-nav-link">
+                <i class="fas fa-layer-group"></i>
+                <strong>Catalogos <span>Listas auxiliares</span></strong>
+            </a>
+            <a href="#config-branding-title" class="config-nav-link">
+                <i class="fas fa-palette"></i>
+                <strong>Marca <span>Identidad visual</span></strong>
+            </a>
+        </nav>
+
+                <section class="config-command-help">
+                    <span><i class="fas fa-lock"></i> Los valores de solo lectura no modifican el guardado.</span>
+                    <span><i class="fas fa-save"></i> Los cambios editables se aplican hasta confirmar.</span>
+                </section>
+            </aside>
+
+            <div class="config-content-flow">
+        <section class="config-panel config-section" aria-labelledby="config-operational-readonly-title">
+            <div class="config-panel-header">
+                <div>
+                    <p class="config-section-kicker">Solo lectura</p>
+                    <h2 id="config-operational-readonly-title" class="config-panel-title">
+                        <span class="config-section-icon"><i class="fas fa-clipboard-check"></i></span>
+                        Configuracion operativa del hotel
+                    </h2>
+                    <p class="config-panel-copy">
+                        Valores leidos desde el registry tenant-safe. Este bloque no permite edicion ni guarda cambios.
+                    </p>
+                </div>
+                <span class="config-readonly-badge">
+                    <i class="fas fa-lock"></i>
+                    Solo lectura
+                </span>
+            </div>
+
+            <div class="config-oper-grid">
+                <?php foreach ($configOperationalReadOnly as $operationalItem): ?>
+                    <article class="config-oper-item<?= !empty($operationalItem['featured']) ? ' is-featured' : '' ?>">
+                        <span class="config-oper-icon">
+                            <i class="fas <?= htmlspecialchars($operationalItem['icon'], ENT_QUOTES, 'UTF-8') ?>"></i>
+                        </span>
+                        <div>
+                            <p class="config-meta-label">
+                                <?= htmlspecialchars($operationalItem['label'], ENT_QUOTES, 'UTF-8') ?>
+                            </p>
+                            <p class="config-oper-value">
+                                <?= $configOperationalDisplay($operationalItem['value']) ?>
+                            </p>
+                            <p class="config-oper-detail">
+                                <?= htmlspecialchars($operationalItem['detail'], ENT_QUOTES, 'UTF-8') ?>
+                            </p>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        </section>
+
         <form method="POST" action="<?= url('configuracion/update') ?>" id="configForm" class="config-section" enctype="multipart/form-data">
             <?= csrf_field() ?>
 
-            <section class="config-panel">
+            <section class="config-panel config-intro-panel">
                 <div class="config-panel-header">
                     <div>
                         <p class="config-section-kicker">Editable</p>
                         <h2 class="config-panel-title">
                             <span class="config-section-icon"><i class="fas fa-edit"></i></span>
-                            Configuracion del hotel
+                            Centro de configuracion editable
                         </h2>
                         <p class="config-panel-copy">
-                            Estos son los campos que se pueden guardar desde esta pantalla.
+                            Ajusta la operacion visible, catalogos y marca del hotel desde una sola pantalla.
                         </p>
                     </div>
+                </div>
+
+                <div class="config-start-grid">
+                    <article class="config-start-card is-primary">
+                        <span><i class="fas fa-sliders-h"></i></span>
+                        <strong>Ajustes del hotel</strong>
+                        <p>Horarios, contacto, moneda y textos que alimentan pantallas y documentos compatibles.</p>
+                    </article>
+                    <article class="config-start-card">
+                        <span><i class="fas fa-bed"></i></span>
+                        <strong>Catalogos operativos</strong>
+                        <p>Tipos de habitaciones, pisos, amenidades, zonas, estacionamientos y unidades.</p>
+                    </article>
+                    <article class="config-start-card">
+                        <span><i class="fas fa-palette"></i></span>
+                        <strong>Marca del hotel</strong>
+                        <p>Logo, colores, estilo de menu, login e iconos de app sin mezclar identidad Medisoft.</p>
+                    </article>
+                    <article class="config-start-card">
+                        <span><i class="fas fa-check-double"></i></span>
+                        <strong>Guardado controlado</strong>
+                        <p>El formulario conserva sus campos originales y confirma antes de aplicar cambios.</p>
+                    </article>
                 </div>
             </section>
 
@@ -1049,6 +2129,112 @@ textarea.form-input {
                                         <?= htmlspecialchars($settingDefinition['descripcion'], ENT_QUOTES, 'UTF-8') ?>
                                     </p>
                                 <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <?php if (!empty($configNotificationSettingDefinitions)): ?>
+                <section class="config-panel config-section" aria-labelledby="config-notifications-title">
+                    <div class="config-panel-header">
+                        <div>
+                            <p class="config-section-kicker">Centro de notificaciones</p>
+                            <h3 id="config-notifications-title" class="config-panel-title">
+                                <span class="config-section-icon"><i class="fas fa-bell"></i></span>
+                                Reglas automaticas
+                            </h3>
+                            <p class="config-panel-copy">
+                                Preferencias por hotel para los avisos operativos que aparecen en el dashboard y en notificaciones.
+                            </p>
+                        </div>
+                    </div>
+
+                    <?php
+                    $configNotificationGroups = [
+                        [
+                            'title' => 'Activacion general',
+                            'hint' => 'Control maestro de avisos automaticos.',
+                            'keys' => $configNotificationGlobalKeys,
+                        ],
+                        [
+                            'title' => 'Reglas operativas',
+                            'hint' => 'Tipos de aviso que el dashboard puede crear con datos reales del hotel.',
+                            'keys' => $configNotificationRuleKeys,
+                        ],
+                        [
+                            'title' => 'Umbrales',
+                            'hint' => 'Valores que cambian cuando un aviso sube de prioridad.',
+                            'keys' => $configNotificationThresholdKeys,
+                        ],
+                    ];
+                    ?>
+
+                    <div class="config-catalog-stack">
+                        <?php foreach ($configNotificationGroups as $notificationGroup): ?>
+                            <div class="config-catalog-box">
+                                <div class="config-catalog-head">
+                                    <div>
+                                        <h4 class="config-catalog-title">
+                                            <?= htmlspecialchars($notificationGroup['title'], ENT_QUOTES, 'UTF-8') ?>
+                                        </h4>
+                                        <p class="config-field-hint">
+                                            <?= htmlspecialchars($notificationGroup['hint'], ENT_QUOTES, 'UTF-8') ?>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="config-field-grid">
+                                    <?php foreach ($notificationGroup['keys'] as $settingKey): ?>
+                                        <?php
+                                        if (empty($configNotificationSettingDefinitions[$settingKey])) {
+                                            continue;
+                                        }
+
+                                        $settingDefinition = $configNotificationSettingDefinitions[$settingKey];
+                                        $settingInput = $settingDefinition['input'] ?? 'text';
+                                        $settingValue = $configHotelSettings[$settingKey] ?? ($settingDefinition['default'] ?? '');
+                                        $settingId = 'hotel_config_' . preg_replace('/[^a-z0-9_]+/i', '_', $settingKey);
+                                        $settingHtmlType = $settingInput === 'number' ? 'number' : 'text';
+                                        $settingMin = $settingDefinition['min_value'] ?? null;
+                                        $settingMaxValue = $settingDefinition['max_value'] ?? null;
+                                        $settingStep = $settingDefinition['step'] ?? null;
+                                        ?>
+                                        <div class="config-field">
+                                            <?php if ($settingInput === 'checkbox'): ?>
+                                                <input type="hidden"
+                                                       name="hotel_config[<?= htmlspecialchars($settingKey, ENT_QUOTES, 'UTF-8') ?>]"
+                                                       value="0">
+                                                <label class="config-toggle-label" for="<?= htmlspecialchars($settingId, ENT_QUOTES, 'UTF-8') ?>">
+                                                    <input type="checkbox"
+                                                           id="<?= htmlspecialchars($settingId, ENT_QUOTES, 'UTF-8') ?>"
+                                                           name="hotel_config[<?= htmlspecialchars($settingKey, ENT_QUOTES, 'UTF-8') ?>]"
+                                                           value="1"
+                                                           <?= (bool) $settingValue ? 'checked' : '' ?>>
+                                                    <?= htmlspecialchars($settingDefinition['label'] ?? $settingKey, ENT_QUOTES, 'UTF-8') ?>
+                                                </label>
+                                            <?php else: ?>
+                                                <label for="<?= htmlspecialchars($settingId, ENT_QUOTES, 'UTF-8') ?>">
+                                                    <?= htmlspecialchars($settingDefinition['label'] ?? $settingKey, ENT_QUOTES, 'UTF-8') ?>
+                                                </label>
+                                                <input type="<?= htmlspecialchars($settingHtmlType, ENT_QUOTES, 'UTF-8') ?>"
+                                                       id="<?= htmlspecialchars($settingId, ENT_QUOTES, 'UTF-8') ?>"
+                                                       name="hotel_config[<?= htmlspecialchars($settingKey, ENT_QUOTES, 'UTF-8') ?>]"
+                                                       value="<?= htmlspecialchars((string) $settingValue, ENT_QUOTES, 'UTF-8') ?>"
+                                                       class="form-input"
+                                                       <?= $settingMin !== null ? 'min="' . (int) $settingMin . '"' : '' ?>
+                                                       <?= $settingMaxValue !== null ? 'max="' . (int) $settingMaxValue . '"' : '' ?>
+                                                       <?= $settingStep !== null ? 'step="' . htmlspecialchars((string) $settingStep, ENT_QUOTES, 'UTF-8') . '"' : '' ?>>
+                                            <?php endif; ?>
+
+                                            <?php if (!empty($settingDefinition['descripcion'])): ?>
+                                                <p class="config-field-hint">
+                                                    <?= htmlspecialchars($settingDefinition['descripcion'], ENT_QUOTES, 'UTF-8') ?>
+                                                </p>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -1854,6 +3040,78 @@ textarea.form-input {
                 </div>
             </div>
         </form>
+
+        <section class="config-panel config-section" aria-labelledby="config-pwa-devices-title">
+            <div class="config-panel-header">
+                <div>
+                    <p class="config-section-kicker">PWA Push</p>
+                    <h3 id="config-pwa-devices-title" class="config-panel-title">
+                        <span class="config-section-icon"><i class="fas fa-mobile-screen-button"></i></span>
+                        Dispositivos con avisos activos
+                    </h3>
+                    <p class="config-panel-copy">
+                        Equipos que aceptaron recibir notificaciones PWA de este hotel. Revocar un dispositivo impide nuevos avisos hasta que se active de nuevo.
+                    </p>
+                </div>
+            </div>
+
+            <?php if (empty($configPwaPushDevices)): ?>
+                <div class="config-device-empty">
+                    Todavia no hay dispositivos PWA registrados para este hotel.
+                </div>
+            <?php else: ?>
+                <div class="config-device-list">
+                    <?php foreach ($configPwaPushDevices as $device): ?>
+                        <?php
+                        $deviceId = (int)($device['id'] ?? 0);
+                        $deviceActive = !empty($device['activo']);
+                        $deviceName = $configPwaDeviceName($device);
+                        $deviceSeen = $configPwaDate($device['last_seen_at'] ?? null);
+                        $deviceCreated = $configPwaDate($device['created_at'] ?? null);
+                        ?>
+                        <article class="config-device-row">
+                            <span class="config-device-icon">
+                                <i class="fas fa-mobile-screen-button"></i>
+                            </span>
+                            <div>
+                                <strong class="config-device-title">
+                                    <?= htmlspecialchars($deviceName, ENT_QUOTES, 'UTF-8') ?>
+                                </strong>
+                                <div class="config-device-meta">
+                                    <span>
+                                        <i class="fas fa-clock"></i>
+                                        Ultima actividad: <?= htmlspecialchars($deviceSeen, ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                    <span>
+                                        <i class="fas fa-calendar-plus"></i>
+                                        Alta: <?= htmlspecialchars($deviceCreated, ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                    <span class="config-device-status <?= $deviceActive ? 'is-active' : 'is-inactive' ?>">
+                                        <i class="fas <?= $deviceActive ? 'fa-circle-check' : 'fa-ban' ?>"></i>
+                                        <?= $deviceActive ? 'Activo' : 'Revocado' ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="config-device-actions">
+                                <?php if ($deviceActive && $deviceId > 0): ?>
+                                    <form method="POST"
+                                          action="<?= url('configuracion/pwa-push/' . $deviceId . '/revocar') ?>"
+                                          class="config-device-form">
+                                        <?= csrf_field() ?>
+                                        <button type="submit" class="config-device-revoke">
+                                            <i class="fas fa-ban"></i>
+                                            Revocar
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </section>
+            </div>
+        </div>
     </main>
 </div>
 

@@ -39,6 +39,22 @@ $sidebarLogoUrl = ($sidebarBranding && function_exists('hotel_branding_asset_url
     ? (hotel_branding_asset_url($sidebarBranding['logo_url'] ?? null) ?: hotel_branding_default_logo_url())
     : (function_exists('hotel_branding_default_logo_url') ? hotel_branding_default_logo_url() : asset('img/logo.png'));
 $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_context();
+$sidebarNotificacionesNoLeidas = 0;
+
+if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_context() && function_exists('current_hotel_id')) {
+    try {
+        require_once APP_PATH . '/models/Notificacion.php';
+        $sidebarNotificacionModel = new Notificacion();
+        $sidebarNotificacionesNoLeidas = $sidebarNotificacionModel->contarNoLeidas(
+            (int) current_hotel_id(),
+            function_exists('current_hotel_user_role') ? current_hotel_user_role() : null,
+            function_exists('user_id') ? user_id() : null
+        );
+    } catch (Throwable $e) {
+        error_log('No se pudo contar notificaciones del sidebar: ' . $e->getMessage());
+        $sidebarNotificacionesNoLeidas = 0;
+    }
+}
 ?>
 
 <aside id="sidebar" class="sidebar-main sidebar-fixed <?= $sidebarEsPanelSaas ? 'sidebar-saas' : 'hotel-sidebar' ?>">
@@ -135,8 +151,8 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
             </div>
         </div>
         <?php else: ?>
-        <?php if ($mostrarDashboard): ?>
         <div class="nav-section hotel-nav-section hotel-dashboard-section">
+            <?php if ($mostrarDashboard): ?>
             <a href="<?= url('dashboard') ?>"
                class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'dashboard') !== false ? 'active' : '' ?>">
                 <div class="nav-icon">
@@ -144,8 +160,19 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
                 </div>
                 <span class="nav-text">Dashboard</span>
             </a>
+            <?php endif; ?>
+
+            <a href="<?= url('notificaciones') ?>"
+               class="nav-item <?= strpos($sidebarRequestPath, '/notificaciones') === 0 ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-bell"></i>
+                    <?php if ($sidebarNotificacionesNoLeidas > 0): ?>
+                    <span class="nav-badge nav-badge-notifications"><?= $sidebarNotificacionesNoLeidas > 99 ? '99+' : (int)$sidebarNotificacionesNoLeidas ?></span>
+                    <?php endif; ?>
+                </div>
+                <span class="nav-text">Notificaciones</span>
+            </a>
         </div>
-        <?php endif; ?>
 
         <?php if ($menuModulosSinConfigurar): ?>
         <div class="nav-section hotel-nav-section">
@@ -364,6 +391,18 @@ $sidebarMostrarLimpiezaOffline = !$sidebarEsPanelSaas && function_exists('has_ho
 
 .user-menu-btn:hover {
     background: color-mix(in srgb, <?= $sidebarEsPanelSaas ? 'var(--ms-primary, #2563EB)' : 'var(--brand-primary, #1B2746)' ?> 10%, transparent);
+}
+
+.nav-badge.nav-badge-notifications {
+    top: -1px !important;
+    right: -1px !important;
+    min-width: 13px !important;
+    height: 13px !important;
+    border-radius: 999px !important;
+    padding: 0 3px !important;
+    font-size: .48rem !important;
+    line-height: 1 !important;
+    font-weight: 800 !important;
 }
 </style>
 

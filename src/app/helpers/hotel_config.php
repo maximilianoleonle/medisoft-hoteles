@@ -228,6 +228,265 @@ if (!function_exists('hotel_config_editable_definitions')) {
                 'max' => 800,
                 'rows' => 3,
             ],
+            'reportes.links_publicos_activos' => [
+                'label' => 'Permitir links seguros publicos',
+                'type' => 'boolean',
+                'input' => 'checkbox',
+                'default' => true,
+                'grupo' => 'reportes',
+                'descripcion' => 'Si se apaga, los links de reportes ya generados dejan de abrir publicamente para este hotel.',
+                'required' => false,
+            ],
+            'reportes.link_expiracion_dias' => [
+                'label' => 'Dias de vigencia del link',
+                'type' => 'integer',
+                'input' => 'number',
+                'default' => 7,
+                'grupo' => 'reportes',
+                'descripcion' => 'Vigencia predeterminada para nuevos links seguros de reportes PDF.',
+                'required' => true,
+                'min_value' => 1,
+                'max_value' => 90,
+                'step' => 1,
+            ],
+            'reportes.email_envio_activo' => [
+                'label' => 'Permitir envio por correo',
+                'type' => 'boolean',
+                'input' => 'checkbox',
+                'default' => false,
+                'grupo' => 'reportes',
+                'descripcion' => 'Activa el envio de links seguros de reportes por correo. No adjunta PDFs.',
+                'required' => false,
+            ],
+            'reportes.email_destinatarios' => [
+                'label' => 'Destinatarios de reportes',
+                'type' => 'string',
+                'input' => 'email_list',
+                'default' => '',
+                'grupo' => 'reportes',
+                'descripcion' => 'Correos separados por coma, punto y coma o salto de linea.',
+                'required' => false,
+                'max' => 500,
+                'rows' => 3,
+            ],
+            'reportes.email_remitente' => [
+                'label' => 'Correo remitente',
+                'type' => 'string',
+                'input' => 'email',
+                'default' => '',
+                'grupo' => 'reportes',
+                'descripcion' => 'Correo que aparecera como remitente. Si queda vacio se usa el email de contacto.',
+                'required' => false,
+                'max' => 160,
+            ],
+            'reportes.email_nombre_remitente' => [
+                'label' => 'Nombre remitente',
+                'type' => 'string',
+                'input' => 'text',
+                'default' => '',
+                'grupo' => 'reportes',
+                'descripcion' => 'Nombre visible del remitente. Si queda vacio se usa el nombre del hotel.',
+                'required' => false,
+                'max' => 120,
+            ],
+            'reportes.email_asunto' => [
+                'label' => 'Asunto del correo',
+                'type' => 'string',
+                'input' => 'text',
+                'default' => 'Reporte disponible - {hotel}',
+                'grupo' => 'reportes',
+                'descripcion' => 'Puedes usar {hotel}, {titulo} y {expira}.',
+                'required' => false,
+                'max' => 180,
+            ],
+            'reportes.email_mensaje' => [
+                'label' => 'Mensaje del correo',
+                'type' => 'string',
+                'input' => 'textarea',
+                'default' => "Hola,\n\nEl reporte {titulo} de {hotel} ya esta disponible.\n\nLink seguro: {link}\nVigencia: {expira}",
+                'grupo' => 'reportes',
+                'descripcion' => 'Plantilla del cuerpo. Variables: {hotel}, {titulo}, {link}, {expira}.',
+                'required' => false,
+                'max' => 1200,
+                'rows' => 5,
+            ],
+            'notificaciones.automaticas_activas' => [
+                'label' => 'Activar reglas automaticas',
+                'type' => 'boolean',
+                'input' => 'checkbox',
+                'default' => true,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Permite que el dashboard genere avisos operativos automaticos para el hotel.',
+                'required' => false,
+            ],
+            'notificaciones.pwa_push_activo' => [
+                'label' => 'Permitir notificaciones PWA',
+                'type' => 'boolean',
+                'input' => 'checkbox',
+                'default' => true,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Permite que usuarios del hotel activen avisos push en sus dispositivos instalados o compatibles.',
+                'required' => false,
+            ],
+            'notificaciones.pwa_push_solo_prioritarias' => [
+                'label' => 'Push solo para prioridad alta o critica',
+                'type' => 'boolean',
+                'input' => 'checkbox',
+                'default' => false,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Si se activa, el celular solo recibira avisos push de severidad alta o critica.',
+                'required' => false,
+            ],
+            'notificaciones.pwa_push_automaticas' => [
+                'label' => 'Enviar push de reglas automaticas',
+                'type' => 'boolean',
+                'input' => 'checkbox',
+                'default' => true,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Permite enviar push cuando el dashboard crea avisos automaticos por reglas operativas.',
+                'required' => false,
+            ],
+            'notificaciones.pwa_push_eventos' => [
+                'label' => 'Enviar push de eventos operativos',
+                'type' => 'boolean',
+                'input' => 'checkbox',
+                'default' => true,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Permite enviar push cuando una accion del sistema genera un aviso, por ejemplo caja, habitaciones o facturacion.',
+                'required' => false,
+            ],
+            'notificaciones.regla_checkins_pendientes' => [
+                'label' => 'Avisar check-ins pendientes',
+                'type' => 'boolean',
+                'input' => 'checkbox',
+                'default' => true,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Crea avisos cuando hay reservaciones confirmadas con entrada vencida.',
+                'required' => false,
+            ],
+            'notificaciones.regla_checkouts_pendientes' => [
+                'label' => 'Avisar check-outs pendientes',
+                'type' => 'boolean',
+                'input' => 'checkbox',
+                'default' => true,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Crea avisos cuando hay salidas vencidas en reservaciones activas.',
+                'required' => false,
+            ],
+            'notificaciones.regla_facturas_pendientes' => [
+                'label' => 'Avisar facturas pendientes',
+                'type' => 'boolean',
+                'input' => 'checkbox',
+                'default' => true,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Crea avisos cuando existen solicitudes de factura pendientes.',
+                'required' => false,
+            ],
+            'notificaciones.regla_mantenimiento_activo' => [
+                'label' => 'Avisar mantenimiento activo',
+                'type' => 'boolean',
+                'input' => 'checkbox',
+                'default' => true,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Crea avisos cuando hay habitaciones en mantenimiento.',
+                'required' => false,
+            ],
+            'notificaciones.regla_habitaciones_limpieza' => [
+                'label' => 'Avisar habitaciones en limpieza',
+                'type' => 'boolean',
+                'input' => 'checkbox',
+                'default' => true,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Crea avisos cuando hay habitaciones pendientes de liberar por limpieza.',
+                'required' => false,
+            ],
+            'notificaciones.regla_caja_abierta_prolongada' => [
+                'label' => 'Avisar caja abierta prolongada',
+                'type' => 'boolean',
+                'input' => 'checkbox',
+                'default' => true,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Crea avisos cuando un corte de caja lleva demasiado tiempo abierto.',
+                'required' => false,
+            ],
+            'notificaciones.regla_inventario_bajo' => [
+                'label' => 'Avisar inventario bajo',
+                'type' => 'boolean',
+                'input' => 'checkbox',
+                'default' => true,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Crea avisos cuando productos activos llegan a su stock minimo.',
+                'required' => false,
+            ],
+            'notificaciones.regla_reporte_gerencial_diario' => [
+                'label' => 'Crear reporte gerencial diario',
+                'type' => 'boolean',
+                'input' => 'checkbox',
+                'default' => true,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Crea una notificacion diaria para gerencia con resumen de ingresos, ocupacion, agenda y pendientes.',
+                'required' => false,
+            ],
+            'notificaciones.umbral_retraso_alta_dias' => [
+                'label' => 'Dias para prioridad alta en entradas/salidas',
+                'type' => 'integer',
+                'input' => 'number',
+                'default' => 2,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Dias vencidos para subir check-ins o check-outs pendientes a prioridad alta.',
+                'required' => true,
+                'min_value' => 1,
+                'max_value' => 30,
+                'step' => 1,
+            ],
+            'notificaciones.umbral_facturas_alta' => [
+                'label' => 'Facturas para prioridad alta',
+                'type' => 'integer',
+                'input' => 'number',
+                'default' => 5,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Cantidad de facturas pendientes necesaria para mostrar prioridad alta.',
+                'required' => true,
+                'min_value' => 1,
+                'max_value' => 100,
+                'step' => 1,
+            ],
+            'notificaciones.umbral_limpieza_media' => [
+                'label' => 'Habitaciones en limpieza para prioridad media',
+                'type' => 'integer',
+                'input' => 'number',
+                'default' => 5,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Cantidad de habitaciones en limpieza necesaria para subir el aviso a prioridad media.',
+                'required' => true,
+                'min_value' => 1,
+                'max_value' => 200,
+                'step' => 1,
+            ],
+            'notificaciones.umbral_caja_horas_media' => [
+                'label' => 'Horas de caja abierta para avisar',
+                'type' => 'integer',
+                'input' => 'number',
+                'default' => 12,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Horas minimas que debe llevar abierta una caja para crear aviso.',
+                'required' => true,
+                'min_value' => 1,
+                'max_value' => 168,
+                'step' => 1,
+            ],
+            'notificaciones.umbral_caja_horas_alta' => [
+                'label' => 'Horas de caja abierta para prioridad alta',
+                'type' => 'integer',
+                'input' => 'number',
+                'default' => 24,
+                'grupo' => 'notificaciones',
+                'descripcion' => 'Horas necesarias para que el aviso de caja abierta sea prioridad alta.',
+                'required' => true,
+                'min_value' => 1,
+                'max_value' => 336,
+                'step' => 1,
+            ],
             'pwa.nombre_app' => [
                 'label' => 'Nombre de la app',
                 'type' => 'string',
@@ -339,11 +598,61 @@ if (!function_exists('hotel_config_normalize_editable_value')) {
             ];
         }
 
+        if ($type === 'integer') {
+            if (!preg_match('/^-?\d+$/', $value)) {
+                return [
+                    'ok' => false,
+                    'error' => "{$label} debe ser un numero entero.",
+                ];
+            }
+
+            $intValue = (int) $value;
+            $minValue = $definition['min_value'] ?? null;
+            $maxValue = $definition['max_value'] ?? null;
+
+            if ($minValue !== null && $intValue < (int) $minValue) {
+                return [
+                    'ok' => false,
+                    'error' => "{$label} debe ser mayor o igual a {$minValue}.",
+                ];
+            }
+
+            if ($maxValue !== null && $intValue > (int) $maxValue) {
+                return [
+                    'ok' => false,
+                    'error' => "{$label} debe ser menor o igual a {$maxValue}.",
+                ];
+            }
+
+            return [
+                'ok' => true,
+                'value' => (string) $intValue,
+            ];
+        }
+
         if ($input === 'email' && $value !== '' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
             return [
                 'ok' => false,
                 'error' => "{$label} no tiene un formato valido.",
             ];
+        }
+
+        if ($input === 'email_list' && $value !== '') {
+            $emails = preg_split('/[,;\r\n]+/', $value);
+            $emails = array_values(array_unique(array_filter(array_map('trim', $emails), static function ($email) {
+                return $email !== '';
+            })));
+
+            foreach ($emails as $email) {
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    return [
+                        'ok' => false,
+                        'error' => "{$label} contiene un correo con formato invalido: {$email}.",
+                    ];
+                }
+            }
+
+            $value = implode(', ', $emails);
         }
 
         $maxLength = (int) ($definition['max'] ?? 0);
@@ -1360,6 +1669,70 @@ if (!function_exists('hotel_feature_enabled')) {
         $clave = strpos($clave, 'feature.') === 0 ? $clave : 'feature.' . $clave;
 
         return (bool) hotel_config_get($clave, $default, $hotelId);
+    }
+}
+
+if (!function_exists('hotel_report_links_public_enabled')) {
+    function hotel_report_links_public_enabled($hotelId = null)
+    {
+        return (bool) hotel_config_get('reportes.links_publicos_activos', true, $hotelId);
+    }
+}
+
+if (!function_exists('hotel_report_link_expiration_days')) {
+    function hotel_report_link_expiration_days($hotelId = null)
+    {
+        $days = (int) hotel_config_get('reportes.link_expiracion_dias', 7, $hotelId);
+
+        return max(1, min(90, $days));
+    }
+}
+
+if (!function_exists('hotel_report_email_enabled')) {
+    function hotel_report_email_enabled($hotelId = null)
+    {
+        return (bool) hotel_config_get('reportes.email_envio_activo', false, $hotelId);
+    }
+}
+
+if (!function_exists('hotel_report_email_recipients')) {
+    function hotel_report_email_recipients($hotelId = null)
+    {
+        $value = (string) hotel_config_get('reportes.email_destinatarios', '', $hotelId);
+        $emails = preg_split('/[,;\r\n]+/', $value);
+
+        return array_values(array_unique(array_filter(array_map('trim', $emails), static function ($email) {
+            return $email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL);
+        })));
+    }
+}
+
+if (!function_exists('hotel_notifications_automatic_enabled')) {
+    function hotel_notifications_automatic_enabled($hotelId = null)
+    {
+        return (bool) hotel_config_get('notificaciones.automaticas_activas', true, $hotelId);
+    }
+}
+
+if (!function_exists('hotel_notification_rule_enabled')) {
+    function hotel_notification_rule_enabled($regla, $hotelId = null)
+    {
+        $regla = preg_replace('/[^a-z0-9_]+/i', '', (string) $regla);
+        if ($regla === '') {
+            return false;
+        }
+
+        return (bool) hotel_config_get('notificaciones.regla_' . $regla, true, $hotelId);
+    }
+}
+
+if (!function_exists('hotel_notification_threshold')) {
+    function hotel_notification_threshold($clave, $default, $hotelId = null, $min = 1, $max = 999)
+    {
+        $clave = preg_replace('/[^a-z0-9_]+/i', '', (string) $clave);
+        $value = (int) hotel_config_get('notificaciones.' . $clave, (int) $default, $hotelId);
+
+        return max((int) $min, min((int) $max, $value));
     }
 }
 

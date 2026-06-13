@@ -185,30 +185,46 @@ async function syncPendingActions() {
 
 // â”€â”€â”€ PUSH NOTIFICATIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 self.addEventListener('push', event => {
-  const data = event.data ? event.data.json() : {};
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (error) {
+    data = { body: 'Nueva notificacion de Medisoft Hoteles' };
+  }
+
   const options = {
     body: data.body || 'Nueva notificacion de Medisoft Hoteles',
     icon: BASE + 'img/icons/icon-192x192.png',
     badge: BASE + 'img/icons/icon-72x72.png',
     vibrate: [100, 50, 100],
+    tag: data.tag || undefined,
+    renotify: Boolean(data.tag),
     data: data,
-    actions: [
-      { action: 'open', title: 'Ver' },
-      { action: 'close', title: 'Cerrar' },
-    ],
   };
+
   event.waitUntil(
-    self.registration.showNotification('Medisoft Hoteles', options)
+    self.registration.showNotification(data.title || 'Medisoft Hoteles', options)
   );
 });
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  if (event.action === 'open' || !event.action) {
-    event.waitUntil(
-      clients.openWindow(BASE + (event.notification.data?.url || 'dashboard'))
-    );
-  }
+  const data = event.notification.data || {};
+  const targetUrl = new URL(data.url || 'dashboard', BASE).href;
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(openClients => {
+      for (const client of openClients) {
+        const clientUrl = new URL(client.url);
+        const target = new URL(targetUrl);
+        if (clientUrl.origin === target.origin && clientUrl.pathname === target.pathname) {
+          return client.focus();
+        }
+      }
+
+      return clients.openWindow(targetUrl);
+    })
+  );
 });
 
 // â”€â”€â”€ MENSAJES DESDE LA APP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

@@ -334,17 +334,27 @@
 }
 
 .reportes-view .rep-cta {
-    background: var(--report-heading) !important;
+    background: linear-gradient(
+        135deg,
+        var(--report-brand),
+        var(--report-brand-dark)
+    ) !important;
     color: #FFFFFF !important;
-    box-shadow: 0 12px 22px -18px rgba(17,24,39,.7) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 12px 22px -18px color-mix(in srgb, var(--report-brand) 72%, #111827) !important;
 }
 
 .reportes-view .rep-cta:hover {
-    box-shadow: 0 14px 26px -18px color-mix(in srgb, var(--report-color) 46%, #111827) !important;
+    background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--report-brand) 92%, #FFFFFF),
+        var(--report-brand-dark)
+    ) !important;
+    box-shadow: 0 14px 26px -18px color-mix(in srgb, var(--report-brand) 78%, #111827) !important;
 }
 
 .reportes-view .rep-cta:focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--report-accent) 24%, transparent) !important;
+    outline: 3px solid color-mix(in srgb, var(--report-brand) 28%, transparent) !important;
     outline-offset: 3px;
 }
 
@@ -384,7 +394,7 @@
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <span class="report-chip"><i class="fas fa-user-shield text-xs"></i> Gerencia</span>
-                    <span class="report-chip"><i class="fas fa-folder-open text-xs"></i> 4 reportes activos</span>
+                    <span class="report-chip"><i class="fas fa-folder-open text-xs"></i> 6 areas activas</span>
                 </div>
             </div>
         </div>
@@ -492,6 +502,52 @@
                     </ul>
                     <a href="<?= url('reportes/mantenimiento') ?>" class="rep-cta">
                         <i class="fas fa-wrench text-sm"></i> Abrir reporte
+                    </a>
+                </div>
+            </div>
+
+            <!-- 5: Links seguros -->
+            <div class="rep-card" style="--report-color:#0F766E;--report-color-strong:#115E59;--report-color-soft:#CCFBF1;">
+                <div class="card-accent"></div>
+                <div class="card-body">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="rep-icon-wrap">
+                            <i class="fas fa-link text-white"></i>
+                        </div>
+                        <span class="cat-badge">Seguridad</span>
+                    </div>
+                    <h3 class="text-base font-bold text-gray-800 mb-1.5">Historial y Links Seguros</h3>
+                    <p class="text-xs text-gray-500 mb-4 leading-relaxed">Administra PDFs guardados para compartirlos con expiracion y revocacion.</p>
+                    <ul class="feat-list">
+                        <li><i class="fas fa-check-circle"></i>Historial interno</li>
+                        <li><i class="fas fa-check-circle"></i>Vencimiento de links</li>
+                        <li><i class="fas fa-check-circle"></i>Control de accesos</li>
+                    </ul>
+                    <a href="<?= url('reportes/links') ?>" class="rep-cta">
+                        <i class="fas fa-shield-alt text-sm"></i> Abrir historial
+                    </a>
+                </div>
+            </div>
+
+            <!-- 6: Reporte gerencial diario -->
+            <div class="rep-card" style="--report-color:#1F2937;--report-color-strong:#111827;--report-color-soft:#EEF2F7;">
+                <div class="card-accent"></div>
+                <div class="card-body">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="rep-icon-wrap">
+                            <i class="fas fa-briefcase text-white"></i>
+                        </div>
+                        <span class="cat-badge">Gerencial</span>
+                    </div>
+                    <h3 class="text-base font-bold text-gray-800 mb-1.5">Reporte Gerencial Diario</h3>
+                    <p class="text-xs text-gray-500 mb-4 leading-relaxed">Resume ingresos, ocupacion, agenda, caja y pendientes criticos del dia.</p>
+                    <ul class="feat-list">
+                        <li><i class="fas fa-check-circle"></i>Vista ejecutiva diaria</li>
+                        <li><i class="fas fa-check-circle"></i>Pendientes accionables</li>
+                        <li><i class="fas fa-check-circle"></i>Notificacion automatica</li>
+                    </ul>
+                    <a href="<?= url('reportes/gerencial-diario') ?>" class="rep-cta">
+                        <i class="fas fa-chart-pie text-sm"></i> Abrir reporte
                     </a>
                 </div>
             </div>

@@ -684,6 +684,235 @@
     }
   }
 
+  // ==========================================================================
+  // 8. PUSH PWA POR DISPOSITIVO
+  // ==========================================================================
+  let pushClientConfig = null;
+
+  function csrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || '';
+  }
+
+  function isIosDevice() {
+    return /iphone|ipad|ipod/i.test(window.navigator.userAgent || '');
+  }
+
+  function isStandalonePwa() {
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  }
+
+  function pushSupported() {
+    return 'serviceWorker' in navigator &&
+      'PushManager' in window &&
+      'Notification' in window;
+  }
+
+  function base64UrlToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const output = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; i++) {
+      output[i] = rawData.charCodeAt(i);
+    }
+
+    return output;
+  }
+
+  async function pushJson(url, payload = {}) {
+    const response = await fetch(url, {
+      method: 'POST',
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-Token': csrfToken(),
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.success === false) {
+      throw new Error(data.message || 'No se pudo completar la accion.');
+    }
+
+    return data;
+  }
+
+  async function loadPushConfig(panel) {
+    if (pushClientConfig) return pushClientConfig;
+
+    const publicKeyUrl = panel?.dataset?.publicKeyUrl || `${BASE}/api/pwa-push/public-key`;
+    const response = await fetch(publicKeyUrl, {
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+    });
+
+    pushClientConfig = await response.json();
+    return pushClientConfig;
+  }
+
+  function setPushPanelState(panel, state, message) {
+    if (!panel) return;
+
+    const button = panel.querySelector('[data-pwa-push-toggle]');
+    const testButton = panel.querySelector('[data-pwa-push-test]');
+    const status = panel.querySelector('[data-pwa-push-status]');
+
+    panel.dataset.pushState = state;
+    if (status) status.textContent = message || '';
+
+    if (button) {
+      button.disabled = state === 'loading' ||
+        state === 'unsupported' ||
+        state === 'blocked' ||
+        state === 'unconfigured' ||
+        state === 'disabled';
+      button.dataset.mode = state === 'enabled' ? 'disable' : 'enable';
+      const label = button.querySelector('[data-pwa-push-label]');
+      if (label) {
+        label.textContent = state === 'enabled'
+          ? 'Desactivar en este dispositivo'
+          : 'Activar en este dispositivo';
+      }
+    }
+
+    if (testButton) {
+      testButton.hidden = state !== 'enabled';
+      testButton.disabled = state !== 'enabled';
+    }
+  }
+
+  async function refreshPushPanel(panel) {
+    if (!panel) return;
+
+    if (!pushSupported()) {
+      const message = isIosDevice() && !isStandalonePwa()
+        ? 'En iPhone debes agregar la app a pantalla de inicio para recibir avisos.'
+        : 'Este navegador no soporta notificaciones push PWA.';
+      setPushPanelState(panel, 'unsupported', message);
+      return;
+    }
+
+    setPushPanelState(panel, 'loading', 'Revisando estado de este dispositivo...');
+
+    try {
+      const config = await loadPushConfig(panel);
+      if (!config.enabled || !config.public_key) {
+        setPushPanelState(panel, config.configured ? 'disabled' : 'unconfigured', config.message || 'Push no disponible.');
+        return;
+      }
+
+      if (Notification.permission === 'denied') {
+        setPushPanelState(panel, 'blocked', 'El navegador bloqueo los permisos. Activalos desde la configuracion del sitio.');
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+
+      if (subscription) {
+        setPushPanelState(panel, 'enabled', 'Este dispositivo ya recibe avisos del hotel.');
+      } else {
+        setPushPanelState(panel, 'available', config.message || 'Puedes activar avisos en este dispositivo.');
+      }
+    } catch (error) {
+      setPushPanelState(panel, 'error', error.message || 'No se pudo revisar Push PWA.');
+    }
+  }
+
+  async function enablePushForPanel(panel) {
+    const config = await loadPushConfig(panel);
+    if (!config.enabled || !config.public_key) {
+      throw new Error(config.message || 'Push no disponible.');
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      throw new Error('Permiso no concedido por el navegador.');
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+    const existing = await registration.pushManager.getSubscription();
+    const subscription = existing || await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: base64UrlToUint8Array(config.public_key),
+    });
+
+    await pushJson(panel.dataset.subscribeUrl || `${BASE}/api/pwa-push/subscribe`, {
+      subscription: subscription.toJSON(),
+    });
+
+    return subscription;
+  }
+
+  async function disablePushForPanel(panel) {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+
+    if (subscription) {
+      await pushJson(panel.dataset.unsubscribeUrl || `${BASE}/api/pwa-push/unsubscribe`, {
+        endpoint: subscription.endpoint,
+      });
+      await subscription.unsubscribe();
+    }
+  }
+
+  function initPushControls() {
+    document.querySelectorAll('[data-pwa-push-panel]').forEach(panel => {
+      if (panel.dataset.pushBound === '1') {
+        refreshPushPanel(panel);
+        return;
+      }
+
+      panel.dataset.pushBound = '1';
+      refreshPushPanel(panel);
+
+      panel.querySelector('[data-pwa-push-toggle]')?.addEventListener('click', async () => {
+        const state = panel.dataset.pushState;
+        setPushPanelState(panel, 'loading', state === 'enabled' ? 'Desactivando avisos...' : 'Activando avisos...');
+
+        try {
+          if (state === 'enabled') {
+            await disablePushForPanel(panel);
+            showToast('Notificaciones desactivadas en este dispositivo.', 'success');
+          } else {
+            await enablePushForPanel(panel);
+            showToast('Notificaciones activadas en este dispositivo.', 'success');
+          }
+
+          pushClientConfig = null;
+          await refreshPushPanel(panel);
+        } catch (error) {
+          showToast(error.message || 'No se pudo cambiar Push PWA.', 'error', 5200);
+          await refreshPushPanel(panel);
+        }
+      });
+
+      panel.querySelector('[data-pwa-push-test]')?.addEventListener('click', async () => {
+        setPushPanelState(panel, 'loading', 'Enviando prueba...');
+
+        try {
+          await pushJson(panel.dataset.testUrl || `${BASE}/api/pwa-push/test`, {});
+          showToast('Prueba enviada. Revisa las notificaciones del dispositivo.', 'success', 5200);
+        } catch (error) {
+          showToast(error.message || 'No se pudo enviar la prueba.', 'error', 5200);
+        } finally {
+          await refreshPushPanel(panel);
+        }
+      });
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', initPushControls);
+
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // 8. HELPERS UI
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -762,6 +991,8 @@
     triggerInstall: window.triggerInstall,
     checkOnline: detectarConexionReal,
     isOnline: () => _onlineConfirmado,
+    initPushControls,
+    refreshPushControls: () => document.querySelectorAll('[data-pwa-push-panel]').forEach(refreshPushPanel),
   };
 
 })();

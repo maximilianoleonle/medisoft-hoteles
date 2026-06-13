@@ -56,7 +56,10 @@ $vehiculos_count = count($vehiculos);
     --ge-line: color-mix(in srgb, var(--ge-brand) 14%, #E9DDCB);
     --ge-line-strong: color-mix(in srgb, var(--ge-accent) 36%, #D8C4A4);
     --ge-muted: color-mix(in srgb, var(--ge-brand-dark) 50%, #94A3B8);
+    --ge-heading: #111827;
     --ge-text: #182033;
+    --ge-text-soft: #334155;
+    --ge-accent-readable: color-mix(in srgb, var(--ge-accent) 66%, #3B2D12);
     --ge-success: #157A52;
     --ge-danger: #B9463D;
     --ge-info: #2E6EA8;
@@ -103,12 +106,12 @@ $vehiculos_count = count($vehiculos);
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    color: var(--ge-brand);
+    color: var(--ge-text-soft);
     transition: color .18s ease, transform .18s ease;
 }
 
 .ge-breadcrumb a:hover {
-    color: var(--ge-accent-deep);
+    color: var(--ge-accent-readable);
     transform: translateY(-1px);
 }
 
@@ -168,7 +171,7 @@ $vehiculos_count = count($vehiculos);
     align-items: center;
     gap: 8px;
     margin-bottom: 8px;
-    color: color-mix(in srgb, var(--ge-accent) 78%, var(--ge-brand));
+    color: var(--ge-accent-readable);
     font-size: .72rem;
     font-weight: 900;
     letter-spacing: .08em;
@@ -177,7 +180,7 @@ $vehiculos_count = count($vehiculos);
 
 .ge-title {
     margin: 0;
-    color: var(--ge-brand);
+    color: var(--ge-heading);
     font-family: var(--ge-serif);
     font-size: clamp(2.2rem, 5vw, 4.6rem);
     line-height: .9;
@@ -235,7 +238,7 @@ $vehiculos_count = count($vehiculos);
 .ge-link-btn {
     border: 1px solid var(--ge-line);
     background: rgba(255,253,248,.82);
-    color: var(--ge-brand);
+    color: var(--ge-text);
 }
 
 .ge-link-btn:hover {
@@ -259,7 +262,7 @@ $vehiculos_count = count($vehiculos);
 .ge-btn-secondary {
     border: 1px solid var(--ge-line);
     background: var(--ge-panel);
-    color: var(--ge-brand);
+    color: var(--ge-text);
 }
 
 .ge-btn-secondary:hover {
@@ -341,7 +344,7 @@ $vehiculos_count = count($vehiculos);
 .ge-panel h2,
 .ge-side-card h3 {
     margin: 0;
-    color: var(--ge-brand);
+    color: var(--ge-heading);
     font-size: 1rem;
     font-weight: 900;
     line-height: 1.2;
@@ -380,7 +383,7 @@ $vehiculos_count = count($vehiculos);
     justify-content: space-between;
     gap: 8px;
     margin-bottom: 7px;
-    color: color-mix(in srgb, var(--ge-brand) 88%, #27364D);
+    color: var(--ge-text-soft);
     font-size: .76rem;
     font-weight: 900;
 }
@@ -398,7 +401,7 @@ $vehiculos_count = count($vehiculos);
     left: 14px;
     top: 50%;
     transform: translateY(-50%);
-    color: color-mix(in srgb, var(--ge-brand) 42%, #94A3B8);
+    color: color-mix(in srgb, var(--ge-accent) 45%, #94A3B8);
     pointer-events: none;
 }
 
@@ -448,7 +451,7 @@ textarea.ge-control {
     border-radius: 17px;
     border: 1px solid color-mix(in srgb, var(--ge-info) 22%, var(--ge-line));
     background: color-mix(in srgb, var(--ge-info) 7%, var(--ge-panel));
-    color: var(--ge-brand);
+    color: var(--ge-text);
 }
 
 .ge-context-note i {
@@ -458,7 +461,7 @@ textarea.ge-control {
 
 .ge-context-note strong {
     display: block;
-    color: var(--ge-brand);
+    color: var(--ge-heading);
     font-size: .84rem;
     font-weight: 900;
 }
@@ -504,13 +507,13 @@ textarea.ge-control {
     place-items: center;
     flex: 0 0 auto;
     border-radius: 13px;
-    background: color-mix(in srgb, var(--ge-brand) 9%, #FFFDF8);
-    color: var(--ge-brand);
+    background: color-mix(in srgb, var(--ge-accent) 10%, #FFFDF8);
+    color: var(--ge-accent-readable);
 }
 
 .ge-vehicle-card strong {
     display: block;
-    color: var(--ge-brand);
+    color: var(--ge-heading);
     font-size: .92rem;
     font-weight: 900;
     overflow: hidden;
@@ -553,12 +556,12 @@ textarea.ge-control {
 }
 
 .ge-empty i {
-    color: color-mix(in srgb, var(--ge-accent) 70%, var(--ge-brand));
+    color: var(--ge-accent-readable);
     font-size: 1.8rem;
 }
 
 .ge-empty strong {
-    color: var(--ge-brand);
+    color: var(--ge-heading);
     font-size: .96rem;
     font-weight: 900;
 }
@@ -575,7 +578,7 @@ textarea.ge-control {
     border: 1px solid var(--ge-line);
     border-radius: 15px;
     background: var(--ge-panel);
-    color: var(--ge-brand);
+    color: var(--ge-text);
     font-size: .82rem;
     font-weight: 900;
     transition: transform .18s ease, border-color .18s ease, background .18s ease;
@@ -686,7 +689,7 @@ textarea.ge-control {
 }
 
 .ge-meta-row strong {
-    color: var(--ge-brand);
+    color: var(--ge-heading);
     font-size: .8rem;
     font-weight: 950;
     text-align: right;
@@ -732,7 +735,7 @@ textarea.ge-control {
 
 .ge-actions-copy strong {
     display: block;
-    color: var(--ge-brand);
+    color: var(--ge-heading);
     font-size: .88rem;
     font-weight: 950;
 }

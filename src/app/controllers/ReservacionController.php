@@ -39,6 +39,108 @@ class ReservacionController extends Controller {
         return obtenerHotelIdActualCompat();
     }
 
+    private function cotizacionPdfBranding(): array {
+        $branding = function_exists('current_hotel_branding') ? current_hotel_branding() : [];
+        if (!is_array($branding)) {
+            $branding = [];
+        }
+
+        $primary = $this->cotizacionPdfHex($branding['color_primary'] ?? null, '#1B2746');
+        $secondary = $this->cotizacionPdfHex($branding['color_secondary'] ?? null, '#0F172A');
+        $accent = $this->cotizacionPdfHex($branding['color_accent'] ?? null, '#BD9441');
+        $headerText = $this->cotizacionPdfTextColor($secondary);
+
+        return [
+            'hotel' => function_exists('current_hotel_display_name')
+                ? current_hotel_display_name('Medisoft Hoteles')
+                : 'Medisoft Hoteles',
+            'logo' => $this->cotizacionPdfLogoPath($branding),
+            'primary_rgb' => $this->cotizacionPdfRgb($primary),
+            'secondary_rgb' => $this->cotizacionPdfRgb($secondary),
+            'accent_rgb' => $this->cotizacionPdfRgb($accent),
+            'surface_rgb' => $this->cotizacionPdfRgb($this->cotizacionPdfMix($primary, '#FFFFFF', 0.07)),
+            'line_rgb' => $this->cotizacionPdfRgb($this->cotizacionPdfMix($accent, '#E5E7EB', 0.25)),
+            'header_text_rgb' => $this->cotizacionPdfRgb($headerText),
+            'header_muted_rgb' => $this->cotizacionPdfRgb($this->cotizacionPdfMix($accent, $headerText, 0.65)),
+        ];
+    }
+
+    private function cotizacionPdfHex($color, string $fallback): string {
+        if (function_exists('hotel_branding_hex')) {
+            return hotel_branding_hex($color, $fallback);
+        }
+
+        $color = trim((string) $color);
+        return preg_match('/^#[0-9A-Fa-f]{6}$/', $color) ? strtoupper($color) : strtoupper($fallback);
+    }
+
+    private function cotizacionPdfRgb(string $hex): array {
+        $hex = ltrim($this->cotizacionPdfHex($hex, '#000000'), '#');
+        return [
+            hexdec(substr($hex, 0, 2)),
+            hexdec(substr($hex, 2, 2)),
+            hexdec(substr($hex, 4, 2)),
+        ];
+    }
+
+    private function cotizacionPdfMix(string $hex, string $target, float $ratio): string {
+        $ratio = max(0, min(1, $ratio));
+        $a = $this->cotizacionPdfRgb($hex);
+        $b = $this->cotizacionPdfRgb($target);
+
+        return sprintf(
+            '#%02X%02X%02X',
+            (int) round($a[0] * $ratio + $b[0] * (1 - $ratio)),
+            (int) round($a[1] * $ratio + $b[1] * (1 - $ratio)),
+            (int) round($a[2] * $ratio + $b[2] * (1 - $ratio))
+        );
+    }
+
+    private function cotizacionPdfTextColor(string $hex): string {
+        $rgb = $this->cotizacionPdfRgb($hex);
+        $luminance = (($rgb[0] * 299) + ($rgb[1] * 587) + ($rgb[2] * 114)) / 1000;
+        return $luminance > 155 ? '#111827' : '#FFFFFF';
+    }
+
+    private function cotizacionPdfLogoPath(array $branding) {
+        $candidate = trim((string) ($branding['logo_url'] ?? ''));
+        $defaultLogo = function_exists('hotel_branding_default_logo_path') ? hotel_branding_default_logo_path() : 'img/logo.png';
+        if ($candidate === '' || $candidate === $defaultLogo) {
+            return null;
+        }
+
+        if (preg_match('/[\x00-\x1F<>"\']/', $candidate)) {
+            return null;
+        }
+
+        $publicRoot = defined('PUBLIC_PATH') ? realpath(PUBLIC_PATH) : null;
+        $urlPath = parse_url($candidate, PHP_URL_PATH);
+        if (!$publicRoot || !$urlPath) {
+            return null;
+        }
+
+        $cleanPath = str_replace('\\', '/', ltrim($urlPath, '/'));
+        $allowed = false;
+        foreach (['uploads/branding/', 'uploads/', 'img/', 'images/'] as $prefix) {
+            if (strpos($cleanPath, $prefix) === 0) {
+                $allowed = true;
+                break;
+            }
+        }
+
+        if (!$allowed) {
+            return null;
+        }
+
+        $extension = strtolower(pathinfo($cleanPath, PATHINFO_EXTENSION));
+        $realPath = realpath(PUBLIC_PATH . '/' . $cleanPath);
+        if (!$realPath || strpos($realPath, $publicRoot . DIRECTORY_SEPARATOR) !== 0 || !is_file($realPath)) {
+            return null;
+        }
+
+        return in_array($extension, ['png', 'jpg', 'jpeg'], true) ? $realPath : null;
+    }
+
     public function agregarNotaAction() {
     if (!$this->isPost()) {
         header('Content-Type: application/json');
@@ -159,11 +261,14 @@ class ReservacionController extends Controller {
             $pdf->AddPage();
  
             // ─── Colores del hotel ───────────────────────────────
-            $olivo     = [92, 122, 78];
-            $olivoOsc  = [61, 82, 52];
-            $gold      = [200, 169, 106];
-            $cream     = [247, 244, 238];
-            $creamMid  = [238, 233, 222];
+            $brand     = $this->cotizacionPdfBranding();
+            $olivo     = $brand['primary_rgb'];
+            $olivoOsc  = $brand['secondary_rgb'];
+            $gold      = $brand['accent_rgb'];
+            $cream     = $brand['surface_rgb'];
+            $creamMid  = $brand['line_rgb'];
+            $headerText = $brand['header_text_rgb'];
+            $headerMuted = $brand['header_muted_rgb'];
             $gris      = [107, 114, 128];
             $grisCla   = [156, 163, 175];
             $blanco    = [255, 255, 255];
@@ -194,20 +299,22 @@ class ReservacionController extends Controller {
             $pdf->SetFillColor($olivo[0], $olivo[1], $olivo[2]);
             $pdf->Rect(0, 38, $pageW, 4, 'F');
  
-            $logoPath = PUBLIC_PATH . '/img/logo.png';
-            if (file_exists($logoPath)) {
+            $logoPath = $brand['logo'];
+            if ($logoPath) {
                 $pdf->Image($logoPath, $margin, 5, 32, 32);
             }
+            $headerTitleX = $logoPath ? $margin + 36 : $margin;
+            $headerTitleW = $logoPath ? 100 : 136;
  
             $pdf->SetFont('Helvetica', 'B', 18);
-            $pdf->SetTextColor($blanco[0], $blanco[1], $blanco[2]);
-            $pdf->SetXY($margin + 36, 8);
-            $pdf->Cell(100, 8, $u(current_hotel_display_name('Medisoft Hoteles')), 0, 2, 'L');
+            $pdf->SetTextColor($headerText[0], $headerText[1], $headerText[2]);
+            $pdf->SetXY($headerTitleX, 8);
+            $pdf->Cell($headerTitleW, 8, $u($brand['hotel']), 0, 2, 'L');
  
             $pdf->SetFont('Helvetica', '', 9);
             $pdf->SetTextColor($gold[0], $gold[1], $gold[2]);
-            $pdf->SetX($margin + 36);
-            $pdf->Cell(100, 5, $u('Sistema de gestión hotelera'), 0, 2, 'L');
+            $pdf->SetX($headerTitleX);
+            $pdf->Cell($headerTitleW, 5, $u('Sistema de gestión hotelera'), 0, 2, 'L');
  
             $pdf->SetFont('Helvetica', 'B', 22);
             $pdf->SetTextColor($gold[0], $gold[1], $gold[2]);
@@ -215,7 +322,7 @@ class ReservacionController extends Controller {
             $pdf->Cell(70, 10, $u('COTIZACIÓN'), 0, 0, 'R');
  
             $pdf->SetFont('Helvetica', '', 8);
-            $pdf->SetTextColor(200, 210, 195);
+            $pdf->SetTextColor($headerMuted[0], $headerMuted[1], $headerMuted[2]);
             $pdf->SetXY($pageW - $margin - 70, 20);
             $pdf->Cell(70, 5, $u('Fecha: ' . $hoy), 0, 0, 'R');
  
@@ -611,7 +718,7 @@ class ReservacionController extends Controller {
             $pdf->SetFont('Helvetica', '', 7);
             $pdf->SetTextColor($grisCla[0], $grisCla[1], $grisCla[2]);
             $pdf->SetX($margin);
-            $pdf->Cell($contentW / 2, 4, $u(current_hotel_display_name('Medisoft Hoteles')), 0, 0, 'L');
+            $pdf->Cell($contentW / 2, 4, $u($brand['hotel']), 0, 0, 'L');
             $pdf->Cell($contentW / 2, 4, $u('Documento generado el ' . $hoy), 0, 1, 'R');
  
             // Output
@@ -3081,11 +3188,14 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             $pdf->AddPage();
 
             // ─── Colores del hotel ───────────────────────────────
-            $olivo     = [92, 122, 78];    // #5C7A4E
-            $olivoOsc  = [61, 82, 52];     // #3D5234
-            $gold      = [200, 169, 106];  // #C8A96A
-            $cream     = [247, 244, 238];  // #F7F4EE
-            $creamMid  = [238, 233, 222];  // #EEE9DE
+            $brand     = $this->cotizacionPdfBranding();
+            $olivo     = $brand['primary_rgb'];
+            $olivoOsc  = $brand['secondary_rgb'];
+            $gold      = $brand['accent_rgb'];
+            $cream     = $brand['surface_rgb'];
+            $creamMid  = $brand['line_rgb'];
+            $headerText = $brand['header_text_rgb'];
+            $headerMuted = $brand['header_muted_rgb'];
             $gris      = [107, 114, 128];  // #6B7280
             $grisCla   = [156, 163, 175];  // #9CA3AF
             $blanco    = [255, 255, 255];
@@ -3113,22 +3223,24 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             $pdf->Rect(0, 38, $pageW, 4, 'F');
 
             // Logo
-            $logoPath = PUBLIC_PATH . '/img/logo-hotel-san-nicolas2.png';
-            if (file_exists($logoPath)) {
+            $logoPath = $brand['logo'];
+            if ($logoPath) {
                 $pdf->Image($logoPath, $margin, 5, 32, 32);
             }
+            $headerTitleX = $logoPath ? $margin + 36 : $margin;
+            $headerTitleW = $logoPath ? 100 : 136;
 
             // Nombre del hotel
             $pdf->SetFont('Helvetica', 'B', 18);
-            $pdf->SetTextColor($blanco[0], $blanco[1], $blanco[2]);
-            $pdf->SetXY($margin + 36, 8);
-            $pdf->Cell(100, 8, $u(current_hotel_display_name('Medisoft Hoteles')), 0, 2, 'L');
+            $pdf->SetTextColor($headerText[0], $headerText[1], $headerText[2]);
+            $pdf->SetXY($headerTitleX, 8);
+            $pdf->Cell($headerTitleW, 8, $u($brand['hotel']), 0, 2, 'L');
 
             // Subtítulo
             $pdf->SetFont('Helvetica', '', 9);
             $pdf->SetTextColor($gold[0], $gold[1], $gold[2]);
-            $pdf->SetX($margin + 36);
-            $pdf->Cell(100, 5, $u('Sistema de gestión hotelera'), 0, 2, 'L');
+            $pdf->SetX($headerTitleX);
+            $pdf->Cell($headerTitleW, 5, $u('Sistema de gestión hotelera'), 0, 2, 'L');
 
             // Título COTIZACIÓN a la derecha
             $pdf->SetFont('Helvetica', 'B', 22);
@@ -3138,7 +3250,7 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
 
             // Fecha de elaboración
             $pdf->SetFont('Helvetica', '', 8);
-            $pdf->SetTextColor(200, 210, 195);
+            $pdf->SetTextColor($headerMuted[0], $headerMuted[1], $headerMuted[2]);
             $pdf->SetXY($pageW - $margin - 70, 20);
             setlocale(LC_TIME, 'es_MX.UTF-8', 'es_ES.UTF-8', 'es_MX', 'es');
             $meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -3487,7 +3599,7 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             $pdf->SetFont('Helvetica', '', 7);
             $pdf->SetTextColor($grisCla[0], $grisCla[1], $grisCla[2]);
             $pdf->SetX($margin);
-            $pdf->Cell($contentW / 2, 4, $u(current_hotel_display_name('Medisoft Hoteles')), 0, 0, 'L');
+            $pdf->Cell($contentW / 2, 4, $u($brand['hotel']), 0, 0, 'L');
             $pdf->Cell($contentW / 2, 4, $u('Documento generado el ' . $hoy), 0, 1, 'R');
 
             // ─── Output PDF ──────────────────────────────────────

@@ -490,7 +490,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
 }
 
 .vista-reservacion > div:first-of-type .flex.items-center.text-xs.mb-3 a {
-    color: var(--rc-brand) !important;
+    color: #111827 !important;
     display: inline-flex !important;
     align-items: center !important;
     gap: 7px !important;
@@ -498,7 +498,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
 }
 
 .vista-reservacion > div:first-of-type .flex.items-center.text-xs.mb-3 a:hover {
-    color: var(--rc-accent-dark) !important;
+    color: #111827 !important;
     transform: translateY(-1px);
 }
 
@@ -527,13 +527,17 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
 }
 
 .vista-reservacion > div:first-of-type h1 {
-    color: var(--rc-brand) !important;
+    color: #111827 !important;
     font-family: var(--rc-serif) !important;
     font-size: clamp(2rem, 3.6vw, 2.75rem) !important;
     font-weight: 650 !important;
     letter-spacing: 0 !important;
     line-height: .96 !important;
     text-wrap: balance;
+}
+
+.vista-reservacion > div:first-of-type h1 .rc-title-accent {
+    color: var(--rc-brand) !important;
 }
 
 .vista-reservacion > div:first-of-type h1 + p {
@@ -579,7 +583,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
     border-left-width: 1px !important;
     border-radius: 15px !important;
     background: color-mix(in srgb, var(--rc-info) 8%, var(--rc-surface)) !important;
-    color: var(--rc-brand);
+    color: #111827;
     box-shadow: 0 1px 2px color-mix(in srgb, var(--rc-brand-2) 4%, transparent);
 }
 
@@ -652,7 +656,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
 .vista-reservacion .panel-hd-rooms h2,
 .vista-reservacion .panel-hd-notes h2,
 .vista-reservacion .panel-hd-summary h3 {
-    color: var(--rc-brand) !important;
+    color: #111827 !important;
     font-size: .95rem !important;
     font-weight: 850 !important;
     letter-spacing: 0 !important;
@@ -682,7 +686,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
 }
 
 .vista-reservacion label {
-    color: var(--rc-brand) !important;
+    color: #111827 !important;
     font-size: .77rem !important;
     font-weight: 850 !important;
     letter-spacing: .04em;
@@ -848,7 +852,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
 
 .vista-reservacion .guest-info-box .font-bold,
 .vista-reservacion .info-card h4 {
-    color: var(--rc-brand) !important;
+    color: #111827 !important;
 }
 
 .vista-reservacion .buscador-habitaciones {
@@ -941,7 +945,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
 }
 
 .vista-reservacion .habitacion-card h5 {
-    color: var(--rc-brand) !important;
+    color: #111827 !important;
     letter-spacing: 0 !important;
 }
 
@@ -1034,7 +1038,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
 }
 
 .vista-reservacion .rc-room-number strong {
-    color: var(--rc-brand);
+    color: #111827;
     font-family: var(--rc-serif);
     max-width: 100%;
     font-size: clamp(1.55rem, 4vw, 2.05rem);
@@ -1097,7 +1101,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
 .vista-reservacion .rc-room-chip--info {
     border-color: color-mix(in srgb, var(--rc-info) 24%, var(--rc-line));
     background: color-mix(in srgb, var(--rc-info) 7%, #FFFFFF);
-    color: color-mix(in srgb, var(--rc-info) 72%, var(--rc-brand));
+    color: color-mix(in srgb, var(--rc-info) 86%, #12345D);
 }
 
 .vista-reservacion .rc-room-floor,
@@ -1126,7 +1130,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
 
 .vista-reservacion .rc-room-price strong {
     display: block;
-    color: var(--rc-brand);
+    color: #111827;
     font-size: 1.02rem;
     font-weight: 900;
     line-height: 1.05;
@@ -1175,11 +1179,11 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
 
 .vista-reservacion .habitacion-card.selected .rc-room-number strong,
 .vista-reservacion .habitacion-card.selected .rc-room-price strong {
-    color: color-mix(in srgb, var(--rc-success) 76%, var(--rc-brand)) !important;
+    color: color-mix(in srgb, var(--rc-success) 88%, #123322) !important;
 }
 
 .vista-reservacion .habitacion-card.selected .rc-room-action-text {
-    color: color-mix(in srgb, var(--rc-success) 78%, var(--rc-brand));
+    color: color-mix(in srgb, var(--rc-success) 88%, #123322);
 }
 
 @media (max-width: 560px) {
@@ -1275,7 +1279,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
 }
 
 .resumen-flotante h4 {
-    color: var(--brand-primary, #1B2746) !important;
+    color: #111827 !important;
 }
 
 .vista-reservacion ::-webkit-scrollbar {
@@ -1514,7 +1518,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
                         <i class="fas fa-calendar-plus text-white text-xl"></i>
                     </div>
                     <div>
-                        <h1 style="color:white;font-size:1.2rem;font-weight:800;line-height:1.2;">Nueva Reservación</h1>
+                        <h1 style="color:white;font-size:1.2rem;font-weight:800;line-height:1.2;">Nueva <span class="rc-title-accent">Reservación</span></h1>
                         <p style="color:rgba(255,255,255,.6);font-size:.75rem;margin-top:2px;">Seleccione habitaciones y configure cortesías del hotel</p>
                     </div>
                 </div>

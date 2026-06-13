@@ -4,6 +4,8 @@
  */
 
 require_once __DIR__ . '/../helpers/hotel_config.php';
+require_once __DIR__ . '/../models/Notificacion.php';
+require_once __DIR__ . '/../services/NotificacionReglasService.php';
 
 class DashboardController extends Controller {
     
@@ -91,11 +93,14 @@ class DashboardController extends Controller {
             $proximasSalidas = $this->getProximasSalidas();
             
             // Obtener check-ins y check-outs pendientes (pasados de fecha)
-            $checkInsPendientes = $this->reservacionModel->getCheckInsPendientes();
-            $checkOutsPendientes = $this->reservacionModel->getCheckOutsPendientes();
+            $alertasPendientes = $this->getAlertasPendientesReservaciones();
+            $checkInsPendientes = $alertasPendientes['checkins'];
+            $checkOutsPendientes = $alertasPendientes['checkouts'];
             
             // Obtener datos para gráficos
             $datosGraficos = $this->getDatosGraficos();
+            NotificacionReglasService::evaluarDashboard($this->hotelIdActual());
+            $notificacionesDashboard = $this->getNotificacionesDashboard();
             
             // Preparar datos para la vista
             $data = [
@@ -109,7 +114,9 @@ class DashboardController extends Controller {
                 'checkins_pendientes' => $checkInsPendientes,
                 'checkouts_vencidos' => $checkOutsPendientes,
                 'llegadas_tardias' => [], // Puedes implementar esta funcionalidad después
-                'graficos' => $datosGraficos
+                'graficos' => $datosGraficos,
+                'notificaciones_resumen' => $notificacionesDashboard['resumen'],
+                'notificaciones_recientes' => $notificacionesDashboard['recientes']
             ];
             
             // Renderizar vista
@@ -131,6 +138,8 @@ class DashboardController extends Controller {
                 'checkouts_vencidos' => [],
                 'llegadas_tardias' => [],
                 'graficos' => [],
+                'notificaciones_resumen' => $this->getResumenNotificacionesVacio(),
+                'notificaciones_recientes' => [],
                 'error' => 'Error al cargar los datos del dashboard'
             ]);
         }
@@ -376,6 +385,109 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
                 'total' => $huespedesActuales['total_huespedes'] ?? 0,
                 'habitaciones_ocupadas' => $huespedesActuales['habitaciones_ocupadas'] ?? 0
             ]
+        ];
+    }
+
+    private function getNotificacionesDashboard() {
+        $vacio = [
+            'resumen' => $this->getResumenNotificacionesVacio(),
+            'recientes' => []
+        ];
+
+        try {
+            $modelo = new Notificacion();
+            if (!$modelo->tablaDisponible()) {
+                return $vacio;
+            }
+
+            $hotelId = $this->hotelIdActual();
+            $rolUsuario = function_exists('current_hotel_user_role') ? current_hotel_user_role() : null;
+            $usuarioId = function_exists('user_id') ? user_id() : null;
+
+            return [
+                'resumen' => $modelo->resumenPorHotel($hotelId, $rolUsuario, $usuarioId),
+                'recientes' => $modelo->listarPorHotel($hotelId, [
+                    'estado' => 'activas',
+                    'rol_usuario' => $rolUsuario,
+                    'usuario_id' => $usuarioId,
+                ], 5)
+            ];
+        } catch (Throwable $e) {
+            error_log('Error obteniendo notificaciones del dashboard: ' . $e->getMessage());
+            return $vacio;
+        }
+    }
+
+    private function getResumenNotificacionesVacio() {
+        return [
+            'total' => 0,
+            'pendientes' => 0,
+            'nuevas' => 0,
+            'prioritarias' => 0,
+            'resueltas' => 0,
+            'historial' => 0,
+            'hoy' => 0,
+        ];
+    }
+
+    private function getAlertasPendientesReservaciones() {
+        $hotelId = $this->hotelIdActual();
+        if ($hotelId <= 0) {
+            return ['checkins' => [], 'checkouts' => []];
+        }
+
+        $db = Database::getInstance();
+
+        $sqlCheckins = "SELECT
+                    r.id,
+                    r.hotel_id,
+                    r.huesped_id,
+                    r.fecha_entrada,
+                    r.hora_llegada_estimada,
+                    r.precio_total,
+                    h.nombre_completo,
+                    h.telefono,
+                    GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones,
+                    DATEDIFF(CURDATE(), r.fecha_entrada) as dias_retraso
+                FROM reservaciones r
+                INNER JOIN huespedes h ON r.huesped_id = h.id
+                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+                INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
+                WHERE r.hotel_id = ?
+                  AND r.estado = 'confirmada'
+                  AND r.fecha_entrada < CURDATE()
+                GROUP BY r.id
+                ORDER BY r.fecha_entrada
+                LIMIT 10";
+
+        $sqlCheckouts = "SELECT
+                    r.id,
+                    r.hotel_id,
+                    r.huesped_id,
+                    r.fecha_salida,
+                    r.hora_entrada,
+                    r.precio_total,
+                    h.nombre_completo,
+                    h.telefono,
+                    GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones,
+                    DATEDIFF(CURDATE(), r.fecha_salida) as dias_retraso
+                FROM reservaciones r
+                INNER JOIN huespedes h ON r.huesped_id = h.id
+                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+                INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
+                WHERE r.hotel_id = ?
+                  AND r.estado = 'checked_in'
+                  AND r.fecha_salida < CURDATE()
+                GROUP BY r.id
+                ORDER BY r.fecha_salida
+                LIMIT 10";
+
+        $stmtCheckins = $db->query($sqlCheckins, [$hotelId]);
+        $stmtCheckouts = $db->query($sqlCheckouts, [$hotelId]);
+
+        return [
+            'checkins' => $stmtCheckins ? ($stmtCheckins->fetchAll() ?: []) : [],
+            'checkouts' => $stmtCheckouts ? ($stmtCheckouts->fetchAll() ?: []) : [],
         ];
     }
     

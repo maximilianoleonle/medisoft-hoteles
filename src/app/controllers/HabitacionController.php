@@ -1,5 +1,6 @@
 <?php require_once __DIR__ . '/../models/IncrementoTarifa.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
+require_once __DIR__ . '/../services/NotificacionService.php';
 /**
  * Controlador de Habitaciones
  * Sistema hotelero
@@ -84,16 +85,17 @@ public function indexAction() {
             h.telefono,
             COUNT(DISTINCT rh2.habitacion_id) as total_habitaciones
             FROM reservaciones r
-            INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
-            INNER JOIN habitaciones hab_scope ON rh.habitacion_id = hab_scope.id
+            INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+            INNER JOIN habitaciones hab_scope ON rh.habitacion_id = hab_scope.id AND hab_scope.hotel_id = r.hotel_id
             INNER JOIN huespedes h ON r.huesped_id = h.id
-            LEFT JOIN reservacion_habitaciones rh2 ON r.id = rh2.reservacion_id
-            WHERE hab_scope.hotel_id = ?
+            LEFT JOIN reservacion_habitaciones rh2 ON r.id = rh2.reservacion_id AND rh2.hotel_id = r.hotel_id
+            WHERE r.hotel_id = ?
+            AND hab_scope.hotel_id = ?
             AND r.fecha_entrada = CURDATE()
             AND r.estado = 'confirmada'
             GROUP BY rh.habitacion_id, r.id";
     
-    $stmt = $db->query($sql, [$hotelId]);
+    $stmt = $db->query($sql, [$hotelId, $hotelId]);
     $reservaciones_pendientes = [];
     
     while ($row = $stmt->fetch()) {
@@ -167,6 +169,7 @@ public function indexAction() {
     // Agregar estados para la vista
     $estados = Habitacion::getEstados();
     $estados['por_llegar'] = ['label' => 'Por llegar', 'color' => 'purple', 'icon' => 'clock'];
+    $alertasPendientes = $this->obtenerAlertasPendientesHabitaciones($hotelId);
     
     View::renderTemplate('habitaciones/index', [
         'title' => 'Habitaciones - ' . current_hotel_display_name(),
@@ -175,8 +178,76 @@ public function indexAction() {
         'filtros' => $filtros,
         'tipos' => $this->catalogoTiposHabitacion(),
         'estados' => $estados,
-        'pisos' => $this->catalogoPisosHabitacion()
+        'pisos' => $this->catalogoPisosHabitacion(),
+        'checkins_pendientes' => $alertasPendientes['checkins'],
+        'checkouts_vencidos' => $alertasPendientes['checkouts'],
+        'llegadas_tardias' => $alertasPendientes['llegadas_tardias'],
     ]);
+}
+
+private function obtenerAlertasPendientesHabitaciones(int $hotelId): array {
+    if ($hotelId <= 0) {
+        return [
+            'checkins' => [],
+            'checkouts' => [],
+            'llegadas_tardias' => [],
+        ];
+    }
+
+    $db = Database::getInstance();
+
+    $sqlCheckins = "SELECT
+                    r.id,
+                    r.hotel_id,
+                    r.huesped_id,
+                    r.fecha_entrada,
+                    r.hora_llegada_estimada,
+                    r.precio_total,
+                    h.nombre_completo,
+                    h.telefono,
+                    GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones,
+                    DATEDIFF(CURDATE(), r.fecha_entrada) as dias_retraso
+                FROM reservaciones r
+                INNER JOIN huespedes h ON r.huesped_id = h.id
+                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+                INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
+                WHERE r.hotel_id = ?
+                  AND r.estado = 'confirmada'
+                  AND r.fecha_entrada < CURDATE()
+                GROUP BY r.id
+                ORDER BY r.fecha_entrada
+                LIMIT 10";
+
+    $sqlCheckouts = "SELECT
+                    r.id,
+                    r.hotel_id,
+                    r.huesped_id,
+                    r.fecha_salida,
+                    r.hora_entrada,
+                    r.precio_total,
+                    h.nombre_completo,
+                    h.telefono,
+                    GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones,
+                    DATEDIFF(CURDATE(), r.fecha_salida) as dias_retraso
+                FROM reservaciones r
+                INNER JOIN huespedes h ON r.huesped_id = h.id
+                INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+                INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
+                WHERE r.hotel_id = ?
+                  AND r.estado = 'checked_in'
+                  AND r.fecha_salida < CURDATE()
+                GROUP BY r.id
+                ORDER BY r.fecha_salida
+                LIMIT 10";
+
+    $stmtCheckins = $db->query($sqlCheckins, [$hotelId]);
+    $stmtCheckouts = $db->query($sqlCheckouts, [$hotelId]);
+
+    return [
+        'checkins' => $stmtCheckins ? ($stmtCheckins->fetchAll() ?: []) : [],
+        'checkouts' => $stmtCheckouts ? ($stmtCheckouts->fetchAll() ?: []) : [],
+        'llegadas_tardias' => [],
+    ];
 }
 
 private function mostrarDisponibilidadPorFecha($filtros) {
@@ -237,17 +308,18 @@ if (!empty($filtros['estado']) && $filtros['estado'] === 'mantenimiento') {
                      r.estado as estado_reservacion,
                      h.nombre_completo
             FROM reservacion_habitaciones rh
-            INNER JOIN reservaciones r ON rh.reservacion_id = r.id
+            INNER JOIN reservaciones r ON rh.reservacion_id = r.id AND rh.hotel_id = r.hotel_id
             INNER JOIN huespedes h ON r.huesped_id = h.id
-            INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id
+            INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = r.hotel_id
             WHERE r.estado IN ('confirmada', 'checked_in', 'checked_out')
+            AND r.hotel_id = ?
             AND hab.hotel_id = ?
             AND DATE(r.fecha_entrada) <= ?
             AND DATE(r.fecha_salida) > ?
             ORDER BY hab.numero";
     
     error_log("=== EJECUTANDO QUERY DE OCUPADAS ===");
-    $stmt = $db->query($sql_ocupadas, [$hotelId, $fecha_consulta, $fecha_consulta]);
+    $stmt = $db->query($sql_ocupadas, [$hotelId, $hotelId, $fecha_consulta, $fecha_consulta]);
     $ocupadas = [];
     
     while ($row = $stmt->fetch()) {
@@ -358,6 +430,7 @@ if (!empty($filtros['estado']) && $filtros['estado'] === 'mantenimiento') {
     $estados = Habitacion::getEstados();
     $estados['disponible_fecha'] = ['label' => 'Disponible', 'color' => 'green', 'icon' => 'check-circle'];
     $estados['ocupada_fecha'] = ['label' => 'Ocupada', 'color' => 'red', 'icon' => 'user'];
+    $alertasPendientes = $this->obtenerAlertasPendientesHabitaciones($hotelId);
     
     View::renderTemplate('habitaciones/index', [
         'title' => 'Disponibilidad ' . format_date($fecha_consulta) . ' - ' . current_hotel_display_name(),
@@ -368,7 +441,10 @@ if (!empty($filtros['estado']) && $filtros['estado'] === 'mantenimiento') {
         'estados' => $estados,
         'pisos' => $this->catalogoPisosHabitacion(),
         'mostrar_disponibilidad_fecha' => true,
-        'fecha_consultada' => $fecha_consulta
+        'fecha_consultada' => $fecha_consulta,
+        'checkins_pendientes' => $alertasPendientes['checkins'],
+        'checkouts_vencidos' => $alertasPendientes['checkouts'],
+        'llegadas_tardias' => $alertasPendientes['llegadas_tardias'],
     ]);
 }
     
@@ -1216,6 +1292,13 @@ public function mantenimientoAction() {
             
             $db->commit();
             set_mensaje('Mantenimiento iniciado correctamente', 'success');
+            $this->registrarNotificacionHabitacion(
+                (int)$id,
+                'mantenimiento_iniciado',
+                'Mantenimiento iniciado en habitacion ' . ($habitacion['numero'] ?? $id),
+                trim((string)$this->getPost('motivo', '')) ?: 'La habitacion paso a mantenimiento.',
+                $this->getPost('prioridad', 'media') === 'alta' ? 'alta' : 'media'
+            );
             
         } elseif ($accion == 'finalizar') {
             // Actualizar estado de habitación
@@ -1230,6 +1313,13 @@ public function mantenimientoAction() {
             
             $db->commit();
             set_mensaje('Mantenimiento finalizado correctamente', 'success');
+            $this->registrarNotificacionHabitacion(
+                (int)$id,
+                'mantenimiento_finalizado',
+                'Mantenimiento finalizado en habitacion ' . ($habitacion['numero'] ?? $id),
+                'La habitacion fue marcada como disponible.',
+                'info'
+            );
         }
         
     } catch (Exception $e) {
@@ -1334,6 +1424,13 @@ public function programarMantenimientoAction() {
         $fecha_txt = date('d/m/Y', strtotime($fecha_inicio));
         $fin_txt = $fecha_fin ? ' al ' . date('d/m/Y', strtotime($fecha_fin)) : '';
         set_mensaje("Mantenimiento programado para el {$fecha_txt}{$fin_txt} en habitación {$habitacion['numero']}", 'success');
+        $this->registrarNotificacionHabitacion(
+            (int)$id,
+            'mantenimiento_programado',
+            'Mantenimiento programado para habitacion ' . ($habitacion['numero'] ?? $id),
+            'Programado para el ' . $fecha_txt . $fin_txt . '.',
+            $data['prioridad'] === 'alta' ? 'alta' : 'media'
+        );
     } else {
         set_mensaje('Error al programar el mantenimiento', 'error');
     }
@@ -1370,6 +1467,13 @@ public function cancelarMantenimientoProgramadoAction() {
     
     if ($resultado) {
         set_mensaje('Mantenimiento programado cancelado correctamente', 'success');
+        $this->registrarNotificacionHabitacion(
+            (int)($mantenimiento['habitacion_id'] ?? 0),
+            'mantenimiento_programado_cancelado',
+            'Mantenimiento programado cancelado',
+            trim((string)$motivo) ?: 'Se cancelo un mantenimiento programado.',
+            'media'
+        );
     } else {
         set_mensaje('Error al cancelar el mantenimiento programado', 'error');
     }
@@ -1379,6 +1483,32 @@ public function cancelarMantenimientoProgramadoAction() {
 
     /**
      * Liberar habitación
+     */
+/**
+ * Registrar notificacion de habitacion sin bloquear mantenimiento.
+ */
+private function registrarNotificacionHabitacion(int $habitacionId, string $tipo, string $titulo, string $mensaje, string $severidad = 'info'): void {
+    if ($habitacionId <= 0) {
+        return;
+    }
+
+    NotificacionService::crear([
+        'hotel_id' => $this->hotelIdActual(),
+        'modulo' => 'habitaciones',
+        'tipo' => $tipo,
+        'severidad' => $severidad,
+        'titulo' => $titulo,
+        'mensaje' => $mensaje,
+        'entidad_tipo' => 'habitacion',
+        'entidad_id' => $habitacionId,
+        'url' => 'habitaciones/' . $habitacionId,
+        'dedupe_key' => 'habitaciones.' . $tipo . '.' . $habitacionId . '.' . date('YmdHis'),
+        'creada_por' => function_exists('user_id') ? user_id() : null,
+    ]);
+}
+
+    /**
+     * Liberar habitacion
      */
     public function liberarAction() {
     if (!$this->isPost()) {

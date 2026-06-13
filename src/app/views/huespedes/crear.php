@@ -89,7 +89,7 @@ if ($return_to === 'reservacion') {
 }
 
 .gc-breadcrumb a {
-    color: var(--gc-brand);
+    color: #111827;
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -97,7 +97,7 @@ if ($return_to === 'reservacion') {
 }
 
 .gc-breadcrumb a:hover {
-    color: var(--gc-accent-dark);
+    color: #111827;
     transform: translateY(-1px);
 }
 
@@ -145,13 +145,17 @@ if ($return_to === 'reservacion') {
 
 .gc-title {
     margin: 0;
-    color: var(--gc-brand);
+    color: #111827;
     font-family: var(--gc-serif);
     font-size: clamp(2rem, 3.6vw, 2.75rem);
     font-weight: 650;
     letter-spacing: 0;
     line-height: .96;
     text-wrap: balance;
+}
+
+.gc-title-accent {
+    color: var(--gc-brand);
 }
 
 .gc-subtitle {
@@ -188,7 +192,7 @@ if ($return_to === 'reservacion') {
     border: 1px solid color-mix(in srgb, var(--gc-info) 22%, var(--gc-line));
     border-radius: 15px;
     background: color-mix(in srgb, var(--gc-info) 8%, var(--gc-surface));
-    color: var(--gc-brand);
+    color: #111827;
     box-shadow: 0 1px 2px color-mix(in srgb, var(--gc-brand-2) 4%, transparent);
 }
 
@@ -257,7 +261,7 @@ if ($return_to === 'reservacion') {
 .gc-section h2,
 .gc-side-card h3 {
     margin: 0;
-    color: var(--gc-brand);
+    color: #111827;
     font-size: .92rem;
     font-weight: 850;
     letter-spacing: 0;
@@ -395,7 +399,7 @@ if ($return_to === 'reservacion') {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: var(--gc-brand);
+    color: #111827;
     font-size: .84rem;
     font-weight: 850;
 }
@@ -435,7 +439,7 @@ if ($return_to === 'reservacion') {
     border: 1px solid var(--gc-line);
     border-radius: 13px;
     background: var(--gc-surface);
-    color: var(--gc-brand);
+    color: #111827;
     text-align: center;
     font-size: .78rem;
     font-weight: 800;
@@ -468,7 +472,7 @@ if ($return_to === 'reservacion') {
     border: 1px solid var(--gc-line);
     border-radius: 13px;
     background: var(--gc-surface-warm);
-    color: var(--gc-brand);
+    color: #111827;
     font-size: .86rem;
     font-weight: 850;
     transition: transform .18s ease, border-color .18s ease, background .18s ease;
@@ -540,7 +544,7 @@ if ($return_to === 'reservacion') {
 
 .gc-mini-text {
     margin: 0;
-    color: var(--gc-brand);
+    color: #111827;
     font-size: .82rem;
     font-weight: 750;
     line-height: 1.45;
@@ -859,7 +863,7 @@ if ($return_to === 'reservacion') {
                 </div>
                 <div>
                     <p class="gc-kicker">Registro de huesped</p>
-                    <h1 class="gc-title">Crear nuevo huesped</h1>
+                    <h1 class="gc-title">Crear nuevo <span class="gc-title-accent">huesped</span></h1>
                     <p class="gc-subtitle">
                         Captura los datos principales del huesped, su procedencia y vehiculos para dejar listo el expediente operativo.
                     </p>

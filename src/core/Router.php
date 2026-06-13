@@ -20,6 +20,7 @@ class Router {
             '/^\/login$/i',               // Login
             '/^\/h\/[a-z0-9-]+\/login$/i', // Login scoped por hotel
             '/^\/h\/[a-z0-9-]+\/manifest\.webmanifest$/i', // Manifest scoped por hotel
+            '/^\/reportes\/link\/[a-f0-9]+$/i', // Link publico seguro de reporte PDF
             '/^\/manifest\.json$/i',      // PWA manifest
             '/^\/service-worker\.js$/i',  // Service worker
             '/^\/offline\.html$/i'        // Página offline

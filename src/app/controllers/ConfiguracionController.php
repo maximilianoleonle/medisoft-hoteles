@@ -76,6 +76,7 @@ class ConfiguracionController extends Controller {
         $hotelSettings = function_exists('hotel_config_editable_values') ? hotel_config_editable_values() : [];
         $hotelSettings = $this->aplicarFallbackLegacyHotelSettings($hotelSettings, $config['hotel']);
         $hotelId = function_exists('current_hotel_id') ? current_hotel_id() : ($_SESSION['hotel_id'] ?? null);
+        $pwaPushDevices = $this->obtenerDispositivosPwaPush((int)$hotelId);
         
         // CAMBIAR View::render por View::renderTemplate
         View::renderTemplate('configuracion/index', [
@@ -90,6 +91,7 @@ class ConfiguracionController extends Controller {
             'generalZoneCatalog' => function_exists('hotel_general_catalog_zone_rows') ? hotel_general_catalog_zone_rows($hotelId, true) : [],
             'generalParkingCatalog' => function_exists('hotel_general_catalog_parking_rows') ? hotel_general_catalog_parking_rows($hotelId, true) : [],
             'generalUnitCatalog' => function_exists('hotel_general_catalog_unit_rows') ? hotel_general_catalog_unit_rows($hotelId, true) : [],
+            'pwaPushDevices' => $pwaPushDevices,
             'ultimo_backup' => $ultimo_backup,
             'espacio' => $espacio
         ]);
@@ -430,6 +432,19 @@ class ConfiguracionController extends Controller {
             'slug' => function_exists('current_hotel_slug') ? current_hotel_slug() : ($_SESSION['hotel_slug'] ?? null),
             'nombre' => function_exists('current_hotel_nombre') ? current_hotel_nombre() : ($_SESSION['hotel_nombre'] ?? null),
         ];
+    }
+
+    private function obtenerDispositivosPwaPush(int $hotelId): array {
+        if ($hotelId <= 0 || !class_exists('PwaPushSubscription')) {
+            return [];
+        }
+
+        try {
+            return (new PwaPushSubscription())->listarPorHotel($hotelId, 40);
+        } catch (Throwable $e) {
+            error_log('No se pudieron listar dispositivos PWA Push: ' . $e->getMessage());
+            return [];
+        }
     }
 
     private function datosBrandingHotelDesdePayload(array $payload) {

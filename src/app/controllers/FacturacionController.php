@@ -11,6 +11,7 @@ require_once __DIR__ . '/../../core/View.php';
 require_once __DIR__ . '/../models/Reservacion.php';
 require_once __DIR__ . '/../models/Huesped.php';
 require_once __DIR__ . '/../models/ReservacionNota.php';
+require_once __DIR__ . '/../services/NotificacionService.php';
 
 class FacturacionController extends Controller {
     
@@ -265,6 +266,15 @@ class FacturacionController extends Controller {
             
             if ($resultado) {
                 set_mensaje('Datos fiscales guardados correctamente', 'success');
+                if (($datos['estatus'] ?? '') === 'en_proceso') {
+                    $this->registrarNotificacionFacturacion(
+                        (int)$id,
+                        'factura_lista',
+                        'Solicitud de factura #' . (int)$id . ' lista para procesar',
+                        'Los datos fiscales fueron capturados y la solicitud paso a en proceso.',
+                        'media'
+                    );
+                }
             } else {
                 set_mensaje('No se pudieron guardar los datos. Intente de nuevo.', 'error');
             }
@@ -311,6 +321,15 @@ class FacturacionController extends Controller {
             
             if ($resultado) {
                 set_mensaje('Solicitud marcada como facturada exitosamente', 'success');
+                $this->registrarNotificacionFacturacion(
+                    (int)$id,
+                    'factura_completada',
+                    'Factura #' . (int)$id . ' completada',
+                    $numero_factura !== ''
+                        ? 'La solicitud fue marcada como facturada con folio ' . $numero_factura . '.'
+                        : 'La solicitud fue marcada como facturada.',
+                    'info'
+                );
             } else {
                 set_mensaje('No se pudo actualizar el estatus', 'error');
             }
@@ -359,6 +378,13 @@ class FacturacionController extends Controller {
             
             if ($resultado) {
                 set_mensaje('Solicitud de factura cancelada', 'success');
+                $this->registrarNotificacionFacturacion(
+                    (int)$id,
+                    'factura_cancelada',
+                    'Solicitud de factura #' . (int)$id . ' cancelada',
+                    $motivo !== '' ? 'Motivo: ' . $motivo : 'La solicitud de factura fue cancelada.',
+                    'media'
+                );
             } else {
                 set_mensaje('No se pudo cancelar la solicitud', 'error');
             }
@@ -400,6 +426,13 @@ class FacturacionController extends Controller {
             
             if ($resultado) {
                 set_mensaje('Solicitud marcada como "En proceso"', 'success');
+                $this->registrarNotificacionFacturacion(
+                    (int)$id,
+                    'factura_en_proceso',
+                    'Solicitud de factura #' . (int)$id . ' en proceso',
+                    'La solicitud fue tomada para facturacion.',
+                    'media'
+                );
             }
         } catch (Exception $e) {
             set_mensaje('Error: ' . $e->getMessage(), 'error');
@@ -454,6 +487,28 @@ h.nombre_completo as huesped_nombre,
     
     /**
      * Estadísticas para el dashboard de facturación
+     */
+    /**
+     * Registrar notificacion de facturacion sin bloquear la operacion principal.
+     */
+    private function registrarNotificacionFacturacion(int $solicitudId, string $tipo, string $titulo, string $mensaje, string $severidad = 'info'): void {
+        NotificacionService::crear([
+            'hotel_id' => obtenerHotelIdActualCompat(),
+            'modulo' => 'facturacion',
+            'tipo' => $tipo,
+            'severidad' => $severidad,
+            'titulo' => $titulo,
+            'mensaje' => $mensaje,
+            'entidad_tipo' => 'solicitud_factura',
+            'entidad_id' => $solicitudId,
+            'url' => 'facturacion/ver/' . $solicitudId,
+            'dedupe_key' => 'facturacion.' . $tipo . '.' . $solicitudId,
+            'creada_por' => function_exists('user_id') ? user_id() : null,
+        ]);
+    }
+
+    /**
+     * Estadisticas para el dashboard de facturacion.
      */
     private function obtenerEstadisticas() {
         $stats = [];

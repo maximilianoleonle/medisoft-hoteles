@@ -10,6 +10,8 @@ $reservaciones_hoy = $reservaciones_hoy ?? [];
 $proximas_llegadas = $proximas_llegadas ?? [];
 $proximas_salidas = $proximas_salidas ?? [];
 $graficos = $graficos ?? [];
+$notificaciones_resumen = $notificaciones_resumen ?? [];
+$notificaciones_recientes = $notificaciones_recientes ?? [];
 
 if (!function_exists('dashboard_safe')) {
     function dashboard_safe($value, $fallback = '-') {
@@ -94,6 +96,44 @@ if (!function_exists('dashboard_short_date')) {
 
         $meses_cortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
         return date('d', $timestamp) . ' ' . $meses_cortos[(int)date('n', $timestamp) - 1];
+    }
+}
+
+if (!function_exists('dashboard_notif_label')) {
+    function dashboard_notif_label($value) {
+        $labels = [
+            'nueva' => 'Pendiente',
+            'leida' => 'Pendiente',
+            'resuelta' => 'Atendida',
+            'descartada' => 'Historial',
+            'info' => 'Info',
+            'media' => 'Media',
+            'alta' => 'Alta',
+            'critica' => 'Critica',
+            'caja' => 'Caja',
+            'habitaciones' => 'Habitaciones',
+            'facturacion' => 'Facturacion',
+            'inventario' => 'Inventario',
+            'reservaciones' => 'Reservaciones',
+            'sistema' => 'Sistema',
+        ];
+
+        $key = (string)($value ?? '');
+        return $labels[$key] ?? ucfirst(str_replace('_', ' ', $key));
+    }
+}
+
+if (!function_exists('dashboard_notif_icon')) {
+    function dashboard_notif_icon($modulo) {
+        $icons = [
+            'caja' => 'fa-wallet',
+            'habitaciones' => 'fa-bed',
+            'facturacion' => 'fa-file-invoice',
+            'inventario' => 'fa-box',
+            'reservaciones' => 'fa-calendar-check',
+        ];
+
+        return $icons[(string)($modulo ?? '')] ?? 'fa-bell';
     }
 }
 
@@ -235,6 +275,9 @@ $caja_abierta = (bool)$corte_actual;
 $usuario_nombre = function_exists('user_name') ? user_name() : ($_SESSION['nombre'] ?? 'Usuario');
 $usuario_rol = function_exists('user_role') ? user_role() : ($_SESSION['rol'] ?? 'Hotel');
 $usuario_iniciales = dashboard_initials($usuario_nombre);
+$notificaciones_pendientes = (int)($notificaciones_resumen['pendientes'] ?? ($notificaciones_resumen['nuevas'] ?? 0));
+$notificaciones_prioritarias = (int)($notificaciones_resumen['prioritarias'] ?? 0);
+$notificaciones_hoy = (int)($notificaciones_resumen['hoy'] ?? 0);
 
 $chart_data = $graficos['ocupacion_semanal'] ?? [];
 $chart_max = max(1, $habitaciones_total);
@@ -618,6 +661,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     display: flex;
     align-items: center;
     gap: 12px;
+    position: relative;
 }
 
 .hotel-switch,
@@ -642,6 +686,9 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     width: 40px;
     justify-content: center;
     padding: 0;
+    text-decoration: none;
+    appearance: none;
+    cursor: pointer;
 }
 
 .notification-dot {
@@ -654,6 +701,230 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     background: var(--dash-critical);
     border: 1px solid #fff;
     animation: dashPulseDot 2.2s ease-in-out infinite;
+}
+
+.notification-count {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    min-width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--dash-critical);
+    color: #fff;
+    border: 2px solid rgba(255,255,255,.96);
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1;
+    box-shadow: 0 8px 18px rgba(136, 42, 42, .28);
+}
+
+.glass-button.has-notifications {
+    border-color: rgba(255,255,255,.36);
+    background: rgba(255,255,255,.2);
+}
+
+.notification-bell-shell {
+    display: inline-flex;
+}
+
+.notification-quick-panel {
+    position: fixed;
+    z-index: 1200;
+    width: min(320px, calc(100vw - 24px));
+    border: 1px solid rgba(23, 35, 62, .12);
+    border-radius: 16px;
+    background: rgba(255,255,255,.98);
+    color: var(--dash-ink);
+    box-shadow: 0 26px 70px -38px rgba(15, 23, 42, .58);
+    overflow: hidden;
+}
+
+.notification-quick-panel[hidden] {
+    display: none;
+}
+
+.notification-quick-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--dash-line);
+    background: color-mix(in srgb, var(--dash-gold) 7%, #fff);
+}
+
+.notification-quick-head span {
+    display: block;
+    color: var(--dash-muted);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.notification-quick-head strong {
+    color: var(--dash-navy);
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.notification-quick-list {
+    display: grid;
+    max-height: min(300px, 58vh);
+    overflow: auto;
+}
+
+.notification-quick-row {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 16px;
+    align-items: center;
+    gap: 9px;
+    min-height: 60px;
+    padding: 10px 14px;
+    border-bottom: 1px solid color-mix(in srgb, var(--dash-line) 80%, transparent);
+    color: inherit;
+    text-decoration: none;
+}
+
+.notification-quick-row:hover,
+.notification-quick-row:focus-visible {
+    background: color-mix(in srgb, var(--dash-gold) 8%, #fff);
+    outline: none;
+}
+
+.notification-quick-icon {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    color: var(--dash-navy);
+    background: color-mix(in srgb, var(--dash-gold) 13%, #fff);
+}
+
+.notification-quick-title {
+    display: block;
+    color: var(--dash-ink);
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.notification-quick-meta {
+    display: block;
+    margin-top: 4px;
+    color: var(--dash-muted);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.notification-quick-go {
+    color: var(--dash-muted);
+    font-size: 12px;
+}
+
+.notification-quick-empty {
+    padding: 22px 14px;
+    color: var(--dash-muted);
+    font-size: 13px;
+    font-weight: 750;
+    text-align: center;
+}
+
+.notification-quick-push {
+    display: grid;
+    gap: 9px;
+    padding: 12px 14px;
+    border-top: 1px solid var(--dash-line);
+    background: linear-gradient(180deg, #fff, color-mix(in srgb, var(--dash-gold) 5%, #fff));
+}
+
+.notification-quick-push-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--dash-navy);
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.notification-quick-push-status {
+    margin: 0;
+    color: var(--dash-muted);
+    font-size: 11px;
+    line-height: 1.35;
+    font-weight: 700;
+}
+
+.notification-quick-push-actions {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+}
+
+.notification-quick-push-btn {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid color-mix(in srgb, var(--dash-gold) 34%, var(--dash-line));
+    border-radius: 10px;
+    background: var(--dash-navy);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.notification-quick-push-btn.secondary {
+    width: 36px;
+    padding: 0;
+    background: #fff;
+    color: var(--dash-navy);
+}
+
+.notification-quick-push-btn:disabled {
+    cursor: not-allowed;
+    opacity: .62;
+}
+
+.notification-quick-push[data-push-state="enabled"] .notification-quick-push-btn:not(.secondary) {
+    background: color-mix(in srgb, var(--dash-critical) 82%, #111827);
+    border-color: color-mix(in srgb, var(--dash-critical) 58%, var(--dash-line));
+}
+
+.notification-quick-all {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 14px;
+    border-top: 1px solid var(--dash-line);
+    color: var(--dash-navy);
+    font-size: 12px;
+    font-weight: 900;
+    text-decoration: none;
+    background: #fff;
+}
+
+.notification-quick-all:hover,
+.notification-quick-all:focus-visible {
+    background: color-mix(in srgb, var(--dash-gold) 7%, #fff);
+    outline: none;
 }
 
 .hero-title {
@@ -1687,6 +1958,159 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     line-height: 1.45;
 }
 
+.notification-panel {
+    margin-top: 22px;
+    --card-glow: var(--dash-gold);
+}
+
+.notification-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.notification-panel-head p {
+    margin: 5px 0 0;
+    color: var(--dash-slate-500);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.notification-panel-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid var(--dash-line);
+    background: color-mix(in srgb, var(--dash-gold) 8%, #fff);
+    color: var(--dash-navy);
+    font-size: 12px;
+    font-weight: 900;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.notification-panel-link:hover,
+.notification-panel-link:focus-visible {
+    color: var(--dash-navy);
+    border-color: color-mix(in srgb, var(--dash-gold) 38%, var(--dash-line));
+}
+
+.notification-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 16px 0;
+}
+
+.notification-summary-item {
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--dash-line);
+    background: color-mix(in srgb, var(--dash-navy) 3%, #fff);
+}
+
+.notification-summary-item span {
+    display: block;
+    color: var(--dash-slate-500);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.notification-summary-item strong {
+    display: block;
+    margin-top: 4px;
+    color: var(--dash-navy);
+    font-size: 22px;
+    font-weight: 900;
+}
+
+.notification-list {
+    display: grid;
+    gap: 8px;
+}
+
+.notification-row {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 11px;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid var(--dash-line);
+    border-radius: 12px;
+    background: #fff;
+    color: inherit;
+    text-decoration: none;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.notification-row:hover,
+.notification-row:focus-visible {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--dash-gold) 32%, var(--dash-line));
+    background: color-mix(in srgb, var(--dash-gold) 5%, #fff);
+    color: inherit;
+}
+
+.notification-row-icon {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 11px;
+    color: var(--dash-navy);
+    background: color-mix(in srgb, var(--dash-gold) 13%, #fff);
+    border: 1px solid color-mix(in srgb, var(--dash-gold) 28%, var(--dash-line));
+}
+
+.notification-row-main {
+    min-width: 0;
+}
+
+.notification-row-title {
+    color: var(--dash-navy);
+    font-size: 13px;
+    font-weight: 900;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.notification-row-meta {
+    margin-top: 3px;
+    color: var(--dash-slate-500);
+    font-size: 11.5px;
+}
+
+.notification-row-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--dash-bg-available);
+    color: var(--dash-available);
+    font-size: 11px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.notification-row-badge.alta,
+.notification-row-badge.critica {
+    background: var(--dash-bg-critical);
+    color: var(--dash-critical);
+}
+
+.notification-row-badge.media {
+    background: var(--dash-bg-maint);
+    color: var(--dash-maint);
+}
+
 @media (min-width: 1600px) {
     .dashboard-boutique {
         grid-template-columns: 268px minmax(0, 1fr);
@@ -1758,6 +2182,10 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     .grid3 {
         grid-template-columns: 1fr;
     }
+
+    .notification-summary {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 900px) {
@@ -1807,6 +2235,18 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
         font-size: 36px;
     }
 
+    .notification-panel-head {
+        display: grid;
+    }
+
+    .notification-summary,
+    .notification-row {
+        grid-template-columns: 1fr;
+    }
+
+    .notification-row {
+        align-items: start;
+    }
 
     .editorial-hero {
         min-height: 360px;
@@ -2491,9 +2931,96 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                     <div class="hotel-switch">
                         <span><?= dashboard_safe($hotel_display_name, 'Medisoft Hoteles') ?></span>
                     </div>
-                    <div class="glass-button" aria-label="Notificaciones">
-                        <i class="fas fa-bell" aria-hidden="true"></i>
-                        <span class="notification-dot"></span>
+                    <div class="notification-bell-shell" data-notification-quick>
+                        <button type="button"
+                                class="glass-button <?= $notificaciones_pendientes > 0 ? 'has-notifications' : '' ?>"
+                                aria-label="Ver pendientes de notificaciones"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                                aria-controls="notificationQuickPanel"
+                                data-notification-toggle>
+                            <i class="fas fa-bell" aria-hidden="true"></i>
+                            <?php if ($notificaciones_pendientes > 0): ?>
+                                <span class="notification-dot"></span>
+                                <span class="notification-count"><?= $notificaciones_pendientes > 99 ? '99+' : (int)$notificaciones_pendientes ?></span>
+                            <?php endif; ?>
+                        </button>
+
+                        <div class="notification-quick-panel"
+                             id="notificationQuickPanel"
+                             data-notification-panel
+                             hidden>
+                            <div class="notification-quick-head">
+                                <span>Pendientes</span>
+                                <strong><?= (int)$notificaciones_pendientes ?></strong>
+                            </div>
+
+                            <div class="notification-quick-list">
+                                <?php if (empty($notificaciones_recientes)): ?>
+                                    <div class="notification-quick-empty">Sin pendientes operativos por ahora.</div>
+                                <?php else: ?>
+                                    <?php foreach (array_slice($notificaciones_recientes, 0, 4) as $notificacionQuick): ?>
+                                        <?php
+                                        $quickModulo = (string)($notificacionQuick['modulo'] ?? 'sistema');
+                                        $quickId = (int)($notificacionQuick['id'] ?? 0);
+                                        $quickUrl = trim((string)($notificacionQuick['url'] ?? ''));
+                                        $quickHref = ($quickUrl !== '' && $quickId > 0)
+                                            ? url('notificaciones/' . $quickId . '/abrir')
+                                            : url('notificaciones');
+                                        $quickAutomatica = strpos((string)($notificacionQuick['tipo'] ?? ''), 'regla_') === 0;
+                                        ?>
+                                        <a class="notification-quick-row" href="<?= htmlspecialchars($quickHref, ENT_QUOTES, 'UTF-8') ?>">
+                                            <span class="notification-quick-icon">
+                                                <i class="fas <?= dashboard_safe(dashboard_notif_icon($quickModulo), 'fa-bell') ?>" aria-hidden="true"></i>
+                                            </span>
+                                            <span>
+                                                <span class="notification-quick-title"><?= dashboard_safe($notificacionQuick['titulo'] ?? 'Notificacion') ?></span>
+                                                <span class="notification-quick-meta">
+                                                    <?= dashboard_safe(dashboard_notif_label($quickModulo)) ?> · <?= dashboard_safe(dashboard_format_date($notificacionQuick['created_at'] ?? null, 'd/m H:i')) ?>
+                                                    <?= $quickAutomatica ? ' · Automatica' : '' ?>
+                                                </span>
+                                            </span>
+                                            <span class="notification-quick-go">
+                                                <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                                            </span>
+                                        </a>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="notification-quick-push"
+                                 data-pwa-push-panel
+                                 data-public-key-url="<?= url('api/pwa-push/public-key') ?>"
+                                 data-subscribe-url="<?= url('api/pwa-push/subscribe') ?>"
+                                 data-unsubscribe-url="<?= url('api/pwa-push/unsubscribe') ?>"
+                                 data-test-url="<?= url('api/pwa-push/test') ?>">
+                                <div class="notification-quick-push-title">
+                                    <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>
+                                    Avisos del dispositivo
+                                </div>
+                                <p class="notification-quick-push-status" data-pwa-push-status>
+                                    Revisando compatibilidad...
+                                </p>
+                                <div class="notification-quick-push-actions">
+                                    <button type="button" class="notification-quick-push-btn" data-pwa-push-toggle>
+                                        <i class="fas fa-bell" aria-hidden="true"></i>
+                                        <span data-pwa-push-label>Activar en este dispositivo</span>
+                                    </button>
+                                    <button type="button"
+                                            class="notification-quick-push-btn secondary"
+                                            data-pwa-push-test
+                                            title="Enviar prueba"
+                                            hidden>
+                                        <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <a class="notification-quick-all" href="<?= htmlspecialchars(url('notificaciones'), ENT_QUOTES, 'UTF-8') ?>">
+                                Ver todas
+                                <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                            </a>
+                        </div>
                     </div>
                     <div class="avatar" style="border-radius:50%"><?= dashboard_safe($usuario_iniciales, 'M') ?></div>
                 </div>
@@ -2606,6 +3133,68 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                     </a>
                 </div>
             </article>
+        </section>
+
+        <section class="notification-panel card card-pad" aria-label="Resumen de notificaciones">
+            <div class="notification-panel-head section-head">
+                <div>
+                    <h2>Centro de notificaciones</h2>
+                    <p>Seguimiento operativo de caja, mantenimiento y facturacion.</p>
+                </div>
+                <a class="notification-panel-link" href="<?= url('notificaciones') ?>">
+                    Ver centro
+                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                </a>
+            </div>
+
+            <div class="notification-summary">
+                <div class="notification-summary-item">
+                    <span>Pendientes</span>
+                    <strong><?= (int)$notificaciones_pendientes ?></strong>
+                </div>
+                <div class="notification-summary-item">
+                    <span>Prioritarias</span>
+                    <strong><?= (int)$notificaciones_prioritarias ?></strong>
+                </div>
+                <div class="notification-summary-item">
+                    <span>Hoy</span>
+                    <strong><?= (int)$notificaciones_hoy ?></strong>
+                </div>
+            </div>
+
+            <div class="notification-list">
+                <?php if (empty($notificaciones_recientes)): ?>
+                    <div class="empty-state">Sin pendientes operativos por ahora.</div>
+                <?php else: ?>
+                    <?php foreach (array_slice($notificaciones_recientes, 0, 4) as $notificacion): ?>
+                        <?php
+                        $notificacionModulo = (string)($notificacion['modulo'] ?? 'sistema');
+                        $notificacionSeveridad = (string)($notificacion['severidad'] ?? 'info');
+                        $notificacionAutomatica = strpos((string)($notificacion['tipo'] ?? ''), 'regla_') === 0;
+                        $notificacionId = (int)($notificacion['id'] ?? 0);
+                        $notificacionUrl = trim((string)($notificacion['url'] ?? ''));
+                        $notificacionHref = ($notificacionUrl !== '' && $notificacionId > 0)
+                            ? url('notificaciones/' . $notificacionId . '/abrir')
+                            : url('notificaciones');
+                        ?>
+                        <a class="notification-row" href="<?= $notificacionHref ?>">
+                            <span class="notification-row-icon">
+                                <i class="fas <?= dashboard_safe(dashboard_notif_icon($notificacionModulo), 'fa-bell') ?>" aria-hidden="true"></i>
+                            </span>
+                            <span class="notification-row-main">
+                                <span class="notification-row-title"><?= dashboard_safe($notificacion['titulo'] ?? 'Notificacion') ?></span>
+                                <span class="notification-row-meta">
+                                    <?= dashboard_safe(dashboard_notif_label($notificacionModulo)) ?> · <?= dashboard_safe(dashboard_format_date($notificacion['created_at'] ?? null, 'd/m H:i')) ?>
+                                    <?= $notificacionAutomatica ? ' · Automatica' : '' ?>
+                                </span>
+                            </span>
+                            <span class="notification-row-badge <?= dashboard_safe($notificacionSeveridad, 'info') ?>">
+                                <?= dashboard_safe(dashboard_notif_label($notificacionSeveridad)) ?>
+                            </span>
+                        </a>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
         </section>
 
         <section class="grid2">
@@ -2957,3 +3546,84 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
         </div>
     </main>
 </div>
+
+<script>
+(function () {
+    const root = document.querySelector('[data-notification-quick]');
+    if (!root) {
+        return;
+    }
+
+    const button = root.querySelector('[data-notification-toggle]');
+    const panel = root.querySelector('[data-notification-panel]');
+    if (!button || !panel) {
+        return;
+    }
+
+    document.body.appendChild(panel);
+    if (window.PWA && typeof window.PWA.initPushControls === 'function') {
+        window.PWA.initPushControls();
+    }
+
+    function placePanel() {
+        const rect = button.getBoundingClientRect();
+        const width = Math.min(320, Math.max(280, window.innerWidth - 24));
+        const left = Math.min(window.innerWidth - width - 12, Math.max(12, rect.right - width));
+        const top = Math.min(window.innerHeight - 12, Math.max(12, rect.bottom + 10));
+
+        panel.style.width = width + 'px';
+        panel.style.left = left + 'px';
+        panel.style.top = top + 'px';
+    }
+
+    function openPanel() {
+        panel.hidden = false;
+        button.setAttribute('aria-expanded', 'true');
+        placePanel();
+    }
+
+    function closePanel() {
+        panel.hidden = true;
+        button.setAttribute('aria-expanded', 'false');
+    }
+
+    button.addEventListener('click', function (event) {
+        event.stopPropagation();
+        if (panel.hidden) {
+            openPanel();
+            return;
+        }
+
+        closePanel();
+    });
+
+    document.addEventListener('click', function (event) {
+        if (!(event.target instanceof Element)) {
+            return;
+        }
+
+        if (!panel.hidden && !root.contains(event.target) && !panel.contains(event.target)) {
+            closePanel();
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && !panel.hidden) {
+            closePanel();
+            button.focus();
+        }
+    });
+
+    window.addEventListener('resize', function () {
+        if (!panel.hidden) {
+            placePanel();
+        }
+    });
+
+    window.addEventListener('scroll', function () {
+        if (!panel.hidden) {
+            placePanel();
+        }
+    }, true);
+})();
+</script>

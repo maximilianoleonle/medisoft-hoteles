@@ -14,11 +14,13 @@ return [
     'version' => '1.0.0',
     'cache_version' => 'v1',
     
-    // Notificaciones push
+    // Notificaciones push. En produccion define estas variables en el entorno.
     'push' => [
         'enabled' => true,
-        'vapid_public_key' => 'YOUR_VAPID_PUBLIC_KEY',
-        'vapid_private_key' => 'YOUR_VAPID_PRIVATE_KEY'
+        'vapid_public_key' => getenv('PWA_VAPID_PUBLIC_KEY') ?: '',
+        'vapid_private_key' => getenv('PWA_VAPID_PRIVATE_KEY') ?: '',
+        'vapid_subject' => getenv('PWA_VAPID_SUBJECT') ?: 'mailto:soporte@medisoft.mx',
+        'ttl' => 3600,
     ],
     
     // Sincronización en background
