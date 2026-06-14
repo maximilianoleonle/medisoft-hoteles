@@ -1006,6 +1006,36 @@
     background: var(--inv-surface-warm) !important;
 }
 
+/* Viewport alignment: match the broad operational canvas used by huespedes/facturacion. */
+.inv-page {
+    padding: 1rem !important;
+}
+
+.inv-page .inv-topbar > div,
+.inv-page > .px-4 {
+    width: 100%;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.inv-page .inv-topbar > div {
+    padding-top: 0 !important;
+}
+
+.inv-page > .px-4 {
+    padding-top: 1rem !important;
+    padding-bottom: 0 !important;
+}
+
+@media (min-width: 640px) {
+    .inv-page {
+        padding: 2rem !important;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .inv-page *,
     .inv-page *::before,

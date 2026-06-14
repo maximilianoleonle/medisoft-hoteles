@@ -1,10 +1,11 @@
 <!-- Vista Detallada de Incremento de Tarifa -->
 <style>
 :root {
-    --primary: #6B4423;
-    --primary-dark: #5A3A1E;
-    --primary-light: #8B5A3A;
-    --accent: #D4A574;
+    --primary: var(--brand-primary, #1B2746);
+    --primary-dark: var(--brand-secondary, #0F172A);
+    --primary-light: color-mix(in srgb, var(--brand-primary, #1B2746) 68%, #FFFFFF);
+    --accent: var(--brand-accent, #BD9441);
+    --brand-elevated-shadow: color-mix(in srgb, var(--brand-primary, #1B2746) 22%, transparent);
     --success: #10b981;
     --danger: #ef4444;
     --warning: #f59e0b;
@@ -200,7 +201,7 @@
 .btn-primary:hover {
     background: var(--primary-dark);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(107, 68, 35, 0.2);
+    box-shadow: 0 4px 12px var(--brand-elevated-shadow);
 }
 
 .btn-secondary {

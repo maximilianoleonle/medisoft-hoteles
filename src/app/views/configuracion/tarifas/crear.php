@@ -1,10 +1,14 @@
 <!-- Crear Incremento de Tarifa - Diseño Simplificado y Claro -->
 <style>
 :root {
-    --primary: #6B4423;
-    --primary-dark: #5A3A1E;
-    --primary-light: #8B5A3A;
-    --accent: #D4A574;
+    --primary: var(--brand-primary, #1B2746);
+    --primary-dark: var(--brand-secondary, #0F172A);
+    --primary-light: color-mix(in srgb, var(--brand-primary, #1B2746) 68%, #FFFFFF);
+    --accent: var(--brand-accent, #BD9441);
+    --brand-focus-ring: color-mix(in srgb, var(--brand-primary, #1B2746) 18%, transparent);
+    --brand-hover-soft: color-mix(in srgb, var(--brand-accent, #BD9441) 12%, #FFFFFF);
+    --brand-selected-soft: color-mix(in srgb, var(--brand-primary, #1B2746) 8%, #FFFFFF);
+    --brand-elevated-shadow: color-mix(in srgb, var(--brand-primary, #1B2746) 22%, transparent);
     --success: #10b981;
     --danger: #ef4444;
     --warning: #f59e0b;
@@ -94,7 +98,7 @@
 .form-input:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(107, 68, 35, 0.1);
+    box-shadow: 0 0 0 3px var(--brand-focus-ring);
 }
 
 /* Opciones de selección visual */
@@ -116,14 +120,14 @@
 
 .option-card:hover {
     border-color: var(--accent);
-    background: #fffbf0;
+    background: var(--brand-hover-soft);
     transform: translateY(-2px);
 }
 
 .option-card.selected {
     border-color: var(--primary);
-    background: #fef3e7;
-    box-shadow: 0 0 0 3px rgba(107, 68, 35, 0.1);
+    background: var(--brand-selected-soft);
+    box-shadow: 0 0 0 3px var(--brand-focus-ring);
 }
 
 .option-card input[type="radio"] {
@@ -248,7 +252,7 @@ input:checked + .toggle-slider:before {
 .btn-primary:hover {
     background: var(--primary-dark);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(107, 68, 35, 0.2);
+    box-shadow: 0 4px 12px var(--brand-elevated-shadow);
 }
 
 .btn-secondary {
@@ -314,41 +318,690 @@ input:checked + .toggle-slider:before {
 }
 </style>
 
-<div class="min-h-screen bg-gray-50 py-4">
-    <!-- Header Simplificado -->
-    <div class="tarifa-container px-4">
-        <div class="flex justify-between items-center mb-6">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">Crear Incremento de Tarifa</h1>
-                <p class="text-gray-600 mt-1">Configure incrementos de precio para temporadas o eventos especiales</p>
-            </div>
-            <a href="<?= url('configuracion/tarifas') ?>" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i>
-                Regresar
-            </a>
-        </div>
-    </div>
+<style id="tarifa-create-boutique">
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap');
 
-    <div class="tarifa-container px-4">
+.tarifa-create-page {
+    --tar-brand: var(--brand-primary, #1B2746);
+    --tar-brand-2: var(--brand-secondary, #0F172A);
+    --tar-brand-dark: color-mix(in srgb, var(--tar-brand), #000 20%);
+    --tar-brand-soft: color-mix(in srgb, var(--tar-brand) 5%, #FBF8F2);
+    --tar-gold: var(--brand-accent, #BD9441);
+    --tar-gold-soft: color-mix(in srgb, var(--tar-gold) 15%, #FFFFFF);
+    --tar-gold-line: color-mix(in srgb, var(--tar-gold) 42%, #E4D4B0);
+    --tar-gold-ink: color-mix(in srgb, var(--tar-gold) 72%, #000);
+    --tar-ivory: #F6F2EA;
+    --tar-ivory-2: #FBF8F2;
+    --tar-surface: #FFFFFF;
+    --tar-surface-warm: #FCFAF5;
+    --tar-border: color-mix(in srgb, var(--tar-brand) 7%, #E7E1D4);
+    --tar-ring: color-mix(in srgb, var(--tar-gold) 32%, transparent);
+    --tar-text: #171717;
+    --tar-muted: #667085;
+    --tar-heading: #111827;
+    --tar-success: #1E9E63;
+    --tar-danger: #B95B57;
+    --tar-sky: #3E7CB1;
+    --tar-teal: #2F7D72;
+    --tar-plum: #7C4F86;
+    --tar-coral: #C66A5A;
+    --tar-amber: #D0963A;
+    --tar-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    color: var(--tar-text);
+    background:
+        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--tar-gold) 10%, transparent), transparent 60%),
+        radial-gradient(900px 360px at 22% 10%, color-mix(in srgb, var(--tar-teal) 6%, transparent), transparent 58%),
+        linear-gradient(180deg, var(--tar-ivory-2), var(--tar-ivory)) !important;
+}
+
+.tarifa-create-page .tarifa-container {
+    max-width: 1180px;
+}
+
+.tarifa-shell {
+    display: grid;
+    gap: 14px;
+}
+
+.tarifa-hero {
+    padding: 2px 2px 4px;
+}
+
+.tarifa-hero-icon {
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    border-radius: 13px;
+    background: linear-gradient(150deg, var(--tar-plum), var(--tar-brand), var(--tar-teal));
+    color: #fff;
+    box-shadow: 0 12px 24px -10px color-mix(in srgb, var(--tar-brand) 55%, transparent);
+}
+
+.tarifa-page-kicker {
+    color: color-mix(in srgb, var(--tar-coral) 70%, #000);
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.tarifa-page-title {
+    color: var(--tar-brand);
+    font-family: var(--tar-serif);
+    font-size: clamp(1.9rem, 3.2vw, 2.55rem);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0;
+}
+
+.tarifa-page-subtitle {
+    margin-top: 6px;
+    max-width: 46rem;
+    color: var(--tar-muted);
+    font-size: .92rem;
+    font-weight: 500;
+    line-height: 1.45;
+    text-wrap: pretty;
+}
+
+.tarifa-create-page .btn,
+.tarifa-back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    min-height: 38px;
+    border-radius: 11px;
+    border: 1px solid transparent;
+    font-size: .85rem;
+    font-weight: 800;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease, color .16s ease;
+}
+
+.tarifa-back-btn,
+.tarifa-create-page .btn-secondary {
+    padding: .58rem .85rem;
+    border-color: var(--tar-border);
+    background: var(--tar-surface);
+    color: var(--tar-muted);
+    box-shadow: 0 8px 18px -18px rgba(27,39,70,.3);
+}
+
+.tarifa-back-btn:hover,
+.tarifa-create-page .btn-secondary:hover {
+    transform: translateY(-1px);
+    border-color: var(--tar-gold-line);
+    background: var(--tar-gold-soft);
+    color: var(--tar-gold-ink);
+}
+
+.tarifa-summary-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.tarifa-summary-item,
+.tarifa-create-page .section-card {
+    background: var(--tar-surface);
+    border: 1px solid var(--tar-border);
+    box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28);
+}
+
+.tarifa-summary-item {
+    --tar-summary-accent: var(--tar-teal);
+    border-radius: 14px;
+    padding: 11px 12px;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--tar-summary-accent) 9%, #fff), #fff 64%),
+        #fff !important;
+    border-color: color-mix(in srgb, var(--tar-summary-accent) 24%, var(--tar-border)) !important;
+}
+
+.tarifa-summary-item:nth-child(2) {
+    --tar-summary-accent: var(--tar-sky);
+}
+
+.tarifa-summary-item:nth-child(3) {
+    --tar-summary-accent: var(--tar-plum);
+}
+
+.tarifa-summary-label {
+    color: color-mix(in srgb, var(--tar-summary-accent) 72%, var(--tar-muted));
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+}
+
+.tarifa-summary-value {
+    margin-top: 2px;
+    color: color-mix(in srgb, var(--tar-summary-accent) 58%, var(--tar-heading));
+    font-family: var(--tar-serif);
+    font-size: 1.45rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.tarifa-create-page .section-card {
+    --tar-card-accent: var(--tar-brand);
+    margin-bottom: 14px;
+    overflow: hidden;
+    border-radius: 16px;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--tar-card-accent) 4%, #fff), #fff 48%),
+        #fff;
+    transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.tarifa-create-page .section-card:hover {
+    border-color: color-mix(in srgb, var(--tar-card-accent) 34%, var(--tar-border));
+    box-shadow: 0 2px 4px rgba(27,39,70,.05), 0 16px 32px -22px color-mix(in srgb, var(--tar-card-accent) 34%, transparent);
+}
+
+.tarifa-create-page .section-header {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--tar-border);
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--tar-card-accent) 12%, #fff), var(--tar-surface-warm) 68%) !important;
+}
+
+.tarifa-create-page .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--tar-heading);
+    font-size: .98rem;
+    font-weight: 900;
+    line-height: 1.2;
+}
+
+.tarifa-create-page .section-number,
+.tarifa-create-page .section-icon {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    border-radius: 11px;
+    background: linear-gradient(150deg, var(--tar-card-accent), color-mix(in srgb, var(--tar-card-accent) 72%, #111827)) !important;
+    color: #fff !important;
+    font-size: .84rem;
+    font-weight: 900;
+    box-shadow: 0 10px 20px -14px color-mix(in srgb, var(--tar-card-accent) 62%, transparent);
+}
+
+.tarifa-create-page .tarifa-step-prices {
+    --tar-card-accent: var(--tar-sky);
+}
+
+.tarifa-create-page .tarifa-step-info {
+    --tar-card-accent: var(--tar-plum);
+}
+
+.tarifa-create-page .tarifa-step-value {
+    --tar-card-accent: var(--tar-teal);
+}
+
+.tarifa-create-page .tarifa-step-scope {
+    --tar-card-accent: var(--tar-coral);
+}
+
+.tarifa-create-page .tarifa-step-period {
+    --tar-card-accent: var(--tar-success);
+}
+
+.tarifa-create-page .section-body {
+    padding: 18px;
+}
+
+.tarifa-create-page .form-group {
+    margin-bottom: 18px;
+}
+
+.tarifa-create-page .form-label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--tar-muted);
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .055em;
+    text-transform: uppercase;
+}
+
+.tarifa-create-page .form-help {
+    margin-top: 5px;
+    color: var(--tar-muted);
+    font-size: .75rem;
+    font-weight: 650;
+}
+
+.tarifa-create-page .form-input {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 13px;
+    border: 1px solid var(--tar-border);
+    border-radius: 11px;
+    background: var(--tar-surface-warm);
+    color: var(--tar-text);
+    font-size: .9rem;
+    font-weight: 650;
+    transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+.tarifa-create-page .form-input:focus {
+    outline: none;
+    border-color: var(--tar-gold);
+    background: #fff;
+    box-shadow: 0 0 0 3px var(--tar-ring);
+}
+
+.tarifa-create-page .option-cards {
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.tarifa-create-page .option-card {
+    --tar-option-accent: var(--tar-card-accent);
+    position: relative;
+    min-height: 126px;
+    padding: 16px;
+    border: 1px solid var(--tar-border);
+    border-radius: 15px;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--tar-option-accent) 4%, #fff), #fff 56%),
+        var(--tar-surface);
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+.tarifa-create-page .option-card::before {
+    content: "";
+    position: absolute;
+    top: 12px;
+    bottom: 12px;
+    left: 0;
+    width: 5px;
+    border-radius: 0 999px 999px 0;
+    background: var(--tar-option-accent);
+    opacity: 0;
+    transform: translateX(-3px);
+    transition: opacity .16s ease, transform .16s ease;
+}
+
+.tarifa-create-page .option-card::after {
+    content: "";
+    position: absolute;
+    inset: auto 14px 14px auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--tar-option-accent) 24%, #D1D5DB);
+    transition: transform .16s ease, background .16s ease;
+}
+
+.tarifa-create-page .option-card:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--tar-option-accent) 36%, var(--tar-border));
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--tar-option-accent) 8%, #fff), #fff 62%);
+    box-shadow: 0 12px 28px -24px color-mix(in srgb, var(--tar-option-accent) 44%, transparent);
+}
+
+.tarifa-create-page .option-card.selected {
+    border-color: color-mix(in srgb, var(--tar-option-accent) 62%, var(--tar-border));
+    background:
+        radial-gradient(260px 130px at 100% 0%, color-mix(in srgb, var(--tar-option-accent) 24%, transparent), transparent 72%),
+        linear-gradient(180deg, color-mix(in srgb, var(--tar-option-accent) 16%, #fff), color-mix(in srgb, var(--tar-option-accent) 5%, #fff) 72%),
+        var(--tar-surface);
+    box-shadow:
+        inset 0 0 0 2px color-mix(in srgb, var(--tar-option-accent) 26%, transparent),
+        0 0 0 4px color-mix(in srgb, var(--tar-option-accent) 13%, transparent),
+        0 18px 34px -26px color-mix(in srgb, var(--tar-option-accent) 68%, transparent);
+}
+
+.tarifa-create-page .option-card.selected::before {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.tarifa-create-page .option-card.selected::after {
+    background: var(--tar-option-accent);
+    width: 14px;
+    height: 14px;
+    box-shadow:
+        0 0 0 5px color-mix(in srgb, var(--tar-option-accent) 14%, transparent),
+        0 8px 16px -10px color-mix(in srgb, var(--tar-option-accent) 75%, transparent);
+    transform: scale(1);
+}
+
+.tarifa-create-page .option-icon {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 12px;
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--tar-option-accent) 12%, #fff) !important;
+    color: color-mix(in srgb, var(--tar-option-accent) 78%, #111827) !important;
+    font-size: 1.15rem;
+    border: 1px solid color-mix(in srgb, var(--tar-option-accent) 24%, var(--tar-border));
+}
+
+.tarifa-create-page .option-card.selected .option-icon {
+    background: linear-gradient(145deg, var(--tar-option-accent), color-mix(in srgb, var(--tar-option-accent) 74%, #111827)) !important;
+    color: #fff !important;
+    border-color: transparent;
+    box-shadow: 0 12px 22px -16px color-mix(in srgb, var(--tar-option-accent) 78%, transparent);
+}
+
+.tarifa-create-page #seccionTipo .option-card:nth-child(1) {
+    --tar-option-accent: var(--tar-sky);
+}
+
+.tarifa-create-page #seccionTipo .option-card:nth-child(2) {
+    --tar-option-accent: var(--tar-success);
+}
+
+.tarifa-create-page #alcanceOptions .option-card:nth-child(1) {
+    --tar-option-accent: var(--tar-plum);
+}
+
+.tarifa-create-page #alcanceOptions .option-card:nth-child(2) {
+    --tar-option-accent: var(--tar-sky);
+}
+
+.tarifa-create-page #alcanceOptions .option-card:nth-child(3) {
+    --tar-option-accent: var(--tar-amber);
+}
+
+.tarifa-create-page .option-title {
+    margin-bottom: 4px;
+    color: var(--tar-heading);
+    font-size: .95rem;
+    font-weight: 900;
+}
+
+.tarifa-create-page .option-card.selected .option-title {
+    color: color-mix(in srgb, var(--tar-option-accent) 74%, #111827);
+}
+
+.tarifa-create-page .option-desc {
+    max-width: 26rem;
+    color: var(--tar-muted);
+    font-size: .82rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.tarifa-create-page .option-card.selected .option-desc {
+    color: color-mix(in srgb, var(--tar-option-accent) 42%, var(--tar-muted));
+    font-weight: 700;
+}
+
+.tarifa-create-page .toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    margin-bottom: 18px;
+    border: 1px solid var(--tar-border);
+    border-radius: 14px;
+    background: var(--tar-surface-warm);
+}
+
+.tarifa-create-page .toggle-switch {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    flex: 0 0 auto;
+}
+
+.tarifa-create-page .toggle-slider {
+    inset: 0;
+    border-radius: 999px;
+    background: #D7D1C6;
+    transition: background .22s ease, box-shadow .22s ease;
+}
+
+.tarifa-create-page .toggle-slider:before {
+    width: 18px;
+    height: 18px;
+    left: 4px;
+    bottom: 4px;
+    box-shadow: 0 3px 8px rgba(15,23,42,.18);
+    transition: transform .22s ease;
+}
+
+.tarifa-create-page input:checked + .toggle-slider {
+    background: var(--tar-success);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tar-success) 16%, transparent);
+}
+
+.tarifa-create-page input:checked + .toggle-slider:before {
+    transform: translateX(22px);
+}
+
+.tarifa-create-page .preview-card {
+    margin-top: 22px;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--tar-sky) 30%, var(--tar-border));
+    border-radius: 15px;
+    background:
+        radial-gradient(220px 110px at 100% 0%, color-mix(in srgb, var(--tar-sky) 14%, transparent), transparent 72%),
+        linear-gradient(180deg, color-mix(in srgb, var(--tar-sky) 7%, #fff), #fff);
+}
+
+.tarifa-create-page .preview-title {
+    margin-bottom: 10px;
+    color: color-mix(in srgb, var(--tar-sky) 78%, #111827);
+    font-size: .88rem;
+    font-weight: 900;
+}
+
+.tarifa-create-page .btn-primary {
+    background: linear-gradient(135deg, var(--tar-success), color-mix(in srgb, var(--tar-teal) 78%, #111827));
+    color: #fff;
+    box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--tar-success) 58%, transparent);
+}
+
+.tarifa-create-page .btn-primary:hover {
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--tar-success) 92%, #fff), color-mix(in srgb, var(--tar-teal) 72%, #111827));
+}
+
+.tarifa-create-page .is-invalid {
+    border-color: var(--tar-danger);
+}
+
+.tarifa-create-page .invalid-feedback {
+    color: var(--tar-danger);
+}
+
+.tarifa-create-page .selection-list {
+    max-height: 330px;
+    border: 1px solid var(--tar-border);
+    border-radius: 14px;
+    background: var(--tar-surface);
+}
+
+.tarifa-create-page .selection-item {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--tar-border);
+    background: var(--tar-surface);
+    color: var(--tar-text);
+    transition: background .16s ease, border-color .16s ease;
+}
+
+.tarifa-create-page .selection-item:hover {
+    background: var(--tar-ivory-2);
+}
+
+.tarifa-create-page .selection-item input[type="checkbox"] {
+    accent-color: var(--tar-gold);
+}
+
+.tarifa-create-page .tipo-grupo > div:first-child {
+    background: var(--tar-surface-warm) !important;
+    color: var(--tar-muted);
+    border-bottom: 1px solid var(--tar-border);
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.tarifa-create-page table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.tarifa-create-page thead tr {
+    background: var(--tar-surface-warm) !important;
+}
+
+.tarifa-create-page th {
+    color: var(--tar-muted) !important;
+    font-size: .68rem;
+    font-weight: 900 !important;
+    letter-spacing: .055em;
+    text-transform: uppercase;
+}
+
+.tarifa-create-page tbody tr {
+    transition: background .16s ease, box-shadow .16s ease;
+}
+
+.tarifa-create-page tbody tr:hover {
+    background: var(--tar-ivory-2) !important;
+}
+
+.tarifa-create-page .tarifa-note {
+    border: 1px solid var(--tar-border);
+    border-radius: 14px;
+    background: var(--tar-surface-warm);
+}
+
+.tarifa-create-page .bg-amber-50,
+.tarifa-create-page .bg-blue-50,
+.tarifa-create-page .bg-gray-50 {
+    border-color: var(--tar-border) !important;
+    background: var(--tar-surface-warm) !important;
+}
+
+.tarifa-create-page .text-amber-800,
+.tarifa-create-page .text-amber-700,
+.tarifa-create-page .text-blue-800,
+.tarifa-create-page .text-blue-700 {
+    color: var(--tar-muted) !important;
+}
+
+.tarifa-create-page .bg-amber-100,
+.tarifa-create-page .bg-green-100 {
+    border: 1px solid var(--tar-gold-line);
+    background: var(--tar-gold-soft) !important;
+    color: var(--tar-gold-ink) !important;
+}
+
+.tarifa-create-page .text-primary {
+    color: var(--tar-gold-ink) !important;
+}
+
+.tarifa-create-page .btn:focus-visible,
+.tarifa-create-page .option-card:focus-visible,
+.tarifa-create-page .tarifa-back-btn:focus-visible {
+    outline: 2px solid var(--tar-gold);
+    outline-offset: 3px;
+}
+
+.tarifa-create-page .btn:active,
+.tarifa-create-page .tarifa-back-btn:active,
+.tarifa-create-page .option-card:active {
+    transform: translateY(0) scale(.985);
+}
+
+@media (max-width: 768px) {
+    .tarifa-create-page {
+        padding: 14px !important;
+    }
+
+    .tarifa-summary-strip {
+        grid-template-columns: 1fr;
+    }
+
+    .tarifa-create-page .section-body,
+    .tarifa-create-page .section-header {
+        padding: 14px;
+    }
+
+    .tarifa-create-page .option-cards.grid-cols-2 {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+
+<div class="tarifa-create-page hotel-page min-h-screen p-4 sm:p-6">
+    <div class="tarifa-container">
+        <div class="tarifa-shell">
+            <section class="tarifa-hero hotel-page-header">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div class="flex items-start gap-3 min-w-0">
+                        <div class="tarifa-hero-icon">
+                            <i class="fas fa-tags"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="tarifa-page-kicker">Operación hotelera</p>
+                            <h1 class="tarifa-page-title">Nuevo incremento</h1>
+                            <p class="tarifa-page-subtitle">Configura una regla de precio para temporadas, eventos o ajustes puntuales sin perder claridad en alcance y vigencia.</p>
+                        </div>
+                    </div>
+
+                    <a href="<?= url('configuracion/tarifas') ?>" class="tarifa-back-btn" title="Regresar a tarifas dinámicas">
+                        <i class="fas fa-arrow-left"></i>
+                        Regresar
+                    </a>
+                </div>
+            </section>
+
+            <section class="tarifa-summary-strip" aria-label="Resumen para crear incremento">
+                <div class="tarifa-summary-item">
+                    <p class="tarifa-summary-label">Habitaciones</p>
+                    <p class="tarifa-summary-value"><?= number_format(count($habitaciones ?? [])) ?></p>
+                </div>
+                <div class="tarifa-summary-item">
+                    <p class="tarifa-summary-label">Tipos</p>
+                    <p class="tarifa-summary-value"><?= number_format(count($tipos_habitacion ?? [])) ?></p>
+                </div>
+                <div class="tarifa-summary-item">
+                    <p class="tarifa-summary-label">Flujo</p>
+                    <p class="tarifa-summary-value">4 pasos</p>
+                </div>
+            </section>
         <!-- SECCIÓN: Precios Actuales con Tarifas Vigentes -->
-        <div class="section-card mb-6" style="border-left: 4px solid #3b82f6;">
-            <div class="section-header" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
+        <div class="section-card tarifa-step-prices mb-6">
+            <div class="section-header">
                 <div class="flex justify-between items-center">
                     <h2 class="section-title">
-                        <span style="width: 32px; height: 32px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                        <span class="section-icon">
                             <i class="fas fa-tags"></i>
                         </span>
                         Precios Actuales (con tarifas vigentes)
                     </h2>
-                    <button type="button" onclick="togglePreciosActuales()" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                    <button type="button" onclick="togglePreciosActuales()" class="tarifa-back-btn">
                         <i class="fas fa-chevron-down" id="iconTogglePreciosActuales"></i>
                         <span id="textTogglePreciosActuales">Mostrar</span>
                     </button>
                 </div>
             </div>
             <div class="section-body" id="seccionPreciosActuales" style="display: none;">
-                <p class="text-sm text-gray-600 mb-4">
-                    <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+                <p class="tarifa-note text-sm text-gray-600 mb-4 p-3">
+                    <i class="fas fa-info-circle mr-1"></i>
                     Estos son los precios actuales de las habitaciones considerando las tarifas vigentes. El nuevo incremento se sumará sobre estos precios.
                 </p>
                 
@@ -450,7 +1103,7 @@ input:checked + .toggle-slider:before {
             <?= csrf_field() ?>
             
             <!-- PASO 1: Información básica -->
-            <div class="section-card">
+            <div class="section-card tarifa-step-info">
                 <div class="section-header">
                     <h2 class="section-title">
                         <span class="section-number">1</span>
@@ -495,7 +1148,7 @@ input:checked + .toggle-slider:before {
             </div>
 
             <!-- PASO 2: Tipo y valor -->
-            <div class="section-card" id="seccionTipo">
+            <div class="section-card tarifa-step-value" id="seccionTipo">
                 <div class="section-header">
                     <h2 class="section-title">
                         <span class="section-number">2</span>
@@ -557,7 +1210,7 @@ input:checked + .toggle-slider:before {
             </div>
 
             <!-- PASO 3: Aplicación -->
-            <div class="section-card" id="seccionAlcance">
+            <div class="section-card tarifa-step-scope" id="seccionAlcance">
                 <div class="section-header">
                     <h2 class="section-title">
                         <span class="section-number">3</span>
@@ -694,7 +1347,7 @@ input:checked + .toggle-slider:before {
             </div>
 
             <!-- PASO 4: Vigencia -->
-            <div class="section-card">
+            <div class="section-card tarifa-step-period">
                 <div class="section-header">
                     <h2 class="section-title">
                         <span class="section-number">4</span>
@@ -765,10 +1418,15 @@ input:checked + .toggle-slider:before {
             </div>
         </form>
     </div>
+    </div>
 </div>
 
 <!-- JavaScript corregido -->
 <script>
+function tarifaBrandPrimary() {
+    return getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim() || '#1B2746';
+}
+
 // Toggle sección de precios actuales
 function togglePreciosActuales() {
     const seccion = document.getElementById('seccionPreciosActuales');
@@ -895,7 +1553,7 @@ function mostrarFiltroTipos() {
         `,
         showCancelButton: true,
         confirmButtonText: 'Aplicar filtro',
-        confirmButtonColor: '#6B4423'
+        confirmButtonColor: tarifaBrandPrimary()
     }).then((result) => {
         if (result.isConfirmed) {
             const tiposSeleccionados = Array.from(document.querySelectorAll('.tipo-filtro:checked')).map(cb => cb.value);

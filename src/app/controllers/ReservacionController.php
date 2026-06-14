@@ -722,7 +722,9 @@ class ReservacionController extends Controller {
             $pdf->Cell($contentW / 2, 4, $u('Documento generado el ' . $hoy), 0, 1, 'R');
  
             // Output
-            $nombreArchivo = 'Cotizacion_Res' . $reservacion_id . '_' . date('Ymd_His') . '.pdf';
+            $nombreArchivo = function_exists('hotel_export_filename')
+                ? hotel_export_filename('Cotizacion_Res' . $reservacion_id, 'pdf')
+                : 'Cotizacion_Res' . $reservacion_id . '_' . date('Ymd_His') . '.pdf';
             $pdf->Output('I', $nombreArchivo);
             exit;
  
@@ -1381,7 +1383,9 @@ public function obtenerNotasAction() {
             }
 
             // Nombre de archivo
-            $nombre_archivo = 'Reservaciones_' . str_replace('-', '', $fecha) . '.xls';
+            $nombre_archivo = function_exists('hotel_export_filename')
+                ? hotel_export_filename('Reservaciones_' . str_replace('-', '', $fecha), 'xls', false)
+                : 'Reservaciones_' . str_replace('-', '', $fecha) . '.xls';
 
             // Headers para descarga de Excel
             header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
@@ -3603,7 +3607,9 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             $pdf->Cell($contentW / 2, 4, $u('Documento generado el ' . $hoy), 0, 1, 'R');
 
             // ─── Output PDF ──────────────────────────────────────
-            $nombreArchivo = 'Cotizacion_Hotel_' . date('Ymd_His') . '.pdf';
+            $nombreArchivo = function_exists('hotel_export_filename')
+                ? hotel_export_filename('Cotizacion_Hotel', 'pdf')
+                : 'Cotizacion_Hotel_' . date('Ymd_His') . '.pdf';
             $pdf->Output('I', $nombreArchivo);
             exit;
 

@@ -2142,6 +2142,797 @@ html {
     font-weight: 430;
 }
 
+.hc-brand-preview {
+    --preview-primary: var(--hc-brand);
+    --preview-secondary: var(--hc-brand-strong);
+    --preview-accent: var(--hc-accent);
+    --preview-primary-soft: color-mix(in srgb, var(--preview-primary) 9%, #fff);
+    --preview-accent-soft: color-mix(in srgb, var(--preview-accent) 12%, #fff);
+    --preview-line: color-mix(in srgb, var(--preview-primary) 16%, #e7ded2);
+    --preview-on-primary: #fffefb;
+    --preview-on-secondary: #fffefb;
+    position: sticky;
+    top: 88px;
+    align-self: start;
+    display: grid;
+    gap: 14px;
+    padding: 16px;
+    border-radius: 18px;
+    border: 1px solid var(--preview-line);
+    background:
+        radial-gradient(circle at 94% 0%, color-mix(in srgb, var(--preview-accent) 20%, transparent), transparent 10rem),
+        linear-gradient(180deg, rgba(255,255,255,.96), color-mix(in srgb, var(--preview-accent) 4%, rgba(255,255,255,.9)));
+    box-shadow: 0 18px 44px -34px color-mix(in srgb, var(--preview-secondary) 28%, transparent);
+    overflow: hidden;
+}
+
+.hc-preview-head,
+.hc-preview-row,
+.hc-preview-chip,
+.hc-preview-topbar,
+.hc-preview-brandline,
+.hc-preview-assets,
+.hc-preview-asset,
+.hc-preview-palette,
+.hc-preview-swatch,
+.hc-preview-login-card,
+.hc-preview-login-brand,
+.hc-preview-pwa {
+    display: flex;
+    align-items: center;
+}
+
+.hc-preview-head {
+    justify-content: space-between;
+    align-items: start;
+    gap: 12px;
+}
+
+.hc-preview-kicker {
+    display: block;
+    margin: 0 0 3px;
+    color: var(--hc-ink-faint);
+    font-size: .68rem;
+    font-weight: 680;
+}
+
+.hc-preview-title {
+    display: block;
+    max-width: 18rem;
+    color: var(--hc-brand-strong);
+    font-size: .98rem;
+    line-height: 1.18;
+    font-weight: 720;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hc-preview-live {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 0 9px;
+    border-radius: 999px;
+    color: color-mix(in srgb, var(--preview-primary) 72%, #334155);
+    background: var(--preview-primary-soft);
+    border: 1px solid var(--preview-line);
+    font-size: .7rem;
+    font-weight: 760;
+    transition: background .18s ease, border-color .18s ease, color .18s ease;
+}
+
+.hc-preview-live::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--preview-accent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--preview-accent) 16%, transparent);
+}
+
+.hc-brand-preview.is-dirty .hc-preview-live {
+    color: color-mix(in srgb, var(--preview-accent) 72%, #3b2f12);
+    background: color-mix(in srgb, var(--preview-accent) 15%, #fffefb);
+    border-color: color-mix(in srgb, var(--preview-accent) 28%, var(--preview-line));
+}
+
+.hc-preview-actions {
+    flex: 0 0 auto;
+    display: grid;
+    justify-items: end;
+    gap: 7px;
+}
+
+.hc-preview-reset {
+    min-height: 26px;
+    border: 1px solid var(--preview-line);
+    border-radius: 8px;
+    padding: 0 9px;
+    color: color-mix(in srgb, var(--preview-secondary) 62%, #64748b);
+    background: rgba(255,255,255,.72);
+    font-size: .68rem;
+    line-height: 1;
+    font-weight: 720;
+    cursor: pointer;
+    transition: transform .16s ease, background .16s ease, border-color .16s ease, color .16s ease, opacity .16s ease;
+}
+
+.hc-preview-reset:hover:not(:disabled) {
+    color: var(--preview-secondary);
+    background: #fffefb;
+    border-color: color-mix(in srgb, var(--preview-primary) 25%, var(--preview-line));
+    transform: translateY(-1px);
+}
+
+.hc-preview-reset:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.hc-preview-reset:disabled {
+    cursor: default;
+    opacity: .46;
+}
+
+.hc-preview-reset:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--preview-accent) 48%, transparent);
+    outline-offset: 2px;
+}
+
+.hc-preview-system {
+    display: grid;
+    grid-template-columns: 98px minmax(0, 1fr);
+    min-height: 232px;
+    border: 1px solid var(--preview-line);
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fffefb;
+}
+
+.hc-preview-sidebar {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 12px;
+    padding: 12px 10px;
+    background:
+        radial-gradient(circle at 50% -20%, color-mix(in srgb, var(--preview-accent) 14%, transparent), transparent 6rem),
+        linear-gradient(180deg, color-mix(in srgb, var(--preview-primary) 6%, #fff), color-mix(in srgb, var(--preview-accent) 5%, #fff));
+    border-right: 1px solid var(--preview-line);
+}
+
+.hc-brand-preview[data-sidebar-style="solid"] .hc-preview-sidebar {
+    background: linear-gradient(180deg, var(--preview-primary), color-mix(in srgb, var(--preview-primary) 78%, var(--preview-secondary)));
+    color: var(--preview-on-primary);
+    border-right-color: color-mix(in srgb, var(--preview-primary) 60%, var(--preview-secondary));
+}
+
+.hc-brand-preview[data-sidebar-style="dark"] .hc-preview-sidebar {
+    background:
+        radial-gradient(circle at 50% -20%, color-mix(in srgb, var(--preview-accent) 18%, transparent), transparent 6rem),
+        linear-gradient(180deg, var(--preview-secondary), color-mix(in srgb, var(--preview-secondary) 78%, #111827));
+    color: var(--preview-on-secondary);
+    border-right-color: color-mix(in srgb, var(--preview-secondary) 74%, #fff);
+}
+
+.hc-preview-brandline {
+    min-width: 0;
+    gap: 8px;
+}
+
+.hc-preview-mark,
+.hc-preview-app-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--preview-primary) 14%, #ded7ca);
+    background: #fffefb;
+    color: var(--preview-primary);
+}
+
+.hc-preview-mark {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+}
+
+.hc-preview-mark img,
+.hc-preview-app-icon img,
+.hc-preview-login-mark img,
+.hc-preview-upload-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.hc-preview-sidebar-name {
+    min-width: 0;
+    color: inherit;
+    font-size: .68rem;
+    line-height: 1.12;
+    font-weight: 780;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hc-preview-nav {
+    display: grid;
+    gap: 7px;
+    align-content: start;
+}
+
+.hc-preview-nav-item {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    min-height: 29px;
+    border-radius: 9px;
+    padding: 0 8px;
+    color: color-mix(in srgb, var(--preview-secondary) 70%, #64748b);
+    background: transparent;
+    font-size: .62rem;
+    font-weight: 720;
+}
+
+.hc-preview-sidebar .hc-preview-nav-item i {
+    color: currentColor;
+    font-size: .68rem;
+}
+
+.hc-preview-nav-item span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hc-preview-nav-item.is-active {
+    background: linear-gradient(135deg, var(--preview-primary), color-mix(in srgb, var(--preview-primary) 78%, var(--preview-secondary)));
+    color: var(--preview-on-primary);
+}
+
+.hc-brand-preview[data-sidebar-style="solid"] .hc-preview-nav-item,
+.hc-brand-preview[data-sidebar-style="dark"] .hc-preview-nav-item {
+    background: rgba(255,255,255,.08);
+}
+
+.hc-brand-preview[data-sidebar-style="solid"] .hc-preview-nav-item {
+    color: color-mix(in srgb, var(--preview-on-primary) 72%, transparent);
+}
+
+.hc-brand-preview[data-sidebar-style="dark"] .hc-preview-nav-item {
+    color: color-mix(in srgb, var(--preview-on-secondary) 72%, transparent);
+}
+
+.hc-brand-preview[data-sidebar-style="solid"] .hc-preview-nav-item.is-active,
+.hc-brand-preview[data-sidebar-style="dark"] .hc-preview-nav-item.is-active {
+    background: rgba(255,255,255,.2);
+    color: inherit;
+}
+
+.hc-preview-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: inherit;
+    font-size: .6rem;
+    font-weight: 650;
+    opacity: .72;
+}
+
+.hc-preview-status span {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: #16a34a;
+}
+
+.hc-preview-workspace {
+    min-width: 0;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    background:
+        radial-gradient(circle at 98% 0%, color-mix(in srgb, var(--preview-accent) 14%, transparent), transparent 9rem),
+        color-mix(in srgb, var(--preview-accent) 5%, #fbfaf6);
+}
+
+.hc-preview-topbar {
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 48px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--preview-line);
+    background: rgba(255,255,255,.72);
+}
+
+.hc-preview-screen-title {
+    display: block;
+    color: var(--preview-secondary);
+    font-size: .76rem;
+    line-height: 1.1;
+    font-weight: 780;
+}
+
+.hc-preview-screen-subtitle {
+    display: block;
+    margin-top: 2px;
+    color: color-mix(in srgb, var(--preview-secondary) 52%, #94a3b8);
+    font-size: .6rem;
+    line-height: 1.1;
+    font-weight: 560;
+}
+
+.hc-preview-chip {
+    flex: 0 0 auto;
+    min-height: 25px;
+    border-radius: 8px;
+    padding: 0 8px;
+    color: color-mix(in srgb, var(--preview-primary) 76%, #334155);
+    background: #fffefb;
+    border: 1px solid var(--preview-line);
+    font-size: .62rem;
+    font-weight: 760;
+}
+
+.hc-preview-content {
+    display: grid;
+    gap: 11px;
+    padding: 12px;
+}
+
+.hc-preview-metric-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.hc-preview-metric {
+    min-width: 0;
+    min-height: 58px;
+    padding: 9px;
+    border-radius: 11px;
+    background: rgba(255,255,255,.82);
+    border: 1px solid color-mix(in srgb, var(--preview-primary) 10%, #e8ddd0);
+}
+
+.hc-preview-metric strong,
+.hc-preview-room-title {
+    display: block;
+    color: var(--preview-secondary);
+    font-size: .8rem;
+    line-height: 1.1;
+    font-weight: 780;
+}
+
+.hc-preview-metric span,
+.hc-preview-room-meta,
+.hc-preview-login-copy,
+.hc-preview-pwa span {
+    display: block;
+    margin-top: 4px;
+    color: color-mix(in srgb, var(--preview-secondary) 54%, #94a3b8);
+    font-size: .6rem;
+    line-height: 1.25;
+    font-weight: 560;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hc-preview-room {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 68px;
+    padding: 11px;
+    border-radius: 13px;
+    border: 1px solid color-mix(in srgb, var(--preview-accent) 24%, #e8ddd0);
+    background: linear-gradient(135deg, #fff, var(--preview-accent-soft));
+}
+
+.hc-preview-room-cta {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    border-radius: 9px;
+    padding: 0 10px;
+    color: var(--preview-on-primary);
+    background: linear-gradient(135deg, var(--preview-primary), color-mix(in srgb, var(--preview-primary) 78%, var(--preview-secondary)));
+    font-size: .62rem;
+    font-weight: 760;
+    white-space: nowrap;
+}
+
+.hc-preview-login-card {
+    position: relative;
+    min-height: 116px;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 16px;
+    border: 1px solid var(--preview-line);
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--preview-primary) 92%, #111827), color-mix(in srgb, var(--preview-secondary) 84%, #111827));
+    color: var(--preview-on-primary);
+    overflow: hidden;
+}
+
+.hc-preview-login-bg {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity .18s ease;
+}
+
+.hc-preview-login-bg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hc-brand-preview[data-login-style="image"] .hc-preview-login-bg {
+    opacity: .32;
+}
+
+.hc-brand-preview[data-login-style="soft"] .hc-preview-login-card {
+    color: var(--preview-secondary);
+    background: linear-gradient(135deg, var(--preview-accent-soft), var(--preview-primary-soft));
+}
+
+.hc-preview-login-brand,
+.hc-preview-login-panel {
+    position: relative;
+    z-index: 1;
+}
+
+.hc-preview-login-brand {
+    min-width: 0;
+    gap: 10px;
+}
+
+.hc-preview-login-mark,
+.hc-preview-app-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: #fffefb;
+    color: var(--preview-primary);
+}
+
+.hc-preview-login-title {
+    display: block;
+    max-width: 13rem;
+    font-size: .9rem;
+    line-height: 1.1;
+    font-weight: 780;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hc-preview-login-copy {
+    color: currentColor;
+    opacity: .72;
+}
+
+.hc-preview-login-panel {
+    min-width: 96px;
+    display: grid;
+    gap: 7px;
+}
+
+.hc-preview-login-line {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.42);
+}
+
+.hc-brand-preview[data-login-style="soft"] .hc-preview-login-line {
+    background: rgba(15,23,42,.13);
+}
+
+.hc-preview-login-button {
+    height: 24px;
+    border-radius: 8px;
+    background: var(--preview-accent);
+}
+
+.hc-preview-pwa {
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px;
+    border-radius: 14px;
+    border: 1px solid var(--preview-line);
+    background: rgba(255,255,255,.76);
+}
+
+.hc-preview-app-icons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hc-preview-app-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+}
+
+.hc-preview-app-icon.is-large {
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+}
+
+.hc-preview-assets {
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.hc-preview-asset {
+    gap: 7px;
+    min-height: 36px;
+    border-radius: 11px;
+    padding: 6px 8px;
+    border: 1px solid var(--preview-line);
+    background: rgba(255,255,255,.74);
+    color: var(--hc-ink-soft);
+    font-size: .66rem;
+    font-weight: 700;
+}
+
+.hc-preview-asset-box {
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border-radius: 7px;
+    background: var(--preview-primary-soft);
+    color: var(--preview-primary);
+    overflow: hidden;
+}
+
+.hc-preview-palette {
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.hc-preview-swatch {
+    flex: 1 1 92px;
+    min-width: 0;
+    gap: 8px;
+    min-height: 40px;
+    padding: 7px 8px;
+    border-radius: 11px;
+    border: 1px solid var(--preview-line);
+    background: rgba(255,255,255,.74);
+    overflow: hidden;
+}
+
+.hc-preview-swatch-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 8px;
+    flex: 0 0 auto;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.34);
+}
+
+.hc-preview-swatch strong {
+    display: block;
+    color: var(--hc-ink);
+    font-size: .66rem;
+    line-height: 1.05;
+    font-weight: 760;
+}
+
+.hc-preview-swatch code {
+    display: block;
+    margin-top: 2px;
+    color: var(--hc-ink-soft);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .62rem;
+    line-height: 1.05;
+}
+
+.hc-preview-contrast {
+    display: grid;
+    gap: 9px;
+    padding: 10px;
+    border-radius: 13px;
+    border: 1px solid var(--preview-line);
+    background: rgba(255,255,255,.76);
+}
+
+.hc-preview-contrast-head,
+.hc-preview-contrast-grid,
+.hc-preview-contrast-item {
+    display: flex;
+    align-items: center;
+}
+
+.hc-preview-contrast-head {
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.hc-preview-contrast-title {
+    display: block;
+    color: var(--preview-secondary);
+    font-size: .68rem;
+    line-height: 1.1;
+    font-weight: 780;
+}
+
+.hc-preview-contrast-state {
+    flex: 0 0 auto;
+    color: var(--hc-success);
+    font-size: .62rem;
+    line-height: 1.1;
+    font-weight: 760;
+}
+
+.hc-preview-contrast.has-warning .hc-preview-contrast-state {
+    color: var(--hc-danger);
+}
+
+.hc-preview-contrast-grid {
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.hc-preview-contrast-item {
+    flex: 1 1 88px;
+    min-width: 0;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 32px;
+    padding: 6px 7px;
+    border-radius: 9px;
+    border: 1px solid color-mix(in srgb, var(--hc-success) 20%, var(--preview-line));
+    background: color-mix(in srgb, var(--hc-success) 6%, #fffefb);
+    overflow: hidden;
+}
+
+.hc-preview-contrast-item.is-warn {
+    border-color: color-mix(in srgb, var(--hc-danger) 24%, var(--preview-line));
+    background: color-mix(in srgb, var(--hc-danger) 6%, #fffefb);
+}
+
+.hc-preview-contrast-item span,
+.hc-preview-contrast-item strong {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hc-preview-contrast-item span {
+    color: var(--hc-ink-soft);
+    font-size: .6rem;
+    line-height: 1.1;
+    font-weight: 650;
+}
+
+.hc-preview-contrast-item strong {
+    flex: 0 0 auto;
+    color: var(--hc-success);
+    font-size: .62rem;
+    line-height: 1.1;
+    font-weight: 780;
+}
+
+.hc-preview-contrast-item.is-warn strong {
+    color: var(--hc-danger);
+}
+
+.hc-upload-thumb {
+    position: relative;
+}
+
+.hc-upload-thumb img {
+    display: block;
+}
+
+.hc-upload-row {
+    align-items: start;
+}
+
+.hc-upload-control {
+    min-width: 0;
+    display: grid;
+    gap: 6px;
+}
+
+.hc-upload-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+    color: var(--hc-ink-soft);
+    font-size: .72rem;
+    line-height: 1.3;
+    font-weight: 560;
+}
+
+.hc-upload-status::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--hc-ink-faint) 72%, #fff);
+}
+
+.hc-upload-row.is-selected .hc-upload-status {
+    color: color-mix(in srgb, var(--hc-success) 84%, var(--hc-ink));
+}
+
+.hc-upload-row.is-selected .hc-upload-status::before {
+    background: var(--hc-success);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--hc-success) 14%, transparent);
+}
+
+.hc-upload-row.is-selected .hc-upload-thumb {
+    border-color: color-mix(in srgb, var(--hc-success) 28%, var(--hc-line));
+    background: color-mix(in srgb, var(--hc-success) 8%, #fff);
+}
+
+.hc-preview-empty-icon[hidden],
+.hc-preview-upload-img[hidden],
+.hc-preview-image[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 1180px) {
+    .hc-preview-system {
+        grid-template-columns: 88px minmax(0, 1fr);
+    }
+
+    .hc-preview-metric-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 520px) {
+    .hc-preview-system {
+        grid-template-columns: 1fr;
+    }
+
+    .hc-preview-sidebar {
+        grid-template-columns: auto 1fr auto;
+        grid-template-rows: auto;
+        align-items: center;
+        border-right: 0;
+        border-bottom: 1px solid var(--preview-line);
+    }
+
+    .hc-preview-nav {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .hc-preview-status,
+    .hc-preview-sidebar-name,
+    .hc-preview-nav-item span {
+        display: none;
+    }
+
+    .hc-preview-login-card,
+    .hc-preview-pwa {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
+
 @media (max-width: 1240px) {
     .hc-catalog-row,
     .hc-catalog-row.is-type,
@@ -2962,35 +3753,187 @@ html {
                         <input type="hidden" name="hotel_branding[activo]" value="1">
 
                         <div class="hc-brand-grid">
-                            <aside class="hc-brand-preview" aria-label="Vista previa de marca">
-                                <div>
-                                    <div class="hc-brand-logo">
-                                        <?php if ($brandingLogoPreview): ?>
-                                            <img src="<?= htmlspecialchars($brandingLogoPreview, ENT_QUOTES, 'UTF-8') ?>"
-                                                 alt="<?= htmlspecialchars($configHotelNombre, ENT_QUOTES, 'UTF-8') ?>">
-                                        <?php else: ?>
-                                            <i class="fas fa-hotel"></i>
-                                        <?php endif; ?>
+                            <aside class="hc-brand-preview"
+                                   aria-label="Vista previa de marca"
+                                   data-brand-preview
+                                   data-default-name="<?= htmlspecialchars($configHotelNombre, ENT_QUOTES, 'UTF-8') ?>"
+                                   data-sidebar-style="<?= htmlspecialchars((string) ($configBranding['sidebar_style'] ?? 'default'), ENT_QUOTES, 'UTF-8') ?>"
+                                   data-login-style="<?= htmlspecialchars((string) ($configBranding['login_style'] ?? 'default'), ENT_QUOTES, 'UTF-8') ?>"
+                                   style="--preview-primary: <?= htmlspecialchars((string) $brandingPrimary, ENT_QUOTES, 'UTF-8') ?>; --preview-secondary: <?= htmlspecialchars((string) $brandingSecondary, ENT_QUOTES, 'UTF-8') ?>; --preview-accent: <?= htmlspecialchars((string) $brandingAccent, ENT_QUOTES, 'UTF-8') ?>;">
+                                <div class="hc-preview-head">
+                                    <div>
+                                        <span class="hc-preview-kicker">Vista previa del sistema</span>
+                                        <strong class="hc-preview-title" data-brand-preview-text="name">
+                                            <?= htmlspecialchars($configLegacyNombre, ENT_QUOTES, 'UTF-8') ?>
+                                        </strong>
                                     </div>
-                                    <p class="hc-brand-name"><?= htmlspecialchars($configHotelNombre, ENT_QUOTES, 'UTF-8') ?></p>
-                                    <p class="hc-brand-note">
-                                        Estos recursos se aplican al entorno operativo del hotel y no al panel SaaS.
-                                    </p>
+                                    <div class="hc-preview-actions">
+                                        <span class="hc-preview-live" data-brand-dirty-label aria-live="polite">Sin cambios</span>
+                                        <button type="button" class="hc-preview-reset" data-brand-reset disabled>Restablecer</button>
+                                    </div>
                                 </div>
-                                <div class="hc-top-meta">
-                                    <span class="hc-chip">Primary <?= htmlspecialchars((string) $brandingPrimary, ENT_QUOTES, 'UTF-8') ?></span>
-                                    <span class="hc-chip">Accent <?= htmlspecialchars((string) $brandingAccent, ENT_QUOTES, 'UTF-8') ?></span>
+
+                                <div class="hc-preview-system" aria-hidden="true">
+                                    <div class="hc-preview-sidebar">
+                                        <div class="hc-preview-brandline">
+                                            <span class="hc-preview-mark">
+                                                <img <?php if ($brandingLogoPreview): ?>src="<?= htmlspecialchars($brandingLogoPreview, ENT_QUOTES, 'UTF-8') ?>"<?php endif; ?>
+                                                     alt=""
+                                                     data-brand-image="logo"
+                                                     data-original-src="<?= htmlspecialchars($brandingLogoPreview, ENT_QUOTES, 'UTF-8') ?>"
+                                                     <?= $brandingLogoPreview ? '' : 'hidden' ?>>
+                                                <i class="fas fa-hotel hc-preview-empty-icon" data-brand-fallback="logo" <?= $brandingLogoPreview ? 'hidden' : '' ?>></i>
+                                            </span>
+                                            <span class="hc-preview-sidebar-name" data-brand-preview-text="name">
+                                                <?= htmlspecialchars($configLegacyNombre, ENT_QUOTES, 'UTF-8') ?>
+                                            </span>
+                                        </div>
+
+                                        <div class="hc-preview-nav">
+                                            <span class="hc-preview-nav-item is-active"><i class="fas fa-th-large"></i><span>Dashboard</span></span>
+                                            <span class="hc-preview-nav-item"><i class="fas fa-bed"></i><span>Habitaciones</span></span>
+                                            <span class="hc-preview-nav-item"><i class="fas fa-wallet"></i><span>Caja</span></span>
+                                        </div>
+
+                                        <span class="hc-preview-status"><span></span>Sesion activa</span>
+                                    </div>
+
+                                    <div class="hc-preview-workspace">
+                                        <div class="hc-preview-topbar">
+                                            <div>
+                                                <span class="hc-preview-screen-title">Operacion hotelera</span>
+                                                <span class="hc-preview-screen-subtitle" data-brand-preview-text="sidebar-style">Menu default</span>
+                                            </div>
+                                            <span class="hc-preview-chip">Recepcion</span>
+                                        </div>
+
+                                        <div class="hc-preview-content">
+                                            <div class="hc-preview-metric-row">
+                                                <span class="hc-preview-metric"><strong>18</strong><span>Disponibles</span></span>
+                                                <span class="hc-preview-metric"><strong>7</strong><span>Ocupadas</span></span>
+                                                <span class="hc-preview-metric"><strong>3</strong><span>Llegadas</span></span>
+                                            </div>
+                                            <div class="hc-preview-room">
+                                                <div>
+                                                    <span class="hc-preview-room-title">Habitacion 204</span>
+                                                    <span class="hc-preview-room-meta">Suite doble, lista para check-in</span>
+                                                </div>
+                                                <span class="hc-preview-room-cta">Asignar</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="hc-preview-login-card" aria-hidden="true">
+                                    <div class="hc-preview-login-bg">
+                                        <img <?php if ($brandingLoginPreview): ?>src="<?= htmlspecialchars($brandingLoginPreview, ENT_QUOTES, 'UTF-8') ?>"<?php endif; ?>
+                                             alt=""
+                                             data-brand-image="login"
+                                             data-original-src="<?= htmlspecialchars($brandingLoginPreview, ENT_QUOTES, 'UTF-8') ?>"
+                                             <?= $brandingLoginPreview ? '' : 'hidden' ?>>
+                                    </div>
+                                    <div class="hc-preview-login-brand">
+                                        <span class="hc-preview-login-mark">
+                                            <img <?php if ($brandingLogoPreview): ?>src="<?= htmlspecialchars($brandingLogoPreview, ENT_QUOTES, 'UTF-8') ?>"<?php endif; ?>
+                                                 alt=""
+                                                 data-brand-image="logo"
+                                                 data-original-src="<?= htmlspecialchars($brandingLogoPreview, ENT_QUOTES, 'UTF-8') ?>"
+                                                 <?= $brandingLogoPreview ? '' : 'hidden' ?>>
+                                            <i class="fas fa-hotel hc-preview-empty-icon" data-brand-fallback="logo" <?= $brandingLogoPreview ? 'hidden' : '' ?>></i>
+                                        </span>
+                                        <div>
+                                            <strong class="hc-preview-login-title" data-brand-preview-text="name">
+                                                <?= htmlspecialchars($configLegacyNombre, ENT_QUOTES, 'UTF-8') ?>
+                                            </strong>
+                                            <span class="hc-preview-login-copy" data-brand-preview-text="login-style">Login default</span>
+                                        </div>
+                                    </div>
+                                    <div class="hc-preview-login-panel">
+                                        <span class="hc-preview-login-line"></span>
+                                        <span class="hc-preview-login-line"></span>
+                                        <span class="hc-preview-login-button"></span>
+                                    </div>
+                                </div>
+
+                                <div class="hc-preview-pwa" aria-hidden="true">
+                                    <div>
+                                        <span class="hc-preview-screen-title">Iconos y acceso movil</span>
+                                        <span class="hc-preview-screen-subtitle">Favicon, PWA 192 y PWA 512</span>
+                                    </div>
+                                    <div class="hc-preview-app-icons">
+                                        <span class="hc-preview-app-icon">
+                                            <img <?php if ($brandingFaviconPreview): ?>src="<?= htmlspecialchars($brandingFaviconPreview, ENT_QUOTES, 'UTF-8') ?>"<?php endif; ?>
+                                                 alt=""
+                                                 data-brand-image="favicon"
+                                                 data-original-src="<?= htmlspecialchars($brandingFaviconPreview, ENT_QUOTES, 'UTF-8') ?>"
+                                                 <?= $brandingFaviconPreview ? '' : 'hidden' ?>>
+                                            <i class="fas fa-star hc-preview-empty-icon" data-brand-fallback="favicon" <?= $brandingFaviconPreview ? 'hidden' : '' ?>></i>
+                                        </span>
+                                        <span class="hc-preview-app-icon">
+                                            <img <?php if ($brandingPwa192Preview): ?>src="<?= htmlspecialchars($brandingPwa192Preview, ENT_QUOTES, 'UTF-8') ?>"<?php endif; ?>
+                                                 alt=""
+                                                 data-brand-image="pwa192"
+                                                 data-original-src="<?= htmlspecialchars($brandingPwa192Preview, ENT_QUOTES, 'UTF-8') ?>"
+                                                 <?= $brandingPwa192Preview ? '' : 'hidden' ?>>
+                                            <i class="fas fa-mobile-alt hc-preview-empty-icon" data-brand-fallback="pwa192" <?= $brandingPwa192Preview ? 'hidden' : '' ?>></i>
+                                        </span>
+                                        <span class="hc-preview-app-icon is-large">
+                                            <img <?php if ($brandingPwa512Preview): ?>src="<?= htmlspecialchars($brandingPwa512Preview, ENT_QUOTES, 'UTF-8') ?>"<?php endif; ?>
+                                                 alt=""
+                                                 data-brand-image="pwa512"
+                                                 data-original-src="<?= htmlspecialchars($brandingPwa512Preview, ENT_QUOTES, 'UTF-8') ?>"
+                                                 <?= $brandingPwa512Preview ? '' : 'hidden' ?>>
+                                            <i class="fas fa-mobile-alt hc-preview-empty-icon" data-brand-fallback="pwa512" <?= $brandingPwa512Preview ? 'hidden' : '' ?>></i>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="hc-preview-palette" aria-label="Colores de vista previa">
+                                    <span class="hc-preview-swatch">
+                                        <span class="hc-preview-swatch-dot" data-brand-swatch="primary" style="background: <?= htmlspecialchars((string) $brandingPrimary, ENT_QUOTES, 'UTF-8') ?>"></span>
+                                        <span><strong>Principal</strong><code data-brand-preview-code="primary"><?= htmlspecialchars((string) $brandingPrimary, ENT_QUOTES, 'UTF-8') ?></code></span>
+                                    </span>
+                                    <span class="hc-preview-swatch">
+                                        <span class="hc-preview-swatch-dot" data-brand-swatch="secondary" style="background: <?= htmlspecialchars((string) $brandingSecondary, ENT_QUOTES, 'UTF-8') ?>"></span>
+                                        <span><strong>Secundario</strong><code data-brand-preview-code="secondary"><?= htmlspecialchars((string) $brandingSecondary, ENT_QUOTES, 'UTF-8') ?></code></span>
+                                    </span>
+                                    <span class="hc-preview-swatch">
+                                        <span class="hc-preview-swatch-dot" data-brand-swatch="accent" style="background: <?= htmlspecialchars((string) $brandingAccent, ENT_QUOTES, 'UTF-8') ?>"></span>
+                                        <span><strong>Acento</strong><code data-brand-preview-code="accent"><?= htmlspecialchars((string) $brandingAccent, ENT_QUOTES, 'UTF-8') ?></code></span>
+                                    </span>
+                                </div>
+
+                                <div class="hc-preview-contrast" data-brand-contrast aria-label="Revision de contraste de la vista previa">
+                                    <div class="hc-preview-contrast-head">
+                                        <span class="hc-preview-contrast-title">Legibilidad</span>
+                                        <span class="hc-preview-contrast-state" data-brand-contrast-summary>AA listo</span>
+                                    </div>
+                                    <div class="hc-preview-contrast-grid">
+                                        <span class="hc-preview-contrast-item" data-brand-contrast-item="primary">
+                                            <span>Principal</span>
+                                            <strong data-brand-contrast-score="primary">AA</strong>
+                                        </span>
+                                        <span class="hc-preview-contrast-item" data-brand-contrast-item="secondary">
+                                            <span>Secundario</span>
+                                            <strong data-brand-contrast-score="secondary">AA</strong>
+                                        </span>
+                                        <span class="hc-preview-contrast-item" data-brand-contrast-item="accent">
+                                            <span>Acento</span>
+                                            <strong data-brand-contrast-score="accent">AA</strong>
+                                        </span>
+                                    </div>
                                 </div>
                             </aside>
 
                             <div class="hc-field-grid">
                                 <div class="hc-field is-wide">
                                     <label for="branding_nombre_visual">Nombre visual</label>
-                                    <input type="text"
+                                     <input type="text"
                                            id="branding_nombre_visual"
                                            name="hotel_branding[nombre_visual]"
                                            value="<?= $configBrandingField('nombre_visual', $configHotelNombre) ?>"
                                            maxlength="150"
+                                           data-brand-input="name"
                                            class="form-input">
                                     <p class="hc-field-hint">Nombre mostrado en login, encabezado y documentos compatibles.</p>
                                 </div>
@@ -2998,129 +3941,179 @@ html {
                                 <div class="hc-field">
                                     <label for="branding_color_primary">Color principal</label>
                                     <div class="hc-color-input">
-                                        <input type="color"
+                                         <input type="color"
                                                id="branding_color_primary"
                                                name="hotel_branding[color_primary]"
+                                               data-brand-input="primary"
                                                value="<?= htmlspecialchars((string) $brandingPrimary, ENT_QUOTES, 'UTF-8') ?>">
-                                        <span class="hc-color-code"><?= htmlspecialchars((string) $brandingPrimary, ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="hc-color-code" data-brand-preview-code="primary"><?= htmlspecialchars((string) $brandingPrimary, ENT_QUOTES, 'UTF-8') ?></span>
                                     </div>
                                 </div>
 
                                 <div class="hc-field">
                                     <label for="branding_color_secondary">Color secundario</label>
                                     <div class="hc-color-input">
-                                        <input type="color"
+                                         <input type="color"
                                                id="branding_color_secondary"
                                                name="hotel_branding[color_secondary]"
+                                               data-brand-input="secondary"
                                                value="<?= htmlspecialchars((string) $brandingSecondary, ENT_QUOTES, 'UTF-8') ?>">
-                                        <span class="hc-color-code"><?= htmlspecialchars((string) $brandingSecondary, ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="hc-color-code" data-brand-preview-code="secondary"><?= htmlspecialchars((string) $brandingSecondary, ENT_QUOTES, 'UTF-8') ?></span>
                                     </div>
                                 </div>
 
                                 <div class="hc-field">
                                     <label for="branding_color_accent">Color acento</label>
                                     <div class="hc-color-input">
-                                        <input type="color"
+                                         <input type="color"
                                                id="branding_color_accent"
                                                name="hotel_branding[color_accent]"
+                                               data-brand-input="accent"
                                                value="<?= htmlspecialchars((string) $brandingAccent, ENT_QUOTES, 'UTF-8') ?>">
-                                        <span class="hc-color-code"><?= htmlspecialchars((string) $brandingAccent, ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="hc-color-code" data-brand-preview-code="accent"><?= htmlspecialchars((string) $brandingAccent, ENT_QUOTES, 'UTF-8') ?></span>
                                     </div>
                                 </div>
 
-                                <div class="hc-field">
-                                    <label for="branding_sidebar_style">Estilo de menu</label>
-                                    <select id="branding_sidebar_style"
-                                            name="hotel_branding[sidebar_style]"
-                                            class="form-input">
+                                 <div class="hc-field">
+                                     <label for="branding_sidebar_style">Estilo de menu</label>
+                                     <select id="branding_sidebar_style"
+                                             name="hotel_branding[sidebar_style]"
+                                             data-brand-input="sidebar"
+                                             class="form-input">
                                         <option value="default" <?= ($configBranding['sidebar_style'] ?? 'default') === 'default' ? 'selected' : '' ?>>Default</option>
                                         <option value="solid" <?= ($configBranding['sidebar_style'] ?? 'default') === 'solid' ? 'selected' : '' ?>>Solido</option>
                                         <option value="dark" <?= ($configBranding['sidebar_style'] ?? 'default') === 'dark' ? 'selected' : '' ?>>Oscuro</option>
                                     </select>
                                 </div>
 
-                                <div class="hc-field">
-                                    <label for="branding_login_style">Estilo de login</label>
-                                    <select id="branding_login_style"
-                                            name="hotel_branding[login_style]"
-                                            class="form-input">
+                                 <div class="hc-field">
+                                     <label for="branding_login_style">Estilo de login</label>
+                                     <select id="branding_login_style"
+                                             name="hotel_branding[login_style]"
+                                             data-brand-input="login"
+                                             class="form-input">
                                         <option value="default" <?= ($configBranding['login_style'] ?? 'default') === 'default' ? 'selected' : '' ?>>Default</option>
                                         <option value="soft" <?= ($configBranding['login_style'] ?? 'default') === 'soft' ? 'selected' : '' ?>>Suave</option>
                                         <option value="image" <?= ($configBranding['login_style'] ?? 'default') === 'image' ? 'selected' : '' ?>>Imagen</option>
                                     </select>
                                 </div>
 
-                                <div class="hc-field">
-                                    <label for="logo_file">Logo</label>
-                                    <div class="hc-upload-row">
-                                        <div class="hc-upload-thumb">
-                                            <?php if ($brandingLogoPreview): ?>
-                                                <img src="<?= htmlspecialchars($brandingLogoPreview, ENT_QUOTES, 'UTF-8') ?>" alt="Logo">
-                                            <?php else: ?>
-                                                <i class="fas fa-image"></i>
-                                            <?php endif; ?>
+                                 <div class="hc-field">
+                                     <label for="logo_file">Logo</label>
+                                     <div class="hc-upload-row">
+                                         <div class="hc-upload-thumb">
+                                            <img <?php if ($brandingLogoPreview): ?>src="<?= htmlspecialchars($brandingLogoPreview, ENT_QUOTES, 'UTF-8') ?>"<?php endif; ?>
+                                                 alt="Logo"
+                                                 class="hc-preview-upload-img"
+                                                 data-brand-image="logo"
+                                                 data-original-src="<?= htmlspecialchars($brandingLogoPreview, ENT_QUOTES, 'UTF-8') ?>"
+                                                 <?= $brandingLogoPreview ? '' : 'hidden' ?>>
+                                            <i class="fas fa-image hc-preview-empty-icon" data-brand-fallback="logo" <?= $brandingLogoPreview ? 'hidden' : '' ?>></i>
+                                         </div>
+                                        <div class="hc-upload-control">
+                                            <input type="file" id="logo_file" name="logo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" class="form-input" data-brand-file="logo">
+                                            <p class="hc-upload-status"
+                                               data-brand-file-status="logo"
+                                               data-default-status="<?= $brandingLogoPreview ? 'Logo actual cargado' : 'Sin logo cargado' ?>">
+                                                <?= $brandingLogoPreview ? 'Logo actual cargado' : 'Sin logo cargado' ?>
+                                            </p>
                                         </div>
-                                        <input type="file" id="logo_file" name="logo_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" class="form-input">
-                                    </div>
-                                </div>
+                                     </div>
+                                 </div>
 
-                                <div class="hc-field">
-                                    <label for="favicon_file">Favicon</label>
-                                    <div class="hc-upload-row">
-                                        <div class="hc-upload-thumb">
-                                            <?php if ($brandingFaviconPreview): ?>
-                                                <img src="<?= htmlspecialchars($brandingFaviconPreview, ENT_QUOTES, 'UTF-8') ?>" alt="Favicon">
-                                            <?php else: ?>
-                                                <i class="fas fa-star"></i>
-                                            <?php endif; ?>
+                                 <div class="hc-field">
+                                     <label for="favicon_file">Favicon</label>
+                                     <div class="hc-upload-row">
+                                         <div class="hc-upload-thumb">
+                                            <img <?php if ($brandingFaviconPreview): ?>src="<?= htmlspecialchars($brandingFaviconPreview, ENT_QUOTES, 'UTF-8') ?>"<?php endif; ?>
+                                                 alt="Favicon"
+                                                 class="hc-preview-upload-img"
+                                                 data-brand-image="favicon"
+                                                 data-original-src="<?= htmlspecialchars($brandingFaviconPreview, ENT_QUOTES, 'UTF-8') ?>"
+                                                 <?= $brandingFaviconPreview ? '' : 'hidden' ?>>
+                                            <i class="fas fa-star hc-preview-empty-icon" data-brand-fallback="favicon" <?= $brandingFaviconPreview ? 'hidden' : '' ?>></i>
+                                         </div>
+                                        <div class="hc-upload-control">
+                                            <input type="file" id="favicon_file" name="favicon_file" accept=".ico,.png,image/x-icon,image/png" class="form-input" data-brand-file="favicon">
+                                            <p class="hc-upload-status"
+                                               data-brand-file-status="favicon"
+                                               data-default-status="<?= $brandingFaviconPreview ? 'Favicon actual cargado' : 'Sin favicon cargado' ?>">
+                                                <?= $brandingFaviconPreview ? 'Favicon actual cargado' : 'Sin favicon cargado' ?>
+                                            </p>
                                         </div>
-                                        <input type="file" id="favicon_file" name="favicon_file" accept=".ico,.png,image/x-icon,image/png" class="form-input">
-                                    </div>
-                                </div>
+                                     </div>
+                                 </div>
 
-                                <div class="hc-field is-wide">
-                                    <label for="login_background_file">Fondo de login</label>
-                                    <div class="hc-upload-row">
-                                        <div class="hc-upload-thumb">
-                                            <?php if ($brandingLoginPreview): ?>
-                                                <img src="<?= htmlspecialchars($brandingLoginPreview, ENT_QUOTES, 'UTF-8') ?>" alt="Fondo login">
-                                            <?php else: ?>
-                                                <i class="fas fa-image"></i>
-                                            <?php endif; ?>
+                                 <div class="hc-field is-wide">
+                                     <label for="login_background_file">Fondo de login</label>
+                                     <div class="hc-upload-row">
+                                         <div class="hc-upload-thumb">
+                                            <img <?php if ($brandingLoginPreview): ?>src="<?= htmlspecialchars($brandingLoginPreview, ENT_QUOTES, 'UTF-8') ?>"<?php endif; ?>
+                                                 alt="Fondo login"
+                                                 class="hc-preview-upload-img"
+                                                 data-brand-image="login"
+                                                 data-original-src="<?= htmlspecialchars($brandingLoginPreview, ENT_QUOTES, 'UTF-8') ?>"
+                                                 <?= $brandingLoginPreview ? '' : 'hidden' ?>>
+                                            <i class="fas fa-image hc-preview-empty-icon" data-brand-fallback="login" <?= $brandingLoginPreview ? 'hidden' : '' ?>></i>
+                                         </div>
+                                        <div class="hc-upload-control">
+                                            <input type="file" id="login_background_file" name="login_background_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" class="form-input" data-brand-file="login">
+                                            <p class="hc-upload-status"
+                                               data-brand-file-status="login"
+                                               data-default-status="<?= $brandingLoginPreview ? 'Fondo actual cargado' : 'Sin fondo cargado' ?>">
+                                                <?= $brandingLoginPreview ? 'Fondo actual cargado' : 'Sin fondo cargado' ?>
+                                            </p>
                                         </div>
-                                        <input type="file" id="login_background_file" name="login_background_file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" class="form-input">
-                                    </div>
-                                </div>
+                                     </div>
+                                 </div>
 
-                                <div class="hc-field">
-                                    <label for="pwa_icon_192_file">Icono PWA 192</label>
-                                    <div class="hc-upload-row">
-                                        <div class="hc-upload-thumb">
-                                            <?php if ($brandingPwa192Preview): ?>
-                                                <img src="<?= htmlspecialchars($brandingPwa192Preview, ENT_QUOTES, 'UTF-8') ?>" alt="PWA 192">
-                                            <?php else: ?>
-                                                <i class="fas fa-mobile-alt"></i>
-                                            <?php endif; ?>
+                                 <div class="hc-field">
+                                     <label for="pwa_icon_192_file">Icono PWA 192</label>
+                                     <div class="hc-upload-row">
+                                         <div class="hc-upload-thumb">
+                                            <img <?php if ($brandingPwa192Preview): ?>src="<?= htmlspecialchars($brandingPwa192Preview, ENT_QUOTES, 'UTF-8') ?>"<?php endif; ?>
+                                                 alt="PWA 192"
+                                                 class="hc-preview-upload-img"
+                                                 data-brand-image="pwa192"
+                                                 data-original-src="<?= htmlspecialchars($brandingPwa192Preview, ENT_QUOTES, 'UTF-8') ?>"
+                                                 <?= $brandingPwa192Preview ? '' : 'hidden' ?>>
+                                            <i class="fas fa-mobile-alt hc-preview-empty-icon" data-brand-fallback="pwa192" <?= $brandingPwa192Preview ? 'hidden' : '' ?>></i>
+                                         </div>
+                                        <div class="hc-upload-control">
+                                            <input type="file" id="pwa_icon_192_file" name="pwa_icon_192_file" accept=".png,.webp,image/png,image/webp" class="form-input" data-brand-file="pwa192">
+                                            <p class="hc-upload-status"
+                                               data-brand-file-status="pwa192"
+                                               data-default-status="<?= $brandingPwa192Preview ? 'Icono 192 actual cargado' : 'Sin icono 192 cargado' ?>">
+                                                <?= $brandingPwa192Preview ? 'Icono 192 actual cargado' : 'Sin icono 192 cargado' ?>
+                                            </p>
                                         </div>
-                                        <input type="file" id="pwa_icon_192_file" name="pwa_icon_192_file" accept=".png,.webp,image/png,image/webp" class="form-input">
-                                    </div>
-                                    <p class="hc-field-hint">Debe medir exactamente 192x192 px.</p>
-                                </div>
+                                     </div>
+                                     <p class="hc-field-hint">Debe medir exactamente 192x192 px.</p>
+                                 </div>
 
-                                <div class="hc-field">
-                                    <label for="pwa_icon_512_file">Icono PWA 512</label>
-                                    <div class="hc-upload-row">
-                                        <div class="hc-upload-thumb">
-                                            <?php if ($brandingPwa512Preview): ?>
-                                                <img src="<?= htmlspecialchars($brandingPwa512Preview, ENT_QUOTES, 'UTF-8') ?>" alt="PWA 512">
-                                            <?php else: ?>
-                                                <i class="fas fa-mobile-alt"></i>
-                                            <?php endif; ?>
+                                 <div class="hc-field">
+                                     <label for="pwa_icon_512_file">Icono PWA 512</label>
+                                     <div class="hc-upload-row">
+                                         <div class="hc-upload-thumb">
+                                            <img <?php if ($brandingPwa512Preview): ?>src="<?= htmlspecialchars($brandingPwa512Preview, ENT_QUOTES, 'UTF-8') ?>"<?php endif; ?>
+                                                 alt="PWA 512"
+                                                 class="hc-preview-upload-img"
+                                                 data-brand-image="pwa512"
+                                                 data-original-src="<?= htmlspecialchars($brandingPwa512Preview, ENT_QUOTES, 'UTF-8') ?>"
+                                                 <?= $brandingPwa512Preview ? '' : 'hidden' ?>>
+                                            <i class="fas fa-mobile-alt hc-preview-empty-icon" data-brand-fallback="pwa512" <?= $brandingPwa512Preview ? 'hidden' : '' ?>></i>
+                                         </div>
+                                        <div class="hc-upload-control">
+                                            <input type="file" id="pwa_icon_512_file" name="pwa_icon_512_file" accept=".png,.webp,image/png,image/webp" class="form-input" data-brand-file="pwa512">
+                                            <p class="hc-upload-status"
+                                               data-brand-file-status="pwa512"
+                                               data-default-status="<?= $brandingPwa512Preview ? 'Icono 512 actual cargado' : 'Sin icono 512 cargado' ?>">
+                                                <?= $brandingPwa512Preview ? 'Icono 512 actual cargado' : 'Sin icono 512 cargado' ?>
+                                            </p>
                                         </div>
-                                        <input type="file" id="pwa_icon_512_file" name="pwa_icon_512_file" accept=".png,.webp,image/png,image/webp" class="form-input">
-                                    </div>
-                                    <p class="hc-field-hint">Debe medir exactamente 512x512 px.</p>
-                                </div>
+                                     </div>
+                                     <p class="hc-field-hint">Debe medir exactamente 512x512 px.</p>
+                                 </div>
                             </div>
                         </div>
                     </section>
@@ -3439,6 +4432,320 @@ document.querySelectorAll('.hc-color-input input[type="color"]').forEach(input =
         chip.textContent = input.value.toUpperCase();
     });
 });
+
+(() => {
+    const preview = document.querySelector('[data-brand-preview]');
+
+    if (!preview) {
+        return;
+    }
+
+    const fields = {
+        name: document.querySelector('[data-brand-input="name"]'),
+        primary: document.querySelector('[data-brand-input="primary"]'),
+        secondary: document.querySelector('[data-brand-input="secondary"]'),
+        accent: document.querySelector('[data-brand-input="accent"]'),
+        sidebar: document.querySelector('[data-brand-input="sidebar"]'),
+        login: document.querySelector('[data-brand-input="login"]')
+    };
+    const trackedFields = Object.values(fields).filter(Boolean);
+    const fileInputs = Array.from(document.querySelectorAll('[data-brand-file]'));
+    const resetButton = preview.querySelector('[data-brand-reset]');
+    const dirtyLabel = preview.querySelector('[data-brand-dirty-label]');
+    const initialValues = new Map(trackedFields.map(field => [field, field.value]));
+
+    const colorLabels = {
+        primary: 'principal',
+        secondary: 'secundario',
+        accent: 'acento'
+    };
+
+    const sidebarLabels = {
+        default: 'Menu default',
+        solid: 'Menu solido',
+        dark: 'Menu oscuro'
+    };
+
+    const loginLabels = {
+        default: 'Login default',
+        soft: 'Login suave',
+        image: 'Login con imagen'
+    };
+
+    const objectUrls = new Map();
+
+    const normalizeHex = function(value, fallback) {
+        const candidate = String(value || '').trim();
+        return /^#[0-9A-Fa-f]{6}$/.test(candidate) ? candidate.toUpperCase() : fallback;
+    };
+
+    const hexToRgb = function(hex) {
+        const value = normalizeHex(hex, '#111827').replace('#', '');
+        return [
+            parseInt(value.slice(0, 2), 16),
+            parseInt(value.slice(2, 4), 16),
+            parseInt(value.slice(4, 6), 16)
+        ];
+    };
+
+    const rgbToHex = function(rgb) {
+        return '#' + rgb.map(channel => {
+            const safe = Math.max(0, Math.min(255, Math.round(channel)));
+            return safe.toString(16).padStart(2, '0');
+        }).join('').toUpperCase();
+    };
+
+    const mixHex = function(firstHex, secondHex, firstWeight) {
+        const first = hexToRgb(firstHex);
+        const second = hexToRgb(secondHex);
+        const weight = Math.max(0, Math.min(100, firstWeight)) / 100;
+
+        return rgbToHex(first.map((channel, index) => {
+            return channel * weight + second[index] * (1 - weight);
+        }));
+    };
+
+    const luminanceChannel = function(channel) {
+        const value = channel / 255;
+        return value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+    };
+
+    const contrastText = function(hex) {
+        const rgb = hexToRgb(hex);
+        const luminance = 0.2126 * luminanceChannel(rgb[0])
+            + 0.7152 * luminanceChannel(rgb[1])
+            + 0.0722 * luminanceChannel(rgb[2]);
+        const darkRatio = (luminance + 0.05) / 0.05;
+        const lightRatio = 1.05 / (luminance + 0.05);
+
+        return darkRatio >= lightRatio ? '#111827' : '#FFFEFB';
+    };
+
+    const relativeLuminance = function(hex) {
+        const rgb = hexToRgb(hex);
+        return 0.2126 * luminanceChannel(rgb[0])
+            + 0.7152 * luminanceChannel(rgb[1])
+            + 0.0722 * luminanceChannel(rgb[2]);
+    };
+
+    const contrastRatio = function(backgroundHex, textHex) {
+        const first = relativeLuminance(backgroundHex);
+        const second = relativeLuminance(textHex);
+        const light = Math.max(first, second);
+        const dark = Math.min(first, second);
+
+        return (light + 0.05) / (dark + 0.05);
+    };
+
+    const setText = function(selector, value) {
+        document.querySelectorAll(selector).forEach(target => {
+            target.textContent = value;
+        });
+    };
+
+    const setImageSource = function(key, source) {
+        document.querySelectorAll(`[data-brand-image="${key}"]`).forEach(image => {
+            if (source) {
+                image.src = source;
+                image.hidden = false;
+            } else {
+                image.removeAttribute('src');
+                image.hidden = true;
+            }
+        });
+
+        document.querySelectorAll(`[data-brand-fallback="${key}"]`).forEach(icon => {
+            icon.hidden = Boolean(source);
+        });
+    };
+
+    const restoreImage = function(key) {
+        const original = document.querySelector(`[data-brand-image="${key}"]`)?.dataset.originalSrc || '';
+        setImageSource(key, original);
+    };
+
+    const setFileStatus = function(input, key, file) {
+        const row = input.closest('.hc-upload-row');
+        const status = document.querySelector(`[data-brand-file-status="${key}"]`);
+
+        if (row) {
+            row.classList.toggle('is-selected', Boolean(file));
+        }
+
+        if (!status) {
+            return;
+        }
+
+        if (!file) {
+            status.textContent = status.dataset.defaultStatus || 'Sin archivo seleccionado';
+            return;
+        }
+
+        const shortName = file.name.length > 34
+            ? file.name.slice(0, 18) + '...' + file.name.slice(-12)
+            : file.name;
+        status.textContent = 'Seleccionado: ' + shortName;
+    };
+
+    const updateContrastStatus = function(colors) {
+        const contrastPanel = preview.querySelector('[data-brand-contrast]');
+        const summary = preview.querySelector('[data-brand-contrast-summary]');
+        let warningCount = 0;
+
+        Object.entries(colors).forEach(([key, value]) => {
+            const item = preview.querySelector(`[data-brand-contrast-item="${key}"]`);
+            const score = preview.querySelector(`[data-brand-contrast-score="${key}"]`);
+            const textColor = contrastText(value);
+            const ratio = contrastRatio(value, textColor);
+            const tone = textColor === '#111827' ? 'Oscuro' : 'Claro';
+            const passes = ratio >= 4.5;
+
+            if (!passes) {
+                warningCount += 1;
+            }
+
+            if (item) {
+                item.classList.toggle('is-warn', !passes);
+                item.title = `Contraste ${ratio.toFixed(1)}:1`;
+            }
+
+            if (score) {
+                score.textContent = passes ? `${tone} ${ratio.toFixed(1)}` : `Revisar ${ratio.toFixed(1)}`;
+            }
+        });
+
+        if (contrastPanel) {
+            contrastPanel.classList.toggle('has-warning', warningCount > 0);
+        }
+
+        if (summary) {
+            summary.textContent = warningCount > 0 ? 'Revisar contraste' : 'AA listo';
+        }
+    };
+
+    const hasSelectedFiles = function() {
+        return fileInputs.some(input => input.files && input.files.length > 0);
+    };
+
+    const hasFieldChanges = function() {
+        return trackedFields.some(field => field.value !== initialValues.get(field));
+    };
+
+    const updateDirtyState = function() {
+        const isDirty = hasFieldChanges() || hasSelectedFiles();
+        preview.classList.toggle('is-dirty', isDirty);
+
+        if (dirtyLabel) {
+            dirtyLabel.textContent = isDirty ? 'Cambios sin guardar' : 'Sin cambios';
+        }
+
+        if (resetButton) {
+            resetButton.disabled = !isDirty;
+        }
+    };
+
+    const updatePreview = function() {
+        const primary = normalizeHex(fields.primary?.value, '#1B2746');
+        const secondary = normalizeHex(fields.secondary?.value, '#0F172A');
+        const accent = normalizeHex(fields.accent?.value, '#BD9441');
+        const visualName = String(fields.name?.value || preview.dataset.defaultName || 'Hotel').trim()
+            || preview.dataset.defaultName
+            || 'Hotel';
+        const sidebarStyle = fields.sidebar?.value || 'default';
+        const loginStyle = fields.login?.value || 'default';
+
+        preview.style.setProperty('--preview-primary', primary);
+        preview.style.setProperty('--preview-secondary', secondary);
+        preview.style.setProperty('--preview-accent', accent);
+        preview.style.setProperty('--preview-primary-soft', mixHex(primary, '#FFFEFB', 10));
+        preview.style.setProperty('--preview-accent-soft', mixHex(accent, '#FFFEFB', 13));
+        preview.style.setProperty('--preview-line', mixHex(primary, '#E7DED2', 16));
+        preview.style.setProperty('--preview-on-primary', contrastText(primary));
+        preview.style.setProperty('--preview-on-secondary', contrastText(secondary));
+        preview.dataset.sidebarStyle = sidebarStyle;
+        preview.dataset.loginStyle = loginStyle;
+
+        setText('[data-brand-preview-text="name"]', visualName);
+        setText('[data-brand-preview-text="sidebar-style"]', sidebarLabels[sidebarStyle] || 'Menu default');
+        setText('[data-brand-preview-text="login-style"]', loginLabels[loginStyle] || 'Login default');
+
+        Object.entries({ primary, secondary, accent }).forEach(([key, value]) => {
+            document.querySelectorAll(`[data-brand-preview-code="${key}"]`).forEach(target => {
+                target.textContent = value;
+            });
+            document.querySelectorAll(`[data-brand-swatch="${key}"]`).forEach(target => {
+                target.style.background = value;
+                target.title = `${colorLabels[key]} ${value}`;
+            });
+        });
+        updateContrastStatus({ primary, secondary, accent });
+
+        updateDirtyState();
+    };
+
+    trackedFields.forEach(field => {
+        field.addEventListener('input', updatePreview);
+        field.addEventListener('change', updatePreview);
+    });
+
+    fileInputs.forEach(input => {
+        input.addEventListener('change', () => {
+            const key = input.dataset.brandFile;
+            const file = input.files && input.files[0] ? input.files[0] : null;
+
+            if (objectUrls.has(key)) {
+                URL.revokeObjectURL(objectUrls.get(key));
+                objectUrls.delete(key);
+            }
+
+            if (!file) {
+                restoreImage(key);
+                setFileStatus(input, key, null);
+                updateDirtyState();
+                return;
+            }
+
+            const previewUrl = URL.createObjectURL(file);
+            objectUrls.set(key, previewUrl);
+            setImageSource(key, previewUrl);
+            setFileStatus(input, key, file);
+            updateDirtyState();
+        });
+    });
+
+    if (resetButton) {
+        resetButton.addEventListener('click', () => {
+            trackedFields.forEach(field => {
+                field.value = initialValues.get(field) || '';
+                field.dispatchEvent(new Event('input', { bubbles: true }));
+                field.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+
+            fileInputs.forEach(input => {
+                const key = input.dataset.brandFile;
+
+                if (objectUrls.has(key)) {
+                    URL.revokeObjectURL(objectUrls.get(key));
+                    objectUrls.delete(key);
+                }
+
+                input.value = '';
+                restoreImage(key);
+                setFileStatus(input, key, null);
+            });
+
+            updatePreview();
+            updateDirtyState();
+        });
+    }
+
+    updatePreview();
+
+    window.addEventListener('beforeunload', () => {
+        objectUrls.forEach(url => URL.revokeObjectURL(url));
+        objectUrls.clear();
+    });
+})();
 
 const phoneInput = document.querySelector('input[name="hotel_config[contacto.telefono]"], input[name="hotel_telefono"]');
 if (phoneInput) {

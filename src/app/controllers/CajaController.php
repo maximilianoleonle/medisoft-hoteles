@@ -1,7 +1,6 @@
 <?php
 /**
  * Controlador de Caja
- * Los Cedros
  */
 
 require_once __DIR__ . '/../services/ReporteEntregaService.php';
@@ -515,7 +514,9 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
     
     error_log("PDF generado en: $rutaPDF");
     
-    $nombrePDF = 'Corte_' . date('d-m-Y', strtotime($corte['fecha_apertura'])) . '_#' . (int)$corte_id . '.pdf';
+    $nombrePDF = function_exists('hotel_export_filename')
+        ? hotel_export_filename('Corte_' . date('d-m-Y', strtotime($corte['fecha_apertura'])) . '_' . (int)$corte_id, 'pdf', false)
+        : 'Corte_' . date('d-m-Y', strtotime($corte['fecha_apertura'])) . '_' . (int)$corte_id . '.pdf';
     $entrega = new ReporteEntregaService();
     $registro = $entrega->registrarArchivoExistenteYEnviar($rutaPDF, [
         'hotel_id' => $hotel_id,
@@ -882,7 +883,9 @@ $corte_id = intval($this->route_params['id'] ?? 0);
     );
     
     // Forzar descarga
-    $nombreDescarga = 'Corte_' . date('d-m-Y', strtotime($corte['fecha_apertura'])) . '_#' . $corte_id . '.pdf';
+    $nombreDescarga = function_exists('hotel_export_filename')
+        ? hotel_export_filename('Corte_' . date('d-m-Y', strtotime($corte['fecha_apertura'])) . '_' . (int)$corte_id, 'pdf', false)
+        : 'Corte_' . date('d-m-Y', strtotime($corte['fecha_apertura'])) . '_' . (int)$corte_id . '.pdf';
     
     header('Content-Type: application/pdf');
     header('Content-Disposition: attachment; filename="' . $nombreDescarga . '"');

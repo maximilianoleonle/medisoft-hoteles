@@ -142,6 +142,18 @@ if (!function_exists('get_vehiculos_activos_hoy')) {
         try {
             $db = Database::getInstance();
             $hotel_id = obtenerHotelIdActualCompat();
+            $conteo = [];
+            if (function_exists('hotel_general_catalog_parking_rows')) {
+                foreach (hotel_general_catalog_parking_rows(null, false) as $parkingRow) {
+                    $parkingCode = trim((string)($parkingRow['codigo'] ?? ''));
+                    if ($parkingCode !== '') {
+                        $conteo[$parkingCode] = 0;
+                    }
+                }
+            }
+            if (empty($conteo)) {
+                $conteo = ['coches' => 0];
+            }
 
             $sql = "
                 SELECT
@@ -154,21 +166,20 @@ if (!function_exists('get_vehiculos_activos_hoy')) {
                 AND r.fecha_entrada <= CURDATE()
                 AND r.fecha_salida >= CURDATE()
                 AND hv.activo = 1
-                AND hv.estacionamiento = 'coches'
                 GROUP BY hv.estacionamiento
             ";
 
             $stmt = $db->query($sql, [$hotel_id]);
             if (!$stmt) {
-                return ['coches' => 0];
+                return $conteo;
             }
 
             $resultados = $stmt->fetchAll();
-            $conteo = ['coches' => 0];
 
             foreach ($resultados as $resultado) {
-                if (($resultado['estacionamiento'] ?? '') === 'coches') {
-                    $conteo['coches'] = (int)$resultado['total'];
+                $parkingKey = trim((string)($resultado['estacionamiento'] ?? ''));
+                if ($parkingKey !== '') {
+                    $conteo[$parkingKey] = (int)$resultado['total'];
                 }
             }
 
@@ -218,12 +229,44 @@ if (!function_exists('get_lista_vehiculos_estacionamiento')) {
 $estadisticas_estacionamiento = get_vehiculos_activos_hoy();
 $lista_vehiculos_estacionamiento = get_lista_vehiculos_estacionamiento();
 
-$limite_coches = 30;
-$coches = (int)($estadisticas_estacionamiento['coches'] ?? 0);
-$pct_coches = $limite_coches > 0 ? min(100, max(0, round(($coches / $limite_coches) * 100))) : 0;
-$espacios_disp = max(0, $limite_coches - $coches);
+$estacionamientos_dashboard = [];
+if (function_exists('hotel_general_catalog_parking_rows')) {
+    foreach (hotel_general_catalog_parking_rows(null, false) as $parkingRow) {
+        $parkingCode = trim((string)($parkingRow['codigo'] ?? ''));
+        $parkingLabel = trim((string)($parkingRow['label'] ?? ''));
+        if ($parkingCode !== '' && $parkingLabel !== '') {
+            $estacionamientos_dashboard[$parkingCode] = $parkingLabel;
+        }
+    }
+}
+if (empty($estacionamientos_dashboard)) {
+    $estacionamientos_dashboard = ['coches' => 'Coches'];
+}
+
+$resumen_estacionamientos_dashboard = [];
+foreach ($estacionamientos_dashboard as $parkingCode => $parkingLabel) {
+    $resumen_estacionamientos_dashboard[] = [
+        'codigo' => (string)$parkingCode,
+        'label' => (string)$parkingLabel,
+        'total' => (int)($estadisticas_estacionamiento[$parkingCode] ?? 0),
+    ];
+}
+foreach ($estadisticas_estacionamiento as $parkingCode => $parkingTotal) {
+    if (!array_key_exists($parkingCode, $estacionamientos_dashboard)) {
+        $resumen_estacionamientos_dashboard[] = [
+            'codigo' => (string)$parkingCode,
+            'label' => ucwords(str_replace(['_', '-'], ' ', (string)$parkingCode)),
+            'total' => (int)$parkingTotal,
+        ];
+    }
+}
+
+$limite_estacionamiento = 30;
+$vehiculos_estacionados = array_sum(array_map('intval', $estadisticas_estacionamiento));
+$pct_estacionamiento = $limite_estacionamiento > 0 ? min(100, max(0, round(($vehiculos_estacionados / $limite_estacionamiento) * 100))) : 0;
+$espacios_disp = max(0, $limite_estacionamiento - $vehiculos_estacionados);
 $ring_circumference = 314;
-$ring_offset = $ring_circumference - ($ring_circumference * $pct_coches / 100);
+$ring_offset = $ring_circumference - ($ring_circumference * $pct_estacionamiento / 100);
 
 $hotel_display_name = 'Medisoft Hoteles';
 $hotel_branding = [];
@@ -1848,6 +1891,56 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     animation: dashProgressGrow .72s cubic-bezier(.2, .78, .22, 1) both .18s;
 }
 
+.parking-breakdown {
+    display: grid;
+    gap: 8px;
+    margin-top: 13px;
+    padding-top: 12px;
+    border-top: 1px solid var(--dash-line-soft);
+}
+
+.parking-breakdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 34px;
+    padding: 7px 9px;
+    border: 1px solid color-mix(in srgb, var(--dash-gold) 18%, var(--dash-line));
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--dash-gold) 5%, #FFFFFF);
+}
+
+.parking-breakdown-item span {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--dash-navy);
+    font-size: 12px;
+    font-weight: 850;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.parking-breakdown-item strong {
+    min-width: 28px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #FFFFFF;
+    color: var(--dash-gold);
+    font-size: 12px;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dash-gold) 24%, transparent);
+}
+
+.parking-breakdown-item.has-vehicles {
+    background: color-mix(in srgb, var(--dash-gold) 11%, #FFFFFF);
+    border-color: color-mix(in srgb, var(--dash-gold) 34%, var(--dash-line));
+}
+
 .list-row {
     display: grid;
     grid-template-columns: 38px minmax(0, 1fr) auto;
@@ -3343,7 +3436,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
             <article class="card card-pad">
                 <div class="section-head">
                     <h2>Estacionamiento</h2>
-                    <span class="parking-head-note"><?= $coches ?> / <?= $limite_coches ?> ocupados</span>
+                    <span class="parking-head-note"><?= $vehiculos_estacionados ?> / <?= $limite_estacionamiento ?> ocupados</span>
                 </div>
                 <div class="park-ring">
                     <div class="ring-box">
@@ -3357,15 +3450,24 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                                 </linearGradient>
                             </defs>
                         </svg>
-                        <div class="ring-num"><div><b><?= $coches ?></b><span>de <?= $limite_coches ?></span></div></div>
+                        <div class="ring-num"><div><b><?= $vehiculos_estacionados ?></b><span>de <?= $limite_estacionamiento ?></span></div></div>
                     </div>
                     <div class="park-bar">
                         <div class="park-bar-head">
                             <span><i class="fas fa-car" style="color:var(--dash-gold)" aria-hidden="true"></i> Vehículos</span>
-                            <b><?= $pct_coches ?>%</b>
+                            <b><?= $pct_estacionamiento ?>%</b>
                         </div>
-                        <div class="progress"><i style="--progress:<?= $pct_coches ?>%"></i></div>
+                        <div class="progress"><i style="--progress:<?= $pct_estacionamiento ?>%"></i></div>
                         <div class="soft-note"><?= $espacios_disp ?> espacios disponibles</div>
+                        <div class="parking-breakdown" aria-label="Estacionamientos configurados">
+                            <?php foreach ($resumen_estacionamientos_dashboard as $parkingItem): ?>
+                                <?php $parkingTotal = (int)($parkingItem['total'] ?? 0); ?>
+                                <div class="parking-breakdown-item <?= $parkingTotal > 0 ? 'has-vehicles' : '' ?>">
+                                    <span><?= dashboard_safe($parkingItem['label'] ?? 'Estacionamiento') ?></span>
+                                    <strong><?= $parkingTotal ?></strong>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                 </div>
             </article>

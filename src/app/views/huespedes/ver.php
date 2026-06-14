@@ -27,7 +27,24 @@ $email = trim((string)($huesped['email'] ?? ''));
 $contacto_label = $telefono !== '' || $email !== '' ? 'Contacto disponible' : 'Contacto incompleto';
 $ultima_visita_label = $ultima_visita ? format_date($ultima_visita) : 'Sin visitas completadas';
 $es_cliente_frecuente = $total_reservaciones >= 3;
-$estacionamientos = class_exists('HuespedVehiculo') ? HuespedVehiculo::getEstacionamientos() : ['coches' => 'Coches'];
+$estacionamientos = [];
+if (function_exists('hotel_general_catalog_parking_rows')) {
+    foreach (hotel_general_catalog_parking_rows(null, false) as $parkingRow) {
+        $parkingCode = trim((string)($parkingRow['codigo'] ?? ''));
+        $parkingLabel = trim((string)($parkingRow['label'] ?? ''));
+        if ($parkingCode !== '' && $parkingLabel !== '') {
+            $estacionamientos[$parkingCode] = $parkingLabel;
+        }
+    }
+}
+if (empty($estacionamientos) && class_exists('HuespedVehiculo')) {
+    $estacionamientos = HuespedVehiculo::getEstacionamientos();
+}
+if (empty($estacionamientos)) {
+    $estacionamientos = ['coches' => 'Coches'];
+}
+reset($estacionamientos);
+$estacionamientoDefault = (string)key($estacionamientos);
 
 if (!function_exists('guest_detail_safe')) {
     function guest_detail_safe($value, $fallback = '-') {
@@ -54,6 +71,24 @@ if (!function_exists('guest_detail_json_attr')) {
         return htmlspecialchars(json_encode($value, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8');
     }
 }
+
+$guestParkingOptionsHtml = function ($inputClass = '') use ($estacionamientos, $estacionamientoDefault) {
+    $html = '';
+    foreach ($estacionamientos as $parkingCode => $parkingLabel) {
+        $parkingCode = (string)$parkingCode;
+        $parkingCodeEsc = htmlspecialchars($parkingCode, ENT_QUOTES, 'UTF-8');
+        $parkingLabelEsc = htmlspecialchars((string)$parkingLabel, ENT_QUOTES, 'UTF-8');
+        $classAttr = trim((string)$inputClass);
+        $classHtml = $classAttr !== '' ? ' class="' . htmlspecialchars($classAttr, ENT_QUOTES, 'UTF-8') . '"' : '';
+        $checkedAttr = $parkingCode === $estacionamientoDefault ? ' checked' : '';
+        $html .= '<label class="guest-radio-card">';
+        $html .= '<input type="radio" name="estacionamiento" value="' . $parkingCodeEsc . '"' . $classHtml . $checkedAttr . '>';
+        $html .= '<span><i class="fas fa-car"></i>' . $parkingLabelEsc . '</span>';
+        $html .= '</label>';
+    }
+
+    return $html;
+};
 ?>
 
 <style>
@@ -1558,13 +1593,7 @@ if (!function_exists('guest_detail_json_attr')) {
             <div class="guest-radio-group">
                 <label>Estacionamiento <span class="text-red-500">*</span></label>
                 <div class="guest-radio-options">
-                    <label class="guest-radio-card">
-                        <input type="radio" name="estacionamiento" value="coches" checked>
-                        <span>
-                            <i class="fas fa-car"></i>
-                            Coches
-                        </span>
-                    </label>
+                    <?= $guestParkingOptionsHtml() ?>
                 </div>
             </div>
 
@@ -1620,13 +1649,7 @@ if (!function_exists('guest_detail_json_attr')) {
             <div class="guest-radio-group">
                 <label>Estacionamiento <span class="text-red-500">*</span></label>
                 <div class="guest-radio-options">
-                    <label class="guest-radio-card">
-                        <input type="radio" name="estacionamiento" value="coches" class="edit-estacionamiento" checked>
-                        <span>
-                            <i class="fas fa-car"></i>
-                            Coches
-                        </span>
-                    </label>
+                    <?= $guestParkingOptionsHtml('edit-estacionamiento') ?>
                 </div>
             </div>
 
@@ -1682,9 +1705,18 @@ function editarVehiculo(vehiculo) {
     document.getElementById('edit_placas').value = vehiculo.placas || '';
     document.getElementById('edit_color').value = vehiculo.color || '';
 
-    document.querySelectorAll('.edit-estacionamiento').forEach(radio => {
-        radio.checked = radio.value === (vehiculo.estacionamiento || 'coches');
+    const selectedParking = vehiculo.estacionamiento || <?= json_encode($estacionamientoDefault, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    const parkingRadios = document.querySelectorAll('.edit-estacionamiento');
+    let parkingMatched = false;
+    parkingRadios.forEach(radio => {
+        radio.checked = radio.value === selectedParking;
+        if (radio.checked) {
+            parkingMatched = true;
+        }
     });
+    if (!parkingMatched && parkingRadios.length > 0) {
+        parkingRadios[0].checked = true;
+    }
 
     abrirModalEditarVehiculo();
 }

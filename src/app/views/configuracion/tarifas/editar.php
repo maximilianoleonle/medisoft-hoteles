@@ -1,10 +1,14 @@
 <!-- Editar Incremento de Tarifa - Diseño Simplificado y Claro -->
 <style>
 :root {
-    --primary: #6B4423;
-    --primary-dark: #5A3A1E;
-    --primary-light: #8B5A3A;
-    --accent: #D4A574;
+    --primary: var(--brand-primary, #1B2746);
+    --primary-dark: var(--brand-secondary, #0F172A);
+    --primary-light: color-mix(in srgb, var(--brand-primary, #1B2746) 68%, #FFFFFF);
+    --accent: var(--brand-accent, #BD9441);
+    --brand-focus-ring: color-mix(in srgb, var(--brand-primary, #1B2746) 18%, transparent);
+    --brand-hover-soft: color-mix(in srgb, var(--brand-accent, #BD9441) 12%, #FFFFFF);
+    --brand-selected-soft: color-mix(in srgb, var(--brand-primary, #1B2746) 8%, #FFFFFF);
+    --brand-elevated-shadow: color-mix(in srgb, var(--brand-primary, #1B2746) 22%, transparent);
     --success: #10b981;
     --danger: #ef4444;
     --warning: #f59e0b;
@@ -94,7 +98,7 @@
 .form-input:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(107, 68, 35, 0.1);
+    box-shadow: 0 0 0 3px var(--brand-focus-ring);
 }
 
 /* Opciones de selección visual */
@@ -116,14 +120,14 @@
 
 .option-card:hover {
     border-color: var(--accent);
-    background: #fffbf0;
+    background: var(--brand-hover-soft);
     transform: translateY(-2px);
 }
 
 .option-card.selected {
     border-color: var(--primary);
-    background: #fef3e7;
-    box-shadow: 0 0 0 3px rgba(107, 68, 35, 0.1);
+    background: var(--brand-selected-soft);
+    box-shadow: 0 0 0 3px var(--brand-focus-ring);
 }
 
 .option-card input[type="radio"] {
@@ -248,7 +252,7 @@ input:checked + .toggle-slider:before {
 .btn-primary:hover {
     background: var(--primary-dark);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(107, 68, 35, 0.2);
+    box-shadow: 0 4px 12px var(--brand-elevated-shadow);
 }
 
 .btn-secondary {
@@ -645,6 +649,10 @@ input:checked + .toggle-slider:before {
 
 <!-- JavaScript corregido -->
 <script>
+function tarifaBrandPrimary() {
+    return getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim() || '#1B2746';
+}
+
 // Función para seleccionar tipo - CORREGIDA
 function selectTipo(tipo) {
     // Buscar específicamente en la sección de tipo
@@ -755,7 +763,7 @@ function mostrarFiltroTipos() {
         `,
         showCancelButton: true,
         confirmButtonText: 'Aplicar filtro',
-        confirmButtonColor: '#6B4423',
+        confirmButtonColor: tarifaBrandPrimary(),
         cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (result.isConfirmed) {
@@ -803,7 +811,7 @@ document.getElementById('formIncremento').addEventListener('submit', function(e)
         text: "Se actualizará el incremento de tarifa",
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#6B4423',
+        confirmButtonColor: tarifaBrandPrimary(),
         cancelButtonColor: '#6B7280',
         confirmButtonText: 'Sí, guardar',
         cancelButtonText: 'Cancelar'

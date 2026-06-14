@@ -1,4 +1,12 @@
-<?php ?>
+<?php
+$tarifaRoomTypeLabels = [];
+if (function_exists('hotel_room_catalog_types')) {
+    $tarifaRoomTypeLabels = hotel_room_catalog_types();
+}
+if (empty($tarifaRoomTypeLabels) && class_exists('Habitacion')) {
+    $tarifaRoomTypeLabels = Habitacion::getTipos();
+}
+?>
 
 <!-- ── Librerías ─────────────────────────── -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css">
@@ -677,6 +685,37 @@ input.toggle-activo:checked ~ div {
     z-index: 1;
 }
 
+.tar-page > .px-3 > .grid.grid-cols-2.lg\:grid-cols-4 > .tar-stat > .flex:first-child {
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center !important;
+    column-gap: 12px;
+}
+
+.tar-page > .px-3 > .grid.grid-cols-2.lg\:grid-cols-4 > .tar-stat > .flex:first-child .tar-stat-icon {
+    grid-column: 2;
+    justify-self: center;
+}
+
+.tar-page > .px-3 > .grid.grid-cols-2.lg\:grid-cols-4 > .tar-stat > .flex:first-child > span {
+    grid-column: 3;
+    justify-self: end;
+}
+
+.tar-page .tar-stat-icon {
+    display: grid !important;
+    place-items: center;
+    flex: 0 0 36px;
+    line-height: 1;
+    text-align: center;
+}
+
+.tar-page .tar-stat-icon i {
+    display: block;
+    line-height: 1;
+    margin: 0;
+}
+
 .tar-page .tar-filters {
     margin-bottom: 16px;
     overflow: hidden;
@@ -806,26 +845,726 @@ input.toggle-activo:checked ~ div {
 }
 </style>
 
-<div class="tar-page">
+<style id="tarifas-index-create-style">
+.tarifa-index-page {
+    --tar-gold: var(--brand-accent, #BD9441);
+    --tar-gold-soft: color-mix(in srgb, var(--tar-gold) 15%, #FFFFFF);
+    --tar-gold-line: color-mix(in srgb, var(--tar-gold) 42%, #E4D4B0);
+    --tar-gold-ink: color-mix(in srgb, var(--tar-gold) 72%, #000);
+    --tar-ivory: #F6F2EA;
+    --tar-ivory-2: #FBF8F2;
+    --tar-heading: #111827;
+    --tar-sky: #3E7CB1;
+    --tar-teal: #2F7D72;
+    --tar-plum: #7C4F86;
+    --tar-coral: #C66A5A;
+    --tar-amber: #D0963A;
+    padding: 1rem;
+    background:
+        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--tar-gold) 10%, transparent), transparent 60%),
+        radial-gradient(900px 360px at 22% 10%, color-mix(in srgb, var(--tar-teal) 6%, transparent), transparent 58%),
+        linear-gradient(180deg, var(--tar-ivory-2), var(--tar-ivory)) !important;
+}
+
+.tarifa-index-page .tar-topbar,
+.tarifa-index-page .tar-topbar.bg-white {
+    margin: 0 auto 18px;
+    background: transparent !important;
+    border: 0 !important;
+}
+
+.tarifa-index-page .tar-topbar > div,
+.tarifa-index-page > .px-3 {
+    width: 100% !important;
+    max-width: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+.tarifa-index-page .tar-topbar > div {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.tarifa-index-hero-inner {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.tarifa-index-hero-icon {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 48px;
+    border-radius: 15px;
+    color: #fff;
+    background:
+        radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%),
+        linear-gradient(145deg, var(--tar-plum), var(--tar-brand) 54%, var(--tar-teal));
+    box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--tar-brand) 72%, transparent);
+}
+
+.tarifa-index-page .tarifa-page-kicker {
+    margin: 0 0 3px;
+    color: var(--tar-muted);
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+}
+
+.tarifa-index-page .tarifa-page-title {
+    margin: 0;
+    color: var(--tar-brand) !important;
+    font-family: var(--tar-serif);
+    font-size: clamp(2.35rem, 4vw, 3.35rem) !important;
+    font-weight: 700 !important;
+    line-height: .94 !important;
+    text-wrap: balance;
+}
+
+.tarifa-index-page .tarifa-page-subtitle,
+.tarifa-index-page .tar-topbar p.text-gray-400 {
+    max-width: 760px;
+    margin-top: 8px !important;
+    color: var(--tar-muted) !important;
+    font-size: .94rem !important;
+    font-weight: 600;
+    line-height: 1.55;
+}
+
+.tarifa-index-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+    min-width: 280px;
+}
+
+.tarifa-index-page .btn-tar {
+    min-height: 44px;
+    padding: 10px 15px !important;
+    border-radius: 12px !important;
+}
+
+.tarifa-index-page .btn-tar.calc {
+    background: linear-gradient(135deg, var(--tar-brand), color-mix(in srgb, var(--tar-sky) 48%, var(--tar-brand-2))) !important;
+}
+
+.tarifa-index-page .btn-tar.new {
+    background: linear-gradient(135deg, var(--tar-success), color-mix(in srgb, var(--tar-teal) 80%, #111827)) !important;
+    box-shadow: 0 13px 26px -13px color-mix(in srgb, var(--tar-success) 66%, transparent);
+}
+
+.tarifa-index-summary {
+    --tar-summary-line: color-mix(in srgb, var(--tar-brand) 10%, #E7E1D4);
+    margin-bottom: 18px !important;
+    padding: 14px;
+    border: 1px solid var(--tar-summary-line);
+    border-radius: 22px;
+    background:
+        radial-gradient(720px 180px at 0% 0%, color-mix(in srgb, var(--tar-plum) 7%, transparent), transparent 70%),
+        radial-gradient(620px 180px at 100% 20%, color-mix(in srgb, var(--tar-sky) 7%, transparent), transparent 72%),
+        rgba(255,255,255,.42);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.78);
+    backdrop-filter: blur(8px);
+}
+
+.tarifa-index-summary .tar-stat {
+    min-height: 156px !important;
+    padding: 18px !important;
+    border-radius: 16px !important;
+    display: grid !important;
+    grid-template-rows: auto auto 1fr;
+    align-content: stretch;
+    gap: 9px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--ws, var(--tar-brand)) 8%, #FFFFFF), #FFFFFF 48%),
+        var(--tar-surface) !important;
+}
+
+.tarifa-index-summary .tar-stat::before {
+    content: none !important;
+}
+
+.tarifa-index-summary .tar-stat::after {
+    height: 3px !important;
+    opacity: 1 !important;
+    background: linear-gradient(90deg, var(--ws, var(--tar-brand)), color-mix(in srgb, var(--ws, var(--tar-brand)) 34%, transparent)) !important;
+}
+
+.tarifa-index-summary .tar-stat-icon {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 14px !important;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--ws, var(--tar-brand)) 18%, #FFFFFF), #FFFFFF) !important;
+    border: 1px solid color-mix(in srgb, var(--ws, var(--tar-brand)) 28%, var(--tar-border));
+    color: color-mix(in srgb, var(--ws, var(--tar-brand)) 78%, #111827) !important;
+}
+
+.tarifa-index-summary .tar-stat > .flex:first-child {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 14px;
+    margin-bottom: 0 !important;
+}
+
+.tarifa-index-summary .tar-stat > .flex:first-child .tar-stat-icon {
+    grid-column: auto !important;
+    justify-self: auto !important;
+}
+
+.tarifa-index-summary .tar-stat > .flex:first-child > span {
+    grid-column: auto !important;
+    justify-self: auto !important;
+    min-width: 2.5ch;
+    color: color-mix(in srgb, var(--ws, var(--tar-brand)) 72%, #111827) !important;
+    font-family: var(--tar-serif);
+    font-size: clamp(2rem, 3vw, 2.7rem) !important;
+    font-weight: 700 !important;
+    line-height: .9;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.tarifa-index-summary .tar-stat > p:first-of-type {
+    align-self: end;
+    color: color-mix(in srgb, var(--ws, var(--tar-brand)) 64%, var(--tar-muted)) !important;
+    font-size: .7rem !important;
+    font-weight: 900 !important;
+    letter-spacing: .1em !important;
+    line-height: 1.2;
+    margin: 0 !important;
+}
+
+.tarifa-index-summary .tar-stat > p:last-child {
+    max-width: 16rem;
+    margin-top: 0 !important;
+    color: var(--tar-muted) !important;
+    font-size: .8rem !important;
+    font-weight: 600;
+    line-height: 1.38;
+}
+
+.tarifa-index-summary .tar-stat-types .space-y-1 {
+    margin-top: 0 !important;
+    align-self: end;
+    display: grid;
+    gap: 7px;
+}
+
+.tarifa-index-summary .tar-stat-types .space-y-1 > div {
+    min-height: 28px;
+    padding: 5px 8px;
+    border: 1px solid color-mix(in srgb, var(--tar-amber) 16%, var(--tar-border));
+    border-radius: 10px;
+    background: rgba(255,255,255,.7);
+}
+
+.tarifa-index-summary .tar-stat-types .space-y-1 > div span:last-child {
+    color: color-mix(in srgb, var(--tar-amber) 72%, #111827) !important;
+    font-variant-numeric: tabular-nums;
+}
+
+.tarifa-index-summary .tar-stat:hover {
+    transform: translateY(-2px);
+}
+
+.tarifa-index-page .tar-filters,
+.tarifa-index-page .tar-panel {
+    position: relative;
+    border-radius: 18px !important;
+    overflow: hidden;
+}
+
+.tarifa-index-page .tar-filters {
+    --tar-card-accent: var(--tar-sky);
+    margin-bottom: 16px;
+}
+
+.tarifa-index-page .tar-panel {
+    --tar-card-accent: var(--tar-teal);
+}
+
+.tarifa-index-page .tar-filters::before,
+.tarifa-index-page .tar-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--tar-card-accent), color-mix(in srgb, var(--tar-card-accent) 20%, transparent));
+    opacity: .92;
+    z-index: 2;
+}
+
+.tarifa-section-header,
+.tar-panel-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px 18px 15px 20px !important;
+    border-bottom: 1px solid var(--tar-border) !important;
+    background:
+        radial-gradient(360px 120px at 0% 0%, color-mix(in srgb, var(--tar-card-accent, var(--tar-gold)) 12%, transparent), transparent 70%),
+        linear-gradient(180deg, #FFFFFF, var(--tar-surface-warm)) !important;
+}
+
+.tarifa-section-title {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+}
+
+.tarifa-section-icon {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 34px;
+    border-radius: 11px;
+    color: color-mix(in srgb, var(--tar-card-accent, var(--tar-brand)) 76%, #111827);
+    background: color-mix(in srgb, var(--tar-card-accent, var(--tar-brand)) 12%, #FFFFFF);
+    border: 1px solid color-mix(in srgb, var(--tar-card-accent, var(--tar-brand)) 24%, var(--tar-border));
+}
+
+.tarifa-section-title span,
+.tar-panel-title {
+    display: block;
+    color: var(--tar-heading) !important;
+    font-size: .96rem;
+    font-weight: 900;
+    letter-spacing: 0;
+}
+
+.tarifa-section-title small,
+.tar-panel-subtitle {
+    display: block;
+    margin-top: 2px;
+    color: var(--tar-muted);
+    font-size: .78rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.tarifa-index-page .btn-reset {
+    min-height: 36px;
+    padding: 8px 12px;
+    border: 1px solid var(--tar-border);
+    border-radius: 11px;
+    background: #FFFFFF;
+    color: var(--tar-muted) !important;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease;
+}
+
+.tarifa-index-page .btn-reset:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--tar-coral) 24%, var(--tar-border));
+    background: color-mix(in srgb, var(--tar-coral) 7%, #FFFFFF);
+    color: color-mix(in srgb, var(--tar-coral) 72%, #111827) !important;
+}
+
+.tar-panel-count {
+    flex: 0 0 auto;
+    padding: 8px 12px;
+    border: 1px solid color-mix(in srgb, var(--tar-card-accent) 22%, var(--tar-border));
+    border-radius: 999px;
+    background: #FFFFFF;
+    color: color-mix(in srgb, var(--tar-card-accent) 70%, #111827);
+    font-size: .78rem;
+    font-weight: 900;
+}
+
+.tarifa-index-page .tar-filters > .p-4 {
+    padding: 16px 18px 18px 20px !important;
+    background: rgba(255,255,255,.74);
+}
+
+.tarifa-index-page .filter-select,
+.tarifa-index-page .date-input,
+.tarifa-index-page .dataTables_filter input {
+    background: #FFFFFF !important;
+}
+
+.tarifa-index-page .filter-select:hover,
+.tarifa-index-page .date-input:hover,
+.tarifa-index-page .dataTables_filter input:hover {
+    border-color: color-mix(in srgb, var(--tar-sky) 26%, var(--tar-border)) !important;
+}
+
+.tarifa-index-page .tar-panel-body {
+    padding: 16px 18px 20px 20px !important;
+    background: rgba(255,255,255,.7);
+}
+
+.tarifa-index-page #tablaTarifas thead tr th {
+    background: transparent !important;
+    color: var(--tar-muted) !important;
+    border-bottom: 0 !important;
+    font-size: .68rem !important;
+}
+
+.tarifa-index-page #tablaTarifas tbody td {
+    background: #FFFFFF;
+    transition: border-color .16s ease, background .16s ease;
+}
+
+.tarifa-index-page #tablaTarifas tbody td:first-child {
+    box-shadow: inset 4px 0 0 var(--tar-gold);
+}
+
+.tarifa-index-page #tablaTarifas tbody tr[data-vigencia="vigente"] td:first-child {
+    box-shadow: inset 4px 0 0 var(--tar-success);
+}
+
+.tarifa-index-page #tablaTarifas tbody tr[data-vigencia="futuro"] td:first-child {
+    box-shadow: inset 4px 0 0 var(--tar-sky);
+}
+
+.tarifa-index-page #tablaTarifas tbody tr[data-vigencia="pasado"] td:first-child {
+    box-shadow: inset 4px 0 0 #A6ADB8;
+}
+
+.tarifa-index-page #tablaTarifas tbody tr:hover td {
+    background:
+        radial-gradient(260px 90px at 0 0, color-mix(in srgb, var(--tar-card-accent) 9%, transparent), transparent 75%),
+        #FFFFFF !important;
+}
+
+.tarifa-index-page .prio-badge {
+    background: color-mix(in srgb, var(--tar-gold) 12%, #FFFFFF) !important;
+    border-color: var(--tar-gold-line) !important;
+    color: var(--tar-gold-ink) !important;
+}
+
+.tarifa-index-page .val-badge {
+    background: color-mix(in srgb, var(--tar-success) 13%, #FFFFFF) !important;
+}
+
+.tarifa-index-page .scope-global,
+.tarifa-index-page .vig-futuro {
+    background: color-mix(in srgb, var(--tar-sky) 12%, #FFFFFF) !important;
+}
+
+.tarifa-index-page .scope-tipo,
+.tarifa-index-page .vig-perm {
+    background: color-mix(in srgb, var(--tar-plum) 10%, #FFFFFF) !important;
+    border-color: color-mix(in srgb, var(--tar-plum) 22%, #FFFFFF) !important;
+    color: color-mix(in srgb, var(--tar-plum) 72%, #111827) !important;
+}
+
+.tarifa-index-page .scope-hab {
+    background: color-mix(in srgb, var(--tar-amber) 12%, #FFFFFF) !important;
+    border-color: color-mix(in srgb, var(--tar-amber) 28%, #FFFFFF) !important;
+    color: color-mix(in srgb, var(--tar-amber) 68%, #111827) !important;
+}
+
+.tarifa-index-page .icn-btn {
+    background: #FFFFFF !important;
+}
+
+.tarifa-index-page .empty-state {
+    padding: 42px 20px;
+    background:
+        radial-gradient(360px 160px at 50% 0%, color-mix(in srgb, var(--tar-gold) 10%, transparent), transparent 72%),
+        #FFFFFF !important;
+}
+
+@media (max-width: 900px) {
+    .tarifa-index-hero-inner {
+        flex-direction: column;
+    }
+    .tarifa-index-actions {
+        width: 100%;
+        min-width: 0;
+        justify-content: stretch;
+    }
+    .tarifa-index-actions .btn-tar {
+        flex: 1 1 0;
+    }
+    .tarifa-index-page > .px-3 > .grid.grid-cols-2.lg\:grid-cols-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+    .tarifa-index-page > .px-3 > .grid.grid-cols-2.lg\:grid-cols-4 > .tar-stat {
+        grid-column: span 1 !important;
+    }
+}
+
+@media (min-width: 640px) {
+    .tarifa-index-page {
+        padding: 1.5rem !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .tarifa-index-page {
+        padding: 1rem !important;
+    }
+    .tarifa-index-page .tarifa-page-title {
+        font-size: 2rem !important;
+    }
+    .tarifa-index-summary .tar-stat {
+        min-height: 112px !important;
+    }
+    .tarifa-section-header,
+    .tar-panel-hd {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+    .tar-panel-count {
+        align-self: flex-start;
+    }
+}
+
+/* Redesigned dynamic-pricing metrics. */
+.tarifa-index-summary.tarifa-metrics-grid {
+    display: grid !important;
+    grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    margin-bottom: 18px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+}
+
+.tar-metric-card {
+    --metric: var(--tar-brand);
+    grid-column: span 3;
+    position: relative;
+    min-height: 142px;
+    display: grid;
+    grid-template-rows: auto auto auto;
+    gap: 9px;
+    overflow: hidden;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, var(--metric) 16%, var(--tar-border));
+    border-radius: 18px;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--metric) 5%, #FFFFFF), #FFFFFF 68%),
+        #FFFFFF;
+    box-shadow: 0 1px 2px rgba(17, 24, 39, .04), 0 18px 34px -28px color-mix(in srgb, var(--metric) 45%, rgba(17,24,39,.28));
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.tarifa-index-summary > .tar-stat {
+    display: none !important;
+}
+
+.tar-metric-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--metric), color-mix(in srgb, var(--metric) 20%, transparent));
+}
+
+.tar-metric-card::after {
+    content: "";
+    position: absolute;
+    top: -42px;
+    right: -32px;
+    width: 92px;
+    height: 92px;
+    border-radius: 26px;
+    background: color-mix(in srgb, var(--metric) 9%, transparent);
+    transform: rotate(14deg);
+    pointer-events: none;
+}
+
+.tar-metric-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--metric) 32%, var(--tar-border));
+    box-shadow: 0 1px 2px rgba(17, 24, 39, .04), 0 22px 42px -30px color-mix(in srgb, var(--metric) 58%, rgba(17,24,39,.34));
+}
+
+.tar-metric-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+.tar-metric-head,
+.tar-metric-value-row,
+.tar-type-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.tar-metric-label {
+    min-width: 0;
+}
+
+.tar-metric-label span {
+    display: block;
+    color: color-mix(in srgb, var(--metric) 66%, var(--tar-muted));
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .1em;
+    line-height: 1.1;
+    text-transform: uppercase;
+}
+
+.tar-metric-label small {
+    display: block;
+    margin-top: 5px;
+    color: var(--tar-muted);
+    font-size: .72rem;
+    font-weight: 700;
+    line-height: 1.28;
+}
+
+.tar-metric-icon {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 34px;
+    border-radius: 12px;
+    color: color-mix(in srgb, var(--metric) 82%, #111827);
+    background: color-mix(in srgb, var(--metric) 10%, #FFFFFF);
+    border: 1px solid color-mix(in srgb, var(--metric) 22%, var(--tar-border));
+}
+
+.tar-metric-number {
+    color: color-mix(in srgb, var(--metric) 68%, var(--tar-heading));
+    font-family: var(--tar-serif);
+    font-size: clamp(2rem, 3.2vw, 2.65rem);
+    font-weight: 750;
+    line-height: .82;
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.tar-metric-status {
+    min-height: 26px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    border-radius: 999px;
+    color: color-mix(in srgb, var(--metric) 72%, #111827);
+    background: color-mix(in srgb, var(--metric) 8%, #FFFFFF);
+    border: 1px solid color-mix(in srgb, var(--metric) 18%, var(--tar-border));
+    font-size: .7rem;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.tar-metric-line {
+    width: 100%;
+    height: 3px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--metric) 10%, #EEF2F7);
+}
+
+.tar-metric-line span {
+    display: block;
+    width: var(--metric-line, 42%);
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--metric), color-mix(in srgb, var(--metric) 35%, #FFFFFF));
+}
+
+.tar-metric-active { --metric: var(--tar-plum); --metric-line: 48%; }
+.tar-metric-current { --metric: var(--tar-success); --metric-line: 62%; }
+.tar-metric-scheduled { --metric: var(--tar-sky); --metric-line: 38%; }
+.tar-metric-types { --metric: var(--tar-amber); }
+
+.tar-type-breakdown {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    align-self: auto;
+}
+
+.tar-type-row {
+    min-height: 32px;
+    padding: 5px 7px;
+    border: 1px solid color-mix(in srgb, var(--metric) 18%, var(--tar-border));
+    border-radius: 11px;
+    background: rgba(255,255,255,.7);
+}
+
+.tar-type-row span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    color: var(--tar-muted);
+    font-size: .7rem;
+    font-weight: 800;
+}
+
+.tar-type-row strong {
+    color: color-mix(in srgb, var(--metric) 70%, #111827);
+    font-size: .8rem;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.tar-type-dot {
+    width: 8px;
+    height: 8px;
+    flex: 0 0 8px;
+    border-radius: 999px;
+    background: var(--dot-color, var(--metric));
+}
+
+@media (max-width: 1100px) {
+    .tar-metric-card {
+        grid-column: span 6;
+    }
+}
+
+@media (max-width: 640px) {
+    .tarifa-index-summary.tarifa-metrics-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .tar-metric-card {
+        grid-column: 1 / -1;
+        min-height: 124px;
+    }
+
+    .tar-type-breakdown {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<div class="tar-page tarifa-index-page hotel-page min-h-screen">
 
     <!-- Top Bar -->
-    <div class="tar-topbar bg-white">
+    <div class="tar-topbar tarifa-index-hero bg-white">
         <div class="px-3 sm:px-5 lg:px-7 py-4">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="tarifa-index-hero-inner">
 
                 <!-- Title -->
-                <div class="flex items-center gap-3">
-                    <div style="background:rgba(92,122,78,.1);width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;">
-                        <i class="fas fa-tags text-lg" style="color:#5C7A4E"></i>
+                <div class="flex items-start gap-3 min-w-0">
+                    <div class="tarifa-index-hero-icon">
+                        <i class="fas fa-tags text-lg"></i>
                     </div>
-                    <div>
-                        <h1 class="text-base sm:text-xl font-bold text-[#3D5234] leading-tight">Gestión de Tarifas Dinámicas</h1>
-                        <p class="text-xs text-gray-400 mt-0.5">Administra incrementos y promociones de precios · <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?></p>
+                    <div class="min-w-0">
+                        <p class="tarifa-page-kicker">Operaci&oacute;n hotelera</p>
+                        <h1 class="tarifa-page-title text-base sm:text-xl font-bold text-[#3D5234] leading-tight">Tarifas din&aacute;micas</h1>
+                        <p class="tarifa-page-subtitle text-xs text-gray-400 mt-0.5">Administra incrementos y promociones de precios con lectura clara de vigencia, alcance y estado · <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?></p>
                     </div>
                 </div>
 
                 <!-- Actions -->
-                <div class="flex gap-2 w-full sm:w-auto">
+                <div class="tarifa-index-actions">
                     <button onclick="previsualizarPrecios()" class="btn-tar calc flex-1 sm:flex-none">
                         <i class="fas fa-calculator text-xs"></i>
                         <span>Calcular</span><span class="hidden sm:inline"> Precios</span>
@@ -843,24 +1582,86 @@ input.toggle-activo:checked ~ div {
     <div class="px-3 sm:px-5 lg:px-7 py-5">
 
         <!-- Stat Widgets -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <?php $total_tipos_incremento = (int)($estadisticas['porcentaje'] ?? 0) + (int)($estadisticas['monto_fijo'] ?? 0); ?>
+        <div class="tarifa-index-summary tarifa-metrics-grid mb-5" aria-label="Resumen de tarifas dinamicas">
 
             <!-- Activos -->
-            <div class="tar-stat" style="--ws:#5C7A4E">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="tar-stat-icon" style="background:rgba(92,122,78,.1);color:#5C7A4E;">
-                        <i class="fas fa-list"></i>
+            <article class="tar-metric-card tar-metric-active">
+                <div class="tar-metric-head">
+                    <div class="tar-metric-label">
+                        <span>Activos</span>
+                        <small>Incrementos habilitados</small>
                     </div>
-                    <span class="text-xl font-bold text-[#3D5234]"><?= $estadisticas['activos'] ?></span>
+                    <div class="tar-metric-icon"><i class="fas fa-list"></i></div>
                 </div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Activos</p>
-                <p class="text-xs text-gray-400 mt-0.5 hidden sm:block">Incrementos actualmente activos</p>
-            </div>
+                <div class="tar-metric-value-row">
+                    <strong class="tar-metric-number"><?= (int)($estadisticas['activos'] ?? 0) ?></strong>
+                    <span class="tar-metric-status"><i class="fas fa-bolt"></i> Listos</span>
+                </div>
+                <div class="tar-metric-line"><span></span></div>
+            </article>
 
             <!-- Vigentes -->
-            <div class="tar-stat" style="--ws:#10b981">
+            <article class="tar-metric-card tar-metric-current">
+                <div class="tar-metric-head">
+                    <div class="tar-metric-label">
+                        <span>Vigentes</span>
+                        <small>Aplic&aacute;ndose hoy</small>
+                    </div>
+                    <div class="tar-metric-icon"><i class="fas fa-check-circle"></i></div>
+                </div>
+                <div class="tar-metric-value-row">
+                    <strong class="tar-metric-number"><?= (int)($estadisticas['vigentes'] ?? 0) ?></strong>
+                    <span class="tar-metric-status"><i class="fas fa-clock"></i> Hoy</span>
+                </div>
+                <div class="tar-metric-line"><span></span></div>
+            </article>
+
+            <!-- Programados -->
+            <article class="tar-metric-card tar-metric-scheduled">
+                <div class="tar-metric-head">
+                    <div class="tar-metric-label">
+                        <span>Programados</span>
+                        <small>Listos para fechas futuras</small>
+                    </div>
+                    <div class="tar-metric-icon"><i class="fas fa-calendar-alt"></i></div>
+                </div>
+                <div class="tar-metric-value-row">
+                    <strong class="tar-metric-number"><?= (int)($estadisticas['futuros'] ?? 0) ?></strong>
+                    <span class="tar-metric-status"><i class="fas fa-calendar-day"></i> Futuro</span>
+                </div>
+                <div class="tar-metric-line"><span></span></div>
+            </article>
+
+            <!-- Distribucion -->
+            <article class="tar-metric-card tar-metric-types">
+                <div class="tar-metric-head">
+                    <div class="tar-metric-label">
+                        <span>Distribuci&oacute;n</span>
+                        <small>Porcentaje y monto fijo</small>
+                    </div>
+                    <div class="tar-metric-icon"><i class="fas fa-percentage"></i></div>
+                </div>
+                <div class="tar-metric-value-row">
+                    <strong class="tar-metric-number"><?= $total_tipos_incremento ?></strong>
+                    <span class="tar-metric-status"><i class="fas fa-layer-group"></i> Tipos</span>
+                </div>
+                <div class="tar-type-breakdown">
+                    <div class="tar-type-row">
+                        <span><i class="tar-type-dot" style="--dot-color:#7C4F86"></i>Porcentaje</span>
+                        <strong><?= (int)($estadisticas['porcentaje'] ?? 0) ?></strong>
+                    </div>
+                    <div class="tar-type-row">
+                        <span><i class="tar-type-dot" style="--dot-color:#2F7D72"></i>Monto fijo</span>
+                        <strong><?= (int)($estadisticas['monto_fijo'] ?? 0) ?></strong>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Vigentes -->
+            <div class="tar-stat tar-stat-current" style="--ws:var(--tar-success)">
                 <div class="flex items-center justify-between mb-3">
-                    <div class="tar-stat-icon" style="background:rgba(16,185,129,.1);color:#059669;">
+                    <div class="tar-stat-icon">
                         <i class="fas fa-check-circle"></i>
                     </div>
                     <span class="text-xl font-bold text-emerald-600"><?= $estadisticas['vigentes'] ?></span>
@@ -870,9 +1671,9 @@ input.toggle-activo:checked ~ div {
             </div>
 
             <!-- Programados -->
-            <div class="tar-stat" style="--ws:#2563EB">
+            <div class="tar-stat tar-stat-scheduled" style="--ws:var(--tar-sky)">
                 <div class="flex items-center justify-between mb-3">
-                    <div class="tar-stat-icon" style="background:rgba(37,99,235,.1);color:#2563EB;">
+                    <div class="tar-stat-icon">
                         <i class="fas fa-calendar-alt"></i>
                     </div>
                     <span class="text-xl font-bold text-blue-600"><?= $estadisticas['futuros'] ?></span>
@@ -882,11 +1683,12 @@ input.toggle-activo:checked ~ div {
             </div>
 
             <!-- Por tipo -->
-            <div class="tar-stat" style="--ws:#C8A96A">
+            <div class="tar-stat tar-stat-types" style="--ws:var(--tar-amber)">
                 <div class="flex items-center justify-between mb-2">
-                    <div class="tar-stat-icon" style="background:rgba(200,169,106,.12);color:#B8994A;">
+                    <div class="tar-stat-icon">
                         <i class="fas fa-percentage"></i>
                     </div>
+                    <span class="text-xl font-bold text-gray-700"><?= (int)($estadisticas['porcentaje'] ?? 0) + (int)($estadisticas['monto_fijo'] ?? 0) ?></span>
                 </div>
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Por Tipo</p>
                 <div class="space-y-1 text-xs">
@@ -910,12 +1712,15 @@ input.toggle-activo:checked ~ div {
 
         <!-- Filters -->
         <div class="tar-filters">
-            <div class="tar-filters-hd">
-                <div class="flex items-center gap-2">
-                    <div style="width:24px;height:24px;border-radius:6px;background:rgba(92,122,78,.1);display:flex;align-items:center;justify-content:center;">
-                        <i class="fas fa-filter text-xs" style="color:#5C7A4E"></i>
+            <div class="tar-filters-hd tarifa-section-header">
+                <div class="tarifa-section-title">
+                    <div class="tarifa-section-icon">
+                        <i class="fas fa-filter text-xs"></i>
                     </div>
-                    <span class="text-xs font-bold text-[#3D5234]">Filtros</span>
+                    <div>
+                        <span class="text-xs font-bold text-[#3D5234]">Filtros de tarifas</span>
+                        <small>Depura el tablero por estado, tipo y alcance.</small>
+                    </div>
                 </div>
                 <button onclick="resetFiltros()" class="btn-reset">
                     <i class="fas fa-sync-alt mr-1 text-xs"></i>Limpiar
@@ -954,6 +1759,18 @@ input.toggle-activo:checked ~ div {
 
         <!-- Table Panel -->
         <div class="tar-panel">
+            <div class="tar-panel-hd">
+                <div class="tarifa-section-title">
+                    <div class="tarifa-section-icon">
+                        <i class="fas fa-layer-group text-xs"></i>
+                    </div>
+                    <div>
+                        <span class="tar-panel-title">Incrementos configurados</span>
+                        <small class="tar-panel-subtitle">Vista operativa de reglas activas, programadas y finalizadas.</small>
+                    </div>
+                </div>
+                <div class="tar-panel-count"><?= number_format(count($incrementos ?? [])) ?> registros</div>
+            </div>
             <div class="tar-panel-body">
                 <?php if (empty($incrementos)): ?>
                     <div class="empty-state">
@@ -1189,6 +2006,11 @@ input.toggle-activo:checked ~ div {
         </div>
     </div>
 </div>
+
+<script>
+window.tipoHabitacionLabels = <?= json_encode($tarifaRoomTypeLabels, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?> || {};
+window.gettipoHabitacion = t => window.tipoHabitacionLabels[t] || String(t || '').replace(/[_-]+/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+</script>
 
 <script>
 $(document).ready(function() {
@@ -1447,10 +2269,8 @@ $(document).ready(function() {
         if (time) { o.hour='2-digit'; o.minute='2-digit'; }
         return d.toLocaleDateString('es-MX',o);
     };
-    window.gettipoHabitacion = t => ({
-        sencilla:'Sencilla',doble:'Doble',triple:'Triple',cuadruple:'Cuádruple',
-        doble_jacuzzi:'Doble c/ Jacuzzi',sencilla_jacuzzi:'Sencilla c/ Jacuzzi'
-    }[t]||t);
+    const tipoHabitacionLabels = <?= json_encode($tarifaRoomTypeLabels, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?> || {};
+    window.gettipoHabitacion = t => tipoHabitacionLabels[t] || String(t || '').replace(/[_-]+/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     window.resetFiltros = () => $('#filtroEstado,#filtroTipo,#filtroAlcance').val('').trigger('change');
 });
 </script>

@@ -164,8 +164,9 @@ if ($total_paginas > 1) {
 }
 
 .billing-shell {
-    max-width: 1680px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: none;
+    margin: 0;
     display: grid;
     gap: 1rem;
 }

@@ -3,6 +3,7 @@
  * Controlador de Tarifas
  * Los Cedros
  */
+require_once __DIR__ . '/../helpers/hotel_config.php';
 
 class TarifasController extends Controller {
     
@@ -24,8 +25,56 @@ class TarifasController extends Controller {
             $this->redirect('dashboard');
             return false;
         }
-        
+
         return true;
+    }
+
+    private function tiposHabitacionCatalogo(array $tiposActuales = []) {
+        $tipos = [];
+
+        if (function_exists('hotel_room_catalog_types')) {
+            foreach (hotel_room_catalog_types() as $codigo => $nombre) {
+                $codigo = trim((string)$codigo);
+                if ($codigo === '') {
+                    continue;
+                }
+
+                $tipos[$codigo] = [
+                    'tipo' => $codigo,
+                    'nombre' => trim((string)$nombre) !== '' ? (string)$nombre : ucwords(str_replace('_', ' ', $codigo))
+                ];
+            }
+        }
+
+        if (empty($tipos)) {
+            $db = Database::getInstance();
+            $stmt = $db->query("SELECT DISTINCT tipo FROM habitaciones WHERE activa = 1 ORDER BY tipo");
+            foreach (($stmt ? $stmt->fetchAll() : []) as $row) {
+                $codigo = trim((string)($row['tipo'] ?? ''));
+                if ($codigo === '') {
+                    continue;
+                }
+
+                $tipos[$codigo] = [
+                    'tipo' => $codigo,
+                    'nombre' => function_exists('get_tipo_habitacion') ? get_tipo_habitacion($codigo) : ucwords(str_replace('_', ' ', $codigo))
+                ];
+            }
+        }
+
+        foreach ($tiposActuales as $codigo) {
+            $codigo = trim((string)$codigo);
+            if ($codigo === '' || isset($tipos[$codigo])) {
+                continue;
+            }
+
+            $tipos[$codigo] = [
+                'tipo' => $codigo,
+                'nombre' => function_exists('get_tipo_habitacion') ? get_tipo_habitacion($codigo) : ucwords(str_replace('_', ' ', $codigo))
+            ];
+        }
+
+        return array_values($tipos);
     }
     
     /**
@@ -51,13 +100,7 @@ class TarifasController extends Controller {
             return;
         }
         
-        // Obtener datos para el formulario
-        $db = Database::getInstance();
-        
-        // Tipos únicos de habitación
-        $sql_tipos = "SELECT DISTINCT tipo FROM habitaciones WHERE activa = 1 ORDER BY tipo";
-        $stmt = $db->query($sql_tipos);
-        $tipos_habitacion = $stmt->fetchAll();
+        $tipos_habitacion = $this->tiposHabitacionCatalogo();
         
         // Todas las habitaciones
         $habitaciones = $this->habitacionModel->where(['activa' => 1], ['id', 'numero', 'tipo', 'precio_base']);
@@ -184,20 +227,13 @@ class TarifasController extends Controller {
             return;
         }
         
-        // Obtener datos para el formulario
-        $db = Database::getInstance();
-        
-        // Tipos únicos de habitación
-        $sql_tipos = "SELECT DISTINCT tipo FROM habitaciones WHERE activa = 1 ORDER BY tipo";
-        $stmt = $db->query($sql_tipos);
-        $tipos_habitacion = $stmt->fetchAll();
-        
-        // Todas las habitaciones
-        $habitaciones = $this->habitacionModel->where(['activa' => 1], ['id', 'numero', 'tipo', 'precio_base']);
-        
         // Decodificar JSON - Compatible con PHP 8+
         $incremento['tipos_habitacion_array'] = !empty($incremento['tipos_habitacion']) ? json_decode($incremento['tipos_habitacion'], true) : [];
         $incremento['habitaciones_array'] = !empty($incremento['habitaciones']) ? json_decode($incremento['habitaciones'], true) : [];
+        $tipos_habitacion = $this->tiposHabitacionCatalogo($incremento['tipos_habitacion_array']);
+
+        // Todas las habitaciones
+        $habitaciones = $this->habitacionModel->where(['activa' => 1], ['id', 'numero', 'tipo', 'precio_base']);
         
         View::renderTemplate('configuracion/tarifas/editar', [
             'title' => 'Editar Incremento de Tarifa',

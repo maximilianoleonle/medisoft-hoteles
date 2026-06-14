@@ -1773,6 +1773,25 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
         padding: 0 14px calc(14px + env(safe-area-inset-bottom)) !important;
     }
 }
+
+/* Viewport alignment: match the broad operational canvas used by huespedes/facturacion/inventario. */
+.res-bookings {
+    padding: 1rem !important;
+}
+
+.res-shell {
+    width: 100%;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 0 !important;
+}
+
+@media (min-width: 640px) {
+    .res-bookings {
+        padding: 2rem !important;
+    }
+}
 </style>
 
 <div class="res-bookings">

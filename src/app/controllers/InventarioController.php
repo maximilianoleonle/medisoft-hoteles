@@ -20,15 +20,88 @@ class InventarioController extends Controller {
      * Constructor
      */
     public function __construct($route_params = []) {
-    parent::__construct($route_params);
+        parent::__construct($route_params);
     
     // NO uses getConnection(), usa getInstance() directamente
-    $this->db = Database::getInstance();
+        $this->db = Database::getInstance();
     
     // Inicializar modelos
-    $this->inventarioModel = new Inventario();
-    $this->movimientoModel = new MovimientoInventario();
-}
+        $this->inventarioModel = new Inventario();
+        $this->movimientoModel = new MovimientoInventario();
+    }
+
+    private function inventarioPdfBranding(): array {
+        $branding = function_exists('current_hotel_branding') ? current_hotel_branding() : [];
+        if (!is_array($branding)) {
+            $branding = [];
+        }
+
+        $primary = $this->inventarioPdfHex($branding['color_primary'] ?? null, '#1B2746');
+        $secondary = $this->inventarioPdfHex($branding['color_secondary'] ?? null, '#0F172A');
+        $accent = $this->inventarioPdfHex($branding['color_accent'] ?? null, '#BD9441');
+        $primaryText = $this->inventarioPdfTextColor($primary);
+
+        return [
+            'hotel' => function_exists('current_hotel_display_name')
+                ? current_hotel_display_name('Medisoft Hoteles')
+                : 'Medisoft Hoteles',
+            'primary' => $primary,
+            'secondary' => $secondary,
+            'accent' => $accent,
+            'primary_text' => $primaryText,
+            'primary_rgb' => $this->inventarioPdfRgb($primary),
+            'secondary_rgb' => $this->inventarioPdfRgb($secondary),
+            'accent_rgb' => $this->inventarioPdfRgb($accent),
+            'primary_text_rgb' => $this->inventarioPdfRgb($primaryText),
+            'soft' => $this->inventarioPdfMix($primary, '#FFFFFF', 0.08),
+            'line' => $this->inventarioPdfMix($accent, '#D9DEE8', 0.35),
+        ];
+    }
+
+    private function inventarioPdfHex($color, string $fallback): string {
+        if (function_exists('hotel_branding_hex')) {
+            return hotel_branding_hex($color, $fallback);
+        }
+
+        $color = trim((string) $color);
+        if (preg_match('/^#[0-9a-fA-F]{6}$/', $color)) {
+            return strtoupper($color);
+        }
+
+        if (preg_match('/^#[0-9a-fA-F]{3}$/', $color)) {
+            return strtoupper('#' . $color[1] . $color[1] . $color[2] . $color[2] . $color[3] . $color[3]);
+        }
+
+        return strtoupper($fallback);
+    }
+
+    private function inventarioPdfRgb(string $hex): array {
+        $hex = ltrim($this->inventarioPdfHex($hex, '#000000'), '#');
+        return [
+            hexdec(substr($hex, 0, 2)),
+            hexdec(substr($hex, 2, 2)),
+            hexdec(substr($hex, 4, 2)),
+        ];
+    }
+
+    private function inventarioPdfMix(string $hex, string $target, float $ratio): string {
+        $ratio = max(0, min(1, $ratio));
+        $a = $this->inventarioPdfRgb($hex);
+        $b = $this->inventarioPdfRgb($target);
+
+        return sprintf(
+            '#%02X%02X%02X',
+            (int) round($a[0] * $ratio + $b[0] * (1 - $ratio)),
+            (int) round($a[1] * $ratio + $b[1] * (1 - $ratio)),
+            (int) round($a[2] * $ratio + $b[2] * (1 - $ratio))
+        );
+    }
+
+    private function inventarioPdfTextColor(string $hex): string {
+        $rgb = $this->inventarioPdfRgb($hex);
+        $luminance = (($rgb[0] * 299) + ($rgb[1] * 587) + ($rgb[2] * 114)) / 1000;
+        return $luminance > 155 ? '#111827' : '#FFFFFF';
+    }
    
    
 public function debugPdfAction() {
@@ -401,10 +474,15 @@ private function generarPdfReporte($movimientos, $productos, $fecha_desde, $fech
     }
     
     // Crear nuevo PDF
+    $brand = $this->inventarioPdfBranding();
+    $primaryRgb = $brand['primary_rgb'];
+    $accentRgb = $brand['accent_rgb'];
+    $tableHeaderStyle = 'background-color: ' . $brand['primary'] . '; color: ' . $brand['primary_text'] . ';';
+
     $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8');
     
     // Configuración
-    $pdf->SetCreator(current_hotel_display_name('Medisoft Hoteles'));
+    $pdf->SetCreator($brand['hotel']);
     $pdf->SetAuthor('Sistema de Inventario');
     $pdf->SetTitle('Reporte de Inventario');
     
@@ -420,8 +498,8 @@ private function generarPdfReporte($movimientos, $productos, $fecha_desde, $fech
     
     // Header del reporte con mejor diseño
     $pdf->SetFont('helvetica', 'B', 20);
-    $pdf->SetTextColor(107, 68, 35); // Color marrón del hotel
-    $pdf->Cell(0, 12, current_hotel_display_name('Medisoft Hoteles'), 0, 1, 'C');
+    $pdf->SetTextColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
+    $pdf->Cell(0, 12, $brand['hotel'], 0, 1, 'C');
     
     $pdf->SetFont('helvetica', '', 14);
     $pdf->SetTextColor(80, 80, 80);
@@ -431,14 +509,14 @@ private function generarPdfReporte($movimientos, $productos, $fecha_desde, $fech
     $pdf->Cell(0, 6, 'Del ' . format_date($fecha_desde) . ' al ' . format_date($fecha_hasta), 0, 1, 'C');
     
     // Línea decorativa
-    $pdf->SetDrawColor(107, 68, 35);
+    $pdf->SetDrawColor($accentRgb[0], $accentRgb[1], $accentRgb[2]);
     $pdf->SetLineWidth(0.5);
     $pdf->Line(15, $pdf->GetY() + 2, 195, $pdf->GetY() + 2);
     $pdf->Ln(8);
     
     // SECCIÓN 1: Stock Actual (sin columna Mínimo)
     $pdf->SetFont('helvetica', 'B', 14);
-    $pdf->SetTextColor(107, 68, 35);
+    $pdf->SetTextColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
     $pdf->Cell(0, 10, 'INVENTARIO ACTUAL', 0, 1);
     $pdf->SetFont('helvetica', '', 9);
     $pdf->SetTextColor(0, 0, 0);
@@ -446,17 +524,17 @@ private function generarPdfReporte($movimientos, $productos, $fecha_desde, $fech
     // Tabla de stock mejorada
     $html = '<style>
         table { border-collapse: collapse; width: 100%; }
-        th { background-color: #6B4423; color: white; font-weight: bold; padding: 8px; }
+        th { ' . $tableHeaderStyle . ' font-weight: bold; padding: 8px; }
         td { padding: 6px; }
         tr:nth-child(even) { background-color: #f9f9f9; }
     </style>
     <table border="0.5" cellpadding="5">
         <thead>
             <tr>
-                <th width="20%" style="background-color: #6B4423; color: white;">Código</th>
-                <th width="40%" style="background-color: #6B4423; color: white;">Producto</th>
-                <th width="25%" style="background-color: #6B4423; color: white;">Categoría</th>
-                <th width="15%" align="center" style="background-color: #6B4423; color: white;">Stock</th>
+                <th width="20%" style="' . $tableHeaderStyle . '">Código</th>
+                <th width="40%" style="' . $tableHeaderStyle . '">Producto</th>
+                <th width="25%" style="' . $tableHeaderStyle . '">Categoría</th>
+                <th width="15%" align="center" style="' . $tableHeaderStyle . '">Stock</th>
             </tr>
         </thead>
         <tbody>';
@@ -491,7 +569,7 @@ private function generarPdfReporte($movimientos, $productos, $fecha_desde, $fech
     
     // SECCIÓN 2: Movimientos
     $pdf->SetFont('helvetica', 'B', 14);
-    $pdf->SetTextColor(107, 68, 35);
+    $pdf->SetTextColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
     $pdf->Cell(0, 10, 'MOVIMIENTOS DEL PERÍODO', 0, 1);
     $pdf->SetFont('helvetica', '', 9);
     $pdf->SetTextColor(0, 0, 0);
@@ -503,18 +581,18 @@ private function generarPdfReporte($movimientos, $productos, $fecha_desde, $fech
     } else {
         $html = '<style>
             table { border-collapse: collapse; width: 100%; }
-            th { background-color: #6B4423; color: white; font-weight: bold; padding: 6px; }
+            th { ' . $tableHeaderStyle . ' font-weight: bold; padding: 6px; }
             td { padding: 5px; }
             tr:nth-child(even) { background-color: #f9f9f9; }
         </style>
         <table border="0.5" cellpadding="4">
             <thead>
                 <tr>
-                    <th width="18%" style="background-color: #6B4423; color: white;">Fecha/Hora</th>
-                    <th width="28%" style="background-color: #6B4423; color: white;">Producto</th>
-                    <th width="12%" align="center" style="background-color: #6B4423; color: white;">Tipo</th>
-                    <th width="10%" align="center" style="background-color: #6B4423; color: white;">Cant.</th>
-                    <th width="32%" style="background-color: #6B4423; color: white;">Motivo</th>
+                    <th width="18%" style="' . $tableHeaderStyle . '">Fecha/Hora</th>
+                    <th width="28%" style="' . $tableHeaderStyle . '">Producto</th>
+                    <th width="12%" align="center" style="' . $tableHeaderStyle . '">Tipo</th>
+                    <th width="10%" align="center" style="' . $tableHeaderStyle . '">Cant.</th>
+                    <th width="32%" style="' . $tableHeaderStyle . '">Motivo</th>
                 </tr>
             </thead>
             <tbody>';
@@ -563,13 +641,15 @@ private function generarPdfReporte($movimientos, $productos, $fecha_desde, $fech
         $pdf->Ln(10);
         
         // Caja de resumen
-        $pdf->SetFillColor(245, 245, 245);
-        $pdf->SetDrawColor(200, 200, 200);
+        $softRgb = $this->inventarioPdfRgb($brand['soft']);
+        $lineRgb = $this->inventarioPdfRgb($brand['line']);
+        $pdf->SetFillColor($softRgb[0], $softRgb[1], $softRgb[2]);
+        $pdf->SetDrawColor($lineRgb[0], $lineRgb[1], $lineRgb[2]);
         $pdf->Rect(15, $pdf->GetY(), 180, 35, 'DF');
         
         $pdf->SetY($pdf->GetY() + 5);
         $pdf->SetFont('helvetica', 'B', 12);
-        $pdf->SetTextColor(107, 68, 35);
+        $pdf->SetTextColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
         $pdf->Cell(0, 6, 'RESUMEN DE MOVIMIENTOS', 0, 1, 'C');
         
         $pdf->SetFont('helvetica', '', 10);
@@ -601,11 +681,14 @@ private function generarPdfReporte($movimientos, $productos, $fecha_desde, $fech
     $pdf->SetY(-20);
     $pdf->SetFont('helvetica', 'I', 8);
     $pdf->SetTextColor(150, 150, 150);
-    $pdf->Cell(0, 5, current_hotel_display_name('Medisoft Hoteles') . ' - Sistema de Gestión de Inventario', 0, 1, 'C');
+    $pdf->Cell(0, 5, $brand['hotel'] . ' - Sistema de Gestión de Inventario', 0, 1, 'C');
     $pdf->Cell(0, 5, 'Generado el ' . date('d/m/Y H:i:s') . ' por ' . ($_SESSION['usuario_nombre'] ?? 'Sistema'), 0, 1, 'C');
     
     // Salida del PDF
-    $pdf->Output('inventario_hotel_san_nicolas_' . date('Ymd_His') . '.pdf', 'D');
+    $nombreArchivo = function_exists('hotel_export_filename')
+        ? hotel_export_filename('inventario', 'pdf')
+        : 'inventario_' . date('Ymd_His') . '.pdf';
+    $pdf->Output($nombreArchivo, 'D');
     exit();
 }
 
@@ -814,6 +897,54 @@ public function debugMovimientosDateAction() {
         return $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
     }
 
+    private function unidadMedidaDefaultInventario(): string {
+        if (function_exists('hotel_general_catalog_units')) {
+            foreach (hotel_general_catalog_units() as $unidadKey => $unidadLabel) {
+                $unidadKey = trim((string)$unidadKey);
+                if ($unidadKey !== '') {
+                    return $unidadKey;
+                }
+            }
+        }
+
+        return 'pieza';
+    }
+
+    private function unidadMedidaDesdePost(string $key): string {
+        $unidad = trim((string)$this->getPost($key, ''));
+        return $unidad !== '' ? $unidad : $this->unidadMedidaDefaultInventario();
+    }
+
+    private function tiposHabitacionInventario(): array {
+        $tipos = [];
+
+        if (function_exists('hotel_room_catalog_types')) {
+            foreach (hotel_room_catalog_types() as $codigo => $nombre) {
+                $codigo = trim((string)$codigo);
+                if ($codigo === '') {
+                    continue;
+                }
+
+                $tipos[$codigo] = trim((string)$nombre) !== ''
+                    ? (string)$nombre
+                    : ucwords(str_replace('_', ' ', $codigo));
+            }
+        }
+
+        if (!empty($tipos)) {
+            return $tipos;
+        }
+
+        return [
+            'sencilla' => 'Sencilla',
+            'doble' => 'Doble',
+            'triple' => 'Triple',
+            'cuadruple' => 'Cuadruple',
+            'sencilla_manolo' => 'Sencilla Manolo',
+            'doble_manolo' => 'Doble Manolo'
+        ];
+    }
+
     /**
      * Vista de movimientos de inventario
      */
@@ -1002,7 +1133,7 @@ public function debugMovimientosDateAction() {
                 'stock_actual' => intval($this->getPost('stock_inicial', 0)), // MAPEAR stock_inicial -> stock_actual
                 'stock_minimo' => intval($this->getPost('stock_minimo', 0)),
                 'costo_unitario' => floatval($this->getPost('costo_unitario', 0)),
-                'unidad_medida' => $this->getPost('unidad_medida', 'pieza'),
+                'unidad_medida' => $this->unidadMedidaDesdePost('unidad_medida'),
                 'descripcion' => trim($this->getPost('descripcion', '')),
                 'descuento_automatico' => $this->getPost('descuento_automatico') ? 1 : 0,
                 'activo' => 1
@@ -1235,14 +1366,7 @@ public function debugMovimientosDateAction() {
         $productos_automaticos = $this->inventarioModel->getProductosDescuentoAutomatico();
         $configuracion = $this->inventarioModel->getConfiguracionCompleta();
         
-        $tipos_habitacion = [
-    'sencilla' => 'Sencilla',
-    'doble' => 'Doble',
-    'triple' => 'Triple',
-    'cuadruple' => 'Cuádruple',
-    'sencilla_manolo' => 'Sencilla Manolo',
-    'doble_manolo' => 'Doble Manolo'
-];
+        $tipos_habitacion = $this->tiposHabitacionInventario();
         
         View::renderTemplate('inventario/configuracion', [
             'title' => 'Configuración de Descuentos - ' . current_hotel_display_name(),
@@ -1336,7 +1460,7 @@ public function debugMovimientosDateAction() {
                 'categoria_id' => $this->getPost('categoria_id'),
                 'stock_minimo' => intval($this->getPost('stock_minimo', 0)),
                 'costo_unitario' => floatval($this->getPost('costo_unitario', 0)),
-                'unidad_medida' => $this->getPost('unidad_medida', 'pieza'),
+                'unidad_medida' => $this->unidadMedidaDesdePost('unidad_medida'),
                 'descripcion' => trim($this->getPost('descripcion', '')),
                 'descuento_automatico' => $this->getPost('descuento_automatico') ? 1 : 0
             ];

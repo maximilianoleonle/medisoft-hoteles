@@ -57,8 +57,53 @@ function normalize_hotel_login_slug($slug) {
     return preg_match('/^[a-z0-9-]+$/', $slug) ? $slug : null;
 }
 
+function hotel_login_slug_for_hotel_id($hotelId) {
+    static $cache = [];
+
+    $hotelId = (int) $hotelId;
+    if ($hotelId <= 0) {
+        return null;
+    }
+
+    if (array_key_exists($hotelId, $cache)) {
+        return $cache[$hotelId];
+    }
+
+    if (!class_exists('Database')) {
+        $cache[$hotelId] = null;
+        return null;
+    }
+
+    try {
+        $db = Database::getInstance();
+        $stmt = $db->query(
+            "SELECT slug
+             FROM hoteles
+             WHERE id = ? AND activo = 1
+             LIMIT 1",
+            [$hotelId]
+        );
+
+        $hotel = $stmt ? $stmt->fetch() : null;
+        $cache[$hotelId] = normalize_hotel_login_slug($hotel['slug'] ?? null);
+    } catch (Throwable $e) {
+        error_log('No se pudo resolver slug de hotel para login: ' . $e->getMessage());
+        $cache[$hotelId] = null;
+    }
+
+    return $cache[$hotelId];
+}
+
 function remember_hotel_login_context($slug = null) {
-    $slug = normalize_hotel_login_slug($slug ?: ($_SESSION['hotel_slug'] ?? null));
+    $slugFromHotelId = !empty($_SESSION['hotel_id'])
+        ? hotel_login_slug_for_hotel_id($_SESSION['hotel_id'])
+        : null;
+
+    $slug = $slugFromHotelId ?: normalize_hotel_login_slug($slug ?: ($_SESSION['hotel_slug'] ?? null));
+
+    if ($slugFromHotelId) {
+        $_SESSION['hotel_slug'] = $slugFromHotelId;
+    }
 
     if (!$slug) {
         return;
@@ -212,18 +257,23 @@ function has_hotel_context() {
 }
 
 function login_path_for_current_context($requestUri = null) {
-    $slug = null;
+    $hotelId = current_hotel_id();
+    $slug = $hotelId ? hotel_login_slug_for_hotel_id($hotelId) : null;
 
-    if ($requestUri) {
+    if ($slug) {
+        $_SESSION['hotel_slug'] = $slug;
+    }
+
+    if (!$slug) {
+        $slug = normalize_hotel_login_slug(current_hotel_slug());
+    }
+
+    if (!$slug && $requestUri) {
         $path = parse_url($requestUri, PHP_URL_PATH) ?: '';
 
         if (preg_match('#^/h/([a-z0-9-]+)(?:/|$)#i', $path, $matches)) {
-            $slug = strtolower($matches[1]);
+            $slug = normalize_hotel_login_slug($matches[1]);
         }
-    }
-
-    if (!$slug && current_hotel_slug()) {
-        $slug = current_hotel_slug();
     }
 
     if (!$slug) {

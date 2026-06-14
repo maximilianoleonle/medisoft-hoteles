@@ -1,7 +1,6 @@
 <?php
 /**
  * Vista de respaldos
- * Los Cedros
  */
 ?>
 

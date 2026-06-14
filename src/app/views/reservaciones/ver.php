@@ -19,6 +19,40 @@ $nombreHotelTicket = function_exists('mb_strtoupper')
     ? mb_strtoupper($nombreHotelVisible, 'UTF-8')
     : strtoupper($nombreHotelVisible);
 
+$parkingIconByCode = [
+    'coches' => 'fa-car',
+    'camionetas' => 'fa-truck',
+    'discos' => 'fa-compact-disc',
+    'nikkos' => 'fa-star',
+];
+$parkingClassByCode = [
+    'coches' => 'ubicacion-coches',
+    'camionetas' => 'ubicacion-camionetas',
+    'discos' => 'ubicacion-discos',
+    'nikkos' => 'ubicacion-nikkos',
+];
+$reservationParkingMap = [];
+if (function_exists('hotel_general_catalog_parking_rows')) {
+    foreach (hotel_general_catalog_parking_rows(null, true) as $parkingRow) {
+        $parkingCode = trim((string)($parkingRow['codigo'] ?? ''));
+        $parkingLabel = trim((string)($parkingRow['label'] ?? ''));
+        if ($parkingCode === '' || $parkingLabel === '') {
+            continue;
+        }
+
+        $reservationParkingMap[$parkingCode] = [
+            'label' => $parkingLabel,
+            'icon' => $parkingIconByCode[$parkingCode] ?? 'fa-square-parking',
+            'class' => $parkingClassByCode[$parkingCode] ?? 'ubicacion-catalogo',
+        ];
+    }
+}
+if (empty($reservationParkingMap)) {
+    $reservationParkingMap = [
+        'coches' => ['label' => 'Coches', 'icon' => 'fa-car', 'class' => 'ubicacion-coches'],
+    ];
+}
+
 $ticketLogoDataUri = null;
 $ticketLogoAssetUrl = null;
 $ticketLogoPathToDataUri = function($path) {
@@ -220,6 +254,11 @@ if (isset($_SESSION['flash_message']) &&
 .ubicacion-nikkos {
     background: #FEF3C7;
     color: #92400E;
+}
+
+.ubicacion-catalogo {
+    background: #E0F2FE;
+    color: #075985;
 }
 .card-icon {
     width: 2.25rem;
@@ -5379,12 +5418,7 @@ function mostrarVehiculos() {
 
     let html = '<div class="space-y-2">';
     vehiculosHuesped.forEach((vehiculo, index) => {
-        const ubicaciones = {
-    'coches': { label: 'Coches', icon: 'fa-car', class: 'ubicacion-coches' },
-    'camionetas': { label: 'Camionetas', icon: 'fa-truck', class: 'ubicacion-camionetas' },
-    'discos': { label: 'Discos', icon: 'fa-compact-disc', class: 'ubicacion-discos' },
-    'nikkos': { label: 'Nikkos', icon: 'fa-star', class: 'ubicacion-nikkos' }
-};
+        const ubicaciones = <?= json_encode($reservationParkingMap, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
         const ubicacion = ubicaciones[vehiculo.estacionamiento] || { label: 'No especificado', icon: 'fa-question', class: 'ubicacion-fuera' };
 
         html += `

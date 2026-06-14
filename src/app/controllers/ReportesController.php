@@ -235,7 +235,9 @@ class ReportesController extends Controller {
             'tipo_reporte' => 'gerencial-diario',
             'titulo' => 'Reporte gerencial diario ' . date('d/m/Y', strtotime($fecha)),
             'descripcion' => 'Resumen ejecutivo diario de finanzas, ocupacion, agenda, caja y pendientes.',
-            'archivo_nombre' => 'Reporte_Gerencial_Diario_' . str_replace('-', '', $fecha) . '.pdf',
+            'archivo_nombre' => function_exists('hotel_export_filename')
+                ? hotel_export_filename('Reporte_Gerencial_Diario_' . str_replace('-', '', $fecha), 'pdf', false)
+                : 'Reporte_Gerencial_Diario_' . str_replace('-', '', $fecha) . '.pdf',
             'parametros' => [
                 'fecha' => $fecha,
             ],
@@ -709,6 +711,14 @@ private function exportarIngresosGastosUsuarioPdf() {
     ksort($habitacionesPorFecha);
     
     $utilidad = $totales['ingreso'] - $totales['gasto'];
+    $brand = $this->reportePdfBranding();
+    $primaryRgb = $this->reportePdfRgb($brand['primary']);
+    $secondaryRgb = $this->reportePdfRgb($brand['secondary']);
+    $accentRgb = $this->reportePdfRgb($brand['accent']);
+    $primaryTextRgb = $this->reportePdfRgb($this->reportePdfTextColor($brand['primary']));
+    $accentTextRgb = $this->reportePdfRgb($this->reportePdfTextColor($brand['accent']));
+    $utilidadColor = $utilidad >= 0 ? $brand['accent'] : '#B93A32';
+    $utilidadSoft = $utilidad >= 0 ? $brand['accent_soft'] : '#FBE9E7';
     
     // Generar PDF
     $pdf = new ReportePDF('', '');
@@ -717,11 +727,11 @@ private function exportarIngresosGastosUsuarioPdf() {
     $pdf->SetMargins(15, 15, 15);
     $pdf->AddPage();
     
-    // Encabezado con fondo azul
-    $pdf->SetFillColor(41, 128, 185);
+    // Encabezado con color de marca
+    $pdf->SetFillColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
     $pdf->Rect(0, 0, 210, 35, 'F');
     
-    $pdf->SetTextColor(255, 255, 255);
+    $pdf->SetTextColor($primaryTextRgb[0], $primaryTextRgb[1], $primaryTextRgb[2]);
     $pdf->SetFont('helvetica', 'B', 20);
     $pdf->SetY(8);
     $pdf->Cell(0, 10, 'REPORTE DE MOVIMIENTOS', 0, 1, 'C');
@@ -738,21 +748,21 @@ private function exportarIngresosGastosUsuarioPdf() {
     $html = '<table cellpadding="0" cellspacing="8">
         <tr>
             <td width="33%">
-                <div style="background-color:#E8F5E9; border:2px solid #4CAF50; border-radius:10px; padding:20px; text-align:center;">
-                    <div style="font-size:11pt; color:#2E7D32; font-weight:bold; margin-bottom:5px;">INGRESOS</div>
-                    <div style="font-size:20pt; font-weight:bold; color:#1B5E20;">$' . number_format($totales['ingreso'], 2) . '</div>
+                <div style="background-color:' . $brand['primary_soft'] . '; border:2px solid ' . $brand['primary'] . '; border-radius:10px; padding:20px; text-align:center;">
+                    <div style="font-size:11pt; color:' . $brand['primary_dark'] . '; font-weight:bold; margin-bottom:5px;">INGRESOS</div>
+                    <div style="font-size:20pt; font-weight:bold; color:' . $brand['primary'] . ';">$' . number_format($totales['ingreso'], 2) . '</div>
                 </div>
             </td>
             <td width="33%">
-                <div style="background-color:#FFEBEE; border:2px solid #F44336; border-radius:10px; padding:20px; text-align:center;">
-                    <div style="font-size:11pt; color:#C62828; font-weight:bold; margin-bottom:5px;">GASTOS</div>
-                    <div style="font-size:20pt; font-weight:bold; color:#B71C1C;">$' . number_format($totales['gasto'], 2) . '</div>
+                <div style="background-color:' . $brand['secondary_soft'] . '; border:2px solid ' . $brand['secondary'] . '; border-radius:10px; padding:20px; text-align:center;">
+                    <div style="font-size:11pt; color:' . $brand['secondary_dark'] . '; font-weight:bold; margin-bottom:5px;">GASTOS</div>
+                    <div style="font-size:20pt; font-weight:bold; color:' . $brand['secondary'] . ';">$' . number_format($totales['gasto'], 2) . '</div>
                 </div>
             </td>
             <td width="34%">
-                <div style="background-color:' . ($utilidad >= 0 ? '#E3F2FD' : '#FFF3E0') . '; border:2px solid ' . ($utilidad >= 0 ? '#2196F3' : '#FF9800') . '; border-radius:10px; padding:20px; text-align:center;">
-                    <div style="font-size:11pt; color:' . ($utilidad >= 0 ? '#1565C0' : '#E65100') . '; font-weight:bold; margin-bottom:5px;">UTILIDAD</div>
-                    <div style="font-size:20pt; font-weight:bold; color:' . ($utilidad >= 0 ? '#0D47A1' : '#BF360C') . ';">$' . number_format($utilidad, 2) . '</div>
+                <div style="background-color:' . $utilidadSoft . '; border:2px solid ' . $utilidadColor . '; border-radius:10px; padding:20px; text-align:center;">
+                    <div style="font-size:11pt; color:' . $utilidadColor . '; font-weight:bold; margin-bottom:5px;">UTILIDAD</div>
+                    <div style="font-size:20pt; font-weight:bold; color:' . $utilidadColor . ';">$' . number_format($utilidad, 2) . '</div>
                 </div>
             </td>
         </tr>
@@ -763,7 +773,7 @@ private function exportarIngresosGastosUsuarioPdf() {
     
     // Distribución por método de pago
     $pdf->SetFont('helvetica', 'B', 11);
-    $pdf->SetTextColor(52, 73, 94);
+    $pdf->SetTextColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
     $pdf->Cell(0, 8, 'Distribución por Método de Pago', 0, 1);
     
     $totalEfectivo = $totalesPorMetodo['efectivo']['ingreso'] - $totalesPorMetodo['efectivo']['gasto'];
@@ -773,23 +783,23 @@ private function exportarIngresosGastosUsuarioPdf() {
     $html = '<table cellpadding="5" cellspacing="2">
         <tr>
             <td width="30%">
-                <div style="background-color:#E8F5E9; border:1px solid #4CAF50; padding:10px; text-align:center; border-radius:5px;">
-                    <div style="font-size:9pt; color:#2E7D32; font-weight:bold;">EFECTIVO</div>
-                    <div style="font-size:14pt; font-weight:bold; color:#1B5E20;">$' . number_format($totalEfectivo, 2) . '</div>
+                <div style="background-color:' . $brand['primary_soft'] . '; border:1px solid ' . $brand['primary'] . '; padding:10px; text-align:center; border-radius:5px;">
+                    <div style="font-size:9pt; color:' . $brand['primary'] . '; font-weight:bold;">EFECTIVO</div>
+                    <div style="font-size:14pt; font-weight:bold; color:' . $brand['primary_dark'] . ';">$' . number_format($totalEfectivo, 2) . '</div>
                 </div>
             </td>
             <td width="5%"></td>
             <td width="30%">
-                <div style="background-color:#E3F2FD; border:1px solid #2196F3; padding:10px; text-align:center; border-radius:5px;">
-                    <div style="font-size:9pt; color:#1565C0; font-weight:bold;">TARJETA</div>
-                    <div style="font-size:14pt; font-weight:bold; color:#0D47A1;">$' . number_format($totalTarjeta, 2) . '</div>
+                <div style="background-color:' . $brand['secondary_soft'] . '; border:1px solid ' . $brand['secondary'] . '; padding:10px; text-align:center; border-radius:5px;">
+                    <div style="font-size:9pt; color:' . $brand['secondary'] . '; font-weight:bold;">TARJETA</div>
+                    <div style="font-size:14pt; font-weight:bold; color:' . $brand['secondary_dark'] . ';">$' . number_format($totalTarjeta, 2) . '</div>
                 </div>
             </td>
             <td width="5%"></td>
             <td width="30%">
-                <div style="background-color:#F3E5F5; border:1px solid #9C27B0; padding:10px; text-align:center; border-radius:5px;">
-                    <div style="font-size:9pt; color:#6A1B9A; font-weight:bold;">TRANSFERENCIA</div>
-                    <div style="font-size:14pt; font-weight:bold; color:#4A148C;">$' . number_format($totalTransferencia, 2) . '</div>
+                <div style="background-color:' . $brand['accent_soft'] . '; border:1px solid ' . $brand['accent'] . '; padding:10px; text-align:center; border-radius:5px;">
+                    <div style="font-size:9pt; color:' . $brand['accent'] . '; font-weight:bold;">TRANSFERENCIA</div>
+                    <div style="font-size:14pt; font-weight:bold; color:' . $brand['accent_dark'] . ';">$' . number_format($totalTransferencia, 2) . '</div>
                 </div>
             </td>
         </tr>
@@ -799,12 +809,12 @@ private function exportarIngresosGastosUsuarioPdf() {
     $pdf->Ln(8);
     // ═══ SECCIÓN MANOLO vs ELIA (ESTE USUARIO) ═══
     $propiedadesUsuario = $this->obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, $usuario_id, $hotel_id);
-    $this->generarSeccionPropiedadesPDF($pdf, $propiedadesUsuario);
+    $this->generarSeccionPropiedadesPDF($pdf, $propiedadesUsuario, $brand);
     $pdf->Ln(5);
     // DESGLOSE DE HOSPEDAJES POR FECHA
     if (!empty($habitacionesPorFecha)) {
-        $pdf->SetFillColor(103, 58, 183);
-        $pdf->SetTextColor(255, 255, 255);
+        $pdf->SetFillColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
+        $pdf->SetTextColor($primaryTextRgb[0], $primaryTextRgb[1], $primaryTextRgb[2]);
         $pdf->SetFont('helvetica', 'B', 12);
         $pdf->Cell(0, 10, 'DESGLOSE DE HOSPEDAJES POR DÍA', 0, 1, 'C', true);
         $pdf->SetTextColor(0, 0, 0);
@@ -813,14 +823,15 @@ private function exportarIngresosGastosUsuarioPdf() {
         $numerodia = 1;
         foreach ($habitacionesPorFecha as $fecha => $hospedajes) {
             // Encabezado de fecha con número de día
-            $pdf->SetFillColor(236, 239, 241);
+            $dayHeaderRgb = $this->reportePdfRgb($brand['primary_soft']);
+            $pdf->SetFillColor($dayHeaderRgb[0], $dayHeaderRgb[1], $dayHeaderRgb[2]);
             $pdf->SetFont('helvetica', 'B', 10);
             $pdf->Cell(0, 8, 'Día ' . $numerodia . ' - ' . date('d/m/Y', strtotime($fecha)) . ' - ' . $obtenerNombreDia($fecha), 0, 1, 'L', true);
             $pdf->SetFont('helvetica', '', 9);
             
             $html = '<table border="1" cellpadding="4" cellspacing="0">
                 <thead>
-                    <tr style="background-color:#E1BEE7; color:#4A148C; font-weight:bold;">
+                    <tr style="background-color:' . $brand['primary_soft'] . '; color:' . $brand['primary_dark'] . '; font-weight:bold;">
                         <th width="15%" style="text-align:center;">Habitación</th>
                         <th width="45%">Descripción</th>
                         <th width="20%" style="text-align:center;">Método Pago</th>
@@ -838,7 +849,7 @@ private function exportarIngresosGastosUsuarioPdf() {
             });
             
             foreach ($hospedajes as $hosp) {
-                $bgColor = $fila % 2 == 0 ? '#FFFFFF' : '#F3E5F5';
+                $bgColor = $fila % 2 == 0 ? '#FFFFFF' : $brand['primary_soft'];
                 $totalDia += $hosp['monto'];
                 
                 // Color del método
@@ -851,8 +862,8 @@ private function exportarIngresosGastosUsuarioPdf() {
                     $metodoColor = '#1565C0';
                     $metodoBg = '#E3F2FD';
                 } elseif ($hosp['metodo'] == 'transferencia') {
-                    $metodoColor = '#6A1B9A';
-                    $metodoBg = '#F3E5F5';
+                    $metodoColor = $brand['accent'];
+                    $metodoBg = $brand['accent_soft'];
                 }
                 
                 // Si la habitación contiene comas (múltiples habitaciones)
@@ -862,7 +873,7 @@ private function exportarIngresosGastosUsuarioPdf() {
                 }
                 
                 $html .= '<tr style="background-color:' . $bgColor . ';">
-                    <td style="text-align:center; font-weight:bold; font-size:11pt; color:#4A148C;">' . htmlspecialchars($habitacionDisplay) . '</td>
+                    <td style="text-align:center; font-weight:bold; font-size:11pt; color:' . $brand['primary'] . ';">' . htmlspecialchars($habitacionDisplay) . '</td>
                     <td>' . htmlspecialchars(substr($hosp['descripcion'], 0, 50)) . '</td>
                     <td style="text-align:center;"><span style="background-color:' . $metodoBg . '; color:' . $metodoColor . '; padding:2px 8px; border-radius:10px; font-weight:bold;">' . ucfirst($hosp['metodo']) . '</span></td>
                     <td style="text-align:right; font-weight:bold; color:#2E7D32;">$' . number_format($hosp['monto'], 2) . '</td>
@@ -872,9 +883,9 @@ private function exportarIngresosGastosUsuarioPdf() {
             
             $html .= '</tbody>
                 <tfoot>
-                    <tr style="background-color:#E1BEE7;">
+                    <tr style="background-color:' . $brand['primary_soft'] . ';">
                         <td colspan="3" style="text-align:right; font-weight:bold;">Total del día ' . $numerodia . ':</td>
-                        <td style="text-align:right; font-weight:bold; color:#4A148C;">$' . number_format($totalDia, 2) . '</td>
+                        <td style="text-align:right; font-weight:bold; color:' . $brand['primary'] . ';">$' . number_format($totalDia, 2) . '</td>
                     </tr>
                 </tfoot>
             </table>';
@@ -889,8 +900,8 @@ private function exportarIngresosGastosUsuarioPdf() {
             return $m['tipo'] == 'ingreso' ? $m['monto'] : -$m['monto']; 
         }, $movimientosHospedaje));
         
-        $pdf->SetFillColor(103, 58, 183);
-        $pdf->SetTextColor(255, 255, 255);
+        $pdf->SetFillColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
+        $pdf->SetTextColor($primaryTextRgb[0], $primaryTextRgb[1], $primaryTextRgb[2]);
         $pdf->SetFont('helvetica', 'B', 10);
         $pdf->Cell(0, 8, 'TOTAL HOSPEDAJES: $' . number_format($totalGeneralHospedajes, 2), 0, 1, 'C', true);
         $pdf->SetTextColor(0, 0, 0);
@@ -899,8 +910,8 @@ private function exportarIngresosGastosUsuarioPdf() {
     // OTROS MOVIMIENTOS
     if (!empty($otrosMovimientos)) {
         $pdf->Ln(10);
-        $pdf->SetFillColor(255, 152, 0);
-        $pdf->SetTextColor(255, 255, 255);
+        $pdf->SetFillColor($accentRgb[0], $accentRgb[1], $accentRgb[2]);
+        $pdf->SetTextColor($accentTextRgb[0], $accentTextRgb[1], $accentTextRgb[2]);
         $pdf->SetFont('helvetica', 'B', 12);
         $pdf->Cell(0, 10, 'OTROS MOVIMIENTOS', 0, 1, 'C', true);
         $pdf->SetTextColor(0, 0, 0);
@@ -910,7 +921,7 @@ private function exportarIngresosGastosUsuarioPdf() {
         
         $html = '<table border="1" cellpadding="5" cellspacing="0">
             <thead>
-                <tr style="background-color:#FFCC80; color:#E65100; font-weight:bold;">
+                <tr style="background-color:' . $brand['accent_soft'] . '; color:' . $brand['accent_dark'] . '; font-weight:bold;">
                     <th width="12%" style="text-align:center;">Fecha</th>
                     <th width="10%" style="text-align:center;">Tipo</th>
                     <th width="20%">Categoría</th>
@@ -923,7 +934,7 @@ private function exportarIngresosGastosUsuarioPdf() {
         
         $fila = 0;
         foreach ($otrosMovimientos as $mov) {
-            $bgColor = $fila % 2 == 0 ? '#FFFFFF' : '#FFF3E0';
+            $bgColor = $fila % 2 == 0 ? '#FFFFFF' : $brand['accent_soft'];
             $fecha = date('d/m/Y', strtotime($mov['created_at']));
             $tipo = ucfirst($mov['tipo']);
             $categoria = $mov['categoria_nombre'] ?: $mov['categoria'];
@@ -958,9 +969,9 @@ private function exportarIngresosGastosUsuarioPdf() {
         
         $html .= '</tbody>
             <tfoot>
-                <tr style="background-color:#FFE0B2;">
+                <tr style="background-color:' . $brand['accent_soft'] . ';">
                     <td colspan="5" style="text-align:right; font-weight:bold; font-size:11pt;">Total Otros:</td>
-                    <td style="text-align:right; font-weight:bold; font-size:12pt; color:#E65100;">$' . number_format($totalOtros, 2) . '</td>
+                    <td style="text-align:right; font-weight:bold; font-size:12pt; color:' . $brand['accent'] . ';">$' . number_format($totalOtros, 2) . '</td>
                 </tr>
             </tfoot>
         </table>';
@@ -970,17 +981,18 @@ private function exportarIngresosGastosUsuarioPdf() {
     
     // Footer
     $pdf->SetY(-40);
-    $pdf->SetFillColor(236, 240, 241);
+    $footerBgRgb = $this->reportePdfRgb($brand['primary_soft']);
+    $pdf->SetFillColor($footerBgRgb[0], $footerBgRgb[1], $footerBgRgb[2]);
     $pdf->Rect(0, $pdf->GetY() - 5, 210, 50, 'F');
     
     $pdf->SetFont('helvetica', '', 9);
-    $pdf->SetTextColor(52, 73, 94);
+    $pdf->SetTextColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
     
     $html = '<table cellpadding="5">
         <tr>
             <td width="100%" style="text-align:center;">
-                <div style="font-size:10pt; font-weight:bold; color:#2C3E50; margin-bottom:8px;">' . htmlspecialchars(current_hotel_display_name('Medisoft Hoteles'), ENT_QUOTES, 'UTF-8') . ' - Sistema de Gestión</div>
-                <div style="font-size:9pt; color:#7F8C8D;">
+                <div style="font-size:10pt; font-weight:bold; color:' . $brand['primary_dark'] . '; margin-bottom:8px;">' . htmlspecialchars($brand['hotel'], ENT_QUOTES, 'UTF-8') . ' - Sistema de Gestión</div>
+                <div style="font-size:9pt; color:' . $brand['muted'] . ';">
                     Reporte generado el ' . date('d/m/Y') . ' a las ' . date('H:i') . ' hrs<br>
                     Por: ' . (function_exists('usuario_actual') ? usuario_actual('nombre_completo') : 'Sistema')  . '
                 </div>
@@ -991,7 +1003,9 @@ private function exportarIngresosGastosUsuarioPdf() {
     $pdf->writeHTML($html, true, false, false, false, '');
     
     // Salida del PDF
-    $filename = 'Reporte_Movimientos_' . date('Y-m-d_His') . '.pdf';
+    $filename = function_exists('hotel_export_filename')
+        ? hotel_export_filename('Reporte_Movimientos', 'pdf')
+        : 'Reporte_Movimientos_' . date('Y-m-d_His') . '.pdf';
     $this->entregarReportePdf($pdf, [
         'tipo_reporte' => 'ingresos-gastos-usuario',
         'titulo' => 'Reporte de movimientos por usuario',
@@ -1598,7 +1612,9 @@ private function exportarIngresosGastosPdf() {
     $pdf->SetTextColor(120, 120, 120);
     $pdf->Cell(0, 5, $brand['hotel'] . ' - Reporte generado el ' . date('d/m/Y') . ' a las ' . date('H:i') . ' hrs', 0, 1, 'C');
     
-    $filename = 'Ingresos_Gastos_' . date('Y-m-d_His') . '.pdf';
+    $filename = function_exists('hotel_export_filename')
+        ? hotel_export_filename('Ingresos_Gastos', 'pdf')
+        : 'Ingresos_Gastos_' . date('Y-m-d_His') . '.pdf';
     $this->entregarReportePdf($pdf, [
         'tipo_reporte' => 'ingresos-gastos',
         'titulo' => 'Reporte de ingresos vs gastos',
@@ -1826,6 +1842,15 @@ private function exportarIngresosTotalesPdf() {
     }
     
     $utilidadTotal = $totalesGenerales['ingreso'] - $totalesGenerales['gasto'];
+    $brand = $this->reportePdfBranding();
+    $primaryRgb = $this->reportePdfRgb($brand['primary']);
+    $secondaryRgb = $this->reportePdfRgb($brand['secondary']);
+    $accentRgb = $this->reportePdfRgb($brand['accent']);
+    $primaryTextRgb = $this->reportePdfRgb($this->reportePdfTextColor($brand['primary']));
+    $secondaryTextRgb = $this->reportePdfRgb($this->reportePdfTextColor($brand['secondary']));
+    $accentTextRgb = $this->reportePdfRgb($this->reportePdfTextColor($brand['accent']));
+    $utilidadColor = $utilidadTotal >= 0 ? $brand['accent'] : '#B93A32';
+    $utilidadSoft = $utilidadTotal >= 0 ? $brand['accent_soft'] : '#FBE9E7';
     
     // Generar PDF
     $pdf = new ReportePDF('', '');
@@ -1835,16 +1860,16 @@ private function exportarIngresosTotalesPdf() {
     $pdf->AddPage();
     
     // Encabezado
-    $pdf->SetFillColor(41, 128, 185);
+    $pdf->SetFillColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
     $pdf->Rect(0, 0, 210, 35, 'F');
     
-    $pdf->SetTextColor(255, 255, 255);
+    $pdf->SetTextColor($primaryTextRgb[0], $primaryTextRgb[1], $primaryTextRgb[2]);
     $pdf->SetFont('helvetica', 'B', 20);
     $pdf->SetY(8);
     $pdf->Cell(0, 10, 'REPORTE DE INGRESOS TOTALES', 0, 1, 'C');
     
     $pdf->SetFont('helvetica', '', 12);
-    $pdf->Cell(0, 6, current_hotel_display_name('Medisoft Hoteles'), 0, 1, 'C');
+    $pdf->Cell(0, 6, $brand['hotel'], 0, 1, 'C');
     $pdf->SetFont('helvetica', '', 10);
     $pdf->Cell(0, 5, date('d/m/Y', strtotime($fecha_inicio)) . ' - ' . date('d/m/Y', strtotime($fecha_fin)), 0, 1, 'C');
     
@@ -1855,27 +1880,27 @@ private function exportarIngresosTotalesPdf() {
     $html = '<table cellpadding="0" cellspacing="8">
         <tr>
             <td width="25%">
-                <div style="background-color:#E8F5E9; border:2px solid #4CAF50; border-radius:10px; padding:15px; text-align:center;">
-                    <div style="font-size:10pt; color:#2E7D32; font-weight:bold;">INGRESOS</div>
-                    <div style="font-size:18pt; font-weight:bold; color:#1B5E20;">$' . number_format($totalesGenerales['ingreso'], 2) . '</div>
+                <div style="background-color:' . $brand['primary_soft'] . '; border:2px solid ' . $brand['primary'] . '; border-radius:10px; padding:15px; text-align:center;">
+                    <div style="font-size:10pt; color:' . $brand['primary_dark'] . '; font-weight:bold;">INGRESOS</div>
+                    <div style="font-size:18pt; font-weight:bold; color:' . $brand['primary'] . ';">$' . number_format($totalesGenerales['ingreso'], 2) . '</div>
                 </div>
             </td>
             <td width="25%">
-                <div style="background-color:#FFEBEE; border:2px solid #F44336; border-radius:10px; padding:15px; text-align:center;">
-                    <div style="font-size:10pt; color:#C62828; font-weight:bold;">GASTOS</div>
-                    <div style="font-size:18pt; font-weight:bold; color:#B71C1C;">$' . number_format($totalesGenerales['gasto'], 2) . '</div>
+                <div style="background-color:' . $brand['secondary_soft'] . '; border:2px solid ' . $brand['secondary'] . '; border-radius:10px; padding:15px; text-align:center;">
+                    <div style="font-size:10pt; color:' . $brand['secondary_dark'] . '; font-weight:bold;">GASTOS</div>
+                    <div style="font-size:18pt; font-weight:bold; color:' . $brand['secondary'] . ';">$' . number_format($totalesGenerales['gasto'], 2) . '</div>
                 </div>
             </td>
             <td width="25%">
-                <div style="background-color:' . ($utilidadTotal >= 0 ? '#E3F2FD' : '#FFF3E0') . '; border:2px solid ' . ($utilidadTotal >= 0 ? '#2196F3' : '#FF9800') . '; border-radius:10px; padding:15px; text-align:center;">
-                    <div style="font-size:10pt; color:' . ($utilidadTotal >= 0 ? '#1565C0' : '#E65100') . '; font-weight:bold;">UTILIDAD</div>
-                    <div style="font-size:18pt; font-weight:bold; color:' . ($utilidadTotal >= 0 ? '#0D47A1' : '#BF360C') . ';">$' . number_format($utilidadTotal, 2) . '</div>
+                <div style="background-color:' . $utilidadSoft . '; border:2px solid ' . $utilidadColor . '; border-radius:10px; padding:15px; text-align:center;">
+                    <div style="font-size:10pt; color:' . $utilidadColor . '; font-weight:bold;">UTILIDAD</div>
+                    <div style="font-size:18pt; font-weight:bold; color:' . $utilidadColor . ';">$' . number_format($utilidadTotal, 2) . '</div>
                 </div>
             </td>
             <td width="25%">
-                <div style="background-color:#F3E5F5; border:2px solid #9C27B0; border-radius:10px; padding:15px; text-align:center;">
-                    <div style="font-size:10pt; color:#6A1B9A; font-weight:bold;">DÍAS</div>
-                    <div style="font-size:18pt; font-weight:bold; color:#4A148C;">' . count($movimientosPorDia) . '</div>
+                <div style="background-color:' . $brand['accent_soft'] . '; border:2px solid ' . $brand['accent'] . '; border-radius:10px; padding:15px; text-align:center;">
+                    <div style="font-size:10pt; color:' . $brand['accent_dark'] . '; font-weight:bold;">DÍAS</div>
+                    <div style="font-size:18pt; font-weight:bold; color:' . $brand['accent'] . ';">' . count($movimientosPorDia) . '</div>
                 </div>
             </td>
         </tr>
@@ -1886,7 +1911,7 @@ private function exportarIngresosTotalesPdf() {
     
     // Distribución por método
     $pdf->SetFont('helvetica', 'B', 11);
-    $pdf->SetTextColor(52, 73, 94);
+    $pdf->SetTextColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
     $pdf->Cell(0, 8, 'Distribución por Método de Pago', 0, 1);
     
     $totalEfectivo = $totalesPorMetodo['efectivo']['ingreso'] - $totalesPorMetodo['efectivo']['gasto'];
@@ -1896,23 +1921,23 @@ private function exportarIngresosTotalesPdf() {
     $html = '<table cellpadding="5" cellspacing="2">
         <tr>
             <td width="30%">
-                <div style="background-color:#E8F5E9; border:1px solid #4CAF50; padding:10px; text-align:center; border-radius:5px;">
-                    <div style="font-size:9pt; color:#2E7D32; font-weight:bold;">EFECTIVO</div>
-                    <div style="font-size:14pt; font-weight:bold; color:#1B5E20;">$' . number_format($totalEfectivo, 2) . '</div>
+                <div style="background-color:' . $brand['primary_soft'] . '; border:1px solid ' . $brand['primary'] . '; padding:10px; text-align:center; border-radius:5px;">
+                    <div style="font-size:9pt; color:' . $brand['primary'] . '; font-weight:bold;">EFECTIVO</div>
+                    <div style="font-size:14pt; font-weight:bold; color:' . $brand['primary_dark'] . ';">$' . number_format($totalEfectivo, 2) . '</div>
                 </div>
             </td>
             <td width="5%"></td>
             <td width="30%">
-                <div style="background-color:#E3F2FD; border:1px solid #2196F3; padding:10px; text-align:center; border-radius:5px;">
-                    <div style="font-size:9pt; color:#1565C0; font-weight:bold;">TARJETA</div>
-                    <div style="font-size:14pt; font-weight:bold; color:#0D47A1;">$' . number_format($totalTarjeta, 2) . '</div>
+                <div style="background-color:' . $brand['secondary_soft'] . '; border:1px solid ' . $brand['secondary'] . '; padding:10px; text-align:center; border-radius:5px;">
+                    <div style="font-size:9pt; color:' . $brand['secondary'] . '; font-weight:bold;">TARJETA</div>
+                    <div style="font-size:14pt; font-weight:bold; color:' . $brand['secondary_dark'] . ';">$' . number_format($totalTarjeta, 2) . '</div>
                 </div>
             </td>
             <td width="5%"></td>
             <td width="30%">
-                <div style="background-color:#F3E5F5; border:1px solid #9C27B0; padding:10px; text-align:center; border-radius:5px;">
-                    <div style="font-size:9pt; color:#6A1B9A; font-weight:bold;">TRANSFERENCIA</div>
-                    <div style="font-size:14pt; font-weight:bold; color:#4A148C;">$' . number_format($totalTransferencia, 2) . '</div>
+                <div style="background-color:' . $brand['accent_soft'] . '; border:1px solid ' . $brand['accent'] . '; padding:10px; text-align:center; border-radius:5px;">
+                    <div style="font-size:9pt; color:' . $brand['accent'] . '; font-weight:bold;">TRANSFERENCIA</div>
+                    <div style="font-size:14pt; font-weight:bold; color:' . $brand['accent_dark'] . ';">$' . number_format($totalTransferencia, 2) . '</div>
                 </div>
             </td>
         </tr>
@@ -1924,8 +1949,8 @@ private function exportarIngresosTotalesPdf() {
     
     
     // Resumen por usuario
-    $pdf->SetFillColor(52, 152, 219);
-    $pdf->SetTextColor(255, 255, 255);
+    $pdf->SetFillColor($secondaryRgb[0], $secondaryRgb[1], $secondaryRgb[2]);
+    $pdf->SetTextColor($secondaryTextRgb[0], $secondaryTextRgb[1], $secondaryTextRgb[2]);
     $pdf->SetFont('helvetica', 'B', 12);
     $pdf->Cell(0, 10, 'RESUMEN POR USUARIO', 0, 1, 'C', true);
     $pdf->SetTextColor(0, 0, 0);
@@ -1934,7 +1959,7 @@ private function exportarIngresosTotalesPdf() {
     $pdf->SetFont('helvetica', '', 9);
     $html = '<table border="1" cellpadding="4" cellspacing="0">
         <thead>
-            <tr style="background-color:#AED6F1; color:#1B4F72; font-weight:bold;">
+            <tr style="background-color:' . $brand['secondary_soft'] . '; color:' . $brand['secondary_dark'] . '; font-weight:bold;">
                 <th width="40%">Usuario</th>
                 <th width="20%" style="text-align:right;">Ingresos</th>
                 <th width="20%" style="text-align:right;">Gastos</th>
@@ -1945,7 +1970,7 @@ private function exportarIngresosTotalesPdf() {
     
     $fila = 0;
     foreach ($totalesPorUsuario as $usuario => $totales) {
-        $bgColor = $fila % 2 == 0 ? '#FFFFFF' : '#EBF5FB';
+        $bgColor = $fila % 2 == 0 ? '#FFFFFF' : $brand['secondary_soft'];
         $utilidad = $totales['ingreso'] - $totales['gasto'];
         
         $html .= '<tr style="background-color:' . $bgColor . ';">
@@ -1962,8 +1987,8 @@ private function exportarIngresosTotalesPdf() {
     $pdf->Ln(10);
     
     // Resumen por categoría
-    $pdf->SetFillColor(76, 175, 80);
-    $pdf->SetTextColor(255, 255, 255);
+    $pdf->SetFillColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
+    $pdf->SetTextColor($primaryTextRgb[0], $primaryTextRgb[1], $primaryTextRgb[2]);
     $pdf->SetFont('helvetica', 'B', 12);
     $pdf->Cell(0, 10, 'RESUMEN POR CATEGORÍA', 0, 1, 'C', true);
     $pdf->SetTextColor(0, 0, 0);
@@ -1972,7 +1997,7 @@ private function exportarIngresosTotalesPdf() {
     $pdf->SetFont('helvetica', '', 9);
     $html = '<table border="1" cellpadding="4" cellspacing="0">
         <thead>
-            <tr style="background-color:#A5D6A7; color:#1B5E20; font-weight:bold;">
+            <tr style="background-color:' . $brand['primary_soft'] . '; color:' . $brand['primary_dark'] . '; font-weight:bold;">
                 <th width="30%">Categoría</th>
                 <th width="15%" style="text-align:center;">Cantidad</th>
                 <th width="20%" style="text-align:right;">Ingresos</th>
@@ -1984,7 +2009,7 @@ private function exportarIngresosTotalesPdf() {
     
     $fila = 0;
     foreach ($totalesPorCategoria as $categoria => $datos) {
-        $bgColor = $fila % 2 == 0 ? '#FFFFFF' : '#E8F5E9';
+        $bgColor = $fila % 2 == 0 ? '#FFFFFF' : $brand['primary_soft'];
         $total = $datos['ingreso'] - $datos['gasto'];
         
         $html .= '<tr style="background-color:' . $bgColor . ';">
@@ -2002,14 +2027,14 @@ private function exportarIngresosTotalesPdf() {
     
     // ═══ SECCIÓN MANOLO vs ELIA ═══
     $propiedades = $this->obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, null, $hotel_id);
-    $this->generarSeccionPropiedadesPDF($pdf, $propiedades);
+    $this->generarSeccionPropiedadesPDF($pdf, $propiedades, $brand);
     
     // Nueva página para detalle diario
     $pdf->AddPage();
     
     // Detalle por día
-    $pdf->SetFillColor(103, 58, 183);
-    $pdf->SetTextColor(255, 255, 255);
+    $pdf->SetFillColor($accentRgb[0], $accentRgb[1], $accentRgb[2]);
+    $pdf->SetTextColor($accentTextRgb[0], $accentTextRgb[1], $accentTextRgb[2]);
     $pdf->SetFont('helvetica', 'B', 12);
     $pdf->Cell(0, 10, 'DETALLE DIARIO DE MOVIMIENTOS', 0, 1, 'C', true);
     $pdf->SetTextColor(0, 0, 0);
@@ -2017,14 +2042,15 @@ private function exportarIngresosTotalesPdf() {
     
     $numeroDia = 1;
     foreach ($movimientosPorDia as $fecha => $dataDia) {
-        $pdf->SetFillColor(236, 239, 241);
+        $dayHeaderRgb = $this->reportePdfRgb($brand['accent_soft']);
+        $pdf->SetFillColor($dayHeaderRgb[0], $dayHeaderRgb[1], $dayHeaderRgb[2]);
         $pdf->SetFont('helvetica', 'B', 10);
         $pdf->Cell(0, 8, 'Día ' . $numeroDia . ' - ' . date('d/m/Y', strtotime($fecha)) . ' - ' . $obtenerNombreDia($fecha), 0, 1, 'L', true);
         
         $pdf->SetFont('helvetica', '', 8);
         $html = '<table border="1" cellpadding="3" cellspacing="0">
             <thead>
-                <tr style="background-color:#E1BEE7; color:#4A148C; font-weight:bold;">
+                <tr style="background-color:' . $brand['accent_soft'] . '; color:' . $brand['accent_dark'] . '; font-weight:bold;">
                     <th width="8%">Hora</th>
                     <th width="12%">Usuario</th>
                     <th width="12%">Categoría</th>
@@ -2065,7 +2091,7 @@ private function exportarIngresosTotalesPdf() {
         
         $html .= '</tbody>
             <tfoot>
-                <tr style="background-color:#E1BEE7;">
+                <tr style="background-color:' . $brand['accent_soft'] . ';">
                     <td colspan="7" style="text-align:right; font-weight:bold;">Totales del día:</td>
                     <td style="text-align:right; font-weight:bold;">
                         I: $' . number_format($dataDia['totales']['ingreso'], 2) . '<br>
@@ -2083,17 +2109,18 @@ private function exportarIngresosTotalesPdf() {
     
     // Footer
     $pdf->SetY(-40);
-    $pdf->SetFillColor(236, 240, 241);
+    $footerBgRgb = $this->reportePdfRgb($brand['primary_soft']);
+    $pdf->SetFillColor($footerBgRgb[0], $footerBgRgb[1], $footerBgRgb[2]);
     $pdf->Rect(0, $pdf->GetY() - 5, 210, 50, 'F');
     
     $pdf->SetFont('helvetica', '', 9);
-    $pdf->SetTextColor(52, 73, 94);
+    $pdf->SetTextColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
     
     $html = '<table cellpadding="5">
         <tr>
             <td width="100%" style="text-align:center;">
-                <div style="font-size:10pt; font-weight:bold; color:#2C3E50; margin-bottom:8px;">' . htmlspecialchars(current_hotel_display_name('Medisoft Hoteles'), ENT_QUOTES, 'UTF-8') . ' - Sistema de Gestión</div>
-                <div style="font-size:9pt; color:#7F8C8D;">
+                <div style="font-size:10pt; font-weight:bold; color:' . $brand['primary_dark'] . '; margin-bottom:8px;">' . htmlspecialchars($brand['hotel'], ENT_QUOTES, 'UTF-8') . ' - Sistema de Gestión</div>
+                <div style="font-size:9pt; color:' . $brand['muted'] . ';">
                     Reporte generado el ' . date('d/m/Y') . ' a las ' . date('H:i') . ' hrs<br>
                     Por: ' . (function_exists('usuario_actual') ? usuario_actual('nombre_completo') : 'Sistema')  . '
                 </div>
@@ -2104,7 +2131,9 @@ private function exportarIngresosTotalesPdf() {
     $pdf->writeHTML($html, true, false, false, false, '');
     
     // Salida del PDF
-    $filename = 'Reporte_Ingresos_Totales_' . date('Y-m-d_His') . '.pdf';
+    $filename = function_exists('hotel_export_filename')
+        ? hotel_export_filename('Reporte_Ingresos_Totales', 'pdf')
+        : 'Reporte_Ingresos_Totales_' . date('Y-m-d_His') . '.pdf';
     $this->entregarReportePdf($pdf, [
         'tipo_reporte' => 'ingresos-totales',
         'titulo' => 'Reporte de ingresos totales',

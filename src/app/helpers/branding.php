@@ -311,6 +311,52 @@ function current_hotel_display_name($fallback = 'Medisoft Hoteles') {
     return hotel_branding_public_name(is_array($branding) ? $branding : null, $nombreSesion !== '' ? $nombreSesion : $fallback);
 }
 
+function current_hotel_export_slug($fallback = 'hotel') {
+    $nombre = function_exists('current_hotel_display_name')
+        ? current_hotel_display_name($fallback)
+        : $fallback;
+
+    $nombre = trim((string) $nombre);
+    if ($nombre === '') {
+        $nombre = $fallback;
+    }
+
+    if (function_exists('iconv')) {
+        $transliterado = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $nombre);
+        if ($transliterado !== false) {
+            $nombre = $transliterado;
+        }
+    }
+
+    $slug = strtolower($nombre);
+    $slug = preg_replace('/[^a-z0-9]+/', '_', $slug);
+    $slug = trim((string) $slug, '_');
+
+    return $slug !== '' ? $slug : 'hotel';
+}
+
+function hotel_export_filename($prefix, $extension = 'pdf', $includeTimestamp = true) {
+    $prefix = preg_replace('/[^A-Za-z0-9._-]+/', '_', trim((string) $prefix));
+    $prefix = trim((string) $prefix, '._-');
+    if ($prefix === '') {
+        $prefix = 'reporte';
+    }
+
+    $extension = strtolower(preg_replace('/[^A-Za-z0-9]+/', '', (string) $extension));
+    if ($extension === '') {
+        $extension = 'pdf';
+    }
+
+    $parts = [$prefix, current_hotel_export_slug()];
+    if ($includeTimestamp) {
+        $parts[] = date('Ymd_His');
+    }
+
+    return implode('_', array_filter($parts, static function ($part) {
+        return $part !== '';
+    })) . '.' . $extension;
+}
+
 function hotel_branding_upload_asset(array $file, $hotelSlug, $tipo) {
     $config = hotel_branding_upload_config($tipo);
     if (!$config) {

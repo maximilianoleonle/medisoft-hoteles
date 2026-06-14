@@ -23,6 +23,34 @@ if ($return_to === 'reservacion') {
 } elseif ($return_to === 'reservacion_rapida') {
     $cancel_url = url('habitaciones');
 }
+
+$estacionamientos = [];
+if (function_exists('hotel_general_catalog_parking_rows')) {
+    foreach (hotel_general_catalog_parking_rows(null, false) as $parkingRow) {
+        $parkingCode = trim((string)($parkingRow['codigo'] ?? ''));
+        $parkingLabel = trim((string)($parkingRow['label'] ?? ''));
+        if ($parkingCode !== '' && $parkingLabel !== '') {
+            $estacionamientos[$parkingCode] = $parkingLabel;
+        }
+    }
+}
+if (empty($estacionamientos)) {
+    $estacionamientos = ['coches' => 'Coches'];
+}
+reset($estacionamientos);
+$estacionamientoDefault = (string)key($estacionamientos);
+
+$gcParkingOptionsTemplate = '';
+foreach ($estacionamientos as $parkingCode => $parkingLabel) {
+    $parkingCode = (string)$parkingCode;
+    $parkingCodeEsc = htmlspecialchars($parkingCode, ENT_QUOTES, 'UTF-8');
+    $parkingLabelEsc = htmlspecialchars((string)$parkingLabel, ENT_QUOTES, 'UTF-8');
+    $checkedAttr = $parkingCode === $estacionamientoDefault ? ' checked' : '';
+    $gcParkingOptionsTemplate .= '<label class="relative cursor-pointer">';
+    $gcParkingOptionsTemplate .= '<input type="radio" name="__PARKING_NAME__" value="' . $parkingCodeEsc . '" class="peer sr-only"' . $checkedAttr . '>';
+    $gcParkingOptionsTemplate .= '<div class="gc-radio-card"><i class="fas fa-car"></i><p>' . $parkingLabelEsc . '</p></div>';
+    $gcParkingOptionsTemplate .= '</label>';
+}
 ?>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
@@ -1040,19 +1068,9 @@ if ($return_to === 'reservacion') {
                                         <div class="gc-field gc-field-full">
                                             <label class="gc-label">
                                                 Estacionamiento <span class="gc-required">*</span>
-                                            </label>
-                                            <div class="gc-radio-grid">
-                                                <label class="relative cursor-pointer">
-                                                    <input type="radio"
-                                                           name="vehiculos[0][estacionamiento]"
-                                                           value="coches"
-                                                           class="peer sr-only"
-                                                           checked>
-                                                    <div class="gc-radio-card">
-                                                        <i class="fas fa-car"></i>
-                                                        <p>Coches</p>
-                                                    </div>
-                                                </label>
+                                             </label>
+                                             <div class="gc-radio-grid">
+                                                <?= str_replace('__PARKING_NAME__', 'vehiculos[0][estacionamiento]', $gcParkingOptionsTemplate) ?>
                                             </div>
                                         </div>
                                     </div>
@@ -1134,10 +1152,13 @@ if ($return_to === 'reservacion') {
 
 <script>
 let vehiculoIndex = 1;
+const estacionamientoOptionsTemplate = <?= json_encode($gcParkingOptionsTemplate, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
 // Funcion para agregar vehiculo
 function agregarVehiculo() {
     const container = document.getElementById('vehiculos-container');
+    const estacionamientoName = `vehiculos[${vehiculoIndex}][estacionamiento]`;
+    const estacionamientoOptionsHtml = estacionamientoOptionsTemplate.replace(/__PARKING_NAME__/g, estacionamientoName);
     const vehiculoHtml = `
         <div class="vehiculo-item animate-fadeIn">
             <div class="gc-vehicle-head">
@@ -1190,17 +1211,7 @@ function agregarVehiculo() {
                         Estacionamiento <span class="gc-required">*</span>
                     </label>
                     <div class="gc-radio-grid">
-                        <label class="relative cursor-pointer">
-                            <input type="radio"
-                                   name="vehiculos[${vehiculoIndex}][estacionamiento]"
-                                   value="coches"
-                                   class="peer sr-only"
-                                   checked>
-                            <div class="gc-radio-card">
-                                <i class="fas fa-car"></i>
-                                <p>Coches</p>
-                            </div>
-                        </label>
+                        ${estacionamientoOptionsHtml}
                     </div>
                 </div>
             </div>

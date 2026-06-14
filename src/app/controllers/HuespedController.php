@@ -11,7 +11,29 @@ class HuespedController extends Controller {
         parent::__construct($route_params);
         $this->huespedModel = new Huesped();
     }
-    
+
+    private function estacionamientoDefaultVehiculo() {
+        if (function_exists('hotel_general_catalog_parking_rows')) {
+            foreach (hotel_general_catalog_parking_rows(null, false) as $parkingRow) {
+                $parkingCode = trim((string)($parkingRow['codigo'] ?? ''));
+                if ($parkingCode !== '') {
+                    return $parkingCode;
+                }
+            }
+        }
+
+        return 'coches';
+    }
+
+    private function normalizarEstacionamientoVehiculo($value) {
+        $estacionamiento = trim((string)($value ?? ''));
+        return $estacionamiento !== '' ? $estacionamiento : $this->estacionamientoDefaultVehiculo();
+    }
+
+    private function estacionamientoVehiculoDesdePost($key) {
+        return $this->normalizarEstacionamientoVehiculo($this->getPost($key, ''));
+    }
+
     /**
      * Verificar autenticación antes de cada acción
      */
@@ -178,7 +200,7 @@ public function actualizarVehiculoAction() {
         'modelo' => trim($this->getPost('modelo')),
         'placas' => strtoupper(trim($this->getPost('placas'))),
         'color' => trim($this->getPost('color')),
-        'estacionamiento' => $this->getPost('estacionamiento', 'primer_piso')
+        'estacionamiento' => $this->estacionamientoVehiculoDesdePost('estacionamiento')
     ];
     
     // Validaciones
@@ -339,7 +361,7 @@ foreach ($reservaciones as $reservacion) {
         'modelo' => trim($this->getPost('modelo')),
         'placas' => strtoupper(trim($this->getPost('placas'))),
         'color' => trim($this->getPost('color')),
-        'estacionamiento' => $this->getPost('estacionamiento', 'primer_piso')
+        'estacionamiento' => $this->estacionamientoVehiculoDesdePost('estacionamiento')
     ];
     
     // Validaciones
@@ -517,7 +539,7 @@ public function guardarAction() {
             $placas = isset($vehiculo['placas']) ? trim($vehiculo['placas']) : '';
             $modelo = isset($vehiculo['modelo']) ? trim($vehiculo['modelo']) : '';
             $color = isset($vehiculo['color']) ? trim($vehiculo['color']) : '';
-            $estacionamiento = isset($vehiculo['estacionamiento']) ? $vehiculo['estacionamiento'] : 'primer_piso';
+            $estacionamiento = $this->normalizarEstacionamientoVehiculo($vehiculo['estacionamiento'] ?? '');
             
             // Solo procesar si tiene al menos marca o placas
             if (!empty($marca) || !empty($placas)) {

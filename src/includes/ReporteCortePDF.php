@@ -1,7 +1,6 @@
 <?php
 /**
  * Generador de PDF para Corte de Caja
- * Los Cedros
  * 
  * Diseño simple con letras grandes - Paleta Olivo + Café
  * Separación MANOLO vs ELIA por nombre de habitación
@@ -29,6 +28,7 @@ class ReporteCortePDF extends TCPDF {
     
     private $corteId = '';
     private $fechaCorta = '';
+    private $nombreHotel = 'Medisoft Hoteles';
     
     // =================================================================
     // HEADER
@@ -46,7 +46,7 @@ class ReporteCortePDF extends TCPDF {
         
         $this->SetFont('helvetica', '', 10);
         $this->SetTextColor(230, 230, 220);
-        $this->Cell(0, 5, $this->fechaCorta . '   —   Los Cedros   —   Corte #' . $this->corteId, 0, 1, 'C');
+        $this->Cell(0, 5, $this->fechaCorta . '   -   ' . $this->nombreHotel . '   -   Corte #' . $this->corteId, 0, 1, 'C');
         
         $this->SetY(30);
     }
@@ -58,7 +58,7 @@ class ReporteCortePDF extends TCPDF {
         $this->SetY(-12);
         $this->SetFont('helvetica', '', 7);
         $this->SetTextColor(160, 160, 160);
-        $this->Cell(95, 5, 'Los Cedros', 0, 0, 'L');
+        $this->Cell(95, 5, $this->nombreHotel, 0, 0, 'L');
         $this->Cell(95, 5, 'Pág. ' . $this->getAliasNumPage() . '/' . $this->getAliasNbPages(), 0, 0, 'R');
     }
     
@@ -68,6 +68,69 @@ class ReporteCortePDF extends TCPDF {
     private function c_text($c) { $this->SetTextColor($c[0], $c[1], $c[2]); }
     private function c_fill($c) { $this->SetFillColor($c[0], $c[1], $c[2]); }
     private function c_draw($c) { $this->SetDrawColor($c[0], $c[1], $c[2]); }
+
+    private function aplicarBrandingHotel() {
+        $this->nombreHotel = function_exists('current_hotel_display_name')
+            ? current_hotel_display_name('Medisoft Hoteles')
+            : 'Medisoft Hoteles';
+
+        $branding = function_exists('current_hotel_branding') ? current_hotel_branding() : [];
+        if (!is_array($branding)) {
+            $branding = [];
+        }
+
+        $primary = function_exists('hotel_branding_hex') ? hotel_branding_hex($branding['color_primary'] ?? null, '#1B2746') : '#1B2746';
+        $secondary = function_exists('hotel_branding_hex') ? hotel_branding_hex($branding['color_secondary'] ?? null, '#0F172A') : '#0F172A';
+        $accent = function_exists('hotel_branding_hex') ? hotel_branding_hex($branding['color_accent'] ?? null, '#BD9441') : '#BD9441';
+        $palette = function_exists('hotel_branding_safe_palette')
+            ? hotel_branding_safe_palette($primary, $secondary, $accent)
+            : [
+                '--brand-primary' => $primary,
+                '--brand-secondary' => $secondary,
+                '--brand-accent' => $accent,
+                '--brand-surface-soft' => '#FCFAF5',
+                '--brand-line' => '#EBE4D7',
+                '--brand-muted' => '#667085',
+            ];
+
+        $this->olivo = $this->hexToRgb($palette['--brand-primary'] ?? $primary);
+        $this->olivoClaro = $this->hexToRgb($this->mixHex($palette['--brand-primary'] ?? $primary, '#FFFFFF', 0.72));
+        $this->cafe = $this->hexToRgb($palette['--brand-accent'] ?? $accent);
+        $this->cafeClaro = $this->hexToRgb($this->mixHex($palette['--brand-accent'] ?? $accent, '#FFFFFF', 0.68));
+        $this->crema = $this->hexToRgb($palette['--brand-surface-soft'] ?? '#FCFAF5');
+        $this->cremaOsc = $this->hexToRgb($palette['--brand-line'] ?? '#EBE4D7');
+        $this->oscuro = $this->hexToRgb($palette['--brand-secondary'] ?? $secondary);
+        $this->gris = $this->hexToRgb($palette['--brand-muted'] ?? '#667085');
+    }
+
+    private function hexToRgb($hex) {
+        $hex = trim((string) $hex);
+        if (function_exists('hotel_branding_hex')) {
+            $hex = hotel_branding_hex($hex, '#111827');
+        } elseif (!preg_match('/^#[0-9A-Fa-f]{6}$/', $hex)) {
+            $hex = '#111827';
+        }
+
+        $hex = ltrim($hex, '#');
+        return [
+            hexdec(substr($hex, 0, 2)),
+            hexdec(substr($hex, 2, 2)),
+            hexdec(substr($hex, 4, 2)),
+        ];
+    }
+
+    private function mixHex($hex, $target, $ratio) {
+        $ratio = max(0, min(1, (float) $ratio));
+        $a = $this->hexToRgb($hex);
+        $b = $this->hexToRgb($target);
+
+        return sprintf(
+            '#%02X%02X%02X',
+            (int) round($a[0] * $ratio + $b[0] * (1 - $ratio)),
+            (int) round($a[1] * $ratio + $b[1] * (1 - $ratio)),
+            (int) round($a[2] * $ratio + $b[2] * (1 - $ratio))
+        );
+    }
     
     private function titulo($texto, $color = null) {
         if (!$color) $color = $this->olivo;
@@ -114,6 +177,7 @@ class ReporteCortePDF extends TCPDF {
         
         $this->corteId = $corte['id'] ?? '0';
         $this->fechaCorta = date('d/m/Y', strtotime($corte['fecha_apertura'] ?? 'now'));
+        $this->aplicarBrandingHotel();
         
         $fecha_apertura = date('d/m/Y H:i', strtotime($corte['fecha_apertura'] ?? 'now'));
         $fecha_cierre = date('d/m/Y H:i', strtotime($corte['fecha_cierre'] ?? 'now'));
@@ -127,7 +191,7 @@ class ReporteCortePDF extends TCPDF {
         $usuario_apertura = $corte['usuario_apertura'] ?? 'N/A';
         $usuario_cierre = $corte['usuario_cierre'] ?? $corte['usuario_apertura'] ?? 'N/A';
         
-        $this->SetCreator('Los Cedros');
+        $this->SetCreator($this->nombreHotel);
         $this->SetTitle('Corte de Caja #' . $this->corteId);
         $this->SetMargins(10, 32, 10);
         $this->SetAutoPageBreak(true, 16);
@@ -510,9 +574,11 @@ class ReporteCortePDF extends TCPDF {
             mkdir($directorio, 0755, true);
         }
         
-        $nombreArchivo = sprintf('corte_caja_%s_%s.pdf',
-            date('Y-m-d', strtotime($corte['fecha_apertura'])),
-            date('His'));
+        $nombreArchivo = function_exists('hotel_export_filename')
+            ? hotel_export_filename('corte_caja_' . date('Y-m-d', strtotime($corte['fecha_apertura'])), 'pdf')
+            : sprintf('corte_caja_%s_%s.pdf',
+                date('Y-m-d', strtotime($corte['fecha_apertura'])),
+                date('His'));
         
         $rutaCompleta = $directorio . '/' . $nombreArchivo;
         $this->Output($rutaCompleta, 'F');

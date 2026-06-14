@@ -36,6 +36,17 @@ $estacionamientos = [];
 if (class_exists('HuespedVehiculo')) {
     $vehiculoModel = new HuespedVehiculo();
     $vehiculos = $vehiculoModel->porHuesped($huesped_id);
+}
+if (function_exists('hotel_general_catalog_parking_rows')) {
+    foreach (hotel_general_catalog_parking_rows(null, false) as $parkingRow) {
+        $parkingCode = trim((string)($parkingRow['codigo'] ?? ''));
+        $parkingLabel = trim((string)($parkingRow['label'] ?? ''));
+        if ($parkingCode !== '' && $parkingLabel !== '') {
+            $estacionamientos[$parkingCode] = $parkingLabel;
+        }
+    }
+}
+if (empty($estacionamientos) && class_exists('HuespedVehiculo')) {
     $estacionamientos = HuespedVehiculo::getEstacionamientos();
 }
 $vehiculos_count = count($vehiculos);
