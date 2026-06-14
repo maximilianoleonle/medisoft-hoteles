@@ -3,16 +3,17 @@ body.hotel-layout-scope {
     --hotel-primary: var(--brand-primary, #1B2746);
     --hotel-secondary: var(--brand-secondary, #0F172A);
     --hotel-accent: var(--brand-accent, #BD9441);
-    --hotel-bg: color-mix(in srgb, var(--hotel-accent) 9%, #F8F5ED);
-    --hotel-panel: color-mix(in srgb, var(--hotel-accent) 2%, #FFFFFF);
-    --hotel-text: var(--hotel-secondary);
-    --hotel-muted: color-mix(in srgb, var(--hotel-secondary) 54%, #94A3B8);
-    --hotel-brand: var(--hotel-primary);
-    --hotel-brand-dark: var(--hotel-secondary);
-    --hotel-brand-soft: color-mix(in srgb, var(--hotel-primary) 10%, #F8F5ED);
-    --hotel-border: color-mix(in srgb, var(--hotel-accent) 22%, #E7DEC9);
-    --hotel-line: color-mix(in srgb, var(--hotel-accent) 32%, #E2D6BF);
+    --hotel-bg: var(--brand-surface-soft, color-mix(in srgb, var(--hotel-accent) 9%, #F8F5ED));
+    --hotel-panel: var(--brand-surface, color-mix(in srgb, var(--hotel-accent) 2%, #FFFEFB));
+    --hotel-text: var(--brand-text, var(--hotel-secondary));
+    --hotel-muted: var(--brand-muted, color-mix(in srgb, var(--hotel-secondary) 54%, #94A3B8));
+    --hotel-brand: var(--brand-action-bg, var(--hotel-primary));
+    --hotel-brand-dark: var(--brand-action-bg-hover, var(--hotel-secondary));
+    --hotel-brand-soft: var(--brand-soft, color-mix(in srgb, var(--hotel-primary) 10%, #F8F5ED));
+    --hotel-border: var(--brand-border, color-mix(in srgb, var(--hotel-accent) 22%, #E7DEC9));
+    --hotel-line: var(--brand-line, color-mix(in srgb, var(--hotel-accent) 32%, #E2D6BF));
     --hotel-gold: var(--hotel-accent);
+    --hotel-on-brand: var(--brand-action-text, #FFFEFB);
     --sidebar-width: 268px !important;
     --sidebar-collapsed-width: 76px !important;
     background:
@@ -61,7 +62,7 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
     height: 38px;
     border: 1px solid var(--hotel-border);
     border-radius: 10px;
-    background: #fff;
+    background: var(--hotel-panel);
     object-fit: contain;
     padding: 4px;
 }
@@ -102,7 +103,7 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
     gap: 8px;
     border: 1px solid var(--hotel-border);
     border-radius: 10px;
-    background: #fff;
+    background: var(--hotel-panel);
     color: #334155;
     padding: 0 11px;
     font-size: .78rem;
@@ -128,7 +129,7 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
 
 .hotel-layout-scope .hotel-sidebar .sidebar-header {
     padding: 16px 14px 14px !important;
-    background: radial-gradient(circle at top right, color-mix(in srgb, var(--hotel-brand) 13%, transparent), transparent 12rem), #fff !important;
+    background: radial-gradient(circle at top right, color-mix(in srgb, var(--hotel-brand) 13%, transparent), transparent 12rem), var(--hotel-panel) !important;
     border-bottom: 1px solid var(--hotel-border) !important;
     overflow: visible;
 }
@@ -146,7 +147,7 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
     height: 42px !important;
     border: 1px solid var(--hotel-border);
     border-radius: 12px !important;
-    background: #fff;
+    background: var(--hotel-panel);
     object-fit: contain;
     padding: 4px;
     box-shadow: 0 10px 22px rgba(15, 23, 42, .08) !important;
@@ -183,7 +184,7 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
     height: 40px !important;
     border: 1px solid var(--hotel-border) !important;
     border-radius: 11px !important;
-    background: #fff !important;
+    background: var(--hotel-panel) !important;
     box-shadow: none !important;
 }
 
@@ -238,24 +239,24 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
 }
 
 .hotel-layout-scope .hotel-sidebar .nav-item.active .nav-icon,
-.hotel-layout-scope .hotel-sidebar .nav-item:hover .nav-icon { background: #fff; color: var(--hotel-brand-dark) !important; }
+.hotel-layout-scope .hotel-sidebar .nav-item:hover .nav-icon { background: var(--hotel-panel); color: var(--hotel-brand-dark) !important; }
 .hotel-layout-scope .hotel-sidebar .nav-icon i { font-size: .9rem !important; }
 .hotel-layout-scope .hotel-sidebar .nav-text { color: inherit; font-size: .86rem !important; font-weight: 760 !important; letter-spacing: 0 !important; }
-.hotel-layout-scope .hotel-sidebar .nav-badge { background: #dc2626 !important; color: #fff; box-shadow: 0 0 0 2px #fff !important; }
+.hotel-layout-scope .hotel-sidebar .nav-badge { background: #dc2626 !important; color: #FFFEFB; box-shadow: 0 0 0 2px var(--hotel-panel) !important; }
 .hotel-layout-scope .hotel-sidebar .nav-badge.pulse-green,
 .hotel-layout-scope .hotel-sidebar .pulse-green { background: #16a34a !important; }
 
 .hotel-layout-scope .hotel-sidebar .sidebar-footer {
     padding: 12px !important;
     border-top: 1px solid var(--hotel-border) !important;
-    background: #fff !important;
+    background: var(--hotel-panel) !important;
 }
 
 .hotel-layout-scope .hotel-sidebar-status,
 .hotel-layout-scope .hotel-sidebar .user-section {
     border: 1px solid var(--hotel-border) !important;
     border-radius: 12px !important;
-    background: #fff !important;
+    background: var(--hotel-panel) !important;
     box-shadow: none !important;
     backdrop-filter: none !important;
 }
@@ -265,7 +266,7 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
 .hotel-layout-scope .hotel-sidebar .user-name { color: var(--hotel-text) !important; font-size: .84rem !important; }
 .hotel-layout-scope .hotel-sidebar .user-role { color: var(--hotel-muted) !important; font-size: .72rem !important; }
 .hotel-layout-scope .hotel-sidebar .user-menu-btn { background: #f1f5f9 !important; color: #475569 !important; }
-.hotel-layout-scope #user-dropdown { border: 1px solid var(--hotel-border) !important; border-radius: 12px !important; background: #fff !important; box-shadow: 0 -18px 38px rgba(15, 23, 42, .12) !important; }
+.hotel-layout-scope #user-dropdown { border: 1px solid var(--hotel-border) !important; border-radius: 12px !important; background: var(--hotel-panel) !important; box-shadow: 0 -18px 38px rgba(15, 23, 42, .12) !important; }
 .hotel-layout-scope .hotel-sidebar .dropdown-item { border-radius: 9px !important; color: #334155 !important; }
 .hotel-layout-scope .hotel-sidebar .dropdown-item:hover { background: var(--hotel-brand-soft) !important; padding-left: .75rem !important; }
 .hotel-layout-scope .hotel-sidebar .dropdown-item.text-red { color: #dc2626 !important; }
@@ -288,7 +289,7 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
         border: 1px solid rgba(255,255,255,.22);
         border-radius: 12px;
         background: rgba(255,255,255,.12);
-        color: #fff;
+        color: var(--hotel-on-brand);
     }
 
     .hotel-layout-scope .mobile-header-logo {
@@ -309,7 +310,7 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
         min-height: 34px !important;
         max-height: 34px !important;
         border-radius: 10px;
-        background: #fff;
+        background: var(--hotel-panel);
         object-fit: contain;
         padding: 3px;
         filter: none !important;
@@ -319,7 +320,7 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
         display: block;
         max-width: min(48vw, 260px);
         overflow: hidden;
-        color: #fff;
+        color: var(--hotel-on-brand);
         font-size: .88rem;
         font-weight: 900;
         line-height: 1.1;
@@ -477,7 +478,7 @@ body.hotel-layout-scope {
     place-items: center;
     border-radius: 13px;
     border: 1px solid var(--hotel-line);
-    background: linear-gradient(145deg, color-mix(in srgb, var(--hotel-accent) 18%, #FFFFFF), color-mix(in srgb, var(--hotel-primary) 5%, #FFFFFF));
+    background: linear-gradient(145deg, color-mix(in srgb, var(--hotel-accent) 18%, #FFFEFB), color-mix(in srgb, var(--hotel-primary) 5%, #FFFEFB));
     box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 10px 24px color-mix(in srgb, var(--hotel-secondary) 9%, transparent);
     line-height: 1;
     overflow: hidden;
@@ -569,7 +570,7 @@ body.hotel-layout-scope {
 .hotel-layout-scope .hotel-sidebar .search-trigger:hover,
 .hotel-layout-scope .hotel-sidebar .search-trigger:focus-visible {
     background: var(--hotel-brand);
-    color: #fff;
+    color: var(--hotel-on-brand);
     transform: translateX(2px);
     outline: none;
 }
@@ -686,7 +687,7 @@ body.hotel-layout-scope {
 
 .hotel-layout-scope .hotel-sidebar .nav-item.active {
     background: linear-gradient(135deg, var(--hotel-brand), color-mix(in srgb, var(--hotel-brand) 78%, var(--hotel-secondary))) !important;
-    color: #fff !important;
+    color: var(--hotel-on-brand) !important;
     font-weight: 850 !important;
     box-shadow:
         0 13px 28px color-mix(in srgb, var(--hotel-primary) 24%, transparent),
@@ -730,7 +731,7 @@ body.hotel-layout-scope {
 
 .hotel-layout-scope .hotel-sidebar .nav-item.active .nav-icon {
     background: rgba(255,255,255,.22) !important;
-    color: #fff !important;
+    color: var(--hotel-on-brand) !important;
     box-shadow:
         inset 0 0 0 1px rgba(255,255,255,.18),
         0 8px 16px color-mix(in srgb, var(--hotel-secondary) 14%, transparent) !important;
@@ -738,7 +739,7 @@ body.hotel-layout-scope {
 }
 
 .hotel-layout-scope .hotel-sidebar .nav-item.active .nav-icon i {
-    color: #fff !important;
+    color: var(--hotel-on-brand) !important;
 }
 
 .hotel-layout-scope .hotel-sidebar .nav-text {
@@ -755,18 +756,18 @@ body.hotel-layout-scope {
 }
 
 .hotel-layout-scope .hotel-sidebar .nav-item.active .nav-text {
-    color: #fff !important;
+    color: var(--hotel-on-brand) !important;
 }
 
 .hotel-layout-scope .hotel-sidebar .nav-item.active .nav-badge {
-    background: #fff !important;
+    background: var(--hotel-panel) !important;
     color: var(--hotel-brand) !important;
     box-shadow: 0 0 0 2px rgba(255,255,255,.32) !important;
 }
 
 .hotel-layout-scope .hotel-sidebar .nav-item.active .nav-badge.pulse-green,
 .hotel-layout-scope .hotel-sidebar .nav-item.active .pulse-green {
-    background: #fff !important;
+    background: var(--hotel-panel) !important;
     color: #15803d !important;
 }
 
@@ -816,7 +817,7 @@ body.hotel-layout-scope {
     height: 40px !important;
     border-radius: 12px !important;
     background: linear-gradient(160deg, var(--hotel-accent), var(--hotel-brand)) !important;
-    color: #fff !important;
+    color: var(--hotel-on-brand) !important;
 }
 
 .hotel-layout-scope .hotel-sidebar .user-name {

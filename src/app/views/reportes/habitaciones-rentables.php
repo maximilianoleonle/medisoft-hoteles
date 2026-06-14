@@ -95,6 +95,9 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     --rent-primary: var(--brand-primary, #1B2746);
     --rent-secondary: var(--brand-secondary, #0F172A);
     --rent-accent: var(--brand-accent, #BD9441);
+    --rent-action: var(--brand-action-bg, var(--rent-primary));
+    --rent-action-hover: var(--brand-action-bg-hover, var(--rent-secondary));
+    --rent-on-action: var(--brand-action-text, #FFFEFB);
     --rent-bg: color-mix(in srgb, var(--rent-accent) 8%, #F6F1E8);
     --rent-surface: color-mix(in srgb, var(--rent-accent) 3%, #FFFDF8);
     --rent-soft: color-mix(in srgb, var(--rent-primary) 5%, #FFFDF8);
@@ -105,10 +108,11 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     --rent-good: #16824E;
     --rent-warn: #B7791F;
     --rent-bad: #B94A48;
+    --rent-card-shadow: 0 18px 44px -36px rgba(15, 23, 42, .52);
     min-height: 100vh;
     background:
-        radial-gradient(circle at 12% 6%, color-mix(in srgb, var(--rent-accent) 22%, transparent), transparent 28rem),
-        linear-gradient(135deg, color-mix(in srgb, var(--rent-primary) 6%, transparent) 0 1px, transparent 1px 30px),
+        radial-gradient(circle at 86% 4%, color-mix(in srgb, var(--rent-accent) 24%, transparent), transparent 30rem),
+        linear-gradient(135deg, color-mix(in srgb, var(--rent-primary) 5%, transparent) 0 1px, transparent 1px 28px),
         linear-gradient(180deg, var(--rent-bg), #FBFAF7 52%, #F1EAE0);
     color: var(--rent-text);
     opacity: 0;
@@ -120,15 +124,18 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
 }
 
 .rent-shell {
-    width: min(1500px, calc(100% - 28px));
+    width: 100%;
+    max-width: 1500px;
     margin: 0 auto;
-    padding: 28px 0 48px;
+    padding: 30px clamp(34px, 4vw, 76px) 50px;
+    box-sizing: border-box;
 }
 
 .rent-hero {
     display: grid;
-    grid-template-columns: minmax(0, 1.18fr) minmax(330px, .82fr);
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
     gap: 18px;
+    align-items: stretch;
     margin-bottom: 18px;
 }
 
@@ -140,26 +147,29 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
 .rent-insight {
     border: 1px solid var(--rent-line);
     background: var(--rent-surface);
-    box-shadow: 0 20px 54px -42px rgba(15, 23, 42, .5);
+    box-shadow: var(--rent-card-shadow);
 }
 
 .rent-hero-main {
     position: relative;
-    min-height: 335px;
+    min-height: 325px;
     overflow: hidden;
     border-radius: 28px;
     padding: clamp(24px, 4vw, 44px);
     border-color: color-mix(in srgb, var(--rent-accent) 28%, transparent);
     background:
-        radial-gradient(circle at 86% 18%, color-mix(in srgb, var(--rent-accent) 34%, transparent), transparent 22rem),
-        linear-gradient(135deg, color-mix(in srgb, var(--rent-primary) 96%, #0B1020), var(--rent-secondary));
+        radial-gradient(circle at 86% 18%, color-mix(in srgb, var(--rent-accent) 30%, transparent), transparent 22rem),
+        linear-gradient(135deg,
+            color-mix(in srgb, var(--rent-action) 54%, #101827),
+            color-mix(in srgb, var(--rent-action-hover) 58%, #060A12)
+        );
 }
 
 .rent-hero-main::after {
     content: "";
     position: absolute;
-    inset: auto -11% -42% 42%;
-    height: 250px;
+    inset: auto -10% -54% 46%;
+    height: 220px;
     background: radial-gradient(circle, color-mix(in srgb, var(--rent-accent) 42%, transparent), transparent 67%);
     pointer-events: none;
 }
@@ -205,8 +215,18 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     display: inline-flex;
     align-items: center;
     gap: 9px;
+    width: fit-content;
     margin-top: 26px;
-    color: color-mix(in srgb, var(--rent-accent) 82%, #FFFDF8);
+    padding: 8px 11px;
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .1);
+    color: #FFFFFF;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, .22);
+}
+
+.rent-kicker i {
+    color: color-mix(in srgb, var(--rent-accent) 42%, #FFFFFF);
 }
 
 .rent-hero-main h1 {
@@ -214,9 +234,9 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     z-index: 1;
     max-width: 12ch;
     margin: 14px 0 14px;
-    color: #FFFDF8;
+    color: var(--rent-on-action);
     font-family: Georgia, "Times New Roman", serif;
-    font-size: clamp(2.45rem, 5.1vw, 5.4rem);
+    font-size: clamp(2.4rem, 5vw, 5.15rem);
     font-weight: 700;
     line-height: .9;
     letter-spacing: 0;
@@ -228,7 +248,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     z-index: 1;
     max-width: 68ch;
     margin: 0;
-    color: rgba(255, 255, 255, .72);
+    color: color-mix(in srgb, var(--rent-on-action) 82%, transparent);
     font-weight: 650;
     line-height: 1.6;
 }
@@ -256,15 +276,26 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     gap: 9px;
     padding: 0 16px;
     border: 1px solid color-mix(in srgb, var(--rent-accent) 45%, var(--rent-primary));
-    background: var(--rent-primary);
-    color: #FFFDF8;
+    background: var(--rent-action);
+    color: var(--rent-on-action);
     font-weight: 900;
     text-decoration: none;
 }
 
 .rent-btn.is-accent {
-    background: color-mix(in srgb, var(--rent-accent) 88%, #FFFDF8);
-    color: color-mix(in srgb, var(--rent-primary) 88%, #000);
+    border-color: color-mix(in srgb, var(--rent-action) 34%, var(--rent-accent));
+    background: var(--rent-action);
+    color: var(--rent-on-action);
+}
+
+.rent-hero-main .rent-btn.is-accent {
+    border-color: rgba(255, 255, 255, .9);
+    background: #FFFFFF;
+    color: color-mix(in srgb, var(--rent-action) 78%, #05070D);
+}
+
+.rent-hero-main .rent-btn.is-accent i {
+    color: color-mix(in srgb, var(--rent-accent) 48%, var(--rent-action));
 }
 
 .rent-btn.is-soft {
@@ -769,8 +800,8 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
 
 @media (max-width: 720px) {
     .rent-shell {
-        width: min(100% - 20px, 1500px);
-        padding: 18px 0 34px;
+        width: 100%;
+        padding: 18px 12px 36px;
     }
 
     .rent-hero-main,
@@ -892,7 +923,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
                     </span>
                 </div>
 
-                <form method="GET" action="<?= url('reportes/habitaciones-rentables') ?>" class="rent-filter-form" id="rentablesFiltrosForm">
+                <form method="GET" action="<?= url('reportes/habitaciones-rentables') ?>" class="rent-filter-form" id="rentablesFiltrosForm" data-auto-filter-form>
                     <div class="rent-field">
                         <label for="fecha_inicio">Desde</label>
                         <input type="date"

@@ -766,6 +766,208 @@ public function debugMovimientosDateAction() {
         'movimientos_recientes' => $movimientos_recientes
     ]);
 }
+
+    private function inventarioTablaTieneColumna($tabla, $columna): bool {
+        $tablas_permitidas = [
+            'movimientos_inventario',
+            'inventario_productos',
+            'inventario_categorias',
+            'habitaciones',
+        ];
+
+        if (!in_array($tabla, $tablas_permitidas, true)) {
+            return false;
+        }
+
+        $stmt = $this->db->query("SHOW COLUMNS FROM {$tabla} LIKE ?", [$columna]);
+        return $stmt && (bool) $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private function obtenerProductosParaFiltroMovimientos($filtrar_por_hotel, $hotel_id): array {
+        $productos_tienen_hotel = $this->inventarioTablaTieneColumna('inventario_productos', 'hotel_id');
+        $categorias_tienen_hotel = $this->inventarioTablaTieneColumna('inventario_categorias', 'hotel_id');
+
+        $join_categoria = 'p.categoria_id = c.id';
+        if ($productos_tienen_hotel && $categorias_tienen_hotel) {
+            $join_categoria .= ' AND c.hotel_id = p.hotel_id';
+        }
+
+        $where = ['p.activo = 1'];
+        $params = [];
+
+        if ($filtrar_por_hotel && $productos_tienen_hotel) {
+            $where[] = 'p.hotel_id = ?';
+            $params[] = $hotel_id;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT p.*,
+                    COALESCE(c.nombre, 'Sin categoria') AS categoria_nombre
+             FROM inventario_productos p
+             LEFT JOIN inventario_categorias c
+                ON {$join_categoria}
+             WHERE " . implode(' AND ', $where) . "
+             ORDER BY p.nombre",
+            $params
+        );
+
+        return $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+    }
+
+    /**
+     * Vista de movimientos de inventario
+     */
+    public function movimientosAction() {
+        $hotel_id = obtenerHotelIdActualCompat();
+        $movimientos_tienen_hotel = $this->inventarioTablaTieneColumna('movimientos_inventario', 'hotel_id');
+        $productos_tienen_hotel = $this->inventarioTablaTieneColumna('inventario_productos', 'hotel_id');
+        $habitaciones_tienen_hotel = $this->inventarioTablaTieneColumna('habitaciones', 'hotel_id');
+        $productos = $this->obtenerProductosParaFiltroMovimientos($movimientos_tienen_hotel, $hotel_id);
+
+        $tipo = strtoupper(trim((string) $this->getQuery('tipo', '')));
+        $tipos_validos = ['ENTRADA', 'SALIDA', 'AJUSTE'];
+        if (!in_array($tipo, $tipos_validos, true)) {
+            $tipo = '';
+        }
+
+        $origen = strtolower(trim((string) $this->getQuery('origen', '')));
+        $origenes_validos = ['manual', 'automatico'];
+        if (!in_array($origen, $origenes_validos, true)) {
+            $origen = '';
+        }
+
+        $filtros = [
+            'producto_id' => (int) $this->getQuery('producto_id', 0),
+            'tipo' => $tipo,
+            'origen' => $origen,
+            'fecha_desde' => trim((string) $this->getQuery('fecha_desde', '')),
+            'fecha_hasta' => trim((string) $this->getQuery('fecha_hasta', '')),
+        ];
+
+        $pagina_actual = max(1, (int) $this->getQuery('pagina', 1));
+        $por_pagina = 25;
+        $offset = ($pagina_actual - 1) * $por_pagina;
+
+        $where = [];
+        $params = [];
+
+        if ($movimientos_tienen_hotel) {
+            $where[] = 'm.hotel_id = ?';
+            $params[] = $hotel_id;
+        }
+
+        if ($filtros['producto_id'] > 0) {
+            $where[] = 'm.producto_id = ?';
+            $params[] = $filtros['producto_id'];
+        }
+
+        if ($filtros['tipo'] !== '') {
+            $where[] = 'm.tipo_movimiento = ?';
+            $params[] = $filtros['tipo'];
+        }
+
+        $motivo_sql = "LOWER(COALESCE(m.motivo, ''))";
+        $manual_sql = "(
+            {$motivo_sql} LIKE '%manual%'
+            OR (
+                (m.reservacion_id IS NULL OR m.reservacion_id = 0)
+                AND {$motivo_sql} NOT LIKE '%autom%'
+                AND {$motivo_sql} NOT LIKE '%check-in%'
+                AND {$motivo_sql} NOT LIKE '%devolucion%'
+                AND {$motivo_sql} NOT LIKE '%cancelacion%'
+            )
+        )";
+
+        if ($filtros['origen'] === 'manual') {
+            $where[] = $manual_sql;
+        } elseif ($filtros['origen'] === 'automatico') {
+            $where[] = "NOT {$manual_sql}";
+        }
+
+        if ($filtros['fecha_desde'] !== '') {
+            $where[] = 'DATE(m.created_at) >= ?';
+            $params[] = $filtros['fecha_desde'];
+        }
+
+        if ($filtros['fecha_hasta'] !== '') {
+            $where[] = 'DATE(m.created_at) <= ?';
+            $params[] = $filtros['fecha_hasta'];
+        }
+
+        $where_sql = !empty($where) ? implode(' AND ', $where) : '1 = 1';
+
+        $stmt_total = $this->db->query(
+            "SELECT COUNT(*) AS total
+             FROM movimientos_inventario m
+             WHERE {$where_sql}",
+            $params
+        );
+        $total_row = $stmt_total ? $stmt_total->fetch(PDO::FETCH_ASSOC) : [];
+        $total_movimientos = (int) ($total_row['total'] ?? 0);
+        $total_paginas = max(1, (int) ceil($total_movimientos / $por_pagina));
+
+        if ($pagina_actual > $total_paginas) {
+            $pagina_actual = $total_paginas;
+            $offset = ($pagina_actual - 1) * $por_pagina;
+        }
+
+        $stmt_resumen = $this->db->query(
+            "SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN m.tipo_movimiento = 'ENTRADA' THEN 1 ELSE 0 END) AS entradas,
+                SUM(CASE WHEN m.tipo_movimiento = 'SALIDA' THEN 1 ELSE 0 END) AS salidas,
+                SUM(CASE WHEN m.tipo_movimiento = 'AJUSTE' THEN 1 ELSE 0 END) AS ajustes,
+                SUM(CASE WHEN {$manual_sql} THEN 1 ELSE 0 END) AS manuales,
+                SUM(CASE WHEN NOT {$manual_sql} THEN 1 ELSE 0 END) AS automaticos,
+                SUM(ABS(COALESCE(m.cantidad, 0))) AS unidades
+             FROM movimientos_inventario m
+             WHERE {$where_sql}",
+            $params
+        );
+        $resumen_movimientos = $stmt_resumen ? $stmt_resumen->fetch(PDO::FETCH_ASSOC) : [];
+
+        $join_producto = 'm.producto_id = p.id';
+        if ($movimientos_tienen_hotel && $productos_tienen_hotel) {
+            $join_producto .= ' AND p.hotel_id = m.hotel_id';
+        }
+
+        $join_habitacion = 'm.habitacion_id = h.id';
+        if ($movimientos_tienen_hotel && $habitaciones_tienen_hotel) {
+            $join_habitacion .= ' AND h.hotel_id = m.hotel_id';
+        }
+
+        $sql = "SELECT
+                    m.*,
+                    COALESCE(p.nombre, CONCAT('Producto #', m.producto_id)) AS producto_nombre,
+                    COALESCE(p.codigo, 'N/A') AS producto_codigo,
+                    COALESCE(h.numero, m.habitacion_id) AS habitacion_numero,
+                    COALESCE(u.nombre_completo, u.nombre_usuario, CONCAT('Usuario #', m.usuario_id), 'Sistema') AS usuario_nombre,
+                    CASE WHEN {$manual_sql} THEN 'manual' ELSE 'automatico' END AS origen_inferido
+                FROM movimientos_inventario m
+                LEFT JOIN inventario_productos p
+                    ON {$join_producto}
+                LEFT JOIN habitaciones h
+                    ON {$join_habitacion}
+                LEFT JOIN usuarios u
+                    ON m.usuario_id = u.id
+                WHERE {$where_sql}
+                ORDER BY IFNULL(m.created_at, NOW()) DESC, m.id DESC
+                LIMIT {$por_pagina} OFFSET {$offset}";
+
+        $stmt = $this->db->query($sql, $params);
+        $movimientos = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+
+        View::renderTemplate('inventario/movimientos', [
+            'title' => 'Movimientos de Inventario - ' . current_hotel_display_name(),
+            'productos' => $productos,
+            'movimientos' => $movimientos,
+            'filtros' => $filtros,
+            'resumen_movimientos' => $resumen_movimientos ?: [],
+            'total_movimientos' => $total_movimientos,
+            'total_paginas' => $total_paginas,
+            'pagina_actual' => $pagina_actual,
+        ]);
+    }
     
     /**
      * Formulario nuevo producto

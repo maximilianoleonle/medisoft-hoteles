@@ -2,134 +2,529 @@
 
 <style>
 :root {
-    --hotel-brown: #6B4423;
-    --hotel-brown-dark: #5A3A1E;
+    --lc-green: #5C7A4E;
+    --lc-green-dark: #4A6340;
+    --lc-green-deep: #3D5234;
+    --lc-gold: #C8A96A;
+    --lc-cream: #F7F4EE;
+    --lc-cream-mid: #EEE9DE;
+    --exp-text: #2F3A2D;
+    --exp-muted: #7A8574;
+    --exp-line: #DDE8D5;
+    --exp-panel: #FFFEFB;
+    --exp-soft: #F3F7F0;
+    --exp-red: #DC2626;
+    --exp-blue: #3B6FD6;
+    --exp-purple: #7C5CD6;
+    --exp-shadow: 0 18px 42px -34px rgba(61, 82, 52, .36);
 }
-.exportar-view { opacity: 0; transition: opacity 0.3s ease; }
+
+.exportar-view {
+    min-height: 100vh;
+    opacity: 0;
+    background:
+        radial-gradient(circle at 12% 0%, rgba(92,122,78,.12), transparent 24rem),
+        radial-gradient(circle at 90% 5%, rgba(200,169,106,.13), transparent 26rem),
+        linear-gradient(145deg,#EFF4EC 0%,#E8EFE3 45%,#F4F1EB 100%);
+    color: var(--exp-text);
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    transition: opacity .24s ease;
+}
+
 .exportar-view.loaded { opacity: 1; }
+
+.exp-topbar {
+    position: relative;
+    background: rgba(255, 254, 251, .9);
+    border-bottom: 1px solid var(--exp-line);
+}
+
+.exp-topbar::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--lc-green-deep), var(--lc-gold), var(--lc-green-deep));
+}
+
+.exp-shell {
+    width: min(980px, calc(100% - 32px));
+    margin: 0 auto;
+}
+
+.exp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 0;
+}
+
+.exp-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.exp-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    background: rgba(92, 122, 78, .12);
+    color: var(--lc-green);
+    border: 1px solid rgba(92, 122, 78, .18);
+}
+
+.exp-title-group h1 {
+    margin: 0;
+    color: var(--lc-green-deep);
+    font-size: 1.18rem;
+    line-height: 1.15;
+    font-weight: 780;
+}
+
+.exp-title-group p {
+    margin: 4px 0 0;
+    color: var(--exp-muted);
+    font-size: .78rem;
+    line-height: 1.35;
+}
+
+.exp-main {
+    padding: 24px 0 52px;
+}
+
+.exp-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(280px, .82fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.exp-panel {
+    background: var(--exp-panel);
+    border: 1px solid var(--exp-line);
+    border-radius: 16px;
+    box-shadow: var(--exp-shadow);
+    overflow: hidden;
+}
+
+.exp-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 17px 18px 14px;
+    border-bottom: 1px solid #EAF0E5;
+}
+
+.exp-panel-head h2,
+.exp-side-title h2 {
+    margin: 0;
+    color: var(--lc-green-deep);
+    font-size: .98rem;
+    line-height: 1.2;
+    font-weight: 760;
+}
+
+.exp-panel-head p,
+.exp-side-title p {
+    margin: 5px 0 0;
+    color: var(--exp-muted);
+    font-size: .78rem;
+    line-height: 1.45;
+}
+
+.exp-mini-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #F0F5ED;
+    border: 1px solid #D5E4CB;
+    color: var(--lc-green-dark);
+    font-size: .7rem;
+    font-weight: 720;
+    white-space: nowrap;
+}
+
+.exp-form {
+    padding: 18px;
+}
+
+.exp-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 13px 14px;
+    border: 1px solid #D8E6D0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #F8FBF5, #F0F5ED);
+    color: #4A6340;
+    font-size: .8rem;
+    line-height: 1.45;
+}
+
+.exp-note i {
+    margin-top: 2px;
+    color: var(--lc-green);
+}
+
+.exp-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.exp-field label {
+    display: block;
+    margin-bottom: 6px;
+    color: #4A5842;
+    font-size: .74rem;
+    line-height: 1.2;
+    font-weight: 740;
+}
+
+.exp-field input {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid #D6E2CF;
+    border-radius: 11px;
+    background: #FFFEFB;
+    color: var(--exp-text);
+    padding: 0 12px;
+    font-size: .84rem;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.exp-field input:focus {
+    outline: none;
+    border-color: var(--lc-green);
+    background: #FFFFFF;
+    box-shadow: 0 0 0 3px rgba(92, 122, 78, .16);
+}
+
+.exp-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.exp-btn {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 11px;
+    border: 1px solid transparent;
+    padding: 0 15px;
+    font-size: .82rem;
+    font-weight: 760;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease, color .18s ease;
+}
+
+.exp-btn:hover,
+.exp-btn:focus-visible {
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.exp-btn:active {
+    transform: translateY(0) scale(.99);
+}
+
+.exp-btn.primary {
+    flex: 1;
+    background: linear-gradient(135deg, var(--exp-red), #B91C1C);
+    color: #FFFEFB;
+    box-shadow: 0 12px 24px -18px rgba(220, 38, 38, .7);
+}
+
+.exp-btn.primary:hover,
+.exp-btn.primary:focus-visible {
+    box-shadow: 0 16px 28px -20px rgba(220, 38, 38, .85);
+}
+
+.exp-btn.secondary,
+.exp-back {
+    background: #FFFEFB;
+    border-color: #DDE8D5;
+    color: var(--lc-green-deep);
+}
+
+.exp-btn.secondary:hover,
+.exp-btn.secondary:focus-visible,
+.exp-back:hover,
+.exp-back:focus-visible {
+    background: #F7FCF4;
+    border-color: #C7DABE;
+}
+
+.exp-back {
+    min-height: 38px;
+    padding: 0 13px;
+}
+
+.exp-side {
+    display: grid;
+    gap: 12px;
+}
+
+.exp-side-title {
+    padding: 17px 18px 4px;
+}
+
+.exp-option-list {
+    display: grid;
+    gap: 10px;
+    padding: 0 14px 14px;
+}
+
+.exp-option {
+    width: 100%;
+    min-height: 82px;
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 11px;
+    align-items: center;
+    border: 1px solid var(--option-line, #DDE8D5);
+    border-radius: 14px;
+    background:
+        radial-gradient(circle at 0% 0%, var(--option-soft, rgba(92, 122, 78, .08)), transparent 7rem),
+        #FFFEFB;
+    padding: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.exp-option:hover,
+.exp-option:focus-visible {
+    transform: translateY(-1px);
+    border-color: var(--option-color, var(--lc-green));
+    box-shadow: 0 14px 28px -24px var(--option-shadow, rgba(92, 122, 78, .44));
+    outline: none;
+}
+
+.exp-option-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--option-soft, rgba(92, 122, 78, .1));
+    color: var(--option-color, var(--lc-green));
+}
+
+.exp-option strong {
+    display: block;
+    color: #344054;
+    font-size: .83rem;
+    line-height: 1.25;
+    font-weight: 760;
+}
+
+.exp-option-copy {
+    display: block;
+    margin-top: 3px;
+    color: var(--exp-muted);
+    font-size: .72rem;
+    line-height: 1.35;
+}
+
+.exp-option.stock {
+    --option-color: var(--exp-blue);
+    --option-soft: rgba(59, 111, 214, .09);
+    --option-line: rgba(59, 111, 214, .18);
+    --option-shadow: rgba(59, 111, 214, .5);
+}
+
+.exp-option.today {
+    --option-color: var(--exp-purple);
+    --option-soft: rgba(124, 92, 214, .09);
+    --option-line: rgba(124, 92, 214, .18);
+    --option-shadow: rgba(124, 92, 214, .5);
+}
+
+.exp-footer-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 13px 14px;
+    border: 1px solid #E7D7AA;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #FFFBEF, #FAF4DE);
+    color: #7A5A16;
+    font-size: .78rem;
+    line-height: 1.45;
+}
+
+.exp-footer-note i {
+    margin-top: 2px;
+    color: #B98A35;
+}
+
+@media (max-width: 820px) {
+    .exp-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .exp-shell {
+        width: min(100% - 24px, 980px);
+    }
+
+    .exp-header,
+    .exp-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .exp-title-group {
+        align-items: flex-start;
+    }
+
+    .exp-fields {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
 
-<div class="exportar-view min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-4">
-    <!-- Header -->
-    <div class="bg-gradient-to-r from-hotel-brown to-hotel-brown-dark text-white shadow-xl">
-        <div class="container mx-auto px-6 py-3">
-            <div class="flex justify-between items-center">
-                <h1 class="text-xl font-bold flex items-center gap-2">
-                    <i class="fas fa-file-export"></i>
-                    Exportar Inventario
-                </h1>
-                <a href="<?= url('inventario') ?>" 
-                   class="bg-white/20 text-white px-3 py-1.5 rounded-lg hover:bg-white/30 transition text-sm flex items-center gap-2">
+<div class="exportar-view">
+    <header class="exp-topbar">
+        <div class="exp-shell">
+            <div class="exp-header">
+                <div class="exp-title-group">
+                    <div class="exp-icon">
+                        <i class="fas fa-file-export"></i>
+                    </div>
+                    <div>
+                        <h1>Exportar inventario</h1>
+                        <p>Genera reportes PDF sin salir del modulo de inventario.</p>
+                    </div>
+                </div>
+
+                <a href="<?= url('inventario') ?>" class="exp-btn exp-back">
                     <i class="fas fa-arrow-left"></i>
                     Volver
                 </a>
             </div>
         </div>
-    </div>
-    
-    <div class="container mx-auto px-6 py-6 max-w-2xl">
-        <!-- Formulario de Exportación -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                <i class="fas fa-file-pdf text-red-600"></i>
-                Generar Reporte PDF
-            </h2>
-            
-            <form method="POST" action="<?= url('inventario/generarPdfMovimientos') ?>" class="space-y-4">
-                <?= csrf_field() ?>
-                
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                    <p class="text-sm text-blue-800">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        El reporte incluirá el stock actual de todos los productos y los movimientos realizados en el período seleccionado.
-                    </p>
-                </div>
-                
-                <div class="grid md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Fecha Desde <span class="text-red-500">*</span>
-                        </label>
-                        <input type="date" 
-                               name="fecha_desde" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown"
-                               value="2025-09-01"
-                               required>
+    </header>
+
+    <main class="exp-main">
+        <div class="exp-shell">
+            <div class="exp-grid">
+                <section class="exp-panel" aria-label="Generar reporte de inventario">
+                    <div class="exp-panel-head">
+                        <div>
+                            <h2>Reporte por periodo</h2>
+                            <p>Incluye stock actual y movimientos del rango seleccionado.</p>
+                        </div>
+                        <span class="exp-mini-badge">
+                            <i class="fas fa-file-pdf"></i>
+                            PDF
+                        </span>
                     </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Fecha Hasta <span class="text-red-500">*</span>
-                        </label>
-                        <input type="date" 
-                               name="fecha_hasta" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown"
-                               value="2025-09-30"
-                               required>
+
+                    <form method="POST" action="<?= url('inventario/generarPdfMovimientos') ?>" class="exp-form">
+                        <?= csrf_field() ?>
+
+                        <div class="exp-note">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Selecciona el periodo y descarga un reporte listo para revision o respaldo.</span>
+                        </div>
+
+                        <div class="exp-fields">
+                            <div class="exp-field">
+                                <label for="fecha_desde">Fecha desde <span class="text-red-500">*</span></label>
+                                <input type="date"
+                                       id="fecha_desde"
+                                       name="fecha_desde"
+                                       value="2025-09-01"
+                                       required>
+                            </div>
+
+                            <div class="exp-field">
+                                <label for="fecha_hasta">Fecha hasta <span class="text-red-500">*</span></label>
+                                <input type="date"
+                                       id="fecha_hasta"
+                                       name="fecha_hasta"
+                                       value="2025-09-30"
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="exp-actions">
+                            <button type="submit" class="exp-btn primary">
+                                <i class="fas fa-download"></i>
+                                Generar PDF
+                            </button>
+                            <a href="<?= url('inventario') ?>" class="exp-btn secondary">
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </section>
+
+                <aside class="exp-panel exp-side" aria-label="Exportaciones rapidas">
+                    <div class="exp-side-title">
+                        <h2>Exportaciones rapidas</h2>
+                        <p>Accesos simples para reportes frecuentes.</p>
                     </div>
-                </div>
-                
-                <div class="flex gap-3 pt-4">
-                    <button type="submit" 
-                            class="flex-1 bg-red-600 text-white px-4 py-2.5 rounded-lg hover:bg-red-700 transition flex items-center justify-center gap-2 font-medium">
-                        <i class="fas fa-download"></i>
-                        Generar PDF
-                    </button>
-                    <a href="<?= url('inventario') ?>" 
-                       class="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium">
-                        Cancelar
-                    </a>
-                </div>
-            </form>
-        </div>
-        
-        <!-- Opciones Adicionales -->
-        <div class="mt-4 grid md:grid-cols-2 gap-4">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                <h3 class="font-semibold text-gray-900 mb-2 text-sm">
-                    <i class="fas fa-chart-bar text-blue-600 mr-1"></i>
-                    Reporte de Stock Actual
-                </h3>
-                <p class="text-xs text-gray-600 mb-3">
-                    Genera un PDF con el inventario actual, incluyendo productos con stock bajo.
-                </p>
-                <button onclick="exportarStockActual()" 
-                        class="w-full bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
-                    <i class="fas fa-download mr-1"></i>
-                    Descargar Stock Actual
-                </button>
+
+                    <div class="exp-option-list">
+                        <button type="button" onclick="exportarStockActual()" class="exp-option stock">
+                            <span class="exp-option-icon">
+                                <i class="fas fa-boxes"></i>
+                            </span>
+                            <span class="exp-option-copy">
+                                <strong>Stock actual</strong>
+                                <span>Inventario vigente con productos en nivel bajo.</span>
+                            </span>
+                        </button>
+
+                        <button type="button" onclick="exportarMovimientosHoy()" class="exp-option today">
+                            <span class="exp-option-icon">
+                                <i class="fas fa-history"></i>
+                            </span>
+                            <span class="exp-option-copy">
+                                <strong>Movimientos de hoy</strong>
+                                <span>Descarga los movimientos registrados en el dia.</span>
+                            </span>
+                        </button>
+                    </div>
+                </aside>
             </div>
-            
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                <h3 class="font-semibold text-gray-900 mb-2 text-sm">
-                    <i class="fas fa-history text-purple-600 mr-1"></i>
-                    Movimientos del Día
-                </h3>
-                <p class="text-xs text-gray-600 mb-3">
-                    Descarga todos los movimientos realizados en el día actual.
-                </p>
-                <button onclick="exportarMovimientosHoy()" 
-                        class="w-full bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition text-sm">
-                    <i class="fas fa-download mr-1"></i>
-                    Movimientos de Hoy
-                </button>
+
+            <div class="exp-footer-note">
+                <i class="fas fa-lightbulb"></i>
+                <span>Los movimientos en el sistema estan registrados con fechas de 2025. Selecciona el rango correcto antes de generar el PDF.</span>
             </div>
         </div>
-        
-        <!-- Nota informativa sobre las fechas -->
-        <div class="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <p class="text-sm text-amber-800 flex items-start gap-2">
-                <i class="fas fa-lightbulb mt-0.5"></i>
-                <span>Los movimientos en el sistema están registrados con fechas de 2025. Asegúrate de seleccionar el rango de fechas correcto.</span>
-            </p>
-        </div>
-    </div>
+    </main>
 </div>
 
 <script>
-// Función para obtener la fecha actual en formato correcto
+// Funcion para obtener la fecha actual en formato correcto
 function getFechaActual() {
-    // Como los movimientos están en 2025, usar esa fecha
+    // Como los movimientos estan en 2025, usar esa fecha
     return '2025-09-13';
 }
 

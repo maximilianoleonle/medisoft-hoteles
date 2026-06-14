@@ -23,7 +23,8 @@ $filtrarMenuHotel = function_exists('hotel_menu_should_filter_modules') && hotel
 $mostrarUsuariosAdmin = (!$filtrarMenuHotel && can('usuarios.view')) || ($filtrarMenuHotel && $mostrarUsuariosModulo && $sidebarPuedeUsuarios);
 $mostrarConfiguracion = $mostrarConfiguracionModulo && $sidebarPuedeConfiguracion;
 $mostrarTarifas = !$filtrarMenuHotel && can('usuarios.view');
-$mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarConfiguracion || $mostrarTarifas);
+$mostrarNotificacionesMenu = true;
+$mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarNotificacionesMenu || $mostrarConfiguracion || $mostrarTarifas);
 $sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 $sidebarEsPanelSaas = strpos($sidebarRequestPath, '/admin/saas') === 0;
 $sidebarBranding = (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_context() && function_exists('current_hotel_branding'))
@@ -162,16 +163,6 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
             </a>
             <?php endif; ?>
 
-            <a href="<?= url('notificaciones') ?>"
-               class="nav-item <?= strpos($sidebarRequestPath, '/notificaciones') === 0 ? 'active' : '' ?>">
-                <div class="nav-icon">
-                    <i class="fas fa-bell"></i>
-                    <?php if ($sidebarNotificacionesNoLeidas > 0): ?>
-                    <span class="nav-badge nav-badge-notifications"><?= $sidebarNotificacionesNoLeidas > 99 ? '99+' : (int)$sidebarNotificacionesNoLeidas ?></span>
-                    <?php endif; ?>
-                </div>
-                <span class="nav-text">Notificaciones</span>
-            </a>
         </div>
 
         <?php if ($menuModulosSinConfigurar): ?>
@@ -302,6 +293,19 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
             </a>
             <?php endif; ?>
 
+            <?php if ($mostrarNotificacionesMenu): ?>
+            <a href="<?= url('notificaciones') ?>"
+               class="nav-item <?= strpos($sidebarRequestPath, '/notificaciones') === 0 ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-bell"></i>
+                    <?php if ($sidebarNotificacionesNoLeidas > 0): ?>
+                    <span class="nav-badge nav-badge-notifications"><?= $sidebarNotificacionesNoLeidas > 99 ? '99+' : (int)$sidebarNotificacionesNoLeidas ?></span>
+                    <?php endif; ?>
+                </div>
+                <span class="nav-text">Notificaciones</span>
+            </a>
+            <?php endif; ?>
+
             <?php if ($mostrarConfiguracion): ?>
             <a href="<?= url('configuracion') ?>"
                class="nav-item <?= strpos($sidebarRequestPath, '/configuracion') === 0 && strpos($sidebarRequestPath, '/configuracion/tarifas') !== 0 ? 'active' : '' ?>">
@@ -403,6 +407,13 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
     font-size: .48rem !important;
     line-height: 1 !important;
     font-weight: 800 !important;
+}
+
+.hotel-layout-scope .hotel-sidebar .nav-item.active .nav-badge.nav-badge-notifications,
+.nav-item.active .nav-badge.nav-badge-notifications {
+    background: #dc2626 !important;
+    color: #FFFEFB !important;
+    box-shadow: 0 0 0 2px var(--hotel-panel, #FFFFFF) !important;
 }
 </style>
 

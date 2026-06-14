@@ -2590,8 +2590,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 <!-- CHECK-OUTS VENCIDOS -->
                 <?php if (!empty($checkouts_vencidos)): ?>
-                <div class="alert-section">
-                    <div class="alert-section-title" style="color: #f44336;">
+                <div class="alert-section alert-section-critical">
+                    <div class="alert-section-title">
                         <i class="fas fa-door-open"></i>
                         <span>Check-outs Vencidos (<?= count($checkouts_vencidos) ?>)</span>
                     </div>
@@ -2620,8 +2620,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 <!-- CHECK-INS PENDIENTES -->
                 <?php if (!empty($checkins_pendientes)): ?>
-                <div class="alert-section">
-                    <div class="alert-section-title" style="color: #ff9800;">
+                <div class="alert-section alert-section-warning">
+                    <div class="alert-section-title">
                         <i class="fas fa-user-clock"></i>
                         <span>Check-ins Pendientes (<?= count($checkins_pendientes) ?>)</span>
                     </div>
@@ -2653,8 +2653,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 <!-- LLEGADAS TARDÍAS HOY -->
                 <?php if (!empty($llegadas_tardias)): ?>
-                <div class="alert-section">
-                    <div class="alert-section-title" style="color: #2196f3;">
+                <div class="alert-section alert-section-info">
+                    <div class="alert-section-title">
                         <i class="fas fa-phone-alt"></i>
                         <span>Llegadas Tardías Hoy (<?= count($llegadas_tardias) ?>)</span>
                     </div>
@@ -2750,8 +2750,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     </button>
                 <?php endforeach; ?>
             </div>
-            <form method="GET" action="<?= url('habitaciones') ?>" class="hb-filter-right">
-                <input type="date" name="fecha_consulta" id="fecha_consulta" value="<?= $filtros['fecha_consulta'] ?? '' ?>" class="filter-date" onchange="this.form.submit()" title="Disponibilidad en fecha">
+            <form method="GET" action="<?= url('habitaciones') ?>" class="hb-filter-right" data-auto-filter-form>
+                <input type="date" name="fecha_consulta" id="fecha_consulta" value="<?= $filtros['fecha_consulta'] ?? '' ?>" class="filter-date" title="Disponibilidad en fecha">
                 <input type="hidden" name="mostrar_disponibilidad" value="1">
                 <a href="<?= url('habitaciones') ?>" class="filter-btn filter-btn-today" title="Volver a hoy">
                     <i class="fas fa-calendar-day"></i><span class="hidden sm:inline">Hoy</span>
@@ -3010,7 +3010,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     <?php foreach ($__habs as $habitacion): ?>
                 <?php
                 $estado_actual = $habitacion['estado_display'] ?? $habitacion['estado'];
+                $estado_fisico = $habitacion['estado'] ?? $estado_actual;
+                $estado_principal = $estado_actual;
+                if (in_array($estado_fisico, ['limpieza', 'mantenimiento', 'ocupada'], true)) {
+                    $estado_principal = $estado_fisico;
+                }
                 $estadoInfo = $estados[$estado_actual] ?? ['label' => 'Desconocido', 'color' => 'gray', 'icon' => 'question'];
+                $estadoInfoPrincipal = $estados[$estado_principal] ?? $estadoInfo;
 
                 // Verificar si tiene doble movimiento
                 $tiene_doble_movimiento = false;
@@ -3086,7 +3092,7 @@ if ($tiene_doble_movimiento) {
 } elseif ($limpieza_con_por_llegar) {
     $backColorClass = 'back-limpieza-por-llegar';
 } else {
-    $backColorClass = 'back-' . $estado_actual;
+    $backColorClass = 'back-' . $estado_principal;
 }
 
                 // Color de habitación (Área Confortable)
@@ -3109,11 +3115,11 @@ if ($tiene_doble_movimiento) {
                     'doble'            => '#5A57D2',
                     'limpieza-por-llegar' => '#2F77E0',
                 ];
-                $accentColor = $color_hab ?: ($stateAccentColors[$estado_actual] ?? '#1E9E63');
+                $accentColor = $color_hab ?: ($stateAccentColors[$estado_principal] ?? ($stateAccentColors[$estado_actual] ?? '#1E9E63'));
                 if ($es_checkin_vencido || $tiene_checkout_vencido) {
                     $sheetColor = '#D64539';
                 } else {
-                    $sheetColor = $stateAccentColors[$estado_actual] ?? '#1E9E63';
+                    $sheetColor = $stateAccentColors[$estado_principal] ?? ($stateAccentColors[$estado_actual] ?? '#1E9E63');
                 }
                 $backStyle = ''; // el fondo de la hoja lo aplica el CSS vía --sheet-c
                 $hbSearchStr = strtolower(trim(($habitacion['numero'] ?? '') . ' ' . ($tipos[$habitacion['tipo']] ?? $habitacion['tipo']) . ' ' . ($habitacion['ocupacion_actual']['nombre_completo'] ?? '') . ' ' . ($habitacion['reservacion_pendiente']['nombre_completo'] ?? '')));
@@ -3130,8 +3136,33 @@ if ($tiene_doble_movimiento) {
                     $reservacion_detalle_id = $habitacion['info_ocupacion']['reservacion_id'];
                 }
                 $reservacion_detalle_id = $reservacion_detalle_id && (int) $reservacion_detalle_id > 0 ? (int) $reservacion_detalle_id : null;
+                $hbIncidencias = [];
+                if ($es_checkin_vencido && $info_checkin_vencido) {
+                    $diasRetraso = (int)($info_checkin_vencido['dias_retraso'] ?? 0);
+                    $hbIncidencias[] = [
+                        'type' => 'critical',
+                        'icon' => 'exclamation-triangle',
+                        'label' => 'No llegó',
+                        'detail' => $diasRetraso > 0 ? ($diasRetraso . ' día' . ($diasRetraso === 1 ? '' : 's')) : 'Vencido',
+                    ];
+                } elseif ($es_llegada_tardia) {
+                    $hbIncidencias[] = [
+                        'type' => 'warning',
+                        'icon' => 'moon',
+                        'label' => 'Llegada tardía',
+                        'detail' => '',
+                    ];
+                }
+                if ($limpieza_con_por_llegar && !$es_checkin_vencido) {
+                    $hbIncidencias[] = [
+                        'type' => 'info',
+                        'icon' => 'calendar-day',
+                        'label' => 'Reserva pendiente',
+                        'detail' => '',
+                    ];
+                }
                 ?>
-                <div class="flip-card room-card-compact <?= $tiene_checkout_vencido ? 'has-checkout-vencido' : '' ?> <?= $es_checkin_vencido ? 'has-checkin-vencido' : '' ?>"
+                <div class="flip-card room-card-compact <?= $tiene_checkout_vencido ? 'has-checkout-vencido' : '' ?> <?= $es_checkin_vencido ? 'has-checkin-vencido' : '' ?> <?= $habitacion['estado'] == 'limpieza' ? 'has-cleaning-state' : '' ?>"
                       onclick="toggleFlip(this, event)"
                       onkeydown="hbCardKey(event, this)"
                       role="button"
@@ -3139,11 +3170,11 @@ if ($tiene_doble_movimiento) {
                       title="Abrir acciones de la habitación <?= htmlspecialchars($habitacion['numero']) ?>"
                       aria-label="Abrir acciones de la habitación <?= htmlspecialchars($habitacion['numero']) ?>"
                       data-habitacion-id="<?= $habitacion['id'] ?>"
-                      data-estado="<?= htmlspecialchars($estado_actual) ?>" data-tipo="<?= htmlspecialchars($habitacion['tipo']) ?>" data-piso="<?= htmlspecialchars($habitacion['piso']) ?>" data-q="<?= htmlspecialchars($hbSearchStr) ?>"
+                      data-estado="<?= htmlspecialchars($estado_principal) ?>" data-tipo="<?= htmlspecialchars($habitacion['tipo']) ?>" data-piso="<?= htmlspecialchars($habitacion['piso']) ?>" data-q="<?= htmlspecialchars($hbSearchStr) ?>"
                       style="--room-accent-color: <?= htmlspecialchars($accentColor) ?>; --sheet-c: <?= htmlspecialchars($sheetColor) ?>;">
                     <div class="flip-card-inner">
                         <!-- Parte frontal -->
-                        <div class="flip-card-front <?= $tiene_doble_movimiento ? 'estado-doble' : ($limpieza_con_por_llegar ? 'estado-limpieza-por-llegar' : 'estado-' . $estado_actual) ?> rounded-lg shadow-sm relative">
+                        <div class="flip-card-front <?= $tiene_doble_movimiento ? 'estado-doble' : 'estado-' . $estado_principal ?> rounded-lg shadow-sm relative">
 
 
 
@@ -3161,13 +3192,6 @@ if ($tiene_doble_movimiento) {
                             </div>
                             <?php endif; ?>
 
-                            <?php if ($es_checkin_vencido): ?>
-                            <div class="checkin-vencido-indicator">
-                                <i class="fas fa-exclamation-triangle" style="font-size: 10px;"></i>
-                                <span class="font-bold">NO LLEGÓ</span>
-                            </div>
-                            <?php endif; ?>
-
                             <?php if ($es_llegada_tardia && !$es_checkin_vencido): ?>
                             <div class="late-arrival-indicator">
                                 <i class="fas fa-moon" style="font-size: 9px;"></i>
@@ -3181,13 +3205,13 @@ if ($tiene_doble_movimiento) {
                             if ($tiene_doble_movimiento) {
                                 $faceGuest = trim(explode(' ', $info_checkout['nombre_completo'])[0] . ' → ' . explode(' ', $info_checkin['nombre_completo'])[0]);
                                 $faceMeta = 'Rotación de huéspedes';
-                            } elseif ($es_checkin_vencido && $info_checkin_vencido) {
+                            } elseif ($es_checkin_vencido && $info_checkin_vencido && $estado_principal !== 'limpieza' && $estado_principal !== 'mantenimiento') {
                                 $faceGuest = $info_checkin_vencido['nombre'];
                                 $faceMeta = 'No llegó · ' . $info_checkin_vencido['dias_retraso'] . ' día' . ($info_checkin_vencido['dias_retraso'] > 1 ? 's' : '') . ' de retraso';
-                            } elseif ($estado_actual == 'por_llegar' && isset($habitacion['reservacion_pendiente'])) {
+                            } elseif ($estado_principal == 'por_llegar' && isset($habitacion['reservacion_pendiente'])) {
                                 $faceGuest = $habitacion['reservacion_pendiente']['nombre_completo'];
                                 $faceMeta = $es_llegada_tardia ? 'Llegada tardía pendiente' : ('Llega ' . date('g:i A', strtotime($habitacion['reservacion_pendiente']['hora_llegada_estimada'])));
-                            } elseif ($habitacion['estado'] == 'ocupada' && isset($habitacion['ocupacion_actual'])) {
+                            } elseif ($estado_principal == 'ocupada' && isset($habitacion['ocupacion_actual'])) {
                                 $faceGuest = $habitacion['ocupacion_actual']['nombre_completo'];
                                 if ($tiene_checkout_vencido) { $faceMeta = 'Check-out vencido'; }
                                 elseif ($tiene_checkout_hoy) { $faceMeta = 'Sale hoy'; }
@@ -3195,9 +3219,14 @@ if ($tiene_doble_movimiento) {
                             } elseif ($estado_actual == 'ocupada_fecha' && isset($habitacion['info_ocupacion'])) {
                                 $faceGuest = $habitacion['info_ocupacion']['huesped'] ?? 'Ocupada';
                                 $faceMeta = 'No disponible en la fecha';
-                            } elseif ($habitacion['estado'] == 'limpieza') {
-                                $faceMeta = 'Preparando habitación';
-                            } elseif ($habitacion['estado'] == 'mantenimiento') {
+                            } elseif ($estado_principal == 'limpieza') {
+                                if ($es_checkin_vencido && $info_checkin_vencido) {
+                                    $faceGuest = $info_checkin_vencido['nombre'];
+                                } elseif (isset($habitacion['reservacion_pendiente'])) {
+                                    $faceGuest = $habitacion['reservacion_pendiente']['nombre_completo'];
+                                }
+                                $faceMeta = isset($habitacion['reservacion_pendiente']) ? 'En limpieza para llegada' : 'Limpieza pendiente';
+                            } elseif ($estado_principal == 'mantenimiento') {
                                 $faceMeta = $habitacion['mantenimiento_actual']['tipo_mantenimiento'] ?? 'Mantenimiento';
                             }
                             ?>
@@ -3208,13 +3237,24 @@ if ($tiene_doble_movimiento) {
                                         <div class="rc-num"><?= htmlspecialchars($habitacion['numero']) ?></div>
                                         <div class="rc-type"><?= $pisoAbrev ?> · <?= $tipos[$habitacion['tipo']] ?? $habitacion['tipo'] ?></div>
                                     </div>
-                                    <span class="rc-badge"><i class="fas fa-<?= $estadoInfo['icon'] ?>"></i><span><?= $estadoInfo['label'] ?></span></span>
+                                    <span class="rc-badge"><i class="fas fa-<?= $estadoInfoPrincipal['icon'] ?>"></i><span><?= $estadoInfoPrincipal['label'] ?></span></span>
                                 </div>
                                 <div class="rc-mid">
                                     <?php if ($faceGuest !== ''): ?>
                                         <div class="rc-guest"><i class="fas fa-user"></i><span><?= htmlspecialchars($faceGuest) ?></span></div>
                                     <?php else: ?>
                                         <div class="rc-guest rc-guest--empty"><i class="fas fa-bed"></i><span>Sin huésped</span></div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($hbIncidencias)): ?>
+                                        <div class="rc-incidents" aria-label="Incidencias de la habitación">
+                                            <?php foreach ($hbIncidencias as $incidencia): ?>
+                                                <span class="rc-incident rc-incident--<?= htmlspecialchars($incidencia['type']) ?>">
+                                                    <i class="fas fa-<?= htmlspecialchars($incidencia['icon']) ?>"></i>
+                                                    <span><?= htmlspecialchars($incidencia['label']) ?></span>
+                                                    <?php if (!empty($incidencia['detail'])): ?><small><?= htmlspecialchars($incidencia['detail']) ?></small><?php endif; ?>
+                                                </span>
+                                            <?php endforeach; ?>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if ($faceMeta !== ''): ?><div class="rc-meta"><?= htmlspecialchars($faceMeta) ?></div><?php endif; ?>
                                 </div>
@@ -3261,6 +3301,13 @@ if ($tiene_doble_movimiento) {
                                         <i class="fas fa-clock"></i>
                                         <span><?= $info_checkin_vencido['dias_retraso'] ?> día<?= $info_checkin_vencido['dias_retraso'] > 1 ? 's' : '' ?> de retraso</span>
                                     </div>
+
+                                    <?php if ($habitacion['estado'] == 'limpieza'): ?>
+                                        <div class="info-item">
+                                            <i class="fas fa-broom"></i>
+                                            <span>Tambien requiere limpieza</span>
+                                        </div>
+                                    <?php endif; ?>
 
                                 <?php elseif ($tiene_checkout_vencido && $info_checkout_vencido): ?>
                                     <div class="info-item">
@@ -3396,7 +3443,13 @@ if ($tiene_doble_movimiento) {
                                     </a>
 
                                 <?php elseif ($es_checkin_vencido && $info_checkin_vencido): ?>
-                                    <?php /* Accion duplicada omitida: ya existen Detalles/Reservacion en esta hoja. */ ?>
+                                    <?php if ($habitacion['estado'] == 'limpieza'): ?>
+                                        <a href="javascript:void(0)" onclick="event.stopPropagation(); liberarHabitacion(<?= $habitacion['id'] ?>)" class="btn-action btn-primary" title="Marcar esta habitacion como limpia">
+                                            <i class="fas fa-check mr-1"></i>Limpia
+                                        </a>
+                                    <?php else: ?>
+                                        <?php /* Accion duplicada omitida: ya existen Detalles/Reservacion en esta hoja. */ ?>
+                                    <?php endif; ?>
 
                                 <?php elseif ($estado_actual == 'por_llegar' && isset($habitacion['reservacion_pendiente']) && can('reservaciones.checkin')): ?>
                                     <a href="javascript:void(0)" onclick="event.stopPropagation(); hacerCheckInRapido(<?= $habitacion['reservacion_pendiente']['reservacion_id'] ?? $habitacion['reservacion_pendiente']['id'] ?>)" class="btn-action btn-primary" title="Hacer check-in de la reservación pendiente">
@@ -6217,6 +6270,390 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
   text-decoration:underline;
 }
 
+/* Alertas pendientes: panel minimalista inspirado en Configuracion del hotel. */
+.habitaciones-view .alert-panel{
+  --alert-ink: color-mix(in srgb,var(--hb-primary, #1f3f46) 56%, #445160);
+  --alert-muted: #738093;
+  --alert-line: color-mix(in srgb,var(--hb-primary, #1f3f46) 10%, #e8dfd2);
+  --alert-surface: rgba(255,255,255,.9);
+  --alert-soft: color-mix(in srgb,var(--hb-accent, #b58a3c) 4%, #fffdf8);
+  --alert-critical: #d73531;
+  --alert-critical-dark: #7f1d1d;
+  --alert-warning: #b98a35;
+  --alert-checkin: #405564;
+  --alert-checkin-warm: #9a7a4f;
+  --alert-checkin-line: #ded6c8;
+  --alert-checkin-soft: #faf8f3;
+  --alert-info: #58728f;
+  --alert-accent: var(--alert-critical);
+  margin:0 0 1.45rem!important;
+  overflow:hidden!important;
+  border:1px solid color-mix(in srgb,var(--alert-accent) 30%, var(--alert-line))!important;
+  border-left:4px solid color-mix(in srgb,var(--alert-critical) 82%, var(--alert-line))!important;
+  border-radius:18px!important;
+  background:
+    radial-gradient(circle at 95% 0%, color-mix(in srgb,var(--alert-accent) 20%, transparent), transparent 16rem),
+    radial-gradient(circle at 0% 0%, color-mix(in srgb,var(--alert-warning) 9%, transparent), transparent 13rem),
+    linear-gradient(180deg, rgba(255,255,255,.96), color-mix(in srgb,var(--alert-accent) 4%, #fffdf8))!important;
+  box-shadow:
+    0 22px 48px -34px color-mix(in srgb,var(--alert-accent) 70%, transparent),
+    0 1px 0 rgba(255,255,255,.72) inset!important;
+}
+
+.habitaciones-view .alert-panel::before{
+  content:"";
+  display:block;
+  height:6px;
+  background:linear-gradient(90deg,
+    color-mix(in srgb,var(--alert-critical) 96%, var(--alert-line)),
+    color-mix(in srgb,var(--alert-warning) 62%, transparent),
+    color-mix(in srgb,var(--alert-info) 38%, transparent));
+}
+
+.habitaciones-view .alert-header{
+  min-height:70px!important;
+  padding:15px 18px!important;
+  border-bottom:1px solid color-mix(in srgb,var(--alert-accent) 24%, var(--alert-line))!important;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb,var(--alert-accent) 18%, transparent), transparent 13rem),
+    linear-gradient(135deg, color-mix(in srgb,var(--alert-accent) 13%, #fff), color-mix(in srgb,var(--alert-warning) 5%, #fffdf8))!important;
+}
+
+.habitaciones-view .alert-header .flex{
+  min-width:0;
+  gap:11px!important;
+}
+
+.habitaciones-view .alert-header .fa-exclamation-triangle{
+  width:34px;
+  height:34px;
+  display:inline-grid;
+  place-items:center;
+  border:1px solid color-mix(in srgb,var(--alert-critical-dark) 28%, var(--alert-accent));
+  border-radius:12px;
+  background:linear-gradient(135deg, var(--alert-accent), color-mix(in srgb,var(--alert-critical-dark) 72%, var(--alert-accent)))!important;
+  color:#fffdf8!important;
+  box-shadow:0 12px 20px -12px color-mix(in srgb,var(--alert-accent) 95%, transparent);
+  font-size:.88rem!important;
+}
+
+.habitaciones-view .alert-header h3{
+  color:var(--alert-ink)!important;
+  font-size:.98rem!important;
+  line-height:1.2!important;
+  font-weight:720!important;
+  letter-spacing:0!important;
+}
+
+.habitaciones-view .alert-badge{
+  min-width:30px!important;
+  height:30px!important;
+  display:inline-grid!important;
+  place-items:center!important;
+  padding:0 10px!important;
+  border:1px solid color-mix(in srgb,var(--alert-critical-dark) 22%, var(--alert-accent))!important;
+  border-radius:999px!important;
+  background:linear-gradient(135deg, var(--alert-accent), color-mix(in srgb,var(--alert-critical-dark) 68%, var(--alert-accent)))!important;
+  color:#fffdf8!important;
+  box-shadow:0 12px 20px -12px color-mix(in srgb,var(--alert-accent) 92%, transparent)!important;
+  font-size:.76rem!important;
+  font-weight:760!important;
+  font-variant-numeric:tabular-nums;
+}
+
+.habitaciones-view .alert-collapse{
+  width:36px;
+  height:36px;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--alert-line)!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  color:var(--alert-muted)!important;
+  transition:background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+
+.habitaciones-view .alert-collapse:hover,
+.habitaciones-view .alert-collapse:focus-visible{
+  border-color:color-mix(in srgb,var(--alert-accent) 28%, var(--alert-line))!important;
+  background:color-mix(in srgb,var(--alert-accent) 7%, #fff)!important;
+  color:var(--alert-ink)!important;
+  transform:translateY(-1px);
+}
+
+.habitaciones-view .alert-content{
+  padding:16px 18px 18px!important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.48), color-mix(in srgb,var(--alert-accent) 2%, rgba(255,255,255,.28)))!important;
+}
+
+.habitaciones-view .alert-section{
+  --section-accent: var(--alert-warning);
+  --section-aux: var(--section-accent);
+  position:relative;
+  margin:0 0 16px!important;
+  padding:14px!important;
+  border:1px solid color-mix(in srgb,var(--section-accent) 15%, var(--alert-line))!important;
+  border-left:4px solid color-mix(in srgb,var(--section-accent) 58%, var(--alert-line))!important;
+  border-radius:15px!important;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb,var(--section-accent) 8%, transparent), transparent 9rem),
+    linear-gradient(135deg, color-mix(in srgb,var(--section-accent) 5%, rgba(255,255,255,.9)), rgba(255,255,255,.82))!important;
+}
+
+.habitaciones-view .alert-section-critical{ --section-accent: var(--alert-critical); }
+.habitaciones-view .alert-section-warning{
+  --section-accent: var(--alert-checkin);
+  --section-aux: var(--alert-checkin-warm);
+  padding:15px 16px 16px!important;
+  border-left:0!important;
+  border-color:var(--alert-checkin-line)!important;
+  border-radius:16px!important;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.98), rgba(255,255,255,.88)),
+    linear-gradient(180deg, var(--alert-checkin-soft), #fff)!important;
+  box-shadow:
+    0 16px 36px -34px rgba(38, 55, 70, .34),
+    0 1px 0 rgba(255,255,255,.82) inset!important;
+}
+.habitaciones-view .alert-section-info{ --section-accent: var(--alert-info); }
+
+.habitaciones-view .alert-section-warning::before{
+  content:"";
+  position:absolute;
+  inset:16px auto 16px 0;
+  width:4px;
+  height:auto;
+  border-radius:0 999px 999px 0;
+  background:linear-gradient(180deg,
+    color-mix(in srgb,var(--section-accent) 86%, #fff),
+    color-mix(in srgb,var(--section-aux) 72%, #fff));
+}
+
+.habitaciones-view .alert-section:last-child{
+  margin-bottom:0!important;
+}
+
+.habitaciones-view .alert-section-title{
+  margin:0 0 12px!important;
+  color:color-mix(in srgb,var(--section-accent) 76%, #475569)!important;
+  font-size:.88rem!important;
+  line-height:1.25!important;
+  font-weight:720!important;
+}
+
+.habitaciones-view .alert-section-title i{
+  width:28px;
+  height:28px;
+  display:inline-grid;
+  place-items:center;
+  border-radius:10px;
+  background:color-mix(in srgb,var(--section-accent) 12%, #fff);
+  color:color-mix(in srgb,var(--section-accent) 78%, #475569);
+}
+
+.habitaciones-view .alert-section-warning .alert-section-title{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0 0 11px!important;
+  border-bottom:1px solid color-mix(in srgb,var(--alert-checkin-line) 78%, transparent);
+  color:color-mix(in srgb,var(--section-accent) 76%, var(--alert-ink))!important;
+}
+
+.habitaciones-view .alert-section-warning .alert-section-title i{
+  width:30px;
+  height:30px;
+  border:1px solid color-mix(in srgb,var(--section-accent) 16%, var(--alert-checkin-line));
+  border-radius:9px;
+  background:#fff!important;
+  color:color-mix(in srgb,var(--section-accent) 86%, #334155);
+  box-shadow:0 10px 20px -18px rgba(38,55,70,.48);
+}
+
+.habitaciones-view .alert-item{
+  position:relative;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:14px!important;
+  align-items:center!important;
+  margin:0 0 10px!important;
+  padding:13px 14px!important;
+  border:1px solid color-mix(in srgb,var(--section-accent) 15%, var(--alert-line))!important;
+  border-left:0!important;
+  border-radius:14px!important;
+  background:rgba(255,255,255,.78)!important;
+  box-shadow:0 10px 24px -24px color-mix(in srgb,var(--section-accent) 36%, transparent)!important;
+  transform:none!important;
+}
+
+.habitaciones-view .alert-item::before{
+  content:"";
+  position:absolute;
+  inset:12px auto 12px 0;
+  width:3px;
+  border-radius:0 999px 999px 0;
+  background:color-mix(in srgb,var(--section-accent) 72%, var(--alert-line));
+}
+
+.habitaciones-view .alert-section-warning .alert-item{
+  margin-bottom:9px!important;
+  padding:14px 14px 14px 17px!important;
+  border-color:color-mix(in srgb,var(--alert-checkin-line) 88%, #fff)!important;
+  border-radius:13px!important;
+  background:
+    linear-gradient(90deg, color-mix(in srgb,var(--section-accent) 2%, #fff) 0%, #fff 44%),
+    #fff!important;
+  box-shadow:0 12px 24px -26px rgba(38,55,70,.42)!important;
+}
+
+.habitaciones-view .alert-section-warning .alert-item::before{
+  inset:18px auto 18px 0;
+  width:3px;
+  background:color-mix(in srgb,var(--section-accent) 68%, var(--alert-checkin-line));
+}
+
+.habitaciones-view .alert-section-warning .alert-item::after{
+  content:"";
+  position:absolute;
+  left:12px;
+  top:18px;
+  width:6px;
+  height:6px;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--section-aux) 78%, #fff);
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--section-aux) 12%, transparent);
+}
+
+.habitaciones-view .alert-section-warning .alert-info-text{
+  padding-left:7px;
+}
+
+.habitaciones-view .alert-section-warning .alert-info-text strong{
+  color:color-mix(in srgb,var(--section-accent) 78%, #26313c)!important;
+}
+
+.habitaciones-view .alert-section-warning .alert-info-text small{
+  color:#6d7786!important;
+}
+
+.habitaciones-view .alert-section-warning .alert-info-text small i{
+  color:color-mix(in srgb,var(--section-accent) 58%, #8a94a3)!important;
+}
+
+.habitaciones-view .alert-section-warning .alert-info-text a{
+  color:color-mix(in srgb,var(--section-aux) 78%, #334155)!important;
+}
+
+.habitaciones-view .alert-item:hover{
+  border-color:color-mix(in srgb,var(--section-accent) 28%, var(--alert-line))!important;
+  background:color-mix(in srgb,var(--section-accent) 4%, #fff)!important;
+  box-shadow:0 16px 30px -28px color-mix(in srgb,var(--section-accent) 42%, transparent)!important;
+  transform:translateY(-1px)!important;
+}
+
+.habitaciones-view .alert-info-text{
+  min-width:0;
+}
+
+.habitaciones-view .alert-info-text strong{
+  margin:0 0 6px!important;
+  color:var(--alert-ink)!important;
+  font-size:.93rem!important;
+  line-height:1.25!important;
+  font-weight:720!important;
+}
+
+.habitaciones-view .alert-info-text small{
+  display:flex!important;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:6px;
+  color:var(--alert-muted)!important;
+  font-size:.79rem!important;
+  line-height:1.35!important;
+  font-weight:500!important;
+}
+
+.habitaciones-view .alert-info-text small i{
+  color:color-mix(in srgb,var(--section-accent) 62%, var(--alert-muted));
+}
+
+.habitaciones-view .alert-info-text a{
+  color:color-mix(in srgb,var(--section-accent) 82%, #334155)!important;
+  font-weight:760!important;
+}
+
+.habitaciones-view .alert-actions{
+  align-items:center;
+  justify-content:flex-end;
+}
+
+.habitaciones-view .btn-alert{
+  min-height:38px!important;
+  padding:0 13px!important;
+  border:1px solid color-mix(in srgb,var(--section-accent) 24%, var(--alert-line))!important;
+  border-radius:11px!important;
+  background:color-mix(in srgb,var(--section-accent) 10%, #fff)!important;
+  color:color-mix(in srgb,var(--section-accent) 78%, #334155)!important;
+  box-shadow:none!important;
+  font-size:.78rem!important;
+  font-weight:760!important;
+  letter-spacing:0!important;
+}
+
+.habitaciones-view .btn-alert:hover,
+.habitaciones-view .btn-alert:focus-visible{
+  border-color:color-mix(in srgb,var(--section-accent) 38%, var(--alert-line))!important;
+  background:color-mix(in srgb,var(--section-accent) 15%, #fff)!important;
+  transform:translateY(-1px)!important;
+}
+
+.habitaciones-view .btn-alert-primary,
+.habitaciones-view .btn-alert-warning,
+.habitaciones-view .btn-alert-info{
+  color:color-mix(in srgb,var(--section-accent) 78%, #334155)!important;
+}
+
+.habitaciones-view .alert-section-warning .btn-alert-warning{
+  border-color:var(--alert-checkin-line)!important;
+  background:#fff!important;
+  color:color-mix(in srgb,var(--section-accent) 82%, #273744)!important;
+  box-shadow:0 1px 0 rgba(255,255,255,.86) inset!important;
+}
+
+.habitaciones-view .alert-section-warning .btn-alert-warning:hover,
+.habitaciones-view .alert-section-warning .btn-alert-warning:focus-visible{
+  border-color:color-mix(in srgb,var(--section-accent) 34%, var(--alert-checkin-line))!important;
+  background:color-mix(in srgb,var(--section-accent) 8%, #fff)!important;
+  color:color-mix(in srgb,var(--section-accent) 92%, #18212b)!important;
+}
+
+@media (max-width:640px){
+  .habitaciones-view .alert-content{
+    padding:12px!important;
+  }
+
+  .habitaciones-view .alert-section{
+    padding:12px!important;
+  }
+
+  .habitaciones-view .alert-item{
+    grid-template-columns:1fr;
+  }
+
+  .habitaciones-view .alert-actions{
+    width:100%;
+    justify-content:stretch;
+  }
+
+  .habitaciones-view .btn-alert{
+    width:100%;
+    justify-content:center;
+  }
+}
+
 /* Estado "No llego": alerta clara sin borde griton ni datos encimados. */
 .habitaciones-view .room-card-compact.has-checkin-vencido{
   --hb-late:#C9322B;
@@ -6692,6 +7129,447 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
 .habitaciones-view .room-card-compact:not(.flipped):focus-visible .rc-hint{
   color:color-mix(in srgb,var(--hb-accent) 74%,var(--hb-heading))!important;
 }
+
+/* Estado operativo primero; incidencias como chips secundarios. */
+.habitaciones-view .rc-incidents{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-top:6px;
+  min-width:0;
+}
+
+.habitaciones-view .rc-incident{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  max-width:100%;
+  min-height:21px;
+  padding:3px 7px;
+  border:1px solid color-mix(in srgb,var(--hb-line) 78%,#fff);
+  border-radius:999px;
+  background:rgba(255,255,255,.72);
+  color:var(--hb-heading);
+  font-size:.57rem;
+  font-weight:850;
+  line-height:1;
+  letter-spacing:.02em;
+  text-transform:uppercase;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.76);
+  white-space:nowrap;
+  overflow:hidden;
+}
+
+.habitaciones-view .rc-incident i{
+  flex:none;
+  font-size:.56rem;
+}
+
+.habitaciones-view .rc-incident span{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.habitaciones-view .rc-incident small{
+  flex:none;
+  font-size:.53rem;
+  font-weight:800;
+  opacity:.78;
+  text-transform:none;
+}
+
+.habitaciones-view .rc-incident--critical{
+  border-color:color-mix(in srgb,#D64539 36%,#fff);
+  background:color-mix(in srgb,#D64539 10%,#fff);
+  color:#A72822;
+}
+
+.habitaciones-view .rc-incident--warning{
+  border-color:color-mix(in srgb,var(--c-maint) 34%,#fff);
+  background:color-mix(in srgb,var(--c-maint) 11%,#fff);
+  color:color-mix(in srgb,var(--c-maint) 82%,#5B3B05);
+}
+
+.habitaciones-view .rc-incident--info{
+  border-color:color-mix(in srgb,var(--c-arriving) 26%,#fff);
+  background:color-mix(in srgb,var(--c-arriving) 9%,#fff);
+  color:color-mix(in srgb,var(--c-arriving) 78%,var(--hb-heading));
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped) .flip-card-front{
+  animation:none!important;
+  border:1px solid var(--hb-line)!important;
+  border-left-width:4px!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 10px 24px -22px rgba(17,24,39,.35)!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front::before{
+  display:none!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .rc-face{
+  padding:13px 15px 13px 18px!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .rc-stripe{
+  display:block!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .rc-num,
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .rc-price{
+  color:var(--hb-primary)!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .rc-guest{
+  width:auto!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:var(--hb-primary)!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .rc-guest i,
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .rc-meta,
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .rc-hint{
+  color:var(--hb-muted)!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .rc-meta{
+  margin-top:2px!important;
+  font-weight:600!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .rc-badge{
+  border:0!important;
+  color:#fff!important;
+  box-shadow:none!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-disponible,
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-disponible_fecha,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped) .flip-card-front.estado-disponible,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped) .flip-card-front.estado-disponible_fecha{
+  background:linear-gradient(145deg,#F7FCF8,var(--bg-available))!important;
+  border-left-color:var(--c-available)!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-por_llegar,
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-doble,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped) .flip-card-front.estado-por_llegar,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped) .flip-card-front.estado-doble{
+  background:linear-gradient(145deg,#FBFAFF,var(--bg-arriving))!important;
+  border-left-color:var(--c-arriving)!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-ocupada,
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-ocupada_fecha,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped) .flip-card-front.estado-ocupada,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped) .flip-card-front.estado-ocupada_fecha{
+  background:linear-gradient(145deg,#FFF7F3,var(--bg-occupied))!important;
+  border-left-color:var(--c-occupied)!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-limpieza,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped) .flip-card-front.estado-limpieza{
+  background:linear-gradient(145deg,#FAFDFF,var(--bg-cleaning))!important;
+  border-left-color:var(--c-cleaning)!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-mantenimiento,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped) .flip-card-front.estado-mantenimiento{
+  background:linear-gradient(145deg,#FFFDF8,var(--bg-maint))!important;
+  border-left-color:var(--c-maint)!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-disponible .rc-badge,
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-disponible_fecha .rc-badge{ background:var(--c-available)!important; }
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-por_llegar .rc-badge,
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-doble .rc-badge{ background:var(--c-arriving)!important; }
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-ocupada .rc-badge,
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-ocupada_fecha .rc-badge{ background:var(--c-occupied)!important; }
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-limpieza .rc-badge{ background:var(--c-cleaning)!important; }
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front.estado-mantenimiento .rc-badge{ background:var(--c-maint)!important; }
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped):hover .flip-card-front,
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped):focus-visible .flip-card-front,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped):hover .flip-card-front,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped):focus-visible .flip-card-front{
+  border-color:var(--hb-line)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 12px 28px -24px rgba(17,24,39,.38)!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped):is(:hover,:focus-visible) .flip-card-front.estado-disponible,
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped):is(:hover,:focus-visible) .flip-card-front.estado-disponible_fecha,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped):is(:hover,:focus-visible) .flip-card-front.estado-disponible,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped):is(:hover,:focus-visible) .flip-card-front.estado-disponible_fecha{
+  border-left-color:var(--c-available)!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped):is(:hover,:focus-visible) .flip-card-front.estado-por_llegar,
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped):is(:hover,:focus-visible) .flip-card-front.estado-doble,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped):is(:hover,:focus-visible) .flip-card-front.estado-por_llegar,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped):is(:hover,:focus-visible) .flip-card-front.estado-doble{
+  border-left-color:var(--c-arriving)!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped):is(:hover,:focus-visible) .flip-card-front.estado-ocupada,
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped):is(:hover,:focus-visible) .flip-card-front.estado-ocupada_fecha,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped):is(:hover,:focus-visible) .flip-card-front.estado-ocupada,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped):is(:hover,:focus-visible) .flip-card-front.estado-ocupada_fecha{
+  border-left-color:var(--c-occupied)!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped):is(:hover,:focus-visible) .flip-card-front.estado-limpieza,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped):is(:hover,:focus-visible) .flip-card-front.estado-limpieza{
+  border-left-color:var(--c-cleaning)!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped):is(:hover,:focus-visible) .flip-card-front.estado-mantenimiento,
+.habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped):is(:hover,:focus-visible) .flip-card-front.estado-mantenimiento{
+  border-left-color:var(--c-maint)!important;
+}
+
+@media (max-width:640px){
+  .habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped),
+  .habitaciones-view .room-card-compact.has-checkout-vencido:not(.flipped){
+    height:200px!important;
+  }
+  .habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .rc-face{
+    padding:11px 10px 10px 14px!important;
+  }
+  .habitaciones-view .rc-incidents{
+    gap:4px;
+    margin-top:4px;
+  }
+  .habitaciones-view .rc-incident{
+    min-height:19px;
+    padding:3px 6px;
+    font-size:.5rem;
+  }
+  .habitaciones-view .rc-incident small{
+    font-size:.49rem;
+  }
+}
+
+/* Correccion anti-corte: las tarjetas crecen lo justo para mostrar huesped, incidencia, meta y pie. */
+.habitaciones-view .rgrid{
+  align-items:stretch!important;
+}
+
+.habitaciones-view .flip-card,
+.habitaciones-view .flip-card.flipped{
+  min-height:232px!important;
+  height:232px!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido.flipped{
+  min-height:258px!important;
+  height:258px!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido.has-cleaning-state.flipped{
+  min-height:276px!important;
+  height:276px!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido.has-cleaning-state.flipped .action-buttons{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+
+.habitaciones-view .room-card-compact.has-checkin-vencido.has-cleaning-state.flipped .btn-action{
+  padding-inline:7px!important;
+}
+
+.habitaciones-view .flip-card-inner,
+.habitaciones-view .flip-card-front{
+  min-height:100%!important;
+}
+
+.habitaciones-view .rc-face{
+  min-height:0!important;
+  gap:8px!important;
+  padding:14px 15px 13px 18px!important;
+}
+
+.habitaciones-view .rc-top{
+  flex:none!important;
+  min-height:44px;
+}
+
+.habitaciones-view .rc-id{
+  min-width:0;
+}
+
+.habitaciones-view .rc-badge{
+  flex:0 1 auto;
+  max-width:108px;
+}
+
+.habitaciones-view .rc-badge span{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.habitaciones-view .rc-mid{
+  min-height:0!important;
+  margin-top:auto!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:4px!important;
+}
+
+.habitaciones-view .rc-guest,
+.habitaciones-view .rc-meta{
+  line-height:1.2!important;
+}
+
+.habitaciones-view .rc-incidents{
+  margin-top:1px!important;
+  gap:4px!important;
+  overflow:visible!important;
+}
+
+.habitaciones-view .rc-incident{
+  max-width:100%!important;
+  min-height:20px!important;
+  padding:3px 7px!important;
+}
+
+.habitaciones-view .rc-foot{
+  flex:none!important;
+  margin-top:6px!important;
+  min-height:24px;
+}
+
+@media (max-width:768px){
+  .habitaciones-view .flip-card,
+  .habitaciones-view .flip-card.flipped{
+    min-height:232px!important;
+    height:232px!important;
+  }
+}
+
+@media (max-width:640px){
+  .habitaciones-view .rgrid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:11px!important;
+  }
+
+  .habitaciones-view .flip-card,
+  .habitaciones-view .flip-card.flipped,
+  .habitaciones-view .room-card-compact.has-checkin-vencido,
+  .habitaciones-view .room-card-compact.has-checkin-vencido.flipped{
+    min-height:224px!important;
+    height:224px!important;
+  }
+
+  .habitaciones-view .room-card-compact.has-checkin-vencido.flipped{
+    min-height:268px!important;
+    height:268px!important;
+  }
+
+  .habitaciones-view .room-card-compact.has-checkin-vencido.has-cleaning-state.flipped{
+    min-height:286px!important;
+    height:286px!important;
+  }
+
+  .habitaciones-view .room-card-compact.has-checkin-vencido.has-cleaning-state.flipped .action-buttons{
+    grid-template-columns:1fr!important;
+  }
+
+  .habitaciones-view .rc-face,
+  .habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .rc-face{
+    gap:6px!important;
+    padding:12px 10px 10px 14px!important;
+  }
+
+  .habitaciones-view .rc-top{
+    min-height:39px!important;
+  }
+
+  .habitaciones-view .rc-badge{
+    max-width:82px!important;
+  }
+
+  .habitaciones-view .rc-mid{
+    gap:3px!important;
+  }
+
+  .habitaciones-view .rc-meta{
+    display:block!important;
+    max-width:100%;
+    font-size:.55rem!important;
+    line-height:1.15!important;
+  }
+
+  .habitaciones-view .rc-incidents{
+    margin-top:1px!important;
+  }
+
+  .habitaciones-view .rc-incident{
+    max-width:100%!important;
+    min-height:18px!important;
+    padding:3px 6px!important;
+  }
+
+  .habitaciones-view .rc-foot{
+    margin-top:4px!important;
+    min-height:22px!important;
+  }
+}
+
+@media (max-width:430px){
+  .habitaciones-view .rgrid{
+    grid-template-columns:1fr!important;
+  }
+
+  .habitaciones-view .flip-card,
+  .habitaciones-view .flip-card.flipped,
+  .habitaciones-view .room-card-compact.has-checkin-vencido,
+  .habitaciones-view .room-card-compact.has-checkin-vencido.flipped{
+    min-height:204px!important;
+    height:204px!important;
+  }
+
+  .habitaciones-view .room-card-compact.has-checkin-vencido.flipped{
+    min-height:268px!important;
+    height:268px!important;
+  }
+
+  .habitaciones-view .room-card-compact.has-checkin-vencido.has-cleaning-state.flipped{
+    min-height:286px!important;
+    height:286px!important;
+  }
+
+  .habitaciones-view .rc-badge{
+    max-width:116px!important;
+  }
+}
+
+@media (max-width:380px){
+  .habitaciones-view .flip-card,
+  .habitaciones-view .flip-card.flipped,
+  .habitaciones-view .room-card-compact.has-checkin-vencido,
+  .habitaciones-view .room-card-compact.has-checkin-vencido.flipped{
+    min-height:204px!important;
+    height:204px!important;
+  }
+
+  .habitaciones-view .room-card-compact.has-checkin-vencido.flipped{
+    min-height:268px!important;
+    height:268px!important;
+  }
+
+  .habitaciones-view .room-card-compact.has-checkin-vencido.has-cleaning-state.flipped{
+    min-height:286px!important;
+    height:286px!important;
+  }
+}
 </style>
 
 <style id="hb-quick-view-final-override">
@@ -6802,6 +7680,1282 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
             grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)) !important;
         }
     }
+</style>
+
+<style id="hb-reservation-flow-modal-redesign">
+/* Reservacion rapida: modales compactos, neutrales y legibles con cualquier branding. */
+.swal2-container.hb-swal-sheet-container.swal2-backdrop-show,
+.swal2-container.hb-swal-sheet-container.swal2-noanimation{
+    background:
+        radial-gradient(740px 320px at 50% -12%, color-mix(in srgb, var(--brand-accent, #BD9441) 16%, transparent), transparent 62%),
+        rgba(15, 23, 42, .42) !important;
+    backdrop-filter: blur(7px) !important;
+}
+
+.swal2-popup.hb-swal-client,
+.swal2-popup.hb-swal-arrival{
+    --hb-modal-primary: var(--brand-primary, #1B2746);
+    --hb-modal-secondary: var(--brand-secondary, #0F172A);
+    --hb-modal-accent: var(--brand-accent, #BD9441);
+    --hb-modal-ink: #172033;
+    --hb-modal-soft-ink: #475569;
+    --hb-modal-muted: #6B7280;
+    --hb-modal-line: color-mix(in srgb, var(--hb-modal-primary) 12%, #E6DCCB);
+    --hb-modal-soft: color-mix(in srgb, var(--hb-modal-primary) 5%, #FFFFFF);
+    --hb-modal-action: color-mix(in srgb, var(--hb-modal-primary) 78%, #111827);
+    --hb-modal-action-text: #FFFFFF;
+    width: min(720px, calc(100vw - 32px)) !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border: 1px solid var(--hb-modal-line) !important;
+    border-radius: 18px !important;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,253,248,.96)),
+        #FFFFFF !important;
+    color: var(--hb-modal-ink) !important;
+    box-shadow:
+        0 30px 76px -42px rgba(15, 23, 42, .68),
+        0 1px 0 rgba(255,255,255,.9) inset !important;
+}
+
+.swal2-popup.hb-swal-arrival{
+    width: min(560px, calc(100vw - 32px)) !important;
+}
+
+.hb-swal .swal2-title:empty{
+    display: none !important;
+}
+
+.hb-swal .swal2-html-container{
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+}
+
+.hb-swal .swal2-close{
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    z-index: 30 !important;
+    width: 34px !important;
+    height: 34px !important;
+    border: 1px solid color-mix(in srgb, var(--hb-modal-primary) 10%, #E5E7EB) !important;
+    border-radius: 999px !important;
+    background: rgba(255,255,255,.84) !important;
+    color: var(--hb-modal-soft-ink) !important;
+    font-size: 1.2rem !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    transition: transform .16s ease, background .16s ease, color .16s ease;
+}
+
+.hb-swal .swal2-close:hover{
+    transform: translateY(-1px);
+    background: #FFFFFF !important;
+    color: var(--hb-modal-ink) !important;
+}
+
+.hb-client-choice,
+.hb-reservation-step{
+    width: 100%;
+    text-align: left;
+    background: transparent !important;
+}
+
+.hb-client-choice__head,
+.hb-arrival-head{
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    padding: 18px 20px 15px;
+    border-bottom: 1px solid var(--hb-modal-line);
+    background:
+        radial-gradient(420px 160px at 92% 0%, color-mix(in srgb, var(--hb-modal-accent) 12%, transparent), transparent 68%),
+        linear-gradient(180deg, #FFFFFF, color-mix(in srgb, var(--hb-modal-primary) 3%, #FFFDF8));
+}
+
+.hb-client-choice__mark,
+.hb-arrival-mark{
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: var(--hb-modal-action) !important;
+    color: var(--hb-modal-action-text) !important;
+    box-shadow: 0 14px 24px -18px color-mix(in srgb, var(--hb-modal-action) 78%, transparent);
+}
+
+.hb-client-choice__mark i,
+.hb-arrival-mark i{
+    font-size: .95rem;
+}
+
+.hb-client-choice__eyebrow{
+    display: block;
+    margin: 0 0 4px;
+    color: color-mix(in srgb, var(--hb-modal-accent) 72%, var(--hb-modal-soft-ink)) !important;
+    font-size: .68rem;
+    font-weight: 850;
+    letter-spacing: .08em;
+    line-height: 1.1;
+    text-transform: uppercase;
+}
+
+.hb-client-choice h3,
+.hb-arrival-head h3{
+    margin: 0;
+    color: var(--hb-modal-ink) !important;
+    font-size: 1.15rem;
+    font-weight: 850;
+    letter-spacing: 0;
+    line-height: 1.12;
+}
+
+.hb-client-choice__head p,
+.hb-arrival-head p{
+    max-width: 52ch;
+    margin: 6px 0 0;
+    color: var(--hb-modal-muted) !important;
+    font-size: .84rem;
+    font-weight: 500;
+    line-height: 1.45;
+}
+
+.hb-client-choice__options{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 16px 18px 18px;
+}
+
+.hb-client-option{
+    position: relative;
+    display: grid !important;
+    grid-template-rows: auto 1fr auto;
+    gap: 12px;
+    min-height: 156px;
+    padding: 14px !important;
+    border: 1px solid var(--hb-modal-line) !important;
+    border-radius: 16px !important;
+    background: #FFFFFF !important;
+    color: var(--hb-modal-ink) !important;
+    box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 16px 32px -30px rgba(15,23,42,.44) !important;
+    text-align: left !important;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+
+.hb-client-option::before{
+    content: "";
+    position: absolute;
+    inset: 12px auto 12px 0;
+    width: 3px;
+    border-radius: 0 999px 999px 0;
+    background: color-mix(in srgb, var(--hb-modal-action) 58%, #D8C8A8);
+    opacity: .82;
+}
+
+.hb-client-option:hover,
+.hb-client-option:focus-visible{
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--hb-modal-action) 26%, #D9CDBA) !important;
+    background: color-mix(in srgb, var(--hb-modal-action) 4%, #FFFFFF) !important;
+    box-shadow: 0 20px 40px -30px color-mix(in srgb, var(--hb-modal-action) 48%, transparent) !important;
+}
+
+.hb-client-option__top,
+.hb-client-option__body,
+.hb-client-option__cta{
+    position: relative;
+    z-index: 1;
+}
+
+.hb-client-option__top{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.hb-client-option__icon{
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: var(--hb-modal-soft) !important;
+    color: var(--hb-modal-action) !important;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hb-modal-action) 12%, transparent) !important;
+}
+
+.hb-client-option__tag{
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 9px;
+    border: 1px solid color-mix(in srgb, var(--hb-modal-action) 12%, #ECE5D8);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--hb-modal-action) 5%, #FFFFFF) !important;
+    color: color-mix(in srgb, var(--hb-modal-action) 76%, var(--hb-modal-soft-ink)) !important;
+    font-size: .67rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.hb-client-option__body{
+    display: grid;
+    gap: 6px;
+}
+
+.hb-client-option__body strong{
+    color: var(--hb-modal-ink) !important;
+    font-size: .98rem;
+    font-weight: 850;
+    line-height: 1.15;
+}
+
+.hb-client-option__body span{
+    color: var(--hb-modal-muted) !important;
+    font-size: .82rem;
+    font-weight: 500;
+    line-height: 1.38;
+}
+
+.hb-client-option__cta{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 34px;
+    padding-top: 10px;
+    border-top: 1px solid color-mix(in srgb, var(--hb-modal-action) 10%, #ECE5D8) !important;
+    color: var(--hb-modal-action) !important;
+    font-size: .78rem;
+    font-weight: 850;
+}
+
+.hb-client-option__cta i{
+    transition: transform .16s ease;
+}
+
+.hb-client-option:hover .hb-client-option__cta i,
+.hb-client-option:focus-visible .hb-client-option__cta i{
+    transform: translateX(2px);
+}
+
+.hb-client-option--existing{
+    --hb-modal-action: color-mix(in srgb, var(--brand-secondary, #0F172A) 82%, #1E9E63);
+}
+
+.hb-reservation-pill--existing{
+    --hb-modal-action: color-mix(in srgb, var(--brand-secondary, #0F172A) 82%, #1E9E63);
+}
+
+.hb-reservation-pill--new{
+    --hb-modal-action: color-mix(in srgb, var(--brand-primary, #1B2746) 84%, var(--brand-accent, #BD9441));
+}
+
+.hb-arrival-context{
+    display: grid;
+    gap: 12px;
+    padding: 15px 18px 18px;
+}
+
+.hb-reservation-pill,
+.hb-reservation-pill--existing{
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    width: fit-content;
+    min-height: 32px;
+    margin: 0 !important;
+    padding: 0 11px;
+    border: 1px solid color-mix(in srgb, var(--hb-modal-action) 13%, #E6DCCB) !important;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--hb-modal-action) 5%, #FFFFFF) !important;
+    color: color-mix(in srgb, var(--hb-modal-action) 76%, var(--hb-modal-soft-ink)) !important;
+    font-size: .74rem;
+    font-weight: 820;
+}
+
+.hb-reservation-summary{
+    display: grid !important;
+    gap: 12px;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.hb-reservation-dates{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+}
+
+.hb-date-row{
+    display: grid;
+    gap: 5px;
+    min-height: 68px;
+    padding: 11px 12px !important;
+    border: 1px solid var(--hb-modal-line) !important;
+    border-radius: 14px;
+    background: #FFFFFF;
+}
+
+.hb-date-row span{
+    color: var(--hb-modal-muted) !important;
+    font-size: .68rem;
+    font-weight: 820;
+    letter-spacing: .06em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.hb-date-row strong{
+    color: var(--hb-modal-ink) !important;
+    font-size: .93rem;
+    font-weight: 850;
+    line-height: 1.15;
+}
+
+.hb-arrival-card{
+    display: grid;
+    gap: 10px;
+    padding: 14px !important;
+    border: 1px solid color-mix(in srgb, var(--hb-modal-action) 14%, #E6DCCB) !important;
+    border-radius: 16px;
+    background:
+        linear-gradient(180deg, #FFFFFF, color-mix(in srgb, var(--hb-modal-action) 4%, #FFFDF8)) !important;
+}
+
+.hb-arrival-label{
+    margin: 0 !important;
+    color: var(--hb-modal-ink) !important;
+    font-size: .9rem;
+    font-weight: 850;
+    line-height: 1.15;
+}
+
+.hb-arrival-copy{
+    margin: -5px 0 0 !important;
+    color: var(--hb-modal-muted) !important;
+    font-size: .79rem;
+    font-weight: 500;
+    line-height: 1.35;
+}
+
+.hb-arrival-control{
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+}
+
+.hb-arrival-input{
+    width: 100%;
+    height: 42px;
+    padding: 0 12px !important;
+    border: 1px solid color-mix(in srgb, var(--hb-modal-action) 16%, #D8CDBB) !important;
+    border-radius: 12px !important;
+    background: #FFFFFF !important;
+    color: var(--hb-modal-ink) !important;
+    font-size: .96rem !important;
+    font-weight: 780;
+    outline: none;
+    box-shadow: none !important;
+}
+
+.hb-arrival-input:focus{
+    border-color: color-mix(in srgb, var(--hb-modal-action) 42%, #D8CDBB) !important;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--hb-modal-action) 10%, transparent) !important;
+}
+
+.hb-arrival-now,
+.hb-swal-arrival .hb-swal-confirm{
+    min-height: 42px !important;
+    border: 0 !important;
+    border-radius: 12px !important;
+    background: var(--hb-modal-action) !important;
+    color: var(--hb-modal-action-text) !important;
+    box-shadow: 0 14px 24px -18px color-mix(in srgb, var(--hb-modal-action) 76%, transparent) !important;
+    font-weight: 850 !important;
+}
+
+.hb-arrival-now{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 13px !important;
+    font-size: .82rem;
+}
+
+.hb-arrival-now:hover,
+.hb-swal-arrival .hb-swal-confirm:hover{
+    filter: brightness(1.04);
+}
+
+.hb-swal .swal2-actions{
+    width: 100% !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    padding: 0 18px 18px !important;
+}
+
+.swal2-popup.hb-swal-arrival .swal2-actions{
+    display: grid !important;
+    grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+}
+
+.swal2-popup.hb-swal-client .swal2-actions{
+    justify-content: stretch !important;
+}
+
+.hb-swal-client .hb-swal-cancel,
+.hb-swal-arrival .hb-swal-cancel,
+.hb-swal-arrival .hb-swal-confirm{
+    min-height: 42px !important;
+    margin: 0 !important;
+    padding: 0 14px !important;
+    border-radius: 12px !important;
+    font-size: .84rem !important;
+    letter-spacing: 0 !important;
+}
+
+.hb-swal-arrival .hb-swal-cancel{
+    order: 1;
+}
+
+.hb-swal-arrival .hb-swal-confirm{
+    order: 2;
+}
+
+.hb-swal-client .hb-swal-cancel,
+.hb-swal-arrival .hb-swal-cancel{
+    border: 1px solid var(--hb-modal-line) !important;
+    background: #FFFFFF !important;
+    color: var(--hb-modal-ink) !important;
+    box-shadow: none !important;
+}
+
+.hb-swal-client .hb-swal-cancel{
+    width: 100% !important;
+}
+
+.hb-swal-client .hb-swal-cancel:hover,
+.hb-swal-arrival .hb-swal-cancel:hover{
+    background: var(--hb-modal-soft) !important;
+}
+
+@media (max-width: 640px){
+    .swal2-container.hb-swal-sheet-container{
+        align-items: flex-end !important;
+        padding: 10px !important;
+    }
+
+    .swal2-popup.hb-swal-client,
+    .swal2-popup.hb-swal-arrival{
+        width: 100% !important;
+        max-width: none !important;
+        border-radius: 18px 18px 12px 12px !important;
+    }
+
+    .hb-client-choice__head,
+    .hb-arrival-head{
+        padding: 18px 16px 14px;
+    }
+
+    .hb-client-choice__options,
+    .hb-arrival-context{
+        padding: 14px;
+    }
+
+    .hb-client-choice__options,
+    .hb-reservation-dates,
+    .swal2-popup.hb-swal-arrival .swal2-actions{
+        grid-template-columns: 1fr;
+    }
+
+    .hb-client-option{
+        min-height: 132px;
+    }
+
+    .hb-swal .swal2-actions{
+        padding: 0 14px calc(14px + env(safe-area-inset-bottom)) !important;
+    }
+}
+</style>
+
+<style id="hb-reservation-flow-modal-finesse">
+/* Ajuste fino: menos saturacion de marca, mas paleta funcional y microinteracciones suaves. */
+.swal2-popup.hb-swal-client,
+.swal2-popup.hb-swal-arrival{
+    --hb-modal-surface: oklch(98.4% .010 83);
+    --hb-modal-panel: oklch(96.9% .014 78);
+    --hb-modal-ink: oklch(24% .025 252);
+    --hb-modal-soft-ink: oklch(38% .028 250);
+    --hb-modal-muted: oklch(52% .026 252);
+    --hb-modal-line: color-mix(in oklch, var(--brand-primary, #1B2746) 10%, oklch(88% .020 83));
+    --hb-modal-brand-quiet: color-mix(in oklch, var(--brand-primary, #1B2746) 30%, oklch(35% .030 248));
+    --hb-modal-coral: oklch(58% .102 33);
+    --hb-modal-sage: oklch(56% .075 165);
+    --hb-modal-blue: oklch(55% .074 246);
+    --hb-modal-amber: oklch(66% .096 78);
+    --hb-modal-action: oklch(30% .030 252);
+    --hb-modal-action-text: oklch(97% .010 83);
+    --hb-modal-hi: oklch(99% .006 83);
+    background:
+        radial-gradient(520px 180px at 84% 0%, color-mix(in oklch, var(--hb-modal-blue) 13%, transparent), transparent 70%),
+        radial-gradient(360px 150px at 4% 0%, color-mix(in oklch, var(--hb-modal-amber) 11%, transparent), transparent 72%),
+        linear-gradient(180deg, var(--hb-modal-surface), oklch(97.4% .012 78)) !important;
+    box-shadow:
+        0 26px 70px -42px rgba(15, 23, 42, .56),
+        0 1px 0 color-mix(in oklch, var(--hb-modal-hi) 82%, var(--hb-modal-panel)) inset !important;
+    animation: hbReserveModalIn .19s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.swal2-container.hb-swal-sheet-container.swal2-backdrop-show,
+.swal2-container.hb-swal-sheet-container.swal2-noanimation{
+    background:
+        radial-gradient(720px 320px at 54% -10%, color-mix(in oklch, var(--brand-accent, #BD9441) 10%, transparent), transparent 68%),
+        rgba(15, 23, 42, .34) !important;
+    backdrop-filter: blur(5px) !important;
+}
+
+.hb-client-choice__head,
+.hb-arrival-head{
+    background:
+        linear-gradient(135deg, color-mix(in oklch, var(--hb-modal-blue) 5%, var(--hb-modal-surface)), transparent 58%),
+        linear-gradient(180deg, var(--hb-modal-surface), var(--hb-modal-panel)) !important;
+}
+
+.hb-client-choice__mark,
+.hb-arrival-mark{
+    background:
+        linear-gradient(135deg, color-mix(in oklch, var(--hb-modal-blue) 82%, oklch(30% .028 252)), color-mix(in oklch, var(--hb-modal-sage) 68%, oklch(28% .028 252))) !important;
+    box-shadow: 0 13px 24px -20px color-mix(in oklch, var(--hb-modal-blue) 70%, transparent) !important;
+}
+
+.hb-client-choice__eyebrow{
+    color: color-mix(in oklch, var(--hb-modal-blue) 64%, var(--hb-modal-soft-ink)) !important;
+}
+
+.hb-client-option{
+    background:
+        radial-gradient(240px 120px at 100% 0%, color-mix(in oklch, var(--hb-modal-action) 7%, transparent), transparent 70%),
+        color-mix(in oklch, var(--hb-modal-surface) 92%, var(--hb-modal-hi)) !important;
+    box-shadow:
+        0 1px 0 color-mix(in oklch, var(--hb-modal-hi) 84%, var(--hb-modal-panel)) inset,
+        0 14px 30px -31px rgba(15, 23, 42, .42) !important;
+    transition:
+        transform .18s cubic-bezier(.22, 1, .36, 1),
+        border-color .18s ease,
+        background .18s ease,
+        box-shadow .18s ease,
+        color .18s ease !important;
+}
+
+.hb-client-option::before{
+    background:
+        linear-gradient(180deg, color-mix(in oklch, var(--hb-modal-action) 64%, var(--hb-modal-panel)), color-mix(in oklch, var(--hb-modal-action) 36%, var(--hb-modal-panel)));
+    opacity: .72;
+}
+
+.hb-client-option--new,
+.hb-reservation-pill--new{
+    --hb-modal-action: var(--hb-modal-coral);
+}
+
+.hb-client-option--existing,
+.hb-reservation-pill--existing{
+    --hb-modal-action: var(--hb-modal-sage);
+}
+
+.hb-client-option:hover,
+.hb-client-option:focus-visible{
+    transform: translateY(-1px);
+    border-color: color-mix(in oklch, var(--hb-modal-action) 28%, var(--hb-modal-line)) !important;
+    background:
+        radial-gradient(260px 130px at 100% 0%, color-mix(in oklch, var(--hb-modal-action) 10%, transparent), transparent 72%),
+        color-mix(in oklch, var(--hb-modal-action) 4%, var(--hb-modal-surface)) !important;
+    box-shadow:
+        0 1px 0 color-mix(in oklch, var(--hb-modal-hi) 84%, var(--hb-modal-panel)) inset,
+        0 18px 34px -31px color-mix(in oklch, var(--hb-modal-action) 52%, transparent) !important;
+}
+
+.hb-client-option:active{
+    transform: translateY(0) scale(.995);
+}
+
+.hb-client-option__icon{
+    background: color-mix(in oklch, var(--hb-modal-action) 8%, var(--hb-modal-surface)) !important;
+    transition: transform .18s cubic-bezier(.22, 1, .36, 1), background .18s ease, color .18s ease;
+}
+
+.hb-client-option:hover .hb-client-option__icon,
+.hb-client-option:focus-visible .hb-client-option__icon{
+    transform: rotate(-2deg) scale(1.035);
+    background: color-mix(in oklch, var(--hb-modal-action) 13%, var(--hb-modal-surface)) !important;
+}
+
+.hb-client-option__tag,
+.hb-reservation-pill,
+.hb-reservation-pill--existing{
+    background: color-mix(in oklch, var(--hb-modal-action) 7%, var(--hb-modal-surface)) !important;
+    border-color: color-mix(in oklch, var(--hb-modal-action) 16%, var(--hb-modal-line)) !important;
+    color: color-mix(in oklch, var(--hb-modal-action) 68%, var(--hb-modal-soft-ink)) !important;
+}
+
+.hb-date-row{
+    background: color-mix(in oklch, var(--hb-modal-surface) 88%, var(--hb-modal-hi)) !important;
+    transition: border-color .18s ease, background .18s ease;
+}
+
+.hb-date-row:first-child{
+    border-color: color-mix(in oklch, var(--hb-modal-blue) 22%, var(--hb-modal-line)) !important;
+    background:
+        radial-gradient(160px 80px at 100% 0%, color-mix(in oklch, var(--hb-modal-blue) 8%, transparent), transparent 70%),
+        color-mix(in oklch, var(--hb-modal-surface) 90%, var(--hb-modal-hi)) !important;
+}
+
+.hb-date-row:nth-child(2){
+    border-color: color-mix(in oklch, var(--hb-modal-amber) 25%, var(--hb-modal-line)) !important;
+    background:
+        radial-gradient(160px 80px at 100% 0%, color-mix(in oklch, var(--hb-modal-amber) 9%, transparent), transparent 70%),
+        color-mix(in oklch, var(--hb-modal-surface) 90%, var(--hb-modal-hi)) !important;
+}
+
+.hb-arrival-card{
+    background:
+        radial-gradient(230px 120px at 100% 0%, color-mix(in oklch, var(--hb-modal-sage) 8%, transparent), transparent 76%),
+        color-mix(in oklch, var(--hb-modal-surface) 90%, var(--hb-modal-hi)) !important;
+    border-color: color-mix(in oklch, var(--hb-modal-sage) 18%, var(--hb-modal-line)) !important;
+}
+
+.hb-arrival-input{
+    background: color-mix(in oklch, var(--hb-modal-hi) 80%, var(--hb-modal-surface)) !important;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.hb-arrival-input:hover{
+    border-color: color-mix(in oklch, var(--hb-modal-blue) 24%, var(--hb-modal-line)) !important;
+}
+
+.hb-arrival-input:focus{
+    border-color: color-mix(in oklch, var(--hb-modal-blue) 46%, var(--hb-modal-line)) !important;
+    box-shadow: 0 0 0 4px color-mix(in oklch, var(--hb-modal-blue) 12%, transparent) !important;
+}
+
+.hb-arrival-now{
+    --hb-modal-action: var(--hb-modal-blue);
+}
+
+.hb-arrival-later{
+    width: 100%;
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    margin-top: 2px;
+    padding: 10px 11px;
+    border: 1px solid color-mix(in oklch, var(--hb-modal-amber) 26%, var(--hb-modal-line)) !important;
+    border-radius: 13px;
+    background:
+        radial-gradient(180px 90px at 100% 0%, color-mix(in oklch, var(--hb-modal-amber) 9%, transparent), transparent 70%),
+        color-mix(in oklch, var(--hb-modal-surface) 92%, var(--hb-modal-hi)) !important;
+    color: var(--hb-modal-ink);
+    text-align: left;
+    cursor: pointer;
+    transition: transform .18s cubic-bezier(.22, 1, .36, 1), border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+.hb-arrival-later__icon{
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 11px;
+    background: color-mix(in oklch, var(--hb-modal-amber) 11%, var(--hb-modal-surface));
+    color: color-mix(in oklch, var(--hb-modal-amber) 70%, var(--hb-modal-soft-ink));
+}
+
+.hb-arrival-later strong,
+.hb-arrival-later small{
+    display: block;
+}
+
+.hb-arrival-later strong{
+    font-size: .84rem;
+    font-weight: 900;
+    line-height: 1.15;
+}
+
+.hb-arrival-later small{
+    margin-top: 2px;
+    color: var(--hb-modal-muted);
+    font-size: .74rem;
+    font-weight: 650;
+    line-height: 1.25;
+}
+
+.hb-arrival-later:hover,
+.hb-arrival-later:focus-visible{
+    transform: translateY(-1px);
+    border-color: color-mix(in oklch, var(--hb-modal-amber) 42%, var(--hb-modal-line)) !important;
+    box-shadow: 0 14px 26px -24px color-mix(in oklch, var(--hb-modal-amber) 42%, transparent);
+    outline: none;
+}
+
+.hb-swal-arrival .hb-swal-confirm{
+    --hb-modal-action: color-mix(in oklch, var(--hb-modal-brand-quiet) 72%, var(--hb-modal-blue));
+}
+
+.hb-arrival-now,
+.hb-swal-arrival .hb-swal-confirm,
+.hb-swal-client .hb-swal-cancel,
+.hb-swal-arrival .hb-swal-cancel{
+    transition:
+        transform .18s cubic-bezier(.22, 1, .36, 1),
+        background .18s ease,
+        border-color .18s ease,
+        color .18s ease,
+        box-shadow .18s ease,
+        filter .18s ease !important;
+}
+
+.hb-arrival-now:hover,
+.hb-arrival-now:focus-visible,
+.hb-swal-arrival .hb-swal-confirm:hover,
+.hb-swal-arrival .hb-swal-confirm:focus-visible{
+    transform: translateY(-1px);
+    filter: none;
+    background: color-mix(in oklch, var(--hb-modal-action) 86%, oklch(24% .026 252)) !important;
+    box-shadow: 0 16px 26px -20px color-mix(in oklch, var(--hb-modal-action) 62%, transparent) !important;
+}
+
+.hb-swal-client .hb-swal-cancel:hover,
+.hb-swal-client .hb-swal-cancel:focus-visible,
+.hb-swal-arrival .hb-swal-cancel:hover,
+.hb-swal-arrival .hb-swal-cancel:focus-visible{
+    transform: translateY(-1px);
+    border-color: color-mix(in oklch, var(--hb-modal-amber) 26%, var(--hb-modal-line)) !important;
+    background: color-mix(in oklch, var(--hb-modal-amber) 6%, var(--hb-modal-surface)) !important;
+}
+
+.hb-arrival-now:active,
+.hb-swal-arrival .hb-swal-confirm:active,
+.hb-swal-client .hb-swal-cancel:active,
+.hb-swal-arrival .hb-swal-cancel:active{
+    transform: translateY(0) scale(.99);
+}
+
+.swal2-popup.hb-swal-client.swal2-hide,
+.swal2-popup.hb-swal-arrival.swal2-hide{
+    animation: hbReserveModalOut .13s ease-in both !important;
+}
+
+.swal2-container.hb-swal-sheet-container.swal2-backdrop-hide{
+    background: rgba(15, 23, 42, 0) !important;
+    backdrop-filter: blur(0) !important;
+    transition: background .13s ease, backdrop-filter .13s ease !important;
+}
+
+/* Capa final: modal mas blanco, con acentos universales y acciones mas visibles. */
+.swal2-popup.hb-swal-client,
+.swal2-popup.hb-swal-arrival{
+    --hb-modal-danger: oklch(58% .160 27);
+    --hb-modal-danger-dark: oklch(47% .160 27);
+    --hb-modal-coral: oklch(63% .145 35);
+    --hb-modal-sage: oklch(60% .100 166);
+    --hb-modal-blue: oklch(57% .094 235);
+    --hb-modal-amber: oklch(71% .120 78);
+    background:
+        radial-gradient(520px 180px at 105% -8%, color-mix(in oklch, var(--hb-modal-coral) 15%, transparent), transparent 72%),
+        radial-gradient(420px 150px at -8% 0%, color-mix(in oklch, var(--hb-modal-sage) 13%, transparent), transparent 74%),
+        #fff !important;
+    border-color: color-mix(in oklch, var(--brand-accent, #BD9441) 18%, oklch(89% .018 83)) !important;
+    box-shadow:
+        0 34px 78px -46px rgba(15, 23, 42, .62),
+        0 1px 0 rgba(255,255,255,.96) inset !important;
+}
+
+.swal2-popup.hb-swal-client::before,
+.swal2-popup.hb-swal-arrival::before{
+    content: "";
+    display: block;
+    height: 7px;
+    background: linear-gradient(90deg,
+        var(--hb-modal-danger),
+        var(--hb-modal-coral) 34%,
+        var(--hb-modal-amber) 66%,
+        var(--hb-modal-sage));
+}
+
+.hb-swal .swal2-close{
+    top: 14px !important;
+    right: 14px !important;
+    width: 36px !important;
+    height: 36px !important;
+    border: 1px solid color-mix(in oklch, var(--hb-modal-danger) 18%, #fff) !important;
+    background: linear-gradient(180deg, var(--hb-modal-danger), var(--hb-modal-danger-dark)) !important;
+    color: #fff !important;
+    box-shadow: 0 14px 24px -18px color-mix(in oklch, var(--hb-modal-danger) 72%, transparent) !important;
+}
+
+.hb-swal .swal2-close:hover,
+.hb-swal .swal2-close:focus-visible{
+    transform: translateY(-1px) scale(1.03);
+    background: linear-gradient(180deg, color-mix(in oklch, var(--hb-modal-danger) 92%, #fff), var(--hb-modal-danger-dark)) !important;
+    color: #fff !important;
+    outline: 3px solid color-mix(in oklch, var(--hb-modal-danger) 18%, transparent) !important;
+}
+
+.hb-client-choice__head,
+.hb-arrival-head{
+    position: relative;
+    border-bottom-color: color-mix(in oklch, var(--brand-accent, #BD9441) 16%, var(--hb-modal-line)) !important;
+    background:
+        radial-gradient(420px 160px at 92% -10%, color-mix(in oklch, var(--hb-modal-coral) 12%, transparent), transparent 70%),
+        radial-gradient(320px 140px at 0% 0%, color-mix(in oklch, var(--hb-modal-sage) 11%, transparent), transparent 74%),
+        linear-gradient(180deg, #fff, color-mix(in oklch, var(--hb-modal-amber) 5%, #fff)) !important;
+}
+
+.hb-client-choice__head::after,
+.hb-arrival-head::after{
+    content: "";
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: -1px;
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(90deg,
+        color-mix(in oklch, var(--hb-modal-coral) 78%, transparent),
+        color-mix(in oklch, var(--hb-modal-amber) 60%, transparent),
+        color-mix(in oklch, var(--hb-modal-sage) 70%, transparent));
+}
+
+.hb-client-choice__mark{
+    background: linear-gradient(135deg, var(--hb-modal-coral), color-mix(in oklch, var(--hb-modal-danger) 64%, var(--hb-modal-coral))) !important;
+}
+
+.hb-arrival-mark{
+    background: linear-gradient(135deg, var(--hb-modal-blue), color-mix(in oklch, var(--hb-modal-sage) 74%, var(--hb-modal-blue))) !important;
+}
+
+.hb-client-option--new,
+.hb-reservation-pill--new{
+    --hb-modal-action: var(--hb-modal-coral);
+}
+
+.hb-client-option--existing,
+.hb-reservation-pill--existing{
+    --hb-modal-action: var(--hb-modal-sage);
+}
+
+.hb-client-option,
+.hb-date-row,
+.hb-arrival-card{
+    background:
+        radial-gradient(240px 120px at 100% 0%, color-mix(in oklch, var(--hb-modal-action, var(--hb-modal-blue)) 8%, transparent), transparent 72%),
+        #fff !important;
+}
+
+.hb-client-option{
+    border-color: color-mix(in oklch, var(--hb-modal-action) 20%, var(--hb-modal-line)) !important;
+}
+
+.hb-client-option__icon{
+    background: color-mix(in oklch, var(--hb-modal-action) 13%, #fff) !important;
+    color: color-mix(in oklch, var(--hb-modal-action) 82%, var(--hb-modal-ink)) !important;
+}
+
+.hb-arrival-card{
+    --hb-modal-action: var(--hb-modal-blue);
+    border-color: color-mix(in oklch, var(--hb-modal-blue) 22%, var(--hb-modal-line)) !important;
+}
+
+.hb-arrival-later{
+    background:
+        radial-gradient(200px 100px at 100% 0%, color-mix(in oklch, var(--hb-modal-amber) 14%, transparent), transparent 72%),
+        color-mix(in oklch, var(--hb-modal-amber) 4%, #fff) !important;
+}
+
+.hb-swal-client .hb-swal-cancel,
+.hb-swal-arrival .hb-swal-cancel{
+    border-color: color-mix(in oklch, var(--hb-modal-danger) 30%, var(--hb-modal-line)) !important;
+    background:
+        linear-gradient(180deg, color-mix(in oklch, var(--hb-modal-danger) 9%, #fff), color-mix(in oklch, var(--hb-modal-danger) 5%, #fff)) !important;
+    color: color-mix(in oklch, var(--hb-modal-danger-dark) 82%, var(--hb-modal-ink)) !important;
+    box-shadow: 0 12px 24px -22px color-mix(in oklch, var(--hb-modal-danger) 46%, transparent) !important;
+}
+
+.hb-swal-client .hb-swal-cancel:hover,
+.hb-swal-client .hb-swal-cancel:focus-visible,
+.hb-swal-arrival .hb-swal-cancel:hover,
+.hb-swal-arrival .hb-swal-cancel:focus-visible{
+    border-color: color-mix(in oklch, var(--hb-modal-danger) 46%, var(--hb-modal-line)) !important;
+    background:
+        linear-gradient(180deg, color-mix(in oklch, var(--hb-modal-danger) 16%, #fff), color-mix(in oklch, var(--hb-modal-danger) 8%, #fff)) !important;
+}
+
+/* Propuesta sobria: menos color, mas blanco calido y acentos silenciosos. */
+.swal2-popup.hb-swal-client,
+.swal2-popup.hb-swal-arrival{
+    --hb-modal-surface: #fffdfa;
+    --hb-modal-paper: #ffffff;
+    --hb-modal-ink: #202a32;
+    --hb-modal-soft-ink: #4d5963;
+    --hb-modal-muted: #6f7882;
+    --hb-modal-line: color-mix(in srgb, var(--brand-primary, #1B2746) 8%, #e7ded2);
+    --hb-modal-clay: #9b6a5f;
+    --hb-modal-clay-deep: #745048;
+    --hb-modal-moss: #657a70;
+    --hb-modal-moss-deep: #4f6259;
+    --hb-modal-blue: #65798d;
+    --hb-modal-blue-deep: #4e6173;
+    --hb-modal-amber: #a88c5a;
+    --hb-modal-action: var(--hb-modal-blue);
+    --hb-modal-action-text: #ffffff;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,253,249,.98)),
+        var(--hb-modal-surface) !important;
+    border-color: color-mix(in srgb, var(--brand-primary, #1B2746) 9%, #e7ded2) !important;
+    box-shadow:
+        0 30px 70px -46px rgba(20, 28, 36, .56),
+        0 1px 0 rgba(255,255,255,.95) inset !important;
+}
+
+.swal2-popup.hb-swal-client::before,
+.swal2-popup.hb-swal-arrival::before{
+    height: 4px;
+    background: linear-gradient(90deg,
+        color-mix(in srgb, var(--brand-primary, #1B2746) 24%, #e8ded0),
+        color-mix(in srgb, var(--brand-accent, #BD9441) 24%, #eee6da)) !important;
+}
+
+.hb-swal .swal2-close{
+    border-color: color-mix(in srgb, var(--hb-modal-clay) 22%, #e9ded3) !important;
+    background: rgba(255,255,255,.94) !important;
+    color: var(--hb-modal-clay-deep) !important;
+    box-shadow: 0 12px 24px -20px rgba(116, 80, 72, .42) !important;
+}
+
+.hb-swal .swal2-close:hover,
+.hb-swal .swal2-close:focus-visible{
+    background: color-mix(in srgb, var(--hb-modal-clay) 8%, #fff) !important;
+    color: var(--hb-modal-clay-deep) !important;
+    outline: 3px solid color-mix(in srgb, var(--hb-modal-clay) 14%, transparent) !important;
+}
+
+.hb-client-choice__head,
+.hb-arrival-head{
+    border-bottom-color: var(--hb-modal-line) !important;
+    background:
+        linear-gradient(180deg, #ffffff, color-mix(in srgb, var(--brand-accent, #BD9441) 4%, #fffdf8)) !important;
+}
+
+.hb-client-choice__head::after,
+.hb-arrival-head::after{
+    height: 1px;
+    background: linear-gradient(90deg,
+        color-mix(in srgb, var(--brand-primary, #1B2746) 18%, transparent),
+        color-mix(in srgb, var(--brand-accent, #BD9441) 24%, transparent)) !important;
+}
+
+.hb-client-choice__mark,
+.hb-arrival-mark{
+    border: 1px solid color-mix(in srgb, var(--hb-modal-action) 18%, var(--hb-modal-line));
+    background: color-mix(in srgb, var(--hb-modal-action) 9%, #fff) !important;
+    color: color-mix(in srgb, var(--hb-modal-action) 76%, var(--hb-modal-ink)) !important;
+    box-shadow: none !important;
+}
+
+.hb-client-choice__mark{
+    --hb-modal-action: var(--hb-modal-clay);
+}
+
+.hb-arrival-mark{
+    --hb-modal-action: var(--hb-modal-blue);
+}
+
+.hb-client-choice__eyebrow{
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 48%, var(--hb-modal-muted)) !important;
+}
+
+.hb-client-option--new,
+.hb-reservation-pill--new{
+    --hb-modal-action: var(--hb-modal-clay);
+}
+
+.hb-client-option--existing,
+.hb-reservation-pill--existing{
+    --hb-modal-action: var(--hb-modal-moss);
+}
+
+.hb-client-option,
+.hb-date-row,
+.hb-arrival-card{
+    background: var(--hb-modal-paper) !important;
+    border-color: color-mix(in srgb, var(--hb-modal-action, var(--hb-modal-blue)) 14%, var(--hb-modal-line)) !important;
+    box-shadow:
+        0 1px 0 rgba(255,255,255,.9) inset,
+        0 16px 34px -34px rgba(24, 32, 40, .38) !important;
+}
+
+.hb-client-option::before{
+    background: color-mix(in srgb, var(--hb-modal-action) 44%, #d9cfc2) !important;
+    opacity: .72;
+}
+
+.hb-client-option:hover,
+.hb-client-option:focus-visible{
+    background: color-mix(in srgb, var(--hb-modal-action) 3%, #fff) !important;
+    border-color: color-mix(in srgb, var(--hb-modal-action) 24%, var(--hb-modal-line)) !important;
+    box-shadow: 0 20px 40px -34px color-mix(in srgb, var(--hb-modal-action) 28%, transparent) !important;
+}
+
+.hb-client-option__icon,
+.hb-client-option__tag,
+.hb-reservation-pill{
+    background: color-mix(in srgb, var(--hb-modal-action) 6%, #fff) !important;
+    border-color: color-mix(in srgb, var(--hb-modal-action) 12%, var(--hb-modal-line)) !important;
+    color: color-mix(in srgb, var(--hb-modal-action) 68%, var(--hb-modal-soft-ink)) !important;
+}
+
+.hb-arrival-card{
+    --hb-modal-action: var(--hb-modal-blue);
+}
+
+.hb-arrival-later{
+    border-color: color-mix(in srgb, var(--hb-modal-amber) 18%, var(--hb-modal-line)) !important;
+    background: color-mix(in srgb, var(--hb-modal-amber) 4%, #fff) !important;
+}
+
+.hb-arrival-later__icon{
+    background: color-mix(in srgb, var(--hb-modal-amber) 8%, #fff) !important;
+    color: color-mix(in srgb, var(--hb-modal-amber) 70%, var(--hb-modal-soft-ink)) !important;
+}
+
+.hb-arrival-now,
+.hb-swal-arrival .hb-swal-confirm{
+    background: linear-gradient(135deg, var(--hb-modal-blue), var(--hb-modal-blue-deep)) !important;
+    color: #fff !important;
+    box-shadow: 0 14px 24px -20px rgba(78, 97, 115, .5) !important;
+}
+
+.hb-swal-client .hb-swal-cancel,
+.hb-swal-arrival .hb-swal-cancel{
+    border-color: color-mix(in srgb, var(--hb-modal-clay) 18%, var(--hb-modal-line)) !important;
+    background: #fff !important;
+    color: color-mix(in srgb, var(--hb-modal-clay-deep) 70%, var(--hb-modal-ink)) !important;
+    box-shadow: none !important;
+}
+
+.hb-swal-client .hb-swal-cancel:hover,
+.hb-swal-client .hb-swal-cancel:focus-visible,
+.hb-swal-arrival .hb-swal-cancel:hover,
+.hb-swal-arrival .hb-swal-cancel:focus-visible{
+    border-color: color-mix(in srgb, var(--hb-modal-clay) 28%, var(--hb-modal-line)) !important;
+    background: color-mix(in srgb, var(--hb-modal-clay) 5%, #fff) !important;
+}
+
+/* Toques cromaticos moderados: accion clara sin saturar el modal. */
+.swal2-popup.hb-swal-client,
+.swal2-popup.hb-swal-arrival{
+    --hb-modal-clay: #aa6958;
+    --hb-modal-clay-deep: #7d4b40;
+    --hb-modal-moss: #4f806f;
+    --hb-modal-moss-deep: #3d6557;
+    --hb-modal-blue: #4e7398;
+    --hb-modal-blue-deep: #3f5f80;
+    --hb-modal-amber: #aa7f3f;
+}
+
+.swal2-popup.hb-swal-client::before,
+.swal2-popup.hb-swal-arrival::before{
+    height: 5px;
+    background: linear-gradient(90deg,
+        color-mix(in srgb, var(--hb-modal-clay) 46%, #eadfd4),
+        color-mix(in srgb, var(--hb-modal-blue) 38%, #e6edf2),
+        color-mix(in srgb, var(--hb-modal-moss) 42%, #e5eee9)) !important;
+}
+
+.hb-client-option--new .hb-client-option__icon{
+    background: color-mix(in srgb, var(--hb-modal-clay) 16%, #fff) !important;
+    color: var(--hb-modal-clay-deep) !important;
+}
+
+.hb-client-option--existing .hb-client-option__icon{
+    background: color-mix(in srgb, var(--hb-modal-moss) 16%, #fff) !important;
+    color: var(--hb-modal-moss-deep) !important;
+}
+
+.hb-client-option--new .hb-client-option__cta,
+.hb-client-option--existing .hb-client-option__cta{
+    min-height: 38px;
+    margin-top: 2px;
+    padding: 10px 12px 0;
+    border-top-color: color-mix(in srgb, var(--hb-modal-action) 16%, var(--hb-modal-line)) !important;
+    color: color-mix(in srgb, var(--hb-modal-action) 86%, var(--hb-modal-ink)) !important;
+}
+
+.hb-client-option__tag,
+.hb-reservation-pill{
+    background: color-mix(in srgb, var(--hb-modal-action) 10%, #fff) !important;
+    border-color: color-mix(in srgb, var(--hb-modal-action) 18%, var(--hb-modal-line)) !important;
+}
+
+.hb-arrival-mark{
+    background: color-mix(in srgb, var(--hb-modal-blue) 15%, #fff) !important;
+    color: var(--hb-modal-blue-deep) !important;
+}
+
+.hb-arrival-now{
+    background: linear-gradient(135deg, color-mix(in srgb, var(--hb-modal-blue) 92%, #fff), var(--hb-modal-blue-deep)) !important;
+}
+
+.hb-swal-arrival .hb-swal-confirm{
+    background: linear-gradient(135deg, color-mix(in srgb, var(--brand-primary, #1B2746) 62%, var(--hb-modal-blue)), var(--hb-modal-blue-deep)) !important;
+}
+
+.hb-arrival-later{
+    border-color: color-mix(in srgb, var(--hb-modal-amber) 32%, var(--hb-modal-line)) !important;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--hb-modal-amber) 8%, #fff), #fff) !important;
+}
+
+.hb-arrival-later__icon{
+    background: color-mix(in srgb, var(--hb-modal-amber) 15%, #fff) !important;
+    color: color-mix(in srgb, var(--hb-modal-amber) 84%, var(--hb-modal-ink)) !important;
+}
+
+/* Estados de color claros: verde registrado, verde suave despues, cancelar rojo bajo. */
+.swal2-popup.hb-swal-client,
+.swal2-popup.hb-swal-arrival{
+    --hb-modal-green: #2f8f62;
+    --hb-modal-green-deep: #216b4a;
+    --hb-modal-new-strong: #c46349;
+    --hb-modal-new-deep: #934634;
+    --hb-modal-cancel: #b95b57;
+    --hb-modal-cancel-deep: #8f403d;
+}
+
+.hb-client-option--existing:hover,
+.hb-client-option--existing:focus-visible{
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--hb-modal-green) 15%, #fff), #fff) !important;
+    border-color: color-mix(in srgb, var(--hb-modal-green) 48%, var(--hb-modal-line)) !important;
+    box-shadow: 0 22px 42px -32px color-mix(in srgb, var(--hb-modal-green) 55%, transparent) !important;
+}
+
+.hb-client-option--existing:hover .hb-client-option__icon,
+.hb-client-option--existing:focus-visible .hb-client-option__icon{
+    background: linear-gradient(135deg, var(--hb-modal-green), var(--hb-modal-green-deep)) !important;
+    color: #fff !important;
+}
+
+.hb-client-option--existing:hover .hb-client-option__tag,
+.hb-client-option--existing:focus-visible .hb-client-option__tag{
+    background: color-mix(in srgb, var(--hb-modal-green) 18%, #fff) !important;
+    border-color: color-mix(in srgb, var(--hb-modal-green) 34%, var(--hb-modal-line)) !important;
+    color: var(--hb-modal-green-deep) !important;
+}
+
+.hb-client-option--existing:hover .hb-client-option__cta,
+.hb-client-option--existing:focus-visible .hb-client-option__cta{
+    color: var(--hb-modal-green-deep) !important;
+}
+
+.hb-client-option--new:hover,
+.hb-client-option--new:focus-visible{
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--hb-modal-new-strong) 13%, #fff), #fff) !important;
+    border-color: color-mix(in srgb, var(--hb-modal-new-strong) 42%, var(--hb-modal-line)) !important;
+    box-shadow: 0 22px 42px -32px color-mix(in srgb, var(--hb-modal-new-strong) 50%, transparent) !important;
+}
+
+.hb-client-option--new:hover .hb-client-option__icon,
+.hb-client-option--new:focus-visible .hb-client-option__icon{
+    background: linear-gradient(135deg, var(--hb-modal-new-strong), var(--hb-modal-new-deep)) !important;
+    color: #fff !important;
+}
+
+.hb-arrival-later{
+    border-color: color-mix(in srgb, var(--hb-modal-green) 30%, var(--hb-modal-line)) !important;
+    background:
+        radial-gradient(190px 92px at 100% 0%, color-mix(in srgb, var(--hb-modal-green) 10%, transparent), transparent 72%),
+        linear-gradient(180deg, color-mix(in srgb, var(--hb-modal-green) 7%, #fff), #fff) !important;
+}
+
+.hb-arrival-later__icon{
+    background: color-mix(in srgb, var(--hb-modal-green) 14%, #fff) !important;
+    color: var(--hb-modal-green-deep) !important;
+}
+
+.hb-arrival-later:hover,
+.hb-arrival-later:focus-visible{
+    border-color: color-mix(in srgb, var(--hb-modal-green) 44%, var(--hb-modal-line)) !important;
+    box-shadow: 0 14px 26px -24px color-mix(in srgb, var(--hb-modal-green) 45%, transparent) !important;
+}
+
+.hb-swal-client .hb-swal-cancel,
+.hb-swal-arrival .hb-swal-cancel{
+    border-color: color-mix(in srgb, var(--hb-modal-cancel) 30%, var(--hb-modal-line)) !important;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--hb-modal-cancel) 12%, #fff), color-mix(in srgb, var(--hb-modal-cancel) 6%, #fff)) !important;
+    color: var(--hb-modal-cancel-deep) !important;
+    box-shadow: 0 14px 22px -22px color-mix(in srgb, var(--hb-modal-cancel) 54%, transparent) !important;
+}
+
+.hb-swal-client .hb-swal-cancel:hover,
+.hb-swal-client .hb-swal-cancel:focus-visible,
+.hb-swal-arrival .hb-swal-cancel:hover,
+.hb-swal-arrival .hb-swal-cancel:focus-visible{
+    border-color: color-mix(in srgb, var(--hb-modal-cancel) 44%, var(--hb-modal-line)) !important;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--hb-modal-cancel) 17%, #fff), color-mix(in srgb, var(--hb-modal-cancel) 9%, #fff)) !important;
+    color: var(--hb-modal-cancel-deep) !important;
+    box-shadow: 0 16px 26px -22px color-mix(in srgb, var(--hb-modal-cancel) 62%, transparent) !important;
+}
+
+@keyframes hbReserveModalIn{
+    from{
+        opacity: 0;
+        transform: translateY(8px) scale(.985);
+    }
+    to{
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes hbReserveModalOut{
+    from{
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to{
+        opacity: 0;
+        transform: translateY(8px) scale(.985);
+    }
+}
+
+@media (prefers-reduced-motion: reduce){
+    .swal2-popup.hb-swal-client,
+    .swal2-popup.hb-swal-arrival,
+    .hb-client-option,
+    .hb-client-option__icon,
+    .hb-arrival-now,
+    .hb-swal-arrival .hb-swal-confirm,
+    .hb-swal-client .hb-swal-cancel,
+    .hb-swal-arrival .hb-swal-cancel{
+        animation: none !important;
+        transition-duration: .01ms !important;
+    }
+}
 </style>
 
 <script>
@@ -7068,6 +9222,32 @@ function obtenerDatosReservaDefault() {
     };
 }
 
+let hbReservaSwalTimer = null;
+
+function hbCerrarSwalReserva(callback, delay = 160) {
+    if (hbReservaSwalTimer) {
+        clearTimeout(hbReservaSwalTimer);
+        hbReservaSwalTimer = null;
+    }
+
+    const run = () => {
+        hbReservaSwalTimer = null;
+        if (typeof callback === 'function') {
+            callback();
+        }
+    };
+
+    const swalVisible = typeof Swal !== 'undefined'
+        && typeof Swal.isVisible === 'function'
+        && Swal.isVisible();
+
+    if (swalVisible && typeof Swal.close === 'function') {
+        Swal.close();
+    }
+
+    hbReservaSwalTimer = window.setTimeout(run, swalVisible ? delay : Math.min(delay, 80));
+}
+
 function abrirSelectorNuevaReserva(event) {
     if (typeof Swal === 'undefined') {
         return true;
@@ -7108,7 +9288,7 @@ function mostrarSelectorTipoCliente(habitacionId, datosReserva) {
                 </div>
 
                 <div class="hb-client-choice__options" role="group" aria-label="Tipo de cliente">
-                    <button onclick="seleccionarTipoCliente('nuevo', ${habitacionArg}, '${fechaEntrada}', '${fechaSalida}', '${horaActual}')"
+                    <button onclick="seleccionarTipoCliente('nuevo', ${habitacionArg}, '${fechaEntrada}', '${fechaSalida}', '${horaActual}'); return false;"
                             type="button"
                             class="hb-client-option hb-client-option--new">
                         <span class="hb-client-option__top">
@@ -7126,14 +9306,14 @@ function mostrarSelectorTipoCliente(habitacionId, datosReserva) {
                             <i class="fas fa-arrow-right"></i>
                         </span>
                     </button>
-                    <button onclick="seleccionarTipoCliente('existente', ${habitacionArg}, '${fechaEntrada}', '${fechaSalida}', '${horaActual}')"
+                    <button onclick="seleccionarTipoCliente('existente', ${habitacionArg}, '${fechaEntrada}', '${fechaSalida}', '${horaActual}'); return false;"
                             type="button"
                             class="hb-client-option hb-client-option--existing">
                         <span class="hb-client-option__top">
                             <span class="hb-client-option__icon">
                                 <i class="fas fa-user-check"></i>
                             </span>
-                            <span class="hb-client-option__tag">Disponible</span>
+                            <span class="hb-client-option__tag">Registrado</span>
                         </span>
                         <span class="hb-client-option__body">
                             <strong>Cliente registrado</strong>
@@ -7150,8 +9330,12 @@ function mostrarSelectorTipoCliente(habitacionId, datosReserva) {
         showConfirmButton: false,
         showCancelButton: true,
         showCloseButton: true,
+        allowOutsideClick: true,
+        allowEscapeKey: true,
+        returnFocus: false,
+        closeButtonAriaLabel: 'Cerrar',
         cancelButtonText: 'Cancelar',
-        width: '500px',
+        width: '720px',
         customClass: {
             container: 'hb-swal-sheet-container',
             popup: 'hb-swal hb-swal-client',
@@ -7675,22 +9859,26 @@ function recibirRemotosMultiples(reservacionId, habitaciones) {
 
 
 function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, horaActual) {
-    const tieneHabitacion = habitacionId !== null && habitacionId !== undefined && habitacionId !== '';
+    const tieneHabitacion = hayHabitacionReservaRapida(habitacionId);
+    const habitacionArg = tieneHabitacion ? parseInt(habitacionId, 10) : 'null';
 
-    if (!tieneHabitacion) {
-        Swal.close();
-        if (tipo === 'nuevo') {
-            window.location.href = '<?= url('huespedes/create?return_to=reservacion') ?>';
-        } else {
-            window.location.href = '<?= url('reservaciones/crear') ?>';
-        }
-        return;
-    }
-
+    hbCerrarSwalReserva(() => {
     Swal.fire({
-        title: 'Datos de la Reservación',
+        title: '',
         html: `
             <div class="hb-reservation-step">
+                <div class="hb-arrival-head">
+                    <span class="hb-arrival-mark">
+                        <i class="fas fa-clock"></i>
+                    </span>
+                    <div>
+                        <span class="hb-client-choice__eyebrow">Llegada estimada</span>
+                        <h3>Hora de llegada</h3>
+                        <p>Confirma la hora para preparar la habitacion y continuar con el cliente ${tipo === 'existente' ? 'registrado' : 'nuevo'}.</p>
+                    </div>
+                </div>
+
+                <div class="hb-arrival-context">
                 <div class="hb-reservation-pill ${tipo === 'existente' ? 'hb-reservation-pill--existing' : 'hb-reservation-pill--new'}">
                     <i class="fas ${tipo === 'existente' ? 'fa-user-check' : 'fa-user-plus'}"></i>
                     <span>Cliente ${tipo === 'existente' ? 'Existente' : 'Nuevo'}</span>
@@ -7728,12 +9916,30 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
                                 <span>Ahora</span>
                             </button>
                         </div>
+                        <button onclick="continuarReservacionSinHora('${tipo}', ${habitacionArg}, '${fechaEntrada}', '${fechaSalida}'); return false;"
+                                type="button"
+                                class="hb-arrival-later"
+                                aria-label="Definir hora de llegada despues">
+                            <span class="hb-arrival-later__icon">
+                                <i class="fas fa-calendar-plus"></i>
+                            </span>
+                            <span>
+                                <strong>Definir despues</strong>
+                                <small>La capturaras dentro de la creacion de la reservacion.</small>
+                            </span>
+                        </button>
                     </div>
+                </div>
                 </div>
             </div>
         `,
         showCancelButton: true,
-        confirmButtonText: `Continuar con Cliente ${tipo === 'existente' ? 'Existente' : 'Nuevo'}`,
+        showCloseButton: true,
+        allowOutsideClick: true,
+        allowEscapeKey: true,
+        returnFocus: false,
+        closeButtonAriaLabel: 'Cerrar',
+        confirmButtonText: 'Continuar',
         cancelButtonText: 'Volver',
         customClass: {
             container: 'hb-swal-sheet-container',
@@ -7753,16 +9959,8 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
     }).then((result) => {
         if (result.isConfirmed) {
             const horaSeleccionada = result.value;
-
-            // Guardar datos en sessionStorage como respaldo
-            const datosReservacion = {
-                habitacionId: habitacionId,
-                fechaEntrada: fechaEntrada,
-                fechaSalida: fechaSalida,
-                horaLlegada: horaSeleccionada
-            };
-
-            sessionStorage.setItem('reservacionRapida', JSON.stringify(datosReservacion));
+            continuarReservacionDesdeModal(tipo, habitacionId, fechaEntrada, fechaSalida, horaSeleccionada, false);
+            return;
 
             if (tipo === 'nuevo') {
                 // MODIFICADO: Pasar los parámetros por URL para cliente nuevo
@@ -7787,14 +9985,90 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
 
                 window.location.href = '<?= url('reservaciones/crear') ?>?' + params.toString();
             }
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        } else if (result.dismiss === Swal.DismissReason.cancel || result.dismiss === 'cancel') {
             // Volver al primer modal
-            crearReservacionRapida(habitacionId);
+            hbCerrarSwalReserva(() => {
+                mostrarSelectorTipoCliente(habitacionId, {
+                    fechaEntrada: fechaEntrada,
+                    fechaSalida: fechaSalida,
+                    horaActual: horaActual
+                });
+            }, 90);
         }
+    });
     });
 }
 
 // Función auxiliar para formatear fecha
+function hayHabitacionReservaRapida(habitacionId) {
+    return habitacionId !== null
+        && habitacionId !== undefined
+        && habitacionId !== ''
+        && habitacionId !== 'null'
+        && !Number.isNaN(parseInt(habitacionId, 10));
+}
+
+function continuarReservacionSinHora(tipo, habitacionId, fechaEntrada, fechaSalida) {
+    hbCerrarSwalReserva(() => {
+        continuarReservacionDesdeModal(tipo, habitacionId, fechaEntrada, fechaSalida, '', true);
+    }, 80);
+}
+
+function continuarReservacionDesdeModal(tipo, habitacionId, fechaEntrada, fechaSalida, horaSeleccionada, horaPendiente) {
+    const tieneHabitacion = hayHabitacionReservaRapida(habitacionId);
+    const habitacionValor = tieneHabitacion ? parseInt(habitacionId, 10) : null;
+    const horaFinal = horaSeleccionada || '';
+
+    const datosReservacion = {
+        habitacionId: habitacionValor,
+        fechaEntrada: fechaEntrada,
+        fechaSalida: fechaSalida,
+        horaLlegada: horaFinal || null,
+        horaLlegadaPendiente: !!horaPendiente
+    };
+
+    try {
+        sessionStorage.setItem('reservacionRapida', JSON.stringify(datosReservacion));
+    } catch (error) {
+        // Si el navegador bloquea sessionStorage, el flujo por URL sigue funcionando.
+    }
+
+    if (tipo === 'nuevo') {
+        const params = new URLSearchParams({
+            return_to: 'reservacion_rapida',
+            fecha_entrada: fechaEntrada,
+            fecha_salida: fechaSalida
+        });
+
+        if (tieneHabitacion) {
+            params.set('habitacion_id', habitacionValor);
+        }
+
+        if (horaFinal) {
+            params.set('hora_llegada', horaFinal);
+        }
+
+        window.location.href = '<?= url('huespedes/create') ?>?' + params.toString();
+        return;
+    }
+
+    const params = new URLSearchParams({
+        fecha_entrada: fechaEntrada,
+        fecha_salida: fechaSalida
+    });
+
+    if (tieneHabitacion) {
+        params.set('habitacion_id', habitacionValor);
+        params.set('preseleccion', 'true');
+    }
+
+    if (horaFinal) {
+        params.set('hora_llegada', horaFinal);
+    }
+
+    window.location.href = '<?= url('reservaciones/crear') ?>?' + params.toString();
+}
+
 function formatearFechaCorta(fecha) {
     const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     const dia = fecha.getDate();

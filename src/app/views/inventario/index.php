@@ -57,6 +57,8 @@
 .btn-inv.entrada:hover { box-shadow: 0 6px 16px rgba(16,185,129,.3); }
 .btn-inv.salida { background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; }
 .btn-inv.salida:hover { box-shadow: 0 6px 16px rgba(245,158,11,.3); }
+.btn-inv.movimientos { background:linear-gradient(135deg,#3B6FD6,#2563eb); color:#fff; }
+.btn-inv.movimientos:hover { box-shadow: 0 6px 16px rgba(59,111,214,.3); }
 .btn-inv.pdf { background:linear-gradient(135deg,#ef4444,#dc2626); color:#fff; }
 .btn-inv.pdf:hover { box-shadow: 0 6px 16px rgba(239,68,68,.3); }
 
@@ -337,6 +339,48 @@
     transition: transform .18s ease, box-shadow .18s ease, filter .18s ease, background .18s ease, border-color .18s ease !important;
 }
 
+.inv-page .inv-action-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(126px, 1fr));
+    gap: 8px;
+    width: min(100%, 760px);
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+}
+
+.inv-page .inv-action-grid::-webkit-scrollbar {
+    height: 4px;
+}
+
+.inv-page .inv-action-grid::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--inv-brand) 28%, transparent);
+    border-radius: 999px;
+}
+
+.inv-page .inv-action-grid .btn-inv {
+    width: 100%;
+    min-height: 42px;
+    gap: 8px;
+    padding: 0 12px;
+    white-space: nowrap;
+    line-height: 1;
+    font-size: .75rem;
+}
+
+.inv-page .inv-action-grid .btn-inv i {
+    width: 14px;
+    min-width: 14px;
+    text-align: center;
+    font-size: .76rem !important;
+}
+
+.inv-page .inv-action-grid .btn-inv span {
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .inv-page .btn-inv:hover,
 .inv-page .btn-config-inv:hover,
 .inv-page .act-btn:hover {
@@ -360,6 +404,10 @@
 
 .inv-page .btn-inv.salida {
     background: linear-gradient(135deg, var(--inv-warning), color-mix(in srgb, var(--inv-warning) 76%, #000)) !important;
+}
+
+.inv-page .btn-inv.movimientos {
+    background: linear-gradient(135deg, var(--inv-info), color-mix(in srgb, var(--inv-info) 76%, #000)) !important;
 }
 
 .inv-page .btn-inv.pdf {
@@ -776,6 +824,11 @@
         padding-right: 12px;
     }
 
+    .inv-page .inv-action-grid {
+        grid-template-columns: repeat(5, minmax(132px, 132px));
+        width: 100%;
+    }
+
     .inv-page .inv-pill {
         flex: 1 1 calc(50% - 8px);
         justify-content: center;
@@ -969,7 +1022,7 @@
     <!-- Top Bar -->
     <div class="inv-topbar bg-white">
         <div class="px-4 sm:px-5 lg:px-8 py-4">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-3">
 
                 <!-- Title -->
                 <div class="flex items-center gap-3">
@@ -983,20 +1036,26 @@
                 </div>
 
                 <!-- Buttons -->
-                <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-                    <a href="<?= url('inventario/nuevo') ?>" class="btn-inv primary flex-1 sm:flex-none">
+                <div class="inv-action-grid">
+                    <a href="<?= url('inventario/nuevo') ?>" class="btn-inv primary">
                         <i class="fas fa-plus text-xs"></i>
-                        <span class="hidden xs:inline">Nuevo</span> Producto
+                        <span>Nuevo producto</span>
                     </a>
-                    <a href="<?= url('inventario/entrada') ?>" class="btn-inv entrada flex-1 sm:flex-none">
-                        <i class="fas fa-arrow-down text-xs"></i> Entrada
+                    <a href="<?= url('inventario/entrada') ?>" class="btn-inv entrada">
+                        <i class="fas fa-arrow-down text-xs"></i>
+                        <span>Registrar entrada</span>
                     </a>
-                    <a href="<?= url('inventario/salida') ?>" class="btn-inv salida flex-1 sm:flex-none">
-                        <i class="fas fa-arrow-up text-xs"></i> Salida
+                    <a href="<?= url('inventario/salida') ?>" class="btn-inv salida">
+                        <i class="fas fa-arrow-up text-xs"></i>
+                        <span>Registrar salida</span>
                     </a>
-                    <a href="<?= url('inventario/exportar') ?>" class="btn-inv pdf flex-1 sm:flex-none">
+                    <a href="<?= url('inventario/movimientos') ?>" class="btn-inv movimientos">
+                        <i class="fas fa-exchange-alt text-xs"></i>
+                        <span>Movimientos</span>
+                    </a>
+                    <a href="<?= url('inventario/exportar') ?>" class="btn-inv pdf">
                         <i class="fas fa-file-pdf text-xs"></i>
-                        <span class="hidden xs:inline">PDF</span>
+                        <span>Exportar PDF</span>
                     </a>
                 </div>
             </div>

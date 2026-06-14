@@ -24,6 +24,19 @@ if ($layoutEsPanelSaas) {
 } elseif ($layoutBranding && function_exists('hotel_branding_hex')) {
     $layoutThemeColor = hotel_branding_hex($layoutBranding['color_primary'] ?? null, '#1B2746');
 }
+$layoutOfflineBrandingPayload = null;
+if ($layoutOfflineHoteleroActivo && $layoutBranding && function_exists('hotel_branding_hex')) {
+    $layoutOfflineBrandingPayload = [
+        'name' => $layoutNombreVisual,
+        'logo' => $layoutLogoUrl,
+        'primary' => hotel_branding_hex($layoutBranding['color_primary'] ?? null, '#1B2746'),
+        'secondary' => hotel_branding_hex($layoutBranding['color_secondary'] ?? null, '#0F172A'),
+        'accent' => hotel_branding_hex($layoutBranding['color_accent'] ?? null, '#BD9441'),
+        'hotelId' => function_exists('current_hotel_id') ? (int) current_hotel_id() : null,
+        'slug' => function_exists('current_hotel_slug') ? (string) current_hotel_slug() : null,
+        'updatedAt' => date('c'),
+    ];
+}
 $layoutManifestHref = asset('manifest.json');
 $layoutHotelSlug = function_exists('current_hotel_slug') ? current_hotel_slug() : null;
 if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $layoutHotelSlug)) {
@@ -222,6 +235,12 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
         <?php if ($medisoftContext): ?>
         window.MEDISOFT_CONTEXT = <?= json_encode($medisoftContext, JSON_UNESCAPED_SLASHES) ?>;
         window.USUARIO_ID = window.MEDISOFT_CONTEXT.usuario_id;
+        <?php endif; ?>
+        <?php if ($layoutOfflineBrandingPayload): ?>
+        window.MEDISOFT_OFFLINE_BRANDING = <?= json_encode($layoutOfflineBrandingPayload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+        try {
+            window.localStorage.setItem('medisoft:offline-branding', JSON.stringify(window.MEDISOFT_OFFLINE_BRANDING));
+        } catch (error) {}
         <?php endif; ?>
     </script>
 

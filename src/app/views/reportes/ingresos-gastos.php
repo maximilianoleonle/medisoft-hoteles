@@ -100,6 +100,9 @@ $metodoMeta = [
     --pr-primary: var(--brand-primary, #1B2746);
     --pr-secondary: var(--brand-secondary, #0F172A);
     --pr-accent: var(--brand-accent, #BD9441);
+    --pr-action: var(--brand-action-bg, var(--pr-primary));
+    --pr-action-hover: var(--brand-action-bg-hover, var(--pr-secondary));
+    --pr-on-action: var(--brand-action-text, #FFFEFB);
     --pr-bg: color-mix(in srgb, var(--pr-accent) 8%, #F7F2EA);
     --pr-surface: color-mix(in srgb, var(--pr-accent) 3%, #FFFDF8);
     --pr-soft: color-mix(in srgb, var(--pr-primary) 5%, #FFFDF8);
@@ -111,14 +114,15 @@ $metodoMeta = [
     --pr-expense: #B93A32;
     --pr-info: #2563A7;
     --pr-warning: #B7791F;
+    --pr-card-shadow: 0 18px 44px -36px rgba(15, 23, 42, .52);
     color: var(--pr-text);
 }
 
 .profit-report-view {
     min-height: 100vh;
     background:
-        radial-gradient(circle at 90% 7%, color-mix(in srgb, var(--pr-accent) 22%, transparent), transparent 28rem),
-        linear-gradient(120deg, color-mix(in srgb, var(--pr-primary) 5%, transparent) 0 1px, transparent 1px 28px),
+        radial-gradient(circle at 86% 4%, color-mix(in srgb, var(--pr-accent) 24%, transparent), transparent 30rem),
+        linear-gradient(135deg, color-mix(in srgb, var(--pr-primary) 5%, transparent) 0 1px, transparent 1px 28px),
         linear-gradient(180deg, var(--pr-bg), #FBFAF7 56%, #F3EDE4);
     opacity: 0;
     transition: opacity .24s ease;
@@ -129,14 +133,16 @@ $metodoMeta = [
 }
 
 .profit-shell {
-    width: min(1500px, calc(100% - 28px));
+    width: 100%;
+    max-width: 1500px;
     margin: 0 auto;
-    padding: 28px 0 48px;
+    padding: 30px clamp(34px, 4vw, 76px) 50px;
+    box-sizing: border-box;
 }
 
 .profit-hero {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr);
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
     gap: 18px;
     align-items: stretch;
     margin-bottom: 18px;
@@ -148,25 +154,28 @@ $metodoMeta = [
 .profit-section {
     border: 1px solid var(--pr-line);
     background: var(--pr-surface);
-    box-shadow: 0 18px 48px -38px rgba(15, 23, 42, .48);
+    box-shadow: var(--pr-card-shadow);
 }
 
 .profit-hero-main {
     position: relative;
     overflow: hidden;
-    min-height: 310px;
-    padding: clamp(24px, 4vw, 42px);
-    border-color: color-mix(in srgb, var(--pr-accent) 24%, transparent);
-    border-radius: 26px;
+    min-height: 325px;
+    padding: clamp(24px, 4vw, 44px);
+    border-color: color-mix(in srgb, var(--pr-accent) 28%, transparent);
+    border-radius: 28px;
     background:
-        radial-gradient(circle at 88% 14%, color-mix(in srgb, var(--pr-accent) 34%, transparent), transparent 21rem),
-        linear-gradient(135deg, color-mix(in srgb, var(--pr-primary) 95%, #0A0F1C), var(--pr-secondary));
+        radial-gradient(circle at 86% 18%, color-mix(in srgb, var(--pr-accent) 30%, transparent), transparent 22rem),
+        linear-gradient(135deg,
+            color-mix(in srgb, var(--pr-action) 54%, #101827),
+            color-mix(in srgb, var(--pr-action-hover) 58%, #060A12)
+        );
 }
 
 .profit-hero-main::after {
     content: "";
     position: absolute;
-    inset: auto -8% -54% 44%;
+    inset: auto -10% -54% 46%;
     height: 220px;
     background: radial-gradient(circle, color-mix(in srgb, var(--pr-accent) 42%, transparent), transparent 68%);
     pointer-events: none;
@@ -185,32 +194,50 @@ $metodoMeta = [
 }
 
 .profit-kicker {
+    position: relative;
+    z-index: 1;
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    color: color-mix(in srgb, var(--pr-accent) 82%, #FFFDF8);
+    width: fit-content;
+    padding: 8px 11px;
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .1);
+    color: #FFFFFF;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, .22);
+}
+
+.profit-kicker i {
+    color: color-mix(in srgb, var(--pr-accent) 42%, #FFFFFF);
 }
 
 .profit-hero-main h1 {
-    max-width: 11ch;
+    position: relative;
+    z-index: 1;
+    max-width: 12ch;
     margin: 14px 0 14px;
-    color: #FFFDF8;
+    color: var(--pr-on-action);
     font-family: Georgia, "Times New Roman", serif;
-    font-size: clamp(2.45rem, 5vw, 5.2rem);
+    font-size: clamp(2.4rem, 5vw, 5.15rem);
     line-height: .9;
     font-weight: 700;
     letter-spacing: 0;
 }
 
 .profit-hero-main p {
+    position: relative;
+    z-index: 1;
     max-width: 66ch;
     margin: 0;
-    color: rgba(255, 255, 255, .74);
+    color: color-mix(in srgb, var(--pr-on-action) 82%, transparent);
     font-weight: 650;
     line-height: 1.6;
 }
 
 .profit-hero-actions {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
@@ -232,8 +259,8 @@ $metodoMeta = [
     gap: 9px;
     padding: 0 16px;
     border: 1px solid color-mix(in srgb, var(--pr-accent) 46%, var(--pr-primary));
-    background: var(--pr-primary);
-    color: #FFFDF8;
+    background: var(--pr-action);
+    color: var(--pr-on-action);
     font-weight: 900;
     text-decoration: none;
 }
@@ -245,8 +272,19 @@ $metodoMeta = [
 }
 
 .profit-btn.is-accent {
-    background: color-mix(in srgb, var(--pr-accent) 88%, #FFFDF8);
-    color: color-mix(in srgb, var(--pr-primary) 88%, #000);
+    border-color: color-mix(in srgb, var(--pr-action) 34%, var(--pr-accent));
+    background: var(--pr-action);
+    color: var(--pr-on-action);
+}
+
+.profit-hero-main .profit-btn.is-accent {
+    border-color: rgba(255, 255, 255, .9);
+    background: #FFFFFF;
+    color: color-mix(in srgb, var(--pr-action) 78%, #05070D);
+}
+
+.profit-hero-main .profit-btn.is-accent i {
+    color: color-mix(in srgb, var(--pr-accent) 48%, var(--pr-action));
 }
 
 .profit-btn:hover,
@@ -793,8 +831,8 @@ $metodoMeta = [
 
 @media (max-width: 720px) {
     .profit-shell {
-        width: min(100% - 20px, 1500px);
-        padding: 18px 0 34px;
+        width: 100%;
+        padding: 18px 12px 36px;
     }
 
     .profit-hero-main,
@@ -807,6 +845,7 @@ $metodoMeta = [
 
     .profit-hero-main {
         min-height: auto;
+        padding: 22px;
     }
 
     .profit-hero-main h1 {
@@ -878,7 +917,7 @@ $metodoMeta = [
                     <p class="profit-note"><?= number_format($dias_periodo) ?> día<?= $dias_periodo === 1 ? '' : 's' ?> con lectura financiera.</p>
                 </div>
 
-                <form method="get" action="<?= url('reportes/ingresos-gastos') ?>" class="profit-filter-form" id="reporteFiltrosForm">
+                <form method="get" action="<?= url('reportes/ingresos-gastos') ?>" class="profit-filter-form" id="reporteFiltrosForm" data-auto-filter-form>
                     <div class="profit-field">
                         <label for="fecha_inicio">Desde</label>
                         <input type="date"

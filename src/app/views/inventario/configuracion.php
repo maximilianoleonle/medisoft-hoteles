@@ -89,9 +89,11 @@ $hotelNombre = function_exists('current_hotel_display_name')
 }
 
 .disc-shell {
-    width: min(1500px, calc(100% - 28px));
+    width: 100%;
+    max-width: 1500px;
     margin: 0 auto;
-    padding: 28px 0 48px;
+    padding: 30px clamp(34px, 4vw, 76px) 50px;
+    box-sizing: border-box;
 }
 
 .disc-hero {
@@ -120,8 +122,11 @@ $hotelNombre = function_exists('current_hotel_display_name')
     padding: clamp(24px, 4vw, 44px);
     border-color: color-mix(in srgb, var(--disc-accent) 28%, transparent);
     background:
-        radial-gradient(circle at 86% 18%, color-mix(in srgb, var(--disc-accent) 34%, transparent), transparent 22rem),
-        linear-gradient(135deg, color-mix(in srgb, var(--disc-primary) 96%, #0B1020), var(--disc-secondary));
+        radial-gradient(circle at 86% 18%, color-mix(in srgb, var(--disc-accent) 30%, transparent), transparent 22rem),
+        linear-gradient(135deg,
+            color-mix(in srgb, var(--disc-primary) 54%, #101827),
+            color-mix(in srgb, var(--disc-secondary) 58%, #060A12)
+        );
 }
 
 .disc-hero-main::after {
@@ -180,7 +185,17 @@ $hotelNombre = function_exists('current_hotel_display_name')
     align-items: center;
     gap: 9px;
     margin-top: 26px;
-    color: color-mix(in srgb, var(--disc-accent) 82%, #FFFDF8);
+    width: fit-content;
+    padding: 8px 11px;
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 999px;
+    background: rgba(255,255,255,.1);
+    color: #FFFDF8;
+    text-shadow: 0 1px 1px rgba(0,0,0,.22);
+}
+
+.disc-kicker i {
+    color: color-mix(in srgb, var(--disc-accent) 42%, #FFFDF8);
 }
 
 .disc-hero-main h1 {
@@ -233,8 +248,25 @@ $hotelNombre = function_exists('current_hotel_display_name')
 }
 
 .disc-btn.is-accent {
-    background: color-mix(in srgb, var(--disc-accent) 88%, #FFFDF8);
-    color: color-mix(in srgb, var(--disc-primary) 88%, #000);
+    border-color: color-mix(in srgb, var(--disc-primary) 72%, #111827);
+    background: color-mix(in srgb, var(--disc-primary) 88%, #111827);
+    color: #FFFDF8;
+    box-shadow: 0 16px 34px -28px color-mix(in srgb, var(--disc-primary) 72%, transparent);
+}
+
+.disc-btn.is-accent i {
+    color: color-mix(in srgb, var(--disc-accent) 36%, #FFFDF8);
+}
+
+.disc-hero-main .disc-btn.is-accent {
+    border-color: rgba(255,255,255,.74);
+    background: #FFFDF8;
+    color: color-mix(in srgb, var(--disc-primary) 82%, #111827);
+    box-shadow: 0 18px 38px -28px rgba(0,0,0,.62);
+}
+
+.disc-hero-main .disc-btn.is-accent i {
+    color: color-mix(in srgb, var(--disc-accent) 76%, var(--disc-primary));
 }
 
 .disc-btn.is-soft {
@@ -244,9 +276,16 @@ $hotelNombre = function_exists('current_hotel_display_name')
 }
 
 .disc-btn.is-warning {
-    border-color: color-mix(in srgb, var(--disc-warn) 44%, var(--disc-line));
-    background: color-mix(in srgb, var(--disc-warn) 88%, #FFFDF8);
-    color: #3D2A0A;
+    border-color: color-mix(in srgb, var(--disc-warn) 72%, #6B4208);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--disc-warn) 94%, #9A5F13), color-mix(in srgb, var(--disc-warn) 82%, #C78622));
+    color: #1F1607;
+    font-weight: 900;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, .22);
+    box-shadow: 0 14px 28px -24px color-mix(in srgb, var(--disc-warn) 82%, #111827);
+}
+
+.disc-btn.is-warning i {
+    color: #1F1607;
 }
 
 .disc-btn:hover,
@@ -258,8 +297,8 @@ $hotelNombre = function_exists('current_hotel_display_name')
 .disc-side-panel {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    gap: 18px;
+    justify-content: flex-start;
+    gap: 14px;
     border-radius: 25px;
     padding: 20px;
 }
@@ -267,15 +306,22 @@ $hotelNombre = function_exists('current_hotel_display_name')
 .disc-side-top {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 14px;
+    order: 1;
+    margin-top: 0;
+    padding: 15px;
+    border: 1px solid var(--disc-line-soft);
+    border-radius: 18px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--disc-primary) 4%, #FFFDF8), color-mix(in srgb, var(--disc-accent) 4%, #FFFDF8));
 }
 
 .disc-side-title {
-    margin-top: 7px;
+    margin-top: 6px;
     color: var(--disc-primary);
     font-family: Georgia, "Times New Roman", serif;
-    font-size: clamp(1.5rem, 3vw, 2.35rem);
+    font-size: clamp(1.45rem, 2.7vw, 2.1rem);
     font-weight: 700;
     line-height: 1;
 }
@@ -286,25 +332,46 @@ $hotelNombre = function_exists('current_hotel_display_name')
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex: 0 0 38px;
     border-radius: 14px;
     background: color-mix(in srgb, var(--disc-accent) 13%, #FFFDF8);
     color: color-mix(in srgb, var(--disc-accent) 82%, var(--disc-primary));
+    line-height: 1;
+}
+
+.disc-icon > i {
+    width: 1em;
+    height: 1em;
+    display: inline-grid;
+    place-items: center;
+    line-height: 1;
+    margin: 0;
+    transform: translateY(.5px);
 }
 
 .disc-flow {
+    order: 2;
     display: grid;
     gap: 10px;
 }
 
 .disc-flow-item {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 11px;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 13px;
     align-items: center;
-    padding: 12px;
+    padding: 12px 14px;
     border: 1px solid var(--disc-line-soft);
     border-radius: 16px;
-    background: color-mix(in srgb, var(--disc-accent) 3%, #FFFDF8);
+    background: color-mix(in srgb, var(--disc-accent) 2%, #FFFDF8);
+}
+
+.disc-flow-item > .disc-icon {
+    justify-self: center;
+    align-self: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 13px;
 }
 
 .disc-flow-item strong {
@@ -313,7 +380,7 @@ $hotelNombre = function_exists('current_hotel_display_name')
     font-weight: 950;
 }
 
-.disc-flow-item span {
+.disc-flow-item div span {
     display: block;
     color: var(--disc-muted);
     font-size: .78rem;
@@ -646,12 +713,34 @@ $hotelNombre = function_exists('current_hotel_display_name')
     font-weight: 950;
 }
 
-.disc-preview-head span {
+.disc-preview-head div > span {
     display: block;
     margin-top: 3px;
     color: var(--disc-muted);
     font-size: .76rem;
     font-weight: 750;
+}
+
+.disc-preview-head > .disc-icon {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    display: grid;
+    place-items: center;
+    align-self: flex-start;
+    margin: 0;
+    padding: 0;
+    border-radius: 14px;
+}
+
+.disc-preview-head > .disc-icon > i {
+    width: auto;
+    height: auto;
+    display: block;
+    line-height: 1;
+    margin: 0;
+    transform: none;
+    text-align: center;
 }
 
 .disc-consumo {
@@ -735,8 +824,8 @@ $hotelNombre = function_exists('current_hotel_display_name')
 
 @media (max-width: 720px) {
     .disc-shell {
-        width: min(100% - 20px, 1500px);
-        padding: 18px 0 34px;
+        width: 100%;
+        padding: 18px 12px 34px;
     }
 
     .disc-hero-main,

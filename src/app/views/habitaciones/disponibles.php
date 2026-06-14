@@ -22,7 +22,7 @@
     
     <!-- Formulario de búsqueda -->
     <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <form method="GET" action="<?= url('habitaciones/disponibles') ?>" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <form method="GET" action="<?= url('habitaciones/disponibles') ?>" class="grid grid-cols-1 md:grid-cols-4 gap-4" data-auto-filter-form>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Entrada</label>
                 <input type="date" 

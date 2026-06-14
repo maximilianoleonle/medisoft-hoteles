@@ -63,6 +63,9 @@ foreach ($porEstado as $estadoDato) {
     --geo-primary: var(--brand-primary, #1B2746);
     --geo-secondary: var(--brand-secondary, #0F172A);
     --geo-accent: var(--brand-accent, #BD9441);
+    --geo-action: var(--brand-action-bg, var(--geo-primary));
+    --geo-action-hover: var(--brand-action-bg-hover, var(--geo-secondary));
+    --geo-on-action: var(--brand-action-text, #FFFEFB);
     --geo-bg: color-mix(in srgb, var(--geo-accent) 8%, #F7F2EA);
     --geo-surface: color-mix(in srgb, var(--geo-accent) 3%, #FFFDF8);
     --geo-soft: color-mix(in srgb, var(--geo-primary) 5%, #FFFDF8);
@@ -81,10 +84,11 @@ foreach ($porEstado as $estadoDato) {
     --geo-map-bg-deep: color-mix(in srgb, var(--geo-secondary) 78%, #030712);
     --geo-map-bg-mid: color-mix(in srgb, var(--geo-primary) 58%, #111827);
     --geo-map-bg-glow: color-mix(in srgb, var(--geo-accent) 36%, transparent);
+    --geo-card-shadow: 0 18px 44px -36px rgba(15, 23, 42, .52);
     min-height: 100vh;
     background:
-        radial-gradient(circle at 88% 7%, color-mix(in srgb, var(--geo-accent) 21%, transparent), transparent 29rem),
-        linear-gradient(120deg, color-mix(in srgb, var(--geo-primary) 5%, transparent) 0 1px, transparent 1px 28px),
+        radial-gradient(circle at 86% 4%, color-mix(in srgb, var(--geo-accent) 24%, transparent), transparent 30rem),
+        linear-gradient(135deg, color-mix(in srgb, var(--geo-primary) 5%, transparent) 0 1px, transparent 1px 28px),
         linear-gradient(180deg, var(--geo-bg), #FBFAF7 56%, #F2ECE3);
     color: var(--geo-text);
     opacity: 0;
@@ -96,15 +100,18 @@ foreach ($porEstado as $estadoDato) {
 }
 
 .geo-shell {
-    width: min(1500px, calc(100% - 28px));
+    width: 100%;
+    max-width: 1500px;
     margin: 0 auto;
-    padding: 28px 0 48px;
+    padding: 30px clamp(34px, 4vw, 76px) 50px;
+    box-sizing: border-box;
 }
 
 .geo-hero {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr);
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
     gap: 18px;
+    align-items: stretch;
     margin-bottom: 18px;
 }
 
@@ -115,26 +122,29 @@ foreach ($porEstado as $estadoDato) {
 .geo-map-panel {
     border: 1px solid var(--geo-line);
     background: var(--geo-surface);
-    box-shadow: 0 18px 48px -38px rgba(15, 23, 42, .48);
+    box-shadow: var(--geo-card-shadow);
 }
 
 .geo-hero-main {
     position: relative;
     overflow: hidden;
-    min-height: 320px;
-    padding: clamp(24px, 4vw, 42px);
-    border-color: color-mix(in srgb, var(--geo-accent) 24%, transparent);
-    border-radius: 26px;
+    min-height: 325px;
+    padding: clamp(24px, 4vw, 44px);
+    border-color: color-mix(in srgb, var(--geo-accent) 28%, transparent);
+    border-radius: 28px;
     background:
-        radial-gradient(circle at 89% 12%, color-mix(in srgb, var(--geo-accent) 34%, transparent), transparent 21rem),
-        linear-gradient(135deg, color-mix(in srgb, var(--geo-primary) 95%, #0A0F1C), var(--geo-secondary));
+        radial-gradient(circle at 86% 18%, color-mix(in srgb, var(--geo-accent) 30%, transparent), transparent 22rem),
+        linear-gradient(135deg,
+            color-mix(in srgb, var(--geo-action) 54%, #101827),
+            color-mix(in srgb, var(--geo-action-hover) 58%, #060A12)
+        );
 }
 
 .geo-hero-main::after {
     content: "";
     position: absolute;
-    inset: auto -10% -54% 42%;
-    height: 230px;
+    inset: auto -10% -54% 46%;
+    height: 220px;
     background: radial-gradient(circle, color-mix(in srgb, var(--geo-accent) 42%, transparent), transparent 68%);
     pointer-events: none;
 }
@@ -152,32 +162,50 @@ foreach ($porEstado as $estadoDato) {
 }
 
 .geo-kicker {
+    position: relative;
+    z-index: 1;
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    color: color-mix(in srgb, var(--geo-accent) 82%, #FFFDF8);
+    width: fit-content;
+    padding: 8px 11px;
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .1);
+    color: #FFFFFF;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, .22);
+}
+
+.geo-kicker i {
+    color: color-mix(in srgb, var(--geo-accent) 42%, #FFFFFF);
 }
 
 .geo-hero-main h1 {
-    max-width: 11ch;
+    position: relative;
+    z-index: 1;
+    max-width: 12ch;
     margin: 14px 0 14px;
-    color: #FFFDF8;
+    color: var(--geo-on-action);
     font-family: Georgia, "Times New Roman", serif;
-    font-size: clamp(2.45rem, 5vw, 5.25rem);
+    font-size: clamp(2.4rem, 5vw, 5.15rem);
     line-height: .9;
     font-weight: 700;
     letter-spacing: 0;
 }
 
 .geo-hero-main p {
+    position: relative;
+    z-index: 1;
     max-width: 66ch;
     margin: 0;
-    color: rgba(255, 255, 255, .74);
+    color: color-mix(in srgb, var(--geo-on-action) 82%, transparent);
     font-weight: 650;
     line-height: 1.6;
 }
 
 .geo-actions {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
@@ -198,8 +226,8 @@ foreach ($porEstado as $estadoDato) {
     gap: 9px;
     padding: 0 16px;
     border: 1px solid color-mix(in srgb, var(--geo-accent) 46%, var(--geo-primary));
-    background: var(--geo-primary);
-    color: #FFFDF8;
+    background: var(--geo-action);
+    color: var(--geo-on-action);
     font-weight: 900;
     text-decoration: none;
 }
@@ -211,8 +239,19 @@ foreach ($porEstado as $estadoDato) {
 }
 
 .geo-btn.is-accent {
-    background: color-mix(in srgb, var(--geo-accent) 88%, #FFFDF8);
-    color: color-mix(in srgb, var(--geo-primary) 88%, #000);
+    border-color: color-mix(in srgb, var(--geo-action) 34%, var(--geo-accent));
+    background: var(--geo-action);
+    color: var(--geo-on-action);
+}
+
+.geo-hero-main .geo-btn.is-accent {
+    border-color: rgba(255, 255, 255, .9);
+    background: #FFFFFF;
+    color: color-mix(in srgb, var(--geo-action) 78%, #05070D);
+}
+
+.geo-hero-main .geo-btn.is-accent i {
+    color: color-mix(in srgb, var(--geo-accent) 48%, var(--geo-action));
 }
 
 .geo-btn:hover,
@@ -926,8 +965,8 @@ foreach ($porEstado as $estadoDato) {
 
 @media (max-width: 720px) {
     .geo-shell {
-        width: min(100% - 20px, 1500px);
-        padding: 18px 0 34px;
+        width: 100%;
+        padding: 18px 12px 36px;
     }
 
     .geo-hero-main,
@@ -940,6 +979,7 @@ foreach ($porEstado as $estadoDato) {
 
     .geo-hero-main {
         min-height: auto;
+        padding: 22px;
     }
 
     .geo-hero-main h1 {
@@ -1015,7 +1055,7 @@ foreach ($porEstado as $estadoDato) {
                     <p class="geo-note"><?= number_format(count($porEstado)) ?> estados con lectura en este rango.</p>
                 </div>
 
-                <form method="get" action="<?= url('reportes/procedencia') ?>" class="geo-filter-form" id="procedenciaFiltrosForm">
+                <form method="get" action="<?= url('reportes/procedencia') ?>" class="geo-filter-form" id="procedenciaFiltrosForm" data-auto-filter-form>
                     <div class="geo-field">
                         <label for="fecha_inicio">Desde</label>
                         <input type="date"

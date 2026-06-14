@@ -316,7 +316,7 @@ $tipoFiltro = (string)($filtros['tipo_reporte'] ?? '');
             </div>
 
             <section class="report-link-panel">
-                <form method="GET" action="<?= url('reportes/links') ?>" class="report-link-filter">
+                <form method="GET" action="<?= url('reportes/links') ?>" class="report-link-filter" data-auto-filter-form>
                     <div class="report-link-field">
                         <label for="estado">Estado</label>
                         <select id="estado" name="estado">

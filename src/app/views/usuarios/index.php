@@ -152,8 +152,9 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 .usuarios-view {
-    --user-brand: var(--brand-primary, #1B2746);
-    --user-brand-2: var(--brand-secondary, #0F172A);
+    --user-brand: var(--brand-action-bg, var(--brand-primary, #1B2746));
+    --user-brand-2: var(--brand-action-bg-hover, var(--brand-secondary, #0F172A));
+    --user-on-brand: var(--brand-action-text, #FFFEFB);
     --user-accent: var(--brand-accent, #BD9441);
     --user-accent-dark: color-mix(in srgb, var(--user-accent) 72%, #3F2E12);
     --user-accent-soft: color-mix(in srgb, var(--user-accent) 14%, #FFFFFF);
@@ -202,7 +203,11 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
     height: 46px !important;
     border-radius: 13px !important;
     background: linear-gradient(150deg, var(--user-brand), var(--user-brand-2)) !important;
+    color: var(--user-on-brand) !important;
     box-shadow: 0 12px 24px -10px color-mix(in srgb, var(--user-brand) 58%, transparent) !important;
+}
+.usuarios-view .usr-hero div[style] i {
+    color: var(--user-on-brand) !important;
 }
 .usr-hero h1 {
     color: var(--user-brand) !important;
@@ -309,7 +314,7 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
     color: var(--user-brand) !important;
 }
 .usr-panel-hd div[style] .text-white {
-    color: #FFFFFF !important;
+    color: var(--user-on-brand) !important;
 }
 .usr-panel-hd > span {
     background: var(--user-accent-soft) !important;
@@ -489,12 +494,13 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
 }
 
 .usuarios-view .usr-panel-hd > div:first-child > div {
-    background: color-mix(in srgb, var(--user-accent) 14%, var(--user-surface)) !important;
+    background: color-mix(in srgb, var(--user-brand) 12%, var(--user-surface)) !important;
     border: 1px solid var(--user-border);
+    color: var(--user-brand) !important;
 }
 
 .usuarios-view .usr-panel-hd > div:first-child > div i {
-    color: var(--user-accent-dark) !important;
+    color: var(--user-brand) !important;
 }
 
 .usuarios-view table {
@@ -561,9 +567,9 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
 
 /* Color balance: neutral user data, varied initials, hotel brand as accent. */
 .usuarios-view {
-    --user-heading: #111827;
-    --user-text: #1F2937;
-    --user-muted: #667085;
+    --user-heading: var(--brand-text, #111827);
+    --user-text: var(--brand-text, #1F2937);
+    --user-muted: var(--brand-muted, #667085);
     --user-bg: #F8F5ED;
     --user-bg-2: #FBFAF6;
     --user-surface: #FFFFFF;
@@ -594,8 +600,9 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
 
 .usuarios-view .usr-hero div[style],
 .usuarios-view .usr-panel-hd div[style] {
-    background: linear-gradient(150deg, var(--user-heading), color-mix(in srgb, var(--user-brand) 32%, #111827)) !important;
-    box-shadow: 0 14px 24px -18px rgba(17,24,39,.72) !important;
+    background: linear-gradient(150deg, var(--user-brand), var(--user-brand-2)) !important;
+    color: var(--user-on-brand) !important;
+    box-shadow: 0 14px 24px -18px color-mix(in srgb, var(--user-brand) 72%, #111827) !important;
 }
 
 .usuarios-view .gold-badge,
@@ -607,8 +614,8 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
 }
 
 .usuarios-view .btn-nuevo {
-    background: var(--user-heading) !important;
-    color: #FFFFFF !important;
+    background: var(--user-brand) !important;
+    color: var(--user-on-brand) !important;
     box-shadow: 0 12px 22px -18px rgba(17,24,39,.7) !important;
 }
 

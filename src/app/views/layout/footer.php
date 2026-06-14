@@ -23,6 +23,33 @@
     <!-- Buscador global (todas las páginas autenticadas) -->
     <script src="<?= asset('js/buscador-global.js') ?>" defer></script>
 
+    <script>
+        document.addEventListener('change', function(event) {
+            if (!(event.target instanceof Element)) {
+                return;
+            }
+
+            const control = event.target.closest('select, input[type="date"], input[type="month"], input[type="checkbox"], input[type="radio"]');
+            if (!control || control.matches('[data-auto-filter-ignore]')) {
+                return;
+            }
+
+            const form = control.closest('form[data-auto-filter-form]');
+            if (!form || form.dataset.autoFilterSubmitting === '1') {
+                return;
+            }
+
+            form.dataset.autoFilterSubmitting = '1';
+
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+                return;
+            }
+
+            form.submit();
+        });
+    </script>
+
     <!-- Offline: caché de lectura para reservaciones del día -->
     <?php if (isset($title) && stripos($title, 'Reservaciones') !== false): ?>
     <script src="<?= asset('js/reservaciones-offline.js') ?>" defer></script>

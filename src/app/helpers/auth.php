@@ -7,6 +7,10 @@
 /**
  * Verificar si el usuario está autenticado
  */
+if (!defined('MEDISOFT_HOTEL_LOGIN_CONTEXT_COOKIE')) {
+    define('MEDISOFT_HOTEL_LOGIN_CONTEXT_COOKIE', 'medisoft_last_hotel_slug');
+}
+
 function bootstrap_tenant_context_from_session() {
     if (!class_exists('TenantContext')) {
         return;
@@ -43,6 +47,78 @@ function bootstrap_tenant_context_from_session() {
         ]],
         'superadmin' => in_array('superadmin', $roles, true),
     ]);
+
+    remember_hotel_login_context($_SESSION['hotel_slug'] ?? null);
+}
+
+function normalize_hotel_login_slug($slug) {
+    $slug = strtolower(trim((string) $slug));
+
+    return preg_match('/^[a-z0-9-]+$/', $slug) ? $slug : null;
+}
+
+function remember_hotel_login_context($slug = null) {
+    $slug = normalize_hotel_login_slug($slug ?: ($_SESSION['hotel_slug'] ?? null));
+
+    if (!$slug) {
+        return;
+    }
+
+    if (!headers_sent()) {
+        setcookie(MEDISOFT_HOTEL_LOGIN_CONTEXT_COOKIE, $slug, [
+            'expires' => time() + (30 * 24 * 60 * 60),
+            'path' => '/',
+            'domain' => '',
+            'secure' => function_exists('is_https_request') ? is_https_request() : true,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
+
+    $_COOKIE[MEDISOFT_HOTEL_LOGIN_CONTEXT_COOKIE] = $slug;
+}
+
+function hotel_login_cookie_allowed_for_request($requestUri = null) {
+    $path = parse_url($requestUri ?? ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '';
+    $path = strtolower(trim($path, '/'));
+
+    if ($path === '') {
+        return false;
+    }
+
+    if (preg_match('#^(login|logout|h|admin|saas|panel|medisoft|hoteles)(/|$)#', $path)) {
+        return false;
+    }
+
+    $firstSegment = explode('/', $path)[0] ?? '';
+    $hotelSegments = [
+        'api',
+        'auditoria',
+        'caja',
+        'configuracion',
+        'dashboard',
+        'facturacion',
+        'habitaciones',
+        'huespedes',
+        'inventario',
+        'llaves',
+        'mantenimiento',
+        'notificaciones',
+        'perfil',
+        'reportes',
+        'reservaciones',
+        'usuarios',
+    ];
+
+    return in_array($firstSegment, $hotelSegments, true);
+}
+
+function remembered_hotel_login_slug($requestUri = null) {
+    if (!hotel_login_cookie_allowed_for_request($requestUri)) {
+        return null;
+    }
+
+    return normalize_hotel_login_slug($_COOKIE[MEDISOFT_HOTEL_LOGIN_CONTEXT_COOKIE] ?? null);
 }
 
 function is_authenticated() {
@@ -54,6 +130,7 @@ function is_authenticated() {
     $lastActivity = $_SESSION['last_activity'] ?? $_SESSION['login_time'] ?? time();
 
     if ($lifetimeMinutes > 0 && (time() - (int) $lastActivity) > ($lifetimeMinutes * 60)) {
+        remember_hotel_login_context($_SESSION['hotel_slug'] ?? null);
         logout();
         return false;
     }
@@ -94,6 +171,7 @@ function current_user() {
             bootstrap_tenant_context_from_session();
         } else {
             // Usuario no válido, cerrar sesión
+            remember_hotel_login_context($_SESSION['hotel_slug'] ?? null);
             logout();
             return null;
         }
@@ -146,6 +224,10 @@ function login_path_for_current_context($requestUri = null) {
 
     if (!$slug && current_hotel_slug()) {
         $slug = current_hotel_slug();
+    }
+
+    if (!$slug) {
+        $slug = remembered_hotel_login_slug($requestUri);
     }
 
     return $slug ? 'h/' . $slug . '/login' : 'login';
@@ -299,8 +381,9 @@ function can($permission) {
  * Requerir autenticación - MEJORADO
  */
 function require_auth() {
+    $loginPath = login_path_for_current_context($_SERVER['REQUEST_URI'] ?? null);
+
     if (!is_authenticated()) {
-        $loginPath = login_path_for_current_context($_SERVER['REQUEST_URI'] ?? null);
 
         // Si es una petición AJAX, retornar JSON
         if (is_ajax()) {
@@ -394,6 +477,7 @@ function login($user_id, $remember = false, $hotel = null) {
             'rol' => $hotel['rol_hotel'] ?? null,
         ];
 
+        remember_hotel_login_context($_SESSION['hotel_slug'] ?? null);
         bootstrap_tenant_context_from_session();
     }
     

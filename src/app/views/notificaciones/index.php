@@ -6,15 +6,27 @@ $modulos = $modulos ?? [];
 $tablaDisponible = $tablaDisponible ?? false;
 $mensajeFlash = get_mensaje();
 
-if (!function_exists('notif_safe')) {
-    function notif_safe($value, $fallback = '-') {
+if (!function_exists('ntx_safe')) {
+    function ntx_safe($value, $fallback = '-')
+    {
         $text = trim((string)($value ?? ''));
         return htmlspecialchars($text !== '' ? $text : $fallback, ENT_QUOTES, 'UTF-8');
     }
 }
 
-if (!function_exists('notif_date')) {
-    function notif_date($value, $format = 'd/m/Y H:i') {
+if (!function_exists('ntx_class')) {
+    function ntx_class($value, $fallback = 'item')
+    {
+        $class = strtolower(trim((string)($value ?? '')));
+        $class = preg_replace('/[^a-z0-9_-]+/', '-', $class);
+        $class = trim((string)$class, '-');
+        return $class !== '' ? $class : $fallback;
+    }
+}
+
+if (!function_exists('ntx_date')) {
+    function ntx_date($value, $format = 'd/m/Y H:i')
+    {
         if (!$value) {
             return '-';
         }
@@ -24,14 +36,15 @@ if (!function_exists('notif_date')) {
     }
 }
 
-if (!function_exists('notif_label')) {
-    function notif_label($value) {
+if (!function_exists('ntx_label')) {
+    function ntx_label($value)
+    {
         $labels = [
             'activas' => 'Pendientes',
-            'nueva' => 'Pendiente',
-            'leida' => 'Pendiente',
+            'nueva' => 'Nueva',
+            'leida' => 'Vista',
             'resuelta' => 'Atendida',
-            'descartada' => 'Historial',
+            'descartada' => 'Archivada',
             'info' => 'Info',
             'media' => 'Media',
             'alta' => 'Alta',
@@ -41,6 +54,7 @@ if (!function_exists('notif_label')) {
             'facturacion' => 'Facturacion',
             'inventario' => 'Inventario',
             'reservaciones' => 'Reservaciones',
+            'reportes' => 'Reportes',
             'sistema' => 'Sistema',
         ];
 
@@ -49,827 +63,1043 @@ if (!function_exists('notif_label')) {
     }
 }
 
+if (!function_exists('ntx_icon')) {
+    function ntx_icon($modulo)
+    {
+        $icons = [
+            'caja' => 'fa-wallet',
+            'habitaciones' => 'fa-bed',
+            'facturacion' => 'fa-file-invoice',
+            'inventario' => 'fa-boxes-stacked',
+            'reservaciones' => 'fa-calendar-check',
+            'reportes' => 'fa-chart-line',
+            'sistema' => 'fa-sliders',
+        ];
+
+        return $icons[(string)$modulo] ?? 'fa-bell';
+    }
+}
+
+if (!function_exists('ntx_filter_url')) {
+    function ntx_filter_url(array $overrides = [])
+    {
+        $query = array_merge($_GET, $overrides);
+        $query = array_filter($query, static function ($value) {
+            return $value !== null && $value !== '';
+        });
+
+        return url('notificaciones' . (!empty($query) ? '?' . http_build_query($query) : ''));
+    }
+}
+
 $estadoFiltro = (string)($filtros['estado'] ?? 'activas');
 $moduloFiltro = (string)($filtros['modulo'] ?? '');
 $severidadFiltro = (string)($filtros['severidad'] ?? '');
-$notificacionesPendientes = (int)($resumen['pendientes'] ?? ($resumen['nuevas'] ?? 0));
-$notificacionesHistorial = (int)($resumen['historial'] ?? (($resumen['resueltas'] ?? 0) + ($resumen['descartadas'] ?? 0)));
+$hotelNombre = function_exists('current_hotel_display_name') ? current_hotel_display_name() : 'Hotel';
+
+$pendientes = (int)($resumen['pendientes'] ?? ($resumen['nuevas'] ?? 0));
+$nuevas = (int)($resumen['nuevas'] ?? 0);
+$prioritarias = (int)($resumen['prioritarias'] ?? 0);
+$hoy = (int)($resumen['hoy'] ?? 0);
+$historial = (int)($resumen['historial'] ?? (($resumen['resueltas'] ?? 0) + ($resumen['descartadas'] ?? 0)));
+$totalVista = count($notificaciones);
+
+$estadoOpciones = [
+    'activas' => 'Pendientes',
+    'resuelta' => 'Atendidas',
+    'descartada' => 'Archivadas',
+];
+
+$severidadOpciones = [
+    '' => 'Todas',
+    'info' => 'Info',
+    'media' => 'Media',
+    'alta' => 'Alta',
+    'critica' => 'Critica',
+];
+
+$estadoTabs = [
+    'activas' => ['label' => 'Pendientes', 'count' => $pendientes],
+    'resuelta' => ['label' => 'Atendidas', 'count' => (int)($resumen['resueltas'] ?? 0)],
+    'descartada' => ['label' => 'Archivadas', 'count' => max(0, $historial - (int)($resumen['resueltas'] ?? 0))],
+];
 ?>
 
 <style>
-.notif-view {
-    --nt-primary: var(--brand-primary, #1B2746);
-    --nt-secondary: var(--brand-secondary, #0F172A);
-    --nt-accent: var(--brand-accent, #BD9441);
-    --nt-bg: color-mix(in srgb, var(--nt-accent) 6%, #F6F7F9);
-    --nt-surface: #FFFFFF;
-    --nt-line: color-mix(in srgb, var(--nt-primary) 14%, #E5E7EB);
-    --nt-muted: #667085;
+.ntx-page {
+    --ntx-primary: var(--brand-primary, #1f3f46);
+    --ntx-secondary: var(--brand-secondary, #27333f);
+    --ntx-accent: var(--brand-accent, #b58a3c);
+    --ntx-action: var(--brand-action-bg, var(--ntx-primary));
+    --ntx-action-hover: var(--brand-action-bg-hover, color-mix(in srgb, var(--ntx-action) 90%, #111827));
+    --ntx-on-action: var(--brand-action-text, #fffdf8);
+    --ntx-ink: color-mix(in srgb, var(--ntx-primary) 54%, #475467);
+    --ntx-text: #344054;
+    --ntx-muted: #748094;
+    --ntx-line: color-mix(in srgb, var(--ntx-primary) 9%, #e9e2d7);
+    --ntx-surface: rgba(255, 255, 255, .76);
+    --ntx-soft: color-mix(in srgb, var(--ntx-accent) 5%, #f8f5ee);
+    --ntx-tone-blue: #3f7891;
+    --ntx-tone-sage: #2f8a70;
+    --ntx-tone-amber: #b98a35;
+    --ntx-tone-coral: #b66b5f;
+    --ntx-tone-indigo: #6e6aa9;
+    --ntx-tone-olive: #6f8547;
+    --ntx-tone-slate: #58728f;
+    --ntx-panel-accent: var(--ntx-accent);
+    --ntx-panel-wash: color-mix(in srgb, var(--ntx-panel-accent) 6%, #fffdf8);
+    --ntx-focus: color-mix(in srgb, var(--ntx-accent) 22%, transparent);
     min-height: 100vh;
-    background: linear-gradient(180deg, var(--nt-bg), #FBFCFE 70%);
-    color: #172033;
+    color: var(--ntx-text);
+    background:
+        radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--ntx-accent) 12%, transparent), transparent 25rem),
+        radial-gradient(circle at 35% 8%, color-mix(in srgb, var(--ntx-tone-sage) 8%, transparent), transparent 24rem),
+        radial-gradient(circle at 74% 4%, color-mix(in srgb, var(--ntx-tone-indigo) 7%, transparent), transparent 25rem),
+        radial-gradient(circle at 96% 8%, color-mix(in srgb, var(--ntx-primary) 7%, transparent), transparent 30rem),
+        linear-gradient(180deg, #fcfbf8 0%, color-mix(in srgb, var(--ntx-accent) 4%, #f4f1ea) 100%);
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
 }
-.notif-shell {
-    width: min(1320px, calc(100% - 28px));
+
+.ntx-shell {
+    width: min(1440px, calc(100% - 32px));
     margin: 0 auto;
-    padding: 28px 0 46px;
+    padding: 26px 0 52px;
 }
-.notif-hero {
+
+.ntx-top {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 16px;
     align-items: end;
     margin-bottom: 16px;
 }
-.notif-kicker {
-    color: var(--nt-accent);
-    font-size: .74rem;
-    font-weight: 900;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-}
-.notif-title {
-    margin: 5px 0 0;
-    color: var(--nt-primary);
-    font-size: 1.9rem;
-    line-height: 1.1;
-}
-.notif-copy {
-    max-width: 760px;
-    margin: 8px 0 0;
-    color: var(--nt-muted);
-}
-.notif-mark-form {
-    margin: 0;
-}
-.notif-btn {
+
+.ntx-kicker {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
-    min-height: 38px;
-    padding: 0 13px;
-    border-radius: 9px;
-    border: 1px solid var(--nt-line);
-    background: var(--nt-surface);
-    color: var(--nt-primary);
-    font-size: .82rem;
-    font-weight: 850;
-    text-decoration: none;
-    cursor: pointer;
-}
-.notif-btn:hover {
-    background: color-mix(in srgb, var(--nt-accent) 8%, #fff);
-    color: var(--nt-primary);
-}
-.notif-metrics {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-    margin-bottom: 14px;
-}
-.notif-metric,
-.notif-panel {
-    background: rgba(255,255,255,.92);
-    border: 1px solid var(--nt-line);
-    border-radius: 12px;
-    box-shadow: 0 18px 48px -42px rgba(15, 23, 42, .42);
-}
-.notif-metric {
-    padding: 15px;
-}
-.notif-metric span {
-    display: block;
-    color: var(--nt-muted);
-    font-size: .72rem;
-    font-weight: 900;
-    letter-spacing: .05em;
-    text-transform: uppercase;
-}
-.notif-metric strong {
-    display: block;
-    margin-top: 5px;
-    font-size: 1.45rem;
-    color: var(--nt-primary);
-}
-.notif-panel {
-    overflow: hidden;
-}
-.notif-filter {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: end;
-    gap: 10px;
-    padding: 15px;
-    border-bottom: 1px solid var(--nt-line);
-    background: color-mix(in srgb, var(--nt-accent) 4%, #fff);
-}
-.notif-field {
-    display: grid;
-    gap: 5px;
-}
-.notif-field label {
-    color: var(--nt-muted);
-    font-size: .72rem;
-    font-weight: 900;
-    letter-spacing: .05em;
-    text-transform: uppercase;
-}
-.notif-field select {
-    min-width: 170px;
-    height: 39px;
+    min-height: 30px;
     padding: 0 10px;
-    border: 1px solid var(--nt-line);
-    border-radius: 9px;
-    background: #fff;
-    color: #172033;
-}
-.notif-list {
-    display: grid;
-}
-.notif-item {
-    display: grid;
-    grid-template-columns: 42px minmax(0, 1fr);
-    gap: 12px;
-    padding: 16px;
-    border-bottom: 1px solid #EEF0F4;
-    transition: background .16s ease, box-shadow .16s ease;
-}
-.notif-item:last-child {
-    border-bottom: 0;
-}
-.notif-item.is-clickable {
-    cursor: pointer;
-}
-.notif-item.is-clickable:hover,
-.notif-item.is-clickable:focus-visible {
-    background: color-mix(in srgb, var(--nt-accent) 6%, #fff);
-    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--nt-accent) 76%, var(--nt-primary));
-    outline: none;
-}
-.notif-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 11px;
-    display: grid;
-    place-items: center;
-    color: var(--nt-primary);
-    background: color-mix(in srgb, var(--nt-accent) 12%, #fff);
-    border: 1px solid color-mix(in srgb, var(--nt-accent) 26%, #E5E7EB);
-}
-.notif-item.is-nueva .notif-icon {
-    background: color-mix(in srgb, var(--nt-accent) 18%, #fff);
-}
-.notif-item-main {
-    min-width: 0;
-}
-.notif-topline {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-    margin-bottom: 5px;
-}
-.notif-name {
-    color: #172033;
-    font-weight: 900;
-}
-.notif-message {
-    color: #344054;
-    margin: 0;
-}
-.notif-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 8px;
-    color: var(--nt-muted);
-    font-size: .78rem;
-}
-.notif-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 8px;
+    border: 1px solid color-mix(in srgb, var(--ntx-accent) 26%, #ded6c8);
     border-radius: 999px;
-    font-size: .72rem;
-    font-weight: 900;
-}
-.notif-badge.estado-nueva { background:#DBEAFE; color:#1D4ED8; }
-.notif-badge.estado-leida { background:#F3F4F6; color:#374151; }
-.notif-badge.estado-resuelta { background:#DCFCE7; color:#166534; }
-.notif-badge.estado-descartada { background:#F3F4F6; color:#4B5563; }
-.notif-badge.sev-info { background:#F3F4F6; color:#374151; }
-.notif-badge.sev-media { background:#FEF3C7; color:#92400E; }
-.notif-badge.sev-alta { background:#FFEDD5; color:#C2410C; }
-.notif-badge.sev-critica { background:#FEE2E2; color:#991B1B; }
-.notif-empty {
-    padding: 42px 18px;
-    text-align: center;
-    color: var(--nt-muted);
-}
-.notif-empty i {
-    display: inline-grid;
-    place-items: center;
-    width: 48px;
-    height: 48px;
-    margin-bottom: 10px;
-    border-radius: 12px;
-    color: var(--nt-primary);
-    background: color-mix(in srgb, var(--nt-accent) 12%, #fff);
-}
-.notif-alert {
-    margin-bottom: 14px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1px solid var(--nt-line);
-    background: #fff;
-    color: #344054;
-}
-.notif-alert.success { border-color:#BBF7D0; background:#F0FDF4; color:#166534; }
-.notif-alert.error { border-color:#FECACA; background:#FEF2F2; color:#991B1B; }
-@media (max-width: 900px) {
-    .notif-hero,
-    .notif-item {
-        grid-template-columns: 1fr;
-    }
-    .notif-metrics {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-@media (max-width: 560px) {
-    .notif-shell {
-        width: min(100% - 18px, 1320px);
-        padding-top: 18px;
-    }
-    .notif-metrics {
-        grid-template-columns: 1fr;
-    }
-    .notif-title {
-        font-size: 1.45rem;
-    }
-    .notif-field,
-    .notif-field select,
-    .notif-btn {
-        width: 100%;
-    }
+    background: rgba(255,255,255,.72);
+    color: color-mix(in srgb, var(--ntx-primary) 58%, #667085);
+    font-size: .78rem;
+    font-weight: 640;
 }
 
-/* Propuesta nueva: bandeja operativa con panel de mando y timeline. */
-.notif-view {
-    --nt-ink: #111827;
-    --nt-ink-soft: #334155;
-    --nt-muted-strong: #526176;
-    --nt-paper: #FFFDF8;
-    --nt-warm: color-mix(in srgb, var(--nt-accent) 7%, #FFFDF8);
-    --nt-brand-readable: color-mix(in srgb, var(--nt-primary) 78%, #111827);
-    --nt-accent-readable: color-mix(in srgb, var(--nt-accent) 68%, #3B2D12);
-    background:
-        radial-gradient(circle at 10% 7%, color-mix(in srgb, var(--nt-accent) 20%, transparent), transparent 28rem),
-        radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--nt-primary) 9%, transparent), transparent 30rem),
-        linear-gradient(135deg, rgba(255,255,255,.34) 0 25%, transparent 25% 50%) 0 0 / 28px 28px,
-        linear-gradient(180deg, #FFFCF7 0%, color-mix(in srgb, var(--nt-accent) 7%, #F7F3EC) 58%, #EFE7DA 100%);
-    color: var(--nt-ink);
+.ntx-kicker i {
+    color: color-mix(in srgb, var(--ntx-accent) 76%, #795a16);
 }
 
-.notif-shell {
-    width: min(1560px, calc(100% - 32px));
-    padding: 30px 0 54px;
-}
-
-.notif-alert {
-    border-radius: 18px;
-    box-shadow: 0 18px 42px -34px rgba(17,24,39,.5);
-}
-
-.notif-command {
-    display: grid;
-    grid-template-columns: minmax(0, 1.08fr) minmax(320px, .92fr);
-    gap: 16px;
-    align-items: stretch;
-    margin-bottom: 18px;
-}
-
-.notif-hero {
-    position: relative;
-    overflow: hidden;
-    min-height: 278px;
-    display: flex;
-    align-items: flex-end;
-    border: 1px solid color-mix(in srgb, var(--nt-accent) 18%, #DFD4C3);
-    border-radius: 28px;
-    background:
-        radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--nt-accent) 28%, transparent), transparent 18rem),
-        linear-gradient(145deg, #111827, color-mix(in srgb, var(--nt-primary) 68%, #111827));
-    box-shadow: 0 28px 72px -56px rgba(17,24,39,.82);
-    padding: clamp(24px, 3vw, 38px);
-    margin: 0;
-}
-
-.notif-hero::before {
-    content: "";
-    position: absolute;
-    inset: 22px auto 22px 0;
-    width: 5px;
-    border-radius: 0 999px 999px 0;
-    background: linear-gradient(180deg, var(--nt-accent), color-mix(in srgb, var(--nt-primary) 72%, var(--nt-accent)));
-}
-
-.notif-hero-mark {
-    width: 58px;
-    height: 58px;
-    display: grid;
-    place-items: center;
-    border: 1px solid rgba(255,255,255,.16);
-    border-radius: 20px;
-    background: rgba(255,255,255,.1);
-    color: color-mix(in srgb, var(--nt-accent) 72%, #FFFFFF);
-    font-size: 1.35rem;
-    margin-bottom: 18px;
-}
-
-.notif-kicker {
-    color: color-mix(in srgb, var(--nt-accent) 72%, #FFFFFF);
-}
-
-.notif-title {
-    max-width: 780px;
-    color: #FFFFFF;
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: clamp(3rem, 6vw, 6.25rem);
-    line-height: .86;
-    font-weight: 800;
+.ntx-title {
+    margin: 11px 0 0;
+    color: color-mix(in srgb, var(--ntx-primary) 58%, #465467);
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    font-size: clamp(1.7rem, 3vw, 2.85rem);
+    line-height: 1.08;
+    font-weight: 540;
     letter-spacing: 0;
     text-wrap: balance;
 }
 
-.notif-copy {
-    max-width: 66ch;
-    color: rgba(255,255,255,.72);
-    font-size: 1rem;
+.ntx-subtitle {
+    max-width: 680px;
+    margin: 10px 0 0;
+    color: #526176;
+    font-size: .98rem;
     line-height: 1.55;
+    font-weight: 430;
+}
+
+.ntx-live-card {
+    min-width: 260px;
+    border: 1px solid var(--ntx-line);
+    border-radius: 16px;
+    background:
+        linear-gradient(135deg, rgba(255,255,255,.84), color-mix(in srgb, var(--ntx-accent) 7%, rgba(255,255,255,.9)));
+    box-shadow: 0 18px 42px -38px color-mix(in srgb, var(--ntx-primary) 34%, transparent);
+    padding: 16px;
+    color: var(--ntx-text);
+}
+
+.ntx-live-card span {
+    display: block;
+    color: var(--ntx-muted);
+    font-size: .74rem;
     font-weight: 650;
-}
-
-.notif-metrics {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    margin: 0;
-}
-
-.notif-metric {
-    position: relative;
-    overflow: hidden;
-    min-height: 132px;
-    display: grid;
-    align-content: space-between;
-    border: 1px solid color-mix(in srgb, var(--nt-accent) 18%, #DFD4C3);
-    border-radius: 22px;
-    background: rgba(255,255,255,.88);
-    box-shadow: 0 22px 58px -50px rgba(17,24,39,.65);
-    padding: 18px;
-}
-
-.notif-metric::after {
-    content: "";
-    position: absolute;
-    inset: auto 18px 0 auto;
-    width: 74px;
-    height: 4px;
-    border-radius: 999px 999px 0 0;
-    background: var(--metric-color, var(--nt-accent));
-    opacity: .9;
-}
-
-.notif-metric span {
-    color: var(--nt-muted-strong);
+    text-transform: uppercase;
     letter-spacing: .05em;
 }
 
-.notif-metric strong {
-    color: var(--nt-ink);
-    font-size: clamp(2.1rem, 4vw, 3.25rem);
-    line-height: .95;
+.ntx-live-card strong {
+    display: block;
+    margin-top: 5px;
+    font-size: 2.25rem;
+    line-height: 1;
+    color: color-mix(in srgb, var(--ntx-primary) 62%, #4b5563);
+    font-weight: 560;
     font-variant-numeric: tabular-nums;
 }
 
-.notif-workspace {
+.ntx-live-card small {
+    display: block;
+    margin-top: 8px;
+    color: color-mix(in srgb, var(--ntx-accent) 72%, #7c5b16);
+    font-weight: 620;
+}
+
+.ntx-alert {
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--ntx-line);
+    border-radius: 12px;
+    background: rgba(255,255,255,.9);
+    color: var(--ntx-ink);
+    font-weight: 520;
+}
+
+.ntx-alert.success {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.ntx-alert.error {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.ntx-stats {
     display: grid;
-    grid-template-columns: minmax(270px, 330px) minmax(0, 1fr);
-    gap: 18px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.ntx-stat {
+    --stat-color: var(--ntx-accent);
+    position: relative;
+    overflow: hidden;
+    min-height: 94px;
+    display: grid;
+    align-content: space-between;
+    border: 1px solid color-mix(in srgb, var(--stat-color) 18%, var(--ntx-line));
+    border-radius: 14px;
+    background:
+        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--stat-color) 13%, transparent), transparent 8rem),
+        linear-gradient(135deg, color-mix(in srgb, var(--stat-color) 8%, rgba(255,255,255,.88)), var(--ntx-surface));
+    box-shadow: 0 14px 34px -32px color-mix(in srgb, var(--stat-color) 42%, transparent);
+    padding: 14px;
+}
+
+.ntx-stat::after {
+    content: "";
+    position: absolute;
+    inset: auto 12px 0 12px;
+    height: 3px;
+    border-radius: 999px 999px 0 0;
+    background: var(--stat-color, var(--ntx-accent));
+}
+
+.ntx-stat.is-new {
+    --stat-color: var(--ntx-tone-amber);
+}
+
+.ntx-stat.is-priority {
+    --stat-color: var(--ntx-tone-coral);
+}
+
+.ntx-stat.is-today {
+    --stat-color: var(--ntx-tone-blue);
+}
+
+.ntx-stat.is-history {
+    --stat-color: var(--ntx-tone-sage);
+}
+
+.ntx-stat span {
+    color: var(--ntx-muted);
+    font-size: .72rem;
+    font-weight: 620;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.ntx-stat strong {
+    color: color-mix(in srgb, var(--ntx-primary) 58%, #4b5563);
+    font-size: 1.75rem;
+    line-height: 1;
+    font-weight: 560;
+    font-variant-numeric: tabular-nums;
+}
+
+.ntx-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
     align-items: start;
 }
 
-.notif-filter-panel {
-    position: sticky;
-    top: 18px;
+.ntx-side {
     display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(270px, .34fr);
+    grid-template-areas:
+        "filters filters"
+        "modules device";
     gap: 12px;
-    min-width: 0;
+    align-items: stretch;
 }
 
-.notif-filter-card,
-.notif-panel {
-    border: 1px solid color-mix(in srgb, var(--nt-accent) 18%, #DFD4C3);
-    border-radius: 24px;
-    background: rgba(255,255,255,.9);
-    box-shadow: 0 24px 64px -54px rgba(17,24,39,.72);
-}
-
-.notif-filter-card {
+.ntx-panel {
+    position: relative;
     overflow: hidden;
-}
-
-.notif-filter-heading {
-    padding: 18px;
-    border-bottom: 1px solid color-mix(in srgb, var(--nt-accent) 16%, #E7DCCB);
+    border: 1px solid color-mix(in srgb, var(--ntx-panel-accent) 15%, var(--ntx-line));
+    border-radius: 16px;
     background:
-        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--nt-accent) 16%, transparent), transparent 12rem),
-        #FFFFFF;
+        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--ntx-panel-accent) 10%, transparent), transparent 11rem),
+        linear-gradient(180deg, rgba(255,255,255,.94), var(--ntx-panel-wash));
+    box-shadow: 0 14px 34px -34px color-mix(in srgb, var(--ntx-panel-accent) 40%, transparent);
 }
 
-.notif-filter-heading h2,
-.notif-inbox-head h2 {
+.ntx-control-filter {
+    grid-area: filters;
+    --ntx-panel-accent: var(--ntx-tone-blue);
+    --ntx-panel-wash: color-mix(in srgb, var(--ntx-tone-blue) 5%, #fffdf8);
+}
+
+.ntx-module-panel {
+    grid-area: modules;
+    display: flex;
+    flex-direction: column;
+    --ntx-panel-accent: var(--ntx-tone-olive);
+    --ntx-panel-wash: color-mix(in srgb, var(--ntx-tone-olive) 5%, #fffdf8);
+}
+
+.ntx-panel-head {
+    position: relative;
+    padding: 13px 15px 10px;
+    border-bottom: 1px solid color-mix(in srgb, var(--ntx-panel-accent) 14%, var(--ntx-line));
+}
+
+.ntx-panel-head::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--ntx-panel-accent) 62%, var(--ntx-line)), color-mix(in srgb, var(--ntx-panel-accent) 10%, transparent));
+}
+
+.ntx-panel-head h2 {
     margin: 0;
-    color: var(--nt-ink);
-    font-size: 1.05rem;
-    font-weight: 950;
+    color: color-mix(in srgb, var(--ntx-panel-accent) 38%, var(--ntx-ink));
+    font-size: .96rem;
     line-height: 1.2;
+    font-weight: 660;
 }
 
-.notif-filter-heading p,
-.notif-inbox-head p {
-    margin: 5px 0 0;
-    color: var(--nt-muted);
-    font-size: .82rem;
-    line-height: 1.45;
-    font-weight: 700;
+.ntx-panel-head p {
+    margin: 4px 0 0;
+    color: var(--ntx-muted);
+    font-size: .78rem;
+    line-height: 1.42;
+    font-weight: 430;
 }
 
-.notif-filter {
+.ntx-filter {
     display: grid;
-    gap: 13px;
-    padding: 16px;
-    border-bottom: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(220px, .72fr);
+    gap: 10px;
+    align-items: end;
+    padding: 13px 15px 15px;
+}
+
+.ntx-field {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
     background: transparent;
 }
 
-.notif-field {
-    gap: 7px;
+.ntx-field label {
+    color: #435164;
+    font-size: .67rem;
+    font-weight: 720;
+    text-transform: uppercase;
+    letter-spacing: .05em;
 }
 
-.notif-field label {
-    color: var(--nt-ink-soft);
-    letter-spacing: .04em;
-}
-
-.notif-field select {
+.ntx-field select {
     width: 100%;
-    min-width: 0;
-    height: 46px;
-    border-color: color-mix(in srgb, var(--nt-accent) 18%, #E1D7C8);
-    border-radius: 14px;
-    background: #FFFFFF;
-    color: var(--nt-ink);
-    font-weight: 750;
+    height: 40px;
+    border: 1px solid color-mix(in srgb, var(--ntx-panel-accent) 18%, #ddd5c8);
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--ntx-panel-accent) 3%, #fffdf8);
+    color: var(--ntx-ink);
+    padding: 0 10px;
+    font-size: .86rem;
+    font-weight: 620;
     outline: none;
 }
 
-.notif-field select:focus {
-    border-color: color-mix(in srgb, var(--nt-accent) 62%, var(--nt-line));
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--nt-accent) 16%, transparent);
+.ntx-field select:focus {
+    border-color: color-mix(in srgb, var(--ntx-panel-accent) 46%, var(--ntx-line));
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--ntx-panel-accent) 13%, transparent);
 }
 
-.notif-filter-actions {
+.ntx-actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, .85fr);
     gap: 8px;
 }
 
-.notif-btn {
-    min-height: 44px;
-    border-radius: 14px;
-    color: var(--nt-ink);
-    transition: transform .18s ease, border-color .18s ease, background .18s ease;
-}
-
-.notif-btn:hover {
-    transform: translateY(-1px);
-}
-
-.notif-btn.is-primary {
-    border-color: #111827;
-    background: #111827;
-    color: #FFFFFF;
-}
-
-.notif-legend {
-    display: grid;
-    gap: 8px;
-    padding: 14px;
-    border: 1px solid color-mix(in srgb, var(--nt-accent) 18%, #DFD4C3);
-    border-radius: 20px;
-    background: rgba(255,253,248,.82);
-}
-
-.notif-legend span {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    color: var(--nt-ink-3, #475569);
-    font-size: .78rem;
-    font-weight: 750;
-}
-
-.notif-legend i {
-    color: var(--nt-accent-readable);
-}
-
-.notif-push-card {
-    padding: 16px;
-}
-
-.notif-push-card h2 {
-    margin: 0;
-    color: var(--nt-ink);
-    font-size: 1rem;
-    font-weight: 950;
-}
-
-.notif-push-card p {
-    margin: 7px 0 0;
-    color: var(--nt-muted);
-    font-size: .82rem;
-    line-height: 1.45;
-    font-weight: 700;
-}
-
-.notif-push-actions {
-    display: grid;
-    gap: 8px;
-    margin-top: 13px;
-}
-
-.notif-push-card[data-push-state="enabled"] .notif-btn.is-primary {
-    border-color: color-mix(in srgb, #DC2626 72%, #111827);
-    background: color-mix(in srgb, #DC2626 88%, #111827);
-}
-
-.notif-inbox-panel {
-    overflow: hidden;
-}
-
-.notif-inbox-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 14px;
-    padding: 18px 20px;
-    border-bottom: 1px solid color-mix(in srgb, var(--nt-accent) 16%, #E7DCCB);
-    background:
-        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--nt-accent) 14%, transparent), transparent 14rem),
-        #FFFFFF;
-}
-
-.notif-inbox-count {
+.ntx-btn {
+    min-height: 38px;
     display: inline-flex;
     align-items: center;
-    min-height: 32px;
-    border: 1px solid color-mix(in srgb, var(--nt-accent) 24%, #E5DACA);
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--nt-accent) 8%, #FFFFFF);
-    color: var(--nt-accent-readable);
-    padding: 0 10px;
-    font-size: .76rem;
-    font-weight: 950;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid var(--ntx-line);
+    border-radius: 11px;
+    background: #fffdf8;
+    color: var(--ntx-ink);
+    padding: 0 11px;
+    font-size: .8rem;
+    font-weight: 680;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .18s ease, background .18s ease, border-color .18s ease, color .18s ease;
+}
+
+.ntx-btn:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--ntx-panel-accent) 32%, var(--ntx-line));
+    background: color-mix(in srgb, var(--ntx-panel-accent) 8%, #fffdf8);
+}
+
+.ntx-btn:active {
+    transform: translateY(0);
+}
+
+.ntx-btn:focus-visible,
+.ntx-row:focus-visible,
+.ntx-tab:focus-visible {
+    outline: 3px solid var(--ntx-focus);
+    outline-offset: 2px;
+}
+
+.ntx-btn.is-primary {
+    border-color: color-mix(in srgb, var(--ntx-action) 80%, transparent);
+    background: var(--ntx-action);
+    color: var(--ntx-on-action);
+}
+
+.ntx-btn.is-primary:hover {
+    background: var(--ntx-action-hover);
+}
+
+.ntx-module-strip {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-height: 104px;
+    padding: 20px 22px 22px;
+}
+
+.ntx-module-chip {
+    --module-accent: var(--ntx-tone-olive);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex: 0 1 190px;
+    justify-content: space-between;
+    min-height: 38px;
+    border: 1px solid color-mix(in srgb, var(--module-accent) 18%, #ddd5c8);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--module-accent) 4%, #fffdf8);
+    color: #435164;
+    padding: 0 10px 0 6px;
+    font-size: .78rem;
+    font-weight: 660;
+    text-decoration: none;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease, color .18s ease;
+}
+
+.ntx-module-chip:nth-child(6n+1) { --module-accent: var(--ntx-tone-olive); }
+.ntx-module-chip:nth-child(6n+2) { --module-accent: var(--ntx-tone-blue); }
+.ntx-module-chip:nth-child(6n+3) { --module-accent: var(--ntx-tone-indigo); }
+.ntx-module-chip:nth-child(6n+4) { --module-accent: var(--ntx-tone-sage); }
+.ntx-module-chip:nth-child(6n+5) { --module-accent: var(--ntx-tone-amber); }
+.ntx-module-chip:nth-child(6n+6) { --module-accent: var(--ntx-tone-coral); }
+
+.ntx-module-chip i {
+    width: 27px;
+    height: 27px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--module-accent) 12%, #fff);
+    color: color-mix(in srgb, var(--module-accent) 72%, #667085);
+}
+
+.ntx-module-chip strong {
+    margin-left: auto;
+    color: var(--ntx-muted);
+    font-size: .7rem;
+    font-weight: 720;
+    font-variant-numeric: tabular-nums;
+}
+
+.ntx-module-chip:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--module-accent) 36%, #ddd5c8);
+    background: color-mix(in srgb, var(--module-accent) 8%, #fffdf8);
+}
+
+.ntx-module-chip.is-active {
+    border-color: color-mix(in srgb, var(--ntx-action) 84%, transparent);
+    background: var(--ntx-action);
+    color: var(--ntx-on-action);
+}
+
+.ntx-module-chip.is-active i {
+    background: color-mix(in srgb, var(--ntx-on-action) 18%, transparent);
+    color: var(--ntx-on-action);
+}
+
+.ntx-module-chip.is-active strong {
+    color: color-mix(in srgb, var(--ntx-on-action) 84%, transparent);
+}
+
+.ntx-push {
+    grid-area: device;
+    --ntx-panel-accent: var(--ntx-tone-coral);
+    --ntx-panel-wash: color-mix(in srgb, var(--ntx-tone-coral) 5%, #fffdf8);
+    display: grid;
+    align-content: space-between;
+    overflow: hidden;
+    padding: 0;
+}
+
+.ntx-push-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
+    padding: 13px 15px 11px;
+    border-bottom: 1px solid color-mix(in srgb, var(--ntx-line) 84%, transparent);
+}
+
+.ntx-push-icon {
+    width: 34px;
+    height: 34px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--ntx-panel-accent) 12%, #fffdf8);
+    color: color-mix(in srgb, var(--ntx-panel-accent) 72%, #667085);
+}
+
+.ntx-push h2 {
+    margin: 0;
+    color: var(--ntx-ink);
+    font-size: .96rem;
+    font-weight: 660;
+}
+
+.ntx-push p {
+    margin: 4px 0 0;
+    color: var(--ntx-muted);
+    font-size: .78rem;
+    line-height: 1.45;
+    font-weight: 430;
+}
+
+.ntx-push-actions {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 12px 15px 15px;
+}
+
+.ntx-push[data-push-state="enabled"] .ntx-btn.is-primary {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.ntx-main {
+    min-width: 0;
+    overflow: hidden;
+    --ntx-panel-accent: var(--ntx-tone-sage);
+    --ntx-panel-wash: color-mix(in srgb, var(--ntx-tone-sage) 4%, #fffdf8);
+}
+
+.ntx-inbox-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: start;
+    padding: 16px;
+    border-bottom: 1px solid var(--ntx-line);
+}
+
+.ntx-inbox-head h2 {
+    margin: 0;
+    color: var(--ntx-ink);
+    font-size: 1.18rem;
+    line-height: 1.2;
+    font-weight: 620;
+}
+
+.ntx-inbox-head p {
+    margin: 5px 0 0;
+    color: var(--ntx-muted);
+    font-size: .84rem;
+    line-height: 1.45;
+    font-weight: 420;
+}
+
+.ntx-count {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    border: 1px solid color-mix(in srgb, var(--ntx-panel-accent) 20%, #ddd5c8);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ntx-panel-accent) 8%, #fff);
+    color: color-mix(in srgb, var(--ntx-panel-accent) 62%, #667085);
+    padding: 0 11px;
+    font-size: .78rem;
+    font-weight: 620;
     white-space: nowrap;
 }
 
-.notif-list {
-    gap: 12px;
-    padding: 16px;
-    background: linear-gradient(180deg, rgba(255,253,248,.52), rgba(255,255,255,.74));
+.ntx-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    align-content: center;
+    gap: 8px;
+    min-height: 64px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--ntx-line);
+    box-sizing: border-box;
 }
 
-.notif-item {
+.ntx-tab {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid color-mix(in srgb, var(--ntx-primary) 10%, #ddd5c8);
+    border-radius: 999px;
+    background: #fff;
+    color: #526176;
+    padding: 0 11px;
+    font-size: .78rem;
+    font-weight: 560;
+    text-decoration: none;
+    transition: background .18s ease, border-color .18s ease, color .18s ease;
+}
+
+.ntx-tab:hover,
+.ntx-tab.is-active {
+    border-color: color-mix(in srgb, var(--ntx-panel-accent) 42%, #ddd5c8);
+    background: color-mix(in srgb, var(--ntx-panel-accent) 8%, #fff);
+    color: var(--ntx-ink);
+}
+
+.ntx-tab b {
+    font-variant-numeric: tabular-nums;
+}
+
+.ntx-feed {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    background:
+        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--ntx-panel-accent) 8%, transparent), transparent 16rem),
+        linear-gradient(180deg, rgba(255,255,255,.50), color-mix(in srgb, var(--ntx-panel-accent) 3%, rgba(255,255,255,.24)));
+}
+
+.ntx-row {
+    --row-color: var(--ntx-tone-slate);
     position: relative;
-    grid-template-columns: 54px minmax(0, 1fr) auto;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    gap: 13px;
     align-items: start;
-    gap: 14px;
-    border: 1px solid color-mix(in srgb, var(--nt-accent) 14%, #E7DCCB);
-    border-radius: 20px;
-    background: #FFFFFF;
-    padding: 16px;
-    box-shadow: 0 14px 36px -32px rgba(17,24,39,.58);
+    min-height: 94px;
+    border: 1px solid color-mix(in srgb, var(--row-color) 14%, #e8e0d3);
+    border-radius: 14px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--row-color) 5%, rgba(255,255,255,.88)), rgba(255,255,255,.82));
+    padding: 14px;
+    box-shadow: 0 10px 24px -24px color-mix(in srgb, var(--row-color) 35%, transparent);
+    transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
 }
 
-.notif-item::before {
+.ntx-row::before {
     content: "";
     position: absolute;
-    inset: 14px auto 14px 0;
-    width: 4px;
+    inset: 12px auto 12px 0;
+    width: 3px;
     border-radius: 0 999px 999px 0;
-    background: var(--row-color, #94A3B8);
+    background: var(--row-color, #94a3b8);
 }
 
-.notif-item:last-child {
-    border-bottom: 1px solid color-mix(in srgb, var(--nt-accent) 14%, #E7DCCB);
+.ntx-row.is-clickable {
+    cursor: pointer;
 }
 
-.notif-item.is-nueva,
-.notif-item.is-leida {
-    --row-color: color-mix(in srgb, var(--nt-accent) 70%, #F59E0B);
+.ntx-row.is-clickable:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--row-color) 28%, #dfd5c8);
+    background: color-mix(in srgb, var(--row-color) 6%, #fff);
+    box-shadow: 0 14px 28px -26px color-mix(in srgb, var(--row-color) 38%, transparent);
 }
 
-.notif-icon {
-    width: 54px;
-    height: 54px;
-    border-radius: 18px;
-    color: var(--nt-accent-readable);
-    background: color-mix(in srgb, var(--nt-accent) 11%, #FFFFFF);
+.ntx-row.sev-info { --row-color: var(--ntx-tone-blue); }
+.ntx-row.sev-media { --row-color: var(--ntx-tone-amber); }
+.ntx-row.sev-alta { --row-color: var(--ntx-tone-coral); }
+.ntx-row.sev-critica { --row-color: #c2410c; }
+
+.ntx-row.state-resuelta,
+.ntx-row.state-descartada {
+    opacity: .82;
 }
 
-.notif-name {
-    color: var(--nt-ink);
-    font-size: 1rem;
+.ntx-icon {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--row-color) 20%, #ddd5c8);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--row-color) 12%, #fff);
+    color: color-mix(in srgb, var(--row-color) 72%, #667085);
 }
 
-.notif-message {
-    color: var(--nt-ink-soft);
-    line-height: 1.5;
+.ntx-row-copy {
+    min-width: 0;
+}
+
+.ntx-row-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+}
+
+.ntx-row-title {
+    color: color-mix(in srgb, var(--ntx-primary) 52%, #344054);
+    font-size: .98rem;
+    line-height: 1.28;
+    font-weight: 620;
+}
+
+.ntx-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    border-radius: 999px;
+    padding: 0 8px;
+    font-size: .7rem;
     font-weight: 650;
 }
 
-.notif-meta {
-    color: var(--nt-muted);
+.ntx-badge.state-nueva {
+    background: color-mix(in srgb, var(--ntx-tone-amber) 15%, #fff);
+    color: color-mix(in srgb, var(--ntx-tone-amber) 68%, #667085);
 }
 
-.notif-badge {
-    border-radius: 10px;
+.ntx-badge.state-leida {
+    background: #eef2f7;
+    color: #475569;
 }
 
-.notif-open-indicator {
+.ntx-badge.state-resuelta {
+    background: color-mix(in srgb, var(--ntx-tone-sage) 16%, #fff);
+    color: color-mix(in srgb, var(--ntx-tone-sage) 76%, #166534);
+}
+
+.ntx-badge.state-descartada {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.ntx-badge.sev-info {
+    background: color-mix(in srgb, var(--ntx-tone-blue) 12%, #fff);
+    color: color-mix(in srgb, var(--ntx-tone-blue) 70%, #475569);
+}
+
+.ntx-badge.sev-media {
+    background: color-mix(in srgb, var(--ntx-tone-amber) 18%, #fff);
+    color: color-mix(in srgb, var(--ntx-tone-amber) 78%, #92400e);
+}
+
+.ntx-badge.sev-alta {
+    background: color-mix(in srgb, var(--ntx-tone-coral) 17%, #fff);
+    color: color-mix(in srgb, var(--ntx-tone-coral) 80%, #9a3412);
+}
+
+.ntx-badge.sev-critica {
+    background: color-mix(in srgb, #dc2626 14%, #fff);
+    color: #991b1b;
+}
+
+.ntx-message {
+    margin: 7px 0 0;
+    color: #526176;
+    font-size: .9rem;
+    line-height: 1.48;
+    font-weight: 420;
+}
+
+.ntx-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+    color: var(--ntx-muted);
+    font-size: .78rem;
+    font-weight: 430;
+}
+
+.ntx-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.ntx-arrow {
     align-self: center;
     width: 34px;
     height: 34px;
     display: grid;
     place-items: center;
-    border: 1px solid color-mix(in srgb, var(--nt-accent) 18%, #E7DCCB);
+    border: 1px solid color-mix(in srgb, var(--row-color) 18%, #ddd5c8);
     border-radius: 12px;
-    color: var(--nt-muted);
-    background: color-mix(in srgb, var(--nt-accent) 4%, #FFFFFF);
+    color: color-mix(in srgb, var(--row-color) 65%, #667085);
+    background: color-mix(in srgb, var(--row-color) 5%, #fff);
 }
 
-.notif-empty {
-    border: 1px dashed color-mix(in srgb, var(--nt-accent) 24%, #D9CDBB);
-    border-radius: 20px;
-    background: rgba(255,255,255,.72);
+.ntx-empty {
+    min-height: 280px;
+    display: grid;
+    place-items: center;
+    border: 1px dashed color-mix(in srgb, var(--ntx-panel-accent) 28%, #d9cec0);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--ntx-panel-accent) 5%, rgba(255,255,255,.72));
+    padding: 28px;
+    text-align: center;
 }
 
-.notif-empty i {
-    color: var(--nt-accent-readable);
+.ntx-empty i {
+    width: 52px;
+    height: 52px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--ntx-panel-accent) 22%, #ddd5c8);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--ntx-panel-accent) 10%, #fff);
+    color: color-mix(in srgb, var(--ntx-panel-accent) 70%, #667085);
+    font-size: 1.2rem;
 }
 
-@media (max-width: 1180px) {
-    .notif-command,
-    .notif-workspace {
+.ntx-empty h3 {
+    margin: 14px 0 5px;
+    color: var(--ntx-ink);
+    font-size: 1.05rem;
+    font-weight: 620;
+}
+
+.ntx-empty p {
+    max-width: 420px;
+    margin: 0 auto;
+    color: var(--ntx-muted);
+    line-height: 1.5;
+    font-weight: 420;
+}
+
+@media (max-width: 1100px) {
+    .ntx-top,
+    .ntx-layout {
         grid-template-columns: 1fr;
     }
 
-    .notif-filter-panel {
-        position: static;
+    .ntx-live-card {
+        min-width: 0;
     }
 
-    .notif-filter {
+    .ntx-side {
+        position: static;
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "filters"
+            "modules"
+            "device";
+    }
+
+    .ntx-filter {
         grid-template-columns: repeat(3, minmax(0, 1fr));
         align-items: end;
     }
 
-    .notif-filter-actions {
+    .ntx-actions {
         grid-column: 1 / -1;
     }
 }
 
 @media (max-width: 760px) {
-    .notif-shell {
-        width: min(100% - 20px, 1560px);
+    .ntx-shell {
+        width: min(100% - 20px, 1440px);
+        padding-top: 18px;
     }
 
-    .notif-hero {
-        min-height: 240px;
-        border-radius: 22px;
+    .ntx-title {
+        font-size: clamp(1.75rem, 9vw, 2.6rem);
     }
 
-    .notif-title {
-        font-size: clamp(2.35rem, 13vw, 3.5rem);
-    }
-
-    .notif-metrics,
-    .notif-filter {
+    .ntx-stats,
+    .ntx-filter {
         grid-template-columns: 1fr;
     }
 
-    .notif-item {
-        grid-template-columns: 48px minmax(0, 1fr);
+    .ntx-actions {
+        grid-template-columns: 1fr;
     }
 
-    .notif-open-indicator {
+    .ntx-module-strip {
+        justify-content: stretch;
+        min-height: auto;
+    }
+
+    .ntx-module-chip {
+        flex-basis: 100%;
+    }
+
+    .ntx-inbox-head {
+        grid-template-columns: 1fr;
+    }
+
+    .ntx-row {
+        grid-template-columns: 40px minmax(0, 1fr);
+        padding: 13px;
+    }
+
+    .ntx-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .ntx-arrow {
         display: none;
     }
 }
 </style>
 
-<div class="notif-view">
-    <div class="notif-shell">
+<main class="ntx-page">
+    <div class="ntx-shell">
         <?php if ($mensajeFlash): ?>
-            <div class="notif-alert <?= notif_safe($mensajeFlash['tipo'] ?? 'info', 'info') ?>">
-                <?= notif_safe($mensajeFlash['texto'] ?? '') ?>
+            <div class="ntx-alert <?= ntx_class($mensajeFlash['tipo'] ?? 'info', 'info') ?>">
+                <?= ntx_safe($mensajeFlash['texto'] ?? '') ?>
             </div>
         <?php endif; ?>
 
-        <section class="notif-command">
-            <div class="notif-hero">
-                <div>
-                    <span class="notif-hero-mark">
-                        <i class="fas fa-bell"></i>
-                    </span>
-                    <div class="notif-kicker">Centro operativo</div>
-                    <h1 class="notif-title">Notificaciones</h1>
-                    <p class="notif-copy">Pendientes operativos del hotel en un solo lugar. Los avisos informativos se archivan al abrirlos; lo operativo sale de pendientes cuando se atiende en su modulo.</p>
-                </div>
+        <header class="ntx-top">
+            <div>
+                <span class="ntx-kicker">
+                    <i class="fas fa-bell"></i>
+                    <?= ntx_safe($hotelNombre) ?>
+                </span>
+                <h1 class="ntx-title">Avisos del hotel</h1>
+                <p class="ntx-subtitle">Pendientes, avisos y alertas del dia con el color del hotel apenas como acento.</p>
             </div>
 
-            <section class="notif-metrics" aria-label="Resumen de notificaciones">
-                <div class="notif-metric" style="--metric-color: color-mix(in srgb, var(--nt-accent) 70%, #F59E0B);">
-                    <span>Pendientes</span>
-                    <strong><?= $notificacionesPendientes ?></strong>
-                </div>
-                <div class="notif-metric" style="--metric-color: #DC2626;">
-                    <span>Prioritarias</span>
-                    <strong><?= (int)($resumen['prioritarias'] ?? 0) ?></strong>
-                </div>
-                <div class="notif-metric" style="--metric-color: #2563EB;">
-                    <span>Hoy</span>
-                    <strong><?= (int)($resumen['hoy'] ?? 0) ?></strong>
-                </div>
-                <div class="notif-metric" style="--metric-color: #16A34A;">
-                    <span>Historial</span>
-                    <strong><?= $notificacionesHistorial ?></strong>
-                </div>
-            </section>
+            <aside class="ntx-live-card" aria-label="Resumen principal">
+                    <span>Por revisar</span>
+                <strong><?= $pendientes ?></strong>
+                <small><?= $prioritarias ?> prioritarias</small>
+            </aside>
+        </header>
+
+        <section class="ntx-stats" aria-label="Resumen de notificaciones">
+            <div class="ntx-stat is-new">
+                <span>Nuevas</span>
+                <strong><?= $nuevas ?></strong>
+            </div>
+            <div class="ntx-stat is-priority">
+                <span>Prioritarias</span>
+                <strong><?= $prioritarias ?></strong>
+            </div>
+            <div class="ntx-stat is-today">
+                <span>Hoy</span>
+                <strong><?= $hoy ?></strong>
+            </div>
+            <div class="ntx-stat is-history">
+                <span>Historial</span>
+                <strong><?= $historial ?></strong>
+            </div>
         </section>
 
-        <div class="notif-workspace">
-            <aside class="notif-filter-panel" aria-label="Filtros de notificaciones">
-                <section class="notif-filter-card">
-                    <div class="notif-filter-heading">
-                        <h2>Control de bandeja</h2>
-                        <p>Filtra por estado, modulo y prioridad sin salir del centro operativo.</p>
+        <div class="ntx-layout">
+            <aside class="ntx-side" aria-label="Controles de notificaciones">
+                <section class="ntx-panel ntx-control-filter">
+                    <div class="ntx-panel-head">
+                        <h2>Filtros de la lista</h2>
+                        <p>Elige estado, modulo y severidad para depurar la bandeja.</p>
                     </div>
-                    <form method="GET" action="<?= url('notificaciones') ?>" class="notif-filter">
-                        <div class="notif-field">
+
+                    <form method="GET" action="<?= url('notificaciones') ?>" class="ntx-filter" data-auto-filter-form>
+                        <div class="ntx-field">
                             <label for="estado">Estado</label>
                             <select id="estado" name="estado">
-                                <?php foreach (['activas', 'resuelta', 'descartada'] as $estado): ?>
-                                    <option value="<?= notif_safe($estado, '') ?>" <?= $estadoFiltro === $estado ? 'selected' : '' ?>>
-                                        <?= notif_safe(notif_label($estado)) ?>
+                                <?php foreach ($estadoOpciones as $estado => $label): ?>
+                                    <option value="<?= ntx_safe($estado, '') ?>" <?= $estadoFiltro === $estado ? 'selected' : '' ?>>
+                                        <?= ntx_safe($label) ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
 
-                        <div class="notif-field">
+                        <div class="ntx-field">
                             <label for="modulo">Modulo</label>
                             <select id="modulo" name="modulo">
                                 <option value="">Todos</option>
                                 <?php foreach ($modulos as $modulo): ?>
                                     <?php $moduloClave = (string)($modulo['modulo'] ?? ''); ?>
-                                    <option value="<?= notif_safe($moduloClave, '') ?>" <?= $moduloFiltro === $moduloClave ? 'selected' : '' ?>>
-                                        <?= notif_safe(notif_label($moduloClave)) ?> (<?= (int)($modulo['total'] ?? 0) ?>)
+                                    <option value="<?= ntx_safe($moduloClave, '') ?>" <?= $moduloFiltro === $moduloClave ? 'selected' : '' ?>>
+                                        <?= ntx_safe(ntx_label($moduloClave)) ?> (<?= (int)($modulo['total'] ?? 0) ?>)
                                     </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
 
-                        <div class="notif-field">
+                        <div class="ntx-field">
                             <label for="severidad">Severidad</label>
                             <select id="severidad" name="severidad">
-                                <option value="">Todas</option>
-                                <?php foreach (['info', 'media', 'alta', 'critica'] as $severidad): ?>
-                                    <option value="<?= notif_safe($severidad, '') ?>" <?= $severidadFiltro === $severidad ? 'selected' : '' ?>>
-                                        <?= notif_safe(notif_label($severidad)) ?>
+                                <?php foreach ($severidadOpciones as $severidad => $label): ?>
+                                    <option value="<?= ntx_safe($severidad, '') ?>" <?= $severidadFiltro === (string)$severidad ? 'selected' : '' ?>>
+                                        <?= ntx_safe($label) ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
 
-                        <div class="notif-filter-actions">
-                            <button type="submit" class="notif-btn is-primary">
+                        <div class="ntx-actions">
+                            <button type="submit" class="ntx-btn is-primary">
                                 <i class="fas fa-filter"></i>
                                 <span>Filtrar</span>
                             </button>
-                            <a href="<?= url('notificaciones') ?>" class="notif-btn">
+                            <a href="<?= url('notificaciones') ?>" class="ntx-btn">
                                 <i class="fas fa-rotate-left"></i>
                                 <span>Limpiar</span>
                             </a>
@@ -877,26 +1107,47 @@ $notificacionesHistorial = (int)($resumen['historial'] ?? (($resumen['resueltas'
                     </form>
                 </section>
 
-                <div class="notif-legend">
-                    <span><i class="fas fa-circle"></i> Pendiente: requiere seguimiento operativo.</span>
-                    <span><i class="fas fa-bolt"></i> Prioridad alta o critica: atender primero.</span>
-                    <span><i class="fas fa-arrow-up-right-from-square"></i> Los reportes vistos se limpian de pendientes automaticamente.</span>
-                </div>
+                <?php if (!empty($modulos)): ?>
+                    <section class="ntx-panel ntx-module-panel">
+                        <div class="ntx-panel-head">
+                            <h2>Origen</h2>
+                            <p>Accesos directos por area operativa.</p>
+                        </div>
+                        <div class="ntx-module-strip">
+                            <?php foreach ($modulos as $modulo): ?>
+                                <?php $moduloClave = (string)($modulo['modulo'] ?? ''); ?>
+                                <a class="ntx-module-chip <?= $moduloFiltro === $moduloClave ? 'is-active' : '' ?>"
+                                   href="<?= ntx_filter_url(['modulo' => $moduloClave]) ?>">
+                                    <i class="fas <?= ntx_safe(ntx_icon($moduloClave), 'fa-bell') ?>"></i>
+                                    <span><?= ntx_safe(ntx_label($moduloClave)) ?></span>
+                                    <strong><?= (int)($modulo['total'] ?? 0) ?></strong>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    </section>
+                <?php endif; ?>
 
-                <section class="notif-filter-card notif-push-card"
+                <section class="ntx-panel ntx-push"
                          data-pwa-push-panel
                          data-public-key-url="<?= url('api/pwa-push/public-key') ?>"
                          data-subscribe-url="<?= url('api/pwa-push/subscribe') ?>"
                          data-unsubscribe-url="<?= url('api/pwa-push/unsubscribe') ?>"
                          data-test-url="<?= url('api/pwa-push/test') ?>">
-                    <h2>Avisos en este dispositivo</h2>
-                    <p data-pwa-push-status>Revisando compatibilidad del navegador...</p>
-                    <div class="notif-push-actions">
-                        <button type="button" class="notif-btn is-primary" data-pwa-push-toggle>
+                    <div class="ntx-push-head">
+                        <span class="ntx-push-icon" aria-hidden="true">
+                            <i class="fas fa-mobile-screen-button"></i>
+                        </span>
+                        <div>
+                            <h2>Dispositivo</h2>
+                            <p data-pwa-push-status>Revisando compatibilidad del navegador...</p>
+                        </div>
+                    </div>
+                    <div class="ntx-push-actions">
+                        <button type="button" class="ntx-btn is-primary" data-pwa-push-toggle>
                             <i class="fas fa-bell"></i>
                             <span data-pwa-push-label>Activar en este dispositivo</span>
                         </button>
-                        <button type="button" class="notif-btn" data-pwa-push-test hidden>
+                        <button type="button" class="ntx-btn" data-pwa-push-test hidden>
                             <i class="fas fa-paper-plane"></i>
                             <span>Enviar prueba</span>
                         </button>
@@ -904,27 +1155,41 @@ $notificacionesHistorial = (int)($resumen['historial'] ?? (($resumen['resueltas'
                 </section>
             </aside>
 
-            <section class="notif-panel notif-inbox-panel">
-                <div class="notif-inbox-head">
+            <section class="ntx-panel ntx-main" aria-label="Bandeja de notificaciones">
+                <div class="ntx-inbox-head">
                     <div>
-                        <h2>Bandeja de seguimiento</h2>
-                        <p>Notificaciones ordenadas para revisar rapido lo pendiente del hotel.</p>
+                        <h2>Actividad</h2>
+                        <p><?= ntx_safe(ntx_label($estadoFiltro)) ?><?= $moduloFiltro !== '' ? ' de ' . ntx_safe(ntx_label($moduloFiltro)) : '' ?></p>
                     </div>
-                    <span class="notif-inbox-count">
-                        <?= count($notificaciones) ?> registros
-                    </span>
+                    <span class="ntx-count"><?= $totalVista ?> registros</span>
                 </div>
 
-                <div class="notif-list">
+                <nav class="ntx-tabs" aria-label="Cambiar estado">
+                    <?php foreach ($estadoTabs as $estado => $tab): ?>
+                        <a class="ntx-tab <?= $estadoFiltro === $estado ? 'is-active' : '' ?>"
+                           href="<?= ntx_filter_url(['estado' => $estado]) ?>">
+                            <span><?= ntx_safe($tab['label']) ?></span>
+                            <b><?= (int)$tab['count'] ?></b>
+                        </a>
+                    <?php endforeach; ?>
+                </nav>
+
+                <div class="ntx-feed">
                     <?php if (!$tablaDisponible): ?>
-                        <div class="notif-empty">
-                            <i class="fas fa-bell-slash"></i>
-                            <p>La tabla de notificaciones todavia no esta instalada.</p>
+                        <div class="ntx-empty">
+                            <div>
+                                <i class="fas fa-bell-slash"></i>
+                                <h3>Notificaciones no disponibles</h3>
+                                <p>La tabla de notificaciones todavia no esta instalada para este hotel.</p>
+                            </div>
                         </div>
                     <?php elseif (empty($notificaciones)): ?>
-                        <div class="notif-empty">
-                            <i class="fas fa-circle-check"></i>
-                            <p>No hay notificaciones para los filtros seleccionados.</p>
+                        <div class="ntx-empty">
+                            <div>
+                                <i class="fas fa-circle-check"></i>
+                                <h3>Sin registros</h3>
+                                <p>No hay notificaciones para los filtros seleccionados.</p>
+                            </div>
                         </div>
                     <?php else: ?>
                         <?php foreach ($notificaciones as $notificacion): ?>
@@ -933,50 +1198,43 @@ $notificacionesHistorial = (int)($resumen['historial'] ?? (($resumen['resueltas'
                                 $estado = (string)($notificacion['estado'] ?? 'nueva');
                                 $severidad = (string)($notificacion['severidad'] ?? 'info');
                                 $modulo = (string)($notificacion['modulo'] ?? 'sistema');
-                                $esAutomatica = strpos((string)($notificacion['tipo'] ?? ''), 'regla_') === 0;
+                                $tipo = (string)($notificacion['tipo'] ?? '');
+                                $esAutomatica = strpos($tipo, 'regla_') === 0;
                                 $urlDestino = trim((string)($notificacion['url'] ?? ''));
                                 $urlDestinoFinal = ($urlDestino !== '' && $id > 0) ? url('notificaciones/' . $id . '/abrir') : '';
                                 $tituloNotificacion = (string)($notificacion['titulo'] ?? 'Notificacion');
+                                $estadoClass = ntx_class($estado, 'nueva');
+                                $severidadClass = ntx_class($severidad, 'info');
                             ?>
-                            <article class="notif-item is-<?= notif_safe($estado, 'nueva') ?><?= $urlDestinoFinal !== '' ? ' is-clickable' : '' ?>"
+                            <article class="ntx-row state-<?= $estadoClass ?> sev-<?= $severidadClass ?><?= $urlDestinoFinal !== '' ? ' is-clickable' : '' ?>"
                                      <?php if ($urlDestinoFinal !== ''): ?>
                                          data-notif-url="<?= htmlspecialchars($urlDestinoFinal, ENT_QUOTES, 'UTF-8') ?>"
                                          role="link"
                                          tabindex="0"
-                                         aria-label="Ver <?= notif_safe($tituloNotificacion) ?>"
+                                         aria-label="Ver <?= ntx_safe($tituloNotificacion) ?>"
                                      <?php endif; ?>>
-                                <div class="notif-icon">
-                                    <?php if ($modulo === 'caja'): ?>
-                                        <i class="fas fa-wallet"></i>
-                                    <?php elseif ($modulo === 'habitaciones'): ?>
-                                        <i class="fas fa-bed"></i>
-                                    <?php elseif ($modulo === 'facturacion'): ?>
-                                        <i class="fas fa-file-invoice"></i>
-                                    <?php elseif ($modulo === 'reportes'): ?>
-                                        <i class="fas fa-chart-line"></i>
-                                    <?php else: ?>
-                                        <i class="fas fa-bell"></i>
-                                    <?php endif; ?>
+                                <div class="ntx-icon" aria-hidden="true">
+                                    <i class="fas <?= ntx_safe(ntx_icon($modulo), 'fa-bell') ?>"></i>
                                 </div>
 
-                                <div class="notif-item-main">
-                                    <div class="notif-topline">
-                                        <span class="notif-name"><?= notif_safe($notificacion['titulo'] ?? '') ?></span>
-                                        <span class="notif-badge estado-<?= notif_safe($estado, 'nueva') ?>"><?= notif_safe(notif_label($estado)) ?></span>
-                                        <span class="notif-badge sev-<?= notif_safe($severidad, 'info') ?>"><?= notif_safe(notif_label($severidad)) ?></span>
+                                <div class="ntx-row-copy">
+                                    <div class="ntx-row-top">
+                                        <span class="ntx-row-title"><?= ntx_safe($notificacion['titulo'] ?? '') ?></span>
+                                        <span class="ntx-badge state-<?= $estadoClass ?>"><?= ntx_safe(ntx_label($estado)) ?></span>
+                                        <span class="ntx-badge sev-<?= $severidadClass ?>"><?= ntx_safe(ntx_label($severidad)) ?></span>
                                     </div>
-                                    <p class="notif-message"><?= notif_safe($notificacion['mensaje'] ?? '') ?></p>
-                                    <div class="notif-meta">
-                                        <span><i class="fas fa-layer-group"></i> <?= notif_safe(notif_label($modulo)) ?></span>
+                                    <p class="ntx-message"><?= ntx_safe($notificacion['mensaje'] ?? '') ?></p>
+                                    <div class="ntx-meta">
+                                        <span><i class="fas fa-layer-group"></i> <?= ntx_safe(ntx_label($modulo)) ?></span>
                                         <?php if ($esAutomatica): ?>
                                             <span><i class="fas fa-rotate"></i> Automatica</span>
                                         <?php endif; ?>
-                                        <span><i class="fas fa-clock"></i> <?= notif_safe(notif_date($notificacion['created_at'] ?? null)) ?></span>
+                                        <span><i class="fas fa-clock"></i> <?= ntx_safe(ntx_date($notificacion['created_at'] ?? null)) ?></span>
                                     </div>
                                 </div>
 
                                 <?php if ($urlDestinoFinal !== ''): ?>
-                                    <span class="notif-open-indicator" aria-hidden="true">
+                                    <span class="ntx-arrow" aria-hidden="true">
                                         <i class="fas fa-arrow-up-right-from-square"></i>
                                     </span>
                                 <?php endif; ?>
@@ -987,7 +1245,7 @@ $notificacionesHistorial = (int)($resumen['historial'] ?? (($resumen['resueltas'
             </section>
         </div>
     </div>
-</div>
+</main>
 
 <script>
 document.addEventListener('click', function (event) {
@@ -995,7 +1253,7 @@ document.addEventListener('click', function (event) {
         return;
     }
 
-    const item = event.target.closest('.notif-item[data-notif-url]');
+    const item = event.target.closest('.ntx-row[data-notif-url]');
     if (!item || event.target.closest('a, button, input, select, textarea, label')) {
         return;
     }
@@ -1008,7 +1266,7 @@ document.addEventListener('keydown', function (event) {
         return;
     }
 
-    const item = event.target.closest('.notif-item[data-notif-url]');
+    const item = event.target.closest('.ntx-row[data-notif-url]');
     if (!item || !['Enter', ' '].includes(event.key)) {
         return;
     }

@@ -19,7 +19,7 @@
                 Filtros de Reportes
             </div>
             <div class="card-body">
-                <form action="<?= url('/inventarios/reportes') ?>" method="GET" class="row g-3">
+                <form action="<?= url('/inventarios/reportes') ?>" method="GET" class="row g-3" data-auto-filter-form>
                     <div class="col-md-3">
                         <label for="categoria" class="form-label">Categoría</label>
                         <select name="categoria_id" id="categoria" class="form-select">

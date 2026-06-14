@@ -386,21 +386,23 @@ $m_bar_width = static function ($count) use ($habitaciones_total) {
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 :root {
-    --dash-primary: var(--brand-primary, #1B2746);
-    --dash-secondary: var(--brand-secondary, #0F172A);
+    --dash-primary: var(--brand-action-bg, var(--brand-primary, #1B2746));
+    --dash-secondary: var(--brand-action-bg-hover, var(--brand-secondary, #0F172A));
     --dash-accent: var(--brand-accent, #BD9441);
+    --dash-on-brand: var(--brand-action-text, #FFFEFB);
     --dash-ivory: color-mix(in srgb, var(--dash-accent) 9%, #F8F5ED);
     --dash-ivory-2: color-mix(in srgb, var(--dash-accent) 6%, #FBF9F4);
     --dash-surface: color-mix(in srgb, var(--dash-accent) 2%, #FFFFFF);
     --dash-surface-warm: color-mix(in srgb, var(--dash-accent) 5%, #FFFFFF);
     --dash-line: color-mix(in srgb, var(--dash-accent) 22%, #E7DEC9);
     --dash-line-soft: color-mix(in srgb, var(--dash-accent) 12%, #F0ECE2);
-    --dash-navy: var(--dash-secondary);
+    --dash-navy: var(--dash-primary);
     --dash-navy-700: color-mix(in srgb, var(--dash-secondary) 86%, var(--dash-primary));
-    --dash-ink: var(--dash-secondary);
-    --dash-slate-700: color-mix(in srgb, var(--dash-secondary) 70%, #64748B);
-    --dash-slate-500: color-mix(in srgb, var(--dash-secondary) 48%, #94A3B8);
-    --dash-slate-400: color-mix(in srgb, var(--dash-secondary) 35%, #CBD5E1);
+    --dash-ink: var(--brand-text, #1F2937);
+    --dash-muted: var(--brand-muted, #667085);
+    --dash-slate-700: color-mix(in srgb, var(--dash-ink) 72%, #64748B);
+    --dash-slate-500: var(--dash-muted);
+    --dash-slate-400: color-mix(in srgb, var(--dash-muted) 72%, #CBD5E1);
     --dash-gold: var(--dash-accent);
     --dash-gold-mid: color-mix(in srgb, var(--dash-accent) 82%, #FFFFFF);
     --dash-gold-soft: color-mix(in srgb, var(--dash-accent) 64%, #FFFFFF);
@@ -588,8 +590,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     place-items: center;
     flex: 0 0 auto;
     border-radius: 12px;
-    background: linear-gradient(160deg, var(--dash-gold-mid), var(--dash-gold));
-    color: #fff;
+    background: linear-gradient(160deg, var(--dash-primary), var(--dash-secondary));
+    color: var(--dash-on-brand);
     font-weight: 800;
     font-size: 15px;
 }
@@ -650,7 +652,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 }
 
 .hero-date {
-    color: var(--dash-gold-soft);
+    color: color-mix(in srgb, var(--dash-on-brand) 84%, transparent);
+    text-shadow: 0 1px 1px rgba(0,0,0,.24);
     font-size: 11px;
     font-weight: 800;
     letter-spacing: .18em;
@@ -674,7 +677,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     border: 1px solid rgba(255,255,255,.22);
     border-radius: 11px;
     background: rgba(255,255,255,.14);
-    color: #fff;
+    color: var(--dash-on-brand);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.26);
     backdrop-filter: blur(12px);
     font-size: 13px;
@@ -883,7 +886,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     border: 1px solid color-mix(in srgb, var(--dash-gold) 34%, var(--dash-line));
     border-radius: 10px;
     background: var(--dash-navy);
-    color: #fff;
+    color: var(--dash-on-brand);
     font-size: 11px;
     font-weight: 900;
     cursor: pointer;
@@ -936,7 +939,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
 .hero-title h1 {
     margin: 0;
-    color: #fff;
+    color: var(--dash-on-brand);
     font-family: var(--dash-serif);
     font-size: clamp(34px, 4.2vw, 50px);
     line-height: .95;
@@ -946,7 +949,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
 .hero-title p {
     margin: 9px 0 0;
-    color: rgba(255,255,255,.78);
+    color: color-mix(in srgb, var(--dash-on-brand) 82%, transparent);
     font-size: 14px;
     font-weight: 700;
 }
@@ -1296,6 +1299,115 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     font-size: 20px;
     font-weight: 900;
     font-variant-numeric: tabular-nums;
+}
+
+.cash-day-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.cash-day-card .card-row-head {
+    align-items: flex-start;
+}
+
+.cash-day-total {
+    margin-top: 3px;
+    color: var(--dash-navy);
+    font-size: 26px;
+    line-height: 1;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.cash-day-subtitle {
+    margin-top: 5px;
+    color: var(--dash-slate-500);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.cash-day-groups {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 17px;
+}
+
+.cash-day-group {
+    min-width: 0;
+    padding: 11px;
+    border-radius: 13px;
+    background: var(--dash-surface-warm);
+    border: 1px solid var(--dash-line-soft);
+}
+
+.cash-day-group-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .08em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.cash-day-group-title.income {
+    color: var(--dash-available);
+}
+
+.cash-day-group-title.expense {
+    color: var(--dash-critical);
+}
+
+.cash-day-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 25px;
+    color: var(--dash-slate-700);
+    font-size: 12.5px;
+}
+
+.cash-day-row strong {
+    color: var(--dash-navy);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.cash-day-balance {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 13px;
+    background: linear-gradient(135deg, var(--dash-primary), var(--dash-secondary));
+    color: var(--dash-on-brand);
+}
+
+.cash-day-balance span {
+    color: color-mix(in srgb, var(--dash-on-brand) 78%, transparent);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.cash-day-balance strong {
+    color: var(--dash-on-brand);
+    font-size: 18px;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 900px) {
+    .cash-day-groups {
+        grid-template-columns: 1fr;
+    }
 }
 
 .status-badge {
@@ -1783,7 +1895,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 }
 
 .list-avatar.gold {
-    background: linear-gradient(150deg, var(--dash-gold-mid), var(--dash-gold));
+    background: linear-gradient(150deg, var(--dash-primary), var(--dash-secondary));
+    color: var(--dash-on-brand);
 }
 
 .list-name {
@@ -1867,8 +1980,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 }
 
 .cash-box.dark {
-    border-color: var(--dash-navy);
-    background: var(--dash-navy);
+    border-color: color-mix(in srgb, var(--dash-primary) 74%, var(--dash-line));
+    background: linear-gradient(135deg, var(--dash-primary), var(--dash-secondary));
     animation: none;
 }
 
@@ -1880,8 +1993,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
 .cash-box.dark:hover {
     transform: none;
-    border-color: var(--dash-navy);
-    background: var(--dash-navy);
+    border-color: color-mix(in srgb, var(--dash-primary) 74%, var(--dash-line));
+    background: linear-gradient(135deg, var(--dash-primary), var(--dash-secondary));
 }
 
 .cash-box .label {
@@ -1891,7 +2004,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 }
 
 .cash-box.dark .label {
-    color: var(--dash-gold-soft);
+    color: color-mix(in srgb, var(--dash-on-brand) 82%, transparent);
+    text-shadow: 0 1px 1px rgba(0,0,0,.22);
 }
 
 .cash-box .amount {
@@ -1904,7 +2018,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 }
 
 .cash-box.dark .amount {
-    color: #fff;
+    color: var(--dash-on-brand);
+    text-shadow: 0 1px 2px rgba(0,0,0,.2);
 }
 
 .button-row {
@@ -1929,8 +2044,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
 .dash-btn.primary {
     flex: 1;
-    background: var(--dash-navy);
-    color: #fff;
+    background: var(--dash-primary);
+    color: var(--dash-on-brand);
 }
 
 .dash-btn.ghost {
@@ -2353,7 +2468,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 }
 
 .dm-eyebrow {
-    color: var(--dash-gold-soft);
+    color: color-mix(in srgb, var(--dash-on-brand) 84%, transparent);
+    text-shadow: 0 1px 1px rgba(0,0,0,.24);
     font-size: 9.5px;
     font-weight: 800;
     letter-spacing: .18em;
@@ -2362,7 +2478,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
 .dm-hotel {
     margin: 5px 0 0;
-    color: #fff;
+    color: var(--dash-on-brand);
     font-family: var(--dash-serif);
     font-size: 30px;
     line-height: 1;
@@ -2372,7 +2488,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
 .dm-greet {
     margin: 6px 0 0;
-    color: rgba(255, 255, 255, .82);
+    color: color-mix(in srgb, var(--dash-on-brand) 82%, transparent);
     font-size: 12.5px;
     font-weight: 700;
 }
@@ -2744,7 +2860,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 }
 
 .dm-ag .av.gold {
-    background: linear-gradient(150deg, var(--dash-gold-mid), var(--dash-gold));
+    background: linear-gradient(150deg, var(--dash-primary), var(--dash-secondary));
+    color: var(--dash-on-brand);
 }
 
 .dm-ag .nm {
@@ -2824,8 +2941,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 }
 
 .dm-cbox.dark {
-    border-color: var(--dash-navy);
-    background: var(--dash-navy);
+    border-color: color-mix(in srgb, var(--dash-primary) 74%, var(--dash-line));
+    background: linear-gradient(135deg, var(--dash-primary), var(--dash-secondary));
     animation: none;
 }
 
@@ -2843,7 +2960,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 }
 
 .dm-cbox.dark .t {
-    color: var(--dash-gold-soft);
+    color: color-mix(in srgb, var(--dash-on-brand) 82%, transparent);
+    text-shadow: 0 1px 1px rgba(0,0,0,.22);
 }
 
 .dm-cbox .v {
@@ -2855,7 +2973,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 }
 
 .dm-cbox.dark .v {
-    color: #fff;
+    color: var(--dash-on-brand);
+    text-shadow: 0 1px 2px rgba(0,0,0,.2);
 }
 
 .dm-actions {
@@ -2879,8 +2998,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 }
 
 .dm-btn.primary {
-    background: var(--dash-navy);
-    color: #fff;
+    background: var(--dash-primary);
+    color: var(--dash-on-brand);
 }
 
 .dm-btn.ghost {
@@ -3054,24 +3173,37 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                 </div>
             </article>
 
-            <article class="card card-pad">
+            <article class="card card-pad cash-day-card">
                 <div class="card-row-head" style="justify-content:flex-start">
                     <div class="mini-icon" style="background:var(--dash-bg-available);color:var(--dash-available)">
                         <i class="fas fa-dollar-sign" aria-hidden="true"></i>
                     </div>
                     <div>
                         <div class="card-title">Movimientos del día</div>
-                        <div class="money-total"><?= format_money($balance_dia) ?></div>
+                        <div class="cash-day-total"><?= format_money($balance_dia) ?></div>
+                        <div class="cash-day-subtitle">Balance neto de la jornada</div>
                     </div>
                 </div>
-                <div class="money-section" style="color:var(--dash-available)">Ingresos</div>
-                <div class="money-line"><span>Efectivo</span><strong><?= format_money($stats['ingresos']['efectivo_dia'] ?? 0) ?></strong></div>
-                <div class="money-line"><span>Tarjeta</span><strong><?= format_money($stats['ingresos']['tarjeta_dia'] ?? 0) ?></strong></div>
-                <div class="money-line"><span>Transferencia</span><strong><?= format_money($stats['ingresos']['transferencia_dia'] ?? 0) ?></strong></div>
-                <div class="money-section" style="color:var(--dash-critical)">Egresos</div>
-                <div class="money-line"><span>Efectivo</span><strong><?= format_money($stats['egresos']['efectivo_dia'] ?? 0) ?></strong></div>
-                <div class="money-line"><span>Transferencia</span><strong><?= format_money($stats['egresos']['transferencia_dia'] ?? 0) ?></strong></div>
-                <div class="balance-line"><span>Balance</span><strong><?= format_money($balance_dia) ?></strong></div>
+                <div class="cash-day-groups">
+                    <div class="cash-day-group">
+                        <div class="cash-day-group-title income">
+                            <i class="fas fa-arrow-trend-up" aria-hidden="true"></i>
+                            Ingresos
+                        </div>
+                        <div class="cash-day-row"><span>Efectivo</span><strong><?= format_money($stats['ingresos']['efectivo_dia'] ?? 0) ?></strong></div>
+                        <div class="cash-day-row"><span>Tarjeta</span><strong><?= format_money($stats['ingresos']['tarjeta_dia'] ?? 0) ?></strong></div>
+                        <div class="cash-day-row"><span>Transferencia</span><strong><?= format_money($stats['ingresos']['transferencia_dia'] ?? 0) ?></strong></div>
+                    </div>
+                    <div class="cash-day-group">
+                        <div class="cash-day-group-title expense">
+                            <i class="fas fa-arrow-trend-down" aria-hidden="true"></i>
+                            Egresos
+                        </div>
+                        <div class="cash-day-row"><span>Efectivo</span><strong><?= format_money($stats['egresos']['efectivo_dia'] ?? 0) ?></strong></div>
+                        <div class="cash-day-row"><span>Transferencia</span><strong><?= format_money($stats['egresos']['transferencia_dia'] ?? 0) ?></strong></div>
+                    </div>
+                </div>
+                <div class="cash-day-balance"><span>Balance</span><strong><?= format_money($balance_dia) ?></strong></div>
                 <a class="card-kicker-link" href="<?= url('caja') ?>" title="Ir a caja para revisar movimientos">
                     Revisar caja
                     <i class="fas fa-arrow-right" aria-hidden="true"></i>
@@ -3133,68 +3265,6 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                     </a>
                 </div>
             </article>
-        </section>
-
-        <section class="notification-panel card card-pad" aria-label="Resumen de notificaciones">
-            <div class="notification-panel-head section-head">
-                <div>
-                    <h2>Centro de notificaciones</h2>
-                    <p>Seguimiento operativo de caja, mantenimiento y facturacion.</p>
-                </div>
-                <a class="notification-panel-link" href="<?= url('notificaciones') ?>">
-                    Ver centro
-                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
-                </a>
-            </div>
-
-            <div class="notification-summary">
-                <div class="notification-summary-item">
-                    <span>Pendientes</span>
-                    <strong><?= (int)$notificaciones_pendientes ?></strong>
-                </div>
-                <div class="notification-summary-item">
-                    <span>Prioritarias</span>
-                    <strong><?= (int)$notificaciones_prioritarias ?></strong>
-                </div>
-                <div class="notification-summary-item">
-                    <span>Hoy</span>
-                    <strong><?= (int)$notificaciones_hoy ?></strong>
-                </div>
-            </div>
-
-            <div class="notification-list">
-                <?php if (empty($notificaciones_recientes)): ?>
-                    <div class="empty-state">Sin pendientes operativos por ahora.</div>
-                <?php else: ?>
-                    <?php foreach (array_slice($notificaciones_recientes, 0, 4) as $notificacion): ?>
-                        <?php
-                        $notificacionModulo = (string)($notificacion['modulo'] ?? 'sistema');
-                        $notificacionSeveridad = (string)($notificacion['severidad'] ?? 'info');
-                        $notificacionAutomatica = strpos((string)($notificacion['tipo'] ?? ''), 'regla_') === 0;
-                        $notificacionId = (int)($notificacion['id'] ?? 0);
-                        $notificacionUrl = trim((string)($notificacion['url'] ?? ''));
-                        $notificacionHref = ($notificacionUrl !== '' && $notificacionId > 0)
-                            ? url('notificaciones/' . $notificacionId . '/abrir')
-                            : url('notificaciones');
-                        ?>
-                        <a class="notification-row" href="<?= $notificacionHref ?>">
-                            <span class="notification-row-icon">
-                                <i class="fas <?= dashboard_safe(dashboard_notif_icon($notificacionModulo), 'fa-bell') ?>" aria-hidden="true"></i>
-                            </span>
-                            <span class="notification-row-main">
-                                <span class="notification-row-title"><?= dashboard_safe($notificacion['titulo'] ?? 'Notificacion') ?></span>
-                                <span class="notification-row-meta">
-                                    <?= dashboard_safe(dashboard_notif_label($notificacionModulo)) ?> · <?= dashboard_safe(dashboard_format_date($notificacion['created_at'] ?? null, 'd/m H:i')) ?>
-                                    <?= $notificacionAutomatica ? ' · Automatica' : '' ?>
-                                </span>
-                            </span>
-                            <span class="notification-row-badge <?= dashboard_safe($notificacionSeveridad, 'info') ?>">
-                                <?= dashboard_safe(dashboard_notif_label($notificacionSeveridad)) ?>
-                            </span>
-                        </a>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
         </section>
 
         <section class="grid2">

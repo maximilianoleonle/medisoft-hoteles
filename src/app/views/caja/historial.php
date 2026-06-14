@@ -117,6 +117,9 @@ foreach ($cortes as $corte_metodo) {
     --ch-primary: var(--brand-primary, #1B2746);
     --ch-secondary: var(--brand-secondary, #0F172A);
     --ch-accent: var(--brand-accent, #BD9441);
+    --ch-action: var(--brand-action-bg, var(--ch-primary));
+    --ch-action-hover: var(--brand-action-bg-hover, color-mix(in srgb, var(--ch-action) 90%, #111827));
+    --ch-on-action: var(--brand-action-text, #FFFDF8);
     --ch-bg: color-mix(in srgb, var(--ch-accent) 8%, #F6F1E8);
     --ch-surface: color-mix(in srgb, var(--ch-accent) 3%, #FFFDF8);
     --ch-surface-strong: color-mix(in srgb, var(--ch-primary) 5%, #FFFDF8);
@@ -144,8 +147,8 @@ foreach ($cortes as $corte_metodo) {
 
 .cash-history-hero {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
-    gap: 22px;
+    grid-template-columns: minmax(0, 1.35fr) minmax(330px, .65fr);
+    gap: 16px;
     align-items: stretch;
     margin-bottom: 18px;
 }
@@ -153,64 +156,147 @@ foreach ($cortes as $corte_metodo) {
 .cash-history-title {
     position: relative;
     overflow: hidden;
+    display: flex;
+    min-height: 276px;
+    flex-direction: column;
+    justify-content: space-between;
     padding: clamp(22px, 3vw, 34px);
-    border: 1px solid color-mix(in srgb, var(--ch-accent) 24%, transparent);
+    border: 1px solid var(--ch-line);
     border-radius: 24px;
     background:
-        radial-gradient(circle at 88% 14%, color-mix(in srgb, var(--ch-accent) 34%, transparent), transparent 20rem),
-        linear-gradient(135deg, color-mix(in srgb, var(--ch-primary) 94%, #0A0F1C), var(--ch-secondary));
-    box-shadow: 0 30px 74px -48px rgba(15, 23, 42, .7);
+        linear-gradient(135deg, color-mix(in srgb, var(--ch-accent) 5%, #FFFDF8), var(--ch-surface) 62%),
+        linear-gradient(180deg, rgba(255, 255, 255, .62), transparent);
+    box-shadow: 0 24px 58px -46px rgba(15, 23, 42, .6);
 }
 
 .cash-history-title::after {
     content: "";
     position: absolute;
-    inset: auto -8% -54% 48%;
-    height: 210px;
-    background: radial-gradient(circle, color-mix(in srgb, var(--ch-accent) 42%, transparent), transparent 68%);
+    inset: auto 24px 24px auto;
+    width: min(42%, 340px);
+    height: 1px;
+    background: color-mix(in srgb, var(--ch-accent) 36%, transparent);
     pointer-events: none;
+}
+
+.cash-history-title-top {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
 }
 
 .cash-history-kicker {
     display: inline-flex;
     align-items: center;
-    gap: 9px;
-    color: color-mix(in srgb, var(--ch-accent) 82%, #FFFDF8);
+    gap: 8px;
+    min-height: 36px;
+    padding: 5px 11px 5px 6px;
+    border: 1px solid color-mix(in srgb, var(--ch-primary) 14%, var(--ch-line));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ch-primary) 4%, #FFFDF8);
+    color: var(--ch-primary);
     font-size: .72rem;
     font-weight: 900;
-    letter-spacing: .08em;
+    letter-spacing: .06em;
     text-transform: uppercase;
 }
 
+.cash-history-kicker i {
+    width: 25px;
+    height: 25px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--ch-action);
+    color: var(--ch-on-action);
+    font-size: .72rem;
+}
+
+.cash-history-period-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid color-mix(in srgb, var(--ch-accent) 24%, var(--ch-line));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ch-accent) 7%, #FFFDF8);
+    color: var(--ch-primary);
+    font-size: .78rem;
+    font-weight: 900;
+}
+
+.cash-history-copy {
+    position: relative;
+    z-index: 1;
+    margin-top: clamp(22px, 4vw, 42px);
+}
+
 .cash-history-title h1 {
-    max-width: 10ch;
-    margin: 12px 0 14px;
-    color: #FFFDF8;
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: clamp(2.35rem, 5vw, 5rem);
-    line-height: .9;
-    font-weight: 700;
+    max-width: 13ch;
+    margin: 0 0 14px;
+    color: var(--ch-primary);
+    font-family: inherit;
+    font-size: clamp(2.25rem, 4.4vw, 4.45rem);
+    line-height: .95;
+    font-weight: 950;
     letter-spacing: 0;
 }
 
 .cash-history-title p {
-    max-width: 62ch;
+    max-width: 58ch;
     margin: 0;
-    color: rgba(255, 255, 255, .74);
-    font-weight: 650;
+    color: color-mix(in srgb, var(--ch-text) 76%, var(--ch-muted));
+    font-weight: 700;
     line-height: 1.6;
 }
 
-.cash-period-card {
+.cash-history-note-row {
+    position: relative;
+    z-index: 1;
     display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 18px;
-    padding: 20px;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 22px;
+}
+
+.cash-history-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 34px;
+    padding: 0 11px;
+    border: 1px solid var(--ch-line-soft);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ch-surface) 82%, #FFFDF8);
+    color: color-mix(in srgb, var(--ch-primary) 82%, var(--ch-muted));
+    font-size: .78rem;
+    font-weight: 850;
+}
+
+.cash-history-note i {
+    color: color-mix(in srgb, var(--ch-accent) 76%, var(--ch-primary));
+}
+
+.cash-period-card {
+    display: grid;
+    align-content: start;
+    gap: 14px;
+    padding: 18px;
     border: 1px solid var(--ch-line);
     border-radius: 22px;
     background: var(--ch-surface);
     box-shadow: 0 18px 46px -38px rgba(15, 23, 42, .48);
+}
+
+.cash-period-card-head {
+    display: grid;
+    gap: 5px;
 }
 
 .cash-period-label,
@@ -225,12 +311,11 @@ foreach ($cortes as $corte_metodo) {
 }
 
 .cash-period-value {
-    margin-top: 6px;
     color: var(--ch-primary);
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: clamp(1.85rem, 3vw, 2.6rem);
+    font-family: inherit;
+    font-size: clamp(1.55rem, 2.5vw, 2.1rem);
     line-height: 1;
-    font-weight: 700;
+    font-weight: 950;
 }
 
 .cash-history-form {
@@ -246,6 +331,19 @@ foreach ($cortes as $corte_metodo) {
     min-height: 42px;
     border-radius: 13px;
     transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+.cash-filter-field {
+    display: grid;
+    gap: 6px;
+}
+
+.cash-filter-field span {
+    color: var(--ch-muted);
+    font-size: .68rem;
+    font-weight: 950;
+    letter-spacing: .05em;
+    text-transform: uppercase;
 }
 
 .cash-history-form select {
@@ -274,9 +372,13 @@ foreach ($cortes as $corte_metodo) {
 
 .cash-history-form button {
     grid-column: 1 / -1;
-    border: 1px solid color-mix(in srgb, var(--ch-accent) 48%, var(--ch-primary));
-    background: var(--ch-primary);
-    color: #FFFDF8;
+    border: 1px solid color-mix(in srgb, var(--ch-action) 78%, transparent);
+    background: var(--ch-action);
+    color: var(--ch-on-action);
+}
+
+.cash-history-form button:hover {
+    background: var(--ch-action-hover);
 }
 
 .cash-history-link {
@@ -296,14 +398,21 @@ foreach ($cortes as $corte_metodo) {
 .cash-quick-states {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid var(--ch-line-soft);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--ch-primary) 3%, #FFFDF8);
 }
 
 .cash-quick-state {
     padding: 12px;
-    border: 1px solid var(--ch-line-soft);
-    border-radius: 15px;
-    background: color-mix(in srgb, var(--ch-accent) 4%, #FFFDF8);
+    border-right: 1px solid var(--ch-line-soft);
+    background: transparent;
+}
+
+.cash-quick-state:last-child {
+    border-right: 0;
 }
 
 .cash-quick-state strong {
@@ -568,27 +677,49 @@ foreach ($cortes as $corte_metodo) {
 
 .cash-cut-actions {
     display: flex;
-    gap: 7px;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
 }
 
 .cash-action-icon {
-    width: 39px;
-    height: 39px;
+    min-width: 39px;
+    min-height: 39px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 7px;
+    padding: 0 11px;
     border: 1px solid var(--ch-line);
+    border-radius: 12px;
     background: color-mix(in srgb, var(--ch-primary) 4%, #FFFDF8);
     color: var(--ch-primary);
     text-decoration: none;
+    font-size: .76rem;
+    font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.cash-action-icon i {
+    flex: 0 0 auto;
+    font-size: .86rem;
+}
+
+.cash-action-label {
+    display: inline-block;
 }
 
 .cash-action-icon.is-pdf {
     color: var(--ch-expense);
+    background: color-mix(in srgb, var(--ch-expense) 6%, #FFFDF8);
+    border-color: color-mix(in srgb, var(--ch-expense) 24%, var(--ch-line));
 }
 
 .cash-action-icon.is-excel {
     color: var(--ch-income);
+    background: color-mix(in srgb, var(--ch-income) 7%, #FFFDF8);
+    border-color: color-mix(in srgb, var(--ch-income) 24%, var(--ch-line));
 }
 
 .cash-status,
@@ -694,6 +825,17 @@ foreach ($cortes as $corte_metodo) {
     padding: 15px 12px;
     border-bottom: 1px solid var(--ch-line-soft);
     vertical-align: top;
+}
+
+.cash-desktop-table th.cash-actions-col,
+.cash-desktop-table td.cash-actions-cell {
+    padding-left: 16px;
+    padding-right: 18px;
+}
+
+.cash-actions-cell .cash-cut-actions {
+    justify-content: flex-end;
+    min-width: 168px;
 }
 
 .cash-desktop-table tbody tr {
@@ -829,9 +971,31 @@ foreach ($cortes as $corte_metodo) {
         border-radius: 18px;
     }
 
+    .cash-history-title {
+        min-height: auto;
+        padding: 20px;
+    }
+
+    .cash-history-title-top {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .cash-history-copy {
+        margin-top: 28px;
+    }
+
     .cash-history-title h1 {
-        max-width: 9ch;
-        font-size: clamp(2.1rem, 15vw, 3.4rem);
+        max-width: 100%;
+        font-size: clamp(2.05rem, 13vw, 3.35rem);
+    }
+
+    .cash-history-note-row {
+        margin-top: 18px;
+    }
+
+    .cash-history-note {
+        width: 100%;
     }
 
     .cash-history-form,
@@ -840,6 +1004,15 @@ foreach ($cortes as $corte_metodo) {
     .cash-card-metrics,
     .cash-quick-states {
         grid-template-columns: 1fr;
+    }
+
+    .cash-quick-state {
+        border-right: 0;
+        border-bottom: 1px solid var(--ch-line-soft);
+    }
+
+    .cash-quick-state:last-child {
+        border-bottom: 0;
     }
 
     .cash-cut-top {
@@ -865,37 +1038,67 @@ foreach ($cortes as $corte_metodo) {
     <div class="cash-history-shell">
         <section class="cash-history-hero">
             <div class="cash-history-title">
-                <span class="cash-history-kicker">
-                    <i class="fas fa-archive"></i>
-                    Bitácora de caja
-                </span>
-                <h1>Historial de cortes</h1>
-                <p>
-                    Consulta cada apertura y cierre del mes, revisa diferencias de efectivo y descarga los comprobantes de cada corte cerrado.
-                </p>
+                <div class="cash-history-title-top">
+                    <span class="cash-history-kicker">
+                        <i class="fas fa-archive"></i>
+                        Bitácora de caja
+                    </span>
+                    <span class="cash-history-period-badge">
+                        <i class="fas fa-calendar-alt"></i>
+                        <?= caja_hist_safe($periodo_label) ?>
+                    </span>
+                </div>
+
+                <div class="cash-history-copy">
+                    <h1>Historial de cortes</h1>
+                    <p>
+                        Consulta cada apertura y cierre del mes, revisa diferencias de efectivo y descarga los comprobantes de cada corte cerrado.
+                    </p>
+                </div>
+
+                <div class="cash-history-note-row" aria-label="Alcance de la bitácora">
+                    <span class="cash-history-note">
+                        <i class="fas fa-door-open"></i>
+                        Aperturas y cierres
+                    </span>
+                    <span class="cash-history-note">
+                        <i class="fas fa-balance-scale"></i>
+                        Diferencias de efectivo
+                    </span>
+                    <span class="cash-history-note">
+                        <i class="fas fa-file-download"></i>
+                        Comprobantes
+                    </span>
+                </div>
             </div>
 
             <aside class="cash-period-card">
-                <div>
+                <div class="cash-period-card-head">
                     <span class="cash-period-label">Periodo consultado</span>
                     <div class="cash-period-value"><?= caja_hist_safe($periodo_label) ?></div>
                 </div>
 
-                <form method="GET" action="<?= url('caja/historial') ?>" class="cash-history-form">
-                    <select name="mes" aria-label="Mes">
-                        <?php for ($m = 1; $m <= 12; $m++): ?>
-                            <option value="<?= $m ?>" <?= $m == $mes ? 'selected' : '' ?>>
-                                <?= obtener_nombre_mes($m) ?>
-                            </option>
-                        <?php endfor; ?>
-                    </select>
-                    <select name="año" aria-label="Año">
-                        <?php for ($y = date('Y'); $y >= date('Y') - 5; $y--): ?>
-                            <option value="<?= $y ?>" <?= $y == $año ? 'selected' : '' ?>>
-                                <?= $y ?>
-                            </option>
-                        <?php endfor; ?>
-                    </select>
+                <form method="GET" action="<?= url('caja/historial') ?>" class="cash-history-form" data-auto-filter-form>
+                    <label class="cash-filter-field">
+                        <span>Mes</span>
+                        <select name="mes" aria-label="Mes">
+                            <?php for ($m = 1; $m <= 12; $m++): ?>
+                                <option value="<?= $m ?>" <?= $m == $mes ? 'selected' : '' ?>>
+                                    <?= obtener_nombre_mes($m) ?>
+                                </option>
+                            <?php endfor; ?>
+                        </select>
+                    </label>
+                    <label class="cash-filter-field">
+                        <span>Año</span>
+                        <select name="año" aria-label="Año">
+                            <?php for ($y = date('Y'); $y >= date('Y') - 5; $y--): ?>
+                                <option value="<?= $y ?>" <?= $y == $año ? 'selected' : '' ?>>
+                                    <?= $y ?>
+                                </option>
+                            <?php endfor; ?>
+                        </select>
+                    </label>
                     <button type="submit">
                         <i class="fas fa-filter"></i>
                         Filtrar cortes
@@ -1103,14 +1306,14 @@ foreach ($cortes as $corte_metodo) {
                     <table class="cash-desktop-table">
                         <colgroup>
                             <col style="width: 10%;">
-                            <col style="width: 15%;">
-                            <col style="width: 13%;">
-                            <col style="width: 13%;">
-                            <col style="width: 13%;">
+                            <col style="width: 14%;">
+                            <col style="width: 12%;">
                             <col style="width: 11%;">
                             <col style="width: 11%;">
-                            <col style="width: 8%;">
-                            <col style="width: 6%;">
+                            <col style="width: 9%;">
+                            <col style="width: 9%;">
+                            <col style="width: 7%;">
+                            <col style="width: 17%;">
                         </colgroup>
                         <thead>
                             <tr>
@@ -1122,7 +1325,7 @@ foreach ($cortes as $corte_metodo) {
                                 <th class="text-right">Esperado</th>
                                 <th class="text-right">Contado</th>
                                 <th class="text-center">Diferencia</th>
-                                <th class="text-center">Acciones</th>
+                                <th class="text-center cash-actions-col">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1185,17 +1388,20 @@ foreach ($cortes as $corte_metodo) {
                                             <?= $diferencia == 0 ? 'Cuadrado' : caja_hist_money(abs($diferencia)) ?>
                                         </span>
                                     </td>
-                                    <td class="text-center">
-                                        <div class="flex items-center justify-center gap-2">
+                                    <td class="text-center cash-actions-cell">
+                                        <div class="cash-cut-actions">
                                             <a href="<?= url('caja/corte/' . $corte['id']) ?>" class="cash-action-icon" title="Ver detalle">
                                                 <i class="fas fa-eye"></i>
+                                                <span class="cash-action-label">Ver</span>
                                             </a>
                                             <?php if ($estado == 'cerrado'): ?>
                                                 <a href="<?= url('caja/descargar-pdf/' . $corte['id']) ?>" class="cash-action-icon is-pdf" title="Descargar PDF">
                                                     <i class="fas fa-file-pdf"></i>
+                                                    <span class="cash-action-label">PDF</span>
                                                 </a>
                                                 <button type="button" onclick="exportarCorte(<?= $corte['id'] ?>)" class="cash-action-icon is-excel" title="Exportar Excel">
                                                     <i class="fas fa-file-excel"></i>
+                                                    <span class="cash-action-label">Excel</span>
                                                 </button>
                                             <?php endif; ?>
                                         </div>

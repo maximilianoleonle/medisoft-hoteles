@@ -8,9 +8,10 @@
 <!-- Sistema de diseño "Caja boutique" -->
 <style>
     :root {
-        --cash-navy: var(--brand-primary, #1B2746);
-        --cash-navy-deep: var(--brand-secondary, #0F172A);
+        --cash-navy: var(--brand-action-bg, var(--brand-primary, #1B2746));
+        --cash-navy-deep: var(--brand-action-bg-hover, var(--brand-secondary, #0F172A));
         --cash-gold: var(--brand-accent, #BD9441);
+        --cash-on-brand: var(--brand-action-text, #FFFEFB);
 
         --cash-paper: color-mix(in srgb, var(--cash-gold) 4%, #F8F5ED);
         --cash-paper-2: color-mix(in srgb, var(--cash-gold) 3%, #FBF9F4);
@@ -20,9 +21,9 @@
         --cash-border: color-mix(in srgb, var(--cash-navy) 6%, #E7DEC9);
         --cash-border-soft: color-mix(in srgb, var(--cash-navy) 4%, #F0ECE2);
 
-        --cash-heading: #111827;
-        --cash-ink: #1F2937;
-        --cash-muted: #667085;
+        --cash-heading: var(--brand-text, #111827);
+        --cash-ink: var(--brand-text, #1F2937);
+        --cash-muted: var(--brand-muted, #667085);
 
         --cash-green: #1F9D63;
         --cash-green-bg: #E7F5EE;
@@ -126,12 +127,22 @@
         font-weight: 650 !important;
         letter-spacing: 0 !important;
         line-height: .95;
+        color: var(--cash-on-brand) !important;
+    }
+
+    .cash-page .header-card .text-white {
+        color: var(--cash-on-brand) !important;
+    }
+
+    .cash-page .header-card .text-white\/70 {
+        color: color-mix(in srgb, var(--cash-on-brand) 82%, transparent) !important;
     }
 
     .cash-page .cash-header-icon {
         background: color-mix(in srgb, var(--cash-gold) 28%, rgba(255,255,255,.12)) !important;
         border: 1px solid rgba(255,255,255,.22);
         box-shadow: inset 0 1px 0 rgba(255,255,255,.2);
+        color: var(--cash-on-brand) !important;
     }
 
     .cash-page .cash-meta-pill {
@@ -186,6 +197,20 @@
 
     .cash-page .card-efectivo::after {
         display: none !important;
+    }
+
+    .cash-page .card-efectivo .text-white,
+    .cash-page .card-efectivo p.text-3xl,
+    .cash-page .card-efectivo .bg-white\/15 i {
+        color: var(--cash-on-brand) !important;
+    }
+
+    .cash-page .card-efectivo .text-white\/70 {
+        color: color-mix(in srgb, var(--cash-on-brand) 88%, transparent) !important;
+    }
+
+    .cash-page .card-efectivo .text-white\/60 {
+        color: color-mix(in srgb, var(--cash-on-brand) 78%, transparent) !important;
     }
 
     .cash-page .icon-circle {
@@ -277,7 +302,7 @@
         line-height: 1.3;
     }
     .cash-page .stat-help.on-dark {
-        color: rgba(255,255,255,.6);
+        color: color-mix(in srgb, var(--cash-on-brand) 78%, transparent);
     }
 
     .cash-page h3,
@@ -949,7 +974,7 @@
     .cash-page .header-card .cash-meta-pill {
         background: rgba(255,255,255,.20) !important;
         border-color: rgba(255,255,255,.36) !important;
-        color: #FFFFFF !important;
+        color: var(--cash-on-brand) !important;
         font-weight: 800;
         letter-spacing: 0;
         box-shadow:
@@ -960,7 +985,7 @@
     }
 
     .cash-page .header-card .cash-meta-pill i {
-        color: #FFFFFF !important;
+        color: var(--cash-on-brand) !important;
         opacity: .98;
     }
 
@@ -1091,7 +1116,7 @@
         width: 42px !important;
         height: 42px !important;
         border-radius: 12px !important;
-        color: #fff !important;
+        color: var(--cash-on-brand) !important;
         background: linear-gradient(135deg, var(--cash-navy), color-mix(in srgb, var(--cash-navy) 62%, var(--cash-gold))) !important;
         border: 1px solid color-mix(in srgb, var(--cash-gold) 35%, transparent) !important;
         box-shadow: 0 12px 22px -18px color-mix(in srgb, var(--cash-navy) 80%, transparent) !important;
@@ -1164,9 +1189,9 @@
     }
 
     .cash-command-page .btn-corte {
-        background: var(--cash-heading) !important;
-        color: #fff !important;
-        border-color: color-mix(in srgb, var(--cash-gold) 38%, var(--cash-heading)) !important;
+        background: var(--cash-navy) !important;
+        color: var(--cash-on-brand) !important;
+        border-color: color-mix(in srgb, var(--cash-gold) 38%, var(--cash-navy)) !important;
     }
 
     .cash-command-page .btn-ingreso:hover,
@@ -1195,9 +1220,9 @@
         height: auto !important;
         min-height: 70px;
         border-radius: 12px !important;
-        background: rgba(255,255,255,.12) !important;
-        color: #fff !important;
-        border: 1px solid rgba(255,255,255,.16);
+        background: color-mix(in srgb, var(--cash-on-brand) 13%, transparent) !important;
+        color: var(--cash-on-brand) !important;
+        border: 1px solid color-mix(in srgb, var(--cash-on-brand) 18%, transparent);
         box-shadow: none !important;
     }
 
@@ -1207,7 +1232,7 @@
     }
 
     .cash-command-page .caja-status-meta .t {
-        color: #fff !important;
+        color: var(--cash-on-brand) !important;
         font-family: var(--cash-sans);
         font-size: clamp(1.4rem, 1.8vw, 2.05rem) !important;
         font-weight: 900 !important;
@@ -1215,17 +1240,17 @@
     }
 
     .cash-command-page .caja-status-meta .d {
-        color: rgba(255,255,255,.66) !important;
+        color: color-mix(in srgb, var(--cash-on-brand) 72%, transparent) !important;
         margin-top: 9px !important;
         gap: 10px !important;
     }
 
     .cash-command-page .caja-status-meta .d b {
-        color: #fff !important;
+        color: var(--cash-on-brand) !important;
     }
 
     .cash-command-page .caja-pulse {
-        color: #fff !important;
+        color: var(--cash-on-brand) !important;
         background: rgba(31,157,99,.24) !important;
         border: 1px solid rgba(82,221,153,.26);
         border-radius: 8px !important;
@@ -1235,18 +1260,18 @@
         margin-left: 0 !important;
         padding: 14px 16px;
         border-radius: 12px;
-        background: rgba(255,255,255,.11);
-        border: 1px solid rgba(255,255,255,.16);
+        background: color-mix(in srgb, var(--cash-on-brand) 12%, transparent);
+        border: 1px solid color-mix(in srgb, var(--cash-on-brand) 18%, transparent);
         text-align: left !important;
     }
 
     .cash-command-page .caja-status-right .l {
-        color: rgba(255,255,255,.58) !important;
+        color: color-mix(in srgb, var(--cash-on-brand) 66%, transparent) !important;
         letter-spacing: .08em !important;
     }
 
     .cash-command-page .caja-status-right .v {
-        color: #fff !important;
+        color: var(--cash-on-brand) !important;
         font-family: var(--cash-sans);
         font-size: clamp(1.55rem, 2vw, 2.35rem) !important;
         font-weight: 950 !important;
@@ -1309,11 +1334,17 @@
         min-width: 0;
     }
 
-    .cash-command-page .stat-card p:first-child,
-    .cash-command-page .card-efectivo p:first-child {
+    .cash-command-page .stat-card p:first-child {
         font-size: .68rem !important;
         letter-spacing: .08em !important;
         color: color-mix(in srgb, var(--cash-muted) 86%, var(--cash-heading)) !important;
+    }
+
+    .cash-command-page .card-efectivo p:first-child {
+        font-size: .68rem !important;
+        letter-spacing: .08em !important;
+        color: color-mix(in srgb, var(--cash-on-brand) 88%, transparent) !important;
+        text-shadow: 0 1px 1px rgba(0,0,0,.22);
     }
 
     .cash-command-page .stat-card p:nth-child(2),
@@ -1350,11 +1381,18 @@
         box-shadow: none !important;
     }
 
+    .cash-command-page .card-efectivo .bg-white\/15 {
+        background: color-mix(in srgb, var(--cash-on-brand) 16%, transparent) !important;
+        border: 1px solid color-mix(in srgb, var(--cash-on-brand) 20%, transparent) !important;
+        color: var(--cash-on-brand) !important;
+    }
+
     .cash-command-page .icon-circle i,
     .cash-command-page .card-efectivo .bg-white\/15 i {
         display: block !important;
         line-height: 1 !important;
         transform: translateY(.5px);
+        color: currentColor !important;
     }
 
     .cash-command-page .icon-circle.green-ic {
@@ -1377,7 +1415,7 @@
         align-items: stretch !important;
         padding: 18px !important;
         background:
-            linear-gradient(135deg, color-mix(in srgb, var(--cash-navy) 88%, #06110d), color-mix(in srgb, var(--cash-green) 58%, var(--cash-navy-deep))) !important;
+            linear-gradient(135deg, color-mix(in srgb, var(--cash-navy) 92%, #06110d), color-mix(in srgb, var(--cash-green) 34%, var(--cash-navy-deep))) !important;
         border-color: color-mix(in srgb, var(--cash-green) 28%, var(--cash-line)) !important;
         box-shadow: 0 20px 38px -32px color-mix(in srgb, var(--cash-green) 70%, transparent) !important;
     }
@@ -1392,6 +1430,16 @@
             linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent),
             repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 16px) !important;
         opacity: .42 !important;
+    }
+
+    .cash-command-page .card-efectivo p.text-3xl {
+        color: var(--cash-on-brand) !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,.24);
+    }
+
+    .cash-command-page .card-efectivo p.text-white\/60 {
+        color: color-mix(in srgb, var(--cash-on-brand) 80%, transparent) !important;
+        text-shadow: 0 1px 1px rgba(0,0,0,.2);
     }
 
     .cash-command-page .card-efectivo > .flex {
@@ -1421,13 +1469,13 @@
     }
 
     .cash-command-page .cash-summary-wrap > .bg-white > h3 > div {
-        background: var(--cash-heading) !important;
-        color: #fff !important;
+        background: var(--cash-navy) !important;
+        color: var(--cash-on-brand) !important;
         border-radius: 8px !important;
     }
 
     .cash-command-page .cash-summary-wrap > .bg-white > h3 i {
-        color: #fff !important;
+        color: var(--cash-on-brand) !important;
     }
 
     .cash-command-page .method-bar {
@@ -1550,7 +1598,7 @@
         height: 2px;
         margin-left: auto;
         border-radius: 999px;
-        background: color-mix(in srgb, var(--cash-gold) 74%, var(--cash-navy));
+        background: color-mix(in srgb, var(--cash-gold) 62%, var(--cash-navy));
         opacity: .85;
     }
 
@@ -1562,8 +1610,8 @@
         width: 34px !important;
         height: 34px !important;
         border-radius: 9px !important;
-        background: color-mix(in srgb, var(--cash-gold) 12%, #fff) !important;
-        color: color-mix(in srgb, var(--cash-gold) 78%, var(--cash-heading)) !important;
+        background: color-mix(in srgb, var(--cash-navy) 9%, #fff) !important;
+        color: var(--cash-navy) !important;
         border: 1px solid var(--cash-soft-line);
     }
 
@@ -1665,18 +1713,247 @@
     }
 
     .cash-command-page .cash-shortcuts-wrap h3 > div {
-        background: var(--cash-heading) !important;
-        color: #fff !important;
+        background: var(--cash-navy) !important;
+        color: var(--cash-on-brand) !important;
     }
 
     .cash-command-page .cash-shortcuts-wrap h3 i {
-        color: #fff !important;
+        color: var(--cash-on-brand) !important;
     }
 
     .cash-command-page .cash-shortcuts-wrap .grid {
         padding: 14px !important;
         gap: 12px !important;
         align-items: stretch !important;
+    }
+
+    .cash-command-page .cash-movements-panel {
+        min-height: 0;
+        overflow: hidden;
+        border-radius: var(--cash-radius-lg) !important;
+        background: rgba(255,255,255,.94) !important;
+        border: 1px solid var(--cash-line) !important;
+        box-shadow: var(--cash-command-shadow) !important;
+    }
+
+    .cash-command-page .cash-movements-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 15px 16px;
+        background: #fff;
+        border-bottom: 1px solid var(--cash-soft-line);
+    }
+
+    .cash-command-page .cash-movements-icon {
+        width: 36px;
+        height: 36px;
+        flex: 0 0 36px;
+        display: grid;
+        place-items: center;
+        border-radius: 10px;
+        color: var(--cash-navy);
+        background: color-mix(in srgb, var(--cash-navy) 8%, #fff);
+        border: 1px solid var(--cash-soft-line);
+    }
+
+    .cash-command-page .cash-movements-title {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .cash-command-page .cash-movements-title h3 {
+        margin: 0;
+        color: var(--cash-heading) !important;
+        font-size: .95rem;
+        line-height: 1.15;
+        font-weight: 900;
+    }
+
+    .cash-command-page .cash-movements-title p {
+        margin: 4px 0 0;
+        color: var(--cash-muted);
+        font-size: .74rem;
+        line-height: 1.25;
+        font-weight: 650;
+    }
+
+    .cash-command-page .cash-movements-head .cash-view-link {
+        flex: 0 0 auto;
+        margin-left: auto;
+        padding: 8px 10px;
+        border-radius: 9px;
+        color: var(--cash-heading) !important;
+        background: color-mix(in srgb, var(--cash-navy) 5%, #fff);
+        border: 1px solid var(--cash-soft-line);
+        text-decoration: none !important;
+        font-size: .72rem;
+        font-weight: 850;
+    }
+
+    .cash-command-page .cash-movements-list {
+        max-height: clamp(420px, 54vh, 620px) !important;
+        padding: 10px;
+        overflow-y: auto;
+    }
+
+    .cash-command-page .cash-movement-item {
+        display: grid;
+        grid-template-columns: 38px minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: start;
+        padding: 12px;
+        border: 1px solid var(--cash-soft-line);
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .cash-command-page .cash-movement-item + .cash-movement-item {
+        margin-top: 9px;
+    }
+
+    .cash-command-page .cash-movement-item:hover {
+        border-color: color-mix(in srgb, var(--cash-gold) 32%, var(--cash-line));
+        background: color-mix(in srgb, var(--cash-gold) 3%, #fff);
+    }
+
+    .cash-command-page .cash-movement-mark {
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+        border-radius: 11px;
+        background: var(--cash-green-bg);
+        color: var(--cash-green);
+        border: 1px solid color-mix(in srgb, var(--cash-green) 20%, transparent);
+    }
+
+    .cash-command-page .cash-movement-item.is-expense .cash-movement-mark {
+        background: var(--cash-red-bg);
+        color: var(--cash-red);
+        border-color: color-mix(in srgb, var(--cash-red) 20%, transparent);
+    }
+
+    .cash-command-page .cash-movement-main {
+        min-width: 0;
+    }
+
+    .cash-command-page .cash-movement-top,
+    .cash-command-page .cash-movement-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 7px;
+    }
+
+    .cash-command-page .cash-movement-type,
+    .cash-command-page .cash-movement-method,
+    .cash-command-page .cash-movement-time,
+    .cash-command-page .cash-movement-tag,
+    .cash-command-page .cash-movement-edited {
+        min-height: 24px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--cash-soft-line);
+        background: color-mix(in srgb, var(--cash-navy) 4%, #fff);
+        color: var(--cash-muted);
+        font-size: .68rem;
+        line-height: 1;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .cash-command-page .cash-movement-type {
+        color: var(--cash-green);
+        background: var(--cash-green-bg);
+        border-color: color-mix(in srgb, var(--cash-green) 22%, transparent);
+    }
+
+    .cash-command-page .cash-movement-item.is-expense .cash-movement-type {
+        color: var(--cash-red);
+        background: var(--cash-red-bg);
+        border-color: color-mix(in srgb, var(--cash-red) 22%, transparent);
+    }
+
+    .cash-command-page .cash-movement-desc {
+        margin: 9px 0 8px;
+        color: var(--cash-heading);
+        font-size: .9rem;
+        line-height: 1.35;
+        font-weight: 850;
+        overflow-wrap: anywhere;
+    }
+
+    .cash-command-page .cash-movement-meta {
+        color: var(--cash-muted);
+        font-size: .72rem;
+        line-height: 1.25;
+    }
+
+    .cash-command-page .cash-movement-amount {
+        align-self: center;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: var(--cash-green-bg);
+        color: var(--cash-green);
+        font-size: .96rem;
+        line-height: 1;
+        font-weight: 950;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .cash-command-page .cash-movement-item.is-expense .cash-movement-amount {
+        background: var(--cash-red-bg);
+        color: var(--cash-red);
+    }
+
+    .cash-command-page .cash-movement-empty {
+        min-height: 220px;
+        display: grid;
+        place-items: center;
+        align-content: center;
+        gap: 10px;
+        padding: 28px 20px;
+        color: var(--cash-muted);
+        text-align: center;
+    }
+
+    .cash-command-page .cash-movement-empty i {
+        width: 44px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        color: var(--cash-navy);
+        background: color-mix(in srgb, var(--cash-navy) 8%, #fff);
+        border: 1px solid var(--cash-soft-line);
+        font-size: 1rem;
+    }
+
+    @media (max-width: 720px) {
+        .cash-command-page .cash-movements-head {
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .cash-command-page .cash-movements-head .cash-view-link {
+            width: 100%;
+            justify-content: center;
+            margin-left: 48px;
+        }
+
+        .cash-command-page .cash-movement-item {
+            grid-template-columns: 38px minmax(0, 1fr);
+        }
+
+        .cash-command-page .cash-movement-amount {
+            grid-column: 2;
+            justify-self: start;
+        }
     }
 
     .cash-command-page .quick-link {
@@ -1903,6 +2180,345 @@
     }
 </style>
 
+<style id="cash-modal-clean-redesign">
+    #modalIngreso,
+    #modalGasto {
+        --cash-modal-surface: var(--brand-surface, #FFFEFB);
+        --cash-modal-surface-soft: var(--brand-surface-soft, #F7F3EA);
+        --cash-modal-border: color-mix(in srgb, var(--brand-border, #DED8CC) 82%, transparent);
+        --cash-modal-text: var(--brand-text, #202421);
+        --cash-modal-muted: var(--brand-muted, #68706A);
+        --cash-modal-action: var(--brand-action-bg, #223126);
+        --cash-modal-action-hover: var(--brand-action-bg-hover, #17221B);
+        --cash-modal-on-action: var(--brand-action-text, #FFFEFB);
+        --cash-modal-income: #14784B;
+        --cash-modal-expense: #A33A31;
+        --cash-modal-danger-soft: #FFF3F1;
+        background: rgba(16, 20, 18, .68) !important;
+        backdrop-filter: none !important;
+        overflow-y: auto;
+        padding: 16px;
+    }
+
+    #modalIngreso .cash-modal-shell,
+    #modalGasto .cash-modal-shell {
+        min-height: 100%;
+        display: grid;
+        place-items: center;
+    }
+
+    #modalIngreso .cash-modal-dialog,
+    #modalGasto .cash-modal-dialog {
+        width: min(100%, 640px) !important;
+        max-height: calc(100svh - 32px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border-radius: 18px !important;
+        background: var(--cash-modal-surface) !important;
+        border: 1px solid var(--cash-modal-border) !important;
+        box-shadow: 0 30px 80px -44px rgba(10, 13, 12, .7) !important;
+        color: var(--cash-modal-text);
+    }
+
+    #modalIngreso .cash-modal-header,
+    #modalGasto .cash-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 18px 20px;
+        background: linear-gradient(180deg, var(--cash-modal-surface), var(--cash-modal-surface-soft)) !important;
+        border-bottom: 1px solid var(--cash-modal-border);
+    }
+
+    #modalIngreso .cash-modal-heading,
+    #modalGasto .cash-modal-heading {
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    #modalIngreso .cash-modal-icon,
+    #modalGasto .cash-modal-icon {
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--cash-modal-action) 10%, var(--cash-modal-surface));
+        color: var(--cash-modal-action);
+        border: 1px solid color-mix(in srgb, var(--cash-modal-action) 18%, transparent);
+    }
+
+    #modalIngreso .cash-modal-dialog.is-income .cash-modal-icon {
+        background: color-mix(in srgb, var(--cash-modal-income) 11%, var(--cash-modal-surface));
+        color: var(--cash-modal-income);
+        border-color: color-mix(in srgb, var(--cash-modal-income) 24%, transparent);
+    }
+
+    #modalGasto .cash-modal-dialog.is-expense .cash-modal-icon {
+        background: color-mix(in srgb, var(--cash-modal-expense) 10%, var(--cash-modal-surface));
+        color: var(--cash-modal-expense);
+        border-color: color-mix(in srgb, var(--cash-modal-expense) 22%, transparent);
+    }
+
+    #modalIngreso .cash-modal-kicker,
+    #modalGasto .cash-modal-kicker {
+        margin: 0 0 3px;
+        color: var(--cash-modal-muted);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .08em;
+        line-height: 1.1;
+        text-transform: uppercase;
+    }
+
+    #modalIngreso .cash-modal-title,
+    #modalGasto .cash-modal-title {
+        margin: 0;
+        color: var(--cash-modal-text) !important;
+        font-size: 18px;
+        line-height: 1.2;
+        font-weight: 850;
+        letter-spacing: 0;
+    }
+
+    #modalIngreso .cash-modal-close,
+    #modalGasto .cash-modal-close {
+        width: 38px;
+        height: 38px;
+        flex: 0 0 38px;
+        display: grid;
+        place-items: center;
+        border-radius: 10px;
+        color: var(--cash-modal-muted) !important;
+        background: var(--cash-modal-surface) !important;
+        border: 1px solid var(--cash-modal-border) !important;
+        transition: background .18s ease, color .18s ease, transform .18s ease;
+    }
+
+    #modalIngreso .cash-modal-close:hover,
+    #modalGasto .cash-modal-close:hover {
+        color: var(--cash-modal-text) !important;
+        background: color-mix(in srgb, var(--cash-modal-action) 7%, var(--cash-modal-surface)) !important;
+    }
+
+    #modalIngreso .cash-modal-form,
+    #modalGasto .cash-modal-form {
+        min-height: 0;
+        overflow-y: auto;
+        padding: 20px 22px 0 !important;
+        background: var(--cash-modal-surface);
+    }
+
+    #modalIngreso .cash-modal-fields,
+    #modalGasto .cash-modal-fields {
+        display: grid;
+        gap: 14px;
+    }
+
+    #modalIngreso .cash-modal-grid,
+    #modalGasto .cash-modal-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    #modalIngreso .cash-field,
+    #modalGasto .cash-field {
+        min-width: 0;
+        display: grid;
+        gap: 7px;
+    }
+
+    #modalIngreso .cash-field.hidden,
+    #modalGasto .cash-field.hidden {
+        display: none !important;
+    }
+
+    #modalIngreso .modal-label,
+    #modalGasto .modal-label,
+    #modalGasto .modal-label-red {
+        margin: 0;
+        color: var(--cash-modal-text) !important;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+
+    #modalIngreso .modal-label span,
+    #modalGasto .modal-label span {
+        color: var(--cash-modal-expense) !important;
+    }
+
+    #modalIngreso .modal-input,
+    #modalGasto .modal-input,
+    #modalGasto .modal-input-red {
+        width: 100%;
+        min-height: 46px;
+        border-radius: 11px !important;
+        border: 1px solid var(--cash-modal-border) !important;
+        background: color-mix(in srgb, var(--cash-modal-surface-soft) 62%, var(--cash-modal-surface)) !important;
+        color: var(--cash-modal-text) !important;
+        padding: 11px 13px !important;
+        font-size: 14px;
+        line-height: 1.35;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+
+    #modalIngreso textarea.modal-input,
+    #modalGasto textarea.modal-input {
+        min-height: 82px;
+        resize: vertical;
+    }
+
+    #modalIngreso .modal-input::placeholder,
+    #modalGasto .modal-input::placeholder {
+        color: color-mix(in srgb, var(--cash-modal-muted) 72%, transparent);
+    }
+
+    #modalIngreso .modal-input:focus,
+    #modalGasto .modal-input:focus {
+        background: var(--cash-modal-surface) !important;
+        border-color: color-mix(in srgb, var(--cash-modal-action) 68%, var(--cash-modal-border)) !important;
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--cash-modal-action) 18%, transparent) !important;
+    }
+
+    #modalIngreso .cash-money-field,
+    #modalGasto .cash-money-field {
+        position: relative;
+    }
+
+    #modalIngreso .cash-money-prefix,
+    #modalGasto .cash-money-prefix {
+        position: absolute;
+        left: 13px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--cash-modal-muted);
+        font-size: 14px;
+        font-weight: 850;
+        pointer-events: none;
+    }
+
+    #modalIngreso .cash-money-field .modal-input,
+    #modalGasto .cash-money-field .modal-input {
+        padding-left: 30px !important;
+        font-size: 16px;
+        font-weight: 850;
+        font-variant-numeric: tabular-nums;
+    }
+
+    #modalIngreso .cash-modal-actions,
+    #modalGasto .cash-modal-actions {
+        position: sticky;
+        bottom: 0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin: 18px -22px 0;
+        padding: 16px 22px 18px;
+        background: linear-gradient(180deg, color-mix(in srgb, var(--cash-modal-surface) 12%, transparent), var(--cash-modal-surface) 32%);
+        border-top: 1px solid var(--cash-modal-border);
+    }
+
+    #modalIngreso .cash-modal-btn,
+    #modalGasto .cash-modal-btn {
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 16px;
+        border-radius: 11px;
+        font-size: 13px;
+        font-weight: 850;
+        line-height: 1;
+        transition: transform .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+
+    #modalIngreso .cash-modal-btn.secondary,
+    #modalGasto .cash-modal-btn.secondary {
+        color: var(--cash-modal-text) !important;
+        background: var(--cash-modal-surface) !important;
+        border: 1px solid var(--cash-modal-border) !important;
+    }
+
+    #modalIngreso .cash-modal-btn.secondary:hover,
+    #modalGasto .cash-modal-btn.secondary:hover {
+        background: var(--cash-modal-surface-soft) !important;
+    }
+
+    #modalIngreso .cash-modal-btn.primary {
+        color: var(--cash-modal-on-action) !important;
+        background: var(--cash-modal-action) !important;
+        border: 1px solid var(--cash-modal-action) !important;
+    }
+
+    #modalIngreso .cash-modal-btn.primary:hover {
+        background: var(--cash-modal-action-hover) !important;
+        border-color: var(--cash-modal-action-hover) !important;
+    }
+
+    #modalGasto .cash-modal-btn.primary {
+        color: #FFF7F5 !important;
+        background: var(--cash-modal-expense) !important;
+        border: 1px solid color-mix(in srgb, var(--cash-modal-expense) 88%, #4F1714) !important;
+    }
+
+    #modalGasto .cash-modal-btn.primary:hover {
+        background: color-mix(in srgb, var(--cash-modal-expense) 88%, #4F1714) !important;
+    }
+
+    @media (max-width: 640px) {
+        #modalIngreso,
+        #modalGasto {
+            padding: 10px;
+        }
+
+        #modalIngreso .cash-modal-shell,
+        #modalGasto .cash-modal-shell {
+            place-items: end center;
+        }
+
+        #modalIngreso .cash-modal-dialog,
+        #modalGasto .cash-modal-dialog {
+            max-height: calc(100svh - 20px);
+            border-radius: 16px !important;
+        }
+
+        #modalIngreso .cash-modal-header,
+        #modalGasto .cash-modal-header {
+            padding: 16px;
+        }
+
+        #modalIngreso .cash-modal-form,
+        #modalGasto .cash-modal-form {
+            padding: 16px 16px 0 !important;
+        }
+
+        #modalIngreso .cash-modal-grid,
+        #modalGasto .cash-modal-grid {
+            grid-template-columns: 1fr;
+        }
+
+        #modalIngreso .cash-modal-actions,
+        #modalGasto .cash-modal-actions {
+            margin-inline: -16px;
+            padding: 14px 16px 16px;
+        }
+
+        #modalIngreso .cash-modal-btn,
+        #modalGasto .cash-modal-btn {
+            flex: 1;
+        }
+    }
+</style>
+
 <?php
 // ── Datos de apoyo: distribución de ingresos por método de pago (cálculo presentacional, no altera datos) ──
 $cash_ing_efectivo = (float) ($resumen['ingresos']['efectivo']['total'] ?? 0);
@@ -1919,9 +2535,2018 @@ if ($cash_ing_total_metodos > 0) {
     $cash_pct_tarjeta = round(($cash_ing_tarjeta / $cash_ing_total_metodos) * 100, 1);
     $cash_pct_transferencia = max(0, round(100 - $cash_pct_efectivo - $cash_pct_tarjeta, 1));
 }
+
+$cash_balance_general = (float) ($resumen['balance_general'] ?? 0);
+$cash_total_movimientos = (int) ($resumen['total_movimientos'] ?? 0);
+$cash_fecha_apertura_label = !empty($corte['fecha_apertura'])
+    ? date('d/m/Y H:i', strtotime($corte['fecha_apertura']))
+    : 'Sin fecha';
+$cash_hora_apertura_label = !empty($corte['fecha_apertura'])
+    ? date('H:i', strtotime($corte['fecha_apertura']))
+    : '--:--';
+$cash_caja_nombre = $caja['nombre'] ?? 'Caja';
+$cash_responsable = $corte['usuario_apertura'] ?? 'Responsable no asignado';
+$cash_hotel_nombre = function_exists('current_hotel_display_name') ? current_hotel_display_name() : 'Hotel';
+$cash_methods = [
+    'efectivo' => [
+        'label' => 'Efectivo',
+        'icon' => 'money-bill-wave',
+        'class' => 'efectivo',
+        'note' => 'Afecta caja fisica',
+    ],
+    'tarjeta' => [
+        'label' => 'Tarjeta',
+        'icon' => 'credit-card',
+        'class' => 'tarjeta',
+        'note' => 'Cobro bancario',
+    ],
+    'transferencia' => [
+        'label' => 'Transferencia',
+        'icon' => 'exchange-alt',
+        'class' => 'transferencia',
+        'note' => 'Deposito o SPEI',
+    ],
+];
 ?>
+<style id="cash-control-room-redesign">
+    .cash-page.cash-control-room {
+        --cc-dark: color-mix(in srgb, var(--brand-text, #202421) 78%, #101827);
+        --cc-dark-2: color-mix(in srgb, var(--brand-action-bg-hover, #17221B) 58%, #0F172A);
+        --cc-action: var(--brand-action-bg, #223126);
+        --cc-action-hover: var(--brand-action-bg-hover, #17221B);
+        --cc-on-action: var(--brand-action-text, #FFFEFB);
+        --cc-accent: var(--brand-accent, #BD9441);
+        --cc-bg: color-mix(in srgb, var(--cc-accent) 7%, #F5F2EA);
+        --cc-panel: color-mix(in srgb, var(--cc-accent) 2%, #FFFFFF);
+        --cc-panel-2: color-mix(in srgb, var(--cc-action) 4%, #FFFFFF);
+        --cc-line: color-mix(in srgb, var(--cc-action) 14%, #E7DDD0);
+        --cc-line-soft: color-mix(in srgb, var(--cc-action) 8%, #EEE7DC);
+        --cc-text: var(--brand-text, #202421);
+        --cc-muted: var(--brand-muted, #68706A);
+        --cc-green: #16824E;
+        --cc-red: #B93A32;
+        --cc-blue: #2563EB;
+        --cc-violet: #6D4ED8;
+        min-height: 100vh;
+        padding: 18px !important;
+        background:
+            linear-gradient(135deg, color-mix(in srgb, var(--cc-action) 5%, transparent) 0 1px, transparent 1px 28px),
+            radial-gradient(circle at 88% 0%, color-mix(in srgb, var(--cc-accent) 24%, transparent), transparent 28rem),
+            linear-gradient(180deg, var(--cc-bg), #FBFAF6 56%, #EFE7DA) !important;
+        color: var(--cc-text);
+    }
+
+    .cash-control-room > .cash-hero-wrap,
+    .cash-control-room > .cash-status-wrap,
+    .cash-control-room > .cash-summary-wrap,
+    .cash-control-room > .cash-activity-wrap {
+        display: none !important;
+    }
+
+    .cc-shell {
+        position: relative;
+        z-index: 2;
+        width: min(1680px, calc(100vw - 36px));
+        margin: 0 auto;
+    }
+
+    .cc-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(300px, 430px);
+        gap: 18px;
+        align-items: stretch;
+        margin-bottom: 14px;
+        border-radius: 18px;
+        border: 1px solid color-mix(in srgb, var(--cc-accent) 24%, transparent);
+        background:
+            radial-gradient(circle at 86% 10%, color-mix(in srgb, var(--cc-accent) 32%, transparent), transparent 20rem),
+            linear-gradient(135deg, var(--cc-dark), var(--cc-dark-2));
+        box-shadow: 0 28px 70px -48px rgba(15, 23, 42, .9);
+        overflow: hidden;
+    }
+
+    .cc-hero-main {
+        min-width: 0;
+        padding: clamp(22px, 2.5vw, 34px);
+    }
+
+    .cc-state {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 30px;
+        padding: 0 11px;
+        border-radius: 999px;
+        color: #DDF8E9;
+        background: rgba(22, 130, 78, .18);
+        border: 1px solid rgba(92, 214, 143, .26);
+        font-size: .74rem;
+        font-weight: 900;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .cc-state-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #60D394;
+        box-shadow: 0 0 0 5px rgba(96, 211, 148, .12);
+    }
+
+    .cc-hero-title {
+        margin: 16px 0 8px;
+        color: var(--cc-on-action);
+        font-size: clamp(2.35rem, 4.6vw, 5.2rem);
+        line-height: .88;
+        font-weight: 950;
+        letter-spacing: 0;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .cc-hero-title span {
+        display: block;
+        margin-top: 10px;
+        color: color-mix(in srgb, var(--cc-on-action) 72%, transparent);
+        font-size: clamp(.82rem, 1vw, .98rem);
+        line-height: 1.35;
+        font-weight: 800;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+
+    .cc-hero-copy {
+        max-width: 72ch;
+        margin: 0;
+        color: color-mix(in srgb, var(--cc-on-action) 76%, transparent);
+        font-size: .94rem;
+        line-height: 1.55;
+        font-weight: 650;
+    }
+
+    .cc-meta-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin-top: 18px;
+    }
+
+    .cc-meta-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 34px;
+        padding: 0 11px;
+        border-radius: 10px;
+        color: color-mix(in srgb, var(--cc-on-action) 88%, transparent);
+        background: rgba(255, 255, 255, .09);
+        border: 1px solid rgba(255, 255, 255, .14);
+        font-size: .8rem;
+        font-weight: 850;
+    }
+
+    .cc-hero-side {
+        display: grid;
+        gap: 10px;
+        align-content: center;
+        padding: 18px;
+        background: rgba(255, 255, 255, .07);
+        border-left: 1px solid rgba(255, 255, 255, .11);
+    }
+
+    .cc-primary-actions {
+        display: grid;
+        gap: 10px;
+    }
+
+    .cc-action-btn {
+        min-height: 54px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        width: 100%;
+        padding: 0 16px;
+        border-radius: 13px;
+        border: 1px solid transparent;
+        color: #FFFFFF;
+        font-size: .92rem;
+        font-weight: 950;
+        text-decoration: none;
+        cursor: pointer;
+        transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+    }
+
+    .cc-action-btn:hover {
+        transform: translateY(-1px);
+        filter: saturate(1.04);
+    }
+
+    .cc-action-btn:active {
+        transform: translateY(0) scale(.985);
+    }
+
+    .cc-action-btn i {
+        width: 30px;
+        height: 30px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 9px;
+        background: rgba(255, 255, 255, .16);
+    }
+
+    .cc-action-btn.is-income {
+        background: linear-gradient(135deg, #19985E, #0F7048);
+        box-shadow: 0 18px 34px -28px rgba(22, 130, 78, .9);
+    }
+
+    .cc-action-btn.is-expense {
+        background: linear-gradient(135deg, #C9463B, #9A2F28);
+        box-shadow: 0 18px 34px -28px rgba(185, 58, 50, .9);
+    }
+
+    .cc-action-btn.is-cut {
+        background: linear-gradient(135deg, var(--cc-accent), color-mix(in srgb, var(--cc-accent) 64%, #32220A));
+        box-shadow: 0 18px 34px -28px color-mix(in srgb, var(--cc-accent) 90%, transparent);
+    }
+
+    .cc-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .cc-kpi,
+    .cc-panel,
+    .cc-shortcuts {
+        border: 1px solid var(--cc-line);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, .92);
+        box-shadow: 0 18px 42px -34px rgba(15, 23, 42, .54);
+    }
+
+    .cc-kpi {
+        min-height: 132px;
+        display: grid;
+        align-content: space-between;
+        padding: 16px;
+    }
+
+    .cc-kpi-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--cc-muted);
+        font-size: .72rem;
+        font-weight: 950;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .cc-kpi-icon {
+        width: 34px;
+        height: 34px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 10px;
+        background: color-mix(in srgb, var(--cc-action) 8%, #FFFFFF);
+        color: var(--cc-action);
+        border: 1px solid var(--cc-line-soft);
+    }
+
+    .cc-kpi-value {
+        margin: 12px 0 6px;
+        color: var(--cc-text);
+        font-size: clamp(1.35rem, 2vw, 2rem);
+        line-height: 1;
+        font-weight: 950;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .cc-kpi-value.is-income { color: var(--cc-green); }
+    .cc-kpi-value.is-expense { color: var(--cc-red); }
+
+    .cc-kpi-note {
+        margin: 0;
+        color: var(--cc-muted);
+        font-size: .78rem;
+        line-height: 1.35;
+        font-weight: 700;
+    }
+
+    .cc-workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(360px, .92fr);
+        gap: 14px;
+        align-items: start;
+        margin-bottom: 14px;
+    }
+
+    .cc-panel {
+        overflow: hidden;
+    }
+
+    .cc-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 15px 16px;
+        background: linear-gradient(90deg, color-mix(in srgb, var(--cc-accent) 7%, #FFFFFF), #FFFFFF);
+        border-bottom: 1px solid var(--cc-line-soft);
+    }
+
+    .cc-panel-kicker {
+        display: block;
+        color: var(--cc-muted);
+        font-size: .68rem;
+        font-weight: 950;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .cc-panel-title {
+        margin: 4px 0 0;
+        color: var(--cc-text);
+        font-size: 1rem;
+        line-height: 1.2;
+        font-weight: 950;
+    }
+
+    .cc-panel-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        min-height: 34px;
+        padding: 0 11px;
+        border-radius: 10px;
+        color: var(--cc-action);
+        background: color-mix(in srgb, var(--cc-action) 6%, #FFFFFF);
+        border: 1px solid var(--cc-line-soft);
+        font-size: .78rem;
+        font-weight: 900;
+        text-decoration: none;
+    }
+
+    .cc-panel-body {
+        padding: 14px;
+    }
+
+    .cc-method-bar {
+        display: flex;
+        height: 11px;
+        margin-bottom: 12px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: var(--cc-line-soft);
+    }
+
+    .cc-method-bar span:nth-child(1) { background: var(--cc-green); }
+    .cc-method-bar span:nth-child(2) { background: var(--cc-blue); }
+    .cc-method-bar span:nth-child(3) { background: var(--cc-violet); }
+
+    .cc-method-list {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .cc-method-card {
+        min-width: 0;
+        padding: 13px;
+        border-radius: 13px;
+        border: 1px solid var(--cc-line-soft);
+        background: var(--cc-panel);
+    }
+
+    .cc-method-card.is-efectivo { --method-color: var(--cc-green); }
+    .cc-method-card.is-tarjeta { --method-color: var(--cc-blue); }
+    .cc-method-card.is-transferencia { --method-color: var(--cc-violet); }
+
+    .cc-method-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--cc-text);
+        font-size: .86rem;
+        font-weight: 950;
+    }
+
+    .cc-method-title i {
+        color: var(--method-color);
+    }
+
+    .cc-method-note {
+        margin: 4px 0 12px;
+        color: var(--cc-muted);
+        font-size: .72rem;
+        font-weight: 750;
+    }
+
+    .cc-method-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px 0;
+        border-top: 1px solid var(--cc-line-soft);
+        color: var(--cc-muted);
+        font-size: .78rem;
+        font-weight: 850;
+    }
+
+    .cc-money {
+        color: var(--cc-text);
+        font-weight: 950;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .cc-money.is-income { color: var(--cc-green); }
+    .cc-money.is-expense { color: var(--cc-red); }
+
+    .cash-control-room .cash-movements-panel {
+        max-height: none;
+        border-radius: 16px !important;
+        background: rgba(255, 255, 255, .92) !important;
+        border: 1px solid var(--cc-line) !important;
+        box-shadow: 0 18px 42px -34px rgba(15, 23, 42, .54) !important;
+    }
+
+    .cash-control-room .cash-movements-head {
+        padding: 15px 16px !important;
+        background: linear-gradient(90deg, color-mix(in srgb, var(--cc-action) 5%, #FFFFFF), #FFFFFF) !important;
+        border-bottom: 1px solid var(--cc-line-soft) !important;
+    }
+
+    .cash-control-room .cash-movements-list {
+        max-height: 455px !important;
+        padding: 12px !important;
+    }
+
+    .cash-control-room .cash-movement-item {
+        border-radius: 12px !important;
+        border-color: var(--cc-line-soft) !important;
+        box-shadow: none !important;
+    }
+
+    .cc-bottom-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 14px;
+        align-items: start;
+    }
+
+    .cc-category-list {
+        display: grid;
+        gap: 9px;
+    }
+
+    .cc-category-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+        padding: 11px;
+        border: 1px solid var(--cc-line-soft);
+        border-radius: 12px;
+        background: #FFFFFF;
+    }
+
+    .cc-category-main {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+    }
+
+    .cc-category-icon {
+        width: 36px;
+        height: 36px;
+        display: inline-grid;
+        place-items: center;
+        flex: 0 0 36px;
+        border-radius: 10px;
+    }
+
+    .cc-category-title {
+        margin: 0;
+        color: var(--cc-text);
+        font-size: .88rem;
+        line-height: 1.25;
+        font-weight: 900;
+    }
+
+    .cc-category-sub {
+        margin: 2px 0 0;
+        color: var(--cc-muted);
+        font-size: .73rem;
+        font-weight: 750;
+    }
+
+    .cc-empty {
+        display: grid;
+        place-items: center;
+        min-height: 148px;
+        padding: 20px;
+        text-align: center;
+        color: var(--cc-muted);
+        font-weight: 750;
+    }
+
+    .cc-shortcuts {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+        overflow-x: auto;
+    }
+
+    .cc-shortcuts-label {
+        flex: 0 0 auto;
+        color: var(--cc-muted);
+        font-size: .72rem;
+        font-weight: 950;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .cc-shortcut-link {
+        flex: 0 0 auto;
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        padding: 0 13px;
+        border-radius: 11px;
+        color: var(--cc-text);
+        background: #FFFFFF;
+        border: 1px solid var(--cc-line-soft);
+        font-size: .84rem;
+        font-weight: 900;
+        text-decoration: none;
+        transition: transform .16s ease, border-color .16s ease, background .16s ease;
+    }
+
+    .cc-shortcut-link:hover {
+        transform: translateY(-1px);
+        border-color: color-mix(in srgb, var(--cc-accent) 34%, var(--cc-line));
+        background: color-mix(in srgb, var(--cc-accent) 5%, #FFFFFF);
+    }
+
+    @media (max-width: 1180px) {
+        .cc-hero,
+        .cc-workspace {
+            grid-template-columns: 1fr;
+        }
+
+        .cc-hero-side {
+            border-left: 0;
+            border-top: 1px solid rgba(255, 255, 255, .11);
+        }
+
+        .cc-primary-actions {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .cc-kpi-grid,
+        .cc-method-list {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 760px) {
+        .cash-page.cash-control-room {
+            padding: 10px !important;
+        }
+
+        .cc-shell {
+            width: 100%;
+        }
+
+        .cc-primary-actions,
+        .cc-kpi-grid,
+        .cc-method-list,
+        .cc-bottom-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .cc-hero-main,
+        .cc-hero-side {
+            padding: 16px;
+        }
+
+        .cc-hero-title {
+            font-size: clamp(2.05rem, 13vw, 3.25rem);
+        }
+
+        .cc-shortcuts {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .cc-shortcuts-label,
+        .cc-shortcut-link {
+            width: 100%;
+        }
+    }
+</style>
+
+<style id="cash-notifications-index-redesign">
+    .cash-page.cash-control-room {
+        --cn-primary: var(--brand-primary, #1f3f46);
+        --cn-secondary: var(--brand-secondary, #27333f);
+        --cn-accent: var(--brand-accent, #b58a3c);
+        --cn-ink: color-mix(in srgb, var(--cn-primary) 54%, #475467);
+        --cn-text: #344054;
+        --cn-muted: #748094;
+        --cn-line: color-mix(in srgb, var(--cn-primary) 9%, #e9e2d7);
+        --cn-surface: rgba(255, 255, 255, .76);
+        --cn-panel: rgba(255, 255, 255, .9);
+        --cn-soft: color-mix(in srgb, var(--cn-accent) 5%, #f8f5ee);
+        --cn-focus: color-mix(in srgb, var(--cn-accent) 22%, transparent);
+        --cn-income: #16a34a;
+        --cn-expense: #dc2626;
+        --cn-info: #2563eb;
+        --cn-violet: #7c3aed;
+        --cn-cash: #2f8a70;
+        --cn-card: #3f7891;
+        --cn-transfer: #6e6aa9;
+        min-height: 100vh;
+        padding: 0 !important;
+        color: var(--cn-text);
+        background:
+            radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--cn-accent) 12%, transparent), transparent 25rem),
+            radial-gradient(circle at 96% 8%, color-mix(in srgb, var(--cn-primary) 7%, transparent), transparent 30rem),
+            linear-gradient(180deg, #fcfbf8 0%, color-mix(in srgb, var(--cn-accent) 4%, #f4f1ea) 100%) !important;
+        font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    }
+
+    .cash-control-room > .cc-shell {
+        display: none !important;
+    }
+
+    .cash-ntx-shell {
+        width: 100%;
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 30px clamp(34px, 4vw, 76px) 58px;
+        box-sizing: border-box;
+    }
+
+    .cash-ntx-top {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 22px;
+        align-items: end;
+        margin-bottom: 20px;
+    }
+
+    .cash-ntx-heading {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .cash-ntx-kicker {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: color-mix(in srgb, var(--cn-primary) 58%, #667085);
+        font-size: .76rem;
+        font-weight: 720;
+        letter-spacing: .045em;
+        text-transform: uppercase;
+    }
+
+    .cash-ntx-kicker::after {
+        content: "";
+        width: 54px;
+        height: 1px;
+        border-radius: 999px;
+        background: linear-gradient(90deg,
+            color-mix(in srgb, var(--cn-accent) 58%, var(--cn-primary)),
+            color-mix(in srgb, var(--cn-accent) 8%, transparent)
+        );
+    }
+
+    .cash-ntx-kicker i {
+        width: 24px;
+        height: 24px;
+        display: inline-grid;
+        place-items: center;
+        border: 1px solid color-mix(in srgb, var(--cn-accent) 22%, #ded6c8);
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--cn-accent) 7%, rgba(255,255,255,.84));
+        color: color-mix(in srgb, var(--cn-accent) 76%, #795a16);
+        font-size: .72rem;
+    }
+
+    .cash-ntx-title {
+        position: relative;
+        display: block;
+        margin: 0;
+        color: color-mix(in srgb, var(--cn-primary) 78%, #263247);
+        font-size: clamp(2rem, 3.25vw, 3.2rem);
+        line-height: .98;
+        font-weight: 660;
+        letter-spacing: 0;
+        text-wrap: balance;
+        text-shadow: 0 1px 0 rgba(255,255,255,.68);
+    }
+
+    .cash-ntx-title::after {
+        content: none;
+    }
+
+    .cash-ntx-subtitle {
+        max-width: 680px;
+        margin: 2px 0 0;
+        color: #526176;
+        font-size: .98rem;
+        line-height: 1.55;
+        font-weight: 430;
+    }
+
+    .cash-ntx-live-card {
+        min-width: 300px;
+        border: 1px solid var(--cn-line);
+        border-radius: 16px;
+        background:
+            linear-gradient(135deg, rgba(255,255,255,.84), color-mix(in srgb, var(--cn-accent) 7%, rgba(255,255,255,.9)));
+        box-shadow: 0 18px 42px -38px color-mix(in srgb, var(--cn-primary) 34%, transparent);
+        padding: 16px;
+        color: var(--cn-text);
+    }
+
+    .cash-ntx-live-card span {
+        display: block;
+        color: var(--cn-muted);
+        font-size: .74rem;
+        font-weight: 650;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+    }
+
+    .cash-ntx-live-card strong {
+        display: block;
+        margin-top: 5px;
+        color: color-mix(in srgb, var(--cn-primary) 62%, #4b5563);
+        font-size: clamp(1.95rem, 3vw, 2.45rem);
+        line-height: 1;
+        font-weight: 560;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .cash-ntx-live-card small {
+        display: block;
+        margin-top: 8px;
+        color: color-mix(in srgb, var(--cn-accent) 72%, #7c5b16);
+        font-weight: 620;
+    }
+
+    .cash-ntx-stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 22px;
+    }
+
+    .cash-ntx-stat {
+        position: relative;
+        overflow: hidden;
+        min-height: 88px;
+        display: grid;
+        align-content: space-between;
+        border: 1px solid var(--cn-line);
+        border-radius: 14px;
+        background: var(--cn-surface);
+        box-shadow: 0 14px 34px -32px color-mix(in srgb, var(--cn-primary) 22%, transparent);
+        padding: 13px 14px;
+    }
+
+    .cash-ntx-stat::after {
+        content: "";
+        position: absolute;
+        inset: auto 12px 0 12px;
+        height: 3px;
+        border-radius: 999px 999px 0 0;
+        background: var(--stat-color, var(--cn-accent));
+    }
+
+    .cash-ntx-stat.is-initial { --stat-color: color-mix(in srgb, var(--cn-accent) 70%, #d89d20); }
+    .cash-ntx-stat.is-income { --stat-color: var(--cn-income); }
+    .cash-ntx-stat.is-expense { --stat-color: var(--cn-expense); }
+    .cash-ntx-stat.is-balance { --stat-color: var(--cn-info); }
+
+    .cash-ntx-stat span {
+        color: var(--cn-muted);
+        font-size: .72rem;
+        font-weight: 620;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+    }
+
+    .cash-ntx-stat strong {
+        color: color-mix(in srgb, var(--cn-primary) 58%, #4b5563);
+        font-size: 1.55rem;
+        line-height: 1;
+        font-weight: 560;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .cash-ntx-stat strong.is-income,
+    .cash-ntx-money.is-income {
+        color: var(--cn-income);
+    }
+
+    .cash-ntx-stat strong.is-expense,
+    .cash-ntx-money.is-expense {
+        color: var(--cn-expense);
+    }
+
+    .cash-ntx-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(312px, 360px);
+        grid-template-areas: "main side";
+        gap: 18px;
+        align-items: start;
+    }
+
+    .cash-ntx-side {
+        grid-area: side;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+        align-items: start;
+    }
+
+    .cash-ntx-panel {
+        border: 1px solid var(--cn-line);
+        border-radius: 18px;
+        background: var(--cn-panel);
+        box-shadow: 0 18px 42px -36px color-mix(in srgb, var(--cn-primary) 24%, transparent);
+        overflow: hidden;
+    }
+
+    .cash-ntx-panel-head {
+        padding: 16px 17px 12px;
+        border-bottom: 1px solid color-mix(in srgb, var(--cn-line) 84%, transparent);
+    }
+
+    .cash-ntx-panel-head h2 {
+        margin: 0;
+        color: var(--cn-ink);
+        font-size: .98rem;
+        line-height: 1.2;
+        font-weight: 620;
+    }
+
+    .cash-ntx-panel-head p {
+        margin: 5px 0 0;
+        color: var(--cn-muted);
+        font-size: .8rem;
+        line-height: 1.42;
+        font-weight: 420;
+    }
+
+    .cash-ntx-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 9px;
+        padding: 14px;
+    }
+
+    .cash-ntx-btn {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px;
+        border: 1px solid var(--cn-line);
+        border-radius: 12px;
+        background: #fff;
+        color: var(--cn-ink);
+        padding: 0 12px;
+        font-size: .82rem;
+        font-weight: 620;
+        text-decoration: none;
+        cursor: pointer;
+        transition: transform .18s ease, background .18s ease, border-color .18s ease, color .18s ease;
+    }
+
+    .cash-ntx-btn:hover {
+        transform: translateY(-1px);
+        border-color: color-mix(in srgb, var(--cn-accent) 32%, var(--cn-line));
+        background: color-mix(in srgb, var(--cn-accent) 8%, #fff);
+    }
+
+    .cash-ntx-btn.is-income {
+        border-color: color-mix(in srgb, var(--cn-income) 24%, #d8cdbb);
+        background: color-mix(in srgb, var(--cn-income) 8%, #fff);
+        color: #166534;
+    }
+
+    .cash-ntx-btn.is-expense {
+        border-color: #fecaca;
+        background: #fef2f2;
+        color: #991b1b;
+    }
+
+    .cash-ntx-btn.is-primary {
+        border-color: color-mix(in srgb, var(--cn-accent) 34%, #d8cdbb);
+        background: color-mix(in srgb, var(--cn-accent) 13%, #fff);
+        color: color-mix(in srgb, var(--cn-primary) 58%, #667085);
+    }
+
+    .cash-ntx-methods,
+    .cash-ntx-shortcuts {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+    }
+
+    .cash-ntx-methods {
+        grid-template-columns: 1fr;
+    }
+
+    .cash-ntx-shortcuts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .cash-ntx-chip,
+    .cash-ntx-shortcut {
+        --item-color: color-mix(in srgb, var(--cn-accent) 76%, #795a16);
+        --item-soft: color-mix(in srgb, var(--item-color) 8%, #fffdf8);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        min-height: 42px;
+        border: 1px solid color-mix(in srgb, var(--item-color) 18%, #ddd5c8);
+        border-radius: 12px;
+        background:
+            radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--item-color) 9%, transparent), transparent 5.8rem),
+            linear-gradient(135deg, var(--item-soft), rgba(255, 253, 248, .92));
+        color: #435164;
+        padding: 0 11px;
+        font-size: .75rem;
+        font-weight: 590;
+        text-decoration: none;
+        box-shadow: 0 12px 26px -28px color-mix(in srgb, var(--item-color) 42%, transparent);
+        transition: transform .18s cubic-bezier(.22, 1, .36, 1), border-color .18s ease, background .18s ease, box-shadow .18s ease, color .18s ease;
+    }
+
+    .cash-ntx-chip {
+        justify-content: space-between;
+    }
+
+    .cash-ntx-chip span {
+        display: inline-flex;
+        min-width: 0;
+        align-items: center;
+        gap: 7px;
+    }
+
+    .cash-ntx-chip strong {
+        margin-left: auto;
+        color: color-mix(in srgb, var(--item-color) 46%, var(--cn-ink));
+        font-size: .76rem;
+        font-weight: 680;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .cash-ntx-chip i,
+    .cash-ntx-shortcut i {
+        flex: 0 0 auto;
+        width: 24px;
+        height: 24px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--item-color) 12%, rgba(255, 253, 248, .9));
+        color: var(--item-color);
+        font-size: .72rem;
+        transition: transform .18s cubic-bezier(.22, 1, .36, 1), background .18s ease, color .18s ease;
+    }
+
+    .cash-ntx-chip.is-method-efectivo,
+    .cash-ntx-shortcut.is-movements {
+        --item-color: #2f8a70;
+    }
+
+    .cash-ntx-chip.is-method-tarjeta,
+    .cash-ntx-shortcut.is-methods {
+        --item-color: #3f7891;
+    }
+
+    .cash-ntx-chip.is-method-transferencia,
+    .cash-ntx-chip.is-method-transfer,
+    .cash-ntx-shortcut.is-history {
+        --item-color: #6e6aa9;
+    }
+
+    .cash-ntx-shortcut.is-categories {
+        --item-color: #b98a35;
+    }
+
+    .cash-ntx-shortcut:hover,
+    .cash-ntx-shortcut:focus-visible {
+        transform: translateY(-2px);
+        border-color: color-mix(in srgb, var(--item-color) 32%, #ddd5c8);
+        background:
+            radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--item-color) 13%, transparent), transparent 6rem),
+            linear-gradient(135deg, color-mix(in srgb, var(--item-color) 12%, #fffdf8), rgba(255, 253, 248, .96));
+        color: color-mix(in srgb, var(--item-color) 42%, #344054);
+        box-shadow: 0 16px 32px -27px color-mix(in srgb, var(--item-color) 54%, transparent);
+        outline: none;
+    }
+
+    .cash-ntx-shortcut:hover i,
+    .cash-ntx-shortcut:focus-visible i {
+        transform: scale(1.04);
+        background: color-mix(in srgb, var(--item-color) 18%, rgba(255, 253, 248, .92));
+    }
+
+    .cash-ntx-shortcut:active {
+        transform: translateY(0) scale(.99);
+    }
+
+    .cash-ntx-main {
+        grid-area: main;
+        min-width: 0;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at 0 0, color-mix(in srgb, var(--cn-accent) 11%, transparent), transparent 18rem),
+            linear-gradient(180deg, rgba(255,255,255,.96), color-mix(in srgb, var(--cn-info) 4%, #fffdf8)) !important;
+        border-color: color-mix(in srgb, var(--cn-accent) 22%, var(--cn-line)) !important;
+    }
+
+    .cash-ntx-inbox-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 16px;
+        align-items: start;
+        padding: 18px;
+        border-bottom: 1px solid color-mix(in srgb, var(--cn-accent) 18%, var(--cn-line));
+        background:
+            radial-gradient(circle at 100% 0, color-mix(in srgb, var(--cn-info) 8%, transparent), transparent 13rem),
+            linear-gradient(135deg, color-mix(in srgb, var(--cn-accent) 7%, #fff), color-mix(in srgb, var(--cn-primary) 4%, #fff));
+    }
+
+    .cash-ntx-inbox-head h2 {
+        margin: 0;
+        color: var(--cn-ink);
+        font-size: 1.18rem;
+        line-height: 1.2;
+        font-weight: 620;
+    }
+
+    .cash-ntx-inbox-head p {
+        margin: 5px 0 0;
+        color: var(--cn-muted);
+        font-size: .84rem;
+        line-height: 1.45;
+        font-weight: 420;
+    }
+
+    .cash-ntx-count {
+        display: inline-flex;
+        align-items: center;
+        min-height: 34px;
+        border: 1px solid color-mix(in srgb, var(--cn-info) 24%, #ddd5c8);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--cn-info) 9%, #fff);
+        color: color-mix(in srgb, var(--cn-info) 58%, var(--cn-primary));
+        padding: 0 11px;
+        font-size: .78rem;
+        font-weight: 620;
+        white-space: nowrap;
+    }
+
+    .cash-ntx-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        min-height: 66px;
+        padding: 14px 18px 16px;
+        border-bottom: 1px solid color-mix(in srgb, var(--cn-accent) 16%, var(--cn-line));
+        background: linear-gradient(135deg, rgba(255,255,255,.56), color-mix(in srgb, var(--cn-accent) 4%, #fffdf8));
+    }
+
+    .cash-ntx-tab {
+        min-height: 34px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid color-mix(in srgb, var(--cn-primary) 10%, #ddd5c8);
+        border-radius: 999px;
+        background: rgba(255,255,255,.82);
+        color: #526176;
+        padding: 0 11px;
+        font-size: .78rem;
+        font-weight: 560;
+        text-decoration: none;
+    }
+
+    .cash-ntx-tab.is-active {
+        border-color: color-mix(in srgb, var(--cn-income) 28%, #ddd5c8);
+        background: color-mix(in srgb, var(--cn-income) 10%, #fff);
+        color: color-mix(in srgb, var(--cn-income) 58%, var(--cn-ink));
+    }
+
+    .cash-ntx-feed {
+        display: grid;
+        gap: 12px;
+        padding: 16px;
+        background:
+            radial-gradient(circle at 7% 0, color-mix(in srgb, var(--cn-income) 7%, transparent), transparent 18rem),
+            radial-gradient(circle at 96% 100%, color-mix(in srgb, var(--cn-expense) 5%, transparent), transparent 18rem),
+            linear-gradient(180deg, rgba(255,255,255,.54), rgba(255,255,255,.28));
+    }
+
+    .cash-ntx-row {
+        position: relative;
+        display: grid;
+        grid-template-columns: 40px minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: start;
+        min-height: 82px;
+        border: 1px solid color-mix(in srgb, var(--row-color, var(--cn-primary)) 18%, #e8e0d3);
+        border-radius: 14px;
+        background:
+            radial-gradient(circle at 0 50%, color-mix(in srgb, var(--row-color, var(--cn-primary)) 9%, transparent), transparent 8rem),
+            linear-gradient(135deg, color-mix(in srgb, var(--row-color, var(--cn-primary)) 5%, #fff), rgba(255,255,255,.9));
+        padding: 13px 14px;
+        box-shadow: 0 12px 28px -25px color-mix(in srgb, var(--row-color, var(--cn-primary)) 28%, transparent);
+        transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+
+    .cash-ntx-row::before {
+        content: "";
+        position: absolute;
+        inset: 12px auto 12px 0;
+        width: 3px;
+        border-radius: 0 999px 999px 0;
+        background: linear-gradient(180deg, var(--row-color, #94a3b8), color-mix(in srgb, var(--row-color, #94a3b8) 62%, var(--cn-accent)));
+    }
+
+    .cash-ntx-row.is-income { --row-color: var(--cn-income); }
+    .cash-ntx-row.is-expense { --row-color: var(--cn-expense); }
+
+    .cash-ntx-row:hover {
+        transform: translateY(-1px);
+        border-color: color-mix(in srgb, var(--row-color, var(--cn-accent)) 34%, #dfd5c8);
+        background:
+            radial-gradient(circle at 0 50%, color-mix(in srgb, var(--row-color, var(--cn-primary)) 13%, transparent), transparent 8rem),
+            linear-gradient(135deg, color-mix(in srgb, var(--row-color, var(--cn-primary)) 7%, #fff), rgba(255,255,255,.94));
+        box-shadow: 0 16px 32px -26px color-mix(in srgb, var(--row-color, var(--cn-primary)) 36%, transparent);
+    }
+
+    .cash-ntx-icon {
+        width: 40px;
+        height: 40px;
+        display: grid;
+        place-items: center;
+        border: 1px solid color-mix(in srgb, var(--row-color, var(--cn-accent)) 24%, #ddd5c8);
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--row-color, var(--cn-accent)) 12%, #fff);
+        color: color-mix(in srgb, var(--row-color, var(--cn-primary)) 62%, #465668);
+    }
+
+    .cash-ntx-row-title {
+        color: color-mix(in srgb, var(--cn-primary) 52%, #344054);
+        font-size: .98rem;
+        line-height: 1.28;
+        font-weight: 620;
+    }
+
+    .cash-ntx-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        border-radius: 999px;
+        padding: 0 8px;
+        font-size: .7rem;
+        font-weight: 650;
+        border: 1px solid color-mix(in srgb, var(--badge-color, var(--cn-accent)) 18%, transparent);
+        background: color-mix(in srgb, var(--badge-color, var(--cn-accent)) 12%, #fff);
+        color: color-mix(in srgb, var(--badge-color, var(--cn-primary)) 62%, #667085);
+    }
+
+    .cash-ntx-badge.is-income {
+        --badge-color: var(--cn-income);
+        background: color-mix(in srgb, var(--cn-income) 14%, #fff);
+        color: color-mix(in srgb, var(--cn-income) 72%, #1f2937);
+    }
+
+    .cash-ntx-badge.is-expense {
+        --badge-color: var(--cn-expense);
+        background: color-mix(in srgb, var(--cn-expense) 13%, #fff);
+        color: color-mix(in srgb, var(--cn-expense) 72%, #1f2937);
+    }
+
+    .cash-ntx-badge.is-method-efectivo {
+        --badge-color: var(--cn-cash);
+    }
+
+    .cash-ntx-badge.is-method-tarjeta {
+        --badge-color: var(--cn-card);
+    }
+
+    .cash-ntx-badge.is-method-transferencia,
+    .cash-ntx-badge.is-method-transfer {
+        --badge-color: var(--cn-transfer);
+    }
+
+    .cash-ntx-row-top {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 7px;
+    }
+
+    .cash-ntx-message {
+        margin: 6px 0 0;
+        color: color-mix(in srgb, var(--row-color, var(--cn-primary)) 22%, #526176);
+        font-size: .9rem;
+        line-height: 1.48;
+        font-weight: 420;
+    }
+
+    .cash-ntx-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin-top: 8px;
+        color: var(--cn-muted);
+        font-size: .78rem;
+        font-weight: 430;
+    }
+
+    .cash-ntx-meta span,
+    .cash-ntx-meta a {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: color-mix(in srgb, var(--row-color, var(--cn-primary)) 24%, #748094);
+        text-decoration: none;
+    }
+
+    .cash-ntx-amount {
+        align-self: center;
+        justify-self: end;
+        color: color-mix(in srgb, var(--cn-primary) 58%, #4b5563);
+        font-size: .95rem;
+        font-weight: 650;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .cash-ntx-empty {
+        min-height: 230px;
+        display: grid;
+        place-items: center;
+        border: 1px dashed color-mix(in srgb, var(--cn-accent) 28%, #d9cec0);
+        border-radius: 14px;
+        background: rgba(255,255,255,.72);
+        padding: 28px;
+        text-align: center;
+    }
+
+    .cash-ntx-empty i {
+        width: 52px;
+        height: 52px;
+        display: inline-grid;
+        place-items: center;
+        border: 1px solid color-mix(in srgb, var(--cn-accent) 22%, #ddd5c8);
+        border-radius: 14px;
+        background: color-mix(in srgb, var(--cn-accent) 9%, #fff);
+        color: color-mix(in srgb, var(--cn-primary) 58%, #667085);
+        font-size: 1.2rem;
+    }
+
+    .cash-ntx-empty h3 {
+        margin: 14px 0 5px;
+        color: var(--cn-ink);
+        font-size: 1.05rem;
+        font-weight: 620;
+    }
+
+    .cash-ntx-empty p {
+        max-width: 420px;
+        margin: 0 auto;
+        color: var(--cn-muted);
+        line-height: 1.5;
+        font-weight: 420;
+    }
+
+    .cash-ntx-categories {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 22px;
+    }
+
+    .cash-ntx-cat-list {
+        display: grid;
+        gap: 10px;
+        padding: 16px;
+    }
+
+    .cash-ntx-cat {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: center;
+        border: 1px solid color-mix(in srgb, var(--cn-primary) 10%, #e8e0d3);
+        border-radius: 13px;
+        background: rgba(255,255,255,.82);
+        padding: 12px;
+    }
+
+    .cash-ntx-cat-main {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 9px;
+    }
+
+    .cash-ntx-cat-icon {
+        width: 36px;
+        height: 36px;
+        flex: 0 0 36px;
+        display: grid;
+        place-items: center;
+        border-radius: 11px;
+    }
+
+    .cash-ntx-cat strong {
+        display: block;
+        color: color-mix(in srgb, var(--cn-primary) 52%, #344054);
+        font-size: .88rem;
+        font-weight: 620;
+    }
+
+    .cash-ntx-cat small {
+        display: block;
+        margin-top: 2px;
+        color: var(--cn-muted);
+        font-size: .74rem;
+        font-weight: 430;
+    }
+
+    @media (max-width: 1180px) {
+        .cash-ntx-layout {
+            grid-template-columns: 1fr;
+            grid-template-areas:
+                "side"
+                "main";
+        }
+
+        .cash-ntx-side {
+            grid-template-columns: minmax(0, 1fr) minmax(300px, .78fr);
+            align-items: stretch;
+        }
+
+        .cash-ntx-shortcuts-panel {
+            grid-column: 1 / -1;
+        }
+
+        .cash-ntx-live-card {
+            min-width: 0;
+        }
+    }
+
+    @media (max-width: 1100px) {
+        .cash-ntx-top {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 760px) {
+        .cash-ntx-shell {
+            width: 100%;
+            padding: 18px 12px 44px;
+        }
+
+        .cash-ntx-title {
+            font-size: clamp(1.75rem, 9vw, 2.6rem);
+        }
+
+        .cash-ntx-stats,
+        .cash-ntx-side,
+        .cash-ntx-categories {
+            grid-template-columns: 1fr;
+        }
+
+        .cash-ntx-shortcuts {
+            grid-template-columns: 1fr;
+        }
+
+        .cash-ntx-shortcuts-panel {
+            grid-column: auto;
+        }
+
+        .cash-ntx-inbox-head {
+            grid-template-columns: 1fr;
+        }
+
+        .cash-ntx-row {
+            grid-template-columns: 40px minmax(0, 1fr);
+            padding: 13px;
+        }
+
+        .cash-ntx-icon {
+            width: 40px;
+            height: 40px;
+        }
+
+        .cash-ntx-amount {
+            grid-column: 2;
+            justify-self: start;
+        }
+    }
+</style>
+
 <!-- Panel Principal de Caja -->
-<div class="lc-bg cash-page cash-command-page min-h-screen p-4 md:p-6">
+<div class="lc-bg cash-page cash-command-page cash-control-room min-h-screen p-4 md:p-6">
+    <main class="cash-ntx-shell">
+        <header class="cash-ntx-top">
+            <div class="cash-ntx-heading">
+                <span class="cash-ntx-kicker">
+                    <i class="fas fa-cash-register"></i>
+                    <?= htmlspecialchars($cash_hotel_nombre) ?>
+                </span>
+                <h1 class="cash-ntx-title">Caja del hotel</h1>
+                <p class="cash-ntx-subtitle">Turno actual, movimientos y accesos de caja en una lectura clara, compacta y respirada.</p>
+            </div>
+
+            <aside class="cash-ntx-live-card" aria-label="Resumen principal de caja">
+                <span>Efectivo esperado</span>
+                <strong>$<?= number_format($resumen['efectivo_en_caja'] ?? 0, 2) ?></strong>
+                <small><?= htmlspecialchars($cash_caja_nombre) ?> - abierta <?= htmlspecialchars($cash_hora_apertura_label) ?></small>
+            </aside>
+        </header>
+
+        <section class="cash-ntx-stats" aria-label="Resumen de caja">
+            <div class="cash-ntx-stat is-initial">
+                <span>Monto inicial</span>
+                <strong>$<?= number_format($resumen['monto_inicial'] ?? 0, 2) ?></strong>
+            </div>
+            <div class="cash-ntx-stat is-income">
+                <span>Ingresos</span>
+                <strong class="is-income">+$<?= number_format($resumen['ingresos']['total'] ?? 0, 2) ?></strong>
+            </div>
+            <div class="cash-ntx-stat is-expense">
+                <span>Gastos</span>
+                <strong class="is-expense">-$<?= number_format($resumen['gastos']['total'] ?? 0, 2) ?></strong>
+            </div>
+            <div class="cash-ntx-stat is-balance">
+                <span>Balance</span>
+                <strong class="<?= $cash_balance_general >= 0 ? 'is-income' : 'is-expense' ?>">
+                    <?= $cash_balance_general >= 0 ? '+' : '-' ?>$<?= number_format(abs($cash_balance_general), 2) ?>
+                </strong>
+            </div>
+        </section>
+
+        <div class="cash-ntx-layout">
+            <aside class="cash-ntx-side" aria-label="Controles de caja">
+                <section class="cash-ntx-panel cash-ntx-actions-panel">
+                    <div class="cash-ntx-panel-head">
+                        <h2>Acciones</h2>
+                        <p>Registra movimientos sin salir de caja.</p>
+                    </div>
+                    <div class="cash-ntx-actions">
+                        <button type="button" onclick="mostrarModalIngreso()" class="cash-ntx-btn is-income">
+                            <i class="fas fa-plus"></i>
+                            <span>Ingreso</span>
+                        </button>
+                        <button type="button" onclick="mostrarModalGasto()" class="cash-ntx-btn is-expense">
+                            <i class="fas fa-minus"></i>
+                            <span>Gasto</span>
+                        </button>
+                        <a href="<?= url('caja/corte') ?>" class="cash-ntx-btn is-primary">
+                            <i class="fas fa-scissors"></i>
+                            <span>Corte</span>
+                        </a>
+                    </div>
+                </section>
+
+                <section class="cash-ntx-panel cash-ntx-methods-panel">
+                    <div class="cash-ntx-panel-head">
+                        <h2>Metodos</h2>
+                        <p>Resumen por forma de pago.</p>
+                    </div>
+                    <div class="cash-ntx-methods">
+                        <?php foreach ($cash_methods as $method_key => $method): ?>
+                            <?php
+                            $method_ingresos = (float) ($resumen['ingresos'][$method_key]['total'] ?? 0);
+                            $method_gastos = (float) ($resumen['gastos'][$method_key]['total'] ?? 0);
+                            $method_balance = $method_ingresos - $method_gastos;
+                            ?>
+                            <span class="cash-ntx-chip is-method-<?= htmlspecialchars($method_key) ?>">
+                                <span>
+                                    <i class="fas fa-<?= htmlspecialchars($method['icon']) ?>"></i>
+                                    <?= htmlspecialchars($method['label']) ?>
+                                </span>
+                                <strong><?= $method_balance >= 0 ? '+' : '-' ?>$<?= number_format(abs($method_balance), 2) ?></strong>
+                            </span>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+
+                <section class="cash-ntx-panel cash-ntx-shortcuts-panel">
+                    <div class="cash-ntx-panel-head">
+                        <h2>Accesos</h2>
+                        <p>Consulta rapida.</p>
+                    </div>
+                    <div class="cash-ntx-shortcuts">
+                        <a href="<?= url('caja/movimientos') ?>" class="cash-ntx-shortcut is-movements">
+                            <i class="fas fa-list"></i>
+                            Movimientos
+                        </a>
+                        <a href="<?= url('caja/historial') ?>" class="cash-ntx-shortcut is-history">
+                            <i class="fas fa-history"></i>
+                            Historial
+                        </a>
+                        <a href="<?= url('caja/reporte-metodos') ?>" class="cash-ntx-shortcut is-methods">
+                            <i class="fas fa-credit-card"></i>
+                            Metodos
+                        </a>
+                        <?php if (user_role() == 'gerente'): ?>
+                            <a href="<?= url('caja/categorias') ?>" class="cash-ntx-shortcut is-categories">
+                                <i class="fas fa-tags"></i>
+                                Categorias
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </section>
+            </aside>
+
+            <section class="cash-ntx-panel cash-ntx-main" aria-label="Actividad de caja">
+                <div class="cash-ntx-inbox-head">
+                    <div>
+                        <h2>Actividad</h2>
+                        <p>Ultimos movimientos del corte actual.</p>
+                    </div>
+                    <span class="cash-ntx-count"><?= number_format($cash_total_movimientos) ?> movimientos</span>
+                </div>
+
+                <nav class="cash-ntx-tabs" aria-label="Resumen del corte">
+                    <span class="cash-ntx-tab is-active">Turno abierto</span>
+                    <span class="cash-ntx-tab">Responsable <?= htmlspecialchars($cash_responsable) ?></span>
+                    <span class="cash-ntx-tab"><?= htmlspecialchars($cash_fecha_apertura_label) ?></span>
+                </nav>
+
+                <div class="cash-ntx-feed">
+                    <?php if (empty($ultimos_movimientos)): ?>
+                        <div class="cash-ntx-empty">
+                            <div>
+                                <i class="fas fa-receipt"></i>
+                                <h3>Sin movimientos</h3>
+                                <p>Cuando registres ingresos o gastos, apareceran en esta bandeja.</p>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($ultimos_movimientos as $mov): ?>
+                            <?php
+                            $tipo_mostrar = (string)($mov['tipo'] ?? '');
+                            $es_ingreso = ($tipo_mostrar === 'ingreso');
+                            $label_tipo = $es_ingreso ? 'Ingreso' : (($tipo_mostrar === 'egreso') ? 'Devolucion' : 'Gasto');
+                            $metodoPago = $metodos_pago[$mov['metodo_pago'] ?? ''] ?? [];
+                            $metodoKey = preg_replace('/[^a-z0-9_-]/', '', strtolower((string)($mov['metodo_pago'] ?? '')));
+                            $metodoLabel = $metodoPago['label'] ?? ucfirst((string)($mov['metodo_pago'] ?? 'metodo'));
+                            $metodoIcon = $metodoPago['icon'] ?? 'circle';
+                            $movHora = !empty($mov['created_at']) ? date('H:i', strtotime($mov['created_at'])) : '--:--';
+                            ?>
+                            <article class="cash-ntx-row <?= $es_ingreso ? 'is-income' : 'is-expense' ?>">
+                                <div class="cash-ntx-icon" aria-hidden="true">
+                                    <i class="fas fa-<?= $es_ingreso ? 'arrow-down' : 'arrow-up' ?>"></i>
+                                </div>
+                                <div>
+                                    <div class="cash-ntx-row-top">
+                                        <span class="cash-ntx-row-title"><?= htmlspecialchars($mov['descripcion'] ?? 'Movimiento sin descripcion') ?></span>
+                                        <span class="cash-ntx-badge <?= $es_ingreso ? 'is-income' : 'is-expense' ?>"><?= htmlspecialchars($label_tipo) ?></span>
+                                        <span class="cash-ntx-badge <?= $metodoKey !== '' ? 'is-method-' . htmlspecialchars($metodoKey, ENT_QUOTES, 'UTF-8') : '' ?>"><?= htmlspecialchars($metodoLabel) ?></span>
+                                    </div>
+                                    <p class="cash-ntx-message">
+                                        <?= htmlspecialchars($mov['categoria_nombre'] ?? 'Sin categoria') ?>
+                                    </p>
+                                    <div class="cash-ntx-meta">
+                                        <span><i class="far fa-clock"></i> <?= htmlspecialchars($movHora) ?></span>
+                                        <span><i class="fas fa-<?= htmlspecialchars($metodoIcon) ?>"></i> <?= htmlspecialchars($metodoLabel) ?></span>
+                                        <?php if (!empty($mov['reservacion_id'])): ?>
+                                            <a href="<?= url('reservaciones/ver/' . $mov['reservacion_id']) ?>">
+                                                <i class="fas fa-bed"></i> Reserva #<?= (int)$mov['reservacion_id'] ?>
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <strong class="cash-ntx-amount <?= $es_ingreso ? 'is-income' : 'is-expense' ?>">
+                                    <?= $es_ingreso ? '+' : '-' ?>$<?= number_format($mov['monto'] ?? 0, 2) ?>
+                                </strong>
+                            </article>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </section>
+        </div>
+
+        <section class="cash-ntx-categories">
+            <article class="cash-ntx-panel">
+                <div class="cash-ntx-panel-head">
+                    <h2>Ingresos por categoria</h2>
+                    <p>Total <?= '$' . number_format($resumen['ingresos']['total'] ?? 0, 2) ?></p>
+                </div>
+                <div class="cash-ntx-cat-list">
+                    <?php if (empty($movimientos_categoria['ingresos'])): ?>
+                        <div class="cash-ntx-empty">
+                            <div>
+                                <i class="fas fa-circle-check"></i>
+                                <h3>Sin ingresos</h3>
+                                <p>No hay ingresos registrados en este corte.</p>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($movimientos_categoria['ingresos'] as $cat): ?>
+                            <div class="cash-ntx-cat">
+                                <div class="cash-ntx-cat-main">
+                                    <span class="cash-ntx-cat-icon" style="background-color: <?= htmlspecialchars($cat['color'] ?? '#6B7280') ?>18;">
+                                        <i class="<?= htmlspecialchars($cat['icono'] ?? 'fas fa-tag') ?>" style="color: <?= htmlspecialchars($cat['color'] ?? '#6B7280') ?>"></i>
+                                    </span>
+                                    <div>
+                                        <strong><?= htmlspecialchars($cat['categoria'] ?? 'Sin categoria') ?></strong>
+                                        <small><?= number_format($cat['cantidad'] ?? 0) ?> movimientos</small>
+                                    </div>
+                                </div>
+                                <span class="cash-ntx-money is-income">+$<?= number_format($cat['total'] ?? 0, 2) ?></span>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </article>
+
+            <article class="cash-ntx-panel">
+                <div class="cash-ntx-panel-head">
+                    <h2>Gastos por categoria</h2>
+                    <p>Total <?= '$' . number_format($resumen['gastos']['total'] ?? 0, 2) ?></p>
+                </div>
+                <div class="cash-ntx-cat-list">
+                    <?php if (empty($movimientos_categoria['gastos'])): ?>
+                        <div class="cash-ntx-empty">
+                            <div>
+                                <i class="fas fa-circle-check"></i>
+                                <h3>Sin gastos</h3>
+                                <p>No hay gastos registrados en este corte.</p>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($movimientos_categoria['gastos'] as $cat): ?>
+                            <div class="cash-ntx-cat">
+                                <div class="cash-ntx-cat-main">
+                                    <span class="cash-ntx-cat-icon" style="background-color: <?= htmlspecialchars($cat['color'] ?? '#6B7280') ?>18;">
+                                        <i class="<?= htmlspecialchars($cat['icono'] ?? 'fas fa-tag') ?>" style="color: <?= htmlspecialchars($cat['color'] ?? '#6B7280') ?>"></i>
+                                    </span>
+                                    <div>
+                                        <strong><?= htmlspecialchars($cat['categoria'] ?? 'Sin categoria') ?></strong>
+                                        <small><?= number_format($cat['cantidad'] ?? 0) ?> movimientos</small>
+                                    </div>
+                                </div>
+                                <span class="cash-ntx-money is-expense">-$<?= number_format($cat['total'] ?? 0, 2) ?></span>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </article>
+        </section>
+    </main>
+
+    <main class="cc-shell">
+        <section class="cc-hero" aria-label="Estado principal de caja">
+            <div class="cc-hero-main">
+                <span class="cc-state"><span class="cc-state-dot"></span> Caja abierta</span>
+                <h1 class="cc-hero-title">
+                    $<?= number_format($resumen['efectivo_en_caja'] ?? 0, 2) ?>
+                    <span>Efectivo esperado en caja</span>
+                </h1>
+                <p class="cc-hero-copy">
+                    Turno abierto a las <?= htmlspecialchars($cash_hora_apertura_label) ?>. Desde aqui puedes registrar cobros,
+                    capturar salidas y preparar el corte sin perder de vista el saldo fisico.
+                </p>
+                <div class="cc-meta-grid" aria-label="Datos del corte actual">
+                    <span class="cc-meta-pill">
+                        <i class="fas fa-store"></i>
+                        <?= htmlspecialchars($cash_caja_nombre) ?>
+                    </span>
+                    <span class="cc-meta-pill">
+                        <i class="fas fa-user"></i>
+                        <?= htmlspecialchars($cash_responsable) ?>
+                    </span>
+                    <span class="cc-meta-pill">
+                        <i class="fas fa-clock"></i>
+                        <?= htmlspecialchars($cash_fecha_apertura_label) ?>
+                    </span>
+                </div>
+            </div>
+
+            <aside class="cc-hero-side" aria-label="Acciones principales de caja">
+                <div class="cc-primary-actions">
+                    <button type="button" onclick="mostrarModalIngreso()" class="cc-action-btn is-income" title="Registrar un ingreso en caja">
+                        <span>Registrar ingreso</span>
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button type="button" onclick="mostrarModalGasto()" class="cc-action-btn is-expense" title="Registrar un gasto de caja">
+                        <span>Registrar gasto</span>
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <a href="<?= url('caja/corte') ?>" class="cc-action-btn is-cut" title="Ir al corte de caja">
+                        <span>Realizar corte</span>
+                        <i class="fas fa-scissors"></i>
+                    </a>
+                </div>
+            </aside>
+        </section>
+
+        <section class="cc-kpi-grid" aria-label="Resumen de caja">
+            <article class="cc-kpi">
+                <div class="cc-kpi-top">
+                    <span>Monto inicial</span>
+                    <span class="cc-kpi-icon"><i class="fas fa-wallet"></i></span>
+                </div>
+                <div>
+                    <div class="cc-kpi-value">$<?= number_format($resumen['monto_inicial'] ?? 0, 2) ?></div>
+                    <p class="cc-kpi-note">Base con la que se abrio el turno.</p>
+                </div>
+            </article>
+            <article class="cc-kpi">
+                <div class="cc-kpi-top">
+                    <span>Ingresos</span>
+                    <span class="cc-kpi-icon"><i class="fas fa-arrow-trend-up"></i></span>
+                </div>
+                <div>
+                    <div class="cc-kpi-value is-income">+$<?= number_format($resumen['ingresos']['total'] ?? 0, 2) ?></div>
+                    <p class="cc-kpi-note">Cobros registrados en el corte actual.</p>
+                </div>
+            </article>
+            <article class="cc-kpi">
+                <div class="cc-kpi-top">
+                    <span>Gastos</span>
+                    <span class="cc-kpi-icon"><i class="fas fa-arrow-trend-down"></i></span>
+                </div>
+                <div>
+                    <div class="cc-kpi-value is-expense">-$<?= number_format($resumen['gastos']['total'] ?? 0, 2) ?></div>
+                    <p class="cc-kpi-note">Salidas capturadas durante el turno.</p>
+                </div>
+            </article>
+            <article class="cc-kpi">
+                <div class="cc-kpi-top">
+                    <span>Balance</span>
+                    <span class="cc-kpi-icon"><i class="fas fa-scale-balanced"></i></span>
+                </div>
+                <div>
+                    <div class="cc-kpi-value <?= $cash_balance_general >= 0 ? 'is-income' : 'is-expense' ?>">
+                        <?= $cash_balance_general >= 0 ? '+' : '-' ?>$<?= number_format(abs($cash_balance_general), 2) ?>
+                    </div>
+                    <p class="cc-kpi-note"><?= number_format($cash_total_movimientos) ?> movimientos registrados.</p>
+                </div>
+            </article>
+        </section>
+
+        <section class="cc-workspace">
+            <article class="cc-panel">
+                <div class="cc-panel-head">
+                    <div>
+                        <span class="cc-panel-kicker">Metodos de pago</span>
+                        <h2 class="cc-panel-title">Distribucion del turno</h2>
+                    </div>
+                    <a href="<?= url('caja/reporte-metodos') ?>" class="cc-panel-link">
+                        Ver reporte <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="cc-panel-body">
+                    <?php if ($cash_ing_total_metodos > 0): ?>
+                        <div class="cc-method-bar" aria-label="Distribucion de ingresos por metodo">
+                            <span style="width: <?= $cash_pct_efectivo ?>%;"></span>
+                            <span style="width: <?= $cash_pct_tarjeta ?>%;"></span>
+                            <span style="width: <?= $cash_pct_transferencia ?>%;"></span>
+                        </div>
+                    <?php endif; ?>
+                    <div class="cc-method-list">
+                        <?php foreach ($cash_methods as $method_key => $method): ?>
+                            <?php
+                            $method_ingresos = (float) ($resumen['ingresos'][$method_key]['total'] ?? 0);
+                            $method_gastos = (float) ($resumen['gastos'][$method_key]['total'] ?? 0);
+                            $method_balance = $method_ingresos - $method_gastos;
+                            $method_count = (int) ($resumen['ingresos'][$method_key]['cantidad'] ?? 0)
+                                + (int) ($resumen['gastos'][$method_key]['cantidad'] ?? 0);
+                            ?>
+                            <div class="cc-method-card is-<?= htmlspecialchars($method['class']) ?>">
+                                <div class="cc-method-title">
+                                    <i class="fas fa-<?= htmlspecialchars($method['icon']) ?>"></i>
+                                    <?= htmlspecialchars($method['label']) ?>
+                                </div>
+                                <p class="cc-method-note"><?= htmlspecialchars($method['note']) ?> · <?= number_format($method_count) ?> mov.</p>
+                                <div class="cc-method-row">
+                                    <span>Ingresos</span>
+                                    <span class="cc-money is-income">+$<?= number_format($method_ingresos, 2) ?></span>
+                                </div>
+                                <div class="cc-method-row">
+                                    <span>Gastos</span>
+                                    <span class="cc-money is-expense">-$<?= number_format($method_gastos, 2) ?></span>
+                                </div>
+                                <div class="cc-method-row">
+                                    <span>Balance</span>
+                                    <span class="cc-money <?= $method_balance >= 0 ? 'is-income' : 'is-expense' ?>">
+                                        <?= $method_balance >= 0 ? '+' : '-' ?>$<?= number_format(abs($method_balance), 2) ?>
+                                    </span>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </article>
+
+            <aside class="cash-movements-panel">
+                <div class="cash-movements-head">
+                    <div class="cash-movements-icon">
+                        <i class="fas fa-receipt" aria-hidden="true"></i>
+                    </div>
+                    <div class="cash-movements-title">
+                        <h3>Ultimos movimientos</h3>
+                        <p>Actividad reciente del corte actual.</p>
+                    </div>
+                    <a href="<?= url('caja/movimientos') ?>" class="cash-view-link" title="Ver todos los movimientos de caja">
+                        Ver todos <i class="fas fa-arrow-right text-xs" aria-hidden="true"></i>
+                    </a>
+                </div>
+                <div class="cash-movements-list custom-scroll">
+                    <?php if (empty($ultimos_movimientos)): ?>
+                        <div class="cash-movement-empty">
+                            <i class="fas fa-receipt" aria-hidden="true"></i>
+                            <p class="text-sm">No hay movimientos registrados en este corte.</p>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($ultimos_movimientos as $mov): ?>
+                            <?php
+                            $tipo_mostrar = (string)($mov['tipo'] ?? '');
+                            $es_ingreso = ($tipo_mostrar === 'ingreso');
+                            $icono_flecha = $es_ingreso ? 'down' : 'up';
+                            $label_tipo = ucfirst($tipo_mostrar !== '' ? $tipo_mostrar : 'movimiento');
+                            if ($tipo_mostrar === 'egreso') {
+                                $label_tipo = 'Devolucion';
+                            }
+                            $metodoPago = $metodos_pago[$mov['metodo_pago'] ?? ''] ?? [];
+                            $metodoLabel = $metodoPago['label'] ?? ucfirst((string)($mov['metodo_pago'] ?? 'metodo'));
+                            $metodoIcon = $metodoPago['icon'] ?? 'circle';
+                            $movHora = !empty($mov['created_at']) ? date('H:i', strtotime($mov['created_at'])) : '--:--';
+                            ?>
+                            <article class="cash-movement-item <?= $es_ingreso ? 'is-income' : 'is-expense' ?>">
+                                <div class="cash-movement-mark" aria-hidden="true">
+                                    <i class="fas fa-arrow-<?= $icono_flecha ?>"></i>
+                                </div>
+                                <div class="cash-movement-main">
+                                    <div class="cash-movement-top">
+                                        <span class="cash-movement-type">
+                                            <i class="fas fa-arrow-<?= $icono_flecha ?>" aria-hidden="true"></i>
+                                            <?= htmlspecialchars($label_tipo) ?>
+                                        </span>
+                                        <span class="cash-movement-method">
+                                            <i class="fas fa-<?= htmlspecialchars($metodoIcon) ?>" aria-hidden="true"></i>
+                                            <?= htmlspecialchars($metodoLabel) ?>
+                                        </span>
+                                        <span class="cash-movement-time">
+                                            <i class="far fa-clock" aria-hidden="true"></i>
+                                            <?= htmlspecialchars($movHora) ?>
+                                        </span>
+                                    </div>
+                                    <p class="cash-movement-desc">
+                                        <?= htmlspecialchars($mov['descripcion'] ?? 'Movimiento sin descripcion') ?>
+                                    </p>
+                                    <div class="cash-movement-meta">
+                                        <?php if (!empty($mov['categoria_nombre'])): ?>
+                                            <span class="cash-movement-tag">
+                                                <i class="<?= htmlspecialchars($mov['categoria_icono'] ?? 'fas fa-tag') ?>"
+                                                   style="color: <?= htmlspecialchars($mov['categoria_color'] ?? '#9CA3AF') ?>" aria-hidden="true"></i>
+                                                <?= htmlspecialchars($mov['categoria_nombre']) ?>
+                                            </span>
+                                        <?php endif; ?>
+                                        <?php if (!empty($mov['reservacion_id'])): ?>
+                                            <a href="<?= url('reservaciones/ver/' . $mov['reservacion_id']) ?>"
+                                               class="cash-reservation-link"
+                                               title="Ver reservacion #<?= htmlspecialchars($mov['reservacion_id']) ?>">
+                                                <i class="fas fa-bed text-[10px]" aria-hidden="true"></i>
+                                                Reserva #<?= (int)$mov['reservacion_id'] ?>
+                                                <i class="fas fa-arrow-right text-[10px] cash-reservation-arrow" aria-hidden="true"></i>
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div class="cash-movement-amount">
+                                    <?= $es_ingreso ? '+' : '-' ?>$<?= number_format($mov['monto'] ?? 0, 2) ?>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </aside>
+        </section>
+
+        <section class="cc-bottom-grid">
+            <article class="cc-panel">
+                <div class="cc-panel-head">
+                    <div>
+                        <span class="cc-panel-kicker">Ingresos</span>
+                        <h2 class="cc-panel-title">Por categoria</h2>
+                    </div>
+                    <span class="cc-money is-income">+$<?= number_format($resumen['ingresos']['total'] ?? 0, 2) ?></span>
+                </div>
+                <div class="cc-panel-body">
+                    <?php if (empty($movimientos_categoria['ingresos'])): ?>
+                        <div class="cc-empty">Sin ingresos registrados en este corte.</div>
+                    <?php else: ?>
+                        <div class="cc-category-list">
+                            <?php foreach ($movimientos_categoria['ingresos'] as $cat): ?>
+                                <div class="cc-category-item">
+                                    <div class="cc-category-main">
+                                        <span class="cc-category-icon" style="background-color: <?= htmlspecialchars($cat['color'] ?? '#6B7280') ?>18;">
+                                            <i class="<?= htmlspecialchars($cat['icono'] ?? 'fas fa-tag') ?>"
+                                               style="color: <?= htmlspecialchars($cat['color'] ?? '#6B7280') ?>"></i>
+                                        </span>
+                                        <div>
+                                            <p class="cc-category-title"><?= htmlspecialchars($cat['categoria'] ?? 'Sin categoria') ?></p>
+                                            <p class="cc-category-sub"><?= number_format($cat['cantidad'] ?? 0) ?> movimientos</p>
+                                        </div>
+                                    </div>
+                                    <span class="cc-money is-income">+$<?= number_format($cat['total'] ?? 0, 2) ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </article>
+
+            <article class="cc-panel">
+                <div class="cc-panel-head">
+                    <div>
+                        <span class="cc-panel-kicker">Gastos</span>
+                        <h2 class="cc-panel-title">Por categoria</h2>
+                    </div>
+                    <span class="cc-money is-expense">-$<?= number_format($resumen['gastos']['total'] ?? 0, 2) ?></span>
+                </div>
+                <div class="cc-panel-body">
+                    <?php if (empty($movimientos_categoria['gastos'])): ?>
+                        <div class="cc-empty">Sin gastos registrados en este corte.</div>
+                    <?php else: ?>
+                        <div class="cc-category-list">
+                            <?php foreach ($movimientos_categoria['gastos'] as $cat): ?>
+                                <div class="cc-category-item">
+                                    <div class="cc-category-main">
+                                        <span class="cc-category-icon" style="background-color: <?= htmlspecialchars($cat['color'] ?? '#6B7280') ?>18;">
+                                            <i class="<?= htmlspecialchars($cat['icono'] ?? 'fas fa-tag') ?>"
+                                               style="color: <?= htmlspecialchars($cat['color'] ?? '#6B7280') ?>"></i>
+                                        </span>
+                                        <div>
+                                            <p class="cc-category-title"><?= htmlspecialchars($cat['categoria'] ?? 'Sin categoria') ?></p>
+                                            <p class="cc-category-sub"><?= number_format($cat['cantidad'] ?? 0) ?> movimientos</p>
+                                        </div>
+                                    </div>
+                                    <span class="cc-money is-expense">-$<?= number_format($cat['total'] ?? 0, 2) ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </article>
+
+            <nav class="cc-shortcuts" aria-label="Accesos rapidos de caja">
+                <span class="cc-shortcuts-label">Accesos rapidos</span>
+                <a href="<?= url('caja/movimientos') ?>" class="cc-shortcut-link">
+                    <i class="fas fa-list"></i> Movimientos
+                </a>
+                <a href="<?= url('caja/historial') ?>" class="cc-shortcut-link">
+                    <i class="fas fa-history"></i> Historial
+                </a>
+                <a href="<?= url('caja/reporte-metodos') ?>" class="cc-shortcut-link">
+                    <i class="fas fa-credit-card"></i> Metodos
+                </a>
+                <?php if (user_role() == 'gerente'): ?>
+                    <a href="<?= url('caja/categorias') ?>" class="cc-shortcut-link">
+                        <i class="fas fa-tags"></i> Categorias
+                    </a>
+                <?php endif; ?>
+            </nav>
+        </section>
+    </main>
     <!-- Header Principal -->
     <div class="cash-hero-wrap max-w-7xl mx-auto mb-6">
         <div class="header-card rounded-2xl shadow-lg p-5 md:p-7">
@@ -2386,95 +5011,107 @@ if ($cash_ing_total_metodos > 0) {
         </div>
 
         <!-- Columna Derecha - Últimos Movimientos -->
-        <div class="bg-white rounded-xl shadow-sm border border-[#E0ECD8] overflow-hidden">
-            <div class="section-header sh-movs rounded-t-xl">
-                <div class="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-history text-white text-xs"></i>
+        <div class="cash-movements-panel">
+            <div class="cash-movements-head">
+                <div class="cash-movements-icon">
+                    <i class="fas fa-history" aria-hidden="true"></i>
                 </div>
-                <span class="flex-1">Últimos Movimientos</span>
+                <div class="cash-movements-title">
+                    <h3>Últimos movimientos</h3>
+                    <p>Actividad reciente del corte actual.</p>
+                </div>
                 <a href="<?= url('caja/movimientos') ?>"
-                   class="cash-view-link text-white/70 hover:text-white text-xs transition flex items-center gap-1"
+                   class="cash-view-link"
                    title="Ver todos los movimientos de caja">
-                    Ver todos <i class="fas fa-arrow-right text-xs"></i>
+                    Ver todos <i class="fas fa-arrow-right text-xs" aria-hidden="true"></i>
                 </a>
             </div>
-            <div class="custom-scroll divide-y-0 max-h-[600px] overflow-y-auto">
+            <div class="cash-movements-list custom-scroll">
                 <?php if (empty($ultimos_movimientos)): ?>
-                    <div class="text-center py-10 text-gray-400">
-                        <i class="fas fa-receipt text-3xl mb-2 opacity-40"></i>
+                    <div class="cash-movement-empty">
+                        <i class="fas fa-receipt" aria-hidden="true"></i>
                         <p class="text-sm">No hay movimientos registrados en este corte. Registra un ingreso o gasto para ver actividad.</p>
                     </div>
                 <?php else: ?>
                     <?php foreach ($ultimos_movimientos as $mov): ?>
-    <div class="mov-item">
-        <div class="flex items-start justify-between gap-3">
-            <div class="flex-1">
-                <div class="flex items-center gap-1.5 mb-1.5">
-                    <?php
-                    $tipo_mostrar = $mov['tipo'];
-                    $es_ingreso = ($tipo_mostrar == 'ingreso');
-                    $color_badge = $es_ingreso ? 'green' : 'red';
-                    $icono_flecha = $es_ingreso ? 'down' : 'up';
-                    $label_tipo = ucfirst($tipo_mostrar);
-                    if ($tipo_mostrar == 'egreso') { $label_tipo = 'Devolución'; }
-                    ?>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold <?= $es_ingreso ? 'badge-ingreso' : 'badge-gasto' ?>">
-                        <i class="fas fa-arrow-<?= $icono_flecha ?> mr-1 text-[10px]"></i>
-                        <?= $label_tipo ?>
-                    </span>
-                    <?php
-                    $metodoPago = $metodos_pago[$mov['metodo_pago']] ?? [];
-                    ?>
-                    <span class="text-xs text-gray-400 flex items-center gap-1">
-                        <i class="fas fa-<?= htmlspecialchars($metodoPago['icon'] ?? 'circle') ?> text-[10px]"></i>
-                        <?= htmlspecialchars($metodoPago['label'] ?? ucfirst($mov['metodo_pago'])) ?>
-                    </span>
-                </div>
-                <p class="text-sm font-semibold text-gray-800 mb-1 leading-tight">
-                    <?= htmlspecialchars($mov['descripcion'] ?? '') ?>
-                </p>
-                <div class="flex items-center gap-3 text-xs text-gray-400">
-                    <span class="flex items-center gap-1">
-                        <i class="far fa-clock"></i>
-                        <?= date('H:i', strtotime($mov['created_at'])) ?>
-                    </span>
-                    <?php if (!empty($mov['categoria_nombre'])): ?>
-                        <span class="flex items-center gap-1">
-                            <i class="<?= htmlspecialchars($mov['categoria_icono'] ?? 'fas fa-tag') ?>"
-                               style="color: <?= htmlspecialchars($mov['categoria_color'] ?? '#9CA3AF') ?>"></i>
-                            <?= htmlspecialchars($mov['categoria_nombre']) ?>
-                        </span>
-                    <?php endif; ?>
-                </div>
-                <?php if ($mov['reservacion_id']): ?>
-                    <div class="mt-1.5 text-xs">
-                        <a href="<?= url('reservaciones/ver/' . $mov['reservacion_id']) ?>"
-                           class="cash-reservation-link"
-                           title="Ver reservacion #<?= htmlspecialchars($mov['reservacion_id']) ?>">
-                            <i class="fas fa-bed text-[10px]"></i>
-                            Reserva #<?= $mov['reservacion_id'] ?>
-                            <i class="fas fa-arrow-right text-[10px] cash-reservation-arrow" aria-hidden="true"></i>
-                        </a>
-                        <?php if (!empty($mov['habitaciones_detalle'])): ?>
-                            <span class="text-gray-400 flex items-center gap-1 mt-0.5">
-                                <i class="fas fa-door-open text-[10px]"></i>
-                                <?= htmlspecialchars($mov['habitaciones_detalle']) ?>
-                            </span>
-                        <?php endif; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-            <p class="text-base font-bold <?= $es_ingreso ? 'text-emerald-600' : 'text-red-500' ?> whitespace-nowrap">
-                <?= $es_ingreso ? '+' : '-' ?>$<?= number_format($mov['monto'] ?? 0, 2) ?>
-            </p>
-        </div>
-        <?php if (!empty($mov['editado']) && $mov['editado']): ?>
-            <p class="text-xs text-amber-600 mt-1.5 flex items-center gap-1">
-                <i class="fas fa-pen text-[10px]"></i> Editado
-            </p>
-        <?php endif; ?>
-    </div>
-<?php endforeach; ?>
+                        <?php
+                        $tipo_mostrar = (string)($mov['tipo'] ?? '');
+                        $es_ingreso = ($tipo_mostrar === 'ingreso');
+                        $icono_flecha = $es_ingreso ? 'down' : 'up';
+                        $label_tipo = ucfirst($tipo_mostrar !== '' ? $tipo_mostrar : 'movimiento');
+                        if ($tipo_mostrar === 'egreso') {
+                            $label_tipo = 'Devolución';
+                        }
+                        $metodoPago = $metodos_pago[$mov['metodo_pago'] ?? ''] ?? [];
+                        $metodoLabel = $metodoPago['label'] ?? ucfirst((string)($mov['metodo_pago'] ?? 'metodo'));
+                        $metodoIcon = $metodoPago['icon'] ?? 'circle';
+                        $movHora = !empty($mov['created_at']) ? date('H:i', strtotime($mov['created_at'])) : '--:--';
+                        ?>
+                        <article class="cash-movement-item <?= $es_ingreso ? 'is-income' : 'is-expense' ?>">
+                            <div class="cash-movement-mark" aria-hidden="true">
+                                <i class="fas fa-arrow-<?= $icono_flecha ?>"></i>
+                            </div>
+
+                            <div class="cash-movement-main">
+                                <div class="cash-movement-top">
+                                    <span class="cash-movement-type">
+                                        <i class="fas fa-arrow-<?= $icono_flecha ?>" aria-hidden="true"></i>
+                                        <?= htmlspecialchars($label_tipo) ?>
+                                    </span>
+                                    <span class="cash-movement-method">
+                                        <i class="fas fa-<?= htmlspecialchars($metodoIcon) ?>" aria-hidden="true"></i>
+                                        <?= htmlspecialchars($metodoLabel) ?>
+                                    </span>
+                                    <span class="cash-movement-time">
+                                        <i class="far fa-clock" aria-hidden="true"></i>
+                                        <?= htmlspecialchars($movHora) ?>
+                                    </span>
+                                </div>
+
+                                <p class="cash-movement-desc">
+                                    <?= htmlspecialchars($mov['descripcion'] ?? 'Movimiento sin descripción') ?>
+                                </p>
+
+                                <div class="cash-movement-meta">
+                                    <?php if (!empty($mov['categoria_nombre'])): ?>
+                                        <span class="cash-movement-tag">
+                                            <i class="<?= htmlspecialchars($mov['categoria_icono'] ?? 'fas fa-tag') ?>"
+                                               style="color: <?= htmlspecialchars($mov['categoria_color'] ?? '#9CA3AF') ?>" aria-hidden="true"></i>
+                                            <?= htmlspecialchars($mov['categoria_nombre']) ?>
+                                        </span>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($mov['reservacion_id'])): ?>
+                                        <a href="<?= url('reservaciones/ver/' . $mov['reservacion_id']) ?>"
+                                           class="cash-reservation-link"
+                                           title="Ver reservacion #<?= htmlspecialchars($mov['reservacion_id']) ?>">
+                                            <i class="fas fa-bed text-[10px]" aria-hidden="true"></i>
+                                            Reserva #<?= (int)$mov['reservacion_id'] ?>
+                                            <i class="fas fa-arrow-right text-[10px] cash-reservation-arrow" aria-hidden="true"></i>
+                                        </a>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($mov['habitaciones_detalle'])): ?>
+                                        <span class="cash-movement-tag">
+                                            <i class="fas fa-door-open" aria-hidden="true"></i>
+                                            <?= htmlspecialchars($mov['habitaciones_detalle']) ?>
+                                        </span>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($mov['editado'])): ?>
+                                        <span class="cash-movement-edited">
+                                            <i class="fas fa-pen" aria-hidden="true"></i>
+                                            Editado
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
+                            <div class="cash-movement-amount">
+                                <?= $es_ingreso ? '+' : '-' ?>$<?= number_format($mov['monto'] ?? 0, 2) ?>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
                 <?php endif; ?>
             </div>
         </div>
@@ -2484,27 +5121,30 @@ if ($cash_ing_total_metodos > 0) {
 </div>
 
 <!-- Modal Registrar Ingreso -->
-<div id="modalIngreso" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all border border-[#E0ECD8]">
-            <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 p-5 rounded-t-2xl flex items-center justify-between">
-                <h3 class="text-base font-bold text-white flex items-center gap-2">
-                    <div class="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-plus text-white text-sm"></i>
+<div id="modalIngreso" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="modalIngresoTitulo">
+    <div class="cash-modal-shell">
+        <div class="cash-modal-dialog is-income">
+            <div class="cash-modal-header">
+                <div class="cash-modal-heading">
+                    <div class="cash-modal-icon" aria-hidden="true">
+                        <i class="fas fa-plus"></i>
                     </div>
-                    Registrar Ingreso
-                </h3>
-                <button type="button" onclick="cerrarModalIngreso()" class="text-white/70 hover:text-white transition" title="Cerrar modal" aria-label="Cerrar modal de ingreso">
+                    <div>
+                        <p class="cash-modal-kicker">Movimiento de caja</p>
+                        <h3 id="modalIngresoTitulo" class="cash-modal-title">Registrar Ingreso</h3>
+                    </div>
+                </div>
+                <button type="button" onclick="cerrarModalIngreso()" class="cash-modal-close" title="Cerrar modal" aria-label="Cerrar modal de ingreso">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
 
-            <form method="POST" action="<?= url('caja/ingreso') ?>" class="p-5">
+            <form method="POST" action="<?= url('caja/ingreso') ?>" class="cash-modal-form">
                 <?= csrf_field() ?>
 
-                <div class="space-y-4">
+                <div class="cash-modal-fields">
                     <!-- Categoría -->
-                    <div>
+                    <div class="cash-field">
                         <label class="modal-label">Categoría <span class="text-red-400">*</span></label>
                         <select name="categoria_id" id="categoria_ingreso" class="modal-input" required>
                             <option value="">Seleccione una categoría</option>
@@ -2517,23 +5157,23 @@ if ($cash_ing_total_metodos > 0) {
                     </div>
 
                     <!-- Descripción -->
-                    <div>
+                    <div class="cash-field">
                         <label class="modal-label">Descripción <span class="text-red-400">*</span></label>
                         <textarea name="descripcion" rows="2" class="modal-input"
                                   placeholder="Ej: Pago habitación 101" required></textarea>
                     </div>
 
                     <!-- Monto y Método de Pago -->
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
+                    <div class="cash-modal-grid">
+                        <div class="cash-field">
                             <label class="modal-label">Monto <span class="text-red-400">*</span></label>
-                            <div class="relative">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
+                            <div class="cash-money-field">
+                                <span class="cash-money-prefix">$</span>
                                 <input type="number" name="monto" data-money-format="true" step="0.01" min="0.01"
-                                       class="modal-input pl-7" placeholder="0.00" required>
+                                       class="modal-input" placeholder="0.00" required>
                             </div>
                         </div>
-                        <div>
+                        <div class="cash-field">
                             <label class="modal-label">Método de Pago <span class="text-red-400">*</span></label>
                             <select name="metodo_pago" id="metodo_pago_ingreso" class="modal-input" required>
                                 <?php foreach ($metodos_pago as $key => $metodo): ?>
@@ -2544,27 +5184,27 @@ if ($cash_ing_total_metodos > 0) {
                     </div>
 
                     <!-- Referencia -->
-                    <div id="referencia_ingreso_div" class="hidden">
+                    <div id="referencia_ingreso_div" class="cash-field hidden">
                         <label class="modal-label">Referencia/Autorización <span class="text-red-400">*</span></label>
                         <input type="text" name="referencia" class="modal-input" placeholder="Número de referencia">
                     </div>
 
                     <!-- Comprobante -->
-                    <div>
+                    <div class="cash-field">
                         <label class="modal-label">Número de Comprobante</label>
                         <input type="text" name="comprobante" class="modal-input" placeholder="Ej: Ticket #123">
                     </div>
                 </div>
 
                 <!-- Botones -->
-                <div class="flex justify-end gap-2 mt-5 pt-4 border-t border-gray-100">
+                <div class="cash-modal-actions">
                     <button type="button" onclick="cerrarModalIngreso()"
-                            class="px-4 py-2 text-sm border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition font-medium"
+                            class="cash-modal-btn secondary"
                             title="Cancelar ingreso">
                         Cancelar
                     </button>
                     <button type="submit"
-                            class="px-4 py-2 text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg hover:shadow-md transition font-semibold flex items-center gap-1.5"
+                            class="cash-modal-btn primary"
                             title="Guardar ingreso">
                         <i class="fas fa-save text-xs"></i>
                         Guardar Ingreso
@@ -2576,113 +5216,113 @@ if ($cash_ing_total_metodos > 0) {
 </div>
 
 <!-- Modal Registrar Gasto -->
-<div id="modalGasto" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden overflow-y-auto">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm transform transition-all my-8 border border-[#FDDEDE]">
+<div id="modalGasto" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="modalGastoTitulo">
+    <div class="cash-modal-shell">
+        <div class="cash-modal-dialog is-expense">
             <!-- Cabecera -->
-            <div class="bg-gradient-to-r from-red-500 to-red-600 p-5 rounded-t-2xl flex items-center justify-between sticky top-0 z-10">
-                <h3 class="text-base font-bold text-white flex items-center gap-2">
-                    <div class="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-minus text-white text-sm"></i>
+            <div class="cash-modal-header">
+                <div class="cash-modal-heading">
+                    <div class="cash-modal-icon" aria-hidden="true">
+                        <i class="fas fa-minus"></i>
                     </div>
-                    Registrar Gasto
-                </h3>
-                <button type="button" onclick="cerrarModalGasto()" class="text-white/70 hover:text-white transition" title="Cerrar modal" aria-label="Cerrar modal de gasto">
+                    <div>
+                        <p class="cash-modal-kicker">Movimiento de caja</p>
+                        <h3 id="modalGastoTitulo" class="cash-modal-title">Registrar Gasto</h3>
+                    </div>
+                </div>
+                <button type="button" onclick="cerrarModalGasto()" class="cash-modal-close" title="Cerrar modal" aria-label="Cerrar modal de gasto">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
 
-            <!-- Contenido con scroll -->
-            <div class="overflow-y-auto max-h-[calc(100vh-200px)]">
-                <form method="POST" action="<?= url('caja/gasto') ?>" class="p-4">
-                    <?= csrf_field() ?>
+            <form method="POST" action="<?= url('caja/gasto') ?>" class="cash-modal-form">
+                <?= csrf_field() ?>
 
-                    <div class="space-y-3">
-                        <!-- Categoría -->
-                        <div>
-                            <label class="modal-label modal-label-red">Categoría <span class="text-red-400">*</span></label>
-                            <select name="categoria_id" id="categoria_gasto" class="modal-input modal-input-red" required>
-                                <option value="">Seleccione una categoría</option>
-                                <?php foreach ($categorias['gasto'] as $cat): ?>
-                                    <option value="<?= $cat['id'] ?>" data-icono="<?= htmlspecialchars($cat['icono'] ?? '') ?>" data-color="<?= htmlspecialchars($cat['color'] ?? '') ?>">
-                                        <?= htmlspecialchars($cat['nombre'] ?? '') ?>
+                <div class="cash-modal-fields">
+                    <!-- Categoría -->
+                    <div class="cash-field">
+                        <label class="modal-label modal-label-red">Categoría <span class="text-red-400">*</span></label>
+                        <select name="categoria_id" id="categoria_gasto" class="modal-input modal-input-red" required>
+                            <option value="">Seleccione una categoría</option>
+                            <?php foreach ($categorias['gasto'] as $cat): ?>
+                                <option value="<?= $cat['id'] ?>" data-icono="<?= htmlspecialchars($cat['icono'] ?? '') ?>" data-color="<?= htmlspecialchars($cat['color'] ?? '') ?>">
+                                    <?= htmlspecialchars($cat['nombre'] ?? '') ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="cash-field">
+                        <label class="modal-label modal-label-red">Descripción <span class="text-red-400">*</span></label>
+                        <textarea name="descripcion" rows="2" class="modal-input modal-input-red"
+                                  placeholder="Ej: Compra de productos de limpieza" required></textarea>
+                    </div>
+
+                    <!-- Proveedor -->
+                    <div class="cash-field">
+                        <label class="modal-label">Proveedor/Beneficiario</label>
+                        <input type="text" name="proveedor" class="modal-input"
+                               placeholder="Nombre del proveedor">
+                    </div>
+
+                    <!-- Monto y Método de Pago -->
+                    <div class="cash-modal-grid">
+                        <div class="cash-field">
+                            <label class="modal-label modal-label-red">Monto <span class="text-red-400">*</span></label>
+                            <div class="cash-money-field">
+                                <span class="cash-money-prefix">$</span>
+                                <input type="number" name="monto" data-money-format="true" step="0.01" min="0.01"
+                                       class="modal-input modal-input-red"
+                                       placeholder="0.00" required>
+                            </div>
+                        </div>
+
+                        <div class="cash-field">
+                            <label class="modal-label modal-label-red">Método <span class="text-red-400">*</span></label>
+                            <select name="metodo_pago" id="metodo_pago_gasto"
+                                    class="modal-input modal-input-red" required>
+                                <?php foreach ($metodos_pago as $key => $metodo): ?>
+                                    <option value="<?= $key ?>">
+                                        <?= htmlspecialchars($metodo['label'] ?? '') ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-
-                        <!-- Descripción -->
-                        <div>
-                            <label class="modal-label modal-label-red">Descripción <span class="text-red-400">*</span></label>
-                            <textarea name="descripcion" rows="2" class="modal-input modal-input-red"
-                                      placeholder="Ej: Compra de productos de limpieza" required></textarea>
-                        </div>
-
-                        <!-- Proveedor -->
-                        <div>
-                            <label class="modal-label">Proveedor/Beneficiario</label>
-                            <input type="text" name="proveedor" class="modal-input"
-                                   placeholder="Nombre del proveedor">
-                        </div>
-
-                        <!-- Monto y Método de Pago -->
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="modal-label modal-label-red">Monto <span class="text-red-400">*</span></label>
-                                <div class="relative">
-                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
-                                    <input type="number" name="monto" data-money-format="true" step="0.01" min="0.01"
-                                           class="modal-input modal-input-red pl-7"
-                                           placeholder="0.00" required>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="modal-label modal-label-red">Método <span class="text-red-400">*</span></label>
-                                <select name="metodo_pago" id="metodo_pago_gasto"
-                                        class="modal-input modal-input-red" required>
-                                    <?php foreach ($metodos_pago as $key => $metodo): ?>
-                                        <option value="<?= $key ?>">
-                                            <?= htmlspecialchars($metodo['label'] ?? '') ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Referencia -->
-                        <div id="referencia_gasto_div" class="hidden">
-                            <label class="modal-label modal-label-red">
-                                Referencia/Autorización <span class="text-red-400">*</span>
-                            </label>
-                            <input type="text" name="referencia" class="modal-input modal-input-red"
-                                   placeholder="Número de referencia">
-                        </div>
-
-                        <!-- Comprobante -->
-                        <div>
-                            <label class="modal-label">Número de Comprobante</label>
-                            <input type="text" name="comprobante" class="modal-input"
-                                   placeholder="Ej: Factura #ABC123">
-                        </div>
                     </div>
 
-                    <!-- Botones -->
-                    <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-gray-100">
-                        <button type="button" onclick="cerrarModalGasto()"
-                                class="px-3 py-1.5 text-sm border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition font-medium"
-                                title="Cancelar gasto">
-                            Cancelar
-                        </button>
-                        <button type="submit"
-                                class="px-3 py-1.5 text-sm bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:shadow-md transition font-semibold flex items-center gap-1.5"
-                                title="Guardar gasto">
-                            <i class="fas fa-save text-xs"></i>
-                            Guardar
-                        </button>
+                    <!-- Referencia -->
+                    <div id="referencia_gasto_div" class="cash-field hidden">
+                        <label class="modal-label modal-label-red">
+                            Referencia/Autorización <span class="text-red-400">*</span>
+                        </label>
+                        <input type="text" name="referencia" class="modal-input modal-input-red"
+                               placeholder="Número de referencia">
                     </div>
-                </form>
-            </div>
+
+                    <!-- Comprobante -->
+                    <div class="cash-field">
+                        <label class="modal-label">Número de Comprobante</label>
+                        <input type="text" name="comprobante" class="modal-input"
+                               placeholder="Ej: Factura #ABC123">
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="cash-modal-actions">
+                    <button type="button" onclick="cerrarModalGasto()"
+                            class="cash-modal-btn secondary"
+                            title="Cancelar gasto">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                            class="cash-modal-btn primary"
+                            title="Guardar gasto">
+                        <i class="fas fa-save text-xs"></i>
+                        Guardar Gasto
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -2692,54 +5332,59 @@ if ($cash_ing_total_metodos > 0) {
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-// Funciones para modales
-function mostrarModalIngreso() {
-    document.getElementById('modalIngreso').classList.remove('hidden');
+function obtenerSidebarCaja() {
+    return document.getElementById('sidebar') || document.querySelector('[data-sidebar]');
+}
+
+function abrirModalCaja(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) {
+        return;
+    }
+
+    const sidebar = obtenerSidebarCaja();
+    if (sidebar) {
+        sidebar.style.display = 'none';
+    }
+
+    modal.classList.remove('hidden');
     document.body.classList.add('overflow-hidden');
+}
+
+function cerrarModalCaja(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) {
+        return;
+    }
+
+    const sidebar = obtenerSidebarCaja();
+    if (sidebar) {
+        sidebar.style.display = '';
+    }
+
+    modal.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+
+    const form = modal.querySelector('form');
+    if (form) {
+        form.reset();
+    }
+}
+
+function mostrarModalIngreso() {
+    abrirModalCaja('modalIngreso');
 }
 
 function cerrarModalIngreso() {
-    document.getElementById('modalIngreso').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-    document.getElementById('modalIngreso').querySelector('form').reset();
+    cerrarModalCaja('modalIngreso');
 }
 
 function mostrarModalGasto() {
-    document.getElementById('modalGasto').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
+    abrirModalCaja('modalGasto');
 }
 
 function cerrarModalGasto() {
-    document.getElementById('modalGasto').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-    document.getElementById('modalGasto').querySelector('form').reset();
-}
-
-// Reemplazar tus funciones originales con estas
-function mostrarModalIngreso() {
-    document.getElementById('sidebar').style.display = 'none';
-    document.getElementById('modalIngreso').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
-}
-
-function cerrarModalIngreso() {
-    document.getElementById('sidebar').style.display = '';
-    document.getElementById('modalIngreso').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-    document.getElementById('modalIngreso').querySelector('form').reset();
-}
-
-function mostrarModalGasto() {
-    document.getElementById('sidebar').style.display = 'none';
-    document.getElementById('modalGasto').classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
-}
-
-function cerrarModalGasto() {
-    document.getElementById('sidebar').style.display = '';
-    document.getElementById('modalGasto').classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-    document.getElementById('modalGasto').querySelector('form').reset();
+    cerrarModalCaja('modalGasto');
 }
 
 // Cerrar modales con Escape
@@ -2751,33 +5396,53 @@ document.addEventListener('keydown', function(e) {
 });
 
 // Mostrar/ocultar campo de referencia según método de pago
-document.getElementById('metodo_pago_ingreso').addEventListener('change', function() {
-    const referenciaDiv = document.getElementById('referencia_ingreso_div');
-    const referenciaInput = referenciaDiv.querySelector('input');
+const metodoPagoIngreso = document.getElementById('metodo_pago_ingreso');
+if (metodoPagoIngreso) {
+    metodoPagoIngreso.addEventListener('change', function() {
+        const referenciaDiv = document.getElementById('referencia_ingreso_div');
+        if (!referenciaDiv) {
+            return;
+        }
 
-    if (this.value === 'tarjeta' || this.value === 'transferencia') {
-        referenciaDiv.classList.remove('hidden');
-        referenciaInput.setAttribute('required', 'required');
-    } else {
-        referenciaDiv.classList.add('hidden');
-        referenciaInput.removeAttribute('required');
-        referenciaInput.value = '';
-    }
-});
+        const referenciaInput = referenciaDiv.querySelector('input');
+        if (!referenciaInput) {
+            return;
+        }
 
-document.getElementById('metodo_pago_gasto').addEventListener('change', function() {
-    const referenciaDiv = document.getElementById('referencia_gasto_div');
-    const referenciaInput = referenciaDiv.querySelector('input');
+        if (this.value === 'tarjeta' || this.value === 'transferencia') {
+            referenciaDiv.classList.remove('hidden');
+            referenciaInput.setAttribute('required', 'required');
+        } else {
+            referenciaDiv.classList.add('hidden');
+            referenciaInput.removeAttribute('required');
+            referenciaInput.value = '';
+        }
+    });
+}
 
-    if (this.value === 'tarjeta' || this.value === 'transferencia') {
-        referenciaDiv.classList.remove('hidden');
-        referenciaInput.setAttribute('required', 'required');
-    } else {
-        referenciaDiv.classList.add('hidden');
-        referenciaInput.removeAttribute('required');
-        referenciaInput.value = '';
-    }
-});
+const metodoPagoGasto = document.getElementById('metodo_pago_gasto');
+if (metodoPagoGasto) {
+    metodoPagoGasto.addEventListener('change', function() {
+        const referenciaDiv = document.getElementById('referencia_gasto_div');
+        if (!referenciaDiv) {
+            return;
+        }
+
+        const referenciaInput = referenciaDiv.querySelector('input');
+        if (!referenciaInput) {
+            return;
+        }
+
+        if (this.value === 'tarjeta' || this.value === 'transferencia') {
+            referenciaDiv.classList.remove('hidden');
+            referenciaInput.setAttribute('required', 'required');
+        } else {
+            referenciaDiv.classList.add('hidden');
+            referenciaInput.removeAttribute('required');
+            referenciaInput.value = '';
+        }
+    });
+}
 
 // Atajos de teclado
 document.addEventListener('keydown', function(e) {

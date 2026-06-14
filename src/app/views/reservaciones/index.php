@@ -102,6 +102,71 @@ if (!function_exists('reserva_noches')) {
     }
 }
 
+if (!function_exists('reserva_habitaciones_lista')) {
+    function reserva_habitaciones_lista($row) {
+        $habitaciones = [];
+        $fuente = trim((string) ($row['todas_habitaciones'] ?? ''));
+
+        if ($fuente === '') {
+            $fuente = trim((string) ($row['habitacion_numero'] ?? ''));
+        }
+
+        foreach (preg_split('/\s*,\s*/', $fuente, -1, PREG_SPLIT_NO_EMPTY) as $habitacion) {
+            $habitacion = trim((string) $habitacion);
+            if ($habitacion === '') {
+                continue;
+            }
+
+            $habitaciones[$habitacion] = $habitacion;
+        }
+
+        return array_values($habitaciones);
+    }
+}
+
+if (!function_exists('reserva_agrupadas_index')) {
+    function reserva_agrupadas_index($reservaciones) {
+        $agrupadas = [];
+        $orden = [];
+
+        foreach ($reservaciones as $indice => $row) {
+            $res_id = trim((string) ($row['id'] ?? ''));
+            $clave = $res_id !== '' ? 'res-' . $res_id : 'row-' . $indice;
+
+            if (!isset($agrupadas[$clave])) {
+                $row['_habitaciones_lista'] = [];
+                $row['_habitaciones_map'] = [];
+                $agrupadas[$clave] = $row;
+                $orden[] = $clave;
+            }
+
+            foreach (reserva_habitaciones_lista($row) as $habitacion) {
+                if (!isset($agrupadas[$clave]['_habitaciones_map'][$habitacion])) {
+                    $agrupadas[$clave]['_habitaciones_map'][$habitacion] = true;
+                    $agrupadas[$clave]['_habitaciones_lista'][] = $habitacion;
+                }
+            }
+        }
+
+        $resultado = [];
+        foreach ($orden as $clave) {
+            $row = $agrupadas[$clave];
+            $habitaciones = $row['_habitaciones_lista'] ?? [];
+            $total_habitaciones = count($habitaciones);
+
+            if ($total_habitaciones > 0) {
+                $row['todas_habitaciones'] = implode(', ', $habitaciones);
+                $row['total_habitaciones_reserva'] = max((int) ($row['total_habitaciones_reserva'] ?? 1), $total_habitaciones);
+            }
+
+            unset($row['_habitaciones_map']);
+            $resultado[] = $row;
+        }
+
+        return $resultado;
+    }
+}
+
 if (!function_exists('reserva_estado_ui')) {
     function reserva_estado_ui($estado, $estados) {
         $base = $estados[$estado] ?? ['label' => ucfirst(str_replace('_', ' ', (string) $estado)), 'icon' => 'circle'];
@@ -126,6 +191,9 @@ $meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Sep
 $dias_semana = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
 $ts = strtotime($fecha_filtro) ?: time();
 $fecha_bonita = $dias_semana[(int) date('w', $ts)] . ' ' . date('d', $ts) . ' de ' . $meses[(int) date('n', $ts) - 1] . ', ' . date('Y', $ts);
+
+$reservaciones = reserva_agrupadas_index($reservaciones);
+$total_reservaciones = count($reservaciones);
 
 $estado_counts = [
     'confirmada'  => 0,
@@ -297,6 +365,8 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
     text-underline-offset: 3px;
 }
 .res-guest { display: flex; align-items: center; gap: 12px; min-width: 220px; }
+.res-guest-copy { min-width: 0; }
+.res-guest-name-row { min-width: 0; }
 .res-avatar {
     width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
     background: var(--res-avatar-bg, #EEF2FF) !important;
@@ -353,6 +423,19 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .res-room-mark { width: 6px; min-width: 6px; height: 24px; border-radius: 10px; margin-top: 2px; }
 .res-room-main { font-weight: 900; color: var(--res-heading); }
 .res-room-type { color: #8B96A9; font-size: .78rem; margin-top: 3px; }
+.res-room-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; max-width: 360px; }
+.res-room-chip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 8px;
+    border: 1px solid color-mix(in srgb, var(--res-accent) 24%, var(--res-line));
+    background: color-mix(in srgb, var(--res-accent) 7%, #fff);
+    color: var(--res-heading);
+    padding: 3px 7px;
+    font-size: .72rem;
+    font-weight: 900;
+    line-height: 1;
+}
 .res-date-main { color: var(--res-heading); font-weight: 850; white-space: nowrap; }
 .res-date-sub { color: #8B96A9; font-size: .78rem; margin-top: 3px; }
 .res-nights { min-width: 28px; display: inline-flex; justify-content: center; border-radius: 8px; border: 1px solid var(--res-line); background: #FFFDF9; color: #6D778C; font-weight: 900; padding: 3px 8px; }
@@ -366,14 +449,15 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .res-payment { font-size: .76rem; margin-top: 2px; text-align: right; }
 .res-payment.is-paid { color: #067647; }
 .res-payment.is-due { color: #D92D20; }
-.res-row-actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+.res-row-actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; min-width: max-content; }
 .res-icon-btn {
     width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--res-line);
     display: inline-flex; align-items: center; justify-content: center; color: #65728A; background: #fff;
     transition: color .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 .res-icon-btn:hover { color: var(--res-heading); border-color: color-mix(in srgb, var(--res-accent) 42%, var(--res-line)); background: color-mix(in srgb, var(--res-accent) 8%, #fff); box-shadow: 0 10px 20px -16px color-mix(in srgb, var(--res-accent) 70%, transparent); transform: translateY(-1px); }
-.res-row-command { height: 34px; border-radius: 10px; border: 0; padding: 0 12px; color: #fff; font-weight: 900; font-size: .78rem; display: inline-flex; align-items: center; gap: 6px; transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; }
+.res-row-command { min-width: 88px; height: 34px; border-radius: 10px; border: 0; padding: 0 12px; color: #fff; font-weight: 900; font-size: .76rem; line-height: 1; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; }
+.res-row-command i { flex: 0 0 auto; font-size: .82rem; }
 .res-row-command.is-checkin { background: #148653; }
 .res-row-command.is-checkout { background: #D97706; }
 .res-row-command:hover { transform: translateY(-1px); filter: brightness(1.03); box-shadow: 0 10px 20px -14px rgba(15,23,42,.36); }
@@ -386,7 +470,9 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .res-mobile-card:hover { border-color: color-mix(in srgb, var(--res-accent) 36%, var(--res-line)); box-shadow: 0 18px 34px rgba(15,23,42,.09); transform: translateY(-1px); }
 .res-mobile-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
 .res-mobile-guest { display: flex; align-items: center; gap: 11px; min-width: 0; }
-.res-mobile-room { display: flex; align-items: center; gap: 8px; color: var(--res-heading); font-weight: 900; margin: 10px 0; }
+.res-mobile-room { display: flex; align-items: flex-start; gap: 8px; color: var(--res-heading); font-weight: 900; margin: 10px 0; }
+.res-mobile-room-body { min-width: 0; display: grid; gap: 4px; }
+.res-mobile-room .res-room-list { max-width: 100%; margin-top: 2px; }
 .res-mobile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 12px; }
 .res-mobile-info { border-radius: 12px; background: color-mix(in srgb, var(--res-accent) 4%, #FFFFFF); border: 1px solid color-mix(in srgb, var(--res-line) 70%, transparent); padding: 10px; }
 .res-mobile-info span { display: block; color: #7A8498; font-size: .7rem; font-weight: 850; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
@@ -835,6 +921,858 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
     .res-ci-cancel,
     .res-ci-confirm { width: 100%; }
 }
+
+/* Nueva reservacion: selector de cliente + hora, consistente con habitaciones. */
+.swal2-container.res-swal-reservation-container.swal2-backdrop-show,
+.swal2-container.res-swal-reservation-container.swal2-noanimation {
+    background:
+        radial-gradient(740px 320px at 50% -12%, color-mix(in srgb, var(--res-accent) 14%, transparent), transparent 62%),
+        rgba(15, 23, 42, .36) !important;
+    backdrop-filter: blur(5px) !important;
+}
+.swal2-popup.hb-swal-client,
+.swal2-popup.hb-swal-arrival {
+    --hb-modal-primary: var(--brand-primary, #1B2746);
+    --hb-modal-secondary: var(--brand-secondary, #0F172A);
+    --hb-modal-accent: var(--brand-accent, #BD9441);
+    --hb-modal-ink: #172033;
+    --hb-modal-soft-ink: #475569;
+    --hb-modal-muted: #6B7280;
+    --hb-modal-line: color-mix(in srgb, var(--hb-modal-primary) 12%, #E6DCCB);
+    --hb-modal-danger: #D43F3A;
+    --hb-modal-danger-dark: #A92B28;
+    --hb-modal-coral: #D76B4F;
+    --hb-modal-sage: #4E9478;
+    --hb-modal-blue: #497AA8;
+    --hb-modal-amber: #C79235;
+    --hb-modal-action: var(--hb-modal-blue);
+    --hb-modal-action-text: #FFFFFF;
+    width: min(720px, calc(100vw - 32px)) !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border: 1px solid color-mix(in srgb, var(--hb-modal-accent) 18%, #E8DFD1) !important;
+    border-radius: 18px !important;
+    background:
+        radial-gradient(520px 180px at 105% -8%, color-mix(in srgb, var(--hb-modal-coral) 15%, transparent), transparent 72%),
+        radial-gradient(420px 150px at -8% 0%, color-mix(in srgb, var(--hb-modal-sage) 13%, transparent), transparent 74%),
+        #fff !important;
+    color: var(--hb-modal-ink) !important;
+    box-shadow:
+        0 34px 78px -46px rgba(15, 23, 42, .62),
+        0 1px 0 rgba(255, 255, 255, .96) inset !important;
+    animation: resReserveModalIn .18s cubic-bezier(.22, 1, .36, 1) both;
+}
+.swal2-popup.hb-swal-arrival {
+    width: min(560px, calc(100vw - 32px)) !important;
+}
+.swal2-popup.hb-swal-client::before,
+.swal2-popup.hb-swal-arrival::before {
+    content: "";
+    display: block;
+    height: 7px;
+    background: linear-gradient(90deg, var(--hb-modal-danger), var(--hb-modal-coral) 34%, var(--hb-modal-amber) 66%, var(--hb-modal-sage));
+}
+.hb-swal .swal2-title:empty {
+    display: none !important;
+}
+.hb-swal .swal2-html-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+}
+.hb-swal .swal2-close {
+    position: absolute !important;
+    top: 14px !important;
+    right: 14px !important;
+    z-index: 30 !important;
+    width: 36px !important;
+    height: 36px !important;
+    border: 1px solid color-mix(in srgb, var(--hb-modal-danger) 18%, #fff) !important;
+    border-radius: 999px !important;
+    background: linear-gradient(180deg, var(--hb-modal-danger), var(--hb-modal-danger-dark)) !important;
+    color: #fff !important;
+    font-size: 1.15rem !important;
+    cursor: pointer !important;
+    box-shadow: 0 14px 24px -18px color-mix(in srgb, var(--hb-modal-danger) 72%, transparent) !important;
+    transition: transform .16s ease, background .16s ease, box-shadow .16s ease;
+}
+.hb-swal .swal2-close:hover,
+.hb-swal .swal2-close:focus-visible {
+    transform: translateY(-1px) scale(1.03);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--hb-modal-danger) 92%, #fff), var(--hb-modal-danger-dark)) !important;
+    outline: 3px solid color-mix(in srgb, var(--hb-modal-danger) 18%, transparent) !important;
+}
+.hb-client-choice,
+.hb-reservation-step {
+    width: 100%;
+    text-align: left;
+}
+.hb-client-choice__head,
+.hb-arrival-head {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    padding: 18px 20px 16px;
+    border-bottom: 1px solid color-mix(in srgb, var(--hb-modal-accent) 16%, var(--hb-modal-line));
+    background:
+        radial-gradient(420px 160px at 92% -10%, color-mix(in srgb, var(--hb-modal-coral) 12%, transparent), transparent 70%),
+        radial-gradient(320px 140px at 0% 0%, color-mix(in srgb, var(--hb-modal-sage) 11%, transparent), transparent 74%),
+        linear-gradient(180deg, #fff, color-mix(in srgb, var(--hb-modal-amber) 5%, #fff));
+}
+.hb-client-choice__head::after,
+.hb-arrival-head::after {
+    content: "";
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: -1px;
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--hb-modal-coral) 76%, transparent), color-mix(in srgb, var(--hb-modal-amber) 58%, transparent), color-mix(in srgb, var(--hb-modal-sage) 70%, transparent));
+}
+.hb-client-choice__mark,
+.hb-arrival-mark {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    color: #fff !important;
+    box-shadow: 0 14px 24px -18px rgba(15, 23, 42, .44);
+}
+.hb-client-choice__mark {
+    background: linear-gradient(135deg, var(--hb-modal-coral), color-mix(in srgb, var(--hb-modal-danger) 64%, var(--hb-modal-coral))) !important;
+}
+.hb-arrival-mark {
+    background: linear-gradient(135deg, var(--hb-modal-blue), color-mix(in srgb, var(--hb-modal-sage) 74%, var(--hb-modal-blue))) !important;
+}
+.hb-client-choice__eyebrow {
+    display: block;
+    margin: 0 0 4px;
+    color: color-mix(in srgb, var(--hb-modal-blue) 68%, var(--hb-modal-soft-ink)) !important;
+    font-size: .68rem;
+    font-weight: 850;
+    letter-spacing: 0;
+    line-height: 1.1;
+    text-transform: uppercase;
+}
+.hb-client-choice h3,
+.hb-arrival-head h3 {
+    margin: 0;
+    color: var(--hb-modal-ink) !important;
+    font-size: 1.15rem;
+    font-weight: 850;
+    letter-spacing: 0;
+    line-height: 1.12;
+}
+.hb-client-choice__head p,
+.hb-arrival-head p {
+    max-width: 52ch;
+    margin: 6px 0 0;
+    color: var(--hb-modal-muted) !important;
+    font-size: .84rem;
+    font-weight: 500;
+    line-height: 1.45;
+}
+.hb-client-choice__options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 16px 18px 18px;
+}
+.hb-client-option {
+    --hb-modal-action: var(--hb-modal-blue);
+    position: relative;
+    display: grid !important;
+    grid-template-rows: auto 1fr auto;
+    gap: 12px;
+    min-height: 156px;
+    padding: 14px !important;
+    border: 1px solid color-mix(in srgb, var(--hb-modal-action) 20%, var(--hb-modal-line)) !important;
+    border-radius: 16px !important;
+    background:
+        radial-gradient(240px 120px at 100% 0%, color-mix(in srgb, var(--hb-modal-action) 8%, transparent), transparent 72%),
+        #fff !important;
+    color: var(--hb-modal-ink) !important;
+    box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 16px 32px -30px rgba(15,23,42,.44) !important;
+    text-align: left !important;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+.hb-client-option::before {
+    content: "";
+    position: absolute;
+    inset: 12px auto 12px 0;
+    width: 3px;
+    border-radius: 0 999px 999px 0;
+    background: color-mix(in srgb, var(--hb-modal-action) 68%, #D8C8A8);
+}
+.hb-client-option--new,
+.hb-reservation-pill--new {
+    --hb-modal-action: var(--hb-modal-coral);
+}
+.hb-client-option--existing,
+.hb-reservation-pill--existing {
+    --hb-modal-action: var(--hb-modal-sage);
+}
+.hb-client-option:hover,
+.hb-client-option:focus-visible {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--hb-modal-action) 34%, #D9CDBA) !important;
+    background:
+        radial-gradient(260px 130px at 100% 0%, color-mix(in srgb, var(--hb-modal-action) 12%, transparent), transparent 72%),
+        #fff !important;
+    box-shadow: 0 20px 40px -30px color-mix(in srgb, var(--hb-modal-action) 48%, transparent) !important;
+    outline: none;
+}
+.hb-client-option__top,
+.hb-client-option__body,
+.hb-client-option__cta {
+    position: relative;
+    z-index: 1;
+}
+.hb-client-option__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+.hb-client-option__icon {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--hb-modal-action) 13%, #fff) !important;
+    color: color-mix(in srgb, var(--hb-modal-action) 82%, var(--hb-modal-ink)) !important;
+}
+.hb-client-option__tag,
+.hb-reservation-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 9px;
+    border: 1px solid color-mix(in srgb, var(--hb-modal-action) 16%, #ECE5D8);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--hb-modal-action) 7%, #fff) !important;
+    color: color-mix(in srgb, var(--hb-modal-action) 76%, var(--hb-modal-soft-ink)) !important;
+    font-size: .67rem;
+    font-weight: 800;
+    line-height: 1;
+}
+.hb-client-option__body {
+    display: grid;
+    gap: 6px;
+}
+.hb-client-option__body strong {
+    color: var(--hb-modal-ink) !important;
+    font-size: .98rem;
+    font-weight: 850;
+    line-height: 1.15;
+}
+.hb-client-option__body span {
+    color: var(--hb-modal-muted) !important;
+    font-size: .82rem;
+    font-weight: 500;
+    line-height: 1.38;
+}
+.hb-client-option__cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 34px;
+    padding-top: 10px;
+    border-top: 1px solid color-mix(in srgb, var(--hb-modal-action) 10%, #ECE5D8) !important;
+    color: var(--hb-modal-action) !important;
+    font-size: .78rem;
+    font-weight: 850;
+}
+.hb-arrival-context {
+    display: grid;
+    gap: 12px;
+    padding: 15px 18px 18px;
+}
+.hb-reservation-pill {
+    justify-content: flex-start;
+    gap: 8px;
+    width: fit-content;
+    min-height: 32px;
+    margin: 0 !important;
+    padding: 0 11px;
+    font-size: .74rem;
+}
+.hb-reservation-summary {
+    display: grid !important;
+    gap: 12px;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+.hb-reservation-dates {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+}
+.hb-date-row,
+.hb-arrival-card {
+    background:
+        radial-gradient(220px 110px at 100% 0%, color-mix(in srgb, var(--hb-modal-action, var(--hb-modal-blue)) 8%, transparent), transparent 72%),
+        #fff !important;
+}
+.hb-date-row {
+    display: grid;
+    gap: 5px;
+    min-height: 68px;
+    padding: 11px 12px !important;
+    border: 1px solid var(--hb-modal-line) !important;
+    border-radius: 14px;
+}
+.hb-date-row span {
+    color: var(--hb-modal-muted) !important;
+    font-size: .68rem;
+    font-weight: 820;
+    letter-spacing: 0;
+    line-height: 1;
+    text-transform: uppercase;
+}
+.hb-date-row strong {
+    color: var(--hb-modal-ink) !important;
+    font-size: .93rem;
+    font-weight: 850;
+    line-height: 1.15;
+}
+.hb-arrival-card {
+    --hb-modal-action: var(--hb-modal-blue);
+    display: grid;
+    gap: 10px;
+    padding: 14px !important;
+    border: 1px solid color-mix(in srgb, var(--hb-modal-blue) 22%, var(--hb-modal-line)) !important;
+    border-radius: 16px;
+}
+.hb-arrival-label {
+    margin: 0 !important;
+    color: var(--hb-modal-ink) !important;
+    font-size: .9rem;
+    font-weight: 850;
+    line-height: 1.15;
+}
+.hb-arrival-copy {
+    margin: -5px 0 0 !important;
+    color: var(--hb-modal-muted) !important;
+    font-size: .79rem;
+    font-weight: 500;
+    line-height: 1.35;
+}
+.hb-arrival-control {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+}
+.hb-arrival-input {
+    width: 100%;
+    height: 42px;
+    padding: 0 12px !important;
+    border: 1px solid color-mix(in srgb, var(--hb-modal-blue) 18%, #D8CDBB) !important;
+    border-radius: 12px !important;
+    background: #FFFFFF !important;
+    color: var(--hb-modal-ink) !important;
+    font-size: .96rem !important;
+    font-weight: 780;
+    outline: none;
+    box-shadow: none !important;
+}
+.hb-arrival-input:focus {
+    border-color: color-mix(in srgb, var(--hb-modal-blue) 46%, #D8CDBB) !important;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--hb-modal-blue) 12%, transparent) !important;
+}
+.hb-arrival-now,
+.hb-swal-arrival .hb-swal-confirm {
+    min-height: 42px !important;
+    border: 0 !important;
+    border-radius: 12px !important;
+    background: linear-gradient(135deg, var(--hb-modal-blue), color-mix(in srgb, var(--hb-modal-sage) 60%, var(--hb-modal-blue))) !important;
+    color: var(--hb-modal-action-text) !important;
+    box-shadow: 0 14px 24px -18px color-mix(in srgb, var(--hb-modal-blue) 76%, transparent) !important;
+    font-weight: 850 !important;
+}
+.hb-arrival-now {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 13px !important;
+    font-size: .82rem;
+}
+.hb-arrival-later {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    padding: 10px 11px;
+    border: 1px solid color-mix(in srgb, var(--hb-modal-amber) 30%, var(--hb-modal-line)) !important;
+    border-radius: 13px;
+    background:
+        radial-gradient(200px 100px at 100% 0%, color-mix(in srgb, var(--hb-modal-amber) 14%, transparent), transparent 72%),
+        color-mix(in srgb, var(--hb-modal-amber) 4%, #fff) !important;
+    color: var(--hb-modal-ink);
+    text-align: left;
+    cursor: pointer;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.hb-arrival-later__icon {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--hb-modal-amber) 13%, #fff);
+    color: color-mix(in srgb, var(--hb-modal-amber) 76%, var(--hb-modal-soft-ink));
+}
+.hb-arrival-later strong,
+.hb-arrival-later small {
+    display: block;
+}
+.hb-arrival-later strong {
+    font-size: .84rem;
+    font-weight: 900;
+    line-height: 1.15;
+}
+.hb-arrival-later small {
+    margin-top: 2px;
+    color: var(--hb-modal-muted);
+    font-size: .74rem;
+    font-weight: 650;
+    line-height: 1.25;
+}
+.hb-arrival-later:hover,
+.hb-arrival-later:focus-visible,
+.hb-arrival-now:hover,
+.hb-arrival-now:focus-visible,
+.hb-swal-arrival .hb-swal-confirm:hover,
+.hb-swal-arrival .hb-swal-confirm:focus-visible {
+    transform: translateY(-1px);
+    outline: none;
+}
+.hb-swal .swal2-actions {
+    width: 100% !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    padding: 0 18px 18px !important;
+}
+.swal2-popup.hb-swal-arrival .swal2-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+}
+.swal2-popup.hb-swal-client .swal2-actions {
+    justify-content: stretch !important;
+}
+.hb-swal-client .hb-swal-cancel,
+.hb-swal-arrival .hb-swal-cancel,
+.hb-swal-arrival .hb-swal-confirm {
+    min-height: 42px !important;
+    margin: 0 !important;
+    padding: 0 14px !important;
+    border-radius: 12px !important;
+    font-size: .84rem !important;
+    letter-spacing: 0 !important;
+}
+.hb-swal-arrival .hb-swal-cancel {
+    order: 1;
+}
+.hb-swal-arrival .hb-swal-confirm {
+    order: 2;
+}
+.hb-swal-client .hb-swal-cancel,
+.hb-swal-arrival .hb-swal-cancel {
+    border: 1px solid color-mix(in srgb, var(--hb-modal-danger) 30%, var(--hb-modal-line)) !important;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--hb-modal-danger) 9%, #fff), color-mix(in srgb, var(--hb-modal-danger) 5%, #fff)) !important;
+    color: color-mix(in srgb, var(--hb-modal-danger-dark) 82%, var(--hb-modal-ink)) !important;
+    box-shadow: 0 12px 24px -22px color-mix(in srgb, var(--hb-modal-danger) 46%, transparent) !important;
+}
+.hb-swal-client .hb-swal-cancel {
+    width: 100% !important;
+}
+.hb-swal-client .hb-swal-cancel:hover,
+.hb-swal-client .hb-swal-cancel:focus-visible,
+.hb-swal-arrival .hb-swal-cancel:hover,
+.hb-swal-arrival .hb-swal-cancel:focus-visible {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--hb-modal-danger) 46%, var(--hb-modal-line)) !important;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--hb-modal-danger) 16%, #fff), color-mix(in srgb, var(--hb-modal-danger) 8%, #fff)) !important;
+    outline: none;
+}
+.swal2-popup.hb-swal-client.swal2-hide,
+.swal2-popup.hb-swal-arrival.swal2-hide {
+    animation: resReserveModalOut .13s ease-in both !important;
+}
+.swal2-container.res-swal-reservation-container.swal2-backdrop-hide {
+    background: rgba(15, 23, 42, 0) !important;
+    backdrop-filter: blur(0) !important;
+    transition: background .13s ease, backdrop-filter .13s ease !important;
+}
+
+/* Propuesta sobria: menos color, mas blanco calido y acentos silenciosos. */
+.swal2-popup.hb-swal-client,
+.swal2-popup.hb-swal-arrival {
+    --hb-modal-surface: #fffdfa;
+    --hb-modal-paper: #ffffff;
+    --hb-modal-ink: #202a32;
+    --hb-modal-soft-ink: #4d5963;
+    --hb-modal-muted: #6f7882;
+    --hb-modal-line: color-mix(in srgb, var(--brand-primary, #1B2746) 8%, #e7ded2);
+    --hb-modal-clay: #9b6a5f;
+    --hb-modal-clay-deep: #745048;
+    --hb-modal-moss: #657a70;
+    --hb-modal-moss-deep: #4f6259;
+    --hb-modal-blue: #65798d;
+    --hb-modal-blue-deep: #4e6173;
+    --hb-modal-amber: #a88c5a;
+    --hb-modal-action: var(--hb-modal-blue);
+    --hb-modal-action-text: #ffffff;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,253,249,.98)),
+        var(--hb-modal-surface) !important;
+    border-color: color-mix(in srgb, var(--brand-primary, #1B2746) 9%, #e7ded2) !important;
+    box-shadow:
+        0 30px 70px -46px rgba(20, 28, 36, .56),
+        0 1px 0 rgba(255,255,255,.95) inset !important;
+}
+
+.swal2-popup.hb-swal-client::before,
+.swal2-popup.hb-swal-arrival::before {
+    height: 4px;
+    background: linear-gradient(90deg,
+        color-mix(in srgb, var(--brand-primary, #1B2746) 24%, #e8ded0),
+        color-mix(in srgb, var(--brand-accent, #BD9441) 24%, #eee6da)) !important;
+}
+
+.hb-swal .swal2-close {
+    border-color: color-mix(in srgb, var(--hb-modal-clay) 22%, #e9ded3) !important;
+    background: rgba(255,255,255,.94) !important;
+    color: var(--hb-modal-clay-deep) !important;
+    box-shadow: 0 12px 24px -20px rgba(116, 80, 72, .42) !important;
+}
+
+.hb-swal .swal2-close:hover,
+.hb-swal .swal2-close:focus-visible {
+    background: color-mix(in srgb, var(--hb-modal-clay) 8%, #fff) !important;
+    color: var(--hb-modal-clay-deep) !important;
+    outline: 3px solid color-mix(in srgb, var(--hb-modal-clay) 14%, transparent) !important;
+}
+
+.hb-client-choice__head,
+.hb-arrival-head {
+    border-bottom-color: var(--hb-modal-line) !important;
+    background:
+        linear-gradient(180deg, #ffffff, color-mix(in srgb, var(--brand-accent, #BD9441) 4%, #fffdf8)) !important;
+}
+
+.hb-client-choice__head::after,
+.hb-arrival-head::after {
+    height: 1px;
+    background: linear-gradient(90deg,
+        color-mix(in srgb, var(--brand-primary, #1B2746) 18%, transparent),
+        color-mix(in srgb, var(--brand-accent, #BD9441) 24%, transparent)) !important;
+}
+
+.hb-client-choice__mark,
+.hb-arrival-mark {
+    border: 1px solid color-mix(in srgb, var(--hb-modal-action) 18%, var(--hb-modal-line));
+    background: color-mix(in srgb, var(--hb-modal-action) 9%, #fff) !important;
+    color: color-mix(in srgb, var(--hb-modal-action) 76%, var(--hb-modal-ink)) !important;
+    box-shadow: none !important;
+}
+
+.hb-client-choice__mark {
+    --hb-modal-action: var(--hb-modal-clay);
+}
+
+.hb-arrival-mark {
+    --hb-modal-action: var(--hb-modal-blue);
+}
+
+.hb-client-choice__eyebrow {
+    color: color-mix(in srgb, var(--brand-primary, #1B2746) 48%, var(--hb-modal-muted)) !important;
+}
+
+.hb-client-option--new,
+.hb-reservation-pill--new {
+    --hb-modal-action: var(--hb-modal-clay);
+}
+
+.hb-client-option--existing,
+.hb-reservation-pill--existing {
+    --hb-modal-action: var(--hb-modal-moss);
+}
+
+.hb-client-option,
+.hb-date-row,
+.hb-arrival-card {
+    background: var(--hb-modal-paper) !important;
+    border-color: color-mix(in srgb, var(--hb-modal-action, var(--hb-modal-blue)) 14%, var(--hb-modal-line)) !important;
+    box-shadow:
+        0 1px 0 rgba(255,255,255,.9) inset,
+        0 16px 34px -34px rgba(24, 32, 40, .38) !important;
+}
+
+.hb-client-option::before {
+    background: color-mix(in srgb, var(--hb-modal-action) 44%, #d9cfc2) !important;
+    opacity: .72;
+}
+
+.hb-client-option:hover,
+.hb-client-option:focus-visible {
+    background: color-mix(in srgb, var(--hb-modal-action) 3%, #fff) !important;
+    border-color: color-mix(in srgb, var(--hb-modal-action) 24%, var(--hb-modal-line)) !important;
+    box-shadow: 0 20px 40px -34px color-mix(in srgb, var(--hb-modal-action) 28%, transparent) !important;
+}
+
+.hb-client-option__icon,
+.hb-client-option__tag,
+.hb-reservation-pill {
+    background: color-mix(in srgb, var(--hb-modal-action) 6%, #fff) !important;
+    border-color: color-mix(in srgb, var(--hb-modal-action) 12%, var(--hb-modal-line)) !important;
+    color: color-mix(in srgb, var(--hb-modal-action) 68%, var(--hb-modal-soft-ink)) !important;
+}
+
+.hb-arrival-card {
+    --hb-modal-action: var(--hb-modal-blue);
+}
+
+.hb-arrival-later {
+    border-color: color-mix(in srgb, var(--hb-modal-amber) 18%, var(--hb-modal-line)) !important;
+    background: color-mix(in srgb, var(--hb-modal-amber) 4%, #fff) !important;
+}
+
+.hb-arrival-later__icon {
+    background: color-mix(in srgb, var(--hb-modal-amber) 8%, #fff) !important;
+    color: color-mix(in srgb, var(--hb-modal-amber) 70%, var(--hb-modal-soft-ink)) !important;
+}
+
+.hb-arrival-now,
+.hb-swal-arrival .hb-swal-confirm {
+    background: linear-gradient(135deg, var(--hb-modal-blue), var(--hb-modal-blue-deep)) !important;
+    color: #fff !important;
+    box-shadow: 0 14px 24px -20px rgba(78, 97, 115, .5) !important;
+}
+
+.hb-swal-client .hb-swal-cancel,
+.hb-swal-arrival .hb-swal-cancel {
+    border-color: color-mix(in srgb, var(--hb-modal-clay) 18%, var(--hb-modal-line)) !important;
+    background: #fff !important;
+    color: color-mix(in srgb, var(--hb-modal-clay-deep) 70%, var(--hb-modal-ink)) !important;
+    box-shadow: none !important;
+}
+
+.hb-swal-client .hb-swal-cancel:hover,
+.hb-swal-client .hb-swal-cancel:focus-visible,
+.hb-swal-arrival .hb-swal-cancel:hover,
+.hb-swal-arrival .hb-swal-cancel:focus-visible {
+    border-color: color-mix(in srgb, var(--hb-modal-clay) 28%, var(--hb-modal-line)) !important;
+    background: color-mix(in srgb, var(--hb-modal-clay) 5%, #fff) !important;
+}
+
+/* Toques cromaticos moderados: accion clara sin saturar el modal. */
+.swal2-popup.hb-swal-client,
+.swal2-popup.hb-swal-arrival {
+    --hb-modal-clay: #aa6958;
+    --hb-modal-clay-deep: #7d4b40;
+    --hb-modal-moss: #4f806f;
+    --hb-modal-moss-deep: #3d6557;
+    --hb-modal-blue: #4e7398;
+    --hb-modal-blue-deep: #3f5f80;
+    --hb-modal-amber: #aa7f3f;
+}
+
+.swal2-popup.hb-swal-client::before,
+.swal2-popup.hb-swal-arrival::before {
+    height: 5px;
+    background: linear-gradient(90deg,
+        color-mix(in srgb, var(--hb-modal-clay) 46%, #eadfd4),
+        color-mix(in srgb, var(--hb-modal-blue) 38%, #e6edf2),
+        color-mix(in srgb, var(--hb-modal-moss) 42%, #e5eee9)) !important;
+}
+
+.hb-client-option--new .hb-client-option__icon {
+    background: color-mix(in srgb, var(--hb-modal-clay) 16%, #fff) !important;
+    color: var(--hb-modal-clay-deep) !important;
+}
+
+.hb-client-option--existing .hb-client-option__icon {
+    background: color-mix(in srgb, var(--hb-modal-moss) 16%, #fff) !important;
+    color: var(--hb-modal-moss-deep) !important;
+}
+
+.hb-client-option--new .hb-client-option__cta,
+.hb-client-option--existing .hb-client-option__cta {
+    min-height: 38px;
+    margin-top: 2px;
+    padding: 10px 12px 0;
+    border-top-color: color-mix(in srgb, var(--hb-modal-action) 16%, var(--hb-modal-line)) !important;
+    color: color-mix(in srgb, var(--hb-modal-action) 86%, var(--hb-modal-ink)) !important;
+}
+
+.hb-client-option__tag,
+.hb-reservation-pill {
+    background: color-mix(in srgb, var(--hb-modal-action) 10%, #fff) !important;
+    border-color: color-mix(in srgb, var(--hb-modal-action) 18%, var(--hb-modal-line)) !important;
+}
+
+.hb-arrival-mark {
+    background: color-mix(in srgb, var(--hb-modal-blue) 15%, #fff) !important;
+    color: var(--hb-modal-blue-deep) !important;
+}
+
+.hb-arrival-now {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--hb-modal-blue) 92%, #fff), var(--hb-modal-blue-deep)) !important;
+}
+
+.hb-swal-arrival .hb-swal-confirm {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--brand-primary, #1B2746) 62%, var(--hb-modal-blue)), var(--hb-modal-blue-deep)) !important;
+}
+
+.hb-arrival-later {
+    border-color: color-mix(in srgb, var(--hb-modal-amber) 32%, var(--hb-modal-line)) !important;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--hb-modal-amber) 8%, #fff), #fff) !important;
+}
+
+.hb-arrival-later__icon {
+    background: color-mix(in srgb, var(--hb-modal-amber) 15%, #fff) !important;
+    color: color-mix(in srgb, var(--hb-modal-amber) 84%, var(--hb-modal-ink)) !important;
+}
+
+/* Estados de color claros: verde registrado, verde suave despues, cancelar rojo bajo. */
+.swal2-popup.hb-swal-client,
+.swal2-popup.hb-swal-arrival {
+    --hb-modal-green: #2f8f62;
+    --hb-modal-green-deep: #216b4a;
+    --hb-modal-new-strong: #c46349;
+    --hb-modal-new-deep: #934634;
+    --hb-modal-cancel: #b95b57;
+    --hb-modal-cancel-deep: #8f403d;
+}
+
+.hb-client-option--existing:hover,
+.hb-client-option--existing:focus-visible {
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--hb-modal-green) 15%, #fff), #fff) !important;
+    border-color: color-mix(in srgb, var(--hb-modal-green) 48%, var(--hb-modal-line)) !important;
+    box-shadow: 0 22px 42px -32px color-mix(in srgb, var(--hb-modal-green) 55%, transparent) !important;
+}
+
+.hb-client-option--existing:hover .hb-client-option__icon,
+.hb-client-option--existing:focus-visible .hb-client-option__icon {
+    background: linear-gradient(135deg, var(--hb-modal-green), var(--hb-modal-green-deep)) !important;
+    color: #fff !important;
+}
+
+.hb-client-option--existing:hover .hb-client-option__tag,
+.hb-client-option--existing:focus-visible .hb-client-option__tag {
+    background: color-mix(in srgb, var(--hb-modal-green) 18%, #fff) !important;
+    border-color: color-mix(in srgb, var(--hb-modal-green) 34%, var(--hb-modal-line)) !important;
+    color: var(--hb-modal-green-deep) !important;
+}
+
+.hb-client-option--existing:hover .hb-client-option__cta,
+.hb-client-option--existing:focus-visible .hb-client-option__cta {
+    color: var(--hb-modal-green-deep) !important;
+}
+
+.hb-client-option--new:hover,
+.hb-client-option--new:focus-visible {
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--hb-modal-new-strong) 13%, #fff), #fff) !important;
+    border-color: color-mix(in srgb, var(--hb-modal-new-strong) 42%, var(--hb-modal-line)) !important;
+    box-shadow: 0 22px 42px -32px color-mix(in srgb, var(--hb-modal-new-strong) 50%, transparent) !important;
+}
+
+.hb-client-option--new:hover .hb-client-option__icon,
+.hb-client-option--new:focus-visible .hb-client-option__icon {
+    background: linear-gradient(135deg, var(--hb-modal-new-strong), var(--hb-modal-new-deep)) !important;
+    color: #fff !important;
+}
+
+.hb-arrival-later {
+    border-color: color-mix(in srgb, var(--hb-modal-green) 30%, var(--hb-modal-line)) !important;
+    background:
+        radial-gradient(190px 92px at 100% 0%, color-mix(in srgb, var(--hb-modal-green) 10%, transparent), transparent 72%),
+        linear-gradient(180deg, color-mix(in srgb, var(--hb-modal-green) 7%, #fff), #fff) !important;
+}
+
+.hb-arrival-later__icon {
+    background: color-mix(in srgb, var(--hb-modal-green) 14%, #fff) !important;
+    color: var(--hb-modal-green-deep) !important;
+}
+
+.hb-arrival-later:hover,
+.hb-arrival-later:focus-visible {
+    border-color: color-mix(in srgb, var(--hb-modal-green) 44%, var(--hb-modal-line)) !important;
+    box-shadow: 0 14px 26px -24px color-mix(in srgb, var(--hb-modal-green) 45%, transparent) !important;
+}
+
+.hb-swal-client .hb-swal-cancel,
+.hb-swal-arrival .hb-swal-cancel {
+    border-color: color-mix(in srgb, var(--hb-modal-cancel) 30%, var(--hb-modal-line)) !important;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--hb-modal-cancel) 12%, #fff), color-mix(in srgb, var(--hb-modal-cancel) 6%, #fff)) !important;
+    color: var(--hb-modal-cancel-deep) !important;
+    box-shadow: 0 14px 22px -22px color-mix(in srgb, var(--hb-modal-cancel) 54%, transparent) !important;
+}
+
+.hb-swal-client .hb-swal-cancel:hover,
+.hb-swal-client .hb-swal-cancel:focus-visible,
+.hb-swal-arrival .hb-swal-cancel:hover,
+.hb-swal-arrival .hb-swal-cancel:focus-visible {
+    border-color: color-mix(in srgb, var(--hb-modal-cancel) 44%, var(--hb-modal-line)) !important;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--hb-modal-cancel) 17%, #fff), color-mix(in srgb, var(--hb-modal-cancel) 9%, #fff)) !important;
+    color: var(--hb-modal-cancel-deep) !important;
+    box-shadow: 0 16px 26px -22px color-mix(in srgb, var(--hb-modal-cancel) 62%, transparent) !important;
+}
+@keyframes resReserveModalIn {
+    from { opacity: 0; transform: translateY(8px) scale(.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes resReserveModalOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(8px) scale(.985); }
+}
+@media (max-width: 640px) {
+    .swal2-container.res-swal-reservation-container {
+        align-items: flex-end !important;
+        padding: 10px !important;
+    }
+    .swal2-popup.hb-swal-client,
+    .swal2-popup.hb-swal-arrival {
+        width: 100% !important;
+        max-width: none !important;
+        border-radius: 18px 18px 12px 12px !important;
+    }
+    .hb-client-choice__head,
+    .hb-arrival-head {
+        padding: 18px 16px 14px;
+    }
+    .hb-client-choice__options,
+    .hb-arrival-context {
+        padding: 14px;
+    }
+    .hb-client-choice__options,
+    .hb-reservation-dates,
+    .swal2-popup.hb-swal-arrival .swal2-actions {
+        grid-template-columns: 1fr;
+    }
+    .hb-client-option {
+        min-height: 132px;
+    }
+    .hb-swal .swal2-actions {
+        padding: 0 14px calc(14px + env(safe-area-inset-bottom)) !important;
+    }
+}
 </style>
 
 <div class="res-bookings">
@@ -864,7 +1802,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                     <i class="fas fa-file-excel"></i>
                     Excel
                 </button>
-                <a href="<?= url('reservaciones/crear') ?>" class="res-btn res-btn-primary" title="Crear una nueva reservación">
+                <a href="<?= url('reservaciones/crear') ?>" onclick="return resAbrirSelectorNuevaReserva(event)" class="res-btn res-btn-primary" title="Crear una nueva reservación">
                     <i class="fas fa-plus"></i>
                     Nueva reservacion
                 </a>
@@ -935,7 +1873,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                 <div style="font-size:2rem;color:var(--res-accent);margin-bottom:10px;"><i class="fas fa-calendar-day"></i></div>
                 <h2 style="font-size:1.1rem;font-weight:900;color:var(--res-heading);margin:0 0 6px;">Sin reservaciones</h2>
                 <p style="margin:0 0 18px;">No hay reservaciones activas para <?= $es_hoy ? 'hoy' : htmlspecialchars(date('d/m/Y', $ts)) ?>.</p>
-                <a href="<?= url('reservaciones/crear') ?>" class="res-btn res-btn-primary">
+                <a href="<?= url('reservaciones/crear') ?>" onclick="return resAbrirSelectorNuevaReserva(event)" class="res-btn res-btn-primary">
                     <i class="fas fa-plus"></i>Crear reservacion
                 </a>
             </section>
@@ -959,7 +1897,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                         <tr>
                             <th>Folio</th>
                             <th>Huesped</th>
-                            <th>Habitacion</th>
+                            <th>Habitaciones</th>
                             <th>Llegada</th>
                             <th>Salida</th>
                             <th>Noches</th>
@@ -976,10 +1914,14 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                                 $huesped_nombre = trim((string) ($row['huesped_nombre'] ?? 'Sin nombre'));
                                 $huesped_telefono = trim((string) ($row['huesped_telefono'] ?? ''));
                                 $habitacion_numero = trim((string) ($row['habitacion_numero'] ?? ''));
-                                $habitacion_label = $habitacion_numero !== '' ? $habitacion_numero : 'Por asignar';
                                 $habitacion_tipo = reserva_title($row['habitacion_tipo'] ?? '');
-                                $total_habs_reserva = (int) ($row['total_habitaciones_reserva'] ?? 1);
-                                $todas_habs = trim((string) ($row['todas_habitaciones'] ?? $habitacion_label));
+                                $habitaciones_lista = is_array($row['_habitaciones_lista'] ?? null) ? $row['_habitaciones_lista'] : reserva_habitaciones_lista($row);
+                                $todas_habs = trim((string) ($row['todas_habitaciones'] ?? ''));
+                                if ($todas_habs === '' && !empty($habitaciones_lista)) {
+                                    $todas_habs = implode(', ', $habitaciones_lista);
+                                }
+                                $total_habs_reserva = max((int) ($row['total_habitaciones_reserva'] ?? 1), count($habitaciones_lista));
+                                $habitacion_label = $total_habs_reserva > 1 ? $total_habs_reserva . ' habitaciones' : ($habitacion_numero !== '' ? $habitacion_numero : 'Por asignar');
                                 $color = obtenerColorHab($habitacion_numero, $colores_habitacion, $color_numerico);
                                 $estado = $row['estado'] ?? 'confirmada';
                                 $estado_ui = reserva_estado_ui($estado, $estados);
@@ -1005,11 +1947,13 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                                         <div class="res-avatar" style="background:linear-gradient(135deg, <?= htmlspecialchars($color['bg']) ?>, <?= htmlspecialchars($color['dark']) ?>);">
                                             <?= htmlspecialchars(reserva_iniciales($huesped_nombre)) ?>
                                         </div>
-                                        <div>
+                                        <div class="res-guest-copy">
+                                            <div class="res-guest-name-row">
                                             <a href="<?= url('reservaciones/ver/' . $res_id) ?>" class="res-guest-name res-detail-link" title="Ver reservación de <?= htmlspecialchars($huesped_nombre) ?>">
                                                 <?= htmlspecialchars($huesped_nombre) ?>
                                                 <i class="fas fa-arrow-right" aria-hidden="true"></i>
                                             </a>
+                                            </div>
                                             <div class="res-guest-meta">
                                                 <?php if ($huesped_telefono !== ''): ?>
                                                     <a href="tel:<?= htmlspecialchars($huesped_telefono) ?>" class="res-phone-link" title="Llamar a <?= htmlspecialchars($huesped_nombre) ?>"><?= htmlspecialchars($huesped_telefono) ?></a>
@@ -1025,9 +1969,17 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                                         <span class="res-room-mark" style="background:<?= htmlspecialchars($color['bg']) ?>;"></span>
                                         <div>
                                             <div class="res-room-main"><?= htmlspecialchars($habitacion_label) ?></div>
-                                            <div class="res-room-type">
-                                                <?= $total_habs_reserva > 1 ? htmlspecialchars($todas_habs) : ($habitacion_tipo !== '' ? htmlspecialchars($habitacion_tipo) : 'Habitacion') ?>
-                                            </div>
+                                            <?php if ($total_habs_reserva > 1 && !empty($habitaciones_lista)): ?>
+                                                <div class="res-room-list" aria-label="Habitaciones de la reservacion">
+                                                    <?php foreach ($habitaciones_lista as $habitacion_item): ?>
+                                                        <span class="res-room-chip"><?= htmlspecialchars($habitacion_item) ?></span>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            <?php else: ?>
+                                                <div class="res-room-type">
+                                                    <?= $habitacion_tipo !== '' ? htmlspecialchars($habitacion_tipo) : 'Habitacion' ?>
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </td>
@@ -1082,10 +2034,14 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                         $huesped_nombre = trim((string) ($row['huesped_nombre'] ?? 'Sin nombre'));
                         $huesped_telefono = trim((string) ($row['huesped_telefono'] ?? ''));
                         $habitacion_numero = trim((string) ($row['habitacion_numero'] ?? ''));
-                        $habitacion_label = $habitacion_numero !== '' ? $habitacion_numero : 'Por asignar';
                         $habitacion_tipo = reserva_title($row['habitacion_tipo'] ?? '');
-                        $total_habs_reserva = (int) ($row['total_habitaciones_reserva'] ?? 1);
-                        $todas_habs = trim((string) ($row['todas_habitaciones'] ?? $habitacion_label));
+                        $habitaciones_lista = is_array($row['_habitaciones_lista'] ?? null) ? $row['_habitaciones_lista'] : reserva_habitaciones_lista($row);
+                        $todas_habs = trim((string) ($row['todas_habitaciones'] ?? ''));
+                        if ($todas_habs === '' && !empty($habitaciones_lista)) {
+                            $todas_habs = implode(', ', $habitaciones_lista);
+                        }
+                        $total_habs_reserva = max((int) ($row['total_habitaciones_reserva'] ?? 1), count($habitaciones_lista));
+                        $habitacion_label = $total_habs_reserva > 1 ? $total_habs_reserva . ' habitaciones' : ($habitacion_numero !== '' ? $habitacion_numero : 'Por asignar');
                         $color = obtenerColorHab($habitacion_numero, $colores_habitacion, $color_numerico);
                         $estado = $row['estado'] ?? 'confirmada';
                         $estado_ui = reserva_estado_ui($estado, $estados);
@@ -1105,11 +2061,13 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                                 <div class="res-avatar" style="background:linear-gradient(135deg, <?= htmlspecialchars($color['bg']) ?>, <?= htmlspecialchars($color['dark']) ?>);">
                                     <?= htmlspecialchars(reserva_iniciales($huesped_nombre)) ?>
                                 </div>
-                                <div style="min-width:0;">
+                                <div class="res-guest-copy">
+                                    <div class="res-guest-name-row">
                                     <a href="<?= url('reservaciones/ver/' . $res_id) ?>" class="res-guest-name res-detail-link" title="Ver reservación de <?= htmlspecialchars($huesped_nombre) ?>">
                                         <?= htmlspecialchars($huesped_nombre) ?>
                                         <i class="fas fa-arrow-right" aria-hidden="true"></i>
                                     </a>
+                                    </div>
                                     <div class="res-guest-meta">
                                         <a href="<?= url('reservaciones/ver/' . $res_id) ?>" class="res-detail-link" title="Ver detalle de <?= htmlspecialchars($folio) ?>"><?= htmlspecialchars($folio) ?></a>
                                         <?php if ($huesped_telefono !== ''): ?>
@@ -1126,10 +2084,20 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 
                         <div class="res-mobile-room">
                             <span class="res-room-mark" style="background:<?= htmlspecialchars($color['bg']) ?>;"></span>
-                            <span><?= htmlspecialchars($habitacion_label) ?></span>
-                            <small style="color:#8B96A9;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                                <?= $total_habs_reserva > 1 ? htmlspecialchars($todas_habs) : ($habitacion_tipo !== '' ? htmlspecialchars($habitacion_tipo) : 'Habitacion') ?>
-                            </small>
+                            <div class="res-mobile-room-body">
+                                <span><?= htmlspecialchars($habitacion_label) ?></span>
+                                <?php if ($total_habs_reserva > 1 && !empty($habitaciones_lista)): ?>
+                                    <div class="res-room-list" aria-label="Habitaciones de la reservacion">
+                                        <?php foreach ($habitaciones_lista as $habitacion_item): ?>
+                                            <span class="res-room-chip"><?= htmlspecialchars($habitacion_item) ?></span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php else: ?>
+                                    <small style="color:#8B96A9;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                        <?= $habitacion_tipo !== '' ? htmlspecialchars($habitacion_tipo) : 'Habitacion' ?>
+                                    </small>
+                                <?php endif; ?>
+                            </div>
                         </div>
 
                         <div class="res-mobile-grid">
@@ -1411,8 +2379,318 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 const baseUrl = '<?= url('') ?>';
+const resIndexDefaultDate = <?= json_encode($fecha_filtro ?: date('Y-m-d')) ?>;
 let filtroEstadoActual = 'todos';
 let totalReservacion = 0;
+
+let resReservaSwalTimer = null;
+
+function resFechaValida(fechaTexto) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(String(fechaTexto || ''));
+}
+
+function resFormatearFechaLocal(fecha) {
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    return `${anio}-${mes}-${dia}`;
+}
+
+function resObtenerDatosReservaDefault() {
+    const hoy = new Date();
+    const entradaBase = resFechaValida(resIndexDefaultDate)
+        ? new Date(resIndexDefaultDate + 'T00:00:00')
+        : new Date(hoy);
+    const salidaBase = new Date(entradaBase);
+    salidaBase.setDate(salidaBase.getDate() + 1);
+
+    return {
+        fechaEntrada: resFormatearFechaLocal(entradaBase),
+        fechaSalida: resFormatearFechaLocal(salidaBase),
+        horaActual: hoy.toTimeString().slice(0, 5)
+    };
+}
+
+function resCerrarSwalReserva(callback, delay = 160) {
+    if (resReservaSwalTimer) {
+        clearTimeout(resReservaSwalTimer);
+        resReservaSwalTimer = null;
+    }
+
+    const run = () => {
+        resReservaSwalTimer = null;
+        if (typeof callback === 'function') {
+            callback();
+        }
+    };
+
+    const swalVisible = typeof Swal !== 'undefined'
+        && typeof Swal.isVisible === 'function'
+        && Swal.isVisible();
+
+    if (swalVisible && typeof Swal.close === 'function') {
+        Swal.close();
+    }
+
+    resReservaSwalTimer = window.setTimeout(run, swalVisible ? delay : Math.min(delay, 80));
+}
+
+function resAbrirSelectorNuevaReserva(event) {
+    if (typeof Swal === 'undefined') {
+        return true;
+    }
+
+    if (event) event.preventDefault();
+    resMostrarSelectorTipoCliente(resObtenerDatosReservaDefault());
+    return false;
+}
+
+function resMostrarSelectorTipoCliente(datosReserva) {
+    const fechaEntrada = datosReserva.fechaEntrada;
+    const fechaSalida = datosReserva.fechaSalida;
+    const horaActual = datosReserva.horaActual;
+
+    Swal.fire({
+        title: '',
+        html: `
+            <div class="hb-client-choice">
+                <div class="hb-client-choice__head">
+                    <span class="hb-client-choice__mark">
+                        <i class="fas fa-calendar-plus"></i>
+                    </span>
+                    <div>
+                        <span class="hb-client-choice__eyebrow">Nueva reservacion</span>
+                        <h3>Selecciona el tipo de cliente</h3>
+                        <p>Elige si vas a registrar un huesped nuevo o si la reservacion sera para un cliente existente.</p>
+                    </div>
+                </div>
+
+                <div class="hb-client-choice__options" role="group" aria-label="Tipo de cliente">
+                    <button onclick="resSeleccionarTipoCliente('nuevo', '${fechaEntrada}', '${fechaSalida}', '${horaActual}'); return false;"
+                            type="button"
+                            class="hb-client-option hb-client-option--new">
+                        <span class="hb-client-option__top">
+                            <span class="hb-client-option__icon">
+                                <i class="fas fa-user-plus"></i>
+                            </span>
+                            <span class="hb-client-option__tag">Registro</span>
+                        </span>
+                        <span class="hb-client-option__body">
+                            <strong>Cliente nuevo</strong>
+                            <span>Registra al huesped y vuelve al flujo de reservacion con las fechas listas.</span>
+                        </span>
+                        <span class="hb-client-option__cta">
+                            Continuar
+                            <i class="fas fa-arrow-right"></i>
+                        </span>
+                    </button>
+                    <button onclick="resSeleccionarTipoCliente('existente', '${fechaEntrada}', '${fechaSalida}', '${horaActual}'); return false;"
+                            type="button"
+                            class="hb-client-option hb-client-option--existing">
+                        <span class="hb-client-option__top">
+                            <span class="hb-client-option__icon">
+                                <i class="fas fa-user-check"></i>
+                            </span>
+                            <span class="hb-client-option__tag">Registrado</span>
+                        </span>
+                        <span class="hb-client-option__body">
+                            <strong>Cliente registrado</strong>
+                            <span>Continua directo a crear la reservacion y busca al huesped existente.</span>
+                        </span>
+                        <span class="hb-client-option__cta">
+                            Seleccionar
+                            <i class="fas fa-arrow-right"></i>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        `,
+        showConfirmButton: false,
+        showCancelButton: true,
+        showCloseButton: true,
+        allowOutsideClick: true,
+        allowEscapeKey: true,
+        returnFocus: false,
+        closeButtonAriaLabel: 'Cerrar',
+        cancelButtonText: 'Cancelar',
+        width: '720px',
+        customClass: {
+            container: 'res-swal-reservation-container',
+            popup: 'hb-swal hb-swal-client',
+            htmlContainer: 'hb-swal-html',
+            cancelButton: 'hb-swal-cancel'
+        },
+        buttonsStyling: true
+    });
+}
+
+function resSeleccionarTipoCliente(tipo, fechaEntrada, fechaSalida, horaActual) {
+    resCerrarSwalReserva(() => {
+        Swal.fire({
+            title: '',
+            html: `
+                <div class="hb-reservation-step">
+                    <div class="hb-arrival-head">
+                        <span class="hb-arrival-mark">
+                            <i class="fas fa-clock"></i>
+                        </span>
+                        <div>
+                            <span class="hb-client-choice__eyebrow">Llegada estimada</span>
+                            <h3>Hora de llegada</h3>
+                            <p>Confirma la hora para preparar la reservacion y continuar con el cliente ${tipo === 'existente' ? 'registrado' : 'nuevo'}.</p>
+                        </div>
+                    </div>
+
+                    <div class="hb-arrival-context">
+                        <div class="hb-reservation-pill ${tipo === 'existente' ? 'hb-reservation-pill--existing' : 'hb-reservation-pill--new'}">
+                            <i class="fas ${tipo === 'existente' ? 'fa-user-check' : 'fa-user-plus'}"></i>
+                            <span>Cliente ${tipo === 'existente' ? 'existente' : 'nuevo'}</span>
+                        </div>
+
+                        <div class="hb-reservation-summary">
+                            <div class="hb-reservation-dates">
+                                <div class="hb-date-row">
+                                    <span>Check-in</span>
+                                    <strong>${resFormatearFechaCorta(new Date(fechaEntrada + 'T00:00:00'))}</strong>
+                                </div>
+                                <div class="hb-date-row">
+                                    <span>Check-out</span>
+                                    <strong>${resFormatearFechaCorta(new Date(fechaSalida + 'T00:00:00'))}</strong>
+                                </div>
+                            </div>
+
+                            <div class="hb-arrival-card">
+                                <label for="resHoraLlegadaRapida" class="hb-arrival-label">
+                                    Hora de llegada
+                                </label>
+                                <p class="hb-arrival-copy">Define la hora estimada; tambien puedes capturarla despues en la reservacion.</p>
+                                <div class="hb-arrival-control">
+                                    <input type="time"
+                                           id="resHoraLlegadaRapida"
+                                           value=""
+                                           placeholder="--:--"
+                                           class="hb-arrival-input">
+                                    <button onclick="document.getElementById('resHoraLlegadaRapida').value = '${horaActual}'"
+                                            type="button"
+                                            class="hb-arrival-now"
+                                            aria-label="Usar hora actual"
+                                            title="Usar hora actual">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Ahora</span>
+                                    </button>
+                                </div>
+                                <button onclick="resContinuarReservacionSinHora('${tipo}', '${fechaEntrada}', '${fechaSalida}'); return false;"
+                                        type="button"
+                                        class="hb-arrival-later"
+                                        aria-label="Definir hora de llegada despues">
+                                    <span class="hb-arrival-later__icon">
+                                        <i class="fas fa-calendar-plus"></i>
+                                    </span>
+                                    <span>
+                                        <strong>Definir despues</strong>
+                                        <small>La capturaras dentro de la creacion de la reservacion.</small>
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            showCloseButton: true,
+            allowOutsideClick: true,
+            allowEscapeKey: true,
+            returnFocus: false,
+            closeButtonAriaLabel: 'Cerrar',
+            confirmButtonText: 'Continuar',
+            cancelButtonText: 'Volver',
+            customClass: {
+                container: 'res-swal-reservation-container',
+                popup: 'hb-swal hb-swal-arrival',
+                htmlContainer: 'hb-swal-html',
+                confirmButton: 'hb-swal-confirm',
+                cancelButton: 'hb-swal-cancel'
+            },
+            buttonsStyling: true,
+            preConfirm: () => {
+                const horaSeleccionada = document.getElementById('resHoraLlegadaRapida').value;
+                if (!horaSeleccionada) {
+                    Swal.showValidationMessage('Ingresa la hora de llegada o usa Definir despues');
+                    return false;
+                }
+                return horaSeleccionada;
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                resContinuarReservacionDesdeModal(tipo, fechaEntrada, fechaSalida, result.value);
+                return;
+            }
+
+            if (result.dismiss === Swal.DismissReason.cancel || result.dismiss === 'cancel') {
+                resCerrarSwalReserva(() => {
+                    resMostrarSelectorTipoCliente({
+                        fechaEntrada: fechaEntrada,
+                        fechaSalida: fechaSalida,
+                        horaActual: horaActual
+                    });
+                }, 90);
+            }
+        });
+    });
+}
+
+function resContinuarReservacionSinHora(tipo, fechaEntrada, fechaSalida) {
+    resCerrarSwalReserva(() => {
+        resContinuarReservacionDesdeModal(tipo, fechaEntrada, fechaSalida, '');
+    }, 80);
+}
+
+function resContinuarReservacionDesdeModal(tipo, fechaEntrada, fechaSalida, horaSeleccionada) {
+    const horaFinal = horaSeleccionada || '';
+
+    try {
+        sessionStorage.setItem('reservacionRapida', JSON.stringify({
+            habitacionId: null,
+            fechaEntrada: fechaEntrada,
+            fechaSalida: fechaSalida,
+            horaLlegada: horaFinal || null,
+            origen: 'reservaciones_index'
+        }));
+    } catch (error) {
+        // Si sessionStorage no esta disponible, la URL conserva los datos necesarios.
+    }
+
+    if (tipo === 'nuevo') {
+        const params = new URLSearchParams({
+            return_to: 'reservacion_rapida',
+            fecha_entrada: fechaEntrada,
+            fecha_salida: fechaSalida
+        });
+
+        if (horaFinal) {
+            params.set('hora_llegada', horaFinal);
+        }
+
+        window.location.href = '<?= url('huespedes/create') ?>?' + params.toString();
+        return;
+    }
+
+    const params = new URLSearchParams({
+        fecha_entrada: fechaEntrada,
+        fecha_salida: fechaSalida
+    });
+
+    if (horaFinal) {
+        params.set('hora_llegada', horaFinal);
+    }
+
+    window.location.href = '<?= url('reservaciones/crear') ?>?' + params.toString();
+}
+
+function resFormatearFechaCorta(fecha) {
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return `${fecha.getDate()} ${meses[fecha.getMonth()]}`;
+}
 
 function cambiarFecha(f) {
     if (f) window.location.href = baseUrl + '/reservaciones?fecha=' + encodeURIComponent(f);

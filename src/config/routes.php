@@ -334,6 +334,8 @@ $router->get('/inventario/salida', ['controller' => 'Inventario', 'action' => 's
 $router->post('/inventario/procesarSalida', ['controller' => 'Inventario', 'action' => 'procesarSalida']);
 $router->get('/inventario/configuracion', ['controller' => 'Inventario', 'action' => 'configuracion']);
 $router->post('/inventario/guardarConfiguracion', ['controller' => 'Inventario', 'action' => 'guardarConfiguracion']);
+$router->get('/inventario/movimientos', ['controller' => 'Inventario', 'action' => 'movimientos']);
+$router->get('/inventarios/movimientos', ['controller' => 'Inventario', 'action' => 'movimientos']);
 // Rutas de inventario - exportación
 $router->get('/inventario/exportar', ['controller' => 'Inventario', 'action' => 'exportar']);
 $router->post('/inventario/generarPdfMovimientos', ['controller' => 'Inventario', 'action' => 'generarPdfMovimientos']);

@@ -157,7 +157,9 @@ class ReportesController extends Controller {
         
         // Verificar autenticación
         if (!is_authenticated()) {
-            redirect('login');
+            redirect(function_exists('login_path_for_current_context')
+                ? login_path_for_current_context($_SERVER['REQUEST_URI'] ?? null)
+                : 'login');
             exit;
         }
         

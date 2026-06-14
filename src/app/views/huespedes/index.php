@@ -1005,7 +1005,7 @@ select.guest-control {
         </section>
 
         <section class="guest-panel hotel-card p-3 md:p-4">
-            <form method="GET" action="<?= url('huespedes') ?>" class="guest-filter-form" data-guest-live-search-form>
+            <form method="GET" action="<?= url('huespedes') ?>" class="guest-filter-form" data-guest-live-search-form data-auto-filter-form>
                 <div>
                     <label class="block text-xs font-extrabold text-slate-600 uppercase tracking-wide mb-1">Buscar huésped</label>
                     <div class="relative">

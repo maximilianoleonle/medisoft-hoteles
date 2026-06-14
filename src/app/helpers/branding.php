@@ -125,20 +125,172 @@ function hotel_branding_pwa_icon_asset_url($path, $size) {
 
 function hotel_branding_css_vars(array $branding = null) {
     $branding = $branding ?: hotel_branding();
-    $primary = hotel_branding_hex($branding['color_primary'] ?? null, '#1B2746');
-    $secondary = hotel_branding_hex($branding['color_secondary'] ?? null, '#0F172A');
-    $accent = hotel_branding_hex($branding['color_accent'] ?? null, '#BD9441');
+    $primaryRaw = hotel_branding_hex($branding['color_primary'] ?? null, '#1B2746');
+    $secondaryRaw = hotel_branding_hex($branding['color_secondary'] ?? null, '#0F172A');
+    $accentRaw = hotel_branding_hex($branding['color_accent'] ?? null, '#BD9441');
+    $safePalette = hotel_branding_safe_palette($primaryRaw, $secondaryRaw, $accentRaw);
 
-    return '<style id="hotel-branding-vars">:root{'
-        . '--brand-primary:' . $primary . ';'
-        . '--brand-secondary:' . $secondary . ';'
-        . '--brand-accent:' . $accent . ';'
-        . '}</style>';
+    $vars = array_merge([
+        '--brand-primary-raw' => $primaryRaw,
+        '--brand-secondary-raw' => $secondaryRaw,
+        '--brand-accent-raw' => $accentRaw,
+    ], $safePalette);
+
+    $css = '';
+    foreach ($vars as $name => $value) {
+        $css .= $name . ':' . $value . ';';
+    }
+
+    return '<style id="hotel-branding-vars">:root{' . $css . '}</style>';
 }
 
 function hotel_branding_hex($color, $fallback) {
     $color = trim((string) $color);
     return preg_match('/^#[0-9A-Fa-f]{6}$/', $color) ? strtoupper($color) : $fallback;
+}
+
+function hotel_branding_safe_palette($primaryRaw, $secondaryRaw, $accentRaw) {
+    $surface = '#FFFEFB';
+    $surfaceSoft = hotel_branding_mix($accentRaw, '#F8F5ED', 8);
+    $primary = hotel_branding_solid_color_for_light_text($primaryRaw);
+    $secondary = hotel_branding_adjust_for_contrast($secondaryRaw, $surface, 7);
+    $accent = hotel_branding_solid_color_for_light_text($accentRaw);
+    $text = hotel_branding_adjust_for_contrast($secondaryRaw, $surface, 7);
+    $muted = hotel_branding_mix($text, $surface, 66);
+
+    if (hotel_branding_contrast_ratio($muted, $surface) < 4.5) {
+        $muted = hotel_branding_adjust_for_contrast($muted, $surface, 4.5);
+    }
+
+    $actionBg = $primary;
+    $actionText = '#FFFEFB';
+    $actionBgHover = hotel_branding_luminance($actionBg) < 0.18
+        ? hotel_branding_mix($surface, $actionBg, 10)
+        : hotel_branding_mix('#111827', $actionBg, 14);
+
+    if (hotel_branding_contrast_ratio($actionBgHover, $actionText) < 4.5) {
+        $actionBgHover = hotel_branding_solid_color_for_light_text($actionBgHover);
+    }
+
+    return [
+        '--brand-primary' => $primary,
+        '--brand-secondary' => $secondary,
+        '--brand-accent' => $accent,
+        '--brand-text' => $text,
+        '--brand-muted' => $muted,
+        '--brand-surface' => $surface,
+        '--brand-surface-soft' => $surfaceSoft,
+        '--brand-soft' => hotel_branding_mix($primaryRaw, $surface, 9),
+        '--brand-border' => hotel_branding_mix($primary, '#DED7CA', 18),
+        '--brand-line' => hotel_branding_mix($primary, '#E7E1D4', 10),
+        '--brand-focus' => hotel_branding_mix($primary, $surface, 34),
+        '--brand-primary-contrast' => '#FFFEFB',
+        '--brand-secondary-contrast' => '#FFFEFB',
+        '--brand-accent-contrast' => '#FFFEFB',
+        '--brand-action-bg' => $actionBg,
+        '--brand-action-bg-hover' => $actionBgHover,
+        '--brand-action-text' => $actionText,
+    ];
+}
+
+function hotel_branding_solid_color_for_light_text($color, $minimumContrast = 4.5) {
+    $color = strtoupper($color);
+    $lightText = '#FFFEFB';
+
+    if ($color === '#000000') {
+        return '#111827';
+    }
+
+    if (hotel_branding_contrast_ratio($color, $lightText) >= $minimumContrast) {
+        return $color;
+    }
+
+    for ($weight = 8; $weight <= 88; $weight += 4) {
+        $candidate = hotel_branding_mix('#111827', $color, $weight);
+        if (hotel_branding_contrast_ratio($candidate, $lightText) >= $minimumContrast) {
+            return $candidate;
+        }
+    }
+
+    return '#1B2746';
+}
+
+function hotel_branding_adjust_for_contrast($color, $background, $minimumContrast = 4.5) {
+    $color = strtoupper($color);
+    if ($color === '#000000') {
+        $color = '#111827';
+    }
+
+    if (hotel_branding_contrast_ratio($color, $background) >= $minimumContrast) {
+        return $color;
+    }
+
+    $target = hotel_branding_luminance($background) > 0.45 ? '#111827' : '#FFFEFB';
+
+    for ($weight = 8; $weight <= 92; $weight += 4) {
+        $candidate = hotel_branding_mix($target, $color, $weight);
+        if (hotel_branding_contrast_ratio($candidate, $background) >= $minimumContrast) {
+            return $candidate;
+        }
+    }
+
+    return $target;
+}
+
+function hotel_branding_mix($firstHex, $secondHex, $firstWeight) {
+    $first = hotel_branding_hex_to_rgb($firstHex);
+    $second = hotel_branding_hex_to_rgb($secondHex);
+    $firstWeight = max(0, min(100, (float) $firstWeight)) / 100;
+    $secondWeight = 1 - $firstWeight;
+
+    return hotel_branding_rgb_to_hex([
+        (int) round(($first[0] * $firstWeight) + ($second[0] * $secondWeight)),
+        (int) round(($first[1] * $firstWeight) + ($second[1] * $secondWeight)),
+        (int) round(($first[2] * $firstWeight) + ($second[2] * $secondWeight)),
+    ]);
+}
+
+function hotel_branding_contrast_ratio($firstHex, $secondHex) {
+    $first = hotel_branding_luminance($firstHex);
+    $second = hotel_branding_luminance($secondHex);
+    $lighter = max($first, $second);
+    $darker = min($first, $second);
+
+    return ($lighter + 0.05) / ($darker + 0.05);
+}
+
+function hotel_branding_luminance($hex) {
+    $rgb = hotel_branding_hex_to_rgb($hex);
+    $channels = array_map('hotel_branding_luminance_channel', $rgb);
+
+    return ($channels[0] * 0.2126) + ($channels[1] * 0.7152) + ($channels[2] * 0.0722);
+}
+
+function hotel_branding_luminance_channel($channel) {
+    $channel = max(0, min(255, (int) $channel)) / 255;
+
+    return $channel <= 0.03928
+        ? $channel / 12.92
+        : pow(($channel + 0.055) / 1.055, 2.4);
+}
+
+function hotel_branding_hex_to_rgb($hex) {
+    $hex = ltrim(hotel_branding_hex($hex, '#111827'), '#');
+
+    return [
+        hexdec(substr($hex, 0, 2)),
+        hexdec(substr($hex, 2, 2)),
+        hexdec(substr($hex, 4, 2)),
+    ];
+}
+
+function hotel_branding_rgb_to_hex(array $rgb) {
+    return sprintf(
+        '#%02X%02X%02X',
+        max(0, min(255, (int) $rgb[0])),
+        max(0, min(255, (int) $rgb[1])),
+        max(0, min(255, (int) $rgb[2]))
+    );
 }
 
 function hotel_branding_public_name(array $branding = null, $fallback = 'Medisoft Hoteles') {

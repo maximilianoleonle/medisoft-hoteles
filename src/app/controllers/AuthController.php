@@ -248,6 +248,9 @@ class AuthController extends Controller {
         }
 
         $this->validateCSRF();
+        $loginPath = function_exists('login_path_for_current_context')
+            ? login_path_for_current_context($_SERVER['HTTP_REFERER'] ?? $_SERVER['REQUEST_URI'] ?? null)
+            : 'login';
 
         // Verificar que esté autenticado
         if (is_authenticated()) {
@@ -264,7 +267,7 @@ class AuthController extends Controller {
         }
         
         // Redirigir al login
-        $this->redirect('login');
+        $this->redirect($loginPath);
     }
     
     /**

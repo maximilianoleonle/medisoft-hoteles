@@ -602,7 +602,7 @@ $mantenimientos_count = count($mantenimientos_programados);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 9px;
+    gap: 14px;
     border: 1px solid var(--rd-line);
     border-radius: 15px;
     padding: 10px 13px;
@@ -627,6 +627,18 @@ $mantenimientos_count = count($mantenimientos_programados);
 .rd-action {
     background: var(--rd-panel);
     color: var(--rd-brand);
+}
+
+.rd-action > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+}
+
+.rd-action > i:last-child {
+    margin-left: 3px;
+    flex-shrink: 0;
 }
 
 .rd-action:hover {
@@ -2192,6 +2204,609 @@ $mantenimientos_count = count($mantenimientos_programados);
     }
 }
 
+/* Rediseño neutral para modales de mantenimiento.
+   Usa una paleta operacional fija para conservar contraste con cualquier branding de hotel. */
+.room-detail-page #modalMantenimiento.rd-maint-modal,
+.room-detail-page #modalProgramarMantenimiento.rd-maint-modal {
+    --rd-maint-ink: #1C2633;
+    --rd-maint-muted: #667386;
+    --rd-maint-line: #DDD5C8;
+    --rd-maint-surface: #FFFDF8;
+    --rd-maint-soft: #F7F1E8;
+    --rd-maint-panel: #FFFFFF;
+    --rd-maint-amber: #A96113;
+    --rd-maint-blue: #315F76;
+    --rd-maint-action: var(--rd-maint-amber);
+    padding: clamp(14px, 4vw, 30px);
+    background:
+        radial-gradient(circle at 24% 12%, rgba(255, 244, 220, .18), transparent 24rem),
+        radial-gradient(circle at 86% 82%, rgba(111, 139, 150, .20), transparent 28rem),
+        rgba(20, 28, 38, .76);
+    backdrop-filter: blur(14px) saturate(108%);
+}
+
+.room-detail-page #modalProgramarMantenimiento.rd-maint-modal {
+    --rd-maint-action: var(--rd-maint-blue);
+}
+
+.room-detail-page #modalMantenimiento .rd-maint-modal-card,
+.room-detail-page #modalProgramarMantenimiento .rd-maint-modal-card {
+    width: min(100%, 660px);
+    border: 1px solid rgba(255, 255, 255, .74);
+    border-radius: 22px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, .96), rgba(255, 253, 248, .98)),
+        var(--rd-maint-surface);
+    box-shadow:
+        0 30px 86px -48px rgba(9, 14, 24, .92),
+        0 0 0 1px rgba(255, 255, 255, .68) inset;
+}
+
+.room-detail-page #modalMantenimiento .rd-maint-modal-card::before,
+.room-detail-page #modalProgramarMantenimiento .rd-maint-modal-card::before {
+    height: 6px;
+    background:
+        linear-gradient(90deg,
+            var(--rd-maint-action),
+            color-mix(in srgb, var(--rd-maint-action) 64%, #FFFFFF),
+            rgba(255, 255, 255, .12));
+}
+
+.room-detail-page #modalMantenimiento .rd-modal-head,
+.room-detail-page #modalProgramarMantenimiento .rd-modal-head {
+    padding: 22px 22px 18px;
+    border-bottom: 1px solid var(--rd-maint-line);
+    background:
+        radial-gradient(260px 150px at 0% 0%, color-mix(in srgb, var(--rd-maint-action) 12%, transparent), transparent 78%),
+        linear-gradient(180deg, #FFFFFF, var(--rd-maint-soft));
+}
+
+.room-detail-page #modalMantenimiento .rd-maint-title,
+.room-detail-page #modalProgramarMantenimiento .rd-maint-title {
+    grid-template-columns: 50px minmax(0, 1fr);
+    gap: 14px;
+}
+
+.room-detail-page #modalMantenimiento .rd-maint-icon,
+.room-detail-page #modalProgramarMantenimiento .rd-maint-icon {
+    width: 50px;
+    height: 50px;
+    border: 1px solid color-mix(in srgb, var(--rd-maint-action) 26%, #FFFFFF);
+    border-radius: 17px;
+    background:
+        linear-gradient(145deg, #FFFFFF, color-mix(in srgb, var(--rd-maint-action) 10%, var(--rd-maint-soft)));
+    color: var(--rd-maint-action);
+    box-shadow: 0 16px 30px -24px color-mix(in srgb, var(--rd-maint-action) 72%, transparent);
+}
+
+.room-detail-page #modalMantenimiento .rd-maint-kicker,
+.room-detail-page #modalProgramarMantenimiento .rd-maint-kicker {
+    margin-bottom: 7px;
+    padding: 4px 9px;
+    border: 1px solid color-mix(in srgb, var(--rd-maint-action) 18%, var(--rd-maint-line));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--rd-maint-action) 8%, #FFFFFF);
+    color: color-mix(in srgb, var(--rd-maint-action) 78%, var(--rd-maint-ink));
+    font-size: .68rem;
+    font-weight: 950;
+    letter-spacing: .08em;
+}
+
+.room-detail-page #modalMantenimiento .rd-modal-head h3,
+.room-detail-page #modalProgramarMantenimiento .rd-modal-head h3 {
+    color: var(--rd-maint-ink);
+    font-size: clamp(1.28rem, 2.2vw, 1.48rem);
+    font-weight: 950;
+    letter-spacing: 0;
+}
+
+.room-detail-page #modalMantenimiento .rd-modal-head p,
+.room-detail-page #modalProgramarMantenimiento .rd-modal-head p {
+    max-width: 42rem;
+    margin-top: 7px;
+    color: var(--rd-maint-muted);
+    font-size: .9rem;
+    font-weight: 720;
+    line-height: 1.45;
+}
+
+.room-detail-page #modalMantenimiento .rd-modal-close,
+.room-detail-page #modalProgramarMantenimiento .rd-modal-close {
+    border-color: var(--rd-maint-line);
+    background: rgba(255, 255, 255, .82);
+    color: var(--rd-maint-ink);
+}
+
+.room-detail-page #modalMantenimiento .rd-modal-close:hover,
+.room-detail-page #modalProgramarMantenimiento .rd-modal-close:hover {
+    border-color: color-mix(in srgb, var(--rd-maint-action) 36%, var(--rd-maint-line));
+    background: #FFFFFF;
+}
+
+.room-detail-page #modalMantenimiento .rd-modal-form,
+.room-detail-page #modalProgramarMantenimiento .rd-modal-form {
+    gap: 18px;
+    padding: 20px 22px 22px;
+    background: var(--rd-maint-surface);
+}
+
+.room-detail-page #modalMantenimiento .rd-maint-summary,
+.room-detail-page #modalProgramarMantenimiento .rd-maint-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.room-detail-page #modalMantenimiento .rd-maint-summary span,
+.room-detail-page #modalProgramarMantenimiento .rd-maint-summary span {
+    min-height: 48px;
+    gap: 9px;
+    padding: 10px 11px;
+    border: 1px solid var(--rd-maint-line);
+    border-radius: 15px;
+    background: #FFFFFF;
+    color: var(--rd-maint-ink);
+    font-size: .8rem;
+    font-weight: 920;
+    box-shadow: 0 10px 22px -20px rgba(15, 23, 42, .38);
+}
+
+.room-detail-page #modalMantenimiento .rd-maint-summary i,
+.room-detail-page #modalProgramarMantenimiento .rd-maint-summary i {
+    width: 28px;
+    height: 28px;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--rd-maint-action) 10%, var(--rd-maint-soft));
+    color: var(--rd-maint-action);
+}
+
+.room-detail-page #modalMantenimiento .rd-label,
+.room-detail-page #modalProgramarMantenimiento .rd-label {
+    color: var(--rd-maint-ink);
+    font-size: .72rem;
+    font-weight: 950;
+    letter-spacing: .06em;
+}
+
+.room-detail-page #modalMantenimiento .rd-control,
+.room-detail-page #modalProgramarMantenimiento .rd-control {
+    min-height: 50px;
+    border: 1px solid var(--rd-maint-line);
+    border-radius: 15px;
+    background: #FFFFFF;
+    color: var(--rd-maint-ink);
+    font-size: .92rem;
+    font-weight: 780;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .88) inset;
+}
+
+.room-detail-page #modalMantenimiento .rd-control::placeholder,
+.room-detail-page #modalProgramarMantenimiento .rd-control::placeholder {
+    color: #8A94A3;
+}
+
+.room-detail-page #modalMantenimiento .rd-control:focus,
+.room-detail-page #modalProgramarMantenimiento .rd-control:focus {
+    border-color: color-mix(in srgb, var(--rd-maint-action) 62%, var(--rd-maint-line));
+    background: #FFFFFF;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--rd-maint-action) 15%, transparent);
+}
+
+.room-detail-page #modalProgramarMantenimiento .rd-maint-note {
+    align-items: flex-start;
+    gap: 12px;
+    padding: 13px;
+    border: 1px solid color-mix(in srgb, var(--rd-maint-blue) 22%, var(--rd-maint-line));
+    border-radius: 16px;
+    background:
+        linear-gradient(135deg, rgba(49, 95, 118, .09), rgba(255, 255, 255, .92));
+    color: #334155;
+    font-size: .84rem;
+    font-weight: 760;
+    line-height: 1.42;
+}
+
+.room-detail-page #modalProgramarMantenimiento .rd-maint-note i {
+    background: #FFFFFF;
+    color: var(--rd-maint-blue);
+}
+
+.room-detail-page #modalMantenimiento .rd-modal-actions,
+.room-detail-page #modalProgramarMantenimiento .rd-modal-actions {
+    gap: 12px;
+    padding-top: 2px;
+}
+
+.room-detail-page #modalMantenimiento .rd-btn-maint-cancel,
+.room-detail-page #modalProgramarMantenimiento .rd-btn-maint-cancel,
+.room-detail-page #modalMantenimiento .rd-btn-maint-primary,
+.room-detail-page #modalProgramarMantenimiento .rd-btn-maint-primary {
+    min-height: 48px;
+    border-radius: 15px;
+    font-weight: 950;
+}
+
+.room-detail-page #modalMantenimiento .rd-btn-maint-cancel,
+.room-detail-page #modalProgramarMantenimiento .rd-btn-maint-cancel {
+    border: 1px solid var(--rd-maint-line);
+    background: #FFFFFF;
+    color: var(--rd-maint-ink);
+}
+
+.room-detail-page #modalMantenimiento .rd-btn-maint-primary,
+.room-detail-page #modalProgramarMantenimiento .rd-btn-maint-primary {
+    border: 1px solid color-mix(in srgb, var(--rd-maint-action) 72%, #111827);
+    background:
+        linear-gradient(145deg,
+            color-mix(in srgb, var(--rd-maint-action) 94%, #17212D),
+            color-mix(in srgb, var(--rd-maint-action) 76%, #17212D));
+    color: #FFFFFF;
+    box-shadow: 0 16px 30px -22px color-mix(in srgb, var(--rd-maint-action) 72%, #111827);
+}
+
+.room-detail-page #modalMantenimiento .rd-btn-maint-primary:hover,
+.room-detail-page #modalProgramarMantenimiento .rd-btn-maint-primary:hover,
+.room-detail-page #modalMantenimiento .rd-btn-maint-cancel:hover,
+.room-detail-page #modalProgramarMantenimiento .rd-btn-maint-cancel:hover {
+    transform: translateY(-1px);
+}
+
+@media (max-width: 780px) {
+    .room-detail-page #modalMantenimiento.rd-maint-modal,
+    .room-detail-page #modalProgramarMantenimiento.rd-maint-modal {
+        padding: 10px;
+    }
+
+    .room-detail-page #modalMantenimiento .rd-maint-modal-card,
+    .room-detail-page #modalProgramarMantenimiento .rd-maint-modal-card {
+        width: 100%;
+        border-radius: 20px 20px 18px 18px;
+    }
+
+    .room-detail-page #modalMantenimiento .rd-modal-head,
+    .room-detail-page #modalProgramarMantenimiento .rd-modal-head {
+        padding: 18px 16px 15px;
+    }
+
+    .room-detail-page #modalMantenimiento .rd-modal-form,
+    .room-detail-page #modalProgramarMantenimiento .rd-modal-form {
+        padding: 16px;
+    }
+
+    .room-detail-page #modalMantenimiento .rd-maint-title,
+    .room-detail-page #modalProgramarMantenimiento .rd-maint-title {
+        grid-template-columns: 44px minmax(0, 1fr);
+    }
+
+    .room-detail-page #modalMantenimiento .rd-maint-icon,
+    .room-detail-page #modalProgramarMantenimiento .rd-maint-icon {
+        width: 44px;
+        height: 44px;
+    }
+
+    .room-detail-page #modalMantenimiento .rd-maint-summary,
+    .room-detail-page #modalProgramarMantenimiento .rd-maint-summary,
+    .room-detail-page #modalMantenimiento .rd-maint-field-grid,
+    .room-detail-page #modalProgramarMantenimiento .rd-maint-field-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Correccion: estos modales viven fuera de .room-detail-page, asi que se apuntan por ID. */
+#modalMantenimiento.rd-maint-modal,
+#modalProgramarMantenimiento.rd-maint-modal {
+    --maint-ink: #1C2633;
+    --maint-muted: #607083;
+    --maint-line: #DCD4C8;
+    --maint-paper: #FFFDF8;
+    --maint-soft: #F7F1E8;
+    --maint-amber: #A96113;
+    --maint-blue: #315F76;
+    --maint-action: var(--maint-amber);
+    padding: clamp(14px, 4vw, 30px);
+    background:
+        radial-gradient(circle at 18% 10%, rgba(255, 243, 215, .08), transparent 24rem),
+        radial-gradient(circle at 88% 84%, rgba(120, 147, 158, .10), transparent 28rem),
+        rgba(19, 27, 38, .48) !important;
+    backdrop-filter: blur(5px) saturate(102%);
+}
+
+#modalProgramarMantenimiento.rd-maint-modal {
+    --maint-action: var(--maint-blue);
+}
+
+#modalMantenimiento .rd-maint-modal-card,
+#modalProgramarMantenimiento .rd-maint-modal-card {
+    width: min(100%, 660px) !important;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, .76) !important;
+    border-radius: 22px !important;
+    background: var(--maint-paper) !important;
+    box-shadow:
+        0 34px 92px -50px rgba(4, 10, 20, .9),
+        0 0 0 1px rgba(255, 255, 255, .72) inset !important;
+}
+
+#modalMantenimiento .rd-maint-modal-card::before,
+#modalProgramarMantenimiento .rd-maint-modal-card::before {
+    content: "";
+    display: block;
+    height: 6px;
+    background: linear-gradient(90deg, var(--maint-action), rgba(255,255,255,.52), rgba(255,255,255,0));
+}
+
+#modalMantenimiento .rd-modal-head,
+#modalProgramarMantenimiento .rd-modal-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 40px;
+    gap: 14px;
+    align-items: start;
+    padding: 22px 22px 18px !important;
+    border-bottom: 1px solid var(--maint-line) !important;
+    background:
+        radial-gradient(220px 130px at 0% 0%, rgba(169, 97, 19, .10), transparent 72%),
+        linear-gradient(180deg, #FFFFFF, var(--maint-soft)) !important;
+}
+
+#modalProgramarMantenimiento .rd-modal-head {
+    background:
+        radial-gradient(220px 130px at 0% 0%, rgba(49, 95, 118, .12), transparent 72%),
+        linear-gradient(180deg, #FFFFFF, var(--maint-soft)) !important;
+}
+
+#modalMantenimiento .rd-maint-title,
+#modalProgramarMantenimiento .rd-maint-title {
+    display: grid;
+    grid-template-columns: 50px minmax(0, 1fr);
+    gap: 14px;
+    align-items: center;
+}
+
+#modalMantenimiento .rd-maint-icon,
+#modalProgramarMantenimiento .rd-maint-icon {
+    width: 50px;
+    height: 50px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(169, 97, 19, .22);
+    border-radius: 17px;
+    background: #FFFFFF;
+    color: var(--maint-action);
+    box-shadow: 0 16px 30px -24px rgba(15, 23, 42, .52);
+}
+
+#modalProgramarMantenimiento .rd-maint-icon {
+    border-color: rgba(49, 95, 118, .22);
+}
+
+#modalMantenimiento .rd-maint-kicker,
+#modalProgramarMantenimiento .rd-maint-kicker {
+    display: inline-flex;
+    width: fit-content;
+    margin: 0 0 7px;
+    padding: 4px 9px;
+    border: 1px solid rgba(169, 97, 19, .22);
+    border-radius: 8px;
+    background: rgba(169, 97, 19, .08);
+    color: #70400D;
+    font-size: .68rem;
+    font-weight: 950;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+#modalProgramarMantenimiento .rd-maint-kicker {
+    border-color: rgba(49, 95, 118, .22);
+    background: rgba(49, 95, 118, .09);
+    color: #24485A;
+}
+
+#modalMantenimiento .rd-modal-head h3,
+#modalProgramarMantenimiento .rd-modal-head h3 {
+    display: block;
+    margin: 0;
+    color: var(--maint-ink) !important;
+    font-size: clamp(1.24rem, 2.2vw, 1.48rem) !important;
+    font-weight: 950 !important;
+    line-height: 1.08;
+}
+
+#modalMantenimiento .rd-modal-head p,
+#modalProgramarMantenimiento .rd-modal-head p {
+    max-width: 42rem;
+    margin: 7px 0 0;
+    color: var(--maint-muted) !important;
+    font-size: .92rem;
+    font-weight: 720;
+    line-height: 1.45;
+}
+
+#modalMantenimiento .rd-modal-close,
+#modalProgramarMantenimiento .rd-modal-close {
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--maint-line) !important;
+    border-radius: 13px;
+    background: #FFFFFF !important;
+    color: var(--maint-ink) !important;
+    box-shadow: 0 10px 24px -20px rgba(15, 23, 42, .55);
+}
+
+#modalMantenimiento .rd-modal-form,
+#modalProgramarMantenimiento .rd-modal-form {
+    gap: 18px;
+    padding: 20px 22px 22px !important;
+    background: var(--maint-paper) !important;
+    color: var(--maint-ink) !important;
+}
+
+#modalMantenimiento .rd-maint-summary,
+#modalProgramarMantenimiento .rd-maint-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+}
+
+#modalMantenimiento .rd-maint-summary span,
+#modalProgramarMantenimiento .rd-maint-summary span {
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 11px;
+    border: 1px solid var(--maint-line);
+    border-radius: 15px;
+    background: #FFFFFF !important;
+    color: var(--maint-ink) !important;
+    font-size: .8rem;
+    font-weight: 920;
+    box-shadow: 0 10px 22px -20px rgba(15, 23, 42, .38);
+}
+
+#modalMantenimiento .rd-maint-summary i,
+#modalProgramarMantenimiento .rd-maint-summary i,
+#modalProgramarMantenimiento .rd-maint-note i {
+    width: 28px;
+    height: 28px;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 10px;
+    background: rgba(169, 97, 19, .09) !important;
+    color: var(--maint-action) !important;
+}
+
+#modalProgramarMantenimiento .rd-maint-summary i,
+#modalProgramarMantenimiento .rd-maint-note i {
+    background: rgba(49, 95, 118, .10) !important;
+}
+
+#modalMantenimiento .rd-maint-note,
+#modalProgramarMantenimiento .rd-maint-note {
+    align-items: flex-start;
+    gap: 12px;
+    padding: 13px;
+    border: 1px solid rgba(49, 95, 118, .22) !important;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(49, 95, 118, .08), #FFFFFF) !important;
+    color: #334155 !important;
+    font-size: .84rem;
+    font-weight: 760;
+    line-height: 1.42;
+}
+
+#modalMantenimiento .rd-label,
+#modalProgramarMantenimiento .rd-label {
+    margin-bottom: 8px;
+    color: var(--maint-ink) !important;
+    font-size: .72rem;
+    font-weight: 950;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+#modalMantenimiento .rd-control,
+#modalProgramarMantenimiento .rd-control {
+    min-height: 50px;
+    border: 1px solid var(--maint-line) !important;
+    border-radius: 15px !important;
+    background: #FFFFFF !important;
+    color: var(--maint-ink) !important;
+    font-size: .92rem;
+    font-weight: 780;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .88) inset !important;
+}
+
+#modalMantenimiento .rd-control::placeholder,
+#modalProgramarMantenimiento .rd-control::placeholder {
+    color: #8A94A3 !important;
+}
+
+#modalMantenimiento .rd-control:focus,
+#modalProgramarMantenimiento .rd-control:focus {
+    border-color: var(--maint-action) !important;
+    box-shadow: 0 0 0 4px rgba(169, 97, 19, .15) !important;
+}
+
+#modalProgramarMantenimiento .rd-control:focus {
+    box-shadow: 0 0 0 4px rgba(49, 95, 118, .15) !important;
+}
+
+#modalMantenimiento .rd-modal-actions,
+#modalProgramarMantenimiento .rd-modal-actions {
+    gap: 12px;
+    padding-top: 2px;
+}
+
+#modalMantenimiento .rd-btn-maint-cancel,
+#modalProgramarMantenimiento .rd-btn-maint-cancel,
+#modalMantenimiento .rd-btn-maint-primary,
+#modalProgramarMantenimiento .rd-btn-maint-primary {
+    min-height: 48px;
+    border-radius: 15px !important;
+    font-weight: 950;
+}
+
+#modalMantenimiento .rd-btn-maint-cancel,
+#modalProgramarMantenimiento .rd-btn-maint-cancel {
+    border: 1px solid var(--maint-line) !important;
+    background: #FFFFFF !important;
+    color: var(--maint-ink) !important;
+}
+
+#modalMantenimiento .rd-btn-maint-primary,
+#modalProgramarMantenimiento .rd-btn-maint-primary {
+    border: 1px solid rgba(28, 38, 51, .16) !important;
+    background: linear-gradient(145deg, var(--maint-action), #263342) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 16px 30px -22px rgba(15, 23, 42, .65);
+}
+
+@media (max-width: 780px) {
+    #modalMantenimiento .rd-maint-modal-card,
+    #modalProgramarMantenimiento .rd-maint-modal-card {
+        width: 100% !important;
+        border-radius: 20px 20px 18px 18px !important;
+    }
+
+    #modalMantenimiento .rd-modal-head,
+    #modalProgramarMantenimiento .rd-modal-head {
+        padding: 18px 16px 15px !important;
+    }
+
+    #modalMantenimiento .rd-modal-form,
+    #modalProgramarMantenimiento .rd-modal-form {
+        padding: 16px !important;
+    }
+
+    #modalMantenimiento .rd-maint-title,
+    #modalProgramarMantenimiento .rd-maint-title {
+        grid-template-columns: 44px minmax(0, 1fr);
+    }
+
+    #modalMantenimiento .rd-maint-icon,
+    #modalProgramarMantenimiento .rd-maint-icon {
+        width: 44px;
+        height: 44px;
+    }
+
+    #modalMantenimiento .rd-maint-summary,
+    #modalProgramarMantenimiento .rd-maint-summary,
+    #modalMantenimiento .rd-maint-field-grid,
+    #modalProgramarMantenimiento .rd-maint-field-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
 @media (max-width: 1160px) {
     .rd-hero,
     .rd-layout {
@@ -2795,8 +3410,7 @@ $mantenimientos_count = count($mantenimientos_programados);
                             <?php if ($historial_count > 10): ?>
                                 <div style="margin-top: 14px;">
                                     <a href="<?= url('/habitaciones/' . $habitacion_id . '/historial') ?>" class="rd-action">
-                                        <i class="fas fa-history"></i>
-                                        Ver historial completo (<?= number_format($historial_count) ?>)
+                                        <span><i class="fas fa-history"></i>Ver historial completo (<?= number_format($historial_count) ?>)</span>
                                         <i class="fas fa-arrow-right"></i>
                                     </a>
                                 </div>

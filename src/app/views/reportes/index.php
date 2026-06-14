@@ -5,8 +5,9 @@
 
 /* Reports overview: hotel brand-aware visual layer. */
 .reportes-view {
-    --report-brand: var(--brand-primary, #1B2746);
-    --report-brand-dark: color-mix(in srgb, var(--report-brand) 84%, #020617 16%);
+    --report-brand: var(--brand-action-bg, var(--brand-primary, #1B2746));
+    --report-brand-dark: var(--brand-action-bg-hover, color-mix(in srgb, var(--report-brand) 84%, #020617 16%));
+    --report-on-brand: var(--brand-action-text, #FFFEFB);
     --report-brand-mid: color-mix(in srgb, var(--report-brand) 18%, #FCFAF5);
     --report-accent: var(--brand-accent, #BD9441);
     --report-accent-dark: color-mix(in srgb, var(--report-accent) 72%, #3F2E12);
@@ -53,10 +54,14 @@
 }
 .rep-hero-icon {
     background:linear-gradient(150deg, var(--report-brand), var(--report-brand-dark));
+    color: var(--report-on-brand);
     width:46px; height:46px; border-radius:13px;
     display:flex; align-items:center; justify-content:center;
     border:0;
     box-shadow:0 12px 24px -10px color-mix(in srgb, var(--report-brand) 58%, transparent);
+}
+.reportes-view .rep-hero-icon i {
+    color: var(--report-on-brand) !important;
 }
 .reportes-view .rep-hero h1 {
     color:var(--report-brand) !important;
@@ -234,9 +239,9 @@
 
 /* Color balance: keep report categories distinct, use hotel color as an accent. */
 .reportes-view {
-    --report-heading: #111827;
-    --report-text: #1F2937;
-    --report-muted: #667085;
+    --report-heading: var(--brand-text, #111827);
+    --report-text: var(--brand-text, #1F2937);
+    --report-muted: var(--brand-muted, #667085);
     --report-border: color-mix(in srgb, var(--report-brand) 6%, #E6E0D4);
     --report-soft: color-mix(in srgb, var(--report-brand) 3%, #FAF8F2);
     --report-surface: #FFFFFF;
@@ -257,8 +262,9 @@
 }
 
 .reportes-view .rep-hero-icon {
-    background: linear-gradient(150deg, var(--report-heading), color-mix(in srgb, var(--report-brand) 35%, #111827)) !important;
-    box-shadow: 0 14px 24px -18px rgba(17,24,39,.7) !important;
+    background: linear-gradient(150deg, var(--report-brand), var(--report-brand-dark)) !important;
+    color: var(--report-on-brand) !important;
+    box-shadow: 0 14px 24px -18px color-mix(in srgb, var(--report-brand) 72%, #111827) !important;
 }
 
 .reportes-view .rep-hero h1,
@@ -339,7 +345,7 @@
         var(--report-brand),
         var(--report-brand-dark)
     ) !important;
-    color: #FFFFFF !important;
+    color: var(--report-on-brand) !important;
     border-radius: 10px !important;
     box-shadow: 0 12px 22px -18px color-mix(in srgb, var(--report-brand) 72%, #111827) !important;
 }
@@ -347,7 +353,7 @@
 .reportes-view .rep-cta:hover {
     background: linear-gradient(
         135deg,
-        color-mix(in srgb, var(--report-brand) 92%, #FFFFFF),
+        color-mix(in srgb, var(--report-brand) 92%, #FFFEFB),
         var(--report-brand-dark)
     ) !important;
     box-shadow: 0 14px 26px -18px color-mix(in srgb, var(--report-brand) 78%, #111827) !important;

@@ -329,7 +329,7 @@ $riesgoRows = [
                 </p>
             </div>
             <div class="gd-actions">
-                <form method="GET" action="<?= url('reportes/gerencial-diario') ?>" class="gd-date-form">
+                <form method="GET" action="<?= url('reportes/gerencial-diario') ?>" class="gd-date-form" data-auto-filter-form>
                     <input type="date" name="fecha" value="<?= gd_safe($fecha) ?>" class="gd-input">
                     <button type="submit" class="gd-btn primary">
                         <i class="fas fa-rotate" aria-hidden="true"></i>

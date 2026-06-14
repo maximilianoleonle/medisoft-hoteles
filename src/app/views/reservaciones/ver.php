@@ -1397,61 +1397,6 @@ if (isset($_SESSION['flash_message']) &&
     font-size: 1.22rem;
 }
 
-.reservation-detail-v2 .rd-quick-nav {
-    position: sticky;
-    top: 75px;
-    z-index: 30;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin: -2px 0 16px;
-    padding: 8px;
-    border: 1px solid color-mix(in srgb, var(--rd-accent) 28%, #E8DDCA);
-    border-radius: 18px;
-    background: color-mix(in srgb, #FDFBF7 94%, var(--rd-accent));
-    box-shadow: 0 18px 38px -30px color-mix(in srgb, var(--rd-brand) 46%, transparent);
-    backdrop-filter: blur(10px);
-}
-
-.reservation-detail-v2 .rd-quick-nav a {
-    min-height: 36px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border: 1px solid transparent;
-    border-radius: 12px;
-    color: var(--rd-muted);
-    font-size: .76rem;
-    font-weight: 850;
-    text-decoration: none;
-    transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
-}
-
-.reservation-detail-v2 .rd-quick-nav a:hover,
-.reservation-detail-v2 .rd-quick-nav a:focus-visible {
-    color: var(--rd-brand);
-    border-color: color-mix(in srgb, var(--rd-accent) 24%, var(--rd-line));
-    background: color-mix(in srgb, var(--rd-accent) 7%, #FDFBF7);
-    outline: none;
-    transform: translateY(-1px);
-}
-
-.reservation-detail-v2 .rd-quick-nav a.is-active {
-    color: #FDFBF7;
-    border-color: color-mix(in srgb, var(--rd-accent) 48%, var(--rd-brand));
-    background: linear-gradient(135deg, var(--rd-brand), color-mix(in srgb, var(--rd-accent) 24%, var(--rd-brand)));
-    box-shadow: 0 12px 24px -18px color-mix(in srgb, var(--rd-brand) 68%, transparent);
-}
-
-.reservation-detail-v2 .rd-related-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: -6px 0 16px;
-}
-
-.reservation-detail-v2 .rd-related-links a,
 .reservation-detail-v2 .rd-inline-link,
 .reservation-detail-v2 .rd-room-link,
 .reservation-detail-v2 .rd-mini-link {
@@ -1465,18 +1410,6 @@ if (isset($_SESSION['flash_message']) &&
     transition: color .18s ease, background .18s ease, border-color .18s ease, transform .18s ease;
 }
 
-.reservation-detail-v2 .rd-related-links a {
-    min-height: 36px;
-    padding: 8px 11px;
-    border: 1px solid color-mix(in srgb, var(--rd-accent) 22%, var(--rd-line));
-    background: color-mix(in srgb, var(--rd-accent) 5%, #FDFBF7);
-    color: var(--rd-brand);
-    font-size: .75rem;
-    font-weight: 850;
-}
-
-.reservation-detail-v2 .rd-related-links a:hover,
-.reservation-detail-v2 .rd-related-links a:focus-visible,
 .reservation-detail-v2 .rd-inline-link:hover,
 .reservation-detail-v2 .rd-inline-link:focus-visible,
 .reservation-detail-v2 .rd-room-link:hover,
@@ -1573,10 +1506,6 @@ if (isset($_SESSION['flash_message']) &&
         0 20px 42px -30px color-mix(in srgb, var(--rd-brand) 42%, transparent) !important;
 }
 
-.reservation-detail-v2 .rd-section-card.is-visible {
-    border-color: color-mix(in srgb, var(--rd-section-accent, var(--rd-accent)) 38%, var(--rd-line)) !important;
-}
-
 .reservation-detail-v2 .btn-action:focus-visible,
 .reservation-detail-v2 button:focus-visible,
 .reservation-detail-v2 a:focus-visible {
@@ -1640,15 +1569,9 @@ if (isset($_SESSION['flash_message']) &&
 .reservation-detail-v2 textarea,
 .reservation-detail-v2 input:not([type="checkbox"]):not([type="radio"]),
 .reservation-detail-v2 select,
-.reservation-detail-v2 .rd-quick-nav a:not(.is-active),
-.reservation-detail-v2 .rd-quick-nav a:not(.is-active):hover,
-.reservation-detail-v2 .rd-quick-nav a:not(.is-active):focus-visible,
-.reservation-detail-v2 .rd-related-links a,
 .reservation-detail-v2 .rd-inline-link,
 .reservation-detail-v2 .rd-room-link,
 .reservation-detail-v2 .rd-mini-link,
-.reservation-detail-v2 .rd-related-links a:hover,
-.reservation-detail-v2 .rd-related-links a:focus-visible,
 .reservation-detail-v2 .rd-inline-link:hover,
 .reservation-detail-v2 .rd-inline-link:focus-visible,
 .reservation-detail-v2 .rd-room-link:hover,
@@ -1687,9 +1610,6 @@ if (isset($_SESSION['flash_message']) &&
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .reservation-detail-v2 .rd-quick-nav {
-        top: 10px;
-    }
 }
 
 @media (max-width: 640px) {
@@ -1727,32 +1647,6 @@ if (isset($_SESSION['flash_message']) &&
 
     .reservation-detail-v2 .rd-strip-item strong {
         font-size: .9rem;
-    }
-
-    .reservation-detail-v2 .rd-quick-nav {
-        overflow-x: auto;
-        justify-content: flex-start;
-        border-radius: 15px;
-        padding: 7px;
-        scroll-snap-type: x proximity;
-    }
-
-    .reservation-detail-v2 .rd-quick-nav a {
-        flex: 0 0 auto;
-        scroll-snap-align: start;
-        white-space: nowrap;
-    }
-
-    .reservation-detail-v2 .rd-related-links {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 7px;
-    }
-
-    .reservation-detail-v2 .rd-related-links a {
-        justify-content: center;
-        text-align: center;
-        min-height: 38px;
     }
 
     .reservation-detail-v2 .rd-inline-link {
@@ -1829,52 +1723,6 @@ function medisoftVolverAnterior(event, fallbackUrl) {
     return false;
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    const navLinks = Array.from(document.querySelectorAll('[data-rd-nav]'));
-    const sections = navLinks
-        .map(link => document.getElementById(link.getAttribute('data-rd-nav')))
-        .filter(Boolean);
-
-    if (!navLinks.length || !sections.length) return;
-
-    const setActiveSection = function(id) {
-        navLinks.forEach(link => {
-            link.classList.toggle('is-active', link.getAttribute('data-rd-nav') === id);
-        });
-        sections.forEach(section => {
-            section.classList.toggle('is-visible', section.id === id);
-        });
-    };
-
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(event) {
-            const target = document.getElementById(link.getAttribute('data-rd-nav'));
-            if (!target) return;
-
-            event.preventDefault();
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            history.replaceState(null, '', '#' + target.id);
-            setActiveSection(target.id);
-        });
-    });
-
-    if ('IntersectionObserver' in window) {
-        const observer = new IntersectionObserver(entries => {
-            const visible = entries
-                .filter(entry => entry.isIntersecting)
-                .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-
-            if (visible) {
-                setActiveSection(visible.target.id);
-            }
-        }, {
-            rootMargin: '-30% 0px -55% 0px',
-            threshold: [0.2, 0.45, 0.7]
-        });
-
-        sections.forEach(section => observer.observe(section));
-    }
-});
 </script>
 
 <div class="detail-view reservation-detail-v2" style="min-height: 100vh; background: linear-gradient(to bottom, #F9FAFB, #F3F4F6);">
@@ -2185,61 +2033,12 @@ if ($puede_checkin): ?>
         </div>
     </section>
 
-    <nav class="rd-quick-nav no-print" aria-label="Navegacion de la reservacion">
-        <a href="#resumen-reservacion" data-rd-nav="resumen-reservacion" class="is-active">
-            <i class="fas fa-receipt"></i>
-            Resumen
-        </a>
-        <a href="#habitaciones-reservacion" data-rd-nav="habitaciones-reservacion">
-            <i class="fas fa-bed"></i>
-            Habitaciones
-        </a>
-        <a href="#huesped-reservacion" data-rd-nav="huesped-reservacion">
-            <i class="fas fa-user"></i>
-            Huesped
-        </a>
-    </nav>
-
     <?php
     $rd_reservacion_id = (int)($reservacion['id'] ?? 0);
     $rd_huesped_id = (int)($huesped['id'] ?? ($reservacion['huesped_id'] ?? 0));
     $rd_busqueda_reservacion = urlencode((string)$rd_reservacion_id);
     $rd_busqueda_caja = urlencode((string)$rd_reservacion_id);
     ?>
-    <div class="rd-related-links no-print" aria-label="Accesos relacionados">
-        <?php if ($rd_huesped_id > 0): ?>
-            <a href="<?= url('huespedes/' . $rd_huesped_id) ?>" title="Abrir el perfil completo del huesped">
-                <i class="fas fa-user-circle"></i>
-                Perfil del huesped
-            </a>
-            <a href="<?= url('huespedes/' . $rd_huesped_id . '#vehiculos') ?>" title="Ver vehiculos registrados del huesped">
-                <i class="fas fa-car"></i>
-                Vehiculos
-            </a>
-        <?php endif; ?>
-        <?php if ($rd_reservacion_id > 0): ?>
-            <?php if (in_array(($reservacion['estado'] ?? ''), ['confirmada', 'checked_in'], true)): ?>
-                <a href="<?= url('reservaciones/editar/' . $rd_reservacion_id) ?>" title="Editar datos de la reservacion">
-                    <i class="fas fa-pen"></i>
-                    Editar reservacion
-                </a>
-            <?php endif; ?>
-            <?php if ($reservacion['estado'] == 'confirmada'): ?>
-                <a href="<?= url('reservaciones/editar-habitaciones/' . $rd_reservacion_id) ?>" title="Modificar habitaciones de esta reservacion">
-                    <i class="fas fa-bed"></i>
-                    Modificar habitaciones
-                </a>
-            <?php endif; ?>
-            <a href="<?= url('facturacion?buscar=' . $rd_busqueda_reservacion) ?>" title="Buscar solicitudes de factura de esta reservacion">
-                <i class="fas fa-file-invoice-dollar"></i>
-                Facturacion
-            </a>
-            <a href="<?= url('caja/movimientos?buscar=' . $rd_busqueda_caja) ?>" title="Buscar movimientos de caja de esta reservacion">
-                <i class="fas fa-cash-register"></i>
-                Movimientos de caja
-            </a>
-        <?php endif; ?>
-    </div>
 
     <!-- Grid Principal -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
@@ -3973,6 +3772,25 @@ endif;
                     Métodos de Pago
                 </h4>
 
+                <div class="rv-payment-shortcuts" aria-label="Atajos de pago">
+                    <button type="button" class="rv-money-shortcut is-cash" onclick="aplicarPagoRapido('efectivo')">
+                        <i class="fas fa-money-bill-wave"></i>
+                        Efectivo exacto
+                    </button>
+                    <button type="button" class="rv-money-shortcut is-card" onclick="aplicarPagoRapido('tarjeta')">
+                        <i class="fas fa-credit-card"></i>
+                        Tarjeta exacta
+                    </button>
+                    <button type="button" class="rv-money-shortcut is-transfer" onclick="aplicarPagoRapido('transferencia')">
+                        <i class="fas fa-exchange-alt"></i>
+                        Transferencia exacta
+                    </button>
+                    <button type="button" class="rv-money-shortcut is-split" onclick="dividirPagoRapido()">
+                        <i class="fas fa-code-branch"></i>
+                        Mitad efectivo/tarjeta
+                    </button>
+                </div>
+
                 <div id="metodosPagoContainer" class="rv-pay-methods" style="display: flex; flex-direction: column; gap: 0.5rem;">
                     <!-- Efectivo -->
                     <div class="metodo-pago-item rv-pay-option rv-pay-cash" style="background: #F0FDF4; border: 2px solid #BBF7D0; border-radius: 0.5rem; padding: 0.75rem;">
@@ -4005,10 +3823,14 @@ endif;
                                         data-money-format="true"
                                         step="0.01"
                                         min="0"
+                                        oninput="calcularCambio()"
                                         onchange="calcularCambio()"
                                         onkeyup="calcularCambio()"
                                         placeholder="0.00"
                                         style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #BBF7D0; border-radius: 0.375rem; background: white;">
+                                    <button type="button" class="rv-money-mini" onclick="marcarEfectivoExacto()">
+                                        Recibi exacto
+                                    </button>
                                 </div>
                             </div>
                             <div style="background-color: #D1FAE5; border-radius: 0.375rem; padding: 0.375rem 0.5rem; margin-top: 0.375rem; font-size: 0.75rem;">
@@ -4056,6 +3878,7 @@ endif;
                                         data-money-format="true"
                                         step="0.01"
                                         min="0"
+                                        oninput="calcularTotales()"
                                         onchange="calcularTotales()"
                                         style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #BFDBFE; border-radius: 0.375rem;">
                                 </div>
@@ -4090,6 +3913,7 @@ endif;
                                         data-money-format="true"
                                         step="0.01"
                                         min="0"
+                                        oninput="calcularTotales()"
                                         onchange="calcularTotales()"
                                         style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #DDD6FE; border-radius: 0.375rem;">
                                 </div>
@@ -4498,14 +4322,14 @@ endif;
 </div>
 <!-- ========== FIN MODAL CAMBIAR MÉTODO DE PAGO ========== -->
 
-<div id="modalCheckInTardio" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: 420px; max-height: 90vh; overflow-y: auto;">
-        <div class="modal-header" style="padding: 1rem; border-bottom: 2px solid #F3F4F6;">
+<div id="modalCheckInTardio" class="modal-overlay rv-checkin-modal rv-tardio-modal" style="display: none;">
+    <div class="modal-content rv-checkin-shell rv-tardio-shell" style="width: 420px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header rv-checkin-hero rv-tardio-hero" style="padding: 1rem; border-bottom: 2px solid #F3F4F6;">
             <h3 id="tituloModalTardio" style="font-size: 1.125rem; font-weight: 700; margin: 0; color: #1F2937;">
                 <i class="fas fa-clock" style="color: #F59E0B; margin-right: 0.5rem;"></i>
                 Check-in Tardío
             </h3>
-            <button onclick="cerrarModalCheckInTardio()" style="background: none; border: none; cursor: pointer; color: #6B7280; font-size: 1.25rem;">
+            <button onclick="cerrarModalCheckInTardio()" class="rv-checkin-close" style="background: none; border: none; cursor: pointer; color: #6B7280; font-size: 1.25rem;">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -4515,13 +4339,13 @@ endif;
             <!-- Se llena dinámicamente -->
         </div>
 
-        <div class="modal-body" style="padding: 1rem;">
-            <form id="formCheckInTardio" method="POST" action="">
+        <div class="modal-body rv-checkin-body rv-tardio-body" style="padding: 1rem;">
+            <form id="formCheckInTardio" method="POST" action="" class="rv-checkin-form rv-tardio-form">
                 <?= csrf_field() ?>
                 <input type="hidden" name="tipo_tardio" id="tipo_tardio" value="">
 
                 <!-- Info Reservación -->
-                <div style="background: #F9FAFB; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                <div class="rv-tardio-info" style="background: #F9FAFB; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1rem;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.875rem;">
                         <div>
                             <span style="color: #6B7280;">Huésped:</span>
@@ -4543,7 +4367,7 @@ endif;
                 </div>
 
                 <!-- Hora de Entrada (solo para tardío normal) -->
-                <div id="campo_hora_entrada" class="form-group" style="margin-bottom: 1rem;">
+                <div id="campo_hora_entrada" class="form-group rv-arrival-field" style="margin-bottom: 1rem;">
                     <label class="form-label" style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">
                         Hora de Check-in
                     </label>
@@ -4552,7 +4376,7 @@ endif;
                 </div>
 
                 <!-- Total a Cobrar -->
-                <div class="form-group" style="margin-bottom: 1rem;">
+                <div class="form-group rv-total-field" style="margin-bottom: 1rem;">
                     <label class="form-label" style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">
                         Total a Cobrar
                     </label>
@@ -4562,7 +4386,7 @@ endif;
                 </div>
 
                 <!-- Métodos de Pago -->
-                <div class="form-group">
+                <div class="form-group rv-payment-section rv-tardio-payment">
                     <h4 style="font-size: 0.875rem; font-weight: 700; color: #374151; margin-bottom: 0.5rem;">
                         <i class="fas fa-wallet" style="color: #9333EA; margin-right: 0.375rem;"></i>
                         Métodos de Pago
@@ -4571,9 +4395,28 @@ endif;
                         💡 Opcional: Puede registrar el pago ahora o dejarlo pendiente.
                     </p>
 
-                    <div id="metodosPagoContainerTardio" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <div class="rv-payment-shortcuts" aria-label="Atajos de pago express">
+                        <button type="button" class="rv-money-shortcut is-cash" onclick="aplicarPagoRapidoTardio('efectivo')">
+                            <i class="fas fa-money-bill-wave"></i>
+                            Efectivo exacto
+                        </button>
+                        <button type="button" class="rv-money-shortcut is-card" onclick="aplicarPagoRapidoTardio('tarjeta')">
+                            <i class="fas fa-credit-card"></i>
+                            Tarjeta exacta
+                        </button>
+                        <button type="button" class="rv-money-shortcut is-transfer" onclick="aplicarPagoRapidoTardio('transferencia')">
+                            <i class="fas fa-exchange-alt"></i>
+                            Transferencia exacta
+                        </button>
+                        <button type="button" class="rv-money-shortcut is-split" onclick="dividirPagoRapidoTardio()">
+                            <i class="fas fa-code-branch"></i>
+                            Mitad efectivo/tarjeta
+                        </button>
+                    </div>
+
+                    <div id="metodosPagoContainerTardio" class="rv-pay-methods" style="display: flex; flex-direction: column; gap: 0.5rem;">
                         <!-- Sin Pago -->
-                        <div class="metodo-pago-item" style="background: #F3F4F6; border: 2px solid #D1D5DB; border-radius: 0.5rem; padding: 0.75rem;">
+                        <div class="metodo-pago-item rv-pay-option rv-pay-pending" style="background: #F3F4F6; border: 2px solid #D1D5DB; border-radius: 0.5rem; padding: 0.75rem;">
                             <label style="display: flex; align-items: center; font-weight: 600; font-size: 0.875rem; color: #4B5563; cursor: pointer;">
                                 <input type="checkbox"
                                     id="check_sin_pago"
@@ -4586,7 +4429,7 @@ endif;
                         </div>
 
                         <!-- Efectivo -->
-                        <div class="metodo-pago-item" style="background: #F0FDF4; border: 2px solid #BBF7D0; border-radius: 0.5rem; padding: 0.75rem;">
+                        <div class="metodo-pago-item rv-pay-option rv-pay-cash" style="background: #F0FDF4; border: 2px solid #BBF7D0; border-radius: 0.5rem; padding: 0.75rem;">
                             <label style="display: flex; align-items: center; font-weight: 600; font-size: 0.875rem; color: #065F46; cursor: pointer;">
                                 <input type="checkbox"
                                     id="check_efectivo_tardio"
@@ -4616,10 +4459,14 @@ endif;
                                             data-money-format="true"
                                             step="0.01"
                                             min="0"
+                                            oninput="calcularCambioTardio()"
                                             onchange="calcularCambioTardio()"
                                             onkeyup="calcularCambioTardio()"
                                             placeholder="0.00"
                                             style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #BBF7D0; border-radius: 0.375rem; background: white;">
+                                        <button type="button" class="rv-money-mini" onclick="marcarEfectivoExactoTardio()">
+                                            Recibi exacto
+                                        </button>
                                     </div>
                                 </div>
                                 <div style="background-color: #D1FAE5; border-radius: 0.375rem; padding: 0.375rem 0.5rem; margin-top: 0.375rem; font-size: 0.75rem;">
@@ -4629,7 +4476,7 @@ endif;
                         </div>
 
                         <!-- Tarjeta -->
-                        <div class="metodo-pago-item" style="background: #EFF6FF; border: 2px solid #BFDBFE; border-radius: 0.5rem; padding: 0.75rem;">
+                        <div class="metodo-pago-item rv-pay-option rv-pay-card" style="background: #EFF6FF; border: 2px solid #BFDBFE; border-radius: 0.5rem; padding: 0.75rem;">
                             <label style="display: flex; align-items: center; font-weight: 600; font-size: 0.875rem; color: #1E40AF; cursor: pointer;">
                                 <input type="checkbox"
                                     id="check_tarjeta_tardio"
@@ -4641,7 +4488,7 @@ endif;
                             <div id="panel_tarjeta_tardio" class="hidden" style="margin-top: 0.5rem;">
     <!-- Tipo de tarjeta: Crédito / Débito -->
     <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-        <label style="flex: 1; display: flex; align-items: center; gap: 0.375rem; padding: 0.375rem 0.625rem;
+        <label class="rv-radio-chip" style="flex: 1; display: flex; align-items: center; gap: 0.375rem; padding: 0.375rem 0.625rem;
                        background: white; border: 2px solid #BFDBFE; border-radius: 0.375rem;
                        cursor: pointer; font-size: 0.75rem; font-weight: 600; color: #1E40AF; transition: all 0.2s;"
                id="label_credito_tardio"
@@ -4649,7 +4496,7 @@ endif;
             <input type="radio" name="tipo_tarjeta_tardio" value="credito" style="accent-color: #3B82F6;">
             <i class="fas fa-credit-card" style="font-size: 0.625rem;"></i> Crédito
         </label>
-        <label style="flex: 1; display: flex; align-items: center; gap: 0.375rem; padding: 0.375rem 0.625rem;
+        <label class="rv-radio-chip" style="flex: 1; display: flex; align-items: center; gap: 0.375rem; padding: 0.375rem 0.625rem;
                        background: white; border: 2px solid #BFDBFE; border-radius: 0.375rem;
                        cursor: pointer; font-size: 0.75rem; font-weight: 600; color: #1E40AF; transition: all 0.2s;"
                id="label_debito_tardio"
@@ -4667,6 +4514,7 @@ endif;
                                             data-money-format="true"
                                             step="0.01"
                                             min="0"
+                                            oninput="calcularTotalesTardio()"
                                             onchange="calcularTotalesTardio()"
                                             style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #BFDBFE; border-radius: 0.375rem;">
                                     </div>
@@ -4682,7 +4530,7 @@ endif;
                         </div>
 
                         <!-- Transferencia -->
-                        <div class="metodo-pago-item" style="background: #F5F3FF; border: 2px solid #DDD6FE; border-radius: 0.5rem; padding: 0.75rem;">
+                        <div class="metodo-pago-item rv-pay-option rv-pay-transfer" style="background: #F5F3FF; border: 2px solid #DDD6FE; border-radius: 0.5rem; padding: 0.75rem;">
                             <label style="display: flex; align-items: center; font-weight: 600; font-size: 0.875rem; color: #5B21B6; cursor: pointer;">
                                 <input type="checkbox"
                                     id="check_transferencia_tardio"
@@ -4701,6 +4549,7 @@ endif;
                                             data-money-format="true"
                                             step="0.01"
                                             min="0"
+                                            oninput="calcularTotalesTardio()"
                                             onchange="calcularTotalesTardio()"
                                             style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #DDD6FE; border-radius: 0.375rem;">
                                     </div>
@@ -4729,16 +4578,16 @@ endif;
                     </div>
                 </div>
                 <!-- ========== SECCIÓN DE FACTURA (TARDÍO) ========== -->
-<div style="margin-top: 1rem;">
+<div class="rv-invoice-section" style="margin-top: 1rem;">
     <h4 style="font-size: 0.875rem; font-weight: 700; color: #374151; margin-bottom: 0.5rem;">
         <i class="fas fa-file-invoice" style="color: #2563EB; margin-right: 0.375rem;"></i>
         ¿El cliente requiere factura?
         <span style="color: #EF4444; font-size: 0.75rem;">*</span>
     </h4>
 
-    <div id="facturaContainerTardio" style="display: flex; gap: 0.5rem;">
+    <div id="facturaContainerTardio" class="rv-invoice-grid" style="display: flex; gap: 0.5rem;">
         <!-- Opción SÍ -->
-        <label style="flex: 1; display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem;
+        <label class="rv-invoice-choice" style="flex: 1; display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem;
                        background: #F9FAFB; border: 2px solid #E5E7EB; border-radius: 0.5rem;
                        cursor: pointer; transition: all 0.2s;"
                id="label_factura_si_tardio"
@@ -4754,7 +4603,7 @@ endif;
         </label>
 
         <!-- Opción NO -->
-        <label style="flex: 1; display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem;
+        <label class="rv-invoice-choice" style="flex: 1; display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem;
                        background: #F9FAFB; border: 2px solid #E5E7EB; border-radius: 0.5rem;
                        cursor: pointer; transition: all 0.2s;"
                id="label_factura_no_tardio"
@@ -4771,7 +4620,7 @@ endif;
     </div>
 
     <!-- Mensaje cuando no se ha seleccionado -->
-    <div id="facturaValidacionTardio" class="hidden"
+    <div id="facturaValidacionTardio" class="rv-checkin-message hidden"
          style="margin-top: 0.375rem; padding: 0.375rem 0.5rem; background: #FEF2F2;
                 border-radius: 0.375rem; border: 1px solid #FECACA;">
         <p style="font-size: 0.75rem; color: #DC2626; margin: 0;">
@@ -4781,7 +4630,7 @@ endif;
     </div>
 
     <!-- Info: se registrará para facturación interna -->
-    <div id="facturaInfoInternaTardio" class="hidden"
+    <div id="facturaInfoInternaTardio" class="rv-checkin-note hidden"
          style="margin-top: 0.375rem; padding: 0.375rem 0.5rem; background: #EFF6FF;
                 border-radius: 0.375rem; border: 1px solid #BFDBFE;">
         <p style="font-size: 0.7rem; color: #1E40AF; margin: 0;">
@@ -4792,7 +4641,7 @@ endif;
 </div>
 <!-- ========== FIN SECCIÓN DE FACTURA (TARDÍO) ========== -->
                 <!-- Notas Adicionales -->
-                <div class="form-group" style="margin-top: 1rem;">
+                <div class="form-group rv-notes-section" style="margin-top: 1rem;">
                     <label class="form-label" style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">
                         Notas Adicionales (opcional)
                     </label>
@@ -4802,12 +4651,14 @@ endif;
                 </div>
 
                 <!-- Botones -->
-                <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                <div class="rv-checkin-actions" style="display: flex; gap: 0.75rem; margin-top: 1rem;">
                     <button type="button" onclick="cerrarModalCheckInTardio()"
+                            class="rv-btn-cancel"
                             style="flex: 1; padding: 0.625rem; background: #F3F4F6; color: #374151; border: none; border-radius: 0.5rem; font-weight: 600; cursor: pointer;">
                         Cancelar
                     </button>
                     <button type="submit" id="btnConfirmarTardio"
+                            class="rv-btn-confirm"
                             style="flex: 1; padding: 0.625rem; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: white; border: none; border-radius: 0.5rem; font-weight: 700; cursor: pointer;">
                         ✓ Confirmar Check-in
                     </button>
@@ -5617,6 +5468,17 @@ function setMoneyValue(inputOrId, value) {
     }
 }
 
+function splitMoneyParts(total, count) {
+    const safeCount = Math.max(1, parseInt(count, 10) || 1);
+    const totalCents = Math.round((parseFloat(total) || 0) * 100);
+    const baseCents = Math.floor(totalCents / safeCount);
+    const remainder = totalCents - (baseCents * safeCount);
+
+    return Array.from({ length: safeCount }, function(_, index) {
+        return (baseCents + (index < remainder ? 1 : 0)) / 100;
+    });
+}
+
 function sanitizeMoneyForm(form) {
     if (window.MedisoftMoneyInput) {
         window.MedisoftMoneyInput.sanitize(form);
@@ -5691,6 +5553,104 @@ function toggleMetodoPago(metodo) {
 }
 
 // Validación del formulario
+function setCheckInPaymentChecked(metodo, checked) {
+    const checkbox = document.getElementById('check_' + metodo);
+    const panel = document.getElementById('panel_' + metodo);
+    const card = checkbox?.closest('.rv-pay-option, .metodo-pago-item');
+
+    if (!checkbox) {
+        return false;
+    }
+
+    if (checkbox.checked !== checked) {
+        checkbox.checked = checked;
+        toggleMetodoPago(metodo);
+        return true;
+    }
+
+    if (checked) {
+        if (panel) panel.classList.remove('hidden');
+        if (card) card.classList.add('is-open');
+    } else {
+        if (panel) panel.classList.add('hidden');
+        if (card) card.classList.remove('is-open');
+    }
+
+    return true;
+}
+
+function getSelectedCheckInPaymentMethods() {
+    return ['efectivo', 'tarjeta', 'transferencia'].filter(function(metodo) {
+        const checkbox = document.getElementById('check_' + metodo);
+        return checkbox && checkbox.checked;
+    });
+}
+
+function aplicarPagoRapido(metodo) {
+    if (!['efectivo', 'tarjeta', 'transferencia'].includes(metodo)) {
+        return;
+    }
+
+    resetearFormularioPago();
+    setCheckInPaymentChecked(metodo, true);
+    setMoneyValue('monto_' + metodo, totalReservacion);
+
+    if (metodo === 'efectivo') {
+        setMoneyValue('recibido_efectivo', totalReservacion);
+    }
+
+    calcularTotales();
+
+    if (metodo === 'efectivo') {
+        calcularCambio();
+    }
+
+    mostrarMensaje('Pago exacto aplicado.', 'success');
+}
+
+function marcarEfectivoExacto() {
+    setCheckInPaymentChecked('efectivo', true);
+    calcularTotales();
+
+    const montoEfectivo = moneyValue(document.getElementById('monto_efectivo'));
+    setMoneyValue('recibido_efectivo', montoEfectivo);
+    calcularCambio();
+}
+
+function dividirPagoRapido() {
+    let metodos = getSelectedCheckInPaymentMethods();
+
+    if (metodos.length < 2) {
+        resetearFormularioPago();
+        metodos = ['efectivo', 'tarjeta'];
+    }
+
+    metodos.forEach(function(metodo) {
+        setCheckInPaymentChecked(metodo, true);
+    });
+
+    const partes = splitMoneyParts(totalReservacion, metodos.length);
+
+    metodos.forEach(function(metodo, index) {
+        if (metodo !== 'efectivo') {
+            setMoneyValue('monto_' + metodo, partes[index]);
+        }
+    });
+
+    if (metodos.includes('efectivo')) {
+        setMoneyValue('monto_efectivo', partes[metodos.indexOf('efectivo')]);
+    }
+
+    calcularTotales();
+
+    if (metodos.includes('efectivo')) {
+        setMoneyValue('recibido_efectivo', moneyValue(document.getElementById('monto_efectivo')));
+        calcularCambio();
+    }
+
+    mostrarMensaje('Pago dividido entre ' + metodos.length + ' metodos.', 'success');
+}
+
 document.getElementById('formCheckInModal').addEventListener('submit', function(e) {
     e.preventDefault();
 
@@ -6349,6 +6309,8 @@ let reservacionTardioData = {};
 let metodosSeleccionadosTardio = new Set(['sin_pago']);
 
 function abrirModalCheckInTardio(id, huesped, habitaciones, fechaEntrada, fechaSalida, total, tipo, diasRetraso) {
+    const modalTardio = document.getElementById('modalCheckInTardio');
+
     reservacionTardioData = {
         id: id,
         huesped: huesped,
@@ -6359,6 +6321,10 @@ function abrirModalCheckInTardio(id, huesped, habitaciones, fechaEntrada, fechaS
         tipo: tipo, // 'normal_tardio' o 'express'
         diasRetraso: diasRetraso
     };
+
+    if (modalTardio) {
+        modalTardio.dataset.mode = tipo;
+    }
 
     // Configurar el formulario
     const form = document.getElementById('formCheckInTardio');
@@ -6430,17 +6396,30 @@ function abrirModalCheckInTardio(id, huesped, habitaciones, fechaEntrada, fechaS
     resetearFacturaTardio();
 
     // Mostrar modal
-    document.getElementById('modalCheckInTardio').style.display = 'flex';
+    if (modalTardio) {
+        modalTardio.style.display = 'flex';
+    }
+    document.body.style.overflow = 'hidden';
 }
 
 function cerrarModalCheckInTardio() {
-    document.getElementById('modalCheckInTardio').style.display = 'none';
+    const modalTardio = document.getElementById('modalCheckInTardio');
+    if (modalTardio) {
+        modalTardio.style.display = 'none';
+        modalTardio.removeAttribute('data-mode');
+    }
+    document.body.style.overflow = 'auto';
     resetearPagosTardio();
 }
 
 function toggleMetodoPagoTardio(metodo) {
     const checkbox = document.getElementById('check_' + metodo + (metodo === 'sin_pago' ? '' : '_tardio'));
     const panel = document.getElementById('panel_' + metodo + '_tardio');
+    const card = checkbox?.closest('.rv-pay-option, .metodo-pago-item');
+
+    if (!checkbox) {
+        return;
+    }
 
     if (checkbox.checked) {
         // Si se selecciona un método de pago, desmarcar "sin pago"
@@ -6449,12 +6428,16 @@ function toggleMetodoPagoTardio(metodo) {
             if (sinPagoCheck) {
                 sinPagoCheck.checked = false;
                 metodosSeleccionadosTardio.delete('sin_pago');
+                const sinPagoCard = sinPagoCheck.closest('.rv-pay-option, .metodo-pago-item');
+                if (sinPagoCard) sinPagoCard.classList.remove('is-open');
             }
         } else {
             // Si se selecciona "sin pago", desmarcar todos los demás
             ['efectivo', 'tarjeta', 'transferencia'].forEach(m => {
                 const check = document.getElementById('check_' + m + '_tardio');
                 if (check) check.checked = false;
+                const methodCard = check?.closest('.rv-pay-option, .metodo-pago-item');
+                if (methodCard) methodCard.classList.remove('is-open');
                 const p = document.getElementById('panel_' + m + '_tardio');
                 if (p) p.classList.add('hidden');
             });
@@ -6463,6 +6446,7 @@ function toggleMetodoPagoTardio(metodo) {
 
         metodosSeleccionadosTardio.add(metodo);
         if (panel) panel.classList.remove('hidden');
+        if (card) card.classList.add('is-open');
 
         if (metodo === 'efectivo') {
             calcularMontoEfectivoTardio();
@@ -6470,6 +6454,7 @@ function toggleMetodoPagoTardio(metodo) {
     } else {
         metodosSeleccionadosTardio.delete(metodo);
         if (panel) panel.classList.add('hidden');
+        if (card) card.classList.remove('is-open');
     }
 
     mostrarResumenTardio();
@@ -6478,6 +6463,103 @@ function toggleMetodoPagoTardio(metodo) {
     const facturaNoTardio = document.getElementById('factura_no_tardio');
     if (facturaNoTardio && facturaNoTardio.checked) {
         mostrarInfoFacturaInternaTardio();
+    }
+}
+
+function setTardioPaymentChecked(metodo, checked) {
+    const checkbox = document.getElementById('check_' + metodo + (metodo === 'sin_pago' ? '' : '_tardio'));
+    const panel = document.getElementById('panel_' + metodo + '_tardio');
+    const card = checkbox?.closest('.rv-pay-option, .metodo-pago-item');
+
+    if (!checkbox) {
+        return false;
+    }
+
+    if (checkbox.checked !== checked) {
+        checkbox.checked = checked;
+        toggleMetodoPagoTardio(metodo);
+        return true;
+    }
+
+    if (checked) {
+        metodosSeleccionadosTardio.add(metodo);
+        if (panel) panel.classList.remove('hidden');
+        if (card) card.classList.add('is-open');
+    } else {
+        metodosSeleccionadosTardio.delete(metodo);
+        if (panel) panel.classList.add('hidden');
+        if (card) card.classList.remove('is-open');
+    }
+
+    return true;
+}
+
+function getSelectedTardioPaymentMethods() {
+    return ['efectivo', 'tarjeta', 'transferencia'].filter(function(metodo) {
+        return metodosSeleccionadosTardio.has(metodo);
+    });
+}
+
+function aplicarPagoRapidoTardio(metodo) {
+    if (!['efectivo', 'tarjeta', 'transferencia'].includes(metodo)) {
+        return;
+    }
+
+    resetearPagosTardio();
+    setTardioPaymentChecked(metodo, true);
+    setMoneyValue('monto_' + metodo + '_tardio', reservacionTardioData.total);
+
+    if (metodo === 'efectivo') {
+        setMoneyValue('recibido_efectivo_tardio', reservacionTardioData.total);
+    }
+
+    mostrarResumenTardio();
+    calcularTotalesTardio();
+
+    if (metodo === 'efectivo') {
+        calcularCambioTardio();
+    }
+}
+
+function marcarEfectivoExactoTardio() {
+    setTardioPaymentChecked('efectivo', true);
+    calcularTotalesTardio();
+
+    const montoEfectivo = moneyValue(document.getElementById('monto_efectivo_tardio'));
+    setMoneyValue('recibido_efectivo_tardio', montoEfectivo);
+    calcularCambioTardio();
+}
+
+function dividirPagoRapidoTardio() {
+    let metodos = getSelectedTardioPaymentMethods();
+
+    if (metodos.length < 2) {
+        resetearPagosTardio();
+        metodos = ['efectivo', 'tarjeta'];
+    }
+
+    metodos.forEach(function(metodo) {
+        setTardioPaymentChecked(metodo, true);
+    });
+
+    const partes = splitMoneyParts(reservacionTardioData.total, metodos.length);
+
+    metodos.forEach(function(metodo, index) {
+        if (metodo !== 'efectivo') {
+            setMoneyValue('monto_' + metodo + '_tardio', partes[index]);
+        }
+    });
+
+    if (metodos.includes('efectivo')) {
+        setMoneyValue('monto_efectivo_tardio', partes[metodos.indexOf('efectivo')]);
+    }
+
+    mostrarResumenTardio();
+    calcularTotalesTardio();
+
+    if (metodos.includes('efectivo')) {
+        setMoneyValue('recibido_efectivo_tardio', moneyValue(document.getElementById('monto_efectivo_tardio')));
+        calcularCambioTardio();
     }
 }
 
@@ -6490,7 +6572,7 @@ function calcularMontoEfectivoTardio() {
         totalOtros += moneyValue(document.getElementById('monto_transferencia_tardio'));
     }
 
-    const montoEfectivo = reservacionTardioData.total - totalOtros;
+    const montoEfectivo = Math.max(0, reservacionTardioData.total - totalOtros);
     setMoneyValue('monto_efectivo_tardio', montoEfectivo);
 }
 
@@ -6547,10 +6629,16 @@ function mostrarResumenTardio() {
 }
 
 function resetearPagosTardio() {
+    metodosSeleccionadosTardio = reservacionTardioData.tipo === 'express' ? new Set() : new Set(['sin_pago']);
+
     // Desmarcar todos los checkboxes
     ['sin_pago', 'efectivo_tardio', 'tarjeta_tardio', 'transferencia_tardio'].forEach(id => {
         const check = document.getElementById('check_' + id);
-        if (check) check.checked = false;
+        if (check) {
+            check.checked = false;
+            const card = check.closest('.rv-pay-option, .metodo-pago-item');
+            if (card) card.classList.remove('is-open');
+        }
     });
 
     // Ocultar todos los paneles
@@ -6565,6 +6653,14 @@ function resetearPagosTardio() {
         if (input) input.value = '';
     });
 
+    document.querySelectorAll('input[name="tipo_tarjeta_tardio"]').forEach(radio => { radio.checked = false; });
+    ['label_credito_tardio', 'label_debito_tardio'].forEach(id => {
+        const label = document.getElementById(id);
+        if (!label) return;
+        label.style.borderColor = '';
+        label.style.background = '';
+    });
+
     document.getElementById('cambio_efectivo_tardio').textContent = '$0.00';
     document.getElementById('total_pagado_tardio').textContent = '$0.00';
     document.getElementById('pendiente_tardio').textContent = '$0.00';
@@ -6573,7 +6669,11 @@ function resetearPagosTardio() {
     // Marcar "sin pago" por defecto si no es express
     if (reservacionTardioData.tipo !== 'express') {
         const sinPago = document.getElementById('check_sin_pago');
-        if (sinPago) sinPago.checked = true;
+        if (sinPago) {
+            sinPago.checked = true;
+            const sinPagoCard = sinPago.closest('.rv-pay-option, .metodo-pago-item');
+            if (sinPagoCard) sinPagoCard.classList.add('is-open');
+        }
     }
 }
 
@@ -7666,7 +7766,7 @@ function mostrarPreviewMDD(tipo, html) {
     color: rgba(255,255,255,.66);
     font-size: .72rem;
     font-weight: 850;
-    letter-spacing: .05em;
+    letter-spacing: 0;
     text-transform: uppercase;
 }
 
@@ -7814,7 +7914,7 @@ function mostrarPreviewMDD(tipo, html) {
     color: #111827;
     font-size: .72rem;
     font-weight: 900;
-    letter-spacing: .05em;
+    letter-spacing: 0;
     text-transform: uppercase;
 }
 
@@ -7846,7 +7946,7 @@ function mostrarPreviewMDD(tipo, html) {
     color: #111827 !important;
     font-size: .72rem !important;
     font-weight: 900 !important;
-    letter-spacing: .05em !important;
+    letter-spacing: 0 !important;
     text-transform: uppercase;
 }
 
@@ -7909,6 +8009,60 @@ function mostrarPreviewMDD(tipo, html) {
 #modalCheckIn .rv-pay-cash { --rv-pay-color: #148653; }
 #modalCheckIn .rv-pay-card { --rv-pay-color: #2563EB; }
 #modalCheckIn .rv-pay-transfer { --rv-pay-color: #7C3AED; }
+
+#modalCheckIn .rv-payment-shortcuts,
+#modalCheckInTardio .rv-payment-shortcuts {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0 0 12px;
+}
+
+#modalCheckIn .rv-money-shortcut,
+#modalCheckInTardio .rv-money-shortcut,
+#modalCheckIn .rv-money-mini,
+#modalCheckInTardio .rv-money-mini {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid color-mix(in srgb, var(--rv-shortcut-color, var(--brand-primary, #1B2746)) 22%, #DCE2EA);
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--rv-shortcut-color, var(--brand-primary, #1B2746)) 7%, #fff);
+    color: color-mix(in srgb, var(--rv-shortcut-color, var(--brand-primary, #1B2746)) 82%, #111827);
+    font-size: .77rem;
+    font-weight: 900;
+    line-height: 1.15;
+    cursor: pointer;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+
+#modalCheckIn .rv-money-shortcut:hover,
+#modalCheckInTardio .rv-money-shortcut:hover,
+#modalCheckIn .rv-money-mini:hover,
+#modalCheckInTardio .rv-money-mini:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--rv-shortcut-color, var(--brand-primary, #1B2746)) 42%, #DCE2EA);
+    box-shadow: 0 12px 24px -22px color-mix(in srgb, var(--rv-shortcut-color, var(--brand-primary, #1B2746)) 80%, transparent);
+}
+
+#modalCheckIn .rv-money-shortcut.is-cash,
+#modalCheckInTardio .rv-money-shortcut.is-cash { --rv-shortcut-color: #148653; }
+#modalCheckIn .rv-money-shortcut.is-card,
+#modalCheckInTardio .rv-money-shortcut.is-card { --rv-shortcut-color: #2563EB; }
+#modalCheckIn .rv-money-shortcut.is-transfer,
+#modalCheckInTardio .rv-money-shortcut.is-transfer { --rv-shortcut-color: #7C3AED; }
+#modalCheckIn .rv-money-shortcut.is-split,
+#modalCheckInTardio .rv-money-shortcut.is-split { --rv-shortcut-color: var(--brand-accent, #BD9441); }
+
+#modalCheckIn .rv-money-mini,
+#modalCheckInTardio .rv-money-mini {
+    width: 100%;
+    min-height: 32px;
+    margin-top: 7px;
+    --rv-shortcut-color: #148653;
+}
 
 #modalCheckIn .rv-pay-toggle {
     width: 100%;
@@ -8235,16 +8389,583 @@ function mostrarPreviewMDD(tipo, html) {
     transform: translateY(-1px);
 }
 
+/* Check-in tardio / proceso express: same operating surface as check-in. */
+#modalCheckInTardio.rv-tardio-modal {
+    padding: clamp(10px, 2vw, 24px);
+    background:
+        radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--brand-accent, #BD9441) 24%, transparent), transparent 34%),
+        linear-gradient(145deg, rgba(7, 12, 22, .86), rgba(23, 29, 43, .74));
+    -webkit-backdrop-filter: blur(10px) saturate(1.05);
+    backdrop-filter: blur(10px) saturate(1.05);
+    z-index: 12000;
+}
+
+#modalCheckInTardio .rv-tardio-shell {
+    width: min(960px, calc(100vw - 24px)) !important;
+    max-width: min(960px, calc(100vw - 24px)) !important;
+    max-height: min(92dvh, 900px) !important;
+    display: grid !important;
+    grid-template-columns: minmax(250px, .9fr) minmax(0, 1.7fr);
+    overflow: hidden !important;
+    border-radius: 28px !important;
+    background: #F8F4EC !important;
+    border: 1px solid rgba(255,255,255,.55);
+    box-shadow: 0 38px 92px -34px rgba(4, 8, 18, .78), 0 0 0 1px rgba(255,255,255,.22) inset;
+    animation: rvCheckInShow .32s cubic-bezier(.22, 1, .36, 1);
+}
+
+#modalCheckInTardio .rv-tardio-hero {
+    position: relative;
+    isolation: isolate;
+    grid-column: 1;
+    grid-row: 1 / 3;
+    min-height: 100%;
+    padding: 28px !important;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 28px;
+    color: #fff;
+    background:
+        linear-gradient(150deg, color-mix(in srgb, var(--brand-secondary, #0F172A) 86%, #111827), color-mix(in srgb, var(--brand-primary, #1B2746) 74%, #1F2937)),
+        var(--brand-secondary, #0F172A) !important;
+    border-bottom: 0 !important;
+}
+
+#modalCheckInTardio[data-mode="express"] .rv-tardio-hero {
+    background:
+        linear-gradient(150deg, color-mix(in srgb, #9A3412 78%, #111827), color-mix(in srgb, var(--brand-secondary, #0F172A) 78%, #431407)),
+        #431407 !important;
+}
+
+#modalCheckInTardio .rv-tardio-hero::before {
+    content: '';
+    position: absolute;
+    inset: 14px;
+    z-index: -1;
+    border: 1px solid rgba(255,255,255,.13);
+    border-radius: 22px;
+}
+
+#modalCheckInTardio .rv-tardio-hero::after {
+    content: '';
+    position: absolute;
+    right: -48px;
+    bottom: -48px;
+    z-index: -1;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--brand-accent, #BD9441) 34%, transparent);
+    filter: blur(4px);
+}
+
+#modalCheckInTardio .rv-tardio-hero > button {
+    position: absolute !important;
+    top: 18px !important;
+    right: 18px !important;
+    width: 38px !important;
+    height: 38px !important;
+    display: grid !important;
+    place-items: center !important;
+    border: 1px solid rgba(255,255,255,.24) !important;
+    border-radius: 14px !important;
+    background: rgba(255,255,255,.13) !important;
+    color: #fff !important;
+    cursor: pointer !important;
+    transition: transform .18s ease, background .18s ease !important;
+}
+
+#modalCheckInTardio .rv-tardio-hero > button:hover {
+    transform: translateY(-1px);
+    background: rgba(255,255,255,.24) !important;
+}
+
+#modalCheckInTardio .rv-tardio-hero h3 {
+    margin: 0 !important;
+    padding-top: 34px;
+    max-width: 9ch;
+    display: grid;
+    gap: 14px;
+    color: #fff !important;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(2rem, 4vw, 2.8rem) !important;
+    font-weight: 700 !important;
+    line-height: .9 !important;
+    letter-spacing: 0 !important;
+    text-wrap: balance;
+}
+
+#modalCheckInTardio .rv-tardio-hero h3::after {
+    content: 'Regulariza la llegada y deja el pago listo sin pasos extra.';
+    max-width: 25ch;
+    color: rgba(255,255,255,.72);
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: .86rem;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+#modalCheckInTardio[data-mode="express"] .rv-tardio-hero h3::after {
+    content: 'Cobra y cierra check-in/check-out en un solo flujo.';
+}
+
+#modalCheckInTardio .rv-tardio-hero h3 i {
+    width: 54px;
+    height: 54px;
+    margin: 0 !important;
+    display: grid;
+    place-items: center;
+    border-radius: 18px;
+    color: #fff !important;
+    background: rgba(255,255,255,.13);
+    border: 1px solid rgba(255,255,255,.22);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
+    font-size: 1.15rem;
+}
+
+#modalCheckInTardio #alertaTardio {
+    grid-column: 2;
+    padding: 20px 20px 0 !important;
+}
+
+#modalCheckInTardio #alertaTardio > div {
+    border: 1px solid color-mix(in srgb, #EA580C 25%, #F5D0A9) !important;
+    border-radius: 17px !important;
+    background: #FFF7ED !important;
+    padding: 13px 14px !important;
+}
+
+#modalCheckInTardio .rv-tardio-body {
+    grid-column: 2;
+    min-height: 0;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+#modalCheckInTardio .rv-tardio-form {
+    min-height: 0;
+    max-height: min(92dvh, 900px);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(175px, .58fr);
+    gap: 14px;
+    padding: 20px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--brand-primary, #1B2746) 28%, #D7DCE3) transparent;
+}
+
+#modalCheckInTardio .rv-tardio-info,
+#modalCheckInTardio .rv-arrival-field,
+#modalCheckInTardio .rv-total-field,
+#modalCheckInTardio .rv-payment-section,
+#modalCheckInTardio .rv-invoice-section,
+#modalCheckInTardio .rv-notes-section,
+#modalCheckInTardio #resumen_totales_tardio {
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 10%, #E7DDD1) !important;
+    border-radius: 20px !important;
+    background: rgba(255,255,255,.92) !important;
+    box-shadow: 0 1px 0 rgba(255,255,255,.76) inset;
+    margin: 0 !important;
+    padding: 16px !important;
+}
+
+#modalCheckInTardio .rv-tardio-info,
+#modalCheckInTardio .rv-payment-section,
+#modalCheckInTardio .rv-invoice-section,
+#modalCheckInTardio .rv-notes-section,
+#modalCheckInTardio #resumen_totales_tardio,
+#modalCheckInTardio .rv-checkin-actions {
+    grid-column: 1 / -1;
+}
+
+#modalCheckInTardio .rv-total-field {
+    background: linear-gradient(145deg, #fff, color-mix(in srgb, var(--brand-accent, #BD9441) 9%, #fff)) !important;
+}
+
+#modalCheckInTardio .rv-total-field > div {
+    padding: 0 !important;
+    background: transparent !important;
+    text-align: left !important;
+    border-radius: 0 !important;
+}
+
+#modalCheckInTardio #totalACobrarTardio {
+    display: block;
+    color: var(--brand-secondary, #0F172A) !important;
+    font-size: clamp(1.55rem, 4vw, 2.2rem) !important;
+    font-weight: 950 !important;
+    line-height: 1 !important;
+    font-variant-numeric: tabular-nums;
+}
+
+#modalCheckInTardio .form-label,
+#modalCheckInTardio .rv-total-field > label,
+#modalCheckInTardio .rv-arrival-field > label,
+#modalCheckInTardio .rv-pay-option label[style*="font-size: 0.75rem"] {
+    display: block !important;
+    margin-bottom: 7px !important;
+    color: #111827 !important;
+    font-size: .72rem !important;
+    font-weight: 900 !important;
+    letter-spacing: 0 !important;
+    text-transform: uppercase;
+}
+
+#modalCheckInTardio input[type="time"],
+#modalCheckInTardio input[type="number"],
+#modalCheckInTardio input[type="text"],
+#modalCheckInTardio textarea {
+    width: 100% !important;
+    min-height: 43px !important;
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 16%, #DFE4EA) !important;
+    border-radius: 14px !important;
+    padding: 10px 12px !important;
+    background: #fff !important;
+    color: var(--brand-secondary, #0F172A) !important;
+    font-size: .9rem !important;
+    font-weight: 760 !important;
+    outline: none !important;
+    transition: border-color .18s ease, box-shadow .18s ease !important;
+}
+
+#modalCheckInTardio textarea {
+    min-height: 74px !important;
+    resize: vertical;
+}
+
+#modalCheckInTardio input[type="time"]:focus,
+#modalCheckInTardio input[type="number"]:focus,
+#modalCheckInTardio input[type="text"]:focus,
+#modalCheckInTardio textarea:focus {
+    border-color: var(--brand-primary, #1B2746) !important;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-primary, #1B2746) 12%, transparent) !important;
+}
+
+#modalCheckInTardio .rv-payment-section > h4,
+#modalCheckInTardio .rv-invoice-section > h4 {
+    margin: 0 0 10px !important;
+    color: var(--brand-secondary, #0F172A) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: .94rem !important;
+    font-weight: 950 !important;
+}
+
+#modalCheckInTardio .rv-payment-section > h4 i,
+#modalCheckInTardio .rv-invoice-section > h4 i {
+    color: var(--brand-primary, #1B2746) !important;
+    margin-right: 0 !important;
+}
+
+#modalCheckInTardio #nota_pago_opcional {
+    margin: 0 0 10px !important;
+    color: #667085 !important;
+    font-size: .78rem !important;
+    font-weight: 760 !important;
+}
+
+#modalCheckInTardio .rv-pay-methods {
+    display: grid !important;
+    gap: 10px !important;
+}
+
+#modalCheckInTardio .rv-pay-option {
+    --rv-pay-color: var(--brand-primary, #1B2746);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--rv-pay-color) 16%, #E5E7EB) !important;
+    border-radius: 17px !important;
+    background: #fff !important;
+    padding: 0 !important;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease, transform .18s ease;
+}
+
+#modalCheckInTardio .rv-pay-option::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: color-mix(in srgb, var(--rv-pay-color) 76%, #fff);
+    opacity: .68;
+}
+
+#modalCheckInTardio .rv-pay-option.is-open,
+#modalCheckInTardio .rv-pay-option:has(input[type="checkbox"]:checked) {
+    border-color: color-mix(in srgb, var(--rv-pay-color) 46%, #D7DCE3);
+    background: color-mix(in srgb, var(--rv-pay-color) 4%, #fff) !important;
+    box-shadow: 0 18px 36px -28px color-mix(in srgb, var(--rv-pay-color) 70%, transparent);
+    transform: translateY(-1px);
+}
+
+#modalCheckInTardio .rv-pay-pending { --rv-pay-color: #667085; }
+#modalCheckInTardio .rv-pay-cash { --rv-pay-color: #148653; }
+#modalCheckInTardio .rv-pay-card { --rv-pay-color: #2563EB; }
+#modalCheckInTardio .rv-pay-transfer { --rv-pay-color: #7C3AED; }
+
+#modalCheckInTardio .rv-pay-option > label {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 13px 14px 13px 17px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    color: var(--brand-secondary, #0F172A) !important;
+    font-size: .9rem !important;
+    font-weight: 920 !important;
+    cursor: pointer !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+#modalCheckInTardio .rv-pay-option > label i {
+    color: var(--rv-pay-color) !important;
+    margin-right: 0 !important;
+}
+
+#modalCheckInTardio .rv-pay-option > label input {
+    width: 18px !important;
+    height: 18px !important;
+    margin-right: 0 !important;
+    accent-color: var(--rv-pay-color) !important;
+}
+
+#modalCheckInTardio .rv-pay-option > div[id^="panel_"] {
+    margin-top: 0 !important;
+    border-top: 1px solid color-mix(in srgb, var(--rv-pay-color) 18%, #E5E7EB);
+    padding: 13px 14px 15px 17px;
+    background: color-mix(in srgb, var(--rv-pay-color) 6%, #fff);
+}
+
+#modalCheckInTardio #panel_efectivo_tardio > div:first-child,
+#modalCheckInTardio #panel_tarjeta_tardio > div:last-child,
+#modalCheckInTardio #panel_transferencia_tardio > div:first-child,
+#modalCheckInTardio #panel_tarjeta_tardio > div:first-child,
+#modalCheckInTardio .rv-invoice-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+}
+
+#modalCheckInTardio #panel_tarjeta_tardio > div:first-child {
+    margin-bottom: 10px !important;
+}
+
+#modalCheckInTardio #panel_efectivo_tardio > div:last-child {
+    margin-top: 9px !important;
+    padding: 9px 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    border-radius: 14px !important;
+    background: rgba(255,255,255,.78) !important;
+    color: #475467 !important;
+    font-size: .82rem !important;
+    font-weight: 850 !important;
+}
+
+#modalCheckInTardio #cambio_efectivo_tardio {
+    color: #148653 !important;
+    font-variant-numeric: tabular-nums;
+}
+
+#modalCheckInTardio .rv-radio-chip,
+#modalCheckInTardio .rv-invoice-choice {
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 13%, #DCE2EA) !important;
+    border-radius: 15px !important;
+    background: #fff !important;
+    cursor: pointer;
+    transition: border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+#modalCheckInTardio .rv-radio-chip {
+    min-height: 42px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px !important;
+    color: #1E40AF !important;
+    font-size: .82rem !important;
+    font-weight: 880 !important;
+}
+
+#modalCheckInTardio .rv-radio-chip input,
+#modalCheckInTardio .rv-invoice-choice input {
+    accent-color: var(--brand-primary, #1B2746);
+}
+
+#modalCheckInTardio .rv-radio-chip:has(input:checked) {
+    border-color: #2563EB !important;
+    background: #EFF6FF !important;
+    box-shadow: 0 12px 24px -22px rgba(37,99,235,.82);
+}
+
+#modalCheckInTardio .rv-invoice-choice {
+    min-height: 70px;
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    padding: 13px !important;
+}
+
+#modalCheckInTardio .rv-invoice-choice > div > span {
+    display: block;
+    color: var(--brand-secondary, #0F172A) !important;
+    font-size: .88rem !important;
+    font-weight: 920 !important;
+}
+
+#modalCheckInTardio .rv-invoice-choice p {
+    display: block;
+    margin-top: 2px;
+    color: #667085 !important;
+    font-size: .72rem !important;
+    font-weight: 700 !important;
+    line-height: 1.35 !important;
+}
+
+#modalCheckInTardio #label_factura_si_tardio.is-selected {
+    border-color: color-mix(in srgb, #2563EB 62%, #DCE2EA) !important;
+    background: #EFF6FF !important;
+    box-shadow: 0 12px 24px -22px rgba(37,99,235,.82);
+}
+
+#modalCheckInTardio #label_factura_no_tardio.is-selected {
+    border-color: color-mix(in srgb, var(--brand-primary, #1B2746) 38%, #DCE2EA) !important;
+    background: color-mix(in srgb, var(--brand-primary, #1B2746) 5%, #fff) !important;
+}
+
+#modalCheckInTardio .rv-checkin-note,
+#modalCheckInTardio .rv-checkin-message {
+    margin-top: 9px !important;
+    border-radius: 13px !important;
+    padding: 10px 11px !important;
+    font-size: .78rem !important;
+    font-weight: 780 !important;
+    line-height: 1.35 !important;
+}
+
+#modalCheckInTardio .rv-checkin-note {
+    border: 1px solid #BFDBFE !important;
+    background: #EFF6FF !important;
+    color: #1E40AF !important;
+}
+
+#modalCheckInTardio .rv-checkin-message {
+    border: 1px solid #FECACA !important;
+    background: #FEF2F2 !important;
+    color: #B42318 !important;
+}
+
+#modalCheckInTardio #resumen_totales_tardio {
+    display: block;
+    background: linear-gradient(135deg, #fff, #F6F2EA) !important;
+}
+
+#modalCheckInTardio #resumen_totales_tardio.hidden {
+    display: none !important;
+}
+
+#modalCheckInTardio #resumen_totales_tardio > div {
+    margin: 0 !important;
+    padding: 4px 0;
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: #667085 !important;
+    font-size: .82rem !important;
+    font-weight: 780 !important;
+}
+
+#modalCheckInTardio .rv-checkin-actions {
+    position: sticky;
+    bottom: 0;
+    display: flex !important;
+    gap: 10px !important;
+    padding: 15px 20px 20px !important;
+    margin: 0 !important;
+    border-top: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 10%, #E7DDD1);
+    background: color-mix(in srgb, #F8F4EC 90%, transparent) !important;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+
+#modalCheckInTardio .rv-btn-cancel,
+#modalCheckInTardio .rv-btn-confirm {
+    min-height: 45px !important;
+    border-radius: 14px !important;
+    padding: 0 16px !important;
+    font-size: .9rem !important;
+    font-weight: 930 !important;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+#modalCheckInTardio .rv-btn-cancel {
+    flex: .9;
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 13%, #DCE2EA) !important;
+    color: var(--brand-secondary, #0F172A) !important;
+    background: #fff !important;
+}
+
+#modalCheckInTardio .rv-btn-confirm {
+    flex: 1.25;
+    border: 0 !important;
+    color: #fff !important;
+    background: linear-gradient(135deg, #B45309, #92400E) !important;
+    box-shadow: 0 16px 32px -19px rgba(180,83,9,.92) !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+#modalCheckInTardio[data-mode="express"] .rv-btn-confirm {
+    background: linear-gradient(135deg, #EA580C, #C2410C) !important;
+    box-shadow: 0 16px 32px -19px rgba(234,88,12,.9) !important;
+}
+
+#modalCheckInTardio .rv-btn-cancel:hover,
+#modalCheckInTardio .rv-btn-confirm:hover {
+    transform: translateY(-1px);
+}
+
 @media (max-width: 840px) {
     #modalCheckIn .rv-checkin-shell { grid-template-columns: 1fr; }
+    #modalCheckInTardio .rv-tardio-shell {
+        grid-template-columns: 1fr !important;
+    }
     #modalCheckIn .rv-checkin-hero {
         min-height: auto;
         padding: 18px 64px 18px 18px;
         gap: 12px;
     }
+    #modalCheckInTardio .rv-tardio-hero {
+        grid-column: 1;
+        grid-row: auto;
+        min-height: auto;
+        padding: 18px 64px 18px 18px !important;
+        gap: 12px;
+    }
     #modalCheckIn .rv-checkin-hero::before,
-    #modalCheckIn .rv-checkin-hero::after { display: none; }
+    #modalCheckIn .rv-checkin-hero::after,
+    #modalCheckInTardio .rv-tardio-hero::before,
+    #modalCheckInTardio .rv-tardio-hero::after { display: none; }
     #modalCheckIn .rv-checkin-hero h3 {
+        max-width: none;
+        padding-top: 0;
+        grid-template-columns: 44px minmax(0, 1fr);
+        align-items: center;
+        gap: 12px;
+        font-family: 'Manrope', system-ui, sans-serif;
+        font-size: 1.08rem !important;
+        line-height: 1.15 !important;
+    }
+    #modalCheckInTardio .rv-tardio-hero h3 {
         max-width: none;
         padding-top: 0;
         grid-template-columns: 44px minmax(0, 1fr);
@@ -8259,9 +8980,22 @@ function mostrarPreviewMDD(tipo, html) {
         height: 44px;
         border-radius: 15px;
     }
+    #modalCheckInTardio .rv-tardio-hero h3 i {
+        width: 44px;
+        height: 44px;
+        border-radius: 15px;
+    }
     #modalCheckIn .rv-checkin-hero h3::after {
         grid-column: 2;
         font-size: .76rem;
+    }
+    #modalCheckInTardio .rv-tardio-hero h3::after {
+        grid-column: 2;
+        font-size: .76rem;
+    }
+    #modalCheckInTardio #alertaTardio,
+    #modalCheckInTardio .rv-tardio-body {
+        grid-column: 1;
     }
     #modalCheckIn .rv-checkin-heading {
         grid-template-columns: 44px minmax(0, 1fr);
@@ -8294,14 +9028,31 @@ function mostrarPreviewMDD(tipo, html) {
         align-items: flex-end;
         padding: 8px 8px 0;
     }
+    #modalCheckInTardio.rv-tardio-modal {
+        align-items: flex-end;
+        padding: 8px 8px 0;
+    }
     #modalCheckIn .rv-checkin-shell {
         width: 100%;
         max-height: 96dvh;
         border-radius: 24px 24px 0 0;
     }
+    #modalCheckInTardio .rv-tardio-shell {
+        width: 100% !important;
+        max-height: 96dvh !important;
+        border-radius: 24px 24px 0 0 !important;
+    }
     #modalCheckIn .rv-checkin-form {
         grid-template-columns: 1fr;
         padding: 14px;
+    }
+    #modalCheckInTardio .rv-tardio-form {
+        grid-template-columns: 1fr;
+        padding: 14px;
+    }
+    #modalCheckIn .rv-payment-shortcuts,
+    #modalCheckInTardio .rv-payment-shortcuts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     #modalCheckIn .rv-checkin-arrival,
     #modalCheckIn .rv-input-grid,
@@ -8313,12 +9064,25 @@ function mostrarPreviewMDD(tipo, html) {
     #modalCheckIn #panel_transferencia > div:first-child {
         grid-template-columns: 1fr !important;
     }
+    #modalCheckInTardio #panel_efectivo_tardio > div:first-child,
+    #modalCheckInTardio #panel_tarjeta_tardio > div:first-child,
+    #modalCheckInTardio #panel_tarjeta_tardio > div:last-child,
+    #modalCheckInTardio #panel_transferencia_tardio > div:first-child,
+    #modalCheckInTardio .rv-invoice-grid {
+        grid-template-columns: 1fr !important;
+    }
     #modalCheckIn .rv-checkin-actions {
         flex-direction: column;
         padding: 12px 14px 14px !important;
     }
+    #modalCheckInTardio .rv-checkin-actions {
+        flex-direction: column;
+        padding: 12px 14px 14px !important;
+    }
     #modalCheckIn .rv-btn-cancel,
-    #modalCheckIn .rv-btn-confirm { width: 100%; }
+    #modalCheckIn .rv-btn-confirm,
+    #modalCheckInTardio .rv-btn-cancel,
+    #modalCheckInTardio .rv-btn-confirm { width: 100%; }
 }
 
 

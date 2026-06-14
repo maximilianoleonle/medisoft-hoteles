@@ -2,454 +2,966 @@
 /**
  * Vista de Corte de Caja
  * Los Cedros
- * 
- * NOTA: Esta versión incluye correcciones para evitar errores de deprecación
- * al pasar valores null a htmlspecialchars() en PHP 8+
+ *
+ * NOTA: Esta version incluye correcciones para evitar errores de deprecacion
+ * al pasar valores null a htmlspecialchars() en PHP 8+.
  */
 
-// Función helper para manejar valores null de forma segura
 if (!function_exists('safe_html')) {
     function safe_html($value) {
         return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
     }
 }
+
+if (!function_exists('corte_money')) {
+    function corte_money($value, $prefix = '') {
+        return $prefix . '$' . number_format((float)($value ?? 0), 2);
+    }
+}
+
+$movimientos = $movimientos ?? [];
+$movimientos_categoria = $movimientos_categoria ?? ['ingresos' => [], 'gastos' => []];
+$denominaciones = $denominaciones ?? [1000, 500, 200, 100, 50, 20, 10, 5, 2, 1, 0.50];
+$metodos_pago = $metodos_pago ?? [];
+
+$fechaApertura = $corte['fecha_apertura'] ?? 'now';
+$efectivoEsperado = (float)($resumen['efectivo_en_caja'] ?? 0);
+$balanceGeneral = (float)($resumen['balance_general'] ?? 0);
 ?>
 
-<!-- Corte de Caja -->
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
-    <!-- Header -->
-    <div class="max-w-6xl mx-auto mb-6">
-        <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8 border-t-4 border-red-500">
-            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-                <div>
-                    <h1 class="text-3xl md:text-4xl font-bold text-hotel-brown font-playfair mb-2">
-                        Corte de Caja
-                    </h1>
-                    <div class="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-                        <span class="flex items-center">
-                            <i class="fas fa-calendar mr-2"></i>
-                            <?= date('d/m/Y', strtotime($corte['fecha_apertura'] ?? 'now')) ?>
-                        </span>
-                        <span class="text-gray-400">•</span>
-                        <span class="flex items-center">
-                            <i class="fas fa-clock mr-2"></i>
-                            Apertura: <?= date('H:i', strtotime($corte['fecha_apertura'] ?? 'now')) ?>
-                        </span>
-                        <span class="text-gray-400">•</span>
-                        <span class="flex items-center">
-                            <i class="fas fa-user mr-2"></i>
-                            <?= safe_html($corte['usuario_apertura']) ?>
-                        </span>
+<style>
+.ccx-page {
+    --ccx-primary: var(--brand-primary, #1f3f46);
+    --ccx-secondary: var(--brand-secondary, #27333f);
+    --ccx-accent: var(--brand-accent, #b58a3c);
+    --ccx-ink: color-mix(in srgb, var(--ccx-primary) 54%, #475467);
+    --ccx-text: #344054;
+    --ccx-muted: #748094;
+    --ccx-line: color-mix(in srgb, var(--ccx-primary) 9%, #e9e2d7);
+    --ccx-surface: rgba(255,255,255,.78);
+    --ccx-focus: color-mix(in srgb, var(--ccx-accent) 22%, transparent);
+    min-height: 100vh;
+    color: var(--ccx-text);
+    background:
+        radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--ccx-accent) 12%, transparent), transparent 25rem),
+        radial-gradient(circle at 96% 10%, color-mix(in srgb, var(--ccx-primary) 7%, transparent), transparent 30rem),
+        linear-gradient(180deg, #fcfbf8 0%, color-mix(in srgb, var(--ccx-accent) 4%, #f4f1ea) 100%);
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+
+.ccx-shell {
+    width: min(1440px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 26px 0 54px;
+}
+
+.ccx-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: end;
+    margin-bottom: 16px;
+}
+
+.ccx-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 30px;
+    padding: 0 10px;
+    border: 1px solid color-mix(in srgb, var(--ccx-accent) 26%, #ded6c8);
+    border-radius: 999px;
+    background: rgba(255,255,255,.72);
+    color: color-mix(in srgb, var(--ccx-primary) 58%, #667085);
+    font-size: .78rem;
+    font-weight: 640;
+}
+
+.ccx-kicker i {
+    color: color-mix(in srgb, var(--ccx-accent) 76%, #795a16);
+}
+
+.ccx-title {
+    margin: 11px 0 0;
+    color: color-mix(in srgb, var(--ccx-primary) 58%, #465467);
+    font-size: clamp(1.7rem, 3vw, 2.85rem);
+    line-height: 1.08;
+    font-weight: 540;
+    letter-spacing: 0;
+    text-wrap: balance;
+}
+
+.ccx-subtitle {
+    max-width: 720px;
+    margin: 10px 0 0;
+    color: #526176;
+    font-size: .98rem;
+    line-height: 1.55;
+    font-weight: 430;
+}
+
+.ccx-back {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid var(--ccx-line);
+    border-radius: 12px;
+    background: rgba(255,255,255,.84);
+    color: var(--ccx-ink);
+    padding: 0 13px;
+    font-size: .84rem;
+    font-weight: 560;
+    text-decoration: none;
+    transition: transform .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.ccx-back:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--ccx-accent) 30%, var(--ccx-line));
+    background: color-mix(in srgb, var(--ccx-accent) 7%, #fff);
+}
+
+.ccx-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.ccx-stat {
+    position: relative;
+    overflow: hidden;
+    min-height: 100px;
+    display: grid;
+    align-content: space-between;
+    border: 1px solid var(--ccx-line);
+    border-radius: 14px;
+    background: var(--ccx-surface);
+    box-shadow: 0 14px 34px -32px color-mix(in srgb, var(--ccx-primary) 22%, transparent);
+    padding: 14px;
+}
+
+.ccx-stat::after {
+    content: "";
+    position: absolute;
+    inset: auto 12px 0 12px;
+    height: 3px;
+    border-radius: 999px 999px 0 0;
+    background: var(--stat-color, var(--ccx-accent));
+}
+
+.ccx-stat span {
+    color: var(--ccx-muted);
+    font-size: .72rem;
+    font-weight: 620;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.ccx-stat strong {
+    color: color-mix(in srgb, var(--ccx-primary) 58%, #4b5563);
+    font-size: clamp(1.25rem, 2.4vw, 1.75rem);
+    line-height: 1.04;
+    font-weight: 560;
+    font-variant-numeric: tabular-nums;
+}
+
+.ccx-stat small {
+    color: var(--ccx-muted);
+    font-size: .78rem;
+    font-weight: 430;
+}
+
+.ccx-stat.is-start { --stat-color: #64748b; }
+.ccx-stat.is-income { --stat-color: #16a34a; }
+.ccx-stat.is-expense { --stat-color: #dc2626; }
+.ccx-stat.is-cash { --stat-color: color-mix(in srgb, var(--ccx-accent) 70%, #d89d20); }
+
+.ccx-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(330px, 420px);
+    gap: 16px;
+    align-items: start;
+}
+
+.ccx-main,
+.ccx-side {
+    min-width: 0;
+    display: grid;
+    gap: 16px;
+}
+
+.ccx-panel {
+    border: 1px solid var(--ccx-line);
+    border-radius: 16px;
+    background: rgba(255,255,255,.9);
+    box-shadow: 0 16px 38px -34px color-mix(in srgb, var(--ccx-primary) 24%, transparent);
+    overflow: hidden;
+}
+
+.ccx-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 16px 12px;
+    border-bottom: 1px solid color-mix(in srgb, var(--ccx-line) 84%, transparent);
+}
+
+.ccx-panel-head h2,
+.ccx-panel-head h3 {
+    margin: 0;
+    color: var(--ccx-ink);
+    font-size: 1rem;
+    line-height: 1.24;
+    font-weight: 620;
+}
+
+.ccx-panel-head p {
+    margin: 5px 0 0;
+    color: var(--ccx-muted);
+    font-size: .8rem;
+    line-height: 1.42;
+    font-weight: 420;
+}
+
+.ccx-count {
+    min-height: 30px;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid color-mix(in srgb, var(--ccx-accent) 20%, #ddd5c8);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ccx-accent) 8%, #fff);
+    color: color-mix(in srgb, var(--ccx-primary) 58%, #667085);
+    padding: 0 10px;
+    font-size: .76rem;
+    font-weight: 620;
+    white-space: nowrap;
+}
+
+.ccx-table-wrap {
+    overflow-x: auto;
+}
+
+.ccx-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ccx-table th {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--ccx-line);
+    color: var(--ccx-muted);
+    font-size: .72rem;
+    font-weight: 620;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    white-space: nowrap;
+}
+
+.ccx-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid color-mix(in srgb, var(--ccx-line) 72%, transparent);
+    color: var(--ccx-text);
+    font-size: .88rem;
+    line-height: 1.35;
+    font-weight: 430;
+}
+
+.ccx-table tfoot td {
+    border-bottom: 0;
+    background: color-mix(in srgb, var(--ccx-accent) 4%, #fff);
+    font-weight: 620;
+}
+
+.ccx-panel.is-movements {
+    align-self: start;
+}
+
+.ccx-panel.is-movements .ccx-panel-head {
+    align-items: center;
+    padding: 12px 14px 10px;
+}
+
+.ccx-panel.is-movements .ccx-panel-head h2 {
+    font-size: .96rem;
+}
+
+.ccx-panel.is-movements .ccx-panel-head p {
+    margin-top: 3px;
+    font-size: .76rem;
+}
+
+.ccx-panel.is-movements .ccx-table th {
+    padding: 9px 12px;
+    font-size: .68rem;
+}
+
+.ccx-panel.is-movements .ccx-table td {
+    padding: 10px 12px;
+    font-size: .84rem;
+}
+
+.ccx-money {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.ccx-money.is-income { color: #15803d; }
+.ccx-money.is-expense { color: #b91c1c; }
+.ccx-money.is-balance { color: color-mix(in srgb, var(--ccx-primary) 62%, #475569); }
+
+.ccx-method {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ccx-ink);
+    font-weight: 560;
+}
+
+.ccx-method i {
+    color: color-mix(in srgb, var(--ccx-accent) 76%, #795a16);
+}
+
+.ccx-categories {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.ccx-list {
+    display: grid;
+    gap: 8px;
+    padding: 14px;
+}
+
+.ccx-list-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    border: 1px solid color-mix(in srgb, var(--ccx-primary) 8%, #ebe4d8);
+    border-radius: 12px;
+    background: rgba(255,255,255,.78);
+    padding: 10px;
+}
+
+.ccx-list-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    color: var(--ccx-text);
+    font-size: .84rem;
+    font-weight: 430;
+}
+
+.ccx-list-name span {
+    color: var(--ccx-muted);
+    font-size: .74rem;
+}
+
+.ccx-empty {
+    padding: 26px 14px;
+    text-align: center;
+    color: var(--ccx-muted);
+    font-size: .86rem;
+    font-weight: 430;
+}
+
+.ccx-form {
+    padding: 16px;
+}
+
+.ccx-form-title {
+    margin: 0 0 12px;
+    color: var(--ccx-ink);
+    font-size: .96rem;
+    line-height: 1.24;
+    font-weight: 620;
+}
+
+.ccx-denoms {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.ccx-denom-row {
+    display: grid;
+    grid-template-columns: 82px minmax(0, 1fr) 88px;
+    gap: 9px;
+    align-items: center;
+}
+
+.ccx-denom-label,
+.ccx-subtotal {
+    color: var(--ccx-muted);
+    font-size: .78rem;
+    font-weight: 520;
+    font-variant-numeric: tabular-nums;
+}
+
+.ccx-subtotal {
+    text-align: right;
+}
+
+.ccx-input,
+.ccx-textarea {
+    width: 100%;
+    border: 1px solid color-mix(in srgb, var(--ccx-accent) 18%, #ddd5c8);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--ccx-text);
+    outline: none;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.ccx-input {
+    height: 40px;
+    padding: 0 10px;
+    text-align: center;
+    font-weight: 520;
+    font-variant-numeric: tabular-nums;
+}
+
+.ccx-textarea {
+    min-height: 86px;
+    resize: vertical;
+    padding: 10px 12px;
+    font-weight: 430;
+}
+
+.ccx-input:focus,
+.ccx-textarea:focus {
+    border-color: color-mix(in srgb, var(--ccx-accent) 60%, var(--ccx-line));
+    box-shadow: 0 0 0 4px var(--ccx-focus);
+    background: #fff;
+}
+
+.ccx-form-label {
+    display: block;
+    margin: 0 0 7px;
+    color: #435164;
+    font-size: .74rem;
+    font-weight: 620;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.ccx-total-box {
+    display: grid;
+    gap: 9px;
+    border-top: 1px solid var(--ccx-line);
+    border-bottom: 1px solid var(--ccx-line);
+    padding: 14px 0;
+    margin-bottom: 16px;
+}
+
+.ccx-total-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--ccx-muted);
+    font-size: .86rem;
+}
+
+.ccx-total-row strong,
+.ccx-total-row output {
+    color: color-mix(in srgb, var(--ccx-primary) 58%, #4b5563);
+    font-size: 1rem;
+    font-weight: 560;
+    font-variant-numeric: tabular-nums;
+}
+
+.ccx-total-row.is-main output {
+    font-size: 1.55rem;
+}
+
+#diferencia.text-green-600 { color: #15803d; }
+#diferencia.text-red-600 { color: #b91c1c; }
+#diferencia.text-gray-700 { color: color-mix(in srgb, var(--ccx-primary) 58%, #4b5563); }
+
+.ccx-alert {
+    margin-bottom: 16px;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    background: #fffbeb;
+    color: #92400e;
+    padding: 12px;
+    font-size: .84rem;
+    font-weight: 520;
+}
+
+.ccx-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+}
+
+.ccx-btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid var(--ccx-line);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--ccx-ink);
+    padding: 0 12px;
+    font-size: .84rem;
+    font-weight: 620;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.ccx-btn:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--ccx-accent) 30%, var(--ccx-line));
+    background: color-mix(in srgb, var(--ccx-accent) 7%, #fff);
+}
+
+.ccx-btn.is-danger {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.ccx-export {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid color-mix(in srgb, var(--ccx-accent) 20%, #ddd5c8);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ccx-accent) 8%, #fff);
+    color: color-mix(in srgb, var(--ccx-primary) 58%, #667085);
+    padding: 0 10px;
+    font-size: .78rem;
+    font-weight: 620;
+    cursor: pointer;
+}
+
+.ccx-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    border-radius: 999px;
+    padding: 0 8px;
+    font-size: .7rem;
+    font-weight: 650;
+}
+
+.ccx-badge.is-income {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.ccx-badge.is-expense {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+@media (max-width: 1180px) {
+    .ccx-top,
+    .ccx-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ccx-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .ccx-shell {
+        width: min(100% - 20px, 1440px);
+        padding-top: 18px;
+    }
+
+    .ccx-title {
+        font-size: clamp(1.75rem, 9vw, 2.6rem);
+    }
+
+    .ccx-summary,
+    .ccx-categories,
+    .ccx-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .ccx-denom-row {
+        grid-template-columns: 72px minmax(0, 1fr) 76px;
+    }
+
+    .ccx-panel-head {
+        display: grid;
+    }
+}
+</style>
+
+<main class="ccx-page">
+    <div class="ccx-shell">
+        <header class="ccx-top">
+            <div>
+                <span class="ccx-kicker">
+                    <i class="fas fa-cash-register"></i>
+                    Caja abierta
+                </span>
+                <h1 class="ccx-title">Corte de caja</h1>
+                <p class="ccx-subtitle">
+                    Revisa el resumen del turno, cuenta el efectivo y cierra la caja con una vista clara y tranquila.
+                </p>
+            </div>
+
+            <a href="<?= url('caja') ?>" class="ccx-back">
+                <i class="fas fa-arrow-left"></i>
+                <span>Volver a caja</span>
+            </a>
+        </header>
+
+        <section class="ccx-summary" aria-label="Resumen de corte">
+            <article class="ccx-stat is-start">
+                <span>Monto inicial</span>
+                <strong><?= corte_money($resumen['monto_inicial'] ?? 0) ?></strong>
+                <small><?= date('d/m/Y H:i', strtotime($fechaApertura)) ?> · <?= safe_html($corte['usuario_apertura'] ?? '') ?></small>
+            </article>
+
+            <article class="ccx-stat is-income">
+                <span>Total ingresos</span>
+                <strong><?= corte_money($resumen['ingresos']['total'] ?? 0, '+') ?></strong>
+                <small>Entradas registradas en el corte</small>
+            </article>
+
+            <article class="ccx-stat is-expense">
+                <span>Total gastos</span>
+                <strong><?= corte_money($resumen['gastos']['total'] ?? 0, '-') ?></strong>
+                <small>Salidas registradas en el corte</small>
+            </article>
+
+            <article class="ccx-stat is-cash">
+                <span>Efectivo esperado</span>
+                <strong id="efectivoEsperado"><?= corte_money($efectivoEsperado) ?></strong>
+                <small>Balance general: <?= corte_money($balanceGeneral) ?></small>
+            </article>
+        </section>
+
+        <div class="ccx-grid">
+            <div class="ccx-main">
+                <section class="ccx-panel">
+                    <div class="ccx-panel-head">
+                        <div>
+                            <h2>Metodo de pago</h2>
+                            <p>Ingresos, gastos y balance por forma de cobro.</p>
+                        </div>
+                        <span class="ccx-count">3 metodos</span>
                     </div>
-                </div>
-                
-                <a href="<?= url('caja') ?>" 
-                   class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition flex items-center gap-2">
-                    <i class="fas fa-arrow-left"></i>
-                    <span>Volver</span>
-                </a>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Resumen General -->
-    <div class="max-w-6xl mx-auto mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- Monto Inicial -->
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-semibold text-gray-700">Monto Inicial</h3>
-                    <i class="fas fa-wallet text-blue-500"></i>
-                </div>
-                <p class="text-2xl font-bold text-gray-800">
-                    $<?= number_format($resumen['monto_inicial'] ?? 0, 2) ?>
-                </p>
-            </div>
-            
-            <!-- Total Ingresos -->
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-semibold text-gray-700">Total Ingresos</h3>
-                    <i class="fas fa-arrow-down text-green-500"></i>
-                </div>
-                <p class="text-2xl font-bold text-green-600">
-                    +$<?= number_format($resumen['ingresos']['total'] ?? 0, 2) ?>
-                </p>
-            </div>
-            
-            <!-- Total Gastos -->
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-semibold text-gray-700">Total Gastos</h3>
-                    <i class="fas fa-arrow-up text-red-500"></i>
-                </div>
-                <p class="text-2xl font-bold text-red-600">
-                    -$<?= number_format($resumen['gastos']['total'] ?? 0, 2) ?>
-                </p>
-            </div>
-            
-            <!-- Efectivo Esperado -->
-            <div class="bg-gradient-to-br from-hotel-gold to-yellow-600 rounded-xl shadow-lg p-6 text-white">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-semibold">Efectivo Esperado</h3>
-                    <i class="fas fa-money-bill-wave"></i>
-                </div>
-                <p class="text-3xl font-bold" id="efectivoEsperado">
-                    $<?= number_format($resumen['efectivo_en_caja'] ?? 0, 2) ?>
-                </p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Columna Izquierda - Desglose -->
-        <div class="lg:col-span-2 space-y-6">
-            <!-- Desglose por Método de Pago -->
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div class="bg-gray-800 p-4">
-                    <h2 class="text-lg font-semibold text-white">
-                        <i class="fas fa-list-alt mr-2"></i>
-                        Desglose por Método de Pago
-                    </h2>
-                </div>
-                <div class="p-6">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="text-sm text-gray-600 border-b">
-                                <th class="text-left py-2">Método</th>
-                                <th class="text-center py-2">Ingresos</th>
-                                <th class="text-center py-2">Gastos</th>
-                                <th class="text-right py-2">Balance</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach (['efectivo', 'tarjeta', 'transferencia'] as $metodo): ?>
-                                <?php 
-                                $ingresos = $resumen['ingresos'][$metodo]['total'] ?? 0;
-                                $gastos = $resumen['gastos'][$metodo]['total'] ?? 0;
-                                $balance = $ingresos - $gastos;
-                                ?>
-                                <tr class="border-b">
-                                    <td class="py-3">
-                                        <span class="flex items-center gap-2">
-                                            <i class="fas fa-<?= $metodos_pago[$metodo]['icon'] ?? 'dollar-sign' ?> text-<?= $metodos_pago[$metodo]['color'] ?? 'gray' ?>-500"></i>
-                                            <?= ucfirst($metodo) ?>
-                                        </span>
-                                    </td>
-                                    <td class="text-center text-green-600">
-                                        +$<?= number_format($ingresos, 2) ?>
-                                        <?php if (($resumen['ingresos'][$metodo]['cantidad'] ?? 0) > 0): ?>
-                                            <span class="text-xs text-gray-500 block">
-                                                (<?= $resumen['ingresos'][$metodo]['cantidad'] ?>)
+
+                    <div class="ccx-table-wrap">
+                        <table class="ccx-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">Metodo</th>
+                                    <th class="text-center">Ingresos</th>
+                                    <th class="text-center">Gastos</th>
+                                    <th class="text-right">Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach (['efectivo', 'tarjeta', 'transferencia'] as $metodo): ?>
+                                    <?php
+                                    $ingresos = (float)($resumen['ingresos'][$metodo]['total'] ?? 0);
+                                    $gastos = (float)($resumen['gastos'][$metodo]['total'] ?? 0);
+                                    $balance = $ingresos - $gastos;
+                                    ?>
+                                    <tr>
+                                        <td>
+                                            <span class="ccx-method">
+                                                <i class="fas fa-<?= safe_html($metodos_pago[$metodo]['icon'] ?? 'dollar-sign') ?>"></i>
+                                                <?= ucfirst($metodo) ?>
                                             </span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="text-center text-red-600">
-                                        -$<?= number_format($gastos, 2) ?>
-                                        <?php if (($resumen['gastos'][$metodo]['cantidad'] ?? 0) > 0): ?>
-                                            <span class="text-xs text-gray-500 block">
-                                                (<?= $resumen['gastos'][$metodo]['cantidad'] ?>)
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="ccx-money is-income"><?= corte_money($ingresos, '+') ?></span>
+                                            <?php if (($resumen['ingresos'][$metodo]['cantidad'] ?? 0) > 0): ?>
+                                                <small class="block text-gray-400">(<?= (int)$resumen['ingresos'][$metodo]['cantidad'] ?>)</small>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="ccx-money is-expense"><?= corte_money($gastos, '-') ?></span>
+                                            <?php if (($resumen['gastos'][$metodo]['cantidad'] ?? 0) > 0): ?>
+                                                <small class="block text-gray-400">(<?= (int)$resumen['gastos'][$metodo]['cantidad'] ?>)</small>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-right">
+                                            <span class="ccx-money <?= $balance >= 0 ? 'is-income' : 'is-expense' ?>">
+                                                <?= corte_money($balance) ?>
                                             </span>
-                                        <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td>TOTAL</td>
+                                    <td class="text-center">
+                                        <span class="ccx-money is-income"><?= corte_money($resumen['ingresos']['total'] ?? 0, '+') ?></span>
                                     </td>
-                                    <td class="text-right font-semibold <?= $balance >= 0 ? 'text-green-600' : 'text-red-600' ?>">
-                                        $<?= number_format($balance, 2) ?>
+                                    <td class="text-center">
+                                        <span class="ccx-money is-expense"><?= corte_money($resumen['gastos']['total'] ?? 0, '-') ?></span>
+                                    </td>
+                                    <td class="text-right">
+                                        <span class="ccx-money is-balance"><?= corte_money($balanceGeneral) ?></span>
                                     </td>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                        <tfoot>
-                            <tr class="font-bold text-lg">
-                                <td class="pt-4">TOTALES</td>
-                                <td class="pt-4 text-center text-green-600">
-                                    +$<?= number_format($resumen['ingresos']['total'] ?? 0, 2) ?>
-                                </td>
-                                <td class="pt-4 text-center text-red-600">
-                                    -$<?= number_format($resumen['gastos']['total'] ?? 0, 2) ?>
-                                </td>
-                                <td class="pt-4 text-right text-hotel-brown">
-                                    $<?= number_format($resumen['balance_general'] ?? 0, 2) ?>
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-            
-            <!-- Movimientos por Categoría -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Ingresos por Categoría -->
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-                    <div class="bg-green-600 p-4">
-                        <h3 class="text-white font-semibold">
-                            <i class="fas fa-tags mr-2"></i>
-                            Ingresos por Categoría
-                        </h3>
+                            </tfoot>
+                        </table>
                     </div>
-                    <div class="p-4">
-                        <?php if (empty($movimientos_categoria['ingresos'])): ?>
-                            <p class="text-gray-500 text-center py-4">Sin ingresos</p>
-                        <?php else: ?>
-                            <div class="space-y-2">
-                                <?php foreach ($movimientos_categoria['ingresos'] as $cat): ?>
-                                    <div class="flex items-center justify-between p-2 bg-green-50 rounded">
-                                        <span class="text-sm flex items-center gap-2">
-                                            <i class="<?= $cat['icono'] ?? 'fas fa-tag' ?>" style="color: <?= $cat['color'] ?? '#000' ?>"></i>
-                                            <?= safe_html($cat['categoria']) ?>
-                                            <span class="text-xs text-gray-500">(<?= $cat['cantidad'] ?? 0 ?>)</span>
-                                        </span>
-                                        <span class="font-semibold text-green-600">
-                                            $<?= number_format($cat['total'] ?? 0, 2) ?>
-                                        </span>
-                                    </div>
-                                <?php endforeach; ?>
+                </section>
+
+                <section class="ccx-categories" aria-label="Movimientos por categoria">
+                    <article class="ccx-panel">
+                        <div class="ccx-panel-head">
+                            <div>
+                                <h3>Ingresos por categoria</h3>
+                                <p>Origen de las entradas del turno.</p>
                             </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                
-                <!-- Gastos por Categoría -->
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-                    <div class="bg-red-600 p-4">
-                        <h3 class="text-white font-semibold">
-                            <i class="fas fa-tags mr-2"></i>
-                            Gastos por Categoría
-                        </h3>
-                    </div>
-                    <div class="p-4">
-                        <?php if (empty($movimientos_categoria['gastos'])): ?>
-                            <p class="text-gray-500 text-center py-4">Sin gastos</p>
-                        <?php else: ?>
-                            <div class="space-y-2">
-                                <?php foreach ($movimientos_categoria['gastos'] as $cat): ?>
-                                    <div class="flex items-center justify-between p-2 bg-red-50 rounded">
-                                        <span class="text-sm flex items-center gap-2">
-                                            <i class="<?= $cat['icono'] ?? 'fas fa-tag' ?>" style="color: <?= $cat['color'] ?? '#000' ?>"></i>
-                                            <?= safe_html($cat['categoria']) ?>
-                                            <span class="text-xs text-gray-500">(<?= $cat['cantidad'] ?? 0 ?>)</span>
-                                        </span>
-                                        <span class="font-semibold text-red-600">
-                                            $<?= number_format($cat['total'] ?? 0, 2) ?>
-                                        </span>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Columna Derecha - Arqueo de Caja -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div class="bg-gradient-to-r from-purple-600 to-purple-700 p-4">
-                <h2 class="text-lg font-semibold text-white">
-                    <i class="fas fa-calculator mr-2"></i>
-                    Arqueo de Efectivo
-                </h2>
-            </div>
-            
-            <form method="POST" action="<?= url('caja/corte/cerrar') ?>" id="formCorte" class="p-6">
-                <?= csrf_field() ?>
-                <input type="hidden" name="corte_id" value="<?= $corte['id'] ?? '' ?>">
-                
-                <!-- Conteo de Billetes -->
-                <div class="space-y-3 mb-6">
-                    <h4 class="font-semibold text-gray-700 mb-3">Conteo de Billetes y Monedas</h4>
-                    
-                    <?php 
-                    // Asegurar que $denominaciones existe y es un array
-                    $denominaciones = $denominaciones ?? [1000, 500, 200, 100, 50, 20, 10, 5, 2, 1, 0.50];
-                    foreach ($denominaciones as $denominacion): 
-                    ?>
-                        <div class="flex items-center gap-3">
-                            <label class="w-20 text-sm text-gray-600">
-                                $<?= number_format($denominacion, 2) ?>
-                            </label>
-                            <input type="number" 
-                                   name="denominaciones[<?= $denominacion ?>]" 
-                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-center denominacion-input"
-                                   data-valor="<?= $denominacion ?>"
-                                   min="0" 
-                                   value="0"
-                                   placeholder="0">
-                            <span class="w-24 text-right text-sm font-medium subtotal" data-denominacion="<?= $denominacion ?>">
-                                $0.00
-                            </span>
                         </div>
-                    <?php endforeach; ?>
-                </div>
-                
-                <!-- Total Contado -->
-                <div class="border-t pt-4 mb-6">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="font-semibold text-gray-700">Total Contado:</span>
-                        <span class="text-2xl font-bold text-purple-600" id="totalContado">$0.00</span>
+                        <div class="ccx-list">
+                            <?php if (empty($movimientos_categoria['ingresos'])): ?>
+                                <p class="ccx-empty">Sin ingresos</p>
+                            <?php else: ?>
+                                <?php foreach ($movimientos_categoria['ingresos'] as $cat): ?>
+                                    <div class="ccx-list-row">
+                                        <span class="ccx-list-name">
+                                            <i class="<?= safe_html($cat['icono'] ?? 'fas fa-tag') ?>" style="color: <?= safe_html($cat['color'] ?? '#94a3b8') ?>"></i>
+                                            <?= safe_html($cat['categoria'] ?? '') ?>
+                                            <span>(<?= (int)($cat['cantidad'] ?? 0) ?>)</span>
+                                        </span>
+                                        <span class="ccx-money is-income"><?= corte_money($cat['total'] ?? 0) ?></span>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </article>
+
+                    <article class="ccx-panel">
+                        <div class="ccx-panel-head">
+                            <div>
+                                <h3>Gastos por categoria</h3>
+                                <p>Salida de efectivo y otros metodos.</p>
+                            </div>
+                        </div>
+                        <div class="ccx-list">
+                            <?php if (empty($movimientos_categoria['gastos'])): ?>
+                                <p class="ccx-empty">Sin gastos</p>
+                            <?php else: ?>
+                                <?php foreach ($movimientos_categoria['gastos'] as $cat): ?>
+                                    <div class="ccx-list-row">
+                                        <span class="ccx-list-name">
+                                            <i class="<?= safe_html($cat['icono'] ?? 'fas fa-tag') ?>" style="color: <?= safe_html($cat['color'] ?? '#94a3b8') ?>"></i>
+                                            <?= safe_html($cat['categoria'] ?? '') ?>
+                                            <span>(<?= (int)($cat['cantidad'] ?? 0) ?>)</span>
+                                        </span>
+                                        <span class="ccx-money is-expense"><?= corte_money($cat['total'] ?? 0) ?></span>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="ccx-panel is-movements">
+                    <div class="ccx-panel-head">
+                        <div>
+                            <h2>Detalle de movimientos</h2>
+                            <p>Todos los movimientos registrados en este corte.</p>
+                        </div>
+                        <button onclick="exportarMovimientos()" class="ccx-export" type="button">
+                            <i class="fas fa-download"></i>
+                            <span>Exportar</span>
+                        </button>
                     </div>
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm text-gray-600">Efectivo Esperado:</span>
-                        <span class="text-lg font-semibold text-gray-700">
-                            $<?= number_format($resumen['efectivo_en_caja'] ?? 0, 2) ?>
-                        </span>
+
+                    <div class="ccx-table-wrap">
+                        <table class="ccx-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">Hora</th>
+                                    <th class="text-left">Tipo</th>
+                                    <th class="text-left">Descripcion</th>
+                                    <th class="text-left">Categoria</th>
+                                    <th class="text-left">Metodo</th>
+                                    <th class="text-right">Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($movimientos)): ?>
+                                    <tr>
+                                        <td colspan="6" class="text-center text-gray-400 py-8">No hay movimientos en este corte.</td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($movimientos as $mov): ?>
+                                        <?php
+                                        $tipoMovimiento = $mov['tipo'] ?? 'ingreso';
+                                        $metodo = $mov['metodo_pago'] ?? 'efectivo';
+                                        $icon = $metodos_pago[$metodo]['icon'] ?? 'dollar-sign';
+                                        ?>
+                                        <tr>
+                                            <td><?= date('H:i', strtotime($mov['created_at'] ?? 'now')) ?></td>
+                                            <td>
+                                                <span class="ccx-badge <?= $tipoMovimiento === 'ingreso' ? 'is-income' : 'is-expense' ?>">
+                                                    <?= ucfirst($tipoMovimiento) ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <?= safe_html($mov['descripcion'] ?? '') ?>
+                                                <?php if (!empty($mov['referencia'])): ?>
+                                                    <small class="block text-gray-400">Ref: <?= safe_html($mov['referencia']) ?></small>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <?php if (!empty($mov['categoria_nombre'])): ?>
+                                                    <span class="ccx-method">
+                                                        <i class="<?= safe_html($mov['categoria_icono'] ?? 'fas fa-tag') ?>" style="color: <?= safe_html($mov['categoria_color'] ?? '#94a3b8') ?>"></i>
+                                                        <?= safe_html($mov['categoria_nombre']) ?>
+                                                    </span>
+                                                <?php else: ?>
+                                                    <span class="text-gray-400">-</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <span class="ccx-method">
+                                                    <i class="fas fa-<?= safe_html($icon) ?>"></i>
+                                                    <?= ucfirst($metodo) ?>
+                                                </span>
+                                            </td>
+                                            <td class="text-right">
+                                                <span class="ccx-money <?= $tipoMovimiento === 'ingreso' ? 'is-income' : 'is-expense' ?>">
+                                                    <?= $tipoMovimiento === 'ingreso' ? '+' : '-' ?>$<?= number_format((float)($mov['monto'] ?? 0), 2) ?>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="font-semibold text-gray-700">Diferencia:</span>
-                        <span class="text-xl font-bold" id="diferencia">$0.00</span>
-                    </div>
-                </div>
-                
-                <!-- Campo oculto para efectivo contado -->
-                <input type="hidden" name="efectivo_contado" id="efectivo_contado" value="0">
-                
-                <!-- Observaciones -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Observaciones
-                    </label>
-                    <textarea name="observaciones" 
-                              rows="3"
-                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                              placeholder="Comentarios sobre el corte..."></textarea>
-                </div>
-                
-                <!-- Advertencia si hay diferencia -->
-                <div id="alertaDiferencia" class="hidden mb-6">
-                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <p class="text-sm font-semibold text-yellow-800">
-                            <i class="fas fa-exclamation-triangle mr-2"></i>
-                            <span id="mensajeDiferencia"></span>
-                        </p>
-                    </div>
-                </div>
-                
-                <!-- Botones -->
-                <div class="flex gap-3">
-                    <a href="<?= url('caja') ?>" 
-                       class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-center">
-                        Cancelar
-                    </a>
-                    <button type="submit" 
-                            class="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:shadow-lg transition">
-                        <i class="fas fa-cut mr-2"></i>
-                        Cerrar Caja
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Lista de Movimientos -->
-    <div class="max-w-6xl mx-auto mt-6">
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div class="bg-gray-800 p-4 flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-white">
-                    <i class="fas fa-list mr-2"></i>
-                    Detalle de Movimientos (<?= count($movimientos ?? []) ?>)
-                </h2>
-                <button onclick="exportarMovimientos()" 
-                        class="px-3 py-1 bg-white/10 hover:bg-white/20 text-white rounded transition text-sm">
-                    <i class="fas fa-download mr-1"></i>
-                    Exportar
-                </button>
+                </section>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-50">
-                        <tr class="text-sm text-gray-600">
-                            <th class="text-left p-3">Hora</th>
-                            <th class="text-left p-3">Tipo</th>
-                            <th class="text-left p-3">Descripción</th>
-                            <th class="text-left p-3">Categoría</th>
-                            <th class="text-left p-3">Método</th>
-                            <th class="text-right p-3">Monto</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y">
-                        <?php 
-                        // Asegurar que $movimientos es un array
-                        $movimientos = $movimientos ?? [];
-                        foreach ($movimientos as $mov): 
-                        ?>
-                            <tr class="hover:bg-gray-50">
-                                <td class="p-3 text-sm">
-                                    <?= date('H:i', strtotime($mov['created_at'] ?? 'now')) ?>
-                                </td>
-                                <td class="p-3">
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                        <?= ($mov['tipo'] ?? 'ingreso') == 'ingreso' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' ?>">
-                                        <?= ucfirst($mov['tipo'] ?? 'ingreso') ?>
+
+            <aside class="ccx-side" aria-label="Arqueo de efectivo">
+                <section class="ccx-panel">
+                    <div class="ccx-panel-head">
+                        <div>
+                            <h2>Arqueo de efectivo</h2>
+                            <p>Cuenta billetes y monedas antes de cerrar.</p>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="<?= url('caja/corte/cerrar') ?>" id="formCorte" class="ccx-form">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="corte_id" value="<?= $corte['id'] ?? '' ?>">
+
+                        <h4 class="ccx-form-title">Denominaciones</h4>
+                        <div class="ccx-denoms">
+                            <?php foreach ($denominaciones as $denominacion): ?>
+                                <div class="ccx-denom-row">
+                                    <label class="ccx-denom-label">
+                                        $<?= number_format((float)$denominacion, 2) ?>
+                                    </label>
+                                    <input type="number"
+                                           name="denominaciones[<?= $denominacion ?>]"
+                                           class="ccx-input denominacion-input"
+                                           data-valor="<?= $denominacion ?>"
+                                           min="0"
+                                           value="0"
+                                           placeholder="0">
+                                    <span class="ccx-subtotal subtotal" data-denominacion="<?= $denominacion ?>">
+                                        $0.00
                                     </span>
-                                </td>
-                                <td class="p-3 text-sm">
-                                    <?= safe_html($mov['descripcion']) ?>
-                                    <?php if (!empty($mov['referencia'])): ?>
-                                        <span class="text-xs text-gray-500 block">
-                                            Ref: <?= safe_html($mov['referencia']) ?>
-                                        </span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="p-3 text-sm">
-                                    <?php if (!empty($mov['categoria_nombre'])): ?>
-                                        <span class="flex items-center gap-1">
-                                            <i class="<?= $mov['categoria_icono'] ?? 'fas fa-tag' ?> text-xs" 
-                                               style="color: <?= $mov['categoria_color'] ?? '#000' ?>"></i>
-                                            <?= safe_html($mov['categoria_nombre']) ?>
-                                        </span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="p-3 text-sm">
-                                    <?php 
-                                    $metodo = $mov['metodo_pago'] ?? 'efectivo';
-                                    $icon = $metodos_pago[$metodo]['icon'] ?? 'dollar-sign';
-                                    $color = $metodos_pago[$metodo]['color'] ?? 'gray';
-                                    ?>
-                                    <i class="fas fa-<?= $icon ?> mr-1 text-<?= $color ?>-500"></i>
-                                    <?= ucfirst($metodo) ?>
-                                </td>
-                                <td class="p-3 text-right font-semibold <?= ($mov['tipo'] ?? 'ingreso') == 'ingreso' ? 'text-green-600' : 'text-red-600' ?>">
-                                    <?= ($mov['tipo'] ?? 'ingreso') == 'ingreso' ? '+' : '-' ?>$<?= number_format($mov['monto'] ?? 0, 2) ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <div class="ccx-total-box">
+                            <div class="ccx-total-row is-main">
+                                <span>Total contado</span>
+                                <output id="totalContado">$0.00</output>
+                            </div>
+                            <div class="ccx-total-row">
+                                <span>Efectivo esperado</span>
+                                <strong><?= corte_money($efectivoEsperado) ?></strong>
+                            </div>
+                            <div class="ccx-total-row">
+                                <span>Diferencia</span>
+                                <output id="diferencia">$0.00</output>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="efectivo_contado" id="efectivo_contado" value="0">
+
+                        <div class="mb-4">
+                            <label class="ccx-form-label">Observaciones</label>
+                            <textarea name="observaciones"
+                                      rows="3"
+                                      class="ccx-textarea"
+                                      placeholder="Comentarios sobre el corte..."></textarea>
+                        </div>
+
+                        <div id="alertaDiferencia" class="hidden">
+                            <div class="ccx-alert">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                <span id="mensajeDiferencia"></span>
+                            </div>
+                        </div>
+
+                        <div class="ccx-actions">
+                            <a href="<?= url('caja') ?>" class="ccx-btn">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="ccx-btn is-danger">
+                                <i class="fas fa-cut"></i>
+                                <span>Cerrar caja</span>
+                            </button>
+                        </div>
+                    </form>
+                </section>
+            </aside>
         </div>
     </div>
-</div>
+</main>
 
 <script>
-// Variables globales
-const efectivoEsperado = <?= $resumen['efectivo_en_caja'] ?? 0 ?>;
+const efectivoEsperado = <?= $efectivoEsperado ?>;
 
-// Calcular totales del arqueo
 function calcularTotales() {
     let totalContado = 0;
-    
-    // Calcular subtotales y total
+
     document.querySelectorAll('.denominacion-input').forEach(input => {
         const cantidad = parseInt(input.value) || 0;
         const valor = parseFloat(input.dataset.valor);
         const subtotal = cantidad * valor;
-        
-        // Actualizar subtotal de la línea
+
         const subtotalElement = document.querySelector(`.subtotal[data-denominacion="${valor}"]`);
         subtotalElement.textContent = '$' + subtotal.toFixed(2);
-        
+
         totalContado += subtotal;
     });
-    
-    // Actualizar total contado
+
     document.getElementById('totalContado').textContent = '$' + totalContado.toFixed(2);
     document.getElementById('efectivo_contado').value = totalContado.toFixed(2);
-    
-    // Calcular diferencia
+
     const diferencia = totalContado - efectivoEsperado;
     const diferenciaElement = document.getElementById('diferencia');
-    
+
     diferenciaElement.textContent = (diferencia >= 0 ? '+' : '') + '$' + diferencia.toFixed(2);
-    
-    // Cambiar color según diferencia
+
     if (diferencia > 0) {
         diferenciaElement.className = 'text-xl font-bold text-green-600';
     } else if (diferencia < 0) {
@@ -457,11 +969,10 @@ function calcularTotales() {
     } else {
         diferenciaElement.className = 'text-xl font-bold text-gray-700';
     }
-    
-    // Mostrar/ocultar alerta
+
     const alertaDiferencia = document.getElementById('alertaDiferencia');
     const mensajeDiferencia = document.getElementById('mensajeDiferencia');
-    
+
     if (Math.abs(diferencia) > 0.01) {
         alertaDiferencia.classList.remove('hidden');
         if (diferencia > 0) {
@@ -474,7 +985,6 @@ function calcularTotales() {
     }
 }
 
-// Event listeners para inputs
 document.querySelectorAll('.denominacion-input').forEach(input => {
     input.addEventListener('input', calcularTotales);
     input.addEventListener('focus', function() {
@@ -485,19 +995,18 @@ document.querySelectorAll('.denominacion-input').forEach(input => {
     });
 });
 
-// Confirmación antes de cerrar
 document.getElementById('formCorte').addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const totalContado = parseFloat(document.getElementById('efectivo_contado').value);
     const diferencia = totalContado - efectivoEsperado;
-    
+
     let mensaje = `
         <div class="text-left">
             <p class="mb-2"><strong>Efectivo esperado:</strong> $${efectivoEsperado.toFixed(2)}</p>
             <p class="mb-2"><strong>Efectivo contado:</strong> $${totalContado.toFixed(2)}</p>
     `;
-    
+
     if (Math.abs(diferencia) > 0.01) {
         const tipo = diferencia > 0 ? 'sobrante' : 'faltante';
         const color = diferencia > 0 ? 'green' : 'red';
@@ -505,21 +1014,20 @@ document.getElementById('formCorte').addEventListener('submit', function(e) {
             <strong>Diferencia:</strong> ${diferencia > 0 ? '+' : ''}$${diferencia.toFixed(2)} (${tipo})
         </p>`;
     } else {
-        mensaje += `<p class="mb-2 text-green-600"><strong>✔ Cuadre exacto</strong></p>`;
+        mensaje += `<p class="mb-2 text-green-600"><strong>Cuadre exacto</strong></p>`;
     }
-    
+
     mensaje += `</div>`;
-    
-    // Verificar si Swal está disponible
+
     if (typeof Swal !== 'undefined') {
         Swal.fire({
-            title: '¿Confirmar cierre de caja?',
+            title: 'Confirmar cierre de caja',
             html: mensaje,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#DC2626',
             cancelButtonColor: '#6B7280',
-            confirmButtonText: '<i class="fas fa-cut mr-2"></i>Sí, cerrar caja',
+            confirmButtonText: '<i class="fas fa-cut mr-2"></i>Si, cerrar caja',
             cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
@@ -527,19 +1035,16 @@ document.getElementById('formCorte').addEventListener('submit', function(e) {
             }
         });
     } else {
-        // Fallback si SweetAlert2 no está disponible
-        if (confirm('¿Confirmar cierre de caja?\n\nEfectivo esperado: $' + efectivoEsperado.toFixed(2) + '\nEfectivo contado: $' + totalContado.toFixed(2))) {
+        if (confirm('Confirmar cierre de caja?\n\nEfectivo esperado: $' + efectivoEsperado.toFixed(2) + '\nEfectivo contado: $' + totalContado.toFixed(2))) {
             this.submit();
         }
     }
 });
 
-// Función para exportar movimientos
 function exportarMovimientos() {
     window.location.href = '<?= url('caja/exportar?corte_id=' . ($corte['id'] ?? '')) ?>';
 }
 
-// Atajo para enfocar en el primer campo
 document.addEventListener('DOMContentLoaded', function() {
     const primerInput = document.querySelector('.denominacion-input');
     if (primerInput) {

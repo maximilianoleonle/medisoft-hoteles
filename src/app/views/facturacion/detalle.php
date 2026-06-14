@@ -86,11 +86,12 @@ foreach ($pagos as $pago) {
 
 <style>
 .invoice-desk {
-    --invoice-brand: var(--brand-primary, #2f7d73);
-    --invoice-brand-dark: var(--brand-secondary, #173f45);
+    --invoice-brand: var(--brand-action-bg, var(--brand-primary, #2f7d73));
+    --invoice-brand-dark: var(--brand-action-bg-hover, var(--brand-secondary, #173f45));
+    --invoice-on-brand: var(--brand-action-text, #FFFEFB);
     --invoice-accent: var(--brand-accent, #c8a24e);
-    --invoice-ink: #172033;
-    --invoice-muted: #687386;
+    --invoice-ink: var(--brand-text, #172033);
+    --invoice-muted: var(--brand-muted, #687386);
     --invoice-subtle: #8a94a6;
     --invoice-paper: #fffdf8;
     --invoice-page: #f6f1e8;
@@ -260,7 +261,7 @@ foreach ($pagos as $pago) {
     background:
         radial-gradient(circle at 88% 16%, color-mix(in srgb, var(--invoice-accent) 36%, transparent), transparent 10rem),
         linear-gradient(145deg, var(--invoice-brand-dark), color-mix(in srgb, var(--invoice-brand) 78%, #102d34));
-    color: #ffffff;
+    color: var(--invoice-on-brand);
 }
 
 .invoice-status-pill {
@@ -272,7 +273,7 @@ foreach ($pagos as $pago) {
     border-radius: 12px;
     padding: 7px 10px;
     background: rgba(255,255,255,.12);
-    color: #ffffff;
+    color: var(--invoice-on-brand);
     font-size: .78rem;
     font-weight: 950;
 }
@@ -364,7 +365,7 @@ foreach ($pagos as $pago) {
 
 .invoice-step.is-active .invoice-step-icon {
     background: #2563eb;
-    color: #ffffff;
+    color: #FFFEFB;
 }
 
 .invoice-step.is-complete {
@@ -374,7 +375,7 @@ foreach ($pagos as $pago) {
 
 .invoice-step.is-complete .invoice-step-icon {
     background: var(--invoice-brand);
-    color: #ffffff;
+    color: var(--invoice-on-brand);
 }
 
 .invoice-step.is-muted {
@@ -809,12 +810,12 @@ textarea.invoice-input {
     inset: 0;
     z-index: 13000;
     display: flex;
-    align-items: stretch;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: center;
     padding: 18px;
-    background: rgba(15,28,34,.72);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
+    background: rgba(12,18,32,.72);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
 }
 
 .invoice-modal-overlay.hidden {
@@ -822,29 +823,78 @@ textarea.invoice-input {
 }
 
 .invoice-modal {
-    width: min(460px, 100%);
-    height: 100%;
-    max-height: 100%;
+    --modal-tone: rgb(8 115 75);
+    --modal-tone-dark: rgb(5 83 54);
+    --modal-soft: rgb(234 247 240);
+    --modal-border: rgb(143 211 178);
+    width: min(520px, 100%);
+    max-height: calc(100dvh - 36px);
     overflow-y: auto;
-    border-radius: 24px;
-    background: var(--invoice-paper);
-    box-shadow: 0 34px 100px -42px rgba(0,0,0,.82);
+    border: 1px solid color-mix(in srgb, var(--modal-tone) 24%, rgb(226 218 204));
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgb(255 253 248), rgb(250 247 240));
+    box-shadow: 0 34px 100px -42px rgba(12,18,32,.86);
+}
+
+.invoice-modal.is-complete {
+    --modal-tone: rgb(8 115 75);
+    --modal-tone-dark: rgb(5 83 54);
+    --modal-soft: rgb(234 247 240);
+    --modal-border: rgb(143 211 178);
+}
+
+.invoice-modal.is-cancel {
+    --modal-tone: rgb(180 35 24);
+    --modal-tone-dark: rgb(127 29 29);
+    --modal-soft: rgb(255 241 240);
+    --modal-border: rgb(253 162 155);
 }
 
 .invoice-modal-head {
-    padding: 22px 24px;
-    color: #ffffff;
-    background: linear-gradient(135deg, var(--modal-color), color-mix(in srgb, var(--modal-color) 66%, #172033));
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr);
+    gap: 13px;
+    align-items: center;
+    padding: 22px 24px 18px;
+    color: var(--invoice-ink);
+    background:
+        radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--modal-tone) 14%, transparent), transparent 38%),
+        linear-gradient(180deg, rgb(255 253 248), var(--modal-soft));
+    border-bottom: 1px solid var(--modal-border);
+}
+
+.invoice-modal-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
+    display: grid;
+    place-items: center;
+    color: rgb(255 253 248);
+    background: linear-gradient(145deg, var(--modal-tone), var(--modal-tone-dark));
+    box-shadow: 0 16px 30px -18px color-mix(in srgb, var(--modal-tone) 80%, transparent);
+}
+
+.invoice-modal-copy {
+    min-width: 0;
+}
+
+.invoice-modal-kicker {
+    display: block;
+    margin-bottom: 3px;
+    color: color-mix(in srgb, var(--modal-tone) 78%, var(--invoice-ink));
+    font-size: .69rem;
+    font-weight: 950;
+    letter-spacing: .08em;
+    line-height: 1;
+    text-transform: uppercase;
 }
 
 .invoice-modal-head h3 {
     margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 9px;
     font-family: Georgia, "Times New Roman", serif;
-    font-size: 1.34rem;
+    font-size: 1.28rem;
     font-weight: 950;
+    line-height: 1.08;
 }
 
 .invoice-modal-body {
@@ -859,10 +909,35 @@ textarea.invoice-input {
     font-weight: 750;
 }
 
+.invoice-modal-alert {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 16px;
+    border: 1px solid var(--modal-border);
+    border-radius: 16px;
+    background: var(--modal-soft);
+    padding: 13px 14px;
+}
+
+.invoice-modal-alert strong {
+    color: color-mix(in srgb, var(--modal-tone) 76%, var(--invoice-ink));
+    font-size: .88rem;
+    font-weight: 950;
+}
+
+.invoice-modal-alert span {
+    color: #475467;
+    font-size: .78rem;
+    font-weight: 760;
+    line-height: 1.45;
+}
+
 .invoice-modal-actions {
     display: flex;
     gap: 10px;
-    margin-top: 14px;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid color-mix(in srgb, var(--modal-tone) 14%, rgb(231 220 203));
 }
 
 .invoice-modal-actions .invoice-button {
@@ -1388,18 +1463,24 @@ textarea.invoice-input {
 </div>
 
 <div id="modalCompletar" class="invoice-modal-overlay hidden">
-    <div class="invoice-modal">
-        <div class="invoice-modal-head" style="--modal-color:#16824E;">
-            <h3>
-                <i class="fas fa-check-circle"></i>
-                Marcar como facturada
-            </h3>
+    <div class="invoice-modal is-complete" role="dialog" aria-modal="true" aria-labelledby="modalCompletarTitulo">
+        <div class="invoice-modal-head">
+            <div class="invoice-modal-icon" aria-hidden="true">
+                <i class="fas fa-file-invoice-dollar"></i>
+            </div>
+            <div class="invoice-modal-copy">
+                <span class="invoice-modal-kicker">Confirmacion final</span>
+                <h3 id="modalCompletarTitulo">Marcar como facturada</h3>
+            </div>
         </div>
         <form method="POST" action="<?= url('facturacion/completar') ?>">
             <?= csrf_field() ?>
             <input type="hidden" name="solicitud_id" value="<?= fact_det_safe($solicitud['id'] ?? '') ?>">
             <div class="invoice-modal-body">
-                <p>Confirma que la factura ya fue generada en Aspel. Puedes registrar el folio de la factura.</p>
+                <div class="invoice-modal-alert">
+                    <strong>La solicitud pasara a completada.</strong>
+                    <span>Usa esta accion solamente cuando la factura ya exista en Aspel.</span>
+                </div>
                 <label class="invoice-label">Numero de factura</label>
                 <input type="text" name="numero_factura" class="invoice-input" placeholder="Ej: FA-001234" style="font-family: monospace; font-size: 1rem;">
                 <p class="invoice-hint">Opcional. Folio de la factura generada en Aspel.</p>
@@ -1416,18 +1497,24 @@ textarea.invoice-input {
 </div>
 
 <div id="modalCancelar" class="invoice-modal-overlay hidden">
-    <div class="invoice-modal">
-        <div class="invoice-modal-head" style="--modal-color:#D04437;">
-            <h3>
-                <i class="fas fa-times-circle"></i>
-                Cancelar solicitud
-            </h3>
+    <div class="invoice-modal is-cancel" role="dialog" aria-modal="true" aria-labelledby="modalCancelarTitulo">
+        <div class="invoice-modal-head">
+            <div class="invoice-modal-icon" aria-hidden="true">
+                <i class="fas fa-ban"></i>
+            </div>
+            <div class="invoice-modal-copy">
+                <span class="invoice-modal-kicker">Accion de riesgo</span>
+                <h3 id="modalCancelarTitulo">Cancelar solicitud</h3>
+            </div>
         </div>
         <form method="POST" action="<?= url('facturacion/cancelar') ?>">
             <?= csrf_field() ?>
             <input type="hidden" name="solicitud_id" value="<?= fact_det_safe($solicitud['id'] ?? '') ?>">
             <div class="invoice-modal-body">
-                <p>Esta accion cancela la solicitud de factura. Agrega un motivo para dejar trazabilidad.</p>
+                <div class="invoice-modal-alert">
+                    <strong>La solicitud saldra del flujo de facturacion.</strong>
+                    <span>Agrega un motivo para que recepcion y administracion sepan por que se cancelo.</span>
+                </div>
                 <label class="invoice-label">Motivo de cancelacion</label>
                 <textarea name="motivo" class="invoice-input" rows="3" placeholder="Motivo de la cancelacion..."></textarea>
                 <div class="invoice-modal-actions">
