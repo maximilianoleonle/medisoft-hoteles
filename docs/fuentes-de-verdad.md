@@ -27,16 +27,17 @@ Fuente nueva fundacional:
 
 Estado:
 
-- fundacion read-only;
+- fundacion read-only hasta Fase 3B;
+- Fase 3C autoriza generacion manual controlada desde compras recibidas;
 - sin pagos;
 - sin Caja;
-- sin generacion automatica desde compras todavia;
-- sin datos operativos generados por la aplicacion.
+- sin generacion automatica desde compras;
+- sin integracion con Caja.
 - commit de cierre tecnico: `1fa1653`.
 
 Regla:
 
-- Cualquier escritura en CxP requiere nueva fase autorizada.
+- La unica escritura CxP autorizada en 3C sera generacion manual desde compra recibida.
 - Cualquier integracion con Caja requiere nueva fase autorizada.
 - Cualquier generacion automatica desde compras requiere nueva fase autorizada.
 - Cualquier escritura futura debe validar que `proveedor_id`, `compra_id` y `hotel_id` pertenezcan al mismo hotel antes de persistir datos.
@@ -53,7 +54,8 @@ Fuente operativa actual:
 Regla:
 
 - La recepcion minima ya autorizada puede escribir inventario.
-- No debe crear CxP automaticamente en Fase 3B.
+- No debe crear CxP automaticamente en Fase 3C.
+- CxP solo podra generarse por accion manual posterior a la recepcion.
 
 ## Proveedores
 

@@ -97,7 +97,7 @@ Bajo para datos operativos actuales porque:
 
 ## Cambio no relacionado pendiente
 
-`src/app/views/reservaciones/ver.php` tiene un ajuste visual fuera del commit de Fase 3B.
+`src/app/views/reservaciones/ver.php` tuvo un ajuste visual fuera del commit de Fase 3B y quedo commiteado en `dc3c150`.
 
 Rollback de ese cambio, si el usuario lo autoriza despues:
 
@@ -106,3 +106,23 @@ Rollback de ese cambio, si el usuario lo autoriza despues:
 3. Si se decide conservar, hacer commit separado despues de `php -l` y prueba visual del modal.
 
 No mezclar este archivo con rollback de CxP.
+
+## Fase 3C
+
+### 3C-0 contrato y diagnostico
+
+- Rollback: revertir el commit documental si se descarta el diseno.
+- DB: no aplica; no hay escrituras.
+
+### 3C-A simulador read-only
+
+- Rollback: revertir commit de simulador.
+- DB: no aplica; debe ser solo lectura.
+
+### 3C-B generacion manual
+
+- Rollback de codigo: revertir commit de generacion.
+- Rollback de datos: no borrar CxP sin autorizacion explicita.
+- Si se crean CxP reales, primero exportar conteos y filas afectadas.
+- No tocar Caja, cortes ni movimientos.
+- Si hay que anular datos, requerir autorizacion y documentar si se marca estado o se restaura backup.

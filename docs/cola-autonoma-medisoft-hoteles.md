@@ -2,13 +2,13 @@
 
 ## Ultimo mensaje real usado
 
-Control de calidad, auditoria, documentacion final, cierre tecnico del bloque autorizado y triage del cambio no relacionado pendiente tras el cierre de Fase 3B.
+Nuevo bloque autorizado Fase 3C: CxP operativa controlada sin Caja. Iniciar con Fase 3C-0 de contrato y diagnostico, sin implementar simulador ni generacion manual todavia.
 
 ## Estado vigente
 
-- Fase actual: Fase 3B aplicada.
+- Fase actual: Fase 3C-0 contrato y diagnostico.
 - Riesgo: naranja.
-- Estado: `CIERRE_TECNICO_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- Estado: contrato 3C en preparacion, sin funcionalidad nueva aplicada.
 - Base local principal: `medisoft_hoteles_import`.
 - Backup previo a DB:
   - `src/storage/backups/phase3b_20260615_040742_before_cxp_medisoft_hoteles_import.sql`
@@ -38,6 +38,18 @@ No permite pagos, Caja, generacion automatica desde compras, saldos operativos, 
 - `1fa1653` - `feat(phase-3b): add read-only accounts payable foundation`
 - `2535dd1` - `docs: record post-3b audit closure`
 - `ca2bda4` - `docs: record security audit closure`
+- `8a49995` - `docs: close authorized technical block`
+- `dc3c150` - `fix: improve late check-in modal layout`
+
+## Diagnostico 3C-0
+
+- Estado Git al inicio de 3C-0: limpio.
+- QA manual del bloque anterior: reportada como realizada por el usuario.
+- Cambio visual de reservaciones: commiteado en `dc3c150`.
+- Compras recibidas detectadas: 2.
+- Compras recibidas elegibles para CxP: 2.
+- CxP actuales: 0.
+- Movimientos Caja-CxP: 0.
 
 ## Cambios pendientes clasificados post-commit
 
@@ -47,8 +59,7 @@ No permite pagos, Caja, generacion automatica desde compras, saldos operativos, 
 
 ### No relacionado con Fase 3B
 
-- `src/app/views/reservaciones/ver.php`: ajuste visual del modal de check-in tardio. No fue incluido en el commit de Fase 3B.
-- Clasificacion: cambio visual posiblemente util, pero requiere QA manual y commit separado.
+- Ninguno pendiente. El ajuste visual de reservaciones quedo commiteado en `dc3c150`.
 
 ### Dudosos
 
@@ -83,4 +94,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Esperar QA manual del usuario. No avanzar a Fase 3C, pagos, Caja ni CxP operativa sin nuevo mensaje real explicito.
+Continuar con Fase 3C-A: simulador read-only de CxP generable desde compras recibidas. No implementar generacion manual hasta terminar el simulador.

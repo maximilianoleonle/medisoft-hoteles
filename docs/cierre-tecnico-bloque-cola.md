@@ -4,7 +4,7 @@
 
 Estado objetivo: `CIERRE_TECNICO_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
-Este cierre no equivale a validacion manual completa. Falta QA en navegador por parte del usuario antes de autorizar nuevas fases operativas.
+Este cierre fue seguido por QA manual reportada como realizada por el usuario y por commit separado del ajuste visual de reservaciones.
 
 ## Fases cerradas
 
@@ -16,7 +16,8 @@ Este cierre no equivale a validacion manual completa. Falta QA en navegador por 
 | 3A | Ficha read-only de proveedor | `3d8f997` | Cerrada |
 | 3B draft | Borrador tecnico CxP base | `673f47f` | Cerrada como draft |
 | 3B aplicada | CxP base read-only | `1fa1653` | Cerrada |
-| Post 3B | Auditoria/cierre documental | `2535dd1`, `ca2bda4` | Cerrada |
+| Post 3B | Auditoria/cierre documental | `2535dd1`, `ca2bda4`, `8a49995` | Cerrada |
+| Reservaciones visual | Ajuste modal check-in tardio | `dc3c150` | Cerrada como cambio separado |
 
 ## Confirmaciones tecnicas
 
@@ -62,15 +63,14 @@ Este cierre no equivale a validacion manual completa. Falta QA en navegador por 
   - `inventario_habitacion_config` vs `inventario_config_habitacion`;
   - `push_subscriptions` vs `pwa_push_subscriptions`;
   - `huespedes_vehiculos` vs `huesped_vehiculos`.
-- `src/app/views/reservaciones/ver.php` queda como cambio no relacionado pendiente.
+- `src/app/views/reservaciones/ver.php` fue resuelto en commit separado `dc3c150`.
 
-## QA manual pendiente
+## QA manual
 
-- QA critica, funcional, visual y regresion vive en `docs/qa-pendiente-cola.md`.
-- No avanzar a Fase 3C, pagos, Caja ni CxP operativa hasta completar QA manual y recibir nuevo mensaje real.
+- QA manual del bloque 2X-3B fue reportada como realizada por el usuario.
+- QA de Fase 3C vive en `docs/qa-pendiente-cola.md`.
 
 ## Estado Git esperado
 
-- HEAD funcional/documental del bloque: `ca2bda4`.
-- Pendiente no relacionado: `src/app/views/reservaciones/ver.php`.
-- Ese archivo debe resolverse en commit separado o descartarse solo con autorizacion explicita.
+- HEAD funcional/documental del bloque anterior antes de 3C: `dc3c150`.
+- Pendientes no relacionados al iniciar 3C-0: ninguno.

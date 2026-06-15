@@ -55,4 +55,15 @@ Ultima auditoria:
 
 ## Recomendacion
 
-No avanzar a Fase 3C ni a pagos/Caja hasta completar QA manual y recibir nuevo mensaje real.
+Fase 3C fue autorizada por nuevo mensaje real. Mantener prohibidos pagos, Caja, CxC, nomina, permisos profundos y `/api/sync`.
+
+## Fase 3C - controles esperados
+
+- Simulador primero, sin escritura.
+- Generacion manual posterior, nunca automatica.
+- Validar compra recibida y `hotel_id`.
+- Validar proveedor del mismo hotel.
+- Validar no duplicado por `(hotel_id, compra_id)`.
+- Validar `total > 0`.
+- Registrar auditoria si `AuditService` esta disponible.
+- Mantener movimientos Caja-CxP en cero.

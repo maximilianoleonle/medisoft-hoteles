@@ -4,7 +4,7 @@
 
 Estado: `CIERRE_TECNICO_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
-El bloque autorizado queda tecnicamente cerrado. No esta validado manualmente por usuario todavia.
+El bloque Fase 2X-3B queda tecnicamente cerrado y el usuario reporto QA manual realizada.
 
 ## Fases y commits
 
@@ -15,6 +15,21 @@ El bloque autorizado queda tecnicamente cerrado. No esta validado manualmente po
 - Fase 3B draft: `673f47f` - borrador CxP base.
 - Fase 3B aplicada: `1fa1653` - CxP base read-only.
 - Cierre/auditoria: `2535dd1`, `ca2bda4`.
+- Cierre tecnico final: `8a49995`.
+- Ajuste visual reservaciones post-QA: `dc3c150`.
+
+## Nuevo bloque Fase 3C
+
+Objetivo: generar CxP manualmente desde compras recibidas, sin Caja ni pagos.
+
+Estado actual:
+
+- Fase 3C-0 iniciada.
+- Contrato y diagnostico documentados.
+- No se implemento simulador.
+- No se implemento generacion manual.
+- CxP sigue vacia.
+- Compras recibidas elegibles detectadas: 2.
 
 ## Situacion
 
@@ -92,5 +107,4 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 
 - QA manual autenticada de listado/detalle CxP.
 - QA visual/regresion de compras, proveedores y recepcion.
-- Decision separada sobre `src/app/views/reservaciones/ver.php`.
-- No avanzar a Fase 3C ni a CxP operativa hasta recibir nuevo mensaje real tras QA manual.
+- Continuar con Fase 3C-A: simulador read-only.

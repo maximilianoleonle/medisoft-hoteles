@@ -45,12 +45,45 @@
 - QA automatica post-commit Fase 3B: completada sin errores bloqueantes.
 - Auditoria de seguridad post-cierre: completada sin hallazgos bloqueantes.
 - Cierre tecnico del bloque: completado.
-- QA manual: pendiente y necesaria antes de considerar validado por usuario.
-- Bloqueante para Fase 3C: si. No avanzar a Fase 3C hasta completar QA manual y recibir nuevo mensaje real.
+- QA manual del bloque 2X-3B: reportada como realizada por el usuario.
+- Bloqueante para Fase 3C: no; Fase 3C fue autorizada por nuevo mensaje real.
+
+## QA Fase 3C
+
+### QA critica
+
+- Confirmar que el simulador 3C-A no escribe en DB.
+- Confirmar que la generacion 3C-B es manual, no automatica.
+- Confirmar que solo compras `recibida` generan CxP.
+- Confirmar que no se duplica CxP por compra.
+- Confirmar que CxP generada respeta `hotel_id`.
+- Confirmar que proveedor y compra pertenecen al mismo hotel.
+- Confirmar que no hay Caja, pagos ni abonos.
+- Confirmar que `/api/sync` sigue bloqueado.
+
+### QA funcional
+
+- Revisar listado de compras recibidas elegibles.
+- Revisar motivos de bloqueo cuando una compra ya tiene CxP.
+- Generar CxP manualmente desde una compra recibida autorizada.
+- Revisar listado y detalle CxP despues de generar.
+- Revisar detalle de compra para ver CxP vinculada.
+
+### QA visual
+
+- Revisar simulador en escritorio y movil.
+- Revisar estados elegible/bloqueado.
+- Revisar mensajes de exito/error.
+- Revisar consistencia con compras/proveedores/CxP.
+
+### QA regresion
+
+- Confirmar que recepcion de compra no genera CxP automaticamente.
+- Confirmar que compras/proveedores siguen aislados por hotel.
+- Confirmar que Caja/cortes/movimientos no cambian.
+- Confirmar que reportes de compras recibidas siguen funcionando.
 
 ## Triage no relacionado
 
-- `src/app/views/reservaciones/ver.php` mantiene un cambio visual del modal de check-in tardio.
-- Clasificacion: no relacionado con compras/proveedores/CxP.
-- Riesgo estimado: bajo-medio, porque toca vista grande de reservacion y layout de un flujo sensible de check-in.
-- Recomendacion: probar visualmente el modal de check-in tardio y, si se confirma correcto, commitearlo por separado. No mezclarlo con CxP.
+- Sin cambios no relacionados pendientes al iniciar 3C-0.
+- El ajuste visual del modal de check-in tardio fue commiteado en `dc3c150`.

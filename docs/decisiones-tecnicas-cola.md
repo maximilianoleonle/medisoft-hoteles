@@ -57,3 +57,14 @@
 - Sin integracion accidental con Caja.
 - `/api/sync` sigue registrado y bloqueado.
 - Las tablas legacy de inventario siguen congeladas; el bloque de compras usa `inventario_productos` y `movimientos_inventario`.
+
+## Fase 3C
+
+- Nuevo mensaje real autoriza Fase 3C.
+- La generacion CxP sera manual, nunca automatica al recibir compra.
+- Fase 3C-A debe ser simulador read-only antes de cualquier escritura.
+- Fase 3C-B podra escribir `cuentas_por_pagar`, pero no Caja ni pagos.
+- Toda CxP nacida de compra debe validar compra recibida, proveedor del mismo hotel, `total > 0` y no duplicado `(hotel_id, compra_id)`.
+- La auditoria debera usar `AuditService` si el patron sigue disponible.
+- `cuentas_por_pagar_movimientos` solo podra usarse como trazabilidad interna de CREACION si se mantiene sin pagos ni Caja.
+- `/api/sync` sigue fuera de alcance.
