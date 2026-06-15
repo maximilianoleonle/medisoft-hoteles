@@ -154,6 +154,15 @@
 - Esto evita un enlace visual a proveedor no valido cuando una compra queda bloqueada por proveedor inexistente o de otro hotel.
 - No cambia elegibilidad, escritura ni reglas de generacion.
 
+## Auditoria seguridad Fase 3C post-QA
+
+- Auditoria estatica completada sin hallazgos bloqueantes.
+- Confirmado por revision de codigo: unico POST 3C con `validateCSRF()`.
+- Confirmado por revision de codigo: `before()` exige autenticacion, contexto hotelero y modulo `inventario`.
+- Confirmado por revision de codigo: no hay escritura en Caja ni pagos desde CxP.
+- Confirmado por revision de codigo: generacion valida compra recibida, proveedor del hotel, total positivo, detalles y no duplicado.
+- No se pudo re-ejecutar health/preflights en esta pasada porque Docker Desktop no esta disponible y `php` no esta en PATH local.
+
 ## Triage no relacionado
 
 - Sin cambios no relacionados pendientes al iniciar 3C-0.

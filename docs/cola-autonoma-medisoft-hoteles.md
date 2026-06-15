@@ -2,19 +2,20 @@
 
 ## Ultimo mensaje real usado
 
-QA_MANUAL_COMPLETADA_3C y revision tecnica del bloque Fase 3C: validar cierre de CxP generada desde compras, sin avanzar a pagos, Caja ni Fase 3D.
+QA_MANUAL_COMPLETADA_3C y auditoria de seguridad del bloque Fase 3C: validar cierre de CxP generada desde compras, sin avanzar a pagos, Caja ni Fase 3D.
 
 ## Estado vigente
 
 - Bloque actual: Fase 3C CxP.
-- Fase actual: revision tecnica post-QA manual.
+- Fase actual: auditoria seguridad post-QA manual.
 - Riesgo: naranja.
-- Estado: Fase 3C implementada, validada manualmente por el usuario y en revision tecnica final.
+- Estado: Fase 3C implementada, validada manualmente por el usuario y auditada estaticamente sin hallazgos bloqueantes.
 - HEAD base antes de la revision 3C: `8a40d9c docs(phase-np): define independent payroll module contract`.
 - Estado Git al iniciar revision 3C: limpio.
 - Base local principal: `medisoft_hoteles_import`.
 - No avanzar a pagos, Caja, Fase 3D ni nuevas funcionalidades.
 - Nota: existe commit documental NP-0 previo (`8a40d9c`); no se continua ni se mezcla con esta revision 3C.
+- Limitacion actual: Docker Desktop no disponible y `php` no esta en PATH local; re-ejecutar health/preflights cuando el entorno vuelva a estar disponible.
 
 ## Bloque base previo: Fase 3B CxP read-only
 

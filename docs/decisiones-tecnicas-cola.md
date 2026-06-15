@@ -101,6 +101,14 @@
 - No se agrega indice/migracion en esta revision; la prevencion de duplicados sigue basada en bloqueo transaccional de la compra con `FOR UPDATE` y verificacion de CxP existente.
 - No se autoriza pago, abono, Caja ni Fase 3D.
 
+## Auditoria seguridad Fase 3C
+
+- La auditoria post-QA queda documentada como revision estatica sin cambios funcionales.
+- No se agrega migracion ni indice en esta auditoria.
+- Los riesgos de concurrencia se mantienen como residuales documentados; cualquier endurecimiento con indice unico requerira migracion futura autorizada.
+- La ausencia de pagos/Caja sigue siendo una regla de fase, no solo una decision visual.
+- Health/preflights deben re-ejecutarse cuando Docker/PHP esten disponibles.
+
 ## Bloque Personal y Nomina (Fase NP)
 
 ### Decisiones de diagnostico NP-0

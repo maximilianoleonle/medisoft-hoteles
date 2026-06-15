@@ -25,6 +25,7 @@ Ultima auditoria:
 - Resultado: sin hallazgos bloqueantes.
 - Cambios de codigo requeridos: ajuste menor en preview para no enlazar proveedor si el proveedor no pertenece al hotel actual.
 - Cambios de documentacion: QA manual y cierre 3C actualizados.
+- Auditoria post-QA adicional: completada por revision estatica; sin nuevos cambios de codigo.
 
 ## Controles revisados
 
@@ -47,9 +48,28 @@ Ultima auditoria:
 - Acceso sin sesion a `/cuentas-por-pagar` redirige a login.
 - `/api/sync` sigue fuera de alcance y validado por checker como bloqueado.
 
+## Auditoria especifica Fase 3C post-QA
+
+- Creacion de CxP sin `hotel_id`: bloqueada por `CuentaPorPagar::generarDesdeCompraRecibida()`, que valida `hotelId > 0` y lo inserta explicitamente.
+- Creacion de CxP con proveedor de otro hotel: bloqueada por `obtenerCompraParaGeneracion()`, que une proveedor con `p.hotel_id = c.hotel_id`, y por `assertCompraGenerable()`.
+- Creacion de CxP con compra de otro hotel: bloqueada por busqueda `WHERE c.id = ? AND c.hotel_id = ?`.
+- Duplicacion de CxP: bloqueada por transaccion, `FOR UPDATE` sobre compra y verificacion `cuentas_por_pagar` por `(hotel_id, compra_id)`.
+- Generacion desde compra no recibida: bloqueada por `assertCompraGenerable()` con estado exacto `recibida`.
+- Generacion desde compra cancelada/borrador: bloqueada por la misma validacion de estado y el boton no aparece para filas no elegibles.
+- Escritura accidental en Caja: no hay referencias de escritura a `movimientos_caja`, `cortes_caja` ni `cajas` en el flujo CxP.
+- Creacion accidental de pagos: no hay rutas, vistas ni modelo de pagos CxP; `cuentas_por_pagar_movimientos` no se inserta en 3C.
+- Endpoints POST sin proteccion: el unico POST 3C llama `validateCSRF()` y pasa por `before()` con `requireAuth`, contexto hotelero y modulo `inventario`.
+- Falta de CSRF: el formulario elegible usa `csrf_field()`.
+- Botones visibles en estados incorrectos: el boton solo se renderiza cuando `es_elegible` es verdadero.
+- Errores de permisos: CxP comparte guardas de modulo `inventario` en controlador y sidebar.
+- `/api/sync` modificado accidentalmente: no hay cambios de codigo en `ApiController` ni en la ruta `/api/sync` dentro de esta revision.
+- Rollback insuficiente: `docs/rollback-cola.md` documenta rollback por 3C-A, 3C-B, 3C-C y revision post-QA.
+- QA critica incompleta: QA manual 3C fue reportada como completada por el usuario; `/api/sync` queda cubierto por checker automatico cuando el entorno este disponible.
+
 ## Warnings conocidos
 
 - Los checkers ejecutados dentro del contenedor no ven `docs/technical` ni `migrations/` completos por el montaje actual.
+- En esta auditoria post-QA no se pudo re-ejecutar `php -l`, health ni preflights porque Docker Desktop no esta disponible y `php` no esta en PATH local.
 - Hay tablas legacy/duplicadas documentadas que no se deben borrar ni fusionar.
 - No hay cambios no relacionados pendientes en Git al iniciar esta revision; el ajuste visual de reservaciones quedo commiteado por separado.
 

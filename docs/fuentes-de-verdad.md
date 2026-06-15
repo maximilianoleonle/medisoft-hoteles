@@ -47,6 +47,7 @@ Regla:
 - `cuentas_por_pagar_movimientos` queda sin uso operativo en 3C-B.
 - Los checkers 3C-C deben fallar si detectan CxP duplicada, sin compra/proveedor, con cruce de hotel, con total/saldo invalido o con referencia CxP en `movimientos_caja`.
 - El preview solo debe enlazar a proveedor cuando el proveedor existe dentro del mismo `hotel_id`; si no, debe mostrar la compra bloqueada sin link a otro hotel.
+- La auditoria de seguridad 3C es una capa de verificacion; no corrige datos automaticamente ni autoriza escrituras nuevas.
 - Cualquier integracion con Caja requiere nueva fase autorizada.
 - Cualquier generacion automatica desde compras requiere nueva fase autorizada.
 - Cualquier escritura futura debe validar que `proveedor_id`, `compra_id` y `hotel_id` pertenezcan al mismo hotel antes de persistir datos.

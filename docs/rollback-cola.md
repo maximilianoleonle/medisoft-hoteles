@@ -181,6 +181,17 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   - prueba visual del preview con compra elegible y compra bloqueada.
 - No tocar Caja, pagos, abonos ni movimientos financieros.
 
+### Auditoria seguridad post-QA Fase 3C
+
+- Rollback de documentacion: revertir el commit `docs(phase-3c): record payable generation security audit` si se quiere retirar la matriz de auditoria.
+- DB: no aplica; auditoria documental/estatica sin escrituras.
+- Codigo: no aplica si no hay cambios funcionales en el commit de auditoria.
+- Validacion posterior recomendada cuando Docker este disponible:
+  - `docker compose exec -T app php -l app/views/cuentas_por_pagar/generacion_preview.php`;
+  - `docker compose exec -T app php tools/saas/health_check_fase_1a.php`;
+  - `docker compose exec -T app php tools/saas/preflight_compras_minimas.php`;
+  - `docker compose exec -T app php tools/saas/preflight_recepcion_compras.php`.
+
 ## Bloque Personal y Nomina (Fase NP)
 
 ### NP-0 contrato y diagnostico

@@ -29,6 +29,7 @@ Estado actual:
 - Fase 3C-B implementa generacion manual controlada con POST + CSRF.
 - Fase 3C-C refuerza health/preflights con consistencia CxP y deteccion de Caja relacionada.
 - Revision tecnica post-QA completo ajuste menor de preview para no enlazar proveedores fuera del `hotel_id`.
+- Auditoria de seguridad post-QA completada sin hallazgos bloqueantes.
 - QA manual del bloque Fase 3C: completada por el usuario.
 - No se implementaron pagos ni Caja.
 - CxP puede crearse solo desde compra recibida elegible.
@@ -109,6 +110,8 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 - CxP: permite generacion manual controlada; no hay pagos, abonos ni movimientos de Caja.
 - Riesgo residual: futuras escrituras CxP deben validar estrictamente `hotel_id` de proveedor/compra.
 - 3C-C agrega validacion automatica para duplicados, compras/proveedores inexistentes, cruces de hotel, compras no recibidas, saldos/totales invalidos, fechas faltantes y referencias CxP en Caja.
+- Auditoria post-QA confirmo estaticamente: unico POST con CSRF, guardas de autenticacion/contexto/modulo, sin escrituras en Caja/pagos y sin cambios en `/api/sync`.
+- Limitacion de verificacion actual: Docker Desktop no disponible y `php` no esta en PATH local, por lo que health/preflights no se re-ejecutaron en esta pasada.
 
 ## Pendiente antes de avanzar
 
