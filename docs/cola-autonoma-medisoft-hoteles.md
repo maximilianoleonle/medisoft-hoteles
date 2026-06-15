@@ -8,7 +8,7 @@ Control de calidad, auditoria, documentacion final, cierre tecnico del bloque au
 
 - Fase actual: Fase 3B aplicada.
 - Riesgo: naranja.
-- Estado: cierre tecnico post-commit y auditoria de seguridad con QA manual pendiente.
+- Estado: `CIERRE_TECNICO_COMPLETADO_QA_MANUAL_PENDIENTE`.
 - Base local principal: `medisoft_hoteles_import`.
 - Backup previo a DB:
   - `src/storage/backups/phase3b_20260615_040742_before_cxp_medisoft_hoteles_import.sql`
@@ -36,12 +36,14 @@ No permite pagos, Caja, generacion automatica desde compras, saldos operativos, 
 - `3d8f997` - `feat: expand supplier profile and purchase history`
 - `673f47f` - `docs: draft accounts payable foundation`
 - `1fa1653` - `feat(phase-3b): add read-only accounts payable foundation`
+- `2535dd1` - `docs: record post-3b audit closure`
+- `ca2bda4` - `docs: record security audit closure`
 
 ## Cambios pendientes clasificados post-commit
 
 ### Relacionados con Fase 3B
 
-- Ninguno pendiente fuera de documentacion de auditoria final.
+- Ninguno pendiente.
 
 ### No relacionado con Fase 3B
 
@@ -74,6 +76,10 @@ No permite pagos, Caja, generacion automatica desde compras, saldos operativos, 
 ## QA manual pendiente
 
 Ver `docs/qa-pendiente-cola.md`.
+
+## Documento de cierre
+
+Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 

@@ -44,7 +44,7 @@
 
 ## Cierre tecnico post-commit
 
-- El bloque autorizado queda en modo QA/auditoria.
+- El bloque autorizado queda en estado `CIERRE_TECNICO_COMPLETADO_QA_MANUAL_PENDIENTE`.
 - No se avanza a Fase 3C sin nuevo mensaje real.
 - No se implementan pagos, Caja, CxC, nomina ni permisos profundos.
 - La documentacion final puede seguir ajustandose sin cambiar comportamiento funcional.

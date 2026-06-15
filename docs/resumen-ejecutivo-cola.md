@@ -1,5 +1,21 @@
 # Resumen ejecutivo - cola autonoma
 
+## Estado final del bloque autorizado
+
+Estado: `CIERRE_TECNICO_COMPLETADO_QA_MANUAL_PENDIENTE`.
+
+El bloque autorizado queda tecnicamente cerrado. No esta validado manualmente por usuario todavia.
+
+## Fases y commits
+
+- Fase 2X: `d1f1431` - detalle read-only de compra recibida.
+- Fase 2Y: `32abb7b` - reporte read-only de compras recibidas.
+- Fase 2Z: `052fd7a` - endurecimiento de recepcion de compras.
+- Fase 3A: `3d8f997` - ficha read-only de proveedor.
+- Fase 3B draft: `673f47f` - borrador CxP base.
+- Fase 3B aplicada: `1fa1653` - CxP base read-only.
+- Cierre/auditoria: `2535dd1`, `ca2bda4`.
+
 ## Situacion
 
 Medisoft Hoteles cerro Fase 3B aplicada: una base tecnica read-only para cuentas por pagar.
@@ -77,3 +93,4 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 - QA manual autenticada de listado/detalle CxP.
 - QA visual/regresion de compras, proveedores y recepcion.
 - Decision separada sobre `src/app/views/reservaciones/ver.php`.
+- No avanzar a Fase 3C ni a CxP operativa hasta recibir nuevo mensaje real tras QA manual.

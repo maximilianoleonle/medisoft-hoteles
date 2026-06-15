@@ -1,5 +1,41 @@
 # Rollback - cola autonoma
 
+## Rollback por fase
+
+### Fase 2X
+
+- Commit: `d1f1431 feat: add read-only received purchase detail`.
+- Rollback: revertir el commit si el detalle read-only de compra recibida causa regresion.
+- DB: no requiere rollback de datos.
+- Validacion posterior: `php -l`, rutas de compras y preflights.
+
+### Fase 2Y
+
+- Commit: `32abb7b feat: add read-only received purchases reports`.
+- Rollback: revertir el commit si el reporte read-only genera errores.
+- DB: no requiere rollback de datos.
+- Validacion posterior: reporte `/compras/reportes/recibidas`, `php -l` y preflights.
+
+### Fase 2Z
+
+- Commit: `052fd7a fix: harden minimal purchase receiving flow`.
+- Rollback: revertir solo si la guarda impide recepcion valida; revisar antes porque protege doble recepcion.
+- DB: no borrar movimientos. Si hubo recepcion real, tratar como dato operativo y no revertir por SQL sin autorizacion.
+- Validacion posterior: prueba anti doble recepcion y consistencia `compra_detalles.movimiento_inventario_id`.
+
+### Fase 3A
+
+- Commit: `3d8f997 feat: expand supplier profile and purchase history`.
+- Rollback: revertir si la ficha read-only de proveedor genera error de vista/controlador.
+- DB: no requiere rollback de datos.
+- Validacion posterior: `/proveedores/{id}` autenticado y sin sesion.
+
+### Fase 3B draft
+
+- Commit: `673f47f docs: draft accounts payable foundation`.
+- Rollback: revertir documentacion/draft si se descarta el diseno CxP.
+- DB: no aplica para el draft.
+
 ## Fase 3B aplicada
 
 Commit de cierre:

@@ -44,6 +44,7 @@
 
 - QA automatica post-commit Fase 3B: completada sin errores bloqueantes.
 - Auditoria de seguridad post-cierre: completada sin hallazgos bloqueantes.
+- Cierre tecnico del bloque: completado.
 - QA manual: pendiente y necesaria antes de considerar validado por usuario.
 - Bloqueante para Fase 3C: si. No avanzar a Fase 3C hasta completar QA manual y recibir nuevo mensaje real.
 
