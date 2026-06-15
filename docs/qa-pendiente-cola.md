@@ -50,9 +50,9 @@
 
 ## QA Fase 3C
 
-Estado reanclado: `GENERACION_3C_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+Estado vigente: `GENERACION_3C_A_B_VALIDADA_MANUALMENTE`.
 
-La siguiente validacion formal debe revisar 3C-B en navegador: preview, boton elegible, generacion manual, bloqueo de duplicado y ausencia de Caja/pagos.
+El usuario reporto QA manual completada para 3C-A y 3C-B. La siguiente fase permitida es 3C-C validaciones, health y preflights.
 
 ### QA critica
 
@@ -90,6 +90,7 @@ La siguiente validacion formal debe revisar 3C-B en navegador: preview, boton el
 
 ### QA especifica Fase 3C-A
 
+- Estado manual: OK reportado por el usuario.
 - Abrir `/cuentas-por-pagar/generacion-preview` autenticado.
 - Confirmar que muestra compras recibidas del hotel actual.
 - Confirmar que muestra links a compra y proveedor.
@@ -101,6 +102,7 @@ La siguiente validacion formal debe revisar 3C-B en navegador: preview, boton el
 
 ### QA especifica Fase 3C-B
 
+- Estado manual: OK reportado por el usuario.
 - Usar una compra recibida elegible.
 - Presionar `Generar CxP`.
 - Confirmar redireccion al detalle de la CxP.
@@ -142,19 +144,19 @@ La siguiente validacion formal debe revisar 3C-B en navegador: preview, boton el
 
 ## QA manual historica Fase 3C
 
-- Simulador de CxP generable desde compras recibidas: OK.
-- Compra recibida elegible muestra accion para generar CxP: OK.
-- Compra no elegible muestra motivo de bloqueo: OK.
-- Generar CxP desde compra recibida: OK.
-- No se permite duplicar CxP para la misma compra: OK.
-- CxP generada aparece en `/cuentas-por-pagar`: OK.
-- Detalle de CxP muestra origen de compra/proveedor: OK.
-- Detalle de compra muestra vinculo a CxP generada: OK.
-- No hay botones de pago: OK.
-- No hay movimientos de Caja: OK.
-- No hay integracion con Caja: OK.
+- `/cuentas-por-pagar/generacion-preview`: OK.
+- La compra `#2` aparece con CxP generada/bloqueada: OK.
+- Link a CxP `#2`: OK.
+- `/cuentas-por-pagar/2`: OK.
+- Origen compra/proveedor visible: OK.
+- Sin botones de pago: OK.
+- Sin abonos: OK.
+- Sin acciones de Caja: OK.
+- Reporte de compras recibidas: OK.
+- Ficha de proveedor: OK.
+- Detalle de compra recibida: OK.
 - `/api/sync`: no probado manualmente; cubierto por checker automatico cuando el entorno esta disponible.
-- Reclasificacion reanclaje: esta lista queda como evidencia historica y no como cierre formal.
+- Resultado vigente: 3C-A y 3C-B quedan validadas manualmente; no autoriza pagos, Caja ni Fase 3D.
 
 ## Revision tecnica Fase 3C
 

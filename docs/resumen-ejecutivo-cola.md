@@ -2,24 +2,24 @@
 
 ## Reanclaje Fase 3C
 
-Estado real reanclado: `GENERACION_3C_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+Estado vigente: `GENERACION_3C_A_B_VALIDADA_MANUALMENTE`.
 
-Motivo: despues del reanclaje, se formalizo 3C-A primero y luego se implemento 3C-B como generacion manual controlada desde compra recibida. Docker estuvo disponible para `php -l`, health, preflights, POST sin sesion, backup, prueba controlada, doble generacion y conteos DB antes/despues.
+Motivo: despues del reanclaje, se formalizo 3C-A primero y luego se implemento 3C-B como generacion manual controlada desde compra recibida. Docker estuvo disponible para `php -l`, health, preflights, POST sin sesion, backup, prueba controlada, doble generacion y conteos DB antes/despues. El usuario reporto QA manual completada para 3C-A y 3C-B.
 
 Estado formal vigente:
 
 - Fase 3C-0 contrato y diagnostico: completada.
-- Fase 3C-A simulador read-only: completada tecnicamente y commiteada.
-- Fase 3C-B generacion manual: completada tecnicamente y pendiente QA manual en navegador.
+- Fase 3C-A simulador read-only: completada tecnicamente, commiteada y validada manualmente.
+- Fase 3C-B generacion manual: completada tecnicamente, commiteada y validada manualmente.
 - Fase 3C-C validaciones/health/preflights: diferida como cierre formal; se conservan validaciones read-only de consistencia CxP.
 - Revision tecnica `8765258` y auditoria `2662998`: reclasificadas como revision/auditoria prematuras o documentales; no cierran Fase 3C.
-- Siguiente accion recomendada: QA manual de 3C-B.
+- Siguiente accion recomendada: Fase 3C-C validaciones, health y preflights.
 
 ## Estado final del bloque autorizado anterior
 
 Estado: `CIERRE_TECNICO_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
-El bloque Fase 2X-3B queda como bloque cerrado anterior; Fase 3C queda con 3C-B completada tecnicamente y pendiente de QA manual.
+El bloque Fase 2X-3B queda como bloque cerrado anterior; Fase 3C queda con 3C-A y 3C-B completadas y validadas manualmente.
 
 ## Fases y commits
 
@@ -44,8 +44,8 @@ Estado actual:
 - Fase 3C-B completada tecnicamente: POST manual con CSRF, validaciones centrales, auditoria y bloqueo de duplicados.
 - Fase 3C-C queda diferida como cierre formal; los checkers actuales conservan validaciones read-only de consistencia CxP.
 - Revision tecnica y auditoria post-QA fueron prematuras respecto al nuevo reanclaje.
-- QA manual previa no se usa como cierre formal de Fase 3C en este estado reanclado.
-- QA manual nueva requerida: validar visualmente generacion manual desde `/cuentas-por-pagar/generacion-preview`.
+- QA manual 3C-A/3C-B reportada por el usuario: preview OK, CxP #2 vinculada, detalle CxP OK, origen compra/proveedor visible, sin pagos, sin abonos y sin Caja.
+- Siguiente fase permitida: 3C-C validaciones, health y preflights.
 - No se implementaron pagos ni Caja.
 - No avanzar a pagos, Caja ni Fase 3D.
 
@@ -126,9 +126,8 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 
 ## Pendiente antes de avanzar
 
-- Ejecutar QA manual de 3C-B autenticado.
-- Confirmar visualmente que el boton solo aparece en compras elegibles, genera una CxP y luego bloquea duplicado.
 - No avanzar a pagos, Caja ni Fase 3D sin nuevo mensaje real o cola especifica.
+- La siguiente fase permitida por el usuario es 3C-C validaciones, health y preflights.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

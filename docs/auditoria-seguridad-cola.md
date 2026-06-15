@@ -15,7 +15,7 @@ Auditoria post-commit del bloque autorizado hasta Fase 3C:
 
 ## Reanclaje Fase 3C
 
-Estado real reanclado: `GENERACION_3C_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+Estado vigente: `GENERACION_3C_A_B_VALIDADA_MANUALMENTE`.
 
 La auditoria previa de Fase 3C queda reclasificada como prematura/documental. No debe usarse para afirmar que Fase 3C esta cerrada, revisada completamente ni auditada completamente.
 
@@ -24,7 +24,7 @@ Motivo:
 - el repositorio ya tenia antecedente historico de simulador, generacion manual y checkers;
 - el nuevo flujo reanclado activo 3C-A primero y despues 3C-B;
 - Docker/PHP estan disponibles y se re-ejecutaron verificaciones completas;
-- queda pendiente QA manual de navegador antes de cerrar visualmente 3C-B.
+- el usuario reporto QA manual completada para 3C-A y 3C-B.
 
 ## Resultado historico previo
 
@@ -69,7 +69,7 @@ Motivo:
 - Errores de permisos: CxP comparte guardas de modulo `inventario` en controlador y sidebar.
 - `/api/sync` modificado accidentalmente: no hay cambios de codigo en `ApiController` ni en la ruta `/api/sync` dentro de esta revision.
 - Rollback insuficiente: `docs/rollback-cola.md` documenta rollback por 3C-A, 3C-B, 3C-C y revision post-QA.
-- QA critica incompleta: falta QA manual en navegador de 3C-B antes de cierre visual.
+- QA critica 3C-A/3C-B: completada manualmente por el usuario.
 
 ## Warnings conocidos
 
@@ -85,7 +85,7 @@ Motivo:
 
 ## Recomendacion
 
-Ejecutar QA manual de `/cuentas-por-pagar/generacion-preview` autenticado. Mantener prohibidos pagos, Caja, CxC, nomina operativa, permisos profundos y `/api/sync` hasta nuevo bloque explicito.
+Continuar solo con Fase 3C-C validaciones, health y preflights cuando sea autorizada. Mantener prohibidos pagos, Caja, CxC, nomina operativa, permisos profundos y `/api/sync` hasta nuevo bloque explicito.
 
 ## Fase 3C - controles esperados
 

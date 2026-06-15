@@ -2,14 +2,14 @@
 
 ## Ultimo mensaje real usado
 
-COLA_3C_B_GENERACION_MANUAL_SIN_CAJA: generar manualmente CxP desde compra recibida, sin pagos ni Caja.
+QA_MANUAL_COMPLETADA_3C_A_B: marcar 3C-A y 3C-B como validadas manualmente, sin avanzar a pagos, Caja ni Fase 3D.
 
 ## Estado vigente
 
 - Bloque actual: Fase 3C CxP.
-- Fase actual: 3C-B generacion manual controlada.
+- Fase actual: 3C-A/3C-B validadas manualmente; 3C-C pendiente como siguiente fase permitida.
 - Riesgo: naranja.
-- Estado: `GENERACION_3C_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+- Estado: `GENERACION_3C_A_B_VALIDADA_MANUALMENTE`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -21,11 +21,11 @@ COLA_3C_B_GENERACION_MANUAL_SIN_CAJA: generar manualmente CxP desde compra recib
 
 - 3C-0 contrato y diagnostico: completada en `9897465`.
 - 3C-A simulador: codigo vigente con ruta/vista/modelo verificados y commiteados en `c0ff5a1`.
-- 3C-B generacion manual: implementada tecnicamente; pendiente QA manual en navegador.
+- 3C-B generacion manual: implementada tecnicamente y validada manualmente por el usuario.
 - 3C-C validaciones: checkers read-only conservan reglas de consistencia CxP.
 - Revision `8765258`: ajuste de vista/documentacion, no cierre formal.
 - Auditoria `2662998`: documentacion de auditoria prematura bajo el reanclaje, no cierre formal.
-- Siguiente accion recomendada: QA manual de Fase 3C-B.
+- Siguiente accion recomendada: Fase 3C-C validaciones, health y preflights.
 
 ## Bloque base previo: Fase 3B CxP read-only
 
@@ -167,7 +167,7 @@ No permite pagos, Caja, generacion automatica desde compras, saldos operativos, 
 
 ## QA manual
 
-Fase 3C: cualquier QA manual previa queda como antecedente historico; no cierra formalmente 3C bajo el reanclaje. Ver `docs/qa-pendiente-cola.md`.
+Fase 3C-A/3C-B: QA manual reportada por el usuario como completada. Ver `docs/qa-pendiente-cola.md`.
 
 ## Documento de cierre
 
@@ -186,4 +186,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Siguiente paso formal: QA manual de 3C-B en navegador. No avanzar a pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Siguiente paso formal permitido: Fase 3C-C validaciones, health y preflights. No avanzar a pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

@@ -99,7 +99,7 @@ Al cerrar esta fase, no avanzar a Fase 3C sin nuevo mensaje real. El estado debe
 
 ### Reanclaje de estado
 
-Estado formal vigente: `GENERACION_3C_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+Estado formal vigente: `GENERACION_3C_A_B_VALIDADA_MANUALMENTE`.
 
 El repositorio contiene commits de implementacion posteriores al contrato, pero el nuevo reanclaje impide tratarlos como cierre formal:
 
@@ -109,7 +109,7 @@ El repositorio contiene commits de implementacion posteriores al contrato, pero 
 - `5dfe665`: codigo de validaciones read-only conservado en health/preflights.
 - `8765258` y `2662998`: revision/auditoria prematuras o documentales.
 
-Siguiente paso formal: QA manual de Fase 3C-B.
+Siguiente paso formal: Fase 3C-C validaciones, health y preflights.
 
 ### Objetivo
 
@@ -233,6 +233,7 @@ Definition of Done 3C-B:
 - prueba de doble generacion falla limpiamente;
 - checkers/preflights actualizados;
 - `php -l`, health, preflights y `git diff --check` sin errores bloqueantes.
+- QA manual reportada por el usuario como OK para preview, CxP `#2`, detalle CxP, origen compra/proveedor, compras recibidas, proveedor, detalle compra y ausencia de pagos/abonos/Caja.
 
 Prueba local controlada:
 

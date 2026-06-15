@@ -28,8 +28,9 @@ Fuente nueva fundacional:
 Estado:
 
 - fundacion read-only hasta Fase 3B;
-- Reanclaje Fase 3C: estado formal `GENERACION_3C_B_COMPLETADA_QA_MANUAL_PENDIENTE`;
+- Reanclaje Fase 3C: estado formal `GENERACION_3C_A_B_VALIDADA_MANUALMENTE`;
 - Fase 3C-A tiene preview read-only ruteado, protegido, navegable y verificado automaticamente;
+- Fase 3C-A y 3C-B fueron validadas manualmente por el usuario;
 - Fase 3C-B tiene generacion manual POST activa desde compras recibidas elegibles;
 - Fase 3C-C queda diferida como cierre formal, aunque health/preflights ya incluyen comprobaciones read-only de consistencia CxP;
 - sin pagos;
@@ -40,8 +41,8 @@ Estado:
 
 Regla vigente despues del reanclaje:
 
-- La siguiente accion formal es QA manual de generacion manual 3C-B desde `/cuentas-por-pagar/generacion-preview`.
-- No ampliar hacia pagos, Caja ni Fase 3D hasta validar manualmente 3C-B y autorizar una fase nueva.
+- La siguiente accion formal permitida es Fase 3C-C validaciones, health y preflights.
+- No ampliar hacia pagos, Caja ni Fase 3D sin nueva autorizacion explicita.
 - El preview 3C-A no es fuente de datos nueva; solo interpreta `compras` + `proveedores` + `cuentas_por_pagar`.
 - Las CxP creadas en pruebas locales controladas (`id=1` compra `#5`, `id=2` compra `#2`) quedan como evidencia local; no borrar ni corregir automaticamente.
 - `cuentas_por_pagar_movimientos` queda sin uso operativo.

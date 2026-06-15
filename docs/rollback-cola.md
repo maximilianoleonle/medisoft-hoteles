@@ -111,11 +111,11 @@ No mezclar este archivo con rollback de CxP.
 
 ### Reanclaje de estado
 
-- Estado formal vigente: `GENERACION_3C_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+- Estado formal vigente: `GENERACION_3C_A_B_VALIDADA_MANUALMENTE`.
 - 3C-A esta implementada como GET read-only; 3C-B esta implementada como POST manual controlado; 3C-C queda diferida como cierre formal.
 - No borrar codigo ni datos automaticamente.
 - No hacer rollback destructivo de la CxP historica creada por prueba local sin nueva autorizacion y backup.
-- Antes de tocar pagos, Caja o Fase 3D, validar manualmente que 3C-B genera solo CxP y bloquea duplicados.
+- Antes de tocar pagos, Caja o Fase 3D, completar 3C-C y recibir autorizacion explicita de una fase nueva.
 
 ### 3C-0 contrato y diagnostico
 
@@ -137,7 +137,7 @@ No mezclar este archivo con rollback de CxP.
 
 ### 3C-B generacion manual
 
-- Estado vigente: implementada tecnicamente y pendiente QA manual.
+- Estado vigente: implementada tecnicamente y validada manualmente por el usuario.
 - Rollback de codigo: revertir el commit `feat(phase-3c): generate payable from received purchase` si causa regresion.
 - Rollback de datos: no borrar CxP sin autorizacion explicita.
 - Si se crean CxP reales, primero exportar conteos y filas afectadas.
