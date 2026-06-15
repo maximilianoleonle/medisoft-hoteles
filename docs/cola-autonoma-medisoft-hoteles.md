@@ -2,20 +2,21 @@
 
 ## Ultimo mensaje real usado
 
-Bloque autorizado Personal y Nomina (Fase NP): modulo INDEPENDIENTE de trabajadores con ledger laboral, saldos por persona, asistencia y comisiones, multi-hotel, SIN integracion con Caja ni salida real de dinero. Empezar por Fase NP-0 (contrato y diagnostico).
+QA_MANUAL_COMPLETADA_3C y revision tecnica del bloque Fase 3C: validar cierre de CxP generada desde compras, sin avanzar a pagos, Caja ni Fase 3D.
 
 ## Estado vigente
 
-- Bloque actual: Personal y Nomina (Fase NP).
-- Fase actual: NP-0 contrato y diagnostico.
+- Bloque actual: Fase 3C CxP.
+- Fase actual: revision tecnica post-QA manual.
 - Riesgo: naranja.
-- Estado: contrato, diagnostico read-only y diseno de 6 tablas completados; sin funcionalidad, sin migraciones aplicadas, sin escritura en DB.
-- HEAD al iniciar NP-0: `5dfe665 test(phase-3c): add payable consistency checks`.
-- Estado Git al iniciar NP-0: limpio.
+- Estado: Fase 3C implementada, validada manualmente por el usuario y en revision tecnica final.
+- HEAD base antes de la revision 3C: `8a40d9c docs(phase-np): define independent payroll module contract`.
+- Estado Git al iniciar revision 3C: limpio.
 - Base local principal: `medisoft_hoteles_import`.
-- Contrato NP: `docs/fase_NP_0_contrato_diagnostico.md`.
+- No avanzar a pagos, Caja, Fase 3D ni nuevas funcionalidades.
+- Nota: existe commit documental NP-0 previo (`8a40d9c`); no se continua ni se mezcla con esta revision 3C.
 
-## Bloque anterior (cerrado): Fase 3C CxP
+## Bloque base previo: Fase 3B CxP read-only
 
 - Ultimo mensaje real del bloque previo: Fase 3C-B generacion manual controlada de CxP desde compra recibida, sin Caja ni pagos.
 - Estado: cerrado tecnicamente; QA manual reportada por el usuario.
@@ -134,9 +135,9 @@ No permite pagos, Caja, generacion automatica desde compras, saldos operativos, 
 - `/api/sync` sigue bloqueado y fuera de alcance.
 - Riesgo residual futuro: escrituras CxP deben validar proveedor/compra por `hotel_id` antes de insertar.
 
-## QA manual pendiente
+## QA manual
 
-Ver `docs/qa-pendiente-cola.md`.
+Fase 3C: QA manual completada por el usuario. Ver `docs/qa-pendiente-cola.md`.
 
 ## Documento de cierre
 
@@ -155,4 +156,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Confirmar contrato NP-0 y avanzar a Fase NP-A (migracion aditiva de `trabajadores` + `trabajador_documentos` y ficha basica read-first). No avanzar a Caja ni a salida de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Ninguna funcionalidad nueva dentro de esta revision. Esperar nuevo mensaje real para cualquier bloque posterior. No avanzar a pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

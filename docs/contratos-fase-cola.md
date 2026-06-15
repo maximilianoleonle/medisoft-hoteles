@@ -220,6 +220,31 @@ Definition of Done 3C-B:
 - checkers/preflights actualizados;
 - `php -l`, health, preflights y `git diff --check` sin errores bloqueantes.
 
+### Estado 3C-C y revision post-QA
+
+Validaciones de consistencia agregadas a health/preflights:
+
+- CxP duplicada por compra/hotel;
+- CxP con compra inexistente;
+- CxP con proveedor inexistente;
+- CxP con `hotel_id` nulo;
+- CxP con compra o proveedor de otro hotel;
+- CxP generada desde compra no recibida;
+- CxP con saldo/total invalido;
+- CxP sin fecha de emision;
+- referencias CxP en movimientos de Caja.
+
+QA manual del bloque 3C: completada por el usuario.
+
+Revision tecnica post-QA:
+
+- el preview enlaza proveedor solo si el proveedor fue resuelto dentro del mismo `hotel_id`;
+- sin nuevas rutas;
+- sin nuevas migraciones;
+- sin pagos;
+- sin Caja;
+- sin Fase 3D.
+
 ## Bloque Personal y Nomina (Fase NP): modulo independiente de trabajadores
 
 ### Objetivo

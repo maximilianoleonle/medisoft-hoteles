@@ -44,7 +44,7 @@
 
 ## Cierre tecnico post-commit
 
-- El bloque autorizado queda en estado `CIERRE_TECNICO_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- El bloque 2X-3B quedo en estado `CIERRE_TECNICO_COMPLETADO_QA_MANUAL_PENDIENTE`; Fase 3C quedo validada manualmente despues.
 - No se avanza a Fase 3C sin nuevo mensaje real.
 - No se implementan pagos, Caja, CxC, nomina ni permisos profundos.
 - La documentacion final puede seguir ajustandose sin cambiar comportamiento funcional.
@@ -92,6 +92,14 @@
 - No se inserta en `cuentas_por_pagar_movimientos` en 3C-B para no introducir tipos operativos de pago/abono.
 - La trazabilidad de creacion se registra en `logs_auditoria` mediante `AuditService`.
 - Caja sigue completamente fuera del flujo.
+
+## Revision tecnica Fase 3C
+
+- La QA manual del bloque 3C fue reportada como completada por el usuario.
+- El preview debe renderizar link a proveedor solo cuando el proveedor fue resuelto por el join scoped al `hotel_id` de la compra.
+- Si una compra conserva `proveedor_id` pero el proveedor no existe en el hotel actual, la fila queda bloqueada y no debe enlazar a otro proveedor.
+- No se agrega indice/migracion en esta revision; la prevencion de duplicados sigue basada en bloqueo transaccional de la compra con `FOR UPDATE` y verificacion de CxP existente.
+- No se autoriza pago, abono, Caja ni Fase 3D.
 
 ## Bloque Personal y Nomina (Fase NP)
 

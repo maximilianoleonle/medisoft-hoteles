@@ -32,6 +32,7 @@ Estado:
 - Fase 3C-A solo agrega preview read-only de compras elegibles;
 - Fase 3C-B permite crear CxP manualmente desde compra recibida elegible;
 - Fase 3C-C no agrega funcionalidad de usuario; solo valida consistencia CxP en health/preflights;
+- Fase 3C fue validada manualmente por el usuario;
 - sin pagos;
 - sin Caja;
 - sin generacion automatica desde compras;
@@ -45,6 +46,7 @@ Regla:
 - La CxP 3C-B se crea en `cuentas_por_pagar` y su auditoria en `logs_auditoria`.
 - `cuentas_por_pagar_movimientos` queda sin uso operativo en 3C-B.
 - Los checkers 3C-C deben fallar si detectan CxP duplicada, sin compra/proveedor, con cruce de hotel, con total/saldo invalido o con referencia CxP en `movimientos_caja`.
+- El preview solo debe enlazar a proveedor cuando el proveedor existe dentro del mismo `hotel_id`; si no, debe mostrar la compra bloqueada sin link a otro hotel.
 - Cualquier integracion con Caja requiere nueva fase autorizada.
 - Cualquier generacion automatica desde compras requiere nueva fase autorizada.
 - Cualquier escritura futura debe validar que `proveedor_id`, `compra_id` y `hotel_id` pertenezcan al mismo hotel antes de persistir datos.

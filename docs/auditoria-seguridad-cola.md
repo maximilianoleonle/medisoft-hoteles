@@ -2,40 +2,47 @@
 
 ## Alcance
 
-Auditoria post-commit del bloque autorizado hasta Fase 3B:
+Auditoria post-commit del bloque autorizado hasta Fase 3C:
 
 - Fase 2X: detalle read-only de compra recibida.
 - Fase 2Y: reportes read-only de compras recibidas.
 - Fase 2Z: endurecimiento de recepcion minima.
 - Fase 3A: ficha read-only de proveedor con historial.
 - Fase 3B: cuentas por pagar base read-only.
+- Fase 3C-A: simulador read-only de CxP generable desde compras recibidas.
+- Fase 3C-B: generacion manual controlada de CxP desde compra recibida.
+- Fase 3C-C: validaciones de consistencia CxP en health/preflights.
 
 ## Resultado
 
-Estado: `AUDITORIA_SEGURIDAD_COMPLETADA_QA_MANUAL_PENDIENTE`.
+Estado: `AUDITORIA_SEGURIDAD_3C_COMPLETADA_QA_MANUAL_COMPLETADA`.
 
-No se detectaron riesgos bloqueantes en la auditoria automatica/local.
+No se detectaron riesgos bloqueantes en la auditoria tecnica/local del bloque 3C.
 
 Ultima auditoria:
 
-- Bloque: Fase 2X, 2Y, 2Z, 3A y 3B.
+- Bloque: Fase 3C.
 - Resultado: sin hallazgos bloqueantes.
-- Cambios de codigo requeridos: ninguno.
-- Cambios de documentacion: matriz de riesgo/QA actualizada.
+- Cambios de codigo requeridos: ajuste menor en preview para no enlazar proveedor si el proveedor no pertenece al hotel actual.
+- Cambios de documentacion: QA manual y cierre 3C actualizados.
 
 ## Controles revisados
 
-- CxP tiene rutas GET solamente:
+- CxP conserva rutas GET de consulta:
   - `/cuentas-por-pagar`;
+  - `/cuentas-por-pagar/generacion-preview`;
   - `/cuentas-por-pagar/{id}`.
-- CxP no tiene formularios POST.
-- CxP no llama `validateCSRF`, porque no escribe datos.
+- CxP tiene un unico POST autorizado en 3C:
+  - `/cuentas-por-pagar/generar-desde-compra/{id}`.
+- El POST autorizado usa `validateCSRF()`.
+- El boton de generacion solo aparece en compras elegibles del preview.
 - CxP no contiene acciones de pago.
-- CxP no escribe en `cuentas_por_pagar`.
+- CxP solo escribe en `cuentas_por_pagar` durante generacion manual desde compra recibida.
 - CxP no escribe en `cuentas_por_pagar_movimientos`.
 - CxP no toca `movimientos_caja`, `cortes_caja` ni `cajas`.
 - Modelo CxP filtra por `hotel_id`.
-- Proveedor/Compras no escriben CxP ni enlazan CxP desde sus vistas.
+- La generacion valida compra recibida, proveedor del mismo hotel, total positivo, detalles existentes y no duplicado.
+- Proveedor/Compras no generan CxP automaticamente.
 - Sidebar expone CxP bajo el gate de Inventario.
 - Acceso sin sesion a `/cuentas-por-pagar` redirige a login.
 - `/api/sync` sigue fuera de alcance y validado por checker como bloqueado.
@@ -44,18 +51,16 @@ Ultima auditoria:
 
 - Los checkers ejecutados dentro del contenedor no ven `docs/technical` ni `migrations/` completos por el montaje actual.
 - Hay tablas legacy/duplicadas documentadas que no se deben borrar ni fusionar.
-- `src/app/views/reservaciones/ver.php` tiene un cambio visual pendiente y no relacionado.
+- No hay cambios no relacionados pendientes en Git al iniciar esta revision; el ajuste visual de reservaciones quedo commiteado por separado.
 
 ## Riesgos residuales
 
-- Falta QA manual autenticada de listado/detalle CxP.
-- Falta QA visual del estado vacio y filtros.
-- Falta decidir el destino del cambio visual de `reservaciones/ver.php`.
-- Si una fase futura escribe CxP, debe validar estrictamente `hotel_id` de proveedor/compra antes de insertar o actualizar saldos.
+- Si una fase futura agrega pagos, debe crear contrato nuevo y revisar Caja, saldos y movimientos financieros desde cero.
+- No hay indice unico fisico documentado para `(hotel_id, compra_id)`; la prevencion actual usa bloqueo transaccional sobre la compra y verificacion de CxP existente.
 
 ## Recomendacion
 
-Fase 3C fue autorizada por nuevo mensaje real. Mantener prohibidos pagos, Caja, CxC, nomina, permisos profundos y `/api/sync`.
+Fase 3C queda validada manualmente por el usuario. Mantener prohibidos pagos, Caja, CxC, nomina operativa, permisos profundos y `/api/sync` hasta nuevo bloque explicito.
 
 ## Fase 3C - controles esperados
 

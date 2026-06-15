@@ -170,6 +170,17 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   - `git diff --check`.
 - Si alguna validacion detecta datos inconsistentes, no corregir con `UPDATE`/`DELETE` sin nueva autorizacion y backup.
 
+### Revision tecnica post-QA Fase 3C
+
+- Rollback de codigo/docs: revertir el commit `fix(review): stabilize phase 3c payable generation` si el ajuste visual no se desea.
+- DB: no aplica; no hay migracion ni escritura de datos.
+- Alcance del ajuste: el preview no enlaza a proveedor si el proveedor no fue resuelto dentro del mismo `hotel_id`.
+- Validacion posterior:
+  - `php -l` sobre la vista si PHP esta disponible;
+  - health/preflights cuando Docker o PHP esten disponibles;
+  - prueba visual del preview con compra elegible y compra bloqueada.
+- No tocar Caja, pagos, abonos ni movimientos financieros.
+
 ## Bloque Personal y Nomina (Fase NP)
 
 ### NP-0 contrato y diagnostico

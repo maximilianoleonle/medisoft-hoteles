@@ -111,7 +111,7 @@
 - La doble generacion fue bloqueada limpiamente.
 - No se crearon movimientos en `cuentas_por_pagar_movimientos`.
 - No cambiaron `cajas` ni `movimientos_caja`.
-- Pendiente: QA manual autenticada en navegador.
+- QA manual autenticada en navegador: completada por el usuario.
 
 ## Resultado automatico Fase 3C-C
 
@@ -131,7 +131,28 @@
   - CxP sin fecha de emision;
   - movimientos de Caja con referencia textual a CxP.
 - Resultado actual de las validaciones: 0 inconsistencias CxP y 0 movimientos de Caja relacionados con CxP.
-- Pendiente: QA manual autenticada en navegador para confirmar mensajes/flujo visual de 3C-B.
+- QA manual autenticada en navegador para mensajes/flujo visual de 3C-B: completada por el usuario.
+
+## QA manual completada Fase 3C
+
+- Simulador de CxP generable desde compras recibidas: OK.
+- Compra recibida elegible muestra accion para generar CxP: OK.
+- Compra no elegible muestra motivo de bloqueo: OK.
+- Generar CxP desde compra recibida: OK.
+- No se permite duplicar CxP para la misma compra: OK.
+- CxP generada aparece en `/cuentas-por-pagar`: OK.
+- Detalle de CxP muestra origen de compra/proveedor: OK.
+- Detalle de compra muestra vinculo a CxP generada: OK.
+- No hay botones de pago: OK.
+- No hay movimientos de Caja: OK.
+- No hay integracion con Caja: OK.
+- `/api/sync`: no probado manualmente; cubierto por checker automatico cuando el entorno esta disponible.
+
+## Revision tecnica Fase 3C
+
+- Vista de preview ajustada para enlazar al proveedor solo si el join scoped por `hotel_id` encontro proveedor del hotel actual.
+- Esto evita un enlace visual a proveedor no valido cuando una compra queda bloqueada por proveedor inexistente o de otro hotel.
+- No cambia elegibilidad, escritura ni reglas de generacion.
 
 ## Triage no relacionado
 

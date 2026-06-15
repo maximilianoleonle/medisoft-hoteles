@@ -2,9 +2,9 @@
 
 ## Estado final del bloque autorizado
 
-Estado: `CIERRE_TECNICO_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado: `CIERRE_TECNICO_3C_COMPLETADO_QA_MANUAL_COMPLETADA`.
 
-El bloque Fase 2X-3B queda tecnicamente cerrado y el usuario reporto QA manual realizada.
+El bloque Fase 3C queda implementado, revisado tecnicamente y validado manualmente por el usuario.
 
 ## Fases y commits
 
@@ -28,6 +28,8 @@ Estado actual:
 - Fase 3C-A implementa preview/simulador.
 - Fase 3C-B implementa generacion manual controlada con POST + CSRF.
 - Fase 3C-C refuerza health/preflights con consistencia CxP y deteccion de Caja relacionada.
+- Revision tecnica post-QA completo ajuste menor de preview para no enlazar proveedores fuera del `hotel_id`.
+- QA manual del bloque Fase 3C: completada por el usuario.
 - No se implementaron pagos ni Caja.
 - CxP puede crearse solo desde compra recibida elegible.
 - Compras recibidas elegibles antes de la prueba local: 2.
@@ -37,9 +39,9 @@ Estado actual:
 
 ## Situacion
 
-Medisoft Hoteles cerro Fase 3B aplicada: una base tecnica read-only para cuentas por pagar.
+Medisoft Hoteles cerro Fase 3C: generacion manual controlada de CxP desde compras recibidas.
 
-La fase se apoya en una migracion local ya aplicada sobre `medisoft_hoteles_import`, con backup previo confirmado. Las tablas nuevas existen y deben permanecer vacias hasta que una fase posterior autorice generacion de saldos.
+La fase se apoya en una migracion local ya aplicada sobre `medisoft_hoteles_import`, con backup previo confirmado. 3C-B creo una CxP local controlada desde compra recibida; no hay pagos, abonos ni movimientos de Caja.
 
 ## Alcance de Fase 3B
 
@@ -91,7 +93,7 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 
 ## Cierre tecnico post-commit
 
-- CxP sigue sin acciones POST.
+- CxP tiene un unico POST autorizado: generacion manual desde compra recibida elegible con CSRF.
 - CxP sigue sin integracion con Caja.
 - Compras y proveedores no generan ni escriben CxP.
 - Las consultas revisadas mantienen filtros por `hotel_id`.
@@ -104,15 +106,14 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 - Perdida de datos: no detectada; no hay borrado ni migracion destructiva.
 - Doble recepcion: protegida por contrato transaccional y validaciones de estado/detalles.
 - Inventario: se mantiene fuente moderna `inventario_productos` + `movimientos_inventario`.
-- CxP: se mantiene read-only y vacio.
+- CxP: permite generacion manual controlada; no hay pagos, abonos ni movimientos de Caja.
 - Riesgo residual: futuras escrituras CxP deben validar estrictamente `hotel_id` de proveedor/compra.
 - 3C-C agrega validacion automatica para duplicados, compras/proveedores inexistentes, cruces de hotel, compras no recibidas, saldos/totales invalidos, fechas faltantes y referencias CxP en Caja.
 
 ## Pendiente antes de avanzar
 
-- QA manual autenticada de listado/detalle CxP, preview 3C-A y generacion manual 3C-B.
-- QA visual/regresion de compras, proveedores y recepcion.
-- No avanzar a pagos/Caja sin nueva autorizacion.
+- No queda QA manual pendiente reportada para Fase 3C.
+- No avanzar a pagos, Caja ni Fase 3D sin nuevo mensaje real explicito.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

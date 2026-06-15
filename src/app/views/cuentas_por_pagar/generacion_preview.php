@@ -230,7 +230,7 @@ $estado = (string)($filtros['estado'] ?? 'recibida');
                                             <div class="text-xs text-slate-500"><?= cxp_preview_safe($compra['compra_folio'] ?? null, 'Sin folio') ?></div>
                                         </td>
                                         <td>
-                                            <?php if (!empty($compra['proveedor_id'])): ?>
+                                            <?php if (!empty($compra['proveedor_id']) && !empty($compra['proveedor_nombre'])): ?>
                                                 <a class="font-black text-slate-800 underline" href="<?= url('proveedores/' . (int)$compra['proveedor_id']) ?>">
                                                     <?= cxp_preview_safe($compra['proveedor_nombre'] ?? null) ?>
                                                 </a>
