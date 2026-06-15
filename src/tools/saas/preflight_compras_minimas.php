@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z para Compras minimas.
+ * Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B para Compras minimas y CxP read-only.
  *
  * Solo lectura. No crea tablas, rutas, migraciones ni datos.
  */
@@ -155,7 +155,7 @@ $purchaseReceptionPreflightPath = $appRoot . '/tools/saas/preflight_recepcion_co
 $draftMigrationPath = $projectRoot . '/docs/technical/sql_drafts/20260615_002_fase_2n_compras_minimas_draft.sql';
 $officialMigrationPath = $projectRoot . '/migrations/20260615_002_fase_2n_compras_minimas.sql';
 
-echo "Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z - Compras minimas\n";
+echo "Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B - Compras minimas y CxP read-only\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {
@@ -378,7 +378,6 @@ if ($pdo) {
     $futureTables = [
         'proveedor_contactos',
         'compra_pagos',
-        'cuentas_por_pagar',
         'documentos_proveedor',
     ];
     foreach ($futureTables as $table) {
@@ -390,6 +389,17 @@ if ($pdo) {
         } else {
             pfOk('Tabla futura aun no creada: ' . $table);
         }
+    }
+
+    if (pfTableExists($pdo, $database, 'cuentas_por_pagar') && pfTableExists($pdo, $database, 'cuentas_por_pagar_movimientos')) {
+        pfOk('Tablas CxP Fase 3B existen para modo read-only.');
+        pfOk('cuentas_por_pagar registros actuales: ' . (string)pfCountRows($pdo, 'cuentas_por_pagar'));
+        pfOk('cuentas_por_pagar_movimientos registros actuales: ' . (string)pfCountRows($pdo, 'cuentas_por_pagar_movimientos'));
+    } else {
+        pfWarning(
+            'Tablas CxP Fase 3B aun no existen.',
+            'Aplicar migracion CxP solo despues de backup si se va a exponer la vista read-only.'
+        );
     }
 
     if ($pdo->inTransaction()) {
@@ -441,7 +451,12 @@ if (is_file($routesPath)) {
             'POST /compras/{id:[0-9]+}/recibir',
         ], true) && $controller === 'compra' && in_array($action, ['index', 'crear', 'reporterecibidas', 'ver', 'guardar', 'recibir'], true);
 
-        if ($isAllowedPurchaseRoute) {
+        $isAllowedCxpReadOnlyRoute = in_array($method . ' /' . $path, [
+            'GET /cuentas-por-pagar',
+            'GET /cuentas-por-pagar/{id:[0-9]+}',
+        ], true) && $controller === 'cuentaporpagar' && in_array($action, ['index', 'ver'], true);
+
+        if ($isAllowedPurchaseRoute || $isAllowedCxpReadOnlyRoute) {
             continue;
         }
 
@@ -458,11 +473,11 @@ if (is_file($routesPath)) {
     }
 
     if (empty($forbiddenRoutes)) {
-        pfOk('Solo existen compras minimas Fase 2Y: listado, detalle, reporte read-only, borrador y recepcion; no hay pagos, CxP, contactos ni documentos.');
+        pfOk('Solo existen compras minimas y CxP read-only Fase 3B; no hay pagos, contactos ni documentos.');
     } else {
         pfError(
-            'Rutas fuera del alcance Fase 2X detectadas: ' . implode(' | ', $forbiddenRoutes),
-            'Retirar rutas que no sean GET /compras, GET /compras/{id}, GET /compras/crear, POST /compras y POST /compras/{id}/recibir.'
+            'Rutas fuera del alcance Fase 3B detectadas: ' . implode(' | ', $forbiddenRoutes),
+            'Retirar rutas que no sean Compras minimas o GET de CxP read-only.'
         );
     }
 } else {
@@ -471,10 +486,7 @@ if (is_file($routesPath)) {
 
 $blockedFiles = [
     $appRoot . '/app/controllers/ComprasController.php',
-    $appRoot . '/app/controllers/CuentaPorPagarController.php',
     $appRoot . '/app/models/Compra.php',
-    $appRoot . '/app/models/CuentaPorPagar.php',
-    $appRoot . '/app/views/cuentas_por_pagar',
 ];
 $existingBlockedFiles = [];
 foreach ($blockedFiles as $path) {
@@ -484,12 +496,39 @@ foreach ($blockedFiles as $path) {
 }
 
 if (!$existingBlockedFiles) {
-    pfOk('No hay controladores/modelos/vistas de CxP o compras avanzadas activos.');
+    pfOk('No hay controladores/modelos legacy de compras avanzadas activos.');
 } else {
     pfWarning(
-        'Archivos de CxP o compras avanzadas detectados: ' . implode(', ', $existingBlockedFiles),
+        'Archivos de compras avanzadas detectados: ' . implode(', ', $existingBlockedFiles),
         'Auditar antes de registrar rutas o depender de ellos.'
     );
+}
+
+$cxpControllerPath = $appRoot . '/app/controllers/CuentaPorPagarController.php';
+$cxpModelPath = $appRoot . '/app/models/CuentaPorPagar.php';
+$cxpIndexViewPath = $appRoot . '/app/views/cuentas_por_pagar/index.php';
+$cxpDetailViewPath = $appRoot . '/app/views/cuentas_por_pagar/ver.php';
+if (is_file($cxpControllerPath) && is_file($cxpModelPath) && is_file($cxpIndexViewPath) && is_file($cxpDetailViewPath)) {
+    $cxpCode = (string)file_get_contents($cxpControllerPath) . "\n"
+        . (string)file_get_contents($cxpModelPath) . "\n"
+        . (string)file_get_contents($cxpIndexViewPath) . "\n"
+        . (string)file_get_contents($cxpDetailViewPath);
+    if (
+        strpos($cxpCode, 'CuentaPorPagarController') !== false
+        && strpos($cxpCode, 'class CuentaPorPagar') !== false
+        && strpos($cxpCode, 'cuentas_por_pagar/index') !== false
+        && strpos($cxpCode, 'cuentas_por_pagar/ver') !== false
+        && strpos($cxpCode, 'method="POST"') === false
+        && strpos($cxpCode, 'validateCSRF') === false
+        && strpos($cxpCode, 'movimientos_caja') === false
+    ) {
+        pfOk('CxP Fase 3B existe solo en modo read-only.');
+    } else {
+        pfError(
+            'CxP Fase 3B contiene tokens fuera de alcance.',
+            'Mantener CxP sin POST, sin pagos, sin CSRF y sin movimientos_caja.'
+        );
+    }
 }
 
 if (is_file($purchaseServicePath)) {

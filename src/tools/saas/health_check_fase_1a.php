@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B-draft.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -311,6 +311,34 @@ $providerDetailViewFile = hcFindFirstExistingPath([
     dirname(getcwd()) . '/src/app/views/proveedores/ver.php',
     '/workspace/src/app/views/proveedores/ver.php',
 ]);
+$cxpControllerFile = hcFindFirstExistingPath([
+    $appRoot . '/app/controllers/CuentaPorPagarController.php',
+    $projectRoot . '/src/app/controllers/CuentaPorPagarController.php',
+    getcwd() . '/app/controllers/CuentaPorPagarController.php',
+    dirname(getcwd()) . '/src/app/controllers/CuentaPorPagarController.php',
+    '/workspace/src/app/controllers/CuentaPorPagarController.php',
+]);
+$cxpModelFile = hcFindFirstExistingPath([
+    $appRoot . '/app/models/CuentaPorPagar.php',
+    $projectRoot . '/src/app/models/CuentaPorPagar.php',
+    getcwd() . '/app/models/CuentaPorPagar.php',
+    dirname(getcwd()) . '/src/app/models/CuentaPorPagar.php',
+    '/workspace/src/app/models/CuentaPorPagar.php',
+]);
+$cxpIndexViewFile = hcFindFirstExistingPath([
+    $appRoot . '/app/views/cuentas_por_pagar/index.php',
+    $projectRoot . '/src/app/views/cuentas_por_pagar/index.php',
+    getcwd() . '/app/views/cuentas_por_pagar/index.php',
+    dirname(getcwd()) . '/src/app/views/cuentas_por_pagar/index.php',
+    '/workspace/src/app/views/cuentas_por_pagar/index.php',
+]);
+$cxpDetailViewFile = hcFindFirstExistingPath([
+    $appRoot . '/app/views/cuentas_por_pagar/ver.php',
+    $projectRoot . '/src/app/views/cuentas_por_pagar/ver.php',
+    getcwd() . '/app/views/cuentas_por_pagar/ver.php',
+    dirname(getcwd()) . '/src/app/views/cuentas_por_pagar/ver.php',
+    '/workspace/src/app/views/cuentas_por_pagar/ver.php',
+]);
 $purchaseTestTool = hcFindFirstExistingPath([
     $appRoot . '/tools/saas/probar_compra_service.php',
     $projectRoot . '/src/tools/saas/probar_compra_service.php',
@@ -339,6 +367,13 @@ $minimalPurchasingOfficialMigration = hcFindFirstExistingPath([
     dirname(dirname(getcwd())) . '/migrations/20260615_002_fase_2n_compras_minimas.sql',
     '/workspace/migrations/20260615_002_fase_2n_compras_minimas.sql',
 ]);
+$cxpOfficialMigration = hcFindFirstExistingPath([
+    $projectRoot . '/migrations/20260615_003_fase_3b_cxp_base.sql',
+    getcwd() . '/migrations/20260615_003_fase_3b_cxp_base.sql',
+    dirname(getcwd()) . '/migrations/20260615_003_fase_3b_cxp_base.sql',
+    dirname(dirname(getcwd())) . '/migrations/20260615_003_fase_3b_cxp_base.sql',
+    '/workspace/migrations/20260615_003_fase_3b_cxp_base.sql',
+]);
 $docsTechnicalDir = hcFindFirstExistingPath([
     getenv('DOCS_TECHNICAL_DIR') ?: '',
     getenv('PROJECT_ROOT') ? rtrim((string) getenv('PROJECT_ROOT'), "/\\") . '/docs/technical' : '',
@@ -353,7 +388,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B-draft - Medisoft Hoteles\n";
+echo "Health check Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -431,8 +466,9 @@ if ($minimalPurchasingPreflight && is_file($minimalPurchasingPreflight)) {
         && strpos($minimalPurchasingPreflightCode, 'Fase 2X') !== false
         && strpos($minimalPurchasingPreflightCode, 'Fase 2Y') !== false
         && strpos($minimalPurchasingPreflightCode, 'Fase 2Z') !== false
+        && strpos($minimalPurchasingPreflightCode, 'Fase 3B') !== false
     ) {
-        hcOk('Preflight de compras minimas existe, es solo lectura y conoce Fase 2R/2S/2T/2U/2V/2W/2X/2Y/2Z.');
+        hcOk('Preflight de compras minimas existe, es solo lectura y conoce Fase 2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B.');
     } else {
         hcWarning(
             'Preflight de compras minimas existe pero no declara guardas completas.',
@@ -456,13 +492,14 @@ if ($purchaseReceptionPreflight && is_file($purchaseReceptionPreflight)) {
         && strpos($purchaseReceptionPreflightCode, 'Fase 2X') !== false
         && strpos($purchaseReceptionPreflightCode, 'Fase 2Y') !== false
         && strpos($purchaseReceptionPreflightCode, 'Fase 2Z') !== false
+        && strpos($purchaseReceptionPreflightCode, 'Fase 3B') !== false
         && strpos($purchaseReceptionPreflightCode, 'Solo lectura') !== false
         && strpos($purchaseReceptionPreflightCode, 'START TRANSACTION READ ONLY') !== false
         && strpos($purchaseReceptionPreflightCode, 'detalles_con_movimiento') !== false
         && strpos($purchaseReceptionPreflightCode, 'productos_repetidos') !== false
         && strpos($purchaseReceptionPreflightCode, 'un movimiento por linea') !== false
     ) {
-        hcOk('Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z de recepcion de compras existe y es solo lectura.');
+        hcOk('Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B de recepcion de compras existe y es solo lectura.');
     } else {
         hcWarning(
             'Preflight Fase 2T de recepcion existe pero no declara todas las guardas esperadas.',
@@ -496,7 +533,7 @@ if ($cxpBaseDraft && is_file($cxpBaseDraft)) {
         && strpos($cxpDraftCode, 'Rollback manual documentado') !== false
         && strpos($cxpDraftCode, 'movimientos_caja') === false
     ) {
-        hcOk('Borrador Fase 3B de CxP base existe y permanece fuera de migrations/.');
+        hcOk('Borrador tecnico Fase 3B de CxP base existe para trazabilidad.');
     } else {
         hcWarning(
             'Borrador Fase 3B de CxP base incompleto o riesgoso.',
@@ -505,8 +542,31 @@ if ($cxpBaseDraft && is_file($cxpBaseDraft)) {
     }
 } else {
     hcWarning(
-        'No existe borrador Fase 3B de CxP base.',
-        'Crear docs/technical/sql_drafts/20260615_003_fase_3b_cxp_base_draft.sql antes de promover CxP.'
+        'Borrador Fase 3B de CxP base no visible desde este contexto.',
+        'Ejecutar el checker desde la raiz del proyecto o montar docs/technical para validar el borrador historico.'
+    );
+}
+
+if ($cxpOfficialMigration && is_file($cxpOfficialMigration)) {
+    $cxpMigrationCode = (string) file_get_contents($cxpOfficialMigration);
+    if (
+        strpos($cxpMigrationCode, 'CREATE TABLE IF NOT EXISTS cuentas_por_pagar') !== false
+        && strpos($cxpMigrationCode, 'CREATE TABLE IF NOT EXISTS cuentas_por_pagar_movimientos') !== false
+        && strpos($cxpMigrationCode, '20260615_003_fase_3b_cxp_base.sql') !== false
+        && strpos($cxpMigrationCode, 'phase3b_20260615_040742_before_cxp_medisoft_hoteles_import.sql') !== false
+        && strpos($cxpMigrationCode, 'movimientos_caja') === false
+    ) {
+        hcOk('Migracion oficial Fase 3B de CxP base existe y documenta backup previo.');
+    } else {
+        hcWarning(
+            'Migracion oficial Fase 3B de CxP base incompleta.',
+            'Validar tablas, backup documentado, ausencia de Caja y registro en migrations.'
+        );
+    }
+} else {
+    hcWarning(
+        'Migracion oficial Fase 3B de CxP base no visible desde este contexto.',
+        'Ejecutar el checker desde la raiz del proyecto o montar migrations/ para validar el archivo oficial.'
     );
 }
 
@@ -1309,7 +1369,6 @@ if ($pdo) {
     $futurePurchasingTables = [
         'proveedor_contactos',
         'compra_pagos',
-        'cuentas_por_pagar',
         'documentos_proveedor',
     ];
     foreach ($futurePurchasingTables as $table) {
@@ -1321,6 +1380,68 @@ if ($pdo) {
         } else {
             hcOk('Tabla futura no creada en Fase 2O: ' . $table);
         }
+    }
+
+    if (hcTableExists($pdo, $database, 'cuentas_por_pagar') && hcTableExists($pdo, $database, 'cuentas_por_pagar_movimientos')) {
+        $cxpRequiredColumns = [
+            'id', 'hotel_id', 'proveedor_id', 'compra_id', 'folio',
+            'descripcion', 'fecha_emision', 'fecha_vencimiento', 'estado',
+            'moneda', 'subtotal', 'impuestos', 'total', 'saldo', 'notas',
+            'created_by', 'updated_by', 'created_at', 'updated_at',
+        ];
+        $cxpMissingColumns = [];
+        foreach ($cxpRequiredColumns as $column) {
+            if (!hcColumnExists($pdo, $database, 'cuentas_por_pagar', $column)) {
+                $cxpMissingColumns[] = $column;
+            }
+        }
+
+        $cxpMovRequiredColumns = [
+            'id', 'cuenta_por_pagar_id', 'hotel_id', 'tipo_movimiento',
+            'monto', 'saldo_anterior', 'saldo_posterior', 'referencia',
+            'notas', 'usuario_id', 'created_at',
+        ];
+        $cxpMovMissingColumns = [];
+        foreach ($cxpMovRequiredColumns as $column) {
+            if (!hcColumnExists($pdo, $database, 'cuentas_por_pagar_movimientos', $column)) {
+                $cxpMovMissingColumns[] = $column;
+            }
+        }
+
+        if (empty($cxpMissingColumns) && empty($cxpMovMissingColumns)) {
+            hcOk('Tablas Fase 3B de CxP base existen con columnas requeridas.');
+        } else {
+            hcError(
+                'Tablas Fase 3B de CxP incompletas. Faltan CxP: ' . implode(', ', $cxpMissingColumns) . '. Movimientos: ' . implode(', ', $cxpMovMissingColumns),
+                'No exponer CxP hasta reconciliar la migracion 20260615_003_fase_3b_cxp_base.sql.'
+            );
+        }
+
+        $cxpCount = hcCountRows($pdo, 'cuentas_por_pagar');
+        $cxpMovCount = hcCountRows($pdo, 'cuentas_por_pagar_movimientos');
+        hcOk('CxP Fase 3B disponible en modo base. Registros: cuentas=' . (string)$cxpCount . ', movimientos=' . (string)$cxpMovCount . '.');
+
+        if (hcTableExists($pdo, $database, 'migrations')) {
+            $stmt = $pdo->prepare(
+                "SELECT COUNT(*) FROM migrations
+                 WHERE nombre = '20260615_003_fase_3b_cxp_base.sql'
+                   AND estado = 'ejecutada'"
+            );
+            $stmt->execute();
+            if ((int)$stmt->fetchColumn() === 1) {
+                hcOk('Migracion Fase 3B de CxP base registrada como ejecutada.');
+            } else {
+                hcError(
+                    'Migracion Fase 3B de CxP base no esta registrada como ejecutada.',
+                    'Registrar solo si las tablas fueron creadas correctamente tras backup.'
+                );
+            }
+        }
+    } else {
+        hcWarning(
+            'Tablas Fase 3B de CxP base aun no existen.',
+            'Aplicar la migracion 20260615_003_fase_3b_cxp_base.sql solo despues de backup.'
+        );
     }
 
     $inventoryModernTables = [
@@ -1929,6 +2050,26 @@ if (!is_file($routesPath)) {
         );
     }
 
+    $cxpExpectedRoutes = [
+        ['method' => 'get', 'path' => 'cuentas-por-pagar'],
+        ['method' => 'get', 'path' => 'cuentas-por-pagar/{id:[0-9]+}'],
+    ];
+    $missingCxpRoutes = [];
+    foreach ($cxpExpectedRoutes as $expectedRoute) {
+        if (!hcRouteExists($routes, $expectedRoute['path'], $expectedRoute['method'])) {
+            $missingCxpRoutes[] = strtoupper($expectedRoute['method']) . ' /' . $expectedRoute['path'];
+        }
+    }
+
+    if (empty($missingCxpRoutes)) {
+        hcOk('Rutas Fase 3B de CxP read-only estan registradas.');
+    } else {
+        hcWarning(
+            'Rutas Fase 3B de CxP read-only faltantes: ' . implode(', ', $missingCxpRoutes),
+            'Registrar solo GET /cuentas-por-pagar y GET /cuentas-por-pagar/{id}; sin POST ni pagos.'
+        );
+    }
+
     $forbiddenPurchaseRoutes = [];
     foreach ($routes as $route) {
         $method = strtoupper((string) $route['method']);
@@ -1946,7 +2087,12 @@ if (!is_file($routesPath)) {
             'POST /compras/{id:[0-9]+}/recibir',
         ], true) && $controller === 'compra' && in_array($action, ['index', 'crear', 'reporterecibidas', 'ver', 'guardar', 'recibir'], true);
 
-        if ($isAllowedPurchaseRoute) {
+        $isAllowedCxpReadOnlyRoute = in_array($method . ' /' . $path, [
+            'GET /cuentas-por-pagar',
+            'GET /cuentas-por-pagar/{id:[0-9]+}',
+        ], true) && $controller === 'cuentaporpagar' && in_array($action, ['index', 'ver'], true);
+
+        if ($isAllowedPurchaseRoute || $isAllowedCxpReadOnlyRoute) {
             continue;
         }
 
@@ -1963,11 +2109,11 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($forbiddenPurchaseRoutes)) {
-        hcOk('Solo hay reporte read-only, detalle read-only y recepcion minima Fase 2Y; no hay rutas de pagos, CxP, contactos ni documentos de compras.');
+        hcOk('Solo hay compras minimas y CxP read-only Fase 3B; no hay rutas de pagos, contactos ni documentos de compras.');
     } else {
         hcError(
-            'Rutas fuera del alcance Fase 2Y detectadas: ' . implode(' | ', $forbiddenPurchaseRoutes),
-            'Retirar rutas que no sean Compras basicas, reporte read-only, detalle y POST /compras/{id}/recibir.'
+            'Rutas fuera del alcance Fase 3B detectadas: ' . implode(' | ', $forbiddenPurchaseRoutes),
+            'Retirar rutas que no sean Compras basicas, CxP read-only, reporte read-only, detalle y POST /compras/{id}/recibir.'
         );
     }
 
@@ -2194,6 +2340,77 @@ if (!is_file($routesPath)) {
         );
     }
 
+    if ($cxpControllerFile && is_file($cxpControllerFile) && $cxpModelFile && is_file($cxpModelFile)) {
+        $cxpControllerCode = (string) file_get_contents($cxpControllerFile);
+        $cxpModelCode = (string) file_get_contents($cxpModelFile);
+        $cxpCode = $cxpControllerCode . "\n" . $cxpModelCode;
+        $cxpForbidden = preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(cuentas_por_pagar|cuentas_por_pagar_movimientos|movimientos_caja|cortes_caja|cajas)\b/i', $cxpCode)
+            || strpos($cxpCode, 'function pagarAction') !== false
+            || strpos($cxpCode, 'validateCSRF') !== false
+            || strpos($cxpCode, 'AuditService::record') !== false
+            || strpos($cxpCode, 'movimientos_caja') !== false;
+
+        if (
+            !$cxpForbidden
+            && strpos($cxpControllerCode, 'class CuentaPorPagarController') !== false
+            && strpos($cxpControllerCode, 'function indexAction') !== false
+            && strpos($cxpControllerCode, 'function verAction') !== false
+            && strpos($cxpControllerCode, "require_hotel_module('inventario')") !== false
+            && strpos($cxpControllerCode, 'cuentas_por_pagar/index') !== false
+            && strpos($cxpControllerCode, 'cuentas_por_pagar/ver') !== false
+            && strpos($cxpModelCode, 'class CuentaPorPagar') !== false
+            && strpos($cxpModelCode, "protected \$table = 'cuentas_por_pagar'") !== false
+            && strpos($cxpModelCode, 'function resumenPorHotel') !== false
+            && strpos($cxpModelCode, 'function listarPorHotel') !== false
+            && strpos($cxpModelCode, 'function buscarPorIdHotel') !== false
+            && strpos($cxpModelCode, 'function movimientosPorCuenta') !== false
+            && strpos($cxpModelCode, 'FROM cuentas_por_pagar') !== false
+            && strpos($cxpModelCode, 'FROM cuentas_por_pagar_movimientos') !== false
+        ) {
+            hcOk('CxP Fase 3B expone modelo/controlador read-only sin pagos ni Caja.');
+        } else {
+            hcError(
+                'CxP Fase 3B no cumple contrato read-only o contiene tokens prohibidos.',
+                'Mantener solo GET index/ver, SELECTs y sin pagos, CSRF, auditoria de escritura ni movimientos_caja.'
+            );
+        }
+    } else {
+        hcWarning(
+            'Faltan modelo/controlador de CxP Fase 3B.',
+            'Crear CuentaPorPagar y CuentaPorPagarController solo para vistas read-only.'
+        );
+    }
+
+    if ($cxpIndexViewFile && is_file($cxpIndexViewFile) && $cxpDetailViewFile && is_file($cxpDetailViewFile)) {
+        $cxpIndexViewCode = (string) file_get_contents($cxpIndexViewFile);
+        $cxpDetailViewCode = (string) file_get_contents($cxpDetailViewFile);
+        $cxpViewsCode = $cxpIndexViewCode . "\n" . $cxpDetailViewCode;
+        if (
+            strpos($cxpIndexViewCode, "action=\"<?= url('cuentas-por-pagar') ?>\"") !== false
+            && strpos($cxpIndexViewCode, "url('cuentas-por-pagar/' . (int)") !== false
+            && strpos($cxpDetailViewCode, "url('cuentas-por-pagar')") !== false
+            && strpos($cxpDetailViewCode, "url('compras/' . (int)") !== false
+            && strpos($cxpDetailViewCode, "url('proveedores/' . (int)") !== false
+            && strpos($cxpViewsCode, 'Solo lectura') !== false
+            && strpos($cxpViewsCode, 'Sin pagos') !== false
+            && strpos($cxpViewsCode, 'method="POST"') === false
+            && strpos($cxpViewsCode, 'csrf_field()') === false
+            && strpos($cxpViewsCode, 'movimientos_caja') === false
+        ) {
+            hcOk('Vistas CxP Fase 3B son read-only y no exponen pagos ni Caja.');
+        } else {
+            hcError(
+                'Vistas CxP Fase 3B incompletas o con acciones fuera de alcance.',
+                'Mantener listado/detalle read-only, sin POST, sin CSRF y sin enlaces de pago/caja.'
+            );
+        }
+    } else {
+        hcWarning(
+            'Faltan vistas CxP Fase 3B.',
+            'Crear app/views/cuentas_por_pagar/index.php y ver.php en modo solo lectura.'
+        );
+    }
+
     if (is_file($sidebarPath)) {
         $sidebarCode = (string) file_get_contents($sidebarPath);
         if (
@@ -2222,12 +2439,16 @@ if (!is_file($routesPath)) {
             );
         }
 
-        if (strpos($sidebarCode, 'cuentas-por-pagar') === false && strpos($sidebarCode, 'Cuentas por pagar') === false) {
-            hcOk('Sidebar no expone CxP ni pagos de compras.');
+        if (
+            strpos($sidebarCode, '$mostrarCuentasPorPagar = $mostrarInventario') !== false
+            && strpos($sidebarCode, "url('cuentas-por-pagar')") !== false
+            && strpos($sidebarCode, 'Cuentas por pagar') !== false
+        ) {
+            hcOk('Sidebar expone CxP read-only Fase 3B bajo el gate visual de Inventario.');
         } else {
             hcError(
-                'Sidebar expone CxP o pagos de compras fuera del alcance.',
-                'Retirar enlaces financieros hasta una fase aprobada.'
+                'Sidebar no expone CxP read-only bajo el gate esperado.',
+                'Enlazar /cuentas-por-pagar solo mediante $mostrarCuentasPorPagar = $mostrarInventario.'
             );
         }
     } else {
@@ -2741,6 +2962,22 @@ if (!is_file($routesPath)) {
                         'Actualizar docs/technical/inventory_reconciliation.md con CxP base no ejecutada y exclusiones.'
                     );
                 }
+
+                if (
+                    strpos($inventarioDocCode, 'Fase 3B aplicada') !== false
+                    && strpos($inventarioDocCode, '20260615_003_fase_3b_cxp_base.sql') !== false
+                    && strpos($inventarioDocCode, 'CuentaPorPagarController') !== false
+                    && strpos($inventarioDocCode, 'GET /cuentas-por-pagar') !== false
+                    && strpos($inventarioDocCode, 'Sin movimientos de caja') !== false
+                    && strpos($inventarioDocCode, 'Sin formularios POST') !== false
+                ) {
+                    hcOk('Documentacion de inventario registra CxP read-only Fase 3B aplicada.');
+                } else {
+                    hcWarning(
+                        'Documentacion de inventario no registra aun Fase 3B aplicada.',
+                        'Actualizar docs/technical/inventory_reconciliation.md con migracion, rutas read-only y exclusiones.'
+                    );
+                }
             }
 
             if ($purchasingInventoryDoc === null || !is_file($purchasingInventoryDoc)) {
@@ -3083,6 +3320,22 @@ if (!is_file($routesPath)) {
                     hcWarning(
                         'Contrato de compras no registra draft Fase 3B.',
                         'Actualizar docs/technical/purchasing_inventory_contract.md con draft CxP, no ejecucion y promocion futura.'
+                    );
+                }
+
+                if (
+                    strpos($purchasingDocCode, 'Actualizacion Fase 3B aplicada') !== false
+                    && strpos($purchasingDocCode, 'phase3b_20260615_040742_before_cxp_medisoft_hoteles_import.sql') !== false
+                    && strpos($purchasingDocCode, '20260615_003_fase_3b_cxp_base.sql') !== false
+                    && strpos($purchasingDocCode, 'CuentaPorPagarController') !== false
+                    && strpos($purchasingDocCode, 'GET /cuentas-por-pagar') !== false
+                    && strpos($purchasingDocCode, 'Sin movimientos de caja') !== false
+                ) {
+                    hcOk('Contrato de compras documenta CxP read-only Fase 3B aplicada.');
+                } else {
+                    hcWarning(
+                        'Contrato de compras no registra Fase 3B aplicada.',
+                        'Actualizar docs/technical/purchasing_inventory_contract.md con backup, migracion, rutas read-only y exclusiones.'
                     );
                 }
             }

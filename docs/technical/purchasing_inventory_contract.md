@@ -1335,6 +1335,43 @@ Promocion futura segura:
 6. Validar tablas vacias, llaves foraneas e indices.
 7. Crear vistas read-only de CxP en una subfase posterior.
 
+## Actualizacion Fase 3B aplicada
+
+Aplicacion local controlada:
+
+- Backup previo: `src/storage/backups/phase3b_20260615_040742_before_cxp_medisoft_hoteles_import.sql`.
+- SHA256: `24663D206AE15B86B001708D8BC2665541548443A0EA363548CAFC3FDF3A4D2C`.
+- Tamano: `3017728` bytes.
+- Migracion oficial: `migrations/20260615_003_fase_3b_cxp_base.sql`.
+- Tablas creadas:
+  - `cuentas_por_pagar`.
+  - `cuentas_por_pagar_movimientos`.
+- Registro en `migrations`: `20260615_003_fase_3b_cxp_base.sql` con estado `ejecutada`.
+- Conteos posteriores: ambas tablas quedaron en `0` registros.
+
+UI read-only:
+
+- Rutas nuevas permitidas:
+  - `GET /cuentas-por-pagar`.
+  - `GET /cuentas-por-pagar/{id}`.
+- Controlador: `CuentaPorPagarController`.
+- Modelo: `CuentaPorPagar`.
+- Vistas:
+  - `app/views/cuentas_por_pagar/index.php`.
+  - `app/views/cuentas_por_pagar/ver.php`.
+- Sidebar: enlace bajo gate visual de Inventario.
+
+Alcance:
+
+- Solo lectura.
+- Sin formularios POST.
+- Sin registrar pagos.
+- Sin movimientos de caja.
+- Sin cambios en recepcion de compras.
+- Sin generacion automatica de CxP desde compras.
+- Sin afectacion a reportes financieros.
+- Sin cambios en `/api/sync`.
+
 ## No implementar todavia
 
 - Pagos de compras.

@@ -1111,3 +1111,39 @@ Promocion futura:
 - Requiere backup completo y SHA256 antes de ejecutar cualquier SQL.
 - Requiere promover el draft a `migrations/`.
 - Requiere validar estructura vacia antes de construir vistas read-only.
+
+## Fase 3B aplicada: CxP read-only
+
+Aplicacion local controlada:
+
+- Backup previo: `src/storage/backups/phase3b_20260615_040742_before_cxp_medisoft_hoteles_import.sql`.
+- SHA256: `24663D206AE15B86B001708D8BC2665541548443A0EA363548CAFC3FDF3A4D2C`.
+- Migracion: `migrations/20260615_003_fase_3b_cxp_base.sql`.
+- Tablas creadas: `cuentas_por_pagar` y `cuentas_por_pagar_movimientos`.
+- Ambas tablas quedaron vacias despues de aplicar la migracion.
+
+Implementacion read-only:
+
+- Rutas:
+  - `GET /cuentas-por-pagar`.
+  - `GET /cuentas-por-pagar/{id}`.
+- Controlador: `CuentaPorPagarController`.
+- Modelo: `CuentaPorPagar`.
+- Vistas: `cuentas_por_pagar/index.php` y `cuentas_por_pagar/ver.php`.
+- Sidebar bajo gate visual de `inventario`.
+
+Contrato de inventario:
+
+- No modifica `inventario_productos`.
+- No crea movimientos en `movimientos_inventario`.
+- No modifica la recepcion de compras.
+- No genera CxP automaticamente desde compras en esta fase.
+
+Exclusiones:
+
+- Sin pagos.
+- Sin movimientos de caja.
+- Sin documentos.
+- Sin formularios POST.
+- Sin cambios en reportes financieros.
+- Sin cambios en `/api/sync`.

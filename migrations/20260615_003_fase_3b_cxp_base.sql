@@ -1,6 +1,4 @@
--- Fase 3B - Borrador no ejecutado - Cuentas por pagar base read-only.
---
--- NO EJECUTAR EN ESTA SUBFASE.
+-- Fase 3B - Cuentas por pagar base read-only.
 --
 -- OBJETIVO:
 -- - Preparar estructura no destructiva para cuentas por pagar.
@@ -10,11 +8,10 @@
 -- - No afectar reportes financieros oficiales.
 -- - No tocar /api/sync.
 --
--- PROMOCION FUTURA:
--- 1) Hacer backup completo de medisoft_hoteles_import.
--- 2) Confirmar SHA256 y tamano del backup.
--- 3) Mover/copiar este borrador a migrations/ solo cuando se autorice aplicarlo.
--- 4) Ejecutarlo una vez validado el health checker y registrar en migrations.
+-- BACKUP REALIZADO ANTES DE EJECUTAR EN LOCAL:
+-- - Archivo: src/storage/backups/phase3b_20260615_040742_before_cxp_medisoft_hoteles_import.sql
+-- - SHA256: 24663D206AE15B86B001708D8BC2665541548443A0EA363548CAFC3FDF3A4D2C
+-- - Tamano: 3017728 bytes
 
 SET @migration_name := '20260615_003_fase_3b_cxp_base.sql';
 

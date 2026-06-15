@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase 2T/2U/2V/2W/2X para recepcion minima de compras.
+ * Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B para recepcion minima de compras.
  *
  * Solo lectura. No ejecuta recepcion ni modifica DB.
  * Valida borradores pendientes, recepciones reales, productos_repetidos,
@@ -223,7 +223,7 @@ $purchasingDocPath = prcFirstExistingPath([
     $appRoot . '/docs/technical/purchasing_inventory_contract.md',
 ]);
 
-echo "Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z - Recepcion minima de compras\n";
+echo "Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B - Recepcion minima de compras y CxP read-only\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {
@@ -534,7 +534,6 @@ if ($pdo) {
 
         $futureTables = [
             'compra_pagos',
-            'cuentas_por_pagar',
             'documentos_proveedor',
             'proveedor_contactos',
         ];
@@ -547,6 +546,17 @@ if ($pdo) {
             } else {
                 prcOk('Tabla futura no existe en Fase 2T: ' . $table);
             }
+        }
+
+        if (prcTableExists($pdo, $database, 'cuentas_por_pagar') && prcTableExists($pdo, $database, 'cuentas_por_pagar_movimientos')) {
+            prcOk('Tablas CxP Fase 3B existen para modo read-only y no forman parte de la recepcion minima.');
+            prcOk('cuentas_por_pagar registros actuales: ' . (string)prcCountRows($pdo, 'cuentas_por_pagar'));
+            prcOk('cuentas_por_pagar_movimientos registros actuales: ' . (string)prcCountRows($pdo, 'cuentas_por_pagar_movimientos'));
+        } else {
+            prcWarning(
+                'Tablas CxP Fase 3B aun no existen.',
+                'Esto no bloquea recepcion; aplicar CxP solo con backup si se requiere vista read-only.'
+            );
         }
     }
 
@@ -592,7 +602,14 @@ if (is_file($routesPath)) {
             && $controller === 'compra'
             && in_array($action, ['index', 'crear', 'reporterecibidas', 'ver', 'guardar', 'recibir'], true);
 
-        if ($allowed) {
+        $allowedCxpReadOnly = in_array($method . ' /' . $path, [
+            'GET /cuentas-por-pagar',
+            'GET /cuentas-por-pagar/{id:[0-9]+}',
+        ], true)
+            && $controller === 'cuentaporpagar'
+            && in_array($action, ['index', 'ver'], true);
+
+        if ($allowed || $allowedCxpReadOnly) {
             continue;
         }
 
@@ -610,11 +627,11 @@ if (is_file($routesPath)) {
     }
 
     if (!$forbiddenRoutes) {
-        prcOk('Solo hay reporte read-only, detalle read-only y recepcion minima; no hay pago, CxP ni documentos de compras.');
+        prcOk('Solo hay reporte read-only, detalle read-only, recepcion minima y CxP read-only; no hay pago ni documentos de compras.');
     } else {
         prcError(
-            'Rutas fuera del alcance Fase 2V/2W/2X/2Y: ' . implode(' | ', $forbiddenRoutes),
-            'Retirar rutas que no sean reporte read-only, detalle, borrador y POST /compras/{id}/recibir.'
+            'Rutas fuera del alcance Fase 2V/2W/2X/2Y/3B: ' . implode(' | ', $forbiddenRoutes),
+            'Retirar rutas que no sean reporte read-only, detalle, borrador, POST /compras/{id}/recibir o CxP GET read-only.'
         );
     }
 } else {

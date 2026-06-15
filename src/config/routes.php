@@ -219,6 +219,10 @@ $router->get('/compras/{id:[0-9]+}', ['controller' => 'Compra', 'action' => 'ver
 $router->post('/compras', ['controller' => 'Compra', 'action' => 'guardar']);
 $router->post('/compras/{id:[0-9]+}/recibir', ['controller' => 'Compra', 'action' => 'recibir']);
 
+// Fase 3B: CxP base read-only. Sin pagos, caja ni movimientos financieros.
+$router->get('/cuentas-por-pagar', ['controller' => 'CuentaPorPagar', 'action' => 'index']);
+$router->get('/cuentas-por-pagar/{id:[0-9]+}', ['controller' => 'CuentaPorPagar', 'action' => 'ver']);
+
 $router->get('/api/pwa-push/public-key', ['controller' => 'PwaPush', 'action' => 'publicKey']);
 $router->post('/api/pwa-push/subscribe', ['controller' => 'PwaPush', 'action' => 'subscribe']);
 $router->post('/api/pwa-push/unsubscribe', ['controller' => 'PwaPush', 'action' => 'unsubscribe']);

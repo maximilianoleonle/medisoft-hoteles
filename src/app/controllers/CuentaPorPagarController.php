@@ -1,0 +1,89 @@
+<?php
+
+require_once __DIR__ . '/../../core/Controller.php';
+require_once __DIR__ . '/../../core/View.php';
+require_once __DIR__ . '/../helpers/hotel_config.php';
+require_once __DIR__ . '/../models/CuentaPorPagar.php';
+
+class CuentaPorPagarController extends Controller
+{
+    private $cuentaModel;
+
+    public function __construct($route_params = [])
+    {
+        parent::__construct($route_params);
+        $this->cuentaModel = new CuentaPorPagar();
+    }
+
+    protected function before()
+    {
+        $this->requireAuth();
+
+        if (function_exists('require_hotel_context')) {
+            require_hotel_context();
+        }
+
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('inventario');
+        }
+
+        return true;
+    }
+
+    public function indexAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $filtros = [
+            'buscar' => $this->getQuery('buscar', ''),
+            'estado' => $this->getQuery('estado', 'todos'),
+        ];
+
+        $tablaDisponible = $this->cuentaModel->tablaDisponible();
+        $cuentas = $tablaDisponible ? $this->cuentaModel->listarPorHotel($hotelId, $filtros, 100) : [];
+        $resumen = $tablaDisponible ? $this->cuentaModel->resumenPorHotel($hotelId) : [
+            'total' => 0,
+            'pendientes' => 0,
+            'parciales' => 0,
+            'pagadas' => 0,
+            'vencidas' => 0,
+            'canceladas' => 0,
+            'total_importe' => '0.00',
+            'saldo_total' => '0.00',
+            'saldo_vencido' => '0.00',
+        ];
+
+        View::renderTemplate('cuentas_por_pagar/index', [
+            'title' => 'Cuentas por pagar - ' . current_hotel_display_name(),
+            'cuentas' => $cuentas,
+            'resumen' => $resumen,
+            'filtros' => $filtros,
+            'tablaDisponible' => $tablaDisponible,
+        ]);
+    }
+
+    public function verAction(): void
+    {
+        $id = (int)($this->route_params['id'] ?? 0);
+        $cuenta = $this->cuentaModel->buscarPorIdHotel($id, $this->hotelIdActual());
+
+        if (!$cuenta) {
+            set_mensaje('Cuenta por pagar no encontrada para el hotel actual.', 'error');
+            $this->redirect('cuentas-por-pagar');
+            return;
+        }
+
+        View::renderTemplate('cuentas_por_pagar/ver', [
+            'title' => 'Cuenta por pagar #' . $id . ' - ' . current_hotel_display_name(),
+            'cuenta' => $cuenta,
+            'movimientos' => $this->cuentaModel->movimientosPorCuenta($id, $this->hotelIdActual(), 100),
+            'movimientosDisponibles' => $this->cuentaModel->movimientosDisponibles(),
+        ]);
+    }
+
+    private function hotelIdActual(): int
+    {
+        return function_exists('obtenerHotelIdActualCompat')
+            ? (int)obtenerHotelIdActualCompat()
+            : (int)($_SESSION['hotel_id'] ?? 0);
+    }
+}
