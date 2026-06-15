@@ -50,6 +50,10 @@
 
 ## QA Fase 3C
 
+Estado reanclado: `SIMULADOR_3C_PARCIAL`.
+
+La QA manual y automatica registrada previamente para 3C queda como antecedente historico. No debe usarse para cerrar formalmente Fase 3C despues del reanclaje. La siguiente validacion formal debe empezar por 3C-A simulador read-only.
+
 ### QA critica
 
 - Confirmar que el simulador 3C-A no escribe en DB.
@@ -111,7 +115,7 @@
 - La doble generacion fue bloqueada limpiamente.
 - No se crearon movimientos en `cuentas_por_pagar_movimientos`.
 - No cambiaron `cajas` ni `movimientos_caja`.
-- QA manual autenticada en navegador: completada por el usuario.
+- Reclasificacion reanclaje: antecedente historico; no cierre formal de 3C-B.
 
 ## Resultado automatico Fase 3C-C
 
@@ -131,9 +135,9 @@
   - CxP sin fecha de emision;
   - movimientos de Caja con referencia textual a CxP.
 - Resultado actual de las validaciones: 0 inconsistencias CxP y 0 movimientos de Caja relacionados con CxP.
-- QA manual autenticada en navegador para mensajes/flujo visual de 3C-B: completada por el usuario.
+- Reclasificacion reanclaje: antecedente historico; no cierre formal de 3C-C.
 
-## QA manual completada Fase 3C
+## QA manual historica Fase 3C
 
 - Simulador de CxP generable desde compras recibidas: OK.
 - Compra recibida elegible muestra accion para generar CxP: OK.
@@ -147,6 +151,7 @@
 - No hay movimientos de Caja: OK.
 - No hay integracion con Caja: OK.
 - `/api/sync`: no probado manualmente; cubierto por checker automatico cuando el entorno esta disponible.
+- Reclasificacion reanclaje: esta lista queda como evidencia historica y no como cierre formal.
 
 ## Revision tecnica Fase 3C
 
@@ -156,7 +161,7 @@
 
 ## Auditoria seguridad Fase 3C post-QA
 
-- Auditoria estatica completada sin hallazgos bloqueantes.
+- Auditoria estatica previa sin hallazgos bloqueantes, reclasificada como prematura.
 - Confirmado por revision de codigo: unico POST 3C con `validateCSRF()`.
 - Confirmado por revision de codigo: `before()` exige autenticacion, contexto hotelero y modulo `inventario`.
 - Confirmado por revision de codigo: no hay escritura en Caja ni pagos desde CxP.

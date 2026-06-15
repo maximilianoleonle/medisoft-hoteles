@@ -109,6 +109,14 @@ No mezclar este archivo con rollback de CxP.
 
 ## Fase 3C
 
+### Reanclaje de estado
+
+- Estado formal vigente: `SIMULADOR_3C_PARCIAL`.
+- 3C-A/B/C tienen codigo historico, pero no se tratan como cierre formal despues del reanclaje.
+- No borrar codigo ni datos automaticamente.
+- No hacer rollback destructivo de la CxP historica creada por prueba local sin nueva autorizacion y backup.
+- Si se decide repetir formalmente 3C-A, primero validar que el simulador actual sea reutilizable antes de tocar 3C-B.
+
 ### 3C-0 contrato y diagnostico
 
 - Rollback: revertir el commit documental si se descarta el diseno.

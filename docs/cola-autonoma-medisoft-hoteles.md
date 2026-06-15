@@ -2,20 +2,30 @@
 
 ## Ultimo mensaje real usado
 
-QA_MANUAL_COMPLETADA_3C y auditoria de seguridad del bloque Fase 3C: validar cierre de CxP generada desde compras, sin avanzar a pagos, Caja ni Fase 3D.
+REANCLAR_FASE_3C_VERDAD_ACTUAL: reconstruir estado real de Fase 3C y corregir documentacion adelantada.
 
 ## Estado vigente
 
 - Bloque actual: Fase 3C CxP.
-- Fase actual: auditoria seguridad post-QA manual.
+- Fase actual: reanclaje de verdad actual.
 - Riesgo: naranja.
-- Estado: Fase 3C implementada, validada manualmente por el usuario y auditada estaticamente sin hallazgos bloqueantes.
-- HEAD base antes de la revision 3C: `8a40d9c docs(phase-np): define independent payroll module contract`.
-- Estado Git al iniciar revision 3C: limpio.
+- Estado: `SIMULADOR_3C_PARCIAL`.
+- HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
+- Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
 - No avanzar a pagos, Caja, Fase 3D ni nuevas funcionalidades.
-- Nota: existe commit documental NP-0 previo (`8a40d9c`); no se continua ni se mezcla con esta revision 3C.
+- Nota: existen commits de 3C-A/B/C y revisiones posteriores, pero el nuevo reanclaje no los considera cierre formal.
 - Limitacion actual: Docker Desktop no disponible y `php` no esta en PATH local; re-ejecutar health/preflights cuando el entorno vuelva a estar disponible.
+
+## Reanclaje Fase 3C
+
+- 3C-0 contrato y diagnostico: completada en `9897465`.
+- 3C-A simulador: codigo existente (`c216dc5`) con ruta/vista/modelo detectados estaticamente; estado formal `SIMULADOR_3C_PARCIAL` hasta verificacion ejecutable.
+- 3C-B generacion manual: codigo existente (`cb83121`), reclasificado como adelantado/no formal hasta cerrar 3C-A.
+- 3C-C validaciones: codigo existente (`5dfe665`), reclasificado como adelantado/no formal hasta cerrar 3C-A.
+- Revision `8765258`: ajuste de vista/documentacion, no cierre formal.
+- Auditoria `2662998`: documentacion de auditoria prematura bajo el reanclaje, no cierre formal.
+- Siguiente cola recomendada: `COLA_3C_A_SIMULADOR_READ_ONLY`.
 
 ## Bloque base previo: Fase 3B CxP read-only
 
@@ -138,7 +148,7 @@ No permite pagos, Caja, generacion automatica desde compras, saldos operativos, 
 
 ## QA manual
 
-Fase 3C: QA manual completada por el usuario. Ver `docs/qa-pendiente-cola.md`.
+Fase 3C: cualquier QA manual previa queda como antecedente historico; no cierra formalmente 3C bajo el reanclaje. Ver `docs/qa-pendiente-cola.md`.
 
 ## Documento de cierre
 
@@ -157,4 +167,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Ninguna funcionalidad nueva dentro de esta revision. Esperar nuevo mensaje real para cualquier bloque posterior. No avanzar a pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Ejecutar `COLA_3C_A_SIMULADOR_READ_ONLY` como siguiente paso formal. No avanzar a 3C-B, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

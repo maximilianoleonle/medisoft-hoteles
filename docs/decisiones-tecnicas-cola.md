@@ -69,6 +69,17 @@
 - `cuentas_por_pagar_movimientos` solo podra usarse como trazabilidad interna de CREACION si se mantiene sin pagos ni Caja.
 - `/api/sync` sigue fuera de alcance.
 
+## Reanclaje Fase 3C
+
+- Nuevo mensaje real `REANCLAR_FASE_3C_VERDAD_ACTUAL` corrige el estado documental.
+- Estado formal vigente: `SIMULADOR_3C_PARCIAL`.
+- `9897465` queda como contrato 3C-0 completado.
+- `c216dc5` contiene codigo de simulador; queda como base parcial pendiente de verificacion formal.
+- `cb83121` contiene generacion manual; queda como codigo adelantado/no formal hasta cerrar 3C-A.
+- `5dfe665` contiene validaciones; queda como codigo adelantado/no formal hasta cerrar 3C-A.
+- `8765258` y `2662998` quedan reclasificados como revision/auditoria prematuras o documentales, no cierre formal.
+- Siguiente accion: `COLA_3C_A_SIMULADOR_READ_ONLY`.
+
 ## Fase 3C-A
 
 - El simulador se ubica dentro de CxP, no dentro de recepcion de compras, para evitar que recibir una compra sugiera generacion automatica.
@@ -95,7 +106,7 @@
 
 ## Revision tecnica Fase 3C
 
-- La QA manual del bloque 3C fue reportada como completada por el usuario.
+- La QA manual previa del bloque 3C queda como antecedente historico, no cierre formal despues del reanclaje.
 - El preview debe renderizar link a proveedor solo cuando el proveedor fue resuelto por el join scoped al `hotel_id` de la compra.
 - Si una compra conserva `proveedor_id` pero el proveedor no existe en el hotel actual, la fila queda bloqueada y no debe enlazar a otro proveedor.
 - No se agrega indice/migracion en esta revision; la prevencion de duplicados sigue basada en bloqueo transaccional de la compra con `FOR UPDATE` y verificacion de CxP existente.
@@ -103,7 +114,7 @@
 
 ## Auditoria seguridad Fase 3C
 
-- La auditoria post-QA queda documentada como revision estatica sin cambios funcionales.
+- La auditoria post-QA queda documentada como revision estatica prematura sin cambios funcionales.
 - No se agrega migracion ni indice en esta auditoria.
 - Los riesgos de concurrencia se mantienen como residuales documentados; cualquier endurecimiento con indice unico requerira migracion futura autorizada.
 - La ausencia de pagos/Caja sigue siendo una regla de fase, no solo una decision visual.

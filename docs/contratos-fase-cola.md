@@ -97,6 +97,20 @@ Al cerrar esta fase, no avanzar a Fase 3C sin nuevo mensaje real. El estado debe
 
 ## Fase 3C: CxP operativa controlada sin Caja
 
+### Reanclaje de estado
+
+Estado formal vigente: `SIMULADOR_3C_PARCIAL`.
+
+El repositorio contiene commits de implementacion posteriores al contrato, pero el nuevo reanclaje impide tratarlos como cierre formal:
+
+- `9897465`: contrato 3C-0 completado.
+- `c216dc5`: codigo de simulador, base parcial para 3C-A.
+- `cb83121`: codigo de generacion manual, adelantado/no formal hasta cerrar 3C-A.
+- `5dfe665`: codigo de validaciones, adelantado/no formal hasta cerrar 3C-A.
+- `8765258` y `2662998`: revision/auditoria prematuras o documentales.
+
+Siguiente paso formal: `COLA_3C_A_SIMULADOR_READ_ONLY`.
+
 ### Objetivo
 
 Permitir generar cuentas por pagar manualmente desde compras recibidas, de forma controlada, auditable y sin integracion con Caja ni pagos.
@@ -190,9 +204,9 @@ Definition of Done 3C-A:
 - confirmar HTTP sin sesion redirige o bloquea;
 - confirmar conteos DB sin escritura antes/despues.
 
-### Estado 3C-B
+### Codigo historico 3C-B existente
 
-Generacion manual controlada de CxP desde compra recibida:
+Generacion manual controlada de CxP desde compra recibida existe en el codigo, pero queda reclasificada como adelantada/no formal hasta revalidar 3C-A:
 
 - ruta: `POST /cuentas-por-pagar/generar-desde-compra/{id}`;
 - controlador: `CuentaPorPagarController::generarDesdeCompraAction()`;
@@ -209,7 +223,7 @@ Generacion manual controlada de CxP desde compra recibida:
 - sin movimientos de Caja;
 - sin generacion automatica desde recepcion.
 
-Definition of Done 3C-B:
+Definition of Done 3C-B pendiente de revalidacion:
 
 - no genera CxP desde compras no recibidas;
 - no duplica CxP por compra;
@@ -220,9 +234,9 @@ Definition of Done 3C-B:
 - checkers/preflights actualizados;
 - `php -l`, health, preflights y `git diff --check` sin errores bloqueantes.
 
-### Estado 3C-C y revision post-QA
+### Codigo historico 3C-C y revision post-QA
 
-Validaciones de consistencia agregadas a health/preflights:
+Validaciones de consistencia agregadas a health/preflights existen en codigo, pero quedan reclasificadas como adelantadas/no formales hasta revalidar 3C-A:
 
 - CxP duplicada por compra/hotel;
 - CxP con compra inexistente;
@@ -234,7 +248,7 @@ Validaciones de consistencia agregadas a health/preflights:
 - CxP sin fecha de emision;
 - referencias CxP en movimientos de Caja.
 
-QA manual del bloque 3C: completada por el usuario.
+QA manual del bloque 3C: antecedente historico; no cierre formal despues del reanclaje.
 
 Revision tecnica post-QA:
 

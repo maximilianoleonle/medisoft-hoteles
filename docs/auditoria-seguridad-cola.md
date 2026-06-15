@@ -13,19 +13,25 @@ Auditoria post-commit del bloque autorizado hasta Fase 3C:
 - Fase 3C-B: generacion manual controlada de CxP desde compra recibida.
 - Fase 3C-C: validaciones de consistencia CxP en health/preflights.
 
-## Resultado
+## Reanclaje Fase 3C
 
-Estado: `AUDITORIA_SEGURIDAD_3C_COMPLETADA_QA_MANUAL_COMPLETADA`.
+Estado real reanclado: `SIMULADOR_3C_PARCIAL`.
 
-No se detectaron riesgos bloqueantes en la auditoria tecnica/local del bloque 3C.
+La auditoria previa de Fase 3C queda reclasificada como prematura/documental. No debe usarse para afirmar que Fase 3C esta cerrada, revisada completamente ni auditada completamente.
 
-Ultima auditoria:
+Motivo:
 
-- Bloque: Fase 3C.
-- Resultado: sin hallazgos bloqueantes.
-- Cambios de codigo requeridos: ajuste menor en preview para no enlazar proveedor si el proveedor no pertenece al hotel actual.
-- Cambios de documentacion: QA manual y cierre 3C actualizados.
-- Auditoria post-QA adicional: completada por revision estatica; sin nuevos cambios de codigo.
+- el repositorio contiene codigo de simulador, generacion manual y checkers;
+- el nuevo mensaje real exige reconstruir verdad actual y no considerar 3C cerrada;
+- Docker/PHP no estan disponibles para re-ejecutar verificaciones completas;
+- por tanto, la auditoria queda como antecedente y debe repetirse despues de cerrar formalmente 3C-A/3C-B/3C-C.
+
+## Resultado historico previo
+
+- Bloque revisado: Fase 3C.
+- Resultado historico: sin hallazgos bloqueantes por revision estatica.
+- Reclasificacion: auditoria prematura; no cierre formal de Fase 3C.
+- Cambios de codigo historicos: ajuste menor en preview para no enlazar proveedor si el proveedor no pertenece al hotel actual.
 
 ## Controles revisados
 
@@ -48,7 +54,7 @@ Ultima auditoria:
 - Acceso sin sesion a `/cuentas-por-pagar` redirige a login.
 - `/api/sync` sigue fuera de alcance y validado por checker como bloqueado.
 
-## Auditoria especifica Fase 3C post-QA
+## Auditoria especifica Fase 3C post-QA historica
 
 - Creacion de CxP sin `hotel_id`: bloqueada por `CuentaPorPagar::generarDesdeCompraRecibida()`, que valida `hotelId > 0` y lo inserta explicitamente.
 - Creacion de CxP con proveedor de otro hotel: bloqueada por `obtenerCompraParaGeneracion()`, que une proveedor con `p.hotel_id = c.hotel_id`, y por `assertCompraGenerable()`.
@@ -64,7 +70,7 @@ Ultima auditoria:
 - Errores de permisos: CxP comparte guardas de modulo `inventario` en controlador y sidebar.
 - `/api/sync` modificado accidentalmente: no hay cambios de codigo en `ApiController` ni en la ruta `/api/sync` dentro de esta revision.
 - Rollback insuficiente: `docs/rollback-cola.md` documenta rollback por 3C-A, 3C-B, 3C-C y revision post-QA.
-- QA critica incompleta: QA manual 3C fue reportada como completada por el usuario; `/api/sync` queda cubierto por checker automatico cuando el entorno este disponible.
+- QA critica incompleta: cualquier QA manual previa queda como antecedente historico; se requiere revalidacion formal de 3C-A antes de usarla como cierre.
 
 ## Warnings conocidos
 
@@ -80,7 +86,7 @@ Ultima auditoria:
 
 ## Recomendacion
 
-Fase 3C queda validada manualmente por el usuario. Mantener prohibidos pagos, Caja, CxC, nomina operativa, permisos profundos y `/api/sync` hasta nuevo bloque explicito.
+Ejecutar primero `COLA_3C_A_SIMULADOR_READ_ONLY`. Mantener prohibidos pagos, Caja, CxC, nomina operativa, permisos profundos y `/api/sync` hasta nuevo bloque explicito.
 
 ## Fase 3C - controles esperados
 

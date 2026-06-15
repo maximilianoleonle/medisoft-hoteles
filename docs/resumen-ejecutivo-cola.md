@@ -1,10 +1,25 @@
 # Resumen ejecutivo - cola autonoma
 
-## Estado final del bloque autorizado
+## Reanclaje Fase 3C
 
-Estado: `CIERRE_TECNICO_3C_COMPLETADO_QA_MANUAL_COMPLETADA`.
+Estado real reanclado: `SIMULADOR_3C_PARCIAL`.
 
-El bloque Fase 3C queda implementado, revisado tecnicamente y validado manualmente por el usuario.
+Motivo: el repositorio contiene codigo posterior al contrato 3C-0 para simulador, generacion manual y validaciones, pero el nuevo mensaje real invalida tratar Fase 3C como cerrada, revisada o auditada completamente. En el entorno actual no se pudo re-ejecutar `php -l`, health, preflights ni pruebas HTTP porque Docker Desktop no esta disponible y `php` no esta en PATH local.
+
+Estado formal vigente:
+
+- Fase 3C-0 contrato y diagnostico: completada.
+- Fase 3C-A simulador read-only: codigo existente y ruteado, pero queda como parcial hasta re-verificacion formal.
+- Fase 3C-B generacion manual: codigo existente en commit `cb83121`, pero no debe considerarse fase formalmente completada bajo este reanclaje.
+- Fase 3C-C validaciones/health/preflights: codigo existente en commit `5dfe665`, pero no debe considerarse cierre formal bajo este reanclaje.
+- Revision tecnica `8765258` y auditoria `2662998`: reclasificadas como revision/auditoria prematuras o documentales; no cierran Fase 3C.
+- Siguiente accion recomendada: `COLA_3C_A_SIMULADOR_READ_ONLY`.
+
+## Estado final del bloque autorizado anterior
+
+Estado: `CIERRE_TECNICO_COMPLETADO_QA_MANUAL_PENDIENTE`.
+
+El bloque Fase 2X-3B queda como bloque cerrado anterior; Fase 3C vuelve a estado parcial reanclado.
 
 ## Fases y commits
 
@@ -25,24 +40,19 @@ Objetivo: generar CxP manualmente desde compras recibidas, sin Caja ni pagos.
 Estado actual:
 
 - Fase 3C-0 completada con contrato y diagnostico.
-- Fase 3C-A implementa preview/simulador.
-- Fase 3C-B implementa generacion manual controlada con POST + CSRF.
-- Fase 3C-C refuerza health/preflights con consistencia CxP y deteccion de Caja relacionada.
-- Revision tecnica post-QA completo ajuste menor de preview para no enlazar proveedores fuera del `hotel_id`.
-- Auditoria de seguridad post-QA completada sin hallazgos bloqueantes.
-- QA manual del bloque Fase 3C: completada por el usuario.
+- Fase 3C-A tiene codigo parcial existente: ruta/vista/modelo de preview detectados estaticamente.
+- Fase 3C-B tiene codigo existente, pero se reclasifica como adelantado hasta revalidar formalmente 3C-A.
+- Fase 3C-C tiene checkers existentes, pero se reclasifica como adelantado hasta revalidar formalmente 3C-A.
+- Revision tecnica y auditoria post-QA fueron prematuras respecto al nuevo reanclaje.
+- QA manual previa no se usa como cierre formal de Fase 3C en este estado reanclado.
 - No se implementaron pagos ni Caja.
-- CxP puede crearse solo desde compra recibida elegible.
-- Compras recibidas elegibles antes de la prueba local: 2.
-- Prueba local generada: compra `#5` -> CxP `#1`.
-- CxP actuales despues de prueba local: 1.
-- Movimientos de Caja relacionados con CxP: 0.
+- No avanzar a pagos, Caja ni Fase 3D.
 
-## Situacion
+## Situacion historica
 
-Medisoft Hoteles cerro Fase 3C: generacion manual controlada de CxP desde compras recibidas.
+El historial contiene commits que implementan partes de Fase 3C, pero el estado documental vigente no debe tratarlos como cierre formal completo.
 
-La fase se apoya en una migracion local ya aplicada sobre `medisoft_hoteles_import`, con backup previo confirmado. 3C-B creo una CxP local controlada desde compra recibida; no hay pagos, abonos ni movimientos de Caja.
+La prueba local historica de 3C-B creo una CxP controlada desde compra recibida. Ese dato no debe borrarse ni corregirse automaticamente; queda como antecedente a revisar si se decide repetir formalmente 3C-B.
 
 ## Alcance de Fase 3B
 
@@ -115,8 +125,9 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 
 ## Pendiente antes de avanzar
 
-- No queda QA manual pendiente reportada para Fase 3C.
-- No avanzar a pagos, Caja ni Fase 3D sin nuevo mensaje real explicito.
+- Re-ejecutar Fase 3C-A simulador read-only como siguiente cola formal.
+- Confirmar con verificaciones actuales que el simulador esta ruteado, protegido y funcional.
+- No avanzar a 3C-B, pagos, Caja ni Fase 3D sin nuevo mensaje real o cola especifica.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

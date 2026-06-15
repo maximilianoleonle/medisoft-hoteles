@@ -28,23 +28,23 @@ Fuente nueva fundacional:
 Estado:
 
 - fundacion read-only hasta Fase 3B;
-- Fase 3C autoriza generacion manual controlada desde compras recibidas;
-- Fase 3C-A solo agrega preview read-only de compras elegibles;
-- Fase 3C-B permite crear CxP manualmente desde compra recibida elegible;
-- Fase 3C-C no agrega funcionalidad de usuario; solo valida consistencia CxP en health/preflights;
-- Fase 3C fue validada manualmente por el usuario;
+- Reanclaje Fase 3C: estado formal `SIMULADOR_3C_PARCIAL`;
+- Fase 3C-A tiene codigo existente de preview read-only, pendiente de verificacion formal;
+- Fase 3C-B tiene codigo existente de generacion manual, reclasificado como adelantado/no formal hasta cerrar 3C-A;
+- Fase 3C-C tiene codigo existente de health/preflights, reclasificado como adelantado/no formal hasta cerrar 3C-A;
 - sin pagos;
 - sin Caja;
 - sin generacion automatica desde compras;
 - sin integracion con Caja.
 - commit de cierre tecnico: `1fa1653`.
 
-Regla:
+Regla vigente despues del reanclaje:
 
-- La unica escritura CxP autorizada en 3C sera generacion manual desde compra recibida.
+- La siguiente accion formal debe ser `COLA_3C_A_SIMULADOR_READ_ONLY`.
+- No ejecutar ni ampliar generacion manual hasta revalidar formalmente el simulador.
 - El preview 3C-A no es fuente de datos nueva; solo interpreta `compras` + `proveedores` + `cuentas_por_pagar`.
-- La CxP 3C-B se crea en `cuentas_por_pagar` y su auditoria en `logs_auditoria`.
-- `cuentas_por_pagar_movimientos` queda sin uso operativo en 3C-B.
+- La CxP historica creada en prueba local de 3C-B queda como antecedente; no borrar ni corregir automaticamente.
+- `cuentas_por_pagar_movimientos` queda sin uso operativo.
 - Los checkers 3C-C deben fallar si detectan CxP duplicada, sin compra/proveedor, con cruce de hotel, con total/saldo invalido o con referencia CxP en `movimientos_caja`.
 - El preview solo debe enlazar a proveedor cuando el proveedor existe dentro del mismo `hotel_id`; si no, debe mostrar la compra bloqueada sin link a otro hotel.
 - La auditoria de seguridad 3C es una capa de verificacion; no corrige datos automaticamente ni autoriza escrituras nuevas.
