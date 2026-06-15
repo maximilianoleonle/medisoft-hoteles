@@ -28,11 +28,11 @@ Fuente nueva fundacional:
 Estado:
 
 - fundacion read-only hasta Fase 3B;
-- Reanclaje Fase 3C: estado formal `GENERACION_3C_A_B_VALIDADA_MANUALMENTE`;
+- Reanclaje Fase 3C: estado formal `VALIDACIONES_3C_C_COMPLETADAS`;
 - Fase 3C-A tiene preview read-only ruteado, protegido, navegable y verificado automaticamente;
 - Fase 3C-A y 3C-B fueron validadas manualmente por el usuario;
 - Fase 3C-B tiene generacion manual POST activa desde compras recibidas elegibles;
-- Fase 3C-C queda diferida como cierre formal, aunque health/preflights ya incluyen comprobaciones read-only de consistencia CxP;
+- Fase 3C-C queda completada tecnicamente como health/preflights read-only de consistencia CxP;
 - sin pagos;
 - sin Caja;
 - sin generacion automatica desde compras;
@@ -41,12 +41,12 @@ Estado:
 
 Regla vigente despues del reanclaje:
 
-- La siguiente accion formal permitida es Fase 3C-C validaciones, health y preflights.
+- La siguiente accion formal recomendada es revision tecnica/auditoria de cierre 3C si se autoriza explicitamente.
 - No ampliar hacia pagos, Caja ni Fase 3D sin nueva autorizacion explicita.
 - El preview 3C-A no es fuente de datos nueva; solo interpreta `compras` + `proveedores` + `cuentas_por_pagar`.
 - Las CxP creadas en pruebas locales controladas (`id=1` compra `#5`, `id=2` compra `#2`) quedan como evidencia local; no borrar ni corregir automaticamente.
 - `cuentas_por_pagar_movimientos` queda sin uso operativo.
-- Los checkers 3C-C deben fallar si detectan CxP duplicada, sin compra/proveedor, con cruce de hotel, con total/saldo invalido o con referencia CxP en `movimientos_caja`.
+- Los checkers 3C-C deben fallar si detectan CxP duplicada, sin compra/proveedor, con cruce de hotel, con total/saldo invalido, sin fecha de emision, con movimientos CxP/pagos/abonos o con referencia CxP en `movimientos_caja`.
 - El preview solo debe enlazar a proveedor cuando el proveedor existe dentro del mismo `hotel_id`; si no, debe mostrar la compra bloqueada sin link a otro hotel.
 - La auditoria de seguridad 3C es una capa de verificacion; no corrige datos automaticamente ni autoriza escrituras nuevas.
 - Cualquier integracion con Caja requiere nueva fase autorizada.

@@ -50,9 +50,9 @@
 
 ## QA Fase 3C
 
-Estado vigente: `GENERACION_3C_A_B_VALIDADA_MANUALMENTE`.
+Estado vigente: `VALIDACIONES_3C_C_COMPLETADAS`.
 
-El usuario reporto QA manual completada para 3C-A y 3C-B. La siguiente fase permitida es 3C-C validaciones, health y preflights.
+El usuario reporto QA manual completada para 3C-A y 3C-B. Fase 3C-C queda completada tecnicamente con validaciones read-only en health/preflights y SQL de consistencia.
 
 ### QA critica
 
@@ -138,9 +138,14 @@ El usuario reporto QA manual completada para 3C-A y 3C-B. La siguiente fase perm
   - CxP con saldo mayor al total;
   - CxP con total invalido o saldo negativo;
   - CxP sin fecha de emision;
+  - movimientos CxP/pagos/abonos accidentales;
   - movimientos de Caja con referencia textual a CxP.
-- Resultado actual de las validaciones: 0 inconsistencias CxP y 0 movimientos de Caja relacionados con CxP.
-- Reclasificacion reanclaje: antecedente historico; no cierre formal de 3C-C.
+- Resultado verificado en DB local:
+  - `cuentas_por_pagar`: 2;
+  - `cuentas_por_pagar_movimientos`: 0;
+  - inconsistencias CxP principales: 0;
+  - movimientos de Caja con referencia textual a CxP: 0;
+  - `compra_pagos`: tabla inexistente.
 
 ## QA manual historica Fase 3C
 

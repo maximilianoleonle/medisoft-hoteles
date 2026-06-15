@@ -2,18 +2,18 @@
 
 ## Reanclaje Fase 3C
 
-Estado vigente: `GENERACION_3C_A_B_VALIDADA_MANUALMENTE`.
+Estado vigente: `VALIDACIONES_3C_C_COMPLETADAS`.
 
-Motivo: despues del reanclaje, se formalizo 3C-A primero y luego se implemento 3C-B como generacion manual controlada desde compra recibida. Docker estuvo disponible para `php -l`, health, preflights, POST sin sesion, backup, prueba controlada, doble generacion y conteos DB antes/despues. El usuario reporto QA manual completada para 3C-A y 3C-B.
+Motivo: despues del reanclaje, se formalizo 3C-A primero y luego se implemento 3C-B como generacion manual controlada desde compra recibida. El usuario reporto QA manual completada para 3C-A y 3C-B. Fase 3C-C queda dedicada a validaciones read-only en health/preflights y SQL de consistencia, sin pagos, abonos, Caja ni `/api/sync`.
 
 Estado formal vigente:
 
 - Fase 3C-0 contrato y diagnostico: completada.
 - Fase 3C-A simulador read-only: completada tecnicamente, commiteada y validada manualmente.
 - Fase 3C-B generacion manual: completada tecnicamente, commiteada y validada manualmente.
-- Fase 3C-C validaciones/health/preflights: diferida como cierre formal; se conservan validaciones read-only de consistencia CxP.
+- Fase 3C-C validaciones/health/preflights: completada tecnicamente como verificacion read-only.
 - Revision tecnica `8765258` y auditoria `2662998`: reclasificadas como revision/auditoria prematuras o documentales; no cierran Fase 3C.
-- Siguiente accion recomendada: Fase 3C-C validaciones, health y preflights.
+- Siguiente accion recomendada: revision tecnica/auditoria de cierre 3C si el usuario la autoriza.
 
 ## Estado final del bloque autorizado anterior
 
@@ -42,10 +42,11 @@ Estado actual:
 - Fase 3C-0 completada con contrato y diagnostico.
 - Fase 3C-A completada tecnicamente como simulador read-only: ruta GET, vista, controller, modelo, navegacion desde CxP y guardas existentes.
 - Fase 3C-B completada tecnicamente: POST manual con CSRF, validaciones centrales, auditoria y bloqueo de duplicados.
-- Fase 3C-C queda diferida como cierre formal; los checkers actuales conservan validaciones read-only de consistencia CxP.
+- Fase 3C-C completada tecnicamente: health/preflights validan duplicados, relaciones, saldos, fechas, ausencia de movimientos CxP, ausencia de Caja y ausencia de pagos/abonos.
+- SQL read-only 3C-C confirmo `cuentas_por_pagar=2`, `cuentas_por_pagar_movimientos=0`, inconsistencias CxP=0, Caja-CxP=0 y `compra_pagos` inexistente.
 - Revision tecnica y auditoria post-QA fueron prematuras respecto al nuevo reanclaje.
 - QA manual 3C-A/3C-B reportada por el usuario: preview OK, CxP #2 vinculada, detalle CxP OK, origen compra/proveedor visible, sin pagos, sin abonos y sin Caja.
-- Siguiente fase permitida: 3C-C validaciones, health y preflights.
+- Siguiente fase recomendada: cierre tecnico/revision de 3C; no pagos, Caja ni Fase 3D.
 - No se implementaron pagos ni Caja.
 - No avanzar a pagos, Caja ni Fase 3D.
 
@@ -127,7 +128,7 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 ## Pendiente antes de avanzar
 
 - No avanzar a pagos, Caja ni Fase 3D sin nuevo mensaje real o cola especifica.
-- La siguiente fase permitida por el usuario es 3C-C validaciones, health y preflights.
+- La siguiente accion recomendada es revision tecnica/auditoria de cierre de 3C, si se autoriza explicitamente.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

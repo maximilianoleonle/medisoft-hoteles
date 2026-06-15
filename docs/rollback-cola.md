@@ -111,11 +111,11 @@ No mezclar este archivo con rollback de CxP.
 
 ### Reanclaje de estado
 
-- Estado formal vigente: `GENERACION_3C_A_B_VALIDADA_MANUALMENTE`.
-- 3C-A esta implementada como GET read-only; 3C-B esta implementada como POST manual controlado; 3C-C queda diferida como cierre formal.
+- Estado formal vigente: `VALIDACIONES_3C_C_COMPLETADAS`.
+- 3C-A esta implementada como GET read-only; 3C-B esta implementada como POST manual controlado; 3C-C queda implementada como checkers read-only.
 - No borrar codigo ni datos automaticamente.
 - No hacer rollback destructivo de la CxP historica creada por prueba local sin nueva autorizacion y backup.
-- Antes de tocar pagos, Caja o Fase 3D, completar 3C-C y recibir autorizacion explicita de una fase nueva.
+- Antes de tocar pagos, Caja o Fase 3D, hacer revision/auditoria de cierre 3C y recibir autorizacion explicita de una fase nueva.
 
 ### 3C-0 contrato y diagnostico
 
@@ -177,9 +177,11 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 
 ### 3C-C validaciones, health y preflights
 
+- Estado vigente: completada tecnicamente como verificacion read-only.
 - Rollback de codigo/docs: revertir el commit `test(phase-3c): add payable consistency checks` si alguna regla genera falsos positivos bloqueantes.
 - Rollback de datos: no aplica; la fase solo ejecuta consultas de lectura.
 - No se crean nuevas rutas, vistas, pagos, abonos ni movimientos de Caja.
+- Validaciones cubiertas: duplicados, compra/proveedor inexistente, `hotel_id`, cruce de hotel, compra no recibida, saldo/total, fecha de emision, movimientos CxP/pagos/abonos y referencias CxP en Caja.
 - Validacion posterior:
   - `php -l` en health/preflights;
   - health checker;

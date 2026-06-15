@@ -15,7 +15,7 @@ Auditoria post-commit del bloque autorizado hasta Fase 3C:
 
 ## Reanclaje Fase 3C
 
-Estado vigente: `GENERACION_3C_A_B_VALIDADA_MANUALMENTE`.
+Estado vigente: `VALIDACIONES_3C_C_COMPLETADAS`.
 
 La auditoria previa de Fase 3C queda reclasificada como prematura/documental. No debe usarse para afirmar que Fase 3C esta cerrada, revisada completamente ni auditada completamente.
 
@@ -45,6 +45,8 @@ Motivo:
 - CxP no contiene acciones de pago.
 - CxP 3C-B escribe solo en `cuentas_por_pagar` durante generacion manual.
 - CxP no escribe en `cuentas_por_pagar_movimientos`.
+- Health/preflights fallan si `cuentas_por_pagar_movimientos` deja de estar en cero durante Fase 3C-C.
+- SQL read-only 3C-C confirma cero movimientos CxP/pagos/abonos y cero movimientos de Caja con referencia CxP.
 - CxP no toca `movimientos_caja`, `cortes_caja` ni `cajas`.
 - Modelo CxP filtra por `hotel_id`.
 - La generacion valida compra recibida, proveedor del mismo hotel, total positivo, detalles existentes y no duplicado.
@@ -85,7 +87,7 @@ Motivo:
 
 ## Recomendacion
 
-Continuar solo con Fase 3C-C validaciones, health y preflights cuando sea autorizada. Mantener prohibidos pagos, Caja, CxC, nomina operativa, permisos profundos y `/api/sync` hasta nuevo bloque explicito.
+Continuar solo con revision tecnica/auditoria de cierre 3C si el usuario la autoriza. Mantener prohibidos pagos, Caja, CxC, nomina operativa, permisos profundos y `/api/sync` hasta nuevo bloque explicito.
 
 ## Fase 3C - controles esperados
 

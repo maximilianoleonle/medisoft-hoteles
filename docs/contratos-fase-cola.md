@@ -99,7 +99,7 @@ Al cerrar esta fase, no avanzar a Fase 3C sin nuevo mensaje real. El estado debe
 
 ### Reanclaje de estado
 
-Estado formal vigente: `GENERACION_3C_A_B_VALIDADA_MANUALMENTE`.
+Estado formal vigente: `VALIDACIONES_3C_C_COMPLETADAS`.
 
 El repositorio contiene commits de implementacion posteriores al contrato, pero el nuevo reanclaje impide tratarlos como cierre formal:
 
@@ -109,7 +109,7 @@ El repositorio contiene commits de implementacion posteriores al contrato, pero 
 - `5dfe665`: codigo de validaciones read-only conservado en health/preflights.
 - `8765258` y `2662998`: revision/auditoria prematuras o documentales.
 
-Siguiente paso formal: Fase 3C-C validaciones, health y preflights.
+Siguiente paso formal: revision tecnica/auditoria de cierre 3C, solo si el usuario la autoriza.
 
 ### Objetivo
 
@@ -250,7 +250,7 @@ Prueba local controlada:
 
 ### Codigo historico 3C-C y revision post-QA
 
-Validaciones de consistencia agregadas a health/preflights se conservan como verificacion read-only de 3C-B, aunque el cierre formal 3C-C queda para una cola posterior:
+Validaciones de consistencia agregadas a health/preflights quedan formalizadas como Fase 3C-C read-only:
 
 - CxP duplicada por compra/hotel;
 - CxP con compra inexistente;
@@ -260,6 +260,7 @@ Validaciones de consistencia agregadas a health/preflights se conservan como ver
 - CxP generada desde compra no recibida;
 - CxP con saldo/total invalido;
 - CxP sin fecha de emision;
+- movimientos CxP/pagos/abonos accidentales;
 - referencias CxP en movimientos de Caja.
 
 QA manual del bloque 3C: antecedente historico; no cierre formal despues del reanclaje.

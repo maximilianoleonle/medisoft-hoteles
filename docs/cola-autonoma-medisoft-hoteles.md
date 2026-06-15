@@ -2,14 +2,14 @@
 
 ## Ultimo mensaje real usado
 
-QA_MANUAL_COMPLETADA_3C_A_B: marcar 3C-A y 3C-B como validadas manualmente, sin avanzar a pagos, Caja ni Fase 3D.
+COLA_3C_C_VALIDACIONES_HEALTH_PREFLIGHTS: reforzar validaciones read-only de CxP generada desde compras, sin pagos, abonos, Caja ni `/api/sync`.
 
 ## Estado vigente
 
 - Bloque actual: Fase 3C CxP.
-- Fase actual: 3C-A/3C-B validadas manualmente; 3C-C pendiente como siguiente fase permitida.
+- Fase actual: 3C-C validaciones, health y preflights.
 - Riesgo: naranja.
-- Estado: `GENERACION_3C_A_B_VALIDADA_MANUALMENTE`.
+- Estado: `VALIDACIONES_3C_C_COMPLETADAS`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -22,10 +22,11 @@ QA_MANUAL_COMPLETADA_3C_A_B: marcar 3C-A y 3C-B como validadas manualmente, sin 
 - 3C-0 contrato y diagnostico: completada en `9897465`.
 - 3C-A simulador: codigo vigente con ruta/vista/modelo verificados y commiteados en `c0ff5a1`.
 - 3C-B generacion manual: implementada tecnicamente y validada manualmente por el usuario.
-- 3C-C validaciones: checkers read-only conservan reglas de consistencia CxP.
+- 3C-C validaciones: checkers read-only refuerzan reglas de consistencia CxP y ausencia de movimientos/pagos/abonos.
+- SQL read-only 3C-C: CxP=2, movimientos CxP=0, inconsistencias=0, Caja-CxP=0, `compra_pagos` inexistente.
 - Revision `8765258`: ajuste de vista/documentacion, no cierre formal.
 - Auditoria `2662998`: documentacion de auditoria prematura bajo el reanclaje, no cierre formal.
-- Siguiente accion recomendada: Fase 3C-C validaciones, health y preflights.
+- Siguiente accion recomendada: revision tecnica/auditoria de cierre 3C, solo si el usuario la autoriza.
 
 ## Bloque base previo: Fase 3B CxP read-only
 
@@ -186,4 +187,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Siguiente paso formal permitido: Fase 3C-C validaciones, health y preflights. No avanzar a pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Siguiente paso formal recomendado: revision tecnica/auditoria de cierre 3C, solo si el usuario la autoriza. No avanzar a pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

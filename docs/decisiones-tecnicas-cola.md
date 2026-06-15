@@ -72,13 +72,13 @@
 ## Reanclaje Fase 3C
 
 - Nuevo mensaje real `REANCLAR_FASE_3C_VERDAD_ACTUAL` corrige el estado documental.
-- Estado formal vigente: `GENERACION_3C_A_B_VALIDADA_MANUALMENTE`.
+- Estado formal vigente: `VALIDACIONES_3C_C_COMPLETADAS`.
 - `9897465` queda como contrato 3C-0 completado.
 - `c216dc5` contiene codigo de simulador; queda como base parcial pendiente de verificacion formal.
 - `cb83121` contiene el antecedente historico de generacion manual; la implementacion vigente reintroduce 3C-B con validacion automatica.
 - `5dfe665` contiene validaciones; se conservan como checkers read-only de consistencia CxP.
 - `8765258` y `2662998` quedan reclasificados como revision/auditoria prematuras o documentales, no cierre formal.
-- Siguiente accion: Fase 3C-C validaciones, health y preflights.
+- Siguiente accion: revision tecnica/auditoria de cierre 3C, solo si el usuario la autoriza.
 
 ## Fase 3C-A
 
@@ -118,6 +118,12 @@
 - Los riesgos de concurrencia se mantienen como residuales documentados; cualquier endurecimiento con indice unico requerira migracion futura autorizada.
 - La ausencia de pagos/Caja sigue siendo una regla de fase, no solo una decision visual.
 - Health/preflights deben re-ejecutarse cuando Docker/PHP esten disponibles.
+
+## Fase 3C-C
+
+- Estado: completada tecnicamente como validaciones read-only en health/preflights.
+- Las validaciones fallan con ERROR si detectan CxP duplicada por compra/hotel, compra o proveedor inexistente, `hotel_id` nulo, cruce de hotel, compra no recibida, saldo mayor al total, total invalido, fecha de emision nula, movimientos CxP/pagos/abonos o referencias CxP en Caja.
+- No se agregan rutas, vistas, pagos, abonos, Caja ni cambios en `/api/sync`.
 
 ## Bloque Personal y Nomina (Fase NP)
 

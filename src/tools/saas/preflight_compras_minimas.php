@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B/3C-B para Compras minimas y CxP controlada.
+ * Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B/3C-C para Compras minimas y CxP controlada.
  *
  * Solo lectura. No crea tablas, rutas, migraciones ni datos.
  */
@@ -128,6 +128,12 @@ function pfCxpCajaTextPredicate(PDO $pdo, string $database): ?string
 
 function pfReportCxpConsistency(PDO $pdo, string $database): void
 {
+    pfReportZeroCount(
+        'movimientos CxP/pagos/abonos accidentales',
+        pfCountRows($pdo, 'cuentas_por_pagar_movimientos'),
+        'Revisar cuentas_por_pagar_movimientos; Fase 3C-C no debe tener pagos, abonos ni movimientos CxP.'
+    );
+
     $checks = [
         [
             'label' => 'CxP duplicada por compra y hotel',
@@ -305,7 +311,7 @@ $purchaseReceptionPreflightPath = $appRoot . '/tools/saas/preflight_recepcion_co
 $draftMigrationPath = $projectRoot . '/docs/technical/sql_drafts/20260615_002_fase_2n_compras_minimas_draft.sql';
 $officialMigrationPath = $projectRoot . '/migrations/20260615_002_fase_2n_compras_minimas.sql';
 
-echo "Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B/3C-B - Compras minimas y CxP controlada\n";
+echo "Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B/3C-C - Compras minimas y CxP controlada\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {

@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-B.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -164,6 +164,12 @@ function hcCxpCajaTextPredicate(PDO $pdo, string $database): ?string
 
 function hcReportCxpConsistency(PDO $pdo, string $database): void
 {
+    hcReportZeroCount(
+        'movimientos CxP/pagos/abonos accidentales',
+        hcCountRows($pdo, 'cuentas_por_pagar_movimientos'),
+        'Revisar cuentas_por_pagar_movimientos; Fase 3C-C no debe tener pagos, abonos ni movimientos CxP.'
+    );
+
     $checks = [
         [
             'label' => 'CxP duplicada por compra y hotel',
@@ -546,7 +552,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-B - Medisoft Hoteles\n";
+echo "Health check Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -620,9 +626,9 @@ if ($minimalPurchasingPreflight && is_file($minimalPurchasingPreflight)) {
         && strpos($minimalPurchasingPreflightCode, 'cuentas-por-pagar/generacion-preview') !== false
         && strpos($minimalPurchasingPreflightCode, 'function generacionPreviewAction') !== false
         && strpos($minimalPurchasingPreflightCode, 'function previewGeneracionDesdeCompras') !== false
-        && strpos($minimalPurchasingPreflightCode, '3C-B') !== false
+        && strpos($minimalPurchasingPreflightCode, '3C-C') !== false
     ) {
-        hcOk('Preflight de compras minimas existe, es solo lectura y conoce Fase 2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B/3C-B.');
+        hcOk('Preflight de compras minimas existe, es solo lectura y conoce Fase 2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B/3C-C.');
     } else {
         hcWarning(
             'Preflight de compras minimas existe pero no declara guardas completas.',
@@ -640,7 +646,7 @@ if ($purchaseReceptionPreflight && is_file($purchaseReceptionPreflight)) {
     $purchaseReceptionPreflightCode = (string) file_get_contents($purchaseReceptionPreflight);
     if (
         strpos($purchaseReceptionPreflightCode, 'Preflight Fase 2T') !== false
-        && strpos($purchaseReceptionPreflightCode, '3C-B') !== false
+        && strpos($purchaseReceptionPreflightCode, '3C-C') !== false
         && strpos($purchaseReceptionPreflightCode, 'Solo lectura') !== false
         && strpos($purchaseReceptionPreflightCode, 'START TRANSACTION READ ONLY') !== false
         && strpos($purchaseReceptionPreflightCode, 'detalles_con_movimiento') !== false
@@ -650,7 +656,7 @@ if ($purchaseReceptionPreflight && is_file($purchaseReceptionPreflight)) {
         && strpos($purchaseReceptionPreflightCode, 'generacionpreview') !== false
         && strpos($purchaseReceptionPreflightCode, 'movimientos_caja') !== false
     ) {
-        hcOk('Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B/3C-B de recepcion de compras existe y es solo lectura.');
+        hcOk('Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B/3C-C de recepcion de compras existe y es solo lectura.');
     } else {
         hcWarning(
             'Preflight Fase 2T de recepcion existe pero no declara todas las guardas esperadas.',
@@ -1570,7 +1576,7 @@ if ($pdo) {
 
         $cxpCount = hcCountRows($pdo, 'cuentas_por_pagar');
         $cxpMovCount = hcCountRows($pdo, 'cuentas_por_pagar_movimientos');
-        hcOk('CxP Fase 3B disponible en modo base. Registros: cuentas=' . (string)$cxpCount . ', movimientos=' . (string)$cxpMovCount . '.');
+        hcOk('CxP Fase 3B/3C-C disponible. Registros: cuentas=' . (string)$cxpCount . ', movimientos=' . (string)$cxpMovCount . '.');
         hcReportCxpConsistency($pdo, $database);
 
         if (hcTableExists($pdo, $database, 'migrations')) {

@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B/3C-B para recepcion minima de compras.
+ * Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B/3C-C para recepcion minima de compras.
  *
  * Solo lectura. No ejecuta recepcion ni modifica DB.
  * Valida borradores pendientes, recepciones reales, productos_repetidos,
@@ -140,6 +140,12 @@ function prcCxpCajaTextPredicate(PDO $pdo, string $database): ?string
 
 function prcReportCxpConsistency(PDO $pdo, string $database): void
 {
+    prcReportZeroCount(
+        'movimientos CxP/pagos/abonos accidentales',
+        prcCountRows($pdo, 'cuentas_por_pagar_movimientos'),
+        'Revisar cuentas_por_pagar_movimientos; Fase 3C-C no debe tener pagos, abonos ni movimientos CxP.'
+    );
+
     $checks = [
         [
             'label' => 'CxP duplicada por compra y hotel',
@@ -373,7 +379,7 @@ $purchasingDocPath = prcFirstExistingPath([
     $appRoot . '/docs/technical/purchasing_inventory_contract.md',
 ]);
 
-echo "Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B/3C-B - Recepcion minima de compras y CxP controlada\n";
+echo "Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B/3C-C - Recepcion minima de compras y CxP controlada\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {
