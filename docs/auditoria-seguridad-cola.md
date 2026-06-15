@@ -1,0 +1,50 @@
+# Auditoria de seguridad - cola autonoma
+
+## Alcance
+
+Auditoria post-commit del bloque autorizado hasta Fase 3B:
+
+- Fase 2X: detalle read-only de compra recibida.
+- Fase 2Y: reportes read-only de compras recibidas.
+- Fase 2Z: endurecimiento de recepcion minima.
+- Fase 3A: ficha read-only de proveedor con historial.
+- Fase 3B: cuentas por pagar base read-only.
+
+## Resultado
+
+Estado: `AUDITORIA_SEGURIDAD_COMPLETADA_QA_MANUAL_PENDIENTE`.
+
+No se detectaron riesgos bloqueantes en la auditoria automatica/local.
+
+## Controles revisados
+
+- CxP tiene rutas GET solamente:
+  - `/cuentas-por-pagar`;
+  - `/cuentas-por-pagar/{id}`.
+- CxP no tiene formularios POST.
+- CxP no llama `validateCSRF`, porque no escribe datos.
+- CxP no contiene acciones de pago.
+- CxP no escribe en `cuentas_por_pagar`.
+- CxP no escribe en `cuentas_por_pagar_movimientos`.
+- CxP no toca `movimientos_caja`, `cortes_caja` ni `cajas`.
+- Modelo CxP filtra por `hotel_id`.
+- Proveedor/Compras no escriben CxP ni enlazan CxP desde sus vistas.
+- Sidebar expone CxP bajo el gate de Inventario.
+- Acceso sin sesion a `/cuentas-por-pagar` redirige a login.
+- `/api/sync` sigue fuera de alcance y validado por checker como bloqueado.
+
+## Warnings conocidos
+
+- Los checkers ejecutados dentro del contenedor no ven `docs/technical` ni `migrations/` completos por el montaje actual.
+- Hay tablas legacy/duplicadas documentadas que no se deben borrar ni fusionar.
+- `src/app/views/reservaciones/ver.php` tiene un cambio visual pendiente y no relacionado.
+
+## Riesgos residuales
+
+- Falta QA manual autenticada de listado/detalle CxP.
+- Falta QA visual del estado vacio y filtros.
+- Falta decidir el destino del cambio visual de `reservaciones/ver.php`.
+
+## Recomendacion
+
+No avanzar a Fase 3C ni a pagos/Caja hasta completar QA manual y recibir nuevo mensaje real.

@@ -38,6 +38,13 @@
 
 ## Estado
 
-- QA automatica: pendiente de cierre en esta fase.
-- QA manual: recomendada antes de autorizar Fase 3C.
-- Bloqueante para commit Fase 3B: no, si las verificaciones automaticas pasan.
+- QA automatica post-commit Fase 3B: completada sin errores bloqueantes.
+- QA manual: pendiente y necesaria antes de considerar validado por usuario.
+- Bloqueante para Fase 3C: si. No avanzar a Fase 3C hasta completar QA manual y recibir nuevo mensaje real.
+
+## Triage no relacionado
+
+- `src/app/views/reservaciones/ver.php` mantiene un cambio visual del modal de check-in tardio.
+- Clasificacion: no relacionado con compras/proveedores/CxP.
+- Riesgo estimado: bajo-medio, porque toca vista grande de reservacion y layout de un flujo sensible de check-in.
+- Recomendacion: probar visualmente el modal de check-in tardio y, si se confirma correcto, commitearlo por separado. No mezclarlo con CxP.

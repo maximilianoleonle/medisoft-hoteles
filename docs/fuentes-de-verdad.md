@@ -32,11 +32,13 @@ Estado:
 - sin Caja;
 - sin generacion automatica desde compras todavia;
 - sin datos operativos generados por la aplicacion.
+- commit de cierre tecnico: `1fa1653`.
 
 Regla:
 
 - Cualquier escritura en CxP requiere nueva fase autorizada.
 - Cualquier integracion con Caja requiere nueva fase autorizada.
+- Cualquier generacion automatica desde compras requiere nueva fase autorizada.
 
 ## Compras
 

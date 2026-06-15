@@ -2,6 +2,10 @@
 
 ## Fase 3B aplicada
 
+Commit de cierre:
+
+- `1fa1653 feat(phase-3b): add read-only accounts payable foundation`
+
 ### Codigo
 
 Rollback seguro de codigo:
@@ -46,3 +50,15 @@ Bajo para datos operativos actuales porque:
 - restaurar dump completo encima de datos vivos;
 - reset destructivo de Git;
 - push.
+
+## Cambio no relacionado pendiente
+
+`src/app/views/reservaciones/ver.php` tiene un ajuste visual fuera del commit de Fase 3B.
+
+Rollback de ese cambio, si el usuario lo autoriza despues:
+
+1. Revisar diff actual.
+2. Si se decide descartar, revertir solo ese archivo con un comando no destructivo y explicito.
+3. Si se decide conservar, hacer commit separado despues de `php -l` y prueba visual del modal.
+
+No mezclar este archivo con rollback de CxP.

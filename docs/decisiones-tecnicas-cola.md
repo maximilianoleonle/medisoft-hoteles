@@ -38,3 +38,12 @@
 
 - `src/app/views/reservaciones/ver.php` se considera cambio no relacionado con Fase 3B y queda fuera del commit.
 - El commit de cierre debe ser selectivo e incluir solo CxP, checkers, docs y rutas/navegacion relacionadas.
+- El commit de cierre Fase 3B fue `1fa1653`.
+- Cualquier decision sobre `src/app/views/reservaciones/ver.php` debe hacerse en commit separado tras QA visual.
+
+## Cierre tecnico post-commit
+
+- El bloque autorizado queda en modo QA/auditoria.
+- No se avanza a Fase 3C sin nuevo mensaje real.
+- No se implementan pagos, Caja, CxC, nomina ni permisos profundos.
+- La documentacion final puede seguir ajustandose sin cambiar comportamiento funcional.

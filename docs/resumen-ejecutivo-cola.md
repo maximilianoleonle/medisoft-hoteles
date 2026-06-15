@@ -2,7 +2,7 @@
 
 ## Situacion
 
-Medisoft Hoteles esta cerrando Fase 3B aplicada: una base tecnica read-only para cuentas por pagar.
+Medisoft Hoteles cerro Fase 3B aplicada: una base tecnica read-only para cuentas por pagar.
 
 La fase se apoya en una migracion local ya aplicada sobre `medisoft_hoteles_import`, con backup previo confirmado. Las tablas nuevas existen y deben permanecer vacias hasta que una fase posterior autorice generacion de saldos.
 
@@ -25,14 +25,14 @@ No se permite:
 - modificar `/api/sync`;
 - avanzar a Fase 3C.
 
-## Estado tecnico esperado
+## Estado tecnico auditado
 
 - Codigo CxP read-only.
 - Rutas GET solamente.
 - Vistas sin formularios de pago.
 - Health/preflight compatibles.
 - Documentacion de metodologia vigente.
-- Commit selectivo de cierre.
+- Commit selectivo de cierre: `1fa1653 feat(phase-3b): add read-only accounts payable foundation`.
 - `src/app/views/reservaciones/ver.php` queda fuera por no pertenecer al bloque.
 
 ## Decisiones clave
@@ -53,3 +53,18 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 - sin integracion con Caja;
 - sin pagos;
 - verificaciones automaticas.
+
+## Cierre tecnico post-commit
+
+- CxP sigue sin acciones POST.
+- CxP sigue sin integracion con Caja.
+- Compras y proveedores no generan ni escriben CxP.
+- Las consultas revisadas mantienen filtros por `hotel_id`.
+- `/cuentas-por-pagar` sin sesion redirige a login.
+- `/api/sync` sigue fuera de alcance y bloqueado segun checker.
+
+## Pendiente antes de avanzar
+
+- QA manual autenticada de listado/detalle CxP.
+- QA visual/regresion de compras, proveedores y recepcion.
+- Decision separada sobre `src/app/views/reservaciones/ver.php`.
