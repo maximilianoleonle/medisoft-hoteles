@@ -141,21 +141,7 @@ public function indexAction() {
         }
     }
     
-    // Aplicar filtro de estado si existe
-    if ($filtros['estado']) {
-        if ($filtros['estado'] == 'por_llegar') {
-            // Filtrar solo habitaciones con estado_display = por_llegar
-            $habitaciones = array_filter($habitaciones, function($hab) {
-                return $hab['estado_display'] == 'por_llegar';
-            });
-        } else {
-            // Filtrar por estado normal
-            $habitaciones = array_filter($habitaciones, function($hab) use ($filtros) {
-                return $hab['estado'] == $filtros['estado'];
-            });
-        }
-    }
-    
+    // El estado queda como filtro visual inicial en la vista para no recortar el DOM.
     // Obtener estadísticas actualizadas
     $estadisticas = $this->habitacionModel->estadisticas();
     $estadisticas['por_llegar'] = count($reservaciones_pendientes);
@@ -284,17 +270,7 @@ private function mostrarDisponibilidadPorFecha($filtros) {
         }
     }
     
-    // Si hay filtro de estado para mantenimiento o limpieza, aplicarlo
-if (!empty($filtros['estado']) && $filtros['estado'] === 'mantenimiento') {
-        error_log("FILTRO DE ESTADO APLICADO: {$filtros['estado']}");
-        $antes = count($todasHabitaciones);
-        $todasHabitaciones = array_filter($todasHabitaciones, function($h) use ($filtros) {
-            return $h['estado'] == $filtros['estado'];
-        });
-        $despues = count($todasHabitaciones);
-        error_log("Habitaciones antes del filtro: $antes, después: $despues");
-    }
-    
+    // El estado se conserva para que la vista aplique el filtro sin perder habitaciones.
     // Query para obtener ocupadas - Todas las habitaciones ocupadas EN la fecha específica
     // NO incluye las que hacen check-out ese día (porque ese día se desocupan)
     // Incluye checked_out para mostrar correctamente fechas pasadas
@@ -387,19 +363,7 @@ if (!empty($filtros['estado']) && $filtros['estado'] === 'mantenimiento') {
     error_log("Disponibles: $disponibles");
     error_log("Ocupadas: $ocupadas_count");
     
-    // Aplicar filtro de estado si existe
-    if (!empty($filtros['estado']) && !in_array($filtros['estado'], ['mantenimiento', 'limpieza'])) {
-        if ($filtros['estado'] == 'disponible') {
-            $habitaciones_procesadas = array_filter($habitaciones_procesadas, function($h) {
-                return $h['estado_display'] == 'disponible_fecha';
-            });
-        } elseif ($filtros['estado'] == 'ocupada') {
-            $habitaciones_procesadas = array_filter($habitaciones_procesadas, function($h) {
-                return $h['estado_display'] == 'ocupada_fecha';
-            });
-        }
-    }
-    
+    // El estado se conserva para que la vista aplique el filtro sin perder habitaciones.
     // Reindexar y ordenar
     $habitaciones_procesadas = array_values($habitaciones_procesadas);
     usort($habitaciones_procesadas, function($a, $b) {

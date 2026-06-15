@@ -51,11 +51,12 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
     try {
         require_once APP_PATH . '/models/Notificacion.php';
         $sidebarNotificacionModel = new Notificacion();
-        $sidebarNotificacionesNoLeidas = $sidebarNotificacionModel->contarNoLeidas(
+        $sidebarResumenNotificaciones = $sidebarNotificacionModel->resumenPorHotel(
             (int) current_hotel_id(),
             function_exists('current_hotel_user_role') ? current_hotel_user_role() : null,
             function_exists('user_id') ? user_id() : null
         );
+        $sidebarNotificacionesNoLeidas = (int)($sidebarResumenNotificaciones['nuevas'] ?? 0);
     } catch (Throwable $e) {
         error_log('No se pudo contar notificaciones del sidebar: ' . $e->getMessage());
         $sidebarNotificacionesNoLeidas = 0;

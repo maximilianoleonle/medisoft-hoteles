@@ -404,10 +404,13 @@ foreach ($devolucionesPorMetodo as $metodo => $monto) {
             $rolUsuario = function_exists('current_hotel_user_role') ? current_hotel_user_role() : null;
             $usuarioId = function_exists('user_id') ? user_id() : null;
 
+            $resumen = $modelo->resumenPorHotel($hotelId, $rolUsuario, $usuarioId);
+            $resumen['pendientes'] = (int)($resumen['nuevas'] ?? 0);
+
             return [
-                'resumen' => $modelo->resumenPorHotel($hotelId, $rolUsuario, $usuarioId),
+                'resumen' => $resumen,
                 'recientes' => $modelo->listarPorHotel($hotelId, [
-                    'estado' => 'activas',
+                    'estado' => 'nueva',
                     'rol_usuario' => $rolUsuario,
                     'usuario_id' => $usuarioId,
                 ], 5)

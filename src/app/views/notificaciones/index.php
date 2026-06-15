@@ -84,6 +84,9 @@ if (!function_exists('ntx_filter_url')) {
     function ntx_filter_url(array $overrides = [])
     {
         $query = array_merge($_GET, $overrides);
+        if (($query['estado'] ?? '') === 'activas') {
+            $query['estado'] = 'nueva';
+        }
         $query = array_filter($query, static function ($value) {
             return $value !== null && $value !== '';
         });
@@ -92,20 +95,23 @@ if (!function_exists('ntx_filter_url')) {
     }
 }
 
-$estadoFiltro = (string)($filtros['estado'] ?? 'activas');
+$estadoFiltro = (string)($filtros['estado'] ?? 'nueva');
+if ($estadoFiltro === 'activas') {
+    $estadoFiltro = 'nueva';
+}
 $moduloFiltro = (string)($filtros['modulo'] ?? '');
 $severidadFiltro = (string)($filtros['severidad'] ?? '');
 $hotelNombre = function_exists('current_hotel_display_name') ? current_hotel_display_name() : 'Hotel';
 
-$pendientes = (int)($resumen['pendientes'] ?? ($resumen['nuevas'] ?? 0));
 $nuevas = (int)($resumen['nuevas'] ?? 0);
+$pendientes = $nuevas;
 $prioritarias = (int)($resumen['prioritarias'] ?? 0);
 $hoy = (int)($resumen['hoy'] ?? 0);
 $historial = (int)($resumen['historial'] ?? (($resumen['resueltas'] ?? 0) + ($resumen['descartadas'] ?? 0)));
 $totalVista = count($notificaciones);
 
 $estadoOpciones = [
-    'activas' => 'Pendientes',
+    'nueva' => 'Pendientes',
     'resuelta' => 'Atendidas',
     'descartada' => 'Archivadas',
 ];
@@ -119,7 +125,7 @@ $severidadOpciones = [
 ];
 
 $estadoTabs = [
-    'activas' => ['label' => 'Pendientes', 'count' => $pendientes],
+    'nueva' => ['label' => 'Pendientes', 'count' => $pendientes],
     'resuelta' => ['label' => 'Atendidas', 'count' => (int)($resumen['resueltas'] ?? 0)],
     'descartada' => ['label' => 'Archivadas', 'count' => max(0, $historial - (int)($resumen['resueltas'] ?? 0))],
 ];
@@ -739,8 +745,7 @@ $estadoTabs = [
     min-height: 94px;
     border: 1px solid color-mix(in srgb, var(--row-color) 14%, #e8e0d3);
     border-radius: 14px;
-    background:
-        linear-gradient(135deg, color-mix(in srgb, var(--row-color) 5%, rgba(255,255,255,.88)), rgba(255,255,255,.82));
+    background: #fff;
     padding: 14px;
     box-shadow: 0 10px 24px -24px color-mix(in srgb, var(--row-color) 35%, transparent);
     transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
@@ -762,7 +767,7 @@ $estadoTabs = [
 .ntx-row.is-clickable:hover {
     transform: translateY(-1px);
     border-color: color-mix(in srgb, var(--row-color) 28%, #dfd5c8);
-    background: color-mix(in srgb, var(--row-color) 6%, #fff);
+    background: #fff;
     box-shadow: 0 14px 28px -26px color-mix(in srgb, var(--row-color) 38%, transparent);
 }
 
@@ -1159,7 +1164,7 @@ $estadoTabs = [
                 <div class="ntx-inbox-head">
                     <div>
                         <h2>Actividad</h2>
-                        <p><?= ntx_safe(ntx_label($estadoFiltro)) ?><?= $moduloFiltro !== '' ? ' de ' . ntx_safe(ntx_label($moduloFiltro)) : '' ?></p>
+                        <p><?= ntx_safe($estadoTabs[$estadoFiltro]['label'] ?? ntx_label($estadoFiltro)) ?><?= $moduloFiltro !== '' ? ' de ' . ntx_safe(ntx_label($moduloFiltro)) : '' ?></p>
                     </div>
                     <span class="ntx-count"><?= $totalVista ?> registros</span>
                 </div>

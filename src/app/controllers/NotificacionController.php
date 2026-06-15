@@ -24,8 +24,13 @@ class NotificacionController extends Controller {
 
     public function indexAction() {
         $hotelId = $this->hotelIdActual();
+        $estadoFiltro = (string)$this->getQuery('estado', 'nueva');
+        if ($estadoFiltro === 'activas') {
+            $estadoFiltro = 'nueva';
+        }
+
         $filtros = [
-            'estado' => $this->getQuery('estado', 'activas'),
+            'estado' => $estadoFiltro,
             'modulo' => $this->getQuery('modulo', ''),
             'severidad' => $this->getQuery('severidad', ''),
             'rol_usuario' => function_exists('current_hotel_user_role') ? current_hotel_user_role() : null,
