@@ -72,14 +72,14 @@
 ## Reanclaje Fase 3C
 
 - Nuevo mensaje real `REANCLAR_FASE_3C_VERDAD_ACTUAL` corrige el estado documental.
-- Estado formal vigente: `REVISION_TECNICA_3C_COMPLETADA`.
+- Estado formal vigente: `AUDITORIA_SEGURIDAD_3C_COMPLETADA`.
 - `9897465` queda como contrato 3C-0 completado.
 - `c216dc5` contiene codigo de simulador; queda como base parcial pendiente de verificacion formal.
 - `cb83121` contiene el antecedente historico de generacion manual; la implementacion vigente reintroduce 3C-B con validacion automatica.
 - `5dfe665` contiene validaciones; se conservan como checkers read-only de consistencia CxP.
 - `8765258` queda reclasificado como antecedente de revision prematura; la revision tecnica actual ya se ejecuto despues de 3C-C.
-- `2662998` queda reclasificado como auditoria prematura/documental, no cierre de seguridad post-3C-C.
-- Siguiente accion: auditoria de seguridad/cierre 3C, solo si el usuario la autoriza.
+- `2662998` queda reclasificado como auditoria prematura/documental.
+- Siguiente accion: cierre tecnico 3C, solo si el usuario lo autoriza.
 
 ## Fase 3C-A
 
@@ -116,11 +116,12 @@
 
 ## Auditoria seguridad Fase 3C
 
-- La auditoria post-QA queda documentada como revision estatica prematura sin cambios funcionales.
+- Estado: completada post-3C-C sin hallazgos bloqueantes.
 - No se agrega migracion ni indice en esta auditoria.
 - Los riesgos de concurrencia se mantienen como residuales documentados; cualquier endurecimiento con indice unico requerira migracion futura autorizada.
 - La ausencia de pagos/Caja sigue siendo una regla de fase, no solo una decision visual.
-- Health/preflights deben re-ejecutarse cuando Docker/PHP esten disponibles.
+- Health/preflights y SQL read-only confirman cero movimientos CxP/pagos/abonos, cero Caja-CxP y `/api/sync` bloqueado.
+- Cambios no relacionados de dashboard/habitaciones/notificaciones quedan fuera del bloque 3C.
 
 ## Fase 3C-C
 

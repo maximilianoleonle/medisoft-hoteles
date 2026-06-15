@@ -2,9 +2,9 @@
 
 ## Reanclaje Fase 3C
 
-Estado vigente: `REVISION_TECNICA_3C_COMPLETADA`.
+Estado vigente: `AUDITORIA_SEGURIDAD_3C_COMPLETADA`.
 
-Motivo: despues del reanclaje, se formalizo 3C-A primero, luego 3C-B como generacion manual controlada y despues 3C-C como validaciones read-only en health/preflights. La revision tecnica 3C confirma rutas, guards, CSRF, `hotel_id`, relacion compra-proveedor-hotel, CxP `#2`, ausencia de pagos/abonos/Caja y `/api/sync` sin cambios.
+Motivo: despues del reanclaje, se formalizo 3C-A primero, luego 3C-B como generacion manual controlada y despues 3C-C como validaciones read-only en health/preflights. La revision tecnica 3C confirmo rutas, guards, CSRF, `hotel_id`, relacion compra-proveedor-hotel, CxP `#2`, ausencia de pagos/abonos/Caja y `/api/sync` sin cambios. La auditoria de seguridad 3C confirma que no hay hallazgos bloqueantes.
 
 Estado formal vigente:
 
@@ -13,8 +13,9 @@ Estado formal vigente:
 - Fase 3C-B generacion manual: completada tecnicamente, commiteada y validada manualmente.
 - Fase 3C-C validaciones/health/preflights: completada tecnicamente como verificacion read-only.
 - Revision tecnica 3C actual: completada sin hallazgos bloqueantes.
-- Auditoria `2662998`: reclasificada como auditoria prematura/documental; no cierra seguridad post-3C-C.
-- Siguiente accion recomendada: auditoria de seguridad/cierre 3C si el usuario la autoriza.
+- Auditoria seguridad 3C actual: completada sin hallazgos bloqueantes.
+- Auditoria `2662998`: reclasificada como auditoria prematura/documental.
+- Siguiente accion recomendada: cierre tecnico 3C si el usuario lo autoriza.
 
 ## Estado final del bloque autorizado anterior
 
@@ -46,9 +47,10 @@ Estado actual:
 - Fase 3C-C completada tecnicamente: health/preflights validan duplicados, relaciones, saldos, fechas, ausencia de movimientos CxP, ausencia de Caja y ausencia de pagos/abonos.
 - SQL read-only 3C-C confirmo `cuentas_por_pagar=2`, `cuentas_por_pagar_movimientos=0`, inconsistencias CxP=0, Caja-CxP=0 y `compra_pagos` inexistente.
 - Revision tecnica 3C actual confirma CxP `#2` desde compra `#2`, compra recibida, mismo `hotel_id=4`, proveedor `#2`, total/saldo `1900.00` y fecha de emision presente.
-- Auditoria post-QA previa fue prematura respecto al nuevo reanclaje.
+- Auditoria seguridad 3C actual confirma cero movimientos CxP, cero Caja-CxP, `compra_pagos` inexistente, CSRF/guards activos y `/api/sync` bloqueado.
+- Cambios no relacionados pendientes al cierre de auditoria: `src/app/services/PwaPushService.php` y `src/public_html/service-worker.js`; no forman parte de CxP y no se commitean en el bloque 3C.
 - QA manual 3C-A/3C-B reportada por el usuario: preview OK, CxP #2 vinculada, detalle CxP OK, origen compra/proveedor visible, sin pagos, sin abonos y sin Caja.
-- Siguiente fase recomendada: auditoria de seguridad/cierre 3C; no pagos, Caja ni Fase 3D.
+- Siguiente fase recomendada: cierre tecnico 3C; no pagos, Caja ni Fase 3D.
 - No se implementaron pagos ni Caja.
 - No avanzar a pagos, Caja ni Fase 3D.
 
@@ -130,7 +132,7 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 ## Pendiente antes de avanzar
 
 - No avanzar a pagos, Caja ni Fase 3D sin nuevo mensaje real o cola especifica.
-- La siguiente accion recomendada es auditoria de seguridad/cierre de 3C, si se autoriza explicitamente.
+- La siguiente accion recomendada es cierre tecnico 3C, si se autoriza explicitamente.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

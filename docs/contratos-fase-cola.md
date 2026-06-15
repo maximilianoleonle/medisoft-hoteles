@@ -99,7 +99,7 @@ Al cerrar esta fase, no avanzar a Fase 3C sin nuevo mensaje real. El estado debe
 
 ### Reanclaje de estado
 
-Estado formal vigente: `REVISION_TECNICA_3C_COMPLETADA`.
+Estado formal vigente: `AUDITORIA_SEGURIDAD_3C_COMPLETADA`.
 
 El repositorio contiene commits de implementacion posteriores al contrato, pero el nuevo reanclaje impide tratarlos como cierre formal:
 
@@ -110,7 +110,7 @@ El repositorio contiene commits de implementacion posteriores al contrato, pero 
 - `8765258`: antecedente de ajuste/revision prematura; la revision tecnica actual ya fue ejecutada despues de 3C-C.
 - `2662998`: auditoria prematura/documental; no sustituye auditoria de seguridad post-3C-C.
 
-Siguiente paso formal: auditoria de seguridad/cierre 3C, solo si el usuario la autoriza.
+Siguiente paso formal: cierre tecnico 3C, solo si el usuario lo autoriza.
 
 ### Objetivo
 

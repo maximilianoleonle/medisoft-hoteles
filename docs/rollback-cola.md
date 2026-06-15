@@ -111,11 +111,11 @@ No mezclar este archivo con rollback de CxP.
 
 ### Reanclaje de estado
 
-- Estado formal vigente: `REVISION_TECNICA_3C_COMPLETADA`.
+- Estado formal vigente: `AUDITORIA_SEGURIDAD_3C_COMPLETADA`.
 - 3C-A esta implementada como GET read-only; 3C-B esta implementada como POST manual controlado; 3C-C queda implementada como checkers read-only.
 - No borrar codigo ni datos automaticamente.
 - No hacer rollback destructivo de la CxP historica creada por prueba local sin nueva autorizacion y backup.
-- Antes de tocar pagos, Caja o Fase 3D, hacer auditoria de seguridad/cierre 3C y recibir autorizacion explicita de una fase nueva.
+- Antes de tocar pagos, Caja o Fase 3D, hacer cierre tecnico 3C y recibir autorizacion explicita de una fase nueva.
 
 ### 3C-0 contrato y diagnostico
 
@@ -204,6 +204,7 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 
 ### Auditoria seguridad post-QA Fase 3C
 
+- Estado vigente: completada sin hallazgos bloqueantes.
 - Rollback de documentacion: revertir el commit `docs(phase-3c): record payable generation security audit` si se quiere retirar la matriz de auditoria.
 - DB: no aplica; auditoria documental/estatica sin escrituras.
 - Codigo: no aplica si no hay cambios funcionales en el commit de auditoria.

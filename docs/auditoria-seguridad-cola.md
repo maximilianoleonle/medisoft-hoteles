@@ -15,9 +15,9 @@ Auditoria post-commit del bloque autorizado hasta Fase 3C:
 
 ## Reanclaje Fase 3C
 
-Estado vigente: `REVISION_TECNICA_3C_COMPLETADA`.
+Estado vigente: `AUDITORIA_SEGURIDAD_3C_COMPLETADA`.
 
-La auditoria previa de Fase 3C queda reclasificada como prematura/documental. La revision tecnica post-3C-C ya fue completada, pero la auditoria de seguridad/cierre aun debe ejecutarse si el usuario la autoriza.
+Auditoria de seguridad post-3C-C completada sin hallazgos bloqueantes. La auditoria previa `2662998` queda como antecedente prematuro/documental.
 
 Motivo:
 
@@ -25,6 +25,8 @@ Motivo:
 - el nuevo flujo reanclado activo 3C-A primero y despues 3C-B;
 - Docker/PHP estan disponibles y se re-ejecutaron verificaciones completas;
 - el usuario reporto QA manual completada para 3C-A y 3C-B.
+- la revision tecnica post-3C-C quedo completada en `59feafc`.
+- la auditoria actual verifica CxP, Caja, pagos/abonos, guards, CSRF, rollback, QA y cambios no relacionados.
 
 ## Resultado historico previo
 
@@ -32,6 +34,20 @@ Motivo:
 - Resultado historico: sin hallazgos bloqueantes por revision estatica.
 - Reclasificacion: auditoria prematura; no sustituye la auditoria de seguridad post-3C-C.
 - Cambios de codigo historicos: ajuste menor en preview para no enlazar proveedor si el proveedor no pertenece al hotel actual.
+
+## Resultado actual
+
+- Resultado: sin hallazgos bloqueantes.
+- No se detecta creacion de CxP sin `hotel_id`.
+- No se detecta CxP con compra/proveedor de otro hotel.
+- No se detecta duplicacion de CxP por compra/hotel.
+- No se detecta CxP desde compra no recibida, cancelada o borrador.
+- No se detectan movimientos en `cuentas_por_pagar_movimientos`.
+- No se detectan movimientos de Caja relacionados con CxP.
+- No existe tabla `compra_pagos`.
+- `/api/sync` sigue bloqueado por checker.
+- Cambios no relacionados de dashboard/habitaciones/notificaciones quedaron fuera del bloque 3C; al iniciar esta auditoria ya estaban en commit separado `e52766e`.
+- Cambios no relacionados pendientes detectados al cierre: `src/app/services/PwaPushService.php` y `src/public_html/service-worker.js`. No se revisan como parte de 3C, no se revierten y no se incluyen en este commit.
 
 ## Controles revisados
 
@@ -55,7 +71,7 @@ Motivo:
 - Acceso sin sesion a `/cuentas-por-pagar` redirige a login.
 - `/api/sync` sigue fuera de alcance y validado por checker como bloqueado.
 
-## Auditoria especifica Fase 3C post-QA historica
+## Auditoria especifica Fase 3C post-3C-C
 
 - Creacion de CxP sin `hotel_id`: bloqueada por `CuentaPorPagar::generarDesdeCompraRecibida()`, que valida `hotelId > 0` y lo inserta explicitamente.
 - Creacion de CxP con proveedor de otro hotel: bloqueada por `obtenerCompraParaGeneracion()`, que une proveedor con `p.hotel_id = c.hotel_id`, y por `assertCompraGenerable()`.
@@ -72,13 +88,14 @@ Motivo:
 - `/api/sync` modificado accidentalmente: no hay cambios de codigo en `ApiController` ni en la ruta `/api/sync` dentro de esta revision.
 - Rollback insuficiente: `docs/rollback-cola.md` documenta rollback por 3C-A, 3C-B, 3C-C y revision post-QA.
 - QA critica 3C-A/3C-B: completada manualmente por el usuario.
+- QA critica 3C-C: cubierta por health/preflights y SQL read-only con `ERROR: 0`.
 
 ## Warnings conocidos
 
 - Los checkers ejecutados dentro del contenedor no ven `docs/technical` ni `migrations/` completos por el montaje actual.
-- Verificacion automatica 3C-B ejecutada con Docker/PHP disponible: `php -l`, health, preflights, POST sin sesion y prueba local controlada.
+- Verificacion automatica 3C ejecutada con Docker/PHP disponible: `php -l`, health, preflights, SQL read-only, POST sin sesion historico y prueba local controlada.
 - Hay tablas legacy/duplicadas documentadas que no se deben borrar ni fusionar.
-- No hay cambios no relacionados pendientes en Git al iniciar esta revision; el ajuste visual de reservaciones quedo commiteado por separado.
+- Hay cambios no relacionados pendientes en Git al cierre de esta auditoria: `src/app/services/PwaPushService.php` y `src/public_html/service-worker.js`. Permanecen fuera del bloque CxP y requieren triage separado porque `service-worker.js` esta en zona protegida del proyecto.
 
 ## Riesgos residuales
 
@@ -87,7 +104,7 @@ Motivo:
 
 ## Recomendacion
 
-Continuar solo con auditoria de seguridad/cierre 3C si el usuario la autoriza. Mantener prohibidos pagos, Caja, CxC, nomina operativa, permisos profundos y `/api/sync` hasta nuevo bloque explicito.
+Continuar solo con cierre tecnico 3C si el usuario lo autoriza. Mantener prohibidos pagos, Caja, CxC, nomina operativa, permisos profundos y `/api/sync` hasta nuevo bloque explicito.
 
 ## Fase 3C - controles esperados
 

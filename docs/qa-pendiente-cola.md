@@ -50,10 +50,11 @@
 
 ## QA Fase 3C
 
-Estado vigente: `REVISION_TECNICA_3C_COMPLETADA`.
+Estado vigente: `AUDITORIA_SEGURIDAD_3C_COMPLETADA`.
 
 El usuario reporto QA manual completada para 3C-A y 3C-B. Fase 3C-C queda completada tecnicamente con validaciones read-only en health/preflights y SQL de consistencia.
 Revision tecnica 3C completada sin hallazgos bloqueantes: rutas, controlador, modelo, vistas, sidebar, permisos/guards, CSRF, filtros `hotel_id`, CxP `#2`, ausencia de pagos/abonos/Caja y `/api/sync` sin cambios.
+Auditoria seguridad 3C completada sin hallazgos bloqueantes: cero movimientos CxP/pagos/abonos, cero Caja-CxP, `compra_pagos` inexistente y cambios no relacionados fuera del bloque. Quedan pendientes no relacionados para triage separado: `src/app/services/PwaPushService.php` y `src/public_html/service-worker.js`.
 
 ### QA critica
 
