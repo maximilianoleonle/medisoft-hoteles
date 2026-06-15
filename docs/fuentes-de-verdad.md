@@ -28,10 +28,10 @@ Fuente nueva fundacional:
 Estado:
 
 - fundacion read-only hasta Fase 3B;
-- Reanclaje Fase 3C: estado formal `SIMULADOR_3C_PARCIAL`;
-- Fase 3C-A tiene codigo existente de preview read-only, pendiente de verificacion formal;
-- Fase 3C-B tiene codigo existente de generacion manual, reclasificado como adelantado/no formal hasta cerrar 3C-A;
-- Fase 3C-C tiene codigo existente de health/preflights, reclasificado como adelantado/no formal hasta cerrar 3C-A;
+- Reanclaje Fase 3C: estado formal `SIMULADOR_3C_COMPLETADO_QA_MANUAL_PENDIENTE`;
+- Fase 3C-A tiene preview read-only ruteado, protegido, navegable y verificado automaticamente;
+- Fase 3C-B queda diferida; no hay ruta POST activa, boton de generacion ni metodo de escritura CxP en el codigo vigente;
+- Fase 3C-C queda diferida como cierre formal, aunque health/preflights ya incluyen comprobaciones read-only de consistencia CxP;
 - sin pagos;
 - sin Caja;
 - sin generacion automatica desde compras;
@@ -40,8 +40,8 @@ Estado:
 
 Regla vigente despues del reanclaje:
 
-- La siguiente accion formal debe ser `COLA_3C_A_SIMULADOR_READ_ONLY`.
-- No ejecutar ni ampliar generacion manual hasta revalidar formalmente el simulador.
+- La siguiente accion formal es QA manual de `GET /cuentas-por-pagar/generacion-preview`.
+- No ejecutar ni ampliar generacion manual hasta validar manualmente el simulador y autorizar Fase 3C-B.
 - El preview 3C-A no es fuente de datos nueva; solo interpreta `compras` + `proveedores` + `cuentas_por_pagar`.
 - La CxP historica creada en prueba local de 3C-B queda como antecedente; no borrar ni corregir automaticamente.
 - `cuentas_por_pagar_movimientos` queda sin uso operativo.

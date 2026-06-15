@@ -9,19 +9,19 @@ REANCLAR_FASE_3C_VERDAD_ACTUAL: reconstruir estado real de Fase 3C y corregir do
 - Bloque actual: Fase 3C CxP.
 - Fase actual: reanclaje de verdad actual.
 - Riesgo: naranja.
-- Estado: `SIMULADOR_3C_PARCIAL`.
+- Estado: `SIMULADOR_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
 - No avanzar a pagos, Caja, Fase 3D ni nuevas funcionalidades.
 - Nota: existen commits de 3C-A/B/C y revisiones posteriores, pero el nuevo reanclaje no los considera cierre formal.
-- Limitacion actual: Docker Desktop no disponible y `php` no esta en PATH local; re-ejecutar health/preflights cuando el entorno vuelva a estar disponible.
+- Verificacion actual: Docker disponible; `php -l`, health, preflights, HTTP sin sesion, conteos DB antes/despues y `git diff --check` ejecutados.
 
 ## Reanclaje Fase 3C
 
 - 3C-0 contrato y diagnostico: completada en `9897465`.
-- 3C-A simulador: codigo existente (`c216dc5`) con ruta/vista/modelo detectados estaticamente; estado formal `SIMULADOR_3C_PARCIAL` hasta verificacion ejecutable.
-- 3C-B generacion manual: codigo existente (`cb83121`), reclasificado como adelantado/no formal hasta cerrar 3C-A.
+- 3C-A simulador: codigo vigente con ruta/vista/modelo verificados; estado formal `SIMULADOR_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- 3C-B generacion manual: antecedente historico (`cb83121`), pero el codigo vigente la deja diferida sin ruta POST activa hasta QA manual de 3C-A.
 - 3C-C validaciones: codigo existente (`5dfe665`), reclasificado como adelantado/no formal hasta cerrar 3C-A.
 - Revision `8765258`: ajuste de vista/documentacion, no cierre formal.
 - Auditoria `2662998`: documentacion de auditoria prematura bajo el reanclaje, no cierre formal.
@@ -79,18 +79,15 @@ No permite pagos, Caja, generacion automatica desde compras, saldos operativos, 
 - Modelo CxP consulta compras, proveedores, hoteles, detalles y CxP con `hotel_id`.
 - La vista muestra compra, proveedor, hotel, fecha, total, estado, CxP existente, elegibilidad y bloqueo.
 - No hay POST, pagos, Caja ni generacion automatica.
+- Estado corregido: ruteado, protegido por `CuentaPorPagarController::before()`, navegable desde CxP y verificado automaticamente.
 
-## Implementacion 3C-B
+## Fase 3C-B diferida
 
-- Ruta nueva: `POST /cuentas-por-pagar/generar-desde-compra/{id}`.
-- Controller: `CuentaPorPagarController::generarDesdeCompraAction()`.
-- Modelo: `CuentaPorPagar::generarDesdeCompraRecibida()`.
-- Usa CSRF y transaccion.
-- Bloquea compra con `FOR UPDATE`.
-- Valida compra recibida, proveedor del mismo hotel, total positivo, detalles existentes y no duplicado.
-- Inserta solo en `cuentas_por_pagar`.
-- Registra auditoria en `logs_auditoria` si esta disponible.
-- No inserta pagos, abonos ni movimientos de Caja.
+- No hay ruta POST activa.
+- No hay `generarDesdeCompraAction()`.
+- No hay `generarDesdeCompraRecibida()`.
+- No hay boton `Generar CxP`.
+- La prueba local historica queda como antecedente; no se borra ni se repite sin autorizacion.
 
 ## Prueba local 3C-B
 
@@ -167,4 +164,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Ejecutar `COLA_3C_A_SIMULADOR_READ_ONLY` como siguiente paso formal. No avanzar a 3C-B, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Siguiente paso formal: QA manual de `/cuentas-por-pagar/generacion-preview` autenticado. No avanzar a 3C-B, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

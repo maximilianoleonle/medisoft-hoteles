@@ -72,10 +72,10 @@
 ## Reanclaje Fase 3C
 
 - Nuevo mensaje real `REANCLAR_FASE_3C_VERDAD_ACTUAL` corrige el estado documental.
-- Estado formal vigente: `SIMULADOR_3C_PARCIAL`.
+- Estado formal vigente: `SIMULADOR_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
 - `9897465` queda como contrato 3C-0 completado.
 - `c216dc5` contiene codigo de simulador; queda como base parcial pendiente de verificacion formal.
-- `cb83121` contiene generacion manual; queda como codigo adelantado/no formal hasta cerrar 3C-A.
+- `cb83121` contiene el antecedente historico de generacion manual; el codigo vigente de 3C-A lo deja diferido y sin ruta POST activa.
 - `5dfe665` contiene validaciones; queda como codigo adelantado/no formal hasta cerrar 3C-A.
 - `8765258` y `2662998` quedan reclasificados como revision/auditoria prematuras o documentales, no cierre formal.
 - Siguiente accion: `COLA_3C_A_SIMULADOR_READ_ONLY`.
@@ -93,16 +93,12 @@
 
 ## Fase 3C-B
 
-- La generacion queda como accion manual en CxP, no como efecto secundario de `CompraService::recibirCompra()`.
-- La unica ruta POST nueva es `POST /cuentas-por-pagar/generar-desde-compra/{id}`.
-- La vista del preview muestra el boton solo cuando la compra es elegible.
-- El modelo centraliza validaciones y usa transaccion propia.
-- La compra se bloquea con `FOR UPDATE` antes de validar estado, proveedor, total y duplicado.
-- El duplicado se evita consultando `cuentas_por_pagar` por `(hotel_id, compra_id)` dentro de la transaccion.
-- La CxP nace en estado `pendiente`, con `saldo = total` y sin fecha de vencimiento automatica.
-- No se inserta en `cuentas_por_pagar_movimientos` en 3C-B para no introducir tipos operativos de pago/abono.
-- La trazabilidad de creacion se registra en `logs_auditoria` mediante `AuditService`.
-- Caja sigue completamente fuera del flujo.
+- Estado: diferida hasta QA manual de 3C-A y nueva autorizacion.
+- No hay ruta POST activa de generacion en el codigo vigente.
+- No hay boton `Generar CxP` en el preview 3C-A.
+- No hay metodo vigente de insercion `generarDesdeCompraRecibida()`.
+- Cuando se reactive formalmente, la generacion debe quedar como accion manual en CxP, no como efecto secundario de `CompraService::recibirCompra()`.
+- Caja debe seguir completamente fuera del flujo.
 
 ## Revision tecnica Fase 3C
 

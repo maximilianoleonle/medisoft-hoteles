@@ -111,11 +111,11 @@ No mezclar este archivo con rollback de CxP.
 
 ### Reanclaje de estado
 
-- Estado formal vigente: `SIMULADOR_3C_PARCIAL`.
-- 3C-A/B/C tienen codigo historico, pero no se tratan como cierre formal despues del reanclaje.
+- Estado formal vigente: `SIMULADOR_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- 3C-A esta implementada como GET read-only; 3C-B/C quedan diferidas como fases formales.
 - No borrar codigo ni datos automaticamente.
 - No hacer rollback destructivo de la CxP historica creada por prueba local sin nueva autorizacion y backup.
-- Si se decide repetir formalmente 3C-A, primero validar que el simulador actual sea reutilizable antes de tocar 3C-B.
+- Antes de tocar 3C-B, validar manualmente que el simulador 3C-A muestra elegibilidad/bloqueos sin acciones POST.
 
 ### 3C-0 contrato y diagnostico
 
@@ -137,7 +137,8 @@ No mezclar este archivo con rollback de CxP.
 
 ### 3C-B generacion manual
 
-- Rollback de codigo: revertir commit de generacion (`feat(phase-3c): generate payable from received purchase` cuando exista).
+- Estado vigente: diferida; no hay ruta POST activa, boton ni metodo de insercion CxP.
+- Reactivacion futura: requiere nuevo commit de generacion (`feat(phase-3c): generate payable from received purchase`) y backup previo.
 - Rollback de datos: no borrar CxP sin autorizacion explicita.
 - Si se crean CxP reales, primero exportar conteos y filas afectadas.
 - No tocar Caja, cortes ni movimientos.

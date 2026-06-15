@@ -2,24 +2,24 @@
 
 ## Reanclaje Fase 3C
 
-Estado real reanclado: `SIMULADOR_3C_PARCIAL`.
+Estado real reanclado: `SIMULADOR_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
-Motivo: el repositorio contiene codigo posterior al contrato 3C-0 para simulador, generacion manual y validaciones, pero el nuevo mensaje real invalida tratar Fase 3C como cerrada, revisada o auditada completamente. En el entorno actual no se pudo re-ejecutar `php -l`, health, preflights ni pruebas HTTP porque Docker Desktop no esta disponible y `php` no esta en PATH local.
+Motivo: despues del reanclaje, se formalizo solo Fase 3C-A como preview GET read-only. Se retiraron del codigo vigente la ruta POST, boton y metodos de generacion CxP que pertenecen a 3C-B. Docker estuvo disponible para re-ejecutar `php -l`, health, preflights, HTTP sin sesion y conteos DB antes/despues.
 
 Estado formal vigente:
 
 - Fase 3C-0 contrato y diagnostico: completada.
-- Fase 3C-A simulador read-only: codigo existente y ruteado, pero queda como parcial hasta re-verificacion formal.
-- Fase 3C-B generacion manual: codigo existente en commit `cb83121`, pero no debe considerarse fase formalmente completada bajo este reanclaje.
-- Fase 3C-C validaciones/health/preflights: codigo existente en commit `5dfe665`, pero no debe considerarse cierre formal bajo este reanclaje.
+- Fase 3C-A simulador read-only: completada tecnicamente, pendiente QA manual en navegador.
+- Fase 3C-B generacion manual: diferida; el antecedente `cb83121` no representa codigo vigente activo.
+- Fase 3C-C validaciones/health/preflights: diferida como cierre formal; se conservan validaciones read-only de consistencia CxP.
 - Revision tecnica `8765258` y auditoria `2662998`: reclasificadas como revision/auditoria prematuras o documentales; no cierran Fase 3C.
-- Siguiente accion recomendada: `COLA_3C_A_SIMULADOR_READ_ONLY`.
+- Siguiente accion recomendada: QA manual de `/cuentas-por-pagar/generacion-preview`.
 
 ## Estado final del bloque autorizado anterior
 
 Estado: `CIERRE_TECNICO_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
-El bloque Fase 2X-3B queda como bloque cerrado anterior; Fase 3C vuelve a estado parcial reanclado.
+El bloque Fase 2X-3B queda como bloque cerrado anterior; Fase 3C queda en simulador read-only completado tecnicamente y pendiente de QA manual.
 
 ## Fases y commits
 
@@ -40,11 +40,12 @@ Objetivo: generar CxP manualmente desde compras recibidas, sin Caja ni pagos.
 Estado actual:
 
 - Fase 3C-0 completada con contrato y diagnostico.
-- Fase 3C-A tiene codigo parcial existente: ruta/vista/modelo de preview detectados estaticamente.
-- Fase 3C-B tiene codigo existente, pero se reclasifica como adelantado hasta revalidar formalmente 3C-A.
-- Fase 3C-C tiene checkers existentes, pero se reclasifica como adelantado hasta revalidar formalmente 3C-A.
+- Fase 3C-A completada tecnicamente como simulador read-only: ruta GET, vista, controller, modelo, navegacion desde CxP y guardas existentes.
+- Fase 3C-B queda diferida: no hay ruta POST activa, no hay boton de generacion y no hay metodo de insercion CxP vigente.
+- Fase 3C-C queda diferida como cierre formal; los checkers actuales conservan validaciones read-only de consistencia CxP.
 - Revision tecnica y auditoria post-QA fueron prematuras respecto al nuevo reanclaje.
 - QA manual previa no se usa como cierre formal de Fase 3C en este estado reanclado.
+- QA manual nueva requerida: validar visualmente `/cuentas-por-pagar/generacion-preview` autenticado.
 - No se implementaron pagos ni Caja.
 - No avanzar a pagos, Caja ni Fase 3D.
 
@@ -104,11 +105,11 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 
 ## Cierre tecnico post-commit
 
-- CxP tiene un unico POST autorizado: generacion manual desde compra recibida elegible con CSRF.
+- CxP 3C-A no tiene POST activo: solo listado, detalle y preview GET read-only.
 - CxP sigue sin integracion con Caja.
 - Compras y proveedores no generan ni escriben CxP.
 - Las consultas revisadas mantienen filtros por `hotel_id`.
-- `/cuentas-por-pagar` sin sesion redirige a login.
+- `/cuentas-por-pagar/generacion-preview` sin sesion redirige a login.
 - `/api/sync` sigue fuera de alcance y bloqueado segun checker.
 
 ## Auditoria de seguridad
@@ -117,16 +118,16 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 - Perdida de datos: no detectada; no hay borrado ni migracion destructiva.
 - Doble recepcion: protegida por contrato transaccional y validaciones de estado/detalles.
 - Inventario: se mantiene fuente moderna `inventario_productos` + `movimientos_inventario`.
-- CxP: permite generacion manual controlada; no hay pagos, abonos ni movimientos de Caja.
+- CxP: en 3C-A solo permite preview read-only; no hay pagos, abonos ni movimientos de Caja.
 - Riesgo residual: futuras escrituras CxP deben validar estrictamente `hotel_id` de proveedor/compra.
 - 3C-C agrega validacion automatica para duplicados, compras/proveedores inexistentes, cruces de hotel, compras no recibidas, saldos/totales invalidos, fechas faltantes y referencias CxP en Caja.
-- Auditoria post-QA confirmo estaticamente: unico POST con CSRF, guardas de autenticacion/contexto/modulo, sin escrituras en Caja/pagos y sin cambios en `/api/sync`.
-- Limitacion de verificacion actual: Docker Desktop no disponible y `php` no esta en PATH local, por lo que health/preflights no se re-ejecutaron en esta pasada.
+- Auditoria corregida confirma: sin POST 3C-A, guardas de autenticacion/contexto/modulo, sin escrituras en Caja/pagos y sin cambios en `/api/sync`.
+- Verificacion actual: Docker disponible; `php -l`, health, preflights, HTTP sin sesion y conteos DB antes/despues ejecutados.
 
 ## Pendiente antes de avanzar
 
-- Re-ejecutar Fase 3C-A simulador read-only como siguiente cola formal.
-- Confirmar con verificaciones actuales que el simulador esta ruteado, protegido y funcional.
+- Ejecutar QA manual del simulador 3C-A autenticado.
+- Confirmar visualmente que el simulador esta ruteado, protegido, navegable y sin botones POST.
 - No avanzar a 3C-B, pagos, Caja ni Fase 3D sin nuevo mensaje real o cola especifica.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)

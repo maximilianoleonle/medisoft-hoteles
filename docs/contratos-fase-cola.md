@@ -99,13 +99,13 @@ Al cerrar esta fase, no avanzar a Fase 3C sin nuevo mensaje real. El estado debe
 
 ### Reanclaje de estado
 
-Estado formal vigente: `SIMULADOR_3C_PARCIAL`.
+Estado formal vigente: `SIMULADOR_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
 El repositorio contiene commits de implementacion posteriores al contrato, pero el nuevo reanclaje impide tratarlos como cierre formal:
 
 - `9897465`: contrato 3C-0 completado.
 - `c216dc5`: codigo de simulador, base parcial para 3C-A.
-- `cb83121`: codigo de generacion manual, adelantado/no formal hasta cerrar 3C-A.
+- `cb83121`: antecedente historico de generacion manual; en el codigo vigente 3C-A la generacion queda retirada/diferida.
 - `5dfe665`: codigo de validaciones, adelantado/no formal hasta cerrar 3C-A.
 - `8765258` y `2662998`: revision/auditoria prematuras o documentales.
 
@@ -204,19 +204,15 @@ Definition of Done 3C-A:
 - confirmar HTTP sin sesion redirige o bloquea;
 - confirmar conteos DB sin escritura antes/despues.
 
-### Codigo historico 3C-B existente
+### Fase 3C-B diferida
 
-Generacion manual controlada de CxP desde compra recibida existe en el codigo, pero queda reclasificada como adelantada/no formal hasta revalidar 3C-A:
+La generacion manual controlada de CxP desde compra recibida queda diferida hasta QA manual de 3C-A y nueva autorizacion:
 
-- ruta: `POST /cuentas-por-pagar/generar-desde-compra/{id}`;
-- controlador: `CuentaPorPagarController::generarDesdeCompraAction()`;
-- modelo: `CuentaPorPagar::generarDesdeCompraRecibida()`;
-- boton visible solo en filas elegibles del preview;
-- CSRF obligatorio;
-- transaccion propia;
-- bloqueo `FOR UPDATE` sobre la compra y verificacion de CxP existente;
-- auditoria con `AuditService::record()`;
-- redireccion a detalle de CxP generada;
+- no hay ruta POST activa para generar CxP;
+- no hay `CuentaPorPagarController::generarDesdeCompraAction()` vigente;
+- no hay `CuentaPorPagar::generarDesdeCompraRecibida()` vigente;
+- no hay boton `Generar CxP` en el preview 3C-A;
+- no hay CSRF nuevo porque 3C-A no escribe datos;
 - sin pagos;
 - sin abonos;
 - sin Caja;

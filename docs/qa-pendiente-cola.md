@@ -50,14 +50,14 @@
 
 ## QA Fase 3C
 
-Estado reanclado: `SIMULADOR_3C_PARCIAL`.
+Estado reanclado: `SIMULADOR_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
 La QA manual y automatica registrada previamente para 3C queda como antecedente historico. No debe usarse para cerrar formalmente Fase 3C despues del reanclaje. La siguiente validacion formal debe empezar por 3C-A simulador read-only.
 
 ### QA critica
 
 - Confirmar que el simulador 3C-A no escribe en DB.
-- Confirmar que la generacion 3C-B es manual, no automatica.
+- Confirmar que 3C-A no muestra acciones de generacion y que la generacion 3C-B sigue diferida.
 - Confirmar que solo compras `recibida` generan CxP.
 - Confirmar que no se duplica CxP por compra.
 - Confirmar que CxP generada respeta `hotel_id`.
@@ -69,10 +69,10 @@ La QA manual y automatica registrada previamente para 3C queda como antecedente 
 
 - Revisar listado de compras recibidas elegibles.
 - Revisar motivos de bloqueo cuando una compra ya tiene CxP.
-- Confirmar que `/cuentas-por-pagar/generacion-preview` muestra boton solo en compras elegibles.
-- Generar CxP manualmente desde una compra recibida autorizada.
-- Revisar listado y detalle CxP despues de generar.
-- Revisar detalle de compra y preview para ver CxP vinculada.
+- Confirmar que `/cuentas-por-pagar/generacion-preview` no muestra botones POST ni `Generar CxP`.
+- Confirmar que las compras elegibles muestran solo diagnostico de elegibilidad.
+- Revisar listado y detalle CxP existentes sin crear nuevas cuentas.
+- Revisar detalle de compra y preview para ver CxP vinculada cuando ya exista.
 
 ### QA visual
 
@@ -96,17 +96,15 @@ La QA manual y automatica registrada previamente para 3C queda como antecedente 
 - Confirmar que muestra link a CxP solo si ya existe.
 - Confirmar que las compras elegibles indican motivo de elegibilidad.
 - Confirmar que las compras no elegibles indican motivo de bloqueo.
+- Confirmar que no hay boton `Generar CxP`.
 - Confirmar que no hay botones de pago, abono ni Caja.
 
-### QA especifica Fase 3C-B
+### QA futura Fase 3C-B
 
-- Usar una compra recibida elegible.
-- Presionar `Generar CxP`.
-- Confirmar redireccion al detalle de la CxP.
-- Confirmar que el preview cambia la compra a bloqueada por CxP existente.
-- Intentar generar de nuevo y confirmar error claro.
-- Confirmar que no cambia `movimientos_caja`.
-- Confirmar que no hay pagos ni abonos.
+- Estado: diferida; no ejecutar en 3C-A.
+- Requiere nueva autorizacion antes de reactivar ruta POST, boton, CSRF y metodo de escritura.
+- Confirmar que no cambia `movimientos_caja` cuando se autorice una prueba futura.
+- Confirmar que no hay pagos ni abonos cuando se autorice una prueba futura.
 
 ## Resultado automatico Fase 3C-B
 
@@ -162,7 +160,7 @@ La QA manual y automatica registrada previamente para 3C queda como antecedente 
 ## Auditoria seguridad Fase 3C post-QA
 
 - Auditoria estatica previa sin hallazgos bloqueantes, reclasificada como prematura.
-- Confirmado por revision de codigo: unico POST 3C con `validateCSRF()`.
+- Confirmado por revision de codigo corregida: no hay POST 3C-A activo.
 - Confirmado por revision de codigo: `before()` exige autenticacion, contexto hotelero y modulo `inventario`.
 - Confirmado por revision de codigo: no hay escritura en Caja ni pagos desde CxP.
 - Confirmado por revision de codigo: generacion valida compra recibida, proveedor del hotel, total positivo, detalles y no duplicado.

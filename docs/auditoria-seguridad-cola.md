@@ -15,16 +15,16 @@ Auditoria post-commit del bloque autorizado hasta Fase 3C:
 
 ## Reanclaje Fase 3C
 
-Estado real reanclado: `SIMULADOR_3C_PARCIAL`.
+Estado real reanclado: `SIMULADOR_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
 La auditoria previa de Fase 3C queda reclasificada como prematura/documental. No debe usarse para afirmar que Fase 3C esta cerrada, revisada completamente ni auditada completamente.
 
 Motivo:
 
-- el repositorio contiene codigo de simulador, generacion manual y checkers;
+- el repositorio contenia codigo de simulador, generacion manual y checkers;
 - el nuevo mensaje real exige reconstruir verdad actual y no considerar 3C cerrada;
 - Docker/PHP no estan disponibles para re-ejecutar verificaciones completas;
-- por tanto, la auditoria queda como antecedente y debe repetirse despues de cerrar formalmente 3C-A/3C-B/3C-C.
+- por tanto, la auditoria queda como antecedente y debe repetirse despues de QA manual de 3C-A y antes de activar 3C-B.
 
 ## Resultado historico previo
 
@@ -39,12 +39,10 @@ Motivo:
   - `/cuentas-por-pagar`;
   - `/cuentas-por-pagar/generacion-preview`;
   - `/cuentas-por-pagar/{id}`.
-- CxP tiene un unico POST autorizado en 3C:
-  - `/cuentas-por-pagar/generar-desde-compra/{id}`.
-- El POST autorizado usa `validateCSRF()`.
-- El boton de generacion solo aparece en compras elegibles del preview.
+- CxP no tiene POST activo en 3C-A.
+- No hay boton de generacion en el preview vigente.
 - CxP no contiene acciones de pago.
-- CxP solo escribe en `cuentas_por_pagar` durante generacion manual desde compra recibida.
+- CxP 3C-A no escribe en `cuentas_por_pagar`; solo consulta compras/proveedores/CxP.
 - CxP no escribe en `cuentas_por_pagar_movimientos`.
 - CxP no toca `movimientos_caja`, `cortes_caja` ni `cajas`.
 - Modelo CxP filtra por `hotel_id`.
@@ -56,17 +54,17 @@ Motivo:
 
 ## Auditoria especifica Fase 3C post-QA historica
 
-- Creacion de CxP sin `hotel_id`: bloqueada por `CuentaPorPagar::generarDesdeCompraRecibida()`, que valida `hotelId > 0` y lo inserta explicitamente.
-- Creacion de CxP con proveedor de otro hotel: bloqueada por `obtenerCompraParaGeneracion()`, que une proveedor con `p.hotel_id = c.hotel_id`, y por `assertCompraGenerable()`.
-- Creacion de CxP con compra de otro hotel: bloqueada por busqueda `WHERE c.id = ? AND c.hotel_id = ?`.
-- Duplicacion de CxP: bloqueada por transaccion, `FOR UPDATE` sobre compra y verificacion `cuentas_por_pagar` por `(hotel_id, compra_id)`.
-- Generacion desde compra no recibida: bloqueada por `assertCompraGenerable()` con estado exacto `recibida`.
-- Generacion desde compra cancelada/borrador: bloqueada por la misma validacion de estado y el boton no aparece para filas no elegibles.
+- Creacion de CxP sin `hotel_id`: no aplica en 3C-A porque no hay escritura ni ruta POST activa.
+- Creacion de CxP con proveedor de otro hotel: no aplica en 3C-A; el preview une proveedor con `p.hotel_id = c.hotel_id` y bloquea filas sin proveedor resuelto.
+- Creacion de CxP con compra de otro hotel: no aplica en 3C-A; el preview filtra `compras` por `c.hotel_id = hotel actual`.
+- Duplicacion de CxP: no aplica en 3C-A; el preview detecta `cxp_count > 0` y muestra bloqueo.
+- Generacion desde compra no recibida: no aplica en 3C-A; no hay accion de generacion y la fila muestra motivo de bloqueo.
+- Generacion desde compra cancelada/borrador: no aplica en 3C-A; no hay boton de escritura.
 - Escritura accidental en Caja: no hay referencias de escritura a `movimientos_caja`, `cortes_caja` ni `cajas` en el flujo CxP.
 - Creacion accidental de pagos: no hay rutas, vistas ni modelo de pagos CxP; `cuentas_por_pagar_movimientos` no se inserta en 3C.
-- Endpoints POST sin proteccion: el unico POST 3C llama `validateCSRF()` y pasa por `before()` con `requireAuth`, contexto hotelero y modulo `inventario`.
-- Falta de CSRF: el formulario elegible usa `csrf_field()`.
-- Botones visibles en estados incorrectos: el boton solo se renderiza cuando `es_elegible` es verdadero.
+- Endpoints POST sin proteccion: no hay POST CxP 3C-A activo.
+- Falta de CSRF: no aplica en 3C-A porque no hay formulario de escritura.
+- Botones visibles en estados incorrectos: no hay boton de generacion en 3C-A.
 - Errores de permisos: CxP comparte guardas de modulo `inventario` en controlador y sidebar.
 - `/api/sync` modificado accidentalmente: no hay cambios de codigo en `ApiController` ni en la ruta `/api/sync` dentro de esta revision.
 - Rollback insuficiente: `docs/rollback-cola.md` documenta rollback por 3C-A, 3C-B, 3C-C y revision post-QA.
@@ -86,7 +84,7 @@ Motivo:
 
 ## Recomendacion
 
-Ejecutar primero `COLA_3C_A_SIMULADOR_READ_ONLY`. Mantener prohibidos pagos, Caja, CxC, nomina operativa, permisos profundos y `/api/sync` hasta nuevo bloque explicito.
+Ejecutar QA manual de `/cuentas-por-pagar/generacion-preview` autenticado. Mantener prohibidos pagos, Caja, CxC, nomina operativa, permisos profundos y `/api/sync` hasta nuevo bloque explicito.
 
 ## Fase 3C - controles esperados
 

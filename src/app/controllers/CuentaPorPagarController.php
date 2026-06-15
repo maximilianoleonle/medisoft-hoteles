@@ -103,42 +103,10 @@ class CuentaPorPagarController extends Controller
         ]);
     }
 
-    public function generarDesdeCompraAction(): void
-    {
-        if (!$this->isPost()) {
-            $this->redirect('cuentas-por-pagar/generacion-preview');
-            return;
-        }
-
-        $this->validateCSRF();
-
-        $compraId = (int)($this->route_params['id'] ?? 0);
-        try {
-            $resultado = $this->cuentaModel->generarDesdeCompraRecibida(
-                $this->hotelIdActual(),
-                $compraId,
-                $this->usuarioIdActual()
-            );
-
-            $cxpId = (int)($resultado['cxp_id'] ?? 0);
-            set_mensaje('Cuenta por pagar #' . $cxpId . ' generada desde compra #' . $compraId . '.', 'success');
-            $this->redirect('cuentas-por-pagar/' . $cxpId);
-        } catch (Throwable $e) {
-            set_mensaje('No se pudo generar la cuenta por pagar: ' . $e->getMessage(), 'error');
-            $this->redirect('cuentas-por-pagar/generacion-preview');
-        }
-    }
-
     private function hotelIdActual(): int
     {
         return function_exists('obtenerHotelIdActualCompat')
             ? (int)obtenerHotelIdActualCompat()
             : (int)($_SESSION['hotel_id'] ?? 0);
-    }
-
-    private function usuarioIdActual(): ?int
-    {
-        $usuarioId = $_SESSION['user_id'] ?? $_SESSION['usuario_id'] ?? null;
-        return $usuarioId ? (int)$usuarioId : null;
     }
 }
