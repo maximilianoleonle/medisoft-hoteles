@@ -1298,6 +1298,43 @@ Alcance:
 - Sin cambios en calculos financieros.
 - Sin cambios en `/api/sync`.
 
+## Actualizacion Fase 3B draft
+
+Preparacion no ejecutada de Cuentas por Pagar base:
+
+- Archivo: `docs/technical/sql_drafts/20260615_003_fase_3b_cxp_base_draft.sql`.
+- Estado: borrador no ejecutado.
+- No se agrega archivo a `migrations/` en esta subfase.
+- No se ejecuta contra ninguna base de datos.
+- No se registran filas en `migrations`.
+- Tablas propuestas:
+  - `cuentas_por_pagar`.
+  - `cuentas_por_pagar_movimientos`.
+- Relacion propuesta con `hoteles`, `proveedores`, `compras` y `usuarios`.
+- `uk_cxp_hotel_compra` evita duplicar una CxP por compra dentro del mismo hotel.
+- `saldo` y `total` quedan con checks no negativos.
+
+Alcance:
+
+- Solo preparacion tecnica.
+- Sin rutas activas de CxP.
+- Sin vistas activas de CxP.
+- Sin pagos.
+- Sin movimientos de caja.
+- Sin afectacion a reportes financieros.
+- Sin cambios en recepcion de compras.
+- Sin cambios en `/api/sync`.
+
+Promocion futura segura:
+
+1. Generar backup completo de `medisoft_hoteles_import`.
+2. Confirmar tamano y SHA256 del backup.
+3. Revisar el SQL draft.
+4. Promoverlo a `migrations/` con nombre oficial.
+5. Ejecutarlo solo si el health checker no tiene errores.
+6. Validar tablas vacias, llaves foraneas e indices.
+7. Crear vistas read-only de CxP en una subfase posterior.
+
 ## No implementar todavia
 
 - Pagos de compras.

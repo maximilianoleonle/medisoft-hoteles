@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B-draft.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -325,6 +325,13 @@ $minimalPurchasingDraft = hcFindFirstExistingPath([
     dirname(dirname(getcwd())) . '/docs/technical/sql_drafts/20260615_002_fase_2n_compras_minimas_draft.sql',
     '/workspace/docs/technical/sql_drafts/20260615_002_fase_2n_compras_minimas_draft.sql',
 ]);
+$cxpBaseDraft = hcFindFirstExistingPath([
+    $projectRoot . '/docs/technical/sql_drafts/20260615_003_fase_3b_cxp_base_draft.sql',
+    getcwd() . '/docs/technical/sql_drafts/20260615_003_fase_3b_cxp_base_draft.sql',
+    dirname(getcwd()) . '/docs/technical/sql_drafts/20260615_003_fase_3b_cxp_base_draft.sql',
+    dirname(dirname(getcwd())) . '/docs/technical/sql_drafts/20260615_003_fase_3b_cxp_base_draft.sql',
+    '/workspace/docs/technical/sql_drafts/20260615_003_fase_3b_cxp_base_draft.sql',
+]);
 $minimalPurchasingOfficialMigration = hcFindFirstExistingPath([
     $projectRoot . '/migrations/20260615_002_fase_2n_compras_minimas.sql',
     getcwd() . '/migrations/20260615_002_fase_2n_compras_minimas.sql',
@@ -346,7 +353,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A - Medisoft Hoteles\n";
+echo "Health check Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B-draft - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -475,6 +482,31 @@ if ($minimalPurchasingOfficialMigration && is_file($minimalPurchasingOfficialMig
     hcWarning(
         'Migracion oficial Fase 2O de compras minimas no existe en migrations/.',
         'Promover el borrador solo con backup completo y autorizacion explicita.'
+    );
+}
+
+if ($cxpBaseDraft && is_file($cxpBaseDraft)) {
+    $cxpDraftCode = (string) file_get_contents($cxpBaseDraft);
+    if (
+        strpos($cxpDraftCode, 'NO EJECUTAR EN ESTA SUBFASE') !== false
+        && strpos($cxpDraftCode, 'CREATE TABLE IF NOT EXISTS cuentas_por_pagar') !== false
+        && strpos($cxpDraftCode, 'CREATE TABLE IF NOT EXISTS cuentas_por_pagar_movimientos') !== false
+        && strpos($cxpDraftCode, 'uk_cxp_hotel_compra') !== false
+        && strpos($cxpDraftCode, 'fk_cxp_compra') !== false
+        && strpos($cxpDraftCode, 'Rollback manual documentado') !== false
+        && strpos($cxpDraftCode, 'movimientos_caja') === false
+    ) {
+        hcOk('Borrador Fase 3B de CxP base existe y permanece fuera de migrations/.');
+    } else {
+        hcWarning(
+            'Borrador Fase 3B de CxP base incompleto o riesgoso.',
+            'Mantenerlo no ejecutado, no destructivo, sin Caja y con rollback manual documentado.'
+        );
+    }
+} else {
+    hcWarning(
+        'No existe borrador Fase 3B de CxP base.',
+        'Crear docs/technical/sql_drafts/20260615_003_fase_3b_cxp_base_draft.sql antes de promover CxP.'
     );
 }
 
@@ -2694,6 +2726,21 @@ if (!is_file($routesPath)) {
                         'Actualizar docs/technical/inventory_reconciliation.md con ficha read-only de proveedor e historial.'
                     );
                 }
+
+                if (
+                    strpos($inventarioDocCode, 'Fase 3B draft') !== false
+                    && strpos($inventarioDocCode, '20260615_003_fase_3b_cxp_base_draft.sql') !== false
+                    && strpos($inventarioDocCode, 'No se ejecuta SQL contra la base') !== false
+                    && strpos($inventarioDocCode, 'Sin movimientos de caja') !== false
+                    && strpos($inventarioDocCode, 'Sin rutas activas de CxP') !== false
+                ) {
+                    hcOk('Documentacion de inventario registra draft no ejecutado Fase 3B de CxP.');
+                } else {
+                    hcWarning(
+                        'Documentacion de inventario no registra aun draft Fase 3B.',
+                        'Actualizar docs/technical/inventory_reconciliation.md con CxP base no ejecutada y exclusiones.'
+                    );
+                }
             }
 
             if ($purchasingInventoryDoc === null || !is_file($purchasingInventoryDoc)) {
@@ -3021,6 +3068,21 @@ if (!is_file($routesPath)) {
                     hcWarning(
                         'Contrato de compras no registra proveedores v2 Fase 3A.',
                         'Actualizar docs/technical/purchasing_inventory_contract.md con ficha read-only, ruta y exclusiones.'
+                    );
+                }
+
+                if (
+                    strpos($purchasingDocCode, 'Actualizacion Fase 3B draft') !== false
+                    && strpos($purchasingDocCode, '20260615_003_fase_3b_cxp_base_draft.sql') !== false
+                    && strpos($purchasingDocCode, 'No se ejecuta contra ninguna base de datos') !== false
+                    && strpos($purchasingDocCode, 'uk_cxp_hotel_compra') !== false
+                    && strpos($purchasingDocCode, 'Sin movimientos de caja') !== false
+                ) {
+                    hcOk('Contrato de compras documenta draft no ejecutado Fase 3B de CxP.');
+                } else {
+                    hcWarning(
+                        'Contrato de compras no registra draft Fase 3B.',
+                        'Actualizar docs/technical/purchasing_inventory_contract.md con draft CxP, no ejecucion y promocion futura.'
                     );
                 }
             }

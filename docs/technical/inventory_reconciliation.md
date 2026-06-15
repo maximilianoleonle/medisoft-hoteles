@@ -1078,3 +1078,36 @@ Exclusiones:
 - Sin movimientos de caja.
 - Sin cambios en reportes financieros.
 - Sin cambios en `/api/sync`.
+
+## Fase 3B draft: cuentas por pagar base
+
+Implementacion:
+
+- Borrador SQL no ejecutado: `docs/technical/sql_drafts/20260615_003_fase_3b_cxp_base_draft.sql`.
+- Tablas propuestas: `cuentas_por_pagar` y `cuentas_por_pagar_movimientos`.
+- No se agrega archivo oficial a `migrations/` en esta subfase.
+- No se ejecuta SQL contra la base.
+- No se registra migracion.
+
+Contrato de inventario:
+
+- CxP no modifica `inventario_productos`.
+- CxP no crea movimientos en `movimientos_inventario`.
+- CxP solo referencia compras ya existentes cuando se promueva la fase.
+- La recepcion de compras no se altera en esta subfase.
+
+Exclusiones:
+
+- Sin pagos.
+- Sin movimientos de caja.
+- Sin documentos.
+- Sin rutas activas de CxP.
+- Sin vistas activas de CxP.
+- Sin cambios en reportes financieros.
+- Sin cambios en `/api/sync`.
+
+Promocion futura:
+
+- Requiere backup completo y SHA256 antes de ejecutar cualquier SQL.
+- Requiere promover el draft a `migrations/`.
+- Requiere validar estructura vacia antes de construir vistas read-only.

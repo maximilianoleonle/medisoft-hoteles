@@ -7,7 +7,7 @@ Roadmap autonomo recibido para avanzar fase por fase desde Fase 2X completada, i
 ## Fase actual
 
 - Fase 3B: cuentas por pagar base read-only.
-- Estado: siguiente subfase segura pendiente; no se han ejecutado migraciones de CxP.
+- Estado: subfase draft no ejecutada preparada; no se han ejecutado migraciones de CxP.
 
 ## Fases completadas
 
@@ -17,13 +17,15 @@ Roadmap autonomo recibido para avanzar fase por fase desde Fase 2X completada, i
 - Fase 2Y: reporte read-only de compras recibidas por proveedor/producto.
 - Fase 2Z: guardas explicitas de recepcion e idempotencia basica.
 - Fase 3A: ficha read-only de proveedor e historial de compras.
+- Fase 3B-draft: borrador SQL no ejecutado para CxP base.
 
 ## Commits realizados
 
 - `d1f1431` - `feat: add read-only received purchase detail`
 - `32abb7b` - `feat: add read-only received purchases reports`
 - `052fd7a` - `fix: harden minimal purchase receiving flow`
-- Pendiente: hash del checkpoint Fase 3A se reporta al cerrar el commit actual.
+- `3d8f997` - `feat: expand supplier profile and purchase history`
+- Pendiente: checkpoint Fase 3B-draft.
 
 ## Pruebas ejecutadas
 
@@ -52,6 +54,10 @@ Roadmap autonomo recibido para avanzar fase por fase desde Fase 2X completada, i
 - Fase 3A `preflight_compras_minimas.php` via Docker: OK 34, WARNING 3, ERROR 0. Warnings por docs/migraciones no visibles en el montaje del contenedor.
 - Fase 3A `preflight_recepcion_compras.php` via Docker: OK 25, WARNING 2, ERROR 0. Warnings por docs no montados en el contenedor.
 - Fase 3A `git diff --check`: sin errores bloqueantes; solo warnings de normalizacion CRLF.
+- Fase 3B-draft `php -l` via Docker: `health_check_fase_1a.php` sin errores.
+- Fase 3B-draft `health_check_fase_1a.php` via Docker: OK 141, WARNING 22, ERROR 0. Warning adicional esperado porque `docs/technical` no esta montado en el contenedor y el draft no es visible desde Docker.
+- Fase 3B-draft validacion host con `rg`: el SQL contiene `NO EJECUTAR EN ESTA SUBFASE`, `CREATE TABLE IF NOT EXISTS cuentas_por_pagar`, `CREATE TABLE IF NOT EXISTS cuentas_por_pagar_movimientos`, `uk_cxp_hotel_compra` y rollback manual.
+- Fase 3B-draft validacion host: `migrations/20260615_003_fase_3b_cxp_base.sql` no existe; `docs/technical/sql_drafts/20260615_003_fase_3b_cxp_base_draft.sql` existe.
 
 ## Warnings conocidos
 
@@ -73,7 +79,7 @@ Roadmap autonomo recibido para avanzar fase por fase desde Fase 2X completada, i
 
 ## Siguiente fase recomendada
 
-- Fase 3B: preparar CxP base read-only con una subfase no destructiva y sin ejecutar migraciones hasta backup/validacion.
+- Fase 3B: promover el draft solo despues de backup y validacion; luego construir vistas read-only de CxP.
 
 ## Decisiones tecnicas importantes
 
@@ -87,7 +93,9 @@ Roadmap autonomo recibido para avanzar fase por fase desde Fase 2X completada, i
 - Fase 2Z no agrega rutas de escritura ni toca DB; solo endurece precondiciones de recepcion y navegacion read-only.
 - Fase 3A se implemento sin migraciones ni cambios de DB; expone lectura y navegacion con campos existentes.
 - Fase 3A permite lectura de `compras` desde `Proveedor`, pero no escribe en compras, inventario, Caja ni CxP.
-- Fase 3B debe iniciar con diseno/migracion no destructiva y no debe integrarse con Caja.
+- Fase 3B-draft no se agrega a `migrations/` todavia para evitar que el health checker marque migraciones pendientes no registradas.
+- Fase 3B-draft no se ejecuta contra DB; solo prepara estructura propuesta y rollback manual.
+- Fase 3B no debe integrarse con Caja.
 
 ## Archivos modificados por fase
 
@@ -134,6 +142,13 @@ Roadmap autonomo recibido para avanzar fase por fase desde Fase 2X completada, i
 - `src/app/models/Proveedor.php`
 - `src/app/views/proveedores/index.php`
 - `src/app/views/proveedores/ver.php`
+- `src/tools/saas/health_check_fase_1a.php`
+- `docs/technical/purchasing_inventory_contract.md`
+- `docs/technical/inventory_reconciliation.md`
+
+### Fase 3B-draft
+
+- `docs/technical/sql_drafts/20260615_003_fase_3b_cxp_base_draft.sql`
 - `src/tools/saas/health_check_fase_1a.php`
 - `docs/technical/purchasing_inventory_contract.md`
 - `docs/technical/inventory_reconciliation.md`
