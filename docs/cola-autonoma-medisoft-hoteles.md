@@ -2,14 +2,14 @@
 
 ## Ultimo mensaje real usado
 
-COLA_3C_C_VALIDACIONES_HEALTH_PREFLIGHTS: reforzar validaciones read-only de CxP generada desde compras, sin pagos, abonos, Caja ni `/api/sync`.
+COLA_REVISION_TECNICA_3C: revisar tecnicamente contrato, preview, generacion manual y validaciones 3C, sin pagos, abonos, Caja ni Fase 3D.
 
 ## Estado vigente
 
 - Bloque actual: Fase 3C CxP.
-- Fase actual: 3C-C validaciones, health y preflights.
+- Fase actual: revision tecnica 3C.
 - Riesgo: naranja.
-- Estado: `VALIDACIONES_3C_C_COMPLETADAS`.
+- Estado: `REVISION_TECNICA_3C_COMPLETADA`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -24,9 +24,9 @@ COLA_3C_C_VALIDACIONES_HEALTH_PREFLIGHTS: reforzar validaciones read-only de CxP
 - 3C-B generacion manual: implementada tecnicamente y validada manualmente por el usuario.
 - 3C-C validaciones: checkers read-only refuerzan reglas de consistencia CxP y ausencia de movimientos/pagos/abonos.
 - SQL read-only 3C-C: CxP=2, movimientos CxP=0, inconsistencias=0, Caja-CxP=0, `compra_pagos` inexistente.
-- Revision `8765258`: ajuste de vista/documentacion, no cierre formal.
-- Auditoria `2662998`: documentacion de auditoria prematura bajo el reanclaje, no cierre formal.
-- Siguiente accion recomendada: revision tecnica/auditoria de cierre 3C, solo si el usuario la autoriza.
+- Revision tecnica 3C actual: completada sin hallazgos bloqueantes.
+- Auditoria `2662998`: documentacion de auditoria prematura bajo el reanclaje, no cierre formal post-3C-C.
+- Siguiente accion recomendada: auditoria de seguridad/cierre 3C, solo si el usuario la autoriza.
 
 ## Bloque base previo: Fase 3B CxP read-only
 
@@ -187,4 +187,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Siguiente paso formal recomendado: revision tecnica/auditoria de cierre 3C, solo si el usuario la autoriza. No avanzar a pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Siguiente paso formal recomendado: auditoria de seguridad/cierre 3C, solo si el usuario la autoriza. No avanzar a pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

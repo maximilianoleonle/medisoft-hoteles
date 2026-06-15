@@ -2222,10 +2222,10 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($missingCxpRoutes)) {
-        hcOk('Rutas Fase 3B/3C-B de CxP, preview GET y generacion manual POST estan registradas.');
+        hcOk('Rutas Fase 3B/3C-C de CxP, preview GET y generacion manual POST estan registradas.');
     } else {
         hcWarning(
-            'Rutas Fase 3B/3C-B de CxP faltantes: ' . implode(', ', $missingCxpRoutes),
+            'Rutas Fase 3B/3C-C de CxP faltantes: ' . implode(', ', $missingCxpRoutes),
             'Registrar GET listado/preview/detalle y POST manual /cuentas-por-pagar/generar-desde-compra/{id}; sin pagos ni Caja.'
         );
     }
@@ -2271,10 +2271,10 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($forbiddenPurchaseRoutes)) {
-        hcOk('Solo hay compras minimas y CxP/preview/generacion manual Fase 3B/3C-B; no hay rutas de pagos, contactos ni documentos de compras.');
+        hcOk('Solo hay compras minimas y CxP/preview/generacion manual Fase 3B/3C-C; no hay rutas de pagos, contactos ni documentos de compras.');
     } else {
         hcError(
-            'Rutas fuera del alcance Fase 3C-B detectadas: ' . implode(' | ', $forbiddenPurchaseRoutes),
+            'Rutas fuera del alcance Fase 3C-C detectadas: ' . implode(' | ', $forbiddenPurchaseRoutes),
             'Retirar rutas que no sean Compras basicas, CxP listado/preview/detalle, POST generar CxP desde compra y POST /compras/{id}/recibir.'
         );
     }
@@ -2539,10 +2539,10 @@ if (!is_file($routesPath)) {
             && strpos($cxpModelCode, 'FROM cuentas_por_pagar') !== false
             && strpos($cxpModelCode, 'FROM cuentas_por_pagar_movimientos') !== false
         ) {
-            hcOk('CxP Fase 3B/3C-B expone lectura, preview y generacion manual auditada sin pagos ni Caja.');
+            hcOk('CxP Fase 3B/3C-C expone lectura, preview y generacion manual auditada sin pagos ni Caja.');
         } else {
             hcError(
-                'CxP Fase 3C-B no cumple contrato o contiene tokens prohibidos.',
+                'CxP Fase 3C-C no cumple contrato o contiene tokens prohibidos.',
                 'Mantener GET index/preview/ver y POST generar desde compra recibida; sin pagos, abonos ni movimientos_caja.'
             );
         }
@@ -2579,10 +2579,10 @@ if (!is_file($routesPath)) {
             && strpos($cxpIndexViewCode . "\n" . $cxpDetailViewCode, 'csrf_field()') === false
             && strpos($cxpViewsCode, 'movimientos_caja') === false
         ) {
-            hcOk('Vistas CxP Fase 3B/3C-B incluyen lectura, preview y POST manual con CSRF sin pagos ni Caja.');
+            hcOk('Vistas CxP Fase 3B/3C-C incluyen lectura, preview y POST manual con CSRF sin pagos ni Caja.');
         } else {
             hcError(
-                'Vistas CxP Fase 3C-B incompletas o con acciones fuera de alcance.',
+                'Vistas CxP Fase 3C-C incompletas o con acciones fuera de alcance.',
                 'Mantener listado/detalle read-only y solo POST manual desde preview con CSRF; sin enlaces de pago/caja.'
             );
         }

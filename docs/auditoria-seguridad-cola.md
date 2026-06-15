@@ -15,9 +15,9 @@ Auditoria post-commit del bloque autorizado hasta Fase 3C:
 
 ## Reanclaje Fase 3C
 
-Estado vigente: `VALIDACIONES_3C_C_COMPLETADAS`.
+Estado vigente: `REVISION_TECNICA_3C_COMPLETADA`.
 
-La auditoria previa de Fase 3C queda reclasificada como prematura/documental. No debe usarse para afirmar que Fase 3C esta cerrada, revisada completamente ni auditada completamente.
+La auditoria previa de Fase 3C queda reclasificada como prematura/documental. La revision tecnica post-3C-C ya fue completada, pero la auditoria de seguridad/cierre aun debe ejecutarse si el usuario la autoriza.
 
 Motivo:
 
@@ -30,7 +30,7 @@ Motivo:
 
 - Bloque revisado: Fase 3C.
 - Resultado historico: sin hallazgos bloqueantes por revision estatica.
-- Reclasificacion: auditoria prematura; no cierre formal de Fase 3C.
+- Reclasificacion: auditoria prematura; no sustituye la auditoria de seguridad post-3C-C.
 - Cambios de codigo historicos: ajuste menor en preview para no enlazar proveedor si el proveedor no pertenece al hotel actual.
 
 ## Controles revisados
@@ -87,7 +87,7 @@ Motivo:
 
 ## Recomendacion
 
-Continuar solo con revision tecnica/auditoria de cierre 3C si el usuario la autoriza. Mantener prohibidos pagos, Caja, CxC, nomina operativa, permisos profundos y `/api/sync` hasta nuevo bloque explicito.
+Continuar solo con auditoria de seguridad/cierre 3C si el usuario la autoriza. Mantener prohibidos pagos, Caja, CxC, nomina operativa, permisos profundos y `/api/sync` hasta nuevo bloque explicito.
 
 ## Fase 3C - controles esperados
 

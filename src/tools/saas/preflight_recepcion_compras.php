@@ -789,7 +789,7 @@ if (is_file($routesPath)) {
         prcOk('Solo hay reporte read-only, detalle read-only, recepcion minima y CxP/preview/generacion manual; no hay pago ni documentos de compras.');
     } else {
         prcError(
-            'Rutas fuera del alcance Fase 2V/2W/2X/2Y/3C-B: ' . implode(' | ', $forbiddenRoutes),
+            'Rutas fuera del alcance Fase 2V/2W/2X/2Y/3C-C: ' . implode(' | ', $forbiddenRoutes),
             'Retirar rutas que no sean reporte read-only, detalle, borrador, POST /compras/{id}/recibir, CxP GET/preview/detalle o POST generar CxP.'
         );
     }

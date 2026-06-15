@@ -111,11 +111,11 @@ No mezclar este archivo con rollback de CxP.
 
 ### Reanclaje de estado
 
-- Estado formal vigente: `VALIDACIONES_3C_C_COMPLETADAS`.
+- Estado formal vigente: `REVISION_TECNICA_3C_COMPLETADA`.
 - 3C-A esta implementada como GET read-only; 3C-B esta implementada como POST manual controlado; 3C-C queda implementada como checkers read-only.
 - No borrar codigo ni datos automaticamente.
 - No hacer rollback destructivo de la CxP historica creada por prueba local sin nueva autorizacion y backup.
-- Antes de tocar pagos, Caja o Fase 3D, hacer revision/auditoria de cierre 3C y recibir autorizacion explicita de una fase nueva.
+- Antes de tocar pagos, Caja o Fase 3D, hacer auditoria de seguridad/cierre 3C y recibir autorizacion explicita de una fase nueva.
 
 ### 3C-0 contrato y diagnostico
 

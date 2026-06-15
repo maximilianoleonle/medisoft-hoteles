@@ -632,10 +632,10 @@ if (is_file($routesPath)) {
     }
 
     if (empty($forbiddenRoutes)) {
-        pfOk('Solo existen compras minimas y CxP/preview/generacion manual Fase 3B/3C-B; no hay pagos, contactos ni documentos.');
+        pfOk('Solo existen compras minimas y CxP/preview/generacion manual Fase 3B/3C-C; no hay pagos, contactos ni documentos.');
     } else {
         pfError(
-            'Rutas fuera del alcance Fase 3C-B detectadas: ' . implode(' | ', $forbiddenRoutes),
+            'Rutas fuera del alcance Fase 3C-C detectadas: ' . implode(' | ', $forbiddenRoutes),
             'Retirar rutas que no sean Compras minimas, GET de CxP/preview/detalle o POST generar CxP desde compra.'
         );
     }
@@ -698,10 +698,10 @@ if (
         && strpos($cxpCode, 'function pagarAction') === false
         && strpos($cxpCode, 'function abonarAction') === false
     ) {
-        pfOk('CxP Fase 3B/3C-B existe con lectura, preview y generacion manual controlada.');
+        pfOk('CxP Fase 3B/3C-C existe con lectura, preview y generacion manual controlada.');
     } else {
         pfError(
-            'CxP Fase 3C-B contiene tokens fuera de alcance o falta validacion central.',
+            'CxP Fase 3C-C contiene tokens fuera de alcance o falta validacion central.',
             'Mantener solo POST manual con CSRF desde compra recibida, sin pagos ni movimientos_caja.'
         );
     }

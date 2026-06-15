@@ -99,7 +99,7 @@ Al cerrar esta fase, no avanzar a Fase 3C sin nuevo mensaje real. El estado debe
 
 ### Reanclaje de estado
 
-Estado formal vigente: `VALIDACIONES_3C_C_COMPLETADAS`.
+Estado formal vigente: `REVISION_TECNICA_3C_COMPLETADA`.
 
 El repositorio contiene commits de implementacion posteriores al contrato, pero el nuevo reanclaje impide tratarlos como cierre formal:
 
@@ -107,9 +107,10 @@ El repositorio contiene commits de implementacion posteriores al contrato, pero 
 - `c216dc5`: codigo de simulador, base parcial para 3C-A.
 - `cb83121`: antecedente historico de generacion manual; la implementacion vigente reintroduce 3C-B de forma controlada.
 - `5dfe665`: codigo de validaciones read-only conservado en health/preflights.
-- `8765258` y `2662998`: revision/auditoria prematuras o documentales.
+- `8765258`: antecedente de ajuste/revision prematura; la revision tecnica actual ya fue ejecutada despues de 3C-C.
+- `2662998`: auditoria prematura/documental; no sustituye auditoria de seguridad post-3C-C.
 
-Siguiente paso formal: revision tecnica/auditoria de cierre 3C, solo si el usuario la autoriza.
+Siguiente paso formal: auditoria de seguridad/cierre 3C, solo si el usuario la autoriza.
 
 ### Objetivo
 
@@ -263,7 +264,7 @@ Validaciones de consistencia agregadas a health/preflights quedan formalizadas c
 - movimientos CxP/pagos/abonos accidentales;
 - referencias CxP en movimientos de Caja.
 
-QA manual del bloque 3C: antecedente historico; no cierre formal despues del reanclaje.
+Revision tecnica 3C actual: rutas, controlador, modelo, vistas, sidebar, guards, CSRF, filtros `hotel_id`, CxP `#2`, ausencia de pagos/abonos/Caja y `/api/sync` sin cambios revisados sin hallazgos bloqueantes.
 
 Revision tecnica post-QA:
 

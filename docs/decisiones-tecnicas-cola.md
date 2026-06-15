@@ -72,13 +72,14 @@
 ## Reanclaje Fase 3C
 
 - Nuevo mensaje real `REANCLAR_FASE_3C_VERDAD_ACTUAL` corrige el estado documental.
-- Estado formal vigente: `VALIDACIONES_3C_C_COMPLETADAS`.
+- Estado formal vigente: `REVISION_TECNICA_3C_COMPLETADA`.
 - `9897465` queda como contrato 3C-0 completado.
 - `c216dc5` contiene codigo de simulador; queda como base parcial pendiente de verificacion formal.
 - `cb83121` contiene el antecedente historico de generacion manual; la implementacion vigente reintroduce 3C-B con validacion automatica.
 - `5dfe665` contiene validaciones; se conservan como checkers read-only de consistencia CxP.
-- `8765258` y `2662998` quedan reclasificados como revision/auditoria prematuras o documentales, no cierre formal.
-- Siguiente accion: revision tecnica/auditoria de cierre 3C, solo si el usuario la autoriza.
+- `8765258` queda reclasificado como antecedente de revision prematura; la revision tecnica actual ya se ejecuto despues de 3C-C.
+- `2662998` queda reclasificado como auditoria prematura/documental, no cierre de seguridad post-3C-C.
+- Siguiente accion: auditoria de seguridad/cierre 3C, solo si el usuario la autoriza.
 
 ## Fase 3C-A
 
@@ -105,10 +106,12 @@
 
 ## Revision tecnica Fase 3C
 
-- La QA manual previa del bloque 3C queda como antecedente historico, no cierre formal despues del reanclaje.
+- Estado: completada despues de 3C-A, 3C-B y 3C-C.
+- La QA manual de 3C-A/3C-B queda vigente y documentada.
 - El preview debe renderizar link a proveedor solo cuando el proveedor fue resuelto por el join scoped al `hotel_id` de la compra.
 - Si una compra conserva `proveedor_id` pero el proveedor no existe en el hotel actual, la fila queda bloqueada y no debe enlazar a otro proveedor.
 - No se agrega indice/migracion en esta revision; la prevencion de duplicados sigue basada en bloqueo transaccional de la compra con `FOR UPDATE` y verificacion de CxP existente.
+- CxP `#2` se verifico como generada desde compra `#2`, compra recibida, mismo hotel/proveedor, total y saldo validos.
 - No se autoriza pago, abono, Caja ni Fase 3D.
 
 ## Auditoria seguridad Fase 3C
