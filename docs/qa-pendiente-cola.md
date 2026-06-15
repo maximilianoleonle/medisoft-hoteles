@@ -50,11 +50,12 @@
 
 ## QA Fase 3C
 
-Estado vigente: `AUDITORIA_SEGURIDAD_3C_COMPLETADA`.
+Estado vigente: `CIERRE_TECNICO_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
 El usuario reporto QA manual completada para 3C-A y 3C-B. Fase 3C-C queda completada tecnicamente con validaciones read-only en health/preflights y SQL de consistencia.
 Revision tecnica 3C completada sin hallazgos bloqueantes: rutas, controlador, modelo, vistas, sidebar, permisos/guards, CSRF, filtros `hotel_id`, CxP `#2`, ausencia de pagos/abonos/Caja y `/api/sync` sin cambios.
 Auditoria seguridad 3C completada sin hallazgos bloqueantes: cero movimientos CxP/pagos/abonos, cero Caja-CxP, `compra_pagos` inexistente y cambios no relacionados fuera del bloque. Quedan pendientes no relacionados para triage separado: `src/app/services/PwaPushService.php` y `src/public_html/service-worker.js`.
+Cierre tecnico 3C completado documentalmente. La QA manual de 3C-A y 3C-B ya fue reportada como OK por el usuario; queda pendiente QA manual final/regresion del bloque completo si aplica.
 
 ### QA critica
 
@@ -164,6 +165,7 @@ Auditoria seguridad 3C completada sin hallazgos bloqueantes: cero movimientos Cx
 - Detalle de compra recibida: OK.
 - `/api/sync`: no probado manualmente; cubierto por checker automatico cuando el entorno esta disponible.
 - Resultado vigente: 3C-A y 3C-B quedan validadas manualmente; no autoriza pagos, Caja ni Fase 3D.
+- Resultado de cierre: bloque 3C cerrado tecnicamente; no autoriza pagos, abonos, Caja ni Fase 3D.
 
 ## Revision tecnica Fase 3C
 
@@ -184,6 +186,8 @@ Auditoria seguridad 3C completada sin hallazgos bloqueantes: cero movimientos Cx
 
 - Sin cambios no relacionados pendientes al iniciar 3C-0.
 - El ajuste visual del modal de check-in tardio fue commiteado en `dc3c150`.
+- Cambios no relacionados ya separados en commit `e52766e`: `src/app/controllers/DashboardController.php`, `src/app/controllers/HabitacionController.php`, `src/app/controllers/NotificacionController.php`, `src/app/views/layout/sidebar.php`, `src/app/views/notificaciones/index.php`.
+- Cambios no relacionados pendientes al cierre 3C: `src/app/services/PwaPushService.php` y `src/public_html/service-worker.js`.
 
 ## QA Bloque Personal y Nomina (Fase NP)
 

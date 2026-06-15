@@ -74,3 +74,62 @@ Este cierre fue seguido por QA manual reportada como realizada por el usuario y 
 
 - HEAD funcional/documental del bloque anterior antes de 3C: `dc3c150`.
 - Pendientes no relacionados al iniciar 3C-0: ninguno.
+
+## Cierre tecnico Fase 3C
+
+Estado objetivo: `CIERRE_TECNICO_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
+
+La Fase 3C queda cerrada tecnicamente como generacion manual controlada de CxP desde compras recibidas, sin pagos, sin abonos, sin Caja, sin movimientos de Caja y sin cambios en `/api/sync`.
+
+### Fases cerradas 3C
+
+| Fase | Alcance | Commit | Estado |
+| --- | --- | --- | --- |
+| 3C-0 | Contrato y diagnostico | `9897465` | Cerrada |
+| Reanclaje 3C | Estado real corregido | `41e6c18` | Cerrada |
+| 3C-A | Simulador read-only de CxP generable | `c0ff5a1` | Cerrada y validada manualmente |
+| 3C-B | Generacion manual sin Caja | `c5e9de8` | Cerrada y validada manualmente |
+| QA 3C-A/B | Validacion manual documentada | `b9ca075` | Cerrada |
+| 3C-C | Validaciones, health y preflights | `e91cab5` | Cerrada tecnicamente |
+| Revision tecnica 3C | Estabilizacion post-3C-C | `59feafc` | Cerrada |
+| Auditoria seguridad 3C | Auditoria post-3C-C | `c14d14d` | Cerrada |
+
+### Confirmaciones 3C
+
+- 3C-0 contrato y diagnostico documentado.
+- 3C-A implementado como GET read-only, ruteado, protegido, navegable y validado manualmente.
+- 3C-B implementado como POST manual con CSRF, transaccion, validaciones centrales, auditoria y validacion manual.
+- 3C-C implementado como health/preflights read-only de consistencia CxP.
+- Revision tecnica 3C completada sin hallazgos bloqueantes.
+- Auditoria seguridad 3C completada sin hallazgos bloqueantes.
+- Rollback por subfase documentado.
+- Fuentes de verdad actualizadas.
+- QA critica, funcional, visual y regresion actualizada.
+- Warnings conocidos listados.
+- Commits registrados.
+- Sin pagos.
+- Sin abonos.
+- Sin Caja.
+- Sin movimientos de Caja.
+- Sin cambios en `/api/sync`.
+- Sin Fase 3D.
+
+### Warnings y pendientes separados
+
+- La QA manual de 3C-A y 3C-B fue reportada como OK por el usuario. Queda pendiente QA manual final/regresion del cierre 3C si el usuario desea validar todo el bloque completo en navegador.
+- Cambios no relacionados ya separados en commit `e52766e`:
+  - `src/app/controllers/DashboardController.php`;
+  - `src/app/controllers/HabitacionController.php`;
+  - `src/app/controllers/NotificacionController.php`;
+  - `src/app/views/layout/sidebar.php`;
+  - `src/app/views/notificaciones/index.php`.
+- Cambios no relacionados pendientes en Git al cierre:
+  - `src/app/services/PwaPushService.php`;
+  - `src/public_html/service-worker.js`.
+- `src/public_html/service-worker.js` esta en zona protegida por `AGENTS.md`; requiere triage separado antes de cualquier commit o cambio adicional.
+
+### Estado Git al cierre 3C
+
+- El commit de cierre 3C debe incluir solo documentacion del bloque 3C.
+- No incluir cambios PWA/no relacionados en el commit de cierre.
+- No hacer push.

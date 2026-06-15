@@ -2,14 +2,14 @@
 
 ## Ultimo mensaje real usado
 
-COLA_AUDITORIA_SEGURIDAD_3C: auditar seguridad/riesgo del bloque 3C completo, sin pagos, abonos, Caja ni Fase 3D.
+COLA_CERRAR_BLOQUE_3C: cerrar tecnicamente Fase 3C sin pagos, abonos, Caja, Fase 3D ni cambios en `/api/sync`.
 
 ## Estado vigente
 
 - Bloque actual: Fase 3C CxP.
-- Fase actual: auditoria seguridad 3C.
+- Fase actual: cierre tecnico 3C.
 - Riesgo: naranja.
-- Estado: `AUDITORIA_SEGURIDAD_3C_COMPLETADA`.
+- Estado: `CIERRE_TECNICO_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -26,9 +26,11 @@ COLA_AUDITORIA_SEGURIDAD_3C: auditar seguridad/riesgo del bloque 3C completo, si
 - SQL read-only 3C-C: CxP=2, movimientos CxP=0, inconsistencias=0, Caja-CxP=0, `compra_pagos` inexistente.
 - Revision tecnica 3C actual: completada sin hallazgos bloqueantes.
 - Auditoria seguridad 3C actual: completada sin hallazgos bloqueantes.
+- Cierre tecnico 3C: completado documentalmente, sin autorizar pagos, abonos, Caja, Fase 3D ni `/api/sync`.
 - Auditoria `2662998`: documentacion de auditoria prematura bajo el reanclaje.
 - Cambios no relacionados pendientes al cierre de auditoria 3C: `src/app/services/PwaPushService.php` y `src/public_html/service-worker.js`; no forman parte del bloque CxP y requieren triage separado.
-- Siguiente accion recomendada: cierre tecnico 3C, solo si el usuario lo autoriza.
+- Cambios no relacionados ya separados en `e52766e`: `src/app/controllers/DashboardController.php`, `src/app/controllers/HabitacionController.php`, `src/app/controllers/NotificacionController.php`, `src/app/views/layout/sidebar.php`, `src/app/views/notificaciones/index.php`.
+- Siguiente accion recomendada: QA manual final/regresion del cierre 3C si aplica o triage separado de PWA/no relacionados.
 
 ## Bloque base previo: Fase 3B CxP read-only
 
@@ -189,4 +191,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Siguiente paso formal recomendado: cierre tecnico 3C, solo si el usuario lo autoriza. No avanzar a pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Siguiente paso formal recomendado: QA manual final/regresion del cierre 3C si aplica o triage separado de PWA/no relacionados. No avanzar a pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

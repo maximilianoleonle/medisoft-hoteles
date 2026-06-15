@@ -111,11 +111,11 @@ No mezclar este archivo con rollback de CxP.
 
 ### Reanclaje de estado
 
-- Estado formal vigente: `AUDITORIA_SEGURIDAD_3C_COMPLETADA`.
+- Estado formal vigente: `CIERRE_TECNICO_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
 - 3C-A esta implementada como GET read-only; 3C-B esta implementada como POST manual controlado; 3C-C queda implementada como checkers read-only.
 - No borrar codigo ni datos automaticamente.
 - No hacer rollback destructivo de la CxP historica creada por prueba local sin nueva autorizacion y backup.
-- Antes de tocar pagos, Caja o Fase 3D, hacer cierre tecnico 3C y recibir autorizacion explicita de una fase nueva.
+- Antes de tocar pagos, Caja o Fase 3D, recibir autorizacion explicita de una fase nueva y hacer backup si hubiera escritura de datos.
 
 ### 3C-0 contrato y diagnostico
 
@@ -208,6 +208,15 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Rollback de documentacion: revertir el commit `docs(phase-3c): record payable generation security audit` si se quiere retirar la matriz de auditoria.
 - DB: no aplica; auditoria documental/estatica sin escrituras.
 - Codigo: no aplica si no hay cambios funcionales en el commit de auditoria.
+
+### Cierre tecnico Fase 3C
+
+- Estado vigente: `CIERRE_TECNICO_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- Rollback de documentacion: revertir el commit `docs(phase-3c): close controlled payable generation block` si se quiere retirar solo el cierre documental.
+- DB: no aplica; cierre documental sin escrituras.
+- Codigo: no aplica si no hay cambios funcionales en el commit de cierre.
+- No revertir ni borrar CxP de prueba (`id=1`, `id=2`) sin autorizacion explicita, backup y estrategia de reconciliacion.
+- No mezclar rollback 3C con cambios PWA/no relacionados.
 - Validacion posterior recomendada cuando Docker este disponible:
   - `docker compose exec -T app php -l app/views/cuentas_por_pagar/generacion_preview.php`;
   - `docker compose exec -T app php tools/saas/health_check_fase_1a.php`;

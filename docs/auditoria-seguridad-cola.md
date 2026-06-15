@@ -15,7 +15,7 @@ Auditoria post-commit del bloque autorizado hasta Fase 3C:
 
 ## Reanclaje Fase 3C
 
-Estado vigente: `AUDITORIA_SEGURIDAD_3C_COMPLETADA`.
+Estado vigente: `CIERRE_TECNICO_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
 Auditoria de seguridad post-3C-C completada sin hallazgos bloqueantes. La auditoria previa `2662998` queda como antecedente prematuro/documental.
 
@@ -104,7 +104,7 @@ Motivo:
 
 ## Recomendacion
 
-Continuar solo con cierre tecnico 3C si el usuario lo autoriza. Mantener prohibidos pagos, Caja, CxC, nomina operativa, permisos profundos y `/api/sync` hasta nuevo bloque explicito.
+Bloque 3C cerrado tecnicamente. Mantener prohibidos pagos, Caja, CxC, nomina operativa, permisos profundos y `/api/sync` hasta nuevo bloque explicito.
 
 ## Fase 3C - controles esperados
 
