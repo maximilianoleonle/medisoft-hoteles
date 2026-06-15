@@ -339,7 +339,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y - Medisoft Hoteles\n";
+echo "Health check Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -416,8 +416,9 @@ if ($minimalPurchasingPreflight && is_file($minimalPurchasingPreflight)) {
         && strpos($minimalPurchasingPreflightCode, 'Fase 2W') !== false
         && strpos($minimalPurchasingPreflightCode, 'Fase 2X') !== false
         && strpos($minimalPurchasingPreflightCode, 'Fase 2Y') !== false
+        && strpos($minimalPurchasingPreflightCode, 'Fase 2Z') !== false
     ) {
-        hcOk('Preflight de compras minimas existe, es solo lectura y conoce Fase 2R/2S/2T/2U/2V/2W/2X/2Y.');
+        hcOk('Preflight de compras minimas existe, es solo lectura y conoce Fase 2R/2S/2T/2U/2V/2W/2X/2Y/2Z.');
     } else {
         hcWarning(
             'Preflight de compras minimas existe pero no declara guardas completas.',
@@ -440,13 +441,14 @@ if ($purchaseReceptionPreflight && is_file($purchaseReceptionPreflight)) {
         && strpos($purchaseReceptionPreflightCode, 'Fase 2W') !== false
         && strpos($purchaseReceptionPreflightCode, 'Fase 2X') !== false
         && strpos($purchaseReceptionPreflightCode, 'Fase 2Y') !== false
+        && strpos($purchaseReceptionPreflightCode, 'Fase 2Z') !== false
         && strpos($purchaseReceptionPreflightCode, 'Solo lectura') !== false
         && strpos($purchaseReceptionPreflightCode, 'START TRANSACTION READ ONLY') !== false
         && strpos($purchaseReceptionPreflightCode, 'detalles_con_movimiento') !== false
         && strpos($purchaseReceptionPreflightCode, 'productos_repetidos') !== false
         && strpos($purchaseReceptionPreflightCode, 'un movimiento por linea') !== false
     ) {
-        hcOk('Preflight Fase 2T/2U/2V/2W/2X/2Y de recepcion de compras existe y es solo lectura.');
+        hcOk('Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z de recepcion de compras existe y es solo lectura.');
     } else {
         hcWarning(
             'Preflight Fase 2T de recepcion existe pero no declara todas las guardas esperadas.',
@@ -481,6 +483,11 @@ if ($purchaseServiceFile && is_file($purchaseServiceFile)) {
         && strpos($purchaseServiceCode, 'function catalogosReporteRecibidas') !== false
         && strpos($purchaseServiceCode, 'function reporteRecibidas') !== false
         && strpos($purchaseServiceCode, 'function filtrosReporteRecibidas') !== false
+        && strpos($purchaseServiceCode, 'function assertCompraPuedeRecibirse') !== false
+        && strpos($purchaseServiceCode, 'function assertDetallesPuedenRecibirse') !== false
+        && strpos($purchaseServiceCode, 'ya fue recibida') !== false
+        && strpos($purchaseServiceCode, 'esta cancelada') !== false
+        && strpos($purchaseServiceCode, 'otra sesion') !== false
         && strpos($purchaseServiceCode, 'COUNT(DISTINCT c.id)') !== false
         && strpos($purchaseServiceCode, 'GROUP BY p.id, p.nombre') !== false
         && strpos($purchaseServiceCode, 'GROUP BY ip.id, ip.codigo, ip.nombre, ip.unidad_medida') !== false
@@ -493,11 +500,11 @@ if ($purchaseServiceFile && is_file($purchaseServiceFile)) {
         && strpos($purchaseServiceCode, 'movimientos_caja') === false
         && strpos($purchaseServiceCode, 'cuentas_por_pagar') === false
     ) {
-        hcOk('CompraService existe con contrato transaccional y lecturas/reportes de UI Fase 2Y.');
+        hcOk('CompraService existe con contrato transaccional, reportes y guardas Fase 2Z.');
     } else {
         hcWarning(
-            'CompraService Fase 2Y existe pero no declara todas las guardas esperadas.',
-            'Revisar crearBorrador, recibirCompra, reporteRecibidas, transaccion, auditoria, movimientos_inventario y ausencia de Caja/CxP.'
+            'CompraService Fase 2Z existe pero no declara todas las guardas esperadas.',
+            'Revisar crearBorrador, recibirCompra, reporteRecibidas, assertCompraPuedeRecibirse, assertDetallesPuedenRecibirse y ausencia de Caja/CxP.'
         );
     }
 } else {
@@ -2075,6 +2082,7 @@ if (!is_file($routesPath)) {
             && strpos($purchaseDetailViewCode, 'movimiento_inventario_id') !== false
             && strpos($purchaseDetailViewCode, 'movimiento_stock_posterior') !== false
             && strpos($purchaseDetailViewCode, "url('compras?estado=") !== false
+            && strpos($purchaseDetailViewCode, "url('compras/reportes/recibidas')") !== false
             && strpos($purchaseReportViewCode, "action=\"<?= url('compras/reportes/recibidas') ?>\"") !== false
             && strpos($purchaseReportViewCode, 'por_proveedor') !== false
             && strpos($purchaseReportViewCode, 'por_producto') !== false
@@ -2599,6 +2607,21 @@ if (!is_file($routesPath)) {
                         'Actualizar docs/technical/inventory_reconciliation.md con reporte read-only de compras recibidas.'
                     );
                 }
+
+                if (
+                    strpos($inventarioDocCode, 'Fase 2Z') !== false
+                    && strpos($inventarioDocCode, 'assertCompraPuedeRecibirse()') !== false
+                    && strpos($inventarioDocCode, 'assertDetallesPuedenRecibirse()') !== false
+                    && strpos($inventarioDocCode, 'un movimiento por linea') !== false
+                    && strpos($inventarioDocCode, 'Sin movimientos de caja') !== false
+                ) {
+                    hcOk('Documentacion de inventario registra endurecimiento Fase 2Z.');
+                } else {
+                    hcWarning(
+                        'Documentacion de inventario no registra aun Fase 2Z.',
+                        'Actualizar docs/technical/inventory_reconciliation.md con guardas de recepcion y navegacion read-only.'
+                    );
+                }
             }
 
             if ($purchasingInventoryDoc === null || !is_file($purchasingInventoryDoc)) {
@@ -2895,6 +2918,21 @@ if (!is_file($routesPath)) {
                     hcWarning(
                         'Contrato de compras no registra reporte read-only Fase 2Y.',
                         'Actualizar docs/technical/purchasing_inventory_contract.md con ruta, vista, filtros, agregados y exclusiones.'
+                    );
+                }
+
+                if (
+                    strpos($purchasingDocCode, 'Actualizacion Fase 2Z') !== false
+                    && strpos($purchasingDocCode, 'assertCompraPuedeRecibirse()') !== false
+                    && strpos($purchasingDocCode, 'assertDetallesPuedenRecibirse()') !== false
+                    && strpos($purchasingDocCode, 'recepcion doble') !== false
+                    && strpos($purchasingDocCode, 'Sin pagos') !== false
+                ) {
+                    hcOk('Contrato de compras documenta endurecimiento Fase 2Z.');
+                } else {
+                    hcWarning(
+                        'Contrato de compras no registra endurecimiento Fase 2Z.',
+                        'Actualizar docs/technical/purchasing_inventory_contract.md con guardas de recepcion doble, estados y detalles invalidos.'
                     );
                 }
             }

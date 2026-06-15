@@ -1240,6 +1240,31 @@ Alcance:
 - Sin cambios en calculos financieros.
 - Sin cambios en `/api/sync`.
 
+## Actualizacion Fase 2Z
+
+Endurecimiento de compras minimas antes de CxP:
+
+- `CompraService::recibirCompra()` conserva transaccion propia y bloqueo `FOR UPDATE`.
+- Nueva guarda interna: `assertCompraPuedeRecibirse()`.
+- Nueva guarda interna: `assertDetallesPuedenRecibirse()`.
+- Mensaje explicito si una compra ya esta `recibida`.
+- Mensaje explicito si una compra esta `cancelada`.
+- Bloqueo si una compra tiene `fecha_recepcion` antes de recibir.
+- Bloqueo si un detalle ya tiene `movimiento_inventario_id`.
+- Bloqueo si un detalle tiene cantidad o importes invalidos.
+- Mensaje mas claro cuando el `UPDATE compras ... estado = 'borrador'` no actualiza filas.
+- Navegacion read-only desde detalle hacia `/compras/reportes/recibidas`.
+
+Alcance:
+
+- Sin rutas de escritura nuevas.
+- Sin pagos.
+- Sin cuentas por pagar.
+- Sin movimientos de caja.
+- Sin documentos.
+- Sin cambios en calculos financieros.
+- Sin cambios en `/api/sync`.
+
 ## No implementar todavia
 
 - Pagos de compras.

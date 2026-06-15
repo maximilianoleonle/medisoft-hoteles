@@ -1023,3 +1023,29 @@ Exclusiones:
 - Sin movimientos de caja.
 - Sin cambios en reportes financieros.
 - Sin cambios en `/api/sync`.
+
+## Fase 2Z: endurecimiento de compras minimas
+
+Implementacion:
+
+- `CompraService::recibirCompra()` separa precondiciones en guardas internas.
+- `assertCompraPuedeRecibirse()` bloquea recepcion doble, compras canceladas, estados no borrador y `fecha_recepcion` previa.
+- `assertDetallesPuedenRecibirse()` bloquea detalles ya vinculados a movimiento, cantidades no positivas e importes negativos.
+- El mensaje de error al marcar una compra como recibida indica posible procesamiento por otra sesion.
+- `compras/ver.php` agrega navegacion read-only al reporte de compras recibidas.
+
+Contrato de inventario:
+
+- No cambia la creacion de movimientos: sigue siendo un `movimientos_inventario` tipo `ENTRADA` por linea.
+- No cambia el calculo de stock: `stock_posterior = stock_anterior + cantidad`.
+- No cambia la regla de productos repetidos: un movimiento por linea.
+- No escribe en tablas legacy `productos` ni `inventario_movimientos`.
+
+Exclusiones:
+
+- Sin pagos.
+- Sin cuentas por pagar.
+- Sin documentos.
+- Sin movimientos de caja.
+- Sin cambios en reportes financieros.
+- Sin cambios en `/api/sync`.

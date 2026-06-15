@@ -101,24 +101,14 @@ class CompraService
 
         try {
             $compra = $this->obtenerCompraBloqueada($hotelId, $compraId);
-
-            if ($compra['estado'] !== 'borrador') {
-                throw new Exception('Solo se pueden recibir compras en estado borrador');
-            }
+            $this->assertCompraPuedeRecibirse($compra);
 
             $this->obtenerProveedorActivo($hotelId, (int)$compra['proveedor_id']);
             $detalles = $this->obtenerDetallesBloqueados($hotelId, $compraId);
-
-            if (!$detalles) {
-                throw new Exception('La compra no tiene detalles para recibir');
-            }
+            $this->assertDetallesPuedenRecibirse($detalles);
 
             $movimientos = [];
             foreach ($detalles as $detalle) {
-                if (!empty($detalle['movimiento_inventario_id'])) {
-                    throw new Exception('La compra ya tiene movimientos de inventario vinculados');
-                }
-
                 $producto = $this->obtenerProductoActivo($hotelId, (int)$detalle['producto_id'], true);
                 $stockAnterior = (float)$producto['stock_actual'];
                 $cantidad = (float)$detalle['cantidad'];
@@ -206,7 +196,7 @@ class CompraService
             ]);
 
             if ($stmt->rowCount() !== 1) {
-                throw new Exception('No se pudo marcar la compra como recibida');
+                throw new Exception('No se pudo marcar la compra como recibida; verifica si ya fue procesada por otra sesion');
             }
 
             AuditService::record('compras.recibida', [
@@ -722,6 +712,28 @@ class CompraService
         return $compra;
     }
 
+    private function assertCompraPuedeRecibirse(array $compra): void
+    {
+        $estado = (string)($compra['estado'] ?? '');
+        $compraId = (int)($compra['id'] ?? 0);
+
+        if ($estado === 'recibida') {
+            throw new Exception('La compra #' . $compraId . ' ya fue recibida y no puede recibirse dos veces');
+        }
+
+        if ($estado === 'cancelada') {
+            throw new Exception('La compra #' . $compraId . ' esta cancelada y no puede recibirse');
+        }
+
+        if ($estado !== 'borrador') {
+            throw new Exception('Solo se pueden recibir compras en estado borrador');
+        }
+
+        if (!empty($compra['fecha_recepcion'])) {
+            throw new Exception('La compra #' . $compraId . ' ya tiene fecha de recepcion registrada');
+        }
+    }
+
     private function obtenerDetallesBloqueados(int $hotelId, int $compraId): array
     {
         $stmt = $this->pdo->prepare(
@@ -735,6 +747,29 @@ class CompraService
         $stmt->execute([$compraId, $hotelId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    private function assertDetallesPuedenRecibirse(array $detalles): void
+    {
+        if (!$detalles) {
+            throw new Exception('La compra no tiene detalles para recibir');
+        }
+
+        foreach ($detalles as $detalle) {
+            $detalleId = (int)($detalle['id'] ?? 0);
+
+            if (!empty($detalle['movimiento_inventario_id'])) {
+                throw new Exception('El detalle #' . $detalleId . ' ya tiene movimiento de inventario vinculado');
+            }
+
+            if ((float)($detalle['cantidad'] ?? 0) <= 0) {
+                throw new Exception('El detalle #' . $detalleId . ' tiene cantidad invalida para recepcion');
+            }
+
+            if ((float)($detalle['costo_unitario'] ?? 0) < 0 || (float)($detalle['subtotal'] ?? 0) < 0) {
+                throw new Exception('El detalle #' . $detalleId . ' tiene importes invalidos para recepcion');
+            }
+        }
     }
 
     private function obtenerProveedorActivo(int $hotelId, int $proveedorId): array

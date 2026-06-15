@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y para Compras minimas.
+ * Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z para Compras minimas.
  *
  * Solo lectura. No crea tablas, rutas, migraciones ni datos.
  */
@@ -155,7 +155,7 @@ $purchaseReceptionPreflightPath = $appRoot . '/tools/saas/preflight_recepcion_co
 $draftMigrationPath = $projectRoot . '/docs/technical/sql_drafts/20260615_002_fase_2n_compras_minimas_draft.sql';
 $officialMigrationPath = $projectRoot . '/migrations/20260615_002_fase_2n_compras_minimas.sql';
 
-echo "Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y - Compras minimas\n";
+echo "Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z - Compras minimas\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {
@@ -504,6 +504,10 @@ if (is_file($purchaseServicePath)) {
         && strpos($service, 'function catalogosReporteRecibidas') !== false
         && strpos($service, 'function reporteRecibidas') !== false
         && strpos($service, 'function filtrosReporteRecibidas') !== false
+        && strpos($service, 'function assertCompraPuedeRecibirse') !== false
+        && strpos($service, 'function assertDetallesPuedenRecibirse') !== false
+        && strpos($service, 'ya fue recibida') !== false
+        && strpos($service, 'otra sesion') !== false
         && strpos($service, 'COUNT(DISTINCT c.id)') !== false
         && strpos($service, 'GROUP BY p.id, p.nombre') !== false
         && strpos($service, 'GROUP BY ip.id, ip.codigo, ip.nombre, ip.unidad_medida') !== false
@@ -517,11 +521,11 @@ if (is_file($purchaseServicePath)) {
         && strpos($service, 'movimientos_caja') === false
         && strpos($service, 'cuentas_por_pagar') === false
     ) {
-        pfOk('CompraService Fase 2Y existe con contrato transaccional minimo y reportes read-only.');
+        pfOk('CompraService Fase 2Z existe con contrato transaccional minimo, reportes read-only y guardas explicitas de recepcion.');
     } else {
         pfWarning(
-            'CompraService Fase 2Y existe pero no declara todas las guardas esperadas.',
-            'Revisar crearBorrador, recibirCompra, reporteRecibidas, transaccion, auditoria, movimientos_inventario y ausencia de Caja/CxP.'
+            'CompraService Fase 2Z existe pero no declara todas las guardas esperadas.',
+            'Revisar crearBorrador, recibirCompra, reporteRecibidas, assertCompraPuedeRecibirse, assertDetallesPuedenRecibirse y ausencia de Caja/CxP.'
         );
     }
 } else {
@@ -600,6 +604,7 @@ if (is_file($purchaseIndexViewPath) && is_file($purchaseFormViewPath) && is_file
         && strpos($detailView, 'movimiento_inventario_id') !== false
         && strpos($detailView, 'movimiento_stock_posterior') !== false
         && strpos($detailView, "url('compras?estado=") !== false
+        && strpos($detailView, "url('compras/reportes/recibidas')") !== false
         && strpos($reportView, "action=\"<?= url('compras/reportes/recibidas') ?>\"") !== false
         && strpos($reportView, 'por_proveedor') !== false
         && strpos($reportView, 'por_producto') !== false
@@ -850,6 +855,18 @@ if (is_file($docsPath)) {
         pfOk('Contrato Fase 2Y documentado.');
     } else {
         pfWarning('Contrato Fase 2Y incompleto o no documentado.', 'Actualizar docs/technical/purchasing_inventory_contract.md con reporte read-only de compras recibidas.');
+    }
+
+    if (
+        strpos($doc, 'Actualizacion Fase 2Z') !== false
+        && strpos($doc, 'assertCompraPuedeRecibirse()') !== false
+        && strpos($doc, 'assertDetallesPuedenRecibirse()') !== false
+        && strpos($doc, 'recepcion doble') !== false
+        && strpos($doc, 'Sin pagos') !== false
+    ) {
+        pfOk('Contrato Fase 2Z documentado.');
+    } else {
+        pfWarning('Contrato Fase 2Z incompleto o no documentado.', 'Actualizar docs/technical/purchasing_inventory_contract.md con endurecimiento de compras minimas.');
     }
 } else {
     pfWarning('No se encontro contrato de compras.', 'Crear docs/technical/purchasing_inventory_contract.md.');

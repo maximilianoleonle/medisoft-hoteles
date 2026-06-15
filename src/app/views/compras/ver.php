@@ -149,10 +149,16 @@ foreach ($detalles as $detalle) {
 
     <section class="p-6">
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <a class="purchase-btn purchase-btn-muted" href="<?= url('compras?estado=' . urlencode($estado ?: 'todos')) ?>">
-                <i class="fas fa-arrow-left"></i>
-                Volver
-            </a>
+            <div class="flex flex-wrap gap-2">
+                <a class="purchase-btn purchase-btn-muted" href="<?= url('compras?estado=' . urlencode($estado ?: 'todos')) ?>">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver
+                </a>
+                <a class="purchase-btn purchase-btn-muted" href="<?= url('compras/reportes/recibidas') ?>">
+                    <i class="fas fa-chart-column"></i>
+                    Reporte
+                </a>
+            </div>
             <span class="purchase-badge">
                 <i class="fas fa-circle-dot"></i>
                 <?= comp_view_safe($estado) ?>

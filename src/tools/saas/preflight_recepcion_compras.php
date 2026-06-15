@@ -223,7 +223,7 @@ $purchasingDocPath = prcFirstExistingPath([
     $appRoot . '/docs/technical/purchasing_inventory_contract.md',
 ]);
 
-echo "Preflight Fase 2T/2U/2V/2W/2X/2Y - Recepcion minima de compras\n";
+echo "Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z - Recepcion minima de compras\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {
@@ -668,6 +668,11 @@ if (is_file($purchaseServicePath)) {
         && strpos($service, 'function obtenerCompra') !== false
         && strpos($service, 'function reporteRecibidas') !== false
         && strpos($service, 'function catalogosReporteRecibidas') !== false
+        && strpos($service, 'function assertCompraPuedeRecibirse') !== false
+        && strpos($service, 'function assertDetallesPuedenRecibirse') !== false
+        && strpos($service, 'ya fue recibida') !== false
+        && strpos($service, 'esta cancelada') !== false
+        && strpos($service, 'otra sesion') !== false
         && strpos($service, 'GROUP BY p.id, p.nombre') !== false
         && strpos($service, 'GROUP BY ip.id, ip.codigo, ip.nombre, ip.unidad_medida') !== false
         && strpos($service, 'obtenerCompraBloqueada') !== false
@@ -677,11 +682,11 @@ if (is_file($purchaseServicePath)) {
         && strpos($service, "estado = 'recibida'") !== false
         && strpos($service, 'AuditService::record') !== false
     ) {
-        prcOk('CompraService conserva contrato interno para recepcion y reportes read-only con idempotencia basica.');
+        prcOk('CompraService conserva contrato interno para recepcion, reportes read-only e idempotencia explicita Fase 2Z.');
     } else {
         prcWarning(
             'CompraService no muestra todas las guardas esperadas para recepcion y reportes.',
-            'Revisar bloqueo de compra/detalles/productos, estado borrador, movimiento_inventario_id y reporteRecibidas.'
+            'Revisar bloqueo de compra/detalles/productos, estado borrador, movimiento_inventario_id, reporteRecibidas y guardas Fase 2Z.'
         );
     }
 } else {
@@ -726,14 +731,16 @@ if (is_file($purchasingDocPath)) {
         && strpos($doc, 'Actualizacion Fase 2W') !== false
         && strpos($doc, 'Actualizacion Fase 2X') !== false
         && strpos($doc, 'Actualizacion Fase 2Y') !== false
+        && strpos($doc, 'Actualizacion Fase 2Z') !== false
+        && strpos($doc, 'assertCompraPuedeRecibirse()') !== false
         && strpos($doc, 'GET /compras/reportes/recibidas') !== false
         && strpos($doc, 'preflight_recepcion_compras.php') !== false
         && strpos($doc, 'productos repetidos') !== false
         && strpos($doc, 'un movimiento por linea') !== false
     ) {
-        prcOk('Contrato de compras documenta Fase 2T/2U/2W/2X/2Y.');
+        prcOk('Contrato de compras documenta Fase 2T/2U/2W/2X/2Y/2Z.');
     } else {
-        prcWarning('Contrato de compras no documenta completamente Fase 2T/2U/2W/2X/2Y.', 'Actualizar purchasing_inventory_contract.md.');
+        prcWarning('Contrato de compras no documenta completamente Fase 2T/2U/2W/2X/2Y/2Z.', 'Actualizar purchasing_inventory_contract.md.');
     }
 } else {
     prcWarning('No se encontro purchasing_inventory_contract.md.', 'Documentar Fase 2T antes de recepcion real.');
@@ -747,14 +754,16 @@ if (is_file($inventoryDocPath)) {
         && strpos($doc, 'Fase 2W') !== false
         && strpos($doc, 'Fase 2X') !== false
         && strpos($doc, 'Fase 2Y') !== false
+        && strpos($doc, 'Fase 2Z') !== false
+        && strpos($doc, 'assertCompraPuedeRecibirse()') !== false
         && strpos($doc, 'GET /compras/reportes/recibidas') !== false
         && strpos($doc, 'preflight_recepcion_compras.php') !== false
         && strpos($doc, 'productos repetidos') !== false
         && strpos($doc, 'un movimiento por linea') !== false
     ) {
-        prcOk('Documento de inventario registra Fase 2T/2U/2W/2X/2Y.');
+        prcOk('Documento de inventario registra Fase 2T/2U/2W/2X/2Y/2Z.');
     } else {
-        prcWarning('Documento de inventario no registra completamente Fase 2T/2U/2W/2X/2Y.', 'Actualizar inventory_reconciliation.md.');
+        prcWarning('Documento de inventario no registra completamente Fase 2T/2U/2W/2X/2Y/2Z.', 'Actualizar inventory_reconciliation.md.');
     }
 } else {
     prcWarning('No se encontro inventory_reconciliation.md.', 'Documentar Fase 2T en inventario.');
