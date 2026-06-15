@@ -62,6 +62,15 @@ No permite pagos, Caja, generacion automatica desde compras, saldos operativos, 
 - HTTP sin sesion `GET /cuentas-por-pagar`.
 - `git diff --check`.
 
+## Auditoria de seguridad post-cierre
+
+- Estado: completada sin hallazgos bloqueantes.
+- CxP conserva solo lectura y rutas GET.
+- No hay integracion accidental con Caja.
+- No hay escritura CxP desde compras/proveedores.
+- `/api/sync` sigue bloqueado y fuera de alcance.
+- Riesgo residual futuro: escrituras CxP deben validar proveedor/compra por `hotel_id` antes de insertar.
+
 ## QA manual pendiente
 
 Ver `docs/qa-pendiente-cola.md`.

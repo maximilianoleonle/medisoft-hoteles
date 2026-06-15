@@ -16,6 +16,13 @@ Estado: `AUDITORIA_SEGURIDAD_COMPLETADA_QA_MANUAL_PENDIENTE`.
 
 No se detectaron riesgos bloqueantes en la auditoria automatica/local.
 
+Ultima auditoria:
+
+- Bloque: Fase 2X, 2Y, 2Z, 3A y 3B.
+- Resultado: sin hallazgos bloqueantes.
+- Cambios de codigo requeridos: ninguno.
+- Cambios de documentacion: matriz de riesgo/QA actualizada.
+
 ## Controles revisados
 
 - CxP tiene rutas GET solamente:
@@ -44,6 +51,7 @@ No se detectaron riesgos bloqueantes en la auditoria automatica/local.
 - Falta QA manual autenticada de listado/detalle CxP.
 - Falta QA visual del estado vacio y filtros.
 - Falta decidir el destino del cambio visual de `reservaciones/ver.php`.
+- Si una fase futura escribe CxP, debe validar estrictamente `hotel_id` de proveedor/compra antes de insertar o actualizar saldos.
 
 ## Recomendacion
 

@@ -42,6 +42,14 @@ Bajo para datos operativos actuales porque:
 - no se genero saldo automatico desde compras;
 - no se integraron movimientos de Caja.
 
+### Auditoria de seguridad post-cierre
+
+- Perdida de datos: sin indicios; la fase solo agrego tablas nuevas vacias y codigo read-only.
+- Caja: sin integracion CxP; no hay movimientos de Caja relacionados con CxP.
+- Doble recepcion: protegida por estado, `fecha_recepcion`, bloqueo transaccional y `movimiento_inventario_id`.
+- Migracion: idempotente para estructura base mediante `CREATE TABLE IF NOT EXISTS` y registro con `ON DUPLICATE KEY UPDATE`.
+- Riesgo residual futuro: si una fase posterior escribe CxP, debe validar que proveedor y compra pertenezcan al mismo `hotel_id` antes de insertar cualquier saldo.
+
 ### No hacer sin autorizacion
 
 - `DROP TABLE cuentas_por_pagar`;

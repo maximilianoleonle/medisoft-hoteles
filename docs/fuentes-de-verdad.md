@@ -39,6 +39,7 @@ Regla:
 - Cualquier escritura en CxP requiere nueva fase autorizada.
 - Cualquier integracion con Caja requiere nueva fase autorizada.
 - Cualquier generacion automatica desde compras requiere nueva fase autorizada.
+- Cualquier escritura futura debe validar que `proveedor_id`, `compra_id` y `hotel_id` pertenezcan al mismo hotel antes de persistir datos.
 
 ## Compras
 

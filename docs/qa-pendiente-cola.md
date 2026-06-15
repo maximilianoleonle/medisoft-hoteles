@@ -5,8 +5,12 @@
 - Confirmar que CxP es solo lectura.
 - Confirmar que no hay botones de pago en `/cuentas-por-pagar`.
 - Confirmar que no hay botones de pago en `/cuentas-por-pagar/{id}`.
+- Confirmar que no existe ningun POST operativo de CxP.
 - Confirmar que no se generan movimientos de Caja al abrir CxP.
 - Confirmar que no se genera CxP automaticamente desde compras.
+- Confirmar que una compra recibida no puede recibirse dos veces.
+- Confirmar que cada linea recibida conserva exactamente un `movimiento_inventario_id`.
+- Confirmar que proveedores, compras y CxP no muestran datos de otro hotel.
 - Confirmar que `/api/sync` sigue bloqueado.
 
 ## QA funcional
@@ -39,6 +43,7 @@
 ## Estado
 
 - QA automatica post-commit Fase 3B: completada sin errores bloqueantes.
+- Auditoria de seguridad post-cierre: completada sin hallazgos bloqueantes.
 - QA manual: pendiente y necesaria antes de considerar validado por usuario.
 - Bloqueante para Fase 3C: si. No avanzar a Fase 3C hasta completar QA manual y recibir nuevo mensaje real.
 

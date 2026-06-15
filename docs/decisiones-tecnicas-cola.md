@@ -15,6 +15,7 @@
 - No se integra Caja.
 - No se genera CxP automaticamente desde compras.
 - La navegacion se agrega bajo el mismo alcance funcional que inventario, sin crear permisos profundos nuevos.
+- Riesgo residual documentado: la estructura permite referencias a proveedor/compra por ID; cualquier escritura futura debe comprobar `hotel_id` de proveedor y compra antes de insertar.
 
 ## Compras y proveedores
 
@@ -47,3 +48,12 @@
 - No se avanza a Fase 3C sin nuevo mensaje real.
 - No se implementan pagos, Caja, CxC, nomina ni permisos profundos.
 - La documentacion final puede seguir ajustandose sin cambiar comportamiento funcional.
+
+## Auditoria de seguridad post-cierre
+
+- Sin rutas sensibles nuevas sin `requireAuth`.
+- Sin POST operativo en CxP.
+- Sin tokens de escritura CxP en controlador/modelo/vistas CxP.
+- Sin integracion accidental con Caja.
+- `/api/sync` sigue registrado y bloqueado.
+- Las tablas legacy de inventario siguen congeladas; el bloque de compras usa `inventario_productos` y `movimientos_inventario`.

@@ -63,6 +63,15 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 - `/cuentas-por-pagar` sin sesion redirige a login.
 - `/api/sync` sigue fuera de alcance y bloqueado segun checker.
 
+## Auditoria de seguridad
+
+- Resultado: sin hallazgos bloqueantes.
+- Perdida de datos: no detectada; no hay borrado ni migracion destructiva.
+- Doble recepcion: protegida por contrato transaccional y validaciones de estado/detalles.
+- Inventario: se mantiene fuente moderna `inventario_productos` + `movimientos_inventario`.
+- CxP: se mantiene read-only y vacio.
+- Riesgo residual: futuras escrituras CxP deben validar estrictamente `hotel_id` de proveedor/compra.
+
 ## Pendiente antes de avanzar
 
 - QA manual autenticada de listado/detalle CxP.
