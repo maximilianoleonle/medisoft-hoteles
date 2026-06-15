@@ -25,10 +25,14 @@ Objetivo: generar CxP manualmente desde compras recibidas, sin Caja ni pagos.
 Estado actual:
 
 - Fase 3C-0 completada con contrato y diagnostico.
-- Fase 3C-A implementa preview/simulador read-only.
-- No se implemento generacion manual.
-- CxP sigue vacia.
-- Compras recibidas elegibles detectadas: 2.
+- Fase 3C-A implementa preview/simulador.
+- Fase 3C-B implementa generacion manual controlada con POST + CSRF.
+- No se implementaron pagos ni Caja.
+- CxP puede crearse solo desde compra recibida elegible.
+- Compras recibidas elegibles antes de la prueba local: 2.
+- Prueba local generada: compra `#5` -> CxP `#1`.
+- CxP actuales despues de prueba local: 1.
+- Movimientos de Caja: sin cambios.
 
 ## Situacion
 
@@ -104,6 +108,6 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 
 ## Pendiente antes de avanzar
 
-- QA manual autenticada de listado/detalle CxP y preview 3C-A.
+- QA manual autenticada de listado/detalle CxP, preview 3C-A y generacion manual 3C-B.
 - QA visual/regresion de compras, proveedores y recepcion.
-- Continuar con Fase 3C-B solo si el simulador 3C-A queda estable y autorizado.
+- No avanzar a pagos/Caja sin nueva autorizacion.

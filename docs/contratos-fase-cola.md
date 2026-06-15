@@ -189,3 +189,33 @@ Definition of Done 3C-A:
 - ejecutar checkers/preflights;
 - confirmar HTTP sin sesion redirige o bloquea;
 - confirmar conteos DB sin escritura antes/despues.
+
+### Estado 3C-B
+
+Generacion manual controlada de CxP desde compra recibida:
+
+- ruta: `POST /cuentas-por-pagar/generar-desde-compra/{id}`;
+- controlador: `CuentaPorPagarController::generarDesdeCompraAction()`;
+- modelo: `CuentaPorPagar::generarDesdeCompraRecibida()`;
+- boton visible solo en filas elegibles del preview;
+- CSRF obligatorio;
+- transaccion propia;
+- bloqueo `FOR UPDATE` sobre la compra y verificacion de CxP existente;
+- auditoria con `AuditService::record()`;
+- redireccion a detalle de CxP generada;
+- sin pagos;
+- sin abonos;
+- sin Caja;
+- sin movimientos de Caja;
+- sin generacion automatica desde recepcion.
+
+Definition of Done 3C-B:
+
+- no genera CxP desde compras no recibidas;
+- no duplica CxP por compra;
+- valida `hotel_id` de compra y proveedor;
+- valida total positivo y detalles existentes;
+- prueba controlada local con backup previo;
+- prueba de doble generacion falla limpiamente;
+- checkers/preflights actualizados;
+- `php -l`, health, preflights y `git diff --check` sin errores bloqueantes.

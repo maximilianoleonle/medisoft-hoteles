@@ -129,8 +129,29 @@ No mezclar este archivo con rollback de CxP.
 
 ### 3C-B generacion manual
 
-- Rollback de codigo: revertir commit de generacion.
+- Rollback de codigo: revertir commit de generacion (`feat(phase-3c): generate payable from received purchase` cuando exista).
 - Rollback de datos: no borrar CxP sin autorizacion explicita.
 - Si se crean CxP reales, primero exportar conteos y filas afectadas.
 - No tocar Caja, cortes ni movimientos.
 - Si hay que anular datos, requerir autorizacion y documentar si se marca estado o se restaura backup.
+- Backup requerido antes de prueba local de escritura.
+- Validaciones posteriores:
+  - una sola CxP por compra;
+  - cero movimientos de Caja nuevos;
+  - doble generacion bloqueada;
+  - auditoria registrada si `logs_auditoria` esta disponible.
+
+Backup valido usado antes de la prueba local:
+
+- `src/storage/backups/phase3c_b_20260615_053711_before_manual_cxp_medisoft_hoteles_import_notablespaces.sql`
+- SHA256: `8086F91DF17DB09CFBB28E7E12BED475FDD81FB538948F4B60141A90BE9E801D`
+- tamano: `1528988`
+
+Dato creado en la prueba local:
+
+- `cuentas_por_pagar.id = 1`
+- `compra_id = 5`
+- `hotel_id = 4`
+- `total = saldo = 1000.00`
+
+Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizacion; restaurar backup o acordar una estrategia de anulacion/reconciliacion.

@@ -79,3 +79,16 @@
 - Una compra bloqueada muestra motivo explicito en la vista.
 - La vista solo enlaza a recursos read-only ya existentes: detalle de compra, proveedor y CxP.
 - No se agregan formularios POST ni botones de generacion en 3C-A.
+
+## Fase 3C-B
+
+- La generacion queda como accion manual en CxP, no como efecto secundario de `CompraService::recibirCompra()`.
+- La unica ruta POST nueva es `POST /cuentas-por-pagar/generar-desde-compra/{id}`.
+- La vista del preview muestra el boton solo cuando la compra es elegible.
+- El modelo centraliza validaciones y usa transaccion propia.
+- La compra se bloquea con `FOR UPDATE` antes de validar estado, proveedor, total y duplicado.
+- El duplicado se evita consultando `cuentas_por_pagar` por `(hotel_id, compra_id)` dentro de la transaccion.
+- La CxP nace en estado `pendiente`, con `saldo = total` y sin fecha de vencimiento automatica.
+- No se inserta en `cuentas_por_pagar_movimientos` en 3C-B para no introducir tipos operativos de pago/abono.
+- La trazabilidad de creacion se registra en `logs_auditoria` mediante `AuditService`.
+- Caja sigue completamente fuera del flujo.

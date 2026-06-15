@@ -2,13 +2,13 @@
 
 ## Ultimo mensaje real usado
 
-Cola autorizada Fase 3C-A: simulador read-only de CxP generable desde compras recibidas. No implementar generacion manual todavia.
+Cola autorizada Fase 3C-B: generacion manual controlada de CxP desde compra recibida, sin Caja ni pagos.
 
 ## Estado vigente
 
-- Fase actual: Fase 3C-A simulador read-only.
+- Fase actual: Fase 3C-B generacion manual controlada.
 - Riesgo: naranja.
-- Estado: preview GET implementado, sin escrituras CxP ni Caja.
+- Estado: POST manual implementado con CSRF, transaccion y auditoria; sin Caja ni pagos.
 - Base local principal: `medisoft_hoteles_import`.
 - Backup previo a DB:
   - `src/storage/backups/phase3b_20260615_040742_before_cxp_medisoft_hoteles_import.sql`
@@ -59,6 +59,39 @@ No permite pagos, Caja, generacion automatica desde compras, saldos operativos, 
 - La vista muestra compra, proveedor, hotel, fecha, total, estado, CxP existente, elegibilidad y bloqueo.
 - No hay POST, pagos, Caja ni generacion automatica.
 
+## Implementacion 3C-B
+
+- Ruta nueva: `POST /cuentas-por-pagar/generar-desde-compra/{id}`.
+- Controller: `CuentaPorPagarController::generarDesdeCompraAction()`.
+- Modelo: `CuentaPorPagar::generarDesdeCompraRecibida()`.
+- Usa CSRF y transaccion.
+- Bloquea compra con `FOR UPDATE`.
+- Valida compra recibida, proveedor del mismo hotel, total positivo, detalles existentes y no duplicado.
+- Inserta solo en `cuentas_por_pagar`.
+- Registra auditoria en `logs_auditoria` si esta disponible.
+- No inserta pagos, abonos ni movimientos de Caja.
+
+## Prueba local 3C-B
+
+- Backup valido previo:
+  - `src/storage/backups/phase3c_b_20260615_053711_before_manual_cxp_medisoft_hoteles_import_notablespaces.sql`
+  - SHA256: `8086F91DF17DB09CFBB28E7E12BED475FDD81FB538948F4B60141A90BE9E801D`
+  - tamano: `1528988`
+- Primer intento de backup con routines/tablespaces genero advertencias de privilegios y no se toma como respaldo valido:
+  - `src/storage/backups/phase3c_b_20260615_053658_before_manual_cxp_medisoft_hoteles_import.sql`
+- Registro usado para prueba:
+  - hotel_id: `4`
+  - compra_id: `5`
+  - total: `1000.00`
+- Resultado:
+  - CxP generada: `id = 1`
+  - doble generacion: bloqueada con mensaje de CxP existente
+  - `cuentas_por_pagar`: `0 -> 1`
+  - `cuentas_por_pagar_movimientos`: `0 -> 0`
+  - `logs_auditoria`: `23 -> 24`
+  - `cajas`: `3 -> 3`
+  - `movimientos_caja`: `1402 -> 1402`
+
 ## Cambios pendientes clasificados post-commit
 
 ### Relacionados con Fase 3B
@@ -102,4 +135,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Verificar y cerrar Fase 3C-A. No avanzar a generacion manual hasta que el simulador quede estable.
+Verificar y cerrar Fase 3C-B. No avanzar a pagos, Caja ni abonos sin nueva autorizacion.

@@ -65,10 +65,10 @@
 
 - Revisar listado de compras recibidas elegibles.
 - Revisar motivos de bloqueo cuando una compra ya tiene CxP.
-- Confirmar que `/cuentas-por-pagar/generacion-preview` no muestra boton de generar en 3C-A.
-- Generar CxP manualmente desde una compra recibida autorizada solo cuando 3C-B sea implementada.
-- Revisar listado y detalle CxP despues de generar solo en 3C-B.
-- Revisar detalle de compra para ver CxP vinculada solo en 3C-B.
+- Confirmar que `/cuentas-por-pagar/generacion-preview` muestra boton solo en compras elegibles.
+- Generar CxP manualmente desde una compra recibida autorizada.
+- Revisar listado y detalle CxP despues de generar.
+- Revisar detalle de compra y preview para ver CxP vinculada.
 
 ### QA visual
 
@@ -92,7 +92,26 @@
 - Confirmar que muestra link a CxP solo si ya existe.
 - Confirmar que las compras elegibles indican motivo de elegibilidad.
 - Confirmar que las compras no elegibles indican motivo de bloqueo.
-- Confirmar que no hay botones POST ni acciones de generacion manual todavia.
+- Confirmar que no hay botones de pago, abono ni Caja.
+
+### QA especifica Fase 3C-B
+
+- Usar una compra recibida elegible.
+- Presionar `Generar CxP`.
+- Confirmar redireccion al detalle de la CxP.
+- Confirmar que el preview cambia la compra a bloqueada por CxP existente.
+- Intentar generar de nuevo y confirmar error claro.
+- Confirmar que no cambia `movimientos_caja`.
+- Confirmar que no hay pagos ni abonos.
+
+## Resultado automatico Fase 3C-B
+
+- Prueba local controlada ejecutada sobre compra `#5` del hotel `4`.
+- Se genero CxP `#1`.
+- La doble generacion fue bloqueada limpiamente.
+- No se crearon movimientos en `cuentas_por_pagar_movimientos`.
+- No cambiaron `cajas` ni `movimientos_caja`.
+- Pendiente: QA manual autenticada en navegador.
 
 ## Triage no relacionado
 

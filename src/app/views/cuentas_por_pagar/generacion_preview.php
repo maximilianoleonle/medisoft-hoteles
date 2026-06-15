@@ -129,7 +129,7 @@ $estado = (string)($filtros['estado'] ?? 'recibida');
                 <div class="cxp-kicker">Compras / CxP</div>
                 <h1 class="cxp-title">Preview de generacion CxP</h1>
                 <p class="cxp-subtitle">
-                    Simulador de solo lectura para detectar compras recibidas que podrian generar una cuenta por pagar. No crea registros, no toca pagos y no afecta Caja.
+                    Evalua compras recibidas y permite generar CxP solo con una accion manual explicita. No crea pagos, no registra abonos y no afecta Caja.
                 </p>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-5 gap-2 min-w-[380px]">
@@ -171,7 +171,7 @@ $estado = (string)($filtros['estado'] ?? 'recibida');
             </div>
             <span class="cxp-badge">
                 <i class="fas fa-lock"></i>
-                Solo GET
+                Manual con CSRF
             </span>
         </div>
 
@@ -273,6 +273,13 @@ $estado = (string)($filtros['estado'] ?? 'recibida');
                                                     Elegible
                                                 </span>
                                                 <div class="text-xs text-slate-500 mt-1"><?= cxp_preview_safe($compra['motivo_elegibilidad'] ?? null) ?></div>
+                                                <form method="POST" action="<?= url('cuentas-por-pagar/generar-desde-compra/' . (int)($compra['compra_id'] ?? 0)) ?>" class="mt-3">
+                                                    <?= csrf_field() ?>
+                                                    <button class="cxp-btn cxp-btn-primary" type="submit">
+                                                        <i class="fas fa-file-invoice-dollar"></i>
+                                                        Generar CxP
+                                                    </button>
+                                                </form>
                                             <?php else: ?>
                                                 <span class="cxp-badge cxp-badge-blocked">
                                                     <i class="fas fa-ban"></i>

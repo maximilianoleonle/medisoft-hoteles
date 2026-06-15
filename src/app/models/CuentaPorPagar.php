@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../core/Model.php';
 require_once __DIR__ . '/../../core/Database.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
+require_once __DIR__ . '/../services/AuditService.php';
 
 class CuentaPorPagar extends Model
 {
@@ -294,6 +295,95 @@ class CuentaPorPagar extends Model
         return $resumen;
     }
 
+    public function generarDesdeCompraRecibida(int $hotelId, int $compraId, ?int $usuarioId = null): array
+    {
+        $hotelId = $this->validarId($hotelId, 'Hotel invalido');
+        $compraId = $this->validarId($compraId, 'Compra invalida');
+        $usuarioId = $this->normalizarUsuarioId($usuarioId);
+        $pdo = $this->db->getConnection();
+
+        if (!$this->tablasPreviewGeneracionDisponibles()) {
+            throw new Exception('Tablas requeridas de compras y CxP no disponibles');
+        }
+
+        if ($pdo->inTransaction()) {
+            throw new Exception('La generacion de CxP debe controlar su propia transaccion');
+        }
+
+        $pdo->beginTransaction();
+
+        try {
+            $compra = $this->obtenerCompraParaGeneracion($hotelId, $compraId);
+            $this->assertCompraGenerable($compra);
+            $this->assertSinCxpParaCompra($hotelId, $compraId);
+
+            $fechaEmision = $this->normalizarFechaEmision($compra['fecha_recepcion'] ?? null, $compra['fecha_compra'] ?? null);
+            $folio = 'CXP-COMPRA-' . $compraId;
+            $descripcion = 'Cuenta por pagar generada desde compra #' . $compraId;
+
+            $stmt = $pdo->prepare(
+                "INSERT INTO cuentas_por_pagar
+                    (hotel_id, proveedor_id, compra_id, folio, descripcion,
+                     fecha_emision, fecha_vencimiento, estado, moneda,
+                     subtotal, impuestos, total, saldo, notas,
+                     created_by, updated_by, created_at, updated_at)
+                 VALUES
+                    (?, ?, ?, ?, ?, ?, NULL, 'pendiente', 'MXN',
+                     ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())"
+            );
+            $stmt->execute([
+                $hotelId,
+                (int)$compra['proveedor_id'],
+                $compraId,
+                $folio,
+                $descripcion,
+                $fechaEmision,
+                $this->decimal($compra['subtotal'] ?? 0),
+                $this->decimal($compra['impuestos'] ?? 0),
+                $this->decimal($compra['total'] ?? 0),
+                $this->decimal($compra['total'] ?? 0),
+                'Generada manualmente desde compra recibida #' . $compraId . '. Sin pagos ni Caja.',
+                $usuarioId,
+                $usuarioId,
+            ]);
+
+            $cxpId = (int)$pdo->lastInsertId();
+
+            AuditService::record('cuentas_por_pagar.generada_desde_compra', [
+                'hotel_id' => $hotelId,
+                'usuario_id' => $usuarioId,
+                'entidad_tipo' => 'cuentas_por_pagar',
+                'entidad_id' => (string)$cxpId,
+                'descripcion' => 'CxP generada manualmente desde compra recibida',
+                'datos_despues' => [
+                    'cxp_id' => $cxpId,
+                    'compra_id' => $compraId,
+                    'proveedor_id' => (int)$compra['proveedor_id'],
+                    'proveedor_nombre' => $compra['proveedor_nombre'] ?? null,
+                    'estado' => 'pendiente',
+                    'total' => $this->decimal($compra['total'] ?? 0),
+                    'saldo' => $this->decimal($compra['total'] ?? 0),
+                    'sin_caja' => true,
+                    'sin_pagos' => true,
+                ],
+            ]);
+
+            $pdo->commit();
+
+            return [
+                'cxp_id' => $cxpId,
+                'compra_id' => $compraId,
+                'hotel_id' => $hotelId,
+            ];
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            throw $e;
+        }
+    }
+
     private function resumenVacio(): array
     {
         return [
@@ -325,6 +415,78 @@ class CuentaPorPagar extends Model
             : 'recibida';
     }
 
+    private function obtenerCompraParaGeneracion(int $hotelId, int $compraId): array
+    {
+        $pdo = $this->db->getConnection();
+        $stmt = $pdo->prepare(
+            "SELECT c.*,
+                    p.id AS proveedor_hotel_id,
+                    p.nombre AS proveedor_nombre,
+                    p.rfc AS proveedor_rfc,
+                    (
+                        SELECT COUNT(*)
+                        FROM compra_detalles d
+                        WHERE d.hotel_id = c.hotel_id
+                          AND d.compra_id = c.id
+                    ) AS detalle_count
+             FROM compras c
+             LEFT JOIN proveedores p
+                ON p.id = c.proveedor_id
+               AND p.hotel_id = c.hotel_id
+             WHERE c.id = ?
+               AND c.hotel_id = ?
+             LIMIT 1
+             FOR UPDATE"
+        );
+        $stmt->execute([$compraId, $hotelId]);
+        $compra = $stmt->fetch();
+
+        if (!$compra) {
+            throw new Exception('Compra no encontrada para el hotel actual');
+        }
+
+        return $compra;
+    }
+
+    private function assertCompraGenerable(array $compra): void
+    {
+        if (($compra['estado'] ?? '') !== 'recibida') {
+            throw new Exception('Solo se puede generar CxP desde compras recibidas');
+        }
+
+        if (empty($compra['proveedor_id']) || empty($compra['proveedor_hotel_id'])) {
+            throw new Exception('El proveedor no pertenece al hotel actual');
+        }
+
+        if ((float)($compra['total'] ?? 0) <= 0) {
+            throw new Exception('El total de la compra no es valido para CxP');
+        }
+
+        if ((int)($compra['detalle_count'] ?? 0) <= 0) {
+            throw new Exception('La compra no tiene detalles para respaldar la CxP');
+        }
+    }
+
+    private function assertSinCxpParaCompra(int $hotelId, int $compraId): void
+    {
+        $pdo = $this->db->getConnection();
+        $stmt = $pdo->prepare(
+            "SELECT id
+             FROM cuentas_por_pagar
+             WHERE hotel_id = ?
+               AND compra_id = ?
+             ORDER BY id ASC
+             LIMIT 1
+             FOR UPDATE"
+        );
+        $stmt->execute([$hotelId, $compraId]);
+        $existente = $stmt->fetch();
+
+        if ($existente) {
+            throw new Exception('Ya existe una cuenta por pagar para esta compra: #' . (int)$existente['id']);
+        }
+    }
+
     private function evaluarPreviewGeneracion(array $compra): array
     {
         $bloqueo = '';
@@ -348,6 +510,28 @@ class CuentaPorPagar extends Model
         $compra['motivo_bloqueo'] = $bloqueo;
 
         return $compra;
+    }
+
+    private function validarId($value, string $message): int
+    {
+        $id = (int)$value;
+        if ($id <= 0) {
+            throw new Exception($message);
+        }
+
+        return $id;
+    }
+
+    private function normalizarUsuarioId($value): ?int
+    {
+        $id = (int)($value ?? 0);
+        return $id > 0 ? $id : null;
+    }
+
+    private function normalizarFechaEmision($fechaRecepcion, $fechaCompra): string
+    {
+        $fecha = trim((string)($fechaRecepcion ?: $fechaCompra ?: date('Y-m-d')));
+        return substr($fecha, 0, 10);
     }
 
     private function tablaExiste(string $tabla): bool
