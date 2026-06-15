@@ -15,16 +15,16 @@ Auditoria post-commit del bloque autorizado hasta Fase 3C:
 
 ## Reanclaje Fase 3C
 
-Estado real reanclado: `SIMULADOR_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado real reanclado: `GENERACION_3C_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
 
 La auditoria previa de Fase 3C queda reclasificada como prematura/documental. No debe usarse para afirmar que Fase 3C esta cerrada, revisada completamente ni auditada completamente.
 
 Motivo:
 
-- el repositorio contenia codigo de simulador, generacion manual y checkers;
-- el nuevo mensaje real exige reconstruir verdad actual y no considerar 3C cerrada;
-- Docker/PHP no estan disponibles para re-ejecutar verificaciones completas;
-- por tanto, la auditoria queda como antecedente y debe repetirse despues de QA manual de 3C-A y antes de activar 3C-B.
+- el repositorio ya tenia antecedente historico de simulador, generacion manual y checkers;
+- el nuevo flujo reanclado activo 3C-A primero y despues 3C-B;
+- Docker/PHP estan disponibles y se re-ejecutaron verificaciones completas;
+- queda pendiente QA manual de navegador antes de cerrar visualmente 3C-B.
 
 ## Resultado historico previo
 
@@ -39,10 +39,11 @@ Motivo:
   - `/cuentas-por-pagar`;
   - `/cuentas-por-pagar/generacion-preview`;
   - `/cuentas-por-pagar/{id}`.
-- CxP no tiene POST activo en 3C-A.
-- No hay boton de generacion en el preview vigente.
+- CxP tiene un unico POST activo en 3C-B:
+  - `/cuentas-por-pagar/generar-desde-compra/{id}`.
+- El boton de generacion solo aparece en compras elegibles del preview.
 - CxP no contiene acciones de pago.
-- CxP 3C-A no escribe en `cuentas_por_pagar`; solo consulta compras/proveedores/CxP.
+- CxP 3C-B escribe solo en `cuentas_por_pagar` durante generacion manual.
 - CxP no escribe en `cuentas_por_pagar_movimientos`.
 - CxP no toca `movimientos_caja`, `cortes_caja` ni `cajas`.
 - Modelo CxP filtra por `hotel_id`.
@@ -54,26 +55,26 @@ Motivo:
 
 ## Auditoria especifica Fase 3C post-QA historica
 
-- Creacion de CxP sin `hotel_id`: no aplica en 3C-A porque no hay escritura ni ruta POST activa.
-- Creacion de CxP con proveedor de otro hotel: no aplica en 3C-A; el preview une proveedor con `p.hotel_id = c.hotel_id` y bloquea filas sin proveedor resuelto.
-- Creacion de CxP con compra de otro hotel: no aplica en 3C-A; el preview filtra `compras` por `c.hotel_id = hotel actual`.
-- Duplicacion de CxP: no aplica en 3C-A; el preview detecta `cxp_count > 0` y muestra bloqueo.
-- Generacion desde compra no recibida: no aplica en 3C-A; no hay accion de generacion y la fila muestra motivo de bloqueo.
-- Generacion desde compra cancelada/borrador: no aplica en 3C-A; no hay boton de escritura.
+- Creacion de CxP sin `hotel_id`: bloqueada por `CuentaPorPagar::generarDesdeCompraRecibida()`, que valida `hotelId > 0` y lo inserta explicitamente.
+- Creacion de CxP con proveedor de otro hotel: bloqueada por `obtenerCompraParaGeneracion()`, que une proveedor con `p.hotel_id = c.hotel_id`, y por `assertCompraGenerable()`.
+- Creacion de CxP con compra de otro hotel: bloqueada por busqueda `WHERE c.id = ? AND c.hotel_id = ?`.
+- Duplicacion de CxP: bloqueada por transaccion, `FOR UPDATE` sobre compra y verificacion `cuentas_por_pagar` por `(hotel_id, compra_id)`.
+- Generacion desde compra no recibida: bloqueada por `assertCompraGenerable()` con estado exacto `recibida`.
+- Generacion desde compra cancelada/borrador: bloqueada por la misma validacion de estado y el boton no aparece para filas no elegibles.
 - Escritura accidental en Caja: no hay referencias de escritura a `movimientos_caja`, `cortes_caja` ni `cajas` en el flujo CxP.
 - Creacion accidental de pagos: no hay rutas, vistas ni modelo de pagos CxP; `cuentas_por_pagar_movimientos` no se inserta en 3C.
-- Endpoints POST sin proteccion: no hay POST CxP 3C-A activo.
-- Falta de CSRF: no aplica en 3C-A porque no hay formulario de escritura.
-- Botones visibles en estados incorrectos: no hay boton de generacion en 3C-A.
+- Endpoints POST sin proteccion: el unico POST 3C llama `validateCSRF()` y pasa por `before()` con `requireAuth`, contexto hotelero y modulo `inventario`.
+- Falta de CSRF: el formulario elegible usa `csrf_field()`.
+- Botones visibles en estados incorrectos: el boton solo se renderiza cuando `es_elegible` es verdadero.
 - Errores de permisos: CxP comparte guardas de modulo `inventario` en controlador y sidebar.
 - `/api/sync` modificado accidentalmente: no hay cambios de codigo en `ApiController` ni en la ruta `/api/sync` dentro de esta revision.
 - Rollback insuficiente: `docs/rollback-cola.md` documenta rollback por 3C-A, 3C-B, 3C-C y revision post-QA.
-- QA critica incompleta: cualquier QA manual previa queda como antecedente historico; se requiere revalidacion formal de 3C-A antes de usarla como cierre.
+- QA critica incompleta: falta QA manual en navegador de 3C-B antes de cierre visual.
 
 ## Warnings conocidos
 
 - Los checkers ejecutados dentro del contenedor no ven `docs/technical` ni `migrations/` completos por el montaje actual.
-- En esta auditoria post-QA no se pudo re-ejecutar `php -l`, health ni preflights porque Docker Desktop no esta disponible y `php` no esta en PATH local.
+- Verificacion automatica 3C-B ejecutada con Docker/PHP disponible: `php -l`, health, preflights, POST sin sesion y prueba local controlada.
 - Hay tablas legacy/duplicadas documentadas que no se deben borrar ni fusionar.
 - No hay cambios no relacionados pendientes en Git al iniciar esta revision; el ajuste visual de reservaciones quedo commiteado por separado.
 

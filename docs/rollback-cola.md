@@ -111,11 +111,11 @@ No mezclar este archivo con rollback de CxP.
 
 ### Reanclaje de estado
 
-- Estado formal vigente: `SIMULADOR_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
-- 3C-A esta implementada como GET read-only; 3C-B/C quedan diferidas como fases formales.
+- Estado formal vigente: `GENERACION_3C_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+- 3C-A esta implementada como GET read-only; 3C-B esta implementada como POST manual controlado; 3C-C queda diferida como cierre formal.
 - No borrar codigo ni datos automaticamente.
 - No hacer rollback destructivo de la CxP historica creada por prueba local sin nueva autorizacion y backup.
-- Antes de tocar 3C-B, validar manualmente que el simulador 3C-A muestra elegibilidad/bloqueos sin acciones POST.
+- Antes de tocar pagos, Caja o Fase 3D, validar manualmente que 3C-B genera solo CxP y bloquea duplicados.
 
 ### 3C-0 contrato y diagnostico
 
@@ -137,8 +137,8 @@ No mezclar este archivo con rollback de CxP.
 
 ### 3C-B generacion manual
 
-- Estado vigente: diferida; no hay ruta POST activa, boton ni metodo de insercion CxP.
-- Reactivacion futura: requiere nuevo commit de generacion (`feat(phase-3c): generate payable from received purchase`) y backup previo.
+- Estado vigente: implementada tecnicamente y pendiente QA manual.
+- Rollback de codigo: revertir el commit `feat(phase-3c): generate payable from received purchase` si causa regresion.
 - Rollback de datos: no borrar CxP sin autorizacion explicita.
 - Si se crean CxP reales, primero exportar conteos y filas afectadas.
 - No tocar Caja, cortes ni movimientos.
@@ -152,16 +152,26 @@ No mezclar este archivo con rollback de CxP.
 
 Backup valido usado antes de la prueba local:
 
+- `src/storage/backups/phase3c_b_20260615_144908_before_manual_cxp_medisoft_hoteles_import.sql`
+- SHA256: `C0403F7B5ACBDA35EF4C05E2840546D5D9978802A21C9736BEBC6FF462518061`
+- tamano: `1532615`
+
+Backup historico usado antes de la primera prueba local:
+
 - `src/storage/backups/phase3c_b_20260615_053711_before_manual_cxp_medisoft_hoteles_import_notablespaces.sql`
 - SHA256: `8086F91DF17DB09CFBB28E7E12BED475FDD81FB538948F4B60141A90BE9E801D`
 - tamano: `1528988`
 
-Dato creado en la prueba local:
+Datos creados en pruebas locales:
 
 - `cuentas_por_pagar.id = 1`
 - `compra_id = 5`
 - `hotel_id = 4`
 - `total = saldo = 1000.00`
+- `cuentas_por_pagar.id = 2`
+- `compra_id = 2`
+- `hotel_id = 4`
+- `total = saldo = 1900.00`
 
 Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizacion; restaurar backup o acordar una estrategia de anulacion/reconciliacion.
 

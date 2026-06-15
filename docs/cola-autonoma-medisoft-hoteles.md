@@ -2,14 +2,14 @@
 
 ## Ultimo mensaje real usado
 
-REANCLAR_FASE_3C_VERDAD_ACTUAL: reconstruir estado real de Fase 3C y corregir documentacion adelantada.
+COLA_3C_B_GENERACION_MANUAL_SIN_CAJA: generar manualmente CxP desde compra recibida, sin pagos ni Caja.
 
 ## Estado vigente
 
 - Bloque actual: Fase 3C CxP.
-- Fase actual: reanclaje de verdad actual.
+- Fase actual: 3C-B generacion manual controlada.
 - Riesgo: naranja.
-- Estado: `SIMULADOR_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- Estado: `GENERACION_3C_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -20,12 +20,12 @@ REANCLAR_FASE_3C_VERDAD_ACTUAL: reconstruir estado real de Fase 3C y corregir do
 ## Reanclaje Fase 3C
 
 - 3C-0 contrato y diagnostico: completada en `9897465`.
-- 3C-A simulador: codigo vigente con ruta/vista/modelo verificados; estado formal `SIMULADOR_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
-- 3C-B generacion manual: antecedente historico (`cb83121`), pero el codigo vigente la deja diferida sin ruta POST activa hasta QA manual de 3C-A.
-- 3C-C validaciones: codigo existente (`5dfe665`), reclasificado como adelantado/no formal hasta cerrar 3C-A.
+- 3C-A simulador: codigo vigente con ruta/vista/modelo verificados y commiteados en `c0ff5a1`.
+- 3C-B generacion manual: implementada tecnicamente; pendiente QA manual en navegador.
+- 3C-C validaciones: checkers read-only conservan reglas de consistencia CxP.
 - Revision `8765258`: ajuste de vista/documentacion, no cierre formal.
 - Auditoria `2662998`: documentacion de auditoria prematura bajo el reanclaje, no cierre formal.
-- Siguiente cola recomendada: `COLA_3C_A_SIMULADOR_READ_ONLY`.
+- Siguiente accion recomendada: QA manual de Fase 3C-B.
 
 ## Bloque base previo: Fase 3B CxP read-only
 
@@ -81,15 +81,18 @@ No permite pagos, Caja, generacion automatica desde compras, saldos operativos, 
 - No hay POST, pagos, Caja ni generacion automatica.
 - Estado corregido: ruteado, protegido por `CuentaPorPagarController::before()`, navegable desde CxP y verificado automaticamente.
 
-## Fase 3C-B diferida
+## Implementacion 3C-B
 
-- No hay ruta POST activa.
-- No hay `generarDesdeCompraAction()`.
-- No hay `generarDesdeCompraRecibida()`.
-- No hay boton `Generar CxP`.
-- La prueba local historica queda como antecedente; no se borra ni se repite sin autorizacion.
+- Ruta nueva activa: `POST /cuentas-por-pagar/generar-desde-compra/{id}`.
+- Controller: `CuentaPorPagarController::generarDesdeCompraAction()`.
+- Modelo: `CuentaPorPagar::generarDesdeCompraRecibida()`.
+- Usa CSRF, transaccion y bloqueo `FOR UPDATE`.
+- Valida compra recibida, proveedor del mismo hotel, total positivo, detalles existentes y no duplicado.
+- Inserta solo en `cuentas_por_pagar`.
+- Registra auditoria en `logs_auditoria`.
+- No inserta pagos, abonos, movimientos de CxP ni movimientos de Caja.
 
-## Prueba local 3C-B
+## Prueba local historica 3C-B
 
 - Backup valido previo:
   - `src/storage/backups/phase3c_b_20260615_053711_before_manual_cxp_medisoft_hoteles_import_notablespaces.sql`
@@ -107,6 +110,25 @@ No permite pagos, Caja, generacion automatica desde compras, saldos operativos, 
   - `cuentas_por_pagar`: `0 -> 1`
   - `cuentas_por_pagar_movimientos`: `0 -> 0`
   - `logs_auditoria`: `23 -> 24`
+  - `cajas`: `3 -> 3`
+  - `movimientos_caja`: `1402 -> 1402`
+
+## Prueba local vigente 3C-B
+
+- Backup valido previo:
+  - `src/storage/backups/phase3c_b_20260615_144908_before_manual_cxp_medisoft_hoteles_import.sql`
+  - SHA256: `C0403F7B5ACBDA35EF4C05E2840546D5D9978802A21C9736BEBC6FF462518061`
+  - tamano: `1532615`
+- Registro usado para prueba:
+  - hotel_id: `4`
+  - compra_id: `2`
+  - total: `1900.00`
+- Resultado:
+  - CxP generada: `id = 2`
+  - doble generacion: bloqueada con mensaje de CxP existente
+  - `cuentas_por_pagar`: `1 -> 2`
+  - `cuentas_por_pagar_movimientos`: `0 -> 0`
+  - `logs_auditoria`: `25 -> 26`
   - `cajas`: `3 -> 3`
   - `movimientos_caja`: `1402 -> 1402`
 
@@ -164,4 +186,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Siguiente paso formal: QA manual de `/cuentas-por-pagar/generacion-preview` autenticado. No avanzar a 3C-B, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Siguiente paso formal: QA manual de 3C-B en navegador. No avanzar a pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

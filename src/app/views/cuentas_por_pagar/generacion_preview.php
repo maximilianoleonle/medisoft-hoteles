@@ -129,7 +129,7 @@ $estado = (string)($filtros['estado'] ?? 'recibida');
                 <div class="cxp-kicker">Compras / CxP</div>
                 <h1 class="cxp-title">Preview de generacion CxP</h1>
                 <p class="cxp-subtitle">
-                    Evalua compras recibidas que podrian generar CxP en una fase posterior. Esta pantalla es solo lectura: no crea CxP, pagos, abonos ni afecta Caja.
+                    Evalua compras recibidas y permite generar CxP solo con una accion manual explicita. No crea pagos, no registra abonos y no afecta Caja.
                 </p>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-5 gap-2 min-w-[380px]">
@@ -171,7 +171,7 @@ $estado = (string)($filtros['estado'] ?? 'recibida');
             </div>
             <span class="cxp-badge">
                 <i class="fas fa-lock"></i>
-                Solo lectura GET
+                Manual con CSRF
             </span>
         </div>
 
@@ -273,7 +273,13 @@ $estado = (string)($filtros['estado'] ?? 'recibida');
                                                     Elegible
                                                 </span>
                                                 <div class="text-xs text-slate-500 mt-1"><?= cxp_preview_safe($compra['motivo_elegibilidad'] ?? null) ?></div>
-                                                <div class="text-xs text-slate-500 mt-3">Accion de generacion diferida a Fase 3C-B.</div>
+                                                <form method="POST" action="<?= url('cuentas-por-pagar/generar-desde-compra/' . (int)($compra['compra_id'] ?? 0)) ?>" class="mt-3">
+                                                    <?= csrf_field() ?>
+                                                    <button class="cxp-btn cxp-btn-primary" type="submit">
+                                                        <i class="fas fa-file-invoice-dollar"></i>
+                                                        Generar CxP
+                                                    </button>
+                                                </form>
                                             <?php else: ?>
                                                 <span class="cxp-badge cxp-badge-blocked">
                                                     <i class="fas fa-ban"></i>

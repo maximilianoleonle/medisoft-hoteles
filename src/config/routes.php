@@ -219,9 +219,10 @@ $router->get('/compras/{id:[0-9]+}', ['controller' => 'Compra', 'action' => 'ver
 $router->post('/compras', ['controller' => 'Compra', 'action' => 'guardar']);
 $router->post('/compras/{id:[0-9]+}/recibir', ['controller' => 'Compra', 'action' => 'recibir']);
 
-// Fase 3B/3C-A: CxP base y preview GET read-only. Sin POST, pagos, caja ni movimientos financieros.
+// Fase 3B/3C-B: CxP base, preview GET y generacion manual controlada. Sin pagos, caja ni movimientos financieros.
 $router->get('/cuentas-por-pagar', ['controller' => 'CuentaPorPagar', 'action' => 'index']);
 $router->get('/cuentas-por-pagar/generacion-preview', ['controller' => 'CuentaPorPagar', 'action' => 'generacionPreview']);
+$router->post('/cuentas-por-pagar/generar-desde-compra/{id:[0-9]+}', ['controller' => 'CuentaPorPagar', 'action' => 'generarDesdeCompra']);
 $router->get('/cuentas-por-pagar/{id:[0-9]+}', ['controller' => 'CuentaPorPagar', 'action' => 'ver']);
 
 $router->get('/api/pwa-push/public-key', ['controller' => 'PwaPush', 'action' => 'publicKey']);

@@ -28,9 +28,9 @@ Fuente nueva fundacional:
 Estado:
 
 - fundacion read-only hasta Fase 3B;
-- Reanclaje Fase 3C: estado formal `SIMULADOR_3C_COMPLETADO_QA_MANUAL_PENDIENTE`;
+- Reanclaje Fase 3C: estado formal `GENERACION_3C_B_COMPLETADA_QA_MANUAL_PENDIENTE`;
 - Fase 3C-A tiene preview read-only ruteado, protegido, navegable y verificado automaticamente;
-- Fase 3C-B queda diferida; no hay ruta POST activa, boton de generacion ni metodo de escritura CxP en el codigo vigente;
+- Fase 3C-B tiene generacion manual POST activa desde compras recibidas elegibles;
 - Fase 3C-C queda diferida como cierre formal, aunque health/preflights ya incluyen comprobaciones read-only de consistencia CxP;
 - sin pagos;
 - sin Caja;
@@ -40,10 +40,10 @@ Estado:
 
 Regla vigente despues del reanclaje:
 
-- La siguiente accion formal es QA manual de `GET /cuentas-por-pagar/generacion-preview`.
-- No ejecutar ni ampliar generacion manual hasta validar manualmente el simulador y autorizar Fase 3C-B.
+- La siguiente accion formal es QA manual de generacion manual 3C-B desde `/cuentas-por-pagar/generacion-preview`.
+- No ampliar hacia pagos, Caja ni Fase 3D hasta validar manualmente 3C-B y autorizar una fase nueva.
 - El preview 3C-A no es fuente de datos nueva; solo interpreta `compras` + `proveedores` + `cuentas_por_pagar`.
-- La CxP historica creada en prueba local de 3C-B queda como antecedente; no borrar ni corregir automaticamente.
+- Las CxP creadas en pruebas locales controladas (`id=1` compra `#5`, `id=2` compra `#2`) quedan como evidencia local; no borrar ni corregir automaticamente.
 - `cuentas_por_pagar_movimientos` queda sin uso operativo.
 - Los checkers 3C-C deben fallar si detectan CxP duplicada, sin compra/proveedor, con cruce de hotel, con total/saldo invalido o con referencia CxP en `movimientos_caja`.
 - El preview solo debe enlazar a proveedor cuando el proveedor existe dentro del mismo `hotel_id`; si no, debe mostrar la compra bloqueada sin link a otro hotel.

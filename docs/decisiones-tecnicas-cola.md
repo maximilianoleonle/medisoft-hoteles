@@ -72,13 +72,13 @@
 ## Reanclaje Fase 3C
 
 - Nuevo mensaje real `REANCLAR_FASE_3C_VERDAD_ACTUAL` corrige el estado documental.
-- Estado formal vigente: `SIMULADOR_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- Estado formal vigente: `GENERACION_3C_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
 - `9897465` queda como contrato 3C-0 completado.
 - `c216dc5` contiene codigo de simulador; queda como base parcial pendiente de verificacion formal.
-- `cb83121` contiene el antecedente historico de generacion manual; el codigo vigente de 3C-A lo deja diferido y sin ruta POST activa.
-- `5dfe665` contiene validaciones; queda como codigo adelantado/no formal hasta cerrar 3C-A.
+- `cb83121` contiene el antecedente historico de generacion manual; la implementacion vigente reintroduce 3C-B con validacion automatica.
+- `5dfe665` contiene validaciones; se conservan como checkers read-only de consistencia CxP.
 - `8765258` y `2662998` quedan reclasificados como revision/auditoria prematuras o documentales, no cierre formal.
-- Siguiente accion: `COLA_3C_A_SIMULADOR_READ_ONLY`.
+- Siguiente accion: QA manual de Fase 3C-B.
 
 ## Fase 3C-A
 
@@ -93,11 +93,14 @@
 
 ## Fase 3C-B
 
-- Estado: diferida hasta QA manual de 3C-A y nueva autorizacion.
-- No hay ruta POST activa de generacion en el codigo vigente.
-- No hay boton `Generar CxP` en el preview 3C-A.
-- No hay metodo vigente de insercion `generarDesdeCompraRecibida()`.
-- Cuando se reactive formalmente, la generacion debe quedar como accion manual en CxP, no como efecto secundario de `CompraService::recibirCompra()`.
+- Estado: implementada tecnicamente y pendiente QA manual.
+- La generacion queda como accion manual en CxP, no como efecto secundario de `CompraService::recibirCompra()`.
+- La ruta POST activa es `POST /cuentas-por-pagar/generar-desde-compra/{id}`.
+- El preview muestra `Generar CxP` solo cuando la compra es elegible.
+- El modelo centraliza validaciones en `CuentaPorPagar::generarDesdeCompraRecibida()`.
+- La compra se bloquea con `FOR UPDATE`; se valida recibida, proveedor del hotel, total positivo, detalles y ausencia de CxP previa.
+- Se inserta solo en `cuentas_por_pagar`; no se inserta en `cuentas_por_pagar_movimientos`.
+- La trazabilidad queda en `logs_auditoria` via `AuditService::record()`.
 - Caja debe seguir completamente fuera del flujo.
 
 ## Revision tecnica Fase 3C

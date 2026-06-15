@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-A.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-B.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -546,7 +546,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-A - Medisoft Hoteles\n";
+echo "Health check Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-B - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -620,9 +620,9 @@ if ($minimalPurchasingPreflight && is_file($minimalPurchasingPreflight)) {
         && strpos($minimalPurchasingPreflightCode, 'cuentas-por-pagar/generacion-preview') !== false
         && strpos($minimalPurchasingPreflightCode, 'function generacionPreviewAction') !== false
         && strpos($minimalPurchasingPreflightCode, 'function previewGeneracionDesdeCompras') !== false
-        && strpos($minimalPurchasingPreflightCode, '3C-A') !== false
+        && strpos($minimalPurchasingPreflightCode, '3C-B') !== false
     ) {
-        hcOk('Preflight de compras minimas existe, es solo lectura y conoce Fase 2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B/3C-A.');
+        hcOk('Preflight de compras minimas existe, es solo lectura y conoce Fase 2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B/3C-B.');
     } else {
         hcWarning(
             'Preflight de compras minimas existe pero no declara guardas completas.',
@@ -640,7 +640,7 @@ if ($purchaseReceptionPreflight && is_file($purchaseReceptionPreflight)) {
     $purchaseReceptionPreflightCode = (string) file_get_contents($purchaseReceptionPreflight);
     if (
         strpos($purchaseReceptionPreflightCode, 'Preflight Fase 2T') !== false
-        && strpos($purchaseReceptionPreflightCode, '3C-A') !== false
+        && strpos($purchaseReceptionPreflightCode, '3C-B') !== false
         && strpos($purchaseReceptionPreflightCode, 'Solo lectura') !== false
         && strpos($purchaseReceptionPreflightCode, 'START TRANSACTION READ ONLY') !== false
         && strpos($purchaseReceptionPreflightCode, 'detalles_con_movimiento') !== false
@@ -650,7 +650,7 @@ if ($purchaseReceptionPreflight && is_file($purchaseReceptionPreflight)) {
         && strpos($purchaseReceptionPreflightCode, 'generacionpreview') !== false
         && strpos($purchaseReceptionPreflightCode, 'movimientos_caja') !== false
     ) {
-        hcOk('Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B/3C-A de recepcion de compras existe y es solo lectura.');
+        hcOk('Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B/3C-B de recepcion de compras existe y es solo lectura.');
     } else {
         hcWarning(
             'Preflight Fase 2T de recepcion existe pero no declara todas las guardas esperadas.',
@@ -2205,6 +2205,7 @@ if (!is_file($routesPath)) {
     $cxpExpectedRoutes = [
         ['method' => 'get', 'path' => 'cuentas-por-pagar'],
         ['method' => 'get', 'path' => 'cuentas-por-pagar/generacion-preview'],
+        ['method' => 'post', 'path' => 'cuentas-por-pagar/generar-desde-compra/{id:[0-9]+}'],
         ['method' => 'get', 'path' => 'cuentas-por-pagar/{id:[0-9]+}'],
     ];
     $missingCxpRoutes = [];
@@ -2215,11 +2216,11 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($missingCxpRoutes)) {
-        hcOk('Rutas Fase 3B/3C-A de CxP y preview GET read-only estan registradas.');
+        hcOk('Rutas Fase 3B/3C-B de CxP, preview GET y generacion manual POST estan registradas.');
     } else {
         hcWarning(
-            'Rutas Fase 3B/3C-A de CxP faltantes: ' . implode(', ', $missingCxpRoutes),
-            'Registrar solo GET listado/preview/detalle; la generacion POST queda diferida a 3C-B.'
+            'Rutas Fase 3B/3C-B de CxP faltantes: ' . implode(', ', $missingCxpRoutes),
+            'Registrar GET listado/preview/detalle y POST manual /cuentas-por-pagar/generar-desde-compra/{id}; sin pagos ni Caja.'
         );
     }
 
@@ -2243,8 +2244,9 @@ if (!is_file($routesPath)) {
         $isAllowedCxpReadOnlyRoute = in_array($method . ' /' . $path, [
             'GET /cuentas-por-pagar',
             'GET /cuentas-por-pagar/generacion-preview',
+            'POST /cuentas-por-pagar/generar-desde-compra/{id:[0-9]+}',
             'GET /cuentas-por-pagar/{id:[0-9]+}',
-        ], true) && $controller === 'cuentaporpagar' && in_array($action, ['index', 'generacionpreview', 'ver'], true);
+        ], true) && $controller === 'cuentaporpagar' && in_array($action, ['index', 'generacionpreview', 'generardesdecompra', 'ver'], true);
 
         if ($isAllowedPurchaseRoute || $isAllowedCxpReadOnlyRoute) {
             continue;
@@ -2263,11 +2265,11 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($forbiddenPurchaseRoutes)) {
-        hcOk('Solo hay compras minimas y CxP/preview GET Fase 3B/3C-A; no hay rutas de pagos, contactos, documentos ni generacion CxP.');
+        hcOk('Solo hay compras minimas y CxP/preview/generacion manual Fase 3B/3C-B; no hay rutas de pagos, contactos ni documentos de compras.');
     } else {
         hcError(
-            'Rutas fuera del alcance Fase 3C-A detectadas: ' . implode(' | ', $forbiddenPurchaseRoutes),
-            'Retirar rutas que no sean Compras basicas, CxP listado/preview/detalle y POST /compras/{id}/recibir; generacion CxP queda diferida.'
+            'Rutas fuera del alcance Fase 3C-B detectadas: ' . implode(' | ', $forbiddenPurchaseRoutes),
+            'Retirar rutas que no sean Compras basicas, CxP listado/preview/detalle, POST generar CxP desde compra y POST /compras/{id}/recibir.'
         );
     }
 
@@ -2510,6 +2512,8 @@ if (!is_file($routesPath)) {
             && strpos($cxpControllerCode, 'class CuentaPorPagarController') !== false
             && strpos($cxpControllerCode, 'function indexAction') !== false
             && strpos($cxpControllerCode, 'function generacionPreviewAction') !== false
+            && strpos($cxpControllerCode, 'function generarDesdeCompraAction') !== false
+            && strpos($cxpControllerCode, 'validateCSRF') !== false
             && strpos($cxpControllerCode, 'function verAction') !== false
             && strpos($cxpControllerCode, "require_hotel_module('inventario')") !== false
             && strpos($cxpControllerCode, 'cuentas_por_pagar/index') !== false
@@ -2520,19 +2524,20 @@ if (!is_file($routesPath)) {
             && strpos($cxpModelCode, 'function resumenPorHotel') !== false
             && strpos($cxpModelCode, 'function listarPorHotel') !== false
             && strpos($cxpModelCode, 'function previewGeneracionDesdeCompras') !== false
-            && strpos($cxpControllerCode, 'function generarDesdeCompraAction') === false
-            && strpos($cxpModelCode, 'function generarDesdeCompraRecibida') === false
-            && strpos($cxpModelCode, 'INSERT INTO cuentas_por_pagar') === false
+            && strpos($cxpModelCode, 'function generarDesdeCompraRecibida') !== false
+            && strpos($cxpModelCode, 'FOR UPDATE') !== false
+            && strpos($cxpModelCode, 'INSERT INTO cuentas_por_pagar') !== false
+            && strpos($cxpModelCode, 'AuditService::record') !== false
             && strpos($cxpModelCode, 'function buscarPorIdHotel') !== false
             && strpos($cxpModelCode, 'function movimientosPorCuenta') !== false
             && strpos($cxpModelCode, 'FROM cuentas_por_pagar') !== false
             && strpos($cxpModelCode, 'FROM cuentas_por_pagar_movimientos') !== false
         ) {
-            hcOk('CxP Fase 3B/3C-A expone listado/detalle y preview read-only sin generacion, pagos ni Caja.');
+            hcOk('CxP Fase 3B/3C-B expone lectura, preview y generacion manual auditada sin pagos ni Caja.');
         } else {
             hcError(
-                'CxP Fase 3C-A no cumple contrato o contiene tokens de escritura.',
-                'Mantener solo GET index/preview/ver; retirar generarDesdeCompra, INSERT CxP, pagos, abonos y movimientos_caja.'
+                'CxP Fase 3C-B no cumple contrato o contiene tokens prohibidos.',
+                'Mantener GET index/preview/ver y POST generar desde compra recibida; sin pagos, abonos ni movimientos_caja.'
             );
         }
     } else {
@@ -2559,21 +2564,20 @@ if (!is_file($routesPath)) {
             && strpos($cxpDetailViewCode, "url('compras/' . (int)") !== false
             && strpos($cxpDetailViewCode, "url('proveedores/' . (int)") !== false
             && strpos($cxpPreviewViewCode, "action=\"<?= url('cuentas-por-pagar/generacion-preview') ?>\"") !== false
-            && strpos($cxpPreviewViewCode, "generar-desde-compra") === false
-            && strpos($cxpPreviewViewCode, 'csrf_field()') === false
+            && strpos($cxpPreviewViewCode, "action=\"<?= url('cuentas-por-pagar/generar-desde-compra/' . (int)") !== false
+            && strpos($cxpPreviewViewCode, 'csrf_field()') !== false
             && strpos($cxpPreviewViewCode, "url('compras/' . (int)") !== false
             && strpos($cxpPreviewViewCode, "url('proveedores/' . (int)") !== false
             && strpos($cxpViewsCode, 'Solo lectura') !== false
             && strpos($cxpViewsCode, 'Sin pagos') !== false
-            && strpos($cxpViewsCode, 'method="POST"') === false
             && strpos($cxpIndexViewCode . "\n" . $cxpDetailViewCode, 'csrf_field()') === false
             && strpos($cxpViewsCode, 'movimientos_caja') === false
         ) {
-            hcOk('Vistas CxP Fase 3B/3C-A incluyen listado, detalle y preview read-only sin formularios POST.');
+            hcOk('Vistas CxP Fase 3B/3C-B incluyen lectura, preview y POST manual con CSRF sin pagos ni Caja.');
         } else {
             hcError(
-                'Vistas CxP Fase 3C-A incompletas o con acciones fuera de alcance.',
-                'Mantener listado/detalle/preview read-only; sin POST generar, pagos, abonos ni enlaces de caja.'
+                'Vistas CxP Fase 3C-B incompletas o con acciones fuera de alcance.',
+                'Mantener listado/detalle read-only y solo POST manual desde preview con CSRF; sin enlaces de pago/caja.'
             );
         }
     } else {

@@ -99,17 +99,17 @@ Al cerrar esta fase, no avanzar a Fase 3C sin nuevo mensaje real. El estado debe
 
 ### Reanclaje de estado
 
-Estado formal vigente: `SIMULADOR_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado formal vigente: `GENERACION_3C_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
 
 El repositorio contiene commits de implementacion posteriores al contrato, pero el nuevo reanclaje impide tratarlos como cierre formal:
 
 - `9897465`: contrato 3C-0 completado.
 - `c216dc5`: codigo de simulador, base parcial para 3C-A.
-- `cb83121`: antecedente historico de generacion manual; en el codigo vigente 3C-A la generacion queda retirada/diferida.
-- `5dfe665`: codigo de validaciones, adelantado/no formal hasta cerrar 3C-A.
+- `cb83121`: antecedente historico de generacion manual; la implementacion vigente reintroduce 3C-B de forma controlada.
+- `5dfe665`: codigo de validaciones read-only conservado en health/preflights.
 - `8765258` y `2662998`: revision/auditoria prematuras o documentales.
 
-Siguiente paso formal: `COLA_3C_A_SIMULADOR_READ_ONLY`.
+Siguiente paso formal: QA manual de Fase 3C-B.
 
 ### Objetivo
 
@@ -204,22 +204,26 @@ Definition of Done 3C-A:
 - confirmar HTTP sin sesion redirige o bloquea;
 - confirmar conteos DB sin escritura antes/despues.
 
-### Fase 3C-B diferida
+### Estado 3C-B
 
-La generacion manual controlada de CxP desde compra recibida queda diferida hasta QA manual de 3C-A y nueva autorizacion:
+La generacion manual controlada de CxP desde compra recibida esta implementada y verificada automaticamente:
 
-- no hay ruta POST activa para generar CxP;
-- no hay `CuentaPorPagarController::generarDesdeCompraAction()` vigente;
-- no hay `CuentaPorPagar::generarDesdeCompraRecibida()` vigente;
-- no hay boton `Generar CxP` en el preview 3C-A;
-- no hay CSRF nuevo porque 3C-A no escribe datos;
+- ruta: `POST /cuentas-por-pagar/generar-desde-compra/{id}`;
+- controlador: `CuentaPorPagarController::generarDesdeCompraAction()`;
+- modelo: `CuentaPorPagar::generarDesdeCompraRecibida()`;
+- boton `Generar CxP` visible solo en filas elegibles del preview;
+- CSRF obligatorio;
+- transaccion propia;
+- bloqueo `FOR UPDATE` sobre la compra y verificacion de CxP existente;
+- auditoria con `AuditService::record()`;
+- redireccion al detalle de CxP generada;
 - sin pagos;
 - sin abonos;
 - sin Caja;
 - sin movimientos de Caja;
 - sin generacion automatica desde recepcion.
 
-Definition of Done 3C-B pendiente de revalidacion:
+Definition of Done 3C-B:
 
 - no genera CxP desde compras no recibidas;
 - no duplica CxP por compra;
@@ -230,9 +234,22 @@ Definition of Done 3C-B pendiente de revalidacion:
 - checkers/preflights actualizados;
 - `php -l`, health, preflights y `git diff --check` sin errores bloqueantes.
 
+Prueba local controlada:
+
+- backup previo: `src/storage/backups/phase3c_b_20260615_144908_before_manual_cxp_medisoft_hoteles_import.sql`;
+- SHA256: `C0403F7B5ACBDA35EF4C05E2840546D5D9978802A21C9736BEBC6FF462518061`;
+- compra usada: `compra_id=2`, `hotel_id=4`;
+- CxP creada: `id=2`, `total=1900.00`, `saldo=1900.00`;
+- doble generacion bloqueada con mensaje de CxP existente;
+- `cuentas_por_pagar`: `1 -> 2`;
+- `cuentas_por_pagar_movimientos`: `0 -> 0`;
+- `cajas`: `3 -> 3`;
+- `movimientos_caja`: `1402 -> 1402`;
+- `logs_auditoria`: `25 -> 26`.
+
 ### Codigo historico 3C-C y revision post-QA
 
-Validaciones de consistencia agregadas a health/preflights existen en codigo, pero quedan reclasificadas como adelantadas/no formales hasta revalidar 3C-A:
+Validaciones de consistencia agregadas a health/preflights se conservan como verificacion read-only de 3C-B, aunque el cierre formal 3C-C queda para una cola posterior:
 
 - CxP duplicada por compra/hotel;
 - CxP con compra inexistente;

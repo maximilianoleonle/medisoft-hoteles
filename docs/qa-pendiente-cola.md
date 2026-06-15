@@ -50,14 +50,14 @@
 
 ## QA Fase 3C
 
-Estado reanclado: `SIMULADOR_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado reanclado: `GENERACION_3C_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
 
-La QA manual y automatica registrada previamente para 3C queda como antecedente historico. No debe usarse para cerrar formalmente Fase 3C despues del reanclaje. La siguiente validacion formal debe empezar por 3C-A simulador read-only.
+La siguiente validacion formal debe revisar 3C-B en navegador: preview, boton elegible, generacion manual, bloqueo de duplicado y ausencia de Caja/pagos.
 
 ### QA critica
 
-- Confirmar que el simulador 3C-A no escribe en DB.
-- Confirmar que 3C-A no muestra acciones de generacion y que la generacion 3C-B sigue diferida.
+- Confirmar que el flujo 3C-B solo escribe cuando el usuario presiona explicitamente `Generar CxP`.
+- Confirmar que la generacion 3C-B es manual, no automatica.
 - Confirmar que solo compras `recibida` generan CxP.
 - Confirmar que no se duplica CxP por compra.
 - Confirmar que CxP generada respeta `hotel_id`.
@@ -69,9 +69,9 @@ La QA manual y automatica registrada previamente para 3C queda como antecedente 
 
 - Revisar listado de compras recibidas elegibles.
 - Revisar motivos de bloqueo cuando una compra ya tiene CxP.
-- Confirmar que `/cuentas-por-pagar/generacion-preview` no muestra botones POST ni `Generar CxP`.
-- Confirmar que las compras elegibles muestran solo diagnostico de elegibilidad.
-- Revisar listado y detalle CxP existentes sin crear nuevas cuentas.
+- Confirmar que `/cuentas-por-pagar/generacion-preview` muestra `Generar CxP` solo en compras elegibles.
+- Generar CxP manualmente desde una compra recibida autorizada.
+- Revisar listado y detalle CxP despues de generar.
 - Revisar detalle de compra y preview para ver CxP vinculada cuando ya exista.
 
 ### QA visual
@@ -96,24 +96,29 @@ La QA manual y automatica registrada previamente para 3C queda como antecedente 
 - Confirmar que muestra link a CxP solo si ya existe.
 - Confirmar que las compras elegibles indican motivo de elegibilidad.
 - Confirmar que las compras no elegibles indican motivo de bloqueo.
-- Confirmar que no hay boton `Generar CxP`.
+- Confirmar que el boton `Generar CxP` solo aparece en filas elegibles.
 - Confirmar que no hay botones de pago, abono ni Caja.
 
-### QA futura Fase 3C-B
+### QA especifica Fase 3C-B
 
-- Estado: diferida; no ejecutar en 3C-A.
-- Requiere nueva autorizacion antes de reactivar ruta POST, boton, CSRF y metodo de escritura.
-- Confirmar que no cambia `movimientos_caja` cuando se autorice una prueba futura.
-- Confirmar que no hay pagos ni abonos cuando se autorice una prueba futura.
+- Usar una compra recibida elegible.
+- Presionar `Generar CxP`.
+- Confirmar redireccion al detalle de la CxP.
+- Confirmar que el preview cambia la compra a bloqueada por CxP existente.
+- Intentar generar de nuevo y confirmar error claro.
+- Confirmar que no cambia `movimientos_caja`.
+- Confirmar que no hay pagos ni abonos.
 
 ## Resultado automatico Fase 3C-B
 
-- Prueba local controlada ejecutada sobre compra `#5` del hotel `4`.
-- Se genero CxP `#1`.
+- Backup previo confirmado: `src/storage/backups/phase3c_b_20260615_144908_before_manual_cxp_medisoft_hoteles_import.sql`.
+- SHA256: `C0403F7B5ACBDA35EF4C05E2840546D5D9978802A21C9736BEBC6FF462518061`.
+- Prueba local controlada ejecutada sobre compra `#2` del hotel `4`.
+- Se genero CxP `#2`.
 - La doble generacion fue bloqueada limpiamente.
 - No se crearon movimientos en `cuentas_por_pagar_movimientos`.
 - No cambiaron `cajas` ni `movimientos_caja`.
-- Reclasificacion reanclaje: antecedente historico; no cierre formal de 3C-B.
+- `logs_auditoria` aumento de `25` a `26`.
 
 ## Resultado automatico Fase 3C-C
 
@@ -160,11 +165,11 @@ La QA manual y automatica registrada previamente para 3C queda como antecedente 
 ## Auditoria seguridad Fase 3C post-QA
 
 - Auditoria estatica previa sin hallazgos bloqueantes, reclasificada como prematura.
-- Confirmado por revision de codigo corregida: no hay POST 3C-A activo.
+- Confirmado por revision de codigo actual: hay un unico POST 3C-B con CSRF.
 - Confirmado por revision de codigo: `before()` exige autenticacion, contexto hotelero y modulo `inventario`.
 - Confirmado por revision de codigo: no hay escritura en Caja ni pagos desde CxP.
 - Confirmado por revision de codigo: generacion valida compra recibida, proveedor del hotel, total positivo, detalles y no duplicado.
-- No se pudo re-ejecutar health/preflights en esta pasada porque Docker Desktop no esta disponible y `php` no esta en PATH local.
+- Health/preflights se re-ejecutaron con Docker/PHP disponible y quedaron sin errores bloqueantes.
 
 ## Triage no relacionado
 
