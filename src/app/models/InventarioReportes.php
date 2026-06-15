@@ -1,4 +1,6 @@
 <?php
+// LEGACY INVENTARIO FASE 2C: archivo congelado. El flujo moderno de reportes
+// sale por InventarioController/MovimientoInventario y tablas inventario_* scoped.
 namespace App\Services;
 
 use App\Models\Inventario;

@@ -61,6 +61,24 @@ class Inventario extends Model {
         return (int)($result[0]['total'] ?? 0) > 0;
     }
 
+    public function tipoHabitacionPerteneceAlHotel($tipoHabitacion) {
+        $hotelId = $this->hotelIdActual();
+        $tipoHabitacion = trim((string)$tipoHabitacion);
+
+        if ($tipoHabitacion === '') {
+            return false;
+        }
+
+        $result = $this->query(
+            "SELECT COUNT(*) AS total
+             FROM tipos_habitacion
+             WHERE codigo = ? AND hotel_id = ? AND activo = 1",
+            [$tipoHabitacion, $hotelId]
+        );
+
+        return (int)($result[0]['total'] ?? 0) > 0;
+    }
+
     public function actualizarProductoBase($id, array $data) {
         $hotelId = $this->hotelIdActual();
         $data = $this->filterFillable($data);
@@ -246,25 +264,50 @@ class Inventario extends Model {
         $db = Database::getInstance();
 
         try {
-            // Convertir cantidad a entero para evitar decimales
-            $cantidad = intval($cantidad);
+            $tipo_habitacion = trim((string)$tipo_habitacion);
+            $producto_id = (int)$producto_id;
+
+            if ($tipo_habitacion === '' || !$this->tipoHabitacionPerteneceAlHotel($tipo_habitacion)) {
+                throw new Exception('Tipo de habitacion no encontrado para el hotel actual');
+            }
+
+            if ($producto_id <= 0) {
+                throw new Exception('Producto de inventario no valido');
+            }
+
+            if ($cantidad === '' || !is_numeric($cantidad)) {
+                throw new Exception('La cantidad de configuracion debe ser numerica');
+            }
+
+            $cantidad = (int)$cantidad;
+            if ($cantidad < 0) {
+                throw new Exception('La cantidad de configuracion no puede ser negativa');
+            }
 
             $producto = $this->query(
-                "SELECT id
+                "SELECT id, nombre, descuento_automatico
                  FROM inventario_productos
-                 WHERE id = ? AND hotel_id = ?",
+                 WHERE id = ?
+                    AND hotel_id = ?
+                    AND activo = 1
+                    AND descuento_automatico = 1",
                 [$producto_id, $hotelId]
             );
 
             if (empty($producto)) {
-                return false;
+                throw new Exception('Producto de inventario no encontrado para el hotel actual');
             }
 
             // Primero verificar si existe el registro
-            $sql = "SELECT id FROM inventario_config_habitacion
+            $sql = "SELECT id, cantidad_descontar, activo
+                    FROM inventario_config_habitacion
                     WHERE tipo_habitacion = ? AND producto_id = ? AND hotel_id = ?";
             $stmt = $db->query($sql, [$tipo_habitacion, $producto_id, $hotelId]);
             $existe = $stmt ? $stmt->fetch() : null;
+
+            $cantidadAnterior = $existe ? (float)$existe['cantidad_descontar'] : null;
+            $activoAnterior = $existe ? (int)$existe['activo'] : null;
+            $activoNuevo = $cantidad > 0 ? 1 : 0;
 
             if ($existe) {
                 // Si existe, actualizar
@@ -295,15 +338,41 @@ class Inventario extends Model {
                     ]);
                 } else {
                     // Si la cantidad es 0 y no existe, no hacer nada
-                    return true;
+                    return [
+                        'changed' => false,
+                        'hotel_id' => $hotelId,
+                        'tipo_habitacion' => $tipo_habitacion,
+                        'producto_id' => $producto_id,
+                        'producto_nombre' => $producto[0]['nombre'] ?? null,
+                        'cantidad_anterior' => null,
+                        'cantidad_nueva' => 0,
+                        'activo_anterior' => null,
+                        'activo_nuevo' => 0,
+                        'descuento_automatico_cambio' => false,
+                    ];
                 }
             }
 
-            return true;
+            $changed = !$existe
+                || (float)$cantidadAnterior !== (float)$cantidad
+                || (int)$activoAnterior !== (int)$activoNuevo;
+
+            return [
+                'changed' => $changed,
+                'hotel_id' => $hotelId,
+                'tipo_habitacion' => $tipo_habitacion,
+                'producto_id' => $producto_id,
+                'producto_nombre' => $producto[0]['nombre'] ?? null,
+                'cantidad_anterior' => $cantidadAnterior,
+                'cantidad_nueva' => $cantidad,
+                'activo_anterior' => $activoAnterior,
+                'activo_nuevo' => $activoNuevo,
+                'descuento_automatico_cambio' => false,
+            ];
 
         } catch (Exception $e) {
             error_log("Error en actualizarConfiguracion: " . $e->getMessage());
-            return false;
+            throw $e;
         }
     }
 }

@@ -1,368 +1,750 @@
 <?php
-/**
- * Vista de creación de usuario - Versión compacta
- * Vista hotelera
- */
 $esGestionHotel = $esGestionHotel ?? false;
+$workerLabel = $esGestionHotel ? 'Trabajador' : 'Usuario';
+$workerLabelLower = $esGestionHotel ? 'trabajador' : 'usuario';
+
+if (!function_exists('worker_form_initials')) {
+    function worker_form_initials($name) {
+        $name = trim((string) $name);
+        if ($name === '') {
+            return '?';
+        }
+
+        $parts = preg_split('/\s+/', $name);
+        $first = $parts[0] ?? '';
+        $second = $parts[1] ?? '';
+        $a = function_exists('mb_substr') ? mb_substr($first, 0, 1, 'UTF-8') : substr($first, 0, 1);
+        $b = function_exists('mb_substr') ? mb_substr($second, 0, 1, 'UTF-8') : substr($second, 0, 1);
+        $initials = $a . ($b ?: '');
+        return function_exists('mb_strtoupper') ? mb_strtoupper($initials, 'UTF-8') : strtoupper($initials);
+    }
+}
 ?>
 
-<!-- Estilos críticos inline para prevenir FOUC -->
 <style>
-:root {
-    --hotel-brown: #6B4423;
-    --hotel-brown-dark: #5A3A1E;
-    --hotel-gold: #D4A574;
+.worker-page {
+    --worker-brand: var(--brand-primary, #2563EB);
+    --worker-brand-dark: color-mix(in srgb, var(--worker-brand), #000 28%);
+    --worker-brand-soft: color-mix(in srgb, var(--worker-brand) 7%, #F8FAFC);
+    --worker-accent: var(--brand-accent, #F59E0B);
+    --worker-border: color-mix(in srgb, var(--worker-brand) 10%, #E2E8F0);
+    --worker-ring: color-mix(in srgb, var(--worker-brand) 16%, transparent);
+    --worker-text: #0F172A;
+    --worker-muted: #64748B;
+    color: var(--worker-text);
 }
-.create-usuario-view { opacity: 0; transition: opacity 0.3s ease; }
-.create-usuario-view.loaded { opacity: 1; }
-.form-input {
-    transition: all 0.3s ease;
-    border: 1px solid #d1d5db;
+
+.worker-shell {
+    display: grid;
+    gap: 14px;
 }
-.form-input:focus {
-    border-color: var(--hotel-brown);
-    box-shadow: 0 0 0 3px rgba(107, 68, 35, 0.1);
+
+.worker-hero {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px;
+    border-radius: 14px;
+    background:
+        radial-gradient(circle at right top, rgba(255,255,255,.16), transparent 34%),
+        linear-gradient(135deg, var(--worker-brand-dark), var(--worker-brand));
+    box-shadow: 0 16px 34px color-mix(in srgb, var(--worker-brand) 16%, transparent);
+}
+
+.worker-hero-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 0;
+}
+
+.worker-hero-icon,
+.worker-preview-avatar {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+
+.worker-hero-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    color: #fff;
+    background: rgba(255,255,255,.16);
+    border: 1px solid rgba(255,255,255,.16);
+}
+
+.worker-kicker {
+    color: rgba(255,255,255,.72);
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.worker-title {
+    margin: 1px 0 0;
+    color: rgba(255,255,255,.98);
+    font-size: clamp(1.55rem, 3vw, 2.25rem);
+    font-weight: 900;
+    letter-spacing: 0;
+    line-height: 1.05;
+}
+
+.worker-subtitle {
+    margin-top: 6px;
+    max-width: 44rem;
+    color: rgba(255,255,255,.92);
+    font-size: .92rem;
+    font-weight: 650;
+    line-height: 1.45;
+    text-shadow: 0 1px 1px rgba(15,23,42,.22);
+}
+
+.worker-back-btn,
+.worker-action-btn,
+.worker-secondary-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    min-height: 38px;
+    border-radius: 10px;
+    font-weight: 850;
+    text-decoration: none;
+    transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease;
+}
+
+.worker-back-btn {
+    flex: 0 0 auto;
+    padding: .55rem .85rem;
+    color: var(--worker-brand-dark);
+    background: #fff;
+    box-shadow: 0 10px 22px rgba(15,23,42,.14);
+    white-space: nowrap;
+}
+
+.worker-back-btn:hover,
+.worker-action-btn:hover,
+.worker-secondary-btn:hover {
+    transform: translateY(-1px);
+}
+
+.worker-form-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(320px, .65fr);
+    gap: 14px;
+    align-items: start;
+}
+
+.worker-main-stack,
+.worker-side-stack {
+    display: grid;
+    gap: 14px;
+}
+
+.worker-panel,
+.worker-actions-bar {
+    border: 1px solid var(--worker-border);
+    border-radius: 14px;
+    background: rgba(255,255,255,.96);
+    box-shadow: 0 8px 24px rgba(15,23,42,.045);
+}
+
+.worker-panel {
+    overflow: hidden;
+}
+
+.worker-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 14px 12px;
+    border-bottom: 1px solid var(--worker-border);
+    background:
+        radial-gradient(circle at right top, color-mix(in srgb, var(--worker-brand) 8%, transparent), transparent 38%),
+        linear-gradient(180deg, #fff, var(--worker-brand-soft));
+}
+
+.worker-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.worker-panel-icon {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 34px;
+    border-radius: 10px;
+    color: var(--worker-brand-dark);
+    background: #fff;
+    border: 1px solid var(--worker-border);
+}
+
+.worker-panel-title h2,
+.worker-preview-name {
+    margin: 0;
+    color: var(--worker-text);
+    font-size: .98rem;
+    font-weight: 900;
+    line-height: 1.15;
+}
+
+.worker-panel-title p,
+.worker-panel-copy,
+.worker-preview-user,
+.worker-help {
+    color: var(--worker-muted);
+    font-size: .78rem;
+    font-weight: 650;
+    line-height: 1.35;
+}
+
+.worker-panel-body {
+    padding: 14px;
+}
+
+.worker-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.worker-field {
+    display: grid;
+    gap: 6px;
+}
+
+.worker-field.is-full {
+    grid-column: 1 / -1;
+}
+
+.worker-label {
+    color: #334155;
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .035em;
+    text-transform: uppercase;
+}
+
+.worker-optional {
+    color: var(--worker-muted);
+    font-weight: 750;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.worker-control-wrap {
+    position: relative;
+}
+
+.worker-control-icon,
+.worker-control-action,
+.worker-select-caret,
+.worker-state-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+}
+
+.worker-control-icon {
+    left: 12px;
+}
+
+.worker-control-action,
+.worker-state-icon,
+.worker-select-caret {
+    right: 12px;
+}
+
+.worker-control-action {
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.worker-input {
+    width: 100%;
+    min-height: 42px;
+    padding: 0 12px 0 38px;
+    border: 1px solid var(--worker-border);
+    border-radius: 11px;
+    color: var(--worker-text);
+    background: #fff;
+    font-size: .9rem;
+    font-weight: 650;
+    transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+.worker-input.has-right {
+    padding-right: 38px;
+}
+
+.worker-input:focus {
     outline: none;
+    border-color: var(--worker-brand);
+    box-shadow: 0 0 0 4px var(--worker-ring);
 }
-.form-input:valid {
-    border-color: #86efac;
+
+.worker-input:disabled {
+    background: #F1F5F9;
+    color: #64748B;
+    cursor: not-allowed;
 }
-.form-input:invalid:not(:placeholder-shown) {
-    border-color: #fca5a5;
+
+.worker-message {
+    min-height: 16px;
+    font-size: .74rem;
+    font-weight: 800;
 }
-.password-strength {
-    height: 3px;
-    border-radius: 2px;
-    transition: all 0.3s ease;
+
+.worker-strength-track {
+    width: 100%;
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #E2E8F0;
+}
+
+.worker-strength-bar {
+    height: 100%;
+    width: 0;
+    border-radius: inherit;
+    transition: width .2s ease, background .2s ease;
+}
+
+.worker-preview-card {
+    padding: 14px;
+}
+
+.worker-preview-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.worker-preview-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    color: var(--worker-brand-dark);
+    background: color-mix(in srgb, var(--worker-accent) 18%, #FFFFFF);
+    border: 1px solid color-mix(in srgb, var(--worker-accent) 34%, var(--worker-border));
+    font-size: 1rem;
+    font-weight: 950;
+}
+
+.worker-preview-list,
+.worker-permission-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.worker-preview-row,
+.worker-permission,
+.worker-note {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 34px;
+    padding: 8px 10px;
+    border: 1px solid var(--worker-border);
+    border-radius: 11px;
+    background: #fff;
+}
+
+.worker-preview-row span,
+.worker-note span {
+    color: var(--worker-muted);
+    font-size: .76rem;
+    font-weight: 800;
+}
+
+.worker-preview-row strong,
+.worker-note strong {
+    color: var(--worker-text);
+    font-size: .8rem;
+    font-weight: 900;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.worker-permission {
+    justify-content: flex-start;
+    color: #475569;
+    font-size: .78rem;
+    font-weight: 750;
+}
+
+.worker-permission i {
+    width: 16px;
+    color: var(--worker-brand);
+}
+
+.worker-actions-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px;
+}
+
+.worker-required-note {
+    color: var(--worker-muted);
+    font-size: .78rem;
+    font-weight: 750;
+}
+
+.worker-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.worker-secondary-btn,
+.worker-action-btn {
+    border: 0;
+    padding: .65rem .95rem;
+    cursor: pointer;
+}
+
+.worker-secondary-btn {
+    color: #475569;
+    background: #F1F5F9;
+}
+
+.worker-action-btn {
+    color: #fff;
+    background: var(--worker-brand);
+    box-shadow: 0 12px 24px color-mix(in srgb, var(--worker-brand) 18%, transparent);
+}
+
+@media (max-width: 1100px) {
+    .worker-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .worker-hero,
+    .worker-actions-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .worker-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .worker-back-btn,
+    .worker-action-btn,
+    .worker-secondary-btn {
+        width: 100%;
+    }
 }
 </style>
 
-<div class="create-usuario-view min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-    <!-- Header Compacto -->
-    <div class="bg-gradient-to-r from-hotel-brown to-hotel-brown-dark text-white shadow-xl">
-        <div class="container mx-auto px-4 py-3">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h1 class="text-xl font-bold font-playfair flex items-center gap-2">
-                        <i class="fas fa-user-plus text-lg opacity-80"></i>
-                        <?= $esGestionHotel ? 'Nuevo Trabajador' : 'Nuevo Usuario' ?>
-                        <span class="text-hotel-gold text-sm font-normal ml-2">Crear cuenta de acceso</span>
-                    </h1>
+<div class="worker-page hotel-page p-4 sm:p-6">
+    <div class="worker-shell">
+        <section class="worker-hero">
+            <div class="worker-hero-main">
+                <div class="worker-hero-icon">
+                    <i class="fas fa-user-plus"></i>
                 </div>
-                <a href="<?= url('usuarios') ?>"
-                   class="bg-white/10 backdrop-blur text-white px-3 py-1.5 rounded-lg hover:bg-white/20 transition-all duration-300 flex items-center gap-1.5 border border-white/20 text-sm">
-                    <i class="fas fa-arrow-left text-xs"></i>
-                    <span>Volver</span>
-                </a>
+                <div>
+                    <div class="worker-kicker">Equipo del hotel</div>
+                    <h1 class="worker-title">Nuevo <?= htmlspecialchars($workerLabel, ENT_QUOTES, 'UTF-8') ?></h1>
+                    <p class="worker-subtitle">
+                        Crea una cuenta operativa clara, con rol definido, contacto y acceso listo para el equipo de recepcion y administracion.
+                    </p>
+                </div>
             </div>
-        </div>
-    </div>
+            <a href="<?= url('usuarios') ?>" class="worker-back-btn">
+                <i class="fas fa-arrow-left"></i>
+                Volver
+            </a>
+        </section>
 
-    <div class="container mx-auto px-4 py-4 max-w-6xl">
-        <!-- Formulario principal -->
         <form method="POST" action="<?= url('usuarios/store') ?>" id="createUserForm">
             <?= csrf_field() ?>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <!-- Columna 1: Datos de Cuenta -->
-                <div class="lg:col-span-1">
-                    <div class="bg-white rounded-lg shadow-sm p-4 h-full">
-                        <h3 class="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                            <i class="fas fa-user-circle text-hotel-brown text-sm"></i>
-                            Datos de Cuenta
-                        </h3>
-
-                        <!-- Nombre de Usuario -->
-                        <div class="mb-3">
-                            <label for="nombre_usuario" class="block text-xs font-semibold text-gray-700 mb-1">
-                                Nombre de Usuario *
-                            </label>
-                            <div class="relative">
-                                <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
-                                    <i class="fas fa-at"></i>
-                                </span>
-                                <input type="text"
-                                       id="nombre_usuario"
-                                       name="nombre_usuario"
-                                       value="<?= old('nombre_usuario') ?>"
-                                       required
-                                       minlength="4"
-                                       pattern="[a-zA-Z0-9_]+"
-                                       class="form-input w-full pl-8 pr-8 py-1.5 rounded-md text-sm"
-                                       placeholder="usuario123"
-                                       onkeyup="verificarDisponibilidad()">
-                                <span id="availability-icon" class="absolute right-2.5 top-1/2 transform -translate-y-1/2 hidden text-sm">
-                                    <i class="fas fa-circle-check"></i>
-                                </span>
+            <div class="worker-form-grid">
+                <div class="worker-main-stack">
+                    <section class="worker-panel">
+                        <div class="worker-panel-head">
+                            <div class="worker-panel-title">
+                                <div class="worker-panel-icon"><i class="fas fa-key"></i></div>
+                                <div>
+                                    <h2>Acceso al sistema</h2>
+                                    <p>Usuario y contrasena para iniciar sesion.</p>
+                                </div>
                             </div>
-                            <p id="availability-message" class="mt-0.5 text-xs hidden"></p>
                         </div>
-
-                        <!-- Contraseña -->
-                        <div class="mb-3">
-                            <label for="password" class="block text-xs font-semibold text-gray-700 mb-1">
-                                Contraseña *
-                            </label>
-                            <div class="relative">
-                                <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
-                                    <i class="fas fa-lock"></i>
-                                </span>
-                                <input type="password"
-                                       id="password"
-                                       name="password"
-                                       required
-                                       minlength="10"
-                                       class="form-input w-full pl-8 pr-8 py-1.5 rounded-md text-sm"
-                                       placeholder="••••••••"
-                                       onkeyup="checkPasswordStrength()">
-                                <button type="button" onclick="togglePassword()" class="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm">
-                                    <i class="fas fa-eye" id="toggleIcon"></i>
-                                </button>
-                            </div>
-                            <!-- Indicador de fuerza compacto -->
-                            <div class="mt-1">
-                                <div class="flex justify-between items-center">
-                                    <div class="w-full bg-gray-200 rounded-full h-0.5 mr-2">
-                                        <div id="strength-bar" class="password-strength w-0 h-full rounded-full"></div>
+                        <div class="worker-panel-body">
+                            <div class="worker-fields">
+                                <div class="worker-field is-full">
+                                    <label for="nombre_usuario" class="worker-label">Nombre de usuario *</label>
+                                    <div class="worker-control-wrap">
+                                        <span class="worker-control-icon"><i class="fas fa-at"></i></span>
+                                        <input type="text"
+                                               id="nombre_usuario"
+                                               name="nombre_usuario"
+                                               value="<?= htmlspecialchars(old('nombre_usuario'), ENT_QUOTES, 'UTF-8') ?>"
+                                               required
+                                               minlength="4"
+                                               pattern="[a-zA-Z0-9_]+"
+                                               class="worker-input has-right"
+                                               placeholder="usuario123"
+                                               onkeyup="verificarDisponibilidad()">
+                                        <span id="availability-icon" class="worker-state-icon hidden">
+                                            <i class="fas fa-circle-check"></i>
+                                        </span>
                                     </div>
-                                    <span id="strength-text" class="text-xs font-medium whitespace-nowrap"></span>
+                                    <p id="availability-message" class="worker-message hidden"></p>
+                                </div>
+
+                                <div class="worker-field">
+                                    <label for="password" class="worker-label">Contrasena *</label>
+                                    <div class="worker-control-wrap">
+                                        <span class="worker-control-icon"><i class="fas fa-lock"></i></span>
+                                        <input type="password"
+                                               id="password"
+                                               name="password"
+                                               required
+                                               minlength="10"
+                                               class="worker-input has-right"
+                                               placeholder="**********"
+                                               onkeyup="checkPasswordStrength()">
+                                        <button type="button" onclick="togglePassword()" class="worker-control-action" aria-label="Mostrar contrasena">
+                                            <i class="fas fa-eye" id="toggleIcon"></i>
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="worker-strength-track">
+                                            <div id="strength-bar" class="worker-strength-bar"></div>
+                                        </div>
+                                        <span id="strength-text" class="worker-message"></span>
+                                    </div>
+                                </div>
+
+                                <div class="worker-field">
+                                    <label for="password_confirmation" class="worker-label">Confirmar contrasena *</label>
+                                    <div class="worker-control-wrap">
+                                        <span class="worker-control-icon"><i class="fas fa-lock"></i></span>
+                                        <input type="password"
+                                               id="password_confirmation"
+                                               name="password_confirmation"
+                                               required
+                                               minlength="10"
+                                               class="worker-input has-right"
+                                               placeholder="**********"
+                                               onkeyup="checkPasswordMatch()">
+                                        <span id="match-icon" class="worker-state-icon hidden">
+                                            <i class="fas fa-check-circle"></i>
+                                        </span>
+                                    </div>
+                                    <p id="match-message" class="worker-message hidden"></p>
                                 </div>
                             </div>
                         </div>
+                    </section>
 
-                        <!-- Confirmar Contraseña -->
-                        <div class="mb-3">
-                            <label for="password_confirmation" class="block text-xs font-semibold text-gray-700 mb-1">
-                                Confirmar Contraseña *
-                            </label>
-                            <div class="relative">
-                                <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
-                                    <i class="fas fa-lock"></i>
-                                </span>
-                                <input type="password"
-                                       id="password_confirmation"
-                                       name="password_confirmation"
-                                       required
-                                       minlength="10"
-                                       class="form-input w-full pl-8 pr-8 py-1.5 rounded-md text-sm"
-                                       placeholder="••••••••"
-                                       onkeyup="checkPasswordMatch()">
-                                <span id="match-icon" class="absolute right-2.5 top-1/2 transform -translate-y-1/2 hidden text-sm">
-                                    <i class="fas fa-check-circle"></i>
-                                </span>
+                    <section class="worker-panel">
+                        <div class="worker-panel-head">
+                            <div class="worker-panel-title">
+                                <div class="worker-panel-icon"><i class="fas fa-id-card"></i></div>
+                                <div>
+                                    <h2>Datos del <?= htmlspecialchars($workerLabelLower, ENT_QUOTES, 'UTF-8') ?></h2>
+                                    <p>Informacion visible para operacion interna.</p>
+                                </div>
                             </div>
-                            <p id="match-message" class="mt-0.5 text-xs hidden"></p>
                         </div>
-                    </div>
+                        <div class="worker-panel-body">
+                            <div class="worker-fields">
+                                <div class="worker-field is-full">
+                                    <label for="nombre_completo" class="worker-label">Nombre completo *</label>
+                                    <div class="worker-control-wrap">
+                                        <span class="worker-control-icon"><i class="fas fa-user"></i></span>
+                                        <input type="text"
+                                               id="nombre_completo"
+                                               name="nombre_completo"
+                                               value="<?= htmlspecialchars(old('nombre_completo'), ENT_QUOTES, 'UTF-8') ?>"
+                                               required
+                                               class="worker-input"
+                                               placeholder="Nombre y apellidos"
+                                               onkeyup="actualizarPreview()">
+                                    </div>
+                                </div>
+
+                                <div class="worker-field">
+                                    <label for="email" class="worker-label">Email <span class="worker-optional">(opcional)</span></label>
+                                    <div class="worker-control-wrap">
+                                        <span class="worker-control-icon"><i class="fas fa-envelope"></i></span>
+                                        <input type="email"
+                                               id="email"
+                                               name="email"
+                                               value="<?= htmlspecialchars(old('email'), ENT_QUOTES, 'UTF-8') ?>"
+                                               class="worker-input"
+                                               placeholder="correo@hotel.com">
+                                    </div>
+                                </div>
+
+                                <div class="worker-field">
+                                    <label for="telefono" class="worker-label">Telefono <span class="worker-optional">(opcional)</span></label>
+                                    <div class="worker-control-wrap">
+                                        <span class="worker-control-icon"><i class="fas fa-phone"></i></span>
+                                        <input type="tel"
+                                               id="telefono"
+                                               name="telefono"
+                                               value="<?= htmlspecialchars(old('telefono'), ENT_QUOTES, 'UTF-8') ?>"
+                                               class="worker-input"
+                                               placeholder="(555) 123-4567">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="worker-panel">
+                        <div class="worker-panel-head">
+                            <div class="worker-panel-title">
+                                <div class="worker-panel-icon"><i class="fas fa-shield-alt"></i></div>
+                                <div>
+                                    <h2>Rol operativo</h2>
+                                    <p>Define el alcance de acceso dentro del hotel.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="worker-panel-body">
+                            <div class="worker-field">
+                                <label for="rol" class="worker-label">Rol *</label>
+                                <div class="worker-control-wrap">
+                                    <span class="worker-control-icon"><i class="fas fa-user-tag"></i></span>
+                                    <select id="rol" name="rol" required class="worker-input has-right appearance-none" onchange="actualizarPermisos()">
+                                        <option value="">Seleccione un rol</option>
+                                        <option value="gerente" <?= old('rol') == 'gerente' ? 'selected' : '' ?>>Gerente</option>
+                                        <option value="administrador" <?= old('rol') == 'administrador' ? 'selected' : '' ?>>Administrador</option>
+                                        <option value="recepcionista" <?= old('rol') == 'recepcionista' ? 'selected' : '' ?>>Recepcionista</option>
+                                    </select>
+                                    <span class="worker-select-caret"><i class="fas fa-chevron-down"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
                 </div>
 
-                <!-- Columna 2: Información Personal y Rol -->
-                <div class="lg:col-span-1 space-y-4">
-                    <!-- Información Personal -->
-                    <div class="bg-white rounded-lg shadow-sm p-4">
-                        <h3 class="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                            <i class="fas fa-id-card text-hotel-brown text-sm"></i>
-                            Información Personal
-                        </h3>
-
-                        <!-- Nombre Completo -->
-                        <div class="mb-3">
-                            <label for="nombre_completo" class="block text-xs font-semibold text-gray-700 mb-1">
-                                Nombre Completo *
-                            </label>
-                            <div class="relative">
-                                <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
-                                    <i class="fas fa-user"></i>
-                                </span>
-                                <input type="text"
-                                       id="nombre_completo"
-                                       name="nombre_completo"
-                                       value="<?= old('nombre_completo') ?>"
-                                       required
-                                       class="form-input w-full pl-8 pr-3 py-1.5 rounded-md text-sm"
-                                       placeholder="Juan Pérez García"
-                                       onkeyup="actualizarPreview()">
+                <aside class="worker-side-stack">
+                    <section class="worker-panel worker-preview-card">
+                        <div class="worker-preview-top">
+                            <div id="preview-avatar" class="worker-preview-avatar">?</div>
+                            <div class="min-w-0">
+                                <p id="preview-nombre" class="worker-preview-name">Nombre del <?= htmlspecialchars($workerLabelLower, ENT_QUOTES, 'UTF-8') ?></p>
+                                <p id="preview-usuario" class="worker-preview-user">@usuario</p>
                             </div>
                         </div>
 
-                        <!-- Email -->
-                        <div class="mb-3">
-                            <label for="email" class="block text-xs font-semibold text-gray-700 mb-1">
-                                Email <span class="font-normal text-gray-500">(opcional)</span>
-                            </label>
-                            <div class="relative">
-                                <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
-                                    <i class="fas fa-envelope"></i>
-                                </span>
-                                <input type="email"
-                                       id="email"
-                                       name="email"
-                                       value="<?= old('email') ?>"
-                                       class="form-input w-full pl-8 pr-3 py-1.5 rounded-md text-sm"
-                                       placeholder="usuario@hotel.com">
+                        <div class="worker-preview-list">
+                            <div class="worker-preview-row">
+                                <span>Rol</span>
+                                <strong id="preview-rol">-</strong>
+                            </div>
+                            <div class="worker-preview-row">
+                                <span>Email</span>
+                                <strong id="preview-email">-</strong>
+                            </div>
+                            <div class="worker-preview-row">
+                                <span>Telefono</span>
+                                <strong id="preview-telefono">-</strong>
                             </div>
                         </div>
+                    </section>
 
-                        <!-- Teléfono -->
-                        <div>
-                            <label for="telefono" class="block text-xs font-semibold text-gray-700 mb-1">
-                                Teléfono <span class="font-normal text-gray-500">(opcional)</span>
-                            </label>
-                            <div class="relative">
-                                <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
-                                    <i class="fas fa-phone"></i>
-                                </span>
-                                <input type="tel"
-                                       id="telefono"
-                                       name="telefono"
-                                       value="<?= old('telefono') ?>"
-                                       class="form-input w-full pl-8 pr-3 py-1.5 rounded-md text-sm"
-                                       placeholder="(555) 123-4567">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Rol -->
-                    <div class="bg-white rounded-lg shadow-sm p-4">
-                        <h3 class="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                            <i class="fas fa-shield-alt text-hotel-brown text-sm"></i>
-                            Rol y Permisos
-                        </h3>
-
-                        <div class="mb-3">
-                            <label for="rol" class="block text-xs font-semibold text-gray-700 mb-1">
-                                Rol *
-                            </label>
-                            <div class="relative">
-                                <span class="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm">
-                                    <i class="fas fa-user-tag"></i>
-                                </span>
-                                <select id="rol" name="rol" required
-                                        class="form-input w-full pl-8 pr-8 py-1.5 rounded-md text-sm appearance-none bg-white"
-                                        onchange="actualizarPermisos()">
-                                    <option value="">Seleccione un rol</option>
-                                    <option value="gerente" <?= old('rol') == 'gerente' ? 'selected' : '' ?>>Gerente</option>
-                                    <option value="administrador" <?= old('rol') == 'administrador' ? 'selected' : '' ?>>Administrador</option>
-                                    <option value="recepcionista" <?= old('rol') == 'recepcionista' ? 'selected' : '' ?>>Recepcionista</option>
-                                </select>
-                                <span class="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none text-xs">
-                                    <i class="fas fa-chevron-down"></i>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Columna 3: Vista Previa y Permisos -->
-                <div class="lg:col-span-1 space-y-4">
-                    <!-- Vista Previa -->
-                    <div class="bg-white rounded-lg shadow-sm p-4">
-                        <h3 class="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                            <i class="fas fa-eye text-hotel-brown text-sm"></i>
-                            Vista Previa
-                        </h3>
-
-                        <div class="bg-gray-50 rounded-md p-3">
-                            <div class="flex items-center gap-3 mb-3">
-                                <div id="preview-avatar" class="h-10 w-10 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <span class="text-gray-500 font-bold text-sm">?</span>
-                                </div>
-                                <div class="min-w-0">
-                                    <p id="preview-nombre" class="font-semibold text-gray-900 text-sm truncate">Nombre del usuario</p>
-                                    <p id="preview-usuario" class="text-xs text-gray-500 truncate">@usuario</p>
-                                </div>
-                            </div>
-
-                            <div class="space-y-1.5 text-xs">
-                                <div class="flex items-center gap-2">
-                                    <i class="fas fa-user-tag text-gray-400 w-3"></i>
-                                    <span class="text-gray-600">Rol:</span>
-                                    <span id="preview-rol" class="font-medium text-gray-900">-</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <i class="fas fa-envelope text-gray-400 w-3"></i>
-                                    <span class="text-gray-600">Email:</span>
-                                    <span id="preview-email" class="font-medium text-gray-900 truncate">-</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <i class="fas fa-phone text-gray-400 w-3"></i>
-                                    <span class="text-gray-600">Tel:</span>
-                                    <span id="preview-telefono" class="font-medium text-gray-900">-</span>
+                    <section class="worker-panel">
+                        <div class="worker-panel-head">
+                            <div class="worker-panel-title">
+                                <div class="worker-panel-icon"><i class="fas fa-user-shield"></i></div>
+                                <div>
+                                    <h2>Permisos del rol</h2>
+                                    <p>Resumen rapido del acceso.</p>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Permisos -->
-                    <div class="bg-white rounded-lg shadow-sm p-4">
-                        <h4 class="text-sm font-semibold text-gray-700 mb-2">
-                            Permisos del rol:
-                        </h4>
-                        <div id="permisosRol" class="space-y-1 text-xs">
-                            <p class="text-gray-500 italic">
-                                <i class="fas fa-info-circle mr-1"></i>
-                                Selecciona un rol
-                            </p>
+                        <div class="worker-panel-body">
+                            <div id="permisosRol" class="worker-permission-list">
+                                <p class="worker-panel-copy"><i class="fas fa-info-circle mr-1"></i>Selecciona un rol.</p>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    </section>
+
+                    <section class="worker-panel">
+                        <div class="worker-panel-body">
+                            <div class="worker-note">
+                                <span>Estado inicial</span>
+                                <strong>Activo al crear</strong>
+                            </div>
+                            <div class="worker-note mt-2">
+                                <span>Seguridad</span>
+                                <strong>10 caracteres minimo</strong>
+                            </div>
+                        </div>
+                    </section>
+                </aside>
             </div>
 
-            <!-- Botones de acción -->
-            <div class="bg-white rounded-lg shadow-sm p-3 mt-4">
-                <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
-                    <div class="text-xs text-gray-500">
-                        <i class="fas fa-asterisk text-xs text-red-500"></i>
-                        Campos obligatorios
-                    </div>
-
-                    <div class="flex gap-2">
-                        <a href="<?= url('usuarios') ?>"
-                           class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-all duration-300 flex items-center gap-2 text-sm font-medium">
-                            <i class="fas fa-times text-xs"></i>
-                            Cancelar
-                        </a>
-                        <button type="submit"
-                                class="px-4 py-2 bg-hotel-brown text-white rounded-md hover:bg-hotel-brown-dark transition-all duration-300 flex items-center gap-2 text-sm font-medium shadow hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                                id="submitBtn">
-                            <i class="fas fa-user-plus text-xs"></i>
-                            Crear Usuario
-                        </button>
-                    </div>
+            <div class="worker-actions-bar mt-4">
+                <div class="worker-required-note">
+                    <i class="fas fa-asterisk text-red-500"></i>
+                    Campos obligatorios
+                </div>
+                <div class="worker-actions">
+                    <a href="<?= url('usuarios') ?>" class="worker-secondary-btn">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </a>
+                    <button type="submit" class="worker-action-btn" id="submitBtn">
+                        <i class="fas fa-user-plus"></i>
+                        Crear <?= htmlspecialchars($workerLabel, ENT_QUOTES, 'UTF-8') ?>
+                    </button>
                 </div>
             </div>
         </form>
     </div>
 </div>
 
-<!-- JavaScript -->
 <script>
-// Función para mostrar/ocultar contraseña
 function togglePassword() {
     const passwordInput = document.getElementById('password');
     const passwordConfirmInput = document.getElementById('password_confirmation');
     const toggleIcon = document.getElementById('toggleIcon');
 
-    if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        passwordConfirmInput.type = 'text';
-        toggleIcon.classList.remove('fa-eye');
-        toggleIcon.classList.add('fa-eye-slash');
-    } else {
-        passwordInput.type = 'password';
-        passwordConfirmInput.type = 'password';
-        toggleIcon.classList.remove('fa-eye-slash');
-        toggleIcon.classList.add('fa-eye');
-    }
+    if (!passwordInput || !passwordConfirmInput || !toggleIcon) return;
+
+    const show = passwordInput.type === 'password';
+    passwordInput.type = show ? 'text' : 'password';
+    passwordConfirmInput.type = show ? 'text' : 'password';
+    toggleIcon.classList.toggle('fa-eye', !show);
+    toggleIcon.classList.toggle('fa-eye-slash', show);
 }
 
-// Verificar disponibilidad de usuario (simulado)
 let checkTimeout;
 function verificarDisponibilidad() {
     clearTimeout(checkTimeout);
     const input = document.getElementById('nombre_usuario');
     const icon = document.getElementById('availability-icon');
     const message = document.getElementById('availability-message');
+
+    if (!input || !icon || !message) return;
 
     if (input.value.length < 4) {
         icon.classList.add('hidden');
@@ -371,56 +753,54 @@ function verificarDisponibilidad() {
     }
 
     checkTimeout = setTimeout(() => {
-        const disponible = !['admin', 'user', 'test'].includes(input.value);
-
+        const disponible = !['admin', 'user', 'test'].includes(input.value.toLowerCase());
         icon.classList.remove('hidden');
         message.classList.remove('hidden');
 
         if (disponible) {
             icon.innerHTML = '<i class="fas fa-check-circle text-emerald-500"></i>';
             message.textContent = 'Disponible';
-            message.className = 'mt-0.5 text-xs text-emerald-600';
+            message.className = 'worker-message text-emerald-600';
         } else {
             icon.innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
             message.textContent = 'No disponible';
-            message.className = 'mt-0.5 text-xs text-red-600';
+            message.className = 'worker-message text-red-600';
         }
-    }, 500);
+    }, 400);
 }
 
-// Verificar fuerza de contraseña
 function checkPasswordStrength() {
-    const password = document.getElementById('password').value;
+    const password = document.getElementById('password')?.value || '';
     const strengthBar = document.getElementById('strength-bar');
     const strengthText = document.getElementById('strength-text');
+    if (!strengthBar || !strengthText) return;
 
     let strength = 0;
-    if (password.length >= 8) strength++;
+    if (password.length >= 10) strength++;
     if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
     if (password.match(/[0-9]/)) strength++;
     if (password.match(/[^a-zA-Z0-9]/)) strength++;
 
-    const strengthLevels = [
-        { width: '25%', color: 'bg-red-500', text: 'Débil' },
-        { width: '50%', color: 'bg-orange-500', text: 'Regular' },
-        { width: '75%', color: 'bg-yellow-500', text: 'Buena' },
-        { width: '100%', color: 'bg-emerald-500', text: 'Excelente' }
+    const levels = [
+        { width: '25%', color: '#EF4444', text: 'Debil', className: 'text-red-600' },
+        { width: '50%', color: '#F97316', text: 'Regular', className: 'text-orange-600' },
+        { width: '75%', color: '#EAB308', text: 'Buena', className: 'text-yellow-700' },
+        { width: '100%', color: '#10B981', text: 'Excelente', className: 'text-emerald-600' }
     ];
 
-    const level = strengthLevels[strength] || strengthLevels[0];
-
-    strengthBar.className = `password-strength ${level.color}`;
+    const level = levels[Math.max(0, strength - 1)] || levels[0];
     strengthBar.style.width = password.length > 0 ? level.width : '0';
+    strengthBar.style.background = level.color;
     strengthText.textContent = password.length > 0 ? level.text : '';
-    strengthText.className = `text-xs font-medium ${level.text === 'Débil' ? 'text-red-600' : level.text === 'Regular' ? 'text-orange-600' : level.text === 'Buena' ? 'text-yellow-600' : 'text-emerald-600'}`;
+    strengthText.className = 'worker-message ' + level.className;
 }
 
-// Verificar coincidencia de contraseñas
 function checkPasswordMatch() {
-    const password = document.getElementById('password').value;
-    const confirmation = document.getElementById('password_confirmation').value;
+    const password = document.getElementById('password')?.value || '';
+    const confirmation = document.getElementById('password_confirmation')?.value || '';
     const icon = document.getElementById('match-icon');
     const message = document.getElementById('match-message');
+    if (!icon || !message) return;
 
     if (confirmation.length === 0) {
         icon.classList.add('hidden');
@@ -434,85 +814,90 @@ function checkPasswordMatch() {
     if (password === confirmation) {
         icon.innerHTML = '<i class="fas fa-check-circle text-emerald-500"></i>';
         message.textContent = 'Coinciden';
-        message.className = 'mt-0.5 text-xs text-emerald-600';
+        message.className = 'worker-message text-emerald-600';
     } else {
         icon.innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
         message.textContent = 'No coinciden';
-        message.className = 'mt-0.5 text-xs text-red-600';
+        message.className = 'worker-message text-red-600';
     }
 }
 
-// Permisos por rol - CORREGIDOS para coincidir con editar.php
 const permisosPorRol = {
     gerente: [
         { icon: 'fa-crown', permiso: 'Acceso total al sistema' },
-        { icon: 'fa-users', permiso: 'Gestión completa de usuarios' },
+        { icon: 'fa-users', permiso: 'Gestion completa de usuarios' },
         { icon: 'fa-chart-line', permiso: 'Todos los reportes' },
-        { icon: 'fa-cog', permiso: 'Configuración del sistema' }
+        { icon: 'fa-cog', permiso: 'Configuracion del sistema' }
     ],
     administrador: [
-        { icon: 'fa-tachometer-alt', permiso: 'Gestión operativa' },
+        { icon: 'fa-tachometer-alt', permiso: 'Gestion operativa' },
         { icon: 'fa-chart-bar', permiso: 'Reportes' },
         { icon: 'fa-cash-register', permiso: 'Caja' }
     ],
     recepcionista: [
-        { icon: 'fa-calendar-check', permiso: 'Check-in/Check-out' },
-        { icon: 'fa-bed', permiso: 'Consultas básicas' }
+        { icon: 'fa-calendar-check', permiso: 'Check-in y check-out' },
+        { icon: 'fa-bed', permiso: 'Consultas basicas' }
     ]
 };
 
-// Actualizar permisos cuando cambie el rol
 function actualizarPermisos() {
     const rolSelect = document.getElementById('rol');
     const permisosDiv = document.getElementById('permisosRol');
-    const rolActual = rolSelect.value;
+    const rolActual = rolSelect?.value || '';
 
     actualizarPreview();
+    if (!permisosDiv) return;
 
     if (!rolActual) {
-        permisosDiv.innerHTML = '<p class="text-gray-500 italic"><i class="fas fa-info-circle mr-1"></i>Selecciona un rol</p>';
+        permisosDiv.innerHTML = '<p class="worker-panel-copy"><i class="fas fa-info-circle mr-1"></i>Selecciona un rol.</p>';
         return;
     }
 
     permisosDiv.innerHTML = '';
-
-    if (permisosPorRol[rolActual]) {
-        permisosPorRol[rolActual].forEach(item => {
-            permisosDiv.innerHTML += `
-                <div class="flex items-center gap-1.5 text-gray-600">
-                    <i class="fas ${item.icon} text-hotel-gold w-3"></i>
-                    <span>${item.permiso}</span>
-                </div>
-            `;
-        });
-    }
+    (permisosPorRol[rolActual] || []).forEach(item => {
+        permisosDiv.innerHTML += `
+            <div class="worker-permission">
+                <i class="fas ${item.icon}"></i>
+                <span>${item.permiso}</span>
+            </div>
+        `;
+    });
 }
 
-// Actualizar vista previa
+function titleRole(rol) {
+    return rol ? rol.charAt(0).toUpperCase() + rol.slice(1) : '-';
+}
+
 function actualizarPreview() {
-    const nombreCompleto = document.getElementById('nombre_completo').value || 'Nombre del usuario';
-    const nombreUsuario = document.getElementById('nombre_usuario').value || 'usuario';
-    const email = document.getElementById('email').value || '-';
-    const telefono = document.getElementById('telefono').value || '-';
-    const rol = document.getElementById('rol').value || '-';
-
-    // Avatar
+    const nombreCompleto = document.getElementById('nombre_completo')?.value || 'Nombre del <?= htmlspecialchars($workerLabelLower, ENT_QUOTES, 'UTF-8') ?>';
+    const nombreUsuario = document.getElementById('nombre_usuario')?.value || 'usuario';
+    const email = document.getElementById('email')?.value || '-';
+    const telefono = document.getElementById('telefono')?.value || '-';
+    const rol = document.getElementById('rol')?.value || '';
     const avatar = document.getElementById('preview-avatar');
-    if (nombreCompleto !== 'Nombre del usuario') {
-        const iniciales = nombreCompleto.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-        avatar.innerHTML = `<span class="text-hotel-brown-dark font-bold text-sm">${iniciales}</span>`;
-        avatar.className = 'h-10 w-10 bg-hotel-gold rounded-full flex items-center justify-center flex-shrink-0';
+
+    if (avatar) {
+        if (nombreCompleto.indexOf('Nombre del') !== 0) {
+            const iniciales = nombreCompleto.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            avatar.textContent = iniciales || '?';
+        } else {
+            avatar.textContent = '?';
+        }
     }
 
-    document.getElementById('preview-nombre').textContent = nombreCompleto;
-    document.getElementById('preview-usuario').textContent = '@' + nombreUsuario;
-    document.getElementById('preview-email').textContent = email;
-    document.getElementById('preview-telefono').textContent = telefono;
-    document.getElementById('preview-rol').textContent = rol ? rol.charAt(0).toUpperCase() + rol.slice(1) : '-';
+    const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    };
+
+    setText('preview-nombre', nombreCompleto);
+    setText('preview-usuario', '@' + nombreUsuario);
+    setText('preview-email', email);
+    setText('preview-telefono', telefono);
+    setText('preview-rol', titleRole(rol));
 }
 
-// Formateo de teléfono
-document.getElementById('telefono').addEventListener('input', function(e) {
+function formatPhoneInput(e) {
     let value = e.target.value.replace(/\D/g, '');
     let formattedValue = '';
 
@@ -528,67 +913,65 @@ document.getElementById('telefono').addEventListener('input', function(e) {
 
     e.target.value = formattedValue;
     actualizarPreview();
-});
+}
 
-// Validación del formulario
-document.getElementById('createUserForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+document.addEventListener('DOMContentLoaded', function() {
+    const telefono = document.getElementById('telefono');
+    if (telefono) telefono.addEventListener('input', formatPhoneInput);
 
-    const password = document.getElementById('password').value;
-    const confirmation = document.getElementById('password_confirmation').value;
+    ['nombre_completo', 'nombre_usuario', 'email'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', actualizarPreview);
+    });
 
-    if (password !== confirmation) {
-        Swal.fire({
-            title: 'Error',
-            text: 'Las contraseñas no coinciden',
-            icon: 'error',
-            confirmButtonColor: '#DC2626'
+    const form = document.getElementById('createUserForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const password = document.getElementById('password')?.value || '';
+            const confirmation = document.getElementById('password_confirmation')?.value || '';
+            const nombreCompleto = document.getElementById('nombre_completo')?.value || '';
+            const nombreUsuario = document.getElementById('nombre_usuario')?.value || '';
+            const rol = document.getElementById('rol')?.value || '';
+
+            if (password !== confirmation) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ title: 'Error', text: 'Las contrasenas no coinciden', icon: 'error', confirmButtonColor: '#DC2626' });
+                }
+                return;
+            }
+
+            if (typeof Swal === 'undefined') {
+                this.submit();
+                return;
+            }
+
+            Swal.fire({
+                title: 'Crear <?= htmlspecialchars($workerLabelLower, ENT_QUOTES, 'UTF-8') ?>',
+                html: `<div class="text-left text-sm">
+                    <p><strong>Nombre:</strong> ${nombreCompleto}</p>
+                    <p><strong>Usuario:</strong> @${nombreUsuario}</p>
+                    <p><strong>Rol:</strong> ${titleRole(rol)}</p>
+                </div>`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: 'var(--brand-primary, #2563EB)',
+                cancelButtonColor: '#64748B',
+                confirmButtonText: 'Crear',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true
+            }).then(result => {
+                if (result.isConfirmed) this.submit();
+            });
         });
-        return;
     }
 
-    const nombreCompleto = document.getElementById('nombre_completo').value;
-    const nombreUsuario = document.getElementById('nombre_usuario').value;
-    const rol = document.getElementById('rol').value;
-
-    Swal.fire({
-        title: '¿Crear usuario?',
-        html: `<div class="text-left text-sm">
-            <p><strong>Nombre:</strong> ${nombreCompleto}</p>
-            <p><strong>Usuario:</strong> @${nombreUsuario}</p>
-            <p><strong>Rol:</strong> ${rol.charAt(0).toUpperCase() + rol.slice(1)}</p>
-        </div>`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#6B4423',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Sí, crear',
-        cancelButtonText: 'Cancelar',
-        reverseButtons: true
-    }).then((result) => {
-        if (result.isConfirmed) {
-            this.submit();
-        }
-    });
-});
-
-// Animación de entrada
-document.addEventListener('DOMContentLoaded', function() {
-    const view = document.querySelector('.create-usuario-view');
-    if (view) view.classList.add('loaded');
-
-    if (document.getElementById('rol').value) actualizarPermisos();
-
+    if (document.getElementById('rol')?.value) actualizarPermisos();
     actualizarPreview();
 });
-
-// Listeners
-document.getElementById('nombre_completo').addEventListener('input', actualizarPreview);
-document.getElementById('nombre_usuario').addEventListener('input', actualizarPreview);
-document.getElementById('email').addEventListener('input', actualizarPreview);
 </script>
 
-<!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <?php clear_old_input(); ?>

@@ -443,8 +443,13 @@ public function estadisticasImagenesAction() {
 /**
  * Limpiar imágenes huérfanas (que no están referenciadas en BD)
  */
+ /**
+  * LEGACY INVENTARIO FASE 2D: metodo no ruteado con dependencia historica.
+  * No exponer como API nueva; usar InventarioService::verificarDisponibilidad.
+  */
  public function getProductosDescuentoReservacion($id)
 {
+    // LEGACY INVENTARIO FASE 2D: congelado, no ruteado; usar InventarioService.
     header('Content-Type: application/json');
     
     try {

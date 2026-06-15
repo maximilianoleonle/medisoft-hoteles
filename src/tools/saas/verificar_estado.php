@@ -161,7 +161,17 @@ $tablasSaas = [
     'hoteles',
     'hotel_configuracion',
     'hotel_usuarios',
+    'hotel_modulos',
+    'hotel_branding',
     'logs_auditoria',
+    'saas_admins',
+    'modulos',
+    'planes',
+    'plan_modulos',
+    'reporte_links',
+    'reporte_link_envios',
+    'pwa_push_subscriptions',
+    'proveedores',
 ];
 
 $tablasDisponibles = [];
@@ -184,6 +194,20 @@ if ($tablasDisponibles['migrations']) {
         '20260526_007_add_hotel_id_movimientos_inventario.sql',
         '20260526_008_add_hotel_id_reservaciones_base.sql',
         '20260526_009_add_hotel_id_caja_base.sql',
+        '20260526_010_create_saas_admins.sql',
+        '20260526_011_create_modulos_hotel_modulos.sql',
+        '20260526_012_create_planes_plan_modulos.sql',
+        '20260526_013_create_hotel_branding.sql',
+        '20260526_014_add_pwa_icons_to_hotel_branding.sql',
+        '20260611_001_create_reporte_links.sql',
+        '20260611_002_create_reporte_link_envios.sql',
+        '20260611_003_create_notificaciones.sql',
+        '20260611_004_create_pwa_push_subscriptions.sql',
+        '20260614_001_add_modulo_tarifas_dinamicas.sql',
+        '20260614_002_fase_1b_modulos_los_cedros_auditoria.sql',
+        '20260614_003_fix_vista_caja_actual_invoker.sql',
+        '20260614_004_fase_2f_catalogo_proveedores.sql',
+        '20260615_001_fase_2j_unique_proveedores.sql',
     ];
 
     $stmt = $pdo->prepare('SELECT estado FROM migrations WHERE nombre = :nombre LIMIT 1');
@@ -291,6 +315,8 @@ if ($tablasDisponibles['hotel_usuarios'] && $tablasDisponibles['hoteles']) {
 $tablasPermitidasConHotelId = [
     'hotel_configuracion',
     'hotel_usuarios',
+    'hotel_modulos',
+    'hotel_branding',
     'logs_auditoria',
     'tipos_habitacion',
     'habitaciones',
@@ -309,6 +335,11 @@ $tablasPermitidasConHotelId = [
     'cajas',
     'cortes_caja',
     'movimientos_caja',
+    'notificaciones',
+    'pwa_push_subscriptions',
+    'reporte_links',
+    'reporte_link_envios',
+    'proveedores',
 ];
 
 $stmt = $pdo->prepare(
@@ -444,7 +475,7 @@ if ($hotel === null || !isset($hotel['id'])) {
         if ($total === $conLosCedros) {
             ok("Tabla {$tabla} tiene {$conLosCedros}/{$total} registros asignados a Los Cedros");
         } else {
-            errorCheck("Tabla {$tabla} tiene {$conLosCedros}/{$total} registros asignados a Los Cedros");
+            warn("Tabla {$tabla} tiene distribucion multihotel: {$conLosCedros}/{$total} registros asignados a Los Cedros");
         }
 
         if (existeIndice($pdo, $databaseName, $tabla, $metadata['indice'])) {
@@ -498,7 +529,7 @@ if ($hotel === null || !isset($hotel['id'])) {
         if ($total === $conLosCedros) {
             ok("Tabla {$tabla} tiene {$conLosCedros}/{$total} registros asignados a Los Cedros");
         } else {
-            errorCheck("Tabla {$tabla} tiene {$conLosCedros}/{$total} registros asignados a Los Cedros");
+            warn("Tabla {$tabla} tiene distribucion multihotel: {$conLosCedros}/{$total} registros asignados a Los Cedros");
         }
 
         if (existeIndice($pdo, $databaseName, $tabla, $metadata['indice'])) {
@@ -552,7 +583,7 @@ if ($hotel === null || !isset($hotel['id'])) {
         if ($total === $conLosCedros) {
             ok("Tabla {$tabla} tiene {$conLosCedros}/{$total} registros asignados a Los Cedros");
         } else {
-            errorCheck("Tabla {$tabla} tiene {$conLosCedros}/{$total} registros asignados a Los Cedros");
+            warn("Tabla {$tabla} tiene distribucion multihotel: {$conLosCedros}/{$total} registros asignados a Los Cedros");
         }
 
         if (existeIndice($pdo, $databaseName, $tabla, $metadata['indice'])) {
@@ -606,7 +637,7 @@ if ($hotel === null || !isset($hotel['id'])) {
         if ($total === $conLosCedros) {
             ok("Tabla {$tabla} tiene {$conLosCedros}/{$total} registros asignados a Los Cedros");
         } else {
-            errorCheck("Tabla {$tabla} tiene {$conLosCedros}/{$total} registros asignados a Los Cedros");
+            warn("Tabla {$tabla} tiene distribucion multihotel: {$conLosCedros}/{$total} registros asignados a Los Cedros");
         }
 
         if (existeIndice($pdo, $databaseName, $tabla, $metadata['indice'])) {
@@ -629,7 +660,7 @@ if ($hotel === null || !isset($hotel['id'])) {
         if ($reservacionesFallback === 2) {
             ok('Reservaciones 48 y 49 tienen hotel_id de Los Cedros');
         } else {
-            errorCheck("Reservaciones 48 y 49 con hotel_id de Los Cedros: {$reservacionesFallback}/2");
+            warn("Reservaciones historicas 48 y 49 no pertenecen ambas a Los Cedros en esta base multihotel: {$reservacionesFallback}/2");
         }
     }
 }
@@ -671,7 +702,7 @@ if ($hotel === null || !isset($hotel['id'])) {
         if ($total === $conLosCedros) {
             ok("Tabla {$tabla} tiene {$conLosCedros}/{$total} registros asignados a Los Cedros");
         } else {
-            errorCheck("Tabla {$tabla} tiene {$conLosCedros}/{$total} registros asignados a Los Cedros");
+            warn("Tabla {$tabla} tiene distribucion multihotel: {$conLosCedros}/{$total} registros asignados a Los Cedros");
         }
 
         if (existeIndice($pdo, $databaseName, $tabla, $metadata['indice'])) {
@@ -680,6 +711,60 @@ if ($hotel === null || !isset($hotel['id'])) {
             errorCheck("Indice {$metadata['indice']} no existe");
         }
     }
+}
+
+if ($tablasDisponibles['proveedores'] ?? false) {
+    if (existeColumna($pdo, $databaseName, 'proveedores', 'hotel_id')) {
+        ok('Tabla proveedores tiene hotel_id post Fase 2F');
+
+        $stmt = $pdo->query(
+            'SELECT COUNT(*) AS total,
+                    SUM(CASE WHEN hotel_id IS NULL THEN 1 ELSE 0 END) AS hotel_id_null
+             FROM proveedores'
+        );
+        $conteo = $stmt->fetch(PDO::FETCH_ASSOC);
+        $hotelIdNull = (int) ($conteo['hotel_id_null'] ?? 0);
+
+        if ($hotelIdNull === 0) {
+            ok('Tabla proveedores no tiene hotel_id NULL en registros existentes');
+        } else {
+            errorCheck("Tabla proveedores tiene {$hotelIdNull} registros con hotel_id NULL");
+        }
+
+        if (existeIndice($pdo, $databaseName, 'proveedores', 'idx_proveedores_hotel_activo')) {
+            ok('Indice idx_proveedores_hotel_activo existe');
+        } else {
+            errorCheck('Indice idx_proveedores_hotel_activo no existe');
+        }
+
+        if (existeColumna($pdo, $databaseName, 'proveedores', 'nombre_activo_key')) {
+            ok('Columna generada nombre_activo_key existe para proveedores');
+        } else {
+            errorCheck('Columna generada nombre_activo_key no existe para proveedores');
+        }
+
+        if (existeIndice($pdo, $databaseName, 'proveedores', 'uk_proveedores_hotel_rfc')) {
+            ok('Indice unico uk_proveedores_hotel_rfc existe');
+        } else {
+            errorCheck('Indice unico uk_proveedores_hotel_rfc no existe');
+        }
+
+        if (existeIndice($pdo, $databaseName, 'proveedores', 'uk_proveedores_hotel_nombre_activo')) {
+            ok('Indice unico uk_proveedores_hotel_nombre_activo existe');
+        } else {
+            errorCheck('Indice unico uk_proveedores_hotel_nombre_activo no existe');
+        }
+
+        if (existeForeignKey($pdo, $databaseName, 'proveedores', 'fk_proveedores_hotel')) {
+            ok('Foreign key fk_proveedores_hotel existe hacia hoteles(id)');
+        } else {
+            errorCheck('Foreign key fk_proveedores_hotel no existe hacia hoteles(id)');
+        }
+    } else {
+        errorCheck('Tabla proveedores no tiene hotel_id post Fase 2F');
+    }
+} else {
+    errorCheck('Tabla proveedores no existe post Fase 2F');
 }
 
 $tablasOperativasSinHotelIdEsperadas = [

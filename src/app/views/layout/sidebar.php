@@ -10,6 +10,8 @@ $mostrarReservaciones = $menuModuloActivo('reservaciones');
 $mostrarHuespedes = $menuModuloActivo('huespedes');
 $mostrarCaja = $menuModuloActivo('caja');
 $mostrarInventario = $menuModuloActivo('inventario');
+$mostrarProveedores = $mostrarInventario;
+$mostrarCompras = $mostrarInventario;
 $mostrarFacturacion = $menuModuloActivo('facturacion');
 $mostrarReportes = $menuModuloActivo('reportes');
 $mostrarUsuariosModulo = $menuModuloActivo('usuarios');
@@ -20,7 +22,7 @@ $sidebarPuedeUsuarios = can('usuarios.view') || in_array($sidebarRolHotel, ['ger
 $sidebarPuedeConfiguracion = can('configuracion.view') || in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $sidebarPuedeTarifas = is_gerente() || is_admin() || in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes;
-$mostrarOperaciones = $mostrarCaja || $mostrarInventario || $mostrarFacturacion;
+$mostrarOperaciones = $mostrarCaja || $mostrarInventario || $mostrarProveedores || $mostrarCompras || $mostrarFacturacion;
 $filtrarMenuHotel = function_exists('hotel_menu_should_filter_modules') && hotel_menu_should_filter_modules();
 $mostrarUsuariosAdmin = (!$filtrarMenuHotel && can('usuarios.view')) || ($filtrarMenuHotel && $mostrarUsuariosModulo && $sidebarPuedeUsuarios);
 $mostrarConfiguracion = $mostrarConfiguracionModulo && $sidebarPuedeConfiguracion;
@@ -249,11 +251,31 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
 
             <?php if ($mostrarInventario): ?>
             <a href="<?= url('inventario') ?>"
-               class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'inventario') !== false ? 'active' : '' ?>">
+               class="nav-item <?= strpos($sidebarRequestPath, '/inventario') === 0 ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-box"></i>
                 </div>
                 <span class="nav-text">Inventarios</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarProveedores): ?>
+            <a href="<?= url('proveedores') ?>"
+               class="nav-item <?= strpos($sidebarRequestPath, '/proveedores') === 0 ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <span class="nav-text">Proveedores</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarCompras): ?>
+            <a href="<?= url('compras') ?>"
+               class="nav-item <?= strpos($sidebarRequestPath, '/compras') === 0 ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <span class="nav-text">Compras</span>
             </a>
             <?php endif; ?>
 

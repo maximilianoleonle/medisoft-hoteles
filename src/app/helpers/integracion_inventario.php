@@ -1,4 +1,7 @@
 <?php
+// LEGACY INVENTARIO FASE 2C: guia historica congelada. Contiene ejemplos y
+// mantenimiento potencialmente destructivo; no ejecutar ni enlazar sin fase propia.
+// LEGACY INVENTARIO FASE 2D: las funciones con escrituras quedan bloqueadas por defecto.
 /**
  * GUÍA DE INTEGRACIÓN - SISTEMA DE INVENTARIO AUTOMÁTICO
  * Los Cedros
@@ -6,6 +9,19 @@
  * Este archivo muestra cómo integrar el sistema de inventario automático
  * con los módulos de Reservaciones y Habitaciones
  */
+
+if (!function_exists('inventario_legacy_fase2d_escritura_permitida')) {
+    function inventario_legacy_fase2d_escritura_permitida($funcion) {
+        $permitido = defined('MEDISOFT_ALLOW_LEGACY_INVENTORY_GUIDE_WRITES')
+            && MEDISOFT_ALLOW_LEGACY_INVENTORY_GUIDE_WRITES === true;
+
+        if (!$permitido) {
+            error_log('Bloqueada funcion legacy de inventario Fase 2D: ' . $funcion);
+        }
+
+        return $permitido;
+    }
+}
 
 // ============================================================================
 // INTEGRACIÓN CON RESERVACIONCONTROLLER
@@ -421,6 +437,10 @@ function agregar_datos_inventario_reporte_general($fecha_inicio, $fecha_fin) {
  * Función para configurar inventario automático al crear/editar tipos de habitación
  */
 function configurar_inventario_tipo_habitacion($tipo_habitacion_id, $configuracion = []) {
+    if (!inventario_legacy_fase2d_escritura_permitida(__FUNCTION__)) {
+        return false;
+    }
+
     try {
         $inventarioModel = new Inventario();
         
@@ -464,6 +484,10 @@ function configurar_inventario_tipo_habitacion($tipo_habitacion_id, $configuraci
  * Función para ejecutar mantenimiento de inventario (ejecutar semanalmente)
  */
 function mantenimiento_inventario() {
+    if (!inventario_legacy_fase2d_escritura_permitida(__FUNCTION__)) {
+        return false;
+    }
+
     try {
         $db = Database::getInstance();
         

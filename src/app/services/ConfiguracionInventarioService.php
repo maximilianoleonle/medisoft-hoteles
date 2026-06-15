@@ -1,4 +1,6 @@
 <?php
+// LEGACY INVENTARIO FASE 2C: servicio congelado. Une configuracion contra productos
+// legacy y no debe conectarse a rutas nuevas sin una fase de migracion especifica.
 class ConfiguracionInventarioService {
     private $db;
     

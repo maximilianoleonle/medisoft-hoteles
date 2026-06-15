@@ -1287,6 +1287,9 @@
                                                 <a href="<?= url('inventario/editar/'.$producto['id']) ?>" class="act-btn edit" title="Editar">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
+                                                <a href="<?= url('inventario/ajuste/'.$producto['id']) ?>" class="act-btn edit" title="Ajustar stock">
+                                                    <i class="fas fa-sliders-h"></i>
+                                                </a>
                                                 <button type="button"
                                                         onclick="confirmarEliminarProducto(<?= $producto['id'] ?>, '<?= htmlspecialchars($producto['nombre']) ?>', <?= $producto['stock_actual'] ?>)"
                                                         class="act-btn del" title="Eliminar">
@@ -1335,6 +1338,9 @@
                                 <div class="prod-actions">
                                     <a href="<?= url('inventario/editar/'.$producto['id']) ?>" class="act-btn edit" title="Editar">
                                         <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="<?= url('inventario/ajuste/'.$producto['id']) ?>" class="act-btn edit" title="Ajustar stock">
+                                        <i class="fas fa-sliders-h"></i>
                                     </a>
                                     <button type="button"
                                             onclick="confirmarEliminarProducto(<?= $producto['id'] ?>, '<?= htmlspecialchars($producto['nombre']) ?>', <?= $producto['stock_actual'] ?>)"

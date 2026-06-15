@@ -9,6 +9,7 @@ require_once __DIR__ . '/../../core/View.php';
 require_once __DIR__ . '/../models/Inventario.php';
 require_once __DIR__ . '/../models/MovimientoInventario.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
+require_once __DIR__ . '/../services/AuditService.php';
 
 class InventarioController extends Controller {
     
@@ -28,6 +29,63 @@ class InventarioController extends Controller {
     // Inicializar modelos
         $this->inventarioModel = new Inventario();
         $this->movimientoModel = new MovimientoInventario();
+    }
+
+    private function usuarioIdActualInventario(): ?int {
+        $usuarioId = $_SESSION['user_id'] ?? $_SESSION['usuario_id'] ?? null;
+        return $usuarioId ? (int) $usuarioId : null;
+    }
+
+    private function limitarTextoInventario(string $texto, int $limite): string {
+        if (function_exists('mb_substr')) {
+            return mb_substr($texto, 0, $limite, 'UTF-8');
+        }
+
+        return substr($texto, 0, $limite);
+    }
+
+    private function registrarAuditoriaConfiguracionInventario(array $cambios): void {
+        if (empty($cambios)) {
+            return;
+        }
+
+        try {
+            $hotelId = function_exists('obtenerHotelIdActualCompat') ? obtenerHotelIdActualCompat() : null;
+            $datosAntes = [];
+            $datosDespues = [];
+
+            foreach ($cambios as $cambio) {
+                $clave = ($cambio['tipo_habitacion'] ?? 'tipo') . '#' . ($cambio['producto_id'] ?? 'producto');
+                $datosAntes[$clave] = [
+                    'tipo_habitacion' => $cambio['tipo_habitacion'] ?? null,
+                    'producto_id' => $cambio['producto_id'] ?? null,
+                    'producto_nombre' => $cambio['producto_nombre'] ?? null,
+                    'cantidad' => $cambio['cantidad_anterior'] ?? null,
+                    'activo' => $cambio['activo_anterior'] ?? null,
+                ];
+                $datosDespues[$clave] = [
+                    'tipo_habitacion' => $cambio['tipo_habitacion'] ?? null,
+                    'producto_id' => $cambio['producto_id'] ?? null,
+                    'producto_nombre' => $cambio['producto_nombre'] ?? null,
+                    'cantidad' => $cambio['cantidad_nueva'] ?? null,
+                    'activo' => $cambio['activo_nuevo'] ?? null,
+                    'descuento_automatico_cambio' => (bool)($cambio['descuento_automatico_cambio'] ?? false),
+                    'origen' => 'inventario/configuracion',
+                ];
+            }
+
+            AuditService::record('inventario.configuracion_actualizada', [
+                'hotel_id' => $hotelId,
+                'usuario_id' => $this->usuarioIdActualInventario(),
+                'entidad_tipo' => 'inventario_configuracion',
+                'entidad_id' => 'hotel:' . (string)$hotelId,
+                'descripcion' => 'Configuracion de inventario por tipo de habitacion actualizada',
+                'datos_antes' => $datosAntes,
+                'datos_despues' => $datosDespues,
+            ]);
+        } catch (Throwable $e) {
+            error_log('No se pudo auditar configuracion de inventario: ' . $e->getMessage());
+        }
     }
 
     private function inventarioPdfBranding(): array {
@@ -408,13 +466,16 @@ public function generarPdfMovimientosAction() {
         error_log("Fecha desde: " . $fecha_desde);
         error_log("Fecha hasta: " . $fecha_hasta);
         
-        // Primero, obtener el rango de fechas que tiene movimientos
+        $hotel_id = obtenerHotelIdActualCompat();
+
+        // Primero, obtener el rango de fechas que tiene movimientos del hotel actual
         $db = Database::getInstance();
         $sql_rango = "SELECT MIN(DATE(created_at)) as fecha_min, 
                              MAX(DATE(created_at)) as fecha_max,
                              COUNT(*) as total
-                      FROM movimientos_inventario";
-        $stmt_rango = $db->query($sql_rango);
+                      FROM movimientos_inventario
+                      WHERE hotel_id = ?";
+        $stmt_rango = $db->query($sql_rango, [$hotel_id]);
         $rango = $stmt_rango->fetch();
         
         error_log("Rango de fechas en BD: " . $rango['fecha_min'] . " a " . $rango['fecha_max']);
@@ -426,12 +487,17 @@ public function generarPdfMovimientosAction() {
                p.codigo as producto_codigo,
                h.numero as habitacion_numero
         FROM movimientos_inventario m
-        LEFT JOIN inventario_productos p ON m.producto_id = p.id
-        LEFT JOIN habitaciones h ON m.habitacion_id = h.id
-        WHERE DATE(m.created_at) BETWEEN ? AND ?
+        LEFT JOIN inventario_productos p
+            ON m.producto_id = p.id
+            AND p.hotel_id = m.hotel_id
+        LEFT JOIN habitaciones h
+            ON m.habitacion_id = h.id
+            AND h.hotel_id = m.hotel_id
+        WHERE m.hotel_id = ?
+        AND DATE(m.created_at) BETWEEN ? AND ?
         ORDER BY m.created_at DESC";
         
-        $stmt = $db->query($sql, [$fecha_desde, $fecha_hasta]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_desde, $fecha_hasta]);
         $movimientos = $stmt ? $stmt->fetchAll() : [];
         
         error_log("Movimientos encontrados: " . count($movimientos));
@@ -1398,13 +1464,22 @@ public function debugMovimientosDateAction() {
         // AGREGAR ESTA LÍNEA
         error_log("Config procesada: " . print_r($config, true));
         
+        $cambiosAuditables = [];
+
         foreach ($config as $tipo_hab => $productos) {
-    foreach ($productos as $prod_id => $cantidad) {
-        // Convertir cantidad a entero
-        $cantidad = intval($cantidad);
-        $this->inventarioModel->actualizarConfiguracion($tipo_hab, $prod_id, $cantidad);
-    }
-}
+            if (!is_array($productos)) {
+                throw new Exception('Configuracion invalida para el tipo de habitacion');
+            }
+
+            foreach ($productos as $prod_id => $cantidad) {
+                $resultado = $this->inventarioModel->actualizarConfiguracion($tipo_hab, $prod_id, $cantidad);
+                if (is_array($resultado) && !empty($resultado['changed'])) {
+                    $cambiosAuditables[] = $resultado;
+                }
+            }
+        }
+
+        $this->registrarAuditoriaConfiguracionInventario($cambiosAuditables);
         
         set_mensaje('Configuración actualizada correctamente', 'success');
         
@@ -1528,11 +1603,18 @@ public function debugMovimientosDateAction() {
      * Ajuste de inventario (para correcciones)
      */
     public function ajusteAction() {
-        $productos = $this->inventarioModel->getAllWithCategory();
+        $producto_id = (int)($this->route_params['id'] ?? 0);
+        $producto = $producto_id > 0 ? $this->inventarioModel->getByIdWithCategory($producto_id) : null;
+
+        if (!$producto) {
+            set_mensaje('Producto no encontrado para el hotel actual', 'error');
+            $this->redirect('inventario');
+            return;
+        }
         
         View::renderTemplate('inventario/ajuste', [
             'title' => 'Ajuste de Inventario - ' . current_hotel_display_name(),
-            'productos' => $productos
+            'producto' => $producto
         ]);
     }
     
@@ -1540,62 +1622,116 @@ public function debugMovimientosDateAction() {
      * Procesar ajuste de inventario
      */
     public function procesarAjusteAction() {
+        $producto_id = (int)($this->route_params['id'] ?? 0);
+        $redirectUrl = $producto_id > 0 ? 'inventario/ajuste/' . $producto_id : 'inventario';
+
         if (!$this->isPost()) {
-            $this->redirect('inventario');
+            $this->redirect($redirectUrl);
             return;
         }
         
         $this->validateCSRF();
         
         try {
-            $producto_id = intval($this->getPost('producto_id'));
-            $stock_nuevo = intval($this->getPost('stock_nuevo'));
-            $motivo = trim($this->getPost('motivo'));
+            if ($producto_id <= 0) {
+                throw new Exception('Producto no encontrado');
+            }
+
+            $tipo = strtoupper(trim((string)$this->getPost('tipo', '')));
+            $cantidadRaw = trim((string)$this->getPost('cantidad', ''));
+            $motivo = trim((string)$this->getPost('motivo', ''));
+            $observaciones = trim((string)$this->getPost('observaciones', ''));
             
             // Obtener producto actual
             $producto = $this->inventarioModel->getByIdWithCategory($producto_id);
             
             if (!$producto) {
+                $redirectUrl = 'inventario';
                 throw new Exception('Producto no encontrado');
             }
             
-            $stock_anterior = intval($producto['stock_actual']);
-            
-            // Solo procesar si hay diferencia
-            if ($stock_anterior !== $stock_nuevo) {
-                $this->db->safeBeginTransaction();
-
-                // Actualizar stock
-                $actualizado = $this->inventarioModel->actualizarProductoBase($producto_id, [
-                    'stock_actual' => $stock_nuevo
-                ]);
-                
-                if ($actualizado) {
-                    // Calcular diferencia
-                    $diferencia = $stock_nuevo - $stock_anterior;
-                    
-                    // Registrar movimiento de ajuste
-                    $movimiento_data = [
-    'producto_id' => $producto_id,
-    'tipo_movimiento' => 'AJUSTE',
-    'cantidad' => abs($diferencia),
-    'stock_anterior' => $stock_anterior,
-    'stock_posterior' => $stock_nuevo,
-    'motivo' => 'Ajuste manual: ' . $motivo,
-    'usuario_id' => $_SESSION['usuario_id'] ?? null,
-    'created_at' => date('Y-m-d H:i:s') // AGREGAR ESTA LÍNEA
-];
-                    $this->movimientoModel->crearMovimientoManual($movimiento_data);
-
-                    $this->db->safeCommit();
-                    set_mensaje('Ajuste realizado correctamente', 'success');
-                } else {
-                    throw new Exception('No se pudo actualizar el stock');
-                }
-            } else {
-                set_mensaje('No hay cambios en el stock', 'info');
+            if (!in_array($tipo, ['ENTRADA', 'SALIDA'], true)) {
+                throw new Exception('Debe seleccionar si el ajuste suma o resta stock');
             }
+
+            if ($cantidadRaw === '' || !is_numeric($cantidadRaw)) {
+                throw new Exception('La cantidad del ajuste debe ser numerica');
+            }
+
+            $cantidad = round((float)$cantidadRaw, 2);
+            if ($cantidad <= 0) {
+                throw new Exception('La cantidad del ajuste debe ser mayor a cero');
+            }
+
+            if ($motivo === '') {
+                throw new Exception('El motivo del ajuste es obligatorio');
+            }
+
+            $stock_anterior = round((float)$producto['stock_actual'], 2);
+            $diferencia = $tipo === 'ENTRADA' ? $cantidad : -$cantidad;
+            $stock_nuevo = round($stock_anterior + $diferencia, 2);
+
+            if ($stock_nuevo < 0) {
+                throw new Exception('El ajuste dejaria stock negativo. Stock disponible: ' . number_format($stock_anterior, 2));
+            }
+
+            $this->db->safeBeginTransaction();
+
+            // Actualizar stock
+            $actualizado = $this->inventarioModel->actualizarProductoBase($producto_id, [
+                'stock_actual' => $stock_nuevo
+            ]);
             
+            if (!$actualizado) {
+                throw new Exception('No se pudo actualizar el stock');
+            }
+
+            $motivoMovimiento = 'Ajuste manual: ' . $motivo;
+            if ($observaciones !== '') {
+                $motivoMovimiento .= ' | Obs: ' . $observaciones;
+            }
+
+            // Registrar movimiento de ajuste en la tabla moderna.
+            $movimiento_data = [
+                'producto_id' => $producto_id,
+                'tipo_movimiento' => 'AJUSTE',
+                'cantidad' => abs($diferencia),
+                'stock_anterior' => $stock_anterior,
+                'stock_posterior' => $stock_nuevo,
+                'motivo' => $this->limitarTextoInventario($motivoMovimiento, 255),
+                'usuario_id' => $this->usuarioIdActualInventario(),
+                'created_at' => date('Y-m-d H:i:s')
+            ];
+
+            $movimiento_id = $this->movimientoModel->crearMovimientoManual($movimiento_data);
+            if (!$movimiento_id) {
+                throw new Exception('No se pudo registrar el movimiento de inventario');
+            }
+
+            AuditService::record('inventario.ajuste_stock', [
+                'hotel_id' => obtenerHotelIdActualCompat(),
+                'usuario_id' => $this->usuarioIdActualInventario(),
+                'entidad_tipo' => 'inventario_producto',
+                'entidad_id' => (string)$producto_id,
+                'descripcion' => 'Ajuste manual de stock',
+                'datos_antes' => [
+                    'stock_actual' => $stock_anterior,
+                ],
+                'datos_despues' => [
+                    'stock_actual' => $stock_nuevo,
+                    'diferencia' => $diferencia,
+                    'tipo_ajuste' => $tipo,
+                    'cantidad' => $cantidad,
+                    'motivo' => $motivo,
+                    'observaciones' => $observaciones !== '' ? $observaciones : null,
+                    'movimiento_id' => (int)$movimiento_id,
+                ],
+            ]);
+
+            $this->db->safeCommit();
+            set_mensaje('Ajuste realizado correctamente', 'success');
+            $this->redirect('inventario/movimientos');
+            return;
 	        } catch (Exception $e) {
             if ($this->db->enTransaccion()) {
                 $this->db->safeRollBack();
@@ -1603,7 +1739,7 @@ public function debugMovimientosDateAction() {
 	            set_mensaje('Error: ' . $e->getMessage(), 'error');
 	        }
         
-        $this->redirect('inventario');
+        $this->redirect($redirectUrl);
     }
     
     /**

@@ -362,7 +362,18 @@ $tablasMigradasConHotelId = array_merge(
 );
 
 $tablasPermitidasConHotelIdPostReservaciones1B = array_merge(
-    ['hotel_configuracion', 'hotel_usuarios', 'logs_auditoria'],
+    [
+        'hotel_configuracion',
+        'hotel_usuarios',
+        'hotel_modulos',
+        'hotel_branding',
+        'logs_auditoria',
+        'notificaciones',
+        'pwa_push_subscriptions',
+        'reporte_links',
+        'reporte_link_envios',
+        'proveedores',
+    ],
     array_keys($tablasHabitacionesMigradas),
     array_keys($tablasInventarioBaseMigradas),
     array_keys($tablasMovimientosInventarioMigradas),
@@ -375,8 +386,9 @@ $tablas = [
         'hoteles' => ['necesita_hotel_id' => false, 'orden' => 0, 'riesgo' => 'bajo', 'motivo' => 'Tabla raiz de hoteles; no debe tener hotel_id propio.'],
         'hotel_configuracion' => ['necesita_hotel_id' => true, 'orden' => 0, 'riesgo' => 'bajo', 'motivo' => 'Tabla SaaS ya creada para configuracion por hotel.'],
         'hotel_usuarios' => ['necesita_hotel_id' => true, 'orden' => 0, 'riesgo' => 'bajo', 'motivo' => 'Tabla pivote SaaS ya creada para relacionar usuarios y hoteles.'],
-        'logs_auditoria' => ['necesita_hotel_id' => true, 'orden' => 0, 'riesgo' => 'medio', 'motivo' => 'Auditoria multi-hotel futura; todavia no debe activarse en modulos.'],
+        'logs_auditoria' => ['necesita_hotel_id' => true, 'orden' => 0, 'riesgo' => 'medio', 'motivo' => 'Auditoria multi-hotel base; escritura gradual permitida para login/logout.'],
         'migrations' => ['necesita_hotel_id' => false, 'orden' => 0, 'riesgo' => 'bajo', 'motivo' => 'Registro global de migraciones; no es informacion operativa por hotel.'],
+        'proveedores' => ['necesita_hotel_id' => true, 'orden' => 13, 'riesgo' => 'bajo', 'motivo' => 'Catalogo Fase 2F por hotel; no debe tocar compras, caja ni CxP.'],
     ],
     'habitaciones' => [
         'habitaciones' => ['necesita_hotel_id' => true, 'orden' => 2, 'riesgo' => 'medio', 'motivo' => 'Entidad operativa central; primera candidata, pero conecta con reservaciones y ocupacion.'],
@@ -571,7 +583,7 @@ foreach ($tablas as $grupo => $grupoTablas) {
                 if ($totalHotel === $conLosCedros) {
                     preflightOk("Tabla {$tabla} tiene {$conLosCedros}/{$totalHotel} registros asignados a Los Cedros");
                 } else {
-                    preflightError("Tabla {$tabla} tiene {$conLosCedros}/{$totalHotel} registros asignados a Los Cedros");
+                    preflightWarn("Tabla {$tabla} tiene distribucion multihotel: {$conLosCedros}/{$totalHotel} registros asignados a Los Cedros");
                 }
             }
 

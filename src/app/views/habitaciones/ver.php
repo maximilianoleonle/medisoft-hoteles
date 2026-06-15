@@ -3464,7 +3464,7 @@ $mantenimientos_count = count($mantenimientos_programados);
                                 </button>
                             </div>
                         <?php elseif ($habitacion_estado == 'limpieza'): ?>
-                            <form method="POST" action="<?= url('habitaciones/limpieza/' . $habitacion_id) ?>">
+                            <form method="POST" action="<?= url('habitaciones/' . $habitacion_id . '/liberar') ?>">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="accion" value="finalizar">
                                 <button type="submit" class="rd-btn rd-btn-success" style="width: 100%;">

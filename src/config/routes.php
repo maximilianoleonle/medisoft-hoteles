@@ -113,10 +113,11 @@ $router->post('/habitaciones/imagen/principal', [
     'action' => 'establecerPrincipal'
 ]);
 
-$router->post('/habitaciones/{id:[0-9]+}/reordenar-imagenes', [
-    'controller' => 'Habitacion',
-    'action' => 'reordenarImagenes'
-]);
+// Pendiente Fase 1B: no existe HabitacionController::reordenarImagenesAction().
+// $router->post('/habitaciones/{id:[0-9]+}/reordenar-imagenes', [
+//     'controller' => 'Habitacion',
+//     'action' => 'reordenarImagenes'
+// ]);
 
 
 
@@ -139,7 +140,7 @@ $router->get('/api/inventario/verificar-stock/{id:[0-9]+}', [
 // Ruta para el check-in - cambiar add() por post()
 $router->post('/reservaciones/checkin/{id:[0-9]+}', [
     'controller' => 'Reservacion',
-    'action' => 'checkin'
+    'action' => 'checkIn'
 ]);
 
 $router->get('/caja/descargar-pdf/{id:[0-9]+}', ['controller' => 'Caja', 'action' => 'descargarPDF']);
@@ -199,6 +200,21 @@ $router->post('/notificaciones/marcar-todas-leidas', ['controller' => 'Notificac
 $router->post('/notificaciones/{id:[0-9]+}/leer', ['controller' => 'Notificacion', 'action' => 'marcarLeida']);
 $router->post('/notificaciones/{id:[0-9]+}/resolver', ['controller' => 'Notificacion', 'action' => 'resolver']);
 $router->post('/notificaciones/{id:[0-9]+}/descartar', ['controller' => 'Notificacion', 'action' => 'descartar']);
+
+// Fase 2F: catalogo minimo de proveedores. No incluye compras, pagos ni caja.
+$router->get('/proveedores', ['controller' => 'Proveedor', 'action' => 'index']);
+$router->get('/proveedores/crear', ['controller' => 'Proveedor', 'action' => 'crear']);
+$router->post('/proveedores', ['controller' => 'Proveedor', 'action' => 'guardar']);
+$router->get('/proveedores/{id:[0-9]+}/editar', ['controller' => 'Proveedor', 'action' => 'editar']);
+$router->post('/proveedores/{id:[0-9]+}/actualizar', ['controller' => 'Proveedor', 'action' => 'actualizar']);
+$router->post('/proveedores/{id:[0-9]+}/desactivar', ['controller' => 'Proveedor', 'action' => 'desactivar']);
+$router->post('/proveedores/{id:[0-9]+}/reactivar', ['controller' => 'Proveedor', 'action' => 'reactivar']);
+
+// Fase 2R: compras en borrador. Sin recepcion, pagos, caja, CxP ni documentos.
+$router->get('/compras', ['controller' => 'Compra', 'action' => 'index']);
+$router->get('/compras/crear', ['controller' => 'Compra', 'action' => 'crear']);
+$router->post('/compras', ['controller' => 'Compra', 'action' => 'guardar']);
+
 $router->get('/api/pwa-push/public-key', ['controller' => 'PwaPush', 'action' => 'publicKey']);
 $router->post('/api/pwa-push/subscribe', ['controller' => 'PwaPush', 'action' => 'subscribe']);
 $router->post('/api/pwa-push/unsubscribe', ['controller' => 'PwaPush', 'action' => 'unsubscribe']);
@@ -237,7 +253,9 @@ $router->post('/habitaciones/cancelar-mantenimiento-programado/{id:[0-9]+}', ['c
 $router->post('/habitaciones/{id:[0-9]+}/liberar', ['controller' => 'Habitacion', 'action' => 'liberar']);
 $router->post('/habitaciones/{id:[0-9]+}/cambiar-estado', ['controller' => 'Habitacion', 'action' => 'cambiarEstado']);
 $router->post('/habitaciones/liberar-multiples', ['controller' => 'Habitacion', 'action' => 'liberarMultiples']);
-$router->get('/habitaciones/{id:[0-9]+}/imagen', ['controller' => 'Habitacion', 'action' => 'verImagen']);
+// Pendiente Fase 1B: no existe HabitacionController::verImagenAction().
+// Usar /habitaciones/{id}/imagenes o /api/habitaciones/{id}/imagen-info.
+// $router->get('/habitaciones/{id:[0-9]+}/imagen', ['controller' => 'Habitacion', 'action' => 'verImagen']);
 $router->get('/habitaciones/{id:[0-9]+}/historial', ['controller' => 'Habitacion', 'action' => 'historial']);
 
 // Gestión de Huéspedes
@@ -255,8 +273,10 @@ $router->get('/reservaciones/crear', ['controller' => 'Reservacion', 'action' =>
 $router->post('/reservaciones/guardar', ['controller' => 'Reservacion', 'action' => 'guardar']);
 $router->post('/reservaciones/cotizacion-pdf', ['controller' => 'Reservacion', 'action' => 'cotizacionPdf']);
 $router->get('/reservaciones/ver/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'ver']);
-$router->get('/reservaciones/editar/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'editar']);
-$router->post('/reservaciones/actualizar/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'actualizar']);
+// Pendiente Fase 1B: no existen ReservacionController::editarAction() ni actualizarAction().
+// El flujo seguro registrado hoy es /reservaciones/editar-habitaciones/{id}.
+// $router->get('/reservaciones/editar/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'editar']);
+// $router->post('/reservaciones/actualizar/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'actualizar']);
 $router->post('/reservaciones/check-in/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'checkIn']);
 $router->post('/reservaciones/check-out/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'checkOut']);
 
@@ -291,9 +311,9 @@ $router->get('/reservaciones/obtener-notas', [
     'action' => 'obtenerNotas'
 ]);
 // Rutas AJAX para reservaciones
-$router->post('/reservaciones/verificar-disponibilidad', ['controller' => 'Reservacion', 'action' => 'verificarDisponibilidad']);
-$router->get('/reservaciones/buscar-huesped', ['controller' => 'Reservacion', 'action' => 'buscarHuesped']);
-$router->get('/reservaciones/habitaciones-disponibles', ['controller' => 'Reservacion', 'action' => 'habitacionesDisponibles']);
+$router->post('/reservaciones/verificar-disponibilidad', ['controller' => 'Api', 'action' => 'verificarDisponibilidad']);
+$router->get('/reservaciones/buscar-huesped', ['controller' => 'Api', 'action' => 'buscarHuespedes']);
+$router->get('/reservaciones/habitaciones-disponibles', ['controller' => 'Api', 'action' => 'habitacionesDisponibles']);
 
 $router->get('/reservaciones/exportar-pdf', ['controller' => 'Reservacion', 'action' => 'exportarPDF']);
 $router->get('/reservaciones/exportar-excel', ['controller' => 'Reservacion', 'action' => 'exportarExcel']);
@@ -339,6 +359,8 @@ $router->get('/inventarios/movimientos', ['controller' => 'Inventario', 'action'
 // Rutas de inventario - exportación
 $router->get('/inventario/exportar', ['controller' => 'Inventario', 'action' => 'exportar']);
 $router->post('/inventario/generarPdfMovimientos', ['controller' => 'Inventario', 'action' => 'generarPdfMovimientos']);
+$router->get('/inventario/ajuste/{id:[0-9]+}', ['controller' => 'Inventario', 'action' => 'ajuste']);
+$router->post('/inventario/ajuste/{id:[0-9]+}', ['controller' => 'Inventario', 'action' => 'procesarAjuste']);
 
 // Ruta debug deshabilitada en produccion.
 // $router->get('/inventario/debug-movimientos', ['controller' => 'Inventario', 'action' => 'debugMovimientos']);
@@ -405,6 +427,7 @@ $router->post('/configuracion/update', ['controller' => 'Configuracion', 'action
 $router->post('/configuracion/pwa-push/{id:[0-9]+}/revocar', ['controller' => 'PwaPush', 'action' => 'revocarDispositivo']);
 $router->get('/configuracion/backup', ['controller' => 'Configuracion', 'action' => 'backup']);
 $router->post('/configuracion/backup/create', ['controller' => 'Configuracion', 'action' => 'crearBackup']);
+$router->get('/configuracion/backup/descargar', ['controller' => 'Configuracion', 'action' => 'descargarBackup']);
 $router->get('/configuracion/tarifas', ['controller' => 'Tarifas', 'action' => 'index']);
 $router->get('/configuracion/tarifas/crear', ['controller' => 'Tarifas', 'action' => 'crear']);
 $router->post('/configuracion/tarifas/crear', ['controller' => 'Tarifas', 'action' => 'crear']);

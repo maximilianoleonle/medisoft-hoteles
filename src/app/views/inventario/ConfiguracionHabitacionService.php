@@ -1,4 +1,6 @@
 <?php
+// LEGACY INVENTARIO FASE 2C: clase ubicada en carpeta de vistas y congelada.
+// Usa productos legacy; el flujo oficial actual es /inventario/configuracion.
 
 namespace App\Services;
 

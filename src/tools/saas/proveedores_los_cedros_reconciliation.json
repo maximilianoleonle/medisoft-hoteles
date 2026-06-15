@@ -1,0 +1,181 @@
+{
+  "phase": "2L",
+  "description": "Lista revisable para preparar importacion idempotente de proveedores historicos de Los Cedros.",
+  "source_db": "medisoft_hoteles",
+  "source_table": "movimientos_caja",
+  "source_column": "proveedor",
+  "target_db": "medisoft_hoteles_import",
+  "target_table": "proveedores",
+  "target_hotel_slug": "los-cedros",
+  "rules": {
+    "approved_candidates_are_insertable": true,
+    "excluded_candidates_are_never_inserted": true,
+    "match_strategy": "normalized provider name per hotel",
+    "rfc": null,
+    "created_by": null,
+    "does_not_touch_cash_movements": true,
+    "requires_backup_before_apply": true
+  },
+  "candidates": [
+    {
+      "nombre": "Tortillería San José",
+      "approved": true,
+      "reason": "Proveedor recurrente de despensa en movimientos historicos."
+    },
+    {
+      "nombre": "La burbujita",
+      "approved": true,
+      "reason": "Proveedor recurrente en movimientos historicos."
+    },
+    {
+      "nombre": "Ales minisúper",
+      "approved": true,
+      "reason": "Proveedor recurrente de despensa en movimientos historicos."
+    },
+    {
+      "nombre": "mini super Mónica",
+      "approved": true,
+      "reason": "Proveedor recurrente de despensa en movimientos historicos."
+    },
+    {
+      "nombre": "carnicería",
+      "approved": true,
+      "reason": "Proveedor recurrente de despensa en movimientos historicos."
+    },
+    {
+      "nombre": "Esposa de Don mitra",
+      "approved": true,
+      "reason": "Nombre operativo usado como proveedor historico."
+    },
+    {
+      "nombre": "GAS DE OAXACA",
+      "approved": true,
+      "reason": "Proveedor de servicios identificado en movimientos historicos."
+    },
+    {
+      "nombre": "Mochilas Marvin",
+      "approved": true,
+      "reason": "Proveedor historico con mas de un uso."
+    },
+    {
+      "nombre": "centro de atención Telcel",
+      "approved": true,
+      "reason": "Proveedor de servicios identificado en movimientos historicos."
+    },
+    {
+      "nombre": "doc. Manuel",
+      "approved": true,
+      "reason": "Nombre operativo usado como proveedor historico."
+    },
+    {
+      "nombre": "Eduardo",
+      "approved": true,
+      "reason": "Nombre operativo usado como proveedor historico."
+    },
+    {
+      "nombre": "El pollon",
+      "approved": true,
+      "reason": "Proveedor de despensa identificado en movimientos historicos."
+    },
+    {
+      "nombre": "ferretería",
+      "approved": true,
+      "reason": "Proveedor de mantenimiento identificado en movimientos historicos."
+    },
+    {
+      "nombre": "JOSE DE JESUS",
+      "approved": true,
+      "reason": "Nombre operativo usado como proveedor historico."
+    },
+    {
+      "nombre": "Juan Eduardo Gómez",
+      "approved": true,
+      "reason": "Nombre operativo usado como proveedor historico."
+    },
+    {
+      "nombre": "Manuel",
+      "approved": true,
+      "reason": "Nombre operativo usado como proveedor historico."
+    },
+    {
+      "nombre": "Mary",
+      "approved": true,
+      "reason": "Nombre operativo usado como proveedor historico."
+    },
+    {
+      "nombre": "Mueblería Rodante (la combi de don ANGEL )",
+      "approved": true,
+      "reason": "Proveedor identificado en movimientos historicos."
+    },
+    {
+      "nombre": "OXXO",
+      "approved": true,
+      "reason": "Proveedor identificado en movimientos historicos."
+    },
+    {
+      "nombre": "Papelería",
+      "approved": true,
+      "reason": "Proveedor identificado en movimientos historicos."
+    },
+    {
+      "nombre": "Pastelería Marlen",
+      "approved": true,
+      "reason": "Proveedor de despensa identificado en movimientos historicos."
+    },
+    {
+      "nombre": "pollería el pallón",
+      "approved": true,
+      "reason": "Proveedor de despensa identificado en movimientos historicos."
+    },
+    {
+      "nombre": "Purificadora de agua (don chucho )",
+      "approved": true,
+      "reason": "Proveedor de despensa identificado en movimientos historicos."
+    },
+    {
+      "nombre": "Rafel León",
+      "approved": true,
+      "reason": "Nombre operativo usado como proveedor historico."
+    },
+    {
+      "nombre": "refaccionaria Diaz",
+      "approved": true,
+      "reason": "Proveedor de servicios identificado en movimientos historicos."
+    },
+    {
+      "nombre": "roca blanca",
+      "approved": true,
+      "reason": "Proveedor de despensa identificado en movimientos historicos."
+    },
+    {
+      "nombre": "Sheila",
+      "approved": true,
+      "reason": "Nombre operativo usado como proveedor historico."
+    },
+    {
+      "nombre": "Sr. Mitra",
+      "approved": true,
+      "reason": "Nombre operativo usado como proveedor historico."
+    },
+    {
+      "nombre": "verdulería",
+      "approved": true,
+      "reason": "Proveedor de despensa identificado en movimientos historicos."
+    },
+    {
+      "nombre": "huésped",
+      "approved": false,
+      "reason": "Texto generico; no debe convertirse automaticamente en proveedor."
+    },
+    {
+      "nombre": "no se",
+      "approved": false,
+      "reason": "Placeholder ambiguo; no debe convertirse automaticamente en proveedor."
+    },
+    {
+      "nombre": "sin definir",
+      "approved": false,
+      "reason": "Placeholder ambiguo; no debe convertirse automaticamente en proveedor."
+    }
+  ]
+}

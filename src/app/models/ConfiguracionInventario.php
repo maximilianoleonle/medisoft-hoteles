@@ -1,5 +1,7 @@
-// app/models/ConfiguracionInventario.php
 <?php
+// app/models/ConfiguracionInventario.php
+// LEGACY INVENTARIO FASE 2C: archivo congelado. No usar para flujos nuevos;
+// conserva referencias antiguas a productos/inventario_config_habitacion solo para auditoria.
 namespace App\Models;
 
 use App\Core\Model;

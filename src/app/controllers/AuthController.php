@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../services/AuditService.php';
+
 /**
  * Controlador de Autenticación
  * Los Cedros
@@ -150,6 +152,7 @@ class AuthController extends Controller {
             ]);
 
             $this->logLogin($usuario['id'], true);
+            $this->auditLogin((int) $usuario['id'], true, $nombre_usuario, (int) $hotel['hotel_id'], 'hotel_login');
             set_mensaje('Bienvenido ' . $usuario['nombre_completo'], 'success');
             $this->redirect('dashboard');
         }
@@ -160,11 +163,13 @@ class AuthController extends Controller {
             $_SESSION[$bloqueo_key] = time() + 900;
             unset($_SESSION[$intentos_key]);
             $this->logLogin(null, false, $nombre_usuario);
+            $this->auditLogin(null, false, $nombre_usuario, (int) $hotel['hotel_id'], 'hotel_login');
             set_mensaje('Cuenta bloqueada temporalmente por multiples intentos fallidos. Intenta en 15 minutos.', 'error');
             $this->redirect($loginPath);
         }
 
         $this->logLogin(null, false, $nombre_usuario);
+        $this->auditLogin(null, false, $nombre_usuario, (int) $hotel['hotel_id'], 'hotel_login');
         $restantes = 5 - $_SESSION[$intentos_key];
         set_mensaje('Usuario o contrasena no validos para este hotel. Te quedan ' . $restantes . ' intento(s).', 'error');
         $this->redirect($loginPath);
@@ -217,6 +222,7 @@ class AuthController extends Controller {
 
             login($usuario['id'], $remember);
             $this->logLogin($usuario['id'], true);
+            $this->auditLogin((int) $usuario['id'], true, $nombre_usuario, null, 'login');
             set_mensaje('Bienvenido ' . $usuario['nombre_completo'], 'success');
             $this->redirect('dashboard');
 
@@ -228,11 +234,13 @@ class AuthController extends Controller {
                 $_SESSION[$bloqueo_key] = time() + 900; // 15 minutos
                 unset($_SESSION[$intentos_key]);
                 $this->logLogin(null, false, $nombre_usuario);
+                $this->auditLogin(null, false, $nombre_usuario, null, 'login');
                 set_mensaje('Cuenta bloqueada temporalmente por múltiples intentos fallidos. Intenta en 15 minutos.', 'error');
                 $this->redirect('login');
             }
 
             $this->logLogin(null, false, $nombre_usuario);
+            $this->auditLogin(null, false, $nombre_usuario, null, 'login');
             $restantes = 5 - $_SESSION[$intentos_key];
             set_mensaje('Usuario o contraseña incorrectos. Te quedan ' . $restantes . ' intento(s).', 'error');
             $this->redirect('login');
@@ -255,12 +263,14 @@ class AuthController extends Controller {
         // Verificar que esté autenticado
         if (is_authenticated()) {
             $user_id = user_id();
+            $hotel_id = function_exists('current_hotel_id') ? current_hotel_id() : ($_SESSION['hotel_id'] ?? null);
             
             // Cerrar sesión
             logout();
             
             // Registrar en log
             $this->logLogout($user_id);
+            $this->auditLogout((int) $user_id, $hotel_id ? (int) $hotel_id : null);
             
             // Mensaje
             set_mensaje('Sesión cerrada correctamente', 'info');
@@ -351,6 +361,19 @@ class AuthController extends Controller {
             error_log("Error al registrar log de login: " . $e->getMessage());
         }
     }
+
+    private function auditLogin($user_id, $success, $username = null, $hotel_id = null, $contexto = 'login') {
+        try {
+            if ($success && $user_id) {
+                AuditService::loginSuccess((int) $user_id, $hotel_id ? (int) $hotel_id : null, $contexto);
+                return;
+            }
+
+            AuditService::loginFailed($username, $hotel_id ? (int) $hotel_id : null, $contexto);
+        } catch (Throwable $e) {
+            error_log("Error al registrar auditoria de login: " . $e->getMessage());
+        }
+    }
     
     /**
      * Registrar logout en log
@@ -375,6 +398,16 @@ class AuthController extends Controller {
             
         } catch (Exception $e) {
             error_log("Error al registrar log de logout: " . $e->getMessage());
+        }
+    }
+
+    private function auditLogout($user_id, $hotel_id = null) {
+        try {
+            if ($user_id) {
+                AuditService::logout((int) $user_id, $hotel_id ? (int) $hotel_id : null);
+            }
+        } catch (Throwable $e) {
+            error_log("Error al registrar auditoria de logout: " . $e->getMessage());
         }
     }
 }
