@@ -28,7 +28,7 @@ Fuente nueva fundacional:
 Estado:
 
 - fundacion read-only hasta Fase 3B;
-- Reanclaje Fase 3C: estado formal `CIERRE_TECNICO_3C_COMPLETADO_QA_MANUAL_PENDIENTE`;
+- Reanclaje Fase 3C: estado formal `FASE_3C_VALIDADA_MANUALMENTE`;
 - Fase 3C-A tiene preview read-only ruteado, protegido, navegable y verificado automaticamente;
 - Fase 3C-A y 3C-B fueron validadas manualmente por el usuario;
 - Fase 3C-B tiene generacion manual POST activa desde compras recibidas elegibles;
@@ -51,6 +51,7 @@ Regla vigente despues del reanclaje:
 - La auditoria de seguridad 3C es una capa de verificacion; no corrige datos automaticamente ni autoriza escrituras nuevas.
 - Auditoria seguridad 3C post-3C-C completada: no hay hallazgos bloqueantes y no autoriza pagos, Caja ni Fase 3D.
 - Cierre tecnico 3C completado: no cambia fuentes de verdad, no autoriza pagos/abonos/Caja y mantiene `cuentas_por_pagar_movimientos` sin uso operativo.
+- QA manual final 3C reportada como OK por el usuario; no cambia fuentes de verdad ni autoriza funcionalidades nuevas.
 - Cualquier integracion con Caja requiere nueva fase autorizada.
 - Cualquier generacion automatica desde compras requiere nueva fase autorizada.
 - Cualquier escritura futura debe validar que `proveedor_id`, `compra_id` y `hotel_id` pertenezcan al mismo hotel antes de persistir datos.

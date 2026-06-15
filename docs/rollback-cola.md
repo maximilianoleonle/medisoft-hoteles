@@ -111,7 +111,7 @@ No mezclar este archivo con rollback de CxP.
 
 ### Reanclaje de estado
 
-- Estado formal vigente: `CIERRE_TECNICO_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- Estado formal vigente: `FASE_3C_VALIDADA_MANUALMENTE`.
 - 3C-A esta implementada como GET read-only; 3C-B esta implementada como POST manual controlado; 3C-C queda implementada como checkers read-only.
 - No borrar codigo ni datos automaticamente.
 - No hacer rollback destructivo de la CxP historica creada por prueba local sin nueva autorizacion y backup.
@@ -211,12 +211,13 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 
 ### Cierre tecnico Fase 3C
 
-- Estado vigente: `CIERRE_TECNICO_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- Estado vigente: `FASE_3C_VALIDADA_MANUALMENTE`.
 - Rollback de documentacion: revertir el commit `docs(phase-3c): close controlled payable generation block` si se quiere retirar solo el cierre documental.
 - DB: no aplica; cierre documental sin escrituras.
 - Codigo: no aplica si no hay cambios funcionales en el commit de cierre.
 - No revertir ni borrar CxP de prueba (`id=1`, `id=2`) sin autorizacion explicita, backup y estrategia de reconciliacion.
 - No mezclar rollback 3C con cambios PWA/no relacionados.
+- La validacion manual final no requiere rollback de datos; es documentacion de QA reportada por el usuario.
 - Validacion posterior recomendada cuando Docker este disponible:
   - `docker compose exec -T app php -l app/views/cuentas_por_pagar/generacion_preview.php`;
   - `docker compose exec -T app php tools/saas/health_check_fase_1a.php`;

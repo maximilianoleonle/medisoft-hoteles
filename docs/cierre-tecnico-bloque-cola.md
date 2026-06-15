@@ -77,7 +77,7 @@ Este cierre fue seguido por QA manual reportada como realizada por el usuario y 
 
 ## Cierre tecnico Fase 3C
 
-Estado objetivo: `CIERRE_TECNICO_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado final: `FASE_3C_VALIDADA_MANUALMENTE`.
 
 La Fase 3C queda cerrada tecnicamente como generacion manual controlada de CxP desde compras recibidas, sin pagos, sin abonos, sin Caja, sin movimientos de Caja y sin cambios en `/api/sync`.
 
@@ -93,6 +93,7 @@ La Fase 3C queda cerrada tecnicamente como generacion manual controlada de CxP d
 | 3C-C | Validaciones, health y preflights | `e91cab5` | Cerrada tecnicamente |
 | Revision tecnica 3C | Estabilizacion post-3C-C | `59feafc` | Cerrada |
 | Auditoria seguridad 3C | Auditoria post-3C-C | `c14d14d` | Cerrada |
+| QA manual final 3C | Validacion final del usuario | reporte manual | Completada |
 
 ### Confirmaciones 3C
 
@@ -113,10 +114,11 @@ La Fase 3C queda cerrada tecnicamente como generacion manual controlada de CxP d
 - Sin movimientos de Caja.
 - Sin cambios en `/api/sync`.
 - Sin Fase 3D.
+- QA manual final reportada como OK por el usuario.
 
 ### Warnings y pendientes separados
 
-- La QA manual de 3C-A y 3C-B fue reportada como OK por el usuario. Queda pendiente QA manual final/regresion del cierre 3C si el usuario desea validar todo el bloque completo en navegador.
+- La QA manual final del bloque 3C fue reportada como OK por el usuario. No autoriza pagos, abonos, Caja ni Fase 3D.
 - Cambios no relacionados ya separados en commit `e52766e`:
   - `src/app/controllers/DashboardController.php`;
   - `src/app/controllers/HabitacionController.php`;

@@ -50,12 +50,12 @@
 
 ## QA Fase 3C
 
-Estado vigente: `CIERRE_TECNICO_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado vigente: `FASE_3C_VALIDADA_MANUALMENTE`.
 
 El usuario reporto QA manual completada para 3C-A y 3C-B. Fase 3C-C queda completada tecnicamente con validaciones read-only en health/preflights y SQL de consistencia.
 Revision tecnica 3C completada sin hallazgos bloqueantes: rutas, controlador, modelo, vistas, sidebar, permisos/guards, CSRF, filtros `hotel_id`, CxP `#2`, ausencia de pagos/abonos/Caja y `/api/sync` sin cambios.
 Auditoria seguridad 3C completada sin hallazgos bloqueantes: cero movimientos CxP/pagos/abonos, cero Caja-CxP, `compra_pagos` inexistente y cambios no relacionados fuera del bloque. Quedan pendientes no relacionados para triage separado: `src/app/services/PwaPushService.php` y `src/public_html/service-worker.js`.
-Cierre tecnico 3C completado documentalmente. La QA manual de 3C-A y 3C-B ya fue reportada como OK por el usuario; queda pendiente QA manual final/regresion del bloque completo si aplica.
+Cierre tecnico 3C completado documentalmente. La QA manual final del bloque 3C fue reportada como OK por el usuario.
 
 ### QA critica
 
@@ -166,6 +166,26 @@ Cierre tecnico 3C completado documentalmente. La QA manual de 3C-A y 3C-B ya fue
 - `/api/sync`: no probado manualmente; cubierto por checker automatico cuando el entorno esta disponible.
 - Resultado vigente: 3C-A y 3C-B quedan validadas manualmente; no autoriza pagos, Caja ni Fase 3D.
 - Resultado de cierre: bloque 3C cerrado tecnicamente; no autoriza pagos, abonos, Caja ni Fase 3D.
+
+## QA manual final Fase 3C
+
+- `/cuentas-por-pagar/generacion-preview`: OK.
+- Simulador de CxP: OK.
+- Compra con CxP existente aparece bloqueada: OK.
+- Link a CxP generada: OK.
+- `/cuentas-por-pagar/2`: OK.
+- Origen compra/proveedor visible: OK.
+- CxP generada desde compra recibida: OK.
+- No se permite duplicar CxP: OK.
+- No hay botones de pago: OK.
+- No hay abonos: OK.
+- No hay acciones de Caja: OK.
+- No hay movimientos de Caja: OK.
+- Reporte de compras recibidas: OK.
+- Ficha de proveedor: OK.
+- Detalle de compra recibida: OK.
+- `/api/sync`: no probado manualmente; cubierto por checker automatico cuando el entorno esta disponible.
+- Resultado: Fase 3C validada manualmente. No autoriza pagos, abonos, Caja ni Fase 3D.
 
 ## Revision tecnica Fase 3C
 

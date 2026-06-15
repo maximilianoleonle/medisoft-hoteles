@@ -72,14 +72,14 @@
 ## Reanclaje Fase 3C
 
 - Nuevo mensaje real `REANCLAR_FASE_3C_VERDAD_ACTUAL` corrige el estado documental.
-- Estado formal vigente: `CIERRE_TECNICO_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- Estado formal vigente: `FASE_3C_VALIDADA_MANUALMENTE`.
 - `9897465` queda como contrato 3C-0 completado.
 - `c216dc5` contiene codigo de simulador; queda como base parcial pendiente de verificacion formal.
 - `cb83121` contiene el antecedente historico de generacion manual; la implementacion vigente reintroduce 3C-B con validacion automatica.
 - `5dfe665` contiene validaciones; se conservan como checkers read-only de consistencia CxP.
 - `8765258` queda reclasificado como antecedente de revision prematura; la revision tecnica actual ya se ejecuto despues de 3C-C.
 - `2662998` queda reclasificado como auditoria prematura/documental.
-- Siguiente accion: QA manual final/regresion del cierre 3C si aplica o triage separado de cambios PWA/no relacionados.
+- Siguiente accion: triage separado de cambios PWA/no relacionados. No avanzar a pagos, abonos, Caja ni Fase 3D.
 
 ## Fase 3C-A
 
@@ -127,7 +127,7 @@
 
 - Estado: completado documentalmente.
 - No habilita pagos, abonos, Caja, Fase 3D ni cambios en `/api/sync`.
-- La QA manual de 3C-A y 3C-B ya fue reportada como OK; la QA manual final/regresion del cierre completo queda pendiente si aplica.
+- La QA manual de 3C-A, 3C-B y cierre final 3C ya fue reportada como OK por el usuario.
 - Cambios no relacionados ya separados en `e52766e`: dashboard, habitaciones, notificaciones, sidebar y vista de notificaciones.
 - Cambios PWA pendientes (`PwaPushService.php`, `service-worker.js`) requieren triage separado y no forman parte de CxP.
 

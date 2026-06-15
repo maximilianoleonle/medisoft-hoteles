@@ -99,7 +99,7 @@ Al cerrar esta fase, no avanzar a Fase 3C sin nuevo mensaje real. El estado debe
 
 ### Reanclaje de estado
 
-Estado formal vigente: `CIERRE_TECNICO_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado formal vigente: `FASE_3C_VALIDADA_MANUALMENTE`.
 
 El repositorio contiene commits de implementacion posteriores al contrato, pero el nuevo reanclaje impide tratarlos como cierre formal:
 
@@ -110,7 +110,7 @@ El repositorio contiene commits de implementacion posteriores al contrato, pero 
 - `8765258`: antecedente de ajuste/revision prematura; la revision tecnica actual ya fue ejecutada despues de 3C-C.
 - `2662998`: auditoria prematura/documental; no sustituye auditoria de seguridad post-3C-C.
 
-Siguiente paso formal: QA manual final/regresion del cierre 3C si aplica o triage separado de cambios PWA/no relacionados.
+Siguiente paso formal: triage separado de cambios PWA/no relacionados. No avanzar a pagos, abonos, Caja ni Fase 3D.
 
 ### Objetivo
 
@@ -277,10 +277,11 @@ Revision tecnica post-QA:
 
 ### Cierre tecnico 3C
 
-Estado: `CIERRE_TECNICO_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado: `FASE_3C_VALIDADA_MANUALMENTE`.
 
 - Contrato, 3C-A, 3C-B, 3C-C, revision tecnica, auditoria seguridad, rollback, fuentes de verdad y QA quedan documentados.
 - 3C-A y 3C-B fueron validadas manualmente por el usuario.
+- QA manual final del bloque 3C fue reportada como OK por el usuario.
 - 3C-C queda validada automaticamente por health/preflights y SQL read-only.
 - No se autoriza pagos, abonos, Caja, Fase 3D ni cambios en `/api/sync`.
 - Cambios no relacionados quedan fuera del bloque CxP.

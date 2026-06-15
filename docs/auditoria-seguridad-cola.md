@@ -15,7 +15,7 @@ Auditoria post-commit del bloque autorizado hasta Fase 3C:
 
 ## Reanclaje Fase 3C
 
-Estado vigente: `CIERRE_TECNICO_3C_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado vigente: `FASE_3C_VALIDADA_MANUALMENTE`.
 
 Auditoria de seguridad post-3C-C completada sin hallazgos bloqueantes. La auditoria previa `2662998` queda como antecedente prematuro/documental.
 
@@ -48,6 +48,7 @@ Motivo:
 - `/api/sync` sigue bloqueado por checker.
 - Cambios no relacionados de dashboard/habitaciones/notificaciones quedaron fuera del bloque 3C; al iniciar esta auditoria ya estaban en commit separado `e52766e`.
 - Cambios no relacionados pendientes detectados al cierre: `src/app/services/PwaPushService.php` y `src/public_html/service-worker.js`. No se revisan como parte de 3C, no se revierten y no se incluyen en este commit.
+- QA manual final 3C reportada por el usuario como OK: preview, simulador, bloqueo por CxP existente, links, detalle CxP, origen compra/proveedor, no duplicados, sin pagos, sin abonos, sin Caja y sin movimientos de Caja.
 
 ## Controles revisados
 
