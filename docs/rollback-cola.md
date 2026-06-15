@@ -116,8 +116,16 @@ No mezclar este archivo con rollback de CxP.
 
 ### 3C-A simulador read-only
 
-- Rollback: revertir commit de simulador.
+- Rollback: revertir commit de simulador (`feat(phase-3c): add payable generation preview` cuando exista).
 - DB: no aplica; debe ser solo lectura.
+- Archivos esperados:
+  - `src/config/routes.php`;
+  - `src/app/controllers/CuentaPorPagarController.php`;
+  - `src/app/models/CuentaPorPagar.php`;
+  - `src/app/views/cuentas_por_pagar/index.php`;
+  - `src/app/views/cuentas_por_pagar/generacion_preview.php`;
+  - checkers/preflights y documentacion.
+- Validacion posterior: `php -l`, checkers/preflights, conteos CxP antes/despues sin cambios.
 
 ### 3C-B generacion manual
 

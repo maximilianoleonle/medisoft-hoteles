@@ -161,3 +161,31 @@ Motivo:
 ### Estado 3C-0
 
 Contrato y diagnostico documentados en `docs/fase_3C_0_contrato_diagnostico.md`. No se implemento simulador ni generacion manual en 3C-0.
+
+### Estado 3C-A
+
+Simulador read-only de generacion CxP desde compras implementado como preview GET:
+
+- ruta: `GET /cuentas-por-pagar/generacion-preview`;
+- controlador: `CuentaPorPagarController::generacionPreviewAction()`;
+- modelo: `CuentaPorPagar::previewGeneracionDesdeCompras()`;
+- vista: `app/views/cuentas_por_pagar/generacion_preview.php`;
+- acceso protegido por los mismos guards de CxP (`requireAuth`, contexto hotelero y modulo `inventario`);
+- consulta filtrada por `hotel_id`;
+- sin POST;
+- sin CSRF porque no hay escritura;
+- sin pagos;
+- sin Caja;
+- sin generacion automatica.
+
+Definition of Done 3C-A:
+
+- mostrar compra, proveedor, hotel, fecha, total y estado;
+- mostrar si ya existe CxP vinculada;
+- mostrar motivo de elegibilidad o bloqueo;
+- incluir links read-only a compra, proveedor y CxP cuando existan;
+- mantener estado vacio claro;
+- validar `php -l` en archivos PHP tocados;
+- ejecutar checkers/preflights;
+- confirmar HTTP sin sesion redirige o bloquea;
+- confirmar conteos DB sin escritura antes/despues.

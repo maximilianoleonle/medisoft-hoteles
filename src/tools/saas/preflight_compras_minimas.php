@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B para Compras minimas y CxP read-only.
+ * Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B/3C-A para Compras minimas y CxP read-only.
  *
  * Solo lectura. No crea tablas, rutas, migraciones ni datos.
  */
@@ -155,7 +155,7 @@ $purchaseReceptionPreflightPath = $appRoot . '/tools/saas/preflight_recepcion_co
 $draftMigrationPath = $projectRoot . '/docs/technical/sql_drafts/20260615_002_fase_2n_compras_minimas_draft.sql';
 $officialMigrationPath = $projectRoot . '/migrations/20260615_002_fase_2n_compras_minimas.sql';
 
-echo "Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B - Compras minimas y CxP read-only\n";
+echo "Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B/3C-A - Compras minimas y CxP read-only\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {
@@ -453,8 +453,9 @@ if (is_file($routesPath)) {
 
         $isAllowedCxpReadOnlyRoute = in_array($method . ' /' . $path, [
             'GET /cuentas-por-pagar',
+            'GET /cuentas-por-pagar/generacion-preview',
             'GET /cuentas-por-pagar/{id:[0-9]+}',
-        ], true) && $controller === 'cuentaporpagar' && in_array($action, ['index', 'ver'], true);
+        ], true) && $controller === 'cuentaporpagar' && in_array($action, ['index', 'generacionpreview', 'ver'], true);
 
         if ($isAllowedPurchaseRoute || $isAllowedCxpReadOnlyRoute) {
             continue;
@@ -473,11 +474,11 @@ if (is_file($routesPath)) {
     }
 
     if (empty($forbiddenRoutes)) {
-        pfOk('Solo existen compras minimas y CxP read-only Fase 3B; no hay pagos, contactos ni documentos.');
+        pfOk('Solo existen compras minimas y CxP/preview GET read-only Fase 3B/3C-A; no hay pagos, contactos ni documentos.');
     } else {
         pfError(
             'Rutas fuera del alcance Fase 3B detectadas: ' . implode(' | ', $forbiddenRoutes),
-            'Retirar rutas que no sean Compras minimas o GET de CxP read-only.'
+            'Retirar rutas que no sean Compras minimas o GET de CxP/preview read-only.'
         );
     }
 } else {
@@ -507,25 +508,36 @@ if (!$existingBlockedFiles) {
 $cxpControllerPath = $appRoot . '/app/controllers/CuentaPorPagarController.php';
 $cxpModelPath = $appRoot . '/app/models/CuentaPorPagar.php';
 $cxpIndexViewPath = $appRoot . '/app/views/cuentas_por_pagar/index.php';
+$cxpPreviewViewPath = $appRoot . '/app/views/cuentas_por_pagar/generacion_preview.php';
 $cxpDetailViewPath = $appRoot . '/app/views/cuentas_por_pagar/ver.php';
-if (is_file($cxpControllerPath) && is_file($cxpModelPath) && is_file($cxpIndexViewPath) && is_file($cxpDetailViewPath)) {
+if (
+    is_file($cxpControllerPath)
+    && is_file($cxpModelPath)
+    && is_file($cxpIndexViewPath)
+    && is_file($cxpPreviewViewPath)
+    && is_file($cxpDetailViewPath)
+) {
     $cxpCode = (string)file_get_contents($cxpControllerPath) . "\n"
         . (string)file_get_contents($cxpModelPath) . "\n"
         . (string)file_get_contents($cxpIndexViewPath) . "\n"
+        . (string)file_get_contents($cxpPreviewViewPath) . "\n"
         . (string)file_get_contents($cxpDetailViewPath);
     if (
         strpos($cxpCode, 'CuentaPorPagarController') !== false
         && strpos($cxpCode, 'class CuentaPorPagar') !== false
         && strpos($cxpCode, 'cuentas_por_pagar/index') !== false
+        && strpos($cxpCode, 'cuentas_por_pagar/generacion_preview') !== false
         && strpos($cxpCode, 'cuentas_por_pagar/ver') !== false
+        && strpos($cxpCode, 'function generacionPreviewAction') !== false
+        && strpos($cxpCode, 'function previewGeneracionDesdeCompras') !== false
         && strpos($cxpCode, 'method="POST"') === false
         && strpos($cxpCode, 'validateCSRF') === false
         && strpos($cxpCode, 'movimientos_caja') === false
     ) {
-        pfOk('CxP Fase 3B existe solo en modo read-only.');
+        pfOk('CxP Fase 3B/3C-A existe en modo read-only con preview GET.');
     } else {
         pfError(
-            'CxP Fase 3B contiene tokens fuera de alcance.',
+            'CxP Fase 3B/3C-A contiene tokens fuera de alcance.',
             'Mantener CxP sin POST, sin pagos, sin CSRF y sin movimientos_caja.'
         );
     }

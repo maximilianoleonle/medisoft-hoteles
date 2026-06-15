@@ -29,6 +29,7 @@ Estado:
 
 - fundacion read-only hasta Fase 3B;
 - Fase 3C autoriza generacion manual controlada desde compras recibidas;
+- Fase 3C-A solo agrega preview read-only de compras elegibles;
 - sin pagos;
 - sin Caja;
 - sin generacion automatica desde compras;
@@ -38,6 +39,7 @@ Estado:
 Regla:
 
 - La unica escritura CxP autorizada en 3C sera generacion manual desde compra recibida.
+- El preview 3C-A no es fuente de datos nueva; solo interpreta `compras` + `proveedores` + `cuentas_por_pagar`.
 - Cualquier integracion con Caja requiere nueva fase autorizada.
 - Cualquier generacion automatica desde compras requiere nueva fase autorizada.
 - Cualquier escritura futura debe validar que `proveedor_id`, `compra_id` y `hotel_id` pertenezcan al mismo hotel antes de persistir datos.

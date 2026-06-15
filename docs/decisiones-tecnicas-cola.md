@@ -68,3 +68,14 @@
 - La auditoria debera usar `AuditService` si el patron sigue disponible.
 - `cuentas_por_pagar_movimientos` solo podra usarse como trazabilidad interna de CREACION si se mantiene sin pagos ni Caja.
 - `/api/sync` sigue fuera de alcance.
+
+## Fase 3C-A
+
+- El simulador se ubica dentro de CxP, no dentro de recepcion de compras, para evitar que recibir una compra sugiera generacion automatica.
+- La ruta nueva es solo `GET /cuentas-por-pagar/generacion-preview`.
+- Se reutilizan los guards existentes de CxP: autenticacion, contexto hotelero y modulo `inventario`.
+- El modelo usa solo consultas `SELECT` sobre `compras`, `compra_detalles`, `proveedores`, `hoteles` y `cuentas_por_pagar`.
+- La elegibilidad se evalua por compra recibida, proveedor del mismo hotel, total positivo, detalles vinculados y ausencia de CxP previa.
+- Una compra bloqueada muestra motivo explicito en la vista.
+- La vista solo enlaza a recursos read-only ya existentes: detalle de compra, proveedor y CxP.
+- No se agregan formularios POST ni botones de generacion en 3C-A.

@@ -2,13 +2,13 @@
 
 ## Ultimo mensaje real usado
 
-Nuevo bloque autorizado Fase 3C: CxP operativa controlada sin Caja. Iniciar con Fase 3C-0 de contrato y diagnostico, sin implementar simulador ni generacion manual todavia.
+Cola autorizada Fase 3C-A: simulador read-only de CxP generable desde compras recibidas. No implementar generacion manual todavia.
 
 ## Estado vigente
 
-- Fase actual: Fase 3C-0 contrato y diagnostico.
+- Fase actual: Fase 3C-A simulador read-only.
 - Riesgo: naranja.
-- Estado: contrato 3C en preparacion, sin funcionalidad nueva aplicada.
+- Estado: preview GET implementado, sin escrituras CxP ni Caja.
 - Base local principal: `medisoft_hoteles_import`.
 - Backup previo a DB:
   - `src/storage/backups/phase3b_20260615_040742_before_cxp_medisoft_hoteles_import.sql`
@@ -50,6 +50,14 @@ No permite pagos, Caja, generacion automatica desde compras, saldos operativos, 
 - Compras recibidas elegibles para CxP: 2.
 - CxP actuales: 0.
 - Movimientos Caja-CxP: 0.
+
+## Implementacion 3C-A
+
+- Ruta nueva: `GET /cuentas-por-pagar/generacion-preview`.
+- Vista nueva: `src/app/views/cuentas_por_pagar/generacion_preview.php`.
+- Modelo CxP consulta compras, proveedores, hoteles, detalles y CxP con `hotel_id`.
+- La vista muestra compra, proveedor, hotel, fecha, total, estado, CxP existente, elegibilidad y bloqueo.
+- No hay POST, pagos, Caja ni generacion automatica.
 
 ## Cambios pendientes clasificados post-commit
 
@@ -94,4 +102,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Continuar con Fase 3C-A: simulador read-only de CxP generable desde compras recibidas. No implementar generacion manual hasta terminar el simulador.
+Verificar y cerrar Fase 3C-A. No avanzar a generacion manual hasta que el simulador quede estable.

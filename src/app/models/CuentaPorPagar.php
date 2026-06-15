@@ -18,6 +18,17 @@ class CuentaPorPagar extends Model
         return $this->tablaExiste('cuentas_por_pagar_movimientos');
     }
 
+    public function tablasPreviewGeneracionDisponibles(): bool
+    {
+        foreach (['compras', 'compra_detalles', 'proveedores', 'hoteles', 'cuentas_por_pagar'] as $tabla) {
+            if (!$this->tablaExiste($tabla)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function resumenPorHotel(int $hotelId): array
     {
         if ($hotelId <= 0 || !$this->tablaDisponible()) {
@@ -155,6 +166,134 @@ class CuentaPorPagar extends Model
         return $stmt ? ($stmt->fetchAll() ?: []) : [];
     }
 
+    public function previewGeneracionDesdeCompras(int $hotelId, array $filtros = [], int $limite = 200): array
+    {
+        if ($hotelId <= 0 || !$this->tablasPreviewGeneracionDisponibles()) {
+            return [];
+        }
+
+        $limite = max(1, min(300, $limite));
+        $where = ['c.hotel_id = ?'];
+        $params = [$hotelId, $hotelId, $hotelId];
+
+        $estado = $this->normalizarEstadoCompra($filtros['estado'] ?? 'recibida');
+        if ($estado !== 'todos') {
+            $where[] = 'c.estado = ?';
+            $params[] = $estado;
+        }
+
+        $buscar = trim((string)($filtros['buscar'] ?? ''));
+        if ($buscar !== '') {
+            $like = '%' . $buscar . '%';
+            $where[] = '(c.folio LIKE ? OR p.nombre LIKE ? OR CAST(c.id AS CHAR) LIKE ?)';
+            array_push($params, $like, $like, $like);
+        }
+
+        $stmt = $this->db->query(
+            "SELECT c.id AS compra_id,
+                    c.hotel_id,
+                    h.nombre AS hotel_nombre,
+                    c.proveedor_id,
+                    p.nombre AS proveedor_nombre,
+                    p.rfc AS proveedor_rfc,
+                    c.folio AS compra_folio,
+                    c.fecha_compra,
+                    c.fecha_recepcion,
+                    c.estado AS compra_estado,
+                    c.subtotal,
+                    c.impuestos,
+                    c.total,
+                    COALESCE(det.detalle_count, 0) AS detalle_count,
+                    cxp.cxp_id,
+                    COALESCE(cxp.cxp_count, 0) AS cxp_count,
+                    cxp.cxp_estado,
+                    cxp.cxp_folio,
+                    cxp.cxp_saldo
+             FROM compras c
+             INNER JOIN hoteles h
+                ON h.id = c.hotel_id
+             LEFT JOIN proveedores p
+                ON p.id = c.proveedor_id
+               AND p.hotel_id = c.hotel_id
+             LEFT JOIN (
+                 SELECT hotel_id,
+                        compra_id,
+                        COUNT(*) AS detalle_count
+                 FROM compra_detalles
+                 WHERE hotel_id = ?
+                 GROUP BY hotel_id, compra_id
+             ) det
+                ON det.hotel_id = c.hotel_id
+               AND det.compra_id = c.id
+             LEFT JOIN (
+                 SELECT hotel_id,
+                        compra_id,
+                        MIN(id) AS cxp_id,
+                        COUNT(*) AS cxp_count,
+                        MIN(estado) AS cxp_estado,
+                        MIN(folio) AS cxp_folio,
+                        SUM(saldo) AS cxp_saldo
+                 FROM cuentas_por_pagar
+                 WHERE hotel_id = ?
+                   AND compra_id IS NOT NULL
+                 GROUP BY hotel_id, compra_id
+             ) cxp
+                ON cxp.hotel_id = c.hotel_id
+               AND cxp.compra_id = c.id
+             WHERE " . implode(' AND ', $where) . "
+             ORDER BY
+                CASE
+                    WHEN c.estado = 'recibida'
+                     AND COALESCE(cxp.cxp_count, 0) = 0
+                     AND p.id IS NOT NULL
+                     AND c.total > 0
+                     AND COALESCE(det.detalle_count, 0) > 0
+                    THEN 0
+                    ELSE 1
+                END,
+                c.fecha_recepcion DESC,
+                c.id DESC
+             LIMIT {$limite}",
+            $params
+        );
+
+        $filas = $stmt ? ($stmt->fetchAll() ?: []) : [];
+        return array_map([$this, 'evaluarPreviewGeneracion'], $filas);
+    }
+
+    public function resumenPreviewGeneracion(array $compras): array
+    {
+        $resumen = [
+            'total' => count($compras),
+            'elegibles' => 0,
+            'bloqueadas' => 0,
+            'con_cxp' => 0,
+            'recibidas' => 0,
+            'total_elegible' => '0.00',
+        ];
+
+        foreach ($compras as $compra) {
+            if (($compra['compra_estado'] ?? '') === 'recibida') {
+                $resumen['recibidas']++;
+            }
+
+            if ((int)($compra['cxp_count'] ?? 0) > 0) {
+                $resumen['con_cxp']++;
+            }
+
+            if (!empty($compra['es_elegible'])) {
+                $resumen['elegibles']++;
+                $resumen['total_elegible'] = $this->decimal(
+                    (float)$resumen['total_elegible'] + (float)($compra['total'] ?? 0)
+                );
+            } else {
+                $resumen['bloqueadas']++;
+            }
+        }
+
+        return $resumen;
+    }
+
     private function resumenVacio(): array
     {
         return [
@@ -176,6 +315,39 @@ class CuentaPorPagar extends Model
         return in_array($estado, ['pendiente', 'parcial', 'pagada', 'vencida', 'cancelada', 'todos'], true)
             ? $estado
             : 'todos';
+    }
+
+    private function normalizarEstadoCompra($value): string
+    {
+        $estado = (string)($value ?? 'recibida');
+        return in_array($estado, ['borrador', 'recibida', 'cancelada', 'todos'], true)
+            ? $estado
+            : 'recibida';
+    }
+
+    private function evaluarPreviewGeneracion(array $compra): array
+    {
+        $bloqueo = '';
+
+        if (($compra['compra_estado'] ?? '') !== 'recibida') {
+            $bloqueo = 'La compra no esta recibida.';
+        } elseif (empty($compra['proveedor_id']) || empty($compra['proveedor_nombre'])) {
+            $bloqueo = 'El proveedor no existe para el hotel actual.';
+        } elseif ((float)($compra['total'] ?? 0) <= 0) {
+            $bloqueo = 'El total de la compra no es valido.';
+        } elseif ((int)($compra['detalle_count'] ?? 0) <= 0) {
+            $bloqueo = 'La compra no tiene detalles vinculados.';
+        } elseif ((int)($compra['cxp_count'] ?? 0) > 0) {
+            $bloqueo = 'Ya existe una cuenta por pagar vinculada.';
+        }
+
+        $compra['es_elegible'] = $bloqueo === '';
+        $compra['motivo_elegibilidad'] = $bloqueo === ''
+            ? 'Compra recibida, con proveedor del hotel, total valido y sin CxP vinculada.'
+            : '';
+        $compra['motivo_bloqueo'] = $bloqueo;
+
+        return $compra;
     }
 
     private function tablaExiste(string $tabla): bool

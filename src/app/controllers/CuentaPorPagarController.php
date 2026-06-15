@@ -80,6 +80,29 @@ class CuentaPorPagarController extends Controller
         ]);
     }
 
+    public function generacionPreviewAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $filtros = [
+            'buscar' => $this->getQuery('buscar', ''),
+            'estado' => $this->getQuery('estado', 'recibida'),
+        ];
+
+        $tablaDisponible = $this->cuentaModel->tablasPreviewGeneracionDisponibles();
+        $compras = $tablaDisponible
+            ? $this->cuentaModel->previewGeneracionDesdeCompras($hotelId, $filtros, 200)
+            : [];
+        $resumen = $this->cuentaModel->resumenPreviewGeneracion($compras);
+
+        View::renderTemplate('cuentas_por_pagar/generacion_preview', [
+            'title' => 'Preview generacion CxP - ' . current_hotel_display_name(),
+            'compras' => $compras,
+            'resumen' => $resumen,
+            'filtros' => $filtros,
+            'tablaDisponible' => $tablaDisponible,
+        ]);
+    }
+
     private function hotelIdActual(): int
     {
         return function_exists('obtenerHotelIdActualCompat')

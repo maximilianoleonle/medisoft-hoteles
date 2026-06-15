@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B para recepcion minima de compras.
+ * Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B/3C-A para recepcion minima de compras.
  *
  * Solo lectura. No ejecuta recepcion ni modifica DB.
  * Valida borradores pendientes, recepciones reales, productos_repetidos,
@@ -223,7 +223,7 @@ $purchasingDocPath = prcFirstExistingPath([
     $appRoot . '/docs/technical/purchasing_inventory_contract.md',
 ]);
 
-echo "Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B - Recepcion minima de compras y CxP read-only\n";
+echo "Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B/3C-A - Recepcion minima de compras y CxP read-only\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {
@@ -604,10 +604,11 @@ if (is_file($routesPath)) {
 
         $allowedCxpReadOnly = in_array($method . ' /' . $path, [
             'GET /cuentas-por-pagar',
+            'GET /cuentas-por-pagar/generacion-preview',
             'GET /cuentas-por-pagar/{id:[0-9]+}',
         ], true)
             && $controller === 'cuentaporpagar'
-            && in_array($action, ['index', 'ver'], true);
+            && in_array($action, ['index', 'generacionpreview', 'ver'], true);
 
         if ($allowed || $allowedCxpReadOnly) {
             continue;
@@ -627,11 +628,11 @@ if (is_file($routesPath)) {
     }
 
     if (!$forbiddenRoutes) {
-        prcOk('Solo hay reporte read-only, detalle read-only, recepcion minima y CxP read-only; no hay pago ni documentos de compras.');
+        prcOk('Solo hay reporte read-only, detalle read-only, recepcion minima y CxP/preview GET read-only; no hay pago ni documentos de compras.');
     } else {
         prcError(
             'Rutas fuera del alcance Fase 2V/2W/2X/2Y/3B: ' . implode(' | ', $forbiddenRoutes),
-            'Retirar rutas que no sean reporte read-only, detalle, borrador, POST /compras/{id}/recibir o CxP GET read-only.'
+            'Retirar rutas que no sean reporte read-only, detalle, borrador, POST /compras/{id}/recibir o CxP GET/preview read-only.'
         );
     }
 } else {

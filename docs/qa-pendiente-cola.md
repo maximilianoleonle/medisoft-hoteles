@@ -65,9 +65,10 @@
 
 - Revisar listado de compras recibidas elegibles.
 - Revisar motivos de bloqueo cuando una compra ya tiene CxP.
-- Generar CxP manualmente desde una compra recibida autorizada.
-- Revisar listado y detalle CxP despues de generar.
-- Revisar detalle de compra para ver CxP vinculada.
+- Confirmar que `/cuentas-por-pagar/generacion-preview` no muestra boton de generar en 3C-A.
+- Generar CxP manualmente desde una compra recibida autorizada solo cuando 3C-B sea implementada.
+- Revisar listado y detalle CxP despues de generar solo en 3C-B.
+- Revisar detalle de compra para ver CxP vinculada solo en 3C-B.
 
 ### QA visual
 
@@ -82,6 +83,16 @@
 - Confirmar que compras/proveedores siguen aislados por hotel.
 - Confirmar que Caja/cortes/movimientos no cambian.
 - Confirmar que reportes de compras recibidas siguen funcionando.
+
+### QA especifica Fase 3C-A
+
+- Abrir `/cuentas-por-pagar/generacion-preview` autenticado.
+- Confirmar que muestra compras recibidas del hotel actual.
+- Confirmar que muestra links a compra y proveedor.
+- Confirmar que muestra link a CxP solo si ya existe.
+- Confirmar que las compras elegibles indican motivo de elegibilidad.
+- Confirmar que las compras no elegibles indican motivo de bloqueo.
+- Confirmar que no hay botones POST ni acciones de generacion manual todavia.
 
 ## Triage no relacionado
 

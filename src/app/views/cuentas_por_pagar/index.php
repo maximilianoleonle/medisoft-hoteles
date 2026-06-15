@@ -149,6 +149,17 @@ $estado = (string)($filtros['estado'] ?? 'todos');
                 <p class="text-sm text-slate-500 mt-1">Aplica la migracion Fase 3B solo despues de backup para habilitar esta vista.</p>
             </div>
         <?php else: ?>
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <a class="cxp-btn cxp-btn-muted" href="<?= url('cuentas-por-pagar/generacion-preview') ?>">
+                    <i class="fas fa-search"></i>
+                    Preview generacion desde compras
+                </a>
+                <span class="cxp-badge">
+                    <i class="fas fa-lock"></i>
+                    Sin generacion automatica
+                </span>
+            </div>
+
             <div class="cxp-panel p-4 mb-4">
                 <form method="GET" action="<?= url('cuentas-por-pagar') ?>" class="grid grid-cols-1 md:grid-cols-[1fr_180px_auto] gap-3">
                     <input class="cxp-input" type="search" name="buscar" value="<?= cxp_safe($buscar, '') ?>" placeholder="Buscar por proveedor, folio o descripcion">

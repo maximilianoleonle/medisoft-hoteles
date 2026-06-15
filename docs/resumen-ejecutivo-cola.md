@@ -24,9 +24,8 @@ Objetivo: generar CxP manualmente desde compras recibidas, sin Caja ni pagos.
 
 Estado actual:
 
-- Fase 3C-0 iniciada.
-- Contrato y diagnostico documentados.
-- No se implemento simulador.
+- Fase 3C-0 completada con contrato y diagnostico.
+- Fase 3C-A implementa preview/simulador read-only.
 - No se implemento generacion manual.
 - CxP sigue vacia.
 - Compras recibidas elegibles detectadas: 2.
@@ -105,6 +104,6 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 
 ## Pendiente antes de avanzar
 
-- QA manual autenticada de listado/detalle CxP.
+- QA manual autenticada de listado/detalle CxP y preview 3C-A.
 - QA visual/regresion de compras, proveedores y recepcion.
-- Continuar con Fase 3C-A: simulador read-only.
+- Continuar con Fase 3C-B solo si el simulador 3C-A queda estable y autorizado.
