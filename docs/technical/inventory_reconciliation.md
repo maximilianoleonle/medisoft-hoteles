@@ -994,3 +994,32 @@ Exclusiones:
 - Sin movimientos de caja.
 - Sin cambios en reportes financieros.
 - Sin cambios en `/api/sync`.
+
+## Fase 2Y: reportes read-only de compras recibidas
+
+Implementacion:
+
+- Ruta `GET /compras/reportes/recibidas`.
+- Accion `CompraController::reporteRecibidasAction()`.
+- Vista `app/views/compras/reporte_recibidas.php`.
+- Lectura mediante `CompraService::reporteRecibidas()`.
+- Filtros por proveedor, producto, fecha inicial, fecha final y estado.
+- Totales por proveedor y producto derivados de `compra_detalles`.
+- Enlaces de regreso al detalle `GET /compras/{id}`.
+
+Contrato de inventario:
+
+- El reporte usa `compras`, `compra_detalles`, `proveedores`, `inventario_productos` y `movimientos_inventario`.
+- No modifica `inventario_productos.stock_actual`.
+- No crea movimientos.
+- No escribe en tablas legacy `productos` ni `inventario_movimientos`.
+- Los movimientos vinculados se muestran solo si existe `movimiento_inventario_id`.
+
+Exclusiones:
+
+- Sin pagos.
+- Sin cuentas por pagar.
+- Sin documentos.
+- Sin movimientos de caja.
+- Sin cambios en reportes financieros.
+- Sin cambios en `/api/sync`.

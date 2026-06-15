@@ -166,7 +166,7 @@ $estado = (string)($filtros['estado'] ?? 'borrador');
             </div>
         <?php else: ?>
             <div class="purchase-panel p-4 mb-4">
-                <form method="GET" action="<?= url('compras') ?>" class="grid grid-cols-1 md:grid-cols-[1fr_170px_auto_auto] gap-3">
+                <form method="GET" action="<?= url('compras') ?>" class="grid grid-cols-1 md:grid-cols-[1fr_170px_auto_auto_auto] gap-3">
                     <input class="purchase-input" type="search" name="buscar" value="<?= comp_safe($buscar, '') ?>" placeholder="Buscar por folio o proveedor">
                     <select class="purchase-input" name="estado">
                         <option value="borrador" <?= $estado === 'borrador' ? 'selected' : '' ?>>Borradores</option>
@@ -178,6 +178,10 @@ $estado = (string)($filtros['estado'] ?? 'borrador');
                         <i class="fas fa-search"></i>
                         Filtrar
                     </button>
+                    <a class="purchase-btn purchase-btn-muted" href="<?= url('compras/reportes/recibidas') ?>">
+                        <i class="fas fa-chart-column"></i>
+                        Reporte
+                    </a>
                     <a class="purchase-btn purchase-btn-primary" href="<?= url('compras/crear') ?>">
                         <i class="fas fa-plus"></i>
                         Nuevo

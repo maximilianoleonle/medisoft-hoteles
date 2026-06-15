@@ -210,9 +210,10 @@ $router->post('/proveedores/{id:[0-9]+}/actualizar', ['controller' => 'Proveedor
 $router->post('/proveedores/{id:[0-9]+}/desactivar', ['controller' => 'Proveedor', 'action' => 'desactivar']);
 $router->post('/proveedores/{id:[0-9]+}/reactivar', ['controller' => 'Proveedor', 'action' => 'reactivar']);
 
-// Fase 2R/2V/2X: compras en borrador, recepcion minima y detalle de solo lectura. Sin pagos, caja, CxP ni documentos.
+// Fase 2R/2V/2X/2Y: compras en borrador, recepcion minima, detalle y reportes read-only. Sin pagos, caja, CxP ni documentos.
 $router->get('/compras', ['controller' => 'Compra', 'action' => 'index']);
 $router->get('/compras/crear', ['controller' => 'Compra', 'action' => 'crear']);
+$router->get('/compras/reportes/recibidas', ['controller' => 'Compra', 'action' => 'reporteRecibidas']);
 $router->get('/compras/{id:[0-9]+}', ['controller' => 'Compra', 'action' => 'ver']);
 $router->post('/compras', ['controller' => 'Compra', 'action' => 'guardar']);
 $router->post('/compras/{id:[0-9]+}/recibir', ['controller' => 'Compra', 'action' => 'recibir']);

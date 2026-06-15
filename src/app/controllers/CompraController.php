@@ -117,6 +117,54 @@ class CompraController extends Controller
         }
     }
 
+    public function reporteRecibidasAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $filtros = [
+            'proveedor_id' => $this->getQuery('proveedor_id', ''),
+            'producto_id' => $this->getQuery('producto_id', ''),
+            'fecha_inicio' => $this->getQuery('fecha_inicio', ''),
+            'fecha_fin' => $this->getQuery('fecha_fin', ''),
+            'estado' => $this->getQuery('estado', 'recibida'),
+        ];
+
+        $catalogos = [
+            'proveedores' => [],
+            'productos' => [],
+        ];
+        $reporte = [
+            'filtros' => $filtros,
+            'resumen' => [
+                'compras' => 0,
+                'proveedores' => 0,
+                'productos' => 0,
+                'cantidad_total' => '0.00',
+                'total_lineas' => '0.00',
+            ],
+            'lineas' => [],
+            'por_proveedor' => [],
+            'por_producto' => [],
+        ];
+        $tablaDisponible = true;
+        $errorTecnico = null;
+
+        try {
+            $catalogos = $this->compraService->catalogosReporteRecibidas($hotelId);
+            $reporte = $this->compraService->reporteRecibidas($hotelId, $filtros, 300);
+        } catch (Throwable $e) {
+            $tablaDisponible = false;
+            $errorTecnico = $e->getMessage();
+        }
+
+        View::renderTemplate('compras/reporte_recibidas', [
+            'title' => 'Reporte de compras recibidas - ' . current_hotel_display_name(),
+            'catalogos' => $catalogos,
+            'reporte' => $reporte,
+            'tablaDisponible' => $tablaDisponible,
+            'errorTecnico' => $errorTecnico,
+        ]);
+    }
+
     public function guardarAction(): void
     {
         if (!$this->isPost()) {

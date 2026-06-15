@@ -1209,6 +1209,37 @@ Validacion manual:
 - Usuario confirmo que la compra aparece como `recibida` en la pantalla.
 - Resultado manual reportado: correcto.
 
+## Actualizacion Fase 2Y
+
+Historial y reportes read-only de compras:
+
+- Ruta nueva permitida: `GET /compras/reportes/recibidas`.
+- Controlador: `CompraController::reporteRecibidasAction()`.
+- Vista: `app/views/compras/reporte_recibidas.php`.
+- Servicio: `CompraService::reporteRecibidas()`.
+- Catalogos de filtros: `CompraService::catalogosReporteRecibidas()`.
+- Filtros soportados: proveedor, producto, rango de fechas y estado.
+- Totales mostrados: compras, proveedores, productos, cantidad recibida y subtotal de lineas.
+- Agregados read-only: totales por proveedor y totales por producto.
+- Cada linea conserva link al detalle `GET /compras/{id}`.
+
+Contrato multihotel:
+
+- Todas las consultas filtran por `c.hotel_id = ?`.
+- Los joins a proveedores, detalles, productos y movimientos usan el `hotel_id` de la compra o del detalle.
+- No se consulta ni escribe en tablas legacy de inventario.
+
+Alcance:
+
+- Solo lectura.
+- Sin formularios POST nuevos.
+- Sin pagos.
+- Sin cuentas por pagar.
+- Sin movimientos de caja.
+- Sin documentos.
+- Sin cambios en calculos financieros.
+- Sin cambios en `/api/sync`.
+
 ## No implementar todavia
 
 - Pagos de compras.

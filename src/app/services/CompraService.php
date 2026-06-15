@@ -399,6 +399,249 @@ class CompraService
         ];
     }
 
+    public function catalogosReporteRecibidas(int $hotelId): array
+    {
+        $this->assertTablasDisponibles();
+
+        $hotelId = $this->validarId($hotelId, 'Hotel invalido');
+
+        $stmt = $this->pdo->prepare(
+            "SELECT p.id, p.nombre, p.rfc
+             FROM proveedores p
+             WHERE p.hotel_id = ?
+               AND (
+                   p.activo = 1
+                   OR EXISTS (
+                       SELECT 1
+                       FROM compras c
+                       WHERE c.hotel_id = p.hotel_id
+                         AND c.proveedor_id = p.id
+                   )
+               )
+             ORDER BY p.nombre ASC
+             LIMIT 500"
+        );
+        $stmt->execute([$hotelId]);
+        $proveedores = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $stmt = $this->pdo->prepare(
+            "SELECT ip.id, ip.codigo, ip.nombre, ip.unidad_medida
+             FROM inventario_productos ip
+             WHERE ip.hotel_id = ?
+               AND (
+                   ip.activo = 1
+                   OR EXISTS (
+                       SELECT 1
+                       FROM compra_detalles d
+                       WHERE d.hotel_id = ip.hotel_id
+                         AND d.producto_id = ip.id
+                   )
+               )
+             ORDER BY ip.nombre ASC
+             LIMIT 800"
+        );
+        $stmt->execute([$hotelId]);
+        $productos = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'proveedores' => $proveedores,
+            'productos' => $productos,
+        ];
+    }
+
+    public function reporteRecibidas(int $hotelId, array $filtros = [], int $limite = 300): array
+    {
+        $this->assertTablasDisponibles();
+
+        $hotelId = $this->validarId($hotelId, 'Hotel invalido');
+        $limite = max(1, min(500, (int)$limite));
+        [$filtrosNormalizados, $where, $params] = $this->filtrosReporteRecibidas($hotelId, $filtros);
+        $whereSql = implode(' AND ', $where);
+
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(DISTINCT c.id) AS compras,
+                    COUNT(DISTINCT c.proveedor_id) AS proveedores,
+                    COUNT(DISTINCT d.producto_id) AS productos,
+                    COALESCE(SUM(d.cantidad), 0) AS cantidad_total,
+                    COALESCE(SUM(d.subtotal), 0) AS total_lineas
+             FROM compras c
+             INNER JOIN proveedores p
+                ON p.id = c.proveedor_id
+               AND p.hotel_id = c.hotel_id
+             INNER JOIN compra_detalles d
+                ON d.compra_id = c.id
+               AND d.hotel_id = c.hotel_id
+             INNER JOIN inventario_productos ip
+                ON ip.id = d.producto_id
+               AND ip.hotel_id = d.hotel_id
+             WHERE {$whereSql}"
+        );
+        $stmt->execute($params);
+        $resumen = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        $stmt = $this->pdo->prepare(
+            "SELECT p.id AS proveedor_id,
+                    p.nombre AS proveedor_nombre,
+                    COUNT(DISTINCT c.id) AS compras,
+                    COALESCE(SUM(d.cantidad), 0) AS cantidad_total,
+                    COALESCE(SUM(d.subtotal), 0) AS total_lineas
+             FROM compras c
+             INNER JOIN proveedores p
+                ON p.id = c.proveedor_id
+               AND p.hotel_id = c.hotel_id
+             INNER JOIN compra_detalles d
+                ON d.compra_id = c.id
+               AND d.hotel_id = c.hotel_id
+             INNER JOIN inventario_productos ip
+                ON ip.id = d.producto_id
+               AND ip.hotel_id = d.hotel_id
+             WHERE {$whereSql}
+             GROUP BY p.id, p.nombre
+             ORDER BY total_lineas DESC, p.nombre ASC
+             LIMIT 200"
+        );
+        $stmt->execute($params);
+        $porProveedor = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $stmt = $this->pdo->prepare(
+            "SELECT ip.id AS producto_id,
+                    ip.codigo AS producto_codigo,
+                    ip.nombre AS producto_nombre,
+                    ip.unidad_medida,
+                    COUNT(DISTINCT c.id) AS compras,
+                    COALESCE(SUM(d.cantidad), 0) AS cantidad_total,
+                    COALESCE(SUM(d.subtotal), 0) AS total_lineas
+             FROM compras c
+             INNER JOIN proveedores p
+                ON p.id = c.proveedor_id
+               AND p.hotel_id = c.hotel_id
+             INNER JOIN compra_detalles d
+                ON d.compra_id = c.id
+               AND d.hotel_id = c.hotel_id
+             INNER JOIN inventario_productos ip
+                ON ip.id = d.producto_id
+               AND ip.hotel_id = d.hotel_id
+             WHERE {$whereSql}
+             GROUP BY ip.id, ip.codigo, ip.nombre, ip.unidad_medida
+             ORDER BY total_lineas DESC, ip.nombre ASC
+             LIMIT 300"
+        );
+        $stmt->execute($params);
+        $porProducto = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $stmt = $this->pdo->prepare(
+            "SELECT c.id AS compra_id,
+                    c.folio,
+                    c.estado,
+                    c.fecha_compra,
+                    c.fecha_recepcion,
+                    COALESCE(DATE(c.fecha_recepcion), c.fecha_compra) AS fecha_reporte,
+                    p.id AS proveedor_id,
+                    p.nombre AS proveedor_nombre,
+                    d.id AS detalle_id,
+                    d.producto_id,
+                    ip.codigo AS producto_codigo,
+                    ip.nombre AS producto_nombre,
+                    ip.unidad_medida,
+                    d.cantidad,
+                    d.costo_unitario,
+                    d.subtotal,
+                    d.movimiento_inventario_id,
+                    mi.tipo_movimiento AS movimiento_tipo,
+                    mi.created_at AS movimiento_created_at
+             FROM compras c
+             INNER JOIN proveedores p
+                ON p.id = c.proveedor_id
+               AND p.hotel_id = c.hotel_id
+             INNER JOIN compra_detalles d
+                ON d.compra_id = c.id
+               AND d.hotel_id = c.hotel_id
+             INNER JOIN inventario_productos ip
+                ON ip.id = d.producto_id
+               AND ip.hotel_id = d.hotel_id
+             LEFT JOIN movimientos_inventario mi
+                ON mi.id = d.movimiento_inventario_id
+               AND mi.hotel_id = d.hotel_id
+             WHERE {$whereSql}
+             ORDER BY COALESCE(c.fecha_recepcion, c.fecha_compra) DESC, c.id DESC, d.id ASC
+             LIMIT {$limite}"
+        );
+        $stmt->execute($params);
+        $lineas = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'filtros' => $filtrosNormalizados,
+            'resumen' => [
+                'compras' => (int)($resumen['compras'] ?? 0),
+                'proveedores' => (int)($resumen['proveedores'] ?? 0),
+                'productos' => (int)($resumen['productos'] ?? 0),
+                'cantidad_total' => $this->decimal($resumen['cantidad_total'] ?? 0),
+                'total_lineas' => $this->decimal($resumen['total_lineas'] ?? 0),
+            ],
+            'lineas' => $lineas,
+            'por_proveedor' => $porProveedor,
+            'por_producto' => $porProducto,
+        ];
+    }
+
+    private function filtrosReporteRecibidas(int $hotelId, array $filtros): array
+    {
+        $estado = (string)($filtros['estado'] ?? 'recibida');
+        $estado = $estado === '' ? 'recibida' : $estado;
+        if (!in_array($estado, ['recibida', 'borrador', 'cancelada', 'todos'], true)) {
+            throw new Exception('Estado de reporte invalido');
+        }
+
+        $proveedorId = $this->normalizarIdOpcional($filtros['proveedor_id'] ?? null, 'Proveedor invalido');
+        $productoId = $this->normalizarIdOpcional($filtros['producto_id'] ?? null, 'Producto invalido');
+        $fechaInicio = $this->normalizarFechaOpcional($filtros['fecha_inicio'] ?? null, 'Fecha inicial invalida');
+        $fechaFin = $this->normalizarFechaOpcional($filtros['fecha_fin'] ?? null, 'Fecha final invalida');
+
+        if ($fechaInicio !== null && $fechaFin !== null && $fechaFin < $fechaInicio) {
+            throw new Exception('El rango de fechas del reporte es invalido');
+        }
+
+        $where = ['c.hotel_id = ?'];
+        $params = [$hotelId];
+
+        if ($estado !== 'todos') {
+            $where[] = 'c.estado = ?';
+            $params[] = $estado;
+        }
+
+        if ($proveedorId !== null) {
+            $where[] = 'c.proveedor_id = ?';
+            $params[] = $proveedorId;
+        }
+
+        if ($productoId !== null) {
+            $where[] = 'd.producto_id = ?';
+            $params[] = $productoId;
+        }
+
+        if ($fechaInicio !== null) {
+            $where[] = 'COALESCE(DATE(c.fecha_recepcion), c.fecha_compra) >= ?';
+            $params[] = $fechaInicio;
+        }
+
+        if ($fechaFin !== null) {
+            $where[] = 'COALESCE(DATE(c.fecha_recepcion), c.fecha_compra) <= ?';
+            $params[] = $fechaFin;
+        }
+
+        return [
+            [
+                'estado' => $estado,
+                'proveedor_id' => $proveedorId,
+                'producto_id' => $productoId,
+                'fecha_inicio' => $fechaInicio,
+                'fecha_fin' => $fechaFin,
+            ],
+            $where,
+            $params,
+        ];
+    }
+
     private function insertarDetalles(int $compraId, int $hotelId, array $detalles): void
     {
         $stmt = $this->pdo->prepare(
@@ -620,9 +863,43 @@ class CompraService
         return $id;
     }
 
+    private function normalizarIdOpcional($value, string $message): ?int
+    {
+        $text = trim((string)($value ?? ''));
+        if ($text === '') {
+            return null;
+        }
+
+        if (!ctype_digit($text)) {
+            throw new Exception($message);
+        }
+
+        return $this->validarId($text, $message);
+    }
+
     private function normalizarUsuarioId(?int $usuarioId): ?int
     {
         return $usuarioId !== null && $usuarioId > 0 ? $usuarioId : null;
+    }
+
+    private function normalizarFechaOpcional($value, string $message): ?string
+    {
+        $fecha = trim((string)($value ?? ''));
+        if ($fecha === '') {
+            return null;
+        }
+
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $fecha);
+        $errors = DateTimeImmutable::getLastErrors();
+
+        if (
+            !$date
+            || ($errors !== false && ((int)$errors['warning_count'] > 0 || (int)$errors['error_count'] > 0))
+        ) {
+            throw new Exception($message);
+        }
+
+        return $date->format('Y-m-d');
     }
 
     private function normalizarFecha($value): string

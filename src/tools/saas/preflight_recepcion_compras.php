@@ -213,6 +213,7 @@ $purchaseControllerPath = $appRoot . '/app/controllers/CompraController.php';
 $purchaseIndexViewPath = $appRoot . '/app/views/compras/index.php';
 $purchaseFormViewPath = $appRoot . '/app/views/compras/form.php';
 $purchaseDetailViewPath = $appRoot . '/app/views/compras/ver.php';
+$purchaseReportViewPath = $appRoot . '/app/views/compras/reporte_recibidas.php';
 $inventoryDocPath = prcFirstExistingPath([
     $projectRoot . '/docs/technical/inventory_reconciliation.md',
     $appRoot . '/docs/technical/inventory_reconciliation.md',
@@ -222,7 +223,7 @@ $purchasingDocPath = prcFirstExistingPath([
     $appRoot . '/docs/technical/purchasing_inventory_contract.md',
 ]);
 
-echo "Preflight Fase 2T/2U/2V/2W/2X - Recepcion minima de compras\n";
+echo "Preflight Fase 2T/2U/2V/2W/2X/2Y - Recepcion minima de compras\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {
@@ -559,6 +560,7 @@ if (is_file($routesPath)) {
     $expectedRoutes = [
         ['method' => 'get', 'path' => 'compras'],
         ['method' => 'get', 'path' => 'compras/crear'],
+        ['method' => 'get', 'path' => 'compras/reportes/recibidas'],
         ['method' => 'get', 'path' => 'compras/{id:[0-9]+}'],
         ['method' => 'post', 'path' => 'compras'],
         ['method' => 'post', 'path' => 'compras/{id:[0-9]+}/recibir'],
@@ -571,7 +573,7 @@ if (is_file($routesPath)) {
     }
 
     if (!$missingRoutes) {
-        prcOk('Rutas publicas de Compras incluyen detalle, borradores y recepcion minima Fase 2V/2W/2X.');
+        prcOk('Rutas publicas de Compras incluyen reporte read-only, detalle, borradores y recepcion minima Fase 2V/2W/2X/2Y.');
     } else {
         prcError('Faltan rutas de borrador: ' . implode(', ', $missingRoutes), 'Restaurar rutas minimas antes de validar UI.');
     }
@@ -584,11 +586,11 @@ if (is_file($routesPath)) {
         $action = strtolower((string) $route['action']);
         $signature = $method . ' /' . $path . ' -> ' . $controller . '::' . $action;
 
-        $allowed = in_array($method . ' /' . $path, ['GET /compras', 'GET /compras/crear', 'GET /compras/{id:[0-9]+}', 'POST /compras'], true)
+        $allowed = in_array($method . ' /' . $path, ['GET /compras', 'GET /compras/crear', 'GET /compras/reportes/recibidas', 'GET /compras/{id:[0-9]+}', 'POST /compras'], true)
             || $method . ' /' . $path === 'POST /compras/{id:[0-9]+}/recibir';
         $allowed = $allowed
             && $controller === 'compra'
-            && in_array($action, ['index', 'crear', 'ver', 'guardar', 'recibir'], true);
+            && in_array($action, ['index', 'crear', 'reporterecibidas', 'ver', 'guardar', 'recibir'], true);
 
         if ($allowed) {
             continue;
@@ -608,11 +610,11 @@ if (is_file($routesPath)) {
     }
 
     if (!$forbiddenRoutes) {
-        prcOk('Solo hay detalle read-only y recepcion minima; no hay pago, CxP ni documentos de compras.');
+        prcOk('Solo hay reporte read-only, detalle read-only y recepcion minima; no hay pago, CxP ni documentos de compras.');
     } else {
         prcError(
-            'Rutas fuera del alcance Fase 2V/2W/2X: ' . implode(' | ', $forbiddenRoutes),
-            'Retirar rutas que no sean detalle, borrador y POST /compras/{id}/recibir.'
+            'Rutas fuera del alcance Fase 2V/2W/2X/2Y: ' . implode(' | ', $forbiddenRoutes),
+            'Retirar rutas que no sean reporte read-only, detalle, borrador y POST /compras/{id}/recibir.'
         );
     }
 } else {
@@ -639,16 +641,20 @@ if (is_file($purchaseControllerPath)) {
     if (
         !$found
         && strpos($controller, 'function verAction') !== false
+        && strpos($controller, 'function reporteRecibidasAction') !== false
         && strpos($controller, 'function recibirAction') !== false
         && strpos($controller, 'obtenerCompra') !== false
+        && strpos($controller, 'reporteRecibidas') !== false
+        && strpos($controller, 'catalogosReporteRecibidas') !== false
+        && strpos($controller, 'compras/reporte_recibidas') !== false
         && strpos($controller, 'compras/ver') !== false
         && strpos($controller, 'recibirCompra') !== false
     ) {
-        prcOk('CompraController expone detalle read-only y recepcion minima; no expone pago, cancelacion, CxP, documentos ni caja.');
+        prcOk('CompraController expone reporte read-only, detalle read-only y recepcion minima; no expone pago, cancelacion, CxP, documentos ni caja.');
     } else {
         prcError(
-            'CompraController no cumple Fase 2V/2W/2X o contiene tokens fuera de alcance: ' . (empty($found) ? 'sin detalle' : implode(', ', $found)),
-            'Mantener solo detalle read-only y recepcion minima sin pago, cancelacion, CxP, documentos ni caja.'
+            'CompraController no cumple Fase 2V/2W/2X/2Y o contiene tokens fuera de alcance: ' . (empty($found) ? 'sin detalle' : implode(', ', $found)),
+            'Mantener solo reporte read-only, detalle read-only y recepcion minima sin pago, cancelacion, CxP, documentos ni caja.'
         );
     }
 } else {
@@ -660,6 +666,10 @@ if (is_file($purchaseServicePath)) {
     if (
         strpos($service, 'function recibirCompra') !== false
         && strpos($service, 'function obtenerCompra') !== false
+        && strpos($service, 'function reporteRecibidas') !== false
+        && strpos($service, 'function catalogosReporteRecibidas') !== false
+        && strpos($service, 'GROUP BY p.id, p.nombre') !== false
+        && strpos($service, 'GROUP BY ip.id, ip.codigo, ip.nombre, ip.unidad_medida') !== false
         && strpos($service, 'obtenerCompraBloqueada') !== false
         && strpos($service, 'LEFT JOIN movimientos_inventario') !== false
         && strpos($service, 'movimiento_stock_posterior') !== false
@@ -667,41 +677,45 @@ if (is_file($purchaseServicePath)) {
         && strpos($service, "estado = 'recibida'") !== false
         && strpos($service, 'AuditService::record') !== false
     ) {
-        prcOk('CompraService conserva contrato interno para recepcion futura con idempotencia basica.');
+        prcOk('CompraService conserva contrato interno para recepcion y reportes read-only con idempotencia basica.');
     } else {
         prcWarning(
-            'CompraService no muestra todas las guardas esperadas para recepcion futura.',
-            'Revisar bloqueo de compra/detalles/productos, estado borrador y movimiento_inventario_id.'
+            'CompraService no muestra todas las guardas esperadas para recepcion y reportes.',
+            'Revisar bloqueo de compra/detalles/productos, estado borrador, movimiento_inventario_id y reporteRecibidas.'
         );
     }
 } else {
     prcError('No existe CompraService.', 'No preparar recepcion sin servicio transaccional revisado.');
 }
 
-if (is_file($purchaseIndexViewPath) && is_file($purchaseFormViewPath) && is_file($purchaseDetailViewPath)) {
+if (is_file($purchaseIndexViewPath) && is_file($purchaseFormViewPath) && is_file($purchaseDetailViewPath) && is_file($purchaseReportViewPath)) {
     $views = (string) file_get_contents($purchaseIndexViewPath) . "\n"
         . (string) file_get_contents($purchaseFormViewPath) . "\n"
-        . (string) file_get_contents($purchaseDetailViewPath);
+        . (string) file_get_contents($purchaseDetailViewPath) . "\n"
+        . (string) file_get_contents($purchaseReportViewPath);
     if (
         strpos($views, "url('compras/recibir") === false
+        && strpos($views, "url('compras/reportes/recibidas')") !== false
         && strpos($views, "url('compras/' . (int)") !== false
         && strpos($views, '/recibir') !== false
         && strpos($views, 'purchase-btn-receive') !== false
+        && strpos($views, 'por_proveedor') !== false
+        && strpos($views, 'por_producto') !== false
         && strpos($views, 'movimiento_inventario_id') !== false
         && strpos($views, 'movimiento_stock_posterior') !== false
         && strpos($views, "url('compras/pagar") === false
         && strpos($views, 'cuentas-por-pagar') === false
         && strpos($views, 'documentos-proveedor') === false
     ) {
-        prcOk('Vistas de Compras muestran detalle read-only y recepcion minima; no muestran pago/CxP/documentos.');
+        prcOk('Vistas de Compras muestran reporte read-only, detalle read-only y recepcion minima; no muestran pago/CxP/documentos.');
     } else {
         prcError(
             'Vistas de Compras contienen enlaces fuera de alcance.',
-            'Mantener solo detalle read-only, boton de recepcion minima y retirar pago, CxP o documentos.'
+            'Mantener solo reporte read-only, detalle read-only, boton de recepcion minima y retirar pago, CxP o documentos.'
         );
     }
 } else {
-    prcError('Faltan vistas de Compras.', 'Restaurar vistas de listado, formulario y detalle antes de validar compras.');
+    prcError('Faltan vistas de Compras.', 'Restaurar vistas de listado, formulario, detalle y reporte antes de validar compras.');
 }
 
 if (is_file($purchasingDocPath)) {
@@ -711,13 +725,15 @@ if (is_file($purchasingDocPath)) {
         && strpos($doc, 'Actualizacion Fase 2U') !== false
         && strpos($doc, 'Actualizacion Fase 2W') !== false
         && strpos($doc, 'Actualizacion Fase 2X') !== false
+        && strpos($doc, 'Actualizacion Fase 2Y') !== false
+        && strpos($doc, 'GET /compras/reportes/recibidas') !== false
         && strpos($doc, 'preflight_recepcion_compras.php') !== false
         && strpos($doc, 'productos repetidos') !== false
         && strpos($doc, 'un movimiento por linea') !== false
     ) {
-        prcOk('Contrato de compras documenta Fase 2T/2U/2W/2X.');
+        prcOk('Contrato de compras documenta Fase 2T/2U/2W/2X/2Y.');
     } else {
-        prcWarning('Contrato de compras no documenta completamente Fase 2T/2U/2W/2X.', 'Actualizar purchasing_inventory_contract.md.');
+        prcWarning('Contrato de compras no documenta completamente Fase 2T/2U/2W/2X/2Y.', 'Actualizar purchasing_inventory_contract.md.');
     }
 } else {
     prcWarning('No se encontro purchasing_inventory_contract.md.', 'Documentar Fase 2T antes de recepcion real.');
@@ -730,13 +746,15 @@ if (is_file($inventoryDocPath)) {
         && strpos($doc, 'Fase 2U') !== false
         && strpos($doc, 'Fase 2W') !== false
         && strpos($doc, 'Fase 2X') !== false
+        && strpos($doc, 'Fase 2Y') !== false
+        && strpos($doc, 'GET /compras/reportes/recibidas') !== false
         && strpos($doc, 'preflight_recepcion_compras.php') !== false
         && strpos($doc, 'productos repetidos') !== false
         && strpos($doc, 'un movimiento por linea') !== false
     ) {
-        prcOk('Documento de inventario registra Fase 2T/2U/2W/2X.');
+        prcOk('Documento de inventario registra Fase 2T/2U/2W/2X/2Y.');
     } else {
-        prcWarning('Documento de inventario no registra completamente Fase 2T/2U/2W/2X.', 'Actualizar inventory_reconciliation.md.');
+        prcWarning('Documento de inventario no registra completamente Fase 2T/2U/2W/2X/2Y.', 'Actualizar inventory_reconciliation.md.');
     }
 } else {
     prcWarning('No se encontro inventory_reconciliation.md.', 'Documentar Fase 2T en inventario.');
