@@ -113,6 +113,26 @@
 - No cambiaron `cajas` ni `movimientos_caja`.
 - Pendiente: QA manual autenticada en navegador.
 
+## Resultado automatico Fase 3C-C
+
+- Health checker actualizado para detectar inconsistencias CxP generadas desde compras.
+- Preflight de compras minimas actualizado con las mismas reglas de consistencia.
+- Preflight de recepcion de compras actualizado con las mismas reglas de consistencia.
+- Validaciones automaticas agregadas:
+  - CxP duplicada por compra/hotel;
+  - CxP con compra inexistente;
+  - CxP con proveedor inexistente;
+  - CxP con `hotel_id` nulo;
+  - CxP con compra de otro hotel;
+  - CxP con proveedor de otro hotel;
+  - CxP generada desde compra no recibida;
+  - CxP con saldo mayor al total;
+  - CxP con total invalido o saldo negativo;
+  - CxP sin fecha de emision;
+  - movimientos de Caja con referencia textual a CxP.
+- Resultado actual de las validaciones: 0 inconsistencias CxP y 0 movimientos de Caja relacionados con CxP.
+- Pendiente: QA manual autenticada en navegador para confirmar mensajes/flujo visual de 3C-B.
+
 ## Triage no relacionado
 
 - Sin cambios no relacionados pendientes al iniciar 3C-0.

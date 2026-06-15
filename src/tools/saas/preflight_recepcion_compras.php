@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B/3C-B para recepcion minima de compras.
+ * Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B/3C-C para recepcion minima de compras.
  *
  * Solo lectura. No ejecuta recepcion ni modifica DB.
  * Valida borradores pendientes, recepciones reales, productos_repetidos,
@@ -91,6 +91,156 @@ function prcCountSql(PDO $pdo, string $fromSql, string $where = '1=1', array $pa
     $stmt->execute($params);
 
     return (int) $stmt->fetchColumn();
+}
+
+function prcCountScalar(PDO $pdo, string $sql): ?int
+{
+    try {
+        $stmt = $pdo->query($sql);
+
+        return $stmt ? (int) $stmt->fetchColumn() : null;
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+
+function prcReportZeroCount(string $label, ?int $count, string $recommendation): void
+{
+    if ($count === null) {
+        prcWarning(
+            'No se pudo validar consistencia CxP: ' . $label . '.',
+            'Revisar manualmente el esquema antes de avanzar con CxP operativa.'
+        );
+        return;
+    }
+
+    if ($count === 0) {
+        prcOk('Consistencia CxP OK: ' . $label . ' = 0.');
+        return;
+    }
+
+    prcError('Consistencia CxP fallo: ' . $label . ' = ' . (string)$count . '.', $recommendation);
+}
+
+function prcCxpCajaTextPredicate(PDO $pdo, string $database): ?string
+{
+    $columns = [];
+    foreach (['descripcion', 'referencia', 'proveedor', 'categoria', 'comprobante', 'motivo_edicion'] as $column) {
+        if (prcColumnExists($pdo, $database, 'movimientos_caja', $column)) {
+            $columns[] = 'COALESCE(' . prcQuote($column) . ", '')";
+        }
+    }
+
+    if (empty($columns)) {
+        return null;
+    }
+
+    return "LOWER(CONCAT_WS(' ', " . implode(', ', $columns) . ")) REGEXP 'cxp|cuenta por pagar|cuentas por pagar'";
+}
+
+function prcReportCxpConsistency(PDO $pdo, string $database): void
+{
+    $checks = [
+        [
+            'label' => 'CxP duplicada por compra y hotel',
+            'sql' => "SELECT COUNT(*) FROM (
+                SELECT hotel_id, compra_id
+                FROM cuentas_por_pagar
+                WHERE compra_id IS NOT NULL
+                GROUP BY hotel_id, compra_id
+                HAVING COUNT(*) > 1
+            ) duplicadas",
+            'recommendation' => 'No generar nuevas CxP hasta dejar una sola cuenta por compra/hotel.',
+        ],
+        [
+            'label' => 'CxP con compra inexistente',
+            'sql' => "SELECT COUNT(*)
+                FROM cuentas_por_pagar cxp
+                LEFT JOIN compras c ON c.id = cxp.compra_id
+                WHERE cxp.compra_id IS NOT NULL
+                  AND c.id IS NULL",
+            'recommendation' => 'Reconciliar compra_id antes de exponer generacion o reportes CxP.',
+        ],
+        [
+            'label' => 'CxP con proveedor inexistente',
+            'sql' => "SELECT COUNT(*)
+                FROM cuentas_por_pagar cxp
+                LEFT JOIN proveedores p ON p.id = cxp.proveedor_id
+                WHERE p.id IS NULL",
+            'recommendation' => 'Reconciliar proveedor_id antes de permitir CxP operativa.',
+        ],
+        [
+            'label' => 'CxP con hotel_id nulo',
+            'sql' => 'SELECT COUNT(*) FROM cuentas_por_pagar WHERE hotel_id IS NULL',
+            'recommendation' => 'Asignar hotel_id por respaldo verificado antes de usar CxP.',
+        ],
+        [
+            'label' => 'CxP con compra de otro hotel',
+            'sql' => "SELECT COUNT(*)
+                FROM cuentas_por_pagar cxp
+                JOIN compras c ON c.id = cxp.compra_id
+                WHERE cxp.compra_id IS NOT NULL
+                  AND c.hotel_id <> cxp.hotel_id",
+            'recommendation' => 'Bloquear la cuenta y reconciliar hotel_id de compra/CxP.',
+        ],
+        [
+            'label' => 'CxP con proveedor de otro hotel',
+            'sql' => "SELECT COUNT(*)
+                FROM cuentas_por_pagar cxp
+                JOIN proveedores p ON p.id = cxp.proveedor_id
+                WHERE p.hotel_id <> cxp.hotel_id",
+            'recommendation' => 'Bloquear la cuenta y reconciliar hotel_id de proveedor/CxP.',
+        ],
+        [
+            'label' => 'CxP generada desde compra no recibida',
+            'sql' => "SELECT COUNT(*)
+                FROM cuentas_por_pagar cxp
+                JOIN compras c ON c.id = cxp.compra_id
+                WHERE cxp.compra_id IS NOT NULL
+                  AND c.estado <> 'recibida'",
+            'recommendation' => 'Anular avance CxP sobre compras no recibidas y revisar el origen manual.',
+        ],
+        [
+            'label' => 'CxP con saldo mayor al total',
+            'sql' => 'SELECT COUNT(*) FROM cuentas_por_pagar WHERE saldo > total',
+            'recommendation' => 'Corregir saldo/total antes de habilitar pagos o reportes financieros.',
+        ],
+        [
+            'label' => 'CxP con total invalido o saldo negativo',
+            'sql' => 'SELECT COUNT(*) FROM cuentas_por_pagar WHERE total <= 0 OR saldo < 0',
+            'recommendation' => 'Revisar totales de origen antes de permitir nuevas generaciones.',
+        ],
+        [
+            'label' => 'CxP sin fecha de emision',
+            'sql' => 'SELECT COUNT(*) FROM cuentas_por_pagar WHERE fecha_emision IS NULL',
+            'recommendation' => 'Completar fecha_emision desde la compra validada antes de operar CxP.',
+        ],
+    ];
+
+    foreach ($checks as $check) {
+        prcReportZeroCount($check['label'], prcCountScalar($pdo, $check['sql']), $check['recommendation']);
+    }
+
+    if (prcTableExists($pdo, $database, 'movimientos_caja')) {
+        $predicate = prcCxpCajaTextPredicate($pdo, $database);
+        if ($predicate === null) {
+            prcWarning(
+                'No se pudo validar movimientos de Caja relacionados con CxP: faltan columnas textuales conocidas.',
+                'Confirmar manualmente que Fase 3C no haya escrito movimientos_caja.'
+            );
+        } else {
+            prcReportZeroCount(
+                'movimientos de Caja con referencia textual a CxP',
+                prcCountScalar($pdo, 'SELECT COUNT(*) FROM movimientos_caja WHERE ' . $predicate),
+                'Revisar movimientos_caja; Fase 3C no debe crear pagos, abonos ni movimientos de Caja.'
+            );
+        }
+    } else {
+        prcWarning(
+            'No se pudo validar movimientos de Caja relacionados con CxP porque falta movimientos_caja.',
+            'Revisar esquema de Caja antes de habilitar pagos.'
+        );
+    }
 }
 
 function prcFirstExistingPath(array $paths): string
@@ -223,7 +373,7 @@ $purchasingDocPath = prcFirstExistingPath([
     $appRoot . '/docs/technical/purchasing_inventory_contract.md',
 ]);
 
-echo "Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B/3C-B - Recepcion minima de compras y CxP controlada\n";
+echo "Preflight Fase 2T/2U/2V/2W/2X/2Y/2Z/3B/3C-C - Recepcion minima de compras y CxP controlada\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {
@@ -552,6 +702,7 @@ if ($pdo) {
             prcOk('Tablas CxP Fase 3B existen para modo read-only y no forman parte de la recepcion minima.');
             prcOk('cuentas_por_pagar registros actuales: ' . (string)prcCountRows($pdo, 'cuentas_por_pagar'));
             prcOk('cuentas_por_pagar_movimientos registros actuales: ' . (string)prcCountRows($pdo, 'cuentas_por_pagar_movimientos'));
+            prcReportCxpConsistency($pdo, $database);
         } else {
             prcWarning(
                 'Tablas CxP Fase 3B aun no existen.',
@@ -632,7 +783,7 @@ if (is_file($routesPath)) {
         prcOk('Solo hay reporte read-only, detalle read-only, recepcion minima y CxP/preview/generacion manual; no hay pago ni documentos de compras.');
     } else {
         prcError(
-            'Rutas fuera del alcance Fase 2V/2W/2X/2Y/3C-B: ' . implode(' | ', $forbiddenRoutes),
+            'Rutas fuera del alcance Fase 2V/2W/2X/2Y/3C-C: ' . implode(' | ', $forbiddenRoutes),
             'Retirar rutas que no sean reporte read-only, detalle, borrador, POST /compras/{id}/recibir, CxP GET/preview/detalle o POST generar CxP.'
         );
     }

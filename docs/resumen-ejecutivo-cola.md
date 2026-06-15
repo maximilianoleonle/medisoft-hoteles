@@ -27,12 +27,13 @@ Estado actual:
 - Fase 3C-0 completada con contrato y diagnostico.
 - Fase 3C-A implementa preview/simulador.
 - Fase 3C-B implementa generacion manual controlada con POST + CSRF.
+- Fase 3C-C refuerza health/preflights con consistencia CxP y deteccion de Caja relacionada.
 - No se implementaron pagos ni Caja.
 - CxP puede crearse solo desde compra recibida elegible.
 - Compras recibidas elegibles antes de la prueba local: 2.
 - Prueba local generada: compra `#5` -> CxP `#1`.
 - CxP actuales despues de prueba local: 1.
-- Movimientos de Caja: sin cambios.
+- Movimientos de Caja relacionados con CxP: 0.
 
 ## Situacion
 
@@ -105,6 +106,7 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 - Inventario: se mantiene fuente moderna `inventario_productos` + `movimientos_inventario`.
 - CxP: se mantiene read-only y vacio.
 - Riesgo residual: futuras escrituras CxP deben validar estrictamente `hotel_id` de proveedor/compra.
+- 3C-C agrega validacion automatica para duplicados, compras/proveedores inexistentes, cruces de hotel, compras no recibidas, saldos/totales invalidos, fechas faltantes y referencias CxP en Caja.
 
 ## Pendiente antes de avanzar
 

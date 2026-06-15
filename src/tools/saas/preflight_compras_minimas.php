@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B/3C-B para Compras minimas y CxP controlada.
+ * Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B/3C-C para Compras minimas y CxP controlada.
  *
  * Solo lectura. No crea tablas, rutas, migraciones ni datos.
  */
@@ -81,6 +81,156 @@ function pfCountRows(PDO $pdo, string $table, string $where = '1=1'): int
     return $stmt ? (int) $stmt->fetchColumn() : 0;
 }
 
+function pfCountScalar(PDO $pdo, string $sql): ?int
+{
+    try {
+        $stmt = $pdo->query($sql);
+
+        return $stmt ? (int) $stmt->fetchColumn() : null;
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+
+function pfReportZeroCount(string $label, ?int $count, string $recommendation): void
+{
+    if ($count === null) {
+        pfWarning(
+            'No se pudo validar consistencia CxP: ' . $label . '.',
+            'Revisar manualmente el esquema antes de avanzar con CxP operativa.'
+        );
+        return;
+    }
+
+    if ($count === 0) {
+        pfOk('Consistencia CxP OK: ' . $label . ' = 0.');
+        return;
+    }
+
+    pfError('Consistencia CxP fallo: ' . $label . ' = ' . (string)$count . '.', $recommendation);
+}
+
+function pfCxpCajaTextPredicate(PDO $pdo, string $database): ?string
+{
+    $columns = [];
+    foreach (['descripcion', 'referencia', 'proveedor', 'categoria', 'comprobante', 'motivo_edicion'] as $column) {
+        if (pfColumnExists($pdo, $database, 'movimientos_caja', $column)) {
+            $columns[] = 'COALESCE(' . pfQuote($column) . ", '')";
+        }
+    }
+
+    if (empty($columns)) {
+        return null;
+    }
+
+    return "LOWER(CONCAT_WS(' ', " . implode(', ', $columns) . ")) REGEXP 'cxp|cuenta por pagar|cuentas por pagar'";
+}
+
+function pfReportCxpConsistency(PDO $pdo, string $database): void
+{
+    $checks = [
+        [
+            'label' => 'CxP duplicada por compra y hotel',
+            'sql' => "SELECT COUNT(*) FROM (
+                SELECT hotel_id, compra_id
+                FROM cuentas_por_pagar
+                WHERE compra_id IS NOT NULL
+                GROUP BY hotel_id, compra_id
+                HAVING COUNT(*) > 1
+            ) duplicadas",
+            'recommendation' => 'No generar nuevas CxP hasta dejar una sola cuenta por compra/hotel.',
+        ],
+        [
+            'label' => 'CxP con compra inexistente',
+            'sql' => "SELECT COUNT(*)
+                FROM cuentas_por_pagar cxp
+                LEFT JOIN compras c ON c.id = cxp.compra_id
+                WHERE cxp.compra_id IS NOT NULL
+                  AND c.id IS NULL",
+            'recommendation' => 'Reconciliar compra_id antes de exponer generacion o reportes CxP.',
+        ],
+        [
+            'label' => 'CxP con proveedor inexistente',
+            'sql' => "SELECT COUNT(*)
+                FROM cuentas_por_pagar cxp
+                LEFT JOIN proveedores p ON p.id = cxp.proveedor_id
+                WHERE p.id IS NULL",
+            'recommendation' => 'Reconciliar proveedor_id antes de permitir CxP operativa.',
+        ],
+        [
+            'label' => 'CxP con hotel_id nulo',
+            'sql' => 'SELECT COUNT(*) FROM cuentas_por_pagar WHERE hotel_id IS NULL',
+            'recommendation' => 'Asignar hotel_id por respaldo verificado antes de usar CxP.',
+        ],
+        [
+            'label' => 'CxP con compra de otro hotel',
+            'sql' => "SELECT COUNT(*)
+                FROM cuentas_por_pagar cxp
+                JOIN compras c ON c.id = cxp.compra_id
+                WHERE cxp.compra_id IS NOT NULL
+                  AND c.hotel_id <> cxp.hotel_id",
+            'recommendation' => 'Bloquear la cuenta y reconciliar hotel_id de compra/CxP.',
+        ],
+        [
+            'label' => 'CxP con proveedor de otro hotel',
+            'sql' => "SELECT COUNT(*)
+                FROM cuentas_por_pagar cxp
+                JOIN proveedores p ON p.id = cxp.proveedor_id
+                WHERE p.hotel_id <> cxp.hotel_id",
+            'recommendation' => 'Bloquear la cuenta y reconciliar hotel_id de proveedor/CxP.',
+        ],
+        [
+            'label' => 'CxP generada desde compra no recibida',
+            'sql' => "SELECT COUNT(*)
+                FROM cuentas_por_pagar cxp
+                JOIN compras c ON c.id = cxp.compra_id
+                WHERE cxp.compra_id IS NOT NULL
+                  AND c.estado <> 'recibida'",
+            'recommendation' => 'Anular avance CxP sobre compras no recibidas y revisar el origen manual.',
+        ],
+        [
+            'label' => 'CxP con saldo mayor al total',
+            'sql' => 'SELECT COUNT(*) FROM cuentas_por_pagar WHERE saldo > total',
+            'recommendation' => 'Corregir saldo/total antes de habilitar pagos o reportes financieros.',
+        ],
+        [
+            'label' => 'CxP con total invalido o saldo negativo',
+            'sql' => 'SELECT COUNT(*) FROM cuentas_por_pagar WHERE total <= 0 OR saldo < 0',
+            'recommendation' => 'Revisar totales de origen antes de permitir nuevas generaciones.',
+        ],
+        [
+            'label' => 'CxP sin fecha de emision',
+            'sql' => 'SELECT COUNT(*) FROM cuentas_por_pagar WHERE fecha_emision IS NULL',
+            'recommendation' => 'Completar fecha_emision desde la compra validada antes de operar CxP.',
+        ],
+    ];
+
+    foreach ($checks as $check) {
+        pfReportZeroCount($check['label'], pfCountScalar($pdo, $check['sql']), $check['recommendation']);
+    }
+
+    if (pfTableExists($pdo, $database, 'movimientos_caja')) {
+        $predicate = pfCxpCajaTextPredicate($pdo, $database);
+        if ($predicate === null) {
+            pfWarning(
+                'No se pudo validar movimientos de Caja relacionados con CxP: faltan columnas textuales conocidas.',
+                'Confirmar manualmente que Fase 3C no haya escrito movimientos_caja.'
+            );
+        } else {
+            pfReportZeroCount(
+                'movimientos de Caja con referencia textual a CxP',
+                pfCountScalar($pdo, 'SELECT COUNT(*) FROM movimientos_caja WHERE ' . $predicate),
+                'Revisar movimientos_caja; Fase 3C no debe crear pagos, abonos ni movimientos de Caja.'
+            );
+        }
+    } else {
+        pfWarning(
+            'No se pudo validar movimientos de Caja relacionados con CxP porque falta movimientos_caja.',
+            'Revisar esquema de Caja antes de habilitar pagos.'
+        );
+    }
+}
+
 function pfRouteRegex(string $route): string
 {
     $quoted = preg_quote(trim($route, '/'), '#');
@@ -155,7 +305,7 @@ $purchaseReceptionPreflightPath = $appRoot . '/tools/saas/preflight_recepcion_co
 $draftMigrationPath = $projectRoot . '/docs/technical/sql_drafts/20260615_002_fase_2n_compras_minimas_draft.sql';
 $officialMigrationPath = $projectRoot . '/migrations/20260615_002_fase_2n_compras_minimas.sql';
 
-echo "Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B/3C-B - Compras minimas y CxP controlada\n";
+echo "Preflight Fase 2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3B/3C-C - Compras minimas y CxP controlada\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {
@@ -395,6 +545,7 @@ if ($pdo) {
         pfOk('Tablas CxP Fase 3B existen para modo read-only.');
         pfOk('cuentas_por_pagar registros actuales: ' . (string)pfCountRows($pdo, 'cuentas_por_pagar'));
         pfOk('cuentas_por_pagar_movimientos registros actuales: ' . (string)pfCountRows($pdo, 'cuentas_por_pagar_movimientos'));
+        pfReportCxpConsistency($pdo, $database);
     } else {
         pfWarning(
             'Tablas CxP Fase 3B aun no existen.',
@@ -475,10 +626,10 @@ if (is_file($routesPath)) {
     }
 
     if (empty($forbiddenRoutes)) {
-        pfOk('Solo existen compras minimas y CxP/preview/generacion manual Fase 3B/3C-B; no hay pagos, contactos ni documentos.');
+        pfOk('Solo existen compras minimas y CxP/preview/generacion manual Fase 3B/3C-C; no hay pagos, contactos ni documentos.');
     } else {
         pfError(
-            'Rutas fuera del alcance Fase 3C-B detectadas: ' . implode(' | ', $forbiddenRoutes),
+            'Rutas fuera del alcance Fase 3C-C detectadas: ' . implode(' | ', $forbiddenRoutes),
             'Retirar rutas que no sean Compras minimas, GET de CxP/preview/detalle o POST generar CxP desde compra.'
         );
     }
@@ -541,10 +692,10 @@ if (
         && strpos($cxpCode, 'function pagarAction') === false
         && strpos($cxpCode, 'function abonarAction') === false
     ) {
-        pfOk('CxP Fase 3B/3C-B existe con lectura, preview y generacion manual controlada.');
+        pfOk('CxP Fase 3B/3C-C existe con lectura, preview y generacion manual controlada.');
     } else {
         pfError(
-            'CxP Fase 3C-B contiene tokens fuera de alcance o falta validacion central.',
+            'CxP Fase 3C-C contiene tokens fuera de alcance o falta validacion central.',
             'Mantener solo POST manual con CSRF desde compra recibida, sin pagos ni movimientos_caja.'
         );
     }

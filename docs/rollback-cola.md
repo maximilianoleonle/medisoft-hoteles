@@ -155,3 +155,17 @@ Dato creado en la prueba local:
 - `total = saldo = 1000.00`
 
 Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizacion; restaurar backup o acordar una estrategia de anulacion/reconciliacion.
+
+### 3C-C validaciones, health y preflights
+
+- Rollback de codigo/docs: revertir el commit `test(phase-3c): add payable consistency checks` si alguna regla genera falsos positivos bloqueantes.
+- Rollback de datos: no aplica; la fase solo ejecuta consultas de lectura.
+- No se crean nuevas rutas, vistas, pagos, abonos ni movimientos de Caja.
+- Validacion posterior:
+  - `php -l` en health/preflights;
+  - health checker;
+  - preflight de compras minimas;
+  - preflight de recepcion de compras;
+  - SQL read-only de consistencia CxP;
+  - `git diff --check`.
+- Si alguna validacion detecta datos inconsistentes, no corregir con `UPDATE`/`DELETE` sin nueva autorizacion y backup.
