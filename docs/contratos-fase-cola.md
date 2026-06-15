@@ -219,3 +219,94 @@ Definition of Done 3C-B:
 - prueba de doble generacion falla limpiamente;
 - checkers/preflights actualizados;
 - `php -l`, health, preflights y `git diff --check` sin errores bloqueantes.
+
+## Bloque Personal y Nomina (Fase NP): modulo independiente de trabajadores
+
+### Objetivo
+
+Crear un modulo INDEPENDIENTE de Personal y Nomina para registrar trabajadores
+(sin acceso obligatorio al sistema), roles laborales, pagos, anticipos, prestamos,
+asistencia y saldos por persona; con contabilidad laboral auditable y multi-hotel,
+PERO SIN integracion con Caja ni salida real de dinero en este bloque.
+
+Un "pago a trabajador" en este bloque es un REGISTRO LABORAL que afecta el saldo del
+trabajador; NO genera movimiento de Caja. La salida real de dinero se difiere a un
+bloque posterior (Fase NP-Caja).
+
+### Riesgo
+
+Naranja.
+
+Motivo:
+
+- crea un modulo financiero-laboral nuevo (deuda y saldos por persona);
+- toca un concepto sensible (trabajadores antes ligados a `usuarios`);
+- pero NO mueve dinero, NO toca Caja, NO altera `usuarios` destructivamente, NO toca `/api/sync`.
+
+### Incluye
+
+- contrato y diagnostico (NP-0);
+- migraciones ADITIVAS reversibles de 6 tablas nuevas (`trabajadores`,
+  `trabajador_pagos`, `trabajador_anticipos`, `trabajador_prestamos`,
+  `trabajador_asistencias`, `trabajador_documentos`);
+- ficha basica de trabajador (listado + ficha read-first, luego CRUD controlado);
+- pagos, anticipos y prestamos como ledger laboral;
+- saldos por trabajador y reportes read-only semanal/quincenal e historial;
+- asistencia y comisiones/bonos/descuentos como conceptos del ledger;
+- referencia logica/opcional trabajador-responsable de mantenimiento;
+- checkers de consistencia laboral, health/preflight;
+- QA, rollback, fuentes de verdad, revision tecnica, auditoria y cierre.
+
+### No incluye
+
+- integracion con Caja; categoria "Nomina" que mueva Caja; movimientos de Caja;
+- salida real de dinero; conciliacion;
+- edicion manual destructiva de saldos;
+- conversion/fusion de usuarios existentes en trabajadores;
+- ALTER destructivo sobre `usuarios`; borrado de usuarios; permisos profundos / auth;
+- CxC; cambios en `/api/sync`;
+- migraciones destructivas; eliminacion de tablas/columnas; borrado de datos;
+- push; produccion; secrets; refactors grandes.
+
+### Definition of Done del bloque NP
+
+1. Contrato documentado.
+2. Migraciones aditivas creadas y reversibles.
+3. Ficha basica de trabajador creada y verificada.
+4. Trabajador independiente de `usuarios` (no requiere login).
+5. Pagos/anticipos/prestamos registrados como ledger laboral.
+6. Saldos calculados correctamente desde el ledger.
+7. Reportes semanal/quincenal e historial read-only funcionando.
+8. Asistencia y comisiones registradas.
+9. No hay integracion con Caja.
+10. No hay movimientos de Caja.
+11. No hay salida real de dinero.
+12. No se altero `usuarios` de forma destructiva.
+13. Todo respeta `hotel_id`.
+14. Checkers pasan con cero errores bloqueantes.
+15. `php -l` pasa en archivos tocados.
+16. HTTP sin sesion bloquea rutas sensibles.
+17. QA manual documentada.
+18. Rollback documentado.
+19. Revision tecnica completada.
+20. Auditoria de seguridad completada.
+21. Commit por fase/subfase.
+22. Estado Git explicado.
+
+### Subfases y commits sugeridos
+
+- NP-0: contrato y diagnostico -> `docs(phase-np): define independent payroll module contract`.
+- NP-A: ficha basica de trabajador -> `feat(phase-np): add worker basic profile and listing`.
+- NP-B: pagos, anticipos y prestamos (sin Caja) -> `feat(phase-np): record worker payments, advances and loans`.
+- NP-C: saldos y reportes read-only -> `feat(phase-np): add worker balances and payroll reports`.
+- NP-D: asistencia y comisiones -> `feat(phase-np): add worker attendance and commissions`.
+- NP-E: validaciones, health y preflights -> `test(phase-np): add payroll consistency checks`.
+- NP-F: documentacion y cierre -> `docs(phase-np): close independent payroll module block`.
+
+### Estado NP-0
+
+Contrato, diagnostico read-only y diseno aditivo de las 6 tablas documentados en
+`docs/fase_NP_0_contrato_diagnostico.md`. No se implemento funcionalidad, no se crearon
+migraciones aplicadas y no se escribio en la base de datos. La formula de saldo por
+trabajador y la referencia logica de "responsable" quedan especificadas para NP-C y el
+alcance #9.

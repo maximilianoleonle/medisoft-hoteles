@@ -92,3 +92,47 @@
 - No se inserta en `cuentas_por_pagar_movimientos` en 3C-B para no introducir tipos operativos de pago/abono.
 - La trazabilidad de creacion se registra en `logs_auditoria` mediante `AuditService`.
 - Caja sigue completamente fuera del flujo.
+
+## Bloque Personal y Nomina (Fase NP)
+
+### Decisiones de diagnostico NP-0
+
+- Hoy "trabajador" = `usuarios` (tabla global, sin `hotel_id`, `rol` de sistema) + pivote
+  `hotel_usuarios`. No hay rol laboral, deuda ni saldo por persona.
+- El trabajador NP es una **entidad nueva e independiente**: no requiere usuario del sistema
+  ni login. El vinculo a un usuario es opcional via `trabajadores.usuario_id` con
+  `ON DELETE SET NULL`; jamas se altera `usuarios` de forma destructiva.
+- No se convierte ni fusiona ningun `usuario` existente en trabajador.
+
+### Decisiones de diseno de tablas NP
+
+- 6 tablas aditivas, todas con `hotel_id NOT NULL` (FK `hoteles` RESTRICT) y, las hijas,
+  `trabajador_id` (FK `trabajadores` RESTRICT). Baja logica via `estado`, nunca borrado fisico.
+- El ledger laboral se reparte en `trabajador_pagos` (pago/comision/bono/descuento/ajuste
+  con `efecto` a_favor/en_contra), `trabajador_anticipos` y `trabajador_prestamos`
+  (ambos con `saldo_pendiente`).
+- Un `tipo='pago'` en `trabajador_pagos` es una liquidacion laboral entregada; es un
+  REGISTRO LABORAL, NO un movimiento de Caja.
+- El saldo por trabajador es DERIVADO del ledger (no editable manualmente). Formula
+  documentada en `docs/fase_NP_0_contrato_diagnostico.md`.
+- Asistencia: `UNIQUE (hotel_id, trabajador_id, fecha)` para evitar duplicados por dia.
+- Documentos: ruta de archivo siguiendo el patron de uploads del proyecto; baja logica.
+
+### Decisiones sobre Caja y nomina
+
+- NO se crea categoria "Nomina" en `categorias_movimientos` en este bloque.
+- NO se inserta en `movimientos_caja` por nomina. La integracion Caja se difiere a una
+  Fase NP-Caja autorizada por separado.
+
+### Decision sobre "responsable" de mantenimiento
+
+- En NP la referencia trabajador-responsable es **logica y opcional**, de solo lectura,
+  basada en el campo de texto libre `mantenimientos_habitaciones.realizado_por`.
+- NO se altera `mantenimientos_habitaciones`. Una columna FK real se difiere a una
+  migracion aditiva posterior autorizada.
+
+### Decisiones de seguridad/operacion NP
+
+- Auditoria con `AuditService::record()` si la tabla `logs_auditoria` esta disponible.
+- Escrituras explicitas (POST + CSRF + transaccion cuando el patron lo permita).
+- `/api/sync` fuera de alcance.

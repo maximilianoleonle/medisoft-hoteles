@@ -113,3 +113,25 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 - QA manual autenticada de listado/detalle CxP, preview 3C-A y generacion manual 3C-B.
 - QA visual/regresion de compras, proveedores y recepcion.
 - No avanzar a pagos/Caja sin nueva autorizacion.
+
+## Nuevo bloque Personal y Nomina (Fase NP)
+
+Objetivo: modulo INDEPENDIENTE de trabajadores con ledger laboral, saldos por persona,
+asistencia y comisiones, multi-hotel, SIN integracion con Caja ni salida real de dinero.
+
+Estado actual:
+
+- Fase NP-0 completada: contrato, diagnostico read-only y diseno aditivo de 6 tablas.
+- HEAD al iniciar NP-0: `5dfe665`; Git limpio.
+- Hoy "trabajador" = `usuarios` + `hotel_usuarios`; sin rol laboral, deuda ni saldo por persona.
+- Caja revisada en solo lectura; NO existe categoria "Nomina"; movimientos Caja-nomina: 0.
+- No existe ninguna tabla `trabajador*`: el bloque es 100% aditivo.
+- No se implemento funcionalidad ni se escribio en DB en NP-0.
+
+Riesgo: naranja (modulo financiero-laboral nuevo y concepto sensible), mitigado por
+migraciones aditivas/reversibles, sin Caja, sin tocar `usuarios` destructivamente,
+filtro `hotel_id` y validaciones fuertes.
+
+Subfases planificadas: NP-A (ficha basica), NP-B (pagos/anticipos/prestamos sin Caja),
+NP-C (saldos y reportes), NP-D (asistencia y comisiones), NP-E (validaciones/health),
+NP-F (cierre). Contrato: `docs/fase_NP_0_contrato_diagnostico.md`.

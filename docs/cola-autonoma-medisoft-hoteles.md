@@ -2,15 +2,24 @@
 
 ## Ultimo mensaje real usado
 
-Cola autorizada Fase 3C-B: generacion manual controlada de CxP desde compra recibida, sin Caja ni pagos.
+Bloque autorizado Personal y Nomina (Fase NP): modulo INDEPENDIENTE de trabajadores con ledger laboral, saldos por persona, asistencia y comisiones, multi-hotel, SIN integracion con Caja ni salida real de dinero. Empezar por Fase NP-0 (contrato y diagnostico).
 
 ## Estado vigente
 
-- Fase actual: Fase 3C-B generacion manual controlada.
+- Bloque actual: Personal y Nomina (Fase NP).
+- Fase actual: NP-0 contrato y diagnostico.
 - Riesgo: naranja.
-- Estado: POST manual implementado con CSRF, transaccion y auditoria; sin Caja ni pagos.
+- Estado: contrato, diagnostico read-only y diseno de 6 tablas completados; sin funcionalidad, sin migraciones aplicadas, sin escritura en DB.
+- HEAD al iniciar NP-0: `5dfe665 test(phase-3c): add payable consistency checks`.
+- Estado Git al iniciar NP-0: limpio.
 - Base local principal: `medisoft_hoteles_import`.
-- Backup previo a DB:
+- Contrato NP: `docs/fase_NP_0_contrato_diagnostico.md`.
+
+## Bloque anterior (cerrado): Fase 3C CxP
+
+- Ultimo mensaje real del bloque previo: Fase 3C-B generacion manual controlada de CxP desde compra recibida, sin Caja ni pagos.
+- Estado: cerrado tecnicamente; QA manual reportada por el usuario.
+- Backup previo a DB del bloque previo:
   - `src/storage/backups/phase3b_20260615_040742_before_cxp_medisoft_hoteles_import.sql`
   - SHA256: `24663D206AE15B86B001708D8BC2665541548443A0EA363548CAFC3FDF3A4D2C`
   - tamano: `3017728`
@@ -133,6 +142,17 @@ Ver `docs/qa-pendiente-cola.md`.
 
 Ver `docs/cierre-tecnico-bloque-cola.md`.
 
+## Diagnostico NP-0 (Personal y Nomina)
+
+- HEAD al iniciar: `5dfe665`; Git limpio; rama `feature/saas-multihotel` 21 commits por delante de origin (sin push).
+- Hoy "trabajador" = `usuarios` (tabla global, sin `hotel_id`, `rol` de sistema) + pivote `hotel_usuarios`. No hay rol laboral, deuda ni saldo por persona.
+- Caja revisada en solo lectura: `cajas`, `movimientos_caja`, `cortes_caja`, `categorias_movimientos`. NO existe categoria "Nomina". Movimientos Caja-nomina: 0 (debe seguir en 0).
+- Responsable de mantenimiento/limpieza: hoy es texto libre `mantenimientos_habitaciones.realizado_por`; no hay tabla `limpieza`/`tareas`. La referencia NP sera logica/opcional, sin alterar mantenimiento.
+- No existe ninguna tabla `trabajador*`: el bloque es 100% aditivo.
+- Patrones reutilizables: `AuditService::record()` (auditoria), migracion aditiva idempotente (modelo `20260615_003_fase_3b_cxp_base.sql`), modelos con filtro `hotel_id`.
+- Confirmado: NO hace falta tocar Caja, ni `usuarios` destructivamente, ni `/api/sync`.
+- Diseno de 6 tablas (`trabajadores`, `trabajador_pagos`, `trabajador_anticipos`, `trabajador_prestamos`, `trabajador_asistencias`, `trabajador_documentos`) documentado en `docs/fase_NP_0_contrato_diagnostico.md`.
+
 ## Siguiente accion
 
-Verificar y cerrar Fase 3C-B. No avanzar a pagos, Caja ni abonos sin nueva autorizacion.
+Confirmar contrato NP-0 y avanzar a Fase NP-A (migracion aditiva de `trabajadores` + `trabajador_documentos` y ficha basica read-first). No avanzar a Caja ni a salida de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

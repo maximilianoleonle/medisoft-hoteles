@@ -137,3 +137,40 @@
 
 - Sin cambios no relacionados pendientes al iniciar 3C-0.
 - El ajuste visual del modal de check-in tardio fue commiteado en `dc3c150`.
+
+## QA Bloque Personal y Nomina (Fase NP)
+
+### Estado NP-0
+
+- Contrato y diagnostico documentados; sin funcionalidad, sin migraciones aplicadas, sin escritura en DB.
+- No hay QA manual pendiente especifica de NP-0 mas alla de validar lectura del contrato.
+- Git limpio al iniciar; HEAD `5dfe665`.
+
+### QA critica planificada (NP)
+
+- Confirmar que NO existe ningun movimiento de Caja generado por nomina (debe seguir en 0).
+- Confirmar que un trabajador puede existir SIN usuario del sistema (sin login).
+- Confirmar que `usuarios` no se altera de forma destructiva ni se borra.
+- Confirmar que toda tabla `trabajador*` respeta `hotel_id` y no muestra datos de otro hotel.
+- Confirmar que pagos/anticipos/prestamos son acciones explicitas (POST + CSRF), nunca automaticas.
+- Confirmar que los saldos son derivados del ledger y no editables manualmente.
+- Confirmar que `/api/sync` sigue bloqueado.
+
+### QA funcional planificada (NP)
+
+- NP-A: listado de trabajadores por hotel, ficha read-first, alta/edicion controlada, baja logica, documentos.
+- NP-B: registrar pago/anticipo/prestamo con validacion de hotel, trabajador activo y monto valido; mensajes claros.
+- NP-C: ver saldo a favor/en contra, historial y reporte semanal/quincenal por hotel y trabajador.
+- NP-D: registrar asistencia y comisiones/bonos/descuentos y ver su efecto en saldos.
+
+### QA regresion planificada (NP)
+
+- Confirmar que Caja/cortes/movimientos no cambian al usar el modulo de nomina.
+- Confirmar que `usuarios`/`hotel_usuarios` siguen intactos.
+- Confirmar que mantenimiento/limpieza siguen funcionando (la referencia de responsable es logica/opcional).
+
+### QA visual planificada (NP)
+
+- Listado y ficha de trabajador en escritorio y movil.
+- Estados vacios claros (sin trabajadores, sin movimientos).
+- Consistencia visual con el resto del sistema; sin mezclar branding Medisoft SaaS con branding hotelero.

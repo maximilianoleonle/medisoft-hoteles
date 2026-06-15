@@ -74,6 +74,39 @@ Regla:
 
 - La ficha de proveedor y su historial son read-only para compras recibidas.
 
+## Personal y Nomina (Fase NP)
+
+Fuente nueva e independiente (modulo de trabajadores):
+
+- `trabajadores`
+- `trabajador_pagos`
+- `trabajador_anticipos`
+- `trabajador_prestamos`
+- `trabajador_asistencias`
+- `trabajador_documentos`
+
+Estado:
+
+- Fase NP-0 solo define contrato, diagnostico y diseno aditivo de las 6 tablas; aun no
+  existen en la base de datos.
+- El bloque NP es un modulo financiero-laboral INDEPENDIENTE: ledger laboral, saldos por
+  persona, asistencia y comisiones, multi-hotel.
+- Sin integracion con Caja, sin movimientos de Caja, sin salida real de dinero en este bloque.
+
+Reglas:
+
+- El "trabajador" es una entidad independiente: NO requiere usuario del sistema ni login.
+- El vinculo opcional a un `usuario` es por `trabajadores.usuario_id` con `ON DELETE SET NULL`;
+  nunca se altera `usuarios` de forma destructiva ni se fusionan usuarios en trabajadores.
+- Un "pago a trabajador" es un REGISTRO LABORAL que afecta el saldo del trabajador, NO un
+  movimiento de Caja.
+- El saldo por trabajador es DERIVADO del ledger (`trabajador_pagos`, `trabajador_anticipos`,
+  `trabajador_prestamos`); no es editable manualmente.
+- Toda escritura valida `hotel_id` y `trabajador_id` del mismo hotel antes de persistir.
+- Cualquier integracion con Caja o salida real de dinero requiere una Fase NP-Caja autorizada.
+- La referencia trabajador-responsable de mantenimiento es logica/opcional y no altera
+  `mantenimientos_habitaciones`.
+
 ## Sync
 
 Fuente de verdad operativa:

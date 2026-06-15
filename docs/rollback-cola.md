@@ -169,3 +169,30 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   - SQL read-only de consistencia CxP;
   - `git diff --check`.
 - Si alguna validacion detecta datos inconsistentes, no corregir con `UPDATE`/`DELETE` sin nueva autorizacion y backup.
+
+## Bloque Personal y Nomina (Fase NP)
+
+### NP-0 contrato y diagnostico
+
+- Rollback: revertir el commit documental `docs(phase-np): define independent payroll module contract` si se descarta el diseno.
+- DB: no aplica; NP-0 no escribe en la base de datos.
+
+### NP-A en adelante (migraciones aditivas)
+
+- Cada migracion creara tablas nuevas vacias (`trabajadores`, `trabajador_pagos`,
+  `trabajador_anticipos`, `trabajador_prestamos`, `trabajador_asistencias`,
+  `trabajador_documentos`) con `CREATE TABLE IF NOT EXISTS` y bloque de rollback comentado.
+- Backup previo obligatorio antes de cualquier escritura local de prueba, siguiendo el
+  patron `src/storage/backups/`.
+- Rollback de codigo: revertir el commit de la subfase correspondiente.
+- Rollback de DB: `DROP TABLE` de las tablas nuevas SOLO si estan vacias y con
+  autorizacion explicita; quitar el registro de `migrations` por `nombre`.
+- Si existen datos reales (trabajadores, pagos, anticipos, prestamos, asistencias,
+  documentos), NO ejecutar `DROP`/`DELETE`: exportar conteos, reconciliar y documentar
+  rollback especifico antes de cualquier cambio.
+
+### Reglas duras de rollback NP
+
+- No borrar ni alterar `usuarios` ni `hotel_usuarios` durante ningun rollback NP.
+- No tocar Caja, cortes ni movimientos durante ningun rollback NP.
+- No hacer reset destructivo de Git ni push.
