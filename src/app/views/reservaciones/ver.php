@@ -4383,6 +4383,7 @@ endif;
                 <?= csrf_field() ?>
                 <input type="hidden" name="tipo_tardio" id="tipo_tardio" value="">
 
+                <div class="rv-tardio-fields">
                 <!-- Info Reservación -->
                 <div class="rv-tardio-info" style="background: #F9FAFB; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1rem;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.875rem;">
@@ -4687,6 +4688,7 @@ endif;
                     <textarea name="notas_adicionales" rows="2"
                               placeholder="Ej: El personal olvidó hacer el check-in"
                               style="width: 100%; padding: 0.5rem; border: 2px solid #E5E7EB; border-radius: 0.5rem; font-size: 0.875rem; resize: vertical;"></textarea>
+                </div>
                 </div>
 
                 <!-- Botones -->
@@ -8437,9 +8439,11 @@ function mostrarPreviewMDD(tipo, html) {
 #modalCheckInTardio .rv-tardio-shell {
     width: min(960px, calc(100vw - 24px)) !important;
     max-width: min(960px, calc(100vw - 24px)) !important;
+    height: min(92dvh, 900px) !important;
     max-height: min(92dvh, 900px) !important;
     display: grid !important;
     grid-template-columns: minmax(250px, .9fr) minmax(0, 1.7fr);
+    grid-template-rows: auto minmax(0, 1fr);
     overflow: hidden !important;
     border-radius: 28px !important;
     background: #F8F4EC !important;
@@ -8579,7 +8583,16 @@ function mostrarPreviewMDD(tipo, html) {
 
 #modalCheckInTardio .rv-tardio-form {
     min-height: 0;
-    max-height: min(92dvh, 900px);
+    height: 100%;
+    max-height: 100%;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    padding: 0;
+    overflow: hidden;
+}
+
+#modalCheckInTardio .rv-tardio-fields {
+    min-height: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(175px, .58fr);
     gap: 14px;
@@ -8972,6 +8985,7 @@ function mostrarPreviewMDD(tipo, html) {
     #modalCheckIn .rv-checkin-shell { grid-template-columns: 1fr; }
     #modalCheckInTardio .rv-tardio-shell {
         grid-template-columns: 1fr !important;
+        grid-template-rows: auto auto minmax(0, 1fr) !important;
     }
     #modalCheckIn .rv-checkin-hero {
         min-height: auto;
@@ -9073,6 +9087,7 @@ function mostrarPreviewMDD(tipo, html) {
     }
     #modalCheckInTardio .rv-tardio-shell {
         width: 100% !important;
+        height: 96dvh !important;
         max-height: 96dvh !important;
         border-radius: 24px 24px 0 0 !important;
     }
@@ -9080,7 +9095,7 @@ function mostrarPreviewMDD(tipo, html) {
         grid-template-columns: 1fr;
         padding: 14px;
     }
-    #modalCheckInTardio .rv-tardio-form {
+    #modalCheckInTardio .rv-tardio-fields {
         grid-template-columns: 1fr;
         padding: 14px;
     }
