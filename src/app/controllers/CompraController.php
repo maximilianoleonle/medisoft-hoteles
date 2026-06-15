@@ -92,6 +92,31 @@ class CompraController extends Controller
         ]);
     }
 
+    public function verAction(): void
+    {
+        try {
+            $compraId = (int)($this->route_params['id'] ?? 0);
+            if ($compraId <= 0) {
+                throw new Exception('Compra invalida');
+            }
+
+            $compra = $this->compraService->obtenerCompra($this->hotelIdActual(), $compraId);
+            if (!$compra) {
+                set_mensaje('Compra no encontrada para el hotel actual.', 'error');
+                $this->redirect('compras');
+                return;
+            }
+
+            View::renderTemplate('compras/ver', [
+                'title' => 'Compra #' . $compraId . ' - ' . current_hotel_display_name(),
+                'compra' => $compra,
+            ]);
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo cargar el detalle de la compra: ' . $e->getMessage(), 'error');
+            $this->redirect('compras');
+        }
+    }
+
     public function guardarAction(): void
     {
         if (!$this->isPost()) {
@@ -123,6 +148,41 @@ class CompraController extends Controller
         } catch (Throwable $e) {
             set_mensaje('Error: ' . $e->getMessage(), 'error');
             $this->redirect('compras/crear');
+        }
+    }
+
+    public function recibirAction(): void
+    {
+        if (!$this->isPost()) {
+            $this->redirect('compras');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        try {
+            $compraId = (int)($this->route_params['id'] ?? 0);
+            if ($compraId <= 0) {
+                throw new Exception('Compra invalida');
+            }
+
+            $resultado = $this->compraService->recibirCompra(
+                $this->hotelIdActual(),
+                $compraId,
+                $this->usuarioIdActual()
+            );
+            $movimientos = isset($resultado['movimientos']) && is_array($resultado['movimientos'])
+                ? count($resultado['movimientos'])
+                : 0;
+
+            set_mensaje(
+                'Compra #' . $compraId . ' recibida correctamente. Movimientos de inventario: ' . $movimientos . '.',
+                'success'
+            );
+            $this->redirect('compras?estado=recibida');
+        } catch (Throwable $e) {
+            set_mensaje('Error al recibir compra: ' . $e->getMessage(), 'error');
+            $this->redirect('compras');
         }
     }
 

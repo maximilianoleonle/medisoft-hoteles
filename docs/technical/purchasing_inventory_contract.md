@@ -995,6 +995,220 @@ Pendiente para fase futura:
 - Definir si la recepcion permitira lineas repetidas del mismo producto o si la UI debera consolidarlas antes de recibir.
 - No exponer boton de recepcion sin backup, prueba transaccional y rollback documentado.
 
+## Actualizacion Fase 2T
+
+Preflight de recepcion futura, sin recibir compras:
+
+- Script nuevo: `src/tools/saas/preflight_recepcion_compras.php`.
+- Sin recepcion real.
+- Solo lectura con `START TRANSACTION READ ONLY`.
+- No crea rutas.
+- No crea botones.
+- No ejecuta `CompraService::recibirCompra()`.
+- No modifica stock.
+- No crea `movimientos_inventario`.
+- No cambia estados de `compras`.
+- No toca Caja, pagos, CxP ni documentos.
+
+Validaciones principales:
+
+- Tablas y columnas minimas: `compras`, `compra_detalles`, `proveedores`, `inventario_productos`, `movimientos_inventario`, `logs_auditoria` y `hoteles`.
+- Borradores con `hotel_id`.
+- Proveedor activo del mismo hotel.
+- Productos activos del mismo hotel.
+- Detalles con cantidad positiva e importes no negativos.
+- `detalles_con_movimiento = 0` antes de habilitar recepcion.
+- `movimientos_recepcion_compra = 0` como senal de que no hay recepciones persistidas desde esta fase.
+- Rutas publicas limitadas a `GET /compras`, `GET /compras/crear` y `POST /compras`.
+- Vistas sin enlaces a recepcion, pagos, CxP o documentos.
+
+Resultado esperado para el borrador manual actual:
+
+- Debe seguir en `estado = borrador`.
+- Debe seguir sin `movimiento_inventario_id`.
+- Puede emitir `WARNING` por productos repetidos.
+
+Decision pendiente:
+
+- El borrador manual contiene productos repetidos.
+- Antes de recepcion real se debe decidir si esos productos repetidos se consolidan en una sola linea por producto o si se permite crear un movimiento de inventario por cada linea.
+- Esta decision queda pendiente deliberadamente para no cambiar comportamiento ni datos en Fase 2T.
+
+## Actualizacion Fase 2U
+
+Decision tecnica para productos repetidos:
+
+- Se permite que una compra tenga el mismo producto en mas de una linea.
+- La recepcion futura debe generar un movimiento por linea de detalle.
+- No se consolidan lineas automaticamente.
+- No se modifica el borrador del usuario para fusionar cantidades.
+- La trazabilidad queda en `compra_detalles.movimiento_inventario_id`.
+- La idempotencia se mantiene con `compras.estado = 'borrador'` antes de recibir y `movimiento_inventario_id IS NULL` por detalle.
+
+Motivo:
+
+- Consolidar silenciosamente cambiaria la captura original.
+- Un movimiento por linea conserva el historial exacto de lo que se capturo.
+- Los reportes de inventario ya pueden sumar multiples movimientos del mismo producto.
+
+Prueba controlada:
+
+- `src/tools/saas/probar_compra_service.php` acepta `--duplicate-line`.
+- El modo `--duplicate-line` crea dos lineas temporales del mismo producto.
+- La prueba espera dos movimientos de inventario y dos detalles vinculados.
+- La prueba exige `--backup-file` y `--confirm=ROLLBACK_TEST`.
+- La prueba siempre usa rollback y no debe dejar compras, detalles, movimientos, auditoria ni stock persistidos.
+
+Comando recomendado:
+
+```bash
+docker compose exec -T app php tools/saas/probar_compra_service.php --apply --duplicate-line --backup-file=/var/www/html/storage/backups/archivo.sql --confirm=ROLLBACK_TEST
+```
+
+Ejecucion local controlada:
+
+- Backup `src/storage/backups/phase2u_20260615_023632_medisoft_hoteles_import.sql`.
+- SHA256 `E123A6E8D37A6C6978BCE01FC1EF3F837C06D2F61B319AC32AF1224014E93CE6`.
+- Fixture: Los Cedros, proveedor `Tortilleria San Jose`, producto `Papel Higienico`.
+- Modo: `--apply --duplicate-line --confirm=ROLLBACK_TEST`.
+- Compra temporal: `#3`.
+- Movimientos esperados: 2.
+- Movimientos recibidos dentro de transaccion: 2.
+- Detalles vinculados dentro de transaccion: 2.
+- Antes: `compras=0`, `compra_detalles=0`, `movimientos_inventario=85`, `logs_auditoria=3`, `stock=339.00`.
+- Dentro de transaccion: `compras=1`, `compra_detalles=2`, `movimientos_inventario=87`, `logs_auditoria=5`, `stock=341.00`.
+- Despues del rollback: `compras=0`, `compra_detalles=0`, `movimientos_inventario=85`, `logs_auditoria=3`, `stock=339.00`.
+- Resultado: rollback verificado, sin persistencia operativa.
+
+Exclusiones:
+
+- Sin recepcion visible en UI.
+- Sin rutas nuevas.
+- Sin botones nuevos.
+- Sin pagos, CxP, documentos ni Caja.
+
+## Actualizacion Fase 2V
+
+Recepcion minima real desde Compras:
+
+- Ruta nueva permitida: `POST /compras/{id}/recibir`.
+- Controlador: `CompraController::recibirAction()`.
+- Servicio reutilizado: `CompraService::recibirCompra()`.
+- Vista: boton `Recibir` solo para compras en `estado = borrador`.
+- El formulario usa `POST` y `csrf_field()`.
+- El acceso mantiene `require_hotel_module('inventario')`.
+
+Efecto esperado al recibir:
+
+- Cambia `compras.estado` de `borrador` a `recibida`.
+- Llena `fecha_recepcion` y `recibida_por`.
+- Incrementa `inventario_productos.stock_actual`.
+- Crea un `movimientos_inventario` tipo `ENTRADA` por cada linea de detalle.
+- Vincula cada detalle mediante `compra_detalles.movimiento_inventario_id`.
+- Registra auditoria `compras.recibida`.
+
+Guardas:
+
+- Solo recibe compras del hotel actual.
+- Solo recibe compras en `estado = borrador`.
+- No recibe una linea que ya tenga `movimiento_inventario_id`.
+- No registra pagos.
+- No crea CxP.
+- No toca `movimientos_caja`.
+- No crea documentos.
+- No cambia calculos financieros.
+
+Prueba previa requerida:
+
+- Ejecutar `probar_compra_service.php --apply --duplicate-line` con backup y rollback.
+- Verificar `preflight_recepcion_compras.php` sin errores.
+- Verificar `health_check_fase_1a.php` sin errores.
+
+Ejecucion local controlada:
+
+- Backup `src/storage/backups/phase2v_20260615_024412_medisoft_hoteles_import.sql`.
+- SHA256 `B9FA594C0C960213D9EA3D105DB46216D7C8C5012E7C97BF479B225B0559EB6D`.
+- Prueba ejecutada con `--apply --duplicate-line --confirm=ROLLBACK_TEST`.
+- Compra temporal: `#4`.
+- Movimientos esperados: 2.
+- Movimientos recibidos dentro de transaccion: 2.
+- Detalles vinculados dentro de transaccion: 2.
+- Antes: `compras=0`, `compra_detalles=0`, `movimientos_inventario=85`, `logs_auditoria=3`, `stock=339.00`.
+- Dentro de transaccion: `compras=1`, `compra_detalles=2`, `movimientos_inventario=87`, `logs_auditoria=5`, `stock=341.00`.
+- Despues del rollback: `compras=0`, `compra_detalles=0`, `movimientos_inventario=85`, `logs_auditoria=3`, `stock=339.00`.
+- Resultado: rollback verificado, sin persistencia operativa.
+
+## Actualizacion Fase 2W
+
+Recepcion real controlada de la compra #2:
+
+- Backup previo: `src/storage/backups/phase2w_20260615_024841_before_receive_compra_2_medisoft_hoteles_import.sql`.
+- SHA256: `CDEE8C67C1AA6C4CFD316C6A1081C6EDB936D1CB507E637B357910B84EE579E6`.
+- Hotel: Maximiliano (`hotel_id = 4`).
+- Usuario responsable: `adminmax` (`usuario_id = 24`).
+- Compra recibida: compra #2.
+- Estado anterior: `borrador`.
+- Estado posterior: `recibida`.
+- `fecha_recepcion`: `2026-06-15 02:49:12`.
+- `recibida_por`: `24`.
+
+Movimientos generados:
+
+- Detalle #2, producto #39 `H4-JABON`: movimiento #993, cantidad `100.00`, stock `50.00 -> 150.00`.
+- Detalle #3, producto #38 `H4-AGUA`: movimiento #994, cantidad `100.00`, stock `74.00 -> 174.00`.
+- Detalle #4, producto #39 `H4-JABON`: movimiento #995, cantidad `100.00`, stock `150.00 -> 250.00`.
+
+Validacion post-recepcion:
+
+- Cada detalle de compra quedo vinculado con `movimiento_inventario_id`.
+- Se respetó la regla Fase 2U: producto repetido genera un movimiento por linea.
+- Se registro auditoria `compras.recibida` para compra #2.
+- `inventario_productos.stock_actual` quedo en `174.00` para `H4-AGUA`.
+- `inventario_productos.stock_actual` quedo en `250.00` para `H4-JABON`.
+
+Exclusiones confirmadas:
+
+- Sin pagos.
+- Sin cuentas por pagar.
+- Sin movimientos de caja.
+- Sin documentos.
+- Sin cambios en calculos financieros.
+- Sin cambios en `/api/sync`.
+
+## Actualizacion Fase 2X
+
+Detalle de compra de solo lectura:
+
+- Ruta nueva permitida: `GET /compras/{id}`.
+- Controlador: `CompraController::verAction()`.
+- Vista: `app/views/compras/ver.php`.
+- Servicio reutilizado: `CompraService::obtenerCompra()`.
+- El detalle muestra proveedor, folio, fechas, estado, totales, lineas y movimientos vinculados.
+- La consulta de detalles incluye `movimientos_inventario` mediante `LEFT JOIN` para mostrar stock anterior/posterior.
+
+Alcance:
+
+- Solo lectura.
+- Sin formularios nuevos de escritura.
+- Sin pagos.
+- Sin cuentas por pagar.
+- Sin movimientos de caja.
+- Sin documentos.
+- Sin cambios en calculos financieros.
+- Sin cambios en `/api/sync`.
+
+Validacion esperada:
+
+- La compra #2 recibida debe mostrar tres lineas.
+- Cada linea debe mostrar su `movimiento_inventario_id`.
+- `H4-JABON` debe aparecer dos veces con movimientos separados.
+- No debe aparecer ningun enlace o accion de pago, CxP o documentos.
+
+Validacion manual:
+
+- Usuario confirmo que la compra aparece como `recibida` en la pantalla.
+- Resultado manual reportado: correcto.
+
 ## No implementar todavia
 
 - Pagos de compras.

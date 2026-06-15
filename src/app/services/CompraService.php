@@ -266,11 +266,23 @@ class CompraService
         }
 
         $stmt = $this->pdo->prepare(
-            "SELECT d.*, ip.nombre AS producto_nombre, ip.codigo AS producto_codigo
+            "SELECT d.*,
+                    ip.nombre AS producto_nombre,
+                    ip.codigo AS producto_codigo,
+                    mi.tipo_movimiento AS movimiento_tipo,
+                    mi.cantidad AS movimiento_cantidad,
+                    mi.stock_anterior AS movimiento_stock_anterior,
+                    mi.stock_posterior AS movimiento_stock_posterior,
+                    mi.motivo AS movimiento_motivo,
+                    mi.usuario_id AS movimiento_usuario_id,
+                    mi.created_at AS movimiento_created_at
              FROM compra_detalles d
              INNER JOIN inventario_productos ip
                 ON ip.id = d.producto_id
                AND ip.hotel_id = d.hotel_id
+             LEFT JOIN movimientos_inventario mi
+                ON mi.id = d.movimiento_inventario_id
+               AND mi.hotel_id = d.hotel_id
              WHERE d.compra_id = ?
                AND d.hotel_id = ?
              ORDER BY d.id ASC"

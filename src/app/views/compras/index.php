@@ -88,6 +88,15 @@ $estado = (string)($filtros['estado'] ?? 'borrador');
     background: #fff;
     color: #334155;
 }
+.purchases-page .purchase-btn-receive {
+    background: #0f766e;
+    border-color: #0f766e;
+    color: #fff;
+}
+.purchases-page .purchase-inline-form {
+    display: inline-flex;
+    justify-content: flex-end;
+}
 .purchases-page .purchase-input {
     width: 100%;
     min-height: 40px;
@@ -194,10 +203,12 @@ $estado = (string)($filtros['estado'] ?? 'borrador');
                                     <th class="text-left">Estado</th>
                                     <th class="text-right">Lineas</th>
                                     <th class="text-right">Total</th>
+                                    <th class="text-right">Accion</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($compras as $compra): ?>
+                                    <?php $compraEstado = (string)($compra['estado'] ?? ''); ?>
                                     <tr>
                                         <td>
                                             <div class="font-black text-slate-800">#<?= (int)($compra['id'] ?? 0) ?></div>
@@ -208,11 +219,28 @@ $estado = (string)($filtros['estado'] ?? 'borrador');
                                         <td>
                                             <span class="purchase-badge">
                                                 <i class="fas fa-circle-dot"></i>
-                                                <?= comp_safe($compra['estado'] ?? null) ?>
+                                                <?= comp_safe($compraEstado) ?>
                                             </span>
                                         </td>
                                         <td class="text-right"><?= (int)($compra['detalle_count'] ?? 0) ?></td>
                                         <td class="text-right font-black"><?= comp_money($compra['total'] ?? 0) ?></td>
+                                        <td class="text-right">
+                                            <div class="flex flex-wrap justify-end gap-2">
+                                                <a class="purchase-btn purchase-btn-muted" href="<?= url('compras/' . (int)($compra['id'] ?? 0)) ?>">
+                                                    <i class="fas fa-eye"></i>
+                                                    Ver
+                                                </a>
+                                            <?php if ($compraEstado === 'borrador'): ?>
+                                                <form class="purchase-inline-form" method="POST" action="<?= url('compras/' . (int)($compra['id'] ?? 0) . '/recibir') ?>" onsubmit="return confirm('Recibir esta compra incrementara el stock y generara movimientos de inventario. Esta accion no registra pagos ni caja. ¿Continuar?');">
+                                                    <?= csrf_field() ?>
+                                                    <button class="purchase-btn purchase-btn-receive" type="submit">
+                                                        <i class="fas fa-box-open"></i>
+                                                        Recibir
+                                                    </button>
+                                                </form>
+                                            <?php endif; ?>
+                                            </div>
+                                        </td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>

@@ -1,9 +1,11 @@
 <?php
 /**
- * Prueba controlada de CompraService.
+ * Prueba controlada de CompraService Fase 2Q/2U.
  *
  * Por defecto es solo lectura. El modo --apply ejecuta una compra de prueba
  * dentro de una transaccion externa y SIEMPRE hace rollback.
+ * Fase 2U agrega --duplicate-line para validar la regla: un movimiento de
+ * inventario por cada linea de detalle, aunque el producto se repita.
  */
 
 if (PHP_SAPI !== 'cli') {
@@ -27,6 +29,7 @@ $options = getopt('', [
     'product-id::',
     'cantidad::',
     'costo-unitario::',
+    'duplicate-line',
     'format::',
     'help',
 ]);
@@ -35,8 +38,10 @@ if (isset($options['help'])) {
     echo "Uso:\n";
     echo "  php tools/saas/probar_compra_service.php [--format=text|json]\n";
     echo "  php tools/saas/probar_compra_service.php --apply --backup-file=/ruta/backup.sql --confirm=ROLLBACK_TEST\n";
+    echo "  php tools/saas/probar_compra_service.php --apply --duplicate-line --backup-file=/ruta/backup.sql --confirm=ROLLBACK_TEST\n";
     echo "\n";
     echo "El modo --apply ejecuta crearBorrador + recibirCompra y luego hace rollback.\n";
+    echo "--duplicate-line crea dos lineas del mismo producto y espera dos movimientos de inventario.\n";
     echo "No crea rutas, UI, pagos, CxP, documentos ni movimientos de caja.\n";
     exit(0);
 }
@@ -101,6 +106,7 @@ try {
             'product_id' => $productId,
             'cantidad' => $cantidad,
             'costo_unitario' => $costoUnitario,
+            'duplicate_line' => array_key_exists('duplicate-line', $options),
         ])
         : runDryRun($pdo, [
             'target_hotel_slug' => $targetHotelSlug,
@@ -108,6 +114,7 @@ try {
             'product_id' => $productId,
             'cantidad' => $cantidad,
             'costo_unitario' => $costoUnitario,
+            'duplicate_line' => array_key_exists('duplicate-line', $options),
         ]);
 } catch (Throwable $e) {
     if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {
@@ -139,11 +146,12 @@ function runDryRun(PDO $pdo, array $runtime): array
         $pdo->rollBack();
 
         return [
-            'phase' => '2Q',
+            'phase' => !empty($runtime['duplicate_line']) ? '2U' : '2Q',
             'mode' => 'dry-run',
             'writes_db' => false,
             'rollback_test_executed' => false,
             'fixture' => publicFixture($fixture),
+            'duplicate_line_mode' => !empty($runtime['duplicate_line']),
             'snapshot' => $snapshot,
             'warnings' => $warnings,
             'errors' => 0,
@@ -166,30 +174,54 @@ function runRollbackExercise(Database $db, PDO $pdo, array $runtime): array
     $fixture = buildFixture($pdo, $runtime);
     $before = fetchSnapshot($pdo, $fixture);
     $warnings = validateStaticContract($pdo);
-    $folio = 'F2Q-' . date('YmdHis') . '-' . random_int(1000, 9999);
+    $duplicateLine = !empty($runtime['duplicate_line']);
+    $phase = $duplicateLine ? '2U' : '2Q';
+    $folio = $phase . '-' . date('YmdHis') . '-' . random_int(1000, 9999);
 
     $pdo->beginTransaction();
 
     try {
         $service = new CompraService($db, ['manage_transaction' => false]);
+        $detalles = [[
+            'producto_id' => (int)$fixture['product']['id'],
+            'cantidad' => $fixture['cantidad'],
+            'costo_unitario' => $fixture['costo_unitario'],
+        ]];
+
+        if ($duplicateLine) {
+            $detalles[] = [
+                'producto_id' => (int)$fixture['product']['id'],
+                'cantidad' => $fixture['cantidad'],
+                'costo_unitario' => $fixture['costo_unitario'],
+            ];
+        }
+
         $compraId = $service->crearBorrador(
             (int)$fixture['hotel']['id'],
             [
                 'proveedor_id' => (int)$fixture['provider']['id'],
                 'folio' => $folio,
                 'fecha_compra' => date('Y-m-d'),
-                'notas' => 'Prueba Fase 2Q con rollback automatico',
+                'notas' => 'Prueba Fase ' . $phase . ' con rollback automatico',
             ],
-            [[
-                'producto_id' => (int)$fixture['product']['id'],
-                'cantidad' => $fixture['cantidad'],
-                'costo_unitario' => $fixture['costo_unitario'],
-            ]],
+            $detalles,
             null
         );
 
         $received = $service->recibirCompra((int)$fixture['hotel']['id'], $compraId, null);
         $insideCompra = $service->obtenerCompra((int)$fixture['hotel']['id'], $compraId);
+        $detailMovements = fetchPurchaseDetailMovements($pdo, (int)$fixture['hotel']['id'], $compraId);
+        $expectedMovements = count($detalles);
+        $receivedMovements = isset($received['movimientos']) && is_array($received['movimientos'])
+            ? count($received['movimientos'])
+            : 0;
+        $linkedMovements = 0;
+        foreach ($detailMovements as $detailMovement) {
+            if (!empty($detailMovement['movimiento_inventario_id'])) {
+                $linkedMovements++;
+            }
+        }
+        $duplicateRuleOk = $receivedMovements === $expectedMovements && $linkedMovements === $expectedMovements;
         $inside = fetchSnapshot($pdo, $fixture);
 
         $pdo->rollBack();
@@ -197,29 +229,39 @@ function runRollbackExercise(Database $db, PDO $pdo, array $runtime): array
         $after = fetchSnapshot($pdo, $fixture);
         $persisted = findPurchaseByFolio($pdo, (int)$fixture['hotel']['id'], $folio);
         $rollbackOk = snapshotsMatch($before, $after) && !$persisted;
+        $success = $rollbackOk && (!$duplicateLine || $duplicateRuleOk);
 
         return [
-            'phase' => '2Q',
+            'phase' => $phase,
             'mode' => 'rollback-test',
             'writes_db' => true,
             'rolled_back' => true,
             'rollback_ok' => $rollbackOk,
             'backup_file' => $runtime['backup_file'],
             'fixture' => publicFixture($fixture),
+            'duplicate_line_mode' => $duplicateLine,
             'compra_id_temporal' => $compraId,
             'folio_temporal' => $folio,
             'received' => $received,
+            'duplicate_product_rule' => [
+                'policy' => 'one_inventory_movement_per_detail_line',
+                'expected_movements' => $expectedMovements,
+                'received_movements' => $receivedMovements,
+                'linked_details' => $linkedMovements,
+                'ok' => $duplicateRuleOk,
+            ],
             'inside_transaction' => [
                 'compra_estado' => $insideCompra['estado'] ?? null,
                 'detalle_count' => isset($insideCompra['detalles']) ? count($insideCompra['detalles']) : 0,
+                'detail_movements' => $detailMovements,
                 'snapshot' => $inside,
             ],
             'before' => $before,
             'after' => $after,
             'warnings' => $warnings,
-            'errors' => $rollbackOk ? 0 : 1,
-            'recommendations' => $rollbackOk
-                ? ['Rollback verificado. La siguiente fase puede preparar UI interna controlada.']
+            'errors' => $success ? 0 : 1,
+            'recommendations' => $success
+                ? ['Rollback verificado. La recepcion futura puede mantener un movimiento por linea de detalle.']
                 : ['Revisar inmediatamente: la prueba no dejo el estado inicial intacto. Restaurar backup si hay duda.'],
         ];
     } catch (Throwable $e) {
@@ -382,6 +424,28 @@ function findPurchaseByFolio(PDO $pdo, int $hotelId, string $folio): bool
     return (int)$stmt->fetchColumn() > 0;
 }
 
+function fetchPurchaseDetailMovements(PDO $pdo, int $hotelId, int $compraId): array
+{
+    $stmt = $pdo->prepare(
+        "SELECT d.id AS detalle_id,
+                d.producto_id,
+                d.cantidad AS detalle_cantidad,
+                d.movimiento_inventario_id,
+                mi.tipo_movimiento,
+                mi.cantidad AS movimiento_cantidad
+         FROM compra_detalles d
+         LEFT JOIN movimientos_inventario mi
+                ON mi.id = d.movimiento_inventario_id
+               AND mi.hotel_id = d.hotel_id
+         WHERE d.hotel_id = ?
+           AND d.compra_id = ?
+         ORDER BY d.id ASC"
+    );
+    $stmt->execute([$hotelId, $compraId]);
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+}
+
 function validateStaticContract(PDO $pdo): array
 {
     $warnings = [];
@@ -395,7 +459,7 @@ function validateStaticContract(PDO $pdo): array
     $routesPath = dirname(__DIR__, 2) . '/config/routes.php';
     if (is_file($routesPath)) {
         $routes = (string)file_get_contents($routesPath);
-        foreach (['/compras', '/cuentas-por-pagar', '/documentos-proveedor'] as $token) {
+        foreach (['/compras/recibir', '/compras/pagar', '/cuentas-por-pagar', '/documentos-proveedor', '/compra-pagos'] as $token) {
             if (strpos($routes, $token) !== false) {
                 $warnings[] = "Ruta fuera de alcance detectada: {$token}";
             }
@@ -482,10 +546,11 @@ function decimal($value): string
 
 function renderTextReport(array $report): void
 {
-    echo "Prueba CompraService Fase 2Q\n";
+    echo "Prueba CompraService Fase " . ($report['phase'] ?? '2Q') . "\n";
     echo "============================\n";
     echo "Modo: " . $report['mode'] . "\n";
     echo "Escribe DB: " . (!empty($report['writes_db']) ? 'si, con rollback' : 'no') . "\n";
+    echo "Linea duplicada: " . (!empty($report['duplicate_line_mode']) ? 'si' : 'no') . "\n";
 
     if (!empty($report['backup_file'])) {
         echo "Backup: " . $report['backup_file'] . "\n";
@@ -499,6 +564,15 @@ function renderTextReport(array $report): void
     if (isset($report['rollback_ok'])) {
         echo "Rollback OK: " . ($report['rollback_ok'] ? 'si' : 'no') . "\n";
         echo "Compra temporal: " . ($report['compra_id_temporal'] ?? 'n/a') . "\n";
+    }
+
+    if (!empty($report['duplicate_product_rule'])) {
+        $rule = $report['duplicate_product_rule'];
+        echo "Regla producto repetido: " . $rule['policy'] . "\n";
+        echo "Movimientos esperados: " . $rule['expected_movements'];
+        echo ", recibidos: " . $rule['received_movements'];
+        echo ", detalles vinculados: " . $rule['linked_details'];
+        echo ", OK: " . (!empty($rule['ok']) ? 'si' : 'no') . "\n";
     }
 
     if (!empty($report['snapshot'])) {
