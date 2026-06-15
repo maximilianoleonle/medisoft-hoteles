@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -304,6 +304,13 @@ $purchaseReportViewFile = hcFindFirstExistingPath([
     dirname(getcwd()) . '/src/app/views/compras/reporte_recibidas.php',
     '/workspace/src/app/views/compras/reporte_recibidas.php',
 ]);
+$providerDetailViewFile = hcFindFirstExistingPath([
+    $appRoot . '/app/views/proveedores/ver.php',
+    $projectRoot . '/src/app/views/proveedores/ver.php',
+    getcwd() . '/app/views/proveedores/ver.php',
+    dirname(getcwd()) . '/src/app/views/proveedores/ver.php',
+    '/workspace/src/app/views/proveedores/ver.php',
+]);
 $purchaseTestTool = hcFindFirstExistingPath([
     $appRoot . '/tools/saas/probar_compra_service.php',
     $projectRoot . '/src/tools/saas/probar_compra_service.php',
@@ -339,7 +346,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z - Medisoft Hoteles\n";
+echo "Health check Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -1840,6 +1847,7 @@ if (!is_file($routesPath)) {
         ['method' => 'get', 'path' => 'proveedores'],
         ['method' => 'get', 'path' => 'proveedores/crear'],
         ['method' => 'post', 'path' => 'proveedores'],
+        ['method' => 'get', 'path' => 'proveedores/1', 'pattern' => true],
         ['method' => 'get', 'path' => 'proveedores/1/editar', 'pattern' => true],
         ['method' => 'post', 'path' => 'proveedores/1/actualizar', 'pattern' => true],
         ['method' => 'post', 'path' => 'proveedores/1/desactivar', 'pattern' => true],
@@ -1857,11 +1865,11 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($missingProviderRoutes)) {
-        hcOk('Rutas minimas Fase 2F de proveedores estan registradas.');
+        hcOk('Rutas minimas Fase 3A de proveedores, incluida ficha read-only, estan registradas.');
     } else {
         hcError(
-            'Rutas Fase 2F de proveedores faltantes: ' . implode(', ', $missingProviderRoutes),
-            'Registrar solo CRUD minimo de proveedores antes de probar el catalogo.'
+            'Rutas Fase 3A de proveedores faltantes: ' . implode(', ', $missingProviderRoutes),
+            'Registrar CRUD minimo y GET /proveedores/{id} read-only antes de probar Proveedores v2.'
         );
     }
 
@@ -1969,15 +1977,36 @@ if (!is_file($routesPath)) {
         $providerForbiddenCode = $providerModelCode . "\n" . $providerControllerCode;
         $hasForbiddenProviderScope = strpos($providerForbiddenCode, 'movimientos_caja') !== false
             || strpos($providerForbiddenCode, 'cuentas_por_pagar') !== false
-            || strpos($providerForbiddenCode, 'compra_') !== false
-            || preg_match('/\bcompras\b/i', $providerForbiddenCode);
+            || strpos($providerForbiddenCode, 'compra_pagos') !== false
+            || strpos($providerForbiddenCode, 'documentos_proveedor') !== false
+            || preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(compras|compra_detalles|inventario_productos|movimientos_inventario|movimientos_caja|cuentas_por_pagar)\b/i', $providerForbiddenCode);
 
         if (!$hasForbiddenProviderScope) {
-            hcOk('Proveedor Fase 2F no toca compras, CxP ni caja.');
+            hcOk('Proveedor Fase 3A no toca Caja, CxP, pagos ni escrituras de compras/inventario.');
         } else {
             hcError(
-                'Proveedor Fase 2F contiene referencias a compras/CxP/caja.',
-                'Quitar logica financiera o de compras; esta fase solo permite catalogo.'
+                'Proveedor Fase 3A contiene referencias fuera de alcance o escrituras prohibidas.',
+                'Mantener Proveedores v2 en lectura de compras; sin Caja, CxP, pagos ni escrituras de compras/inventario.'
+            );
+        }
+
+        if (
+            strpos($providerControllerCode, 'function verAction') !== false
+            && strpos($providerControllerCode, 'proveedores/ver') !== false
+            && strpos($providerControllerCode, 'comprasDisponibles') !== false
+            && strpos($providerControllerCode, 'resumenComprasPorProveedor') !== false
+            && strpos($providerControllerCode, 'comprasRecientesPorProveedor') !== false
+            && strpos($providerModelCode, 'function comprasDisponibles') !== false
+            && strpos($providerModelCode, 'function resumenComprasPorProveedor') !== false
+            && strpos($providerModelCode, 'function comprasRecientesPorProveedor') !== false
+            && strpos($providerModelCode, 'FROM compras') !== false
+            && strpos($providerModelCode, 'JOIN compra_detalles') !== false
+        ) {
+            hcOk('Proveedor Fase 3A expone ficha read-only e historial de compras por hotel.');
+        } else {
+            hcWarning(
+                'Proveedor Fase 3A no muestra ficha read-only completa.',
+                'Agregar verAction, proveedores/ver.php y metodos read-only resumenComprasPorProveedor/comprasRecientesPorProveedor.'
             );
         }
 
@@ -2004,6 +2033,33 @@ if (!is_file($routesPath)) {
             hcError(
                 'ProveedorController no valida modulo inventario.',
                 'Proteger /proveedores con require_hotel_module("inventario") para alinear acceso directo con el sidebar.'
+            );
+        }
+
+        $providerIndexViewPath = $appRoot . '/app/views/proveedores/index.php';
+        if (is_file($providerIndexViewPath) && $providerDetailViewFile && is_file($providerDetailViewFile)) {
+            $providerIndexViewCode = (string) file_get_contents($providerIndexViewPath);
+            $providerDetailViewCode = (string) file_get_contents($providerDetailViewFile);
+            if (
+                strpos($providerIndexViewCode, "url('proveedores/' . (int)\$proveedor['id'])") !== false
+                && strpos($providerDetailViewCode, 'Compras recientes') !== false
+                && strpos($providerDetailViewCode, 'Solo lectura') !== false
+                && strpos($providerDetailViewCode, "url('compras/' . (int)") !== false
+                && strpos($providerDetailViewCode, "url('compras/reportes/recibidas?proveedor_id='") !== false
+                && strpos($providerDetailViewCode, '<form') === false
+                && strpos($providerDetailViewCode, 'csrf_field()') === false
+            ) {
+                hcOk('Vistas de Proveedores Fase 3A enlazan ficha read-only e historial sin formularios nuevos.');
+            } else {
+                hcWarning(
+                    'Vistas de Proveedores Fase 3A incompletas.',
+                    'Asegurar enlace GET /proveedores/{id}, vista read-only sin forms y links a compras/reporte.'
+                );
+            }
+        } else {
+            hcWarning(
+                'No se encontro vista de detalle de Proveedores Fase 3A.',
+                'Crear app/views/proveedores/ver.php para la ficha read-only.'
             );
         }
     } else {
@@ -2622,6 +2678,22 @@ if (!is_file($routesPath)) {
                         'Actualizar docs/technical/inventory_reconciliation.md con guardas de recepcion y navegacion read-only.'
                     );
                 }
+
+                if (
+                    strpos($inventarioDocCode, 'Fase 3A') !== false
+                    && strpos($inventarioDocCode, 'ProveedorController::verAction()') !== false
+                    && strpos($inventarioDocCode, 'Proveedor::resumenComprasPorProveedor()') !== false
+                    && strpos($inventarioDocCode, 'Proveedor::comprasRecientesPorProveedor()') !== false
+                    && strpos($inventarioDocCode, 'GET /proveedores/{id}') !== false
+                    && strpos($inventarioDocCode, 'Sin movimientos de caja') !== false
+                ) {
+                    hcOk('Documentacion de inventario registra proveedores v2 read-only Fase 3A.');
+                } else {
+                    hcWarning(
+                        'Documentacion de inventario no registra aun Fase 3A.',
+                        'Actualizar docs/technical/inventory_reconciliation.md con ficha read-only de proveedor e historial.'
+                    );
+                }
             }
 
             if ($purchasingInventoryDoc === null || !is_file($purchasingInventoryDoc)) {
@@ -2933,6 +3005,22 @@ if (!is_file($routesPath)) {
                     hcWarning(
                         'Contrato de compras no registra endurecimiento Fase 2Z.',
                         'Actualizar docs/technical/purchasing_inventory_contract.md con guardas de recepcion doble, estados y detalles invalidos.'
+                    );
+                }
+
+                if (
+                    strpos($purchasingDocCode, 'Actualizacion Fase 3A') !== false
+                    && strpos($purchasingDocCode, 'GET /proveedores/{id}') !== false
+                    && strpos($purchasingDocCode, 'ProveedorController::verAction()') !== false
+                    && strpos($purchasingDocCode, 'Proveedor::resumenComprasPorProveedor()') !== false
+                    && strpos($purchasingDocCode, 'Proveedor::comprasRecientesPorProveedor()') !== false
+                    && strpos($purchasingDocCode, 'Sin pagos') !== false
+                ) {
+                    hcOk('Contrato de compras documenta proveedores v2 read-only Fase 3A.');
+                } else {
+                    hcWarning(
+                        'Contrato de compras no registra proveedores v2 Fase 3A.',
+                        'Actualizar docs/technical/purchasing_inventory_contract.md con ficha read-only, ruta y exclusiones.'
                     );
                 }
             }

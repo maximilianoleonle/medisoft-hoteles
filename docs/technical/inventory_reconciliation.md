@@ -1049,3 +1049,32 @@ Exclusiones:
 - Sin movimientos de caja.
 - Sin cambios en reportes financieros.
 - Sin cambios en `/api/sync`.
+
+## Fase 3A: proveedores v2 read-only
+
+Implementacion:
+
+- Ruta `GET /proveedores/{id}`.
+- Accion `ProveedorController::verAction()`.
+- Vista `app/views/proveedores/ver.php`.
+- Lectura mediante `Proveedor::resumenComprasPorProveedor()`.
+- Lectura mediante `Proveedor::comprasRecientesPorProveedor()`.
+- Enlace desde `app/views/proveedores/index.php` hacia la ficha de proveedor.
+- Enlace desde la ficha hacia `GET /compras/{id}` y `GET /compras/reportes/recibidas?proveedor_id={id}`.
+
+Contrato de inventario:
+
+- La ficha no crea ni edita compras.
+- La ficha no modifica `inventario_productos.stock_actual`.
+- La ficha no crea movimientos en `movimientos_inventario`.
+- La ficha solo resume datos ya existentes en `compras` y `compra_detalles`.
+- Las lecturas quedan filtradas por `hotel_id` y `proveedor_id`.
+
+Exclusiones:
+
+- Sin pagos.
+- Sin cuentas por pagar.
+- Sin documentos.
+- Sin movimientos de caja.
+- Sin cambios en reportes financieros.
+- Sin cambios en `/api/sync`.

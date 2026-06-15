@@ -210,6 +210,9 @@ $estado = (string)($filtros['estado'] ?? 'activos');
                                         </td>
                                         <td>
                                             <div class="flex justify-end gap-2">
+                                                <a class="provider-btn provider-btn-muted" href="<?= url('proveedores/' . (int)$proveedor['id']) ?>" title="Ver">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
                                                 <a class="provider-btn provider-btn-muted" href="<?= url('proveedores/' . (int)$proveedor['id'] . '/editar') ?>" title="Editar">
                                                     <i class="fas fa-pen"></i>
                                                 </a>

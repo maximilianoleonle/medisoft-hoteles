@@ -201,10 +201,11 @@ $router->post('/notificaciones/{id:[0-9]+}/leer', ['controller' => 'Notificacion
 $router->post('/notificaciones/{id:[0-9]+}/resolver', ['controller' => 'Notificacion', 'action' => 'resolver']);
 $router->post('/notificaciones/{id:[0-9]+}/descartar', ['controller' => 'Notificacion', 'action' => 'descartar']);
 
-// Fase 2F: catalogo minimo de proveedores. No incluye compras, pagos ni caja.
+// Fase 2F/3A: catalogo de proveedores y ficha read-only con historial. No incluye pagos ni caja.
 $router->get('/proveedores', ['controller' => 'Proveedor', 'action' => 'index']);
 $router->get('/proveedores/crear', ['controller' => 'Proveedor', 'action' => 'crear']);
 $router->post('/proveedores', ['controller' => 'Proveedor', 'action' => 'guardar']);
+$router->get('/proveedores/{id:[0-9]+}', ['controller' => 'Proveedor', 'action' => 'ver']);
 $router->get('/proveedores/{id:[0-9]+}/editar', ['controller' => 'Proveedor', 'action' => 'editar']);
 $router->post('/proveedores/{id:[0-9]+}/actualizar', ['controller' => 'Proveedor', 'action' => 'actualizar']);
 $router->post('/proveedores/{id:[0-9]+}/desactivar', ['controller' => 'Proveedor', 'action' => 'desactivar']);

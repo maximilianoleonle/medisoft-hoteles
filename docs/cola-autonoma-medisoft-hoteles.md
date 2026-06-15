@@ -6,8 +6,8 @@ Roadmap autonomo recibido para avanzar fase por fase desde Fase 2X completada, i
 
 ## Fase actual
 
-- Fase 2Z: endurecimiento de compras minimas.
-- Estado: verificacion completada, listo para commit.
+- Fase 3B: cuentas por pagar base read-only.
+- Estado: siguiente subfase segura pendiente; no se han ejecutado migraciones de CxP.
 
 ## Fases completadas
 
@@ -16,12 +16,14 @@ Roadmap autonomo recibido para avanzar fase por fase desde Fase 2X completada, i
 - Fase 2X: detalle read-only de compra recibida.
 - Fase 2Y: reporte read-only de compras recibidas por proveedor/producto.
 - Fase 2Z: guardas explicitas de recepcion e idempotencia basica.
+- Fase 3A: ficha read-only de proveedor e historial de compras.
 
 ## Commits realizados
 
 - `d1f1431` - `feat: add read-only received purchase detail`
 - `32abb7b` - `feat: add read-only received purchases reports`
-- Pendiente: checkpoint Fase 2Z.
+- `052fd7a` - `fix: harden minimal purchase receiving flow`
+- Pendiente: hash del checkpoint Fase 3A se reporta al cerrar el commit actual.
 
 ## Pruebas ejecutadas
 
@@ -43,6 +45,13 @@ Roadmap autonomo recibido para avanzar fase por fase desde Fase 2X completada, i
 - Fase 2Z `preflight_recepcion_compras.php`: OK 27, WARNING 0, ERROR 0.
 - Fase 2Z `health_check_fase_1a.php`: OK 198, WARNING 14, ERROR 0.
 - Fase 2Z smoke anti doble recepcion `CompraService::recibirCompra(4, 2, 24)`: error esperado `La compra #2 ya fue recibida y no puede recibirse dos veces`; conteos antes/despues sin cambios (`compras_recibidas=1`, `movimientos=3`, `auditoria=1`).
+- Fase 3A `php -l` via Docker: `ProveedorController.php`, `Proveedor.php`, `proveedores/index.php`, `proveedores/ver.php`, `routes.php`, `health_check_fase_1a.php` sin errores.
+- Fase 3A `health_check_fase_1a.php` via Docker: OK 141, WARNING 21, ERROR 0. Warnings principales por docs no montados en contenedor y legacy conocido.
+- Fase 3A smoke read-only `Proveedor::resumenComprasPorProveedor(2, 4)`: proveedor `Juan Pedro`, 1 compra recibida, 3 lineas, 2 productos, cantidad `300.00`, total recibido `1900.00`.
+- Fase 3A HTTP sin sesion `GET /proveedores/1`: 303 a `/login`, sin exponer datos.
+- Fase 3A `preflight_compras_minimas.php` via Docker: OK 34, WARNING 3, ERROR 0. Warnings por docs/migraciones no visibles en el montaje del contenedor.
+- Fase 3A `preflight_recepcion_compras.php` via Docker: OK 25, WARNING 2, ERROR 0. Warnings por docs no montados en el contenedor.
+- Fase 3A `git diff --check`: sin errores bloqueantes; solo warnings de normalizacion CRLF.
 
 ## Warnings conocidos
 
@@ -64,7 +73,7 @@ Roadmap autonomo recibido para avanzar fase por fase desde Fase 2X completada, i
 
 ## Siguiente fase recomendada
 
-- Fase 3A: proveedores v2.
+- Fase 3B: preparar CxP base read-only con una subfase no destructiva y sin ejecutar migraciones hasta backup/validacion.
 
 ## Decisiones tecnicas importantes
 
@@ -76,6 +85,9 @@ Roadmap autonomo recibido para avanzar fase por fase desde Fase 2X completada, i
 - Fase 2Y usa solo `compras`, `compra_detalles`, `proveedores`, `inventario_productos` y `movimientos_inventario`.
 - La revision visual de 2Y no bloquea 2Z porque las verificaciones automaticas pasaron y no hay escritura nueva.
 - Fase 2Z no agrega rutas de escritura ni toca DB; solo endurece precondiciones de recepcion y navegacion read-only.
+- Fase 3A se implemento sin migraciones ni cambios de DB; expone lectura y navegacion con campos existentes.
+- Fase 3A permite lectura de `compras` desde `Proveedor`, pero no escribe en compras, inventario, Caja ni CxP.
+- Fase 3B debe iniciar con diseno/migracion no destructiva y no debe integrarse con Caja.
 
 ## Archivos modificados por fase
 
@@ -111,6 +123,17 @@ Roadmap autonomo recibido para avanzar fase por fase desde Fase 2X completada, i
 - `src/app/views/compras/ver.php`
 - `src/tools/saas/preflight_compras_minimas.php`
 - `src/tools/saas/preflight_recepcion_compras.php`
+- `src/tools/saas/health_check_fase_1a.php`
+- `docs/technical/purchasing_inventory_contract.md`
+- `docs/technical/inventory_reconciliation.md`
+
+### Fase 3A
+
+- `src/config/routes.php`
+- `src/app/controllers/ProveedorController.php`
+- `src/app/models/Proveedor.php`
+- `src/app/views/proveedores/index.php`
+- `src/app/views/proveedores/ver.php`
 - `src/tools/saas/health_check_fase_1a.php`
 - `docs/technical/purchasing_inventory_contract.md`
 - `docs/technical/inventory_reconciliation.md`

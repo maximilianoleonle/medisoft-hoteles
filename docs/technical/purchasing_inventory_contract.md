@@ -1265,6 +1265,39 @@ Alcance:
 - Sin cambios en calculos financieros.
 - Sin cambios en `/api/sync`.
 
+## Actualizacion Fase 3A
+
+Ficha read-only de proveedor e historial de compras:
+
+- Ruta nueva permitida: `GET /proveedores/{id}`.
+- Controlador: `ProveedorController::verAction()`.
+- Vista: `app/views/proveedores/ver.php`.
+- Modelo: `Proveedor::resumenComprasPorProveedor()`.
+- Modelo: `Proveedor::comprasRecientesPorProveedor()`.
+- El listado `app/views/proveedores/index.php` agrega solo un enlace GET hacia la ficha.
+- La ficha muestra datos de contacto, estado, resumen de compras y compras recientes del proveedor.
+- Las compras recientes enlazan al detalle `GET /compras/{id}`.
+- La ficha enlaza al reporte `GET /compras/reportes/recibidas?proveedor_id={id}`.
+
+Contrato multihotel:
+
+- El proveedor se obtiene con `buscarPorIdHotel($id, $hotelId)`.
+- Todas las consultas de compras usan `hotel_id` y `proveedor_id`.
+- Si las tablas `compras` o `compra_detalles` no existen, la ficha muestra resumen vacio sin fallar.
+
+Alcance:
+
+- Solo lectura.
+- Sin formularios POST nuevos.
+- Sin pagos.
+- Sin cuentas por pagar.
+- Sin movimientos de caja.
+- Sin documentos.
+- Sin escrituras en `compras` o `compra_detalles`.
+- Sin escrituras en `inventario_productos` ni `movimientos_inventario`.
+- Sin cambios en calculos financieros.
+- Sin cambios en `/api/sync`.
+
 ## No implementar todavia
 
 - Pagos de compras.

@@ -90,6 +90,116 @@ class Proveedor extends Model {
         ];
     }
 
+    public function comprasDisponibles(): bool {
+        return $this->tablaDisponible()
+            && $this->tablaExiste('compras')
+            && $this->tablaExiste('compra_detalles');
+    }
+
+    public function resumenComprasPorProveedor(int $id, int $hotelId): array {
+        $resumen = [
+            'compras' => 0,
+            'borradores' => 0,
+            'recibidas' => 0,
+            'canceladas' => 0,
+            'total_compras' => '0.00',
+            'total_recibido' => '0.00',
+            'lineas' => 0,
+            'productos' => 0,
+            'cantidad_total' => '0.00',
+            'total_lineas' => '0.00',
+            'ultima_compra' => null,
+            'ultima_recepcion' => null,
+        ];
+
+        if ($id <= 0 || $hotelId <= 0 || !$this->comprasDisponibles()) {
+            return $resumen;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT COUNT(*) AS compras,
+                    SUM(CASE WHEN estado = 'borrador' THEN 1 ELSE 0 END) AS borradores,
+                    SUM(CASE WHEN estado = 'recibida' THEN 1 ELSE 0 END) AS recibidas,
+                    SUM(CASE WHEN estado = 'cancelada' THEN 1 ELSE 0 END) AS canceladas,
+                    COALESCE(SUM(total), 0) AS total_compras,
+                    COALESCE(SUM(CASE WHEN estado = 'recibida' THEN total ELSE 0 END), 0) AS total_recibido,
+                    MAX(fecha_compra) AS ultima_compra,
+                    MAX(fecha_recepcion) AS ultima_recepcion
+             FROM compras
+             WHERE id > 0
+               AND hotel_id = ?
+               AND proveedor_id = ?",
+            [$hotelId, $id]
+        );
+        $compras = $stmt ? ($stmt->fetch() ?: []) : [];
+
+        $stmt = $this->db->query(
+            "SELECT COUNT(d.id) AS lineas,
+                    COUNT(DISTINCT d.producto_id) AS productos,
+                    COALESCE(SUM(d.cantidad), 0) AS cantidad_total,
+                    COALESCE(SUM(d.subtotal), 0) AS total_lineas
+             FROM compras c
+             INNER JOIN compra_detalles d
+                ON d.compra_id = c.id
+               AND d.hotel_id = c.hotel_id
+             WHERE c.hotel_id = ?
+               AND c.proveedor_id = ?",
+            [$hotelId, $id]
+        );
+        $lineas = $stmt ? ($stmt->fetch() ?: []) : [];
+
+        return [
+            'compras' => (int)($compras['compras'] ?? 0),
+            'borradores' => (int)($compras['borradores'] ?? 0),
+            'recibidas' => (int)($compras['recibidas'] ?? 0),
+            'canceladas' => (int)($compras['canceladas'] ?? 0),
+            'total_compras' => $this->decimal($compras['total_compras'] ?? 0),
+            'total_recibido' => $this->decimal($compras['total_recibido'] ?? 0),
+            'lineas' => (int)($lineas['lineas'] ?? 0),
+            'productos' => (int)($lineas['productos'] ?? 0),
+            'cantidad_total' => $this->decimal($lineas['cantidad_total'] ?? 0),
+            'total_lineas' => $this->decimal($lineas['total_lineas'] ?? 0),
+            'ultima_compra' => $compras['ultima_compra'] ?? null,
+            'ultima_recepcion' => $compras['ultima_recepcion'] ?? null,
+        ];
+    }
+
+    public function comprasRecientesPorProveedor(int $id, int $hotelId, int $limite = 50): array {
+        if ($id <= 0 || $hotelId <= 0 || !$this->comprasDisponibles()) {
+            return [];
+        }
+
+        $limite = max(1, min(100, $limite));
+        $stmt = $this->db->query(
+            "SELECT c.id,
+                    c.folio,
+                    c.estado,
+                    c.fecha_compra,
+                    c.fecha_recepcion,
+                    c.subtotal,
+                    c.impuestos,
+                    c.total,
+                    COUNT(d.id) AS detalle_count,
+                    COUNT(DISTINCT d.producto_id) AS producto_count,
+                    COALESCE(SUM(d.cantidad), 0) AS cantidad_total,
+                    COALESCE(SUM(d.subtotal), 0) AS total_lineas,
+                    SUM(CASE WHEN d.movimiento_inventario_id IS NOT NULL THEN 1 ELSE 0 END) AS movimientos_count
+             FROM compras c
+             LEFT JOIN compra_detalles d
+                ON d.compra_id = c.id
+               AND d.hotel_id = c.hotel_id
+             WHERE c.hotel_id = ?
+               AND c.proveedor_id = ?
+             GROUP BY c.id, c.folio, c.estado, c.fecha_compra, c.fecha_recepcion,
+                      c.subtotal, c.impuestos, c.total
+             ORDER BY COALESCE(c.fecha_recepcion, c.fecha_compra) DESC, c.id DESC
+             LIMIT {$limite}",
+            [$hotelId, $id]
+        );
+
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
     public function buscarPorIdHotel(int $id, int $hotelId): ?array {
         if ($id <= 0 || $hotelId <= 0 || !$this->tablaDisponible()) {
             return null;
@@ -260,6 +370,23 @@ class Proveedor extends Model {
 
         $row = $stmt ? $stmt->fetch() : null;
         return $row ?: null;
+    }
+
+    private function tablaExiste(string $tabla): bool {
+        $stmt = $this->db->query(
+            "SELECT 1
+             FROM information_schema.TABLES
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = ?
+             LIMIT 1",
+            [$tabla]
+        );
+
+        return $stmt !== false && (bool)$stmt->fetch();
+    }
+
+    private function decimal($value): string {
+        return number_format((float)($value ?? 0), 2, '.', '');
     }
 
     private function nullableTexto($value, int $limite): ?string {

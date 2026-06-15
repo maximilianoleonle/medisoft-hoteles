@@ -60,6 +60,24 @@ class ProveedorController extends Controller {
         ]);
     }
 
+    public function verAction() {
+        $hotelId = $this->hotelIdActual();
+        $proveedor = $this->proveedorActual();
+        if (!$proveedor) {
+            set_mensaje('Proveedor no encontrado para el hotel actual.', 'error');
+            $this->redirect('proveedores');
+            return;
+        }
+
+        View::renderTemplate('proveedores/ver', [
+            'title' => 'Proveedor - ' . current_hotel_display_name(),
+            'proveedor' => $proveedor,
+            'historialDisponible' => $this->proveedorModel->comprasDisponibles(),
+            'resumenCompras' => $this->proveedorModel->resumenComprasPorProveedor((int)$proveedor['id'], $hotelId),
+            'comprasRecientes' => $this->proveedorModel->comprasRecientesPorProveedor((int)$proveedor['id'], $hotelId, 50),
+        ]);
+    }
+
     public function guardarAction() {
         if (!$this->isPost()) {
             $this->redirect('proveedores');
