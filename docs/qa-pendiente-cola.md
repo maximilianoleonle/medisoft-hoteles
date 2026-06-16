@@ -448,14 +448,14 @@ Resultado automatico de cierre:
 
 ## QA Fase 4C Documentos por entidad
 
-Estado: `DOCUMENTOS_ENTIDAD_READ_ONLY_4C_COMPLETADO`.
+Estado: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_COMPLETADO`.
 
 4C-0 es documentacion y diagnostico; no requiere QA en navegador.
 
 QA automatica 4C-A:
 
 - `php -l` debe pasar en controladores/vistas/partial y health checker tocados.
-- Health checker debe validar partial read-only, cinco vistas con seccion documental
+- Health checker debe validar partial contextual, cinco vistas con seccion documental
   y cinco controladores con `Documento::documentosPorEntidad()`.
 - SQL read-only debe confirmar que no se insertaron documentos ni relaciones durante
   esta subfase.
@@ -470,10 +470,12 @@ QA manual pendiente 4C-A:
 - Ficha de huesped muestra documentos vinculados o estado vacio.
 - Detalle de reservacion muestra documentos vinculados o estado vacio.
 - Links a detalle documental y descarga usan rutas protegidas existentes.
+- La accion `Vincular documento` aparece en las cinco fichas y abre
+  `/documentos/subir` con `entidad_tipo` y `entidad_id`.
+- Al cargar desde esa accion, el formulario muestra el vinculo con la entidad correcta.
 - Un documento de otro hotel no aparece en la entidad actual.
 - No se muestran `storage_path`, `nombre_archivo`, rutas absolutas ni links publicos.
-- No aparecen botones de upload, edicion, borrado ni reemplazo de archivo dentro de
-  las fichas.
+- No aparecen acciones de edicion, borrado ni reemplazo de archivo dentro de las fichas.
 - No hay Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
 
 ### QA visual 4C-A

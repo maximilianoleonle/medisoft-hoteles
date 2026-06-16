@@ -372,11 +372,11 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Codigo: no aplica; 4C-0 no toca rutas, controladores, modelos ni vistas.
 - No borrar documentos, relaciones, auditorias ni archivos en `src/storage/documentos/`.
 
-### 4C-A secciones documentales read-only por entidad
+### 4C-A secciones documentales contextuales por entidad
 
 - Rollback de codigo/documentacion: revertir el commit
   `feat(phase-4c): add read-only entity document sections`.
-- DB: no aplica; 4C-A no inserta, actualiza ni elimina datos.
+- DB: no aplica para revertir el enlace/contexto; 4C-A no crea tablas ni rutas nuevas.
 - Quitar el partial de las fichas no debe borrar documentos ni relaciones existentes.
 - Mantener intactas las rutas documentales globales (`/documentos`, detalle, descarga y
   metadata) porque pertenecen a 4A/4B.

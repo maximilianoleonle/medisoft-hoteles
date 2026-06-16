@@ -9,9 +9,9 @@ Mensaje actual procesado: "Continua"; se crea contrato 4C-0 para documentos por 
 ## Estado vigente
 
 - Bloque actual: Fase 4C Documentos por entidad.
-- Fase actual: 4C-A secciones documentales read-only por entidad.
+- Fase actual: 4C-A secciones documentales contextuales por entidad.
 - Riesgo: naranja.
-- Estado: `DOCUMENTOS_ENTIDAD_READ_ONLY_4C_COMPLETADO`.
+- Estado: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_COMPLETADO`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -82,10 +82,12 @@ Mensaje actual procesado: "Continua"; se crea contrato 4C-0 para documentos por 
 - Entidades objetivo: proveedor, compra, cuenta por pagar, huesped y reservacion.
 - Infraestructura reutilizada: `documento_entidades`, `Documento::documentosPorEntidad()`,
   `DocumentoController::entidadAction()` y `GET /documentos/entidad/{tipo}/{id}`.
-- 4C-A implementa secciones read-only en fichas de proveedor, compra, CxP, huesped y
+- 4C-A implementa secciones contextuales en fichas de proveedor, compra, CxP, huesped y
   reservacion mediante `src/app/views/partials/documentos_entidad.php`.
 - Los controladores pasan metadata segura consultada por `hotel_id`.
-- Sin DB, sin migraciones, sin nuevos POST y sin escrituras en 4C-A.
+- La accion `Vincular documento` abre el flujo existente
+  `/documentos/subir?entidad_tipo=...&entidad_id=...`.
+- Sin DB, sin migraciones, sin nuevos POST ni rutas nuevas en 4C-A.
 - Prohibido: borrado, reemplazo de archivo, links publicos, Caja, pagos, abonos,
   Fase 3D, NP-A y `/api/sync`.
 - Siguiente accion recomendada: QA manual 4C-A o revision/auditoria 4C segun autorizacion.

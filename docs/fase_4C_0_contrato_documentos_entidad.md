@@ -2,10 +2,9 @@
 
 Estado: `CONTRATO_4C_DOCUMENTOS_ENTIDAD_COMPLETADO`.
 
-Actualizacion 4C-A: se implemento la primera integracion read-only con un alcance mas
-conservador que el previsto inicialmente: las fichas muestran metadata segura y enlaces
-GET a detalle/descarga autenticada, pero no agregan links de carga contextual ni de
-edicion de metadata desde la ficha.
+Actualizacion 4C-A: se implemento la primera integracion contextual. Las fichas muestran
+metadata segura, enlaces GET a detalle/descarga autenticada y accion `Vincular documento`
+hacia la carga contextual existente. No agregan edicion de metadata desde la ficha.
 
 ## Objetivo
 
@@ -89,7 +88,7 @@ Mitigaciones:
 
 ## Alcance permitido para Fase 4C
 
-4C-A read-only contextual:
+4C-A contextual:
 
 - Mostrar seccion documental en fichas de:
   - proveedor;
@@ -109,7 +108,7 @@ Mitigaciones:
 - Link a detalle documental.
 - Link a descarga autenticada ya existente.
 - Link a formulario de metadata ya existente si el documento esta activo queda diferido.
-- Link a carga contextual ya existente si la entidad pertenece al hotel actual queda diferido.
+- Link a carga contextual ya existente si la entidad pertenece al hotel actual.
 
 4C-B integracion de carga contextual:
 
@@ -241,8 +240,8 @@ documentos ni relaciones ya existentes.
 
 ## Siguiente subfase recomendada
 
-`COLA_4C_A_DOCUMENTOS_POR_ENTIDAD_READ_ONLY`
+`COLA_4C_A_DOCUMENTOS_POR_ENTIDAD_CONTEXTUAL`
 
-Objetivo futuro: agregar secciones documentales read-only en fichas de proveedor,
-compra, CxP, huesped y reservacion usando la ruta y modelo existentes, sin nuevas
-escrituras y sin tocar Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
+Objetivo implementado: agregar secciones documentales contextuales en fichas de proveedor,
+compra, CxP, huesped y reservacion usando la ruta y modelo existentes, sin rutas nuevas,
+sin POST nuevo y sin tocar Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.

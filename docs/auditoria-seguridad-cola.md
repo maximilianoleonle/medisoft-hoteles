@@ -292,7 +292,7 @@ Estado: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
 
 ## Fase 4C Documentos por entidad - auditoria de contrato
 
-Estado: `DOCUMENTOS_ENTIDAD_READ_ONLY_4C_COMPLETADO`.
+Estado: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_COMPLETADO`.
 
 - 4C-0 no agrega rutas, controladores, modelos, vistas ni DB.
 - Riesgo principal futuro: mostrar documentos de otro hotel si una ficha no valida
@@ -301,9 +301,11 @@ Estado: `DOCUMENTOS_ENTIDAD_READ_ONLY_4C_COMPLETADO`.
   `hotel_id`, nunca desde una consulta ad hoc en la vista.
 - Las fichas no deben mostrar `storage_path`, `nombre_archivo`, rutas absolutas
   ni links publicos.
-- 4C-A usa `Documento::documentosPorEntidad()` desde controladores y partial read-only
+- 4C-A usa `Documento::documentosPorEntidad()` desde controladores y partial contextual
   compartido.
-- 4C-A no crea rutas, POST, uploads, edicion, borrado ni reemplazo de archivo.
+- 4C-A no crea rutas, POST nuevo, edicion, borrado ni reemplazo de archivo.
+- La accion `Vincular documento` usa `GET /documentos/subir?entidad_tipo=...&entidad_id=...`;
+  `DocumentoController::subirAction()` valida entidad y hotel antes de renderizar.
 - Los enlaces visibles son GET a detalle documental y descarga autenticada ya existente.
 - Sin Caja, pagos, abonos, Fase 3D, NP-A, PWA/offline ni `/api/sync`.
 

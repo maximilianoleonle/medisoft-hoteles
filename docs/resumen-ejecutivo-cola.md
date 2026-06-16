@@ -313,10 +313,10 @@ Resultado 4C-0:
 
 Resultado 4C-A:
 
-- Estado tecnico: `DOCUMENTOS_ENTIDAD_READ_ONLY_4C_COMPLETADO`.
+- Estado tecnico: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_COMPLETADO`.
 - Documento creado: `docs/fase_4C_A_documentos_entidad_readonly.md`.
 - Partial creado: `src/app/views/partials/documentos_entidad.php`.
-- Fichas con seccion documental read-only:
+- Fichas con seccion documental contextual:
   - `proveedores/ver.php`;
   - `compras/ver.php`;
   - `cuentas_por_pagar/ver.php`;
@@ -324,7 +324,9 @@ Resultado 4C-A:
   - `reservaciones/ver.php`.
 - Controladores consultan documentos por entidad con filtro `hotel_id`.
 - La vista no expone `storage_path` ni `nombre_archivo`.
-- No hay nuevos POST, uploads, edicion, borrado, Caja, pagos, abonos, Fase 3D,
+- Hotfix UX: se agrega `Vincular documento` hacia la carga contextual existente
+  `documentos/subir?entidad_tipo=...&entidad_id=...`.
+- No hay nuevos POST, edicion desde ficha, borrado, Caja, pagos, abonos, Fase 3D,
   NP-A ni cambios en `/api/sync`.
 - Siguiente paso recomendado tras QA manual: revision tecnica/auditoria 4C o la
   subfase autorizada siguiente del Centro Documental.

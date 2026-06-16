@@ -427,9 +427,9 @@ Objetivo:
 - Usar `documento_entidades` como relacion polimorfica ya existente.
 - No implementar funcionalidad en 4C-0; solo contrato y diagnostico.
 
-Alcance futuro 4C-A:
+Alcance implementado 4C-A:
 
-- Secciones read-only en fichas de entidad.
+- Secciones contextuales en fichas de entidad.
 - Estado vacio claro.
 - Links a detalle, descarga autenticada y metadata ya protegidas.
 - Link a carga contextual existente solo si la entidad pertenece al hotel.
@@ -443,24 +443,26 @@ Documento:
 
 - `docs/fase_4C_0_contrato_documentos_entidad.md`.
 
-## Fase 4C-A: Secciones documentales read-only por entidad
+## Fase 4C-A: Secciones documentales contextuales por entidad
 
-Estado formal vigente: `DOCUMENTOS_ENTIDAD_READ_ONLY_4C_COMPLETADO`.
+Estado formal vigente: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_COMPLETADO`.
 
 Alcance implementado:
 
 - Partial reutilizable `src/app/views/partials/documentos_entidad.php`.
-- Secciones read-only en fichas de proveedor, compra, cuenta por pagar, huesped y
+- Secciones de lista segura en fichas de proveedor, compra, cuenta por pagar, huesped y
   reservacion.
 - Consultas por entidad usando `Documento::documentosPorEntidad()` y filtro `hotel_id`.
 - Enlaces GET a detalle documental y descarga autenticada ya existente.
+- Enlace GET `Vincular documento` hacia `documentos/subir?entidad_tipo=...&entidad_id=...`
+  usando el flujo protegido existente.
 - Estado vacio claro cuando no hay documentos vinculados.
 
 Fuera de alcance:
 
-- Upload desde la ficha, edicion de metadata desde la ficha, borrado, reemplazo de
-  archivo, links publicos, permisos nuevos, Caja, pagos, abonos, Fase 3D, NP-A,
-  PWA/offline y `/api/sync`.
+- Formularios nuevos en fichas, POST nuevos, edicion de metadata desde la ficha,
+  borrado, reemplazo de archivo, links publicos, permisos nuevos, Caja, pagos, abonos,
+  Fase 3D, NP-A, PWA/offline y `/api/sync`.
 
 Documento:
 

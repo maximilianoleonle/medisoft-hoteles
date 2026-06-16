@@ -53,6 +53,10 @@ if (!function_exists('doc_entity_date')) {
 $entityLabel = doc_entity_safe($documentosEntidadContexto['label'] ?? 'Entidad');
 $entityTipo = doc_entity_safe($documentosEntidadContexto['tipo'] ?? '');
 $entityId = (int)($documentosEntidadContexto['id'] ?? 0);
+$hasEntityContext = $entityTipo !== '' && $entityId > 0;
+$entityQuery = $hasEntityContext
+    ? '?entidad_tipo=' . rawurlencode((string)($documentosEntidadContexto['tipo'] ?? '')) . '&entidad_id=' . $entityId
+    : '';
 ?>
 
 <?php if (!defined('DOCUMENTOS_ENTIDAD_PARTIAL_CSS')): ?>
@@ -113,10 +117,22 @@ $entityId = (int)($documentosEntidadContexto['id'] ?? 0);
                 <?php endif; ?>
             </p>
         </div>
-        <span class="de-badge">
-            <i class="fas fa-lock"></i>
-            Solo lectura
-        </span>
+        <div class="inline-flex flex-wrap items-center justify-end gap-2">
+            <span class="de-badge">
+                <i class="fas fa-lock"></i>
+                Lista segura
+            </span>
+            <?php if ($hasEntityContext): ?>
+                <a class="de-action" href="<?= url('documentos/entidad/' . rawurlencode((string)($documentosEntidadContexto['tipo'] ?? '')) . '/' . $entityId) ?>">
+                    <i class="fas fa-folder-tree"></i>
+                    Ver todos
+                </a>
+                <a class="de-action" href="<?= url('documentos/subir' . $entityQuery) ?>">
+                    <i class="fas fa-paperclip"></i>
+                    Vincular documento
+                </a>
+            <?php endif; ?>
+        </div>
     </div>
 
     <?php if (empty($documentosEntidad)): ?>

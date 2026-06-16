@@ -3603,19 +3603,22 @@ if (!is_file($routesPath)) {
 
     if (
         $documentosEntidadPartialCode !== ''
-        && strpos($documentosEntidadPartialCode, 'Solo lectura') !== false
+        && strpos($documentosEntidadPartialCode, 'Lista segura') !== false
+        && strpos($documentosEntidadPartialCode, 'Vincular documento') !== false
+        && strpos($documentosEntidadPartialCode, "documentos/subir' . \$entityQuery") !== false
         && strpos($documentosEntidadPartialCode, 'storage_path') === false
         && strpos($documentosEntidadPartialCode, 'nombre_archivo') === false
         && strpos($documentosEntidadPartialCode, 'documentos/\' . $documentoId') !== false
+        && strpos($documentosEntidadPartialCode, '<form') === false
+        && strpos($documentosEntidadPartialCode, 'method=') === false
         && strpos($documentosEntidadPartialCode, '/editar') === false
         && strpos($documentosEntidadPartialCode, '/actualizar') === false
-        && stripos($documentosEntidadPartialCode, 'subir') === false
     ) {
-        hcOk('Centro Documental Fase 4C-A tiene partial read-only por entidad sin storage_path, edicion ni upload.');
+        hcOk('Centro Documental Fase 4C-A tiene partial contextual por entidad sin storage_path, formularios, edicion ni POST nuevo.');
     } else {
         hcWarning(
-            'Centro Documental Fase 4C-A no muestra partial read-only completo por entidad.',
-            'Validar src/app/views/partials/documentos_entidad.php: sin storage_path/nombre_archivo, sin editar/subir y solo enlaces GET seguros.'
+            'Centro Documental Fase 4C-A no muestra partial contextual completo por entidad.',
+            'Validar src/app/views/partials/documentos_entidad.php: sin storage_path/nombre_archivo, sin formularios, sin editar/actualizar y solo enlaces GET seguros.'
         );
     }
 
@@ -3635,11 +3638,11 @@ if (!is_file($routesPath)) {
     }
 
     if (count($viewsConPartial) === count($documentosEntidadViews)) {
-        hcOk('Fichas de proveedor, compra, CxP, huesped y reservacion incluyen seccion documental read-only.');
+        hcOk('Fichas de proveedor, compra, CxP, huesped y reservacion incluyen seccion documental contextual.');
     } else {
         $faltantes = array_diff(array_keys($documentosEntidadViews), $viewsConPartial);
         hcWarning(
-            'Faltan fichas con seccion documental read-only 4C-A: ' . implode(', ', $faltantes),
+            'Faltan fichas con seccion documental contextual 4C-A: ' . implode(', ', $faltantes),
             'Agregar View::partial("documentos_entidad") solo en fichas autorizadas y sin formularios nuevos.'
         );
     }

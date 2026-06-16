@@ -164,7 +164,7 @@ Reglas de fuente de verdad:
 
 ## Documentos por entidad (Fase 4C)
 
-Estado formal: `DOCUMENTOS_ENTIDAD_READ_ONLY_4C_COMPLETADO`.
+Estado formal: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_COMPLETADO`.
 
 Fuente de verdad:
 
@@ -180,7 +180,9 @@ Fuente de verdad:
   `Documento::documentosPorEntidad()` y `src/app/views/partials/documentos_entidad.php`.
 - Las fichas no son fuente de verdad documental; solo consumen metadata ya registrada.
 - No hay links publicos ni permisos nuevos en 4C-A.
-- No hay upload, edicion, borrado ni reemplazo de archivo desde fichas de entidad.
+- La accion `Vincular documento` apunta a la carga contextual existente; la fuente de
+  verdad sigue siendo `documentos` + `documento_entidades`.
+- No hay edicion, borrado ni reemplazo de archivo desde fichas de entidad.
 
 ## Personal y Nomina (Fase NP)
 
