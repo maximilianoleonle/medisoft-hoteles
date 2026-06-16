@@ -1036,3 +1036,16 @@ instruccion del usuario.
 - QA manual sigue pendiente y diferida.
 - No avanzar a automatizaciones, acciones de tarea, cambios de habitacion, check-in,
   check-out, pagos, Caja, nomina, offline ni `/api/sync` desde este cierre.
+
+### Estado MANT-A
+
+- Reporte de mantenimiento read-only estabilizado.
+- QA manual diferida por instruccion del usuario.
+- Probar `/reportes/mantenimiento` con sesion de hotel.
+- Confirmar que los datos pertenecen solo al hotel activo.
+- Probar filtros por fecha y tipo.
+- Confirmar estado vacio si no hay mantenimientos.
+- Confirmar que no existen formularios POST ni botones para crear/iniciar/completar/
+  cancelar mantenimientos desde el reporte.
+- Confirmar que HTTP sin sesion bloquea o redirige.
+- Confirmar que no participa Caja, pagos, abonos, nomina, offline ni `/api/sync`.

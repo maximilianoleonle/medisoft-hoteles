@@ -1068,3 +1068,17 @@ Estado formal vigente: `BLOQUE_OP_TABLERO_OPERATIVO_CERRADO_QA_DIFERIDA`.
 - Cierre tecnico del tablero operativo diario read-only.
 - No agrega funcionalidad nueva en el cierre.
 - Siguiente contrato requerido antes de convertir el tablero en pantalla de acciones.
+
+### Estado MANT-A
+
+Estado formal vigente: `REPORTE_MANTENIMIENTO_MANT_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_A_reporte_mantenimiento_readonly.md`.
+- No crea modulo nuevo; estabiliza el reporte existente `GET /reportes/mantenimiento`.
+- Se corrige el scope multihotel de las consultas activas de mantenimiento en
+  `Reporte.php`.
+- Se agrega preflight tecnico `src/tools/saas/preflight_reporte_mantenimiento.php`.
+- No agrega POST, migraciones, escrituras, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.
+- Siguiente accion segura: QA manual diferida o contrato independiente para el proximo
+  bloque.

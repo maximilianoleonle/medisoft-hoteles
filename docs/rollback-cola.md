@@ -814,3 +814,14 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-op): close read-only daily operations dashboard block`.
 - DB: no aplica; es cierre documental.
 - Mantener intacto el codigo OP-A salvo que se revierta su commit especifico.
+
+### MANT-A reporte de mantenimiento read-only
+
+- Rollback de codigo/documentacion: revertir el commit
+  `test(phase-mant): add read-only maintenance report guardrails`.
+- DB: no aplica; MANT-A no crea migraciones ni escribe datos.
+- El rollback retiraria el preflight MANT-A, los checks del health y el filtro multihotel
+  agregado a la familia activa del reporte.
+- Si se revierte, revisar manualmente que `/reportes/mantenimiento` no mezcle datos de
+  hoteles distintos antes de exponerlo a usuarios.
+- No tocar Caja, pagos, abonos, nomina, offline ni `/api/sync`.

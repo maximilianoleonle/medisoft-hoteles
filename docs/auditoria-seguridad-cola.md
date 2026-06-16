@@ -875,3 +875,18 @@ Estado: `BLOQUE_OP_TABLERO_OPERATIVO_CERRADO_QA_DIFERIDA`.
 - Health y preflight validan que OP-A sigue read-only.
 - Riesgo residual: falta QA manual visual.
 - No se habilitan acciones desde el tablero.
+
+## Auditoria MANT-A reporte mantenimiento
+
+Estado: `REPORTE_MANTENIMIENTO_MANT_A_COMPLETADO_QA_DIFERIDA`.
+
+- Superficie revisada: `GET /reportes/mantenimiento`.
+- Hallazgo corregido: consultas activas de mantenimiento sin filtro `hotel_id`.
+- Mitigacion: todos los metodos usados por `mantenimientoAction()` ahora filtran por el
+  hotel actual y los joins con habitaciones validan hotel coincidente.
+- Sin POST, sin formularios operativos, sin CSRF requerido para escritura porque no hay
+  escritura.
+- No hay migraciones, cambios de DB, Caja, pagos, abonos, nomina, offline ni cambios en
+  `/api/sync`.
+- Riesgo residual: QA manual diferida para confirmar visualmente datos de cada hotel y
+  filtros del reporte.

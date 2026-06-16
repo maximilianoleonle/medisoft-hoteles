@@ -801,3 +801,17 @@ agregar funcionalidades nuevas.
 - No hay POST, migraciones, escrituras, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.
 - Siguiente accion segura: nuevo contrato independiente.
+
+## Reporte mantenimiento MANT-A
+
+- Estado formal: `REPORTE_MANTENIMIENTO_MANT_A_COMPLETADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_MANT_A_reporte_mantenimiento_readonly.md`.
+- No crea modulo nuevo; estabiliza `/reportes/mantenimiento` existente.
+- Se corrige scope multihotel de las consultas activas del reporte en `Reporte.php`.
+- Se agrega `src/tools/saas/preflight_reporte_mantenimiento.php`.
+- Health checker general cubre MANT-A.
+- No hay POST, migraciones, escrituras, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.
+- Siguiente accion segura: nuevo contrato independiente; no convertir mantenimiento en
+  acciones automaticas sin contrato.

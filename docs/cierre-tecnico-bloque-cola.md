@@ -801,3 +801,14 @@ Estado: `BLOQUE_OP_TABLERO_OPERATIVO_CERRADO_QA_DIFERIDA`.
 - No hay POST, escrituras, migraciones, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.
 - QA manual queda diferida.
+
+## Checkpoint tecnico MANT-A
+
+Estado: `REPORTE_MANTENIMIENTO_MANT_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_A_reporte_mantenimiento_readonly.md`.
+- Se estabiliza la ruta existente `GET /reportes/mantenimiento`.
+- Las consultas activas del reporte quedan scoped por `hotel_id`.
+- Health y preflight MANT-A validan ruta GET, ausencia de POST y datos multihotel.
+- No hay escrituras, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- QA manual queda diferida.

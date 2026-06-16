@@ -399,3 +399,15 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - `documentos.storage_path` y `documentos.nombre_archivo` no son parte del reporte.
 - La fuente del tablero sigue siendo agregada/read-only y todo debe venir del
   `hotel_id` actual.
+
+### MANT-A reporte mantenimiento read-only
+
+- No crea fuente nueva.
+- Fuente de mantenimiento historico: `mantenimientos_habitaciones`.
+- Fuente de habitaciones: `habitaciones`.
+- Metadata de usuario: `usuarios`, solo para mostrar responsable/registro.
+- El reporte existente `/reportes/mantenimiento` debe leer exclusivamente datos del
+  `hotel_id` actual.
+- Los joins con `habitaciones` deben validar que `mantenimientos_habitaciones.hotel_id`
+  coincida con `habitaciones.hotel_id`.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.

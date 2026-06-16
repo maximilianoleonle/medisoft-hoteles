@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/TLM-G/OP-A.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/TLM-G/OP-A/MANT-A.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -125,6 +125,31 @@ function hcCountScalar(PDO $pdo, string $sql): ?int
     } catch (Throwable $e) {
         return null;
     }
+}
+
+function hcMethodBody(string $code, string $method): string
+{
+    $needle = 'function ' . $method . '(';
+    $start = strpos($code, $needle);
+    if ($start === false) {
+        return '';
+    }
+
+    $next = strpos($code, "\n    public function ", $start + strlen($needle));
+    if ($next === false) {
+        $next = strpos($code, "\n}", $start + strlen($needle));
+    }
+
+    if ($next === false) {
+        return substr($code, $start);
+    }
+
+    return substr($code, $start, $next - $start);
+}
+
+function hcCodeBodyIsReadOnly(string $body): bool
+{
+    return !preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|REPLACE\s+INTO|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE)\b/i', $body);
 }
 
 function hcReportZeroCount(string $label, ?int $count, string $recommendation): void
@@ -819,7 +844,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A-4D/NP-C-D-A/TLM-G/OP-A - Medisoft Hoteles\n";
+echo "Health check Fase 1A-4D/NP-C-D-A/TLM-G/OP-A/MANT-A - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -4939,6 +4964,133 @@ if (!is_file($routesPath)) {
             'Preflight OP-A no existe.',
             'Crear preflight read-only para validar tablero operativo diario.'
         );
+    }
+
+    $mantControllerPath = $controllersDir . '/ReportesController.php';
+    $mantModelPath = $appRoot . '/app/models/Reporte.php';
+    $mantViewPath = $appRoot . '/app/views/reportes/mantenimiento.php';
+    $mantPreflightPath = $appRoot . '/tools/saas/preflight_reporte_mantenimiento.php';
+    $mantControllerCode = is_file($mantControllerPath) ? (string) file_get_contents($mantControllerPath) : '';
+    $mantModelCode = is_file($mantModelPath) ? (string) file_get_contents($mantModelPath) : '';
+    $mantViewCode = is_file($mantViewPath) ? (string) file_get_contents($mantViewPath) : '';
+
+    if (hcRouteExists($routes, 'reportes/mantenimiento', 'get')) {
+        hcOk('Ruta MANT-A registrada: GET /reportes/mantenimiento.');
+    } else {
+        hcWarning(
+            'Ruta MANT-A GET /reportes/mantenimiento no esta registrada.',
+            'Mantener o restaurar solo GET /reportes/mantenimiento si el reporte read-only sigue vigente.'
+        );
+    }
+
+    if (!hcRouteExists($routes, 'reportes/mantenimiento', 'post')) {
+        hcOk('MANT-A no expone POST /reportes/mantenimiento.');
+    } else {
+        hcError(
+            'MANT-A expone POST /reportes/mantenimiento fuera de contrato.',
+            'Retirar POST; el reporte de mantenimiento debe seguir solo lectura.'
+        );
+    }
+
+    if (
+        $mantControllerCode !== ''
+        && strpos($mantControllerCode, 'class ReportesController') !== false
+        && strpos($mantControllerCode, 'function mantenimientoAction') !== false
+        && strpos($mantControllerCode, 'is_authenticated()') !== false
+        && strpos($mantControllerCode, "require_hotel_module('reportes')") !== false
+        && strpos($mantControllerCode, '../views/reportes/mantenimiento.php') !== false
+    ) {
+        hcOk('ReportesController MANT-A usa sesion, permisos, modulo reportes y vista read-only existente.');
+    } else {
+        hcWarning(
+            'ReportesController MANT-A no muestra guardas completas.',
+            'Validar sesion, permisos, modulo reportes y render de reportes/mantenimiento.'
+        );
+    }
+
+    $mantActiveMethods = [
+        'obtenerMantenimientosPorTipo' => 'hotel_id = ?',
+        'obtenerMantenimientosPorPrioridad' => 'hotel_id = ?',
+        'obtenerHabitacionesConMasMantenimientos' => 'h.hotel_id = ?',
+        'obtenerRegistroMantenimientos' => 'm.hotel_id = ?',
+        'obtenerTopResponsablesMantenimiento' => 'hotel_id = ?',
+        'obtenerTendenciaMensualMantenimiento' => 'hotel_id = ?',
+        'obtenerEstadisticasMantenimientoCompletas' => 'hotel_id = ?',
+    ];
+    foreach ($mantActiveMethods as $method => $scopeNeedle) {
+        $methodBody = hcMethodBody($mantModelCode, $method);
+        if ($methodBody === '') {
+            hcError(
+                'MANT-A no encuentra metodo activo: ' . $method . '.',
+                'Restaurar el metodo usado por ReportesController::mantenimientoAction.'
+            );
+            continue;
+        }
+
+        if (strpos($methodBody, $scopeNeedle) !== false && hcCodeBodyIsReadOnly($methodBody)) {
+            hcOk('Metodo MANT-A scoped/read-only: ' . $method . '.');
+        } else {
+            hcError(
+                'Metodo MANT-A sin filtro hotel_id/read-only: ' . $method . '.',
+                'Agregar filtro hotel_id y evitar escrituras en la familia activa del reporte.'
+            );
+        }
+    }
+
+    if (
+        $mantViewCode !== ''
+        && strpos($mantViewCode, 'Reporte de mantenimiento') !== false
+        && strpos($mantViewCode, 'method="GET"') !== false
+        && strpos($mantViewCode, 'method="POST"') === false
+        && strpos($mantViewCode, 'csrf_field()') === false
+        && strpos($mantViewCode, 'storage_path') === false
+        && strpos($mantViewCode, "url('reportes/mantenimiento')") !== false
+    ) {
+        hcOk('Vista MANT-A es GET/read-only y no expone storage interno.');
+    } else {
+        hcWarning(
+            'Vista MANT-A no muestra contrato visual completo.',
+            'Revisar formulario GET unico, ausencia de POST/storage y ruta correcta.'
+        );
+    }
+
+    if (is_file($mantPreflightPath)) {
+        hcOk('Preflight MANT-A disponible: tools/saas/preflight_reporte_mantenimiento.php.');
+    } else {
+        hcWarning(
+            'Preflight MANT-A no existe.',
+            'Crear preflight read-only para validar reporte de mantenimiento.'
+        );
+    }
+
+    if (hcTableExists($pdo, $database, 'mantenimientos_habitaciones')) {
+        $mantenimientosSinHotel = hcCountScalar($pdo, 'SELECT COUNT(*) FROM mantenimientos_habitaciones WHERE hotel_id IS NULL');
+        if ($mantenimientosSinHotel === 0) {
+            hcOk('MANT-A datos: mantenimientos sin hotel_id = 0.');
+        } else {
+            hcError(
+                'MANT-A datos: mantenimientos sin hotel_id = ' . (string)$mantenimientosSinHotel . '.',
+                'Reconciliar hotel_id antes de automatizar mantenimiento o confiar en reportes multihotel.'
+            );
+        }
+
+        if (hcTableExists($pdo, $database, 'habitaciones')) {
+            $mantenimientosOtroHotel = hcCountScalar(
+                $pdo,
+                "SELECT COUNT(*)
+                 FROM mantenimientos_habitaciones m
+                 JOIN habitaciones h ON h.id = m.habitacion_id
+                 WHERE m.hotel_id <> h.hotel_id"
+            );
+            if ($mantenimientosOtroHotel === 0) {
+                hcOk('MANT-A datos: mantenimientos con habitacion de otro hotel = 0.');
+            } else {
+                hcError(
+                    'MANT-A datos: mantenimientos con habitacion de otro hotel = ' . (string)$mantenimientosOtroHotel . '.',
+                    'Corregir vinculos habitacion/hotel antes de operar mantenimiento avanzado.'
+                );
+            }
+        }
     }
 
     if (hcRouteExists($routes, 'api/sync', 'post')) {

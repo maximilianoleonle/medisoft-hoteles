@@ -461,6 +461,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerMantenimientosPorTipo($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 tipo_mantenimiento,
@@ -473,11 +474,12 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 SUM(CASE WHEN estado = 'en_proceso' THEN 1 ELSE 0 END) as en_proceso,
                 SUM(CASE WHEN estado = 'cancelado' THEN 1 ELSE 0 END) as cancelados
                 FROM mantenimientos_habitaciones
-                WHERE DATE(created_at) BETWEEN ? AND ?
+                WHERE hotel_id = ?
+                AND DATE(created_at) BETWEEN ? AND ?
                 GROUP BY tipo_mantenimiento
                 ORDER BY cantidad DESC";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetchAll() ?: [];
     }
 
@@ -486,6 +488,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerMantenimientosPorPrioridad($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 prioridad,
@@ -496,11 +499,12 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 SUM(CASE WHEN estado = 'en_proceso' THEN 1 ELSE 0 END) as en_proceso,
                 ROUND(SUM(CASE WHEN estado = 'completado' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) as tasa_completitud
                 FROM mantenimientos_habitaciones
-                WHERE DATE(created_at) BETWEEN ? AND ?
+                WHERE hotel_id = ?
+                AND DATE(created_at) BETWEEN ? AND ?
                 GROUP BY prioridad
                 ORDER BY FIELD(prioridad, 'urgente', 'alta', 'media', 'baja')";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         return $stmt->fetchAll() ?: [];
     }
 
@@ -509,6 +513,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerHabitacionesConMasMantenimientos($fecha_inicio, $fecha_fin, $limite = 10) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 h.id,
@@ -523,12 +528,14 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 MAX(m.fecha_inicio) as ultimo_mantenimiento
                 FROM habitaciones h
                 INNER JOIN mantenimientos_habitaciones m ON h.id = m.habitacion_id
-                WHERE DATE(m.fecha_inicio) BETWEEN ? AND ?
+                    AND m.hotel_id = h.hotel_id
+                WHERE h.hotel_id = ?
+                AND DATE(m.fecha_inicio) BETWEEN ? AND ?
                 GROUP BY h.id, h.numero, h.tipo, h.piso
                 ORDER BY total_mantenimientos DESC, costo_total DESC
                 LIMIT ?";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin, $limite]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin, $limite]);
         return $stmt->fetchAll() ?: [];
     }
 
@@ -1535,6 +1542,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerRegistroMantenimientos($tipo_filtro = '') {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         if ($tipo_filtro) {
             $sql = "SELECT m.*,
@@ -1543,11 +1551,13 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                     u.nombre_completo    AS usuario_nombre
                     FROM mantenimientos_habitaciones m
                     LEFT JOIN habitaciones h ON m.habitacion_id = h.id
+                        AND h.hotel_id = m.hotel_id
                     LEFT JOIN usuarios    u ON m.usuario_registro_id = u.id
-                    WHERE m.tipo_mantenimiento = ?
+                    WHERE m.hotel_id = ?
+                    AND m.tipo_mantenimiento = ?
                     ORDER BY m.created_at DESC
                     LIMIT 50";
-            $stmt = $db->query($sql, [$tipo_filtro]);
+            $stmt = $db->query($sql, [$hotel_id, $tipo_filtro]);
         } else {
             $sql = "SELECT m.*,
                     h.numero             AS habitacion_numero,
@@ -1555,10 +1565,12 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                     u.nombre_completo    AS usuario_nombre
                     FROM mantenimientos_habitaciones m
                     LEFT JOIN habitaciones h ON m.habitacion_id = h.id
+                        AND h.hotel_id = m.hotel_id
                     LEFT JOIN usuarios    u ON m.usuario_registro_id = u.id
+                    WHERE m.hotel_id = ?
                     ORDER BY m.created_at DESC
                     LIMIT 50";
-            $stmt = $db->query($sql, []);
+            $stmt = $db->query($sql, [$hotel_id]);
         }
         
         if ($stmt === false) return [];
@@ -1570,19 +1582,21 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerTopResponsablesMantenimiento($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 COALESCE(realizado_por, 'Sin asignar') AS realizado_por,
                 COUNT(*) AS cantidad
                 FROM mantenimientos_habitaciones
-                WHERE DATE(created_at) BETWEEN ? AND ?
+                WHERE hotel_id = ?
+                  AND DATE(created_at) BETWEEN ? AND ?
                   AND realizado_por IS NOT NULL
                   AND realizado_por <> ''
                 GROUP BY realizado_por
                 ORDER BY cantidad DESC
                 LIMIT 8";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         if ($stmt === false) return [];
         return $stmt->fetchAll() ?: [];
     }
@@ -1592,6 +1606,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerTendenciaMensualMantenimiento($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT
                 DATE_FORMAT(fecha_inicio, '%Y-%m')  AS mes,
@@ -1599,11 +1614,12 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                 COUNT(*)                            AS cantidad,
                 COALESCE(SUM(costo), 0)             AS costo_mes
                 FROM mantenimientos_habitaciones
-                WHERE DATE(created_at) BETWEEN ? AND ?
+                WHERE hotel_id = ?
+                AND DATE(created_at) BETWEEN ? AND ?
                 GROUP BY mes, mes_label
                 ORDER BY mes ASC";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         if ($stmt === false) return [];
         return $stmt->fetchAll() ?: [];
     }
@@ -1613,6 +1629,7 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
      */
     public function obtenerEstadisticasMantenimientoCompletas($fecha_inicio, $fecha_fin) {
         $db = Database::getInstance();
+        $hotel_id = $this->hotelIdActual();
         
         $sql = "SELECT 
                 COUNT(*) AS total_mantenimientos,
@@ -1628,9 +1645,10 @@ public function getComparacionPeriodos($fecha_inicio_actual, $fecha_fin_actual, 
                     END
                 ), 0) AS duracion_promedio_horas
                 FROM mantenimientos_habitaciones
-                WHERE DATE(created_at) BETWEEN ? AND ?";
+                WHERE hotel_id = ?
+                AND DATE(created_at) BETWEEN ? AND ?";
         
-        $stmt = $db->query($sql, [$fecha_inicio, $fecha_fin]);
+        $stmt = $db->query($sql, [$hotel_id, $fecha_inicio, $fecha_fin]);
         if ($stmt === false) return ['total_mantenimientos'=>0,'completados'=>0,'en_proceso'=>0,'cancelados'=>0,'programados'=>0,'costo_total'=>0,'costo_promedio'=>0,'duracion_promedio_horas'=>0];
         return $stmt->fetch() ?: ['total_mantenimientos'=>0,'completados'=>0,'en_proceso'=>0,'cancelados'=>0,'programados'=>0,'costo_total'=>0,'costo_promedio'=>0,'duracion_promedio_horas'=>0];
     }

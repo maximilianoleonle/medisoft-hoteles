@@ -702,3 +702,15 @@
 - QA manual queda diferida por instruccion del usuario, no sustituida por los checkers.
 - El siguiente bloque debe tener contrato propio para evitar que el tablero derive en
   acciones sobre reservaciones, habitaciones, tareas o finanzas.
+
+## Decision MANT-A
+
+- No se crea una pantalla nueva porque ya existe `GET /reportes/mantenimiento`.
+- MANT-A se limita a estabilizar esa ruta existente y corregir el scope multihotel de la
+  familia activa de consultas.
+- La correccion se aplica solo a los metodos usados por
+  `ReportesController::mantenimientoAction()`.
+- El reporte conserva su formulario GET de filtros y no agrega POST ni acciones.
+- `preflight_reporte_mantenimiento.php` y el health general quedan como guardrails para
+  detectar lecturas sin `hotel_id`, rutas POST accidentales o datos inconsistentes.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.

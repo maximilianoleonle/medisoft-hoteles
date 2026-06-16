@@ -898,3 +898,16 @@ Resultado OP-F:
 - Verificaciones automaticas pasan con `ERROR: 0`.
 - QA manual queda diferida.
 - Siguiente paso recomendado: abrir contrato independiente para el siguiente bloque.
+
+Resultado MANT-A:
+
+- Estado tecnico: `REPORTE_MANTENIMIENTO_MANT_A_COMPLETADO_QA_DIFERIDA`.
+- Documento: `docs/fase_MANT_A_reporte_mantenimiento_readonly.md`.
+- Se estabiliza el reporte existente `/reportes/mantenimiento` sin crear modulo nuevo.
+- Se corrige el scope multihotel de las consultas activas usadas por el reporte.
+- Se agrega preflight MANT-A y health general ahora valida esta superficie.
+- No hay POST, migraciones, escrituras, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.
+- QA manual queda diferida.
+- Siguiente paso recomendado: nuevo contrato independiente; no abrir acciones de
+  mantenimiento sin autorizacion explicita.
