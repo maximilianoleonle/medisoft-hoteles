@@ -560,4 +560,13 @@ Estado: `BLOQUE_TLM_CERRADO_QA_DIFERIDA`.
 - Revision tecnica y auditoria del bloque TLM completadas.
 - Commits TLM registrados hasta TLM-G.
 - Health y preflight TLM-G sin errores.
+
+## Checkpoint tecnico NP-C-0
+
+Estado: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
+
+- Documento: `docs/fase_NP_C_0_contrato_ledger_laboral.md`.
+- Solo contrato: no hay cambios de DB ni codigo.
+- Caja, pagos reales, abonos, categoria Nomina y `/api/sync` siguen fuera de alcance.
+- Siguiente paso seguro: NP-C-A read-only.
 - QA manual queda diferida por instruccion del usuario.

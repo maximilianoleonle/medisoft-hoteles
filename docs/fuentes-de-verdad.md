@@ -316,3 +316,16 @@ Reglas:
 - TLM-H cierra el bloque base sin cambiar fuentes de verdad: disponibilidad sigue en
   `habitaciones`, mantenimiento historico sigue en `mantenimientos_habitaciones` y tareas
   operativas siguen en `tareas_operativas`.
+
+### NP-C ledger laboral
+
+Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
+
+- Fuente de trabajador: `trabajadores`.
+- Fuente de conceptos laborales: `trabajador_pagos`.
+- Fuente de anticipos: `trabajador_anticipos`.
+- Fuente de prestamos: `trabajador_prestamos`.
+- Fuente de asistencias: `trabajador_asistencias`.
+- El saldo laboral es informativo y derivado; no es movimiento de Caja.
+- Caja, cortes, movimientos, categoria Nomina y `/api/sync` no son fuente de verdad de
+  NP-C.

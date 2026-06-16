@@ -795,3 +795,10 @@ instruccion del usuario.
 - Confirmar que no cambia disponibilidad de habitacion.
 - Confirmar que no se modifica `mantenimientos_habitaciones`.
 - Confirmar que no se crean movimientos de Caja, pagos, abonos, nomina ni asistencia.
+
+### Estado NP-C-0
+
+- Contrato de ledger laboral completado.
+- No requiere QA de navegador porque no agrega rutas ni vistas.
+- QA futura NP-C-A: validar resumen read-only de ledger por trabajador y estados vacios,
+  sin POST, sin Caja y sin movimientos reales.

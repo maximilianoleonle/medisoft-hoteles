@@ -616,3 +616,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - No tocar `/api/sync`, PWA, offline, IndexedDB ni caches.
 - No borrar mantenimientos historicos.
 - No ejecutar `DELETE` ni `DROP` sin autorizacion nueva y backup validado.
+
+### NP-C-0 contrato de ledger laboral
+
+- Revertir el commit documental `docs(phase-np): define worker ledger contract`.
+- DB: no aplica; NP-C-0 no crea migraciones ni escribe datos.
+- Codigo: no aplica; NP-C-0 no agrega rutas, modelos, controladores ni vistas.
+- No tocar tablas `trabajador_*`, Caja, movimientos, categorias ni `/api/sync`.

@@ -847,3 +847,14 @@ Estado formal vigente: `BLOQUE_TLM_CERRADO_QA_DIFERIDA`.
 - Revision tecnica, auditoria de seguridad y cierre documental completados.
 - No agrega funcionalidades nuevas.
 - QA manual queda diferida por instruccion del usuario.
+
+## Fase NP-C: Ledger laboral
+
+### Estado NP-C-0
+
+Estado formal vigente: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
+
+- Documento: `docs/fase_NP_C_0_contrato_ledger_laboral.md`.
+- Define ledger laboral informativo sin Caja, sin pagos reales y sin `/api/sync`.
+- No agrega rutas, vistas, migraciones, POST ni escrituras.
+- Siguiente subfase segura: NP-C-A read-only de ledger laboral por trabajador.

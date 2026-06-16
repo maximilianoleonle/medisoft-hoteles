@@ -622,3 +622,13 @@ Resultado TLM-H:
 - QA manual sigue diferida por instruccion del usuario.
 - Siguiente paso recomendado: esperar QA manual TLM o pasar a un nuevo bloque autorizado
   independiente.
+
+Resultado NP-C-0:
+
+- Estado tecnico: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
+- Documento: `docs/fase_NP_C_0_contrato_ledger_laboral.md`.
+- Se define el contrato de ledger laboral informativo sobre tablas `trabajador_*`.
+- No se agregan rutas, vistas, POST, migraciones ni escrituras.
+- Caja, pagos reales, abonos, categoria Nomina y `/api/sync` quedan explicitamente fuera
+  de alcance.
+- Siguiente paso recomendado: NP-C-A read-only de ledger laboral, sin crear datos.

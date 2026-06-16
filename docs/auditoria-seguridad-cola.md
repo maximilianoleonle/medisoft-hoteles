@@ -606,3 +606,14 @@ Estado: `BLOQUE_TLM_CERRADO_QA_DIFERIDA`.
 - Se conserva QA manual diferida.
 - Riesgo residual principal: validar visualmente flujos manuales de tareas cuando el
   usuario retome QA.
+
+## Auditoria NP-C-0 ledger laboral
+
+Estado: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
+
+- Solo documenta contrato; no agrega rutas ni escrituras.
+- Riesgo principal identificado: confundir saldo laboral informativo con pago real.
+- Mitigacion: NP-C-A debe ser read-only; cualquier POST futuro requiere CSRF,
+  auditoria, filtro `hotel_id` y cero escritura en Caja.
+- Caja, movimientos, cortes, categoria Nomina, pagos reales y `/api/sync` quedan fuera de
+  alcance.

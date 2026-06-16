@@ -517,3 +517,14 @@ agregar funcionalidades nuevas.
 - QA manual global queda diferida por instruccion del usuario.
 - Siguiente accion segura: nuevo bloque autorizado independiente o QA manual TLM cuando
   el usuario vuelva.
+
+## Contrato NP-C-0 (ledger laboral)
+
+- Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
+- Documento creado: `docs/fase_NP_C_0_contrato_ledger_laboral.md`.
+- Objetivo: definir ledger laboral informativo sobre `trabajador_pagos`,
+  `trabajador_anticipos`, `trabajador_prestamos` y `trabajador_asistencias`.
+- NP-C-0 no agrega rutas, vistas, migraciones, POST ni escrituras.
+- Caja, pagos reales, abonos, categoria Nomina y `/api/sync` siguen fuera de alcance.
+- Siguiente accion segura: NP-C-A ledger laboral read-only por trabajador y resumen por
+  hotel, sin POST y sin crear datos.

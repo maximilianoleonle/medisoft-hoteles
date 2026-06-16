@@ -500,3 +500,12 @@
 - La QA manual queda diferida por instruccion del usuario.
 - Cualquier fase futura de automatizacion debe abrir contrato nuevo y no puede inferirse
   desde este cierre.
+
+## Decision NP-C-0 ledger laboral
+
+- El ledger laboral se define como informacion derivada de tablas `trabajador_*`.
+- La primera subfase implementable debe ser read-only para evitar confundir saldos
+  laborales con pagos reales.
+- Caja queda separada: no se crea categoria Nomina ni movimientos.
+- Cualquier salida real de dinero requiere bloque NP-Caja independiente y autorizacion
+  explicita.
