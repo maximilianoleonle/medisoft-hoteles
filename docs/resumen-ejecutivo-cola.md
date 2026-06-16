@@ -338,7 +338,7 @@ Resultado 4C-A:
 
 ## Nuevo bloque Fase 4D Archivado documental
 
-Estado: `BAJA_LOGICA_DOCUMENTAL_4D_B_A_COMPLETADA_QA_DIFERIDA`.
+Estado: `CIERRE_TECNICO_4D_COMPLETADO_QA_DIFERIDA`.
 
 Objetivo: preparar una fase segura para archivar, restaurar y eventualmente dar baja
 logica a documentos sin borrar archivos fisicos ni registros.
@@ -402,6 +402,14 @@ Resultado 4D-B-A:
 - No hay restauracion desde `eliminado`, borrado fisico, `DELETE`, Caja, pagos,
   abonos, Fase 3D, NP-A ni cambios en `/api/sync`.
 - QA manual queda diferida por instruccion del usuario.
+
+Cierre tecnico 4D:
+
+- Estado final: `CIERRE_TECNICO_4D_COMPLETADO_QA_DIFERIDA`.
+- Bloque documental 4D culminado tecnicamente.
+- QA manual pendiente solo para 4D-B-A baja logica.
+- Siguiente bloque recomendado: Personal base, iniciando por contrato/diagnostico o
+  migracion base segun estado real del repo.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

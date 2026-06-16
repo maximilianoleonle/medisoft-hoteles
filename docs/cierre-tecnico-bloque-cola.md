@@ -353,3 +353,25 @@ por instruccion del usuario para permitir avance autonomo.
   logica.
 - Validar que archivo fisico y relaciones se conservan.
 - Validar auditoria.
+
+## Cierre tecnico Fase 4D
+
+Estado final: `CIERRE_TECNICO_4D_COMPLETADO_QA_DIFERIDA`.
+
+El bloque documental 4D queda culminado tecnicamente:
+
+- 4D-0 contrato y diagnostico: completado.
+- 4D-A archivado/restauracion reversible: implementado y validado manualmente.
+- 4D-B-0 contrato de baja logica: completado.
+- 4D-B-A baja logica controlada: implementada y verificada automaticamente.
+
+QA manual pendiente diferida por instruccion del usuario:
+
+- Baja logica `activo/archivado -> eliminado`.
+- Bloqueo visual de descarga/edicion/restauracion en estado `eliminado`.
+- Conservacion de archivo fisico, metadata y relaciones.
+- Auditoria `documentos.estado_actualizado`.
+
+No se implemento recuperacion desde `eliminado`, borrado fisico, `DELETE`, baja masiva,
+reemplazo de archivo, links publicos, Caja, pagos, abonos, Fase 3D, NP-A ni cambios en
+`/api/sync`.

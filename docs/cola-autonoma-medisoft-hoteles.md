@@ -10,9 +10,9 @@ manual por ahora; se implementa 4D-B-A baja logica documental controlada.
 ## Estado vigente
 
 - Bloque actual: Fase 4D Archivado documental.
-- Fase actual: 4D-B-A baja logica documental.
+- Fase actual: cierre tecnico Fase 4D documental.
 - Riesgo: naranja.
-- Estado: `BAJA_LOGICA_DOCUMENTAL_4D_B_A_COMPLETADA_QA_DIFERIDA`.
+- Estado: `CIERRE_TECNICO_4D_COMPLETADO_QA_DIFERIDA`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -127,8 +127,9 @@ manual por ahora; se implementa 4D-B-A baja logica documental controlada.
   `Documento::actualizarEstado()` con `activo/archivado -> eliminado`, auditoria y
   boton `Baja logica` en detalle documental.
 - QA manual 4D-B-A queda diferida por instruccion del usuario.
-- Siguiente accion recomendada: verificar, commitear y cerrar documentalmente Fase 4D
-  antes de pasar a Personal base o Tareas/Limpieza/Mantenimiento.
+- Cierre tecnico 4D: bloque documental culminado tecnicamente con QA manual de 4D-B-A
+  diferida.
+- Siguiente accion recomendada: pasar a Personal base como siguiente bloque seguro.
 
 ## Reanclaje Fase 3C
 

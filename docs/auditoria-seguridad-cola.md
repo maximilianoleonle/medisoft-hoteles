@@ -380,6 +380,15 @@ Estado: `BAJA_LOGICA_DOCUMENTAL_4D_B_A_COMPLETADA_QA_DIFERIDA`.
   pagos, abonos, NP-A, Fase 3D, PWA/offline y `/api/sync`.
 - QA manual queda diferida por instruccion del usuario.
 
+### Cierre seguridad Fase 4D
+
+Estado: `CIERRE_TECNICO_4D_COMPLETADO_QA_DIFERIDA`.
+
+- No hay hallazgos bloqueantes en 4D-A/4D-B-A.
+- Health checker valida archivado/restauracion y baja logica con `ERROR: 0`.
+- La unica QA manual pendiente del bloque documental es probar baja logica en navegador.
+- `/api/sync` sigue fuera de alcance y bloqueado.
+
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 
 ### Estado NP-0

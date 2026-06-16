@@ -497,7 +497,7 @@ QA manual completada 4C-A:
 
 ## QA Fase 4D Archivado documental
 
-Estado: `FASE_4D_A_VALIDADA_MANUALMENTE`.
+Estado: `CIERRE_TECNICO_4D_COMPLETADO_QA_DIFERIDA`.
 
 4D-0 es documentacion y diagnostico; no requiere QA en navegador.
 
