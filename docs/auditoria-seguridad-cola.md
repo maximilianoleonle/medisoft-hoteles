@@ -257,7 +257,7 @@ Estado: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
 
 ### Auditoria 4B-B
 
-- Estado: `AUDITORIA_DESCARGAS_4B_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+- Estado: `AUDITORIA_DESCARGAS_4B_B_VALIDADA_MANUALMENTE`.
 - Se agrega trazabilidad minima para descargas exitosas y bloqueadas.
 - La auditoria se registra con `AuditService::record()` en `logs_auditoria`.
 - Los fallos de auditoria son tolerantes y no rompen la descarga.
@@ -266,6 +266,15 @@ Estado: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
   `/api/sync`.
 - Riesgo residual: cada descarga exitosa o intento bloqueado genera escritura en
   `logs_auditoria`; es intencional y debe monitorearse si el volumen crece.
+
+### Auditoria contrato 4B-C
+
+- Estado: `CONTRATO_4B_C_METADATA_DOCUMENTAL_COMPLETADO`.
+- La edicion futura debe limitarse a metadata segura; nunca archivo fisico ni rutas
+  internas.
+- Riesgo principal futuro: alterar `storage_path`, `hotel_id` o metadata tecnica por
+  formulario; queda prohibido por contrato.
+- Debe auditar `documentos.metadata_actualizada` solo cuando haya cambios reales.
 
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 

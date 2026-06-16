@@ -212,13 +212,20 @@
 
 ### Fase 4B-B auditoria de descargas
 
-- Estado formal vigente: `AUDITORIA_DESCARGAS_4B_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+- Estado formal vigente: `AUDITORIA_DESCARGAS_4B_B_VALIDADA_MANUALMENTE`.
 - Se decide registrar `documentos.descargado` y `documentos.descarga_bloqueada` en
   `logs_auditoria` usando `AuditService::record()`.
 - La auditoria queda en controlador, cerca del flujo HTTP de descarga, porque no cambia
   la fuente de verdad del archivo ni el modelo de storage.
 - No se registra `storage_path` ni `nombre_archivo`.
 - Los fallos de auditoria no bloquean la descarga.
+
+### Fase 4B-C contrato metadata documental
+
+- Estado formal vigente: `CONTRATO_4B_C_METADATA_DOCUMENTAL_COMPLETADO`.
+- La siguiente edicion permitida debe ser solo metadata segura.
+- No se deben editar archivo fisico, storage, hash, MIME, tamano ni hotel.
+- Cualquier POST futuro debe usar CSRF y auditoria diferencial.
 
 ### Decisiones de diagnostico NP-0
 

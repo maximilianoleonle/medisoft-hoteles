@@ -214,7 +214,7 @@ autorizacion explicita de fase.
 
 ## Resultado Fase 4B-B - Auditoria de descargas documentales
 
-Estado: `AUDITORIA_DESCARGAS_4B_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+Estado: `AUDITORIA_DESCARGAS_4B_B_VALIDADA_MANUALMENTE`.
 
 Objetivo:
 
@@ -273,11 +273,61 @@ Verificacion automatica:
 - Conteos de control: `cuentas_por_pagar_movimientos=0`, `movimientos_caja=1403`.
 - `git diff --check`: OK.
 
-QA manual pendiente:
+QA manual completada:
 
-1. Iniciar sesion en un hotel con documentos.
-2. Descargar un documento activo.
-3. Confirmar que el archivo sigue descargando correctamente.
-4. Confirmar que se registra una auditoria `documentos.descargado`.
-5. Intentar acceder a un documento no disponible para el hotel actual.
-6. Confirmar bloqueo sin exponer ruta interna y auditoria `documentos.descarga_bloqueada`.
+El usuario reporto que la auditoria de descargas funciona. La Fase 4B-B queda validada
+manualmente sin autorizar edicion, borrado, links publicos, Caja, pagos, abonos ni
+`/api/sync`.
+
+## Fase 4B-C - Contrato de edicion controlada de metadata documental
+
+Estado: `CONTRATO_4B_C_METADATA_DOCUMENTAL_COMPLETADO`.
+
+Objetivo:
+
+Permitir en una fase posterior editar solo metadata segura de documentos existentes,
+sin reemplazar archivos, sin mover storage, sin borrar documentos y sin crear links
+publicos.
+
+Alcance permitido futuro:
+
+- Editar `titulo`.
+- Editar `descripcion`.
+- Editar `etiquetas`.
+- Editar `documento_tipo_id` solo si el tipo esta activo y pertenece al hotel actual o
+  es global.
+- Cambiar `estado` solo entre `activo` y `archivado` si se autoriza explicitamente en
+  la implementacion.
+- Registrar auditoria con `AuditService::record()`.
+
+Fuera de alcance:
+
+- Reemplazar archivo fisico.
+- Cambiar `storage_path`.
+- Cambiar `nombre_archivo`.
+- Cambiar `hotel_id`.
+- Cambiar `sha256`, `mime_type` o `size_bytes`.
+- Borrado fisico.
+- Baja logica `eliminado` sin contrato separado.
+- Links publicos.
+- Caja, pagos, abonos, Fase 3D, PWA/offline y `/api/sync`.
+
+Reglas de seguridad:
+
+- Toda edicion debe requerir autenticacion, contexto hotelero y modulo relacionado.
+- Toda busqueda debe usar `id + hotel_id`.
+- Debe usar CSRF en cualquier POST.
+- Debe validar longitudes y limpiar texto.
+- No debe mostrar ni aceptar `storage_path` ni `nombre_archivo`.
+- Debe comparar antes/despues para auditar solo cambios reales.
+- Si no hay cambios reales, debe responder sin escribir auditoria ruidosa.
+
+Definition of Done futura:
+
+- GET de formulario de metadata protegido.
+- POST de actualizacion con CSRF.
+- Validaciones centrales en modelo o servicio.
+- Auditoria `documentos.metadata_actualizada` con campos antes/despues seguros.
+- Sin cambios en archivo fisico.
+- Sin nuevas rutas publicas.
+- `php -l`, health checker, prueba POST sin sesion bloqueada, prueba CSRF y QA manual.

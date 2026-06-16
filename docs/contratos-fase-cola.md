@@ -354,7 +354,7 @@ links publicos o auditoria de descargas.
 
 ### Estado
 
-Estado formal vigente: `AUDITORIA_DESCARGAS_4B_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+Estado formal vigente: `AUDITORIA_DESCARGAS_4B_B_VALIDADA_MANUALMENTE`.
 
 ### Contrato
 
@@ -372,6 +372,23 @@ Estado formal vigente: `AUDITORIA_DESCARGAS_4B_B_COMPLETADA_QA_MANUAL_PENDIENTE`
 - La descarga sigue funcionando.
 - Los fallos de auditoria son tolerantes.
 - QA manual documentada.
+
+## Fase 4B-C: Edicion controlada de metadata documental
+
+### Estado
+
+Estado formal vigente: `CONTRATO_4B_C_METADATA_DOCUMENTAL_COMPLETADO`.
+
+### Contrato
+
+- Permitir editar solo metadata segura: `titulo`, `descripcion`, `etiquetas` y tipo
+  documental valido para el hotel.
+- Mantener archivo fisico, `storage_path`, `nombre_archivo`, `sha256`, `mime_type`,
+  `size_bytes` y `hotel_id` fuera del formulario.
+- Usar GET protegido para formulario y POST con CSRF para guardar.
+- Registrar `documentos.metadata_actualizada` con antes/despues seguro.
+- No implementar borrado, reemplazo de archivo, links publicos, Caja, pagos, abonos ni
+  `/api/sync`.
 
 ## Bloque Personal y Nomina (Fase NP): modulo independiente de trabajadores
 

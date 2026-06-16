@@ -262,8 +262,15 @@ Resultado 4B-B:
   para documento `#3` de otro hotel.
 - No hay nuevas rutas, POST, edicion, borrado, links publicos, Caja, pagos, abonos ni
   `/api/sync`.
-- Siguiente paso recomendado: QA manual de descarga y validacion visual/DB del evento
-  de auditoria antes de avanzar a edicion, borrado o links publicos.
+- QA manual 4B-B reportada por el usuario como funcional.
+
+Resultado 4B-C contrato:
+
+- Se documenta contrato para edicion controlada de metadata documental.
+- La futura edicion queda limitada a `titulo`, `descripcion`, `etiquetas`,
+  `documento_tipo_id` y, si se autoriza, estado `activo/archivado`.
+- Quedan prohibidos reemplazo de archivo, cambio de storage, borrado, links publicos,
+  Caja, pagos, abonos y `/api/sync`.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

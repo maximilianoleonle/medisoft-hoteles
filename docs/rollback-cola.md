@@ -348,6 +348,13 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   deja de registrar `documentos.descargado` y `documentos.descarga_bloqueada`.
 - No hay migraciones, storage, Caja, pagos, abonos ni `/api/sync` involucrados.
 
+### 4B-C contrato metadata documental
+
+- Rollback documental: revertir el commit `docs(phase-4b): define document metadata editing contract`.
+- DB: no aplica; el contrato no escribe datos.
+- Codigo: no aplica; no se implementan rutas, POST ni vistas en el contrato.
+- No borrar auditorias 4B-B ni documentos existentes.
+
 ### Fases futuras
 
 - Antes de migracion o escritura: backup fresco.

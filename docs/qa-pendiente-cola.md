@@ -363,7 +363,7 @@ descargas sin nueva fase explicita.
 - Descarga en navegador validada.
 - No se autoriza edicion, borrado, links publicos, pagos, abonos, Caja ni `/api/sync`.
 
-### QA manual pendiente 4B-B
+### QA manual completada 4B-B
 
 Resultado automatico:
 
@@ -374,17 +374,21 @@ Resultado automatico:
 - El hash SHA256 del archivo descargado coincide con el documento esperado.
 - `cuentas_por_pagar_movimientos=0` y `movimientos_caja=1403`.
 
-Validacion manual recomendada:
+Resultado manual:
 
-- Descargar un documento activo desde `/documentos`.
-- Confirmar que el archivo sigue descargando correctamente.
-- Confirmar en auditoria que aparece `documentos.descargado` con `hotel_id`,
-  `usuario_id`, `entidad_tipo=documento` y `entidad_id` del documento.
-- Intentar descargar un documento no disponible para el hotel actual.
-- Confirmar que el intento queda bloqueado sin exponer ruta interna.
-- Confirmar en auditoria que aparece `documentos.descarga_bloqueada`.
-- Confirmar que no hay edicion, borrado, links publicos, pagos, abonos, Caja ni
-  cambios en `/api/sync`.
+- El usuario reporto que funciona.
+- Fase 4B-B queda validada manualmente.
+- No autoriza edicion, borrado, links publicos, pagos, abonos, Caja ni cambios en
+  `/api/sync`.
+
+### QA futura 4B-C metadata documental
+
+- GET de formulario protegido debe requerir sesion.
+- POST sin sesion debe redirigir/bloquear.
+- POST sin CSRF valido debe fallar limpiamente.
+- Editar `titulo`, `descripcion`, `etiquetas` o tipo documental debe conservar archivo,
+  `storage_path`, `nombre_archivo`, `sha256`, `mime_type`, `size_bytes` y `hotel_id`.
+- Auditoria `documentos.metadata_actualizada` debe registrar antes/despues seguro.
 
 ### QA critica futura
 
