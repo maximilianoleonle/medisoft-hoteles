@@ -714,3 +714,14 @@ agregar funcionalidades nuevas.
 - No agrega rutas, vistas, modelos, migraciones ni escrituras.
 - Caja, nomina, pagos reales, abonos, liquidaciones y `/api/sync` quedan fuera.
 - Siguiente accion segura: NP-F-A implementacion read-only del reporte.
+
+## Reporte Personal NP-F-A
+
+- Estado formal: `REPORTE_PERSONAL_NP_F_A_COMPLETADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_NP_F_A_reporte_personal_readonly.md`.
+- Se agrega `/trabajadores/reporte` como GET read-only protegido por guardas de Personal.
+- El reporte consolida trabajadores, ledger laboral, asistencia, documentos laborales y
+  tareas asignadas por `hotel_id`.
+- No agrega POST, nomina, pagos reales, abonos, Caja ni cambios en `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.
+- Siguiente accion segura: revision tecnica/auditoria/cierre de NP-F-A.

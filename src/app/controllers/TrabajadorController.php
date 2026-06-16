@@ -59,6 +59,18 @@ class TrabajadorController extends Controller
         ]);
     }
 
+    public function reporteAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $tablaDisponible = $this->trabajadorModel->tablaDisponible();
+
+        View::renderTemplate('trabajadores/reporte', [
+            'title' => 'Reporte de Personal - ' . current_hotel_display_name(),
+            'reporte' => $tablaDisponible ? $this->trabajadorModel->reporteReadOnlyPorHotel($hotelId) : $this->reporteVacio(),
+            'tablaDisponible' => $tablaDisponible,
+        ]);
+    }
+
     public function verAction(): void
     {
         $id = (int)($this->route_params['id'] ?? 0);
@@ -399,6 +411,49 @@ class TrabajadorController extends Controller
             'activos' => 0,
             'inactivos' => 0,
             'baja' => 0,
+        ];
+    }
+
+    private function reporteVacio(): array
+    {
+        return [
+            'trabajadores' => $this->resumenVacio(),
+            'ledger' => [
+                'conceptos_count' => 0,
+                'conceptos_a_favor' => '0.00',
+                'conceptos_en_contra' => '0.00',
+                'conceptos_neutros' => '0.00',
+                'anticipos_count' => 0,
+                'anticipos_saldo' => '0.00',
+                'prestamos_count' => 0,
+                'prestamos_saldo' => '0.00',
+                'saldo_informativo' => '0.00',
+            ],
+            'asistencias' => [
+                'total' => 0,
+                'asistencia' => 0,
+                'falta' => 0,
+                'retardo' => 0,
+                'permiso' => 0,
+                'incapacidad' => 0,
+                'descanso' => 0,
+                'horas_extra' => 0,
+                'primera_fecha' => null,
+                'ultima_fecha' => null,
+            ],
+            'documentos' => [
+                'total' => 0,
+                'trabajadores_con_documentos' => 0,
+            ],
+            'tareas' => [
+                'total' => 0,
+                'pendiente' => 0,
+                'asignada' => 0,
+                'en_proceso' => 0,
+                'completada' => 0,
+                'cancelada' => 0,
+            ],
+            'trabajadores_relevantes' => [],
         ];
     }
 

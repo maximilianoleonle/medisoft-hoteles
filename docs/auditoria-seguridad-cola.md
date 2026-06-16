@@ -795,3 +795,14 @@ Estado: `CONTRATO_NP_F_REPORTE_PERSONAL_READONLY_COMPLETADO`.
 - Riesgo futuro principal: convertir un reporte en pantalla operativa con acciones POST.
 - Mitigacion definida: NP-F-A debe ser GET/read-only, scoped por `hotel_id`, sin Caja,
   sin nomina, sin pagos reales y sin `/api/sync`.
+
+## Auditoria NP-F-A reporte Personal read-only
+
+Estado: `REPORTE_PERSONAL_NP_F_A_COMPLETADO_QA_DIFERIDA`.
+
+- Nueva superficie: GET `/trabajadores/reporte`.
+- Sin formularios POST, sin CSRF necesario, sin acciones operativas.
+- Consultas scoped por `hotel_id`.
+- No hay escrituras en `trabajador_*`, tareas, documentos, Caja ni `/api/sync`.
+- Riesgo residual: QA manual diferida y posibilidad de que usuarios interpreten saldos
+  informativos como pagos reales; la vista mantiene copy explicito de no Caja/no nomina.

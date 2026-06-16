@@ -1012,3 +1012,11 @@ Estado formal vigente: `CONTRATO_NP_F_REPORTE_PERSONAL_READONLY_COMPLETADO`.
 - Solo contrato; no agrega codigo ni DB.
 - Define futuro reporte read-only de Personal, sin escrituras, nomina, pagos reales,
   abonos, Caja ni `/api/sync`.
+
+### Estado NP-F-A
+
+Estado formal vigente: `REPORTE_PERSONAL_NP_F_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_F_A_reporte_personal_readonly.md`.
+- Implementacion GET/read-only de `/trabajadores/reporte`.
+- No agrega escrituras, nomina, pagos reales, abonos, Caja ni `/api/sync`.

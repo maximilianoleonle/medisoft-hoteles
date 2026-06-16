@@ -238,8 +238,9 @@ $router->post('/documentos/{id:[0-9]+}/eliminar', ['controller' => 'Documento', 
 $router->get('/documentos/{id:[0-9]+}/descargar', ['controller' => 'Documento', 'action' => 'descargar']);
 $router->get('/documentos/{id:[0-9]+}', ['controller' => 'Documento', 'action' => 'ver']);
 
-// Fase NP-A/NP-C-D-A: Personal base, CRUD basico y ledger laboral manual. Sin pagos reales, nomina ni Caja.
+// Fase NP-A/NP-F-A: Personal base, CRUD basico, ledger laboral manual y reporte read-only. Sin pagos reales, nomina ni Caja.
 $router->get('/trabajadores', ['controller' => 'Trabajador', 'action' => 'index']);
+$router->get('/trabajadores/reporte', ['controller' => 'Trabajador', 'action' => 'reporte']);
 $router->get('/trabajadores/crear', ['controller' => 'Trabajador', 'action' => 'crear']);
 $router->post('/trabajadores', ['controller' => 'Trabajador', 'action' => 'guardar']);
 $router->get('/trabajadores/{id:[0-9]+}', ['controller' => 'Trabajador', 'action' => 'ver']);

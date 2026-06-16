@@ -727,3 +727,13 @@ Estado: `BLOQUE_NP_PERSONAL_OPERATIVO_BASE_CERRADO_QA_DIFERIDA`.
 - No agrega funcionalidad nueva ni cambios de base de datos.
 - No hay nomina automatica, pagos reales, abonos, Caja ni cambios en `/api/sync`.
 - QA manual queda diferida por instruccion del usuario.
+
+## Checkpoint tecnico NP-F-A
+
+Estado: `REPORTE_PERSONAL_NP_F_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_F_A_reporte_personal_readonly.md`.
+- Reporte GET/read-only agregado en `/trabajadores/reporte`.
+- Consolida trabajadores, ledger laboral, asistencia, documentos y tareas asignadas.
+- No hay POST, nomina, pagos reales, abonos, Caja ni cambios en `/api/sync`.
+- QA manual queda diferida.

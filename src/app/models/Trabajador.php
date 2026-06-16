@@ -116,6 +116,169 @@ class Trabajador extends Model
         ];
     }
 
+    public function reporteReadOnlyPorHotel(int $hotelId): array
+    {
+        $reporte = [
+            'trabajadores' => $this->resumenPorHotel($hotelId),
+            'ledger' => [
+                'conceptos_count' => 0,
+                'conceptos_a_favor' => '0.00',
+                'conceptos_en_contra' => '0.00',
+                'conceptos_neutros' => '0.00',
+                'anticipos_count' => 0,
+                'anticipos_saldo' => '0.00',
+                'prestamos_count' => 0,
+                'prestamos_saldo' => '0.00',
+                'saldo_informativo' => '0.00',
+            ],
+            'asistencias' => [
+                'total' => 0,
+                'asistencia' => 0,
+                'falta' => 0,
+                'retardo' => 0,
+                'permiso' => 0,
+                'incapacidad' => 0,
+                'descanso' => 0,
+                'horas_extra' => 0,
+                'primera_fecha' => null,
+                'ultima_fecha' => null,
+            ],
+            'documentos' => [
+                'total' => 0,
+                'trabajadores_con_documentos' => 0,
+            ],
+            'tareas' => [
+                'total' => 0,
+                'pendiente' => 0,
+                'asignada' => 0,
+                'en_proceso' => 0,
+                'completada' => 0,
+                'cancelada' => 0,
+            ],
+            'trabajadores_relevantes' => [],
+        ];
+
+        if ($hotelId <= 0 || !$this->tablaDisponible()) {
+            return $reporte;
+        }
+
+        if ($this->tablaExiste('trabajador_pagos')) {
+            $row = $this->fetchOne(
+                "SELECT COUNT(*) AS total,
+                        COALESCE(SUM(CASE WHEN estado = 'activo' AND efecto = 'a_favor' THEN monto ELSE 0 END), 0) AS a_favor,
+                        COALESCE(SUM(CASE WHEN estado = 'activo' AND efecto = 'en_contra' THEN monto ELSE 0 END), 0) AS en_contra,
+                        COALESCE(SUM(CASE WHEN estado = 'activo' AND efecto = 'neutro' THEN monto ELSE 0 END), 0) AS neutro
+                 FROM trabajador_pagos
+                 WHERE hotel_id = ?",
+                [$hotelId]
+            );
+            $reporte['ledger']['conceptos_count'] = (int)($row['total'] ?? 0);
+            $reporte['ledger']['conceptos_a_favor'] = $this->decimal($row['a_favor'] ?? 0);
+            $reporte['ledger']['conceptos_en_contra'] = $this->decimal($row['en_contra'] ?? 0);
+            $reporte['ledger']['conceptos_neutros'] = $this->decimal($row['neutro'] ?? 0);
+        }
+
+        if ($this->tablaExiste('trabajador_anticipos')) {
+            $row = $this->fetchOne(
+                "SELECT COUNT(*) AS total,
+                        COALESCE(SUM(CASE WHEN estado = 'pendiente' THEN saldo_pendiente ELSE 0 END), 0) AS saldo
+                 FROM trabajador_anticipos
+                 WHERE hotel_id = ?",
+                [$hotelId]
+            );
+            $reporte['ledger']['anticipos_count'] = (int)($row['total'] ?? 0);
+            $reporte['ledger']['anticipos_saldo'] = $this->decimal($row['saldo'] ?? 0);
+        }
+
+        if ($this->tablaExiste('trabajador_prestamos')) {
+            $row = $this->fetchOne(
+                "SELECT COUNT(*) AS total,
+                        COALESCE(SUM(CASE WHEN estado = 'vigente' THEN saldo_pendiente ELSE 0 END), 0) AS saldo
+                 FROM trabajador_prestamos
+                 WHERE hotel_id = ?",
+                [$hotelId]
+            );
+            $reporte['ledger']['prestamos_count'] = (int)($row['total'] ?? 0);
+            $reporte['ledger']['prestamos_saldo'] = $this->decimal($row['saldo'] ?? 0);
+        }
+
+        if ($this->tablaExiste('trabajador_asistencias')) {
+            $row = $this->fetchOne(
+                "SELECT COUNT(*) AS total,
+                        SUM(CASE WHEN tipo = 'asistencia' THEN 1 ELSE 0 END) AS asistencia,
+                        SUM(CASE WHEN tipo = 'falta' THEN 1 ELSE 0 END) AS falta,
+                        SUM(CASE WHEN tipo = 'retardo' THEN 1 ELSE 0 END) AS retardo,
+                        SUM(CASE WHEN tipo = 'permiso' THEN 1 ELSE 0 END) AS permiso,
+                        SUM(CASE WHEN tipo = 'incapacidad' THEN 1 ELSE 0 END) AS incapacidad,
+                        SUM(CASE WHEN tipo = 'descanso' THEN 1 ELSE 0 END) AS descanso,
+                        SUM(CASE WHEN tipo = 'horas_extra' THEN 1 ELSE 0 END) AS horas_extra,
+                        MIN(fecha) AS primera_fecha,
+                        MAX(fecha) AS ultima_fecha
+                 FROM trabajador_asistencias
+                 WHERE hotel_id = ?",
+                [$hotelId]
+            );
+
+            foreach (['total', 'asistencia', 'falta', 'retardo', 'permiso', 'incapacidad', 'descanso', 'horas_extra'] as $key) {
+                $reporte['asistencias'][$key] = (int)($row[$key] ?? 0);
+            }
+            $reporte['asistencias']['primera_fecha'] = $row['primera_fecha'] ?? null;
+            $reporte['asistencias']['ultima_fecha'] = $row['ultima_fecha'] ?? null;
+        }
+
+        if ($this->tablaExiste('documentos') && $this->tablaExiste('documento_entidades')) {
+            $row = $this->fetchOne(
+                "SELECT COUNT(DISTINCT d.id) AS total,
+                        COUNT(DISTINCT de.entidad_id) AS trabajadores_con_documentos
+                 FROM documento_entidades de
+                 INNER JOIN documentos d
+                    ON d.id = de.documento_id
+                   AND d.hotel_id = de.hotel_id
+                 WHERE de.hotel_id = ?
+                   AND de.entidad_tipo = 'trabajador'
+                   AND d.estado <> 'eliminado'",
+                [$hotelId]
+            );
+            $reporte['documentos']['total'] = (int)($row['total'] ?? 0);
+            $reporte['documentos']['trabajadores_con_documentos'] = (int)($row['trabajadores_con_documentos'] ?? 0);
+        }
+
+        if ($this->tablaExiste('tareas_operativas')) {
+            $row = $this->fetchOne(
+                "SELECT COUNT(*) AS total,
+                        SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) AS pendiente,
+                        SUM(CASE WHEN estado = 'asignada' THEN 1 ELSE 0 END) AS asignada,
+                        SUM(CASE WHEN estado = 'en_proceso' THEN 1 ELSE 0 END) AS en_proceso,
+                        SUM(CASE WHEN estado = 'completada' THEN 1 ELSE 0 END) AS completada,
+                        SUM(CASE WHEN estado = 'cancelada' THEN 1 ELSE 0 END) AS cancelada
+                 FROM tareas_operativas
+                 WHERE hotel_id = ?
+                   AND trabajador_id IS NOT NULL",
+                [$hotelId]
+            );
+
+            foreach (['total', 'pendiente', 'asignada', 'en_proceso', 'completada', 'cancelada'] as $key) {
+                $reporte['tareas'][$key] = (int)($row[$key] ?? 0);
+            }
+        }
+
+        $reporte['ledger']['saldo_informativo'] = $this->decimal(
+            (float)$reporte['ledger']['conceptos_a_favor']
+            - (float)$reporte['ledger']['conceptos_en_contra']
+            - (float)$reporte['ledger']['anticipos_saldo']
+            - (float)$reporte['ledger']['prestamos_saldo']
+        );
+
+        $trabajadores = $this->listarPorHotel($hotelId, ['estado' => 'todos'], 80);
+        foreach ($trabajadores as $trabajador) {
+            $trabajadorId = (int)($trabajador['id'] ?? 0);
+            $trabajador['resumen_laboral'] = $this->resumenLedgerPorTrabajador($trabajadorId, $hotelId);
+            $reporte['trabajadores_relevantes'][] = $trabajador;
+        }
+
+        return $reporte;
+    }
+
     public function buscarPorIdHotel(int $id, int $hotelId): ?array
     {
         if ($id <= 0 || $hotelId <= 0 || !$this->tablaDisponible()) {

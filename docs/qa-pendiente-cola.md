@@ -971,3 +971,12 @@ instruccion del usuario.
 - No requiere QA de navegador porque no agrega funcionalidad.
 - QA futura NP-F-A debe confirmar ruta protegida, datos scoped por hotel, estados vacios,
   ausencia de POST y ausencia de botones financieros.
+
+### Estado NP-F-A
+
+- Reporte Personal read-only implementado.
+- QA manual diferida por instruccion del usuario.
+- Probar `/trabajadores/reporte` con sesion de hotel.
+- Confirmar estados vacios o datos correctos segun existan trabajadores.
+- Confirmar que no existen formularios POST, botones de nomina, pago, abono ni Caja.
+- Confirmar que HTTP sin sesion bloquea o redirige.

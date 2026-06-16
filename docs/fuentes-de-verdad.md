@@ -361,3 +361,6 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - NP-F-0 define un reporte futuro read-only; no crea fuente nueva. Debe derivar datos de
   `trabajadores`, tablas `trabajador_*`, Centro Documental moderno y `tareas_operativas`
   cuando aplique.
+- NP-F-A implementa ese reporte sin crear fuente nueva: trabajadores en `trabajadores`,
+  ledger en tablas `trabajador_*`, documentos en Centro Documental moderno y tareas en
+  `tareas_operativas`; Caja no participa.

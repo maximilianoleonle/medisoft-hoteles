@@ -170,6 +170,7 @@ $routesPath = $appRoot . '/config/routes.php';
 $workerModelPath = $appRoot . '/app/models/Trabajador.php';
 $workerControllerPath = $appRoot . '/app/controllers/TrabajadorController.php';
 $workerDetailViewPath = $appRoot . '/app/views/trabajadores/ver.php';
+$workerReportViewPath = $appRoot . '/app/views/trabajadores/reporte.php';
 
 echo "Preflight Fase NP-C-D-A - Ledger laboral\n";
 echo "=====================================================\n";
@@ -382,7 +383,7 @@ if ($routes === []) {
     }
 
     if ($forbiddenWorkerRoutes === []) {
-        npPfOk('Rutas Personal NP-C-D-A exponen solo ledger laboral manual autorizado sin pagos reales ni Caja.');
+        npPfOk('Rutas Personal NP-F-A exponen solo reporte read-only y ledger laboral manual autorizado sin pagos reales ni Caja.');
     } else {
         npPfError(
             'Rutas Personal fuera de alcance: ' . implode(', ', $forbiddenWorkerRoutes) . '.',
@@ -428,6 +429,27 @@ if (is_file($workerDetailViewPath)) {
     }
 } else {
     npPfWarning('No se encontro vista de trabajador.', 'Revisar modulo Personal antes de QA.');
+}
+
+if (is_file($workerReportViewPath)) {
+    $reportCode = (string) file_get_contents($workerReportViewPath);
+    if (
+        strpos($reportCode, 'Reporte de Personal') !== false
+        && strpos($reportCode, 'read-only') !== false
+        && strpos($reportCode, 'method="POST"') === false
+        && strpos($reportCode, 'csrf_field()') === false
+        && strpos($reportCode, 'movimientos_caja') === false
+        && strpos($reportCode, 'cuentas_por_pagar') === false
+    ) {
+        npPfOk('Vista de reporte Personal NP-F-A es read-only y no expone Caja ni CxP.');
+    } else {
+        npPfWarning(
+            'Vista de reporte Personal NP-F-A no muestra contrato read-only completo.',
+            'Asegurar reporte sin POST, sin Caja, sin CxP y con copy de solo lectura.'
+        );
+    }
+} else {
+    npPfWarning('No se encontro vista de reporte Personal NP-F-A.', 'Crear reporte.php solo si la fase read-only esta autorizada.');
 }
 
 echo "=====================================================\n";

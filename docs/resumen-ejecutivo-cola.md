@@ -85,6 +85,18 @@ Estado actual: `CONTRATO_NP_F_REPORTE_PERSONAL_READONLY_COMPLETADO`.
   `/api/sync`.
 - Siguiente paso recomendado: NP-F-A implementacion GET/read-only del reporte.
 
+## Reporte Personal read-only implementado
+
+Estado actual: `REPORTE_PERSONAL_NP_F_A_COMPLETADO_QA_DIFERIDA`.
+
+- Ruta nueva: `/trabajadores/reporte`.
+- Se implementa solo lectura: sin POST, sin nomina, sin pagos reales, sin abonos y sin
+  Caja.
+- El reporte consolida trabajadores, ledger laboral, asistencias, documentos y tareas por
+  hotel.
+- Health checker y preflight laboral conocen el contrato NP-F-A.
+- QA manual queda diferida por instruccion del usuario.
+
 ## Situacion historica
 
 El historial contiene commits que implementan partes de Fase 3C, pero el estado documental vigente no debe tratarlos como cierre formal completo.

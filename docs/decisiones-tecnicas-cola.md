@@ -635,3 +635,12 @@
 - Tareas asignadas y documentos laborales pueden mostrarse como contexto, pero no deben
   generar asistencia, pagos, abonos ni Caja.
 - Cualquier accion operativa desde el reporte queda fuera del contrato.
+
+## Decision NP-F-A reporte Personal read-only
+
+- La ruta vive en `/trabajadores/reporte` para mantenerla dentro del modulo Personal y no
+  mezclarla con reportes financieros.
+- El reporte reutiliza guardas existentes de Personal: sesion, hotel actual, modulo
+  `usuarios` y permiso `usuarios.view`.
+- No se agrega filtro de hotel visible; el hotel sale del contexto de sesion.
+- El reporte muestra saldos como informacion laboral, no como deuda pagable.

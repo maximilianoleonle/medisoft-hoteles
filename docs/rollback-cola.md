@@ -754,3 +754,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-np): define read-only worker report contract`.
 - DB: no aplica; es solo contrato.
 - No tocar tablas `trabajador_*`, tareas, documentos, Caja ni `/api/sync`.
+
+### NP-F-A reporte Personal read-only
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-np): add read-only worker report`.
+- DB: no aplica; NP-F-A no crea migraciones ni escribe datos.
+- No tocar tablas `trabajador_*`, `tareas_operativas`, documentos, Caja ni `/api/sync`.

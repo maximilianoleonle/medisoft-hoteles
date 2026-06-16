@@ -2731,6 +2731,7 @@ if (!is_file($routesPath)) {
 
     $workerExpectedRoutes = [
         ['method' => 'get', 'path' => 'trabajadores'],
+        ['method' => 'get', 'path' => 'trabajadores/reporte'],
         ['method' => 'get', 'path' => 'trabajadores/crear'],
         ['method' => 'post', 'path' => 'trabajadores'],
         ['method' => 'get', 'path' => 'trabajadores/{id:[0-9]+}'],
@@ -2751,17 +2752,18 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($missingWorkerRoutes)) {
-        hcOk('Rutas Personal NP-C-D-A registradas: CRUD basico y ledger laboral manual sin Caja.');
+        hcOk('Rutas Personal NP-F-A registradas: CRUD basico, reporte read-only y ledger laboral manual sin Caja.');
     } else {
         hcWarning(
-            'Rutas Personal NP-C-D-A faltantes: ' . implode(', ', $missingWorkerRoutes),
-            'Registrar CRUD basico y POST de ledger laboral manual; sin pagos reales, nomina ni Caja.'
+            'Rutas Personal NP-F-A faltantes: ' . implode(', ', $missingWorkerRoutes),
+            'Registrar CRUD basico, GET reporte read-only y POST de ledger laboral manual; sin pagos reales, nomina ni Caja.'
         );
     }
 
     $forbiddenWorkerRoutes = [];
     $allowedWorkerRouteSignatures = [
         'GET /trabajadores -> trabajador::index',
+        'GET /trabajadores/reporte -> trabajador::reporte',
         'GET /trabajadores/crear -> trabajador::crear',
         'POST /trabajadores -> trabajador::guardar',
         'GET /trabajadores/{id:[0-9]+} -> trabajador::ver',
@@ -2786,11 +2788,11 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($forbiddenWorkerRoutes)) {
-        hcOk('Personal NP-C-D-A mantiene solo rutas autorizadas; ledger laboral manual no toca pagos reales ni Caja.');
+        hcOk('Personal NP-F-A mantiene solo rutas autorizadas; reporte read-only y ledger laboral manual no tocan pagos reales ni Caja.');
     } else {
         hcError(
-            'Personal NP-C-D-A tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenWorkerRoutes),
-            'Retirar rutas que no sean CRUD basico o ledger laboral manual sin Caja.'
+            'Personal NP-F-A tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenWorkerRoutes),
+            'Retirar rutas que no sean CRUD basico, reporte read-only o ledger laboral manual sin Caja.'
         );
     }
 
@@ -3044,6 +3046,7 @@ if (!is_file($routesPath)) {
         if (
             strpos($workerModelCode, "protected \$table = 'trabajadores'") !== false
             && strpos($workerModelCode, 'function listarPorHotel') !== false
+            && strpos($workerModelCode, 'function reporteReadOnlyPorHotel') !== false
             && strpos($workerModelCode, 'function buscarPorIdHotel') !== false
             && strpos($workerModelCode, 'function resumenLedgerPorTrabajador') !== false
             && strpos($workerModelCode, 'function conceptosLaboralesPorTrabajador') !== false
@@ -3065,11 +3068,11 @@ if (!is_file($routesPath)) {
             && strpos($workerModelCode, 'storage_path') === false
             && strpos($workerModelCode, 'ruta_archivo') === false
         ) {
-            hcOk('Trabajador model NP-C-D-A consulta ledger y registra movimientos laborales manuales con aislamiento hotel_id.');
+            hcOk('Trabajador model NP-F-A consulta reporte read-only y ledger con aislamiento hotel_id.');
         } else {
             hcWarning(
-                'Trabajador model NP-C-D-A no muestra contrato completo.',
-                'Usar trabajadores/ledger con hotel_id, movimientos laborales manuales validados y no exponer storage_path/ruta_archivo.'
+                'Trabajador model NP-F-A no muestra contrato completo.',
+                'Usar reporte/trabajadores/ledger con hotel_id, movimientos laborales manuales validados y no exponer storage_path/ruta_archivo.'
             );
         }
 
@@ -3079,16 +3082,17 @@ if (!is_file($routesPath)) {
             || strpos($workerCode, 'movimientos_caja') !== false;
 
         if (!$workerForbiddenWrite) {
-            hcOk('Personal NP-C-D-A escribe solo trabajadores y ledger laboral permitido; sin Caja ni Nomina operativa.');
+            hcOk('Personal NP-F-A escribe solo trabajadores y ledger laboral permitido; reporte read-only sin Caja ni Nomina operativa.');
         } else {
             hcError(
-                'Personal NP-C-D-A contiene escrituras o referencias fuera de alcance.',
+                'Personal NP-F-A contiene escrituras o referencias fuera de alcance.',
                 'Permitir solo INSERT/UPDATE en trabajadores e INSERT controlado en trabajador_pagos/anticipos/prestamos/asistencias; sin DELETE ni Caja.'
             );
         }
 
         if (
             strpos($workerControllerCode, 'function indexAction') !== false
+            && strpos($workerControllerCode, 'function reporteAction') !== false
             && strpos($workerControllerCode, 'function verAction') !== false
             && strpos($workerControllerCode, 'function crearAction') !== false
             && strpos($workerControllerCode, 'function guardarAction') !== false
@@ -3121,14 +3125,15 @@ if (!is_file($routesPath)) {
             && strpos($workerControllerCode, 'validateCSRF') !== false
             && strpos($workerControllerCode, 'AuditService::record') !== false
             && strpos($workerControllerCode, 'trabajadores/index') !== false
+            && strpos($workerControllerCode, 'trabajadores/reporte') !== false
             && strpos($workerControllerCode, 'trabajadores/ver') !== false
             && strpos($workerControllerCode, 'trabajadores/form') !== false
         ) {
-            hcOk('TrabajadorController NP-C-D-A expone CRUD y ledger laboral manual con permisos, CSRF y auditoria.');
+            hcOk('TrabajadorController NP-F-A expone CRUD, reporte read-only y ledger laboral manual con permisos, CSRF y auditoria.');
         } else {
             hcWarning(
-                'TrabajadorController NP-C-D-A no muestra guardas o acciones completas.',
-                'Validar requireAuth, hotel, permisos, CSRF, auditoria y acciones CRUD/ledger laboral.'
+                'TrabajadorController NP-F-A no muestra guardas o acciones completas.',
+                'Validar requireAuth, hotel, permisos, CSRF, auditoria y acciones CRUD/reporte/ledger laboral.'
             );
         }
     } else {
@@ -3139,15 +3144,18 @@ if (!is_file($routesPath)) {
     }
 
     $workerFormViewPath = $appRoot . '/app/views/trabajadores/form.php';
-    if (is_file($workerIndexViewPath) && is_file($workerDetailViewPath) && is_file($workerFormViewPath)) {
+    $workerReportViewPath = $appRoot . '/app/views/trabajadores/reporte.php';
+    if (is_file($workerIndexViewPath) && is_file($workerDetailViewPath) && is_file($workerFormViewPath) && is_file($workerReportViewPath)) {
         $workerIndexViewCode = (string) file_get_contents($workerIndexViewPath);
         $workerDetailViewCode = (string) file_get_contents($workerDetailViewPath);
         $workerFormViewCode = (string) file_get_contents($workerFormViewPath);
-        $workerViewsCode = $workerIndexViewCode . "\n" . $workerDetailViewCode . "\n" . $workerFormViewCode;
+        $workerReportViewCode = (string) file_get_contents($workerReportViewPath);
+        $workerViewsCode = $workerIndexViewCode . "\n" . $workerDetailViewCode . "\n" . $workerFormViewCode . "\n" . $workerReportViewCode;
 
         if (
             strpos($workerIndexViewCode, "action=\"<?= url('trabajadores') ?>\"") !== false
             && strpos($workerIndexViewCode, 'method="GET"') !== false
+            && strpos($workerIndexViewCode, "url('trabajadores/reporte')") !== false
             && strpos($workerIndexViewCode, "url('trabajadores/' . (int)") !== false
             && strpos($workerIndexViewCode, '/baja-logica') !== false
             && strpos($workerIndexViewCode, '/reactivar') !== false
@@ -3168,22 +3176,27 @@ if (!is_file($routesPath)) {
             && strpos($workerDetailViewCode, 'name="monto"') !== false
             && strpos($workerDetailViewCode, 'name="hora_entrada"') !== false
             && strpos($workerDetailViewCode, 'no representa movimiento de Caja') !== false
+            && strpos($workerReportViewCode, 'Reporte de Personal') !== false
+            && strpos($workerReportViewCode, 'read-only') !== false
+            && strpos($workerReportViewCode, 'No genera nomina') !== false
+            && strpos($workerReportViewCode, 'method="POST"') === false
+            && strpos($workerReportViewCode, 'csrf_field()') === false
             && substr_count($workerViewsCode, 'csrf_field()') >= 3
             && strpos($workerViewsCode, 'ruta_archivo') === false
             && strpos($workerViewsCode, 'movimientos_caja') === false
             && strpos($workerViewsCode, 'cuentas_por_pagar') === false
         ) {
-            hcOk('Vistas Personal NP-C-D-A muestran CRUD y ledger laboral manual con CSRF sin Caja/pagos reales.');
+            hcOk('Vistas Personal NP-F-A muestran CRUD, reporte read-only y ledger laboral manual con CSRF sin Caja/pagos reales.');
         } else {
             hcWarning(
-                'Vistas Personal NP-C-D-A no muestran contrato completo.',
-                'Asegurar filtros GET, formulario POST+CSRF, ledger laboral manual, sin pagos reales/Caja ni rutas internas de archivos.'
+                'Vistas Personal NP-F-A no muestran contrato completo.',
+                'Asegurar filtros GET, reporte sin POST, formulario POST+CSRF, ledger laboral manual, sin pagos reales/Caja ni rutas internas de archivos.'
             );
         }
     } else {
         hcWarning(
-            'Faltan vistas Personal NP-B-A.',
-            'Crear index.php, ver.php y form.php antes de habilitar CRUD.'
+            'Faltan vistas Personal NP-F-A.',
+            'Crear index.php, reporte.php, ver.php y form.php antes de habilitar Personal completo.'
         );
     }
 
