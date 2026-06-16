@@ -1059,3 +1059,12 @@ Estado formal vigente: `TABLERO_OPERATIVO_OP_A_COMPLETADO_QA_DIFERIDA`.
 - No agrega formularios, POST, cambios de estado, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.
 - Siguiente accion segura: revision tecnica/auditoria/cierre de OP-A.
+
+### Estado OP-F
+
+Estado formal vigente: `BLOQUE_OP_TABLERO_OPERATIVO_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_OP_F_cierre_tablero_operativo.md`.
+- Cierre tecnico del tablero operativo diario read-only.
+- No agrega funcionalidad nueva en el cierre.
+- Siguiente contrato requerido antes de convertir el tablero en pantalla de acciones.

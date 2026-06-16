@@ -807,3 +807,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Retirar ruta `GET /operacion/diaria`, `OperacionController`, `OperacionDiaria`, vista,
   preflight, enlace sidebar y checks OP-A.
 - No tocar reservaciones, habitaciones, tareas, documentos, Caja ni `/api/sync`.
+
+### OP-F cierre tecnico tablero operativo
+
+- Rollback documental: revertir el commit
+  `docs(phase-op): close read-only daily operations dashboard block`.
+- DB: no aplica; es cierre documental.
+- Mantener intacto el codigo OP-A salvo que se revierta su commit especifico.

@@ -866,3 +866,12 @@ Estado: `TABLERO_OPERATIVO_OP_A_COMPLETADO_QA_DIFERIDA`.
 - `OperacionDiaria` usa `hotel_id` en consultas y no contiene INSERT/UPDATE/DELETE.
 - La vista no expone `storage_path`, `nombre_archivo` ni `movimientos_caja`.
 - Riesgo residual: QA manual diferida para validar visualmente datos reales por hotel.
+
+## Auditoria OP-F
+
+Estado: `BLOQUE_OP_TABLERO_OPERATIVO_CERRADO_QA_DIFERIDA`.
+
+- Revision de cierre sin hallazgos bloqueantes.
+- Health y preflight validan que OP-A sigue read-only.
+- Riesgo residual: falta QA manual visual.
+- No se habilitan acciones desde el tablero.

@@ -790,3 +790,14 @@ agregar funcionalidades nuevas.
 - QA manual queda diferida por instruccion del usuario.
 - Siguiente accion segura: revision tecnica/auditoria/cierre OP-A o nuevo contrato
   independiente.
+
+## Cierre tecnico OP-F
+
+- Estado formal: `BLOQUE_OP_TABLERO_OPERATIVO_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_OP_F_cierre_tablero_operativo.md`.
+- Revision tecnica y auditoria del tablero operativo read-only completadas.
+- Verificaciones automaticas pasan con `ERROR: 0` y warnings historicos permitidos.
+- QA manual queda diferida.
+- No hay POST, migraciones, escrituras, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.
+- Siguiente accion segura: nuevo contrato independiente.

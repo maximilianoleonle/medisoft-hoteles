@@ -789,3 +789,15 @@ Estado: `TABLERO_OPERATIVO_OP_A_COMPLETADO_QA_DIFERIDA`.
 - Health y preflight OP-A validan ruta unica, modelo read-only y vista sin formularios.
 - No hay escrituras, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - QA manual queda diferida.
+
+## Cierre tecnico OP-F
+
+Estado: `BLOQUE_OP_TABLERO_OPERATIVO_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_OP_F_cierre_tablero_operativo.md`.
+- Revision tecnica y auditoria de seguridad completadas para el tablero operativo
+  read-only.
+- No se agregaron funcionalidades nuevas en el cierre.
+- No hay POST, escrituras, migraciones, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.
+- QA manual queda diferida.

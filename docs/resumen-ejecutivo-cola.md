@@ -889,3 +889,12 @@ Resultado OP-A:
 - Health checker y preflight OP-A validan ausencia de POST, storage interno, Caja y
   escrituras.
 - No se toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+
+Resultado OP-F:
+
+- Estado tecnico: `BLOQUE_OP_TABLERO_OPERATIVO_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_OP_F_cierre_tablero_operativo.md`.
+- Revision tecnica y auditoria OP-A completadas sin hallazgos bloqueantes.
+- Verificaciones automaticas pasan con `ERROR: 0`.
+- QA manual queda diferida.
+- Siguiente paso recomendado: abrir contrato independiente para el siguiente bloque.

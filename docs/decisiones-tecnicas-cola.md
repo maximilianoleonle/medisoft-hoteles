@@ -695,3 +695,10 @@
   existente mezcla metricas financieras de Caja.
 - No se agregan filtros visibles de hotel: el hotel sale del contexto de sesion.
 - Los documentos se muestran solo como metadata segura y enlaces al detalle autenticado.
+
+## Decision OP-F
+
+- El tablero operativo read-only se cierra antes de abrir automatizaciones.
+- QA manual queda diferida por instruccion del usuario, no sustituida por los checkers.
+- El siguiente bloque debe tener contrato propio para evitar que el tablero derive en
+  acciones sobre reservaciones, habitaciones, tareas o finanzas.

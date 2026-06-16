@@ -1029,3 +1029,10 @@ instruccion del usuario.
 - Confirmar que no hay formularios POST ni botones de accion.
 - Confirmar que no se exponen `storage_path`, `nombre_archivo` ni rutas privadas.
 - Confirmar que Caja, pagos, abonos, nomina y `/api/sync` no participan.
+
+### Estado OP-F
+
+- Bloque Tablero Operativo Diario cerrado tecnicamente.
+- QA manual sigue pendiente y diferida.
+- No avanzar a automatizaciones, acciones de tarea, cambios de habitacion, check-in,
+  check-out, pagos, Caja, nomina, offline ni `/api/sync` desde este cierre.
