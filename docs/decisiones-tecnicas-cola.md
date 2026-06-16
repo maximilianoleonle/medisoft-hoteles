@@ -855,3 +855,11 @@
 - El modelo de tareas centraliza validacion, duplicado activo, transaccion y evento.
 - No se modifica `TareaOperativa::crearParaHotel()` para no cambiar el alta manual
   generica.
+
+## Decision MANT-G-F
+
+- Se cierra MANT-G despues de lectura contextual y creacion manual individual.
+- No se implementa automatizacion, cron ni acciones masivas.
+- Cualquier automatizacion futura requiere contrato nuevo, backup y QA manual explicita.
+- La QA manual de MANT-G queda diferida y documentada, sin bloquear otros bloques
+  independientes por instruccion del usuario.

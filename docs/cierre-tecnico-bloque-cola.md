@@ -982,3 +982,14 @@ Estado: `CREACION_MANUAL_TAREA_MANT_G_B_A_COMPLETADA_QA_DIFERIDA`.
 - No hay automatizacion ni creacion masiva.
 - No hay cambios de estado en habitaciones o mantenimientos.
 - QA manual queda diferida.
+
+## Cierre tecnico MANT-G-F
+
+Estado: `BLOQUE_MANT_G_TAREAS_DESDE_MANTENIMIENTO_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_G_F_cierre_tareas_mantenimiento.md`.
+- Revision tecnica y auditoria completadas para tareas desde mantenimiento.
+- Verificaciones automaticas pasan con `ERROR: 0`.
+- No hay creacion automatica, acciones masivas, cron, Caja, pagos, abonos, nomina,
+  CxP operativa, offline ni `/api/sync`.
+- QA manual real queda diferida por instruccion del usuario.

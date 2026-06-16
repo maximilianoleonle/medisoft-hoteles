@@ -976,3 +976,18 @@ agregar funcionalidades nuevas.
 - No modifica habitaciones, mantenimientos, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.
 - Siguiente accion segura: revision/auditoria/cierre MANT-G antes de automatizaciones.
+
+## MANT-G-F cierre tecnico tareas desde mantenimiento
+
+- Estado formal: `BLOQUE_MANT_G_TAREAS_DESDE_MANTENIMIENTO_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_MANT_G_F_cierre_tareas_mantenimiento.md`.
+- Commits del bloque:
+  - `e07e321`
+  - `1d33ee8`
+  - `46fcf70`
+  - `8841430`
+- Revision tecnica y auditoria completadas.
+- Health y preflights pasan con `ERROR: 0`.
+- QA manual queda diferida.
+- Siguiente accion segura: ejecutar QA manual MANT-G o abrir contrato nuevo para un
+  bloque independiente.

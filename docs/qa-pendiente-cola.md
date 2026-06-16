@@ -1208,3 +1208,11 @@ instruccion del usuario.
 - Confirmar bloqueo de duplicado activo.
 - Confirmar que no cambia habitacion ni mantenimiento.
 - Confirmar que no hay Caja, pagos, abonos, nomina ni cambios en `/api/sync`.
+
+### Estado MANT-G-F
+
+- Bloque tareas desde mantenimiento cerrado tecnicamente.
+- QA manual real sigue diferida por instruccion del usuario.
+- Antes de cualquier automatizacion futura, ejecutar QA MANT-G-B-A y documentar IDs
+  usados.
+- No avanzar a cron, creacion automatica ni acciones masivas sin contrato nuevo.

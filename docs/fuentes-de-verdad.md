@@ -499,3 +499,15 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   - `habitaciones`.
 - `habitaciones` y `mantenimientos_habitaciones` no se actualizan.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.
+
+### MANT-G-F cierre tecnico tareas desde mantenimiento
+
+- Fuente de verdad documental: `docs/fase_MANT_G_F_cierre_tareas_mantenimiento.md`.
+- Fuente de verdad tecnica del bloque:
+  - `TareaOperativa` para lectura/creacion centralizada;
+  - `TareaController` para guardas HTTP, CSRF y auditoria;
+  - `ReportesController::mantenimientoProgramadoAction()` para preview read-only;
+  - `tools/saas/preflight_tareas_operativas.php`;
+  - `tools/saas/preflight_mantenimiento_operativo.php`;
+  - `tools/saas/health_check_fase_1a.php`.
+- No hay fuente de verdad en Caja, pagos, abonos, nomina, offline ni `/api/sync`.

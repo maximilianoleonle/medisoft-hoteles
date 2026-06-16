@@ -1088,3 +1088,13 @@ Resultado MANT-G-B-A:
 - No se cambia habitacion, mantenimiento, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.
 - QA manual queda diferida.
+
+Resultado MANT-G-F:
+
+- Estado tecnico: `BLOQUE_MANT_G_TAREAS_DESDE_MANTENIMIENTO_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_MANT_G_F_cierre_tareas_mantenimiento.md`.
+- Se cierra tecnicamente el bloque de tareas desde mantenimiento.
+- Health y preflights pasan con `ERROR: 0`.
+- QA manual real queda pendiente/diferida.
+- No se autoriza automatizacion, acciones masivas, cron, Caja, pagos, abonos, nomina,
+  CxP operativa, offline ni `/api/sync`.

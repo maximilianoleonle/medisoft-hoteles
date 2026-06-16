@@ -959,3 +959,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - El rollback retiraria ruta POST, accion del controlador, metodo de modelo, boton en
   preview y checks asociados.
 - No tocar Caja, pagos, abonos, nomina ni `/api/sync`.
+
+### MANT-G-F cierre tecnico tareas desde mantenimiento
+
+- Rollback documental: revertir el commit
+  `docs(phase-mant): close maintenance task linkage block`.
+- DB: no aplica; es cierre documental.
+- Mantener intacto MANT-G-A/MANT-G-B-A salvo que se reviertan sus commits especificos.

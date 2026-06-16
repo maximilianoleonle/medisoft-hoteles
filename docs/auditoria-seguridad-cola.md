@@ -1071,3 +1071,18 @@ Estado: `CREACION_MANUAL_TAREA_MANT_G_B_A_COMPLETADA_QA_DIFERIDA`.
 - Auditoria registra `tareas.creada_desde_mantenimiento`.
 - No se modifica `habitaciones` ni `mantenimientos_habitaciones`.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.
+
+## Auditoria MANT-G-F
+
+Estado: `BLOQUE_MANT_G_TAREAS_DESDE_MANTENIMIENTO_CERRADO_QA_DIFERIDA`.
+
+- Cierre tecnico del bloque MANT-G sin funcionalidades nuevas.
+- Confirmado por health/preflights:
+  - ruta manual registrada y controlada;
+  - duplicados activos por mantenimiento en cero;
+  - tareas con mantenimiento inexistente o de otro hotel en cero;
+  - movimientos de Caja relacionados con tareas en cero;
+  - `/api/sync` sigue bloqueado en codigo.
+- No hay automatizacion, cron, accion masiva, Caja, pagos, abonos, nomina ni CxP
+  operativa.
+- Riesgo residual: QA manual diferida por instruccion del usuario.
