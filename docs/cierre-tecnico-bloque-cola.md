@@ -605,3 +605,15 @@ Estado: `CONTRATO_NP_C_B_CONCEPTOS_LABORALES_COMPLETADO`.
 - Solo contrato; no agrega rutas, vistas, POST ni escrituras.
 - Define futura escritura manual de conceptos laborales sin Caja.
 - QA manual queda diferida por instruccion del usuario.
+
+## Checkpoint tecnico NP-C-B-A
+
+Estado: `CONCEPTOS_LABORALES_NP_C_B_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_B_A_conceptos_laborales.md`.
+- Ruta POST controlada para registrar conceptos laborales.
+- Modelo central con transaccion, validacion de trabajador activo y aislamiento
+  `hotel_id`.
+- Vista de trabajador con formulario CSRF y advertencia de no Caja/no pago real.
+- Health/preflight actualizados y ejecutados sin errores.
+- QA manual queda diferida porque no hay trabajadores locales.

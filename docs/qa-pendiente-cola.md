@@ -837,3 +837,23 @@ instruccion del usuario.
 - No requiere QA de navegador porque no agrega funcionalidad.
 - Si se implementa NP-C-B-A en el futuro, QA debe confirmar que no toca Caja ni crea
   pagos reales.
+
+### Estado NP-C-B-A
+
+- Conceptos laborales manuales implementados.
+- QA manual diferida por instruccion del usuario.
+- No se hizo prueba de escritura automatica porque `trabajadores` esta vacia y no se
+  deben fabricar datos sin autorizacion.
+
+### QA manual diferida NP-C-B-A
+
+- Crear o usar un trabajador activo autorizado.
+- Abrir `/trabajadores/{id}`.
+- Confirmar que el formulario de concepto laboral aparece solo para trabajador activo.
+- Registrar una comision o bono y confirmar que aparece como `a_favor`.
+- Registrar un descuento y confirmar que aparece como `en_contra`.
+- Registrar un ajuste y confirmar que respeta el efecto elegido.
+- Confirmar que no se crea movimiento de Caja.
+- Confirmar que no aparece boton de pago real, abono, anticipo ni prestamo.
+- Ejecutar `docker compose exec -T app php /var/www/html/tools/saas/preflight_personal_ledger.php`.
+- Confirmar `ERROR: 0`.

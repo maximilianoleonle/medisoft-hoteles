@@ -332,4 +332,9 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - NP-C-A solo lee estas fuentes desde la ficha de trabajador; no crea ni corrige datos.
 - NP-C-E solo valida consistencia; no corrige ni sustituye ninguna fuente.
 - NP-C-F cierra el bloque read-only sin cambiar fuentes de verdad.
-- NP-C-B-0 solo documenta futura escritura en `trabajador_pagos`; todavia no crea datos.
+- NP-C-B-0 documenta la primera escritura controlada en `trabajador_pagos`.
+- NP-C-B-A permite crear manualmente conceptos `comision`, `bono`, `descuento` y
+  `ajuste` en `trabajador_pagos`.
+- `trabajador_pagos` sigue siendo ledger laboral informativo, no Caja ni pago real.
+- Anticipos, prestamos y asistencia siguen fuera de alcance operativo hasta contrato
+  especifico.

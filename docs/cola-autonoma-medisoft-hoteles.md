@@ -568,3 +568,17 @@ agregar funcionalidades nuevas.
   descuento y ajuste.
 - No implementa rutas, vistas, POST ni escrituras.
 - Mantiene fuera tipo `pago` como salida real, Caja, categoria Nomina y `/api/sync`.
+
+## Conceptos laborales NP-C-B-A
+
+- Estado formal: `CONCEPTOS_LABORALES_NP_C_B_A_COMPLETADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_NP_C_B_A_conceptos_laborales.md`.
+- Se implementa POST manual controlado en `trabajador_pagos` para comision, bono,
+  descuento y ajuste.
+- La accion exige trabajador activo del hotel actual, CSRF y permiso existente.
+- Auditoria registra el concepto con banderas `sin_caja` y `sin_pago_real`.
+- No crea pagos reales, abonos, anticipos, prestamos, asistencia, categoria Nomina ni
+  movimientos de Caja.
+- No se toco `/api/sync`.
+- Siguiente accion segura: revision tecnica/auditoria/cierre de NP-C-B-A antes de abrir
+  anticipos, prestamos, asistencia o cualquier salida real.

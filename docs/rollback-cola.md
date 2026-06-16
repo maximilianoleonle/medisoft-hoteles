@@ -648,3 +648,14 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Revertir el commit `docs(phase-np): define controlled worker concept contract`.
 - DB: no aplica; es solo documentacion.
 - No tocar `trabajador_pagos`, Caja ni `/api/sync`.
+
+### NP-C-B-A conceptos laborales manuales
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-np): add controlled worker concept entry`.
+- DB: no ejecutar `DELETE`, `UPDATE` ni correcciones manuales sobre `trabajador_pagos`
+  sin autorizacion nueva.
+- Si QA manual genero conceptos de prueba, documentar los IDs y esperar una fase
+  autorizada de anulacion o correccion.
+- No tocar Caja, categorias de Caja, movimientos, pagos reales, abonos, anticipos,
+  prestamos, asistencia ni `/api/sync`.

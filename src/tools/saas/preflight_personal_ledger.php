@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase NP-C-A para ledger laboral de Personal.
+ * Preflight Fase NP-C-B-A para ledger laboral de Personal.
  *
  * Solo lectura. No crea rutas, migraciones ni datos.
  * Valida consistencia de trabajador_* y ausencia de Caja/Nomina operativa antes de
@@ -141,10 +141,19 @@ function npPfFileContainsForbiddenLedgerWrite(string $path): bool
 
     $code = (string) file_get_contents($path);
 
-    return (bool) preg_match(
-        '/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(trabajador_pagos|trabajador_anticipos|trabajador_prestamos|trabajador_asistencias|trabajador_documentos|movimientos_caja|cajas|cortes_caja)\b/i',
-        $code
-    );
+    if (preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(trabajador_anticipos|trabajador_prestamos|trabajador_asistencias|trabajador_documentos|movimientos_caja|cajas|cortes_caja)\b/i', $code)) {
+        return true;
+    }
+
+    if (preg_match('/\b(UPDATE|DELETE\s+FROM)\s+trabajador_pagos\b/i', $code)) {
+        return true;
+    }
+
+    if (basename($path) !== 'Trabajador.php' && preg_match('/\bINSERT\s+INTO\s+trabajador_pagos\b/i', $code)) {
+        return true;
+    }
+
+    return false;
 }
 
 $appEnv = getenv('APP_ENV');
@@ -162,7 +171,7 @@ $workerModelPath = $appRoot . '/app/models/Trabajador.php';
 $workerControllerPath = $appRoot . '/app/controllers/TrabajadorController.php';
 $workerDetailViewPath = $appRoot . '/app/views/trabajadores/ver.php';
 
-echo "Preflight Fase NP-C-A - Ledger laboral\n";
+echo "Preflight Fase NP-C-B-A - Ledger laboral\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {
@@ -268,7 +277,7 @@ if ($pdo instanceof PDO) {
     );
     npPfReportZero(
         'conceptos laborales con tipo invalido',
-        npPfCountScalar($pdo, "SELECT COUNT(*) FROM trabajador_pagos WHERE tipo NOT IN ('pago', 'comision', 'bono', 'descuento', 'ajuste')"),
+        npPfCountScalar($pdo, "SELECT COUNT(*) FROM trabajador_pagos WHERE tipo NOT IN ('comision', 'bono', 'descuento', 'ajuste')"),
         'Normalizar tipos de concepto laboral.'
     );
     npPfReportZero(
@@ -354,11 +363,11 @@ if ($routes === []) {
     }
 
     if ($forbiddenWorkerRoutes === []) {
-        npPfOk('Rutas Personal NP-C-A no exponen pagos, anticipos, prestamos, asistencia, nomina ni Caja.');
+        npPfOk('Rutas Personal NP-C-B-A no exponen pagos reales, anticipos, prestamos, asistencia, nomina ni Caja.');
     } else {
         npPfError(
             'Rutas Personal fuera de alcance: ' . implode(', ', $forbiddenWorkerRoutes) . '.',
-            'Retirar rutas operativas hasta abrir contrato NP-C-B/NP-C-C/NP-C-D.'
+            'Retirar rutas operativas hasta abrir contrato de anticipos, prestamos, asistencia o Caja.'
         );
     }
 }
@@ -371,8 +380,8 @@ foreach ([$workerModelPath, $workerControllerPath] as $path) {
 
     if (npPfFileContainsForbiddenLedgerWrite($path)) {
         npPfError(
-            'Archivo contiene escritura fuera del alcance NP-C-A: ' . basename($path),
-            'NP-C-A solo debe leer trabajador_*; retirar INSERT/UPDATE/DELETE de ledger o Caja.'
+            'Archivo contiene escritura fuera del alcance NP-C-B-A: ' . basename($path),
+            'NP-C-B-A solo permite INSERT controlado en trabajador_pagos desde Trabajador.php; retirar otras escrituras de ledger o Caja.'
         );
     } else {
         npPfOk('Archivo sin escrituras de ledger/Caja fuera de alcance: ' . basename($path) . '.');
@@ -387,7 +396,7 @@ if (is_file($workerDetailViewPath)) {
         && strpos($viewCode, 'no representa movimiento de Caja') !== false
         && strpos($viewCode, 'movimientos_caja') === false
     ) {
-        npPfOk('Vista de trabajador muestra ledger read-only con aclaracion de saldo informativo.');
+        npPfOk('Vista de trabajador muestra ledger y concepto manual sin Caja con aclaracion de saldo informativo.');
     } else {
         npPfWarning(
             'Vista de trabajador no muestra claramente el contrato NP-C-A.',

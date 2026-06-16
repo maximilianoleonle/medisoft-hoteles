@@ -655,3 +655,15 @@ Estado: `CONTRATO_NP_C_B_CONCEPTOS_LABORALES_COMPLETADO`.
 - Solo contrato documental.
 - Riesgo principal: confundir concepto laboral con pago real.
 - Mitigacion: no habilitar tipo `pago` como salida real y mantener Caja fuera.
+
+## Auditoria NP-C-B-A conceptos laborales manuales
+
+Estado: `CONCEPTOS_LABORALES_NP_C_B_A_COMPLETADO_QA_DIFERIDA`.
+
+- La unica escritura nueva autorizada es `INSERT INTO trabajador_pagos`.
+- Se valida trabajador activo del hotel actual antes de escribir.
+- El formulario usa CSRF y permiso administrativo existente.
+- No se permite tipo `pago`; solo `comision`, `bono`, `descuento` y `ajuste`.
+- No hay escrituras en Caja, cortes, movimientos, anticipos, prestamos ni asistencia.
+- Health checker y preflight detectan escrituras fuera de alcance.
+- Riesgo residual: falta QA manual con trabajador real porque la tabla local esta vacia.

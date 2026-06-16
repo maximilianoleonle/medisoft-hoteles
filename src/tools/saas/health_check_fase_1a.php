@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-A/TLM-G.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-B-A/TLM-G.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -819,7 +819,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A-4D/NP-C-A/TLM-G - Medisoft Hoteles\n";
+echo "Health check Fase 1A-4D/NP-C-B-A/TLM-G - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -964,7 +964,7 @@ if ($operationalTasksPreflight && is_file($operationalTasksPreflight)) {
 if ($workerLedgerPreflight && is_file($workerLedgerPreflight)) {
     $workerLedgerPreflightCode = (string) file_get_contents($workerLedgerPreflight);
     if (
-        strpos($workerLedgerPreflightCode, 'Preflight Fase NP-C-A') !== false
+        strpos($workerLedgerPreflightCode, 'Preflight Fase NP-C-B-A') !== false
         && strpos($workerLedgerPreflightCode, 'Solo lectura') !== false
         && strpos($workerLedgerPreflightCode, 'START TRANSACTION READ ONLY') !== false
         && strpos($workerLedgerPreflightCode, 'trabajador_pagos') !== false
@@ -973,16 +973,16 @@ if ($workerLedgerPreflight && is_file($workerLedgerPreflight)) {
         && strpos($workerLedgerPreflightCode, 'trabajador_asistencias') !== false
         && strpos($workerLedgerPreflightCode, 'movimientos_caja') !== false
     ) {
-        hcOk('Preflight Fase NP-C-A de ledger laboral existe y es solo lectura.');
+        hcOk('Preflight Fase NP-C-B-A de ledger laboral existe y es solo lectura/controlado.');
     } else {
         hcWarning(
-            'Preflight Fase NP-C-A existe pero no declara todas las guardas esperadas.',
+            'Preflight Fase NP-C-B-A existe pero no declara todas las guardas esperadas.',
             'Verificar solo lectura, tablas trabajador_*, aislamiento hotel_id y ausencia de Caja/Nomina.'
         );
     }
 } else {
     hcWarning(
-        'No existe preflight Fase NP-C-A de ledger laboral.',
+        'No existe preflight Fase NP-C-B-A de ledger laboral.',
         'Crear src/tools/saas/preflight_personal_ledger.php antes de habilitar escrituras laborales.'
     );
 }
@@ -2736,6 +2736,7 @@ if (!is_file($routesPath)) {
         ['method' => 'get', 'path' => 'trabajadores/{id:[0-9]+}'],
         ['method' => 'get', 'path' => 'trabajadores/{id:[0-9]+}/editar'],
         ['method' => 'post', 'path' => 'trabajadores/{id:[0-9]+}/actualizar'],
+        ['method' => 'post', 'path' => 'trabajadores/{id:[0-9]+}/conceptos-laborales'],
         ['method' => 'post', 'path' => 'trabajadores/{id:[0-9]+}/baja-logica'],
         ['method' => 'post', 'path' => 'trabajadores/{id:[0-9]+}/reactivar'],
     ];
@@ -2747,11 +2748,11 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($missingWorkerRoutes)) {
-        hcOk('Rutas Personal NP-B-A registradas: listado, detalle y CRUD basico de trabajador.');
+        hcOk('Rutas Personal NP-C-B-A registradas: CRUD basico y concepto laboral manual sin Caja.');
     } else {
         hcWarning(
-            'Rutas Personal NP-B-A faltantes: ' . implode(', ', $missingWorkerRoutes),
-            'Registrar solo CRUD basico de trabajadores; sin pagos, nomina ni Caja.'
+            'Rutas Personal NP-C-B-A faltantes: ' . implode(', ', $missingWorkerRoutes),
+            'Registrar CRUD basico y POST de concepto laboral manual; sin pagos reales, nomina ni Caja.'
         );
     }
 
@@ -2763,6 +2764,7 @@ if (!is_file($routesPath)) {
         'GET /trabajadores/{id:[0-9]+} -> trabajador::ver',
         'GET /trabajadores/{id:[0-9]+}/editar -> trabajador::editar',
         'POST /trabajadores/{id:[0-9]+}/actualizar -> trabajador::actualizar',
+        'POST /trabajadores/{id:[0-9]+}/conceptos-laborales -> trabajador::registrarconceptolaboral',
         'POST /trabajadores/{id:[0-9]+}/baja-logica -> trabajador::bajalogica',
         'POST /trabajadores/{id:[0-9]+}/reactivar -> trabajador::reactivar',
     ];
@@ -2778,11 +2780,11 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($forbiddenWorkerRoutes)) {
-        hcOk('Personal NP-B-A mantiene solo rutas autorizadas de CRUD basico; no hay pagos, asistencias ni documentos laborales.');
+        hcOk('Personal NP-C-B-A mantiene solo rutas autorizadas; concepto laboral manual no toca pagos reales ni Caja.');
     } else {
         hcError(
-            'Personal NP-B-A tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenWorkerRoutes),
-            'Retirar rutas que no sean listado/detalle/crear/editar/baja/reactivar de trabajador.'
+            'Personal NP-C-B-A tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenWorkerRoutes),
+            'Retirar rutas que no sean CRUD basico o concepto laboral manual sin Caja.'
         );
     }
 
@@ -3041,29 +3043,33 @@ if (!is_file($routesPath)) {
             && strpos($workerModelCode, 'function conceptosLaboralesPorTrabajador') !== false
             && strpos($workerModelCode, 'function anticiposPorTrabajador') !== false
             && strpos($workerModelCode, 'function prestamosPorTrabajador') !== false
+            && strpos($workerModelCode, 'function registrarConceptoLaboralParaHotel') !== false
+            && strpos($workerModelCode, 'function validarConceptoLaboral') !== false
             && strpos($workerModelCode, 'saldo_informativo') !== false
+            && strpos($workerModelCode, "INSERT INTO trabajador_pagos") !== false
             && preg_match('/WHERE\s+t\.id\s*=\s*\?\s+AND\s+t\.hotel_id\s*=\s*\?/i', $workerModelCode)
             && strpos($workerModelCode, 'storage_path') === false
             && strpos($workerModelCode, 'ruta_archivo') === false
         ) {
-            hcOk('Trabajador model NP-C-A consulta trabajadores y ledger laboral read-only con aislamiento hotel_id.');
+            hcOk('Trabajador model NP-C-B-A consulta ledger y registra concepto laboral manual con aislamiento hotel_id.');
         } else {
             hcWarning(
-                'Trabajador model NP-C-A no muestra contrato read-only completo.',
-                'Usar trabajadores/ledger con hotel_id, buscarPorIdHotel/listarPorHotel, saldo informativo y no exponer storage_path/ruta_archivo.'
+                'Trabajador model NP-C-B-A no muestra contrato completo.',
+                'Usar trabajadores/ledger con hotel_id, concepto laboral manual validado y no exponer storage_path/ruta_archivo.'
             );
         }
 
-        $workerForbiddenWrite = preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(trabajador_pagos|trabajador_anticipos|trabajador_prestamos|trabajador_asistencias|trabajador_documentos|movimientos_caja|cajas|cortes_caja)\b/i', $workerCode)
+        $workerForbiddenWrite = preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(trabajador_anticipos|trabajador_prestamos|trabajador_asistencias|trabajador_documentos|movimientos_caja|cajas|cortes_caja)\b/i', $workerCode)
+            || preg_match('/\b(UPDATE|DELETE\s+FROM)\s+trabajador_pagos\b/i', $workerCode)
             || preg_match('/\bDELETE\s+FROM\s+trabajadores\b/i', $workerCode)
             || strpos($workerCode, 'movimientos_caja') !== false;
 
         if (!$workerForbiddenWrite) {
-            hcOk('Personal NP-B-A escribe solo trabajadores; sin ledger laboral, Caja ni Nomina operativa.');
+            hcOk('Personal NP-C-B-A escribe solo trabajadores y trabajador_pagos; sin Caja ni Nomina operativa.');
         } else {
             hcError(
-                'Personal NP-B-A contiene escrituras o referencias fuera de alcance.',
-                'Permitir solo INSERT/UPDATE en trabajadores; sin DELETE, ledger laboral ni Caja.'
+                'Personal NP-C-B-A contiene escrituras o referencias fuera de alcance.',
+                'Permitir solo INSERT/UPDATE en trabajadores e INSERT controlado en trabajador_pagos; sin DELETE ni Caja.'
             );
         }
 
@@ -3076,7 +3082,9 @@ if (!is_file($routesPath)) {
             && strpos($workerControllerCode, 'function actualizarAction') !== false
             && strpos($workerControllerCode, 'function bajaLogicaAction') !== false
             && strpos($workerControllerCode, 'function reactivarAction') !== false
+            && strpos($workerControllerCode, 'function registrarConceptoLaboralAction') !== false
             && strpos($workerControllerCode, 'conceptosLaboralesPorTrabajador') !== false
+            && strpos($workerControllerCode, 'registrarConceptoLaboralParaHotel') !== false
             && strpos($workerControllerCode, 'anticiposPorTrabajador') !== false
             && strpos($workerControllerCode, 'prestamosPorTrabajador') !== false
             && strpos($workerControllerCode, "require_hotel_module('usuarios')") !== false
@@ -3095,11 +3103,11 @@ if (!is_file($routesPath)) {
             && strpos($workerControllerCode, 'trabajadores/ver') !== false
             && strpos($workerControllerCode, 'trabajadores/form') !== false
         ) {
-            hcOk('TrabajadorController NP-B-A expone CRUD basico con permisos, CSRF y auditoria.');
+            hcOk('TrabajadorController NP-C-B-A expone CRUD y concepto laboral manual con permisos, CSRF y auditoria.');
         } else {
             hcWarning(
-                'TrabajadorController NP-B-A no muestra guardas o acciones CRUD completas.',
-                'Validar requireAuth, hotel, modulo usuarios, permisos usuarios.create/edit, CSRF, auditoria y acciones crear/editar/baja/reactivar.'
+                'TrabajadorController NP-C-B-A no muestra guardas o acciones completas.',
+                'Validar requireAuth, hotel, permisos, CSRF, auditoria y acciones CRUD/concepto laboral.'
             );
         }
     } else {
@@ -3131,17 +3139,20 @@ if (!is_file($routesPath)) {
             && strpos($workerFormViewCode, 'csrf_field()') !== false
             && strpos($workerDetailViewCode, 'Ledger laboral') !== false
             && strpos($workerDetailViewCode, 'Saldo informativo') !== false
+            && strpos($workerDetailViewCode, '/conceptos-laborales') !== false
+            && strpos($workerDetailViewCode, 'name="tipo"') !== false
+            && strpos($workerDetailViewCode, 'name="monto"') !== false
             && strpos($workerDetailViewCode, 'no representa movimiento de Caja') !== false
             && substr_count($workerViewsCode, 'csrf_field()') >= 3
             && strpos($workerViewsCode, 'ruta_archivo') === false
             && strpos($workerViewsCode, 'movimientos_caja') === false
             && strpos($workerViewsCode, 'cuentas_por_pagar') === false
         ) {
-            hcOk('Vistas Personal NP-C-A muestran CRUD basico y ledger read-only sin Caja/pagos reales.');
+            hcOk('Vistas Personal NP-C-B-A muestran CRUD y concepto laboral manual con CSRF sin Caja/pagos reales.');
         } else {
             hcWarning(
-                'Vistas Personal NP-C-A no muestran contrato completo.',
-                'Asegurar filtros GET, formulario POST+CSRF, ledger read-only, baja/reactivar con CSRF, sin pagos reales/Caja ni rutas internas de archivos.'
+                'Vistas Personal NP-C-B-A no muestran contrato completo.',
+                'Asegurar filtros GET, formulario POST+CSRF, concepto laboral manual, sin pagos reales/Caja ni rutas internas de archivos.'
             );
         }
     } else {

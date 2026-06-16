@@ -270,6 +270,102 @@ class Trabajador extends Model
         return $stmt !== false;
     }
 
+    public function registrarConceptoLaboralParaHotel(int $trabajadorId, int $hotelId, array $datos, ?int $usuarioId = null): int
+    {
+        if ($trabajadorId <= 0 || $hotelId <= 0 || !$this->tablaDisponible() || !$this->tablaExiste('trabajador_pagos')) {
+            throw new Exception('Ledger laboral no disponible');
+        }
+
+        $trabajador = $this->buscarPorIdHotel($trabajadorId, $hotelId);
+        if (!$trabajador) {
+            throw new Exception('Trabajador no encontrado para el hotel actual');
+        }
+
+        if (($trabajador['estado'] ?? '') !== 'activo') {
+            throw new Exception('Solo se pueden registrar conceptos a trabajadores activos');
+        }
+
+        $concepto = $this->normalizarConceptoLaboral($datos);
+        $this->validarConceptoLaboral($concepto);
+
+        $this->db->safeBeginTransaction();
+
+        try {
+            $stmt = $this->db->query(
+                "INSERT INTO trabajador_pagos
+                    (hotel_id, trabajador_id, tipo, efecto, monto, concepto,
+                     periodo_inicio, periodo_fin, fecha, referencia, notas,
+                     estado, created_by, updated_by, created_at, updated_at)
+                 VALUES
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                     'activo', ?, ?, NOW(), NOW())",
+                [
+                    $hotelId,
+                    $trabajadorId,
+                    $concepto['tipo'],
+                    $concepto['efecto'],
+                    $concepto['monto'],
+                    $concepto['concepto'],
+                    $concepto['periodo_inicio'],
+                    $concepto['periodo_fin'],
+                    $concepto['fecha'],
+                    $concepto['referencia'],
+                    $concepto['notas'],
+                    $usuarioId,
+                    $usuarioId,
+                ]
+            );
+
+            if (!$stmt) {
+                throw new Exception('No se pudo registrar el concepto laboral');
+            }
+
+            $conceptoId = (int)$this->db->lastInsertId();
+            $this->db->safeCommit();
+
+            return $conceptoId;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
+    public function conceptoLaboralPorIdHotel(int $conceptoId, int $trabajadorId, int $hotelId): ?array
+    {
+        if ($conceptoId <= 0 || $trabajadorId <= 0 || $hotelId <= 0 || !$this->tablaExiste('trabajador_pagos')) {
+            return null;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT id,
+                    hotel_id,
+                    trabajador_id,
+                    tipo,
+                    efecto,
+                    monto,
+                    concepto,
+                    periodo_inicio,
+                    periodo_fin,
+                    fecha,
+                    referencia,
+                    notas,
+                    estado,
+                    created_by,
+                    updated_by,
+                    created_at,
+                    updated_at
+             FROM trabajador_pagos
+             WHERE id = ?
+               AND trabajador_id = ?
+               AND hotel_id = ?
+             LIMIT 1",
+            [$conceptoId, $trabajadorId, $hotelId]
+        );
+
+        $row = $stmt ? $stmt->fetch() : null;
+        return $row ?: null;
+    }
+
     public function cambiarEstadoParaHotel(int $id, int $hotelId, string $estado, ?int $usuarioId = null): bool
     {
         if ($id <= 0 || $hotelId <= 0 || !$this->tablaDisponible()) {
@@ -540,6 +636,61 @@ class Trabajador extends Model
             'periodicidad_pago' => $this->nullablePeriodicidad($datos['periodicidad_pago'] ?? null),
             'notas' => $this->nullableTexto($datos['notas'] ?? null, 1000),
         ];
+    }
+
+    public function normalizarConceptoLaboral(array $datos): array
+    {
+        $tipo = strtolower(trim((string)($datos['tipo'] ?? '')));
+        $efecto = strtolower(trim((string)($datos['efecto'] ?? '')));
+        $monto = trim((string)($datos['monto'] ?? ''));
+        $montoNormalizado = is_numeric($monto)
+            ? number_format((float)$monto, 2, '.', '')
+            : 'INVALIDO';
+
+        if (in_array($tipo, ['comision', 'bono'], true)) {
+            $efecto = 'a_favor';
+        } elseif ($tipo === 'descuento') {
+            $efecto = 'en_contra';
+        }
+
+        return [
+            'tipo' => $tipo,
+            'efecto' => in_array($efecto, ['a_favor', 'en_contra'], true) ? $efecto : '',
+            'monto' => $montoNormalizado,
+            'concepto' => $this->limpiarTexto($datos['concepto'] ?? '', 160),
+            'periodo_inicio' => $this->nullableFecha($datos['periodo_inicio'] ?? null),
+            'periodo_fin' => $this->nullableFecha($datos['periodo_fin'] ?? null),
+            'fecha' => $this->nullableFecha($datos['fecha'] ?? null),
+            'referencia' => $this->nullableTexto($datos['referencia'] ?? null, 120),
+            'notas' => $this->nullableTexto($datos['notas'] ?? null, 1000),
+        ];
+    }
+
+    private function validarConceptoLaboral(array $datos): void
+    {
+        if (!in_array($datos['tipo'], ['comision', 'bono', 'descuento', 'ajuste'], true)) {
+            throw new Exception('Tipo de concepto laboral no permitido');
+        }
+
+        if (!in_array($datos['efecto'], ['a_favor', 'en_contra'], true)) {
+            throw new Exception('Efecto de concepto laboral no valido');
+        }
+
+        if ($datos['monto'] === 'INVALIDO' || !is_numeric($datos['monto']) || (float)$datos['monto'] <= 0) {
+            throw new Exception('El monto debe ser mayor a cero');
+        }
+
+        if ($datos['concepto'] === '') {
+            throw new Exception('El concepto es obligatorio');
+        }
+
+        if ($datos['fecha'] === null) {
+            throw new Exception('La fecha del concepto es obligatoria');
+        }
+
+        if ($datos['periodo_inicio'] !== null && $datos['periodo_fin'] !== null && $datos['periodo_fin'] < $datos['periodo_inicio']) {
+            throw new Exception('El periodo fin no puede ser anterior al periodo inicio');
+        }
     }
 
     private function validarDatos(int $hotelId, array $datos): void

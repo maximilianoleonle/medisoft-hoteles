@@ -31,6 +31,7 @@ if (!function_exists('trab_view_qty')) {
 }
 
 $trabajadorId = (int)($trabajador['id'] ?? 0);
+$puedeRegistrarConcepto = ($trabajador['estado'] ?? '') === 'activo' && !empty($ledgerDisponible['trabajador_pagos']);
 ?>
 
 <style>
@@ -310,17 +311,81 @@ $trabajadorId = (int)($trabajador['id'] ?? 0);
             <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <div>
                     <h2 class="font-black text-lg">Ledger laboral</h2>
-                    <p class="text-sm text-slate-500 mt-1">Vista read-only de conceptos, anticipos y prestamos del trabajador en el hotel actual.</p>
+                    <p class="text-sm text-slate-500 mt-1">Conceptos, anticipos y prestamos del trabajador en el hotel actual. No genera Caja.</p>
                 </div>
                 <span class="worker-badge">
                     <i class="fas fa-lock"></i>
-                    Sin Caja
+                    Sin pago real
                 </span>
             </div>
 
             <div class="worker-ledger-note mb-4">
                 Este bloque no crea pagos, no genera abonos, no descuenta Caja y no modifica saldos reales. El saldo mostrado es informativo y deriva de tablas de Personal.
             </div>
+
+            <?php if ($puedeRegistrarConcepto): ?>
+                <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/conceptos-laborales') ?>" class="worker-ledger-card p-4 mb-4">
+                    <?= csrf_field() ?>
+                    <div class="grid grid-cols-1 lg:grid-cols-[160px_150px_150px_1fr] gap-3">
+                        <div>
+                            <label class="worker-meta-label" for="concepto_tipo">Tipo</label>
+                            <select id="concepto_tipo" class="worker-input mt-1" name="tipo" required>
+                                <option value="comision">Comision</option>
+                                <option value="bono">Bono</option>
+                                <option value="descuento">Descuento</option>
+                                <option value="ajuste">Ajuste</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="worker-meta-label" for="concepto_efecto">Efecto</label>
+                            <select id="concepto_efecto" class="worker-input mt-1" name="efecto">
+                                <option value="">Automatico</option>
+                                <option value="a_favor">A favor</option>
+                                <option value="en_contra">En contra</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="worker-meta-label" for="concepto_monto">Monto</label>
+                            <input id="concepto_monto" class="worker-input mt-1" type="number" min="0.01" step="0.01" name="monto" required>
+                        </div>
+                        <div>
+                            <label class="worker-meta-label" for="concepto_texto">Concepto</label>
+                            <input id="concepto_texto" class="worker-input mt-1" type="text" maxlength="160" name="concepto" required placeholder="Ej. bono por desempeno">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mt-3">
+                        <div>
+                            <label class="worker-meta-label" for="concepto_fecha">Fecha</label>
+                            <input id="concepto_fecha" class="worker-input mt-1" type="date" name="fecha" value="<?= date('Y-m-d') ?>" required>
+                        </div>
+                        <div>
+                            <label class="worker-meta-label" for="concepto_periodo_inicio">Periodo inicio</label>
+                            <input id="concepto_periodo_inicio" class="worker-input mt-1" type="date" name="periodo_inicio">
+                        </div>
+                        <div>
+                            <label class="worker-meta-label" for="concepto_periodo_fin">Periodo fin</label>
+                            <input id="concepto_periodo_fin" class="worker-input mt-1" type="date" name="periodo_fin">
+                        </div>
+                        <div>
+                            <label class="worker-meta-label" for="concepto_referencia">Referencia</label>
+                            <input id="concepto_referencia" class="worker-input mt-1" type="text" maxlength="120" name="referencia" placeholder="Opcional">
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="worker-meta-label" for="concepto_notas">Notas</label>
+                        <textarea id="concepto_notas" class="worker-input mt-1 min-h-[86px] py-3" maxlength="1000" name="notas" placeholder="Opcional. No se registra en Caja."></textarea>
+                    </div>
+                    <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+                        <div class="text-xs text-slate-500">Comision/bono suman a favor; descuento resta; ajuste permite elegir efecto. No crea pagos reales.</div>
+                        <button class="worker-btn" type="submit">
+                            <i class="fas fa-plus"></i>
+                            Registrar concepto
+                        </button>
+                    </div>
+                </form>
+            <?php elseif (($trabajador['estado'] ?? '') !== 'activo'): ?>
+                <div class="worker-ledger-note mb-4">Solo se pueden registrar conceptos laborales a trabajadores activos.</div>
+            <?php endif; ?>
 
             <div class="worker-ledger-grid">
                 <article class="worker-ledger-card">
@@ -340,13 +405,13 @@ $trabajadorId = (int)($trabajador['id'] ?? 0);
                                         <div>
                                             <div class="font-black"><?= trab_view_safe($concepto['concepto'] ?? null, 'Sin concepto') ?></div>
                                             <div class="text-xs text-slate-500">
-                                                <?= trab_view_safe($concepto['fecha'] ?? null) ?> · <?= trab_view_safe($concepto['tipo'] ?? null) ?> · <?= trab_view_safe($concepto['efecto'] ?? null) ?>
+                                                <?= trab_view_safe($concepto['fecha'] ?? null) ?> - <?= trab_view_safe($concepto['tipo'] ?? null) ?> - <?= trab_view_safe($concepto['efecto'] ?? null) ?>
                                             </div>
                                         </div>
                                         <strong><?= trab_view_money($concepto['monto'] ?? 0) ?></strong>
                                     </div>
                                     <div class="text-xs text-slate-500 mt-2">
-                                        Estado: <?= trab_view_safe($concepto['estado'] ?? null) ?> · Ref: <?= trab_view_safe($concepto['referencia'] ?? null, 'Sin referencia') ?>
+                                        Estado: <?= trab_view_safe($concepto['estado'] ?? null) ?> - Ref: <?= trab_view_safe($concepto['referencia'] ?? null, 'Sin referencia') ?>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -370,12 +435,12 @@ $trabajadorId = (int)($trabajador['id'] ?? 0);
                                     <div class="flex items-start justify-between gap-3">
                                         <div>
                                             <div class="font-black"><?= trab_view_safe($anticipo['motivo'] ?? null, 'Sin motivo') ?></div>
-                                            <div class="text-xs text-slate-500"><?= trab_view_safe($anticipo['fecha'] ?? null) ?> · <?= trab_view_safe($anticipo['estado'] ?? null) ?></div>
+                                            <div class="text-xs text-slate-500"><?= trab_view_safe($anticipo['fecha'] ?? null) ?> - <?= trab_view_safe($anticipo['estado'] ?? null) ?></div>
                                         </div>
                                         <strong><?= trab_view_money($anticipo['monto'] ?? 0) ?></strong>
                                     </div>
                                     <div class="text-xs text-slate-500 mt-2">
-                                        Saldo pendiente: <?= trab_view_money($anticipo['saldo_pendiente'] ?? 0) ?> · Ref: <?= trab_view_safe($anticipo['referencia'] ?? null, 'Sin referencia') ?>
+                                        Saldo pendiente: <?= trab_view_money($anticipo['saldo_pendiente'] ?? 0) ?> - Ref: <?= trab_view_safe($anticipo['referencia'] ?? null, 'Sin referencia') ?>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -399,12 +464,12 @@ $trabajadorId = (int)($trabajador['id'] ?? 0);
                                     <div class="flex items-start justify-between gap-3">
                                         <div>
                                             <div class="font-black"><?= trab_view_safe($prestamo['motivo'] ?? null, 'Sin motivo') ?></div>
-                                            <div class="text-xs text-slate-500"><?= trab_view_safe($prestamo['fecha'] ?? null) ?> · <?= trab_view_safe($prestamo['estado'] ?? null) ?></div>
+                                            <div class="text-xs text-slate-500"><?= trab_view_safe($prestamo['fecha'] ?? null) ?> - <?= trab_view_safe($prestamo['estado'] ?? null) ?></div>
                                         </div>
                                         <strong><?= trab_view_money($prestamo['monto'] ?? 0) ?></strong>
                                     </div>
                                     <div class="text-xs text-slate-500 mt-2">
-                                        Saldo pendiente: <?= trab_view_money($prestamo['saldo_pendiente'] ?? 0) ?> · Abono sugerido: <?= trab_view_money($prestamo['abono_periodico'] ?? 0) ?>
+                                        Saldo pendiente: <?= trab_view_money($prestamo['saldo_pendiente'] ?? 0) ?> - Abono sugerido: <?= trab_view_money($prestamo['abono_periodico'] ?? 0) ?>
                                     </div>
                                 </div>
                             <?php endforeach; ?>

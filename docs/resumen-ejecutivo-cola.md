@@ -671,3 +671,17 @@ Resultado NP-C-B-0:
   `trabajador_pagos`.
 - No se implementan rutas, vistas, POST ni escrituras.
 - Caja, categoria Nomina, pagos reales y `/api/sync` siguen fuera de alcance.
+
+Resultado NP-C-B-A:
+
+- Estado tecnico: `CONCEPTOS_LABORALES_NP_C_B_A_COMPLETADO_QA_DIFERIDA`.
+- Documento: `docs/fase_NP_C_B_A_conceptos_laborales.md`.
+- Se habilita registro manual de concepto laboral en `trabajador_pagos` desde la ficha de
+  trabajador activo.
+- La escritura esta centralizada en el modelo, usa transaccion, valida `hotel_id`,
+  trabajador activo, tipo, efecto, monto y fecha.
+- La UI usa CSRF y deja claro que no es pago real ni movimiento de Caja.
+- Health checker y preflight de ledger laboral validan NP-C-B-A.
+- No se crean pagos reales, abonos, anticipos, prestamos, asistencia, categoria Nomina ni
+  movimientos de Caja.
+- No se toco `/api/sync`.

@@ -193,6 +193,44 @@ class TrabajadorController extends Controller
         $this->cambiarEstado('activo', 'Trabajador reactivado correctamente.', 'trabajadores.reactivado');
     }
 
+    public function registrarConceptoLaboralAction(): void
+    {
+        $this->requireWritePermission('usuarios.edit');
+
+        if (!$this->isPost()) {
+            $this->redirect('trabajadores');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        $id = (int)($this->route_params['id'] ?? 0);
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            $trabajador = $this->trabajadorModel->buscarPorIdHotel($id, $hotelId);
+            if (!$trabajador) {
+                throw new Exception('Trabajador no encontrado para el hotel actual');
+            }
+
+            $conceptoId = $this->trabajadorModel->registrarConceptoLaboralParaHotel(
+                $id,
+                $hotelId,
+                $this->datosConceptoLaboral(),
+                $this->usuarioIdActual()
+            );
+
+            $concepto = $this->trabajadorModel->conceptoLaboralPorIdHotel($conceptoId, $id, $hotelId);
+            $this->auditarConceptoLaboral($trabajador, $concepto ?: [], $conceptoId);
+
+            set_mensaje('Concepto laboral registrado correctamente. No se genero movimiento de Caja.', 'success');
+            $this->redirect('trabajadores/' . $id);
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo registrar el concepto laboral: ' . $e->getMessage(), 'error');
+            $this->redirect($id > 0 ? 'trabajadores/' . $id : 'trabajadores');
+        }
+    }
+
     private function cambiarEstado(string $estado, string $mensaje, string $accion): void
     {
         $this->requireWritePermission('usuarios.edit');
@@ -264,6 +302,21 @@ class TrabajadorController extends Controller
         ];
     }
 
+    private function datosConceptoLaboral(): array
+    {
+        return [
+            'tipo' => $this->getPost('tipo', ''),
+            'efecto' => $this->getPost('efecto', ''),
+            'monto' => $this->getPost('monto', ''),
+            'concepto' => $this->getPost('concepto', ''),
+            'periodo_inicio' => $this->getPost('periodo_inicio', ''),
+            'periodo_fin' => $this->getPost('periodo_fin', ''),
+            'fecha' => $this->getPost('fecha', ''),
+            'referencia' => $this->getPost('referencia', ''),
+            'notas' => $this->getPost('notas', ''),
+        ];
+    }
+
     private function usuarioIdActual(): ?int
     {
         $usuarioId = $_SESSION['user_id'] ?? $_SESSION['usuario_id'] ?? null;
@@ -291,6 +344,28 @@ class TrabajadorController extends Controller
             ]);
         } catch (Throwable $e) {
             error_log('No se pudo auditar trabajador: ' . $e->getMessage());
+        }
+    }
+
+    private function auditarConceptoLaboral(array $trabajador, array $concepto, int $conceptoId): void
+    {
+        try {
+            AuditService::record('trabajadores.concepto_laboral_registrado', [
+                'hotel_id' => $this->hotelIdActual(),
+                'usuario_id' => $this->usuarioIdActual(),
+                'entidad_tipo' => 'trabajador_concepto_laboral',
+                'entidad_id' => (string)$conceptoId,
+                'descripcion' => 'Concepto laboral manual registrado sin Caja',
+                'datos_despues' => [
+                    'trabajador_id' => (int)($trabajador['id'] ?? 0),
+                    'trabajador_nombre' => $trabajador['nombre_completo'] ?? null,
+                    'concepto' => $concepto,
+                    'sin_caja' => true,
+                    'sin_pago_real' => true,
+                ],
+            ]);
+        } catch (Throwable $e) {
+            error_log('No se pudo auditar concepto laboral: ' . $e->getMessage());
         }
     }
 }

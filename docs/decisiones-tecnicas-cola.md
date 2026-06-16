@@ -536,3 +536,12 @@
   descuento y ajuste.
 - El tipo `pago` no se habilita como salida real en este contrato.
 - Cualquier egreso real requiere bloque NP-Caja independiente.
+
+## Decision NP-C-B-A conceptos laborales manuales
+
+- Se implementa la primera escritura laboral solo como `INSERT` en `trabajador_pagos`.
+- La UI vive en la ficha de trabajador para mantener contexto y evitar navegacion nueva.
+- No se habilita tipo `pago`; pagos reales quedan fuera del contrato.
+- `hotel_id` se deriva del contexto de sesion y se valida contra el trabajador.
+- La auditoria registra explicitamente `sin_caja` y `sin_pago_real`.
+- No se crean categorias Nomina ni movimientos en Caja.

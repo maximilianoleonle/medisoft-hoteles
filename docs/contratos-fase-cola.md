@@ -892,3 +892,14 @@ Estado formal vigente: `CONTRATO_NP_C_B_CONCEPTOS_LABORALES_COMPLETADO`.
 - Documento: `docs/fase_NP_C_B_0_contrato_conceptos_laborales.md`.
 - Solo contrato; no agrega codigo ni DB.
 - Escritura futura limitada a comision, bono, descuento y ajuste, sin Caja.
+
+### Estado NP-C-B-A
+
+Estado formal vigente: `CONCEPTOS_LABORALES_NP_C_B_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_B_A_conceptos_laborales.md`.
+- Escritura manual implementada y limitada a `trabajador_pagos`.
+- Caja, pagos reales, abonos, anticipos, prestamos, asistencia y `/api/sync` siguen fuera
+  de alcance.
+- Antes de abrir otra escritura laboral se recomienda revision/auditoria/cierre de esta
+  subfase.
