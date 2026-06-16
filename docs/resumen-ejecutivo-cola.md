@@ -141,7 +141,7 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 
 ## Nuevo bloque Fase 4A Centro Documental
 
-Estado: `AUDITORIA_SEGURIDAD_4A_COMPLETADA`.
+Estado: `CIERRE_TECNICO_4A_COMPLETADO`.
 
 Objetivo: crear una fundacion segura para adjuntar, consultar y relacionar documentos
 con proveedor, compra, CxP, huesped, reservacion y trabajador futuro, sin Caja, pagos,
@@ -218,7 +218,8 @@ Resultado 4A-C:
 - QA manual post-hotfix 4A-C: el usuario reporto que la carga documental ya funciona.
 - Revision tecnica 4A: se reforzo `/documentos/entidad/{tipo}/{id}` para validar que la entidad exista y pertenezca al hotel actual antes de mostrar listado contextual o enlace de carga.
 - Auditoria seguridad 4A: no hay rutas de descarga, edicion ni borrado documental; no se exponen rutas internas; no hay referencias documentales en PWA/offline; sin Caja, pagos, abonos ni `/api/sync`.
-- Siguiente cola recomendada: `[COLA_CERRAR_BLOQUE_4A]`.
+- Cierre tecnico 4A: bloque 4A-0..4A-C documentado y cerrado; no autoriza descargas, edicion, borrado, pagos, Caja, Fase 3D ni `/api/sync`.
+- Siguiente paso recomendado: nuevo mensaje real para autorizar una fase posterior, por ejemplo descarga segura autenticada.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

@@ -268,7 +268,7 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 
 ### 4A-C upload seguro documental
 
-- Estado vigente: `AUDITORIA_SEGURIDAD_4A_COMPLETADA`.
+- Estado vigente: `CIERRE_TECNICO_4A_COMPLETADO`.
 - Backup previo:
   `src/storage/backups/phase4a_c_20260615_190912_before_document_upload_medisoft_hoteles_import.sql`.
 - SHA256: `DF150F705824973621B9A1276980DC73ECB7AE5261B67A5D71E541FE13797446`.
@@ -314,6 +314,13 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Rollback documental: revertir el commit `docs(phase-4a): record document center security audit`.
 - DB: no aplica; auditoria sin escrituras.
 - Codigo: no aplica si el commit solo contiene documentacion de auditoria.
+
+### 4A cierre tecnico
+
+- Rollback documental: revertir el commit `docs(phase-4a): close document center foundation block`.
+- DB: no aplica; cierre tecnico sin escrituras.
+- Codigo: no aplica si el commit solo contiene documentacion de cierre.
+- No borrar documentos de prueba, tipos documentales ni archivos de storage sin autorizacion explicita.
 
 ### Fases futuras
 

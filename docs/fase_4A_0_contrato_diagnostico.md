@@ -569,9 +569,46 @@ Rollback manual de 4A-C:
    explicita para una anulacion/reconciliacion puntual de `documentos.id = 1` y su relacion.
 4. Mantener `src/storage/documentos/` fuera de Git.
 
-## Siguiente cola recomendada
+## Revision tecnica, auditoria y cierre 4A
 
-`[COLA_REVISION_TECNICA_4A]`
+Estado: `CIERRE_TECNICO_4A_COMPLETADO`.
 
-Objetivo: revisar tecnicamente 4A-0, 4A-A, 4A-B y 4A-C antes de descarga segura o
-acciones de borrado. No avanzar a descargas publicas, pagos, Caja, Fase 3D ni `/api/sync`.
+Revision tecnica post-QA:
+
+- La ruta contextual `/documentos/entidad/{tipo}/{id}` valida que la entidad exista y
+  pertenezca al hotel actual antes de mostrar listado o enlace de carga.
+- `/documentos` y `/documentos/entidad/proveedor/8` respondieron `200` con sesion local.
+- `/documentos/entidad/proveedor/999999` y
+  `/documentos/subir?entidad_tipo=proveedor&entidad_id=999999` redirigieron `303` a
+  `/documentos`.
+
+Auditoria seguridad:
+
+- Rutas documentales activas: `GET /documentos`, `GET /documentos/subir`,
+  `POST /documentos/subir`, `GET /documentos/entidad/{tipo}/{id}` y
+  `GET /documentos/{id}`.
+- No hay rutas documentales de descarga, edicion ni borrado.
+- `storage_path` y `nombre_archivo` no se muestran en vistas.
+- No hay referencias documentales en PWA/offline ni cambios en `/api/sync`.
+- Conteos read-only de cierre: `documento_tipos=6`, `documentos=3`,
+  `documento_entidades=1`, `cuentas_por_pagar_movimientos=0`, `movimientos_caja=1403`,
+  `logs_auditoria=29`.
+
+Cierre tecnico:
+
+- 4A-0 contrato y diagnostico completado.
+- 4A-A migracion base completada.
+- 4A-B capa read-only completada.
+- 4A-C upload seguro completado y QA manual post-hotfix reportada como funcional por el
+  usuario.
+- Hotfix post-QA aplicado para tipos documentales, carga general y CSS relativo.
+- Revision tecnica y auditoria de seguridad completadas.
+- Rollback, QA, resumen ejecutivo, decisiones y fuentes de verdad actualizadas.
+- No se habilitan descargas, edicion, borrado, pagos, abonos, Caja, Fase 3D ni
+  `/api/sync`.
+
+## Siguiente paso recomendado
+
+Abrir un nuevo mensaje real si se desea autorizar una fase posterior, por ejemplo descarga
+segura autenticada. No avanzar a descargas publicas, pagos, Caja, Fase 3D ni `/api/sync`
+sin contrato nuevo.

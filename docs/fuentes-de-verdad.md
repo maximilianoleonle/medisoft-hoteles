@@ -83,7 +83,7 @@ Regla:
 
 ## Centro Documental (Fase 4A)
 
-Estado formal: `AUDITORIA_SEGURIDAD_4A_COMPLETADA`.
+Estado formal: `CIERRE_TECNICO_4A_COMPLETADO`.
 
 Fuente fundacional creada:
 

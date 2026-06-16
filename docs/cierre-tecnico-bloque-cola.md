@@ -135,3 +135,63 @@ La Fase 3C queda cerrada tecnicamente como generacion manual controlada de CxP d
 - El commit de cierre 3C debe incluir solo documentacion del bloque 3C.
 - No incluir cambios PWA/no relacionados en el commit de cierre.
 - No hacer push.
+
+## Cierre tecnico Fase 4A
+
+Estado final: `CIERRE_TECNICO_4A_COMPLETADO`.
+
+La Fase 4A queda cerrada tecnicamente como Centro Documental Base: contrato,
+migracion base, consultas read-only y carga segura hacia storage privado. No habilita
+descarga, edicion, borrado, pagos, abonos, Caja, Fase 3D ni `/api/sync`.
+
+### Fases cerradas 4A
+
+| Fase | Alcance | Commit | Estado |
+| --- | --- | --- | --- |
+| 4A-0 | Contrato y diagnostico | `af126f7` | Cerrada |
+| 4A-A | Migracion base documental | `6eae89b` | Cerrada |
+| 4A-B | Capa read-only documental | `dc32c3a` | Cerrada |
+| 4A-C | Upload seguro documental | `4668571` | Cerrada |
+| Hotfix 4A-C | Tipos documentales y carga general | `a5b15f1` | Cerrada y probada manualmente |
+| Revision tecnica 4A | Guard contextual por entidad/hotel | `c435ddb` | Cerrada |
+| Auditoria seguridad 4A | Auditoria post-QA | `d34886f` | Cerrada |
+
+### Confirmaciones 4A
+
+- Tablas base creadas: `documento_tipos`, `documentos`, `documento_entidades`.
+- Tipos documentales globales disponibles: Contrato, Comprobante, Identificacion,
+  Factura, Evidencia y Otro.
+- Rutas activas: `GET /documentos`, `GET /documentos/subir`,
+  `POST /documentos/subir`, `GET /documentos/entidad/{tipo}/{id}` y
+  `GET /documentos/{id}`.
+- Upload con `multipart/form-data`, CSRF, validacion MIME/extension/tamano y storage
+  privado bajo `STORAGE_PATH/documentos`.
+- Ruta contextual valida entidad existente del hotel actual antes de mostrar listado o
+  enlace de carga.
+- Vistas no muestran `storage_path` ni `nombre_archivo`.
+- Sin rutas documentales de descarga, edicion ni borrado.
+- Sin Caja, pagos, abonos, Fase 3D ni cambios en `/api/sync`.
+- QA manual post-hotfix reportada como funcional por el usuario.
+
+### Verificaciones 4A registradas
+
+- `php -l` en `DocumentoController.php`: sin errores.
+- `health_check_fase_1a.php`: PASS con warnings permitidos.
+- `preflight_compras_minimas.php`: PASS con warnings permitidos.
+- `preflight_recepcion_compras.php`: PASS con warnings permitidos.
+- HTTP sin sesion en `GET /documentos/subir` y `POST /documentos/subir`: redirige a
+  login.
+- HTTP autenticado: `/documentos` y `/documentos/entidad/proveedor/8` responden `200`;
+  entidad invalida redirige `303` a `/documentos`.
+- SQL read-only de cierre: `documento_tipos=6`, `documentos=3`,
+  `documento_entidades=1`, `cuentas_por_pagar_movimientos=0`, `movimientos_caja=1403`,
+  `logs_auditoria=29`.
+
+### Warnings y pendientes 4A
+
+- `documentos.id=1`, `documentos.id=2` y `documentos.id=3` existen por pruebas locales
+  y/o QA manual; no borrar ni reconciliar sin autorizacion explicita.
+- `src/storage/documentos/` es runtime privado e ignorado por Git.
+- La descarga segura aun no existe; debe abrirse como fase nueva con contrato, guardias,
+  `realpath`, headers privados y pruebas manuales.
+- No hacer push.

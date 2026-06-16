@@ -211,7 +211,7 @@ Cierre tecnico 3C completado documentalmente. La QA manual final del bloque 3C f
 
 ## QA Fase 4A Centro Documental
 
-Estado vigente: `AUDITORIA_SEGURIDAD_4A_COMPLETADA`.
+Estado vigente: `CIERRE_TECNICO_4A_COMPLETADO`.
 
 4A-0 no implemento funcionalidad. 4A-A creo solo esquema base, sin uploads, sin POST,
 sin descargas y sin datos operativos. 4A-B agrega capa de consulta read-only de metadata
@@ -319,6 +319,13 @@ sin exponer archivos.
 - `unlink` aparece solo como rollback interno para eliminar un archivo recien movido si falla la transaccion.
 - No hay referencias documentales en `service-worker.js`, `pwa.js`, `offline-data.js`, `reservaciones-offline.js` ni `ApiController`.
 - Conteos read-only de auditoria: `documento_tipos=6`, `documentos=3`, `documento_entidades=1`, `cuentas_por_pagar_movimientos=0`, `movimientos_caja=1403`, `logs_auditoria=29`.
+
+### Cierre tecnico Fase 4A
+
+- 4A-0, 4A-A, 4A-B y 4A-C quedan cerradas tecnicamente.
+- QA manual post-hotfix fue reportada como funcional por el usuario.
+- El cierre no habilita descarga, edicion, borrado, pagos, abonos, Caja, Fase 3D ni `/api/sync`.
+- Cualquier descarga segura debe abrirse en un bloque posterior con contrato, guardias y headers privados.
 
 ### QA critica futura
 

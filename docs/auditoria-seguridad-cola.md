@@ -120,7 +120,7 @@ Bloque 3C cerrado tecnicamente. Mantener prohibidos pagos, Caja, CxC, nomina ope
 
 ## Fase 4A Centro Documental - auditoria inicial de contrato
 
-Estado: `AUDITORIA_SEGURIDAD_4A_COMPLETADA`.
+Estado: `CIERRE_TECNICO_4A_COMPLETADO`.
 
 - Riesgo principal: exposicion accidental de documentos privados si se guardan en
   `public_html/uploads`.

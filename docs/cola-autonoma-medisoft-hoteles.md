@@ -4,14 +4,14 @@
 
 NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Centro Documental Base.
 
-Mensaje actual procesado: confirmacion manual "Ya funciona, continua" sobre la carga documental 4A-C, revision tecnica post-QA y auditoria de seguridad 4A.
+Mensaje actual procesado: confirmacion manual "Ya funciona, continua" sobre la carga documental 4A-C, revision tecnica, auditoria de seguridad y cierre tecnico 4A.
 
 ## Estado vigente
 
 - Bloque actual: Fase 4A Centro Documental Base.
-- Fase actual: auditoria seguridad 4A post-upload seguro documental.
+- Fase actual: cierre tecnico 4A post-upload seguro documental.
 - Riesgo: naranja.
-- Estado: `AUDITORIA_SEGURIDAD_4A_COMPLETADA`.
+- Estado: `CIERRE_TECNICO_4A_COMPLETADO`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -44,7 +44,8 @@ Mensaje actual procesado: confirmacion manual "Ya funciona, continua" sobre la c
   Contrato.
 - Revision tecnica post-QA 4A: la ruta contextual `/documentos/entidad/{tipo}/{id}` valida que la entidad exista en el hotel actual antes de mostrar documentos o enlace de carga.
 - Auditoria seguridad 4A: sin rutas de descarga, edicion ni borrado documental; sin exposicion de `storage_path`; sin referencias documentales en PWA/offline; sin Caja, pagos, abonos ni `/api/sync`.
-- Siguiente cola recomendada: `[COLA_CERRAR_BLOQUE_4A]`.
+- Cierre tecnico 4A: contrato, migracion base, read-only, upload seguro, hotfix post-QA, revision, auditoria, rollback, QA y fuentes de verdad documentados.
+- Siguiente accion recomendada: definir nuevo mensaje real antes de avanzar a descarga segura u otra fase; no improvisar descargas publicas.
 
 ## Reanclaje Fase 3C
 
@@ -221,4 +222,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Siguiente paso formal recomendado: `[COLA_CERRAR_BLOQUE_4A]` para cierre tecnico documental de 4A-0..4A-C antes de autorizar descargas seguras o fases posteriores. No avanzar a descargas publicas, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Siguiente paso formal recomendado: nuevo mensaje real para autorizar una fase posterior, por ejemplo descarga segura autenticada. No avanzar a descargas publicas, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

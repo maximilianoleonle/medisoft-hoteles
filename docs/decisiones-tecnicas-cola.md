@@ -141,7 +141,7 @@
 
 ## Fase 4A Centro Documental
 
-- Estado formal vigente: `AUDITORIA_SEGURIDAD_4A_COMPLETADA`.
+- Estado formal vigente: `CIERRE_TECNICO_4A_COMPLETADO`.
 - Centro Documental debe iniciar con storage privado, no con enlaces publicos directos.
 - `public_html/uploads` queda reservado para assets publicos/imagenes ya existentes.
 - El patron de descarga segura de `ReporteLinkController` es la referencia tecnica para
@@ -190,6 +190,8 @@
 - Auditoria seguridad post-QA 4A confirma que no hay descarga, edicion ni borrado
   documental; `storage_path` no es URL publica; PWA/offline y `/api/sync` quedan fuera
   del bloque.
+- Cierre tecnico 4A no autoriza descargas, edicion, borrado, pagos, Caja, Fase 3D ni
+  `/api/sync`; cualquier descarga segura requiere nuevo bloque explicito.
 - No se permite tocar Caja, pagos, abonos, Fase 3D ni `/api/sync`.
 
 ### Decisiones de diagnostico NP-0
