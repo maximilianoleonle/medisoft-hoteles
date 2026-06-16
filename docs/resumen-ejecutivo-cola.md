@@ -519,3 +519,23 @@ Resultado TLM-B:
 - No se cambio `habitaciones.estado`.
 - No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
 - Siguiente paso recomendado: TLM-C creacion manual controlada, si se autoriza.
+
+Resultado TLM-C:
+
+- Estado tecnico: `CREACION_MANUAL_TLM_C_COMPLETADA_QA_DIFERIDA`.
+- Documento: `docs/fase_TLM_C_creacion_manual_tareas.md`.
+- Rutas agregadas:
+  - `GET /tareas/crear`;
+  - `POST /tareas`.
+- El listado `/tareas` muestra accion `Nueva tarea` para usuarios con
+  `habitaciones.mantenimiento`.
+- El alta manual crea solo registros en `tareas_operativas` y `tarea_eventos`.
+- La tarea nace en estado `pendiente`, con `origen = manual`.
+- Se valida `hotel_id` del contexto y habitacion opcional del mismo hotel.
+- POST protegido con CSRF, permiso `habitaciones.mantenimiento` y auditoria con
+  `AuditService`.
+- No hay asignacion, inicio, cierre, cancelacion ni cambio de `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.
+- Siguiente paso recomendado: TLM-D asignacion opcional a trabajador activo del mismo
+  hotel.

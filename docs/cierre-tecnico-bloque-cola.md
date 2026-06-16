@@ -476,3 +476,19 @@ Estado: `TAREAS_READ_ONLY_TLM_B_COMPLETADO_QA_DIFERIDA`.
 - No se cambio `habitaciones.estado`.
 - No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina, PWA/offline/cache
   ni `/api/sync`.
+
+## Creacion manual Fase TLM-C
+
+Estado: `CREACION_MANUAL_TLM_C_COMPLETADA_QA_DIFERIDA`.
+
+- Documento: `docs/fase_TLM_C_creacion_manual_tareas.md`.
+- Rutas autorizadas:
+  - `GET /tareas/crear`;
+  - `POST /tareas`.
+- La tarea se crea `pendiente`, `manual` y con evento inicial `creada`.
+- POST protegido con CSRF, permiso `habitaciones.mantenimiento` y auditoria.
+- No se implementa asignacion, inicio, cierre ni cancelacion.
+- No se cambio `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina, PWA/offline/cache
+  ni `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.

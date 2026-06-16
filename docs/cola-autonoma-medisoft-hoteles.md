@@ -395,3 +395,27 @@ Siguiente cola exacta recomendada:
 
 Implementar creacion manual controlada con POST + CSRF, auditoria y validacion de
 hotel. Mantener prohibido cambiar automaticamente `habitaciones.estado`.
+
+## Creacion manual TLM-C
+
+- Estado formal: `CREACION_MANUAL_TLM_C_COMPLETADA_QA_DIFERIDA`.
+- Documento creado: `docs/fase_TLM_C_creacion_manual_tareas.md`.
+- Rutas:
+  - `GET /tareas/crear`;
+  - `POST /tareas`.
+- Modelo: `TareaOperativa::crearParaHotel()` crea tarea y evento inicial en transaccion.
+- Controlador: `TareaController::guardarAction()` exige POST, CSRF y permiso
+  `habitaciones.mantenimiento`.
+- No se cambio `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina, PWA/offline/cache
+  ni `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.
+
+## Siguiente accion
+
+Siguiente cola exacta recomendada:
+
+`[COLA_TLM_D_ASIGNACION_TRABAJADOR]`
+
+Implementar asignacion opcional de tareas a trabajadores activos del mismo hotel, sin
+pagos, sin Caja y sin modificar automaticamente estados de habitacion.

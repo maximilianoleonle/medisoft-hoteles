@@ -23,6 +23,7 @@ $tareas = is_array($tareas ?? null) ? $tareas : [];
 $resumen = is_array($resumen ?? null) ? $resumen : [];
 $filtros = is_array($filtros ?? null) ? $filtros : [];
 $tablaDisponible = (bool)($tablaDisponible ?? false);
+$puedeCrear = function_exists('can') && can('habitaciones.mantenimiento');
 
 $estadoLabels = [
     'pendiente' => 'Pendiente',
@@ -51,6 +52,7 @@ $prioridadLabels = [
 .tlm-title{font-size:30px;line-height:1.1;margin:6px 0 8px;font-weight:900;color:#101828}
 .tlm-subtitle{color:#64748b;max-width:720px;margin:0}
 .tlm-status{padding:10px 12px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;font-size:13px}
+.tlm-actions{display:flex;flex-direction:column;gap:10px;align-items:flex-end}
 .tlm-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:18px 0 22px}
 .tlm-metric{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:14px;box-shadow:0 6px 18px rgba(15,23,42,.05)}
 .tlm-metric span{display:block;font-size:12px;color:#64748b;font-weight:700;text-transform:uppercase}
@@ -58,7 +60,8 @@ $prioridadLabels = [
 .tlm-panel{background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 10px 28px rgba(15,23,42,.06);overflow:hidden}
 .tlm-filter{display:grid;grid-template-columns:2fr repeat(3,1fr) auto;gap:10px;padding:16px;border-bottom:1px solid #e5e7eb;background:#f8fafc}
 .tlm-control{width:100%;border:1px solid #d1d5db;border-radius:7px;padding:10px 11px;font-size:14px;background:#fff;color:#172033}
-.tlm-btn{border:0;border-radius:7px;background:#172033;color:#fff;font-weight:800;padding:10px 16px;cursor:pointer}
+.tlm-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:7px;background:#172033;color:#fff;font-weight:800;padding:10px 16px;cursor:pointer;text-decoration:none;min-height:40px}
+.tlm-btn--light{background:#fff;color:#172033;border:1px solid #d1d5db}
 .tlm-table-wrap{overflow-x:auto}
 .tlm-table{width:100%;border-collapse:collapse;min-width:920px}
 .tlm-table th{font-size:12px;text-align:left;text-transform:uppercase;letter-spacing:.08em;color:#64748b;background:#fbfcfe;padding:12px 14px;border-bottom:1px solid #e5e7eb}
@@ -74,7 +77,7 @@ $prioridadLabels = [
 .tlm-pill--cancelada{background:#f1f5f9;color:#475569}
 .tlm-empty{padding:46px 24px;text-align:center;color:#64748b}
 .tlm-empty strong{display:block;color:#172033;font-size:18px;margin-bottom:8px}
-@media (max-width:900px){.tlm-head{display:block}.tlm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tlm-filter{grid-template-columns:1fr}.tlm-title{font-size:24px}}
+@media (max-width:900px){.tlm-head{display:block}.tlm-actions{align-items:flex-start;margin-top:14px}.tlm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tlm-filter{grid-template-columns:1fr}.tlm-title{font-size:24px}}
 </style>
 
 <div class="tlm-page">
@@ -82,10 +85,18 @@ $prioridadLabels = [
         <div>
             <div class="tlm-kicker">Operaciones</div>
             <h1 class="tlm-title">Tareas operativas</h1>
-            <p class="tlm-subtitle">Lectura inicial de tareas de limpieza, mantenimiento y pendientes generales. Esta fase no crea ni modifica tareas.</p>
+            <p class="tlm-subtitle">Tareas de limpieza, mantenimiento y pendientes generales por hotel. La creacion manual no cambia estados de habitaciones ni integra Caja.</p>
         </div>
-        <div class="tlm-status">
-            Modo read-only: sin altas, asignaciones, cierres ni cambios de habitacion.
+        <div class="tlm-actions">
+            <?php if ($puedeCrear): ?>
+                <a class="tlm-btn" href="<?= url('tareas/crear') ?>">
+                    <i class="fas fa-plus"></i>
+                    Nueva tarea
+                </a>
+            <?php endif; ?>
+            <div class="tlm-status">
+                Fase TLM-C: alta manual controlada. Sin asignaciones, cierres, cambios de habitacion ni Caja.
+            </div>
         </div>
     </div>
 
@@ -129,7 +140,11 @@ $prioridadLabels = [
         <?php elseif (empty($tareas)): ?>
             <div class="tlm-empty">
                 <strong>No hay tareas operativas registradas</strong>
-                Cuando se autorice la creacion manual, las tareas apareceran aqui por hotel.
+                <?php if ($puedeCrear): ?>
+                    Crea la primera tarea manual para el hotel actual cuando sea necesario.
+                <?php else: ?>
+                    No hay tareas registradas para el hotel actual.
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <div class="tlm-table-wrap">

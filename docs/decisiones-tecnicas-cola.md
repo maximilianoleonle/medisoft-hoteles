@@ -429,3 +429,19 @@
 - No se crean permisos profundos nuevos en esta subfase.
 - No se muestran acciones de crear/asignar/iniciar/completar/cancelar hasta contrato
   separado.
+
+## Decision TLM-C creacion manual
+
+- Se habilita un unico POST autorizado: `POST /tareas`.
+- La creacion manual usa `habitaciones.mantenimiento` como permiso conservador porque
+  las tareas pueden impactar operacion de habitaciones.
+- `hotel_id` se toma del contexto activo; no se envia ni se acepta desde el formulario.
+- La habitacion vinculada es opcional y se valida por `id + hotel_id`.
+- La tarea nace en `estado = pendiente` y `origen = manual`.
+- Se registra evento inicial `creada` en `tarea_eventos`.
+- Se usa transaccion para insertar tarea y evento juntos.
+- Auditoria central con `AuditService::record()` se ejecuta sin bloquear el flujo si
+  `logs_auditoria` no estuviera disponible.
+- No se implementan asignacion, inicio, cierre, cancelacion ni cambios automaticos de
+  `habitaciones.estado`.
+- No se toca `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.

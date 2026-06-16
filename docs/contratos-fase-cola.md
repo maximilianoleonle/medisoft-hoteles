@@ -762,3 +762,20 @@ Estado formal vigente: `TAREAS_READ_ONLY_TLM_B_COMPLETADO_QA_DIFERIDA`.
 - Sidebar muestra `Tareas` bajo Operaciones.
 - No hay POST, creacion, asignacion, cierre, cancelacion ni cambios de habitacion.
 - No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
+
+### Estado TLM-C
+
+Estado formal vigente: `CREACION_MANUAL_TLM_C_COMPLETADA_QA_DIFERIDA`.
+
+- Documento: `docs/fase_TLM_C_creacion_manual_tareas.md`.
+- Rutas:
+  - `GET /tareas/crear`;
+  - `POST /tareas`;
+  - `GET /tareas/{id}`.
+- Alta manual con POST + CSRF, permiso `habitaciones.mantenimiento`, auditoria y
+  transaccion.
+- La tarea se crea en `tareas_operativas`, estado `pendiente`, origen `manual`.
+- El evento inicial se crea en `tarea_eventos`.
+- No hay asignacion, inicio, cierre, cancelacion ni cambios de habitacion.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.

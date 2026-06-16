@@ -7,6 +7,9 @@ class TareaOperativa extends Model
 {
     protected $table = 'tareas_operativas';
 
+    private const CATEGORIAS = ['limpieza', 'mantenimiento', 'general'];
+    private const PRIORIDADES = ['baja', 'media', 'alta', 'urgente'];
+
     public function tablaDisponible(): bool
     {
         return $this->tablaExiste('tareas_operativas');
@@ -205,6 +208,195 @@ class TareaOperativa extends Model
         }
 
         return $base;
+    }
+
+    public function habitacionesOpciones(int $hotelId): array
+    {
+        if ($hotelId <= 0) {
+            return [];
+        }
+
+        $stmt = $this->db->query(
+            "SELECT id, numero, estado
+             FROM habitaciones
+             WHERE hotel_id = ?
+               AND COALESCE(activa, 1) = 1
+             ORDER BY CAST(numero AS UNSIGNED), numero",
+            [$hotelId]
+        );
+
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
+    public function crearParaHotel(int $hotelId, array $datos, ?int $usuarioId = null): int
+    {
+        if ($hotelId <= 0) {
+            throw new InvalidArgumentException('Hotel no valido para crear la tarea.');
+        }
+
+        if (!$this->tablaDisponible() || !$this->eventosDisponibles()) {
+            throw new RuntimeException('La base de tareas operativas no esta disponible.');
+        }
+
+        $datos = $this->normalizarDatos($datos, $hotelId);
+        $this->db->safeBeginTransaction();
+
+        try {
+            $stmt = $this->db->query(
+                "INSERT INTO tareas_operativas
+                    (hotel_id, categoria, titulo, descripcion, prioridad, estado,
+                     habitacion_id, fecha_programada, fecha_limite, creada_por_usuario_id,
+                     origen, created_at)
+                 VALUES
+                    (?, ?, ?, ?, ?, 'pendiente',
+                     ?, ?, ?, ?,
+                     'manual', NOW())",
+                [
+                    $hotelId,
+                    $datos['categoria'],
+                    $datos['titulo'],
+                    $datos['descripcion'],
+                    $datos['prioridad'],
+                    $datos['habitacion_id'],
+                    $datos['fecha_programada'],
+                    $datos['fecha_limite'],
+                    $usuarioId,
+                ]
+            );
+
+            if (!$stmt) {
+                throw new RuntimeException('No se pudo insertar la tarea operativa.');
+            }
+
+            $tareaId = (int)$this->db->lastInsertId();
+            $this->registrarEvento(
+                $hotelId,
+                $tareaId,
+                'creada',
+                null,
+                'pendiente',
+                'Tarea creada manualmente.',
+                $usuarioId
+            );
+
+            $this->db->safeCommit();
+            return $tareaId;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
+    private function normalizarDatos(array $datos, int $hotelId): array
+    {
+        $titulo = trim((string)($datos['titulo'] ?? ''));
+        if ($titulo === '') {
+            throw new InvalidArgumentException('El titulo de la tarea es obligatorio.');
+        }
+
+        if (function_exists('mb_substr')) {
+            $titulo = mb_substr($titulo, 0, 160, 'UTF-8');
+        } else {
+            $titulo = substr($titulo, 0, 160);
+        }
+
+        $categoria = trim((string)($datos['categoria'] ?? 'general'));
+        if (!in_array($categoria, self::CATEGORIAS, true)) {
+            $categoria = 'general';
+        }
+
+        $prioridad = trim((string)($datos['prioridad'] ?? 'media'));
+        if (!in_array($prioridad, self::PRIORIDADES, true)) {
+            $prioridad = 'media';
+        }
+
+        $habitacionId = $this->normalizarEnteroNullable($datos['habitacion_id'] ?? null);
+        if ($habitacionId !== null) {
+            $this->validarHabitacionHotel($habitacionId, $hotelId);
+        }
+
+        $fechaProgramada = $this->normalizarFechaHora($datos['fecha_programada'] ?? null);
+        $fechaLimite = $this->normalizarFechaHora($datos['fecha_limite'] ?? null);
+        if ($fechaProgramada !== null && $fechaLimite !== null && strtotime($fechaLimite) < strtotime($fechaProgramada)) {
+            throw new InvalidArgumentException('La fecha limite no puede ser anterior a la fecha programada.');
+        }
+
+        $descripcion = trim((string)($datos['descripcion'] ?? ''));
+
+        return [
+            'titulo' => $titulo,
+            'descripcion' => $descripcion !== '' ? $descripcion : null,
+            'categoria' => $categoria,
+            'prioridad' => $prioridad,
+            'habitacion_id' => $habitacionId,
+            'fecha_programada' => $fechaProgramada,
+            'fecha_limite' => $fechaLimite,
+        ];
+    }
+
+    private function validarHabitacionHotel(int $habitacionId, int $hotelId): void
+    {
+        $stmt = $this->db->query(
+            "SELECT COUNT(*) AS total
+             FROM habitaciones
+             WHERE id = ?
+               AND hotel_id = ?
+               AND COALESCE(activa, 1) = 1",
+            [$habitacionId, $hotelId]
+        );
+        $row = $stmt ? $stmt->fetch() : null;
+
+        if ((int)($row['total'] ?? 0) !== 1) {
+            throw new InvalidArgumentException('La habitacion seleccionada no pertenece al hotel actual.');
+        }
+    }
+
+    private function registrarEvento(
+        int $hotelId,
+        int $tareaId,
+        string $tipoEvento,
+        ?string $estadoAnterior,
+        ?string $estadoNuevo,
+        ?string $comentario,
+        ?int $usuarioId
+    ): void {
+        $stmt = $this->db->query(
+            "INSERT INTO tarea_eventos
+                (hotel_id, tarea_id, tipo_evento, estado_anterior, estado_nuevo, comentario, usuario_id, created_at)
+             VALUES
+                (?, ?, ?, ?, ?, ?, ?, NOW())",
+            [$hotelId, $tareaId, $tipoEvento, $estadoAnterior, $estadoNuevo, $comentario, $usuarioId]
+        );
+
+        if (!$stmt) {
+            throw new RuntimeException('No se pudo registrar el evento inicial de la tarea.');
+        }
+    }
+
+    private function normalizarEnteroNullable($value): ?int
+    {
+        if ($value === null || trim((string)$value) === '') {
+            return null;
+        }
+
+        $id = (int)$value;
+        return $id > 0 ? $id : null;
+    }
+
+    private function normalizarFechaHora($value): ?string
+    {
+        $value = trim((string)($value ?? ''));
+        if ($value === '') {
+            return null;
+        }
+
+        $value = str_replace('T', ' ', $value);
+        $timestamp = strtotime($value);
+        if (!$timestamp) {
+            throw new InvalidArgumentException('Formato de fecha no valido.');
+        }
+
+        return date('Y-m-d H:i:s', $timestamp);
     }
 
     private function tablaExiste(string $tabla): bool

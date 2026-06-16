@@ -513,3 +513,21 @@ Estado: `TAREAS_READ_ONLY_TLM_B_COMPLETADO_QA_DIFERIDA`.
 - No se modifica `mantenimientos_habitaciones`.
 - No hay escrituras en Caja, pagos, abonos, nomina ni `/api/sync`.
 - QA manual queda diferida por instruccion del usuario.
+
+## Auditoria TLM-C creacion manual
+
+Estado: `CREACION_MANUAL_TLM_C_COMPLETADA_QA_DIFERIDA`.
+
+- Rutas nuevas: `GET /tareas/crear` y `POST /tareas`.
+- Proteccion: sesion, contexto hotelero, modulo `habitaciones`, permiso
+  `habitaciones.mantenimiento` y CSRF en el POST.
+- Aislamiento multi-hotel: `hotel_id` se toma del contexto activo; la habitacion
+  opcional se valida por `id + hotel_id`.
+- Escrituras permitidas: solo `INSERT` en `tareas_operativas` y `tarea_eventos`.
+- No hay `UPDATE` ni `DELETE` de tareas en esta subfase.
+- No se cambia `habitaciones.estado`.
+- No se modifica `mantenimientos_habitaciones`.
+- No hay escrituras en Caja, pagos, abonos, nomina ni `/api/sync`.
+- Auditoria: `AuditService::record()` registra la creacion cuando esta disponible.
+- Riesgo residual: aun no hay asignacion/cierre/cancelacion; las tareas creadas durante
+  QA deben quedar documentadas hasta una fase operativa posterior.

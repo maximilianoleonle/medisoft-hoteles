@@ -553,6 +553,18 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Mantener intactas `tareas_operativas` y `tarea_eventos`; pertenecen a TLM-A.
 - No tocar `habitaciones.estado`, `mantenimientos_habitaciones`, Caja ni `/api/sync`.
 
+### TLM-C creacion manual aplicada
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-tlm): create operational tasks manually`.
+- DB: no ejecutar `DELETE` automaticamente. Si QA manual crea tareas de prueba,
+  documentar IDs y esperar autorizacion para cancelarlas o reconciliarlas en una fase
+  posterior.
+- Mantener intactas `tareas_operativas` y `tarea_eventos`; pertenecen a TLM-A.
+- No revertir mediante cambios a `habitaciones.estado` ni
+  `mantenimientos_habitaciones`, porque TLM-C no los modifica.
+- No tocar Caja, pagos, abonos, nomina ni `/api/sync`.
+
 ### Reglas duras de rollback TLM
 
 - No tocar Caja, pagos, abonos ni nomina.

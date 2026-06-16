@@ -678,6 +678,27 @@ instruccion del usuario.
 - Abrir `/tareas` con usuario autorizado.
 - Confirmar estado vacio claro.
 - Confirmar filtros GET por busqueda, categoria, estado y prioridad.
-- Confirmar que no hay boton de crear, asignar, iniciar, completar o cancelar.
+- Confirmar que no hay botones de asignar, iniciar, completar o cancelar.
 - Confirmar que el sidebar muestra `Tareas` solo dentro del contexto hotelero.
 - Confirmar bloqueo/redireccion sin sesion.
+
+### Estado TLM-C
+
+- Creacion manual controlada implementada.
+- POST autorizado unico: `POST /tareas`.
+- QA manual diferida por instruccion del usuario.
+
+### QA manual diferida TLM-C
+
+- Abrir `/tareas/crear` con usuario autorizado.
+- Confirmar que el formulario incluye CSRF y no solicita `hotel_id`.
+- Crear una tarea general sin habitacion.
+- Crear una tarea vinculada a una habitacion del hotel actual.
+- Confirmar redireccion al detalle de la tarea creada.
+- Confirmar que el detalle muestra estado `Pendiente`, origen `manual` y evento
+  `creada`.
+- Confirmar que no aparece asignacion, inicio, cierre, cancelacion ni acciones de Caja.
+- Confirmar que `habitaciones.estado` no cambia tras crear una tarea.
+- Confirmar que `mantenimientos_habitaciones` no se modifica.
+- Confirmar bloqueo/redireccion sin sesion en `GET /tareas/crear` y `POST /tareas`.
+- Confirmar que `/api/sync` sigue bloqueado con HTTP 423 por checker.

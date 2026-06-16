@@ -270,7 +270,7 @@ Regla:
 
 ## Tareas, Limpieza y Mantenimiento (Fase TLM)
 
-Estado formal: `MIGRACION_TLM_A_TAREAS_BASE_COMPLETADA_QA_DIFERIDA`.
+Estado formal: `CREACION_MANUAL_TLM_C_COMPLETADA_QA_DIFERIDA`.
 
 Fuentes actuales:
 
@@ -289,5 +289,11 @@ Reglas:
 - Una asignacion futura a trabajador debe validar `trabajadores.hotel_id` y estado activo.
 - Caja, pagos, abonos y nomina no son fuente de verdad de TLM.
 - `/api/sync` queda fuera de alcance.
-- TLM-A crea tablas vacias; no hay tareas reales todavia.
+- TLM-A creo tablas vacias; a partir de TLM-C pueden existir tareas manuales.
 - TLM-B solo lee `tareas_operativas` y `tarea_eventos`; no crea ni corrige datos.
+- TLM-C crea tareas manuales solo en `tareas_operativas` y su evento inicial en
+  `tarea_eventos`.
+- `hotel_id` siempre viene del contexto de sesion; no se acepta desde formulario.
+- La habitacion opcional debe pertenecer al mismo hotel.
+- La tarea manual nace `pendiente` y `origen = manual`.
+- TLM-C no cambia `habitaciones.estado` ni `mantenimientos_habitaciones`.

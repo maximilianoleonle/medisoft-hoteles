@@ -248,8 +248,10 @@ $router->post('/trabajadores/{id:[0-9]+}/actualizar', ['controller' => 'Trabajad
 $router->post('/trabajadores/{id:[0-9]+}/baja-logica', ['controller' => 'Trabajador', 'action' => 'bajaLogica']);
 $router->post('/trabajadores/{id:[0-9]+}/reactivar', ['controller' => 'Trabajador', 'action' => 'reactivar']);
 
-// Fase TLM-B: tareas operativas read-only. Sin POST ni cambios de estado.
+// Fase TLM-C: tareas operativas con alta manual controlada. Sin cambios de estado, asignaciones ni Caja.
 $router->get('/tareas', ['controller' => 'Tarea', 'action' => 'index']);
+$router->get('/tareas/crear', ['controller' => 'Tarea', 'action' => 'crear']);
+$router->post('/tareas', ['controller' => 'Tarea', 'action' => 'guardar']);
 $router->get('/tareas/{id:[0-9]+}', ['controller' => 'Tarea', 'action' => 'ver']);
 
 $router->get('/api/pwa-push/public-key', ['controller' => 'PwaPush', 'action' => 'publicKey']);
