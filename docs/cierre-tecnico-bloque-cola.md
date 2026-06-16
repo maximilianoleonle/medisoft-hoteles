@@ -769,3 +769,13 @@ Estado: `BLOQUE_TLM_I_REPORTE_OPERATIVO_CERRADO_QA_DIFERIDA`.
 - No se agregaron funcionalidades nuevas en el cierre.
 - No hay nuevas acciones de tarea, cambios de habitacion, Caja, nomina ni `/api/sync`.
 - QA manual queda diferida.
+
+## Contrato OP-0
+
+Estado: `CONTRATO_OP_0_TABLERO_OPERATIVO_READONLY_COMPLETADO`.
+
+- Documento: `docs/fase_OP_0_contrato_tablero_operativo_readonly.md`.
+- Contrato documental para un futuro tablero operativo diario GET/read-only.
+- No hay codigo, rutas, migraciones, cambios de DB ni escrituras.
+- No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- Siguiente paso seguro: OP-A implementacion read-only si se autoriza.

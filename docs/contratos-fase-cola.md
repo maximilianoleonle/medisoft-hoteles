@@ -1037,3 +1037,15 @@ Estado formal vigente: `REPORTE_TLM_I_A_COMPLETADO_QA_DIFERIDA`.
 - Documento: `docs/fase_TLM_I_A_reporte_operativo_readonly.md`.
 - Implementacion GET/read-only de `/tareas/reporte`.
 - No agrega escrituras, asignaciones, cambios de estado, Caja ni `/api/sync`.
+
+## Fase OP-0: Tablero Operativo Diario read-only
+
+Estado formal vigente: `CONTRATO_OP_0_TABLERO_OPERATIVO_READONLY_COMPLETADO`.
+
+- Documento: `docs/fase_OP_0_contrato_tablero_operativo_readonly.md`.
+- Solo contrato; no agrega rutas, vistas, modelos, migraciones ni escrituras.
+- Define una fase futura OP-A para consolidar ocupacion, reservaciones, habitaciones,
+  tareas, mantenimiento, trabajadores y documentos recientes en modo GET/read-only.
+- Fuera de alcance: acciones sobre tareas, habitaciones, reservaciones, Caja, pagos,
+  abonos, nomina, offline y `/api/sync`.
+- Siguiente accion segura: OP-A implementacion read-only del tablero, si se autoriza.

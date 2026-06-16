@@ -867,3 +867,14 @@ Resultado NP-D-F:
 - Health checker sin errores valida `trabajador` como entidad documental moderna.
 - QA manual de vincular/subir/descargar documento de trabajador queda diferida.
 - `trabajador_documentos` sigue congelada y en 0 registros.
+
+Resultado OP-0:
+
+- Estado tecnico: `CONTRATO_OP_0_TABLERO_OPERATIVO_READONLY_COMPLETADO`.
+- Documento: `docs/fase_OP_0_contrato_tablero_operativo_readonly.md`.
+- Se define un tablero operativo diario futuro en modo solo lectura.
+- Alcance futuro: consolidar ocupacion, reservaciones, habitaciones, tareas,
+  mantenimiento, trabajadores y documentos recientes por `hotel_id`.
+- No se agregan rutas, modelos, vistas, migraciones ni escrituras.
+- No se toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- Siguiente paso recomendado: OP-A implementacion GET/read-only si se autoriza.

@@ -379,3 +379,15 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   habitaciones/trabajadores/mantenimiento.
 - TLM-I-F cierra el reporte sin cambiar fuentes de verdad ni automatizar disponibilidad,
   limpieza, mantenimiento, asistencia, Caja o nomina.
+
+### OP-0 tablero operativo diario read-only
+
+- Fuente de verdad: ninguna tabla nueva; el tablero futuro debe ser solo agregador.
+- Ocupacion/reservaciones: `reservaciones`.
+- Habitaciones: `habitaciones` y `tipos_habitacion`.
+- Tareas: `tareas_operativas` y `tarea_eventos`.
+- Mantenimiento historico: `mantenimientos_habitaciones` solo en lectura.
+- Personal operativo: `trabajadores` solo en lectura.
+- Documentos: `documentos` y `documento_entidades` solo como metadatos seguros.
+- Restriccion: todas las consultas deben filtrar por `hotel_id` y no deben exponer rutas
+  internas de storage.

@@ -845,3 +845,14 @@ Estado: `BLOQUE_TLM_I_REPORTE_OPERATIVO_CERRADO_QA_DIFERIDA`.
 - Health/preflight validan que el reporte sea read-only y que no se agreguen rutas fuera
   de alcance.
 - Riesgo residual: falta QA manual en navegador con tareas reales.
+
+## Auditoria OP-0
+
+Estado: `CONTRATO_OP_0_TABLERO_OPERATIVO_READONLY_COMPLETADO`.
+
+- OP-0 es solo contrato documental; no agrega superficie HTTP ni DB.
+- Riesgo principal futuro: mezclar datos de hoteles al consolidar reservaciones,
+  habitaciones, tareas, trabajadores y documentos. OP-A debe exigir `hotel_id`.
+- Riesgo futuro rojo: convertir el tablero en panel de acciones. Cualquier POST o cambio
+  de estado queda fuera de OP-A y requiere contrato nuevo.
+- `/api/sync`, offline, Caja, pagos, abonos y nomina quedan explicitamente fuera.

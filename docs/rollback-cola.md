@@ -791,3 +791,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-tlm): close read-only operations report block`.
 - DB: no aplica; es cierre documental.
 - Mantener intacto el codigo TLM-I-A salvo que se revierta su commit especifico.
+
+### OP-0 contrato tablero operativo diario read-only
+
+- Rollback documental: revertir el commit
+  `docs(phase-op): define read-only daily operations dashboard contract`.
+- DB: no aplica; OP-0 no crea migraciones, rutas ni datos.
+- No tocar reservaciones, habitaciones, tareas, documentos, Caja ni `/api/sync`.

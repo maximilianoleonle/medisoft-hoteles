@@ -676,3 +676,13 @@
 - QA manual queda diferida por instruccion del usuario, no sustituida por los checkers.
 - El siguiente bloque debe empezar con contrato independiente para evitar alcance
   implicito sobre habitaciones, limpieza, mantenimiento o Personal.
+
+## Decision OP-0
+
+- El siguiente bloque seguro se define primero como contrato de tablero operativo diario
+  read-only antes de escribir codigo.
+- OP-A, si se autoriza, debe observar datos existentes y no operar sobre ellos.
+- El tablero no sera fuente de verdad; solo consolidara fuentes modernas ya existentes
+  filtradas por `hotel_id`.
+- Cualquier accion futura sobre tareas, habitaciones, reservaciones, Caja, pagos, abonos,
+  nomina, offline o `/api/sync` requiere contrato separado.

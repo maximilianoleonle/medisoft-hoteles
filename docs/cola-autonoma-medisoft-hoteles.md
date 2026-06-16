@@ -767,3 +767,13 @@ agregar funcionalidades nuevas.
 - QA manual queda diferida.
 - No hay nuevas acciones de tarea, cambios de habitacion, Caja, nomina ni `/api/sync`.
 - Siguiente accion segura: contrato documental independiente para el proximo bloque.
+
+## Contrato OP-0 Tablero Operativo Diario read-only
+
+- Estado formal: `CONTRATO_OP_0_TABLERO_OPERATIVO_READONLY_COMPLETADO`.
+- Documento creado: `docs/fase_OP_0_contrato_tablero_operativo_readonly.md`.
+- Define un tablero futuro de observacion diaria solo lectura para ocupacion,
+  reservaciones, habitaciones, tareas, mantenimiento, trabajadores y documentos.
+- No agrega rutas, vistas, modelos, migraciones, formularios ni escrituras.
+- Caja, pagos, abonos, nomina, cambios de habitacion, offline y `/api/sync` quedan fuera.
+- Siguiente accion segura: OP-A implementacion GET/read-only del tablero operativo.

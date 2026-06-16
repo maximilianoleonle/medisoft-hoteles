@@ -1009,3 +1009,11 @@ instruccion del usuario.
 - QA manual sigue pendiente y diferida.
 - No avanzar a automatizaciones de limpieza/mantenimiento, disponibilidad de habitacion,
   asistencia, nomina, pagos ni Caja desde este cierre.
+
+### Estado OP-0
+
+- Contrato de tablero operativo diario read-only completado.
+- No requiere QA de navegador porque no agrega funcionalidad.
+- QA futura OP-A debe confirmar ruta protegida, datos scoped por hotel, estados vacios,
+  ausencia de POST, ausencia de acciones de tarea/habitacion/reservacion y ausencia de
+  Caja, pagos, abonos, nomina, offline y `/api/sync`.
