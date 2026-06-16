@@ -967,3 +967,13 @@ Estado formal vigente: `BLOQUE_NP_C_D_ASISTENCIA_MANUAL_CERRADO_QA_DIFERIDA`.
 - Cierre tecnico del bloque de asistencia manual.
 - Siguiente contrato requerido antes de edicion, anulacion, correccion, nomina, abonos,
   liquidaciones o pagos reales.
+
+### Estado NP-D-0
+
+Estado formal vigente: `CONTRATO_NP_D_DOCUMENTOS_LABORALES_COMPLETADO`.
+
+- Documento: `docs/fase_NP_D_0_contrato_documentos_laborales.md`.
+- Solo contrato; no agrega codigo ni DB.
+- Documentos laborales futuros deben usar Centro Documental moderno con
+  `entidad_tipo = trabajador`.
+- `trabajador_documentos` queda congelada hasta una fase explicita de reconciliacion.

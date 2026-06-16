@@ -743,3 +743,13 @@ Estado: `BLOQUE_NP_C_D_ASISTENCIA_MANUAL_CERRADO_QA_DIFERIDA`.
 - QA manual queda diferida; no se marca validacion de usuario.
 - Riesgo residual: edicion/anulacion de asistencias, nomina y Caja requieren contrato
   nuevo.
+
+## Auditoria NP-D-0 documentos laborales
+
+Estado: `CONTRATO_NP_D_DOCUMENTOS_LABORALES_COMPLETADO`.
+
+- Solo contrato documental.
+- Riesgo principal: duplicar fuentes documentales o exponer rutas internas de archivos.
+- Mitigacion: usar Centro Documental moderno y congelar `trabajador_documentos`.
+- Cualquier implementacion futura debe validar trabajador por `hotel_id` y no mostrar
+  `storage_path` ni `ruta_archivo`.

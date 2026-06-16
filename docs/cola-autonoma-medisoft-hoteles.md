@@ -660,3 +660,15 @@ agregar funcionalidades nuevas.
 - QA manual queda diferida porque no hay trabajadores locales.
 - Siguiente accion segura: contrato nuevo independiente; no abrir Caja ni nomina sin
   autorizacion explicita.
+
+## Contrato NP-D-0 documentos laborales
+
+- Estado formal: `CONTRATO_NP_D_DOCUMENTOS_LABORALES_COMPLETADO`.
+- Documento creado: `docs/fase_NP_D_0_contrato_documentos_laborales.md`.
+- Define que documentos laborales futuros deben extender el Centro Documental moderno con
+  `entidad_tipo = trabajador`.
+- `trabajador_documentos` queda congelada como tabla legacy/aditiva de Personal base.
+- No agrega codigo, rutas, migraciones, POST ni escrituras.
+- No toca Caja, pagos reales, abonos, nomina ni `/api/sync`.
+- Siguiente accion segura: NP-D-A integracion read-only/contextual de documentos de
+  trabajador, reutilizando Centro Documental existente.

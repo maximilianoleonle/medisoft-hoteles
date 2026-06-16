@@ -714,3 +714,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-np): close controlled worker attendance block`.
 - DB: no aplica; es cierre documental.
 - Mantener intactas asistencias ya creadas si existieran.
+
+### NP-D-0 contrato de documentos laborales
+
+- Rollback documental: revertir el commit
+  `docs(phase-np): define worker document center contract`.
+- DB: no aplica; NP-D-0 no crea rutas, migraciones ni datos.
+- No tocar `documentos`, `documento_entidades`, `trabajador_documentos` ni storage.

@@ -754,3 +754,14 @@ Resultado NP-C-D-F:
 - Checkers sin errores: preflight de ledger laboral y health general.
 - QA manual queda diferida hasta que exista un trabajador activo autorizado.
 - Siguiente paso recomendado: contrato nuevo independiente, sin abrir nomina ni Caja.
+
+Resultado NP-D-0:
+
+- Estado tecnico: `CONTRATO_NP_D_DOCUMENTOS_LABORALES_COMPLETADO`.
+- Documento: `docs/fase_NP_D_0_contrato_documentos_laborales.md`.
+- Se define que documentos laborales futuros deben usar Centro Documental moderno
+  (`documentos` + `documento_entidades`) con `entidad_tipo = trabajador`.
+- `trabajador_documentos` queda congelada como tabla legacy/aditiva hasta fase explicita
+  de reconciliacion.
+- No se implementan rutas, vistas, POST, migraciones ni escrituras.
+- No se toca Caja, pagos, abonos, nomina ni `/api/sync`.

@@ -926,3 +926,10 @@ instruccion del usuario.
 - QA manual sigue pendiente y diferida.
 - No avanzar a nomina, descuentos automaticos, abonos, liquidaciones ni Caja sin contrato
   nuevo y autorizacion explicita.
+
+### Estado NP-D-0
+
+- Contrato de documentos laborales completado.
+- No requiere QA de navegador porque no agrega funcionalidad.
+- QA futura NP-D-A debe confirmar que documentos de trabajador usan Centro Documental
+  moderno, sin exponer rutas internas ni usar `trabajador_documentos` como flujo nuevo.

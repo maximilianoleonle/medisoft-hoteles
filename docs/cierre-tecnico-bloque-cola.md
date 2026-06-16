@@ -686,3 +686,12 @@ Estado: `BLOQUE_NP_C_D_ASISTENCIA_MANUAL_CERRADO_QA_DIFERIDA`.
 - No se agregaron funcionalidades nuevas en el cierre.
 - No hay nomina automatica, pagos reales, abonos, Caja ni cambios en `/api/sync`.
 - QA manual queda diferida.
+
+## Contrato NP-D-0
+
+Estado: `CONTRATO_NP_D_DOCUMENTOS_LABORALES_COMPLETADO`.
+
+- Documento: `docs/fase_NP_D_0_contrato_documentos_laborales.md`.
+- Solo contrato; no agrega rutas, vistas, POST, migraciones ni escrituras.
+- Define que documentos laborales futuros usen Centro Documental moderno.
+- `trabajador_documentos` queda congelada hasta reconciliacion autorizada.

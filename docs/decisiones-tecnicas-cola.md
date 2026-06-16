@@ -597,3 +597,11 @@
 - No se asume que el cierre habilita edicion/anulacion de asistencias.
 - El siguiente avance de Personal debe ser contrato independiente y no financiero, salvo
   autorizacion explicita.
+
+## Decision NP-D-0 documentos laborales
+
+- No se abrira un segundo flujo documental basado en `trabajador_documentos` mientras ya
+  exista Centro Documental moderno.
+- La extension futura debe agregar `trabajador` como entidad documental y validar contra
+  `trabajadores.hotel_id`.
+- `trabajador_documentos` se mantiene congelada hasta reconciliacion autorizada.

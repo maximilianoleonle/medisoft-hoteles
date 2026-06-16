@@ -348,3 +348,8 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   `trabajador_asistencias`.
 - `trabajador_asistencias` sigue siendo ledger laboral operativo; no calcula nomina, no
   descuenta ni crea pagos reales.
+- NP-D-0 define que documentos laborales nuevos deben usar el Centro Documental moderno:
+  `documentos`, `documento_entidades` y `documento_tipos`.
+- La relacion con trabajadores debe vivir como `documento_entidades.entidad_tipo =
+  'trabajador'`; `trabajador_documentos` queda congelada como tabla legacy/aditiva hasta
+  reconciliacion autorizada.
