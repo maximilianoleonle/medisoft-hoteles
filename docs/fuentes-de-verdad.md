@@ -546,3 +546,15 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   - `logs_auditoria`.
 - `habitaciones.estado` seguira siendo la fuente de verdad de disponibilidad.
 - Inventario automatico, Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.
+
+### LIM-B-A creacion manual de tarea de limpieza
+
+- No crea fuente nueva.
+- Escrituras permitidas:
+  - `tareas_operativas`;
+  - `tarea_eventos`;
+  - `logs_auditoria`.
+- Lecturas de validacion:
+  - `habitaciones`.
+- `habitaciones.estado` no se actualiza y sigue siendo autoridad de disponibilidad.
+- Inventario automatico, Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.

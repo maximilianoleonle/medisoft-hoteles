@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A/MANT-E-A/MANT-G-B-A.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A/MANT-E-A/MANT-G-B-A/LIM-B-A.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -844,7 +844,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A-4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A/MANT-E-A/MANT-G-B-A - Medisoft Hoteles\n";
+echo "Health check Fase 1A-4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A/MANT-E-A/MANT-G-B-A/LIM-B-A - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -2827,6 +2827,7 @@ if (!is_file($routesPath)) {
         ['method' => 'get', 'path' => 'tareas/crear'],
         ['method' => 'post', 'path' => 'tareas'],
         ['method' => 'post', 'path' => 'tareas/desde-mantenimiento/{id:[0-9]+}'],
+        ['method' => 'post', 'path' => 'tareas/desde-limpieza/{id:[0-9]+}'],
         ['method' => 'post', 'path' => 'tareas/{id:[0-9]+}/asignar'],
         ['method' => 'post', 'path' => 'tareas/{id:[0-9]+}/iniciar'],
         ['method' => 'post', 'path' => 'tareas/{id:[0-9]+}/completar'],
@@ -2841,7 +2842,7 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($missingTaskRoutes)) {
-        hcOk('Rutas TLM-I-A conservadas: listado, reporte read-only, formulario, alta, asignacion, estados manuales y detalle.');
+        hcOk('Rutas TLM-I-A/MANT-G-B-A/LIM-B-A conservadas: listado, reporte read-only, formulario, alta, altas contextuales, asignacion, estados manuales y detalle.');
     } else {
         hcWarning(
             'Rutas TLM-I-A faltantes: ' . implode(', ', $missingTaskRoutes),
@@ -2862,6 +2863,7 @@ if (!is_file($routesPath)) {
             'GET /tareas/crear -> tarea::crear',
             'POST /tareas -> tarea::guardar',
             'POST /tareas/desde-mantenimiento/{id:[0-9]+} -> tarea::creardesdemantenimiento',
+            'POST /tareas/desde-limpieza/{id:[0-9]+} -> tarea::creardesdelimpieza',
             'POST /tareas/{id:[0-9]+}/asignar -> tarea::asignar',
             'POST /tareas/{id:[0-9]+}/iniciar -> tarea::iniciar',
             'POST /tareas/{id:[0-9]+}/completar -> tarea::completar',
@@ -2875,7 +2877,7 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($forbiddenTaskRoutes)) {
-        hcOk('TLM-I-A/MANT-G-B-A mantiene solo rutas autorizadas; reporte read-only y POST manual desde mantenimiento controlado.');
+        hcOk('TLM-I-A/MANT-G-B-A/LIM-B-A mantiene solo rutas autorizadas; reporte read-only y POST manual contextual controlado.');
     } else {
         hcError(
             'TLM-I-A tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenTaskRoutes),
@@ -3319,6 +3321,30 @@ if (!is_file($routesPath)) {
             );
         }
 
+        $taskHasCleaningCreate =
+            strpos($taskModelCode, 'function crearDesdeLimpiezaHabitacionParaHotel') !== false
+            && strpos($taskModelCode, 'function buscarTareaActivaLimpiezaPorHabitacionHotel') !== false
+            && strpos($taskModelCode, "'limpieza_manual'") !== false
+            && strpos($taskModelCode, "categoria = 'limpieza'") !== false
+            && strpos($taskModelCode, "estado IN ('pendiente', 'asignada', 'en_proceso')") !== false
+            && strpos($taskModelCode, "!== 'limpieza'") !== false
+            && preg_match('/INSERT\s+INTO\s+tareas_operativas/i', $taskModelCode)
+            && preg_match('/INSERT\s+INTO\s+tarea_eventos/i', $taskModelCode)
+            && strpos($taskModelCode, 'safeBeginTransaction') !== false
+            && strpos($taskModelCode, 'safeCommit') !== false
+            && strpos($taskModelCode, 'safeRollBack') !== false
+            && strpos($taskModelCode, 'FROM habitaciones') !== false
+            && strpos($taskModelCode, 'FOR UPDATE') !== false;
+
+        if ($taskHasCleaningCreate) {
+            hcOk('LIM-B-A modelo crea tarea desde habitacion en limpieza con transaccion y bloqueo de duplicado activo.');
+        } else {
+            hcWarning(
+                'LIM-B-A modelo no muestra creacion desde limpieza completa.',
+                'Validar habitacion en limpieza, categoria limpieza, bloqueo de duplicado activo, transaccion, evento inicial y ausencia de Caja.'
+            );
+        }
+
         $taskHasAssignment =
             strpos($taskModelCode, 'function asignarTrabajadorParaHotel') !== false
             && strpos($taskModelCode, 'function trabajadoresActivosOpciones') !== false
@@ -3394,6 +3420,7 @@ if (!is_file($routesPath)) {
             && strpos($taskControllerCode, 'function crearAction') !== false
             && strpos($taskControllerCode, 'function guardarAction') !== false
             && strpos($taskControllerCode, 'function crearDesdeMantenimientoAction') !== false
+            && strpos($taskControllerCode, 'function crearDesdeLimpiezaAction') !== false
             && strpos($taskControllerCode, 'function asignarAction') !== false
             && strpos($taskControllerCode, 'function iniciarAction') !== false
             && strpos($taskControllerCode, 'function completarAction') !== false
@@ -3405,17 +3432,18 @@ if (!is_file($routesPath)) {
             && strpos($taskControllerCode, 'validateCSRF') !== false
             && strpos($taskControllerCode, 'AuditService::record') !== false
             && strpos($taskControllerCode, 'crearDesdeMantenimientoParaHotel') !== false
+            && strpos($taskControllerCode, 'crearDesdeLimpiezaHabitacionParaHotel') !== false
             && strpos($taskControllerCode, 'asignarTrabajadorParaHotel') !== false
             && strpos($taskControllerCode, 'tareas/index') !== false
             && strpos($taskControllerCode, 'tareas/reporte') !== false
             && strpos($taskControllerCode, 'tareas/form') !== false
             && strpos($taskControllerCode, 'tareas/ver') !== false
         ) {
-            hcOk('TareaController TLM-I-A/MANT-G-B-A expone listado/reporte/form/alta/alta desde mantenimiento/asignacion/estados/detalle con guardas, CSRF y auditoria.');
+            hcOk('TareaController TLM-I-A/MANT-G-B-A/LIM-B-A expone listado/reporte/form/alta/contextuales/asignacion/estados/detalle con guardas, CSRF y auditoria.');
         } else {
             hcWarning(
-                'TareaController TLM-I-A/MANT-G-B-A no muestra guardas o acciones completas.',
-                'Validar requireAuth, hotel, modulo habitaciones, permisos, CSRF y acciones index/reporte/crear/guardar/desde mantenimiento/asignar/iniciar/completar/cancelar/ver.'
+                'TareaController TLM-I-A/MANT-G-B-A/LIM-B-A no muestra guardas o acciones completas.',
+                'Validar requireAuth, hotel, modulo habitaciones, permisos, CSRF y acciones index/reporte/crear/guardar/desde mantenimiento/desde limpieza/asignar/iniciar/completar/cancelar/ver.'
             );
         }
     } else {
@@ -5139,6 +5167,9 @@ if (!is_file($routesPath)) {
     $mantOpPreviewViewCode = is_file($appRoot . '/app/views/reportes/mantenimiento-programado.php')
         ? (string) file_get_contents($appRoot . '/app/views/reportes/mantenimiento-programado.php')
         : '';
+    $limpiezaReportViewCode = is_file($appRoot . '/app/views/reportes/limpieza-operativa.php')
+        ? (string) file_get_contents($appRoot . '/app/views/reportes/limpieza-operativa.php')
+        : '';
 
     $mantOpRoutesOk = hcRoutePatternExists($routes, 'habitaciones/1/mantenimiento', 'post')
         && hcRoutePatternExists($routes, 'habitaciones/1/programar-mantenimiento', 'post')
@@ -5184,6 +5215,15 @@ if (!is_file($routesPath)) {
     } else {
         hcError(
             'Ruta MANT-G-B-A POST /tareas/desde-mantenimiento/{id} no esta registrada.',
+            'Registrar solo creacion manual individual con CSRF, permiso y validacion central.'
+        );
+    }
+
+    if (hcRoutePatternExists($routes, 'tareas/desde-limpieza/1', 'post')) {
+        hcOk('Ruta LIM-B-A registrada: POST /tareas/desde-limpieza/{id}.');
+    } else {
+        hcError(
+            'Ruta LIM-B-A POST /tareas/desde-limpieza/{id} no esta registrada.',
             'Registrar solo creacion manual individual con CSRF, permiso y validacion central.'
         );
     }
@@ -5316,6 +5356,23 @@ if (!is_file($routesPath)) {
         );
     }
 
+    if (
+        $mantTaskControllerCode !== ''
+        && strpos($mantTaskControllerCode, 'function crearDesdeLimpiezaAction') !== false
+        && strpos($mantTaskControllerCode, 'crearDesdeLimpiezaHabitacionParaHotel') !== false
+        && strpos($mantTaskControllerCode, 'validateCSRF()') !== false
+        && strpos($mantTaskControllerCode, "require_permission('habitaciones.mantenimiento')") !== false
+        && strpos($mantTaskControllerCode, 'tareas.creada_desde_limpieza') !== false
+        && strpos($mantTaskControllerCode, 'AuditService::record') !== false
+    ) {
+        hcOk('TareaController LIM-B-A crea tarea desde limpieza con CSRF, permiso y auditoria.');
+    } else {
+        hcError(
+            'TareaController LIM-B-A no muestra guardas completas.',
+            'Revisar CSRF, permiso, auditoria y metodo central de limpieza.'
+        );
+    }
+
     $mantPreviewModelBody = hcMethodBody($mantOpModelCode, 'previewProgramados');
     if (
         $mantPreviewModelBody !== ''
@@ -5409,6 +5466,27 @@ if (!is_file($routesPath)) {
         hcError(
             'Vista MANT-D-A/MANT-E-A/MANT-G-A no muestra contrato visual completo.',
             'Revisar estado vacio, enlaces GET, boton existente con permiso/CSRF, tareas vinculadas y nota de /api/sync.'
+        );
+    }
+
+    if (
+        $limpiezaReportViewCode !== ''
+        && strpos($limpiezaReportViewCode, 'Limpieza operativa') !== false
+        && strpos($limpiezaReportViewCode, "url('reportes')") !== false
+        && strpos($limpiezaReportViewCode, "url('tareas/desde-limpieza/'") !== false
+        && strpos($limpiezaReportViewCode, 'method="POST"') !== false
+        && strpos($limpiezaReportViewCode, 'csrf_field()') !== false
+        && strpos($limpiezaReportViewCode, "can('habitaciones.mantenimiento')") !== false
+        && strpos($limpiezaReportViewCode, 'tarea_activa') !== false
+        && strpos($limpiezaReportViewCode, "url('tareas/'") !== false
+        && strpos($limpiezaReportViewCode, 'movimientos_caja') === false
+        && strpos($limpiezaReportViewCode, '/api/sync') !== false
+    ) {
+        hcOk('Vista LIM-A/LIM-B-A muestra reporte y creacion manual con permiso, CSRF y tareas vinculadas sin Caja ni /api/sync.');
+    } else {
+        hcError(
+            'Vista LIM-B-A no muestra contrato visual completo.',
+            'Revisar reporte read-only, boton manual con permiso/CSRF, tarea vinculada y ausencia de Caja/api sync.'
         );
     }
 
@@ -5560,6 +5638,27 @@ if (!is_file($routesPath)) {
                 hcError(
                     'MANT-G-B-A datos: mantenimientos con mas de una tarea activa vinculada = ' . (string)$mantTaskActiveDuplicates . '.',
                     'Cancelar/cerrar duplicados antes de crear nuevas tareas desde mantenimiento.'
+                );
+            }
+
+            $cleaningTaskActiveDuplicates = hcCountScalar(
+                $pdo,
+                "SELECT COUNT(*) FROM (
+                    SELECT hotel_id, habitacion_id
+                    FROM tareas_operativas
+                    WHERE categoria = 'limpieza'
+                      AND habitacion_id IS NOT NULL
+                      AND estado IN ('pendiente', 'asignada', 'en_proceso')
+                    GROUP BY hotel_id, habitacion_id
+                    HAVING COUNT(*) > 1
+                ) duplicados"
+            );
+            if ($cleaningTaskActiveDuplicates === 0) {
+                hcOk('LIM-B-A datos: habitaciones con mas de una tarea activa de limpieza = 0.');
+            } else {
+                hcError(
+                    'LIM-B-A datos: habitaciones con mas de una tarea activa de limpieza = ' . (string)$cleaningTaskActiveDuplicates . '.',
+                    'Cerrar o cancelar duplicados antes de crear nuevas tareas desde limpieza.'
                 );
             }
         } else {

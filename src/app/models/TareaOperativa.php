@@ -259,6 +259,49 @@ class TareaOperativa extends Model
         return $row ?: null;
     }
 
+    public function buscarTareaActivaLimpiezaPorHabitacionHotel(int $hotelId, int $habitacionId): ?array
+    {
+        if ($hotelId <= 0 || $habitacionId <= 0 || !$this->tablaDisponible()) {
+            return null;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT t.id,
+                    t.hotel_id,
+                    t.categoria,
+                    t.titulo,
+                    t.prioridad,
+                    t.estado,
+                    t.habitacion_id,
+                    t.trabajador_id,
+                    t.fecha_programada,
+                    t.fecha_limite,
+                    t.origen,
+                    t.created_at,
+                    h.numero AS habitacion_numero,
+                    tr.nombre_completo AS trabajador_nombre
+             FROM tareas_operativas t
+             LEFT JOIN habitaciones h
+                ON h.id = t.habitacion_id
+               AND h.hotel_id = t.hotel_id
+             LEFT JOIN trabajadores tr
+                ON tr.id = t.trabajador_id
+               AND tr.hotel_id = t.hotel_id
+             WHERE t.hotel_id = ?
+               AND t.habitacion_id = ?
+               AND t.categoria = 'limpieza'
+               AND t.estado IN ('pendiente', 'asignada', 'en_proceso')
+             ORDER BY FIELD(t.estado, 'en_proceso', 'asignada', 'pendiente'),
+                      COALESCE(t.fecha_limite, t.fecha_programada, t.created_at) ASC,
+                      t.id ASC
+             LIMIT 1",
+            [$hotelId, $habitacionId]
+        );
+
+        $row = $stmt ? $stmt->fetch() : null;
+        return $row ?: null;
+    }
+
     public function resumenPorHotel(int $hotelId): array
     {
         $base = [
@@ -664,6 +707,116 @@ class TareaOperativa extends Model
         }
     }
 
+    public function crearDesdeLimpiezaHabitacionParaHotel(int $hotelId, int $habitacionId, array $datos = [], ?int $usuarioId = null): int
+    {
+        if ($hotelId <= 0) {
+            throw new InvalidArgumentException('Hotel no valido para crear la tarea.');
+        }
+
+        if ($habitacionId <= 0) {
+            throw new InvalidArgumentException('Habitacion no valida para crear la tarea de limpieza.');
+        }
+
+        if (!$this->tablaDisponible() || !$this->eventosDisponibles()) {
+            throw new RuntimeException('La base de tareas operativas no esta disponible.');
+        }
+
+        $this->db->safeBeginTransaction();
+
+        try {
+            $stmt = $this->db->query(
+                "SELECT id,
+                        hotel_id,
+                        numero,
+                        tipo,
+                        piso,
+                        estado
+                 FROM habitaciones
+                 WHERE id = ?
+                   AND hotel_id = ?
+                   AND COALESCE(activa, 1) = 1
+                 LIMIT 1
+                 FOR UPDATE",
+                [$habitacionId, $hotelId]
+            );
+            $habitacion = $stmt ? $stmt->fetch() : null;
+            if (!$habitacion) {
+                throw new RuntimeException('Habitacion no encontrada para el hotel actual.');
+            }
+
+            if ((string)($habitacion['estado'] ?? '') !== 'limpieza') {
+                throw new RuntimeException('Solo se pueden crear tareas de limpieza desde habitaciones en estado limpieza.');
+            }
+
+            $duplicado = $this->db->query(
+                "SELECT id
+                 FROM tareas_operativas
+                 WHERE hotel_id = ?
+                   AND habitacion_id = ?
+                   AND categoria = 'limpieza'
+                   AND estado IN ('pendiente', 'asignada', 'en_proceso')
+                 ORDER BY id ASC
+                 LIMIT 1
+                 FOR UPDATE",
+                [$hotelId, $habitacionId]
+            );
+            $duplicadoRow = $duplicado ? $duplicado->fetch() : null;
+            if ($duplicadoRow) {
+                throw new RuntimeException('Ya existe una tarea activa de limpieza para esta habitacion.');
+            }
+
+            $titulo = $this->limitarTexto(
+                $datos['titulo'] ?? '',
+                160,
+                'Limpieza habitacion ' . (string)($habitacion['numero'] ?? $habitacionId)
+            );
+            $descripcion = $this->limitarTexto(
+                $datos['descripcion'] ?? '',
+                2000,
+                $this->descripcionLimpiezaParaTarea($habitacion)
+            );
+
+            $stmt = $this->db->query(
+                "INSERT INTO tareas_operativas
+                    (hotel_id, categoria, titulo, descripcion, prioridad, estado,
+                     habitacion_id, fecha_programada, creada_por_usuario_id,
+                     origen, created_at)
+                 VALUES
+                    (?, 'limpieza', ?, ?, 'media', 'pendiente',
+                     ?, NOW(), ?,
+                     'limpieza_manual', NOW())",
+                [
+                    $hotelId,
+                    $titulo,
+                    $descripcion,
+                    $habitacionId,
+                    $usuarioId,
+                ]
+            );
+
+            if (!$stmt) {
+                throw new RuntimeException('No se pudo insertar la tarea de limpieza.');
+            }
+
+            $tareaId = (int)$this->db->lastInsertId();
+            $this->registrarEvento(
+                $hotelId,
+                $tareaId,
+                'creada',
+                null,
+                'pendiente',
+                'Tarea creada manualmente desde limpieza de habitacion #' . (string)$habitacionId . '.',
+                $usuarioId
+            );
+
+            $this->db->safeCommit();
+            return $tareaId;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
     public function asignarTrabajadorParaHotel(int $id, int $hotelId, int $trabajadorId, ?int $usuarioId = null): bool
     {
         if ($id <= 0 || $hotelId <= 0) {
@@ -882,6 +1035,17 @@ class TareaOperativa extends Model
         }
 
         return implode("\n", $lineas);
+    }
+
+    private function descripcionLimpiezaParaTarea(array $habitacion): string
+    {
+        return implode("\n", [
+            'Tarea manual de limpieza vinculada a habitacion.',
+            'Habitacion: ' . (string)($habitacion['numero'] ?? $habitacion['id'] ?? '-'),
+            'Tipo: ' . (string)($habitacion['tipo'] ?? '-'),
+            'Piso: ' . (string)($habitacion['piso'] ?? '-'),
+            'Estado habitacion al crear tarea: ' . (string)($habitacion['estado'] ?? '-'),
+        ]);
     }
 
     private function validarHabitacionHotel(int $habitacionId, int $hotelId): void

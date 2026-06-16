@@ -172,6 +172,38 @@ class TareaController extends Controller
         }
     }
 
+    public function crearDesdeLimpiezaAction(): void
+    {
+        $this->requireWritePermission();
+
+        if (!$this->isPost()) {
+            $this->redirect('reportes/limpieza');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        $habitacionId = (int)($this->route_params['id'] ?? 0);
+
+        try {
+            $hotelId = $this->hotelIdActual();
+            $tareaId = $this->tareaModel->crearDesdeLimpiezaHabitacionParaHotel(
+                $hotelId,
+                $habitacionId,
+                [],
+                $this->usuarioIdActual()
+            );
+            $tarea = $this->tareaModel->buscarPorIdHotel($tareaId, $hotelId);
+            $this->auditar('tareas.creada_desde_limpieza', $tareaId, $tarea);
+
+            set_mensaje('Tarea de limpieza creada correctamente.', 'success');
+            $this->redirect('tareas/' . $tareaId);
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo crear la tarea de limpieza: ' . $e->getMessage(), 'error');
+            $this->redirect('reportes/limpieza');
+        }
+    }
+
     public function asignarAction(): void
     {
         $this->requireWritePermission();

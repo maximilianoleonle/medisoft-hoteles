@@ -1001,3 +1001,14 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Codigo: no aplica.
 - No tocar habitaciones, tareas, inventario, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.
+
+### LIM-B-A creacion manual de tarea de limpieza
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-lim): create housekeeping tasks manually`.
+- DB: no aplica si no se ejecuta QA manual.
+- Si QA manual crea tareas reales, no borrar con SQL manual; usar flujo de cancelacion de
+  tareas o documentar IDs.
+- El rollback retiraria ruta POST, accion del controlador, metodos de modelo, boton en
+  reporte y checks asociados.
+- No tocar habitaciones, inventario, Caja, pagos, abonos, nomina ni `/api/sync`.

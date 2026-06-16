@@ -1033,3 +1033,14 @@ agregar funcionalidades nuevas.
 - No modifica codigo, DB, rutas, modelos, vistas, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.
 - Siguiente accion segura: LIM-B-A implementacion manual controlada.
+
+## LIM-B-A creacion manual de tarea de limpieza
+
+- Estado formal: `CREACION_MANUAL_TAREA_LIM_B_A_COMPLETADA_QA_DIFERIDA`.
+- Documento creado: `docs/fase_LIM_B_A_creacion_manual_tarea_limpieza.md`.
+- Ruta POST: `/tareas/desde-limpieza/{id}`.
+- Crea tarea pendiente de categoria `limpieza` con `origen = limpieza_manual`.
+- Bloquea duplicado activo por habitacion.
+- No modifica habitaciones, inventario, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.
+- Siguiente accion segura: revision/auditoria/cierre LIM-B.

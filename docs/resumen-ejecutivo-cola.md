@@ -1134,3 +1134,13 @@ Resultado LIM-B-0:
   estado `limpieza`.
 - No se modifica codigo, DB, rutas, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - Siguiente paso recomendado: LIM-B-A implementacion manual controlada.
+
+Resultado LIM-B-A:
+
+- Estado tecnico: `CREACION_MANUAL_TAREA_LIM_B_A_COMPLETADA_QA_DIFERIDA`.
+- Documento: `docs/fase_LIM_B_A_creacion_manual_tarea_limpieza.md`.
+- Se agrega POST manual para crear tarea de limpieza desde habitacion en estado
+  `limpieza`.
+- Se bloquea duplicado activo por habitacion.
+- No se cambia disponibilidad, inventario, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.

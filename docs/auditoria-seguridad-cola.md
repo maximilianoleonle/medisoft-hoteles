@@ -1130,3 +1130,15 @@ Estado: `CONTRATO_LIM_B_0_CREACION_MANUAL_TAREA_LIMPIEZA_COMPLETADO`.
 - Riesgo principal futuro: que una tarea libere habitacion automaticamente.
 - Mitigacion definida: la tarea no actualiza `habitaciones.estado`.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.
+
+## Auditoria LIM-B-A
+
+Estado: `CREACION_MANUAL_TAREA_LIM_B_A_COMPLETADA_QA_DIFERIDA`.
+
+- Ruta POST protegida por sesion, permiso y CSRF.
+- Modelo valida habitacion activa del hotel actual y estado `limpieza`.
+- Modelo bloquea duplicado activo de categoria `limpieza` por habitacion.
+- Escritura limitada a `tareas_operativas` y `tarea_eventos`; auditoria en
+  `logs_auditoria`.
+- No se actualiza `habitaciones`.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.

@@ -31,6 +31,7 @@ $resumen = is_array($reporte['resumen'] ?? null) ? $reporte['resumen'] : [];
 $habitaciones = is_array($reporte['habitaciones'] ?? null) ? $reporte['habitaciones'] : [];
 $porPiso = is_array($reporte['por_piso'] ?? null) ? $reporte['por_piso'] : [];
 $tareasActivas = is_array($reporte['tareas_activas'] ?? null) ? $reporte['tareas_activas'] : [];
+$puedeCrearTareaLimpieza = function_exists('can') ? can('habitaciones.mantenimiento') : false;
 ?>
 
 <style>
@@ -59,6 +60,9 @@ $tareasActivas = is_array($reporte['tareas_activas'] ?? null) ? $reporte['tareas
 .lim-rep-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:900;background:#e0f2fe;color:#075985}
 .lim-rep-pill.is-task{background:#eef2ff;color:#3730a3}
 .lim-rep-pill.is-empty{background:#f8fafc;color:#64748b}
+.lim-rep-inline-form{margin-top:9px}
+.lim-rep-task-create{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:7px;background:#172033;color:#fff;font-size:12px;font-weight:900;padding:8px 10px;cursor:pointer}
+.lim-rep-task-create:hover{background:#0f172a}
 .lim-rep-side{display:flex;flex-direction:column;gap:16px}
 .lim-rep-list{display:flex;flex-direction:column}
 .lim-rep-list-item{padding:12px 14px;border-bottom:1px solid #eef2f7}
@@ -142,6 +146,18 @@ $tareasActivas = is_array($reporte['tareas_activas'] ?? null) ? $reporte['tareas
                                             <div class="lim-rep-muted"><?= lim_rep_num($tareasCount) ?> tarea(s) activa(s)</div>
                                         <?php else: ?>
                                             <span class="lim-rep-pill is-empty">Sin tarea activa</span>
+                                            <?php if ($puedeCrearTareaLimpieza): ?>
+                                                <form class="lim-rep-inline-form"
+                                                      method="POST"
+                                                      action="<?= url('tareas/desde-limpieza/' . (int)($habitacion['id'] ?? 0)) ?>"
+                                                      onsubmit="return confirm('Crear una tarea de limpieza para esta habitacion?')">
+                                                    <?= csrf_field() ?>
+                                                    <button type="submit" class="lim-rep-task-create">
+                                                        <i class="fas fa-tasks"></i>
+                                                        Crear tarea
+                                                    </button>
+                                                </form>
+                                            <?php endif; ?>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -152,7 +168,7 @@ $tareasActivas = is_array($reporte['tareas_activas'] ?? null) ? $reporte['tareas
             <?php endif; ?>
 
             <div class="lim-rep-note">
-                LIM-A es solo lectura: no contiene formularios, no libera habitaciones, no crea tareas, no descuenta inventario y no toca Caja, pagos, abonos, nomina, offline ni /api/sync.
+                LIM-B-A agrega solo creacion manual de tarea de limpieza con permiso y CSRF. No libera habitaciones, no cambia estados, no descuenta inventario y no toca Caja, pagos, abonos, nomina, offline ni /api/sync.
             </div>
         </section>
 

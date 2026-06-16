@@ -898,3 +898,11 @@
   persistencia.
 - La creacion debe usar validacion central del modelo y bloquear duplicados activos.
 - Completar una tarea de limpieza no debe liberar automaticamente la habitacion.
+
+## Decision LIM-B-A
+
+- Se implementa una creacion manual individual, no automatica ni masiva.
+- La validacion de habitacion en `limpieza` queda en el modelo para evitar que la vista
+  sea la unica barrera.
+- El origen `limpieza_manual` diferencia estas tareas de altas manuales genericas.
+- El boton vive en `/reportes/limpieza` porque ahi se ve el estado operativo actual.

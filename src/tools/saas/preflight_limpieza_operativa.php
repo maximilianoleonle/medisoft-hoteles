@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase LIM-A - Limpieza operativa read-only.
+ * Preflight Fase LIM-A/LIM-B-A - Limpieza operativa.
  *
  * Solo ejecuta consultas de lectura y validaciones estaticas.
  */
@@ -113,13 +113,15 @@ function limPfMethodBody(string $code, string $method): string
     return '';
 }
 
-echo "Preflight Fase LIM-A - Limpieza operativa read-only\n";
+echo "Preflight Fase LIM-A/LIM-B-A - Limpieza operativa\n";
 echo "====================================================\n";
 
 $root = dirname(__DIR__, 2);
 $configPath = $root . '/config/database.php';
 $routesPath = $root . '/config/routes.php';
 $controllerPath = $root . '/app/controllers/ReportesController.php';
+$taskControllerPath = $root . '/app/controllers/TareaController.php';
+$taskModelPath = $root . '/app/models/TareaOperativa.php';
 $viewPath = $root . '/app/views/reportes/limpieza-operativa.php';
 $indexViewPath = $root . '/app/views/reportes/index.php';
 
@@ -176,6 +178,25 @@ if ($pdo instanceof PDO) {
         } else {
             limPfError('Tareas de limpieza cross-hotel detectadas: ' . $crossHotelTasks);
         }
+
+        $duplicadas = limPfScalar(
+            $pdo,
+            "SELECT COUNT(*)
+             FROM (
+                SELECT hotel_id, habitacion_id, COUNT(*) AS total
+                FROM tareas_operativas
+                WHERE categoria = 'limpieza'
+                  AND habitacion_id IS NOT NULL
+                  AND estado IN ('pendiente', 'asignada', 'en_proceso')
+                GROUP BY hotel_id, habitacion_id
+                HAVING COUNT(*) > 1
+             ) duplicadas"
+        );
+        if ($duplicadas === 0) {
+            limPfOk('Habitaciones con mas de una tarea activa de limpieza = 0.');
+        } else {
+            limPfError('Habitaciones con tareas activas de limpieza duplicadas: ' . $duplicadas);
+        }
     } else {
         limPfWarning('Tabla tareas_operativas no existe.', 'LIM-A debe seguir funcionando con contexto de tareas vacio.');
     }
@@ -229,6 +250,12 @@ if (strpos($routesCode, "\$router->post('/reportes/limpieza") === false) {
     limPfError('POST /reportes/limpieza detectado.', 'LIM-A debe ser solo GET.');
 }
 
+if ($routesCode !== '' && limPfRouteExists($routesCode, 'post', '/tareas/desde-limpieza/{id:[0-9]+}', 'crearDesdeLimpieza')) {
+    limPfOk('Ruta LIM-B-A registrada: POST /tareas/desde-limpieza/{id}.');
+} else {
+    limPfError('Ruta LIM-B-A faltante o no controlada.', 'Registrar solo POST /tareas/desde-limpieza/{id} con TareaController.');
+}
+
 $controllerCode = is_file($controllerPath) ? file_get_contents($controllerPath) : '';
 $limActionCode = limPfMethodBody($controllerCode, 'limpiezaAction');
 $limReportCode = limPfMethodBody($controllerCode, 'reporteLimpiezaOperativa');
@@ -256,15 +283,46 @@ if (
 
 $viewCode = is_file($viewPath) ? file_get_contents($viewPath) : '';
 if (
-    strpos($viewCode, 'LIM-A es solo lectura') !== false
+    strpos($viewCode, 'LIM-B-A agrega solo creacion manual') !== false
     && strpos($viewCode, "url('habitaciones/'") !== false
     && strpos($viewCode, "url('tareas/'") !== false
-    && stripos($viewCode, '<form') === false
+    && strpos($viewCode, "url('tareas/desde-limpieza/'") !== false
+    && strpos($viewCode, 'csrf_field()') !== false
     && stripos($viewCode, 'storage_path') === false
 ) {
-    limPfOk('Vista LIM-A es read-only y no expone formularios.');
+    limPfOk('Vista LIM-A/LIM-B-A muestra reporte y POST manual con CSRF sin exponer storage.');
 } else {
-    limPfError('Vista LIM-A no cumple contrato read-only.', 'Revisar ausencia de forms y enlaces GET seguros.');
+    limPfError('Vista LIM-A/LIM-B-A no cumple contrato esperado.', 'Revisar enlaces GET, POST manual con CSRF y ausencia de storage.');
+}
+
+$taskControllerCode = is_file($taskControllerPath) ? file_get_contents($taskControllerPath) : '';
+$limTaskActionCode = limPfMethodBody($taskControllerCode, 'crearDesdeLimpiezaAction');
+if (
+    $limTaskActionCode !== ''
+    && strpos($limTaskActionCode, 'requireWritePermission') !== false
+    && strpos($limTaskActionCode, 'validateCSRF') !== false
+    && strpos($limTaskActionCode, 'crearDesdeLimpiezaHabitacionParaHotel') !== false
+    && strpos($limTaskActionCode, 'tareas.creada_desde_limpieza') !== false
+) {
+    limPfOk('TareaController LIM-B-A crea tarea de limpieza con permiso, CSRF y auditoria.');
+} else {
+    limPfError('TareaController LIM-B-A incompleto.', 'Revisar permiso, CSRF, metodo central y auditoria.');
+}
+
+$taskModelCode = is_file($taskModelPath) ? file_get_contents($taskModelPath) : '';
+$limTaskCreateCode = limPfMethodBody($taskModelCode, 'crearDesdeLimpiezaHabitacionParaHotel');
+if (
+    $limTaskCreateCode !== ''
+    && strpos($limTaskCreateCode, "estado'] ?? '') !== 'limpieza'") !== false
+    && strpos($limTaskCreateCode, "categoria = 'limpieza'") !== false
+    && strpos($limTaskCreateCode, "'limpieza_manual'") !== false
+    && stripos($limTaskCreateCode, 'UPDATE habitaciones') === false
+    && stripos($limTaskCreateCode, 'movimientos_caja') === false
+    && stripos($limTaskCreateCode, 'api/sync') === false
+) {
+    limPfOk('TareaOperativa LIM-B-A valida habitacion en limpieza, bloquea duplicado y no cambia disponibilidad.');
+} else {
+    limPfError('TareaOperativa LIM-B-A no muestra guardas completas.', 'Revisar estado limpieza, duplicado activo, origen y ausencia de cambios en habitaciones/Caja.');
 }
 
 $indexCode = is_file($indexViewPath) ? file_get_contents($indexViewPath) : '';

@@ -1259,3 +1259,16 @@ instruccion del usuario.
   - confirmar que no cambia `habitaciones.estado`;
   - confirmar que no hay inventario automatico, Caja, pagos, abonos, nomina, offline ni
     `/api/sync`.
+
+### Estado LIM-B-A
+
+- Creacion manual de tarea de limpieza implementada.
+- QA manual diferida por instruccion del usuario.
+- Probar `/reportes/limpieza`.
+- Crear una tarea desde una habitacion en limpieza.
+- Confirmar detalle de tarea, `categoria = limpieza`, `habitacion_id`, `hotel_id` y
+  `origen = limpieza_manual`.
+- Confirmar bloqueo de duplicado activo.
+- Confirmar que no cambia `habitaciones.estado`.
+- Confirmar que no hay inventario automatico, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.

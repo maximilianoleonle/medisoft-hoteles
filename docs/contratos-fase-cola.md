@@ -1313,3 +1313,15 @@ Estado formal vigente: `CONTRATO_LIM_B_0_CREACION_MANUAL_TAREA_LIMPIEZA_COMPLETA
 - Prohibe liberar habitaciones, cambiar disponibilidad, automatizar checkout, inventario
   automatico, Caja, pagos, abonos, nomina, offline y `/api/sync`.
 - Siguiente accion segura: LIM-B-A implementacion manual controlada.
+
+### Estado LIM-B-A
+
+Estado formal vigente: `CREACION_MANUAL_TAREA_LIM_B_A_COMPLETADA_QA_DIFERIDA`.
+
+- Documento: `docs/fase_LIM_B_A_creacion_manual_tarea_limpieza.md`.
+- Implementa `POST /tareas/desde-limpieza/{id}`.
+- Crea tarea manual de categoria `limpieza` con `origen = limpieza_manual`.
+- Bloquea duplicados activos por habitacion.
+- No cambia habitaciones, reservaciones ni inventario.
+- No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- Siguiente accion segura: revision/auditoria/cierre LIM-B.
