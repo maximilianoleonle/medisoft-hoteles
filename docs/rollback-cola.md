@@ -604,6 +604,12 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - No tocar `tareas_operativas`, `tarea_eventos`, `habitaciones.estado`,
   `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
 
+### TLM-H cierre tecnico aplicado
+
+- Rollback documental: revertir el commit `docs(phase-tlm): close operational tasks block`.
+- DB: no aplica; TLM-H solo documenta revision/auditoria/cierre.
+- No tocar datos reales ni tablas TLM durante rollback documental.
+
 ### Reglas duras de rollback TLM
 
 - No tocar Caja, pagos, abonos ni nomina.

@@ -838,3 +838,12 @@ Estado formal vigente: `PREFLIGHT_TLM_G_COMPLETADO_QA_DIFERIDA`.
 - Solo lectura; sin rutas, UI, POST ni migraciones.
 - Valida consistencia de tareas, eventos, entidades, fechas, estados y ausencia de Caja.
 - No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
+
+### Estado TLM-H
+
+Estado formal vigente: `BLOQUE_TLM_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_TLM_H_cierre_bloque.md`.
+- Revision tecnica, auditoria de seguridad y cierre documental completados.
+- No agrega funcionalidades nuevas.
+- QA manual queda diferida por instruccion del usuario.

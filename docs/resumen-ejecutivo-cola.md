@@ -610,3 +610,15 @@ Resultado TLM-G:
 - No crea asistencia, pagos, abonos, nomina ni movimientos de Caja.
 - No se toco `/api/sync`.
 - Siguiente paso recomendado: TLM-H revision tecnica, auditoria y cierre del bloque.
+
+Resultado TLM-H:
+
+- Estado tecnico: `BLOQUE_TLM_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_TLM_H_cierre_bloque.md`.
+- Se revisaron rutas, controladores, modelo, vistas, partial contextual, permisos,
+  CSRF, auditoria, filtros `hotel_id`, ausencia de Caja, ausencia de pagos/abonos/nomina
+  y ausencia de cambios en `/api/sync`.
+- No se agregan funcionalidades nuevas.
+- QA manual sigue diferida por instruccion del usuario.
+- Siguiente paso recomendado: esperar QA manual TLM o pasar a un nuevo bloque autorizado
+  independiente.

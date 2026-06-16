@@ -551,3 +551,13 @@ Estado: `PREFLIGHT_TLM_G_COMPLETADO_QA_DIFERIDA`.
 - No se cambio `habitaciones.estado`.
 - No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina, PWA/offline/cache
   ni `/api/sync`.
+
+## Cierre tecnico Fase TLM-H
+
+Estado: `BLOQUE_TLM_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_TLM_H_cierre_bloque.md`.
+- Revision tecnica y auditoria del bloque TLM completadas.
+- Commits TLM registrados hasta TLM-G.
+- Health y preflight TLM-G sin errores.
+- QA manual queda diferida por instruccion del usuario.

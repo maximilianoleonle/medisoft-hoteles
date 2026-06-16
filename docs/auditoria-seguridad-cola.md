@@ -596,3 +596,13 @@ Estado: `PREFLIGHT_TLM_G_COMPLETADO_QA_DIFERIDA`.
 - No agrega rutas, UI, POST, migraciones ni escrituras.
 - No toca `habitaciones.estado`, `mantenimientos_habitaciones`, Caja, pagos, abonos,
   nomina ni `/api/sync`.
+
+## Auditoria TLM-H cierre tecnico
+
+Estado: `BLOQUE_TLM_CERRADO_QA_DIFERIDA`.
+
+- Revision del bloque TLM completa hasta TLM-G.
+- No se agregaron funcionalidades en el cierre.
+- Se conserva QA manual diferida.
+- Riesgo residual principal: validar visualmente flujos manuales de tareas cuando el
+  usuario retome QA.

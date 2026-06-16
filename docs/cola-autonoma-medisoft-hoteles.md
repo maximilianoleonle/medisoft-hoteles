@@ -508,3 +508,12 @@ Siguiente cola exacta recomendada:
 
 Revisar tecnicamente, auditar y cerrar el bloque Tareas/Limpieza/Mantenimiento sin
 agregar funcionalidades nuevas.
+
+## Cierre tecnico TLM-H
+
+- Estado formal: `BLOQUE_TLM_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_TLM_H_cierre_bloque.md`.
+- Bloque TLM queda cerrado tecnicamente hasta TLM-G.
+- QA manual global queda diferida por instruccion del usuario.
+- Siguiente accion segura: nuevo bloque autorizado independiente o QA manual TLM cuando
+  el usuario vuelva.

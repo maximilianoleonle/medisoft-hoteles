@@ -493,3 +493,10 @@
   entidad hotelera.
 - No se automatiza correccion de datos desde el checker.
 - No se agregan rutas ni funcionalidades de usuario.
+
+## Decision TLM-H cierre tecnico
+
+- El bloque TLM se cierra tecnicamente sin automatizar disponibilidad de habitaciones.
+- La QA manual queda diferida por instruccion del usuario.
+- Cualquier fase futura de automatizacion debe abrir contrato nuevo y no puede inferirse
+  desde este cierre.

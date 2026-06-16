@@ -776,3 +776,22 @@ instruccion del usuario.
 - Confirmar `ERROR: 0`.
 - Confirmar que cualquier warning sea conocido y no implique Caja, pagos, abonos,
   nomina ni `/api/sync`.
+
+### Estado TLM-H
+
+- Cierre tecnico del bloque TLM completado.
+- QA manual global de TLM queda diferida por instruccion del usuario.
+
+### QA manual global TLM pendiente
+
+- Crear tarea manual general.
+- Crear tarea vinculada a habitacion.
+- Asignar trabajador activo.
+- Iniciar una tarea.
+- Completar una tarea.
+- Cancelar una tarea.
+- Confirmar eventos en detalle de tarea.
+- Confirmar que tareas aparecen en ficha de habitacion/trabajador.
+- Confirmar que no cambia disponibilidad de habitacion.
+- Confirmar que no se modifica `mantenimientos_habitaciones`.
+- Confirmar que no se crean movimientos de Caja, pagos, abonos, nomina ni asistencia.

@@ -313,3 +313,6 @@ Reglas:
 - `huespedes` no es fuente multihotel directa para TLM porque no tiene `hotel_id`; si una
   tarea necesita contexto de huesped, debe resolverse por reservacion u otra entidad con
   hotel.
+- TLM-H cierra el bloque base sin cambiar fuentes de verdad: disponibilidad sigue en
+  `habitaciones`, mantenimiento historico sigue en `mantenimientos_habitaciones` y tareas
+  operativas siguen en `tareas_operativas`.
