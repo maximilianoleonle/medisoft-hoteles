@@ -482,3 +482,19 @@ Estado: `CONTRATO_TLM_0_COMPLETADO`.
   `habitaciones.estado` sin contrato. Mitigacion: TLM-A/TLM-B deben ser aditivas y
   read-first; el primer flujo de tareas no debe cambiar estados de habitacion.
 - Se mantiene prohibido tocar Caja, pagos, abonos, nomina, PWA/offline/cache y `/api/sync`.
+
+## Auditoria TLM-A migracion base
+
+Estado: `MIGRACION_TLM_A_TAREAS_BASE_COMPLETADA_QA_DIFERIDA`.
+
+- Migracion aditiva aplicada tras backup verificado.
+- Tablas creadas vacias: `tareas_operativas` y `tarea_eventos`.
+- Ambas tablas tienen `hotel_id`.
+- `tareas_operativas` referencia entidades operativas de forma nullable; no fuerza
+  cambios sobre habitaciones, reservaciones, huespedes, trabajadores ni mantenimientos.
+- `habitaciones.estado` no fue modificado por la migracion.
+- `mantenimientos_habitaciones` conserva sus 10 registros.
+- Existen 4 movimientos historicos de Caja con texto de productos de limpieza; son
+  preexistentes y no pertenecen a TLM-A.
+- No hay rutas, UI ni POST nuevos.
+- No se toco Caja, pagos, abonos, nomina, PWA/offline/cache ni `/api/sync`.

@@ -733,3 +733,18 @@ Estado formal vigente: `CONTRATO_TLM_0_COMPLETADO`.
 - TLM-F: integracion contextual en habitacion/trabajador -> `feat(phase-tlm): show contextual operational tasks`.
 - TLM-G: health/preflights -> `test(phase-tlm): add operational task consistency checks`.
 - TLM-H: revision, auditoria y cierre -> `docs(phase-tlm): close operational tasks block`.
+
+### Estado TLM-A
+
+Estado formal vigente: `MIGRACION_TLM_A_TAREAS_BASE_COMPLETADA_QA_DIFERIDA`.
+
+- Migracion aplicada: `migrations/20260616_002_fase_tlm_a_tareas_base.sql`.
+- Backup previo verificado:
+  `src/storage/backups/phase_tlm_a_20260616_030648_before_tasks_base_medisoft_hoteles_import.sql`.
+- SHA256: `C76243D8AF98A2D9AA9D94FB5B1BB4D29369A861594141C7EC397A13AF3CF242`.
+- Tablas creadas vacias:
+  - `tareas_operativas`;
+  - `tarea_eventos`.
+- No se crearon rutas, UI, controladores, modelos ni POST.
+- No se cambio `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.

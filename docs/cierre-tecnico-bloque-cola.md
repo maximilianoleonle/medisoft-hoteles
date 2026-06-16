@@ -446,3 +446,19 @@ Estado: `CONTRATO_TLM_0_COMPLETADO`.
 - No se escribio en DB.
 - No se toco Caja, pagos, abonos, nomina, PWA/offline/cache ni `/api/sync`.
 - Siguiente subfase segura: TLM-A migracion base aditiva de tareas con backup previo.
+
+## Migracion Fase TLM-A
+
+Estado: `MIGRACION_TLM_A_TAREAS_BASE_COMPLETADA_QA_DIFERIDA`.
+
+- Backup previo validado con SHA256.
+- Migracion aplicada: `migrations/20260616_002_fase_tlm_a_tareas_base.sql`.
+- Tablas creadas y vacias:
+  - `tareas_operativas`;
+  - `tarea_eventos`.
+- Migracion registrada en `migrations`.
+- Health checker actualizado para validar TLM-A.
+- No hay rutas, UI, controladores, modelos ni POST de tareas.
+- No se cambio `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina, PWA/offline/cache
+  ni `/api/sync`.

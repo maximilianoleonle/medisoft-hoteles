@@ -491,3 +491,18 @@ Resultado TLM-0:
   - `trabajadores`: 0.
 - Riesgo: naranja, porque limpieza/mantenimiento afecta disponibilidad y reservaciones.
 - Siguiente paso recomendado: TLM-A migracion base aditiva de tareas, con backup previo.
+
+Resultado TLM-A:
+
+- Estado tecnico: `MIGRACION_TLM_A_TAREAS_BASE_COMPLETADA_QA_DIFERIDA`.
+- Backup valido:
+  `src/storage/backups/phase_tlm_a_20260616_030648_before_tasks_base_medisoft_hoteles_import.sql`.
+- SHA256: `C76243D8AF98A2D9AA9D94FB5B1BB4D29369A861594141C7EC397A13AF3CF242`.
+- Migracion: `migrations/20260616_002_fase_tlm_a_tareas_base.sql`.
+- Tablas creadas vacias: `tareas_operativas`, `tarea_eventos`.
+- Migracion registrada en batch local `20`.
+- No se crearon tareas ni eventos.
+- No se crearon rutas, UI ni POST.
+- No se cambio `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
+- Siguiente paso recomendado: TLM-B read-only de tareas operativas.

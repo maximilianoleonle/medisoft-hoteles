@@ -533,6 +533,17 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - No borrar ni modificar `mantenimientos_habitaciones`.
 - No cambiar ni recalcular `habitaciones.estado`.
 
+### TLM-A migracion base aplicada
+
+- Backup valido:
+  `src/storage/backups/phase_tlm_a_20260616_030648_before_tasks_base_medisoft_hoteles_import.sql`.
+- SHA256: `C76243D8AF98A2D9AA9D94FB5B1BB4D29369A861594141C7EC397A13AF3CF242`.
+- Rollback DB solo con autorizacion explicita y si ambas tablas siguen vacias:
+  `tarea_eventos`, `tareas_operativas`.
+- Quitar registro de `migrations` para
+  `20260616_002_fase_tlm_a_tareas_base.sql` solo si se hace rollback completo.
+- No tocar `mantenimientos_habitaciones`, `habitaciones`, Caja ni `/api/sync`.
+
 ### Reglas duras de rollback TLM
 
 - No tocar Caja, pagos, abonos ni nomina.

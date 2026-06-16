@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-A.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-B-A/TLM-A.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -552,7 +552,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A-4D/NP-A - Medisoft Hoteles\n";
+echo "Health check Fase 1A-4D/NP-B-A/TLM-A - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -1696,6 +1696,90 @@ if ($pdo) {
         hcError(
             'Personal base NP-A detecta referencias de Caja/Nomina. movimientos=' . (string)$cajaNomina . ', categorias=' . (string)$categoriasNomina . '.',
             'Revisar antes de continuar; NP-A no debe tocar Caja ni crear categoria Nomina.'
+        );
+    }
+
+    $tlmTables = [
+        'tareas_operativas' => [
+            'id', 'hotel_id', 'categoria', 'titulo', 'descripcion', 'prioridad',
+            'estado', 'habitacion_id', 'reservacion_id', 'huesped_id',
+            'trabajador_id', 'mantenimiento_id', 'fecha_programada', 'fecha_limite',
+            'fecha_inicio', 'fecha_cierre', 'creada_por_usuario_id',
+            'asignada_por_usuario_id', 'cerrada_por_usuario_id',
+            'cancelada_por_usuario_id', 'origen', 'notas_cierre',
+            'created_at', 'updated_at',
+        ],
+        'tarea_eventos' => [
+            'id', 'hotel_id', 'tarea_id', 'tipo_evento', 'estado_anterior',
+            'estado_nuevo', 'comentario', 'usuario_id', 'created_at',
+        ],
+    ];
+
+    $tlmMissingTables = [];
+    $tlmMissingColumns = [];
+    $tlmRows = 0;
+    foreach ($tlmTables as $table => $columns) {
+        if (!hcTableExists($pdo, $database, $table)) {
+            $tlmMissingTables[] = $table;
+            continue;
+        }
+
+        $tlmRows += (int)(hcCountRows($pdo, $table) ?? 0);
+
+        foreach ($columns as $column) {
+            if (!hcColumnExists($pdo, $database, $table, $column)) {
+                $tlmMissingColumns[] = $table . '.' . $column;
+            }
+        }
+
+        if (!hcColumnExists($pdo, $database, $table, 'hotel_id')) {
+            $tlmMissingColumns[] = $table . '.hotel_id';
+        } else {
+            $nullHotel = hcNullHotelRows($pdo, $table);
+            if ($nullHotel === 0) {
+                hcOk('TLM-A tabla ' . $table . ' tiene hotel_id completo.');
+            } else {
+                hcError(
+                    'TLM-A tabla ' . $table . ' tiene hotel_id NULL: ' . (string)$nullHotel . '.',
+                    'Reconciliar hotel_id antes de exponer tareas operativas.'
+                );
+            }
+        }
+    }
+
+    if (empty($tlmMissingTables) && empty($tlmMissingColumns)) {
+        hcOk('TLM-A base de tareas operativas disponible. Registros totales=' . (string)$tlmRows . '.');
+    } else {
+        hcWarning(
+            'TLM-A base de tareas operativas incompleta. Tablas faltantes: ' . implode(', ', $tlmMissingTables) . '. Columnas faltantes: ' . implode(', ', $tlmMissingColumns) . '.',
+            'No avanzar a UI o POST de tareas hasta completar la migracion base.'
+        );
+    }
+
+    if (hcTableExists($pdo, $database, 'migrations')) {
+        $tlmMigration = hcCountScalar(
+            $pdo,
+            "SELECT COUNT(*) FROM migrations WHERE nombre = '20260616_002_fase_tlm_a_tareas_base.sql' AND estado = 'ejecutada'"
+        );
+        if ($tlmMigration === 1) {
+            hcOk('Migracion TLM-A de tareas operativas registrada como ejecutada.');
+        } else {
+            hcWarning(
+                'Tablas TLM-A pueden existir pero la migracion no esta registrada.',
+                'Registrar solo si fue aplicada con backup verificado.'
+            );
+        }
+    }
+
+    $cajaTlmCategorias = hcTableExists($pdo, $database, 'categorias_movimientos')
+        ? hcCountScalar($pdo, "SELECT COUNT(*) FROM categorias_movimientos WHERE LOWER(COALESCE(nombre, '')) IN ('tareas', 'tarea', 'limpieza', 'mantenimiento')")
+        : null;
+    if ($cajaTlmCategorias === 0) {
+        hcOk('TLM-A no creo categorias operativas nuevas en Caja.');
+    } else {
+        hcWarning(
+            'TLM-A detecta categorias de Caja que coinciden con tareas/limpieza/mantenimiento: ' . (string)$cajaTlmCategorias . '.',
+            'Validar que sean historicas antes de cualquier integracion; TLM-A no debe tocar Caja.'
         );
     }
 

@@ -408,3 +408,13 @@
 - No se automatizara el cambio de `habitaciones.estado` desde tareas en la primera etapa
   operativa.
 - No se toca Caja, pagos, abonos, nomina, PWA/offline/cache ni `/api/sync`.
+
+## Decision TLM-A migracion base
+
+- Se crean solo `tareas_operativas` y `tarea_eventos`; `tarea_checklist_items` queda
+  diferida para evitar sobrealcance.
+- La migracion registra relaciones opcionales con habitacion, reservacion, huesped,
+  trabajador y mantenimiento, pero no crea automatizaciones.
+- `tarea_eventos` conserva historial tecnico sin reemplazar `logs_auditoria`.
+- No hay datos semilla: las dos tablas quedan vacias.
+- La primera UI futura debe ser read-only antes de habilitar cualquier POST.

@@ -658,3 +658,11 @@ instruccion del usuario.
 - Reservaciones siguen bloqueando conflictos de mantenimiento programado.
 - Reporte de mantenimiento sigue leyendo `mantenimientos_habitaciones`.
 - Notificaciones de limpieza/mantenimiento siguen funcionando.
+
+### Estado TLM-A
+
+- Migracion base aplicada.
+- Tablas `tareas_operativas` y `tarea_eventos` creadas y vacias.
+- No hay UI, rutas ni POST que probar en navegador.
+- QA manual diferida: validar en una fase posterior que las vistas read-only muestren
+  estado vacio y no cambien habitaciones ni mantenimiento.

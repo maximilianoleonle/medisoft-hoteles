@@ -270,7 +270,7 @@ Regla:
 
 ## Tareas, Limpieza y Mantenimiento (Fase TLM)
 
-Estado formal: `CONTRATO_TLM_0_COMPLETADO`.
+Estado formal: `MIGRACION_TLM_A_TAREAS_BASE_COMPLETADA_QA_DIFERIDA`.
 
 Fuentes actuales:
 
@@ -278,6 +278,8 @@ Fuentes actuales:
 - Historial y programacion de mantenimiento de habitaciones: `mantenimientos_habitaciones`.
 - Trabajadores asignables futuros: `trabajadores`.
 - Notificaciones operativas: `notificaciones`.
+- Tareas operativas futuras: `tareas_operativas`.
+- Eventos tecnicos de tarea: `tarea_eventos`.
 
 Reglas:
 
@@ -287,3 +289,4 @@ Reglas:
 - Una asignacion futura a trabajador debe validar `trabajadores.hotel_id` y estado activo.
 - Caja, pagos, abonos y nomina no son fuente de verdad de TLM.
 - `/api/sync` queda fuera de alcance.
+- TLM-A crea tablas vacias; no hay tareas reales todavia.

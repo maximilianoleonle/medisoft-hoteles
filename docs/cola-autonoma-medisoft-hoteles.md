@@ -350,3 +350,24 @@ Siguiente cola exacta recomendada:
 Crear migracion base aditiva de tareas operativas con backup previo de
 `medisoft_hoteles_import`. No crear UI ni POST funcional todavia si la migracion no queda
 verificada.
+
+## Migracion TLM-A (Tareas operativas base)
+
+- Estado formal: `MIGRACION_TLM_A_TAREAS_BASE_COMPLETADA_QA_DIFERIDA`.
+- Backup valido:
+  `src/storage/backups/phase_tlm_a_20260616_030648_before_tasks_base_medisoft_hoteles_import.sql`.
+- SHA256: `C76243D8AF98A2D9AA9D94FB5B1BB4D29369A861594141C7EC397A13AF3CF242`.
+- Migracion aplicada: `migrations/20260616_002_fase_tlm_a_tareas_base.sql`.
+- Tablas creadas vacias: `tareas_operativas`, `tarea_eventos`.
+- No se creo UI, rutas ni POST.
+- No se cambio `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
+
+## Siguiente accion
+
+Siguiente cola exacta recomendada:
+
+`[COLA_TLM_B_TAREAS_READ_ONLY]`
+
+Crear capa GET read-only de tareas operativas: listado, detalle y estado vacio, sin POST,
+sin cambio de estados de habitacion y sin tocar Caja.
