@@ -985,3 +985,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   reportes y preflight LIM-A.
 - No tocar habitaciones, reservaciones, tareas, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.
+
+### LIM-F cierre tecnico limpieza read-only
+
+- Rollback documental: revertir el commit
+  `docs(phase-lim): close read-only housekeeping block`.
+- DB: no aplica; es cierre documental.
+- Mantener intacto LIM-A salvo que se revierta su commit especifico.

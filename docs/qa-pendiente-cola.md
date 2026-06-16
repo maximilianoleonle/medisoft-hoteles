@@ -1240,3 +1240,10 @@ instruccion del usuario.
 - Confirmar que los enlaces a habitacion/tarea son GET.
 - Confirmar que no hay formularios, liberacion automatica, creacion de tareas,
   inventario automatico, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+
+### Estado LIM-F
+
+- Bloque limpieza read-only cerrado tecnicamente.
+- QA manual real sigue diferida.
+- No avanzar a POST de limpieza, automatizacion ni inventario automatico sin contrato
+  nuevo.

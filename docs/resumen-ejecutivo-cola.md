@@ -1117,3 +1117,11 @@ Resultado LIM-A:
 - Preflight LIM-A pasa con `ERROR: 0`; health general pasa con `ERROR: 0`.
 - No hay POST, formularios, cambios de disponibilidad, Caja, pagos, abonos, nomina,
   offline ni `/api/sync`.
+
+Resultado LIM-F:
+
+- Estado tecnico: `BLOQUE_LIM_LIMPIEZA_READONLY_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_LIM_F_cierre_limpieza_readonly.md`.
+- Se cierra tecnicamente el bloque read-only de limpieza.
+- QA manual real queda pendiente/diferida.
+- No se autoriza POST de limpieza ni automatizaciones.

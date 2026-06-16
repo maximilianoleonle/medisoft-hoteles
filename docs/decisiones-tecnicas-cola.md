@@ -882,3 +882,10 @@
   prematuras.
 - Las tareas de limpieza se muestran como contexto; no controlan disponibilidad.
 - El reporte no usa formularios ni acciones de liberacion.
+
+## Decision LIM-F
+
+- Se cierra el bloque LIM en estado read-only para no abrir acciones operativas sin QA.
+- Cualquier creacion manual de tarea de limpieza desde habitacion requiere contrato
+  separado, bloqueo de duplicados activos y QA manual.
+- Cualquier integracion de inventario por limpieza queda fuera hasta contrato especifico.

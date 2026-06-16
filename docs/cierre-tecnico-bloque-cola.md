@@ -1004,3 +1004,14 @@ Estado: `REPORTE_LIM_A_LIMPIEZA_READONLY_COMPLETADO_QA_DIFERIDA`.
 - No hay formularios, POST, liberacion automatica, cambios de estado, Caja, pagos,
   abonos, nomina, offline ni `/api/sync`.
 - QA manual real queda diferida por instruccion del usuario.
+
+## Cierre tecnico LIM-F
+
+Estado: `BLOQUE_LIM_LIMPIEZA_READONLY_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_LIM_F_cierre_limpieza_readonly.md`.
+- Revision tecnica y auditoria completadas para LIM-A.
+- Verificaciones automaticas pasan con `ERROR: 0`.
+- No hay POST, formularios, liberacion automatica, cambios de estado, Caja, pagos,
+  abonos, nomina, offline ni `/api/sync`.
+- QA manual real queda diferida por instruccion del usuario.

@@ -1109,3 +1109,12 @@ Estado: `REPORTE_LIM_A_LIMPIEZA_READONLY_COMPLETADO_QA_DIFERIDA`.
 - Enlaces solo a GET de habitacion/tarea.
 - Preflight valida ausencia de POST, Caja, `/api/sync` y tareas cross-hotel.
 - Riesgo residual: QA manual diferida.
+
+## Auditoria LIM-F
+
+Estado: `BLOQUE_LIM_LIMPIEZA_READONLY_CERRADO_QA_DIFERIDA`.
+
+- Cierre tecnico sin funcionalidades nuevas.
+- Confirmado: no hay POST LIM, no hay formularios y no hay escrituras.
+- Confirmado: sin Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- Riesgo residual: QA manual diferida.

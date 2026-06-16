@@ -1013,3 +1013,13 @@ agregar funcionalidades nuevas.
 - No hay POST, formularios, liberacion automatica, cambios de estado, Caja, pagos,
   abonos, nomina, offline ni `/api/sync`.
 - Siguiente accion segura: revision/auditoria/cierre LIM-A.
+
+## LIM-F cierre tecnico limpieza read-only
+
+- Estado formal: `BLOQUE_LIM_LIMPIEZA_READONLY_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_LIM_F_cierre_limpieza_readonly.md`.
+- Cierra LIM-0 y LIM-A.
+- Verificaciones automaticas pasan con `ERROR: 0`.
+- QA manual queda diferida.
+- Siguiente accion segura: contrato independiente para un bloque nuevo o QA manual
+  diferida.

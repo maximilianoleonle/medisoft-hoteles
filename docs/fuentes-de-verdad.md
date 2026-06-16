@@ -529,3 +529,10 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - Fuente de verificacion: `tools/saas/preflight_limpieza_operativa.php`.
 - `habitaciones.estado` sigue siendo la autoridad de disponibilidad.
 - `tareas_operativas` solo aporta contexto operativo.
+
+### LIM-F cierre tecnico limpieza read-only
+
+- Fuente de verdad documental: `docs/fase_LIM_F_cierre_limpieza_readonly.md`.
+- Fuente tecnica vigente: LIM-A, sin POST ni escrituras.
+- No hay fuente de verdad en inventario automatico, Caja, pagos, abonos, nomina, offline
+  ni `/api/sync`.

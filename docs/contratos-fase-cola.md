@@ -1290,3 +1290,14 @@ Estado formal vigente: `REPORTE_LIM_A_LIMPIEZA_READONLY_COMPLETADO_QA_DIFERIDA`.
 - No libera habitaciones, no crea tareas, no descuenta inventario y no toca Caja, pagos,
   abonos, nomina, offline ni `/api/sync`.
 - Siguiente accion segura: revision/auditoria/cierre LIM-A.
+
+### Estado LIM-F
+
+Estado formal vigente: `BLOQUE_LIM_LIMPIEZA_READONLY_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_LIM_F_cierre_limpieza_readonly.md`.
+- Cierra tecnicamente LIM-0 y LIM-A.
+- No agrega funcionalidades nuevas.
+- QA manual real queda diferida.
+- No autoriza POST, automatizacion, liberacion, inventario automatico, Caja, pagos,
+  abonos, nomina, offline ni `/api/sync`.
