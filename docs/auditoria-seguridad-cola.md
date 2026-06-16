@@ -1175,3 +1175,12 @@ Estado: `AGENDA_TLM_J_A_TAREAS_TRABAJADOR_READONLY_COMPLETADA_QA_DIFERIDA`.
 - Vista contiene formulario GET, sin POST ni CSRF.
 - Enlaces solo a vistas existentes de tarea, trabajador y habitacion.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.
+
+## Auditoria TLM-J-F
+
+Estado: `BLOQUE_TLM_J_AGENDA_TAREAS_CERRADO_QA_DIFERIDA`.
+
+- Revision tecnica completada con preflight TLM y health en `ERROR 0`.
+- La agenda se mantiene sin acciones operativas.
+- Riesgo residual: QA manual diferida y base local sin datos para validar filas reales.
+- Cualquier integracion con turnos, nomina o automatizacion requiere contrato nuevo.

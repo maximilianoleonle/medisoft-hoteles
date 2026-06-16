@@ -1178,3 +1178,12 @@ Resultado TLM-J-A:
 - No hay POST, asignaciones, estados manuales desde agenda, Caja, nomina, offline ni
   `/api/sync`.
 - Siguiente paso recomendado: revision/auditoria/cierre TLM-J.
+
+Resultado TLM-J-F:
+
+- Estado tecnico: `BLOQUE_TLM_J_AGENDA_TAREAS_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_TLM_J_F_cierre_agenda_tareas.md`.
+- Se cierra tecnicamente el bloque de agenda de tareas.
+- Health y preflight TLM pasan con `ERROR: 0`.
+- QA manual real queda pendiente/diferida.
+- No se autorizan acciones operativas nuevas desde la agenda.

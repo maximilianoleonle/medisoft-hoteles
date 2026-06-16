@@ -929,3 +929,10 @@
 - El rango se normaliza a maximo 31 dias para evitar consultas amplias accidentales.
 - La vista no replica acciones de detalle; solo muestra enlaces GET.
 - La navegacion primaria se agrega desde `/tareas`, no como modulo independiente.
+
+## Decision TLM-J-F
+
+- Se cierra TLM-J sin marcar QA manual como completada.
+- La agenda queda como herramienta read-only; cualquier accion futura debe vivir en el
+  detalle de tarea o en contrato nuevo.
+- No se abre planeacion de turnos ni nomina desde este cierre.

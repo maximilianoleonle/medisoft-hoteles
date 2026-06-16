@@ -1359,3 +1359,12 @@ Estado formal vigente: `AGENDA_TLM_J_A_TAREAS_TRABAJADOR_READONLY_COMPLETADA_QA_
 - No toca habitaciones, mantenimientos, inventario, Caja, pagos, abonos, nomina,
   offline ni `/api/sync`.
 - Siguiente accion segura: revision/auditoria/cierre TLM-J.
+
+## Fase TLM-J-F: cierre tecnico agenda de tareas
+
+Estado formal vigente: `BLOQUE_TLM_J_AGENDA_TAREAS_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_TLM_J_F_cierre_agenda_tareas.md`.
+- Cierra tecnicamente TLM-J-0 y TLM-J-A.
+- QA manual real queda diferida.
+- No autoriza acciones operativas nuevas desde agenda.

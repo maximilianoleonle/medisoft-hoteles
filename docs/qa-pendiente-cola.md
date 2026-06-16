@@ -1306,3 +1306,9 @@ instruccion del usuario.
   completar/cancelar en la agenda.
 - Confirmar que no cambia habitacion, mantenimiento, inventario, Caja, nomina, offline
   ni `/api/sync`.
+
+### Estado TLM-J-F
+
+- Bloque agenda de tareas cerrado tecnicamente.
+- QA manual real sigue diferida.
+- No abrir acciones operativas desde agenda sin contrato nuevo.

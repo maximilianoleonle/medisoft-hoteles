@@ -1077,3 +1077,15 @@ agregar funcionalidades nuevas.
 - No agrega POST, asignaciones, cambios de estado, cambios de habitacion, Caja, nomina,
   offline ni `/api/sync`.
 - Siguiente accion segura: revision/auditoria/cierre TLM-J.
+
+## TLM-J-F cierre tecnico agenda de tareas
+
+- Estado formal: `BLOQUE_TLM_J_AGENDA_TAREAS_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_TLM_J_F_cierre_agenda_tareas.md`.
+- Commits del bloque:
+  - `968c4be`
+  - `8c035a7`
+- Revision tecnica y auditoria completadas.
+- Health y preflight TLM pasan con `ERROR: 0`.
+- QA manual queda diferida.
+- Siguiente accion segura: contrato nuevo independiente o QA diferida acumulada.

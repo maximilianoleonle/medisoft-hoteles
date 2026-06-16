@@ -595,3 +595,10 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   - `habitaciones`;
   - `mantenimientos_habitaciones`.
 - No crea fuentes nuevas ni escrituras.
+
+### TLM-J-F cierre tecnico agenda de tareas
+
+- Fuente de verdad documental: `docs/fase_TLM_J_F_cierre_agenda_tareas.md`.
+- Estado formal: `BLOQUE_TLM_J_AGENDA_TAREAS_CERRADO_QA_DIFERIDA`.
+- Fuentes tecnicas vigentes: las mismas de TLM-J-A.
+- No hay migraciones, nuevas tablas ni cambios de datos.

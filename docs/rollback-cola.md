@@ -1041,3 +1041,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   vista, enlace desde tareas y checks asociados.
 - No tocar tareas reales, trabajadores, habitaciones, mantenimientos, Caja, pagos,
   abonos, nomina, offline ni `/api/sync`.
+
+### TLM-J-F cierre tecnico agenda de tareas
+
+- Rollback documental: revertir el commit
+  `docs(phase-tlm): close worker task agenda block`.
+- DB: no aplica; es cierre documental.
+- Mantener intacto TLM-J-A salvo que se revierta su commit especifico.
