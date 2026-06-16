@@ -147,7 +147,7 @@ $estado = (string)($filtros['estado'] ?? 'activos');
             </div>
         <?php else: ?>
             <div class="worker-panel p-4 mb-4">
-                <form method="GET" action="<?= url('trabajadores') ?>" class="grid grid-cols-1 md:grid-cols-[1fr_180px_auto] gap-3">
+                <form method="GET" action="<?= url('trabajadores') ?>" class="grid grid-cols-1 md:grid-cols-[1fr_180px_auto_auto] gap-3">
                     <input class="worker-input" type="search" name="buscar" value="<?= trab_safe($buscar, '') ?>" placeholder="Buscar por nombre, identificacion, rol, telefono o correo">
                     <select class="worker-input" name="estado">
                         <option value="activos" <?= $estado === 'activos' ? 'selected' : '' ?>>Activos</option>
@@ -159,6 +159,10 @@ $estado = (string)($filtros['estado'] ?? 'activos');
                         <i class="fas fa-filter"></i>
                         Filtrar
                     </button>
+                    <a class="worker-btn" href="<?= url('trabajadores/crear') ?>">
+                        <i class="fas fa-plus"></i>
+                        Nuevo
+                    </a>
                 </form>
             </div>
 
@@ -206,10 +210,29 @@ $estado = (string)($filtros['estado'] ?? 'activos');
                                         </td>
                                         <td class="text-right"><?= trab_money($trabajador['salario_base'] ?? null) ?></td>
                                         <td class="text-right">
-                                            <a class="worker-btn" href="<?= url('trabajadores/' . (int)($trabajador['id'] ?? 0)) ?>">
-                                                <i class="fas fa-eye"></i>
-                                                Ver
-                                            </a>
+                                            <div class="flex justify-end gap-2">
+                                                <a class="worker-btn" href="<?= url('trabajadores/' . (int)($trabajador['id'] ?? 0)) ?>" title="Ver">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a class="worker-btn" href="<?= url('trabajadores/' . (int)($trabajador['id'] ?? 0) . '/editar') ?>" title="Editar">
+                                                    <i class="fas fa-pen"></i>
+                                                </a>
+                                                <?php if (($trabajador['estado'] ?? '') === 'baja'): ?>
+                                                    <form method="POST" action="<?= url('trabajadores/' . (int)($trabajador['id'] ?? 0) . '/reactivar') ?>">
+                                                        <?= csrf_field() ?>
+                                                        <button class="worker-btn" type="submit" title="Reactivar">
+                                                            <i class="fas fa-rotate-left"></i>
+                                                        </button>
+                                                    </form>
+                                                <?php else: ?>
+                                                    <form method="POST" action="<?= url('trabajadores/' . (int)($trabajador['id'] ?? 0) . '/baja-logica') ?>" onsubmit="return confirm('Confirmar baja logica del trabajador. No se borrara el registro.');">
+                                                        <?= csrf_field() ?>
+                                                        <button class="worker-btn" type="submit" title="Baja logica">
+                                                            <i class="fas fa-user-slash"></i>
+                                                        </button>
+                                                    </form>
+                                                <?php endif; ?>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

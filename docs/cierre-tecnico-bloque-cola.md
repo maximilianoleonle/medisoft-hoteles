@@ -421,3 +421,15 @@ Estado: `CONTRATO_NP_B_CRUD_TRABAJADORES_COMPLETADO`.
 - No implementa codigo, rutas, DB ni escrituras.
 - No autoriza pagos, anticipos, prestamos, asistencia operativa, documentos laborales,
   Caja, categoria Nomina ni `/api/sync`.
+
+## Implementacion Fase NP-B-A
+
+Estado: `CRUD_TRABAJADORES_NP_B_A_COMPLETADO_QA_DIFERIDA`.
+
+- Rutas CRUD basicas de trabajadores implementadas.
+- Modelo central valida datos y hotel.
+- Vista de formulario con POST + CSRF.
+- Listado/detalle muestran editar, baja logica o reactivar segun estado.
+- Auditoria en cambios de trabajador.
+- Sin pagos, anticipos, prestamos, asistencia operativa, documentos laborales, Caja ni
+  `/api/sync`.

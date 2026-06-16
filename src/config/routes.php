@@ -238,9 +238,15 @@ $router->post('/documentos/{id:[0-9]+}/eliminar', ['controller' => 'Documento', 
 $router->get('/documentos/{id:[0-9]+}/descargar', ['controller' => 'Documento', 'action' => 'descargar']);
 $router->get('/documentos/{id:[0-9]+}', ['controller' => 'Documento', 'action' => 'ver']);
 
-// Fase NP-A: Personal base read-only. Sin altas, pagos, nomina, Caja ni acciones POST.
+// Fase NP-A/NP-B-A: Personal base y CRUD basico de trabajador. Sin pagos, nomina ni Caja.
 $router->get('/trabajadores', ['controller' => 'Trabajador', 'action' => 'index']);
+$router->get('/trabajadores/crear', ['controller' => 'Trabajador', 'action' => 'crear']);
+$router->post('/trabajadores', ['controller' => 'Trabajador', 'action' => 'guardar']);
 $router->get('/trabajadores/{id:[0-9]+}', ['controller' => 'Trabajador', 'action' => 'ver']);
+$router->get('/trabajadores/{id:[0-9]+}/editar', ['controller' => 'Trabajador', 'action' => 'editar']);
+$router->post('/trabajadores/{id:[0-9]+}/actualizar', ['controller' => 'Trabajador', 'action' => 'actualizar']);
+$router->post('/trabajadores/{id:[0-9]+}/baja-logica', ['controller' => 'Trabajador', 'action' => 'bajaLogica']);
+$router->post('/trabajadores/{id:[0-9]+}/reactivar', ['controller' => 'Trabajador', 'action' => 'reactivar']);
 
 $router->get('/api/pwa-push/public-key', ['controller' => 'PwaPush', 'action' => 'publicKey']);
 $router->post('/api/pwa-push/subscribe', ['controller' => 'PwaPush', 'action' => 'subscribe']);

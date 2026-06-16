@@ -457,3 +457,13 @@ Resultado NP-B-0:
   POST + CSRF, auditoria y filtro `hotel_id`.
 - Sigue fuera de alcance: pagos, anticipos, prestamos, asistencia operativa, documentos
   laborales, Caja, categoria Nomina y `/api/sync`.
+
+Resultado NP-B-A:
+
+- Estado tecnico: `CRUD_TRABAJADORES_NP_B_A_COMPLETADO_QA_DIFERIDA`.
+- Rutas CRUD basicas de trabajador agregadas bajo `/trabajadores`.
+- Validaciones centrales en `Trabajador`: hotel actual, usuario opcional del mismo hotel,
+  nombre obligatorio, email valido y salario no negativo.
+- POST con CSRF y auditoria para crear, actualizar, baja logica y reactivar.
+- Sin pagos, anticipos, prestamos, asistencia operativa, documentos laborales, Caja ni
+  `/api/sync`.

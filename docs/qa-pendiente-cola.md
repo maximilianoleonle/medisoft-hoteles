@@ -580,14 +580,19 @@ QA manual diferida 4D-B-A:
 
 - Crear trabajador minimo con nombre obligatorio.
 - Crear trabajador sin usuario del sistema.
+- Crear trabajador con usuario vinculado del hotel actual.
 - Validar email invalido bloqueado.
 - Validar salario negativo bloqueado.
+- Validar salario no numerico bloqueado.
 - Editar telefono/rol/notas y confirmar auditoria.
 - Dar baja logica y confirmar que no se borra fisicamente.
 - Reactivar si la accion queda implementada.
 - Confirmar que no aparecen acciones de pago, anticipo, prestamo, asistencia ni Caja.
 - Confirmar que un hotel no puede ver/editar trabajador de otro hotel.
 - Confirmar HTTP sin sesion bloquea todos los POST.
+
+Estado NP-B-A: implementado y verificado automaticamente; QA manual queda diferida por
+instruccion del usuario.
 
 ### QA critica planificada (NP)
 

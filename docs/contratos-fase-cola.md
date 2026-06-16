@@ -681,3 +681,12 @@ Estado formal vigente: `CONTRATO_NP_B_CRUD_TRABAJADORES_COMPLETADO`.
 - No autoriza pagos, anticipos, prestamos, asistencia operativa, documentos laborales,
   Caja, categoria Nomina ni `/api/sync`.
 - Define POST + CSRF, auditoria, filtro `hotel_id`, baja logica y rollback sin `DELETE`.
+
+### Estado NP-B-A
+
+Estado formal vigente: `CRUD_TRABAJADORES_NP_B_A_COMPLETADO_QA_DIFERIDA`.
+
+- CRUD basico de trabajador implementado con POST + CSRF.
+- Solo escribe en `trabajadores`.
+- No implementa pagos, anticipos, prestamos, asistencia operativa, documentos laborales,
+  Caja, categoria Nomina ni `/api/sync`.

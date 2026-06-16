@@ -143,10 +143,33 @@ $trabajadorId = (int)($trabajador['id'] ?? 0);
 
     <section class="p-6">
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <a class="worker-btn" href="<?= url('trabajadores') ?>">
-                <i class="fas fa-arrow-left"></i>
-                Volver
-            </a>
+            <div class="flex flex-wrap gap-2">
+                <a class="worker-btn" href="<?= url('trabajadores') ?>">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver
+                </a>
+                <a class="worker-btn" href="<?= url('trabajadores/' . $trabajadorId . '/editar') ?>">
+                    <i class="fas fa-pen"></i>
+                    Editar
+                </a>
+                <?php if (($trabajador['estado'] ?? '') === 'baja'): ?>
+                    <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/reactivar') ?>">
+                        <?= csrf_field() ?>
+                        <button class="worker-btn" type="submit">
+                            <i class="fas fa-rotate-left"></i>
+                            Reactivar
+                        </button>
+                    </form>
+                <?php else: ?>
+                    <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/baja-logica') ?>" onsubmit="return confirm('Confirmar baja logica del trabajador. No se borrara el registro.');">
+                        <?= csrf_field() ?>
+                        <button class="worker-btn" type="submit">
+                            <i class="fas fa-user-slash"></i>
+                            Baja logica
+                        </button>
+                    </form>
+                <?php endif; ?>
+            </div>
             <span class="worker-badge">
                 <i class="fas fa-circle-dot"></i>
                 <?= trab_view_safe($trabajador['estado'] ?? null) ?>

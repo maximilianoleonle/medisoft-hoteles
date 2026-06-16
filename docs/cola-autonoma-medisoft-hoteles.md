@@ -314,7 +314,9 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 ## Siguiente accion
 
 NP-A UI read-first queda implementada con listado/ficha basica en GET y QA manual
-diferida. NP-B-0 deja definido el contrato de CRUD basico de trabajadores. Siguiente
-paso formal recomendado: implementar NP-B-A alta/edicion/baja logica de trabajador, sin
-pagos, sin Caja y sin `/api/sync`.
+diferida. NP-B-0 deja definido el contrato de CRUD basico de trabajadores. NP-B-A queda
+implementado con alta/edicion/baja logica/reactivacion, sin pagos, sin Caja y sin
+`/api/sync`.
+Siguiente paso formal recomendado: NP-C-0 contrato de ledger laboral o bloque
+Tareas/Limpieza/Mantenimiento base, sin integracion con Caja.
 No hacer push.

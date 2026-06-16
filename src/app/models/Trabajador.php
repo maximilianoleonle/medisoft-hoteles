@@ -156,6 +156,158 @@ class Trabajador extends Model
         return $row ?: null;
     }
 
+    public function usuariosVinculablesPorHotel(int $hotelId): array
+    {
+        if ($hotelId <= 0 || !$this->tablaExiste('hotel_usuarios') || !$this->tablaExiste('usuarios')) {
+            return [];
+        }
+
+        $stmt = $this->db->query(
+            "SELECT u.id,
+                    u.nombre_completo,
+                    u.nombre_usuario,
+                    u.email,
+                    hu.rol AS rol_hotel
+             FROM hotel_usuarios hu
+             INNER JOIN usuarios u
+                ON u.id = hu.usuario_id
+             WHERE hu.hotel_id = ?
+               AND hu.activo = 1
+               AND u.activo = 1
+             ORDER BY u.nombre_completo ASC, u.nombre_usuario ASC",
+            [$hotelId]
+        );
+
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
+    public function crearParaHotel(int $hotelId, array $datos, ?int $usuarioId = null): int
+    {
+        if ($hotelId <= 0 || !$this->tablaDisponible()) {
+            throw new Exception('Modulo de Personal no disponible');
+        }
+
+        $datos = $this->normalizarDatos($datos);
+        $this->validarDatos($hotelId, $datos);
+
+        $stmt = $this->db->query(
+            "INSERT INTO trabajadores
+                (hotel_id, usuario_id, nombre_completo, identificacion, rol_laboral,
+                 telefono, email, estado, fecha_alta, fecha_baja, salario_base,
+                 periodicidad_pago, notas, created_by, updated_by, created_at, updated_at)
+             VALUES
+                (?, ?, ?, ?, ?, ?, ?, 'activo', ?, NULL, ?, ?, ?, ?, ?, NOW(), NOW())",
+            [
+                $hotelId,
+                $datos['usuario_id'],
+                $datos['nombre_completo'],
+                $datos['identificacion'],
+                $datos['rol_laboral'],
+                $datos['telefono'],
+                $datos['email'],
+                $datos['fecha_alta'],
+                $datos['salario_base'],
+                $datos['periodicidad_pago'],
+                $datos['notas'],
+                $usuarioId,
+                $usuarioId,
+            ]
+        );
+
+        if (!$stmt) {
+            throw new Exception('No se pudo crear el trabajador');
+        }
+
+        return (int)$this->db->lastInsertId();
+    }
+
+    public function actualizarParaHotel(int $id, int $hotelId, array $datos, ?int $usuarioId = null): bool
+    {
+        if ($id <= 0 || $hotelId <= 0 || !$this->tablaDisponible()) {
+            return false;
+        }
+
+        if (!$this->buscarPorIdHotel($id, $hotelId)) {
+            throw new Exception('Trabajador no encontrado para el hotel actual');
+        }
+
+        $datos = $this->normalizarDatos($datos);
+        $this->validarDatos($hotelId, $datos);
+
+        $stmt = $this->db->query(
+            "UPDATE trabajadores
+             SET usuario_id = ?,
+                 nombre_completo = ?,
+                 identificacion = ?,
+                 rol_laboral = ?,
+                 telefono = ?,
+                 email = ?,
+                 fecha_alta = ?,
+                 salario_base = ?,
+                 periodicidad_pago = ?,
+                 notas = ?,
+                 updated_by = ?,
+                 updated_at = NOW()
+             WHERE id = ?
+               AND hotel_id = ?",
+            [
+                $datos['usuario_id'],
+                $datos['nombre_completo'],
+                $datos['identificacion'],
+                $datos['rol_laboral'],
+                $datos['telefono'],
+                $datos['email'],
+                $datos['fecha_alta'],
+                $datos['salario_base'],
+                $datos['periodicidad_pago'],
+                $datos['notas'],
+                $usuarioId,
+                $id,
+                $hotelId,
+            ]
+        );
+
+        return $stmt !== false;
+    }
+
+    public function cambiarEstadoParaHotel(int $id, int $hotelId, string $estado, ?int $usuarioId = null): bool
+    {
+        if ($id <= 0 || $hotelId <= 0 || !$this->tablaDisponible()) {
+            return false;
+        }
+
+        $estado = strtolower(trim($estado));
+        if (!in_array($estado, ['activo', 'inactivo', 'baja'], true)) {
+            throw new Exception('Estado de trabajador no valido');
+        }
+
+        $actual = $this->buscarPorIdHotel($id, $hotelId);
+        if (!$actual) {
+            throw new Exception('Trabajador no encontrado para el hotel actual');
+        }
+
+        if (($actual['estado'] ?? null) === $estado) {
+            return true;
+        }
+
+        $fechaBajaSql = $estado === 'baja'
+            ? 'COALESCE(fecha_baja, CURDATE())'
+            : 'NULL';
+
+        $stmt = $this->db->query(
+            "UPDATE trabajadores
+             SET estado = ?,
+                 fecha_baja = {$fechaBajaSql},
+                 updated_by = ?,
+                 updated_at = NOW()
+             WHERE id = ?
+               AND hotel_id = ?",
+            [$estado, $usuarioId, $id, $hotelId]
+        );
+
+        return $stmt !== false;
+    }
+
     public function resumenLedgerPorTrabajador(int $trabajadorId, int $hotelId): array
     {
         $resumen = [
@@ -265,6 +417,76 @@ class Trabajador extends Model
         return $stmt ? ($stmt->fetchAll() ?: []) : [];
     }
 
+    public function normalizarDatos(array $datos): array
+    {
+        $usuarioId = (int)($datos['usuario_id'] ?? 0);
+        $salarioBase = trim((string)($datos['salario_base'] ?? ''));
+        $salarioNormalizado = null;
+        if ($salarioBase !== '') {
+            $salarioNormalizado = is_numeric($salarioBase)
+                ? number_format((float)$salarioBase, 2, '.', '')
+                : 'INVALIDO';
+        }
+
+        return [
+            'usuario_id' => $usuarioId > 0 ? $usuarioId : null,
+            'nombre_completo' => $this->limpiarTexto($datos['nombre_completo'] ?? '', 150),
+            'identificacion' => $this->nullableTexto($datos['identificacion'] ?? null, 60),
+            'rol_laboral' => $this->nullableTexto($datos['rol_laboral'] ?? null, 80),
+            'telefono' => $this->nullableTexto($datos['telefono'] ?? null, 30),
+            'email' => $this->nullableTexto(strtolower((string)($datos['email'] ?? '')), 120),
+            'fecha_alta' => $this->nullableFecha($datos['fecha_alta'] ?? null),
+            'salario_base' => $salarioNormalizado,
+            'periodicidad_pago' => $this->nullablePeriodicidad($datos['periodicidad_pago'] ?? null),
+            'notas' => $this->nullableTexto($datos['notas'] ?? null, 1000),
+        ];
+    }
+
+    private function validarDatos(int $hotelId, array $datos): void
+    {
+        if ($datos['nombre_completo'] === '') {
+            throw new Exception('El nombre completo del trabajador es obligatorio');
+        }
+
+        if ($datos['email'] !== null && !filter_var($datos['email'], FILTER_VALIDATE_EMAIL)) {
+            throw new Exception('El correo del trabajador no es valido');
+        }
+
+        if ($datos['salario_base'] !== null && !is_numeric($datos['salario_base'])) {
+            throw new Exception('El salario base debe ser numerico');
+        }
+
+        if ($datos['salario_base'] !== null && (float)$datos['salario_base'] < 0) {
+            throw new Exception('El salario base no puede ser negativo');
+        }
+
+        if ($datos['usuario_id'] !== null && !$this->usuarioPerteneceAlHotel((int)$datos['usuario_id'], $hotelId)) {
+            throw new Exception('El usuario vinculado no pertenece al hotel actual');
+        }
+    }
+
+    private function usuarioPerteneceAlHotel(int $usuarioId, int $hotelId): bool
+    {
+        if ($usuarioId <= 0 || $hotelId <= 0 || !$this->tablaExiste('hotel_usuarios')) {
+            return false;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT 1
+             FROM hotel_usuarios hu
+             INNER JOIN usuarios u
+                ON u.id = hu.usuario_id
+             WHERE hu.hotel_id = ?
+               AND hu.usuario_id = ?
+               AND hu.activo = 1
+               AND u.activo = 1
+             LIMIT 1",
+            [$hotelId, $usuarioId]
+        );
+
+        return $stmt !== false && (bool)$stmt->fetch();
+    }
+
     private function fetchOne(string $sql, array $params = []): array
     {
         $stmt = $this->db->query($sql, $params);
@@ -288,5 +510,40 @@ class Trabajador extends Model
     private function decimal($value): string
     {
         return number_format((float)($value ?? 0), 2, '.', '');
+    }
+
+    private function nullableFecha($value): ?string
+    {
+        $texto = trim((string)($value ?? ''));
+        if ($texto === '') {
+            return null;
+        }
+
+        $fecha = DateTime::createFromFormat('Y-m-d', $texto);
+        return $fecha && $fecha->format('Y-m-d') === $texto ? $texto : null;
+    }
+
+    private function nullablePeriodicidad($value): ?string
+    {
+        $texto = strtolower(trim((string)($value ?? '')));
+        return in_array($texto, ['semanal', 'quincenal', 'mensual', 'por_evento'], true)
+            ? $texto
+            : null;
+    }
+
+    private function nullableTexto($value, int $limite): ?string
+    {
+        $texto = $this->limpiarTexto($value, $limite);
+        return $texto === '' ? null : $texto;
+    }
+
+    private function limpiarTexto($value, int $limite): string
+    {
+        $texto = trim((string)($value ?? ''));
+        if (function_exists('mb_substr')) {
+            return mb_substr($texto, 0, $limite, 'UTF-8');
+        }
+
+        return substr($texto, 0, $limite);
     }
 }

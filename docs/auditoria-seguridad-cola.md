@@ -453,3 +453,18 @@ Estado: `CONTRATO_NP_B_CRUD_TRABAJADORES_COMPLETADO`.
   validacion de datos.
 - Caja, pagos, anticipos, prestamos, asistencia operativa, documentos laborales y
   `/api/sync` siguen fuera de alcance.
+
+### Auditoria NP-B-A CRUD trabajadores
+
+Estado: `CRUD_TRABAJADORES_NP_B_A_COMPLETADO_QA_DIFERIDA`.
+
+- Rutas POST nuevas: crear, actualizar, baja logica y reactivar trabajador.
+- Proteccion: sesion, contexto hotelero, modulo `usuarios`, permisos `usuarios.create`
+  / `usuarios.edit` y CSRF.
+- Aislamiento: modelo usa `hotel_id` del contexto y detalle/actualizacion por
+  `id + hotel_id`.
+- `usuario_id` opcional validado contra `hotel_usuarios` del mismo hotel.
+- No hay `DELETE FROM trabajadores`.
+- No hay escrituras en ledger laboral, Caja, CxP, pagos, anticipos, prestamos,
+  asistencia ni documentos laborales.
+- Auditoria con `AuditService` en crear/actualizar/baja/reactivar.

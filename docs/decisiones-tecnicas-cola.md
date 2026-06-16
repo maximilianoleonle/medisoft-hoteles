@@ -372,6 +372,14 @@
   profundos de Personal.
 - Reglas de formularios: POST + CSRF, sin forms anidados y sin acciones financieras.
 
+### Decision NP-B-A CRUD trabajadores
+
+- Se implementa baja logica con `estado = baja` y no con borrado fisico.
+- La reactivacion limpia `fecha_baja` para que el estado activo no conserve baja vigente.
+- La creacion de trabajadores no crea usuarios ni cambia `hotel_usuarios`.
+- `usuarios.create` protege alta; `usuarios.edit` protege edicion/baja/reactivacion.
+- La auditoria se integra sin bloquear si `logs_auditoria` no estuviera disponible.
+
 ### Decision sobre "responsable" de mantenimiento
 
 - En NP la referencia trabajador-responsable es **logica y opcional**, de solo lectura,

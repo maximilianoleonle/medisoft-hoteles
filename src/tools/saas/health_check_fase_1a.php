@@ -2329,7 +2329,13 @@ if (!is_file($routesPath)) {
 
     $workerExpectedRoutes = [
         ['method' => 'get', 'path' => 'trabajadores'],
+        ['method' => 'get', 'path' => 'trabajadores/crear'],
+        ['method' => 'post', 'path' => 'trabajadores'],
         ['method' => 'get', 'path' => 'trabajadores/{id:[0-9]+}'],
+        ['method' => 'get', 'path' => 'trabajadores/{id:[0-9]+}/editar'],
+        ['method' => 'post', 'path' => 'trabajadores/{id:[0-9]+}/actualizar'],
+        ['method' => 'post', 'path' => 'trabajadores/{id:[0-9]+}/baja-logica'],
+        ['method' => 'post', 'path' => 'trabajadores/{id:[0-9]+}/reactivar'],
     ];
     $missingWorkerRoutes = [];
     foreach ($workerExpectedRoutes as $expectedRoute) {
@@ -2339,31 +2345,42 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($missingWorkerRoutes)) {
-        hcOk('Rutas Personal NP-A read-only registradas: GET /trabajadores y GET /trabajadores/{id}.');
+        hcOk('Rutas Personal NP-B-A registradas: listado, detalle y CRUD basico de trabajador.');
     } else {
         hcWarning(
-            'Rutas Personal NP-A read-only faltantes: ' . implode(', ', $missingWorkerRoutes),
-            'Registrar solo rutas GET para listado/detalle; no exponer altas, pagos, nomina ni Caja.'
+            'Rutas Personal NP-B-A faltantes: ' . implode(', ', $missingWorkerRoutes),
+            'Registrar solo CRUD basico de trabajadores; sin pagos, nomina ni Caja.'
         );
     }
 
     $forbiddenWorkerRoutes = [];
+    $allowedWorkerRouteSignatures = [
+        'GET /trabajadores -> trabajador::index',
+        'GET /trabajadores/crear -> trabajador::crear',
+        'POST /trabajadores -> trabajador::guardar',
+        'GET /trabajadores/{id:[0-9]+} -> trabajador::ver',
+        'GET /trabajadores/{id:[0-9]+}/editar -> trabajador::editar',
+        'POST /trabajadores/{id:[0-9]+}/actualizar -> trabajador::actualizar',
+        'POST /trabajadores/{id:[0-9]+}/baja-logica -> trabajador::bajalogica',
+        'POST /trabajadores/{id:[0-9]+}/reactivar -> trabajador::reactivar',
+    ];
     foreach ($routes as $route) {
         $method = strtoupper((string) $route['method']);
         $path = strtolower(trim((string) $route['path'], '/'));
         $controller = strtolower((string) $route['controller']);
         $action = strtolower((string) $route['action']);
-        if ((strpos($path, 'trabajadores') !== false || $controller === 'trabajador') && $method !== 'GET') {
-            $forbiddenWorkerRoutes[] = $method . ' /' . $path . ' -> ' . $controller . '::' . $action;
+        $signature = $method . ' /' . $path . ' -> ' . $controller . '::' . $action;
+        if ((strpos($path, 'trabajadores') !== false || $controller === 'trabajador') && !in_array($signature, $allowedWorkerRouteSignatures, true)) {
+            $forbiddenWorkerRoutes[] = $signature;
         }
     }
 
     if (empty($forbiddenWorkerRoutes)) {
-        hcOk('Personal NP-A mantiene solo rutas GET; no hay POST de altas, pagos, asistencias ni documentos laborales.');
+        hcOk('Personal NP-B-A mantiene solo rutas autorizadas de CRUD basico; no hay pagos, asistencias ni documentos laborales.');
     } else {
         hcError(
-            'Personal NP-A tiene rutas operativas fuera de alcance: ' . implode(' | ', $forbiddenWorkerRoutes),
-            'Retirar rutas no GET hasta fase autorizada con backup y QA.'
+            'Personal NP-B-A tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenWorkerRoutes),
+            'Retirar rutas que no sean listado/detalle/crear/editar/baja/reactivar de trabajador.'
         );
     }
 
@@ -2573,33 +2590,49 @@ if (!is_file($routesPath)) {
             );
         }
 
-        $workerForbiddenWrite = preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(trabajadores|trabajador_pagos|trabajador_anticipos|trabajador_prestamos|trabajador_asistencias|trabajador_documentos|movimientos_caja|cajas|cortes_caja)\b/i', $workerCode)
-            || strpos($workerControllerCode, 'validateCSRF') !== false
-            || strpos($workerControllerCode, 'isPost') !== false
+        $workerForbiddenWrite = preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(trabajador_pagos|trabajador_anticipos|trabajador_prestamos|trabajador_asistencias|trabajador_documentos|movimientos_caja|cajas|cortes_caja)\b/i', $workerCode)
+            || preg_match('/\bDELETE\s+FROM\s+trabajadores\b/i', $workerCode)
             || strpos($workerCode, 'movimientos_caja') !== false;
 
         if (!$workerForbiddenWrite) {
-            hcOk('Personal NP-A UI mantiene capa read-only: sin escrituras, CSRF/POST, Caja ni Nomina operativa.');
+            hcOk('Personal NP-B-A escribe solo trabajadores; sin ledger laboral, Caja ni Nomina operativa.');
         } else {
             hcError(
-                'Personal NP-A UI contiene escrituras o referencias fuera de alcance.',
-                'Mantener Personal en GET/listado/detalle hasta autorizar altas, asistencias, nomina o Caja.'
+                'Personal NP-B-A contiene escrituras o referencias fuera de alcance.',
+                'Permitir solo INSERT/UPDATE en trabajadores; sin DELETE, ledger laboral ni Caja.'
             );
         }
 
         if (
             strpos($workerControllerCode, 'function indexAction') !== false
             && strpos($workerControllerCode, 'function verAction') !== false
+            && strpos($workerControllerCode, 'function crearAction') !== false
+            && strpos($workerControllerCode, 'function guardarAction') !== false
+            && strpos($workerControllerCode, 'function editarAction') !== false
+            && strpos($workerControllerCode, 'function actualizarAction') !== false
+            && strpos($workerControllerCode, 'function bajaLogicaAction') !== false
+            && strpos($workerControllerCode, 'function reactivarAction') !== false
             && strpos($workerControllerCode, "require_hotel_module('usuarios')") !== false
             && strpos($workerControllerCode, "require_permission('usuarios.view')") !== false
+            && (
+                strpos($workerControllerCode, "require_permission('usuarios.create')") !== false
+                || strpos($workerControllerCode, "requireWritePermission('usuarios.create')") !== false
+            )
+            && (
+                strpos($workerControllerCode, "require_permission('usuarios.edit')") !== false
+                || strpos($workerControllerCode, "requireWritePermission('usuarios.edit')") !== false
+            )
+            && strpos($workerControllerCode, 'validateCSRF') !== false
+            && strpos($workerControllerCode, 'AuditService::record') !== false
             && strpos($workerControllerCode, 'trabajadores/index') !== false
             && strpos($workerControllerCode, 'trabajadores/ver') !== false
+            && strpos($workerControllerCode, 'trabajadores/form') !== false
         ) {
-            hcOk('TrabajadorController NP-A expone solo listado/detalle bajo modulo usuarios y permiso usuarios.view.');
+            hcOk('TrabajadorController NP-B-A expone CRUD basico con permisos, CSRF y auditoria.');
         } else {
             hcWarning(
-                'TrabajadorController NP-A no muestra guardas o acciones read-only completas.',
-                'Validar requireAuth, require_hotel_context, require_hotel_module("usuarios"), require_permission("usuarios.view"), indexAction y verAction.'
+                'TrabajadorController NP-B-A no muestra guardas o acciones CRUD completas.',
+                'Validar requireAuth, hotel, modulo usuarios, permisos usuarios.create/edit, CSRF, auditoria y acciones crear/editar/baja/reactivar.'
             );
         }
     } else {
@@ -2609,33 +2642,42 @@ if (!is_file($routesPath)) {
         );
     }
 
-    if (is_file($workerIndexViewPath) && is_file($workerDetailViewPath)) {
+    $workerFormViewPath = $appRoot . '/app/views/trabajadores/form.php';
+    if (is_file($workerIndexViewPath) && is_file($workerDetailViewPath) && is_file($workerFormViewPath)) {
         $workerIndexViewCode = (string) file_get_contents($workerIndexViewPath);
         $workerDetailViewCode = (string) file_get_contents($workerDetailViewPath);
-        $workerViewsCode = $workerIndexViewCode . "\n" . $workerDetailViewCode;
+        $workerFormViewCode = (string) file_get_contents($workerFormViewPath);
+        $workerViewsCode = $workerIndexViewCode . "\n" . $workerDetailViewCode . "\n" . $workerFormViewCode;
 
         if (
             strpos($workerIndexViewCode, "action=\"<?= url('trabajadores') ?>\"") !== false
             && strpos($workerIndexViewCode, 'method="GET"') !== false
             && strpos($workerIndexViewCode, "url('trabajadores/' . (int)") !== false
+            && strpos($workerIndexViewCode, '/baja-logica') !== false
+            && strpos($workerIndexViewCode, '/reactivar') !== false
             && strpos($workerDetailViewCode, 'Solo lectura') !== false
+            && strpos($workerDetailViewCode, '/baja-logica') !== false
+            && strpos($workerDetailViewCode, '/reactivar') !== false
             && strpos($workerDetailViewCode, "url('trabajadores')") !== false
-            && stripos($workerViewsCode, 'method="POST"') === false
-            && stripos($workerViewsCode, 'csrf_field()') === false
+            && strpos($workerFormViewCode, 'method="POST"') !== false
+            && strpos($workerFormViewCode, 'name="nombre_completo"') !== false
+            && strpos($workerFormViewCode, 'csrf_field()') !== false
+            && substr_count($workerViewsCode, 'csrf_field()') >= 3
             && strpos($workerViewsCode, 'ruta_archivo') === false
             && strpos($workerViewsCode, 'movimientos_caja') === false
+            && strpos($workerViewsCode, 'cuentas_por_pagar') === false
         ) {
-            hcOk('Vistas Personal NP-A muestran listado/detalle con filtros GET, estado vacio y sin formularios POST.');
+            hcOk('Vistas Personal NP-B-A muestran CRUD basico con filtros GET, formularios POST+CSRF y sin Caja/pagos.');
         } else {
             hcWarning(
-                'Vistas Personal NP-A no muestran contrato read-only completo.',
-                'Asegurar filtros GET, enlaces a detalle, estado vacio, sin POST/CSRF y sin rutas internas de archivos.'
+                'Vistas Personal NP-B-A no muestran contrato CRUD completo.',
+                'Asegurar filtros GET, formulario POST+CSRF, baja/reactivar con CSRF, sin pagos/Caja ni rutas internas de archivos.'
             );
         }
     } else {
         hcWarning(
-            'Faltan vistas Personal NP-A read-only.',
-            'Crear app/views/trabajadores/index.php y ver.php antes de habilitar navegacion.'
+            'Faltan vistas Personal NP-B-A.',
+            'Crear index.php, ver.php y form.php antes de habilitar CRUD.'
         );
     }
 

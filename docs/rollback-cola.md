@@ -501,6 +501,14 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - No borrar tablas `trabajador*`.
 - No tocar Caja, `usuarios`, `hotel_usuarios` ni `/api/sync`.
 
+### NP-B-A CRUD trabajadores aplicado
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-np): add controlled worker CRUD`.
+- DB: no usar `DELETE`. Si se crearon trabajadores de prueba durante QA, aplicar baja
+  logica o restaurar backup autorizado.
+- Auditorias generadas por QA no deben borrarse sin autorizacion.
+
 ### Reglas duras de rollback NP
 
 - No borrar ni alterar `usuarios` ni `hotel_usuarios` durante ningun rollback NP.
