@@ -980,3 +980,9 @@ instruccion del usuario.
 - Confirmar estados vacios o datos correctos segun existan trabajadores.
 - Confirmar que no existen formularios POST, botones de nomina, pago, abono ni Caja.
 - Confirmar que HTTP sin sesion bloquea o redirige.
+
+### Estado NP-F-F
+
+- Bloque reporte Personal read-only cerrado tecnicamente.
+- QA manual sigue pendiente y diferida.
+- No avanzar a nomina, pagos reales, abonos/liquidaciones ni Caja desde este cierre.

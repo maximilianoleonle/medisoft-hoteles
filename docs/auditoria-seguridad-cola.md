@@ -806,3 +806,12 @@ Estado: `REPORTE_PERSONAL_NP_F_A_COMPLETADO_QA_DIFERIDA`.
 - No hay escrituras en `trabajador_*`, tareas, documentos, Caja ni `/api/sync`.
 - Riesgo residual: QA manual diferida y posibilidad de que usuarios interpreten saldos
   informativos como pagos reales; la vista mantiene copy explicito de no Caja/no nomina.
+
+## Auditoria NP-F-F cierre reporte Personal
+
+Estado: `BLOQUE_NP_F_REPORTE_PERSONAL_CERRADO_QA_DIFERIDA`.
+
+- Revision tecnica y auditoria completadas sin hallazgos bloqueantes.
+- Health/preflight validan que el reporte sea read-only y que no se agreguen rutas fuera
+  de alcance.
+- Riesgo residual: falta QA manual en navegador con datos reales de trabajadores.

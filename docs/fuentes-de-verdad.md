@@ -364,3 +364,5 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - NP-F-A implementa ese reporte sin crear fuente nueva: trabajadores en `trabajadores`,
   ledger en tablas `trabajador_*`, documentos en Centro Documental moderno y tareas en
   `tareas_operativas`; Caja no participa.
+- NP-F-F cierra el reporte sin cambiar fuentes de verdad ni convertir saldos laborales en
+  obligaciones pagables.

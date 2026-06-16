@@ -737,3 +737,13 @@ Estado: `REPORTE_PERSONAL_NP_F_A_COMPLETADO_QA_DIFERIDA`.
 - Consolida trabajadores, ledger laboral, asistencia, documentos y tareas asignadas.
 - No hay POST, nomina, pagos reales, abonos, Caja ni cambios en `/api/sync`.
 - QA manual queda diferida.
+
+## Cierre tecnico NP-F-F
+
+Estado: `BLOQUE_NP_F_REPORTE_PERSONAL_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_F_F_cierre_reporte_personal.md`.
+- Revision tecnica y auditoria de seguridad completadas para el reporte read-only.
+- No se agregaron funcionalidades nuevas en el cierre.
+- No hay nomina, pagos reales, abonos, Caja ni cambios en `/api/sync`.
+- QA manual queda diferida.

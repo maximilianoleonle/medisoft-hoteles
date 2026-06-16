@@ -725,3 +725,13 @@ agregar funcionalidades nuevas.
 - No agrega POST, nomina, pagos reales, abonos, Caja ni cambios en `/api/sync`.
 - QA manual queda diferida por instruccion del usuario.
 - Siguiente accion segura: revision tecnica/auditoria/cierre de NP-F-A.
+
+## Cierre tecnico NP-F-F
+
+- Estado formal: `BLOQUE_NP_F_REPORTE_PERSONAL_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_NP_F_F_cierre_reporte_personal.md`.
+- Revision tecnica y auditoria del reporte read-only completadas.
+- Verificaciones automaticas pasan con `ERROR: 0` y warnings historicos permitidos.
+- QA manual queda diferida.
+- No hay nomina, pagos reales, abonos, Caja ni cambios en `/api/sync`.
+- Siguiente accion segura: contrato documental independiente para el proximo bloque.

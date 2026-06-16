@@ -97,6 +97,16 @@ Estado actual: `REPORTE_PERSONAL_NP_F_A_COMPLETADO_QA_DIFERIDA`.
 - Health checker y preflight laboral conocen el contrato NP-F-A.
 - QA manual queda diferida por instruccion del usuario.
 
+## Cierre reporte Personal read-only
+
+Estado actual: `BLOQUE_NP_F_REPORTE_PERSONAL_CERRADO_QA_DIFERIDA`.
+
+- NP-F-A queda cerrado tecnicamente con revision/auditoria documental.
+- Verificaciones automaticas: lint PHP OK, preflight Personal `ERROR: 0`, health checker
+  `ERROR: 0`, HTTP sin sesion `303`, SQL read-only sin cambios operativos.
+- No hay nomina, pagos reales, abonos, Caja ni cambios en `/api/sync`.
+- QA manual queda diferida.
+
 ## Situacion historica
 
 El historial contiene commits que implementan partes de Fase 3C, pero el estado documental vigente no debe tratarlos como cierre formal completo.

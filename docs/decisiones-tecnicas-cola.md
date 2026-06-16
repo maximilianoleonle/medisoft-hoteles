@@ -644,3 +644,10 @@
   `usuarios` y permiso `usuarios.view`.
 - No se agrega filtro de hotel visible; el hotel sale del contexto de sesion.
 - El reporte muestra saldos como informacion laboral, no como deuda pagable.
+
+## Decision NP-F-F cierre reporte Personal
+
+- El reporte read-only se considera tecnicamente cerrado antes de abrir cualquier
+  operacion financiera laboral.
+- La QA manual queda diferida por instruccion del usuario, no sustituida por los checkers.
+- El siguiente bloque debe ser independiente y contractual para evitar alcance implicito.
