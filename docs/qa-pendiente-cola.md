@@ -1126,3 +1126,15 @@ instruccion del usuario.
 - Bloque preview mantenimiento programado cerrado tecnicamente.
 - QA manual sigue diferida por instruccion del usuario.
 - No avanzar a activacion manual/automatica sin contrato separado y QA explicita.
+
+### Estado MANT-E-0
+
+- Contrato de activacion manual completado.
+- No requiere QA de navegador porque no agrega codigo.
+- Una futura MANT-E-A si requerira QA manual obligatoria:
+  - activar un solo mantenimiento vencido/hoy de prueba;
+  - confirmar cambio a `en_proceso`;
+  - confirmar habitacion en `mantenimiento`;
+  - confirmar bloqueo de doble activacion;
+  - confirmar bloqueo con reservacion conflictiva;
+  - confirmar que no hay Caja, pagos, abonos, nomina, offline ni `/api/sync`.

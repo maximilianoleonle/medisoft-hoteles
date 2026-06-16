@@ -989,3 +989,14 @@ Estado: `BLOQUE_MANT_D_PREVIEW_VENCIDOS_CERRADO_QA_DIFERIDA`.
 - Health y preflight validan que MANT-D-A sigue GET/read-only.
 - No se agregan nuevas acciones ni automatizaciones en el cierre.
 - Riesgo residual: QA manual diferida y warning historico documentado.
+
+## Auditoria MANT-E-0
+
+Estado: `CONTRATO_MANT_E_0_ACTIVACION_MANUAL_COMPLETADO`.
+
+- Contrato documental sin codigo ni DB.
+- Riesgo principal: activar cambia dos fuentes operativas (`mantenimientos_habitaciones`
+  y `habitaciones`).
+- Mitigacion definida: solo accion manual individual, transaccion, CSRF, permiso,
+  auditoria, validacion de habitacion disponible y reservaciones conflictivas.
+- Automatizacion masiva/cron sigue prohibida.

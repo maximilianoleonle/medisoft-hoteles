@@ -903,3 +903,13 @@ agregar funcionalidades nuevas.
 - No agrega activacion, cron, escrituras, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.
 - Siguiente accion segura: contrato independiente para la proxima fase.
+
+## Contrato MANT-E-0 activacion manual
+
+- Estado formal: `CONTRATO_MANT_E_0_ACTIVACION_MANUAL_COMPLETADO`.
+- Documento creado: `docs/fase_MANT_E_0_contrato_activacion_manual_vencidos.md`.
+- No modifica codigo ni DB.
+- La futura activacion debe ser manual, individual, con CSRF, auditoria, transaccion y
+  QA manual explicita.
+- No se autoriza activacion masiva, automatica, cron ni `activarMantenimientosPendientes()`
+  desde web.

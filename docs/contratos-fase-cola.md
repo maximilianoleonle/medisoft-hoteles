@@ -1180,3 +1180,14 @@ Estado formal vigente: `BLOQUE_MANT_D_PREVIEW_VENCIDOS_CERRADO_QA_DIFERIDA`.
 - No agrega funcionalidades nuevas.
 - No autoriza activacion manual ni automatica.
 - Siguiente bloque debe iniciar con contrato independiente.
+
+### Estado MANT-E-0
+
+Estado formal vigente: `CONTRATO_MANT_E_0_ACTIVACION_MANUAL_COMPLETADO`.
+
+- Documento: `docs/fase_MANT_E_0_contrato_activacion_manual_vencidos.md`.
+- Define una futura activacion manual individual de mantenimientos vencidos/hoy.
+- No implementa rutas, botones, POST, migraciones ni escrituras.
+- Prohibe activacion masiva, automatica, cron y uso web de
+  `activarMantenimientosPendientes()`.
+- MANT-E-A futura requiere backup/checklist y QA manual explicita.

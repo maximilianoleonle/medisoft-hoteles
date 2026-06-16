@@ -897,3 +897,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-mant): close overdue maintenance preview`.
 - DB: no aplica; es cierre documental.
 - Mantener intacto MANT-D-A salvo que se revierta su commit especifico.
+
+### MANT-E-0 contrato activacion manual
+
+- Rollback documental: revertir el commit
+  `docs(phase-mant): define manual overdue maintenance activation contract`.
+- DB: no aplica; MANT-E-0 no crea rutas, migraciones ni datos.
+- Codigo: no aplica.

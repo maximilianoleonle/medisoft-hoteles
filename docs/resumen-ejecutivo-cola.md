@@ -1011,3 +1011,15 @@ Resultado MANT-D-F:
 - Warning residual historico documentado.
 - No se agregan nuevas funcionalidades ni activaciones.
 - Siguiente paso recomendado: contrato independiente antes de activar mantenimientos.
+
+Resultado MANT-E-0:
+
+- Estado tecnico: `CONTRATO_MANT_E_0_ACTIVACION_MANUAL_COMPLETADO`.
+- Documento: `docs/fase_MANT_E_0_contrato_activacion_manual_vencidos.md`.
+- Se define contrato para una futura activacion manual individual de mantenimientos
+  vencidos o para hoy.
+- No se modifica codigo ni DB.
+- Queda prohibida la activacion masiva/automatica y el uso web de
+  `activarMantenimientosPendientes()`.
+- Siguiente paso recomendado: MANT-E-A solo con backup/checklist y QA manual explicita,
+  o abrir otro bloque read-only independiente.

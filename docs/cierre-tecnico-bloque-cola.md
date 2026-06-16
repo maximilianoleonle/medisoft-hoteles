@@ -908,3 +908,13 @@ Estado: `BLOQUE_MANT_D_PREVIEW_VENCIDOS_CERRADO_QA_DIFERIDA`.
 - No hay activacion manual/automatica, cron, escrituras, Caja, pagos, abonos, nomina,
   offline ni `/api/sync`.
 - QA manual queda diferida.
+
+## Contrato tecnico MANT-E-0
+
+Estado: `CONTRATO_MANT_E_0_ACTIVACION_MANUAL_COMPLETADO`.
+
+- Documento: `docs/fase_MANT_E_0_contrato_activacion_manual_vencidos.md`.
+- Define condiciones para una futura activacion manual individual.
+- No modifica codigo ni DB.
+- No habilita POST ni botones.
+- No autoriza activacion automatica.

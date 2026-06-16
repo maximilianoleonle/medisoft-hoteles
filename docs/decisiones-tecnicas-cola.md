@@ -792,3 +792,12 @@
 - La QA manual queda diferida, pero no bloquea el cierre tecnico del preview read-only.
 - La activacion manual o automatica debe iniciar con contrato independiente y pruebas
   manuales explicitas.
+
+## Decision MANT-E-0
+
+- Si se implementa activacion, debe ser manual e individual; la activacion masiva queda
+  fuera por riesgo de disponibilidad.
+- No se debe conectar `activarMantenimientosPendientes()` a web, cron ni dashboard.
+- El contrato exige validar habitacion disponible, reservaciones conflictivas y ausencia
+  de otro mantenimiento `en_proceso` antes de escribir.
+- MANT-E-A no debe avanzar sin backup/checklist y QA manual explicita.
