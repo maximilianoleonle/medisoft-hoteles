@@ -1,6 +1,8 @@
 <?php
 
 require_once __DIR__ . '/../models/PwaPushSubscription.php';
+require_once __DIR__ . '/../models/HotelBranding.php';
+require_once __DIR__ . '/../helpers/branding.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
 
 class PwaPushService {
@@ -79,6 +81,8 @@ class PwaPushService {
             return ['sent' => 0, 'failed' => 0, 'skipped' => true];
         }
 
+        $payload = $this->agregarBrandingAlPayload($hotelId, $payload);
+
         $suscripciones = !empty($rolesDestino)
             ? $this->subscriptionModel->listarActivasPorHotelRoles($hotelId, $rolesDestino)
             : $this->subscriptionModel->listarActivasPorHotel($hotelId);
@@ -100,6 +104,86 @@ class PwaPushService {
         }
 
         return $resultado;
+    }
+
+    private function agregarBrandingAlPayload(int $hotelId, array $payload): array {
+        $branding = function_exists('hotel_branding') ? hotel_branding($hotelId) : [];
+
+        $icon = function_exists('hotel_branding_pwa_icon_asset_url')
+            ? (
+                hotel_branding_pwa_icon_asset_url($branding['pwa_icon_192_url'] ?? null, 192)
+                ?: hotel_branding_pwa_icon_asset_url($branding['pwa_icon_512_url'] ?? null, 512)
+            )
+            : null;
+
+        if (!$icon && function_exists('hotel_branding_asset_url')) {
+            $icon = hotel_branding_asset_url($branding['logo_url'] ?? null);
+        }
+
+        $payload['icon'] = $this->normalizarAssetPush($payload['icon'] ?? $icon ?? 'img/icons/icon-192x192.png');
+        $payload['badge'] = $this->normalizarAssetPush($payload['badge'] ?? $payload['icon'] ?? 'img/icons/icon-72x72.png');
+
+        return $payload;
+    }
+
+    private function normalizarAssetPush($url): string {
+        $url = trim((string)$url);
+        if ($url === '') {
+            return 'img/icons/icon-192x192.png';
+        }
+
+        $localAsset = $this->normalizarAssetPushLocal($url);
+        if ($localAsset !== null) {
+            return $localAsset;
+        }
+
+        if (preg_match('/^https?:\/\//i', $url)) {
+            return $url;
+        }
+
+        return ltrim($url, '/');
+    }
+
+    private function normalizarAssetPushLocal(string $url): ?string {
+        $partes = parse_url($url);
+        if ($partes === false) {
+            return null;
+        }
+
+        $path = (string)($partes['path'] ?? $url);
+        $path = ltrim(str_replace('\\', '/', $path), '/');
+        if (!$this->esRutaAssetPushLocalPermitida($path)) {
+            return null;
+        }
+
+        if (defined('PUBLIC_PATH') && !is_file(PUBLIC_PATH . '/' . $path)) {
+            return null;
+        }
+
+        $query = isset($partes['query']) && $partes['query'] !== ''
+            ? '?' . $partes['query']
+            : '';
+
+        return $path . $query;
+    }
+
+    private function esRutaAssetPushLocalPermitida(string $path): bool {
+        if ($path === '' || preg_match('/[\x00-\x1F<>"\']/', $path)) {
+            return false;
+        }
+
+        $extension = strtolower(pathinfo(parse_url($path, PHP_URL_PATH) ?: $path, PATHINFO_EXTENSION));
+        if (!in_array($extension, ['png', 'jpg', 'jpeg', 'webp', 'ico'], true)) {
+            return false;
+        }
+
+        foreach (['uploads/branding/', 'uploads/', 'img/icons/', 'img/'] as $prefijo) {
+            if (strpos($path, $prefijo) === 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function enviarWebPush(array $suscripcion, array $payload): array {

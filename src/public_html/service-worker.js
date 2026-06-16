@@ -192,10 +192,21 @@ self.addEventListener('push', event => {
     data = { body: 'Nueva notificacion de Medisoft Hoteles' };
   }
 
+  const notificationAsset = (value, fallback) => {
+    if (!value || typeof value !== 'string') return fallback;
+
+    try {
+      const url = new URL(value, BASE);
+      return url.origin === self.location.origin ? url.href : fallback;
+    } catch (error) {
+      return fallback;
+    }
+  };
+
   const options = {
     body: data.body || 'Nueva notificacion de Medisoft Hoteles',
-    icon: BASE + 'img/icons/icon-192x192.png',
-    badge: BASE + 'img/icons/icon-72x72.png',
+    icon: notificationAsset(data.icon, BASE + 'img/icons/icon-192x192.png'),
+    badge: notificationAsset(data.badge, BASE + 'img/icons/icon-72x72.png'),
     vibrate: [100, 50, 100],
     tag: data.tag || undefined,
     renotify: Boolean(data.tag),
