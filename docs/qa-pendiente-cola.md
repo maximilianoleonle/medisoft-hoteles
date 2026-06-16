@@ -955,3 +955,12 @@ instruccion del usuario.
 - Bloque de documentos laborales cerrado tecnicamente.
 - QA manual sigue pendiente y diferida.
 - No avanzar a reconciliacion de `trabajador_documentos` ni storage nuevo sin contrato.
+
+### Estado NP-E
+
+- Bloque Personal operativo base cerrado tecnicamente.
+- QA manual sigue pendiente y diferida.
+- Validar en navegador con un trabajador activo: ficha, concepto laboral, anticipo,
+  prestamo, asistencia, documento vinculado y ausencia de Caja/pagos/abonos.
+- No avanzar a nomina, pagos reales, abonos/liquidaciones ni reconciliacion documental
+  legacy sin contrato nuevo.

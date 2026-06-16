@@ -715,3 +715,15 @@ Estado: `BLOQUE_NP_D_DOCUMENTOS_LABORALES_CERRADO_QA_DIFERIDA`.
 - No se agregaron funcionalidades nuevas en el cierre.
 - No hay storage publico nuevo, Caja, pagos, abonos, nomina ni cambios en `/api/sync`.
 - QA manual queda diferida.
+
+## Cierre tecnico NP-E
+
+Estado: `BLOQUE_NP_PERSONAL_OPERATIVO_BASE_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_E_cierre_personal_operativo_base.md`.
+- Cierre paraguas del bloque Personal operativo base.
+- Incluye trabajadores, ledger read-only, conceptos laborales, anticipos/prestamos,
+  asistencia manual y documentos laborales contextuales.
+- No agrega funcionalidad nueva ni cambios de base de datos.
+- No hay nomina automatica, pagos reales, abonos, Caja ni cambios en `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.

@@ -619,3 +619,11 @@
 - Se cierra documentos laborales sin reconciliar `trabajador_documentos`.
 - No se asume que el cierre habilita migracion de archivos legacy.
 - Cualquier reconciliacion documental laboral debe ser contrato separado.
+
+## Decision NP-E cierre Personal operativo base
+
+- Se agrega un cierre paraguas documental para evitar que las subfases laborales se
+  interpreten como autorizacion de nomina o Caja.
+- El siguiente avance recomendado es lectura/reporte antes que nuevas escrituras.
+- QA manual queda diferida, no omitida definitivamente.
+- Cualquier integracion financiera laboral debe abrir contrato independiente.

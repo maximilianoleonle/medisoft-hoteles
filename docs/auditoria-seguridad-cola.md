@@ -775,3 +775,14 @@ Estado: `BLOQUE_NP_D_DOCUMENTOS_LABORALES_CERRADO_QA_DIFERIDA`.
 - QA manual queda diferida; no se marca validacion de usuario.
 - Riesgo residual: reconciliacion o retiro de `trabajador_documentos` requiere contrato
   nuevo.
+
+## Auditoria NP-E cierre Personal operativo base
+
+Estado: `BLOQUE_NP_PERSONAL_OPERATIVO_BASE_CERRADO_QA_DIFERIDA`.
+
+- Cierre documental; no agrega nuevas superficies de ataque.
+- No hay endpoints nuevos, migraciones ni escrituras adicionales.
+- Se mantiene separacion estricta entre ledger laboral informativo y Caja.
+- `/api/sync` queda fuera de alcance.
+- Riesgo residual principal: QA manual diferida con trabajador activo y posible confusion
+  operativa si conceptos/anticipos/prestamos se interpretan como pagos reales.

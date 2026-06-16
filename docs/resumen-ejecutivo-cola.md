@@ -59,6 +59,20 @@ Estado actual:
 - No se implementaron pagos ni Caja.
 - No avanzar a pagos, Caja ni Fase 3D.
 
+## Bloque Personal operativo base
+
+Estado actual: `BLOQUE_NP_PERSONAL_OPERATIVO_BASE_CERRADO_QA_DIFERIDA`.
+
+- Personal base, ledger laboral, conceptos manuales, anticipos/prestamos manuales,
+  asistencia manual y documentos laborales contextuales quedan cerrados tecnicamente.
+- El cierre paraguas queda documentado en
+  `docs/fase_NP_E_cierre_personal_operativo_base.md`.
+- No hay nomina automatica, pagos reales, abonos, Caja ni cambios en `/api/sync`.
+- QA manual queda diferida por instruccion del usuario porque no hay trabajadores locales
+  suficientes para validar todos los flujos en navegador.
+- Siguiente paso recomendado: contrato de reporte read-only de Personal antes de abrir
+  cualquier escritura nueva.
+
 ## Situacion historica
 
 El historial contiene commits que implementan partes de Fase 3C, pero el estado documental vigente no debe tratarlos como cierre formal completo.

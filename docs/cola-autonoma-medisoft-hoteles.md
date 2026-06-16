@@ -693,3 +693,14 @@ agregar funcionalidades nuevas.
 - Centro Documental moderno es la fuente; `trabajador_documentos` sigue congelada.
 - QA manual queda diferida.
 - Siguiente accion segura: contrato nuevo independiente para la siguiente necesidad.
+
+## Cierre tecnico NP-E Personal operativo base
+
+- Estado formal: `BLOQUE_NP_PERSONAL_OPERATIVO_BASE_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_NP_E_cierre_personal_operativo_base.md`.
+- Se cierra documentalmente el conjunto de Personal base, ledger laboral, conceptos,
+  anticipos/prestamos, asistencia manual y documentos laborales.
+- No agrega codigo, rutas, migraciones ni escrituras.
+- No hay nomina automatica, pagos reales, abonos, Caja ni cambios en `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.
+- Siguiente accion segura: contrato read-only de reporte de Personal, si se autoriza.

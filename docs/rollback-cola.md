@@ -738,3 +738,12 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-np): close worker document center block`.
 - DB: no aplica; es cierre documental.
 - Mantener intactos documentos y vinculos ya creados si existieran.
+
+### NP-E cierre tecnico Personal operativo base
+
+- Rollback documental: revertir el commit
+  `docs(phase-np): close personal base operations block`.
+- DB: no aplica; es cierre documental.
+- Para codigo o datos, usar los rollback granulares de NP-A, NP-B, NP-C y NP-D.
+- No tocar tablas `trabajador_*`, `documentos`, `documento_entidades`, Caja ni
+  `/api/sync` sin autorizacion nueva.

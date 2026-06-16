@@ -355,3 +355,6 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   reconciliacion autorizada.
 - NP-D-A implementa esa relacion moderna en la ficha de trabajador; los conteos de
   documentos laborales deben preferir `documento_entidades` sobre `trabajador_documentos`.
+- NP-E cierra el bloque Personal operativo base sin cambiar fuentes de verdad; el ledger
+  laboral sigue en tablas `trabajador_*`, documentos laborales siguen en Centro
+  Documental moderno y Caja no participa.
