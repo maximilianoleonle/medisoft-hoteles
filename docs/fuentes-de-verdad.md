@@ -187,7 +187,7 @@ Fuente de verdad:
 
 ## Archivado documental (Fase 4D)
 
-Estado formal: `CONTRATO_4D_ARCHIVADO_DOCUMENTAL_COMPLETADO`.
+Estado formal: `ARCHIVADO_DOCUMENTAL_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
 Fuente de verdad:
 
@@ -198,7 +198,9 @@ Fuente de verdad:
 - Archivar o eliminar logicamente no debe borrar `documentos`, `documento_entidades`
   ni archivos fisicos.
 - Cualquier cambio futuro de estado debe auditarse en `logs_auditoria`.
-- No hay Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync` en 4D-0.
+- 4D-A cambia estado solo con `Documento::actualizarEstado()` y auditoria
+  `documentos.estado_actualizado`.
+- No hay Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync` en 4D-A.
 
 ## Personal y Nomina (Fase NP)
 

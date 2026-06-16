@@ -158,3 +158,24 @@ documentos, relaciones ni archivos fisicos.
 Objetivo: implementar solo archivado/restauracion reversible (`activo <-> archivado`)
 con POST + CSRF, auditoria, filtro `hotel_id`, sin baja logica `eliminado`, sin borrado
 fisico, sin Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
+
+## Resultado Fase 4D-A
+
+Estado tecnico: `ARCHIVADO_DOCUMENTAL_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+
+Se implemento archivado/restauracion reversible con:
+
+- POST `/documentos/{id}/archivar`;
+- POST `/documentos/{id}/restaurar`;
+- CSRF obligatorio;
+- validacion central `Documento::actualizarEstado()`;
+- busqueda por `id + hotel_id`;
+- auditoria `documentos.estado_actualizado`;
+- botones visibles solo en detalle documental y segun estado.
+
+No se implemento baja logica `eliminado`, borrado fisico, `DELETE` SQL, reemplazo de
+archivo, links publicos, Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
+
+Documento de implementacion:
+
+- `docs/fase_4D_A_archivado_documental_controlado.md`.

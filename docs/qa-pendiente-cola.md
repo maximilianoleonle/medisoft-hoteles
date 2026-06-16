@@ -497,11 +497,24 @@ QA manual completada 4C-A:
 
 ## QA Fase 4D Archivado documental
 
-Estado: `CONTRATO_4D_ARCHIVADO_DOCUMENTAL_COMPLETADO`.
+Estado: `ARCHIVADO_DOCUMENTAL_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
 4D-0 es documentacion y diagnostico; no requiere QA en navegador.
 
-QA futura 4D-A:
+QA automatica completada 4D-A:
+
+- `php -l` en `Documento.php`, `DocumentoController.php`, `documentos/ver.php` y
+  `health_check_fase_1a.php`.
+- `health_check_fase_1a.php` debe detectar rutas, CSRF, auditoria y ausencia de
+  `DELETE FROM documentos`.
+- `git diff --check`.
+- SQL read-only antes/despues de QA manual para confirmar que no se borran documentos,
+  relaciones ni archivos.
+- HTTP sin sesion en `POST /documentos/1/archivar`: `303` a login.
+- Prueba transaccional con rollback: `activo -> archivado`, auditoria dentro de la
+  transaccion y rollback final sin persistir cambios.
+
+QA manual pendiente 4D-A:
 
 - Archivar documento activo cambia estado a `archivado`.
 - Restaurar documento archivado cambia estado a `activo`.

@@ -119,6 +119,16 @@ $documentoId = (int)($documento['id'] ?? 0);
     background: #fff;
     color: #334155;
 }
+.doc-detail-page .doc-btn-warning {
+    background: #fff7ed;
+    color: #9a3412;
+    border-color: #fed7aa;
+}
+.doc-detail-page .doc-btn-success {
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #a7f3d0;
+}
 .doc-detail-page .doc-badge {
     display: inline-flex;
     align-items: center;
@@ -198,6 +208,21 @@ $documentoId = (int)($documento['id'] ?? 0);
                         <i class="fas fa-download"></i>
                         Descargar
                     </a>
+                    <form method="POST" action="<?= url('documentos/' . $documentoId . '/archivar') ?>">
+                        <?= csrf_field() ?>
+                        <button class="doc-btn doc-btn-warning" type="submit" onclick="return confirm('¿Archivar este documento? Podras restaurarlo despues.');">
+                            <i class="fas fa-archive"></i>
+                            Archivar
+                        </button>
+                    </form>
+                <?php elseif (($documento['estado'] ?? '') === 'archivado'): ?>
+                    <form method="POST" action="<?= url('documentos/' . $documentoId . '/restaurar') ?>">
+                        <?= csrf_field() ?>
+                        <button class="doc-btn doc-btn-success" type="submit" onclick="return confirm('¿Restaurar este documento al estado activo?');">
+                            <i class="fas fa-rotate-left"></i>
+                            Restaurar
+                        </button>
+                    </form>
                 <?php endif; ?>
             </div>
             <span class="doc-badge">

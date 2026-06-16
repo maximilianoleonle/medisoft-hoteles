@@ -357,6 +357,21 @@ Resultado 4D-0:
 - Siguiente paso recomendado: `COLA_4D_A_ARCHIVADO_DOCUMENTAL_CONTROLADO`, solo si se
   autoriza implementacion.
 
+Resultado 4D-A:
+
+- Estado tecnico: `ARCHIVADO_DOCUMENTAL_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- Documento creado: `docs/fase_4D_A_archivado_documental_controlado.md`.
+- Rutas POST agregadas: `/documentos/{id}/archivar` y `/documentos/{id}/restaurar`.
+- Modelo central: `Documento::actualizarEstado()` valida `id + hotel_id` y solo permite
+  `activo <-> archivado`.
+- Vista de detalle muestra `Archivar` o `Restaurar` segun estado, con CSRF.
+- Auditoria: `documentos.estado_actualizado`.
+- No hay baja logica `eliminado`, borrado fisico, `DELETE`, Caja, pagos, abonos,
+  Fase 3D, NP-A ni cambios en `/api/sync`.
+- Verificacion automatica: `php -l`, health, preflights, HTTP sin sesion, SQL read-only,
+  prueba transaccional con rollback y `git diff --check`.
+- Pendiente: QA manual en navegador.
+
 ## Nuevo bloque Personal y Nomina (Fase NP)
 
 Objetivo: modulo INDEPENDIENTE de trabajadores con ledger laboral, saldos por persona,

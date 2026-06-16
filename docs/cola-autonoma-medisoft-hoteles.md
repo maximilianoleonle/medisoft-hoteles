@@ -4,15 +4,15 @@
 
 NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Centro Documental Base.
 
-Mensaje actual procesado: "Te autorizo"; se crea contrato 4D-0 para archivado
+Mensaje actual procesado: "Te autorizo, continua"; se implementa 4D-A archivado
 documental controlado.
 
 ## Estado vigente
 
 - Bloque actual: Fase 4D Archivado documental.
-- Fase actual: 4D-0 contrato y diagnostico.
+- Fase actual: 4D-A archivado/restauracion documental.
 - Riesgo: naranja.
-- Estado: `CONTRATO_4D_ARCHIVADO_DOCUMENTAL_COMPLETADO`.
+- Estado: `ARCHIVADO_DOCUMENTAL_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -111,8 +111,13 @@ documental controlado.
 - 4D-B queda diferido: baja logica hacia `eliminado` con confirmacion fuerte.
 - Sin codigo, sin DB, sin migraciones, sin rutas nuevas, sin Caja, pagos, abonos,
   Fase 3D, NP-A ni `/api/sync`.
-- Siguiente accion recomendada: `COLA_4D_A_ARCHIVADO_DOCUMENTAL_CONTROLADO`, solo si se
-  autoriza implementacion.
+- 4D-A implementado: POST `/documentos/{id}/archivar` y
+  `/documentos/{id}/restaurar`, CSRF, `Documento::actualizarEstado()`, auditoria
+  `documentos.estado_actualizado` y botones en detalle documental.
+- Verificacion 4D-A: `php -l`, health, preflights, HTTP sin sesion, SQL read-only,
+  prueba transaccional con rollback y `git diff --check` ejecutados sin errores
+  bloqueantes.
+- Siguiente accion recomendada: QA manual 4D-A en navegador.
 
 ## Reanclaje Fase 3C
 

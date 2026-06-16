@@ -524,6 +524,61 @@ class Documento extends Model
         ];
     }
 
+    public function actualizarEstado(int $id, int $hotelId, string $nuevoEstado, ?int $usuarioId = null): array
+    {
+        $id = $this->validarId($id, 'Documento invalido');
+        $hotelId = $this->validarId($hotelId, 'Hotel invalido');
+        $nuevoEstado = $this->normalizarEstadoCambio($nuevoEstado);
+
+        if (!$this->tablaExiste('documentos')) {
+            throw new Exception('Tabla documentos no disponible');
+        }
+
+        $antes = $this->buscarPorIdHotel($id, $hotelId);
+        if (!$antes) {
+            throw new Exception('Documento no encontrado para el hotel actual');
+        }
+
+        $estadoAntes = (string)($antes['estado'] ?? '');
+        if ($estadoAntes === 'eliminado') {
+            throw new Exception('Los documentos eliminados no se pueden restaurar en esta fase');
+        }
+
+        $transiciones = [
+            'activo' => ['archivado'],
+            'archivado' => ['activo'],
+        ];
+
+        if (!in_array($nuevoEstado, $transiciones[$estadoAntes] ?? [], true)) {
+            throw new Exception('Transicion de estado documental no permitida');
+        }
+
+        $stmt = $this->db->query(
+            "UPDATE documentos
+             SET estado = ?,
+                 updated_at = NOW()
+             WHERE id = ?
+               AND hotel_id = ?
+               AND estado = ?",
+            [$nuevoEstado, $id, $hotelId, $estadoAntes]
+        );
+
+        if ($stmt === false || $stmt->rowCount() < 1) {
+            throw new Exception('No se pudo actualizar el estado documental');
+        }
+
+        $despues = $this->buscarPorIdHotel($id, $hotelId);
+        $this->auditarEstadoActualizado($hotelId, $id, $usuarioId, $antes, $despues ?: []);
+
+        return [
+            'documento_id' => $id,
+            'hotel_id' => $hotelId,
+            'changed' => true,
+            'estado_antes' => $estadoAntes,
+            'estado_despues' => $nuevoEstado,
+        ];
+    }
+
     public function normalizarEntidadTipo(?string $entidadTipo): ?string
     {
         $entidadTipo = trim((string)$entidadTipo);
@@ -584,6 +639,16 @@ class Documento extends Model
         return in_array($estado, ['activo', 'archivado', 'eliminado', 'todos'], true)
             ? $estado
             : 'todos';
+    }
+
+    private function normalizarEstadoCambio(string $estado): string
+    {
+        $estado = trim($estado);
+        if (!in_array($estado, ['activo', 'archivado'], true)) {
+            throw new Exception('Estado documental no permitido en esta fase');
+        }
+
+        return $estado;
     }
 
     private function tablaExiste(string $tabla): bool
@@ -966,6 +1031,37 @@ class Documento extends Model
             ]);
         } catch (Throwable $e) {
             error_log('No se pudo auditar metadata documental: ' . $e->getMessage());
+        }
+    }
+
+    private function auditarEstadoActualizado(int $hotelId, int $documentoId, ?int $usuarioId, array $antes, array $despues): void
+    {
+        $estadoAntes = (string)($antes['estado'] ?? '');
+        $estadoDespues = (string)($despues['estado'] ?? '');
+        if ($estadoAntes === '' || $estadoDespues === '' || $estadoAntes === $estadoDespues) {
+            return;
+        }
+
+        try {
+            AuditService::record('documentos.estado_actualizado', [
+                'hotel_id' => $hotelId,
+                'usuario_id' => $this->normalizarUsuarioId($usuarioId),
+                'entidad_tipo' => 'documento',
+                'entidad_id' => (string)$documentoId,
+                'descripcion' => 'Estado documental actualizado',
+                'datos_antes' => [
+                    'documento_id' => $documentoId,
+                    'estado' => $estadoAntes,
+                    'titulo' => $this->limitarTexto($antes['titulo'] ?? null, 180),
+                ],
+                'datos_despues' => [
+                    'documento_id' => $documentoId,
+                    'estado' => $estadoDespues,
+                    'titulo' => $this->limitarTexto($despues['titulo'] ?? null, 180),
+                ],
+            ]);
+        } catch (Throwable $e) {
+            error_log('No se pudo auditar estado documental: ' . $e->getMessage());
         }
     }
 }

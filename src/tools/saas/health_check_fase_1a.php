@@ -3596,6 +3596,38 @@ if (!is_file($routesPath)) {
         );
     }
 
+    $documentoDetailViewPath = $appRoot . '/app/views/documentos/ver.php';
+    $documentoDetailViewCode = is_file($documentoDetailViewPath)
+        ? (string) file_get_contents($documentoDetailViewPath)
+        : '';
+
+    if (
+        hcRoutePatternExists($routes, 'documentos/1/archivar', 'post')
+        && hcRoutePatternExists($routes, 'documentos/1/restaurar', 'post')
+        && $documentoControllerCode !== ''
+        && $documentoModelCode !== ''
+        && $documentoDetailViewCode !== ''
+        && strpos($documentoControllerCode, 'archivarAction') !== false
+        && strpos($documentoControllerCode, 'restaurarAction') !== false
+        && strpos($documentoControllerCode, 'validateCSRF') !== false
+        && strpos($documentoModelCode, 'actualizarEstado') !== false
+        && strpos($documentoModelCode, 'documentos.estado_actualizado') !== false
+        && strpos($documentoModelCode, "'activo' => ['archivado'],") !== false
+        && strpos($documentoModelCode, "'archivado' => ['activo'],") !== false
+        && strpos($documentoDetailViewCode, "method=\"POST\"") !== false
+        && strpos($documentoDetailViewCode, "csrf_field()") !== false
+        && strpos($documentoDetailViewCode, "/archivar") !== false
+        && strpos($documentoDetailViewCode, "/restaurar") !== false
+        && strpos($documentoModelCode, 'DELETE FROM documentos') === false
+    ) {
+        hcOk('Centro Documental Fase 4D-A archiva/restaura con POST, CSRF, transiciones centrales y auditoria sin borrar archivos.');
+    } else {
+        hcWarning(
+            'Centro Documental Fase 4D-A no muestra contrato completo de archivado reversible.',
+            'Validar POST /documentos/{id}/archivar y /restaurar, CSRF, Documento::actualizarEstado(), auditoria documentos.estado_actualizado y ausencia de borrado fisico.'
+        );
+    }
+
     $documentosEntidadPartialPath = $appRoot . '/app/views/partials/documentos_entidad.php';
     $documentosEntidadPartialCode = is_file($documentosEntidadPartialPath)
         ? (string) file_get_contents($documentosEntidadPartialPath)

@@ -493,6 +493,28 @@ Documento:
 
 - `docs/fase_4D_0_contrato_archivado_documental.md`.
 
+## Fase 4D-A: Archivado/restauracion documental
+
+Estado formal vigente: `ARCHIVADO_DOCUMENTAL_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+
+Alcance implementado:
+
+- POST `/documentos/{id}/archivar`.
+- POST `/documentos/{id}/restaurar`.
+- Transiciones permitidas: `activo -> archivado` y `archivado -> activo`.
+- Validacion central en `Documento::actualizarEstado()`.
+- Auditoria `documentos.estado_actualizado`.
+- Acciones visibles solo en detalle documental y con CSRF.
+
+Fuera de alcance:
+
+- Baja logica hacia `eliminado`, borrado fisico, `DELETE` SQL, reemplazo de archivo,
+  links publicos, Caja, pagos, abonos, Fase 3D, NP-A y `/api/sync`.
+
+Documento:
+
+- `docs/fase_4D_A_archivado_documental_controlado.md`.
+
 ## Bloque Personal y Nomina (Fase NP): modulo independiente de trabajadores
 
 ### Objetivo

@@ -400,6 +400,17 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   y backup previo si se autoriza explicitamente.
 - No borrar archivos fisicos bajo `src/storage/documentos/`.
 
+### 4D-A archivado/restauracion documental
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-4d): add controlled document archival`.
+- DB: no borrar filas. Si un documento fue archivado durante QA, restaurarlo desde la
+  UI con `POST /documentos/{id}/restaurar`.
+- Si un documento fue restaurado durante QA y debe volver a archivado, usar la accion
+  `POST /documentos/{id}/archivar`.
+- No usar `DELETE` sobre `documentos`, `documento_entidades` ni `logs_auditoria`.
+- No borrar archivos fisicos bajo `src/storage/documentos/`.
+
 ### Fases futuras
 
 - Antes de migracion o escritura: backup fresco.

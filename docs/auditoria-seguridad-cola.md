@@ -314,7 +314,7 @@ Estado: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_VALIDADA_MANUALMENTE`.
 
 ## Fase 4D Archivado documental - auditoria de contrato
 
-Estado: `CONTRATO_4D_ARCHIVADO_DOCUMENTAL_COMPLETADO`.
+Estado: `ARCHIVADO_DOCUMENTAL_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
 - 4D-0 no agrega rutas, controladores, modelos, vistas ni DB.
 - Riesgo principal futuro: cambiar estado de documentos de otro hotel si no se valida
@@ -326,6 +326,10 @@ Estado: `CONTRATO_4D_ARCHIVADO_DOCUMENTAL_COMPLETADO`.
 - No usar `DELETE` sobre `documentos` o `documento_entidades`.
 - No mostrar `storage_path`, `nombre_archivo`, rutas absolutas ni links publicos.
 - Sin Caja, pagos, abonos, Fase 3D, NP-A, PWA/offline ni `/api/sync`.
+- 4D-A implementa solo `activo <-> archivado`; la baja logica `eliminado` sigue fuera
+  de alcance.
+- Verificacion automatica completada sin errores bloqueantes; queda pendiente QA manual
+  en navegador.
 
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 

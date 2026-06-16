@@ -149,6 +149,16 @@ class DocumentoController extends Controller
         }
     }
 
+    public function archivarAction(): void
+    {
+        $this->cambiarEstadoAction('archivado', 'Documento archivado correctamente.');
+    }
+
+    public function restaurarAction(): void
+    {
+        $this->cambiarEstadoAction('activo', 'Documento restaurado correctamente.');
+    }
+
     public function subirAction(): void
     {
         $hotelId = $this->hotelIdActual();
@@ -262,6 +272,33 @@ class DocumentoController extends Controller
             'descripcion' => $this->getPost('descripcion', ''),
             'etiquetas' => $this->getPost('etiquetas', ''),
         ];
+    }
+
+    private function cambiarEstadoAction(string $nuevoEstado, string $mensajeExito): void
+    {
+        if (!$this->isPost()) {
+            $this->redirect('documentos');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        $id = (int)($this->route_params['id'] ?? 0);
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            $this->documentoModel->actualizarEstado(
+                $id,
+                $hotelId,
+                $nuevoEstado,
+                $this->usuarioIdActual()
+            );
+            set_mensaje($mensajeExito, 'success');
+            $this->redirect('documentos/' . $id);
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo actualizar el estado documental: ' . $e->getMessage(), 'error');
+            $this->redirect($id > 0 ? 'documentos/' . $id : 'documentos');
+        }
     }
 
     private function contextoEntidadDesdeRequest(int $hotelId, bool $validarExistencia): array|false|null

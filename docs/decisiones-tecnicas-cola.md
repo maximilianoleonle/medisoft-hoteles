@@ -275,6 +275,17 @@
 - No se autoriza borrado fisico, `DELETE` SQL, reemplazo de archivo, links publicos,
   Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
 
+### Fase 4D-A archivado documental controlado
+
+- Estado formal vigente: `ARCHIVADO_DOCUMENTAL_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- Se implementa solo `activo <-> archivado`; `eliminado` queda fuera para evitar baja
+  logica irreversible o ambigua.
+- Las acciones viven en el detalle documental, no en listados masivos.
+- Se usa POST + CSRF y confirmacion del navegador para reducir clic accidental.
+- La vista no acepta `estado` libre; el controlador decide el estado objetivo y el
+  modelo valida la transicion.
+- La auditoria usa `documentos.estado_actualizado` con estado antes/despues seguro.
+
 ### Decisiones de diagnostico NP-0
 
 - Hoy "trabajador" = `usuarios` (tabla global, sin `hotel_id`, `rol` de sistema) + pivote
