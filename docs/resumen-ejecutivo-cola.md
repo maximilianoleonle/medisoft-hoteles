@@ -275,6 +275,8 @@ Resultado 4B-C-A:
   update real + auditoria + rollback sin persistencia.
 - Quedan prohibidos reemplazo de archivo, cambio de storage, borrado, links publicos,
   Caja, pagos, abonos y `/api/sync`.
+- QA manual 4B-C-A reportada por el usuario como correcta.
+- Estado formal: `METADATA_DOCUMENTAL_4B_C_A_VALIDADA_MANUALMENTE`.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

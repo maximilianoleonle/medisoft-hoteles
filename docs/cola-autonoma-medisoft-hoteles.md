@@ -11,7 +11,7 @@ Mensaje actual procesado: "Hagamoslo"; se implementa Fase 4B-C-A edicion control
 - Bloque actual: Fase 4B Descarga segura de documentos.
 - Fase actual: 4B-C contrato de edicion controlada de metadata documental.
 - Riesgo: naranja.
-- Estado: `METADATA_DOCUMENTAL_4B_C_A_COMPLETADA_QA_MANUAL_PENDIENTE`.
+- Estado: `METADATA_DOCUMENTAL_4B_C_A_VALIDADA_MANUALMENTE`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -65,7 +65,7 @@ Mensaje actual procesado: "Hagamoslo"; se implementa Fase 4B-C-A edicion control
 - Verificacion 4B-B: `documentos.descargado=1`, `documentos.descarga_bloqueada=1`,
   `cuentas_por_pagar_movimientos=0`, `movimientos_caja=1403`.
 - Prohibido: links publicos, edicion, borrado, Caja, pagos, abonos, PWA/offline, Fase 3D y `/api/sync`.
-- Siguiente accion: QA manual de edicion controlada de metadata documental.
+- Siguiente accion: revision tecnica, auditoria de seguridad y cierre documental de Fase 4B.
 
 ## Reanclaje Fase 3C
 
@@ -242,4 +242,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Siguiente paso formal recomendado: QA manual de 4B-C-A antes de avanzar a borrado, links publicos, reemplazo de archivos, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Siguiente paso formal recomendado: cerrar Fase 4B con revision tecnica y auditoria de seguridad antes de considerar borrado, links publicos, reemplazo de archivos, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

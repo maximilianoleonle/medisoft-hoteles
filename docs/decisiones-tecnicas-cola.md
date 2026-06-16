@@ -222,7 +222,7 @@
 
 ### Fase 4B-C-A metadata documental
 
-- Estado formal vigente: `METADATA_DOCUMENTAL_4B_C_A_COMPLETADA_QA_MANUAL_PENDIENTE`.
+- Estado formal vigente: `METADATA_DOCUMENTAL_4B_C_A_VALIDADA_MANUALMENTE`.
 - La edicion permitida es solo metadata segura.
 - No se deben editar archivo fisico, storage, hash, MIME, tamano ni hotel.
 - El POST usa CSRF y auditoria diferencial.

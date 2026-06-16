@@ -381,7 +381,7 @@ Resultado manual:
 - No autoriza edicion, borrado, links publicos, pagos, abonos, Caja ni cambios en
   `/api/sync`.
 
-### QA manual pendiente 4B-C-A metadata documental
+### QA manual completada 4B-C-A metadata documental
 
 Resultado automatico:
 
@@ -392,16 +392,15 @@ Resultado automatico:
 - Prueba transaccional de cambio real genero `documentos.metadata_actualizada` dentro
   de transaccion y rollback dejo metadata/auditoria sin cambios persistidos.
 
-Validacion manual recomendada:
+Validacion manual reportada por el usuario:
 
-- GET de formulario protegido debe requerir sesion.
-- POST sin sesion debe redirigir/bloquear.
-- POST sin CSRF valido debe fallar limpiamente.
-- Editar `titulo`, `descripcion`, `etiquetas` o tipo documental debe conservar archivo,
-  `storage_path`, `nombre_archivo`, `sha256`, `mime_type`, `size_bytes` y `hotel_id`.
-- Auditoria `documentos.metadata_actualizada` debe registrar antes/despues seguro.
-- Confirmar que no aparecen acciones de borrado, reemplazo de archivo, links publicos,
-  pagos, abonos, Caja ni `/api/sync`.
+- El usuario confirmo que la prueba manual fue correcta.
+- El formulario de edicion de metadata documental funciona.
+- Editar metadata conserva archivo, storage privado, `storage_path`, `nombre_archivo`,
+  `sha256`, `mime_type`, `size_bytes`, `hotel_id` y relaciones.
+- No aparecen acciones de borrado, reemplazo de archivo, links publicos, pagos, abonos,
+  Caja ni `/api/sync`.
+- Estado formal: `METADATA_DOCUMENTAL_4B_C_A_VALIDADA_MANUALMENTE`.
 
 ### QA critica futura
 

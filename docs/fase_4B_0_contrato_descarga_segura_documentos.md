@@ -281,7 +281,7 @@ manualmente sin autorizar edicion, borrado, links publicos, Caja, pagos, abonos 
 
 ## Fase 4B-C - Contrato de edicion controlada de metadata documental
 
-Estado: `METADATA_DOCUMENTAL_4B_C_A_COMPLETADA_QA_MANUAL_PENDIENTE`.
+Estado: `METADATA_DOCUMENTAL_4B_C_A_VALIDADA_MANUALMENTE`.
 
 Objetivo:
 
@@ -377,11 +377,9 @@ Verificacion automatica:
   warnings conocidos.
 - `git diff --check`: OK.
 
-QA manual pendiente:
+QA manual completada:
 
-1. Abrir `/documentos/{id}/editar`.
-2. Confirmar que el formulario solo muestra campos de metadata segura.
-3. Guardar un cambio menor de titulo o descripcion.
-4. Confirmar redireccion a `/documentos/{id}` y metadata actualizada.
-5. Confirmar auditoria `documentos.metadata_actualizada`.
-6. Confirmar que descarga, archivo, hash, MIME, tamano, hotel y vinculos siguen intactos.
+1. El usuario confirmo que la prueba manual fue correcta.
+2. La edicion desde `/documentos/{id}/editar` funciona.
+3. La metadata se actualiza sin cambiar descarga, archivo, hash, MIME, tamano, hotel ni vinculos.
+4. No aparecen acciones de borrado, reemplazo de archivo, links publicos, pagos, abonos, Caja ni `/api/sync`.

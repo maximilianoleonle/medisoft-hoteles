@@ -269,7 +269,7 @@ Estado: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
 
 ### Auditoria 4B-C-A
 
-- Estado: `METADATA_DOCUMENTAL_4B_C_A_COMPLETADA_QA_MANUAL_PENDIENTE`.
+- Estado: `METADATA_DOCUMENTAL_4B_C_A_VALIDADA_MANUALMENTE`.
 - La edicion se limita a metadata segura; nunca archivo fisico ni rutas internas.
 - `storage_path`, `nombre_archivo`, `sha256`, `mime_type`, `size_bytes` y `hotel_id`
   quedan fuera del formulario y del update.
