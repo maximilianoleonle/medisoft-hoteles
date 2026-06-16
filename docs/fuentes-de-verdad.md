@@ -185,6 +185,21 @@ Fuente de verdad:
 - QA manual post-hotfix confirmo el flujo contextual de vinculacion documental.
 - No hay edicion, borrado ni reemplazo de archivo desde fichas de entidad.
 
+## Archivado documental (Fase 4D)
+
+Estado formal: `CONTRATO_4D_ARCHIVADO_DOCUMENTAL_COMPLETADO`.
+
+Fuente de verdad:
+
+- El estado documental vive en `documentos.estado`.
+- Estados validos actuales: `activo`, `archivado`, `eliminado`.
+- La metadata y archivo fisico siguen en `documentos` + `STORAGE_PATH/documentos`.
+- Las relaciones se mantienen en `documento_entidades`.
+- Archivar o eliminar logicamente no debe borrar `documentos`, `documento_entidades`
+  ni archivos fisicos.
+- Cualquier cambio futuro de estado debe auditarse en `logs_auditoria`.
+- No hay Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync` en 4D-0.
+
 ## Personal y Nomina (Fase NP)
 
 Fuente nueva e independiente (modulo de trabajadores):

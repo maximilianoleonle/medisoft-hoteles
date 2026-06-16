@@ -312,6 +312,21 @@ Estado: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_VALIDADA_MANUALMENTE`.
 - La validacion manual confirma que el enlace contextual no introdujo escrituras nuevas
   fuera del flujo de carga documental ya existente y protegido.
 
+## Fase 4D Archivado documental - auditoria de contrato
+
+Estado: `CONTRATO_4D_ARCHIVADO_DOCUMENTAL_COMPLETADO`.
+
+- 4D-0 no agrega rutas, controladores, modelos, vistas ni DB.
+- Riesgo principal futuro: cambiar estado de documentos de otro hotel si no se valida
+  `id + hotel_id`.
+- Control requerido: transiciones centralizadas en modelo/servicio y nunca desde la
+  vista.
+- Toda accion futura debe ser POST + CSRF.
+- La baja logica no debe borrar archivos fisicos ni relaciones.
+- No usar `DELETE` sobre `documentos` o `documento_entidades`.
+- No mostrar `storage_path`, `nombre_archivo`, rutas absolutas ni links publicos.
+- Sin Caja, pagos, abonos, Fase 3D, NP-A, PWA/offline ni `/api/sync`.
+
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 
 ### Estado NP-0

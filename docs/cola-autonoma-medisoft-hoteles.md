@@ -4,15 +4,15 @@
 
 NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Centro Documental Base.
 
-Mensaje actual procesado: "Continua, todo funciona a la perfeccion"; se registra QA
-manual completada de 4C-A documentos por entidad.
+Mensaje actual procesado: "Te autorizo"; se crea contrato 4D-0 para archivado
+documental controlado.
 
 ## Estado vigente
 
-- Bloque actual: Fase 4C Documentos por entidad.
-- Fase actual: cierre tecnico de 4C-A secciones documentales contextuales por entidad.
+- Bloque actual: Fase 4D Archivado documental.
+- Fase actual: 4D-0 contrato y diagnostico.
 - Riesgo: naranja.
-- Estado: `CIERRE_TECNICO_4C_COMPLETADO_QA_MANUAL_VALIDADA`.
+- Estado: `CONTRATO_4D_ARCHIVADO_DOCUMENTAL_COMPLETADO`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -98,6 +98,21 @@ manual completada de 4C-A documentos por entidad.
 - Cierre tecnico 4C: documentado en `docs/cierre-tecnico-bloque-cola.md`.
 - Siguiente accion recomendada: nuevo bloque explicito; no avanzar automaticamente a
   borrado, reemplazo, links publicos, Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
+
+## Fase 4D Archivado documental
+
+- 4D-0 contrato y diagnostico: completado documentalmente.
+- Documento: `docs/fase_4D_0_contrato_archivado_documental.md`.
+- Diagnostico: `documentos.estado` ya soporta `activo`, `archivado` y `eliminado`;
+  todavia no hay accion formal de archivado, restauracion ni baja logica.
+- Regla central futura: cambio de estado solo por POST + CSRF, busqueda `id + hotel_id`,
+  auditoria antes/despues y sin borrar archivos fisicos.
+- 4D-A recomendado: archivado/restauracion reversible (`activo <-> archivado`).
+- 4D-B queda diferido: baja logica hacia `eliminado` con confirmacion fuerte.
+- Sin codigo, sin DB, sin migraciones, sin rutas nuevas, sin Caja, pagos, abonos,
+  Fase 3D, NP-A ni `/api/sync`.
+- Siguiente accion recomendada: `COLA_4D_A_ARCHIVADO_DOCUMENTAL_CONTROLADO`, solo si se
+  autoriza implementacion.
 
 ## Reanclaje Fase 3C
 

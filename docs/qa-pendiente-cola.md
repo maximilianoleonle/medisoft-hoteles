@@ -495,6 +495,31 @@ QA manual completada 4C-A:
 - Reportes seguros siguen descargando.
 - Login/logout normal.
 
+## QA Fase 4D Archivado documental
+
+Estado: `CONTRATO_4D_ARCHIVADO_DOCUMENTAL_COMPLETADO`.
+
+4D-0 es documentacion y diagnostico; no requiere QA en navegador.
+
+QA futura 4D-A:
+
+- Archivar documento activo cambia estado a `archivado`.
+- Restaurar documento archivado cambia estado a `activo`.
+- Acciones usan POST + CSRF.
+- HTTP sin sesion bloquea o redirige.
+- Documento de otro hotel no puede cambiar estado.
+- Se registra auditoria `documentos.estado_actualizado` con antes/despues.
+- No se borra archivo fisico.
+- No se borran filas en `documentos` ni `documento_entidades`.
+- No se exponen `storage_path`, `nombre_archivo`, rutas absolutas ni links publicos.
+- No hay Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
+
+QA futura 4D-B:
+
+- Baja logica hacia `eliminado` requiere confirmacion fuerte.
+- Documento eliminado bloquea edicion y descarga.
+- Recuperacion desde `eliminado` queda fuera de alcance salvo contrato separado.
+
 ## QA Bloque Personal y Nomina (Fase NP)
 
 ### Estado NP-0

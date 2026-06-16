@@ -262,6 +262,19 @@
 - No se agrega metadata edit, borrado ni reemplazo desde fichas para mantener el
   alcance controlado.
 
+### Fase 4D-0 archivado documental
+
+- Estado formal vigente: `CONTRATO_4D_ARCHIVADO_DOCUMENTAL_COMPLETADO`.
+- Se elige archivado/restauracion reversible antes que baja logica porque reduce riesgo
+  y aprovecha `documentos.estado = activo/archivado/eliminado` ya existente.
+- 4D-0 no agrega codigo ni DB; solo define contrato, transiciones y controles.
+- La implementacion futura debe validar transiciones en modelo/servicio central, no en
+  vistas.
+- Toda accion futura debe ser POST + CSRF, buscar por `id + hotel_id` y auditar
+  antes/despues.
+- No se autoriza borrado fisico, `DELETE` SQL, reemplazo de archivo, links publicos,
+  Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
+
 ### Decisiones de diagnostico NP-0
 
 - Hoy "trabajador" = `usuarios` (tabla global, sin `hotel_id`, `rol` de sistema) + pivote

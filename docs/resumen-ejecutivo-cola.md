@@ -336,6 +336,27 @@ Resultado 4C-A:
   avanzar automaticamente a borrado, reemplazo, links publicos, Caja, pagos, abonos,
   Fase 3D, NP-A ni `/api/sync`.
 
+## Nuevo bloque Fase 4D Archivado documental
+
+Estado: `CONTRATO_4D_ARCHIVADO_DOCUMENTAL_COMPLETADO`.
+
+Objetivo: preparar una fase segura para archivar, restaurar y eventualmente dar baja
+logica a documentos sin borrar archivos fisicos ni registros.
+
+Resultado 4D-0:
+
+- Documento creado: `docs/fase_4D_0_contrato_archivado_documental.md`.
+- Diagnostico confirma que `documentos.estado` ya soporta `activo`, `archivado` y
+  `eliminado`.
+- Se define 4D-A como archivado/restauracion reversible (`activo <-> archivado`) con
+  POST + CSRF, auditoria y filtro `hotel_id`.
+- Se deja 4D-B como baja logica futura hacia `eliminado`, con confirmacion fuerte y
+  sin borrado fisico.
+- No hay codigo, rutas nuevas, POST nuevo, DB, migraciones, Caja, pagos, abonos,
+  Fase 3D, NP-A ni cambios en `/api/sync`.
+- Siguiente paso recomendado: `COLA_4D_A_ARCHIVADO_DOCUMENTAL_CONTROLADO`, solo si se
+  autoriza implementacion.
+
 ## Nuevo bloque Personal y Nomina (Fase NP)
 
 Objetivo: modulo INDEPENDIENTE de trabajadores con ledger laboral, saldos por persona,

@@ -469,6 +469,30 @@ Documento:
 
 - `docs/fase_4C_A_documentos_entidad_readonly.md`.
 
+## Fase 4D-0: Archivado documental
+
+Estado formal vigente: `CONTRATO_4D_ARCHIVADO_DOCUMENTAL_COMPLETADO`.
+
+Objetivo:
+
+- Definir archivado/restauracion y baja logica futura de documentos.
+- Mantener todo reversible por estado; sin borrado fisico.
+- No implementar funcionalidad en 4D-0; solo contrato y diagnostico.
+
+Alcance futuro propuesto:
+
+- 4D-A: `activo <-> archivado` con POST + CSRF, filtro `hotel_id` y auditoria.
+- 4D-B: baja logica hacia `eliminado` con confirmacion fuerte, si se autoriza despues.
+
+Fuera de alcance:
+
+- Borrado fisico, `DELETE` SQL, reemplazo de archivo, links publicos, Caja, pagos,
+  abonos, Fase 3D, NP-A, PWA/offline y `/api/sync`.
+
+Documento:
+
+- `docs/fase_4D_0_contrato_archivado_documental.md`.
+
 ## Bloque Personal y Nomina (Fase NP): modulo independiente de trabajadores
 
 ### Objetivo

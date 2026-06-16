@@ -384,6 +384,22 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   metadata) porque pertenecen a 4A/4B.
 - No borrar archivos fisicos bajo `src/storage/documentos/`.
 
+### 4D-0 archivado documental
+
+- Rollback documental: revertir el commit
+  `docs(phase-4d): define document archival contract`.
+- DB: no aplica; 4D-0 no escribe datos ni crea migraciones.
+- Codigo: no aplica; 4D-0 no toca rutas, controladores, modelos ni vistas.
+- No borrar documentos, relaciones, auditorias ni archivos en `src/storage/documentos/`.
+
+### 4D-A/4D-B futuras
+
+- Revertir por commit de implementacion.
+- No usar `DELETE` SQL como rollback.
+- Si hubo cambios de estado en prueba controlada, revertir solo con UPDATE documentado
+  y backup previo si se autoriza explicitamente.
+- No borrar archivos fisicos bajo `src/storage/documentos/`.
+
 ### Fases futuras
 
 - Antes de migracion o escritura: backup fresco.
