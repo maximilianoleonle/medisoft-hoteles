@@ -418,3 +418,14 @@
 - `tarea_eventos` conserva historial tecnico sin reemplazar `logs_auditoria`.
 - No hay datos semilla: las dos tablas quedan vacias.
 - La primera UI futura debe ser read-only antes de habilitar cualquier POST.
+
+## Decision TLM-B read-only
+
+- La primera superficie de tareas se limita a GET listado/detalle.
+- Se usa el guard conservador de `habitaciones` + `habitaciones.view`, porque TLM afecta
+  contexto operativo de habitaciones.
+- Sidebar muestra `Tareas` bajo Operaciones y solo si habitaciones/limpieza/mantenimiento
+  estan activos visualmente.
+- No se crean permisos profundos nuevos en esta subfase.
+- No se muestran acciones de crear/asignar/iniciar/completar/cancelar hasta contrato
+  separado.

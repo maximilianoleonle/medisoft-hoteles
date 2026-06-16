@@ -290,3 +290,4 @@ Reglas:
 - Caja, pagos, abonos y nomina no son fuente de verdad de TLM.
 - `/api/sync` queda fuera de alcance.
 - TLM-A crea tablas vacias; no hay tareas reales todavia.
+- TLM-B solo lee `tareas_operativas` y `tarea_eventos`; no crea ni corrige datos.

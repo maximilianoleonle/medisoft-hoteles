@@ -544,6 +544,15 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `20260616_002_fase_tlm_a_tareas_base.sql` solo si se hace rollback completo.
 - No tocar `mantenimientos_habitaciones`, `habitaciones`, Caja ni `/api/sync`.
 
+### TLM-B read-only aplicado
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-tlm): add read-only operational tasks layer`.
+- DB: no aplica para retirar la UI; no ejecutar `DROP`, `DELETE`, `UPDATE` ni cambios de
+  datos.
+- Mantener intactas `tareas_operativas` y `tarea_eventos`; pertenecen a TLM-A.
+- No tocar `habitaciones.estado`, `mantenimientos_habitaciones`, Caja ni `/api/sync`.
+
 ### Reglas duras de rollback TLM
 
 - No tocar Caja, pagos, abonos ni nomina.

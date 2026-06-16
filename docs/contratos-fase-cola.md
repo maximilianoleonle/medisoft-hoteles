@@ -748,3 +748,17 @@ Estado formal vigente: `MIGRACION_TLM_A_TAREAS_BASE_COMPLETADA_QA_DIFERIDA`.
 - No se crearon rutas, UI, controladores, modelos ni POST.
 - No se cambio `habitaciones.estado`.
 - No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
+
+### Estado TLM-B
+
+Estado formal vigente: `TAREAS_READ_ONLY_TLM_B_COMPLETADO_QA_DIFERIDA`.
+
+- Modelo read-only: `TareaOperativa`.
+- Controlador GET: `TareaController`.
+- Rutas:
+  - `GET /tareas`;
+  - `GET /tareas/{id}`.
+- Vistas read-only con filtros GET y estado vacio.
+- Sidebar muestra `Tareas` bajo Operaciones.
+- No hay POST, creacion, asignacion, cierre, cancelacion ni cambios de habitacion.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.

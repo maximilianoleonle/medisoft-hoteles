@@ -371,3 +371,27 @@ Siguiente cola exacta recomendada:
 
 Crear capa GET read-only de tareas operativas: listado, detalle y estado vacio, sin POST,
 sin cambio de estados de habitacion y sin tocar Caja.
+
+## Read-only TLM-B (Tareas operativas)
+
+- Estado formal: `TAREAS_READ_ONLY_TLM_B_COMPLETADO_QA_DIFERIDA`.
+- Modelo: `TareaOperativa`.
+- Controlador: `TareaController`.
+- Rutas GET:
+  - `/tareas`;
+  - `/tareas/{id}`.
+- Vistas:
+  - `app/views/tareas/index.php`;
+  - `app/views/tareas/ver.php`.
+- Sidebar: `Tareas` bajo Operaciones.
+- Sin POST, sin creacion/asignacion/cierre/cancelacion, sin cambios de habitacion.
+- Health valida TLM-B con `ERROR: 0`.
+
+## Siguiente accion
+
+Siguiente cola exacta recomendada:
+
+`[COLA_TLM_C_CREACION_MANUAL_TAREAS]`
+
+Implementar creacion manual controlada con POST + CSRF, auditoria y validacion de
+hotel. Mantener prohibido cambiar automaticamente `habitaciones.estado`.

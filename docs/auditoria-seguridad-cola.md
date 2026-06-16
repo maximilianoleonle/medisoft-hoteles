@@ -498,3 +498,18 @@ Estado: `MIGRACION_TLM_A_TAREAS_BASE_COMPLETADA_QA_DIFERIDA`.
   preexistentes y no pertenecen a TLM-A.
 - No hay rutas, UI ni POST nuevos.
 - No se toco Caja, pagos, abonos, nomina, PWA/offline/cache ni `/api/sync`.
+
+## Auditoria TLM-B read-only
+
+Estado: `TAREAS_READ_ONLY_TLM_B_COMPLETADO_QA_DIFERIDA`.
+
+- Rutas nuevas: `GET /tareas` y `GET /tareas/{id}`.
+- Proteccion: sesion, contexto hotelero, modulo `habitaciones` y permiso
+  `habitaciones.view`.
+- Aislamiento: modelo filtra por `hotel_id`; detalle por `id + hotel_id`; joins por el
+  mismo hotel.
+- Datos: no hay `INSERT`, `UPDATE`, `DELETE`, POST, CSRF ni acciones de escritura.
+- No se cambia `habitaciones.estado`.
+- No se modifica `mantenimientos_habitaciones`.
+- No hay escrituras en Caja, pagos, abonos, nomina ni `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.

@@ -666,3 +666,18 @@ instruccion del usuario.
 - No hay UI, rutas ni POST que probar en navegador.
 - QA manual diferida: validar en una fase posterior que las vistas read-only muestren
   estado vacio y no cambien habitaciones ni mantenimiento.
+
+### Estado TLM-B
+
+- UI read-only implementada en `/tareas` y `/tareas/{id}`.
+- No hay POST ni acciones operativas.
+- QA manual diferida por instruccion del usuario.
+
+### QA manual diferida TLM-B
+
+- Abrir `/tareas` con usuario autorizado.
+- Confirmar estado vacio claro.
+- Confirmar filtros GET por busqueda, categoria, estado y prioridad.
+- Confirmar que no hay boton de crear, asignar, iniciar, completar o cancelar.
+- Confirmar que el sidebar muestra `Tareas` solo dentro del contexto hotelero.
+- Confirmar bloqueo/redireccion sin sesion.

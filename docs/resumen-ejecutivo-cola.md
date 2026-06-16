@@ -506,3 +506,16 @@ Resultado TLM-A:
 - No se cambio `habitaciones.estado`.
 - No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
 - Siguiente paso recomendado: TLM-B read-only de tareas operativas.
+
+Resultado TLM-B:
+
+- Estado tecnico: `TAREAS_READ_ONLY_TLM_B_COMPLETADO_QA_DIFERIDA`.
+- Modelo/controlador/vistas read-only creados para tareas operativas.
+- Rutas GET creadas: `/tareas` y `/tareas/{id}`.
+- Sidebar expone `Tareas` bajo Operaciones.
+- Health valida rutas, modelo, vistas y ausencia de POST.
+- HTTP sin sesion redirige a login.
+- No hay creacion/asignacion/cierre/cancelacion de tareas.
+- No se cambio `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
+- Siguiente paso recomendado: TLM-C creacion manual controlada, si se autoriza.

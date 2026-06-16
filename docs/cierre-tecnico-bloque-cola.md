@@ -462,3 +462,17 @@ Estado: `MIGRACION_TLM_A_TAREAS_BASE_COMPLETADA_QA_DIFERIDA`.
 - No se cambio `habitaciones.estado`.
 - No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina, PWA/offline/cache
   ni `/api/sync`.
+
+## Read-only Fase TLM-B
+
+Estado: `TAREAS_READ_ONLY_TLM_B_COMPLETADO_QA_DIFERIDA`.
+
+- Modelo read-only: `TareaOperativa`.
+- Controlador GET: `TareaController`.
+- Rutas: `/tareas` y `/tareas/{id}`.
+- Vistas de listado/detalle con filtros GET y estado vacio.
+- Sidebar muestra `Tareas` bajo Operaciones.
+- Health checker valida rutas, modelo, vistas, sidebar y ausencia de POST.
+- No se cambio `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina, PWA/offline/cache
+  ni `/api/sync`.
