@@ -378,9 +378,10 @@ reemplazo de archivo, links publicos, Caja, pagos, abonos, Fase 3D, NP-A ni camb
 
 ## Checkpoint tecnico Fase NP-A
 
-Estado: `MIGRACION_NP_A_PERSONAL_BASE_COMPLETADA_QA_DIFERIDA`.
+Estado: `PERSONAL_READ_ONLY_NP_A_COMPLETADO_QA_DIFERIDA`.
 
-La base de Personal queda creada como estructura vacia, sin UI y sin movimientos.
+La base de Personal queda creada como estructura vacia y con primera UI read-first, sin
+movimientos.
 
 ### Confirmaciones NP-A
 
@@ -393,6 +394,19 @@ La base de Personal queda creada como estructura vacia, sin UI y sin movimientos
   - `trabajador_prestamos`;
   - `trabajador_asistencias`;
   - `trabajador_documentos`.
+- Rutas GET implementadas:
+  - `/trabajadores`;
+  - `/trabajadores/{id}`.
+- Modelo/controlador/vistas read-only implementados.
+- Sidebar muestra `Personal` bajo administracion.
 - Health checker valida estructura NP-A y migracion registrada.
 - Caja/Nomina sigue en cero.
 - No se tocaron `usuarios` destructivamente, Caja ni `/api/sync`.
+- No hay POST, alta, edicion, pagos, anticipos, prestamos ni asistencia operativa.
+
+QA manual diferida:
+
+- Validar listado/ficha en navegador.
+- Validar filtros GET y estados vacios.
+- Validar bloqueo sin sesion/permiso.
+- Validar que no hay botones operativos de nomina/Caja.

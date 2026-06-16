@@ -347,6 +347,20 @@
 - Caja queda separada: no se crea categoria Nomina ni movimientos.
 - Las fases visuales y operativas deben consumir estas tablas con filtro `hotel_id`.
 
+### Decision NP-A UI read-first
+
+- Se expone primero listado/ficha en GET para validar el contrato visual sin habilitar
+  altas ni movimientos laborales.
+- Se reutiliza `usuarios.view` y modulo `usuarios` como guard temporal conservador,
+  porque Personal contiene datos laborales sensibles y aun no existe permisos profundos
+  propios de nomina.
+- La ficha muestra agregados de `trabajador_pagos`, `trabajador_anticipos`,
+  `trabajador_prestamos`, `trabajador_asistencias` y `trabajador_documentos` solo como
+  lectura; no calcula ni persiste saldos definitivos en esta subfase.
+- No se integra con Centro Documental central para trabajadores todavia porque
+  `Documento::ENTIDAD_TIPOS` no incluye `trabajador`; se evita mezclar contratos.
+- No se muestra `ruta_archivo` de `trabajador_documentos`.
+
 ### Decision sobre "responsable" de mantenimiento
 
 - En NP la referencia trabajador-responsable es **logica y opcional**, de solo lectura,

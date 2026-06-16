@@ -73,11 +73,24 @@ Tablas creadas:
 - Health checker actualizado para validar tablas NP-A, migracion registrada y cero
   Caja/Nomina.
 
+## Actualizacion NP-A UI read-first
+
+La subfase visual read-first ya expone listado y ficha de trabajadores en modo lectura:
+
+- `GET /trabajadores`
+- `GET /trabajadores/{id}`
+- Sin POST, sin altas, sin edicion, sin pagos, sin anticipos, sin prestamos, sin Caja.
+- Guardas: sesion, contexto hotel, modulo `usuarios` y permiso `usuarios.view`.
+- Documentacion especifica: `docs/fase_NP_A_ui_personal_readonly.md`.
+
 ## QA manual diferida
 
-No hay flujo visual aun. Cuando exista ficha/listado, validar:
+Cuando se retome QA en navegador, validar:
 
 - tablas vacias no rompen UI;
+- listado `/trabajadores` muestra estado vacio;
+- filtros GET funcionan;
+- ficha `/trabajadores/{id}` respeta hotel actual cuando existan registros;
 - trabajador puede existir sin usuario del sistema;
 - todos los listados filtran por `hotel_id`;
 - Caja no cambia.

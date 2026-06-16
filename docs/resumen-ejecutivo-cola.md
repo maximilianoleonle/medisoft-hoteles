@@ -443,5 +443,8 @@ Resultado NP-A:
 - Migracion: `migrations/20260616_001_fase_np_a_personal_base.sql`.
 - Conteos finales de las seis tablas: 0.
 - Caja/Nomina: movimientos 0, categorias 0.
-- Siguiente paso recomendado: NP-A UI read-first de listado/ficha basica de trabajador,
-  sin pagos reales ni Caja.
+- UI read-first implementada: `GET /trabajadores` y `GET /trabajadores/{id}` con
+  guardas administrativas, estados vacios y sin POST.
+- Sin pagos reales, anticipos, prestamos, asistencia operativa ni Caja.
+- Siguiente paso recomendado: contrato NP-B para alta/edicion segura de trabajador o
+  bloque Tareas/Limpieza/Mantenimiento base, segun prioridad.

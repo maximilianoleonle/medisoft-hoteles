@@ -238,6 +238,10 @@ $router->post('/documentos/{id:[0-9]+}/eliminar', ['controller' => 'Documento', 
 $router->get('/documentos/{id:[0-9]+}/descargar', ['controller' => 'Documento', 'action' => 'descargar']);
 $router->get('/documentos/{id:[0-9]+}', ['controller' => 'Documento', 'action' => 'ver']);
 
+// Fase NP-A: Personal base read-only. Sin altas, pagos, nomina, Caja ni acciones POST.
+$router->get('/trabajadores', ['controller' => 'Trabajador', 'action' => 'index']);
+$router->get('/trabajadores/{id:[0-9]+}', ['controller' => 'Trabajador', 'action' => 'ver']);
+
 $router->get('/api/pwa-push/public-key', ['controller' => 'PwaPush', 'action' => 'publicKey']);
 $router->post('/api/pwa-push/subscribe', ['controller' => 'PwaPush', 'action' => 'subscribe']);
 $router->post('/api/pwa-push/unsubscribe', ['controller' => 'PwaPush', 'action' => 'unsubscribe']);

@@ -651,7 +651,7 @@ alcance #9.
 
 ### Estado NP-A
 
-Estado formal vigente: `MIGRACION_NP_A_PERSONAL_BASE_COMPLETADA_QA_DIFERIDA`.
+Estado formal vigente: `PERSONAL_READ_ONLY_NP_A_COMPLETADO_QA_DIFERIDA`.
 
 - Migracion aditiva aplicada: `migrations/20260616_001_fase_np_a_personal_base.sql`.
 - Tablas creadas vacias: `trabajadores`, `trabajador_pagos`,
@@ -659,5 +659,15 @@ Estado formal vigente: `MIGRACION_NP_A_PERSONAL_BASE_COMPLETADA_QA_DIFERIDA`.
   `trabajador_documentos`.
 - Backup previo verificado.
 - Sin datos semilla.
-- Sin UI todavia.
+- UI read-first implementada:
+  - `GET /trabajadores`;
+  - `GET /trabajadores/{id}`.
+- Sin POST, altas, edicion, pagos, anticipos, prestamos, asistencia operativa ni
+  documentos laborales.
 - Sin Caja, pagos reales, categoria Nomina ni `/api/sync`.
+
+### Estado siguiente sugerido NP-B
+
+Definir contrato de alta/edicion segura de trabajador antes de implementar escritura.
+Debe seguir sin Caja, sin nomina operativa y sin pagos reales, con POST + CSRF,
+auditoria, validacion de duplicados razonable y filtro `hotel_id`.

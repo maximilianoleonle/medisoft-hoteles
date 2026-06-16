@@ -477,6 +477,15 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Borrar tambien el registro de `migrations` para
   `20260616_001_fase_np_a_personal_base.sql` solo si se hace rollback completo.
 
+### NP-A UI read-first
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-np): add read-only worker directory`.
+- DB: no aplica para retirar la UI; no ejecutar `DROP`, `DELETE`, `UPDATE` ni cambios de
+  datos.
+- Mantener intactas las tablas `trabajador*`; pertenecen a la migracion base NP-A.
+- No tocar Caja, `usuarios`, `hotel_usuarios` ni `/api/sync`.
+
 ### Reglas duras de rollback NP
 
 - No borrar ni alterar `usuarios` ni `hotel_usuarios` durante ningun rollback NP.

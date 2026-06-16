@@ -426,3 +426,19 @@ Estado: `MIGRACION_NP_A_PERSONAL_BASE_COMPLETADA_QA_DIFERIDA`.
 - Caja no fue tocada: movimientos Nomina 0 y categorias Nomina 0.
 - No hay rutas, controladores ni vistas de Personal todavia.
 - `/api/sync` fuera de alcance.
+
+### Auditoria NP-A UI read-first
+
+Estado: `PERSONAL_READ_ONLY_NP_A_COMPLETADO_QA_DIFERIDA`.
+
+- Rutas nuevas: solo `GET /trabajadores` y `GET /trabajadores/{id}`.
+- Proteccion: autenticacion, contexto hotelero, modulo `usuarios` y permiso
+  `usuarios.view`.
+- Aislamiento multi-hotel: modelo filtra por `hotel_id` y detalle por `id + hotel_id`.
+- Datos: no hay `INSERT`, `UPDATE`, `DELETE`, POST, CSRF ni acciones de escritura.
+- Caja/Nomina: no hay referencias a `movimientos_caja`, `cajas`, `cortes_caja` ni
+  categoria Nomina.
+- Archivos laborales: no se expone `ruta_archivo` de `trabajador_documentos`.
+- Riesgo residual: permisos propios de Personal/Nomina quedan diferidos; temporalmente
+  se reutiliza `usuarios.view` como guard administrativo conservador.
+- QA manual queda diferida por instruccion del usuario.

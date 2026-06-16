@@ -227,6 +227,8 @@ Estado:
 - Fase NP-0 define contrato, diagnostico y diseno aditivo de las 6 tablas.
 - Fase NP-A crea las seis tablas en la base `medisoft_hoteles_import`; actualmente estan
   vacias.
+- Fase NP-A UI read-first consume esas tablas en modo lectura mediante
+  `Trabajador::listarPorHotel()` y `Trabajador::buscarPorIdHotel()`.
 - Migracion fuente: `migrations/20260616_001_fase_np_a_personal_base.sql`.
 - Backup previo valido: `src/storage/backups/phase_np_a_20260616_021311_before_personal_base_medisoft_hoteles_import.sql`.
 - No hay categoria Nomina ni movimientos de Caja generados por NP-A.
@@ -243,6 +245,7 @@ Reglas:
   movimiento de Caja.
 - El saldo por trabajador es DERIVADO del ledger (`trabajador_pagos`, `trabajador_anticipos`,
   `trabajador_prestamos`); no es editable manualmente.
+- La UI NP-A solo muestra metadata y agregados; no crea ni corrige saldos.
 - Toda escritura valida `hotel_id` y `trabajador_id` del mismo hotel antes de persistir.
 - Cualquier integracion con Caja o salida real de dinero requiere una Fase NP-Caja autorizada.
 - La referencia trabajador-responsable de mantenimiento es logica/opcional y no altera

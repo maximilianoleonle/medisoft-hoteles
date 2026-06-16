@@ -27,10 +27,11 @@ $mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuesp
 $mostrarOperaciones = $mostrarCaja || $mostrarInventario || $mostrarProveedores || $mostrarCompras || $mostrarCuentasPorPagar || $mostrarDocumentos || $mostrarFacturacion;
 $filtrarMenuHotel = function_exists('hotel_menu_should_filter_modules') && hotel_menu_should_filter_modules();
 $mostrarUsuariosAdmin = (!$filtrarMenuHotel && can('usuarios.view')) || ($filtrarMenuHotel && $mostrarUsuariosModulo && $sidebarPuedeUsuarios);
+$mostrarPersonal = $mostrarUsuariosAdmin;
 $mostrarConfiguracion = $mostrarConfiguracionModulo && $sidebarPuedeConfiguracion;
 $mostrarTarifas = $sidebarPuedeTarifas && (!$filtrarMenuHotel || $mostrarTarifasModulo);
 $mostrarNotificacionesMenu = true;
-$mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarNotificacionesMenu || $mostrarConfiguracion || $mostrarTarifas);
+$mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNotificacionesMenu || $mostrarConfiguracion || $mostrarTarifas);
 $sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 $sidebarEsPanelSaas = strpos($sidebarRequestPath, '/admin/saas') === 0;
 $sidebarBranding = (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_context() && function_exists('current_hotel_branding'))
@@ -337,6 +338,16 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
                     <i class="fas fa-user"></i>
                 </div>
                 <span class="nav-text">Usuarios</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarPersonal): ?>
+            <a href="<?= url('trabajadores') ?>"
+               class="nav-item <?= strpos($sidebarRequestPath, '/trabajadores') === 0 ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <span class="nav-text">Personal</span>
             </a>
             <?php endif; ?>
 

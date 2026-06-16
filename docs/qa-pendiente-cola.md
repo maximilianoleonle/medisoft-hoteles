@@ -558,9 +558,23 @@ QA manual diferida 4D-B-A:
 
 - Migracion base aplicada y documentada.
 - Seis tablas `trabajador*` existen y estan vacias.
-- No hay UI de Personal todavia, por lo tanto QA visual queda diferida.
+- UI read-first de Personal implementada en `GET /trabajadores` y
+  `GET /trabajadores/{id}`.
+- No hay POST, altas, edicion, pagos, anticipos, prestamos ni Caja.
 - Caja/Nomina sigue en cero.
 - `/api/sync` fuera de alcance.
+
+### QA manual diferida NP-A UI read-first
+
+- Abrir `/trabajadores` con usuario autorizado.
+- Confirmar estado vacio claro si no hay trabajadores.
+- Probar filtros GET por busqueda/estado.
+- Confirmar que no aparecen acciones de alta, editar, pagar, anticipo, prestamo,
+  asistencia, documentos laborales, nomina ni Caja.
+- Abrir `/trabajadores/{id}` cuando exista un registro de prueba autorizado.
+- Confirmar que usuario sin sesion redirige/bloquea.
+- Confirmar que usuario sin `usuarios.view` no accede.
+- Confirmar que Caja/cortes/movimientos no cambian.
 
 ### QA critica planificada (NP)
 
@@ -574,7 +588,8 @@ QA manual diferida 4D-B-A:
 
 ### QA funcional planificada (NP)
 
-- NP-A: listado de trabajadores por hotel, ficha read-first, alta/edicion controlada, baja logica, documentos.
+- NP-A: listado de trabajadores por hotel y ficha read-first.
+- NP-B futuro: alta/edicion controlada, baja logica y documentos laborales.
 - NP-B: registrar pago/anticipo/prestamo con validacion de hotel, trabajador activo y monto valido; mensajes claros.
 - NP-C: ver saldo a favor/en contra, historial y reporte semanal/quincenal por hotel y trabajador.
 - NP-D: registrar asistencia y comisiones/bonos/descuentos y ver su efecto en saldos.

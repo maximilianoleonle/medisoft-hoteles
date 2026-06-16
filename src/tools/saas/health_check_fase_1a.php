@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-A.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -552,7 +552,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4C-A - Medisoft Hoteles\n";
+echo "Health check Fase 1A-4D/NP-A - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -2327,6 +2327,46 @@ if (!is_file($routesPath)) {
         );
     }
 
+    $workerExpectedRoutes = [
+        ['method' => 'get', 'path' => 'trabajadores'],
+        ['method' => 'get', 'path' => 'trabajadores/{id:[0-9]+}'],
+    ];
+    $missingWorkerRoutes = [];
+    foreach ($workerExpectedRoutes as $expectedRoute) {
+        if (!hcRouteExists($routes, $expectedRoute['path'], $expectedRoute['method'])) {
+            $missingWorkerRoutes[] = strtoupper($expectedRoute['method']) . ' /' . $expectedRoute['path'];
+        }
+    }
+
+    if (empty($missingWorkerRoutes)) {
+        hcOk('Rutas Personal NP-A read-only registradas: GET /trabajadores y GET /trabajadores/{id}.');
+    } else {
+        hcWarning(
+            'Rutas Personal NP-A read-only faltantes: ' . implode(', ', $missingWorkerRoutes),
+            'Registrar solo rutas GET para listado/detalle; no exponer altas, pagos, nomina ni Caja.'
+        );
+    }
+
+    $forbiddenWorkerRoutes = [];
+    foreach ($routes as $route) {
+        $method = strtoupper((string) $route['method']);
+        $path = strtolower(trim((string) $route['path'], '/'));
+        $controller = strtolower((string) $route['controller']);
+        $action = strtolower((string) $route['action']);
+        if ((strpos($path, 'trabajadores') !== false || $controller === 'trabajador') && $method !== 'GET') {
+            $forbiddenWorkerRoutes[] = $method . ' /' . $path . ' -> ' . $controller . '::' . $action;
+        }
+    }
+
+    if (empty($forbiddenWorkerRoutes)) {
+        hcOk('Personal NP-A mantiene solo rutas GET; no hay POST de altas, pagos, asistencias ni documentos laborales.');
+    } else {
+        hcError(
+            'Personal NP-A tiene rutas operativas fuera de alcance: ' . implode(' | ', $forbiddenWorkerRoutes),
+            'Retirar rutas no GET hasta fase autorizada con backup y QA.'
+        );
+    }
+
     $forbiddenPurchaseRoutes = [];
     foreach ($routes as $route) {
         $method = strtoupper((string) $route['method']);
@@ -2503,6 +2543,114 @@ if (!is_file($routesPath)) {
         hcError(
             'Faltan archivos de Proveedor Fase 2F.',
             'Crear src/app/models/Proveedor.php y src/app/controllers/ProveedorController.php para las rutas registradas.'
+        );
+    }
+
+    $workerModelPath = $appRoot . '/app/models/Trabajador.php';
+    $workerControllerPath = $controllersDir . '/TrabajadorController.php';
+    $workerIndexViewPath = $appRoot . '/app/views/trabajadores/index.php';
+    $workerDetailViewPath = $appRoot . '/app/views/trabajadores/ver.php';
+
+    if (is_file($workerModelPath) && is_file($workerControllerPath)) {
+        $workerModelCode = (string) file_get_contents($workerModelPath);
+        $workerControllerCode = (string) file_get_contents($workerControllerPath);
+        $workerCode = $workerModelCode . "\n" . $workerControllerCode;
+
+        if (
+            strpos($workerModelCode, "protected \$table = 'trabajadores'") !== false
+            && strpos($workerModelCode, 'function listarPorHotel') !== false
+            && strpos($workerModelCode, 'function buscarPorIdHotel') !== false
+            && strpos($workerModelCode, 'function resumenLedgerPorTrabajador') !== false
+            && preg_match('/WHERE\s+t\.id\s*=\s*\?\s+AND\s+t\.hotel_id\s*=\s*\?/i', $workerModelCode)
+            && strpos($workerModelCode, 'storage_path') === false
+            && strpos($workerModelCode, 'ruta_archivo') === false
+        ) {
+            hcOk('Trabajador model NP-A consulta trabajadores con aislamiento hotel_id y sin exponer rutas de archivos.');
+        } else {
+            hcWarning(
+                'Trabajador model NP-A no muestra contrato read-only completo.',
+                'Usar trabajadores con hotel_id, buscarPorIdHotel/listarPorHotel y no exponer storage_path/ruta_archivo.'
+            );
+        }
+
+        $workerForbiddenWrite = preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(trabajadores|trabajador_pagos|trabajador_anticipos|trabajador_prestamos|trabajador_asistencias|trabajador_documentos|movimientos_caja|cajas|cortes_caja)\b/i', $workerCode)
+            || strpos($workerControllerCode, 'validateCSRF') !== false
+            || strpos($workerControllerCode, 'isPost') !== false
+            || strpos($workerCode, 'movimientos_caja') !== false;
+
+        if (!$workerForbiddenWrite) {
+            hcOk('Personal NP-A UI mantiene capa read-only: sin escrituras, CSRF/POST, Caja ni Nomina operativa.');
+        } else {
+            hcError(
+                'Personal NP-A UI contiene escrituras o referencias fuera de alcance.',
+                'Mantener Personal en GET/listado/detalle hasta autorizar altas, asistencias, nomina o Caja.'
+            );
+        }
+
+        if (
+            strpos($workerControllerCode, 'function indexAction') !== false
+            && strpos($workerControllerCode, 'function verAction') !== false
+            && strpos($workerControllerCode, "require_hotel_module('usuarios')") !== false
+            && strpos($workerControllerCode, "require_permission('usuarios.view')") !== false
+            && strpos($workerControllerCode, 'trabajadores/index') !== false
+            && strpos($workerControllerCode, 'trabajadores/ver') !== false
+        ) {
+            hcOk('TrabajadorController NP-A expone solo listado/detalle bajo modulo usuarios y permiso usuarios.view.');
+        } else {
+            hcWarning(
+                'TrabajadorController NP-A no muestra guardas o acciones read-only completas.',
+                'Validar requireAuth, require_hotel_context, require_hotel_module("usuarios"), require_permission("usuarios.view"), indexAction y verAction.'
+            );
+        }
+    } else {
+        hcWarning(
+            'Faltan archivos Personal NP-A read-only.',
+            'Crear Trabajador.php y TrabajadorController.php solo si la subfase UI read-only esta autorizada.'
+        );
+    }
+
+    if (is_file($workerIndexViewPath) && is_file($workerDetailViewPath)) {
+        $workerIndexViewCode = (string) file_get_contents($workerIndexViewPath);
+        $workerDetailViewCode = (string) file_get_contents($workerDetailViewPath);
+        $workerViewsCode = $workerIndexViewCode . "\n" . $workerDetailViewCode;
+
+        if (
+            strpos($workerIndexViewCode, "action=\"<?= url('trabajadores') ?>\"") !== false
+            && strpos($workerIndexViewCode, 'method="GET"') !== false
+            && strpos($workerIndexViewCode, "url('trabajadores/' . (int)") !== false
+            && strpos($workerDetailViewCode, 'Solo lectura') !== false
+            && strpos($workerDetailViewCode, "url('trabajadores')") !== false
+            && stripos($workerViewsCode, 'method="POST"') === false
+            && stripos($workerViewsCode, 'csrf_field()') === false
+            && strpos($workerViewsCode, 'ruta_archivo') === false
+            && strpos($workerViewsCode, 'movimientos_caja') === false
+        ) {
+            hcOk('Vistas Personal NP-A muestran listado/detalle con filtros GET, estado vacio y sin formularios POST.');
+        } else {
+            hcWarning(
+                'Vistas Personal NP-A no muestran contrato read-only completo.',
+                'Asegurar filtros GET, enlaces a detalle, estado vacio, sin POST/CSRF y sin rutas internas de archivos.'
+            );
+        }
+    } else {
+        hcWarning(
+            'Faltan vistas Personal NP-A read-only.',
+            'Crear app/views/trabajadores/index.php y ver.php antes de habilitar navegacion.'
+        );
+    }
+
+    $sidebarPath = $appRoot . '/app/views/layout/sidebar.php';
+    $sidebarCode = is_file($sidebarPath) ? (string) file_get_contents($sidebarPath) : '';
+    if (
+        $sidebarCode !== ''
+        && strpos($sidebarCode, "url('trabajadores')") !== false
+        && strpos($sidebarCode, '$mostrarPersonal') !== false
+    ) {
+        hcOk('Sidebar registra Personal NP-A bajo administracion existente.');
+    } else {
+        hcWarning(
+            'Sidebar no muestra navegacion Personal NP-A.',
+            'Agregar enlace GET /trabajadores solo bajo guardas administrativas existentes.'
         );
     }
 

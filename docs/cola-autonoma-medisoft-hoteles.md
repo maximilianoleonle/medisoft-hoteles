@@ -313,6 +313,7 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Siguiente paso formal recomendado: NP-A UI read-first de Personal (listado/ficha basica
-sin pagos reales, sin Caja, sin movimientos laborales todavia y sin tocar `/api/sync`).
-No hacer push.
+NP-A UI read-first queda implementada con listado/ficha basica en GET y QA manual
+diferida. Siguiente paso formal recomendado: contrato NP-B para alta/edicion segura de
+trabajador, o iniciar bloque Tareas/Limpieza/Mantenimiento base si se prioriza operacion.
+No hacer push, no tocar Caja ni `/api/sync`.
