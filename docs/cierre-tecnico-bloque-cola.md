@@ -676,3 +676,13 @@ Estado: `ASISTENCIA_MANUAL_NP_C_D_A_COMPLETADA_QA_DIFERIDA`.
 - Vista de trabajador con formulario CSRF y advertencia de no nomina/no Caja.
 - Health/preflight actualizados y ejecutados sin errores.
 - QA manual queda diferida porque no hay trabajadores locales.
+
+## Cierre tecnico NP-C-D-F
+
+Estado: `BLOQUE_NP_C_D_ASISTENCIA_MANUAL_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_D_F_cierre_asistencia_manual.md`.
+- Revision tecnica y auditoria de seguridad completadas para asistencia manual.
+- No se agregaron funcionalidades nuevas en el cierre.
+- No hay nomina automatica, pagos reales, abonos, Caja ni cambios en `/api/sync`.
+- QA manual queda diferida.

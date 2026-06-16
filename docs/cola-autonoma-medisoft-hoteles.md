@@ -649,3 +649,14 @@ agregar funcionalidades nuevas.
   manual por ahora.
 - Siguiente accion segura: revision/auditoria/cierre de NP-C-D-A antes de abrir
   edicion/anulacion de asistencia, nomina, abonos o Caja.
+
+## Cierre tecnico NP-C-D-F
+
+- Estado formal: `BLOQUE_NP_C_D_ASISTENCIA_MANUAL_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_NP_C_D_F_cierre_asistencia_manual.md`.
+- Bloque de asistencia manual queda cerrado tecnicamente.
+- No hay nomina automatica, descuentos automaticos, pagos reales, abonos, Caja ni
+  cambios en `/api/sync`.
+- QA manual queda diferida porque no hay trabajadores locales.
+- Siguiente accion segura: contrato nuevo independiente; no abrir Caja ni nomina sin
+  autorizacion explicita.

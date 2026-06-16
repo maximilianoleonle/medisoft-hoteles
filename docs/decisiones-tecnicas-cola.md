@@ -590,3 +590,10 @@
 - No se habilita edicion, anulacion, correccion, calculo de nomina ni descuento
   automatico.
 - Caja queda completamente fuera del flujo.
+
+## Decision NP-C-D-F cierre asistencia manual
+
+- Se cierra asistencia manual sin convertirla en nomina.
+- No se asume que el cierre habilita edicion/anulacion de asistencias.
+- El siguiente avance de Personal debe ser contrato independiente y no financiero, salvo
+  autorizacion explicita.

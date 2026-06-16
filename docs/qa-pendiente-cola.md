@@ -919,3 +919,10 @@ instruccion del usuario.
 - Confirmar que no se crean pagos reales, abonos, nomina ni movimientos de Caja.
 - Ejecutar `docker compose exec -T app php /var/www/html/tools/saas/preflight_personal_ledger.php`.
 - Confirmar `ERROR: 0`.
+
+### Estado NP-C-D-F
+
+- Bloque de asistencia manual cerrado tecnicamente.
+- QA manual sigue pendiente y diferida.
+- No avanzar a nomina, descuentos automaticos, abonos, liquidaciones ni Caja sin contrato
+  nuevo y autorizacion explicita.

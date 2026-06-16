@@ -958,3 +958,12 @@ Estado formal vigente: `ASISTENCIA_MANUAL_NP_C_D_A_COMPLETADA_QA_DIFERIDA`.
   de alcance.
 - Antes de abrir edicion, anulacion, correccion o calculo de nomina se requiere contrato
   nuevo.
+
+### Estado NP-C-D-F
+
+Estado formal vigente: `BLOQUE_NP_C_D_ASISTENCIA_MANUAL_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_D_F_cierre_asistencia_manual.md`.
+- Cierre tecnico del bloque de asistencia manual.
+- Siguiente contrato requerido antes de edicion, anulacion, correccion, nomina, abonos,
+  liquidaciones o pagos reales.

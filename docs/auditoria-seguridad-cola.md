@@ -733,3 +733,13 @@ Estado: `ASISTENCIA_MANUAL_NP_C_D_A_COMPLETADA_QA_DIFERIDA`.
 - Se bloquea duplicado por `(hotel_id, trabajador_id, fecha)`.
 - Preflight y health checker detectan escrituras fuera de alcance.
 - Riesgo residual: falta QA manual con trabajador real porque la tabla local esta vacia.
+
+## Auditoria NP-C-D-F cierre asistencia manual
+
+Estado: `BLOQUE_NP_C_D_ASISTENCIA_MANUAL_CERRADO_QA_DIFERIDA`.
+
+- Revision tecnica completada.
+- No quedan errores automaticos relacionados con NP-C-D-A.
+- QA manual queda diferida; no se marca validacion de usuario.
+- Riesgo residual: edicion/anulacion de asistencias, nomina y Caja requieren contrato
+  nuevo.

@@ -745,3 +745,12 @@ Resultado NP-C-D-A:
 - Health checker y preflight conocen NP-C-D-A.
 - No se crea nomina, pagos reales, abonos, categorias Nomina ni movimientos de Caja.
 - No se toco `/api/sync`.
+
+Resultado NP-C-D-F:
+
+- Estado tecnico: `BLOQUE_NP_C_D_ASISTENCIA_MANUAL_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_NP_C_D_F_cierre_asistencia_manual.md`.
+- Se cierra tecnicamente el bloque de asistencia manual.
+- Checkers sin errores: preflight de ledger laboral y health general.
+- QA manual queda diferida hasta que exista un trabajador activo autorizado.
+- Siguiente paso recomendado: contrato nuevo independiente, sin abrir nomina ni Caja.
