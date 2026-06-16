@@ -801,3 +801,12 @@
 - El contrato exige validar habitacion disponible, reservaciones conflictivas y ausencia
   de otro mantenimiento `en_proceso` antes de escribir.
 - MANT-E-A no debe avanzar sin backup/checklist y QA manual explicita.
+
+## Decision MANT-E-A
+
+- Se implementa una activacion manual individual, no masiva.
+- No se reutiliza `activarMantenimientosPendientes()` porque activa multiples registros.
+- Se crea `Mantenimiento::activarProgramadoManual()` para centralizar validaciones y
+  mantener la transaccion en una sola capa.
+- El boton vive en el preview porque ahi ya se calculan candidatos y advertencias.
+- La vista solo muestra el boton si el usuario puede `habitaciones.mantenimiento`.

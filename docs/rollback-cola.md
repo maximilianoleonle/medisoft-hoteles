@@ -904,3 +904,13 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-mant): define manual overdue maintenance activation contract`.
 - DB: no aplica; MANT-E-0 no crea rutas, migraciones ni datos.
 - Codigo: no aplica.
+
+### MANT-E-A activacion manual mantenimiento programado
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-mant): activate overdue scheduled maintenance manually`.
+- DB: no aplica si no se ejecuto QA manual real.
+- Si QA manual activo un mantenimiento real, documentar ID de mantenimiento y habitacion;
+  no borrar ni actualizar con SQL manual.
+- Retirar ruta POST, accion del controlador, metodo transaccional, boton del preview y
+  checks MANT-E-A.

@@ -443,3 +443,13 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - El candidato mostrado en la vista no cambia estados ni crea datos.
 - La disponibilidad operativa no se recalcula ni se persiste en esta fase.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.
+
+### MANT-E-A activacion manual mantenimiento programado
+
+- No crea fuente nueva.
+- La activacion manual escribe exclusivamente en fuentes existentes:
+  - `mantenimientos_habitaciones` para pasar de `programado` a `en_proceso`;
+  - `habitaciones` para pasar de `disponible` a `mantenimiento`;
+  - `logs_auditoria` y `notificaciones` como trazabilidad no financiera.
+- `reservaciones` y `reservacion_habitaciones` solo se leen para bloquear conflictos.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.

@@ -1191,3 +1191,14 @@ Estado formal vigente: `CONTRATO_MANT_E_0_ACTIVACION_MANUAL_COMPLETADO`.
 - Prohibe activacion masiva, automatica, cron y uso web de
   `activarMantenimientosPendientes()`.
 - MANT-E-A futura requiere backup/checklist y QA manual explicita.
+
+### Estado MANT-E-A
+
+Estado formal vigente: `ACTIVACION_MANUAL_MANT_E_A_COMPLETADA_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_E_A_activacion_manual_vencidos.md`.
+- Implementa POST individual para activar mantenimientos programados vencidos o de hoy.
+- Requiere CSRF, permiso `habitaciones.mantenimiento`, transaccion y auditoria.
+- No usa `activarMantenimientosPendientes()`.
+- No activa automaticamente ni en lote.
+- QA manual queda diferida; no se ejecuto activacion real automatizada.

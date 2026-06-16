@@ -302,6 +302,7 @@ $router->post('/habitaciones/{id:[0-9]+}/delete', ['controller' => 'Habitacion',
 $router->post('/habitaciones/{id:[0-9]+}/mantenimiento', ['controller' => 'Habitacion', 'action' => 'mantenimiento']);
 $router->post('/habitaciones/{id:[0-9]+}/programar-mantenimiento', ['controller' => 'Habitacion', 'action' => 'programarMantenimiento']);
 $router->post('/habitaciones/cancelar-mantenimiento-programado/{id:[0-9]+}', ['controller' => 'Habitacion', 'action' => 'cancelarMantenimientoProgramado']);
+$router->post('/habitaciones/activar-mantenimiento-programado/{id:[0-9]+}', ['controller' => 'Habitacion', 'action' => 'activarMantenimientoProgramado']);
 $router->post('/habitaciones/{id:[0-9]+}/liberar', ['controller' => 'Habitacion', 'action' => 'liberar']);
 $router->post('/habitaciones/{id:[0-9]+}/cambiar-estado', ['controller' => 'Habitacion', 'action' => 'cambiarEstado']);
 $router->post('/habitaciones/liberar-multiples', ['controller' => 'Habitacion', 'action' => 'liberarMultiples']);

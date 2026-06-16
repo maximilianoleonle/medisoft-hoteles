@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../models/TareaOperativa.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
 require_once __DIR__ . '/../services/NotificacionService.php';
+require_once __DIR__ . '/../services/AuditService.php';
 /**
  * Controlador de Habitaciones
  * Sistema hotelero
@@ -1595,6 +1596,83 @@ private function registrarNotificacionHabitacion(int $habitacionId, string $tipo
     /**
      * Liberar habitacion
      */
+/**
+ * Activar manualmente mantenimiento programado vencido o de hoy.
+ * POST /habitaciones/activar-mantenimiento-programado/{id}
+ */
+public function activarMantenimientoProgramadoAction() {
+    if (!$this->isPost()) {
+        $this->redirect('reportes/mantenimiento-programado');
+        return;
+    }
+
+    $this->validateCSRF();
+    $this->requirePermission('habitaciones.mantenimiento');
+
+    $mantenimiento_id = (int)($this->route_params['id'] ?? 0);
+    $dias = max(0, min(90, (int)$this->getPost('dias', 30)));
+    $returnTo = trim((string)$this->getPost('return_to', 'preview'));
+
+    require_once __DIR__ . '/../models/Mantenimiento.php';
+    $mantenimientoModel = new Mantenimiento();
+    $resultado = $mantenimientoModel->activarProgramadoManual($mantenimiento_id, user_id());
+
+    if (!empty($resultado['success'])) {
+        $habitacionId = (int)($resultado['habitacion_id'] ?? 0);
+        $habitacionNumero = (string)($resultado['habitacion_numero'] ?? $habitacionId);
+
+        set_mensaje('Mantenimiento programado activado para habitacion ' . $habitacionNumero, 'success');
+        $this->registrarNotificacionHabitacion(
+            $habitacionId,
+            'mantenimiento_programado_activado',
+            'Mantenimiento programado activado',
+            'La habitacion paso a mantenimiento desde la activacion manual.',
+            'alta'
+        );
+        $this->registrarAuditoriaMantenimientoProgramado('mantenimiento_programado.activado_manual', [
+            'mantenimiento_id' => $mantenimiento_id,
+            'habitacion_id' => $habitacionId,
+            'resultado' => 'activado',
+        ]);
+    } else {
+        $mensaje = trim((string)($resultado['message'] ?? 'No se pudo activar el mantenimiento programado'));
+        set_mensaje($mensaje, 'error');
+        $this->registrarAuditoriaMantenimientoProgramado('mantenimiento_programado.activacion_bloqueada', [
+            'mantenimiento_id' => $mantenimiento_id,
+            'resultado' => 'bloqueado',
+            'motivo' => $mensaje,
+        ]);
+    }
+
+    if ($returnTo === 'habitacion' && !empty($resultado['habitacion_id'])) {
+        $this->redirect('habitaciones/' . (int)$resultado['habitacion_id']);
+        return;
+    }
+
+    $this->redirect('reportes/mantenimiento-programado?dias=' . $dias);
+}
+
+/**
+ * Registrar auditoria de mantenimiento sin bloquear el flujo principal.
+ */
+private function registrarAuditoriaMantenimientoProgramado(string $accion, array $contexto): void {
+    try {
+        $mantenimientoId = isset($contexto['mantenimiento_id']) ? (int)$contexto['mantenimiento_id'] : 0;
+        AuditService::record($accion, [
+            'hotel_id' => $this->hotelIdActual(),
+            'usuario_id' => user_id(),
+            'entidad_tipo' => 'mantenimiento',
+            'entidad_id' => $mantenimientoId > 0 ? (string)$mantenimientoId : null,
+            'descripcion' => $accion === 'mantenimiento_programado.activado_manual'
+                ? 'Mantenimiento programado activado manualmente'
+                : 'Activacion manual de mantenimiento programado bloqueada',
+            'datos_despues' => $contexto,
+        ]);
+    } catch (Throwable $e) {
+        error_log('No se pudo registrar auditoria de mantenimiento programado: ' . $e->getMessage());
+    }
+}
+
     public function liberarAction() {
     if (!$this->isPost()) {
         $this->redirect('habitaciones');

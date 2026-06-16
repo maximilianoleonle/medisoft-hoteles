@@ -1000,3 +1000,15 @@ Estado: `CONTRATO_MANT_E_0_ACTIVACION_MANUAL_COMPLETADO`.
 - Mitigacion definida: solo accion manual individual, transaccion, CSRF, permiso,
   auditoria, validacion de habitacion disponible y reservaciones conflictivas.
 - Automatizacion masiva/cron sigue prohibida.
+
+## Auditoria MANT-E-A
+
+Estado: `ACTIVACION_MANUAL_MANT_E_A_COMPLETADA_QA_DIFERIDA`.
+
+- Ruta POST protegida por sesion, CSRF y permiso.
+- Modelo usa transaccion y `FOR UPDATE`.
+- Se bloquea mantenimiento futuro, no programado, de otro hotel, con habitacion no
+  disponible, con mantenimiento en proceso o con reservacion conflictiva.
+- No se llama `activarMantenimientosPendientes()`.
+- No se toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- Riesgo residual: falta QA manual real con backup previo.

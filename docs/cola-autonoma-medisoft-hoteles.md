@@ -913,3 +913,12 @@ agregar funcionalidades nuevas.
   QA manual explicita.
 - No se autoriza activacion masiva, automatica, cron ni `activarMantenimientosPendientes()`
   desde web.
+
+## Activacion MANT-E-A mantenimiento programado
+
+- Estado formal: `ACTIVACION_MANUAL_MANT_E_A_COMPLETADA_QA_DIFERIDA`.
+- Documento creado: `docs/fase_MANT_E_A_activacion_manual_vencidos.md`.
+- Implementa POST individual desde preview para candidatos vencidos/hoy.
+- No usa activacion masiva ni automatica.
+- No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- QA manual queda diferida y debe ejecutarse con backup previo.

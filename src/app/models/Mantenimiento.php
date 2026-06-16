@@ -612,6 +612,166 @@ class Mantenimiento extends Model {
             'fecha_inicio' => date('Y-m-d H:i:s')
         ]);
     }
+
+    /**
+     * Activar manualmente un mantenimiento programado vencido o de hoy.
+     */
+    public function activarProgramadoManual($mantenimiento_id, $usuario_id = null) {
+        $mantenimiento_id = (int)$mantenimiento_id;
+        $usuario_id = $usuario_id ? (int)$usuario_id : null;
+        $hotelId = $this->hotelIdActual();
+        $hoy = date('Y-m-d');
+        $pdo = $this->db->getConnection();
+
+        if ($mantenimiento_id <= 0) {
+            return [
+                'success' => false,
+                'message' => 'Mantenimiento no valido',
+            ];
+        }
+
+        try {
+            $pdo->beginTransaction();
+
+            $stmt = $pdo->prepare(
+                "SELECT
+                    m.*,
+                    h.numero AS habitacion_numero,
+                    h.estado AS habitacion_estado
+                 FROM {$this->table} m
+                 INNER JOIN habitaciones h
+                    ON h.id = m.habitacion_id
+                   AND h.hotel_id = m.hotel_id
+                 WHERE m.id = ?
+                   AND m.hotel_id = ?
+                 LIMIT 1
+                 FOR UPDATE"
+            );
+            $stmt->execute([$mantenimiento_id, $hotelId]);
+            $mantenimiento = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$mantenimiento) {
+                throw new RuntimeException('Mantenimiento no encontrado para el hotel actual');
+            }
+
+            if ((int)($mantenimiento['programado'] ?? 0) !== 1 || (string)($mantenimiento['estado'] ?? '') !== 'programado') {
+                throw new RuntimeException('Solo se puede activar un mantenimiento programado pendiente');
+            }
+
+            $fechaProgramada = substr((string)($mantenimiento['fecha_programada'] ?? ''), 0, 10);
+            if ($fechaProgramada === '') {
+                throw new RuntimeException('El mantenimiento no tiene fecha programada');
+            }
+
+            if ($fechaProgramada > $hoy) {
+                throw new RuntimeException('Solo se puede activar mantenimiento vencido o programado para hoy');
+            }
+
+            if ((string)($mantenimiento['habitacion_estado'] ?? '') !== 'disponible') {
+                throw new RuntimeException('La habitacion no esta disponible para iniciar mantenimiento');
+            }
+
+            $stmtActivo = $pdo->prepare(
+                "SELECT id
+                 FROM {$this->table}
+                 WHERE habitacion_id = ?
+                   AND hotel_id = ?
+                   AND estado = 'en_proceso'
+                 LIMIT 1
+                 FOR UPDATE"
+            );
+            $stmtActivo->execute([(int)$mantenimiento['habitacion_id'], $hotelId]);
+            if ($stmtActivo->fetch(PDO::FETCH_ASSOC)) {
+                throw new RuntimeException('La habitacion ya tiene un mantenimiento en proceso');
+            }
+
+            $fechaFin = substr((string)($mantenimiento['fecha_programada_fin'] ?: $fechaProgramada), 0, 10);
+            $fechaFinExclusiva = date('Y-m-d', strtotime($fechaFin . ' +1 day'));
+            $stmtReservas = $pdo->prepare(
+                "SELECT COUNT(*)
+                 FROM reservaciones r
+                 INNER JOIN reservacion_habitaciones rh
+                    ON rh.reservacion_id = r.id
+                   AND rh.hotel_id = r.hotel_id
+                 INNER JOIN habitaciones h
+                    ON h.id = rh.habitacion_id
+                   AND h.hotel_id = r.hotel_id
+                 WHERE r.hotel_id = ?
+                   AND rh.habitacion_id = ?
+                   AND r.estado IN ('confirmada', 'checked_in')
+                   AND r.fecha_entrada < ?
+                   AND r.fecha_salida > ?"
+            );
+            $stmtReservas->execute([
+                $hotelId,
+                (int)$mantenimiento['habitacion_id'],
+                $fechaFinExclusiva,
+                $fechaProgramada,
+            ]);
+
+            if ((int)$stmtReservas->fetchColumn() > 0) {
+                throw new RuntimeException('Hay reservaciones conflictivas para la fecha programada');
+            }
+
+            $stmtUpdateMantenimiento = $pdo->prepare(
+                "UPDATE {$this->table}
+                 SET estado = 'en_proceso',
+                     fecha_inicio = NOW(),
+                     realizado_por = ?,
+                     updated_at = NOW()
+                 WHERE id = ?
+                   AND hotel_id = ?
+                   AND estado = 'programado'
+                   AND programado = 1"
+            );
+            $stmtUpdateMantenimiento->execute([
+                $usuario_id,
+                $mantenimiento_id,
+                $hotelId,
+            ]);
+
+            if ($stmtUpdateMantenimiento->rowCount() !== 1) {
+                throw new RuntimeException('No se pudo actualizar el mantenimiento programado');
+            }
+
+            $stmtUpdateHabitacion = $pdo->prepare(
+                "UPDATE habitaciones
+                 SET estado = 'mantenimiento',
+                     updated_at = NOW()
+                 WHERE id = ?
+                   AND hotel_id = ?
+                   AND estado = 'disponible'"
+            );
+            $stmtUpdateHabitacion->execute([
+                (int)$mantenimiento['habitacion_id'],
+                $hotelId,
+            ]);
+
+            if ($stmtUpdateHabitacion->rowCount() !== 1) {
+                throw new RuntimeException('No se pudo marcar la habitacion en mantenimiento');
+            }
+
+            $pdo->commit();
+
+            return [
+                'success' => true,
+                'message' => 'Mantenimiento programado activado correctamente',
+                'mantenimiento' => $mantenimiento,
+                'habitacion_id' => (int)$mantenimiento['habitacion_id'],
+                'habitacion_numero' => $mantenimiento['habitacion_numero'] ?? null,
+            ];
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'mantenimiento_id' => $mantenimiento_id,
+            ];
+        }
+    }
     
     /**
      * Cancelar un mantenimiento programado

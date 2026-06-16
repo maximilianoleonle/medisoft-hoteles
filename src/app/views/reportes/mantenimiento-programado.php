@@ -43,6 +43,8 @@ $categoriaClass = [
     'hoy' => 'is-warning',
     'proximo' => 'is-neutral',
 ];
+
+$puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenimiento') : false;
 ?>
 
 <style>
@@ -76,6 +78,9 @@ $categoriaClass = [
 .mant-prog-pill.is-neutral{background:#e0f2fe;color:#075985}
 .mant-prog-warnings{display:flex;flex-direction:column;gap:5px}
 .mant-prog-warning{font-size:12px;color:#475569;background:#f8fafc;border:1px solid #e5e7eb;border-radius:7px;padding:6px 8px;font-weight:700}
+.mant-prog-inline-form{margin-top:9px}
+.mant-prog-activate{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:7px;background:#0f766e;color:#fff;font-size:12px;font-weight:900;padding:8px 10px;cursor:pointer}
+.mant-prog-activate:hover{background:#115e59}
 .mant-prog-empty{padding:38px 20px;text-align:center;color:#64748b}
 .mant-prog-empty strong{display:block;color:#172033;font-size:18px;margin-bottom:8px}
 .mant-prog-note{padding:14px 18px;background:#f8fafc;color:#475569;border-top:1px solid #e5e7eb;font-size:13px;font-weight:700}
@@ -173,6 +178,20 @@ $categoriaClass = [
                                     <span class="mant-prog-pill <?= !empty($item['preview_candidato']) ? 'is-warning' : 'is-neutral' ?>">
                                         <?= !empty($item['preview_candidato']) ? 'Candidato' : 'Solo lectura' ?>
                                     </span>
+                                    <?php if (!empty($item['preview_candidato']) && $puedeActivarMantenimiento): ?>
+                                        <form class="mant-prog-inline-form"
+                                              method="POST"
+                                              action="<?= url('habitaciones/activar-mantenimiento-programado/' . (int)($item['id'] ?? 0)) ?>"
+                                              onsubmit="return confirm('Activar este mantenimiento programado y marcar la habitacion en mantenimiento?')">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="dias" value="<?= (int)$dias ?>">
+                                            <input type="hidden" name="return_to" value="preview">
+                                            <button type="submit" class="mant-prog-activate">
+                                                <i class="fas fa-play"></i>
+                                                Activar
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
                                     <?php if (!empty($item['motivo'])): ?>
                                         <div class="mant-prog-muted"><?= mant_prog_safe($item['motivo']) ?></div>
                                     <?php endif; ?>
@@ -185,7 +204,7 @@ $categoriaClass = [
         <?php endif; ?>
 
         <div class="mant-prog-note">
-            Esta vista no llama activaciones automaticas, no cambia disponibilidad, no crea tareas y no toca Caja, pagos, abonos, nomina, offline ni /api/sync.
+            Esta vista no llama activaciones automaticas, no crea tareas y no toca Caja, pagos, abonos, nomina, offline ni /api/sync. La activacion manual disponible para candidatos requiere permiso, CSRF y validacion backend.
         </div>
     </section>
 </div>

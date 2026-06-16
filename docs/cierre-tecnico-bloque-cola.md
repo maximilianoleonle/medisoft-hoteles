@@ -918,3 +918,14 @@ Estado: `CONTRATO_MANT_E_0_ACTIVACION_MANUAL_COMPLETADO`.
 - No modifica codigo ni DB.
 - No habilita POST ni botones.
 - No autoriza activacion automatica.
+
+## Checkpoint tecnico MANT-E-A
+
+Estado: `ACTIVACION_MANUAL_MANT_E_A_COMPLETADA_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_E_A_activacion_manual_vencidos.md`.
+- Ruta POST individual agregada con CSRF y permiso.
+- Metodo transaccional centralizado en `Mantenimiento`.
+- Health y preflight pasan con `ERROR: 0`.
+- HTTP sin sesion bloquea/redirige.
+- QA manual real queda diferida.

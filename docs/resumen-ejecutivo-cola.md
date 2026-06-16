@@ -1023,3 +1023,15 @@ Resultado MANT-E-0:
   `activarMantenimientosPendientes()`.
 - Siguiente paso recomendado: MANT-E-A solo con backup/checklist y QA manual explicita,
   o abrir otro bloque read-only independiente.
+
+Resultado MANT-E-A:
+
+- Estado tecnico: `ACTIVACION_MANUAL_MANT_E_A_COMPLETADA_QA_DIFERIDA`.
+- Documento: `docs/fase_MANT_E_A_activacion_manual_vencidos.md`.
+- Se agrega activacion manual individual desde el preview.
+- El backend valida hotel, estado programado, fecha vencida/hoy, habitacion disponible,
+  ausencia de mantenimiento en proceso y reservaciones conflictivas.
+- La escritura usa transaccion y no toca Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.
+- Checkers pasan con `ERROR: 0`.
+- QA manual queda diferida; no se ejecuto activacion real de datos desde automatizacion.

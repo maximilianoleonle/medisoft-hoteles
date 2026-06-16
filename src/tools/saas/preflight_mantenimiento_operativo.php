@@ -171,7 +171,7 @@ $modelPath = $appRoot . '/app/models/Mantenimiento.php';
 $viewPath = $appRoot . '/app/views/habitaciones/ver.php';
 $previewViewPath = $appRoot . '/app/views/reportes/mantenimiento-programado.php';
 
-echo "Preflight Fase MANT-B/MANT-C-A/MANT-D-A - Mantenimiento operativo existente\n";
+echo "Preflight Fase MANT-B/MANT-C-A/MANT-D-A/MANT-E-A - Mantenimiento operativo existente\n";
 echo "=====================================================\n";
 
 if (is_file($configPath)) {
@@ -307,6 +307,12 @@ if (mantOpRoutePatternExists($routes, '/^habitaciones\/cancelar-mantenimiento-pr
     mantOpError('Ruta MANT-B faltante: POST /habitaciones/cancelar-mantenimiento-programado/{id}.', 'Restaurar ruta POST existente con CSRF y permisos.');
 }
 
+if (mantOpRoutePatternExists($routes, '/^habitaciones\/activar-mantenimiento-programado\/\{id:[^}]+\}$/', 'post')) {
+    mantOpOk('Ruta MANT-E-A registrada: POST /habitaciones/activar-mantenimiento-programado/{id}.');
+} else {
+    mantOpError('Ruta MANT-E-A faltante: POST /habitaciones/activar-mantenimiento-programado/{id}.', 'Restaurar activacion manual individual con CSRF y permisos.');
+}
+
 if (mantOpRoutePatternExists($routes, '/^reportes\/mantenimiento-programado$/', 'get')) {
     mantOpOk('Ruta MANT-D-A registrada: GET /reportes/mantenimiento-programado.');
 } else {
@@ -387,6 +393,8 @@ if (
 
 $previewControllerBody = mantOpMethodBody($reportesControllerCode, 'mantenimientoProgramadoAction');
 $previewModelBody = mantOpMethodBody($modelCode, 'previewProgramados');
+$activateControllerBody = mantOpMethodBody($controllerCode, 'activarMantenimientoProgramadoAction');
+$activateModelBody = mantOpMethodBody($modelCode, 'activarProgramadoManual');
 if (
     $previewControllerBody !== ''
     && strpos($previewControllerBody, 'previewProgramados') !== false
@@ -425,13 +433,45 @@ if (
 if (
     $previewViewCode !== ''
     && strpos($previewViewCode, "url('habitaciones/'") !== false
-    && strpos($previewViewCode, 'method="POST"') === false
-    && strpos($previewViewCode, 'csrf_field()') === false
+    && strpos($previewViewCode, "url('habitaciones/activar-mantenimiento-programado/'") !== false
+    && strpos($previewViewCode, "can('habitaciones.mantenimiento')") !== false
+    && strpos($previewViewCode, 'method="POST"') !== false
+    && strpos($previewViewCode, 'csrf_field()') !== false
     && stripos($previewViewCode, 'activarMantenimientosPendientes') === false
 ) {
-    mantOpOk('Vista MANT-D-A es navegable, read-only y sin formularios POST.');
+    mantOpOk('Vista MANT-D-A/MANT-E-A mantiene preview GET y accion manual POST con permiso y CSRF.');
 } else {
-    mantOpError('Vista MANT-D-A no muestra contrato read-only esperado.', 'Revisar enlaces GET, ausencia de POST y ausencia de acciones de activacion.');
+    mantOpError('Vista MANT-D-A/MANT-E-A no muestra contrato esperado.', 'Revisar preview GET, boton solo con permiso, POST con CSRF y ausencia de activacion automatica.');
+}
+
+if (
+    $activateControllerBody !== ''
+    && strpos($activateControllerBody, 'validateCSRF()') !== false
+    && strpos($activateControllerBody, "requirePermission('habitaciones.mantenimiento')") !== false
+    && strpos($activateControllerBody, 'activarProgramadoManual') !== false
+    && strpos($activateControllerBody, 'registrarAuditoriaMantenimientoProgramado') !== false
+    && stripos($activateControllerBody, 'activarMantenimientosPendientes') === false
+    && stripos($activateControllerBody, 'movimientos_caja') === false
+) {
+    mantOpOk('HabitacionController::activarMantenimientoProgramadoAction tiene CSRF, permiso, auditoria y no usa activacion masiva.');
+} else {
+    mantOpError('HabitacionController::activarMantenimientoProgramadoAction no muestra guardas MANT-E-A.', 'Revisar CSRF, permiso, auditoria, metodo central y ausencia de Caja/activacion masiva.');
+}
+
+if (
+    $activateModelBody !== ''
+    && strpos($activateModelBody, 'beginTransaction') !== false
+    && strpos($activateModelBody, 'FOR UPDATE') !== false
+    && strpos($activateModelBody, "estado = 'en_proceso'") !== false
+    && strpos($activateModelBody, "estado = 'mantenimiento'") !== false
+    && strpos($activateModelBody, "r.estado IN ('confirmada', 'checked_in')") !== false
+    && strpos($activateModelBody, "m.hotel_id = ?") !== false
+    && stripos($activateModelBody, 'activarMantenimientosPendientes') === false
+    && stripos($activateModelBody, 'movimientos_caja') === false
+) {
+    mantOpOk('Mantenimiento::activarProgramadoManual es transaccional, scoped, valida conflictos y no toca Caja.');
+} else {
+    mantOpError('Mantenimiento::activarProgramadoManual no muestra guardas MANT-E-A completas.', 'Revisar transaccion, FOR UPDATE, hotel_id, conflictos, habitacion disponible y ausencia de Caja.');
 }
 
 $recommendations = array_values(array_unique(array_filter($recommendations)));

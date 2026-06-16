@@ -1138,3 +1138,16 @@ instruccion del usuario.
   - confirmar bloqueo de doble activacion;
   - confirmar bloqueo con reservacion conflictiva;
   - confirmar que no hay Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+
+### QA futura MANT-E-A
+
+- Crear backup de DB antes de activar un candidato real.
+- Abrir `/reportes/mantenimiento-programado`.
+- Confirmar boton "Activar" solo en candidatos vencidos/hoy y con permiso.
+- Activar un candidato controlado.
+- Confirmar mensaje de exito.
+- Confirmar que el mantenimiento queda `en_proceso`.
+- Confirmar que la habitacion queda en `mantenimiento`.
+- Intentar doble activacion y confirmar bloqueo limpio.
+- Confirmar que no se crean movimientos de Caja, pagos, abonos ni cambios en `/api/sync`.
+- Estado tecnico actual: `ACTIVACION_MANUAL_MANT_E_A_COMPLETADA_QA_DIFERIDA`.
