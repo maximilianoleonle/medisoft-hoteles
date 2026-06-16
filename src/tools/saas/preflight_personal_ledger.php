@@ -399,7 +399,7 @@ if (is_file($workerDetailViewPath)) {
         npPfOk('Vista de trabajador muestra ledger y concepto manual sin Caja con aclaracion de saldo informativo.');
     } else {
         npPfWarning(
-            'Vista de trabajador no muestra claramente el contrato NP-C-A.',
+            'Vista de trabajador no muestra claramente el contrato NP-C-B-A.',
             'Asegurar texto de saldo informativo y ausencia de rutas internas/Caja.'
         );
     }

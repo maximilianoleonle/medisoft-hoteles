@@ -391,7 +391,7 @@ $puedeRegistrarConcepto = ($trabajador['estado'] ?? '') === 'activo' && !empty($
                 <article class="worker-ledger-card">
                     <header>
                         <h3 class="font-black">Conceptos laborales</h3>
-                        <p class="text-xs text-slate-500 mt-1">Bonos, comisiones, descuentos, ajustes o liquidaciones registradas en el ledger.</p>
+                        <p class="text-xs text-slate-500 mt-1">Bonos, comisiones, descuentos y ajustes registrados en el ledger.</p>
                     </header>
                     <div class="worker-ledger-body">
                         <?php if (empty($ledgerDisponible['trabajador_pagos'])): ?>
