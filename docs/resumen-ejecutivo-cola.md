@@ -977,3 +977,14 @@ Resultado MANT-C-F:
 - QA manual queda diferida.
 - Siguiente paso recomendado: nuevo contrato independiente antes de activar
   mantenimientos automaticamente o alterar disponibilidad.
+
+Resultado MANT-D-0:
+
+- Estado tecnico: `CONTRATO_MANT_D_0_PREVIEW_VENCIDOS_COMPLETADO`.
+- Documento: `docs/fase_MANT_D_0_contrato_preview_vencidos.md`.
+- Se define un preview futuro GET/read-only de mantenimientos programados vencidos/
+  proximos y bloqueos operativos.
+- Queda prohibido activar vencidos, llamar `activarMantenimientosPendientes()`, cambiar
+  habitaciones, crear cron o tocar disponibilidad automaticamente.
+- No se modifica codigo ni DB.
+- Siguiente paso recomendado: MANT-D-A preview read-only de candidatos.

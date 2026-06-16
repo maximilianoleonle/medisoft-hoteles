@@ -1146,3 +1146,14 @@ Estado formal vigente: `BLOQUE_MANT_C_MANTENIMIENTO_PROGRAMADO_CERRADO_QA_DIFERI
 - No agrega funcionalidad nueva.
 - Siguiente contrato requerido antes de activar automaticamente mantenimientos vencidos
   o modificar disponibilidad por automatizacion.
+
+### Estado MANT-D-0
+
+Estado formal vigente: `CONTRATO_MANT_D_0_PREVIEW_VENCIDOS_COMPLETADO`.
+
+- Documento: `docs/fase_MANT_D_0_contrato_preview_vencidos.md`.
+- Define una fase futura GET/read-only para observar mantenimientos programados vencidos
+  o proximos sin activarlos.
+- Prohibe llamar `Mantenimiento::activarMantenimientosPendientes()`, cambiar
+  habitaciones, crear cron o tocar disponibilidad automaticamente.
+- Siguiente accion segura: MANT-D-A preview read-only de candidatos, si se autoriza.

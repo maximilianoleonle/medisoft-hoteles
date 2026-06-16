@@ -765,3 +765,11 @@
 - MANT-C se cierra tecnicamente antes de cualquier automatizacion.
 - QA manual queda diferida por instruccion del usuario, no sustituida por los checkers.
 - La activacion automatica de mantenimientos vencidos requiere contrato independiente.
+
+## Decision MANT-D-0
+
+- El siguiente paso no sera activacion, sino observabilidad read-only de candidatos.
+- La ruta futura debe vivir bajo reportes para evitar convertir la ficha de habitacion en
+  una pantalla de automatizacion.
+- `activarMantenimientosPendientes()` queda congelado hasta una fase posterior con QA
+  manual explicita.

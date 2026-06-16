@@ -956,3 +956,13 @@ Estado: `BLOQUE_MANT_C_MANTENIMIENTO_PROGRAMADO_CERRADO_QA_DIFERIDA`.
 - Health y preflight validan MANT-C-A con `ERROR: 0`.
 - Riesgo residual: QA manual visual/funcional diferida.
 - No se habilita activacion automatica de mantenimientos vencidos.
+
+## Auditoria MANT-D-0
+
+Estado: `CONTRATO_MANT_D_0_PREVIEW_VENCIDOS_COMPLETADO`.
+
+- Contrato documental sin cambios de codigo.
+- Riesgo principal identificado: activar vencidos cambia mantenimiento y habitacion.
+- La fase futura queda limitada a GET/read-only y no puede llamar
+  `activarMantenimientosPendientes()`.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.

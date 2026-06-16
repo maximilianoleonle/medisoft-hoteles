@@ -874,3 +874,12 @@ Estado: `BLOQUE_MANT_C_MANTENIMIENTO_PROGRAMADO_CERRADO_QA_DIFERIDA`.
 - No se agregaron funcionalidades nuevas en el cierre.
 - No hay rutas nuevas, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - QA manual queda diferida.
+
+## Contrato tecnico MANT-D-0
+
+Estado: `CONTRATO_MANT_D_0_PREVIEW_VENCIDOS_COMPLETADO`.
+
+- Documento: `docs/fase_MANT_D_0_contrato_preview_vencidos.md`.
+- Define preview read-only de mantenimientos programados vencidos/proximos.
+- No modifica codigo ni DB.
+- No autoriza activacion automatica.

@@ -1104,3 +1104,17 @@ instruccion del usuario.
 - QA manual global de MANT-C queda diferida.
 - No avanzar a activacion automatica de vencidos, cron/dashboard, disponibilidad
   automatica, Caja, pagos, abonos, nomina, offline ni `/api/sync` sin contrato nuevo.
+
+### Estado MANT-D-0
+
+- Contrato de preview read-only de vencidos completado.
+- QA manual no aplica todavia; no se modifico codigo.
+
+### QA futura MANT-D-A
+
+- Abrir preview con sesion de hotel.
+- Confirmar estado vacio o listado de candidatos.
+- Confirmar que los registros pertenecen solo al hotel activo.
+- Confirmar links a habitacion.
+- Confirmar que no hay botones de activar, POST, cron ni cambios de habitacion.
+- Confirmar HTTP sin sesion.

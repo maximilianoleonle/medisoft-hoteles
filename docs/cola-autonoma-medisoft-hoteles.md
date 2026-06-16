@@ -875,3 +875,10 @@ agregar funcionalidades nuevas.
 - No agrega funcionalidad nueva.
 - Siguiente accion segura: nuevo contrato independiente; no activar mantenimientos
   vencidos automaticamente sin contrato.
+
+## Contrato MANT-D-0 preview vencidos
+
+- Estado formal: `CONTRATO_MANT_D_0_PREVIEW_VENCIDOS_COMPLETADO`.
+- Documento creado: `docs/fase_MANT_D_0_contrato_preview_vencidos.md`.
+- No modifica codigo ni DB.
+- Siguiente accion segura: MANT-D-A preview GET/read-only de candidatos.
