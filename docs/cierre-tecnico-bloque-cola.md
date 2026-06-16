@@ -993,3 +993,14 @@ Estado: `BLOQUE_MANT_G_TAREAS_DESDE_MANTENIMIENTO_CERRADO_QA_DIFERIDA`.
 - No hay creacion automatica, acciones masivas, cron, Caja, pagos, abonos, nomina,
   CxP operativa, offline ni `/api/sync`.
 - QA manual real queda diferida por instruccion del usuario.
+
+## Checkpoint tecnico LIM-A
+
+Estado: `REPORTE_LIM_A_LIMPIEZA_READONLY_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_LIM_A_reporte_limpieza_readonly.md`.
+- Ruta GET `/reportes/limpieza`.
+- Preflight LIM-A y health general pasan con `ERROR: 0`.
+- No hay formularios, POST, liberacion automatica, cambios de estado, Caja, pagos,
+  abonos, nomina, offline ni `/api/sync`.
+- QA manual real queda diferida por instruccion del usuario.

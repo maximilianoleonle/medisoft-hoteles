@@ -1001,3 +1001,15 @@ agregar funcionalidades nuevas.
 - No modifica codigo, DB, rutas, modelos, vistas, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.
 - Siguiente accion segura: LIM-A reporte GET/read-only de limpieza.
+
+## LIM-A reporte limpieza read-only
+
+- Estado formal: `REPORTE_LIM_A_LIMPIEZA_READONLY_COMPLETADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_LIM_A_reporte_limpieza_readonly.md`.
+- Ruta GET: `/reportes/limpieza`.
+- Vista read-only con habitaciones en limpieza, distribucion por piso y tareas activas de
+  limpieza.
+- Preflight: `tools/saas/preflight_limpieza_operativa.php`.
+- No hay POST, formularios, liberacion automatica, cambios de estado, Caja, pagos,
+  abonos, nomina, offline ni `/api/sync`.
+- Siguiente accion segura: revision/auditoria/cierre LIM-A.

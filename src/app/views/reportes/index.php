@@ -512,6 +512,9 @@
                     <a href="<?= url('reportes/mantenimiento-programado') ?>" class="rep-cta" style="margin-top:8px;background:#fff;color:var(--report-color);border:1px solid color-mix(in srgb, var(--report-color) 32%, var(--report-border));">
                         <i class="fas fa-calendar-check text-sm"></i> Ver programados
                     </a>
+                    <a href="<?= url('reportes/limpieza') ?>" class="rep-cta" style="margin-top:8px;background:#fff;color:var(--report-color);border:1px solid color-mix(in srgb, var(--report-color) 32%, var(--report-border));">
+                        <i class="fas fa-broom text-sm"></i> Ver limpieza
+                    </a>
                 </div>
             </div>
 

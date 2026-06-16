@@ -975,3 +975,13 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Codigo: no aplica.
 - No tocar habitaciones, reservaciones, tareas, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.
+
+### LIM-A reporte limpieza read-only
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-lim): add read-only housekeeping report`.
+- DB: no aplica; LIM-A no crea migraciones ni datos.
+- El rollback retiraria ruta GET, accion de reportes, vista, enlace del centro de
+  reportes y preflight LIM-A.
+- No tocar habitaciones, reservaciones, tareas, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.

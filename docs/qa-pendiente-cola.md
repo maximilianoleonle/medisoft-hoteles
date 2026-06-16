@@ -1230,3 +1230,13 @@ instruccion del usuario.
   - confirmar enlaces GET seguros a habitacion/tareas;
   - confirmar que no hay POST, liberacion automatica, Caja, pagos, abonos, nomina,
     offline ni `/api/sync`.
+
+### Estado LIM-A
+
+- Reporte limpieza read-only implementado.
+- QA manual diferida por instruccion del usuario.
+- Probar `/reportes/limpieza`.
+- Confirmar resumen y habitaciones en limpieza del hotel actual.
+- Confirmar que los enlaces a habitacion/tarea son GET.
+- Confirmar que no hay formularios, liberacion automatica, creacion de tareas,
+  inventario automatico, Caja, pagos, abonos, nomina, offline ni `/api/sync`.

@@ -2146,6 +2146,167 @@ private function exportarIngresosTotalesPdf() {
     ]);
 }
 /**
+ * Reporte read-only de limpieza operativa.
+ */
+public function limpiezaAction() {
+    $hotelId = (int)$this->hotelIdActual();
+    $reporte = $this->reporteLimpiezaOperativa($hotelId);
+
+    View::renderTemplate('reportes/limpieza-operativa', [
+        'title' => 'Limpieza operativa - ' . current_hotel_display_name(),
+        'reporte' => $reporte,
+    ]);
+}
+
+private function reporteLimpiezaOperativa(int $hotelId): array {
+    $base = [
+        'resumen' => [
+            'habitaciones_activas' => 0,
+            'en_limpieza' => 0,
+            'con_tarea_activa' => 0,
+            'sin_tarea_activa' => 0,
+            'tareas_limpieza_activas' => 0,
+        ],
+        'habitaciones' => [],
+        'por_piso' => [],
+        'tareas_activas' => [],
+        'tareas_disponibles' => false,
+    ];
+
+    if ($hotelId <= 0) {
+        return $base;
+    }
+
+    $db = Database::getInstance();
+    $tareasDisponibles = $this->tablaExisteReporte($db, 'tareas_operativas');
+    $base['tareas_disponibles'] = $tareasDisponibles;
+
+    $stmt = $db->query(
+        "SELECT COUNT(*) AS habitaciones_activas,
+                SUM(CASE WHEN estado = 'limpieza' THEN 1 ELSE 0 END) AS en_limpieza
+         FROM habitaciones
+         WHERE hotel_id = ?
+           AND activa = 1",
+        [$hotelId]
+    );
+    $resumenHabitaciones = $stmt ? ($stmt->fetch() ?: []) : [];
+    $base['resumen']['habitaciones_activas'] = (int)($resumenHabitaciones['habitaciones_activas'] ?? 0);
+    $base['resumen']['en_limpieza'] = (int)($resumenHabitaciones['en_limpieza'] ?? 0);
+
+    $stmt = $db->query(
+        "SELECT piso,
+                COUNT(*) AS total
+         FROM habitaciones
+         WHERE hotel_id = ?
+           AND activa = 1
+           AND estado = 'limpieza'
+         GROUP BY piso
+         ORDER BY piso",
+        [$hotelId]
+    );
+    $base['por_piso'] = $stmt ? ($stmt->fetchAll() ?: []) : [];
+
+    $taskJoin = '';
+    $taskSelect = '0 AS tareas_activas_limpieza, NULL AS tarea_activa_id, NULL AS tarea_activa_titulo, NULL AS tarea_activa_estado';
+    if ($tareasDisponibles) {
+        $taskSelect = "COUNT(t.id) AS tareas_activas_limpieza,
+                       MIN(t.id) AS tarea_activa_id,
+                       MIN(t.titulo) AS tarea_activa_titulo,
+                       MIN(t.estado) AS tarea_activa_estado";
+        $taskJoin = "LEFT JOIN tareas_operativas t
+                       ON t.hotel_id = h.hotel_id
+                      AND t.habitacion_id = h.id
+                      AND t.categoria = 'limpieza'
+                      AND t.estado IN ('pendiente', 'asignada', 'en_proceso')";
+    }
+
+    $stmt = $db->query(
+        "SELECT h.id,
+                h.numero,
+                h.tipo,
+                h.piso,
+                h.estado,
+                h.updated_at,
+                ult.ultima_salida,
+                {$taskSelect}
+         FROM habitaciones h
+         LEFT JOIN (
+             SELECT rh.habitacion_id,
+                    MAX(r.fecha_salida) AS ultima_salida
+             FROM reservacion_habitaciones rh
+             INNER JOIN reservaciones r
+                ON r.id = rh.reservacion_id
+             WHERE r.hotel_id = ?
+               AND r.estado IN ('checked_out', 'checked_in', 'confirmada')
+             GROUP BY rh.habitacion_id
+         ) ult
+            ON ult.habitacion_id = h.id
+         {$taskJoin}
+         WHERE h.hotel_id = ?
+           AND h.activa = 1
+           AND h.estado = 'limpieza'
+         GROUP BY h.id, h.numero, h.tipo, h.piso, h.estado, h.updated_at, ult.ultima_salida
+         ORDER BY COALESCE(h.updated_at, ult.ultima_salida, '1970-01-01') ASC, CAST(h.numero AS UNSIGNED) ASC
+         LIMIT 200",
+        [$hotelId, $hotelId]
+    );
+    $base['habitaciones'] = $stmt ? ($stmt->fetchAll() ?: []) : [];
+
+    foreach ($base['habitaciones'] as $habitacion) {
+        if ((int)($habitacion['tareas_activas_limpieza'] ?? 0) > 0) {
+            $base['resumen']['con_tarea_activa']++;
+        }
+    }
+    $base['resumen']['sin_tarea_activa'] = max(0, $base['resumen']['en_limpieza'] - $base['resumen']['con_tarea_activa']);
+
+    if ($tareasDisponibles) {
+        $stmt = $db->query(
+            "SELECT t.id,
+                    t.titulo,
+                    t.estado,
+                    t.prioridad,
+                    t.fecha_programada,
+                    t.fecha_limite,
+                    t.habitacion_id,
+                    h.numero AS habitacion_numero
+             FROM tareas_operativas t
+             LEFT JOIN habitaciones h
+                ON h.id = t.habitacion_id
+               AND h.hotel_id = t.hotel_id
+             WHERE t.hotel_id = ?
+               AND t.categoria = 'limpieza'
+               AND t.estado IN ('pendiente', 'asignada', 'en_proceso')
+             ORDER BY FIELD(t.estado, 'en_proceso', 'asignada', 'pendiente'),
+                      FIELD(t.prioridad, 'urgente', 'alta', 'media', 'baja'),
+                      COALESCE(t.fecha_limite, t.fecha_programada, t.created_at) ASC
+             LIMIT 30",
+            [$hotelId]
+        );
+        $base['tareas_activas'] = $stmt ? ($stmt->fetchAll() ?: []) : [];
+        $base['resumen']['tareas_limpieza_activas'] = count($base['tareas_activas']);
+    }
+
+    return $base;
+}
+
+private function tablaExisteReporte(Database $db, string $tabla): bool {
+    if (!preg_match('/^[a-zA-Z0-9_]+$/', $tabla)) {
+        return false;
+    }
+
+    $stmt = $db->query(
+        "SELECT COUNT(*) AS total
+         FROM information_schema.TABLES
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = ?",
+        [$tabla]
+    );
+
+    $row = $stmt ? ($stmt->fetch() ?: []) : [];
+    return (int)($row['total'] ?? 0) > 0;
+}
+
+/**
  * Preview read-only de mantenimiento programado vencido/proximo.
  */
 public function mantenimientoProgramadoAction() {

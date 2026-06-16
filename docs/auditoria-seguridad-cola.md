@@ -1097,3 +1097,15 @@ Estado: `CONTRATO_LIM_0_LIMPIEZA_OPERATIVA_COMPLETADO`.
 - Riesgo principal futuro: reactivar descuentos automaticos de inventario por limpieza.
 - Mitigacion: inventario automatico queda fuera de alcance hasta contrato especifico.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.
+
+## Auditoria LIM-A
+
+Estado: `REPORTE_LIM_A_LIMPIEZA_READONLY_COMPLETADO_QA_DIFERIDA`.
+
+- Ruta nueva solo GET: `/reportes/limpieza`.
+- Constructor de `ReportesController` conserva sesion, permiso y modulo `reportes`.
+- Vista sin `<form>` y sin POST.
+- Consultas scoped por `hotel_id`.
+- Enlaces solo a GET de habitacion/tarea.
+- Preflight valida ausencia de POST, Caja, `/api/sync` y tareas cross-hotel.
+- Riesgo residual: QA manual diferida.

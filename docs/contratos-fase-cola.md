@@ -1277,3 +1277,16 @@ Estado formal vigente: `CONTRATO_LIM_0_LIMPIEZA_OPERATIVA_COMPLETADO`.
 - Prohibe automatizar liberacion, reactivar inventario automatico, Caja, pagos, abonos,
   nomina, offline y `/api/sync`.
 - Siguiente accion segura: LIM-A reporte GET/read-only de limpieza.
+
+### Estado LIM-A
+
+Estado formal vigente: `REPORTE_LIM_A_LIMPIEZA_READONLY_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_LIM_A_reporte_limpieza_readonly.md`.
+- Implementa `GET /reportes/limpieza`.
+- Muestra habitaciones en limpieza, distribucion por piso y tareas activas de categoria
+  `limpieza`.
+- No contiene formularios ni POST.
+- No libera habitaciones, no crea tareas, no descuenta inventario y no toca Caja, pagos,
+  abonos, nomina, offline ni `/api/sync`.
+- Siguiente accion segura: revision/auditoria/cierre LIM-A.

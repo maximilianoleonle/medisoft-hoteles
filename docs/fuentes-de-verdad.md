@@ -520,3 +520,12 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   - `reservaciones` y `reservacion_habitaciones` para checkout;
   - `tareas_operativas` y `tarea_eventos` solo como seguimiento.
 - `movimientos_caja`, pagos, abonos, nomina, offline y `/api/sync` no participan.
+
+### LIM-A reporte limpieza read-only
+
+- Fuente de verdad documental: `docs/fase_LIM_A_reporte_limpieza_readonly.md`.
+- Fuente tecnica de consulta: `ReportesController::reporteLimpiezaOperativa()`.
+- Fuente visual: `app/views/reportes/limpieza-operativa.php`.
+- Fuente de verificacion: `tools/saas/preflight_limpieza_operativa.php`.
+- `habitaciones.estado` sigue siendo la autoridad de disponibilidad.
+- `tareas_operativas` solo aporta contexto operativo.

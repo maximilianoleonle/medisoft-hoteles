@@ -873,3 +873,12 @@
   habitaciones por si mismas.
 - La primera implementacion futura debe ser LIM-A read-only, no una accion POST.
 - Inventario automatico por limpieza queda congelado hasta contrato especifico.
+
+## Decision LIM-A
+
+- El reporte vive en `ReportesController` porque es una vista GET/read-only y reutiliza
+  guardas existentes de `reportes`.
+- No se crea `LimpiezaController` todavia para evitar un modulo operativo con acciones
+  prematuras.
+- Las tareas de limpieza se muestran como contexto; no controlan disponibilidad.
+- El reporte no usa formularios ni acciones de liberacion.

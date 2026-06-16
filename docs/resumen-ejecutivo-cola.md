@@ -1107,3 +1107,13 @@ Resultado LIM-0:
 - Se define que tareas de limpieza solo son seguimiento y no fuente de disponibilidad.
 - No se modifica codigo, DB, rutas, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - Siguiente paso recomendado: LIM-A reporte read-only de limpieza.
+
+Resultado LIM-A:
+
+- Estado tecnico: `REPORTE_LIM_A_LIMPIEZA_READONLY_COMPLETADO_QA_DIFERIDA`.
+- Documento: `docs/fase_LIM_A_reporte_limpieza_readonly.md`.
+- Se agrega `GET /reportes/limpieza`.
+- Vista read-only de habitaciones en limpieza y tareas activas de categoria `limpieza`.
+- Preflight LIM-A pasa con `ERROR: 0`; health general pasa con `ERROR: 0`.
+- No hay POST, formularios, cambios de disponibilidad, Caja, pagos, abonos, nomina,
+  offline ni `/api/sync`.
