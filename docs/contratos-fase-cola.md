@@ -373,11 +373,11 @@ Estado formal vigente: `AUDITORIA_DESCARGAS_4B_B_VALIDADA_MANUALMENTE`.
 - Los fallos de auditoria son tolerantes.
 - QA manual documentada.
 
-## Fase 4B-C: Edicion controlada de metadata documental
+## Fase 4B-C-A: Edicion controlada de metadata documental
 
 ### Estado
 
-Estado formal vigente: `CONTRATO_4B_C_METADATA_DOCUMENTAL_COMPLETADO`.
+Estado formal vigente: `METADATA_DOCUMENTAL_4B_C_A_COMPLETADA_QA_MANUAL_PENDIENTE`.
 
 ### Contrato
 
@@ -389,6 +389,13 @@ Estado formal vigente: `CONTRATO_4B_C_METADATA_DOCUMENTAL_COMPLETADO`.
 - Registrar `documentos.metadata_actualizada` con antes/despues seguro.
 - No implementar borrado, reemplazo de archivo, links publicos, Caja, pagos, abonos ni
   `/api/sync`.
+
+### Implementacion
+
+- `GET /documentos/{id}/editar`.
+- `POST /documentos/{id}/actualizar`.
+- `Documento::actualizarMetadata()` centraliza validacion y escritura.
+- Vista `documentos/editar.php` no expone rutas internas.
 
 ## Bloque Personal y Nomina (Fase NP): modulo independiente de trabajadores
 

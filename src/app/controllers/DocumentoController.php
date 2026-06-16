@@ -91,6 +91,64 @@ class DocumentoController extends Controller
         $this->servirArchivoPrivado($documento, $ruta);
     }
 
+    public function editarAction(): void
+    {
+        $id = (int)($this->route_params['id'] ?? 0);
+        $hotelId = $this->hotelIdActual();
+        $documento = $this->documentoModel->buscarPorIdHotel($id, $hotelId);
+
+        if (!$documento) {
+            set_mensaje('Documento no encontrado para el hotel actual.', 'error');
+            $this->redirect('documentos');
+            return;
+        }
+
+        if (($documento['estado'] ?? '') === 'eliminado') {
+            set_mensaje('No se puede editar metadata de documentos eliminados.', 'error');
+            $this->redirect('documentos/' . $id);
+            return;
+        }
+
+        View::renderTemplate('documentos/editar', [
+            'title' => 'Editar metadata documento #' . $id . ' - ' . current_hotel_display_name(),
+            'documento' => $documento,
+            'tipos' => $this->documentoModel->tiposActivosPorHotel($hotelId),
+        ]);
+    }
+
+    public function actualizarAction(): void
+    {
+        if (!$this->isPost()) {
+            $this->redirect('documentos');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        $id = (int)($this->route_params['id'] ?? 0);
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            $resultado = $this->documentoModel->actualizarMetadata(
+                $id,
+                $hotelId,
+                $this->datosMetadata(),
+                $this->usuarioIdActual()
+            );
+
+            if (!($resultado['changed'] ?? false)) {
+                set_mensaje('No se detectaron cambios de metadata.', 'info');
+            } else {
+                set_mensaje('Metadata documental actualizada correctamente.', 'success');
+            }
+
+            $this->redirect('documentos/' . $id);
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo actualizar la metadata: ' . $e->getMessage(), 'error');
+            $this->redirect($id > 0 ? 'documentos/' . $id . '/editar' : 'documentos');
+        }
+    }
+
     public function subirAction(): void
     {
         $hotelId = $this->hotelIdActual();
@@ -193,6 +251,16 @@ class DocumentoController extends Controller
             'entidad_tipo' => $this->getPost('entidad_tipo', ''),
             'entidad_id' => (int)$this->getPost('entidad_id', 0),
             'relacion' => $this->getPost('relacion', ''),
+        ];
+    }
+
+    private function datosMetadata(): array
+    {
+        return [
+            'documento_tipo_id' => (int)$this->getPost('documento_tipo_id', 0),
+            'titulo' => $this->getPost('titulo', ''),
+            'descripcion' => $this->getPost('descripcion', ''),
+            'etiquetas' => $this->getPost('etiquetas', ''),
         ];
     }
 

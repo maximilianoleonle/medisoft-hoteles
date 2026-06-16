@@ -281,7 +281,7 @@ manualmente sin autorizar edicion, borrado, links publicos, Caja, pagos, abonos 
 
 ## Fase 4B-C - Contrato de edicion controlada de metadata documental
 
-Estado: `CONTRATO_4B_C_METADATA_DOCUMENTAL_COMPLETADO`.
+Estado: `METADATA_DOCUMENTAL_4B_C_A_COMPLETADA_QA_MANUAL_PENDIENTE`.
 
 Objetivo:
 
@@ -331,3 +331,57 @@ Definition of Done futura:
 - Sin cambios en archivo fisico.
 - Sin nuevas rutas publicas.
 - `php -l`, health checker, prueba POST sin sesion bloqueada, prueba CSRF y QA manual.
+
+## Resultado Fase 4B-C-A - Edicion controlada de metadata
+
+Implementacion:
+
+- Rutas agregadas:
+  - `GET /documentos/{id}/editar`;
+  - `POST /documentos/{id}/actualizar`.
+- Controlador:
+  - `DocumentoController::editarAction()`;
+  - `DocumentoController::actualizarAction()`.
+- Modelo:
+  - `Documento::actualizarMetadata()`.
+- Vista:
+  - `src/app/views/documentos/editar.php`.
+
+Reglas aplicadas:
+
+- Busqueda por `id + hotel_id`.
+- POST con CSRF.
+- Metadata editable limitada a `titulo`, `descripcion`, `etiquetas` y
+  `documento_tipo_id`.
+- Tipo documental validado por hotel actual o tipo global activo.
+- No se editan archivo fisico, `storage_path`, `nombre_archivo`, `sha256`,
+  `mime_type`, `size_bytes`, `hotel_id` ni vinculos.
+- No se agregan descargas publicas, links publicos, borrado, Caja, pagos, abonos ni
+  `/api/sync`.
+- Auditoria `documentos.metadata_actualizada` solo cuando hay cambios reales.
+
+Verificacion automatica:
+
+- `php -l` limpio en controlador, modelo, vistas documentales, rutas y health checker.
+- `GET /documentos/1/editar` sin sesion: `303` a login.
+- `POST /documentos/1/actualizar` sin sesion: `303` a login.
+- `GET /documentos/1/editar` con sesion Los Cedros: `200`.
+- `POST /documentos/1/actualizar` no-op con CSRF valido: `303` a detalle, sin cambios
+  persistidos y sin auditoria ruidosa.
+- `POST /documentos/1/actualizar` con CSRF invalido: `303` a dashboard, sin cambios.
+- Prueba transaccional directa: update de titulo + auditoria dentro de transaccion y
+  rollback exitoso; `audit_delta_inside=1`, `audit_delta_after=0`.
+- `health_check_fase_1a.php`: PASS con warnings conocidos; detecta rutas 4B-C y
+  auditoria diferencial.
+- `preflight_compras_minimas.php` y `preflight_recepcion_compras.php`: PASS con
+  warnings conocidos.
+- `git diff --check`: OK.
+
+QA manual pendiente:
+
+1. Abrir `/documentos/{id}/editar`.
+2. Confirmar que el formulario solo muestra campos de metadata segura.
+3. Guardar un cambio menor de titulo o descripcion.
+4. Confirmar redireccion a `/documentos/{id}` y metadata actualizada.
+5. Confirmar auditoria `documentos.metadata_actualizada`.
+6. Confirmar que descarga, archivo, hash, MIME, tamano, hotel y vinculos siguen intactos.

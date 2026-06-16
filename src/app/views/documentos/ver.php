@@ -187,6 +187,12 @@ $documentoId = (int)($documento['id'] ?? 0);
                     <i class="fas fa-arrow-left"></i>
                     Volver
                 </a>
+                <?php if (($documento['estado'] ?? '') !== 'eliminado'): ?>
+                    <a class="doc-btn doc-btn-muted" href="<?= url('documentos/' . $documentoId . '/editar') ?>">
+                        <i class="fas fa-edit"></i>
+                        Editar metadata
+                    </a>
+                <?php endif; ?>
                 <?php if (($documento['estado'] ?? '') === 'activo'): ?>
                     <a class="doc-btn doc-btn-muted" href="<?= url('documentos/' . $documentoId . '/descargar') ?>">
                         <i class="fas fa-download"></i>

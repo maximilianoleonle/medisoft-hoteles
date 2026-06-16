@@ -149,8 +149,10 @@ Reglas de fuente de verdad:
 - 4B-B registra trazabilidad en `logs_auditoria` mediante `AuditService`; la fuente de
   verdad del archivo sigue siendo `documentos.storage_path` bajo storage privado.
 - `logs_auditoria` no sustituye metadata documental; solo registra eventos de acceso.
-- 4B-C contrato: la metadata editable futura vivira en `documentos` y `documento_tipos`;
-  el archivo privado y su integridad seguiran gobernados por `storage_path` y `sha256`.
+- 4B-C-A metadata: la metadata editable vive en `documentos` y `documento_tipos`;
+  el archivo privado y su integridad siguen gobernados por `storage_path` y `sha256`.
+- `logs_auditoria` registra `documentos.metadata_actualizada`, pero no sustituye la
+  fila de `documentos` como fuente de verdad.
 - La ruta activa de descarga es `GET /documentos/{id}/descargar`.
 - Solo documentos `activo` del hotel actual son descargables.
 - No hay links publicos ni tokens publicos de documentos.

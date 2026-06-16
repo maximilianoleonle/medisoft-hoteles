@@ -225,11 +225,13 @@ $router->get('/cuentas-por-pagar/generacion-preview', ['controller' => 'CuentaPo
 $router->post('/cuentas-por-pagar/generar-desde-compra/{id:[0-9]+}', ['controller' => 'CuentaPorPagar', 'action' => 'generarDesdeCompra']);
 $router->get('/cuentas-por-pagar/{id:[0-9]+}', ['controller' => 'CuentaPorPagar', 'action' => 'ver']);
 
-// Fase 4A/4B: Centro Documental con metadata, carga segura y descarga autenticada. Sin edicion ni borrado.
+// Fase 4A/4B: Centro Documental con metadata, carga segura, descarga autenticada y edicion limitada de metadata. Sin borrado.
 $router->get('/documentos', ['controller' => 'Documento', 'action' => 'index']);
 $router->get('/documentos/subir', ['controller' => 'Documento', 'action' => 'subir']);
 $router->post('/documentos/subir', ['controller' => 'Documento', 'action' => 'guardar']);
 $router->get('/documentos/entidad/{tipo:[a-z_]+}/{id:[0-9]+}', ['controller' => 'Documento', 'action' => 'entidad']);
+$router->get('/documentos/{id:[0-9]+}/editar', ['controller' => 'Documento', 'action' => 'editar']);
+$router->post('/documentos/{id:[0-9]+}/actualizar', ['controller' => 'Documento', 'action' => 'actualizar']);
 $router->get('/documentos/{id:[0-9]+}/descargar', ['controller' => 'Documento', 'action' => 'descargar']);
 $router->get('/documentos/{id:[0-9]+}', ['controller' => 'Documento', 'action' => 'ver']);
 

@@ -381,7 +381,18 @@ Resultado manual:
 - No autoriza edicion, borrado, links publicos, pagos, abonos, Caja ni cambios en
   `/api/sync`.
 
-### QA futura 4B-C metadata documental
+### QA manual pendiente 4B-C-A metadata documental
+
+Resultado automatico:
+
+- GET/POST sin sesion bloqueados o redirigidos.
+- GET con sesion carga el formulario de metadata.
+- POST no-op con CSRF valido redirige al detalle sin modificar datos ni auditar ruido.
+- POST con CSRF invalido no modifica metadata.
+- Prueba transaccional de cambio real genero `documentos.metadata_actualizada` dentro
+  de transaccion y rollback dejo metadata/auditoria sin cambios persistidos.
+
+Validacion manual recomendada:
 
 - GET de formulario protegido debe requerir sesion.
 - POST sin sesion debe redirigir/bloquear.
@@ -389,6 +400,8 @@ Resultado manual:
 - Editar `titulo`, `descripcion`, `etiquetas` o tipo documental debe conservar archivo,
   `storage_path`, `nombre_archivo`, `sha256`, `mime_type`, `size_bytes` y `hotel_id`.
 - Auditoria `documentos.metadata_actualizada` debe registrar antes/despues seguro.
+- Confirmar que no aparecen acciones de borrado, reemplazo de archivo, links publicos,
+  pagos, abonos, Caja ni `/api/sync`.
 
 ### QA critica futura
 

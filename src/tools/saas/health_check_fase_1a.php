@@ -3557,6 +3557,45 @@ if (!is_file($routesPath)) {
         );
     }
 
+    $documentoModelPath = $appRoot . '/app/models/Documento.php';
+    $documentoModelCode = is_file($documentoModelPath)
+        ? (string) file_get_contents($documentoModelPath)
+        : '';
+    $documentoEditViewPath = $appRoot . '/app/views/documentos/editar.php';
+    $documentoEditViewCode = is_file($documentoEditViewPath)
+        ? (string) file_get_contents($documentoEditViewPath)
+        : '';
+
+    if (
+        hcRoutePatternExists($routes, 'documentos/1/editar', 'get')
+        && hcRoutePatternExists($routes, 'documentos/1/actualizar', 'post')
+    ) {
+        hcOk('Rutas Fase 4B-C de metadata documental registradas: GET editar y POST actualizar.');
+    } else {
+        hcWarning(
+            'Rutas Fase 4B-C de metadata documental incompletas.',
+            'Registrar GET /documentos/{id}/editar y POST /documentos/{id}/actualizar solo si la fase esta autorizada.'
+        );
+    }
+
+    if (
+        $documentoControllerCode !== ''
+        && $documentoModelCode !== ''
+        && strpos($documentoControllerCode, 'validateCSRF') !== false
+        && strpos($documentoModelCode, 'actualizarMetadata') !== false
+        && strpos($documentoModelCode, 'documentos.metadata_actualizada') !== false
+        && $documentoEditViewCode !== ''
+        && strpos($documentoEditViewCode, 'storage_path') === false
+        && strpos($documentoEditViewCode, 'nombre_archivo') === false
+    ) {
+        hcOk('Centro Documental Fase 4B-C actualiza metadata con CSRF y auditoria diferencial sin editar archivo/storage.');
+    } elseif ($documentoModelCode !== '') {
+        hcWarning(
+            'Centro Documental no muestra contrato completo Fase 4B-C.',
+            'Validar metadata en modelo, usar CSRF y auditar documentos.metadata_actualizada sin exponer storage_path.'
+        );
+    }
+
     if (hcRouteExists($routes, 'api/sync', 'post')) {
         $apiController = $controllersDir . '/ApiController.php';
         $apiCode = is_file($apiController) ? (string) file_get_contents($apiController) : '';

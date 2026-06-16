@@ -4,14 +4,14 @@
 
 NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Centro Documental Base.
 
-Mensaje actual procesado: "Si funciona, continuemos con lo siguiente"; se marca Fase 4B-B como validada manualmente y se documenta contrato 4B-C.
+Mensaje actual procesado: "Hagamoslo"; se implementa Fase 4B-C-A edicion controlada de metadata documental.
 
 ## Estado vigente
 
 - Bloque actual: Fase 4B Descarga segura de documentos.
 - Fase actual: 4B-C contrato de edicion controlada de metadata documental.
 - Riesgo: naranja.
-- Estado: `CONTRATO_4B_C_METADATA_DOCUMENTAL_COMPLETADO`.
+- Estado: `METADATA_DOCUMENTAL_4B_C_A_COMPLETADA_QA_MANUAL_PENDIENTE`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -51,7 +51,10 @@ Mensaje actual procesado: "Si funciona, continuemos con lo siguiente"; se marca 
 - 4B-0 contrato y diagnostico: completado documentalmente.
 - 4B-A descarga segura autenticada: implementada tecnicamente y validada manualmente por el usuario.
 - 4B-B auditoria de descargas: implementada tecnicamente, verificada y validada manualmente por el usuario.
-- 4B-C contrato de edicion metadata: documentado sin implementar rutas ni POST.
+- 4B-C-A edicion metadata: implementada tecnicamente con GET/POST, CSRF, validacion por hotel y auditoria diferencial.
+- Verificacion 4B-C-A: GET/POST sin sesion bloqueados, GET con sesion `200`, POST no-op
+  sin cambios persistidos, CSRF invalido bloqueado y prueba transaccional con rollback
+  valida `documentos.metadata_actualizada`.
 - Documento: `docs/fase_4B_0_contrato_descarga_segura_documentos.md`.
 - Ruta implementada: `GET /documentos/{id}/descargar`.
 - Controlador: `DocumentoController::descargarAction()`.
@@ -62,7 +65,7 @@ Mensaje actual procesado: "Si funciona, continuemos con lo siguiente"; se marca 
 - Verificacion 4B-B: `documentos.descargado=1`, `documentos.descarga_bloqueada=1`,
   `cuentas_por_pagar_movimientos=0`, `movimientos_caja=1403`.
 - Prohibido: links publicos, edicion, borrado, Caja, pagos, abonos, PWA/offline, Fase 3D y `/api/sync`.
-- Siguiente accion: autorizar implementacion 4B-C-A si se desea editar metadata documental.
+- Siguiente accion: QA manual de edicion controlada de metadata documental.
 
 ## Reanclaje Fase 3C
 
@@ -239,4 +242,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Siguiente paso formal recomendado: implementar 4B-C-A edicion controlada de metadata documental solo con nueva autorizacion explicita. No avanzar a descargas publicas, borrado, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Siguiente paso formal recomendado: QA manual de 4B-C-A antes de avanzar a borrado, links publicos, reemplazo de archivos, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

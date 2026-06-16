@@ -445,6 +445,85 @@ class Documento extends Model
         }
     }
 
+    public function actualizarMetadata(int $id, int $hotelId, array $datos, ?int $usuarioId = null): array
+    {
+        $id = $this->validarId($id, 'Documento invalido');
+        $hotelId = $this->validarId($hotelId, 'Hotel invalido');
+
+        if (!$this->tablaExiste('documentos')) {
+            throw new Exception('Tabla documentos no disponible');
+        }
+
+        $antes = $this->buscarPorIdHotel($id, $hotelId);
+        if (!$antes) {
+            throw new Exception('Documento no encontrado para el hotel actual');
+        }
+
+        if (($antes['estado'] ?? '') === 'eliminado') {
+            throw new Exception('No se puede editar metadata de documentos eliminados');
+        }
+
+        $tipoId = (int)($datos['documento_tipo_id'] ?? 0);
+        $tipo = $tipoId > 0 ? $this->resolverTipoDocumento($hotelId, $tipoId) : null;
+
+        $nuevaMetadata = [
+            'documento_tipo_id' => $tipo ? (int)$tipo['id'] : null,
+            'titulo' => $this->limitarTexto($datos['titulo'] ?? null, 180),
+            'descripcion' => $this->limitarTexto($datos['descripcion'] ?? null, 255),
+            'etiquetas' => $this->limitarTexto($datos['etiquetas'] ?? null, 1000),
+        ];
+
+        $metadataAntes = $this->metadataAuditable($antes);
+        if ($metadataAntes === $nuevaMetadata) {
+            return [
+                'documento_id' => $id,
+                'hotel_id' => $hotelId,
+                'changed' => false,
+                'antes' => $metadataAntes,
+                'despues' => $nuevaMetadata,
+                'cambios' => [],
+            ];
+        }
+
+        $stmt = $this->db->query(
+            "UPDATE documentos
+             SET documento_tipo_id = ?,
+                 titulo = ?,
+                 descripcion = ?,
+                 etiquetas = ?,
+                 updated_at = NOW()
+             WHERE id = ?
+               AND hotel_id = ?",
+            [
+                $nuevaMetadata['documento_tipo_id'],
+                $nuevaMetadata['titulo'],
+                $nuevaMetadata['descripcion'],
+                $nuevaMetadata['etiquetas'],
+                $id,
+                $hotelId,
+            ]
+        );
+
+        if ($stmt === false) {
+            throw new Exception('No se pudo guardar la metadata documental');
+        }
+
+        $despues = $this->buscarPorIdHotel($id, $hotelId);
+        $metadataDespues = $this->metadataAuditable($despues ?: $nuevaMetadata);
+        $cambios = $this->diferenciasMetadata($metadataAntes, $metadataDespues);
+
+        $this->auditarMetadataActualizada($hotelId, $id, $usuarioId, $metadataAntes, $metadataDespues, $cambios);
+
+        return [
+            'documento_id' => $id,
+            'hotel_id' => $hotelId,
+            'changed' => true,
+            'antes' => $metadataAntes,
+            'despues' => $metadataDespues,
+            'cambios' => $cambios,
+        ];
+    }
+
     public function normalizarEntidadTipo(?string $entidadTipo): ?string
     {
         $entidadTipo = trim((string)$entidadTipo);
@@ -834,6 +913,59 @@ class Documento extends Model
             ]);
         } catch (Throwable $e) {
             error_log('No se pudo auditar carga documental: ' . $e->getMessage());
+        }
+    }
+
+    private function metadataAuditable(array $documento): array
+    {
+        return [
+            'documento_tipo_id' => !empty($documento['documento_tipo_id']) ? (int)$documento['documento_tipo_id'] : null,
+            'titulo' => $this->limitarTexto($documento['titulo'] ?? null, 180),
+            'descripcion' => $this->limitarTexto($documento['descripcion'] ?? null, 255),
+            'etiquetas' => $this->limitarTexto($documento['etiquetas'] ?? null, 1000),
+        ];
+    }
+
+    private function diferenciasMetadata(array $antes, array $despues): array
+    {
+        $cambios = [];
+        foreach ($despues as $campo => $valor) {
+            if (($antes[$campo] ?? null) !== $valor) {
+                $cambios[$campo] = [
+                    'antes' => $antes[$campo] ?? null,
+                    'despues' => $valor,
+                ];
+            }
+        }
+
+        return $cambios;
+    }
+
+    private function auditarMetadataActualizada(int $hotelId, int $documentoId, ?int $usuarioId, array $antes, array $despues, array $cambios): void
+    {
+        if (empty($cambios)) {
+            return;
+        }
+
+        try {
+            AuditService::record('documentos.metadata_actualizada', [
+                'hotel_id' => $hotelId,
+                'usuario_id' => $this->normalizarUsuarioId($usuarioId),
+                'entidad_tipo' => 'documento',
+                'entidad_id' => (string)$documentoId,
+                'descripcion' => 'Metadata documental actualizada',
+                'datos_antes' => [
+                    'documento_id' => $documentoId,
+                    'metadata' => $antes,
+                ],
+                'datos_despues' => [
+                    'documento_id' => $documentoId,
+                    'metadata' => $despues,
+                    'cambios' => array_keys($cambios),
+                ],
+            ]);
+        } catch (Throwable $e) {
+            error_log('No se pudo auditar metadata documental: ' . $e->getMessage());
         }
     }
 }

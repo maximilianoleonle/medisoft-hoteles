@@ -220,12 +220,12 @@
 - No se registra `storage_path` ni `nombre_archivo`.
 - Los fallos de auditoria no bloquean la descarga.
 
-### Fase 4B-C contrato metadata documental
+### Fase 4B-C-A metadata documental
 
-- Estado formal vigente: `CONTRATO_4B_C_METADATA_DOCUMENTAL_COMPLETADO`.
-- La siguiente edicion permitida debe ser solo metadata segura.
+- Estado formal vigente: `METADATA_DOCUMENTAL_4B_C_A_COMPLETADA_QA_MANUAL_PENDIENTE`.
+- La edicion permitida es solo metadata segura.
 - No se deben editar archivo fisico, storage, hash, MIME, tamano ni hotel.
-- Cualquier POST futuro debe usar CSRF y auditoria diferencial.
+- El POST usa CSRF y auditoria diferencial.
 
 ### Decisiones de diagnostico NP-0
 

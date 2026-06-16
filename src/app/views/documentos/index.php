@@ -272,13 +272,19 @@ if ($esEntidad) {
                                         </td>
                                         <td class="text-right">
                                             <div class="flex justify-end gap-2">
-                                                <a class="docs-btn docs-btn-muted" href="<?= url('documentos/' . (int)($documento['id'] ?? 0)) ?>">
-                                                    <i class="fas fa-eye"></i>
-                                                    Ver
-                                                </a>
-                                                <?php if (($documento['estado'] ?? '') === 'activo'): ?>
-                                                    <a class="docs-btn docs-btn-muted" href="<?= url('documentos/' . (int)($documento['id'] ?? 0) . '/descargar') ?>">
-                                                        <i class="fas fa-download"></i>
+                                                    <a class="docs-btn docs-btn-muted" href="<?= url('documentos/' . (int)($documento['id'] ?? 0)) ?>">
+                                                        <i class="fas fa-eye"></i>
+                                                        Ver
+                                                    </a>
+                                                    <?php if (($documento['estado'] ?? '') !== 'eliminado'): ?>
+                                                        <a class="docs-btn docs-btn-muted" href="<?= url('documentos/' . (int)($documento['id'] ?? 0) . '/editar') ?>">
+                                                            <i class="fas fa-edit"></i>
+                                                            Editar
+                                                        </a>
+                                                    <?php endif; ?>
+                                                    <?php if (($documento['estado'] ?? '') === 'activo'): ?>
+                                                        <a class="docs-btn docs-btn-muted" href="<?= url('documentos/' . (int)($documento['id'] ?? 0) . '/descargar') ?>">
+                                                            <i class="fas fa-download"></i>
                                                         Descargar
                                                     </a>
                                                 <?php endif; ?>

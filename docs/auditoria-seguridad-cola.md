@@ -267,14 +267,14 @@ Estado: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
 - Riesgo residual: cada descarga exitosa o intento bloqueado genera escritura en
   `logs_auditoria`; es intencional y debe monitorearse si el volumen crece.
 
-### Auditoria contrato 4B-C
+### Auditoria 4B-C-A
 
-- Estado: `CONTRATO_4B_C_METADATA_DOCUMENTAL_COMPLETADO`.
-- La edicion futura debe limitarse a metadata segura; nunca archivo fisico ni rutas
-  internas.
-- Riesgo principal futuro: alterar `storage_path`, `hotel_id` o metadata tecnica por
-  formulario; queda prohibido por contrato.
-- Debe auditar `documentos.metadata_actualizada` solo cuando haya cambios reales.
+- Estado: `METADATA_DOCUMENTAL_4B_C_A_COMPLETADA_QA_MANUAL_PENDIENTE`.
+- La edicion se limita a metadata segura; nunca archivo fisico ni rutas internas.
+- `storage_path`, `nombre_archivo`, `sha256`, `mime_type`, `size_bytes` y `hotel_id`
+  quedan fuera del formulario y del update.
+- POST usa CSRF y busqueda por `id + hotel_id`.
+- Audita `documentos.metadata_actualizada` solo cuando hay cambios reales.
 
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 

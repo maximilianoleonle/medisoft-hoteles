@@ -264,11 +264,15 @@ Resultado 4B-B:
   `/api/sync`.
 - QA manual 4B-B reportada por el usuario como funcional.
 
-Resultado 4B-C contrato:
+Resultado 4B-C-A:
 
-- Se documenta contrato para edicion controlada de metadata documental.
-- La futura edicion queda limitada a `titulo`, `descripcion`, `etiquetas`,
-  `documento_tipo_id` y, si se autoriza, estado `activo/archivado`.
+- Se implementa edicion controlada de metadata documental.
+- Rutas: `GET /documentos/{id}/editar` y `POST /documentos/{id}/actualizar`.
+- Metadata editable limitada a `titulo`, `descripcion`, `etiquetas` y
+  `documento_tipo_id`.
+- Auditoria: `documentos.metadata_actualizada` solo cuando hay cambios reales.
+- Verificacion: POST no-op e invalido no modifican datos; prueba transaccional confirma
+  update real + auditoria + rollback sin persistencia.
 - Quedan prohibidos reemplazo de archivo, cambio de storage, borrado, links publicos,
   Caja, pagos, abonos y `/api/sync`.
 

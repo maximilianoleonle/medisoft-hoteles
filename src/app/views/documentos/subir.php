@@ -121,7 +121,7 @@ $tieneContexto = is_array($contextoEntidad);
                 <div class="doc-upload-kicker">Centro documental</div>
                 <h1 class="doc-upload-title">Subir documento</h1>
                 <p class="doc-upload-subtitle">
-                    Carga controlada hacia storage privado. No se habilita descarga, edicion ni borrado en esta fase.
+                    Carga controlada hacia storage privado. No se habilita reemplazo de archivo ni borrado en esta fase.
                 </p>
             </div>
             <span class="doc-upload-badge">
@@ -216,7 +216,7 @@ $tieneContexto = is_array($contextoEntidad);
                         <div class="font-black mb-2">Reglas de esta fase</div>
                         <ul class="text-sm text-slate-600 space-y-1">
                             <li>Sin descarga publica.</li>
-                            <li>Sin edicion ni borrado.</li>
+                            <li>Sin reemplazo de archivo ni borrado.</li>
                             <li>Validacion por hotel y entidad.</li>
                             <li>Storage privado fuera de public_html.</li>
                         </ul>
