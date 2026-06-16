@@ -617,3 +617,13 @@ Estado: `CONCEPTOS_LABORALES_NP_C_B_A_COMPLETADO_QA_DIFERIDA`.
 - Vista de trabajador con formulario CSRF y advertencia de no Caja/no pago real.
 - Health/preflight actualizados y ejecutados sin errores.
 - QA manual queda diferida porque no hay trabajadores locales.
+
+## Cierre tecnico NP-C-B-F
+
+Estado: `BLOQUE_NP_C_B_CONCEPTOS_LABORALES_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_B_F_cierre_conceptos_laborales.md`.
+- Revision tecnica y auditoria de seguridad completadas para conceptos laborales.
+- No se agregaron funcionalidades nuevas en el cierre.
+- No hay pagos reales, abonos, Caja, Nomina operativa ni cambios en `/api/sync`.
+- QA manual queda diferida.

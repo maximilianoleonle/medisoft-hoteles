@@ -857,3 +857,9 @@ instruccion del usuario.
 - Confirmar que no aparece boton de pago real, abono, anticipo ni prestamo.
 - Ejecutar `docker compose exec -T app php /var/www/html/tools/saas/preflight_personal_ledger.php`.
 - Confirmar `ERROR: 0`.
+
+### Estado NP-C-B-F
+
+- Bloque de conceptos laborales manuales cerrado tecnicamente.
+- QA manual sigue pendiente y diferida.
+- No avanzar a anticipos, prestamos o asistencia sin contrato nuevo.

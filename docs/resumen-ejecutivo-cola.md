@@ -685,3 +685,14 @@ Resultado NP-C-B-A:
 - No se crean pagos reales, abonos, anticipos, prestamos, asistencia, categoria Nomina ni
   movimientos de Caja.
 - No se toco `/api/sync`.
+
+Resultado NP-C-B-F:
+
+- Estado tecnico: `BLOQUE_NP_C_B_CONCEPTOS_LABORALES_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_NP_C_B_F_cierre_conceptos_laborales.md`.
+- Se cierra tecnicamente el bloque de conceptos laborales manuales.
+- Commits incluidos: contrato, implementacion y revision tecnica.
+- Checkers sin errores: preflight de ledger laboral y health general.
+- QA manual queda diferida hasta que exista un trabajador activo autorizado.
+- Siguiente paso recomendado: abrir contrato nuevo antes de anticipos, prestamos o
+  asistencia.

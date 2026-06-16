@@ -582,3 +582,14 @@ agregar funcionalidades nuevas.
 - No se toco `/api/sync`.
 - Siguiente accion segura: revision tecnica/auditoria/cierre de NP-C-B-A antes de abrir
   anticipos, prestamos, asistencia o cualquier salida real.
+
+## Cierre tecnico NP-C-B-F
+
+- Estado formal: `BLOQUE_NP_C_B_CONCEPTOS_LABORALES_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_NP_C_B_F_cierre_conceptos_laborales.md`.
+- Bloque de conceptos laborales manuales queda cerrado tecnicamente.
+- Revision tecnica posterior aplicada en `fix(review): stabilize worker concept entry`.
+- QA manual queda diferida porque no hay trabajadores locales y el usuario pidio omitir QA
+  manual por ahora.
+- Siguiente accion segura: contrato nuevo para anticipos/prestamos o asistencia; no
+  implementar sin contrato explicito.

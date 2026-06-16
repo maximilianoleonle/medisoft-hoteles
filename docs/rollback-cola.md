@@ -659,3 +659,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   autorizada de anulacion o correccion.
 - No tocar Caja, categorias de Caja, movimientos, pagos reales, abonos, anticipos,
   prestamos, asistencia ni `/api/sync`.
+
+### NP-C-B-F cierre tecnico conceptos laborales
+
+- Rollback documental: revertir el commit
+  `docs(phase-np): close controlled worker concept block`.
+- DB: no aplica; es cierre documental.
+- Mantener intactos conceptos ya creados si existieran.

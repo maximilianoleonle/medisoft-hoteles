@@ -667,3 +667,14 @@ Estado: `CONCEPTOS_LABORALES_NP_C_B_A_COMPLETADO_QA_DIFERIDA`.
 - No hay escrituras en Caja, cortes, movimientos, anticipos, prestamos ni asistencia.
 - Health checker y preflight detectan escrituras fuera de alcance.
 - Riesgo residual: falta QA manual con trabajador real porque la tabla local esta vacia.
+
+## Auditoria NP-C-B-F cierre conceptos laborales
+
+Estado: `BLOQUE_NP_C_B_CONCEPTOS_LABORALES_CERRADO_QA_DIFERIDA`.
+
+- Revision tecnica completada.
+- Se corrigieron inconsistencias menores de texto sin cambiar logica.
+- No quedan errores automaticos relacionados con NP-C-B-A.
+- QA manual queda diferida; no se marca validacion de usuario.
+- Riesgo residual: siguiente bloque de anticipos/prestamos/asistencia requiere contrato
+  nuevo por su cercania con flujo financiero laboral.

@@ -903,3 +903,11 @@ Estado formal vigente: `CONCEPTOS_LABORALES_NP_C_B_A_COMPLETADO_QA_DIFERIDA`.
   de alcance.
 - Antes de abrir otra escritura laboral se recomienda revision/auditoria/cierre de esta
   subfase.
+
+### Estado NP-C-B-F
+
+Estado formal vigente: `BLOQUE_NP_C_B_CONCEPTOS_LABORALES_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_B_F_cierre_conceptos_laborales.md`.
+- Cierre tecnico del bloque de conceptos laborales manuales.
+- Siguiente contrato requerido antes de anticipos, prestamos, asistencia o pagos reales.

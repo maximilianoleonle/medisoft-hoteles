@@ -545,3 +545,9 @@
 - `hotel_id` se deriva del contexto de sesion y se valida contra el trabajador.
 - La auditoria registra explicitamente `sin_caja` y `sin_pago_real`.
 - No se crean categorias Nomina ni movimientos en Caja.
+
+## Decision NP-C-B-F cierre conceptos laborales
+
+- Se cierra tecnicamente el bloque sin abrir anticipos, prestamos ni asistencia.
+- Las siguientes escrituras laborales requieren contratos separados por riesgo operativo.
+- QA manual queda diferida y no se toma como validacion de usuario.
