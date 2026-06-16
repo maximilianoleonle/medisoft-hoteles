@@ -1272,3 +1272,15 @@ instruccion del usuario.
 - Confirmar que no cambia `habitaciones.estado`.
 - Confirmar que no hay inventario automatico, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.
+
+### Estado LIM-B-F
+
+- Estado formal: `BLOQUE_LIM_B_TAREAS_DESDE_LIMPIEZA_CERRADO_QA_DIFERIDA`.
+- Verificacion automatica completada:
+  - `php -l`: OK.
+  - `preflight_limpieza_operativa.php`: `ERROR 0`.
+  - `health_check_fase_1a.php`: `ERROR 0`.
+  - POST sin sesion redirige a login.
+  - SQL read-only confirma cero escrituras por intento sin sesion.
+- QA manual sigue pendiente y no bloquea nuevas tareas independientes por
+  instruccion del usuario.

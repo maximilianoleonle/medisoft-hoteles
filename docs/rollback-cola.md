@@ -1012,3 +1012,13 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - El rollback retiraria ruta POST, accion del controlador, metodos de modelo, boton en
   reporte y checks asociados.
 - No tocar habitaciones, inventario, Caja, pagos, abonos, nomina ni `/api/sync`.
+
+### LIM-B-F cierre tecnico tareas desde limpieza
+
+- Rollback documental: revertir el commit
+  `docs(phase-lim): close manual housekeeping task block`.
+- Para retirar la funcionalidad, revertir
+  `c6d6743 feat(phase-lim): create housekeeping tasks manually`.
+- DB/migraciones: no aplica.
+- Si existen tareas reales creadas por QA posterior, no eliminarlas con SQL
+  manual; cancelar por flujo de tareas o documentar reconciliacion.

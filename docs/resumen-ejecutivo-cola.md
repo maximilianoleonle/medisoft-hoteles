@@ -1144,3 +1144,18 @@ Resultado LIM-B-A:
 - Se bloquea duplicado activo por habitacion.
 - No se cambia disponibilidad, inventario, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.
+
+Resultado LIM-B-F:
+
+- Estado tecnico: `BLOQUE_LIM_B_TAREAS_DESDE_LIMPIEZA_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_LIM_B_F_cierre_tareas_limpieza.md`.
+- Commit funcional cerrado: `c6d6743 feat(phase-lim): create housekeeping tasks manually`.
+- Verificaciones automaticas:
+  - `php -l` en PHP tocado: OK.
+  - `preflight_limpieza_operativa.php`: `OK 20`, `WARNING 0`, `ERROR 0`.
+  - `health_check_fase_1a.php`: `ERROR 0`, warnings historicos.
+  - HTTP sin sesion al POST: redirige a login.
+  - SQL read-only: cero tareas creadas por intento sin sesion y Caja sin cambios.
+- QA manual queda diferida; no se marca validacion de navegador.
+- Siguiente paso recomendado: abrir solo un contrato nuevo e independiente antes
+  de automatizar limpieza o integrarla con checkout/liberacion.

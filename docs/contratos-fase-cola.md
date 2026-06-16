@@ -1325,3 +1325,13 @@ Estado formal vigente: `CREACION_MANUAL_TAREA_LIM_B_A_COMPLETADA_QA_DIFERIDA`.
 - No cambia habitaciones, reservaciones ni inventario.
 - No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - Siguiente accion segura: revision/auditoria/cierre LIM-B.
+
+### Estado LIM-B-F
+
+Estado formal vigente: `BLOQUE_LIM_B_TAREAS_DESDE_LIMPIEZA_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_LIM_B_F_cierre_tareas_limpieza.md`.
+- Contrato cerrado sin QA manual de navegador.
+- No se autoriza automatizacion de limpieza desde checkout, inventario,
+  liberacion ni offline.
+- Siguiente accion segura: contrato nuevo e independiente.

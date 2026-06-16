@@ -1044,3 +1044,16 @@ agregar funcionalidades nuevas.
 - No modifica habitaciones, inventario, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.
 - Siguiente accion segura: revision/auditoria/cierre LIM-B.
+
+## LIM-B-F cierre tecnico tareas desde limpieza
+
+- Estado formal: `BLOQUE_LIM_B_TAREAS_DESDE_LIMPIEZA_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_LIM_B_F_cierre_tareas_limpieza.md`.
+- Commits del bloque:
+  - `0165d5c`
+  - `c6d6743`
+- Revision tecnica y auditoria completadas.
+- Health y preflight LIM pasan con `ERROR: 0`.
+- QA manual queda diferida por instruccion del usuario.
+- Siguiente accion segura: contrato independiente para el siguiente bloque de
+  tareas/limpieza/mantenimiento o volver a QA manual acumulada.

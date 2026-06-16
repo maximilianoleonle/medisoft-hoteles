@@ -558,3 +558,15 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   - `habitaciones`.
 - `habitaciones.estado` no se actualiza y sigue siendo autoridad de disponibilidad.
 - Inventario automatico, Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.
+
+### LIM-B-F cierre tecnico tareas desde limpieza
+
+- Estado formal: `BLOQUE_LIM_B_TAREAS_DESDE_LIMPIEZA_CERRADO_QA_DIFERIDA`.
+- Fuente de verdad documental: `docs/fase_LIM_B_F_cierre_tareas_limpieza.md`.
+- Fuentes tecnicas cerradas:
+  - `tareas_operativas`;
+  - `tarea_eventos`;
+  - `logs_auditoria`.
+- `habitaciones.estado = limpieza` es condicion de entrada, no resultado modificado
+  por LIM-B-A.
+- No hay migraciones ni nuevas tablas.

@@ -906,3 +906,11 @@
   sea la unica barrera.
 - El origen `limpieza_manual` diferencia estas tareas de altas manuales genericas.
 - El boton vive en `/reportes/limpieza` porque ahi se ve el estado operativo actual.
+
+## Decision LIM-B-F
+
+- Se cierra tecnicamente LIM-B sin marcar QA manual como completada.
+- El estado formal queda en
+  `BLOQUE_LIM_B_TAREAS_DESDE_LIMPIEZA_CERRADO_QA_DIFERIDA`.
+- No se habilita automatizacion desde checkout, liberacion, inventario ni offline.
+- Cualquier siguiente paso de limpieza debe iniciar con contrato propio.

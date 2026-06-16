@@ -1142,3 +1142,15 @@ Estado: `CREACION_MANUAL_TAREA_LIM_B_A_COMPLETADA_QA_DIFERIDA`.
   `logs_auditoria`.
 - No se actualiza `habitaciones`.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.
+
+## Auditoria LIM-B-F
+
+Estado: `BLOQUE_LIM_B_TAREAS_DESDE_LIMPIEZA_CERRADO_QA_DIFERIDA`.
+
+- Revision tecnica completada con health y preflight en `ERROR 0`.
+- La ruta nueva se mantiene aislada en `POST /tareas/desde-limpieza/{id}`.
+- La vista no libera habitaciones ni descuenta inventario.
+- La accion no toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- El intento sin sesion redirige a login y no crea registros.
+- Riesgo residual: QA manual queda diferida; si se crean tareas reales, el rollback
+  funcional debe tratarlas como datos operativos.
