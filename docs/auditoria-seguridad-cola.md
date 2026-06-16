@@ -314,7 +314,7 @@ Estado: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_VALIDADA_MANUALMENTE`.
 
 ## Fase 4D Archivado documental - auditoria de contrato
 
-Estado: `ARCHIVADO_DOCUMENTAL_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado: `CIERRE_TECNICO_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
 - 4D-0 no agrega rutas, controladores, modelos, vistas ni DB.
 - Riesgo principal futuro: cambiar estado de documentos de otro hotel si no se valida
@@ -330,6 +330,22 @@ Estado: `ARCHIVADO_DOCUMENTAL_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
   de alcance.
 - Verificacion automatica completada sin errores bloqueantes; queda pendiente QA manual
   en navegador.
+
+### Auditoria 4D-A post-implementacion
+
+- Rutas sensibles: solo `POST /documentos/{id}/archivar` y
+  `POST /documentos/{id}/restaurar`.
+- Proteccion: autenticacion, contexto hotelero, modulo relacionado y CSRF.
+- Aislamiento multi-hotel: `Documento::actualizarEstado()` exige `id + hotel_id`.
+- Transiciones: solo `activo -> archivado` y `archivado -> activo`.
+- Datos: no hay `DELETE`, no se borra archivo fisico, no se borran relaciones en
+  `documento_entidades`.
+- Auditoria: `documentos.estado_actualizado` registra estado antes/despues.
+- Vista: no envia `hotel_id`, `estado`, `storage_path` ni `nombre_archivo`.
+- Descarga: documentos archivados no muestran accion de descarga en detalle.
+- Fuera de alcance confirmado: baja logica `eliminado`, Caja, pagos, abonos, NP-A,
+  Fase 3D y `/api/sync`.
+- Resultado: cierre tecnico sin hallazgos bloqueantes; pendiente QA manual en navegador.
 
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 

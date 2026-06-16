@@ -187,7 +187,7 @@ Fuente de verdad:
 
 ## Archivado documental (Fase 4D)
 
-Estado formal: `ARCHIVADO_DOCUMENTAL_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado formal: `CIERRE_TECNICO_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
 Fuente de verdad:
 
@@ -200,6 +200,8 @@ Fuente de verdad:
 - Cualquier cambio futuro de estado debe auditarse en `logs_auditoria`.
 - 4D-A cambia estado solo con `Documento::actualizarEstado()` y auditoria
   `documentos.estado_actualizado`.
+- La revision tecnica/auditoria de cierre confirma que 4D-A solo permite
+  `activo <-> archivado`; `eliminado` sigue fuera de alcance.
 - No hay Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync` en 4D-A.
 
 ## Personal y Nomina (Fase NP)

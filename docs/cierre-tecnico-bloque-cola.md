@@ -245,3 +245,51 @@ borrado, reemplazo de archivo, links publicos, pagos, abonos, Caja, Fase 3D, NP-
 - No existe autorizacion para borrado, reemplazo de archivo, links publicos, permisos
   profundos, Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
 - No hacer push.
+
+## Cierre tecnico Fase 4D-A
+
+Estado final: `CIERRE_TECNICO_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+
+La Fase 4D-A queda cerrada tecnicamente como archivado/restauracion reversible de
+documentos. No habilita baja logica `eliminado`, borrado fisico, `DELETE`, reemplazo
+de archivo, links publicos, Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
+
+### Fases cerradas 4D
+
+| Fase | Alcance | Commit | Estado |
+| --- | --- | --- | --- |
+| 4D-0 | Contrato y diagnostico de archivado documental | `67e00ec` | Cerrada |
+| 4D-A | Archivado/restauracion documental controlada | `01733ee` | Cerrada tecnicamente, QA manual pendiente |
+
+### Confirmaciones 4D-A
+
+- Rutas POST: `/documentos/{id}/archivar` y `/documentos/{id}/restaurar`.
+- Ambas acciones usan CSRF y pasan por los guards existentes del controlador documental.
+- El modelo central `Documento::actualizarEstado()` valida `id + hotel_id`.
+- Transiciones permitidas: `activo -> archivado` y `archivado -> activo`.
+- La vista de detalle solo muestra la accion compatible con el estado actual.
+- No se envia `estado`, `hotel_id`, `storage_path` ni `nombre_archivo` desde formularios.
+- Se audita `documentos.estado_actualizado`.
+- No hay `DELETE`, no se borra archivo fisico ni se borran relaciones.
+- Sin Caja, pagos, abonos, Fase 3D, NP-A ni cambios en `/api/sync`.
+
+### Verificaciones 4D-A registradas
+
+- `php -l` en modelo, controlador, vista y health checker: sin errores.
+- `health_check_fase_1a.php`: PASS con warnings permitidos y `ERROR: 0`.
+- `preflight_compras_minimas.php`: PASS con warnings permitidos.
+- `preflight_recepcion_compras.php`: PASS con warnings permitidos.
+- HTTP sin sesion en `POST /documentos/1/archivar`: `303` a login.
+- SQL read-only: documentos y relaciones conservados; movimientos CxP en cero y Caja
+  sin cambios atribuibles a 4D-A.
+- Prueba transaccional con rollback: cambio `activo -> archivado`, auditoria dentro de
+  la transaccion y rollback sin persistencia.
+- `git diff --check`: sin errores de whitespace.
+
+### Warnings y pendientes 4D-A
+
+- Falta QA manual en navegador para archivar y restaurar un documento real.
+- Si la QA manual cambia estados, el rollback operativo debe hacerse con la accion
+  inversa desde UI, no con `DELETE`.
+- La baja logica hacia `eliminado` queda diferida a una fase futura con contrato propio.
+- No hacer push.

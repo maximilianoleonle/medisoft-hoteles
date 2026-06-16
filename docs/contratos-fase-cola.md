@@ -495,7 +495,7 @@ Documento:
 
 ## Fase 4D-A: Archivado/restauracion documental
 
-Estado formal vigente: `ARCHIVADO_DOCUMENTAL_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado formal vigente: `CIERRE_TECNICO_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
 Alcance implementado:
 
@@ -505,6 +505,8 @@ Alcance implementado:
 - Validacion central en `Documento::actualizarEstado()`.
 - Auditoria `documentos.estado_actualizado`.
 - Acciones visibles solo en detalle documental y con CSRF.
+- Revision tecnica/auditoria: sin hallazgos bloqueantes; no hay borrado fisico,
+  `DELETE`, Caja, pagos, abonos ni cambios en `/api/sync`.
 
 Fuera de alcance:
 

@@ -1,6 +1,6 @@
 # Fase 4D-A - Archivado documental controlado
 
-Estado tecnico: `ARCHIVADO_DOCUMENTAL_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado tecnico: `CIERRE_TECNICO_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
 ## Objetivo
 
@@ -69,6 +69,30 @@ Resultado:
   de transaccion, auditoria delta `1`, rollback exitoso, estado final `activo` y
   auditoria delta final `0`.
 - `git diff --check`: sin errores de whitespace; solo warnings CRLF normales de Windows.
+
+## Revision tecnica y auditoria
+
+Resultado: sin hallazgos bloqueantes.
+
+- Rutas revisadas: solo existen los POST autorizados de archivar/restaurar.
+- Guards revisados: el flujo pasa por autenticacion, contexto hotelero y CSRF.
+- Modelo revisado: la actualizacion de estado esta centralizada en
+  `Documento::actualizarEstado()` y filtra por `id + hotel_id`.
+- Transiciones revisadas: solo `activo -> archivado` y `archivado -> activo`.
+- Vista revisada: no envia `hotel_id`, `estado`, `storage_path` ni `nombre_archivo`;
+  solo muestra la accion que corresponde al estado actual.
+- Auditoria revisada: registra `documentos.estado_actualizado` con estado antes/despues.
+- Riesgo de perdida de datos: bajo; no hay `DELETE`, no se elimina archivo fisico y no
+  se borran relaciones.
+- Caja, pagos, abonos, Fase 3D, NP-A y `/api/sync`: fuera de alcance y sin cambios.
+
+## Cierre tecnico
+
+El bloque 4D-A queda cerrado tecnicamente como archivado/restauracion reversible. No
+queda autorizada la baja logica `eliminado`; esa decision requiere una fase futura con
+contrato propio.
+
+Estado de cierre: `CIERRE_TECNICO_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
 ## QA manual requerida
 

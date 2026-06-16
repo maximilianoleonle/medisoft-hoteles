@@ -404,6 +404,9 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 
 - Rollback de codigo/documentacion: revertir el commit
   `feat(phase-4d): add controlled document archival`.
+- Rollback de cierre tecnico documental: revertir el commit
+  `docs(phase-4d): close document archival technical review` si solo se quiere
+  deshacer la reclasificacion documental de cierre.
 - DB: no borrar filas. Si un documento fue archivado durante QA, restaurarlo desde la
   UI con `POST /documentos/{id}/restaurar`.
 - Si un documento fue restaurado durante QA y debe volver a archivado, usar la accion
