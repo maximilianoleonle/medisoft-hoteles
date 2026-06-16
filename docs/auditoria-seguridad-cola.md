@@ -348,6 +348,21 @@ Estado: `FASE_4D_A_VALIDADA_MANUALMENTE`.
 - Resultado: cierre tecnico sin hallazgos bloqueantes y QA manual completada por el
   usuario.
 
+### Auditoria de contrato 4D-B-0
+
+Estado: `CONTRATO_4D_B_BAJA_LOGICA_DOCUMENTAL_COMPLETADO`.
+
+- 4D-B-0 no agrega rutas, controladores, modelos, vistas ni DB.
+- La baja logica futura queda limitada por contrato a `activo -> eliminado` y
+  `archivado -> eliminado`.
+- Restaurar desde `eliminado` queda fuera de alcance y requiere contrato separado.
+- Toda implementacion futura debe usar POST + CSRF, filtro `id + hotel_id`, auditoria y
+  confirmacion fuerte.
+- Se prohibe borrado fisico, `DELETE`, baja masiva, links publicos, Caja, pagos,
+  abonos, NP-A, Fase 3D, PWA/offline y `/api/sync`.
+- Resultado: contrato seguro; sin superficie de ataque nueva porque no hay codigo
+  funcional.
+
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 
 ### Estado NP-0

@@ -400,6 +400,14 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   y backup previo si se autoriza explicitamente.
 - No borrar archivos fisicos bajo `src/storage/documentos/`.
 
+### 4D-B-0 contrato de baja logica documental
+
+- Rollback documental: revertir el commit
+  `docs(phase-4d): define document soft-delete contract`.
+- DB: no aplica; 4D-B-0 no escribe datos ni crea migraciones.
+- Codigo: no aplica; 4D-B-0 no toca rutas, controladores, modelos ni vistas.
+- No borrar documentos, relaciones, auditorias ni archivos en `src/storage/documentos/`.
+
 ### 4D-A archivado/restauracion documental
 
 - Rollback de codigo/documentacion: revertir el commit

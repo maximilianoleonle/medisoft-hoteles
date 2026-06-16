@@ -518,6 +518,28 @@ Documento:
 
 - `docs/fase_4D_A_archivado_documental_controlado.md`.
 
+## Fase 4D-B-0: Contrato de baja logica documental
+
+Estado formal vigente: `CONTRATO_4D_B_BAJA_LOGICA_DOCUMENTAL_COMPLETADO`.
+
+Alcance documentado:
+
+- Baja logica futura hacia `eliminado`.
+- Ruta futura propuesta: `POST /documentos/{id}/eliminar`.
+- Transiciones futuras propuestas: `activo -> eliminado` y `archivado -> eliminado`.
+- Confirmacion fuerte, POST + CSRF, filtro `id + hotel_id` y auditoria obligatoria.
+- Sin restauracion desde `eliminado` en 4D-B.
+
+Fuera de alcance:
+
+- Implementacion de rutas, controladores, modelo, vistas o DB en 4D-B-0.
+- Borrado fisico, `DELETE`, baja masiva, reemplazo de archivo, links publicos, Caja,
+  pagos, abonos, Fase 3D, NP-A y `/api/sync`.
+
+Documento:
+
+- `docs/fase_4D_B_0_contrato_baja_logica_documental.md`.
+
 ## Bloque Personal y Nomina (Fase NP): modulo independiente de trabajadores
 
 ### Objetivo

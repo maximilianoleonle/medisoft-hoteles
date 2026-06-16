@@ -299,3 +299,28 @@ de archivo, links publicos, Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
   inversa desde UI, no con `DELETE`.
 - La baja logica hacia `eliminado` queda diferida a una fase futura con contrato propio.
 - No hacer push.
+
+## Cierre documental Fase 4D-B-0
+
+Estado final: `CONTRATO_4D_B_BAJA_LOGICA_DOCUMENTAL_COMPLETADO`.
+
+La Fase 4D-B-0 queda cerrada solo como contrato de baja logica documental. No agrega
+rutas, controladores, modelos, vistas, DB, migraciones ni acciones operativas.
+
+### Confirmaciones 4D-B-0
+
+- Documento creado: `docs/fase_4D_B_0_contrato_baja_logica_documental.md`.
+- Baja logica futura definida como cambio de `documentos.estado` hacia `eliminado`.
+- Transiciones futuras propuestas: `activo -> eliminado` y `archivado -> eliminado`.
+- Restaurar desde `eliminado` queda fuera de alcance y requiere contrato separado.
+- Implementacion futura debe usar POST + CSRF, filtro `id + hotel_id`, confirmacion
+  fuerte y auditoria.
+- Sin borrado fisico, `DELETE`, baja masiva, Caja, pagos, abonos, Fase 3D, NP-A ni
+  cambios en `/api/sync`.
+
+### Warnings y pendientes 4D-B-0
+
+- No existe ruta operativa `POST /documentos/{id}/eliminar` todavia.
+- No hay QA manual de navegador porque 4D-B-0 no implementa funcionalidad.
+- Implementar 4D-B-A requiere nueva autorizacion explicita.
+- No hacer push.

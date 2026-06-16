@@ -181,3 +181,21 @@ Documento de implementacion:
 - `docs/fase_4D_A_archivado_documental_controlado.md`.
 - Revision tecnica/auditoria de cierre: sin hallazgos bloqueantes.
 - QA manual de navegador: reportada por el usuario como correcta.
+
+## Resultado Fase 4D-B-0
+
+Estado tecnico: `CONTRATO_4D_B_BAJA_LOGICA_DOCUMENTAL_COMPLETADO`.
+
+Se documento el contrato para baja logica futura con:
+
+- transiciones futuras `activo -> eliminado` y `archivado -> eliminado`;
+- ruta futura propuesta `POST /documentos/{id}/eliminar`;
+- POST + CSRF, filtro `id + hotel_id`, confirmacion fuerte y auditoria obligatoria;
+- prohibicion de borrado fisico, `DELETE`, baja masiva y restauracion desde
+  `eliminado`.
+
+No se implementaron rutas, controladores, modelos, vistas, DB ni migraciones.
+
+Documento:
+
+- `docs/fase_4D_B_0_contrato_baja_logica_documental.md`.

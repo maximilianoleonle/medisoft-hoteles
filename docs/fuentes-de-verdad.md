@@ -203,6 +203,10 @@ Fuente de verdad:
 - La revision tecnica/auditoria de cierre confirma que 4D-A solo permite
   `activo <-> archivado`; `eliminado` sigue fuera de alcance.
 - QA manual de archivar/restaurar reportada por el usuario como correcta.
+- 4D-B-0 documenta que una baja logica futura debera usar `documentos.estado =
+  eliminado`, sin borrar archivo fisico ni relaciones.
+- La recuperacion desde `eliminado` no es fuente de verdad vigente y requerira contrato
+  separado si algun dia se autoriza.
 - No hay Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync` en 4D-A.
 
 ## Personal y Nomina (Fase NP)

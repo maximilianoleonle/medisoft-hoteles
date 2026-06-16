@@ -289,6 +289,16 @@
   baja logica `eliminado` permanece diferida a contrato futuro.
 - La QA manual del flujo archivar/restaurar fue reportada por el usuario como correcta.
 
+### Fase 4D-B-0 contrato de baja logica documental
+
+- Estado formal vigente: `CONTRATO_4D_B_BAJA_LOGICA_DOCUMENTAL_COMPLETADO`.
+- Se define baja logica como cambio de estado a `eliminado`, nunca como borrado fisico.
+- La implementacion no se agrega en 4D-B-0 para evitar un cambio destructivo accidental.
+- Las transiciones futuras permitidas seran `activo -> eliminado` y
+  `archivado -> eliminado`; recuperar desde `eliminado` requiere otro contrato.
+- El boton futuro debe vivir en detalle documental y requerir confirmacion fuerte,
+  POST + CSRF y auditoria.
+
 ### Decisiones de diagnostico NP-0
 
 - Hoy "trabajador" = `usuarios` (tabla global, sin `hotel_id`, `rol` de sistema) + pivote
