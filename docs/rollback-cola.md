@@ -1031,3 +1031,13 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Codigo: no aplica.
 - No tocar tareas, trabajadores, habitaciones, mantenimientos, Caja, pagos, abonos,
   nomina, offline ni `/api/sync`.
+
+### TLM-J-A agenda de tareas por trabajador
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-tlm): add worker task agenda`.
+- DB: no aplica; no crea migraciones ni datos.
+- El rollback retiraria ruta GET, accion del controlador, metodo read-only del modelo,
+  vista, enlace desde tareas y checks asociados.
+- No tocar tareas reales, trabajadores, habitaciones, mantenimientos, Caja, pagos,
+  abonos, nomina, offline ni `/api/sync`.

@@ -488,6 +488,155 @@ class TareaOperativa extends Model
         return $reporte;
     }
 
+    public function agendaReadOnlyPorHotel(int $hotelId, array $filtros = []): array
+    {
+        $desde = $this->normalizarFechaSimple($filtros['desde'] ?? null, date('Y-m-d'));
+        $hasta = $this->normalizarFechaSimple($filtros['hasta'] ?? null, $desde);
+
+        $desdeTs = strtotime($desde);
+        $hastaTs = strtotime($hasta);
+        if ($hastaTs < $desdeTs) {
+            [$desde, $hasta] = [$hasta, $desde];
+            [$desdeTs, $hastaTs] = [$hastaTs, $desdeTs];
+        }
+
+        $maxHasta = strtotime('+31 days', $desdeTs);
+        if ($hastaTs > $maxHasta) {
+            $hasta = date('Y-m-d', $maxHasta);
+        }
+
+        $estado = strtolower(trim((string)($filtros['estado'] ?? 'activos')));
+        $estadosPermitidos = ['todos', 'activos', 'pendiente', 'asignada', 'en_proceso', 'completada', 'cancelada'];
+        if (!in_array($estado, $estadosPermitidos, true)) {
+            $estado = 'activos';
+        }
+
+        $categoria = strtolower(trim((string)($filtros['categoria'] ?? 'todos')));
+        if ($categoria !== 'todos' && !in_array($categoria, self::CATEGORIAS, true)) {
+            $categoria = 'todos';
+        }
+
+        $trabajadorId = $this->normalizarEnteroNullable($filtros['trabajador_id'] ?? null);
+
+        $agenda = [
+            'filtros' => [
+                'desde' => $desde,
+                'hasta' => $hasta,
+                'trabajador_id' => $trabajadorId ?: 'todos',
+                'categoria' => $categoria,
+                'estado' => $estado,
+            ],
+            'resumen' => [
+                'total' => 0,
+                'activas' => 0,
+                'sin_asignar' => 0,
+                'por_estado' => [],
+                'por_categoria' => [],
+                'por_trabajador' => [],
+            ],
+            'tareas' => [],
+        ];
+
+        if ($hotelId <= 0 || !$this->tablaDisponible()) {
+            return $agenda;
+        }
+
+        $where = [
+            't.hotel_id = ?',
+            'DATE(COALESCE(t.fecha_programada, t.fecha_limite, t.created_at)) BETWEEN ? AND ?',
+        ];
+        $params = [$hotelId, $desde, $hasta];
+
+        if ($estado === 'activos') {
+            $where[] = "t.estado IN ('pendiente', 'asignada', 'en_proceso')";
+        } elseif ($estado !== 'todos') {
+            $where[] = 't.estado = ?';
+            $params[] = $estado;
+        }
+
+        if ($categoria !== 'todos') {
+            $where[] = 't.categoria = ?';
+            $params[] = $categoria;
+        }
+
+        if ($trabajadorId !== null) {
+            $where[] = 't.trabajador_id = ?';
+            $params[] = $trabajadorId;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT t.id,
+                    t.hotel_id,
+                    t.categoria,
+                    t.titulo,
+                    t.prioridad,
+                    t.estado,
+                    t.habitacion_id,
+                    t.trabajador_id,
+                    t.mantenimiento_id,
+                    t.fecha_programada,
+                    t.fecha_limite,
+                    t.fecha_inicio,
+                    t.fecha_cierre,
+                    t.origen,
+                    t.created_at,
+                    DATE(COALESCE(t.fecha_programada, t.fecha_limite, t.created_at)) AS fecha_agenda,
+                    h.numero AS habitacion_numero,
+                    h.estado AS habitacion_estado,
+                    tr.nombre_completo AS trabajador_nombre,
+                    tr.rol_laboral AS trabajador_rol,
+                    m.tipo_mantenimiento,
+                    m.motivo AS mantenimiento_motivo
+             FROM tareas_operativas t
+             LEFT JOIN habitaciones h
+                ON h.id = t.habitacion_id
+               AND h.hotel_id = t.hotel_id
+             LEFT JOIN trabajadores tr
+                ON tr.id = t.trabajador_id
+               AND tr.hotel_id = t.hotel_id
+             LEFT JOIN mantenimientos_habitaciones m
+                ON m.id = t.mantenimiento_id
+               AND m.hotel_id = t.hotel_id
+             WHERE " . implode(' AND ', $where) . "
+             ORDER BY fecha_agenda ASC,
+                      CASE WHEN tr.nombre_completo IS NULL THEN 1 ELSE 0 END,
+                      tr.nombre_completo ASC,
+                      FIELD(t.estado, 'en_proceso', 'asignada', 'pendiente', 'completada', 'cancelada'),
+                      FIELD(t.prioridad, 'urgente', 'alta', 'media', 'baja'),
+                      t.id ASC
+             LIMIT 300",
+            $params
+        );
+
+        $tareas = $stmt ? ($stmt->fetchAll() ?: []) : [];
+        $agenda['tareas'] = $tareas;
+        $agenda['resumen']['total'] = count($tareas);
+
+        foreach ($tareas as $tarea) {
+            $estadoTarea = (string)($tarea['estado'] ?? 'pendiente');
+            $categoriaTarea = (string)($tarea['categoria'] ?? 'general');
+            $trabajadorNombre = trim((string)($tarea['trabajador_nombre'] ?? ''));
+            if ($trabajadorNombre === '') {
+                $trabajadorNombre = 'Sin asignar';
+            }
+
+            if (in_array($estadoTarea, ['pendiente', 'asignada', 'en_proceso'], true)) {
+                $agenda['resumen']['activas']++;
+                if (empty($tarea['trabajador_id'])) {
+                    $agenda['resumen']['sin_asignar']++;
+                }
+            }
+
+            $agenda['resumen']['por_estado'][$estadoTarea] = ($agenda['resumen']['por_estado'][$estadoTarea] ?? 0) + 1;
+            $agenda['resumen']['por_categoria'][$categoriaTarea] = ($agenda['resumen']['por_categoria'][$categoriaTarea] ?? 0) + 1;
+            $agenda['resumen']['por_trabajador'][$trabajadorNombre] = ($agenda['resumen']['por_trabajador'][$trabajadorNombre] ?? 0) + 1;
+        }
+
+        arsort($agenda['resumen']['por_trabajador']);
+
+        return $agenda;
+    }
+
     public function habitacionesOpciones(int $hotelId): array
     {
         if ($hotelId <= 0) {
@@ -1174,6 +1323,18 @@ class TareaOperativa extends Model
         }
 
         return date('Y-m-d H:i:s', $timestamp);
+    }
+
+    private function normalizarFechaSimple($value, string $fallback): string
+    {
+        $value = trim((string)($value ?? ''));
+        $timestamp = $value !== '' ? strtotime($value) : false;
+
+        if (!$timestamp) {
+            $timestamp = strtotime($fallback);
+        }
+
+        return date('Y-m-d', $timestamp ?: time());
     }
 
     private function nullableTexto($value, int $limite): ?string

@@ -69,6 +69,26 @@ class TareaController extends Controller
         ]);
     }
 
+    public function agendaAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $tablaDisponible = $this->tareaModel->tablaDisponible();
+        $filtros = [
+            'desde' => $this->getQuery('desde', date('Y-m-d')),
+            'hasta' => $this->getQuery('hasta', date('Y-m-d')),
+            'trabajador_id' => $this->getQuery('trabajador_id', 'todos'),
+            'categoria' => $this->getQuery('categoria', 'todos'),
+            'estado' => $this->getQuery('estado', 'activos'),
+        ];
+
+        View::renderTemplate('tareas/agenda', [
+            'title' => 'Agenda de tareas - ' . current_hotel_display_name(),
+            'agenda' => $tablaDisponible ? $this->tareaModel->agendaReadOnlyPorHotel($hotelId, $filtros) : $this->agendaVacia($filtros),
+            'trabajadores' => $tablaDisponible ? $this->tareaModel->trabajadoresActivosOpciones($hotelId) : [],
+            'tablaDisponible' => $tablaDisponible,
+        ]);
+    }
+
     public function verAction(): void
     {
         $id = (int)($this->route_params['id'] ?? 0);
@@ -286,6 +306,22 @@ class TareaController extends Controller
             'por_habitacion' => [],
             'recientes' => [],
             'eventos_recientes' => [],
+        ];
+    }
+
+    private function agendaVacia(array $filtros): array
+    {
+        return [
+            'filtros' => $filtros,
+            'resumen' => [
+                'total' => 0,
+                'activas' => 0,
+                'sin_asignar' => 0,
+                'por_estado' => [],
+                'por_categoria' => [],
+                'por_trabajador' => [],
+            ],
+            'tareas' => [],
         ];
     }
 

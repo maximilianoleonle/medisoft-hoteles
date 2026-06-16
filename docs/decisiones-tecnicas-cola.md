@@ -922,3 +922,10 @@
 - La agenda debe vivir bajo el modulo existente de tareas para reutilizar guardas.
 - Personal aporta trabajadores asignados, pero no se abre nomina ni pagos.
 - Limpieza y mantenimiento se muestran como categorias/origenes, sin automatizacion.
+
+## Decision TLM-J-A
+
+- La agenda usa `TareaController` y `TareaOperativa` existentes para mantener guardas.
+- El rango se normaliza a maximo 31 dias para evitar consultas amplias accidentales.
+- La vista no replica acciones de detalle; solo muestra enlaces GET.
+- La navegacion primaria se agrega desde `/tareas`, no como modulo independiente.

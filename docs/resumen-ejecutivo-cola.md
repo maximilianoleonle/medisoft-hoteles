@@ -1168,3 +1168,13 @@ Resultado TLM-J-0:
 - No hay codigo, rutas, DB ni escrituras.
 - Siguiente paso recomendado: TLM-J-A implementacion GET/read-only de
   `/tareas/agenda`.
+
+Resultado TLM-J-A:
+
+- Estado tecnico: `AGENDA_TLM_J_A_TAREAS_TRABAJADOR_READONLY_COMPLETADA_QA_DIFERIDA`.
+- Documento: `docs/fase_TLM_J_A_agenda_tareas_trabajador.md`.
+- Se agrega `GET /tareas/agenda` con filtros read-only.
+- La agenda consulta tareas, trabajadores, habitaciones y mantenimientos con `hotel_id`.
+- No hay POST, asignaciones, estados manuales desde agenda, Caja, nomina, offline ni
+  `/api/sync`.
+- Siguiente paso recomendado: revision/auditoria/cierre TLM-J.

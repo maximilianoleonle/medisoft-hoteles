@@ -582,3 +582,16 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   - `mantenimientos_habitaciones`.
 - No crea fuentes nuevas.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.
+
+### TLM-J-A agenda de tareas por trabajador
+
+- Fuente de verdad documental: `docs/fase_TLM_J_A_agenda_tareas_trabajador.md`.
+- Fuente tecnica de consulta: `TareaOperativa::agendaReadOnlyPorHotel()`.
+- Fuente visual: `app/views/tareas/agenda.php`.
+- Ruta: `GET /tareas/agenda`.
+- Fuentes de lectura:
+  - `tareas_operativas`;
+  - `trabajadores`;
+  - `habitaciones`;
+  - `mantenimientos_habitaciones`.
+- No crea fuentes nuevas ni escrituras.

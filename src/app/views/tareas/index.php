@@ -98,6 +98,10 @@ $prioridadLabels = [
                 <i class="fas fa-chart-pie"></i>
                 Reporte
             </a>
+            <a class="tlm-btn tlm-btn--light" href="<?= url('tareas/agenda') ?>">
+                <i class="fas fa-calendar-day"></i>
+                Agenda
+            </a>
             <div class="tlm-status">
                 Fase TLM-I-A: operacion manual controlada y reporte read-only. Sin cambios de habitacion ni Caja.
             </div>

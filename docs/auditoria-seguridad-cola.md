@@ -1164,3 +1164,14 @@ Estado: `CONTRATO_TLM_J_0_AGENDA_TAREAS_TRABAJADOR_COMPLETADO`.
 - Riesgos futuros: rangos de fecha amplios o exposicion cross-hotel.
 - Mitigacion definida: filtros por `hotel_id`, rango por defecto corto y enlaces GET.
 - Caja, pagos, abonos, nomina operativa, offline y `/api/sync` siguen fuera de alcance.
+
+## Auditoria TLM-J-A
+
+Estado: `AGENDA_TLM_J_A_TAREAS_TRABAJADOR_READONLY_COMPLETADA_QA_DIFERIDA`.
+
+- Ruta nueva solo GET: `/tareas/agenda`.
+- Constructor de `TareaController` conserva sesion, hotel, modulo y permiso view.
+- Modelo filtra por `hotel_id` y limita rango a 31 dias.
+- Vista contiene formulario GET, sin POST ni CSRF.
+- Enlaces solo a vistas existentes de tarea, trabajador y habitacion.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.

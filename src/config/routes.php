@@ -259,6 +259,7 @@ $router->post('/trabajadores/{id:[0-9]+}/reactivar', ['controller' => 'Trabajado
 // Fase TLM-I-A: tareas operativas con alta, asignacion, estados manuales y reporte read-only. Sin cambios de estado de habitacion ni Caja.
 $router->get('/tareas', ['controller' => 'Tarea', 'action' => 'index']);
 $router->get('/tareas/reporte', ['controller' => 'Tarea', 'action' => 'reporte']);
+$router->get('/tareas/agenda', ['controller' => 'Tarea', 'action' => 'agenda']);
 $router->get('/tareas/crear', ['controller' => 'Tarea', 'action' => 'crear']);
 $router->post('/tareas', ['controller' => 'Tarea', 'action' => 'guardar']);
 $router->post('/tareas/desde-limpieza/{id:[0-9]+}', ['controller' => 'Tarea', 'action' => 'crearDesdeLimpieza']);

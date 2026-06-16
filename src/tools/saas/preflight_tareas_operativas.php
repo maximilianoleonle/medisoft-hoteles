@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase TLM-G/MANT-G-B para tareas operativas.
+ * Preflight Fase TLM-G/MANT-G-B/TLM-J-A para tareas operativas.
  *
  * Solo lectura. No crea rutas, migraciones ni datos.
  * Valida consistencia de tareas_operativas/tarea_eventos, entidades vinculadas,
@@ -186,7 +186,7 @@ $taskPartialPath = $appRoot . '/app/views/tareas/_contextual_list.php';
 $habitacionControllerPath = $appRoot . '/app/controllers/HabitacionController.php';
 $trabajadorControllerPath = $appRoot . '/app/controllers/TrabajadorController.php';
 
-echo "Preflight Fase TLM-G/MANT-G-B - Tareas operativas\n";
+echo "Preflight Fase TLM-G/MANT-G-B/TLM-J-A - Tareas operativas\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {
@@ -438,9 +438,11 @@ $routes = tlmPfParseRoutes($routesPath);
 $expectedRoutes = [
     ['method' => 'get', 'path' => 'tareas'],
     ['method' => 'get', 'path' => 'tareas/reporte'],
+    ['method' => 'get', 'path' => 'tareas/agenda'],
     ['method' => 'get', 'path' => 'tareas/crear'],
     ['method' => 'post', 'path' => 'tareas'],
     ['method' => 'post', 'path' => 'tareas/desde-mantenimiento/{id:[0-9]+}'],
+    ['method' => 'post', 'path' => 'tareas/desde-limpieza/{id:[0-9]+}'],
     ['method' => 'get', 'path' => 'tareas/{id:[0-9]+}'],
     ['method' => 'post', 'path' => 'tareas/{id:[0-9]+}/asignar'],
     ['method' => 'post', 'path' => 'tareas/{id:[0-9]+}/iniciar'],
@@ -495,6 +497,7 @@ $trabajadorControllerCode = is_file($trabajadorControllerPath) ? (string) file_g
 if (
     $taskModelCode !== ''
     && strpos($taskModelCode, 'function reporteReadOnlyPorHotel') !== false
+    && strpos($taskModelCode, 'function agendaReadOnlyPorHotel') !== false
     && strpos($taskModelCode, 'function listarPorEntidadHotel') !== false
     && strpos($taskModelCode, 'WHERE t.hotel_id = ?') !== false
     && strpos($taskModelCode, 'function crearParaHotel') !== false
@@ -503,7 +506,7 @@ if (
     && strpos($taskModelCode, "'mantenimiento_manual'") !== false
     && strpos($taskModelCode, 'function cambiarEstadoManualParaHotel') !== false
 ) {
-    tlmPfOk('TareaOperativa conserva reporte read-only, lecturas, alta manual, alta desde mantenimiento y estados con hotel_id.');
+    tlmPfOk('TareaOperativa conserva reporte/agenda read-only, lecturas, alta manual, alta desde mantenimiento y estados con hotel_id.');
 } else {
     tlmPfError('TareaOperativa no muestra contrato TLM esperado.', 'Revisar modelo antes de continuar.');
 }
@@ -511,13 +514,14 @@ if (
 if (
     $taskControllerCode !== ''
     && strpos($taskControllerCode, 'function reporteAction') !== false
+    && strpos($taskControllerCode, 'function agendaAction') !== false
     && strpos($taskControllerCode, 'function crearDesdeMantenimientoAction') !== false
     && strpos($taskControllerCode, 'crearDesdeMantenimientoParaHotel') !== false
     && strpos($taskControllerCode, 'validateCSRF') !== false
     && strpos($taskControllerCode, "require_permission('habitaciones.mantenimiento')") !== false
     && strpos($taskControllerCode, 'AuditService::record') !== false
 ) {
-    tlmPfOk('TareaController conserva reporte read-only, POST mantenimiento manual con CSRF, permiso conservador y auditoria.');
+    tlmPfOk('TareaController conserva reporte/agenda read-only, POST mantenimiento manual con CSRF, permiso conservador y auditoria.');
 } else {
     tlmPfError('TareaController no muestra guardas TLM completas.', 'Validar CSRF, permisos y auditoria antes de continuar.');
 }
@@ -536,6 +540,8 @@ if (
 
 $taskReportViewPath = $appRoot . '/app/views/tareas/reporte.php';
 $taskReportCode = is_file($taskReportViewPath) ? (string) file_get_contents($taskReportViewPath) : '';
+$taskAgendaViewPath = $appRoot . '/app/views/tareas/agenda.php';
+$taskAgendaCode = is_file($taskAgendaViewPath) ? (string) file_get_contents($taskAgendaViewPath) : '';
 if (
     $taskReportCode !== ''
     && strpos($taskReportCode, 'Reporte operativo') !== false
@@ -549,6 +555,25 @@ if (
     tlmPfWarning(
         'Vista de reporte TLM-I-A no muestra contrato read-only completo.',
         'Asegurar reporte sin POST, sin Caja y con enlaces GET al detalle de tareas.'
+    );
+}
+
+if (
+    $taskAgendaCode !== ''
+    && strpos($taskAgendaCode, 'Agenda de tareas') !== false
+    && strpos($taskAgendaCode, 'method="GET"') !== false
+    && strpos($taskAgendaCode, "url('tareas/agenda')") !== false
+    && strpos($taskAgendaCode, 'method="POST"') === false
+    && strpos($taskAgendaCode, 'csrf_field()') === false
+    && strpos($taskAgendaCode, 'movimientos_caja') === false
+    && strpos($taskAgendaCode, '/api/sync') !== false
+    && strpos($taskAgendaCode, "url('tareas/'") !== false
+) {
+    tlmPfOk('Vista TLM-J-A agenda es GET/read-only y no expone Caja.');
+} else {
+    tlmPfWarning(
+        'Vista TLM-J-A agenda no muestra contrato read-only completo.',
+        'Asegurar filtros GET, sin POST/CSRF, sin Caja y con enlaces GET.'
     );
 }
 

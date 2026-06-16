@@ -1347,3 +1347,15 @@ Estado formal vigente: `CONTRATO_TLM_J_0_AGENDA_TAREAS_TRABAJADOR_COMPLETADO`.
 - No toca habitaciones, mantenimientos, inventario, Caja, pagos, abonos, nomina,
   offline ni `/api/sync`.
 - Siguiente accion segura: TLM-J-A implementacion GET/read-only.
+
+## Fase TLM-J-A: agenda read-only de tareas por trabajador
+
+Estado formal vigente: `AGENDA_TLM_J_A_TAREAS_TRABAJADOR_READONLY_COMPLETADA_QA_DIFERIDA`.
+
+- Documento: `docs/fase_TLM_J_A_agenda_tareas_trabajador.md`.
+- Implementa `GET /tareas/agenda`.
+- Filtros GET por fecha, trabajador, categoria y estado.
+- No agrega POST ni escrituras.
+- No toca habitaciones, mantenimientos, inventario, Caja, pagos, abonos, nomina,
+  offline ni `/api/sync`.
+- Siguiente accion segura: revision/auditoria/cierre TLM-J.

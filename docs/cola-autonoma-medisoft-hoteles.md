@@ -1067,3 +1067,13 @@ agregar funcionalidades nuevas.
 - No toca habitaciones, mantenimientos, inventario, Caja, pagos, abonos, nomina,
   offline ni `/api/sync`.
 - Siguiente accion segura: TLM-J-A implementacion GET/read-only.
+
+## TLM-J-A agenda de tareas por trabajador
+
+- Estado formal: `AGENDA_TLM_J_A_TAREAS_TRABAJADOR_READONLY_COMPLETADA_QA_DIFERIDA`.
+- Documento creado: `docs/fase_TLM_J_A_agenda_tareas_trabajador.md`.
+- Ruta GET/read-only: `/tareas/agenda`.
+- Filtros por fecha, trabajador, categoria y estado.
+- No agrega POST, asignaciones, cambios de estado, cambios de habitacion, Caja, nomina,
+  offline ni `/api/sync`.
+- Siguiente accion segura: revision/auditoria/cierre TLM-J.

@@ -1295,3 +1295,14 @@ instruccion del usuario.
   - confirmar enlaces GET a tarea/trabajador/habitacion;
   - confirmar ausencia de POST, asignacion, estados manuales, Caja, nomina,
     offline y `/api/sync`.
+
+### Estado TLM-J-A
+
+- Agenda de tareas por trabajador implementada en modo GET/read-only.
+- QA manual diferida por instruccion del usuario.
+- Probar `/tareas/agenda`.
+- Filtrar por fecha, trabajador, categoria y estado.
+- Confirmar que solo hay enlaces GET y que no aparecen acciones de asignar/iniciar/
+  completar/cancelar en la agenda.
+- Confirmar que no cambia habitacion, mantenimiento, inventario, Caja, nomina, offline
+  ni `/api/sync`.
