@@ -822,3 +822,11 @@ instruccion del usuario.
   - ejecutar `docker compose exec -T app php /var/www/html/tools/saas/preflight_personal_ledger.php`;
   - confirmar `ERROR: 0`;
   - confirmar que Caja/Nomina sigan en cero.
+
+### Estado NP-C-F
+
+- Bloque read-only de ledger laboral cerrado tecnicamente.
+- QA manual diferida:
+  - confirmar visualmente `/trabajadores/{id}` con un trabajador real o de prueba;
+  - confirmar que el ledger no ofrece acciones de pago/abono/Caja;
+  - confirmar que el saldo se lee como informativo.

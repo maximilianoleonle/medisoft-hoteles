@@ -636,3 +636,9 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Revertir el commit `test(phase-np): add worker ledger consistency checks`.
 - DB: no aplica; el preflight es solo lectura.
 - No tocar tablas `trabajador_*`, Caja ni `/api/sync`.
+
+### NP-C-F cierre tecnico read-only
+
+- Revertir el commit `docs(phase-np): close read-only worker ledger block`.
+- DB: no aplica; es cierre documental.
+- No tocar tablas `trabajador_*`, Caja ni `/api/sync`.

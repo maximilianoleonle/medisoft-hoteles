@@ -876,3 +876,11 @@ Estado formal vigente: `PREFLIGHT_LEDGER_NP_C_E_COMPLETADO_QA_DIFERIDA`.
 - Herramienta: `src/tools/saas/preflight_personal_ledger.php`.
 - Solo lectura; no agrega UI ni escrituras.
 - Valida tablas `trabajador_*` y ausencia de Caja/Nomina operativa.
+
+### Estado NP-C-F
+
+Estado formal vigente: `BLOQUE_NP_C_READ_ONLY_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_F_cierre_ledger_read_only.md`.
+- Cierra contrato, vista read-only y preflight.
+- La siguiente escritura laboral requiere contrato nuevo.

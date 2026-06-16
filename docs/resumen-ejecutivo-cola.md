@@ -653,3 +653,12 @@ Resultado NP-C-E:
 - No agrega UI, rutas, POST, migraciones ni escrituras.
 - Siguiente paso recomendado: revision tecnica/auditoria/cierre de NP-C read-only o
   contrato futuro para escrituras laborales sin Caja.
+
+Resultado NP-C-F:
+
+- Estado tecnico: `BLOQUE_NP_C_READ_ONLY_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_NP_C_F_cierre_ledger_read_only.md`.
+- Se cierra el bloque read-only de ledger laboral: contrato, vista y preflight.
+- No hay pagos reales, abonos, Caja, categoria Nomina ni cambios en `/api/sync`.
+- Siguiente paso recomendado: contrato NP-C-B-0 si se autoriza primera escritura laboral
+  sin Caja, o QA manual diferida de NP-C.

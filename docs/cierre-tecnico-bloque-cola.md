@@ -587,4 +587,13 @@ Estado: `PREFLIGHT_LEDGER_NP_C_E_COMPLETADO_QA_DIFERIDA`.
 - Nuevo preflight read-only de ledger laboral.
 - Health checker lo detecta.
 - Sin UI, rutas, POST, migraciones ni escrituras.
+
+## Cierre tecnico NP-C-F
+
+Estado: `BLOQUE_NP_C_READ_ONLY_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_F_cierre_ledger_read_only.md`.
+- Cierra el bloque read-only de ledger laboral.
+- QA manual queda diferida.
+- La siguiente escritura laboral requiere contrato nuevo.
 - QA manual queda diferida por instruccion del usuario.

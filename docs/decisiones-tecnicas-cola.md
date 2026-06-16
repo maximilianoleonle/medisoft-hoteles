@@ -522,3 +522,10 @@
 - Se agrega preflight dedicado en vez de ampliar preflights de compras o tareas.
 - El checker falla ante inconsistencias estructurales y no corrige datos.
 - La ausencia de categoria Nomina en Caja se mantiene como condicion de seguridad.
+
+## Decision NP-C-F cierre read-only
+
+- El bloque NP-C se cierra solo como lectura y validacion.
+- No se infiere autorizacion para registrar conceptos laborales por haber mostrado el
+  ledger.
+- La primera escritura laboral futura debe abrir contrato propio y mantener Caja fuera.

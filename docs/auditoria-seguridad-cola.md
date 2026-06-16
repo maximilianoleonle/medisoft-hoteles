@@ -638,3 +638,12 @@ Estado: `PREFLIGHT_LEDGER_NP_C_E_COMPLETADO_QA_DIFERIDA`.
 - Valida ausencia de rutas operativas de nomina/Caja bajo `/trabajadores`.
 - Valida ausencia de categoria `Nomina` en Caja.
 - No toca `/api/sync`.
+
+## Auditoria NP-C-F cierre read-only
+
+Estado: `BLOQUE_NP_C_READ_ONLY_CERRADO_QA_DIFERIDA`.
+
+- El bloque queda cerrado sin escrituras laborales.
+- La separacion con Caja permanece intacta.
+- Riesgo residual: QA visual con trabajador real queda diferida.
+- Siguiente fase de escritura debe abrir contrato independiente.

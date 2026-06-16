@@ -550,3 +550,12 @@ agregar funcionalidades nuevas.
 - No crea rutas, vistas, POST, migraciones ni datos.
 - Siguiente accion segura: revision tecnica/auditoria/cierre del bloque NP-C read-only,
   o contrato futuro para primera escritura laboral sin Caja.
+
+## Cierre tecnico NP-C-F
+
+- Estado formal: `BLOQUE_NP_C_READ_ONLY_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_NP_C_F_cierre_ledger_read_only.md`.
+- Cierra contrato, vista read-only y preflight del ledger laboral.
+- No hay pagos reales, abonos, Caja, categoria Nomina ni `/api/sync`.
+- Siguiente accion segura: contrato NP-C-B-0 para primera escritura laboral controlada,
+  sin Caja, o QA manual diferida del bloque read-only.
