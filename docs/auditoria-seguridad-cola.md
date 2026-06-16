@@ -411,3 +411,18 @@ Estado: `CIERRE_TECNICO_4D_COMPLETADO_QA_DIFERIDA`.
 - Auditoria con `AuditService` en escrituras relevantes.
 - `/api/sync` fuera de alcance y bloqueado.
 - Montos no negativos garantizados por `CHECK` y por validacion de aplicacion.
+
+### Auditoria NP-A migracion base
+
+Estado: `MIGRACION_NP_A_PERSONAL_BASE_COMPLETADA_QA_DIFERIDA`.
+
+- Migracion aditiva aplicada tras backup verificado.
+- Tablas creadas vacias: `trabajadores`, `trabajador_pagos`,
+  `trabajador_anticipos`, `trabajador_prestamos`, `trabajador_asistencias`,
+  `trabajador_documentos`.
+- Todas las tablas tienen `hotel_id`.
+- Tablas hijas tienen `trabajador_id` con FK a `trabajadores`.
+- `usuarios` no fue alterada de forma destructiva; el vinculo es opcional.
+- Caja no fue tocada: movimientos Nomina 0 y categorias Nomina 0.
+- No hay rutas, controladores ni vistas de Personal todavia.
+- `/api/sync` fuera de alcance.

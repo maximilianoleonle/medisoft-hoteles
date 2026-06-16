@@ -1602,6 +1602,103 @@ if ($pdo) {
         );
     }
 
+    $npTables = [
+        'trabajadores' => [
+            'id', 'hotel_id', 'usuario_id', 'nombre_completo', 'identificacion',
+            'rol_laboral', 'telefono', 'email', 'estado', 'fecha_alta',
+            'fecha_baja', 'salario_base', 'periodicidad_pago', 'notas',
+            'created_by', 'updated_by', 'created_at', 'updated_at',
+        ],
+        'trabajador_pagos' => [
+            'id', 'hotel_id', 'trabajador_id', 'tipo', 'efecto', 'monto',
+            'concepto', 'periodo_inicio', 'periodo_fin', 'fecha', 'referencia',
+            'notas', 'estado', 'created_by', 'updated_by', 'created_at', 'updated_at',
+        ],
+        'trabajador_anticipos' => [
+            'id', 'hotel_id', 'trabajador_id', 'monto', 'saldo_pendiente',
+            'fecha', 'motivo', 'estado', 'referencia', 'notas',
+            'created_by', 'updated_by', 'created_at', 'updated_at',
+        ],
+        'trabajador_prestamos' => [
+            'id', 'hotel_id', 'trabajador_id', 'monto', 'saldo_pendiente',
+            'fecha', 'plazo_meses', 'abono_periodico', 'motivo', 'estado',
+            'referencia', 'notas', 'created_by', 'updated_by', 'created_at', 'updated_at',
+        ],
+        'trabajador_asistencias' => [
+            'id', 'hotel_id', 'trabajador_id', 'fecha', 'tipo',
+            'hora_entrada', 'hora_salida', 'horas', 'horas_extra',
+            'observaciones', 'created_by', 'updated_by', 'created_at', 'updated_at',
+        ],
+        'trabajador_documentos' => [
+            'id', 'hotel_id', 'trabajador_id', 'tipo', 'nombre_original',
+            'ruta_archivo', 'mime', 'tamano', 'notas', 'estado',
+            'subido_por', 'created_at', 'updated_at',
+        ],
+    ];
+
+    $npMissingTables = [];
+    $npMissingColumns = [];
+    $npRows = 0;
+    foreach ($npTables as $table => $columns) {
+        if (!hcTableExists($pdo, $database, $table)) {
+            $npMissingTables[] = $table;
+            continue;
+        }
+
+        if (!hcColumnExists($pdo, $database, $table, 'hotel_id')) {
+            $npMissingColumns[] = $table . '.hotel_id';
+        }
+
+        foreach ($columns as $column) {
+            if (!hcColumnExists($pdo, $database, $table, $column)) {
+                $npMissingColumns[] = $table . '.' . $column;
+            }
+        }
+
+        $npRows += (int)(hcCountRows($pdo, $table) ?? 0);
+    }
+
+    if (empty($npMissingTables) && empty($npMissingColumns)) {
+        hcOk('Personal base NP-A tiene las seis tablas aditivas con hotel_id y columnas requeridas. Registros totales=' . (string)$npRows . '.');
+    } else {
+        hcWarning(
+            'Personal base NP-A incompleto. Tablas faltantes: ' . implode(', ', $npMissingTables) . '. Columnas faltantes: ' . implode(', ', $npMissingColumns) . '.',
+            'No exponer Personal hasta aplicar o reconciliar migrations/20260616_001_fase_np_a_personal_base.sql.'
+        );
+    }
+
+    if (hcTableExists($pdo, $database, 'migrations')) {
+        $stmt = $pdo->prepare(
+            "SELECT COUNT(*) FROM migrations
+             WHERE nombre = '20260616_001_fase_np_a_personal_base.sql'
+               AND estado = 'ejecutada'"
+        );
+        $stmt->execute();
+        if ((int)$stmt->fetchColumn() === 1) {
+            hcOk('Migracion Personal base NP-A registrada como ejecutada.');
+        } elseif (empty($npMissingTables)) {
+            hcWarning(
+                'Tablas Personal base NP-A existen pero la migracion no esta registrada.',
+                'Registrar solo si la migracion fue aplicada tras backup verificado.'
+            );
+        }
+    }
+
+    $cajaNomina = hcTableExists($pdo, $database, 'movimientos_caja')
+        ? hcCountScalar($pdo, "SELECT COUNT(*) FROM movimientos_caja WHERE LOWER(COALESCE(categoria, '')) LIKE '%nomina%'")
+        : null;
+    $categoriasNomina = hcTableExists($pdo, $database, 'categorias_movimientos')
+        ? hcCountScalar($pdo, "SELECT COUNT(*) FROM categorias_movimientos WHERE LOWER(COALESCE(nombre, '')) LIKE '%nomina%'")
+        : null;
+    if ($cajaNomina === 0 && $categoriasNomina === 0) {
+        hcOk('Personal base NP-A no genero movimientos ni categorias de Caja/Nomina.');
+    } else {
+        hcError(
+            'Personal base NP-A detecta referencias de Caja/Nomina. movimientos=' . (string)$cajaNomina . ', categorias=' . (string)$categoriasNomina . '.',
+            'Revisar antes de continuar; NP-A no debe tocar Caja ni crear categoria Nomina.'
+        );
+    }
+
     $inventoryModernTables = [
         'inventario_productos' => 'productos operativos',
         'movimientos_inventario' => 'movimientos operativos',

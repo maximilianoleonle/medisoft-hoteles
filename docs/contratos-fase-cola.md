@@ -648,3 +648,16 @@ Contrato, diagnostico read-only y diseno aditivo de las 6 tablas documentados en
 migraciones aplicadas y no se escribio en la base de datos. La formula de saldo por
 trabajador y la referencia logica de "responsable" quedan especificadas para NP-C y el
 alcance #9.
+
+### Estado NP-A
+
+Estado formal vigente: `MIGRACION_NP_A_PERSONAL_BASE_COMPLETADA_QA_DIFERIDA`.
+
+- Migracion aditiva aplicada: `migrations/20260616_001_fase_np_a_personal_base.sql`.
+- Tablas creadas vacias: `trabajadores`, `trabajador_pagos`,
+  `trabajador_anticipos`, `trabajador_prestamos`, `trabajador_asistencias`,
+  `trabajador_documentos`.
+- Backup previo verificado.
+- Sin datos semilla.
+- Sin UI todavia.
+- Sin Caja, pagos reales, categoria Nomina ni `/api/sync`.

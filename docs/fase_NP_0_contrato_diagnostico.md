@@ -279,3 +279,24 @@ Contrato, diagnostico y diseno de las 6 tablas completados. No se implemento
 funcionalidad, no se crearon migraciones aplicadas y no se escribio en la base de datos.
 Siguiente subfase: NP-A (migraciones aditivas + ficha basica de trabajador), solo tras
 confirmar este contrato.
+
+## Resultado NP-A migracion base
+
+Estado tecnico: `MIGRACION_NP_A_PERSONAL_BASE_COMPLETADA_QA_DIFERIDA`.
+
+- Backup valido: `src/storage/backups/phase_np_a_20260616_021311_before_personal_base_medisoft_hoteles_import.sql`.
+- SHA256: `0F9E64B040437A73D559534E5753133F4C3508C29F5B9EA0278B351097666246`.
+- Migracion: `migrations/20260616_001_fase_np_a_personal_base.sql`.
+- Batch local: `19`.
+- Tablas creadas vacias:
+  - `trabajadores`;
+  - `trabajador_pagos`;
+  - `trabajador_anticipos`;
+  - `trabajador_prestamos`;
+  - `trabajador_asistencias`;
+  - `trabajador_documentos`.
+- No se insertaron trabajadores ni movimientos.
+- No se creo categoria Nomina ni movimientos de Caja.
+- `/api/sync` sigue fuera de alcance.
+
+Documento: `docs/fase_NP_A_migracion_personal_base.md`.

@@ -466,6 +466,17 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   documentos), NO ejecutar `DROP`/`DELETE`: exportar conteos, reconciliar y documentar
   rollback especifico antes de cualquier cambio.
 
+### NP-A migracion base aplicada
+
+- Backup valido:
+  `src/storage/backups/phase_np_a_20260616_021311_before_personal_base_medisoft_hoteles_import.sql`.
+- SHA256: `0F9E64B040437A73D559534E5753133F4C3508C29F5B9EA0278B351097666246`.
+- Rollback solo con autorizacion explicita y si las seis tablas siguen vacias:
+  `trabajador_documentos`, `trabajador_asistencias`, `trabajador_prestamos`,
+  `trabajador_anticipos`, `trabajador_pagos`, `trabajadores`.
+- Borrar tambien el registro de `migrations` para
+  `20260616_001_fase_np_a_personal_base.sql` solo si se hace rollback completo.
+
 ### Reglas duras de rollback NP
 
 - No borrar ni alterar `usuarios` ni `hotel_usuarios` durante ningun rollback NP.

@@ -339,6 +339,14 @@
 - NO se inserta en `movimientos_caja` por nomina. La integracion Caja se difiere a una
   Fase NP-Caja autorizada por separado.
 
+### Decision NP-A migracion base
+
+- Se crea primero la base de datos vacia de Personal antes de UI o movimientos.
+- La migracion es 100% aditiva y no crea datos semilla.
+- Se mantiene `usuarios` intacta; `trabajadores.usuario_id` es opcional.
+- Caja queda separada: no se crea categoria Nomina ni movimientos.
+- Las fases visuales y operativas deben consumir estas tablas con filtro `hotel_id`.
+
 ### Decision sobre "responsable" de mantenimiento
 
 - En NP la referencia trabajador-responsable es **logica y opcional**, de solo lectura,

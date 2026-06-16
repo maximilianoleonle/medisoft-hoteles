@@ -375,3 +375,24 @@ QA manual pendiente diferida por instruccion del usuario:
 No se implemento recuperacion desde `eliminado`, borrado fisico, `DELETE`, baja masiva,
 reemplazo de archivo, links publicos, Caja, pagos, abonos, Fase 3D, NP-A ni cambios en
 `/api/sync`.
+
+## Checkpoint tecnico Fase NP-A
+
+Estado: `MIGRACION_NP_A_PERSONAL_BASE_COMPLETADA_QA_DIFERIDA`.
+
+La base de Personal queda creada como estructura vacia, sin UI y sin movimientos.
+
+### Confirmaciones NP-A
+
+- Backup previo valido con SHA256 documentado.
+- Migracion aplicada: `migrations/20260616_001_fase_np_a_personal_base.sql`.
+- Tablas creadas vacias:
+  - `trabajadores`;
+  - `trabajador_pagos`;
+  - `trabajador_anticipos`;
+  - `trabajador_prestamos`;
+  - `trabajador_asistencias`;
+  - `trabajador_documentos`.
+- Health checker valida estructura NP-A y migracion registrada.
+- Caja/Nomina sigue en cero.
+- No se tocaron `usuarios` destructivamente, Caja ni `/api/sync`.

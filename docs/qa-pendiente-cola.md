@@ -554,6 +554,14 @@ QA manual diferida 4D-B-A:
 - No hay QA manual pendiente especifica de NP-0 mas alla de validar lectura del contrato.
 - Git limpio al iniciar; HEAD `5dfe665`.
 
+### Estado NP-A
+
+- Migracion base aplicada y documentada.
+- Seis tablas `trabajador*` existen y estan vacias.
+- No hay UI de Personal todavia, por lo tanto QA visual queda diferida.
+- Caja/Nomina sigue en cero.
+- `/api/sync` fuera de alcance.
+
 ### QA critica planificada (NP)
 
 - Confirmar que NO existe ningun movimiento de Caja generado por nomina (debe seguir en 0).

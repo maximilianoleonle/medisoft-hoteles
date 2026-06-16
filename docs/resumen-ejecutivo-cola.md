@@ -419,11 +419,13 @@ asistencia y comisiones, multi-hotel, SIN integracion con Caja ni salida real de
 Estado actual:
 
 - Fase NP-0 completada: contrato, diagnostico read-only y diseno aditivo de 6 tablas.
+- Fase NP-A completada tecnicamente: migracion aditiva de Personal base aplicada y
+  tablas creadas vacias.
 - HEAD al iniciar NP-0: `5dfe665`; Git limpio.
 - Hoy "trabajador" = `usuarios` + `hotel_usuarios`; sin rol laboral, deuda ni saldo por persona.
 - Caja revisada en solo lectura; NO existe categoria "Nomina"; movimientos Caja-nomina: 0.
-- No existe ninguna tabla `trabajador*`: el bloque es 100% aditivo.
-- No se implemento funcionalidad ni se escribio en DB en NP-0.
+- Tablas `trabajador*` existen desde NP-A y estan vacias.
+- No se implemento funcionalidad visual ni se insertaron trabajadores/movimientos.
 
 Riesgo: naranja (modulo financiero-laboral nuevo y concepto sensible), mitigado por
 migraciones aditivas/reversibles, sin Caja, sin tocar `usuarios` destructivamente,
@@ -432,3 +434,14 @@ filtro `hotel_id` y validaciones fuertes.
 Subfases planificadas: NP-A (ficha basica), NP-B (pagos/anticipos/prestamos sin Caja),
 NP-C (saldos y reportes), NP-D (asistencia y comisiones), NP-E (validaciones/health),
 NP-F (cierre). Contrato: `docs/fase_NP_0_contrato_diagnostico.md`.
+
+Resultado NP-A:
+
+- Estado tecnico: `MIGRACION_NP_A_PERSONAL_BASE_COMPLETADA_QA_DIFERIDA`.
+- Backup valido: `src/storage/backups/phase_np_a_20260616_021311_before_personal_base_medisoft_hoteles_import.sql`.
+- SHA256: `0F9E64B040437A73D559534E5753133F4C3508C29F5B9EA0278B351097666246`.
+- Migracion: `migrations/20260616_001_fase_np_a_personal_base.sql`.
+- Conteos finales de las seis tablas: 0.
+- Caja/Nomina: movimientos 0, categorias 0.
+- Siguiente paso recomendado: NP-A UI read-first de listado/ficha basica de trabajador,
+  sin pagos reales ni Caja.

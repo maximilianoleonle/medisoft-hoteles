@@ -5,18 +5,18 @@
 NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Centro Documental Base.
 
 Mensaje actual procesado: el usuario autoriza continuar autonomamente y omitir QA
-manual por ahora; se implementa 4D-B-A baja logica documental controlada.
+manual por ahora; se aplica NP-A migracion base de Personal.
 
 ## Estado vigente
 
-- Bloque actual: Fase 4D Archivado documental.
-- Fase actual: cierre tecnico Fase 4D documental.
+- Bloque actual: Personal y Nomina independiente.
+- Fase actual: NP-A migracion base de Personal.
 - Riesgo: naranja.
-- Estado: `CIERRE_TECNICO_4D_COMPLETADO_QA_DIFERIDA`.
+- Estado: `MIGRACION_NP_A_PERSONAL_BASE_COMPLETADA_QA_DIFERIDA`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
-- No avanzar a pagos, Caja, Fase 3D ni nuevas funcionalidades.
+- No avanzar a pagos reales, Caja, Fase 3D ni `/api/sync`.
 - Nota: existen commits de 3C-A/B/C y revisiones posteriores, pero el nuevo reanclaje no los considera cierre formal.
 - Verificacion previa del bloque documental: `php -l`, health, preflights, HTTP sin
   sesion, prueba de upload controlada, rechazo de extension invalida, conteos DB
@@ -299,14 +299,20 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 - Hoy "trabajador" = `usuarios` (tabla global, sin `hotel_id`, `rol` de sistema) + pivote `hotel_usuarios`. No hay rol laboral, deuda ni saldo por persona.
 - Caja revisada en solo lectura: `cajas`, `movimientos_caja`, `cortes_caja`, `categorias_movimientos`. NO existe categoria "Nomina". Movimientos Caja-nomina: 0 (debe seguir en 0).
 - Responsable de mantenimiento/limpieza: hoy es texto libre `mantenimientos_habitaciones.realizado_por`; no hay tabla `limpieza`/`tareas`. La referencia NP sera logica/opcional, sin alterar mantenimiento.
-- No existe ninguna tabla `trabajador*`: el bloque es 100% aditivo.
+- NP-0 confirmo que no existia ninguna tabla `trabajador*`; NP-A ya crea las seis
+  tablas base vacias.
 - Patrones reutilizables: `AuditService::record()` (auditoria), migracion aditiva idempotente (modelo `20260615_003_fase_3b_cxp_base.sql`), modelos con filtro `hotel_id`.
 - Confirmado: NO hace falta tocar Caja, ni `usuarios` destructivamente, ni `/api/sync`.
 - Diseno de 6 tablas (`trabajadores`, `trabajador_pagos`, `trabajador_anticipos`, `trabajador_prestamos`, `trabajador_asistencias`, `trabajador_documentos`) documentado en `docs/fase_NP_0_contrato_diagnostico.md`.
+- Backup NP-A valido:
+  `src/storage/backups/phase_np_a_20260616_021311_before_personal_base_medisoft_hoteles_import.sql`.
+- SHA256 NP-A: `0F9E64B040437A73D559534E5753133F4C3508C29F5B9EA0278B351097666246`.
+- Migracion NP-A: `migrations/20260616_001_fase_np_a_personal_base.sql`.
+- Conteos NP-A posteriores: seis tablas `trabajador*` en 0 registros.
+- Caja/Nomina sigue en cero: no hay movimientos ni categoria Nomina.
 
 ## Siguiente accion
 
-Siguiente paso formal recomendado: implementar 4C-A solo si el usuario lo confirma:
-secciones documentales read-only por entidad, sin nuevas escrituras, sin borrado,
-sin links publicos, sin pagos, sin Caja, sin Fase 3D, sin NP-A y sin tocar `/api/sync`.
+Siguiente paso formal recomendado: NP-A UI read-first de Personal (listado/ficha basica
+sin pagos reales, sin Caja, sin movimientos laborales todavia y sin tocar `/api/sync`).
 No hacer push.

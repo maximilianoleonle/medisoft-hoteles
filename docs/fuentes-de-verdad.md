@@ -224,8 +224,12 @@ Fuente nueva e independiente (modulo de trabajadores):
 
 Estado:
 
-- Fase NP-0 solo define contrato, diagnostico y diseno aditivo de las 6 tablas; aun no
-  existen en la base de datos.
+- Fase NP-0 define contrato, diagnostico y diseno aditivo de las 6 tablas.
+- Fase NP-A crea las seis tablas en la base `medisoft_hoteles_import`; actualmente estan
+  vacias.
+- Migracion fuente: `migrations/20260616_001_fase_np_a_personal_base.sql`.
+- Backup previo valido: `src/storage/backups/phase_np_a_20260616_021311_before_personal_base_medisoft_hoteles_import.sql`.
+- No hay categoria Nomina ni movimientos de Caja generados por NP-A.
 - El bloque NP es un modulo financiero-laboral INDEPENDIENTE: ledger laboral, saldos por
   persona, asistencia y comisiones, multi-hotel.
 - Sin integracion con Caja, sin movimientos de Caja, sin salida real de dinero en este bloque.
