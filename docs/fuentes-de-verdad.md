@@ -358,3 +358,6 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - NP-E cierra el bloque Personal operativo base sin cambiar fuentes de verdad; el ledger
   laboral sigue en tablas `trabajador_*`, documentos laborales siguen en Centro
   Documental moderno y Caja no participa.
+- NP-F-0 define un reporte futuro read-only; no crea fuente nueva. Debe derivar datos de
+  `trabajadores`, tablas `trabajador_*`, Centro Documental moderno y `tareas_operativas`
+  cuando aplique.

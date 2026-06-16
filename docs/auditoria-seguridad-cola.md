@@ -786,3 +786,12 @@ Estado: `BLOQUE_NP_PERSONAL_OPERATIVO_BASE_CERRADO_QA_DIFERIDA`.
 - `/api/sync` queda fuera de alcance.
 - Riesgo residual principal: QA manual diferida con trabajador activo y posible confusion
   operativa si conceptos/anticipos/prestamos se interpretan como pagos reales.
+
+## Auditoria NP-F-0 reporte Personal read-only
+
+Estado: `CONTRATO_NP_F_REPORTE_PERSONAL_READONLY_COMPLETADO`.
+
+- Solo contrato documental; no hay endpoints ni escrituras nuevas.
+- Riesgo futuro principal: convertir un reporte en pantalla operativa con acciones POST.
+- Mitigacion definida: NP-F-A debe ser GET/read-only, scoped por `hotel_id`, sin Caja,
+  sin nomina, sin pagos reales y sin `/api/sync`.

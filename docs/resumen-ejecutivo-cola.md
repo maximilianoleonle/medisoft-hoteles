@@ -73,6 +73,18 @@ Estado actual: `BLOQUE_NP_PERSONAL_OPERATIVO_BASE_CERRADO_QA_DIFERIDA`.
 - Siguiente paso recomendado: contrato de reporte read-only de Personal antes de abrir
   cualquier escritura nueva.
 
+## Contrato reporte Personal read-only
+
+Estado actual: `CONTRATO_NP_F_REPORTE_PERSONAL_READONLY_COMPLETADO`.
+
+- Queda definido el contrato NP-F-0 para un reporte read-only de Personal.
+- No se implementan rutas, vistas, modelos ni DB en esta subfase.
+- El reporte futuro debe consolidar trabajadores, ledger laboral, asistencia, documentos
+  y tareas asignadas sin escrituras.
+- Quedan prohibidos nomina automatica, pagos reales, abonos, liquidaciones, Caja y
+  `/api/sync`.
+- Siguiente paso recomendado: NP-F-A implementacion GET/read-only del reporte.
+
 ## Situacion historica
 
 El historial contiene commits que implementan partes de Fase 3C, pero el estado documental vigente no debe tratarlos como cierre formal completo.

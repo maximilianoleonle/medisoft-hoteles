@@ -704,3 +704,13 @@ agregar funcionalidades nuevas.
 - No hay nomina automatica, pagos reales, abonos, Caja ni cambios en `/api/sync`.
 - QA manual queda diferida por instruccion del usuario.
 - Siguiente accion segura: contrato read-only de reporte de Personal, si se autoriza.
+
+## Contrato NP-F-0 reporte Personal read-only
+
+- Estado formal: `CONTRATO_NP_F_REPORTE_PERSONAL_READONLY_COMPLETADO`.
+- Documento creado: `docs/fase_NP_F_0_contrato_reporte_personal_readonly.md`.
+- Define un reporte futuro que consolide trabajadores, ledger laboral, asistencia,
+  documentos y tareas asignadas solo en lectura.
+- No agrega rutas, vistas, modelos, migraciones ni escrituras.
+- Caja, nomina, pagos reales, abonos, liquidaciones y `/api/sync` quedan fuera.
+- Siguiente accion segura: NP-F-A implementacion read-only del reporte.

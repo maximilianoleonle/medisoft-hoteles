@@ -995,3 +995,20 @@ Estado formal vigente: `BLOQUE_NP_D_DOCUMENTOS_LABORALES_CERRADO_QA_DIFERIDA`.
 - Cierre tecnico del bloque de documentos laborales.
 - Siguiente contrato requerido antes de reconciliar `trabajador_documentos` o agregar
   nuevos flujos de storage.
+
+### Estado NP-E
+
+Estado formal vigente: `BLOQUE_NP_PERSONAL_OPERATIVO_BASE_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_E_cierre_personal_operativo_base.md`.
+- Cierre documental paraguas del bloque Personal operativo base.
+- No autoriza nomina, pagos reales, abonos, liquidaciones, Caja ni reconciliacion legacy.
+
+### Estado NP-F-0
+
+Estado formal vigente: `CONTRATO_NP_F_REPORTE_PERSONAL_READONLY_COMPLETADO`.
+
+- Documento: `docs/fase_NP_F_0_contrato_reporte_personal_readonly.md`.
+- Solo contrato; no agrega codigo ni DB.
+- Define futuro reporte read-only de Personal, sin escrituras, nomina, pagos reales,
+  abonos, Caja ni `/api/sync`.

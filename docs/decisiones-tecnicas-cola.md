@@ -627,3 +627,11 @@
 - El siguiente avance recomendado es lectura/reporte antes que nuevas escrituras.
 - QA manual queda diferida, no omitida definitivamente.
 - Cualquier integracion financiera laboral debe abrir contrato independiente.
+
+## Decision NP-F-0 reporte Personal read-only
+
+- Se prioriza un reporte de lectura antes de abrir nuevas escrituras laborales.
+- El reporte futuro debe operar como consolidacion, no como nomina.
+- Tareas asignadas y documentos laborales pueden mostrarse como contexto, pero no deben
+  generar asistencia, pagos, abonos ni Caja.
+- Cualquier accion operativa desde el reporte queda fuera del contrato.

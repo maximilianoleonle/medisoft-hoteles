@@ -964,3 +964,10 @@ instruccion del usuario.
   prestamo, asistencia, documento vinculado y ausencia de Caja/pagos/abonos.
 - No avanzar a nomina, pagos reales, abonos/liquidaciones ni reconciliacion documental
   legacy sin contrato nuevo.
+
+### Estado NP-F-0
+
+- Contrato de reporte Personal read-only completado.
+- No requiere QA de navegador porque no agrega funcionalidad.
+- QA futura NP-F-A debe confirmar ruta protegida, datos scoped por hotel, estados vacios,
+  ausencia de POST y ausencia de botones financieros.

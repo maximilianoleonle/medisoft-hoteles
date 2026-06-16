@@ -747,3 +747,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Para codigo o datos, usar los rollback granulares de NP-A, NP-B, NP-C y NP-D.
 - No tocar tablas `trabajador_*`, `documentos`, `documento_entidades`, Caja ni
   `/api/sync` sin autorizacion nueva.
+
+### NP-F-0 contrato reporte Personal read-only
+
+- Rollback documental: revertir el commit
+  `docs(phase-np): define read-only worker report contract`.
+- DB: no aplica; es solo contrato.
+- No tocar tablas `trabajador_*`, tareas, documentos, Caja ni `/api/sync`.
