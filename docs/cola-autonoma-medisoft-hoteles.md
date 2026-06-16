@@ -815,3 +815,14 @@ agregar funcionalidades nuevas.
 - QA manual queda diferida por instruccion del usuario.
 - Siguiente accion segura: nuevo contrato independiente; no convertir mantenimiento en
   acciones automaticas sin contrato.
+
+## Cierre tecnico MANT-F
+
+- Estado formal: `BLOQUE_MANT_REPORTE_MANTENIMIENTO_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_MANT_F_cierre_reporte_mantenimiento.md`.
+- Revision tecnica y auditoria del reporte de mantenimiento read-only completadas.
+- Verificaciones automaticas pasan con `ERROR: 0` y warnings historicos permitidos.
+- QA manual queda diferida.
+- No hay POST, migraciones, escrituras, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.
+- Siguiente accion segura: nuevo contrato independiente.

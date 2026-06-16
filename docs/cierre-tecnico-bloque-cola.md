@@ -812,3 +812,15 @@ Estado: `REPORTE_MANTENIMIENTO_MANT_A_COMPLETADO_QA_DIFERIDA`.
 - Health y preflight MANT-A validan ruta GET, ausencia de POST y datos multihotel.
 - No hay escrituras, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - QA manual queda diferida.
+
+## Cierre tecnico MANT-F
+
+Estado: `BLOQUE_MANT_REPORTE_MANTENIMIENTO_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_F_cierre_reporte_mantenimiento.md`.
+- Revision tecnica y auditoria de seguridad completadas para el reporte de mantenimiento
+  read-only.
+- No se agregaron funcionalidades nuevas en el cierre.
+- No hay POST, escrituras, migraciones, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.
+- QA manual queda diferida.

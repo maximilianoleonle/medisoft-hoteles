@@ -1082,3 +1082,12 @@ Estado formal vigente: `REPORTE_MANTENIMIENTO_MANT_A_COMPLETADO_QA_DIFERIDA`.
   `/api/sync`.
 - Siguiente accion segura: QA manual diferida o contrato independiente para el proximo
   bloque.
+
+### Estado MANT-F
+
+Estado formal vigente: `BLOQUE_MANT_REPORTE_MANTENIMIENTO_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_F_cierre_reporte_mantenimiento.md`.
+- Cierre tecnico del reporte de mantenimiento read-only.
+- No agrega funcionalidad nueva en el cierre.
+- Siguiente contrato requerido antes de abrir acciones de mantenimiento o automatizaciones.

@@ -890,3 +890,12 @@ Estado: `REPORTE_MANTENIMIENTO_MANT_A_COMPLETADO_QA_DIFERIDA`.
   `/api/sync`.
 - Riesgo residual: QA manual diferida para confirmar visualmente datos de cada hotel y
   filtros del reporte.
+
+## Auditoria MANT-F cierre reporte mantenimiento
+
+Estado: `BLOQUE_MANT_REPORTE_MANTENIMIENTO_CERRADO_QA_DIFERIDA`.
+
+- Revision de cierre sin hallazgos bloqueantes.
+- Health y preflight validan que MANT-A sigue read-only y scoped por `hotel_id`.
+- Riesgo residual: falta QA manual visual con datos reales por hotel.
+- No se habilitan acciones de mantenimiento desde el reporte.

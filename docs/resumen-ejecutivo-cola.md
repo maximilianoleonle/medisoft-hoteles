@@ -911,3 +911,12 @@ Resultado MANT-A:
 - QA manual queda diferida.
 - Siguiente paso recomendado: nuevo contrato independiente; no abrir acciones de
   mantenimiento sin autorizacion explicita.
+
+Resultado MANT-F:
+
+- Estado tecnico: `BLOQUE_MANT_REPORTE_MANTENIMIENTO_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_MANT_F_cierre_reporte_mantenimiento.md`.
+- Se cierra tecnicamente el reporte de mantenimiento read-only.
+- Verificaciones automaticas pasan con `ERROR: 0`.
+- QA manual queda diferida.
+- Siguiente paso recomendado: abrir contrato independiente para el siguiente bloque.

@@ -714,3 +714,10 @@
 - `preflight_reporte_mantenimiento.php` y el health general quedan como guardrails para
   detectar lecturas sin `hotel_id`, rutas POST accidentales o datos inconsistentes.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.
+
+## Decision MANT-F
+
+- El reporte de mantenimiento read-only se cierra antes de abrir acciones operativas.
+- QA manual queda diferida por instruccion del usuario, no sustituida por los checkers.
+- Cualquier accion futura de crear/iniciar/completar/cancelar mantenimiento debe tener
+  contrato separado y no puede inferirse desde este cierre.

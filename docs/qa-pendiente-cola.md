@@ -1049,3 +1049,10 @@ instruccion del usuario.
   cancelar mantenimientos desde el reporte.
 - Confirmar que HTTP sin sesion bloquea o redirige.
 - Confirmar que no participa Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+
+### Estado MANT-F
+
+- Bloque reporte mantenimiento read-only cerrado tecnicamente.
+- QA manual sigue pendiente y diferida.
+- No avanzar a acciones de mantenimiento, automatizacion de habitaciones, Caja, pagos,
+  abonos, nomina, offline ni `/api/sync` desde este cierre.
