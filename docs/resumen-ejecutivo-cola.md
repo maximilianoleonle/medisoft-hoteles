@@ -293,7 +293,7 @@ Cierre tecnico 4B:
 
 ## Nuevo bloque Fase 4C Documentos por entidad
 
-Estado: `CONTRATO_4C_DOCUMENTOS_ENTIDAD_COMPLETADO`.
+Estado: `CIERRE_TECNICO_4C_COMPLETADO_QA_MANUAL_VALIDADA`.
 
 Objetivo: definir como integrar documentos en fichas operativas de proveedor, compra,
 cuenta por pagar, huesped y reservacion usando la relacion existente
@@ -331,9 +331,10 @@ Resultado 4C-A:
 - QA manual post-hotfix reportada por el usuario como correcta: la accion
   `Vincular documento` aparece, abre la carga contextual existente y el flujo funciona
   correctamente.
-- Siguiente paso recomendado: cerrar documentalmente 4C-A o abrir un nuevo bloque solo
-  con autorizacion explicita. No avanzar automaticamente a borrado, reemplazo, links
-  publicos, Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
+- Cierre tecnico documental: registrado en `docs/cierre-tecnico-bloque-cola.md`.
+- Siguiente paso recomendado: abrir un nuevo bloque solo con autorizacion explicita. No
+  avanzar automaticamente a borrado, reemplazo, links publicos, Caja, pagos, abonos,
+  Fase 3D, NP-A ni `/api/sync`.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

@@ -195,3 +195,53 @@ descarga, edicion, borrado, pagos, abonos, Caja, Fase 3D ni `/api/sync`.
 - La descarga segura aun no existe; debe abrirse como fase nueva con contrato, guardias,
   `realpath`, headers privados y pruebas manuales.
 - No hacer push.
+
+## Cierre tecnico Fase 4C
+
+Estado final: `CIERRE_TECNICO_4C_COMPLETADO_QA_MANUAL_VALIDADA`.
+
+La Fase 4C queda cerrada tecnicamente como integracion contextual de documentos en
+fichas operativas. Reutiliza la infraestructura documental existente y no habilita
+borrado, reemplazo de archivo, links publicos, pagos, abonos, Caja, Fase 3D, NP-A ni
+`/api/sync`.
+
+### Fases cerradas 4C
+
+| Fase | Alcance | Commit | Estado |
+| --- | --- | --- | --- |
+| 4C-0 | Contrato y diagnostico de documentos por entidad | `87a611f` | Cerrada |
+| 4C-A | Secciones documentales contextuales por entidad | `ebd764d` | Cerrada |
+| Hotfix 4C-A | Accion `Vincular documento` hacia carga contextual existente | `64f81d2` | Cerrada y probada manualmente |
+| QA manual 4C-A | Validacion reportada por el usuario | `4542d83` | Documentada |
+
+### Confirmaciones 4C
+
+- Entidades cubiertas: proveedor, compra, cuenta por pagar, huesped y reservacion.
+- Partial reutilizable: `src/app/views/partials/documentos_entidad.php`.
+- Las fichas muestran metadata segura y estado vacio claro.
+- La consulta documental usa `Documento::documentosPorEntidad()` con filtro `hotel_id`.
+- La accion `Vincular documento` abre `GET /documentos/subir?entidad_tipo=...&entidad_id=...`
+  y queda bajo los guards existentes del flujo de carga documental.
+- No se muestran `storage_path`, `nombre_archivo`, rutas absolutas ni links publicos.
+- No hay formularios nuevos, POST nuevos, edicion de metadata desde fichas, borrado ni
+  reemplazo de archivo en 4C-A.
+- Sin Caja, pagos, abonos, Fase 3D, NP-A ni cambios en `/api/sync`.
+- QA manual post-hotfix reportada como correcta por el usuario.
+
+### Verificaciones 4C registradas
+
+- `php -l` en partial, controladores/vistas tocadas y health checker: sin errores en la
+  verificacion previa de implementacion.
+- `health_check_fase_1a.php`: PASS con warnings permitidos en la verificacion previa.
+- HTTP sin sesion en ruta de carga contextual: redirige a login segun patron existente.
+- SQL read-only previo: sin escrituras nuevas por la seccion contextual; no se crean
+  documentos ni relaciones durante el render de fichas.
+- `git diff --check`: sin errores de whitespace en el cierre documental.
+
+### Warnings y pendientes 4C
+
+- 4C-A consume la carga contextual existente de 4A-C; cualquier cambio futuro en carga
+  debe validar entidad/hotel y CSRF.
+- No existe autorizacion para borrado, reemplazo de archivo, links publicos, permisos
+  profundos, Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
+- No hacer push.

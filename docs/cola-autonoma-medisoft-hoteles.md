@@ -10,9 +10,9 @@ manual completada de 4C-A documentos por entidad.
 ## Estado vigente
 
 - Bloque actual: Fase 4C Documentos por entidad.
-- Fase actual: 4C-A secciones documentales contextuales por entidad.
+- Fase actual: cierre tecnico de 4C-A secciones documentales contextuales por entidad.
 - Riesgo: naranja.
-- Estado: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_VALIDADA_MANUALMENTE`.
+- Estado: `CIERRE_TECNICO_4C_COMPLETADO_QA_MANUAL_VALIDADA`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -95,9 +95,9 @@ manual completada de 4C-A documentos por entidad.
 - Prohibido: borrado, reemplazo de archivo, links publicos, Caja, pagos, abonos,
   Fase 3D, NP-A y `/api/sync`.
 - QA manual 4C-A: completada por el usuario despues del hotfix de `Vincular documento`.
-- Siguiente accion recomendada: nuevo bloque explicito o cierre documental adicional;
-  no avanzar automaticamente a borrado, reemplazo, links publicos, Caja, pagos,
-  abonos, Fase 3D, NP-A ni `/api/sync`.
+- Cierre tecnico 4C: documentado en `docs/cierre-tecnico-bloque-cola.md`.
+- Siguiente accion recomendada: nuevo bloque explicito; no avanzar automaticamente a
+  borrado, reemplazo, links publicos, Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
 
 ## Reanclaje Fase 3C
 
