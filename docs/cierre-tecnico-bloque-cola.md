@@ -410,3 +410,14 @@ QA manual diferida:
 - Validar filtros GET y estados vacios.
 - Validar bloqueo sin sesion/permiso.
 - Validar que no hay botones operativos de nomina/Caja.
+
+## Contrato Fase NP-B-0
+
+Estado: `CONTRATO_NP_B_CRUD_TRABAJADORES_COMPLETADO`.
+
+- Documento: `docs/fase_NP_B_0_contrato_crud_trabajadores.md`.
+- Define la siguiente implementacion segura: alta, edicion, baja logica y reactivacion
+  de trabajadores.
+- No implementa codigo, rutas, DB ni escrituras.
+- No autoriza pagos, anticipos, prestamos, asistencia operativa, documentos laborales,
+  Caja, categoria Nomina ni `/api/sync`.

@@ -576,6 +576,19 @@ QA manual diferida 4D-B-A:
 - Confirmar que usuario sin `usuarios.view` no accede.
 - Confirmar que Caja/cortes/movimientos no cambian.
 
+### QA manual planificada NP-B CRUD trabajador
+
+- Crear trabajador minimo con nombre obligatorio.
+- Crear trabajador sin usuario del sistema.
+- Validar email invalido bloqueado.
+- Validar salario negativo bloqueado.
+- Editar telefono/rol/notas y confirmar auditoria.
+- Dar baja logica y confirmar que no se borra fisicamente.
+- Reactivar si la accion queda implementada.
+- Confirmar que no aparecen acciones de pago, anticipo, prestamo, asistencia ni Caja.
+- Confirmar que un hotel no puede ver/editar trabajador de otro hotel.
+- Confirmar HTTP sin sesion bloquea todos los POST.
+
 ### QA critica planificada (NP)
 
 - Confirmar que NO existe ningun movimiento de Caja generado por nomina (debe seguir en 0).

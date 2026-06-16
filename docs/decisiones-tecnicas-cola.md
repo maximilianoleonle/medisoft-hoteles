@@ -361,6 +361,17 @@
   `Documento::ENTIDAD_TIPOS` no incluye `trabajador`; se evita mezclar contratos.
 - No se muestra `ruta_archivo` de `trabajador_documentos`.
 
+### Decision NP-B-0 CRUD trabajadores
+
+- La siguiente escritura autorizable debe limitarse a `trabajadores`; el ledger laboral
+  queda para otra subfase.
+- La baja de trabajador sera logica (`estado = baja`) para evitar borrar historico y
+  preservar relaciones futuras.
+- No se crearan usuarios automaticamente; `usuario_id` permanece opcional.
+- El guard temporal seguira usando administracion/usuarios hasta definir permisos
+  profundos de Personal.
+- Reglas de formularios: POST + CSRF, sin forms anidados y sin acciones financieras.
+
 ### Decision sobre "responsable" de mantenimiento
 
 - En NP la referencia trabajador-responsable es **logica y opcional**, de solo lectura,

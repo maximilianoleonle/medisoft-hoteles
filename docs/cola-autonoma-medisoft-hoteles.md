@@ -314,6 +314,7 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 ## Siguiente accion
 
 NP-A UI read-first queda implementada con listado/ficha basica en GET y QA manual
-diferida. Siguiente paso formal recomendado: contrato NP-B para alta/edicion segura de
-trabajador, o iniciar bloque Tareas/Limpieza/Mantenimiento base si se prioriza operacion.
-No hacer push, no tocar Caja ni `/api/sync`.
+diferida. NP-B-0 deja definido el contrato de CRUD basico de trabajadores. Siguiente
+paso formal recomendado: implementar NP-B-A alta/edicion/baja logica de trabajador, sin
+pagos, sin Caja y sin `/api/sync`.
+No hacer push.

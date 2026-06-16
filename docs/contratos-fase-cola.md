@@ -671,3 +671,13 @@ Estado formal vigente: `PERSONAL_READ_ONLY_NP_A_COMPLETADO_QA_DIFERIDA`.
 Definir contrato de alta/edicion segura de trabajador antes de implementar escritura.
 Debe seguir sin Caja, sin nomina operativa y sin pagos reales, con POST + CSRF,
 auditoria, validacion de duplicados razonable y filtro `hotel_id`.
+
+### Estado NP-B-0
+
+Estado formal vigente: `CONTRATO_NP_B_CRUD_TRABAJADORES_COMPLETADO`.
+
+- Documento: `docs/fase_NP_B_0_contrato_crud_trabajadores.md`.
+- Se limita la siguiente implementacion a CRUD basico de `trabajadores`.
+- No autoriza pagos, anticipos, prestamos, asistencia operativa, documentos laborales,
+  Caja, categoria Nomina ni `/api/sync`.
+- Define POST + CSRF, auditoria, filtro `hotel_id`, baja logica y rollback sin `DELETE`.

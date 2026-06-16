@@ -486,6 +486,21 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Mantener intactas las tablas `trabajador*`; pertenecen a la migracion base NP-A.
 - No tocar Caja, `usuarios`, `hotel_usuarios` ni `/api/sync`.
 
+### NP-B-0 contrato CRUD trabajadores
+
+- Rollback documental: revertir el commit
+  `docs(phase-np): define worker CRUD contract`.
+- DB: no aplica; NP-B-0 no escribe datos ni crea migraciones.
+- Codigo: no aplica; NP-B-0 no toca rutas, controladores, modelos ni vistas.
+
+### NP-B-A futura implementacion CRUD trabajadores
+
+- Rollback de codigo/documentacion: revertir el commit de implementacion.
+- DB: no usar `DELETE` automaticamente sobre `trabajadores`; si hay datos de prueba,
+  documentar IDs y preferir baja logica o restauracion desde backup autorizado.
+- No borrar tablas `trabajador*`.
+- No tocar Caja, `usuarios`, `hotel_usuarios` ni `/api/sync`.
+
 ### Reglas duras de rollback NP
 
 - No borrar ni alterar `usuarios` ni `hotel_usuarios` durante ningun rollback NP.

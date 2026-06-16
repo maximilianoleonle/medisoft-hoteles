@@ -448,3 +448,12 @@ Resultado NP-A:
 - Sin pagos reales, anticipos, prestamos, asistencia operativa ni Caja.
 - Siguiente paso recomendado: contrato NP-B para alta/edicion segura de trabajador o
   bloque Tareas/Limpieza/Mantenimiento base, segun prioridad.
+
+Resultado NP-B-0:
+
+- Estado tecnico: `CONTRATO_NP_B_CRUD_TRABAJADORES_COMPLETADO`.
+- Documento: `docs/fase_NP_B_0_contrato_crud_trabajadores.md`.
+- Proxima implementacion permitida: alta/edicion/baja logica/reactivar trabajador con
+  POST + CSRF, auditoria y filtro `hotel_id`.
+- Sigue fuera de alcance: pagos, anticipos, prestamos, asistencia operativa, documentos
+  laborales, Caja, categoria Nomina y `/api/sync`.

@@ -442,3 +442,14 @@ Estado: `PERSONAL_READ_ONLY_NP_A_COMPLETADO_QA_DIFERIDA`.
 - Riesgo residual: permisos propios de Personal/Nomina quedan diferidos; temporalmente
   se reutiliza `usuarios.view` como guard administrativo conservador.
 - QA manual queda diferida por instruccion del usuario.
+
+### Auditoria NP-B-0 contrato CRUD trabajadores
+
+Estado: `CONTRATO_NP_B_CRUD_TRABAJADORES_COMPLETADO`.
+
+- No agrega codigo ni DB; sin superficie de ataque nueva.
+- La implementacion futura queda limitada a escrituras en `trabajadores`.
+- Controles obligatorios futuros: POST + CSRF, `hotel_id`, auditoria, baja logica y
+  validacion de datos.
+- Caja, pagos, anticipos, prestamos, asistencia operativa, documentos laborales y
+  `/api/sync` siguen fuera de alcance.

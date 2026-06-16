@@ -229,6 +229,8 @@ Estado:
   vacias.
 - Fase NP-A UI read-first consume esas tablas en modo lectura mediante
   `Trabajador::listarPorHotel()` y `Trabajador::buscarPorIdHotel()`.
+- Fase NP-B-0 define que el CRUD futuro escribira solo en `trabajadores` y mantendra
+  el ledger laboral intacto.
 - Migracion fuente: `migrations/20260616_001_fase_np_a_personal_base.sql`.
 - Backup previo valido: `src/storage/backups/phase_np_a_20260616_021311_before_personal_base_medisoft_hoteles_import.sql`.
 - No hay categoria Nomina ni movimientos de Caja generados por NP-A.
@@ -247,6 +249,8 @@ Reglas:
   `trabajador_prestamos`); no es editable manualmente.
 - La UI NP-A solo muestra metadata y agregados; no crea ni corrige saldos.
 - Toda escritura valida `hotel_id` y `trabajador_id` del mismo hotel antes de persistir.
+- La baja de trabajador debe persistirse como `trabajadores.estado = 'baja'`, no como
+  borrado fisico.
 - Cualquier integracion con Caja o salida real de dinero requiere una Fase NP-Caja autorizada.
 - La referencia trabajador-responsable de mantenimiento es logica/opcional y no altera
   `mantenimientos_habitaciones`.
