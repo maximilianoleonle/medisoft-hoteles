@@ -1,6 +1,6 @@
 # Fase 4C-A - Documentos por entidad contextual
 
-Estado tecnico: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_COMPLETADO`.
+Estado tecnico: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_VALIDADA_MANUALMENTE`.
 
 ## Objetivo
 
@@ -46,6 +46,7 @@ Entidades incluidas:
 - `php -l` pasa en archivos PHP tocados.
 - Health checker detecta partial, vistas y consultas por entidad.
 - SQL de verificacion confirma que el cambio de UI no inserta documentos ni relaciones.
+- QA manual post-hotfix confirma que la accion `Vincular documento` aparece y funciona.
 
 ## Rollback
 

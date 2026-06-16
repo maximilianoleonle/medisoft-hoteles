@@ -313,7 +313,7 @@ Resultado 4C-0:
 
 Resultado 4C-A:
 
-- Estado tecnico: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_COMPLETADO`.
+- Estado tecnico: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_VALIDADA_MANUALMENTE`.
 - Documento creado: `docs/fase_4C_A_documentos_entidad_readonly.md`.
 - Partial creado: `src/app/views/partials/documentos_entidad.php`.
 - Fichas con seccion documental contextual:
@@ -328,8 +328,12 @@ Resultado 4C-A:
   `documentos/subir?entidad_tipo=...&entidad_id=...`.
 - No hay nuevos POST, edicion desde ficha, borrado, Caja, pagos, abonos, Fase 3D,
   NP-A ni cambios en `/api/sync`.
-- Siguiente paso recomendado tras QA manual: revision tecnica/auditoria 4C o la
-  subfase autorizada siguiente del Centro Documental.
+- QA manual post-hotfix reportada por el usuario como correcta: la accion
+  `Vincular documento` aparece, abre la carga contextual existente y el flujo funciona
+  correctamente.
+- Siguiente paso recomendado: cerrar documentalmente 4C-A o abrir un nuevo bloque solo
+  con autorizacion explicita. No avanzar automaticamente a borrado, reemplazo, links
+  publicos, Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

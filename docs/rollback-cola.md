@@ -376,6 +376,8 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 
 - Rollback de codigo/documentacion: revertir el commit
   `feat(phase-4c): add read-only entity document sections`.
+- Rollback del enlace contextual post-QA: revertir el commit
+  `fix(phase-4c): add contextual document link`.
 - DB: no aplica para revertir el enlace/contexto; 4C-A no crea tablas ni rutas nuevas.
 - Quitar el partial de las fichas no debe borrar documentos ni relaciones existentes.
 - Mantener intactas las rutas documentales globales (`/documentos`, detalle, descarga y

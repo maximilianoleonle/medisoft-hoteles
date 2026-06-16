@@ -292,7 +292,7 @@ Estado: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
 
 ## Fase 4C Documentos por entidad - auditoria de contrato
 
-Estado: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_COMPLETADO`.
+Estado: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_VALIDADA_MANUALMENTE`.
 
 - 4C-0 no agrega rutas, controladores, modelos, vistas ni DB.
 - Riesgo principal futuro: mostrar documentos de otro hotel si una ficha no valida
@@ -308,6 +308,9 @@ Estado: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_COMPLETADO`.
   `DocumentoController::subirAction()` valida entidad y hotel antes de renderizar.
 - Los enlaces visibles son GET a detalle documental y descarga autenticada ya existente.
 - Sin Caja, pagos, abonos, Fase 3D, NP-A, PWA/offline ni `/api/sync`.
+- QA manual post-hotfix reportada por el usuario como correcta.
+- La validacion manual confirma que el enlace contextual no introdujo escrituras nuevas
+  fuera del flujo de carga documental ya existente y protegido.
 
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 

@@ -448,7 +448,7 @@ Resultado automatico de cierre:
 
 ## QA Fase 4C Documentos por entidad
 
-Estado: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_COMPLETADO`.
+Estado: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_VALIDADA_MANUALMENTE`.
 
 4C-0 es documentacion y diagnostico; no requiere QA en navegador.
 
@@ -462,7 +462,7 @@ QA automatica 4C-A:
 - HTTP sin sesion en fichas nuevas debe redirigir a login o bloquear segun el patron
   existente.
 
-QA manual pendiente 4C-A:
+QA manual completada 4C-A:
 
 - Ficha de proveedor muestra documentos vinculados o estado vacio.
 - Ficha de compra muestra documentos vinculados o estado vacio.
@@ -477,6 +477,10 @@ QA manual pendiente 4C-A:
 - No se muestran `storage_path`, `nombre_archivo`, rutas absolutas ni links publicos.
 - No aparecen acciones de edicion, borrado ni reemplazo de archivo dentro de las fichas.
 - No hay Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
+- Resultado manual reportado por el usuario: "todo funciona a la perfeccion".
+- La validacion manual cierra el ajuste contextual de `Vincular documento`, pero no
+  autoriza borrado, reemplazo, links publicos, Caja, pagos, abonos, Fase 3D, NP-A ni
+  cambios en `/api/sync`.
 
 ### QA visual 4C-A
 

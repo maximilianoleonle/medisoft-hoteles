@@ -164,7 +164,7 @@ Reglas de fuente de verdad:
 
 ## Documentos por entidad (Fase 4C)
 
-Estado formal: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_COMPLETADO`.
+Estado formal: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_VALIDADA_MANUALMENTE`.
 
 Fuente de verdad:
 
@@ -182,6 +182,7 @@ Fuente de verdad:
 - No hay links publicos ni permisos nuevos en 4C-A.
 - La accion `Vincular documento` apunta a la carga contextual existente; la fuente de
   verdad sigue siendo `documentos` + `documento_entidades`.
+- QA manual post-hotfix confirmo el flujo contextual de vinculacion documental.
 - No hay edicion, borrado ni reemplazo de archivo desde fichas de entidad.
 
 ## Personal y Nomina (Fase NP)

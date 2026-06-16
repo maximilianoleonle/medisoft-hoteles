@@ -445,7 +445,7 @@ Documento:
 
 ## Fase 4C-A: Secciones documentales contextuales por entidad
 
-Estado formal vigente: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_COMPLETADO`.
+Estado formal vigente: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_VALIDADA_MANUALMENTE`.
 
 Alcance implementado:
 
@@ -457,6 +457,7 @@ Alcance implementado:
 - Enlace GET `Vincular documento` hacia `documentos/subir?entidad_tipo=...&entidad_id=...`
   usando el flujo protegido existente.
 - Estado vacio claro cuando no hay documentos vinculados.
+- QA manual post-hotfix reportada por el usuario como correcta.
 
 Fuera de alcance:
 

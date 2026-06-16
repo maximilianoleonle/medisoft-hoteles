@@ -249,7 +249,7 @@
 
 ### Fase 4C-A documentos por entidad contextual
 
-- Estado formal vigente: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_COMPLETADO`.
+- Estado formal vigente: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_VALIDADA_MANUALMENTE`.
 - Se crea un partial reutilizable para evitar duplicar tablas de documentos en cada
   ficha.
 - Los controladores consultan documentos por entidad con `hotel_id` antes de renderizar.
@@ -257,6 +257,8 @@
   segura y enlaces GET a detalle/descarga documental ya protegida.
 - Se agrega enlace GET `Vincular documento` porque el flujo contextual ya existe y
   valida entidad/hotel antes de mostrar el formulario.
+- La QA manual posterior confirma que el enlace contextual aparece y funciona en las
+  fichas esperadas.
 - No se agrega metadata edit, borrado ni reemplazo desde fichas para mantener el
   alcance controlado.
 

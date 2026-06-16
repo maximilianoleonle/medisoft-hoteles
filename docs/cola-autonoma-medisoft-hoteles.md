@@ -4,20 +4,24 @@
 
 NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Centro Documental Base.
 
-Mensaje actual procesado: "Continua"; se crea contrato 4C-0 para documentos por entidad.
+Mensaje actual procesado: "Continua, todo funciona a la perfeccion"; se registra QA
+manual completada de 4C-A documentos por entidad.
 
 ## Estado vigente
 
 - Bloque actual: Fase 4C Documentos por entidad.
 - Fase actual: 4C-A secciones documentales contextuales por entidad.
 - Riesgo: naranja.
-- Estado: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_COMPLETADO`.
+- Estado: `DOCUMENTOS_ENTIDAD_CONTEXTUAL_4C_VALIDADA_MANUALMENTE`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
 - No avanzar a pagos, Caja, Fase 3D ni nuevas funcionalidades.
 - Nota: existen commits de 3C-A/B/C y revisiones posteriores, pero el nuevo reanclaje no los considera cierre formal.
-- Verificacion actual: Docker disponible; `php -l`, health, preflights, HTTP sin sesion, prueba de upload controlada, rechazo de extension invalida, conteos DB antes/despues y `git diff --check` ejecutados. QA manual post-hotfix reportada por el usuario como funcional.
+- Verificacion previa del bloque documental: `php -l`, health, preflights, HTTP sin
+  sesion, prueba de upload controlada, rechazo de extension invalida, conteos DB
+  antes/despues y `git diff --check` ejecutados. QA manual post-hotfix 4C-A reportada
+  por el usuario como funcional.
 
 ## Fase 4A Centro Documental
 
@@ -90,7 +94,10 @@ Mensaje actual procesado: "Continua"; se crea contrato 4C-0 para documentos por 
 - Sin DB, sin migraciones, sin nuevos POST ni rutas nuevas en 4C-A.
 - Prohibido: borrado, reemplazo de archivo, links publicos, Caja, pagos, abonos,
   Fase 3D, NP-A y `/api/sync`.
-- Siguiente accion recomendada: QA manual 4C-A o revision/auditoria 4C segun autorizacion.
+- QA manual 4C-A: completada por el usuario despues del hotfix de `Vincular documento`.
+- Siguiente accion recomendada: nuevo bloque explicito o cierre documental adicional;
+  no avanzar automaticamente a borrado, reemplazo, links publicos, Caja, pagos,
+  abonos, Fase 3D, NP-A ni `/api/sync`.
 
 ## Reanclaje Fase 3C
 
