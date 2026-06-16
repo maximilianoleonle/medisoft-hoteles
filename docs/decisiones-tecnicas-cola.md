@@ -660,3 +660,12 @@
 - Tareas no sustituyen `habitaciones.estado` ni `mantenimientos_habitaciones`.
 - Cualquier accion de asignar/iniciar/completar/cancelar desde el reporte queda fuera del
   contrato.
+
+## Decision TLM-I-A reporte operativo read-only
+
+- La ruta vive en `/tareas/reporte` para mantener contexto operativo y evitar mezclar con
+  reportes financieros.
+- El reporte reutiliza guardas TLM existentes: sesion, hotel actual, modulo `habitaciones`
+  y permiso `habitaciones.view`.
+- No se agrega filtro visible de hotel; el hotel sale del contexto de sesion.
+- El reporte no ofrece acciones de tarea para mantener separacion con el detalle operativo.

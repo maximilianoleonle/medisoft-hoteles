@@ -745,3 +745,15 @@ agregar funcionalidades nuevas.
 - No crea tareas, no asigna trabajadores, no cambia estados, no toca habitaciones,
   mantenimiento historico, Caja, nomina ni `/api/sync`.
 - Siguiente accion segura: TLM-I-A implementacion GET/read-only del reporte.
+
+## Reporte operativo TLM-I-A
+
+- Estado formal: `REPORTE_TLM_I_A_COMPLETADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_TLM_I_A_reporte_operativo_readonly.md`.
+- Se agrega `/tareas/reporte` como GET read-only protegido por guardas TLM.
+- Consolida estados, categorias, prioridades, riesgos, carga por trabajador/habitacion,
+  tareas recientes y eventos recientes.
+- No agrega POST, asignaciones, cambios de estado, cambios de habitacion, Caja, nomina ni
+  `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.
+- Siguiente accion segura: revision tecnica/auditoria/cierre de TLM-I-A.

@@ -255,6 +255,151 @@ class TareaOperativa extends Model
         return $base;
     }
 
+    public function reporteReadOnlyPorHotel(int $hotelId): array
+    {
+        $reporte = [
+            'resumen' => $this->resumenPorHotel($hotelId),
+            'prioridades' => [
+                'baja' => 0,
+                'media' => 0,
+                'alta' => 0,
+                'urgente' => 0,
+            ],
+            'riesgos' => [
+                'vencidas' => 0,
+                'proximas_24h' => 0,
+                'sin_asignar_activas' => 0,
+            ],
+            'por_trabajador' => [],
+            'por_habitacion' => [],
+            'recientes' => [],
+            'eventos_recientes' => [],
+        ];
+
+        if ($hotelId <= 0 || !$this->tablaDisponible()) {
+            return $reporte;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT prioridad, COUNT(*) AS total
+             FROM tareas_operativas
+             WHERE hotel_id = ?
+             GROUP BY prioridad",
+            [$hotelId]
+        );
+        foreach ($stmt ? ($stmt->fetchAll() ?: []) : [] as $row) {
+            $prioridad = (string)($row['prioridad'] ?? '');
+            if (array_key_exists($prioridad, $reporte['prioridades'])) {
+                $reporte['prioridades'][$prioridad] = (int)($row['total'] ?? 0);
+            }
+        }
+
+        $riesgos = $this->fetchOne(
+            "SELECT
+                SUM(CASE WHEN estado IN ('pendiente', 'asignada', 'en_proceso') AND fecha_limite IS NOT NULL AND fecha_limite < NOW() THEN 1 ELSE 0 END) AS vencidas,
+                SUM(CASE WHEN estado IN ('pendiente', 'asignada', 'en_proceso') AND fecha_limite IS NOT NULL AND fecha_limite >= NOW() AND fecha_limite <= DATE_ADD(NOW(), INTERVAL 1 DAY) THEN 1 ELSE 0 END) AS proximas_24h,
+                SUM(CASE WHEN estado IN ('pendiente', 'asignada', 'en_proceso') AND trabajador_id IS NULL THEN 1 ELSE 0 END) AS sin_asignar_activas
+             FROM tareas_operativas
+             WHERE hotel_id = ?",
+            [$hotelId]
+        );
+        foreach (['vencidas', 'proximas_24h', 'sin_asignar_activas'] as $key) {
+            $reporte['riesgos'][$key] = (int)($riesgos[$key] ?? 0);
+        }
+
+        $stmt = $this->db->query(
+            "SELECT t.trabajador_id,
+                    tr.nombre_completo AS trabajador_nombre,
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN t.estado IN ('pendiente', 'asignada', 'en_proceso') THEN 1 ELSE 0 END) AS activas,
+                    SUM(CASE WHEN t.estado = 'completada' THEN 1 ELSE 0 END) AS completadas
+             FROM tareas_operativas t
+             INNER JOIN trabajadores tr
+                ON tr.id = t.trabajador_id
+               AND tr.hotel_id = t.hotel_id
+             WHERE t.hotel_id = ?
+               AND t.trabajador_id IS NOT NULL
+             GROUP BY t.trabajador_id, tr.nombre_completo
+             ORDER BY activas DESC, total DESC, tr.nombre_completo ASC
+             LIMIT 12",
+            [$hotelId]
+        );
+        $reporte['por_trabajador'] = $stmt ? ($stmt->fetchAll() ?: []) : [];
+
+        $stmt = $this->db->query(
+            "SELECT t.habitacion_id,
+                    h.numero AS habitacion_numero,
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN t.estado IN ('pendiente', 'asignada', 'en_proceso') THEN 1 ELSE 0 END) AS activas,
+                    SUM(CASE WHEN t.estado = 'completada' THEN 1 ELSE 0 END) AS completadas
+             FROM tareas_operativas t
+             INNER JOIN habitaciones h
+                ON h.id = t.habitacion_id
+               AND h.hotel_id = t.hotel_id
+             WHERE t.hotel_id = ?
+               AND t.habitacion_id IS NOT NULL
+             GROUP BY t.habitacion_id, h.numero
+             ORDER BY activas DESC, total DESC, CAST(h.numero AS UNSIGNED), h.numero
+             LIMIT 12",
+            [$hotelId]
+        );
+        $reporte['por_habitacion'] = $stmt ? ($stmt->fetchAll() ?: []) : [];
+
+        $stmt = $this->db->query(
+            "SELECT t.id,
+                    t.categoria,
+                    t.titulo,
+                    t.prioridad,
+                    t.estado,
+                    t.habitacion_id,
+                    t.trabajador_id,
+                    t.fecha_programada,
+                    t.fecha_limite,
+                    t.updated_at,
+                    h.numero AS habitacion_numero,
+                    tr.nombre_completo AS trabajador_nombre
+             FROM tareas_operativas t
+             LEFT JOIN habitaciones h
+                ON h.id = t.habitacion_id
+               AND h.hotel_id = t.hotel_id
+             LEFT JOIN trabajadores tr
+                ON tr.id = t.trabajador_id
+               AND tr.hotel_id = t.hotel_id
+             WHERE t.hotel_id = ?
+             ORDER BY t.updated_at DESC, t.id DESC
+             LIMIT 15",
+            [$hotelId]
+        );
+        $reporte['recientes'] = $stmt ? ($stmt->fetchAll() ?: []) : [];
+
+        if ($this->eventosDisponibles()) {
+            $stmt = $this->db->query(
+                "SELECT e.id,
+                        e.tarea_id,
+                        e.tipo_evento,
+                        e.estado_anterior,
+                        e.estado_nuevo,
+                        e.comentario,
+                        e.created_at,
+                        t.titulo AS tarea_titulo,
+                        u.nombre_completo AS usuario_nombre
+                 FROM tarea_eventos e
+                 INNER JOIN tareas_operativas t
+                    ON t.id = e.tarea_id
+                   AND t.hotel_id = e.hotel_id
+                 LEFT JOIN usuarios u
+                    ON u.id = e.usuario_id
+                 WHERE e.hotel_id = ?
+                 ORDER BY e.created_at DESC, e.id DESC
+                 LIMIT 15",
+                [$hotelId]
+            );
+            $reporte['eventos_recientes'] = $stmt ? ($stmt->fetchAll() ?: []) : [];
+        }
+
+        return $reporte;
+    }
+
     public function habitacionesOpciones(int $hotelId): array
     {
         if ($hotelId <= 0) {
@@ -687,5 +832,11 @@ class TareaOperativa extends Model
         );
         $row = $stmt ? $stmt->fetch() : null;
         return (int)($row['total'] ?? 0) > 0;
+    }
+
+    private function fetchOne(string $sql, array $params = []): array
+    {
+        $stmt = $this->db->query($sql, $params);
+        return $stmt ? ($stmt->fetch() ?: []) : [];
     }
 }

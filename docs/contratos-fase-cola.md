@@ -1029,3 +1029,11 @@ Estado formal vigente: `CONTRATO_TLM_I_REPORTE_OPERATIVO_READONLY_COMPLETADO`.
 - Solo contrato; no agrega codigo ni DB.
 - Define futuro reporte GET/read-only de tareas operativas, sin crear tareas, sin cambiar
   estados, sin habitaciones, sin mantenimiento historico, sin Caja y sin `/api/sync`.
+
+### Estado TLM-I-A
+
+Estado formal vigente: `REPORTE_TLM_I_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_TLM_I_A_reporte_operativo_readonly.md`.
+- Implementacion GET/read-only de `/tareas/reporte`.
+- No agrega escrituras, asignaciones, cambios de estado, Caja ni `/api/sync`.

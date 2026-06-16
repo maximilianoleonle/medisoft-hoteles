@@ -374,3 +374,6 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - `habitaciones`, `trabajadores` y `mantenimientos_habitaciones` son contexto de lectura,
   no destino de escritura desde el reporte.
 - Caja, nomina, pagos y `/api/sync` no participan.
+- TLM-I-A implementa ese reporte sin crear fuente nueva: tareas en
+  `tareas_operativas`, eventos en `tarea_eventos` y contexto de lectura desde
+  habitaciones/trabajadores/mantenimiento.

@@ -824,3 +824,15 @@ Estado: `CONTRATO_TLM_I_REPORTE_OPERATIVO_READONLY_COMPLETADO`.
 - Riesgo futuro principal: convertir el reporte en pantalla de acciones operativas.
 - Mitigacion definida: TLM-I-A debe ser GET/read-only, scoped por `hotel_id`, sin POST,
   sin cambios de habitacion, sin Caja y sin `/api/sync`.
+
+## Auditoria TLM-I-A reporte operativo read-only
+
+Estado: `REPORTE_TLM_I_A_COMPLETADO_QA_DIFERIDA`.
+
+- Nueva superficie: GET `/tareas/reporte`.
+- Sin formularios POST, sin CSRF necesario, sin acciones operativas.
+- Consultas scoped por `hotel_id`.
+- No hay escrituras en `tareas_operativas`, `tarea_eventos`, habitaciones,
+  mantenimientos, Caja ni `/api/sync`.
+- Riesgo residual: QA manual diferida y posible interpretacion del reporte como pantalla
+  operativa; la vista mantiene copy explicito de solo lectura.

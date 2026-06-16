@@ -57,6 +57,18 @@ class TareaController extends Controller
         ]);
     }
 
+    public function reporteAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $tablaDisponible = $this->tareaModel->tablaDisponible();
+
+        View::renderTemplate('tareas/reporte', [
+            'title' => 'Reporte operativo de tareas - ' . current_hotel_display_name(),
+            'reporte' => $tablaDisponible ? $this->tareaModel->reporteReadOnlyPorHotel($hotelId) : $this->reporteVacio(),
+            'tablaDisponible' => $tablaDisponible,
+        ]);
+    }
+
     public function verAction(): void
     {
         $id = (int)($this->route_params['id'] ?? 0);
@@ -186,6 +198,28 @@ class TareaController extends Controller
             'limpieza' => 0,
             'mantenimiento' => 0,
             'general' => 0,
+        ];
+    }
+
+    private function reporteVacio(): array
+    {
+        return [
+            'resumen' => $this->resumenVacio(),
+            'prioridades' => [
+                'baja' => 0,
+                'media' => 0,
+                'alta' => 0,
+                'urgente' => 0,
+            ],
+            'riesgos' => [
+                'vencidas' => 0,
+                'proximas_24h' => 0,
+                'sin_asignar_activas' => 0,
+            ],
+            'por_trabajador' => [],
+            'por_habitacion' => [],
+            'recientes' => [],
+            'eventos_recientes' => [],
         ];
     }
 

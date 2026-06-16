@@ -2798,6 +2798,7 @@ if (!is_file($routesPath)) {
 
     $taskExpectedRoutes = [
         ['method' => 'get', 'path' => 'tareas'],
+        ['method' => 'get', 'path' => 'tareas/reporte'],
         ['method' => 'get', 'path' => 'tareas/crear'],
         ['method' => 'post', 'path' => 'tareas'],
         ['method' => 'post', 'path' => 'tareas/{id:[0-9]+}/asignar'],
@@ -2814,11 +2815,11 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($missingTaskRoutes)) {
-        hcOk('Rutas TLM-F conservadas: listado, formulario, alta, asignacion, estados manuales y detalle.');
+        hcOk('Rutas TLM-I-A conservadas: listado, reporte read-only, formulario, alta, asignacion, estados manuales y detalle.');
     } else {
         hcWarning(
-            'Rutas TLM-F faltantes: ' . implode(', ', $missingTaskRoutes),
-            'Registrar rutas de listado, formulario, alta, asignacion, iniciar, completar, cancelar y detalle.'
+            'Rutas TLM-I-A faltantes: ' . implode(', ', $missingTaskRoutes),
+            'Registrar rutas de listado, reporte, formulario, alta, asignacion, iniciar, completar, cancelar y detalle.'
         );
     }
 
@@ -2831,6 +2832,7 @@ if (!is_file($routesPath)) {
         $signature = $method . ' /' . $path . ' -> ' . $controller . '::' . $action;
         $allowedTaskRoute = in_array($signature, [
             'GET /tareas -> tarea::index',
+            'GET /tareas/reporte -> tarea::reporte',
             'GET /tareas/crear -> tarea::crear',
             'POST /tareas -> tarea::guardar',
             'POST /tareas/{id:[0-9]+}/asignar -> tarea::asignar',
@@ -2846,11 +2848,11 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($forbiddenTaskRoutes)) {
-        hcOk('TLM-F mantiene solo rutas autorizadas; no agrega POST contextual nuevo.');
+        hcOk('TLM-I-A mantiene solo rutas autorizadas; reporte read-only y sin POST contextual nuevo.');
     } else {
         hcError(
-            'TLM-F tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenTaskRoutes),
-            'Retirar rutas de tareas fuera del contrato listado/form/alta/asignacion/estados/detalle.'
+            'TLM-I-A tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenTaskRoutes),
+            'Retirar rutas de tareas fuera del contrato listado/reporte/form/alta/asignacion/estados/detalle.'
         );
     }
 
@@ -3218,6 +3220,7 @@ if (!is_file($routesPath)) {
     $taskModelPath = $appRoot . '/app/models/TareaOperativa.php';
     $taskControllerPath = $controllersDir . '/TareaController.php';
     $taskIndexViewPath = $appRoot . '/app/views/tareas/index.php';
+    $taskReportViewPath = $appRoot . '/app/views/tareas/reporte.php';
     $taskDetailViewPath = $appRoot . '/app/views/tareas/ver.php';
     $taskFormViewPath = $appRoot . '/app/views/tareas/form.php';
     $taskPartialViewPath = $appRoot . '/app/views/tareas/_contextual_list.php';
@@ -3230,6 +3233,7 @@ if (!is_file($routesPath)) {
         if (
             strpos($taskModelCode, "protected \$table = 'tareas_operativas'") !== false
             && strpos($taskModelCode, 'function listarPorHotel') !== false
+            && strpos($taskModelCode, 'function reporteReadOnlyPorHotel') !== false
             && strpos($taskModelCode, 'function buscarPorIdHotel') !== false
             && strpos($taskModelCode, 'function eventosPorTarea') !== false
             && preg_match('/WHERE\s+t\.id\s*=\s*\?\s+AND\s+t\.hotel_id\s*=\s*\?/i', $taskModelCode)
@@ -3237,11 +3241,11 @@ if (!is_file($routesPath)) {
             && strpos($taskModelCode, 'tr.hotel_id = t.hotel_id') !== false
             && strpos($taskModelCode, 'm.hotel_id = t.hotel_id') !== false
         ) {
-            hcOk('TareaOperativa model TLM-F consulta tareas con aislamiento hotel_id y joins scoped.');
+            hcOk('TareaOperativa model TLM-I-A consulta tareas/reporte con aislamiento hotel_id y joins scoped.');
         } else {
             hcWarning(
-                'TareaOperativa model TLM-F no muestra contrato de consulta completo.',
-                'Usar tareas_operativas con hotel_id, detalle por id+hotel y joins por el mismo hotel.'
+                'TareaOperativa model TLM-I-A no muestra contrato de consulta completo.',
+                'Usar tareas_operativas con hotel_id, reporte read-only, detalle por id+hotel y joins por el mismo hotel.'
             );
         }
 
@@ -3335,6 +3339,7 @@ if (!is_file($routesPath)) {
 
         if (
             strpos($taskControllerCode, 'function indexAction') !== false
+            && strpos($taskControllerCode, 'function reporteAction') !== false
             && strpos($taskControllerCode, 'function verAction') !== false
             && strpos($taskControllerCode, 'function crearAction') !== false
             && strpos($taskControllerCode, 'function guardarAction') !== false
@@ -3350,14 +3355,15 @@ if (!is_file($routesPath)) {
             && strpos($taskControllerCode, 'AuditService::record') !== false
             && strpos($taskControllerCode, 'asignarTrabajadorParaHotel') !== false
             && strpos($taskControllerCode, 'tareas/index') !== false
+            && strpos($taskControllerCode, 'tareas/reporte') !== false
             && strpos($taskControllerCode, 'tareas/form') !== false
             && strpos($taskControllerCode, 'tareas/ver') !== false
         ) {
-            hcOk('TareaController TLM-F expone listado/form/alta/asignacion/estados/detalle con guardas, CSRF y auditoria.');
+            hcOk('TareaController TLM-I-A expone listado/reporte/form/alta/asignacion/estados/detalle con guardas, CSRF y auditoria.');
         } else {
             hcWarning(
-                'TareaController TLM-F no muestra guardas o acciones completas.',
-                'Validar requireAuth, hotel, modulo habitaciones, permisos, CSRF y acciones index/crear/guardar/asignar/iniciar/completar/cancelar/ver.'
+                'TareaController TLM-I-A no muestra guardas o acciones completas.',
+                'Validar requireAuth, hotel, modulo habitaciones, permisos, CSRF y acciones index/reporte/crear/guardar/asignar/iniciar/completar/cancelar/ver.'
             );
         }
     } else {
@@ -3367,18 +3373,23 @@ if (!is_file($routesPath)) {
         );
     }
 
-    if (is_file($taskIndexViewPath) && is_file($taskDetailViewPath) && is_file($taskFormViewPath) && is_file($taskPartialViewPath)) {
+    if (is_file($taskIndexViewPath) && is_file($taskReportViewPath) && is_file($taskDetailViewPath) && is_file($taskFormViewPath) && is_file($taskPartialViewPath)) {
         $taskIndexViewCode = (string) file_get_contents($taskIndexViewPath);
+        $taskReportViewCode = (string) file_get_contents($taskReportViewPath);
         $taskDetailViewCode = (string) file_get_contents($taskDetailViewPath);
         $taskFormViewCode = (string) file_get_contents($taskFormViewPath);
         $taskPartialViewCode = (string) file_get_contents($taskPartialViewPath);
-        $taskViewsCode = $taskIndexViewCode . "\n" . $taskDetailViewCode . "\n" . $taskFormViewCode . "\n" . $taskPartialViewCode;
+        $taskViewsCode = $taskIndexViewCode . "\n" . $taskReportViewCode . "\n" . $taskDetailViewCode . "\n" . $taskFormViewCode . "\n" . $taskPartialViewCode;
 
         if (
             strpos($taskIndexViewCode, "action=\"<?= url('tareas') ?>\"") !== false
             && strpos($taskIndexViewCode, 'method="GET"') !== false
+            && strpos($taskIndexViewCode, "url('tareas/reporte')") !== false
             && strpos($taskIndexViewCode, "url('tareas/crear')") !== false
             && strpos($taskIndexViewCode, "url('tareas/' . (int)") !== false
+            && strpos($taskReportViewCode, 'Reporte operativo') !== false
+            && strpos($taskReportViewCode, 'method="POST"') === false
+            && strpos($taskReportViewCode, 'csrf_field()') === false
             && strpos($taskDetailViewCode, "url('tareas')") !== false
             && strpos($taskDetailViewCode, 'Eventos') !== false
             && strpos($taskDetailViewCode, "/asignar')") !== false
@@ -3395,11 +3406,11 @@ if (!is_file($routesPath)) {
             && strpos($taskViewsCode, 'movimientos_caja') === false
             && strpos($taskViewsCode, "action=\"<?= url('habitaciones") === false
         ) {
-            hcOk('Vistas TLM-F muestran filtros GET, alta/asignacion/estados manuales con CSRF sin Caja.');
+            hcOk('Vistas TLM-I-A muestran filtros GET, reporte read-only, alta/asignacion/estados manuales con CSRF sin Caja.');
         } else {
             hcWarning(
-                'Vistas TLM-F no muestran contrato visual completo.',
-                'Asegurar filtros GET, POST /tareas, asignacion y estados manuales con CSRF y sin acciones de habitacion/Caja.'
+                'Vistas TLM-I-A no muestran contrato visual completo.',
+                'Asegurar filtros GET, reporte sin POST, POST /tareas, asignacion y estados manuales con CSRF y sin acciones de habitacion/Caja.'
             );
         }
 
@@ -3456,8 +3467,8 @@ if (!is_file($routesPath)) {
         }
     } else {
         hcWarning(
-            'Faltan vistas TLM-F.',
-            'Crear app/views/tareas/index.php, form.php, ver.php y _contextual_list.php.'
+            'Faltan vistas TLM-I-A.',
+            'Crear app/views/tareas/index.php, reporte.php, form.php, ver.php y _contextual_list.php.'
         );
     }
 

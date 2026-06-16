@@ -747,3 +747,14 @@ Estado: `BLOQUE_NP_F_REPORTE_PERSONAL_CERRADO_QA_DIFERIDA`.
 - No se agregaron funcionalidades nuevas en el cierre.
 - No hay nomina, pagos reales, abonos, Caja ni cambios en `/api/sync`.
 - QA manual queda diferida.
+
+## Checkpoint tecnico TLM-I-A
+
+Estado: `REPORTE_TLM_I_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_TLM_I_A_reporte_operativo_readonly.md`.
+- Reporte GET/read-only agregado en `/tareas/reporte`.
+- Consolida tareas, eventos, riesgos y cargas operativas por hotel.
+- No hay POST, asignaciones, cambios de estado, cambios de habitacion, Caja ni
+  `/api/sync`.
+- QA manual queda diferida.

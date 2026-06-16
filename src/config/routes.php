@@ -253,8 +253,9 @@ $router->post('/trabajadores/{id:[0-9]+}/asistencias', ['controller' => 'Trabaja
 $router->post('/trabajadores/{id:[0-9]+}/baja-logica', ['controller' => 'Trabajador', 'action' => 'bajaLogica']);
 $router->post('/trabajadores/{id:[0-9]+}/reactivar', ['controller' => 'Trabajador', 'action' => 'reactivar']);
 
-// Fase TLM-E: tareas operativas con alta, asignacion y estados manuales. Sin cambios de estado de habitacion ni Caja.
+// Fase TLM-I-A: tareas operativas con alta, asignacion, estados manuales y reporte read-only. Sin cambios de estado de habitacion ni Caja.
 $router->get('/tareas', ['controller' => 'Tarea', 'action' => 'index']);
+$router->get('/tareas/reporte', ['controller' => 'Tarea', 'action' => 'reporte']);
 $router->get('/tareas/crear', ['controller' => 'Tarea', 'action' => 'crear']);
 $router->post('/tareas', ['controller' => 'Tarea', 'action' => 'guardar']);
 $router->post('/tareas/{id:[0-9]+}/asignar', ['controller' => 'Tarea', 'action' => 'asignar']);

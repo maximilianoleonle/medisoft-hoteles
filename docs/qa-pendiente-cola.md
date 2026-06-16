@@ -993,3 +993,12 @@ instruccion del usuario.
 - No requiere QA de navegador porque no agrega funcionalidad.
 - QA futura TLM-I-A debe confirmar ruta protegida, datos scoped por hotel, estados vacios,
   ausencia de POST y ausencia de acciones de tarea.
+
+### Estado TLM-I-A
+
+- Reporte operativo TLM read-only implementado.
+- QA manual diferida por instruccion del usuario.
+- Probar `/tareas/reporte` con sesion de hotel.
+- Confirmar estados vacios o datos correctos segun existan tareas.
+- Confirmar que no existen formularios POST ni botones de asignar/iniciar/completar/cancelar.
+- Confirmar que HTTP sin sesion bloquea o redirige.

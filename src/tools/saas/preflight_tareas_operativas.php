@@ -424,6 +424,7 @@ if ($pdo) {
 $routes = tlmPfParseRoutes($routesPath);
 $expectedRoutes = [
     ['method' => 'get', 'path' => 'tareas'],
+    ['method' => 'get', 'path' => 'tareas/reporte'],
     ['method' => 'get', 'path' => 'tareas/crear'],
     ['method' => 'post', 'path' => 'tareas'],
     ['method' => 'get', 'path' => 'tareas/{id:[0-9]+}'],
@@ -479,23 +480,25 @@ $trabajadorControllerCode = is_file($trabajadorControllerPath) ? (string) file_g
 
 if (
     $taskModelCode !== ''
+    && strpos($taskModelCode, 'function reporteReadOnlyPorHotel') !== false
     && strpos($taskModelCode, 'function listarPorEntidadHotel') !== false
     && strpos($taskModelCode, 'WHERE t.hotel_id = ?') !== false
     && strpos($taskModelCode, 'function crearParaHotel') !== false
     && strpos($taskModelCode, 'function cambiarEstadoManualParaHotel') !== false
 ) {
-    tlmPfOk('TareaOperativa conserva lecturas, alta manual y estados con hotel_id.');
+    tlmPfOk('TareaOperativa conserva reporte read-only, lecturas, alta manual y estados con hotel_id.');
 } else {
     tlmPfError('TareaOperativa no muestra contrato TLM esperado.', 'Revisar modelo antes de continuar.');
 }
 
 if (
     $taskControllerCode !== ''
+    && strpos($taskControllerCode, 'function reporteAction') !== false
     && strpos($taskControllerCode, 'validateCSRF') !== false
     && strpos($taskControllerCode, "require_permission('habitaciones.mantenimiento')") !== false
     && strpos($taskControllerCode, 'AuditService::record') !== false
 ) {
-    tlmPfOk('TareaController conserva CSRF, permiso conservador y auditoria.');
+    tlmPfOk('TareaController conserva reporte read-only, CSRF, permiso conservador y auditoria.');
 } else {
     tlmPfError('TareaController no muestra guardas TLM completas.', 'Validar CSRF, permisos y auditoria antes de continuar.');
 }
@@ -510,6 +513,24 @@ if (
     tlmPfOk('Partial contextual TLM-F es read-only.');
 } else {
     tlmPfError('Partial contextual TLM-F no parece read-only.', 'Retirar formularios o rutas internas del partial contextual.');
+}
+
+$taskReportViewPath = $appRoot . '/app/views/tareas/reporte.php';
+$taskReportCode = is_file($taskReportViewPath) ? (string) file_get_contents($taskReportViewPath) : '';
+if (
+    $taskReportCode !== ''
+    && strpos($taskReportCode, 'Reporte operativo') !== false
+    && strpos($taskReportCode, 'method="POST"') === false
+    && strpos($taskReportCode, 'csrf_field()') === false
+    && strpos($taskReportCode, 'movimientos_caja') === false
+    && strpos($taskReportCode, "url('tareas/'") !== false
+) {
+    tlmPfOk('Vista de reporte TLM-I-A es read-only y no expone Caja.');
+} else {
+    tlmPfWarning(
+        'Vista de reporte TLM-I-A no muestra contrato read-only completo.',
+        'Asegurar reporte sin POST, sin Caja y con enlaces GET al detalle de tareas.'
+    );
 }
 
 if (

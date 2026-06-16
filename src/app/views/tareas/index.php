@@ -94,8 +94,12 @@ $prioridadLabels = [
                     Nueva tarea
                 </a>
             <?php endif; ?>
+            <a class="tlm-btn tlm-btn--light" href="<?= url('tareas/reporte') ?>">
+                <i class="fas fa-chart-pie"></i>
+                Reporte
+            </a>
             <div class="tlm-status">
-                Fase TLM-C: alta manual controlada. Sin asignaciones, cierres, cambios de habitacion ni Caja.
+                Fase TLM-I-A: operacion manual controlada y reporte read-only. Sin cambios de habitacion ni Caja.
             </div>
         </div>
     </div>

@@ -118,6 +118,17 @@ Estado actual: `CONTRATO_TLM_I_REPORTE_OPERATIVO_READONLY_COMPLETADO`.
 - Quedan prohibidos cambios de estado, asignaciones, habitacion, mantenimiento historico,
   Caja, nomina y `/api/sync`.
 
+## Reporte operativo TLM read-only implementado
+
+Estado actual: `REPORTE_TLM_I_A_COMPLETADO_QA_DIFERIDA`.
+
+- Ruta nueva: `/tareas/reporte`.
+- Se implementa solo lectura: sin POST, sin asignar, sin iniciar/completar/cancelar, sin
+  cambios de habitacion y sin Caja.
+- El reporte consolida tareas y eventos por hotel.
+- Health checker y preflight TLM conocen el contrato TLM-I-A.
+- QA manual queda diferida por instruccion del usuario.
+
 ## Situacion historica
 
 El historial contiene commits que implementan partes de Fase 3C, pero el estado documental vigente no debe tratarlos como cierre formal completo.
