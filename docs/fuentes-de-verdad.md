@@ -570,3 +570,15 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - `habitaciones.estado = limpieza` es condicion de entrada, no resultado modificado
   por LIM-B-A.
 - No hay migraciones ni nuevas tablas.
+
+### TLM-J-0 agenda de tareas por trabajador
+
+- Fuente de verdad documental:
+  `docs/fase_TLM_J_0_contrato_agenda_tareas_trabajador.md`.
+- Fuentes tecnicas futuras de lectura:
+  - `tareas_operativas`;
+  - `trabajadores`;
+  - `habitaciones`;
+  - `mantenimientos_habitaciones`.
+- No crea fuentes nuevas.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.

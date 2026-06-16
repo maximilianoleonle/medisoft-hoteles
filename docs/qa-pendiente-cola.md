@@ -1284,3 +1284,14 @@ instruccion del usuario.
   - SQL read-only confirma cero escrituras por intento sin sesion.
 - QA manual sigue pendiente y no bloquea nuevas tareas independientes por
   instruccion del usuario.
+
+### Estado TLM-J-0
+
+- Contrato de agenda de tareas por trabajador completado.
+- No requiere QA de navegador porque no agrega codigo, rutas ni DB.
+- QA futura TLM-J-A:
+  - abrir `/tareas/agenda`;
+  - filtrar por fecha y trabajador;
+  - confirmar enlaces GET a tarea/trabajador/habitacion;
+  - confirmar ausencia de POST, asignacion, estados manuales, Caja, nomina,
+    offline y `/api/sync`.

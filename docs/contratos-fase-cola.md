@@ -1335,3 +1335,15 @@ Estado formal vigente: `BLOQUE_LIM_B_TAREAS_DESDE_LIMPIEZA_CERRADO_QA_DIFERIDA`.
 - No se autoriza automatizacion de limpieza desde checkout, inventario,
   liberacion ni offline.
 - Siguiente accion segura: contrato nuevo e independiente.
+
+## Fase TLM-J-0: contrato agenda de tareas por trabajador
+
+Estado formal vigente: `CONTRATO_TLM_J_0_AGENDA_TAREAS_TRABAJADOR_COMPLETADO`.
+
+- Documento: `docs/fase_TLM_J_0_contrato_agenda_tareas_trabajador.md`.
+- Define una futura ruta GET/read-only `/tareas/agenda`.
+- Objetivo: visualizar carga operativa por trabajador, fecha, categoria y estado.
+- No implementa codigo, rutas, modelos ni escrituras.
+- No toca habitaciones, mantenimientos, inventario, Caja, pagos, abonos, nomina,
+  offline ni `/api/sync`.
+- Siguiente accion segura: TLM-J-A implementacion GET/read-only.

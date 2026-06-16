@@ -1159,3 +1159,12 @@ Resultado LIM-B-F:
 - QA manual queda diferida; no se marca validacion de navegador.
 - Siguiente paso recomendado: abrir solo un contrato nuevo e independiente antes
   de automatizar limpieza o integrarla con checkout/liberacion.
+
+Resultado TLM-J-0:
+
+- Estado tecnico: `CONTRATO_TLM_J_0_AGENDA_TAREAS_TRABAJADOR_COMPLETADO`.
+- Documento: `docs/fase_TLM_J_0_contrato_agenda_tareas_trabajador.md`.
+- Se define una agenda futura GET/read-only de tareas por trabajador y fecha.
+- No hay codigo, rutas, DB ni escrituras.
+- Siguiente paso recomendado: TLM-J-A implementacion GET/read-only de
+  `/tareas/agenda`.

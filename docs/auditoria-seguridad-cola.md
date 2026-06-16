@@ -1154,3 +1154,13 @@ Estado: `BLOQUE_LIM_B_TAREAS_DESDE_LIMPIEZA_CERRADO_QA_DIFERIDA`.
 - El intento sin sesion redirige a login y no crea registros.
 - Riesgo residual: QA manual queda diferida; si se crean tareas reales, el rollback
   funcional debe tratarlas como datos operativos.
+
+## Auditoria TLM-J-0
+
+Estado: `CONTRATO_TLM_J_0_AGENDA_TAREAS_TRABAJADOR_COMPLETADO`.
+
+- Subfase documental sin cambios de codigo ni DB.
+- La fase futura queda limitada a GET/read-only.
+- Riesgos futuros: rangos de fecha amplios o exposicion cross-hotel.
+- Mitigacion definida: filtros por `hotel_id`, rango por defecto corto y enlaces GET.
+- Caja, pagos, abonos, nomina operativa, offline y `/api/sync` siguen fuera de alcance.

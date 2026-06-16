@@ -914,3 +914,11 @@
   `BLOQUE_LIM_B_TAREAS_DESDE_LIMPIEZA_CERRADO_QA_DIFERIDA`.
 - No se habilita automatizacion desde checkout, liberacion, inventario ni offline.
 - Cualquier siguiente paso de limpieza debe iniciar con contrato propio.
+
+## Decision TLM-J-0
+
+- La siguiente mejora segura de Tareas sera una agenda GET/read-only, no una nueva
+  accion operativa.
+- La agenda debe vivir bajo el modulo existente de tareas para reutilizar guardas.
+- Personal aporta trabajadores asignados, pero no se abre nomina ni pagos.
+- Limpieza y mantenimiento se muestran como categorias/origenes, sin automatizacion.

@@ -1057,3 +1057,13 @@ agregar funcionalidades nuevas.
 - QA manual queda diferida por instruccion del usuario.
 - Siguiente accion segura: contrato independiente para el siguiente bloque de
   tareas/limpieza/mantenimiento o volver a QA manual acumulada.
+
+## Contrato TLM-J-0 agenda de tareas por trabajador
+
+- Estado formal: `CONTRATO_TLM_J_0_AGENDA_TAREAS_TRABAJADOR_COMPLETADO`.
+- Documento creado: `docs/fase_TLM_J_0_contrato_agenda_tareas_trabajador.md`.
+- Define futura agenda GET/read-only para tareas por fecha/trabajador/categoria/estado.
+- No crea rutas ni codigo en esta subfase.
+- No toca habitaciones, mantenimientos, inventario, Caja, pagos, abonos, nomina,
+  offline ni `/api/sync`.
+- Siguiente accion segura: TLM-J-A implementacion GET/read-only.

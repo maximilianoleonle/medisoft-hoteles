@@ -1022,3 +1022,12 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - DB/migraciones: no aplica.
 - Si existen tareas reales creadas por QA posterior, no eliminarlas con SQL
   manual; cancelar por flujo de tareas o documentar reconciliacion.
+
+### TLM-J-0 contrato agenda de tareas por trabajador
+
+- Rollback documental: revertir el commit
+  `docs(phase-tlm): define worker task agenda contract`.
+- DB: no aplica; TLM-J-0 no crea migraciones, rutas, modelos ni datos.
+- Codigo: no aplica.
+- No tocar tareas, trabajadores, habitaciones, mantenimientos, Caja, pagos, abonos,
+  nomina, offline ni `/api/sync`.
