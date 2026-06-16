@@ -339,6 +339,15 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Despues del rollback, validar que no exista ruta `GET /documentos/{id}/descargar` y
   que `/documentos` y `/documentos/{id}` sigan funcionando.
 
+### 4B-B auditoria de descargas documentales
+
+- Rollback de codigo/documentacion: revertir el commit `feat(phase-4b): audit secure document downloads`.
+- DB: no borrar auditorias existentes salvo autorizacion explicita; `logs_auditoria`
+  es historico.
+- Efecto esperado del rollback: la descarga sigue funcionando si 4B-A permanece, pero
+  deja de registrar `documentos.descargado` y `documentos.descarga_bloqueada`.
+- No hay migraciones, storage, Caja, pagos, abonos ni `/api/sync` involucrados.
+
 ### Fases futuras
 
 - Antes de migracion o escritura: backup fresco.

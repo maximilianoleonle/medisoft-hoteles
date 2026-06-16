@@ -350,6 +350,29 @@ implementar todavia rutas ni lectura de archivos.
 QA manual de `GET /documentos/{id}/descargar` antes de avanzar a edicion, borrado,
 links publicos o auditoria de descargas.
 
+## Fase 4B-B: Auditoria de descargas documentales
+
+### Estado
+
+Estado formal vigente: `AUDITORIA_DESCARGAS_4B_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+
+### Contrato
+
+- Registrar descarga exitosa de documentos privados.
+- Registrar intentos bloqueados despues de autenticacion y contexto hotelero.
+- Usar `AuditService::record()`.
+- No exponer `storage_path`, `nombre_archivo` ni URL publica.
+- No agregar rutas, POST, edicion, borrado, Caja, pagos, abonos ni `/api/sync`.
+
+### Definition of Done
+
+- `documentos.descargado` aparece para descarga valida.
+- `documentos.descarga_bloqueada` aparece para documento no disponible o archivo no
+  resoluble.
+- La descarga sigue funcionando.
+- Los fallos de auditoria son tolerantes.
+- QA manual documentada.
+
 ## Bloque Personal y Nomina (Fase NP): modulo independiente de trabajadores
 
 ### Objetivo

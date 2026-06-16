@@ -252,8 +252,18 @@ Resultado 4B-A:
 - Documento `#1` de Los Cedros descarga `200`; documento `#3` de otro hotel redirige.
 - No hay POST nuevo, links publicos, edicion, borrado, Caja, pagos, abonos ni `/api/sync`.
 - QA manual 4B-A reportada por el usuario como completada.
-- Siguiente paso recomendado: nueva autorizacion explicita antes de edicion, borrado,
-  links publicos o auditoria de descargas.
+
+Resultado 4B-B:
+
+- Se agrega auditoria tolerante de descargas documentales con `AuditService::record()`.
+- Eventos: `documentos.descargado` y `documentos.descarga_bloqueada`.
+- No se registra `storage_path` ni `nombre_archivo`.
+- Verificacion local genero una auditoria exitosa para documento `#1` y una bloqueada
+  para documento `#3` de otro hotel.
+- No hay nuevas rutas, POST, edicion, borrado, links publicos, Caja, pagos, abonos ni
+  `/api/sync`.
+- Siguiente paso recomendado: QA manual de descarga y validacion visual/DB del evento
+  de auditoria antes de avanzar a edicion, borrado o links publicos.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

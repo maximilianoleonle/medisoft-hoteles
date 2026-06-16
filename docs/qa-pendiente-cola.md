@@ -363,6 +363,29 @@ descargas sin nueva fase explicita.
 - Descarga en navegador validada.
 - No se autoriza edicion, borrado, links publicos, pagos, abonos, Caja ni `/api/sync`.
 
+### QA manual pendiente 4B-B
+
+Resultado automatico:
+
+- Descarga valida `GET /documentos/1/descargar`: `200`.
+- Intento cross-hotel `GET /documentos/3/descargar`: `303` a `/documentos`.
+- Auditorias generadas: `documentos.descargado=1` y
+  `documentos.descarga_bloqueada=1`.
+- El hash SHA256 del archivo descargado coincide con el documento esperado.
+- `cuentas_por_pagar_movimientos=0` y `movimientos_caja=1403`.
+
+Validacion manual recomendada:
+
+- Descargar un documento activo desde `/documentos`.
+- Confirmar que el archivo sigue descargando correctamente.
+- Confirmar en auditoria que aparece `documentos.descargado` con `hotel_id`,
+  `usuario_id`, `entidad_tipo=documento` y `entidad_id` del documento.
+- Intentar descargar un documento no disponible para el hotel actual.
+- Confirmar que el intento queda bloqueado sin exponer ruta interna.
+- Confirmar en auditoria que aparece `documentos.descarga_bloqueada`.
+- Confirmar que no hay edicion, borrado, links publicos, pagos, abonos, Caja ni
+  cambios en `/api/sync`.
+
 ### QA critica futura
 
 - Documento de un hotel no visible en otro hotel.

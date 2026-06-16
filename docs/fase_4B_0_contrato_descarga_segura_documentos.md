@@ -211,3 +211,73 @@ Siguiente paso:
 
 No avanzar a edicion, borrado, links publicos ni auditoria de descargas sin nueva
 autorizacion explicita de fase.
+
+## Resultado Fase 4B-B - Auditoria de descargas documentales
+
+Estado: `AUDITORIA_DESCARGAS_4B_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+
+Objetivo:
+
+Registrar trazabilidad minima de descargas de documentos privados sin cambiar el
+contrato de almacenamiento ni exponer rutas internas.
+
+Implementacion:
+
+- `DocumentoController::descargarAction()` registra intentos bloqueados cuando el
+  documento solicitado no esta disponible para el hotel actual.
+- `DocumentoController::descargarAction()` registra intentos bloqueados cuando la
+  metadata existe pero el archivo privado no se puede resolver.
+- `DocumentoController::servirArchivoPrivado()` registra `documentos.descargado`
+  antes de emitir el archivo.
+- La auditoria usa `AuditService::record()` y es tolerante a fallos: si no se puede
+  escribir en `logs_auditoria`, la descarga no se rompe.
+
+Eventos:
+
+- `documentos.descargado`: descarga exitosa desde storage privado.
+- `documentos.descarga_bloqueada`: documento no disponible, archivo privado no
+  disponible o archivo no legible.
+
+Datos registrados:
+
+- `hotel_id`.
+- `usuario_id` resuelto de la sesion actual.
+- `entidad_tipo = documento`.
+- `entidad_id = documento_id`.
+- Motivo para bloqueos.
+- Metadata segura: `nombre_original`, MIME, tamano, estado y marca de storage privado.
+
+Exclusiones:
+
+- No se registra `storage_path`.
+- No se registra `nombre_archivo`.
+- No hay nuevas rutas.
+- No hay POST nuevo.
+- No hay descargas publicas ni tokens.
+- No hay edicion ni borrado.
+- No se toca Caja, pagos, abonos, PWA/offline ni `/api/sync`.
+
+Verificacion automatica:
+
+- `php -l` limpio en `DocumentoController.php` y `health_check_fase_1a.php`.
+- `health_check_fase_1a.php`: PASS con warnings conocidos; detecta ruta documental
+  segura y auditoria Fase 4B-B.
+- `preflight_compras_minimas.php`: PASS con warnings conocidos.
+- `preflight_recepcion_compras.php`: PASS con warnings conocidos.
+- HTTP con sesion Los Cedros en `/documentos/1/descargar`: `200`.
+- HTTP con sesion Los Cedros en `/documentos/3/descargar`: `303` a `/documentos`.
+- Auditoria generada: `documentos.descargado=1`,
+  `documentos.descarga_bloqueada=1`.
+- Hash SHA256 del archivo descargado `documentos.id=1`:
+  `18B0855BC03494BD6C3059AC14BF342366B7F3DD598C118FA98CF91F987EAC64`.
+- Conteos de control: `cuentas_por_pagar_movimientos=0`, `movimientos_caja=1403`.
+- `git diff --check`: OK.
+
+QA manual pendiente:
+
+1. Iniciar sesion en un hotel con documentos.
+2. Descargar un documento activo.
+3. Confirmar que el archivo sigue descargando correctamente.
+4. Confirmar que se registra una auditoria `documentos.descargado`.
+5. Intentar acceder a un documento no disponible para el hotel actual.
+6. Confirmar bloqueo sin exponer ruta interna y auditoria `documentos.descarga_bloqueada`.

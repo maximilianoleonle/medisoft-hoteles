@@ -210,6 +210,16 @@
   lectura de archivo; puede autorizarse despues como fase separada.
 - 4B no autoriza edicion, borrado, Caja, pagos, abonos, PWA/offline ni `/api/sync`.
 
+### Fase 4B-B auditoria de descargas
+
+- Estado formal vigente: `AUDITORIA_DESCARGAS_4B_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+- Se decide registrar `documentos.descargado` y `documentos.descarga_bloqueada` en
+  `logs_auditoria` usando `AuditService::record()`.
+- La auditoria queda en controlador, cerca del flujo HTTP de descarga, porque no cambia
+  la fuente de verdad del archivo ni el modelo de storage.
+- No se registra `storage_path` ni `nombre_archivo`.
+- Los fallos de auditoria no bloquean la descarga.
+
 ### Decisiones de diagnostico NP-0
 
 - Hoy "trabajador" = `usuarios` (tabla global, sin `hotel_id`, `rol` de sistema) + pivote

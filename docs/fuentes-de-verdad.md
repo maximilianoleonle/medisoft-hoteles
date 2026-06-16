@@ -146,6 +146,9 @@ Reglas de fuente de verdad:
   `realpath(STORAGE_PATH . '/documentos')`.
 - No existen links publicos de documentos en el contrato 4B-0.
 - 4B-A implementa descarga autenticada desde `documentos` y `STORAGE_PATH/documentos`.
+- 4B-B registra trazabilidad en `logs_auditoria` mediante `AuditService`; la fuente de
+  verdad del archivo sigue siendo `documentos.storage_path` bajo storage privado.
+- `logs_auditoria` no sustituye metadata documental; solo registra eventos de acceso.
 - La ruta activa de descarga es `GET /documentos/{id}/descargar`.
 - Solo documentos `activo` del hotel actual son descargables.
 - No hay links publicos ni tokens publicos de documentos.

@@ -3529,6 +3529,34 @@ if (!is_file($routesPath)) {
         }
     }
 
+    $documentoControllerPath = $controllersDir . '/DocumentoController.php';
+    $documentoControllerCode = is_file($documentoControllerPath)
+        ? (string) file_get_contents($documentoControllerPath)
+        : '';
+
+    if (hcRoutePatternExists($routes, 'documentos/1/descargar', 'get')) {
+        hcOk('Ruta documental segura registrada: GET /documentos/{id}/descargar.');
+    } else {
+        hcWarning(
+            'Ruta documental segura GET /documentos/{id}/descargar no esta registrada.',
+            'Restaurar la ruta solo si Fase 4B-A sigue vigente.'
+        );
+    }
+
+    if (
+        $documentoControllerCode !== ''
+        && strpos($documentoControllerCode, 'documentos.descargado') !== false
+        && strpos($documentoControllerCode, 'documentos.descarga_bloqueada') !== false
+        && strpos($documentoControllerCode, 'AuditService::record') !== false
+    ) {
+        hcOk('Centro Documental Fase 4B-B audita descargas exitosas y bloqueadas con AuditService.');
+    } elseif ($documentoControllerCode !== '') {
+        hcWarning(
+            'Centro Documental no muestra auditoria completa Fase 4B-B.',
+            'Registrar documentos.descargado y documentos.descarga_bloqueada con AuditService sin exponer storage_path.'
+        );
+    }
+
     if (hcRouteExists($routes, 'api/sync', 'post')) {
         $apiController = $controllersDir . '/ApiController.php';
         $apiCode = is_file($apiController) ? (string) file_get_contents($apiController) : '';

@@ -255,6 +255,18 @@ Estado: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
 - No se agregan POST, edicion, borrado, Caja, pagos, abonos ni `/api/sync`.
 - No se registra auditoria de descarga en esta fase para evitar escrituras en DB.
 
+### Auditoria 4B-B
+
+- Estado: `AUDITORIA_DESCARGAS_4B_B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+- Se agrega trazabilidad minima para descargas exitosas y bloqueadas.
+- La auditoria se registra con `AuditService::record()` en `logs_auditoria`.
+- Los fallos de auditoria son tolerantes y no rompen la descarga.
+- No se registran rutas internas (`storage_path`) ni nombres fisicos (`nombre_archivo`).
+- No hay nuevas rutas, POST, tokens publicos, edicion, borrado, Caja, pagos, abonos ni
+  `/api/sync`.
+- Riesgo residual: cada descarga exitosa o intento bloqueado genera escritura en
+  `logs_auditoria`; es intencional y debe monitorearse si el volumen crece.
+
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 
 ### Estado NP-0

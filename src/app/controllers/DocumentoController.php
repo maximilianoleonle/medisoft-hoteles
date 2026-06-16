@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../core/View.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
 require_once __DIR__ . '/../helpers/modulos.php';
 require_once __DIR__ . '/../models/Documento.php';
+require_once __DIR__ . '/../services/AuditService.php';
 
 class DocumentoController extends Controller
 {
@@ -72,6 +73,7 @@ class DocumentoController extends Controller
         $documento = $this->documentoModel->buscarDescargablePorIdHotel($id, $hotelId);
 
         if (!$documento) {
+            $this->auditarDescargaBloqueada($hotelId, $id, 'documento_no_disponible');
             set_mensaje('Documento no disponible para descarga en el hotel actual.', 'error');
             $this->redirect('documentos');
             return;
@@ -80,6 +82,7 @@ class DocumentoController extends Controller
         try {
             $ruta = $this->documentoModel->resolverRutaPrivada($documento);
         } catch (Throwable $e) {
+            $this->auditarDescargaBloqueada($hotelId, $id, 'archivo_privado_no_disponible');
             set_mensaje('El archivo privado no esta disponible para descarga.', 'error');
             $this->redirect('documentos/' . $id);
             return;
@@ -293,6 +296,11 @@ class DocumentoController extends Controller
     private function servirArchivoPrivado(array $documento, string $ruta): void
     {
         if (!is_file($ruta) || !is_readable($ruta)) {
+            $this->auditarDescargaBloqueada(
+                (int)($documento['hotel_id'] ?? $this->hotelIdActual()),
+                (int)($documento['id'] ?? 0),
+                'archivo_no_legible'
+            );
             set_mensaje('El archivo privado no esta disponible para descarga.', 'error');
             $this->redirect('documentos/' . (int)($documento['id'] ?? 0));
             return;
@@ -301,6 +309,8 @@ class DocumentoController extends Controller
         $mimeType = $this->mimeDescargaPermitido($documento['mime_type'] ?? null);
         $nombre = $this->nombreDescargaSeguro($documento['nombre_original'] ?? ('documento-' . (int)($documento['id'] ?? 0)));
         $tamano = filesize($ruta);
+
+        $this->auditarDescargaExitosa($documento, $mimeType, $tamano);
 
         while (ob_get_level() > 0) {
             @ob_end_clean();
@@ -339,6 +349,60 @@ class DocumentoController extends Controller
         $nombre = trim((string)$nombre);
 
         return $nombre !== '' ? $nombre : 'documento';
+    }
+
+    private function auditarDescargaExitosa(array $documento, string $mimeType, int|false $tamano): void
+    {
+        $documentoId = (int)($documento['id'] ?? 0);
+        $hotelId = (int)($documento['hotel_id'] ?? $this->hotelIdActual());
+
+        if ($documentoId <= 0 || $hotelId <= 0) {
+            return;
+        }
+
+        $this->registrarAuditoriaDocumento('documentos.descargado', $hotelId, $documentoId, [
+            'descripcion' => 'Documento descargado desde storage privado',
+            'datos_despues' => [
+                'documento_id' => $documentoId,
+                'nombre_original' => $documento['nombre_original'] ?? null,
+                'mime_type' => $mimeType,
+                'size_bytes' => $tamano !== false ? (int)$tamano : (int)($documento['size_bytes'] ?? 0),
+                'estado' => $documento['estado'] ?? null,
+                'storage_privado' => true,
+            ],
+        ]);
+    }
+
+    private function auditarDescargaBloqueada(int $hotelId, int $documentoId, string $motivo): void
+    {
+        if ($hotelId <= 0 || $documentoId <= 0) {
+            return;
+        }
+
+        $this->registrarAuditoriaDocumento('documentos.descarga_bloqueada', $hotelId, $documentoId, [
+            'descripcion' => 'Descarga documental bloqueada: ' . $motivo,
+            'datos_despues' => [
+                'documento_id' => $documentoId,
+                'motivo' => $motivo,
+                'storage_privado' => true,
+            ],
+        ]);
+    }
+
+    private function registrarAuditoriaDocumento(string $accion, int $hotelId, int $documentoId, array $contexto): void
+    {
+        try {
+            AuditService::record($accion, [
+                'hotel_id' => $hotelId,
+                'usuario_id' => $this->usuarioIdActual(),
+                'entidad_tipo' => 'documento',
+                'entidad_id' => (string)$documentoId,
+                'descripcion' => $contexto['descripcion'] ?? null,
+                'datos_despues' => $contexto['datos_despues'] ?? [],
+            ]);
+        } catch (Throwable $e) {
+            error_log('No se pudo auditar descarga documental: ' . $e->getMessage());
+        }
     }
 
     private function hotelIdActual(): int
