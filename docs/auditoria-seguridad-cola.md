@@ -966,3 +966,17 @@ Estado: `CONTRATO_MANT_D_0_PREVIEW_VENCIDOS_COMPLETADO`.
 - La fase futura queda limitada a GET/read-only y no puede llamar
   `activarMantenimientosPendientes()`.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.
+
+## Auditoria MANT-D-A
+
+Estado: `PREVIEW_MANT_D_A_COMPLETADO_QA_DIFERIDA`.
+
+- Superficie revisada: `GET /reportes/mantenimiento-programado`.
+- Ruta protegida por las guardas existentes de `ReportesController`.
+- Modelo scoped por `hotel_id` y lectura pura.
+- Vista sin formularios POST, sin CSRF, sin botones de activacion y sin storage interno.
+- No llama `activarMantenimientosPendientes()`.
+- No cambia habitaciones, reservaciones, tareas ni disponibilidad.
+- Checkers confirman `ERROR: 0` y `/api/sync` bloqueado en codigo.
+- Riesgo residual: QA manual diferida y warning historico de 1 habitacion en
+  mantenimiento sin registro activo.

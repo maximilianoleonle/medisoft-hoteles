@@ -882,3 +882,15 @@ agregar funcionalidades nuevas.
 - Documento creado: `docs/fase_MANT_D_0_contrato_preview_vencidos.md`.
 - No modifica codigo ni DB.
 - Siguiente accion segura: MANT-D-A preview GET/read-only de candidatos.
+
+## Preview MANT-D-A mantenimiento programado
+
+- Estado formal: `PREVIEW_MANT_D_A_COMPLETADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_MANT_D_A_preview_mantenimiento_programado.md`.
+- Ruta GET/read-only: `/reportes/mantenimiento-programado`.
+- No activa mantenimientos pendientes automaticamente.
+- No cambia habitaciones ni disponibilidad.
+- No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.
+- Siguiente accion segura: cierre tecnico documental MANT-D o nuevo contrato
+  independiente.

@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -844,7 +844,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A-4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A - Medisoft Hoteles\n";
+echo "Health check Fase 1A-4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -5103,6 +5103,9 @@ if (!is_file($routesPath)) {
     $mantOpViewCode = is_file($appRoot . '/app/views/habitaciones/ver.php')
         ? (string) file_get_contents($appRoot . '/app/views/habitaciones/ver.php')
         : '';
+    $mantOpPreviewViewCode = is_file($appRoot . '/app/views/reportes/mantenimiento-programado.php')
+        ? (string) file_get_contents($appRoot . '/app/views/reportes/mantenimiento-programado.php')
+        : '';
 
     $mantOpRoutesOk = hcRoutePatternExists($routes, 'habitaciones/1/mantenimiento', 'post')
         && hcRoutePatternExists($routes, 'habitaciones/1/programar-mantenimiento', 'post')
@@ -5113,6 +5116,24 @@ if (!is_file($routesPath)) {
         hcError(
             'Rutas MANT-B existentes incompletas.',
             'Restaurar POST mantenimiento/programar/cancelar solo con CSRF y permisos.'
+        );
+    }
+
+    if (hcRouteExists($routes, 'reportes/mantenimiento-programado', 'get')) {
+        hcOk('Ruta MANT-D-A registrada: GET /reportes/mantenimiento-programado.');
+    } else {
+        hcError(
+            'Ruta MANT-D-A GET /reportes/mantenimiento-programado no esta registrada.',
+            'Restaurar el preview read-only bajo ReportesController sin POST ni activaciones.'
+        );
+    }
+
+    if (!hcRouteExists($routes, 'reportes/mantenimiento-programado', 'post')) {
+        hcOk('MANT-D-A no expone POST /reportes/mantenimiento-programado.');
+    } else {
+        hcError(
+            'MANT-D-A expone POST /reportes/mantenimiento-programado fuera de contrato.',
+            'Retirar POST; el preview vencido/proximo debe seguir solo lectura.'
         );
     }
 
@@ -5192,6 +5213,41 @@ if (!is_file($routesPath)) {
         );
     }
 
+    $mantPreviewControllerBody = hcMethodBody($mantControllerCode, 'mantenimientoProgramadoAction');
+    if (
+        $mantPreviewControllerBody !== ''
+        && strpos($mantPreviewControllerBody, 'previewProgramados') !== false
+        && strpos($mantPreviewControllerBody, 'View::renderTemplate') !== false
+        && strpos($mantPreviewControllerBody, 'activarMantenimientosPendientes') === false
+        && hcCodeBodyIsReadOnly($mantPreviewControllerBody)
+    ) {
+        hcOk('ReportesController MANT-D-A expone preview GET/read-only sin activar pendientes.');
+    } else {
+        hcError(
+            'ReportesController MANT-D-A no muestra contrato read-only completo.',
+            'Mantener solo consulta previewProgramados, render de vista y ausencia de activacion/escrituras.'
+        );
+    }
+
+    $mantPreviewModelBody = hcMethodBody($mantOpModelCode, 'previewProgramados');
+    if (
+        $mantPreviewModelBody !== ''
+        && strpos($mantPreviewModelBody, 'm.hotel_id = ?') !== false
+        && strpos($mantPreviewModelBody, 'm.programado = 1') !== false
+        && strpos($mantPreviewModelBody, "m.estado = 'programado'") !== false
+        && strpos($mantPreviewModelBody, 'reservaciones_conflicto') !== false
+        && strpos($mantPreviewModelBody, 'preview_candidato') !== false
+        && strpos($mantPreviewModelBody, 'activarMantenimientosPendientes') === false
+        && hcCodeBodyIsReadOnly($mantPreviewModelBody)
+    ) {
+        hcOk('Mantenimiento::previewProgramados MANT-D-A es scoped por hotel_id, read-only y calcula candidatos/conflictos.');
+    } else {
+        hcError(
+            'Mantenimiento::previewProgramados MANT-D-A no muestra guardas read-only completas.',
+            'Revisar filtro hotel_id, estado programado, conflictos, candidatos y ausencia de escrituras.'
+        );
+    }
+
     if (
         $mantOpViewCode !== ''
         && strpos($mantOpViewCode, "url('habitaciones/' . \$habitacion_id . '/mantenimiento')") !== false
@@ -5204,6 +5260,24 @@ if (!is_file($routesPath)) {
         hcWarning(
             'habitaciones/ver.php no muestra todos los formularios MANT-B esperados.',
             'Revisar actions, method POST y csrf_field() de mantenimiento.'
+        );
+    }
+
+    if (
+        $mantOpPreviewViewCode !== ''
+        && strpos($mantOpPreviewViewCode, 'Preview de mantenimiento programado') !== false
+        && strpos($mantOpPreviewViewCode, "url('habitaciones/'") !== false
+        && strpos($mantOpPreviewViewCode, "url('reportes/mantenimiento-programado") !== false
+        && strpos($mantOpPreviewViewCode, 'method="POST"') === false
+        && strpos($mantOpPreviewViewCode, 'csrf_field()') === false
+        && strpos($mantOpPreviewViewCode, 'activarMantenimientosPendientes') === false
+        && strpos($mantOpPreviewViewCode, '/api/sync') !== false
+    ) {
+        hcOk('Vista MANT-D-A es navegable, read-only, sin POST y declara que no toca /api/sync.');
+    } else {
+        hcError(
+            'Vista MANT-D-A no muestra contrato visual read-only completo.',
+            'Revisar estado vacio, enlaces GET, ausencia de POST/CSRF/activadores y nota de /api/sync.'
         );
     }
 

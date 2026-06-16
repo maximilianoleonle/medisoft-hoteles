@@ -1157,3 +1157,16 @@ Estado formal vigente: `CONTRATO_MANT_D_0_PREVIEW_VENCIDOS_COMPLETADO`.
 - Prohibe llamar `Mantenimiento::activarMantenimientosPendientes()`, cambiar
   habitaciones, crear cron o tocar disponibilidad automaticamente.
 - Siguiente accion segura: MANT-D-A preview read-only de candidatos, si se autoriza.
+
+### Estado MANT-D-A
+
+Estado formal vigente: `PREVIEW_MANT_D_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_D_A_preview_mantenimiento_programado.md`.
+- Implementa `GET /reportes/mantenimiento-programado` como preview read-only.
+- Lista mantenimientos programados vencidos/proximos, conflictos de reservacion,
+  estado de habitacion y candidato revisable.
+- No llama `activarMantenimientosPendientes()`.
+- No cambia habitaciones, no crea tareas, no agrega cron ni automatizaciones.
+- No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- Siguiente accion segura: cierre tecnico documental MANT-D o QA manual diferida.

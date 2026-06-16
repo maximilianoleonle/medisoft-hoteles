@@ -166,10 +166,12 @@ $appRoot = dirname(__DIR__, 2);
 $configPath = $appRoot . '/config/database.php';
 $routesPath = $appRoot . '/config/routes.php';
 $controllerPath = $appRoot . '/app/controllers/HabitacionController.php';
+$reportesControllerPath = $appRoot . '/app/controllers/ReportesController.php';
 $modelPath = $appRoot . '/app/models/Mantenimiento.php';
 $viewPath = $appRoot . '/app/views/habitaciones/ver.php';
+$previewViewPath = $appRoot . '/app/views/reportes/mantenimiento-programado.php';
 
-echo "Preflight Fase MANT-B/MANT-C-A - Mantenimiento operativo existente\n";
+echo "Preflight Fase MANT-B/MANT-C-A/MANT-D-A - Mantenimiento operativo existente\n";
 echo "=====================================================\n";
 
 if (is_file($configPath)) {
@@ -305,9 +307,17 @@ if (mantOpRoutePatternExists($routes, '/^habitaciones\/cancelar-mantenimiento-pr
     mantOpError('Ruta MANT-B faltante: POST /habitaciones/cancelar-mantenimiento-programado/{id}.', 'Restaurar ruta POST existente con CSRF y permisos.');
 }
 
+if (mantOpRoutePatternExists($routes, '/^reportes\/mantenimiento-programado$/', 'get')) {
+    mantOpOk('Ruta MANT-D-A registrada: GET /reportes/mantenimiento-programado.');
+} else {
+    mantOpError('Ruta MANT-D-A faltante: GET /reportes/mantenimiento-programado.', 'Restaurar preview read-only bajo reportes.');
+}
+
 $controllerCode = is_file($controllerPath) ? (string) file_get_contents($controllerPath) : '';
+$reportesControllerCode = is_file($reportesControllerPath) ? (string) file_get_contents($reportesControllerPath) : '';
 $modelCode = is_file($modelPath) ? (string) file_get_contents($modelPath) : '';
 $viewCode = is_file($viewPath) ? (string) file_get_contents($viewPath) : '';
+$previewViewCode = is_file($previewViewPath) ? (string) file_get_contents($previewViewPath) : '';
 $mantBody = mantOpMethodBody($controllerCode, 'mantenimientoAction');
 
 if (
@@ -375,6 +385,31 @@ if (
     mantOpError('Mantenimiento model no muestra guardas tenant-safe completas.', 'Revisar find/update scoped y tieneProgramadoSolapado.');
 }
 
+$previewControllerBody = mantOpMethodBody($reportesControllerCode, 'mantenimientoProgramadoAction');
+$previewModelBody = mantOpMethodBody($modelCode, 'previewProgramados');
+if (
+    $previewControllerBody !== ''
+    && strpos($previewControllerBody, 'previewProgramados') !== false
+    && stripos($previewControllerBody, 'activarMantenimientosPendientes') === false
+    && !preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE)\b/i', $previewControllerBody)
+) {
+    mantOpOk('ReportesController::mantenimientoProgramadoAction es GET/read-only y no activa pendientes.');
+} else {
+    mantOpError('ReportesController::mantenimientoProgramadoAction no muestra contrato read-only MANT-D-A.', 'Revisar que solo consulte previewProgramados y no active pendientes.');
+}
+
+if (
+    $previewModelBody !== ''
+    && strpos($previewModelBody, 'm.hotel_id = ?') !== false
+    && strpos($previewModelBody, 'reservaciones_conflicto') !== false
+    && stripos($previewModelBody, 'activarMantenimientosPendientes') === false
+    && !preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE)\b/i', $previewModelBody)
+) {
+    mantOpOk('Mantenimiento::previewProgramados es read-only, scoped por hotel_id y detecta conflictos.');
+} else {
+    mantOpError('Mantenimiento::previewProgramados no muestra guardas read-only MANT-D-A.', 'Revisar hotel_id, conflictos y ausencia de escrituras.');
+}
+
 if (
     $viewCode !== ''
     && strpos($viewCode, "url('habitaciones/' . \$habitacion_id . '/mantenimiento')") !== false
@@ -385,6 +420,18 @@ if (
     mantOpOk('habitaciones/ver.php conserva formularios MANT-B con CSRF.');
 } else {
     mantOpError('habitaciones/ver.php no muestra formularios MANT-B esperados con CSRF.', 'Revisar action/method/csrf de mantenimiento.');
+}
+
+if (
+    $previewViewCode !== ''
+    && strpos($previewViewCode, "url('habitaciones/'") !== false
+    && strpos($previewViewCode, 'method="POST"') === false
+    && strpos($previewViewCode, 'csrf_field()') === false
+    && stripos($previewViewCode, 'activarMantenimientosPendientes') === false
+) {
+    mantOpOk('Vista MANT-D-A es navegable, read-only y sin formularios POST.');
+} else {
+    mantOpError('Vista MANT-D-A no muestra contrato read-only esperado.', 'Revisar enlaces GET, ausencia de POST y ausencia de acciones de activacion.');
 }
 
 $recommendations = array_values(array_unique(array_filter($recommendations)));

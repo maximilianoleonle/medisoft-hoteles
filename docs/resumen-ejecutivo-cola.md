@@ -988,3 +988,16 @@ Resultado MANT-D-0:
   habitaciones, crear cron o tocar disponibilidad automaticamente.
 - No se modifica codigo ni DB.
 - Siguiente paso recomendado: MANT-D-A preview read-only de candidatos.
+
+Resultado MANT-D-A:
+
+- Estado tecnico: `PREVIEW_MANT_D_A_COMPLETADO_QA_DIFERIDA`.
+- Documento: `docs/fase_MANT_D_A_preview_mantenimiento_programado.md`.
+- Se agrega `/reportes/mantenimiento-programado` como preview GET/read-only.
+- Muestra programados vencidos/proximos, estado de habitacion, conflictos de
+  reservacion y candidato revisable.
+- Health y preflight MANT validan ruta GET, ausencia de POST, modelo read-only,
+  `hotel_id` y bloqueo de activaciones automaticas.
+- No se llama `activarMantenimientosPendientes()`.
+- No hay migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- QA manual queda diferida.

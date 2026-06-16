@@ -1118,3 +1118,5 @@ instruccion del usuario.
 - Confirmar links a habitacion.
 - Confirmar que no hay botones de activar, POST, cron ni cambios de habitacion.
 - Confirmar HTTP sin sesion.
+- Confirmar que Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.
+- Estado tecnico actual: `PREVIEW_MANT_D_A_COMPLETADO_QA_DIFERIDA`.

@@ -2146,6 +2146,23 @@ private function exportarIngresosTotalesPdf() {
     ]);
 }
 /**
+ * Preview read-only de mantenimiento programado vencido/proximo.
+ */
+public function mantenimientoProgramadoAction() {
+    $dias = (int)$this->getQuery('dias', 30);
+    $dias = max(0, min(90, $dias));
+
+    require_once __DIR__ . '/../models/Mantenimiento.php';
+    $mantenimientoModel = new Mantenimiento();
+
+    View::renderTemplate('reportes/mantenimiento-programado', [
+        'title' => 'Mantenimiento programado - ' . current_hotel_display_name(),
+        'preview' => $mantenimientoModel->previewProgramados($dias),
+        'dias' => $dias,
+    ]);
+}
+
+/**
  * Reporte de Mantenimiento de Habitaciones
  */
 public function mantenimientoAction() {

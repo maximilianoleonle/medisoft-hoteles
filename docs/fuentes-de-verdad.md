@@ -420,3 +420,26 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - Toda accion debe operar con `hotel_id` del contexto actual.
 - Una habitacion no debe tener mas de un mantenimiento `en_proceso` por hotel.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.
+
+### MANT-C mantenimiento programado
+
+- No crea fuente nueva.
+- La programacion vive en `mantenimientos_habitaciones` con `programado = 1`,
+  `estado = 'programado'`, `fecha_programada` y `fecha_programada_fin`.
+- Las habitaciones siguen en `habitaciones`.
+- Las reservaciones y `reservacion_habitaciones` solo son fuente de validacion de
+  conflictos, no destino de escritura.
+- `Mantenimiento::activarMantenimientosPendientes()` no es fuente nueva y sigue
+  desconectado hasta contrato posterior.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.
+
+### MANT-D-A preview mantenimiento programado
+
+- No crea fuente nueva.
+- El preview es una lectura derivada de:
+  - `mantenimientos_habitaciones` para programados vencidos/proximos;
+  - `habitaciones` para estado actual y pertenencia por hotel;
+  - `reservaciones` y `reservacion_habitaciones` para senales de conflicto.
+- El candidato mostrado en la vista no cambia estados ni crea datos.
+- La disponibilidad operativa no se recalcula ni se persiste en esta fase.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.

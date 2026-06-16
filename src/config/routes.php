@@ -440,6 +440,7 @@ $router->post('/reportes/links/{id:[0-9]+}/revocar', ['controller' => 'ReporteLi
 $router->get('/reportes/link/{token:[a-f0-9]+}', ['controller' => 'ReporteLink', 'action' => 'descargarPublico']);
 
 // Reportes individuales
+$router->get('/reportes/mantenimiento-programado', ['controller' => 'Reportes', 'action' => 'mantenimientoProgramado']);
 $router->get('/reportes/ingresos-gastos', ['controller' => 'Reportes', 'action' => 'ingresosGastos']);
 $router->get('/reportes/procedencia', ['controller' => 'Reportes', 'action' => 'procedencia']);
 $router->get('/reportes/habitaciones-rentables', ['controller' => 'Reportes', 'action' => 'habitacionesRentables']);

@@ -200,6 +200,118 @@ class Mantenimiento extends Model {
         $result = $stmt ? $stmt->fetch() : false;
         return ((int)($result['total'] ?? 0)) > 0;
     }
+
+    /**
+     * Preview read-only de mantenimientos programados vencidos o proximos.
+     */
+    public function previewProgramados($dias = 30) {
+        $dias = max(0, min(90, (int)$dias));
+        $hotelId = $this->hotelIdActual();
+        $hoy = date('Y-m-d');
+        $hasta = date('Y-m-d', strtotime('+' . $dias . ' days'));
+
+        $sql = "SELECT
+                    m.id,
+                    m.habitacion_id,
+                    m.tipo_mantenimiento,
+                    m.prioridad,
+                    m.motivo,
+                    m.descripcion,
+                    m.fecha_programada,
+                    m.fecha_programada_fin,
+                    m.created_at,
+                    h.numero AS habitacion_numero,
+                    h.tipo AS habitacion_tipo,
+                    h.piso AS habitacion_piso,
+                    h.estado AS habitacion_estado,
+                    (
+                        SELECT COUNT(*)
+                        FROM reservaciones r
+                        INNER JOIN reservacion_habitaciones rh ON rh.reservacion_id = r.id
+                        INNER JOIN habitaciones hr ON hr.id = rh.habitacion_id
+                        WHERE rh.habitacion_id = m.habitacion_id
+                          AND hr.hotel_id = m.hotel_id
+                          AND r.estado IN ('confirmada', 'checked_in')
+                          AND r.fecha_entrada < DATE_ADD(COALESCE(m.fecha_programada_fin, m.fecha_programada), INTERVAL 1 DAY)
+                          AND r.fecha_salida > m.fecha_programada
+                    ) AS reservaciones_conflicto
+                FROM {$this->table} m
+                INNER JOIN habitaciones h
+                    ON h.id = m.habitacion_id
+                   AND h.hotel_id = m.hotel_id
+                WHERE m.hotel_id = ?
+                  AND m.programado = 1
+                  AND m.estado = 'programado'
+                  AND m.fecha_programada IS NOT NULL
+                  AND m.fecha_programada <= ?
+                ORDER BY
+                    m.fecha_programada ASC,
+                    FIELD(m.prioridad, 'urgente', 'alta', 'media', 'baja'),
+                    m.id ASC";
+
+        $stmt = $this->db->query($sql, [$hotelId, $hasta]);
+        $rows = $stmt ? $stmt->fetchAll() : [];
+        $resumen = [
+            'total' => 0,
+            'vencidos' => 0,
+            'hoy' => 0,
+            'proximos' => 0,
+            'con_conflictos' => 0,
+            'habitacion_no_disponible' => 0,
+            'candidatos' => 0,
+        ];
+
+        foreach ($rows as &$row) {
+            $fecha = (string)($row['fecha_programada'] ?? '');
+            $conflictos = (int)($row['reservaciones_conflicto'] ?? 0);
+            $estadoHabitacion = (string)($row['habitacion_estado'] ?? '');
+            $advertencias = [];
+
+            if ($fecha < $hoy) {
+                $row['categoria_preview'] = 'vencido';
+                $advertencias[] = 'Fecha programada vencida';
+                $resumen['vencidos']++;
+            } elseif ($fecha === $hoy) {
+                $row['categoria_preview'] = 'hoy';
+                $advertencias[] = 'Programado para hoy';
+                $resumen['hoy']++;
+            } else {
+                $row['categoria_preview'] = 'proximo';
+                $advertencias[] = 'Programado proximamente';
+                $resumen['proximos']++;
+            }
+
+            if ($estadoHabitacion !== 'disponible') {
+                $advertencias[] = 'Habitacion en estado ' . ($estadoHabitacion ?: 'desconocido');
+                $resumen['habitacion_no_disponible']++;
+            }
+
+            if ($conflictos > 0) {
+                $advertencias[] = 'Reservaciones conflictivas: ' . $conflictos;
+                $resumen['con_conflictos']++;
+            }
+
+            $row['preview_candidato'] = ($fecha <= $hoy && $estadoHabitacion === 'disponible' && $conflictos === 0);
+            if ($row['preview_candidato']) {
+                $advertencias[] = 'Candidato revisable; no se activa automaticamente';
+                $resumen['candidatos']++;
+            } else {
+                $advertencias[] = 'Solo lectura; requiere revision manual';
+            }
+
+            $row['preview_advertencias'] = $advertencias;
+            $resumen['total']++;
+        }
+        unset($row);
+
+        return [
+            'dias' => $dias,
+            'desde' => $hoy,
+            'hasta' => $hasta,
+            'resumen' => $resumen,
+            'registros' => $rows,
+        ];
+    }
     
     /**
      * Finalizar mantenimiento

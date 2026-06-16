@@ -773,3 +773,14 @@
   una pantalla de automatizacion.
 - `activarMantenimientosPendientes()` queda congelado hasta una fase posterior con QA
   manual explicita.
+
+## Decision MANT-D-A
+
+- El preview vive en `/reportes/mantenimiento-programado` porque es observacion y no
+  accion operativa.
+- `Mantenimiento::previewProgramados()` centraliza el scope `hotel_id` y los motivos de
+  bloqueo para evitar reglas duplicadas en la vista.
+- La vista puede decir "candidato", pero no puede activar ni presentar POST.
+- Las reservaciones solo se consultan como senal de conflicto; no se modifican.
+- Cualquier automatizacion futura debe abrir contrato separado antes de llamar
+  `activarMantenimientosPendientes()`.

@@ -883,3 +883,16 @@ Estado: `CONTRATO_MANT_D_0_PREVIEW_VENCIDOS_COMPLETADO`.
 - Define preview read-only de mantenimientos programados vencidos/proximos.
 - No modifica codigo ni DB.
 - No autoriza activacion automatica.
+
+## Checkpoint tecnico MANT-D-A
+
+Estado: `PREVIEW_MANT_D_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_D_A_preview_mantenimiento_programado.md`.
+- Ruta GET/read-only agregada en `/reportes/mantenimiento-programado`.
+- Modelo `Mantenimiento::previewProgramados()` calcula vencidos/proximos, conflictos y
+  candidatos por `hotel_id`.
+- Health y preflight MANT-D-A validan ausencia de POST, ausencia de activacion automatica
+  y `/api/sync` bloqueado.
+- No hay escrituras, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- QA manual queda diferida.

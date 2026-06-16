@@ -879,3 +879,14 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-mant): define overdue maintenance preview contract`.
 - DB: no aplica; MANT-D-0 no crea rutas, migraciones ni datos.
 - Codigo: no aplica.
+
+### MANT-D-A preview mantenimiento programado
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-mant): add overdue maintenance preview`.
+- DB: no aplica; MANT-D-A no crea migraciones ni escribe datos.
+- El rollback retiraria ruta GET `/reportes/mantenimiento-programado`, accion de
+  `ReportesController`, metodo `Mantenimiento::previewProgramados()`, vista, enlace en
+  reportes y checks de health/preflight.
+- No tocar registros reales de `mantenimientos_habitaciones`, `habitaciones`,
+  reservaciones, Caja ni `/api/sync`.
