@@ -980,3 +980,12 @@ Estado: `PREVIEW_MANT_D_A_COMPLETADO_QA_DIFERIDA`.
 - Checkers confirman `ERROR: 0` y `/api/sync` bloqueado en codigo.
 - Riesgo residual: QA manual diferida y warning historico de 1 habitacion en
   mantenimiento sin registro activo.
+
+## Auditoria MANT-D-F
+
+Estado: `BLOQUE_MANT_D_PREVIEW_VENCIDOS_CERRADO_QA_DIFERIDA`.
+
+- Revision de cierre sin hallazgos bloqueantes.
+- Health y preflight validan que MANT-D-A sigue GET/read-only.
+- No se agregan nuevas acciones ni automatizaciones en el cierre.
+- Riesgo residual: QA manual diferida y warning historico documentado.

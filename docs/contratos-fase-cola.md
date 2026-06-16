@@ -1170,3 +1170,13 @@ Estado formal vigente: `PREVIEW_MANT_D_A_COMPLETADO_QA_DIFERIDA`.
 - No cambia habitaciones, no crea tareas, no agrega cron ni automatizaciones.
 - No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - Siguiente accion segura: cierre tecnico documental MANT-D o QA manual diferida.
+
+### Estado MANT-D-F
+
+Estado formal vigente: `BLOQUE_MANT_D_PREVIEW_VENCIDOS_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_D_F_cierre_preview_vencidos.md`.
+- Cierra tecnicamente el preview read-only de vencidos/proximos.
+- No agrega funcionalidades nuevas.
+- No autoriza activacion manual ni automatica.
+- Siguiente bloque debe iniciar con contrato independiente.

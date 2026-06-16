@@ -896,3 +896,15 @@ Estado: `PREVIEW_MANT_D_A_COMPLETADO_QA_DIFERIDA`.
   y `/api/sync` bloqueado.
 - No hay escrituras, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - QA manual queda diferida.
+
+## Cierre tecnico MANT-D-F
+
+Estado: `BLOQUE_MANT_D_PREVIEW_VENCIDOS_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_D_F_cierre_preview_vencidos.md`.
+- Revision tecnica y auditoria completadas para el preview read-only.
+- Verificaciones automaticas pasan con `ERROR: 0`.
+- No se agregan funcionalidades nuevas.
+- No hay activacion manual/automatica, cron, escrituras, Caja, pagos, abonos, nomina,
+  offline ni `/api/sync`.
+- QA manual queda diferida.

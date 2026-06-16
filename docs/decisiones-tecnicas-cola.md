@@ -784,3 +784,11 @@
 - Las reservaciones solo se consultan como senal de conflicto; no se modifican.
 - Cualquier automatizacion futura debe abrir contrato separado antes de llamar
   `activarMantenimientosPendientes()`.
+
+## Decision MANT-D-F
+
+- El bloque se cierra sin evolucionar a activacion porque el siguiente paso ya seria una
+  escritura operativa sobre mantenimiento/habitaciones.
+- La QA manual queda diferida, pero no bloquea el cierre tecnico del preview read-only.
+- La activacion manual o automatica debe iniciar con contrato independiente y pruebas
+  manuales explicitas.

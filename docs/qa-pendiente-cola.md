@@ -1120,3 +1120,9 @@ instruccion del usuario.
 - Confirmar HTTP sin sesion.
 - Confirmar que Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.
 - Estado tecnico actual: `PREVIEW_MANT_D_A_COMPLETADO_QA_DIFERIDA`.
+
+### Estado MANT-D-F
+
+- Bloque preview mantenimiento programado cerrado tecnicamente.
+- QA manual sigue diferida por instruccion del usuario.
+- No avanzar a activacion manual/automatica sin contrato separado y QA explicita.

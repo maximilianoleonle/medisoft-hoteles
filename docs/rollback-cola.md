@@ -890,3 +890,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   reportes y checks de health/preflight.
 - No tocar registros reales de `mantenimientos_habitaciones`, `habitaciones`,
   reservaciones, Caja ni `/api/sync`.
+
+### MANT-D-F cierre tecnico preview vencidos
+
+- Rollback documental: revertir el commit
+  `docs(phase-mant): close overdue maintenance preview`.
+- DB: no aplica; es cierre documental.
+- Mantener intacto MANT-D-A salvo que se revierta su commit especifico.

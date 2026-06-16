@@ -894,3 +894,12 @@ agregar funcionalidades nuevas.
 - QA manual queda diferida por instruccion del usuario.
 - Siguiente accion segura: cierre tecnico documental MANT-D o nuevo contrato
   independiente.
+
+## Cierre tecnico MANT-D-F
+
+- Estado formal: `BLOQUE_MANT_D_PREVIEW_VENCIDOS_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_MANT_D_F_cierre_preview_vencidos.md`.
+- Revision tecnica/auditoria del preview read-only completadas.
+- No agrega activacion, cron, escrituras, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.
+- Siguiente accion segura: contrato independiente para la proxima fase.

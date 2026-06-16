@@ -1001,3 +1001,13 @@ Resultado MANT-D-A:
 - No se llama `activarMantenimientosPendientes()`.
 - No hay migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - QA manual queda diferida.
+
+Resultado MANT-D-F:
+
+- Estado tecnico: `BLOQUE_MANT_D_PREVIEW_VENCIDOS_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_MANT_D_F_cierre_preview_vencidos.md`.
+- Se cierra tecnicamente el preview read-only de mantenimientos vencidos/proximos.
+- Verificaciones automaticas pasan con `ERROR: 0`.
+- Warning residual historico documentado.
+- No se agregan nuevas funcionalidades ni activaciones.
+- Siguiente paso recomendado: contrato independiente antes de activar mantenimientos.
