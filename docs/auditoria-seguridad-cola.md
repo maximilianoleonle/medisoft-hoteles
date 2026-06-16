@@ -1021,3 +1021,15 @@ Estado: `BLOQUE_MANT_E_ACTIVACION_MANUAL_CERRADO_QA_DIFERIDA`.
 - Health y preflight validan que el POST es individual, con CSRF/permiso y sin Caja.
 - Riesgo residual: QA manual real pendiente y warning historico documentado.
 - No se autoriza activacion automatica ni masiva.
+
+## Auditoria MANT-G-0
+
+Estado: `CONTRATO_MANT_G_0_TAREAS_DESDE_MANTENIMIENTO_COMPLETADO`.
+
+- Contrato documental sin cambios de codigo ni DB.
+- Riesgo principal: que una tarea vinculada se interprete como fuente de disponibilidad.
+- Mitigacion: el contrato fija que tareas solo son seguimiento operativo.
+- Riesgo principal futuro: duplicar tareas para un mismo mantenimiento.
+- Mitigacion futura: validacion por `hotel_id`, `mantenimiento_id`, estado y origen antes
+  de crear.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.

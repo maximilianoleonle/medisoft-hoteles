@@ -1158,3 +1158,16 @@ instruccion del usuario.
 - QA manual real sigue pendiente con backup previo.
 - No avanzar a activacion automatica, cron ni acciones masivas hasta completar QA y abrir
   contrato nuevo.
+
+### Estado MANT-G-0
+
+- Contrato de integracion tareas desde mantenimiento completado.
+- No requiere QA de navegador porque no agrega codigo ni rutas.
+- QA futura MANT-G-A:
+  - confirmar estado vacio de tareas vinculadas a mantenimiento;
+  - confirmar que solo aparecen tareas del hotel actual;
+  - si se autoriza creacion manual, crear una tarea desde mantenimiento controlado;
+  - confirmar `mantenimiento_id` correcto en la tarea;
+  - confirmar que no cambia `habitaciones.estado`;
+  - confirmar que no cambia `mantenimientos_habitaciones.estado`;
+  - confirmar que no hay Caja, pagos, abonos, nomina ni cambios en `/api/sync`.

@@ -817,3 +817,13 @@
 - QA manual queda diferida por instruccion del usuario, pero debe existir antes de
   considerar estable el flujo operativo con datos reales.
 - Cualquier cron, activacion masiva o dashboard automation requiere contrato separado.
+
+## Decision MANT-G-0
+
+- La integracion entre mantenimiento y tareas no se implementa como automatismo.
+- `mantenimientos_habitaciones` conserva autoridad sobre mantenimiento y
+  `habitaciones` conserva autoridad sobre disponibilidad.
+- `tareas_operativas.mantenimiento_id` se reconoce como enlace tecnico existente, pero
+  no se usa desde la creacion manual actual sin fase separada.
+- La siguiente fase debe iniciar por lectura contextual o creacion manual explicita,
+  nunca por cron o creacion automatica al activar mantenimiento.

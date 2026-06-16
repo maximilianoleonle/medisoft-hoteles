@@ -1044,3 +1044,15 @@ Resultado MANT-E-F:
 - Verificaciones automaticas pasan con `ERROR: 0`.
 - QA manual real queda pendiente con backup previo.
 - No se autoriza activacion automatica ni masiva.
+
+Resultado MANT-G-0:
+
+- Estado tecnico: `CONTRATO_MANT_G_0_TAREAS_DESDE_MANTENIMIENTO_COMPLETADO`.
+- Documento: `docs/fase_MANT_G_0_contrato_tareas_desde_mantenimiento.md`.
+- Se diagnostica que `tareas_operativas` ya puede referenciar
+  `mantenimientos_habitaciones` mediante `mantenimiento_id`.
+- La creacion manual actual de tareas no llena `mantenimiento_id`, por lo que la
+  integracion queda como contrato futuro y no como funcionalidad existente.
+- No se modifica codigo, DB, rutas, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- Siguiente paso recomendado: MANT-G-A con lectura contextual o creacion manual
+  estrictamente controlada desde mantenimiento.

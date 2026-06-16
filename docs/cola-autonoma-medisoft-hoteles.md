@@ -931,3 +931,14 @@ agregar funcionalidades nuevas.
 - No agrega activacion automatica, cron, acciones masivas, Caja, pagos, abonos, nomina,
   offline ni `/api/sync`.
 - Siguiente accion segura: contrato independiente.
+
+## Contrato MANT-G-0 tareas desde mantenimiento
+
+- Estado formal: `CONTRATO_MANT_G_0_TAREAS_DESDE_MANTENIMIENTO_COMPLETADO`.
+- Documento creado: `docs/fase_MANT_G_0_contrato_tareas_desde_mantenimiento.md`.
+- No modifica codigo ni DB.
+- Define como futura integracion que `tareas_operativas` pueda dar seguimiento a un
+  mantenimiento mediante `mantenimiento_id`.
+- No autoriza automatizacion, cron, cambios de disponibilidad, Caja, pagos, abonos,
+  nomina, offline ni `/api/sync`.
+- Siguiente accion segura: `[COLA_MANT_G_A_TAREAS_CONTEXTUALES_MANTENIMIENTO]`.

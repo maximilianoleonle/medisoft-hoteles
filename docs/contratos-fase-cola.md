@@ -1212,3 +1212,17 @@ Estado formal vigente: `BLOQUE_MANT_E_ACTIVACION_MANUAL_CERRADO_QA_DIFERIDA`.
 - No agrega funcionalidades nuevas.
 - QA manual real sigue pendiente.
 - No autoriza activacion automatica, cron ni activacion masiva.
+
+### Estado MANT-G-0
+
+Estado formal vigente: `CONTRATO_MANT_G_0_TAREAS_DESDE_MANTENIMIENTO_COMPLETADO`.
+
+- Documento: `docs/fase_MANT_G_0_contrato_tareas_desde_mantenimiento.md`.
+- Define integracion futura entre mantenimiento y tareas operativas.
+- `mantenimientos_habitaciones` sigue siendo fuente de verdad de mantenimiento.
+- `habitaciones` sigue siendo fuente de verdad de disponibilidad.
+- `tareas_operativas.mantenimiento_id` ya existe, pero la creacion manual actual no lo
+  llena.
+- No implementa rutas, POST, migraciones, automatizaciones ni escrituras.
+- Siguiente accion segura: MANT-G-A lectura contextual o creacion manual controlada de
+  tarea vinculada a mantenimiento.

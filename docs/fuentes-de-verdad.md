@@ -453,3 +453,13 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   - `logs_auditoria` y `notificaciones` como trazabilidad no financiera.
 - `reservaciones` y `reservacion_habitaciones` solo se leen para bloquear conflictos.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.
+
+### MANT-G-0 tareas desde mantenimiento
+
+- No crea fuente nueva.
+- `mantenimientos_habitaciones` sigue siendo fuente de verdad de mantenimiento.
+- `habitaciones` sigue siendo fuente de verdad de disponibilidad.
+- `tareas_operativas` y `tarea_eventos` son seguimiento operativo.
+- `tareas_operativas.mantenimiento_id` es enlace contextual, no autorizacion para cambiar
+  estados de mantenimiento o habitacion.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.

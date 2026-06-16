@@ -921,3 +921,11 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-mant): close manual maintenance activation block`.
 - DB: no aplica; es cierre documental.
 - Mantener intacto MANT-E-A salvo que se revierta su commit especifico.
+
+### MANT-G-0 contrato tareas desde mantenimiento
+
+- Rollback documental: revertir el commit
+  `docs(phase-mant): define maintenance task linkage contract`.
+- DB: no aplica; MANT-G-0 no crea migraciones, rutas, modelos ni datos.
+- Codigo: no aplica.
+- No borrar ni modificar tareas, mantenimientos o habitaciones.

@@ -940,3 +940,14 @@ Estado: `BLOQUE_MANT_E_ACTIVACION_MANUAL_CERRADO_QA_DIFERIDA`.
 - No hay activacion automatica, cron, acciones masivas, Caja, pagos, abonos, nomina,
   offline ni `/api/sync`.
 - QA manual real queda diferida.
+
+## Contrato tecnico MANT-G-0
+
+Estado: `CONTRATO_MANT_G_0_TAREAS_DESDE_MANTENIMIENTO_COMPLETADO`.
+
+- Documento: `docs/fase_MANT_G_0_contrato_tareas_desde_mantenimiento.md`.
+- Contrato documental para una integracion futura entre mantenimiento y tareas.
+- No agrega codigo, rutas, migraciones, formularios ni escrituras.
+- No automatiza tareas al activar mantenimiento.
+- No hay Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- Siguiente accion segura: MANT-G-A con alcance reducido y verificable.
