@@ -169,6 +169,57 @@ class TareaOperativa extends Model
         return $stmt ? ($stmt->fetchAll() ?: []) : [];
     }
 
+    public function listarPorEntidadHotel(int $hotelId, string $entidad, int $entidadId, int $limite = 10): array
+    {
+        if ($hotelId <= 0 || $entidadId <= 0 || !$this->tablaDisponible()) {
+            return [];
+        }
+
+        $columnas = [
+            'habitacion' => 't.habitacion_id',
+            'trabajador' => 't.trabajador_id',
+        ];
+
+        if (!isset($columnas[$entidad])) {
+            return [];
+        }
+
+        $limite = max(1, min(30, $limite));
+        $stmt = $this->db->query(
+            "SELECT t.id,
+                    t.hotel_id,
+                    t.categoria,
+                    t.titulo,
+                    t.prioridad,
+                    t.estado,
+                    t.habitacion_id,
+                    t.trabajador_id,
+                    t.fecha_programada,
+                    t.fecha_limite,
+                    t.fecha_inicio,
+                    t.fecha_cierre,
+                    t.origen,
+                    t.created_at,
+                    h.numero AS habitacion_numero,
+                    tr.nombre_completo AS trabajador_nombre
+             FROM tareas_operativas t
+             LEFT JOIN habitaciones h
+                ON h.id = t.habitacion_id
+               AND h.hotel_id = t.hotel_id
+             LEFT JOIN trabajadores tr
+                ON tr.id = t.trabajador_id
+               AND tr.hotel_id = t.hotel_id
+             WHERE t.hotel_id = ?
+               AND {$columnas[$entidad]} = ?
+             ORDER BY FIELD(t.estado, 'en_proceso', 'asignada', 'pendiente', 'completada', 'cancelada'),
+                      COALESCE(t.fecha_limite, t.fecha_programada, t.created_at) DESC
+             LIMIT {$limite}",
+            [$hotelId, $entidadId]
+        );
+
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
     public function resumenPorHotel(int $hotelId): array
     {
         $base = [

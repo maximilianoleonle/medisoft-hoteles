@@ -3,6 +3,7 @@ $trabajador = $trabajador ?? [];
 $resumenLedger = $resumenLedger ?? [];
 $asistenciasRecientes = $asistenciasRecientes ?? [];
 $ledgerDisponible = $ledgerDisponible ?? [];
+$tareasContextuales = is_array($tareasContextuales ?? null) ? $tareasContextuales : [];
 
 if (!function_exists('trab_view_safe')) {
     function trab_view_safe($value, $fallback = '-')
@@ -257,6 +258,14 @@ $trabajadorId = (int)($trabajador['id'] ?? 0);
                     Lectura tecnica de tablas Personal base; sin acciones operativas en esta fase.
                 </div>
             </div>
+        </div>
+
+        <div class="mb-4">
+            <?php
+            $tituloTareasContextuales = 'Tareas asignadas';
+            $subtituloTareasContextuales = 'Tareas operativas vinculadas a este trabajador. No representan asistencia ni pago.';
+            include __DIR__ . '/../tareas/_contextual_list.php';
+            ?>
         </div>
 
         <div class="worker-panel overflow-hidden">

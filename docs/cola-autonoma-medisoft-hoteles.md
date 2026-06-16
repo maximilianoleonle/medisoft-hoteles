@@ -469,3 +469,23 @@ Siguiente cola exacta recomendada:
 
 Mostrar tareas relacionadas en fichas de habitacion y trabajador, sin crear nuevos POST y
 sin automatizar disponibilidad.
+
+## Contexto visual TLM-F
+
+- Estado formal: `CONTEXTUAL_TLM_F_COMPLETADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_TLM_F_contextual_tareas.md`.
+- Se agrego lectura contextual de tareas desde habitacion y trabajador.
+- La integracion es read-only y reutiliza `GET /tareas/{id}` para detalle.
+- No agrega rutas, POST, migraciones ni escrituras.
+- No cambia disponibilidad, mantenimiento historico, Caja, pagos, abonos, nomina ni
+  `/api/sync`.
+- QA manual queda diferida.
+
+## Siguiente accion
+
+Siguiente cola exacta recomendada:
+
+`[COLA_TLM_G_HEALTH_PREFLIGHTS]`
+
+Agregar validaciones de consistencia para tareas operativas y eventos, sin crear
+funcionalidad nueva ni tocar disponibilidad de habitaciones.

@@ -5,16 +5,19 @@ require_once __DIR__ . '/../../core/View.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
 require_once __DIR__ . '/../helpers/modulos.php';
 require_once __DIR__ . '/../models/Trabajador.php';
+require_once __DIR__ . '/../models/TareaOperativa.php';
 require_once __DIR__ . '/../services/AuditService.php';
 
 class TrabajadorController extends Controller
 {
     private $trabajadorModel;
+    private $tareaModel;
 
     public function __construct($route_params = [])
     {
         parent::__construct($route_params);
         $this->trabajadorModel = new Trabajador();
+        $this->tareaModel = new TareaOperativa();
     }
 
     protected function before()
@@ -73,6 +76,7 @@ class TrabajadorController extends Controller
             'resumenLedger' => $this->trabajadorModel->resumenLedgerPorTrabajador($id, $hotelId),
             'asistenciasRecientes' => $this->trabajadorModel->ultimosMovimientosPorTrabajador($id, $hotelId, 20),
             'ledgerDisponible' => $this->trabajadorModel->tablasLedgerDisponibles(),
+            'tareasContextuales' => $this->tareaModel->listarPorEntidadHotel($hotelId, 'trabajador', $id, 8),
         ]);
     }
 

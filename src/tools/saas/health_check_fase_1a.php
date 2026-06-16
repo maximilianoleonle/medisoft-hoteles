@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-B-A/TLM-E.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-B-A/TLM-F.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -552,7 +552,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A-4D/NP-B-A/TLM-E - Medisoft Hoteles\n";
+echo "Health check Fase 1A-4D/NP-B-A/TLM-F - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -2486,10 +2486,10 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($missingTaskRoutes)) {
-        hcOk('Rutas TLM-E registradas: listado, formulario, alta, asignacion, estados manuales y detalle.');
+        hcOk('Rutas TLM-F conservadas: listado, formulario, alta, asignacion, estados manuales y detalle.');
     } else {
         hcWarning(
-            'Rutas TLM-E faltantes: ' . implode(', ', $missingTaskRoutes),
+            'Rutas TLM-F faltantes: ' . implode(', ', $missingTaskRoutes),
             'Registrar rutas de listado, formulario, alta, asignacion, iniciar, completar, cancelar y detalle.'
         );
     }
@@ -2518,10 +2518,10 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($forbiddenTaskRoutes)) {
-        hcOk('TLM-E mantiene solo rutas autorizadas: GET listado/form/detalle y POST crear/asignar/estado.');
+        hcOk('TLM-F mantiene solo rutas autorizadas; no agrega POST contextual nuevo.');
     } else {
         hcError(
-            'TLM-E tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenTaskRoutes),
+            'TLM-F tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenTaskRoutes),
             'Retirar rutas de tareas fuera del contrato listado/form/alta/asignacion/estados/detalle.'
         );
     }
@@ -2843,6 +2843,7 @@ if (!is_file($routesPath)) {
     $taskIndexViewPath = $appRoot . '/app/views/tareas/index.php';
     $taskDetailViewPath = $appRoot . '/app/views/tareas/ver.php';
     $taskFormViewPath = $appRoot . '/app/views/tareas/form.php';
+    $taskPartialViewPath = $appRoot . '/app/views/tareas/_contextual_list.php';
 
     if (is_file($taskModelPath) && is_file($taskControllerPath)) {
         $taskModelCode = (string) file_get_contents($taskModelPath);
@@ -2859,10 +2860,10 @@ if (!is_file($routesPath)) {
             && strpos($taskModelCode, 'tr.hotel_id = t.hotel_id') !== false
             && strpos($taskModelCode, 'm.hotel_id = t.hotel_id') !== false
         ) {
-            hcOk('TareaOperativa model TLM-E consulta tareas con aislamiento hotel_id y joins scoped.');
+            hcOk('TareaOperativa model TLM-F consulta tareas con aislamiento hotel_id y joins scoped.');
         } else {
             hcWarning(
-                'TareaOperativa model TLM-E no muestra contrato de consulta completo.',
+                'TareaOperativa model TLM-F no muestra contrato de consulta completo.',
                 'Usar tareas_operativas con hotel_id, detalle por id+hotel y joins por el mismo hotel.'
             );
         }
@@ -2879,10 +2880,10 @@ if (!is_file($routesPath)) {
             && strpos($taskModelCode, "'manual'") !== false;
 
         if ($taskHasManualCreate) {
-            hcOk('TLM-E modelo conserva alta manual atomica con evento inicial, hotel_id y origen manual.');
+            hcOk('TLM-F modelo conserva alta manual atomica con evento inicial, hotel_id y origen manual.');
         } else {
             hcWarning(
-                'TLM-E modelo no muestra alta manual segura completa.',
+                'TLM-F modelo no muestra alta manual segura completa.',
                 'Validar INSERT controlado en tareas_operativas/tarea_eventos, transaccion y habitacion del mismo hotel.'
             );
         }
@@ -2900,10 +2901,10 @@ if (!is_file($routesPath)) {
             && strpos($taskModelCode, 'safeRollBack') !== false;
 
         if ($taskHasAssignment) {
-            hcOk('TLM-E modelo conserva asignacion atomica a trabajador activo del mismo hotel.');
+            hcOk('TLM-F modelo conserva asignacion atomica a trabajador activo del mismo hotel.');
         } else {
             hcWarning(
-                'TLM-E modelo no muestra asignacion segura completa.',
+                'TLM-F modelo no muestra asignacion segura completa.',
                 'Validar UPDATE scoped por id+hotel, trabajador activo del mismo hotel, transaccion y evento asignada.'
             );
         }
@@ -2920,11 +2921,25 @@ if (!is_file($routesPath)) {
             && preg_match('/INSERT\s+INTO\s+tarea_eventos/i', $taskModelCode);
 
         if ($taskHasStateChanges) {
-            hcOk('TLM-E modelo permite iniciar/completar/cancelar con transicion manual y evento.');
+            hcOk('TLM-F modelo conserva iniciar/completar/cancelar con transicion manual y evento.');
         } else {
             hcWarning(
-                'TLM-E modelo no muestra transiciones manuales completas.',
+                'TLM-F modelo no muestra transiciones manuales completas.',
                 'Validar iniciar/completar/cancelar con UPDATE scoped, evento y sin cambios de habitacion.'
+            );
+        }
+
+        if (
+            strpos($taskModelCode, 'function listarPorEntidadHotel') !== false
+            && strpos($taskModelCode, "'habitacion' => 't.habitacion_id'") !== false
+            && strpos($taskModelCode, "'trabajador' => 't.trabajador_id'") !== false
+            && strpos($taskModelCode, 'WHERE t.hotel_id = ?') !== false
+        ) {
+            hcOk('TLM-F modelo expone consulta contextual por habitacion/trabajador con hotel_id.');
+        } else {
+            hcWarning(
+                'TLM-F modelo no muestra consulta contextual completa.',
+                'Agregar lectura por entidad con hotel_id; sin nuevas escrituras.'
             );
         }
 
@@ -2933,10 +2948,10 @@ if (!is_file($routesPath)) {
             || preg_match('/INSERT\s+INTO\s+(habitaciones|mantenimientos_habitaciones|movimientos_caja|cajas|cortes_caja)\b/i', $taskCode);
 
         if (!$taskForbiddenWrite) {
-            hcOk('TLM-E no contiene escrituras fuera de tareas_operativas/tarea_eventos ni toca habitaciones, mantenimiento o Caja.');
+            hcOk('TLM-F no contiene escrituras fuera de tareas_operativas/tarea_eventos ni toca habitaciones, mantenimiento o Caja.');
         } else {
             hcError(
-                'TLM-E contiene escrituras fuera de alcance.',
+                'TLM-F contiene escrituras fuera de alcance.',
                 'Permitir solo INSERT/UPDATE controlado en tareas_operativas y eventos; sin DELETE ni Caja.'
             );
         }
@@ -2961,25 +2976,26 @@ if (!is_file($routesPath)) {
             && strpos($taskControllerCode, 'tareas/form') !== false
             && strpos($taskControllerCode, 'tareas/ver') !== false
         ) {
-            hcOk('TareaController TLM-E expone listado/form/alta/asignacion/estados/detalle con guardas, CSRF y auditoria.');
+            hcOk('TareaController TLM-F expone listado/form/alta/asignacion/estados/detalle con guardas, CSRF y auditoria.');
         } else {
             hcWarning(
-                'TareaController TLM-E no muestra guardas o acciones completas.',
+                'TareaController TLM-F no muestra guardas o acciones completas.',
                 'Validar requireAuth, hotel, modulo habitaciones, permisos, CSRF y acciones index/crear/guardar/asignar/iniciar/completar/cancelar/ver.'
             );
         }
     } else {
         hcWarning(
-            'Faltan archivos TLM-E.',
+            'Faltan archivos TLM-F.',
             'Crear TareaOperativa.php y TareaController.php solo si la subfase de estados manuales esta autorizada.'
         );
     }
 
-    if (is_file($taskIndexViewPath) && is_file($taskDetailViewPath) && is_file($taskFormViewPath)) {
+    if (is_file($taskIndexViewPath) && is_file($taskDetailViewPath) && is_file($taskFormViewPath) && is_file($taskPartialViewPath)) {
         $taskIndexViewCode = (string) file_get_contents($taskIndexViewPath);
         $taskDetailViewCode = (string) file_get_contents($taskDetailViewPath);
         $taskFormViewCode = (string) file_get_contents($taskFormViewPath);
-        $taskViewsCode = $taskIndexViewCode . "\n" . $taskDetailViewCode . "\n" . $taskFormViewCode;
+        $taskPartialViewCode = (string) file_get_contents($taskPartialViewPath);
+        $taskViewsCode = $taskIndexViewCode . "\n" . $taskDetailViewCode . "\n" . $taskFormViewCode . "\n" . $taskPartialViewCode;
 
         if (
             strpos($taskIndexViewCode, "action=\"<?= url('tareas') ?>\"") !== false
@@ -3002,17 +3018,69 @@ if (!is_file($routesPath)) {
             && strpos($taskViewsCode, 'movimientos_caja') === false
             && strpos($taskViewsCode, "action=\"<?= url('habitaciones") === false
         ) {
-            hcOk('Vistas TLM-E muestran filtros GET, alta/asignacion/estados manuales con CSRF sin Caja.');
+            hcOk('Vistas TLM-F muestran filtros GET, alta/asignacion/estados manuales con CSRF sin Caja.');
         } else {
             hcWarning(
-                'Vistas TLM-E no muestran contrato visual completo.',
+                'Vistas TLM-F no muestran contrato visual completo.',
                 'Asegurar filtros GET, POST /tareas, asignacion y estados manuales con CSRF y sin acciones de habitacion/Caja.'
+            );
+        }
+
+        if (
+            strpos($taskPartialViewCode, 'tareasContextuales') !== false
+            && strpos($taskPartialViewCode, "url('tareas/'") !== false
+            && strpos($taskPartialViewCode, 'method="POST"') === false
+            && strpos($taskPartialViewCode, 'csrf_field()') === false
+            && strpos($taskPartialViewCode, 'storage_path') === false
+        ) {
+            hcOk('Partial TLM-F contextual es read-only y enlaza al detalle de tareas.');
+        } else {
+            hcWarning(
+                'Partial TLM-F contextual no parece read-only completo.',
+                'Mantenerlo sin formularios ni acciones; solo metadata y enlaces.'
+            );
+        }
+
+        $habitacionControllerPath = $controllersDir . '/HabitacionController.php';
+        $habitacionViewPathTlm = $appRoot . '/app/views/habitaciones/ver.php';
+        $habitacionControllerCode = is_file($habitacionControllerPath) ? (string) file_get_contents($habitacionControllerPath) : '';
+        $habitacionViewCodeTlm = is_file($habitacionViewPathTlm) ? (string) file_get_contents($habitacionViewPathTlm) : '';
+        $workerControllerCodeForTasks = is_file($workerControllerPath) ? (string) file_get_contents($workerControllerPath) : '';
+        $workerDetailViewCodeForTasks = is_file($workerDetailViewPath) ? (string) file_get_contents($workerDetailViewPath) : '';
+
+        if (
+            strpos($habitacionControllerCode, 'TareaOperativa') !== false
+            && strpos($habitacionControllerCode, "listarPorEntidadHotel(\$hotelId, 'habitacion'") !== false
+            && strpos($habitacionControllerCode, "'tareas_contextuales'") !== false
+            && strpos($habitacionViewCodeTlm, '$tareas_contextuales') !== false
+            && strpos($habitacionViewCodeTlm, "_contextual_list.php") !== false
+        ) {
+            hcOk('Ficha Habitacion TLM-F integra tareas contextuales read-only por hotel.');
+        } else {
+            hcWarning(
+                'Ficha Habitacion TLM-F no muestra integracion contextual completa.',
+                'Cargar TareaOperativa::listarPorEntidadHotel(habitacion) desde el controlador y renderizar el partial read-only.'
+            );
+        }
+
+        if (
+            strpos($workerControllerCodeForTasks, 'TareaOperativa') !== false
+            && strpos($workerControllerCodeForTasks, "listarPorEntidadHotel(\$hotelId, 'trabajador'") !== false
+            && strpos($workerControllerCodeForTasks, "'tareasContextuales'") !== false
+            && strpos($workerDetailViewCodeForTasks, '$tareasContextuales') !== false
+            && strpos($workerDetailViewCodeForTasks, "_contextual_list.php") !== false
+        ) {
+            hcOk('Ficha Trabajador TLM-F integra tareas asignadas read-only por hotel.');
+        } else {
+            hcWarning(
+                'Ficha Trabajador TLM-F no muestra integracion contextual completa.',
+                'Cargar TareaOperativa::listarPorEntidadHotel(trabajador) desde el controlador y renderizar el partial read-only.'
             );
         }
     } else {
         hcWarning(
-            'Faltan vistas TLM-E.',
-            'Crear app/views/tareas/index.php, form.php y ver.php para alta/asignacion/estados controlados.'
+            'Faltan vistas TLM-F.',
+            'Crear app/views/tareas/index.php, form.php, ver.php y _contextual_list.php.'
         );
     }
 
@@ -3021,10 +3089,10 @@ if (!is_file($routesPath)) {
         && strpos($sidebarCode, "url('tareas')") !== false
         && strpos($sidebarCode, '$mostrarTareas') !== false
     ) {
-        hcOk('Sidebar registra Tareas TLM-E bajo operaciones con gate visual de limpieza/mantenimiento/habitaciones.');
+        hcOk('Sidebar registra Tareas TLM-F bajo operaciones con gate visual de limpieza/mantenimiento/habitaciones.');
     } else {
         hcWarning(
-            'Sidebar no muestra navegacion Tareas TLM-E.',
+            'Sidebar no muestra navegacion Tareas TLM-F.',
             'Agregar enlace GET /tareas bajo gate visual de limpieza/mantenimiento/habitaciones.'
         );
     }

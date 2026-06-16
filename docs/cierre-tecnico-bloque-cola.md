@@ -525,3 +525,17 @@ Estado: `ESTADOS_TLM_E_COMPLETADOS_QA_DIFERIDA`.
 - No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina, PWA/offline/cache
   ni `/api/sync`.
 - QA manual queda diferida por instruccion del usuario.
+
+## Contexto visual Fase TLM-F
+
+Estado: `CONTEXTUAL_TLM_F_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_TLM_F_contextual_tareas.md`.
+- Se implemento bloque contextual read-only en ficha de habitacion y trabajador.
+- No se agregaron rutas nuevas, POST nuevos, migraciones ni escrituras.
+- `TareaOperativa::listarPorEntidadHotel()` filtra por hotel y entidad permitida.
+- Health checker valida modelo, partial e integracion en ambas fichas.
+- No se cambio `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina, PWA/offline/cache
+  ni `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.

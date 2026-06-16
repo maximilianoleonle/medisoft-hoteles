@@ -576,3 +576,21 @@ Resultado TLM-E:
 - No se toco `/api/sync`.
 - QA manual queda diferida por instruccion del usuario.
 - Siguiente paso recomendado: TLM-F contexto visual de tareas en habitacion/trabajador.
+
+Resultado TLM-F:
+
+- Estado tecnico: `CONTEXTUAL_TLM_F_COMPLETADO_QA_DIFERIDA`.
+- Documento: `docs/fase_TLM_F_contextual_tareas.md`.
+- Se agrega lectura contextual de tareas por `habitacion` y `trabajador` en
+  `TareaOperativa::listarPorEntidadHotel()`.
+- La ficha de habitacion muestra tareas operativas vinculadas con estado vacio claro.
+- La ficha de trabajador muestra tareas asignadas con estado vacio claro.
+- No se agregan rutas nuevas ni POST nuevos.
+- No se crean, asignan, inician, completan ni cancelan tareas desde las fichas
+  contextuales.
+- No cambia `habitaciones.estado`.
+- No modifica `mantenimientos_habitaciones`.
+- No crea asistencia, pagos, abonos, nomina ni movimientos de Caja.
+- No se toco `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.
+- Siguiente paso recomendado: TLM-G health/preflights de consistencia de tareas.

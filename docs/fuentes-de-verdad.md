@@ -304,3 +304,7 @@ Reglas:
   `tarea_eventos`.
 - TLM-E no convierte completar/cancelar una tarea en cambio de disponibilidad de
   habitacion.
+- TLM-F muestra tareas contextuales desde habitacion/trabajador leyendo
+  `tareas_operativas` por `hotel_id`; no crea nuevas fuentes de datos.
+- La ficha de trabajador no es fuente de nomina: solo muestra tareas asignadas, sin
+  asistencia, pagos, abonos ni Caja.

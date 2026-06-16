@@ -471,3 +471,13 @@
 - Cada transicion registra evento tecnico y auditoria.
 - No se automatizan disponibilidad, notificaciones, Caja, pagos, abonos ni nomina.
 - `/api/sync` queda fuera de alcance.
+
+## Decision TLM-F contexto visual de tareas
+
+- La integracion contextual en habitacion/trabajador es read-only y reutiliza
+  `TareaOperativa::listarPorEntidadHotel()`.
+- No se agregan rutas nuevas ni POST nuevos.
+- El partial contextual no contiene formularios ni acciones de estado; solo metadata y
+  enlaces GET a detalle de tarea.
+- La ficha de trabajador no se convierte en modulo de nomina ni asistencia.
+- La ficha de habitacion no cambia disponibilidad ni mantenimiento por mostrar tareas.

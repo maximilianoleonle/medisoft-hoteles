@@ -585,6 +585,17 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - No revertir mediante cambios a `habitaciones.estado`.
 - No tocar `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
 
+### TLM-F contexto visual aplicado
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-tlm): show contextual operational tasks`.
+- DB: no ejecutar SQL; TLM-F no crea migraciones ni escribe datos.
+- Mantener intactas `tareas_operativas` y `tarea_eventos`; pertenecen a TLM-A.
+- No tocar `habitaciones.estado`, `mantenimientos_habitaciones`, Caja, pagos, abonos,
+  nomina ni `/api/sync`.
+- Si hay tareas reales existentes, no borrarlas; solo retirar la vista contextual si se
+  decide revertir.
+
 ### Reglas duras de rollback TLM
 
 - No tocar Caja, pagos, abonos ni nomina.

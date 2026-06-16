@@ -10,6 +10,7 @@ $proxima_salida = $proxima_salida ?? null;
 $historial_reciente = is_array($historial_reciente ?? null) ? $historial_reciente : [];
 $mantenimiento_actual = $mantenimiento_actual ?? null;
 $mantenimientos_programados = is_array($mantenimientos_programados ?? null) ? $mantenimientos_programados : [];
+$tareas_contextuales = is_array($tareas_contextuales ?? null) ? $tareas_contextuales : [];
 $reservacion_pendiente = $reservacion_pendiente ?? null;
 $estados = $estados ?? [];
 $tipos = $tipos ?? [];
@@ -3174,6 +3175,13 @@ $mantenimientos_count = count($mantenimientos_programados);
                         </div>
                     </section>
                 <?php endif; ?>
+
+                <?php
+                $tareasContextuales = $tareas_contextuales;
+                $tituloTareasContextuales = 'Tareas operativas';
+                $subtituloTareasContextuales = 'Tareas de limpieza, mantenimiento o seguimiento vinculadas a esta habitacion.';
+                include __DIR__ . '/../tareas/_contextual_list.php';
+                ?>
 
                 <?php if (!empty($mantenimientos_programados)): ?>
                     <section class="rd-panel rd-maint-card rd-section-maint">

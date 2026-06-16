@@ -1,4 +1,5 @@
 <?php require_once __DIR__ . '/../models/IncrementoTarifa.php';
+require_once __DIR__ . '/../models/TareaOperativa.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
 require_once __DIR__ . '/../services/NotificacionService.php';
 /**
@@ -9,11 +10,13 @@ require_once __DIR__ . '/../services/NotificacionService.php';
 class HabitacionController extends Controller {
     private $habitacionModel;
     private $habitacionImagenModel;
+    private $tareaModel;
     
     public function __construct($route_params) {
         parent::__construct($route_params);
         $this->habitacionModel = new Habitacion();
         $this->habitacionImagenModel = new HabitacionImagen();
+        $this->tareaModel = new TareaOperativa();
     }
     
     /**
@@ -616,6 +619,7 @@ error_log(print_r($ocupacion_actual, true));
         'historial_reciente' => $historial_reciente,
         'mantenimiento_actual' => $mantenimiento_actual,
         'mantenimientos_programados' => $mantenimientos_programados ?? [],
+        'tareas_contextuales' => $this->tareaModel->listarPorEntidadHotel($hotelId, 'habitacion', (int)$id, 8),
         'reservacion_pendiente' => $reservacion_pendiente,
         'estados' => Habitacion::getEstados(),
         'tipos' => $this->catalogoTiposHabitacion()

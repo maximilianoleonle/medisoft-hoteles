@@ -814,3 +814,16 @@ Estado formal vigente: `ESTADOS_TLM_E_COMPLETADOS_QA_DIFERIDA`.
 - No cambia `habitaciones.estado`.
 - No se toco `mantenimientos_habitaciones` ni `/api/sync`.
 - QA manual queda diferida por instruccion del usuario.
+
+### Estado TLM-F
+
+Estado formal vigente: `CONTEXTUAL_TLM_F_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_TLM_F_contextual_tareas.md`.
+- Integracion contextual read-only completada.
+- Fichas impactadas:
+  - `habitaciones/ver.php`;
+  - `trabajadores/ver.php`.
+- Consulta central: `TareaOperativa::listarPorEntidadHotel()`.
+- Sin rutas nuevas, sin POST nuevos y sin cambios de DB.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.

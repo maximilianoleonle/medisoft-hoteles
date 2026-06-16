@@ -744,3 +744,22 @@ instruccion del usuario.
 - Confirmar que no se modifica `mantenimientos_habitaciones`.
 - Confirmar que no se crean asistencia, pagos, abonos ni movimientos de Caja.
 - Confirmar bloqueo/redireccion sin sesion para iniciar/completar/cancelar.
+
+### Estado TLM-F
+
+- Integracion contextual read-only de tareas en fichas de habitacion y trabajador.
+- No agrega rutas ni POST nuevos.
+- QA manual diferida por instruccion del usuario.
+
+### QA manual diferida TLM-F
+
+- Abrir una habitacion sin tareas y confirmar estado vacio claro.
+- Abrir una habitacion con tarea vinculada y confirmar enlace a `/tareas/{id}`.
+- Abrir un trabajador sin tareas y confirmar estado vacio claro.
+- Asignar una tarea a un trabajador activo y confirmar que aparece en su ficha.
+- Confirmar que el bloque contextual no muestra formularios ni botones de asignar,
+  iniciar, completar o cancelar.
+- Confirmar que no cambia `habitaciones.estado`.
+- Confirmar que no se modifica `mantenimientos_habitaciones`.
+- Confirmar que no se crean asistencia, pagos, abonos, nomina ni movimientos de Caja.
+- Confirmar bloqueo/redireccion sin sesion en `/habitaciones/{id}` y `/trabajadores/{id}`.

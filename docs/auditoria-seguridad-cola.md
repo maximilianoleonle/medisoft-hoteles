@@ -567,3 +567,18 @@ Estado: `ESTADOS_TLM_E_COMPLETADOS_QA_DIFERIDA`.
 - No hay escrituras en Caja, pagos, abonos, nomina, asistencia ni `/api/sync`.
 - Riesgo residual: completar una tarea no libera habitaciones; esto debe quedar claro en
   QA manual.
+
+## Auditoria TLM-F contexto visual
+
+Estado: `CONTEXTUAL_TLM_F_COMPLETADO_QA_DIFERIDA`.
+
+- Integracion read-only en fichas de habitacion y trabajador.
+- No se agregan POST, formularios ni acciones operativas.
+- `TareaOperativa::listarPorEntidadHotel()` filtra por `hotel_id` y entidad permitida.
+- Los joins de habitacion/trabajador se hacen por el mismo `hotel_id`.
+- El partial contextual no expone `storage_path`, rutas internas ni acciones de Caja.
+- No cambia `habitaciones.estado`.
+- No modifica `mantenimientos_habitaciones`.
+- No crea asistencia, pagos, abonos, nomina ni movimientos de Caja.
+- Riesgo residual: confusion operativa entre tarea y mantenimiento. Mitigacion: textos
+  indican que el bloque es de tareas operativas y no altera disponibilidad.
