@@ -628,3 +628,13 @@ Estado: `LEDGER_LABORAL_NP_C_A_COMPLETADO_QA_DIFERIDA`.
 - No se crean pagos reales, abonos, movimientos de Caja ni categoria Nomina.
 - Riesgo residual: el usuario debe validar visualmente que el texto "saldo informativo"
   sea claro y que no parezca una accion de pago.
+
+## Auditoria NP-C-E preflight
+
+Estado: `PREFLIGHT_LEDGER_NP_C_E_COMPLETADO_QA_DIFERIDA`.
+
+- El preflight usa transaccion read-only y no corrige datos.
+- Valida integridad de hotel/trabajador en tablas `trabajador_*`.
+- Valida ausencia de rutas operativas de nomina/Caja bajo `/trabajadores`.
+- Valida ausencia de categoria `Nomina` en Caja.
+- No toca `/api/sync`.

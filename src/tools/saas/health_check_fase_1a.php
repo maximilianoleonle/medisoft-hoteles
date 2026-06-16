@@ -679,6 +679,13 @@ $operationalTasksPreflight = hcFindFirstExistingPath([
     dirname(getcwd()) . '/src/tools/saas/preflight_tareas_operativas.php',
     '/workspace/src/tools/saas/preflight_tareas_operativas.php',
 ]);
+$workerLedgerPreflight = hcFindFirstExistingPath([
+    $appRoot . '/tools/saas/preflight_personal_ledger.php',
+    $projectRoot . '/src/tools/saas/preflight_personal_ledger.php',
+    getcwd() . '/tools/saas/preflight_personal_ledger.php',
+    dirname(getcwd()) . '/src/tools/saas/preflight_personal_ledger.php',
+    '/workspace/src/tools/saas/preflight_personal_ledger.php',
+]);
 $purchaseServiceFile = hcFindFirstExistingPath([
     $appRoot . '/app/services/CompraService.php',
     $projectRoot . '/src/app/services/CompraService.php',
@@ -951,6 +958,32 @@ if ($operationalTasksPreflight && is_file($operationalTasksPreflight)) {
     hcWarning(
         'No existe preflight Fase TLM-G de tareas operativas.',
         'Crear src/tools/saas/preflight_tareas_operativas.php antes de automatizar tareas.'
+    );
+}
+
+if ($workerLedgerPreflight && is_file($workerLedgerPreflight)) {
+    $workerLedgerPreflightCode = (string) file_get_contents($workerLedgerPreflight);
+    if (
+        strpos($workerLedgerPreflightCode, 'Preflight Fase NP-C-A') !== false
+        && strpos($workerLedgerPreflightCode, 'Solo lectura') !== false
+        && strpos($workerLedgerPreflightCode, 'START TRANSACTION READ ONLY') !== false
+        && strpos($workerLedgerPreflightCode, 'trabajador_pagos') !== false
+        && strpos($workerLedgerPreflightCode, 'trabajador_anticipos') !== false
+        && strpos($workerLedgerPreflightCode, 'trabajador_prestamos') !== false
+        && strpos($workerLedgerPreflightCode, 'trabajador_asistencias') !== false
+        && strpos($workerLedgerPreflightCode, 'movimientos_caja') !== false
+    ) {
+        hcOk('Preflight Fase NP-C-A de ledger laboral existe y es solo lectura.');
+    } else {
+        hcWarning(
+            'Preflight Fase NP-C-A existe pero no declara todas las guardas esperadas.',
+            'Verificar solo lectura, tablas trabajador_*, aislamiento hotel_id y ausencia de Caja/Nomina.'
+        );
+    }
+} else {
+    hcWarning(
+        'No existe preflight Fase NP-C-A de ledger laboral.',
+        'Crear src/tools/saas/preflight_personal_ledger.php antes de habilitar escrituras laborales.'
     );
 }
 

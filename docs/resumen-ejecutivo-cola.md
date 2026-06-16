@@ -643,3 +643,13 @@ Resultado NP-C-A:
 - No se crean datos, pagos reales, abonos, movimientos de Caja ni categoria Nomina.
 - Health checker conoce NP-C-A.
 - Siguiente paso recomendado: preflight de consistencia NP-C antes de cualquier escritura.
+
+Resultado NP-C-E:
+
+- Estado tecnico: `PREFLIGHT_LEDGER_NP_C_E_COMPLETADO_QA_DIFERIDA`.
+- Documento: `docs/fase_NP_C_E_preflight_ledger.md`.
+- Nuevo preflight read-only: `src/tools/saas/preflight_personal_ledger.php`.
+- Health checker detecta el preflight de ledger laboral.
+- No agrega UI, rutas, POST, migraciones ni escrituras.
+- Siguiente paso recomendado: revision tecnica/auditoria/cierre de NP-C read-only o
+  contrato futuro para escrituras laborales sin Caja.

@@ -578,4 +578,13 @@ Estado: `LEDGER_LABORAL_NP_C_A_COMPLETADO_QA_DIFERIDA`.
 - Codigo read-only integrado en ficha de trabajador.
 - No hay rutas nuevas, POST, migraciones ni escrituras.
 - Caja, pagos reales, abonos, categoria Nomina y `/api/sync` siguen fuera de alcance.
+
+## Checkpoint tecnico NP-C-E
+
+Estado: `PREFLIGHT_LEDGER_NP_C_E_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_E_preflight_ledger.md`.
+- Nuevo preflight read-only de ledger laboral.
+- Health checker lo detecta.
+- Sin UI, rutas, POST, migraciones ni escrituras.
 - QA manual queda diferida por instruccion del usuario.

@@ -867,3 +867,12 @@ Estado formal vigente: `LEDGER_LABORAL_NP_C_A_COMPLETADO_QA_DIFERIDA`.
 - Se muestra ledger read-only en `GET /trabajadores/{id}`.
 - No agrega rutas, POST, migraciones ni escrituras.
 - Sin Caja, pagos reales, abonos, categoria Nomina ni `/api/sync`.
+
+### Estado NP-C-E
+
+Estado formal vigente: `PREFLIGHT_LEDGER_NP_C_E_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_E_preflight_ledger.md`.
+- Herramienta: `src/tools/saas/preflight_personal_ledger.php`.
+- Solo lectura; no agrega UI ni escrituras.
+- Valida tablas `trabajador_*` y ausencia de Caja/Nomina operativa.

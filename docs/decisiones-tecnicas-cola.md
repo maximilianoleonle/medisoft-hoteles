@@ -516,3 +516,9 @@
 - No se agregan botones operativos ni POST.
 - El saldo se etiqueta como informativo para evitar tratarlo como pago real.
 - Se mantienen vacios claros cuando las tablas `trabajador_*` no tienen registros.
+
+## Decision NP-C-E preflight
+
+- Se agrega preflight dedicado en vez de ampliar preflights de compras o tareas.
+- El checker falla ante inconsistencias estructurales y no corrige datos.
+- La ausencia de categoria Nomina en Caja se mantiene como condicion de seguridad.

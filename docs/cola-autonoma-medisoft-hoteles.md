@@ -539,3 +539,14 @@ agregar funcionalidades nuevas.
 - No toca Caja, pagos reales, abonos, categoria Nomina ni `/api/sync`.
 - Siguiente accion segura: NP-C-E health/preflight especifico de ledger laboral, o
   revision/auditoria si se decide cerrar esta parte antes de habilitar escrituras.
+
+## Preflight ledger NP-C-E
+
+- Estado formal: `PREFLIGHT_LEDGER_NP_C_E_COMPLETADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_NP_C_E_preflight_ledger.md`.
+- Herramienta: `src/tools/saas/preflight_personal_ledger.php`.
+- Valida consistencia de tablas `trabajador_*`, ausencia de categoria Nomina en Caja y
+  ausencia de rutas/escrituras operativas de ledger.
+- No crea rutas, vistas, POST, migraciones ni datos.
+- Siguiente accion segura: revision tecnica/auditoria/cierre del bloque NP-C read-only,
+  o contrato futuro para primera escritura laboral sin Caja.

@@ -630,3 +630,9 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - DB: no aplica; NP-C-A no crea migraciones ni escribe datos.
 - No borrar conceptos, anticipos, prestamos ni asistencias reales si ya existieran.
 - No tocar Caja, categoria Nomina ni `/api/sync`.
+
+### NP-C-E preflight de ledger laboral
+
+- Revertir el commit `test(phase-np): add worker ledger consistency checks`.
+- DB: no aplica; el preflight es solo lectura.
+- No tocar tablas `trabajador_*`, Caja ni `/api/sync`.

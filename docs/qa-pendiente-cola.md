@@ -813,3 +813,12 @@ instruccion del usuario.
   - confirmar estados vacios si no hay conceptos;
   - confirmar ausencia de botones de pago, abono, Caja o nomina;
   - confirmar que el saldo se presenta como informativo.
+
+### Estado NP-C-E
+
+- Preflight de ledger laboral implementado.
+- QA manual visual no aplica.
+- Verificacion recomendada:
+  - ejecutar `docker compose exec -T app php /var/www/html/tools/saas/preflight_personal_ledger.php`;
+  - confirmar `ERROR: 0`;
+  - confirmar que Caja/Nomina sigan en cero.

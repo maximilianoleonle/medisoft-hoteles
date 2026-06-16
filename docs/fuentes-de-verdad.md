@@ -330,3 +330,4 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - Caja, cortes, movimientos, categoria Nomina y `/api/sync` no son fuente de verdad de
   NP-C.
 - NP-C-A solo lee estas fuentes desde la ficha de trabajador; no crea ni corrige datos.
+- NP-C-E solo valida consistencia; no corrige ni sustituye ninguna fuente.
