@@ -248,7 +248,7 @@ borrado, reemplazo de archivo, links publicos, pagos, abonos, Caja, Fase 3D, NP-
 
 ## Cierre tecnico Fase 4D-A
 
-Estado final: `CIERRE_TECNICO_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado final: `FASE_4D_A_VALIDADA_MANUALMENTE`.
 
 La Fase 4D-A queda cerrada tecnicamente como archivado/restauracion reversible de
 documentos. No habilita baja logica `eliminado`, borrado fisico, `DELETE`, reemplazo
@@ -259,7 +259,7 @@ de archivo, links publicos, Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
 | Fase | Alcance | Commit | Estado |
 | --- | --- | --- | --- |
 | 4D-0 | Contrato y diagnostico de archivado documental | `67e00ec` | Cerrada |
-| 4D-A | Archivado/restauracion documental controlada | `01733ee` | Cerrada tecnicamente, QA manual pendiente |
+| 4D-A | Archivado/restauracion documental controlada | `01733ee` | Cerrada y validada manualmente |
 
 ### Confirmaciones 4D-A
 
@@ -286,9 +286,15 @@ de archivo, links publicos, Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
   la transaccion y rollback sin persistencia.
 - `git diff --check`: sin errores de whitespace.
 
+### QA manual 4D-A
+
+- QA manual reportada por el usuario como correcta: todas las pruebas responden
+  perfectamente.
+- Se valida archivar/restaurar documento desde navegador y conservar archivo,
+  relaciones y auditoria.
+
 ### Warnings y pendientes 4D-A
 
-- Falta QA manual en navegador para archivar y restaurar un documento real.
 - Si la QA manual cambia estados, el rollback operativo debe hacerse con la accion
   inversa desde UI, no con `DELETE`.
 - La baja logica hacia `eliminado` queda diferida a una fase futura con contrato propio.

@@ -338,7 +338,7 @@ Resultado 4C-A:
 
 ## Nuevo bloque Fase 4D Archivado documental
 
-Estado: `CIERRE_TECNICO_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado: `FASE_4D_A_VALIDADA_MANUALMENTE`.
 
 Objetivo: preparar una fase segura para archivar, restaurar y eventualmente dar baja
 logica a documentos sin borrar archivos fisicos ni registros.
@@ -359,7 +359,7 @@ Resultado 4D-0:
 
 Resultado 4D-A:
 
-- Estado tecnico: `CIERRE_TECNICO_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- Estado tecnico: `FASE_4D_A_VALIDADA_MANUALMENTE`.
 - Documento creado: `docs/fase_4D_A_archivado_documental_controlado.md`.
 - Rutas POST agregadas: `/documentos/{id}/archivar` y `/documentos/{id}/restaurar`.
 - Modelo central: `Documento::actualizarEstado()` valida `id + hotel_id` y solo permite
@@ -371,8 +371,10 @@ Resultado 4D-A:
 - Verificacion automatica: `php -l`, health, preflights, HTTP sin sesion, SQL read-only,
   prueba transaccional con rollback y `git diff --check`.
 - Revision tecnica/auditoria: sin hallazgos bloqueantes; el bloque queda cerrado
-  tecnicamente y mantiene pendiente QA manual de navegador.
-- Pendiente: QA manual en navegador.
+  tecnicamente.
+- QA manual: el usuario reporto que todas las pruebas QA responden perfectamente.
+- Pendiente real: no avanzar a baja logica `eliminado`, Caja, pagos, abonos, Fase 3D,
+  NP-A ni `/api/sync` sin nuevo bloque explicito.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

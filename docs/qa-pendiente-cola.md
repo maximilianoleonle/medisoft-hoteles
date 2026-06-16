@@ -497,7 +497,7 @@ QA manual completada 4C-A:
 
 ## QA Fase 4D Archivado documental
 
-Estado: `CIERRE_TECNICO_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado: `FASE_4D_A_VALIDADA_MANUALMENTE`.
 
 4D-0 es documentacion y diagnostico; no requiere QA en navegador.
 
@@ -515,7 +515,9 @@ QA automatica completada 4D-A:
   transaccion y rollback final sin persistir cambios.
 - Revision tecnica y auditoria de cierre: completadas sin hallazgos bloqueantes.
 
-QA manual pendiente 4D-A:
+QA manual completada 4D-A:
+
+Resultado reportado por el usuario: todas las pruebas QA responden perfectamente.
 
 - Archivar documento activo cambia estado a `archivado`.
 - Restaurar documento archivado cambia estado a `activo`.

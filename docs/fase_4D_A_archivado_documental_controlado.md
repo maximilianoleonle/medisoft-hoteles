@@ -1,6 +1,6 @@
 # Fase 4D-A - Archivado documental controlado
 
-Estado tecnico: `CIERRE_TECNICO_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado tecnico: `FASE_4D_A_VALIDADA_MANUALMENTE`.
 
 ## Objetivo
 
@@ -92,9 +92,11 @@ El bloque 4D-A queda cerrado tecnicamente como archivado/restauracion reversible
 queda autorizada la baja logica `eliminado`; esa decision requiere una fase futura con
 contrato propio.
 
-Estado de cierre: `CIERRE_TECNICO_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado de cierre: `FASE_4D_A_VALIDADA_MANUALMENTE`.
 
-## QA manual requerida
+## QA manual completada
+
+Resultado reportado por el usuario: todas las pruebas QA responden perfectamente.
 
 1. Entrar a `/documentos/{id}` con un documento en estado `activo`.
 2. Confirmar que aparece `Archivar` y no aparece `Restaurar`.
@@ -107,6 +109,8 @@ Estado de cierre: `CIERRE_TECNICO_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
 7. Revisar que no se borro el archivo ni la relacion con entidades.
 8. Revisar que `logs_auditoria` tenga `documentos.estado_actualizado`.
 9. Confirmar que no hay Caja, pagos, abonos ni cambios en `/api/sync`.
+
+Estado: completado por QA manual del usuario.
 
 ## Rollback
 

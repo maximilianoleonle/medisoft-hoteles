@@ -161,7 +161,7 @@ fisico, sin Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
 
 ## Resultado Fase 4D-A
 
-Estado tecnico: `CIERRE_TECNICO_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado tecnico: `FASE_4D_A_VALIDADA_MANUALMENTE`.
 
 Se implemento archivado/restauracion reversible con:
 
@@ -179,5 +179,5 @@ archivo, links publicos, Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
 Documento de implementacion:
 
 - `docs/fase_4D_A_archivado_documental_controlado.md`.
-- Revision tecnica/auditoria de cierre: sin hallazgos bloqueantes; QA manual de
-  navegador sigue pendiente.
+- Revision tecnica/auditoria de cierre: sin hallazgos bloqueantes.
+- QA manual de navegador: reportada por el usuario como correcta.

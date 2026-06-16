@@ -4,15 +4,15 @@
 
 NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Centro Documental Base.
 
-Mensaje actual procesado: "Te autorizo continua"; se cierra tecnicamente 4D-A
-archivado documental controlado, sin marcar QA manual como completada.
+Mensaje actual procesado: "Confirmo que todas las pruebas qa, responden perfectamente";
+se marca 4D-A archivado documental como validada manualmente.
 
 ## Estado vigente
 
 - Bloque actual: Fase 4D Archivado documental.
 - Fase actual: 4D-A archivado/restauracion documental.
 - Riesgo: naranja.
-- Estado: `CIERRE_TECNICO_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- Estado: `FASE_4D_A_VALIDADA_MANUALMENTE`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -120,7 +120,9 @@ archivado documental controlado, sin marcar QA manual como completada.
 - Revision tecnica/auditoria 4D-A: sin hallazgos bloqueantes; se confirma POST + CSRF,
   filtro `id + hotel_id`, auditoria, ausencia de `DELETE`, ausencia de borrado fisico
   y ausencia de Caja, pagos, abonos, NP-A, Fase 3D y `/api/sync`.
-- Siguiente accion recomendada: QA manual 4D-A en navegador.
+- QA manual 4D-A: reportada por el usuario como correcta.
+- Siguiente accion recomendada: abrir nuevo bloque explicito; no avanzar
+  automaticamente a baja logica `eliminado`, pagos, Caja, Fase 3D, NP-A ni `/api/sync`.
 
 ## Reanclaje Fase 3C
 

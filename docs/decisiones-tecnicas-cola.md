@@ -277,7 +277,7 @@
 
 ### Fase 4D-A archivado documental controlado
 
-- Estado formal vigente: `CIERRE_TECNICO_4D_A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- Estado formal vigente: `FASE_4D_A_VALIDADA_MANUALMENTE`.
 - Se implementa solo `activo <-> archivado`; `eliminado` queda fuera para evitar baja
   logica irreversible o ambigua.
 - Las acciones viven en el detalle documental, no en listados masivos.
@@ -287,6 +287,7 @@
 - La auditoria usa `documentos.estado_actualizado` con estado antes/despues seguro.
 - La revision tecnica y auditoria de cierre no detectaron hallazgos bloqueantes; la
   baja logica `eliminado` permanece diferida a contrato futuro.
+- La QA manual del flujo archivar/restaurar fue reportada por el usuario como correcta.
 
 ### Decisiones de diagnostico NP-0
 
