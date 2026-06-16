@@ -1125,3 +1125,12 @@ Resultado LIM-F:
 - Se cierra tecnicamente el bloque read-only de limpieza.
 - QA manual real queda pendiente/diferida.
 - No se autoriza POST de limpieza ni automatizaciones.
+
+Resultado LIM-B-0:
+
+- Estado tecnico: `CONTRATO_LIM_B_0_CREACION_MANUAL_TAREA_LIMPIEZA_COMPLETADO`.
+- Documento: `docs/fase_LIM_B_0_contrato_creacion_manual_tarea_limpieza.md`.
+- Se define una futura accion manual para crear tarea de limpieza desde habitacion en
+  estado `limpieza`.
+- No se modifica codigo, DB, rutas, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- Siguiente paso recomendado: LIM-B-A implementacion manual controlada.

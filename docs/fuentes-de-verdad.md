@@ -536,3 +536,13 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - Fuente tecnica vigente: LIM-A, sin POST ni escrituras.
 - No hay fuente de verdad en inventario automatico, Caja, pagos, abonos, nomina, offline
   ni `/api/sync`.
+
+### LIM-B-0 creacion manual de tarea de limpieza
+
+- No crea fuente nueva.
+- La futura escritura permitida debera limitarse a:
+  - `tareas_operativas`;
+  - `tarea_eventos`;
+  - `logs_auditoria`.
+- `habitaciones.estado` seguira siendo la fuente de verdad de disponibilidad.
+- Inventario automatico, Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.

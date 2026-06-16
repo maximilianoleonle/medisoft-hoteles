@@ -1118,3 +1118,15 @@ Estado: `BLOQUE_LIM_LIMPIEZA_READONLY_CERRADO_QA_DIFERIDA`.
 - Confirmado: no hay POST LIM, no hay formularios y no hay escrituras.
 - Confirmado: sin Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - Riesgo residual: QA manual diferida.
+
+## Auditoria LIM-B-0
+
+Estado: `CONTRATO_LIM_B_0_CREACION_MANUAL_TAREA_LIMPIEZA_COMPLETADO`.
+
+- Contrato documental sin cambios de codigo ni DB.
+- Riesgo principal futuro: crear tareas duplicadas para una misma habitacion en limpieza.
+- Mitigacion definida: bloqueo por `hotel_id`, `habitacion_id`, `categoria = limpieza` y
+  estado activo.
+- Riesgo principal futuro: que una tarea libere habitacion automaticamente.
+- Mitigacion definida: la tarea no actualiza `habitaciones.estado`.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.

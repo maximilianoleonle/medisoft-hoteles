@@ -1301,3 +1301,15 @@ Estado formal vigente: `BLOQUE_LIM_LIMPIEZA_READONLY_CERRADO_QA_DIFERIDA`.
 - QA manual real queda diferida.
 - No autoriza POST, automatizacion, liberacion, inventario automatico, Caja, pagos,
   abonos, nomina, offline ni `/api/sync`.
+
+### Estado LIM-B-0
+
+Estado formal vigente: `CONTRATO_LIM_B_0_CREACION_MANUAL_TAREA_LIMPIEZA_COMPLETADO`.
+
+- Documento: `docs/fase_LIM_B_0_contrato_creacion_manual_tarea_limpieza.md`.
+- Define futura creacion manual de tarea de limpieza desde una habitacion en estado
+  `limpieza`.
+- No implementa codigo, rutas, modelos ni escrituras.
+- Prohibe liberar habitaciones, cambiar disponibilidad, automatizar checkout, inventario
+  automatico, Caja, pagos, abonos, nomina, offline y `/api/sync`.
+- Siguiente accion segura: LIM-B-A implementacion manual controlada.

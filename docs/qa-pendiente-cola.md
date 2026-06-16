@@ -1247,3 +1247,15 @@ instruccion del usuario.
 - QA manual real sigue diferida.
 - No avanzar a POST de limpieza, automatizacion ni inventario automatico sin contrato
   nuevo.
+
+### Estado LIM-B-0
+
+- Contrato de creacion manual de tarea de limpieza completado.
+- No requiere QA de navegador porque no agrega codigo ni rutas.
+- QA futura LIM-B-A:
+  - crear tarea desde una habitacion en limpieza;
+  - confirmar `categoria = limpieza`, `habitacion_id`, `hotel_id` y origen;
+  - confirmar bloqueo de duplicado activo;
+  - confirmar que no cambia `habitaciones.estado`;
+  - confirmar que no hay inventario automatico, Caja, pagos, abonos, nomina, offline ni
+    `/api/sync`.

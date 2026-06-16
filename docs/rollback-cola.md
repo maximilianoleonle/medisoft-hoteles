@@ -992,3 +992,12 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-lim): close read-only housekeeping block`.
 - DB: no aplica; es cierre documental.
 - Mantener intacto LIM-A salvo que se revierta su commit especifico.
+
+### LIM-B-0 contrato creacion manual de tarea de limpieza
+
+- Rollback documental: revertir el commit
+  `docs(phase-lim): define manual housekeeping task contract`.
+- DB: no aplica; LIM-B-0 no crea migraciones, rutas, modelos ni datos.
+- Codigo: no aplica.
+- No tocar habitaciones, tareas, inventario, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.

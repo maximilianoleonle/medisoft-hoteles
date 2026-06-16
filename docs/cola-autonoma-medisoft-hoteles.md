@@ -1023,3 +1023,13 @@ agregar funcionalidades nuevas.
 - QA manual queda diferida.
 - Siguiente accion segura: contrato independiente para un bloque nuevo o QA manual
   diferida.
+
+## Contrato LIM-B-0 creacion manual de tarea de limpieza
+
+- Estado formal: `CONTRATO_LIM_B_0_CREACION_MANUAL_TAREA_LIMPIEZA_COMPLETADO`.
+- Documento creado: `docs/fase_LIM_B_0_contrato_creacion_manual_tarea_limpieza.md`.
+- Define futura accion manual para crear tarea de limpieza desde habitacion en estado
+  `limpieza`.
+- No modifica codigo, DB, rutas, modelos, vistas, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.
+- Siguiente accion segura: LIM-B-A implementacion manual controlada.

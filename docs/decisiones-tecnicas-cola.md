@@ -889,3 +889,12 @@
 - Cualquier creacion manual de tarea de limpieza desde habitacion requiere contrato
   separado, bloqueo de duplicados activos y QA manual.
 - Cualquier integracion de inventario por limpieza queda fuera hasta contrato especifico.
+
+## Decision LIM-B-0
+
+- La futura tarea de limpieza debe crearse desde `TareaController`, porque la entidad
+  escrita es una tarea.
+- El reporte de limpieza solo debe disparar un POST manual y no contener logica de
+  persistencia.
+- La creacion debe usar validacion central del modelo y bloquear duplicados activos.
+- Completar una tarea de limpieza no debe liberar automaticamente la habitacion.
