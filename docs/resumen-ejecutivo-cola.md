@@ -939,3 +939,16 @@ Resultado MANT-B-F:
 - Verificaciones automaticas pasan con `ERROR: 0`.
 - QA manual queda diferida.
 - Siguiente paso recomendado: contrato independiente antes de automatizar mantenimiento.
+
+Resultado MANT-C-0:
+
+- Estado tecnico: `CONTRATO_MANT_C_0_MANTENIMIENTO_PROGRAMADO_COMPLETADO`.
+- Documento: `docs/fase_MANT_C_0_contrato_mantenimiento_programado.md`.
+- Se diagnostican rutas existentes de programacion/cancelacion de mantenimiento:
+  `POST /habitaciones/{id}/programar-mantenimiento` y
+  `POST /habitaciones/cancelar-mantenimiento-programado/{id}`.
+- Se identifica como riesgo mayor `Mantenimiento::activarMantenimientosPendientes()`,
+  porque cambia mantenimientos a `en_proceso` y habitaciones a `mantenimiento`.
+- No se modifica codigo, DB, Caja, pagos, abonos, offline ni `/api/sync`.
+- Siguiente paso recomendado: MANT-C-A guardrails de programacion/cancelacion existente,
+  sin activar automatizaciones.

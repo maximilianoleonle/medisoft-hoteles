@@ -848,3 +848,11 @@ agregar funcionalidades nuevas.
 - QA manual queda diferida.
 - No hay rutas nuevas, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - Siguiente accion segura: nuevo contrato independiente.
+
+## Contrato MANT-C-0 mantenimiento programado
+
+- Estado formal: `CONTRATO_MANT_C_0_MANTENIMIENTO_PROGRAMADO_COMPLETADO`.
+- Documento creado: `docs/fase_MANT_C_0_contrato_mantenimiento_programado.md`.
+- No modifica codigo ni DB.
+- Siguiente accion segura: MANT-C-A guardrails de programacion/cancelacion existente,
+  sin activar mantenimientos pendientes automaticamente.

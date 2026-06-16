@@ -923,3 +923,15 @@ Estado: `BLOQUE_MANT_B_MANTENIMIENTO_INMEDIATO_CERRADO_QA_DIFERIDA`.
   `hotel_id`.
 - Riesgo residual: falta QA manual visual y el warning historico documentado.
 - No se habilitan automatizaciones de mantenimiento programado.
+
+## Auditoria MANT-C-0
+
+Estado: `CONTRATO_MANT_C_0_MANTENIMIENTO_PROGRAMADO_COMPLETADO`.
+
+- Riesgo principal: `Mantenimiento::activarMantenimientosPendientes()` puede cambiar
+  mantenimientos a `en_proceso` y habitaciones a `mantenimiento`.
+- El contrato prohibe conectar esa activacion a cron, dashboard o request web en la
+  siguiente subfase.
+- Programacion/cancelacion deben reforzar pertenencia por `hotel_id`, estados permitidos
+  y duplicados solapados antes de considerarse estables.
+- No se modifica codigo, DB, Caja, pagos, abonos, nomina, offline ni `/api/sync`.

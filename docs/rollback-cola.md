@@ -848,3 +848,11 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-mant): close immediate maintenance guardrails`.
 - DB: no aplica; es cierre documental.
 - Mantener intacto el codigo MANT-B salvo que se revierta su commit especifico.
+
+### MANT-C-0 contrato mantenimiento programado
+
+- Rollback documental: revertir el commit
+  `docs(phase-mant): define scheduled maintenance contract`.
+- DB: no aplica; MANT-C-0 no crea migraciones, rutas ni datos.
+- Codigo: no aplica; no se modifica PHP.
+- No tocar registros reales de `mantenimientos_habitaciones`.

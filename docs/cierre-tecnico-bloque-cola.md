@@ -841,6 +841,15 @@ Estado: `BLOQUE_MANT_B_MANTENIMIENTO_INMEDIATO_CERRADO_QA_DIFERIDA`.
 
 - Documento: `docs/fase_MANT_B_F_cierre_mantenimiento_inmediato.md`.
 - Revision tecnica y auditoria de seguridad completadas para mantenimiento inmediato.
+
+## Contrato tecnico MANT-C-0
+
+Estado: `CONTRATO_MANT_C_0_MANTENIMIENTO_PROGRAMADO_COMPLETADO`.
+
+- Documento: `docs/fase_MANT_C_0_contrato_mantenimiento_programado.md`.
+- El bloque siguiente debe estabilizar programacion/cancelacion existente antes de
+  cualquier automatizacion de disponibilidad.
+- `activarMantenimientosPendientes()` queda fuera del siguiente paso por riesgo alto.
 - No se agregaron funcionalidades nuevas en el cierre.
 - No hay rutas nuevas, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - QA manual queda diferida.

@@ -1111,3 +1111,17 @@ Estado formal vigente: `BLOQUE_MANT_B_MANTENIMIENTO_INMEDIATO_CERRADO_QA_DIFERID
 - Cierre tecnico del endurecimiento de mantenimiento inmediato.
 - No agrega funcionalidad nueva en el cierre.
 - Siguiente contrato requerido antes de automatizar mantenimiento programado o disponibilidad.
+
+### Estado MANT-C-0
+
+Estado formal vigente: `CONTRATO_MANT_C_0_MANTENIMIENTO_PROGRAMADO_COMPLETADO`.
+
+- Documento: `docs/fase_MANT_C_0_contrato_mantenimiento_programado.md`.
+- Define el contrato para estabilizar programacion/cancelacion de mantenimiento
+  programado existente antes de tocar codigo operativo.
+- Fuentes de verdad: `habitaciones`, `mantenimientos_habitaciones`, `reservaciones`,
+  `reservacion_habitaciones` y contexto de `hotel_id`.
+- Queda prohibido activar automaticamente mantenimientos pendientes, conectar cron/
+  dashboard o modificar disponibilidad sin contrato separado.
+- Siguiente accion segura: MANT-C-A guardrails de programacion/cancelacion existente,
+  si se autoriza.

@@ -738,3 +738,14 @@
 - QA manual queda diferida por instruccion del usuario, no sustituida por los checkers.
 - El warning de una habitacion en mantenimiento sin registro activo queda como historico
   conocido y no autoriza correccion SQL automatica.
+
+## Decision MANT-C-0
+
+- El mantenimiento programado se separa de mantenimiento inmediato porque ya afecta
+  disponibilidad futura y conflictos de reservaciones.
+- `mantenimientos_habitaciones` sigue siendo fuente de verdad para mantenimiento
+  programado; `tareas_operativas` solo aporta contexto y no sustituye esa tabla.
+- `activarMantenimientosPendientes()` queda expresamente fuera de MANT-C-A hasta tener
+  contrato propio, porque escribe en mantenimientos y habitaciones.
+- La siguiente implementacion segura debe reforzar validaciones y pertenencia por hotel
+  en rutas existentes, sin crear automatizaciones.

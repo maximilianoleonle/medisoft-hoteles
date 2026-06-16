@@ -1073,3 +1073,21 @@ instruccion del usuario.
 - QA manual sigue pendiente y diferida.
 - No avanzar a automatizacion de mantenimiento programado, disponibilidad automatica,
   Caja, pagos, abonos, nomina, offline ni `/api/sync` desde este cierre.
+
+### Estado MANT-C-0
+
+- Contrato de mantenimiento programado completado.
+- QA manual no aplica todavia; no se modifico codigo.
+
+### QA futura MANT-C-A
+
+- Programar mantenimiento en una habitacion disponible con fechas validas.
+- Confirmar bloqueo de fecha pasada y fin anterior a inicio.
+- Confirmar bloqueo cuando existe reservacion conflictiva.
+- Confirmar bloqueo de mantenimiento programado duplicado/solapado para la misma
+  habitacion.
+- Cancelar mantenimiento programado desde ficha de habitacion.
+- Confirmar que cancelacion no opera mantenimientos de otro hotel ni estados no
+  programados.
+- Confirmar que no se activa automaticamente ningun mantenimiento vencido.
+- Confirmar que no hay Caja, pagos, abonos, nomina, offline ni `/api/sync`.
