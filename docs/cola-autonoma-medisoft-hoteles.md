@@ -593,3 +593,13 @@ agregar funcionalidades nuevas.
   manual por ahora.
 - Siguiente accion segura: contrato nuevo para anticipos/prestamos o asistencia; no
   implementar sin contrato explicito.
+
+## Contrato NP-C-C-0 anticipos y prestamos
+
+- Estado formal: `CONTRATO_NP_C_C_ANTICIPOS_PRESTAMOS_COMPLETADO`.
+- Documento creado: `docs/fase_NP_C_C_0_contrato_anticipos_prestamos.md`.
+- Define futura escritura manual en `trabajador_anticipos` y `trabajador_prestamos`.
+- No implementa rutas, vistas, POST ni escrituras.
+- Caja, pagos reales, abonos, liquidaciones, Nomina y `/api/sync` siguen fuera de alcance.
+- Siguiente accion segura: NP-C-C-A registro manual controlado de anticipos/prestamos sin
+  Caja, solo si se mantiene la autorizacion.

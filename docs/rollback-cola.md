@@ -666,3 +666,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-np): close controlled worker concept block`.
 - DB: no aplica; es cierre documental.
 - Mantener intactos conceptos ya creados si existieran.
+
+### NP-C-C-0 contrato de anticipos y prestamos
+
+- Rollback documental: revertir el commit
+  `docs(phase-np): define controlled worker advance loan contract`.
+- DB: no aplica; NP-C-C-0 no crea rutas, migraciones ni datos.
+- No tocar `trabajador_anticipos`, `trabajador_prestamos`, Caja ni `/api/sync`.

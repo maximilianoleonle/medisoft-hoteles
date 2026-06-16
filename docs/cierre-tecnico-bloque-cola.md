@@ -627,3 +627,11 @@ Estado: `BLOQUE_NP_C_B_CONCEPTOS_LABORALES_CERRADO_QA_DIFERIDA`.
 - No se agregaron funcionalidades nuevas en el cierre.
 - No hay pagos reales, abonos, Caja, Nomina operativa ni cambios en `/api/sync`.
 - QA manual queda diferida.
+
+## Contrato NP-C-C-0
+
+Estado: `CONTRATO_NP_C_C_ANTICIPOS_PRESTAMOS_COMPLETADO`.
+
+- Documento: `docs/fase_NP_C_C_0_contrato_anticipos_prestamos.md`.
+- Solo contrato; no agrega rutas, vistas, POST ni escrituras.
+- Define futura captura manual de anticipos/prestamos sin Caja.

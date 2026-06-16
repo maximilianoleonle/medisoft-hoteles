@@ -696,3 +696,11 @@ Resultado NP-C-B-F:
 - QA manual queda diferida hasta que exista un trabajador activo autorizado.
 - Siguiente paso recomendado: abrir contrato nuevo antes de anticipos, prestamos o
   asistencia.
+
+Resultado NP-C-C-0:
+
+- Estado tecnico: `CONTRATO_NP_C_C_ANTICIPOS_PRESTAMOS_COMPLETADO`.
+- Documento: `docs/fase_NP_C_C_0_contrato_anticipos_prestamos.md`.
+- Se define contrato para futura captura manual de anticipos y prestamos laborales.
+- No se implementan rutas, vistas, POST ni escrituras.
+- Caja, pagos reales, abonos, Nomina y `/api/sync` siguen fuera de alcance.

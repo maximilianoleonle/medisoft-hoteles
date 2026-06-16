@@ -551,3 +551,10 @@
 - Se cierra tecnicamente el bloque sin abrir anticipos, prestamos ni asistencia.
 - Las siguientes escrituras laborales requieren contratos separados por riesgo operativo.
 - QA manual queda diferida y no se toma como validacion de usuario.
+
+## Decision NP-C-C-0 anticipos y prestamos
+
+- Anticipos y prestamos se separan de conceptos laborales para controlar mejor el riesgo.
+- El saldo pendiente inicial se derivara del monto; no debe venir del formulario.
+- Esta captura futura no representara salida real de dinero ni movimiento de Caja.
+- Abonos, liquidaciones o anulaciones de saldo requieren contrato propio.

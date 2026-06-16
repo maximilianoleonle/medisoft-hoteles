@@ -678,3 +678,12 @@ Estado: `BLOQUE_NP_C_B_CONCEPTOS_LABORALES_CERRADO_QA_DIFERIDA`.
 - QA manual queda diferida; no se marca validacion de usuario.
 - Riesgo residual: siguiente bloque de anticipos/prestamos/asistencia requiere contrato
   nuevo por su cercania con flujo financiero laboral.
+
+## Auditoria NP-C-C-0 anticipos y prestamos
+
+Estado: `CONTRATO_NP_C_C_ANTICIPOS_PRESTAMOS_COMPLETADO`.
+
+- Solo contrato documental.
+- Riesgo principal: confundir anticipo/prestamo laboral con egreso real de Caja.
+- Mitigacion: no crear Caja, no crear pagos/abonos y derivar saldos iniciales del monto.
+- Cualquier abono, liquidacion o movimiento financiero real queda fuera de alcance.

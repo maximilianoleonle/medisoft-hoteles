@@ -911,3 +911,12 @@ Estado formal vigente: `BLOQUE_NP_C_B_CONCEPTOS_LABORALES_CERRADO_QA_DIFERIDA`.
 - Documento: `docs/fase_NP_C_B_F_cierre_conceptos_laborales.md`.
 - Cierre tecnico del bloque de conceptos laborales manuales.
 - Siguiente contrato requerido antes de anticipos, prestamos, asistencia o pagos reales.
+
+### Estado NP-C-C-0
+
+Estado formal vigente: `CONTRATO_NP_C_C_ANTICIPOS_PRESTAMOS_COMPLETADO`.
+
+- Documento: `docs/fase_NP_C_C_0_contrato_anticipos_prestamos.md`.
+- Solo contrato; no agrega codigo ni DB.
+- Escritura futura limitada a anticipos y prestamos laborales sin Caja, sin abonos y sin
+  pagos reales.

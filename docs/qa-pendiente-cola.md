@@ -863,3 +863,10 @@ instruccion del usuario.
 - Bloque de conceptos laborales manuales cerrado tecnicamente.
 - QA manual sigue pendiente y diferida.
 - No avanzar a anticipos, prestamos o asistencia sin contrato nuevo.
+
+### Estado NP-C-C-0
+
+- Contrato de anticipos y prestamos completado.
+- No requiere QA de navegador porque no agrega funcionalidad.
+- QA futura NP-C-C-A debe confirmar captura manual, saldo inicial igual al monto, ausencia
+  de Caja y ausencia de pagos/abonos reales.

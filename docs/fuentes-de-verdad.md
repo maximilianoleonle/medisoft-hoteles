@@ -336,5 +336,7 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - NP-C-B-A permite crear manualmente conceptos `comision`, `bono`, `descuento` y
   `ajuste` en `trabajador_pagos`.
 - `trabajador_pagos` sigue siendo ledger laboral informativo, no Caja ni pago real.
-- Anticipos, prestamos y asistencia siguen fuera de alcance operativo hasta contrato
-  especifico.
+- NP-C-C-0 documenta futura escritura en `trabajador_anticipos` y
+  `trabajador_prestamos`, pero todavia no crea datos.
+- Anticipos y prestamos siguen siendo ledger laboral informativo, no Caja ni pago real.
+- Asistencia sigue fuera de alcance operativo hasta contrato especifico.
