@@ -492,3 +492,19 @@ Estado: `CREACION_MANUAL_TLM_C_COMPLETADA_QA_DIFERIDA`.
 - No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina, PWA/offline/cache
   ni `/api/sync`.
 - QA manual queda diferida por instruccion del usuario.
+
+## Asignacion Fase TLM-D
+
+Estado: `ASIGNACION_TLM_D_COMPLETADA_QA_DIFERIDA`.
+
+- Documento: `docs/fase_TLM_D_asignacion_trabajador.md`.
+- Ruta autorizada:
+  - `POST /tareas/{id}/asignar`.
+- La asignacion valida tarea y trabajador activo del mismo hotel.
+- La tarea queda en estado `asignada` y registra evento `asignada`.
+- POST protegido con CSRF, permiso `habitaciones.mantenimiento` y auditoria.
+- No se implementa inicio, cierre ni cancelacion.
+- No se cambio `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina, PWA/offline/cache
+  ni `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.

@@ -270,7 +270,7 @@ Regla:
 
 ## Tareas, Limpieza y Mantenimiento (Fase TLM)
 
-Estado formal: `CREACION_MANUAL_TLM_C_COMPLETADA_QA_DIFERIDA`.
+Estado formal: `ASIGNACION_TLM_D_COMPLETADA_QA_DIFERIDA`.
 
 Fuentes actuales:
 
@@ -297,3 +297,6 @@ Reglas:
 - La habitacion opcional debe pertenecer al mismo hotel.
 - La tarea manual nace `pendiente` y `origen = manual`.
 - TLM-C no cambia `habitaciones.estado` ni `mantenimientos_habitaciones`.
+- TLM-D asigna tareas solo a `trabajadores` activos del mismo hotel.
+- La asignacion de tarea NO crea asistencia, nomina, pago, abono ni Caja.
+- La asignacion no inicia ni cierra tarea; solo deja `estado = asignada`.

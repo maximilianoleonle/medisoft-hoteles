@@ -531,3 +531,21 @@ Estado: `CREACION_MANUAL_TLM_C_COMPLETADA_QA_DIFERIDA`.
 - Auditoria: `AuditService::record()` registra la creacion cuando esta disponible.
 - Riesgo residual: aun no hay asignacion/cierre/cancelacion; las tareas creadas durante
   QA deben quedar documentadas hasta una fase operativa posterior.
+
+## Auditoria TLM-D asignacion a trabajador
+
+Estado: `ASIGNACION_TLM_D_COMPLETADA_QA_DIFERIDA`.
+
+- Ruta nueva: `POST /tareas/{id}/asignar`.
+- Proteccion: sesion, contexto hotelero, modulo `habitaciones`, permiso
+  `habitaciones.mantenimiento` y CSRF.
+- Aislamiento multi-hotel: tarea por `id + hotel_id`; trabajador por
+  `id + hotel_id + estado activo`.
+- Escrituras permitidas: `UPDATE tareas_operativas` para trabajador/estado asignada y
+  `INSERT tarea_eventos`.
+- No hay `DELETE`.
+- No se cambia `habitaciones.estado`.
+- No se modifica `mantenimientos_habitaciones`.
+- No hay escrituras en Caja, pagos, abonos, nomina, asistencia ni `/api/sync`.
+- Riesgo residual: no hay trabajadores activos en la base local actual; QA real depende
+  de crear o tener un trabajador activo.

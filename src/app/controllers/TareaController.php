@@ -74,6 +74,10 @@ class TareaController extends Controller
             'tarea' => $tarea,
             'eventos' => $this->tareaModel->eventosPorTarea($id, $hotelId, 50),
             'eventosDisponibles' => $this->tareaModel->eventosDisponibles(),
+            'trabajadoresActivos' => $this->puedeAsignar($tarea)
+                ? $this->tareaModel->trabajadoresActivosOpciones($hotelId)
+                : [],
+            'puedeAsignar' => $this->puedeAsignar($tarea),
         ]);
     }
 
@@ -119,6 +123,39 @@ class TareaController extends Controller
             set_mensaje('No se pudo crear la tarea: ' . $e->getMessage(), 'error');
             $this->redirect('tareas/crear');
         }
+    }
+
+    public function asignarAction(): void
+    {
+        $this->requireWritePermission();
+
+        if (!$this->isPost()) {
+            $this->redirect('tareas');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        $id = (int)($this->route_params['id'] ?? 0);
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            $antes = $this->tareaModel->buscarPorIdHotel($id, $hotelId);
+            if (!$antes) {
+                throw new RuntimeException('Tarea no encontrada para el hotel actual.');
+            }
+
+            $trabajadorId = (int)$this->getPost('trabajador_id', 0);
+            $this->tareaModel->asignarTrabajadorParaHotel($id, $hotelId, $trabajadorId, $this->usuarioIdActual());
+            $despues = $this->tareaModel->buscarPorIdHotel($id, $hotelId);
+            $this->auditar('tareas.asignada', $id, $despues, $antes);
+
+            set_mensaje('Tarea asignada correctamente.', 'success');
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo asignar la tarea: ' . $e->getMessage(), 'error');
+        }
+
+        $this->redirect($id > 0 ? 'tareas/' . $id : 'tareas');
     }
 
     private function resumenVacio(): array
@@ -169,7 +206,15 @@ class TareaController extends Controller
         }
     }
 
-    private function auditar(string $accion, int $tareaId, ?array $despues): void
+    private function puedeAsignar(array $tarea): bool
+    {
+        $estado = (string)($tarea['estado'] ?? '');
+        return function_exists('can')
+            && can('habitaciones.mantenimiento')
+            && in_array($estado, ['pendiente', 'asignada'], true);
+    }
+
+    private function auditar(string $accion, int $tareaId, ?array $despues, ?array $antes = null): void
     {
         try {
             AuditService::record($accion, [
@@ -177,7 +222,8 @@ class TareaController extends Controller
                 'usuario_id' => $this->usuarioIdActual(),
                 'entidad_tipo' => 'tarea_operativa',
                 'entidad_id' => (string)$tareaId,
-                'descripcion' => 'Tarea operativa creada manualmente',
+                'descripcion' => 'Cambio en tarea operativa',
+                'datos_antes' => $antes,
                 'datos_despues' => $despues,
             ]);
         } catch (Throwable $e) {

@@ -539,3 +539,21 @@ Resultado TLM-C:
 - QA manual queda diferida por instruccion del usuario.
 - Siguiente paso recomendado: TLM-D asignacion opcional a trabajador activo del mismo
   hotel.
+
+Resultado TLM-D:
+
+- Estado tecnico: `ASIGNACION_TLM_D_COMPLETADA_QA_DIFERIDA`.
+- Documento: `docs/fase_TLM_D_asignacion_trabajador.md`.
+- Ruta agregada: `POST /tareas/{id}/asignar`.
+- El detalle de tarea muestra seccion de asignacion solo para tareas `pendiente` o
+  `asignada` y usuario con permiso.
+- La asignacion valida trabajador activo del mismo hotel.
+- La tarea queda en estado `asignada` y registra evento `asignada`.
+- Se audita la asignacion con `AuditService`.
+- No crea trabajadores, asistencia, pagos, abonos ni movimientos de Caja.
+- No cambia `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones`, nomina ni `/api/sync`.
+- QA manual queda diferida; la base local tiene 0 trabajadores activos al momento de
+  implementar esta subfase.
+- Siguiente paso recomendado: TLM-E inicio/cierre/cancelacion manual de tareas, si se
+  autoriza.

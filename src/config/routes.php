@@ -248,10 +248,11 @@ $router->post('/trabajadores/{id:[0-9]+}/actualizar', ['controller' => 'Trabajad
 $router->post('/trabajadores/{id:[0-9]+}/baja-logica', ['controller' => 'Trabajador', 'action' => 'bajaLogica']);
 $router->post('/trabajadores/{id:[0-9]+}/reactivar', ['controller' => 'Trabajador', 'action' => 'reactivar']);
 
-// Fase TLM-C: tareas operativas con alta manual controlada. Sin cambios de estado, asignaciones ni Caja.
+// Fase TLM-D: tareas operativas con alta manual y asignacion controlada. Sin cambios de estado de habitacion ni Caja.
 $router->get('/tareas', ['controller' => 'Tarea', 'action' => 'index']);
 $router->get('/tareas/crear', ['controller' => 'Tarea', 'action' => 'crear']);
 $router->post('/tareas', ['controller' => 'Tarea', 'action' => 'guardar']);
+$router->post('/tareas/{id:[0-9]+}/asignar', ['controller' => 'Tarea', 'action' => 'asignar']);
 $router->get('/tareas/{id:[0-9]+}', ['controller' => 'Tarea', 'action' => 'ver']);
 
 $router->get('/api/pwa-push/public-key', ['controller' => 'PwaPush', 'action' => 'publicKey']);

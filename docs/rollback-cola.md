@@ -565,6 +565,16 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `mantenimientos_habitaciones`, porque TLM-C no los modifica.
 - No tocar Caja, pagos, abonos, nomina ni `/api/sync`.
 
+### TLM-D asignacion aplicada
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-tlm): assign tasks to workers`.
+- DB: no ejecutar `DELETE` ni `UPDATE` manual sobre tareas/eventos sin autorizacion.
+- Si QA manual asigna una tarea de prueba, documentar IDs y esperar una fase autorizada
+  de reasignacion/cancelacion para corregirla.
+- No revertir mediante cambios a `habitaciones.estado`.
+- No tocar `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
+
 ### Reglas duras de rollback TLM
 
 - No tocar Caja, pagos, abonos ni nomina.

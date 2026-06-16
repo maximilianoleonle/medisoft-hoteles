@@ -445,3 +445,17 @@
 - No se implementan asignacion, inicio, cierre, cancelacion ni cambios automaticos de
   `habitaciones.estado`.
 - No se toca `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
+
+## Decision TLM-D asignacion a trabajador
+
+- La asignacion se limita a tareas en estado `pendiente` o `asignada`.
+- El trabajador debe existir, estar `activo` y pertenecer al mismo `hotel_id`.
+- Asignar una tarea cambia solo `trabajador_id`, `asignada_por_usuario_id` y
+  `estado = asignada`.
+- La asignacion registra evento `asignada` en `tarea_eventos`.
+- La asignacion registra auditoria con `AuditService::record()`.
+- No se registra asistencia ni movimiento laboral financiero.
+- No se crean pagos, abonos, Caja ni nomina.
+- No se inicia ni cierra la tarea.
+- No se cambia `habitaciones.estado`.
+- No se modifica `mantenimientos_habitaciones` ni `/api/sync`.

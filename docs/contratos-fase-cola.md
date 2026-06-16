@@ -779,3 +779,21 @@ Estado formal vigente: `CREACION_MANUAL_TLM_C_COMPLETADA_QA_DIFERIDA`.
 - No hay asignacion, inicio, cierre, cancelacion ni cambios de habitacion.
 - No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
 - QA manual queda diferida por instruccion del usuario.
+
+### Estado TLM-D
+
+Estado formal vigente: `ASIGNACION_TLM_D_COMPLETADA_QA_DIFERIDA`.
+
+- Documento: `docs/fase_TLM_D_asignacion_trabajador.md`.
+- Ruta:
+  - `POST /tareas/{id}/asignar`.
+- Asignacion controlada con POST + CSRF, permiso `habitaciones.mantenimiento`,
+  auditoria y transaccion.
+- Solo permite tareas `pendiente` o `asignada`.
+- Valida trabajador activo del mismo hotel.
+- La tarea queda `asignada` y registra evento `asignada`.
+- No inicia, completa ni cancela tareas.
+- No crea asistencia, pagos, abonos, Caja ni nomina.
+- No cambia `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones` ni `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.

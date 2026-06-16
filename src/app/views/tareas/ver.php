@@ -22,6 +22,8 @@ if (!function_exists('tlm_date')) {
 $tarea = is_array($tarea ?? null) ? $tarea : [];
 $eventos = is_array($eventos ?? null) ? $eventos : [];
 $eventosDisponibles = (bool)($eventosDisponibles ?? false);
+$trabajadoresActivos = is_array($trabajadoresActivos ?? null) ? $trabajadoresActivos : [];
+$puedeAsignar = (bool)($puedeAsignar ?? false);
 
 $estadoLabels = [
     'pendiente' => 'Pendiente',
@@ -73,6 +75,10 @@ $prioridad = (string)($tarea['prioridad'] ?? 'media');
 .tlm-event strong{display:block;color:#111827}
 .tlm-muted{color:#64748b;font-size:13px}
 .tlm-empty{padding:28px;text-align:center;color:#64748b;border:1px dashed #cbd5e1;border-radius:8px;background:#f8fafc}
+.tlm-form-row{display:grid;gap:10px}
+.tlm-select{width:100%;border:1px solid #d1d5db;border-radius:7px;background:#fff;color:#172033;padding:10px 11px;font-size:14px;min-height:42px}
+.tlm-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:7px;background:#172033;color:#fff;font-weight:900;padding:10px 16px;text-decoration:none;min-height:40px;cursor:pointer}
+.tlm-help{font-size:13px;color:#64748b}
 @media (max-width:900px){.tlm-grid{grid-template-columns:1fr}.tlm-title{font-size:24px}.tlm-defs{grid-template-columns:1fr}}
 </style>
 
@@ -142,6 +148,34 @@ $prioridad = (string)($tarea['prioridad'] ?? 'media');
                     <?php endif; ?>
                 </dd>
             </dl>
+        </section>
+
+        <section class="tlm-card">
+            <h2>Asignacion</h2>
+            <?php if (!$puedeAsignar): ?>
+                <div class="tlm-empty">Esta tarea no esta disponible para asignacion en esta fase.</div>
+            <?php elseif (empty($trabajadoresActivos)): ?>
+                <div class="tlm-empty">No hay trabajadores activos disponibles para asignar en el hotel actual.</div>
+            <?php else: ?>
+                <form method="POST" action="<?= url('tareas/' . (int)($tarea['id'] ?? 0) . '/asignar') ?>" class="tlm-form-row">
+                    <?= csrf_field() ?>
+                    <select class="tlm-select" name="trabajador_id" required>
+                        <option value="">Seleccionar trabajador activo</option>
+                        <?php foreach ($trabajadoresActivos as $trabajador): ?>
+                            <?php $trabajadorId = (int)($trabajador['id'] ?? 0); ?>
+                            <option value="<?= $trabajadorId ?>" <?= $trabajadorId === (int)($tarea['trabajador_id'] ?? 0) ? 'selected' : '' ?>>
+                                <?= tlm_safe($trabajador['nombre_completo'] ?? ('Trabajador #' . $trabajadorId)) ?>
+                                <?= !empty($trabajador['rol_laboral']) ? ' - ' . tlm_safe($trabajador['rol_laboral']) : '' ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="tlm-help">Solo trabajadores activos del hotel actual. No genera pagos, asistencia ni cambios de habitacion.</div>
+                    <button class="tlm-btn" type="submit">
+                        <i class="fas fa-user-check"></i>
+                        Asignar trabajador
+                    </button>
+                </form>
+            <?php endif; ?>
         </section>
 
         <section class="tlm-card">

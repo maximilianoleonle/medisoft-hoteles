@@ -419,3 +419,28 @@ Siguiente cola exacta recomendada:
 
 Implementar asignacion opcional de tareas a trabajadores activos del mismo hotel, sin
 pagos, sin Caja y sin modificar automaticamente estados de habitacion.
+
+## Asignacion TLM-D
+
+- Estado formal: `ASIGNACION_TLM_D_COMPLETADA_QA_DIFERIDA`.
+- Documento creado: `docs/fase_TLM_D_asignacion_trabajador.md`.
+- Ruta nueva:
+  - `POST /tareas/{id}/asignar`.
+- El detalle de tarea permite asignar trabajador activo cuando la tarea esta `pendiente`
+  o `asignada`.
+- La asignacion valida hotel, trabajador activo, CSRF y permiso
+  `habitaciones.mantenimiento`.
+- No se inicia, completa ni cancela tarea.
+- No se cambio `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina, PWA/offline/cache
+  ni `/api/sync`.
+- QA manual queda diferida; no habia trabajadores activos en la base local al implementar.
+
+## Siguiente accion
+
+Siguiente cola exacta recomendada:
+
+`[COLA_TLM_E_ESTADOS_TAREA]`
+
+Implementar inicio, cierre y cancelacion manual de tareas con auditoria, sin Caja, sin
+pagos y sin cambios automaticos de disponibilidad de habitacion.

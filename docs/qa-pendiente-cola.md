@@ -702,3 +702,24 @@ instruccion del usuario.
 - Confirmar que `mantenimientos_habitaciones` no se modifica.
 - Confirmar bloqueo/redireccion sin sesion en `GET /tareas/crear` y `POST /tareas`.
 - Confirmar que `/api/sync` sigue bloqueado con HTTP 423 por checker.
+
+### Estado TLM-D
+
+- Asignacion controlada a trabajador activo implementada.
+- POST autorizado unico para asignacion: `POST /tareas/{id}/asignar`.
+- QA manual diferida por instruccion del usuario.
+- Nota: al implementar TLM-D, la base local reporta 0 trabajadores activos; primero debe
+  existir un trabajador activo para probar asignacion real.
+
+### QA manual diferida TLM-D
+
+- Crear o usar trabajador activo del hotel actual.
+- Crear o usar tarea pendiente del hotel actual.
+- Abrir `/tareas/{id}`.
+- Confirmar que aparece selector de trabajador activo.
+- Asignar trabajador.
+- Confirmar que la tarea queda `Asignada`.
+- Confirmar evento `asignada`.
+- Confirmar que no cambia `habitaciones.estado`.
+- Confirmar que no se crean asistencia, pagos, abonos ni movimientos de Caja.
+- Confirmar bloqueo/redireccion sin sesion para `POST /tareas/{id}/asignar`.

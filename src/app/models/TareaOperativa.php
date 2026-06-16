@@ -228,6 +228,24 @@ class TareaOperativa extends Model
         return $stmt ? ($stmt->fetchAll() ?: []) : [];
     }
 
+    public function trabajadoresActivosOpciones(int $hotelId): array
+    {
+        if ($hotelId <= 0 || !$this->tablaExiste('trabajadores')) {
+            return [];
+        }
+
+        $stmt = $this->db->query(
+            "SELECT id, nombre_completo, rol_laboral
+             FROM trabajadores
+             WHERE hotel_id = ?
+               AND estado = 'activo'
+             ORDER BY nombre_completo ASC, id ASC",
+            [$hotelId]
+        );
+
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
     public function crearParaHotel(int $hotelId, array $datos, ?int $usuarioId = null): int
     {
         if ($hotelId <= 0) {
@@ -281,6 +299,68 @@ class TareaOperativa extends Model
 
             $this->db->safeCommit();
             return $tareaId;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
+    public function asignarTrabajadorParaHotel(int $id, int $hotelId, int $trabajadorId, ?int $usuarioId = null): bool
+    {
+        if ($id <= 0 || $hotelId <= 0) {
+            throw new InvalidArgumentException('Tarea no valida para asignacion.');
+        }
+
+        if ($trabajadorId <= 0) {
+            throw new InvalidArgumentException('Seleccione un trabajador activo.');
+        }
+
+        $tarea = $this->buscarPorIdHotel($id, $hotelId);
+        if (!$tarea) {
+            throw new RuntimeException('Tarea no encontrada para el hotel actual.');
+        }
+
+        $estadoAnterior = (string)($tarea['estado'] ?? 'pendiente');
+        if (!in_array($estadoAnterior, ['pendiente', 'asignada'], true)) {
+            throw new RuntimeException('Solo se pueden asignar tareas pendientes o ya asignadas.');
+        }
+
+        $trabajador = $this->trabajadorActivoEnHotel($trabajadorId, $hotelId);
+        if (!$trabajador) {
+            throw new RuntimeException('El trabajador seleccionado no esta activo en el hotel actual.');
+        }
+
+        $this->db->safeBeginTransaction();
+
+        try {
+            $stmt = $this->db->query(
+                "UPDATE tareas_operativas
+                 SET trabajador_id = ?,
+                     asignada_por_usuario_id = ?,
+                     estado = 'asignada',
+                     updated_at = NOW()
+                 WHERE id = ?
+                   AND hotel_id = ?
+                   AND estado IN ('pendiente', 'asignada')",
+                [$trabajadorId, $usuarioId, $id, $hotelId]
+            );
+
+            if (!$stmt || $stmt->rowCount() !== 1) {
+                throw new RuntimeException('No se pudo asignar la tarea.');
+            }
+
+            $this->registrarEvento(
+                $hotelId,
+                $id,
+                'asignada',
+                $estadoAnterior,
+                'asignada',
+                'Tarea asignada a ' . (string)($trabajador['nombre_completo'] ?? ('trabajador #' . $trabajadorId)) . '.',
+                $usuarioId
+            );
+
+            $this->db->safeCommit();
+            return true;
         } catch (Throwable $e) {
             $this->db->safeRollBack();
             throw $e;
@@ -349,6 +429,26 @@ class TareaOperativa extends Model
         if ((int)($row['total'] ?? 0) !== 1) {
             throw new InvalidArgumentException('La habitacion seleccionada no pertenece al hotel actual.');
         }
+    }
+
+    private function trabajadorActivoEnHotel(int $trabajadorId, int $hotelId): ?array
+    {
+        if (!$this->tablaExiste('trabajadores')) {
+            return null;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT id, nombre_completo
+             FROM trabajadores
+             WHERE id = ?
+               AND hotel_id = ?
+               AND estado = 'activo'
+             LIMIT 1",
+            [$trabajadorId, $hotelId]
+        );
+        $row = $stmt ? $stmt->fetch() : null;
+
+        return $row ?: null;
     }
 
     private function registrarEvento(
