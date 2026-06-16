@@ -930,3 +930,12 @@ Resultado MANT-B:
 - Se agrega `src/tools/saas/preflight_mantenimiento_operativo.php`.
 - No hay nuevas rutas, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - QA manual queda diferida.
+
+Resultado MANT-B-F:
+
+- Estado tecnico: `BLOQUE_MANT_B_MANTENIMIENTO_INMEDIATO_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_MANT_B_F_cierre_mantenimiento_inmediato.md`.
+- Se cierra tecnicamente el endurecimiento de mantenimiento inmediato.
+- Verificaciones automaticas pasan con `ERROR: 0`.
+- QA manual queda diferida.
+- Siguiente paso recomendado: contrato independiente antes de automatizar mantenimiento.

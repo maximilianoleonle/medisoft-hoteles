@@ -838,3 +838,13 @@ agregar funcionalidades nuevas.
 - No hay rutas nuevas, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - QA manual queda diferida por instruccion del usuario.
 - Siguiente accion segura: cierre tecnico MANT-B o nuevo contrato independiente.
+
+## Cierre tecnico MANT-B-F
+
+- Estado formal: `BLOQUE_MANT_B_MANTENIMIENTO_INMEDIATO_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_MANT_B_F_cierre_mantenimiento_inmediato.md`.
+- Revision tecnica y auditoria del mantenimiento inmediato completadas.
+- Verificaciones automaticas pasan con `ERROR: 0` y warnings historicos permitidos.
+- QA manual queda diferida.
+- No hay rutas nuevas, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- Siguiente accion segura: nuevo contrato independiente.

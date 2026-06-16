@@ -731,3 +731,10 @@
 - El bloqueo de duplicados se hace antes del `INSERT` para evitar registros `en_proceso`
   paralelos por habitacion/hotel.
 - No se automatiza mantenimiento programado ni disponibilidad fuera del flujo existente.
+
+## Decision MANT-B-F
+
+- MANT-B se cierra tecnicamente antes de automatizar mantenimiento programado.
+- QA manual queda diferida por instruccion del usuario, no sustituida por los checkers.
+- El warning de una habitacion en mantenimiento sin registro activo queda como historico
+  conocido y no autoriza correccion SQL automatica.

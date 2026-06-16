@@ -1102,3 +1102,12 @@ Estado formal vigente: `MANTENIMIENTO_INMEDIATO_MANT_B_COMPLETADO_QA_DIFERIDA`.
 - Mantiene CSRF, permiso `habitaciones.mantenimiento` y scope `hotel_id`.
 - No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - Siguiente accion segura: QA manual diferida o cierre tecnico MANT-B.
+
+### Estado MANT-B-F
+
+Estado formal vigente: `BLOQUE_MANT_B_MANTENIMIENTO_INMEDIATO_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_B_F_cierre_mantenimiento_inmediato.md`.
+- Cierre tecnico del endurecimiento de mantenimiento inmediato.
+- No agrega funcionalidad nueva en el cierre.
+- Siguiente contrato requerido antes de automatizar mantenimiento programado o disponibilidad.

@@ -913,3 +913,13 @@ Estado: `MANTENIMIENTO_INMEDIATO_MANT_B_COMPLETADO_QA_DIFERIDA`.
 - No se agregan rutas, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - Riesgo residual: una habitacion historica esta en mantenimiento sin registro
   `en_proceso`; queda como warning, sin correccion automatica.
+
+## Auditoria MANT-B-F cierre mantenimiento inmediato
+
+Estado: `BLOQUE_MANT_B_MANTENIMIENTO_INMEDIATO_CERRADO_QA_DIFERIDA`.
+
+- Revision de cierre sin hallazgos bloqueantes.
+- Health y preflight validan que MANT-B mantiene CSRF, permisos, catalogos, duplicados y
+  `hotel_id`.
+- Riesgo residual: falta QA manual visual y el warning historico documentado.
+- No se habilitan automatizaciones de mantenimiento programado.

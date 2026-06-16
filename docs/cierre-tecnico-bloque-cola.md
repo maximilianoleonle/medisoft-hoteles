@@ -834,3 +834,13 @@ Estado: `MANTENIMIENTO_INMEDIATO_MANT_B_COMPLETADO_QA_DIFERIDA`.
 - Health y preflight MANT-B validan CSRF, permisos, catalogos, duplicados y `hotel_id`.
 - No hay migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - QA manual queda diferida.
+
+## Cierre tecnico MANT-B-F
+
+Estado: `BLOQUE_MANT_B_MANTENIMIENTO_INMEDIATO_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_B_F_cierre_mantenimiento_inmediato.md`.
+- Revision tecnica y auditoria de seguridad completadas para mantenimiento inmediato.
+- No se agregaron funcionalidades nuevas en el cierre.
+- No hay rutas nuevas, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- QA manual queda diferida.

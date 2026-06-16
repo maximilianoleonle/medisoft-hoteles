@@ -1066,3 +1066,10 @@ instruccion del usuario.
 - Confirmar que un segundo intento de iniciar queda bloqueado limpiamente.
 - Probar finalizar mantenimiento desde habitacion en mantenimiento.
 - Confirmar que no se crean movimientos de Caja, pagos, abonos ni cambios en `/api/sync`.
+
+### Estado MANT-B-F
+
+- Bloque mantenimiento inmediato cerrado tecnicamente.
+- QA manual sigue pendiente y diferida.
+- No avanzar a automatizacion de mantenimiento programado, disponibilidad automatica,
+  Caja, pagos, abonos, nomina, offline ni `/api/sync` desde este cierre.
