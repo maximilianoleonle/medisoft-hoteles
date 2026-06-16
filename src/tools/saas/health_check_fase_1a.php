@@ -4619,6 +4619,21 @@ if (!is_file($routesPath)) {
         : '';
 
     if (
+        $documentoModelCode !== ''
+        && strpos($documentoModelCode, "'trabajador'") !== false
+        && strpos($documentoModelCode, "'trabajador' => 'trabajadores'") !== false
+        && strpos($documentoControllerCode, "'trabajador' => 'Trabajador'") !== false
+        && strpos($documentoControllerCode, "'usuarios'") !== false
+    ) {
+        hcOk('Centro Documental NP-D-A reconoce trabajador como entidad moderna validada por hotel_id.');
+    } elseif ($documentoModelCode !== '') {
+        hcWarning(
+            'Centro Documental no reconoce trabajador como entidad moderna completa.',
+            'Agregar trabajador en Documento::ENTIDAD_TIPOS, validar contra trabajadores y etiquetar la entidad sin usar trabajador_documentos como flujo nuevo.'
+        );
+    }
+
+    if (
         hcRoutePatternExists($routes, 'documentos/1/editar', 'get')
         && hcRoutePatternExists($routes, 'documentos/1/actualizar', 'post')
     ) {
@@ -4736,6 +4751,7 @@ if (!is_file($routesPath)) {
         'cuenta_por_pagar' => $appRoot . '/app/views/cuentas_por_pagar/ver.php',
         'huesped' => $appRoot . '/app/views/huespedes/ver.php',
         'reservacion' => $appRoot . '/app/views/reservaciones/ver.php',
+        'trabajador' => $appRoot . '/app/views/trabajadores/ver.php',
     ];
     $viewsConPartial = [];
     foreach ($documentosEntidadViews as $entidadTipo => $viewPath) {
@@ -4746,7 +4762,7 @@ if (!is_file($routesPath)) {
     }
 
     if (count($viewsConPartial) === count($documentosEntidadViews)) {
-        hcOk('Fichas de proveedor, compra, CxP, huesped y reservacion incluyen seccion documental contextual.');
+        hcOk('Fichas de proveedor, compra, CxP, huesped, reservacion y trabajador incluyen seccion documental contextual.');
     } else {
         $faltantes = array_diff(array_keys($documentosEntidadViews), $viewsConPartial);
         hcWarning(
@@ -4761,6 +4777,7 @@ if (!is_file($routesPath)) {
         'cuenta_por_pagar' => $controllersDir . '/CuentaPorPagarController.php',
         'huesped' => $controllersDir . '/HuespedController.php',
         'reservacion' => $controllersDir . '/ReservacionController.php',
+        'trabajador' => $controllersDir . '/TrabajadorController.php',
     ];
     $controllersConConsulta = [];
     foreach ($documentosEntidadControllers as $entidadTipo => $controllerPath) {

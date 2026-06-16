@@ -765,3 +765,16 @@ Resultado NP-D-0:
   de reconciliacion.
 - No se implementan rutas, vistas, POST, migraciones ni escrituras.
 - No se toca Caja, pagos, abonos, nomina ni `/api/sync`.
+
+Resultado NP-D-A:
+
+- Estado tecnico: `DOCUMENTOS_LABORALES_NP_D_A_COMPLETADOS_QA_DIFERIDA`.
+- Documento: `docs/fase_NP_D_A_documentos_laborales_contextuales.md`.
+- Se agrega `trabajador` como entidad del Centro Documental moderno.
+- La ficha de trabajador muestra el partial `documentos_entidad` y enlaza al flujo
+  documental existente para ver/vincular documentos.
+- El contador de documentos laborales usa `documentos` + `documento_entidades` cuando la
+  fuente moderna esta disponible.
+- `trabajador_documentos` queda congelada; no se escribe ni se expone como storage.
+- No se crean rutas nuevas, migraciones, pagos, abonos, nomina, Caja ni cambios en
+  `/api/sync`.

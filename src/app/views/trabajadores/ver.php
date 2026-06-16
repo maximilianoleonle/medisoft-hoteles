@@ -310,6 +310,11 @@ $puedeRegistrarAsistencia = ($trabajador['estado'] ?? '') === 'activo' && !empty
             </div>
         </div>
 
+        <?php View::partial('documentos_entidad', [
+            'documentosEntidad' => $documentosEntidad ?? [],
+            'documentosEntidadContexto' => $documentosEntidadContexto ?? [],
+        ]); ?>
+
         <div class="worker-panel p-5 mb-4">
             <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <div>

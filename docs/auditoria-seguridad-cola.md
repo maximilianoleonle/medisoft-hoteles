@@ -753,3 +753,15 @@ Estado: `CONTRATO_NP_D_DOCUMENTOS_LABORALES_COMPLETADO`.
 - Mitigacion: usar Centro Documental moderno y congelar `trabajador_documentos`.
 - Cualquier implementacion futura debe validar trabajador por `hotel_id` y no mostrar
   `storage_path` ni `ruta_archivo`.
+
+## Auditoria NP-D-A documentos laborales
+
+Estado: `DOCUMENTOS_LABORALES_NP_D_A_COMPLETADOS_QA_DIFERIDA`.
+
+- La integracion usa Centro Documental moderno y no escribe en `trabajador_documentos`.
+- `Documento::entidadExisteEnHotel()` valida `trabajador` contra `trabajadores.hotel_id`.
+- La ficha de trabajador renderiza metadata segura mediante partial existente.
+- No se exponen rutas internas de storage.
+- No se crean rutas nuevas ni se toca `/api/sync`.
+- Riesgo residual: QA manual de vincular/subir/descargar documento de trabajador queda
+  diferida.

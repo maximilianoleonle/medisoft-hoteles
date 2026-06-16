@@ -672,3 +672,15 @@ agregar funcionalidades nuevas.
 - No toca Caja, pagos reales, abonos, nomina ni `/api/sync`.
 - Siguiente accion segura: NP-D-A integracion read-only/contextual de documentos de
   trabajador, reutilizando Centro Documental existente.
+
+## Documentos laborales NP-D-A
+
+- Estado formal: `DOCUMENTOS_LABORALES_NP_D_A_COMPLETADOS_QA_DIFERIDA`.
+- Documento creado: `docs/fase_NP_D_A_documentos_laborales_contextuales.md`.
+- `trabajador` queda como entidad permitida del Centro Documental moderno.
+- La ficha de trabajador muestra documentos vinculados y reutiliza el flujo existente de
+  vincular/ver/descargar documentos.
+- No se crean rutas nuevas ni uploads propios de Personal.
+- `trabajador_documentos` queda congelada como tabla legacy/aditiva.
+- No se toca Caja, pagos reales, abonos, nomina ni `/api/sync`.
+- Siguiente accion segura: revision/auditoria/cierre de NP-D-A.

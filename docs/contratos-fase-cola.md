@@ -977,3 +977,12 @@ Estado formal vigente: `CONTRATO_NP_D_DOCUMENTOS_LABORALES_COMPLETADO`.
 - Documentos laborales futuros deben usar Centro Documental moderno con
   `entidad_tipo = trabajador`.
 - `trabajador_documentos` queda congelada hasta una fase explicita de reconciliacion.
+
+### Estado NP-D-A
+
+Estado formal vigente: `DOCUMENTOS_LABORALES_NP_D_A_COMPLETADOS_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_D_A_documentos_laborales_contextuales.md`.
+- `trabajador` se integra como entidad documental moderna.
+- Ficha de trabajador usa partial contextual existente sin rutas nuevas.
+- `trabajador_documentos` sigue congelada; no se usa como flujo operativo nuevo.

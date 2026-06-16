@@ -605,3 +605,11 @@
 - La extension futura debe agregar `trabajador` como entidad documental y validar contra
   `trabajadores.hotel_id`.
 - `trabajador_documentos` se mantiene congelada hasta reconciliacion autorizada.
+
+## Decision NP-D-A documentos laborales
+
+- Se reutiliza `View::partial('documentos_entidad')` en la ficha de trabajador.
+- No se crean rutas nuevas porque el Centro Documental ya provee listado contextual,
+  upload seguro, detalle y descarga segura.
+- El contador de documentos laborales prefiere la fuente moderna y solo cae a
+  `trabajador_documentos` si no existen las tablas documentales modernas.

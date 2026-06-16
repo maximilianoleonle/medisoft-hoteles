@@ -38,6 +38,7 @@ class Documento extends Model
         'cuenta_por_pagar',
         'huesped',
         'reservacion',
+        'trabajador',
     ];
 
     public function tablasDisponibles(): bool
@@ -603,6 +604,7 @@ class Documento extends Model
             'cuenta_por_pagar' => 'cuentas_por_pagar',
             'huesped' => 'huespedes',
             'reservacion' => 'reservaciones',
+            'trabajador' => 'trabajadores',
         ];
 
         $tabla = $tablas[$entidadTipo] ?? null;

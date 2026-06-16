@@ -764,7 +764,21 @@ class Trabajador extends Model
             $resumen['asistencias_count'] = (int)($row['total'] ?? 0);
         }
 
-        if ($this->tablaExiste('trabajador_documentos')) {
+        if ($this->tablaExiste('documentos') && $this->tablaExiste('documento_entidades')) {
+            $row = $this->fetchOne(
+                "SELECT COUNT(DISTINCT d.id) AS total
+                 FROM documento_entidades de
+                 INNER JOIN documentos d
+                    ON d.id = de.documento_id
+                   AND d.hotel_id = de.hotel_id
+                 WHERE de.hotel_id = ?
+                   AND de.entidad_tipo = 'trabajador'
+                   AND de.entidad_id = ?
+                   AND d.estado <> 'eliminado'",
+                [$hotelId, $trabajadorId]
+            );
+            $resumen['documentos_count'] = (int)($row['total'] ?? 0);
+        } elseif ($this->tablaExiste('trabajador_documentos')) {
             $row = $this->fetchOne(
                 "SELECT COUNT(*) AS total
                  FROM trabajador_documentos

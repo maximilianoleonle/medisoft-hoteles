@@ -933,3 +933,19 @@ instruccion del usuario.
 - No requiere QA de navegador porque no agrega funcionalidad.
 - QA futura NP-D-A debe confirmar que documentos de trabajador usan Centro Documental
   moderno, sin exponer rutas internas ni usar `trabajador_documentos` como flujo nuevo.
+
+### Estado NP-D-A
+
+- Documentos laborales contextuales implementados.
+- QA manual diferida por instruccion del usuario.
+
+### QA manual diferida NP-D-A
+
+- Crear o usar un trabajador activo autorizado.
+- Abrir `/trabajadores/{id}`.
+- Confirmar que aparece "Documentos vinculados".
+- Usar "Vincular documento" y cargar un archivo permitido.
+- Confirmar que aparece en la ficha de trabajador.
+- Abrir detalle y descarga segura del documento.
+- Confirmar que no se expone `storage_path`, `nombre_archivo` ni `ruta_archivo`.
+- Confirmar que `trabajador_documentos` no recibe registros nuevos.

@@ -721,3 +721,13 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-np): define worker document center contract`.
 - DB: no aplica; NP-D-0 no crea rutas, migraciones ni datos.
 - No tocar `documentos`, `documento_entidades`, `trabajador_documentos` ni storage.
+
+### NP-D-A documentos laborales contextuales
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-np): link workers to document center`.
+- DB: no ejecutar `DELETE`, `UPDATE` ni correcciones manuales sobre `documentos`,
+  `documento_entidades` o storage sin autorizacion nueva.
+- Si QA manual genero documentos o vinculos de prueba, documentar IDs y usar el flujo
+  documental autorizado de baja logica/archivado.
+- No tocar `trabajador_documentos`, Caja, pagos, abonos, nomina ni `/api/sync`.

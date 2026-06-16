@@ -380,7 +380,7 @@ class DocumentoController extends Controller
             return;
         }
 
-        foreach (['inventario', 'huespedes', 'reservaciones'] as $clave) {
+        foreach (['inventario', 'huespedes', 'reservaciones', 'usuarios'] as $clave) {
             if (hotel_menu_module_enabled($clave)) {
                 return;
             }
@@ -398,6 +398,7 @@ class DocumentoController extends Controller
             'cuenta_por_pagar' => 'Cuenta por pagar',
             'huesped' => 'Huesped',
             'reservacion' => 'Reservacion',
+            'trabajador' => 'Trabajador',
         ];
 
         return $labels[$entidadTipo] ?? 'Entidad';

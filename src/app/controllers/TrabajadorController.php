@@ -6,6 +6,7 @@ require_once __DIR__ . '/../helpers/hotel_config.php';
 require_once __DIR__ . '/../helpers/modulos.php';
 require_once __DIR__ . '/../models/Trabajador.php';
 require_once __DIR__ . '/../models/TareaOperativa.php';
+require_once __DIR__ . '/../models/Documento.php';
 require_once __DIR__ . '/../services/AuditService.php';
 
 class TrabajadorController extends Controller
@@ -70,6 +71,14 @@ class TrabajadorController extends Controller
             return;
         }
 
+        $documentosEntidad = [];
+        try {
+            $documentoModel = new Documento();
+            $documentosEntidad = $documentoModel->documentosPorEntidad($hotelId, 'trabajador', $id, 10);
+        } catch (Throwable $e) {
+            $documentosEntidad = [];
+        }
+
         View::renderTemplate('trabajadores/ver', [
             'title' => 'Trabajador #' . $id . ' - ' . current_hotel_display_name(),
             'trabajador' => $trabajador,
@@ -80,6 +89,12 @@ class TrabajadorController extends Controller
             'asistenciasRecientes' => $this->trabajadorModel->ultimosMovimientosPorTrabajador($id, $hotelId, 20),
             'ledgerDisponible' => $this->trabajadorModel->tablasLedgerDisponibles(),
             'tareasContextuales' => $this->tareaModel->listarPorEntidadHotel($hotelId, 'trabajador', $id, 8),
+            'documentosEntidad' => $documentosEntidad,
+            'documentosEntidadContexto' => [
+                'tipo' => 'trabajador',
+                'id' => $id,
+                'label' => 'Trabajador',
+            ],
         ]);
     }
 

@@ -695,3 +695,13 @@ Estado: `CONTRATO_NP_D_DOCUMENTOS_LABORALES_COMPLETADO`.
 - Solo contrato; no agrega rutas, vistas, POST, migraciones ni escrituras.
 - Define que documentos laborales futuros usen Centro Documental moderno.
 - `trabajador_documentos` queda congelada hasta reconciliacion autorizada.
+
+## Checkpoint tecnico NP-D-A
+
+Estado: `DOCUMENTOS_LABORALES_NP_D_A_COMPLETADOS_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_D_A_documentos_laborales_contextuales.md`.
+- `trabajador` agregado como entidad del Centro Documental moderno.
+- Ficha de trabajador renderiza documentos contextuales mediante partial seguro.
+- No se crean rutas nuevas ni se usa `trabajador_documentos`.
+- QA manual queda diferida.
