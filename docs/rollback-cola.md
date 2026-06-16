@@ -683,3 +683,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Si QA manual genero registros de prueba, documentar IDs y esperar fase autorizada de
   anulacion o correccion.
 - No tocar Caja, movimientos, pagos reales, abonos, asistencia ni `/api/sync`.
+
+### NP-C-C-F cierre tecnico anticipos y prestamos
+
+- Rollback documental: revertir el commit
+  `docs(phase-np): close controlled worker advance loan block`.
+- DB: no aplica; es cierre documental.
+- Mantener intactos anticipos/prestamos ya creados si existieran.

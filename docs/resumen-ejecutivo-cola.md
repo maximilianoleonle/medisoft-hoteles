@@ -716,3 +716,12 @@ Resultado NP-C-C-A:
 - Health checker y preflight conocen NP-C-C-A.
 - No se crean pagos reales, abonos, Nomina ni movimientos de Caja.
 - No se toco `/api/sync`.
+
+Resultado NP-C-C-F:
+
+- Estado tecnico: `BLOQUE_NP_C_C_ANTICIPOS_PRESTAMOS_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_NP_C_C_F_cierre_anticipos_prestamos.md`.
+- Se cierra tecnicamente el bloque de anticipos/prestamos manuales.
+- Checkers sin errores: preflight de ledger laboral y health general.
+- QA manual queda diferida hasta que exista un trabajador activo autorizado.
+- Siguiente paso recomendado: contrato nuevo de asistencia manual basica o QA manual NP-C.

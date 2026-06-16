@@ -616,3 +616,13 @@ agregar funcionalidades nuevas.
 - No se toco `/api/sync`.
 - Siguiente accion segura: revision tecnica/auditoria/cierre de NP-C-C-A antes de abrir
   asistencia o abonos/liquidaciones.
+
+## Cierre tecnico NP-C-C-F
+
+- Estado formal: `BLOQUE_NP_C_C_ANTICIPOS_PRESTAMOS_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_NP_C_C_F_cierre_anticipos_prestamos.md`.
+- Bloque de anticipos y prestamos manuales queda cerrado tecnicamente.
+- Revision tecnica posterior aplicada en `fix(review): stabilize worker advances and loans copy`.
+- QA manual queda diferida porque no hay trabajadores locales.
+- Siguiente accion segura: contrato nuevo para asistencia manual basica, sin nomina
+  automatica.

@@ -887,3 +887,9 @@ instruccion del usuario.
 - Confirmar que no se crean movimientos de Caja.
 - Ejecutar `docker compose exec -T app php /var/www/html/tools/saas/preflight_personal_ledger.php`.
 - Confirmar `ERROR: 0`.
+
+### Estado NP-C-C-F
+
+- Bloque de anticipos y prestamos manuales cerrado tecnicamente.
+- QA manual sigue pendiente y diferida.
+- No avanzar a abonos, liquidaciones, Caja ni asistencia sin contrato nuevo.

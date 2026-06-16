@@ -700,3 +700,13 @@ Estado: `ANTICIPOS_PRESTAMOS_NP_C_C_A_COMPLETADO_QA_DIFERIDA`.
 - No hay escrituras en Caja, cortes, movimientos, asistencia ni abonos.
 - Preflight y health checker detectan escrituras fuera de alcance.
 - Riesgo residual: falta QA manual con trabajador real porque la tabla local esta vacia.
+
+## Auditoria NP-C-C-F cierre anticipos y prestamos
+
+Estado: `BLOQUE_NP_C_C_ANTICIPOS_PRESTAMOS_CERRADO_QA_DIFERIDA`.
+
+- Revision tecnica completada.
+- Se corrigio copy desactualizado sin cambiar logica.
+- No quedan errores automaticos relacionados con NP-C-C-A.
+- QA manual queda diferida; no se marca validacion de usuario.
+- Riesgo residual: abonos/liquidaciones y asistencia requieren contrato nuevo.

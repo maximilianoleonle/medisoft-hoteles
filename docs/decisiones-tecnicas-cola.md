@@ -567,3 +567,10 @@
 - La vista no envia `estado`, `saldo_pendiente` ni `hotel_id`.
 - Los abonos periodicos de prestamos son informativos y no crean pagos.
 - Caja queda completamente fuera del flujo.
+
+## Decision NP-C-C-F cierre anticipos y prestamos
+
+- Se cierra tecnicamente el bloque sin abrir abonos, liquidaciones ni asistencia.
+- La siguiente escritura laboral recomendada debe empezar por contrato de asistencia
+  manual, sin nomina automatica.
+- QA manual queda diferida y no se toma como validacion de usuario.

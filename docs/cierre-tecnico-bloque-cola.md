@@ -646,3 +646,13 @@ Estado: `ANTICIPOS_PRESTAMOS_NP_C_C_A_COMPLETADO_QA_DIFERIDA`.
 - Vista de trabajador con formularios CSRF y advertencias de no Caja/no abonos.
 - Health/preflight actualizados y ejecutados sin errores.
 - QA manual queda diferida porque no hay trabajadores locales.
+
+## Cierre tecnico NP-C-C-F
+
+Estado: `BLOQUE_NP_C_C_ANTICIPOS_PRESTAMOS_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_C_F_cierre_anticipos_prestamos.md`.
+- Revision tecnica y auditoria de seguridad completadas para anticipos/prestamos.
+- No se agregaron funcionalidades nuevas en el cierre.
+- No hay pagos reales, abonos, Caja, Nomina operativa ni cambios en `/api/sync`.
+- QA manual queda diferida.

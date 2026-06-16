@@ -930,3 +930,11 @@ Estado formal vigente: `ANTICIPOS_PRESTAMOS_NP_C_C_A_COMPLETADO_QA_DIFERIDA`.
   `trabajador_prestamos`.
 - Caja, pagos reales, abonos, asistencia y `/api/sync` siguen fuera de alcance.
 - Antes de abrir abonos/liquidaciones o asistencia se requiere contrato nuevo.
+
+### Estado NP-C-C-F
+
+Estado formal vigente: `BLOQUE_NP_C_C_ANTICIPOS_PRESTAMOS_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_C_F_cierre_anticipos_prestamos.md`.
+- Cierre tecnico del bloque de anticipos/prestamos manuales.
+- Siguiente contrato requerido antes de asistencia, abonos, liquidaciones o pagos reales.
