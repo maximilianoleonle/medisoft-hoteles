@@ -141,16 +141,23 @@
 
 ## Fase 4A Centro Documental
 
-- Estado formal vigente: `CONTRATO_4A_COMPLETADO`.
+- Estado formal vigente: `MIGRACION_4A_COMPLETADA`.
 - Centro Documental debe iniciar con storage privado, no con enlaces publicos directos.
 - `public_html/uploads` queda reservado para assets publicos/imagenes ya existentes.
 - El patron de descarga segura de `ReporteLinkController` es la referencia tecnica para
   resolver rutas con `realpath`, limitar raices permitidas y servir con headers privados.
-- Las tablas propuestas son aditivas: `documento_tipos`, `documentos`,
+- Las tablas base creadas son aditivas: `documento_tipos`, `documentos`,
   `documento_entidades`.
 - La relacion con entidades sera polimorfica; la validacion de pertenencia al mismo
   `hotel_id` debe vivir en modelo/servicio, no solo en vista.
-- 4A-0 no crea migraciones, no implementa uploads, no crea POST y no escribe datos.
+- 4A-A no inserta datos operativos y deja las tres tablas vacias.
+- `mime_permitidos` y `etiquetas` quedan como `TEXT` para mantener compatibilidad sin
+  depender de JSON en esta fundacion.
+- `documento_entidades` usa indices no unicos para no bloquear relaciones futuras
+  multiples con la misma entidad bajo roles distintos.
+- `storage_path` queda como path privado futuro, nunca como URL publica.
+- 4A-0 no creo migraciones; 4A-A crea solo esquema. No implementa uploads, no crea POST,
+  no crea descargas y no escribe documentos.
 - No se permite tocar Caja, pagos, abonos, Fase 3D ni `/api/sync`.
 
 ### Decisiones de diagnostico NP-0

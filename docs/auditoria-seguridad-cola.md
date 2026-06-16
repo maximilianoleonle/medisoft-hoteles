@@ -120,17 +120,30 @@ Bloque 3C cerrado tecnicamente. Mantener prohibidos pagos, Caja, CxC, nomina ope
 
 ## Fase 4A Centro Documental - auditoria inicial de contrato
 
-Estado: `CONTRATO_4A_COMPLETADO`.
+Estado: `MIGRACION_4A_COMPLETADA`.
 
 - Riesgo principal: exposicion accidental de documentos privados si se guardan en
   `public_html/uploads`.
 - Mitigacion definida: usar `STORAGE_PATH/documentos` y descarga por controlador.
 - Patron seguro de referencia: `ReporteLinkController`, con `realpath`, raices
   permitidas, validacion de hotel/permisos y headers privados.
-- No existen tablas generales `documentos`, `documento_tipos` ni
-  `documento_entidades`; la fase futura debe ser aditiva.
-- 4A-0 no implementa uploads, POST, descargas, migraciones ni escrituras.
+- Tablas generales creadas de forma aditiva y vacia:
+  `documento_tipos`, `documentos`, `documento_entidades`.
+- 4A-A no implementa uploads, POST, descargas, acciones de borrado ni exposicion publica.
+- `storage_path` queda documentado como almacenamiento privado futuro, no URL publica.
+- No se insertaron documentos ni relaciones; conteos iniciales en cero.
+- No se detectaron pagos/abonos CxP nuevos ni movimientos CxP.
 - Prohibido en 4A: Caja, pagos, abonos, Fase 3D y `/api/sync`.
+
+### Auditoria 4A-A
+
+- Backup previo confirmado con SHA256 antes de aplicar DB.
+- Migracion usa `CREATE TABLE IF NOT EXISTS`.
+- No contiene `DROP`, `DELETE`, `UPDATE` de datos operativos ni `ALTER` destructivo.
+- No modifica tablas de Caja, pagos, abonos, CxP operativa ni `/api/sync`.
+- Las tablas nuevas incluyen `hotel_id` para aislamiento multi-hotel.
+- Riesgo residual: las relaciones polimorficas no pueden tener FK directa contra cada
+  entidad; las fases read-only/upload deben validar entidad y hotel en modelo/servicio.
 
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 

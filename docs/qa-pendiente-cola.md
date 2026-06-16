@@ -211,9 +211,24 @@ Cierre tecnico 3C completado documentalmente. La QA manual final del bloque 3C f
 
 ## QA Fase 4A Centro Documental
 
-Estado vigente: `CONTRATO_4A_COMPLETADO`.
+Estado vigente: `MIGRACION_4A_COMPLETADA`.
 
-4A-0 no implementa funcionalidad. QA pendiente aplica a fases futuras.
+4A-0 no implemento funcionalidad. 4A-A creo solo esquema base, sin uploads, sin POST,
+sin descargas y sin datos operativos.
+
+### Resultado automatico Fase 4A-A
+
+- Backup previo confirmado:
+  `src/storage/backups/phase4a_20260615_182352_before_document_center_medisoft_hoteles_import.sql`.
+- SHA256: `698A304F69B312EF06EABA787C83969629F2B14BCA096906CC08CADDC7D898F0`.
+- Migracion aplicada: `migrations/20260615_004_fase_4a_centro_documental_base.sql`.
+- Tablas documentales existentes y vacias:
+  - `documento_tipos`: `0`;
+  - `documentos`: `0`;
+  - `documento_entidades`: `0`.
+- `cuentas_por_pagar_movimientos`: `0`.
+- No se detectaron tablas de pagos/abonos CxP creadas.
+- No se implemento acceso publico a documentos.
 
 ### QA critica futura
 

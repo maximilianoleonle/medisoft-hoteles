@@ -229,6 +229,27 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Archivos: no aplica; no se crearon uploads ni rutas funcionales.
 - No tocar Caja, pagos, abonos, Fase 3D ni `/api/sync`.
 
+### 4A-A migracion base documental
+
+- Estado vigente: `MIGRACION_4A_COMPLETADA`.
+- Backup previo:
+  `src/storage/backups/phase4a_20260615_182352_before_document_center_medisoft_hoteles_import.sql`.
+- SHA256: `698A304F69B312EF06EABA787C83969629F2B14BCA096906CC08CADDC7D898F0`.
+- Tamano: `1535817` bytes.
+- Migracion: `migrations/20260615_004_fase_4a_centro_documental_base.sql`.
+- Rollback de codigo: revertir el commit `feat(phase-4a): add document center base schema`.
+- Rollback DB manual solo con autorizacion explicita y si las tablas estan vacias:
+  1. `SELECT COUNT(*) FROM documento_entidades;`
+  2. `SELECT COUNT(*) FROM documentos;`
+  3. `SELECT COUNT(*) FROM documento_tipos;`
+  4. si los tres conteos son `0`, ejecutar `DROP TABLE documento_entidades;`
+  5. ejecutar `DROP TABLE documentos;`
+  6. ejecutar `DROP TABLE documento_tipos;`
+  7. borrar el registro de `migrations` para `20260615_004_fase_4a_centro_documental_base.sql`.
+- Si alguna tabla tiene datos, no ejecutar `DROP` ni `DELETE`; exportar y decidir
+  reconciliacion o restauracion desde backup.
+- No borrar archivos de storage; 4A-A no crea archivos fisicos.
+
 ### Fases futuras
 
 - Antes de migracion o escritura: backup fresco.

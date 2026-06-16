@@ -83,9 +83,9 @@ Regla:
 
 ## Centro Documental (Fase 4A)
 
-Estado formal: `CONTRATO_4A_COMPLETADO`.
+Estado formal: `MIGRACION_4A_COMPLETADA`.
 
-Fuente propuesta:
+Fuente fundacional creada:
 
 - `documento_tipos`;
 - `documentos`;
@@ -93,12 +93,18 @@ Fuente propuesta:
 
 Reglas:
 
-- No existen aun como fuente operativa general; 4A-0 solo documenta contrato.
+- Existen como tablas base vacias desde 4A-A, pero todavia no son fuente operativa de
+  archivos porque no hay uploads, descargas ni adjuntos funcionales expuestos.
 - Los archivos privados deben vivir bajo `STORAGE_PATH/documentos`.
 - `public_html/uploads` no debe ser fuente de documentos privados.
 - `reporte_links` sigue siendo fuente especifica de reportes PDF y no debe fusionarse
   con Centro Documental en 4A base.
 - Toda relacion documental debe validar `hotel_id` de documento y entidad.
+- `storage_path` apunta a almacenamiento privado futuro; no debe usarse como URL publica.
+- La relacion `documento_entidades` es polimorfica; la validacion de pertenencia a hotel
+  de proveedor/compra/CxP/huesped/reservacion debe vivir en modelo/servicio.
+- Conteos iniciales post-migracion: `documento_tipos=0`, `documentos=0`,
+  `documento_entidades=0`.
 - No Caja, pagos, abonos, Fase 3D ni `/api/sync`.
 
 ## Personal y Nomina (Fase NP)

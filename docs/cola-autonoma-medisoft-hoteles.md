@@ -2,14 +2,16 @@
 
 ## Ultimo mensaje real usado
 
-NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Fase 4A-0 contrato y diagnostico del Centro Documental Base, sin uploads ni POST.
+NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Centro Documental Base.
+
+Cola actual procesada: `[COLA_4A_A_MIGRACION_BASE_DOCUMENTOS]`, migracion base no destructiva, idempotente y multi-hotel, sin uploads ni POST.
 
 ## Estado vigente
 
 - Bloque actual: Fase 4A Centro Documental Base.
-- Fase actual: 4A-0 contrato y diagnostico.
+- Fase actual: 4A-A migracion base documental.
 - Riesgo: naranja.
-- Estado: `CONTRATO_4A_COMPLETADO`.
+- Estado: `MIGRACION_4A_COMPLETADA`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -20,14 +22,18 @@ NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Fase 4A-0 contrato y 
 ## Fase 4A Centro Documental
 
 - 4A-0 contrato y diagnostico: completada documentalmente.
+- 4A-A migracion base: completada con migracion aditiva, backup previo, tablas vacias y registro en `migrations`.
 - HEAD al iniciar: `35abdc7 fix(pwa): use hotel branding assets for push notifications`.
 - Git al iniciar: limpio.
 - Patrones detectados: `public_html/uploads` para assets publicos; `storage/reportes` + `ReporteLinkController` como patron privado seguro.
 - No existen tablas generales `documentos`, `documento_entidades` ni `documento_tipos`; existen `reporte_links` y `reporte_link_envios` para reportes PDF.
 - Propuesta: tablas aditivas `documento_tipos`, `documentos`, `documento_entidades`.
 - Storage recomendado: `STORAGE_PATH/documentos/{hotel_id}/{yyyy}/{mm}` con descarga por controlador.
-- Sin uploads, sin POST, sin migraciones aplicadas y sin escrituras en DB durante 4A-0.
-- Siguiente cola recomendada: `[COLA_4A_A_MIGRACION_BASE_DOCUMENTOS]`.
+- Backup 4A-A: `src/storage/backups/phase4a_20260615_182352_before_document_center_medisoft_hoteles_import.sql`, SHA256 `698A304F69B312EF06EABA787C83969629F2B14BCA096906CC08CADDC7D898F0`, tamano `1535817`.
+- Migracion 4A-A: `migrations/20260615_004_fase_4a_centro_documental_base.sql`.
+- Tablas documentales creadas y vacias: `documento_tipos=0`, `documentos=0`, `documento_entidades=0`.
+- Sin uploads, sin POST, sin descargas, sin acciones de borrado y sin exposicion publica de documentos.
+- Siguiente cola recomendada: `[COLA_4A_B_DOCUMENTOS_READ_ONLY]`.
 
 ## Reanclaje Fase 3C
 
@@ -204,4 +210,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Siguiente paso formal recomendado: `[COLA_4A_A_MIGRACION_BASE_DOCUMENTOS]` si se autoriza la migracion base documental. No avanzar a pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Siguiente paso formal recomendado: `[COLA_4A_B_DOCUMENTOS_READ_ONLY]` para modelo/controlador/vistas read-only de metadata documental. No avanzar a uploads, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

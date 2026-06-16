@@ -355,8 +355,54 @@ Fases futuras:
 
 ## Siguiente cola recomendada
 
-`[COLA_4A_A_MIGRACION_BASE_DOCUMENTOS]`
+`[COLA_4A_B_DOCUMENTOS_READ_ONLY]`
 
-Objetivo: crear migracion idempotente y no destructiva para `documento_tipos`,
-`documentos` y `documento_entidades`, con backup previo si se ejecuta localmente, sin
-uploads, sin descarga de archivos, sin Caja, sin pagos, sin abonos y sin `/api/sync`.
+Objetivo: crear modelos/controladores/vistas read-only para consultar metadata
+documental por hotel y por entidad, sin uploads, sin POST, sin descarga de archivos, sin
+Caja, sin pagos, sin abonos y sin `/api/sync`.
+
+## Resultado Fase 4A-A - Migracion base documental
+
+Estado: `MIGRACION_4A_COMPLETADA`.
+
+Backup previo confirmado antes de aplicar DB:
+
+- `src/storage/backups/phase4a_20260615_182352_before_document_center_medisoft_hoteles_import.sql`
+- tamano: `1535817` bytes
+- SHA256: `698A304F69B312EF06EABA787C83969629F2B14BCA096906CC08CADDC7D898F0`
+
+Migracion creada y aplicada localmente:
+
+- `migrations/20260615_004_fase_4a_centro_documental_base.sql`
+- registrada en `migrations` como `ejecutada`, batch `17`
+
+Tablas creadas:
+
+- `documento_tipos`
+- `documentos`
+- `documento_entidades`
+
+Conteos posteriores:
+
+- `documento_tipos`: `0`
+- `documentos`: `0`
+- `documento_entidades`: `0`
+
+No se implementaron uploads, POST, descargas, borrados ni exposicion publica de
+documentos. El campo `storage_path` queda reservado para almacenamiento privado futuro,
+no para `public_html/uploads`.
+
+Validaciones de no afectacion:
+
+- `cuentas_por_pagar`: `2`
+- `cuentas_por_pagar_movimientos`: `0`
+- `movimientos_caja`: `1403`
+- tablas de pagos/abonos CxP buscadas: inexistentes
+
+Rollback manual de 4A-A:
+
+1. Confirmar con backup vigente y autorizacion explicita.
+2. Confirmar que `documento_entidades`, `documentos` y `documento_tipos` siguen en `0`.
+3. Si estan vacias, revertir el commit de la migracion y ejecutar rollback SQL manual en
+   orden hijo-padre.
+4. Si contienen datos, no ejecutar `DROP`; exportar conteos y definir reconciliacion.

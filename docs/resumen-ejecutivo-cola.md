@@ -141,7 +141,7 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 
 ## Nuevo bloque Fase 4A Centro Documental
 
-Estado: `CONTRATO_4A_COMPLETADO`.
+Estado: `MIGRACION_4A_COMPLETADA`.
 
 Objetivo: crear una fundacion segura para adjuntar, consultar y relacionar documentos
 con proveedor, compra, CxP, huesped, reservacion y trabajador futuro, sin Caja, pagos,
@@ -158,6 +158,19 @@ Resultado 4A-0:
 - Propuesta de tablas aditivas documentada.
 - Siguiente cola recomendada: `[COLA_4A_A_MIGRACION_BASE_DOCUMENTOS]`.
 - No se implementaron uploads, POST, descargas ni migraciones en 4A-0.
+
+Resultado 4A-A:
+
+- Backup previo confirmado antes de aplicar DB:
+  `src/storage/backups/phase4a_20260615_182352_before_document_center_medisoft_hoteles_import.sql`.
+- SHA256: `698A304F69B312EF06EABA787C83969629F2B14BCA096906CC08CADDC7D898F0`.
+- Tamano: `1535817` bytes.
+- Migracion creada: `migrations/20260615_004_fase_4a_centro_documental_base.sql`.
+- Migracion aplicada localmente y registrada en `migrations` como batch `17`.
+- Tablas creadas y vacias: `documento_tipos=0`, `documentos=0`, `documento_entidades=0`.
+- No hay uploads, POST, descargas, borrados ni exposicion publica de documentos.
+- No se tocaron Caja, pagos, abonos, CxP operativa ni `/api/sync`.
+- Siguiente cola recomendada: `[COLA_4A_B_DOCUMENTOS_READ_ONLY]`.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 
