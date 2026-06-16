@@ -870,3 +870,20 @@ instruccion del usuario.
 - No requiere QA de navegador porque no agrega funcionalidad.
 - QA futura NP-C-C-A debe confirmar captura manual, saldo inicial igual al monto, ausencia
   de Caja y ausencia de pagos/abonos reales.
+
+### Estado NP-C-C-A
+
+- Anticipos y prestamos manuales implementados.
+- QA manual diferida por instruccion del usuario.
+- No se hizo prueba de escritura automatica porque `trabajadores` esta vacia.
+
+### QA manual diferida NP-C-C-A
+
+- Crear o usar un trabajador activo autorizado.
+- Abrir `/trabajadores/{id}`.
+- Registrar anticipo y confirmar saldo pendiente igual al monto.
+- Registrar prestamo y confirmar saldo pendiente igual al monto.
+- Confirmar que no se crean pagos reales ni abonos.
+- Confirmar que no se crean movimientos de Caja.
+- Ejecutar `docker compose exec -T app php /var/www/html/tools/saas/preflight_personal_ledger.php`.
+- Confirmar `ERROR: 0`.

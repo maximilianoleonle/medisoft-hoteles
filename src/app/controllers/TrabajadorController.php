@@ -231,6 +231,82 @@ class TrabajadorController extends Controller
         }
     }
 
+    public function registrarAnticipoLaboralAction(): void
+    {
+        $this->requireWritePermission('usuarios.edit');
+
+        if (!$this->isPost()) {
+            $this->redirect('trabajadores');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        $id = (int)($this->route_params['id'] ?? 0);
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            $trabajador = $this->trabajadorModel->buscarPorIdHotel($id, $hotelId);
+            if (!$trabajador) {
+                throw new Exception('Trabajador no encontrado para el hotel actual');
+            }
+
+            $anticipoId = $this->trabajadorModel->registrarAnticipoLaboralParaHotel(
+                $id,
+                $hotelId,
+                $this->datosAnticipoLaboral(),
+                $this->usuarioIdActual()
+            );
+
+            $anticipo = $this->trabajadorModel->anticipoLaboralPorIdHotel($anticipoId, $id, $hotelId);
+            $this->auditarMovimientoLaboral('trabajadores.anticipo_laboral_registrado', 'trabajador_anticipo', $trabajador, $anticipo ?: [], $anticipoId);
+
+            set_mensaje('Anticipo laboral registrado correctamente. No se genero movimiento de Caja.', 'success');
+            $this->redirect('trabajadores/' . $id);
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo registrar el anticipo laboral: ' . $e->getMessage(), 'error');
+            $this->redirect($id > 0 ? 'trabajadores/' . $id : 'trabajadores');
+        }
+    }
+
+    public function registrarPrestamoLaboralAction(): void
+    {
+        $this->requireWritePermission('usuarios.edit');
+
+        if (!$this->isPost()) {
+            $this->redirect('trabajadores');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        $id = (int)($this->route_params['id'] ?? 0);
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            $trabajador = $this->trabajadorModel->buscarPorIdHotel($id, $hotelId);
+            if (!$trabajador) {
+                throw new Exception('Trabajador no encontrado para el hotel actual');
+            }
+
+            $prestamoId = $this->trabajadorModel->registrarPrestamoLaboralParaHotel(
+                $id,
+                $hotelId,
+                $this->datosPrestamoLaboral(),
+                $this->usuarioIdActual()
+            );
+
+            $prestamo = $this->trabajadorModel->prestamoLaboralPorIdHotel($prestamoId, $id, $hotelId);
+            $this->auditarMovimientoLaboral('trabajadores.prestamo_laboral_registrado', 'trabajador_prestamo', $trabajador, $prestamo ?: [], $prestamoId);
+
+            set_mensaje('Prestamo laboral registrado correctamente. No se genero movimiento de Caja.', 'success');
+            $this->redirect('trabajadores/' . $id);
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo registrar el prestamo laboral: ' . $e->getMessage(), 'error');
+            $this->redirect($id > 0 ? 'trabajadores/' . $id : 'trabajadores');
+        }
+    }
+
     private function cambiarEstado(string $estado, string $mensaje, string $accion): void
     {
         $this->requireWritePermission('usuarios.edit');
@@ -317,6 +393,30 @@ class TrabajadorController extends Controller
         ];
     }
 
+    private function datosAnticipoLaboral(): array
+    {
+        return [
+            'monto' => $this->getPost('monto', ''),
+            'fecha' => $this->getPost('fecha', ''),
+            'motivo' => $this->getPost('motivo', ''),
+            'referencia' => $this->getPost('referencia', ''),
+            'notas' => $this->getPost('notas', ''),
+        ];
+    }
+
+    private function datosPrestamoLaboral(): array
+    {
+        return [
+            'monto' => $this->getPost('monto', ''),
+            'fecha' => $this->getPost('fecha', ''),
+            'plazo_meses' => $this->getPost('plazo_meses', ''),
+            'abono_periodico' => $this->getPost('abono_periodico', ''),
+            'motivo' => $this->getPost('motivo', ''),
+            'referencia' => $this->getPost('referencia', ''),
+            'notas' => $this->getPost('notas', ''),
+        ];
+    }
+
     private function usuarioIdActual(): ?int
     {
         $usuarioId = $_SESSION['user_id'] ?? $_SESSION['usuario_id'] ?? null;
@@ -366,6 +466,29 @@ class TrabajadorController extends Controller
             ]);
         } catch (Throwable $e) {
             error_log('No se pudo auditar concepto laboral: ' . $e->getMessage());
+        }
+    }
+
+    private function auditarMovimientoLaboral(string $accion, string $entidadTipo, array $trabajador, array $movimiento, int $movimientoId): void
+    {
+        try {
+            AuditService::record($accion, [
+                'hotel_id' => $this->hotelIdActual(),
+                'usuario_id' => $this->usuarioIdActual(),
+                'entidad_tipo' => $entidadTipo,
+                'entidad_id' => (string)$movimientoId,
+                'descripcion' => 'Movimiento laboral manual registrado sin Caja',
+                'datos_despues' => [
+                    'trabajador_id' => (int)($trabajador['id'] ?? 0),
+                    'trabajador_nombre' => $trabajador['nombre_completo'] ?? null,
+                    'movimiento' => $movimiento,
+                    'sin_caja' => true,
+                    'sin_pago_real' => true,
+                    'sin_abono' => true,
+                ],
+            ]);
+        } catch (Throwable $e) {
+            error_log('No se pudo auditar movimiento laboral: ' . $e->getMessage());
         }
     }
 }

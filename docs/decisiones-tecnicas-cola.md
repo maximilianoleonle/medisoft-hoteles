@@ -558,3 +558,12 @@
 - El saldo pendiente inicial se derivara del monto; no debe venir del formulario.
 - Esta captura futura no representara salida real de dinero ni movimiento de Caja.
 - Abonos, liquidaciones o anulaciones de saldo requieren contrato propio.
+
+## Decision NP-C-C-A anticipos y prestamos manuales
+
+- Se implementa captura manual inicial sin abonos ni liquidaciones.
+- El estado inicial se fija en backend: `pendiente` para anticipos y `vigente` para
+  prestamos.
+- La vista no envia `estado`, `saldo_pendiente` ni `hotel_id`.
+- Los abonos periodicos de prestamos son informativos y no crean pagos.
+- Caja queda completamente fuera del flujo.

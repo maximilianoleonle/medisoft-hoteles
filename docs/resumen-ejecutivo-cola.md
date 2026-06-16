@@ -704,3 +704,15 @@ Resultado NP-C-C-0:
 - Se define contrato para futura captura manual de anticipos y prestamos laborales.
 - No se implementan rutas, vistas, POST ni escrituras.
 - Caja, pagos reales, abonos, Nomina y `/api/sync` siguen fuera de alcance.
+
+Resultado NP-C-C-A:
+
+- Estado tecnico: `ANTICIPOS_PRESTAMOS_NP_C_C_A_COMPLETADO_QA_DIFERIDA`.
+- Documento: `docs/fase_NP_C_C_A_anticipos_prestamos.md`.
+- Se agregan formularios POST controlados para anticipos y prestamos en la ficha de
+  trabajador.
+- Modelo central valida hotel, trabajador activo, monto, fecha y motivo.
+- `saldo_pendiente` inicia igual al monto.
+- Health checker y preflight conocen NP-C-C-A.
+- No se crean pagos reales, abonos, Nomina ni movimientos de Caja.
+- No se toco `/api/sync`.

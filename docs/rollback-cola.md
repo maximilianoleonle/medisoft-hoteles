@@ -673,3 +673,13 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-np): define controlled worker advance loan contract`.
 - DB: no aplica; NP-C-C-0 no crea rutas, migraciones ni datos.
 - No tocar `trabajador_anticipos`, `trabajador_prestamos`, Caja ni `/api/sync`.
+
+### NP-C-C-A anticipos y prestamos manuales
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-np): add controlled worker advances and loans`.
+- DB: no ejecutar `DELETE`, `UPDATE` ni correcciones manuales sobre
+  `trabajador_anticipos` o `trabajador_prestamos` sin autorizacion nueva.
+- Si QA manual genero registros de prueba, documentar IDs y esperar fase autorizada de
+  anulacion o correccion.
+- No tocar Caja, movimientos, pagos reales, abonos, asistencia ni `/api/sync`.

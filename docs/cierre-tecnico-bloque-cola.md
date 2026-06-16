@@ -635,3 +635,14 @@ Estado: `CONTRATO_NP_C_C_ANTICIPOS_PRESTAMOS_COMPLETADO`.
 - Documento: `docs/fase_NP_C_C_0_contrato_anticipos_prestamos.md`.
 - Solo contrato; no agrega rutas, vistas, POST ni escrituras.
 - Define futura captura manual de anticipos/prestamos sin Caja.
+
+## Checkpoint tecnico NP-C-C-A
+
+Estado: `ANTICIPOS_PRESTAMOS_NP_C_C_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_C_A_anticipos_prestamos.md`.
+- Rutas POST controladas para anticipos y prestamos.
+- Modelo central con transaccion, validacion de trabajador activo y aislamiento `hotel_id`.
+- Vista de trabajador con formularios CSRF y advertencias de no Caja/no abonos.
+- Health/preflight actualizados y ejecutados sin errores.
+- QA manual queda diferida porque no hay trabajadores locales.

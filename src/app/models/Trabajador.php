@@ -366,6 +366,188 @@ class Trabajador extends Model
         return $row ?: null;
     }
 
+    public function registrarAnticipoLaboralParaHotel(int $trabajadorId, int $hotelId, array $datos, ?int $usuarioId = null): int
+    {
+        if ($trabajadorId <= 0 || $hotelId <= 0 || !$this->tablaDisponible() || !$this->tablaExiste('trabajador_anticipos')) {
+            throw new Exception('Ledger de anticipos no disponible');
+        }
+
+        $trabajador = $this->buscarPorIdHotel($trabajadorId, $hotelId);
+        if (!$trabajador) {
+            throw new Exception('Trabajador no encontrado para el hotel actual');
+        }
+
+        if (($trabajador['estado'] ?? '') !== 'activo') {
+            throw new Exception('Solo se pueden registrar anticipos a trabajadores activos');
+        }
+
+        $anticipo = $this->normalizarAnticipoLaboral($datos);
+        $this->validarAnticipoLaboral($anticipo);
+
+        $this->db->safeBeginTransaction();
+
+        try {
+            $stmt = $this->db->query(
+                "INSERT INTO trabajador_anticipos
+                    (hotel_id, trabajador_id, monto, saldo_pendiente, fecha,
+                     motivo, estado, referencia, notas, created_by, updated_by,
+                     created_at, updated_at)
+                 VALUES
+                    (?, ?, ?, ?, ?, ?, 'pendiente', ?, ?, ?, ?, NOW(), NOW())",
+                [
+                    $hotelId,
+                    $trabajadorId,
+                    $anticipo['monto'],
+                    $anticipo['monto'],
+                    $anticipo['fecha'],
+                    $anticipo['motivo'],
+                    $anticipo['referencia'],
+                    $anticipo['notas'],
+                    $usuarioId,
+                    $usuarioId,
+                ]
+            );
+
+            if (!$stmt) {
+                throw new Exception('No se pudo registrar el anticipo laboral');
+            }
+
+            $anticipoId = (int)$this->db->lastInsertId();
+            $this->db->safeCommit();
+
+            return $anticipoId;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
+    public function registrarPrestamoLaboralParaHotel(int $trabajadorId, int $hotelId, array $datos, ?int $usuarioId = null): int
+    {
+        if ($trabajadorId <= 0 || $hotelId <= 0 || !$this->tablaDisponible() || !$this->tablaExiste('trabajador_prestamos')) {
+            throw new Exception('Ledger de prestamos no disponible');
+        }
+
+        $trabajador = $this->buscarPorIdHotel($trabajadorId, $hotelId);
+        if (!$trabajador) {
+            throw new Exception('Trabajador no encontrado para el hotel actual');
+        }
+
+        if (($trabajador['estado'] ?? '') !== 'activo') {
+            throw new Exception('Solo se pueden registrar prestamos a trabajadores activos');
+        }
+
+        $prestamo = $this->normalizarPrestamoLaboral($datos);
+        $this->validarPrestamoLaboral($prestamo);
+
+        $this->db->safeBeginTransaction();
+
+        try {
+            $stmt = $this->db->query(
+                "INSERT INTO trabajador_prestamos
+                    (hotel_id, trabajador_id, monto, saldo_pendiente, fecha,
+                     plazo_meses, abono_periodico, motivo, estado, referencia,
+                     notas, created_by, updated_by, created_at, updated_at)
+                 VALUES
+                    (?, ?, ?, ?, ?, ?, ?, ?, 'vigente', ?, ?, ?, ?, NOW(), NOW())",
+                [
+                    $hotelId,
+                    $trabajadorId,
+                    $prestamo['monto'],
+                    $prestamo['monto'],
+                    $prestamo['fecha'],
+                    $prestamo['plazo_meses'],
+                    $prestamo['abono_periodico'],
+                    $prestamo['motivo'],
+                    $prestamo['referencia'],
+                    $prestamo['notas'],
+                    $usuarioId,
+                    $usuarioId,
+                ]
+            );
+
+            if (!$stmt) {
+                throw new Exception('No se pudo registrar el prestamo laboral');
+            }
+
+            $prestamoId = (int)$this->db->lastInsertId();
+            $this->db->safeCommit();
+
+            return $prestamoId;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
+    public function anticipoLaboralPorIdHotel(int $anticipoId, int $trabajadorId, int $hotelId): ?array
+    {
+        if ($anticipoId <= 0 || $trabajadorId <= 0 || $hotelId <= 0 || !$this->tablaExiste('trabajador_anticipos')) {
+            return null;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT id,
+                    hotel_id,
+                    trabajador_id,
+                    monto,
+                    saldo_pendiente,
+                    fecha,
+                    motivo,
+                    estado,
+                    referencia,
+                    notas,
+                    created_by,
+                    updated_by,
+                    created_at,
+                    updated_at
+             FROM trabajador_anticipos
+             WHERE id = ?
+               AND trabajador_id = ?
+               AND hotel_id = ?
+             LIMIT 1",
+            [$anticipoId, $trabajadorId, $hotelId]
+        );
+
+        $row = $stmt ? $stmt->fetch() : null;
+        return $row ?: null;
+    }
+
+    public function prestamoLaboralPorIdHotel(int $prestamoId, int $trabajadorId, int $hotelId): ?array
+    {
+        if ($prestamoId <= 0 || $trabajadorId <= 0 || $hotelId <= 0 || !$this->tablaExiste('trabajador_prestamos')) {
+            return null;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT id,
+                    hotel_id,
+                    trabajador_id,
+                    monto,
+                    saldo_pendiente,
+                    fecha,
+                    plazo_meses,
+                    abono_periodico,
+                    motivo,
+                    estado,
+                    referencia,
+                    notas,
+                    created_by,
+                    updated_by,
+                    created_at,
+                    updated_at
+             FROM trabajador_prestamos
+             WHERE id = ?
+               AND trabajador_id = ?
+               AND hotel_id = ?
+             LIMIT 1",
+            [$prestamoId, $trabajadorId, $hotelId]
+        );
+
+        $row = $stmt ? $stmt->fetch() : null;
+        return $row ?: null;
+    }
+
     public function cambiarEstadoParaHotel(int $id, int $hotelId, string $estado, ?int $usuarioId = null): bool
     {
         if ($id <= 0 || $hotelId <= 0 || !$this->tablaDisponible()) {
@@ -690,6 +872,89 @@ class Trabajador extends Model
 
         if ($datos['periodo_inicio'] !== null && $datos['periodo_fin'] !== null && $datos['periodo_fin'] < $datos['periodo_inicio']) {
             throw new Exception('El periodo fin no puede ser anterior al periodo inicio');
+        }
+    }
+
+    private function normalizarAnticipoLaboral(array $datos): array
+    {
+        return [
+            'monto' => $this->normalizarMontoLaboral($datos['monto'] ?? ''),
+            'fecha' => $this->nullableFecha($datos['fecha'] ?? null),
+            'motivo' => $this->limpiarTexto($datos['motivo'] ?? '', 160),
+            'referencia' => $this->nullableTexto($datos['referencia'] ?? null, 120),
+            'notas' => $this->nullableTexto($datos['notas'] ?? null, 1000),
+        ];
+    }
+
+    private function normalizarPrestamoLaboral(array $datos): array
+    {
+        $plazo = trim((string)($datos['plazo_meses'] ?? ''));
+        $abono = trim((string)($datos['abono_periodico'] ?? ''));
+
+        return [
+            'monto' => $this->normalizarMontoLaboral($datos['monto'] ?? ''),
+            'fecha' => $this->nullableFecha($datos['fecha'] ?? null),
+            'plazo_meses' => $plazo === '' ? null : (is_numeric($plazo) ? (int)$plazo : 'INVALIDO'),
+            'abono_periodico' => $abono === '' ? null : $this->normalizarMontoLaboral($abono, true),
+            'motivo' => $this->limpiarTexto($datos['motivo'] ?? '', 160),
+            'referencia' => $this->nullableTexto($datos['referencia'] ?? null, 120),
+            'notas' => $this->nullableTexto($datos['notas'] ?? null, 1000),
+        ];
+    }
+
+    private function validarAnticipoLaboral(array $datos): void
+    {
+        $this->validarMontoLaboral($datos['monto']);
+
+        if ($datos['fecha'] === null) {
+            throw new Exception('La fecha del anticipo es obligatoria');
+        }
+
+        if ($datos['motivo'] === '') {
+            throw new Exception('El motivo del anticipo es obligatorio');
+        }
+    }
+
+    private function validarPrestamoLaboral(array $datos): void
+    {
+        $this->validarMontoLaboral($datos['monto']);
+
+        if ($datos['fecha'] === null) {
+            throw new Exception('La fecha del prestamo es obligatoria');
+        }
+
+        if ($datos['motivo'] === '') {
+            throw new Exception('El motivo del prestamo es obligatorio');
+        }
+
+        if ($datos['plazo_meses'] === 'INVALIDO' || ($datos['plazo_meses'] !== null && (int)$datos['plazo_meses'] <= 0)) {
+            throw new Exception('El plazo del prestamo debe ser mayor a cero cuando se capture');
+        }
+
+        if ($datos['abono_periodico'] === 'INVALIDO' || ($datos['abono_periodico'] !== null && (float)$datos['abono_periodico'] < 0)) {
+            throw new Exception('El abono periodico debe ser cero o mayor cuando se capture');
+        }
+    }
+
+    private function normalizarMontoLaboral($value, bool $permiteCero = false): string
+    {
+        $monto = trim((string)($value ?? ''));
+        if (!is_numeric($monto)) {
+            return 'INVALIDO';
+        }
+
+        $numero = (float)$monto;
+        if ($permiteCero && $numero === 0.0) {
+            return '0.00';
+        }
+
+        return number_format($numero, 2, '.', '');
+    }
+
+    private function validarMontoLaboral($monto): void
+    {
+        if ($monto === 'INVALIDO' || !is_numeric($monto) || (float)$monto <= 0) {
+            throw new Exception('El monto debe ser mayor a cero');
         }
     }
 

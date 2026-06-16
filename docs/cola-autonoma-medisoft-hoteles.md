@@ -603,3 +603,16 @@ agregar funcionalidades nuevas.
 - Caja, pagos reales, abonos, liquidaciones, Nomina y `/api/sync` siguen fuera de alcance.
 - Siguiente accion segura: NP-C-C-A registro manual controlado de anticipos/prestamos sin
   Caja, solo si se mantiene la autorizacion.
+
+## Anticipos y prestamos NP-C-C-A
+
+- Estado formal: `ANTICIPOS_PRESTAMOS_NP_C_C_A_COMPLETADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_NP_C_C_A_anticipos_prestamos.md`.
+- Se implementa captura manual de anticipos y prestamos desde ficha de trabajador activo.
+- La accion exige hotel actual, CSRF, permiso existente y trabajador activo.
+- `saldo_pendiente` inicial se deriva del monto y no se recibe desde formulario.
+- No crea pagos reales, abonos, liquidaciones, asistencia, categoria Nomina ni movimientos
+  de Caja.
+- No se toco `/api/sync`.
+- Siguiente accion segura: revision tecnica/auditoria/cierre de NP-C-C-A antes de abrir
+  asistencia o abonos/liquidaciones.

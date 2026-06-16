@@ -920,3 +920,13 @@ Estado formal vigente: `CONTRATO_NP_C_C_ANTICIPOS_PRESTAMOS_COMPLETADO`.
 - Solo contrato; no agrega codigo ni DB.
 - Escritura futura limitada a anticipos y prestamos laborales sin Caja, sin abonos y sin
   pagos reales.
+
+### Estado NP-C-C-A
+
+Estado formal vigente: `ANTICIPOS_PRESTAMOS_NP_C_C_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_C_A_anticipos_prestamos.md`.
+- Escritura manual implementada y limitada a `trabajador_anticipos` y
+  `trabajador_prestamos`.
+- Caja, pagos reales, abonos, asistencia y `/api/sync` siguen fuera de alcance.
+- Antes de abrir abonos/liquidaciones o asistencia se requiere contrato nuevo.

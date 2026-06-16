@@ -687,3 +687,16 @@ Estado: `CONTRATO_NP_C_C_ANTICIPOS_PRESTAMOS_COMPLETADO`.
 - Riesgo principal: confundir anticipo/prestamo laboral con egreso real de Caja.
 - Mitigacion: no crear Caja, no crear pagos/abonos y derivar saldos iniciales del monto.
 - Cualquier abono, liquidacion o movimiento financiero real queda fuera de alcance.
+
+## Auditoria NP-C-C-A anticipos y prestamos manuales
+
+Estado: `ANTICIPOS_PRESTAMOS_NP_C_C_A_COMPLETADO_QA_DIFERIDA`.
+
+- Las unicas escrituras nuevas autorizadas son `INSERT INTO trabajador_anticipos` e
+  `INSERT INTO trabajador_prestamos`.
+- Se valida trabajador activo del hotel actual antes de escribir.
+- El formulario usa CSRF y permiso administrativo existente.
+- No se aceptan `estado`, `saldo_pendiente` ni `hotel_id` desde formulario.
+- No hay escrituras en Caja, cortes, movimientos, asistencia ni abonos.
+- Preflight y health checker detectan escrituras fuera de alcance.
+- Riesgo residual: falta QA manual con trabajador real porque la tabla local esta vacia.

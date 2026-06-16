@@ -32,6 +32,8 @@ if (!function_exists('trab_view_qty')) {
 
 $trabajadorId = (int)($trabajador['id'] ?? 0);
 $puedeRegistrarConcepto = ($trabajador['estado'] ?? '') === 'activo' && !empty($ledgerDisponible['trabajador_pagos']);
+$puedeRegistrarAnticipo = ($trabajador['estado'] ?? '') === 'activo' && !empty($ledgerDisponible['trabajador_anticipos']);
+$puedeRegistrarPrestamo = ($trabajador['estado'] ?? '') === 'activo' && !empty($ledgerDisponible['trabajador_prestamos']);
 ?>
 
 <style>
@@ -424,6 +426,42 @@ $puedeRegistrarConcepto = ($trabajador['estado'] ?? '') === 'activo' && !empty($
                         <h3 class="font-black">Anticipos</h3>
                         <p class="text-xs text-slate-500 mt-1">Registros laborales informativos; no son egresos de Caja en esta fase.</p>
                     </header>
+                    <?php if ($puedeRegistrarAnticipo): ?>
+                        <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/anticipos') ?>" class="p-4 border-b border-slate-200">
+                            <?= csrf_field() ?>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="worker-meta-label" for="anticipo_monto">Monto</label>
+                                    <input id="anticipo_monto" class="worker-input mt-1" type="number" min="0.01" step="0.01" name="monto" required>
+                                </div>
+                                <div>
+                                    <label class="worker-meta-label" for="anticipo_fecha">Fecha</label>
+                                    <input id="anticipo_fecha" class="worker-input mt-1" type="date" name="fecha" value="<?= date('Y-m-d') ?>" required>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="worker-meta-label" for="anticipo_motivo">Motivo</label>
+                                    <input id="anticipo_motivo" class="worker-input mt-1" type="text" maxlength="160" name="motivo" required placeholder="Ej. anticipo de sueldo">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="worker-meta-label" for="anticipo_referencia">Referencia</label>
+                                    <input id="anticipo_referencia" class="worker-input mt-1" type="text" maxlength="120" name="referencia" placeholder="Opcional">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="worker-meta-label" for="anticipo_notas">Notas</label>
+                                    <textarea id="anticipo_notas" class="worker-input mt-1 min-h-[70px] py-3" maxlength="1000" name="notas" placeholder="Opcional. No se registra en Caja."></textarea>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
+                                <div class="text-xs text-slate-500">Saldo pendiente inicia igual al monto. No crea pago ni Caja.</div>
+                                <button class="worker-btn" type="submit">
+                                    <i class="fas fa-plus"></i>
+                                    Registrar anticipo
+                                </button>
+                            </div>
+                        </form>
+                    <?php elseif (($trabajador['estado'] ?? '') !== 'activo'): ?>
+                        <div class="worker-ledger-note m-4">Solo se pueden registrar anticipos a trabajadores activos.</div>
+                    <?php endif; ?>
                     <div class="worker-ledger-body">
                         <?php if (empty($ledgerDisponible['trabajador_anticipos'])): ?>
                             <div class="p-5 text-sm text-slate-500">La tabla de anticipos no esta disponible.</div>
@@ -453,6 +491,50 @@ $puedeRegistrarConcepto = ($trabajador['estado'] ?? '') === 'activo' && !empty($
                         <h3 class="font-black">Prestamos</h3>
                         <p class="text-xs text-slate-500 mt-1">Deuda laboral del trabajador registrada fuera de Caja.</p>
                     </header>
+                    <?php if ($puedeRegistrarPrestamo): ?>
+                        <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/prestamos') ?>" class="p-4 border-b border-slate-200">
+                            <?= csrf_field() ?>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="worker-meta-label" for="prestamo_monto">Monto</label>
+                                    <input id="prestamo_monto" class="worker-input mt-1" type="number" min="0.01" step="0.01" name="monto" required>
+                                </div>
+                                <div>
+                                    <label class="worker-meta-label" for="prestamo_fecha">Fecha</label>
+                                    <input id="prestamo_fecha" class="worker-input mt-1" type="date" name="fecha" value="<?= date('Y-m-d') ?>" required>
+                                </div>
+                                <div>
+                                    <label class="worker-meta-label" for="prestamo_plazo">Plazo meses</label>
+                                    <input id="prestamo_plazo" class="worker-input mt-1" type="number" min="1" step="1" name="plazo_meses" placeholder="Opcional">
+                                </div>
+                                <div>
+                                    <label class="worker-meta-label" for="prestamo_abono">Abono informativo</label>
+                                    <input id="prestamo_abono" class="worker-input mt-1" type="number" min="0" step="0.01" name="abono_periodico" placeholder="Opcional">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="worker-meta-label" for="prestamo_motivo">Motivo</label>
+                                    <input id="prestamo_motivo" class="worker-input mt-1" type="text" maxlength="160" name="motivo" required placeholder="Ej. prestamo interno">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="worker-meta-label" for="prestamo_referencia">Referencia</label>
+                                    <input id="prestamo_referencia" class="worker-input mt-1" type="text" maxlength="120" name="referencia" placeholder="Opcional">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="worker-meta-label" for="prestamo_notas">Notas</label>
+                                    <textarea id="prestamo_notas" class="worker-input mt-1 min-h-[70px] py-3" maxlength="1000" name="notas" placeholder="Opcional. No se registra en Caja."></textarea>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
+                                <div class="text-xs text-slate-500">Saldo pendiente inicia igual al monto. No crea abonos ni Caja.</div>
+                                <button class="worker-btn" type="submit">
+                                    <i class="fas fa-plus"></i>
+                                    Registrar prestamo
+                                </button>
+                            </div>
+                        </form>
+                    <?php elseif (($trabajador['estado'] ?? '') !== 'activo'): ?>
+                        <div class="worker-ledger-note m-4">Solo se pueden registrar prestamos a trabajadores activos.</div>
+                    <?php endif; ?>
                     <div class="worker-ledger-body">
                         <?php if (empty($ledgerDisponible['trabajador_prestamos'])): ?>
                             <div class="p-5 text-sm text-slate-500">La tabla de prestamos no esta disponible.</div>

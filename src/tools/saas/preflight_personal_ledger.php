@@ -1,10 +1,10 @@
 <?php
 /**
- * Preflight Fase NP-C-B-A para ledger laboral de Personal.
+ * Preflight Fase NP-C-C-A para ledger laboral de Personal.
  *
  * Solo lectura. No crea rutas, migraciones ni datos.
  * Valida consistencia de trabajador_* y ausencia de Caja/Nomina operativa antes de
- * habilitar escrituras futuras sobre conceptos laborales.
+ * habilitar escrituras futuras sobre conceptos laborales, anticipos o prestamos.
  */
 
 if (PHP_SAPI !== 'cli') {
@@ -141,15 +141,15 @@ function npPfFileContainsForbiddenLedgerWrite(string $path): bool
 
     $code = (string) file_get_contents($path);
 
-    if (preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(trabajador_anticipos|trabajador_prestamos|trabajador_asistencias|trabajador_documentos|movimientos_caja|cajas|cortes_caja)\b/i', $code)) {
+    if (preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(trabajador_asistencias|trabajador_documentos|movimientos_caja|cajas|cortes_caja)\b/i', $code)) {
         return true;
     }
 
-    if (preg_match('/\b(UPDATE|DELETE\s+FROM)\s+trabajador_pagos\b/i', $code)) {
+    if (preg_match('/\b(UPDATE|DELETE\s+FROM)\s+(trabajador_pagos|trabajador_anticipos|trabajador_prestamos)\b/i', $code)) {
         return true;
     }
 
-    if (basename($path) !== 'Trabajador.php' && preg_match('/\bINSERT\s+INTO\s+trabajador_pagos\b/i', $code)) {
+    if (basename($path) !== 'Trabajador.php' && preg_match('/\bINSERT\s+INTO\s+(trabajador_pagos|trabajador_anticipos|trabajador_prestamos)\b/i', $code)) {
         return true;
     }
 
@@ -171,7 +171,7 @@ $workerModelPath = $appRoot . '/app/models/Trabajador.php';
 $workerControllerPath = $appRoot . '/app/controllers/TrabajadorController.php';
 $workerDetailViewPath = $appRoot . '/app/views/trabajadores/ver.php';
 
-echo "Preflight Fase NP-C-B-A - Ledger laboral\n";
+echo "Preflight Fase NP-C-C-A - Ledger laboral\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {
@@ -355,19 +355,27 @@ if ($routes === []) {
     npPfWarning('No se pudieron parsear rutas.', 'Ejecutar desde el arbol src completo.');
 } else {
     $forbiddenWorkerRoutes = [];
+    $allowedManualLedgerRoutes = [
+        'trabajadores/{id:[0-9]+}/conceptos-laborales',
+        'trabajadores/{id:[0-9]+}/anticipos',
+        'trabajadores/{id:[0-9]+}/prestamos',
+    ];
     foreach ($routes as $route) {
-        $path = strtolower((string)$route['path']);
-        if (strpos($path, '/trabajadores') !== false && preg_match('/pago|anticipo|prestamo|asistencia|nomina|caja/', $path)) {
+        $path = strtolower(trim((string)$route['path'], '/'));
+        if (strpos($path, 'trabajadores') !== false
+            && preg_match('/pago|anticipo|prestamo|asistencia|nomina|caja/', $path)
+            && !in_array($path, $allowedManualLedgerRoutes, true)
+        ) {
             $forbiddenWorkerRoutes[] = strtoupper($route['method']) . ' ' . $route['path'];
         }
     }
 
     if ($forbiddenWorkerRoutes === []) {
-        npPfOk('Rutas Personal NP-C-B-A no exponen pagos reales, anticipos, prestamos, asistencia, nomina ni Caja.');
+        npPfOk('Rutas Personal NP-C-C-A exponen solo conceptos, anticipos y prestamos manuales sin pagos reales ni Caja.');
     } else {
         npPfError(
             'Rutas Personal fuera de alcance: ' . implode(', ', $forbiddenWorkerRoutes) . '.',
-            'Retirar rutas operativas hasta abrir contrato de anticipos, prestamos, asistencia o Caja.'
+            'Retirar rutas operativas hasta abrir contrato de asistencia, abonos o Caja.'
         );
     }
 }
@@ -380,8 +388,8 @@ foreach ([$workerModelPath, $workerControllerPath] as $path) {
 
     if (npPfFileContainsForbiddenLedgerWrite($path)) {
         npPfError(
-            'Archivo contiene escritura fuera del alcance NP-C-B-A: ' . basename($path),
-            'NP-C-B-A solo permite INSERT controlado en trabajador_pagos desde Trabajador.php; retirar otras escrituras de ledger o Caja.'
+            'Archivo contiene escritura fuera del alcance NP-C-C-A: ' . basename($path),
+            'NP-C-C-A solo permite INSERT controlado en trabajador_pagos, trabajador_anticipos y trabajador_prestamos desde Trabajador.php; retirar otras escrituras de ledger o Caja.'
         );
     } else {
         npPfOk('Archivo sin escrituras de ledger/Caja fuera de alcance: ' . basename($path) . '.');
@@ -393,13 +401,16 @@ if (is_file($workerDetailViewPath)) {
     if (
         strpos($viewCode, 'Ledger laboral') !== false
         && strpos($viewCode, 'Saldo informativo') !== false
+        && strpos($viewCode, '/conceptos-laborales') !== false
+        && strpos($viewCode, '/anticipos') !== false
+        && strpos($viewCode, '/prestamos') !== false
         && strpos($viewCode, 'no representa movimiento de Caja') !== false
         && strpos($viewCode, 'movimientos_caja') === false
     ) {
-        npPfOk('Vista de trabajador muestra ledger y concepto manual sin Caja con aclaracion de saldo informativo.');
+        npPfOk('Vista de trabajador muestra ledger y movimientos manuales sin Caja con aclaracion de saldo informativo.');
     } else {
         npPfWarning(
-            'Vista de trabajador no muestra claramente el contrato NP-C-B-A.',
+            'Vista de trabajador no muestra claramente el contrato NP-C-C-A.',
             'Asegurar texto de saldo informativo y ausencia de rutas internas/Caja.'
         );
     }
