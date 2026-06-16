@@ -332,3 +332,4 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - NP-C-A solo lee estas fuentes desde la ficha de trabajador; no crea ni corrige datos.
 - NP-C-E solo valida consistencia; no corrige ni sustituye ninguna fuente.
 - NP-C-F cierra el bloque read-only sin cambiar fuentes de verdad.
+- NP-C-B-0 solo documenta futura escritura en `trabajador_pagos`; todavia no crea datos.

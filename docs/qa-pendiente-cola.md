@@ -830,3 +830,10 @@ instruccion del usuario.
   - confirmar visualmente `/trabajadores/{id}` con un trabajador real o de prueba;
   - confirmar que el ledger no ofrece acciones de pago/abono/Caja;
   - confirmar que el saldo se lee como informativo.
+
+### Estado NP-C-B-0
+
+- Contrato de conceptos laborales completado.
+- No requiere QA de navegador porque no agrega funcionalidad.
+- Si se implementa NP-C-B-A en el futuro, QA debe confirmar que no toca Caja ni crea
+  pagos reales.

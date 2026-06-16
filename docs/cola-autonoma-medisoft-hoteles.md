@@ -559,3 +559,12 @@ agregar funcionalidades nuevas.
 - No hay pagos reales, abonos, Caja, categoria Nomina ni `/api/sync`.
 - Siguiente accion segura: contrato NP-C-B-0 para primera escritura laboral controlada,
   sin Caja, o QA manual diferida del bloque read-only.
+
+## Contrato NP-C-B-0 conceptos laborales
+
+- Estado formal: `CONTRATO_NP_C_B_CONCEPTOS_LABORALES_COMPLETADO`.
+- Documento creado: `docs/fase_NP_C_B_0_contrato_conceptos_laborales.md`.
+- Define una futura escritura manual en `trabajador_pagos` para comision, bono,
+  descuento y ajuste.
+- No implementa rutas, vistas, POST ni escrituras.
+- Mantiene fuera tipo `pago` como salida real, Caja, categoria Nomina y `/api/sync`.

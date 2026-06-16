@@ -662,3 +662,12 @@ Resultado NP-C-F:
 - No hay pagos reales, abonos, Caja, categoria Nomina ni cambios en `/api/sync`.
 - Siguiente paso recomendado: contrato NP-C-B-0 si se autoriza primera escritura laboral
   sin Caja, o QA manual diferida de NP-C.
+
+Resultado NP-C-B-0:
+
+- Estado tecnico: `CONTRATO_NP_C_B_CONCEPTOS_LABORALES_COMPLETADO`.
+- Documento: `docs/fase_NP_C_B_0_contrato_conceptos_laborales.md`.
+- Se define contrato futuro para registrar comision, bono, descuento y ajuste en
+  `trabajador_pagos`.
+- No se implementan rutas, vistas, POST ni escrituras.
+- Caja, categoria Nomina, pagos reales y `/api/sync` siguen fuera de alcance.

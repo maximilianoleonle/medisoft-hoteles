@@ -529,3 +529,10 @@
 - No se infiere autorizacion para registrar conceptos laborales por haber mostrado el
   ledger.
 - La primera escritura laboral futura debe abrir contrato propio y mantener Caja fuera.
+
+## Decision NP-C-B-0 conceptos laborales
+
+- La primera escritura laboral futura se limita a conceptos no Caja: comision, bono,
+  descuento y ajuste.
+- El tipo `pago` no se habilita como salida real en este contrato.
+- Cualquier egreso real requiere bloque NP-Caja independiente.

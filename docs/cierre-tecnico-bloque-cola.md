@@ -596,4 +596,12 @@ Estado: `BLOQUE_NP_C_READ_ONLY_CERRADO_QA_DIFERIDA`.
 - Cierra el bloque read-only de ledger laboral.
 - QA manual queda diferida.
 - La siguiente escritura laboral requiere contrato nuevo.
+
+## Contrato NP-C-B-0
+
+Estado: `CONTRATO_NP_C_B_CONCEPTOS_LABORALES_COMPLETADO`.
+
+- Documento: `docs/fase_NP_C_B_0_contrato_conceptos_laborales.md`.
+- Solo contrato; no agrega rutas, vistas, POST ni escrituras.
+- Define futura escritura manual de conceptos laborales sin Caja.
 - QA manual queda diferida por instruccion del usuario.

@@ -884,3 +884,11 @@ Estado formal vigente: `BLOQUE_NP_C_READ_ONLY_CERRADO_QA_DIFERIDA`.
 - Documento: `docs/fase_NP_C_F_cierre_ledger_read_only.md`.
 - Cierra contrato, vista read-only y preflight.
 - La siguiente escritura laboral requiere contrato nuevo.
+
+### Estado NP-C-B-0
+
+Estado formal vigente: `CONTRATO_NP_C_B_CONCEPTOS_LABORALES_COMPLETADO`.
+
+- Documento: `docs/fase_NP_C_B_0_contrato_conceptos_laborales.md`.
+- Solo contrato; no agrega codigo ni DB.
+- Escritura futura limitada a comision, bono, descuento y ajuste, sin Caja.

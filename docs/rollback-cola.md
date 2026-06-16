@@ -642,3 +642,9 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Revertir el commit `docs(phase-np): close read-only worker ledger block`.
 - DB: no aplica; es cierre documental.
 - No tocar tablas `trabajador_*`, Caja ni `/api/sync`.
+
+### NP-C-B-0 contrato de conceptos laborales
+
+- Revertir el commit `docs(phase-np): define controlled worker concept contract`.
+- DB: no aplica; es solo documentacion.
+- No tocar `trabajador_pagos`, Caja ni `/api/sync`.

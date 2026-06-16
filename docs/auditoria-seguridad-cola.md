@@ -647,3 +647,11 @@ Estado: `BLOQUE_NP_C_READ_ONLY_CERRADO_QA_DIFERIDA`.
 - La separacion con Caja permanece intacta.
 - Riesgo residual: QA visual con trabajador real queda diferida.
 - Siguiente fase de escritura debe abrir contrato independiente.
+
+## Auditoria NP-C-B-0 conceptos laborales
+
+Estado: `CONTRATO_NP_C_B_CONCEPTOS_LABORALES_COMPLETADO`.
+
+- Solo contrato documental.
+- Riesgo principal: confundir concepto laboral con pago real.
+- Mitigacion: no habilitar tipo `pago` como salida real y mantener Caja fuera.
