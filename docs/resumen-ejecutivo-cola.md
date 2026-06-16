@@ -1068,3 +1068,12 @@ Resultado MANT-G-A:
   ni `/api/sync`.
 - Health y preflight pasan con `ERROR: 0`.
 - QA manual queda diferida.
+
+Resultado MANT-G-B-0:
+
+- Estado tecnico: `CONTRATO_MANT_G_B_0_CREACION_MANUAL_TAREA_MANTENIMIENTO_COMPLETADO`.
+- Documento: `docs/fase_MANT_G_B_0_contrato_creacion_manual_tarea_mantenimiento.md`.
+- Se define la futura creacion manual de una tarea vinculada a mantenimiento.
+- No se modifica codigo, DB, rutas, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- Siguiente paso recomendado: MANT-G-B-A POST manual individual con CSRF, permiso,
+  transaccion, auditoria y bloqueo de duplicado activo.

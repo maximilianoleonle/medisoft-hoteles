@@ -475,3 +475,14 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - La presencia o ausencia de una tarea vinculada no modifica disponibilidad ni estado de
   mantenimiento.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.
+
+### MANT-G-B-0 creacion manual de tarea desde mantenimiento
+
+- No crea fuente nueva.
+- La futura escritura permitida debera limitarse a:
+  - `tareas_operativas` para la tarea vinculada;
+  - `tarea_eventos` para el evento inicial;
+  - `logs_auditoria` como trazabilidad no financiera.
+- `habitaciones` y `mantenimientos_habitaciones` seguiran siendo fuentes de verdad y no
+  deben cambiar por crear la tarea.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.

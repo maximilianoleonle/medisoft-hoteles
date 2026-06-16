@@ -1183,3 +1183,16 @@ instruccion del usuario.
 - Confirmar que no cambia `habitaciones.estado`.
 - Confirmar que no cambia `mantenimientos_habitaciones.estado`.
 - Confirmar que no hay Caja, pagos, abonos, nomina ni cambios en `/api/sync`.
+
+### Estado MANT-G-B-0
+
+- Contrato de creacion manual de tarea desde mantenimiento completado.
+- No requiere QA de navegador porque no agrega codigo ni rutas.
+- QA futura MANT-G-B-A:
+  - crear una tarea desde mantenimiento controlado;
+  - confirmar detalle de tarea;
+  - confirmar `mantenimiento_id`, `habitacion_id`, `hotel_id` y `origen`;
+  - confirmar evento inicial;
+  - confirmar bloqueo de duplicado activo;
+  - confirmar que no cambia habitacion ni mantenimiento;
+  - confirmar que no hay Caja, pagos, abonos, nomina ni cambios en `/api/sync`.

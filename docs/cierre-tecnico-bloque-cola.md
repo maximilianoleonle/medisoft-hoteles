@@ -962,3 +962,13 @@ Estado: `TAREAS_CONTEXTUALES_MANT_G_A_COMPLETADAS_QA_DIFERIDA`.
 - No hay rutas nuevas, POST nuevos, creacion de tareas ni automatizacion.
 - Verificaciones automaticas pasan con `ERROR: 0`.
 - QA manual queda diferida.
+
+## Contrato tecnico MANT-G-B-0
+
+Estado: `CONTRATO_MANT_G_B_0_CREACION_MANUAL_TAREA_MANTENIMIENTO_COMPLETADO`.
+
+- Documento: `docs/fase_MANT_G_B_0_contrato_creacion_manual_tarea_mantenimiento.md`.
+- Contrato documental para creacion manual futura de tarea desde mantenimiento.
+- No agrega codigo, rutas, migraciones, formularios ni escrituras.
+- No automatiza tareas al activar mantenimiento.
+- No hay Caja, pagos, abonos, nomina, offline ni `/api/sync`.

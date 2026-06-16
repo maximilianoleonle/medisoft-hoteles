@@ -953,3 +953,14 @@ agregar funcionalidades nuevas.
 - No crea tareas, no agrega POST, no cambia habitaciones/mantenimientos y no toca Caja,
   pagos, abonos, nomina, offline ni `/api/sync`.
 - Siguiente accion segura: contrato MANT-G-B antes de cualquier creacion manual.
+
+## Contrato MANT-G-B-0 creacion manual de tarea desde mantenimiento
+
+- Estado formal: `CONTRATO_MANT_G_B_0_CREACION_MANUAL_TAREA_MANTENIMIENTO_COMPLETADO`.
+- Documento creado:
+  `docs/fase_MANT_G_B_0_contrato_creacion_manual_tarea_mantenimiento.md`.
+- No modifica codigo ni DB.
+- Define una futura accion manual para crear una tarea vinculada a un mantenimiento.
+- Prohibe automatizacion, cron, cambios de disponibilidad, Caja, pagos, abonos, nomina,
+  offline y `/api/sync`.
+- Siguiente accion segura: `[COLA_MANT_G_B_A_CREACION_MANUAL_TAREA_MANTENIMIENTO]`.

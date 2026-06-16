@@ -1238,3 +1238,15 @@ Estado formal vigente: `TAREAS_CONTEXTUALES_MANT_G_A_COMPLETADAS_QA_DIFERIDA`.
 - No crea tareas, no cambia habitaciones y no cambia mantenimientos.
 - Checkers pasan con `ERROR: 0`.
 - QA manual queda diferida.
+
+### Estado MANT-G-B-0
+
+Estado formal vigente: `CONTRATO_MANT_G_B_0_CREACION_MANUAL_TAREA_MANTENIMIENTO_COMPLETADO`.
+
+- Documento: `docs/fase_MANT_G_B_0_contrato_creacion_manual_tarea_mantenimiento.md`.
+- Define una futura accion POST manual para crear una tarea vinculada a un
+  mantenimiento.
+- No implementa rutas, modelos, vistas ni escrituras.
+- La futura implementacion debe bloquear duplicados activos por mantenimiento.
+- No autoriza automatizacion, cron, cambios de disponibilidad, Caja, pagos, abonos,
+  nomina, offline ni `/api/sync`.

@@ -836,3 +836,13 @@
   reutilizar el patron contextual ya usado por habitacion/trabajador.
 - No se altera `crearParaHotel()` todavia; crear tareas desde mantenimiento requiere fase
   MANT-G-B separada.
+
+## Decision MANT-G-B-0
+
+- La futura creacion de tarea desde mantenimiento debe ser manual, no automatica.
+- Se exige bloqueo de duplicado activo para evitar multiples tareas abiertas sobre el
+  mismo mantenimiento.
+- La tarea puede usar `origen = 'mantenimiento_manual'` para distinguirse de altas
+  manuales genericas.
+- El cierre de la tarea no debe cerrar el mantenimiento; cualquier sincronizacion de
+  estados requiere contrato separado.

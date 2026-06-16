@@ -1046,3 +1046,16 @@ Estado: `TAREAS_CONTEXTUALES_MANT_G_A_COMPLETADAS_QA_DIFERIDA`.
 - Checkers validan tareas con mantenimiento inexistente y tareas con mantenimiento de
   otro hotel en cero.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.
+
+## Auditoria MANT-G-B-0
+
+Estado: `CONTRATO_MANT_G_B_0_CREACION_MANUAL_TAREA_MANTENIMIENTO_COMPLETADO`.
+
+- Contrato documental sin cambios de codigo ni DB.
+- Riesgo principal futuro: duplicar tareas activas para el mismo mantenimiento.
+- Mitigacion definida: bloqueo por `hotel_id + mantenimiento_id` en estados
+  `pendiente`, `asignada` o `en_proceso`.
+- Riesgo principal futuro: que una tarea altere disponibilidad.
+- Mitigacion definida: tarea solo escribe en `tareas_operativas`/`tarea_eventos`; no
+  modifica `habitaciones` ni `mantenimientos_habitaciones`.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.

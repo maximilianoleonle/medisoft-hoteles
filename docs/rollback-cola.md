@@ -940,3 +940,11 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   visual de tareas vinculadas en el preview.
 - No borrar tareas, mantenimientos, habitaciones ni eventos.
 - No tocar Caja, pagos, abonos, nomina ni `/api/sync`.
+
+### MANT-G-B-0 contrato creacion manual de tarea desde mantenimiento
+
+- Rollback documental: revertir el commit
+  `docs(phase-mant): define manual maintenance task creation contract`.
+- DB: no aplica; MANT-G-B-0 no crea migraciones, rutas, modelos ni datos.
+- Codigo: no aplica.
+- No borrar ni modificar tareas, mantenimientos, habitaciones o eventos.
