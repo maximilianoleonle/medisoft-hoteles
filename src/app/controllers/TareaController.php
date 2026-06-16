@@ -78,6 +78,7 @@ class TareaController extends Controller
                 ? $this->tareaModel->trabajadoresActivosOpciones($hotelId)
                 : [],
             'puedeAsignar' => $this->puedeAsignar($tarea),
+            'puedeCambiarEstado' => $this->puedeCambiarEstado($tarea),
         ]);
     }
 
@@ -158,6 +159,21 @@ class TareaController extends Controller
         $this->redirect($id > 0 ? 'tareas/' . $id : 'tareas');
     }
 
+    public function iniciarAction(): void
+    {
+        $this->cambiarEstadoManual('iniciar', 'Tarea iniciada correctamente.', 'tareas.iniciada');
+    }
+
+    public function completarAction(): void
+    {
+        $this->cambiarEstadoManual('completar', 'Tarea completada correctamente.', 'tareas.completada');
+    }
+
+    public function cancelarAction(): void
+    {
+        $this->cambiarEstadoManual('cancelar', 'Tarea cancelada correctamente.', 'tareas.cancelada');
+    }
+
     private function resumenVacio(): array
     {
         return [
@@ -206,12 +222,59 @@ class TareaController extends Controller
         }
     }
 
+    private function cambiarEstadoManual(string $accion, string $mensajeExito, string $accionAuditoria): void
+    {
+        $this->requireWritePermission();
+
+        if (!$this->isPost()) {
+            $this->redirect('tareas');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        $id = (int)($this->route_params['id'] ?? 0);
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            $antes = $this->tareaModel->buscarPorIdHotel($id, $hotelId);
+            if (!$antes) {
+                throw new RuntimeException('Tarea no encontrada para el hotel actual.');
+            }
+
+            $comentario = $this->getPost('comentario', '');
+            $this->tareaModel->cambiarEstadoManualParaHotel(
+                $id,
+                $hotelId,
+                $accion,
+                $this->usuarioIdActual(),
+                $comentario
+            );
+            $despues = $this->tareaModel->buscarPorIdHotel($id, $hotelId);
+            $this->auditar($accionAuditoria, $id, $despues, $antes);
+
+            set_mensaje($mensajeExito, 'success');
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo actualizar la tarea: ' . $e->getMessage(), 'error');
+        }
+
+        $this->redirect($id > 0 ? 'tareas/' . $id : 'tareas');
+    }
+
     private function puedeAsignar(array $tarea): bool
     {
         $estado = (string)($tarea['estado'] ?? '');
         return function_exists('can')
             && can('habitaciones.mantenimiento')
             && in_array($estado, ['pendiente', 'asignada'], true);
+    }
+
+    private function puedeCambiarEstado(array $tarea): bool
+    {
+        $estado = (string)($tarea['estado'] ?? '');
+        return function_exists('can')
+            && can('habitaciones.mantenimiento')
+            && in_array($estado, ['pendiente', 'asignada', 'en_proceso'], true);
     }
 
     private function auditar(string $accion, int $tareaId, ?array $despues, ?array $antes = null): void

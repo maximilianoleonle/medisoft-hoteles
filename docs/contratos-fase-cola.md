@@ -797,3 +797,20 @@ Estado formal vigente: `ASIGNACION_TLM_D_COMPLETADA_QA_DIFERIDA`.
 - No cambia `habitaciones.estado`.
 - No se toco `mantenimientos_habitaciones` ni `/api/sync`.
 - QA manual queda diferida por instruccion del usuario.
+
+### Estado TLM-E
+
+Estado formal vigente: `ESTADOS_TLM_E_COMPLETADOS_QA_DIFERIDA`.
+
+- Documento: `docs/fase_TLM_E_estados_tarea.md`.
+- Rutas:
+  - `POST /tareas/{id}/iniciar`;
+  - `POST /tareas/{id}/completar`;
+  - `POST /tareas/{id}/cancelar`.
+- Transiciones manuales con POST + CSRF, permiso `habitaciones.mantenimiento`,
+  auditoria y transaccion.
+- Eventos registrados: `iniciada`, `completada`, `cancelada`.
+- No crea asistencia, pagos, abonos, Caja ni nomina.
+- No cambia `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones` ni `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.

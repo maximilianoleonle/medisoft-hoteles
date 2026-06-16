@@ -723,3 +723,24 @@ instruccion del usuario.
 - Confirmar que no cambia `habitaciones.estado`.
 - Confirmar que no se crean asistencia, pagos, abonos ni movimientos de Caja.
 - Confirmar bloqueo/redireccion sin sesion para `POST /tareas/{id}/asignar`.
+
+### Estado TLM-E
+
+- Estados manuales de tarea implementados.
+- POST autorizados:
+  - `POST /tareas/{id}/iniciar`;
+  - `POST /tareas/{id}/completar`;
+  - `POST /tareas/{id}/cancelar`.
+- QA manual diferida por instruccion del usuario.
+
+### QA manual diferida TLM-E
+
+- Crear o usar una tarea activa.
+- Iniciar tarea y confirmar estado `En proceso` + evento `iniciada`.
+- Completar tarea activa y confirmar estado `Completada` + evento `completada`.
+- Cancelar tarea activa y confirmar estado `Cancelada` + evento `cancelada`.
+- Confirmar que una tarea completada/cancelada ya no muestra acciones operativas.
+- Confirmar que no cambia `habitaciones.estado`.
+- Confirmar que no se modifica `mantenimientos_habitaciones`.
+- Confirmar que no se crean asistencia, pagos, abonos ni movimientos de Caja.
+- Confirmar bloqueo/redireccion sin sesion para iniciar/completar/cancelar.

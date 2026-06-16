@@ -575,6 +575,16 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - No revertir mediante cambios a `habitaciones.estado`.
 - No tocar `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
 
+### TLM-E estados manuales aplicado
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-tlm): manage task lifecycle manually`.
+- DB: no ejecutar `DELETE` ni `UPDATE` manual sobre tareas/eventos sin autorizacion.
+- Si QA manual inicio, completo o cancelo tareas de prueba, documentar IDs antes de
+  cualquier correccion.
+- No revertir mediante cambios a `habitaciones.estado`.
+- No tocar `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
+
 ### Reglas duras de rollback TLM
 
 - No tocar Caja, pagos, abonos ni nomina.

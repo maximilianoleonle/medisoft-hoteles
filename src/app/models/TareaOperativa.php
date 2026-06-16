@@ -367,6 +367,81 @@ class TareaOperativa extends Model
         }
     }
 
+    public function cambiarEstadoManualParaHotel(
+        int $id,
+        int $hotelId,
+        string $accion,
+        ?int $usuarioId = null,
+        ?string $comentario = null
+    ): bool {
+        if ($id <= 0 || $hotelId <= 0) {
+            throw new InvalidArgumentException('Tarea no valida para cambio de estado.');
+        }
+
+        $tarea = $this->buscarPorIdHotel($id, $hotelId);
+        if (!$tarea) {
+            throw new RuntimeException('Tarea no encontrada para el hotel actual.');
+        }
+
+        $estadoAnterior = (string)($tarea['estado'] ?? 'pendiente');
+        $accion = strtolower(trim($accion));
+
+        $transicion = $this->transicionManual($accion, $estadoAnterior);
+        $comentario = $this->nullableTexto($comentario, 800);
+
+        $this->db->safeBeginTransaction();
+
+        try {
+            $stmt = $this->db->query(
+                "UPDATE tareas_operativas
+                 SET estado = ?,
+                     fecha_inicio = CASE WHEN ? = 'en_proceso' THEN COALESCE(fecha_inicio, NOW()) ELSE fecha_inicio END,
+                     fecha_cierre = CASE WHEN ? IN ('completada', 'cancelada') THEN NOW() ELSE fecha_cierre END,
+                     cerrada_por_usuario_id = CASE WHEN ? IN ('completada', 'cancelada') THEN ? ELSE cerrada_por_usuario_id END,
+                     cancelada_por_usuario_id = CASE WHEN ? = 'cancelada' THEN ? ELSE cancelada_por_usuario_id END,
+                     notas_cierre = CASE WHEN ? IN ('completada', 'cancelada') THEN ? ELSE notas_cierre END,
+                     updated_at = NOW()
+                 WHERE id = ?
+                   AND hotel_id = ?
+                   AND estado = ?",
+                [
+                    $transicion['estado_nuevo'],
+                    $transicion['estado_nuevo'],
+                    $transicion['estado_nuevo'],
+                    $transicion['estado_nuevo'],
+                    $usuarioId,
+                    $transicion['estado_nuevo'],
+                    $usuarioId,
+                    $transicion['estado_nuevo'],
+                    $comentario,
+                    $id,
+                    $hotelId,
+                    $estadoAnterior,
+                ]
+            );
+
+            if (!$stmt || $stmt->rowCount() !== 1) {
+                throw new RuntimeException('No se pudo actualizar el estado de la tarea.');
+            }
+
+            $this->registrarEvento(
+                $hotelId,
+                $id,
+                $transicion['evento'],
+                $estadoAnterior,
+                $transicion['estado_nuevo'],
+                $comentario ?: $transicion['comentario'],
+                $usuarioId
+            );
+
+            $this->db->safeCommit();
+            return true;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
     private function normalizarDatos(array $datos, int $hotelId): array
     {
         $titulo = trim((string)($datos['titulo'] ?? ''));
@@ -451,6 +526,49 @@ class TareaOperativa extends Model
         return $row ?: null;
     }
 
+    private function transicionManual(string $accion, string $estadoActual): array
+    {
+        $activos = ['pendiente', 'asignada', 'en_proceso'];
+
+        if ($accion === 'iniciar') {
+            if (!in_array($estadoActual, ['pendiente', 'asignada'], true)) {
+                throw new RuntimeException('Solo se pueden iniciar tareas pendientes o asignadas.');
+            }
+
+            return [
+                'estado_nuevo' => 'en_proceso',
+                'evento' => 'iniciada',
+                'comentario' => 'Tarea iniciada manualmente.',
+            ];
+        }
+
+        if ($accion === 'completar') {
+            if (!in_array($estadoActual, $activos, true)) {
+                throw new RuntimeException('Solo se pueden completar tareas activas.');
+            }
+
+            return [
+                'estado_nuevo' => 'completada',
+                'evento' => 'completada',
+                'comentario' => 'Tarea completada manualmente.',
+            ];
+        }
+
+        if ($accion === 'cancelar') {
+            if (!in_array($estadoActual, $activos, true)) {
+                throw new RuntimeException('Solo se pueden cancelar tareas activas.');
+            }
+
+            return [
+                'estado_nuevo' => 'cancelada',
+                'evento' => 'cancelada',
+                'comentario' => 'Tarea cancelada manualmente.',
+            ];
+        }
+
+        throw new InvalidArgumentException('Accion de tarea no permitida.');
+    }
+
     private function registrarEvento(
         int $hotelId,
         int $tareaId,
@@ -497,6 +615,20 @@ class TareaOperativa extends Model
         }
 
         return date('Y-m-d H:i:s', $timestamp);
+    }
+
+    private function nullableTexto($value, int $limite): ?string
+    {
+        $texto = trim((string)($value ?? ''));
+        if ($texto === '') {
+            return null;
+        }
+
+        if (function_exists('mb_substr')) {
+            return mb_substr($texto, 0, $limite, 'UTF-8');
+        }
+
+        return substr($texto, 0, $limite);
     }
 
     private function tablaExiste(string $tabla): bool

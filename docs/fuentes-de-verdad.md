@@ -270,7 +270,7 @@ Regla:
 
 ## Tareas, Limpieza y Mantenimiento (Fase TLM)
 
-Estado formal: `ASIGNACION_TLM_D_COMPLETADA_QA_DIFERIDA`.
+Estado formal: `ESTADOS_TLM_E_COMPLETADOS_QA_DIFERIDA`.
 
 Fuentes actuales:
 
@@ -300,3 +300,7 @@ Reglas:
 - TLM-D asigna tareas solo a `trabajadores` activos del mismo hotel.
 - La asignacion de tarea NO crea asistencia, nomina, pago, abono ni Caja.
 - La asignacion no inicia ni cierra tarea; solo deja `estado = asignada`.
+- TLM-E cambia estados de tarea solo en `tareas_operativas` y registra eventos en
+  `tarea_eventos`.
+- TLM-E no convierte completar/cancelar una tarea en cambio de disponibilidad de
+  habitacion.

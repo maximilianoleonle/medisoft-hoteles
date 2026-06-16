@@ -508,3 +508,20 @@ Estado: `ASIGNACION_TLM_D_COMPLETADA_QA_DIFERIDA`.
 - No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina, PWA/offline/cache
   ni `/api/sync`.
 - QA manual queda diferida por instruccion del usuario.
+
+## Estados manuales Fase TLM-E
+
+Estado: `ESTADOS_TLM_E_COMPLETADOS_QA_DIFERIDA`.
+
+- Documento: `docs/fase_TLM_E_estados_tarea.md`.
+- Rutas autorizadas:
+  - `POST /tareas/{id}/iniciar`;
+  - `POST /tareas/{id}/completar`;
+  - `POST /tareas/{id}/cancelar`.
+- Transiciones manuales centralizadas en modelo.
+- Se registran eventos y auditoria.
+- No se implementa liberacion/bloqueo automatico de habitacion.
+- No se cambio `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina, PWA/offline/cache
+  ni `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.

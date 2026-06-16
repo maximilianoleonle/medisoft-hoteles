@@ -549,3 +549,21 @@ Estado: `ASIGNACION_TLM_D_COMPLETADA_QA_DIFERIDA`.
 - No hay escrituras en Caja, pagos, abonos, nomina, asistencia ni `/api/sync`.
 - Riesgo residual: no hay trabajadores activos en la base local actual; QA real depende
   de crear o tener un trabajador activo.
+
+## Auditoria TLM-E estados manuales
+
+Estado: `ESTADOS_TLM_E_COMPLETADOS_QA_DIFERIDA`.
+
+- Rutas nuevas: `POST /tareas/{id}/iniciar`, `POST /tareas/{id}/completar` y
+  `POST /tareas/{id}/cancelar`.
+- Proteccion: sesion, contexto hotelero, modulo `habitaciones`, permiso
+  `habitaciones.mantenimiento` y CSRF.
+- Aislamiento multi-hotel: tarea por `id + hotel_id`.
+- Escrituras permitidas: `UPDATE tareas_operativas` para estado/fechas/notas y
+  `INSERT tarea_eventos`.
+- No hay `DELETE`.
+- No se cambia `habitaciones.estado`.
+- No se modifica `mantenimientos_habitaciones`.
+- No hay escrituras en Caja, pagos, abonos, nomina, asistencia ni `/api/sync`.
+- Riesgo residual: completar una tarea no libera habitaciones; esto debe quedar claro en
+  QA manual.

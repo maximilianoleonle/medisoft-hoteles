@@ -444,3 +444,28 @@ Siguiente cola exacta recomendada:
 
 Implementar inicio, cierre y cancelacion manual de tareas con auditoria, sin Caja, sin
 pagos y sin cambios automaticos de disponibilidad de habitacion.
+
+## Estados manuales TLM-E
+
+- Estado formal: `ESTADOS_TLM_E_COMPLETADOS_QA_DIFERIDA`.
+- Documento creado: `docs/fase_TLM_E_estados_tarea.md`.
+- Rutas nuevas:
+  - `POST /tareas/{id}/iniciar`;
+  - `POST /tareas/{id}/completar`;
+  - `POST /tareas/{id}/cancelar`.
+- El detalle de tarea muestra acciones para tareas activas.
+- Cada transicion valida hotel, CSRF y permiso `habitaciones.mantenimiento`.
+- Se registran eventos y auditoria.
+- No se cambio `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina, PWA/offline/cache
+  ni `/api/sync`.
+- QA manual queda diferida.
+
+## Siguiente accion
+
+Siguiente cola exacta recomendada:
+
+`[COLA_TLM_F_CONTEXTUAL_HABITACION_TRABAJADOR]`
+
+Mostrar tareas relacionadas en fichas de habitacion y trabajador, sin crear nuevos POST y
+sin automatizar disponibilidad.

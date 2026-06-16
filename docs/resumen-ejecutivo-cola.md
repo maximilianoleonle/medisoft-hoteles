@@ -557,3 +557,22 @@ Resultado TLM-D:
   implementar esta subfase.
 - Siguiente paso recomendado: TLM-E inicio/cierre/cancelacion manual de tareas, si se
   autoriza.
+
+Resultado TLM-E:
+
+- Estado tecnico: `ESTADOS_TLM_E_COMPLETADOS_QA_DIFERIDA`.
+- Documento: `docs/fase_TLM_E_estados_tarea.md`.
+- Rutas agregadas:
+  - `POST /tareas/{id}/iniciar`;
+  - `POST /tareas/{id}/completar`;
+  - `POST /tareas/{id}/cancelar`.
+- El detalle de tarea muestra acciones de estado solo para tareas activas.
+- Transiciones centralizadas en `TareaOperativa::cambiarEstadoManualParaHotel()`.
+- Eventos registrados: `iniciada`, `completada`, `cancelada`.
+- Auditoria con `AuditService`.
+- No cambia `habitaciones.estado`.
+- No modifica `mantenimientos_habitaciones`.
+- No crea asistencia, pagos, abonos, nomina ni movimientos de Caja.
+- No se toco `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.
+- Siguiente paso recomendado: TLM-F contexto visual de tareas en habitacion/trabajador.

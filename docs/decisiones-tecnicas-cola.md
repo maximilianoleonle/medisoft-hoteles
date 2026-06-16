@@ -459,3 +459,15 @@
 - No se inicia ni cierra la tarea.
 - No se cambia `habitaciones.estado`.
 - No se modifica `mantenimientos_habitaciones` ni `/api/sync`.
+
+## Decision TLM-E estados manuales
+
+- Se implementan tres acciones explicitas: iniciar, completar y cancelar.
+- Las transiciones se centralizan en `TareaOperativa::transicionManual()`.
+- Completar/cancelar una tarea registra `fecha_cierre`, pero no modifica habitacion ni
+  mantenimiento historico.
+- Iniciar una tarea registra `fecha_inicio`, pero no genera asistencia laboral.
+- Las notas opcionales se guardan como `notas_cierre` solo al completar/cancelar.
+- Cada transicion registra evento tecnico y auditoria.
+- No se automatizan disponibilidad, notificaciones, Caja, pagos, abonos ni nomina.
+- `/api/sync` queda fuera de alcance.
