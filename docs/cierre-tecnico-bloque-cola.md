@@ -433,3 +433,16 @@ Estado: `CRUD_TRABAJADORES_NP_B_A_COMPLETADO_QA_DIFERIDA`.
 - Auditoria en cambios de trabajador.
 - Sin pagos, anticipos, prestamos, asistencia operativa, documentos laborales, Caja ni
   `/api/sync`.
+
+## Contrato Fase TLM-0
+
+Estado: `CONTRATO_TLM_0_COMPLETADO`.
+
+- Documento: `docs/fase_TLM_0_contrato_diagnostico.md`.
+- Diagnostico read-only completado.
+- No hay tabla propia de tareas; existe `mantenimientos_habitaciones` como fuente actual.
+- `habitaciones.estado` sigue siendo fuente de disponibilidad.
+- No se implementaron migraciones, rutas, controladores, modelos ni vistas.
+- No se escribio en DB.
+- No se toco Caja, pagos, abonos, nomina, PWA/offline/cache ni `/api/sync`.
+- Siguiente subfase segura: TLM-A migracion base aditiva de tareas con backup previo.

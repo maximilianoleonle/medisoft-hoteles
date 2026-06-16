@@ -690,3 +690,46 @@ Estado formal vigente: `CRUD_TRABAJADORES_NP_B_A_COMPLETADO_QA_DIFERIDA`.
 - Solo escribe en `trabajadores`.
 - No implementa pagos, anticipos, prestamos, asistencia operativa, documentos laborales,
   Caja, categoria Nomina ni `/api/sync`.
+
+## Bloque Tareas, Limpieza y Mantenimiento (Fase TLM)
+
+### Objetivo
+
+Crear una capa operativa de tareas para limpieza, mantenimiento ligero y tareas generales
+sin reemplazar la fuente actual de estados de habitacion ni el historial existente de
+`mantenimientos_habitaciones`.
+
+### Estado TLM-0
+
+Estado formal vigente: `CONTRATO_TLM_0_COMPLETADO`.
+
+- Documento: `docs/fase_TLM_0_contrato_diagnostico.md`.
+- Diagnostico confirma que hoy NO existe tabla propia de tareas.
+- Fuente actual de disponibilidad: `habitaciones.estado`.
+- Fuente actual de mantenimiento historico/programado: `mantenimientos_habitaciones`.
+- `mantenimientos_habitaciones` tiene 10 registros y 0 sin `hotel_id`.
+- Habitaciones actuales: 12 en `limpieza` y 2 en `mantenimiento`.
+- Modulos `limpieza` y `mantenimiento` existen y estan activos para los 4 hoteles revisados.
+- TLM-0 no crea migraciones, rutas, controladores, modelos, vistas ni cambios de DB.
+
+### Reglas duras TLM
+
+- No tocar `/api/sync`.
+- No tocar Caja, pagos, abonos ni nomina.
+- No reescribir check-in/check-out, reservaciones ni disponibilidad.
+- No borrar ni fusionar `mantenimientos_habitaciones`.
+- No cambiar `habitaciones.estado` automaticamente desde tareas en la primera etapa.
+- Todo futuro POST debe usar CSRF y auditar cambios sensibles.
+- Toda tabla futura debe incluir `hotel_id`.
+
+### Subfases sugeridas TLM
+
+- TLM-0: contrato y diagnostico -> `docs(phase-tlm): define tasks housekeeping maintenance contract`.
+- TLM-A: migracion base aditiva -> `feat(phase-tlm): add operational tasks base schema`.
+- TLM-B: capa read-only -> `feat(phase-tlm): add read-only operational tasks layer`.
+- TLM-C: creacion manual de tarea -> `feat(phase-tlm): create operational tasks manually`.
+- TLM-D: asignacion opcional a trabajador -> `feat(phase-tlm): assign tasks to workers`.
+- TLM-E: cierre/cancelacion manual -> `feat(phase-tlm): complete and cancel operational tasks`.
+- TLM-F: integracion contextual en habitacion/trabajador -> `feat(phase-tlm): show contextual operational tasks`.
+- TLM-G: health/preflights -> `test(phase-tlm): add operational task consistency checks`.
+- TLM-H: revision, auditoria y cierre -> `docs(phase-tlm): close operational tasks block`.

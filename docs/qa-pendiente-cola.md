@@ -623,3 +623,38 @@ instruccion del usuario.
 - Listado y ficha de trabajador en escritorio y movil.
 - Estados vacios claros (sin trabajadores, sin movimientos).
 - Consistencia visual con el resto del sistema; sin mezclar branding Medisoft SaaS con branding hotelero.
+
+## QA Bloque Tareas, Limpieza y Mantenimiento (Fase TLM)
+
+### Estado TLM-0
+
+- Contrato y diagnostico documentados.
+- Sin migraciones, rutas, UI ni escrituras de DB.
+- QA manual diferida por instruccion del usuario.
+
+### QA critica planificada TLM
+
+- Confirmar que `/api/sync` sigue bloqueado.
+- Confirmar que Caja/cortes/movimientos no cambian al usar tareas.
+- Confirmar que tareas futuras no cambian `habitaciones.estado` automaticamente en la
+  primera etapa.
+- Confirmar que `mantenimientos_habitaciones` no se borra, fusiona ni renombra.
+- Confirmar que todo acceso futuro filtra por `hotel_id`.
+- Confirmar que tareas futuras solo se asignan a trabajadores activos del mismo hotel.
+
+### QA funcional planificada TLM
+
+- TLM-A: tablas nuevas vacias y migracion registrada.
+- TLM-B: listado/detalle read-only con estado vacio claro.
+- TLM-C: crear tarea manual con CSRF y auditoria, sin cambiar disponibilidad.
+- TLM-D: asignar/reasignar trabajador activo del mismo hotel.
+- TLM-E: iniciar/completar/cancelar tarea manualmente.
+- TLM-F: ver tareas contextuales desde habitacion y trabajador.
+
+### QA regresion planificada TLM
+
+- Habitaciones en limpieza pueden liberarse como antes.
+- Mantenimiento de habitacion actual sigue funcionando.
+- Reservaciones siguen bloqueando conflictos de mantenimiento programado.
+- Reporte de mantenimiento sigue leyendo `mantenimientos_habitaciones`.
+- Notificaciones de limpieza/mantenimiento siguen funcionando.

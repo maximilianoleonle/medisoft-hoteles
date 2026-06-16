@@ -392,3 +392,19 @@
 - Auditoria con `AuditService::record()` si la tabla `logs_auditoria` esta disponible.
 - Escrituras explicitas (POST + CSRF + transaccion cuando el patron lo permita).
 - `/api/sync` fuera de alcance.
+
+## Decisiones TLM-0 Tareas, Limpieza y Mantenimiento
+
+- TLM se define como una capa nueva de tareas operativas, no como reemplazo de
+  `mantenimientos_habitaciones`.
+- Se conserva `habitaciones.estado` como fuente de verdad para disponibilidad y estado
+  operativo de habitacion.
+- Se conserva `mantenimientos_habitaciones` como fuente historica y programada de
+  mantenimiento de habitacion.
+- La primera migracion futura debe ser aditiva, idempotente y separada; no debe alterar
+  ni recalcular estados de habitacion.
+- La relacion futura tarea-trabajador sera opcional y validada contra `trabajadores`
+  activos del mismo hotel.
+- No se automatizara el cambio de `habitaciones.estado` desde tareas en la primera etapa
+  operativa.
+- No se toca Caja, pagos, abonos, nomina, PWA/offline/cache ni `/api/sync`.

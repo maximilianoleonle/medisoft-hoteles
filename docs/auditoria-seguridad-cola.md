@@ -468,3 +468,17 @@ Estado: `CRUD_TRABAJADORES_NP_B_A_COMPLETADO_QA_DIFERIDA`.
 - No hay escrituras en ledger laboral, Caja, CxP, pagos, anticipos, prestamos,
   asistencia ni documentos laborales.
 - Auditoria con `AuditService` en crear/actualizar/baja/reactivar.
+
+## Auditoria TLM-0 contrato y diagnostico
+
+Estado: `CONTRATO_TLM_0_COMPLETADO`.
+
+- Sin codigo nuevo, sin rutas nuevas y sin migraciones.
+- No hay escrituras de DB.
+- Diagnostico confirma que la unica tabla operativa existente de mantenimiento es
+  `mantenimientos_habitaciones`.
+- `mantenimientos_habitaciones` tiene `hotel_id` completo en los 10 registros revisados.
+- Riesgo principal: una fase futura de tareas podria afectar disponibilidad si cambia
+  `habitaciones.estado` sin contrato. Mitigacion: TLM-A/TLM-B deben ser aditivas y
+  read-first; el primer flujo de tareas no debe cambiar estados de habitacion.
+- Se mantiene prohibido tocar Caja, pagos, abonos, nomina, PWA/offline/cache y `/api/sync`.

@@ -467,3 +467,27 @@ Resultado NP-B-A:
 - POST con CSRF y auditoria para crear, actualizar, baja logica y reactivar.
 - Sin pagos, anticipos, prestamos, asistencia operativa, documentos laborales, Caja ni
   `/api/sync`.
+
+## Nuevo bloque Tareas, Limpieza y Mantenimiento (Fase TLM)
+
+Objetivo: preparar una capa operativa de tareas para limpieza, mantenimiento ligero y
+tareas generales, sin sustituir el flujo actual de habitaciones ni el historial de
+mantenimiento.
+
+Resultado TLM-0:
+
+- Estado tecnico: `CONTRATO_TLM_0_COMPLETADO`.
+- Documento: `docs/fase_TLM_0_contrato_diagnostico.md`.
+- Diagnostico read-only ejecutado.
+- No se crearon migraciones, rutas, controladores, modelos ni vistas.
+- No se escribio en DB.
+- Fuente actual de disponibilidad: `habitaciones.estado`.
+- Fuente actual de mantenimiento: `mantenimientos_habitaciones`.
+- Conteos revisados:
+  - `mantenimientos_habitaciones`: 10 registros.
+  - registros de mantenimiento sin `hotel_id`: 0.
+  - habitaciones en `limpieza`: 12.
+  - habitaciones en `mantenimiento`: 2.
+  - `trabajadores`: 0.
+- Riesgo: naranja, porque limpieza/mantenimiento afecta disponibilidad y reservaciones.
+- Siguiente paso recomendado: TLM-A migracion base aditiva de tareas, con backup previo.

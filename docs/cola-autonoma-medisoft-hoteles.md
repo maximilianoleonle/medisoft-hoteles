@@ -320,3 +320,33 @@ implementado con alta/edicion/baja logica/reactivacion, sin pagos, sin Caja y si
 Siguiente paso formal recomendado: NP-C-0 contrato de ledger laboral o bloque
 Tareas/Limpieza/Mantenimiento base, sin integracion con Caja.
 No hacer push.
+
+## Diagnostico TLM-0 (Tareas, Limpieza y Mantenimiento)
+
+- Estado formal: `CONTRATO_TLM_0_COMPLETADO`.
+- Documento creado: `docs/fase_TLM_0_contrato_diagnostico.md`.
+- Rama: `feature/saas-multihotel`.
+- El diagnostico fue read-only y no escribio datos.
+- Fuente actual de disponibilidad: `habitaciones.estado`.
+- Fuente actual de mantenimiento: `mantenimientos_habitaciones`.
+- No existe tabla propia de tareas operativas todavia.
+- Conteos observados:
+  - `mantenimientos_habitaciones`: 10.
+  - mantenimientos sin `hotel_id`: 0.
+  - habitaciones en limpieza: 12.
+  - habitaciones en mantenimiento: 2.
+  - trabajadores: 0.
+- Modulos `limpieza` y `mantenimiento` existen y estan activos en los 4 hoteles
+  revisados.
+- Riesgo: naranja por impacto potencial en disponibilidad y reservaciones.
+- Limites: no Caja, no pagos, no abonos, no nomina, no PWA/offline/cache, no `/api/sync`.
+
+## Siguiente accion
+
+Siguiente cola exacta recomendada:
+
+`[COLA_TLM_A_MIGRACION_BASE_TAREAS]`
+
+Crear migracion base aditiva de tareas operativas con backup previo de
+`medisoft_hoteles_import`. No crear UI ni POST funcional todavia si la migracion no queda
+verificada.

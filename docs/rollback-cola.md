@@ -514,3 +514,28 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - No borrar ni alterar `usuarios` ni `hotel_usuarios` durante ningun rollback NP.
 - No tocar Caja, cortes ni movimientos durante ningun rollback NP.
 - No hacer reset destructivo de Git ni push.
+
+## Bloque Tareas, Limpieza y Mantenimiento (Fase TLM)
+
+### TLM-0 contrato y diagnostico
+
+- Rollback documental: revertir el commit
+  `docs(phase-tlm): define tasks housekeeping maintenance contract`.
+- DB: no aplica; TLM-0 no crea migraciones ni escribe datos.
+- Codigo: no aplica; TLM-0 no crea rutas, controladores, modelos ni vistas.
+
+### TLM-A futura migracion base
+
+- Backup previo obligatorio antes de aplicar cualquier migracion.
+- La migracion debe ser aditiva e idempotente.
+- Rollback de DB solo con autorizacion explicita y solo si las tablas nuevas siguen
+  vacias.
+- No borrar ni modificar `mantenimientos_habitaciones`.
+- No cambiar ni recalcular `habitaciones.estado`.
+
+### Reglas duras de rollback TLM
+
+- No tocar Caja, pagos, abonos ni nomina.
+- No tocar `/api/sync`, PWA, offline, IndexedDB ni caches.
+- No borrar mantenimientos historicos.
+- No ejecutar `DELETE` ni `DROP` sin autorizacion nueva y backup validado.
