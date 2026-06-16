@@ -210,6 +210,11 @@ Resultado 4A-C:
   `documento_tipos=0`, `cuentas_por_pagar_movimientos=0`, `movimientos_caja=1403`.
 - Archivo `.html` invalido fue rechazado sin crear registros.
 - No hay descarga, edicion, borrado, pagos, abonos, Caja ni `/api/sync`.
+- Hotfix post-QA 4A-C:
+  - tipos documentales globales creados por migracion idempotente;
+  - carga general simplificada sin IDs manuales de entidad;
+  - CSS relativo del layout corregido con `asset()`;
+  - prueba controlada creo `documentos.id=2` con tipo Contrato y sin vinculo inicial.
 - Siguiente cola recomendada: `[COLA_REVISION_TECNICA_4A]`.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)

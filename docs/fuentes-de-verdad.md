@@ -111,6 +111,10 @@ Reglas:
 - Conteos post-prueba 4A-C local: `documento_tipos=0`, `documentos=1`,
   `documento_entidades=1`.
 - Documento de prueba 4A-C: `documentos.id=1`, hotel `1`, vinculado a proveedor `8`.
+- Hotfix post-QA 4A-C: `documento_tipos=6` con tipos globales Contrato, Comprobante,
+  Identificacion, Factura, Evidencia y Otro.
+- Documento de prueba del hotfix: `documentos.id=2`, hotel `1`, tipo Contrato, sin
+  vinculo inicial.
 - Las vistas read-only no deben mostrar `storage_path`, `nombre_archivo` ni rutas internas.
 - Las rutas documentales de consulta son GET: `/documentos`, `/documentos/{id}` y
   `/documentos/entidad/{tipo}/{id}`.

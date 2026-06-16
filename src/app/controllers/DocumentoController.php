@@ -79,7 +79,6 @@ class DocumentoController extends Controller
         View::renderTemplate('documentos/subir', [
             'title' => 'Subir documento - ' . current_hotel_display_name(),
             'tipos' => $this->documentoModel->tiposActivosPorHotel($hotelId),
-            'entidadTipos' => $this->documentoModel->entidadTiposPermitidos(),
             'contextoEntidad' => $contextoEntidad,
         ]);
     }

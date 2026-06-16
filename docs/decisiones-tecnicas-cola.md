@@ -179,6 +179,11 @@
   codigo versionado.
 - La descarga segura queda fuera de 4A-C y requiere una fase posterior con controlador
   autenticado, `realpath` y headers privados.
+- Hotfix post-QA 4A-C: se agregan tipos documentales globales por migracion seed
+  idempotente para evitar un select vacio.
+- La carga general ya no solicita manualmente `entidad_tipo`/`entidad_id`; el vinculo se
+  conserva solo si la ruta llega con contexto de entidad validado.
+- El CSS del layout debe cargarse con `asset()` para evitar 404 en subrutas.
 - No se permite tocar Caja, pagos, abonos, Fase 3D ni `/api/sync`.
 
 ### Decisiones de diagnostico NP-0

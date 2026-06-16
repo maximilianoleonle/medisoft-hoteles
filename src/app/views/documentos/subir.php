@@ -1,6 +1,5 @@
 <?php
 $tipos = $tipos ?? [];
-$entidadTipos = $entidadTipos ?? [];
 $contextoEntidad = $contextoEntidad ?? null;
 
 if (!function_exists('doc_upload_safe')) {
@@ -202,23 +201,15 @@ $tieneContexto = is_array($contextoEntidad);
                                 #<?= (int)($contextoEntidad['id'] ?? 0) ?>
                             </div>
                             <p class="mt-1 text-sm text-slate-500">El documento se vinculara a esta entidad del hotel actual.</p>
+
+                            <label class="doc-upload-label mt-4" for="relacion">Relacion</label>
+                            <input class="doc-upload-field" type="text" id="relacion" name="relacion" maxlength="80" placeholder="Ej. comprobante, contrato, evidencia">
                         <?php else: ?>
-                            <label class="doc-upload-label mt-1" for="entidad_tipo">Entidad opcional</label>
-                            <select class="doc-upload-field" id="entidad_tipo" name="entidad_tipo">
-                                <option value="">Sin vinculo inicial</option>
-                                <?php foreach ($entidadTipos as $entidadTipo): ?>
-                                    <option value="<?= doc_upload_safe($entidadTipo, '') ?>">
-                                        <?= doc_upload_safe(doc_upload_label($entidadTipo)) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-
-                            <label class="doc-upload-label mt-4" for="entidad_id">ID de entidad</label>
-                            <input class="doc-upload-field" type="number" min="1" step="1" id="entidad_id" name="entidad_id" placeholder="Opcional">
+                            <div class="font-black">Sin vinculo inicial</div>
+                            <p class="mt-1 text-sm text-slate-500">
+                                Para vincularlo a proveedor, compra, CxP, huesped o reservacion, abre la carga desde la ficha o listado documental de esa entidad.
+                            </p>
                         <?php endif; ?>
-
-                        <label class="doc-upload-label mt-4" for="relacion">Relacion</label>
-                        <input class="doc-upload-field" type="text" id="relacion" name="relacion" maxlength="80" placeholder="Ej. comprobante, contrato, evidencia">
                     </div>
 
                     <div class="doc-upload-panel p-4 bg-slate-50">

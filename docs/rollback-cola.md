@@ -287,6 +287,21 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - No ejecutar `DELETE`, `DROP`, `unlink` ni limpieza masiva sin autorizacion nueva.
 - `src/storage/documentos/` queda ignorado por Git porque es storage runtime privado.
 
+### 4A-C hotfix tipos documentales y carga general
+
+- Backup previo:
+  `src/storage/backups/phase4a_fix_20260615_193644_before_document_upload_fixes_medisoft_hoteles_import.sql`.
+- SHA256: `FC9E0F68106A7ED49EC2228EFF0452F24710BDEF8E435AE3DE24ACD0A013C673`.
+- Migracion: `migrations/20260615_005_fase_4a_seed_documento_tipos.sql`.
+- Rollback de codigo: revertir el commit del hotfix.
+- Rollback DB solo con autorizacion explicita:
+  1. revisar si algun documento real usa los tipos globales;
+  2. si se decide retirar tipos, poner `documentos.documento_tipo_id = NULL` para esos
+     IDs o restaurar backup completo;
+  3. borrar filas globales de `documento_tipos` solo si no hay uso real;
+  4. borrar registro de `migrations` del seed.
+- Prueba local del hotfix creo `documentos.id = 2`; no borrar sin autorizacion.
+
 ### Fases futuras
 
 - Antes de migracion o escritura: backup fresco.

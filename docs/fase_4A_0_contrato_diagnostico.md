@@ -518,6 +518,49 @@ Validaciones:
 - URL publica directa a `storage/documentos/...`: no sirve el archivo y redirige a login.
 - No se implementaron descargas, edicion, borrado, pagos, abonos, Caja ni `/api/sync`.
 
+## Hotfix post-QA Fase 4A-C - Tipos y carga general
+
+Motivo:
+
+- El formulario no mostraba opciones en `Tipo documental` porque `documento_tipos` estaba
+  vacia.
+- La carga general permitia capturar manualmente tipo/ID de entidad, lo que facilitaba
+  errores por IDs inexistentes.
+- En subrutas como `/documentos/subir`, el layout cargaba
+  `documentos/css/performance-optimization.css` por una ruta relativa.
+
+Backup previo:
+
+- `src/storage/backups/phase4a_fix_20260615_193644_before_document_upload_fixes_medisoft_hoteles_import.sql`
+- tamano: `1542543` bytes
+- SHA256: `FC9E0F68106A7ED49EC2228EFF0452F24710BDEF8E435AE3DE24ACD0A013C673`
+
+Migracion creada y aplicada:
+
+- `migrations/20260615_005_fase_4a_seed_documento_tipos.sql`
+- tipos globales creados: Contrato, Comprobante, Identificacion, Factura, Evidencia y Otro.
+- MIME permitidos por tipo: PDF, JPG/JPEG, PNG y WEBP.
+- maximo por tipo: `10 MB`.
+
+Correcciones funcionales:
+
+- `Tipo documental` ahora tiene opciones activas globales.
+- La carga desde `/documentos/subir` queda sin vinculo inicial, sin pedir IDs manuales.
+- El vinculo a entidad se mantiene cuando la carga llega con contexto validado por query
+  (`entidad_tipo` + `entidad_id`).
+- El CSS del layout usa `asset('css/performance-optimization.css')`.
+
+Prueba local controlada del hotfix:
+
+- Documento creado: `documentos.id = 2`.
+- Tipo: `Contrato`.
+- Sin relacion inicial (`documento_entidades` no aumento para ese documento).
+- Storage privado:
+  `documentos/hotel_1/2026/06/doc_20260615_194006_c03cb76ab56051a7.pdf`.
+- Conteos post-hotfix: `documento_tipos=6`, `documentos=2`, `documento_entidades=1`,
+  `logs_auditoria=28`.
+- Caja, pagos, abonos y CxP operativa sin cambios.
+
 Rollback manual de 4A-C:
 
 1. Revertir el commit de codigo 4A-C si hay regresion funcional.

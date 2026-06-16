@@ -273,6 +273,10 @@ sin exponer archivos.
 - Iniciar sesion en Los Cedros.
 - Abrir `/documentos`.
 - Presionar `Subir documento`.
+- Confirmar que `Tipo documental` muestra Contrato, Comprobante, Identificacion,
+  Factura, Evidencia y Otro.
+- Confirmar que la carga general muestra `Sin vinculo inicial` y no pide IDs manuales de
+  entidad.
 - Cargar un PDF o imagen valida menor a 10 MB.
 - Confirmar redireccion al detalle del documento.
 - Confirmar que el detalle muestra metadata y vinculo, pero no descarga ni ruta interna.
@@ -280,6 +284,18 @@ sin exponer archivos.
 - Confirmar que el documento aparece en `/documentos` y en
   `/documentos/entidad/proveedor/8` si se usa el proveedor de prueba.
 - Confirmar que no aparecen botones de descarga, edicion, borrado, pago, abono ni Caja.
+- Confirmar que no aparece error 404 de `documentos/css/performance-optimization.css` en
+  consola/red.
+
+### Resultado automatico hotfix Fase 4A-C
+
+- Tipos documentales globales creados: `6`.
+- `GET /documentos/subir` muestra tipos documentales y ya no muestra campos manuales de
+  entidad en carga general.
+- `GET /css/performance-optimization.css`: `200 OK`.
+- Carga controlada sin vinculo inicial creo `documentos.id = 2` con tipo `Contrato`.
+- `documento_entidades` se mantuvo en `1`, sin relacion para el documento `#2`.
+- Caja, pagos, abonos y CxP operativa sin cambios.
 
 ### QA critica futura
 

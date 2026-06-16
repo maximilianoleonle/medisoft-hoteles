@@ -197,8 +197,19 @@ Riesgos residuales 4A-C:
 - La descarga segura aun no existe; no debe improvisarse con URLs directas.
 - La prueba local creo `documentos.id=1` y `documento_entidades.id=1`; no borrar sin
   autorizacion explicita.
-- Los tipos documentales siguen vacios; las cargas usan reglas base hasta definir catalogo.
+- Los tipos documentales base ya existen; las cargas siguen limitadas a PDF/JPG/PNG/WEBP
+  hasta una fase posterior que autorice formatos adicionales.
 - Falta QA manual en navegador para validar flujo visual y mensajes con usuario real.
+
+### Hotfix seguridad 4A-C
+
+- Se agregaron tipos globales por seed idempotente; no se modifica ningun documento
+  existente salvo el registro de prueba controlada.
+- Cada tipo mantiene MIME permitidos acotados a PDF/JPG/PNG/WEBP y maximo `10 MB`.
+- La carga general ya no permite capturar manualmente IDs de entidad, reduciendo errores
+  de vinculacion a entidades inexistentes.
+- El vinculo por entidad sigue disponible solo con contexto validado.
+- La correccion del CSS relativo no toca PWA, service worker, cache names ni `/api/sync`.
 
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 

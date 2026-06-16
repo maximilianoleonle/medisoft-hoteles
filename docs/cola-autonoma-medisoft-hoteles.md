@@ -39,6 +39,9 @@ Cola actual procesada: `[COLA_4A_C_UPLOAD_SEGURO_DOCUMENTOS]`, carga segura de d
 - Las vistas no muestran `storage_path` ni rutas internas.
 - Backup 4A-C: `src/storage/backups/phase4a_c_20260615_190912_before_document_upload_medisoft_hoteles_import.sql`, SHA256 `DF150F705824973621B9A1276980DC73ECB7AE5261B67A5D71E541FE13797446`, tamano `1541523`.
 - Prueba 4A-C: documento `#1` creado en hotel `1`, vinculado a proveedor `#8`, storage privado `documentos/hotel_1/2026/06/doc_20260615_191313_37017248e4f9b6e2.pdf`, auditoria `documentos.cargado`.
+- Hotfix post-QA 4A-C: tipos documentales globales creados (`6`), carga general sin IDs
+  manuales de entidad, CSS relativo corregido, prueba controlada documento `#2` con tipo
+  Contrato.
 - Siguiente cola recomendada: `[COLA_REVISION_TECNICA_4A]`.
 
 ## Reanclaje Fase 3C

@@ -112,7 +112,7 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
     <!-- NUEVO: Tamaño grande del sidebar -->
     <link rel="stylesheet" href="<?= asset('css/sidebar-size-override.css') ?>">
 
-    <link rel="stylesheet" href="css/performance-optimization.css"> <!-- NUEVO -->
+    <link rel="stylesheet" href="<?= asset('css/performance-optimization.css') ?>"> <!-- NUEVO -->
     <!-- Chart.js para gráficas -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
