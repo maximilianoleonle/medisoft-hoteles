@@ -229,6 +229,19 @@ Riesgos residuales 4A-C:
 - SQL read-only: `documento_tipos=6`, `documentos=3`, `documento_entidades=1`, `cuentas_por_pagar_movimientos=0`, `movimientos_caja=1403`, `logs_auditoria=29`.
 - Sin Caja, pagos, abonos, Fase 3D ni `/api/sync`.
 
+## Fase 4B Descarga segura documental - auditoria de contrato
+
+Estado: `CONTRATO_4B_DESCARGA_SEGURA_COMPLETADO`.
+
+- 4B-0 no implementa rutas ni lectura de archivos.
+- Riesgo principal futuro: exposicion de documentos privados si se omite `hotel_id` o
+  `realpath`.
+- Mitigacion obligatoria: buscar documento por `id + hotel_id`, restringir a estado
+  `activo`, resolver archivo bajo `realpath(STORAGE_PATH . '/documentos')` y enviar
+  headers privados.
+- Prohibido: links publicos, tokens publicos, `public_html/uploads`, edicion, borrado,
+  Caja, pagos, abonos, PWA/offline y `/api/sync`.
+
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 
 ### Estado NP-0

@@ -327,6 +327,25 @@ sin exponer archivos.
 - El cierre no habilita descarga, edicion, borrado, pagos, abonos, Caja, Fase 3D ni `/api/sync`.
 - Cualquier descarga segura debe abrirse en un bloque posterior con contrato, guardias y headers privados.
 
+## QA Fase 4B Descarga segura documental
+
+Estado vigente: `CONTRATO_4B_DESCARGA_SEGURA_COMPLETADO`.
+
+4B-0 es solo contrato; no requiere QA manual funcional porque no implementa rutas ni
+descarga archivos.
+
+### QA planificada 4B-A
+
+- HTTP sin sesion en `/documentos/{id}/descargar` debe redirigir a login.
+- Documento inexistente o de otro hotel no debe descargarse.
+- Documento valido del hotel actual debe descargar con `Content-Type`,
+  `Content-Disposition`, `X-Content-Type-Options`, `Cache-Control: private` y
+  `Content-Length`.
+- El navegador no debe recibir `storage_path` ni `nombre_archivo`.
+- Archivo fisico faltante debe mostrar error controlado sin exponer ruta interna.
+- No debe haber links publicos ni tokens publicos de documentos.
+- No debe crear pagos, abonos, Caja, movimientos financieros ni tocar `/api/sync`.
+
 ### QA critica futura
 
 - Documento de un hotel no visible en otro hotel.

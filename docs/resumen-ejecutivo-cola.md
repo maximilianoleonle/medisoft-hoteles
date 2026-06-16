@@ -221,6 +221,27 @@ Resultado 4A-C:
 - Cierre tecnico 4A: bloque 4A-0..4A-C documentado y cerrado; no autoriza descargas, edicion, borrado, pagos, Caja, Fase 3D ni `/api/sync`.
 - Siguiente paso recomendado: nuevo mensaje real para autorizar una fase posterior, por ejemplo descarga segura autenticada.
 
+## Nuevo bloque Fase 4B Descarga segura documental
+
+Estado: `CONTRATO_4B_DESCARGA_SEGURA_COMPLETADO`.
+
+Objetivo: definir descarga autenticada de documentos privados ya cargados en Centro
+Documental, sin exponer `storage_path`, sin links publicos, sin Caja, pagos, abonos ni
+`/api/sync`.
+
+Resultado 4B-0:
+
+- Documento creado: `docs/fase_4B_0_contrato_descarga_segura_documentos.md`.
+- Ruta futura propuesta: `GET /documentos/{id}/descargar`.
+- Implementacion futura propuesta: `DocumentoController::descargarAction()` con
+  validacion `id + hotel_id`, documento `activo`, `realpath` bajo
+  `STORAGE_PATH/documentos` y headers privados.
+- Se tomo como referencia tecnica `ReporteLinkController`, pero sin token publico y sin
+  limitar a PDF.
+- No se implementaron rutas, modelos, vistas, migraciones, lectura de archivos ni
+  escrituras DB.
+- Siguiente cola recomendada: `[COLA_4B_A_DESCARGA_SEGURA_DOCUMENTOS]`.
+
 ## Nuevo bloque Personal y Nomina (Fase NP)
 
 Objetivo: modulo INDEPENDIENTE de trabajadores con ledger laboral, saldos por persona,

@@ -322,6 +322,14 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Codigo: no aplica si el commit solo contiene documentacion de cierre.
 - No borrar documentos de prueba, tipos documentales ni archivos de storage sin autorizacion explicita.
 
+### 4B-0 contrato descarga segura documental
+
+- Estado vigente: `CONTRATO_4B_DESCARGA_SEGURA_COMPLETADO`.
+- Rollback documental: revertir el commit `docs(phase-4b): define secure document download contract`.
+- DB: no aplica; 4B-0 no escribe datos.
+- Codigo: no aplica; 4B-0 no crea rutas ni controladores.
+- Archivos fisicos: no aplica; no se leen ni borran archivos en 4B-0.
+
 ### Fases futuras
 
 - Antes de migracion o escritura: backup fresco.

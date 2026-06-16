@@ -128,6 +128,25 @@ Reglas:
 - `src/storage/documentos/` queda fuera de Git; no se debe versionar storage runtime.
 - No Caja, pagos, abonos, Fase 3D ni `/api/sync`.
 
+## Descarga segura documental (Fase 4B)
+
+Estado formal: `CONTRATO_4B_DESCARGA_SEGURA_COMPLETADO`.
+
+Contrato:
+
+- `docs/fase_4B_0_contrato_descarga_segura_documentos.md`.
+
+Reglas de fuente de verdad:
+
+- La metadata autorizada vive en `documentos`.
+- El archivo fisico vive bajo `STORAGE_PATH/documentos`.
+- La descarga futura debe buscar por `documentos.id + documentos.hotel_id`.
+- `storage_path` es path privado relativo, no URL publica.
+- La ruta fisica solo es valida si `realpath` queda dentro de
+  `realpath(STORAGE_PATH . '/documentos')`.
+- No existen links publicos de documentos en el contrato 4B-0.
+- 4B-0 no implementa descarga todavia; solo define reglas.
+
 ## Personal y Nomina (Fase NP)
 
 Fuente nueva e independiente (modulo de trabajadores):

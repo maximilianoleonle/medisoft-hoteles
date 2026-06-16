@@ -194,6 +194,21 @@
   `/api/sync`; cualquier descarga segura requiere nuevo bloque explicito.
 - No se permite tocar Caja, pagos, abonos, Fase 3D ni `/api/sync`.
 
+## Fase 4B Descarga segura documental
+
+- Estado formal vigente: `CONTRATO_4B_DESCARGA_SEGURA_COMPLETADO`.
+- 4B-0 solo documenta contrato; no implementa ruta, modelo, vista, migracion ni lectura
+  de archivos.
+- La ruta futura propuesta es `GET /documentos/{id}/descargar`.
+- La descarga debe ser autenticada, scoped por `hotel_id` y restringida a documentos
+  `activo`.
+- La ruta fisica debe resolverse con `realpath` bajo
+  `realpath(STORAGE_PATH . '/documentos')`.
+- No se permiten links publicos de documentos en esta fase.
+- El patron de `ReporteLinkController` sirve como referencia para headers privados y
+  `realpath`, pero no debe copiarse el acceso publico por token.
+- 4B no autoriza edicion, borrado, Caja, pagos, abonos, PWA/offline ni `/api/sync`.
+
 ### Decisiones de diagnostico NP-0
 
 - Hoy "trabajador" = `usuarios` (tabla global, sin `hotel_id`, `rol` de sistema) + pivote

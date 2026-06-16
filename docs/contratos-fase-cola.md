@@ -325,6 +325,31 @@ descarga por controlador autenticado y validacion de `hotel_id`. No usar
 `[COLA_4A_A_MIGRACION_BASE_DOCUMENTOS]`, solo si se autoriza crear migracion
 idempotente y no destructiva.
 
+## Fase 4B-0: Descarga segura de documentos
+
+### Estado
+
+Estado formal vigente: `CONTRATO_4B_DESCARGA_SEGURA_COMPLETADO`.
+
+### Objetivo
+
+Definir la descarga autenticada de archivos privados del Centro Documental sin
+implementar todavia rutas ni lectura de archivos.
+
+### Alcance 4B-0
+
+- Contrato de ruta futura `GET /documentos/{id}/descargar`.
+- Reglas de `requireAuth`, contexto hotelero, modulo relacionado y `hotel_id`.
+- Regla de `realpath` bajo `STORAGE_PATH/documentos`.
+- Headers privados y nombre de archivo seguro.
+- Riesgos, rollback y Definition of Done.
+- Sin implementacion, sin POST, sin DB, sin Caja, pagos, abonos ni `/api/sync`.
+
+### Siguiente paso
+
+`[COLA_4B_A_DESCARGA_SEGURA_DOCUMENTOS]`, solo si se autoriza implementar descarga
+autenticada siguiendo `docs/fase_4B_0_contrato_descarga_segura_documentos.md`.
+
 ## Bloque Personal y Nomina (Fase NP): modulo independiente de trabajadores
 
 ### Objetivo
