@@ -196,7 +196,7 @@
 
 ## Fase 4B Descarga segura documental
 
-- Estado formal vigente: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+- Estado formal vigente: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
 - 4B-0 documento contrato; 4B-A implementa descarga autenticada.
 - La ruta implementada es `GET /documentos/{id}/descargar`.
 - La descarga debe ser autenticada, scoped por `hotel_id` y restringida a documentos

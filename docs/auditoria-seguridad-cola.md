@@ -231,7 +231,7 @@ Riesgos residuales 4A-C:
 
 ## Fase 4B Descarga segura documental - auditoria de contrato
 
-Estado: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+Estado: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
 
 - 4B-0 no implementa rutas ni lectura de archivos.
 - Riesgo principal futuro: exposicion de documentos privados si se omite `hotel_id` o

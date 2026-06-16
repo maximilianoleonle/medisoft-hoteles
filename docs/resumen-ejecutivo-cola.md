@@ -223,7 +223,7 @@ Resultado 4A-C:
 
 ## Nuevo bloque Fase 4B Descarga segura documental
 
-Estado: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+Estado: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
 
 Objetivo: definir descarga autenticada de documentos privados ya cargados en Centro
 Documental, sin exponer `storage_path`, sin links publicos, sin Caja, pagos, abonos ni
@@ -251,7 +251,9 @@ Resultado 4B-A:
 - HTTP sin sesion redirige a login.
 - Documento `#1` de Los Cedros descarga `200`; documento `#3` de otro hotel redirige.
 - No hay POST nuevo, links publicos, edicion, borrado, Caja, pagos, abonos ni `/api/sync`.
-- Siguiente paso recomendado: QA manual de descarga antes de avanzar.
+- QA manual 4B-A reportada por el usuario como completada.
+- Siguiente paso recomendado: nueva autorizacion explicita antes de edicion, borrado,
+  links publicos o auditoria de descargas.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

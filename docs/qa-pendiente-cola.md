@@ -329,10 +329,11 @@ sin exponer archivos.
 
 ## QA Fase 4B Descarga segura documental
 
-Estado vigente: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+Estado vigente: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
 
-4B-0 fue contrato. 4B-A implementa descarga autenticada y requiere QA manual en
-navegador antes de avanzar a edicion, borrado, links publicos o auditoria de descargas.
+4B-0 fue contrato. 4B-A implementa descarga autenticada y fue validada manualmente por
+el usuario. No autoriza avanzar a edicion, borrado, links publicos o auditoria de
+descargas sin nueva fase explicita.
 
 ### Resultado automatico 4B-A
 
@@ -356,17 +357,11 @@ navegador antes de avanzar a edicion, borrado, links publicos o auditoria de des
 - Nota: la capa global mantiene `Cache-Control: no-cache, no-store, must-revalidate`,
   mas restrictivo para documentos sensibles.
 
-### QA manual pendiente 4B-A
+### QA manual completada 4B-A
 
-- Iniciar sesion en Los Cedros.
-- Abrir `/documentos`.
-- Entrar a un documento activo.
-- Presionar `Descargar`.
-- Confirmar que el archivo descarga correctamente.
-- Confirmar que el detalle no muestra `storage_path`, `nombre_archivo` ni ruta interna.
-- Confirmar que no existen acciones de edicion, borrado, links publicos, pagos, abonos
-  ni Caja.
-- Confirmar que `/api/sync` sigue fuera del flujo.
+- Resultado reportado por el usuario: `QA_MANUAL_COMPLETADA_4B_A`.
+- Descarga en navegador validada.
+- No se autoriza edicion, borrado, links publicos, pagos, abonos, Caja ni `/api/sync`.
 
 ### QA critica futura
 

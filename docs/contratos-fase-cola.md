@@ -329,7 +329,7 @@ idempotente y no destructiva.
 
 ### Estado
 
-Estado formal vigente: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+Estado formal vigente: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
 
 ### Objetivo
 

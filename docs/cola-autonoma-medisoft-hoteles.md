@@ -4,14 +4,14 @@
 
 NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Centro Documental Base.
 
-Mensaje actual procesado: "Continua"; se implementa Fase 4B-A descarga segura autenticada de documentos.
+Mensaje actual procesado: "QA_MANUAL_COMPLETADA_4B_A"; se marca Fase 4B-A como validada manualmente.
 
 ## Estado vigente
 
 - Bloque actual: Fase 4B Descarga segura de documentos.
 - Fase actual: 4B-A descarga segura autenticada.
 - Riesgo: naranja.
-- Estado: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+- Estado: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -49,7 +49,7 @@ Mensaje actual procesado: "Continua"; se implementa Fase 4B-A descarga segura au
 ## Fase 4B Descarga segura de documentos
 
 - 4B-0 contrato y diagnostico: completado documentalmente.
-- 4B-A descarga segura autenticada: implementada tecnicamente.
+- 4B-A descarga segura autenticada: implementada tecnicamente y validada manualmente por el usuario.
 - Documento: `docs/fase_4B_0_contrato_descarga_segura_documentos.md`.
 - Ruta implementada: `GET /documentos/{id}/descargar`.
 - Controlador: `DocumentoController::descargarAction()`.
@@ -57,7 +57,7 @@ Mensaje actual procesado: "Continua"; se implementa Fase 4B-A descarga segura au
 - No hay POST nuevo, links publicos, edicion, borrado, migraciones ni escrituras DB.
 - Verificacion HTTP: sin sesion `303` a login; documento `#1` de Los Cedros descarga `200`; documento `#3` de otro hotel redirige `303` a `/documentos`.
 - Prohibido: links publicos, edicion, borrado, Caja, pagos, abonos, PWA/offline, Fase 3D y `/api/sync`.
-- Siguiente accion: QA manual de descarga en navegador.
+- Siguiente accion: esperar autorizacion explicita de la siguiente subfase documental segura.
 
 ## Reanclaje Fase 3C
 

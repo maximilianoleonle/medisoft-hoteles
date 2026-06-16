@@ -130,7 +130,7 @@ Reglas:
 
 ## Descarga segura documental (Fase 4B)
 
-Estado formal: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+Estado formal: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
 
 Contrato:
 

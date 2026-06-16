@@ -324,7 +324,7 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 
 ### 4B-0 contrato descarga segura documental
 
-- Estado vigente: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+- Estado vigente: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
 - Rollback documental: revertir el commit `docs(phase-4b): define secure document download contract`.
 - DB: no aplica; 4B-0 no escribe datos.
 - Codigo: no aplica; 4B-0 no crea rutas ni controladores.

@@ -146,7 +146,7 @@ links publicos, Caja, pagos, abonos, Fase 3D ni `/api/sync`.
 
 ## Resultado Fase 4B-A - Descarga segura autenticada
 
-Estado: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+Estado: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
 
 Implementacion:
 
@@ -201,17 +201,13 @@ Nota de headers:
 - La capa global del sistema mantiene `Cache-Control: no-cache, no-store,
   must-revalidate`, que es mas restrictivo para documentos sensibles.
 
-QA manual pendiente:
+QA manual completada:
 
-1. Iniciar sesion en Los Cedros.
-2. Abrir `/documentos`.
-3. Entrar a un documento activo.
-4. Presionar `Descargar`.
-5. Confirmar que el archivo descarga correctamente.
-6. Confirmar que no aparece `storage_path`, `nombre_archivo` ni ruta interna.
-7. Confirmar que no aparecen acciones de edicion, borrado, pagos, abonos ni Caja.
+El usuario reporto `QA_MANUAL_COMPLETADA_4B_A` despues de probar la descarga en
+navegador. La descarga segura queda validada manualmente sin autorizar edicion, borrado,
+links publicos, pagos, abonos, Caja ni `/api/sync`.
 
 Siguiente paso:
 
-No avanzar a edicion, borrado, links publicos ni auditoria de descargas hasta que la QA
-manual confirme esta fase.
+No avanzar a edicion, borrado, links publicos ni auditoria de descargas sin nueva
+autorizacion explicita de fase.
