@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/TLM-G/OP-A/MANT-A.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -844,7 +844,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A-4D/NP-C-D-A/TLM-G/OP-A/MANT-A - Medisoft Hoteles\n";
+echo "Health check Fase 1A-4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -5090,6 +5090,163 @@ if (!is_file($routesPath)) {
                     'Corregir vinculos habitacion/hotel antes de operar mantenimiento avanzado.'
                 );
             }
+        }
+    }
+
+    $mantOpPreflightPath = $appRoot . '/tools/saas/preflight_mantenimiento_operativo.php';
+    $mantOpControllerCode = is_file($controllersDir . '/HabitacionController.php')
+        ? (string) file_get_contents($controllersDir . '/HabitacionController.php')
+        : '';
+    $mantOpModelCode = is_file($appRoot . '/app/models/Mantenimiento.php')
+        ? (string) file_get_contents($appRoot . '/app/models/Mantenimiento.php')
+        : '';
+    $mantOpViewCode = is_file($appRoot . '/app/views/habitaciones/ver.php')
+        ? (string) file_get_contents($appRoot . '/app/views/habitaciones/ver.php')
+        : '';
+
+    $mantOpRoutesOk = hcRoutePatternExists($routes, 'habitaciones/1/mantenimiento', 'post')
+        && hcRoutePatternExists($routes, 'habitaciones/1/programar-mantenimiento', 'post')
+        && hcRoutePatternExists($routes, 'habitaciones/cancelar-mantenimiento-programado/1', 'post');
+    if ($mantOpRoutesOk) {
+        hcOk('Rutas MANT-B existentes registradas con POST controlado.');
+    } else {
+        hcError(
+            'Rutas MANT-B existentes incompletas.',
+            'Restaurar POST mantenimiento/programar/cancelar solo con CSRF y permisos.'
+        );
+    }
+
+    $mantOpBody = hcMethodBody($mantOpControllerCode, 'mantenimientoAction');
+    if (
+        $mantOpBody !== ''
+        && strpos($mantOpBody, 'validateCSRF()') !== false
+        && strpos($mantOpBody, "requirePermission('habitaciones.mantenimiento')") !== false
+        && strpos($mantOpBody, "['iniciar', 'finalizar']") !== false
+        && strpos($mantOpBody, 'Mantenimiento::getTipos()') !== false
+        && strpos($mantOpBody, 'Mantenimiento::getPrioridades()') !== false
+        && strpos($mantOpBody, '$motivo ===') !== false
+        && strpos($mantOpBody, 'SELECT COUNT(*) FROM mantenimientos_habitaciones') !== false
+        && strpos($mantOpBody, '$hotelId') !== false
+        && strpos($mantOpBody, 'movimientos_caja') === false
+    ) {
+        hcOk('HabitacionController MANT-B valida accion, tipo, prioridad, motivo, duplicados y hotel_id.');
+    } else {
+        hcError(
+            'HabitacionController MANT-B no muestra guardas completas.',
+            'Revisar CSRF, permiso, whitelist de accion, tipo/prioridad/motivo, duplicados y hotel_id.'
+        );
+    }
+
+    foreach (['programarMantenimientoAction', 'cancelarMantenimientoProgramadoAction'] as $mantOpMethod) {
+        $mantOpMethodBody = hcMethodBody($mantOpControllerCode, $mantOpMethod);
+        if (
+            $mantOpMethodBody !== ''
+            && strpos($mantOpMethodBody, 'validateCSRF()') !== false
+            && strpos($mantOpMethodBody, "requirePermission('habitaciones.mantenimiento')") !== false
+            && strpos($mantOpMethodBody, 'movimientos_caja') === false
+        ) {
+            hcOk('HabitacionController MANT-B conserva guardas en ' . $mantOpMethod . '.');
+        } else {
+            hcError(
+                'HabitacionController MANT-B sin guardas completas en ' . $mantOpMethod . '.',
+                'Revisar CSRF, permiso y ausencia de Caja.'
+            );
+        }
+    }
+
+    if (
+        $mantOpModelCode !== ''
+        && strpos($mantOpModelCode, 'class Mantenimiento') !== false
+        && strpos($mantOpModelCode, 'WHERE {$this->primaryKey} = ? AND hotel_id = ?') !== false
+        && strpos($mantOpModelCode, 'AND m.hotel_id = ?') !== false
+    ) {
+        hcOk('Mantenimiento model MANT-B mantiene scope hotel_id en operaciones base.');
+    } else {
+        hcError(
+            'Mantenimiento model MANT-B no muestra scope hotel_id suficiente.',
+            'No operar mantenimiento hasta restaurar find/update/consultas con hotel_id.'
+        );
+    }
+
+    if (
+        $mantOpViewCode !== ''
+        && strpos($mantOpViewCode, "url('habitaciones/' . \$habitacion_id . '/mantenimiento')") !== false
+        && strpos($mantOpViewCode, "url('habitaciones/' . \$habitacion_id . '/programar-mantenimiento')") !== false
+        && strpos($mantOpViewCode, "url('habitaciones/cancelar-mantenimiento-programado/'") !== false
+        && substr_count($mantOpViewCode, 'csrf_field()') >= 3
+    ) {
+        hcOk('habitaciones/ver.php conserva formularios MANT-B con CSRF.');
+    } else {
+        hcWarning(
+            'habitaciones/ver.php no muestra todos los formularios MANT-B esperados.',
+            'Revisar actions, method POST y csrf_field() de mantenimiento.'
+        );
+    }
+
+    if (is_file($mantOpPreflightPath)) {
+        hcOk('Preflight MANT-B disponible: tools/saas/preflight_mantenimiento_operativo.php.');
+    } else {
+        hcWarning(
+            'Preflight MANT-B no existe.',
+            'Crear preflight para validar mantenimiento operativo existente.'
+        );
+    }
+
+    if (hcTableExists($pdo, $database, 'mantenimientos_habitaciones') && hcTableExists($pdo, $database, 'habitaciones')) {
+        $mantOpDuplicates = hcCountScalar(
+            $pdo,
+            "SELECT COUNT(*) FROM (
+                SELECT hotel_id, habitacion_id
+                FROM mantenimientos_habitaciones
+                WHERE estado = 'en_proceso'
+                GROUP BY hotel_id, habitacion_id
+                HAVING COUNT(*) > 1
+            ) duplicados"
+        );
+        if ($mantOpDuplicates === 0) {
+            hcOk('MANT-B datos: mantenimientos en proceso duplicados = 0.');
+        } else {
+            hcError(
+                'MANT-B datos: mantenimientos en proceso duplicados = ' . (string)$mantOpDuplicates . '.',
+                'No permitir nuevas altas hasta reconciliar duplicados.'
+            );
+        }
+
+        $mantOpActiveWrongRoom = hcCountScalar(
+            $pdo,
+            "SELECT COUNT(*)
+             FROM mantenimientos_habitaciones m
+             JOIN habitaciones h ON h.id = m.habitacion_id AND h.hotel_id = m.hotel_id
+             WHERE m.estado = 'en_proceso'
+               AND h.estado <> 'mantenimiento'"
+        );
+        if ($mantOpActiveWrongRoom === 0) {
+            hcOk('MANT-B datos: mantenimientos en proceso con habitacion fuera de mantenimiento = 0.');
+        } else {
+            hcError(
+                'MANT-B datos: mantenimientos en proceso con habitacion fuera de mantenimiento = ' . (string)$mantOpActiveWrongRoom . '.',
+                'Reconciliar estado de habitacion/mantenimiento antes de automatizar.'
+            );
+        }
+
+        $mantOpRoomWithoutActive = hcCountScalar(
+            $pdo,
+            "SELECT COUNT(*)
+             FROM habitaciones h
+             LEFT JOIN mantenimientos_habitaciones m
+               ON m.habitacion_id = h.id
+              AND m.hotel_id = h.hotel_id
+              AND m.estado = 'en_proceso'
+             WHERE h.estado = 'mantenimiento'
+               AND m.id IS NULL"
+        );
+        if ($mantOpRoomWithoutActive === 0) {
+            hcOk('MANT-B datos: habitaciones en mantenimiento sin registro en proceso = 0.');
+        } else {
+            hcWarning(
+                'MANT-B datos: habitaciones en mantenimiento sin registro en proceso = ' . (string)$mantOpRoomWithoutActive . '.',
+                'Revisar historico antes de automatizar cierres masivos.'
+            );
         }
     }
 

@@ -832,3 +832,12 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-mant): close read-only maintenance report block`.
 - DB: no aplica; es cierre documental.
 - Mantener intacto el codigo MANT-A salvo que se revierta su commit especifico.
+
+### MANT-B mantenimiento inmediato existente
+
+- Rollback de codigo/documentacion: revertir el commit
+  `fix(phase-mant): harden immediate maintenance action`.
+- DB: no aplica; MANT-B no crea migraciones ni modifica datos por si mismo.
+- Si QA manual creo mantenimientos de prueba, documentar IDs y usar flujos autorizados
+  para finalizar/cancelar; no borrar con SQL manual.
+- No tocar Caja, pagos, abonos, nomina, offline ni `/api/sync`.

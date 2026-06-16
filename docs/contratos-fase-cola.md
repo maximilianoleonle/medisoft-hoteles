@@ -1091,3 +1091,14 @@ Estado formal vigente: `BLOQUE_MANT_REPORTE_MANTENIMIENTO_CERRADO_QA_DIFERIDA`.
 - Cierre tecnico del reporte de mantenimiento read-only.
 - No agrega funcionalidad nueva en el cierre.
 - Siguiente contrato requerido antes de abrir acciones de mantenimiento o automatizaciones.
+
+### Estado MANT-B
+
+Estado formal vigente: `MANTENIMIENTO_INMEDIATO_MANT_B_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_B_mantenimiento_inmediato_guardrails.md`.
+- No crea rutas nuevas; endurece `POST /habitaciones/{id}/mantenimiento` existente.
+- Agrega validacion backend de accion, tipo, prioridad, motivo y duplicado en proceso.
+- Mantiene CSRF, permiso `habitaciones.mantenimiento` y scope `hotel_id`.
+- No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- Siguiente accion segura: QA manual diferida o cierre tecnico MANT-B.

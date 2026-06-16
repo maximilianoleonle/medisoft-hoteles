@@ -1226,8 +1226,14 @@ public function mantenimientoAction() {
     $this->validateCSRF();
     $this->requirePermission('habitaciones.mantenimiento');
     
-    $id = $this->route_params['id'] ?? 0;
-    $accion = $this->getPost('accion');
+    $id = (int)($this->route_params['id'] ?? 0);
+    $accion = trim((string)$this->getPost('accion'));
+    $hotelId = $this->hotelIdActual();
+
+    if (!in_array($accion, ['iniciar', 'finalizar'], true)) {
+        set_mensaje('AcciÃ³n de mantenimiento no vÃ¡lida', 'error');
+        $this->redirect('habitaciones/' . $id);
+    }
     
     $db = Database::getInstance();
     $habitacion = $this->habitacionModel->find($id);
@@ -1241,6 +1247,38 @@ public function mantenimientoAction() {
         $db->beginTransaction();
         
         if ($accion == 'iniciar') {
+            require_once __DIR__ . '/../models/Mantenimiento.php';
+
+            $tipoMantenimiento = trim((string)$this->getPost('tipo_mantenimiento'));
+            $prioridad = trim((string)$this->getPost('prioridad', 'media'));
+            $motivo = trim((string)$this->getPost('motivo'));
+
+            if (!in_array($tipoMantenimiento, array_keys(Mantenimiento::getTipos()), true)) {
+                throw new InvalidArgumentException('Debe seleccionar un tipo de mantenimiento vÃ¡lido');
+            }
+
+            if (!in_array($prioridad, array_keys(Mantenimiento::getPrioridades()), true)) {
+                throw new InvalidArgumentException('Debe seleccionar una prioridad vÃ¡lida');
+            }
+
+            if ($motivo === '') {
+                throw new InvalidArgumentException('El motivo es obligatorio');
+            }
+
+            if (($habitacion['estado'] ?? '') === 'mantenimiento') {
+                throw new RuntimeException('La habitaciÃ³n ya estÃ¡ en mantenimiento');
+            }
+
+            $stmtActivo = $db->query(
+                "SELECT COUNT(*) FROM mantenimientos_habitaciones
+                 WHERE habitacion_id = ? AND hotel_id = ? AND estado = 'en_proceso'",
+                [$id, $hotelId]
+            );
+
+            if ($stmtActivo && (int)$stmtActivo->fetchColumn() > 0) {
+                throw new RuntimeException('La habitaciÃ³n ya tiene un mantenimiento en proceso');
+            }
+
             // Actualizar estado de habitación
             $this->habitacionModel->update($id, ['estado' => 'mantenimiento']);
             
@@ -1250,11 +1288,11 @@ public function mantenimientoAction() {
                     VALUES (?, ?, ?, ?, ?, ?, NOW(), 'en_proceso')";
             
             $db->query($sql, [
-                $this->hotelIdActual(),
+                $hotelId,
                 $id,
-                $this->getPost('tipo_mantenimiento'),
-                $this->getPost('prioridad', 'media'),
-                $this->getPost('motivo'),
+                $tipoMantenimiento,
+                $prioridad,
+                $motivo,
                 current_user('id')
             ]);
             
@@ -1264,11 +1302,15 @@ public function mantenimientoAction() {
                 (int)$id,
                 'mantenimiento_iniciado',
                 'Mantenimiento iniciado en habitacion ' . ($habitacion['numero'] ?? $id),
-                trim((string)$this->getPost('motivo', '')) ?: 'La habitacion paso a mantenimiento.',
-                $this->getPost('prioridad', 'media') === 'alta' ? 'alta' : 'media'
+                $motivo ?: 'La habitacion paso a mantenimiento.',
+                $prioridad === 'alta' ? 'alta' : 'media'
             );
             
         } elseif ($accion == 'finalizar') {
+            if (($habitacion['estado'] ?? '') !== 'mantenimiento') {
+                throw new RuntimeException('Solo se puede finalizar mantenimiento de una habitaciÃ³n en mantenimiento');
+            }
+
             // Actualizar estado de habitación
             $this->habitacionModel->update($id, ['estado' => 'disponible']);
             
@@ -1277,7 +1319,7 @@ public function mantenimientoAction() {
                     SET estado = 'completado', fecha_fin = NOW() 
                     WHERE habitacion_id = ? AND hotel_id = ? AND estado = 'en_proceso'";
             
-            $db->query($sql, [$id, $this->hotelIdActual()]);
+            $db->query($sql, [$id, $hotelId]);
             
             $db->commit();
             set_mensaje('Mantenimiento finalizado correctamente', 'success');

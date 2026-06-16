@@ -824,3 +824,13 @@ Estado: `BLOQUE_MANT_REPORTE_MANTENIMIENTO_CERRADO_QA_DIFERIDA`.
 - No hay POST, escrituras, migraciones, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.
 - QA manual queda diferida.
+
+## Checkpoint tecnico MANT-B
+
+Estado: `MANTENIMIENTO_INMEDIATO_MANT_B_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_B_mantenimiento_inmediato_guardrails.md`.
+- Se endurece una accion POST existente sin crear rutas nuevas.
+- Health y preflight MANT-B validan CSRF, permisos, catalogos, duplicados y `hotel_id`.
+- No hay migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- QA manual queda diferida.

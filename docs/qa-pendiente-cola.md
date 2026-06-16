@@ -1056,3 +1056,13 @@ instruccion del usuario.
 - QA manual sigue pendiente y diferida.
 - No avanzar a acciones de mantenimiento, automatizacion de habitaciones, Caja, pagos,
   abonos, nomina, offline ni `/api/sync` desde este cierre.
+
+### Estado MANT-B
+
+- Mantenimiento inmediato existente endurecido.
+- QA manual diferida por instruccion del usuario.
+- Probar iniciar mantenimiento desde una habitacion disponible.
+- Confirmar validaciones de tipo, prioridad y motivo.
+- Confirmar que un segundo intento de iniciar queda bloqueado limpiamente.
+- Probar finalizar mantenimiento desde habitacion en mantenimiento.
+- Confirmar que no se crean movimientos de Caja, pagos, abonos ni cambios en `/api/sync`.

@@ -920,3 +920,13 @@ Resultado MANT-F:
 - Verificaciones automaticas pasan con `ERROR: 0`.
 - QA manual queda diferida.
 - Siguiente paso recomendado: abrir contrato independiente para el siguiente bloque.
+
+Resultado MANT-B:
+
+- Estado tecnico: `MANTENIMIENTO_INMEDIATO_MANT_B_COMPLETADO_QA_DIFERIDA`.
+- Documento: `docs/fase_MANT_B_mantenimiento_inmediato_guardrails.md`.
+- Se endurece la accion existente `POST /habitaciones/{id}/mantenimiento`.
+- Se agregan validaciones backend y bloqueo de duplicados en proceso.
+- Se agrega `src/tools/saas/preflight_mantenimiento_operativo.php`.
+- No hay nuevas rutas, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- QA manual queda diferida.

@@ -899,3 +899,17 @@ Estado: `BLOQUE_MANT_REPORTE_MANTENIMIENTO_CERRADO_QA_DIFERIDA`.
 - Health y preflight validan que MANT-A sigue read-only y scoped por `hotel_id`.
 - Riesgo residual: falta QA manual visual con datos reales por hotel.
 - No se habilitan acciones de mantenimiento desde el reporte.
+
+## Auditoria MANT-B mantenimiento inmediato
+
+Estado: `MANTENIMIENTO_INMEDIATO_MANT_B_COMPLETADO_QA_DIFERIDA`.
+
+- Superficie revisada: `POST /habitaciones/{id}/mantenimiento`.
+- CSRF y permiso `habitaciones.mantenimiento` se mantienen.
+- Se agrega whitelist de accion y validacion backend de tipo/prioridad/motivo.
+- Se bloquea iniciar si la habitacion ya esta en mantenimiento o si ya existe registro
+  `en_proceso` para la misma habitacion/hotel.
+- Finalizar exige que la habitacion este en estado `mantenimiento`.
+- No se agregan rutas, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- Riesgo residual: una habitacion historica esta en mantenimiento sin registro
+  `en_proceso`; queda como warning, sin correccion automatica.

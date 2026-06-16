@@ -1,0 +1,359 @@
+<?php
+/**
+ * Preflight Fase MANT-B para mantenimiento inmediato existente.
+ *
+ * Solo lectura. No crea rutas, migraciones ni datos.
+ * Valida guardas del POST existente de mantenimiento de habitaciones.
+ */
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    echo "Esta herramienta solo puede ejecutarse por CLI.\n";
+    exit(1);
+}
+
+$ok = 0;
+$warnings = 0;
+$errors = 0;
+$recommendations = [];
+
+function mantOpLine(string $level, string $message): void
+{
+    echo '[' . $level . '] ' . $message . "\n";
+}
+
+function mantOpOk(string $message): void
+{
+    global $ok;
+    $ok++;
+    mantOpLine('OK', $message);
+}
+
+function mantOpWarning(string $message, string $recommendation = ''): void
+{
+    global $warnings, $recommendations;
+    $warnings++;
+    mantOpLine('WARNING', $message);
+    if ($recommendation !== '') {
+        $recommendations[] = $recommendation;
+    }
+}
+
+function mantOpError(string $message, string $recommendation = ''): void
+{
+    global $errors, $recommendations;
+    $errors++;
+    mantOpLine('ERROR', $message);
+    if ($recommendation !== '') {
+        $recommendations[] = $recommendation;
+    }
+}
+
+function mantOpQuote(string $identifier): string
+{
+    return '`' . str_replace('`', '``', $identifier) . '`';
+}
+
+function mantOpTableExists(PDO $pdo, string $database, string $table): bool
+{
+    $stmt = $pdo->prepare(
+        'SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = :db AND TABLE_NAME = :table'
+    );
+    $stmt->execute(['db' => $database, 'table' => $table]);
+
+    return (int) $stmt->fetchColumn() > 0;
+}
+
+function mantOpCountRows(PDO $pdo, string $table): int
+{
+    $stmt = $pdo->query('SELECT COUNT(*) FROM ' . mantOpQuote($table));
+
+    return $stmt ? (int) $stmt->fetchColumn() : 0;
+}
+
+function mantOpCountScalar(PDO $pdo, string $sql): ?int
+{
+    try {
+        $stmt = $pdo->query($sql);
+
+        return $stmt ? (int) $stmt->fetchColumn() : null;
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+
+function mantOpParseRoutes(string $path): array
+{
+    if (!is_file($path)) {
+        return [];
+    }
+
+    $raw = (string) file_get_contents($path);
+    $raw = preg_replace('/^\s*\/\/.*$/m', '', $raw);
+    preg_match_all(
+        "/\\\$router->(get|post)\\('([^']+)'\\s*,\\s*\\[\\s*'controller'\\s*=>\\s*'([^']+)'\\s*,\\s*'action'\\s*=>\\s*'([^']+)'/s",
+        $raw,
+        $matches,
+        PREG_SET_ORDER
+    );
+
+    $routes = [];
+    foreach ($matches as $match) {
+        $routes[] = [
+            'method' => $match[1],
+            'path' => trim($match[2], '/'),
+            'controller' => $match[3],
+            'action' => $match[4],
+        ];
+    }
+
+    return $routes;
+}
+
+function mantOpRouteExists(array $routes, string $path, string $method): bool
+{
+    $path = trim($path, '/');
+    foreach ($routes as $route) {
+        if (strtolower((string)$route['method']) === strtolower($method) && (string)$route['path'] === $path) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function mantOpRoutePatternExists(array $routes, string $pattern, string $method): bool
+{
+    foreach ($routes as $route) {
+        if (strtolower((string)$route['method']) === strtolower($method) && preg_match($pattern, (string)$route['path'])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function mantOpMethodBody(string $code, string $method): string
+{
+    $needle = 'function ' . $method . '(';
+    $start = strpos($code, $needle);
+    if ($start === false) {
+        return '';
+    }
+
+    $next = strpos($code, "\n    public function ", $start + strlen($needle));
+    if ($next === false) {
+        $next = strpos($code, "\n}", $start + strlen($needle));
+    }
+
+    if ($next === false) {
+        return substr($code, $start);
+    }
+
+    return substr($code, $start, $next - $start);
+}
+
+$appEnv = getenv('APP_ENV');
+if ($appEnv !== 'local') {
+    mantOpError(
+        'APP_ENV debe ser local para ejecutar este preflight. Valor actual: ' . ($appEnv === false || $appEnv === '' ? '(sin definir)' : $appEnv),
+        'Ejecutar solo en entorno local o staging controlado.'
+    );
+}
+
+$appRoot = dirname(__DIR__, 2);
+$configPath = $appRoot . '/config/database.php';
+$routesPath = $appRoot . '/config/routes.php';
+$controllerPath = $appRoot . '/app/controllers/HabitacionController.php';
+$modelPath = $appRoot . '/app/models/Mantenimiento.php';
+$viewPath = $appRoot . '/app/views/habitaciones/ver.php';
+
+echo "Preflight Fase MANT-B - Mantenimiento operativo existente\n";
+echo "=====================================================\n";
+
+if (is_file($configPath)) {
+    mantOpOk('Configuracion de base detectada.');
+} else {
+    mantOpError('No se encontro config/database.php.', 'Ejecutar desde el arbol src del proyecto.');
+}
+
+$pdo = null;
+$database = '';
+if (is_file($configPath)) {
+    try {
+        $dbConfig = require $configPath;
+        $database = (string)($dbConfig['database'] ?? '');
+        $dsn = sprintf(
+            'mysql:host=%s;port=%s;dbname=%s;charset=%s',
+            $dbConfig['host'] ?? 'db',
+            getenv('DB_PORT') ?: ($dbConfig['port'] ?? '3306'),
+            $database,
+            $dbConfig['charset'] ?? 'utf8mb4'
+        );
+        $pdo = new PDO($dsn, $dbConfig['username'] ?? '', $dbConfig['password'] ?? '', [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]);
+        $pdo->exec('SET SESSION TRANSACTION READ ONLY');
+        $pdo->exec('START TRANSACTION READ ONLY');
+        mantOpOk('Conexion de solo lectura inicializada para ' . $database . '.');
+    } catch (Throwable $e) {
+        mantOpError('No se pudo abrir conexion de solo lectura: ' . $e->getMessage(), 'Revisar contenedores y credenciales.');
+    }
+}
+
+if ($pdo instanceof PDO) {
+    foreach (['mantenimientos_habitaciones', 'habitaciones'] as $table) {
+        if (mantOpTableExists($pdo, $database, $table)) {
+            mantOpOk('Fuente MANT-B disponible: ' . $table . ' (' . mantOpCountRows($pdo, $table) . ' registros).');
+        } else {
+            mantOpError('Fuente MANT-B faltante: ' . $table . '.', 'No operar mantenimiento hasta reconciliar la tabla fuente.');
+        }
+    }
+
+    $duplicateActive = mantOpCountScalar(
+        $pdo,
+        "SELECT COUNT(*) FROM (
+            SELECT hotel_id, habitacion_id
+            FROM mantenimientos_habitaciones
+            WHERE estado = 'en_proceso'
+            GROUP BY hotel_id, habitacion_id
+            HAVING COUNT(*) > 1
+        ) duplicados"
+    );
+    if ($duplicateActive === 0) {
+        mantOpOk('Mantenimientos en proceso duplicados por habitacion/hotel = 0.');
+    } else {
+        mantOpError('Mantenimientos en proceso duplicados por habitacion/hotel = ' . (string)$duplicateActive . '.', 'No permitir nuevas altas hasta reconciliar duplicados.');
+    }
+
+    $activeWrongRoom = mantOpCountScalar(
+        $pdo,
+        "SELECT COUNT(*)
+         FROM mantenimientos_habitaciones m
+         JOIN habitaciones h ON h.id = m.habitacion_id AND h.hotel_id = m.hotel_id
+         WHERE m.estado = 'en_proceso'
+           AND h.estado <> 'mantenimiento'"
+    );
+    if ($activeWrongRoom === 0) {
+        mantOpOk('Mantenimientos en proceso con habitacion fuera de mantenimiento = 0.');
+    } else {
+        mantOpError('Mantenimientos en proceso con habitacion fuera de mantenimiento = ' . (string)$activeWrongRoom . '.', 'Reconciliar estado de habitacion/mantenimiento antes de automatizar.');
+    }
+
+    $roomWithoutActive = mantOpCountScalar(
+        $pdo,
+        "SELECT COUNT(*)
+         FROM habitaciones h
+         LEFT JOIN mantenimientos_habitaciones m
+           ON m.habitacion_id = h.id
+          AND m.hotel_id = h.hotel_id
+          AND m.estado = 'en_proceso'
+         WHERE h.estado = 'mantenimiento'
+           AND m.id IS NULL"
+    );
+    if ($roomWithoutActive === 0) {
+        mantOpOk('Habitaciones en mantenimiento sin registro en proceso = 0.');
+    } else {
+        mantOpWarning('Habitaciones en mantenimiento sin registro en proceso = ' . (string)$roomWithoutActive . '.', 'Revisar historico antes de automatizar cierres masivos.');
+    }
+}
+
+$routes = mantOpParseRoutes($routesPath);
+$requiredRoutes = [
+    ['label' => 'POST /habitaciones/{id}/mantenimiento', 'pattern' => '/^habitaciones\/\{id:[^}]+\}\/mantenimiento$/'],
+    ['label' => 'POST /habitaciones/{id}/programar-mantenimiento', 'pattern' => '/^habitaciones\/\{id:[^}]+\}\/programar-mantenimiento$/'],
+];
+
+foreach ($requiredRoutes as $route) {
+    if (mantOpRoutePatternExists($routes, $route['pattern'], 'post')) {
+        mantOpOk('Ruta MANT-B registrada: ' . $route['label'] . '.');
+    } else {
+        mantOpError('Ruta MANT-B faltante: ' . $route['label'] . '.', 'Restaurar ruta POST existente con CSRF y permisos.');
+    }
+}
+
+if (mantOpRoutePatternExists($routes, '/^habitaciones\/cancelar-mantenimiento-programado\/\{id:[^}]+\}$/', 'post')) {
+    mantOpOk('Ruta MANT-B registrada: POST /habitaciones/cancelar-mantenimiento-programado/{id}.');
+} else {
+    mantOpError('Ruta MANT-B faltante: POST /habitaciones/cancelar-mantenimiento-programado/{id}.', 'Restaurar ruta POST existente con CSRF y permisos.');
+}
+
+$controllerCode = is_file($controllerPath) ? (string) file_get_contents($controllerPath) : '';
+$modelCode = is_file($modelPath) ? (string) file_get_contents($modelPath) : '';
+$viewCode = is_file($viewPath) ? (string) file_get_contents($viewPath) : '';
+$mantBody = mantOpMethodBody($controllerCode, 'mantenimientoAction');
+
+if (
+    $mantBody !== ''
+    && strpos($mantBody, 'validateCSRF()') !== false
+    && strpos($mantBody, "requirePermission('habitaciones.mantenimiento')") !== false
+    && strpos($mantBody, "['iniciar', 'finalizar']") !== false
+    && strpos($mantBody, 'Mantenimiento::getTipos()') !== false
+    && strpos($mantBody, 'Mantenimiento::getPrioridades()') !== false
+    && strpos($mantBody, '$motivo ===') !== false
+    && strpos($mantBody, 'SELECT COUNT(*) FROM mantenimientos_habitaciones') !== false
+    && strpos($mantBody, '$hotelId') !== false
+    && strpos($mantBody, 'movimientos_caja') === false
+) {
+    mantOpOk('HabitacionController::mantenimientoAction tiene CSRF, permiso, validaciones, bloqueo de duplicados y hotel_id.');
+} else {
+    mantOpError('HabitacionController::mantenimientoAction no muestra todas las guardas MANT-B.', 'Revisar CSRF, permiso, accion whitelist, tipo/prioridad/motivo, duplicados y hotel_id.');
+}
+
+foreach (['programarMantenimientoAction', 'cancelarMantenimientoProgramadoAction'] as $method) {
+    $body = mantOpMethodBody($controllerCode, $method);
+    if (
+        $body !== ''
+        && strpos($body, 'validateCSRF()') !== false
+        && strpos($body, "requirePermission('habitaciones.mantenimiento')") !== false
+        && strpos($body, 'movimientos_caja') === false
+    ) {
+        mantOpOk('HabitacionController::' . $method . ' conserva CSRF, permiso y no toca Caja.');
+    } else {
+        mantOpError('HabitacionController::' . $method . ' no muestra guardas esperadas.', 'Revisar CSRF, permiso y ausencia de Caja.');
+    }
+}
+
+if (
+    $modelCode !== ''
+    && strpos($modelCode, 'class Mantenimiento') !== false
+    && strpos($modelCode, 'function find') !== false
+    && strpos($modelCode, 'WHERE {$this->primaryKey} = ? AND hotel_id = ?') !== false
+    && strpos($modelCode, 'function update') !== false
+    && strpos($modelCode, 'WHERE {$this->primaryKey} = ? AND hotel_id = ?') !== false
+) {
+    mantOpOk('Mantenimiento model mantiene find/update scoped por hotel_id.');
+} else {
+    mantOpError('Mantenimiento model no muestra find/update tenant-safe.', 'No operar mantenimiento hasta restaurar scope hotel_id.');
+}
+
+if (
+    $viewCode !== ''
+    && strpos($viewCode, "url('habitaciones/' . \$habitacion_id . '/mantenimiento')") !== false
+    && strpos($viewCode, "url('habitaciones/' . \$habitacion_id . '/programar-mantenimiento')") !== false
+    && strpos($viewCode, "url('habitaciones/cancelar-mantenimiento-programado/'") !== false
+    && substr_count($viewCode, 'csrf_field()') >= 3
+) {
+    mantOpOk('habitaciones/ver.php conserva formularios MANT-B con CSRF.');
+} else {
+    mantOpError('habitaciones/ver.php no muestra formularios MANT-B esperados con CSRF.', 'Revisar action/method/csrf de mantenimiento.');
+}
+
+$recommendations = array_values(array_unique(array_filter($recommendations)));
+
+echo "=====================================================\n";
+echo "Resumen\n";
+echo "OK: {$ok}\n";
+echo "WARNING: {$warnings}\n";
+echo "ERROR: {$errors}\n";
+
+if ($recommendations) {
+    echo "Recomendaciones concretas:\n";
+    foreach ($recommendations as $recommendation) {
+        echo "- {$recommendation}\n";
+    }
+}
+
+echo 'Resultado general: ' . ($errors > 0 ? 'FAIL' : 'PASS_WITH_WARNINGS_ALLOWED') . "\n";
+exit($errors > 0 ? 1 : 0);

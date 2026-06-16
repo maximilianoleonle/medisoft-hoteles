@@ -721,3 +721,13 @@
 - QA manual queda diferida por instruccion del usuario, no sustituida por los checkers.
 - Cualquier accion futura de crear/iniciar/completar/cancelar mantenimiento debe tener
   contrato separado y no puede inferirse desde este cierre.
+
+## Decision MANT-B
+
+- Se endurece la accion existente `POST /habitaciones/{id}/mantenimiento` en lugar de
+  crear un flujo nuevo.
+- No se cambian actions ni names de los formularios existentes.
+- La validacion de tipo/prioridad se centraliza contra el catalogo de `Mantenimiento`.
+- El bloqueo de duplicados se hace antes del `INSERT` para evitar registros `en_proceso`
+  paralelos por habitacion/hotel.
+- No se automatiza mantenimiento programado ni disponibilidad fuera del flujo existente.

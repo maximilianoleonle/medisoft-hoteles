@@ -826,3 +826,15 @@ agregar funcionalidades nuevas.
 - No hay POST, migraciones, escrituras, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.
 - Siguiente accion segura: nuevo contrato independiente.
+
+## Mantenimiento inmediato MANT-B
+
+- Estado formal: `MANTENIMIENTO_INMEDIATO_MANT_B_COMPLETADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_MANT_B_mantenimiento_inmediato_guardrails.md`.
+- Se endurece la ruta existente `POST /habitaciones/{id}/mantenimiento`.
+- Se validan accion, tipo, prioridad, motivo y duplicado `en_proceso` por habitacion/hotel.
+- Se agrega `src/tools/saas/preflight_mantenimiento_operativo.php`.
+- Health checker general cubre MANT-B.
+- No hay rutas nuevas, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.
+- Siguiente accion segura: cierre tecnico MANT-B o nuevo contrato independiente.

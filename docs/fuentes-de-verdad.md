@@ -411,3 +411,12 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - Los joins con `habitaciones` deben validar que `mantenimientos_habitaciones.hotel_id`
   coincida con `habitaciones.hotel_id`.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.
+
+### MANT-B mantenimiento inmediato existente
+
+- No crea fuente nueva.
+- La habitacion operativa sigue en `habitaciones`.
+- El registro historico/inmediato de mantenimiento sigue en `mantenimientos_habitaciones`.
+- Toda accion debe operar con `hotel_id` del contexto actual.
+- Una habitacion no debe tener mas de un mantenimiento `en_proceso` por hotel.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.
