@@ -227,6 +227,15 @@
 - No se deben editar archivo fisico, storage, hash, MIME, tamano ni hotel.
 - El POST usa CSRF y auditoria diferencial.
 
+### Cierre tecnico 4B post-QA
+
+- Estado formal vigente: `CIERRE_TECNICO_4B_COMPLETADO`.
+- Se cierra 4B despues de QA manual de descarga, auditoria de descargas y metadata.
+- El cierre no agrega funcionalidad: solo registra revision tecnica, auditoria de
+  seguridad y verificaciones.
+- Cualquier fase futura de archivado, baja logica, reemplazo o links publicos requiere
+  contrato nuevo y autorizacion explicita.
+
 ### Decisiones de diagnostico NP-0
 
 - Hoy "trabajador" = `usuarios` (tabla global, sin `hotel_id`, `rol` de sistema) + pivote

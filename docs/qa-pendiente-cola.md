@@ -402,6 +402,35 @@ Validacion manual reportada por el usuario:
   Caja ni `/api/sync`.
 - Estado formal: `METADATA_DOCUMENTAL_4B_C_A_VALIDADA_MANUALMENTE`.
 
+### Cierre tecnico 4B post-QA
+
+Resultado automatico de cierre:
+
+- `php -l` limpio en `DocumentoController.php`, `Documento.php`, vistas documentales,
+  `routes.php` y `health_check_fase_1a.php`.
+- `health_check_fase_1a.php`: PASS con warnings conocidos; rutas 4B-A/4B-C y auditoria
+  4B-B detectadas.
+- `preflight_compras_minimas.php`: PASS con warnings conocidos.
+- `preflight_recepcion_compras.php`: PASS con warnings conocidos.
+- HTTP sin sesion:
+  - `GET /documentos`: `303` a login.
+  - `GET /documentos/1/descargar`: `303` a login.
+  - `GET /documentos/1/editar`: `303` a login.
+  - `POST /documentos/1/actualizar`: `303` a login.
+- SQL read-only:
+  - `documento_tipos=6`;
+  - `documentos=3`;
+  - `documento_entidades=1`;
+  - `documentos_sin_hotel=0`;
+  - `documentos_eliminados=0`;
+  - `documentos.descargado=1`;
+  - `documentos.descarga_bloqueada=1`;
+  - `documentos.metadata_actualizada=1`;
+  - `cuentas_por_pagar_movimientos=0`.
+- `/api/sync`: handler conserva `sync_temporarily_disabled` + HTTP `423`; sin sesion
+  el middleware redirige a login antes de ejecutar el handler.
+- Estado formal: `CIERRE_TECNICO_4B_COMPLETADO`.
+
 ### QA critica futura
 
 - Documento de un hotel no visible en otro hotel.

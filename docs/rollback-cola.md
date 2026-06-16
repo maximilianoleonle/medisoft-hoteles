@@ -356,6 +356,14 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `logs_auditoria.datos_antes` o backup antes de revertir codigo.
 - No borrar auditorias 4B-B ni documentos existentes.
 
+### 4B cierre tecnico post-QA
+
+- Rollback documental: revertir el commit de cierre 4B si se quiere retirar solo la
+  marca `CIERRE_TECNICO_4B_COMPLETADO`.
+- DB: no aplica; el cierre es documentacion y verificaciones read-only.
+- Codigo: no aplica si el commit solo contiene documentacion de cierre.
+- No borrar documentos, auditorias ni archivos en `src/storage/documentos/`.
+
 ### Fases futuras
 
 - Antes de migracion o escritura: backup fresco.

@@ -4,14 +4,14 @@
 
 NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Centro Documental Base.
 
-Mensaje actual procesado: "Hagamoslo"; se implementa Fase 4B-C-A edicion controlada de metadata documental.
+Mensaje actual procesado: "Confirmo las pruebas correctas, CONTINUA CON EL SIGUIENTE PASO"; se marca 4B-C-A como validada manualmente y se cierra tecnicamente Fase 4B.
 
 ## Estado vigente
 
 - Bloque actual: Fase 4B Descarga segura de documentos.
-- Fase actual: 4B-C contrato de edicion controlada de metadata documental.
+- Fase actual: cierre tecnico post-QA de Fase 4B.
 - Riesgo: naranja.
-- Estado: `METADATA_DOCUMENTAL_4B_C_A_VALIDADA_MANUALMENTE`.
+- Estado: `CIERRE_TECNICO_4B_COMPLETADO`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -55,17 +55,25 @@ Mensaje actual procesado: "Hagamoslo"; se implementa Fase 4B-C-A edicion control
 - Verificacion 4B-C-A: GET/POST sin sesion bloqueados, GET con sesion `200`, POST no-op
   sin cambios persistidos, CSRF invalido bloqueado y prueba transaccional con rollback
   valida `documentos.metadata_actualizada`.
+- QA manual 4B-C-A: reportada por el usuario como correcta.
+- Revision tecnica post-QA 4B: `php -l`, health, preflights, HTTP sin sesion y SQL
+  read-only ejecutados sin errores bloqueantes.
+- Auditoria seguridad post-QA 4B: sin exposicion de `storage_path` en vistas, sin
+  links publicos, sin borrado, sin reemplazo, sin Caja, sin pagos, sin abonos y sin
+  cambios en `/api/sync`.
 - Documento: `docs/fase_4B_0_contrato_descarga_segura_documentos.md`.
 - Ruta implementada: `GET /documentos/{id}/descargar`.
 - Controlador: `DocumentoController::descargarAction()`.
 - Reglas clave: `requireAuth`, contexto hotelero, validacion `id + hotel_id`, documento `activo`, `realpath` bajo `STORAGE_PATH/documentos`, headers privados y sin rutas publicas.
-- No hay POST nuevo, links publicos, edicion, borrado ni migraciones.
+- Hay POST de carga documental y POST de metadata ya autorizados; no hay POST de
+  borrado, reemplazo, links publicos, Caja, pagos ni abonos.
 - 4B-B agrega escritura controlada en `logs_auditoria` para descargas exitosas y bloqueadas.
 - Verificacion HTTP: sin sesion `303` a login; documento `#1` de Los Cedros descarga `200`; documento `#3` de otro hotel redirige `303` a `/documentos`.
 - Verificacion 4B-B: `documentos.descargado=1`, `documentos.descarga_bloqueada=1`,
   `cuentas_por_pagar_movimientos=0`, `movimientos_caja=1403`.
-- Prohibido: links publicos, edicion, borrado, Caja, pagos, abonos, PWA/offline, Fase 3D y `/api/sync`.
-- Siguiente accion: revision tecnica, auditoria de seguridad y cierre documental de Fase 4B.
+- Prohibido: links publicos, edicion de archivo/storage, borrado, Caja, pagos, abonos,
+  PWA/offline, Fase 3D y `/api/sync`.
+- Siguiente accion: nuevo bloque autorizado por el usuario; no avanzar automaticamente a borrado, links publicos, reemplazo, pagos, Caja, Fase 3D ni NP-A.
 
 ## Reanclaje Fase 3C
 
@@ -242,4 +250,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Siguiente paso formal recomendado: cerrar Fase 4B con revision tecnica y auditoria de seguridad antes de considerar borrado, links publicos, reemplazo de archivos, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Siguiente paso formal recomendado: esperar nuevo bloque autorizado. Opciones seguras futuras: contrato de archivado/baja logica documental o contrato de documentos por entidad, sin borrado fisico, sin links publicos, sin pagos, sin Caja, sin Fase 3D, sin NP-A y sin tocar `/api/sync`. No hacer push.

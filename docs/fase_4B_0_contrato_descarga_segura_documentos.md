@@ -168,8 +168,8 @@ Reglas aplicadas:
 - La raiz permitida es `realpath(STORAGE_PATH . '/documentos')`.
 - No se expone `storage_path` ni `nombre_archivo`.
 - No se crean links publicos.
-- No hay POST nuevo.
-- No hay edicion ni borrado.
+- En 4B-A no hay POST nuevo.
+- En 4B-A no hay edicion ni borrado.
 - No se toca Caja, pagos, abonos, PWA/offline ni `/api/sync`.
 - No se agrego auditoria de descarga en esta fase para mantener la descarga sin
   escrituras DB.
@@ -252,7 +252,7 @@ Exclusiones:
 - No se registra `storage_path`.
 - No se registra `nombre_archivo`.
 - No hay nuevas rutas.
-- No hay POST nuevo.
+- En 4B-B no hay POST nuevo.
 - No hay descargas publicas ni tokens.
 - No hay edicion ni borrado.
 - No se toca Caja, pagos, abonos, PWA/offline ni `/api/sync`.

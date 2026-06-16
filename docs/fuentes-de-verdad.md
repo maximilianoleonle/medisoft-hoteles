@@ -130,7 +130,7 @@ Reglas:
 
 ## Descarga segura documental (Fase 4B)
 
-Estado formal: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
+Estado formal: `CIERRE_TECNICO_4B_COMPLETADO`.
 
 Contrato:
 
@@ -156,6 +156,11 @@ Reglas de fuente de verdad:
 - La ruta activa de descarga es `GET /documentos/{id}/descargar`.
 - Solo documentos `activo` del hotel actual son descargables.
 - No hay links publicos ni tokens publicos de documentos.
+- La edicion vigente solo modifica metadata segura en `documentos`; archivo fisico,
+  `storage_path`, `nombre_archivo`, `sha256`, MIME, tamano, hotel y vinculos no se
+  cambian en 4B-C-A.
+- El cierre 4B no autoriza borrado, reemplazo de archivo, links publicos, pagos, Caja,
+  abonos, Fase 3D, NP-A ni cambios en `/api/sync`.
 
 ## Personal y Nomina (Fase NP)
 

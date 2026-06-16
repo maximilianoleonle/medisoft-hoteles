@@ -276,6 +276,20 @@ Estado: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
 - POST usa CSRF y busqueda por `id + hotel_id`.
 - Audita `documentos.metadata_actualizada` solo cuando hay cambios reales.
 
+### Cierre seguridad 4B post-QA
+
+- Estado: `CIERRE_TECNICO_4B_COMPLETADO`.
+- Rutas documentales sensibles requieren sesion; HTTP sin sesion redirige a login.
+- Descarga solo usa `GET /documentos/{id}/descargar`, documento `activo`,
+  `id + hotel_id` y `realpath` bajo `STORAGE_PATH/documentos`.
+- Metadata solo usa `POST /documentos/{id}/actualizar` con CSRF y update limitado a
+  `documento_tipo_id`, `titulo`, `descripcion` y `etiquetas`.
+- Las vistas no muestran `storage_path` ni `nombre_archivo`.
+- No hay rutas de borrado, reemplazo de archivo, links publicos, Caja, pagos, abonos
+  ni cambios en `/api/sync`.
+- Riesgo residual: `logs_auditoria` crece con descargas y actualizaciones de metadata;
+  aceptado como trazabilidad minima del bloque.
+
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 
 ### Estado NP-0

@@ -397,6 +397,25 @@ Estado formal vigente: `METADATA_DOCUMENTAL_4B_C_A_VALIDADA_MANUALMENTE`.
 - `Documento::actualizarMetadata()` centraliza validacion y escritura.
 - Vista `documentos/editar.php` no expone rutas internas.
 
+## Cierre tecnico Fase 4B
+
+Estado formal vigente: `CIERRE_TECNICO_4B_COMPLETADO`.
+
+Alcance del cierre:
+
+- 4B-0 contrato de descarga segura.
+- 4B-A descarga autenticada.
+- 4B-B auditoria de descargas.
+- 4B-C-A edicion controlada de metadata documental.
+- Revision tecnica y auditoria seguridad post-QA.
+
+Fuera de alcance del cierre:
+
+- Borrado fisico o baja logica.
+- Reemplazo de archivo.
+- Links publicos o tokens de documentos.
+- Caja, pagos, abonos, Fase 3D, NP-A y `/api/sync`.
+
 ## Bloque Personal y Nomina (Fase NP): modulo independiente de trabajadores
 
 ### Objetivo

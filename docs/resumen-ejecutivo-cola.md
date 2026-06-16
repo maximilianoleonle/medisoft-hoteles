@@ -250,7 +250,8 @@ Resultado 4B-A:
   `nombre_archivo`.
 - HTTP sin sesion redirige a login.
 - Documento `#1` de Los Cedros descarga `200`; documento `#3` de otro hotel redirige.
-- No hay POST nuevo, links publicos, edicion, borrado, Caja, pagos, abonos ni `/api/sync`.
+- En 4B-A no hay POST nuevo, links publicos, edicion, borrado, Caja, pagos, abonos ni `/api/sync`;
+  la edicion posterior queda limitada a metadata en 4B-C-A.
 - QA manual 4B-A reportada por el usuario como completada.
 
 Resultado 4B-B:
@@ -277,6 +278,18 @@ Resultado 4B-C-A:
   Caja, pagos, abonos y `/api/sync`.
 - QA manual 4B-C-A reportada por el usuario como correcta.
 - Estado formal: `METADATA_DOCUMENTAL_4B_C_A_VALIDADA_MANUALMENTE`.
+
+Cierre tecnico 4B:
+
+- Estado formal: `CIERRE_TECNICO_4B_COMPLETADO`.
+- Revision tecnica post-QA ejecutada sin hallazgos bloqueantes.
+- Auditoria seguridad post-QA confirma rutas protegidas, CSRF en POST, filtros
+  `hotel_id`, storage privado, ausencia de rutas internas en vistas y ausencia de
+  borrado, reemplazo, links publicos, Caja, pagos, abonos y cambios en `/api/sync`.
+- Verificaciones: `php -l`, health, preflights, HTTP sin sesion, SQL read-only y
+  `git diff --check`.
+- Siguiente paso recomendado: nuevo bloque autorizado; no avanzar automaticamente a
+  borrado, links publicos, reemplazo de archivos, pagos, Caja, Fase 3D ni NP-A.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 
