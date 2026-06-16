@@ -613,3 +613,9 @@
   upload seguro, detalle y descarga segura.
 - El contador de documentos laborales prefiere la fuente moderna y solo cae a
   `trabajador_documentos` si no existen las tablas documentales modernas.
+
+## Decision NP-D-F cierre documentos laborales
+
+- Se cierra documentos laborales sin reconciliar `trabajador_documentos`.
+- No se asume que el cierre habilita migracion de archivos legacy.
+- Cualquier reconciliacion documental laboral debe ser contrato separado.

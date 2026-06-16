@@ -778,3 +778,12 @@ Resultado NP-D-A:
 - `trabajador_documentos` queda congelada; no se escribe ni se expone como storage.
 - No se crean rutas nuevas, migraciones, pagos, abonos, nomina, Caja ni cambios en
   `/api/sync`.
+
+Resultado NP-D-F:
+
+- Estado tecnico: `BLOQUE_NP_D_DOCUMENTOS_LABORALES_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_NP_D_F_cierre_documentos_laborales.md`.
+- Se cierra tecnicamente documentos laborales contextuales.
+- Health checker sin errores valida `trabajador` como entidad documental moderna.
+- QA manual de vincular/subir/descargar documento de trabajador queda diferida.
+- `trabajador_documentos` sigue congelada y en 0 registros.

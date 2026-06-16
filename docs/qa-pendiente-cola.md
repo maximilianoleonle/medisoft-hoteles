@@ -949,3 +949,9 @@ instruccion del usuario.
 - Abrir detalle y descarga segura del documento.
 - Confirmar que no se expone `storage_path`, `nombre_archivo` ni `ruta_archivo`.
 - Confirmar que `trabajador_documentos` no recibe registros nuevos.
+
+### Estado NP-D-F
+
+- Bloque de documentos laborales cerrado tecnicamente.
+- QA manual sigue pendiente y diferida.
+- No avanzar a reconciliacion de `trabajador_documentos` ni storage nuevo sin contrato.

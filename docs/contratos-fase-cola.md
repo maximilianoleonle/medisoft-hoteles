@@ -986,3 +986,12 @@ Estado formal vigente: `DOCUMENTOS_LABORALES_NP_D_A_COMPLETADOS_QA_DIFERIDA`.
 - `trabajador` se integra como entidad documental moderna.
 - Ficha de trabajador usa partial contextual existente sin rutas nuevas.
 - `trabajador_documentos` sigue congelada; no se usa como flujo operativo nuevo.
+
+### Estado NP-D-F
+
+Estado formal vigente: `BLOQUE_NP_D_DOCUMENTOS_LABORALES_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_D_F_cierre_documentos_laborales.md`.
+- Cierre tecnico del bloque de documentos laborales.
+- Siguiente contrato requerido antes de reconciliar `trabajador_documentos` o agregar
+  nuevos flujos de storage.

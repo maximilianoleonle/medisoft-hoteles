@@ -705,3 +705,13 @@ Estado: `DOCUMENTOS_LABORALES_NP_D_A_COMPLETADOS_QA_DIFERIDA`.
 - Ficha de trabajador renderiza documentos contextuales mediante partial seguro.
 - No se crean rutas nuevas ni se usa `trabajador_documentos`.
 - QA manual queda diferida.
+
+## Cierre tecnico NP-D-F
+
+Estado: `BLOQUE_NP_D_DOCUMENTOS_LABORALES_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_D_F_cierre_documentos_laborales.md`.
+- Revision tecnica y auditoria de seguridad completadas para documentos laborales.
+- No se agregaron funcionalidades nuevas en el cierre.
+- No hay storage publico nuevo, Caja, pagos, abonos, nomina ni cambios en `/api/sync`.
+- QA manual queda diferida.

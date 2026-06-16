@@ -684,3 +684,12 @@ agregar funcionalidades nuevas.
 - `trabajador_documentos` queda congelada como tabla legacy/aditiva.
 - No se toca Caja, pagos reales, abonos, nomina ni `/api/sync`.
 - Siguiente accion segura: revision/auditoria/cierre de NP-D-A.
+
+## Cierre tecnico NP-D-F
+
+- Estado formal: `BLOQUE_NP_D_DOCUMENTOS_LABORALES_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_NP_D_F_cierre_documentos_laborales.md`.
+- Bloque de documentos laborales queda cerrado tecnicamente.
+- Centro Documental moderno es la fuente; `trabajador_documentos` sigue congelada.
+- QA manual queda diferida.
+- Siguiente accion segura: contrato nuevo independiente para la siguiente necesidad.

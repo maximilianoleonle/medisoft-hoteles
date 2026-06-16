@@ -765,3 +765,13 @@ Estado: `DOCUMENTOS_LABORALES_NP_D_A_COMPLETADOS_QA_DIFERIDA`.
 - No se crean rutas nuevas ni se toca `/api/sync`.
 - Riesgo residual: QA manual de vincular/subir/descargar documento de trabajador queda
   diferida.
+
+## Auditoria NP-D-F cierre documentos laborales
+
+Estado: `BLOQUE_NP_D_DOCUMENTOS_LABORALES_CERRADO_QA_DIFERIDA`.
+
+- Revision tecnica completada.
+- No quedan errores automaticos relacionados con NP-D-A.
+- QA manual queda diferida; no se marca validacion de usuario.
+- Riesgo residual: reconciliacion o retiro de `trabajador_documentos` requiere contrato
+  nuevo.

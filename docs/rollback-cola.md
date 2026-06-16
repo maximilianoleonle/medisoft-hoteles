@@ -731,3 +731,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Si QA manual genero documentos o vinculos de prueba, documentar IDs y usar el flujo
   documental autorizado de baja logica/archivado.
 - No tocar `trabajador_documentos`, Caja, pagos, abonos, nomina ni `/api/sync`.
+
+### NP-D-F cierre tecnico documentos laborales
+
+- Rollback documental: revertir el commit
+  `docs(phase-np): close worker document center block`.
+- DB: no aplica; es cierre documental.
+- Mantener intactos documentos y vinculos ya creados si existieran.
