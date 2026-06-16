@@ -710,3 +710,13 @@ Estado: `BLOQUE_NP_C_C_ANTICIPOS_PRESTAMOS_CERRADO_QA_DIFERIDA`.
 - No quedan errores automaticos relacionados con NP-C-C-A.
 - QA manual queda diferida; no se marca validacion de usuario.
 - Riesgo residual: abonos/liquidaciones y asistencia requieren contrato nuevo.
+
+## Auditoria NP-C-D-0 asistencia manual
+
+Estado: `CONTRATO_NP_C_D_ASISTENCIA_MANUAL_COMPLETADO`.
+
+- Solo contrato documental.
+- Riesgo principal: convertir asistencia en nomina automatica sin controles.
+- Mitigacion: captura manual sin calculos de pago, sin Caja y sin descuentos automaticos.
+- La llave unica por trabajador/dia evita duplicados si la implementacion futura valida
+  antes de insertar.

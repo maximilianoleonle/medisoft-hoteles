@@ -938,3 +938,12 @@ Estado formal vigente: `BLOQUE_NP_C_C_ANTICIPOS_PRESTAMOS_CERRADO_QA_DIFERIDA`.
 - Documento: `docs/fase_NP_C_C_F_cierre_anticipos_prestamos.md`.
 - Cierre tecnico del bloque de anticipos/prestamos manuales.
 - Siguiente contrato requerido antes de asistencia, abonos, liquidaciones o pagos reales.
+
+### Estado NP-C-D-0
+
+Estado formal vigente: `CONTRATO_NP_C_D_ASISTENCIA_MANUAL_COMPLETADO`.
+
+- Documento: `docs/fase_NP_C_D_0_contrato_asistencia_manual.md`.
+- Solo contrato; no agrega codigo ni DB.
+- Escritura futura limitada a asistencia manual por trabajador/dia, sin nomina automatica
+  y sin Caja.

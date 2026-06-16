@@ -574,3 +574,10 @@
 - La siguiente escritura laboral recomendada debe empezar por contrato de asistencia
   manual, sin nomina automatica.
 - QA manual queda diferida y no se toma como validacion de usuario.
+
+## Decision NP-C-D-0 asistencia manual
+
+- La asistencia se manejara como registro laboral manual, no como nomina calculada.
+- Se respeta la llave unica `(hotel_id, trabajador_id, fecha)`.
+- Edicion, anulacion o correccion de asistencia requieren contrato separado.
+- Tareas operativas no generan asistencia automaticamente.

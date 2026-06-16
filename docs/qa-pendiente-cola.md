@@ -893,3 +893,10 @@ instruccion del usuario.
 - Bloque de anticipos y prestamos manuales cerrado tecnicamente.
 - QA manual sigue pendiente y diferida.
 - No avanzar a abonos, liquidaciones, Caja ni asistencia sin contrato nuevo.
+
+### Estado NP-C-D-0
+
+- Contrato de asistencia manual completado.
+- No requiere QA de navegador porque no agrega funcionalidad.
+- QA futura NP-C-D-A debe confirmar una asistencia por trabajador/dia, ausencia de Caja y
+  ausencia de nomina automatica.

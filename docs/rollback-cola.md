@@ -690,3 +690,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-np): close controlled worker advance loan block`.
 - DB: no aplica; es cierre documental.
 - Mantener intactos anticipos/prestamos ya creados si existieran.
+
+### NP-C-D-0 contrato de asistencia manual
+
+- Rollback documental: revertir el commit
+  `docs(phase-np): define controlled worker attendance contract`.
+- DB: no aplica; NP-C-D-0 no crea rutas, migraciones ni datos.
+- No tocar `trabajador_asistencias`, Caja ni `/api/sync`.

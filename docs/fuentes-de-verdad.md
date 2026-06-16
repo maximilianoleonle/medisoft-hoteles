@@ -341,4 +341,6 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - NP-C-C-A permite crear manualmente anticipos y prestamos con saldo pendiente inicial
   igual al monto.
 - Anticipos y prestamos siguen siendo ledger laboral informativo, no Caja ni pago real.
-- Asistencia sigue fuera de alcance operativo hasta contrato especifico.
+- NP-C-D-0 documenta futura escritura manual en `trabajador_asistencias`, pero todavia no
+  crea datos.
+- Asistencia no es nomina automatica ni Caja; es un registro laboral por trabajador/dia.

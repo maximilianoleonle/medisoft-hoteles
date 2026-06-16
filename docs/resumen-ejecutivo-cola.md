@@ -725,3 +725,11 @@ Resultado NP-C-C-F:
 - Checkers sin errores: preflight de ledger laboral y health general.
 - QA manual queda diferida hasta que exista un trabajador activo autorizado.
 - Siguiente paso recomendado: contrato nuevo de asistencia manual basica o QA manual NP-C.
+
+Resultado NP-C-D-0:
+
+- Estado tecnico: `CONTRATO_NP_C_D_ASISTENCIA_MANUAL_COMPLETADO`.
+- Documento: `docs/fase_NP_C_D_0_contrato_asistencia_manual.md`.
+- Se define contrato para futura captura manual de asistencia por trabajador/dia.
+- No se implementan rutas, vistas, POST ni escrituras.
+- No se autoriza nomina automatica, Caja, pagos reales ni `/api/sync`.

@@ -656,3 +656,11 @@ Estado: `BLOQUE_NP_C_C_ANTICIPOS_PRESTAMOS_CERRADO_QA_DIFERIDA`.
 - No se agregaron funcionalidades nuevas en el cierre.
 - No hay pagos reales, abonos, Caja, Nomina operativa ni cambios en `/api/sync`.
 - QA manual queda diferida.
+
+## Contrato NP-C-D-0
+
+Estado: `CONTRATO_NP_C_D_ASISTENCIA_MANUAL_COMPLETADO`.
+
+- Documento: `docs/fase_NP_C_D_0_contrato_asistencia_manual.md`.
+- Solo contrato; no agrega rutas, vistas, POST ni escrituras.
+- Define futura captura manual de asistencia sin nomina automatica ni Caja.

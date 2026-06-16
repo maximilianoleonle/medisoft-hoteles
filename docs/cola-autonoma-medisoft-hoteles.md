@@ -626,3 +626,12 @@ agregar funcionalidades nuevas.
 - QA manual queda diferida porque no hay trabajadores locales.
 - Siguiente accion segura: contrato nuevo para asistencia manual basica, sin nomina
   automatica.
+
+## Contrato NP-C-D-0 asistencia manual
+
+- Estado formal: `CONTRATO_NP_C_D_ASISTENCIA_MANUAL_COMPLETADO`.
+- Documento creado: `docs/fase_NP_C_D_0_contrato_asistencia_manual.md`.
+- Define futura captura manual basica en `trabajador_asistencias`.
+- No implementa rutas, vistas, POST ni escrituras.
+- No autoriza nomina automatica, descuentos, Caja, pagos reales ni `/api/sync`.
+- Siguiente accion segura: NP-C-D-A captura manual de asistencia sin Caja.
