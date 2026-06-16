@@ -36,6 +36,14 @@ $buscar = (string)($filtros['buscar'] ?? '');
 $estado = (string)($filtros['estado'] ?? 'todos');
 $tipoFiltro = (int)($filtros['documento_tipo_id'] ?? 0);
 $esEntidad = is_array($contextoEntidad);
+$uploadUrl = url('documentos/subir');
+
+if ($esEntidad) {
+    $uploadUrl .= '?' . http_build_query([
+        'entidad_tipo' => (string)($contextoEntidad['tipo'] ?? ''),
+        'entidad_id' => (int)($contextoEntidad['id'] ?? 0),
+    ]);
+}
 ?>
 
 <style>
@@ -172,10 +180,14 @@ $esEntidad = is_array($contextoEntidad);
                             Centro documental
                         </a>
                     <?php endif; ?>
+                    <a class="docs-btn docs-btn-primary" href="<?= doc_safe($uploadUrl, '') ?>">
+                        <i class="fas fa-upload"></i>
+                        Subir documento
+                    </a>
                 </div>
                 <span class="docs-badge">
                     <i class="fas fa-lock"></i>
-                    Solo lectura
+                    Sin descarga publica
                 </span>
             </div>
 
@@ -211,7 +223,7 @@ $esEntidad = is_array($contextoEntidad);
                     <div class="p-8 text-center">
                         <div class="text-4xl text-slate-300 mb-3"><i class="fas fa-folder-open"></i></div>
                         <h2 class="font-black text-lg">Sin documentos</h2>
-                        <p class="text-sm text-slate-500 mt-1">La estructura esta lista; aun no hay metadata documental registrada.</p>
+                        <p class="text-sm text-slate-500 mt-1">La estructura esta lista para cargas seguras; aun no hay metadata documental registrada.</p>
                     </div>
                 <?php else: ?>
                     <div class="overflow-x-auto">

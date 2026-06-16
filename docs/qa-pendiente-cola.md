@@ -211,7 +211,7 @@ Cierre tecnico 3C completado documentalmente. La QA manual final del bloque 3C f
 
 ## QA Fase 4A Centro Documental
 
-Estado vigente: `DOCUMENTOS_READ_ONLY_4A_COMPLETADO`.
+Estado vigente: `UPLOAD_SEGURO_4A_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
 4A-0 no implemento funcionalidad. 4A-A creo solo esquema base, sin uploads, sin POST,
 sin descargas y sin datos operativos. 4A-B agrega capa de consulta read-only de metadata
@@ -238,12 +238,48 @@ sin exponer archivos.
 - Rutas GET creadas:
   - `/documentos`;
   - `/documentos/{id}`;
-  - `/documentos/entidad/{entidad_tipo}/{entidad_id}`.
+  - `/documentos/entidad/{tipo}/{id}`.
 - HTTP sin sesion en `/documentos`: debe redirigir a login por middleware global.
 - La vista de listado muestra estado vacio cuando no hay documentos.
 - La vista de detalle no muestra `storage_path`, `nombre_archivo` ni rutas internas.
 - No existen rutas POST bajo `/documentos`.
 - No se implemento upload, descarga, edicion ni borrado.
+
+### Resultado automatico Fase 4A-C
+
+- `GET /documentos/subir` y `POST /documentos/subir` agregados.
+- `php -l` limpio en modelo, controlador, vista de listado, vista de carga y rutas.
+- HTTP sin sesion:
+  - `GET /documentos/subir`: redirige a login;
+  - `POST /documentos/subir`: redirige a login.
+- Backup previo antes de escritura:
+  `src/storage/backups/phase4a_c_20260615_190912_before_document_upload_medisoft_hoteles_import.sql`.
+- SHA256: `DF150F705824973621B9A1276980DC73ECB7AE5261B67A5D71E541FE13797446`.
+- Prueba local controlada:
+  - documento creado: `documentos.id = 1`;
+  - hotel: `1` (`Los Cedros`);
+  - entidad vinculada: `proveedor #8`;
+  - storage privado:
+    `documentos/hotel_1/2026/06/doc_20260615_191313_37017248e4f9b6e2.pdf`;
+  - auditoria: `logs_auditoria` aumento a `27`.
+- Archivo `.html` invalido rechazado con mensaje claro y sin crear registros.
+- URL directa a `storage/documentos/...` no sirve el archivo.
+- `health_check_fase_1a.php`, `preflight_compras_minimas.php` y
+  `preflight_recepcion_compras.php` pasan con warnings conocidos.
+- No se tocaron Caja, pagos, abonos, CxP operativa ni `/api/sync`.
+
+### QA manual pendiente Fase 4A-C
+
+- Iniciar sesion en Los Cedros.
+- Abrir `/documentos`.
+- Presionar `Subir documento`.
+- Cargar un PDF o imagen valida menor a 10 MB.
+- Confirmar redireccion al detalle del documento.
+- Confirmar que el detalle muestra metadata y vinculo, pero no descarga ni ruta interna.
+- Intentar subir `.html` o `.php` y confirmar rechazo limpio.
+- Confirmar que el documento aparece en `/documentos` y en
+  `/documentos/entidad/proveedor/8` si se usa el proveedor de prueba.
+- Confirmar que no aparecen botones de descarga, edicion, borrado, pago, abono ni Caja.
 
 ### QA critica futura
 

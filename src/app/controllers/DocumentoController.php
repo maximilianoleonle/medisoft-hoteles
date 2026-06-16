@@ -65,11 +65,57 @@ class DocumentoController extends Controller
         ]);
     }
 
+    public function subirAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $contextoEntidad = $this->contextoEntidadDesdeRequest($hotelId, true);
+
+        if ($contextoEntidad === false) {
+            set_mensaje('Entidad documental no encontrada para el hotel actual.', 'error');
+            $this->redirect('documentos');
+            return;
+        }
+
+        View::renderTemplate('documentos/subir', [
+            'title' => 'Subir documento - ' . current_hotel_display_name(),
+            'tipos' => $this->documentoModel->tiposActivosPorHotel($hotelId),
+            'entidadTipos' => $this->documentoModel->entidadTiposPermitidos(),
+            'contextoEntidad' => $contextoEntidad,
+        ]);
+    }
+
+    public function guardarAction(): void
+    {
+        if (!$this->isPost()) {
+            $this->redirect('documentos/subir');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        $datos = $this->datosUpload();
+        try {
+            $resultado = $this->documentoModel->crearDesdeUpload(
+                $this->hotelIdActual(),
+                $_FILES['archivo'] ?? [],
+                $datos,
+                $this->usuarioIdActual()
+            );
+
+            $documentoId = (int)($resultado['documento_id'] ?? 0);
+            set_mensaje('Documento #' . $documentoId . ' cargado correctamente en storage privado.', 'success');
+            $this->redirect('documentos/' . $documentoId);
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo cargar el documento: ' . $e->getMessage(), 'error');
+            $this->redirect('documentos/subir' . $this->queryContexto($datos));
+        }
+    }
+
     public function entidadAction(): void
     {
         $hotelId = $this->hotelIdActual();
-        $entidadTipo = $this->documentoModel->normalizarEntidadTipo($this->route_params['entidad_tipo'] ?? null);
-        $entidadId = (int)($this->route_params['entidad_id'] ?? 0);
+        $entidadTipo = $this->documentoModel->normalizarEntidadTipo($this->route_params['entidad_tipo'] ?? $this->route_params['tipo'] ?? null);
+        $entidadId = (int)($this->route_params['entidad_id'] ?? $this->route_params['id'] ?? 0);
 
         if ($entidadTipo === null || $entidadId <= 0) {
             set_mensaje('Entidad documental no valida.', 'error');
@@ -104,6 +150,55 @@ class DocumentoController extends Controller
             'estado' => $this->getQuery('estado', 'todos'),
             'documento_tipo_id' => (int)$this->getQuery('documento_tipo_id', 0),
         ];
+    }
+
+    private function datosUpload(): array
+    {
+        return [
+            'documento_tipo_id' => (int)$this->getPost('documento_tipo_id', 0),
+            'titulo' => $this->getPost('titulo', ''),
+            'descripcion' => $this->getPost('descripcion', ''),
+            'etiquetas' => $this->getPost('etiquetas', ''),
+            'entidad_tipo' => $this->getPost('entidad_tipo', ''),
+            'entidad_id' => (int)$this->getPost('entidad_id', 0),
+            'relacion' => $this->getPost('relacion', ''),
+        ];
+    }
+
+    private function contextoEntidadDesdeRequest(int $hotelId, bool $validarExistencia): array|false|null
+    {
+        $entidadTipo = $this->documentoModel->normalizarEntidadTipo($this->getQuery('entidad_tipo', ''));
+        $entidadId = (int)$this->getQuery('entidad_id', 0);
+
+        if ($entidadTipo === null && $entidadId <= 0) {
+            return null;
+        }
+
+        if ($entidadTipo === null || $entidadId <= 0) {
+            return false;
+        }
+
+        if ($validarExistencia && !$this->documentoModel->entidadExisteEnHotel($hotelId, $entidadTipo, $entidadId)) {
+            return false;
+        }
+
+        return [
+            'tipo' => $entidadTipo,
+            'id' => $entidadId,
+            'label' => $this->etiquetaEntidad($entidadTipo),
+        ];
+    }
+
+    private function queryContexto(array $datos): string
+    {
+        $entidadTipo = $this->documentoModel->normalizarEntidadTipo($datos['entidad_tipo'] ?? '');
+        $entidadId = (int)($datos['entidad_id'] ?? 0);
+
+        if ($entidadTipo === null || $entidadId <= 0) {
+            return '';
+        }
+
+        return '?entidad_tipo=' . rawurlencode($entidadTipo) . '&entidad_id=' . $entidadId;
     }
 
     private function resumenVacio(): array
@@ -172,5 +267,11 @@ class DocumentoController extends Controller
         return function_exists('obtenerHotelIdActualCompat')
             ? (int)obtenerHotelIdActualCompat()
             : (int)($_SESSION['hotel_id'] ?? 0);
+    }
+
+    private function usuarioIdActual(): ?int
+    {
+        $usuarioId = $_SESSION['user_id'] ?? $_SESSION['usuario_id'] ?? null;
+        return $usuarioId ? (int)$usuarioId : null;
     }
 }

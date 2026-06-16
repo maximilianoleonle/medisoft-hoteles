@@ -4,26 +4,27 @@
 
 NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Centro Documental Base.
 
-Cola actual procesada: `[COLA_4A_B_DOCUMENTOS_READ_ONLY]`, capa read-only para consultar metadata documental y relaciones, sin uploads, POST ni descargas.
+Cola actual procesada: `[COLA_4A_C_UPLOAD_SEGURO_DOCUMENTOS]`, carga segura de documentos hacia storage privado, con POST + CSRF, sin descargas, edicion ni borrado.
 
 ## Estado vigente
 
 - Bloque actual: Fase 4A Centro Documental Base.
-- Fase actual: 4A-B capa read-only documental.
+- Fase actual: 4A-C upload seguro documental.
 - Riesgo: naranja.
-- Estado: `DOCUMENTOS_READ_ONLY_4A_COMPLETADO`.
+- Estado: `UPLOAD_SEGURO_4A_COMPLETADO_QA_MANUAL_PENDIENTE`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
 - No avanzar a pagos, Caja, Fase 3D ni nuevas funcionalidades.
 - Nota: existen commits de 3C-A/B/C y revisiones posteriores, pero el nuevo reanclaje no los considera cierre formal.
-- Verificacion actual: Docker disponible; `php -l`, health, preflights, HTTP sin sesion, conteos DB antes/despues y `git diff --check` ejecutados.
+- Verificacion actual: Docker disponible; `php -l`, health, preflights, HTTP sin sesion, prueba de upload controlada, rechazo de extension invalida, conteos DB antes/despues y `git diff --check` ejecutados.
 
 ## Fase 4A Centro Documental
 
 - 4A-0 contrato y diagnostico: completada documentalmente.
 - 4A-A migracion base: completada con migracion aditiva, backup previo, tablas vacias y registro en `migrations`.
 - 4A-B read-only: completada con modelo `Documento`, controlador GET, vistas de listado/detalle y navegacion segura.
+- 4A-C upload seguro: completada tecnicamente con formulario, POST + CSRF, validacion MIME/extension/tamano, storage privado, vinculo opcional por entidad y auditoria. Pendiente QA manual del usuario.
 - HEAD al iniciar: `35abdc7 fix(pwa): use hotel branding assets for push notifications`.
 - Git al iniciar: limpio.
 - Patrones detectados: `public_html/uploads` para assets publicos; `storage/reportes` + `ReporteLinkController` como patron privado seguro.
@@ -34,9 +35,11 @@ Cola actual procesada: `[COLA_4A_B_DOCUMENTOS_READ_ONLY]`, capa read-only para c
 - Migracion 4A-A: `migrations/20260615_004_fase_4a_centro_documental_base.sql`.
 - Tablas documentales creadas y vacias: `documento_tipos=0`, `documentos=0`, `documento_entidades=0`.
 - Sin uploads, sin POST, sin descargas, sin acciones de borrado y sin exposicion publica de documentos.
-- Rutas read-only 4A-B: `GET /documentos`, `GET /documentos/{id}`, `GET /documentos/entidad/{entidad_tipo}/{entidad_id}`.
+- Rutas read-only 4A-B: `GET /documentos`, `GET /documentos/{id}`, `GET /documentos/entidad/{tipo}/{id}`.
 - Las vistas no muestran `storage_path` ni rutas internas.
-- Siguiente cola recomendada: `[COLA_4A_C_UPLOAD_SEGURO_DOCUMENTOS]`.
+- Backup 4A-C: `src/storage/backups/phase4a_c_20260615_190912_before_document_upload_medisoft_hoteles_import.sql`, SHA256 `DF150F705824973621B9A1276980DC73ECB7AE5261B67A5D71E541FE13797446`, tamano `1541523`.
+- Prueba 4A-C: documento `#1` creado en hotel `1`, vinculado a proveedor `#8`, storage privado `documentos/hotel_1/2026/06/doc_20260615_191313_37017248e4f9b6e2.pdf`, auditoria `documentos.cargado`.
+- Siguiente cola recomendada: `[COLA_REVISION_TECNICA_4A]`.
 
 ## Reanclaje Fase 3C
 
@@ -213,4 +216,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Siguiente paso formal recomendado: `[COLA_4A_C_UPLOAD_SEGURO_DOCUMENTOS]` para carga segura con CSRF, storage privado, validacion MIME/tamano/extension y auditoria. No avanzar a descargas publicas, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Siguiente paso formal recomendado: `[COLA_REVISION_TECNICA_4A]` para revisar 4A-0..4A-C antes de autorizar descargas seguras o fases posteriores. No avanzar a descargas publicas, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

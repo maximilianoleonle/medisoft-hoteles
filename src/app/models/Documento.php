@@ -2,10 +2,35 @@
 
 require_once __DIR__ . '/../../core/Model.php';
 require_once __DIR__ . '/../../core/Database.php';
+require_once __DIR__ . '/../services/AuditService.php';
 
 class Documento extends Model
 {
     protected $table = 'documentos';
+
+    private const MAX_UPLOAD_BYTES = 10485760;
+
+    private const MIME_PERMITIDOS = [
+        'application/pdf' => ['pdf'],
+        'image/jpeg' => ['jpg', 'jpeg'],
+        'image/png' => ['png'],
+        'image/webp' => ['webp'],
+    ];
+
+    private const EXTENSIONES_PELIGROSAS = [
+        'php',
+        'phtml',
+        'phar',
+        'js',
+        'html',
+        'htm',
+        'svg',
+        'exe',
+        'bat',
+        'cmd',
+        'sh',
+        'ps1',
+    ];
 
     private const ENTIDAD_TIPOS = [
         'proveedor',
@@ -263,6 +288,98 @@ class Documento extends Model
         return $stmt ? ($stmt->fetchAll() ?: []) : [];
     }
 
+    public function crearDesdeUpload(int $hotelId, array $archivo, array $datos = [], ?int $usuarioId = null): array
+    {
+        $hotelId = $this->validarId($hotelId, 'Hotel invalido');
+
+        if (!$this->tablasDisponibles()) {
+            throw new Exception('Tablas documentales no disponibles');
+        }
+
+        $tipo = $this->resolverTipoDocumento($hotelId, (int)($datos['documento_tipo_id'] ?? 0));
+        $validado = $this->validarArchivoSubido($archivo, $tipo);
+        $entidad = $this->resolverEntidad($hotelId, $datos);
+        $storage = $this->prepararStoragePrivado($hotelId, $validado['extension']);
+        $movedFile = null;
+
+        if (!move_uploaded_file($validado['tmp_name'], $storage['absolute_path'])) {
+            throw new Exception('No se pudo guardar el archivo en storage privado');
+        }
+
+        $movedFile = $storage['absolute_path'];
+        @chmod($movedFile, 0640);
+        $pdo = $this->db->getConnection();
+
+        if ($pdo->inTransaction()) {
+            $this->eliminarArchivoNuevo($movedFile);
+            throw new Exception('La carga documental debe controlar su propia transaccion');
+        }
+
+        $pdo->beginTransaction();
+
+        try {
+            $stmt = $pdo->prepare(
+                "INSERT INTO documentos
+                    (hotel_id, documento_tipo_id, nombre_original, nombre_archivo,
+                     storage_path, mime_type, size_bytes, sha256, titulo,
+                     descripcion, etiquetas, estado, subido_por_usuario_id,
+                     created_at, updated_at)
+                 VALUES
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'activo', ?, NOW(), NOW())"
+            );
+            $stmt->execute([
+                $hotelId,
+                $tipo ? (int)$tipo['id'] : null,
+                $validado['nombre_original'],
+                $storage['nombre_archivo'],
+                $storage['storage_path'],
+                $validado['mime_type'],
+                $validado['size_bytes'],
+                $validado['sha256'],
+                $this->limitarTexto($datos['titulo'] ?? null, 180),
+                $this->limitarTexto($datos['descripcion'] ?? null, 255),
+                $this->limitarTexto($datos['etiquetas'] ?? null, 1000),
+                $this->normalizarUsuarioId($usuarioId),
+            ]);
+
+            $documentoId = (int)$pdo->lastInsertId();
+
+            if ($entidad) {
+                $stmt = $pdo->prepare(
+                    "INSERT INTO documento_entidades
+                        (hotel_id, documento_id, entidad_tipo, entidad_id, relacion, created_at, updated_at)
+                     VALUES
+                        (?, ?, ?, ?, ?, NOW(), NOW())"
+                );
+                $stmt->execute([
+                    $hotelId,
+                    $documentoId,
+                    $entidad['tipo'],
+                    $entidad['id'],
+                    $this->limitarTexto($datos['relacion'] ?? null, 80),
+                ]);
+            }
+
+            $this->auditarCarga($hotelId, $documentoId, $usuarioId, $validado, $entidad);
+
+            $pdo->commit();
+
+            return [
+                'documento_id' => $documentoId,
+                'hotel_id' => $hotelId,
+                'storage_path' => $storage['storage_path'],
+                'entidad' => $entidad,
+            ];
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            $this->eliminarArchivoNuevo($movedFile);
+            throw $e;
+        }
+    }
+
     public function normalizarEntidadTipo(?string $entidadTipo): ?string
     {
         $entidadTipo = trim((string)$entidadTipo);
@@ -272,6 +389,38 @@ class Documento extends Model
     public function entidadTiposPermitidos(): array
     {
         return self::ENTIDAD_TIPOS;
+    }
+
+    public function entidadExisteEnHotel(int $hotelId, string $entidadTipo, int $entidadId): bool
+    {
+        $entidadTipo = $this->normalizarEntidadTipo($entidadTipo);
+        if ($hotelId <= 0 || $entidadTipo === null || $entidadId <= 0) {
+            return false;
+        }
+
+        $tablas = [
+            'proveedor' => 'proveedores',
+            'compra' => 'compras',
+            'cuenta_por_pagar' => 'cuentas_por_pagar',
+            'huesped' => 'huespedes',
+            'reservacion' => 'reservaciones',
+        ];
+
+        $tabla = $tablas[$entidadTipo] ?? null;
+        if (!$tabla || !$this->tablaExiste($tabla)) {
+            return false;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT 1
+             FROM {$tabla}
+             WHERE id = ?
+               AND hotel_id = ?
+             LIMIT 1",
+            [$entidadId, $hotelId]
+        );
+
+        return $stmt !== false && (bool)$stmt->fetch();
     }
 
     private function resumenVacio(): array
@@ -305,5 +454,321 @@ class Documento extends Model
         );
 
         return $stmt !== false && (bool)$stmt->fetch();
+    }
+
+    private function resolverTipoDocumento(int $hotelId, int $tipoId): ?array
+    {
+        if ($tipoId <= 0) {
+            return null;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT id,
+                    hotel_id,
+                    clave,
+                    nombre,
+                    mime_permitidos,
+                    max_size_mb,
+                    activo
+             FROM documento_tipos
+             WHERE id = ?
+               AND activo = 1
+               AND (hotel_id IS NULL OR hotel_id = ?)
+             LIMIT 1",
+            [$tipoId, $hotelId]
+        );
+
+        $tipo = $stmt ? $stmt->fetch() : null;
+        if (!$tipo) {
+            throw new Exception('Tipo de documento no disponible para el hotel actual');
+        }
+
+        return $tipo;
+    }
+
+    private function validarArchivoSubido(array $archivo, ?array $tipo): array
+    {
+        $error = (int)($archivo['error'] ?? UPLOAD_ERR_NO_FILE);
+        if ($error !== UPLOAD_ERR_OK) {
+            throw new Exception($this->mensajeUploadError($error));
+        }
+
+        $tmpName = (string)($archivo['tmp_name'] ?? '');
+        if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+            throw new Exception('Archivo de carga no valido');
+        }
+
+        $size = (int)($archivo['size'] ?? 0);
+        $maxBytes = $this->maxBytesParaTipo($tipo);
+        if ($size <= 0) {
+            throw new Exception('El archivo esta vacio');
+        }
+
+        if ($size > $maxBytes) {
+            throw new Exception('El archivo excede el tamano maximo permitido de ' . $this->formatBytes($maxBytes));
+        }
+
+        $nombreOriginal = $this->limpiarNombreOriginal($archivo['name'] ?? 'documento');
+        $extension = strtolower((string)pathinfo($nombreOriginal, PATHINFO_EXTENSION));
+        if ($extension === '' || !preg_match('/^[a-z0-9]+$/', $extension)) {
+            throw new Exception('Extension de archivo no valida');
+        }
+
+        if (in_array($extension, self::EXTENSIONES_PELIGROSAS, true)) {
+            throw new Exception('Extension de archivo no permitida');
+        }
+
+        $mimeType = $this->detectarMime($tmpName);
+        $mimesPermitidos = $this->mimesPermitidosParaTipo($tipo);
+        if (!isset($mimesPermitidos[$mimeType])) {
+            throw new Exception('Tipo MIME no permitido: ' . $mimeType);
+        }
+
+        if (!in_array($extension, $mimesPermitidos[$mimeType], true)) {
+            throw new Exception('La extension no coincide con el tipo MIME detectado');
+        }
+
+        return [
+            'tmp_name' => $tmpName,
+            'nombre_original' => $nombreOriginal,
+            'extension' => $extension,
+            'mime_type' => $mimeType,
+            'size_bytes' => $size,
+            'sha256' => hash_file('sha256', $tmpName),
+        ];
+    }
+
+    private function resolverEntidad(int $hotelId, array $datos): ?array
+    {
+        $entidadTipoRaw = trim((string)($datos['entidad_tipo'] ?? ''));
+        $entidadId = (int)($datos['entidad_id'] ?? 0);
+
+        if ($entidadTipoRaw === '' && $entidadId <= 0) {
+            return null;
+        }
+
+        $entidadTipo = $this->normalizarEntidadTipo($entidadTipoRaw);
+        if ($entidadTipo === null || $entidadId <= 0) {
+            throw new Exception('Entidad documental no valida');
+        }
+
+        if (!$this->entidadExisteEnHotel($hotelId, $entidadTipo, $entidadId)) {
+            throw new Exception('La entidad no existe o no pertenece al hotel actual');
+        }
+
+        return [
+            'tipo' => $entidadTipo,
+            'id' => $entidadId,
+        ];
+    }
+
+    private function prepararStoragePrivado(int $hotelId, string $extension): array
+    {
+        if (!defined('STORAGE_PATH')) {
+            throw new Exception('STORAGE_PATH no esta definido');
+        }
+
+        $root = rtrim(STORAGE_PATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'documentos';
+        $hotelDir = 'hotel_' . $hotelId;
+        $year = date('Y');
+        $month = date('m');
+        $relativeDir = 'documentos/' . $hotelDir . '/' . $year . '/' . $month;
+        $absoluteDir = $root . DIRECTORY_SEPARATOR . $hotelDir . DIRECTORY_SEPARATOR . $year . DIRECTORY_SEPARATOR . $month;
+
+        if (!$this->asegurarDirectorioPrivado($root) || !$this->asegurarDirectorioPrivado($absoluteDir)) {
+            throw new Exception('No se pudo preparar el storage privado');
+        }
+
+        $rootReal = realpath($root);
+        $dirReal = realpath($absoluteDir);
+        if (!$rootReal || !$dirReal || strpos($dirReal, $rootReal) !== 0) {
+            throw new Exception('Ruta de storage privada no valida');
+        }
+
+        for ($i = 0; $i < 10; $i++) {
+            $nombreArchivo = 'doc_' . date('Ymd_His') . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
+            $absolutePath = $dirReal . DIRECTORY_SEPARATOR . $nombreArchivo;
+            if (!file_exists($absolutePath)) {
+                return [
+                    'nombre_archivo' => $nombreArchivo,
+                    'storage_path' => $relativeDir . '/' . $nombreArchivo,
+                    'absolute_path' => $absolutePath,
+                ];
+            }
+        }
+
+        throw new Exception('No se pudo generar un nombre de archivo unico');
+    }
+
+    private function asegurarDirectorioPrivado(string $dir): bool
+    {
+        if (!is_dir($dir) && !mkdir($dir, 0750, true)) {
+            return false;
+        }
+
+        $guard = rtrim($dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.htaccess';
+        if (!is_file($guard)) {
+            @file_put_contents($guard, "Require all denied\nDeny from all\n");
+        }
+
+        return is_dir($dir) && is_writable($dir);
+    }
+
+    private function mimesPermitidosParaTipo(?array $tipo): array
+    {
+        $permitidos = self::MIME_PERMITIDOS;
+        $mimesTipo = $this->parseMimePermitidos($tipo['mime_permitidos'] ?? null);
+
+        if (empty($mimesTipo)) {
+            return $permitidos;
+        }
+
+        return array_intersect_key($permitidos, array_flip($mimesTipo));
+    }
+
+    private function parseMimePermitidos($value): array
+    {
+        $value = trim((string)($value ?? ''));
+        if ($value === '') {
+            return [];
+        }
+
+        $json = json_decode($value, true);
+        if (is_array($json)) {
+            return array_values(array_filter(array_map('strval', $json)));
+        }
+
+        return array_values(array_filter(array_map('trim', explode(',', $value))));
+    }
+
+    private function maxBytesParaTipo(?array $tipo): int
+    {
+        $maxBytes = self::MAX_UPLOAD_BYTES;
+        $tipoMb = (float)($tipo['max_size_mb'] ?? 0);
+
+        if ($tipoMb > 0) {
+            $maxBytes = min($maxBytes, (int)floor($tipoMb * 1024 * 1024));
+        }
+
+        return max(1, $maxBytes);
+    }
+
+    private function detectarMime(string $tmpName): string
+    {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = $finfo ? finfo_file($finfo, $tmpName) : null;
+
+        if ($finfo) {
+            finfo_close($finfo);
+        }
+
+        return is_string($mime) && $mime !== '' ? $mime : 'application/octet-stream';
+    }
+
+    private function limpiarNombreOriginal($nombre): string
+    {
+        $nombre = basename(str_replace('\\', '/', (string)$nombre));
+        $nombre = preg_replace('/[\x00-\x1F\x7F]+/', '', $nombre);
+        $nombre = trim((string)$nombre);
+
+        if ($nombre === '') {
+            $nombre = 'documento';
+        }
+
+        return $this->substrSeguro($nombre, 255);
+    }
+
+    private function limitarTexto($value, int $max): ?string
+    {
+        $text = trim((string)($value ?? ''));
+        if ($text === '') {
+            return null;
+        }
+
+        return $this->substrSeguro($text, $max);
+    }
+
+    private function substrSeguro(string $text, int $max): string
+    {
+        if (function_exists('mb_substr')) {
+            return mb_substr($text, 0, $max, 'UTF-8');
+        }
+
+        return substr($text, 0, $max);
+    }
+
+    private function validarId($value, string $message): int
+    {
+        $id = (int)$value;
+        if ($id <= 0) {
+            throw new Exception($message);
+        }
+
+        return $id;
+    }
+
+    private function normalizarUsuarioId($value): ?int
+    {
+        $id = (int)($value ?? 0);
+        return $id > 0 ? $id : null;
+    }
+
+    private function formatBytes(int $bytes): string
+    {
+        if ($bytes >= 1048576) {
+            return number_format($bytes / 1048576, 2) . ' MB';
+        }
+
+        if ($bytes >= 1024) {
+            return number_format($bytes / 1024, 2) . ' KB';
+        }
+
+        return $bytes . ' B';
+    }
+
+    private function mensajeUploadError(int $error): string
+    {
+        $mensajes = [
+            UPLOAD_ERR_INI_SIZE => 'El archivo excede el limite configurado del servidor',
+            UPLOAD_ERR_FORM_SIZE => 'El archivo excede el limite del formulario',
+            UPLOAD_ERR_PARTIAL => 'El archivo se cargo parcialmente',
+            UPLOAD_ERR_NO_FILE => 'Debe seleccionar un archivo',
+            UPLOAD_ERR_NO_TMP_DIR => 'No hay directorio temporal disponible',
+            UPLOAD_ERR_CANT_WRITE => 'No se pudo escribir el archivo temporal',
+            UPLOAD_ERR_EXTENSION => 'Una extension de PHP detuvo la carga',
+        ];
+
+        return $mensajes[$error] ?? 'Error de carga no identificado';
+    }
+
+    private function eliminarArchivoNuevo(?string $path): void
+    {
+        if ($path && is_file($path)) {
+            @unlink($path);
+        }
+    }
+
+    private function auditarCarga(int $hotelId, int $documentoId, ?int $usuarioId, array $archivo, ?array $entidad): void
+    {
+        try {
+            AuditService::record('documentos.cargado', [
+                'hotel_id' => $hotelId,
+                'usuario_id' => $this->normalizarUsuarioId($usuarioId),
+                'entidad_tipo' => 'documento',
+                'entidad_id' => (string)$documentoId,
+                'descripcion' => 'Documento cargado en storage privado',
+                'datos_despues' => [
+                    'documento_id' => $documentoId,
+                    'nombre_original' => $archivo['nombre_original'],
+                    'mime_type' => $archivo['mime_type'],
+                    'size_bytes' => $archivo['size_bytes'],
+                    'sha256' => $archivo['sha256'],
+                    'vinculo' => $entidad,
+                    'storage_privado' => true,
+                ],
+            ]);
+        } catch (Throwable $e) {
+            error_log('No se pudo auditar carga documental: ' . $e->getMessage());
+        }
     }
 }

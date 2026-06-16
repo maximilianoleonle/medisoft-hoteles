@@ -266,6 +266,27 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Validar despues de rollback: `php -l` en rutas/sidebar si se modifican,
   health/preflights y ausencia de rutas `/documentos`.
 
+### 4A-C upload seguro documental
+
+- Estado vigente: `UPLOAD_SEGURO_4A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- Backup previo:
+  `src/storage/backups/phase4a_c_20260615_190912_before_document_upload_medisoft_hoteles_import.sql`.
+- SHA256: `DF150F705824973621B9A1276980DC73ECB7AE5261B67A5D71E541FE13797446`.
+- Tamano: `1541523` bytes.
+- Rollback de codigo: revertir el commit `feat(phase-4a): add secure document upload`.
+- Rollback DB/archivos: no borrar registros ni archivos sin autorizacion explicita.
+- Prueba local controlada creada:
+  - `documentos.id = 1`;
+  - `documento_entidades.id = 1`;
+  - storage privado:
+    `src/storage/documentos/hotel_1/2026/06/doc_20260615_191313_37017248e4f9b6e2.pdf`.
+- Si se decide retirar esa prueba local, opciones seguras:
+  1. restaurar el backup completo si el entorno local puede volver al punto anterior;
+  2. solicitar autorizacion explicita para una anulacion/reconciliacion puntual;
+  3. documentar conteos antes/despues.
+- No ejecutar `DELETE`, `DROP`, `unlink` ni limpieza masiva sin autorizacion nueva.
+- `src/storage/documentos/` queda ignorado por Git porque es storage runtime privado.
+
 ### Fases futuras
 
 - Antes de migracion o escritura: backup fresco.

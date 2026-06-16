@@ -419,7 +419,7 @@ Rutas GET creadas:
 
 - `GET /documentos`
 - `GET /documentos/{id}`
-- `GET /documentos/entidad/{entidad_tipo}/{entidad_id}`
+- `GET /documentos/entidad/{tipo}/{id}`
 
 Alcance real:
 
@@ -454,10 +454,81 @@ Validaciones automaticas:
 - HTTP sin sesion en `/documentos`;
 - `git diff --check`.
 
+## Resultado Fase 4A-C - Upload seguro documental
+
+Estado: `UPLOAD_SEGURO_4A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+
+Backup previo confirmado antes de la prueba local con escritura:
+
+- `src/storage/backups/phase4a_c_20260615_190912_before_document_upload_medisoft_hoteles_import.sql`
+- tamano: `1541523` bytes
+- SHA256: `DF150F705824973621B9A1276980DC73ECB7AE5261B67A5D71E541FE13797446`
+
+Rutas nuevas:
+
+- `GET /documentos/subir`
+- `POST /documentos/subir`
+
+Alcance implementado:
+
+- formulario de carga con `multipart/form-data` y `csrf_field()`;
+- validacion de archivo con `is_uploaded_file`, tamano maximo base de `10 MB`, extension
+  permitida, bloqueo de extensiones peligrosas y MIME real con `finfo`;
+- MIME/extension inicial permitido: PDF, JPG/JPEG, PNG y WEBP;
+- validacion de tipo documental activo si se selecciona;
+- validacion de entidad opcional por `hotel_id` para proveedor, compra, cuenta por pagar,
+  huesped y reservacion;
+- guardado fisico en storage privado bajo
+  `STORAGE_PATH/documentos/hotel_{hotel_id}/YYYY/MM/`;
+- nombre fisico aleatorio y permisos de archivo `0640`;
+- registro en `documentos`;
+- registro opcional en `documento_entidades`;
+- auditoria `documentos.cargado` con `AuditService`;
+- `.gitignore` actualizado para no versionar `src/storage/documentos/`.
+
+Prueba local controlada:
+
+- sesion local de prueba con usuario `1`, hotel `1` (`Los Cedros`) y CSRF controlado;
+- proveedor vinculado: `proveedores.id = 8`, hotel `1`;
+- archivo temporal local: `%TEMP%/phase4a_c_test_upload.pdf`;
+- documento creado: `documentos.id = 1`;
+- relacion creada: `documento_entidades.id = 1`, `proveedor #8`;
+- storage privado:
+  `documentos/hotel_1/2026/06/doc_20260615_191313_37017248e4f9b6e2.pdf`;
+- SHA256 registrado:
+  `18b0855bc03494bd6c3059ac14bf342366b7f3dd598c118fa98cf91f987eac64`.
+
+Conteos posteriores a la prueba:
+
+- `documento_tipos`: `0`;
+- `documentos`: `1`;
+- `documento_entidades`: `1`;
+- `cuentas_por_pagar`: `2`;
+- `cuentas_por_pagar_movimientos`: `0`;
+- `movimientos_caja`: `1403`;
+- `reservacion_pagos`: `18`;
+- `reservacion_abonos`: `3`;
+- `logs_auditoria`: `27`.
+
+Validaciones:
+
+- HTTP sin sesion en `GET /documentos/subir`: redirige a login.
+- HTTP sin sesion en `POST /documentos/subir`: redirige a login.
+- Archivo `.html` invalido: rechazado con mensaje claro y sin crear registros.
+- URL publica directa a `storage/documentos/...`: no sirve el archivo y redirige a login.
+- No se implementaron descargas, edicion, borrado, pagos, abonos, Caja ni `/api/sync`.
+
+Rollback manual de 4A-C:
+
+1. Revertir el commit de codigo 4A-C si hay regresion funcional.
+2. No borrar archivos fisicos sin autorizacion explicita.
+3. Si se desea retirar la prueba local, partir del backup anterior o solicitar autorizacion
+   explicita para una anulacion/reconciliacion puntual de `documentos.id = 1` y su relacion.
+4. Mantener `src/storage/documentos/` fuera de Git.
+
 ## Siguiente cola recomendada
 
-`[COLA_4A_C_UPLOAD_SEGURO_DOCUMENTOS]`
+`[COLA_REVISION_TECNICA_4A]`
 
-Objetivo: disenar e implementar la carga segura de documentos con POST + CSRF,
-validacion MIME/tamano/extension, storage privado y auditoria, sin descarga publica, sin
-borrado fisico, sin Caja, sin pagos, sin abonos y sin `/api/sync`.
+Objetivo: revisar tecnicamente 4A-0, 4A-A, 4A-B y 4A-C antes de descarga segura o
+acciones de borrado. No avanzar a descargas publicas, pagos, Caja, Fase 3D ni `/api/sync`.

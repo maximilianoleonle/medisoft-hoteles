@@ -141,7 +141,7 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 
 ## Nuevo bloque Fase 4A Centro Documental
 
-Estado: `DOCUMENTOS_READ_ONLY_4A_COMPLETADO`.
+Estado: `UPLOAD_SEGURO_4A_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
 Objetivo: crear una fundacion segura para adjuntar, consultar y relacionar documentos
 con proveedor, compra, CxP, huesped, reservacion y trabajador futuro, sin Caja, pagos,
@@ -181,13 +181,36 @@ Resultado 4A-B:
 - Rutas GET creadas:
   - `/documentos`;
   - `/documentos/{id}`;
-  - `/documentos/entidad/{entidad_tipo}/{entidad_id}`.
+  - `/documentos/entidad/{tipo}/{id}`.
 - Navegacion agregada en sidebar solo cuando hay modulos relacionados activos.
 - No se crean uploads, POST, descargas, edicion ni borrado.
 - No se expone `storage_path`, `nombre_archivo` ni rutas internas.
 - Tablas documentales siguen vacias en entorno local.
 - No se tocaron Caja, pagos, abonos, CxP operativa ni `/api/sync`.
-- Siguiente cola recomendada: `[COLA_4A_C_UPLOAD_SEGURO_DOCUMENTOS]`.
+
+Resultado 4A-C:
+
+- Backup previo antes de escritura:
+  `src/storage/backups/phase4a_c_20260615_190912_before_document_upload_medisoft_hoteles_import.sql`.
+- SHA256: `DF150F705824973621B9A1276980DC73ECB7AE5261B67A5D71E541FE13797446`.
+- Tamano: `1541523` bytes.
+- Rutas nuevas:
+  - `GET /documentos/subir`;
+  - `POST /documentos/subir`.
+- Formulario de carga con `multipart/form-data` y CSRF.
+- Validacion de archivo: `is_uploaded_file`, tamano maximo, extension permitida, extensiones
+  peligrosas bloqueadas y MIME real con `finfo`.
+- Tipos permitidos iniciales: PDF, JPG/JPEG, PNG y WEBP.
+- Storage privado bajo `STORAGE_PATH/documentos/hotel_{hotel_id}/YYYY/MM`.
+- No se expone `storage_path` ni `nombre_archivo` en vistas.
+- Se registra metadata en `documentos`, vinculo opcional en `documento_entidades` y
+  auditoria `documentos.cargado`.
+- Prueba controlada: documento `#1` creado en hotel `1`, vinculado a proveedor `#8`.
+- Conteos post-prueba: `documentos=1`, `documento_entidades=1`,
+  `documento_tipos=0`, `cuentas_por_pagar_movimientos=0`, `movimientos_caja=1403`.
+- Archivo `.html` invalido fue rechazado sin crear registros.
+- No hay descarga, edicion, borrado, pagos, abonos, Caja ni `/api/sync`.
+- Siguiente cola recomendada: `[COLA_REVISION_TECNICA_4A]`.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

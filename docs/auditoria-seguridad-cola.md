@@ -120,7 +120,7 @@ Bloque 3C cerrado tecnicamente. Mantener prohibidos pagos, Caja, CxC, nomina ope
 
 ## Fase 4A Centro Documental - auditoria inicial de contrato
 
-Estado: `DOCUMENTOS_READ_ONLY_4A_COMPLETADO`.
+Estado: `UPLOAD_SEGURO_4A_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
 - Riesgo principal: exposicion accidental de documentos privados si se guardan en
   `public_html/uploads`.
@@ -149,7 +149,7 @@ Estado: `DOCUMENTOS_READ_ONLY_4A_COMPLETADO`.
 ### Auditoria 4A-B
 
 - Rutas creadas: solo GET (`/documentos`, `/documentos/{id}`,
-  `/documentos/entidad/{entidad_tipo}/{entidad_id}`).
+  `/documentos/entidad/{tipo}/{id}`).
 - No hay rutas POST, upload, descarga, edicion ni borrado bajo `/documentos`.
 - Acceso sin sesion queda protegido por middleware global de autenticacion.
 - Controlador exige contexto hotelero y modulos relacionados visibles.
@@ -159,6 +159,46 @@ Estado: `DOCUMENTOS_READ_ONLY_4A_COMPLETADO`.
 - Riesgo residual: los vinculos polimorficos solo prueban `hotel_id` de
   `documento_entidades`; la fase de upload debe validar existencia real de cada entidad
   antes de insertar relaciones.
+
+### Auditoria 4A-C
+
+- Rutas nuevas:
+  - `GET /documentos/subir`;
+  - `POST /documentos/subir`.
+- El POST pasa por `DocumentoController::before()`, por lo tanto exige autenticacion,
+  contexto hotelero y modulo relacionado activo.
+- El formulario incluye `csrf_field()` y el controlador llama `validateCSRF()`.
+- El modelo valida `hotel_id > 0` antes de escribir.
+- La entidad opcional se normaliza y se valida contra proveedor, compra, CxP, huesped o
+  reservacion del mismo `hotel_id`.
+- El archivo se valida con:
+  - error de upload;
+  - `is_uploaded_file`;
+  - tamano maximo;
+  - extension simple;
+  - bloqueo de extensiones peligrosas;
+  - MIME real con `finfo`;
+  - coincidencia MIME-extension.
+- El archivo fisico se guarda fuera de `public_html`, bajo `STORAGE_PATH/documentos`.
+- El nombre fisico es aleatorio y no reutiliza el nombre original.
+- El permiso del archivo se fuerza a `0640`.
+- La transaccion inserta `documentos`, opcionalmente `documento_entidades`, y registra
+  auditoria `documentos.cargado`.
+- Si falla la transaccion despues de mover el archivo, el archivo nuevo se elimina como
+  rollback interno de la misma carga.
+- Las vistas no muestran `storage_path` ni `nombre_archivo`.
+- No hay ruta de descarga, edicion ni borrado.
+- La URL directa a `storage/documentos/...` no sirvio el archivo en prueba local.
+- Archivo `.html` invalido fue rechazado sin crear registros.
+- No se detectaron cambios en Caja, pagos, abonos, CxP operativa ni `/api/sync`.
+
+Riesgos residuales 4A-C:
+
+- La descarga segura aun no existe; no debe improvisarse con URLs directas.
+- La prueba local creo `documentos.id=1` y `documento_entidades.id=1`; no borrar sin
+  autorizacion explicita.
+- Los tipos documentales siguen vacios; las cargas usan reglas base hasta definir catalogo.
+- Falta QA manual en navegador para validar flujo visual y mensajes con usuario real.
 
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 

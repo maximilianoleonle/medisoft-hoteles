@@ -83,7 +83,7 @@ Regla:
 
 ## Centro Documental (Fase 4A)
 
-Estado formal: `DOCUMENTOS_READ_ONLY_4A_COMPLETADO`.
+Estado formal: `UPLOAD_SEGURO_4A_COMPLETADO_QA_MANUAL_PENDIENTE`.
 
 Fuente fundacional creada:
 
@@ -93,9 +93,11 @@ Fuente fundacional creada:
 
 Reglas:
 
-- Existen como tablas base vacias desde 4A-A, pero todavia no son fuente operativa de
-  archivos porque no hay uploads, descargas ni adjuntos funcionales expuestos.
+- Existen como tablas base desde 4A-A.
 - 4A-B permite consultar solo metadata segura y relaciones documentales por `hotel_id`.
+- 4A-C permite crear metadata y archivo privado mediante carga manual segura con CSRF.
+- La metadata operativa vive en `documentos` y `documento_entidades`; el binario vive en
+  `STORAGE_PATH/documentos`, no en la base de datos.
 - Los archivos privados deben vivir bajo `STORAGE_PATH/documentos`.
 - `public_html/uploads` no debe ser fuente de documentos privados.
 - `reporte_links` sigue siendo fuente especifica de reportes PDF y no debe fusionarse
@@ -106,10 +108,16 @@ Reglas:
   de proveedor/compra/CxP/huesped/reservacion debe vivir en modelo/servicio.
 - Conteos iniciales post-migracion: `documento_tipos=0`, `documentos=0`,
   `documento_entidades=0`.
+- Conteos post-prueba 4A-C local: `documento_tipos=0`, `documentos=1`,
+  `documento_entidades=1`.
+- Documento de prueba 4A-C: `documentos.id=1`, hotel `1`, vinculado a proveedor `8`.
 - Las vistas read-only no deben mostrar `storage_path`, `nombre_archivo` ni rutas internas.
-- Las rutas documentales actuales son solo GET: `/documentos`, `/documentos/{id}` y
-  `/documentos/entidad/{entidad_tipo}/{entidad_id}`.
-- No hay upload, descarga, edicion ni borrado en 4A-B.
+- Las rutas documentales de consulta son GET: `/documentos`, `/documentos/{id}` y
+  `/documentos/entidad/{tipo}/{id}`.
+- Las rutas documentales de carga son: `GET /documentos/subir` y
+  `POST /documentos/subir`.
+- No hay descarga, edicion ni borrado en 4A-C.
+- `src/storage/documentos/` queda fuera de Git; no se debe versionar storage runtime.
 - No Caja, pagos, abonos, Fase 3D ni `/api/sync`.
 
 ## Personal y Nomina (Fase NP)

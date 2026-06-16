@@ -141,7 +141,7 @@
 
 ## Fase 4A Centro Documental
 
-- Estado formal vigente: `DOCUMENTOS_READ_ONLY_4A_COMPLETADO`.
+- Estado formal vigente: `UPLOAD_SEGURO_4A_COMPLETADO_QA_MANUAL_PENDIENTE`.
 - Centro Documental debe iniciar con storage privado, no con enlaces publicos directos.
 - `public_html/uploads` queda reservado para assets publicos/imagenes ya existentes.
 - El patron de descarga segura de `ReporteLinkController` es la referencia tecnica para
@@ -166,6 +166,19 @@
   (`inventario`, `huespedes`, `reservaciones`) sin crear permisos profundos nuevos.
 - La navegacion `Documentos` se muestra solo si existe al menos un modulo relacionado
   activo en el hotel.
+- 4A-C agrega carga manual segura con `POST /documentos/subir`, CSRF y validaciones en
+  modelo, pero no agrega descarga, edicion ni borrado.
+- El storage de 4A-C queda bajo `STORAGE_PATH/documentos/hotel_{hotel_id}/YYYY/MM` con
+  nombre fisico aleatorio y permisos `0640`.
+- Se bloquean extensiones peligrosas y se valida MIME real con `finfo`; tipos iniciales:
+  PDF, JPG/JPEG, PNG y WEBP.
+- La relacion con entidad se valida en modelo contra la tabla real y el `hotel_id` actual
+  antes de insertar en `documento_entidades`.
+- La auditoria de carga usa `AuditService::record('documentos.cargado')`.
+- `src/storage/documentos/` se ignora en Git porque contiene runtime privado local, no
+  codigo versionado.
+- La descarga segura queda fuera de 4A-C y requiere una fase posterior con controlador
+  autenticado, `realpath` y headers privados.
 - No se permite tocar Caja, pagos, abonos, Fase 3D ni `/api/sync`.
 
 ### Decisiones de diagnostico NP-0
