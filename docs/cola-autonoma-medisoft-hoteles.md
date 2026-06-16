@@ -2,20 +2,32 @@
 
 ## Ultimo mensaje real usado
 
-QA_MANUAL_COMPLETADA_3C: marcar Fase 3C como validada manualmente, sin avanzar a nuevas funcionalidades.
+NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Fase 4A-0 contrato y diagnostico del Centro Documental Base, sin uploads ni POST.
 
 ## Estado vigente
 
-- Bloque actual: Fase 3C CxP.
-- Fase actual: validacion manual final 3C documentada.
+- Bloque actual: Fase 4A Centro Documental Base.
+- Fase actual: 4A-0 contrato y diagnostico.
 - Riesgo: naranja.
-- Estado: `FASE_3C_VALIDADA_MANUALMENTE`.
+- Estado: `CONTRATO_4A_COMPLETADO`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
 - No avanzar a pagos, Caja, Fase 3D ni nuevas funcionalidades.
 - Nota: existen commits de 3C-A/B/C y revisiones posteriores, pero el nuevo reanclaje no los considera cierre formal.
 - Verificacion actual: Docker disponible; `php -l`, health, preflights, HTTP sin sesion, conteos DB antes/despues y `git diff --check` ejecutados.
+
+## Fase 4A Centro Documental
+
+- 4A-0 contrato y diagnostico: completada documentalmente.
+- HEAD al iniciar: `35abdc7 fix(pwa): use hotel branding assets for push notifications`.
+- Git al iniciar: limpio.
+- Patrones detectados: `public_html/uploads` para assets publicos; `storage/reportes` + `ReporteLinkController` como patron privado seguro.
+- No existen tablas generales `documentos`, `documento_entidades` ni `documento_tipos`; existen `reporte_links` y `reporte_link_envios` para reportes PDF.
+- Propuesta: tablas aditivas `documento_tipos`, `documentos`, `documento_entidades`.
+- Storage recomendado: `STORAGE_PATH/documentos/{hotel_id}/{yyyy}/{mm}` con descarga por controlador.
+- Sin uploads, sin POST, sin migraciones aplicadas y sin escrituras en DB durante 4A-0.
+- Siguiente cola recomendada: `[COLA_4A_A_MIGRACION_BASE_DOCUMENTOS]`.
 
 ## Reanclaje Fase 3C
 
@@ -29,9 +41,9 @@ QA_MANUAL_COMPLETADA_3C: marcar Fase 3C como validada manualmente, sin avanzar a
 - Cierre tecnico 3C: completado documentalmente, sin autorizar pagos, abonos, Caja, Fase 3D ni `/api/sync`.
 - QA manual final 3C: reportada por el usuario como OK.
 - Auditoria `2662998`: documentacion de auditoria prematura bajo el reanclaje.
-- Cambios no relacionados pendientes al cierre de auditoria 3C: `src/app/services/PwaPushService.php` y `src/public_html/service-worker.js`; no forman parte del bloque CxP y requieren triage separado.
+- Cambios PWA no relacionados fueron diagnosticados, validados manualmente y commiteados por separado en `35abdc7`.
 - Cambios no relacionados ya separados en `e52766e`: `src/app/controllers/DashboardController.php`, `src/app/controllers/HabitacionController.php`, `src/app/controllers/NotificacionController.php`, `src/app/views/layout/sidebar.php`, `src/app/views/notificaciones/index.php`.
-- Siguiente accion recomendada: triage separado de PWA/no relacionados. No avanzar a pagos, abonos, Caja ni Fase 3D.
+- Siguiente accion recomendada: continuar solo con Fase 4A autorizada. No avanzar a pagos, abonos, Caja ni Fase 3D.
 
 ## Bloque base previo: Fase 3B CxP read-only
 
@@ -192,4 +204,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Siguiente paso formal recomendado: triage separado de PWA/no relacionados. No avanzar a pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Siguiente paso formal recomendado: `[COLA_4A_A_MIGRACION_BASE_DOCUMENTOS]` si se autoriza la migracion base documental. No avanzar a pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

@@ -81,6 +81,26 @@ Regla:
 
 - La ficha de proveedor y su historial son read-only para compras recibidas.
 
+## Centro Documental (Fase 4A)
+
+Estado formal: `CONTRATO_4A_COMPLETADO`.
+
+Fuente propuesta:
+
+- `documento_tipos`;
+- `documentos`;
+- `documento_entidades`.
+
+Reglas:
+
+- No existen aun como fuente operativa general; 4A-0 solo documenta contrato.
+- Los archivos privados deben vivir bajo `STORAGE_PATH/documentos`.
+- `public_html/uploads` no debe ser fuente de documentos privados.
+- `reporte_links` sigue siendo fuente especifica de reportes PDF y no debe fusionarse
+  con Centro Documental en 4A base.
+- Toda relacion documental debe validar `hotel_id` de documento y entidad.
+- No Caja, pagos, abonos, Fase 3D ni `/api/sync`.
+
 ## Personal y Nomina (Fase NP)
 
 Fuente nueva e independiente (modulo de trabajadores):

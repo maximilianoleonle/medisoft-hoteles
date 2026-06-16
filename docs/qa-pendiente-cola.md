@@ -54,7 +54,7 @@ Estado vigente: `FASE_3C_VALIDADA_MANUALMENTE`.
 
 El usuario reporto QA manual completada para 3C-A y 3C-B. Fase 3C-C queda completada tecnicamente con validaciones read-only en health/preflights y SQL de consistencia.
 Revision tecnica 3C completada sin hallazgos bloqueantes: rutas, controlador, modelo, vistas, sidebar, permisos/guards, CSRF, filtros `hotel_id`, CxP `#2`, ausencia de pagos/abonos/Caja y `/api/sync` sin cambios.
-Auditoria seguridad 3C completada sin hallazgos bloqueantes: cero movimientos CxP/pagos/abonos, cero Caja-CxP, `compra_pagos` inexistente y cambios no relacionados fuera del bloque. Quedan pendientes no relacionados para triage separado: `src/app/services/PwaPushService.php` y `src/public_html/service-worker.js`.
+Auditoria seguridad 3C completada sin hallazgos bloqueantes: cero movimientos CxP/pagos/abonos, cero Caja-CxP, `compra_pagos` inexistente y cambios no relacionados fuera del bloque. Los cambios PWA no relacionados fueron validados manualmente y commiteados por separado en `35abdc7`.
 Cierre tecnico 3C completado documentalmente. La QA manual final del bloque 3C fue reportada como OK por el usuario.
 
 ### QA critica
@@ -207,7 +207,41 @@ Cierre tecnico 3C completado documentalmente. La QA manual final del bloque 3C f
 - Sin cambios no relacionados pendientes al iniciar 3C-0.
 - El ajuste visual del modal de check-in tardio fue commiteado en `dc3c150`.
 - Cambios no relacionados ya separados en commit `e52766e`: `src/app/controllers/DashboardController.php`, `src/app/controllers/HabitacionController.php`, `src/app/controllers/NotificacionController.php`, `src/app/views/layout/sidebar.php`, `src/app/views/notificaciones/index.php`.
-- Cambios no relacionados pendientes al cierre 3C: `src/app/services/PwaPushService.php` y `src/public_html/service-worker.js`.
+- Cambios PWA no relacionados resueltos despues del cierre 3C: `src/app/services/PwaPushService.php` y `src/public_html/service-worker.js` quedaron en `35abdc7`.
+
+## QA Fase 4A Centro Documental
+
+Estado vigente: `CONTRATO_4A_COMPLETADO`.
+
+4A-0 no implementa funcionalidad. QA pendiente aplica a fases futuras.
+
+### QA critica futura
+
+- Documento de un hotel no visible en otro hotel.
+- Archivo privado no accesible por URL directa.
+- Descarga sin sesion bloqueada o redirigida.
+- Upload rechaza extension, MIME o tamano invalido.
+- No hay escritura en Caja, pagos, abonos ni CxP operativa.
+- `/api/sync` sigue bloqueado.
+
+### QA funcional futura
+
+- Proveedor, compra, CxP, huesped y reservacion muestran estado vacio documental.
+- Documento adjunto aparece solo en la entidad correcta.
+- Descarga autenticada funciona con permisos.
+
+### QA visual futura
+
+- Estado vacio claro.
+- Lista de documentos compacta y consistente con el sistema hotelero.
+- No mezclar identidad Medisoft SaaS con branding del hotel.
+
+### QA regresion futura
+
+- Fase 3C sigue funcionando.
+- PWA push sigue funcionando.
+- Reportes seguros siguen descargando.
+- Login/logout normal.
 
 ## QA Bloque Personal y Nomina (Fase NP)
 

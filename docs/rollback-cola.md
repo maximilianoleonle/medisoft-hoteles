@@ -218,6 +218,23 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - No revertir ni borrar CxP de prueba (`id=1`, `id=2`) sin autorizacion explicita, backup y estrategia de reconciliacion.
 - No mezclar rollback 3C con cambios PWA/no relacionados.
 - La validacion manual final no requiere rollback de datos; es documentacion de QA reportada por el usuario.
+
+## Fase 4A Centro Documental
+
+### 4A-0 contrato y diagnostico
+
+- Estado vigente: `CONTRATO_4A_COMPLETADO`.
+- Rollback: revertir el commit `docs(phase-4a): define document center foundation contract`.
+- DB: no aplica; no se ejecutaron migraciones ni escrituras.
+- Archivos: no aplica; no se crearon uploads ni rutas funcionales.
+- No tocar Caja, pagos, abonos, Fase 3D ni `/api/sync`.
+
+### Fases futuras
+
+- Antes de migracion o escritura: backup fresco.
+- No borrar archivos subidos sin autorizacion explicita.
+- Preferir baja logica sobre borrado fisico.
+- Revertir por subfase y validar health/preflights.
 - Validacion posterior recomendada cuando Docker este disponible:
   - `docker compose exec -T app php -l app/views/cuentas_por_pagar/generacion_preview.php`;
   - `docker compose exec -T app php tools/saas/health_check_fase_1a.php`;

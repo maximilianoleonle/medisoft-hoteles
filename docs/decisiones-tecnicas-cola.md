@@ -129,7 +129,7 @@
 - No habilita pagos, abonos, Caja, Fase 3D ni cambios en `/api/sync`.
 - La QA manual de 3C-A, 3C-B y cierre final 3C ya fue reportada como OK por el usuario.
 - Cambios no relacionados ya separados en `e52766e`: dashboard, habitaciones, notificaciones, sidebar y vista de notificaciones.
-- Cambios PWA pendientes (`PwaPushService.php`, `service-worker.js`) requieren triage separado y no forman parte de CxP.
+- Cambios PWA no relacionados (`PwaPushService.php`, `service-worker.js`) fueron validados manualmente y commiteados por separado en `35abdc7`; no forman parte de CxP.
 
 ## Fase 3C-C
 
@@ -138,6 +138,20 @@
 - No se agregan rutas, vistas, pagos, abonos, Caja ni cambios en `/api/sync`.
 
 ## Bloque Personal y Nomina (Fase NP)
+
+## Fase 4A Centro Documental
+
+- Estado formal vigente: `CONTRATO_4A_COMPLETADO`.
+- Centro Documental debe iniciar con storage privado, no con enlaces publicos directos.
+- `public_html/uploads` queda reservado para assets publicos/imagenes ya existentes.
+- El patron de descarga segura de `ReporteLinkController` es la referencia tecnica para
+  resolver rutas con `realpath`, limitar raices permitidas y servir con headers privados.
+- Las tablas propuestas son aditivas: `documento_tipos`, `documentos`,
+  `documento_entidades`.
+- La relacion con entidades sera polimorfica; la validacion de pertenencia al mismo
+  `hotel_id` debe vivir en modelo/servicio, no solo en vista.
+- 4A-0 no crea migraciones, no implementa uploads, no crea POST y no escribe datos.
+- No se permite tocar Caja, pagos, abonos, Fase 3D ni `/api/sync`.
 
 ### Decisiones de diagnostico NP-0
 

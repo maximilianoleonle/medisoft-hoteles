@@ -47,7 +47,7 @@ Motivo:
 - No existe tabla `compra_pagos`.
 - `/api/sync` sigue bloqueado por checker.
 - Cambios no relacionados de dashboard/habitaciones/notificaciones quedaron fuera del bloque 3C; al iniciar esta auditoria ya estaban en commit separado `e52766e`.
-- Cambios no relacionados pendientes detectados al cierre: `src/app/services/PwaPushService.php` y `src/public_html/service-worker.js`. No se revisan como parte de 3C, no se revierten y no se incluyen en este commit.
+- Cambios PWA no relacionados detectados al cierre 3C fueron validados manualmente y commiteados por separado en `35abdc7`.
 - QA manual final 3C reportada por el usuario como OK: preview, simulador, bloqueo por CxP existente, links, detalle CxP, origen compra/proveedor, no duplicados, sin pagos, sin abonos, sin Caja y sin movimientos de Caja.
 
 ## Controles revisados
@@ -96,7 +96,7 @@ Motivo:
 - Los checkers ejecutados dentro del contenedor no ven `docs/technical` ni `migrations/` completos por el montaje actual.
 - Verificacion automatica 3C ejecutada con Docker/PHP disponible: `php -l`, health, preflights, SQL read-only, POST sin sesion historico y prueba local controlada.
 - Hay tablas legacy/duplicadas documentadas que no se deben borrar ni fusionar.
-- Hay cambios no relacionados pendientes en Git al cierre de esta auditoria: `src/app/services/PwaPushService.php` y `src/public_html/service-worker.js`. Permanecen fuera del bloque CxP y requieren triage separado porque `service-worker.js` esta en zona protegida del proyecto.
+- Los cambios PWA no relacionados (`src/app/services/PwaPushService.php`, `src/public_html/service-worker.js`) quedaron fuera de CxP y fueron resueltos por separado en `35abdc7`.
 
 ## Riesgos residuales
 
@@ -117,6 +117,20 @@ Bloque 3C cerrado tecnicamente. Mantener prohibidos pagos, Caja, CxC, nomina ope
 - Validar `total > 0`.
 - Registrar auditoria si `AuditService` esta disponible.
 - Mantener movimientos Caja-CxP en cero.
+
+## Fase 4A Centro Documental - auditoria inicial de contrato
+
+Estado: `CONTRATO_4A_COMPLETADO`.
+
+- Riesgo principal: exposicion accidental de documentos privados si se guardan en
+  `public_html/uploads`.
+- Mitigacion definida: usar `STORAGE_PATH/documentos` y descarga por controlador.
+- Patron seguro de referencia: `ReporteLinkController`, con `realpath`, raices
+  permitidas, validacion de hotel/permisos y headers privados.
+- No existen tablas generales `documentos`, `documento_tipos` ni
+  `documento_entidades`; la fase futura debe ser aditiva.
+- 4A-0 no implementa uploads, POST, descargas, migraciones ni escrituras.
+- Prohibido en 4A: Caja, pagos, abonos, Fase 3D y `/api/sync`.
 
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 

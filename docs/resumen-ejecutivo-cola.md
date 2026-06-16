@@ -17,7 +17,7 @@ Estado formal vigente:
 - Cierre tecnico 3C: completado documentalmente.
 - QA manual final 3C: completada por el usuario.
 - Auditoria `2662998`: reclasificada como auditoria prematura/documental.
-- Siguiente accion recomendada: triage separado de cambios PWA/no relacionados. No avanzar a pagos, abonos, Caja ni Fase 3D.
+- Siguiente accion recomendada: continuar solo con Fase 4A autorizada. No avanzar a pagos, abonos, Caja ni Fase 3D.
 
 ## Estado final del bloque autorizado anterior
 
@@ -52,10 +52,10 @@ Estado actual:
 - Auditoria seguridad 3C actual confirma cero movimientos CxP, cero Caja-CxP, `compra_pagos` inexistente, CSRF/guards activos y `/api/sync` bloqueado.
 - Cierre tecnico 3C completado: contrato, simulador, generacion manual, validaciones, revision, auditoria, rollback, fuentes de verdad, QA y warnings quedan documentados.
 - QA manual final 3C reportada como OK: preview, simulador, CxP existente bloqueada, links, detalle CxP, origen compra/proveedor, CxP desde compra recibida, no duplicados, sin pagos, sin abonos, sin Caja y sin movimientos de Caja.
-- Cambios no relacionados pendientes al cierre de auditoria: `src/app/services/PwaPushService.php` y `src/public_html/service-worker.js`; no forman parte de CxP y no se commitean en el bloque 3C.
+- Cambios PWA no relacionados al cierre de auditoria fueron validados manualmente y commiteados por separado en `35abdc7`; no forman parte de CxP.
 - Cambios no relacionados ya separados en `e52766e`: `DashboardController.php`, `HabitacionController.php`, `NotificacionController.php`, `sidebar.php` y `notificaciones/index.php`.
 - QA manual 3C-A/3C-B reportada por el usuario: preview OK, CxP #2 vinculada, detalle CxP OK, origen compra/proveedor visible, sin pagos, sin abonos y sin Caja.
-- Siguiente paso recomendado: triage separado de cambios PWA/no relacionados; no pagos, Caja ni Fase 3D.
+- Siguiente paso recomendado: Fase 4A-A migracion base documental si se autoriza; no pagos, Caja ni Fase 3D.
 - No se implementaron pagos ni Caja.
 - No avanzar a pagos, Caja ni Fase 3D.
 
@@ -137,7 +137,27 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 ## Pendiente antes de avanzar
 
 - No avanzar a pagos, Caja ni Fase 3D sin nuevo mensaje real o cola especifica.
-- La siguiente accion recomendada es triage separado de cambios PWA/no relacionados.
+- La siguiente accion recomendada es Fase 4A-A migracion base documental si se autoriza.
+
+## Nuevo bloque Fase 4A Centro Documental
+
+Estado: `CONTRATO_4A_COMPLETADO`.
+
+Objetivo: crear una fundacion segura para adjuntar, consultar y relacionar documentos
+con proveedor, compra, CxP, huesped, reservacion y trabajador futuro, sin Caja, pagos,
+abonos, Fase 3D ni `/api/sync`.
+
+Resultado 4A-0:
+
+- Git inicial limpio en HEAD `35abdc7`.
+- Diagnostico de uploads publicos: `public_html/uploads` sirve assets publicos.
+- Diagnostico de storage privado: `storage/reportes` y `ReporteLinkController` son el
+  patron de descarga segura.
+- No existen tablas generales `documentos`, `documento_entidades`,
+  `documento_tipos`.
+- Propuesta de tablas aditivas documentada.
+- Siguiente cola recomendada: `[COLA_4A_A_MIGRACION_BASE_DOCUMENTOS]`.
+- No se implementaron uploads, POST, descargas ni migraciones en 4A-0.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

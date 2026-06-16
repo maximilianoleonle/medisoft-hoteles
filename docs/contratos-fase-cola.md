@@ -286,6 +286,45 @@ Estado: `FASE_3C_VALIDADA_MANUALMENTE`.
 - No se autoriza pagos, abonos, Caja, Fase 3D ni cambios en `/api/sync`.
 - Cambios no relacionados quedan fuera del bloque CxP.
 
+## Fase 4A: Centro Documental Base
+
+### Estado
+
+Estado formal vigente: `CONTRATO_4A_COMPLETADO`.
+
+### Objetivo
+
+Crear una fundacion segura para adjuntar, consultar y relacionar documentos con
+proveedores, compras, CxP, huespedes, reservaciones y trabajadores futuros, sin Caja,
+pagos, abonos, Fase 3D ni `/api/sync`.
+
+### Alcance 4A-0
+
+- Diagnostico de infraestructura documental/uploads.
+- Revision de almacenamiento local, guards, permisos y rutas.
+- Propuesta de tablas base.
+- Contrato, semaforo, Definition of Done, QA y rollback.
+- Sin uploads, sin POST, sin migraciones aplicadas, sin escrituras en DB.
+
+### Propuesta base
+
+- `documento_tipos`: catalogo global/por hotel de tipos.
+- `documentos`: metadata del archivo, `hotel_id`, storage privado, MIME, tamano,
+  hash, estado y autoria.
+- `documento_entidades`: relacion polimorfica con `proveedor`, `compra`,
+  `cuenta_por_pagar`, `huesped`, `reservacion` y `trabajador`.
+
+### Regla de seguridad
+
+El almacenamiento predeterminado debe ser privado en `STORAGE_PATH/documentos`, con
+descarga por controlador autenticado y validacion de `hotel_id`. No usar
+`public_html/uploads` para documentos privados.
+
+### Siguiente paso
+
+`[COLA_4A_A_MIGRACION_BASE_DOCUMENTOS]`, solo si se autoriza crear migracion
+idempotente y no destructiva.
+
 ## Bloque Personal y Nomina (Fase NP): modulo independiente de trabajadores
 
 ### Objetivo
