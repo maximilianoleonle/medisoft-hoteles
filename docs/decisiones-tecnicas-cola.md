@@ -863,3 +863,13 @@
 - Cualquier automatizacion futura requiere contrato nuevo, backup y QA manual explicita.
 - La QA manual de MANT-G queda diferida y documentada, sin bloquear otros bloques
   independientes por instruccion del usuario.
+
+## Decision LIM-0
+
+- Limpieza se trata como bloque independiente de bajo riesgo antes de cualquier
+  automatizacion.
+- `habitaciones.estado = limpieza` sigue siendo la fuente de verdad operativa.
+- Las tareas de categoria `limpieza` solo documentan seguimiento y no liberan
+  habitaciones por si mismas.
+- La primera implementacion futura debe ser LIM-A read-only, no una accion POST.
+- Inventario automatico por limpieza queda congelado hasta contrato especifico.

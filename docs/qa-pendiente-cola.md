@@ -1216,3 +1216,17 @@ instruccion del usuario.
 - Antes de cualquier automatizacion futura, ejecutar QA MANT-G-B-A y documentar IDs
   usados.
 - No avanzar a cron, creacion automatica ni acciones masivas sin contrato nuevo.
+
+## QA Bloque Limpieza Operativa (Fase LIM)
+
+### Estado LIM-0
+
+- Contrato de limpieza operativa completado.
+- No requiere QA de navegador porque no agrega codigo, rutas ni DB.
+- QA futura LIM-A:
+  - abrir el reporte read-only de limpieza;
+  - confirmar filtro por hotel;
+  - confirmar estado vacio o listado de habitaciones en limpieza;
+  - confirmar enlaces GET seguros a habitacion/tareas;
+  - confirmar que no hay POST, liberacion automatica, Caja, pagos, abonos, nomina,
+    offline ni `/api/sync`.

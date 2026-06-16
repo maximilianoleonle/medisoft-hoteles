@@ -1098,3 +1098,12 @@ Resultado MANT-G-F:
 - QA manual real queda pendiente/diferida.
 - No se autoriza automatizacion, acciones masivas, cron, Caja, pagos, abonos, nomina,
   CxP operativa, offline ni `/api/sync`.
+
+Resultado LIM-0:
+
+- Estado tecnico: `CONTRATO_LIM_0_LIMPIEZA_OPERATIVA_COMPLETADO`.
+- Documento: `docs/fase_LIM_0_contrato_limpieza_operativa.md`.
+- Se diagnostica limpieza como estado operativo existente de habitaciones.
+- Se define que tareas de limpieza solo son seguimiento y no fuente de disponibilidad.
+- No se modifica codigo, DB, rutas, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- Siguiente paso recomendado: LIM-A reporte read-only de limpieza.

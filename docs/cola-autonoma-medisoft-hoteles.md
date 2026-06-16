@@ -991,3 +991,13 @@ agregar funcionalidades nuevas.
 - QA manual queda diferida.
 - Siguiente accion segura: ejecutar QA manual MANT-G o abrir contrato nuevo para un
   bloque independiente.
+
+## Contrato LIM-0 limpieza operativa
+
+- Estado formal: `CONTRATO_LIM_0_LIMPIEZA_OPERATIVA_COMPLETADO`.
+- Documento creado: `docs/fase_LIM_0_contrato_limpieza_operativa.md`.
+- Diagnostica estado `limpieza`, flujo de liberacion existente, tareas de categoria
+  limpieza y riesgos de inventario/offline.
+- No modifica codigo, DB, rutas, modelos, vistas, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.
+- Siguiente accion segura: LIM-A reporte GET/read-only de limpieza.

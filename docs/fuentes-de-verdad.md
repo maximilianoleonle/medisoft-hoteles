@@ -511,3 +511,12 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   - `tools/saas/preflight_mantenimiento_operativo.php`;
   - `tools/saas/health_check_fase_1a.php`.
 - No hay fuente de verdad en Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+
+### LIM-0 limpieza operativa
+
+- Fuente de verdad documental: `docs/fase_LIM_0_contrato_limpieza_operativa.md`.
+- Fuente de verdad operativa:
+  - `habitaciones.estado` para disponibilidad fisica;
+  - `reservaciones` y `reservacion_habitaciones` para checkout;
+  - `tareas_operativas` y `tarea_eventos` solo como seguimiento.
+- `movimientos_caja`, pagos, abonos, nomina, offline y `/api/sync` no participan.

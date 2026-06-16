@@ -966,3 +966,12 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-mant): close maintenance task linkage block`.
 - DB: no aplica; es cierre documental.
 - Mantener intacto MANT-G-A/MANT-G-B-A salvo que se reviertan sus commits especificos.
+
+### LIM-0 contrato limpieza operativa
+
+- Rollback documental: revertir el commit
+  `docs(phase-lim): define housekeeping operations contract`.
+- DB: no aplica; LIM-0 no crea migraciones, rutas, modelos ni datos.
+- Codigo: no aplica.
+- No tocar habitaciones, reservaciones, tareas, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.

@@ -1086,3 +1086,14 @@ Estado: `BLOQUE_MANT_G_TAREAS_DESDE_MANTENIMIENTO_CERRADO_QA_DIFERIDA`.
 - No hay automatizacion, cron, accion masiva, Caja, pagos, abonos, nomina ni CxP
   operativa.
 - Riesgo residual: QA manual diferida por instruccion del usuario.
+
+## Auditoria LIM-0
+
+Estado: `CONTRATO_LIM_0_LIMPIEZA_OPERATIVA_COMPLETADO`.
+
+- Contrato documental sin cambios de codigo ni DB.
+- Riesgo principal futuro: liberar habitaciones automaticamente sin revision humana.
+- Mitigacion: LIM-0 prohibe automatizacion y exige fases read-only primero.
+- Riesgo principal futuro: reactivar descuentos automaticos de inventario por limpieza.
+- Mitigacion: inventario automatico queda fuera de alcance hasta contrato especifico.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.

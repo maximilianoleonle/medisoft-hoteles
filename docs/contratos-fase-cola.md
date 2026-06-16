@@ -1261,3 +1261,19 @@ Estado formal vigente: `CREACION_MANUAL_TAREA_MANT_G_B_A_COMPLETADA_QA_DIFERIDA`
 - Bloquea duplicados activos por mantenimiento.
 - No cambia habitaciones ni mantenimientos.
 - QA manual queda diferida.
+
+## Bloque Limpieza Operativa (Fase LIM)
+
+### Estado LIM-0
+
+Estado formal vigente: `CONTRATO_LIM_0_LIMPIEZA_OPERATIVA_COMPLETADO`.
+
+- Documento: `docs/fase_LIM_0_contrato_limpieza_operativa.md`.
+- Define contrato para evolucionar limpieza sin tocar disponibilidad automaticamente.
+- Reconoce `habitaciones.estado = limpieza` como fuente de verdad actual.
+- Reconoce `tareas_operativas` como seguimiento, no como autoridad para liberar
+  habitaciones.
+- No implementa codigo, rutas, modelos, migraciones ni escrituras.
+- Prohibe automatizar liberacion, reactivar inventario automatico, Caja, pagos, abonos,
+  nomina, offline y `/api/sync`.
+- Siguiente accion segura: LIM-A reporte GET/read-only de limpieza.
