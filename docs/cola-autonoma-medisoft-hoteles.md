@@ -942,3 +942,14 @@ agregar funcionalidades nuevas.
 - No autoriza automatizacion, cron, cambios de disponibilidad, Caja, pagos, abonos,
   nomina, offline ni `/api/sync`.
 - Siguiente accion segura: `[COLA_MANT_G_A_TAREAS_CONTEXTUALES_MANTENIMIENTO]`.
+
+## MANT-G-A tareas contextuales desde mantenimiento
+
+- Estado formal: `TAREAS_CONTEXTUALES_MANT_G_A_COMPLETADAS_QA_DIFERIDA`.
+- Documento creado: `docs/fase_MANT_G_A_tareas_contextuales_mantenimiento.md`.
+- Extiende lectura contextual de tareas para entidad `mantenimiento`.
+- El preview `GET /reportes/mantenimiento-programado` muestra tareas vinculadas si
+  existen.
+- No crea tareas, no agrega POST, no cambia habitaciones/mantenimientos y no toca Caja,
+  pagos, abonos, nomina, offline ni `/api/sync`.
+- Siguiente accion segura: contrato MANT-G-B antes de cualquier creacion manual.

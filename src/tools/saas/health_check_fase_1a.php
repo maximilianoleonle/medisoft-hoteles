@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A/MANT-E-A.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A/MANT-E-A/MANT-G-A.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -844,7 +844,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A-4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A/MANT-E-A - Medisoft Hoteles\n";
+echo "Health check Fase 1A-4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A/MANT-E-A/MANT-G-A - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -5100,6 +5100,9 @@ if (!is_file($routesPath)) {
     $mantOpModelCode = is_file($appRoot . '/app/models/Mantenimiento.php')
         ? (string) file_get_contents($appRoot . '/app/models/Mantenimiento.php')
         : '';
+    $mantTaskModelCode = is_file($appRoot . '/app/models/TareaOperativa.php')
+        ? (string) file_get_contents($appRoot . '/app/models/TareaOperativa.php')
+        : '';
     $mantOpViewCode = is_file($appRoot . '/app/views/habitaciones/ver.php')
         ? (string) file_get_contents($appRoot . '/app/views/habitaciones/ver.php')
         : '';
@@ -5226,15 +5229,32 @@ if (!is_file($routesPath)) {
     if (
         $mantPreviewControllerBody !== ''
         && strpos($mantPreviewControllerBody, 'previewProgramados') !== false
+        && strpos($mantPreviewControllerBody, 'TareaOperativa') !== false
+        && strpos($mantPreviewControllerBody, "listarPorEntidadHotel(\$hotelId, 'mantenimiento'") !== false
         && strpos($mantPreviewControllerBody, 'View::renderTemplate') !== false
         && strpos($mantPreviewControllerBody, 'activarMantenimientosPendientes') === false
         && hcCodeBodyIsReadOnly($mantPreviewControllerBody)
     ) {
-        hcOk('ReportesController MANT-D-A expone preview GET/read-only sin activar pendientes.');
+        hcOk('ReportesController MANT-D-A/MANT-G-A expone preview GET/read-only con tareas vinculadas sin activar pendientes.');
     } else {
         hcError(
-            'ReportesController MANT-D-A no muestra contrato read-only completo.',
-            'Mantener solo consulta previewProgramados, render de vista y ausencia de activacion/escrituras.'
+            'ReportesController MANT-D-A/MANT-G-A no muestra contrato read-only completo.',
+            'Mantener previewProgramados, tareas vinculadas read-only, render de vista y ausencia de activacion/escrituras.'
+        );
+    }
+
+    if (
+        $mantTaskModelCode !== ''
+        && strpos($mantTaskModelCode, "'mantenimiento' => 't.mantenimiento_id'") !== false
+        && strpos($mantTaskModelCode, 'function listarPorEntidadHotel') !== false
+        && strpos($mantTaskModelCode, 'WHERE t.hotel_id = ?') !== false
+        && strpos($mantTaskModelCode, 'movimientos_caja') === false
+    ) {
+        hcOk('TareaOperativa MANT-G-A permite lectura contextual por mantenimiento con hotel_id.');
+    } else {
+        hcError(
+            'TareaOperativa MANT-G-A no muestra lectura contextual por mantenimiento.',
+            'Agregar solo lectura por mantenimiento_id, scoped por hotel_id y sin Caja.'
         );
     }
 
@@ -5317,16 +5337,18 @@ if (!is_file($routesPath)) {
         && strpos($mantOpPreviewViewCode, "url('reportes/mantenimiento-programado") !== false
         && strpos($mantOpPreviewViewCode, "url('habitaciones/activar-mantenimiento-programado/'") !== false
         && strpos($mantOpPreviewViewCode, "can('habitaciones.mantenimiento')") !== false
+        && strpos($mantOpPreviewViewCode, 'tareas_vinculadas') !== false
+        && strpos($mantOpPreviewViewCode, "url('tareas/'") !== false
         && strpos($mantOpPreviewViewCode, 'method="POST"') !== false
         && strpos($mantOpPreviewViewCode, 'csrf_field()') !== false
         && strpos($mantOpPreviewViewCode, 'activarMantenimientosPendientes') === false
         && strpos($mantOpPreviewViewCode, '/api/sync') !== false
     ) {
-        hcOk('Vista MANT-D-A/MANT-E-A mantiene preview navegable y accion manual con permiso/CSRF sin /api/sync.');
+        hcOk('Vista MANT-D-A/MANT-E-A/MANT-G-A mantiene preview, accion manual existente y tareas vinculadas read-only sin /api/sync.');
     } else {
         hcError(
-            'Vista MANT-D-A/MANT-E-A no muestra contrato visual completo.',
-            'Revisar estado vacio, enlaces GET, boton solo con permiso, CSRF, ausencia de activacion masiva y nota de /api/sync.'
+            'Vista MANT-D-A/MANT-E-A/MANT-G-A no muestra contrato visual completo.',
+            'Revisar estado vacio, enlaces GET, boton existente con permiso/CSRF, tareas vinculadas y nota de /api/sync.'
         );
     }
 
@@ -5421,6 +5443,49 @@ if (!is_file($routesPath)) {
             hcWarning(
                 'MANT-C-A datos: mantenimientos programados solapados = ' . (string)$mantScheduledOverlaps . '.',
                 'Revisar solapes historicos antes de automatizar disponibilidad.'
+            );
+        }
+
+        if (hcTableExists($pdo, $database, 'tareas_operativas')) {
+            $mantTasksMissingMaintenance = hcCountScalar(
+                $pdo,
+                "SELECT COUNT(*)
+                 FROM tareas_operativas t
+                 LEFT JOIN mantenimientos_habitaciones m
+                   ON m.id = t.mantenimiento_id
+                 WHERE t.mantenimiento_id IS NOT NULL
+                   AND m.id IS NULL"
+            );
+            if ($mantTasksMissingMaintenance === 0) {
+                hcOk('MANT-G-A datos: tareas con mantenimiento inexistente = 0.');
+            } else {
+                hcError(
+                    'MANT-G-A datos: tareas con mantenimiento inexistente = ' . (string)$mantTasksMissingMaintenance . '.',
+                    'Reconciliar mantenimiento_id antes de exponer enlaces contextuales.'
+                );
+            }
+
+            $mantTasksCrossHotel = hcCountScalar(
+                $pdo,
+                "SELECT COUNT(*)
+                 FROM tareas_operativas t
+                 JOIN mantenimientos_habitaciones m
+                   ON m.id = t.mantenimiento_id
+                 WHERE t.mantenimiento_id IS NOT NULL
+                   AND m.hotel_id <> t.hotel_id"
+            );
+            if ($mantTasksCrossHotel === 0) {
+                hcOk('MANT-G-A datos: tareas con mantenimiento de otro hotel = 0.');
+            } else {
+                hcError(
+                    'MANT-G-A datos: tareas con mantenimiento de otro hotel = ' . (string)$mantTasksCrossHotel . '.',
+                    'Bloquear vistas contextuales hasta alinear hotel_id.'
+                );
+            }
+        } else {
+            hcWarning(
+                'MANT-G-A no puede validar tareas vinculadas porque falta tareas_operativas.',
+                'Aplicar TLM-A antes de usar tareas contextuales de mantenimiento.'
             );
         }
     }

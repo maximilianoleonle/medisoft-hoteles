@@ -1056,3 +1056,15 @@ Resultado MANT-G-0:
 - No se modifica codigo, DB, rutas, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - Siguiente paso recomendado: MANT-G-A con lectura contextual o creacion manual
   estrictamente controlada desde mantenimiento.
+
+Resultado MANT-G-A:
+
+- Estado tecnico: `TAREAS_CONTEXTUALES_MANT_G_A_COMPLETADAS_QA_DIFERIDA`.
+- Documento: `docs/fase_MANT_G_A_tareas_contextuales_mantenimiento.md`.
+- El preview de mantenimiento programado ahora muestra tareas vinculadas por
+  `mantenimiento_id`, si existen.
+- La integracion es GET/read-only y no crea tareas.
+- No hay rutas nuevas, POST nuevos, Caja, pagos, abonos, nomina, CxP operativa, offline
+  ni `/api/sync`.
+- Health y preflight pasan con `ERROR: 0`.
+- QA manual queda diferida.

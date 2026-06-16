@@ -1171,3 +1171,15 @@ instruccion del usuario.
   - confirmar que no cambia `habitaciones.estado`;
   - confirmar que no cambia `mantenimientos_habitaciones.estado`;
   - confirmar que no hay Caja, pagos, abonos, nomina ni cambios en `/api/sync`.
+
+### Estado MANT-G-A
+
+- Tareas contextuales desde mantenimiento implementadas en modo read-only.
+- QA manual diferida por instruccion del usuario.
+- Probar `/reportes/mantenimiento-programado`.
+- Confirmar estado vacio "Sin tareas vinculadas" cuando no hay tareas.
+- Confirmar enlace a `GET /tareas/{id}` si existe una tarea con `mantenimiento_id`.
+- Confirmar que no hay boton de crear tarea desde mantenimiento.
+- Confirmar que no cambia `habitaciones.estado`.
+- Confirmar que no cambia `mantenimientos_habitaciones.estado`.
+- Confirmar que no hay Caja, pagos, abonos, nomina ni cambios en `/api/sync`.

@@ -951,3 +951,14 @@ Estado: `CONTRATO_MANT_G_0_TAREAS_DESDE_MANTENIMIENTO_COMPLETADO`.
 - No automatiza tareas al activar mantenimiento.
 - No hay Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - Siguiente accion segura: MANT-G-A con alcance reducido y verificable.
+
+## Checkpoint tecnico MANT-G-A
+
+Estado: `TAREAS_CONTEXTUALES_MANT_G_A_COMPLETADAS_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_G_A_tareas_contextuales_mantenimiento.md`.
+- Se agrega lectura contextual de tareas vinculadas en el preview de mantenimiento
+  programado.
+- No hay rutas nuevas, POST nuevos, creacion de tareas ni automatizacion.
+- Verificaciones automaticas pasan con `ERROR: 0`.
+- QA manual queda diferida.

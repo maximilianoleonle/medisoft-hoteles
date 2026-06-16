@@ -1226,3 +1226,15 @@ Estado formal vigente: `CONTRATO_MANT_G_0_TAREAS_DESDE_MANTENIMIENTO_COMPLETADO`
 - No implementa rutas, POST, migraciones, automatizaciones ni escrituras.
 - Siguiente accion segura: MANT-G-A lectura contextual o creacion manual controlada de
   tarea vinculada a mantenimiento.
+
+### Estado MANT-G-A
+
+Estado formal vigente: `TAREAS_CONTEXTUALES_MANT_G_A_COMPLETADAS_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_G_A_tareas_contextuales_mantenimiento.md`.
+- Implementa lectura contextual de tareas vinculadas a mantenimiento desde el preview
+  `GET /reportes/mantenimiento-programado`.
+- No agrega rutas nuevas ni POST nuevos.
+- No crea tareas, no cambia habitaciones y no cambia mantenimientos.
+- Checkers pasan con `ERROR: 0`.
+- QA manual queda diferida.

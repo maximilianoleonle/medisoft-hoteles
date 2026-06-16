@@ -1033,3 +1033,16 @@ Estado: `CONTRATO_MANT_G_0_TAREAS_DESDE_MANTENIMIENTO_COMPLETADO`.
 - Mitigacion futura: validacion por `hotel_id`, `mantenimiento_id`, estado y origen antes
   de crear.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.
+
+## Auditoria MANT-G-A
+
+Estado: `TAREAS_CONTEXTUALES_MANT_G_A_COMPLETADAS_QA_DIFERIDA`.
+
+- La integracion es GET/read-only.
+- Las tareas vinculadas se consultan por `hotel_id` y `mantenimiento_id`.
+- La vista solo muestra enlaces GET al detalle de tarea.
+- No hay POST nuevo ni boton para crear tareas desde mantenimiento.
+- No cambia `habitaciones.estado` ni `mantenimientos_habitaciones.estado`.
+- Checkers validan tareas con mantenimiento inexistente y tareas con mantenimiento de
+  otro hotel en cero.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.

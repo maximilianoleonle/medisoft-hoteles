@@ -172,6 +172,7 @@ class TareaOperativa extends Model
         $columnas = [
             'habitacion' => 't.habitacion_id',
             'trabajador' => 't.trabajador_id',
+            'mantenimiento' => 't.mantenimiento_id',
         ];
 
         if (!isset($columnas[$entidad])) {
@@ -188,6 +189,7 @@ class TareaOperativa extends Model
                     t.estado,
                     t.habitacion_id,
                     t.trabajador_id,
+                    t.mantenimiento_id,
                     t.fecha_programada,
                     t.fecha_limite,
                     t.fecha_inicio,

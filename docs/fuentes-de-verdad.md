@@ -463,3 +463,15 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - `tareas_operativas.mantenimiento_id` es enlace contextual, no autorizacion para cambiar
   estados de mantenimiento o habitacion.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.
+
+### MANT-G-A tareas contextuales desde mantenimiento
+
+- No crea fuente nueva.
+- El preview lee:
+  - `mantenimientos_habitaciones` para programados vencidos/proximos;
+  - `habitaciones` para contexto de habitacion;
+  - `tareas_operativas` para tareas vinculadas por `mantenimiento_id`;
+  - `tarea_eventos` solo indirectamente desde el detalle de tarea existente.
+- La presencia o ausencia de una tarea vinculada no modifica disponibilidad ni estado de
+  mantenimiento.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.

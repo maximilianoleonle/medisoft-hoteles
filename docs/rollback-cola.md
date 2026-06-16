@@ -929,3 +929,14 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - DB: no aplica; MANT-G-0 no crea migraciones, rutas, modelos ni datos.
 - Codigo: no aplica.
 - No borrar ni modificar tareas, mantenimientos o habitaciones.
+
+### MANT-G-A tareas contextuales desde mantenimiento
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-mant): show maintenance linked tasks`.
+- DB: no aplica; MANT-G-A no crea migraciones ni escribe datos.
+- El rollback retiraria soporte contextual `mantenimiento` en
+  `TareaOperativa::listarPorEntidadHotel()`, carga desde `ReportesController` y bloque
+  visual de tareas vinculadas en el preview.
+- No borrar tareas, mantenimientos, habitaciones ni eventos.
+- No tocar Caja, pagos, abonos, nomina ni `/api/sync`.

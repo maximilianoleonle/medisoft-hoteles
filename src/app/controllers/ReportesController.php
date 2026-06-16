@@ -2153,11 +2153,24 @@ public function mantenimientoProgramadoAction() {
     $dias = max(0, min(90, $dias));
 
     require_once __DIR__ . '/../models/Mantenimiento.php';
+    require_once __DIR__ . '/../models/TareaOperativa.php';
     $mantenimientoModel = new Mantenimiento();
+    $tareaModel = new TareaOperativa();
+    $preview = $mantenimientoModel->previewProgramados($dias);
+    $hotelId = (int)$this->hotelIdActual();
+
+    if ($hotelId > 0 && isset($preview['registros']) && is_array($preview['registros'])) {
+        foreach ($preview['registros'] as $index => $registro) {
+            $mantenimientoId = (int)($registro['id'] ?? 0);
+            $preview['registros'][$index]['tareas_vinculadas'] = $mantenimientoId > 0
+                ? $tareaModel->listarPorEntidadHotel($hotelId, 'mantenimiento', $mantenimientoId, 3)
+                : [];
+        }
+    }
 
     View::renderTemplate('reportes/mantenimiento-programado', [
         'title' => 'Mantenimiento programado - ' . current_hotel_display_name(),
-        'preview' => $mantenimientoModel->previewProgramados($dias),
+        'preview' => $preview,
         'dias' => $dias,
     ]);
 }

@@ -78,6 +78,10 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
 .mant-prog-pill.is-neutral{background:#e0f2fe;color:#075985}
 .mant-prog-warnings{display:flex;flex-direction:column;gap:5px}
 .mant-prog-warning{font-size:12px;color:#475569;background:#f8fafc;border:1px solid #e5e7eb;border-radius:7px;padding:6px 8px;font-weight:700}
+.mant-prog-linked-tasks{margin-top:9px;display:flex;flex-direction:column;gap:5px}
+.mant-prog-linked-task{display:block;border:1px solid #e5e7eb;border-radius:7px;background:#fff;color:#172033;text-decoration:none;padding:7px 8px;font-size:12px;font-weight:800}
+.mant-prog-linked-task span{display:block;color:#64748b;font-size:11px;font-weight:700;margin-top:2px}
+.mant-prog-linked-empty{margin-top:9px;color:#94a3b8;font-size:12px;font-weight:800}
 .mant-prog-inline-form{margin-top:9px}
 .mant-prog-activate{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:7px;background:#0f766e;color:#fff;font-size:12px;font-weight:900;padding:8px 10px;cursor:pointer}
 .mant-prog-activate:hover{background:#115e59}
@@ -147,6 +151,7 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
                             $categoria = (string)($item['categoria_preview'] ?? 'proximo');
                             $pillClass = $categoriaClass[$categoria] ?? 'is-neutral';
                             $advertencias = is_array($item['preview_advertencias'] ?? null) ? $item['preview_advertencias'] : [];
+                            $tareasVinculadas = is_array($item['tareas_vinculadas'] ?? null) ? $item['tareas_vinculadas'] : [];
                             ?>
                             <tr>
                                 <td>
@@ -194,6 +199,21 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
                                     <?php endif; ?>
                                     <?php if (!empty($item['motivo'])): ?>
                                         <div class="mant-prog-muted"><?= mant_prog_safe($item['motivo']) ?></div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($tareasVinculadas)): ?>
+                                        <div class="mant-prog-linked-tasks" aria-label="Tareas vinculadas">
+                                            <?php foreach ($tareasVinculadas as $tarea): ?>
+                                                <a class="mant-prog-linked-task" href="<?= url('tareas/' . (int)($tarea['id'] ?? 0)) ?>">
+                                                    <?= mant_prog_safe($tarea['titulo'] ?? ('Tarea #' . (int)($tarea['id'] ?? 0))) ?>
+                                                    <span>
+                                                        <?= mant_prog_safe(ucfirst((string)($tarea['estado'] ?? ''))) ?>
+                                                        - <?= mant_prog_safe(ucfirst((string)($tarea['prioridad'] ?? ''))) ?>
+                                                    </span>
+                                                </a>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="mant-prog-linked-empty">Sin tareas vinculadas.</div>
                                     <?php endif; ?>
                                 </td>
                             </tr>

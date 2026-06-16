@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase MANT-B/MANT-C para mantenimiento operativo existente.
+ * Preflight Fase MANT-B/MANT-C/MANT-D/MANT-E/MANT-G para mantenimiento operativo existente.
  *
  * Solo lectura. No crea rutas, migraciones ni datos.
  * Valida guardas del POST existente de mantenimiento de habitaciones y
@@ -168,10 +168,11 @@ $routesPath = $appRoot . '/config/routes.php';
 $controllerPath = $appRoot . '/app/controllers/HabitacionController.php';
 $reportesControllerPath = $appRoot . '/app/controllers/ReportesController.php';
 $modelPath = $appRoot . '/app/models/Mantenimiento.php';
+$taskModelPath = $appRoot . '/app/models/TareaOperativa.php';
 $viewPath = $appRoot . '/app/views/habitaciones/ver.php';
 $previewViewPath = $appRoot . '/app/views/reportes/mantenimiento-programado.php';
 
-echo "Preflight Fase MANT-B/MANT-C-A/MANT-D-A/MANT-E-A - Mantenimiento operativo existente\n";
+echo "Preflight Fase MANT-B/MANT-C-A/MANT-D-A/MANT-E-A/MANT-G-A - Mantenimiento operativo existente\n";
 echo "=====================================================\n";
 
 if (is_file($configPath)) {
@@ -285,6 +286,40 @@ if ($pdo instanceof PDO) {
     } else {
         mantOpWarning('Mantenimientos programados solapados por habitacion/hotel = ' . (string)$scheduledOverlaps . '.', 'Revisar solapes historicos antes de automatizar disponibilidad.');
     }
+
+    if (mantOpTableExists($pdo, $database, 'tareas_operativas')) {
+        $tasksMissingMaintenance = mantOpCountScalar(
+            $pdo,
+            "SELECT COUNT(*)
+             FROM tareas_operativas t
+             LEFT JOIN mantenimientos_habitaciones m
+               ON m.id = t.mantenimiento_id
+             WHERE t.mantenimiento_id IS NOT NULL
+               AND m.id IS NULL"
+        );
+        if ($tasksMissingMaintenance === 0) {
+            mantOpOk('Tareas vinculadas a mantenimiento inexistente = 0.');
+        } else {
+            mantOpError('Tareas vinculadas a mantenimiento inexistente = ' . (string)$tasksMissingMaintenance . '.', 'Reconciliar mantenimiento_id antes de mostrar enlaces contextuales.');
+        }
+
+        $tasksCrossHotelMaintenance = mantOpCountScalar(
+            $pdo,
+            "SELECT COUNT(*)
+             FROM tareas_operativas t
+             JOIN mantenimientos_habitaciones m
+               ON m.id = t.mantenimiento_id
+             WHERE t.mantenimiento_id IS NOT NULL
+               AND m.hotel_id <> t.hotel_id"
+        );
+        if ($tasksCrossHotelMaintenance === 0) {
+            mantOpOk('Tareas vinculadas a mantenimiento de otro hotel = 0.');
+        } else {
+            mantOpError('Tareas vinculadas a mantenimiento de otro hotel = ' . (string)$tasksCrossHotelMaintenance . '.', 'Bloquear vistas contextuales hasta alinear hotel_id.');
+        }
+    } else {
+        mantOpWarning('No existe tareas_operativas; MANT-G-A contextual queda sin datos.', 'Aplicar TLM-A antes de usar tareas vinculadas a mantenimiento.');
+    }
 }
 
 $routes = mantOpParseRoutes($routesPath);
@@ -322,6 +357,7 @@ if (mantOpRoutePatternExists($routes, '/^reportes\/mantenimiento-programado$/', 
 $controllerCode = is_file($controllerPath) ? (string) file_get_contents($controllerPath) : '';
 $reportesControllerCode = is_file($reportesControllerPath) ? (string) file_get_contents($reportesControllerPath) : '';
 $modelCode = is_file($modelPath) ? (string) file_get_contents($modelPath) : '';
+$taskModelCode = is_file($taskModelPath) ? (string) file_get_contents($taskModelPath) : '';
 $viewCode = is_file($viewPath) ? (string) file_get_contents($viewPath) : '';
 $previewViewCode = is_file($previewViewPath) ? (string) file_get_contents($previewViewPath) : '';
 $mantBody = mantOpMethodBody($controllerCode, 'mantenimientoAction');
@@ -398,12 +434,26 @@ $activateModelBody = mantOpMethodBody($modelCode, 'activarProgramadoManual');
 if (
     $previewControllerBody !== ''
     && strpos($previewControllerBody, 'previewProgramados') !== false
+    && strpos($previewControllerBody, 'TareaOperativa') !== false
+    && strpos($previewControllerBody, "listarPorEntidadHotel(\$hotelId, 'mantenimiento'") !== false
     && stripos($previewControllerBody, 'activarMantenimientosPendientes') === false
     && !preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE)\b/i', $previewControllerBody)
 ) {
-    mantOpOk('ReportesController::mantenimientoProgramadoAction es GET/read-only y no activa pendientes.');
+    mantOpOk('ReportesController::mantenimientoProgramadoAction es GET/read-only, anexa tareas MANT-G-A y no activa pendientes.');
 } else {
-    mantOpError('ReportesController::mantenimientoProgramadoAction no muestra contrato read-only MANT-D-A.', 'Revisar que solo consulte previewProgramados y no active pendientes.');
+    mantOpError('ReportesController::mantenimientoProgramadoAction no muestra contrato read-only MANT-D-A/MANT-G-A.', 'Revisar previewProgramados, tareas vinculadas read-only y ausencia de escrituras.');
+}
+
+if (
+    $taskModelCode !== ''
+    && strpos($taskModelCode, "'mantenimiento' => 't.mantenimiento_id'") !== false
+    && strpos($taskModelCode, 'function listarPorEntidadHotel') !== false
+    && strpos($taskModelCode, 'WHERE t.hotel_id = ?') !== false
+    && stripos($taskModelCode, 'movimientos_caja') === false
+) {
+    mantOpOk('TareaOperativa MANT-G-A permite lectura contextual por mantenimiento con hotel_id.');
+} else {
+    mantOpError('TareaOperativa MANT-G-A no muestra lectura contextual por mantenimiento.', 'Agregar solo lectura por mantenimiento_id, scoped por hotel_id y sin Caja.');
 }
 
 if (
@@ -435,13 +485,15 @@ if (
     && strpos($previewViewCode, "url('habitaciones/'") !== false
     && strpos($previewViewCode, "url('habitaciones/activar-mantenimiento-programado/'") !== false
     && strpos($previewViewCode, "can('habitaciones.mantenimiento')") !== false
+    && strpos($previewViewCode, 'tareas_vinculadas') !== false
+    && strpos($previewViewCode, "url('tareas/'") !== false
     && strpos($previewViewCode, 'method="POST"') !== false
     && strpos($previewViewCode, 'csrf_field()') !== false
     && stripos($previewViewCode, 'activarMantenimientosPendientes') === false
 ) {
-    mantOpOk('Vista MANT-D-A/MANT-E-A mantiene preview GET y accion manual POST con permiso y CSRF.');
+    mantOpOk('Vista MANT-D-A/MANT-E-A/MANT-G-A mantiene preview, accion manual existente y tareas vinculadas read-only.');
 } else {
-    mantOpError('Vista MANT-D-A/MANT-E-A no muestra contrato esperado.', 'Revisar preview GET, boton solo con permiso, POST con CSRF y ausencia de activacion automatica.');
+    mantOpError('Vista MANT-D-A/MANT-E-A/MANT-G-A no muestra contrato esperado.', 'Revisar preview GET, boton existente con permiso/CSRF, tareas vinculadas read-only y ausencia de activacion automatica.');
 }
 
 if (

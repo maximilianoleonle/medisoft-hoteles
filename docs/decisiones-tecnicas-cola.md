@@ -827,3 +827,12 @@
   no se usa desde la creacion manual actual sin fase separada.
 - La siguiente fase debe iniciar por lectura contextual o creacion manual explicita,
   nunca por cron o creacion automatica al activar mantenimiento.
+
+## Decision MANT-G-A
+
+- Se eligio lectura contextual antes de cualquier creacion manual.
+- La ruta existente de preview es suficiente; no se agregan rutas nuevas.
+- `TareaOperativa::listarPorEntidadHotel()` se extiende con entidad `mantenimiento` para
+  reutilizar el patron contextual ya usado por habitacion/trabajador.
+- No se altera `crearParaHotel()` todavia; crear tareas desde mantenimiento requiere fase
+  MANT-G-B separada.
