@@ -651,3 +651,12 @@
   operacion financiera laboral.
 - La QA manual queda diferida por instruccion del usuario, no sustituida por los checkers.
 - El siguiente bloque debe ser independiente y contractual para evitar alcance implicito.
+
+## Decision TLM-I-0 reporte operativo read-only
+
+- Se prioriza lectura/reporting antes de nuevas acciones operativas de tareas.
+- El reporte futuro debe vivir dentro de Tareas para no mezclarlo con reportes
+  financieros.
+- Tareas no sustituyen `habitaciones.estado` ni `mantenimientos_habitaciones`.
+- Cualquier accion de asignar/iniciar/completar/cancelar desde el reporte queda fuera del
+  contrato.

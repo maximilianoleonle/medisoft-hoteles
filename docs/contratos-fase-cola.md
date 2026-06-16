@@ -1020,3 +1020,12 @@ Estado formal vigente: `REPORTE_PERSONAL_NP_F_A_COMPLETADO_QA_DIFERIDA`.
 - Documento: `docs/fase_NP_F_A_reporte_personal_readonly.md`.
 - Implementacion GET/read-only de `/trabajadores/reporte`.
 - No agrega escrituras, nomina, pagos reales, abonos, Caja ni `/api/sync`.
+
+### Estado TLM-I-0
+
+Estado formal vigente: `CONTRATO_TLM_I_REPORTE_OPERATIVO_READONLY_COMPLETADO`.
+
+- Documento: `docs/fase_TLM_I_0_contrato_reporte_operativo_readonly.md`.
+- Solo contrato; no agrega codigo ni DB.
+- Define futuro reporte GET/read-only de tareas operativas, sin crear tareas, sin cambiar
+  estados, sin habitaciones, sin mantenimiento historico, sin Caja y sin `/api/sync`.

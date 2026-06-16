@@ -986,3 +986,10 @@ instruccion del usuario.
 - Bloque reporte Personal read-only cerrado tecnicamente.
 - QA manual sigue pendiente y diferida.
 - No avanzar a nomina, pagos reales, abonos/liquidaciones ni Caja desde este cierre.
+
+### Estado TLM-I-0
+
+- Contrato de reporte operativo TLM read-only completado.
+- No requiere QA de navegador porque no agrega funcionalidad.
+- QA futura TLM-I-A debe confirmar ruta protegida, datos scoped por hotel, estados vacios,
+  ausencia de POST y ausencia de acciones de tarea.

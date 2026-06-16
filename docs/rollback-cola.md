@@ -768,3 +768,11 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-np): close read-only worker report block`.
 - DB: no aplica; es cierre documental.
 - Mantener intacto el codigo NP-F-A salvo que se revierta su commit especifico.
+
+### TLM-I-0 contrato reporte operativo read-only
+
+- Rollback documental: revertir el commit
+  `docs(phase-tlm): define read-only operations report contract`.
+- DB: no aplica; es solo contrato.
+- No tocar `tareas_operativas`, `tarea_eventos`, habitaciones, mantenimiento, Caja ni
+  `/api/sync`.

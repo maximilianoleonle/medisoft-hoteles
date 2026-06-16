@@ -735,3 +735,13 @@ agregar funcionalidades nuevas.
 - QA manual queda diferida.
 - No hay nomina, pagos reales, abonos, Caja ni cambios en `/api/sync`.
 - Siguiente accion segura: contrato documental independiente para el proximo bloque.
+
+## Contrato TLM-I-0 reporte operativo read-only
+
+- Estado formal: `CONTRATO_TLM_I_REPORTE_OPERATIVO_READONLY_COMPLETADO`.
+- Documento creado: `docs/fase_TLM_I_0_contrato_reporte_operativo_readonly.md`.
+- Define un reporte futuro de tareas operativas solo lectura.
+- No agrega rutas, vistas, modelos, migraciones ni escrituras.
+- No crea tareas, no asigna trabajadores, no cambia estados, no toca habitaciones,
+  mantenimiento historico, Caja, nomina ni `/api/sync`.
+- Siguiente accion segura: TLM-I-A implementacion GET/read-only del reporte.

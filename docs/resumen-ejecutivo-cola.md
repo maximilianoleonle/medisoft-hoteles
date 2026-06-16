@@ -107,6 +107,17 @@ Estado actual: `BLOQUE_NP_F_REPORTE_PERSONAL_CERRADO_QA_DIFERIDA`.
 - No hay nomina, pagos reales, abonos, Caja ni cambios en `/api/sync`.
 - QA manual queda diferida.
 
+## Contrato reporte operativo TLM read-only
+
+Estado actual: `CONTRATO_TLM_I_REPORTE_OPERATIVO_READONLY_COMPLETADO`.
+
+- Queda definido TLM-I-0 para un reporte futuro de tareas operativas solo lectura.
+- No se implementan rutas, vistas, modelos ni DB en esta subfase.
+- El reporte futuro debe derivar datos de `tareas_operativas`, `tarea_eventos`,
+  habitaciones, trabajadores y mantenimientos solo en lectura.
+- Quedan prohibidos cambios de estado, asignaciones, habitacion, mantenimiento historico,
+  Caja, nomina y `/api/sync`.
+
 ## Situacion historica
 
 El historial contiene commits que implementan partes de Fase 3C, pero el estado documental vigente no debe tratarlos como cierre formal completo.

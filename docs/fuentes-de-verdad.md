@@ -366,3 +366,11 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   `tareas_operativas`; Caja no participa.
 - NP-F-F cierra el reporte sin cambiar fuentes de verdad ni convertir saldos laborales en
   obligaciones pagables.
+
+### TLM-I reporte operativo read-only
+
+- TLM-I-0 no crea fuente nueva.
+- El reporte futuro debe leer de `tareas_operativas` y `tarea_eventos`.
+- `habitaciones`, `trabajadores` y `mantenimientos_habitaciones` son contexto de lectura,
+  no destino de escritura desde el reporte.
+- Caja, nomina, pagos y `/api/sync` no participan.

@@ -815,3 +815,12 @@ Estado: `BLOQUE_NP_F_REPORTE_PERSONAL_CERRADO_QA_DIFERIDA`.
 - Health/preflight validan que el reporte sea read-only y que no se agreguen rutas fuera
   de alcance.
 - Riesgo residual: falta QA manual en navegador con datos reales de trabajadores.
+
+## Auditoria TLM-I-0 reporte operativo read-only
+
+Estado: `CONTRATO_TLM_I_REPORTE_OPERATIVO_READONLY_COMPLETADO`.
+
+- Solo contrato documental; no hay endpoints ni escrituras nuevas.
+- Riesgo futuro principal: convertir el reporte en pantalla de acciones operativas.
+- Mitigacion definida: TLM-I-A debe ser GET/read-only, scoped por `hotel_id`, sin POST,
+  sin cambios de habitacion, sin Caja y sin `/api/sync`.
