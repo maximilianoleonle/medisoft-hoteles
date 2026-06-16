@@ -964,3 +964,15 @@ agregar funcionalidades nuevas.
 - Prohibe automatizacion, cron, cambios de disponibilidad, Caja, pagos, abonos, nomina,
   offline y `/api/sync`.
 - Siguiente accion segura: `[COLA_MANT_G_B_A_CREACION_MANUAL_TAREA_MANTENIMIENTO]`.
+
+## MANT-G-B-A creacion manual de tarea desde mantenimiento
+
+- Estado formal: `CREACION_MANUAL_TAREA_MANT_G_B_A_COMPLETADA_QA_DIFERIDA`.
+- Documento creado: `docs/fase_MANT_G_B_A_creacion_manual_tarea_mantenimiento.md`.
+- Ruta POST: `/tareas/desde-mantenimiento/{id}`.
+- Crea tarea pendiente con `mantenimiento_id`, `habitacion_id` y
+  `origen = mantenimiento_manual`.
+- Bloquea duplicado activo por mantenimiento.
+- No modifica habitaciones, mantenimientos, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.
+- Siguiente accion segura: revision/auditoria/cierre MANT-G antes de automatizaciones.

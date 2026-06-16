@@ -846,3 +846,12 @@
   manuales genericas.
 - El cierre de la tarea no debe cerrar el mantenimiento; cualquier sincronizacion de
   estados requiere contrato separado.
+
+## Decision MANT-G-B-A
+
+- La creacion se ubica en `TareaController`, porque la entidad escrita es una tarea.
+- El preview de mantenimiento solo dispara el POST manual y no contiene logica de
+  persistencia.
+- El modelo de tareas centraliza validacion, duplicado activo, transaccion y evento.
+- No se modifica `TareaOperativa::crearParaHotel()` para no cambiar el alta manual
+  generica.

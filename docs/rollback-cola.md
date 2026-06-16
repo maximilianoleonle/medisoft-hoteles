@@ -948,3 +948,14 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - DB: no aplica; MANT-G-B-0 no crea migraciones, rutas, modelos ni datos.
 - Codigo: no aplica.
 - No borrar ni modificar tareas, mantenimientos, habitaciones o eventos.
+
+### MANT-G-B-A creacion manual de tarea desde mantenimiento
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-mant): create tasks from maintenance manually`.
+- DB: no aplica si no se ejecuta QA manual.
+- Si QA manual crea tareas reales, no borrar con SQL manual; usar flujo de cancelacion de
+  tareas o documentar IDs.
+- El rollback retiraria ruta POST, accion del controlador, metodo de modelo, boton en
+  preview y checks asociados.
+- No tocar Caja, pagos, abonos, nomina ni `/api/sync`.

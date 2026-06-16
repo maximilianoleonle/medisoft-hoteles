@@ -2165,6 +2165,9 @@ public function mantenimientoProgramadoAction() {
             $preview['registros'][$index]['tareas_vinculadas'] = $mantenimientoId > 0
                 ? $tareaModel->listarPorEntidadHotel($hotelId, 'mantenimiento', $mantenimientoId, 3)
                 : [];
+            $preview['registros'][$index]['tarea_activa_vinculada'] = $mantenimientoId > 0
+                ? $tareaModel->buscarTareaActivaPorMantenimientoHotel($hotelId, $mantenimientoId)
+                : null;
         }
     }
 

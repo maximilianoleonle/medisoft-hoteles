@@ -1059,3 +1059,15 @@ Estado: `CONTRATO_MANT_G_B_0_CREACION_MANUAL_TAREA_MANTENIMIENTO_COMPLETADO`.
 - Mitigacion definida: tarea solo escribe en `tareas_operativas`/`tarea_eventos`; no
   modifica `habitaciones` ni `mantenimientos_habitaciones`.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.
+
+## Auditoria MANT-G-B-A
+
+Estado: `CREACION_MANUAL_TAREA_MANT_G_B_A_COMPLETADA_QA_DIFERIDA`.
+
+- Ruta POST protegida por sesion, modulo, permiso y CSRF.
+- Modelo valida mantenimiento y habitacion por `hotel_id`.
+- Modelo bloquea duplicado activo por mantenimiento.
+- Escritura limitada a `tareas_operativas` y `tarea_eventos`.
+- Auditoria registra `tareas.creada_desde_mantenimiento`.
+- No se modifica `habitaciones` ni `mantenimientos_habitaciones`.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` siguen fuera de alcance.

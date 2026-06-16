@@ -216,6 +216,49 @@ class TareaOperativa extends Model
         return $stmt ? ($stmt->fetchAll() ?: []) : [];
     }
 
+    public function buscarTareaActivaPorMantenimientoHotel(int $hotelId, int $mantenimientoId): ?array
+    {
+        if ($hotelId <= 0 || $mantenimientoId <= 0 || !$this->tablaDisponible()) {
+            return null;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT t.id,
+                    t.hotel_id,
+                    t.categoria,
+                    t.titulo,
+                    t.prioridad,
+                    t.estado,
+                    t.habitacion_id,
+                    t.trabajador_id,
+                    t.mantenimiento_id,
+                    t.fecha_programada,
+                    t.fecha_limite,
+                    t.origen,
+                    t.created_at,
+                    h.numero AS habitacion_numero,
+                    tr.nombre_completo AS trabajador_nombre
+             FROM tareas_operativas t
+             LEFT JOIN habitaciones h
+                ON h.id = t.habitacion_id
+               AND h.hotel_id = t.hotel_id
+             LEFT JOIN trabajadores tr
+                ON tr.id = t.trabajador_id
+               AND tr.hotel_id = t.hotel_id
+             WHERE t.hotel_id = ?
+               AND t.mantenimiento_id = ?
+               AND t.estado IN ('pendiente', 'asignada', 'en_proceso')
+             ORDER BY FIELD(t.estado, 'en_proceso', 'asignada', 'pendiente'),
+                      COALESCE(t.fecha_limite, t.fecha_programada, t.created_at) ASC,
+                      t.id ASC
+             LIMIT 1",
+            [$hotelId, $mantenimientoId]
+        );
+
+        $row = $stmt ? $stmt->fetch() : null;
+        return $row ?: null;
+    }
+
     public function resumenPorHotel(int $hotelId): array
     {
         $base = [
@@ -497,6 +540,130 @@ class TareaOperativa extends Model
         }
     }
 
+    public function crearDesdeMantenimientoParaHotel(int $hotelId, int $mantenimientoId, array $datos = [], ?int $usuarioId = null): int
+    {
+        if ($hotelId <= 0) {
+            throw new InvalidArgumentException('Hotel no valido para crear la tarea.');
+        }
+
+        if ($mantenimientoId <= 0) {
+            throw new InvalidArgumentException('Mantenimiento no valido para crear la tarea.');
+        }
+
+        if (!$this->tablaDisponible() || !$this->eventosDisponibles()) {
+            throw new RuntimeException('La base de tareas operativas no esta disponible.');
+        }
+
+        $this->db->safeBeginTransaction();
+
+        try {
+            $stmt = $this->db->query(
+                "SELECT m.id,
+                        m.hotel_id,
+                        m.habitacion_id,
+                        m.tipo_mantenimiento,
+                        m.prioridad,
+                        m.motivo,
+                        m.descripcion,
+                        m.fecha_programada,
+                        m.fecha_programada_fin,
+                        m.fecha_inicio,
+                        m.estado,
+                        h.numero AS habitacion_numero
+                 FROM mantenimientos_habitaciones m
+                 INNER JOIN habitaciones h
+                    ON h.id = m.habitacion_id
+                   AND h.hotel_id = m.hotel_id
+                 WHERE m.id = ?
+                   AND m.hotel_id = ?
+                 LIMIT 1
+                 FOR UPDATE",
+                [$mantenimientoId, $hotelId]
+            );
+            $mantenimiento = $stmt ? $stmt->fetch() : null;
+            if (!$mantenimiento) {
+                throw new RuntimeException('Mantenimiento no encontrado para el hotel actual.');
+            }
+
+            $duplicado = $this->db->query(
+                "SELECT id
+                 FROM tareas_operativas
+                 WHERE hotel_id = ?
+                   AND mantenimiento_id = ?
+                   AND estado IN ('pendiente', 'asignada', 'en_proceso')
+                 ORDER BY id ASC
+                 LIMIT 1
+                 FOR UPDATE",
+                [$hotelId, $mantenimientoId]
+            );
+            $duplicadoRow = $duplicado ? $duplicado->fetch() : null;
+            if ($duplicadoRow) {
+                throw new RuntimeException('Ya existe una tarea activa vinculada a este mantenimiento.');
+            }
+
+            $titulo = $this->limitarTexto(
+                $datos['titulo'] ?? '',
+                160,
+                'Seguimiento mantenimiento hab. ' . (string)($mantenimiento['habitacion_numero'] ?? $mantenimiento['habitacion_id'])
+            );
+            $descripcion = $this->limitarTexto(
+                $datos['descripcion'] ?? '',
+                2000,
+                $this->descripcionMantenimientoParaTarea($mantenimiento)
+            );
+            $prioridad = (string)($mantenimiento['prioridad'] ?? 'media');
+            if (!in_array($prioridad, self::PRIORIDADES, true)) {
+                $prioridad = 'media';
+            }
+
+            $fechaProgramada = $mantenimiento['fecha_programada'] ?? ($mantenimiento['fecha_inicio'] ?? null);
+            $fechaLimite = $mantenimiento['fecha_programada_fin'] ?? null;
+
+            $stmt = $this->db->query(
+                "INSERT INTO tareas_operativas
+                    (hotel_id, categoria, titulo, descripcion, prioridad, estado,
+                     habitacion_id, mantenimiento_id, fecha_programada, fecha_limite,
+                     creada_por_usuario_id, origen, created_at)
+                 VALUES
+                    (?, 'mantenimiento', ?, ?, ?, 'pendiente',
+                     ?, ?, ?, ?,
+                     ?, 'mantenimiento_manual', NOW())",
+                [
+                    $hotelId,
+                    $titulo,
+                    $descripcion,
+                    $prioridad,
+                    (int)$mantenimiento['habitacion_id'],
+                    $mantenimientoId,
+                    $fechaProgramada,
+                    $fechaLimite,
+                    $usuarioId,
+                ]
+            );
+
+            if (!$stmt) {
+                throw new RuntimeException('No se pudo insertar la tarea vinculada al mantenimiento.');
+            }
+
+            $tareaId = (int)$this->db->lastInsertId();
+            $this->registrarEvento(
+                $hotelId,
+                $tareaId,
+                'creada',
+                null,
+                'pendiente',
+                'Tarea creada manualmente desde mantenimiento #' . (string)$mantenimientoId . '.',
+                $usuarioId
+            );
+
+            $this->db->safeCommit();
+            return $tareaId;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
     public function asignarTrabajadorParaHotel(int $id, int $hotelId, int $trabajadorId, ?int $usuarioId = null): bool
     {
         if ($id <= 0 || $hotelId <= 0) {
@@ -679,6 +846,42 @@ class TareaOperativa extends Model
             'fecha_programada' => $fechaProgramada,
             'fecha_limite' => $fechaLimite,
         ];
+    }
+
+    private function limitarTexto($value, int $limite, string $fallback): string
+    {
+        $texto = trim((string)($value ?? ''));
+        if ($texto === '') {
+            $texto = $fallback;
+        }
+
+        if (function_exists('mb_substr')) {
+            return mb_substr($texto, 0, $limite, 'UTF-8');
+        }
+
+        return substr($texto, 0, $limite);
+    }
+
+    private function descripcionMantenimientoParaTarea(array $mantenimiento): string
+    {
+        $lineas = [
+            'Tarea vinculada al mantenimiento #' . (int)($mantenimiento['id'] ?? 0) . '.',
+            'Habitacion: ' . (string)($mantenimiento['habitacion_numero'] ?? $mantenimiento['habitacion_id'] ?? '-'),
+            'Tipo: ' . (string)($mantenimiento['tipo_mantenimiento'] ?? '-'),
+            'Estado mantenimiento: ' . (string)($mantenimiento['estado'] ?? '-'),
+        ];
+
+        $motivo = trim((string)($mantenimiento['motivo'] ?? ''));
+        if ($motivo !== '') {
+            $lineas[] = 'Motivo: ' . $motivo;
+        }
+
+        $descripcion = trim((string)($mantenimiento['descripcion'] ?? ''));
+        if ($descripcion !== '') {
+            $lineas[] = 'Descripcion: ' . $descripcion;
+        }
+
+        return implode("\n", $lineas);
     }
 
     private function validarHabitacionHotel(int $habitacionId, int $hotelId): void

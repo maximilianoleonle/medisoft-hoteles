@@ -1196,3 +1196,15 @@ instruccion del usuario.
   - confirmar bloqueo de duplicado activo;
   - confirmar que no cambia habitacion ni mantenimiento;
   - confirmar que no hay Caja, pagos, abonos, nomina ni cambios en `/api/sync`.
+
+### Estado MANT-G-B-A
+
+- Creacion manual de tarea desde mantenimiento implementada.
+- QA manual diferida por instruccion del usuario.
+- Probar `/reportes/mantenimiento-programado`.
+- Crear una tarea desde un mantenimiento controlado.
+- Confirmar detalle de tarea, `mantenimiento_id`, `habitacion_id`, `hotel_id` y
+  `origen = mantenimiento_manual`.
+- Confirmar bloqueo de duplicado activo.
+- Confirmar que no cambia habitacion ni mantenimiento.
+- Confirmar que no hay Caja, pagos, abonos, nomina ni cambios en `/api/sync`.

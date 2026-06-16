@@ -972,3 +972,13 @@ Estado: `CONTRATO_MANT_G_B_0_CREACION_MANUAL_TAREA_MANTENIMIENTO_COMPLETADO`.
 - No agrega codigo, rutas, migraciones, formularios ni escrituras.
 - No automatiza tareas al activar mantenimiento.
 - No hay Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+
+## Checkpoint tecnico MANT-G-B-A
+
+Estado: `CREACION_MANUAL_TAREA_MANT_G_B_A_COMPLETADA_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_G_B_A_creacion_manual_tarea_mantenimiento.md`.
+- Se agrega POST manual individual para crear tarea desde mantenimiento.
+- No hay automatizacion ni creacion masiva.
+- No hay cambios de estado en habitaciones o mantenimientos.
+- QA manual queda diferida.

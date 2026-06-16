@@ -138,6 +138,40 @@ class TareaController extends Controller
         }
     }
 
+    public function crearDesdeMantenimientoAction(): void
+    {
+        $this->requireWritePermission();
+
+        if (!$this->isPost()) {
+            $this->redirect('reportes/mantenimiento-programado');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        $mantenimientoId = (int)($this->route_params['id'] ?? 0);
+        $dias = (int)$this->getPost('dias', 30);
+        $dias = max(0, min(90, $dias));
+
+        try {
+            $hotelId = $this->hotelIdActual();
+            $tareaId = $this->tareaModel->crearDesdeMantenimientoParaHotel(
+                $hotelId,
+                $mantenimientoId,
+                [],
+                $this->usuarioIdActual()
+            );
+            $tarea = $this->tareaModel->buscarPorIdHotel($tareaId, $hotelId);
+            $this->auditar('tareas.creada_desde_mantenimiento', $tareaId, $tarea);
+
+            set_mensaje('Tarea vinculada al mantenimiento creada correctamente.', 'success');
+            $this->redirect('tareas/' . $tareaId);
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo crear la tarea desde mantenimiento: ' . $e->getMessage(), 'error');
+            $this->redirect('reportes/mantenimiento-programado?dias=' . $dias);
+        }
+    }
+
     public function asignarAction(): void
     {
         $this->requireWritePermission();

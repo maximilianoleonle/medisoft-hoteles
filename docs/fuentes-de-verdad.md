@@ -486,3 +486,16 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - `habitaciones` y `mantenimientos_habitaciones` seguiran siendo fuentes de verdad y no
   deben cambiar por crear la tarea.
 - Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.
+
+### MANT-G-B-A creacion manual de tarea desde mantenimiento
+
+- No crea fuente nueva.
+- Escrituras permitidas:
+  - `tareas_operativas`;
+  - `tarea_eventos`;
+  - `logs_auditoria` como trazabilidad.
+- Lecturas de validacion:
+  - `mantenimientos_habitaciones`;
+  - `habitaciones`.
+- `habitaciones` y `mantenimientos_habitaciones` no se actualizan.
+- Caja, pagos, abonos, nomina, offline y `/api/sync` no participan.

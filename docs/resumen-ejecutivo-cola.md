@@ -1077,3 +1077,14 @@ Resultado MANT-G-B-0:
 - No se modifica codigo, DB, rutas, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - Siguiente paso recomendado: MANT-G-B-A POST manual individual con CSRF, permiso,
   transaccion, auditoria y bloqueo de duplicado activo.
+
+Resultado MANT-G-B-A:
+
+- Estado tecnico: `CREACION_MANUAL_TAREA_MANT_G_B_A_COMPLETADA_QA_DIFERIDA`.
+- Documento: `docs/fase_MANT_G_B_A_creacion_manual_tarea_mantenimiento.md`.
+- Se agrega `POST /tareas/desde-mantenimiento/{id}`.
+- El modelo crea una tarea pendiente vinculada a mantenimiento y evento inicial.
+- Se bloquea duplicado activo por mantenimiento.
+- No se cambia habitacion, mantenimiento, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.
+- QA manual queda diferida.

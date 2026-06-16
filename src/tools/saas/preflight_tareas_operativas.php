@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase TLM-G para tareas operativas.
+ * Preflight Fase TLM-G/MANT-G-B para tareas operativas.
  *
  * Solo lectura. No crea rutas, migraciones ni datos.
  * Valida consistencia de tareas_operativas/tarea_eventos, entidades vinculadas,
@@ -186,7 +186,7 @@ $taskPartialPath = $appRoot . '/app/views/tareas/_contextual_list.php';
 $habitacionControllerPath = $appRoot . '/app/controllers/HabitacionController.php';
 $trabajadorControllerPath = $appRoot . '/app/controllers/TrabajadorController.php';
 
-echo "Preflight Fase TLM-G - Tareas operativas\n";
+echo "Preflight Fase TLM-G/MANT-G-B - Tareas operativas\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {
@@ -385,6 +385,19 @@ if ($pdo) {
             );
         }
 
+        tlmPfReportZeroCount(
+            'mantenimientos con mas de una tarea activa vinculada',
+            tlmPfCountScalar($pdo, "SELECT COUNT(*) FROM (
+                    SELECT hotel_id, mantenimiento_id
+                    FROM tareas_operativas
+                    WHERE mantenimiento_id IS NOT NULL
+                      AND estado IN ('pendiente', 'asignada', 'en_proceso')
+                    GROUP BY hotel_id, mantenimiento_id
+                    HAVING COUNT(*) > 1
+                ) duplicados"),
+            'Cancelar o cerrar duplicados antes de crear nuevas tareas desde mantenimiento.'
+        );
+
         if (tlmPfTableExists($pdo, $database, 'trabajadores')) {
             $inactiveAssigned = tlmPfCountScalar($pdo, "SELECT COUNT(*)
                 FROM tareas_operativas t
@@ -427,6 +440,7 @@ $expectedRoutes = [
     ['method' => 'get', 'path' => 'tareas/reporte'],
     ['method' => 'get', 'path' => 'tareas/crear'],
     ['method' => 'post', 'path' => 'tareas'],
+    ['method' => 'post', 'path' => 'tareas/desde-mantenimiento/{id:[0-9]+}'],
     ['method' => 'get', 'path' => 'tareas/{id:[0-9]+}'],
     ['method' => 'post', 'path' => 'tareas/{id:[0-9]+}/asignar'],
     ['method' => 'post', 'path' => 'tareas/{id:[0-9]+}/iniciar'],
@@ -484,9 +498,12 @@ if (
     && strpos($taskModelCode, 'function listarPorEntidadHotel') !== false
     && strpos($taskModelCode, 'WHERE t.hotel_id = ?') !== false
     && strpos($taskModelCode, 'function crearParaHotel') !== false
+    && strpos($taskModelCode, 'function crearDesdeMantenimientoParaHotel') !== false
+    && strpos($taskModelCode, 'function buscarTareaActivaPorMantenimientoHotel') !== false
+    && strpos($taskModelCode, "'mantenimiento_manual'") !== false
     && strpos($taskModelCode, 'function cambiarEstadoManualParaHotel') !== false
 ) {
-    tlmPfOk('TareaOperativa conserva reporte read-only, lecturas, alta manual y estados con hotel_id.');
+    tlmPfOk('TareaOperativa conserva reporte read-only, lecturas, alta manual, alta desde mantenimiento y estados con hotel_id.');
 } else {
     tlmPfError('TareaOperativa no muestra contrato TLM esperado.', 'Revisar modelo antes de continuar.');
 }
@@ -494,11 +511,13 @@ if (
 if (
     $taskControllerCode !== ''
     && strpos($taskControllerCode, 'function reporteAction') !== false
+    && strpos($taskControllerCode, 'function crearDesdeMantenimientoAction') !== false
+    && strpos($taskControllerCode, 'crearDesdeMantenimientoParaHotel') !== false
     && strpos($taskControllerCode, 'validateCSRF') !== false
     && strpos($taskControllerCode, "require_permission('habitaciones.mantenimiento')") !== false
     && strpos($taskControllerCode, 'AuditService::record') !== false
 ) {
-    tlmPfOk('TareaController conserva reporte read-only, CSRF, permiso conservador y auditoria.');
+    tlmPfOk('TareaController conserva reporte read-only, POST mantenimiento manual con CSRF, permiso conservador y auditoria.');
 } else {
     tlmPfError('TareaController no muestra guardas TLM completas.', 'Validar CSRF, permisos y auditoria antes de continuar.');
 }

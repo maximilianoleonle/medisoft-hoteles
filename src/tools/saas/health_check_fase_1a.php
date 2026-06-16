@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A/MANT-E-A/MANT-G-A.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A/MANT-E-A/MANT-G-B-A.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -844,7 +844,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A-4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A/MANT-E-A/MANT-G-A - Medisoft Hoteles\n";
+echo "Health check Fase 1A-4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A/MANT-E-A/MANT-G-B-A - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -2826,6 +2826,7 @@ if (!is_file($routesPath)) {
         ['method' => 'get', 'path' => 'tareas/reporte'],
         ['method' => 'get', 'path' => 'tareas/crear'],
         ['method' => 'post', 'path' => 'tareas'],
+        ['method' => 'post', 'path' => 'tareas/desde-mantenimiento/{id:[0-9]+}'],
         ['method' => 'post', 'path' => 'tareas/{id:[0-9]+}/asignar'],
         ['method' => 'post', 'path' => 'tareas/{id:[0-9]+}/iniciar'],
         ['method' => 'post', 'path' => 'tareas/{id:[0-9]+}/completar'],
@@ -2860,6 +2861,7 @@ if (!is_file($routesPath)) {
             'GET /tareas/reporte -> tarea::reporte',
             'GET /tareas/crear -> tarea::crear',
             'POST /tareas -> tarea::guardar',
+            'POST /tareas/desde-mantenimiento/{id:[0-9]+} -> tarea::creardesdemantenimiento',
             'POST /tareas/{id:[0-9]+}/asignar -> tarea::asignar',
             'POST /tareas/{id:[0-9]+}/iniciar -> tarea::iniciar',
             'POST /tareas/{id:[0-9]+}/completar -> tarea::completar',
@@ -2873,7 +2875,7 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($forbiddenTaskRoutes)) {
-        hcOk('TLM-I-A mantiene solo rutas autorizadas; reporte read-only y sin POST contextual nuevo.');
+        hcOk('TLM-I-A/MANT-G-B-A mantiene solo rutas autorizadas; reporte read-only y POST manual desde mantenimiento controlado.');
     } else {
         hcError(
             'TLM-I-A tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenTaskRoutes),
@@ -3294,6 +3296,29 @@ if (!is_file($routesPath)) {
             );
         }
 
+        $taskHasMaintenanceCreate =
+            strpos($taskModelCode, 'function crearDesdeMantenimientoParaHotel') !== false
+            && strpos($taskModelCode, 'function buscarTareaActivaPorMantenimientoHotel') !== false
+            && strpos($taskModelCode, "'mantenimiento_manual'") !== false
+            && strpos($taskModelCode, 'mantenimiento_id') !== false
+            && strpos($taskModelCode, "estado IN ('pendiente', 'asignada', 'en_proceso')") !== false
+            && preg_match('/INSERT\s+INTO\s+tareas_operativas/i', $taskModelCode)
+            && preg_match('/INSERT\s+INTO\s+tarea_eventos/i', $taskModelCode)
+            && strpos($taskModelCode, 'safeBeginTransaction') !== false
+            && strpos($taskModelCode, 'safeCommit') !== false
+            && strpos($taskModelCode, 'safeRollBack') !== false
+            && strpos($taskModelCode, 'FROM mantenimientos_habitaciones m') !== false
+            && strpos($taskModelCode, 'FOR UPDATE') !== false;
+
+        if ($taskHasMaintenanceCreate) {
+            hcOk('MANT-G-B-A modelo crea tarea desde mantenimiento con transaccion, mantenimiento_id y bloqueo de duplicado activo.');
+        } else {
+            hcWarning(
+                'MANT-G-B-A modelo no muestra creacion desde mantenimiento completa.',
+                'Validar mantenimiento_id, bloqueo de duplicado activo, transaccion, evento inicial y ausencia de Caja.'
+            );
+        }
+
         $taskHasAssignment =
             strpos($taskModelCode, 'function asignarTrabajadorParaHotel') !== false
             && strpos($taskModelCode, 'function trabajadoresActivosOpciones') !== false
@@ -3368,6 +3393,7 @@ if (!is_file($routesPath)) {
             && strpos($taskControllerCode, 'function verAction') !== false
             && strpos($taskControllerCode, 'function crearAction') !== false
             && strpos($taskControllerCode, 'function guardarAction') !== false
+            && strpos($taskControllerCode, 'function crearDesdeMantenimientoAction') !== false
             && strpos($taskControllerCode, 'function asignarAction') !== false
             && strpos($taskControllerCode, 'function iniciarAction') !== false
             && strpos($taskControllerCode, 'function completarAction') !== false
@@ -3378,17 +3404,18 @@ if (!is_file($routesPath)) {
             && strpos($taskControllerCode, "require_permission('habitaciones.mantenimiento')") !== false
             && strpos($taskControllerCode, 'validateCSRF') !== false
             && strpos($taskControllerCode, 'AuditService::record') !== false
+            && strpos($taskControllerCode, 'crearDesdeMantenimientoParaHotel') !== false
             && strpos($taskControllerCode, 'asignarTrabajadorParaHotel') !== false
             && strpos($taskControllerCode, 'tareas/index') !== false
             && strpos($taskControllerCode, 'tareas/reporte') !== false
             && strpos($taskControllerCode, 'tareas/form') !== false
             && strpos($taskControllerCode, 'tareas/ver') !== false
         ) {
-            hcOk('TareaController TLM-I-A expone listado/reporte/form/alta/asignacion/estados/detalle con guardas, CSRF y auditoria.');
+            hcOk('TareaController TLM-I-A/MANT-G-B-A expone listado/reporte/form/alta/alta desde mantenimiento/asignacion/estados/detalle con guardas, CSRF y auditoria.');
         } else {
             hcWarning(
-                'TareaController TLM-I-A no muestra guardas o acciones completas.',
-                'Validar requireAuth, hotel, modulo habitaciones, permisos, CSRF y acciones index/reporte/crear/guardar/asignar/iniciar/completar/cancelar/ver.'
+                'TareaController TLM-I-A/MANT-G-B-A no muestra guardas o acciones completas.',
+                'Validar requireAuth, hotel, modulo habitaciones, permisos, CSRF y acciones index/reporte/crear/guardar/desde mantenimiento/asignar/iniciar/completar/cancelar/ver.'
             );
         }
     } else {
@@ -5103,6 +5130,9 @@ if (!is_file($routesPath)) {
     $mantTaskModelCode = is_file($appRoot . '/app/models/TareaOperativa.php')
         ? (string) file_get_contents($appRoot . '/app/models/TareaOperativa.php')
         : '';
+    $mantTaskControllerCode = is_file($controllersDir . '/TareaController.php')
+        ? (string) file_get_contents($controllersDir . '/TareaController.php')
+        : '';
     $mantOpViewCode = is_file($appRoot . '/app/views/habitaciones/ver.php')
         ? (string) file_get_contents($appRoot . '/app/views/habitaciones/ver.php')
         : '';
@@ -5146,6 +5176,15 @@ if (!is_file($routesPath)) {
         hcError(
             'Ruta MANT-E-A POST /habitaciones/activar-mantenimiento-programado/{id} no esta registrada.',
             'Registrar solo la activacion manual individual con CSRF, permiso y validacion central.'
+        );
+    }
+
+    if (hcRoutePatternExists($routes, 'tareas/desde-mantenimiento/1', 'post')) {
+        hcOk('Ruta MANT-G-B-A registrada: POST /tareas/desde-mantenimiento/{id}.');
+    } else {
+        hcError(
+            'Ruta MANT-G-B-A POST /tareas/desde-mantenimiento/{id} no esta registrada.',
+            'Registrar solo creacion manual individual con CSRF, permiso y validacion central.'
         );
     }
 
@@ -5247,14 +5286,33 @@ if (!is_file($routesPath)) {
         $mantTaskModelCode !== ''
         && strpos($mantTaskModelCode, "'mantenimiento' => 't.mantenimiento_id'") !== false
         && strpos($mantTaskModelCode, 'function listarPorEntidadHotel') !== false
+        && strpos($mantTaskModelCode, 'function buscarTareaActivaPorMantenimientoHotel') !== false
+        && strpos($mantTaskModelCode, 'function crearDesdeMantenimientoParaHotel') !== false
+        && strpos($mantTaskModelCode, "'mantenimiento_manual'") !== false
         && strpos($mantTaskModelCode, 'WHERE t.hotel_id = ?') !== false
         && strpos($mantTaskModelCode, 'movimientos_caja') === false
     ) {
-        hcOk('TareaOperativa MANT-G-A permite lectura contextual por mantenimiento con hotel_id.');
+        hcOk('TareaOperativa MANT-G-B-A permite lectura y creacion manual desde mantenimiento con hotel_id.');
     } else {
         hcError(
-            'TareaOperativa MANT-G-A no muestra lectura contextual por mantenimiento.',
-            'Agregar solo lectura por mantenimiento_id, scoped por hotel_id y sin Caja.'
+            'TareaOperativa MANT-G-B-A no muestra contrato de mantenimiento.',
+            'Agregar lectura/creacion por mantenimiento_id, scoped por hotel_id y sin Caja.'
+        );
+    }
+
+    if (
+        $mantTaskControllerCode !== ''
+        && strpos($mantTaskControllerCode, 'function crearDesdeMantenimientoAction') !== false
+        && strpos($mantTaskControllerCode, 'crearDesdeMantenimientoParaHotel') !== false
+        && strpos($mantTaskControllerCode, 'validateCSRF()') !== false
+        && strpos($mantTaskControllerCode, "require_permission('habitaciones.mantenimiento')") !== false
+        && strpos($mantTaskControllerCode, 'AuditService::record') !== false
+    ) {
+        hcOk('TareaController MANT-G-B-A crea tarea desde mantenimiento con CSRF, permiso y auditoria.');
+    } else {
+        hcError(
+            'TareaController MANT-G-B-A no muestra guardas completas.',
+            'Revisar CSRF, permiso, auditoria y metodo central.'
         );
     }
 
@@ -5339,6 +5397,8 @@ if (!is_file($routesPath)) {
         && strpos($mantOpPreviewViewCode, "can('habitaciones.mantenimiento')") !== false
         && strpos($mantOpPreviewViewCode, 'tareas_vinculadas') !== false
         && strpos($mantOpPreviewViewCode, "url('tareas/'") !== false
+        && strpos($mantOpPreviewViewCode, 'tarea_activa_vinculada') !== false
+        && strpos($mantOpPreviewViewCode, "url('tareas/desde-mantenimiento/'") !== false
         && strpos($mantOpPreviewViewCode, 'method="POST"') !== false
         && strpos($mantOpPreviewViewCode, 'csrf_field()') !== false
         && strpos($mantOpPreviewViewCode, 'activarMantenimientosPendientes') === false
@@ -5480,6 +5540,26 @@ if (!is_file($routesPath)) {
                 hcError(
                     'MANT-G-A datos: tareas con mantenimiento de otro hotel = ' . (string)$mantTasksCrossHotel . '.',
                     'Bloquear vistas contextuales hasta alinear hotel_id.'
+                );
+            }
+
+            $mantTaskActiveDuplicates = hcCountScalar(
+                $pdo,
+                "SELECT COUNT(*) FROM (
+                    SELECT hotel_id, mantenimiento_id
+                    FROM tareas_operativas
+                    WHERE mantenimiento_id IS NOT NULL
+                      AND estado IN ('pendiente', 'asignada', 'en_proceso')
+                    GROUP BY hotel_id, mantenimiento_id
+                    HAVING COUNT(*) > 1
+                ) duplicados"
+            );
+            if ($mantTaskActiveDuplicates === 0) {
+                hcOk('MANT-G-B-A datos: mantenimientos con mas de una tarea activa vinculada = 0.');
+            } else {
+                hcError(
+                    'MANT-G-B-A datos: mantenimientos con mas de una tarea activa vinculada = ' . (string)$mantTaskActiveDuplicates . '.',
+                    'Cancelar/cerrar duplicados antes de crear nuevas tareas desde mantenimiento.'
                 );
             }
         } else {

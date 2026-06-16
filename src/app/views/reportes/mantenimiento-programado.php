@@ -85,6 +85,8 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
 .mant-prog-inline-form{margin-top:9px}
 .mant-prog-activate{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:7px;background:#0f766e;color:#fff;font-size:12px;font-weight:900;padding:8px 10px;cursor:pointer}
 .mant-prog-activate:hover{background:#115e59}
+.mant-prog-task-create{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:7px;background:#172033;color:#fff;font-size:12px;font-weight:900;padding:8px 10px;cursor:pointer}
+.mant-prog-task-create:hover{background:#0f172a}
 .mant-prog-empty{padding:38px 20px;text-align:center;color:#64748b}
 .mant-prog-empty strong{display:block;color:#172033;font-size:18px;margin-bottom:8px}
 .mant-prog-note{padding:14px 18px;background:#f8fafc;color:#475569;border-top:1px solid #e5e7eb;font-size:13px;font-weight:700}
@@ -152,6 +154,7 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
                             $pillClass = $categoriaClass[$categoria] ?? 'is-neutral';
                             $advertencias = is_array($item['preview_advertencias'] ?? null) ? $item['preview_advertencias'] : [];
                             $tareasVinculadas = is_array($item['tareas_vinculadas'] ?? null) ? $item['tareas_vinculadas'] : [];
+                            $tareaActivaVinculada = is_array($item['tarea_activa_vinculada'] ?? null) ? $item['tarea_activa_vinculada'] : null;
                             ?>
                             <tr>
                                 <td>
@@ -215,6 +218,23 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
                                     <?php else: ?>
                                         <div class="mant-prog-linked-empty">Sin tareas vinculadas.</div>
                                     <?php endif; ?>
+                                    <?php if ($tareaActivaVinculada): ?>
+                                        <div class="mant-prog-linked-empty">
+                                            Tarea activa vinculada: #<?= (int)($tareaActivaVinculada['id'] ?? 0) ?>.
+                                        </div>
+                                    <?php elseif ($puedeActivarMantenimiento): ?>
+                                        <form class="mant-prog-inline-form"
+                                              method="POST"
+                                              action="<?= url('tareas/desde-mantenimiento/' . (int)($item['id'] ?? 0)) ?>"
+                                              onsubmit="return confirm('Crear una tarea operativa vinculada a este mantenimiento?')">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="dias" value="<?= (int)$dias ?>">
+                                            <button type="submit" class="mant-prog-task-create">
+                                                <i class="fas fa-tasks"></i>
+                                                Crear tarea
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -224,7 +244,7 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
         <?php endif; ?>
 
         <div class="mant-prog-note">
-            Esta vista no llama activaciones automaticas, no crea tareas y no toca Caja, pagos, abonos, nomina, offline ni /api/sync. La activacion manual disponible para candidatos requiere permiso, CSRF y validacion backend.
+            Esta vista no llama activaciones automaticas, no crea tareas automaticamente y no toca Caja, pagos, abonos, nomina, offline ni /api/sync. Las acciones manuales disponibles requieren permiso, CSRF y validacion backend.
         </div>
     </section>
 </div>

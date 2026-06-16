@@ -1250,3 +1250,14 @@ Estado formal vigente: `CONTRATO_MANT_G_B_0_CREACION_MANUAL_TAREA_MANTENIMIENTO_
 - La futura implementacion debe bloquear duplicados activos por mantenimiento.
 - No autoriza automatizacion, cron, cambios de disponibilidad, Caja, pagos, abonos,
   nomina, offline ni `/api/sync`.
+
+### Estado MANT-G-B-A
+
+Estado formal vigente: `CREACION_MANUAL_TAREA_MANT_G_B_A_COMPLETADA_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_G_B_A_creacion_manual_tarea_mantenimiento.md`.
+- Implementa `POST /tareas/desde-mantenimiento/{id}`.
+- Crea tarea manual vinculada a mantenimiento con `origen = mantenimiento_manual`.
+- Bloquea duplicados activos por mantenimiento.
+- No cambia habitaciones ni mantenimientos.
+- QA manual queda diferida.
