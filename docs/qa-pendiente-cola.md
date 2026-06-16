@@ -211,7 +211,7 @@ Cierre tecnico 3C completado documentalmente. La QA manual final del bloque 3C f
 
 ## QA Fase 4A Centro Documental
 
-Estado vigente: `REVISION_TECNICA_4A_COMPLETADA`.
+Estado vigente: `AUDITORIA_SEGURIDAD_4A_COMPLETADA`.
 
 4A-0 no implemento funcionalidad. 4A-A creo solo esquema base, sin uploads, sin POST,
 sin descargas y sin datos operativos. 4A-B agrega capa de consulta read-only de metadata
@@ -310,6 +310,15 @@ sin exponer archivos.
 - El enlace de carga contextual queda disponible solo para entidades validas del hotel actual.
 - Verificacion HTTP autenticada: `/documentos` y `/documentos/entidad/proveedor/8` responden `200`; `/documentos/entidad/proveedor/999999` y `/documentos/subir?entidad_tipo=proveedor&entidad_id=999999` redirigen `303` a `/documentos`.
 - No se agregaron descargas, edicion, borrado, pagos, abonos, Caja ni cambios en `/api/sync`.
+
+### Resultado auditoria seguridad Fase 4A
+
+- Rutas documentales activas confirmadas: `GET /documentos`, `GET /documentos/subir`, `POST /documentos/subir`, `GET /documentos/entidad/{tipo}/{id}` y `GET /documentos/{id}`.
+- No hay rutas documentales de descarga, edicion ni borrado.
+- `storage_path` y `nombre_archivo` se usan solo dentro del modelo y no se muestran en vistas.
+- `unlink` aparece solo como rollback interno para eliminar un archivo recien movido si falla la transaccion.
+- No hay referencias documentales en `service-worker.js`, `pwa.js`, `offline-data.js`, `reservaciones-offline.js` ni `ApiController`.
+- Conteos read-only de auditoria: `documento_tipos=6`, `documentos=3`, `documento_entidades=1`, `cuentas_por_pagar_movimientos=0`, `movimientos_caja=1403`, `logs_auditoria=29`.
 
 ### QA critica futura
 

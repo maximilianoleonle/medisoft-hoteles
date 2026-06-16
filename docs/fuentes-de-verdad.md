@@ -83,7 +83,7 @@ Regla:
 
 ## Centro Documental (Fase 4A)
 
-Estado formal: `REVISION_TECNICA_4A_COMPLETADA`.
+Estado formal: `AUDITORIA_SEGURIDAD_4A_COMPLETADA`.
 
 Fuente fundacional creada:
 
@@ -123,6 +123,8 @@ Reglas:
 - Las rutas documentales de carga son: `GET /documentos/subir` y
   `POST /documentos/subir`.
 - No hay descarga, edicion ni borrado en 4A-C.
+- Auditoria seguridad 4A confirma que PWA/offline y `/api/sync` no participan en Centro
+  Documental base.
 - `src/storage/documentos/` queda fuera de Git; no se debe versionar storage runtime.
 - No Caja, pagos, abonos, Fase 3D ni `/api/sync`.
 

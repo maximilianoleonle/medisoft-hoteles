@@ -268,7 +268,7 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 
 ### 4A-C upload seguro documental
 
-- Estado vigente: `REVISION_TECNICA_4A_COMPLETADA`.
+- Estado vigente: `AUDITORIA_SEGURIDAD_4A_COMPLETADA`.
 - Backup previo:
   `src/storage/backups/phase4a_c_20260615_190912_before_document_upload_medisoft_hoteles_import.sql`.
 - SHA256: `DF150F705824973621B9A1276980DC73ECB7AE5261B67A5D71E541FE13797446`.
@@ -308,6 +308,12 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - DB: no aplica; la revision tecnica no crea ni modifica datos.
 - Cambio funcional: la ruta contextual `/documentos/entidad/{tipo}/{id}` valida la existencia de la entidad en el hotel actual antes de mostrar la vista.
 - Si se revierte, la carga contextual sigue validando entidad antes de subir, pero el listado contextual volveria a poder mostrar una entidad inexistente como pantalla vacia.
+
+### 4A auditoria seguridad post-QA
+
+- Rollback documental: revertir el commit `docs(phase-4a): record document center security audit`.
+- DB: no aplica; auditoria sin escrituras.
+- Codigo: no aplica si el commit solo contiene documentacion de auditoria.
 
 ### Fases futuras
 

@@ -120,7 +120,7 @@ Bloque 3C cerrado tecnicamente. Mantener prohibidos pagos, Caja, CxC, nomina ope
 
 ## Fase 4A Centro Documental - auditoria inicial de contrato
 
-Estado: `REVISION_TECNICA_4A_COMPLETADA`.
+Estado: `AUDITORIA_SEGURIDAD_4A_COMPLETADA`.
 
 - Riesgo principal: exposicion accidental de documentos privados si se guardan en
   `public_html/uploads`.
@@ -217,6 +217,17 @@ Riesgos residuales 4A-C:
 - Correccion: `DocumentoController::entidadAction()` valida `Documento::entidadExisteEnHotel()` antes de consultar documentos y antes de exponer el enlace de carga contextual.
 - Riesgo reducido: evita pantallas contextuales ambiguas y mantiene el guard multi-hotel consistente entre listado contextual y carga contextual.
 - No se agregaron descargas, edicion, borrado, pagos, abonos, Caja ni cambios en `/api/sync`.
+
+### Auditoria seguridad 4A post-QA
+
+- Rutas documentales activas: `GET /documentos`, `GET /documentos/subir`, `POST /documentos/subir`, `GET /documentos/entidad/{tipo}/{id}`, `GET /documentos/{id}`.
+- No existen rutas documentales de descarga, edicion ni borrado.
+- El POST documental conserva `requireAuth`, contexto hotelero, modulo relacionado, CSRF y validacion central en modelo.
+- `storage_path` y `nombre_archivo` no se muestran en vistas; se usan solo como metadata privada interna.
+- `unlink` solo aparece como rollback interno de `Documento::crearDesdeUpload()` cuando la transaccion falla despues de mover el archivo.
+- No hay referencias a documentos en PWA/offline (`service-worker.js`, `pwa.js`, `offline-data.js`, `reservaciones-offline.js`) ni cambios en `ApiController`.
+- SQL read-only: `documento_tipos=6`, `documentos=3`, `documento_entidades=1`, `cuentas_por_pagar_movimientos=0`, `movimientos_caja=1403`, `logs_auditoria=29`.
+- Sin Caja, pagos, abonos, Fase 3D ni `/api/sync`.
 
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 
