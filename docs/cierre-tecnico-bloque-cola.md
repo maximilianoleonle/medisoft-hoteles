@@ -758,3 +758,14 @@ Estado: `REPORTE_TLM_I_A_COMPLETADO_QA_DIFERIDA`.
 - No hay POST, asignaciones, cambios de estado, cambios de habitacion, Caja ni
   `/api/sync`.
 - QA manual queda diferida.
+
+## Cierre tecnico TLM-I-F
+
+Estado: `BLOQUE_TLM_I_REPORTE_OPERATIVO_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_TLM_I_F_cierre_reporte_operativo.md`.
+- Revision tecnica y auditoria de seguridad completadas para el reporte operativo
+  read-only.
+- No se agregaron funcionalidades nuevas en el cierre.
+- No hay nuevas acciones de tarea, cambios de habitacion, Caja, nomina ni `/api/sync`.
+- QA manual queda diferida.

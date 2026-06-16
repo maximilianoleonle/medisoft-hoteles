@@ -757,3 +757,13 @@ agregar funcionalidades nuevas.
   `/api/sync`.
 - QA manual queda diferida por instruccion del usuario.
 - Siguiente accion segura: revision tecnica/auditoria/cierre de TLM-I-A.
+
+## Cierre tecnico TLM-I-F
+
+- Estado formal: `BLOQUE_TLM_I_REPORTE_OPERATIVO_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_TLM_I_F_cierre_reporte_operativo.md`.
+- Revision tecnica y auditoria del reporte operativo read-only completadas.
+- Verificaciones automaticas pasan con `ERROR: 0` y warnings historicos permitidos.
+- QA manual queda diferida.
+- No hay nuevas acciones de tarea, cambios de habitacion, Caja, nomina ni `/api/sync`.
+- Siguiente accion segura: contrato documental independiente para el proximo bloque.

@@ -129,6 +129,16 @@ Estado actual: `REPORTE_TLM_I_A_COMPLETADO_QA_DIFERIDA`.
 - Health checker y preflight TLM conocen el contrato TLM-I-A.
 - QA manual queda diferida por instruccion del usuario.
 
+## Cierre reporte operativo TLM
+
+Estado actual: `BLOQUE_TLM_I_REPORTE_OPERATIVO_CERRADO_QA_DIFERIDA`.
+
+- TLM-I-A queda cerrado tecnicamente con revision/auditoria documental.
+- Verificaciones automaticas: lint PHP OK, preflight TLM `ERROR: 0`, health checker
+  `ERROR: 0`, HTTP sin sesion `303`, SQL read-only sin cambios operativos.
+- No hay nuevas acciones de tarea, cambios de habitacion, Caja, nomina ni `/api/sync`.
+- QA manual queda diferida.
+
 ## Situacion historica
 
 El historial contiene commits que implementan partes de Fase 3C, pero el estado documental vigente no debe tratarlos como cierre formal completo.

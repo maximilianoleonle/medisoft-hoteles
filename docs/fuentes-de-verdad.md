@@ -377,3 +377,5 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - TLM-I-A implementa ese reporte sin crear fuente nueva: tareas en
   `tareas_operativas`, eventos en `tarea_eventos` y contexto de lectura desde
   habitaciones/trabajadores/mantenimiento.
+- TLM-I-F cierra el reporte sin cambiar fuentes de verdad ni automatizar disponibilidad,
+  limpieza, mantenimiento, asistencia, Caja o nomina.

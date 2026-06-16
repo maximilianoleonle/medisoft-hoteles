@@ -1002,3 +1002,10 @@ instruccion del usuario.
 - Confirmar estados vacios o datos correctos segun existan tareas.
 - Confirmar que no existen formularios POST ni botones de asignar/iniciar/completar/cancelar.
 - Confirmar que HTTP sin sesion bloquea o redirige.
+
+### Estado TLM-I-F
+
+- Bloque reporte operativo TLM read-only cerrado tecnicamente.
+- QA manual sigue pendiente y diferida.
+- No avanzar a automatizaciones de limpieza/mantenimiento, disponibilidad de habitacion,
+  asistencia, nomina, pagos ni Caja desde este cierre.

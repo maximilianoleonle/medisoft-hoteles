@@ -669,3 +669,10 @@
   y permiso `habitaciones.view`.
 - No se agrega filtro visible de hotel; el hotel sale del contexto de sesion.
 - El reporte no ofrece acciones de tarea para mantener separacion con el detalle operativo.
+
+## Decision TLM-I-F cierre reporte operativo
+
+- El reporte operativo read-only queda cerrado antes de abrir automatizaciones.
+- QA manual queda diferida por instruccion del usuario, no sustituida por los checkers.
+- El siguiente bloque debe empezar con contrato independiente para evitar alcance
+  implicito sobre habitaciones, limpieza, mantenimiento o Personal.

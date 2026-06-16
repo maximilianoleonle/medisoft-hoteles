@@ -784,3 +784,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - DB: no aplica; TLM-I-A no crea migraciones ni escribe datos.
 - No tocar `tareas_operativas`, `tarea_eventos`, habitaciones, mantenimiento, Caja ni
   `/api/sync`.
+
+### TLM-I-F cierre reporte operativo read-only
+
+- Rollback documental: revertir el commit
+  `docs(phase-tlm): close read-only operations report block`.
+- DB: no aplica; es cierre documental.
+- Mantener intacto el codigo TLM-I-A salvo que se revierta su commit especifico.

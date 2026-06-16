@@ -836,3 +836,12 @@ Estado: `REPORTE_TLM_I_A_COMPLETADO_QA_DIFERIDA`.
   mantenimientos, Caja ni `/api/sync`.
 - Riesgo residual: QA manual diferida y posible interpretacion del reporte como pantalla
   operativa; la vista mantiene copy explicito de solo lectura.
+
+## Auditoria TLM-I-F cierre reporte operativo
+
+Estado: `BLOQUE_TLM_I_REPORTE_OPERATIVO_CERRADO_QA_DIFERIDA`.
+
+- Revision tecnica y auditoria completadas sin hallazgos bloqueantes.
+- Health/preflight validan que el reporte sea read-only y que no se agreguen rutas fuera
+  de alcance.
+- Riesgo residual: falta QA manual en navegador con tareas reales.
