@@ -5,6 +5,7 @@ $menuModuloActivo = function ($clave) {
 
 $menuModulosSinConfigurar = function_exists('hotel_menu_modules_unconfigured') && hotel_menu_modules_unconfigured();
 $mostrarDashboard = $menuModuloActivo('dashboard');
+$mostrarOperacionDiaria = $mostrarDashboard;
 $mostrarHabitaciones = $menuModuloActivo('habitaciones');
 $mostrarReservaciones = $menuModuloActivo('reservaciones');
 $mostrarHuespedes = $menuModuloActivo('huespedes');
@@ -169,6 +170,16 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
                     <i class="fas fa-th-large"></i>
                 </div>
                 <span class="nav-text">Dashboard</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarOperacionDiaria): ?>
+            <a href="<?= url('operacion/diaria') ?>"
+               class="nav-item <?= strpos($sidebarRequestPath, '/operacion/diaria') === 0 ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <span class="nav-text">Operacion diaria</span>
             </a>
             <?php endif; ?>
 

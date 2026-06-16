@@ -1049,3 +1049,13 @@ Estado formal vigente: `CONTRATO_OP_0_TABLERO_OPERATIVO_READONLY_COMPLETADO`.
 - Fuera de alcance: acciones sobre tareas, habitaciones, reservaciones, Caja, pagos,
   abonos, nomina, offline y `/api/sync`.
 - Siguiente accion segura: OP-A implementacion read-only del tablero, si se autoriza.
+
+### Estado OP-A
+
+Estado formal vigente: `TABLERO_OPERATIVO_OP_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_OP_A_tablero_operativo_readonly.md`.
+- Implementacion GET/read-only de `/operacion/diaria`.
+- No agrega formularios, POST, cambios de estado, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.
+- Siguiente accion segura: revision tecnica/auditoria/cierre de OP-A.

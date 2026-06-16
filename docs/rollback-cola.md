@@ -798,3 +798,12 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-op): define read-only daily operations dashboard contract`.
 - DB: no aplica; OP-0 no crea migraciones, rutas ni datos.
 - No tocar reservaciones, habitaciones, tareas, documentos, Caja ni `/api/sync`.
+
+### OP-A tablero operativo diario read-only
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-op): add read-only daily operations dashboard`.
+- DB: no aplica; OP-A no crea migraciones ni escribe datos.
+- Retirar ruta `GET /operacion/diaria`, `OperacionController`, `OperacionDiaria`, vista,
+  preflight, enlace sidebar y checks OP-A.
+- No tocar reservaciones, habitaciones, tareas, documentos, Caja ni `/api/sync`.

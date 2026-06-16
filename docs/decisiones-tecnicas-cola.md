@@ -686,3 +686,12 @@
   filtradas por `hotel_id`.
 - Cualquier accion futura sobre tareas, habitaciones, reservaciones, Caja, pagos, abonos,
   nomina, offline o `/api/sync` requiere contrato separado.
+
+## Decision OP-A
+
+- El tablero operativo se implementa como modulo de observacion bajo `dashboard`, no como
+  pantalla de acciones.
+- Se crea `OperacionDiaria` para no reutilizar `DashboardController`, porque el dashboard
+  existente mezcla metricas financieras de Caja.
+- No se agregan filtros visibles de hotel: el hotel sale del contexto de sesion.
+- Los documentos se muestran solo como metadata segura y enlaces al detalle autenticado.

@@ -193,6 +193,9 @@ $router->get('/dashboard', ['controller' => 'Dashboard', 'action' => 'index']);
 $router->get('/dashboard/stats', ['controller' => 'Dashboard', 'action' => 'stats']);
 $router->get('/dashboard/charts', ['controller' => 'Dashboard', 'action' => 'charts']);
 
+// Fase OP-A: tablero operativo diario GET/read-only. Sin acciones, Caja, pagos ni /api/sync.
+$router->get('/operacion/diaria', ['controller' => 'Operacion', 'action' => 'diaria']);
+
 // Centro de notificaciones
 $router->get('/notificaciones', ['controller' => 'Notificacion', 'action' => 'index']);
 $router->get('/notificaciones/{id:[0-9]+}/abrir', ['controller' => 'Notificacion', 'action' => 'abrir']);

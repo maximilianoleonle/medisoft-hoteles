@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/TLM-G.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/TLM-G/OP-A.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -819,7 +819,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A-4D/NP-C-D-A/TLM-G - Medisoft Hoteles\n";
+echo "Health check Fase 1A-4D/NP-C-D-A/TLM-G/OP-A - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -4822,6 +4822,122 @@ if (!is_file($routesPath)) {
         hcWarning(
             'Faltan consultas documentales por entidad en controladores: ' . implode(', ', $faltantes),
             'Usar Documento::documentosPorEntidad($hotelId, $entidadTipo, $id) y pasar solo metadata segura a la vista.'
+        );
+    }
+
+    $opControllerPath = $controllersDir . '/OperacionController.php';
+    $opModelPath = $appRoot . '/app/models/OperacionDiaria.php';
+    $opViewPath = $appRoot . '/app/views/operacion/diaria.php';
+    $opPreflightPath = $appRoot . '/tools/saas/preflight_operacion_diaria.php';
+    $opControllerCode = is_file($opControllerPath) ? (string) file_get_contents($opControllerPath) : '';
+    $opModelCode = is_file($opModelPath) ? (string) file_get_contents($opModelPath) : '';
+    $opViewCode = is_file($opViewPath) ? (string) file_get_contents($opViewPath) : '';
+    $opSidebarCode = is_file($sidebarPath) ? (string) file_get_contents($sidebarPath) : '';
+
+    if (hcRouteExists($routes, 'operacion/diaria', 'get')) {
+        hcOk('Ruta OP-A registrada: GET /operacion/diaria.');
+    } else {
+        hcWarning(
+            'Ruta OP-A GET /operacion/diaria no esta registrada.',
+            'Registrar solo GET /operacion/diaria si el tablero operativo read-only sigue vigente.'
+        );
+    }
+
+    $forbiddenOpRoutes = [];
+    foreach ($routes as $route) {
+        $method = strtoupper((string) $route['method']);
+        $path = strtolower(trim((string) $route['path'], '/'));
+        $controller = strtolower((string) $route['controller']);
+        $action = strtolower((string) $route['action']);
+        $signature = $method . ' /' . $path . ' -> ' . $controller . '::' . $action;
+
+        if (($path === 'operacion/diaria' || strpos($path, 'operacion/') === 0 || $controller === 'operacion')
+            && $signature !== 'GET /operacion/diaria -> operacion::diaria') {
+            $forbiddenOpRoutes[] = $signature;
+        }
+    }
+
+    if (empty($forbiddenOpRoutes)) {
+        hcOk('OP-A mantiene una unica ruta GET/read-only y no expone POST operativos.');
+    } else {
+        hcError(
+            'OP-A tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenOpRoutes),
+            'Retirar rutas OP que no sean GET /operacion/diaria -> Operacion::diaria.'
+        );
+    }
+
+    if (
+        $opControllerCode !== ''
+        && strpos($opControllerCode, 'class OperacionController') !== false
+        && strpos($opControllerCode, 'function diariaAction') !== false
+        && strpos($opControllerCode, 'require_hotel_context') !== false
+        && strpos($opControllerCode, "require_hotel_module('dashboard')") !== false
+        && strpos($opControllerCode, 'OperacionDiaria') !== false
+        && strpos($opControllerCode, 'operacion/diaria') !== false
+    ) {
+        hcOk('OperacionController OP-A usa sesion, hotel actual, modulo dashboard y vista read-only.');
+    } else {
+        hcWarning(
+            'OperacionController OP-A no muestra guardas completas.',
+            'Validar requireAuth, require_hotel_context, require_hotel_module("dashboard") y render de operacion/diaria.'
+        );
+    }
+
+    if (
+        $opModelCode !== ''
+        && strpos($opModelCode, 'class OperacionDiaria') !== false
+        && strpos($opModelCode, 'function reporteReadOnlyPorHotel') !== false
+        && strpos($opModelCode, 'hotel_id = ?') !== false
+        && strpos($opModelCode, 'storage_path') === false
+        && !preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\b/i', $opModelCode)
+        && strpos($opModelCode, 'movimientos_caja') === false
+    ) {
+        hcOk('OperacionDiaria OP-A solo lee fuentes modernas con hotel_id y no toca Caja/storage.');
+    } else {
+        hcError(
+            'OperacionDiaria OP-A no cumple contrato read-only.',
+            'Retirar escrituras, referencias a Caja/storage_path o consultas sin hotel_id.'
+        );
+    }
+
+    if (
+        $opViewCode !== ''
+        && strpos($opViewCode, 'Tablero operativo diario') !== false
+        && strpos($opViewCode, '<form') === false
+        && strpos($opViewCode, 'method="POST"') === false
+        && strpos($opViewCode, 'csrf_field()') === false
+        && strpos($opViewCode, 'storage_path') === false
+        && strpos($opViewCode, 'movimientos_caja') === false
+        && strpos($opViewCode, "url('reservaciones/ver/'") !== false
+        && strpos($opViewCode, "url('tareas/'") !== false
+    ) {
+        hcOk('Vista OP-A es read-only, sin formularios, sin storage_path y con enlaces GET.');
+    } else {
+        hcWarning(
+            'Vista OP-A no muestra contrato visual completo.',
+            'Asegurar vista sin formularios/POST/CSRF/storage_path/Caja y con enlaces GET seguros.'
+        );
+    }
+
+    if (
+        $opSidebarCode !== ''
+        && strpos($opSidebarCode, '$mostrarOperacionDiaria') !== false
+        && strpos($opSidebarCode, "url('operacion/diaria')") !== false
+    ) {
+        hcOk('Sidebar OP-A enlaza tablero operativo solo bajo guardas visuales del modulo dashboard.');
+    } else {
+        hcWarning(
+            'Sidebar OP-A no muestra navegacion del tablero operativo.',
+            'Agregar enlace visual solo cuando dashboard este activo.'
+        );
+    }
+
+    if (is_file($opPreflightPath)) {
+        hcOk('Preflight OP-A disponible: tools/saas/preflight_operacion_diaria.php.');
+    } else {
+        hcWarning(
+            'Preflight OP-A no existe.',
+            'Crear preflight read-only para validar tablero operativo diario.'
         );
     }
 

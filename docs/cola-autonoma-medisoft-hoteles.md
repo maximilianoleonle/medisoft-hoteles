@@ -777,3 +777,16 @@ agregar funcionalidades nuevas.
 - No agrega rutas, vistas, modelos, migraciones, formularios ni escrituras.
 - Caja, pagos, abonos, nomina, cambios de habitacion, offline y `/api/sync` quedan fuera.
 - Siguiente accion segura: OP-A implementacion GET/read-only del tablero operativo.
+
+## Tablero operativo OP-A
+
+- Estado formal: `TABLERO_OPERATIVO_OP_A_COMPLETADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_OP_A_tablero_operativo_readonly.md`.
+- Ruta GET/read-only: `/operacion/diaria`.
+- Modelo `OperacionDiaria` consolida habitaciones, reservaciones, tareas, mantenimiento,
+  trabajadores y documentos por `hotel_id`.
+- No agrega POST, migraciones, escrituras, Caja, pagos, abonos, nomina, offline ni
+  `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.
+- Siguiente accion segura: revision tecnica/auditoria/cierre OP-A o nuevo contrato
+  independiente.

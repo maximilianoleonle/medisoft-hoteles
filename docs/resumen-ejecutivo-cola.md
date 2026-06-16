@@ -878,3 +878,14 @@ Resultado OP-0:
 - No se agregan rutas, modelos, vistas, migraciones ni escrituras.
 - No se toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - Siguiente paso recomendado: OP-A implementacion GET/read-only si se autoriza.
+
+Resultado OP-A:
+
+- Estado tecnico: `TABLERO_OPERATIVO_OP_A_COMPLETADO_QA_DIFERIDA`.
+- Documento: `docs/fase_OP_A_tablero_operativo_readonly.md`.
+- Se agrega `/operacion/diaria` como tablero operativo GET/read-only.
+- Consolida fuentes existentes por `hotel_id`: habitaciones, reservaciones, tareas,
+  mantenimiento, trabajadores y documentos.
+- Health checker y preflight OP-A validan ausencia de POST, storage interno, Caja y
+  escrituras.
+- No se toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.

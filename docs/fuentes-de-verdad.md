@@ -391,3 +391,11 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - Documentos: `documentos` y `documento_entidades` solo como metadatos seguros.
 - Restriccion: todas las consultas deben filtrar por `hotel_id` y no deben exponer rutas
   internas de storage.
+
+### OP-A tablero operativo diario
+
+- Implementacion: `OperacionDiaria` no crea fuente nueva.
+- No lee `movimientos_caja` ni fuentes financieras.
+- `documentos.storage_path` y `documentos.nombre_archivo` no son parte del reporte.
+- La fuente del tablero sigue siendo agregada/read-only y todo debe venir del
+  `hotel_id` actual.

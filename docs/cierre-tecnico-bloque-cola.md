@@ -779,3 +779,13 @@ Estado: `CONTRATO_OP_0_TABLERO_OPERATIVO_READONLY_COMPLETADO`.
 - No hay codigo, rutas, migraciones, cambios de DB ni escrituras.
 - No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - Siguiente paso seguro: OP-A implementacion read-only si se autoriza.
+
+## Checkpoint tecnico OP-A
+
+Estado: `TABLERO_OPERATIVO_OP_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_OP_A_tablero_operativo_readonly.md`.
+- Ruta GET/read-only agregada en `/operacion/diaria`.
+- Health y preflight OP-A validan ruta unica, modelo read-only y vista sin formularios.
+- No hay escrituras, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- QA manual queda diferida.

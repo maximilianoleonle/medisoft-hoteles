@@ -1017,3 +1017,15 @@ instruccion del usuario.
 - QA futura OP-A debe confirmar ruta protegida, datos scoped por hotel, estados vacios,
   ausencia de POST, ausencia de acciones de tarea/habitacion/reservacion y ausencia de
   Caja, pagos, abonos, nomina, offline y `/api/sync`.
+
+### Estado OP-A
+
+- Tablero operativo diario read-only implementado.
+- QA manual diferida por instruccion del usuario.
+- Probar `/operacion/diaria` con sesion de hotel.
+- Confirmar que muestra datos o estados vacios sin errores.
+- Confirmar que el sidebar muestra "Operacion diaria" solo cuando dashboard esta activo.
+- Confirmar que HTTP sin sesion bloquea o redirige.
+- Confirmar que no hay formularios POST ni botones de accion.
+- Confirmar que no se exponen `storage_path`, `nombre_archivo` ni rutas privadas.
+- Confirmar que Caja, pagos, abonos, nomina y `/api/sync` no participan.

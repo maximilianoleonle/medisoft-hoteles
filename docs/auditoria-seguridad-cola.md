@@ -856,3 +856,13 @@ Estado: `CONTRATO_OP_0_TABLERO_OPERATIVO_READONLY_COMPLETADO`.
 - Riesgo futuro rojo: convertir el tablero en panel de acciones. Cualquier POST o cambio
   de estado queda fuera de OP-A y requiere contrato nuevo.
 - `/api/sync`, offline, Caja, pagos, abonos y nomina quedan explicitamente fuera.
+
+## Auditoria OP-A
+
+Estado: `TABLERO_OPERATIVO_OP_A_COMPLETADO_QA_DIFERIDA`.
+
+- Nueva superficie: GET `/operacion/diaria`.
+- Sin POST, formularios, CSRF ni acciones operativas.
+- `OperacionDiaria` usa `hotel_id` en consultas y no contiene INSERT/UPDATE/DELETE.
+- La vista no expone `storage_path`, `nombre_archivo` ni `movimientos_caja`.
+- Riesgo residual: QA manual diferida para validar visualmente datos reales por hotel.
