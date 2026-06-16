@@ -166,6 +166,40 @@ class Mantenimiento extends Model {
         
         return $this->create($data);
     }
+
+    /**
+     * Verificar si ya existe mantenimiento programado que se solape con el rango.
+     */
+    public function tieneProgramadoSolapado($habitacion_id, $fecha_inicio, $fecha_fin = null, $excluir_id = null) {
+        $fecha_fin_check = $fecha_fin ?: $fecha_inicio;
+        $params = [
+            $habitacion_id,
+            $this->hotelIdActual(),
+            $fecha_fin_check,
+            $fecha_inicio
+        ];
+
+        $whereExclusion = '';
+        if ($excluir_id !== null) {
+            $whereExclusion = " AND {$this->primaryKey} <> ?";
+            $params[] = $excluir_id;
+        }
+
+        $sql = "SELECT COUNT(*) as total
+                FROM {$this->table}
+                WHERE habitacion_id = ?
+                AND hotel_id = ?
+                AND programado = 1
+                AND estado = 'programado'
+                AND fecha_programada IS NOT NULL
+                AND fecha_programada <= ?
+                AND COALESCE(fecha_programada_fin, fecha_programada) >= ?
+                {$whereExclusion}";
+
+        $stmt = $this->db->query($sql, $params);
+        $result = $stmt ? $stmt->fetch() : false;
+        return ((int)($result['total'] ?? 0)) > 0;
+    }
     
     /**
      * Finalizar mantenimiento

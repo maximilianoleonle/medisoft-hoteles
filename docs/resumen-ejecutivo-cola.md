@@ -952,3 +952,17 @@ Resultado MANT-C-0:
 - No se modifica codigo, DB, Caja, pagos, abonos, offline ni `/api/sync`.
 - Siguiente paso recomendado: MANT-C-A guardrails de programacion/cancelacion existente,
   sin activar automatizaciones.
+
+Resultado MANT-C-A:
+
+- Estado tecnico: `MANTENIMIENTO_PROGRAMADO_MANT_C_A_COMPLETADO_QA_DIFERIDA`.
+- Documento: `docs/fase_MANT_C_A_guardrails_mantenimiento_programado.md`.
+- Se endurecen las rutas existentes de programacion/cancelacion de mantenimiento
+  programado sin crear rutas nuevas.
+- Programacion ahora valida fechas reales, tipo, prioridad, motivo y solapes por
+  habitacion/hotel.
+- Cancelacion confirma mantenimiento y habitacion del hotel actual antes de operar.
+- Health y preflight MANT reconocen MANT-C-A; ambos quedan con `ERROR: 0`.
+- No se activa `Mantenimiento::activarMantenimientosPendientes()`.
+- No hay migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- QA manual queda diferida.

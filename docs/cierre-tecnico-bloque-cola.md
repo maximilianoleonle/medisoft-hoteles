@@ -853,3 +853,14 @@ Estado: `CONTRATO_MANT_C_0_MANTENIMIENTO_PROGRAMADO_COMPLETADO`.
 - No se agregaron funcionalidades nuevas en el cierre.
 - No hay rutas nuevas, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - QA manual queda diferida.
+
+## Checkpoint tecnico MANT-C-A
+
+Estado: `MANTENIMIENTO_PROGRAMADO_MANT_C_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_C_A_guardrails_mantenimiento_programado.md`.
+- Se endurecen programacion/cancelacion de mantenimiento programado existente.
+- Health y preflight MANT-C-A validan fechas, catalogos, motivo, solapes, CSRF,
+  permisos y `hotel_id`.
+- No hay rutas nuevas, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- QA manual queda diferida.

@@ -935,3 +935,15 @@ Estado: `CONTRATO_MANT_C_0_MANTENIMIENTO_PROGRAMADO_COMPLETADO`.
 - Programacion/cancelacion deben reforzar pertenencia por `hotel_id`, estados permitidos
   y duplicados solapados antes de considerarse estables.
 - No se modifica codigo, DB, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+
+## Auditoria MANT-C-A
+
+Estado: `MANTENIMIENTO_PROGRAMADO_MANT_C_A_COMPLETADO_QA_DIFERIDA`.
+
+- Programacion mantiene CSRF, permiso y hotel actual.
+- Se bloquean fechas invalidas, catalogos alterados, motivo vacio y solapes programados.
+- Cancelacion valida mantenimiento scoped y habitacion visible del hotel actual.
+- Checkers confirman solapes historicos = 0 y ausencia de Caja en la superficie revisada.
+- Riesgo residual: QA manual diferida y una habitacion historica en mantenimiento sin
+  registro `en_proceso`.
+- `/api/sync`, Caja, pagos, abonos, nomina y offline siguen fuera de alcance.

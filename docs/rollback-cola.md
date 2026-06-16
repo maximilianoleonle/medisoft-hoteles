@@ -856,3 +856,12 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - DB: no aplica; MANT-C-0 no crea migraciones, rutas ni datos.
 - Codigo: no aplica; no se modifica PHP.
 - No tocar registros reales de `mantenimientos_habitaciones`.
+
+### MANT-C-A guardrails mantenimiento programado
+
+- Rollback de codigo/documentacion: revertir el commit
+  `fix(phase-mant): harden scheduled maintenance actions`.
+- DB: no aplica; MANT-C-A no crea migraciones ni escribe datos por si mismo.
+- Si QA manual creo mantenimientos programados, documentar IDs y cancelar con el flujo
+  autorizado; no borrar con SQL manual.
+- No tocar Caja, pagos, abonos, nomina, offline ni `/api/sync`.

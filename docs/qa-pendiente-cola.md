@@ -1091,3 +1091,9 @@ instruccion del usuario.
   programados.
 - Confirmar que no se activa automaticamente ningun mantenimiento vencido.
 - Confirmar que no hay Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+
+### Estado MANT-C-A
+
+- Guardrails de programacion/cancelacion implementados.
+- QA manual sigue diferida por instruccion del usuario.
+- Preflight y health ejecutados con `ERROR: 0`.

@@ -1352,7 +1352,8 @@ public function programarMantenimientoAction() {
     $this->validateCSRF();
     $this->requirePermission('habitaciones.mantenimiento');
     
-    $id = $this->route_params['id'] ?? 0;
+    $id = (int)($this->route_params['id'] ?? 0);
+    $hotelId = $this->hotelIdActual();
     
     $habitacion = $this->habitacionModel->find($id);
     if (!$habitacion) {
@@ -1364,8 +1365,24 @@ public function programarMantenimientoAction() {
     require_once __DIR__ . '/../models/Mantenimiento.php';
     $mantenimientoModel = new Mantenimiento();
     
-    $fecha_inicio = $this->getPost('fecha_programada');
-    $fecha_fin = $this->getPost('fecha_programada_fin');
+    $fecha_inicio = trim((string)$this->getPost('fecha_programada'));
+    $fecha_fin = trim((string)$this->getPost('fecha_programada_fin'));
+    $parseDate = static function ($value) {
+        $value = trim((string)$value);
+        if ($value === '') {
+            return null;
+        }
+
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+        $errors = DateTimeImmutable::getLastErrors();
+        $hasErrors = is_array($errors) && ((int)$errors['warning_count'] > 0 || (int)$errors['error_count'] > 0);
+
+        if (!$date || $hasErrors || $date->format('Y-m-d') !== $value) {
+            return false;
+        }
+
+        return $date;
+    };
     
     // Validaciones
     if (empty($fecha_inicio)) {
@@ -1373,6 +1390,15 @@ public function programarMantenimientoAction() {
         $this->redirect('habitaciones/' . $id);
         return;
     }
+
+    $fecha_inicio_dt = $parseDate($fecha_inicio);
+    if (!$fecha_inicio_dt) {
+        set_mensaje('La fecha programada no es valida', 'error');
+        $this->redirect('habitaciones/' . $id);
+        return;
+    }
+
+    $fecha_inicio = $fecha_inicio_dt->format('Y-m-d');
     
     if ($fecha_inicio < date('Y-m-d')) {
         set_mensaje('La fecha programada no puede ser en el pasado', 'error');
@@ -1380,8 +1406,48 @@ public function programarMantenimientoAction() {
         return;
     }
     
+    if ($fecha_fin !== '') {
+        $fecha_fin_dt = $parseDate($fecha_fin);
+        if (!$fecha_fin_dt) {
+            set_mensaje('La fecha de fin no es valida', 'error');
+            $this->redirect('habitaciones/' . $id);
+            return;
+        }
+
+        $fecha_fin = $fecha_fin_dt->format('Y-m-d');
+    }
+
     if (!empty($fecha_fin) && $fecha_fin < $fecha_inicio) {
         set_mensaje('La fecha de fin no puede ser anterior a la fecha de inicio', 'error');
+        $this->redirect('habitaciones/' . $id);
+        return;
+    }
+
+    $tipoMantenimiento = trim((string)$this->getPost('tipo_mantenimiento', 'preventivo'));
+    $prioridad = trim((string)$this->getPost('prioridad', 'media'));
+    $motivo = trim((string)$this->getPost('motivo'));
+    $descripcion = trim((string)$this->getPost('descripcion', ''));
+
+    if (!in_array($tipoMantenimiento, array_keys(Mantenimiento::getTipos()), true)) {
+        set_mensaje('Debe seleccionar un tipo de mantenimiento valido', 'error');
+        $this->redirect('habitaciones/' . $id);
+        return;
+    }
+
+    if (!in_array($prioridad, array_keys(Mantenimiento::getPrioridades()), true)) {
+        set_mensaje('Debe seleccionar una prioridad valida', 'error');
+        $this->redirect('habitaciones/' . $id);
+        return;
+    }
+
+    if ($motivo === '') {
+        set_mensaje('El motivo es obligatorio', 'error');
+        $this->redirect('habitaciones/' . $id);
+        return;
+    }
+
+    if ($mantenimientoModel->tieneProgramadoSolapado($id, $fecha_inicio, $fecha_fin ?: null)) {
+        set_mensaje('Ya existe un mantenimiento programado para esta habitacion en ese rango de fechas', 'error');
         $this->redirect('habitaciones/' . $id);
         return;
     }
@@ -1392,7 +1458,6 @@ public function programarMantenimientoAction() {
     $fecha_fin_check_ext = date('Y-m-d', strtotime($fecha_fin_check . ' +1 day'));
     
     $db = Database::getInstance();
-    $hotelId = $this->hotelIdActual();
     $sql = "SELECT r.id, h.nombre_completo, r.fecha_entrada, r.fecha_salida
             FROM reservaciones r
             INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id
@@ -1419,10 +1484,10 @@ public function programarMantenimientoAction() {
     }
     
     $data = [
-        'tipo_mantenimiento' => $this->getPost('tipo_mantenimiento', 'preventivo'),
-        'prioridad' => $this->getPost('prioridad', 'media'),
-        'motivo' => $this->getPost('motivo', ''),
-        'descripcion' => $this->getPost('descripcion', ''),
+        'tipo_mantenimiento' => $tipoMantenimiento,
+        'prioridad' => $prioridad,
+        'motivo' => $motivo,
+        'descripcion' => $descripcion,
         'fecha_programada' => $fecha_inicio,
         'fecha_programada_fin' => $fecha_fin ?: null,
         'usuario_registro_id' => current_user('id')
@@ -1439,7 +1504,7 @@ public function programarMantenimientoAction() {
             'mantenimiento_programado',
             'Mantenimiento programado para habitacion ' . ($habitacion['numero'] ?? $id),
             'Programado para el ' . $fecha_txt . $fin_txt . '.',
-            $data['prioridad'] === 'alta' ? 'alta' : 'media'
+            $prioridad === 'alta' ? 'alta' : 'media'
         );
     } else {
         set_mensaje('Error al programar el mantenimiento', 'error');
@@ -1460,7 +1525,7 @@ public function cancelarMantenimientoProgramadoAction() {
     $this->validateCSRF();
     $this->requirePermission('habitaciones.mantenimiento');
     
-    $mantenimiento_id = $this->route_params['id'] ?? 0;
+    $mantenimiento_id = (int)($this->route_params['id'] ?? 0);
     
     require_once __DIR__ . '/../models/Mantenimiento.php';
     $mantenimientoModel = new Mantenimiento();
@@ -1471,8 +1536,18 @@ public function cancelarMantenimientoProgramadoAction() {
         $this->redirect('habitaciones');
         return;
     }
+
+    $habitacion = $this->habitacionModel->find((int)($mantenimiento['habitacion_id'] ?? 0));
+    if (!$habitacion) {
+        set_mensaje('Habitacion no encontrada para el hotel actual', 'error');
+        $this->redirect('habitaciones');
+        return;
+    }
     
-    $motivo = $this->getPost('motivo_cancelacion', 'Cancelado por el usuario');
+    $motivo = trim((string)$this->getPost('motivo_cancelacion', 'Cancelado por el usuario'));
+    if ($motivo === '') {
+        $motivo = 'Cancelado por el usuario';
+    }
     $resultado = $mantenimientoModel->cancelarProgramado($mantenimiento_id, $motivo);
     
     if ($resultado) {

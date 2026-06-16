@@ -749,3 +749,13 @@
   contrato propio, porque escribe en mantenimientos y habitaciones.
 - La siguiente implementacion segura debe reforzar validaciones y pertenencia por hotel
   en rutas existentes, sin crear automatizaciones.
+
+## Decision MANT-C-A
+
+- Se refuerzan las rutas existentes en vez de crear un modulo nuevo.
+- El bloqueo de solapes vive en `Mantenimiento::tieneProgramadoSolapado()` para no
+  depender solo del controlador o de la vista.
+- La cancelacion conserva el flujo actual, pero exige que la habitacion asociada sea
+  visible en el hotel actual.
+- No se toca la activacion automatica de mantenimientos vencidos porque cambia estado de
+  habitaciones y requiere contrato propio.

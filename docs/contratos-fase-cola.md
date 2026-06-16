@@ -1125,3 +1125,14 @@ Estado formal vigente: `CONTRATO_MANT_C_0_MANTENIMIENTO_PROGRAMADO_COMPLETADO`.
   dashboard o modificar disponibilidad sin contrato separado.
 - Siguiente accion segura: MANT-C-A guardrails de programacion/cancelacion existente,
   si se autoriza.
+
+### Estado MANT-C-A
+
+Estado formal vigente: `MANTENIMIENTO_PROGRAMADO_MANT_C_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_C_A_guardrails_mantenimiento_programado.md`.
+- Endurece rutas existentes de programacion/cancelacion sin crear rutas nuevas.
+- Agrega validacion backend de fechas, catalogos, motivo, solapes y pertenencia por
+  `hotel_id`.
+- `activarMantenimientosPendientes()` sigue desconectado y fuera de alcance.
+- Siguiente accion segura: revision tecnica/auditoria/cierre MANT-C o QA manual diferida.

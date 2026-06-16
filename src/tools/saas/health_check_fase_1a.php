@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -844,7 +844,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A-4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B - Medisoft Hoteles\n";
+echo "Health check Fase 1A-4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -5137,21 +5137,43 @@ if (!is_file($routesPath)) {
         );
     }
 
-    foreach (['programarMantenimientoAction', 'cancelarMantenimientoProgramadoAction'] as $mantOpMethod) {
-        $mantOpMethodBody = hcMethodBody($mantOpControllerCode, $mantOpMethod);
-        if (
-            $mantOpMethodBody !== ''
-            && strpos($mantOpMethodBody, 'validateCSRF()') !== false
-            && strpos($mantOpMethodBody, "requirePermission('habitaciones.mantenimiento')") !== false
-            && strpos($mantOpMethodBody, 'movimientos_caja') === false
-        ) {
-            hcOk('HabitacionController MANT-B conserva guardas en ' . $mantOpMethod . '.');
-        } else {
-            hcError(
-                'HabitacionController MANT-B sin guardas completas en ' . $mantOpMethod . '.',
-                'Revisar CSRF, permiso y ausencia de Caja.'
-            );
-        }
+    $mantProgramarBody = hcMethodBody($mantOpControllerCode, 'programarMantenimientoAction');
+    if (
+        $mantProgramarBody !== ''
+        && strpos($mantProgramarBody, 'validateCSRF()') !== false
+        && strpos($mantProgramarBody, "requirePermission('habitaciones.mantenimiento')") !== false
+        && strpos($mantProgramarBody, "DateTimeImmutable::createFromFormat('!Y-m-d'") !== false
+        && strpos($mantProgramarBody, 'Mantenimiento::getTipos()') !== false
+        && strpos($mantProgramarBody, 'Mantenimiento::getPrioridades()') !== false
+        && strpos($mantProgramarBody, '$motivo ===') !== false
+        && strpos($mantProgramarBody, 'tieneProgramadoSolapado') !== false
+        && strpos($mantProgramarBody, '$hotelId') !== false
+        && strpos($mantProgramarBody, 'movimientos_caja') === false
+    ) {
+        hcOk('HabitacionController MANT-C-A valida programacion con CSRF, permiso, fechas, catalogos, motivo, solapes y hotel_id.');
+    } else {
+        hcError(
+            'HabitacionController MANT-C-A sin guardas completas en programarMantenimientoAction.',
+            'Revisar fechas, catalogos, motivo, solapes, hotel_id, CSRF, permiso y ausencia de Caja.'
+        );
+    }
+
+    $mantCancelarBody = hcMethodBody($mantOpControllerCode, 'cancelarMantenimientoProgramadoAction');
+    if (
+        $mantCancelarBody !== ''
+        && strpos($mantCancelarBody, 'validateCSRF()') !== false
+        && strpos($mantCancelarBody, "requirePermission('habitaciones.mantenimiento')") !== false
+        && strpos($mantCancelarBody, 'habitacionModel->find') !== false
+        && strpos($mantCancelarBody, 'cancelarProgramado') !== false
+        && strpos($mantCancelarBody, '$motivo ===') !== false
+        && strpos($mantCancelarBody, 'movimientos_caja') === false
+    ) {
+        hcOk('HabitacionController MANT-C-A valida cancelacion con CSRF, permiso, habitacion scoped y motivo normalizado.');
+    } else {
+        hcError(
+            'HabitacionController MANT-C-A sin guardas completas en cancelarMantenimientoProgramadoAction.',
+            'Revisar CSRF, permiso, habitacion del hotel, motivo y ausencia de Caja.'
+        );
     }
 
     if (
@@ -5159,12 +5181,14 @@ if (!is_file($routesPath)) {
         && strpos($mantOpModelCode, 'class Mantenimiento') !== false
         && strpos($mantOpModelCode, 'WHERE {$this->primaryKey} = ? AND hotel_id = ?') !== false
         && strpos($mantOpModelCode, 'AND m.hotel_id = ?') !== false
+        && strpos($mantOpModelCode, 'function tieneProgramadoSolapado') !== false
+        && strpos($mantOpModelCode, 'COALESCE(fecha_programada_fin, fecha_programada) >= ?') !== false
     ) {
-        hcOk('Mantenimiento model MANT-B mantiene scope hotel_id en operaciones base.');
+        hcOk('Mantenimiento model MANT-B/MANT-C mantiene scope hotel_id y chequeo de solapes programados.');
     } else {
         hcError(
-            'Mantenimiento model MANT-B no muestra scope hotel_id suficiente.',
-            'No operar mantenimiento hasta restaurar find/update/consultas con hotel_id.'
+            'Mantenimiento model MANT-B/MANT-C no muestra scope hotel_id suficiente.',
+            'No operar mantenimiento hasta restaurar find/update/consultas con hotel_id y solapes programados.'
         );
     }
 
@@ -5246,6 +5270,34 @@ if (!is_file($routesPath)) {
             hcWarning(
                 'MANT-B datos: habitaciones en mantenimiento sin registro en proceso = ' . (string)$mantOpRoomWithoutActive . '.',
                 'Revisar historico antes de automatizar cierres masivos.'
+            );
+        }
+
+        $mantScheduledOverlaps = hcCountScalar(
+            $pdo,
+            "SELECT COUNT(*) FROM (
+                SELECT a.id
+                FROM mantenimientos_habitaciones a
+                INNER JOIN mantenimientos_habitaciones b
+                  ON b.hotel_id = a.hotel_id
+                 AND b.habitacion_id = a.habitacion_id
+                 AND b.id > a.id
+                 AND b.programado = 1
+                 AND b.estado = 'programado'
+                 AND b.fecha_programada IS NOT NULL
+                 AND b.fecha_programada <= COALESCE(a.fecha_programada_fin, a.fecha_programada)
+                 AND COALESCE(b.fecha_programada_fin, b.fecha_programada) >= a.fecha_programada
+                WHERE a.programado = 1
+                  AND a.estado = 'programado'
+                  AND a.fecha_programada IS NOT NULL
+            ) solapes"
+        );
+        if ($mantScheduledOverlaps === 0) {
+            hcOk('MANT-C-A datos: mantenimientos programados solapados = 0.');
+        } else {
+            hcWarning(
+                'MANT-C-A datos: mantenimientos programados solapados = ' . (string)$mantScheduledOverlaps . '.',
+                'Revisar solapes historicos antes de automatizar disponibilidad.'
             );
         }
     }

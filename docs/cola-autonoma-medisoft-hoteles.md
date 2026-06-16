@@ -856,3 +856,13 @@ agregar funcionalidades nuevas.
 - No modifica codigo ni DB.
 - Siguiente accion segura: MANT-C-A guardrails de programacion/cancelacion existente,
   sin activar mantenimientos pendientes automaticamente.
+
+## Mantenimiento programado MANT-C-A
+
+- Estado formal: `MANTENIMIENTO_PROGRAMADO_MANT_C_A_COMPLETADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_MANT_C_A_guardrails_mantenimiento_programado.md`.
+- Endurece rutas existentes sin crear rutas nuevas.
+- No activa mantenimientos pendientes automaticamente.
+- No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- Siguiente accion segura: revision tecnica/auditoria/cierre MANT-C o QA manual
+  diferida.
