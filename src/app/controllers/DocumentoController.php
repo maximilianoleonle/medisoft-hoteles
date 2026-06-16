@@ -123,6 +123,12 @@ class DocumentoController extends Controller
         }
 
         $tablaDisponible = $this->documentoModel->tablasDisponibles();
+        if (!$this->documentoModel->entidadExisteEnHotel($hotelId, $entidadTipo, $entidadId)) {
+            set_mensaje('Entidad documental no encontrada para el hotel actual.', 'error');
+            $this->redirect('documentos');
+            return;
+        }
+
         $documentos = $tablaDisponible
             ? $this->documentoModel->documentosPorEntidad($hotelId, $entidadTipo, $entidadId, 100)
             : [];

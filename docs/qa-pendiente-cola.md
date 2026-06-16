@@ -211,7 +211,7 @@ Cierre tecnico 3C completado documentalmente. La QA manual final del bloque 3C f
 
 ## QA Fase 4A Centro Documental
 
-Estado vigente: `UPLOAD_SEGURO_4A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado vigente: `REVISION_TECNICA_4A_COMPLETADA`.
 
 4A-0 no implemento funcionalidad. 4A-A creo solo esquema base, sin uploads, sin POST,
 sin descargas y sin datos operativos. 4A-B agrega capa de consulta read-only de metadata
@@ -268,7 +268,14 @@ sin exponer archivos.
   `preflight_recepcion_compras.php` pasan con warnings conocidos.
 - No se tocaron Caja, pagos, abonos, CxP operativa ni `/api/sync`.
 
-### QA manual pendiente Fase 4A-C
+### QA manual completada Fase 4A-C
+
+- El usuario reporto despues del hotfix: "Ya funciona".
+- La carga documental corregida deja de bloquearse por falta de tipos documentales.
+- La carga general ya no pide IDs manuales de entidad.
+- El CSS corregido evita el 404 relativo desde rutas bajo `/documentos`.
+
+### Checklist de regresion Fase 4A-C
 
 - Iniciar sesion en Los Cedros.
 - Abrir `/documentos`.
@@ -296,6 +303,13 @@ sin exponer archivos.
 - Carga controlada sin vinculo inicial creo `documentos.id = 2` con tipo `Contrato`.
 - `documento_entidades` se mantuvo en `1`, sin relacion para el documento `#2`.
 - Caja, pagos, abonos y CxP operativa sin cambios.
+
+### Resultado revision tecnica Fase 4A
+
+- `/documentos/entidad/{tipo}/{id}` ahora valida que la entidad exista y pertenezca al hotel actual antes de mostrar el listado contextual.
+- El enlace de carga contextual queda disponible solo para entidades validas del hotel actual.
+- Verificacion HTTP autenticada: `/documentos` y `/documentos/entidad/proveedor/8` responden `200`; `/documentos/entidad/proveedor/999999` y `/documentos/subir?entidad_tipo=proveedor&entidad_id=999999` redirigen `303` a `/documentos`.
+- No se agregaron descargas, edicion, borrado, pagos, abonos, Caja ni cambios en `/api/sync`.
 
 ### QA critica futura
 

@@ -120,7 +120,7 @@ Bloque 3C cerrado tecnicamente. Mantener prohibidos pagos, Caja, CxC, nomina ope
 
 ## Fase 4A Centro Documental - auditoria inicial de contrato
 
-Estado: `UPLOAD_SEGURO_4A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado: `REVISION_TECNICA_4A_COMPLETADA`.
 
 - Riesgo principal: exposicion accidental de documentos privados si se guardan en
   `public_html/uploads`.
@@ -199,7 +199,7 @@ Riesgos residuales 4A-C:
   autorizacion explicita.
 - Los tipos documentales base ya existen; las cargas siguen limitadas a PDF/JPG/PNG/WEBP
   hasta una fase posterior que autorice formatos adicionales.
-- Falta QA manual en navegador para validar flujo visual y mensajes con usuario real.
+- QA manual post-hotfix reportada por el usuario como funcional.
 
 ### Hotfix seguridad 4A-C
 
@@ -210,6 +210,13 @@ Riesgos residuales 4A-C:
   de vinculacion a entidades inexistentes.
 - El vinculo por entidad sigue disponible solo con contexto validado.
 - La correccion del CSS relativo no toca PWA, service worker, cache names ni `/api/sync`.
+
+### Revision tecnica 4A post-QA
+
+- Hallazgo corregido: `/documentos/entidad/{tipo}/{id}` podia mostrar una vista contextual vacia para una entidad inexistente o ajena al hotel, aunque la carga contextual posterior si la bloqueaba.
+- Correccion: `DocumentoController::entidadAction()` valida `Documento::entidadExisteEnHotel()` antes de consultar documentos y antes de exponer el enlace de carga contextual.
+- Riesgo reducido: evita pantallas contextuales ambiguas y mantiene el guard multi-hotel consistente entre listado contextual y carga contextual.
+- No se agregaron descargas, edicion, borrado, pagos, abonos, Caja ni cambios en `/api/sync`.
 
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 

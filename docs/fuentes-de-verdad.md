@@ -83,7 +83,7 @@ Regla:
 
 ## Centro Documental (Fase 4A)
 
-Estado formal: `UPLOAD_SEGURO_4A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+Estado formal: `REVISION_TECNICA_4A_COMPLETADA`.
 
 Fuente fundacional creada:
 
@@ -118,6 +118,8 @@ Reglas:
 - Las vistas read-only no deben mostrar `storage_path`, `nombre_archivo` ni rutas internas.
 - Las rutas documentales de consulta son GET: `/documentos`, `/documentos/{id}` y
   `/documentos/entidad/{tipo}/{id}`.
+- `/documentos/entidad/{tipo}/{id}` debe validar que la entidad exista y pertenezca al
+  hotel actual antes de mostrar documentos o permitir carga contextual.
 - Las rutas documentales de carga son: `GET /documentos/subir` y
   `POST /documentos/subir`.
 - No hay descarga, edicion ni borrado en 4A-C.

@@ -4,27 +4,27 @@
 
 NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Centro Documental Base.
 
-Cola actual procesada: `[COLA_4A_C_UPLOAD_SEGURO_DOCUMENTOS]`, carga segura de documentos hacia storage privado, con POST + CSRF, sin descargas, edicion ni borrado.
+Mensaje actual procesado: confirmacion manual "Ya funciona, continua" sobre la carga documental 4A-C y revision tecnica post-QA.
 
 ## Estado vigente
 
 - Bloque actual: Fase 4A Centro Documental Base.
-- Fase actual: 4A-C upload seguro documental.
+- Fase actual: revision tecnica 4A post-upload seguro documental.
 - Riesgo: naranja.
-- Estado: `UPLOAD_SEGURO_4A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- Estado: `REVISION_TECNICA_4A_COMPLETADA`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
 - No avanzar a pagos, Caja, Fase 3D ni nuevas funcionalidades.
 - Nota: existen commits de 3C-A/B/C y revisiones posteriores, pero el nuevo reanclaje no los considera cierre formal.
-- Verificacion actual: Docker disponible; `php -l`, health, preflights, HTTP sin sesion, prueba de upload controlada, rechazo de extension invalida, conteos DB antes/despues y `git diff --check` ejecutados.
+- Verificacion actual: Docker disponible; `php -l`, health, preflights, HTTP sin sesion, prueba de upload controlada, rechazo de extension invalida, conteos DB antes/despues y `git diff --check` ejecutados. QA manual post-hotfix reportada por el usuario como funcional.
 
 ## Fase 4A Centro Documental
 
 - 4A-0 contrato y diagnostico: completada documentalmente.
 - 4A-A migracion base: completada con migracion aditiva, backup previo, tablas vacias y registro en `migrations`.
 - 4A-B read-only: completada con modelo `Documento`, controlador GET, vistas de listado/detalle y navegacion segura.
-- 4A-C upload seguro: completada tecnicamente con formulario, POST + CSRF, validacion MIME/extension/tamano, storage privado, vinculo opcional por entidad y auditoria. Pendiente QA manual del usuario.
+- 4A-C upload seguro: completada tecnicamente con formulario, POST + CSRF, validacion MIME/extension/tamano, storage privado, vinculo opcional por entidad y auditoria. QA manual post-hotfix reportada por el usuario como funcional.
 - HEAD al iniciar: `35abdc7 fix(pwa): use hotel branding assets for push notifications`.
 - Git al iniciar: limpio.
 - Patrones detectados: `public_html/uploads` para assets publicos; `storage/reportes` + `ReporteLinkController` como patron privado seguro.
@@ -42,7 +42,8 @@ Cola actual procesada: `[COLA_4A_C_UPLOAD_SEGURO_DOCUMENTOS]`, carga segura de d
 - Hotfix post-QA 4A-C: tipos documentales globales creados (`6`), carga general sin IDs
   manuales de entidad, CSS relativo corregido, prueba controlada documento `#2` con tipo
   Contrato.
-- Siguiente cola recomendada: `[COLA_REVISION_TECNICA_4A]`.
+- Revision tecnica post-QA 4A: la ruta contextual `/documentos/entidad/{tipo}/{id}` valida que la entidad exista en el hotel actual antes de mostrar documentos o enlace de carga.
+- Siguiente cola recomendada: `[COLA_AUDITORIA_SEGURIDAD_4A]`.
 
 ## Reanclaje Fase 3C
 
@@ -219,4 +220,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Siguiente paso formal recomendado: `[COLA_REVISION_TECNICA_4A]` para revisar 4A-0..4A-C antes de autorizar descargas seguras o fases posteriores. No avanzar a descargas publicas, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Siguiente paso formal recomendado: `[COLA_AUDITORIA_SEGURIDAD_4A]` para auditar 4A-0..4A-C antes de autorizar descargas seguras o fases posteriores. No avanzar a descargas publicas, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

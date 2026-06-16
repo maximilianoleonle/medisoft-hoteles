@@ -141,7 +141,7 @@
 
 ## Fase 4A Centro Documental
 
-- Estado formal vigente: `UPLOAD_SEGURO_4A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- Estado formal vigente: `REVISION_TECNICA_4A_COMPLETADA`.
 - Centro Documental debe iniciar con storage privado, no con enlaces publicos directos.
 - `public_html/uploads` queda reservado para assets publicos/imagenes ya existentes.
 - El patron de descarga segura de `ReporteLinkController` es la referencia tecnica para
@@ -184,6 +184,9 @@
 - La carga general ya no solicita manualmente `entidad_tipo`/`entidad_id`; el vinculo se
   conserva solo si la ruta llega con contexto de entidad validado.
 - El CSS del layout debe cargarse con `asset()` para evitar 404 en subrutas.
+- Revision tecnica post-QA 4A: el listado contextual `/documentos/entidad/{tipo}/{id}`
+  debe validar existencia real de la entidad en el hotel actual antes de mostrar la vista
+  o el enlace de carga contextual.
 - No se permite tocar Caja, pagos, abonos, Fase 3D ni `/api/sync`.
 
 ### Decisiones de diagnostico NP-0

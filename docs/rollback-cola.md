@@ -268,7 +268,7 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 
 ### 4A-C upload seguro documental
 
-- Estado vigente: `UPLOAD_SEGURO_4A_COMPLETADO_QA_MANUAL_PENDIENTE`.
+- Estado vigente: `REVISION_TECNICA_4A_COMPLETADA`.
 - Backup previo:
   `src/storage/backups/phase4a_c_20260615_190912_before_document_upload_medisoft_hoteles_import.sql`.
 - SHA256: `DF150F705824973621B9A1276980DC73ECB7AE5261B67A5D71E541FE13797446`.
@@ -301,6 +301,13 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   3. borrar filas globales de `documento_tipos` solo si no hay uso real;
   4. borrar registro de `migrations` del seed.
 - Prueba local del hotfix creo `documentos.id = 2`; no borrar sin autorizacion.
+
+### 4A revision tecnica post-QA
+
+- Rollback de codigo/documentacion: revertir el commit `fix(review): stabilize phase 4a document center`.
+- DB: no aplica; la revision tecnica no crea ni modifica datos.
+- Cambio funcional: la ruta contextual `/documentos/entidad/{tipo}/{id}` valida la existencia de la entidad en el hotel actual antes de mostrar la vista.
+- Si se revierte, la carga contextual sigue validando entidad antes de subir, pero el listado contextual volveria a poder mostrar una entidad inexistente como pantalla vacia.
 
 ### Fases futuras
 
