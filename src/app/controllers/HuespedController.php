@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../models/Documento.php';
 /**
  * Controlador de Huéspedes
  * Los Cedros
@@ -306,6 +307,19 @@ public function actualizarAction() {
     
     // Obtener vehículos del huésped
     $vehiculos = $this->huespedModel->getVehiculos($id);
+
+    $hotelId = function_exists('obtenerHotelIdActualCompat')
+        ? (int)obtenerHotelIdActualCompat()
+        : (int)($_SESSION['hotel_id'] ?? 0);
+    $documentosEntidad = [];
+    try {
+        $documentoModel = new Documento();
+        if ($documentoModel->entidadExisteEnHotel($hotelId, 'huesped', (int)$id)) {
+            $documentosEntidad = $documentoModel->documentosPorEntidad($hotelId, 'huesped', (int)$id, 10);
+        }
+    } catch (Throwable $e) {
+        $documentosEntidad = [];
+    }
     
     // Calcular estadísticas
     // Calcular estadísticas del huésped (solo completadas)
@@ -329,7 +343,13 @@ foreach ($reservaciones as $reservacion) {
         'reservaciones' => $reservaciones,
         'total_reservaciones' => $total_reservaciones,
         'total_gastado' => $total_gastado,
-        'ultima_visita' => $ultima_visita
+        'ultima_visita' => $ultima_visita,
+        'documentosEntidad' => $documentosEntidad,
+        'documentosEntidadContexto' => [
+            'tipo' => 'huesped',
+            'id' => (int)$id,
+            'label' => 'Huesped',
+        ],
     ]);
 }
     

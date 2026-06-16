@@ -2,6 +2,11 @@
 
 Estado: `CONTRATO_4C_DOCUMENTOS_ENTIDAD_COMPLETADO`.
 
+Actualizacion 4C-A: se implemento la primera integracion read-only con un alcance mas
+conservador que el previsto inicialmente: las fichas muestran metadata segura y enlaces
+GET a detalle/descarga autenticada, pero no agregan links de carga contextual ni de
+edicion de metadata desde la ficha.
+
 ## Objetivo
 
 Definir la integracion contextual del Centro Documental en fichas operativas ya
@@ -78,7 +83,7 @@ Mitigaciones:
 - Resolver documentos desde modelo/servicio central usando `hotel_id`.
 - Mostrar solo metadata segura.
 - Usar links a rutas ya protegidas: `/documentos/{id}`,
-  `/documentos/{id}/descargar` y `/documentos/{id}/editar`.
+  `/documentos/{id}` y `/documentos/{id}/descargar`.
 - No mostrar `storage_path`, `nombre_archivo`, rutas absolutas ni URLs privadas.
 - No agregar borrado, reemplazo, links publicos, pagos, Caja ni `/api/sync`.
 
@@ -103,8 +108,8 @@ Mitigaciones:
   - fecha de carga.
 - Link a detalle documental.
 - Link a descarga autenticada ya existente.
-- Link a formulario de metadata ya existente si el documento esta activo.
-- Link a carga contextual ya existente si la entidad pertenece al hotel actual.
+- Link a formulario de metadata ya existente si el documento esta activo queda diferido.
+- Link a carga contextual ya existente si la entidad pertenece al hotel actual queda diferido.
 
 4C-B integracion de carga contextual:
 

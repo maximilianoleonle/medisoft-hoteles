@@ -240,6 +240,11 @@ $activo = (int)($proveedor['activo'] ?? 0) === 1;
             </div>
         </div>
 
+        <?php View::partial('documentos_entidad', [
+            'documentosEntidad' => $documentosEntidad ?? [],
+            'documentosEntidadContexto' => $documentosEntidadContexto ?? [],
+        ]); ?>
+
         <div class="provider-panel overflow-hidden">
             <div class="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
                 <h2 class="font-black text-lg">Compras recientes</h2>

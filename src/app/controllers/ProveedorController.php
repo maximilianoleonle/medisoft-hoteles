@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../core/Controller.php';
 require_once __DIR__ . '/../../core/View.php';
 require_once __DIR__ . '/../models/Proveedor.php';
+require_once __DIR__ . '/../models/Documento.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
 require_once __DIR__ . '/../services/AuditService.php';
 
@@ -69,12 +70,26 @@ class ProveedorController extends Controller {
             return;
         }
 
+        $documentosEntidad = [];
+        try {
+            $documentoModel = new Documento();
+            $documentosEntidad = $documentoModel->documentosPorEntidad($hotelId, 'proveedor', (int)$proveedor['id'], 10);
+        } catch (Throwable $e) {
+            $documentosEntidad = [];
+        }
+
         View::renderTemplate('proveedores/ver', [
             'title' => 'Proveedor - ' . current_hotel_display_name(),
             'proveedor' => $proveedor,
             'historialDisponible' => $this->proveedorModel->comprasDisponibles(),
             'resumenCompras' => $this->proveedorModel->resumenComprasPorProveedor((int)$proveedor['id'], $hotelId),
             'comprasRecientes' => $this->proveedorModel->comprasRecientesPorProveedor((int)$proveedor['id'], $hotelId, 50),
+            'documentosEntidad' => $documentosEntidad,
+            'documentosEntidadContexto' => [
+                'tipo' => 'proveedor',
+                'id' => (int)$proveedor['id'],
+                'label' => 'Proveedor',
+            ],
         ]);
     }
 

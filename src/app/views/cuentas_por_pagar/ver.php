@@ -211,6 +211,11 @@ if (!function_exists('cxp_view_money')) {
             </div>
         </div>
 
+        <?php View::partial('documentos_entidad', [
+            'documentosEntidad' => $documentosEntidad ?? [],
+            'documentosEntidadContexto' => $documentosEntidadContexto ?? [],
+        ]); ?>
+
         <div class="cxp-panel overflow-hidden">
             <div class="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
                 <h2 class="font-black text-lg">Movimientos referenciales</h2>

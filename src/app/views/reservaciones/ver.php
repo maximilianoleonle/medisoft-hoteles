@@ -2079,6 +2079,11 @@ if ($puede_checkin): ?>
     $rd_busqueda_caja = urlencode((string)$rd_reservacion_id);
     ?>
 
+    <?php View::partial('documentos_entidad', [
+        'documentosEntidad' => $documentosEntidad ?? [],
+        'documentosEntidadContexto' => $documentosEntidadContexto ?? [],
+    ]); ?>
+
     <!-- Grid Principal -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <!-- Columna Principal -->

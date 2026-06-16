@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../core/Controller.php';
 require_once __DIR__ . '/../../core/View.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
 require_once __DIR__ . '/../models/CuentaPorPagar.php';
+require_once __DIR__ . '/../models/Documento.php';
 
 class CuentaPorPagarController extends Controller
 {
@@ -64,7 +65,8 @@ class CuentaPorPagarController extends Controller
     public function verAction(): void
     {
         $id = (int)($this->route_params['id'] ?? 0);
-        $cuenta = $this->cuentaModel->buscarPorIdHotel($id, $this->hotelIdActual());
+        $hotelId = $this->hotelIdActual();
+        $cuenta = $this->cuentaModel->buscarPorIdHotel($id, $hotelId);
 
         if (!$cuenta) {
             set_mensaje('Cuenta por pagar no encontrada para el hotel actual.', 'error');
@@ -72,11 +74,25 @@ class CuentaPorPagarController extends Controller
             return;
         }
 
+        $documentosEntidad = [];
+        try {
+            $documentoModel = new Documento();
+            $documentosEntidad = $documentoModel->documentosPorEntidad($hotelId, 'cuenta_por_pagar', $id, 10);
+        } catch (Throwable $e) {
+            $documentosEntidad = [];
+        }
+
         View::renderTemplate('cuentas_por_pagar/ver', [
             'title' => 'Cuenta por pagar #' . $id . ' - ' . current_hotel_display_name(),
             'cuenta' => $cuenta,
-            'movimientos' => $this->cuentaModel->movimientosPorCuenta($id, $this->hotelIdActual(), 100),
+            'movimientos' => $this->cuentaModel->movimientosPorCuenta($id, $hotelId, 100),
             'movimientosDisponibles' => $this->cuentaModel->movimientosDisponibles(),
+            'documentosEntidad' => $documentosEntidad,
+            'documentosEntidadContexto' => [
+                'tipo' => 'cuenta_por_pagar',
+                'id' => $id,
+                'label' => 'Cuenta por pagar',
+            ],
         ]);
     }
 

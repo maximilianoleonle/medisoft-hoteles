@@ -164,7 +164,7 @@ Reglas de fuente de verdad:
 
 ## Documentos por entidad (Fase 4C)
 
-Estado formal: `CONTRATO_4C_DOCUMENTOS_ENTIDAD_COMPLETADO`.
+Estado formal: `DOCUMENTOS_ENTIDAD_READ_ONLY_4C_COMPLETADO`.
 
 Fuente de verdad:
 
@@ -176,7 +176,11 @@ Fuente de verdad:
   `reservacion`.
 - `documento_entidades` no reemplaza datos de negocio de proveedores, compras, CxP,
   huespedes ni reservaciones; solo registra vinculos documentales.
-- No hay links publicos ni permisos nuevos en 4C-0.
+- 4C-A muestra metadata vinculada en fichas operativas mediante
+  `Documento::documentosPorEntidad()` y `src/app/views/partials/documentos_entidad.php`.
+- Las fichas no son fuente de verdad documental; solo consumen metadata ya registrada.
+- No hay links publicos ni permisos nuevos en 4C-A.
+- No hay upload, edicion, borrado ni reemplazo de archivo desde fichas de entidad.
 
 ## Personal y Nomina (Fase NP)
 

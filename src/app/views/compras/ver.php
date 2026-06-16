@@ -186,6 +186,11 @@ foreach ($detalles as $detalle) {
             </div>
         </div>
 
+        <?php View::partial('documentos_entidad', [
+            'documentosEntidad' => $documentosEntidad ?? [],
+            'documentosEntidadContexto' => $documentosEntidadContexto ?? [],
+        ]); ?>
+
         <div class="purchase-panel overflow-hidden">
             <div class="px-5 py-4 border-b border-slate-200">
                 <h2 class="font-black text-lg">Lineas y movimientos vinculados</h2>

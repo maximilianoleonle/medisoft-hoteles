@@ -9,6 +9,7 @@ require_once __DIR__ . '/../../core/View.php';
 require_once __DIR__ . '/../models/Reservacion.php';
 require_once __DIR__ . '/../models/Habitacion.php';
 require_once __DIR__ . '/../models/Huesped.php';
+require_once __DIR__ . '/../models/Documento.php';
 require_once __DIR__ . '/../models/Caja.php';
 
 class ReservacionController extends Controller {
@@ -2168,6 +2169,17 @@ require_once __DIR__ . '/../models/ReservacionNota.php';
 $notaModel = new ReservacionNota();
 $notas = $notaModel->obtenerPorReservacion($id);
 $total_notas = count($notas);
+
+$documentosEntidad = [];
+try {
+    $hotelId = (int)$this->hotelIdActual();
+    $documentoModel = new Documento();
+    if ($documentoModel->entidadExisteEnHotel($hotelId, 'reservacion', (int)$id)) {
+        $documentosEntidad = $documentoModel->documentosPorEntidad($hotelId, 'reservacion', (int)$id, 10);
+    }
+} catch (Throwable $e) {
+    $documentosEntidad = [];
+}
         
         View::renderTemplate('reservaciones/ver', [
     'title' => 'Reservación #' . $id . ' - ' . current_hotel_display_name(),
@@ -2178,7 +2190,13 @@ $total_notas = count($notas);
     'estados' => Reservacion::getEstados(),
     'pagos' => $pagos,
     'notas' => $notas,
-    'total_notas' => $total_notas
+    'total_notas' => $total_notas,
+    'documentosEntidad' => $documentosEntidad,
+    'documentosEntidadContexto' => [
+        'tipo' => 'reservacion',
+        'id' => (int)$id,
+        'label' => 'Reservacion',
+    ],
 ]);
     }
     

@@ -552,7 +552,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C - Medisoft Hoteles\n";
+echo "Health check Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4C-A - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -3593,6 +3593,83 @@ if (!is_file($routesPath)) {
         hcWarning(
             'Centro Documental no muestra contrato completo Fase 4B-C.',
             'Validar metadata en modelo, usar CSRF y auditar documentos.metadata_actualizada sin exponer storage_path.'
+        );
+    }
+
+    $documentosEntidadPartialPath = $appRoot . '/app/views/partials/documentos_entidad.php';
+    $documentosEntidadPartialCode = is_file($documentosEntidadPartialPath)
+        ? (string) file_get_contents($documentosEntidadPartialPath)
+        : '';
+
+    if (
+        $documentosEntidadPartialCode !== ''
+        && strpos($documentosEntidadPartialCode, 'Solo lectura') !== false
+        && strpos($documentosEntidadPartialCode, 'storage_path') === false
+        && strpos($documentosEntidadPartialCode, 'nombre_archivo') === false
+        && strpos($documentosEntidadPartialCode, 'documentos/\' . $documentoId') !== false
+        && strpos($documentosEntidadPartialCode, '/editar') === false
+        && strpos($documentosEntidadPartialCode, '/actualizar') === false
+        && stripos($documentosEntidadPartialCode, 'subir') === false
+    ) {
+        hcOk('Centro Documental Fase 4C-A tiene partial read-only por entidad sin storage_path, edicion ni upload.');
+    } else {
+        hcWarning(
+            'Centro Documental Fase 4C-A no muestra partial read-only completo por entidad.',
+            'Validar src/app/views/partials/documentos_entidad.php: sin storage_path/nombre_archivo, sin editar/subir y solo enlaces GET seguros.'
+        );
+    }
+
+    $documentosEntidadViews = [
+        'proveedor' => $appRoot . '/app/views/proveedores/ver.php',
+        'compra' => $appRoot . '/app/views/compras/ver.php',
+        'cuenta_por_pagar' => $appRoot . '/app/views/cuentas_por_pagar/ver.php',
+        'huesped' => $appRoot . '/app/views/huespedes/ver.php',
+        'reservacion' => $appRoot . '/app/views/reservaciones/ver.php',
+    ];
+    $viewsConPartial = [];
+    foreach ($documentosEntidadViews as $entidadTipo => $viewPath) {
+        $viewCode = is_file($viewPath) ? (string) file_get_contents($viewPath) : '';
+        if (strpos($viewCode, "View::partial('documentos_entidad'") !== false) {
+            $viewsConPartial[] = $entidadTipo;
+        }
+    }
+
+    if (count($viewsConPartial) === count($documentosEntidadViews)) {
+        hcOk('Fichas de proveedor, compra, CxP, huesped y reservacion incluyen seccion documental read-only.');
+    } else {
+        $faltantes = array_diff(array_keys($documentosEntidadViews), $viewsConPartial);
+        hcWarning(
+            'Faltan fichas con seccion documental read-only 4C-A: ' . implode(', ', $faltantes),
+            'Agregar View::partial("documentos_entidad") solo en fichas autorizadas y sin formularios nuevos.'
+        );
+    }
+
+    $documentosEntidadControllers = [
+        'proveedor' => $controllersDir . '/ProveedorController.php',
+        'compra' => $controllersDir . '/CompraController.php',
+        'cuenta_por_pagar' => $controllersDir . '/CuentaPorPagarController.php',
+        'huesped' => $controllersDir . '/HuespedController.php',
+        'reservacion' => $controllersDir . '/ReservacionController.php',
+    ];
+    $controllersConConsulta = [];
+    foreach ($documentosEntidadControllers as $entidadTipo => $controllerPath) {
+        $controllerCode = is_file($controllerPath) ? (string) file_get_contents($controllerPath) : '';
+        if (
+            strpos($controllerCode, 'Documento') !== false
+            && strpos($controllerCode, 'documentosPorEntidad') !== false
+            && strpos($controllerCode, "'" . $entidadTipo . "'") !== false
+        ) {
+            $controllersConConsulta[] = $entidadTipo;
+        }
+    }
+
+    if (count($controllersConConsulta) === count($documentosEntidadControllers)) {
+        hcOk('Controladores 4C-A consultan documentos por entidad con Documento::documentosPorEntidad().');
+    } else {
+        $faltantes = array_diff(array_keys($documentosEntidadControllers), $controllersConConsulta);
+        hcWarning(
+            'Faltan consultas documentales por entidad en controladores: ' . implode(', ', $faltantes),
+            'Usar Documento::documentosPorEntidad($hotelId, $entidadTipo, $id) y pasar solo metadata segura a la vista.'
         );
     }
 

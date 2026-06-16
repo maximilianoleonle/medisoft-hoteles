@@ -1481,6 +1481,11 @@ $guestParkingOptionsHtml = function ($inputClass = '') use ($estacionamientos, $
                         <?php endif; ?>
                     </div>
                 </section>
+
+                <?php View::partial('documentos_entidad', [
+                    'documentosEntidad' => $documentosEntidad ?? [],
+                    'documentosEntidadContexto' => $documentosEntidadContexto ?? [],
+                ]); ?>
             </main>
 
             <aside class="guest-side-stack">

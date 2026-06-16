@@ -292,15 +292,19 @@ Estado: `DESCARGA_SEGURA_4B_VALIDADA_MANUALMENTE`.
 
 ## Fase 4C Documentos por entidad - auditoria de contrato
 
-Estado: `CONTRATO_4C_DOCUMENTOS_ENTIDAD_COMPLETADO`.
+Estado: `DOCUMENTOS_ENTIDAD_READ_ONLY_4C_COMPLETADO`.
 
 - 4C-0 no agrega rutas, controladores, modelos, vistas ni DB.
 - Riesgo principal futuro: mostrar documentos de otro hotel si una ficha no valida
   `hotel_id` antes de consultar `documento_entidades`.
 - Control requerido: resolver documentos desde modelo/servicio central con
   `hotel_id`, nunca desde una consulta ad hoc en la vista.
-- Las fichas futuras no deben mostrar `storage_path`, `nombre_archivo`, rutas absolutas
+- Las fichas no deben mostrar `storage_path`, `nombre_archivo`, rutas absolutas
   ni links publicos.
+- 4C-A usa `Documento::documentosPorEntidad()` desde controladores y partial read-only
+  compartido.
+- 4C-A no crea rutas, POST, uploads, edicion, borrado ni reemplazo de archivo.
+- Los enlaces visibles son GET a detalle documental y descarga autenticada ya existente.
 - Sin Caja, pagos, abonos, Fase 3D, NP-A, PWA/offline ni `/api/sync`.
 
 ## Bloque Personal y Nomina (Fase NP) - controles esperados

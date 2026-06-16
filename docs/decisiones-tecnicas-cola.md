@@ -247,6 +247,17 @@
 - No se autorizan borrado, reemplazo, links publicos, Caja, pagos, abonos, Fase 3D,
   NP-A ni `/api/sync`.
 
+### Fase 4C-A documentos por entidad read-only
+
+- Estado formal vigente: `DOCUMENTOS_ENTIDAD_READ_ONLY_4C_COMPLETADO`.
+- Se crea un partial reutilizable para evitar duplicar tablas de documentos en cada
+  ficha.
+- Los controladores consultan documentos por entidad con `hotel_id` antes de renderizar.
+- Las fichas de proveedor, compra, CxP, huesped y reservacion solo muestran metadata
+  segura y enlaces GET a detalle/descarga documental ya protegida.
+- No se agrega upload, metadata edit, borrado ni reemplazo desde fichas para mantener
+  el alcance read-only.
+
 ### Decisiones de diagnostico NP-0
 
 - Hoy "trabajador" = `usuarios` (tabla global, sin `hotel_id`, `rol` de sistema) + pivote

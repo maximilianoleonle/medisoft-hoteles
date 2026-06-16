@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../core/Controller.php';
 require_once __DIR__ . '/../../core/View.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
+require_once __DIR__ . '/../models/Documento.php';
 require_once __DIR__ . '/../services/CompraService.php';
 
 class CompraController extends Controller
@@ -100,16 +101,31 @@ class CompraController extends Controller
                 throw new Exception('Compra invalida');
             }
 
-            $compra = $this->compraService->obtenerCompra($this->hotelIdActual(), $compraId);
+            $hotelId = $this->hotelIdActual();
+            $compra = $this->compraService->obtenerCompra($hotelId, $compraId);
             if (!$compra) {
                 set_mensaje('Compra no encontrada para el hotel actual.', 'error');
                 $this->redirect('compras');
                 return;
             }
 
+            $documentosEntidad = [];
+            try {
+                $documentoModel = new Documento();
+                $documentosEntidad = $documentoModel->documentosPorEntidad($hotelId, 'compra', $compraId, 10);
+            } catch (Throwable $e) {
+                $documentosEntidad = [];
+            }
+
             View::renderTemplate('compras/ver', [
                 'title' => 'Compra #' . $compraId . ' - ' . current_hotel_display_name(),
                 'compra' => $compra,
+                'documentosEntidad' => $documentosEntidad,
+                'documentosEntidadContexto' => [
+                    'tipo' => 'compra',
+                    'id' => $compraId,
+                    'label' => 'Compra',
+                ],
             ]);
         } catch (Throwable $e) {
             set_mensaje('No se pudo cargar el detalle de la compra: ' . $e->getMessage(), 'error');

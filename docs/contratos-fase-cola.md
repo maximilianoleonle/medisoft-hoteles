@@ -443,6 +443,29 @@ Documento:
 
 - `docs/fase_4C_0_contrato_documentos_entidad.md`.
 
+## Fase 4C-A: Secciones documentales read-only por entidad
+
+Estado formal vigente: `DOCUMENTOS_ENTIDAD_READ_ONLY_4C_COMPLETADO`.
+
+Alcance implementado:
+
+- Partial reutilizable `src/app/views/partials/documentos_entidad.php`.
+- Secciones read-only en fichas de proveedor, compra, cuenta por pagar, huesped y
+  reservacion.
+- Consultas por entidad usando `Documento::documentosPorEntidad()` y filtro `hotel_id`.
+- Enlaces GET a detalle documental y descarga autenticada ya existente.
+- Estado vacio claro cuando no hay documentos vinculados.
+
+Fuera de alcance:
+
+- Upload desde la ficha, edicion de metadata desde la ficha, borrado, reemplazo de
+  archivo, links publicos, permisos nuevos, Caja, pagos, abonos, Fase 3D, NP-A,
+  PWA/offline y `/api/sync`.
+
+Documento:
+
+- `docs/fase_4C_A_documentos_entidad_readonly.md`.
+
 ## Bloque Personal y Nomina (Fase NP): modulo independiente de trabajadores
 
 ### Objetivo

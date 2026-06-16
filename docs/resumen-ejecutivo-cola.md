@@ -311,6 +311,24 @@ Resultado 4C-0:
 - No hay nuevas escrituras, Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
 - Siguiente paso recomendado: `COLA_4C_A_DOCUMENTOS_POR_ENTIDAD_READ_ONLY`.
 
+Resultado 4C-A:
+
+- Estado tecnico: `DOCUMENTOS_ENTIDAD_READ_ONLY_4C_COMPLETADO`.
+- Documento creado: `docs/fase_4C_A_documentos_entidad_readonly.md`.
+- Partial creado: `src/app/views/partials/documentos_entidad.php`.
+- Fichas con seccion documental read-only:
+  - `proveedores/ver.php`;
+  - `compras/ver.php`;
+  - `cuentas_por_pagar/ver.php`;
+  - `huespedes/ver.php`;
+  - `reservaciones/ver.php`.
+- Controladores consultan documentos por entidad con filtro `hotel_id`.
+- La vista no expone `storage_path` ni `nombre_archivo`.
+- No hay nuevos POST, uploads, edicion, borrado, Caja, pagos, abonos, Fase 3D,
+  NP-A ni cambios en `/api/sync`.
+- Siguiente paso recomendado tras QA manual: revision tecnica/auditoria 4C o la
+  subfase autorizada siguiente del Centro Documental.
+
 ## Nuevo bloque Personal y Nomina (Fase NP)
 
 Objetivo: modulo INDEPENDIENTE de trabajadores con ledger laboral, saldos por persona,
