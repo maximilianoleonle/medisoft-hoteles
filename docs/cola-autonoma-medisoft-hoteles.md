@@ -635,3 +635,17 @@ agregar funcionalidades nuevas.
 - No implementa rutas, vistas, POST ni escrituras.
 - No autoriza nomina automatica, descuentos, Caja, pagos reales ni `/api/sync`.
 - Siguiente accion segura: NP-C-D-A captura manual de asistencia sin Caja.
+
+## Asistencia manual NP-C-D-A
+
+- Estado formal: `ASISTENCIA_MANUAL_NP_C_D_A_COMPLETADA_QA_DIFERIDA`.
+- Documento creado: `docs/fase_NP_C_D_A_asistencia_manual.md`.
+- Se implementa POST manual controlado en `trabajador_asistencias`.
+- La accion exige hotel actual, CSRF, permiso existente y trabajador activo.
+- Se bloquea duplicado por trabajador/dia antes de insertar.
+- No crea nomina, pagos reales, abonos, descuentos automaticos ni movimientos de Caja.
+- No se toco `/api/sync`.
+- QA manual queda diferida porque no hay trabajadores locales y el usuario pidio omitir QA
+  manual por ahora.
+- Siguiente accion segura: revision/auditoria/cierre de NP-C-D-A antes de abrir
+  edicion/anulacion de asistencia, nomina, abonos o Caja.

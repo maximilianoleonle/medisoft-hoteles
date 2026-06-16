@@ -238,7 +238,7 @@ $router->post('/documentos/{id:[0-9]+}/eliminar', ['controller' => 'Documento', 
 $router->get('/documentos/{id:[0-9]+}/descargar', ['controller' => 'Documento', 'action' => 'descargar']);
 $router->get('/documentos/{id:[0-9]+}', ['controller' => 'Documento', 'action' => 'ver']);
 
-// Fase NP-A/NP-C-C-A: Personal base, CRUD basico y ledger laboral manual. Sin pagos reales, nomina ni Caja.
+// Fase NP-A/NP-C-D-A: Personal base, CRUD basico y ledger laboral manual. Sin pagos reales, nomina ni Caja.
 $router->get('/trabajadores', ['controller' => 'Trabajador', 'action' => 'index']);
 $router->get('/trabajadores/crear', ['controller' => 'Trabajador', 'action' => 'crear']);
 $router->post('/trabajadores', ['controller' => 'Trabajador', 'action' => 'guardar']);
@@ -248,6 +248,7 @@ $router->post('/trabajadores/{id:[0-9]+}/actualizar', ['controller' => 'Trabajad
 $router->post('/trabajadores/{id:[0-9]+}/conceptos-laborales', ['controller' => 'Trabajador', 'action' => 'registrarConceptoLaboral']);
 $router->post('/trabajadores/{id:[0-9]+}/anticipos', ['controller' => 'Trabajador', 'action' => 'registrarAnticipoLaboral']);
 $router->post('/trabajadores/{id:[0-9]+}/prestamos', ['controller' => 'Trabajador', 'action' => 'registrarPrestamoLaboral']);
+$router->post('/trabajadores/{id:[0-9]+}/asistencias', ['controller' => 'Trabajador', 'action' => 'registrarAsistenciaLaboral']);
 $router->post('/trabajadores/{id:[0-9]+}/baja-logica', ['controller' => 'Trabajador', 'action' => 'bajaLogica']);
 $router->post('/trabajadores/{id:[0-9]+}/reactivar', ['controller' => 'Trabajador', 'action' => 'reactivar']);
 

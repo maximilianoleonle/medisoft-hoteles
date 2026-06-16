@@ -900,3 +900,22 @@ instruccion del usuario.
 - No requiere QA de navegador porque no agrega funcionalidad.
 - QA futura NP-C-D-A debe confirmar una asistencia por trabajador/dia, ausencia de Caja y
   ausencia de nomina automatica.
+
+### Estado NP-C-D-A
+
+- Asistencia manual implementada.
+- QA manual diferida por instruccion del usuario.
+- No se hizo prueba de escritura automatica porque `trabajadores` esta vacia.
+
+### QA manual diferida NP-C-D-A
+
+- Crear o usar un trabajador activo autorizado.
+- Abrir `/trabajadores/{id}`.
+- Confirmar que el formulario de asistencia aparece solo para trabajador activo.
+- Registrar asistencia con fecha, tipo y horas opcionales.
+- Confirmar que aparece en asistencias recientes.
+- Intentar registrar otra asistencia para el mismo trabajador y fecha.
+- Confirmar que la duplicada falla limpiamente.
+- Confirmar que no se crean pagos reales, abonos, nomina ni movimientos de Caja.
+- Ejecutar `docker compose exec -T app php /var/www/html/tools/saas/preflight_personal_ledger.php`.
+- Confirmar `ERROR: 0`.

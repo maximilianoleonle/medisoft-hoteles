@@ -697,3 +697,13 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-np): define controlled worker attendance contract`.
 - DB: no aplica; NP-C-D-0 no crea rutas, migraciones ni datos.
 - No tocar `trabajador_asistencias`, Caja ni `/api/sync`.
+
+### NP-C-D-A asistencia manual
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-np): add controlled worker attendance capture`.
+- DB: no ejecutar `DELETE`, `UPDATE` ni correcciones manuales sobre
+  `trabajador_asistencias` sin autorizacion nueva.
+- Si QA manual genero asistencias de prueba, documentar IDs y esperar fase autorizada de
+  anulacion o correccion.
+- No tocar Caja, movimientos, pagos reales, abonos, nomina ni `/api/sync`.

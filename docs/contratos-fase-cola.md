@@ -947,3 +947,14 @@ Estado formal vigente: `CONTRATO_NP_C_D_ASISTENCIA_MANUAL_COMPLETADO`.
 - Solo contrato; no agrega codigo ni DB.
 - Escritura futura limitada a asistencia manual por trabajador/dia, sin nomina automatica
   y sin Caja.
+
+### Estado NP-C-D-A
+
+Estado formal vigente: `ASISTENCIA_MANUAL_NP_C_D_A_COMPLETADA_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_D_A_asistencia_manual.md`.
+- Escritura manual implementada y limitada a `trabajador_asistencias`.
+- Caja, pagos reales, abonos, descuentos automaticos, nomina y `/api/sync` siguen fuera
+  de alcance.
+- Antes de abrir edicion, anulacion, correccion o calculo de nomina se requiere contrato
+  nuevo.

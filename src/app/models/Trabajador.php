@@ -548,6 +548,110 @@ class Trabajador extends Model
         return $row ?: null;
     }
 
+    public function registrarAsistenciaLaboralParaHotel(int $trabajadorId, int $hotelId, array $datos, ?int $usuarioId = null): int
+    {
+        if ($trabajadorId <= 0 || $hotelId <= 0 || !$this->tablaDisponible() || !$this->tablaExiste('trabajador_asistencias')) {
+            throw new Exception('Ledger de asistencias no disponible');
+        }
+
+        $trabajador = $this->buscarPorIdHotel($trabajadorId, $hotelId);
+        if (!$trabajador) {
+            throw new Exception('Trabajador no encontrado para el hotel actual');
+        }
+
+        if (($trabajador['estado'] ?? '') !== 'activo') {
+            throw new Exception('Solo se pueden registrar asistencias a trabajadores activos');
+        }
+
+        $asistencia = $this->normalizarAsistenciaLaboral($datos);
+        $this->validarAsistenciaLaboral($asistencia);
+
+        $duplicada = $this->fetchOne(
+            "SELECT id
+             FROM trabajador_asistencias
+             WHERE hotel_id = ?
+               AND trabajador_id = ?
+               AND fecha = ?
+             LIMIT 1",
+            [$hotelId, $trabajadorId, $asistencia['fecha']]
+        );
+
+        if (!empty($duplicada)) {
+            throw new Exception('Ya existe asistencia para este trabajador en la fecha indicada');
+        }
+
+        $this->db->safeBeginTransaction();
+
+        try {
+            $stmt = $this->db->query(
+                "INSERT INTO trabajador_asistencias
+                    (hotel_id, trabajador_id, fecha, tipo, hora_entrada, hora_salida,
+                     horas, horas_extra, observaciones, created_by, updated_by,
+                     created_at, updated_at)
+                 VALUES
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
+                [
+                    $hotelId,
+                    $trabajadorId,
+                    $asistencia['fecha'],
+                    $asistencia['tipo'],
+                    $asistencia['hora_entrada'],
+                    $asistencia['hora_salida'],
+                    $asistencia['horas'],
+                    $asistencia['horas_extra'],
+                    $asistencia['observaciones'],
+                    $usuarioId,
+                    $usuarioId,
+                ]
+            );
+
+            if (!$stmt) {
+                throw new Exception('No se pudo registrar la asistencia laboral');
+            }
+
+            $asistenciaId = (int)$this->db->lastInsertId();
+            $this->db->safeCommit();
+
+            return $asistenciaId;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
+    public function asistenciaLaboralPorIdHotel(int $asistenciaId, int $trabajadorId, int $hotelId): ?array
+    {
+        if ($asistenciaId <= 0 || $trabajadorId <= 0 || $hotelId <= 0 || !$this->tablaExiste('trabajador_asistencias')) {
+            return null;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT id,
+                    hotel_id,
+                    trabajador_id,
+                    fecha,
+                    tipo,
+                    hora_entrada,
+                    hora_salida,
+                    horas,
+                    horas_extra,
+                    observaciones,
+                    created_by,
+                    updated_by,
+                    created_at,
+                    updated_at
+             FROM trabajador_asistencias
+             WHERE id = ?
+               AND trabajador_id = ?
+               AND hotel_id = ?
+             LIMIT 1",
+            [$asistenciaId, $trabajadorId, $hotelId]
+        );
+
+        $row = $stmt ? $stmt->fetch() : null;
+        return $row ?: null;
+    }
+
     public function cambiarEstadoParaHotel(int $id, int $hotelId, string $estado, ?int $usuarioId = null): bool
     {
         if ($id <= 0 || $hotelId <= 0 || !$this->tablaDisponible()) {
@@ -902,6 +1006,19 @@ class Trabajador extends Model
         ];
     }
 
+    private function normalizarAsistenciaLaboral(array $datos): array
+    {
+        return [
+            'fecha' => $this->nullableFecha($datos['fecha'] ?? null),
+            'tipo' => strtolower(trim((string)($datos['tipo'] ?? ''))),
+            'hora_entrada' => $this->nullableHora($datos['hora_entrada'] ?? null),
+            'hora_salida' => $this->nullableHora($datos['hora_salida'] ?? null),
+            'horas' => $this->normalizarHorasLaborales($datos['horas'] ?? null),
+            'horas_extra' => $this->normalizarHorasLaborales($datos['horas_extra'] ?? null),
+            'observaciones' => $this->nullableTexto($datos['observaciones'] ?? null, 255),
+        ];
+    }
+
     private function validarAnticipoLaboral(array $datos): void
     {
         $this->validarMontoLaboral($datos['monto']);
@@ -936,6 +1053,35 @@ class Trabajador extends Model
         }
     }
 
+    private function validarAsistenciaLaboral(array $datos): void
+    {
+        $tiposPermitidos = ['asistencia', 'falta', 'retardo', 'permiso', 'incapacidad', 'descanso', 'horas_extra'];
+
+        if ($datos['fecha'] === null) {
+            throw new Exception('La fecha de asistencia es obligatoria');
+        }
+
+        if (!in_array($datos['tipo'], $tiposPermitidos, true)) {
+            throw new Exception('Tipo de asistencia laboral no permitido');
+        }
+
+        if ($datos['hora_entrada'] === 'INVALIDO' || $datos['hora_salida'] === 'INVALIDO') {
+            throw new Exception('Formato de hora invalido');
+        }
+
+        if ($datos['hora_entrada'] !== null && $datos['hora_salida'] !== null && $datos['hora_salida'] < $datos['hora_entrada']) {
+            throw new Exception('La hora de salida no puede ser anterior a la hora de entrada');
+        }
+
+        if ($datos['horas'] === 'INVALIDO' || ($datos['horas'] !== null && (float)$datos['horas'] < 0)) {
+            throw new Exception('Las horas deben ser cero o mayores cuando se capturen');
+        }
+
+        if ($datos['horas_extra'] === 'INVALIDO' || ($datos['horas_extra'] !== null && (float)$datos['horas_extra'] < 0)) {
+            throw new Exception('Las horas extra deben ser cero o mayores cuando se capturen');
+        }
+    }
+
     private function normalizarMontoLaboral($value, bool $permiteCero = false): string
     {
         $monto = trim((string)($value ?? ''));
@@ -949,6 +1095,16 @@ class Trabajador extends Model
         }
 
         return number_format($numero, 2, '.', '');
+    }
+
+    private function normalizarHorasLaborales($value): ?string
+    {
+        $horas = trim((string)($value ?? ''));
+        if ($horas === '') {
+            return null;
+        }
+
+        return $this->normalizarMontoLaboral($horas, true);
     }
 
     private function validarMontoLaboral($monto): void
@@ -1037,6 +1193,17 @@ class Trabajador extends Model
 
         $fecha = DateTime::createFromFormat('Y-m-d', $texto);
         return $fecha && $fecha->format('Y-m-d') === $texto ? $texto : null;
+    }
+
+    private function nullableHora($value)
+    {
+        $texto = trim((string)($value ?? ''));
+        if ($texto === '') {
+            return null;
+        }
+
+        $hora = DateTime::createFromFormat('H:i', $texto);
+        return $hora && $hora->format('H:i') === $texto ? $texto : 'INVALIDO';
     }
 
     private function nullablePeriodicidad($value): ?string

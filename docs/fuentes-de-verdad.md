@@ -344,3 +344,7 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - NP-C-D-0 documenta futura escritura manual en `trabajador_asistencias`, pero todavia no
   crea datos.
 - Asistencia no es nomina automatica ni Caja; es un registro laboral por trabajador/dia.
+- NP-C-D-A permite crear manualmente una asistencia por trabajador/dia en
+  `trabajador_asistencias`.
+- `trabajador_asistencias` sigue siendo ledger laboral operativo; no calcula nomina, no
+  descuenta ni crea pagos reales.

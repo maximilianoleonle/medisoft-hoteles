@@ -581,3 +581,12 @@
 - Se respeta la llave unica `(hotel_id, trabajador_id, fecha)`.
 - Edicion, anulacion o correccion de asistencia requieren contrato separado.
 - Tareas operativas no generan asistencia automaticamente.
+
+## Decision NP-C-D-A asistencia manual
+
+- Se implementa solo alta manual inicial en `trabajador_asistencias`.
+- La vista no envia `hotel_id`, `trabajador_id`, `created_by` ni `updated_by`.
+- La duplicidad por trabajador/dia se bloquea antes del `INSERT`.
+- No se habilita edicion, anulacion, correccion, calculo de nomina ni descuento
+  automatico.
+- Caja queda completamente fuera del flujo.

@@ -720,3 +720,16 @@ Estado: `CONTRATO_NP_C_D_ASISTENCIA_MANUAL_COMPLETADO`.
 - Mitigacion: captura manual sin calculos de pago, sin Caja y sin descuentos automaticos.
 - La llave unica por trabajador/dia evita duplicados si la implementacion futura valida
   antes de insertar.
+
+## Auditoria NP-C-D-A asistencia manual
+
+Estado: `ASISTENCIA_MANUAL_NP_C_D_A_COMPLETADA_QA_DIFERIDA`.
+
+- La unica escritura nueva autorizada es `INSERT INTO trabajador_asistencias`.
+- Se valida trabajador activo del hotel actual antes de escribir.
+- El formulario usa CSRF y permiso administrativo existente.
+- No se aceptan `hotel_id`, `trabajador_id`, `created_by` ni `updated_by` desde la vista.
+- No hay escrituras en Caja, cortes, movimientos, pagos reales, abonos ni nomina.
+- Se bloquea duplicado por `(hotel_id, trabajador_id, fecha)`.
+- Preflight y health checker detectan escrituras fuera de alcance.
+- Riesgo residual: falta QA manual con trabajador real porque la tabla local esta vacia.

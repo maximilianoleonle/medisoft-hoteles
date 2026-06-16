@@ -34,6 +34,7 @@ $trabajadorId = (int)($trabajador['id'] ?? 0);
 $puedeRegistrarConcepto = ($trabajador['estado'] ?? '') === 'activo' && !empty($ledgerDisponible['trabajador_pagos']);
 $puedeRegistrarAnticipo = ($trabajador['estado'] ?? '') === 'activo' && !empty($ledgerDisponible['trabajador_anticipos']);
 $puedeRegistrarPrestamo = ($trabajador['estado'] ?? '') === 'activo' && !empty($ledgerDisponible['trabajador_prestamos']);
+$puedeRegistrarAsistencia = ($trabajador['estado'] ?? '') === 'activo' && !empty($ledgerDisponible['trabajador_asistencias']);
 ?>
 
 <style>
@@ -155,7 +156,7 @@ $puedeRegistrarPrestamo = ($trabajador['estado'] ?? '') === 'activo' && !empty($
                 <div class="worker-kicker">Personal / Trabajador</div>
                 <h1 class="worker-title"><?= trab_view_safe($trabajador['nombre_completo'] ?? null) ?></h1>
                 <p class="worker-subtitle">
-                    Ficha laboral del hotel actual. El ledger registra conceptos, anticipos y prestamos sin crear pagos reales ni movimientos de caja.
+                    Ficha laboral del hotel actual. El ledger registra conceptos, anticipos, prestamos y asistencias sin crear pagos reales, nomina ni movimientos de caja.
                 </p>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 min-w-[340px]">
@@ -573,8 +574,8 @@ $puedeRegistrarPrestamo = ($trabajador['estado'] ?? '') === 'activo' && !empty($
             <div class="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
                 <h2 class="font-black text-lg">Asistencias recientes</h2>
                 <span class="worker-badge">
-                    <i class="fas fa-lock"></i>
-                    Solo lectura
+                    <i class="fas fa-calendar-check"></i>
+                    Captura manual
                 </span>
             </div>
 
@@ -584,46 +585,101 @@ $puedeRegistrarPrestamo = ($trabajador['estado'] ?? '') === 'activo' && !empty($
                     <h3 class="font-black text-lg">Asistencias no disponibles</h3>
                     <p class="text-sm text-slate-500 mt-1">La tabla de asistencias laborales no esta disponible en esta instalacion.</p>
                 </div>
-            <?php elseif (empty($asistenciasRecientes)): ?>
-                <div class="p-8 text-center">
-                    <div class="text-4xl text-slate-300 mb-3"><i class="fas fa-calendar-day"></i></div>
-                    <h3 class="font-black text-lg">Sin asistencias registradas</h3>
-                    <p class="text-sm text-slate-500 mt-1">Este trabajador aun no tiene asistencias capturadas en el hotel actual.</p>
-                </div>
             <?php else: ?>
-                <div class="overflow-x-auto">
-                    <table class="worker-table min-w-full text-sm">
-                        <thead>
-                            <tr>
-                                <th class="text-left">Fecha</th>
-                                <th class="text-left">Tipo</th>
-                                <th class="text-left">Entrada</th>
-                                <th class="text-left">Salida</th>
-                                <th class="text-right">Horas</th>
-                                <th class="text-right">Extra</th>
-                                <th class="text-left">Observaciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($asistenciasRecientes as $asistencia): ?>
+                <?php if ($puedeRegistrarAsistencia): ?>
+                    <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/asistencias') ?>" class="p-5 border-b border-slate-200">
+                        <?= csrf_field() ?>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                            <div>
+                                <label class="worker-meta-label" for="asistencia_fecha">Fecha</label>
+                                <input id="asistencia_fecha" class="worker-input mt-1" type="date" name="fecha" value="<?= date('Y-m-d') ?>" required>
+                            </div>
+                            <div>
+                                <label class="worker-meta-label" for="asistencia_tipo">Tipo</label>
+                                <select id="asistencia_tipo" class="worker-input mt-1" name="tipo" required>
+                                    <option value="asistencia">Asistencia</option>
+                                    <option value="retardo">Retardo</option>
+                                    <option value="falta">Falta</option>
+                                    <option value="permiso">Permiso</option>
+                                    <option value="incapacidad">Incapacidad</option>
+                                    <option value="descanso">Descanso</option>
+                                    <option value="horas_extra">Horas extra</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="worker-meta-label" for="asistencia_hora_entrada">Entrada</label>
+                                <input id="asistencia_hora_entrada" class="worker-input mt-1" type="time" name="hora_entrada">
+                            </div>
+                            <div>
+                                <label class="worker-meta-label" for="asistencia_hora_salida">Salida</label>
+                                <input id="asistencia_hora_salida" class="worker-input mt-1" type="time" name="hora_salida">
+                            </div>
+                            <div>
+                                <label class="worker-meta-label" for="asistencia_horas">Horas</label>
+                                <input id="asistencia_horas" class="worker-input mt-1" type="number" min="0" step="0.25" name="horas" placeholder="Opcional">
+                            </div>
+                            <div>
+                                <label class="worker-meta-label" for="asistencia_horas_extra">Horas extra</label>
+                                <input id="asistencia_horas_extra" class="worker-input mt-1" type="number" min="0" step="0.25" name="horas_extra" placeholder="Opcional">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="worker-meta-label" for="asistencia_observaciones">Observaciones</label>
+                                <input id="asistencia_observaciones" class="worker-input mt-1" type="text" maxlength="255" name="observaciones" placeholder="Opcional">
+                            </div>
+                        </div>
+                        <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+                            <div class="text-xs text-slate-500">Un registro por trabajador y dia. No genera nomina, pagos reales ni movimientos de Caja.</div>
+                            <button class="worker-btn" type="submit">
+                                <i class="fas fa-calendar-plus"></i>
+                                Registrar asistencia
+                            </button>
+                        </div>
+                    </form>
+                <?php elseif (($trabajador['estado'] ?? '') !== 'activo'): ?>
+                    <div class="worker-ledger-note m-4">Solo se pueden registrar asistencias a trabajadores activos.</div>
+                <?php endif; ?>
+
+                <?php if (empty($asistenciasRecientes)): ?>
+                    <div class="p-8 text-center">
+                        <div class="text-4xl text-slate-300 mb-3"><i class="fas fa-calendar-day"></i></div>
+                        <h3 class="font-black text-lg">Sin asistencias registradas</h3>
+                        <p class="text-sm text-slate-500 mt-1">Este trabajador aun no tiene asistencias capturadas en el hotel actual.</p>
+                    </div>
+                <?php else: ?>
+                    <div class="overflow-x-auto">
+                        <table class="worker-table min-w-full text-sm">
+                            <thead>
                                 <tr>
-                                    <td><?= trab_view_safe($asistencia['fecha'] ?? null) ?></td>
-                                    <td>
-                                        <span class="worker-badge">
-                                            <i class="fas fa-circle-dot"></i>
-                                            <?= trab_view_safe($asistencia['tipo'] ?? null) ?>
-                                        </span>
-                                    </td>
-                                    <td><?= trab_view_safe($asistencia['hora_entrada'] ?? null) ?></td>
-                                    <td><?= trab_view_safe($asistencia['hora_salida'] ?? null) ?></td>
-                                    <td class="text-right"><?= trab_view_qty($asistencia['horas'] ?? 0) ?></td>
-                                    <td class="text-right"><?= trab_view_qty($asistencia['horas_extra'] ?? 0) ?></td>
-                                    <td><?= trab_view_safe($asistencia['observaciones'] ?? null, 'Sin observaciones') ?></td>
+                                    <th class="text-left">Fecha</th>
+                                    <th class="text-left">Tipo</th>
+                                    <th class="text-left">Entrada</th>
+                                    <th class="text-left">Salida</th>
+                                    <th class="text-right">Horas</th>
+                                    <th class="text-right">Extra</th>
+                                    <th class="text-left">Observaciones</th>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($asistenciasRecientes as $asistencia): ?>
+                                    <tr>
+                                        <td><?= trab_view_safe($asistencia['fecha'] ?? null) ?></td>
+                                        <td>
+                                            <span class="worker-badge">
+                                                <i class="fas fa-circle-dot"></i>
+                                                <?= trab_view_safe($asistencia['tipo'] ?? null) ?>
+                                            </span>
+                                        </td>
+                                        <td><?= trab_view_safe($asistencia['hora_entrada'] ?? null) ?></td>
+                                        <td><?= trab_view_safe($asistencia['hora_salida'] ?? null) ?></td>
+                                        <td class="text-right"><?= trab_view_qty($asistencia['horas'] ?? 0) ?></td>
+                                        <td class="text-right"><?= trab_view_qty($asistencia['horas_extra'] ?? 0) ?></td>
+                                        <td><?= trab_view_safe($asistencia['observaciones'] ?? null, 'Sin observaciones') ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </section>

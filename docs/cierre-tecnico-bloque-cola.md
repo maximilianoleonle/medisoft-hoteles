@@ -664,3 +664,15 @@ Estado: `CONTRATO_NP_C_D_ASISTENCIA_MANUAL_COMPLETADO`.
 - Documento: `docs/fase_NP_C_D_0_contrato_asistencia_manual.md`.
 - Solo contrato; no agrega rutas, vistas, POST ni escrituras.
 - Define futura captura manual de asistencia sin nomina automatica ni Caja.
+
+## Checkpoint tecnico NP-C-D-A
+
+Estado: `ASISTENCIA_MANUAL_NP_C_D_A_COMPLETADA_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_D_A_asistencia_manual.md`.
+- Ruta POST controlada para registrar asistencia laboral manual.
+- Modelo central con transaccion, validacion de trabajador activo, aislamiento `hotel_id`
+  y bloqueo de duplicado por trabajador/dia.
+- Vista de trabajador con formulario CSRF y advertencia de no nomina/no Caja.
+- Health/preflight actualizados y ejecutados sin errores.
+- QA manual queda diferida porque no hay trabajadores locales.

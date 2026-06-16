@@ -733,3 +733,15 @@ Resultado NP-C-D-0:
 - Se define contrato para futura captura manual de asistencia por trabajador/dia.
 - No se implementan rutas, vistas, POST ni escrituras.
 - No se autoriza nomina automatica, Caja, pagos reales ni `/api/sync`.
+
+Resultado NP-C-D-A:
+
+- Estado tecnico: `ASISTENCIA_MANUAL_NP_C_D_A_COMPLETADA_QA_DIFERIDA`.
+- Documento: `docs/fase_NP_C_D_A_asistencia_manual.md`.
+- Se habilita captura manual de asistencia en `trabajador_asistencias` desde la ficha de
+  trabajador activo.
+- La accion exige hotel actual, permiso existente, POST, CSRF y trabajador activo.
+- El modelo valida fecha, tipo, horas, entrada/salida y duplicado por trabajador/dia.
+- Health checker y preflight conocen NP-C-D-A.
+- No se crea nomina, pagos reales, abonos, categorias Nomina ni movimientos de Caja.
+- No se toco `/api/sync`.

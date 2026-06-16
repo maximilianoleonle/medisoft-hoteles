@@ -307,6 +307,44 @@ class TrabajadorController extends Controller
         }
     }
 
+    public function registrarAsistenciaLaboralAction(): void
+    {
+        $this->requireWritePermission('usuarios.edit');
+
+        if (!$this->isPost()) {
+            $this->redirect('trabajadores');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        $id = (int)($this->route_params['id'] ?? 0);
+        $hotelId = $this->hotelIdActual();
+
+        try {
+            $trabajador = $this->trabajadorModel->buscarPorIdHotel($id, $hotelId);
+            if (!$trabajador) {
+                throw new Exception('Trabajador no encontrado para el hotel actual');
+            }
+
+            $asistenciaId = $this->trabajadorModel->registrarAsistenciaLaboralParaHotel(
+                $id,
+                $hotelId,
+                $this->datosAsistenciaLaboral(),
+                $this->usuarioIdActual()
+            );
+
+            $asistencia = $this->trabajadorModel->asistenciaLaboralPorIdHotel($asistenciaId, $id, $hotelId);
+            $this->auditarMovimientoLaboral('trabajadores.asistencia_laboral_registrada', 'trabajador_asistencia', $trabajador, $asistencia ?: [], $asistenciaId);
+
+            set_mensaje('Asistencia laboral registrada correctamente. No se genero nomina ni movimiento de Caja.', 'success');
+            $this->redirect('trabajadores/' . $id);
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo registrar la asistencia laboral: ' . $e->getMessage(), 'error');
+            $this->redirect($id > 0 ? 'trabajadores/' . $id : 'trabajadores');
+        }
+    }
+
     private function cambiarEstado(string $estado, string $mensaje, string $accion): void
     {
         $this->requireWritePermission('usuarios.edit');
@@ -414,6 +452,19 @@ class TrabajadorController extends Controller
             'motivo' => $this->getPost('motivo', ''),
             'referencia' => $this->getPost('referencia', ''),
             'notas' => $this->getPost('notas', ''),
+        ];
+    }
+
+    private function datosAsistenciaLaboral(): array
+    {
+        return [
+            'fecha' => $this->getPost('fecha', ''),
+            'tipo' => $this->getPost('tipo', ''),
+            'hora_entrada' => $this->getPost('hora_entrada', ''),
+            'hora_salida' => $this->getPost('hora_salida', ''),
+            'horas' => $this->getPost('horas', ''),
+            'horas_extra' => $this->getPost('horas_extra', ''),
+            'observaciones' => $this->getPost('observaciones', ''),
         ];
     }
 
