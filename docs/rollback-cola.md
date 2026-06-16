@@ -364,6 +364,14 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Codigo: no aplica si el commit solo contiene documentacion de cierre.
 - No borrar documentos, auditorias ni archivos en `src/storage/documentos/`.
 
+### 4C-0 documentos por entidad
+
+- Rollback documental: revertir el commit
+  `docs(phase-4c): define contextual document attachments contract`.
+- DB: no aplica; 4C-0 no escribe datos ni crea migraciones.
+- Codigo: no aplica; 4C-0 no toca rutas, controladores, modelos ni vistas.
+- No borrar documentos, relaciones, auditorias ni archivos en `src/storage/documentos/`.
+
 ### Fases futuras
 
 - Antes de migracion o escritura: backup fresco.

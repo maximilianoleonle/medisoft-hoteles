@@ -416,6 +416,33 @@ Fuera de alcance del cierre:
 - Links publicos o tokens de documentos.
 - Caja, pagos, abonos, Fase 3D, NP-A y `/api/sync`.
 
+## Fase 4C-0: Documentos por entidad
+
+Estado formal vigente: `CONTRATO_4C_DOCUMENTOS_ENTIDAD_COMPLETADO`.
+
+Objetivo:
+
+- Definir la integracion contextual de documentos en fichas operativas.
+- Entidades objetivo: proveedor, compra, cuenta por pagar, huesped y reservacion.
+- Usar `documento_entidades` como relacion polimorfica ya existente.
+- No implementar funcionalidad en 4C-0; solo contrato y diagnostico.
+
+Alcance futuro 4C-A:
+
+- Secciones read-only en fichas de entidad.
+- Estado vacio claro.
+- Links a detalle, descarga autenticada y metadata ya protegidas.
+- Link a carga contextual existente solo si la entidad pertenece al hotel.
+
+Fuera de alcance:
+
+- Borrado, reemplazo de archivo, links publicos, pagos, abonos, Caja, Fase 3D, NP-A,
+  PWA/offline y `/api/sync`.
+
+Documento:
+
+- `docs/fase_4C_0_contrato_documentos_entidad.md`.
+
 ## Bloque Personal y Nomina (Fase NP): modulo independiente de trabajadores
 
 ### Objetivo

@@ -291,6 +291,26 @@ Cierre tecnico 4B:
 - Siguiente paso recomendado: nuevo bloque autorizado; no avanzar automaticamente a
   borrado, links publicos, reemplazo de archivos, pagos, Caja, Fase 3D ni NP-A.
 
+## Nuevo bloque Fase 4C Documentos por entidad
+
+Estado: `CONTRATO_4C_DOCUMENTOS_ENTIDAD_COMPLETADO`.
+
+Objetivo: definir como integrar documentos en fichas operativas de proveedor, compra,
+cuenta por pagar, huesped y reservacion usando la relacion existente
+`documento_entidades`, sin implementar todavia nuevas secciones ni escrituras.
+
+Resultado 4C-0:
+
+- Documento creado: `docs/fase_4C_0_contrato_documentos_entidad.md`.
+- Diagnostico confirma infraestructura existente:
+  - `Documento::documentosPorEntidad()`;
+  - `DocumentoController::entidadAction()`;
+  - `GET /documentos/entidad/{tipo}/{id}`;
+  - carga contextual ya validada por entidad/hotel.
+- No se tocaron controladores, modelos, rutas, vistas, DB ni migraciones.
+- No hay nuevas escrituras, Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
+- Siguiente paso recomendado: `COLA_4C_A_DOCUMENTOS_POR_ENTIDAD_READ_ONLY`.
+
 ## Nuevo bloque Personal y Nomina (Fase NP)
 
 Objetivo: modulo INDEPENDIENTE de trabajadores con ledger laboral, saldos por persona,

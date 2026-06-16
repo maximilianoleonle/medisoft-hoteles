@@ -162,6 +162,22 @@ Reglas de fuente de verdad:
 - El cierre 4B no autoriza borrado, reemplazo de archivo, links publicos, pagos, Caja,
   abonos, Fase 3D, NP-A ni cambios en `/api/sync`.
 
+## Documentos por entidad (Fase 4C)
+
+Estado formal: `CONTRATO_4C_DOCUMENTOS_ENTIDAD_COMPLETADO`.
+
+Fuente de verdad:
+
+- La relacion documento-entidad vive en `documento_entidades`.
+- La metadata vive en `documentos`.
+- El archivo fisico sigue bajo `STORAGE_PATH/documentos`.
+- La entidad vinculada debe existir y pertenecer al mismo `hotel_id`.
+- Entidades iniciales: `proveedor`, `compra`, `cuenta_por_pagar`, `huesped`,
+  `reservacion`.
+- `documento_entidades` no reemplaza datos de negocio de proveedores, compras, CxP,
+  huespedes ni reservaciones; solo registra vinculos documentales.
+- No hay links publicos ni permisos nuevos en 4C-0.
+
 ## Personal y Nomina (Fase NP)
 
 Fuente nueva e independiente (modulo de trabajadores):

@@ -236,6 +236,17 @@
 - Cualquier fase futura de archivado, baja logica, reemplazo o links publicos requiere
   contrato nuevo y autorizacion explicita.
 
+### Fase 4C-0 documentos por entidad
+
+- Estado formal vigente: `CONTRATO_4C_DOCUMENTOS_ENTIDAD_COMPLETADO`.
+- Se elige integrar documentos por entidad antes de archivado/baja logica porque es
+  menos destructivo y reutiliza infraestructura existente.
+- 4C-0 no agrega codigo ni DB; solo define contrato, riesgos y subfases.
+- La implementacion futura debe usar `documento_entidades` y no duplicar tablas por
+  entidad.
+- No se autorizan borrado, reemplazo, links publicos, Caja, pagos, abonos, Fase 3D,
+  NP-A ni `/api/sync`.
+
 ### Decisiones de diagnostico NP-0
 
 - Hoy "trabajador" = `usuarios` (tabla global, sin `hotel_id`, `rol` de sistema) + pivote

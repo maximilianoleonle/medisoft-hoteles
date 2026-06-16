@@ -4,14 +4,14 @@
 
 NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Centro Documental Base.
 
-Mensaje actual procesado: "Confirmo las pruebas correctas, CONTINUA CON EL SIGUIENTE PASO"; se marca 4B-C-A como validada manualmente y se cierra tecnicamente Fase 4B.
+Mensaje actual procesado: "Continua"; se crea contrato 4C-0 para documentos por entidad.
 
 ## Estado vigente
 
-- Bloque actual: Fase 4B Descarga segura de documentos.
-- Fase actual: cierre tecnico post-QA de Fase 4B.
+- Bloque actual: Fase 4C Documentos por entidad.
+- Fase actual: 4C-0 contrato y diagnostico.
 - Riesgo: naranja.
-- Estado: `CIERRE_TECNICO_4B_COMPLETADO`.
+- Estado: `CONTRATO_4C_DOCUMENTOS_ENTIDAD_COMPLETADO`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -74,6 +74,18 @@ Mensaje actual procesado: "Confirmo las pruebas correctas, CONTINUA CON EL SIGUI
 - Prohibido: links publicos, edicion de archivo/storage, borrado, Caja, pagos, abonos,
   PWA/offline, Fase 3D y `/api/sync`.
 - Siguiente accion: nuevo bloque autorizado por el usuario; no avanzar automaticamente a borrado, links publicos, reemplazo, pagos, Caja, Fase 3D ni NP-A.
+
+## Fase 4C Documentos por entidad
+
+- 4C-0 contrato y diagnostico: completado documentalmente.
+- Documento: `docs/fase_4C_0_contrato_documentos_entidad.md`.
+- Entidades objetivo: proveedor, compra, cuenta por pagar, huesped y reservacion.
+- Infraestructura reutilizada: `documento_entidades`, `Documento::documentosPorEntidad()`,
+  `DocumentoController::entidadAction()` y `GET /documentos/entidad/{tipo}/{id}`.
+- Sin cambios de codigo, sin DB, sin migraciones, sin nuevos POST y sin escrituras.
+- Prohibido: borrado, reemplazo de archivo, links publicos, Caja, pagos, abonos,
+  Fase 3D, NP-A y `/api/sync`.
+- Siguiente accion recomendada: `COLA_4C_A_DOCUMENTOS_POR_ENTIDAD_READ_ONLY`.
 
 ## Reanclaje Fase 3C
 
@@ -250,4 +262,7 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Siguiente paso formal recomendado: esperar nuevo bloque autorizado. Opciones seguras futuras: contrato de archivado/baja logica documental o contrato de documentos por entidad, sin borrado fisico, sin links publicos, sin pagos, sin Caja, sin Fase 3D, sin NP-A y sin tocar `/api/sync`. No hacer push.
+Siguiente paso formal recomendado: implementar 4C-A solo si el usuario lo confirma:
+secciones documentales read-only por entidad, sin nuevas escrituras, sin borrado,
+sin links publicos, sin pagos, sin Caja, sin Fase 3D, sin NP-A y sin tocar `/api/sync`.
+No hacer push.

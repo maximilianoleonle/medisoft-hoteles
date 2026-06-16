@@ -446,6 +446,25 @@ Resultado automatico de cierre:
 - Documento adjunto aparece solo en la entidad correcta.
 - Descarga autenticada funciona con permisos.
 
+## QA Fase 4C Documentos por entidad
+
+Estado: `CONTRATO_4C_DOCUMENTOS_ENTIDAD_COMPLETADO`.
+
+4C-0 es documentacion y diagnostico; no requiere QA en navegador.
+
+QA futura 4C-A:
+
+- Ficha de proveedor muestra documentos vinculados o estado vacio.
+- Ficha de compra muestra documentos vinculados o estado vacio.
+- Detalle de CxP muestra documentos vinculados o estado vacio.
+- Ficha de huesped muestra documentos vinculados o estado vacio.
+- Detalle de reservacion muestra documentos vinculados o estado vacio.
+- Links a documento, descarga y metadata usan rutas protegidas existentes.
+- Link de carga contextual conserva `entidad_tipo` y `entidad_id`.
+- Un documento de otro hotel no aparece en la entidad actual.
+- No se muestran `storage_path`, `nombre_archivo`, rutas absolutas ni links publicos.
+- No hay Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
+
 ### QA visual futura
 
 - Estado vacio claro.
