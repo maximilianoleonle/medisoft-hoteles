@@ -324,3 +324,32 @@ rutas, controladores, modelos, vistas, DB, migraciones ni acciones operativas.
 - No hay QA manual de navegador porque 4D-B-0 no implementa funcionalidad.
 - Implementar 4D-B-A requiere nueva autorizacion explicita.
 - No hacer push.
+
+## Implementacion tecnica Fase 4D-B-A
+
+Estado: `BAJA_LOGICA_DOCUMENTAL_4D_B_A_COMPLETADA_QA_DIFERIDA`.
+
+La Fase 4D-B-A implementa baja logica documental controlada. QA manual queda diferida
+por instruccion del usuario para permitir avance autonomo.
+
+### Confirmaciones 4D-B-A
+
+- Ruta POST: `/documentos/{id}/eliminar`.
+- Controlador: `DocumentoController::eliminarAction()`.
+- Modelo central: `Documento::actualizarEstado()`.
+- Transiciones permitidas: `activo -> eliminado` y `archivado -> eliminado`.
+- Cambios desde `eliminado` siguen bloqueados.
+- Vista de detalle muestra `Baja logica` solo para documentos `activo` o `archivado`.
+- Formulario con CSRF y confirmacion fuerte.
+- Auditoria: `documentos.estado_actualizado`.
+- Sin borrado fisico, sin `DELETE`, sin borrar relaciones, sin Caja, pagos, abonos,
+  Fase 3D, NP-A ni `/api/sync`.
+
+### QA diferida 4D-B-A
+
+- Validar `activo -> eliminado`.
+- Validar `archivado -> eliminado`.
+- Validar que `eliminado` no muestra descarga, edicion, archivar, restaurar ni baja
+  logica.
+- Validar que archivo fisico y relaciones se conservan.
+- Validar auditoria.

@@ -129,6 +129,11 @@ $documentoId = (int)($documento['id'] ?? 0);
     color: #047857;
     border-color: #a7f3d0;
 }
+.doc-detail-page .doc-btn-danger {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
 .doc-detail-page .doc-badge {
     display: inline-flex;
     align-items: center;
@@ -221,6 +226,15 @@ $documentoId = (int)($documento['id'] ?? 0);
                         <button class="doc-btn doc-btn-success" type="submit" onclick="return confirm('¿Restaurar este documento al estado activo?');">
                             <i class="fas fa-rotate-left"></i>
                             Restaurar
+                        </button>
+                    </form>
+                <?php endif; ?>
+                <?php if (in_array(($documento['estado'] ?? ''), ['activo', 'archivado'], true)): ?>
+                    <form method="POST" action="<?= url('documentos/' . $documentoId . '/eliminar') ?>">
+                        <?= csrf_field() ?>
+                        <button class="doc-btn doc-btn-danger" type="submit" onclick="return confirm('Esta accion marcara el documento como eliminado de forma logica. No se borrara el archivo fisico ni sus vinculos. Continuar?');">
+                            <i class="fas fa-ban"></i>
+                            Baja logica
                         </button>
                     </form>
                 <?php endif; ?>

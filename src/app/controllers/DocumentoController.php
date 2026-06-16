@@ -159,6 +159,11 @@ class DocumentoController extends Controller
         $this->cambiarEstadoAction('activo', 'Documento restaurado correctamente.');
     }
 
+    public function eliminarAction(): void
+    {
+        $this->cambiarEstadoAction('eliminado', 'Documento dado de baja logicamente correctamente.');
+    }
+
     public function subirAction(): void
     {
         $hotelId = $this->hotelIdActual();

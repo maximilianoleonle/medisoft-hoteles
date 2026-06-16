@@ -338,7 +338,7 @@ Resultado 4C-A:
 
 ## Nuevo bloque Fase 4D Archivado documental
 
-Estado: `CONTRATO_4D_B_BAJA_LOGICA_DOCUMENTAL_COMPLETADO`.
+Estado: `BAJA_LOGICA_DOCUMENTAL_4D_B_A_COMPLETADA_QA_DIFERIDA`.
 
 Objetivo: preparar una fase segura para archivar, restaurar y eventualmente dar baja
 logica a documentos sin borrar archivos fisicos ni registros.
@@ -389,6 +389,19 @@ Resultado 4D-B-0:
 - No hay borrado fisico, `DELETE`, Caja, pagos, abonos, Fase 3D, NP-A ni cambios en
   `/api/sync`.
 - Siguiente paso recomendado: implementar 4D-B-A solo con nueva autorizacion explicita.
+
+Resultado 4D-B-A:
+
+- Estado tecnico: `BAJA_LOGICA_DOCUMENTAL_4D_B_A_COMPLETADA_QA_DIFERIDA`.
+- Ruta POST implementada: `/documentos/{id}/eliminar`.
+- Controlador: `DocumentoController::eliminarAction()`.
+- Modelo central: `Documento::actualizarEstado()` permite `activo/archivado -> eliminado`
+  y bloquea cambios desde `eliminado`.
+- Vista de detalle muestra `Baja logica` solo en documentos `activo` o `archivado`,
+  con CSRF y confirmacion fuerte.
+- No hay restauracion desde `eliminado`, borrado fisico, `DELETE`, Caja, pagos,
+  abonos, Fase 3D, NP-A ni cambios en `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

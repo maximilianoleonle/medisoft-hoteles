@@ -541,12 +541,12 @@ class Documento extends Model
 
         $estadoAntes = (string)($antes['estado'] ?? '');
         if ($estadoAntes === 'eliminado') {
-            throw new Exception('Los documentos eliminados no se pueden restaurar en esta fase');
+            throw new Exception('Los documentos eliminados no se pueden cambiar en esta fase');
         }
 
         $transiciones = [
-            'activo' => ['archivado'],
-            'archivado' => ['activo'],
+            'activo' => ['archivado', 'eliminado'],
+            'archivado' => ['activo', 'eliminado'],
         ];
 
         if (!in_array($nuevoEstado, $transiciones[$estadoAntes] ?? [], true)) {
@@ -644,7 +644,7 @@ class Documento extends Model
     private function normalizarEstadoCambio(string $estado): string
     {
         $estado = trim($estado);
-        if (!in_array($estado, ['activo', 'archivado'], true)) {
+        if (!in_array($estado, ['activo', 'archivado', 'eliminado'], true)) {
             throw new Exception('Estado documental no permitido en esta fase');
         }
 

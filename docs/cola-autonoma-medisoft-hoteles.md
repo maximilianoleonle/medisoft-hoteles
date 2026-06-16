@@ -4,15 +4,15 @@
 
 NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Centro Documental Base.
 
-Mensaje actual procesado: "Okey, ahora continua con lo siguiente"; se documenta
-4D-B-0 como contrato de baja logica documental, sin implementar funcionalidad.
+Mensaje actual procesado: el usuario autoriza continuar autonomamente y omitir QA
+manual por ahora; se implementa 4D-B-A baja logica documental controlada.
 
 ## Estado vigente
 
 - Bloque actual: Fase 4D Archivado documental.
-- Fase actual: 4D-B-0 contrato de baja logica documental.
+- Fase actual: 4D-B-A baja logica documental.
 - Riesgo: naranja.
-- Estado: `CONTRATO_4D_B_BAJA_LOGICA_DOCUMENTAL_COMPLETADO`.
+- Estado: `BAJA_LOGICA_DOCUMENTAL_4D_B_A_COMPLETADA_QA_DIFERIDA`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -123,9 +123,12 @@ Mensaje actual procesado: "Okey, ahora continua con lo siguiente"; se documenta
 - QA manual 4D-A: reportada por el usuario como correcta.
 - 4D-B-0 contrato: documenta baja logica futura hacia `eliminado`, sin rutas nuevas,
   sin POST, sin modelo nuevo, sin DB y sin migraciones.
-- Siguiente accion recomendada: implementar 4D-B-A solo con nueva autorizacion explicita;
-  no avanzar automaticamente a baja logica operativa, pagos, Caja, Fase 3D, NP-A ni
-  `/api/sync`.
+- 4D-B-A implementado: POST `/documentos/{id}/eliminar`, CSRF,
+  `Documento::actualizarEstado()` con `activo/archivado -> eliminado`, auditoria y
+  boton `Baja logica` en detalle documental.
+- QA manual 4D-B-A queda diferida por instruccion del usuario.
+- Siguiente accion recomendada: verificar, commitear y cerrar documentalmente Fase 4D
+  antes de pasar a Personal base o Tareas/Limpieza/Mantenimiento.
 
 ## Reanclaje Fase 3C
 

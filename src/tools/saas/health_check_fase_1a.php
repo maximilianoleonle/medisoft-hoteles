@@ -3612,8 +3612,8 @@ if (!is_file($routesPath)) {
         && strpos($documentoControllerCode, 'validateCSRF') !== false
         && strpos($documentoModelCode, 'actualizarEstado') !== false
         && strpos($documentoModelCode, 'documentos.estado_actualizado') !== false
-        && strpos($documentoModelCode, "'activo' => ['archivado'],") !== false
-        && strpos($documentoModelCode, "'archivado' => ['activo'],") !== false
+        && strpos($documentoModelCode, "'activo' => ['archivado") !== false
+        && strpos($documentoModelCode, "'archivado' => ['activo") !== false
         && strpos($documentoDetailViewCode, "method=\"POST\"") !== false
         && strpos($documentoDetailViewCode, "csrf_field()") !== false
         && strpos($documentoDetailViewCode, "/archivar") !== false
@@ -3625,6 +3625,30 @@ if (!is_file($routesPath)) {
         hcWarning(
             'Centro Documental Fase 4D-A no muestra contrato completo de archivado reversible.',
             'Validar POST /documentos/{id}/archivar y /restaurar, CSRF, Documento::actualizarEstado(), auditoria documentos.estado_actualizado y ausencia de borrado fisico.'
+        );
+    }
+
+    if (
+        hcRoutePatternExists($routes, 'documentos/1/eliminar', 'post')
+        && $documentoControllerCode !== ''
+        && $documentoModelCode !== ''
+        && $documentoDetailViewCode !== ''
+        && strpos($documentoControllerCode, 'eliminarAction') !== false
+        && strpos($documentoControllerCode, "cambiarEstadoAction('eliminado'") !== false
+        && strpos($documentoControllerCode, 'validateCSRF') !== false
+        && strpos($documentoModelCode, "'activo' => ['archivado', 'eliminado']") !== false
+        && strpos($documentoModelCode, "'archivado' => ['activo', 'eliminado']") !== false
+        && strpos($documentoModelCode, "'activo', 'archivado', 'eliminado'") !== false
+        && strpos($documentoDetailViewCode, "/eliminar") !== false
+        && strpos($documentoDetailViewCode, 'Baja logica') !== false
+        && strpos($documentoDetailViewCode, "csrf_field()") !== false
+        && strpos($documentoModelCode, 'DELETE FROM documentos') === false
+    ) {
+        hcOk('Centro Documental Fase 4D-B-A baja logicamente documentos con POST, CSRF, transiciones centrales y sin borrar archivos.');
+    } elseif ($documentoModelCode !== '') {
+        hcWarning(
+            'Centro Documental Fase 4D-B-A no muestra contrato completo de baja logica.',
+            'Validar POST /documentos/{id}/eliminar, CSRF, transiciones hacia eliminado, auditoria y ausencia de DELETE/borrado fisico.'
         );
     }
 

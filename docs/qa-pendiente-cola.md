@@ -534,12 +534,17 @@ QA futura 4D-B:
 
 - 4D-B-0 solo documenta contrato; no requiere QA de navegador porque no agrega rutas ni
   codigo funcional.
+
+QA manual diferida 4D-B-A:
+
 - Baja logica hacia `eliminado` requiere confirmacion fuerte.
 - Documento eliminado bloquea edicion y descarga.
 - Recuperacion desde `eliminado` queda fuera de alcance salvo contrato separado.
-- Si se autoriza 4D-B-A, QA manual debe validar `activo/archivado -> eliminado`,
-  auditoria, bloqueo de descarga/edicion, conservacion de archivo/relaciones y ausencia
-  de Caja, pagos, abonos, Fase 3D, NP-A y `/api/sync`.
+- Validar `activo/archivado -> eliminado`.
+- Validar auditoria `documentos.estado_actualizado`.
+- Validar bloqueo de descarga/edicion.
+- Validar conservacion de archivo/relaciones.
+- Validar ausencia de Caja, pagos, abonos, Fase 3D, NP-A y `/api/sync`.
 
 ## QA Bloque Personal y Nomina (Fase NP)
 

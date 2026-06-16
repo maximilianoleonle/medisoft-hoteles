@@ -205,9 +205,11 @@ Fuente de verdad:
 - QA manual de archivar/restaurar reportada por el usuario como correcta.
 - 4D-B-0 documenta que una baja logica futura debera usar `documentos.estado =
   eliminado`, sin borrar archivo fisico ni relaciones.
+- 4D-B-A implementa esa baja logica con `Documento::actualizarEstado()` y auditoria
+  `documentos.estado_actualizado`.
 - La recuperacion desde `eliminado` no es fuente de verdad vigente y requerira contrato
   separado si algun dia se autoriza.
-- No hay Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync` en 4D-A.
+- No hay Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync` en 4D-A/4D-B-A.
 
 ## Personal y Nomina (Fase NP)
 

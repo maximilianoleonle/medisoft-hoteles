@@ -1,6 +1,6 @@
 # Fase 4D-B-0 - Contrato de baja logica documental
 
-Estado: `CONTRATO_4D_B_BAJA_LOGICA_DOCUMENTAL_COMPLETADO`.
+Estado: `BAJA_LOGICA_DOCUMENTAL_4D_B_A_COMPLETADA_QA_DIFERIDA`.
 
 ## Objetivo
 
@@ -124,3 +124,30 @@ Solo si se autoriza implementacion:
 Si se implementa una fase futura y se marca un documento como `eliminado`, el rollback
 operativo debe definirse antes de ejecutar la baja. No se debe usar `DELETE` como
 rollback.
+
+## Resultado Fase 4D-B-A
+
+Estado tecnico: `BAJA_LOGICA_DOCUMENTAL_4D_B_A_COMPLETADA_QA_DIFERIDA`.
+
+Se implemento baja logica documental controlada con:
+
+- Ruta POST: `/documentos/{id}/eliminar`.
+- Controlador: `DocumentoController::eliminarAction()`.
+- Modelo central: `Documento::actualizarEstado()` permite `activo -> eliminado` y
+  `archivado -> eliminado`.
+- Vista: boton `Baja logica` visible solo para documentos `activo` o `archivado`.
+- CSRF obligatorio en formulario.
+- Auditoria existente: `documentos.estado_actualizado`.
+- Sin restauracion desde `eliminado`.
+- Sin borrado fisico.
+- Sin `DELETE` SQL.
+- Sin borrar relaciones en `documento_entidades`.
+- Sin Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
+
+QA manual queda diferida por instruccion del usuario. Debe validarse despues:
+
+- `activo -> eliminado`.
+- `archivado -> eliminado`.
+- documento `eliminado` no muestra descarga, edicion ni acciones de restauracion;
+- archivo fisico y relaciones se conservan;
+- auditoria `documentos.estado_actualizado` queda registrada.

@@ -363,6 +363,23 @@ Estado: `CONTRATO_4D_B_BAJA_LOGICA_DOCUMENTAL_COMPLETADO`.
 - Resultado: contrato seguro; sin superficie de ataque nueva porque no hay codigo
   funcional.
 
+### Auditoria 4D-B-A baja logica documental
+
+Estado: `BAJA_LOGICA_DOCUMENTAL_4D_B_A_COMPLETADA_QA_DIFERIDA`.
+
+- Ruta sensible nueva: `POST /documentos/{id}/eliminar`.
+- Proteccion: autenticacion, contexto hotelero, modulo relacionado y CSRF.
+- Aislamiento multi-hotel: `Documento::actualizarEstado()` exige `id + hotel_id`.
+- Transiciones: solo `activo -> eliminado` y `archivado -> eliminado` como nueva baja
+  logica; cambios desde `eliminado` siguen bloqueados.
+- Datos: no hay `DELETE`, no se borra archivo fisico, no se borran relaciones en
+  `documento_entidades`.
+- Auditoria: se reutiliza `documentos.estado_actualizado` con estado antes/despues.
+- Vista: no envia `hotel_id`, `estado`, `storage_path`, `nombre_archivo` ni `sha256`.
+- Fuera de alcance confirmado: restauracion desde `eliminado`, baja masiva, Caja,
+  pagos, abonos, NP-A, Fase 3D, PWA/offline y `/api/sync`.
+- QA manual queda diferida por instruccion del usuario.
+
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 
 ### Estado NP-0

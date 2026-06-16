@@ -408,6 +408,17 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Codigo: no aplica; 4D-B-0 no toca rutas, controladores, modelos ni vistas.
 - No borrar documentos, relaciones, auditorias ni archivos en `src/storage/documentos/`.
 
+### 4D-B-A baja logica documental
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-4d): add controlled document soft-delete`.
+- DB: no borrar filas. Si un documento fue marcado como `eliminado` durante QA o prueba
+  local, definir restauracion operativa explicita antes de revertir datos.
+- No usar `DELETE` sobre `documentos`, `documento_entidades` ni `logs_auditoria`.
+- No borrar archivos fisicos bajo `src/storage/documentos/`.
+- La recuperacion desde `eliminado` no esta implementada en 4D-B-A; requiere contrato
+  separado si se necesita.
+
 ### 4D-A archivado/restauracion documental
 
 - Rollback de codigo/documentacion: revertir el commit

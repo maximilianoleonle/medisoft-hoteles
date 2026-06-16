@@ -299,6 +299,17 @@
 - El boton futuro debe vivir en detalle documental y requerir confirmacion fuerte,
   POST + CSRF y auditoria.
 
+### Fase 4D-B-A baja logica documental controlada
+
+- Estado formal vigente: `BAJA_LOGICA_DOCUMENTAL_4D_B_A_COMPLETADA_QA_DIFERIDA`.
+- Se reutiliza `Documento::actualizarEstado()` para mantener una sola politica central
+  de cambios de estado documental.
+- Se autoriza solo `activo/archivado -> eliminado`; cualquier recuperacion desde
+  `eliminado` queda fuera de alcance.
+- La vista muestra `Baja logica` solo en detalle documental y no en listados masivos.
+- No se elimina archivo fisico ni relaciones; la baja logica es reversible solo por
+  contrato futuro, no por accion actual.
+
 ### Decisiones de diagnostico NP-0
 
 - Hoy "trabajador" = `usuarios` (tabla global, sin `hotel_id`, `rol` de sistema) + pivote

@@ -540,6 +540,24 @@ Documento:
 
 - `docs/fase_4D_B_0_contrato_baja_logica_documental.md`.
 
+## Fase 4D-B-A: Baja logica documental controlada
+
+Estado formal vigente: `BAJA_LOGICA_DOCUMENTAL_4D_B_A_COMPLETADA_QA_DIFERIDA`.
+
+Alcance implementado:
+
+- POST `/documentos/{id}/eliminar`.
+- `DocumentoController::eliminarAction()`.
+- `Documento::actualizarEstado()` permite `activo/archivado -> eliminado`.
+- Boton `Baja logica` en detalle documental solo para documentos `activo` o
+  `archivado`.
+- CSRF, confirmacion fuerte y auditoria `documentos.estado_actualizado`.
+
+Fuera de alcance:
+
+- Restauracion desde `eliminado`, borrado fisico, `DELETE`, baja masiva, reemplazo de
+  archivo, links publicos, Caja, pagos, abonos, Fase 3D, NP-A y `/api/sync`.
+
 ## Bloque Personal y Nomina (Fase NP): modulo independiente de trabajadores
 
 ### Objetivo

@@ -199,3 +199,19 @@ No se implementaron rutas, controladores, modelos, vistas, DB ni migraciones.
 Documento:
 
 - `docs/fase_4D_B_0_contrato_baja_logica_documental.md`.
+
+## Resultado Fase 4D-B-A
+
+Estado tecnico: `BAJA_LOGICA_DOCUMENTAL_4D_B_A_COMPLETADA_QA_DIFERIDA`.
+
+Se implemento baja logica documental con:
+
+- `POST /documentos/{id}/eliminar`;
+- `DocumentoController::eliminarAction()`;
+- `Documento::actualizarEstado()` permitiendo `activo/archivado -> eliminado`;
+- boton `Baja logica` con CSRF y confirmacion fuerte en detalle documental.
+
+No se implemento restauracion desde `eliminado`, borrado fisico, `DELETE`, baja
+masiva, Caja, pagos, abonos, Fase 3D, NP-A ni `/api/sync`.
+
+QA manual queda diferida por instruccion del usuario.
