@@ -596,6 +596,14 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Si hay tareas reales existentes, no borrarlas; solo retirar la vista contextual si se
   decide revertir.
 
+### TLM-G preflight de consistencia aplicado
+
+- Rollback de codigo/documentacion: revertir el commit
+  `test(phase-tlm): add operational task consistency checks`.
+- DB: no aplica; TLM-G solo agrega verificadores read-only.
+- No tocar `tareas_operativas`, `tarea_eventos`, `habitaciones.estado`,
+  `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
+
 ### Reglas duras de rollback TLM
 
 - No tocar Caja, pagos, abonos ni nomina.

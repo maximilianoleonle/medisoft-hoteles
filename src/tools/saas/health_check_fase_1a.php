@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-B-A/TLM-F.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-B-A/TLM-G.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -273,6 +273,259 @@ function hcReportCxpConsistency(PDO $pdo, string $database): void
     }
 }
 
+function hcReportTlmZeroCount(string $label, ?int $count, string $recommendation): void
+{
+    if ($count === null) {
+        hcWarning(
+            'No se pudo validar consistencia TLM: ' . $label . '.',
+            'Revisar manualmente tareas_operativas/tarea_eventos antes de avanzar con automatizaciones.'
+        );
+        return;
+    }
+
+    if ($count === 0) {
+        hcOk('Consistencia TLM OK: ' . $label . ' = 0.');
+        return;
+    }
+
+    hcError('Consistencia TLM fallo: ' . $label . ' = ' . (string)$count . '.', $recommendation);
+}
+
+function hcTlmCajaTextPredicate(PDO $pdo, string $database): ?string
+{
+    $columns = [];
+    foreach (['descripcion', 'referencia', 'proveedor', 'categoria', 'comprobante', 'motivo_edicion'] as $column) {
+        if (hcColumnExists($pdo, $database, 'movimientos_caja', $column)) {
+            $quoted = hcQuoteIdentifier($column);
+            $columns[] = 'COALESCE(' . $quoted . ", '')";
+        }
+    }
+
+    if (empty($columns)) {
+        return null;
+    }
+
+    return "LOWER(CONCAT_WS(' ', " . implode(', ', $columns) . ")) REGEXP 'tareas_operativas|tarea operativa|tarea #[0-9]+'";
+}
+
+function hcReportTlmConsistency(PDO $pdo, string $database): void
+{
+    if (!hcTableExists($pdo, $database, 'tareas_operativas') || !hcTableExists($pdo, $database, 'tarea_eventos')) {
+        hcWarning(
+            'No se pudo validar consistencia TLM-G porque faltan tablas base.',
+            'Aplicar TLM-A con backup antes de ejecutar checks de tareas.'
+        );
+        return;
+    }
+
+    $checks = [
+        [
+            'label' => 'tareas con hotel_id nulo',
+            'sql' => 'SELECT COUNT(*) FROM tareas_operativas WHERE hotel_id IS NULL',
+            'recommendation' => 'Asignar hotel_id desde respaldo verificado antes de usar tareas.',
+        ],
+        [
+            'label' => 'eventos con hotel_id nulo',
+            'sql' => 'SELECT COUNT(*) FROM tarea_eventos WHERE hotel_id IS NULL',
+            'recommendation' => 'Reconciliar eventos sin hotel antes de usar historial de tareas.',
+        ],
+        [
+            'label' => 'eventos sin tarea existente',
+            'sql' => "SELECT COUNT(*)
+                FROM tarea_eventos e
+                LEFT JOIN tareas_operativas t ON t.id = e.tarea_id
+                WHERE t.id IS NULL",
+            'recommendation' => 'No borrar tareas con eventos; reconciliar tarea_id antes de continuar.',
+        ],
+        [
+            'label' => 'eventos con hotel distinto a la tarea',
+            'sql' => "SELECT COUNT(*)
+                FROM tarea_eventos e
+                JOIN tareas_operativas t ON t.id = e.tarea_id
+                WHERE e.hotel_id <> t.hotel_id",
+            'recommendation' => 'Corregir hotel_id de eventos desde la tarea validada.',
+        ],
+        [
+            'label' => 'tareas con estado invalido',
+            'sql' => "SELECT COUNT(*) FROM tareas_operativas
+                WHERE estado NOT IN ('pendiente', 'asignada', 'en_proceso', 'completada', 'cancelada')",
+            'recommendation' => 'Normalizar estados antes de exponer automatizaciones de limpieza/mantenimiento.',
+        ],
+        [
+            'label' => 'tareas con categoria invalida',
+            'sql' => "SELECT COUNT(*) FROM tareas_operativas
+                WHERE categoria NOT IN ('limpieza', 'mantenimiento', 'general')",
+            'recommendation' => 'Normalizar categoria de tareas antes de reportes operativos.',
+        ],
+        [
+            'label' => 'tareas con prioridad invalida',
+            'sql' => "SELECT COUNT(*) FROM tareas_operativas
+                WHERE prioridad NOT IN ('baja', 'media', 'alta', 'urgente')",
+            'recommendation' => 'Normalizar prioridad de tareas antes de reportes operativos.',
+        ],
+        [
+            'label' => 'tareas cerradas sin fecha_cierre',
+            'sql' => "SELECT COUNT(*) FROM tareas_operativas
+                WHERE estado IN ('completada', 'cancelada')
+                  AND fecha_cierre IS NULL",
+            'recommendation' => 'Completar fecha_cierre antes de usar metricas de cumplimiento.',
+        ],
+        [
+            'label' => 'tareas en proceso sin fecha_inicio',
+            'sql' => "SELECT COUNT(*) FROM tareas_operativas
+                WHERE estado = 'en_proceso'
+                  AND fecha_inicio IS NULL",
+            'recommendation' => 'Completar fecha_inicio o regresar la tarea a estado activo consistente.',
+        ],
+        [
+            'label' => 'tareas activas con fecha_cierre',
+            'sql' => "SELECT COUNT(*) FROM tareas_operativas
+                WHERE estado IN ('pendiente', 'asignada', 'en_proceso')
+                  AND fecha_cierre IS NOT NULL",
+            'recommendation' => 'Quitar fecha_cierre o cerrar formalmente la tarea con evento.',
+        ],
+        [
+            'label' => 'tareas con fecha_limite anterior a fecha_programada',
+            'sql' => "SELECT COUNT(*) FROM tareas_operativas
+                WHERE fecha_programada IS NOT NULL
+                  AND fecha_limite IS NOT NULL
+                  AND fecha_limite < fecha_programada",
+            'recommendation' => 'Corregir calendario de tareas antes de usar alertas operativas.',
+        ],
+        [
+            'label' => 'tareas sin evento inicial creada',
+            'sql' => "SELECT COUNT(*)
+                FROM tareas_operativas t
+                LEFT JOIN tarea_eventos e
+                  ON e.tarea_id = t.id
+                 AND e.hotel_id = t.hotel_id
+                 AND e.tipo_evento = 'creada'
+                WHERE e.id IS NULL",
+            'recommendation' => 'Reconstruir evento inicial desde auditoria antes de usar trazabilidad.',
+        ],
+    ];
+
+    foreach ($checks as $check) {
+        hcReportTlmZeroCount($check['label'], hcCountScalar($pdo, $check['sql']), $check['recommendation']);
+    }
+
+    $entityChecks = [
+        [
+            'table' => 'habitaciones',
+            'column' => 'habitacion_id',
+            'label' => 'tareas con habitacion inexistente',
+            'hotel_label' => 'tareas con habitacion de otro hotel',
+        ],
+        [
+            'table' => 'trabajadores',
+            'column' => 'trabajador_id',
+            'label' => 'tareas con trabajador inexistente',
+            'hotel_label' => 'tareas con trabajador de otro hotel',
+        ],
+        [
+            'table' => 'mantenimientos_habitaciones',
+            'column' => 'mantenimiento_id',
+            'label' => 'tareas con mantenimiento inexistente',
+            'hotel_label' => 'tareas con mantenimiento de otro hotel',
+        ],
+        [
+            'table' => 'reservaciones',
+            'column' => 'reservacion_id',
+            'label' => 'tareas con reservacion inexistente',
+            'hotel_label' => 'tareas con reservacion de otro hotel',
+        ],
+        [
+            'table' => 'huespedes',
+            'column' => 'huesped_id',
+            'label' => 'tareas con huesped inexistente',
+            'hotel_label' => 'tareas con huesped de otro hotel',
+        ],
+    ];
+
+    foreach ($entityChecks as $check) {
+        if (!hcTableExists($pdo, $database, $check['table'])) {
+            hcWarning(
+                'No se pudo validar ' . $check['label'] . ' porque falta ' . $check['table'] . '.',
+                'Revisar esquema antes de vincular tareas a ' . $check['table'] . '.'
+            );
+            continue;
+        }
+
+        if (!hcColumnExists($pdo, $database, $check['table'], 'hotel_id')) {
+            $column = hcQuoteIdentifier($check['column']);
+            hcReportTlmZeroCount(
+                'tareas con ' . $check['column'] . ' directo sin scope hotel',
+                hcCountScalar($pdo, "SELECT COUNT(*)
+                    FROM tareas_operativas
+                    WHERE {$column} IS NOT NULL"),
+                'No vincular tareas a ' . $check['table'] . ' hasta tener una ruta de scope por hotel.'
+            );
+            continue;
+        }
+
+        $table = hcQuoteIdentifier($check['table']);
+        $column = hcQuoteIdentifier($check['column']);
+        hcReportTlmZeroCount(
+            $check['label'],
+            hcCountScalar($pdo, "SELECT COUNT(*)
+                FROM tareas_operativas t
+                LEFT JOIN {$table} e ON e.id = t.{$column}
+                WHERE t.{$column} IS NOT NULL
+                  AND e.id IS NULL"),
+            'Reconciliar ' . $check['column'] . ' antes de usar vistas contextuales.'
+        );
+        hcReportTlmZeroCount(
+            $check['hotel_label'],
+            hcCountScalar($pdo, "SELECT COUNT(*)
+                FROM tareas_operativas t
+                JOIN {$table} e ON e.id = t.{$column}
+                WHERE t.{$column} IS NOT NULL
+                  AND e.hotel_id <> t.hotel_id"),
+            'Bloquear automatizaciones hasta alinear hotel_id de tareas y entidad vinculada.'
+        );
+    }
+
+    if (hcTableExists($pdo, $database, 'trabajadores')) {
+        $inactiveAssigned = hcCountScalar($pdo, "SELECT COUNT(*)
+            FROM tareas_operativas t
+            JOIN trabajadores tr
+              ON tr.id = t.trabajador_id
+             AND tr.hotel_id = t.hotel_id
+            WHERE t.trabajador_id IS NOT NULL
+              AND tr.estado <> 'activo'
+              AND t.estado IN ('pendiente', 'asignada', 'en_proceso')");
+        if ($inactiveAssigned === 0) {
+            hcOk('Consistencia TLM OK: tareas activas asignadas a trabajadores inactivos = 0.');
+        } elseif ($inactiveAssigned === null) {
+            hcWarning(
+                'No se pudo validar trabajadores inactivos asignados a tareas activas.',
+                'Revisar manualmente antes de planear turnos o asignaciones.'
+            );
+        } else {
+            hcWarning(
+                'Tareas activas asignadas a trabajadores inactivos: ' . (string)$inactiveAssigned . '.',
+                'Reasignar o cancelar tareas antes de usar operacion diaria.'
+            );
+        }
+    }
+
+    if (hcTableExists($pdo, $database, 'movimientos_caja')) {
+        $predicate = hcTlmCajaTextPredicate($pdo, $database);
+        if ($predicate === null) {
+            hcWarning(
+                'No se pudo validar movimientos de Caja relacionados con TLM: faltan columnas textuales conocidas.',
+                'Confirmar manualmente que TLM no haya escrito movimientos_caja.'
+            );
+        } else {
+            hcReportTlmZeroCount(
+                'movimientos de Caja con referencia textual a tarea operativa',
+                hcCountScalar($pdo, 'SELECT COUNT(*) FROM movimientos_caja WHERE ' . $predicate),
+                'Revisar movimientos_caja; TLM no debe crear pagos, abonos ni movimientos de Caja.'
+            );
+        }
+    }
+}
+
 function hcNullHotelRows(PDO $pdo, string $table): ?int
 {
     try {
@@ -419,6 +672,13 @@ $purchaseReceptionPreflight = hcFindFirstExistingPath([
     dirname(getcwd()) . '/src/tools/saas/preflight_recepcion_compras.php',
     '/workspace/src/tools/saas/preflight_recepcion_compras.php',
 ]);
+$operationalTasksPreflight = hcFindFirstExistingPath([
+    $appRoot . '/tools/saas/preflight_tareas_operativas.php',
+    $projectRoot . '/src/tools/saas/preflight_tareas_operativas.php',
+    getcwd() . '/tools/saas/preflight_tareas_operativas.php',
+    dirname(getcwd()) . '/src/tools/saas/preflight_tareas_operativas.php',
+    '/workspace/src/tools/saas/preflight_tareas_operativas.php',
+]);
 $purchaseServiceFile = hcFindFirstExistingPath([
     $appRoot . '/app/services/CompraService.php',
     $projectRoot . '/src/app/services/CompraService.php',
@@ -552,7 +812,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A-4D/NP-B-A/TLM-F - Medisoft Hoteles\n";
+echo "Health check Fase 1A-4D/NP-B-A/TLM-G - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -667,6 +927,30 @@ if ($purchaseReceptionPreflight && is_file($purchaseReceptionPreflight)) {
     hcWarning(
         'No existe preflight Fase 2T de recepcion de compras.',
         'Crear src/tools/saas/preflight_recepcion_compras.php antes de exponer recepcion.'
+    );
+}
+
+if ($operationalTasksPreflight && is_file($operationalTasksPreflight)) {
+    $operationalTasksPreflightCode = (string) file_get_contents($operationalTasksPreflight);
+    if (
+        strpos($operationalTasksPreflightCode, 'Preflight Fase TLM-G') !== false
+        && strpos($operationalTasksPreflightCode, 'Solo lectura') !== false
+        && strpos($operationalTasksPreflightCode, 'START TRANSACTION READ ONLY') !== false
+        && strpos($operationalTasksPreflightCode, 'tareas_operativas') !== false
+        && strpos($operationalTasksPreflightCode, 'tarea_eventos') !== false
+        && strpos($operationalTasksPreflightCode, 'movimientos_caja') !== false
+    ) {
+        hcOk('Preflight Fase TLM-G de tareas operativas existe y es solo lectura.');
+    } else {
+        hcWarning(
+            'Preflight Fase TLM-G existe pero no declara todas las guardas esperadas.',
+            'Verificar solo lectura, tareas_operativas, tarea_eventos, entidades por hotel y ausencia de Caja.'
+        );
+    }
+} else {
+    hcWarning(
+        'No existe preflight Fase TLM-G de tareas operativas.',
+        'Crear src/tools/saas/preflight_tareas_operativas.php antes de automatizar tareas.'
     );
 }
 
@@ -1749,6 +2033,7 @@ if ($pdo) {
 
     if (empty($tlmMissingTables) && empty($tlmMissingColumns)) {
         hcOk('TLM-A base de tareas operativas disponible. Registros totales=' . (string)$tlmRows . '.');
+        hcReportTlmConsistency($pdo, $database);
     } else {
         hcWarning(
             'TLM-A base de tareas operativas incompleta. Tablas faltantes: ' . implode(', ', $tlmMissingTables) . '. Columnas faltantes: ' . implode(', ', $tlmMissingColumns) . '.',

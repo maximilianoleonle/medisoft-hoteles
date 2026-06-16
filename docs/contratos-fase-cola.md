@@ -827,3 +827,14 @@ Estado formal vigente: `CONTEXTUAL_TLM_F_COMPLETADO_QA_DIFERIDA`.
 - Consulta central: `TareaOperativa::listarPorEntidadHotel()`.
 - Sin rutas nuevas, sin POST nuevos y sin cambios de DB.
 - No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.
+
+### Estado TLM-G
+
+Estado formal vigente: `PREFLIGHT_TLM_G_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_TLM_G_preflight_consistencia.md`.
+- Herramienta: `src/tools/saas/preflight_tareas_operativas.php`.
+- Health checker conoce TLM-G.
+- Solo lectura; sin rutas, UI, POST ni migraciones.
+- Valida consistencia de tareas, eventos, entidades, fechas, estados y ausencia de Caja.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina ni `/api/sync`.

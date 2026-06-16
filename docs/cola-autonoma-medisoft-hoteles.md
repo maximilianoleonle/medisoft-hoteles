@@ -489,3 +489,22 @@ Siguiente cola exacta recomendada:
 
 Agregar validaciones de consistencia para tareas operativas y eventos, sin crear
 funcionalidad nueva ni tocar disponibilidad de habitaciones.
+
+## Health/preflight TLM-G
+
+- Estado formal: `PREFLIGHT_TLM_G_COMPLETADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_TLM_G_preflight_consistencia.md`.
+- Preflight nuevo: `src/tools/saas/preflight_tareas_operativas.php`.
+- Health checker actualizado a TLM-G.
+- No agrega rutas, UI, POST, migraciones ni escrituras.
+- No toca disponibilidad, mantenimiento historico, Caja, pagos, abonos, nomina ni
+  `/api/sync`.
+
+## Siguiente accion
+
+Siguiente cola exacta recomendada:
+
+`[COLA_TLM_H_REVISION_AUDITORIA_CIERRE]`
+
+Revisar tecnicamente, auditar y cerrar el bloque Tareas/Limpieza/Mantenimiento sin
+agregar funcionalidades nuevas.

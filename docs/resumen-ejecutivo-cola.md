@@ -594,3 +594,19 @@ Resultado TLM-F:
 - No se toco `/api/sync`.
 - QA manual queda diferida por instruccion del usuario.
 - Siguiente paso recomendado: TLM-G health/preflights de consistencia de tareas.
+
+Resultado TLM-G:
+
+- Estado tecnico: `PREFLIGHT_TLM_G_COMPLETADO_QA_DIFERIDA`.
+- Documento: `docs/fase_TLM_G_preflight_consistencia.md`.
+- Nuevo preflight read-only: `src/tools/saas/preflight_tareas_operativas.php`.
+- Health checker actualizado para validar consistencia TLM-G.
+- Se detectan tareas/eventos sin hotel, entidades cruzadas de hotel, estados invalidos,
+  fechas incoherentes y movimientos de Caja con referencia a tarea operativa.
+- No se agregan rutas, vistas ni acciones de usuario.
+- No se escriben datos.
+- No cambia `habitaciones.estado`.
+- No modifica `mantenimientos_habitaciones`.
+- No crea asistencia, pagos, abonos, nomina ni movimientos de Caja.
+- No se toco `/api/sync`.
+- Siguiente paso recomendado: TLM-H revision tecnica, auditoria y cierre del bloque.

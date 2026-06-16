@@ -763,3 +763,16 @@ instruccion del usuario.
 - Confirmar que no se modifica `mantenimientos_habitaciones`.
 - Confirmar que no se crean asistencia, pagos, abonos, nomina ni movimientos de Caja.
 - Confirmar bloqueo/redireccion sin sesion en `/habitaciones/{id}` y `/trabajadores/{id}`.
+
+### Estado TLM-G
+
+- Health/preflight de consistencia implementado.
+- No agrega interfaz ni rutas nuevas.
+- QA manual visual no aplica; queda diferida la ejecucion manual general de TLM.
+
+### QA manual diferida TLM-G
+
+- Ejecutar `docker compose exec -T app php /var/www/html/tools/saas/preflight_tareas_operativas.php`.
+- Confirmar `ERROR: 0`.
+- Confirmar que cualquier warning sea conocido y no implique Caja, pagos, abonos,
+  nomina ni `/api/sync`.

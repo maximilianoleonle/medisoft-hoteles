@@ -539,3 +539,15 @@ Estado: `CONTEXTUAL_TLM_F_COMPLETADO_QA_DIFERIDA`.
 - No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina, PWA/offline/cache
   ni `/api/sync`.
 - QA manual queda diferida por instruccion del usuario.
+
+## Health/preflight Fase TLM-G
+
+Estado: `PREFLIGHT_TLM_G_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_TLM_G_preflight_consistencia.md`.
+- Preflight: `src/tools/saas/preflight_tareas_operativas.php`.
+- Health checker valida consistencia de tareas/eventos y ausencia de Caja relacionada.
+- No se agregaron rutas nuevas, POST nuevos, migraciones ni escrituras.
+- No se cambio `habitaciones.estado`.
+- No se toco `mantenimientos_habitaciones`, Caja, pagos, abonos, nomina, PWA/offline/cache
+  ni `/api/sync`.

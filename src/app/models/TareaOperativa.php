@@ -68,7 +68,7 @@ class TareaOperativa extends Model
                     h.numero AS habitacion_numero,
                     tr.nombre_completo AS trabajador_nombre,
                     m.motivo AS mantenimiento_motivo,
-                    hu.nombre_completo AS huesped_nombre
+                    NULL AS huesped_nombre
              FROM tareas_operativas t
              LEFT JOIN habitaciones h
                 ON h.id = t.habitacion_id
@@ -79,9 +79,6 @@ class TareaOperativa extends Model
              LEFT JOIN mantenimientos_habitaciones m
                 ON m.id = t.mantenimiento_id
                AND m.hotel_id = t.hotel_id
-             LEFT JOIN huespedes hu
-                ON hu.id = t.huesped_id
-               AND hu.hotel_id = t.hotel_id
              WHERE " . implode(' AND ', $where) . "
              ORDER BY FIELD(t.estado, 'pendiente', 'asignada', 'en_proceso', 'completada', 'cancelada'),
                       FIELD(t.prioridad, 'urgente', 'alta', 'media', 'baja'),
@@ -108,7 +105,7 @@ class TareaOperativa extends Model
                     m.tipo_mantenimiento,
                     m.motivo AS mantenimiento_motivo,
                     m.estado AS mantenimiento_estado,
-                    hu.nombre_completo AS huesped_nombre,
+                    NULL AS huesped_nombre,
                     uc.nombre_completo AS creada_por_nombre,
                     ua.nombre_completo AS asignada_por_nombre,
                     ucl.nombre_completo AS cerrada_por_nombre
@@ -122,9 +119,6 @@ class TareaOperativa extends Model
              LEFT JOIN mantenimientos_habitaciones m
                 ON m.id = t.mantenimiento_id
                AND m.hotel_id = t.hotel_id
-             LEFT JOIN huespedes hu
-                ON hu.id = t.huesped_id
-               AND hu.hotel_id = t.hotel_id
              LEFT JOIN usuarios uc
                 ON uc.id = t.creada_por_usuario_id
              LEFT JOIN usuarios ua

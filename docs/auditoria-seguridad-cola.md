@@ -582,3 +582,17 @@ Estado: `CONTEXTUAL_TLM_F_COMPLETADO_QA_DIFERIDA`.
 - No crea asistencia, pagos, abonos, nomina ni movimientos de Caja.
 - Riesgo residual: confusion operativa entre tarea y mantenimiento. Mitigacion: textos
   indican que el bloque es de tareas operativas y no altera disponibilidad.
+
+## Auditoria TLM-G health y preflights
+
+Estado: `PREFLIGHT_TLM_G_COMPLETADO_QA_DIFERIDA`.
+
+- Nuevo preflight de tareas operativas es solo lectura y usa transaccion read-only.
+- Health checker valida consistencia de `tareas_operativas` y `tarea_eventos`.
+- Detecta entidades inexistentes o de otro hotel.
+- Detecta estados, categorias, prioridades y fechas incoherentes.
+- Detecta referencias textuales a tareas operativas en `movimientos_caja`.
+- No corrige datos automaticamente.
+- No agrega rutas, UI, POST, migraciones ni escrituras.
+- No toca `habitaciones.estado`, `mantenimientos_habitaciones`, Caja, pagos, abonos,
+  nomina ni `/api/sync`.

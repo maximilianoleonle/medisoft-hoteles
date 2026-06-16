@@ -308,3 +308,8 @@ Reglas:
   `tareas_operativas` por `hotel_id`; no crea nuevas fuentes de datos.
 - La ficha de trabajador no es fuente de nomina: solo muestra tareas asignadas, sin
   asistencia, pagos, abonos ni Caja.
+- TLM-G no crea datos; solo valida que `tareas_operativas` y `tarea_eventos` sigan siendo
+  la fuente tecnica de tareas y eventos.
+- `huespedes` no es fuente multihotel directa para TLM porque no tiene `hotel_id`; si una
+  tarea necesita contexto de huesped, debe resolverse por reservacion u otra entidad con
+  hotel.

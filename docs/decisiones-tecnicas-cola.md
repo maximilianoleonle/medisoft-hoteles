@@ -481,3 +481,15 @@
   enlaces GET a detalle de tarea.
 - La ficha de trabajador no se convierte en modulo de nomina ni asistencia.
 - La ficha de habitacion no cambia disponibilidad ni mantenimiento por mostrar tareas.
+
+## Decision TLM-G health y preflights
+
+- Se agrega un preflight dedicado para tareas en lugar de ampliar los preflights de
+  compras.
+- Los checks de consistencia fallan ante corrupcion estructural y advierten ante casos
+  operativos corregibles, como trabajador inactivo asignado a tarea activa.
+- Como `huespedes` no tiene `hotel_id`, TLM-G no usa `huespedes.hotel_id` y considera
+  `huesped_id` directo como vinculo no seguro hasta tener scope por reservacion u otra
+  entidad hotelera.
+- No se automatiza correccion de datos desde el checker.
+- No se agregan rutas ni funcionalidades de usuario.
