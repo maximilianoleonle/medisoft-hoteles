@@ -225,6 +225,11 @@ $router->get('/cuentas-por-pagar/generacion-preview', ['controller' => 'CuentaPo
 $router->post('/cuentas-por-pagar/generar-desde-compra/{id:[0-9]+}', ['controller' => 'CuentaPorPagar', 'action' => 'generarDesdeCompra']);
 $router->get('/cuentas-por-pagar/{id:[0-9]+}', ['controller' => 'CuentaPorPagar', 'action' => 'ver']);
 
+// Fase 4A-B: Centro Documental read-only. Sin upload, descarga, edicion ni borrado.
+$router->get('/documentos', ['controller' => 'Documento', 'action' => 'index']);
+$router->get('/documentos/entidad/{entidad_tipo:[a-z_]+}/{entidad_id:[0-9]+}', ['controller' => 'Documento', 'action' => 'entidad']);
+$router->get('/documentos/{id:[0-9]+}', ['controller' => 'Documento', 'action' => 'ver']);
+
 $router->get('/api/pwa-push/public-key', ['controller' => 'PwaPush', 'action' => 'publicKey']);
 $router->post('/api/pwa-push/subscribe', ['controller' => 'PwaPush', 'action' => 'subscribe']);
 $router->post('/api/pwa-push/unsubscribe', ['controller' => 'PwaPush', 'action' => 'unsubscribe']);

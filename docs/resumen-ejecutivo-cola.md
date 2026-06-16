@@ -141,7 +141,7 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 
 ## Nuevo bloque Fase 4A Centro Documental
 
-Estado: `MIGRACION_4A_COMPLETADA`.
+Estado: `DOCUMENTOS_READ_ONLY_4A_COMPLETADO`.
 
 Objetivo: crear una fundacion segura para adjuntar, consultar y relacionar documentos
 con proveedor, compra, CxP, huesped, reservacion y trabajador futuro, sin Caja, pagos,
@@ -170,7 +170,24 @@ Resultado 4A-A:
 - Tablas creadas y vacias: `documento_tipos=0`, `documentos=0`, `documento_entidades=0`.
 - No hay uploads, POST, descargas, borrados ni exposicion publica de documentos.
 - No se tocaron Caja, pagos, abonos, CxP operativa ni `/api/sync`.
-- Siguiente cola recomendada: `[COLA_4A_B_DOCUMENTOS_READ_ONLY]`.
+- Siguiente cola recomendada tras 4A-A: `[COLA_4A_B_DOCUMENTOS_READ_ONLY]`.
+
+Resultado 4A-B:
+
+- Modelo read-only creado: `src/app/models/Documento.php`.
+- Controlador read-only creado: `src/app/controllers/DocumentoController.php`.
+- Vistas read-only creadas: `src/app/views/documentos/index.php` y
+  `src/app/views/documentos/ver.php`.
+- Rutas GET creadas:
+  - `/documentos`;
+  - `/documentos/{id}`;
+  - `/documentos/entidad/{entidad_tipo}/{entidad_id}`.
+- Navegacion agregada en sidebar solo cuando hay modulos relacionados activos.
+- No se crean uploads, POST, descargas, edicion ni borrado.
+- No se expone `storage_path`, `nombre_archivo` ni rutas internas.
+- Tablas documentales siguen vacias en entorno local.
+- No se tocaron Caja, pagos, abonos, CxP operativa ni `/api/sync`.
+- Siguiente cola recomendada: `[COLA_4A_C_UPLOAD_SEGURO_DOCUMENTOS]`.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

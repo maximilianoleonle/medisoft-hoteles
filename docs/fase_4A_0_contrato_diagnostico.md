@@ -353,14 +353,6 @@ Fases futuras:
 - Definir retencion y politica de eliminacion fisica futura.
 - Definir si habra links publicos temporales; no incluir en 4A base.
 
-## Siguiente cola recomendada
-
-`[COLA_4A_B_DOCUMENTOS_READ_ONLY]`
-
-Objetivo: crear modelos/controladores/vistas read-only para consultar metadata
-documental por hotel y por entidad, sin uploads, sin POST, sin descarga de archivos, sin
-Caja, sin pagos, sin abonos y sin `/api/sync`.
-
 ## Resultado Fase 4A-A - Migracion base documental
 
 Estado: `MIGRACION_4A_COMPLETADA`.
@@ -406,3 +398,66 @@ Rollback manual de 4A-A:
 3. Si estan vacias, revertir el commit de la migracion y ejecutar rollback SQL manual en
    orden hijo-padre.
 4. Si contienen datos, no ejecutar `DROP`; exportar conteos y definir reconciliacion.
+
+## Resultado Fase 4A-B - Capa read-only documental
+
+Estado: `DOCUMENTOS_READ_ONLY_4A_COMPLETADO`.
+
+Archivos funcionales creados:
+
+- `src/app/models/Documento.php`
+- `src/app/controllers/DocumentoController.php`
+- `src/app/views/documentos/index.php`
+- `src/app/views/documentos/ver.php`
+
+Archivos funcionales modificados:
+
+- `src/config/routes.php`
+- `src/app/views/layout/sidebar.php`
+
+Rutas GET creadas:
+
+- `GET /documentos`
+- `GET /documentos/{id}`
+- `GET /documentos/entidad/{entidad_tipo}/{entidad_id}`
+
+Alcance real:
+
+- consulta general por `hotel_id`;
+- consulta de detalle por `hotel_id`;
+- consulta de documentos vinculados a proveedor, compra, cuenta por pagar, huesped y
+  reservacion;
+- consulta de tipos activos globales o del hotel;
+- metadata segura: titulo, nombre original, tipo, MIME, tamano, estado, fecha y
+  entidades vinculadas;
+- estado vacio cuando no hay documentos.
+
+Controles de seguridad:
+
+- no hay rutas POST;
+- no hay upload;
+- no hay descarga;
+- no hay edicion;
+- no hay borrado;
+- las vistas no muestran `storage_path`, `nombre_archivo` ni rutas internas;
+- el controlador exige sesion, contexto hotelero y al menos un modulo relacionado
+  visible (`inventario`, `huespedes` o `reservaciones`) cuando aplica filtrado de
+  modulos;
+- el sidebar solo muestra Documentos si hay modulos relacionados activos.
+
+Validaciones automaticas:
+
+- `php -l` en modelo, controlador, vistas, rutas y sidebar;
+- health checker;
+- preflights de compras/CxP;
+- SQL read-only para tablas documentales, Caja, CxP y pagos/abonos;
+- HTTP sin sesion en `/documentos`;
+- `git diff --check`.
+
+## Siguiente cola recomendada
+
+`[COLA_4A_C_UPLOAD_SEGURO_DOCUMENTOS]`
+
+Objetivo: disenar e implementar la carga segura de documentos con POST + CSRF,
+validacion MIME/tamano/extension, storage privado y auditoria, sin descarga publica, sin
+borrado fisico, sin Caja, sin pagos, sin abonos y sin `/api/sync`.

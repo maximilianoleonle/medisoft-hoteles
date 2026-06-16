@@ -211,10 +211,11 @@ Cierre tecnico 3C completado documentalmente. La QA manual final del bloque 3C f
 
 ## QA Fase 4A Centro Documental
 
-Estado vigente: `MIGRACION_4A_COMPLETADA`.
+Estado vigente: `DOCUMENTOS_READ_ONLY_4A_COMPLETADO`.
 
 4A-0 no implemento funcionalidad. 4A-A creo solo esquema base, sin uploads, sin POST,
-sin descargas y sin datos operativos.
+sin descargas y sin datos operativos. 4A-B agrega capa de consulta read-only de metadata
+sin exponer archivos.
 
 ### Resultado automatico Fase 4A-A
 
@@ -229,6 +230,20 @@ sin descargas y sin datos operativos.
 - `cuentas_por_pagar_movimientos`: `0`.
 - No se detectaron tablas de pagos/abonos CxP creadas.
 - No se implemento acceso publico a documentos.
+
+### Resultado automatico Fase 4A-B
+
+- `php -l` limpio en `Documento.php`, `DocumentoController.php`, vistas de documentos,
+  rutas y sidebar.
+- Rutas GET creadas:
+  - `/documentos`;
+  - `/documentos/{id}`;
+  - `/documentos/entidad/{entidad_tipo}/{entidad_id}`.
+- HTTP sin sesion en `/documentos`: debe redirigir a login por middleware global.
+- La vista de listado muestra estado vacio cuando no hay documentos.
+- La vista de detalle no muestra `storage_path`, `nombre_archivo` ni rutas internas.
+- No existen rutas POST bajo `/documentos`.
+- No se implemento upload, descarga, edicion ni borrado.
 
 ### QA critica futura
 

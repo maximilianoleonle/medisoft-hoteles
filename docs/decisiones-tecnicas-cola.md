@@ -141,7 +141,7 @@
 
 ## Fase 4A Centro Documental
 
-- Estado formal vigente: `MIGRACION_4A_COMPLETADA`.
+- Estado formal vigente: `DOCUMENTOS_READ_ONLY_4A_COMPLETADO`.
 - Centro Documental debe iniciar con storage privado, no con enlaces publicos directos.
 - `public_html/uploads` queda reservado para assets publicos/imagenes ya existentes.
 - El patron de descarga segura de `ReporteLinkController` es la referencia tecnica para
@@ -158,6 +158,14 @@
 - `storage_path` queda como path privado futuro, nunca como URL publica.
 - 4A-0 no creo migraciones; 4A-A crea solo esquema. No implementa uploads, no crea POST,
   no crea descargas y no escribe documentos.
+- 4A-B introduce un modelo read-only (`Documento`) en lugar de un servicio separado para
+  mantener el patron local de modelos MVC ya usado por CxP, proveedores y compras.
+- Las consultas 4A-B seleccionan metadata segura y excluyen `storage_path` y
+  `nombre_archivo` de las vistas.
+- El guard 4A-B usa autenticacion, contexto hotelero y modulos relacionados visibles
+  (`inventario`, `huespedes`, `reservaciones`) sin crear permisos profundos nuevos.
+- La navegacion `Documentos` se muestra solo si existe al menos un modulo relacionado
+  activo en el hotel.
 - No se permite tocar Caja, pagos, abonos, Fase 3D ni `/api/sync`.
 
 ### Decisiones de diagnostico NP-0

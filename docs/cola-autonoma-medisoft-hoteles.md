@@ -4,14 +4,14 @@
 
 NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Centro Documental Base.
 
-Cola actual procesada: `[COLA_4A_A_MIGRACION_BASE_DOCUMENTOS]`, migracion base no destructiva, idempotente y multi-hotel, sin uploads ni POST.
+Cola actual procesada: `[COLA_4A_B_DOCUMENTOS_READ_ONLY]`, capa read-only para consultar metadata documental y relaciones, sin uploads, POST ni descargas.
 
 ## Estado vigente
 
 - Bloque actual: Fase 4A Centro Documental Base.
-- Fase actual: 4A-A migracion base documental.
+- Fase actual: 4A-B capa read-only documental.
 - Riesgo: naranja.
-- Estado: `MIGRACION_4A_COMPLETADA`.
+- Estado: `DOCUMENTOS_READ_ONLY_4A_COMPLETADO`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -23,6 +23,7 @@ Cola actual procesada: `[COLA_4A_A_MIGRACION_BASE_DOCUMENTOS]`, migracion base n
 
 - 4A-0 contrato y diagnostico: completada documentalmente.
 - 4A-A migracion base: completada con migracion aditiva, backup previo, tablas vacias y registro en `migrations`.
+- 4A-B read-only: completada con modelo `Documento`, controlador GET, vistas de listado/detalle y navegacion segura.
 - HEAD al iniciar: `35abdc7 fix(pwa): use hotel branding assets for push notifications`.
 - Git al iniciar: limpio.
 - Patrones detectados: `public_html/uploads` para assets publicos; `storage/reportes` + `ReporteLinkController` como patron privado seguro.
@@ -33,7 +34,9 @@ Cola actual procesada: `[COLA_4A_A_MIGRACION_BASE_DOCUMENTOS]`, migracion base n
 - Migracion 4A-A: `migrations/20260615_004_fase_4a_centro_documental_base.sql`.
 - Tablas documentales creadas y vacias: `documento_tipos=0`, `documentos=0`, `documento_entidades=0`.
 - Sin uploads, sin POST, sin descargas, sin acciones de borrado y sin exposicion publica de documentos.
-- Siguiente cola recomendada: `[COLA_4A_B_DOCUMENTOS_READ_ONLY]`.
+- Rutas read-only 4A-B: `GET /documentos`, `GET /documentos/{id}`, `GET /documentos/entidad/{entidad_tipo}/{entidad_id}`.
+- Las vistas no muestran `storage_path` ni rutas internas.
+- Siguiente cola recomendada: `[COLA_4A_C_UPLOAD_SEGURO_DOCUMENTOS]`.
 
 ## Reanclaje Fase 3C
 
@@ -210,4 +213,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Siguiente paso formal recomendado: `[COLA_4A_B_DOCUMENTOS_READ_ONLY]` para modelo/controlador/vistas read-only de metadata documental. No avanzar a uploads, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Siguiente paso formal recomendado: `[COLA_4A_C_UPLOAD_SEGURO_DOCUMENTOS]` para carga segura con CSRF, storage privado, validacion MIME/tamano/extension y auditoria. No avanzar a descargas publicas, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

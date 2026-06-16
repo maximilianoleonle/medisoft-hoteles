@@ -250,6 +250,22 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   reconciliacion o restauracion desde backup.
 - No borrar archivos de storage; 4A-A no crea archivos fisicos.
 
+### 4A-B capa read-only documental
+
+- Estado vigente: `DOCUMENTOS_READ_ONLY_4A_COMPLETADO`.
+- Rollback de codigo: revertir el commit `feat(phase-4a): add read-only document center layer`.
+- DB: no aplica; 4A-B no escribe datos ni crea migraciones.
+- Archivos esperados del rollback:
+  - `src/app/models/Documento.php`;
+  - `src/app/controllers/DocumentoController.php`;
+  - `src/app/views/documentos/index.php`;
+  - `src/app/views/documentos/ver.php`;
+  - rutas GET de `/documentos`;
+  - entrada de sidebar `Documentos`.
+- No tocar las tablas creadas por 4A-A durante rollback de 4A-B.
+- Validar despues de rollback: `php -l` en rutas/sidebar si se modifican,
+  health/preflights y ausencia de rutas `/documentos`.
+
 ### Fases futuras
 
 - Antes de migracion o escritura: backup fresco.

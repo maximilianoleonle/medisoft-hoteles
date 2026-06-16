@@ -120,7 +120,7 @@ Bloque 3C cerrado tecnicamente. Mantener prohibidos pagos, Caja, CxC, nomina ope
 
 ## Fase 4A Centro Documental - auditoria inicial de contrato
 
-Estado: `MIGRACION_4A_COMPLETADA`.
+Estado: `DOCUMENTOS_READ_ONLY_4A_COMPLETADO`.
 
 - Riesgo principal: exposicion accidental de documentos privados si se guardan en
   `public_html/uploads`.
@@ -130,6 +130,7 @@ Estado: `MIGRACION_4A_COMPLETADA`.
 - Tablas generales creadas de forma aditiva y vacia:
   `documento_tipos`, `documentos`, `documento_entidades`.
 - 4A-A no implementa uploads, POST, descargas, acciones de borrado ni exposicion publica.
+- 4A-B implementa solo consultas GET de metadata y relaciones.
 - `storage_path` queda documentado como almacenamiento privado futuro, no URL publica.
 - No se insertaron documentos ni relaciones; conteos iniciales en cero.
 - No se detectaron pagos/abonos CxP nuevos ni movimientos CxP.
@@ -144,6 +145,20 @@ Estado: `MIGRACION_4A_COMPLETADA`.
 - Las tablas nuevas incluyen `hotel_id` para aislamiento multi-hotel.
 - Riesgo residual: las relaciones polimorficas no pueden tener FK directa contra cada
   entidad; las fases read-only/upload deben validar entidad y hotel en modelo/servicio.
+
+### Auditoria 4A-B
+
+- Rutas creadas: solo GET (`/documentos`, `/documentos/{id}`,
+  `/documentos/entidad/{entidad_tipo}/{entidad_id}`).
+- No hay rutas POST, upload, descarga, edicion ni borrado bajo `/documentos`.
+- Acceso sin sesion queda protegido por middleware global de autenticacion.
+- Controlador exige contexto hotelero y modulos relacionados visibles.
+- Modelo filtra `documentos` y `documento_entidades` por `hotel_id`.
+- Vistas no muestran `storage_path`, `nombre_archivo` ni rutas internas.
+- No se tocan Caja, pagos, abonos, CxP operativa ni `/api/sync`.
+- Riesgo residual: los vinculos polimorficos solo prueban `hotel_id` de
+  `documento_entidades`; la fase de upload debe validar existencia real de cada entidad
+  antes de insertar relaciones.
 
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 
