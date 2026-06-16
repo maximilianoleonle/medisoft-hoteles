@@ -623,3 +623,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - DB: no aplica; NP-C-0 no crea migraciones ni escribe datos.
 - Codigo: no aplica; NP-C-0 no agrega rutas, modelos, controladores ni vistas.
 - No tocar tablas `trabajador_*`, Caja, movimientos, categorias ni `/api/sync`.
+
+### NP-C-A ledger laboral read-only
+
+- Revertir el commit `feat(phase-np): add read-only worker ledger view`.
+- DB: no aplica; NP-C-A no crea migraciones ni escribe datos.
+- No borrar conceptos, anticipos, prestamos ni asistencias reales si ya existieran.
+- No tocar Caja, categoria Nomina ni `/api/sync`.

@@ -632,3 +632,14 @@ Resultado NP-C-0:
 - Caja, pagos reales, abonos, categoria Nomina y `/api/sync` quedan explicitamente fuera
   de alcance.
 - Siguiente paso recomendado: NP-C-A read-only de ledger laboral, sin crear datos.
+
+Resultado NP-C-A:
+
+- Estado tecnico: `LEDGER_LABORAL_NP_C_A_COMPLETADO_QA_DIFERIDA`.
+- Documento: `docs/fase_NP_C_A_ledger_read_only.md`.
+- La ficha de trabajador muestra ledger laboral read-only con saldo informativo,
+  conceptos, anticipos y prestamos.
+- No se agregan rutas ni POST.
+- No se crean datos, pagos reales, abonos, movimientos de Caja ni categoria Nomina.
+- Health checker conoce NP-C-A.
+- Siguiente paso recomendado: preflight de consistencia NP-C antes de cualquier escritura.

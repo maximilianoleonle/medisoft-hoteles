@@ -329,3 +329,4 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - El saldo laboral es informativo y derivado; no es movimiento de Caja.
 - Caja, cortes, movimientos, categoria Nomina y `/api/sync` no son fuente de verdad de
   NP-C.
+- NP-C-A solo lee estas fuentes desde la ficha de trabajador; no crea ni corrige datos.

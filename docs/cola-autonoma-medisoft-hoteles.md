@@ -528,3 +528,14 @@ agregar funcionalidades nuevas.
 - Caja, pagos reales, abonos, categoria Nomina y `/api/sync` siguen fuera de alcance.
 - Siguiente accion segura: NP-C-A ledger laboral read-only por trabajador y resumen por
   hotel, sin POST y sin crear datos.
+
+## Ledger laboral NP-C-A
+
+- Estado formal: `LEDGER_LABORAL_NP_C_A_COMPLETADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_NP_C_A_ledger_read_only.md`.
+- La ficha de trabajador muestra resumen, conceptos, anticipos y prestamos en modo
+  read-only.
+- No agrega rutas, POST, migraciones ni escrituras.
+- No toca Caja, pagos reales, abonos, categoria Nomina ni `/api/sync`.
+- Siguiente accion segura: NP-C-E health/preflight especifico de ledger laboral, o
+  revision/auditoria si se decide cerrar esta parte antes de habilitar escrituras.

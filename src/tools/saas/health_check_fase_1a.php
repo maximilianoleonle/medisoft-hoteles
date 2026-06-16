@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-B-A/TLM-G.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-A/TLM-G.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -812,7 +812,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A-4D/NP-B-A/TLM-G - Medisoft Hoteles\n";
+echo "Health check Fase 1A-4D/NP-C-A/TLM-G - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -3005,15 +3005,19 @@ if (!is_file($routesPath)) {
             && strpos($workerModelCode, 'function listarPorHotel') !== false
             && strpos($workerModelCode, 'function buscarPorIdHotel') !== false
             && strpos($workerModelCode, 'function resumenLedgerPorTrabajador') !== false
+            && strpos($workerModelCode, 'function conceptosLaboralesPorTrabajador') !== false
+            && strpos($workerModelCode, 'function anticiposPorTrabajador') !== false
+            && strpos($workerModelCode, 'function prestamosPorTrabajador') !== false
+            && strpos($workerModelCode, 'saldo_informativo') !== false
             && preg_match('/WHERE\s+t\.id\s*=\s*\?\s+AND\s+t\.hotel_id\s*=\s*\?/i', $workerModelCode)
             && strpos($workerModelCode, 'storage_path') === false
             && strpos($workerModelCode, 'ruta_archivo') === false
         ) {
-            hcOk('Trabajador model NP-A consulta trabajadores con aislamiento hotel_id y sin exponer rutas de archivos.');
+            hcOk('Trabajador model NP-C-A consulta trabajadores y ledger laboral read-only con aislamiento hotel_id.');
         } else {
             hcWarning(
-                'Trabajador model NP-A no muestra contrato read-only completo.',
-                'Usar trabajadores con hotel_id, buscarPorIdHotel/listarPorHotel y no exponer storage_path/ruta_archivo.'
+                'Trabajador model NP-C-A no muestra contrato read-only completo.',
+                'Usar trabajadores/ledger con hotel_id, buscarPorIdHotel/listarPorHotel, saldo informativo y no exponer storage_path/ruta_archivo.'
             );
         }
 
@@ -3039,6 +3043,9 @@ if (!is_file($routesPath)) {
             && strpos($workerControllerCode, 'function actualizarAction') !== false
             && strpos($workerControllerCode, 'function bajaLogicaAction') !== false
             && strpos($workerControllerCode, 'function reactivarAction') !== false
+            && strpos($workerControllerCode, 'conceptosLaboralesPorTrabajador') !== false
+            && strpos($workerControllerCode, 'anticiposPorTrabajador') !== false
+            && strpos($workerControllerCode, 'prestamosPorTrabajador') !== false
             && strpos($workerControllerCode, "require_hotel_module('usuarios')") !== false
             && strpos($workerControllerCode, "require_permission('usuarios.view')") !== false
             && (
@@ -3089,16 +3096,19 @@ if (!is_file($routesPath)) {
             && strpos($workerFormViewCode, 'method="POST"') !== false
             && strpos($workerFormViewCode, 'name="nombre_completo"') !== false
             && strpos($workerFormViewCode, 'csrf_field()') !== false
+            && strpos($workerDetailViewCode, 'Ledger laboral') !== false
+            && strpos($workerDetailViewCode, 'Saldo informativo') !== false
+            && strpos($workerDetailViewCode, 'no representa movimiento de Caja') !== false
             && substr_count($workerViewsCode, 'csrf_field()') >= 3
             && strpos($workerViewsCode, 'ruta_archivo') === false
             && strpos($workerViewsCode, 'movimientos_caja') === false
             && strpos($workerViewsCode, 'cuentas_por_pagar') === false
         ) {
-            hcOk('Vistas Personal NP-B-A muestran CRUD basico con filtros GET, formularios POST+CSRF y sin Caja/pagos.');
+            hcOk('Vistas Personal NP-C-A muestran CRUD basico y ledger read-only sin Caja/pagos reales.');
         } else {
             hcWarning(
-                'Vistas Personal NP-B-A no muestran contrato CRUD completo.',
-                'Asegurar filtros GET, formulario POST+CSRF, baja/reactivar con CSRF, sin pagos/Caja ni rutas internas de archivos.'
+                'Vistas Personal NP-C-A no muestran contrato completo.',
+                'Asegurar filtros GET, formulario POST+CSRF, ledger read-only, baja/reactivar con CSRF, sin pagos reales/Caja ni rutas internas de archivos.'
             );
         }
     } else {

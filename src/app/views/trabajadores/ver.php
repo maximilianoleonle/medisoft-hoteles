@@ -1,6 +1,9 @@
 <?php
 $trabajador = $trabajador ?? [];
 $resumenLedger = $resumenLedger ?? [];
+$conceptosLaborales = is_array($conceptosLaborales ?? null) ? $conceptosLaborales : [];
+$anticiposRecientes = is_array($anticiposRecientes ?? null) ? $anticiposRecientes : [];
+$prestamosRecientes = is_array($prestamosRecientes ?? null) ? $prestamosRecientes : [];
 $asistenciasRecientes = $asistenciasRecientes ?? [];
 $ledgerDisponible = $ledgerDisponible ?? [];
 $tareasContextuales = is_array($tareasContextuales ?? null) ? $tareasContextuales : [];
@@ -109,6 +112,37 @@ $trabajadorId = (int)($trabajador['id'] ?? 0);
     text-transform: uppercase;
     letter-spacing: .06em;
 }
+.worker-detail-page .worker-ledger-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+.worker-detail-page .worker-ledger-card {
+    border: 1px solid var(--trab-line);
+    background: #fff;
+}
+.worker-detail-page .worker-ledger-card header {
+    border-bottom: 1px solid var(--trab-line);
+    padding: 14px 16px;
+}
+.worker-detail-page .worker-ledger-body {
+    max-height: 360px;
+    overflow: auto;
+}
+.worker-detail-page .worker-ledger-row {
+    border-bottom: 1px solid var(--trab-line);
+    padding: 14px 16px;
+}
+.worker-detail-page .worker-ledger-row:last-child {
+    border-bottom: 0;
+}
+.worker-detail-page .worker-ledger-note {
+    border: 1px solid color-mix(in srgb, var(--trab-accent) 22%, #e5e7eb);
+    background: color-mix(in srgb, var(--trab-accent) 8%, #fff);
+    color: #475569;
+    padding: 12px 14px;
+    font-size: .86rem;
+}
 </style>
 
 <div class="worker-detail-page">
@@ -123,7 +157,7 @@ $trabajadorId = (int)($trabajador['id'] ?? 0);
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 min-w-[340px]">
                 <div class="worker-stat">
-                    <div class="text-xs opacity-75">Pagos</div>
+                    <div class="text-xs opacity-75">Conceptos</div>
                     <div class="text-2xl font-black"><?= (int)($resumenLedger['pagos_count'] ?? 0) ?></div>
                 </div>
                 <div class="worker-stat">
@@ -234,7 +268,15 @@ $trabajadorId = (int)($trabajador['id'] ?? 0);
                 <h2 class="font-black text-lg mb-4">Resumen laboral</h2>
                 <div class="space-y-3 text-sm">
                     <div class="flex items-center justify-between gap-4">
-                        <span class="text-slate-500 font-bold">Pagos activos</span>
+                        <span class="text-slate-500 font-bold">Conceptos a favor</span>
+                        <strong><?= trab_view_money($resumenLedger['conceptos_a_favor'] ?? 0) ?></strong>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <span class="text-slate-500 font-bold">Conceptos en contra</span>
+                        <strong><?= trab_view_money($resumenLedger['conceptos_en_contra'] ?? 0) ?></strong>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                        <span class="text-slate-500 font-bold">Total conceptos activos</span>
                         <strong><?= trab_view_money($resumenLedger['pagos_total'] ?? 0) ?></strong>
                     </div>
                     <div class="flex items-center justify-between gap-4">
@@ -253,10 +295,122 @@ $trabajadorId = (int)($trabajador['id'] ?? 0);
                         <span class="text-slate-500 font-bold">Documentos laborales</span>
                         <strong><?= (int)($resumenLedger['documentos_count'] ?? 0) ?></strong>
                     </div>
+                    <div class="flex items-center justify-between gap-4 pt-3 border-t border-slate-200">
+                        <span class="text-slate-700 font-black">Saldo informativo</span>
+                        <strong><?= trab_view_money($resumenLedger['saldo_informativo'] ?? 0) ?></strong>
+                    </div>
                 </div>
                 <div class="mt-5 text-xs text-slate-500">
-                    Lectura tecnica de tablas Personal base; sin acciones operativas en esta fase.
+                    Lectura derivada del ledger laboral; no representa movimiento de Caja ni pago real.
                 </div>
+            </div>
+        </div>
+
+        <div class="worker-panel p-5 mb-4">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div>
+                    <h2 class="font-black text-lg">Ledger laboral</h2>
+                    <p class="text-sm text-slate-500 mt-1">Vista read-only de conceptos, anticipos y prestamos del trabajador en el hotel actual.</p>
+                </div>
+                <span class="worker-badge">
+                    <i class="fas fa-lock"></i>
+                    Sin Caja
+                </span>
+            </div>
+
+            <div class="worker-ledger-note mb-4">
+                Este bloque no crea pagos, no genera abonos, no descuenta Caja y no modifica saldos reales. El saldo mostrado es informativo y deriva de tablas de Personal.
+            </div>
+
+            <div class="worker-ledger-grid">
+                <article class="worker-ledger-card">
+                    <header>
+                        <h3 class="font-black">Conceptos laborales</h3>
+                        <p class="text-xs text-slate-500 mt-1">Bonos, comisiones, descuentos, ajustes o liquidaciones registradas en el ledger.</p>
+                    </header>
+                    <div class="worker-ledger-body">
+                        <?php if (empty($ledgerDisponible['trabajador_pagos'])): ?>
+                            <div class="p-5 text-sm text-slate-500">La tabla de conceptos laborales no esta disponible.</div>
+                        <?php elseif (empty($conceptosLaborales)): ?>
+                            <div class="p-5 text-sm text-slate-500">Sin conceptos laborales registrados.</div>
+                        <?php else: ?>
+                            <?php foreach ($conceptosLaborales as $concepto): ?>
+                                <div class="worker-ledger-row">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <div class="font-black"><?= trab_view_safe($concepto['concepto'] ?? null, 'Sin concepto') ?></div>
+                                            <div class="text-xs text-slate-500">
+                                                <?= trab_view_safe($concepto['fecha'] ?? null) ?> · <?= trab_view_safe($concepto['tipo'] ?? null) ?> · <?= trab_view_safe($concepto['efecto'] ?? null) ?>
+                                            </div>
+                                        </div>
+                                        <strong><?= trab_view_money($concepto['monto'] ?? 0) ?></strong>
+                                    </div>
+                                    <div class="text-xs text-slate-500 mt-2">
+                                        Estado: <?= trab_view_safe($concepto['estado'] ?? null) ?> · Ref: <?= trab_view_safe($concepto['referencia'] ?? null, 'Sin referencia') ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </article>
+
+                <article class="worker-ledger-card">
+                    <header>
+                        <h3 class="font-black">Anticipos</h3>
+                        <p class="text-xs text-slate-500 mt-1">Registros laborales informativos; no son egresos de Caja en esta fase.</p>
+                    </header>
+                    <div class="worker-ledger-body">
+                        <?php if (empty($ledgerDisponible['trabajador_anticipos'])): ?>
+                            <div class="p-5 text-sm text-slate-500">La tabla de anticipos no esta disponible.</div>
+                        <?php elseif (empty($anticiposRecientes)): ?>
+                            <div class="p-5 text-sm text-slate-500">Sin anticipos registrados.</div>
+                        <?php else: ?>
+                            <?php foreach ($anticiposRecientes as $anticipo): ?>
+                                <div class="worker-ledger-row">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <div class="font-black"><?= trab_view_safe($anticipo['motivo'] ?? null, 'Sin motivo') ?></div>
+                                            <div class="text-xs text-slate-500"><?= trab_view_safe($anticipo['fecha'] ?? null) ?> · <?= trab_view_safe($anticipo['estado'] ?? null) ?></div>
+                                        </div>
+                                        <strong><?= trab_view_money($anticipo['monto'] ?? 0) ?></strong>
+                                    </div>
+                                    <div class="text-xs text-slate-500 mt-2">
+                                        Saldo pendiente: <?= trab_view_money($anticipo['saldo_pendiente'] ?? 0) ?> · Ref: <?= trab_view_safe($anticipo['referencia'] ?? null, 'Sin referencia') ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </article>
+
+                <article class="worker-ledger-card">
+                    <header>
+                        <h3 class="font-black">Prestamos</h3>
+                        <p class="text-xs text-slate-500 mt-1">Deuda laboral del trabajador registrada fuera de Caja.</p>
+                    </header>
+                    <div class="worker-ledger-body">
+                        <?php if (empty($ledgerDisponible['trabajador_prestamos'])): ?>
+                            <div class="p-5 text-sm text-slate-500">La tabla de prestamos no esta disponible.</div>
+                        <?php elseif (empty($prestamosRecientes)): ?>
+                            <div class="p-5 text-sm text-slate-500">Sin prestamos registrados.</div>
+                        <?php else: ?>
+                            <?php foreach ($prestamosRecientes as $prestamo): ?>
+                                <div class="worker-ledger-row">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <div class="font-black"><?= trab_view_safe($prestamo['motivo'] ?? null, 'Sin motivo') ?></div>
+                                            <div class="text-xs text-slate-500"><?= trab_view_safe($prestamo['fecha'] ?? null) ?> · <?= trab_view_safe($prestamo['estado'] ?? null) ?></div>
+                                        </div>
+                                        <strong><?= trab_view_money($prestamo['monto'] ?? 0) ?></strong>
+                                    </div>
+                                    <div class="text-xs text-slate-500 mt-2">
+                                        Saldo pendiente: <?= trab_view_money($prestamo['saldo_pendiente'] ?? 0) ?> · Abono sugerido: <?= trab_view_money($prestamo['abono_periodico'] ?? 0) ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </article>
             </div>
         </div>
 

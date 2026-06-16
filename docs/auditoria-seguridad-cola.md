@@ -617,3 +617,14 @@ Estado: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   auditoria, filtro `hotel_id` y cero escritura en Caja.
 - Caja, movimientos, cortes, categoria Nomina, pagos reales y `/api/sync` quedan fuera de
   alcance.
+
+## Auditoria NP-C-A ledger read-only
+
+Estado: `LEDGER_LABORAL_NP_C_A_COMPLETADO_QA_DIFERIDA`.
+
+- La ficha de trabajador solo lee conceptos, anticipos y prestamos.
+- No se agregan rutas nuevas ni acciones POST.
+- Las consultas se filtran por `hotel_id` y `trabajador_id`.
+- No se crean pagos reales, abonos, movimientos de Caja ni categoria Nomina.
+- Riesgo residual: el usuario debe validar visualmente que el texto "saldo informativo"
+  sea claro y que no parezca una accion de pago.

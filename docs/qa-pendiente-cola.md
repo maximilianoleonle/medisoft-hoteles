@@ -802,3 +802,14 @@ instruccion del usuario.
 - No requiere QA de navegador porque no agrega rutas ni vistas.
 - QA futura NP-C-A: validar resumen read-only de ledger por trabajador y estados vacios,
   sin POST, sin Caja y sin movimientos reales.
+
+### Estado NP-C-A
+
+- Ledger laboral read-only implementado en ficha de trabajador.
+- QA manual diferida:
+  - abrir `/trabajadores`;
+  - abrir `/trabajadores/{id}`;
+  - confirmar bloque "Ledger laboral";
+  - confirmar estados vacios si no hay conceptos;
+  - confirmar ausencia de botones de pago, abono, Caja o nomina;
+  - confirmar que el saldo se presenta como informativo.

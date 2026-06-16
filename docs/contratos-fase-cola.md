@@ -858,3 +858,12 @@ Estado formal vigente: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - Define ledger laboral informativo sin Caja, sin pagos reales y sin `/api/sync`.
 - No agrega rutas, vistas, migraciones, POST ni escrituras.
 - Siguiente subfase segura: NP-C-A read-only de ledger laboral por trabajador.
+
+### Estado NP-C-A
+
+Estado formal vigente: `LEDGER_LABORAL_NP_C_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_A_ledger_read_only.md`.
+- Se muestra ledger read-only en `GET /trabajadores/{id}`.
+- No agrega rutas, POST, migraciones ni escrituras.
+- Sin Caja, pagos reales, abonos, categoria Nomina ni `/api/sync`.

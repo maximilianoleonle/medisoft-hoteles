@@ -509,3 +509,10 @@
 - Caja queda separada: no se crea categoria Nomina ni movimientos.
 - Cualquier salida real de dinero requiere bloque NP-Caja independiente y autorizacion
   explicita.
+
+## Decision NP-C-A read-only
+
+- Se integra el ledger en la ficha existente de trabajador para evitar nuevas rutas.
+- No se agregan botones operativos ni POST.
+- El saldo se etiqueta como informativo para evitar tratarlo como pago real.
+- Se mantienen vacios claros cuando las tablas `trabajador_*` no tienen registros.

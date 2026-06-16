@@ -313,12 +313,15 @@ class Trabajador extends Model
         $resumen = [
             'pagos_count' => 0,
             'pagos_total' => '0.00',
+            'conceptos_a_favor' => '0.00',
+            'conceptos_en_contra' => '0.00',
             'anticipos_count' => 0,
             'anticipos_saldo' => '0.00',
             'prestamos_count' => 0,
             'prestamos_saldo' => '0.00',
             'asistencias_count' => 0,
             'documentos_count' => 0,
+            'saldo_informativo' => '0.00',
         ];
 
         if ($trabajadorId <= 0 || $hotelId <= 0) {
@@ -328,7 +331,9 @@ class Trabajador extends Model
         if ($this->tablaExiste('trabajador_pagos')) {
             $row = $this->fetchOne(
                 "SELECT COUNT(*) AS total,
-                        COALESCE(SUM(CASE WHEN estado = 'activo' THEN monto ELSE 0 END), 0) AS monto
+                        COALESCE(SUM(CASE WHEN estado = 'activo' THEN monto ELSE 0 END), 0) AS monto,
+                        COALESCE(SUM(CASE WHEN estado = 'activo' AND efecto = 'a_favor' THEN monto ELSE 0 END), 0) AS a_favor,
+                        COALESCE(SUM(CASE WHEN estado = 'activo' AND efecto = 'en_contra' THEN monto ELSE 0 END), 0) AS en_contra
                  FROM trabajador_pagos
                  WHERE hotel_id = ?
                    AND trabajador_id = ?",
@@ -336,6 +341,8 @@ class Trabajador extends Model
             );
             $resumen['pagos_count'] = (int)($row['total'] ?? 0);
             $resumen['pagos_total'] = $this->decimal($row['monto'] ?? 0);
+            $resumen['conceptos_a_favor'] = $this->decimal($row['a_favor'] ?? 0);
+            $resumen['conceptos_en_contra'] = $this->decimal($row['en_contra'] ?? 0);
         }
 
         if ($this->tablaExiste('trabajador_anticipos')) {
@@ -387,7 +394,100 @@ class Trabajador extends Model
             $resumen['documentos_count'] = (int)($row['total'] ?? 0);
         }
 
+        $resumen['saldo_informativo'] = $this->decimal(
+            (float)$resumen['conceptos_a_favor']
+            - (float)$resumen['conceptos_en_contra']
+            - (float)$resumen['anticipos_saldo']
+            - (float)$resumen['prestamos_saldo']
+        );
+
         return $resumen;
+    }
+
+    public function conceptosLaboralesPorTrabajador(int $trabajadorId, int $hotelId, int $limite = 20): array
+    {
+        if ($trabajadorId <= 0 || $hotelId <= 0 || !$this->tablaExiste('trabajador_pagos')) {
+            return [];
+        }
+
+        $limite = max(1, min(50, $limite));
+        $stmt = $this->db->query(
+            "SELECT id,
+                    tipo,
+                    efecto,
+                    monto,
+                    concepto,
+                    periodo_inicio,
+                    periodo_fin,
+                    fecha,
+                    referencia,
+                    estado,
+                    created_at
+             FROM trabajador_pagos
+             WHERE hotel_id = ?
+               AND trabajador_id = ?
+             ORDER BY fecha DESC, id DESC
+             LIMIT {$limite}",
+            [$hotelId, $trabajadorId]
+        );
+
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
+    public function anticiposPorTrabajador(int $trabajadorId, int $hotelId, int $limite = 20): array
+    {
+        if ($trabajadorId <= 0 || $hotelId <= 0 || !$this->tablaExiste('trabajador_anticipos')) {
+            return [];
+        }
+
+        $limite = max(1, min(50, $limite));
+        $stmt = $this->db->query(
+            "SELECT id,
+                    monto,
+                    saldo_pendiente,
+                    fecha,
+                    motivo,
+                    estado,
+                    referencia,
+                    created_at
+             FROM trabajador_anticipos
+             WHERE hotel_id = ?
+               AND trabajador_id = ?
+             ORDER BY fecha DESC, id DESC
+             LIMIT {$limite}",
+            [$hotelId, $trabajadorId]
+        );
+
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
+    public function prestamosPorTrabajador(int $trabajadorId, int $hotelId, int $limite = 20): array
+    {
+        if ($trabajadorId <= 0 || $hotelId <= 0 || !$this->tablaExiste('trabajador_prestamos')) {
+            return [];
+        }
+
+        $limite = max(1, min(50, $limite));
+        $stmt = $this->db->query(
+            "SELECT id,
+                    monto,
+                    saldo_pendiente,
+                    fecha,
+                    plazo_meses,
+                    abono_periodico,
+                    motivo,
+                    estado,
+                    referencia,
+                    created_at
+             FROM trabajador_prestamos
+             WHERE hotel_id = ?
+               AND trabajador_id = ?
+             ORDER BY fecha DESC, id DESC
+             LIMIT {$limite}",
+            [$hotelId, $trabajadorId]
+        );
+
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
     }
 
     public function ultimosMovimientosPorTrabajador(int $trabajadorId, int $hotelId, int $limite = 20): array

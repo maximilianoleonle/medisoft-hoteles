@@ -569,4 +569,13 @@ Estado: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - Solo contrato: no hay cambios de DB ni codigo.
 - Caja, pagos reales, abonos, categoria Nomina y `/api/sync` siguen fuera de alcance.
 - Siguiente paso seguro: NP-C-A read-only.
+
+## Checkpoint tecnico NP-C-A
+
+Estado: `LEDGER_LABORAL_NP_C_A_COMPLETADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_NP_C_A_ledger_read_only.md`.
+- Codigo read-only integrado en ficha de trabajador.
+- No hay rutas nuevas, POST, migraciones ni escrituras.
+- Caja, pagos reales, abonos, categoria Nomina y `/api/sync` siguen fuera de alcance.
 - QA manual queda diferida por instruccion del usuario.
