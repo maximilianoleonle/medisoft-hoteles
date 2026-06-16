@@ -914,3 +914,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   no borrar ni actualizar con SQL manual.
 - Retirar ruta POST, accion del controlador, metodo transaccional, boton del preview y
   checks MANT-E-A.
+
+### MANT-E-F cierre tecnico activacion manual
+
+- Rollback documental: revertir el commit
+  `docs(phase-mant): close manual maintenance activation block`.
+- DB: no aplica; es cierre documental.
+- Mantener intacto MANT-E-A salvo que se revierta su commit especifico.

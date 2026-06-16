@@ -1035,3 +1035,12 @@ Resultado MANT-E-A:
   `/api/sync`.
 - Checkers pasan con `ERROR: 0`.
 - QA manual queda diferida; no se ejecuto activacion real de datos desde automatizacion.
+
+Resultado MANT-E-F:
+
+- Estado tecnico: `BLOQUE_MANT_E_ACTIVACION_MANUAL_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_MANT_E_F_cierre_activacion_manual.md`.
+- Se cierra tecnicamente la activacion manual individual.
+- Verificaciones automaticas pasan con `ERROR: 0`.
+- QA manual real queda pendiente con backup previo.
+- No se autoriza activacion automatica ni masiva.

@@ -929,3 +929,14 @@ Estado: `ACTIVACION_MANUAL_MANT_E_A_COMPLETADA_QA_DIFERIDA`.
 - Health y preflight pasan con `ERROR: 0`.
 - HTTP sin sesion bloquea/redirige.
 - QA manual real queda diferida.
+
+## Cierre tecnico MANT-E-F
+
+Estado: `BLOQUE_MANT_E_ACTIVACION_MANUAL_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_E_F_cierre_activacion_manual.md`.
+- Revision tecnica y auditoria completadas para activacion manual individual.
+- Verificaciones automaticas pasan con `ERROR: 0`.
+- No hay activacion automatica, cron, acciones masivas, Caja, pagos, abonos, nomina,
+  offline ni `/api/sync`.
+- QA manual real queda diferida.

@@ -1151,3 +1151,10 @@ instruccion del usuario.
 - Intentar doble activacion y confirmar bloqueo limpio.
 - Confirmar que no se crean movimientos de Caja, pagos, abonos ni cambios en `/api/sync`.
 - Estado tecnico actual: `ACTIVACION_MANUAL_MANT_E_A_COMPLETADA_QA_DIFERIDA`.
+
+### Estado MANT-E-F
+
+- Bloque activacion manual cerrado tecnicamente.
+- QA manual real sigue pendiente con backup previo.
+- No avanzar a activacion automatica, cron ni acciones masivas hasta completar QA y abrir
+  contrato nuevo.

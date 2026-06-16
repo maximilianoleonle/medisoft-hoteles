@@ -1202,3 +1202,13 @@ Estado formal vigente: `ACTIVACION_MANUAL_MANT_E_A_COMPLETADA_QA_DIFERIDA`.
 - No usa `activarMantenimientosPendientes()`.
 - No activa automaticamente ni en lote.
 - QA manual queda diferida; no se ejecuto activacion real automatizada.
+
+### Estado MANT-E-F
+
+Estado formal vigente: `BLOQUE_MANT_E_ACTIVACION_MANUAL_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_E_F_cierre_activacion_manual.md`.
+- Cierra tecnicamente la activacion manual individual.
+- No agrega funcionalidades nuevas.
+- QA manual real sigue pendiente.
+- No autoriza activacion automatica, cron ni activacion masiva.

@@ -810,3 +810,10 @@
   mantener la transaccion en una sola capa.
 - El boton vive en el preview porque ahi ya se calculan candidatos y advertencias.
 - La vista solo muestra el boton si el usuario puede `habitaciones.mantenimiento`.
+
+## Decision MANT-E-F
+
+- El bloque se cierra tecnicamente sin promover activaciones automaticas.
+- QA manual queda diferida por instruccion del usuario, pero debe existir antes de
+  considerar estable el flujo operativo con datos reales.
+- Cualquier cron, activacion masiva o dashboard automation requiere contrato separado.

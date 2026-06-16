@@ -922,3 +922,12 @@ agregar funcionalidades nuevas.
 - No usa activacion masiva ni automatica.
 - No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - QA manual queda diferida y debe ejecutarse con backup previo.
+
+## Cierre tecnico MANT-E-F
+
+- Estado formal: `BLOQUE_MANT_E_ACTIVACION_MANUAL_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_MANT_E_F_cierre_activacion_manual.md`.
+- Revision tecnica/auditoria del POST manual completadas.
+- No agrega activacion automatica, cron, acciones masivas, Caja, pagos, abonos, nomina,
+  offline ni `/api/sync`.
+- Siguiente accion segura: contrato independiente.

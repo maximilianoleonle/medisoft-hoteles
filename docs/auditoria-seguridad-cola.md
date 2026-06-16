@@ -1012,3 +1012,12 @@ Estado: `ACTIVACION_MANUAL_MANT_E_A_COMPLETADA_QA_DIFERIDA`.
 - No se llama `activarMantenimientosPendientes()`.
 - No se toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - Riesgo residual: falta QA manual real con backup previo.
+
+## Auditoria MANT-E-F
+
+Estado: `BLOQUE_MANT_E_ACTIVACION_MANUAL_CERRADO_QA_DIFERIDA`.
+
+- Revision de cierre sin hallazgos bloqueantes automaticos.
+- Health y preflight validan que el POST es individual, con CSRF/permiso y sin Caja.
+- Riesgo residual: QA manual real pendiente y warning historico documentado.
+- No se autoriza activacion automatica ni masiva.
