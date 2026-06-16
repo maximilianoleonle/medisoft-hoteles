@@ -225,11 +225,12 @@ $router->get('/cuentas-por-pagar/generacion-preview', ['controller' => 'CuentaPo
 $router->post('/cuentas-por-pagar/generar-desde-compra/{id:[0-9]+}', ['controller' => 'CuentaPorPagar', 'action' => 'generarDesdeCompra']);
 $router->get('/cuentas-por-pagar/{id:[0-9]+}', ['controller' => 'CuentaPorPagar', 'action' => 'ver']);
 
-// Fase 4A-B/4A-C: Centro Documental con metadata read-only y carga segura. Sin descarga, edicion ni borrado.
+// Fase 4A/4B: Centro Documental con metadata, carga segura y descarga autenticada. Sin edicion ni borrado.
 $router->get('/documentos', ['controller' => 'Documento', 'action' => 'index']);
 $router->get('/documentos/subir', ['controller' => 'Documento', 'action' => 'subir']);
 $router->post('/documentos/subir', ['controller' => 'Documento', 'action' => 'guardar']);
 $router->get('/documentos/entidad/{tipo:[a-z_]+}/{id:[0-9]+}', ['controller' => 'Documento', 'action' => 'entidad']);
+$router->get('/documentos/{id:[0-9]+}/descargar', ['controller' => 'Documento', 'action' => 'descargar']);
 $router->get('/documentos/{id:[0-9]+}', ['controller' => 'Documento', 'action' => 'ver']);
 
 $router->get('/api/pwa-push/public-key', ['controller' => 'PwaPush', 'action' => 'publicKey']);

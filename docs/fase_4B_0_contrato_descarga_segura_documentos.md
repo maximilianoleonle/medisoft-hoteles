@@ -143,3 +143,75 @@ Reglas:
 
 Solo debe implementarse si se acepta este contrato. No avanzar a edicion, borrado,
 links publicos, Caja, pagos, abonos, Fase 3D ni `/api/sync`.
+
+## Resultado Fase 4B-A - Descarga segura autenticada
+
+Estado: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+
+Implementacion:
+
+- Ruta agregada: `GET /documentos/{id}/descargar`.
+- Controlador: `DocumentoController::descargarAction()`.
+- Modelo:
+  - `Documento::buscarDescargablePorIdHotel()`;
+  - `Documento::resolverRutaPrivada()`.
+- Vistas actualizadas:
+  - `src/app/views/documentos/index.php`;
+  - `src/app/views/documentos/ver.php`.
+
+Reglas aplicadas:
+
+- La ruta pasa por `requireAuth`, contexto hotelero y modulo relacionado.
+- La busqueda usa `id + hotel_id`.
+- Solo descarga documentos `activo`.
+- El archivo se resuelve con `realpath`.
+- La raiz permitida es `realpath(STORAGE_PATH . '/documentos')`.
+- No se expone `storage_path` ni `nombre_archivo`.
+- No se crean links publicos.
+- No hay POST nuevo.
+- No hay edicion ni borrado.
+- No se toca Caja, pagos, abonos, PWA/offline ni `/api/sync`.
+- No se agrego auditoria de descarga en esta fase para mantener la descarga sin
+  escrituras DB.
+
+Verificacion automatica:
+
+- `php -l` limpio en controlador, modelo, vistas documentales y rutas.
+- `health_check_fase_1a.php`: PASS con warnings conocidos.
+- `preflight_compras_minimas.php`: PASS con warnings conocidos.
+- `preflight_recepcion_compras.php`: PASS con warnings conocidos.
+- HTTP sin sesion en `/documentos/1/descargar`: `303` a login.
+- HTTP con sesion Los Cedros en `/documentos/1/descargar`: `200`, `Content-Type:
+  application/pdf`, `Content-Disposition: attachment`,
+  `X-Content-Type-Options: nosniff`, `Content-Length: 132`.
+- Archivo descargado de `documentos.id=1` conserva SHA256
+  `18B0855BC03494BD6C3059AC14BF342366B7F3DD598C118FA98CF91F987EAC64`, coincidente
+  con `documentos.sha256`.
+- HTTP con sesion Los Cedros en `/documentos/3/descargar`: `303` a `/documentos`
+  porque pertenece a otro hotel.
+- La vista de detalle muestra `Descargar` y `Descarga privada`, sin `storage_path` ni
+  `nombre_archivo`.
+- Conteos read-only post-verificacion: `documento_tipos=6`, `documentos=3`,
+  `documento_entidades=1`, `cuentas_por_pagar_movimientos=0`, `movimientos_caja=1403`,
+  `logs_auditoria=29`.
+
+Nota de headers:
+
+- El controlador emite headers privados de descarga.
+- La capa global del sistema mantiene `Cache-Control: no-cache, no-store,
+  must-revalidate`, que es mas restrictivo para documentos sensibles.
+
+QA manual pendiente:
+
+1. Iniciar sesion en Los Cedros.
+2. Abrir `/documentos`.
+3. Entrar a un documento activo.
+4. Presionar `Descargar`.
+5. Confirmar que el archivo descarga correctamente.
+6. Confirmar que no aparece `storage_path`, `nombre_archivo` ni ruta interna.
+7. Confirmar que no aparecen acciones de edicion, borrado, pagos, abonos ni Caja.
+
+Siguiente paso:
+
+No avanzar a edicion, borrado, links publicos ni auditoria de descargas hasta que la QA
+manual confirme esta fase.

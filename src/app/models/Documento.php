@@ -216,6 +216,71 @@ class Documento extends Model
         return $row ?: null;
     }
 
+    public function buscarDescargablePorIdHotel(int $id, int $hotelId): ?array
+    {
+        if ($id <= 0 || $hotelId <= 0 || !$this->tablaExiste('documentos')) {
+            return null;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT id,
+                    hotel_id,
+                    nombre_original,
+                    nombre_archivo,
+                    storage_path,
+                    mime_type,
+                    size_bytes,
+                    estado
+             FROM documentos
+             WHERE id = ?
+               AND hotel_id = ?
+               AND estado = 'activo'
+             LIMIT 1",
+            [$id, $hotelId]
+        );
+
+        $row = $stmt ? $stmt->fetch() : null;
+        return $row ?: null;
+    }
+
+    public function resolverRutaPrivada(array $documento): string
+    {
+        if (!defined('STORAGE_PATH')) {
+            throw new Exception('STORAGE_PATH no esta definido');
+        }
+
+        $storagePath = trim((string)($documento['storage_path'] ?? ''));
+        if ($storagePath === '') {
+            throw new Exception('Ruta privada no disponible');
+        }
+
+        $storagePath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $storagePath);
+        $storagePath = ltrim($storagePath, DIRECTORY_SEPARATOR);
+        $segments = array_filter(explode(DIRECTORY_SEPARATOR, $storagePath), 'strlen');
+        if (in_array('..', $segments, true)) {
+            throw new Exception('Ruta privada no valida');
+        }
+
+        $root = rtrim(STORAGE_PATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'documentos';
+        $rootReal = realpath($root);
+        if (!$rootReal || !is_dir($rootReal)) {
+            throw new Exception('Raiz de documentos privada no disponible');
+        }
+
+        $absolutePath = rtrim(STORAGE_PATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $storagePath;
+        $real = realpath($absolutePath);
+        if (!$real || !is_file($real)) {
+            throw new Exception('Archivo privado no encontrado');
+        }
+
+        $rootPrefix = rtrim($rootReal, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        if (strpos($real, $rootPrefix) !== 0) {
+            throw new Exception('Archivo fuera de la raiz privada permitida');
+        }
+
+        return $real;
+    }
+
     public function documentosPorEntidad(int $hotelId, string $entidadTipo, int $entidadId, int $limite = 100): array
     {
         $entidadTipo = $this->normalizarEntidadTipo($entidadTipo);

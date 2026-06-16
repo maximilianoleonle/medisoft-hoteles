@@ -231,7 +231,7 @@ Riesgos residuales 4A-C:
 
 ## Fase 4B Descarga segura documental - auditoria de contrato
 
-Estado: `CONTRATO_4B_DESCARGA_SEGURA_COMPLETADO`.
+Estado: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
 
 - 4B-0 no implementa rutas ni lectura de archivos.
 - Riesgo principal futuro: exposicion de documentos privados si se omite `hotel_id` o
@@ -241,6 +241,19 @@ Estado: `CONTRATO_4B_DESCARGA_SEGURA_COMPLETADO`.
   headers privados.
 - Prohibido: links publicos, tokens publicos, `public_html/uploads`, edicion, borrado,
   Caja, pagos, abonos, PWA/offline y `/api/sync`.
+
+### Auditoria 4B-A
+
+- Ruta activa: `GET /documentos/{id}/descargar`.
+- El controlador usa el guard documental existente: autenticacion, contexto hotelero y
+  modulo relacionado.
+- El modelo busca por `id + hotel_id + estado activo`.
+- La ruta fisica se resuelve con `realpath` y raiz permitida
+  `STORAGE_PATH/documentos`.
+- Documento `#3` de otro hotel no descarga desde sesion Los Cedros.
+- No se agregan links publicos ni tokens.
+- No se agregan POST, edicion, borrado, Caja, pagos, abonos ni `/api/sync`.
+- No se registra auditoria de descarga en esta fase para evitar escrituras en DB.
 
 ## Bloque Personal y Nomina (Fase NP) - controles esperados
 

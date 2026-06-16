@@ -196,10 +196,9 @@
 
 ## Fase 4B Descarga segura documental
 
-- Estado formal vigente: `CONTRATO_4B_DESCARGA_SEGURA_COMPLETADO`.
-- 4B-0 solo documenta contrato; no implementa ruta, modelo, vista, migracion ni lectura
-  de archivos.
-- La ruta futura propuesta es `GET /documentos/{id}/descargar`.
+- Estado formal vigente: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
+- 4B-0 documento contrato; 4B-A implementa descarga autenticada.
+- La ruta implementada es `GET /documentos/{id}/descargar`.
 - La descarga debe ser autenticada, scoped por `hotel_id` y restringida a documentos
   `activo`.
 - La ruta fisica debe resolverse con `realpath` bajo
@@ -207,6 +206,8 @@
 - No se permiten links publicos de documentos en esta fase.
 - El patron de `ReporteLinkController` sirve como referencia para headers privados y
   `realpath`, pero no debe copiarse el acceso publico por token.
+- No se agrega auditoria de descarga en 4B-A para evitar escrituras DB en una accion de
+  lectura de archivo; puede autorizarse despues como fase separada.
 - 4B no autoriza edicion, borrado, Caja, pagos, abonos, PWA/offline ni `/api/sync`.
 
 ### Decisiones de diagnostico NP-0

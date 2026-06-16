@@ -4,14 +4,14 @@
 
 NUEVO_BLOQUE_AUTORIZADO_FASE_4A_CENTRO_DOCUMENTAL: iniciar Centro Documental Base.
 
-Mensaje actual procesado: "Continua"; se avanza solo con contrato 4B-0 de descarga segura autenticada, sin implementar funcionalidad.
+Mensaje actual procesado: "Continua"; se implementa Fase 4B-A descarga segura autenticada de documentos.
 
 ## Estado vigente
 
 - Bloque actual: Fase 4B Descarga segura de documentos.
-- Fase actual: 4B-0 contrato y diagnostico.
+- Fase actual: 4B-A descarga segura autenticada.
 - Riesgo: naranja.
-- Estado: `CONTRATO_4B_DESCARGA_SEGURA_COMPLETADO`.
+- Estado: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
 - HEAD base antes del reanclaje: `2662998 docs(phase-3c): record payable generation security audit`.
 - Estado Git al iniciar reanclaje: limpio.
 - Base local principal: `medisoft_hoteles_import`.
@@ -49,13 +49,15 @@ Mensaje actual procesado: "Continua"; se avanza solo con contrato 4B-0 de descar
 ## Fase 4B Descarga segura de documentos
 
 - 4B-0 contrato y diagnostico: completado documentalmente.
+- 4B-A descarga segura autenticada: implementada tecnicamente.
 - Documento: `docs/fase_4B_0_contrato_descarga_segura_documentos.md`.
-- Ruta futura propuesta: `GET /documentos/{id}/descargar`.
-- Controlador futuro propuesto: `DocumentoController::descargarAction()`.
+- Ruta implementada: `GET /documentos/{id}/descargar`.
+- Controlador: `DocumentoController::descargarAction()`.
 - Reglas clave: `requireAuth`, contexto hotelero, validacion `id + hotel_id`, documento `activo`, `realpath` bajo `STORAGE_PATH/documentos`, headers privados y sin rutas publicas.
-- No se implementaron rutas, modelos, vistas, lectura de archivos, migraciones ni escrituras DB.
+- No hay POST nuevo, links publicos, edicion, borrado, migraciones ni escrituras DB.
+- Verificacion HTTP: sin sesion `303` a login; documento `#1` de Los Cedros descarga `200`; documento `#3` de otro hotel redirige `303` a `/documentos`.
 - Prohibido: links publicos, edicion, borrado, Caja, pagos, abonos, PWA/offline, Fase 3D y `/api/sync`.
-- Siguiente cola recomendada: `[COLA_4B_A_DESCARGA_SEGURA_DOCUMENTOS]`.
+- Siguiente accion: QA manual de descarga en navegador.
 
 ## Reanclaje Fase 3C
 
@@ -232,4 +234,4 @@ Ver `docs/cierre-tecnico-bloque-cola.md`.
 
 ## Siguiente accion
 
-Siguiente paso formal recomendado: `[COLA_4B_A_DESCARGA_SEGURA_DOCUMENTOS]` solo si se acepta implementar descarga autenticada bajo el contrato 4B-0. No avanzar a descargas publicas, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.
+Siguiente paso formal recomendado: QA manual de Fase 4B-A antes de avanzar a edicion, borrado, links publicos, auditoria de descargas o fases posteriores. No avanzar a descargas publicas, pagos, Caja, Fase 3D, NP-A ni salida real de dinero. No alterar `usuarios` de forma destructiva. No tocar `/api/sync`. No hacer push.

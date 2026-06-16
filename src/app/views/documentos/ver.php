@@ -156,7 +156,7 @@ $documentoId = (int)($documento['id'] ?? 0);
                 <div class="doc-kicker">Centro documental</div>
                 <h1 class="doc-title"><?= doc_view_safe($documento['titulo'] ?? null, 'Documento #' . $documentoId) ?></h1>
                 <p class="doc-subtitle">
-                    Ficha de metadata. El archivo privado no se sirve ni se descarga en esta fase.
+                    Ficha de metadata y descarga autenticada. El archivo se sirve desde storage privado sin exponer rutas internas.
                 </p>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 min-w-[320px]">
@@ -182,13 +182,21 @@ $documentoId = (int)($documento['id'] ?? 0);
 
     <section class="p-6">
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <a class="doc-btn doc-btn-muted" href="<?= url('documentos') ?>">
-                <i class="fas fa-arrow-left"></i>
-                Volver
-            </a>
+            <div class="flex flex-wrap gap-2">
+                <a class="doc-btn doc-btn-muted" href="<?= url('documentos') ?>">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver
+                </a>
+                <?php if (($documento['estado'] ?? '') === 'activo'): ?>
+                    <a class="doc-btn doc-btn-muted" href="<?= url('documentos/' . $documentoId . '/descargar') ?>">
+                        <i class="fas fa-download"></i>
+                        Descargar
+                    </a>
+                <?php endif; ?>
+            </div>
             <span class="doc-badge">
-                <i class="fas fa-lock"></i>
-                Sin descarga
+                <i class="fas fa-shield-alt"></i>
+                Descarga privada
             </span>
         </div>
 

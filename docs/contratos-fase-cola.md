@@ -329,7 +329,7 @@ idempotente y no destructiva.
 
 ### Estado
 
-Estado formal vigente: `CONTRATO_4B_DESCARGA_SEGURA_COMPLETADO`.
+Estado formal vigente: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
 
 ### Objetivo
 
@@ -347,8 +347,8 @@ implementar todavia rutas ni lectura de archivos.
 
 ### Siguiente paso
 
-`[COLA_4B_A_DESCARGA_SEGURA_DOCUMENTOS]`, solo si se autoriza implementar descarga
-autenticada siguiendo `docs/fase_4B_0_contrato_descarga_segura_documentos.md`.
+QA manual de `GET /documentos/{id}/descargar` antes de avanzar a edicion, borrado,
+links publicos o auditoria de descargas.
 
 ## Bloque Personal y Nomina (Fase NP): modulo independiente de trabajadores
 

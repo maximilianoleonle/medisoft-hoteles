@@ -65,6 +65,29 @@ class DocumentoController extends Controller
         ]);
     }
 
+    public function descargarAction(): void
+    {
+        $id = (int)($this->route_params['id'] ?? 0);
+        $hotelId = $this->hotelIdActual();
+        $documento = $this->documentoModel->buscarDescargablePorIdHotel($id, $hotelId);
+
+        if (!$documento) {
+            set_mensaje('Documento no disponible para descarga en el hotel actual.', 'error');
+            $this->redirect('documentos');
+            return;
+        }
+
+        try {
+            $ruta = $this->documentoModel->resolverRutaPrivada($documento);
+        } catch (Throwable $e) {
+            set_mensaje('El archivo privado no esta disponible para descarga.', 'error');
+            $this->redirect('documentos/' . $id);
+            return;
+        }
+
+        $this->servirArchivoPrivado($documento, $ruta);
+    }
+
     public function subirAction(): void
     {
         $hotelId = $this->hotelIdActual();
@@ -265,6 +288,57 @@ class DocumentoController extends Controller
         ];
 
         return $labels[$entidadTipo] ?? 'Entidad';
+    }
+
+    private function servirArchivoPrivado(array $documento, string $ruta): void
+    {
+        if (!is_file($ruta) || !is_readable($ruta)) {
+            set_mensaje('El archivo privado no esta disponible para descarga.', 'error');
+            $this->redirect('documentos/' . (int)($documento['id'] ?? 0));
+            return;
+        }
+
+        $mimeType = $this->mimeDescargaPermitido($documento['mime_type'] ?? null);
+        $nombre = $this->nombreDescargaSeguro($documento['nombre_original'] ?? ('documento-' . (int)($documento['id'] ?? 0)));
+        $tamano = filesize($ruta);
+
+        while (ob_get_level() > 0) {
+            @ob_end_clean();
+        }
+
+        header_remove('Cache-Control');
+        header_remove('Pragma');
+        header_remove('Expires');
+        header('Content-Type: ' . $mimeType);
+        header('Content-Disposition: attachment; filename="' . $nombre . '"');
+        header('Content-Length: ' . $tamano);
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: private, max-age=0, must-revalidate');
+        header('Pragma: private');
+        readfile($ruta);
+        exit;
+    }
+
+    private function mimeDescargaPermitido($mimeType): string
+    {
+        $mimeType = trim((string)($mimeType ?? ''));
+        $permitidos = [
+            'application/pdf',
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+        ];
+
+        return in_array($mimeType, $permitidos, true) ? $mimeType : 'application/octet-stream';
+    }
+
+    private function nombreDescargaSeguro($nombre): string
+    {
+        $nombre = basename(str_replace('\\', '/', (string)$nombre));
+        $nombre = preg_replace('/[\x00-\x1F\x7F"]+/', '', $nombre);
+        $nombre = trim((string)$nombre);
+
+        return $nombre !== '' ? $nombre : 'documento';
     }
 
     private function hotelIdActual(): int

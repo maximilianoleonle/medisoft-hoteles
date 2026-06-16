@@ -324,11 +324,20 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 
 ### 4B-0 contrato descarga segura documental
 
-- Estado vigente: `CONTRATO_4B_DESCARGA_SEGURA_COMPLETADO`.
+- Estado vigente: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
 - Rollback documental: revertir el commit `docs(phase-4b): define secure document download contract`.
 - DB: no aplica; 4B-0 no escribe datos.
 - Codigo: no aplica; 4B-0 no crea rutas ni controladores.
 - Archivos fisicos: no aplica; no se leen ni borran archivos en 4B-0.
+
+### 4B-A descarga segura autenticada
+
+- Rollback de codigo/documentacion: revertir el commit `feat(phase-4b): add secure document download`.
+- DB: no aplica; 4B-A no crea ni modifica datos.
+- Archivos fisicos: no borrar archivos en `src/storage/documentos/`.
+- No retirar `documentos`, `documento_entidades` ni `documento_tipos`; pertenecen a 4A.
+- Despues del rollback, validar que no exista ruta `GET /documentos/{id}/descargar` y
+  que `/documentos` y `/documentos/{id}` sigan funcionando.
 
 ### Fases futuras
 

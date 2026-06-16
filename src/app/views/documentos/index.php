@@ -141,7 +141,7 @@ if ($esEntidad) {
                 <div class="docs-kicker">Centro documental</div>
                 <h1 class="docs-title"><?= $esEntidad ? doc_safe($contextoEntidad['label'] ?? 'Entidad') . ' #' . (int)($contextoEntidad['id'] ?? 0) : 'Documentos' ?></h1>
                 <p class="docs-subtitle">
-                    Metadata documental del hotel actual. Los archivos permanecen privados y la descarga se habilitara en una fase posterior.
+                    Metadata documental del hotel actual. Los archivos se descargan de forma autenticada desde storage privado.
                 </p>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 min-w-[320px]">
@@ -186,8 +186,8 @@ if ($esEntidad) {
                     </a>
                 </div>
                 <span class="docs-badge">
-                    <i class="fas fa-lock"></i>
-                    Sin descarga publica
+                    <i class="fas fa-shield-alt"></i>
+                    Descarga privada
                 </span>
             </div>
 
@@ -271,10 +271,18 @@ if ($esEntidad) {
                                             <div class="text-xs text-slate-500"><?= doc_safe($documento['subido_por_nombre'] ?? null, 'Sin usuario') ?></div>
                                         </td>
                                         <td class="text-right">
-                                            <a class="docs-btn docs-btn-muted" href="<?= url('documentos/' . (int)($documento['id'] ?? 0)) ?>">
-                                                <i class="fas fa-eye"></i>
-                                                Ver
-                                            </a>
+                                            <div class="flex justify-end gap-2">
+                                                <a class="docs-btn docs-btn-muted" href="<?= url('documentos/' . (int)($documento['id'] ?? 0)) ?>">
+                                                    <i class="fas fa-eye"></i>
+                                                    Ver
+                                                </a>
+                                                <?php if (($documento['estado'] ?? '') === 'activo'): ?>
+                                                    <a class="docs-btn docs-btn-muted" href="<?= url('documentos/' . (int)($documento['id'] ?? 0) . '/descargar') ?>">
+                                                        <i class="fas fa-download"></i>
+                                                        Descargar
+                                                    </a>
+                                                <?php endif; ?>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

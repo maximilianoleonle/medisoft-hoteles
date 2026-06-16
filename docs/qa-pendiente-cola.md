@@ -329,22 +329,44 @@ sin exponer archivos.
 
 ## QA Fase 4B Descarga segura documental
 
-Estado vigente: `CONTRATO_4B_DESCARGA_SEGURA_COMPLETADO`.
+Estado vigente: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
 
-4B-0 es solo contrato; no requiere QA manual funcional porque no implementa rutas ni
-descarga archivos.
+4B-0 fue contrato. 4B-A implementa descarga autenticada y requiere QA manual en
+navegador antes de avanzar a edicion, borrado, links publicos o auditoria de descargas.
 
-### QA planificada 4B-A
+### Resultado automatico 4B-A
 
-- HTTP sin sesion en `/documentos/{id}/descargar` debe redirigir a login.
-- Documento inexistente o de otro hotel no debe descargarse.
-- Documento valido del hotel actual debe descargar con `Content-Type`,
-  `Content-Disposition`, `X-Content-Type-Options`, `Cache-Control: private` y
-  `Content-Length`.
-- El navegador no debe recibir `storage_path` ni `nombre_archivo`.
-- Archivo fisico faltante debe mostrar error controlado sin exponer ruta interna.
-- No debe haber links publicos ni tokens publicos de documentos.
-- No debe crear pagos, abonos, Caja, movimientos financieros ni tocar `/api/sync`.
+- `php -l` limpio en `DocumentoController.php`, `Documento.php`, vistas documentales y
+  `routes.php`.
+- Health y preflights pasan con warnings conocidos.
+- HTTP sin sesion en `/documentos/1/descargar`: `303` a login.
+- HTTP con sesion Los Cedros en `/documentos/1/descargar`: `200`, `Content-Type:
+  application/pdf`, `Content-Disposition: attachment`,
+  `X-Content-Type-Options: nosniff`, `Content-Length: 132`.
+- Archivo descargado de `documentos.id=1` conserva SHA256
+  `18B0855BC03494BD6C3059AC14BF342366B7F3DD598C118FA98CF91F987EAC64`, coincidente
+  con `documentos.sha256`.
+- HTTP con sesion Los Cedros en `/documentos/3/descargar`: `303` a `/documentos`
+  porque pertenece a otro hotel.
+- Documento inexistente `/documentos/999999/descargar`: `303` a `/documentos`.
+- La vista de detalle muestra `Descargar` y `Descarga privada` sin `storage_path` ni
+  `nombre_archivo`.
+- Conteos read-only: `documento_tipos=6`, `documentos=3`, `documento_entidades=1`,
+  `cuentas_por_pagar_movimientos=0`, `movimientos_caja=1403`, `logs_auditoria=29`.
+- Nota: la capa global mantiene `Cache-Control: no-cache, no-store, must-revalidate`,
+  mas restrictivo para documentos sensibles.
+
+### QA manual pendiente 4B-A
+
+- Iniciar sesion en Los Cedros.
+- Abrir `/documentos`.
+- Entrar a un documento activo.
+- Presionar `Descargar`.
+- Confirmar que el archivo descarga correctamente.
+- Confirmar que el detalle no muestra `storage_path`, `nombre_archivo` ni ruta interna.
+- Confirmar que no existen acciones de edicion, borrado, links publicos, pagos, abonos
+  ni Caja.
+- Confirmar que `/api/sync` sigue fuera del flujo.
 
 ### QA critica futura
 

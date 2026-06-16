@@ -223,7 +223,7 @@ Resultado 4A-C:
 
 ## Nuevo bloque Fase 4B Descarga segura documental
 
-Estado: `CONTRATO_4B_DESCARGA_SEGURA_COMPLETADO`.
+Estado: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
 
 Objetivo: definir descarga autenticada de documentos privados ya cargados en Centro
 Documental, sin exponer `storage_path`, sin links publicos, sin Caja, pagos, abonos ni
@@ -240,7 +240,18 @@ Resultado 4B-0:
   limitar a PDF.
 - No se implementaron rutas, modelos, vistas, migraciones, lectura de archivos ni
   escrituras DB.
-- Siguiente cola recomendada: `[COLA_4B_A_DESCARGA_SEGURA_DOCUMENTOS]`.
+
+Resultado 4B-A:
+
+- Ruta implementada: `GET /documentos/{id}/descargar`.
+- Controlador/modelo actualizados para buscar por `id + hotel_id`, exigir `estado=activo`
+  y resolver archivo por `realpath` bajo `STORAGE_PATH/documentos`.
+- Vistas de listado y detalle muestran accion `Descargar` sin exponer `storage_path` ni
+  `nombre_archivo`.
+- HTTP sin sesion redirige a login.
+- Documento `#1` de Los Cedros descarga `200`; documento `#3` de otro hotel redirige.
+- No hay POST nuevo, links publicos, edicion, borrado, Caja, pagos, abonos ni `/api/sync`.
+- Siguiente paso recomendado: QA manual de descarga antes de avanzar.
 
 ## Nuevo bloque Personal y Nomina (Fase NP)
 

@@ -130,7 +130,7 @@ Reglas:
 
 ## Descarga segura documental (Fase 4B)
 
-Estado formal: `CONTRATO_4B_DESCARGA_SEGURA_COMPLETADO`.
+Estado formal: `DESCARGA_SEGURA_4B_COMPLETADA_QA_MANUAL_PENDIENTE`.
 
 Contrato:
 
@@ -145,7 +145,10 @@ Reglas de fuente de verdad:
 - La ruta fisica solo es valida si `realpath` queda dentro de
   `realpath(STORAGE_PATH . '/documentos')`.
 - No existen links publicos de documentos en el contrato 4B-0.
-- 4B-0 no implementa descarga todavia; solo define reglas.
+- 4B-A implementa descarga autenticada desde `documentos` y `STORAGE_PATH/documentos`.
+- La ruta activa de descarga es `GET /documentos/{id}/descargar`.
+- Solo documentos `activo` del hotel actual son descargables.
+- No hay links publicos ni tokens publicos de documentos.
 
 ## Personal y Nomina (Fase NP)
 
