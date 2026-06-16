@@ -1136,3 +1136,13 @@ Estado formal vigente: `MANTENIMIENTO_PROGRAMADO_MANT_C_A_COMPLETADO_QA_DIFERIDA
   `hotel_id`.
 - `activarMantenimientosPendientes()` sigue desconectado y fuera de alcance.
 - Siguiente accion segura: revision tecnica/auditoria/cierre MANT-C o QA manual diferida.
+
+### Estado MANT-C-F
+
+Estado formal vigente: `BLOQUE_MANT_C_MANTENIMIENTO_PROGRAMADO_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_C_F_cierre_mantenimiento_programado.md`.
+- Cierre tecnico del bloque MANT-C.
+- No agrega funcionalidad nueva.
+- Siguiente contrato requerido antes de activar automaticamente mantenimientos vencidos
+  o modificar disponibilidad por automatizacion.

@@ -864,3 +864,13 @@ Estado: `MANTENIMIENTO_PROGRAMADO_MANT_C_A_COMPLETADO_QA_DIFERIDA`.
   permisos y `hotel_id`.
 - No hay rutas nuevas, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - QA manual queda diferida.
+
+## Cierre tecnico MANT-C-F
+
+Estado: `BLOQUE_MANT_C_MANTENIMIENTO_PROGRAMADO_CERRADO_QA_DIFERIDA`.
+
+- Documento: `docs/fase_MANT_C_F_cierre_mantenimiento_programado.md`.
+- Revision tecnica y auditoria de seguridad completadas para mantenimiento programado.
+- No se agregaron funcionalidades nuevas en el cierre.
+- No hay rutas nuevas, migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- QA manual queda diferida.

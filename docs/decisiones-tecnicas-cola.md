@@ -759,3 +759,9 @@
   visible en el hotel actual.
 - No se toca la activacion automatica de mantenimientos vencidos porque cambia estado de
   habitaciones y requiere contrato propio.
+
+## Decision MANT-C-F
+
+- MANT-C se cierra tecnicamente antes de cualquier automatizacion.
+- QA manual queda diferida por instruccion del usuario, no sustituida por los checkers.
+- La activacion automatica de mantenimientos vencidos requiere contrato independiente.

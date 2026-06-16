@@ -865,3 +865,10 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Si QA manual creo mantenimientos programados, documentar IDs y cancelar con el flujo
   autorizado; no borrar con SQL manual.
 - No tocar Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+
+### MANT-C-F cierre tecnico mantenimiento programado
+
+- Rollback documental: revertir el commit
+  `docs(phase-mant): close scheduled maintenance guardrails`.
+- DB: no aplica; es cierre documental.
+- Mantener intacto el codigo MANT-C-A salvo que se revierta su commit especifico.

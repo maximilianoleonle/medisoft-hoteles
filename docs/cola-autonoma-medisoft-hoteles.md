@@ -866,3 +866,12 @@ agregar funcionalidades nuevas.
 - No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - Siguiente accion segura: revision tecnica/auditoria/cierre MANT-C o QA manual
   diferida.
+
+## Cierre tecnico MANT-C-F
+
+- Estado formal: `BLOQUE_MANT_C_MANTENIMIENTO_PROGRAMADO_CERRADO_QA_DIFERIDA`.
+- Documento creado: `docs/fase_MANT_C_F_cierre_mantenimiento_programado.md`.
+- Revision tecnica y auditoria completadas.
+- No agrega funcionalidad nueva.
+- Siguiente accion segura: nuevo contrato independiente; no activar mantenimientos
+  vencidos automaticamente sin contrato.

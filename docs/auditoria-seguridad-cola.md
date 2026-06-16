@@ -947,3 +947,12 @@ Estado: `MANTENIMIENTO_PROGRAMADO_MANT_C_A_COMPLETADO_QA_DIFERIDA`.
 - Riesgo residual: QA manual diferida y una habitacion historica en mantenimiento sin
   registro `en_proceso`.
 - `/api/sync`, Caja, pagos, abonos, nomina y offline siguen fuera de alcance.
+
+## Auditoria MANT-C-F cierre mantenimiento programado
+
+Estado: `BLOQUE_MANT_C_MANTENIMIENTO_PROGRAMADO_CERRADO_QA_DIFERIDA`.
+
+- Revision de cierre sin hallazgos bloqueantes.
+- Health y preflight validan MANT-C-A con `ERROR: 0`.
+- Riesgo residual: QA manual visual/funcional diferida.
+- No se habilita activacion automatica de mantenimientos vencidos.

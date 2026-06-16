@@ -966,3 +966,14 @@ Resultado MANT-C-A:
 - No se activa `Mantenimiento::activarMantenimientosPendientes()`.
 - No hay migraciones, Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - QA manual queda diferida.
+
+Resultado MANT-C-F:
+
+- Estado tecnico: `BLOQUE_MANT_C_MANTENIMIENTO_PROGRAMADO_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_MANT_C_F_cierre_mantenimiento_programado.md`.
+- Se cierra tecnicamente el bloque de mantenimiento programado.
+- Verificaciones automaticas pasan con `ERROR: 0`.
+- Warnings residuales son historicos y quedan documentados.
+- QA manual queda diferida.
+- Siguiente paso recomendado: nuevo contrato independiente antes de activar
+  mantenimientos automaticamente o alterar disponibilidad.

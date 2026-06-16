@@ -1097,3 +1097,10 @@ instruccion del usuario.
 - Guardrails de programacion/cancelacion implementados.
 - QA manual sigue diferida por instruccion del usuario.
 - Preflight y health ejecutados con `ERROR: 0`.
+
+### Estado MANT-C-F
+
+- Bloque mantenimiento programado cerrado tecnicamente.
+- QA manual global de MANT-C queda diferida.
+- No avanzar a activacion automatica de vencidos, cron/dashboard, disponibilidad
+  automatica, Caja, pagos, abonos, nomina, offline ni `/api/sync` sin contrato nuevo.
