@@ -155,7 +155,7 @@ $puedeRegistrarPrestamo = ($trabajador['estado'] ?? '') === 'activo' && !empty($
                 <div class="worker-kicker">Personal / Trabajador</div>
                 <h1 class="worker-title"><?= trab_view_safe($trabajador['nombre_completo'] ?? null) ?></h1>
                 <p class="worker-subtitle">
-                    Ficha laboral del hotel actual en modo lectura. No registra pagos, anticipos, prestamos ni movimientos de caja.
+                    Ficha laboral del hotel actual. El ledger registra conceptos, anticipos y prestamos sin crear pagos reales ni movimientos de caja.
                 </p>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 min-w-[340px]">
@@ -322,7 +322,7 @@ $puedeRegistrarPrestamo = ($trabajador['estado'] ?? '') === 'activo' && !empty($
             </div>
 
             <div class="worker-ledger-note mb-4">
-                Este bloque no crea pagos, no genera abonos, no descuenta Caja y no modifica saldos reales. El saldo mostrado es informativo y deriva de tablas de Personal.
+                Este bloque no crea pagos reales, no genera abonos y no descuenta Caja. El saldo mostrado es informativo y deriva de tablas de Personal.
             </div>
 
             <?php if ($puedeRegistrarConcepto): ?>
