@@ -1405,3 +1405,18 @@ Pruebas recomendadas:
 5. Intentar duplicar la misma fecha y confirmar bloqueo.
 6. Confirmar cero movimientos de Caja, cero pagos reales y cero abonos.
 7. Ejecutar `preflight_personal_ledger.php`.
+
+## Fase 5C - Anticipos/prestamos/saldos laborales
+
+Estado: QA manual diferida; fase reanclada a NP-C-C.
+
+Pruebas recomendadas:
+
+1. Crear o elegir trabajador activo del hotel actual.
+2. Registrar un anticipo.
+3. Confirmar que aparece en el ledger con saldo pendiente igual al monto.
+4. Registrar un prestamo.
+5. Confirmar que aparece en el ledger con saldo pendiente igual al monto.
+6. Confirmar que el saldo informativo cambia solo en Personal.
+7. Confirmar cero movimientos de Caja, cero pagos reales y cero abonos.
+8. Ejecutar `preflight_personal_ledger.php`.

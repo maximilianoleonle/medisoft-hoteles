@@ -1180,3 +1180,18 @@ Estado formal: `FASE_5B_ASISTENCIA_LABORAL_BASICA_YA_CUBIERTA_POR_NP_C_D`.
 - No hay nomina automatica, pagos reales, abonos, Caja ni `/api/sync`.
 - Siguiente accion segura: reanclar 5C contra anticipos/prestamos/saldos ya existentes
   en NP-C-C.
+
+## Reanclaje 5C Anticipos/prestamos/saldos laborales
+
+Estado formal: `FASE_5C_ANTICIPOS_PRESTAMOS_SALDOS_YA_CUBIERTA_POR_NP_C_C`.
+
+- Documento creado: `docs/fase_5C_reanclaje_anticipos_prestamos_saldos.md`.
+- Anticipos vigentes: `trabajador_anticipos`.
+- Prestamos vigentes: `trabajador_prestamos`.
+- Saldo vigente: saldo informativo calculado desde anticipos/prestamos pendientes.
+- Rutas existentes: `POST /trabajadores/{id}/anticipos` y
+  `POST /trabajadores/{id}/prestamos`.
+- No se crean tablas, rutas ni modelos duplicados.
+- No hay liquidaciones, descuentos automaticos, pagos reales, abonos, Caja ni
+  `/api/sync`.
+- Siguiente accion segura: 5D pagos laborales sin Caja automatica iniciando con contrato.

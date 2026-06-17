@@ -1260,3 +1260,14 @@ Resultado: reanclaje sin hallazgos bloqueantes.
 - Se bloquean duplicados por trabajador y fecha.
 - No hay Caja, pagos reales, abonos, nomina automatica ni `/api/sync`.
 - QA manual queda diferida.
+
+## Auditoria Fase 5C
+
+Resultado: reanclaje sin hallazgos bloqueantes.
+
+- La implementacion vigente exige sesion, hotel actual y CSRF.
+- La escritura queda centralizada en `Trabajador`.
+- `saldo_pendiente` no se acepta desde formularios.
+- No hay liquidaciones, descuentos automaticos, pagos reales, abonos, Caja ni
+  `/api/sync`.
+- QA manual queda diferida.

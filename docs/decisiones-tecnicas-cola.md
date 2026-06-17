@@ -1020,3 +1020,19 @@ Motivo:
 Limite:
 
 - 5B no autoriza nomina, pagos reales, abonos, Caja ni `/api/sync`.
+
+## Fase 5C - Reanclar anticipos/prestamos a NP-C-C
+
+Decision: tratar 5C como cubierta por NP-C-C.
+
+Motivo:
+
+- Ya existen `trabajador_anticipos` y `trabajador_prestamos`.
+- Ya existen rutas POST controladas con CSRF.
+- El saldo informativo ya se calcula desde saldos pendientes.
+- Duplicar saldos laborales crearia inconsistencias contables.
+
+Limite:
+
+- 5C no autoriza liquidaciones, descuentos automaticos, pagos reales, abonos, Caja ni
+  `/api/sync`.

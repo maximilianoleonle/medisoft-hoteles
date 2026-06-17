@@ -674,3 +674,13 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   `trabajadores.hotel_id`.
 - Captura vigente: `POST /trabajadores/{id}/asistencias`.
 - No hay fuente de verdad en Caja, pagos ni nomina para esta fase.
+
+## Fase 5C - Anticipos/prestamos/saldos laborales
+
+- Fuente de anticipos: `trabajador_anticipos`.
+- Fuente de prestamos: `trabajador_prestamos`.
+- Fuente de saldo informativo: calculo en `Trabajador` desde saldos pendientes.
+- Regla multihotel: `hotel_id` de anticipos/prestamos debe coincidir con
+  `trabajadores.hotel_id`.
+- Caja no es fuente de verdad en esta fase.
+- No hay fuente de pagos reales ni abonos laborales todavia.

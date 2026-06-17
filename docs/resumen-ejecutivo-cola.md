@@ -1263,3 +1263,13 @@ Resultado 5B:
 - Fuentes vigentes: `trabajador_asistencias`, `TrabajadorController`,
   `Trabajador::registrarAsistenciaLaboralParaHotel()`.
 - No hay nomina automatica, pagos, abonos, Caja ni `/api/sync`.
+
+Resultado 5C:
+
+- Estado tecnico: `FASE_5C_ANTICIPOS_PRESTAMOS_SALDOS_YA_CUBIERTA_POR_NP_C_C`.
+- Documento: `docs/fase_5C_reanclaje_anticipos_prestamos_saldos.md`.
+- Se confirma que anticipos, prestamos y saldo informativo ya estan implementados en
+  NP-C-C.
+- No se duplica Personal ni se agregan rutas/tablas nuevas.
+- No hay liquidaciones, descuentos automaticos, pagos reales, abonos, Caja ni
+  `/api/sync`.

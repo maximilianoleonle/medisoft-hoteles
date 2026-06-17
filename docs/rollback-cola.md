@@ -1129,3 +1129,14 @@ Rollback:
 2. No revertir NP-C-D sin decision explicita, porque es la fuente vigente de asistencia.
 3. No borrar filas de `trabajador_asistencias`.
 4. Para datos de prueba, documentar IDs y esperar fase de anulacion/correccion.
+
+## Rollback Fase 5C
+
+5C es un reanclaje documental hacia NP-C-C.
+
+Rollback:
+
+1. Revertir el commit documental de reanclaje si la clasificacion cambia.
+2. No revertir NP-C-C sin decision explicita.
+3. No borrar filas de `trabajador_anticipos` ni `trabajador_prestamos`.
+4. No liquidar ni modificar saldos manualmente fuera de una fase autorizada.
