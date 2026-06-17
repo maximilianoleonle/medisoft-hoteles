@@ -1140,3 +1140,14 @@ Rollback:
 2. No revertir NP-C-C sin decision explicita.
 3. No borrar filas de `trabajador_anticipos` ni `trabajador_prestamos`.
 4. No liquidar ni modificar saldos manualmente fuera de una fase autorizada.
+
+## Rollback Fase 5D-0
+
+5D-0 es solo documental.
+
+Rollback:
+
+1. Revertir el commit documental si cambia la decision.
+2. No tocar `trabajador_pagos`.
+3. No crear ni eliminar pagos laborales.
+4. No tocar Caja.

@@ -1273,3 +1273,13 @@ Resultado 5C:
 - No se duplica Personal ni se agregan rutas/tablas nuevas.
 - No hay liquidaciones, descuentos automaticos, pagos reales, abonos, Caja ni
   `/api/sync`.
+
+Resultado 5D-0:
+
+- Estado tecnico: `CONTRATO_5D_PAGOS_LABORALES_SIN_CAJA_COMPLETADO`.
+- Documento: `docs/fase_5D_0_contrato_pagos_laborales_sin_caja.md`.
+- Se diagnostica que `trabajador_pagos` representa conceptos laborales, no pagos reales.
+- No se implementan pagos ni DB.
+- Se recomienda que una fase futura de pagos laborales use entidad independiente sin
+  Caja automatica.
+- No hay Caja, nomina automatica, abonos, liquidaciones ni `/api/sync`.

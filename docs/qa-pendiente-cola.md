@@ -1420,3 +1420,14 @@ Pruebas recomendadas:
 6. Confirmar que el saldo informativo cambia solo en Personal.
 7. Confirmar cero movimientos de Caja, cero pagos reales y cero abonos.
 8. Ejecutar `preflight_personal_ledger.php`.
+
+## Fase 5D-0 - Contrato pagos laborales sin Caja
+
+Estado: sin QA manual operativa; solo contrato.
+
+Revision recomendada:
+
+1. Confirmar que no hay nuevos botones de pago laboral real.
+2. Confirmar que `trabajador_pagos` sigue mostrandose como conceptos laborales.
+3. Confirmar que no se crean movimientos de Caja ni categoria Nomina.
+4. Confirmar que `/api/sync` no participa.

@@ -1195,3 +1195,17 @@ Estado formal: `FASE_5C_ANTICIPOS_PRESTAMOS_SALDOS_YA_CUBIERTA_POR_NP_C_C`.
 - No hay liquidaciones, descuentos automaticos, pagos reales, abonos, Caja ni
   `/api/sync`.
 - Siguiente accion segura: 5D pagos laborales sin Caja automatica iniciando con contrato.
+
+## Contrato 5D-0 Pagos laborales sin Caja automatica
+
+Estado formal: `CONTRATO_5D_PAGOS_LABORALES_SIN_CAJA_COMPLETADO`.
+
+- Documento creado: `docs/fase_5D_0_contrato_pagos_laborales_sin_caja.md`.
+- Diagnostico: `trabajador_pagos` esta reservado para conceptos laborales, no para pagos
+  reales.
+- Se prohibe reutilizar `trabajador_pagos` como pago real sin contrato/migracion futura.
+- No se implementan rutas, modelos, migraciones ni pagos.
+- No hay Caja, nomina automatica, abonos, liquidaciones, descuentos automaticos ni
+  `/api/sync`.
+- Siguiente accion segura: 5D-A solo con autorizacion de entidad de pago laboral
+  independiente, o 7A CxC read-only.

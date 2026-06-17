@@ -684,3 +684,10 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   `trabajadores.hotel_id`.
 - Caja no es fuente de verdad en esta fase.
 - No hay fuente de pagos reales ni abonos laborales todavia.
+
+## Fase 5D-0 - Pagos laborales sin Caja
+
+- `trabajador_pagos` sigue siendo fuente de conceptos laborales, no de pagos reales.
+- No existe fuente de verdad de pagos laborales reales en 5D-0.
+- Caja no es fuente de verdad para Personal en esta fase.
+- Una fase futura debe definir tabla/entidad independiente antes de registrar pagos.

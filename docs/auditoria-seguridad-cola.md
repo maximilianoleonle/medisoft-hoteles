@@ -1271,3 +1271,12 @@ Resultado: reanclaje sin hallazgos bloqueantes.
 - No hay liquidaciones, descuentos automaticos, pagos reales, abonos, Caja ni
   `/api/sync`.
 - QA manual queda diferida.
+
+## Auditoria Fase 5D-0
+
+Resultado: contrato sin cambios operativos.
+
+- No se implementaron pagos laborales.
+- No se crearon rutas ni tablas.
+- Se documenta el riesgo de confundir `trabajador_pagos` con pagos reales.
+- Caja, abonos, liquidaciones, nomina automatica y `/api/sync` siguen fuera de alcance.

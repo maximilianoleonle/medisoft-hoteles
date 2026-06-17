@@ -1036,3 +1036,17 @@ Limite:
 
 - 5C no autoriza liquidaciones, descuentos automaticos, pagos reales, abonos, Caja ni
   `/api/sync`.
+
+## Fase 5D-0 - No reutilizar trabajador_pagos como pago real
+
+Decision: mantener `trabajador_pagos` como tabla de conceptos laborales.
+
+Motivo:
+
+- La semantica vigente de NP-C-B es conceptos, no pagos reales.
+- Reutilizarla para pagos reales mezclaria conceptos, saldos y liquidaciones.
+- Caja debe seguir fuera de Personal hasta un contrato explicito.
+
+Fase futura:
+
+- Definir entidad independiente para pagos laborales sin Caja automatica.
