@@ -1130,3 +1130,18 @@ Limite:
 - Los valores son estimados.
 - El detalle vive en `/cuentas-por-cobrar`.
 - No se habilitan cobros ni acciones desde el tablero.
+
+## Fase 3D-0 - Pagos proveedores requieren servicio transaccional
+
+Decision: no implementar pagos proveedores directamente en controlador o vista.
+
+Motivo:
+
+- Deben actualizarse CxP, movimiento CxP y movimiento Caja de forma atomica.
+- Caja y cortes son historicos sensibles.
+- El proveedor moderno debe validarse por `hotel_id`, no por texto legacy.
+
+Limite:
+
+- 3D-0 no autoriza codigo, migraciones, POST ni movimientos de Caja.
+- La primera subfase segura debe ser simulador read-only o diseno de servicio con backup.

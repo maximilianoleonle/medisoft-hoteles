@@ -1297,3 +1297,15 @@ Estado formal: `BLOQUE_8A_DASHBOARD_KPIS_CERRADO_QA_DIFERIDA`.
 - Confirma dashboard unico, KPIs read-only, sin POST, sin Caja y sin `/api/sync`.
 - QA manual queda diferida.
 - Siguiente accion segura: 3D-0 contrato/diagnostico de pagos proveedores con Caja.
+
+## 3D-0 Contrato pagos proveedores con Caja
+
+Estado formal: `CONTRATO_3D_PAGOS_PROVEEDORES_CAJA_COMPLETADO`.
+
+- Documento creado: `docs/fase_3D_0_contrato_pagos_proveedores_caja.md`.
+- Diagnostico read-only de CxP/Caja.
+- No se implementan rutas, POST, pagos, movimientos, migraciones ni cambios de saldo.
+- Se exige servicio transaccional futuro, corte abierto del mismo hotel, CSRF, auditoria,
+  backup y QA manual.
+- Siguiente accion segura: detener avance operativo hasta que el usuario pueda validar
+  QA/manual y autorizar 3D-A simulador read-only.

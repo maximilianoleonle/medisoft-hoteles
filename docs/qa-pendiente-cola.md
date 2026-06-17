@@ -1518,3 +1518,15 @@ Checklist final:
 2. Confirmar que no existe dashboard paralelo.
 3. Confirmar que los KPIs financieros se muestran como estimados.
 4. Confirmar que `/api/sync` no participa.
+
+## Fase 3D-0 - Contrato pagos proveedores con Caja
+
+Estado: sin QA manual operativa; solo contrato.
+
+Revision recomendada:
+
+1. Leer `docs/fase_3D_0_contrato_pagos_proveedores_caja.md`.
+2. Confirmar que no aparecen botones nuevos de pago proveedor.
+3. Confirmar que no hay rutas nuevas POST para pagar CxP.
+4. Confirmar que no se crearon movimientos de Caja.
+5. Confirmar que no cambian saldos de CxP.

@@ -752,3 +752,16 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - Abonos considerados: `reservacion_abonos` por `hotel_id + reservacion_id`.
 - El KPI no reemplaza `/cuentas-por-cobrar`.
 - Caja no es fuente de verdad para estos KPIs.
+
+## Fase 3D-0 - Pagos proveedores con Caja
+
+- Fuente de deuda proveedor: `cuentas_por_pagar`.
+- Fuente de trazabilidad CxP: `cuentas_por_pagar_movimientos`.
+- Fuente de proveedor moderno: `proveedores`.
+- Fuente de compras: `compras`.
+- Fuente de egreso de Caja futura: `movimientos_caja`, solo si una fase posterior
+  implementa pago transaccional.
+- Fuente de corte abierto: `cortes_caja`.
+- `movimientos_caja.proveedor` es texto historico/legacy, no reemplaza
+  `proveedores.id`.
+- 3D-0 no modifica ninguna fuente.

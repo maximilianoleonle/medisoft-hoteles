@@ -1227,3 +1227,13 @@ Rollback:
 1. Revertir el commit documental de cierre.
 2. Para retirar funcionalidad, revertir 8A-A.
 3. No tocar datos, Caja ni `/api/sync`.
+
+## Rollback Fase 3D-0
+
+3D-0 es solo contrato documental.
+
+Rollback:
+
+1. Revertir el commit documental de 3D-0.
+2. No tocar CxP, Caja, cortes ni movimientos.
+3. No crear rutas ni migraciones de pago.

@@ -1352,3 +1352,12 @@ Resultado 8A-F:
 - Se cierra tecnicamente 8A sin QA manual.
 - El siguiente bloque del roadmap es 3D, pero solo es seguro iniciar contrato/diagnostico
   porque implica pagos proveedores con Caja.
+
+Resultado 3D-0:
+
+- Estado tecnico: `CONTRATO_3D_PAGOS_PROVEEDORES_CAJA_COMPLETADO`.
+- Documento: `docs/fase_3D_0_contrato_pagos_proveedores_caja.md`.
+- Se diagnostica CxP/Caja en modo lectura.
+- No se implementan pagos, rutas, movimientos, migraciones ni cambios de saldo.
+- 3D queda bloqueado para implementacion real hasta backup, simulador read-only,
+  servicio transaccional y QA manual especifica.
