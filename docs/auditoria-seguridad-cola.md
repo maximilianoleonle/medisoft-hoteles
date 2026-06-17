@@ -1240,3 +1240,13 @@ Riesgo residual:
 
 - QA manual debe confirmar carga real desde una tarea y visibilidad posterior en el
   detalle.
+
+## Auditoria Fase 6C-F
+
+Resultado: cierre tecnico sin hallazgos bloqueantes.
+
+- 6C-A y 6C-B mantienen aislamiento por `hotel_id`.
+- La escritura documental autorizada es solo la del Centro Documental existente.
+- No se agregan acciones de borrado, reemplazo, links publicos ni storage publico.
+- No hay cambios en Caja, pagos, nomina, offline ni `/api/sync`.
+- QA manual queda diferida.

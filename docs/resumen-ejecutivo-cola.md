@@ -1244,3 +1244,12 @@ Resultado 6C-B:
   `hotel_id`, validacion de archivo, storage privado y auditoria existentes.
 - No se agregan rutas nuevas, no se expone `storage_path`, no se cambia
   `habitaciones.estado`, no hay Caja, pagos, nomina, offline ni `/api/sync`.
+
+Resultado 6C-F:
+
+- Estado tecnico: `BLOQUE_6C_DOCUMENTOS_TAREAS_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_6C_F_cierre_documentos_tareas.md`.
+- Se cierra tecnicamente la integracion de documentos/evidencias en tareas.
+- Health y preflight de tareas pasan con `ERROR: 0`.
+- QA manual queda diferida por instruccion del usuario.
+- Siguiente paso recomendado: 5B Asistencia laboral basica con contrato previo.

@@ -1154,3 +1154,15 @@ Estado: implementado tecnicamente, QA manual diferida.
   ni `/api/sync`.
 - Siguiente accion segura: cierre tecnico/revision 6C o avanzar a un bloque nuevo
   independiente con QA manual diferida.
+
+## 6C-F cierre tecnico documentos en tareas
+
+Estado: `BLOQUE_6C_DOCUMENTOS_TAREAS_CERRADO_QA_DIFERIDA`.
+
+- Documento creado: `docs/fase_6C_F_cierre_documentos_tareas.md`.
+- Cubre 6C-0, 6C-A y 6C-B.
+- Verifica que la lectura y vinculacion documental de tareas usen Centro Documental,
+  `hotel_id`, CSRF del flujo existente y sin exponer `storage_path`.
+- No hay rutas paralelas, cambios de disponibilidad, Caja, nomina, offline ni
+  `/api/sync`.
+- Siguiente accion segura: 5B Asistencia laboral basica iniciando por contrato.

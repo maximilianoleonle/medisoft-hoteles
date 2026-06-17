@@ -1108,3 +1108,13 @@ Rollback recomendado:
 4. Si existen documentos reales vinculados a `entidad_tipo = tarea`, conservarlos como
    historico y evaluar reconciliacion posterior.
 5. Ejecutar `php -l`, `preflight_tareas_operativas.php` y health checker.
+
+## Rollback Fase 6C-F
+
+El cierre 6C-F es documental.
+
+Rollback:
+
+1. Revertir el commit de cierre si solo se requiere corregir documentacion.
+2. Para desactivar funcionalmente la integracion, revertir 6C-B y/o 6C-A.
+3. No borrar documentos ni vinculos reales existentes.

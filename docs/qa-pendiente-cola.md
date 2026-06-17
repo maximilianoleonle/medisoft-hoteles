@@ -1379,3 +1379,15 @@ Pruebas recomendadas:
 6. Confirmar que el documento aparece en la tarea.
 7. Confirmar que no se muestra `storage_path`.
 8. Confirmar que no se modifican Caja, pagos, nomina ni habitaciones.
+
+## Fase 6C-F - Cierre documentos en tareas
+
+Estado: QA manual diferida.
+
+Pruebas acumuladas:
+
+1. Validar detalle de tarea con y sin documentos.
+2. Validar carga contextual desde tarea.
+3. Validar descarga autenticada del documento ya vinculado.
+4. Confirmar que tarea/habitacion no cambian de estado por adjuntar evidencia.
+5. Confirmar que `/api/sync` sigue sin usarse en este flujo.
