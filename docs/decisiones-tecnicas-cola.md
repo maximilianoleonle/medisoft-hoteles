@@ -1050,3 +1050,17 @@ Motivo:
 Fase futura:
 
 - Definir entidad independiente para pagos laborales sin Caja automatica.
+
+## Fase 7A-0 - CxC inicia derivada y read-only
+
+Decision: iniciar CxC como reporte derivado read-only, no como tabla operativa.
+
+Motivo:
+
+- No existe `cuentas_por_cobrar`.
+- Reservaciones/facturacion/Caja ya tienen reglas historicas sensibles.
+- Crear CxC operativa antes de entender saldos puede duplicar deuda.
+
+Limite:
+
+- 7A no autoriza cobros, abonos, Caja, facturacion nueva ni `/api/sync`.

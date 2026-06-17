@@ -1151,3 +1151,13 @@ Rollback:
 2. No tocar `trabajador_pagos`.
 3. No crear ni eliminar pagos laborales.
 4. No tocar Caja.
+
+## Rollback Fase 7A-0
+
+7A-0 es solo documental.
+
+Rollback:
+
+1. Revertir el commit documental si cambia la decision.
+2. No tocar reservaciones, pagos, abonos, facturacion ni Caja.
+3. No crear tabla CxC sin contrato nuevo.

@@ -1280,3 +1280,13 @@ Resultado: contrato sin cambios operativos.
 - No se crearon rutas ni tablas.
 - Se documenta el riesgo de confundir `trabajador_pagos` con pagos reales.
 - Caja, abonos, liquidaciones, nomina automatica y `/api/sync` siguen fuera de alcance.
+
+## Auditoria Fase 7A-0
+
+Resultado: contrato sin cambios operativos.
+
+- No se crearon tablas CxC.
+- No se agregaron rutas ni controladores.
+- No se tocaron reservaciones, pagos, abonos, facturacion, Caja ni `/api/sync`.
+- Riesgo principal documentado: duplicar saldos/cobros si CxC se vuelve operativa sin
+  reconciliacion previa.

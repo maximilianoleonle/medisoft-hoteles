@@ -1209,3 +1209,16 @@ Estado formal: `CONTRATO_5D_PAGOS_LABORALES_SIN_CAJA_COMPLETADO`.
   `/api/sync`.
 - Siguiente accion segura: 5D-A solo con autorizacion de entidad de pago laboral
   independiente, o 7A CxC read-only.
+
+## Contrato 7A-0 Cuentas por cobrar read-only
+
+Estado formal: `CONTRATO_7A_CXC_READONLY_COMPLETADO`.
+
+- Documento creado: `docs/fase_7A_0_contrato_cuentas_por_cobrar_readonly.md`.
+- No existe tabla `cuentas_por_cobrar`.
+- Fuentes candidatas: `reservaciones`, `reservacion_pagos`, `reservacion_abonos` y
+  `solicitudes_factura`.
+- Conteos locales: reservaciones=17, pagos=19, abonos=3, solicitudes_factura=175.
+- No se crean rutas, modelos, migraciones ni escrituras.
+- No hay cobros, abonos, pagos, Caja, facturacion nueva ni `/api/sync`.
+- Siguiente accion segura: 7A-A reporte GET/read-only derivado.

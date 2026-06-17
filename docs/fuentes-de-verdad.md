@@ -691,3 +691,14 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - No existe fuente de verdad de pagos laborales reales en 5D-0.
 - Caja no es fuente de verdad para Personal en esta fase.
 - Una fase futura debe definir tabla/entidad independiente antes de registrar pagos.
+
+## Fase 7A-0 - Cuentas por cobrar read-only
+
+- No existe fuente operativa `cuentas_por_cobrar`.
+- Fuentes candidatas read-only:
+  - `reservaciones`
+  - `reservacion_pagos`
+  - `reservacion_abonos`
+  - `solicitudes_factura`
+- Caja no es fuente de verdad para 7A.
+- Una CxC operativa futura debe definirse en contrato separado.

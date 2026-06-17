@@ -1431,3 +1431,14 @@ Revision recomendada:
 2. Confirmar que `trabajador_pagos` sigue mostrandose como conceptos laborales.
 3. Confirmar que no se crean movimientos de Caja ni categoria Nomina.
 4. Confirmar que `/api/sync` no participa.
+
+## Fase 7A-0 - Contrato CxC read-only
+
+Estado: sin QA manual operativa; solo contrato.
+
+Revision recomendada:
+
+1. Confirmar que no aparece nueva opcion operativa de cobro.
+2. Confirmar que no hay rutas POST de CxC.
+3. Confirmar que no se crean movimientos de Caja.
+4. Confirmar que facturacion existente no cambia.

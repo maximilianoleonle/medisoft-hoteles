@@ -1283,3 +1283,12 @@ Resultado 5D-0:
 - Se recomienda que una fase futura de pagos laborales use entidad independiente sin
   Caja automatica.
 - No hay Caja, nomina automatica, abonos, liquidaciones ni `/api/sync`.
+
+Resultado 7A-0:
+
+- Estado tecnico: `CONTRATO_7A_CXC_READONLY_COMPLETADO`.
+- Documento: `docs/fase_7A_0_contrato_cuentas_por_cobrar_readonly.md`.
+- Se confirma que no existe tabla `cuentas_por_cobrar`.
+- Se identifican fuentes derivadas candidatas: reservaciones, pagos/abonos de
+  reservacion y solicitudes de factura.
+- No se implementa CxC operativa, Caja, cobros, abonos, pagos ni `/api/sync`.
