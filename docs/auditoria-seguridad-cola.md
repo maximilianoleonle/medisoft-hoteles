@@ -1342,3 +1342,15 @@ Resultado: contrato sin cambios operativos.
 - No se crearon rutas ni modelos nuevos.
 - No hay POST, Caja, pagos, abonos, nomina ni `/api/sync`.
 - El contrato limita KPIs futuros a lectura por `hotel_id`.
+
+## Auditoria Fase 8A-A
+
+Resultado: implementacion read-only sin hallazgos bloqueantes.
+
+- No se agregan rutas.
+- No hay formularios ni POST.
+- `OperacionDiaria` calcula CxC estimada desde reservaciones, pagos y abonos por
+  `hotel_id`.
+- La vista etiqueta los KPIs como estimados.
+- No hay Caja, pagos nuevos, abonos nuevos ni `/api/sync`.
+- Preflight OP-A/8A-A valida ausencia de escrituras y storage interno.

@@ -14,6 +14,13 @@ if (!function_exists('op_daily_num')) {
     }
 }
 
+if (!function_exists('op_daily_money')) {
+    function op_daily_money($value): string
+    {
+        return '$' . number_format((float)($value ?? 0), 2);
+    }
+}
+
 if (!function_exists('op_daily_date')) {
     function op_daily_date($value, bool $withTime = false): string
     {
@@ -33,6 +40,7 @@ $tareas = is_array($reporte['tareas'] ?? null) ? $reporte['tareas'] : [];
 $mantenimiento = is_array($reporte['mantenimiento'] ?? null) ? $reporte['mantenimiento'] : [];
 $trabajadores = is_array($reporte['trabajadores'] ?? null) ? $reporte['trabajadores'] : [];
 $documentos = is_array($reporte['documentos'] ?? null) ? $reporte['documentos'] : [];
+$cuentasPorCobrar = is_array($reporte['cuentas_por_cobrar'] ?? null) ? $reporte['cuentas_por_cobrar'] : [];
 $tablasDisponibles = is_array($tablasDisponibles ?? null) ? $tablasDisponibles : [];
 
 $estadoReservacionLabels = [
@@ -51,7 +59,7 @@ $estadoReservacionLabels = [
 .op-daily-subtitle{color:#64748b;max-width:760px;margin:0}
 .op-daily-actions{display:flex;gap:10px;flex-wrap:wrap}
 .op-daily-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:7px;background:#fff;color:#172033;border:1px solid #d1d5db;font-weight:800;padding:10px 14px;text-decoration:none;min-height:40px}
-.op-daily-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.op-daily-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
 .op-daily-metric{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:14px;box-shadow:0 6px 18px rgba(15,23,42,.05)}
 .op-daily-metric span{display:block;font-size:12px;color:#64748b;font-weight:800;text-transform:uppercase}
 .op-daily-metric strong{display:block;font-size:25px;line-height:1.1;margin-top:8px;color:#111827}
@@ -73,7 +81,7 @@ $estadoReservacionLabels = [
 .op-daily-empty{padding:34px 20px;text-align:center;color:#64748b}
 .op-daily-empty strong{display:block;color:#172033;font-size:18px;margin-bottom:8px}
 .op-daily-alert{padding:14px 18px;background:#f8fafc;color:#475569;border-top:1px solid #e5e7eb;font-size:13px;font-weight:700}
-@media (max-width:1100px){.op-daily-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.op-daily-stack{grid-template-columns:1fr}}
+@media (max-width:1100px){.op-daily-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.op-daily-stack{grid-template-columns:1fr}}
 @media (max-width:720px){.op-daily-hero{display:block}.op-daily-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.op-daily-actions{margin-top:14px}.op-daily-title{font-size:24px}}
 </style>
 
@@ -97,7 +105,26 @@ $estadoReservacionLabels = [
         <div class="op-daily-metric"><span>Llegadas hoy</span><strong><?= op_daily_num($reservaciones['llegadas_hoy'] ?? 0) ?></strong></div>
         <div class="op-daily-metric"><span>Tareas activas</span><strong><?= op_daily_num($tareas['activas'] ?? 0) ?></strong></div>
         <div class="op-daily-metric"><span>Mantenimiento</span><strong><?= op_daily_num(($mantenimiento['en_proceso'] ?? 0) + ($mantenimiento['programado'] ?? 0)) ?></strong></div>
+        <div class="op-daily-metric"><span>CxC estimada</span><strong><?= op_daily_money($cuentasPorCobrar['saldo_estimado'] ?? 0) ?></strong></div>
+        <div class="op-daily-metric"><span>CxC pendientes</span><strong><?= op_daily_num($cuentasPorCobrar['pendientes'] ?? 0) ?></strong></div>
     </div>
+
+    <section class="op-daily-panel" style="margin-bottom:16px">
+        <div class="op-daily-panel-head">
+            <h2 class="op-daily-panel-title">KPIs financieros estimados</h2>
+            <p class="op-daily-panel-subtitle">Lectura derivada de reservaciones, pagos y abonos. No crea cobros, no registra pagos y no toca Caja.</p>
+        </div>
+        <div class="op-daily-list">
+            <div class="op-daily-row"><span>CxC estimada pendiente</span><strong><?= op_daily_money($cuentasPorCobrar['saldo_estimado'] ?? 0) ?></strong></div>
+            <div class="op-daily-row"><span>Reservaciones pendientes</span><strong><?= op_daily_num($cuentasPorCobrar['pendientes'] ?? 0) ?></strong></div>
+            <div class="op-daily-row"><span>Reservaciones liquidadas</span><strong><?= op_daily_num($cuentasPorCobrar['liquidadas'] ?? 0) ?></strong></div>
+            <div class="op-daily-row"><span>Reservaciones con excedente</span><strong><?= op_daily_num($cuentasPorCobrar['excedentes'] ?? 0) ?></strong></div>
+        </div>
+        <div class="op-daily-alert">
+            CxC es estimada y read-only. Para revisar el detalle usa
+            <a class="op-daily-link" href="<?= url('cuentas-por-cobrar') ?>">Cuentas por cobrar</a>.
+        </div>
+    </section>
 
     <div class="op-daily-stack">
         <section class="op-daily-panel">
@@ -180,8 +207,8 @@ $estadoReservacionLabels = [
                             <span>
                                 <a class="op-daily-link" href="<?= url('tareas/' . (int)($tarea['id'] ?? 0)) ?>"><?= op_daily_safe($tarea['titulo'] ?? null) ?></a>
                                 <div class="op-daily-muted">
-                                    <?= op_daily_safe($tarea['categoria'] ?? null) ?> · <?= op_daily_safe($tarea['prioridad'] ?? null) ?>
-                                    <?php if (!empty($tarea['habitacion_numero'])): ?> · Hab. <?= op_daily_safe($tarea['habitacion_numero']) ?><?php endif; ?>
+                                    <?= op_daily_safe($tarea['categoria'] ?? null) ?> - <?= op_daily_safe($tarea['prioridad'] ?? null) ?>
+                                    <?php if (!empty($tarea['habitacion_numero'])): ?> - Hab. <?= op_daily_safe($tarea['habitacion_numero']) ?><?php endif; ?>
                                 </div>
                             </span>
                             <strong><?= op_daily_safe($tarea['estado'] ?? null) ?></strong>
@@ -203,8 +230,8 @@ $estadoReservacionLabels = [
                     <?php foreach ($mantenimiento['recientes'] as $item): ?>
                         <div class="op-daily-row">
                             <span>
-                                Hab. <?= op_daily_safe($item['habitacion_numero'] ?? null) ?> · <?= op_daily_safe($item['motivo'] ?? null) ?>
-                                <div class="op-daily-muted"><?= op_daily_safe($item['tipo_mantenimiento'] ?? null) ?> · <?= op_daily_safe($item['prioridad'] ?? null) ?></div>
+                                Hab. <?= op_daily_safe($item['habitacion_numero'] ?? null) ?> - <?= op_daily_safe($item['motivo'] ?? null) ?>
+                                <div class="op-daily-muted"><?= op_daily_safe($item['tipo_mantenimiento'] ?? null) ?> - <?= op_daily_safe($item['prioridad'] ?? null) ?></div>
                             </span>
                             <strong><?= op_daily_safe($item['estado'] ?? null) ?></strong>
                         </div>
@@ -227,7 +254,7 @@ $estadoReservacionLabels = [
                     <div class="op-daily-row">
                         <span>
                             <a class="op-daily-link" href="<?= url('documentos/' . (int)($documento['id'] ?? 0)) ?>"><?= op_daily_safe($documento['titulo'] ?? $documento['nombre_original'] ?? null) ?></a>
-                            <div class="op-daily-muted"><?= op_daily_safe($documento['entidad_tipo'] ?? 'sin entidad') ?> #<?= op_daily_safe($documento['entidad_id'] ?? '') ?> · <?= op_daily_safe($documento['mime_type'] ?? null) ?></div>
+                            <div class="op-daily-muted"><?= op_daily_safe($documento['entidad_tipo'] ?? 'sin entidad') ?> #<?= op_daily_safe($documento['entidad_id'] ?? '') ?> - <?= op_daily_safe($documento['mime_type'] ?? null) ?></div>
                         </span>
                         <strong><?= op_daily_date($documento['created_at'] ?? null, true) ?></strong>
                     </div>
@@ -237,4 +264,3 @@ $estadoReservacionLabels = [
         <div class="op-daily-alert">Este tablero es solo lectura: no crea tareas, no cambia habitaciones, no toca Caja, no genera pagos y no usa `/api/sync`.</div>
     </section>
 </div>
-

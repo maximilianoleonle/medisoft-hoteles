@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase OP-A para tablero operativo diario read-only.
+ * Preflight Fase OP-A/8A-A para tablero operativo diario read-only.
  *
  * Solo lectura. No crea rutas, migraciones ni datos.
  * Valida que /operacion/diaria sea GET/read-only, scoped por hotel y sin Caja.
@@ -138,7 +138,7 @@ $modelPath = $appRoot . '/app/models/OperacionDiaria.php';
 $viewPath = $appRoot . '/app/views/operacion/diaria.php';
 $sidebarPath = $appRoot . '/app/views/layout/sidebar.php';
 
-echo "Preflight Fase OP-A - Tablero operativo diario\n";
+echo "Preflight Fase OP-A/8A-A - Tablero operativo diario\n";
 echo "=====================================================\n";
 
 if (is_file($configPath)) {
@@ -184,6 +184,8 @@ if ($pdo instanceof PDO) {
         'trabajadores',
         'documentos',
         'documento_entidades',
+        'reservacion_pagos',
+        'reservacion_abonos',
     ];
 
     foreach ($sourceTables as $table) {
@@ -256,17 +258,22 @@ if (
     && strpos($modelCode, 'class OperacionDiaria') !== false
     && strpos($modelCode, 'function reporteReadOnlyPorHotel') !== false
     && strpos($modelCode, 'hotel_id = ?') !== false
+    && strpos($modelCode, 'cuentas_por_cobrar') !== false
+    && strpos($modelCode, 'reservacion_pagos') !== false
+    && strpos($modelCode, 'reservacion_abonos') !== false
     && strpos($modelCode, 'storage_path') === false
     && !preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\b/i', $modelCode)
 ) {
-    opPfOk('OperacionDiaria OP-A es read-only, filtra por hotel_id y no expone storage_path.');
+    opPfOk('OperacionDiaria OP-A/8A-A es read-only, filtra por hotel_id y expone KPIs CxC estimados sin storage_path.');
 } else {
-    opPfError('OperacionDiaria OP-A no cumple contrato read-only.', 'Retirar escrituras, storage_path o consultas sin hotel_id.');
+    opPfError('OperacionDiaria OP-A/8A-A no cumple contrato read-only.', 'Retirar escrituras, storage_path o consultas sin hotel_id.');
 }
 
 if (
     $viewCode !== ''
     && strpos($viewCode, 'Tablero operativo diario') !== false
+    && strpos($viewCode, 'KPIs financieros estimados') !== false
+    && strpos($viewCode, "url('cuentas-por-cobrar')") !== false
     && strpos($viewCode, 'method="POST"') === false
     && strpos($viewCode, '<form') === false
     && strpos($viewCode, 'csrf_field()') === false
@@ -275,9 +282,9 @@ if (
     && strpos($viewCode, "url('reservaciones/ver/'") !== false
     && strpos($viewCode, "url('tareas/'") !== false
 ) {
-    opPfOk('Vista OP-A es read-only, sin formularios ni rutas internas.');
+    opPfOk('Vista OP-A/8A-A es read-only, sin formularios ni rutas internas.');
 } else {
-    opPfError('Vista OP-A no muestra contrato visual seguro.', 'Asegurar vista sin POST/form/storage/Caja y con enlaces GET seguros.');
+    opPfError('Vista OP-A/8A-A no muestra contrato visual seguro.', 'Asegurar vista sin POST/form/storage/Caja y con enlaces GET seguros.');
 }
 
 if ($sidebarCode !== '' && strpos($sidebarCode, "url('operacion/diaria')") !== false && strpos($sidebarCode, '$mostrarOperacionDiaria') !== false) {

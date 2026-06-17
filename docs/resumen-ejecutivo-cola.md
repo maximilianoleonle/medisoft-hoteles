@@ -1335,3 +1335,12 @@ Resultado 8A-0:
 - No se implementa codigo, rutas ni DB.
 - Se proponen KPIs read-only de CxC estimada, tareas, mantenimiento, documentos y
   personal, siempre sin Caja ni `/api/sync`.
+
+Resultado 8A-A:
+
+- Estado tecnico: `KPIS_8A_A_DASHBOARD_READONLY_COMPLETADOS_QA_DIFERIDA`.
+- Documento: `docs/fase_8A_A_kpis_readonly_tablero_operativo.md`.
+- Se extiende `/operacion/diaria` con KPIs de CxC estimada.
+- No se crean rutas nuevas ni dashboard paralelo.
+- No hay POST, formularios, cobros, pagos, abonos, Caja ni `/api/sync`.
+- `preflight_operacion_diaria.php` queda actualizado para validar OP-A/8A-A.

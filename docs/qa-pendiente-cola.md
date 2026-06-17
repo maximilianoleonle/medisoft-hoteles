@@ -1494,3 +1494,16 @@ Revision recomendada:
 2. Confirmar que no se creo dashboard paralelo.
 3. Confirmar que `/operacion/diaria` sigue siendo la superficie prevista.
 4. Confirmar que no hay nuevos POST, Caja, pagos, abonos ni `/api/sync`.
+
+## Fase 8A-A - KPIs read-only en tablero operativo
+
+Estado: QA manual diferida por instruccion del usuario.
+
+Pruebas recomendadas:
+
+1. Abrir `/operacion/diaria`.
+2. Confirmar tarjetas de CxC estimada y CxC pendientes.
+3. Confirmar panel "KPIs financieros estimados".
+4. Confirmar que el enlace a `/cuentas-por-cobrar` funciona.
+5. Confirmar que no hay botones de cobro, pago, abono ni Caja.
+6. Confirmar que no hay formularios POST.

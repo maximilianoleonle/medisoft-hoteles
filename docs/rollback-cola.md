@@ -1206,3 +1206,14 @@ Rollback:
 1. Revertir el commit documental de 8A-0.
 2. No tocar `/operacion/diaria`.
 3. No tocar Caja, pagos, abonos, nomina ni `/api/sync`.
+
+## Rollback Fase 8A-A
+
+8A-A extiende `/operacion/diaria` con KPIs read-only.
+
+Rollback:
+
+1. Revertir el commit `feat(phase-8a): add read-only operational kpis`.
+2. No tocar datos.
+3. No tocar `reservaciones`, pagos, abonos ni Caja.
+4. No tocar `/api/sync`.

@@ -15,6 +15,7 @@ class OperacionDiaria extends Model
             'mantenimiento' => $this->resumenMantenimiento($hotelId),
             'trabajadores' => $this->resumenTrabajadores($hotelId),
             'documentos' => $this->documentosRecientes($hotelId),
+            'cuentas_por_cobrar' => $this->resumenCuentasPorCobrar($hotelId),
         ];
     }
 
@@ -32,6 +33,8 @@ class OperacionDiaria extends Model
             'trabajadores',
             'documentos',
             'documento_entidades',
+            'reservacion_pagos',
+            'reservacion_abonos',
         ];
 
         $disponibles = [];
@@ -324,6 +327,72 @@ class OperacionDiaria extends Model
         return $stmt ? ($stmt->fetchAll() ?: []) : [];
     }
 
+    private function resumenCuentasPorCobrar(int $hotelId): array
+    {
+        $base = [
+            'total_reservaciones' => 0,
+            'pendientes' => 0,
+            'liquidadas' => 0,
+            'excedentes' => 0,
+            'monto_cubierto' => '0.00',
+            'saldo_estimado' => '0.00',
+        ];
+
+        if (
+            $hotelId <= 0
+            || !$this->tablaExiste('reservaciones')
+            || !$this->tablaExiste('reservacion_pagos')
+            || !$this->tablaExiste('reservacion_abonos')
+        ) {
+            return $base;
+        }
+
+        $row = $this->fetchOne(
+            "SELECT COUNT(*) AS total_reservaciones,
+                    SUM(CASE WHEN saldo > 0.009 THEN 1 ELSE 0 END) AS pendientes,
+                    SUM(CASE WHEN saldo BETWEEN -0.009 AND 0.009 THEN 1 ELSE 0 END) AS liquidadas,
+                    SUM(CASE WHEN saldo < -0.009 THEN 1 ELSE 0 END) AS excedentes,
+                    SUM(monto_cubierto) AS monto_cubierto,
+                    SUM(CASE WHEN saldo > 0 THEN saldo ELSE 0 END) AS saldo_estimado
+             FROM (
+                SELECT r.id,
+                       COALESCE(p.total, 0) + COALESCE(a.total, 0) AS monto_cubierto,
+                       r.precio_total - COALESCE(p.total, 0) - COALESCE(a.total, 0) AS saldo
+                FROM reservaciones r
+                LEFT JOIN (
+                    SELECT hotel_id,
+                           reservacion_id,
+                           SUM(monto) AS total
+                    FROM reservacion_pagos
+                    WHERE hotel_id = ?
+                    GROUP BY hotel_id, reservacion_id
+                ) p
+                   ON p.hotel_id = r.hotel_id
+                  AND p.reservacion_id = r.id
+                LEFT JOIN (
+                    SELECT hotel_id,
+                           reservacion_id,
+                           SUM(monto) AS total
+                    FROM reservacion_abonos
+                    WHERE hotel_id = ?
+                    GROUP BY hotel_id, reservacion_id
+                ) a
+                   ON a.hotel_id = r.hotel_id
+                  AND a.reservacion_id = r.id
+                WHERE r.hotel_id = ?
+             ) cxc",
+            [$hotelId, $hotelId, $hotelId]
+        );
+
+        foreach (['total_reservaciones', 'pendientes', 'liquidadas', 'excedentes'] as $key) {
+            $base[$key] = (int)($row[$key] ?? 0);
+        }
+        $base['monto_cubierto'] = $this->decimal($row['monto_cubierto'] ?? 0);
+        $base['saldo_estimado'] = $this->decimal($row['saldo_estimado'] ?? 0);
+
+        return $base;
+    }
+
     private function tablaExiste(string $tabla): bool
     {
         $stmt = $this->db->query(
@@ -343,5 +412,9 @@ class OperacionDiaria extends Model
         $stmt = $this->db->query($sql, $params);
         return $stmt ? ($stmt->fetch() ?: []) : [];
     }
-}
 
+    private function decimal($value): string
+    {
+        return number_format((float)($value ?? 0), 2, '.', '');
+    }
+}

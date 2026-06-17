@@ -743,3 +743,12 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   - `trabajadores`
 - KPIs CxC deben seguir siendo estimados y derivados mientras no exista CxC operativa.
 - Caja no es fuente de verdad de 8A-0.
+
+## Fase 8A-A - KPIs CxC en tablero operativo
+
+- Superficie: `/operacion/diaria`.
+- Fuente principal CxC estimada: `reservaciones`.
+- Pagos considerados: `reservacion_pagos` por `hotel_id + reservacion_id`.
+- Abonos considerados: `reservacion_abonos` por `hotel_id + reservacion_id`.
+- El KPI no reemplaza `/cuentas-por-cobrar`.
+- Caja no es fuente de verdad para estos KPIs.

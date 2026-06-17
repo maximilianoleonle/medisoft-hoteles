@@ -1275,3 +1275,15 @@ Estado formal: `CONTRATO_8A_DASHBOARD_KPIS_READONLY_COMPLETADO`.
 - KPIs futuros deben ser server-side/read-only, filtrados por `hotel_id` y sin Caja.
 - Siguiente accion segura: 8A-A extension pequena de KPIs read-only en
   `OperacionDiaria`.
+
+## 8A-A KPIs read-only en tablero operativo
+
+Estado formal: `KPIS_8A_A_DASHBOARD_READONLY_COMPLETADOS_QA_DIFERIDA`.
+
+- Documento creado: `docs/fase_8A_A_kpis_readonly_tablero_operativo.md`.
+- Se extiende `OperacionDiaria` con CxC estimada derivada.
+- Se actualiza `/operacion/diaria` con tarjetas y panel de KPIs financieros estimados.
+- Se actualiza `preflight_operacion_diaria.php` para validar OP-A/8A-A.
+- No hay rutas nuevas, POST, cobros, pagos, abonos, Caja ni `/api/sync`.
+- QA manual queda diferida.
+- Siguiente accion segura: cierre tecnico 8A-F o contrato 3D antes de tocar Caja.

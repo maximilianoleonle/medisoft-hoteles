@@ -1113,3 +1113,20 @@ Motivo:
 Limite:
 
 - 8A-0 no autoriza codigo, POST, Caja, pagos, abonos, nomina ni `/api/sync`.
+
+## Fase 8A-A - KPIs CxC estimados en OperacionDiaria
+
+Decision: calcular KPIs CxC estimados dentro de `OperacionDiaria`, reutilizando las
+fuentes de 7A-A.
+
+Motivo:
+
+- Evita una ruta nueva.
+- Mantiene la lectura operacional en una sola pantalla.
+- No introduce entidad CxC operativa ni Caja.
+
+Limite:
+
+- Los valores son estimados.
+- El detalle vive en `/cuentas-por-cobrar`.
+- No se habilitan cobros ni acciones desde el tablero.
