@@ -1391,3 +1391,17 @@ Resultado: simulador read-only sin hallazgos bloqueantes automatizados.
   estado de CxP y corte abierto.
 - `/api/sync` queda fuera del alcance.
 - QA manual queda diferida por instruccion del usuario.
+
+## Auditoria Fase 3D-B
+
+Resultado: contrato sin cambios operativos.
+
+- No se agregan rutas.
+- No se agregan botones de pago.
+- No se modifica CxP.
+- No se modifica Caja.
+- No se crean movimientos CxP.
+- No se crean movimientos de Caja.
+- No se tocan cortes abiertos ni cerrados.
+- `/api/sync` queda fuera del alcance.
+- La implementacion real queda condicionada a backup, prueba controlada y QA manual.

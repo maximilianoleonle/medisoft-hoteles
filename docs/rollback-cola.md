@@ -1251,3 +1251,14 @@ Rollback:
 5. Retirar `app/views/cuentas_por_pagar/simulador_caja.php`.
 6. Retirar `src/tools/saas/preflight_pagos_proveedores_caja.php`.
 7. No tocar datos, CxP, Caja, cortes, movimientos ni `/api/sync`.
+
+## Rollback Fase 3D-B
+
+3D-B es solo contrato documental del servicio transaccional.
+
+Rollback:
+
+1. Revertir el commit documental de 3D-B.
+2. No tocar CxP, Caja, cortes ni movimientos.
+3. No crear rutas POST ni botones de pago.
+4. No ejecutar pruebas con escritura sin backup.

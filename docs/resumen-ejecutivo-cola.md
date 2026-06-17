@@ -1372,3 +1372,12 @@ Resultado 3D-A:
 - No hay POST, pagos, abonos, movimientos CxP, movimientos de Caja, cambios de saldo
   ni `/api/sync`.
 - `preflight_pagos_proveedores_caja.php` valida la superficie 3D-A en modo solo lectura.
+
+Resultado 3D-B:
+
+- Estado tecnico: `CONTRATO_3D_B_SERVICIO_PAGO_TRANSACCIONAL_COMPLETADO`.
+- Documento: `docs/fase_3D_B_contrato_servicio_pago_transaccional.md`.
+- Se define el contrato del servicio futuro para pagar proveedores con Caja.
+- No se implementa codigo PHP, rutas, formularios, botones, migraciones ni escrituras.
+- La implementacion real queda bloqueada hasta backup verificado, prueba local controlada
+  y QA manual disponible.

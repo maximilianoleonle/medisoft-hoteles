@@ -193,3 +193,24 @@ No implementa:
 
 La implementacion real de pago sigue bloqueada hasta backup, servicio transaccional y
 QA manual especifica.
+
+## Actualizacion Fase 3D-B
+
+Estado: `CONTRATO_3D_B_SERVICIO_PAGO_TRANSACCIONAL_COMPLETADO`.
+
+Se documento el contrato tecnico del servicio transaccional futuro en
+`docs/fase_3D_B_contrato_servicio_pago_transaccional.md`.
+
+Esta subfase:
+
+- no implementa codigo;
+- no crea rutas;
+- no crea formularios POST;
+- no registra pagos;
+- no crea movimientos CxP;
+- no crea movimientos de Caja;
+- no cambia saldos;
+- no toca `/api/sync`.
+
+El pago real sigue bloqueado hasta backup verificado, prueba local controlada y QA manual
+disponible.

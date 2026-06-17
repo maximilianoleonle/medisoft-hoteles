@@ -1162,3 +1162,19 @@ Limite:
 - 3D-A solo autoriza GET.
 - No hay POST, pagos, abonos, cambios de saldo ni movimientos.
 - 3D-B/3D-C requieren backup y autorizacion especifica antes de escribir.
+
+## Fase 3D-B - Servicio antes que UI
+
+Decision: antes de cualquier boton de pago, definir un servicio transaccional central.
+
+Motivo:
+
+- El pago proveedor debe actualizar CxP, movimiento CxP y movimiento Caja de forma
+  atomica.
+- La vista no debe calcular saldos ni decidir cortes.
+- El controlador futuro debe delegar validaciones financieras al servicio.
+
+Limite:
+
+- Esta subfase solo documenta contrato.
+- No autoriza codigo, POST, escrituras, migraciones ni pruebas con datos reales.

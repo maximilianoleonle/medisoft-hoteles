@@ -1547,3 +1547,17 @@ Pruebas recomendadas:
 8. Confirmar que no existen botones de pago.
 9. Confirmar que no existen formularios POST.
 10. Confirmar que no cambian saldos ni movimientos CxP/Caja.
+
+## Fase 3D-B - Contrato servicio transaccional pago proveedor
+
+Estado: sin QA manual operativa; solo contrato.
+
+Revision recomendada:
+
+1. Leer `docs/fase_3D_B_contrato_servicio_pago_transaccional.md`.
+2. Confirmar que no aparecen botones nuevos de pago.
+3. Confirmar que no hay rutas POST nuevas para pagar CxP.
+4. Confirmar que no se crearon movimientos CxP.
+5. Confirmar que no se crearon movimientos de Caja.
+6. Confirmar que saldos de CxP no cambiaron.
+7. Confirmar que 3D-B real no se implemente sin backup y QA manual disponible.

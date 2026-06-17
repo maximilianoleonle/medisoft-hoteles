@@ -776,3 +776,13 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - `cuentas_por_pagar_movimientos` y `movimientos_caja` solo se cuentan en preflight;
   no son destino de escritura en 3D-A.
 - El simulador no cambia la fuente de verdad: solo diagnostica elegibilidad.
+
+## Fase 3D-B - Contrato servicio transaccional
+
+- No se cambia ninguna fuente de verdad en esta subfase.
+- Fuente futura de deuda: `cuentas_por_pagar`.
+- Fuente futura de trazabilidad CxP: `cuentas_por_pagar_movimientos`.
+- Fuente futura de egreso: `movimientos_caja` solo dentro de transaccion autorizada.
+- Fuente futura de corte abierto: `cortes_caja`.
+- Fuente de proveedor moderno: `proveedores`.
+- `movimientos_caja.proveedor` seguira siendo texto descriptivo, no relacion formal.

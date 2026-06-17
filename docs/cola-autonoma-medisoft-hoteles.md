@@ -1322,3 +1322,14 @@ Estado formal: `SIMULADOR_3D_A_CAJA_READONLY_COMPLETADO_QA_DIFERIDA`.
 - QA manual queda diferida.
 - Siguiente accion segura: no avanzar a pago real sin backup, autorizacion especifica
   y QA manual disponible; solo podria prepararse contrato tecnico de servicio 3D-B.
+
+## 3D-B Contrato servicio transaccional pago proveedor
+
+Estado formal: `CONTRATO_3D_B_SERVICIO_PAGO_TRANSACCIONAL_COMPLETADO`.
+
+- Documento creado: `docs/fase_3D_B_contrato_servicio_pago_transaccional.md`.
+- Define servicio futuro, validaciones, orden transaccional, auditoria y rollback.
+- No implementa codigo, rutas, UI, POST, pagos, abonos ni movimientos.
+- No toca CxP, Caja, cortes ni `/api/sync`.
+- Siguiente accion segura: detener avance operativo de 3D hasta backup verificado y QA
+  manual; no pasar a 3D-C ni pagos reales en cola automatica.
