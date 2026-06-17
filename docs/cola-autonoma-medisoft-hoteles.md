@@ -1263,3 +1263,15 @@ Estado formal: `CONTRATO_7B_CXC_OPERATIVA_SIN_CAJA_COMPLETADO`.
   explicita.
 - Siguiente accion segura sin QA manual: 8A-0 contrato de dashboard operativo con KPIs
   read-only.
+
+## 8A-0 Contrato dashboard operativo KPIs read-only
+
+Estado formal: `CONTRATO_8A_DASHBOARD_KPIS_READONLY_COMPLETADO`.
+
+- Documento creado: `docs/fase_8A_0_contrato_dashboard_operativo_kpis.md`.
+- 8A queda reanclada sobre `/operacion/diaria`.
+- No se crea dashboard paralelo.
+- No se implementa codigo, rutas, DB ni acciones.
+- KPIs futuros deben ser server-side/read-only, filtrados por `hotel_id` y sin Caja.
+- Siguiente accion segura: 8A-A extension pequena de KPIs read-only en
+  `OperacionDiaria`.

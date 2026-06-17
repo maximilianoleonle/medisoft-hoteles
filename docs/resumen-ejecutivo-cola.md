@@ -1325,3 +1325,13 @@ Resultado 7B-0:
 - Caja, cortes, pagos reales, facturacion nueva y `/api/sync` quedan fuera.
 - Por los warnings historicos de 7A, 7B-A no debe implementarse sin backup,
   reconciliacion o autorizacion explicita de migracion base vacia.
+
+Resultado 8A-0:
+
+- Estado tecnico: `CONTRATO_8A_DASHBOARD_KPIS_READONLY_COMPLETADO`.
+- Documento: `docs/fase_8A_0_contrato_dashboard_operativo_kpis.md`.
+- Se reancla 8A sobre el tablero operativo existente `/operacion/diaria`.
+- No se crea un dashboard paralelo.
+- No se implementa codigo, rutas ni DB.
+- Se proponen KPIs read-only de CxC estimada, tareas, mantenimiento, documentos y
+  personal, siempre sin Caja ni `/api/sync`.

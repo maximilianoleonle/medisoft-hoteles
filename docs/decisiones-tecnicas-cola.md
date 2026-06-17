@@ -1099,3 +1099,17 @@ Limite:
 
 - 7B-0 no autoriza migracion, cobros, abonos, pagos, Caja ni `/api/sync`.
 - 7B-A debe ser una migracion base vacia o esperar reconciliacion previa.
+
+## Fase 8A-0 - Extender tablero existente, no duplicarlo
+
+Decision: 8A debe evolucionar `/operacion/diaria` en lugar de crear un segundo dashboard.
+
+Motivo:
+
+- OP-A ya implemento una superficie read-only protegida.
+- Duplicar paneles fragmentaria la operacion diaria.
+- Los KPIs nuevos pueden vivir como extension de `OperacionDiaria`.
+
+Limite:
+
+- 8A-0 no autoriza codigo, POST, Caja, pagos, abonos, nomina ni `/api/sync`.

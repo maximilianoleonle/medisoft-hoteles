@@ -1483,3 +1483,14 @@ Revision recomendada:
 3. Confirmar que no hay rutas nuevas POST de CxC operativa.
 4. Confirmar que no se crearon tablas CxC nuevas.
 5. Confirmar que Caja y cortes no cambiaron.
+
+## Fase 8A-0 - Contrato dashboard operativo KPIs
+
+Estado: sin QA manual operativa; solo contrato.
+
+Revision recomendada:
+
+1. Leer `docs/fase_8A_0_contrato_dashboard_operativo_kpis.md`.
+2. Confirmar que no se creo dashboard paralelo.
+3. Confirmar que `/operacion/diaria` sigue siendo la superficie prevista.
+4. Confirmar que no hay nuevos POST, Caja, pagos, abonos ni `/api/sync`.

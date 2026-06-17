@@ -1333,3 +1333,12 @@ Resultado: contrato sin cambios operativos.
 - No se toco Caja ni `/api/sync`.
 - El contrato bloquea 7B operativa directa por inconsistencias historicas detectadas
   en 7A.
+
+## Auditoria Fase 8A-0
+
+Resultado: contrato sin cambios operativos.
+
+- No se modifico `/operacion/diaria`.
+- No se crearon rutas ni modelos nuevos.
+- No hay POST, Caja, pagos, abonos, nomina ni `/api/sync`.
+- El contrato limita KPIs futuros a lectura por `hotel_id`.

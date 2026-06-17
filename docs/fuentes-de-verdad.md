@@ -727,3 +727,19 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - Caja no es fuente de verdad para 7B-0.
 - `movimientos_caja` queda solo como dato historico sensible, no como destino
   automatico.
+
+## Fase 8A-0 - Dashboard operativo KPIs
+
+- Superficie de verdad: `/operacion/diaria`.
+- Modelo base: `OperacionDiaria`.
+- No crear dashboard paralelo para 8A.
+- KPIs futuros deben leer fuentes existentes:
+  - `reservaciones`
+  - `habitaciones`
+  - `tareas_operativas`
+  - `mantenimientos_habitaciones`
+  - `documentos`
+  - `documento_entidades`
+  - `trabajadores`
+- KPIs CxC deben seguir siendo estimados y derivados mientras no exista CxC operativa.
+- Caja no es fuente de verdad de 8A-0.
