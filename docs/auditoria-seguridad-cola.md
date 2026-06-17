@@ -1313,3 +1313,12 @@ Warnings residuales:
 Estos warnings no bloquean la vista read-only porque la consulta excluye filas que no
 coinciden por hotel/reservacion, pero bloquean cualquier avance a CxC operativa sin
 reconciliacion previa.
+
+## Auditoria Fase 7A-F
+
+Resultado: cierre tecnico sin hallazgos bloqueantes.
+
+- 7A mantiene solo una superficie GET/read-only.
+- No hay acciones operativas de cobro.
+- No hay pagos, abonos nuevos, Caja ni `/api/sync`.
+- Los warnings historicos quedan documentados como prerequisito de 7B.

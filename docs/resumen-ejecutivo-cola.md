@@ -1306,3 +1306,11 @@ Resultado 7A-A:
 - Warnings conocidos: 3 pagos historicos y 170 solicitudes de factura con reservacion
   inexistente o de otro hotel; 3 saldos estimados negativos. Quedan para reconciliacion
   antes de una CxC operativa.
+
+Resultado 7A-F:
+
+- Estado tecnico: `BLOQUE_7A_CXC_READONLY_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_7A_F_cierre_cxc_readonly.md`.
+- Se cierra tecnicamente 7A con contrato y reporte read-only.
+- 7A queda listo para QA manual diferida.
+- Cualquier avance a 7B debe iniciar como contrato y no como cobro operativo directo.

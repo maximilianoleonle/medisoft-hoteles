@@ -1460,3 +1460,14 @@ Pruebas recomendadas:
 9. Abrir una factura desde el enlace si el registro la muestra.
 10. Confirmar que no existen botones de cobro, abono, pago ni Caja.
 11. Confirmar que el texto indica "solo lectura" y "saldo estimado".
+
+## Fase 7A-F - Cierre CxC read-only
+
+Estado: QA manual diferida.
+
+Checklist final:
+
+1. Completar la QA de 7A-A.
+2. Confirmar que 7A sigue sin POST.
+3. Confirmar que no se crearon datos de cobro.
+4. Confirmar que los warnings historicos quedan solo como diagnostico.

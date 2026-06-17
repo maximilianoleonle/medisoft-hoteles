@@ -1239,3 +1239,13 @@ Estado formal: `REPORTE_7A_A_CXC_READONLY_COMPLETADO_QA_DIFERIDA`.
 - Preflight: `ERROR: 0`, con warnings historicos de reconciliacion.
 - QA manual queda diferida por instruccion del usuario.
 - Siguiente accion segura: revision/cierre de 7A-A o contrato 7B sin implementar cobros.
+
+## 7A-F Cierre CxC read-only
+
+Estado formal: `BLOQUE_7A_CXC_READONLY_CERRADO_QA_DIFERIDA`.
+
+- Documento creado: `docs/fase_7A_F_cierre_cxc_readonly.md`.
+- Cubre contrato 7A-0 y reporte 7A-A.
+- Confirma ausencia de POST, cobros, abonos, pagos, Caja y `/api/sync`.
+- Mantiene warnings historicos como bloqueo para CxC operativa.
+- Siguiente accion segura: 7B-0 contrato CxC operativa sin Caja, sin implementar cobros.

@@ -1175,3 +1175,13 @@ Rollback:
    `solicitudes_factura`.
 4. No borrar ni crear tablas.
 5. No tocar Caja ni `/api/sync`.
+
+## Rollback Fase 7A-F
+
+7A-F es solo cierre documental.
+
+Rollback:
+
+1. Revertir el commit documental de cierre.
+2. Si se requiere retirar funcionalidad, revertir 7A-A.
+3. No tocar datos historicos ni Caja.
