@@ -343,6 +343,73 @@ class TareaOperativa extends Model
         return $base;
     }
 
+    public function resumenActivoPorHabitacionesHotel(int $hotelId, array $habitacionIds): array
+    {
+        if ($hotelId <= 0 || !$this->tablaDisponible()) {
+            return [];
+        }
+
+        $ids = [];
+        foreach ($habitacionIds as $id) {
+            $id = (int)$id;
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+
+        if (empty($ids)) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $params = array_merge([$hotelId], array_values($ids));
+
+        $stmt = $this->db->query(
+            "SELECT t.habitacion_id,
+                    COUNT(*) AS total_activas,
+                    SUM(CASE WHEN t.categoria = 'limpieza' THEN 1 ELSE 0 END) AS limpieza,
+                    SUM(CASE WHEN t.categoria = 'mantenimiento' THEN 1 ELSE 0 END) AS mantenimiento,
+                    SUM(CASE WHEN t.categoria = 'general' THEN 1 ELSE 0 END) AS general,
+                    SUM(CASE WHEN t.estado = 'pendiente' THEN 1 ELSE 0 END) AS pendiente,
+                    SUM(CASE WHEN t.estado = 'asignada' THEN 1 ELSE 0 END) AS asignada,
+                    SUM(CASE WHEN t.estado = 'en_proceso' THEN 1 ELSE 0 END) AS en_proceso,
+                    MIN(t.fecha_limite) AS proxima_fecha_limite
+             FROM tareas_operativas t
+             INNER JOIN habitaciones h
+                ON h.id = t.habitacion_id
+               AND h.hotel_id = t.hotel_id
+             WHERE t.hotel_id = ?
+               AND t.habitacion_id IN ({$placeholders})
+               AND t.estado IN ('pendiente', 'asignada', 'en_proceso')
+             GROUP BY t.habitacion_id",
+            $params
+        );
+
+        $resumen = [];
+        foreach ($stmt ? ($stmt->fetchAll() ?: []) : [] as $row) {
+            $habitacionId = (int)($row['habitacion_id'] ?? 0);
+            if ($habitacionId <= 0) {
+                continue;
+            }
+
+            foreach ([
+                'total_activas',
+                'limpieza',
+                'mantenimiento',
+                'general',
+                'pendiente',
+                'asignada',
+                'en_proceso',
+            ] as $campo) {
+                $row[$campo] = (int)($row[$campo] ?? 0);
+            }
+
+            $resumen[$habitacionId] = $row;
+        }
+
+        return $resumen;
+    }
+
     public function reporteReadOnlyPorHotel(int $hotelId): array
     {
         $reporte = [

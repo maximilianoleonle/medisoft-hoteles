@@ -1064,3 +1064,14 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - DB: no aplica; no crea migraciones ni datos.
 - Codigo: no aplica; no agrega rutas, modelos ni vistas.
 - No tocar `habitaciones`, `tareas_operativas`, `tarea_eventos`, Caja ni `/api/sync`.
+
+### 6B-A indicadores read-only de tareas en habitaciones
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-6b): add read-only room task indicators`.
+- DB: no aplica; no crea migraciones ni datos.
+- El rollback retiraria el metodo agregado en `TareaOperativa`, el anexo en
+  `HabitacionController`, el indicador visual en `habitaciones/index.php` y checks/docs
+  asociados.
+- No borrar ni modificar registros reales de `tareas_operativas` o `tarea_eventos`.
+- No tocar `habitaciones.estado`, Caja, nomina, offline ni `/api/sync`.

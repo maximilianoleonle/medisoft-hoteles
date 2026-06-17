@@ -1184,3 +1184,17 @@ Estado: `BLOQUE_TLM_J_AGENDA_TAREAS_CERRADO_QA_DIFERIDA`.
 - La agenda se mantiene sin acciones operativas.
 - Riesgo residual: QA manual diferida y base local sin datos para validar filas reales.
 - Cualquier integracion con turnos, nomina o automatizacion requiere contrato nuevo.
+
+## Auditoria 6B-A
+
+Estado: `INDICADORES_6B_A_TAREAS_HABITACIONES_READONLY_COMPLETADOS_QA_DIFERIDA`.
+
+- No agrega rutas ni POST.
+- Modelo consulta solo `tareas_operativas` activas del hotel actual y valida join con
+  `habitaciones` del mismo `hotel_id`.
+- La vista de habitaciones muestra conteo y categoria como informacion.
+- No hay boton de crear tarea desde tarjeta o ficha de habitacion.
+- No cambia `habitaciones.estado`, no toca mantenimiento, Caja, nomina, offline ni
+  `/api/sync`.
+- Riesgo residual: QA visual diferida para confirmar que el indicador no sature tarjetas
+  con multiples incidencias.

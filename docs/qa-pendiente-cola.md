@@ -1331,3 +1331,15 @@ instruccion del usuario.
   - confirmar que crear limpieza sigue en `/reportes/limpieza`;
   - confirmar que no cambia `habitaciones.estado`;
   - confirmar que no se toca Caja, nomina, offline ni `/api/sync`.
+
+### Estado 6B-A
+
+- Indicadores read-only de tareas activas en habitaciones implementados.
+- QA manual diferida por instruccion del usuario.
+- Probar `/habitaciones`.
+- Confirmar que las habitaciones con tareas activas muestran indicador de conteo.
+- Voltear tarjeta y confirmar que solo hay informacion de tareas, sin boton de crear
+  tarea desde habitacion.
+- Probar disponibilidad por fecha y confirmar que el indicador sigue siendo lectura.
+- Confirmar que la creacion de tarea de limpieza permanece en `/reportes/limpieza`.
+- Confirmar que no cambia disponibilidad, Caja, nomina, offline ni `/api/sync`.

@@ -144,7 +144,8 @@ public function indexAction() {
             }
         }
     }
-    
+    unset($habitacion);
+
     // El estado queda como filtro visual inicial en la vista para no recortar el DOM.
     // Obtener estadísticas actualizadas
     $estadisticas = $this->habitacionModel->estadisticas();
@@ -155,6 +156,7 @@ public function indexAction() {
     usort($habitaciones, function($a, $b) {
         return strnatcmp($a['numero'], $b['numero']);
     });
+    $habitaciones = $this->anexarResumenTareasHabitaciones($hotelId, $habitaciones);
     
     // Agregar estados para la vista
     $estados = Habitacion::getEstados();
@@ -238,6 +240,33 @@ private function obtenerAlertasPendientesHabitaciones(int $hotelId): array {
         'checkouts' => $stmtCheckouts ? ($stmtCheckouts->fetchAll() ?: []) : [],
         'llegadas_tardias' => [],
     ];
+}
+
+private function anexarResumenTareasHabitaciones(int $hotelId, array $habitaciones): array {
+    if ($hotelId <= 0 || empty($habitaciones)) {
+        return $habitaciones;
+    }
+
+    $habitacionIds = [];
+    foreach ($habitaciones as $habitacion) {
+        $habitacionId = (int)($habitacion['id'] ?? 0);
+        if ($habitacionId > 0) {
+            $habitacionIds[] = $habitacionId;
+        }
+    }
+
+    if (empty($habitacionIds)) {
+        return $habitaciones;
+    }
+
+    $resumenPorHabitacion = $this->tareaModel->resumenActivoPorHabitacionesHotel($hotelId, $habitacionIds);
+    foreach ($habitaciones as &$habitacion) {
+        $habitacionId = (int)($habitacion['id'] ?? 0);
+        $habitacion['tareas_activas_resumen'] = $resumenPorHabitacion[$habitacionId] ?? [];
+    }
+    unset($habitacion);
+
+    return $habitaciones;
 }
 
 private function mostrarDisponibilidadPorFecha($filtros) {
@@ -370,6 +399,7 @@ private function mostrarDisponibilidadPorFecha($filtros) {
     // El estado se conserva para que la vista aplique el filtro sin perder habitaciones.
     // Reindexar y ordenar
     $habitaciones_procesadas = array_values($habitaciones_procesadas);
+    $habitaciones_procesadas = $this->anexarResumenTareasHabitaciones($hotelId, $habitaciones_procesadas);
     usort($habitaciones_procesadas, function($a, $b) {
         return strnatcmp($a['numero'], $b['numero']);
     });

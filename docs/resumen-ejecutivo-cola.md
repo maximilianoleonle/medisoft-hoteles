@@ -1205,3 +1205,13 @@ Resultado 6B-0:
 - La siguiente implementacion permitida debe ser read-only.
 - La creacion de tareas de limpieza permanece solo en `/reportes/limpieza`.
 - No se autoriza automatizar disponibilidad, Caja, nomina, offline ni `/api/sync`.
+
+Resultado 6B-A:
+
+- Estado tecnico: `INDICADORES_6B_A_TAREAS_HABITACIONES_READONLY_COMPLETADOS_QA_DIFERIDA`.
+- Documento: `docs/fase_6B_A_indicadores_tareas_habitaciones.md`.
+- Se agrega resumen read-only de tareas activas por habitacion/hotel.
+- El tablero de habitaciones muestra conteo solo si hay tareas activas vinculadas.
+- No hay POST nuevo, no se crean tareas desde la tarjeta y no se cambia
+  `habitaciones.estado`.
+- La creacion manual de tareas de limpieza sigue exclusivamente en `/reportes/limpieza`.

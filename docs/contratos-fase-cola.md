@@ -1393,3 +1393,18 @@ Estado formal vigente: `CONTRATO_6B_INTEGRACION_TAREAS_HABITACIONES_COMPLETADO`.
   `/reportes/limpieza`.
 - No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - Siguiente accion segura: 6B-A indicadores read-only de tareas activas en habitaciones.
+
+## Fase 6B-A - Indicadores read-only de tareas en habitaciones
+
+Estado formal vigente: `INDICADORES_6B_A_TAREAS_HABITACIONES_READONLY_COMPLETADOS_QA_DIFERIDA`.
+
+- Documento: `docs/fase_6B_A_indicadores_tareas_habitaciones.md`.
+- Implementa resumen agregado por `hotel_id` y `habitacion_id` desde
+  `tareas_operativas`.
+- Muestra conteo de tareas activas en el tablero de habitaciones.
+- No agrega rutas ni POST.
+- No crea, asigna, inicia, completa ni cancela tareas.
+- No cambia `habitaciones.estado`.
+- La creacion de limpieza permanece en `/reportes/limpieza`.
+- No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- Siguiente accion segura: 6B-C evidencias/documentos en tareas o cierre tecnico 6B.

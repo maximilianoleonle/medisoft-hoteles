@@ -617,6 +617,17 @@
 - Cualquier accion que cambie habitacion desde una tarea requiere subfase explicita,
   pruebas y nuevo contrato.
 
+## Decision 6B-A indicadores read-only de tareas en habitaciones
+
+- Se implementa un indicador agregado en el tablero de habitaciones en lugar de agregar
+  acciones operativas a la tarjeta.
+- El agregado se calcula desde `tareas_operativas` con `hotel_id` y solo estados activos.
+- La vista muestra conteo y categorias; no expone POST ni rutas de creacion.
+- La tarjeta sigue delegando la gestion de tareas a superficies existentes y la creacion
+  de limpieza permanece en `/reportes/limpieza`.
+- No se modifica `habitaciones.estado`, mantenimiento, Caja, nomina, offline ni
+  `/api/sync`.
+
 ## Decision NP-D-0 documentos laborales
 
 - No se abrira un segundo flujo documental basado en `trabajador_documentos` mientras ya

@@ -1106,3 +1106,13 @@ agregar funcionalidades nuevas.
 - Health y preflight TLM pasan con `ERROR: 0`.
 - QA manual queda diferida.
 - Siguiente accion segura: contrato nuevo independiente o QA diferida acumulada.
+## 6B-A indicadores read-only de tareas en habitaciones
+
+Estado: implementado tecnicamente, QA manual diferida por instruccion del usuario.
+
+- Documento creado: `docs/fase_6B_A_indicadores_tareas_habitaciones.md`.
+- Se agrega resumen read-only de tareas activas por habitacion/hotel desde `TareaOperativa`.
+- El listado de habitaciones muestra indicador compacto solo cuando hay tareas activas.
+- No se agregan POST, no se crean tareas desde la tarjeta, no se cambia disponibilidad.
+- `/reportes/limpieza` sigue siendo la superficie para crear tareas manuales de limpieza.
+- Siguiente accion segura: 6B-C evidencias/documentos en tareas o cierre tecnico 6B si se desea consolidar.

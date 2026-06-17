@@ -621,3 +621,14 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - Estado formal: `BLOQUE_TLM_J_AGENDA_TAREAS_CERRADO_QA_DIFERIDA`.
 - Fuentes tecnicas vigentes: las mismas de TLM-J-A.
 - No hay migraciones, nuevas tablas ni cambios de datos.
+
+### 6B-A indicadores read-only de tareas en habitaciones
+
+- Fuente de verdad documental: `docs/fase_6B_A_indicadores_tareas_habitaciones.md`.
+- Disponibilidad fisica: `habitaciones.estado`.
+- Tareas activas: `tareas_operativas` filtrada por `hotel_id`, `habitacion_id` y
+  estados `pendiente`, `asignada`, `en_proceso`.
+- Historial tecnico: `tarea_eventos`.
+- La existencia de tareas activas no cambia automaticamente disponibilidad ni estado de
+  habitacion.
+- La creacion manual de tareas de limpieza conserva como superficie `/reportes/limpieza`.

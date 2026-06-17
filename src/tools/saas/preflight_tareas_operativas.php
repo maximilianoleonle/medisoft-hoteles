@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase TLM-G/MANT-G-B/TLM-J-A para tareas operativas.
+ * Preflight Fase TLM-G/MANT-G-B/TLM-J-A/6B-A para tareas operativas.
  *
  * Solo lectura. No crea rutas, migraciones ni datos.
  * Valida consistencia de tareas_operativas/tarea_eventos, entidades vinculadas,
@@ -184,9 +184,10 @@ $taskModelPath = $appRoot . '/app/models/TareaOperativa.php';
 $taskControllerPath = $appRoot . '/app/controllers/TareaController.php';
 $taskPartialPath = $appRoot . '/app/views/tareas/_contextual_list.php';
 $habitacionControllerPath = $appRoot . '/app/controllers/HabitacionController.php';
+$habitacionIndexPath = $appRoot . '/app/views/habitaciones/index.php';
 $trabajadorControllerPath = $appRoot . '/app/controllers/TrabajadorController.php';
 
-echo "Preflight Fase TLM-G/MANT-G-B/TLM-J-A - Tareas operativas\n";
+echo "Preflight Fase TLM-G/MANT-G-B/TLM-J-A/6B-A - Tareas operativas\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {
@@ -505,8 +506,9 @@ if (
     && strpos($taskModelCode, 'function buscarTareaActivaPorMantenimientoHotel') !== false
     && strpos($taskModelCode, "'mantenimiento'") !== false
     && strpos($taskModelCode, 'function cambiarEstadoManualParaHotel') !== false
+    && strpos($taskModelCode, 'function resumenActivoPorHabitacionesHotel') !== false
 ) {
-    tlmPfOk('TareaOperativa conserva reporte/agenda read-only, lecturas, alta manual, alta desde mantenimiento y estados con hotel_id.');
+    tlmPfOk('TareaOperativa conserva reporte/agenda read-only, lecturas, resumen 6B-A, alta manual, alta desde mantenimiento y estados con hotel_id.');
 } else {
     tlmPfError('TareaOperativa no muestra contrato TLM esperado.', 'Revisar modelo antes de continuar.');
 }
@@ -542,6 +544,7 @@ $taskReportViewPath = $appRoot . '/app/views/tareas/reporte.php';
 $taskReportCode = is_file($taskReportViewPath) ? (string) file_get_contents($taskReportViewPath) : '';
 $taskAgendaViewPath = $appRoot . '/app/views/tareas/agenda.php';
 $taskAgendaCode = is_file($taskAgendaViewPath) ? (string) file_get_contents($taskAgendaViewPath) : '';
+$habitacionIndexCode = is_file($habitacionIndexPath) ? (string) file_get_contents($habitacionIndexPath) : '';
 if (
     $taskReportCode !== ''
     && strpos($taskReportCode, 'Reporte operativo') !== false
@@ -579,13 +582,29 @@ if (
 
 if (
     strpos($habitacionControllerCode, "listarPorEntidadHotel(\$hotelId, 'habitacion'") !== false
+    && strpos($habitacionControllerCode, 'anexarResumenTareasHabitaciones') !== false
+    && strpos($habitacionControllerCode, 'resumenActivoPorHabitacionesHotel') !== false
     && strpos($trabajadorControllerCode, "listarPorEntidadHotel(\$hotelId, 'trabajador'") !== false
 ) {
-    tlmPfOk('Fichas de habitacion y trabajador consumen tareas contextuales por hotel.');
+    tlmPfOk('Fichas de habitacion/trabajador e indicadores 6B-A consumen tareas por hotel.');
 } else {
     tlmPfWarning(
-        'No se detecto consumo contextual completo en habitacion/trabajador.',
-        'Validar que las fichas llamen listarPorEntidadHotel() con entidad correcta.'
+        'No se detecto consumo contextual completo en habitacion/trabajador o indicadores 6B-A.',
+        'Validar que las fichas llamen listarPorEntidadHotel() y que habitaciones use resumenActivoPorHabitacionesHotel().'
+    );
+}
+
+if (
+    $habitacionIndexCode !== ''
+    && strpos($habitacionIndexCode, 'tareas_activas_resumen') !== false
+    && strpos($habitacionIndexCode, 'fas fa-tasks') !== false
+    && strpos($habitacionIndexCode, "url('tareas/desde-limpieza") === false
+) {
+    tlmPfOk('Vista habitaciones muestra indicador 6B-A sin exponer creacion de tareas desde la tarjeta.');
+} else {
+    tlmPfWarning(
+        'Vista habitaciones no muestra contrato 6B-A completo.',
+        'Asegurar indicador read-only y mantener creacion de limpieza solo en reportes.'
     );
 }
 

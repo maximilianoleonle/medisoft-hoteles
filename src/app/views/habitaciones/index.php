@@ -3161,6 +3161,26 @@ if ($tiene_doble_movimiento) {
                         'detail' => '',
                     ];
                 }
+                $tareasResumen = is_array($habitacion['tareas_activas_resumen'] ?? null) ? $habitacion['tareas_activas_resumen'] : [];
+                $tareasActivas = (int)($tareasResumen['total_activas'] ?? 0);
+                $tareasDetalle = [];
+                if ((int)($tareasResumen['limpieza'] ?? 0) > 0) {
+                    $tareasDetalle[] = (int)$tareasResumen['limpieza'] . ' limp.';
+                }
+                if ((int)($tareasResumen['mantenimiento'] ?? 0) > 0) {
+                    $tareasDetalle[] = (int)$tareasResumen['mantenimiento'] . ' mant.';
+                }
+                if ((int)($tareasResumen['general'] ?? 0) > 0) {
+                    $tareasDetalle[] = (int)$tareasResumen['general'] . ' gen.';
+                }
+                if ($tareasActivas > 0) {
+                    $hbIncidencias[] = [
+                        'type' => 'info',
+                        'icon' => 'tasks',
+                        'label' => $tareasActivas . ' tarea' . ($tareasActivas === 1 ? '' : 's'),
+                        'detail' => implode(' / ', $tareasDetalle),
+                    ];
+                }
                 ?>
                 <div class="flip-card room-card-compact <?= $tiene_checkout_vencido ? 'has-checkout-vencido' : '' ?> <?= $es_checkin_vencido ? 'has-checkin-vencido' : '' ?> <?= $habitacion['estado'] == 'limpieza' ? 'has-cleaning-state' : '' ?>"
                       onclick="toggleFlip(this, event)"
@@ -3269,6 +3289,13 @@ if ($tiene_doble_movimiento) {
                         <div class="flip-card-back <?= $backColorClass ?>"<?= $backStyle ? ' style="' . $backStyle . '"' : '' ?>>
                             <div>
                                 <h4>Hab. <?= htmlspecialchars($habitacion['numero']) ?></h4>
+
+                                <?php if ($tareasActivas > 0): ?>
+                                    <div class="info-item">
+                                        <i class="fas fa-tasks"></i>
+                                        <span><?= $tareasActivas ?> tarea<?= $tareasActivas === 1 ? '' : 's' ?> activa<?= $tareasActivas === 1 ? '' : 's' ?></span>
+                                    </div>
+                                <?php endif; ?>
 
                                 <?php if ($tiene_doble_movimiento): ?>
                                     <div class="info-item">
