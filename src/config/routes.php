@@ -228,6 +228,8 @@ $router->get('/cuentas-por-pagar/generacion-preview', ['controller' => 'CuentaPo
 $router->post('/cuentas-por-pagar/generar-desde-compra/{id:[0-9]+}', ['controller' => 'CuentaPorPagar', 'action' => 'generarDesdeCompra']);
 $router->get('/cuentas-por-pagar/{id:[0-9]+}', ['controller' => 'CuentaPorPagar', 'action' => 'ver']);
 
+$router->get('/cuentas-por-cobrar', ['controller' => 'CuentaPorCobrar', 'action' => 'index']);
+
 // Fase 4A/4B/4D: Centro Documental con metadata, carga segura, descarga autenticada, edicion limitada, archivado reversible y baja logica. Sin borrado fisico.
 $router->get('/documentos', ['controller' => 'Documento', 'action' => 'index']);
 $router->get('/documentos/subir', ['controller' => 'Documento', 'action' => 'subir']);

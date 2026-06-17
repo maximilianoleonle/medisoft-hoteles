@@ -17,6 +17,7 @@ $mostrarCuentasPorPagar = $mostrarInventario;
 $mostrarDocumentos = $mostrarInventario || $mostrarHuespedes || $mostrarReservaciones;
 $mostrarTareas = $mostrarHabitaciones || $menuModuloActivo('limpieza') || $menuModuloActivo('mantenimiento');
 $mostrarFacturacion = $menuModuloActivo('facturacion');
+$mostrarCuentasPorCobrar = $mostrarReservaciones || $mostrarFacturacion;
 $mostrarReportes = $menuModuloActivo('reportes');
 $mostrarUsuariosModulo = $menuModuloActivo('usuarios');
 $mostrarConfiguracionModulo = $menuModuloActivo('configuracion');
@@ -26,7 +27,7 @@ $sidebarPuedeUsuarios = can('usuarios.view') || in_array($sidebarRolHotel, ['ger
 $sidebarPuedeConfiguracion = can('configuracion.view') || in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $sidebarPuedeTarifas = is_gerente() || is_admin() || in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes;
-$mostrarOperaciones = $mostrarCaja || $mostrarInventario || $mostrarProveedores || $mostrarCompras || $mostrarCuentasPorPagar || $mostrarDocumentos || $mostrarTareas || $mostrarFacturacion;
+$mostrarOperaciones = $mostrarCaja || $mostrarInventario || $mostrarProveedores || $mostrarCompras || $mostrarCuentasPorPagar || $mostrarCuentasPorCobrar || $mostrarDocumentos || $mostrarTareas || $mostrarFacturacion;
 $filtrarMenuHotel = function_exists('hotel_menu_should_filter_modules') && hotel_menu_should_filter_modules();
 $mostrarUsuariosAdmin = (!$filtrarMenuHotel && can('usuarios.view')) || ($filtrarMenuHotel && $mostrarUsuariosModulo && $sidebarPuedeUsuarios);
 $mostrarPersonal = $mostrarUsuariosAdmin;
@@ -302,6 +303,16 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
                     <i class="fas fa-file-invoice-dollar"></i>
                 </div>
                 <span class="nav-text">Cuentas por pagar</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarCuentasPorCobrar): ?>
+            <a href="<?= url('cuentas-por-cobrar') ?>"
+               class="nav-item <?= strpos($sidebarRequestPath, '/cuentas-por-cobrar') === 0 ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-hand-holding-dollar"></i>
+                </div>
+                <span class="nav-text">Cuentas por cobrar</span>
             </a>
             <?php endif; ?>
 

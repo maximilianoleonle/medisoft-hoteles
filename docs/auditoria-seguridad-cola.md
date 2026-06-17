@@ -1290,3 +1290,26 @@ Resultado: contrato sin cambios operativos.
 - No se tocaron reservaciones, pagos, abonos, facturacion, Caja ni `/api/sync`.
 - Riesgo principal documentado: duplicar saldos/cobros si CxC se vuelve operativa sin
   reconciliacion previa.
+
+## Auditoria Fase 7A-A
+
+Resultado: implementacion read-only sin hallazgos bloqueantes.
+
+- La unica ruta nueva es `GET /cuentas-por-cobrar`.
+- No hay rutas POST bajo `/cuentas-por-cobrar`.
+- El controlador exige sesion, contexto hotelero y modulo `reservaciones`.
+- El modelo filtra por `reservaciones.hotel_id` y agrega pagos/abonos/facturas por
+  `hotel_id + reservacion_id`.
+- La vista comunica "solo lectura" y "saldo estimado".
+- No hay botones ni acciones de cobro, abono, pago o Caja.
+- No se toca `/api/sync`.
+
+Warnings residuales:
+
+- 3 pagos historicos con reservacion inexistente o de otro hotel.
+- 170 solicitudes de factura con reservacion inexistente o de otro hotel.
+- 3 reservaciones con saldo estimado negativo.
+
+Estos warnings no bloquean la vista read-only porque la consulta excluye filas que no
+coinciden por hotel/reservacion, pero bloquean cualquier avance a CxC operativa sin
+reconciliacion previa.

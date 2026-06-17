@@ -1161,3 +1161,17 @@ Rollback:
 1. Revertir el commit documental si cambia la decision.
 2. No tocar reservaciones, pagos, abonos, facturacion ni Caja.
 3. No crear tabla CxC sin contrato nuevo.
+
+## Rollback Fase 7A-A
+
+7A-A agrega solo una capa GET/read-only derivada.
+
+Rollback:
+
+1. Revertir el commit `feat(phase-7a): add read-only receivables report`.
+2. Retirar ruta GET `/cuentas-por-cobrar`, controlador, modelo, vista, preflight y
+   enlace de sidebar asociados.
+3. No tocar datos de `reservaciones`, `reservacion_pagos`, `reservacion_abonos` ni
+   `solicitudes_factura`.
+4. No borrar ni crear tablas.
+5. No tocar Caja ni `/api/sync`.

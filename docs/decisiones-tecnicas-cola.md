@@ -1064,3 +1064,22 @@ Motivo:
 Limite:
 
 - 7A no autoriza cobros, abonos, Caja, facturacion nueva ni `/api/sync`.
+
+## Fase 7A-A - Reporte CxC sin tabla operativa
+
+Decision: implementar una sola ruta GET `/cuentas-por-cobrar` con saldos estimados
+derivados.
+
+Motivo:
+
+- No existe tabla `cuentas_por_cobrar`.
+- Las fuentes historicas tienen inconsistencias que deben verse, no convertirse todavia
+  en deuda operativa.
+- Una vista read-only permite auditoria funcional sin abrir cobros ni Caja.
+
+Guardrails:
+
+- Filtro obligatorio por `hotel_id`.
+- Sin POST.
+- Sin cobros, abonos, pagos ni movimientos de Caja.
+- Warnings historicos quedan en preflight y documentacion.

@@ -702,3 +702,17 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   - `solicitudes_factura`
 - Caja no es fuente de verdad para 7A.
 - Una CxC operativa futura debe definirse en contrato separado.
+
+## Fase 7A-A - Reporte CxC read-only
+
+- Fuente principal de contexto: `reservaciones` filtrada por `hotel_id`.
+- Huesped se lee desde `huespedes` como dato descriptivo asociado a la reservacion.
+- Pagos existentes se leen desde `reservacion_pagos` agrupados por
+  `hotel_id + reservacion_id`.
+- Abonos existentes se leen desde `reservacion_abonos` agrupados por
+  `hotel_id + reservacion_id`.
+- Facturacion existente se lee desde `solicitudes_factura` agrupada por
+  `hotel_id + reservacion_id`.
+- El saldo mostrado es estimado y derivado; no es una cuenta contable nueva.
+- Caja no es fuente de verdad para este reporte.
+- No existe fuente operativa de cobros CxC en 7A-A.

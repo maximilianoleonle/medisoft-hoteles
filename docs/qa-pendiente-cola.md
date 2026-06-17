@@ -1442,3 +1442,21 @@ Revision recomendada:
 2. Confirmar que no hay rutas POST de CxC.
 3. Confirmar que no se crean movimientos de Caja.
 4. Confirmar que facturacion existente no cambia.
+
+## Fase 7A-A - Reporte CxC read-only
+
+Estado: QA manual diferida por instruccion del usuario.
+
+Pruebas recomendadas:
+
+1. Entrar con sesion hotelera.
+2. Abrir `/cuentas-por-cobrar`.
+3. Confirmar que el reporte carga sin errores.
+4. Confirmar que solo muestra reservaciones del hotel activo.
+5. Probar filtro por huesped/reservacion.
+6. Probar filtro por estado de reservacion.
+7. Probar filtro por estado de saldo.
+8. Abrir una reservacion desde el enlace del reporte.
+9. Abrir una factura desde el enlace si el registro la muestra.
+10. Confirmar que no existen botones de cobro, abono, pago ni Caja.
+11. Confirmar que el texto indica "solo lectura" y "saldo estimado".

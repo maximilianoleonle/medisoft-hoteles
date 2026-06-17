@@ -1292,3 +1292,17 @@ Resultado 7A-0:
 - Se identifican fuentes derivadas candidatas: reservaciones, pagos/abonos de
   reservacion y solicitudes de factura.
 - No se implementa CxC operativa, Caja, cobros, abonos, pagos ni `/api/sync`.
+
+Resultado 7A-A:
+
+- Estado tecnico: `REPORTE_7A_A_CXC_READONLY_COMPLETADO_QA_DIFERIDA`.
+- Documento: `docs/fase_7A_A_reporte_cxc_readonly.md`.
+- Se agrega `/cuentas-por-cobrar` como reporte GET/read-only derivado.
+- La vista calcula saldos estimados desde reservaciones, pagos, abonos y facturacion
+  existente, siempre filtrado por `hotel_id`.
+- No se crea tabla `cuentas_por_cobrar`.
+- No hay POST, cobros, abonos, pagos, movimientos de Caja, facturacion nueva ni
+  `/api/sync`.
+- Warnings conocidos: 3 pagos historicos y 170 solicitudes de factura con reservacion
+  inexistente o de otro hotel; 3 saldos estimados negativos. Quedan para reconciliacion
+  antes de una CxC operativa.

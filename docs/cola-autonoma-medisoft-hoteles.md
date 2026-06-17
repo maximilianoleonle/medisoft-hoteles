@@ -1222,3 +1222,20 @@ Estado formal: `CONTRATO_7A_CXC_READONLY_COMPLETADO`.
 - No se crean rutas, modelos, migraciones ni escrituras.
 - No hay cobros, abonos, pagos, Caja, facturacion nueva ni `/api/sync`.
 - Siguiente accion segura: 7A-A reporte GET/read-only derivado.
+
+## 7A-A Reporte CxC read-only
+
+Estado formal: `REPORTE_7A_A_CXC_READONLY_COMPLETADO_QA_DIFERIDA`.
+
+- Documento creado: `docs/fase_7A_A_reporte_cxc_readonly.md`.
+- Ruta nueva: `GET /cuentas-por-cobrar`.
+- Modelo nuevo: `CuentaPorCobrar`.
+- Controlador nuevo: `CuentaPorCobrarController`.
+- Vista nueva: `cuentas_por_cobrar/index`.
+- Preflight nuevo: `tools/saas/preflight_cuentas_por_cobrar.php`.
+- El reporte deriva saldos estimados desde reservaciones, pagos, abonos y facturacion
+  existente.
+- No se crea tabla CxC, no hay POST, cobros, abonos, pagos, Caja ni `/api/sync`.
+- Preflight: `ERROR: 0`, con warnings historicos de reconciliacion.
+- QA manual queda diferida por instruccion del usuario.
+- Siguiente accion segura: revision/cierre de 7A-A o contrato 7B sin implementar cobros.
