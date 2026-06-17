@@ -1368,3 +1368,28 @@ Estado formal vigente: `BLOQUE_TLM_J_AGENDA_TAREAS_CERRADO_QA_DIFERIDA`.
 - Cierra tecnicamente TLM-J-0 y TLM-J-A.
 - QA manual real queda diferida.
 - No autoriza acciones operativas nuevas desde agenda.
+
+## Fase 5A - Reanclaje Personal laboral basico
+
+Estado formal vigente: `FASE_5A_PERSONAL_LABORAL_BASICO_YA_CUBIERTA_POR_NP`.
+
+- Documento: `docs/fase_5A_reanclaje_personal_laboral_basico.md`.
+- El bloque 5A del roadmap nuevo equivale al bloque NP ya implementado.
+- No se reconstruye Personal desde cero para evitar duplicar tablas, rutas y modelos.
+- Personal vigente usa `trabajadores` y tablas `trabajador_*`.
+- No hay nomina automatica, pagos reales, Caja ni cambios en `/api/sync`.
+- Siguiente accion segura: Fase 6B-0.
+
+## Fase 6B-0 - Contrato Integracion tareas + habitaciones
+
+Estado formal vigente: `CONTRATO_6B_INTEGRACION_TAREAS_HABITACIONES_COMPLETADO`.
+
+- Documento: `docs/fase_6B_0_contrato_integracion_tareas_habitaciones.md`.
+- Define integracion segura entre `tareas_operativas` y `habitaciones`.
+- La primera implementacion permitida debe ser read-only: indicadores, enlaces GET o
+  preflights.
+- Se prohibe automatizar disponibilidad o cambiar `habitaciones.estado` desde tareas.
+- Se prohibe mover la creacion de limpieza a la ficha de habitacion; permanece en
+  `/reportes/limpieza`.
+- No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
+- Siguiente accion segura: 6B-A indicadores read-only de tareas activas en habitaciones.

@@ -736,6 +736,23 @@ agregar funcionalidades nuevas.
 - No hay nomina, pagos reales, abonos, Caja ni cambios en `/api/sync`.
 - Siguiente accion segura: contrato documental independiente para el proximo bloque.
 
+## Reanclaje 5A Personal laboral basico
+
+- Estado formal: `FASE_5A_PERSONAL_LABORAL_BASICO_YA_CUBIERTA_POR_NP`.
+- Documento creado: `docs/fase_5A_reanclaje_personal_laboral_basico.md`.
+- El roadmap nuevo 5A queda cubierto por NP-A/NP-B/NP-C/NP-D/NP-E/NP-F.
+- No se reconstruye Personal ni se crean tablas nuevas.
+- No hay pagos reales, nomina automatica, Caja ni cambios en `/api/sync`.
+
+## Contrato 6B Integracion tareas + habitaciones
+
+- Estado formal: `CONTRATO_6B_INTEGRACION_TAREAS_HABITACIONES_COMPLETADO`.
+- Documento creado: `docs/fase_6B_0_contrato_integracion_tareas_habitaciones.md`.
+- La integracion empezara por indicadores/enlaces read-only y preflights.
+- `habitaciones.estado` no debe cambiar automaticamente por tareas.
+- La creacion de limpieza sigue solo en `/reportes/limpieza`.
+- Siguiente accion segura: 6B-A indicadores read-only de tareas activas en habitaciones.
+
 ## Contrato TLM-I-0 reporte operativo read-only
 
 - Estado formal: `CONTRATO_TLM_I_REPORTE_OPERATIVO_READONLY_COMPLETADO`.

@@ -1048,3 +1048,19 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   `docs(phase-tlm): close worker task agenda block`.
 - DB: no aplica; es cierre documental.
 - Mantener intacto TLM-J-A salvo que se revierta su commit especifico.
+
+### 5A reanclaje Personal laboral basico
+
+- Rollback documental: revertir el commit
+  `docs(phase-5a): map basic labor staff to existing personal module`.
+- DB: no aplica; no crea migraciones ni datos.
+- Codigo: no aplica; no agrega rutas, modelos ni vistas.
+- No tocar tablas `trabajador*`.
+
+### 6B-0 contrato integracion tareas + habitaciones
+
+- Rollback documental: revertir el commit
+  `docs(phase-6b): define task room integration contract`.
+- DB: no aplica; no crea migraciones ni datos.
+- Codigo: no aplica; no agrega rutas, modelos ni vistas.
+- No tocar `habitaciones`, `tareas_operativas`, `tarea_eventos`, Caja ni `/api/sync`.

@@ -1312,3 +1312,22 @@ instruccion del usuario.
 - Bloque agenda de tareas cerrado tecnicamente.
 - QA manual real sigue diferida.
 - No abrir acciones operativas desde agenda sin contrato nuevo.
+
+### Estado 5A
+
+- 5A Personal laboral basico queda reanclada al bloque NP existente.
+- QA manual real sigue diferida para flujos de trabajador/ledger si no hay datos de
+  prueba suficientes.
+- No hay QA nueva de navegador en el reanclaje documental.
+
+### Estado 6B-0
+
+- Contrato de integracion tareas + habitaciones completado.
+- No requiere QA de navegador porque no agrega codigo, rutas, DB ni UI.
+- QA futura 6B-A:
+  - abrir listado/ficha de habitaciones cuando existan tareas vinculadas;
+  - confirmar indicadores read-only;
+  - confirmar que no aparece boton de crear tarea de limpieza en ficha de habitacion;
+  - confirmar que crear limpieza sigue en `/reportes/limpieza`;
+  - confirmar que no cambia `habitaciones.estado`;
+  - confirmar que no se toca Caja, nomina, offline ni `/api/sync`.

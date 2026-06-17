@@ -598,6 +598,25 @@
 - El siguiente avance de Personal debe ser contrato independiente y no financiero, salvo
   autorizacion explicita.
 
+## Decision 5A reanclaje Personal laboral basico
+
+- La Fase 5A del roadmap nuevo queda mapeada al bloque NP existente.
+- No se crea un segundo modulo de Personal porque `trabajadores` y `trabajador_*` ya son
+  las fuentes tecnicas vigentes.
+- Las fases futuras 5B/5C/5D deben extender NP de forma incremental y no duplicar rutas
+  ni tablas.
+- Caja, nomina automatica, pagos reales y `/api/sync` siguen fuera de alcance.
+
+## Decision 6B-0 integracion tareas + habitaciones
+
+- La integracion debe empezar por lectura y consistencia, no por automatizaciones.
+- `habitaciones.estado` sigue siendo la fuente de disponibilidad; tareas no lo cambian
+  automaticamente.
+- La ficha de habitacion puede mostrar contexto de tareas, pero la creacion manual de
+  limpieza permanece en `/reportes/limpieza` por decision del usuario.
+- Cualquier accion que cambie habitacion desde una tarea requiere subfase explicita,
+  pruebas y nuevo contrato.
+
 ## Decision NP-D-0 documentos laborales
 
 - No se abrira un segundo flujo documental basado en `trabajador_documentos` mientras ya

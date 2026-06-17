@@ -380,6 +380,25 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - TLM-I-F cierra el reporte sin cambiar fuentes de verdad ni automatizar disponibilidad,
   limpieza, mantenimiento, asistencia, Caja o nomina.
 
+### Roadmap 5A Personal laboral basico
+
+- 5A no crea fuente nueva adicional: queda cubierto por el bloque NP.
+- Fuente principal: `trabajadores`.
+- Fuentes relacionadas: `trabajador_pagos`, `trabajador_anticipos`,
+  `trabajador_prestamos`, `trabajador_asistencias` y Centro Documental moderno para
+  documentos laborales.
+- No usar `usuarios` como sustituto de trabajadores; solo puede existir vinculo opcional.
+- No crear otro conjunto de tablas para 5A.
+
+### Roadmap 6B Integracion tareas + habitaciones
+
+- Habitaciones: `habitaciones` sigue siendo fuente de estado/disponibilidad.
+- Tareas: `tareas_operativas` sigue siendo fuente de tareas activas e historicas.
+- Eventos: `tarea_eventos` sigue siendo fuente de auditoria tecnica de tareas.
+- La integracion 6B no debe convertir tareas en fuente de disponibilidad.
+- La creacion de tareas de limpieza sigue naciendo desde `/reportes/limpieza`, no desde
+  la ficha de habitacion.
+
 ### OP-0 tablero operativo diario read-only
 
 - Fuente de verdad: ninguna tabla nueva; el tablero futuro debe ser solo agregador.

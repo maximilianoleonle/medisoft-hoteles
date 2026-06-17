@@ -1187,3 +1187,21 @@ Resultado TLM-J-F:
 - Health y preflight TLM pasan con `ERROR: 0`.
 - QA manual real queda pendiente/diferida.
 - No se autorizan acciones operativas nuevas desde la agenda.
+
+Resultado 5A:
+
+- Estado tecnico: `FASE_5A_PERSONAL_LABORAL_BASICO_YA_CUBIERTA_POR_NP`.
+- Documento: `docs/fase_5A_reanclaje_personal_laboral_basico.md`.
+- El roadmap nuevo 5A queda mapeado al bloque NP existente.
+- No se duplica Personal; se conservan `trabajadores` y tablas `trabajador_*` como
+  fuentes vigentes.
+- No hay nomina automatica, pagos reales, Caja ni `/api/sync`.
+
+Resultado 6B-0:
+
+- Estado tecnico: `CONTRATO_6B_INTEGRACION_TAREAS_HABITACIONES_COMPLETADO`.
+- Documento: `docs/fase_6B_0_contrato_integracion_tareas_habitaciones.md`.
+- Se define una integracion segura entre tareas y habitaciones.
+- La siguiente implementacion permitida debe ser read-only.
+- La creacion de tareas de limpieza permanece solo en `/reportes/limpieza`.
+- No se autoriza automatizar disponibilidad, Caja, nomina, offline ni `/api/sync`.
