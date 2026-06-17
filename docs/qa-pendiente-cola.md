@@ -1533,7 +1533,9 @@ Revision recomendada:
 
 ## Fase 3D-A - Simulador Caja read-only para CxP
 
-Estado: QA manual diferida por instruccion del usuario.
+Estado: QA manual completada por el usuario.
+
+Confirmacion recibida: el usuario reviso el bloque pendiente y confirmo que esta bien.
 
 Pruebas recomendadas:
 
@@ -1550,7 +1552,9 @@ Pruebas recomendadas:
 
 ## Fase 3D-B - Contrato servicio transaccional pago proveedor
 
-Estado: sin QA manual operativa; solo contrato.
+Estado: contrato revisado por el usuario; sin QA operativa porque no hay implementacion.
+
+Confirmacion recibida: el usuario reviso el bloque pendiente y confirmo que esta bien.
 
 Revision recomendada:
 

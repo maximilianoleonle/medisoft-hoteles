@@ -2,7 +2,7 @@
 
 ## Estado
 
-`SIMULADOR_3D_A_CAJA_READONLY_COMPLETADO_QA_DIFERIDA`
+`SIMULADOR_3D_A_CAJA_READONLY_VALIDADO_MANUALMENTE`
 
 ## Objetivo
 
@@ -83,9 +83,13 @@ Revertir el commit de 3D-A retira:
 
 No requiere rollback de base de datos porque no crea ni modifica datos.
 
-## QA manual diferida
+## QA manual
 
-Cuando el usuario pueda probar:
+Estado: completada por el usuario.
+
+Confirmacion recibida: el usuario reviso el bloque pendiente y confirmo que esta bien.
+
+Checklist validado:
 
 1. Abrir `/cuentas-por-pagar/simulador-caja`.
 2. Confirmar que la ruta exige sesion.

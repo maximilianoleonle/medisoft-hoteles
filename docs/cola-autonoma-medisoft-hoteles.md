@@ -1312,16 +1312,16 @@ Estado formal: `CONTRATO_3D_PAGOS_PROVEEDORES_CAJA_COMPLETADO`.
 
 ## 3D-A Simulador Caja read-only para CxP
 
-Estado formal: `SIMULADOR_3D_A_CAJA_READONLY_COMPLETADO_QA_DIFERIDA`.
+Estado formal: `SIMULADOR_3D_A_CAJA_READONLY_VALIDADO_MANUALMENTE`.
 
 - Documento creado: `docs/fase_3D_A_simulador_caja_readonly.md`.
 - Ruta creada: GET `/cuentas-por-pagar/simulador-caja`.
 - Se muestra corte abierto del hotel actual y diagnostico por CxP.
 - No hay POST, botones de pago, abonos, cambios de saldo ni movimientos.
 - Se agrega `preflight_pagos_proveedores_caja.php`.
-- QA manual queda diferida.
-- Siguiente accion segura: no avanzar a pago real sin backup, autorizacion especifica
-  y QA manual disponible; solo podria prepararse contrato tecnico de servicio 3D-B.
+- QA manual completada por el usuario.
+- Siguiente accion segura: no avanzar a pago real sin backup y autorizacion especifica
+  de escrituras financieras.
 
 ## 3D-B Contrato servicio transaccional pago proveedor
 
@@ -1331,5 +1331,7 @@ Estado formal: `CONTRATO_3D_B_SERVICIO_PAGO_TRANSACCIONAL_COMPLETADO`.
 - Define servicio futuro, validaciones, orden transaccional, auditoria y rollback.
 - No implementa codigo, rutas, UI, POST, pagos, abonos ni movimientos.
 - No toca CxP, Caja, cortes ni `/api/sync`.
-- Siguiente accion segura: detener avance operativo de 3D hasta backup verificado y QA
-  manual; no pasar a 3D-C ni pagos reales en cola automatica.
+- Revision manual del contrato completada por el usuario.
+- Siguiente accion segura: detener avance operativo de 3D hasta backup verificado y
+  autorizacion explicita de escrituras financieras; no pasar a 3D-C ni pagos reales en
+  cola automatica.

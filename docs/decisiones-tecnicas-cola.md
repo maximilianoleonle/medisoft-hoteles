@@ -1178,3 +1178,5 @@ Limite:
 
 - Esta subfase solo documenta contrato.
 - No autoriza codigo, POST, escrituras, migraciones ni pruebas con datos reales.
+- El contrato fue revisado por el usuario; la implementacion real requiere autorizacion
+  explicita de backup y escrituras financieras.

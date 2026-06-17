@@ -4,6 +4,8 @@
 
 `CONTRATO_3D_B_SERVICIO_PAGO_TRANSACCIONAL_COMPLETADO`
 
+Revision manual: el usuario reviso el bloque pendiente y confirmo que esta bien.
+
 ## Objetivo
 
 Definir el contrato tecnico del servicio que, en una fase posterior, permitira pagar una

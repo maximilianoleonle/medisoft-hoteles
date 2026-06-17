@@ -1390,7 +1390,7 @@ Resultado: simulador read-only sin hallazgos bloqueantes automatizados.
 - La elegibilidad valida `hotel_id`, proveedor del hotel, compra del hotel, saldo,
   estado de CxP y corte abierto.
 - `/api/sync` queda fuera del alcance.
-- QA manual queda diferida por instruccion del usuario.
+- QA manual completada por el usuario.
 
 ## Auditoria Fase 3D-B
 
@@ -1404,4 +1404,6 @@ Resultado: contrato sin cambios operativos.
 - No se crean movimientos de Caja.
 - No se tocan cortes abiertos ni cerrados.
 - `/api/sync` queda fuera del alcance.
-- La implementacion real queda condicionada a backup, prueba controlada y QA manual.
+- Contrato revisado por el usuario.
+- La implementacion real queda condicionada a backup, prueba controlada y autorizacion
+  explicita de escrituras financieras.

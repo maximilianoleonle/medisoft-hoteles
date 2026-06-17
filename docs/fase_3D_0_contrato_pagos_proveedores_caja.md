@@ -167,7 +167,7 @@ reales sin autorizacion explicita, backup y QA manual disponible.
 
 ## Actualizacion Fase 3D-A
 
-Estado: `SIMULADOR_3D_A_CAJA_READONLY_COMPLETADO_QA_DIFERIDA`.
+Estado: `SIMULADOR_3D_A_CAJA_READONLY_VALIDADO_MANUALMENTE`.
 
 Se implemento el simulador read-only en `/cuentas-por-pagar/simulador-caja`.
 
@@ -191,12 +191,16 @@ No implementa:
 - migraciones;
 - `/api/sync`.
 
+QA manual del simulador completada por el usuario.
+
 La implementacion real de pago sigue bloqueada hasta backup, servicio transaccional y
-QA manual especifica.
+autorizacion explicita de escrituras financieras.
 
 ## Actualizacion Fase 3D-B
 
 Estado: `CONTRATO_3D_B_SERVICIO_PAGO_TRANSACCIONAL_COMPLETADO`.
+
+Revision manual: el usuario reviso el bloque pendiente y confirmo que esta bien.
 
 Se documento el contrato tecnico del servicio transaccional futuro en
 `docs/fase_3D_B_contrato_servicio_pago_transaccional.md`.
@@ -212,5 +216,5 @@ Esta subfase:
 - no cambia saldos;
 - no toca `/api/sync`.
 
-El pago real sigue bloqueado hasta backup verificado, prueba local controlada y QA manual
-disponible.
+El pago real sigue bloqueado hasta backup verificado, prueba local controlada y
+autorizacion explicita de escrituras financieras.

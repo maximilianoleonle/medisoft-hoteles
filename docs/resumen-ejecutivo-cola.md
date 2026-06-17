@@ -1364,7 +1364,7 @@ Resultado 3D-0:
 
 Resultado 3D-A:
 
-- Estado tecnico: `SIMULADOR_3D_A_CAJA_READONLY_COMPLETADO_QA_DIFERIDA`.
+- Estado tecnico: `SIMULADOR_3D_A_CAJA_READONLY_VALIDADO_MANUALMENTE`.
 - Documento: `docs/fase_3D_A_simulador_caja_readonly.md`.
 - Se agrega GET `/cuentas-por-pagar/simulador-caja`.
 - El simulador evalua CxP contra proveedor, compra, saldo, estado y corte de Caja
@@ -1372,6 +1372,7 @@ Resultado 3D-A:
 - No hay POST, pagos, abonos, movimientos CxP, movimientos de Caja, cambios de saldo
   ni `/api/sync`.
 - `preflight_pagos_proveedores_caja.php` valida la superficie 3D-A en modo solo lectura.
+- QA manual: el usuario confirmo que reviso el bloque y esta bien.
 
 Resultado 3D-B:
 
@@ -1380,4 +1381,5 @@ Resultado 3D-B:
 - Se define el contrato del servicio futuro para pagar proveedores con Caja.
 - No se implementa codigo PHP, rutas, formularios, botones, migraciones ni escrituras.
 - La implementacion real queda bloqueada hasta backup verificado, prueba local controlada
-  y QA manual disponible.
+  y autorizacion explicita de escrituras financieras.
+- Revision manual: el usuario confirmo que reviso el bloque y esta bien.
