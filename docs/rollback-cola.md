@@ -1185,3 +1185,14 @@ Rollback:
 1. Revertir el commit documental de cierre.
 2. Si se requiere retirar funcionalidad, revertir 7A-A.
 3. No tocar datos historicos ni Caja.
+
+## Rollback Fase 7B-0
+
+7B-0 es solo contrato documental.
+
+Rollback:
+
+1. Revertir el commit documental de 7B-0.
+2. No tocar reservaciones, pagos, abonos, facturacion ni Caja.
+3. No crear ni borrar tablas CxC.
+4. No avanzar a 7B-A sin contrato actualizado.

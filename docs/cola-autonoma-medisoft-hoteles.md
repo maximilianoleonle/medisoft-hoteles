@@ -1249,3 +1249,17 @@ Estado formal: `BLOQUE_7A_CXC_READONLY_CERRADO_QA_DIFERIDA`.
 - Confirma ausencia de POST, cobros, abonos, pagos, Caja y `/api/sync`.
 - Mantiene warnings historicos como bloqueo para CxC operativa.
 - Siguiente accion segura: 7B-0 contrato CxC operativa sin Caja, sin implementar cobros.
+
+## 7B-0 Contrato CxC operativa sin Caja
+
+Estado formal: `CONTRATO_7B_CXC_OPERATIVA_SIN_CAJA_COMPLETADO`.
+
+- Documento creado: `docs/fase_7B_0_contrato_cxc_operativa_sin_caja.md`.
+- No se implementan rutas, modelos, migraciones ni UI.
+- No hay cobros, abonos, pagos, Caja, facturacion nueva ni `/api/sync`.
+- Se propone una entidad futura `cuentas_por_cobrar` solo con migracion aditiva
+  autorizada.
+- Warnings de 7A bloquean cualquier operacion real hasta reconciliacion o decision
+  explicita.
+- Siguiente accion segura sin QA manual: 8A-0 contrato de dashboard operativo con KPIs
+  read-only.

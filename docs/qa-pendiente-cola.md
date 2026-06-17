@@ -1471,3 +1471,15 @@ Checklist final:
 2. Confirmar que 7A sigue sin POST.
 3. Confirmar que no se crearon datos de cobro.
 4. Confirmar que los warnings historicos quedan solo como diagnostico.
+
+## Fase 7B-0 - Contrato CxC operativa sin Caja
+
+Estado: sin QA manual operativa; solo contrato.
+
+Revision recomendada:
+
+1. Leer `docs/fase_7B_0_contrato_cxc_operativa_sin_caja.md`.
+2. Confirmar que no aparecen botones nuevos de cobro.
+3. Confirmar que no hay rutas nuevas POST de CxC operativa.
+4. Confirmar que no se crearon tablas CxC nuevas.
+5. Confirmar que Caja y cortes no cambiaron.

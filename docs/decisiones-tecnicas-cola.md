@@ -1083,3 +1083,19 @@ Guardrails:
 - Sin POST.
 - Sin cobros, abonos, pagos ni movimientos de Caja.
 - Warnings historicos quedan en preflight y documentacion.
+
+## Fase 7B-0 - CxC operativa debe ser entidad aislada
+
+Decision: no reutilizar directamente pagos, abonos ni solicitudes de factura como CxC
+operativa.
+
+Motivo:
+
+- Hay inconsistencias historicas detectadas por 7A.
+- Caja y reservaciones ya tienen comportamiento financiero sensible.
+- Una CxC operativa necesita trazabilidad, origen y saldo propio para no duplicar deuda.
+
+Limite:
+
+- 7B-0 no autoriza migracion, cobros, abonos, pagos, Caja ni `/api/sync`.
+- 7B-A debe ser una migracion base vacia o esperar reconciliacion previa.

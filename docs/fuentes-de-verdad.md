@@ -716,3 +716,14 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - El saldo mostrado es estimado y derivado; no es una cuenta contable nueva.
 - Caja no es fuente de verdad para este reporte.
 - No existe fuente operativa de cobros CxC en 7A-A.
+
+## Fase 7B-0 - CxC operativa futura
+
+- No existe aun fuente de verdad operativa de CxC.
+- La fuente futura propuesta debe ser una tabla nueva `cuentas_por_cobrar` si se
+  autoriza migracion aditiva.
+- La tabla futura no debe reemplazar `reservaciones`, `reservacion_pagos`,
+  `reservacion_abonos` ni `solicitudes_factura` sin reconciliacion.
+- Caja no es fuente de verdad para 7B-0.
+- `movimientos_caja` queda solo como dato historico sensible, no como destino
+  automatico.

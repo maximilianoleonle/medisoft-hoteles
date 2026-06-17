@@ -1314,3 +1314,14 @@ Resultado 7A-F:
 - Se cierra tecnicamente 7A con contrato y reporte read-only.
 - 7A queda listo para QA manual diferida.
 - Cualquier avance a 7B debe iniciar como contrato y no como cobro operativo directo.
+
+Resultado 7B-0:
+
+- Estado tecnico: `CONTRATO_7B_CXC_OPERATIVA_SIN_CAJA_COMPLETADO`.
+- Documento: `docs/fase_7B_0_contrato_cxc_operativa_sin_caja.md`.
+- Se define una CxC operativa futura como entidad aislada, no como reutilizacion directa
+  de pagos/abonos historicos.
+- No se crean rutas, tablas, migraciones, cobros ni movimientos.
+- Caja, cortes, pagos reales, facturacion nueva y `/api/sync` quedan fuera.
+- Por los warnings historicos de 7A, 7B-A no debe implementarse sin backup,
+  reconciliacion o autorizacion explicita de migracion base vacia.
