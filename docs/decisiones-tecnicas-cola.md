@@ -904,7 +904,7 @@
 - La validacion de habitacion en `limpieza` queda en el modelo para evitar que la vista
   sea la unica barrera.
 - El origen `habitacion` vincula estas tareas con la habitacion, usando un valor permitido por el enum actual.
-- El boton vive en `/reportes/limpieza` y en la ficha de habitacion para reducir friccion operativa sin cambiar la ruta POST.
+- El flujo vive solo en `/reportes/limpieza`; no se expone accion de creacion desde la ficha de habitacion.
 
 ## Decision LIM-B-F
 

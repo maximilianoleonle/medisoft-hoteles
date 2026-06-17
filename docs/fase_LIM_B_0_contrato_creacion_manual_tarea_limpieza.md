@@ -56,7 +56,7 @@ LIM-B-0 no implementa codigo. Solo fija reglas para una implementacion futura se
   - creacion de tarea en `tareas_operativas`;
   - evento inicial en `tarea_eventos`.
 - Amarillo:
-  - mostrar boton tambien en ficha de habitacion;
+  - mejorar la navegacion del reporte sin mover la accion fuera de `/reportes/limpieza`;
   - notificaciones a rol limpieza.
 - Rojo:
   - liberar habitacion al completar tarea;

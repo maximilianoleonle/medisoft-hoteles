@@ -1265,7 +1265,6 @@ instruccion del usuario.
 - Creacion manual de tarea de limpieza implementada.
 - QA manual diferida por instruccion del usuario.
 - Probar `/reportes/limpieza`.
-- Probar ficha de una habitacion en limpieza y crear tarea desde acciones rapidas.
 - Crear una tarea desde una habitacion en limpieza.
 - Confirmar detalle de tarea, `categoria = limpieza`, `habitacion_id`, `hotel_id` y
   `origen = habitacion`.

@@ -19,7 +19,6 @@ inventario.
   - `TareaOperativa::crearDesdeLimpiezaHabitacionParaHotel()`
 - Vista:
   - `reportes/limpieza-operativa.php` muestra boton solo cuando no hay tarea activa.
-  - `habitaciones/ver.php` muestra acceso directo cuando la habitacion esta en limpieza y no tiene tarea activa.
 - Preflight:
   - `tools/saas/preflight_limpieza_operativa.php` valida LIM-A/LIM-B-A.
 
@@ -55,14 +54,13 @@ inventario.
 ## QA manual diferida
 
 1. Abrir `/reportes/limpieza`.
-2. Abrir la ficha de una habitacion en limpieza y crear tarea desde acciones rapidas.
-3. Crear tarea desde una habitacion en limpieza.
-4. Confirmar detalle de tarea.
-5. Confirmar `categoria = limpieza`, `habitacion_id`, `hotel_id` y
+2. Crear tarea desde una habitacion en limpieza.
+3. Confirmar detalle de tarea.
+4. Confirmar `categoria = limpieza`, `habitacion_id`, `hotel_id` y
    `origen = habitacion`.
-6. Intentar crear otra tarea activa para la misma habitacion y confirmar bloqueo limpio.
-7. Confirmar que la habitacion sigue en estado `limpieza`.
-8. Confirmar que no hay inventario automatico, Caja, pagos, abonos, nomina, offline ni
+5. Intentar crear otra tarea activa para la misma habitacion y confirmar bloqueo limpio.
+6. Confirmar que la habitacion sigue en estado `limpieza`.
+7. Confirmar que no hay inventario automatico, Caja, pagos, abonos, nomina, offline ni
    cambios en `/api/sync`.
 
 ## Rollback
