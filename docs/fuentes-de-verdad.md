@@ -655,3 +655,13 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   `tareas_operativas`.
 - Upload contextual a tarea sigue diferido; `Documento::ENTIDAD_TIPOS` aun no registra
   `tarea` como entidad permitida para carga.
+## Fase 6C-B - Documentos en tareas
+
+- Fuente de tareas: `tareas_operativas`.
+- Fuente de documentos: `documentos`.
+- Fuente de vinculos: `documento_entidades`.
+- Entidad documental habilitada: `tarea`.
+- Regla multihotel: `documento_entidades.hotel_id` debe coincidir con
+  `tareas_operativas.hotel_id`.
+- Storage privado: se mantiene el Centro Documental existente; no se usa
+  `public_html/uploads` como fuente de verdad documental.

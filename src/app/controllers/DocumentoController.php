@@ -399,6 +399,7 @@ class DocumentoController extends Controller
             'huesped' => 'Huesped',
             'reservacion' => 'Reservacion',
             'trabajador' => 'Trabajador',
+            'tarea' => 'Tarea',
         ];
 
         return $labels[$entidadTipo] ?? 'Entidad';

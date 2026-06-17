@@ -39,6 +39,7 @@ class Documento extends Model
         'huesped',
         'reservacion',
         'trabajador',
+        'tarea',
     ];
 
     public function tablasDisponibles(): bool
@@ -661,6 +662,7 @@ class Documento extends Model
             'huesped' => 'huespedes',
             'reservacion' => 'reservaciones',
             'trabajador' => 'trabajadores',
+            'tarea' => 'tareas_operativas',
         ];
 
         $tabla = $tablas[$entidadTipo] ?? null;

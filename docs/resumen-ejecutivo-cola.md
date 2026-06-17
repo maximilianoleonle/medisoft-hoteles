@@ -1233,3 +1233,14 @@ Resultado 6C-A:
 - La consulta lee `documento_entidades` con `entidad_tipo = tarea` y valida
   `tareas_operativas.hotel_id`.
 - No se habilita upload desde tarea, no hay rutas nuevas ni POST nuevo.
+
+Resultado 6C-B:
+
+- Estado tecnico: `VINCULACION_6C_B_DOCUMENTOS_TAREAS_COMPLETADA_QA_DIFERIDA`.
+- Documento: `docs/fase_6C_B_vinculacion_segura_documentos_tareas.md`.
+- Se habilita `tarea` como entidad valida del Centro Documental.
+- El detalle de tarea muestra enlaces contextuales para ver/vincular documentos.
+- La carga sigue usando `/documentos/subir` con CSRF, validacion de entidad por
+  `hotel_id`, validacion de archivo, storage privado y auditoria existentes.
+- No se agregan rutas nuevas, no se expone `storage_path`, no se cambia
+  `habitaciones.estado`, no hay Caja, pagos, nomina, offline ni `/api/sync`.

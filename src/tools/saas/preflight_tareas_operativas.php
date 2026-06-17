@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase TLM-G/MANT-G-B/TLM-J-A/6B-A/6C-A para tareas operativas.
+ * Preflight Fase TLM-G/MANT-G-B/TLM-J-A/6B-A/6C-A/6C-B para tareas operativas.
  *
  * Solo lectura. No crea rutas, migraciones ni datos.
  * Valida consistencia de tareas_operativas/tarea_eventos, entidades vinculadas,
@@ -190,7 +190,7 @@ $habitacionControllerPath = $appRoot . '/app/controllers/HabitacionController.ph
 $habitacionIndexPath = $appRoot . '/app/views/habitaciones/index.php';
 $trabajadorControllerPath = $appRoot . '/app/controllers/TrabajadorController.php';
 
-echo "Preflight Fase TLM-G/MANT-G-B/TLM-J-A/6B-A/6C-A - Tareas operativas\n";
+echo "Preflight Fase TLM-G/MANT-G-B/TLM-J-A/6B-A/6C-A/6C-B - Tareas operativas\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {
@@ -541,12 +541,14 @@ if (
     && strpos($documentoModelCode, "de.entidad_tipo = 'tarea'") !== false
     && strpos($documentoModelCode, 'tareas_operativas t') !== false
     && strpos($documentoModelCode, 't.hotel_id = de.hotel_id') !== false
+    && strpos($documentoModelCode, "'tarea'") !== false
+    && strpos($documentoModelCode, "'tarea' => 'tareas_operativas'") !== false
 ) {
-    tlmPfOk('Documento model 6C-A consulta documentos de tarea con validacion hotel_id.');
+    tlmPfOk('Documento model 6C-A/6C-B consulta y valida entidad tarea con hotel_id.');
 } else {
     tlmPfWarning(
-        'Documento model no muestra contrato 6C-A completo.',
-        'Validar documentosPorTareaHotel() con join a tareas_operativas por hotel_id.'
+        'Documento model no muestra contrato 6C-A/6C-B completo.',
+        'Validar documentosPorTareaHotel() y entidad tarea contra tareas_operativas por hotel_id.'
     );
 }
 
@@ -634,17 +636,17 @@ if (
     $taskDetailCode !== ''
     && strpos($taskDetailCode, "View::partial('documentos_entidad'") !== false
     && strpos($taskDetailCode, "'tipo' => 'tarea'") !== false
-    && strpos($taskDetailCode, "'documentosEntidadPermiteVincular' => false") !== false
-    && strpos($taskDetailCode, "'documentosEntidadPermiteVerTodos' => false") !== false
+    && strpos($taskDetailCode, "'documentosEntidadPermiteVincular' => true") !== false
+    && strpos($taskDetailCode, "'documentosEntidadPermiteVerTodos' => true") !== false
     && strpos($taskDetailCode, 'storage_path') === false
     && $documentosEntidadPartialCode !== ''
     && strpos($documentosEntidadPartialCode, 'documentosEntidadPermiteVincular') !== false
 ) {
-    tlmPfOk('Detalle de tarea 6C-A muestra documentos vinculados en modo read-only.');
+    tlmPfOk('Detalle de tarea 6C-B usa partial documental y habilita vinculacion por Centro Documental.');
 } else {
     tlmPfWarning(
-        'Detalle de tarea 6C-A no muestra contrato documental read-only completo.',
-        'Asegurar partial documental sin vincular, sin ver todos y sin storage_path.'
+        'Detalle de tarea 6C-B no muestra contrato documental completo.',
+        'Asegurar partial documental con contexto tarea, sin storage_path y sin rutas paralelas.'
     );
 }
 

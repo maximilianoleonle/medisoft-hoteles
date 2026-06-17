@@ -1138,3 +1138,19 @@ Estado: implementado tecnicamente, QA manual diferida.
 - No se habilita upload contextual, no hay rutas nuevas, no hay POST nuevo.
 - Siguiente accion segura: 6C-B vinculacion segura desde tarea o cierre tecnico 6C si
   se quiere pausar antes de cargas.
+
+## 6C-B vinculacion segura de documentos en tareas
+
+Estado: implementado tecnicamente, QA manual diferida.
+
+- Documento creado: `docs/fase_6C_B_vinculacion_segura_documentos_tareas.md`.
+- Se habilita `tarea` como entidad documental valida.
+- `Documento::entidadExisteEnHotel()` valida tareas contra `tareas_operativas` usando
+  `id + hotel_id`.
+- `GET /tareas/{id}` permite usar los enlaces existentes del Centro Documental para
+  ver todos y vincular documentos.
+- No se agregan rutas nuevas; se reutiliza `/documentos/subir`.
+- No se cambia storage, no se expone `storage_path`, no se toca Caja, nomina, offline
+  ni `/api/sync`.
+- Siguiente accion segura: cierre tecnico/revision 6C o avanzar a un bloque nuevo
+  independiente con QA manual diferida.

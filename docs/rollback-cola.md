@@ -1095,3 +1095,16 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - No borrar documentos ni registros de `documento_entidades`.
 - No tocar `tareas_operativas`, `tarea_eventos`, habitaciones, Caja, nomina, offline ni
   `/api/sync`.
+## Rollback Fase 6C-B
+
+La fase 6C-B solo habilita `tarea` como entidad documental y enciende enlaces
+contextuales existentes en el detalle de tarea.
+
+Rollback recomendado:
+
+1. Revertir el commit `feat(phase-6c): enable safe task document linking`.
+2. No borrar documentos.
+3. No borrar filas de `documento_entidades`.
+4. Si existen documentos reales vinculados a `entidad_tipo = tarea`, conservarlos como
+   historico y evaluar reconciliacion posterior.
+5. Ejecutar `php -l`, `preflight_tareas_operativas.php` y health checker.

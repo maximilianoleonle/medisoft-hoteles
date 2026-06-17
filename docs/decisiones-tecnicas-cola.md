@@ -988,3 +988,19 @@
 - La agenda queda como herramienta read-only; cualquier accion futura debe vivir en el
   detalle de tarea o en contrato nuevo.
 - No se abre planeacion de turnos ni nomina desde este cierre.
+## Fase 6C-B - Reutilizar Centro Documental para tareas
+
+Decision: habilitar `tarea` dentro del Centro Documental existente en lugar de crear
+una tabla, ruta o upload paralelo para evidencias de tareas.
+
+Motivo:
+
+- El Centro Documental ya tiene validacion de archivo, storage privado, CSRF,
+  auditoria y control por `hotel_id`.
+- Crear un flujo paralelo duplicaria validaciones y elevaria riesgo de exposicion.
+
+Guardrails:
+
+- `tarea` valida contra `tareas_operativas.id + hotel_id`.
+- No se expone `storage_path`.
+- No se toca Caja, nomina, pagos, offline ni `/api/sync`.

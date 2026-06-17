@@ -268,7 +268,7 @@ $prioridad = (string)($tarea['prioridad'] ?? 'media');
             'id' => (int)($tarea['id'] ?? 0),
             'label' => 'Tarea',
         ],
-        'documentosEntidadPermiteVerTodos' => false,
-        'documentosEntidadPermiteVincular' => false,
+        'documentosEntidadPermiteVerTodos' => true,
+        'documentosEntidadPermiteVincular' => true,
     ]); ?>
 </div>

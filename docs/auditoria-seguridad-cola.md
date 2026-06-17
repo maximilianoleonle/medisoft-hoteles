@@ -1224,3 +1224,19 @@ Estado: `DOCUMENTOS_6C_A_TAREAS_READONLY_COMPLETADOS_QA_DIFERIDA`.
 - No modifica tarea, eventos, habitacion, Caja, nomina, offline ni `/api/sync`.
 - Riesgo residual: QA visual diferida para confirmar estado vacio y ausencia de boton
   de vinculacion desde tarea.
+## Auditoria Fase 6C-B
+
+Resultado: sin hallazgos bloqueantes en la implementacion tecnica.
+
+- La accion contextual de tarea reutiliza `/documentos/subir`.
+- El controlador documental exige sesion y contexto hotelero.
+- El POST de carga conserva CSRF.
+- La entidad `tarea` se valida contra `tareas_operativas` por `hotel_id`.
+- No se agregan rutas publicas de archivo.
+- No se expone `storage_path`.
+- No hay cambios en Caja, pagos, nomina, offline ni `/api/sync`.
+
+Riesgo residual:
+
+- QA manual debe confirmar carga real desde una tarea y visibilidad posterior en el
+  detalle.

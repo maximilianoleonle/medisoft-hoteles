@@ -1365,3 +1365,17 @@ instruccion del usuario.
 - Confirmar que no aparece boton "Vincular documento" en la tarea.
 - Confirmar que no aparece `storage_path`.
 - Confirmar que no cambia tarea, habitacion, Caja, nomina, offline ni `/api/sync`.
+## Fase 6C-B - Vinculacion documental en tareas
+
+Estado: QA manual diferida por instruccion del usuario.
+
+Pruebas recomendadas:
+
+1. Entrar con sesion hotelera y abrir `/tareas/{id}`.
+2. Confirmar que la tarea pertenece al hotel actual.
+3. Usar "Vincular documento".
+4. Confirmar que abre `/documentos/subir?entidad_tipo=tarea&entidad_id={id}`.
+5. Subir archivo permitido.
+6. Confirmar que el documento aparece en la tarea.
+7. Confirmar que no se muestra `storage_path`.
+8. Confirmar que no se modifican Caja, pagos, nomina ni habitaciones.

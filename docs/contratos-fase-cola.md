@@ -1434,3 +1434,35 @@ Estado formal vigente: `DOCUMENTOS_6C_A_TAREAS_READONLY_COMPLETADOS_QA_DIFERIDA`
 - No cambia estado de tareas, habitaciones, mantenimiento, Caja, nomina, pagos, offline
   ni `/api/sync`.
 - Siguiente accion segura: 6C-B vinculacion segura desde tarea usando Centro Documental.
+## Fase 6C-B - Vinculacion segura de documentos en tareas
+
+Estado contractual: implementacion permitida y acotada.
+
+Objetivo:
+
+- Permitir que una tarea operativa use el flujo documental existente para vincular
+  evidencias.
+
+Permitido:
+
+- Agregar `tarea` como entidad documental.
+- Validar `tarea` contra `tareas_operativas.id + hotel_id`.
+- Mostrar enlaces contextuales del Centro Documental en `GET /tareas/{id}`.
+- Reutilizar `/documentos/subir` y sus validaciones existentes.
+
+Prohibido:
+
+- Crear rutas paralelas de upload.
+- Crear rutas publicas de archivo.
+- Exponer `storage_path`.
+- Cambiar estado de habitaciones por documentos.
+- Tocar Caja, pagos, nomina, offline o `/api/sync`.
+
+Definition of Done:
+
+- `php -l` en archivos PHP tocados.
+- `preflight_tareas_operativas.php` con `ERROR: 0`.
+- Health checker con `ERROR: 0`.
+- HTTP sin sesion bloquea rutas documentales/tareas.
+- SQL read-only confirma que no se crearon documentos durante verificacion automatica.
+- `git diff --check`.
