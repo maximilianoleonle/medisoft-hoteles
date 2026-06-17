@@ -1127,3 +1127,14 @@ Estado: contrato completado.
 - La integracion futura debe validar `tareas_operativas.id` + `hotel_id`.
 - No se implementaron rutas, modelos, uploads ni cambios DB.
 - Siguiente accion segura: 6C-A documentos read-only en detalle de tarea.
+
+## 6C-A documentos read-only en tareas
+
+Estado: implementado tecnicamente, QA manual diferida.
+
+- Documento creado: `docs/fase_6C_A_documentos_readonly_tareas.md`.
+- Se agrega lectura de documentos vinculados a tarea con validacion por hotel.
+- `GET /tareas/{id}` muestra la seccion documental sin boton de vincular.
+- No se habilita upload contextual, no hay rutas nuevas, no hay POST nuevo.
+- Siguiente accion segura: 6C-B vinculacion segura desde tarea o cierre tecnico 6C si
+  se quiere pausar antes de cargas.

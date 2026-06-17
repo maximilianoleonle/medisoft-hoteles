@@ -5,16 +5,19 @@ require_once __DIR__ . '/../../core/View.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
 require_once __DIR__ . '/../helpers/modulos.php';
 require_once __DIR__ . '/../models/TareaOperativa.php';
+require_once __DIR__ . '/../models/Documento.php';
 require_once __DIR__ . '/../services/AuditService.php';
 
 class TareaController extends Controller
 {
     private $tareaModel;
+    private $documentoModel;
 
     public function __construct($route_params = [])
     {
         parent::__construct($route_params);
         $this->tareaModel = new TareaOperativa();
+        $this->documentoModel = new Documento();
     }
 
     protected function before()
@@ -111,6 +114,7 @@ class TareaController extends Controller
                 : [],
             'puedeAsignar' => $this->puedeAsignar($tarea),
             'puedeCambiarEstado' => $this->puedeCambiarEstado($tarea),
+            'documentosEntidad' => $this->documentosDeTarea($id, $hotelId),
         ]);
     }
 
@@ -323,6 +327,15 @@ class TareaController extends Controller
             ],
             'tareas' => [],
         ];
+    }
+
+    private function documentosDeTarea(int $tareaId, int $hotelId): array
+    {
+        if ($tareaId <= 0 || $hotelId <= 0) {
+            return [];
+        }
+
+        return $this->documentoModel->documentosPorTareaHotel($hotelId, $tareaId, 50);
     }
 
     private function datosFormulario(): array

@@ -645,3 +645,13 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   entidades del hotel.
 - La entidad documental futura `tarea` debe validarse por `tareas_operativas.id` +
   `hotel_id`.
+
+### 6C-A documentos read-only en tareas
+
+- Fuente de verdad documental: `docs/fase_6C_A_documentos_readonly_tareas.md`.
+- Consulta tecnica: `Documento::documentosPorTareaHotel()`.
+- La vista de tarea solo lee documentos vinculados como `entidad_tipo = tarea`.
+- `documento_entidades` conserva el vinculo, pero no modifica ni reemplaza
+  `tareas_operativas`.
+- Upload contextual a tarea sigue diferido; `Documento::ENTIDAD_TIPOS` aun no registra
+  `tarea` como entidad permitida para carga.

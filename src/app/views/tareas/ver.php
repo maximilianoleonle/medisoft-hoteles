@@ -25,6 +25,7 @@ $eventosDisponibles = (bool)($eventosDisponibles ?? false);
 $trabajadoresActivos = is_array($trabajadoresActivos ?? null) ? $trabajadoresActivos : [];
 $puedeAsignar = (bool)($puedeAsignar ?? false);
 $puedeCambiarEstado = (bool)($puedeCambiarEstado ?? false);
+$documentosEntidad = is_array($documentosEntidad ?? null) ? $documentosEntidad : [];
 
 $estadoLabels = [
     'pendiente' => 'Pendiente',
@@ -259,4 +260,15 @@ $prioridad = (string)($tarea['prioridad'] ?? 'media');
             <?php endif; ?>
         </section>
     </div>
+
+    <?php View::partial('documentos_entidad', [
+        'documentosEntidad' => $documentosEntidad,
+        'documentosEntidadContexto' => [
+            'tipo' => 'tarea',
+            'id' => (int)($tarea['id'] ?? 0),
+            'label' => 'Tarea',
+        ],
+        'documentosEntidadPermiteVerTodos' => false,
+        'documentosEntidadPermiteVincular' => false,
+    ]); ?>
 </div>

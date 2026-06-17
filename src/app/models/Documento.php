@@ -330,6 +330,62 @@ class Documento extends Model
         return $stmt ? ($stmt->fetchAll() ?: []) : [];
     }
 
+    public function documentosPorTareaHotel(int $hotelId, int $tareaId, int $limite = 100): array
+    {
+        if (
+            $hotelId <= 0
+            || $tareaId <= 0
+            || !$this->tablasDisponibles()
+            || !$this->tablaExiste('tareas_operativas')
+        ) {
+            return [];
+        }
+
+        $limite = max(1, min(100, $limite));
+        $stmt = $this->db->query(
+            "SELECT d.id,
+                    d.hotel_id,
+                    d.documento_tipo_id,
+                    d.nombre_original,
+                    d.mime_type,
+                    d.size_bytes,
+                    d.titulo,
+                    d.descripcion,
+                    d.etiquetas,
+                    d.estado,
+                    d.subido_por_usuario_id,
+                    d.created_at,
+                    d.updated_at,
+                    dt.clave AS tipo_clave,
+                    dt.nombre AS tipo_nombre,
+                    u.nombre_completo AS subido_por_nombre,
+                    de.relacion,
+                    1 AS entidades_count,
+                    CONCAT(de.entidad_tipo, '#', de.entidad_id) AS entidades_resumen
+             FROM documento_entidades de
+             INNER JOIN tareas_operativas t
+                ON t.id = de.entidad_id
+               AND t.hotel_id = de.hotel_id
+             INNER JOIN documentos d
+                ON d.id = de.documento_id
+               AND d.hotel_id = de.hotel_id
+             LEFT JOIN documento_tipos dt
+                ON dt.id = d.documento_tipo_id
+               AND (dt.hotel_id IS NULL OR dt.hotel_id = d.hotel_id)
+             LEFT JOIN usuarios u
+                ON u.id = d.subido_por_usuario_id
+             WHERE de.hotel_id = ?
+               AND de.entidad_tipo = 'tarea'
+               AND de.entidad_id = ?
+               AND d.estado <> 'eliminado'
+             ORDER BY de.created_at DESC, de.id DESC
+             LIMIT {$limite}",
+            [$hotelId, $tareaId]
+        );
+
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
     public function entidadesPorDocumento(int $documentoId, int $hotelId): array
     {
         if ($documentoId <= 0 || $hotelId <= 0 || !$this->tablaExiste('documento_entidades')) {

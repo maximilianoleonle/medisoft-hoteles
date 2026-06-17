@@ -640,6 +640,17 @@
 - Documentos no cambian estados de tarea, habitacion, mantenimiento, Caja, nomina ni
   `/api/sync`.
 
+## Decision 6C-A documentos read-only en tareas
+
+- Se agrega lectura documental a tareas sin habilitar todavia upload contextual.
+- Para mantener la subfase read-only, no se agrega `tarea` a `Documento::ENTIDAD_TIPOS`
+  en esta etapa.
+- Se consulta `documento_entidades.entidad_tipo = 'tarea'` solo mediante
+  `Documento::documentosPorTareaHotel()`, validando `tareas_operativas.hotel_id`.
+- El partial documental se parametriza para ocultar "Ver todos" y "Vincular documento"
+  en el detalle de tarea.
+- La vinculacion/carga desde tarea queda diferida a 6C-B.
+
 ## Decision NP-D-0 documentos laborales
 
 - No se abrira un segundo flujo documental basado en `trabajador_documentos` mientras ya

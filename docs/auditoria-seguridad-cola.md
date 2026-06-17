@@ -1211,3 +1211,16 @@ Estado: `CONTRATO_6C_EVIDENCIAS_DOCUMENTOS_TAREAS_COMPLETADO`.
 - Mitigacion definida: validar entidad `tarea` contra `tareas_operativas.id` +
   `hotel_id`.
 - Caja, nomina, pagos, offline y `/api/sync` siguen fuera de alcance.
+
+## Auditoria 6C-A
+
+Estado: `DOCUMENTOS_6C_A_TAREAS_READONLY_COMPLETADOS_QA_DIFERIDA`.
+
+- No agrega rutas ni POST.
+- No habilita upload contextual a tareas.
+- Consulta documentos por tarea con join a `tareas_operativas` y `hotel_id`.
+- El detalle de tarea oculta acciones de vincular documento.
+- No expone `storage_path`.
+- No modifica tarea, eventos, habitacion, Caja, nomina, offline ni `/api/sync`.
+- Riesgo residual: QA visual diferida para confirmar estado vacio y ausencia de boton
+  de vinculacion desde tarea.

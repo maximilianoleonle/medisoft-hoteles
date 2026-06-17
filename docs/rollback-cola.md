@@ -1084,3 +1084,14 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
 - Codigo: no aplica; no agrega rutas, modelos ni vistas.
 - No tocar documentos reales, `documento_entidades`, `tareas_operativas`,
   `tarea_eventos`, Caja, nomina, offline ni `/api/sync`.
+
+### 6C-A documentos read-only en tareas
+
+- Rollback de codigo/documentacion: revertir el commit
+  `feat(phase-6c): show read-only task documents`.
+- DB: no aplica; no crea migraciones ni datos.
+- Retira la consulta documental por tarea, la seccion en `tareas/ver.php` y checks/docs
+  asociados.
+- No borrar documentos ni registros de `documento_entidades`.
+- No tocar `tareas_operativas`, `tarea_eventos`, habitaciones, Caja, nomina, offline ni
+  `/api/sync`.

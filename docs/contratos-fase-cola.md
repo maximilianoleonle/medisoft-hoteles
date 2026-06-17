@@ -1421,3 +1421,16 @@ Estado formal vigente: `CONTRATO_6C_EVIDENCIAS_DOCUMENTOS_TAREAS_COMPLETADO`.
   `storage_path`.
 - No toca habitaciones, mantenimiento, Caja, nomina, pagos, offline ni `/api/sync`.
 - Siguiente accion segura: 6C-A documentos read-only en detalle de tarea.
+
+## Fase 6C-A - Documentos read-only en tareas
+
+Estado formal vigente: `DOCUMENTOS_6C_A_TAREAS_READONLY_COMPLETADOS_QA_DIFERIDA`.
+
+- Documento: `docs/fase_6C_A_documentos_readonly_tareas.md`.
+- `GET /tareas/{id}` muestra documentos vinculados con `entidad_tipo = tarea`.
+- La consulta valida `hotel_id` contra `tareas_operativas`.
+- No habilita upload contextual desde tarea.
+- No agrega rutas, POST ni migraciones.
+- No cambia estado de tareas, habitaciones, mantenimiento, Caja, nomina, pagos, offline
+  ni `/api/sync`.
+- Siguiente accion segura: 6C-B vinculacion segura desde tarea usando Centro Documental.

@@ -1,6 +1,6 @@
 <?php
 /**
- * Preflight Fase TLM-G/MANT-G-B/TLM-J-A/6B-A para tareas operativas.
+ * Preflight Fase TLM-G/MANT-G-B/TLM-J-A/6B-A/6C-A para tareas operativas.
  *
  * Solo lectura. No crea rutas, migraciones ni datos.
  * Valida consistencia de tareas_operativas/tarea_eventos, entidades vinculadas,
@@ -182,12 +182,15 @@ $configPath = $appRoot . '/config/database.php';
 $routesPath = $appRoot . '/config/routes.php';
 $taskModelPath = $appRoot . '/app/models/TareaOperativa.php';
 $taskControllerPath = $appRoot . '/app/controllers/TareaController.php';
+$documentoModelPath = $appRoot . '/app/models/Documento.php';
 $taskPartialPath = $appRoot . '/app/views/tareas/_contextual_list.php';
+$documentosEntidadPartialPath = $appRoot . '/app/views/partials/documentos_entidad.php';
+$taskDetailPath = $appRoot . '/app/views/tareas/ver.php';
 $habitacionControllerPath = $appRoot . '/app/controllers/HabitacionController.php';
 $habitacionIndexPath = $appRoot . '/app/views/habitaciones/index.php';
 $trabajadorControllerPath = $appRoot . '/app/controllers/TrabajadorController.php';
 
-echo "Preflight Fase TLM-G/MANT-G-B/TLM-J-A/6B-A - Tareas operativas\n";
+echo "Preflight Fase TLM-G/MANT-G-B/TLM-J-A/6B-A/6C-A - Tareas operativas\n";
 echo "=====================================================\n";
 
 if (!is_file($configPath)) {
@@ -491,7 +494,10 @@ if (empty($forbiddenRoutes)) {
 
 $taskModelCode = is_file($taskModelPath) ? (string) file_get_contents($taskModelPath) : '';
 $taskControllerCode = is_file($taskControllerPath) ? (string) file_get_contents($taskControllerPath) : '';
+$documentoModelCode = is_file($documentoModelPath) ? (string) file_get_contents($documentoModelPath) : '';
 $taskPartialCode = is_file($taskPartialPath) ? (string) file_get_contents($taskPartialPath) : '';
+$documentosEntidadPartialCode = is_file($documentosEntidadPartialPath) ? (string) file_get_contents($documentosEntidadPartialPath) : '';
+$taskDetailCode = is_file($taskDetailPath) ? (string) file_get_contents($taskDetailPath) : '';
 $habitacionControllerCode = is_file($habitacionControllerPath) ? (string) file_get_contents($habitacionControllerPath) : '';
 $trabajadorControllerCode = is_file($trabajadorControllerPath) ? (string) file_get_contents($trabajadorControllerPath) : '';
 
@@ -522,10 +528,26 @@ if (
     && strpos($taskControllerCode, 'validateCSRF') !== false
     && strpos($taskControllerCode, "require_permission('habitaciones.mantenimiento')") !== false
     && strpos($taskControllerCode, 'AuditService::record') !== false
+    && strpos($taskControllerCode, 'documentosDeTarea') !== false
 ) {
-    tlmPfOk('TareaController conserva reporte/agenda read-only, POST mantenimiento manual con CSRF, permiso conservador y auditoria.');
+    tlmPfOk('TareaController conserva reporte/agenda read-only, documentos 6C-A, POST mantenimiento manual con CSRF, permiso conservador y auditoria.');
 } else {
     tlmPfError('TareaController no muestra guardas TLM completas.', 'Validar CSRF, permisos y auditoria antes de continuar.');
+}
+
+if (
+    $documentoModelCode !== ''
+    && strpos($documentoModelCode, 'function documentosPorTareaHotel') !== false
+    && strpos($documentoModelCode, "de.entidad_tipo = 'tarea'") !== false
+    && strpos($documentoModelCode, 'tareas_operativas t') !== false
+    && strpos($documentoModelCode, 't.hotel_id = de.hotel_id') !== false
+) {
+    tlmPfOk('Documento model 6C-A consulta documentos de tarea con validacion hotel_id.');
+} else {
+    tlmPfWarning(
+        'Documento model no muestra contrato 6C-A completo.',
+        'Validar documentosPorTareaHotel() con join a tareas_operativas por hotel_id.'
+    );
 }
 
 if (
@@ -605,6 +627,24 @@ if (
     tlmPfWarning(
         'Vista habitaciones no muestra contrato 6B-A completo.',
         'Asegurar indicador read-only y mantener creacion de limpieza solo en reportes.'
+    );
+}
+
+if (
+    $taskDetailCode !== ''
+    && strpos($taskDetailCode, "View::partial('documentos_entidad'") !== false
+    && strpos($taskDetailCode, "'tipo' => 'tarea'") !== false
+    && strpos($taskDetailCode, "'documentosEntidadPermiteVincular' => false") !== false
+    && strpos($taskDetailCode, "'documentosEntidadPermiteVerTodos' => false") !== false
+    && strpos($taskDetailCode, 'storage_path') === false
+    && $documentosEntidadPartialCode !== ''
+    && strpos($documentosEntidadPartialCode, 'documentosEntidadPermiteVincular') !== false
+) {
+    tlmPfOk('Detalle de tarea 6C-A muestra documentos vinculados en modo read-only.');
+} else {
+    tlmPfWarning(
+        'Detalle de tarea 6C-A no muestra contrato documental read-only completo.',
+        'Asegurar partial documental sin vincular, sin ver todos y sin storage_path.'
     );
 }
 

@@ -1224,3 +1224,12 @@ Resultado 6C-0:
   `tarea`.
 - No se implementan rutas, uploads ni cambios de base.
 - Siguiente paso: 6C-A documentos read-only en detalle de tarea.
+
+Resultado 6C-A:
+
+- Estado tecnico: `DOCUMENTOS_6C_A_TAREAS_READONLY_COMPLETADOS_QA_DIFERIDA`.
+- Documento: `docs/fase_6C_A_documentos_readonly_tareas.md`.
+- Se muestra seccion documental en el detalle de tarea.
+- La consulta lee `documento_entidades` con `entidad_tipo = tarea` y valida
+  `tareas_operativas.hotel_id`.
+- No se habilita upload desde tarea, no hay rutas nuevas ni POST nuevo.

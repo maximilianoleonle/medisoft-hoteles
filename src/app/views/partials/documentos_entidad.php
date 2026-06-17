@@ -1,6 +1,8 @@
 <?php
 $documentosEntidad = is_array($documentosEntidad ?? null) ? $documentosEntidad : [];
 $documentosEntidadContexto = is_array($documentosEntidadContexto ?? null) ? $documentosEntidadContexto : [];
+$documentosEntidadPermiteVerTodos = (bool)($documentosEntidadPermiteVerTodos ?? true);
+$documentosEntidadPermiteVincular = (bool)($documentosEntidadPermiteVincular ?? true);
 
 if (!function_exists('doc_entity_safe')) {
     function doc_entity_safe($value, string $fallback = '-'): string
@@ -122,11 +124,13 @@ $entityQuery = $hasEntityContext
                 <i class="fas fa-lock"></i>
                 Lista segura
             </span>
-            <?php if ($hasEntityContext): ?>
+            <?php if ($hasEntityContext && $documentosEntidadPermiteVerTodos): ?>
                 <a class="de-action" href="<?= url('documentos/entidad/' . rawurlencode((string)($documentosEntidadContexto['tipo'] ?? '')) . '/' . $entityId) ?>">
                     <i class="fas fa-folder-tree"></i>
                     Ver todos
                 </a>
+            <?php endif; ?>
+            <?php if ($hasEntityContext && $documentosEntidadPermiteVincular): ?>
                 <a class="de-action" href="<?= url('documentos/subir' . $entityQuery) ?>">
                     <i class="fas fa-paperclip"></i>
                     Vincular documento

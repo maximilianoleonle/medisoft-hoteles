@@ -1354,3 +1354,14 @@ instruccion del usuario.
   - confirmar estado vacio si no hay documentos;
   - confirmar que no aparece `storage_path`;
   - confirmar que no cambia estado de tarea, habitacion, Caja, nomina ni `/api/sync`.
+
+### Estado 6C-A
+
+- Documentos read-only en detalle de tarea implementados.
+- QA manual diferida por instruccion del usuario.
+- Probar `/tareas/{id}`.
+- Confirmar que aparece la seccion "Documentos vinculados".
+- Confirmar estado vacio claro cuando no hay documentos.
+- Confirmar que no aparece boton "Vincular documento" en la tarea.
+- Confirmar que no aparece `storage_path`.
+- Confirmar que no cambia tarea, habitacion, Caja, nomina, offline ni `/api/sync`.
