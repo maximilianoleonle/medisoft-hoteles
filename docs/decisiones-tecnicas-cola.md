@@ -1004,3 +1004,19 @@ Guardrails:
 - `tarea` valida contra `tareas_operativas.id + hotel_id`.
 - No se expone `storage_path`.
 - No se toca Caja, nomina, pagos, offline ni `/api/sync`.
+
+## Fase 5B - Reanclar asistencia a NP-C-D
+
+Decision: tratar 5B como cubierta por NP-C-D en lugar de crear una segunda
+implementacion de asistencia.
+
+Motivo:
+
+- Ya existe tabla `trabajador_asistencias`.
+- Ya existe ruta POST controlada con CSRF.
+- Ya existen validaciones de hotel/trabajador activo/duplicado por dia.
+- Duplicar este flujo aumentaria riesgo de inconsistencias laborales.
+
+Limite:
+
+- 5B no autoriza nomina, pagos reales, abonos, Caja ni `/api/sync`.

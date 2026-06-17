@@ -665,3 +665,12 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   `tareas_operativas.hotel_id`.
 - Storage privado: se mantiene el Centro Documental existente; no se usa
   `public_html/uploads` como fuente de verdad documental.
+
+## Fase 5B - Asistencia laboral basica
+
+- Fuente de asistencia: `trabajador_asistencias`.
+- Fuente de trabajador: `trabajadores`.
+- Regla multihotel: `trabajador_asistencias.hotel_id` debe coincidir con
+  `trabajadores.hotel_id`.
+- Captura vigente: `POST /trabajadores/{id}/asistencias`.
+- No hay fuente de verdad en Caja, pagos ni nomina para esta fase.

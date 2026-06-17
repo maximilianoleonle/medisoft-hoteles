@@ -1166,3 +1166,17 @@ Estado: `BLOQUE_6C_DOCUMENTOS_TAREAS_CERRADO_QA_DIFERIDA`.
 - No hay rutas paralelas, cambios de disponibilidad, Caja, nomina, offline ni
   `/api/sync`.
 - Siguiente accion segura: 5B Asistencia laboral basica iniciando por contrato.
+
+## Reanclaje 5B Asistencia laboral basica
+
+Estado formal: `FASE_5B_ASISTENCIA_LABORAL_BASICA_YA_CUBIERTA_POR_NP_C_D`.
+
+- Documento creado: `docs/fase_5B_reanclaje_asistencia_laboral_basica.md`.
+- La asistencia laboral basica ya existe en `trabajador_asistencias`.
+- Ruta existente: `POST /trabajadores/{id}/asistencias`.
+- Mantiene sesion, hotel actual, CSRF, trabajador activo, bloqueo de duplicado por dia
+  y auditoria.
+- No se crean tablas, rutas ni modelos duplicados.
+- No hay nomina automatica, pagos reales, abonos, Caja ni `/api/sync`.
+- Siguiente accion segura: reanclar 5C contra anticipos/prestamos/saldos ya existentes
+  en NP-C-C.

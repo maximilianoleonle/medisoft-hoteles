@@ -1118,3 +1118,14 @@ Rollback:
 1. Revertir el commit de cierre si solo se requiere corregir documentacion.
 2. Para desactivar funcionalmente la integracion, revertir 6C-B y/o 6C-A.
 3. No borrar documentos ni vinculos reales existentes.
+
+## Rollback Fase 5B
+
+5B es un reanclaje documental hacia NP-C-D.
+
+Rollback:
+
+1. Revertir el commit documental de reanclaje si la clasificacion cambia.
+2. No revertir NP-C-D sin decision explicita, porque es la fuente vigente de asistencia.
+3. No borrar filas de `trabajador_asistencias`.
+4. Para datos de prueba, documentar IDs y esperar fase de anulacion/correccion.

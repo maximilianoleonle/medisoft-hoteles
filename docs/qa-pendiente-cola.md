@@ -1391,3 +1391,17 @@ Pruebas acumuladas:
 3. Validar descarga autenticada del documento ya vinculado.
 4. Confirmar que tarea/habitacion no cambian de estado por adjuntar evidencia.
 5. Confirmar que `/api/sync` sigue sin usarse en este flujo.
+
+## Fase 5B - Asistencia laboral basica
+
+Estado: QA manual diferida; fase reanclada a NP-C-D.
+
+Pruebas recomendadas:
+
+1. Crear o elegir trabajador activo del hotel actual.
+2. Abrir `/trabajadores/{id}`.
+3. Registrar asistencia con fecha actual.
+4. Confirmar que aparece en asistencias recientes.
+5. Intentar duplicar la misma fecha y confirmar bloqueo.
+6. Confirmar cero movimientos de Caja, cero pagos reales y cero abonos.
+7. Ejecutar `preflight_personal_ledger.php`.

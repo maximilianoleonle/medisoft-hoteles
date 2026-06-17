@@ -1250,3 +1250,13 @@ Resultado: cierre tecnico sin hallazgos bloqueantes.
 - No se agregan acciones de borrado, reemplazo, links publicos ni storage publico.
 - No hay cambios en Caja, pagos, nomina, offline ni `/api/sync`.
 - QA manual queda diferida.
+
+## Auditoria Fase 5B
+
+Resultado: reanclaje sin hallazgos bloqueantes.
+
+- La implementacion vigente de asistencia exige sesion, hotel actual y CSRF.
+- La escritura queda centralizada en `Trabajador::registrarAsistenciaLaboralParaHotel()`.
+- Se bloquean duplicados por trabajador y fecha.
+- No hay Caja, pagos reales, abonos, nomina automatica ni `/api/sync`.
+- QA manual queda diferida.

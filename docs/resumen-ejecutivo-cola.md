@@ -1253,3 +1253,13 @@ Resultado 6C-F:
 - Health y preflight de tareas pasan con `ERROR: 0`.
 - QA manual queda diferida por instruccion del usuario.
 - Siguiente paso recomendado: 5B Asistencia laboral basica con contrato previo.
+
+Resultado 5B:
+
+- Estado tecnico: `FASE_5B_ASISTENCIA_LABORAL_BASICA_YA_CUBIERTA_POR_NP_C_D`.
+- Documento: `docs/fase_5B_reanclaje_asistencia_laboral_basica.md`.
+- Se confirma que la asistencia laboral basica ya esta implementada en NP-C-D.
+- No se duplica Personal, no se agregan rutas nuevas ni tablas nuevas.
+- Fuentes vigentes: `trabajador_asistencias`, `TrabajadorController`,
+  `Trabajador::registrarAsistenciaLaboralParaHotel()`.
+- No hay nomina automatica, pagos, abonos, Caja ni `/api/sync`.
