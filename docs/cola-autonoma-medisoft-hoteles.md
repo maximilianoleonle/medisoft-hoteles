@@ -1309,3 +1309,16 @@ Estado formal: `CONTRATO_3D_PAGOS_PROVEEDORES_CAJA_COMPLETADO`.
   backup y QA manual.
 - Siguiente accion segura: detener avance operativo hasta que el usuario pueda validar
   QA/manual y autorizar 3D-A simulador read-only.
+
+## 3D-A Simulador Caja read-only para CxP
+
+Estado formal: `SIMULADOR_3D_A_CAJA_READONLY_COMPLETADO_QA_DIFERIDA`.
+
+- Documento creado: `docs/fase_3D_A_simulador_caja_readonly.md`.
+- Ruta creada: GET `/cuentas-por-pagar/simulador-caja`.
+- Se muestra corte abierto del hotel actual y diagnostico por CxP.
+- No hay POST, botones de pago, abonos, cambios de saldo ni movimientos.
+- Se agrega `preflight_pagos_proveedores_caja.php`.
+- QA manual queda diferida.
+- Siguiente accion segura: no avanzar a pago real sin backup, autorizacion especifica
+  y QA manual disponible; solo podria prepararse contrato tecnico de servicio 3D-B.

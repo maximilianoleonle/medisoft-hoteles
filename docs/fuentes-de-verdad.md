@@ -765,3 +765,14 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - `movimientos_caja.proveedor` es texto historico/legacy, no reemplaza
   `proveedores.id`.
 - 3D-0 no modifica ninguna fuente.
+
+## Fase 3D-A - Simulador Caja read-only
+
+- Fuente de deuda proveedor: `cuentas_por_pagar`.
+- Fuente de proveedor moderno: `proveedores` por `id + hotel_id`.
+- Fuente de compra vinculada: `compras` por `id + hotel_id`.
+- Fuente de corte abierto: `cortes_caja` con `estado = abierto`.
+- Fuente de caja activa: `cajas` con `activa = 1`.
+- `cuentas_por_pagar_movimientos` y `movimientos_caja` solo se cuentan en preflight;
+  no son destino de escritura en 3D-A.
+- El simulador no cambia la fuente de verdad: solo diagnostica elegibilidad.

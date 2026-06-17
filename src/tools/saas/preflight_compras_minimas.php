@@ -611,9 +611,10 @@ if (is_file($routesPath)) {
         $isAllowedCxpReadOnlyRoute = in_array($method . ' /' . $path, [
             'GET /cuentas-por-pagar',
             'GET /cuentas-por-pagar/generacion-preview',
+            'GET /cuentas-por-pagar/simulador-caja',
             'POST /cuentas-por-pagar/generar-desde-compra/{id:[0-9]+}',
             'GET /cuentas-por-pagar/{id:[0-9]+}',
-        ], true) && $controller === 'cuentaporpagar' && in_array($action, ['index', 'generacionpreview', 'generardesdecompra', 'ver'], true);
+        ], true) && $controller === 'cuentaporpagar' && in_array($action, ['index', 'generacionpreview', 'simuladorcaja', 'generardesdecompra', 'ver'], true);
 
         if ($isAllowedPurchaseRoute || $isAllowedCxpReadOnlyRoute) {
             continue;

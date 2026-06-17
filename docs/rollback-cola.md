@@ -1237,3 +1237,17 @@ Rollback:
 1. Revertir el commit documental de 3D-0.
 2. No tocar CxP, Caja, cortes ni movimientos.
 3. No crear rutas ni migraciones de pago.
+
+## Rollback Fase 3D-A
+
+3D-A agrega solo una pantalla GET/read-only y un preflight.
+
+Rollback:
+
+1. Revertir el commit `feat(phase-3d): add provider cashbox payment preview`.
+2. Retirar GET `/cuentas-por-pagar/simulador-caja`.
+3. Retirar `CuentaPorPagarController::simuladorCajaAction()`.
+4. Retirar los metodos read-only `simuladorCajaProveedor()` y relacionados del modelo.
+5. Retirar `app/views/cuentas_por_pagar/simulador_caja.php`.
+6. Retirar `src/tools/saas/preflight_pagos_proveedores_caja.php`.
+7. No tocar datos, CxP, Caja, cortes, movimientos ni `/api/sync`.

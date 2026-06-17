@@ -164,3 +164,32 @@ manual especifica.
 
 Solo 3D-A simulador read-only o contrato mas detallado del servicio. No implementar pagos
 reales sin autorizacion explicita, backup y QA manual disponible.
+
+## Actualizacion Fase 3D-A
+
+Estado: `SIMULADOR_3D_A_CAJA_READONLY_COMPLETADO_QA_DIFERIDA`.
+
+Se implemento el simulador read-only en `/cuentas-por-pagar/simulador-caja`.
+
+El simulador:
+
+- lee CxP del hotel actual;
+- valida proveedor del mismo hotel;
+- valida compra vinculada del mismo hotel si existe;
+- valida estado y saldo;
+- lee el corte de Caja abierto del hotel actual;
+- muestra motivo de elegibilidad o bloqueo.
+
+No implementa:
+
+- POST de pago;
+- abonos;
+- movimientos CxP;
+- movimientos de Caja;
+- cambios de saldo;
+- cambios de estado;
+- migraciones;
+- `/api/sync`.
+
+La implementacion real de pago sigue bloqueada hasta backup, servicio transaccional y
+QA manual especifica.

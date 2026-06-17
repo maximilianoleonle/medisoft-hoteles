@@ -30,6 +30,17 @@ class CuentaPorPagar extends Model
         return true;
     }
 
+    public function tablasSimuladorCajaDisponibles(): bool
+    {
+        foreach (['cuentas_por_pagar', 'proveedores', 'compras', 'hoteles', 'cajas', 'cortes_caja'] as $tabla) {
+            if (!$this->tablaExiste($tabla)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function resumenPorHotel(int $hotelId): array
     {
         if ($hotelId <= 0 || !$this->tablaDisponible()) {
@@ -295,6 +306,79 @@ class CuentaPorPagar extends Model
         return $resumen;
     }
 
+    public function simuladorCajaProveedor(int $hotelId, array $filtros = [], int $limite = 200): array
+    {
+        $corte = $this->corteAbiertoSimuladorCaja($hotelId);
+        $cuentas = [];
+
+        if ($hotelId > 0 && $this->tablasSimuladorCajaDisponibles()) {
+            $limite = max(1, min(300, $limite));
+            $where = ['cxp.hotel_id = ?'];
+            $params = [$hotelId];
+
+            $estado = $this->normalizarEstado($filtros['estado'] ?? 'todos');
+            if ($estado !== 'todos') {
+                $where[] = 'cxp.estado = ?';
+                $params[] = $estado;
+            }
+
+            $buscar = trim((string)($filtros['buscar'] ?? ''));
+            if ($buscar !== '') {
+                $like = '%' . $buscar . '%';
+                $where[] = '(cxp.folio LIKE ? OR cxp.descripcion LIKE ? OR p.nombre LIKE ? OR c.folio LIKE ? OR CAST(cxp.id AS CHAR) LIKE ?)';
+                array_push($params, $like, $like, $like, $like, $like);
+            }
+
+            $stmt = $this->db->query(
+                "SELECT cxp.*,
+                        h.nombre AS hotel_nombre,
+                        p.id AS proveedor_hotel_id,
+                        p.nombre AS proveedor_nombre,
+                        p.rfc AS proveedor_rfc,
+                        c.id AS compra_hotel_id,
+                        c.folio AS compra_folio,
+                        c.estado AS compra_estado,
+                        c.fecha_compra,
+                        c.fecha_recepcion
+                 FROM cuentas_por_pagar cxp
+                 INNER JOIN hoteles h
+                    ON h.id = cxp.hotel_id
+                 LEFT JOIN proveedores p
+                    ON p.id = cxp.proveedor_id
+                   AND p.hotel_id = cxp.hotel_id
+                 LEFT JOIN compras c
+                    ON c.id = cxp.compra_id
+                   AND c.hotel_id = cxp.hotel_id
+                 WHERE " . implode(' AND ', $where) . "
+                 ORDER BY
+                    CASE
+                        WHEN cxp.estado IN ('pendiente', 'parcial', 'vencida')
+                         AND cxp.saldo > 0
+                         AND p.id IS NOT NULL
+                         AND (cxp.compra_id IS NULL OR c.id IS NOT NULL)
+                        THEN 0
+                        ELSE 1
+                    END,
+                    cxp.fecha_vencimiento IS NULL ASC,
+                    cxp.fecha_vencimiento ASC,
+                    cxp.id DESC
+                 LIMIT {$limite}",
+                $params
+            );
+
+            $filas = $stmt ? ($stmt->fetchAll() ?: []) : [];
+            foreach ($filas as $fila) {
+                $cuentas[] = $this->evaluarSimuladorCaja($fila, $corte);
+            }
+        }
+
+        return [
+            'corte' => $corte,
+            'cuentas' => $cuentas,
+            'resumen' => $this->resumenSimuladorCaja($cuentas, $corte),
+        ];
+    }
+
     public function generarDesdeCompraRecibida(int $hotelId, int $compraId, ?int $usuarioId = null): array
     {
         $hotelId = $this->validarId($hotelId, 'Hotel invalido');
@@ -486,6 +570,108 @@ class CuentaPorPagar extends Model
         if ($existente) {
             throw new Exception('Ya existe una cuenta por pagar para esta compra: #' . (int)$existente['id']);
         }
+    }
+
+    private function corteAbiertoSimuladorCaja(int $hotelId): ?array
+    {
+        if ($hotelId <= 0 || !$this->tablaExiste('cajas') || !$this->tablaExiste('cortes_caja')) {
+            return null;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT cc.id,
+                    cc.hotel_id,
+                    cc.caja_id,
+                    cc.fecha_apertura,
+                    cc.monto_inicial,
+                    cc.estado,
+                    c.nombre AS caja_nombre,
+                    c.ubicacion AS caja_ubicacion
+             FROM cortes_caja cc
+             INNER JOIN cajas c
+                ON c.id = cc.caja_id
+               AND c.hotel_id = cc.hotel_id
+             WHERE cc.hotel_id = ?
+               AND cc.estado = 'abierto'
+               AND COALESCE(c.activa, 1) = 1
+             ORDER BY cc.fecha_apertura DESC, cc.id DESC
+             LIMIT 1",
+            [$hotelId]
+        );
+
+        $row = $stmt ? $stmt->fetch() : null;
+        return $row ?: null;
+    }
+
+    private function resumenSimuladorCaja(array $cuentas, ?array $corte): array
+    {
+        $resumen = [
+            'total' => count($cuentas),
+            'elegibles' => 0,
+            'bloqueadas' => 0,
+            'sin_corte' => empty($corte) ? 1 : 0,
+            'saldo_elegible' => '0.00',
+            'saldo_revisado' => '0.00',
+        ];
+
+        foreach ($cuentas as $cuenta) {
+            $saldo = (float)($cuenta['saldo'] ?? 0);
+            $resumen['saldo_revisado'] = $this->decimal((float)$resumen['saldo_revisado'] + $saldo);
+
+            if (!empty($cuenta['es_elegible_caja'])) {
+                $resumen['elegibles']++;
+                $resumen['saldo_elegible'] = $this->decimal((float)$resumen['saldo_elegible'] + $saldo);
+            } else {
+                $resumen['bloqueadas']++;
+            }
+        }
+
+        return $resumen;
+    }
+
+    private function evaluarSimuladorCaja(array $cuenta, ?array $corte): array
+    {
+        $bloqueos = [];
+
+        if (empty($corte)) {
+            $bloqueos[] = 'No hay corte de Caja abierto para el hotel actual.';
+        }
+
+        if (empty($cuenta['hotel_id']) || (int)$cuenta['hotel_id'] <= 0) {
+            $bloqueos[] = 'La cuenta no tiene hotel_id valido.';
+        }
+
+        if (!in_array((string)($cuenta['estado'] ?? ''), ['pendiente', 'parcial', 'vencida'], true)) {
+            $bloqueos[] = 'El estado de la cuenta no permite egreso.';
+        }
+
+        if (empty($cuenta['proveedor_id']) || empty($cuenta['proveedor_hotel_id'])) {
+            $bloqueos[] = 'El proveedor no pertenece al hotel actual.';
+        }
+
+        if ((float)($cuenta['total'] ?? 0) <= 0) {
+            $bloqueos[] = 'El total de la cuenta no es valido.';
+        }
+
+        if ((float)($cuenta['saldo'] ?? 0) <= 0) {
+            $bloqueos[] = 'La cuenta no tiene saldo pendiente.';
+        }
+
+        if (!empty($cuenta['compra_id']) && empty($cuenta['compra_hotel_id'])) {
+            $bloqueos[] = 'La compra vinculada no pertenece al hotel actual o no existe.';
+        }
+
+        if (!empty($cuenta['compra_id']) && !empty($cuenta['compra_estado']) && (string)$cuenta['compra_estado'] !== 'recibida') {
+            $bloqueos[] = 'La compra vinculada no esta recibida.';
+        }
+
+        $cuenta['es_elegible_caja'] = empty($bloqueos);
+        $cuenta['motivo_elegibilidad_caja'] = empty($bloqueos)
+            ? 'Cuenta con saldo, proveedor del hotel y corte de Caja abierto. Esta pantalla no registra movimientos.'
+            : '';
+        $cuenta['motivo_bloqueo_caja'] = implode(' ', $bloqueos);
+
+        return $cuenta;
     }
 
     private function evaluarPreviewGeneracion(array $compra): array

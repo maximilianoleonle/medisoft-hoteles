@@ -150,10 +150,16 @@ $estado = (string)($filtros['estado'] ?? 'todos');
             </div>
         <?php else: ?>
             <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <a class="cxp-btn cxp-btn-muted" href="<?= url('cuentas-por-pagar/generacion-preview') ?>">
-                    <i class="fas fa-search"></i>
-                    Preview generacion desde compras
-                </a>
+                <div class="flex flex-wrap gap-2">
+                    <a class="cxp-btn cxp-btn-muted" href="<?= url('cuentas-por-pagar/generacion-preview') ?>">
+                        <i class="fas fa-search"></i>
+                        Preview generacion desde compras
+                    </a>
+                    <a class="cxp-btn cxp-btn-muted" href="<?= url('cuentas-por-pagar/simulador-caja') ?>">
+                        <i class="fas fa-cash-register"></i>
+                        Simulador Caja
+                    </a>
+                </div>
                 <span class="cxp-badge">
                     <i class="fas fa-lock"></i>
                     Sin generacion automatica

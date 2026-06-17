@@ -1530,3 +1530,20 @@ Revision recomendada:
 3. Confirmar que no hay rutas nuevas POST para pagar CxP.
 4. Confirmar que no se crearon movimientos de Caja.
 5. Confirmar que no cambian saldos de CxP.
+
+## Fase 3D-A - Simulador Caja read-only para CxP
+
+Estado: QA manual diferida por instruccion del usuario.
+
+Pruebas recomendadas:
+
+1. Abrir `/cuentas-por-pagar/simulador-caja`.
+2. Confirmar que sin sesion redirige a login o bloquea.
+3. Confirmar que muestra el corte abierto del hotel activo.
+4. Confirmar que lista las CxP del hotel actual.
+5. Confirmar que una CxP con saldo y proveedor valido aparece elegible si hay corte abierto.
+6. Confirmar que CxP pagada/cancelada o sin saldo aparece bloqueada.
+7. Confirmar que los enlaces a CxP, proveedor, compra y Caja abren correctamente.
+8. Confirmar que no existen botones de pago.
+9. Confirmar que no existen formularios POST.
+10. Confirmar que no cambian saldos ni movimientos CxP/Caja.

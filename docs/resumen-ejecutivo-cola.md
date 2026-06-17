@@ -1361,3 +1361,14 @@ Resultado 3D-0:
 - No se implementan pagos, rutas, movimientos, migraciones ni cambios de saldo.
 - 3D queda bloqueado para implementacion real hasta backup, simulador read-only,
   servicio transaccional y QA manual especifica.
+
+Resultado 3D-A:
+
+- Estado tecnico: `SIMULADOR_3D_A_CAJA_READONLY_COMPLETADO_QA_DIFERIDA`.
+- Documento: `docs/fase_3D_A_simulador_caja_readonly.md`.
+- Se agrega GET `/cuentas-por-pagar/simulador-caja`.
+- El simulador evalua CxP contra proveedor, compra, saldo, estado y corte de Caja
+  abierto del hotel actual.
+- No hay POST, pagos, abonos, movimientos CxP, movimientos de Caja, cambios de saldo
+  ni `/api/sync`.
+- `preflight_pagos_proveedores_caja.php` valida la superficie 3D-A en modo solo lectura.

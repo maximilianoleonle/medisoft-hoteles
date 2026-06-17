@@ -1145,3 +1145,20 @@ Limite:
 
 - 3D-0 no autoriza codigo, migraciones, POST ni movimientos de Caja.
 - La primera subfase segura debe ser simulador read-only o diseno de servicio con backup.
+
+## Fase 3D-A - Simulador en CxP antes de Caja operativa
+
+Decision: ubicar el simulador read-only en `/cuentas-por-pagar/simulador-caja`, no en
+la pantalla operativa de Caja.
+
+Motivo:
+
+- La deuda de proveedor nace en CxP.
+- Caja es sensible y no debe recibir acciones nuevas antes del servicio transaccional.
+- El simulador puede leer corte abierto sin modificar saldos ni movimientos.
+
+Limite:
+
+- 3D-A solo autoriza GET.
+- No hay POST, pagos, abonos, cambios de saldo ni movimientos.
+- 3D-B/3D-C requieren backup y autorizacion especifica antes de escribir.

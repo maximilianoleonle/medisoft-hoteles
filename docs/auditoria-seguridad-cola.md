@@ -1375,3 +1375,19 @@ Resultado: contrato sin cambios operativos.
 - Se documenta que cualquier pago proveedor debe ser transaccional y con corte abierto
   del mismo hotel.
 - Implementacion real queda bloqueada hasta backup y QA manual especifica.
+
+## Auditoria Fase 3D-A
+
+Resultado: simulador read-only sin hallazgos bloqueantes automatizados.
+
+- Se agrega solo GET `/cuentas-por-pagar/simulador-caja`.
+- No hay POST de pago proveedor.
+- No hay botones de pago.
+- No hay abonos.
+- No hay escritura en CxP.
+- No hay escritura en Caja.
+- No hay movimientos CxP ni movimientos de Caja nuevos.
+- La elegibilidad valida `hotel_id`, proveedor del hotel, compra del hotel, saldo,
+  estado de CxP y corte abierto.
+- `/api/sync` queda fuera del alcance.
+- QA manual queda diferida por instruccion del usuario.

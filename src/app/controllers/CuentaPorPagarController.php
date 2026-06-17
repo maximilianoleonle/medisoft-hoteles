@@ -119,6 +119,29 @@ class CuentaPorPagarController extends Controller
         ]);
     }
 
+    public function simuladorCajaAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $filtros = [
+            'buscar' => $this->getQuery('buscar', ''),
+            'estado' => $this->getQuery('estado', 'todos'),
+        ];
+
+        $tablaDisponible = $this->cuentaModel->tablasSimuladorCajaDisponibles();
+        $datos = $tablaDisponible
+            ? $this->cuentaModel->simuladorCajaProveedor($hotelId, $filtros, 200)
+            : ['cuentas' => [], 'resumen' => [], 'corte' => null];
+
+        View::renderTemplate('cuentas_por_pagar/simulador_caja', [
+            'title' => 'Simulador Caja CxP - ' . current_hotel_display_name(),
+            'cuentas' => $datos['cuentas'] ?? [],
+            'resumen' => $datos['resumen'] ?? [],
+            'corte' => $datos['corte'] ?? null,
+            'filtros' => $filtros,
+            'tablaDisponible' => $tablaDisponible,
+        ]);
+    }
+
     public function generarDesdeCompraAction(): void
     {
         if (!$this->isPost()) {

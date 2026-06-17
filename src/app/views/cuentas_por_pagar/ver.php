@@ -140,6 +140,10 @@ if (!function_exists('cxp_view_money')) {
                     <i class="fas fa-arrow-left"></i>
                     Volver
                 </a>
+                <a class="cxp-btn cxp-btn-muted" href="<?= url('cuentas-por-pagar/simulador-caja') ?>">
+                    <i class="fas fa-cash-register"></i>
+                    Simulador Caja
+                </a>
                 <?php if (!empty($cuenta['compra_id'])): ?>
                     <a class="cxp-btn cxp-btn-muted" href="<?= url('compras/' . (int)$cuenta['compra_id']) ?>">
                         <i class="fas fa-receipt"></i>
