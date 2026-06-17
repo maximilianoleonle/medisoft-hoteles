@@ -1198,3 +1198,16 @@ Estado: `INDICADORES_6B_A_TAREAS_HABITACIONES_READONLY_COMPLETADOS_QA_DIFERIDA`.
   `/api/sync`.
 - Riesgo residual: QA visual diferida para confirmar que el indicador no sature tarjetas
   con multiples incidencias.
+
+## Auditoria 6C-0
+
+Estado: `CONTRATO_6C_EVIDENCIAS_DOCUMENTOS_TAREAS_COMPLETADO`.
+
+- Subfase documental sin cambios de codigo ni DB.
+- Riesgo futuro principal: exponer rutas privadas o storage documental desde tarea.
+- Mitigacion definida: reutilizar Centro Documental, no crear storage paralelo y no
+  mostrar `storage_path`.
+- Riesgo futuro cross-hotel: vincular documento a tarea de otro hotel.
+- Mitigacion definida: validar entidad `tarea` contra `tareas_operativas.id` +
+  `hotel_id`.
+- Caja, nomina, pagos, offline y `/api/sync` siguen fuera de alcance.

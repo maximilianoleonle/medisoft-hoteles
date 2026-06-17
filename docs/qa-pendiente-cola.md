@@ -1343,3 +1343,14 @@ instruccion del usuario.
 - Probar disponibilidad por fecha y confirmar que el indicador sigue siendo lectura.
 - Confirmar que la creacion de tarea de limpieza permanece en `/reportes/limpieza`.
 - Confirmar que no cambia disponibilidad, Caja, nomina, offline ni `/api/sync`.
+
+### Estado 6C-0
+
+- Contrato de evidencias/documentos en tareas completado.
+- No requiere QA de navegador porque no agrega codigo, rutas, DB ni UI.
+- QA futura 6C-A:
+  - abrir `/tareas/{id}`;
+  - confirmar seccion documental read-only;
+  - confirmar estado vacio si no hay documentos;
+  - confirmar que no aparece `storage_path`;
+  - confirmar que no cambia estado de tarea, habitacion, Caja, nomina ni `/api/sync`.

@@ -628,6 +628,18 @@
 - No se modifica `habitaciones.estado`, mantenimiento, Caja, nomina, offline ni
   `/api/sync`.
 
+## Decision 6C-0 evidencias/documentos en tareas
+
+- Se reutilizara el Centro Documental moderno para evidencias de tarea.
+- No se creara una tabla paralela de evidencias ni storage propio de tareas.
+- La entidad documental futura sera `tarea`, validada contra `tareas_operativas` y
+  `hotel_id`.
+- La carga futura debe reutilizar `DocumentoController` y su validacion de MIME, storage
+  privado, CSRF y auditoria.
+- El detalle de tarea no debe exponer `storage_path` ni rutas publicas directas.
+- Documentos no cambian estados de tarea, habitacion, mantenimiento, Caja, nomina ni
+  `/api/sync`.
+
 ## Decision NP-D-0 documentos laborales
 
 - No se abrira un segundo flujo documental basado en `trabajador_documentos` mientras ya

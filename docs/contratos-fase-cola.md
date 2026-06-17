@@ -1408,3 +1408,16 @@ Estado formal vigente: `INDICADORES_6B_A_TAREAS_HABITACIONES_READONLY_COMPLETADO
 - La creacion de limpieza permanece en `/reportes/limpieza`.
 - No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.
 - Siguiente accion segura: 6B-C evidencias/documentos en tareas o cierre tecnico 6B.
+
+## Fase 6C-0 - Contrato evidencias/documentos en tareas
+
+Estado formal vigente: `CONTRATO_6C_EVIDENCIAS_DOCUMENTOS_TAREAS_COMPLETADO`.
+
+- Documento: `docs/fase_6C_0_contrato_evidencias_documentos_tareas.md`.
+- Define integrar tareas con Centro Documental moderno.
+- La entidad documental futura sera `tarea`, validada contra `tareas_operativas.hotel_id`.
+- No implementa codigo, rutas, uploads ni migraciones.
+- Prohibe storage paralelo, rutas publicas directas, borrado fisico y exposicion de
+  `storage_path`.
+- No toca habitaciones, mantenimiento, Caja, nomina, pagos, offline ni `/api/sync`.
+- Siguiente accion segura: 6C-A documentos read-only en detalle de tarea.

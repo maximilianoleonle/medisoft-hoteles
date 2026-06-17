@@ -1215,3 +1215,12 @@ Resultado 6B-A:
 - No hay POST nuevo, no se crean tareas desde la tarjeta y no se cambia
   `habitaciones.estado`.
 - La creacion manual de tareas de limpieza sigue exclusivamente en `/reportes/limpieza`.
+
+Resultado 6C-0:
+
+- Estado tecnico: `CONTRATO_6C_EVIDENCIAS_DOCUMENTOS_TAREAS_COMPLETADO`.
+- Documento: `docs/fase_6C_0_contrato_evidencias_documentos_tareas.md`.
+- Se define integrar tareas con el Centro Documental moderno usando entidad futura
+  `tarea`.
+- No se implementan rutas, uploads ni cambios de base.
+- Siguiente paso: 6C-A documentos read-only en detalle de tarea.

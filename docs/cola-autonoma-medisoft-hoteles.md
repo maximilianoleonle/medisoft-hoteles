@@ -1116,3 +1116,14 @@ Estado: implementado tecnicamente, QA manual diferida por instruccion del usuari
 - No se agregan POST, no se crean tareas desde la tarjeta, no se cambia disponibilidad.
 - `/reportes/limpieza` sigue siendo la superficie para crear tareas manuales de limpieza.
 - Siguiente accion segura: 6B-C evidencias/documentos en tareas o cierre tecnico 6B si se desea consolidar.
+
+## 6C-0 contrato evidencias/documentos en tareas
+
+Estado: contrato completado.
+
+- Documento creado: `docs/fase_6C_0_contrato_evidencias_documentos_tareas.md`.
+- Diagnostico: Centro Documental moderno ya soporta entidades, pero falta entidad
+  `tarea`.
+- La integracion futura debe validar `tareas_operativas.id` + `hotel_id`.
+- No se implementaron rutas, modelos, uploads ni cambios DB.
+- Siguiente accion segura: 6C-A documentos read-only en detalle de tarea.

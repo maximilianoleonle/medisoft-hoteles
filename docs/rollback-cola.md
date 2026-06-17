@@ -1075,3 +1075,12 @@ Si se decide retirar ese dato de prueba, no hacer `DELETE` directo sin autorizac
   asociados.
 - No borrar ni modificar registros reales de `tareas_operativas` o `tarea_eventos`.
 - No tocar `habitaciones.estado`, Caja, nomina, offline ni `/api/sync`.
+
+### 6C-0 contrato evidencias/documentos en tareas
+
+- Rollback documental: revertir el commit
+  `docs(phase-6c): define task evidence document contract`.
+- DB: no aplica; no crea migraciones ni datos.
+- Codigo: no aplica; no agrega rutas, modelos ni vistas.
+- No tocar documentos reales, `documento_entidades`, `tareas_operativas`,
+  `tarea_eventos`, Caja, nomina, offline ni `/api/sync`.

@@ -632,3 +632,16 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - La existencia de tareas activas no cambia automaticamente disponibilidad ni estado de
   habitacion.
 - La creacion manual de tareas de limpieza conserva como superficie `/reportes/limpieza`.
+
+### 6C-0 evidencias/documentos en tareas
+
+- Fuente de verdad documental: `docs/fase_6C_0_contrato_evidencias_documentos_tareas.md`.
+- Tareas: `tareas_operativas`.
+- Eventos de tarea: `tarea_eventos`.
+- Documentos: `documentos`.
+- Vinculos documentales: `documento_entidades`.
+- Tipos documentales: `documento_tipos`.
+- `documento_entidades` no es fuente de estado de tarea; solo relaciona documentos con
+  entidades del hotel.
+- La entidad documental futura `tarea` debe validarse por `tareas_operativas.id` +
+  `hotel_id`.
