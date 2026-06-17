@@ -118,7 +118,7 @@ $estado = (string)($filtros['estado'] ?? 'todos');
                 <div class="cxp-kicker">Compras / Finanzas operativas</div>
                 <h1 class="cxp-title">Cuentas por pagar</h1>
                 <p class="cxp-subtitle">
-                    Cartera de proveedores en modo lectura. No registra pagos, no descuenta caja y no modifica compras.
+                    Cartera de proveedores. Los pagos se registran solo desde el detalle elegible, con corte de Caja abierto y validaciones por hotel.
                 </p>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 min-w-[340px]">

@@ -5,15 +5,18 @@ require_once __DIR__ . '/../../core/View.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
 require_once __DIR__ . '/../models/CuentaPorPagar.php';
 require_once __DIR__ . '/../models/Documento.php';
+require_once __DIR__ . '/../services/CuentaPorPagarPagoService.php';
 
 class CuentaPorPagarController extends Controller
 {
     private $cuentaModel;
+    private $pagoService;
 
     public function __construct($route_params = [])
     {
         parent::__construct($route_params);
         $this->cuentaModel = new CuentaPorPagar();
+        $this->pagoService = new CuentaPorPagarPagoService();
     }
 
     protected function before()
@@ -82,11 +85,30 @@ class CuentaPorPagarController extends Controller
             $documentosEntidad = [];
         }
 
+        $pagoCaja = [
+            'elegible' => false,
+            'motivo_bloqueo' => 'No se pudo evaluar el pago con Caja.',
+            'corte' => null,
+            'metodos_pago' => [],
+            'monto_maximo' => '0.00',
+        ];
+        $pagoToken = null;
+        try {
+            $pagoCaja = $this->pagoService->evaluarPago($hotelId, $id);
+            if (!empty($pagoCaja['elegible'])) {
+                $pagoToken = $this->generarPagoToken($id);
+            }
+        } catch (Throwable $e) {
+            $pagoCaja['motivo_bloqueo'] = $e->getMessage();
+        }
+
         View::renderTemplate('cuentas_por_pagar/ver', [
             'title' => 'Cuenta por pagar #' . $id . ' - ' . current_hotel_display_name(),
             'cuenta' => $cuenta,
             'movimientos' => $this->cuentaModel->movimientosPorCuenta($id, $hotelId, 100),
             'movimientosDisponibles' => $this->cuentaModel->movimientosDisponibles(),
+            'pagoCaja' => $pagoCaja,
+            'pagoToken' => $pagoToken,
             'documentosEntidad' => $documentosEntidad,
             'documentosEntidadContexto' => [
                 'tipo' => 'cuenta_por_pagar',
@@ -168,6 +190,49 @@ class CuentaPorPagarController extends Controller
         }
     }
 
+    public function registrarPagoCajaAction(): void
+    {
+        if (!$this->isPost()) {
+            $this->redirect('cuentas-por-pagar');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('caja');
+        }
+
+        $cuentaId = (int)($this->route_params['id'] ?? 0);
+        try {
+            if (!$this->consumirPagoToken($cuentaId, (string)$this->getPost('pago_token', ''))) {
+                throw new Exception('Token de pago invalido o ya utilizado; recarga la cuenta antes de reintentar');
+            }
+
+            $resultado = $this->pagoService->registrarPago(
+                $this->hotelIdActual(),
+                $cuentaId,
+                [
+                    'monto' => $this->getPost('monto'),
+                    'metodo_pago' => $this->getPost('metodo_pago'),
+                    'referencia' => $this->getPost('referencia'),
+                    'notas' => $this->getPost('notas'),
+                ],
+                $this->usuarioIdActual()
+            );
+
+            set_mensaje(
+                'Pago de proveedor registrado. Movimiento Caja #' . (int)$resultado['movimiento_caja_id']
+                . ', saldo nuevo ' . number_format((float)$resultado['saldo_posterior'], 2) . '.',
+                'success'
+            );
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo registrar el pago proveedor: ' . $e->getMessage(), 'error');
+        }
+
+        $this->redirect($cuentaId > 0 ? 'cuentas-por-pagar/' . $cuentaId : 'cuentas-por-pagar');
+    }
+
     private function hotelIdActual(): int
     {
         return function_exists('obtenerHotelIdActualCompat')
@@ -179,5 +244,37 @@ class CuentaPorPagarController extends Controller
     {
         $usuarioId = $_SESSION['user_id'] ?? $_SESSION['usuario_id'] ?? null;
         return $usuarioId ? (int)$usuarioId : null;
+    }
+
+    private function generarPagoToken(int $cuentaId): string
+    {
+        if (!isset($_SESSION['cxp_pago_tokens']) || !is_array($_SESSION['cxp_pago_tokens'])) {
+            $_SESSION['cxp_pago_tokens'] = [];
+        }
+
+        $token = bin2hex(random_bytes(16));
+        $_SESSION['cxp_pago_tokens'][$cuentaId] = [
+            'token' => $token,
+            'created_at' => time(),
+        ];
+
+        return $token;
+    }
+
+    private function consumirPagoToken(int $cuentaId, string $token): bool
+    {
+        $token = trim($token);
+        $registro = $_SESSION['cxp_pago_tokens'][$cuentaId] ?? null;
+        unset($_SESSION['cxp_pago_tokens'][$cuentaId]);
+
+        if (!is_array($registro) || $token === '') {
+            return false;
+        }
+
+        if ((int)($registro['created_at'] ?? 0) < time() - 3600) {
+            return false;
+        }
+
+        return hash_equals((string)($registro['token'] ?? ''), $token);
     }
 }

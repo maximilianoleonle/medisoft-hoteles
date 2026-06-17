@@ -1262,3 +1262,30 @@ Rollback:
 2. No tocar CxP, Caja, cortes ni movimientos.
 3. No crear rutas POST ni botones de pago.
 4. No ejecutar pruebas con escritura sin backup.
+
+## Rollback Fase 3D-C
+
+3D-C habilita pago proveedor con Caja mediante servicio transaccional.
+
+Backup previo:
+
+- `backups/medisoft_hoteles_import_before_3d_payments_20260617_105846.sql`
+- SHA256:
+  `9584636FF545D8370B5E84171A9B1CF4EA2A8637D73285316DC83EB14E499A16`
+
+Rollback de codigo:
+
+1. Revertir el commit `feat(phase-3d): register provider payment with cashbox`.
+2. Retirar ruta POST `/cuentas-por-pagar/{id}/registrar-pago-caja`.
+3. Retirar `app/services/CuentaPorPagarPagoService.php`.
+4. Retirar formulario de pago del detalle de CxP.
+5. Retirar `tools/saas/probar_pago_proveedor_caja.php`.
+
+Rollback de datos si se ejecuto un pago real:
+
+1. No borrar datos sin autorizacion financiera.
+2. Identificar movimiento CxP en `cuentas_por_pagar_movimientos`.
+3. Identificar movimiento Caja asociado por referencia/descripcion/corte.
+4. Restaurar saldo/estado de `cuentas_por_pagar` solo con script transaccional revisado.
+5. Registrar auditoria del rollback.
+6. Si el riesgo es alto, restaurar backup completo en una base separada y reconciliar.

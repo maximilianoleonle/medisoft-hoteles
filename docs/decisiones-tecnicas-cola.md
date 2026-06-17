@@ -1180,3 +1180,23 @@ Limite:
 - No autoriza codigo, POST, escrituras, migraciones ni pruebas con datos reales.
 - El contrato fue revisado por el usuario; la implementacion real requiere autorizacion
   explicita de backup y escrituras financieras.
+
+## Fase 3D-C - Pago proveedor concentrado en servicio
+
+Decision: habilitar pago proveedor desde el detalle de CxP, pero concentrar toda la
+escritura financiera en `CuentaPorPagarPagoService`.
+
+Motivo:
+
+- El controlador debe limitarse a sesion, CSRF, modulo Caja, token y redireccion.
+- La vista no debe calcular saldos finales ni seleccionar cortes.
+- El servicio puede bloquear CxP/corte con `FOR UPDATE` y hacer commit/rollback atomico.
+- La prueba rollback puede usar el mismo servicio con `manage_transaction=false`.
+
+Limite:
+
+- No hay pagos automaticos desde compras.
+- No hay abonos.
+- No se modifica UI de Caja.
+- No se toca `/api/sync`.
+- QA manual debe confirmar el flujo real antes de cerrar 3D-C como validado.

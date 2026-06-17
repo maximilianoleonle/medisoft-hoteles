@@ -1,8 +1,8 @@
 <?php
 /**
- * Preflight Fase 3D-A para simulador read-only de egresos a proveedores con Caja.
+ * Preflight Fase 3D para egresos a proveedores con Caja.
  *
- * Solo lectura. No registra egresos, no modifica CxP, no crea movimientos ni toca cortes.
+ * Valida simulador read-only y pago proveedor controlado. No modifica datos.
  */
 
 if (PHP_SAPI !== 'cli') {
@@ -139,8 +139,11 @@ $routesPath = $appRoot . '/config/routes.php';
 $controllerPath = $appRoot . '/app/controllers/CuentaPorPagarController.php';
 $modelPath = $appRoot . '/app/models/CuentaPorPagar.php';
 $viewPath = $appRoot . '/app/views/cuentas_por_pagar/simulador_caja.php';
+$detailViewPath = $appRoot . '/app/views/cuentas_por_pagar/ver.php';
+$paymentServicePath = $appRoot . '/app/services/CuentaPorPagarPagoService.php';
+$rollbackTestPath = $appRoot . '/tools/saas/probar_pago_proveedor_caja.php';
 
-echo "Preflight Fase 3D-A - Simulador read-only de egresos proveedores con Caja\n";
+echo "Preflight Fase 3D - Pago proveedor controlado con Caja\n";
 echo "=====================================================\n";
 
 $pdo = null;
@@ -272,14 +275,21 @@ if (is_file($routesPath)) {
         ppcError('Falta GET /cuentas-por-pagar/simulador-caja.', 'Registrar solo ruta GET read-only para 3D-A.');
     }
 
+    if (ppcRouteExists($routes, 'cuentas-por-pagar/{id:[0-9]+}/registrar-pago-caja', 'post')) {
+        ppcOk('Ruta POST /cuentas-por-pagar/{id}/registrar-pago-caja registrada para 3D-B.');
+    } else {
+        ppcError('Falta POST controlado para registrar pago proveedor con Caja.', 'Registrar solo la ruta POST autorizada de Fase 3D-B.');
+    }
+
     foreach ($routes as $route) {
         $method = strtoupper((string)$route['method']);
         $path = strtolower((string)$route['path']);
         $action = strtolower((string)$route['action']);
-        if ($method === 'POST' && strpos($path, 'cuentas-por-pagar') !== false && strpos($action, 'generardesdecompra') === false) {
+        $allowedPost = in_array($action, ['generardesdecompra', 'registrarpagocaja'], true);
+        if ($method === 'POST' && strpos($path, 'cuentas-por-pagar') !== false && !$allowedPost) {
             ppcError(
-                'POST CxP fuera del alcance 3D-A: /' . trim($path, '/') . ' -> ' . $route['action'],
-                'No crear POST de egreso hasta 3D-C con backup y QA.'
+                'POST CxP fuera del contrato 3D: /' . trim($path, '/') . ' -> ' . $route['action'],
+                'Mantener solo generarDesdeCompra y registrarPagoCaja.'
             );
         }
     }
@@ -310,6 +320,65 @@ if (is_file($controllerPath) && is_file($modelPath) && is_file($viewPath)) {
     }
 } else {
     ppcError('Faltan archivos del simulador 3D-A.', 'Crear controlador/modelo/vista read-only antes de cerrar 3D-A.');
+}
+
+if (is_file($controllerPath) && is_file($detailViewPath) && is_file($paymentServicePath) && is_file($rollbackTestPath)) {
+    $controller = (string)file_get_contents($controllerPath);
+    $detailView = (string)file_get_contents($detailViewPath);
+    $service = (string)file_get_contents($paymentServicePath);
+    $rollbackTest = (string)file_get_contents($rollbackTestPath);
+
+    if (
+        strpos($controller, 'function registrarPagoCajaAction') !== false
+        && strpos($controller, 'validateCSRF()') !== false
+        && strpos($controller, "require_hotel_module('caja')") !== false
+        && strpos($controller, 'consumirPagoToken') !== false
+        && strpos($detailView, 'registrar-pago-caja') !== false
+        && strpos($detailView, 'csrf_field()') !== false
+        && strpos($detailView, 'name="pago_token"') !== false
+    ) {
+        ppcOk('Controlador y vista tienen POST pago Caja con CSRF, modulo Caja y token anti doble envio.');
+    } else {
+        ppcError(
+            'Controlador/vista de pago Caja incompletos.',
+            'Revisar CSRF, modulo Caja, token pago y accion POST del detalle de CxP.'
+        );
+    }
+
+    if (
+        strpos($service, 'class CuentaPorPagarPagoService') !== false
+        && strpos($service, 'manage_transaction') !== false
+        && strpos($service, 'FOR UPDATE') !== false
+        && strpos($service, 'INSERT INTO cuentas_por_pagar_movimientos') !== false
+        && strpos($service, 'INSERT INTO movimientos_caja') !== false
+        && strpos($service, 'UPDATE cuentas_por_pagar') !== false
+        && strpos($service, 'AuditService::record') !== false
+        && strpos($service, "'pendiente', 'parcial', 'vencida'") !== false
+        && strpos($service, 'La compra vinculada no esta recibida') !== false
+    ) {
+        ppcOk('Servicio de pago proveedor usa transaccion, locks, CxP, Caja, auditoria y validaciones de estado.');
+    } else {
+        ppcError(
+            'Servicio de pago proveedor no cumple contrato transaccional minimo.',
+            'Validar locks FOR UPDATE, escrituras CxP/Caja, auditoria y validaciones de compra recibida.'
+        );
+    }
+
+    if (
+        strpos($rollbackTest, "['manage_transaction' => false]") !== false
+        && strpos($rollbackTest, 'rollBack()') !== false
+        && strpos($rollbackTest, 'cuentas_por_pagar_movimientos') !== false
+        && strpos($rollbackTest, 'movimientos_caja') !== false
+    ) {
+        ppcOk('Prueba rollback de pago proveedor disponible y no persistente.');
+    } else {
+        ppcError(
+            'Falta prueba rollback segura para pago proveedor.',
+            'Mantener una prueba CLI que inserte dentro de transaccion externa y haga rollback.'
+        );
+    }
+} else {
+    ppcError('Faltan archivos del pago proveedor 3D-B.', 'Crear servicio, detalle CxP y prueba rollback antes de QA.');
 }
 
 $recommendations = array_values(array_unique(array_filter($recommendations)));

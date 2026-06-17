@@ -2,6 +2,8 @@
 $cuenta = $cuenta ?? [];
 $movimientos = $movimientos ?? [];
 $movimientosDisponibles = $movimientosDisponibles ?? false;
+$pagoCaja = $pagoCaja ?? [];
+$pagoToken = $pagoToken ?? null;
 
 if (!function_exists('cxp_view_safe')) {
     function cxp_view_safe($value, $fallback = '-')
@@ -72,6 +74,22 @@ if (!function_exists('cxp_view_money')) {
     background: #fff;
     color: #334155;
 }
+.cxp-detail-page .cxp-btn-primary {
+    background: var(--cxp-brand);
+    border-color: var(--cxp-brand);
+    color: #fff;
+}
+.cxp-detail-page .cxp-input {
+    width: 100%;
+    min-height: 40px;
+    border: 1px solid var(--cxp-line);
+    background: #fff;
+    padding: 0 12px;
+}
+.cxp-detail-page textarea.cxp-input {
+    min-height: 84px;
+    padding-top: 10px;
+}
 .cxp-detail-page .cxp-badge {
     display: inline-flex;
     align-items: center;
@@ -81,6 +99,16 @@ if (!function_exists('cxp_view_money')) {
     background: var(--cxp-soft);
     font-size: .78rem;
     font-weight: 800;
+}
+.cxp-detail-page .cxp-badge-ok {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #047857;
+}
+.cxp-detail-page .cxp-badge-blocked {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #9a3412;
 }
 .cxp-detail-page .cxp-table th {
     color: #64748b;
@@ -109,7 +137,7 @@ if (!function_exists('cxp_view_money')) {
                 <div class="cxp-kicker">Compras / Cuenta por pagar</div>
                 <h1 class="cxp-title">Cuenta #<?= (int)($cuenta['id'] ?? 0) ?></h1>
                 <p class="cxp-subtitle">
-                    Detalle de solo lectura. Los pagos y movimientos de caja se manejan en fases posteriores.
+                    Detalle de CxP con pago proveedor controlado. Solo registra egreso cuando hay corte de Caja abierto y validaciones de hotel.
                 </p>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 min-w-[320px]">
@@ -158,8 +186,8 @@ if (!function_exists('cxp_view_money')) {
                 <?php endif; ?>
             </div>
             <span class="cxp-badge">
-                <i class="fas fa-lock"></i>
-                Solo lectura
+                <i class="fas fa-shield-alt"></i>
+                Pago controlado
             </span>
         </div>
 
@@ -220,12 +248,102 @@ if (!function_exists('cxp_view_money')) {
             'documentosEntidadContexto' => $documentosEntidadContexto ?? [],
         ]); ?>
 
+        <div class="cxp-panel p-5 mb-4">
+            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                <div>
+                    <h2 class="font-black text-lg">Pago proveedor con Caja</h2>
+                    <?php if (!empty($pagoCaja['elegible'])): ?>
+                        <p class="text-sm text-slate-500 mt-1">
+                            <?= cxp_view_safe($pagoCaja['motivo_elegibilidad'] ?? null) ?>
+                            Se registrara un movimiento de Caja de tipo gasto y un movimiento referencial de CxP.
+                        </p>
+                    <?php else: ?>
+                        <p class="text-sm text-slate-500 mt-1">
+                            <?= cxp_view_safe($pagoCaja['motivo_bloqueo'] ?? null, 'Esta cuenta no es elegible para pago con Caja.') ?>
+                        </p>
+                    <?php endif; ?>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <?php if (!empty($pagoCaja['corte'])): ?>
+                        <span class="cxp-badge cxp-badge-ok">
+                            <i class="fas fa-cash-register"></i>
+                            Corte #<?= (int)$pagoCaja['corte']['id'] ?>
+                        </span>
+                    <?php else: ?>
+                        <span class="cxp-badge cxp-badge-blocked">
+                            <i class="fas fa-ban"></i>
+                            Sin corte abierto
+                        </span>
+                    <?php endif; ?>
+                    <a class="cxp-btn cxp-btn-muted" href="<?= url('cuentas-por-pagar/simulador-caja') ?>">
+                        <i class="fas fa-search"></i>
+                        Ver diagnostico
+                    </a>
+                </div>
+            </div>
+
+            <?php if (!empty($pagoCaja['elegible']) && !empty($pagoToken)): ?>
+                <form method="POST" action="<?= url('cuentas-por-pagar/' . (int)($cuenta['id'] ?? 0) . '/registrar-pago-caja') ?>" class="mt-5 grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="pago_token" value="<?= cxp_view_safe($pagoToken, '') ?>">
+
+                    <div>
+                        <label class="cxp-meta-label" for="cxp_pago_monto">Monto</label>
+                        <input
+                            id="cxp_pago_monto"
+                            class="cxp-input mt-1"
+                            type="number"
+                            name="monto"
+                            min="0.01"
+                            max="<?= cxp_view_safe($pagoCaja['monto_maximo'] ?? ($cuenta['saldo'] ?? 0), '0.00') ?>"
+                            step="0.01"
+                            value="<?= cxp_view_safe($pagoCaja['monto_maximo'] ?? ($cuenta['saldo'] ?? 0), '0.00') ?>"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label class="cxp-meta-label" for="cxp_pago_metodo">Metodo</label>
+                        <select id="cxp_pago_metodo" class="cxp-input mt-1" name="metodo_pago" required>
+                            <?php foreach (($pagoCaja['metodos_pago'] ?? []) as $metodo => $label): ?>
+                                <option value="<?= cxp_view_safe($metodo, '') ?>"><?= cxp_view_safe($label) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="cxp-meta-label" for="cxp_pago_referencia">Referencia</label>
+                        <input
+                            id="cxp_pago_referencia"
+                            class="cxp-input mt-1"
+                            type="text"
+                            name="referencia"
+                            maxlength="100"
+                            placeholder="Folio, transferencia o nota breve"
+                        >
+                    </div>
+
+                    <div class="md:col-span-3">
+                        <label class="cxp-meta-label" for="cxp_pago_notas">Notas</label>
+                        <textarea id="cxp_pago_notas" class="cxp-input mt-1" name="notas" maxlength="1000" placeholder="Opcional"></textarea>
+                    </div>
+
+                    <div class="flex items-end">
+                        <button type="submit" class="cxp-btn cxp-btn-primary w-full justify-center">
+                            <i class="fas fa-money-bill-wave"></i>
+                            Registrar pago
+                        </button>
+                    </div>
+                </form>
+            <?php endif; ?>
+        </div>
+
         <div class="cxp-panel overflow-hidden">
             <div class="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
                 <h2 class="font-black text-lg">Movimientos referenciales</h2>
                 <span class="cxp-badge">
-                    <i class="fas fa-lock"></i>
-                    Sin pagos activos
+                    <i class="fas fa-list-check"></i>
+                    Trazabilidad CxP
                 </span>
             </div>
 

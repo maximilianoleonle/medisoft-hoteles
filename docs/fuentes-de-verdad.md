@@ -786,3 +786,18 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - Fuente futura de corte abierto: `cortes_caja`.
 - Fuente de proveedor moderno: `proveedores`.
 - `movimientos_caja.proveedor` seguira siendo texto descriptivo, no relacion formal.
+
+## Fase 3D-C - Pago proveedor con Caja
+
+- Fuente de deuda y saldo: `cuentas_por_pagar`.
+- Fuente de trazabilidad del pago CxP: `cuentas_por_pagar_movimientos`.
+- Fuente del egreso real de Caja: `movimientos_caja`.
+- Fuente de corte abierto: `cortes_caja`.
+- Fuente de caja activa: `cajas`.
+- Fuente de proveedor moderno: `proveedores` por `id + hotel_id`.
+- Fuente de compra vinculada: `compras` por `id + hotel_id`, solo si la CxP tiene
+  `compra_id`.
+- `movimientos_caja.proveedor` sigue siendo texto descriptivo para reportes legacy; no
+  reemplaza la relacion moderna con `proveedores`.
+- El unico codigo autorizado para escribir simultaneamente CxP y Caja es
+  `CuentaPorPagarPagoService`.

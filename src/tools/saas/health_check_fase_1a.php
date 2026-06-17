@@ -189,10 +189,21 @@ function hcCxpCajaTextPredicate(PDO $pdo, string $database): ?string
 
 function hcReportCxpConsistency(PDO $pdo, string $database): void
 {
+    $cxpMovementCount = hcCountRows($pdo, 'cuentas_por_pagar_movimientos');
+    hcOk('Consistencia CxP: movimientos referenciales actuales = ' . (string)$cxpMovementCount . '.');
     hcReportZeroCount(
-        'movimientos CxP/pagos/abonos accidentales',
-        hcCountRows($pdo, 'cuentas_por_pagar_movimientos'),
-        'Revisar cuentas_por_pagar_movimientos; Fase 3C-C no debe tener pagos, abonos ni movimientos CxP.'
+        'movimientos CxP inconsistentes',
+        hcCountScalar($pdo, "SELECT COUNT(*)
+            FROM cuentas_por_pagar_movimientos m
+            LEFT JOIN cuentas_por_pagar cxp
+              ON cxp.id = m.cuenta_por_pagar_id
+             AND cxp.hotel_id = m.hotel_id
+            WHERE cxp.id IS NULL
+               OR m.hotel_id IS NULL
+               OR m.monto <= 0
+               OR m.saldo_anterior < m.saldo_posterior
+               OR m.saldo_posterior < 0"),
+        'Revisar movimientos CxP antes de operar pagos proveedores.'
     );
 
     $checks = [
@@ -281,13 +292,29 @@ function hcReportCxpConsistency(PDO $pdo, string $database): void
         if ($predicate === null) {
             hcWarning(
                 'No se pudo validar movimientos de Caja relacionados con CxP: faltan columnas textuales conocidas.',
-                'Confirmar manualmente que Fase 3C no haya escrito movimientos_caja.'
+                'Confirmar manualmente que los pagos CxP en Caja sean gastos con corte del mismo hotel.'
             );
         } else {
+            $cxpCashCount = hcCountScalar($pdo, 'SELECT COUNT(*) FROM movimientos_caja WHERE ' . $predicate);
+            hcOk('Consistencia CxP: movimientos de Caja con referencia textual a CxP = ' . (string)$cxpCashCount . '.');
             hcReportZeroCount(
-                'movimientos de Caja con referencia textual a CxP',
-                hcCountScalar($pdo, 'SELECT COUNT(*) FROM movimientos_caja WHERE ' . $predicate),
-                'Revisar movimientos_caja; Fase 3C no debe crear pagos, abonos ni movimientos de Caja.'
+                'movimientos de Caja CxP inconsistentes',
+                hcCountScalar($pdo, "SELECT COUNT(*)
+                    FROM movimientos_caja
+                    WHERE " . $predicate . "
+                      AND (
+                          hotel_id IS NULL
+                          OR tipo <> 'gasto'
+                          OR monto <= 0
+                          OR corte_id IS NULL
+                          OR NOT EXISTS (
+                              SELECT 1
+                              FROM cortes_caja cc
+                              WHERE cc.id = movimientos_caja.corte_id
+                                AND cc.hotel_id = movimientos_caja.hotel_id
+                          )
+                      )"),
+                'Revisar movimientos_caja relacionados con CxP; deben ser gastos con corte del mismo hotel.'
             );
         }
     } else {
@@ -809,6 +836,20 @@ $cxpCashSimulatorViewFile = hcFindFirstExistingPath([
     dirname(getcwd()) . '/src/app/views/cuentas_por_pagar/simulador_caja.php',
     '/workspace/src/app/views/cuentas_por_pagar/simulador_caja.php',
 ]);
+$cxpPaymentServiceFile = hcFindFirstExistingPath([
+    $appRoot . '/app/services/CuentaPorPagarPagoService.php',
+    $projectRoot . '/src/app/services/CuentaPorPagarPagoService.php',
+    getcwd() . '/app/services/CuentaPorPagarPagoService.php',
+    dirname(getcwd()) . '/src/app/services/CuentaPorPagarPagoService.php',
+    '/workspace/src/app/services/CuentaPorPagarPagoService.php',
+]);
+$cxpPaymentRollbackTool = hcFindFirstExistingPath([
+    $appRoot . '/tools/saas/probar_pago_proveedor_caja.php',
+    $projectRoot . '/src/tools/saas/probar_pago_proveedor_caja.php',
+    getcwd() . '/tools/saas/probar_pago_proveedor_caja.php',
+    dirname(getcwd()) . '/src/tools/saas/probar_pago_proveedor_caja.php',
+    '/workspace/src/tools/saas/probar_pago_proveedor_caja.php',
+]);
 $purchaseTestTool = hcFindFirstExistingPath([
     $appRoot . '/tools/saas/probar_compra_service.php',
     $projectRoot . '/src/tools/saas/probar_compra_service.php',
@@ -979,20 +1020,21 @@ if ($purchaseReceptionPreflight && is_file($purchaseReceptionPreflight)) {
 if ($providerCashPreflight && is_file($providerCashPreflight)) {
     $providerCashPreflightCode = (string) file_get_contents($providerCashPreflight);
     if (
-        strpos($providerCashPreflightCode, 'Preflight Fase 3D-A') !== false
-        && strpos($providerCashPreflightCode, 'Solo lectura') !== false
+        strpos($providerCashPreflightCode, 'Preflight Fase 3D') !== false
         && strpos($providerCashPreflightCode, 'START TRANSACTION READ ONLY') !== false
         && strpos($providerCashPreflightCode, 'cuentas-por-pagar/simulador-caja') !== false
+        && strpos($providerCashPreflightCode, 'registrar-pago-caja') !== false
         && strpos($providerCashPreflightCode, 'function simuladorCajaAction') !== false
         && strpos($providerCashPreflightCode, 'function simuladorCajaProveedor') !== false
-        && strpos($providerCashPreflightCode, 'method="POST"') !== false
+        && strpos($providerCashPreflightCode, 'CuentaPorPagarPagoService') !== false
+        && strpos($providerCashPreflightCode, 'probar_pago_proveedor_caja.php') !== false
         && strpos($providerCashPreflightCode, 'movimientos_caja') !== false
     ) {
-        hcOk('Preflight Fase 3D-A de simulador Caja proveedores existe, es solo lectura y bloquea POST fuera de alcance.');
+        hcOk('Preflight Fase 3D de pagos proveedores existe, es solo lectura y valida POST controlado.');
     } else {
         hcWarning(
-            'Preflight Fase 3D-A existe pero no declara todas las guardas esperadas.',
-            'Verificar solo lectura, ruta GET /cuentas-por-pagar/simulador-caja, ausencia de POST de egreso y validacion de Caja/CxP.'
+            'Preflight Fase 3D existe pero no declara todas las guardas esperadas.',
+            'Verificar read-only, ruta GET simulador, POST registrar-pago-caja, servicio y prueba rollback.'
         );
     }
 } else {
@@ -2950,8 +2992,9 @@ if (!is_file($routesPath)) {
             'GET /cuentas-por-pagar/generacion-preview',
             'GET /cuentas-por-pagar/simulador-caja',
             'POST /cuentas-por-pagar/generar-desde-compra/{id:[0-9]+}',
+            'POST /cuentas-por-pagar/{id:[0-9]+}/registrar-pago-caja',
             'GET /cuentas-por-pagar/{id:[0-9]+}',
-        ], true) && $controller === 'cuentaporpagar' && in_array($action, ['index', 'generacionpreview', 'simuladorcaja', 'generardesdecompra', 'ver'], true);
+        ], true) && $controller === 'cuentaporpagar' && in_array($action, ['index', 'generacionpreview', 'simuladorcaja', 'generardesdecompra', 'registrarpagocaja', 'ver'], true);
 
         if ($isAllowedPurchaseRoute || $isAllowedCxpReadOnlyRoute) {
             continue;
@@ -2970,11 +3013,11 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($forbiddenPurchaseRoutes)) {
-        hcOk('Solo hay compras minimas y CxP/preview/generacion manual Fase 3B/3C-C; no hay rutas de pagos, contactos ni documentos de compras.');
+        hcOk('Solo hay compras minimas y CxP controlada; compras no expone pagos, contactos ni documentos.');
     } else {
         hcError(
             'Rutas fuera del alcance Fase 3C-C detectadas: ' . implode(' | ', $forbiddenPurchaseRoutes),
-            'Retirar rutas que no sean Compras basicas, CxP listado/preview/detalle, POST generar CxP desde compra y POST /compras/{id}/recibir.'
+            'Retirar rutas que no sean Compras basicas, CxP listado/preview/detalle, POST generar CxP, POST pago Caja de CxP y POST /compras/{id}/recibir.'
         );
     }
 
@@ -3719,7 +3762,6 @@ if (!is_file($routesPath)) {
         $cxpForbidden = preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(cuentas_por_pagar_movimientos|movimientos_caja|cortes_caja|cajas)\b/i', $cxpCode)
             || strpos($cxpCode, 'function pagarAction') !== false
             || strpos($cxpCode, 'function abonarAction') !== false
-            || strpos($cxpCode, 'PAGO') !== false
             || strpos($cxpCode, 'ABONO') !== false
             || strpos($cxpCode, 'movimientos_caja') !== false;
 
@@ -3730,7 +3772,10 @@ if (!is_file($routesPath)) {
             && strpos($cxpControllerCode, 'function generacionPreviewAction') !== false
             && strpos($cxpControllerCode, 'function simuladorCajaAction') !== false
             && strpos($cxpControllerCode, 'function generarDesdeCompraAction') !== false
+            && strpos($cxpControllerCode, 'function registrarPagoCajaAction') !== false
             && strpos($cxpControllerCode, 'validateCSRF') !== false
+            && strpos($cxpControllerCode, 'consumirPagoToken') !== false
+            && strpos($cxpControllerCode, "require_hotel_module('caja')") !== false
             && strpos($cxpControllerCode, 'function verAction') !== false
             && strpos($cxpControllerCode, "require_hotel_module('inventario')") !== false
             && strpos($cxpControllerCode, 'cuentas_por_pagar/index') !== false
@@ -3753,11 +3798,11 @@ if (!is_file($routesPath)) {
             && strpos($cxpModelCode, 'FROM cuentas_por_pagar') !== false
             && strpos($cxpModelCode, 'FROM cuentas_por_pagar_movimientos') !== false
         ) {
-            hcOk('CxP Fase 3B/3C-C/3D-A expone lectura, preview, simulador Caja GET y generacion manual auditada.');
+            hcOk('CxP Fase 3B/3C/3D expone lectura, preview, simulador Caja GET, generacion manual y POST pago Caja delegado.');
         } else {
             hcError(
-                'CxP Fase 3C-C/3D-A no cumple contrato o contiene tokens prohibidos.',
-                'Mantener GET index/preview/simulador-caja/ver y POST generar desde compra recibida; sin POST de egreso ni movimientos_caja.'
+                'CxP Fase 3D no cumple contrato o contiene tokens prohibidos.',
+                'Mantener GET index/preview/simulador-caja/ver, POST generar desde compra y POST registrarPagoCaja delegado al servicio.'
             );
         }
     } else {
@@ -3788,22 +3833,54 @@ if (!is_file($routesPath)) {
             && strpos($cxpPreviewViewCode, 'csrf_field()') !== false
             && strpos($cxpPreviewViewCode, "url('compras/' . (int)") !== false
             && strpos($cxpPreviewViewCode, "url('proveedores/' . (int)") !== false
-            && strpos($cxpViewsCode, 'Solo lectura') !== false
-            && strpos($cxpViewsCode, 'Sin pagos') !== false
-            && strpos($cxpIndexViewCode . "\n" . $cxpDetailViewCode, 'csrf_field()') === false
+            && strpos($cxpDetailViewCode, 'registrar-pago-caja') !== false
+            && strpos($cxpDetailViewCode, 'csrf_field()') !== false
+            && strpos($cxpDetailViewCode, 'name="pago_token"') !== false
             && strpos($cxpViewsCode, 'movimientos_caja') === false
         ) {
-            hcOk('Vistas CxP Fase 3B/3C-C incluyen lectura, preview y POST manual con CSRF sin pagos ni Caja.');
+            hcOk('Vistas CxP Fase 3D incluyen lectura, preview, detalle con pago Caja controlado y CSRF.');
         } else {
             hcError(
-                'Vistas CxP Fase 3C-C incompletas o con acciones fuera de alcance.',
-                'Mantener listado/detalle read-only y solo POST manual desde preview con CSRF; sin enlaces de pago/caja.'
+                'Vistas CxP Fase 3D incompletas o con acciones fuera de alcance.',
+                'Mantener listado/preview y detalle con unico formulario pago Caja con CSRF/token; simulador debe seguir GET.'
             );
         }
     } else {
         hcWarning(
             'Faltan vistas CxP Fase 3B/3C-A.',
             'Crear app/views/cuentas_por_pagar/index.php, generacion_preview.php y ver.php en modo solo lectura.'
+        );
+    }
+
+    if ($cxpPaymentServiceFile && is_file($cxpPaymentServiceFile) && $cxpPaymentRollbackTool && is_file($cxpPaymentRollbackTool)) {
+        $cxpPaymentServiceCode = (string) file_get_contents($cxpPaymentServiceFile);
+        $cxpPaymentRollbackCode = (string) file_get_contents($cxpPaymentRollbackTool);
+
+        if (
+            strpos($cxpPaymentServiceCode, 'class CuentaPorPagarPagoService') !== false
+            && strpos($cxpPaymentServiceCode, 'manage_transaction') !== false
+            && strpos($cxpPaymentServiceCode, 'FOR UPDATE') !== false
+            && strpos($cxpPaymentServiceCode, 'INSERT INTO cuentas_por_pagar_movimientos') !== false
+            && strpos($cxpPaymentServiceCode, 'INSERT INTO movimientos_caja') !== false
+            && strpos($cxpPaymentServiceCode, 'UPDATE cuentas_por_pagar') !== false
+            && strpos($cxpPaymentServiceCode, 'AuditService::record') !== false
+            && strpos($cxpPaymentServiceCode, 'No hay corte de Caja abierto') !== false
+            && strpos($cxpPaymentServiceCode, 'La compra vinculada no esta recibida') !== false
+            && strpos($cxpPaymentRollbackCode, "['manage_transaction' => false]") !== false
+            && strpos($cxpPaymentRollbackCode, 'rollBack()') !== false
+            && strpos($cxpPaymentRollbackCode, 'movimientos_caja') !== false
+        ) {
+            hcOk('Servicio Fase 3D de pago proveedor concentra transaccion, locks, CxP, Caja, auditoria y prueba rollback.');
+        } else {
+            hcError(
+                'Servicio Fase 3D de pago proveedor incompleto.',
+                'Revisar transaccion, locks FOR UPDATE, escrituras CxP/Caja, auditoria y prueba rollback sin persistencia.'
+            );
+        }
+    } else {
+        hcError(
+            'Falta servicio o herramienta rollback de pago proveedor Fase 3D.',
+            'Crear CuentaPorPagarPagoService y tools/saas/probar_pago_proveedor_caja.php antes de QA manual.'
         );
     }
 

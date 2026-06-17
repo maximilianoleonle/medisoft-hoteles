@@ -128,10 +128,21 @@ function pfCxpCajaTextPredicate(PDO $pdo, string $database): ?string
 
 function pfReportCxpConsistency(PDO $pdo, string $database): void
 {
+    $cxpMovementCount = pfCountRows($pdo, 'cuentas_por_pagar_movimientos');
+    pfOk('Consistencia CxP: movimientos referenciales actuales = ' . (string)$cxpMovementCount . '.');
     pfReportZeroCount(
-        'movimientos CxP/pagos/abonos accidentales',
-        pfCountRows($pdo, 'cuentas_por_pagar_movimientos'),
-        'Revisar cuentas_por_pagar_movimientos; Fase 3C-C no debe tener pagos, abonos ni movimientos CxP.'
+        'movimientos CxP inconsistentes',
+        pfCountScalar($pdo, "SELECT COUNT(*)
+            FROM cuentas_por_pagar_movimientos m
+            LEFT JOIN cuentas_por_pagar cxp
+              ON cxp.id = m.cuenta_por_pagar_id
+             AND cxp.hotel_id = m.hotel_id
+            WHERE cxp.id IS NULL
+               OR m.hotel_id IS NULL
+               OR m.monto <= 0
+               OR m.saldo_anterior < m.saldo_posterior
+               OR m.saldo_posterior < 0"),
+        'Revisar movimientos CxP antes de operar pagos proveedores.'
     );
 
     $checks = [
@@ -220,13 +231,29 @@ function pfReportCxpConsistency(PDO $pdo, string $database): void
         if ($predicate === null) {
             pfWarning(
                 'No se pudo validar movimientos de Caja relacionados con CxP: faltan columnas textuales conocidas.',
-                'Confirmar manualmente que Fase 3C no haya escrito movimientos_caja.'
+                'Confirmar manualmente que los pagos CxP en Caja sean gastos con corte del mismo hotel.'
             );
         } else {
+            $cxpCashCount = pfCountScalar($pdo, 'SELECT COUNT(*) FROM movimientos_caja WHERE ' . $predicate);
+            pfOk('Consistencia CxP: movimientos de Caja con referencia textual a CxP = ' . (string)$cxpCashCount . '.');
             pfReportZeroCount(
-                'movimientos de Caja con referencia textual a CxP',
-                pfCountScalar($pdo, 'SELECT COUNT(*) FROM movimientos_caja WHERE ' . $predicate),
-                'Revisar movimientos_caja; Fase 3C no debe crear pagos, abonos ni movimientos de Caja.'
+                'movimientos de Caja CxP inconsistentes',
+                pfCountScalar($pdo, "SELECT COUNT(*)
+                    FROM movimientos_caja
+                    WHERE " . $predicate . "
+                      AND (
+                          hotel_id IS NULL
+                          OR tipo <> 'gasto'
+                          OR monto <= 0
+                          OR corte_id IS NULL
+                          OR NOT EXISTS (
+                              SELECT 1
+                              FROM cortes_caja cc
+                              WHERE cc.id = movimientos_caja.corte_id
+                                AND cc.hotel_id = movimientos_caja.hotel_id
+                          )
+                      )"),
+                'Revisar movimientos_caja relacionados con CxP; deben ser gastos con corte del mismo hotel.'
             );
         }
     } else {
@@ -613,8 +640,9 @@ if (is_file($routesPath)) {
             'GET /cuentas-por-pagar/generacion-preview',
             'GET /cuentas-por-pagar/simulador-caja',
             'POST /cuentas-por-pagar/generar-desde-compra/{id:[0-9]+}',
+            'POST /cuentas-por-pagar/{id:[0-9]+}/registrar-pago-caja',
             'GET /cuentas-por-pagar/{id:[0-9]+}',
-        ], true) && $controller === 'cuentaporpagar' && in_array($action, ['index', 'generacionpreview', 'simuladorcaja', 'generardesdecompra', 'ver'], true);
+        ], true) && $controller === 'cuentaporpagar' && in_array($action, ['index', 'generacionpreview', 'simuladorcaja', 'generardesdecompra', 'registrarpagocaja', 'ver'], true);
 
         if ($isAllowedPurchaseRoute || $isAllowedCxpReadOnlyRoute) {
             continue;
@@ -633,11 +661,11 @@ if (is_file($routesPath)) {
     }
 
     if (empty($forbiddenRoutes)) {
-        pfOk('Solo existen compras minimas y CxP/preview/generacion manual Fase 3B/3C-C; no hay pagos, contactos ni documentos.');
+        pfOk('Solo existen compras minimas y CxP controlada; compras no registra pagos, contactos ni documentos.');
     } else {
         pfError(
             'Rutas fuera del alcance Fase 3C-C detectadas: ' . implode(' | ', $forbiddenRoutes),
-            'Retirar rutas que no sean Compras minimas, GET de CxP/preview/detalle o POST generar CxP desde compra.'
+            'Retirar rutas que no sean Compras minimas, GET de CxP/preview/detalle, POST generar CxP o POST pago Caja desde CxP.'
         );
     }
 } else {

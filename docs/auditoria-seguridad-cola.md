@@ -1407,3 +1407,22 @@ Resultado: contrato sin cambios operativos.
 - Contrato revisado por el usuario.
 - La implementacion real queda condicionada a backup, prueba controlada y autorizacion
   explicita de escrituras financieras.
+
+## Auditoria Fase 3D-C
+
+Resultado: implementacion tecnica con QA manual pendiente.
+
+- Backup limpio confirmado antes de habilitar escrituras.
+- El POST requiere sesion, hotel actual, modulo inventario, modulo Caja y CSRF.
+- El detalle genera token de pago de un solo uso por cuenta para reducir doble envio.
+- El servicio valida `hotel_id`, proveedor del hotel, proveedor activo, compra recibida,
+  saldo valido, total valido, corte de Caja abierto y monto no mayor al saldo.
+- El servicio usa `FOR UPDATE` para CxP, corte y referencia duplicada.
+- La actualizacion de CxP, movimiento CxP, movimiento Caja y auditoria ocurren en una
+  sola transaccion.
+- No se agregan pagos automaticos desde compras.
+- No se agregan abonos.
+- No se modifica UI de Caja.
+- No se toca `/api/sync`.
+- Riesgo residual: un pago real modifica datos financieros; por eso requiere QA manual
+  controlada y rollback documentado.

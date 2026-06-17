@@ -222,11 +222,12 @@ $router->get('/compras/{id:[0-9]+}', ['controller' => 'Compra', 'action' => 'ver
 $router->post('/compras', ['controller' => 'Compra', 'action' => 'guardar']);
 $router->post('/compras/{id:[0-9]+}/recibir', ['controller' => 'Compra', 'action' => 'recibir']);
 
-// Fase 3B/3C-B/3D-A: CxP base, preview GET, generacion manual y simulador Caja read-only.
+// Fase 3B/3C-B/3D: CxP base, preview GET, generacion manual, simulador Caja y pago proveedor controlado.
 $router->get('/cuentas-por-pagar', ['controller' => 'CuentaPorPagar', 'action' => 'index']);
 $router->get('/cuentas-por-pagar/generacion-preview', ['controller' => 'CuentaPorPagar', 'action' => 'generacionPreview']);
 $router->get('/cuentas-por-pagar/simulador-caja', ['controller' => 'CuentaPorPagar', 'action' => 'simuladorCaja']);
 $router->post('/cuentas-por-pagar/generar-desde-compra/{id:[0-9]+}', ['controller' => 'CuentaPorPagar', 'action' => 'generarDesdeCompra']);
+$router->post('/cuentas-por-pagar/{id:[0-9]+}/registrar-pago-caja', ['controller' => 'CuentaPorPagar', 'action' => 'registrarPagoCaja']);
 $router->get('/cuentas-por-pagar/{id:[0-9]+}', ['controller' => 'CuentaPorPagar', 'action' => 'ver']);
 
 $router->get('/cuentas-por-cobrar', ['controller' => 'CuentaPorCobrar', 'action' => 'index']);

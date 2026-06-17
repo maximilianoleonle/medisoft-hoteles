@@ -1565,3 +1565,26 @@ Revision recomendada:
 5. Confirmar que no se crearon movimientos de Caja.
 6. Confirmar que saldos de CxP no cambiaron.
 7. Confirmar que 3D-B real no se implemente sin backup y QA manual disponible.
+
+## Fase 3D-C - Pago proveedor con Caja
+
+Estado: implementacion tecnica pendiente de QA manual.
+
+Backup previo confirmado:
+
+- `backups/medisoft_hoteles_import_before_3d_payments_20260617_105846.sql`
+- SHA256:
+  `9584636FF545D8370B5E84171A9B1CF4EA2A8637D73285316DC83EB14E499A16`
+
+Pruebas manuales recomendadas:
+
+1. Iniciar sesion en el hotel Los Cedros.
+2. Confirmar que existe corte de Caja abierto.
+3. Abrir `/cuentas-por-pagar/1` o una CxP elegible.
+4. Confirmar que se muestra panel "Pago proveedor con Caja".
+5. Registrar un pago parcial pequeno con referencia unica.
+6. Confirmar mensaje de exito y nuevo saldo.
+7. Confirmar que el movimiento aparece en "Movimientos referenciales".
+8. Abrir Caja y confirmar gasto con categoria `Pago proveedor`.
+9. Reintentar mismo envio desde navegador y confirmar bloqueo por token o referencia.
+10. Confirmar que compras no cambian y que `/api/sync` sigue bloqueado por checker.

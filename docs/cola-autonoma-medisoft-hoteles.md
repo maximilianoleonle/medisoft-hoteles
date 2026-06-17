@@ -1335,3 +1335,18 @@ Estado formal: `CONTRATO_3D_B_SERVICIO_PAGO_TRANSACCIONAL_COMPLETADO`.
 - Siguiente accion segura: detener avance operativo de 3D hasta backup verificado y
   autorizacion explicita de escrituras financieras; no pasar a 3D-C ni pagos reales en
   cola automatica.
+
+## 3D-C Pago proveedor con Caja
+
+Estado formal: `PAGO_PROVEEDOR_CAJA_3D_C_IMPLEMENTADO_QA_MANUAL_PENDIENTE`.
+
+- Documento creado: `docs/fase_3D_C_pago_proveedor_caja.md`.
+- Backup limpio confirmado:
+  `backups/medisoft_hoteles_import_before_3d_payments_20260617_105846.sql`.
+- Se agrega `CuentaPorPagarPagoService`.
+- Se agrega POST `/cuentas-por-pagar/{id}/registrar-pago-caja`.
+- Se agrega formulario de pago en detalle CxP solo para cuentas elegibles.
+- Se agrega prueba rollback `tools/saas/probar_pago_proveedor_caja.php`.
+- No se agregan pagos automaticos, abonos, cambios UI de Caja ni `/api/sync`.
+- Siguiente accion segura: ejecutar verificaciones automaticas y dejar QA manual
+  puntual para confirmar pago real en navegador.

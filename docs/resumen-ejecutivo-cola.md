@@ -1383,3 +1383,19 @@ Resultado 3D-B:
 - La implementacion real queda bloqueada hasta backup verificado, prueba local controlada
   y autorizacion explicita de escrituras financieras.
 - Revision manual: el usuario confirmo que reviso el bloque y esta bien.
+
+Resultado 3D-C:
+
+- Estado tecnico: `PAGO_PROVEEDOR_CAJA_3D_C_IMPLEMENTADO_QA_MANUAL_PENDIENTE`.
+- Documento: `docs/fase_3D_C_pago_proveedor_caja.md`.
+- Backup limpio confirmado:
+  `backups/medisoft_hoteles_import_before_3d_payments_20260617_105846.sql`.
+- Se agrega `CuentaPorPagarPagoService` para registrar pago proveedor de forma
+  transaccional.
+- Se agrega POST `/cuentas-por-pagar/{id}/registrar-pago-caja` con CSRF, modulo Caja y
+  token de pago de un solo uso.
+- El detalle de CxP muestra formulario solo si la cuenta es elegible.
+- Se agrega prueba rollback `tools/saas/probar_pago_proveedor_caja.php`.
+- No se agregan pagos automaticos desde compras, abonos, cambios en pantallas de Caja ni
+  `/api/sync`.
+- Pendiente: QA manual del usuario con una CxP de prueba antes de cerrar como validado.
