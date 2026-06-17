@@ -81,7 +81,7 @@ Una fase futura MANT-G-A puede implementar una de estas opciones seguras:
 - La habitacion asociada debe pertenecer al mismo hotel.
 - La tarea vinculada debe guardar `mantenimiento_id` solo si el mantenimiento es valido.
 - Si se crea una tarea desde mantenimiento, el origen debe distinguirse de `manual`
-  generico, por ejemplo `mantenimiento_manual`.
+  generico, usando el valor permitido `mantenimiento`.
 - No debe existir escritura a Caja, pagos, abonos, nomina ni `/api/sync`.
 - No debe llamar `Mantenimiento::activarMantenimientosPendientes()`.
 - No debe modificar disponibilidad automaticamente.

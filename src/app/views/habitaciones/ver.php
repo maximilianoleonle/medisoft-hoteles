@@ -30,6 +30,16 @@ $precio_base_original = (float)($habitacion['precio_base_original'] ?? $precio_b
 $incremento_total = (float)($habitacion['incremento_total'] ?? 0);
 $tiene_incremento = !empty($habitacion['tiene_incremento']);
 $activa = !empty($habitacion['activa']);
+$puede_crear_tarea_limpieza = function_exists('can') && can('habitaciones.mantenimiento');
+$tiene_tarea_limpieza_activa = false;
+foreach ($tareas_contextuales as $tarea_contextual) {
+    $tarea_categoria = (string)($tarea_contextual['categoria'] ?? '');
+    $tarea_estado = (string)($tarea_contextual['estado'] ?? '');
+    if ($tarea_categoria === 'limpieza' && in_array($tarea_estado, ['pendiente', 'asignada', 'en_proceso'], true)) {
+        $tiene_tarea_limpieza_activa = true;
+        break;
+    }
+}
 
 if (!function_exists('room_detail_safe')) {
     function room_detail_safe($value, $fallback = '-') {
@@ -3480,6 +3490,19 @@ $mantenimientos_count = count($mantenimientos_programados);
                                     Finalizar limpieza
                                 </button>
                             </form>
+                            <?php if ($puede_crear_tarea_limpieza && !$tiene_tarea_limpieza_activa): ?>
+                                <form method="POST" action="<?= url('tareas/desde-limpieza/' . $habitacion_id) ?>">
+                                    <?= csrf_field() ?>
+                                    <button type="submit" class="rd-btn rd-btn-warning" style="width: 100%;">
+                                        <i class="fas fa-list-check"></i>
+                                        Crear tarea de limpieza
+                                    </button>
+                                </form>
+                            <?php elseif ($tiene_tarea_limpieza_activa): ?>
+                                <div class="rd-empty-action">
+                                    Ya existe una tarea de limpieza activa vinculada a esta habitaci&oacute;n.
+                                </div>
+                            <?php endif; ?>
                         <?php else: ?>
                             <div class="rd-empty-action">
                                 No hay acciones de cambio de estado disponibles para este estado. Puedes revisar el expediente o editar la habitaci&oacute;n.

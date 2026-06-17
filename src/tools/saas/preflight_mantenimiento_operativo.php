@@ -474,7 +474,7 @@ if (
     && strpos($taskModelCode, "'mantenimiento' => 't.mantenimiento_id'") !== false
     && strpos($taskModelCode, 'function buscarTareaActivaPorMantenimientoHotel') !== false
     && strpos($taskModelCode, 'function crearDesdeMantenimientoParaHotel') !== false
-    && strpos($taskModelCode, "'mantenimiento_manual'") !== false
+    && strpos($taskModelCode, "'mantenimiento'") !== false
     && strpos($taskModelCode, 'function listarPorEntidadHotel') !== false
     && strpos($taskModelCode, 'WHERE t.hotel_id = ?') !== false
     && stripos($taskModelCode, 'movimientos_caja') === false

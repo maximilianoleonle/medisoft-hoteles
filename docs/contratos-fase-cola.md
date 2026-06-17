@@ -1257,7 +1257,7 @@ Estado formal vigente: `CREACION_MANUAL_TAREA_MANT_G_B_A_COMPLETADA_QA_DIFERIDA`
 
 - Documento: `docs/fase_MANT_G_B_A_creacion_manual_tarea_mantenimiento.md`.
 - Implementa `POST /tareas/desde-mantenimiento/{id}`.
-- Crea tarea manual vinculada a mantenimiento con `origen = mantenimiento_manual`.
+- Crea tarea manual vinculada a mantenimiento con `origen = mantenimiento`.
 - Bloquea duplicados activos por mantenimiento.
 - No cambia habitaciones ni mantenimientos.
 - QA manual queda diferida.
@@ -1320,7 +1320,7 @@ Estado formal vigente: `CREACION_MANUAL_TAREA_LIM_B_A_COMPLETADA_QA_DIFERIDA`.
 
 - Documento: `docs/fase_LIM_B_A_creacion_manual_tarea_limpieza.md`.
 - Implementa `POST /tareas/desde-limpieza/{id}`.
-- Crea tarea manual de categoria `limpieza` con `origen = limpieza_manual`.
+- Crea tarea manual de categoria `limpieza` con `origen = habitacion`.
 - Bloquea duplicados activos por habitacion.
 - No cambia habitaciones, reservaciones ni inventario.
 - No toca Caja, pagos, abonos, nomina, offline ni `/api/sync`.

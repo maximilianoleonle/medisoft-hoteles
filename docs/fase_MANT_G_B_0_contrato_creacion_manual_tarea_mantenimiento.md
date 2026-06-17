@@ -37,7 +37,7 @@ convertirse en fuente de verdad de estado de habitacion ni de mantenimiento.
   - `hotel_id` del contexto;
   - `categoria = 'mantenimiento'`;
   - `estado = 'pendiente'`;
-  - `origen = 'mantenimiento_manual'`;
+  - `origen = 'mantenimiento'`, valor permitido por el enum actual;
   - `habitacion_id` desde el mantenimiento;
   - `mantenimiento_id` del mantenimiento origen;
   - titulo/descripcion derivados de forma segura o recibidos desde formulario minimo.

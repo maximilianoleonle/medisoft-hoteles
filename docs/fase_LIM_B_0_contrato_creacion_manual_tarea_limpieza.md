@@ -22,7 +22,7 @@ LIM-B-0 no implementa codigo. Solo fija reglas para una implementacion futura se
 - Agregar una accion POST manual, explicita y protegida.
 - Crear solo una tarea de categoria `limpieza`.
 - Vincular la tarea a `habitacion_id`.
-- Usar `origen = limpieza_manual` o equivalente.
+- Usar `origen = habitacion`, valor permitido por el enum actual de `tareas_operativas.origen`.
 - Bloquear duplicado activo de limpieza por habitacion.
 - Mostrar boton solo en habitaciones con estado `limpieza`.
 - Auditar la creacion si el patron existe.

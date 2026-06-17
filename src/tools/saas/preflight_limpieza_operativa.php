@@ -315,7 +315,7 @@ if (
     $limTaskCreateCode !== ''
     && strpos($limTaskCreateCode, "estado'] ?? '') !== 'limpieza'") !== false
     && strpos($limTaskCreateCode, "categoria = 'limpieza'") !== false
-    && strpos($limTaskCreateCode, "'limpieza_manual'") !== false
+    && strpos($limTaskCreateCode, "'habitacion'") !== false
     && stripos($limTaskCreateCode, 'UPDATE habitaciones') === false
     && stripos($limTaskCreateCode, 'movimientos_caja') === false
     && stripos($limTaskCreateCode, 'api/sync') === false
@@ -323,6 +323,19 @@ if (
     limPfOk('TareaOperativa LIM-B-A valida habitacion en limpieza, bloquea duplicado y no cambia disponibilidad.');
 } else {
     limPfError('TareaOperativa LIM-B-A no muestra guardas completas.', 'Revisar estado limpieza, duplicado activo, origen y ausencia de cambios en habitaciones/Caja.');
+}
+
+$habitacionViewPath = $root . '/app/views/habitaciones/ver.php';
+$habitacionViewCode = is_file($habitacionViewPath) ? file_get_contents($habitacionViewPath) : '';
+if (
+    strpos($habitacionViewCode, "url('tareas/desde-limpieza/' . \$habitacion_id)") !== false
+    && strpos($habitacionViewCode, 'csrf_field()') !== false
+    && strpos($habitacionViewCode, '$tiene_tarea_limpieza_activa') !== false
+    && strpos($habitacionViewCode, "can('habitaciones.mantenimiento')") !== false
+) {
+    limPfOk('Ficha de habitacion permite crear tarea de limpieza sin pasar por reportes y bloquea duplicado visual.');
+} else {
+    limPfWarning('Ficha de habitacion no muestra acceso directo completo para crear tarea de limpieza.', 'Revisar boton POST con CSRF, permiso y bloqueo cuando ya hay tarea activa.');
 }
 
 $indexCode = is_file($indexViewPath) ? file_get_contents($indexViewPath) : '';

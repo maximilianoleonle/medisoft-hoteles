@@ -63,7 +63,7 @@ probar:
 2. Confirmar tareas vinculadas y estado vacio.
 3. Crear una tarea desde un mantenimiento controlado.
 4. Confirmar detalle de tarea, `hotel_id`, `habitacion_id`, `mantenimiento_id` y
-   `origen = mantenimiento_manual`.
+   `origen = mantenimiento`.
 5. Intentar crear una segunda tarea activa para el mismo mantenimiento y confirmar
    bloqueo limpio.
 6. Confirmar que no cambian habitacion ni mantenimiento.

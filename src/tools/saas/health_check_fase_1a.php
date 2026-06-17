@@ -3305,7 +3305,7 @@ if (!is_file($routesPath)) {
         $taskHasMaintenanceCreate =
             strpos($taskModelCode, 'function crearDesdeMantenimientoParaHotel') !== false
             && strpos($taskModelCode, 'function buscarTareaActivaPorMantenimientoHotel') !== false
-            && strpos($taskModelCode, "'mantenimiento_manual'") !== false
+            && strpos($taskModelCode, "'mantenimiento'") !== false
             && strpos($taskModelCode, 'mantenimiento_id') !== false
             && strpos($taskModelCode, "estado IN ('pendiente', 'asignada', 'en_proceso')") !== false
             && preg_match('/INSERT\s+INTO\s+tareas_operativas/i', $taskModelCode)
@@ -3328,7 +3328,7 @@ if (!is_file($routesPath)) {
         $taskHasCleaningCreate =
             strpos($taskModelCode, 'function crearDesdeLimpiezaHabitacionParaHotel') !== false
             && strpos($taskModelCode, 'function buscarTareaActivaLimpiezaPorHabitacionHotel') !== false
-            && strpos($taskModelCode, "'limpieza_manual'") !== false
+            && strpos($taskModelCode, "'habitacion'") !== false
             && strpos($taskModelCode, "categoria = 'limpieza'") !== false
             && strpos($taskModelCode, "estado IN ('pendiente', 'asignada', 'en_proceso')") !== false
             && strpos($taskModelCode, "!== 'limpieza'") !== false
@@ -5340,7 +5340,7 @@ if (!is_file($routesPath)) {
         && strpos($mantTaskModelCode, 'function listarPorEntidadHotel') !== false
         && strpos($mantTaskModelCode, 'function buscarTareaActivaPorMantenimientoHotel') !== false
         && strpos($mantTaskModelCode, 'function crearDesdeMantenimientoParaHotel') !== false
-        && strpos($mantTaskModelCode, "'mantenimiento_manual'") !== false
+        && strpos($mantTaskModelCode, "'mantenimiento'") !== false
         && strpos($mantTaskModelCode, 'WHERE t.hotel_id = ?') !== false
         && strpos($mantTaskModelCode, 'movimientos_caja') === false
     ) {

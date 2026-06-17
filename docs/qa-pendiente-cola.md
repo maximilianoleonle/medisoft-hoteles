@@ -1204,7 +1204,7 @@ instruccion del usuario.
 - Probar `/reportes/mantenimiento-programado`.
 - Crear una tarea desde un mantenimiento controlado.
 - Confirmar detalle de tarea, `mantenimiento_id`, `habitacion_id`, `hotel_id` y
-  `origen = mantenimiento_manual`.
+  `origen = mantenimiento`.
 - Confirmar bloqueo de duplicado activo.
 - Confirmar que no cambia habitacion ni mantenimiento.
 - Confirmar que no hay Caja, pagos, abonos, nomina ni cambios en `/api/sync`.
@@ -1265,9 +1265,10 @@ instruccion del usuario.
 - Creacion manual de tarea de limpieza implementada.
 - QA manual diferida por instruccion del usuario.
 - Probar `/reportes/limpieza`.
+- Probar ficha de una habitacion en limpieza y crear tarea desde acciones rapidas.
 - Crear una tarea desde una habitacion en limpieza.
 - Confirmar detalle de tarea, `categoria = limpieza`, `habitacion_id`, `hotel_id` y
-  `origen = limpieza_manual`.
+  `origen = habitacion`.
 - Confirmar bloqueo de duplicado activo.
 - Confirmar que no cambia `habitaciones.estado`.
 - Confirmar que no hay inventario automatico, Caja, pagos, abonos, nomina, offline ni

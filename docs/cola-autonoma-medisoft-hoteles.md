@@ -971,7 +971,7 @@ agregar funcionalidades nuevas.
 - Documento creado: `docs/fase_MANT_G_B_A_creacion_manual_tarea_mantenimiento.md`.
 - Ruta POST: `/tareas/desde-mantenimiento/{id}`.
 - Crea tarea pendiente con `mantenimiento_id`, `habitacion_id` y
-  `origen = mantenimiento_manual`.
+  `origen = mantenimiento`.
 - Bloquea duplicado activo por mantenimiento.
 - No modifica habitaciones, mantenimientos, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.
@@ -1039,7 +1039,7 @@ agregar funcionalidades nuevas.
 - Estado formal: `CREACION_MANUAL_TAREA_LIM_B_A_COMPLETADA_QA_DIFERIDA`.
 - Documento creado: `docs/fase_LIM_B_A_creacion_manual_tarea_limpieza.md`.
 - Ruta POST: `/tareas/desde-limpieza/{id}`.
-- Crea tarea pendiente de categoria `limpieza` con `origen = limpieza_manual`.
+- Crea tarea pendiente de categoria `limpieza` con `origen = habitacion`.
 - Bloquea duplicado activo por habitacion.
 - No modifica habitaciones, inventario, Caja, pagos, abonos, nomina, offline ni
   `/api/sync`.

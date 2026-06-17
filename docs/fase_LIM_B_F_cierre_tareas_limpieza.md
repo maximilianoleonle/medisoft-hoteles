@@ -65,7 +65,7 @@ Cuando el usuario retome pruebas manuales:
 2. Elegir una habitacion en estado `limpieza` sin tarea activa.
 3. Crear tarea desde el boton del reporte.
 4. Confirmar redireccion al detalle de tarea.
-5. Confirmar `categoria = limpieza`, `origen = limpieza_manual`,
+5. Confirmar `categoria = limpieza`, `origen = habitacion`,
    `habitacion_id` y `hotel_id`.
 6. Intentar crear segunda tarea activa para la misma habitacion y confirmar
    bloqueo limpio.

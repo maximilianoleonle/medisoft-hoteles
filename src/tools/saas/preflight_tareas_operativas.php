@@ -503,7 +503,7 @@ if (
     && strpos($taskModelCode, 'function crearParaHotel') !== false
     && strpos($taskModelCode, 'function crearDesdeMantenimientoParaHotel') !== false
     && strpos($taskModelCode, 'function buscarTareaActivaPorMantenimientoHotel') !== false
-    && strpos($taskModelCode, "'mantenimiento_manual'") !== false
+    && strpos($taskModelCode, "'mantenimiento'") !== false
     && strpos($taskModelCode, 'function cambiarEstadoManualParaHotel') !== false
 ) {
     tlmPfOk('TareaOperativa conserva reporte/agenda read-only, lecturas, alta manual, alta desde mantenimiento y estados con hotel_id.');

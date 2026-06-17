@@ -842,8 +842,7 @@
 - La futura creacion de tarea desde mantenimiento debe ser manual, no automatica.
 - Se exige bloqueo de duplicado activo para evitar multiples tareas abiertas sobre el
   mismo mantenimiento.
-- La tarea puede usar `origen = 'mantenimiento_manual'` para distinguirse de altas
-  manuales genericas.
+- La tarea debe usar `origen = 'mantenimiento'`, valor permitido por el enum actual.
 - El cierre de la tarea no debe cerrar el mantenimiento; cualquier sincronizacion de
   estados requiere contrato separado.
 
@@ -904,8 +903,8 @@
 - Se implementa una creacion manual individual, no automatica ni masiva.
 - La validacion de habitacion en `limpieza` queda en el modelo para evitar que la vista
   sea la unica barrera.
-- El origen `limpieza_manual` diferencia estas tareas de altas manuales genericas.
-- El boton vive en `/reportes/limpieza` porque ahi se ve el estado operativo actual.
+- El origen `habitacion` vincula estas tareas con la habitacion, usando un valor permitido por el enum actual.
+- El boton vive en `/reportes/limpieza` y en la ficha de habitacion para reducir friccion operativa sin cambiar la ruta POST.
 
 ## Decision LIM-B-F
 

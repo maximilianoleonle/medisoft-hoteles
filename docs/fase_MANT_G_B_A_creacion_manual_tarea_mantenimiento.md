@@ -23,7 +23,7 @@ sin automatizar tareas y sin modificar estados de habitaciones o mantenimientos.
   - bloquea duplicado activo por `hotel_id + mantenimiento_id`;
   - crea tarea en estado `pendiente`;
   - guarda `categoria = mantenimiento`;
-  - guarda `origen = mantenimiento_manual`;
+  - guarda `origen = mantenimiento`;
   - guarda `mantenimiento_id` y `habitacion_id`;
   - registra evento inicial en `tarea_eventos`;
   - usa transaccion y `FOR UPDATE`.
@@ -70,7 +70,7 @@ Checklist sugerido:
 2. Crear una tarea desde un mantenimiento controlado.
 3. Confirmar redireccion a `/tareas/{id}`.
 4. Confirmar que la tarea tiene `mantenimiento_id`, `habitacion_id`, `hotel_id` y
-   `origen = mantenimiento_manual`.
+   `origen = mantenimiento`.
 5. Confirmar evento inicial `creada`.
 6. Confirmar que el preview ya no permite crear otra tarea activa para el mismo
    mantenimiento.

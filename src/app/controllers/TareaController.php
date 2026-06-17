@@ -220,7 +220,7 @@ class TareaController extends Controller
             $this->redirect('tareas/' . $tareaId);
         } catch (Throwable $e) {
             set_mensaje('No se pudo crear la tarea de limpieza: ' . $e->getMessage(), 'error');
-            $this->redirect('reportes/limpieza');
+            $this->redirect($habitacionId > 0 ? 'habitaciones/' . $habitacionId : 'reportes/limpieza');
         }
     }
 

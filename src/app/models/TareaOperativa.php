@@ -819,7 +819,7 @@ class TareaOperativa extends Model
                  VALUES
                     (?, 'mantenimiento', ?, ?, ?, 'pendiente',
                      ?, ?, ?, ?,
-                     ?, 'mantenimiento_manual', NOW())",
+                     ?, 'mantenimiento', NOW())",
                 [
                     $hotelId,
                     $titulo,
@@ -933,7 +933,7 @@ class TareaOperativa extends Model
                  VALUES
                     (?, 'limpieza', ?, ?, 'media', 'pendiente',
                      ?, NOW(), ?,
-                     'limpieza_manual', NOW())",
+                     'habitacion', NOW())",
                 [
                     $hotelId,
                     $titulo,
