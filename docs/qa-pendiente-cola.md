@@ -1507,3 +1507,14 @@ Pruebas recomendadas:
 4. Confirmar que el enlace a `/cuentas-por-cobrar` funciona.
 5. Confirmar que no hay botones de cobro, pago, abono ni Caja.
 6. Confirmar que no hay formularios POST.
+
+## Fase 8A-F - Cierre dashboard KPIs
+
+Estado: QA manual diferida.
+
+Checklist final:
+
+1. Completar QA de 8A-A.
+2. Confirmar que no existe dashboard paralelo.
+3. Confirmar que los KPIs financieros se muestran como estimados.
+4. Confirmar que `/api/sync` no participa.

@@ -1217,3 +1217,13 @@ Rollback:
 2. No tocar datos.
 3. No tocar `reservaciones`, pagos, abonos ni Caja.
 4. No tocar `/api/sync`.
+
+## Rollback Fase 8A-F
+
+8A-F es cierre documental.
+
+Rollback:
+
+1. Revertir el commit documental de cierre.
+2. Para retirar funcionalidad, revertir 8A-A.
+3. No tocar datos, Caja ni `/api/sync`.

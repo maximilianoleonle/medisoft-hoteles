@@ -1287,3 +1287,13 @@ Estado formal: `KPIS_8A_A_DASHBOARD_READONLY_COMPLETADOS_QA_DIFERIDA`.
 - No hay rutas nuevas, POST, cobros, pagos, abonos, Caja ni `/api/sync`.
 - QA manual queda diferida.
 - Siguiente accion segura: cierre tecnico 8A-F o contrato 3D antes de tocar Caja.
+
+## 8A-F Cierre dashboard KPIs
+
+Estado formal: `BLOQUE_8A_DASHBOARD_KPIS_CERRADO_QA_DIFERIDA`.
+
+- Documento creado: `docs/fase_8A_F_cierre_dashboard_kpis.md`.
+- Cubre 8A-0 y 8A-A.
+- Confirma dashboard unico, KPIs read-only, sin POST, sin Caja y sin `/api/sync`.
+- QA manual queda diferida.
+- Siguiente accion segura: 3D-0 contrato/diagnostico de pagos proveedores con Caja.

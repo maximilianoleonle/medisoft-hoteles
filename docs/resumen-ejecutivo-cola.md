@@ -1344,3 +1344,11 @@ Resultado 8A-A:
 - No se crean rutas nuevas ni dashboard paralelo.
 - No hay POST, formularios, cobros, pagos, abonos, Caja ni `/api/sync`.
 - `preflight_operacion_diaria.php` queda actualizado para validar OP-A/8A-A.
+
+Resultado 8A-F:
+
+- Estado tecnico: `BLOQUE_8A_DASHBOARD_KPIS_CERRADO_QA_DIFERIDA`.
+- Documento: `docs/fase_8A_F_cierre_dashboard_kpis.md`.
+- Se cierra tecnicamente 8A sin QA manual.
+- El siguiente bloque del roadmap es 3D, pero solo es seguro iniciar contrato/diagnostico
+  porque implica pagos proveedores con Caja.

@@ -1354,3 +1354,12 @@ Resultado: implementacion read-only sin hallazgos bloqueantes.
 - La vista etiqueta los KPIs como estimados.
 - No hay Caja, pagos nuevos, abonos nuevos ni `/api/sync`.
 - Preflight OP-A/8A-A valida ausencia de escrituras y storage interno.
+
+## Auditoria Fase 8A-F
+
+Resultado: cierre tecnico sin hallazgos bloqueantes.
+
+- 8A queda cerrado como extension read-only.
+- No se habilitan acciones desde dashboard.
+- QA manual queda diferida.
+- Cualquier paso a pagos proveedores con Caja debe iniciar con contrato 3D-0.
