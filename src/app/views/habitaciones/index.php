@@ -7086,6 +7086,42 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
   border-color:color-mix(in srgb,var(--sc) 26%,var(--hb-line))!important;
 }
 
+/* Widgets de estado: conserva el diseno original; acento solo abajo al filtrar. */
+.habitaciones-view #hbStats .hb-stat::before{
+  display:none!important;
+  opacity:0!important;
+}
+
+.habitaciones-view #hbStats .hb-stat::after{
+  left:16px!important;
+  right:16px!important;
+  bottom:0!important;
+  height:3px!important;
+  border-radius:999px 999px 0 0!important;
+  background:
+    radial-gradient(circle at 62% 50%, rgba(255,255,255,.86) 0 1px, transparent 2px),
+    linear-gradient(90deg,
+      color-mix(in srgb,var(--sc) 18%,transparent) 0%,
+      color-mix(in srgb,var(--sc) 54%,#fff) 18%,
+      var(--sc) 46%,
+      color-mix(in srgb,var(--sc) 76%,#fff) 62%,
+      color-mix(in srgb,var(--sc) 22%,transparent) 100%)!important;
+  box-shadow:0 -1px 0 rgba(255,255,255,.74) inset,0 8px 16px -13px color-mix(in srgb,var(--sc) 68%,transparent)!important;
+  opacity:0!important;
+}
+
+.habitaciones-view #hbStats .hb-stat[role="button"]:hover::after,
+.habitaciones-view #hbStats .hb-stat[role="button"]:focus-visible::after{
+  opacity:0!important;
+}
+
+.habitaciones-view #hbStats .hb-stat.is-filter-active::after{
+  left:13px!important;
+  right:13px!important;
+  height:4px!important;
+  opacity:1!important;
+}
+
 .habitaciones-view .hb-chip.is-active,
 .habitaciones-view .hb-mobile-lg.is-active{
   background:var(--hb-heading)!important;
@@ -7597,6 +7633,7 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
     height:286px!important;
   }
 }
+
 </style>
 
 <style id="hb-quick-view-final-override">
@@ -8948,6 +8985,365 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
     box-shadow: 0 16px 26px -22px color-mix(in srgb, var(--hb-modal-cancel) 62%, transparent) !important;
 }
 
+/* Redisenio minimal: overlay oscuro sin difuminado y decisiones rapidas. */
+.swal2-container.hb-swal-sheet-container.swal2-backdrop-show,
+.swal2-container.hb-swal-sheet-container.swal2-noanimation{
+    background: rgba(8, 13, 20, .58) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.swal2-container.hb-swal-sheet-container.swal2-backdrop-hide{
+    background: rgba(8, 13, 20, 0) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.swal2-popup.hb-swal-client,
+.swal2-popup.hb-swal-arrival{
+    --hb-modal-surface: #fbfaf7;
+    --hb-modal-paper: #ffffff;
+    --hb-modal-ink: #1f2933;
+    --hb-modal-soft-ink: #47525d;
+    --hb-modal-muted: #707a84;
+    --hb-modal-line: #e6ded2;
+    --hb-modal-action: color-mix(in srgb, var(--brand-primary, #1B2746) 52%, #45515d);
+    --hb-modal-existing: #536b61;
+    --hb-modal-new: #8b675c;
+    --hb-modal-danger: #9c5d58;
+    width: min(620px, calc(100vw - 32px)) !important;
+    border: 1px solid var(--hb-modal-line) !important;
+    border-radius: 16px !important;
+    background: var(--hb-modal-surface) !important;
+    color: var(--hb-modal-ink) !important;
+    box-shadow: 0 28px 70px -44px rgba(8, 13, 20, .72) !important;
+    animation: hbReserveModalIn .16s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.swal2-popup.hb-swal-arrival{
+    width: min(500px, calc(100vw - 32px)) !important;
+}
+
+.swal2-popup.hb-swal-client::before,
+.swal2-popup.hb-swal-arrival::before,
+.hb-client-choice__head::after,
+.hb-arrival-head::after,
+.hb-client-option::before{
+    display: none !important;
+}
+
+.hb-swal .swal2-close{
+    top: 14px !important;
+    right: 14px !important;
+    width: 32px !important;
+    height: 32px !important;
+    border: 1px solid var(--hb-modal-line) !important;
+    background: #ffffff !important;
+    color: #5d6670 !important;
+    box-shadow: none !important;
+}
+
+.hb-swal .swal2-close:hover,
+.hb-swal .swal2-close:focus-visible{
+    transform: translateY(-1px);
+    background: color-mix(in srgb, var(--hb-modal-danger) 7%, #fff) !important;
+    color: var(--hb-modal-danger) !important;
+    outline: 3px solid color-mix(in srgb, var(--hb-modal-danger) 14%, transparent) !important;
+}
+
+.hb-client-choice__head,
+.hb-arrival-head{
+    grid-template-columns: 34px minmax(0, 1fr) !important;
+    gap: 11px !important;
+    padding: 20px 22px 16px !important;
+    border-bottom: 1px solid var(--hb-modal-line) !important;
+    background: var(--hb-modal-surface) !important;
+}
+
+.hb-client-choice__mark,
+.hb-arrival-mark{
+    width: 34px !important;
+    height: 34px !important;
+    border: 1px solid var(--hb-modal-line) !important;
+    border-radius: 10px !important;
+    background: #ffffff !important;
+    color: var(--hb-modal-action) !important;
+    box-shadow: none !important;
+}
+
+.hb-client-choice__eyebrow{
+    margin-bottom: 5px !important;
+    color: var(--hb-modal-muted) !important;
+    font-size: .66rem !important;
+    font-weight: 760 !important;
+    letter-spacing: .06em !important;
+}
+
+.hb-client-choice h3,
+.hb-arrival-head h3{
+    color: var(--hb-modal-ink) !important;
+    font-size: 1.12rem !important;
+    font-weight: 720 !important;
+    line-height: 1.16 !important;
+}
+
+.hb-client-choice__head p,
+.hb-arrival-head p{
+    margin-top: 6px !important;
+    color: var(--hb-modal-soft-ink) !important;
+    font-size: .84rem !important;
+    font-weight: 440 !important;
+    line-height: 1.42 !important;
+}
+
+.hb-client-choice__options{
+    gap: 10px !important;
+    padding: 14px 16px 16px !important;
+}
+
+.hb-client-option{
+    min-height: 124px !important;
+    gap: 9px !important;
+    padding: 14px !important;
+    border: 1px solid var(--hb-modal-line) !important;
+    border-radius: 13px !important;
+    background: var(--hb-modal-paper) !important;
+    box-shadow: none !important;
+}
+
+.hb-client-option--new{
+    --hb-modal-action: var(--hb-modal-new);
+}
+
+.hb-client-option--existing{
+    --hb-modal-action: var(--hb-modal-existing);
+}
+
+.hb-client-option:hover,
+.hb-client-option:focus-visible{
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--hb-modal-action) 34%, var(--hb-modal-line)) !important;
+    background: color-mix(in srgb, var(--hb-modal-action) 4%, #fff) !important;
+    box-shadow: 0 18px 34px -32px color-mix(in srgb, var(--hb-modal-action) 38%, transparent) !important;
+}
+
+.hb-client-option__icon{
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 10px !important;
+    background: color-mix(in srgb, var(--hb-modal-action) 9%, #fff) !important;
+    color: color-mix(in srgb, var(--hb-modal-action) 78%, var(--hb-modal-ink)) !important;
+    box-shadow: none !important;
+}
+
+.hb-client-option__tag{
+    display: none !important;
+}
+
+.hb-client-option__body strong{
+    color: var(--hb-modal-ink) !important;
+    font-size: .98rem !important;
+    font-weight: 720 !important;
+}
+
+.hb-client-option__body span{
+    color: var(--hb-modal-muted) !important;
+    font-size: .8rem !important;
+    font-weight: 430 !important;
+}
+
+.hb-client-option__cta{
+    justify-content: flex-start !important;
+    gap: 7px !important;
+    min-height: 24px !important;
+    padding-top: 2px !important;
+    border-top: 0 !important;
+    color: color-mix(in srgb, var(--hb-modal-action) 76%, var(--hb-modal-ink)) !important;
+    font-size: .76rem !important;
+    font-weight: 720 !important;
+}
+
+.hb-arrival-context{
+    gap: 11px !important;
+    padding: 14px 16px 16px !important;
+}
+
+.hb-reservation-pill,
+.hb-reservation-pill--existing,
+.hb-reservation-pill--new{
+    min-height: 28px !important;
+    border-color: var(--hb-modal-line) !important;
+    background: #ffffff !important;
+    color: var(--hb-modal-soft-ink) !important;
+    font-size: .72rem !important;
+    font-weight: 680 !important;
+}
+
+.hb-reservation-dates{
+    gap: 8px !important;
+}
+
+.hb-date-row,
+.hb-arrival-card{
+    border: 1px solid var(--hb-modal-line) !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+}
+
+.hb-date-row{
+    min-height: 62px !important;
+    padding: 10px 11px !important;
+}
+
+.hb-date-row span{
+    color: var(--hb-modal-muted) !important;
+    font-size: .64rem !important;
+    font-weight: 720 !important;
+}
+
+.hb-date-row strong{
+    color: var(--hb-modal-ink) !important;
+    font-size: .9rem !important;
+    font-weight: 720 !important;
+}
+
+.hb-arrival-card{
+    gap: 9px !important;
+    padding: 13px !important;
+}
+
+.hb-arrival-label{
+    color: var(--hb-modal-ink) !important;
+    font-size: .9rem !important;
+    font-weight: 720 !important;
+}
+
+.hb-arrival-copy{
+    margin-top: -4px !important;
+    color: var(--hb-modal-muted) !important;
+    font-size: .78rem !important;
+    font-weight: 430 !important;
+}
+
+.hb-arrival-input{
+    height: 40px !important;
+    border-color: var(--hb-modal-line) !important;
+    border-radius: 10px !important;
+    background: #ffffff !important;
+    color: var(--hb-modal-ink) !important;
+    font-size: .94rem !important;
+    font-weight: 680 !important;
+}
+
+.hb-arrival-input:hover{
+    border-color: color-mix(in srgb, var(--hb-modal-action) 22%, var(--hb-modal-line)) !important;
+}
+
+.hb-arrival-input:focus{
+    border-color: color-mix(in srgb, var(--hb-modal-action) 48%, var(--hb-modal-line)) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--hb-modal-action) 12%, transparent) !important;
+}
+
+.hb-arrival-now,
+.hb-swal-arrival .hb-swal-confirm{
+    min-height: 40px !important;
+    border-radius: 10px !important;
+    background: var(--hb-modal-action) !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+.hb-arrival-later{
+    grid-template-columns: 30px minmax(0, 1fr) !important;
+    gap: 9px !important;
+    padding: 9px 10px !important;
+    border-color: var(--hb-modal-line) !important;
+    border-radius: 11px !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+}
+
+.hb-arrival-later__icon{
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 9px !important;
+    background: color-mix(in srgb, var(--hb-modal-existing) 9%, #fff) !important;
+    color: var(--hb-modal-existing) !important;
+}
+
+.hb-arrival-later strong{
+    color: var(--hb-modal-ink) !important;
+    font-size: .82rem !important;
+    font-weight: 720 !important;
+}
+
+.hb-arrival-later small{
+    color: var(--hb-modal-muted) !important;
+    font-size: .72rem !important;
+    font-weight: 430 !important;
+}
+
+.hb-arrival-later:hover,
+.hb-arrival-later:focus-visible{
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--hb-modal-existing) 30%, var(--hb-modal-line)) !important;
+    background: color-mix(in srgb, var(--hb-modal-existing) 4%, #fff) !important;
+    box-shadow: none !important;
+}
+
+.hb-swal .swal2-actions{
+    gap: 8px !important;
+    padding: 0 16px 16px !important;
+}
+
+.hb-swal-client .hb-swal-cancel,
+.hb-swal-arrival .hb-swal-cancel,
+.hb-swal-arrival .hb-swal-confirm{
+    min-height: 40px !important;
+    border-radius: 10px !important;
+    font-size: .82rem !important;
+    font-weight: 700 !important;
+}
+
+.hb-swal-client .hb-swal-cancel,
+.hb-swal-arrival .hb-swal-cancel{
+    border-color: color-mix(in srgb, var(--hb-modal-danger) 24%, var(--hb-modal-line)) !important;
+    background: #ffffff !important;
+    color: color-mix(in srgb, var(--hb-modal-danger) 82%, var(--hb-modal-ink)) !important;
+    box-shadow: none !important;
+}
+
+.hb-swal-client .hb-swal-cancel:hover,
+.hb-swal-client .hb-swal-cancel:focus-visible,
+.hb-swal-arrival .hb-swal-cancel:hover,
+.hb-swal-arrival .hb-swal-cancel:focus-visible{
+    border-color: color-mix(in srgb, var(--hb-modal-danger) 38%, var(--hb-modal-line)) !important;
+    background: color-mix(in srgb, var(--hb-modal-danger) 6%, #fff) !important;
+    box-shadow: none !important;
+}
+
+@media (max-width: 640px){
+    .swal2-container.hb-swal-sheet-container{
+        padding: 12px !important;
+    }
+
+    .swal2-popup.hb-swal-client,
+    .swal2-popup.hb-swal-arrival{
+        border-radius: 16px !important;
+    }
+
+    .hb-client-choice__head,
+    .hb-arrival-head{
+        padding: 18px 16px 14px !important;
+    }
+
+    .hb-client-choice__options,
+    .hb-arrival-context{
+        padding: 12px !important;
+    }
+}
+
 @keyframes hbReserveModalIn{
     from{
         opacity: 0;
@@ -9295,6 +9691,9 @@ function mostrarSelectorTipoCliente(habitacionId, datosReserva) {
     const fechaEntrada = datosReserva.fechaEntrada;
     const fechaSalida = datosReserva.fechaSalida;
     const horaActual = datosReserva.horaActual;
+    const textoAyudaLimpio = tieneHabitacion
+        ? 'Elige como iniciar la reserva de esta habitacion.'
+        : 'Elige como iniciar la nueva reservacion.';
     const textoAyuda = tieneHabitacion
         ? 'Elige cómo quieres continuar con la habitación seleccionada.'
         : 'Elige cómo quieres iniciar esta nueva reservación.';
@@ -9309,8 +9708,8 @@ function mostrarSelectorTipoCliente(habitacionId, datosReserva) {
                     </span>
                     <div>
                         <span class="hb-client-choice__eyebrow">Nueva reservación</span>
-                        <h3>Selecciona el tipo de cliente</h3>
-                        <p>${textoAyuda}</p>
+                        <h3>Tipo de cliente</h3>
+                        <p>${textoAyudaLimpio}</p>
                     </div>
                 </div>
 
@@ -9329,7 +9728,7 @@ function mostrarSelectorTipoCliente(habitacionId, datosReserva) {
                             <span>${tieneHabitacion ? 'Crea el huésped y regresa al flujo de esta habitación.' : 'Registra al huésped antes de armar la reserva.'}</span>
                         </span>
                         <span class="hb-client-option__cta">
-                            Continuar
+                            Elegir
                             <i class="fas fa-arrow-right"></i>
                         </span>
                     </button>
@@ -9343,11 +9742,11 @@ function mostrarSelectorTipoCliente(habitacionId, datosReserva) {
                             <span class="hb-client-option__tag">Registrado</span>
                         </span>
                         <span class="hb-client-option__body">
-                            <strong>Cliente registrado</strong>
+                            <strong>Cliente existente</strong>
                             <span>${tieneHabitacion ? 'Usa un huésped ya creado y completa los datos de llegada.' : 'Busca un huésped existente desde nueva reservación.'}</span>
                         </span>
                         <span class="hb-client-option__cta">
-                            Continuar
+                            Elegir
                             <i class="fas fa-arrow-right"></i>
                         </span>
                     </button>
@@ -9901,7 +10300,7 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
                     <div>
                         <span class="hb-client-choice__eyebrow">Llegada estimada</span>
                         <h3>Hora de llegada</h3>
-                        <p>Confirma la hora para preparar la habitacion y continuar con el cliente ${tipo === 'existente' ? 'registrado' : 'nuevo'}.</p>
+                        <p>Define una hora estimada o continua sin capturarla ahora.</p>
                     </div>
                 </div>
 
@@ -9925,7 +10324,7 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
 
                     <div class="hb-arrival-card">
                         <label for="horaLlegadaRapida" class="hb-arrival-label">
-                            Hora de llegada
+                            Llegada estimada
                         </label>
                         <p class="hb-arrival-copy">Define la hora estimada para preparar la habitación.</p>
                         <div class="hb-arrival-control">
@@ -9952,7 +10351,7 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
                             </span>
                             <span>
                                 <strong>Definir despues</strong>
-                                <small>La capturaras dentro de la creacion de la reservacion.</small>
+                                <small>La podras capturar dentro de la reservacion.</small>
                             </span>
                         </button>
                     </div>

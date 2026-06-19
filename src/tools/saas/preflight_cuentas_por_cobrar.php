@@ -1,10 +1,12 @@
 <?php
 /**
- * Preflight Fase 7A-A para Cuentas por Cobrar read-only.
+ * Preflight Fase 7A-A/7B-B/7B-C-A/7B-D-A para Cuentas por Cobrar.
  *
- * Solo lectura. No crea rutas, migraciones ni datos.
- * Valida que /cuentas-por-cobrar sea GET/read-only, derivado de reservaciones
- * y sin escrituras en Caja, pagos, abonos o facturacion.
+ * No crea rutas, migraciones ni datos.
+ * Valida que CxC derivada siga protegida por hotel, que CxC operativa sea
+ * consultable, y que 7B-C-A solo permita generar CxC manual desde reservacion
+ * elegible. 7B-D-A debe ser simulador GET/read-only. Sin escrituras en Caja,
+ * pagos, abonos, facturacion ni reservaciones.
  */
 
 if (PHP_SAPI !== 'cli') {
@@ -131,15 +133,30 @@ function cxcPfRouteExists(array $routes, string $path, string $method): bool
     return false;
 }
 
+function cxcPfContainsForbiddenWrites(string $code): bool
+{
+    if ($code === '') {
+        return false;
+    }
+
+    return (bool)preg_match(
+        '/\b(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(?:movimientos_caja|cortes_caja|cajas|reservaciones|reservacion_pagos|reservacion_abonos|solicitudes_factura)\b/i',
+        $code
+    );
+}
+
 $appRoot = dirname(__DIR__, 2);
 $configPath = $appRoot . '/config/database.php';
 $routesPath = $appRoot . '/config/routes.php';
 $controllerPath = $appRoot . '/app/controllers/CuentaPorCobrarController.php';
 $modelPath = $appRoot . '/app/models/CuentaPorCobrar.php';
 $viewPath = $appRoot . '/app/views/cuentas_por_cobrar/index.php';
+$operativasViewPath = $appRoot . '/app/views/cuentas_por_cobrar/operativas.php';
+$operativaDetailViewPath = $appRoot . '/app/views/cuentas_por_cobrar/ver_operativa.php';
+$simuladorCajaViewPath = $appRoot . '/app/views/cuentas_por_cobrar/simulador_caja.php';
 $sidebarPath = $appRoot . '/app/views/layout/sidebar.php';
 
-echo "Preflight Fase 7A-A - Cuentas por cobrar read-only\n";
+echo "Preflight Fase 7A-A/7B-B/7B-C-A/7B-D-A - Cuentas por cobrar\n";
 echo "=====================================================\n";
 
 if (is_file($configPath)) {
@@ -182,6 +199,22 @@ if ($pdo instanceof PDO) {
         }
     }
 
+    foreach (['cuentas_por_cobrar', 'cuentas_por_cobrar_movimientos'] as $table) {
+        if (cxcPfTableExists($pdo, $database, $table)) {
+            cxcPfOk('Tabla 7B-B disponible: ' . $table . '.');
+        } else {
+            cxcPfWarning('Tabla 7B-B no disponible: ' . $table . '.', 'Aplicar 7B-A antes de exponer CxC operativa.');
+        }
+    }
+
+    foreach (['cajas', 'cortes_caja'] as $table) {
+        if (cxcPfTableExists($pdo, $database, $table)) {
+            cxcPfOk('Tabla Caja disponible para simulador 7B-D-A: ' . $table . '.');
+        } else {
+            cxcPfWarning('Tabla Caja no disponible para simulador 7B-D-A: ' . $table . '.', 'El simulador debe permanecer bloqueado si falta Caja.');
+        }
+    }
+
     cxcPfReportZero(
         'reservaciones con hotel_id nulo',
         cxcPfCountScalar($pdo, 'SELECT COUNT(*) FROM reservaciones WHERE hotel_id IS NULL'),
@@ -210,6 +243,53 @@ if ($pdo instanceof PDO) {
         'Revisar excedentes antes de operar CxC real.',
         true
     );
+
+    if (cxcPfTableExists($pdo, $database, 'cuentas_por_cobrar')) {
+        cxcPfReportZero(
+            'cuentas_por_cobrar sin hotel_id',
+            cxcPfCountScalar($pdo, 'SELECT COUNT(*) FROM cuentas_por_cobrar WHERE hotel_id IS NULL'),
+            'No operar CxC sin hotel_id.'
+        );
+        cxcPfReportZero(
+            'cuentas_por_cobrar con saldo mayor al total',
+            cxcPfCountScalar($pdo, 'SELECT COUNT(*) FROM cuentas_por_cobrar WHERE saldo > total'),
+            'Revisar saldos CxC antes de permitir escrituras.'
+        );
+        cxcPfReportZero(
+            'cuentas_por_cobrar con importes negativos',
+            cxcPfCountScalar($pdo, 'SELECT COUNT(*) FROM cuentas_por_cobrar WHERE saldo < 0 OR total < 0'),
+            'No permitir importes negativos en CxC operativa.'
+        );
+        cxcPfReportZero(
+            'CxC duplicadas por reservacion',
+            cxcPfCountScalar($pdo, "SELECT COUNT(*) FROM (SELECT hotel_id, origen_tipo, origen_id, COUNT(*) AS total FROM cuentas_por_cobrar WHERE origen_tipo = 'reservacion' AND origen_id IS NOT NULL GROUP BY hotel_id, origen_tipo, origen_id HAVING total > 1) x"),
+            'La generacion manual debe ser idempotente por hotel/reservacion.'
+        );
+        cxcPfReportZero(
+            'CxC de reservacion inexistente o de otro hotel',
+            cxcPfCountScalar($pdo, "SELECT COUNT(*) FROM cuentas_por_cobrar c LEFT JOIN reservaciones r ON r.id = c.reservacion_id AND r.hotel_id = c.hotel_id WHERE c.origen_tipo = 'reservacion' AND c.reservacion_id IS NOT NULL AND r.id IS NULL"),
+            'Revisar CxC vinculadas antes de permitir cobros.'
+        );
+    }
+
+    if (cxcPfTableExists($pdo, $database, 'cuentas_por_cobrar_movimientos')) {
+        cxcPfReportZero(
+            'movimientos CxC sin cuenta existente',
+            cxcPfCountScalar($pdo, 'SELECT COUNT(*) FROM cuentas_por_cobrar_movimientos m LEFT JOIN cuentas_por_cobrar c ON c.id = m.cuenta_por_cobrar_id AND c.hotel_id = m.hotel_id WHERE c.id IS NULL'),
+            'Revisar trazabilidad CxC antes de permitir movimientos.'
+        );
+        cxcPfReportZero(
+            'CxC de reservacion sin movimiento inicial',
+            cxcPfCountScalar($pdo, "SELECT COUNT(*) FROM cuentas_por_cobrar c LEFT JOIN cuentas_por_cobrar_movimientos m ON m.cuenta_por_cobrar_id = c.id AND m.hotel_id = c.hotel_id AND m.tipo_movimiento = 'CREACION' WHERE c.origen_tipo = 'reservacion' AND m.id IS NULL"),
+            'Cada CxC generada manualmente debe tener movimiento CREACION.'
+        );
+    }
+
+    cxcPfReportZero(
+        'movimientos de Caja con referencia textual a CxC',
+        cxcPfCountScalar($pdo, "SELECT COUNT(*) FROM movimientos_caja WHERE categoria LIKE '%CxC%' OR descripcion LIKE '%CxC%' OR referencia LIKE '%CxC%'"),
+        'CxC 7B-B no debe crear ni depender de movimientos de Caja.'
+    );
 }
 
 $routes = cxcPfParseRoutes($routesPath);
@@ -219,15 +299,50 @@ if (cxcPfRouteExists($routes, 'cuentas-por-cobrar', 'get')) {
     cxcPfError('No esta registrada GET /cuentas-por-cobrar.', 'Registrar solo ruta GET para 7A-A.');
 }
 
+if (cxcPfRouteExists($routes, 'cuentas-por-cobrar/operativas', 'get')) {
+    cxcPfOk('Ruta CxC operativa registrada: GET /cuentas-por-cobrar/operativas.');
+} else {
+    cxcPfError('No esta registrada GET /cuentas-por-cobrar/operativas.', 'Registrar solo ruta GET para 7B-B.');
+}
+
+if (cxcPfRouteExists($routes, 'cuentas-por-cobrar/operativas/{id:[0-9]+}', 'get')) {
+    cxcPfOk('Ruta detalle CxC operativa registrada: GET /cuentas-por-cobrar/operativas/{id}.');
+} else {
+    cxcPfError('No esta registrada GET /cuentas-por-cobrar/operativas/{id}.', 'Registrar solo detalle GET para 7B-B.');
+}
+
+if (cxcPfRouteExists($routes, 'cuentas-por-cobrar/simulador-caja', 'get')) {
+    cxcPfOk('Ruta simulador Caja CxC registrada: GET /cuentas-por-cobrar/simulador-caja.');
+} else {
+    cxcPfError('No esta registrada GET /cuentas-por-cobrar/simulador-caja.', 'Registrar solo ruta GET/read-only para 7B-D-A.');
+}
+
+if (cxcPfRouteExists($routes, 'cuentas-por-cobrar/generar-desde-reservacion/{id:[0-9]+}', 'post')) {
+    cxcPfOk('Ruta generacion CxC registrada: POST /cuentas-por-cobrar/generar-desde-reservacion/{id}.');
+} else {
+    cxcPfError('No esta registrada POST /cuentas-por-cobrar/generar-desde-reservacion/{id}.', 'Registrar la ruta POST controlada para 7B-C-A.');
+}
+
+$allowedCxcPostRoutes = [
+    'cuentas-por-cobrar/generar-desde-reservacion/{id:[0-9]+}',
+];
 foreach ($routes as $route) {
-    if (strpos((string)$route['path'], 'cuentas-por-cobrar') === 0 && strtolower((string)$route['method']) !== 'get') {
-        cxcPfError('Ruta CxC no permitida: ' . strtoupper((string)$route['method']) . ' /' . $route['path'] . '.', '7A-A solo permite GET/read-only.');
+    $method = strtolower((string)$route['method']);
+    $path = (string)$route['path'];
+    if (strpos($path, 'cuentas-por-cobrar') === 0 && $method !== 'get') {
+        $isAllowedPost = $method === 'post' && in_array($path, $allowedCxcPostRoutes, true);
+        if (!$isAllowedPost) {
+            cxcPfError('Ruta CxC no permitida: ' . strtoupper($method) . ' /' . $path . '.', '7B-C-A solo permite el POST controlado de generacion manual.');
+        }
     }
 }
 
 $modelCode = is_file($modelPath) ? (string)file_get_contents($modelPath) : '';
 $controllerCode = is_file($controllerPath) ? (string)file_get_contents($controllerPath) : '';
 $viewCode = is_file($viewPath) ? (string)file_get_contents($viewPath) : '';
+$operativasViewCode = is_file($operativasViewPath) ? (string)file_get_contents($operativasViewPath) : '';
+$operativaDetailViewCode = is_file($operativaDetailViewPath) ? (string)file_get_contents($operativaDetailViewPath) : '';
+$simuladorCajaViewCode = is_file($simuladorCajaViewPath) ? (string)file_get_contents($simuladorCajaViewPath) : '';
 $sidebarCode = is_file($sidebarPath) ? (string)file_get_contents($sidebarPath) : '';
 
 if (
@@ -238,11 +353,23 @@ if (
     && strpos($modelCode, 'reservacion_pagos') !== false
     && strpos($modelCode, 'reservacion_abonos') !== false
     && strpos($modelCode, 'solicitudes_factura') !== false
-    && !preg_match('/\b(INSERT|UPDATE|DELETE|ALTER|DROP)\b/i', $modelCode)
+    && strpos($modelCode, 'listarOperativasPorHotel') !== false
+    && strpos($modelCode, 'buscarOperativaPorIdHotel') !== false
+    && strpos($modelCode, 'cuentas_por_cobrar') !== false
+    && strpos($modelCode, 'cuentas_por_cobrar_movimientos') !== false
+    && strpos($modelCode, 'generarDesdeReservacionElegible') !== false
+    && strpos($modelCode, 'simuladorCajaCliente') !== false
+    && strpos($modelCode, 'corteAbiertoSimuladorCaja') !== false
+    && strpos($modelCode, 'tipoMovimientoCobroDisponible') !== false
+    && strpos($modelCode, 'INSERT INTO cuentas_por_cobrar') !== false
+    && strpos($modelCode, 'INSERT INTO cuentas_por_cobrar_movimientos') !== false
+    && strpos($modelCode, 'FOR UPDATE') !== false
+    && strpos($modelCode, 'AuditService::record') !== false
+    && !cxcPfContainsForbiddenWrites($modelCode)
 ) {
-    cxcPfOk('Modelo CxC es read-only y derivado por hotel.');
+    cxcPfOk('Modelo CxC deriva por hotel, lee base operativa y genera CxC manual sin escrituras sensibles.');
 } else {
-    cxcPfError('Modelo CxC no cumple contrato read-only.', 'Revisar CuentaPorCobrar.php.');
+    cxcPfError('Modelo CxC no cumple contrato 7B-C-A.', 'Revisar CuentaPorCobrar.php: solo debe insertar CxC, movimiento CxC y auditoria.');
 }
 
 if (
@@ -250,23 +377,72 @@ if (
     && strpos($controllerCode, 'require_hotel_context') !== false
     && strpos($controllerCode, "require_hotel_module('reservaciones')") !== false
     && strpos($controllerCode, 'indexAction') !== false
-    && !preg_match('/function\s+\w+Action[^}]*validateCSRF/s', $controllerCode)
+    && strpos($controllerCode, 'operativasAction') !== false
+    && strpos($controllerCode, 'verOperativaAction') !== false
+    && strpos($controllerCode, 'simuladorCajaAction') !== false
+    && strpos($controllerCode, 'generarDesdeReservacionAction') !== false
+    && strpos($controllerCode, 'validateCSRF') !== false
+    && strpos($controllerCode, 'generarDesdeReservacionElegible') !== false
+    && strpos($controllerCode, 'simuladorCajaCliente') !== false
+    && strpos($controllerCode, "require_hotel_module('caja')") === false
+    && !cxcPfContainsForbiddenWrites($controllerCode)
 ) {
-    cxcPfOk('Controller CxC expone solo index GET protegido.');
+    cxcPfOk('Controller CxC expone GET protegidos y POST 7B-C-A con CSRF, sin Caja.');
 } else {
-    cxcPfWarning('Controller CxC requiere revision manual.', 'Asegurar auth, hotel, modulo reservaciones y ausencia de POST.');
+    cxcPfWarning('Controller CxC requiere revision manual.', 'Asegurar auth, hotel, modulo reservaciones, CSRF y ausencia de Caja.');
 }
 
 if (
     $viewCode !== ''
     && strpos($viewCode, 'method="GET"') !== false
+    && strpos($viewCode, 'method="POST"') !== false
+    && strpos($viewCode, 'csrf_field()') !== false
+    && strpos($viewCode, 'generar-desde-reservacion') !== false
     && stripos($viewCode, 'saldo estimado') !== false
-    && stripos($viewCode, 'no crea cobros') !== false
+    && stripos($viewCode, 'no registra cobros') !== false
     && strpos($viewCode, 'movimientos_caja') === false
 ) {
-    cxcPfOk('Vista CxC es GET/read-only y comunica saldo estimado.');
+    cxcPfOk('Vista CxC conserva filtro GET y agrega POST con CSRF para generacion manual.');
 } else {
-    cxcPfWarning('Vista CxC no muestra contrato read-only completo.', 'Revisar texto y formularios.');
+    cxcPfWarning('Vista CxC no muestra contrato 7B-C-A completo.', 'Revisar texto, formularios y CSRF.');
+}
+
+if (
+    $operativasViewCode !== ''
+    && strpos($operativasViewCode, 'method="GET"') !== false
+    && stripos($operativasViewCode, 'Solo lectura') !== false
+    && stripos($operativasViewCode, 'no cobra') !== false
+    && stripos($operativasViewCode, 'no toca Caja') !== false
+    && strpos($operativasViewCode, 'method="POST"') === false
+) {
+    cxcPfOk('Vista CxC operativa 7B-B es GET/read-only y sin acciones de cobro.');
+} else {
+    cxcPfWarning('Vista CxC operativa requiere revision manual.', 'Asegurar GET/read-only, sin POST, sin cobros ni Caja.');
+}
+
+if (
+    $operativaDetailViewCode !== ''
+    && stripos($operativaDetailViewCode, 'Solo lectura') !== false
+    && stripos($operativaDetailViewCode, 'no cobra') !== false
+    && stripos($operativaDetailViewCode, 'no toca Caja') !== false
+    && strpos($operativaDetailViewCode, 'method="POST"') === false
+) {
+    cxcPfOk('Detalle CxC operativa 7B-B es read-only y sin acciones de cobro.');
+} else {
+    cxcPfWarning('Detalle CxC operativa requiere revision manual.', 'Asegurar ausencia de POST, cobros, pagos y Caja.');
+}
+
+if (
+    $simuladorCajaViewCode !== ''
+    && strpos($simuladorCajaViewCode, 'method="GET"') !== false
+    && strpos($simuladorCajaViewCode, 'method="POST"') === false
+    && stripos($simuladorCajaViewCode, 'no registra cobros') !== false
+    && strpos($simuladorCajaViewCode, 'cuentas-por-cobrar/simulador-caja') !== false
+    && strpos($simuladorCajaViewCode, 'Tipo COBRO') !== false
+) {
+    cxcPfOk('Vista simulador Caja CxC 7B-D-A es GET/read-only y bloquea cobro sin tipo COBRO.');
+} else {
+    cxcPfWarning('Vista simulador Caja CxC requiere revision manual.', 'Asegurar GET/read-only, sin POST y sin cobros reales.');
 }
 
 if ($sidebarCode !== '' && strpos($sidebarCode, 'cuentas-por-cobrar') !== false) {

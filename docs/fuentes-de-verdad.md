@@ -719,14 +719,158 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 
 ## Fase 7B-0 - CxC operativa futura
 
-- No existe aun fuente de verdad operativa de CxC.
-- La fuente futura propuesta debe ser una tabla nueva `cuentas_por_cobrar` si se
-  autoriza migracion aditiva.
+- Existe estructura base vacia para CxC operativa futura desde 7B-A.
+- La fuente futura propuesta es `cuentas_por_cobrar`, pero aun no contiene datos.
 - La tabla futura no debe reemplazar `reservaciones`, `reservacion_pagos`,
   `reservacion_abonos` ni `solicitudes_factura` sin reconciliacion.
 - Caja no es fuente de verdad para 7B-0.
 - `movimientos_caja` queda solo como dato historico sensible, no como destino
   automatico.
+
+## Fase 7B-A - Migracion base CxC vacia
+
+- Fuente estructural nueva:
+  - `cuentas_por_cobrar`;
+  - `cuentas_por_cobrar_movimientos`.
+- Estado actual: ambas tablas existen y estan vacias.
+- No hay fuente operativa de cobros reales todavia.
+- No hay CxC generada desde reservaciones, pagos, abonos, solicitudes de factura,
+  huerfanos ni excedentes.
+- `cuentas_por_cobrar_movimientos` es trazabilidad futura interna de CxC; no es Caja.
+- Caja no es fuente ni destino en 7B-A.
+- `/api/sync` no participa.
+- Cualquier dato futuro en estas tablas debe crearse por una fase separada con backup,
+  validacion de `hotel_id`, CSRF, auditoria y rollback.
+
+## Fase 7B-B - Listado CxC operativa read-only
+
+- No crea fuente nueva adicional.
+- Fuente de listado operativo: `cuentas_por_cobrar`.
+- Fuente de movimientos internos: `cuentas_por_cobrar_movimientos`.
+- `/cuentas-por-cobrar` sigue siendo reporte estimado derivado 7A-A.
+- `/cuentas-por-cobrar/operativas` es lectura de la fuente operativa futura.
+- `movimientos_caja` no es fuente ni destino.
+- Las tablas siguen vacias y no hay saldos operativos reales todavia.
+
+## Fase 7B-C-0 - Contrato generacion manual CxC
+
+- No crea fuente nueva.
+- No escribe en fuentes existentes.
+- Fuente futura de cuenta: `cuentas_por_cobrar`.
+- Fuente futura de trazabilidad interna: `cuentas_por_cobrar_movimientos`.
+- Fuente de calculo elegible: `reservaciones` con pagos/abonos scoped por
+  `hotel_id + reservacion_id`.
+- La CxC futura debe representar saldo pendiente neto elegible, no total historico.
+- `reservacion_pagos`, `reservacion_abonos` y `solicitudes_factura` se mantienen como
+  historicos sensibles; no se modifican desde 7B-C.
+- Caja no es fuente ni destino.
+
+## Fase 7B-C-A - Generacion manual CxC desde reservacion
+
+- Fuente operativa creada por accion manual: `cuentas_por_cobrar`.
+- Fuente de trazabilidad interna: `cuentas_por_cobrar_movimientos`.
+- Fuente de auditoria: `logs_auditoria`.
+- Fuente de calculo: `reservaciones`, `reservacion_pagos` y `reservacion_abonos`
+  filtrados por `hotel_id + reservacion_id`.
+- `solicitudes_factura` solo aporta contexto scoped si coincide por hotel/reservacion.
+- La CxC representa saldo pendiente neto elegible, no total historico.
+- `reservaciones`, `reservacion_pagos`, `reservacion_abonos` y `solicitudes_factura`
+  no se modifican desde esta fase.
+- Caja no es fuente ni destino.
+- `/api/sync` no participa.
+- Dato operativo validado manualmente:
+  - `cuentas_por_cobrar.id = 1`;
+  - `cuentas_por_cobrar_movimientos.id = 1`;
+  - origen `reservacion #24`;
+  - saldo `4250.00`.
+
+## Fase 7B-C-F - Cierre generacion manual CxC
+
+- No crea fuente nueva.
+- Confirma que `cuentas_por_cobrar` y `cuentas_por_cobrar_movimientos` son ahora
+  fuentes operativas reales para la CxC manual generada.
+- Caja sigue fuera de la fuente de verdad CxC hasta una fase posterior autorizada.
+
+## Fase 7B-D-0 - Contrato cobro CxC con Caja
+
+- No crea fuente nueva.
+- No escribe en fuentes existentes.
+- Fuente futura de cobro CxC pendiente de definir:
+  - ampliar `cuentas_por_cobrar_movimientos` con tipo `COBRO`; o
+  - crear tabla independiente de cobros CxC; o
+  - crear entidad de recibos/cobros.
+- `movimientos_caja` aun no es fuente de verdad para CxC.
+- `AJUSTE` no debe usarse como fuente semantica de cobro.
+- `/api/sync` no participa.
+
+## Fase 7B-D-A - Simulador cobro CxC con Caja
+
+- No crea fuente nueva.
+- No escribe en fuentes existentes.
+- Fuentes leidas:
+  - `cuentas_por_cobrar`;
+  - `cuentas_por_cobrar_movimientos`;
+  - `cortes_caja`;
+  - `cajas`;
+  - `huespedes`;
+  - `reservaciones`;
+  - `solicitudes_factura`.
+- `movimientos_caja` sigue sin ser fuente de verdad de CxC.
+- La ausencia de tipo `COBRO` sigue bloqueando cualquier cobro real.
+- QA manual validada: el simulador muestra la CxC `#1` sin permitir cobro real.
+- `/api/sync` no participa.
+
+## Fase 7B-D-F - Cierre simulador cobro CxC
+
+- No crea fuente nueva.
+- Cierra documentalmente 7B-D-0 y 7B-D-A.
+- Confirma que `cuentas_por_cobrar` y `cuentas_por_cobrar_movimientos` siguen siendo las
+  fuentes operativas CxC existentes.
+- Confirma que `movimientos_caja` todavia no es fuente de cobro CxC.
+- La CxC `#1` sigue protegida como dato operativo real.
+
+## Fase 7B-D-B-0 - Contrato esquema cobro CxC
+
+- No crea fuente nueva.
+- Define que el cobro futuro necesita tipo semantico `COBRO` o entidad de cobros.
+- Recomendacion vigente: agregar `COBRO` al ledger
+  `cuentas_por_cobrar_movimientos.tipo_movimiento` antes del primer servicio
+  transaccional.
+- `AJUSTE` no es fuente valida para cobros.
+- `movimientos_caja` solo sera fuente de ingreso CxC cuando una fase posterior
+  implemente el cobro transaccional autorizado.
+
+## Fase 7A-S-0 - Reconciliacion CxC controlada
+
+- No se crea fuente de verdad nueva.
+- La reconciliacion futura debe tratar `reservacion_pagos`, `reservacion_abonos`,
+  `solicitudes_factura` y `reservaciones` como historicos sensibles.
+- La opcion segura por defecto es exclusion read-only de huerfanos y visualizacion
+  informativa de excedentes.
+- Cualquier escritura futura requiere backup, preview, matriz de decision, auditoria y
+  rollback.
+- Caja y `/api/sync` no son fuente ni destino de esta reconciliacion.
+
+## Fase 7A-S-A - Preview reconciliacion CxC read-only
+
+- No se crea fuente de verdad nueva.
+- La matriz es documental y read-only.
+- Decision default para huerfanos: exclusion de CxC operativa.
+- Decision default para facturas scoped: mantenerlas en reporte read-only.
+- Decision default para excedentes: mantenerlos como informacion, no deuda.
+- Cualquier cambio de esas decisiones requiere politica 7A-S-B y escritura futura
+  autorizada por separado.
+
+## Fase 7A-S-B - Politica clasificacion CxC
+
+- No se crea fuente de verdad nueva.
+- Politica vigente para huerfanos: exclusion de CxC operativa.
+- Politica vigente para facturas scoped validas: contexto read-only.
+- Politica vigente para excedentes: informacion, no deuda.
+- `reservacion_pagos`, `reservacion_abonos`, `solicitudes_factura` y `reservaciones`
+  se mantienen como historicos sensibles.
+- Cualquier fuente operativa CxC futura debe ser nueva, aditiva y no poblada desde
+  huerfanos.
 
 ## Fase 8A-0 - Dashboard operativo KPIs
 

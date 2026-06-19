@@ -1186,6 +1186,70 @@ Rollback:
 2. Si se requiere retirar funcionalidad, revertir 7A-A.
 3. No tocar datos historicos ni Caja.
 
+## Rollback Fase 7A-R
+
+7A-R es solo diagnostico documental/read-only.
+
+Rollback:
+
+1. Revertir el documento `docs/fase_7A_R_reconciliacion_cxc_readonly.md`.
+2. Retirar referencias a 7A-R en resumen, cola y auditoria.
+3. No tocar `reservaciones`, `reservacion_pagos`, `reservacion_abonos`,
+   `solicitudes_factura`, Caja ni `/api/sync`.
+
+## Rollback Fase 7A-S-0
+
+7A-S-0 es solo contrato documental.
+
+Rollback:
+
+1. Revertir el documento
+   `docs/fase_7A_S_0_contrato_reconciliacion_cxc_controlada.md`.
+2. Retirar referencias a 7A-S-0 en resumen, cola, auditoria, fuentes de verdad y cierre
+   7A-F.
+3. No tocar datos historicos.
+4. No crear ni borrar tablas CxC.
+5. No tocar Caja ni `/api/sync`.
+
+## Rollback Fase 7A-S-A
+
+7A-S-A es solo preview/matriz documental read-only.
+
+Rollback:
+
+1. Revertir el documento `docs/fase_7A_S_A_preview_reconciliacion_cxc.md`.
+2. Retirar referencias a 7A-S-A en resumen, cola, auditoria, fuentes de verdad,
+   cierre 7A-F y contrato 7A-S-0.
+3. No tocar datos historicos.
+4. No crear ni borrar tablas CxC.
+5. No tocar Caja ni `/api/sync`.
+
+## Rollback Fase 7A-S-B
+
+7A-S-B es solo politica documental.
+
+Rollback:
+
+1. Revertir el documento `docs/fase_7A_S_B_politica_clasificacion_cxc.md`.
+2. Retirar referencias a 7A-S-B en resumen, cola, auditoria, fuentes de verdad,
+   cierre 7A-F, preview 7A-S-A y contrato 7A-S-0.
+3. No tocar datos historicos.
+4. No crear ni borrar tablas CxC.
+5. No tocar Caja ni `/api/sync`.
+
+## Rollback Fase 7A-S-F
+
+7A-S-F es solo cierre documental.
+
+Rollback:
+
+1. Revertir el documento `docs/fase_7A_S_F_cierre_reconciliacion_cxc.md`.
+2. Retirar referencias a 7A-S-F en resumen, cola, auditoria, cierre 7A-F y contrato
+   7A-S-0.
+3. No tocar datos historicos.
+4. No crear ni borrar tablas CxC.
+5. No tocar Caja ni `/api/sync`.
+
 ## Rollback Fase 7B-0
 
 7B-0 es solo contrato documental.
@@ -1195,7 +1259,171 @@ Rollback:
 1. Revertir el commit documental de 7B-0.
 2. No tocar reservaciones, pagos, abonos, facturacion ni Caja.
 3. No crear ni borrar tablas CxC.
-4. No avanzar a 7B-A sin contrato actualizado.
+4. Si se revierte solo 7B-0 documentalmente, revisar tambien las referencias posteriores
+   a 7B-A antes de dejar la documentacion como fuente vigente.
+
+## Rollback Fase 7B-A
+
+7B-A crea estructura DB vacia y aditiva para CxC futura.
+
+Backup previo:
+
+- `backups/medisoft_hoteles_import_before_7b_a_cxc_base_20260618_163625.sql`
+- SHA256: `0E13547DF43359E71C1A3503EFD8F3A5B5CD096A9BF843EB19F282C0FBE90514`
+- Tamano: `3269772` bytes
+
+Rollback DB manual solo con autorizacion explicita y si las tablas siguen vacias:
+
+1. Confirmar `SELECT COUNT(*) FROM cuentas_por_cobrar_movimientos;`.
+2. Confirmar `SELECT COUNT(*) FROM cuentas_por_cobrar;`.
+3. Si ambos conteos son `0`, ejecutar `DROP TABLE cuentas_por_cobrar_movimientos;`.
+4. Ejecutar `DROP TABLE cuentas_por_cobrar;`.
+5. Borrar el registro de `migrations` para
+   `20260618_001_fase_7b_a_cxc_base_vacia.sql`.
+
+Si alguna tabla tiene datos, no ejecutar `DROP` ni `DELETE`; exportar, reconciliar y
+pedir autorizacion especifica. No tocar Caja, cortes, movimientos, reservaciones,
+pagos, abonos, facturacion ni `/api/sync`.
+
+## Rollback Fase 7B-B
+
+7B-B agrega solo lectura de CxC operativa vacia.
+
+Rollback de codigo:
+
+1. Retirar rutas GET `/cuentas-por-cobrar/operativas` y
+   `/cuentas-por-cobrar/operativas/{id}`.
+2. Revertir metodos `operativasAction()` y `verOperativaAction()` del controlador.
+3. Revertir metodos operativos read-only agregados al modelo `CuentaPorCobrar`.
+4. Eliminar vistas `cuentas_por_cobrar/operativas.php` y
+   `cuentas_por_cobrar/ver_operativa.php`.
+5. Revertir checks 7B-B en `preflight_cuentas_por_cobrar.php`.
+
+DB: no aplica; 7B-B no escribe datos ni ejecuta migraciones.
+
+No borrar tablas `cuentas_por_cobrar` ni `cuentas_por_cobrar_movimientos`; pertenecen a
+7B-A.
+
+## Rollback Fase 7B-C-0
+
+7B-C-0 es solo contrato documental.
+
+Rollback:
+
+1. Revertir el documento
+   `docs/fase_7B_C_0_contrato_generacion_manual_cxc_reservacion.md`.
+2. Retirar referencias a 7B-C-0 en resumen, cola, auditoria, fuentes de verdad y cierre
+   7B-B.
+3. No tocar `cuentas_por_cobrar`.
+4. No tocar `cuentas_por_cobrar_movimientos`.
+5. No tocar reservaciones, pagos, abonos, facturacion, Caja ni `/api/sync`.
+
+DB: no aplica; no hay escrituras ni migraciones.
+
+## Rollback Fase 7B-C-A
+
+7B-C-A agrega codigo para generar CxC manual desde reservacion elegible y puede crear
+datos reales cuando se use desde navegador.
+
+Backup previo:
+
+- `backups/medisoft_hoteles_import_before_7b_c_a_cxc_manual_20260618_170535.sql`
+- SHA256: `877BA8D0E9F97D8DA3047392EE2C5CC91DACEE20A94F5069BF57A2164377EE7B`
+- Tamano: `1647809` bytes
+
+Rollback de codigo si se decide desactivar la funcion:
+
+1. Retirar la ruta POST
+   `/cuentas-por-cobrar/generar-desde-reservacion/{id}`.
+2. Retirar `CuentaPorCobrarController::generarDesdeReservacionAction()`.
+3. Retirar `CuentaPorCobrar::generarDesdeReservacionElegible()` y helpers exclusivos.
+4. Retirar el formulario POST de `cuentas_por_cobrar/index.php`.
+5. Ajustar `preflight_cuentas_por_cobrar.php` para volver al contrato anterior.
+
+Rollback de datos solo con autorizacion explicita:
+
+Dato operativo actual creado por QA manual:
+
+- `cuentas_por_cobrar.id = 1`;
+- `cuentas_por_cobrar_movimientos.id = 1`;
+- `reservacion_id = 24`;
+- `saldo = 4250.00`.
+
+1. Identificar `cuentas_por_cobrar.id`.
+2. Validar que la cuenta fue creada por `origen_tipo = reservacion`.
+3. Validar que solo tenga movimiento `CREACION` y ningun movimiento posterior.
+4. Si no fue usada operativamente, definir anulacion o baja logica autorizada.
+5. Si ya tiene movimientos posteriores, no borrar; abrir fase de reconciliacion.
+
+No ejecutar `DELETE` directo sobre CxC sin backup y autorizacion especifica. No tocar
+reservaciones, pagos, abonos, facturacion, Caja ni `/api/sync`.
+
+## Rollback Fase 7B-C-F
+
+7B-C-F es cierre documental post-QA.
+
+Rollback:
+
+1. Revertir `docs/fase_7B_C_F_cierre_generacion_manual_cxc.md`.
+2. Revertir referencias a 7B-C-F en resumen, cola y auditoria.
+3. No tocar la CxC `#1` ni su movimiento `CREACION`; pertenecen a la prueba manual
+   validada de 7B-C-A.
+
+## Rollback Fase 7B-D-0
+
+7B-D-0 es solo contrato documental.
+
+Rollback:
+
+1. Revertir `docs/fase_7B_D_0_contrato_cobro_cxc_caja.md`.
+2. Retirar referencias a 7B-D-0 en resumen, cola, auditoria y fuentes de verdad.
+3. No tocar `cuentas_por_cobrar`.
+4. No tocar `cuentas_por_cobrar_movimientos`.
+5. No tocar Caja, cortes, movimientos, reservaciones, pagos, abonos, facturacion ni
+   `/api/sync`.
+
+DB: no aplica; no hay migraciones ni escrituras.
+
+## Rollback Fase 7B-D-A
+
+7B-D-A agrega solo un simulador GET/read-only de cobro CxC.
+
+Rollback de codigo:
+
+1. Retirar ruta `GET /cuentas-por-cobrar/simulador-caja`.
+2. Retirar `CuentaPorCobrarController::simuladorCajaAction()`.
+3. Retirar metodos de simulador en `CuentaPorCobrar`.
+4. Eliminar vista `cuentas_por_cobrar/simulador_caja.php`.
+5. Retirar enlaces al simulador desde vistas CxC operativas.
+6. Revertir checks 7B-D-A en `preflight_cuentas_por_cobrar.php`.
+
+DB: no aplica; 7B-D-A no escribe datos ni ejecuta migraciones.
+
+No tocar la CxC `#1`, su movimiento `CREACION`, Caja, cortes, reservaciones, pagos,
+abonos, facturacion ni `/api/sync`.
+
+## Rollback Fase 7B-D-F
+
+7B-D-F es cierre documental post-QA.
+
+Rollback:
+
+1. Revertir `docs/fase_7B_D_F_cierre_simulador_cobro_cxc.md`.
+2. Retirar referencias a 7B-D-F en resumen, cola, auditoria y fuentes de verdad.
+3. No tocar la CxC `#1` ni su movimiento `CREACION`.
+4. No tocar Caja, cortes, reservaciones, pagos, abonos, facturacion ni `/api/sync`.
+
+## Rollback Fase 7B-D-B-0
+
+7B-D-B-0 es solo contrato documental de esquema.
+
+Rollback:
+
+1. Revertir `docs/fase_7B_D_B_0_contrato_esquema_cobro_cxc.md`.
+2. Retirar referencias a 7B-D-B-0 en resumen, cola, auditoria y fuentes de verdad.
+3. No ejecutar `ALTER TABLE`.
+4. No crear rutas POST ni botones de cobro.
+5. No tocar CxC, Caja, cortes, reservaciones, pagos, abonos, facturacion ni `/api/sync`.
 
 ## Rollback Fase 8A-0
 

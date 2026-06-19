@@ -1315,6 +1315,73 @@ Resultado 7A-F:
 - 7A queda listo para QA manual diferida.
 - Cualquier avance a 7B debe iniciar como contrato y no como cobro operativo directo.
 
+Resultado 7A-R:
+
+- Estado tecnico: `RECONCILIACION_7A_R_CXC_READONLY_DIAGNOSTICADA`.
+- Documento: `docs/fase_7A_R_reconciliacion_cxc_readonly.md`.
+- Diagnostico SQL read-only ejecutado sobre warnings de CxC.
+- Los 3 pagos historicos apuntan a reservaciones inexistentes.
+- Las 170 solicitudes de factura huerfanas pertenecen a Los Cedros, apuntan a
+  reservaciones inexistentes y pertenecen al rango 2026-03 a 2026-05.
+- Las 3 reservaciones con saldo negativo pertenecen a Maximiliano Leon y muestran
+  doble cobertura por abono demo + pago posterior completo.
+- No existe tabla `cuentas_por_cobrar` ni movimientos de Caja tipo `CxC`.
+- CxC read-only se mantiene segura, pero CxC operativa sigue bloqueada hasta contrato
+  de reconciliacion controlada.
+
+Resultado 7A-S-0:
+
+- Estado tecnico: `CONTRATO_7A_S_RECONCILIACION_CXC_CONTROLADA_COMPLETADO`.
+- Documento: `docs/fase_7A_S_0_contrato_reconciliacion_cxc_controlada.md`.
+- Se define la politica segura previa a cualquier escritura de reconciliacion CxC.
+- La opcion segura por defecto es excluir de CxC operativa los pagos/facturas huerfanas
+  y mantener excedentes como informativos.
+- Cualquier correccion futura exige backup, preview read-only, matriz de decision,
+  auditoria y rollback.
+- No se modifican DB, rutas, modelos, Caja, reservaciones, pagos, abonos, facturacion
+  ni `/api/sync`.
+- Siguiente paso seguro: 7A-S-A preview read-only de reconciliacion o matriz manual de
+  decision; no cobros ni escrituras.
+
+Resultado 7A-S-A:
+
+- Estado tecnico: `PREVIEW_7A_S_A_RECONCILIACION_CXC_READONLY_COMPLETADO`.
+- Documento: `docs/fase_7A_S_A_preview_reconciliacion_cxc.md`.
+- Se construye matriz read-only de reconciliacion sin codigo nuevo.
+- Pagos huerfanos: 3 registros, decision default `excluir_cxc_operativa`.
+- Facturas huerfanas: 170 registros, decision default `excluir_cxc_operativa`.
+- Facturas scoped validas: 5 registros, decision default `mantener_en_reporte_readonly`.
+- Excedentes: 3 reservaciones, decision default `mantener_excedente_informativo`.
+- No se modifican PHP, DB, rutas, modelos, Caja, reservaciones, pagos, abonos,
+  facturacion ni `/api/sync`.
+- Siguiente paso seguro: 7A-S-B politica de clasificacion; no escrituras.
+
+Resultado 7A-S-B:
+
+- Estado tecnico: `POLITICA_7A_S_B_CLASIFICACION_CXC_CONSERVADORA_COMPLETADA`.
+- Documento: `docs/fase_7A_S_B_politica_clasificacion_cxc.md`.
+- Se adopta politica conservadora: pagos huerfanos y facturas huerfanas quedan
+  excluidos de CxC operativa.
+- Las 5 facturas scoped validas se mantienen solo como contexto read-only.
+- Los 3 excedentes se mantienen como informativos, no como deuda ni devolucion.
+- No se modifican PHP, DB, rutas, modelos, Caja, reservaciones, pagos, abonos,
+  facturacion ni `/api/sync`.
+- Siguiente paso seguro vigente despues de 7B-B: 7B-C-0 solo como contrato de
+  generacion manual futura, sin implementar escrituras.
+
+Resultado 7A-S-F:
+
+- Estado tecnico: `BLOQUE_7A_S_RECONCILIACION_CXC_CERRADO_SIN_ESCRITURAS`.
+- Documento: `docs/fase_7A_S_F_cierre_reconciliacion_cxc.md`.
+- Se cierra el bloque de reconciliacion CxC con contrato, preview/matriz y politica
+  conservadora.
+- Verificaciones: preflight CxC `OK: 14`, `WARNING: 3`, `ERROR: 0`; health general
+  `OK: 278`, `WARNING: 24`, `ERROR: 0`.
+- No se modifican PHP, DB, rutas, modelos, Caja, reservaciones, pagos, abonos,
+  facturacion ni `/api/sync`.
+- Siguiente paso seguro vigente despues de 7B-B: 7B-C-0 solo como contrato de
+  generacion manual futura, sin implementar escrituras.
+
 Resultado 7B-0:
 
 - Estado tecnico: `CONTRATO_7B_CXC_OPERATIVA_SIN_CAJA_COMPLETADO`.
@@ -1323,8 +1390,124 @@ Resultado 7B-0:
   de pagos/abonos historicos.
 - No se crean rutas, tablas, migraciones, cobros ni movimientos.
 - Caja, cortes, pagos reales, facturacion nueva y `/api/sync` quedan fuera.
-- Por los warnings historicos de 7A, 7B-A no debe implementarse sin backup,
-  reconciliacion o autorizacion explicita de migracion base vacia.
+- Por los warnings historicos de 7A, cualquier estructura CxC debia iniciar solo con
+  backup y autorizacion explicita de migracion base vacia.
+
+Resultado 7B-A:
+
+- Estado tecnico: `MIGRACION_7B_A_CXC_BASE_VACIA_COMPLETADA`.
+- Documento: `docs/fase_7B_A_migracion_cxc_base_vacia.md`.
+- Backup previo:
+  `backups/medisoft_hoteles_import_before_7b_a_cxc_base_20260618_163625.sql`.
+- SHA256: `0E13547DF43359E71C1A3503EFD8F3A5B5CD096A9BF843EB19F282C0FBE90514`.
+- Migracion aplicada: `migrations/20260618_001_fase_7b_a_cxc_base_vacia.sql`.
+- Tablas creadas y vacias: `cuentas_por_cobrar=0`,
+  `cuentas_por_cobrar_movimientos=0`.
+- No se poblo CxC desde historicos, huerfanos ni excedentes.
+- No hay cobros, pagos, abonos, movimientos de Caja ni cambios en `/api/sync`.
+- Preflight CxC y health general pasan con `ERROR: 0`.
+- 7B-B ya fue implementado despues como listado/detalle read-only.
+
+Resultado 7B-B:
+
+- Estado tecnico: `LISTADO_7B_B_CXC_OPERATIVA_READONLY_COMPLETADO`.
+- Documento: `docs/fase_7B_B_listado_cxc_operativa_readonly.md`.
+- Rutas GET nuevas:
+  - `/cuentas-por-cobrar/operativas`;
+  - `/cuentas-por-cobrar/operativas/{id}`.
+- Se mantiene `/cuentas-por-cobrar` como reporte estimado 7A-A.
+- Las tablas operativas siguen vacias: `cuentas_por_cobrar=0`,
+  `cuentas_por_cobrar_movimientos=0`.
+- No hay POST, cobros, pagos, abonos, movimientos de Caja ni cambios en `/api/sync`.
+- Preflight CxC: `OK: 25`, `WARNING: 3`, `ERROR: 0`.
+- Health general: `OK: 277`, `WARNING: 25`, `ERROR: 0`.
+- HTTP sin sesion a rutas operativas: `303` a login.
+- 7B-C-0 ya quedo documentado despues como contrato de generacion manual futura.
+
+Resultado 7B-C-0:
+
+- Estado tecnico: `CONTRATO_7B_C_0_GENERACION_MANUAL_CXC_RESERVACION_COMPLETADO`.
+- Documento: `docs/fase_7B_C_0_contrato_generacion_manual_cxc_reservacion.md`.
+- Define una futura generacion manual desde reservacion elegible.
+- No implementa codigo, rutas POST, botones, DB ni escrituras.
+- Decision central: si se implementa despues, la CxC se creara por saldo pendiente neto
+  elegible, no por total historico.
+- Sigue prohibido poblar desde pagos huerfanos, facturas huerfanas o excedentes.
+- Caja, cortes, pagos, abonos, facturacion nueva y `/api/sync` quedan fuera.
+- Siguiente paso seguro: 7B-C-A solo con autorizacion explicita de escrituras CxC
+  manuales y backup previo.
+
+Resultado 7B-C-A:
+
+- Estado tecnico: `GENERACION_MANUAL_CXC_7B_C_A_VALIDADA_MANUALMENTE`.
+- Documento: `docs/fase_7B_C_A_generacion_manual_cxc_reservacion.md`.
+- Backup previo:
+  `backups/medisoft_hoteles_import_before_7b_c_a_cxc_manual_20260618_170535.sql`.
+- SHA256: `877BA8D0E9F97D8DA3047392EE2C5CC91DACEE20A94F5069BF57A2164377EE7B`.
+- Se agrega POST manual con CSRF:
+  `/cuentas-por-cobrar/generar-desde-reservacion/{id}`.
+- La CxC se genera solo por saldo pendiente neto elegible, con movimiento interno
+  `CREACION` y auditoria.
+- No se escriben Caja, cortes, reservaciones, pagos, abonos, facturacion nueva ni
+  `/api/sync`.
+- Preflight CxC actualizado: `OK: 29`, `WARNING: 3`, `ERROR: 0`.
+- QA manual validada: se creo CxC `#1` desde reservacion `#24`, hotel `4`, por
+  `4250.00`, con movimiento `CREACION #1` y auditoria `#105`.
+- Caja-CxC sigue en `0`, duplicados CxC por reservacion `0`.
+
+Resultado 7B-C-F:
+
+- Estado tecnico: `BLOQUE_7B_C_GENERACION_MANUAL_CXC_CERRADO_QA_VALIDADA`.
+- Documento: `docs/fase_7B_C_F_cierre_generacion_manual_cxc.md`.
+- Cierra contrato, implementacion, QA manual y auditoria post-QA de generacion manual
+  CxC.
+- La CxC `#1` queda como dato operativo protegido; no borrar ni modificar sin fase de
+  rollback/anulacion formal.
+- Siguiente paso recomendado: 7B-D-0 contrato/diagnostico de cobro futuro CxC, sin
+  escribir Caja hasta autorizacion explicita.
+
+Resultado 7B-D-0:
+
+- Estado tecnico: `CONTRATO_7B_D_0_COBRO_CXC_CAJA_COMPLETADO`.
+- Documento: `docs/fase_7B_D_0_contrato_cobro_cxc_caja.md`.
+- Define el contrato de cobro futuro de CxC contra Caja.
+- No implementa codigo, rutas, formularios, servicios, migraciones ni escrituras.
+- Diagnostico clave: `cuentas_por_cobrar_movimientos.tipo_movimiento` no tiene tipo
+  `COBRO`; no se debe usar `AJUSTE` para cobros.
+- Siguiente paso seguro: 7B-D-A simulador read-only de cobro CxC contra corte abierto,
+  sin POST ni escrituras.
+
+Resultado 7B-D-A:
+
+- Estado tecnico: `SIMULADOR_COBRO_CXC_CAJA_7B_D_A_VALIDADO_MANUALMENTE`.
+- Documento: `docs/fase_7B_D_A_simulador_cobro_cxc_caja.md`.
+- Ruta GET nueva: `/cuentas-por-cobrar/simulador-caja`.
+- Evalua CxC operativas contra corte de Caja abierto del hotel actual.
+- No tiene POST, no registra cobros, no modifica saldos y no crea movimientos de Caja.
+- Bloqueo esperado: mientras `cuentas_por_cobrar_movimientos.tipo_movimiento` no tenga
+  tipo `COBRO`, las cuentas quedan bloqueadas para cobro real.
+- Preflight CxC: `OK: 33`, `WARNING: 3`, `ERROR: 0`.
+- QA manual validada por el usuario: la CxC `#1` aparece en el simulador, sin boton de
+  cobro y con bloqueo esperado por falta de tipo `COBRO`.
+
+Resultado 7B-D-F:
+
+- Estado tecnico: `BLOQUE_7B_D_SIMULADOR_COBRO_CXC_CERRADO_QA_VALIDADA`.
+- Documento: `docs/fase_7B_D_F_cierre_simulador_cobro_cxc.md`.
+- Cierra el contrato 7B-D-0 y el simulador 7B-D-A con QA manual validada.
+- Confirma que no hubo escrituras de saldos CxC, movimientos CxC nuevos, Caja, cortes
+  ni `/api/sync`.
+- Siguiente paso recomendado: 7B-D-B-0 contrato de esquema de cobro CxC antes de
+  cualquier migracion.
+
+Resultado 7B-D-B-0:
+
+- Estado tecnico: `CONTRATO_7B_D_B_0_ESQUEMA_COBRO_CXC_COMPLETADO`.
+- Documento: `docs/fase_7B_D_B_0_contrato_esquema_cobro_cxc.md`.
+- Define la decision tecnica previa a cobros reales: no usar `AJUSTE` para cobros.
+- Recomendacion incremental: agregar tipo semantico `COBRO` al ledger CxC y dejar tabla
+  de recibos/cobros para una fase posterior.
+- No implementa DB, rutas, formularios, servicios ni escrituras.
 
 Resultado 8A-0:
 
@@ -1386,7 +1569,7 @@ Resultado 3D-B:
 
 Resultado 3D-C:
 
-- Estado tecnico: `PAGO_PROVEEDOR_CAJA_3D_C_IMPLEMENTADO_QA_MANUAL_PENDIENTE`.
+- Estado tecnico: `PAGO_PROVEEDOR_CAJA_3D_C_VALIDADO_MANUALMENTE`.
 - Documento: `docs/fase_3D_C_pago_proveedor_caja.md`.
 - Backup limpio confirmado:
   `backups/medisoft_hoteles_import_before_3d_payments_20260617_105846.sql`.
@@ -1398,4 +1581,11 @@ Resultado 3D-C:
 - Se agrega prueba rollback `tools/saas/probar_pago_proveedor_caja.php`.
 - No se agregan pagos automaticos desde compras, abonos, cambios en pantallas de Caja ni
   `/api/sync`.
-- Pendiente: QA manual del usuario con una CxP de prueba antes de cerrar como validado.
+- QA manual completada por el usuario: pago parcial de `10.00` sobre CxP `#1`.
+- Evidencia post-QA: saldo `1000.00 -> 990.00`, estado `parcial`,
+  `cuentas_por_pagar_movimientos.id = 4`, `movimientos_caja.id = 1478`,
+  categoria `Pago proveedor`, corte `#237`.
+- Preflight post-QA `preflight_pagos_proveedores_caja.php`: `OK: 22`,
+  `WARNING: 0`, `ERROR: 0`.
+- Pendiente futuro: probar pago total en una CxP dedicada y disenar anulacion/reversion
+  formal antes de escalar pagos reales.

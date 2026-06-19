@@ -24,15 +24,18 @@ class NotificacionController extends Controller {
 
     public function indexAction() {
         $hotelId = $this->hotelIdActual();
-        $estadoFiltro = (string)$this->getQuery('estado', 'nueva');
-        if ($estadoFiltro === 'activas') {
-            $estadoFiltro = 'nueva';
+        $estadoFiltro = (string)$this->getQuery('estado', 'activas');
+        if ($estadoFiltro === 'nueva') {
+            $estadoFiltro = 'activas';
+        }
+        if (!in_array($estadoFiltro, ['activas', 'resuelta', 'descartada'], true)) {
+            $estadoFiltro = 'activas';
         }
 
         $filtros = [
             'estado' => $estadoFiltro,
             'modulo' => $this->getQuery('modulo', ''),
-            'severidad' => $this->getQuery('severidad', ''),
+            'severidad' => '',
             'rol_usuario' => function_exists('current_hotel_user_role') ? current_hotel_user_role() : null,
             'usuario_id' => function_exists('user_id') ? user_id() : null,
         ];
@@ -107,9 +110,61 @@ class NotificacionController extends Controller {
         }
 
         $this->validateCSRF();
+
+        if ((string)$this->getPost('accion', '') === 'archivar_pendientes') {
+            $totalArchivadas = $this->archivarPendientesVisibles();
+            set_mensaje(
+                $totalArchivadas > 0
+                    ? $totalArchivadas . ' notificacion(es) pendiente(s) fueron archivadas.'
+                    : 'No habia notificaciones pendientes por archivar.',
+                'success'
+            );
+            $this->redirect('notificaciones');
+            return;
+        }
+
         $ok = $this->notificacionModel->marcarTodasLeidas($this->hotelIdActual());
         set_mensaje($ok ? 'Todas las notificaciones nuevas fueron marcadas como leidas.' : 'No se pudieron actualizar las notificaciones.', $ok ? 'success' : 'error');
         $this->redirect('notificaciones');
+    }
+
+    private function archivarPendientesVisibles(): int {
+        $hotelId = $this->hotelIdActual();
+
+        if ($hotelId <= 0 || !$this->notificacionModel->tablaDisponible() || !class_exists('Database')) {
+            return 0;
+        }
+
+        $db = Database::getInstance();
+        $stmt = $db->query(
+            "SELECT *
+             FROM notificaciones
+             WHERE hotel_id = ?
+               AND estado IN ('nueva', 'leida')",
+            [$hotelId]
+        );
+
+        $notificaciones = $stmt ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
+        if (empty($notificaciones)) {
+            return 0;
+        }
+
+        $rolUsuario = function_exists('current_hotel_user_role') ? current_hotel_user_role() : null;
+        $usuarioId = function_exists('user_id') ? user_id() : null;
+        $archivadas = 0;
+
+        foreach ($notificaciones as $notificacion) {
+            $id = (int)($notificacion['id'] ?? 0);
+            if ($id <= 0 || !$this->notificacionModel->visibleParaUsuario($notificacion, $rolUsuario, $usuarioId)) {
+                continue;
+            }
+
+            if ($this->notificacionModel->cambiarEstado($id, $hotelId, 'descartada')) {
+                $archivadas++;
+            }
+        }
+
+        return $archivadas;
     }
 
     private function accionEstado(string $estado, string $mensajeExito): void {

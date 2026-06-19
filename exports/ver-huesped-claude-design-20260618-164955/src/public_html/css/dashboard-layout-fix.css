@@ -1,0 +1,326 @@
+/* ===================================
+   DASHBOARD LAYOUT FIX - Los Cedros
+   Archivo: dashboard-layout-fix.css
+   =================================== */
+
+/* ===================================
+   RESET DE CONTENEDORES
+   =================================== */
+
+/* Forzar ancho completo en el contenido principal */
+body {
+    overflow-x: hidden;
+}
+
+/* Ajuste del contenedor principal cuando hay sidebar */
+@media (min-width: 1025px) {
+    body {
+        margin-left: var(--sidebar-width, 200px) !important;
+        padding-left: 0 !important;
+    }
+    
+    body.sidebar-collapsed {
+        margin-left: var(--sidebar-collapsed-width, 60px) !important;
+    }
+}
+
+/* ===================================
+   CONTENEDOR PRINCIPAL DEL DASHBOARD
+   =================================== */
+
+/* Asegurar que el main ocupe todo el ancho */
+main,
+.main-content,
+.dashboard-container,
+[class*="container"],
+.flex-1 {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Remover restricciones de ancho máximo */
+.container,
+.max-w-7xl,
+.max-w-6xl,
+.max-w-5xl,
+.max-w-4xl,
+.max-w-3xl,
+.max-w-2xl,
+.max-w-xl,
+.max-w-lg,
+[class*="max-w-"] {
+    max-width: 100% !important;
+}
+
+/* ===================================
+   PADDING Y MÁRGENES OPTIMIZADOS
+   =================================== */
+
+/* Padding horizontal consistente */
+.px-4,
+.px-6,
+.px-8,
+.p-4,
+.p-6,
+.p-8 {
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+}
+
+/* Padding más generoso en pantallas grandes */
+@media (min-width: 1280px) {
+    .px-4,
+    .px-6,
+    .px-8,
+    .p-4,
+    .p-6,
+    .p-8 {
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+    }
+}
+
+@media (min-width: 1536px) {
+    .px-4,
+    .px-6,
+    .px-8,
+    .p-4,
+    .p-6,
+    .p-8 {
+        padding-left: 2.5rem !important;
+        padding-right: 2.5rem !important;
+    }
+}
+
+@media (min-width: 1920px) {
+    .px-4,
+    .px-6,
+    .px-8,
+    .p-4,
+    .p-6,
+    .p-8 {
+        padding-left: 3rem !important;
+        padding-right: 3rem !important;
+    }
+}
+
+/* ===================================
+   DASHBOARD WIDGETS OPTIMIZADOS
+   =================================== */
+
+/* Grid principal del dashboard */
+.dashboard-grid,
+.grid {
+    display: grid !important;
+    width: 100% !important;
+    gap: 1.5rem !important;
+}
+
+/* Grid de 4 columnas para widgets principales */
+@media (min-width: 1280px) {
+    .dashboard-widgets {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 1.5rem !important;
+    }
+}
+
+/* Grid responsivo para pantallas medianas */
+@media (min-width: 768px) and (max-width: 1279px) {
+    .dashboard-widgets {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 1.5rem !important;
+    }
+}
+
+/* ===================================
+   SECCIÓN DE GRÁFICOS
+   =================================== */
+
+/* Contenedor de gráficos */
+.dashboard-charts {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+    margin-top: 1.5rem !important;
+}
+
+/* Gráficos en 2 columnas en pantallas grandes */
+@media (min-width: 1280px) {
+    .dashboard-charts {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* Gráfico de ocupación semanal - ancho completo */
+.ocupacion-semanal-chart {
+    grid-column: 1 / -1 !important;
+}
+
+/* ===================================
+   WIDGETS INDIVIDUALES
+   =================================== */
+
+/* Asegurar que los widgets usen el espacio disponible */
+.dashboard-widget,
+.widget-card,
+.bg-white.rounded-lg.shadow,
+.bg-white.rounded-xl.shadow-sm {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Contenido del widget */
+.widget-content {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+}
+
+/* ===================================
+   TABLAS Y LISTAS
+   =================================== */
+
+/* Tablas responsivas */
+.dashboard-table,
+.table-container {
+    width: 100% !important;
+    overflow-x: auto !important;
+}
+
+table {
+    width: 100% !important;
+    min-width: 600px !important;
+}
+
+/* ===================================
+   HEADER OPTIMIZADO
+   =================================== */
+
+/* Header principal */
+.main-header,
+header {
+    width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* Contenido del header */
+.main-header > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+}
+
+/* ===================================
+   FIXES ESPECÍFICOS PARA TU DASHBOARD
+   =================================== */
+
+/* Contenedor de estadísticas principales */
+.stats-container {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+    gap: 1.5rem !important;
+    width: 100% !important;
+}
+
+/* Widget de ocupación */
+.ocupacion-widget {
+    min-height: 150px !important;
+}
+
+/* Widget de ingresos */
+.ingresos-widget {
+    min-height: 150px !important;
+}
+
+/* ===================================
+   ALERTAS Y NOTIFICACIONES
+   =================================== */
+
+/* Contenedor de alertas */
+.dashboard-alerts,
+.alerts-container {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* ===================================
+   RESPONSIVE MÓVIL
+   =================================== */
+
+@media (max-width: 1024px) {
+    body {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+    
+    /* Padding reducido en móvil */
+    .px-4,
+    .px-6,
+    .px-8,
+    .p-4,
+    .p-6,
+    .p-8 {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    
+    /* Grid de una columna en móvil */
+    .dashboard-widgets,
+    .dashboard-charts,
+    .stats-container {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ===================================
+   UTILIDADES ADICIONALES
+   =================================== */
+
+/* Forzar flex para expandir contenido */
+.flex-expand {
+    display: flex !important;
+    flex: 1 1 0% !important;
+    width: 100% !important;
+}
+
+/* Contenedor con scroll si es necesario */
+.scrollable-container {
+    width: 100% !important;
+    height: 100% !important;
+    overflow: auto !important;
+}
+
+/* ===================================
+   DEBUG - BORDES PARA VISUALIZAR
+   =================================== */
+
+/* Descomenta esto para ver los límites de los contenedores */
+/*
+.dashboard-container { border: 2px solid red !important; }
+.dashboard-widgets { border: 2px solid blue !important; }
+.dashboard-widget { border: 2px solid green !important; }
+main { border: 2px solid purple !important; }
+.main-content { border: 2px solid orange !important; }
+*/
+
+/* ===================================
+   IMPORTANTE: ORDEN DE CARGA
+   =================================== */
+
+/* 
+   Este archivo debe cargarse DESPUÉS de:
+   1. sidebar-styles.css
+   2. custom.css
+   3. Cualquier otro CSS del sistema
+   
+   Para asegurar que estos estilos tengan prioridad
+*/

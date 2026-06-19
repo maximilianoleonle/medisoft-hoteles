@@ -1323,6 +1323,85 @@ Resultado: cierre tecnico sin hallazgos bloqueantes.
 - No hay pagos, abonos nuevos, Caja ni `/api/sync`.
 - Los warnings historicos quedan documentados como prerequisito de 7B.
 
+## Auditoria Fase 7A-R
+
+Resultado: reconciliacion read-only sin hallazgos bloqueantes nuevos.
+
+- Documento: `docs/fase_7A_R_reconciliacion_cxc_readonly.md`.
+- No se agregan rutas, modelos, vistas, migraciones ni escrituras.
+- No se modifica `reservaciones`, `reservacion_pagos`, `reservacion_abonos`,
+  `solicitudes_factura`, Caja ni `/api/sync`.
+- El preflight CxC sigue con `ERROR: 0` y 3 warnings historicos.
+- Los 3 pagos huerfanos apuntan a reservaciones inexistentes.
+- Las 170 solicitudes de factura huerfanas pertenecen a Los Cedros y apuntan a
+  reservaciones inexistentes.
+- Las 3 reservaciones con saldo negativo pertenecen a Maximiliano Leon y muestran
+  doble cobertura por abono demo + pago completo.
+- No existe tabla `cuentas_por_cobrar`.
+- No existen movimientos de Caja tipo `CxC`.
+- Riesgo residual: CxC operativa debe seguir bloqueada hasta contrato de
+  reconciliacion controlada y backup previo.
+
+## Auditoria Fase 7A-S-0
+
+Resultado: contrato de reconciliacion controlada sin cambios operativos.
+
+- Documento: `docs/fase_7A_S_0_contrato_reconciliacion_cxc_controlada.md`.
+- No se agregan rutas, modelos, vistas, migraciones ni escrituras.
+- No se modifica `reservaciones`, `reservacion_pagos`, `reservacion_abonos`,
+  `solicitudes_factura`, Caja ni `/api/sync`.
+- La opcion segura por defecto es excluir huerfanos de CxC operativa y mantener
+  excedentes como informacion, sin tocar datos.
+- El contrato exige backup, preview read-only, matriz de decision, auditoria y rollback
+  antes de cualquier correccion futura.
+- Riesgo residual: una escritura de reconciliacion futura puede alterar historia
+  financiera; debe abrirse como subfase separada y autorizada.
+
+## Auditoria Fase 7A-S-A
+
+Resultado: preview/matriz read-only sin cambios operativos.
+
+- Documento: `docs/fase_7A_S_A_preview_reconciliacion_cxc.md`.
+- No se agregan rutas, modelos, vistas, migraciones ni escrituras.
+- No se modifica `reservaciones`, `reservacion_pagos`, `reservacion_abonos`,
+  `solicitudes_factura`, Caja ni `/api/sync`.
+- La matriz propone decisiones default conservadoras:
+  - pagos huerfanos: `excluir_cxc_operativa`;
+  - facturas huerfanas: `excluir_cxc_operativa`;
+  - facturas scoped validas: `mantener_en_reporte_readonly`;
+  - excedentes: `mantener_excedente_informativo`.
+- El preflight CxC sigue en `ERROR: 0`.
+- Riesgo residual: cualquier cambio a la politica 7A-S-B debe aprobarse antes de
+  cualquier escritura.
+
+## Auditoria Fase 7A-S-B
+
+Resultado: politica conservadora sin cambios operativos.
+
+- Documento: `docs/fase_7A_S_B_politica_clasificacion_cxc.md`.
+- No se agregan rutas, modelos, vistas, migraciones ni escrituras.
+- No se modifica `reservaciones`, `reservacion_pagos`, `reservacion_abonos`,
+  `solicitudes_factura`, Caja ni `/api/sync`.
+- La politica excluye pagos/facturas huerfanas de CxC operativa.
+- Las facturas scoped validas quedan como contexto read-only.
+- Los excedentes quedan como informacion, no deuda.
+- Riesgo residual: cualquier cambio de politica requiere contrato/escritura futura con
+  backup, auditoria y rollback.
+
+## Auditoria Fase 7A-S-F
+
+Resultado: cierre documental sin cambios operativos.
+
+- Documento: `docs/fase_7A_S_F_cierre_reconciliacion_cxc.md`.
+- No se agregan rutas, modelos, vistas, migraciones ni escrituras.
+- No se modifica `reservaciones`, `reservacion_pagos`, `reservacion_abonos`,
+  `solicitudes_factura`, Caja ni `/api/sync`.
+- El bloque 7A-S queda cerrado con politica conservadora.
+- Preflight CxC: `ERROR: 0`.
+- Health general: `ERROR: 0`.
+- Riesgo residual vigente despues de 7B-A: 7B-B debe mantenerse GET/read-only y cualquier
+  escritura CxC futura requiere contrato separado.
+
 ## Auditoria Fase 7B-0
 
 Resultado: contrato sin cambios operativos.
@@ -1333,6 +1412,156 @@ Resultado: contrato sin cambios operativos.
 - No se toco Caja ni `/api/sync`.
 - El contrato bloquea 7B operativa directa por inconsistencias historicas detectadas
   en 7A.
+
+## Auditoria Fase 7B-A
+
+Resultado: migracion base vacia sin hallazgos bloqueantes.
+
+- Backup previo confirmado antes de aplicar DB.
+- Migracion: `migrations/20260618_001_fase_7b_a_cxc_base_vacia.sql`.
+- Se crearon solo tablas aditivas:
+  - `cuentas_por_cobrar`;
+  - `cuentas_por_cobrar_movimientos`.
+- Ambas tablas quedaron en `0` registros.
+- No se poblo CxC desde reservaciones, pagos, abonos, solicitudes de factura,
+  huerfanos ni excedentes.
+- No se crearon rutas, modelos PHP, vistas ni formularios.
+- No se crearon cobros, pagos, abonos ni movimientos de Caja.
+- `/api/sync` no se modifico.
+- Riesgo residual: 7B-B debe seguir siendo GET/read-only; cualquier escritura CxC
+  futura requiere backup, CSRF, auditoria, rollback y contrato separado.
+
+## Auditoria Fase 7B-B
+
+Resultado: listado/detalle read-only sin hallazgos bloqueantes.
+
+- Las rutas nuevas son solo GET.
+- No existen rutas POST bajo `/cuentas-por-cobrar/operativas`.
+- El controlador conserva sesion, contexto hotelero y modulo `reservaciones`.
+- El modelo filtra `cuentas_por_cobrar` por `hotel_id`.
+- El detalle valida `id + hotel_id`.
+- Los movimientos internos se leen desde `cuentas_por_cobrar_movimientos` por
+  `cuenta_por_cobrar_id + hotel_id`.
+- Las vistas no contienen formularios POST ni botones de cobro.
+- No se crean cuentas, pagos, abonos ni movimientos de Caja.
+- `/api/sync` no se modifica.
+- Riesgo residual: 7B-C debe iniciar como contrato; la primera escritura CxC real exige
+  backup y validaciones transaccionales.
+
+## Auditoria Fase 7B-C-0
+
+Resultado: contrato documental sin cambios operativos.
+
+- No se crean rutas POST.
+- No se crean botones.
+- No se modifica DB.
+- No se modifica `cuentas_por_cobrar`.
+- No se modifica `cuentas_por_cobrar_movimientos`.
+- No se modifican reservaciones, pagos, abonos ni solicitudes de factura.
+- No se toca Caja ni `/api/sync`.
+- El contrato exige que una futura CxC se genere por saldo pendiente neto elegible.
+- Riesgo residual: 7B-C-A sera la primera escritura CxC real y requiere backup,
+  transaccion, CSRF, auditoria y rollback.
+
+## Auditoria Fase 7B-C-A
+
+Resultado: implementacion tecnica validada manualmente sin hallazgos bloqueantes
+automatizados.
+
+- Backup previo confirmado con SHA256.
+- La unica ruta POST nueva es
+  `/cuentas-por-cobrar/generar-desde-reservacion/{id}`.
+- El POST pasa por `CuentaPorCobrarController::before()`: sesion, contexto hotelero y
+  modulo `reservaciones`.
+- El POST llama `validateCSRF()`.
+- La vista incluye `csrf_field()` y solo muestra el boton si la fila fue marcada como
+  elegible.
+- La generacion usa transaccion propia y `FOR UPDATE` sobre reservacion y duplicado CxC.
+- La cuenta se crea por saldo pendiente neto, calculado con pagos/abonos scoped por
+  `hotel_id + reservacion_id`.
+- La escritura queda limitada a `cuentas_por_cobrar`,
+  `cuentas_por_cobrar_movimientos` y `logs_auditoria`.
+- El preflight falla si detecta escrituras hacia Caja, reservaciones, pagos, abonos o
+  solicitudes de factura.
+- No hay integracion con Caja, cobro de cliente, abono, facturacion nueva, offline ni
+  `/api/sync`.
+- QA manual validada: CxC `#1`, reservacion `#24`, hotel `4`, saldo `4250.00`,
+  movimiento `CREACION #1`, auditoria `#105`.
+- Consistencia post-QA: duplicados por reservacion `0`, CxC sin movimiento `CREACION`
+  `0`, movimientos CxC huerfanos `0`, Caja-CxC textual `0`.
+- Riesgo residual: la CxC `#1` es dato operativo real; no debe eliminarse ni modificarse
+  sin fase formal de rollback/anulacion.
+
+## Auditoria Fase 7B-C-F
+
+Resultado: cierre tecnico sin hallazgos bloqueantes.
+
+- 7B-C queda cerrado con contrato, implementacion y QA manual validada.
+- La escritura autorizada queda limitada a generacion manual de CxC y movimiento interno
+  `CREACION`.
+- No se habilitan cobros, abonos, pagos de cliente, movimientos de Caja ni facturacion
+  nueva.
+- `/api/sync` no fue modificado.
+- Siguiente fase debe iniciar con contrato separado antes de tocar Caja o saldos por
+  cobro.
+
+## Auditoria Fase 7B-D-0
+
+Resultado: contrato documental sin cambios operativos.
+
+- No se agregan rutas.
+- No se agregan formularios.
+- No se crea servicio de cobro.
+- No se modifica DB.
+- No se modifica CxC ni movimientos CxC.
+- No se toca Caja, cortes ni movimientos de Caja.
+- No se modifican reservaciones, pagos, abonos ni solicitudes de factura.
+- No se toca `/api/sync`.
+- Hallazgo de diseno: el enum `tipo_movimiento` de CxC no tiene tipo `COBRO`.
+- Riesgo bloqueado: no usar `AJUSTE` para simular cobros.
+- Siguiente fase segura: simulador/read-only antes de cualquier escritura financiera.
+
+## Auditoria Fase 7B-D-A
+
+Resultado: simulador read-only validado manualmente, sin hallazgos bloqueantes
+automatizados.
+
+- Ruta nueva solo GET: `/cuentas-por-cobrar/simulador-caja`.
+- No hay POST nuevo de cobro CxC.
+- La vista no contiene formularios `POST`.
+- El controlador usa sesion, contexto hotelero y modulo `reservaciones`.
+- El modelo lee CxC, corte abierto y Caja activa por `hotel_id`.
+- El modelo no contiene escrituras hacia Caja, cortes, reservaciones, pagos, abonos ni
+  facturacion.
+- El simulador bloquea cobro real si falta tipo `COBRO`.
+- No se modifica `/api/sync`.
+- QA manual validada por el usuario: la CxC `#1` aparece bloqueada y no hay accion de
+  cobro.
+- Riesgo residual: el cobro real sigue bloqueado hasta definir esquema de movimiento
+  `COBRO` o entidad de cobro.
+
+## Auditoria Fase 7B-D-F
+
+Resultado: cierre documental sin hallazgos bloqueantes.
+
+- El cierre confirma que 7B-D-A no genero escrituras.
+- Conteos post-QA permanecen controlados: CxC `1`, movimientos CxC `1`, Caja-CxC
+  textual `0`.
+- No se tocaron saldos, Caja, cortes, reservaciones, pagos, abonos, facturacion ni
+  `/api/sync`.
+- La CxC `#1` sigue siendo dato operativo protegido.
+
+## Auditoria Fase 7B-D-B-0
+
+Resultado: contrato documental sin cambios operativos.
+
+- No se agregan migraciones.
+- No se agregan rutas ni formularios.
+- No se implementa servicio de cobro.
+- No se modifican `cuentas_por_cobrar` ni `cuentas_por_cobrar_movimientos`.
+- No se toca Caja ni cortes.
+- Decision de seguridad: no registrar cobros como `AJUSTE`.
+- La recomendacion incremental exige tipo semantico `COBRO` antes de cualquier cobro real.
 
 ## Auditoria Fase 8A-0
 
@@ -1410,7 +1639,7 @@ Resultado: contrato sin cambios operativos.
 
 ## Auditoria Fase 3D-C
 
-Resultado: implementacion tecnica con QA manual pendiente.
+Resultado: implementacion tecnica validada manualmente sin hallazgos bloqueantes post-QA.
 
 - Backup limpio confirmado antes de habilitar escrituras.
 - El POST requiere sesion, hotel actual, modulo inventario, modulo Caja y CSRF.
@@ -1424,5 +1653,14 @@ Resultado: implementacion tecnica con QA manual pendiente.
 - No se agregan abonos.
 - No se modifica UI de Caja.
 - No se toca `/api/sync`.
-- Riesgo residual: un pago real modifica datos financieros; por eso requiere QA manual
-  controlada y rollback documentado.
+- QA manual completada por el usuario con pago parcial real controlado.
+- Evidencia post-QA: CxP `#1` del hotel `Maximiliano Leon`, proveedor `Juan Pedro`,
+  pago `10.00`, saldo `1000.00 -> 990.00`, estado `parcial`.
+- Trazabilidad creada: `cuentas_por_pagar_movimientos.id = 4` y
+  `movimientos_caja.id = 1478`, categoria `Pago proveedor`, corte `#237`,
+  referencia `CXP-1-MOV-4`.
+- Preflight post-QA `preflight_pagos_proveedores_caja.php`: `OK: 22`,
+  `WARNING: 0`, `ERROR: 0`.
+- Riesgo residual: un pago real modifica datos financieros; antes de escalar en
+  operacion diaria conviene disenar anulacion/reversion formal y probar pago total
+  en una CxP dedicada.

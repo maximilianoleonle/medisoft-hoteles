@@ -13,11 +13,16 @@ cuentas nuevas.
 Esta subfase es solo contrato y diagnostico. No implementa rutas, tablas, cobros ni
 migraciones.
 
-## Estado previo
+## Estado previo al contrato 7B-0
 
 - 7A-0 contrato read-only: completado.
 - 7A-A reporte read-only: completado.
 - 7A-F cierre tecnico: completado.
+- 7A-R diagnostico de reconciliacion read-only: completado.
+- 7A-S-0 contrato de reconciliacion controlada: completado.
+- 7A-S-A preview/matriz read-only: completado.
+- 7A-S-B politica conservadora de clasificacion: completado.
+- 7A-S-F cierre de reconciliacion CxC: completado.
 - No existe tabla `cuentas_por_cobrar`.
 - Fuentes existentes:
   - `reservaciones`
@@ -42,6 +47,27 @@ Inconsistencias que bloquean CxC operativa directa:
 - 170 solicitudes de factura con reservacion inexistente o de otro hotel.
 - 3 reservaciones con saldo estimado negativo.
 
+Politica vigente 7A-S-B:
+
+- Los pagos/facturas huerfanas quedan excluidos de CxC operativa.
+- Las facturas scoped validas quedan como contexto read-only.
+- Los excedentes quedan como informacion, no deuda.
+
+## Actualizacion post 7B-A
+
+La subfase 7B-A ya fue ejecutada como migracion base vacia y aditiva.
+
+- Documento: `docs/fase_7B_A_migracion_cxc_base_vacia.md`.
+- Migracion: `migrations/20260618_001_fase_7b_a_cxc_base_vacia.sql`.
+- Backup previo:
+  `backups/medisoft_hoteles_import_before_7b_a_cxc_base_20260618_163625.sql`.
+- Tablas creadas y vacias:
+  - `cuentas_por_cobrar = 0`;
+  - `cuentas_por_cobrar_movimientos = 0`.
+- No se poblaron datos historicos.
+- No se crearon cobros, pagos, abonos ni movimientos de Caja.
+- No se tocaron rutas, modelos, vistas PHP ni `/api/sync`.
+
 ## Riesgo principal
 
 CxC operativa puede duplicar o contradecir:
@@ -59,7 +85,8 @@ operativa aislada y reconciliable.
 
 ## Propuesta de modelo futuro
 
-Solo si se autoriza una migracion aditiva posterior:
+Propuesta original del contrato. La subfase 7B-A ya materializo esta base como
+migracion aditiva vacia, sin poblar datos.
 
 ### `cuentas_por_cobrar`
 
@@ -121,12 +148,15 @@ En 7B inicial, estos movimientos no deben crear Caja automaticamente.
 - Crear tablas aditivas e idempotentes.
 - No poblar datos.
 - No crear Caja.
+- Estado actual: completada como estructura vacia.
 
 ### 7B-B Listado y detalle read-only operativo
 
 - Leer solo tabla CxC nueva.
 - Mostrar estado vacio.
 - Sin POST.
+- Estado actual: completado como rutas GET `/cuentas-por-cobrar/operativas` y
+  `/cuentas-por-cobrar/operativas/{id}`.
 
 ### 7B-C Generacion manual desde reservacion elegible
 
@@ -177,6 +207,7 @@ En 7B inicial, estos movimientos no deben crear Caja automaticamente.
 
 ## Siguiente accion segura
 
-No implementar 7B-A hasta reconciliar warnings o aceptar explicitamente una migracion
-base vacia. Si se continua sin QA manual, el siguiente bloque mas seguro es 8A dashboard
-operativo con KPIs read-only.
+Abrir 7B-C-0 solo como contrato de generacion manual futura desde reservacion elegible.
+
+Queda prohibido poblar CxC inicial desde huerfanos, excedentes o historicos sin una fase
+de escritura nueva con backup, auditoria y rollback.

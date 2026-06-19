@@ -1,0 +1,802 @@
+<?php
+$layoutRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+$layoutEsPanelSaas = strpos($layoutRequestPath, '/admin/saas') === 0;
+$layoutTieneContextoHotel = function_exists('has_hotel_context') && has_hotel_context();
+$layoutOfflineHoteleroActivo = !$layoutEsPanelSaas
+    && $layoutTieneContextoHotel
+    && function_exists('is_authenticated')
+    && is_authenticated();
+$layoutBranding = (!$layoutEsPanelSaas && $layoutTieneContextoHotel && function_exists('current_hotel_branding'))
+    ? current_hotel_branding()
+    : null;
+$layoutNombreVisual = $layoutBranding
+    ? hotel_branding_public_name($layoutBranding, current_hotel_nombre() ?: 'Medisoft Hoteles')
+    : 'Medisoft Hoteles';
+$layoutLogoUrl = ($layoutBranding && function_exists('hotel_branding_asset_url'))
+    ? (hotel_branding_asset_url($layoutBranding['logo_url'] ?? null) ?: hotel_branding_default_logo_url())
+    : (function_exists('hotel_branding_default_logo_url') ? hotel_branding_default_logo_url() : asset('img/logo.png'));
+$layoutFaviconUrl = ($layoutBranding && function_exists('hotel_branding_asset_url'))
+    ? hotel_branding_asset_url($layoutBranding['favicon_url'] ?? null)
+    : null;
+$layoutThemeColor = '#1B2746';
+if ($layoutEsPanelSaas) {
+    $layoutThemeColor = '#0B1220';
+} elseif ($layoutBranding && function_exists('hotel_branding_hex')) {
+    $layoutThemeColor = hotel_branding_hex($layoutBranding['color_primary'] ?? null, '#1B2746');
+}
+$layoutOfflineBrandingPayload = null;
+if ($layoutOfflineHoteleroActivo && $layoutBranding && function_exists('hotel_branding_hex')) {
+    $layoutOfflineBrandingPayload = [
+        'name' => $layoutNombreVisual,
+        'logo' => $layoutLogoUrl,
+        'primary' => hotel_branding_hex($layoutBranding['color_primary'] ?? null, '#1B2746'),
+        'secondary' => hotel_branding_hex($layoutBranding['color_secondary'] ?? null, '#0F172A'),
+        'accent' => hotel_branding_hex($layoutBranding['color_accent'] ?? null, '#BD9441'),
+        'hotelId' => function_exists('current_hotel_id') ? (int) current_hotel_id() : null,
+        'slug' => function_exists('current_hotel_slug') ? (string) current_hotel_slug() : null,
+        'updatedAt' => date('c'),
+    ];
+}
+$layoutManifestHref = asset('manifest.json');
+$layoutHotelSlug = function_exists('current_hotel_slug') ? current_hotel_slug() : null;
+if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $layoutHotelSlug)) {
+    $layoutManifestHref = url('h/' . $layoutHotelSlug . '/manifest.webmanifest');
+}
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Sistema de Gestión Hotelera - <?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
+    <title><?= htmlspecialchars($title ?? $layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?></title>
+    
+    <!-- PWA Meta Tags -->
+    <!-- Color base para la barra de estado -->
+    <meta name="theme-color" content="<?= htmlspecialchars($layoutThemeColor, ENT_QUOTES, 'UTF-8') ?>">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Medisoft Hoteles">
+    <meta name="application-name" content="Medisoft Hoteles">
+    <meta name="msapplication-TileColor" content="<?= htmlspecialchars($layoutThemeColor, ENT_QUOTES, 'UTF-8') ?>">
+    <meta name="msapplication-TileImage" content="<?= asset('img/icons/icon-144x144.png') ?>">
+    <meta name="msapplication-config" content="<?= asset('browserconfig.xml') ?>">
+    <meta name="format-detection" content="telephone=no">
+    
+    <!-- CSRF Token -->
+    <meta name="csrf-token" content="<?= csrf_token() ?>">
+    
+    <!-- Manifest PWA -->
+    <link rel="manifest" href="<?= htmlspecialchars($layoutManifestHref, ENT_QUOTES, 'UTF-8') ?>">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= asset('img/favicon-32x32.png') ?>">
+    <link rel="icon" type="image/png" sizes="16x16" href="<?= asset('img/favicon-16x16.png') ?>">
+    <link rel="icon" type="image/png" href="<?= asset('img/favicon.png') ?>">
+    <?php if ($layoutFaviconUrl): ?>
+    <link rel="icon" href="<?= htmlspecialchars($layoutFaviconUrl, ENT_QUOTES, 'UTF-8') ?>">
+    <?php endif; ?>
+    
+    <!-- iOS Icons -->
+    <link rel="apple-touch-icon" href="<?= asset('img/icons/icon-192x192.png') ?>">
+    <link rel="apple-touch-icon" sizes="72x72" href="<?= asset('img/icons/icon-72x72.png') ?>">
+    <link rel="apple-touch-icon" sizes="96x96" href="<?= asset('img/icons/icon-96x96.png') ?>">
+    <link rel="apple-touch-icon" sizes="128x128" href="<?= asset('img/icons/icon-128x128.png') ?>">
+    <link rel="apple-touch-icon" sizes="144x144" href="<?= asset('img/icons/icon-144x144.png') ?>">
+    <link rel="apple-touch-icon" sizes="152x152" href="<?= asset('img/icons/icon-152x152.png') ?>">
+    <link rel="apple-touch-icon" sizes="192x192" href="<?= asset('img/icons/icon-192x192.png') ?>">
+    <link rel="apple-touch-icon" sizes="384x384" href="<?= asset('img/icons/icon-384x384.png') ?>">
+    <link rel="apple-touch-icon" sizes="512x512" href="<?= asset('img/icons/icon-512x512.png') ?>">
+    
+    <!-- Preconnect para optimización -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Fix para layout del dashboard - Cargar al final -->
+    <link rel="stylesheet" href="<?= asset('css/dashboard-layout-fix.css') ?>">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- CSS del sidebar -->
+    <link rel="stylesheet" href="<?= asset('css/sidebar-styles.css') ?>">
+    <!-- NUEVO: Tamaño grande del sidebar -->
+    <link rel="stylesheet" href="<?= asset('css/sidebar-size-override.css') ?>">
+
+    <link rel="stylesheet" href="<?= asset('css/performance-optimization.css') ?>"> <!-- NUEVO -->
+    <!-- Chart.js para gráficas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Custom Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'hotel-brown': 'var(--brand-secondary, #0F172A)',
+                        'hotel-brown-light': 'color-mix(in srgb, var(--brand-secondary, #0F172A) 82%, #FFFFFF)',
+                        'hotel-brown-dark': 'color-mix(in srgb, var(--brand-secondary, #0F172A) 92%, #000000)',
+                        'hotel-gold': 'var(--brand-accent, #BD9441)',
+                        'hotel-cream': 'color-mix(in srgb, var(--brand-accent, #BD9441) 9%, #F8F5ED)',
+                        'hotel-beige': 'color-mix(in srgb, var(--brand-accent, #BD9441) 18%, #F8F5ED)',
+                        'hotel-olive': 'var(--brand-primary, #1B2746)',
+                        'hotel-olive-light': 'color-mix(in srgb, var(--brand-primary, #1B2746) 76%, #FFFFFF)',
+                        'hotel-olive-dark': 'var(--brand-secondary, #0F172A)'
+                    },
+                    fontFamily: {
+                        'playfair': ['Playfair Display', 'serif'],
+                        'inter': ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <?php if ($layoutBranding && function_exists('hotel_branding_css_vars')): ?>
+        <?= hotel_branding_css_vars($layoutBranding) ?>
+    <?php endif; ?>
+
+    <?php if ($layoutEsPanelSaas): ?>
+    <style>
+        /* Override: header móvil usa identidad Medisoft, no hotel */
+        .ms-admin-scope .mobile-header-modern {
+            background: var(--ms-sidebar, #0B1220) !important;
+            border-bottom: 1px solid rgba(148,163,184,0.16) !important;
+            box-shadow: 0 1px 12px rgba(15,23,42,0.22) !important;
+        }
+        .ms-admin-scope .scroll-progress {
+            background: var(--ms-accent, #06B6D4) !important;
+        }
+        .ms-admin-scope .mobile-menu-toggle {
+            background: rgba(255,255,255,0.08) !important;
+            border-color: rgba(148,163,184,0.22) !important;
+        }
+        .ms-admin-scope .mobile-header-logo img {
+            filter: brightness(0) invert(1) !important;
+        }
+        .ms-admin-scope {
+            --ms-bg: #F6F8FB;
+            --ms-surface: #FFFFFF;
+            --ms-sidebar: #0B1220;
+            --ms-primary: #2563EB;
+            --ms-primary-hover: #1D4ED8;
+            --ms-accent: #06B6D4;
+            --ms-text: #0F172A;
+            --ms-muted: #64748B;
+            --ms-border: #E2E8F0;
+            --ms-success: #16A34A;
+            --ms-warning: #F59E0B;
+            --ms-danger: #DC2626;
+            background: var(--ms-bg);
+            color: var(--ms-text);
+        }
+
+        .ms-admin-scope .main-content {
+            background: var(--ms-bg);
+            color: var(--ms-text);
+        }
+
+        .ms-admin-scope header.bg-white,
+        .ms-admin-scope .bg-white {
+            background-color: var(--ms-surface);
+        }
+
+        .ms-admin-scope .text-gray-500,
+        .ms-admin-scope .text-gray-600,
+        .ms-admin-scope .text-gray-700 {
+            color: var(--ms-muted);
+        }
+
+        .ms-admin-scope .text-gray-900 {
+            color: var(--ms-text);
+        }
+
+        .ms-admin-scope .border-gray-100,
+        .ms-admin-scope .border-gray-200,
+        .ms-admin-scope .border-gray-300,
+        .ms-admin-scope .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+        .ms-admin-scope .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+            border-color: var(--ms-border);
+        }
+    </style>
+    <?php endif; ?>
+    
+    <?php
+        $medisoftContext = null;
+        if ($layoutOfflineHoteleroActivo) {
+            $medisoftHotelId = current_hotel_id();
+            $medisoftUsuarioId = user_id();
+            $medisoftContext = [
+                'hotel_id' => (int) $medisoftHotelId,
+                'usuario_id' => $medisoftUsuarioId ? (int) $medisoftUsuarioId : null,
+                'hotel_scope' => 'hotel-' . (int) $medisoftHotelId,
+                'storage_scope' => 'hotel-' . (int) $medisoftHotelId . '-user-' . ($medisoftUsuarioId ? (int) $medisoftUsuarioId : 'anon'),
+                'storage_version' => 'v1',
+                'generated_at' => date('c'),
+            ];
+        }
+    ?>
+    <script>
+        window.BASE_URL = '<?= rtrim(url(''), '/') ?>';
+        window.API_URL = '<?= url('api') ?>';
+        window.MEDISOFT_OFFLINE_ENABLED = <?= $layoutOfflineHoteleroActivo ? 'true' : 'false' ?>;
+        <?php if ($medisoftContext): ?>
+        window.MEDISOFT_CONTEXT = <?= json_encode($medisoftContext, JSON_UNESCAPED_SLASHES) ?>;
+        window.USUARIO_ID = window.MEDISOFT_CONTEXT.usuario_id;
+        <?php endif; ?>
+        <?php if ($layoutOfflineBrandingPayload): ?>
+        window.MEDISOFT_OFFLINE_BRANDING = <?= json_encode($layoutOfflineBrandingPayload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+        try {
+            window.localStorage.setItem('medisoft:offline-branding', JSON.stringify(window.MEDISOFT_OFFLINE_BRANDING));
+        } catch (error) {}
+        <?php endif; ?>
+    </script>
+
+    <!-- O usando un meta tag -->
+    <meta name="base-url" content="<?= rtrim(url(''), '/') ?>">
+    <meta name="api-url" content="<?= url('api') ?>">
+    
+    <!-- CSS Personalizado -->
+    <link rel="stylesheet" href="<?= asset('css/custom.css') ?>">
+
+    <!-- CSS de la pantalla de carga -->
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/loading-screen.css') : asset('css/loading-screen.css') ?>">
+
+    <!-- CSS PWA (offline banner, toasts, install btn) -->
+    <link rel="stylesheet" href="<?= asset('css/pwa.css') ?>">
+    
+    <!-- Solo en el dashboard -->
+    <?php if (isset($title) && strpos($title, 'Dashboard') !== false): ?>
+    <link rel="stylesheet" href="<?= asset('css/dashboard.css') ?>">
+    <?php endif; ?>
+    
+    <!-- Script de pantalla de carga -->
+    <script src="<?= function_exists('asset_version') ? asset_version('js/loading-screen.js') : asset('js/loading-screen.js') ?>"></script>
+
+    <!-- JavaScript Global -->
+    <script src="<?= asset('js/app.js') ?>" defer></script>
+
+    <!-- PWA: registro de SW + lógica offline (reemplaza el script inline de SW) -->
+    <?php if ($layoutOfflineHoteleroActivo): ?>
+    <script src="<?= asset('js/pwa.js') ?>" defer></script>
+
+    <!-- Offline Data: snapshots de habitaciones/reservaciones + cola tipada + sync -->
+    <script src="<?= asset('js/offline-data.js') ?>" defer></script>
+    <?php endif; ?>
+
+    <style>
+        /* PWA critical UI: evita banners planos si el CSS externo aun no carga */
+        #pwa-offline-banner[hidden],
+        #pwa-update-banner[hidden] {
+            display: none !important;
+        }
+
+        #pwa-offline-banner,
+        #pwa-update-banner {
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        #pwa-offline-banner {
+            position: fixed;
+            top: 14px;
+            right: 18px;
+            left: auto;
+            width: min(460px, calc(100vw - 32px));
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 15px;
+            border: 1px solid rgba(197, 136, 38, 0.28);
+            border-radius: 12px;
+            background: #fff9e9;
+            color: #533916;
+            box-shadow: 0 18px 48px rgba(42, 51, 36, 0.18);
+            transform: translateY(-12px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.22s ease, transform 0.22s ease;
+        }
+
+        #pwa-offline-banner.visible {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #pwa-offline-banner .pwa-banner-icon,
+        #pwa-update-banner .pwa-update-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+        }
+
+        #pwa-offline-banner .pwa-banner-icon {
+            background: #f5dfab;
+            color: #9a5f06;
+        }
+
+        #pwa-offline-banner .pwa-banner-text strong,
+        #pwa-update-banner .pwa-update-copy strong {
+            display: block;
+            font-size: 0.84rem;
+            line-height: 1.15;
+            letter-spacing: 0;
+            color: inherit;
+        }
+
+        #pwa-offline-banner .pwa-banner-text span,
+        #pwa-update-banner .pwa-update-copy span {
+            display: block;
+            margin-top: 2px;
+            font-size: 0.74rem;
+            line-height: 1.25;
+            opacity: 0.78;
+        }
+
+        #pwa-update-banner {
+            position: fixed;
+            right: 20px;
+            bottom: 22px;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: min(440px, calc(100vw - 32px));
+            padding: 12px 12px 12px 14px;
+            border: 1px solid rgba(124, 143, 86, 0.34);
+            border-radius: 14px;
+            background: #f9fbf4;
+            color: #33422b;
+            box-shadow: 0 20px 54px rgba(45, 59, 38, 0.2);
+            transform: translateY(16px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.24s ease, transform 0.24s ease;
+        }
+
+        #pwa-update-banner.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        #pwa-update-banner .pwa-update-icon {
+            background: #e8efd9;
+            color: #5c7442;
+        }
+
+        #pwa-update-banner .pwa-update-copy {
+            flex: 1;
+            min-width: 0;
+        }
+
+        #pwa-update-banner button[data-action="update"] {
+            border: 0;
+            border-radius: 10px;
+            background: #5c7a4e;
+            color: #f8fbf2;
+            padding: 9px 12px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            box-shadow: 0 8px 18px rgba(92, 122, 78, 0.22);
+        }
+
+        #pwa-update-banner button[data-action="update"]:hover {
+            background: #4f6b43;
+        }
+
+        @media (max-width: 640px) {
+            #pwa-offline-banner,
+            #pwa-update-banner {
+                left: 12px;
+                right: 12px;
+                width: auto;
+            }
+
+            #pwa-update-banner {
+                bottom: 14px;
+            }
+        }
+        /* HEADER MÓVIL MODERNO CON AUTO-HIDE */
+        @media (max-width: 1024px) {
+            body {
+                padding-top: 60px;
+            }
+            
+            .mobile-header-modern {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 60px;
+                background: linear-gradient(135deg, var(--brand-primary, #1B2746) 0%, var(--brand-secondary, #0F172A) 100%);
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 15px;
+                transition: transform 0.3s ease;
+            }
+            
+            .mobile-header-modern.hidden {
+                transform: translateY(-100%);
+            }
+            
+            /* Botón de hamburguesa móvil */
+            .mobile-menu-toggle {
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 8px;
+                padding: 0.5rem;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: all 0.2s;
+                margin-left: 5px;
+            }
+
+            .mobile-menu-toggle:hover {
+                background: rgba(255, 255, 255, 0.2);
+            }
+
+            .mobile-menu-toggle:active {
+                transform: scale(0.95);
+            }
+
+            .mobile-menu-toggle i {
+                font-size: 1.25rem;
+                color: white;
+            }
+            
+            /* LOGO CENTRADO - TAMAÑO FIJO */
+            .mobile-header-logo {
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                height: 40px;
+                /* IMPORTANTE: Ancho fijo para evitar que se redimensione */
+                width: auto;
+                min-width: 120px; /* Ancho mínimo */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+          .mobile-header-logo img {
+    height: 100%;
+    width: auto;
+    min-height: 40px;
+    max-height: 40px;
+    object-fit: contain;
+    filter: brightness(0) invert(1)
+            drop-shadow(0 0 6px rgba(92, 64, 51, 0.9))
+            drop-shadow(0 0 14px rgba(92, 64, 51, 0.7))
+            drop-shadow(0 0 24px rgba(92, 64, 51, 0.5));
+}
+
+
+            
+            /* Prevenir que el logo se redimensione en diferentes vistas */
+            .mobile-header-logo img,
+            .mobile-header-logo {
+                transition: none !important;
+                transform-origin: center !important;
+            }
+            
+            /* Asegurar tamaño consistente en todas las vistas */
+            .main-content .mobile-header-logo img,
+            .dashboard .mobile-header-logo img,
+            .habitaciones .mobile-header-logo img,
+            .reservaciones .mobile-header-logo img,
+            .huespedes .mobile-header-logo img,
+            .reportes .mobile-header-logo img,
+            .configuracion .mobile-header-logo img,
+            .inventario .mobile-header-logo img,
+            .caja .mobile-header-logo img,
+            .usuarios .mobile-header-logo img {
+                height: 40px !important;
+                min-height: 40px !important;
+                max-height: 40px !important;
+            }
+            
+            /* Botones de acción */
+            .mobile-header-actions {
+                display: flex;
+                gap: 8px;
+            }
+            
+            .mobile-header-actions button {
+                width: 36px;
+                height: 36px;
+                background: rgba(255, 255, 255, 0.1);
+                border: none;
+                border-radius: 50%;
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+            }
+            
+            /* Barra de progreso */
+            .scroll-progress {
+                position: fixed;
+                top: 60px;
+                left: 0;
+                right: 0;
+                height: 2px;
+            background: var(--brand-accent, #BD9441);
+                transform-origin: left;
+                transform: scaleX(0);
+                z-index: 9998;
+            }
+            
+            /* Ocultar header desktop */
+            header.bg-white {
+                display: none !important;
+            }
+        }
+        
+        @media (min-width: 1025px) {
+            .mobile-header-modern {
+                display: none !important;
+            }
+            .scroll-progress {
+                display: none !important;
+            }
+            /* Header desktop sin contenido: se oculta para no mostrar una barra blanca vacía.
+               El page-header con título y acciones se integrará en la microfase 10.4. */
+            header.bg-white {
+                display: none;
+            }
+        }
+    </style>
+    <?php if (!$layoutEsPanelSaas): ?>
+    <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/hotel-layout-shell.css') : asset('css/hotel-layout-shell.css') ?>">
+    <?php endif; ?>
+</head>
+<body class="bg-gray-100 font-inter<?= $layoutEsPanelSaas ? ' ms-admin-scope' : ' hotel-layout-scope' ?>">
+
+  <!-- ── Banner Offline ─────────────────────────────────────────────────── -->
+  <div id="pwa-offline-banner" role="alert" aria-live="assertive" hidden>
+    <span class="pwa-banner-icon"><i class="fas fa-wifi"></i></span>
+    <div class="pwa-banner-text">
+      <strong>Sin conexión a internet</strong>
+      <span>Modo lectura activo. Los cambios se sincronizarán cuando vuelva internet.</span>
+    </div>
+  </div>
+
+  <!-- ── Banner de nueva versión disponible ────────────────────────────── -->
+  <div id="pwa-update-banner" role="status" aria-live="polite" hidden>
+    <span class="pwa-update-icon"><i class="fas fa-rotate"></i></span>
+    <span class="pwa-update-copy">
+      <strong>Nueva versión lista</strong>
+      <span>Actualiza para cargar las mejoras recientes.</span>
+    </span>
+    <button data-action="update"><i class="fas fa-bolt"></i><span>Actualizar</span></button>
+  </div>
+    <!-- Incluir pantalla de carga -->
+    <?php include APP_PATH . '/views/components/loading-screen.php'; ?>
+    
+    <!-- HEADER MÓVIL MODERNO (Solo aparece en móvil) -->
+    <div class="mobile-header-modern" id="mobileHeaderModern">
+        <button type="button" id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Abrir menú de navegación">
+            <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="mobile-header-logo">
+            <img src="<?= htmlspecialchars($layoutLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
+            <?php if (!$layoutEsPanelSaas): ?>
+            <span class="mobile-header-name"><?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?></span>
+            <?php endif; ?>
+        </div>
+        
+        <!-- Acciones: sync + install -->
+        <div class="mobile-header-actions" style="display:flex;align-items:center;gap:6px;">
+            <!-- Indicador de sincronización -->
+            <div id="pwa-sync-indicator" title="Estado de conexión">
+                <i class="fas fa-sync-alt"></i>
+                <span id="pwa-queue-badge" class="hidden">0</span>
+            </div>
+            <!-- Botón instalar PWA (oculto hasta que el navegador lo permita) -->
+            <button id="pwa-install-btn" class="hidden" onclick="window.triggerInstall()" title="Instalar app">
+                <i class="fas fa-download"></i>
+                <span>Instalar</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Barra de progreso de scroll -->
+    <div class="scroll-progress" id="scrollProgress"></div>
+    
+    <!-- Contenedor Principal -->
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar -->
+        <?php require_once APP_PATH . '/views/layout/sidebar.php'; ?>
+        
+        <!-- Contenido Principal -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header Desktop (solo visible en desktop) -->
+            <header class="bg-white shadow-sm border-b border-gray-200 relative hotel-header">
+                <div class="hotel-header-inner">
+                    <div class="hotel-header-brand">
+                        <img src="<?= htmlspecialchars($layoutLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
+                        <div>
+                            <p class="hotel-header-kicker">Hotel activo</p>
+                            <p class="hotel-header-name"><?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?></p>
+                        </div>
+                    </div>
+
+                    <div class="hotel-header-page">
+                        <p class="hotel-header-kicker">Recepción</p>
+                        <h1><?= htmlspecialchars($title ?? 'Panel hotelero', ENT_QUOTES, 'UTF-8') ?></h1>
+                    </div>
+
+                    <div class="hotel-header-actions">
+                        <span class="hotel-header-status">
+                            <span class="hotel-session-dot"></span>
+                            <span>Sesión activa</span>
+                        </span>
+                        <span class="hotel-header-user">
+                            <i class="fas fa-user-circle"></i>
+                            <?= htmlspecialchars(user_name(), ENT_QUOTES, 'UTF-8') ?>
+                        </span>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Contenido de la página -->
+            <main class="main-content">
+                <!-- Mensajes Flash -->
+                <?php if ($mensaje = get_mensaje()): ?>
+                    <?php 
+                    // Asegurar que el mensaje tenga la estructura correcta
+                    if (is_string($mensaje)) {
+                        $mensaje = ['texto' => $mensaje, 'tipo' => 'info'];
+                    }
+                    
+                    // Obtener valores con defaults seguros
+                    $texto = $mensaje['texto'] ?? 'Operación realizada';
+                    $tipo = $mensaje['tipo'] ?? 'info';
+                    ?>
+                    <div class="mx-6 mt-4 fade-in">
+                        <div class="p-4 rounded-lg flex items-center justify-between <?php 
+                            echo $tipo === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 
+                                ($tipo === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 
+                                'bg-blue-50 text-blue-700 border border-blue-200'); 
+                        ?>">
+                            <div class="flex items-center">
+                                <i class="fas <?php 
+                                    echo $tipo === 'error' ? 'fa-exclamation-circle' : 
+                                        ($tipo === 'success' ? 'fa-check-circle' : 'fa-info-circle'); 
+                                ?> mr-3"></i>
+                                <span><?= htmlspecialchars($texto) ?></span>
+                            </div>
+                            <button onclick="this.parentElement.parentElement.remove()" class="ml-4">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+    <!-- SCRIPT PARA AUTO-HIDE -->
+    <script>
+        // Ejecutar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // Variables para auto-hide
+            let lastScrollTop = 0;
+            let ticking = false;
+            const mobileHeader = document.getElementById('mobileHeaderModern');
+            const scrollProgress = document.getElementById('scrollProgress');
+            
+            // Verificar que el header existe
+            if (mobileHeader) {
+
+                // Función para manejar el scroll
+                function handleScroll() {
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                    
+                    // Solo en móvil
+                    if (window.innerWidth <= 1024) {
+                        // Actualizar barra de progreso
+                        if (scrollProgress && scrollHeight > 0) {
+                            const percentage = scrollTop / scrollHeight;
+                            scrollProgress.style.transform = `scaleX(${percentage})`;
+                        }
+                        
+                        // Auto-hide del header con umbral mínimo
+                        if (scrollTop > lastScrollTop && scrollTop > 10) {
+                            // Scrolling hacia abajo - ocultar y pantalla completa
+                            mobileHeader.classList.add('hidden');
+                            document.body.classList.add('header-hidden');
+                        } else if (scrollTop < lastScrollTop) {
+                            // Scrolling hacia arriba - mostrar
+                            mobileHeader.classList.remove('hidden');
+                            document.body.classList.remove('header-hidden');
+                        }
+                        
+                        // Si estamos en el top, siempre mostrar
+                        if (scrollTop <= 0) {
+                            mobileHeader.classList.remove('hidden');
+                            document.body.classList.remove('header-hidden');
+                        }
+                    }
+                    
+                    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+                    ticking = false;
+                }
+                
+                // Optimizar con requestAnimationFrame
+                function requestTick() {
+                    if (!ticking) {
+                        window.requestAnimationFrame(handleScroll);
+                        ticking = true;
+                    }
+                }
+                
+                // Escuchar evento de scroll
+                window.addEventListener('scroll', requestTick, { passive: true });
+                
+                // PRUEBA MANUAL mejorada
+                window.toggleHeader = function() {
+                    if (mobileHeader.classList.contains('hidden')) {
+                        mobileHeader.classList.remove('hidden');
+                        document.body.classList.remove('header-hidden');
+                    } else {
+                        mobileHeader.classList.add('hidden');
+                        document.body.classList.add('header-hidden');
+                    }
+                };
+            }
+            
+            // Asegurar que el header sea visible al cargar
+            if (window.innerWidth <= 1024 && mobileHeader) {
+                mobileHeader.classList.remove('hidden');
+                document.body.classList.remove('header-hidden');
+            }
+        });
+    </script>
+    
+    <!-- Script para forzar ocultación de pantalla de carga -->
+    <script>
+        // Forzar ocultación después de 2 segundos máximo
+        setTimeout(function() {
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen && loadingScreen.style.display !== 'none') {
+                loadingScreen.style.display = 'none';
+                document.body.classList.remove('loading');
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

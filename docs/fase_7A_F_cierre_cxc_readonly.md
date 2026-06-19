@@ -46,6 +46,87 @@
 Estos warnings no bloquean la vista read-only, pero bloquean cualquier CxC operativa
 hasta reconciliar origen, hotel y saldo.
 
+## Reconciliacion read-only posterior
+
+Documento: `docs/fase_7A_R_reconciliacion_cxc_readonly.md`.
+
+Estado: `RECONCILIACION_7A_R_CXC_READONLY_DIAGNOSTICADA`.
+
+Resultado:
+
+- Los 3 pagos historicos apuntan a reservaciones inexistentes.
+- Las 170 solicitudes de factura huerfanas pertenecen a Los Cedros y apuntan a
+  reservaciones inexistentes, con rango temporal 2026-03 a 2026-05.
+- Solo 5 solicitudes de factura actuales coinciden por `hotel_id + reservacion_id`.
+- Las 3 reservaciones con saldo negativo pertenecen a Maximiliano Leon y muestran
+  doble cobertura por abono demo + pago posterior completo.
+- No existe tabla `cuentas_por_cobrar`.
+- No existen movimientos de Caja tipo `CxC`.
+- El preflight CxC post-diagnostico sigue en `ERROR: 0`.
+
+Decision:
+
+- CxC read-only puede mantenerse.
+- CxC operativa sigue bloqueada hasta contrato de reconciliacion controlada.
+- No borrar ni corregir historicos automaticamente.
+
+## Contrato de reconciliacion controlada
+
+Documento: `docs/fase_7A_S_0_contrato_reconciliacion_cxc_controlada.md`.
+
+Estado: `CONTRATO_7A_S_RECONCILIACION_CXC_CONTROLADA_COMPLETADO`.
+
+Alcance:
+
+- Define matriz de decision para pagos huerfanos, facturas huerfanas y excedentes.
+- No ejecuta escrituras.
+- Exige backup, preview, decision del usuario, auditoria y rollback antes de cualquier
+  correccion futura.
+- Mantiene prohibidos cobros CxC, movimientos de Caja, cambios de reservaciones,
+  pagos, abonos, facturacion y `/api/sync`.
+
+## Preview/matriz de reconciliacion
+
+Documento: `docs/fase_7A_S_A_preview_reconciliacion_cxc.md`.
+
+Estado: `PREVIEW_7A_S_A_RECONCILIACION_CXC_READONLY_COMPLETADO`.
+
+Resultado:
+
+- Matriz de 3 pagos huerfanos con decision default `excluir_cxc_operativa`.
+- Matriz resumida de 170 solicitudes de factura huerfanas con decision default
+  `excluir_cxc_operativa`.
+- Lista de 5 solicitudes scoped validas que pueden seguir en reporte read-only.
+- Matriz de 3 excedentes con decision default `mantener_excedente_informativo`.
+- Sin cambios en PHP, DB, Caja ni `/api/sync`.
+
+## Politica de clasificacion
+
+Documento: `docs/fase_7A_S_B_politica_clasificacion_cxc.md`.
+
+Estado: `POLITICA_7A_S_B_CLASIFICACION_CXC_CONSERVADORA_COMPLETADA`.
+
+Decision vigente:
+
+- Pagos huerfanos: excluir de CxC operativa.
+- Facturas huerfanas: excluir de CxC operativa.
+- Facturas scoped validas: mantener en reporte read-only.
+- Excedentes: mantener como informativos, no deuda.
+- Sin escrituras, sin Caja y sin `/api/sync`.
+
+## Cierre reconciliacion CxC
+
+Documento: `docs/fase_7A_S_F_cierre_reconciliacion_cxc.md`.
+
+Estado: `BLOQUE_7A_S_RECONCILIACION_CXC_CERRADO_SIN_ESCRITURAS`.
+
+Resultado:
+
+- 7A-S queda cerrado con contrato, preview/matriz y politica conservadora.
+- Preflight CxC: `OK: 14`, `WARNING: 3`, `ERROR: 0`.
+- Health general: `OK: 278`, `WARNING: 24`, `ERROR: 0`.
+- Sin cambios PHP, DB, Caja ni `/api/sync`.
+
 ## QA manual diferida
 
 La QA manual queda diferida por instruccion del usuario.
@@ -67,5 +148,9 @@ Debe validarse en navegador:
 
 ## Siguiente accion segura
 
-Solo contrato 7B si se requiere planear CxC operativa sin Caja automatica. No implementar
-cobros hasta reconciliar warnings historicos.
+7B-A ya quedo aplicada como migracion base vacia, sin poblar datos y sin Caja.
+
+7B-B ya quedo implementada como listado/detalle read-only sobre las tablas nuevas vacias.
+
+Siguiente accion segura: 7B-C-0 solo como contrato de generacion manual futura. No
+implementar cobros ni escrituras sobre historicos sin una fase separada.

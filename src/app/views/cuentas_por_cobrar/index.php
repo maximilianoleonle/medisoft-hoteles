@@ -82,6 +82,10 @@ $estadoSaldo = (string)($filtros['estado_saldo'] ?? 'pendiente');
     background: #fff;
     color: #334155;
 }
+.cxc-page .cxc-btn-soft {
+    background: color-mix(in srgb, var(--cxc-accent) 13%, #fff);
+    color: color-mix(in srgb, var(--cxc-brand) 78%, #111827);
+}
 .cxc-page .cxc-input {
     width: 100%;
     min-height: 40px;
@@ -116,10 +120,10 @@ $estadoSaldo = (string)($filtros['estado_saldo'] ?? 'pendiente');
     <section class="cxc-hero">
         <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div>
-                <div class="cxc-kicker">Reservaciones / Lectura financiera</div>
+                <div class="cxc-kicker">Reservaciones / Generacion controlada</div>
                 <h1 class="cxc-title">Cuentas por cobrar</h1>
                 <p class="cxc-subtitle">
-                    Reporte derivado de reservaciones, pagos, abonos y facturacion. No crea cobros, no registra pagos, no toca Caja y no modifica reservaciones.
+                    Reporte derivado de reservaciones, pagos, abonos y facturacion. Permite generar una CxC operativa por saldo pendiente; no registra cobros, no toca Caja y no modifica reservaciones.
                 </p>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 min-w-[340px]">
@@ -151,11 +155,17 @@ $estadoSaldo = (string)($filtros['estado_saldo'] ?? 'pendiente');
             </div>
         <?php else: ?>
             <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <span class="cxc-badge">
-                    <i class="fas fa-lock"></i>
-                    Solo lectura
-                </span>
-                <span class="text-sm text-slate-500">Los saldos son estimados y derivados; no son una cuenta contable nueva.</span>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="cxc-badge">
+                        <i class="fas fa-file-circle-plus"></i>
+                        Generacion manual CxC
+                    </span>
+                    <a class="cxc-btn cxc-btn-muted" href="<?= url('cuentas-por-cobrar/operativas') ?>">
+                        <i class="fas fa-table"></i>
+                        CxC operativa
+                    </a>
+                </div>
+                <span class="text-sm text-slate-500">La generacion usa el saldo pendiente neto y crea movimiento inicial CxC; no crea Caja.</span>
             </div>
 
             <div class="cxc-panel p-4 mb-4">
@@ -241,7 +251,7 @@ $estadoSaldo = (string)($filtros['estado_saldo'] ?? 'pendiente');
                                         </td>
                                         <td class="text-right font-black"><?= cxc_money($cuenta['saldo_estimado'] ?? 0) ?></td>
                                         <td class="text-right">
-                                            <div class="inline-flex gap-2">
+                                            <div class="inline-flex flex-wrap justify-end gap-2">
                                                 <a class="cxc-btn cxc-btn-muted" href="<?= url('reservaciones/ver/' . $reservacionId) ?>">
                                                     <i class="fas fa-eye"></i>
                                                     Reservacion
@@ -251,6 +261,25 @@ $estadoSaldo = (string)($filtros['estado_saldo'] ?? 'pendiente');
                                                         <i class="fas fa-file-invoice"></i>
                                                         Factura
                                                     </a>
+                                                <?php endif; ?>
+                                                <?php if (!empty($cuenta['es_elegible_generacion_cxc'])): ?>
+                                                    <form method="POST" action="<?= url('cuentas-por-cobrar/generar-desde-reservacion/' . $reservacionId) ?>" class="inline-flex">
+                                                        <?= csrf_field() ?>
+                                                        <button class="cxc-btn cxc-btn-soft" type="submit" title="<?= cxc_safe($cuenta['motivo_generacion_cxc'] ?? null, 'Generar CxC') ?>">
+                                                            <i class="fas fa-file-circle-plus"></i>
+                                                            Generar CxC
+                                                        </button>
+                                                    </form>
+                                                <?php elseif (!empty($cuenta['cxc_operativa_id'])): ?>
+                                                    <a class="cxc-btn cxc-btn-muted" href="<?= url('cuentas-por-cobrar/operativas/' . (int)$cuenta['cxc_operativa_id']) ?>">
+                                                        <i class="fas fa-table"></i>
+                                                        CxC #<?= (int)$cuenta['cxc_operativa_id'] ?>
+                                                    </a>
+                                                <?php else: ?>
+                                                    <span class="cxc-badge" title="<?= cxc_safe($cuenta['motivo_bloqueo_generacion_cxc'] ?? null, 'No elegible') ?>">
+                                                        <i class="fas fa-ban"></i>
+                                                        No elegible
+                                                    </span>
                                                 <?php endif; ?>
                                             </div>
                                         </td>

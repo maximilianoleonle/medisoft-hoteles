@@ -1,0 +1,390 @@
+/* ===================================
+   SIDEBAR TAMAÑO MODERADAMENTE GRANDE - Los Cedros
+   Archivo: sidebar-size-override.css
+   =================================== */
+
+/* ===================================
+   VARIABLES DE TAMAÑO AUMENTADAS
+   =================================== */
+:root {
+    /* Tamaños anteriores:
+       --sidebar-width: 200px;
+       --sidebar-collapsed-width: 60px;
+    */
+    
+    /* NUEVOS TAMAÑOS MODERADAMENTE GRANDES */
+    --sidebar-width: 260px !important;  /* Aumentado de 200px a 260px (30% más) */
+    --sidebar-collapsed-width: 70px !important;  /* Aumentado de 60px a 70px */
+    
+    /* Tamaños de fuente aumentados */
+    --sidebar-font-base: 1rem;  /* Aumentado de 0.875rem */
+    --sidebar-font-small: 0.875rem;  /* Aumentado de 0.75rem */
+    --sidebar-font-xs: 0.75rem;  /* Aumentado de 0.65rem */
+}
+
+/* ===================================
+   SIDEBAR PRINCIPAL
+   =================================== */
+.sidebar-main {
+    width: var(--sidebar-width) !important;
+    font-size: var(--sidebar-font-base) !important;
+}
+
+/* ===================================
+   AJUSTE DEL BODY Y CONTENIDO
+   =================================== */
+@media (min-width: 1025px) {
+    body {
+        margin-left: var(--sidebar-width) !important;
+        padding-left: 0 !important;
+    }
+    
+    body.sidebar-collapsed {
+        margin-left: var(--sidebar-collapsed-width) !important;
+    }
+}
+
+/* ===================================
+   HEADER DEL SIDEBAR
+   =================================== */
+.sidebar-header {
+    padding: 1.5rem 1.25rem !important;  /* Más padding */
+}
+
+/* Logo más grande pero moderado */
+.logo-img {
+    width: 40px !important;  /* Aumentado de 32px */
+    height: 40px !important;
+    border-radius: 8px !important;
+}
+
+.logo-text {
+    margin-left: 0.75rem !important;
+}
+
+.logo-title {
+    font-size: 1.25rem !important;  /* Aumentado de 1rem */
+    line-height: 1.2 !important;
+}
+
+.logo-subtitle {
+    font-size: 0.875rem !important;  /* Aumentado de 0.65rem */
+    margin-top: 0.25rem !important;
+}
+
+/* Botón de colapsar más grande */
+.sidebar-collapse-btn {
+    width: 32px !important;  /* Aumentado de 24px */
+    height: 32px !important;
+    font-size: 1.125rem !important;
+    right: 16px !important;
+}
+
+/* ===================================
+   BARRA DE BÚSQUEDA
+   =================================== */
+.sidebar-search {
+    padding: 1rem 1.25rem !important;  /* Más padding */
+}
+
+.search-box {
+    height: 44px !important;  /* Altura aumentada */
+    border-radius: 8px !important;
+}
+
+.search-icon {
+    left: 14px !important;
+    font-size: 1rem !important;  /* Aumentado de 0.75rem */
+}
+
+.search-input {
+    padding: 0.75rem 1rem 0.75rem 2.5rem !important;  /* Más padding */
+    font-size: 0.9375rem !important;  /* Aumentado de 0.75rem */
+}
+
+/* ===================================
+   NAVEGACIÓN
+   =================================== */
+.sidebar-nav {
+    padding: 0.5rem 0 !important;
+}
+
+/* Secciones de navegación */
+.nav-section {
+    margin-bottom: 1.25rem !important;  /* Más espacio entre secciones */
+}
+
+.nav-section-title {
+    padding: 0 1.25rem 0 1.5rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.nav-section-title::before {
+    width: 4px !important;  /* Línea más gruesa */
+    height: 16px !important;
+}
+
+.nav-section-title span {
+    font-size: 0.75rem !important;  /* Aumentado de 0.6rem */
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+}
+
+/* Items de navegación más grandes */
+.nav-item {
+    padding: 0.875rem 1.25rem !important;  /* Más padding */
+    margin: 0.125rem 0.75rem !important;
+    border-radius: 8px !important;
+    font-size: 0.9375rem !important;
+}
+
+.nav-item.active::before {
+    width: 4px !important;  /* Indicador más grueso */
+    height: 24px !important;
+}
+
+/* Iconos más grandes */
+.nav-icon {
+    width: 32px !important;  /* Aumentado de 28px */
+    height: 32px !important;
+    margin-right: 0.75rem !important;
+}
+
+.nav-icon i {
+    font-size: 1rem !important;  /* Aumentado de 0.875rem */
+}
+
+/* Texto de navegación */
+.nav-text {
+    font-size: 0.9375rem !important;  /* Aumentado de 0.8125rem */
+    font-weight: 500 !important;
+    letter-spacing: 0.02em !important;
+}
+
+/* Badges más grandes */
+.nav-badge {
+    min-width: 20px !important;  /* Aumentado de 14px */
+    height: 20px !important;
+    font-size: 0.75rem !important;  /* Aumentado de 0.55rem */
+    padding: 0 4px !important;
+}
+
+/* ===================================
+   FOOTER DEL SIDEBAR
+   =================================== */
+.sidebar-footer {
+    padding: 1rem !important;  /* Más padding */
+}
+
+/* Sección de usuario más grande */
+.user-section {
+    padding: 0.875rem !important;  /* Más padding */
+    gap: 0.75rem !important;
+    border-radius: 8px !important;
+}
+
+.user-avatar {
+    width: 36px !important;  /* Aumentado de 28px */
+    height: 36px !important;
+    border-radius: 8px !important;
+}
+
+.user-avatar i {
+    font-size: 1rem !important;  /* Aumentado de 0.75rem */
+}
+
+.user-name {
+    font-size: 0.9375rem !important;  /* Aumentado de 0.75rem */
+    font-weight: 600 !important;
+}
+
+.user-role {
+    font-size: 0.8125rem !important;  /* Aumentado de 0.65rem */
+    margin-top: 0.125rem !important;
+}
+
+.user-menu-btn {
+    padding: 6px !important;
+    font-size: 1rem !important;
+    border-radius: 6px !important;
+}
+
+/* ===================================
+   DROPDOWN DE USUARIO
+   =================================== */
+.user-dropdown {
+    padding: 0.75rem !important;
+    border-radius: 8px !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.dropdown-item {
+    padding: 0.625rem 1rem !important;
+    gap: 0.75rem !important;
+    font-size: 0.9375rem !important;
+    border-radius: 6px !important;
+}
+
+.dropdown-item i {
+    font-size: 1.125rem !important;
+}
+
+/* ===================================
+   SIDEBAR COLAPSADO
+   =================================== */
+.sidebar-main.collapsed {
+    width: var(--sidebar-collapsed-width) !important;
+}
+
+.sidebar-main.collapsed .logo-img {
+    width: 36px !important;
+    height: 36px !important;
+}
+
+.sidebar-main.collapsed .search-box {
+    width: 44px !important;
+    height: 44px !important;
+}
+
+.sidebar-main.collapsed .search-icon {
+    font-size: 1.125rem !important;
+}
+
+.sidebar-main.collapsed .nav-item {
+    padding: 1rem !important;
+}
+
+.sidebar-main.collapsed .nav-icon {
+    width: 28px !important;
+    height: 28px !important;
+}
+
+.sidebar-main.collapsed .user-section {
+    padding: 0.75rem !important;
+}
+
+/* ===================================
+   TOOLTIPS MÁS GRANDES
+   =================================== */
+.sidebar-main.collapsed [data-tooltip]::after {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+    border-radius: 6px !important;
+}
+
+/* ===================================
+   SCROLLBAR MÁS VISIBLE
+   =================================== */
+.sidebar-nav::-webkit-scrollbar {
+    width: 8px !important;  /* Aumentado de 4px */
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: #f0f0f0 !important;
+    border-radius: 4px !important;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: #c0c0c0 !important;
+    border-radius: 4px !important;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: #999 !important;
+}
+
+/* ===================================
+   ANIMACIONES AJUSTADAS
+   =================================== */
+.nav-item {
+    transition: all 0.3s ease !important;
+}
+
+.nav-item:hover {
+    transform: translateX(3px) !important;  /* Movimiento sutil */
+    background: linear-gradient(to right, rgba(107, 68, 35, 0.06), transparent) !important;
+}
+
+/* ===================================
+   RESPONSIVE PARA SIDEBAR GRANDE
+   =================================== */
+
+/* Pantallas medianas - reducir un poco el sidebar */
+@media (min-width: 1025px) and (max-width: 1440px) {
+    :root {
+        --sidebar-width: 240px !important;  /* Un poco más pequeño en pantallas medianas */
+    }
+}
+
+/* Pantallas muy grandes - sidebar aún más grande */
+@media (min-width: 2560px) {
+    :root {
+        --sidebar-width: 300px !important;  /* Más grande en pantallas 4K */
+        --sidebar-collapsed-width: 80px !important;
+    }
+    
+    .logo-img {
+        width: 48px !important;
+        height: 48px !important;
+    }
+    
+    .nav-icon {
+        width: 36px !important;
+        height: 36px !important;
+    }
+}
+
+/* ===================================
+   EFECTOS VISUALES MEJORADOS
+   =================================== */
+
+/* Sombra más pronunciada */
+.sidebar-main {
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Hover más visible en items */
+.nav-item:hover {
+    box-shadow: 0 2px 8px rgba(107, 68, 35, 0.1) !important;
+}
+
+/* Badge con más presencia */
+.nav-badge {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+    font-weight: 700 !important;
+}
+
+/* ESTILOS MÓVILES PARA SIDEBAR */
+@media screen and (max-width: 1024px) {
+    #sidebar {
+        transform: translateX(-260px) !important;
+        transition: transform 0.3s ease !important;
+    }
+    
+    #sidebar.active {
+        transform: translateX(0) !important;
+    }
+    
+    #sidebar-overlay {
+        display: none !important;
+    }
+    
+    #sidebar-overlay.active {
+        display: block !important;
+    }
+}
+
+/* ===================================
+   IMPORTANTE: APLICAR ESTOS ESTILOS
+   =================================== */
+
+/* 
+   Para usar este archivo:
+   1. Guárdalo como 'sidebar-size-override.css'
+   2. Inclúyelo DESPUÉS de 'sidebar-styles.css' en tu header.php
+   3. Asegúrate de que se cargue al final para sobrescribir los estilos anteriores
+   
+   Ejemplo en header.php:
+   <link rel="stylesheet" href="<?= asset('css/sidebar-styles.css') ?>">
+   <link rel="stylesheet" href="<?= asset('css/sidebar-size-override.css') ?>">
+*/

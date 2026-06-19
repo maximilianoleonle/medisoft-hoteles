@@ -1,5 +1,7 @@
 # Fase 3D-C - Pago proveedor con Caja
 
+Estado: `PAGO_PROVEEDOR_CAJA_3D_C_VALIDADO_MANUALMENTE`.
+
 ## Objetivo
 
 Registrar pagos de cuentas por pagar a proveedores desde el detalle de CxP, creando de
@@ -91,7 +93,9 @@ Para retirar la funcionalidad sin tocar datos:
 - `git diff --check` sin errores.
 - QA manual confirma pago real en navegador antes de cerrar como validado.
 
-## QA manual pendiente
+## QA manual completada
+
+El usuario confirmo que todas las pruebas manuales del flujo pasaron.
 
 1. Abrir `/cuentas-por-pagar/1` o una CxP elegible del hotel actual.
 2. Confirmar que el formulario aparece solo si hay corte abierto.
@@ -102,3 +106,27 @@ Para retirar la funcionalidad sin tocar datos:
 7. Reintentar el mismo POST desde el navegador y confirmar bloqueo por token/referencia.
 8. Pagar saldo restante en una CxP de prueba y confirmar estado `pagada`.
 9. Confirmar que no se toca `/api/sync`.
+
+Evidencia post-QA del pago real controlado:
+
+- Hotel: `Maximiliano Leon`.
+- CxP: `#1`.
+- Proveedor: `Juan Pedro`.
+- Pago parcial registrado: `10.00` en efectivo.
+- Saldo CxP: `1000.00 -> 990.00`.
+- Estado CxP: `pendiente -> parcial`.
+- Movimiento CxP creado: `cuentas_por_pagar_movimientos.id = 4`.
+- Movimiento de Caja creado: `movimientos_caja.id = 1478`.
+- Categoria Caja: `Pago proveedor`.
+- Corte de Caja: `corte_id = 237`.
+- Referencia Caja: `CXP-1-MOV-4`.
+- Preflight post-QA: `preflight_pagos_proveedores_caja.php` con `OK: 22`,
+  `WARNING: 0`, `ERROR: 0`.
+- `/api/sync` no fue tocado.
+
+## Pendiente futuro
+
+- Probar pago total sobre una CxP dedicada cuando se cree un escenario de prueba
+  limpio para validar estado `pagada`.
+- Disenar un flujo formal de anulacion/reversion antes de escalar pagos reales en
+  operacion diaria.

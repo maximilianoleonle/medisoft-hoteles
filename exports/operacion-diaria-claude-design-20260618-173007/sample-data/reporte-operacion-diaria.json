@@ -1,0 +1,117 @@
+{
+  "reporte": {
+    "fecha": "2026-06-18",
+    "habitaciones": {
+      "total": 42,
+      "disponible": 18,
+      "ocupada": 19,
+      "limpieza": 3,
+      "mantenimiento": 2
+    },
+    "reservaciones": {
+      "llegadas_hoy": 7,
+      "salidas_hoy": 5,
+      "activas": 19,
+      "checkins_vencidos": 1,
+      "checkouts_vencidos": 2,
+      "hoy": [
+        {
+          "id": 235,
+          "estado": "confirmada",
+          "fecha_entrada": "2026-06-18",
+          "hora_llegada_estimada": "15:00",
+          "fecha_salida": "2026-06-20",
+          "hora_salida": "12:00",
+          "huesped_nombre": "Mariana Lopez",
+          "habitaciones": "12, 14"
+        },
+        {
+          "id": 236,
+          "estado": "checked_in",
+          "fecha_entrada": "2026-06-17",
+          "hora_llegada_estimada": "18:00",
+          "fecha_salida": "2026-06-18",
+          "hora_salida": "11:30",
+          "huesped_nombre": "Roberto Sanchez",
+          "habitaciones": "8"
+        }
+      ]
+    },
+    "tareas": {
+      "total": 18,
+      "activas": 9,
+      "urgentes": 2,
+      "vencidas": 1,
+      "recientes": [
+        {
+          "id": 51,
+          "titulo": "Revisar blancos de habitacion",
+          "categoria": "Limpieza",
+          "prioridad": "alta",
+          "estado": "asignada",
+          "fecha_limite": "2026-06-18 18:00:00",
+          "habitacion_numero": "12",
+          "trabajador_nombre": "Ana Martinez"
+        }
+      ]
+    },
+    "mantenimiento": {
+      "en_proceso": 1,
+      "programado": 2,
+      "urgente": 1,
+      "recientes": [
+        {
+          "id": 11,
+          "tipo_mantenimiento": "Correctivo",
+          "motivo": "Aire acondicionado",
+          "prioridad": "urgente",
+          "estado": "en_proceso",
+          "fecha_inicio": "2026-06-18 09:20:00",
+          "fecha_programada": "2026-06-18",
+          "habitacion_numero": "21"
+        }
+      ]
+    },
+    "trabajadores": {
+      "total": 16,
+      "activos": 14,
+      "con_tareas_activas": 6
+    },
+    "documentos": [
+      {
+        "id": 91,
+        "titulo": "Identificacion huesped #235",
+        "nombre_original": "ine-mariana.pdf",
+        "mime_type": "application/pdf",
+        "estado": "activo",
+        "created_at": "2026-06-18 10:05:00",
+        "entidad_tipo": "reservacion",
+        "entidad_id": 235,
+        "relacion": "identificacion"
+      }
+    ],
+    "cuentas_por_cobrar": {
+      "total_reservaciones": 24,
+      "pendientes": 6,
+      "liquidadas": 16,
+      "excedentes": 2,
+      "monto_cubierto": "18340.00",
+      "saldo_estimado": "4720.00"
+    }
+  },
+  "tablasDisponibles": {
+    "habitaciones": true,
+    "tipos_habitacion": true,
+    "reservaciones": true,
+    "reservacion_habitaciones": true,
+    "huespedes": true,
+    "tareas_operativas": true,
+    "tarea_eventos": true,
+    "mantenimientos_habitaciones": true,
+    "trabajadores": true,
+    "documentos": true,
+    "documento_entidades": true,
+    "reservacion_pagos": true,
+    "reservacion_abonos": true
+  }
+}

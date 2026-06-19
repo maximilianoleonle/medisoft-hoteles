@@ -1353,13 +1353,18 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     align-items: flex-start;
 }
 
+.cash-day-card .card-row-head > div:last-child {
+    min-width: 0;
+}
+
 .cash-day-total {
     margin-top: 3px;
     color: var(--dash-navy);
-    font-size: 26px;
+    font-size: clamp(22px, 1.65vw, 26px);
     line-height: 1;
     font-weight: 950;
     font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
 }
 
 .cash-day-subtitle {
@@ -1371,13 +1376,14 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
 .cash-day-groups {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 156px), 1fr));
     gap: 10px;
     margin-top: 17px;
 }
 
 .cash-day-group {
     min-width: 0;
+    overflow: hidden;
     padding: 11px;
     border-radius: 13px;
     background: var(--dash-surface-warm);
@@ -1405,18 +1411,26 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 }
 
 .cash-day-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    column-gap: 8px;
     min-height: 25px;
     color: var(--dash-slate-700);
     font-size: 12.5px;
 }
 
+.cash-day-row span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
 .cash-day-row strong {
+    justify-self: end;
     color: var(--dash-navy);
+    font-size: clamp(11px, .78vw, 12.5px);
     font-variant-numeric: tabular-nums;
+    text-align: right;
     white-space: nowrap;
 }
 
@@ -1442,14 +1456,38 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
 .cash-day-balance strong {
     color: var(--dash-on-brand);
-    font-size: 18px;
+    font-size: clamp(16px, 1.15vw, 18px);
     font-weight: 950;
     font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
 }
 
 @media (max-width: 900px) {
     .cash-day-groups {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 420px) {
+    .cash-day-row {
+        grid-template-columns: 1fr;
+        row-gap: 2px;
+    }
+
+    .cash-day-row strong {
+        justify-self: start;
+        text-align: left;
+    }
+
+    .cash-day-balance {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .cash-day-balance strong {
+        text-align: left;
     }
 }
 
