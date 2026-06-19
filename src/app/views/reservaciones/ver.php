@@ -127,6 +127,59 @@ if (isset($_SESSION['flash_message']) &&
     stripos($_SESSION['flash_message']['texto'], 'Check-in') !== false) {
     $auto_imprimir_ticket = true;
 }
+
+$rdHabitacionesTexto = implode(', ', array_filter(array_map(function($habitacion) {
+    return (string)($habitacion['numero'] ?? '');
+}, $habitaciones ?? [])));
+$rdHuespedNombre = trim((string)($huesped['nombre_completo'] ?? 'Huesped'));
+$rdHuespedPartes = preg_split('/\s+/', $rdHuespedNombre);
+$rdHuespedIniciales = '';
+$rdHuespedInicialesCount = 0;
+foreach ($rdHuespedPartes as $rdParteNombre) {
+    if ($rdParteNombre === '') {
+        continue;
+    }
+    $rdHuespedIniciales .= function_exists('mb_substr')
+        ? mb_substr($rdParteNombre, 0, 1, 'UTF-8')
+        : substr($rdParteNombre, 0, 1);
+    $rdHuespedInicialesCount++;
+    if ($rdHuespedInicialesCount >= 2) {
+        break;
+    }
+}
+$rdHuespedIniciales = $rdHuespedIniciales !== ''
+    ? (function_exists('mb_strtoupper') ? mb_strtoupper($rdHuespedIniciales, 'UTF-8') : strtoupper($rdHuespedIniciales))
+    : 'H';
+$rdFechaHoy = date('Y-m-d');
+$rdFechaEntrada = (string)($reservacion['fecha_entrada'] ?? '');
+$rdFechaSalida = (string)($reservacion['fecha_salida'] ?? '');
+$rdCheckinMode = null;
+$rdCheckinDays = 0;
+if (($reservacion['estado'] ?? '') === 'confirmada' && $rdFechaEntrada !== '' && $rdFechaSalida !== '') {
+    if ($rdFechaHoy === $rdFechaEntrada) {
+        $rdCheckinMode = 'normal';
+    } elseif ($rdFechaHoy > $rdFechaEntrada && $rdFechaHoy < $rdFechaSalida) {
+        $rdCheckinMode = 'late';
+        $rdCheckinDays = (int)((strtotime($rdFechaHoy) - strtotime($rdFechaEntrada)) / 86400);
+    } elseif ($rdFechaHoy >= $rdFechaSalida) {
+        $rdCheckinMode = 'express';
+        $rdCheckinDays = (int)((strtotime($rdFechaHoy) - strtotime($rdFechaSalida)) / 86400);
+    }
+}
+$rdCheckinJsMode = $rdCheckinMode === 'express' ? 'express' : 'normal_tardio';
+$rdHuespedNombreJsonAttr = htmlspecialchars(json_encode($rdHuespedNombre, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8');
+$rdHabitacionesTextoJsonAttr = htmlspecialchars(json_encode($rdHabitacionesTexto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8');
+$rdFechaEntradaFormatoJsonAttr = htmlspecialchars(json_encode($rdFechaEntrada !== '' ? date('d/m/Y', strtotime($rdFechaEntrada)) : '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8');
+$rdFechaSalidaFormatoJsonAttr = htmlspecialchars(json_encode($rdFechaSalida !== '' ? date('d/m/Y', strtotime($rdFechaSalida)) : '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8');
+$rdMetodoPagoLabel = !empty($reservacion['metodo_pago'])
+    ? ucfirst(str_replace('_', ' ', (string)$reservacion['metodo_pago']))
+    : 'Pendiente';
+$rdNoches = 1;
+if ($rdFechaEntrada !== '' && $rdFechaSalida !== '') {
+    $rdEntradaDate = new DateTime($rdFechaEntrada);
+    $rdSalidaDate = new DateTime($rdFechaSalida);
+    $rdNoches = $rdEntradaDate->diff($rdSalidaDate)->days ?: 1;
+}
 ?>
 
 <style>
@@ -1744,673 +1797,841 @@ if (isset($_SESSION['flash_message']) &&
 </style>
 
 <!-- Vista de Detalle Moderna -->
-<script>
-function medisoftVolverAnterior(event, fallbackUrl) {
-    if (event) event.preventDefault();
+<?php
+$rdSafe = function($value, string $fallback = '-') {
+    $text = trim((string)($value ?? ''));
+    return htmlspecialchars($text !== '' ? $text : $fallback, ENT_QUOTES, 'UTF-8');
+};
+$rdMoney = function($value) {
+    $amount = (float)($value ?? 0);
+    return function_exists('format_money') ? format_money($amount) : '$' . number_format($amount, 2);
+};
+$rdDate = function($value) use ($rdSafe) {
+    $text = trim((string)($value ?? ''));
+    if ($text === '') {
+        return '-';
+    }
+    $ts = strtotime($text);
+    if (!$ts) {
+        return $rdSafe($text);
+    }
+    $months = [
+        1 => 'ene', 2 => 'feb', 3 => 'mar', 4 => 'abr', 5 => 'may', 6 => 'jun',
+        7 => 'jul', 8 => 'ago', 9 => 'sep', 10 => 'oct', 11 => 'nov', 12 => 'dic',
+    ];
+    return date('d', $ts) . ' ' . $months[(int)date('n', $ts)] . ' ' . date('Y', $ts);
+};
+$rdDateTime = function($value) use ($rdSafe) {
+    $text = trim((string)($value ?? ''));
+    if ($text === '') {
+        return '-';
+    }
+    if (function_exists('format_datetime')) {
+        return format_datetime($text);
+    }
+    $ts = strtotime($text);
+    return $ts ? date('d/m/Y H:i', $ts) : $rdSafe($text);
+};
+$rdBytes = function($bytes) {
+    $bytes = (int)($bytes ?? 0);
+    if ($bytes <= 0) {
+        return '-';
+    }
+    $units = ['B', 'KB', 'MB', 'GB'];
+    $size = (float)$bytes;
+    $index = 0;
+    while ($size >= 1024 && $index < count($units) - 1) {
+        $size /= 1024;
+        $index++;
+    }
+    return number_format($size, $index === 0 ? 0 : 1) . ' ' . $units[$index];
+};
+$rdDocIcon = function($documento) {
+    $mime = strtolower((string)($documento['mime_type'] ?? ''));
+    $name = strtolower((string)(($documento['nombre_original'] ?? '') ?: ($documento['titulo'] ?? '')));
+    if (strpos($mime, 'pdf') !== false || substr($name, -4) === '.pdf') {
+        return ['PDF', 'rdv3-docicon--pdf'];
+    }
+    if (strpos($mime, 'image') !== false || preg_match('/\.(jpg|jpeg|png|webp)$/', $name)) {
+        return ['JPG', 'rdv3-docicon--image'];
+    }
+    return ['DOC', 'rdv3-docicon--doc'];
+};
 
-    try {
-        var refUrl = new URL(document.referrer || '');
-        var esAuth = /\/(?:login|logout)\/?$/.test(refUrl.pathname);
-
-        if (refUrl.origin === window.location.origin && refUrl.href !== window.location.href && !esAuth) {
-            window.location.href = refUrl.href;
-            return false;
-        }
-    } catch (e) {}
-
-    window.location.href = fallbackUrl;
-    return false;
+$rdReservationId = (int)($reservacion['id'] ?? 0);
+$rdEstadoKey = (string)($reservacion['estado'] ?? '');
+$rdEstadoLabel = trim((string)($estado_info['label'] ?? '')) ?: ucfirst(str_replace('_', ' ', $rdEstadoKey ?: 'pendiente'));
+$rdEstadoClass = in_array($rdEstadoKey, ['confirmada', 'checked_in'], true) ? 'rdv3-status--ok' : (in_array($rdEstadoKey, ['cancelada', 'no_show'], true) ? 'rdv3-status--danger' : 'rdv3-status--wait');
+$rdRooms = is_array($habitaciones ?? null) ? $habitaciones : [];
+$rdPayments = is_array($pagos ?? null) ? $pagos : [];
+$rdNotes = is_array($notas ?? null) ? $notas : [];
+$rdDocuments = is_array($documentosEntidad ?? null) ? $documentosEntidad : [];
+$rdDocsContext = is_array($documentosEntidadContexto ?? null) ? $documentosEntidadContexto : [];
+$rdVehicles = is_array($vehiculos ?? null) ? $vehiculos : [];
+$rdTotal = (float)($reservacion['precio_total'] ?? 0);
+$rdTotalPaid = 0.0;
+foreach ($rdPayments as $rdPaymentRow) {
+    $rdTotalPaid += (float)($rdPaymentRow['monto'] ?? $rdPaymentRow['cantidad'] ?? 0);
 }
-
-</script>
-
-<div class="detail-view reservation-detail-v2" style="min-height: 100vh; background: linear-gradient(to bottom, #F9FAFB, #F3F4F6);">
-    <!-- Header -->
-    <div class="detail-header">
-        <div class="container mx-auto px-3">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
-                    <a href="<?= url('reservaciones') ?>" onclick="return medisoftVolverAnterior(event, this.href)" class="hover:scale-110 transition-transform">
-                        <i class="fas fa-arrow-left"></i>
-                    </a>
-                    <div>
-                        <div class="flex items-center gap-3">
-                            <h1 class="text-xl sm:text-2xl font-bold">
-                                Reservación #<?= htmlspecialchars($reservacion['id'] ?? '') ?>
-                            </h1>
-                            <span class="estado-badge estado-<?= $reservacion['estado'] ?>">
-                                <i class="fas fa-<?= htmlspecialchars($estado_info['icon'] ?? 'circle') ?> text-xs"></i>
-                                <?= htmlspecialchars($estado_info['label']) ?>
-                            </span>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-3 text-xs opacity-90 mt-1">
-                            <span><i class="fas fa-bed mr-1 text-gold"></i><?= $reservacion['total_habitaciones'] ?? '0' ?> habitaciones</span>
-                            <?php if (($reservacion['habitaciones_cortesia'] ?? 0) > 0): ?>
-                                <span class="text-green-300">
-                                    <i class="fas fa-gift mr-1"></i><?= $reservacion['habitaciones_cortesia'] ?> gratis
-                                </span>
-                            <?php endif; ?>
-                            <span><i class="fas fa-user mr-1 text-gold"></i><?= htmlspecialchars($reservacion['usuario_registro'] ?? 'Sistema') ?></span>
-                            <span><i class="fas fa-clock mr-1 text-gold"></i><?= !empty($reservacion['created_at']) ? date('d/m/Y H:i', strtotime($reservacion['created_at'])) : '' ?></span>
-                        </div>
-                    </div>
-                </div>
-
-            <!-- Acciones Desktop -->
-            <div class="hidden lg:flex items-center gap-2 no-print">
-                <?php
-// Sistema de Check-in Tardío - Detección Inteligente
-if ($reservacion['estado'] == 'confirmada'):
-    $hoy = date('Y-m-d');
-    $fecha_entrada = $reservacion['fecha_entrada'];
-    $fecha_salida = $reservacion['fecha_salida'];
-
-    // Preparar datos para JavaScript
-    $habitaciones_texto = implode(', ', array_column($habitaciones, 'numero'));
-    $huesped_nombre_js = json_encode($huesped['nombre_completo'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-    $habitaciones_texto_js = json_encode($habitaciones_texto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-    $fecha_entrada_formato_js = json_encode(date('d/m/Y', strtotime($fecha_entrada)), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-    $fecha_salida_formato_js = json_encode(date('d/m/Y', strtotime($fecha_salida)), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-    $huesped_nombre_js_attr = htmlspecialchars($huesped_nombre_js, ENT_QUOTES, 'UTF-8');
-    $habitaciones_texto_js_attr = htmlspecialchars($habitaciones_texto_js, ENT_QUOTES, 'UTF-8');
-    $fecha_entrada_formato_js_attr = htmlspecialchars($fecha_entrada_formato_js, ENT_QUOTES, 'UTF-8');
-    $fecha_salida_formato_js_attr = htmlspecialchars($fecha_salida_formato_js, ENT_QUOTES, 'UTF-8');
-
-    // CASO 1: Check-in normal (solo fecha de entrada)
-    if ($hoy == $fecha_entrada): ?>
-        <button onclick="abrirModalCheckIn(<?= htmlspecialchars($reservacion['id']) ?>, <?= htmlspecialchars($reservacion['precio_total']) ?>)"
-                class="btn-action btn-success">
-            <i class="fas fa-sign-in-alt"></i>
-            Check-in
-        </button>
-    <?php
-    // CASO 2: Check-in tardío (después de entrada pero antes de salida)
-    elseif ($hoy > $fecha_entrada && $hoy < $fecha_salida):
-        $dias_retraso = (strtotime($hoy) - strtotime($fecha_entrada)) / (60 * 60 * 24);
-    ?>
-        <button onclick="abrirModalCheckInTardio(<?= (int) $reservacion['id'] ?>, <?= $huesped_nombre_js_attr ?>, <?= $habitaciones_texto_js_attr ?>, <?= $fecha_entrada_formato_js_attr ?>, <?= $fecha_salida_formato_js_attr ?>, <?= (float) $reservacion['precio_total'] ?>, 'normal_tardio', <?= (int) $dias_retraso ?>)"
-                class="btn-action bg-yellow-500 text-white hover:bg-yellow-600">
-            <i class="fas fa-clock"></i>
-            Check-in Tardío (<?= $dias_retraso ?> día<?= $dias_retraso > 1 ? 's' : '' ?>)
-        </button>
-    <?php
-    // CASO 3: Proceso Express (ya pasó la fecha de salida)
-    elseif ($hoy >= $fecha_salida):
-        $dias_pasados = (strtotime($hoy) - strtotime($fecha_salida)) / (60 * 60 * 24);
-    ?>
-        <button onclick="abrirModalCheckInTardio(<?= (int) $reservacion['id'] ?>, <?= $huesped_nombre_js_attr ?>, <?= $habitaciones_texto_js_attr ?>, <?= $fecha_entrada_formato_js_attr ?>, <?= $fecha_salida_formato_js_attr ?>, <?= (float) $reservacion['precio_total'] ?>, 'express', <?= (int) $dias_pasados ?>)"
-                class="btn-action bg-orange-600 text-white hover:bg-orange-700">
-            <i class="fas fa-bolt"></i>
-            Proceso Express (<?= $dias_pasados ?> día<?= $dias_pasados > 1 ? 's' : '' ?>)
-        </button>
-    <?php
-    endif;
-endif;
+if ($rdTotalPaid <= 0 && !empty($reservacion['metodo_pago'])) {
+    $rdTotalPaid = $rdTotal;
+}
+$rdPaymentLabel = !empty($reservacion['metodo_pago']) ? 'Pagado - ' . $rdMetodoPagoLabel : 'Pago pendiente';
+$rdCortesias = (int)($reservacion['habitaciones_cortesia'] ?? 0);
+foreach ($rdRooms as $rdRoomCountRow) {
+    if (!empty($rdRoomCountRow['es_cortesia']) || !empty($rdRoomCountRow['cortesia'])) {
+        $rdCortesias++;
+    }
+}
+$rdGuestName = trim((string)($huesped['nombre_completo'] ?? $rdHuespedNombre ?? 'Huesped'));
+$rdGuestPhone = trim((string)($huesped['telefono'] ?? $huesped['celular'] ?? $huesped['telefono_principal'] ?? ''));
+$rdGuestEmail = trim((string)($huesped['email'] ?? $huesped['correo'] ?? ''));
+$rdGuestIdType = trim((string)($huesped['tipo_identificacion'] ?? $huesped['identificacion_tipo'] ?? ''));
+$rdGuestIdNumber = trim((string)($huesped['numero_identificacion'] ?? $huesped['identificacion_numero'] ?? $huesped['identificacion'] ?? ''));
+$rdGuestId = trim(($rdGuestIdType !== '' ? $rdGuestIdType . ' - ' : '') . $rdGuestIdNumber);
+$rdGuestOriginParts = array_filter([
+    trim((string)($huesped['procedencia_ciudad'] ?? $huesped['ciudad'] ?? '')),
+    trim((string)($huesped['procedencia_estado'] ?? $huesped['estado'] ?? '')),
+    trim((string)($huesped['pais'] ?? '')),
+]);
+$rdGuestOrigin = !empty($huesped['procedencia']) ? (string)$huesped['procedencia'] : implode(', ', $rdGuestOriginParts);
+$rdEntryTime = trim((string)($reservacion['hora_entrada'] ?? '15:00'));
+$rdExitTime = trim((string)($reservacion['hora_salida'] ?? '12:00'));
+$rdCreatedAt = $reservacion['created_at'] ?? $reservacion['fecha_creacion'] ?? null;
+$rdDocEntityTipo = trim((string)($rdDocsContext['tipo'] ?? ''));
+$rdDocEntityId = (int)($rdDocsContext['id'] ?? 0);
+$rdDocEntityQuery = ($rdDocEntityTipo !== '' && $rdDocEntityId > 0)
+    ? '?entidad_tipo=' . rawurlencode($rdDocEntityTipo) . '&entidad_id=' . $rdDocEntityId
+    : '';
+$rdDocTotalBytes = 0;
+foreach ($rdDocuments as $rdDocTotalRow) {
+    $rdDocTotalBytes += (int)($rdDocTotalRow['size_bytes'] ?? 0);
+}
 ?>
 
-                <?php if ($reservacion['estado'] == 'checked_in'): ?>
-    <!-- Check-out con opción de selección de habitaciones -->
-    <button
-        type="button"
-        onclick="abrirModalCheckOut()"
-        class="btn-action btn-warning">
-        <i class="fas fa-sign-out-alt"></i>
-        Check-out
-    </button>
-<?php endif; ?>
+<script>
+function medisoftVolverAnterior(event) {
+    event.preventDefault();
+    if (window.history.length > 1) {
+        window.history.back();
+        return;
+    }
+    window.location.href = event.currentTarget.getAttribute('href');
+}
+</script>
 
-                <?php if (in_array($reservacion['estado'], ['confirmada', 'checked_in'])): ?>
-                    <button onclick="mostrarFormularioCancelacion()"
-                            class="btn-action btn-danger">
-                        <i class="fas fa-times"></i>
-                        Cancelar
-                    </button>
-                <?php endif; ?>
+<style>
+.rdv3 {
+    --rdv3-primary: var(--brand-primary, #172342);
+    --rdv3-primary-2: var(--brand-secondary, #33415f);
+    --rdv3-accent: var(--brand-accent, #b78b42);
+    --rdv3-bg: color-mix(in srgb, var(--brand-accent, #b78b42) 9%, #f8f4eb);
+    --rdv3-ink: #24304a;
+    --rdv3-muted: #8790a7;
+    --rdv3-line: rgba(36, 48, 74, .12);
+    --rdv3-card: rgba(255, 255, 255, .94);
+    --rdv3-blue: color-mix(in srgb, var(--brand-primary, #1f5da8) 76%, #2563eb);
+    --rdv3-green: #24b777;
+    --rdv3-violet: #6757e8;
+    --rdv3-gold: color-mix(in srgb, var(--brand-accent, #b78b42) 82%, #f0b84c);
+    --rdv3-cyan: #13a8c6;
+    min-height: 100dvh;
+    margin: 0;
+    background:
+        radial-gradient(circle at top right, color-mix(in srgb, var(--rdv3-accent) 14%, transparent) 0, transparent 34rem),
+        var(--rdv3-bg);
+    color: var(--rdv3-ink);
+    font-family: Manrope, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.rdv3 *, .rdv3 *::before, .rdv3 *::after { box-sizing: border-box; }
+.rdv3 a { color: inherit; text-decoration: none; }
+.rdv3 button, .rdv3 a { transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease, color .18s ease; }
+.rdv3 button:hover, .rdv3 a:hover { transform: translateY(-1px); }
+.rdv3 button:active, .rdv3 a:active { transform: translateY(0); }
+.rdv3-shell { width: 100%; min-height: 100dvh; }
+.rdv3-main { min-width: 0; width: 100%; padding: 1rem !important; }
+.rdv3-page { width: 100%; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+.rdv3-topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.rdv3-back {
+    width: 40px;
+    height: 40px;
+    border-radius: 13px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--rdv3-line);
+    background: #fff;
+    color: var(--rdv3-primary);
+    box-shadow: 0 8px 18px rgba(36, 48, 74, .07);
+}
+.rdv3-crumbs { color: #8a93a7; font-size: .78rem; font-weight: 900; }
+.rdv3-crumbs strong { color: var(--rdv3-primary); }
+.rdv3-hero {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 22px;
+    align-items: center;
+    min-height: 112px;
+    padding: 26px 30px;
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at 100% 50%, rgba(255, 255, 255, .14) 0 8rem, transparent 8.2rem),
+        linear-gradient(135deg, var(--rdv3-primary), color-mix(in srgb, var(--rdv3-primary) 86%, #51607b));
+    color: #fff;
+    box-shadow: 0 18px 38px rgba(23, 35, 66, .25);
+}
+.rdv3-titleline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.rdv3-titleline h1 {
+    margin: 0;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: clamp(2rem, 2vw, 2.75rem);
+    line-height: .95;
+    font-weight: 800;
+    letter-spacing: 0;
+}
+.rdv3-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 30px;
+    padding: 0 14px;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 900;
+}
+.rdv3-status::before { content: ""; width: 7px; height: 7px; border-radius: 999px; background: currentColor; }
+.rdv3-status--ok { background: rgba(50, 185, 122, .19); color: #82e0ae; border: 1px solid rgba(130, 224, 174, .2); }
+.rdv3-status--wait { background: rgba(245, 181, 64, .18); color: #f2cf8c; border: 1px solid rgba(242, 207, 140, .2); }
+.rdv3-status--danger { background: rgba(239, 68, 68, .18); color: #fecaca; border: 1px solid rgba(254, 202, 202, .2); }
+.rdv3-meta { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 16px; color: rgba(255, 255, 255, .72); font-size: .82rem; font-weight: 800; }
+.rdv3-meta span { display: inline-flex; align-items: center; gap: 7px; }
+.rdv3-hero-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; min-width: 0; }
+.rdv3-btn {
+    border: 0;
+    min-height: 42px;
+    padding: 0 16px;
+    border-radius: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    font-size: .84rem;
+    font-weight: 950;
+    cursor: pointer;
+}
+.rdv3-btn-primary { background: #22b77a; color: #fff; box-shadow: 0 12px 24px rgba(34, 183, 122, .25); }
+.rdv3-btn-primary:hover { background: #1fa66f; }
+.rdv3-btn-ghost { background: rgba(255, 255, 255, .11); color: #fff; border: 1px solid rgba(255, 255, 255, .24); }
+.rdv3-btn-danger { background: rgba(255, 255, 255, .09); color: #fff; border: 1px solid rgba(255, 255, 255, .22); }
+.rdv3-layout { display: grid; grid-template-columns: minmax(0, 1fr) clamp(318px, 24vw, 360px); gap: 26px; margin-top: 26px; align-items: start; }
+.rdv3-left, .rdv3-right { display: grid; gap: 24px; min-width: 0; }
+.rdv3-right { position: static; align-self: start; }
+.rdv3-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
+    border: 1px solid color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 18%, rgba(255,255,255,.8));
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 5%, #fff) 0, rgba(255,255,255,.96) 9rem),
+        var(--rdv3-card);
+    box-shadow: 0 18px 38px rgba(61, 47, 22, .09);
+}
+.rdv3-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 42px;
+    width: 92px;
+    height: 3px;
+    border-radius: 0 0 999px 999px;
+    background: var(--rdv3-card-accent, var(--rdv3-accent));
+    opacity: .88;
+}
+.rdv3-card--stay { --rdv3-card-accent: var(--rdv3-blue); }
+.rdv3-card--rooms { --rdv3-card-accent: var(--rdv3-violet); }
+.rdv3-card--guest { --rdv3-card-accent: var(--rdv3-cyan); }
+.rdv3-card--docs { --rdv3-card-accent: var(--rdv3-gold); }
+.rdv3-side-card--actions { --rdv3-card-accent: var(--rdv3-blue); }
+.rdv3-side-card--timeline { --rdv3-card-accent: var(--rdv3-gold); }
+.rdv3-side-card--payment { --rdv3-card-accent: var(--rdv3-green); }
+.rdv3-side-card--notes { --rdv3-card-accent: var(--rdv3-blue); }
+.rdv3-card-header {
+    position: relative;
+    z-index: 1;
+    min-height: 0;
+    padding: 28px 42px 14px;
+    border-bottom: 0;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.rdv3-heading { display: inline-flex; align-items: center; gap: 14px; min-width: 0; flex: 1 1 auto; }
+.rdv3-icon { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; border-radius: 12px; color: var(--rdv3-card-accent, var(--rdv3-primary)); background: color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 12%, #fff); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 18%, transparent); }
+.rdv3-icon--blue { color: #3b82f6; background: #eaf2ff; }
+.rdv3-icon--green { color: #2dbd79; background: #e7f8ef; }
+.rdv3-icon--violet { color: #6252d8; background: #eeebff; }
+.rdv3-card-title { margin: 0; color: var(--rdv3-primary); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.22rem; line-height: 1.1; font-weight: 800; overflow-wrap: anywhere; }
+.rdv3-card-body { position: relative; z-index: 1; padding: 12px 42px 32px; }
+.rdv3-stay { display: grid; grid-template-columns: minmax(0, 1fr) 82px minmax(0, 1fr); border: 1px solid color-mix(in srgb, var(--rdv3-blue) 18%, transparent); border-radius: 16px; overflow: hidden; background: linear-gradient(90deg, rgba(59,130,246,.08), rgba(255,255,255,.78) 44%, rgba(14,165,233,.07)); }
+.rdv3-date { padding: 18px; }
+.rdv3-date:first-child { background: linear-gradient(90deg, rgba(59,130,246,.08), transparent); }
+.rdv3-date:last-child { background: linear-gradient(270deg, rgba(14,165,233,.08), transparent); }
+.rdv3-date:last-child { text-align: right; }
+.rdv3-label { display: block; color: #a3acbd; font-size: .69rem; font-weight: 950; text-transform: uppercase; letter-spacing: .03em; }
+.rdv3-label--green { color: #26a96f; }
+.rdv3-date strong { display: block; margin-top: 6px; color: var(--rdv3-blue); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.35rem; line-height: 1; }
+.rdv3-date span { display: block; margin-top: 6px; color: #8992a5; font-size: .78rem; font-weight: 800; }
+.rdv3-nights { display: grid; place-items: center; text-align: center; border-left: 1px solid color-mix(in srgb, var(--rdv3-blue) 16%, transparent); border-right: 1px solid color-mix(in srgb, var(--rdv3-blue) 16%, transparent); color: var(--rdv3-blue); background: rgba(255, 255, 255, .72); }
+.rdv3-nights b { display: block; font-size: 1.35rem; line-height: 1; }
+.rdv3-nights span { display: block; margin-top: 5px; color: #a3acbd; font-size: .62rem; font-weight: 950; text-transform: uppercase; }
+.rdv3-total { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 86px; padding: 17px 18px; border-radius: 16px; border: 1px solid rgba(45, 189, 121, .26); background: radial-gradient(circle at 12% 10%, rgba(45, 189, 121, .17), transparent 18rem), linear-gradient(90deg, rgba(45, 189, 121, .16), rgba(45, 189, 121, .07)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.55); }
+.rdv3-total .rdv3-amount { margin-top: 5px; font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.7rem; font-weight: 800; color: var(--rdv3-primary); }
+.rdv3-pill { display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 12px; border-radius: 999px; background: #fff; color: #37b77d; font-size: .74rem; font-weight: 950; }
+.rdv3-res-note { margin-top: 16px; min-height: 42px; display: flex; align-items: center; gap: 9px; padding: 11px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--rdv3-accent) 24%, transparent); background: color-mix(in srgb, var(--rdv3-accent) 12%, #fff); color: color-mix(in srgb, var(--rdv3-accent) 72%, #5c4927); font-size: .84rem; font-weight: 800; }
+.rdv3-badge { display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 11px; border-radius: 999px; background: color-mix(in srgb, var(--rdv3-accent) 14%, #fff); color: var(--rdv3-accent); font-size: .75rem; font-weight: 950; }
+.rdv3-rooms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.rdv3-room { --room-accent: var(--rdv3-blue); position: relative; min-height: 116px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--room-accent) 18%, transparent); background: linear-gradient(135deg, color-mix(in srgb, var(--room-accent) 8%, #fff), rgba(255,252,247,.76)); padding: 16px; display: grid; align-content: space-between; gap: 12px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.62); }
+.rdv3-room::before { content: ""; position: absolute; left: 0; top: 16px; bottom: 16px; width: 4px; border-radius: 0 8px 8px 0; background: var(--room-accent); opacity: .76; }
+.rdv3-room:nth-child(4n+1) { --room-accent: var(--rdv3-blue); }
+.rdv3-room:nth-child(4n+2) { --room-accent: var(--rdv3-gold); }
+.rdv3-room:nth-child(4n+3) { --room-accent: var(--rdv3-violet); }
+.rdv3-room:nth-child(4n+4) { --room-accent: var(--rdv3-green); }
+.rdv3-room.is-courtesy { --room-accent: var(--rdv3-gold); background: color-mix(in srgb, var(--rdv3-gold) 14%, #fff); }
+.rdv3-room-top { display: flex; justify-content: space-between; gap: 12px; }
+.rdv3-room-number { font-family: "Cormorant Garamond", Georgia, serif; color: color-mix(in srgb, var(--room-accent) 82%, var(--rdv3-primary)); font-size: 1.16rem; font-weight: 800; }
+.rdv3-room-type { color: #69738a; font-size: .82rem; font-weight: 800; margin-top: 2px; }
+.rdv3-room-price { color: color-mix(in srgb, var(--room-accent) 80%, var(--rdv3-primary)); font-weight: 950; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rdv3-tags { display: flex; flex-wrap: wrap; gap: 7px; }
+.rdv3-tag { min-height: 23px; display: inline-flex; align-items: center; gap: 6px; padding: 0 9px; border-radius: 7px; background: rgba(255,255,255,.86); border: 1px solid color-mix(in srgb, var(--room-accent, var(--rdv3-accent)) 14%, var(--rdv3-line)); color: #6f7a91; font-size: .68rem; font-weight: 900; }
+.rdv3-link { color: var(--rdv3-accent); font-size: .78rem; font-weight: 950; border: 0; background: transparent; cursor: pointer; }
+.rdv3-card-header > .rdv3-link {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 9%, #fff);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 13%, transparent);
+}
+.rdv3-card--guest .rdv3-card-body { padding-bottom: 18px; }
+.rdv3-guest-head { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 8px 10px 12px; border-radius: 15px; background: linear-gradient(90deg, rgba(19,168,198,.08), transparent); }
+.rdv3-avatar { flex: 0 0 auto; width: 56px; height: 56px; display: grid; place-items: center; border-radius: 14px; background: linear-gradient(135deg, color-mix(in srgb, var(--rdv3-primary) 85%, #7258ff), #6252d8); color: #fff; font-size: 1.15rem; font-weight: 950; }
+.rdv3-guest-name { margin: 0; color: var(--rdv3-primary); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.55rem; font-weight: 800; line-height: 1; }
+.rdv3-guest-sub { margin-top: 5px; color: #7e879b; font-size: .83rem; font-weight: 800; }
+.rdv3-info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.rdv3-info { --info-accent: var(--rdv3-blue); min-height: 62px; padding: 12px 13px; display: flex; align-items: center; gap: 12px; border: 1px solid color-mix(in srgb, var(--info-accent) 14%, transparent); border-radius: 12px; background: linear-gradient(135deg, color-mix(in srgb, var(--info-accent) 6%, #fff), rgba(255,252,247,.75)); }
+.rdv3-info:nth-child(2) { --info-accent: var(--rdv3-cyan); }
+.rdv3-info:nth-child(3) { --info-accent: var(--rdv3-violet); }
+.rdv3-info:nth-child(4) { --info-accent: var(--rdv3-green); }
+.rdv3-info i { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; color: var(--info-accent); background: #fff; border: 1px solid color-mix(in srgb, var(--info-accent) 15%, var(--rdv3-line)); }
+.rdv3-info small { display: block; color: #a3acbd; font-size: .64rem; font-weight: 950; text-transform: uppercase; }
+.rdv3-info b { display: block; margin-top: 2px; color: #3b4660; font-size: .82rem; font-weight: 950; overflow-wrap: anywhere; }
+.rdv3-subhead { margin: 17px 0 9px; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--rdv3-primary); font-size: .84rem; font-weight: 950; }
+.rdv3-subhead span { display: inline-flex; align-items: center; gap: 8px; }
+.rdv3-car-accent { color: #1ca8c7; }
+.rdv3-vehicle-list { display: grid; gap: 10px; }
+.rdv3 #listaVehiculos > .text-center {
+    min-height: 92px;
+    padding: 18px;
+    border: 1px dashed rgba(19,168,198,.28);
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(19,168,198,.08), rgba(255,255,255,.55));
+    color: #7c879a;
+    display: grid;
+    place-items: center;
+    align-content: center;
+}
+.rdv3 #listaVehiculos > .text-center i { color: rgba(19,168,198,.38) !important; }
+.rdv3 #listaVehiculos > .text-center p { margin: 7px 0 0; font-weight: 850; }
+.rdv3 #listaVehiculos > p,
+.rdv3 #listaNotas > p {
+    min-height: 74px;
+    margin: 0;
+    padding: 18px;
+    border: 1px dashed color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-blue)) 20%, transparent);
+    border-radius: 14px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-blue)) 7%, #fff), rgba(255,255,255,.62));
+    color: #7f8ba0;
+    font-weight: 850;
+    display: grid;
+    place-items: center;
+}
+.rdv3 #listaVehiculos .space-y-2 { display: grid; gap: 10px; }
+.rdv3 #listaVehiculos .vehiculo-item {
+    border: 1px solid rgba(19,168,198,.18);
+    border-radius: 13px;
+    background: linear-gradient(135deg, rgba(19,168,198,.08), rgba(255,255,255,.78));
+    box-shadow: inset 3px 0 0 rgba(19,168,198,.55);
+}
+.rdv3 #listaVehiculos .vehiculo-icon {
+    background: #e6f8fb;
+    color: var(--rdv3-cyan);
+}
+.rdv3-vehicle { min-height: 56px; border: 1px solid color-mix(in srgb, var(--rdv3-accent) 16%, transparent); border-radius: 12px; background: rgba(255, 252, 247, .72); padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rdv3-vehicle-main { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.rdv3-vehicle-icon { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; color: #1ca8c7; background: #e6f8fb; }
+.rdv3-vehicle-title { color: var(--rdv3-primary); font-size: .84rem; font-weight: 950; }
+.rdv3-vehicle-sub { color: #8790a4; font-size: .72rem; font-weight: 800; }
+.rdv3-plate { padding: 7px 10px; border-radius: 7px; background: var(--rdv3-primary); color: #fff; font-size: .73rem; font-weight: 950; white-space: nowrap; }
+.rdv3-side-card::before { left: 32px; width: 68px; }
+.rdv3-side-card .rdv3-card-header { min-height: 0; padding: 24px 32px 12px; }
+.rdv3-side-card .rdv3-heading { gap: 12px; }
+.rdv3-side-card .rdv3-icon { width: 34px; height: 34px; flex-basis: 34px; border-radius: 11px; }
+.rdv3-side-card .rdv3-card-body { padding: 10px 32px 22px; }
+.rdv3-actions { display: grid; gap: 10px; }
+.rdv3-action { --action-accent: var(--rdv3-blue); width: 100%; min-height: 56px; border: 1px solid color-mix(in srgb, var(--action-accent) 16%, transparent); border-radius: 12px; background: linear-gradient(135deg, color-mix(in srgb, var(--action-accent) 7%, #fff), rgba(255,252,247,.78)); color: var(--rdv3-primary); display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 13px; cursor: pointer; font-size: .82rem; font-weight: 950; box-shadow: inset 3px 0 0 color-mix(in srgb, var(--action-accent) 72%, transparent); }
+.rdv3-action:nth-child(2) { --action-accent: var(--rdv3-gold); }
+.rdv3-action:nth-child(3) { --action-accent: var(--rdv3-blue); }
+.rdv3-action:nth-child(4) { --action-accent: var(--rdv3-violet); }
+.rdv3-action:nth-child(5) { --action-accent: #6d7689; }
+.rdv3-action-left { display: inline-flex; align-items: center; gap: 12px; min-width: 0; }
+.rdv3-action-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: #fff; color: var(--rdv3-primary); }
+.rdv3-action-icon.is-green { color: #24b777; background: #e7f8ef; }
+.rdv3-action-icon.is-gold { color: var(--rdv3-accent); background: color-mix(in srgb, var(--rdv3-accent) 15%, #fff); }
+.rdv3-action-icon.is-blue { color: #3b82f6; background: #eaf2ff; }
+.rdv3-action-icon.is-violet { color: #6252d8; background: #eeebff; }
+.rdv3-action-icon.is-gray { color: #6d7689; background: #f4f5f7; }
+.rdv3-action i.fa-chevron-right { color: #a3acbd; font-size: .72rem; }
+.rdv3-timeline { position: relative; display: grid; gap: 15px; padding-left: 12px; }
+.rdv3-timeline::before { content: ""; position: absolute; left: 5px; top: 7px; bottom: 7px; width: 2px; background: color-mix(in srgb, var(--rdv3-accent) 18%, transparent); }
+.rdv3-step { position: relative; padding-left: 18px; }
+.rdv3-step::before { content: ""; position: absolute; left: -12px; top: 4px; width: 14px; height: 14px; border-radius: 999px; background: #fff; border: 3px solid var(--step-color, #d4d8df); }
+.rdv3-step.is-blue { --step-color: #3b82f6; }
+.rdv3-step.is-green { --step-color: #24b777; }
+.rdv3-step.is-gold { --step-color: var(--rdv3-accent); }
+.rdv3-step-title { color: var(--rdv3-primary); font-size: .82rem; font-weight: 950; }
+.rdv3-step-meta { margin-top: 2px; color: #8b94a8; font-size: .72rem; font-weight: 800; line-height: 1.3; }
+.rdv3-payment-total { text-align: center; border-radius: 14px; border: 1px solid rgba(45, 189, 121, .26); background: radial-gradient(circle at 15% 0, rgba(45,189,121,.18), transparent 12rem), rgba(45, 189, 121, .13); padding: 18px; margin-bottom: 14px; }
+.rdv3-payment-total small { display: block; color: #27a96e; font-size: .67rem; font-weight: 950; text-transform: uppercase; }
+.rdv3-payment-total b { display: block; margin-top: 7px; color: var(--rdv3-primary); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.65rem; }
+.rdv3-payment-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; color: var(--rdv3-primary); }
+.rdv3-payment-row + .rdv3-payment-row { border-top: 1px solid var(--rdv3-line); }
+.rdv3-payment-method { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.rdv3-payment-method i { width: 31px; height: 31px; border-radius: 9px; display: grid; place-items: center; color: #2dbd79; background: #e7f8ef; }
+.rdv3-payment-method b { display: block; font-size: .82rem; font-weight: 950; }
+.rdv3-payment-method small { display: block; color: #8790a4; font-size: .7rem; font-weight: 800; }
+.rdv3-payment-amount { font-size: .84rem; font-weight: 950; white-space: nowrap; }
+.rdv3-note-list { display: grid; gap: 10px; max-height: 280px; overflow: auto; }
+.rdv3-note { border-radius: 12px; border: 1px solid color-mix(in srgb, var(--rdv3-accent) 22%, transparent); background: color-mix(in srgb, var(--rdv3-accent) 12%, #fff); padding: 13px; color: #7a5f2b; font-size: .8rem; font-weight: 800; line-height: 1.45; }
+.rdv3-note small { display: block; margin-bottom: 6px; color: color-mix(in srgb, var(--rdv3-accent) 84%, #6e5527); font-weight: 950; }
+.rdv3-count-badge { min-width: 28px; justify-content: center; background: color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 14%, #fff); }
+.rdv3-sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
+.rdv3-doc-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; margin-left: auto; min-width: min(100%, 300px); }
+.rdv3-doc-btn { min-height: 36px; padding: 0 14px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: .76rem; font-weight: 950; white-space: nowrap; }
+.rdv3-doc-btn.is-soft { background: #e7f8ef; color: #26a76f; }
+.rdv3-doc-btn.is-gold { background: color-mix(in srgb, var(--rdv3-primary) 70%, var(--rdv3-accent)); color: #fff; }
+.rdv3-doc-list { display: grid; gap: 11px; }
+.rdv3-doc-row { min-height: 64px; border: 1px solid color-mix(in srgb, var(--rdv3-accent) 16%, transparent); border-radius: 12px; background: rgba(255, 252, 247, .72); padding: 11px 13px; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.rdv3-doc-main { display: flex; align-items: center; gap: 13px; min-width: 0; }
+.rdv3-docicon { width: 43px; height: 43px; border-radius: 11px; display: grid; place-items: center; color: #fff; font-size: .72rem; font-weight: 950; }
+.rdv3-docicon--pdf { background: #d8493e; }
+.rdv3-docicon--image { background: #4f46d8; }
+.rdv3-docicon--doc { background: #2d74da; }
+.rdv3-doc-title { color: var(--rdv3-primary); font-size: .86rem; font-weight: 950; overflow-wrap: anywhere; }
+.rdv3-doc-meta { margin-top: 4px; color: #8790a4; font-size: .72rem; font-weight: 800; }
+.rdv3-doc-right { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+.rdv3-doc-state { border-radius: 999px; min-height: 25px; padding: 0 10px; display: inline-flex; align-items: center; color: #27a96e; background: #e7f8ef; font-size: .7rem; font-weight: 950; }
+.rdv3-doc-state.is-draft { color: var(--rdv3-accent); background: color-mix(in srgb, var(--rdv3-accent) 14%, #fff); }
+.rdv3-iconbtn { width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--rdv3-line); background: #fff; display: grid; place-items: center; color: #8790a4; }
+.rdv3-empty { min-height: 86px; padding: 22px; text-align: center; color: #7f8ba0; font-size: .86rem; font-weight: 850; border: 1px dashed color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 22%, transparent); border-radius: 14px; background: linear-gradient(135deg, color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 7%, #fff), rgba(255,255,255,.58)); display: grid; place-items: center; }
+.rdv3-footer-line { display: flex; justify-content: space-between; gap: 12px; padding-top: 12px; color: #758096; font-size: .78rem; font-weight: 850; }
+@media (max-width: 1360px) {
+    .rdv3-layout { grid-template-columns: minmax(0, 1fr) 320px; gap: 22px; }
+    .rdv3-card::before { left: 36px; }
+    .rdv3-card-header { padding-left: 36px; padding-right: 36px; }
+    .rdv3-card-body { padding-left: 36px; padding-right: 36px; }
+    .rdv3-side-card::before { left: 30px; }
+    .rdv3-side-card .rdv3-card-header { padding-left: 30px; padding-right: 30px; }
+    .rdv3-side-card .rdv3-card-body { padding-left: 30px; padding-right: 30px; }
+}
+@media (max-width: 1120px) {
+    .rdv3 { margin: 0; }
+    .rdv3-layout { grid-template-columns: minmax(0, 1fr); }
+    .rdv3-right { position: static; }
+    .rdv3-right { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .rdv3-side-card { align-self: start; }
+}
+@media (max-width: 780px) {
+    .rdv3 { margin: 0; }
+    .rdv3-hero { grid-template-columns: 1fr; padding: 22px; }
+    .rdv3-card::before,
+    .rdv3-side-card::before { left: 24px; }
+    .rdv3-card-header { padding: 22px 24px 12px; }
+    .rdv3-card-body { padding: 12px 24px 22px; }
+    .rdv3-side-card .rdv3-card-header { padding: 22px 24px 12px; }
+    .rdv3-side-card .rdv3-card-body { padding: 12px 24px 22px; }
+    .rdv3-doc-actions { width: 100%; justify-content: flex-start; padding-left: 0; }
+    .rdv3-right { grid-template-columns: 1fr; }
+    .rdv3-hero { align-items: flex-start; border-radius: 18px; }
+    .rdv3-hero-actions { justify-content: flex-start; width: 100%; }
+    .rdv3-btn { width: 100%; }
+    .rdv3-stay, .rdv3-rooms, .rdv3-info-grid { grid-template-columns: 1fr; }
+    .rdv3-nights { min-height: 62px; border-left: 0; border-right: 0; border-top: 1px solid color-mix(in srgb, var(--rdv3-accent) 16%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--rdv3-accent) 16%, transparent); }
+    .rdv3-date:last-child { text-align: left; }
+    .rdv3-total, .rdv3-doc-row { align-items: flex-start; flex-direction: column; }
+    .rdv3-doc-right { width: 100%; justify-content: space-between; }
+}
+@media (min-width: 640px) {
+    .rdv3-main { padding: 2rem !important; }
+}
 
-                <?php if ($reservacion['estado'] == 'confirmada'): ?>
-                    <a href="<?= url('reservaciones/editar-habitaciones/' . $reservacion['id']) ?>"
-                       class="btn-action bg-purple-500 text-white hover:bg-purple-600">
-                        <i class="fas fa-bed"></i>
-                        Modificar Habitaciones
-                    </a>
-                <?php endif; ?>
+/* Header inset guardrail: keeps section icons away from card edges even if global styles load. */
+.rdv3 {
+    --rdv3-main-header-x: 42px;
+    --rdv3-side-header-x: 32px;
+}
+.rdv3 .rdv3-left > .rdv3-card::before { left: var(--rdv3-main-header-x) !important; }
+.rdv3 .rdv3-right > .rdv3-card::before { left: var(--rdv3-side-header-x) !important; }
+.rdv3 .rdv3-left > .rdv3-card > .rdv3-card-header {
+    padding-left: var(--rdv3-main-header-x) !important;
+    padding-right: var(--rdv3-main-header-x) !important;
+}
+.rdv3 .rdv3-right > .rdv3-card > .rdv3-card-header {
+    padding-left: var(--rdv3-side-header-x) !important;
+    padding-right: var(--rdv3-side-header-x) !important;
+}
+.rdv3 .rdv3-card-header .rdv3-heading {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
+.rdv3 .rdv3-card-header .rdv3-icon {
+    position: static !important;
+    margin-left: 0 !important;
+    transform: none !important;
+}
+@media (max-width: 1360px) {
+    .rdv3 {
+        --rdv3-main-header-x: 36px;
+        --rdv3-side-header-x: 30px;
+    }
+}
+@media (max-width: 780px) {
+    .rdv3 {
+        --rdv3-main-header-x: 24px;
+        --rdv3-side-header-x: 24px;
+    }
+}
+</style>
 
-                <?php if (in_array($reservacion['estado'], ['confirmada', 'checked_in'])): ?>
-                    <button onclick="abrirModalModificarDias()"
-                            class="btn-action bg-indigo-500 text-white hover:bg-indigo-600">
-                        <i class="fas fa-calendar-alt"></i>
-                        Modificar Días
-                    </button>
-                <?php endif; ?>
-
-                <button onclick="abrirModalCotizacion()"
-        class="btn-action btn-cotizacion-ver">
-    <i class="fas fa-file-pdf"></i>
-    Cotización PDF
-</button>
-
-                <!-- ── Botón WhatsApp ── -->
-                <?php if (!empty($huesped['telefono'])): ?>
-                <div class="relative" id="wa-dropdown-wrapper">
-                    <button onclick="toggleWAMenu()"
-                            class="btn-action flex items-center gap-1.5"
-                            style="background:#25D366;color:white;"
-                            title="Enviar mensaje por WhatsApp">
-                        <i class="fab fa-whatsapp text-base"></i>
-                        WhatsApp
-                        <i class="fas fa-chevron-down text-xs opacity-80"></i>
-                    </button>
-                    <div id="wa-menu"
-                         class="hidden absolute right-0 mt-1 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden"
-                         style="top:100%;">
-                        <?php
-                        $wa_tel   = preg_replace('/\D/', '', $huesped['telefono']);
-                        // Agregar código de país México si no lo tiene
-                        if (strlen($wa_tel) === 10) $wa_tel = '52' . $wa_tel;
-                        $wa_nombre = $huesped['nombre_completo'] ?? 'huésped';
-                        $wa_habs   = implode(', ', array_column($habitaciones, 'numero'));
-                        $wa_entrada = date('d/m/Y', strtotime($reservacion['fecha_entrada']));
-                        $wa_salida  = date('d/m/Y', strtotime($reservacion['fecha_salida']));
-                        $wa_noches  = max(1, (new DateTime($reservacion['fecha_salida']))->diff(new DateTime($reservacion['fecha_entrada']))->days);
-                        $wa_precio  = '$' . number_format($reservacion['precio_total'], 2);
-                        $wa_id      = $reservacion['id'];
-                        $wa_metodo  = strtoupper($reservacion['metodo_pago'] ?? '');
-
-                        $msg_confirmacion = urlencode(
-                            "✅ *Confirmación de Reservación - {$nombreHotelVisible}*\n\n" .
-                            "Hola {$wa_nombre}, su reservación ha sido confirmada.\n\n" .
-                            "🏨 *Habitación(es):* {$wa_habs}\n" .
-                            "📅 *Entrada:* {$wa_entrada}\n" .
-                            "📅 *Salida:* {$wa_salida}\n" .
-                            "🌙 *Noches:* {$wa_noches}\n" .
-                            "💰 *Total:* {$wa_precio}\n" .
-                            "🔖 *Reservación #:* {$wa_id}\n\n" .
-                            "Check-in a partir de las 3:00 PM.\n" .
-                            "¡Le esperamos! 🌿"
-                        );
-
-                        $wa_dias_para_llegar = (strtotime($reservacion['fecha_entrada']) - strtotime(date('Y-m-d'))) / 86400;
-                        $msg_recordatorio = urlencode(
-                            "⏰ *Recordatorio de llegada - {$nombreHotelVisible}*\n\n" .
-                            "Hola {$wa_nombre}, le recordamos que su llegada es *mañana " . date('d/m/Y', strtotime($reservacion['fecha_entrada'])) . "*.\n\n" .
-                            "🏨 *Habitación(es):* {$wa_habs}\n" .
-                            "📅 *Salida:* {$wa_salida}\n" .
-                            "💰 *Total:* {$wa_precio}\n\n" .
-                            "Check-in: 3:00 PM · Check-out: 12:00 PM\n" .
-                            "📍 Sistema de gestión hotelera\n\n" .
-                            "¡Le esperamos! 🌿"
-                        );
-
-                        $msg_comprobante = urlencode(
-                            "🧾 *Comprobante de Pago - {$nombreHotelVisible}*\n\n" .
-                            "Hola {$wa_nombre}, gracias por su estancia.\n\n" .
-                            "🏨 *Habitación(es):* {$wa_habs}\n" .
-                            "📅 *Entrada:* {$wa_entrada}\n" .
-                            "📅 *Salida:* {$wa_salida}\n" .
-                            "🌙 *Noches:* {$wa_noches}\n" .
-                            "💰 *Total pagado:* {$wa_precio}" . ($wa_metodo ? " ({$wa_metodo})" : "") . "\n" .
-                            "🔖 *Reservación #:* {$wa_id}\n\n" .
-                            "¡Fue un placer recibirle! Esperamos verle pronto. 🌿"
-                        );
-                        ?>
-                        <a href="https://wa.me/<?= $wa_tel ?>?text=<?= $msg_confirmacion ?>"
-                           target="_blank"
-                           class="flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors border-b border-gray-50">
-                            <span class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                                  style="background:#E8F5E9;">
-                                <i class="fas fa-calendar-check text-sm" style="color:#25D366;"></i>
-                            </span>
-                            <div>
-                                <div class="text-sm font-semibold text-gray-800">Confirmación</div>
-                                <div class="text-xs text-gray-400">Datos de la reservación</div>
-                            </div>
-                        </a>
-                        <a href="https://wa.me/<?= $wa_tel ?>?text=<?= $msg_recordatorio ?>"
-                           target="_blank"
-                           class="flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors border-b border-gray-50">
-                            <span class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                                  style="background:#E8F5E9;">
-                                <i class="fas fa-bell text-sm" style="color:#25D366;"></i>
-                            </span>
-                            <div>
-                                <div class="text-sm font-semibold text-gray-800">Recordatorio de llegada</div>
-                                <div class="text-xs text-gray-400">Para enviar un día antes</div>
-                            </div>
-                        </a>
-                        <a href="https://wa.me/<?= $wa_tel ?>?text=<?= $msg_comprobante ?>"
-                           target="_blank"
-                           class="flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors">
-                            <span class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                                  style="background:#E8F5E9;">
-                                <i class="fas fa-receipt text-sm" style="color:#25D366;"></i>
-                            </span>
-                            <div>
-                                <div class="text-sm font-semibold text-gray-800">Comprobante de pago</div>
-                                <div class="text-xs text-gray-400">Al finalizar la estancia</div>
-                            </div>
-                        </a>
-                    </div>
+<div class="rdv3 detail-view">
+    <div class="rdv3-shell">
+        <main class="rdv3-main">
+            <div class="rdv3-page">
+                <div class="rdv3-topbar">
+                    <a class="rdv3-back" href="<?= url('reservaciones') ?>" onclick="medisoftVolverAnterior(event)" aria-label="Volver a reservaciones"><i class="fas fa-arrow-left"></i></a>
+                    <div class="rdv3-crumbs">Reservaciones / <strong>Reservacion #<?= $rdReservationId ?></strong></div>
                 </div>
-                <script>
-                function toggleWAMenu() {
-                    const menu = document.getElementById('wa-menu');
-                    const button = document.querySelector('#wa-dropdown-wrapper > button');
-                    menu.classList.toggle('hidden');
-                    button?.classList.toggle('wa-menu-open', !menu.classList.contains('hidden'));
-                }
-                // Cerrar al hacer clic fuera
-                document.addEventListener('click', function(e) {
-                    const wrapper = document.getElementById('wa-dropdown-wrapper');
-                    if (wrapper && !wrapper.contains(e.target)) {
-                        document.getElementById('wa-menu')?.classList.add('hidden');
-                        document.querySelector('#wa-dropdown-wrapper > button')?.classList.remove('wa-menu-open');
-                    }
-                });
-                </script>
-                <?php endif; ?>
 
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Contenido Principal -->
-<div class="container mx-auto px-3 py-4">
-    <!-- Alertas -->
-    <!-- Alertas -->
-<?php
-// Calcular el tipo de alerta de check-in pendiente
-$fecha_hoy = date('Y-m-d');
-$puede_checkin = $reservacion['estado'] == 'confirmada' && $reservacion['fecha_entrada'] <= $fecha_hoy;
-$es_express = $puede_checkin && $reservacion['fecha_salida'] <= $fecha_hoy;
-$es_tardio = $puede_checkin && $reservacion['fecha_entrada'] < $fecha_hoy && !$es_express;
-
-if ($puede_checkin): ?>
-    <div class="alert alert-<?= ($es_tardio || $es_express) ? 'warning' : 'info' ?> mb-3">
-        <i class="fas fa-<?= ($es_tardio || $es_express) ? 'exclamation-triangle' : 'info-circle' ?> text-lg"></i>
-        <div>
-            <?php if ($es_express): ?>
-                <p class="font-semibold">Reservación vencida</p>
-                <p class="text-xs mt-0.5 opacity-90">La fecha de salida ya llegó o pasó. Proceda con el proceso express.</p>
-            <?php elseif ($es_tardio): ?>
-                <p class="font-semibold">Reservación con check-in pendiente</p>
-                <p class="text-xs mt-0.5 opacity-90">La fecha de entrada ya pasó. Proceda con el check-in tardío.</p>
-            <?php else: ?>
-                <p class="font-semibold">Check-in programado para hoy</p>
-                <p class="text-xs mt-0.5 opacity-90">El huésped puede registrarse en cualquier momento.</p>
-            <?php endif; ?>
-        </div>
-    </div>
-<?php endif; ?>
-
-    <?php if ($reservacion['estado'] == 'checked_in' && $reservacion['fecha_salida'] == date('Y-m-d')): ?>
-        <div class="alert alert-warning mb-3">
-            <i class="fas fa-exclamation-triangle text-lg"></i>
-            <div>
-                <p class="font-semibold">Check-out programado para hoy</p>
-                <p class="text-xs mt-0.5 opacity-90">La salida está programada antes de las 12:00 PM.</p>
-            </div>
-        </div>
-    <?php endif; ?>
-
-    <section class="rd-reservation-hero-strip no-print" aria-label="Resumen rapido de la reservacion">
-        <div class="rd-strip-item">
-            <span>Estado</span>
-            <strong><?= htmlspecialchars($estado_info['label']) ?></strong>
-        </div>
-        <div class="rd-strip-item">
-            <span>Llegada</span>
-            <strong><?= !empty($reservacion['fecha_entrada']) ? date('d/m/Y', strtotime($reservacion['fecha_entrada'])) : '-' ?></strong>
-        </div>
-        <div class="rd-strip-item">
-            <span>Salida</span>
-            <strong><?= !empty($reservacion['fecha_salida']) ? date('d/m/Y', strtotime($reservacion['fecha_salida'])) : '-' ?></strong>
-        </div>
-        <div class="rd-strip-item is-total">
-            <span>Total</span>
-            <strong><?= format_money($reservacion['precio_total'] ?? 0) ?></strong>
-        </div>
-    </section>
-
-    <?php
-    $rd_reservacion_id = (int)($reservacion['id'] ?? 0);
-    $rd_huesped_id = (int)($huesped['id'] ?? ($reservacion['huesped_id'] ?? 0));
-    $rd_busqueda_reservacion = urlencode((string)$rd_reservacion_id);
-    $rd_busqueda_caja = urlencode((string)$rd_reservacion_id);
-    ?>
-
-    <?php View::partial('documentos_entidad', [
-        'documentosEntidad' => $documentosEntidad ?? [],
-        'documentosEntidadContexto' => $documentosEntidadContexto ?? [],
-    ]); ?>
-
-    <!-- Grid Principal -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <!-- Columna Principal -->
-        <div class="lg:col-span-2 space-y-3">
-            <!-- Información Principal -->
-            <div id="resumen-reservacion" class="info-card card-blue rd-section-card">
-                <div class="card-header">
-                    <div class="card-icon icon-blue">
-                        <i class="fas fa-calendar-check"></i>
-                    </div>
-                    <h2 class="text-base font-bold text-gray-800">Información de Reservación</h2>
-                </div>
-                <div class="card-body">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <div class="info-row">
-                                <span class="info-label">Check-in</span>
-                                <span class="info-value text-blue-600">
-                                    <?= !empty($reservacion['fecha_entrada']) ? date('d/m/Y', strtotime($reservacion['fecha_entrada'])) : '-' ?>
-                                </span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Check-out</span>
-                                <span class="info-value text-blue-600">
-                                    <?= !empty($reservacion['fecha_salida']) ? date('d/m/Y', strtotime($reservacion['fecha_salida'])) : '-' ?>
-                                </span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Noches</span>
-                                <span class="info-value">
-                                    <?php
-                                    $noches = 1;
-                                    if (!empty($reservacion['fecha_entrada']) && !empty($reservacion['fecha_salida'])) {
-                                        $entrada = new DateTime($reservacion['fecha_entrada']);
-                                        $salida = new DateTime($reservacion['fecha_salida']);
-                                        $noches = $entrada->diff($salida)->days ?: 1;
-                                    }
-                                    ?>
-                                    <span class="text-purple-600"><?= $noches ?></span>
-                                    <span class="text-xs text-gray-500 ml-1"><?= $noches == 1 ? 'noche' : 'noches' ?></span>
-                                </span>
-                            </div>
+                <section class="rdv3-hero" aria-labelledby="rdv3-title">
+                    <div>
+                        <div class="rdv3-titleline">
+                            <h1 id="rdv3-title">Reservacion #<?= $rdReservationId ?></h1>
+                            <span class="rdv3-status <?= $rdEstadoClass ?>"><?= $rdSafe($rdEstadoLabel, 'Pendiente') ?></span>
                         </div>
-                        <div>
-    <div class="precio-total mb-3">
-        <?= format_money($reservacion['precio_total'] ?? 0) ?>
-    </div>
-    <?php if (!empty($reservacion['metodo_pago'])): ?>
-        <div class="text-center">
-            <span class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full font-semibold text-sm">
-                <i class="fas fa-check-circle"></i>Pagado
-            </span>
-
-            <?php if (!empty($pagos) && count($pagos) > 1): ?>
-                <!-- Mostrar múltiples métodos de pago -->
-                <div class="mt-2 space-y-1">
-                    <?php foreach ($pagos as $pago): ?>
-                        <p class="text-xs text-gray-600">
-                            <?= ucfirst(htmlspecialchars($pago['metodo_pago'])) ?>:
-                            <span class="font-semibold"><?= format_money($pago['monto']) ?></span>
-                        </p>
-                    <?php endforeach; ?>
-                </div>
-            <?php else: ?>
-                <!-- Método de pago único -->
-                <p class="text-xs text-gray-600 mt-1">
-                    vía <?= ucfirst(htmlspecialchars($reservacion['metodo_pago'])) ?>
-                </p>
-            <?php endif; ?>
-
-            <!-- Botones: Imprimir Ticket y Cambiar Método de Pago -->
-            <div class="mt-3 flex flex-wrap gap-2 justify-center no-print">
-                <button onclick="imprimirTicketTermico()"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-lg text-xs font-semibold hover:from-gray-800 hover:to-gray-900 transition-all shadow-md hover:shadow-lg"
-                        title="Imprimir ticket para impresora térmica">
-                    <i class="fas fa-receipt"></i>
-                    Imprimir Ticket
-                </button>
-                <button onclick="abrirModalCambiarPago()"
-                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg text-xs font-semibold hover:from-amber-600 hover:to-amber-700 transition-all shadow-md hover:shadow-lg"
-                        title="Cambiar o modificar método de pago">
-                    <i class="fas fa-exchange-alt"></i>
-                    Cambiar Método de Pago
-                </button>
-            </div>
-            <div class="rd-mini-actions no-print" style="justify-content:center;">
-                <a href="<?= url('caja/movimientos?buscar=' . $rd_busqueda_caja) ?>"
-                   class="rd-mini-link"
-                   title="Buscar movimientos de caja de esta reservacion">
-                    <i class="fas fa-cash-register"></i>
-                    Caja
-                </a>
-                <a href="<?= url('facturacion?buscar=' . $rd_busqueda_reservacion) ?>"
-                   class="rd-mini-link"
-                   title="Buscar solicitudes de factura de esta reservacion">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                    Facturacion
-                </a>
-            </div>
-        </div>
-    <?php endif; ?>
-</div>
-                    </div>
-
-                    <?php if (!empty($reservacion['notas'])): ?>
-                        <div class="mt-3 p-3 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg border border-amber-200">
-                            <p class="text-sm text-amber-800">
-                                <i class="fas fa-sticky-note mr-2 text-amber-600"></i>
-                                <?= nl2br(htmlspecialchars($reservacion['notas'])) ?>
-                            </p>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- Habitaciones -->
-            <div id="habitaciones-reservacion" class="info-card card-purple rd-section-card">
-                <div class="card-header">
-                    <div class="card-icon icon-purple">
-                        <i class="fas fa-bed"></i>
-                    </div>
-                    <h2 class="text-base font-bold text-gray-800">Habitaciones Reservadas</h2>
-                    <?php if (($reservacion['habitaciones_cortesia'] ?? 0) > 0): ?>
-                        <span class="ml-auto text-xs bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 rounded-full font-bold shadow-md">
-                            <i class="fas fa-gift mr-1"></i><?= $reservacion['habitaciones_cortesia'] ?> gratis
-                        </span>
-                    <?php endif; ?>
-                </div>
-                <div class="card-body">
-                    <?php
-                    $total_pagado_habitaciones = 0;
-                    foreach ($habitaciones as $habitacion_precio) {
-                        if (!empty($habitacion_precio['es_cortesia'])) {
-                            continue;
-                        }
-
-                        if (isset($habitacion_precio['precio']) && is_numeric($habitacion_precio['precio'])) {
-                            $total_pagado_habitaciones += (float) $habitacion_precio['precio'];
-                        }
-                    }
-                    ?>
-                    <div class="room-paid-summary">
-                        <div>
-                            <span>Pagado por habitaciones</span>
-                            <strong><?= format_money($total_pagado_habitaciones) ?></strong>
-                        </div>
-                        <div>
-                            <span>Total de la reservaci&oacute;n</span>
-                            <strong><?= format_money($reservacion['precio_total'] ?? 0) ?></strong>
+                        <div class="rdv3-meta">
+                            <span><i class="fas fa-bed"></i><?= count($rdRooms) ?> habitacion<?= count($rdRooms) === 1 ? '' : 'es' ?></span>
+                            <span><i class="fas fa-user"></i>Registro: <?= $rdSafe($_SESSION['usuario_nombre'] ?? ($reservacion['usuario_nombre'] ?? 'Recepcion')) ?></span>
+                            <span><i class="far fa-clock"></i><?= $rdSafe($rdDateTime($rdCreatedAt), '-') ?></span>
                         </div>
                     </div>
+                    <div class="rdv3-hero-actions">
+                        <?php if ($rdCheckinMode === 'normal'): ?>
+                            <button type="button" class="rdv3-btn rdv3-btn-primary" onclick="abrirModalCheckIn(<?= $rdReservationId ?>, <?= $rdTotal ?>)"><i class="fas fa-right-to-bracket"></i>Check-in</button>
+                        <?php elseif ($rdCheckinMode === 'late' || $rdCheckinMode === 'express'): ?>
+                            <button type="button" class="rdv3-btn rdv3-btn-primary" onclick='abrirModalCheckInTardio(<?= $rdReservationId ?>, <?= $rdHuespedNombreJsonAttr ?>, <?= $rdHabitacionesTextoJsonAttr ?>, <?= $rdFechaEntradaFormatoJsonAttr ?>, <?= $rdFechaSalidaFormatoJsonAttr ?>, <?= $rdTotal ?>, "<?= $rdCheckinJsMode ?>", <?= (int)$rdCheckinDays ?>)'><i class="fas fa-right-to-bracket"></i>Check-in</button>
+                        <?php elseif ($rdEstadoKey === 'checked_in'): ?>
+                            <button type="button" class="rdv3-btn rdv3-btn-primary" onclick="abrirModalCheckOut()"><i class="fas fa-right-from-bracket"></i>Check-out</button>
+                        <?php endif; ?>
+                        <?php if (in_array($rdEstadoKey, ['confirmada', 'checked_in'], true)): ?>
+                            <button type="button" class="rdv3-btn rdv3-btn-ghost" onclick="abrirModalModificarDias()"><i class="far fa-calendar"></i>Modificar dias</button>
+                            <button type="button" class="rdv3-btn rdv3-btn-danger" onclick="mostrarFormularioCancelacion()"><i class="fas fa-xmark"></i>Cancelar</button>
+                        <?php endif; ?>
+                    </div>
+                </section>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <?php foreach ($habitaciones as $hab): ?>
-                            <?php
-                            $es_cortesia_habitacion = !empty($hab['es_cortesia']);
-                            $precio_habitacion_pagado = (isset($hab['precio']) && is_numeric($hab['precio']))
-                                ? (float) $hab['precio']
-                                : 0;
-                            ?>
-                            <div class="room-card <?= $es_cortesia_habitacion ? 'cortesia' : '' ?>">
-                                <div class="flex justify-between items-start">
-                                    <div class="min-w-0">
-                                        <h4 class="font-bold text-gray-800">
-                                            <?php if (!empty($hab['habitacion_id'])): ?>
-                                                <a href="<?= url('habitaciones/' . (int)$hab['habitacion_id']) ?>"
-                                                   class="rd-room-link"
-                                                   onclick="event.stopPropagation();"
-                                                   title="Ver detalle de la habitacion <?= htmlspecialchars($hab['numero'] ?? '') ?>">
-                                            <?php endif; ?>
-                                            <i class="fas fa-door-open mr-1 text-purple-500"></i>
-                                            Habitación <?= htmlspecialchars($hab['numero'] ?? '') ?>
-                                            <?php if (!empty($hab['habitacion_id'])): ?>
-                                                    <i class="fas fa-arrow-up-right-from-square text-[10px] opacity-60"></i>
-                                                </a>
-                                            <?php endif; ?>
-                                        </h4>
-                                        <p class="text-xs text-gray-600 mt-1">
-                                            <?= htmlspecialchars($hab['tipo'] ?? '') ?> • Piso <?= htmlspecialchars($hab['piso'] ?? '') ?>
-                                        </p>
+                <div class="rdv3-layout">
+                    <div class="rdv3-left">
+                        <section class="rdv3-card rdv3-card--stay">
+                            <header class="rdv3-card-header">
+                                <div class="rdv3-heading">
+                                    <span class="rdv3-icon rdv3-icon--blue"><i class="far fa-calendar"></i></span>
+                                    <h2 class="rdv3-card-title">Informacion de la reservacion</h2>
+                                </div>
+                            </header>
+                            <div class="rdv3-card-body">
+                                <div class="rdv3-stay">
+                                    <div class="rdv3-date">
+                                        <span class="rdv3-label">Check-in</span>
+                                        <strong><?= $rdSafe($rdDate($reservacion['fecha_entrada'] ?? null)) ?></strong>
+                                        <span>A partir de <?= $rdSafe($rdEntryTime, '15:00') ?></span>
                                     </div>
-                                    <?php if ($es_cortesia_habitacion): ?>
-                                        <span class="text-xs bg-gradient-to-r from-green-500 to-green-600 text-white px-2 py-1 rounded-full font-bold shadow">
-                                            <i class="fas fa-gift mr-0.5"></i>Cortesía
-                                        </span>
-                                    <?php else: ?>
+                                    <div class="rdv3-nights">
+                                        <div><b><?= (int)$rdNoches ?></b><span>noches</span></div>
+                                    </div>
+                                    <div class="rdv3-date">
+                                        <span class="rdv3-label">Check-out</span>
+                                        <strong><?= $rdSafe($rdDate($reservacion['fecha_salida'] ?? null)) ?></strong>
+                                        <span>Antes de <?= $rdSafe($rdExitTime, '12:00') ?></span>
+                                    </div>
+                                </div>
+                                <div class="rdv3-total">
+                                    <div>
+                                        <span class="rdv3-label rdv3-label--green">Precio total</span>
+                                        <div class="rdv3-amount"><?= $rdMoney($rdTotal) ?></div>
+                                    </div>
+                                    <span class="rdv3-pill"><i class="fas fa-check"></i><?= $rdSafe($rdPaymentLabel, 'Pago pendiente') ?></span>
+                                </div>
+                                <?php if (!empty($reservacion['notas'])): ?>
+                                    <div class="rdv3-res-note"><i class="far fa-note-sticky"></i><?= $rdSafe($reservacion['notas']) ?></div>
+                                <?php endif; ?>
+                            </div>
+                        </section>
 
+                        <section class="rdv3-card rdv3-card--rooms">
+                            <header class="rdv3-card-header">
+                                <div class="rdv3-heading">
+                                    <span class="rdv3-icon rdv3-icon--violet"><i class="fas fa-bed"></i></span>
+                                    <h2 class="rdv3-card-title">Habitaciones reservadas</h2>
+                                </div>
+                                <?php if ($rdCortesias > 0): ?>
+                                    <span class="rdv3-badge"><i class="fas fa-gift"></i><?= $rdCortesias ?> cortesia<?= $rdCortesias === 1 ? '' : 's' ?></span>
+                                <?php endif; ?>
+                            </header>
+                            <div class="rdv3-card-body">
+                                <?php if (empty($rdRooms)): ?>
+                                    <div class="rdv3-empty">No hay habitaciones asociadas a esta reservacion.</div>
+                                <?php else: ?>
+                                    <div class="rdv3-rooms">
+                                        <?php foreach ($rdRooms as $room): ?>
+                                            <?php
+                                            $roomIsCourtesy = !empty($room['es_cortesia']) || !empty($room['cortesia']);
+                                            $roomType = $room['tipo_nombre'] ?? $room['tipo'] ?? $room['nombre_tipo'] ?? 'Habitacion';
+                                            $roomPeople = $room['personas'] ?? $room['capacidad'] ?? null;
+                                            $roomPrice = $room['precio'] ?? $room['precio_total'] ?? $room['precio_noche'] ?? null;
+                                            ?>
+                                            <article class="rdv3-room <?= $roomIsCourtesy ? 'is-courtesy' : '' ?>">
+                                                <div class="rdv3-room-top">
+                                                    <div>
+                                                        <div class="rdv3-room-number"><?= $rdSafe($room['numero'] ?? 'S/N') ?></div>
+                                                        <div class="rdv3-room-type"><?= $rdSafe($roomType) ?><?= $roomPeople ? ' - ' . (int)$roomPeople . ' personas' : '' ?></div>
+                                                    </div>
+                                                    <?php if ($roomIsCourtesy): ?>
+                                                        <span class="rdv3-badge"><i class="fas fa-gift"></i>Cortesia</span>
+                                                    <?php elseif ($roomPrice !== null): ?>
+                                                        <div class="rdv3-room-price"><?= $rdMoney($roomPrice) ?></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="rdv3-tags">
+                                                    <?php if (!empty($room['piso'])): ?><span class="rdv3-tag"><i class="fas fa-layer-group"></i>Piso <?= $rdSafe($room['piso']) ?></span><?php endif; ?>
+                                                    <?php if (!empty($room['categoria'])): ?><span class="rdv3-tag"><i class="fas fa-tag"></i><?= $rdSafe($room['categoria']) ?></span><?php endif; ?>
+                                                    <?php if (!$roomIsCourtesy && $roomPrice === null): ?><span class="rdv3-tag"><i class="fas fa-bed"></i>Reservada</span><?php endif; ?>
+                                                </div>
+                                            </article>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </section>
+
+                        <section class="rdv3-card rdv3-card--guest">
+                            <header class="rdv3-card-header">
+                                <div class="rdv3-heading">
+                                    <span class="rdv3-icon rdv3-icon--violet"><i class="far fa-user"></i></span>
+                                    <h2 class="rdv3-card-title">Datos del huesped</h2>
+                                </div>
+                                <?php if (!empty($huesped['id'])): ?>
+                                    <a class="rdv3-link" href="<?= url('huespedes/' . (int)$huesped['id']) ?>">Ver ficha &rarr;</a>
+                                <?php endif; ?>
+                            </header>
+                            <div class="rdv3-card-body">
+                                <div class="rdv3-guest-head">
+                                    <div class="rdv3-avatar"><?= $rdSafe($rdHuespedIniciales, 'H') ?></div>
+                                    <div>
+                                        <h2 class="rdv3-guest-name"><?= $rdSafe($rdGuestName, 'Huesped') ?></h2>
+                                        <div class="rdv3-guest-sub"><?= $rdSafe($huesped['tipo_cliente'] ?? 'Cliente') ?><?= $rdGuestOrigin !== '' ? ' - ' . $rdSafe($rdGuestOrigin) : '' ?></div>
+                                    </div>
+                                </div>
+
+                                <div class="rdv3-info-grid">
+                                    <div class="rdv3-info"><i class="fas fa-phone"></i><div><small>Telefono</small><b><?= $rdSafe($rdGuestPhone) ?></b></div></div>
+                                    <div class="rdv3-info"><i class="far fa-envelope"></i><div><small>Email</small><b><?= $rdSafe($rdGuestEmail) ?></b></div></div>
+                                    <div class="rdv3-info"><i class="far fa-address-card"></i><div><small>Identificacion</small><b><?= $rdSafe($rdGuestId) ?></b></div></div>
+                                    <div class="rdv3-info"><i class="fas fa-location-dot"></i><div><small>Procedencia</small><b><?= $rdSafe($rdGuestOrigin) ?></b></div></div>
+                                </div>
+
+                                <div class="rdv3-subhead">
+                                    <span><i class="fas fa-car-side rdv3-car-accent"></i>Vehiculos registrados</span>
+                                    <button type="button" class="rdv3-link" onclick="abrirModalAgregarVehiculo()"><i class="fas fa-pen"></i> Agregar</button>
+                                </div>
+                                <div id="listaVehiculos" class="rdv3-vehicle-list">
+                                    <?php if (empty($rdVehicles)): ?>
+                                        <div class="rdv3-empty">Cargando vehiculos...</div>
+                                    <?php else: ?>
+                                        <?php foreach ($rdVehicles as $vehiculo): ?>
+                                            <div class="rdv3-vehicle">
+                                                <div class="rdv3-vehicle-main">
+                                                    <span class="rdv3-vehicle-icon"><i class="fas fa-car"></i></span>
+                                                    <div>
+                                                        <div class="rdv3-vehicle-title"><?= $rdSafe(trim(($vehiculo['marca'] ?? '') . ' ' . ($vehiculo['modelo'] ?? '') . ' ' . ($vehiculo['color'] ?? '')), 'Vehiculo') ?></div>
+                                                        <div class="rdv3-vehicle-sub"><?= $rdSafe($vehiculo['ubicacion_estacionamiento'] ?? $vehiculo['observaciones'] ?? 'Registrado') ?></div>
+                                                    </div>
+                                                </div>
+                                                <span class="rdv3-plate"><?= $rdSafe($vehiculo['placas'] ?? $vehiculo['placa'] ?? 'S/P') ?></span>
+                                            </div>
+                                        <?php endforeach; ?>
                                     <?php endif; ?>
                                 </div>
-                                <div class="room-price-panel">
-                                    <span class="room-price-label">
-                                        Precio que pag&oacute; el cliente
-                                    </span>
-                                    <span class="room-price-value <?= $es_cortesia_habitacion ? 'is-free' : '' ?>">
-                                        <?= $es_cortesia_habitacion ? 'Cortes&iacute;a' : format_money($precio_habitacion_pagado) ?>
-                                    </span>
+                            </div>
+                        </section>
+
+                        <section class="rdv3-card rdv3-card--docs">
+                            <header class="rdv3-card-header">
+                                <div class="rdv3-heading">
+                                    <span class="rdv3-icon"><i class="far fa-folder"></i></span>
+                                    <h2 class="rdv3-card-title">Documentos vinculados</h2>
                                 </div>
-                                <?php if (!empty($hab['habitacion_id'])): ?>
-                                    <div class="rd-mini-actions no-print">
-                                        <a href="<?= url('habitaciones/' . (int)$hab['habitacion_id']) ?>"
-                                           class="rd-mini-link"
-                                           onclick="event.stopPropagation();"
-                                           title="Abrir detalle de habitacion">
-                                            <i class="fas fa-eye"></i>
-                                            Ver detalle
-                                        </a>
-                                        <a href="<?= url('habitaciones/' . (int)$hab['habitacion_id'] . '/historial') ?>"
-                                           class="rd-mini-link"
-                                           onclick="event.stopPropagation();"
-                                           title="Ver historial de la habitacion">
-                                            <i class="fas fa-clock-rotate-left"></i>
-                                            Historial
-                                        </a>
+                                <div class="rdv3-doc-actions">
+                                    <?php if ($rdDocEntityTipo !== '' && $rdDocEntityId > 0): ?>
+                                        <a class="rdv3-doc-btn is-soft" href="<?= url('documentos/entidad/' . rawurlencode($rdDocEntityTipo) . '/' . $rdDocEntityId) ?>"><i class="fas fa-lock"></i>Centro Documental</a>
+                                        <a class="rdv3-doc-btn is-gold" href="<?= url('documentos/subir' . $rdDocEntityQuery) ?>"><i class="fas fa-link"></i>Vincular documento</a>
+                                    <?php endif; ?>
+                                </div>
+                            </header>
+                            <div class="rdv3-card-body">
+                                <?php if (empty($rdDocuments)): ?>
+                                    <div class="rdv3-empty">Esta reservacion aun no tiene documentos vinculados.</div>
+                                <?php else: ?>
+                                    <div class="rdv3-doc-list">
+                                        <?php foreach ($rdDocuments as $documento): ?>
+                                            <?php
+                                            $documentoId = (int)($documento['id'] ?? 0);
+                                            $docEstado = trim((string)($documento['estado'] ?? '')) ?: 'activo';
+                                            $docName = trim((string)(($documento['titulo'] ?? '') ?: ($documento['nombre_original'] ?? 'Documento')));
+                                            [$docIconLabel, $docIconClass] = $rdDocIcon($documento);
+                                            ?>
+                                            <article class="rdv3-doc-row">
+                                                <div class="rdv3-doc-main">
+                                                    <span class="rdv3-docicon <?= $docIconClass ?>"><?= $rdSafe($docIconLabel) ?></span>
+                                                    <div>
+                                                        <div class="rdv3-doc-title"><?= $rdSafe($docName, 'Documento') ?></div>
+                                                        <div class="rdv3-doc-meta"><?= $rdBytes($documento['size_bytes'] ?? 0) ?> &middot; <?= $rdSafe($rdDateTime($documento['created_at'] ?? null)) ?> &middot; <?= $rdSafe($documento['subido_por_nombre'] ?? 'Recepcion') ?></div>
+                                                    </div>
+                                                </div>
+                                                <div class="rdv3-doc-right">
+                                                    <span class="rdv3-doc-state <?= $docEstado === 'borrador' ? 'is-draft' : '' ?>"><?= $rdSafe($docEstado, 'activo') ?></span>
+                                                    <?php if ($documentoId > 0): ?>
+                                                        <a class="rdv3-iconbtn" href="<?= url('documentos/' . $documentoId) ?>" aria-label="Ver documento"><i class="far fa-eye"></i></a>
+                                                        <a class="rdv3-iconbtn" href="<?= url('documentos/' . $documentoId . '/descargar') ?>" aria-label="Descargar documento"><i class="fas fa-print"></i></a>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </article>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <div class="rdv3-footer-line">
+                                        <span><?= count($rdDocuments) ?> documento<?= count($rdDocuments) === 1 ? '' : 's' ?> &middot; <?= $rdBytes($rdDocTotalBytes) ?> en total</span>
+                                        <?php if ($rdDocEntityTipo !== '' && $rdDocEntityId > 0): ?>
+                                            <a class="rdv3-link" href="<?= url('documentos/entidad/' . rawurlencode($rdDocEntityTipo) . '/' . $rdDocEntityId) ?>">Ver todos en Centro Documental &rarr;</a>
+                                        <?php endif; ?>
                                     </div>
                                 <?php endif; ?>
                             </div>
-                        <?php endforeach; ?>
+                        </section>
                     </div>
+
+                    <aside class="rdv3-right" aria-label="Panel lateral de reservacion">
+                        <section class="rdv3-card rdv3-side-card rdv3-side-card--actions">
+                            <header class="rdv3-card-header">
+                                <div class="rdv3-heading"><span class="rdv3-icon"><i class="fas fa-grip"></i></span><h2 class="rdv3-card-title">Acciones rapidas</h2></div>
+                            </header>
+                            <div class="rdv3-card-body rdv3-actions">
+                                <?php if ($rdCheckinMode === 'normal'): ?>
+                                    <button type="button" class="rdv3-action" onclick="abrirModalCheckIn(<?= $rdReservationId ?>, <?= $rdTotal ?>)"><span class="rdv3-action-left"><span class="rdv3-action-icon is-green"><i class="fas fa-right-to-bracket"></i></span>Registrar check-in</span><i class="fas fa-chevron-right"></i></button>
+                                <?php elseif ($rdCheckinMode === 'late' || $rdCheckinMode === 'express'): ?>
+                                    <button type="button" class="rdv3-action" onclick='abrirModalCheckInTardio(<?= $rdReservationId ?>, <?= $rdHuespedNombreJsonAttr ?>, <?= $rdHabitacionesTextoJsonAttr ?>, <?= $rdFechaEntradaFormatoJsonAttr ?>, <?= $rdFechaSalidaFormatoJsonAttr ?>, <?= $rdTotal ?>, "<?= $rdCheckinJsMode ?>", <?= (int)$rdCheckinDays ?>)'><span class="rdv3-action-left"><span class="rdv3-action-icon is-green"><i class="fas fa-right-to-bracket"></i></span>Registrar check-in</span><i class="fas fa-chevron-right"></i></button>
+                                <?php elseif ($rdEstadoKey === 'checked_in'): ?>
+                                    <button type="button" class="rdv3-action" onclick="abrirModalCheckOut()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-green"><i class="fas fa-right-from-bracket"></i></span>Registrar check-out</span><i class="fas fa-chevron-right"></i></button>
+                                <?php endif; ?>
+                                <button type="button" class="rdv3-action" onclick="abrirModalCambiarPago()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-gold"><i class="fas fa-right-left"></i></span>Cambiar metodo de pago</span><i class="fas fa-chevron-right"></i></button>
+                                <button type="button" class="rdv3-action" onclick="abrirModalCotizacion()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-blue"><i class="fas fa-clipboard-list"></i></span>Generar cotizacion</span><i class="fas fa-chevron-right"></i></button>
+                                <button type="button" class="rdv3-action" onclick="abrirModalModificarDias()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-violet"><i class="far fa-calendar"></i></span>Modificar dias</span><i class="fas fa-chevron-right"></i></button>
+                                <?php if (!empty($reservacion['metodo_pago'])): ?>
+                                    <button type="button" class="rdv3-action" onclick="imprimirTicketTermico()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-gray"><i class="fas fa-print"></i></span>Imprimir ticket termico</span><i class="fas fa-chevron-right"></i></button>
+                                <?php endif; ?>
+                            </div>
+                        </section>
+
+                        <section class="rdv3-card rdv3-side-card rdv3-side-card--timeline">
+                            <header class="rdv3-card-header">
+                                <div class="rdv3-heading"><span class="rdv3-icon"><i class="far fa-clock"></i></span><h2 class="rdv3-card-title">Timeline</h2></div>
+                            </header>
+                            <div class="rdv3-card-body">
+                                <div class="rdv3-timeline">
+                                    <div class="rdv3-step is-blue"><div class="rdv3-step-title">Reservacion creada</div><div class="rdv3-step-meta"><?= $rdSafe($rdDateTime($rdCreatedAt), '-') ?></div></div>
+                                    <?php if (!empty($reservacion['metodo_pago'])): ?>
+                                        <div class="rdv3-step is-green"><div class="rdv3-step-title">Pago registrado - <?= $rdMoney($rdTotalPaid) ?></div><div class="rdv3-step-meta"><?= $rdSafe($rdMetodoPagoLabel) ?></div></div>
+                                    <?php endif; ?>
+                                    <div class="rdv3-step is-gold"><div class="rdv3-step-title"><?= $rdSafe($rdEstadoLabel) ?></div><div class="rdv3-step-meta"><?= $rdSafe($rdDateTime($reservacion['updated_at'] ?? $rdCreatedAt), '-') ?></div></div>
+                                    <div class="rdv3-step"><div class="rdv3-step-title"><?= $rdEstadoKey === 'checked_in' ? 'Check-in realizado' : 'Check-in pendiente' ?></div><div class="rdv3-step-meta"><?= $rdEstadoKey === 'checked_in' ? $rdSafe($rdDateTime($reservacion['fecha_checkin'] ?? $rdCreatedAt), '-') : 'Programado ' . $rdSafe($rdDate($reservacion['fecha_entrada'] ?? null)) . ' ' . $rdSafe($rdEntryTime, '15:00') ?></div></div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="rdv3-card rdv3-side-card rdv3-side-card--payment">
+                            <header class="rdv3-card-header">
+                                <div class="rdv3-heading"><span class="rdv3-icon rdv3-icon--green"><i class="far fa-credit-card"></i></span><h2 class="rdv3-card-title">Informacion de pago</h2></div>
+                            </header>
+                            <div class="rdv3-card-body">
+                                <div class="rdv3-payment-total"><small>Total pagado</small><b><?= $rdMoney($rdTotalPaid) ?></b></div>
+                                <?php if (empty($rdPayments)): ?>
+                                    <div class="rdv3-payment-row">
+                                        <div class="rdv3-payment-method"><i class="far fa-credit-card"></i><div><b><?= $rdSafe($rdMetodoPagoLabel) ?></b><small>Metodo registrado</small></div></div>
+                                        <span class="rdv3-payment-amount"><?= $rdMoney($rdTotalPaid) ?></span>
+                                    </div>
+                                <?php else: ?>
+                                    <?php foreach ($rdPayments as $payment): ?>
+                                        <?php $paymentMethod = $payment['metodo_pago'] ?? $payment['metodo'] ?? $rdMetodoPagoLabel; ?>
+                                        <div class="rdv3-payment-row">
+                                            <div class="rdv3-payment-method"><i class="far fa-credit-card"></i><div><b><?= $rdSafe(ucfirst(str_replace('_', ' ', (string)$paymentMethod))) ?></b><small><?= $rdSafe($payment['referencia'] ?? $payment['notas'] ?? 'Recibido en caja') ?></small></div></div>
+                                            <span class="rdv3-payment-amount"><?= $rdMoney($payment['monto'] ?? $payment['cantidad'] ?? 0) ?></span>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                        </section>
+
+                        <section class="rdv3-card rdv3-side-card rdv3-side-card--notes">
+                            <header class="rdv3-card-header">
+                                <div class="rdv3-heading"><span class="rdv3-icon"><i class="far fa-note-sticky"></i></span><h2 class="rdv3-card-title">Notas rapidas</h2></div>
+                                <span class="rdv3-badge rdv3-count-badge"><?= (int)($total_notas ?? count($rdNotes)) ?></span>
+                            </header>
+                            <div class="rdv3-card-body">
+                                <textarea id="nuevaNota" class="rdv3-sr-only" aria-hidden="true" tabindex="-1"></textarea>
+                                <div id="listaNotas" class="rdv3-note-list">
+                                    <?php if (empty($rdNotes)): ?>
+                                        <div class="rdv3-empty">No hay notas aun.</div>
+                                    <?php else: ?>
+                                        <?php foreach ($rdNotes as $nota): ?>
+                                            <div class="rdv3-note nota-item">
+                                                <small><?= $rdSafe($nota['usuario_nombre'] ?? 'Recepcion') ?> &middot; <?= $rdSafe($rdDateTime($nota['created_at'] ?? null), '-') ?></small>
+                                                <?= nl2br($rdSafe($nota['nota'] ?? '')) ?>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </section>
+                    </aside>
                 </div>
             </div>
+        </main>
+    </div>
+</div>
 
-            <!-- Huésped -->
-            <div id="huesped-reservacion" class="info-card card-green rd-section-card">
-                <div class="card-header">
-                    <div class="card-icon icon-green">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <h2 class="text-base font-bold text-gray-800">Datos del Huésped</h2>
-                </div>
-                <div class="card-body">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div class="info-row">
-                            <span class="info-label">Nombre completo</span>
-                            <span class="info-value">
-                                <?php if (!empty($huesped['id'])): ?>
-                                    <a href="<?= url('huespedes/' . (int)$huesped['id']) ?>"
-                                       class="rd-inline-link"
-                                       title="Ver perfil completo del huesped">
-                                        <?= htmlspecialchars($huesped['nombre_completo'] ?? 'No especificado') ?>
-                                        <i class="fas fa-arrow-up-right-from-square text-[10px] opacity-60"></i>
-                                    </a>
-                                <?php else: ?>
-                                    <?= htmlspecialchars($huesped['nombre_completo'] ?? 'No especificado') ?>
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Teléfono</span>
-                            <span class="info-value">
-                                <i class="fas fa-phone text-xs text-green-500 mr-1"></i>
-                                <?php if (!empty($huesped['telefono'])): ?>
-                                    <a href="tel:<?= htmlspecialchars(preg_replace('/\D+/', '', (string)$huesped['telefono'])) ?>"
-                                       class="rd-inline-link"
-                                       title="Llamar al huesped">
-                                        <?= htmlspecialchars($huesped['telefono']) ?>
-                                    </a>
-                                <?php else: ?>
-                                    -
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        <div class="info-row md:col-span-2">
-                            <span class="info-label">Email</span>
-                            <span class="info-value text-sm">
-                                <i class="fas fa-envelope text-xs text-green-500 mr-1"></i>
-                                <?php if (!empty($huesped['email'])): ?>
-                                    <a href="mailto:<?= htmlspecialchars($huesped['email']) ?>"
-                                       class="rd-inline-link"
-                                       title="Enviar correo al huesped">
-                                        <?= htmlspecialchars($huesped['email']) ?>
-                                    </a>
-                                <?php else: ?>
-                                    -
-                                <?php endif; ?>
-                            </span>
-                        </div>
-                        <div class="info-row md:col-span-2">
-                            <span class="info-label">Procedencia</span>
-                            <span class="info-value">
-                                <i class="fas fa-map-marker-alt text-xs text-green-500 mr-1"></i>
-                                <a href="<?= url('reportes/procedencia') ?>"
-                                   class="rd-inline-link"
-                                   title="Abrir reporte de procedencia geografica">
-                                    <?= htmlspecialchars($huesped['procedencia_ciudad'] ?: '-') ?>,
-                                    <?= htmlspecialchars($huesped['procedencia_estado'] ?: '-') ?>
-                                </a>
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Vehículos Section -->
-                    <div class="mt-4 pt-4 border-t-2 border-gray-100">
-                        <div class="flex justify-between items-center mb-3">
-                            <h3 class="text-sm font-bold text-gray-800 flex items-center gap-2">
-                                <i class="fas fa-car text-purple-500"></i>
-                                Vehículos Registrados
-                            </h3>
-                            <button onclick="abrirModalAgregarVehiculo()"
-                                    class="text-xs bg-purple-100 text-purple-700 hover:bg-purple-200 px-3 py-1 rounded-full font-semibold transition-all">
-                                <i class="fas fa-plus-circle mr-1"></i>Agregar
-                            </button>
-                        </div>
-
-                        <div id="listaVehiculos">
-                            <div class="text-center py-4">
-                                <i class="fas fa-spinner fa-spin text-2xl text-purple-500"></i>
-                                <p class="text-sm text-gray-500 mt-2">Cargando vehículos...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Agregar después de la sección de vehículos -->
-<?php if ($reservacion['estado'] == 'checked_in'): ?>
-<!-- Control de Llaves Section -->
-
-<?php endif; ?>
-
-<?php if ($reservacion['estado'] == 'checked_in'): ?>
-<!-- Control de Remotos Section -->
-<!-- ============================================================ -->
-<!-- SECCIÓN ACTUALIZADA: Control de Remotos -->
-<!-- Reemplazar desde la línea 1078 hasta la línea 1224 en ver.php -->
-<!-- ============================================================ -->
-
-<!-- Control de Remotos Section -->
-
-<?php endif; ?>
 <!-- Modal para Entregar Llave -->
 <div id="modalEntregarLlave" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="width: 400px;">
@@ -3117,663 +3338,6 @@ document.getElementById('formRecibirLlave').addEventListener('submit', function(
     this.submit();
 });
 </script>
-
-
-<script>
-// Funciones para control de llaves
-function abrirModalEntregarLlave(habitacionId, numeroHabitacion) {
-    document.getElementById('entregar_habitacion_id').value = habitacionId;
-    document.getElementById('entregar_habitacion_numero').textContent = 'Habitación ' + numeroHabitacion;
-    document.getElementById('modalEntregarLlave').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-}
-
-function cerrarModalEntregarLlave() {
-    document.getElementById('modalEntregarLlave').style.display = 'none';
-    document.body.style.overflow = 'auto';
-    document.getElementById('formEntregarLlave').reset();
-}
-
-function abrirModalRecibirLlave(habitacionId, numeroHabitacion) {
-    document.getElementById('recibir_habitacion_id').value = habitacionId;
-    document.getElementById('recibir_habitacion_numero').textContent = 'Habitación ' + numeroHabitacion;
-    document.getElementById('modalRecibirLlave').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-}
-
-function cerrarModalRecibirLlave() {
-    document.getElementById('modalRecibirLlave').style.display = 'none';
-    document.body.style.overflow = 'auto';
-    document.getElementById('formRecibirLlave').reset();
-}
-
-function toggleEntregaManual(mostrar) {
-    document.getElementById('entregaManualDiv').style.display = mostrar ? 'block' : 'none';
-}
-
-function toggleRecepcionManual(mostrar) {
-    document.getElementById('recepcionManualDiv').style.display = mostrar ? 'block' : 'none';
-}
-
-// Función para entrega rápida desde el índice de habitaciones
-function entregarLlaveRapida(habitacionId, reservacionId) {
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: '¿Entregar llave al huésped?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#3B82F6',
-            cancelButtonColor: '#6B7280',
-            confirmButtonText: 'Sí, entregar',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Crear formulario temporal
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '<?= url("reservaciones/entregar-llave") ?>';
-
-                // CSRF token
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = 'csrf_token';
-                csrfInput.value = '<?= csrf_token() ?>';
-                form.appendChild(csrfInput);
-
-                // Habitación ID
-                const habInput = document.createElement('input');
-                habInput.type = 'hidden';
-                habInput.name = 'habitacion_id';
-                habInput.value = habitacionId;
-                form.appendChild(habInput);
-
-                // Reservación ID
-                const resInput = document.createElement('input');
-                resInput.type = 'hidden';
-                resInput.name = 'reservacion_id';
-                resInput.value = reservacionId;
-                form.appendChild(resInput);
-
-                // Tipo entrega
-                const tipoInput = document.createElement('input');
-                tipoInput.type = 'hidden';
-                tipoInput.name = 'tipo_entrega';
-                tipoInput.value = 'usuario_actual';
-                form.appendChild(tipoInput);
-
-                document.body.appendChild(form);
-                form.submit();
-            }
-        });
-    } else {
-        if (confirm('¿Entregar llave al huésped?')) {
-            window.location.href = '<?= url("reservaciones/entregar-llave-rapida/") ?>' + habitacionId + '/' + reservacionId;
-        }
-    }
-}
-
-// Funciones para control de remotos
-function abrirModalEntregarRemoto(habitacionId, numeroHabitacion) {
-    document.getElementById('entregar_remoto_habitacion_id').value = habitacionId;
-    document.getElementById('entregar_remoto_habitacion_numero').textContent = numeroHabitacion;
-    document.getElementById('modalEntregarRemoto').style.display = 'flex';
-    document.getElementById('formEntregarRemoto').action = '<?= url("reservaciones/entregar-remoto") ?>';
-}
-
-function cerrarModalEntregarRemoto() {
-    document.getElementById('modalEntregarRemoto').style.display = 'none';
-    document.getElementById('formEntregarRemoto').reset();
-}
-
-function abrirModalRecibirRemoto(habitacionId, numeroHabitacion) {
-    document.getElementById('recibir_remoto_habitacion_id').value = habitacionId;
-    document.getElementById('recibir_remoto_habitacion_numero').textContent = numeroHabitacion;
-    document.getElementById('modalRecibirRemoto').style.display = 'flex';
-    document.getElementById('formRecibirRemoto').action = '<?= url("reservaciones/recibir-remoto") ?>';
-}
-
-function cerrarModalRecibirRemoto() {
-    document.getElementById('modalRecibirRemoto').style.display = 'none';
-    document.getElementById('formRecibirRemoto').reset();
-}
-
-function toggleEntregaRemotoManual(show) {
-    const div = document.getElementById('entregaRemotoManualDiv');
-    const input = div.querySelector('input[name="entregada_por_manual"]');
-
-    if (show) {
-        div.style.display = 'block';
-        input.required = true;
-    } else {
-        div.style.display = 'none';
-        input.required = false;
-        input.value = '';
-    }
-}
-
-function toggleRecepcionRemotoManual(show) {
-    const div = document.getElementById('recepcionRemotoManualDiv');
-    const input = div.querySelector('input[name="recibida_por_manual"]');
-
-    if (show) {
-        div.style.display = 'block';
-        input.required = true;
-    } else {
-        div.style.display = 'none';
-        input.required = false;
-        input.value = '';
-    }
-}
-
-function abrirModalEntregarRemotosMultiples() {
-    // Desmarcar todos los checkboxes
-    document.querySelectorAll('.remoto-checkbox').forEach(cb => cb.checked = false);
-    document.getElementById('selectAllRemotos').checked = false;
-
-    document.getElementById('modalEntregarRemotosMultiples').style.display = 'flex';
-}
-
-function cerrarModalEntregarRemotosMultiples() {
-    document.getElementById('modalEntregarRemotosMultiples').style.display = 'none';
-    document.getElementById('formEntregarRemotosMultiples').reset();
-}
-
-function abrirModalRecibirRemotosMultiples() {
-    // Desmarcar todos los checkboxes
-    document.querySelectorAll('.remoto-recibir-checkbox').forEach(cb => cb.checked = false);
-    document.getElementById('selectAllRemotosRecibir').checked = false;
-
-    document.getElementById('modalRecibirRemotosMultiples').style.display = 'flex';
-}
-
-function cerrarModalRecibirRemotosMultiples() {
-    document.getElementById('modalRecibirRemotosMultiples').style.display = 'none';
-    document.getElementById('formRecibirRemotosMultiples').reset();
-}
-
-function toggleSelectAllRemotos() {
-    const selectAll = document.getElementById('selectAllRemotos');
-    const checkboxes = document.querySelectorAll('.remoto-checkbox');
-
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = selectAll.checked;
-    });
-}
-
-function toggleSelectAllRemotosRecibir() {
-    const selectAll = document.getElementById('selectAllRemotosRecibir');
-    const checkboxes = document.querySelectorAll('.remoto-recibir-checkbox');
-
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = selectAll.checked;
-    });
-}
-
-function toggleEntregaRemotosMultiplesManual(show) {
-    const div = document.getElementById('entregaRemotosMultiplesManualDiv');
-    const input = div.querySelector('input[name="entregada_por_manual"]');
-
-    if (show) {
-        div.style.display = 'block';
-        input.required = true;
-    } else {
-        div.style.display = 'none';
-        input.required = false;
-        input.value = '';
-    }
-}
-
-function toggleRecepcionRemotosMultiplesManual(show) {
-    const div = document.getElementById('recepcionRemotosMultiplesManualDiv');
-    const input = div.querySelector('input[name="recibida_por_manual"]');
-
-    if (show) {
-        div.style.display = 'block';
-        input.required = true;
-    } else {
-        div.style.display = 'none';
-        input.required = false;
-        input.value = '';
-    }
-}
-
-// Validación de formularios múltiples
-document.getElementById('formEntregarRemotosMultiples')?.addEventListener('submit', function(e) {
-    const checkboxes = document.querySelectorAll('.remoto-checkbox:checked');
-
-    if (checkboxes.length === 0) {
-        e.preventDefault();
-        alert('Debe seleccionar al menos una habitación');
-        return false;
-    }
-
-    const nombrePropietario = this.querySelector('input[name="nombre_propietario_ine"]').value.trim();
-    if (!nombrePropietario) {
-        e.preventDefault();
-        alert('Debe ingresar el nombre del propietario de la identificación');
-        return false;
-    }
-
-    const tipoIdentificacion = this.querySelector('input[name="tipo_identificacion"]:checked');
-    if (!tipoIdentificacion) {
-        e.preventDefault();
-        alert('Debe seleccionar el tipo de identificación');
-        return false;
-    }
-
-    // Confirmar acción
-    const cantidad = checkboxes.length;
-    const mensaje = `¿Confirma entregar ${cantidad} control(es) remoto(s) a ${nombrePropietario}?`;
-
-    if (!confirm(mensaje)) {
-        e.preventDefault();
-        return false;
-    }
-});
-
-document.getElementById('formRecibirRemotosMultiples')?.addEventListener('submit', function(e) {
-    const checkboxes = document.querySelectorAll('.remoto-recibir-checkbox:checked');
-
-    if (checkboxes.length === 0) {
-        e.preventDefault();
-        alert('Debe seleccionar al menos una habitación');
-        return false;
-    }
-
-    // Confirmar acción
-    const cantidad = checkboxes.length;
-    const mensaje = `¿Confirma recibir ${cantidad} control(es) remoto(s) del huésped?`;
-
-    if (!confirm(mensaje)) {
-        e.preventDefault();
-        return false;
-    }
-});
-
-// Cerrar modales al hacer clic fuera
-window.addEventListener('click', function(e) {
-    // Modal entregar individual
-    if (e.target.id === 'modalEntregarRemoto') {
-        cerrarModalEntregarRemoto();
-    }
-
-    // Modal recibir individual
-    if (e.target.id === 'modalRecibirRemoto') {
-        cerrarModalRecibirRemoto();
-    }
-
-    // Modal entregar múltiple
-    if (e.target.id === 'modalEntregarRemotosMultiples') {
-        cerrarModalEntregarRemotosMultiples();
-    }
-
-    // Modal recibir múltiple
-    if (e.target.id === 'modalRecibirRemotosMultiples') {
-        cerrarModalRecibirRemotosMultiples();
-    }
-});
-
-// Cerrar modales con tecla ESC
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        cerrarModalEntregarRemoto();
-        cerrarModalRecibirRemoto();
-        cerrarModalEntregarRemotosMultiples();
-        cerrarModalRecibirRemotosMultiples();
-    }
-});
-
-// Manejadores de formularios
-document.getElementById('formEntregarRemoto').addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    // Validar que se seleccionó tipo de identificación
-    const tipoId = document.querySelector('input[name="tipo_identificacion"]:checked');
-    if (!tipoId) {
-        alert('Debe seleccionar el tipo de identificación');
-        return;
-    }
-
-    this.action = '<?= url("reservaciones/entregar-remoto") ?>';
-    this.submit();
-});
-
-document.getElementById('formRecibirRemoto').addEventListener('submit', function(e) {
-    e.preventDefault();
-    this.action = '<?= url("reservaciones/recibir-remoto") ?>';
-    this.submit();
-});
-
-// Manejadores de formularios
-document.getElementById('formEntregarLlave').addEventListener('submit', function(e) {
-    e.preventDefault();
-    this.action = '<?= url("reservaciones/entregar-llave") ?>';
-    this.submit();
-});
-
-document.getElementById('formRecibirLlave').addEventListener('submit', function(e) {
-    e.preventDefault();
-    this.action = '<?= url("reservaciones/recibir-llave") ?>';
-    this.submit();
-});
-</script>
-                    <div class="mt-4 flex justify-end">
-                        <a href="<?= url('huespedes/' . (int)($huesped['id'] ?? 0)) ?>"
-                           class="btn-action btn-primary">
-                            <i class="fas fa-user-circle"></i>
-                            Ver perfil completo
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Columna Lateral -->
-        <!-- Columna Lateral -->
-<div class="space-y-3">
-    <!-- Estado Actual -->
-    <div class="info-card card-gold">
-        <div class="card-body text-center py-4">
-            <?php
-            $estado_colors = [
-                'confirmada' => 'blue',
-                'checked_in' => 'green',
-                'checked_out' => 'gray',
-                'cancelada' => 'red'
-            ];
-            $color = $estado_colors[$reservacion['estado']] ?? 'gray';
-            ?>
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-<?= $color ?>-100 to-<?= $color ?>-200 mb-3 shadow-lg">
-                <i class="fas fa-<?= htmlspecialchars($estado_info['icon'] ?? 'circle') ?> text-2xl text-<?= $color ?>-600"></i>
-            </div>
-            <p class="text-lg font-bold text-<?= $color ?>-600">
-                <?= htmlspecialchars($estado_info['label']) ?>
-            </p>
-            <?php if (!empty($reservacion['updated_at'])): ?>
-                <p class="text-xs text-gray-500 mt-2">
-                    Actualizado: <?= date('d/m H:i', strtotime($reservacion['updated_at'])) ?>
-                </p>
-            <?php endif; ?>
-
-            <?php if ($reservacion['estado'] == 'checked_in' && !empty($reservacion['fecha_entrada']) && !empty($reservacion['hora_entrada'])): ?>
-                <div class="mt-3 p-2 bg-green-50 rounded-lg">
-                    <p class="text-xs text-green-700">
-                        <i class="fas fa-clock mr-1"></i>
-                        En el hotel:
-                        <?php
-                        $checkin = new DateTime($reservacion['fecha_entrada'] . ' ' . $reservacion['hora_entrada']);
-                        $ahora = new DateTime();
-                        $diff = $checkin->diff($ahora);
-                        echo $diff->format('%d días, %h horas');
-                        ?>
-                    </p>
-                </div>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <!-- Timeline -->
-    <div class="info-card">
-        <div class="card-header">
-            <div class="card-icon icon-gold">
-                <i class="fas fa-history"></i>
-            </div>
-            <h3 class="text-sm font-bold text-gray-800">Timeline</h3>
-        </div>
-        <div class="card-body">
-            <div class="timeline-item">
-                <div class="timeline-dot bg-blue-500"></div>
-                <div class="ml-7">
-                    <p class="font-semibold text-xs text-gray-800">Reservación creada</p>
-                    <p class="text-xs text-gray-500">
-                        <?= !empty($reservacion['created_at']) ? date('d/m/Y H:i', strtotime($reservacion['created_at'])) : '' ?>
-                    </p>
-                </div>
-            </div>
-
-            <?php if (!empty($reservacion['hora_entrada'])): ?>
-                <div class="timeline-item">
-                    <div class="timeline-dot bg-green-500"></div>
-                    <div class="ml-7">
-                        <p class="font-semibold text-xs text-gray-800">Check-in realizado</p>
-                        <p class="text-xs text-gray-500">
-                            <?= date('d/m/Y', strtotime($reservacion['fecha_entrada'])) ?>
-                            a las <?= substr($reservacion['hora_entrada'], 0, 5) ?>
-                        </p>
-                    </div>
-                </div>
-            <?php endif; ?>
-
-            <?php if ($reservacion['estado'] == 'checked_out' && !empty($reservacion['hora_salida'])): ?>
-                <div class="timeline-item">
-                    <div class="timeline-dot bg-amber-500"></div>
-                    <div class="ml-7">
-                        <p class="font-semibold text-xs text-gray-800">Check-out completado</p>
-                        <p class="text-xs text-gray-500">
-                            <?= date('d/m/Y', strtotime($reservacion['fecha_salida'])) ?>
-                            a las <?= substr($reservacion['hora_salida'], 0, 5) ?>
-                        </p>
-                    </div>
-                </div>
-            <?php endif; ?>
-
-            <?php if ($reservacion['estado'] == 'cancelada'): ?>
-                <div class="timeline-item">
-                    <div class="timeline-dot bg-red-500"></div>
-                    <div class="ml-7">
-                        <p class="font-semibold text-xs text-gray-800">Reservación cancelada</p>
-                        <p class="text-xs text-gray-500">
-                            <?= !empty($reservacion['updated_at']) ? date('d/m/Y H:i', strtotime($reservacion['updated_at'])) : '' ?>
-                        </p>
-                    </div>
-                </div>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <!-- Información de Pago -->
-    <?php if (!empty($reservacion['metodo_pago'])): ?>
-        <div class="info-card card-green">
-            <div class="card-header">
-                <div class="card-icon icon-green">
-                    <i class="fas fa-credit-card"></i>
-                </div>
-                <h3 class="text-sm font-bold text-gray-800">Información de Pago</h3>
-            </div>
-            <div class="card-body">
-                <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-3 text-center border border-green-200">
-                    <p class="text-xs text-green-700 mb-1 font-semibold">Total pagado</p>
-                    <p class="text-2xl font-bold text-green-800"><?= format_money($reservacion['precio_total'] ?? 0) ?></p>
-
-                    <?php if (!empty($pagos) && count($pagos) > 1): ?>
-                        <!-- Pagos mixtos -->
-                        <div class="mt-3 space-y-2">
-                            <?php foreach ($pagos as $pago): ?>
-                                <div class="inline-flex items-center gap-2 text-xs bg-white px-3 py-1 rounded-full border border-green-300 mr-2">
-                                    <i class="fas fa-<?= $pago['metodo_pago'] == 'efectivo' ? 'money-bill-wave' : ($pago['metodo_pago'] == 'tarjeta' ? 'credit-card' : 'exchange-alt') ?> text-green-600"></i>
-                                    <span class="font-semibold text-green-700">
-                                        <?= ucfirst(htmlspecialchars($pago['metodo_pago'])) ?>:
-                                        <?= format_money($pago['monto']) ?>
-                                    </span>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php else: ?>
-                        <!-- Pago único -->
-                        <div class="mt-2 inline-flex items-center gap-2 text-xs bg-white px-3 py-1 rounded-full border border-green-300">
-                            <i class="fas fa-<?= $reservacion['metodo_pago'] == 'efectivo' ? 'money-bill-wave' : ($reservacion['metodo_pago'] == 'tarjeta' ? 'credit-card' : 'exchange-alt') ?> text-green-600"></i>
-                            <span class="font-semibold text-green-700"><?= ucfirst(htmlspecialchars($reservacion['metodo_pago'] ?? '')) ?></span>
-                        </div>
-                    <?php endif; ?>
-                </div>
-
-                <?php if (($reservacion['cambio'] ?? 0) > 0): ?>
-                    <div class="mt-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
-                        <p class="text-xs text-blue-700">
-                            <i class="fas fa-coins mr-1"></i>
-                            Cambio entregado: <strong><?= format_money($reservacion['cambio']) ?></strong>
-                        </p>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (!empty($pagos)): ?>
-                    <!-- Detalles de pagos mixtos -->
-                    <div class="mt-3 pt-3 border-t border-gray-200">
-                        <h4 class="text-xs font-semibold text-gray-700 mb-2">Desglose de pagos:</h4>
-                        <div class="space-y-1">
-                            <?php foreach ($pagos as $pago): ?>
-                                <div class="flex items-center justify-between text-xs">
-                                    <span class="text-gray-600">
-                                        <i class="fas fa-<?= $pago['metodo_pago'] == 'efectivo' ? 'money-bill-wave' : ($pago['metodo_pago'] == 'tarjeta' ? 'credit-card' : 'exchange-alt') ?> w-4"></i>
-                                        <?= ucfirst($pago['metodo_pago']) ?>
-                                        <?php if (!empty($pago['referencia'])): ?>
-                                            <span class="text-gray-400">(<?= htmlspecialchars($pago['referencia']) ?>)</span>
-                                        <?php endif; ?>
-                                    </span>
-                                    <span class="font-semibold text-gray-800"><?= format_money($pago['monto']) ?></span>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    <?php endif; ?>
-
-    <!-- SECCIÓN DE NOTAS RÁPIDAS (NUEVA) -->
-    <div class="info-card card-gold">
-        <div class="card-header">
-            <div class="card-icon icon-gold">
-                <i class="fas fa-sticky-note"></i>
-            </div>
-            <h3 class="text-sm font-bold text-gray-800">Notas Rápidas</h3>
-            <?php if (isset($total_notas) && $total_notas > 0): ?>
-                <span class="ml-auto text-xs bg-amber-500 text-white px-2 py-1 rounded-full"><?= $total_notas ?></span>
-            <?php endif; ?>
-        </div>
-        <div class="card-body">
-            <!-- Formulario para agregar nota -->
-            <div class="mb-3">
-                <textarea id="nuevaNota"
-                          placeholder="Agregar una nota rápida..."
-                          class="w-full p-2 text-xs border rounded-lg resize-none"
-                          rows="2"></textarea>
-                <button onclick="agregarNota()"
-                        class="btn-action btn-primary w-full mt-2 text-xs">
-                    <i class="fas fa-plus"></i> Agregar Nota
-                </button>
-            </div>
-
-            <!-- Lista de notas -->
-            <div id="listaNotas" class="space-y-2 max-h-64 overflow-y-auto">
-                <?php if (empty($notas)): ?>
-                    <p class="text-center text-gray-500 text-xs py-3">No hay notas aún</p>
-                <?php else: ?>
-                    <?php foreach ($notas as $nota): ?>
-                        <div class="nota-item bg-gradient-to-r from-amber-50 to-yellow-50 p-2 rounded-lg border border-amber-200">
-                            <div class="flex items-start justify-between mb-1">
-                                <span class="text-xs font-semibold text-amber-800">
-                                    <?= htmlspecialchars($nota['usuario_nombre']) ?>
-                                </span>
-                                <span class="text-xs text-amber-600">
-                                    <?= date('d/m H:i', strtotime($nota['created_at'])) ?>
-                                </span>
-                            </div>
-                            <p class="text-xs text-gray-700 whitespace-pre-wrap"><?= nl2br(htmlspecialchars($nota['nota'])) ?></p>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-
-    <!-- Botones Móvil / Acciones Rápidas -->
-    <div class="lg:hidden bg-white rounded-xl shadow-sm p-3 info-card no-print">
-        <h3 class="text-sm font-bold text-gray-800 mb-3">Acciones Rápidas</h3>
-        <div class="grid grid-cols-2 gap-2">
-            <?php
-// Detección para móvil
-if ($reservacion['estado'] == 'confirmada'):
-    $hoy = date('Y-m-d');
-    $fecha_entrada = $reservacion['fecha_entrada'];
-    $fecha_salida = $reservacion['fecha_salida'];
-
-    $habitaciones_texto = implode(', ', array_column($habitaciones, 'numero'));
-    $huesped_nombre_js = json_encode($huesped['nombre_completo'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-    $habitaciones_texto_js = json_encode($habitaciones_texto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-    $fecha_entrada_formato_js = json_encode(date('d/m/Y', strtotime($fecha_entrada)), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-    $fecha_salida_formato_js = json_encode(date('d/m/Y', strtotime($fecha_salida)), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-    $huesped_nombre_js_attr = htmlspecialchars($huesped_nombre_js, ENT_QUOTES, 'UTF-8');
-    $habitaciones_texto_js_attr = htmlspecialchars($habitaciones_texto_js, ENT_QUOTES, 'UTF-8');
-    $fecha_entrada_formato_js_attr = htmlspecialchars($fecha_entrada_formato_js, ENT_QUOTES, 'UTF-8');
-    $fecha_salida_formato_js_attr = htmlspecialchars($fecha_salida_formato_js, ENT_QUOTES, 'UTF-8');
-
-    // Check-in normal
-    if ($hoy == $fecha_entrada): ?>
-        <button onclick="abrirModalCheckIn(<?= htmlspecialchars($reservacion['id']) ?>, <?= htmlspecialchars($reservacion['precio_total']) ?>)"
-                class="btn-action btn-success text-xs justify-center col-span-2">
-            <i class="fas fa-sign-in-alt"></i> Check-in
-        </button>
-    <?php
-    // Check-in tardío
-    elseif ($hoy > $fecha_entrada && $hoy < $fecha_salida):
-        $dias = (strtotime($hoy) - strtotime($fecha_entrada)) / (60 * 60 * 24);
-    ?>
-        <button onclick="abrirModalCheckInTardio(<?= (int) $reservacion['id'] ?>, <?= $huesped_nombre_js_attr ?>, <?= $habitaciones_texto_js_attr ?>, <?= $fecha_entrada_formato_js_attr ?>, <?= $fecha_salida_formato_js_attr ?>, <?= (float) $reservacion['precio_total'] ?>, 'normal_tardio', <?= (int) $dias ?>)"
-                class="btn-action bg-yellow-500 text-white hover:bg-yellow-600 text-xs justify-center col-span-2">
-            <i class="fas fa-clock"></i> Check-in Tardío (<?= $dias ?> día<?= $dias > 1 ? 's' : '' ?>)
-        </button>
-    <?php
-    // Proceso Express
-    elseif ($hoy >= $fecha_salida):
-        $dias = (strtotime($hoy) - strtotime($fecha_salida)) / (60 * 60 * 24);
-    ?>
-        <button onclick="abrirModalCheckInTardio(<?= (int) $reservacion['id'] ?>, <?= $huesped_nombre_js_attr ?>, <?= $habitaciones_texto_js_attr ?>, <?= $fecha_entrada_formato_js_attr ?>, <?= $fecha_salida_formato_js_attr ?>, <?= (float) $reservacion['precio_total'] ?>, 'express', <?= (int) $dias ?>)"
-                class="btn-action bg-orange-600 text-white hover:bg-orange-700 text-xs justify-center col-span-2">
-            <i class="fas fa-bolt"></i> Proceso Express (<?= $dias ?> día<?= $dias > 1 ? 's' : '' ?>)
-        </button>
-    <?php
-    endif;
-endif;
-?>
-
-            <?php if ($reservacion['estado'] == 'checked_in'): ?>
-                <button onclick="confirmarCheckOut(<?= htmlspecialchars($reservacion['id']) ?>)"
-                        class="btn-action btn-warning text-xs justify-center col-span-2">
-                    <i class="fas fa-sign-out-alt"></i> Check-out
-                </button>
-            <?php endif; ?>
-             <?php if ($reservacion['estado'] == 'confirmada'): ?>
-                    <a href="<?= url('reservaciones/editar-habitaciones/' . $reservacion['id']) ?>"
-                       class="btn-action bg-purple-500 text-white hover:bg-purple-600 text-xs justify-center">
-                        <i class="fas fa-bed"></i>
-                        Modificar Habitaciones
-                    </a>
-                <?php endif; ?>
-            <?php if (in_array($reservacion['estado'], ['confirmada', 'checked_in'])): ?>
-                <button onclick="abrirModalModificarDias()"
-                        class="btn-action bg-indigo-500 text-white hover:bg-indigo-600 text-xs justify-center">
-                    <i class="fas fa-calendar-alt"></i> Modificar Días
-                </button>
-            <?php endif; ?>
-            <?php if (in_array($reservacion['estado'], ['confirmada', 'checked_in'])): ?>
-                <button onclick="mostrarFormularioCancelacion()"
-                        class="btn-action btn-danger text-xs justify-center">
-                    <i class="fas fa-times"></i> Cancelar
-                </button>
-            <?php endif; ?>
-
-            <button onclick="abrirModalCotizacion()"
-        class="btn-action btn-cotizacion-ver text-xs justify-center">
-    <i class="fas fa-file-pdf"></i> Cotización
-</button>
-        </div>
-    </div>
-</div>
-</div>
-
-
-</div>
 
 <!-- Modal de Check-in con Pagos Mixtos -->
 
