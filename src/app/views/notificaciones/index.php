@@ -1254,4 +1254,267 @@ document.addEventListener('keydown', function (event) {
     event.preventDefault();
     window.location.href = item.dataset.notifUrl;
 });
+
+(function () {
+    'use strict';
+
+    var panel = document.querySelector('[data-pwa-push-panel]');
+    if (!panel || panel.dataset.pushBound === '1') {
+        return;
+    }
+
+    panel.dataset.pushBound = '1';
+
+    var configCache = null;
+    var button = panel.querySelector('[data-pwa-push-toggle]');
+    var testButton = panel.querySelector('[data-pwa-push-test]');
+    var status = panel.querySelector('[data-pwa-push-status]');
+    var label = panel.querySelector('[data-pwa-push-label]');
+
+    function csrfToken() {
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute('content') || '' : '';
+    }
+
+    function pushSupported() {
+        return 'serviceWorker' in navigator &&
+            'PushManager' in window &&
+            'Notification' in window;
+    }
+
+    function isIosDevice() {
+        return /iphone|ipad|ipod/i.test(window.navigator.userAgent || '');
+    }
+
+    function isStandalonePwa() {
+        return window.matchMedia('(display-mode: standalone)').matches ||
+            window.navigator.standalone === true;
+    }
+
+    function setState(state, message) {
+        panel.dataset.pushState = state;
+
+        if (status) {
+            status.textContent = message || '';
+        }
+
+        if (button) {
+            button.disabled = ['loading', 'unsupported', 'blocked', 'unconfigured', 'disabled'].indexOf(state) !== -1;
+            button.dataset.mode = state === 'enabled' ? 'disable' : 'enable';
+        }
+
+        if (label) {
+            label.textContent = state === 'enabled'
+                ? 'Desactivar en este dispositivo'
+                : 'Activar en este dispositivo';
+        }
+
+        if (testButton) {
+            testButton.hidden = state !== 'enabled';
+            testButton.disabled = state !== 'enabled';
+        }
+    }
+
+    function notify(message, type) {
+        if (window.PWA && typeof window.PWA.showToast === 'function') {
+            window.PWA.showToast(message, type || 'info', 5200);
+            return;
+        }
+
+        if (status) {
+            status.textContent = message;
+        }
+    }
+
+    function base64UrlToUint8Array(base64String) {
+        var padding = '='.repeat((4 - base64String.length % 4) % 4);
+        var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        var rawData = window.atob(base64);
+        var output = new Uint8Array(rawData.length);
+
+        for (var i = 0; i < rawData.length; i++) {
+            output[i] = rawData.charCodeAt(i);
+        }
+
+        return output;
+    }
+
+    function jsonFetch(url, options) {
+        return fetch(url, Object.assign({
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        }, options || {})).then(function (response) {
+            return response.json().catch(function () {
+                return {};
+            }).then(function (data) {
+                if (!response.ok || data.success === false) {
+                    throw new Error(data.message || 'No se pudo completar la accion.');
+                }
+
+                return data;
+            });
+        });
+    }
+
+    function postJson(url, payload) {
+        return jsonFetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-Token': csrfToken(),
+            },
+            body: JSON.stringify(payload || {}),
+        });
+    }
+
+    function loadConfig() {
+        if (configCache) {
+            return Promise.resolve(configCache);
+        }
+
+        return jsonFetch(panel.dataset.publicKeyUrl).then(function (config) {
+            configCache = config;
+            return config;
+        });
+    }
+
+    function readyRegistration() {
+        return navigator.serviceWorker.ready.then(function (registration) {
+            if (!registration || !registration.pushManager) {
+                throw new Error('El Service Worker no esta listo para Push.');
+            }
+
+            return registration;
+        });
+    }
+
+    function refresh() {
+        if (!pushSupported()) {
+            setState(
+                'unsupported',
+                isIosDevice() && !isStandalonePwa()
+                    ? 'En iPhone debes agregar la app a pantalla de inicio para recibir avisos.'
+                    : 'Este navegador no soporta notificaciones push PWA.'
+            );
+            return Promise.resolve();
+        }
+
+        setState('loading', 'Revisando estado de este dispositivo...');
+
+        return loadConfig()
+            .then(function (config) {
+                if (!config.enabled || !config.public_key) {
+                    setState(config.configured ? 'disabled' : 'unconfigured', config.message || 'Push no disponible.');
+                    return null;
+                }
+
+                if (Notification.permission === 'denied') {
+                    setState('blocked', 'El navegador bloqueo los permisos. Activalos desde la configuracion del sitio.');
+                    return null;
+                }
+
+                return readyRegistration().then(function (registration) {
+                    return registration.pushManager.getSubscription().then(function (subscription) {
+                        setState(
+                            subscription ? 'enabled' : 'available',
+                            subscription
+                                ? 'Este dispositivo ya recibe avisos del hotel.'
+                                : (config.message || 'Puedes activar avisos en este dispositivo.')
+                        );
+                    });
+                });
+            })
+            .catch(function (error) {
+                setState('error', error.message || 'No se pudo revisar Push PWA.');
+            });
+    }
+
+    function enablePush() {
+        return loadConfig().then(function (config) {
+            if (!config.enabled || !config.public_key) {
+                throw new Error(config.message || 'Push no disponible.');
+            }
+
+            return Notification.requestPermission().then(function (permission) {
+                if (permission !== 'granted') {
+                    throw new Error('Permiso no concedido por el navegador.');
+                }
+
+                return readyRegistration().then(function (registration) {
+                    return registration.pushManager.getSubscription().then(function (existing) {
+                        return existing || registration.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: base64UrlToUint8Array(config.public_key),
+                        });
+                    });
+                });
+            });
+        }).then(function (subscription) {
+            return postJson(panel.dataset.subscribeUrl, {
+                subscription: subscription.toJSON(),
+            });
+        });
+    }
+
+    function disablePush() {
+        return readyRegistration().then(function (registration) {
+            return registration.pushManager.getSubscription();
+        }).then(function (subscription) {
+            if (!subscription) {
+                return null;
+            }
+
+            return postJson(panel.dataset.unsubscribeUrl, {
+                endpoint: subscription.endpoint,
+            }).then(function () {
+                return subscription.unsubscribe();
+            });
+        });
+    }
+
+    if (button) {
+        button.addEventListener('click', function () {
+            var wasEnabled = panel.dataset.pushState === 'enabled';
+            setState('loading', wasEnabled ? 'Desactivando avisos...' : 'Activando avisos...');
+
+            (wasEnabled ? disablePush() : enablePush())
+                .then(function () {
+                    configCache = null;
+                    notify(
+                        wasEnabled
+                            ? 'Notificaciones desactivadas en este dispositivo.'
+                            : 'Notificaciones activadas en este dispositivo.',
+                        'success'
+                    );
+                })
+                .catch(function (error) {
+                    notify(error.message || 'No se pudo cambiar Push PWA.', 'error');
+                })
+                .then(refresh);
+        });
+    }
+
+    if (testButton) {
+        testButton.addEventListener('click', function () {
+            setState('loading', 'Enviando prueba...');
+
+            postJson(panel.dataset.testUrl, {})
+                .then(function () {
+                    notify('Prueba enviada. Revisa las notificaciones del dispositivo.', 'success');
+                })
+                .catch(function (error) {
+                    notify(error.message || 'No se pudo enviar la prueba.', 'error');
+                })
+                .then(refresh);
+        });
+    }
+
+    refresh();
+})();
 </script>
