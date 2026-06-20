@@ -1259,17 +1259,21 @@ document.addEventListener('keydown', function (event) {
     'use strict';
 
     var panel = document.querySelector('[data-pwa-push-panel]');
-    if (!panel || panel.dataset.pushBound === '1') {
+    if (!panel || panel.dataset.ntxPushBound === '1') {
         return;
     }
 
-    panel.dataset.pushBound = '1';
+    panel.dataset.ntxPushBound = '1';
 
     var configCache = null;
     var button = panel.querySelector('[data-pwa-push-toggle]');
     var testButton = panel.querySelector('[data-pwa-push-test]');
     var status = panel.querySelector('[data-pwa-push-status]');
     var label = panel.querySelector('[data-pwa-push-label]');
+
+    if (status) {
+        status.textContent = 'Inicializando controles de este dispositivo...';
+    }
 
     function csrfToken() {
         var meta = document.querySelector('meta[name="csrf-token"]');
@@ -1479,7 +1483,10 @@ document.addEventListener('keydown', function (event) {
     }
 
     if (button) {
-        button.addEventListener('click', function () {
+        button.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+
             var wasEnabled = panel.dataset.pushState === 'enabled';
             setState('loading', wasEnabled ? 'Desactivando avisos...' : 'Activando avisos...');
 
@@ -1501,7 +1508,10 @@ document.addEventListener('keydown', function (event) {
     }
 
     if (testButton) {
-        testButton.addEventListener('click', function () {
+        testButton.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+
             setState('loading', 'Enviando prueba...');
 
             postJson(panel.dataset.testUrl, {})
