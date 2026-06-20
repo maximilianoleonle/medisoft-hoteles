@@ -83,6 +83,17 @@ if (!function_exists('dashboard_percent_text')) {
     }
 }
 
+if (!function_exists('dashboard_room_count_text')) {
+    function dashboard_room_count_text($value, $short = false) {
+        $count = max(0, (int)$value);
+        if ($short) {
+            return $count . ' hab.';
+        }
+
+        return $count . ' ' . ($count === 1 ? 'habitacion' : 'habitaciones');
+    }
+}
+
 if (!function_exists('dashboard_short_date')) {
     function dashboard_short_date($value) {
         if (empty($value)) {
@@ -323,35 +334,33 @@ $notificaciones_prioritarias = (int)($notificaciones_resumen['prioritarias'] ?? 
 $notificaciones_hoy = (int)($notificaciones_resumen['hoy'] ?? 0);
 
 $chart_data = $graficos['ocupacion_semanal'] ?? [];
-$chart_max = max(1, $habitaciones_total);
+$weekly_total_active = max(0, $habitaciones_total);
+$chart_max = max(1, $weekly_total_active);
 $weekly_chart_rows = array_values(array_slice($chart_data, 0, 7));
 $weekly_chart_count = count($weekly_chart_rows);
-$weekly_chart_points = [];
-$weekly_chart_area_points = '';
 $weekly_chart_avg = 0;
 $weekly_chart_peak = 0;
 $weekly_chart_peak_day = '-';
-$weekly_chart_total_pct = 0;
+$weekly_chart_total_occupied = 0;
+$weekly_axis_top = $weekly_total_active;
+$weekly_axis_75 = (int)round($weekly_axis_top * .75);
+$weekly_axis_50 = (int)round($weekly_axis_top * .50);
+$weekly_axis_25 = (int)round($weekly_axis_top * .25);
 
 foreach ($weekly_chart_rows as $index => $row) {
     $ocupadas_week = max(0, (int)($row['ocupadas'] ?? 0));
-    $pct_week = $chart_max > 0 ? min(100, max(0, ($ocupadas_week / $chart_max) * 100)) : 0;
-    $weekly_chart_total_pct += $pct_week;
+    $weekly_chart_total_occupied += $ocupadas_week;
 
-    if ($pct_week >= $weekly_chart_peak) {
-        $weekly_chart_peak = $pct_week;
+    if ($ocupadas_week >= $weekly_chart_peak) {
+        $weekly_chart_peak = $ocupadas_week;
         $weekly_chart_peak_day = (string)($row['dia'] ?? '-');
     }
-
-    $x = $weekly_chart_count > 1 ? ($index / ($weekly_chart_count - 1)) * 100 : 50;
-    $y = 100 - $pct_week;
-    $weekly_chart_points[] = round($x, 2) . ',' . round($y, 2);
 }
 
 if ($weekly_chart_count > 0) {
-    $weekly_chart_avg = $weekly_chart_total_pct / $weekly_chart_count;
-    $weekly_chart_area_points = '0,100 ' . implode(' ', $weekly_chart_points) . ' 100,100';
+    $weekly_chart_avg = $weekly_chart_total_occupied / $weekly_chart_count;
 }
+$weekly_chart_avg_label = rtrim(rtrim(number_format($weekly_chart_avg, 1), '0'), '.') . ' hab.';
 
 // ── Gráfica de línea/área "ocupación semanal" (curva suave) ──
 $weekly_line_rows = [];
@@ -361,7 +370,7 @@ foreach ($weekly_chart_rows as $index => $row) {
     $ocupadas_line = max(0, (int)($row['ocupadas'] ?? 0));
     $pct_line = $chart_max > 0 ? min(100, max(0, ($ocupadas_line / $chart_max) * 100)) : 0;
     $es_hoy_line = $index === $weekly_chart_count - 1;
-    $es_pico_line = $weekly_chart_peak_day !== '-' && (string)($row['dia'] ?? '-') === $weekly_chart_peak_day;
+    $es_pico_line = $weekly_chart_peak_day !== '-' && $ocupadas_line === $weekly_chart_peak;
     $x_line = $weekly_chart_count > 0 ? ((($index + 0.5) / $weekly_chart_count) * 100) : 50;
 
     if ($es_pico_line && $weekly_line_peak_date === '') {
@@ -371,6 +380,7 @@ foreach ($weekly_chart_rows as $index => $row) {
     $weekly_line_rows[] = [
         'dia' => (string)($row['dia'] ?? '-'),
         'fecha' => dashboard_short_date($row['fecha'] ?? ''),
+        'ocupadas' => $ocupadas_line,
         'pct' => $pct_line,
         'x' => $x_line,
         'y' => 100 - $pct_line,
@@ -1717,6 +1727,8 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 .weekly-line-point {
     position: absolute;
     transform: translateX(-50%);
+    z-index: 2;
+    outline: none;
 }
 
 .weekly-line-dot {
@@ -1728,6 +1740,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     border: 2px solid var(--dash-surface);
     box-shadow: 0 2px 6px color-mix(in srgb, var(--dash-navy) 30%, transparent);
     transform: translateY(50%);
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
 }
 
 .weekly-line-value {
@@ -1740,6 +1753,113 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     color: var(--dash-navy);
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
+    transition: transform .18s ease, color .18s ease;
+}
+
+.weekly-line-tooltip {
+    position: absolute;
+    left: 50%;
+    bottom: 30px;
+    z-index: 8;
+    min-width: 172px;
+    padding: 10px 12px;
+    border-radius: 13px;
+    color: #fff;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--dash-navy) 92%, #111827), color-mix(in srgb, var(--dash-navy) 82%, var(--dash-gold)));
+    box-shadow: 0 18px 34px -20px color-mix(in srgb, var(--dash-navy) 86%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 8px) scale(.96);
+    transform-origin: 50% 100%;
+    transition: opacity .18s ease, transform .18s ease;
+}
+
+.weekly-line-tooltip::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -6px;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--dash-navy) 82%, var(--dash-gold));
+    transform: translateX(-50%) rotate(45deg);
+}
+
+.weekly-line-tooltip b {
+    position: relative;
+    z-index: 1;
+    display: block;
+    font-size: 13px;
+    line-height: 1.1;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.weekly-line-tooltip small {
+    position: relative;
+    z-index: 1;
+    display: block;
+    margin-top: 5px;
+    color: rgba(255,255,255,.72);
+    font-size: 10px;
+    line-height: 1.25;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.weekly-line-point:hover,
+.weekly-line-point:focus {
+    z-index: 12;
+}
+
+.weekly-line-point:hover .weekly-line-dot,
+.weekly-line-point:focus .weekly-line-dot {
+    transform: translateY(50%) scale(1.28);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--dash-navy) 12%, transparent), 0 12px 18px -12px color-mix(in srgb, var(--dash-navy) 70%, transparent);
+}
+
+.weekly-line-point:hover .weekly-line-value,
+.weekly-line-point:focus .weekly-line-value {
+    transform: translateX(-50%) translateY(-2px);
+    color: var(--dash-gold);
+}
+
+.weekly-line-point:hover .weekly-line-tooltip,
+.weekly-line-point:focus .weekly-line-tooltip {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+}
+
+.weekly-line-point:first-child .weekly-line-tooltip {
+    left: 0;
+    transform: translate(-10px, 8px) scale(.96);
+}
+
+.weekly-line-point:first-child:hover .weekly-line-tooltip,
+.weekly-line-point:first-child:focus .weekly-line-tooltip {
+    transform: translate(-10px, 0) scale(1);
+}
+
+.weekly-line-point:first-child .weekly-line-tooltip::after {
+    left: 18px;
+}
+
+.weekly-line-point:last-child .weekly-line-tooltip {
+    left: auto;
+    right: 0;
+    transform: translate(10px, 8px) scale(.96);
+}
+
+.weekly-line-point:last-child:hover .weekly-line-tooltip,
+.weekly-line-point:last-child:focus .weekly-line-tooltip {
+    transform: translate(10px, 0) scale(1);
+}
+
+.weekly-line-point:last-child .weekly-line-tooltip::after {
+    left: auto;
+    right: 18px;
 }
 
 .weekly-line-point.is-peak .weekly-line-dot {
@@ -2554,6 +2674,20 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
     .weekly-line-foot-time {
         display: none;
+    }
+
+    .weekly-line-tooltip {
+        min-width: 150px;
+        padding: 9px 10px;
+    }
+
+    .weekly-line-tooltip b {
+        font-size: 12px;
+    }
+
+    .weekly-line-tooltip small {
+        font-size: 9px;
+        white-space: normal;
     }
 }
 
@@ -3403,17 +3537,17 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                 <div class="weekly-chart-head">
                     <div>
                         <h2>Ocupación semanal</h2>
-                        <p>Comparativa diaria de habitaciones ocupadas frente al total activo.</p>
+                        <p>Habitaciones ocupadas por dia frente al total activo.</p>
                     </div>
                     <div class="weekly-chart-summary">
                         <div class="weekly-summary-chip">
                             <span>Promedio semanal</span>
-                            <strong><?= dashboard_percent_text($weekly_chart_avg) ?></strong>
+                            <strong><?= dashboard_safe($weekly_chart_avg_label) ?></strong>
                         </div>
                         <div class="weekly-summary-chip">
                             <span>Día pico</span>
                             <strong><?= dashboard_safe($weekly_chart_peak_day) ?> <?= dashboard_safe($weekly_line_peak_date) ?></strong>
-                            <em><?= dashboard_percent_text($weekly_chart_peak) ?></em>
+                            <em><?= dashboard_safe(dashboard_room_count_text($weekly_chart_peak)) ?> ocupadas</em>
                         </div>
                     </div>
                 </div>
@@ -3422,11 +3556,11 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                 <?php else: ?>
                     <div class="weekly-line-chart" aria-label="Gráfica de ocupación semanal">
                         <div class="weekly-line-axis">
-                            <span>100%</span>
-                            <span>75%</span>
-                            <span>50%</span>
-                            <span>25%</span>
-                            <span>0%</span>
+                            <span><?= dashboard_room_count_text($weekly_axis_top, true) ?></span>
+                            <span><?= dashboard_room_count_text($weekly_axis_75, true) ?></span>
+                            <span><?= dashboard_room_count_text($weekly_axis_50, true) ?></span>
+                            <span><?= dashboard_room_count_text($weekly_axis_25, true) ?></span>
+                            <span>0 hab.</span>
                         </div>
                         <div class="weekly-line-body">
                             <div class="weekly-line-plot">
@@ -3443,9 +3577,13 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                                 <div class="weekly-line-points">
                                     <?php foreach ($weekly_line_rows as $row): ?>
                                         <?php $point_class = 'weekly-line-point' . ($row['es_pico'] ? ' is-peak' : ''); ?>
-                                        <div class="<?= $point_class ?>" style="left: <?= round($row['x'], 2) ?>%; bottom: <?= round($row['pct'], 2) ?>%" title="<?= dashboard_safe($row['dia']) ?> <?= dashboard_safe($row['fecha']) ?>: <?= dashboard_percent_text($row['pct']) ?>">
-                                            <span class="weekly-line-value"><?= dashboard_percent_text($row['pct']) ?></span>
+                                        <div class="<?= $point_class ?>" style="left: <?= round($row['x'], 2) ?>%; bottom: <?= round($row['pct'], 2) ?>%" tabindex="0" aria-label="<?= dashboard_safe($row['dia']) ?> <?= dashboard_safe($row['fecha']) ?>: <?= dashboard_safe(dashboard_room_count_text($row['ocupadas'])) ?> ocupadas">
+                                            <span class="weekly-line-value"><?= dashboard_safe(dashboard_room_count_text($row['ocupadas'], true)) ?></span>
                                             <span class="weekly-line-dot"></span>
+                                            <span class="weekly-line-tooltip" aria-hidden="true">
+                                                <b><?= dashboard_safe(dashboard_room_count_text($row['ocupadas'])) ?> ocupadas</b>
+                                                <small><?= dashboard_safe($row['dia']) ?> <?= dashboard_safe($row['fecha']) ?> &middot; <?= dashboard_safe(dashboard_room_count_text($weekly_total_active)) ?> activas</small>
+                                            </span>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
@@ -3462,7 +3600,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                             <div class="weekly-line-foot">
                                 <span class="weekly-line-foot-info">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle><path d="M12 11v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path><circle cx="12" cy="8" r="1" fill="currentColor"></circle></svg>
-                                    Basado en <?= (int)$chart_max ?> habitaciones activas
+                                    Basado en <?= (int)$weekly_total_active ?> habitaciones activas
                                 </span>
                                 <span class="weekly-line-foot-time">Última actualización: Hoy <?= dashboard_safe($weekly_line_updated_at) ?></span>
                             </div>

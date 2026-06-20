@@ -840,6 +840,94 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
 - `movimientos_caja` solo sera fuente de ingreso CxC cuando una fase posterior
   implemente el cobro transaccional autorizado.
 
+## Fase 7B-D-B-A - Migracion tipo COBRO CxC
+
+- No crea fuente nueva de datos.
+- Amplia la fuente de trazabilidad interna `cuentas_por_cobrar_movimientos` para aceptar
+  `tipo_movimiento = COBRO`.
+- `COBRO` queda disponible como semantica futura, pero aun no existen movimientos reales
+  de cobro.
+- `cuentas_por_cobrar` sigue siendo fuente de deuda/saldo CxC.
+- `movimientos_caja` sigue sin ser fuente de cobro CxC hasta que exista servicio
+  transaccional autorizado.
+- `AJUSTE` permanece reservado para ajustes, no para cobros.
+
+## Fase 7B-D-C-0 - Contrato servicio cobro CxC
+
+- No crea fuente nueva.
+- Define fuentes futuras para cobro CxC:
+  - deuda/saldo: `cuentas_por_cobrar`;
+  - trazabilidad interna: `cuentas_por_cobrar_movimientos`;
+  - ingreso real: `movimientos_caja`;
+  - corte: `cortes_caja`;
+  - caja activa: `cajas`;
+  - auditoria: `logs_auditoria`.
+- `reservacion_pagos` y `reservacion_abonos` siguen como historicos sensibles y no deben
+  recibir escrituras desde cobro CxC.
+- `solicitudes_factura` sigue siendo contexto de lectura, no destino de escritura.
+- `movimientos_caja` solo sera fuente de cobro CxC cuando una fase posterior implemente
+  el servicio transaccional autorizado.
+
+## Fase 7B-D-C-A - Cobro CxC con Caja
+
+- No crea fuente nueva.
+- Habilita escritura transaccional futura usando fuentes existentes:
+  - `cuentas_por_cobrar` para saldo/estado;
+  - `cuentas_por_cobrar_movimientos` para movimiento interno tipo `COBRO`;
+  - `movimientos_caja` para ingreso real;
+  - `logs_auditoria` para trazabilidad.
+- `cortes_caja` y `cajas` son fuentes de validacion/lock, no se actualizan en esta fase.
+- `reservacion_pagos`, `reservacion_abonos` y `solicitudes_factura` no reciben escrituras
+  desde cobro CxC.
+- Post-QA manual validado existe un movimiento `COBRO` persistente asociado a ingreso
+  Caja por referencia compartida `QA-CXC-20260619-001`.
+
+## Fase 7B-D-D-0 - Contrato reversion cobro CxC
+
+- No crea fuente nueva.
+- Define uso futuro de fuentes existentes:
+  - `cuentas_por_cobrar` para saldo/estado;
+  - `cuentas_por_cobrar_movimientos` para movimiento inverso tipo `CANCELACION`;
+  - `movimientos_caja` para gasto de reversion;
+  - `logs_auditoria` para trazabilidad.
+- El cobro original sigue siendo fuente historica y no debe editarse ni borrarse.
+- La referencia canonica futura sera `REV-CXC-{cuenta_id}-MOV-{movimiento_cobro_id}`.
+- `reservacion_pagos`, `reservacion_abonos`, `solicitudes_factura`, `reservaciones`,
+  PWA/offline y `/api/sync` quedan fuera de la reversion.
+
+## Fase 7B-D-D-A - Reversion cobro CxC
+
+- No crea fuente nueva.
+- Habilita escritura transaccional usando fuentes existentes:
+  - `cuentas_por_cobrar` para saldo/estado;
+  - `cuentas_por_cobrar_movimientos` para movimiento tipo `CANCELACION`;
+  - `movimientos_caja` para gasto real de reversion;
+  - `logs_auditoria` para trazabilidad.
+- El cobro original `COBRO #4` y el ingreso Caja `#1482` siguen siendo fuentes
+  historicas y no se editan ni eliminan.
+- Post-QA manual validado existe movimiento inverso persistente:
+  - `cuentas_por_cobrar_movimientos #8`, tipo `CANCELACION`, referencia
+    `REV-CXC-1-MOV-4`;
+  - `movimientos_caja #1486`, tipo `gasto`, categoria `Reversion Cobro CxC`,
+    referencia `REV-CXC-1-MOV-4`;
+  - `logs_auditoria #113`, accion `cuentas_por_cobrar.cobro_caja_revertido`.
+- La prueba rollback post-QA no dejo datos adicionales persistentes.
+- `reservacion_pagos`, `reservacion_abonos`, `solicitudes_factura`, `reservaciones`,
+  PWA/offline y `/api/sync` no reciben escrituras.
+
+## Fase 7B-D-D-F - Cierre reversion cobro CxC
+
+- No crea ni cambia fuentes de verdad.
+- Ratifica que las fuentes vigentes del bloque son:
+  - `cuentas_por_cobrar`;
+  - `cuentas_por_cobrar_movimientos`;
+  - `movimientos_caja`;
+  - `logs_auditoria`.
+- No habilita fuentes nuevas para automatizaciones, cobros masivos, reversiones masivas
+  ni reversiones parciales.
+- `reservacion_pagos`, `reservacion_abonos`, `solicitudes_factura`, `reservaciones`,
+  PWA/offline y `/api/sync` permanecen fuera del cierre.
+
 ## Fase 7A-S-0 - Reconciliacion CxC controlada
 
 - No se crea fuente de verdad nueva.
@@ -945,3 +1033,483 @@ Estado formal: `CONTRATO_NP_C_LEDGER_LABORAL_COMPLETADO`.
   reemplaza la relacion moderna con `proveedores`.
 - El unico codigo autorizado para escribir simultaneamente CxP y Caja es
   `CuentaPorPagarPagoService`.
+
+## Fase 3D-D-0 - Contrato reversion pago proveedor con Caja
+
+- No se cambia ninguna fuente de verdad en esta subfase.
+- Define uso futuro de fuentes existentes:
+  - `cuentas_por_pagar` para saldo/estado;
+  - `cuentas_por_pagar_movimientos` para movimiento inverso tipo `CANCELACION`;
+  - `movimientos_caja` para ingreso real de reversion;
+  - `logs_auditoria` para trazabilidad.
+- Los pagos originales `PAGO_REFERENCIAL #4` y `#5`, junto con Caja `#1478` y
+  `#1479`, siguen siendo fuentes historicas y no deben editarse ni eliminarse.
+- La referencia canonica futura sera `REV-CXP-{cuenta_id}-MOV-{movimiento_pago_id}`.
+- `compras`, `proveedores`, PWA/offline y `/api/sync` quedan fuera de la reversion.
+
+## Fase 3D-D-A - Reversion pago proveedor con Caja
+
+- No crea fuente nueva.
+- Habilita escritura transaccional usando fuentes existentes:
+  - `cuentas_por_pagar` para saldo/estado;
+  - `cuentas_por_pagar_movimientos` para movimiento tipo `CANCELACION`;
+  - `movimientos_caja` para ingreso real de reversion;
+  - `logs_auditoria` para trazabilidad.
+- Los pagos originales `PAGO_REFERENCIAL #4` y `#5`, junto con Caja `#1478` y
+  `#1479`, siguen siendo fuentes historicas y no se editan ni eliminan.
+- La QA manual validada agrego `cuentas_por_pagar_movimientos #9` como
+  `CANCELACION` y `movimientos_caja #1494` como ingreso de reversion, ambos con
+  referencia `REV-CXP-1-MOV-4`.
+- La CxP `#1` queda como fuente vigente en estado `parcial`, saldo `10.00`.
+- La prueba rollback posterior no dejo movimientos adicionales persistentes.
+- `compras`, `proveedores`, PWA/offline y `/api/sync` no reciben escrituras.
+
+## Fase 3D-D-F - Cierre reversion pago proveedor con Caja
+
+- No crea ni cambia fuentes de verdad.
+- Ratifica que las fuentes vigentes del bloque son:
+  - `cuentas_por_pagar`;
+  - `cuentas_por_pagar_movimientos`;
+  - `movimientos_caja`;
+  - `logs_auditoria`.
+- No habilita fuentes nuevas para automatizaciones, pagos masivos ni reversiones
+  parciales.
+- `compras`, `proveedores`, PWA/offline y `/api/sync` permanecen fuera del cierre.
+
+## Fase 9A-0 - Contrato conciliacion financiera read-only
+
+- No crea ni cambia fuentes de verdad.
+- Define lectura futura de fuentes existentes:
+  - `cuentas_por_cobrar`;
+  - `cuentas_por_cobrar_movimientos`;
+  - `cuentas_por_pagar`;
+  - `cuentas_por_pagar_movimientos`;
+  - `movimientos_caja`;
+  - `cortes_caja`;
+  - `cajas`;
+  - `logs_auditoria`;
+  - `reservaciones`, solo contexto CxC;
+  - `compras` y `proveedores`, solo contexto CxP.
+- Las fuentes siguen siendo historicas/sensibles; 9A-0 no permite reconciliacion
+  destructiva ni correcciones automaticas.
+- PWA/offline, IndexedDB, cache names y `/api/sync` quedan fuera de alcance.
+
+## Fase 9A-A - Preflight conciliacion financiera read-only
+
+- No crea ni cambia fuentes de verdad.
+- Agrega una herramienta CLI que lee fuentes existentes:
+  - `cuentas_por_cobrar`;
+  - `cuentas_por_cobrar_movimientos`;
+  - `cuentas_por_pagar`;
+  - `cuentas_por_pagar_movimientos`;
+  - `movimientos_caja`;
+  - `cortes_caja`;
+  - `cajas`;
+  - `logs_auditoria`;
+  - `reservaciones`, solo contexto CxC;
+  - `compras` y `proveedores`, solo contexto CxP;
+  - `hoteles`, para scope y validacion basica.
+- El preflight cruza referencias canonicas y saldos sin modificar datos.
+- Las diferencias detectadas son alertas, no instrucciones de correccion automatica.
+- PWA/offline, IndexedDB, cache names y `/api/sync` quedan fuera de alcance.
+
+## Fase 9A-B-0 - Contrato pantalla conciliacion financiera read-only
+
+- No crea ni cambia fuentes de verdad.
+- Define una futura superficie visual que debe leer las mismas fuentes permitidas por
+  9A-A.
+- La ruta candidata futura no reemplaza:
+  - `cuentas_por_cobrar`;
+  - `cuentas_por_pagar`;
+  - `movimientos_caja`;
+  - `cortes_caja`;
+  - `logs_auditoria`.
+- La pantalla futura solo podra presentar alertas y enlaces de contexto.
+- Las fuentes financieras siguen siendo sensibles y no deben corregirse desde la UI.
+- PWA/offline, IndexedDB, cache names y `/api/sync` quedan fuera de alcance.
+
+## Fase 9A-B-A - Pantalla conciliacion financiera read-only
+
+- No crea ni cambia fuentes de verdad.
+- La ruta `/operacion/conciliacion-financiera` presenta visualmente las mismas fuentes
+  permitidas por 9A-A:
+  - `cuentas_por_cobrar`;
+  - `cuentas_por_cobrar_movimientos`;
+  - `cuentas_por_pagar`;
+  - `cuentas_por_pagar_movimientos`;
+  - `movimientos_caja`;
+  - `cortes_caja`;
+  - `cajas`;
+  - `logs_auditoria`;
+  - `hoteles`;
+  - `reservaciones`, solo contexto CxC;
+  - `compras` y `proveedores`, solo contexto CxP.
+- La pantalla no se convierte en fuente de verdad: solo resume y lista alertas.
+- Cualquier correccion futura requiere fase independiente con backup, contrato y prueba
+  rollback.
+- PWA/offline, IndexedDB, cache names y `/api/sync` quedan fuera de alcance.
+
+## Fase 9A-B-F - Cierre pantalla conciliacion financiera read-only
+
+- No crea ni cambia fuentes de verdad.
+- Ratifica que la pantalla de conciliacion es una superficie diagnostica, no una fuente
+  operativa.
+- Las fuentes vigentes siguen siendo:
+  - `cuentas_por_cobrar`;
+  - `cuentas_por_cobrar_movimientos`;
+  - `cuentas_por_pagar`;
+  - `cuentas_por_pagar_movimientos`;
+  - `movimientos_caja`;
+  - `cortes_caja`;
+  - `cajas`;
+  - `logs_auditoria`.
+- No habilita fuentes nuevas para correcciones, automatizaciones ni conciliacion
+  destructiva.
+- PWA/offline, IndexedDB, cache names y `/api/sync` quedan fuera de alcance.
+
+## Fase 9C-0 - Contrato arqueo por corte y metodo read-only
+
+- No crea ni cambia fuentes de verdad.
+- Define una futura lectura diagnostica sobre fuentes existentes:
+  - `movimientos_caja`;
+  - `cortes_caja`;
+  - `cajas`;
+  - `categorias_movimientos`;
+  - `usuarios`, solo contexto;
+  - `hoteles`, solo scope.
+- `cortes_caja` conserva los totales guardados al cierre.
+- `movimientos_caja` conserva el detalle operativo por metodo, tipo, categoria,
+  referencia y corte.
+- La futura lectura 9C no debe recalcular ni sobrescribir cortes.
+- PWA/offline, IndexedDB, cache names y `/api/sync` quedan fuera de alcance.
+
+## Fase 9C-A - Preflight arqueo por corte y metodo read-only
+
+- No crea ni cambia fuentes de verdad.
+- Agrega una herramienta CLI que lee fuentes existentes:
+  - `movimientos_caja`;
+  - `cortes_caja`;
+  - `cajas`;
+  - `categorias_movimientos`.
+- El preflight compara movimientos contra totales guardados de corte sin modificar
+  ninguno.
+- Los warnings detectados son diagnosticos historicos, no instrucciones de correccion.
+- PWA/offline, IndexedDB, cache names y `/api/sync` quedan fuera de alcance.
+
+## Fase 9C-B-0 - Contrato pantalla arqueo por corte y metodo read-only
+
+- No crea ni cambia fuentes de verdad.
+- Define una futura superficie visual que debe leer las mismas fuentes permitidas por
+  9C-A.
+- La ruta candidata futura no reemplaza:
+  - `movimientos_caja`;
+  - `cortes_caja`;
+  - `cajas`;
+  - `categorias_movimientos`.
+- La pantalla futura solo podra presentar resumenes, diferencias y enlaces de contexto.
+- Las fuentes de Caja siguen siendo sensibles y no deben corregirse desde la UI.
+- PWA/offline, IndexedDB, cache names y `/api/sync` quedan fuera de alcance.
+
+## Fase 9C-B-A - Pantalla arqueo por corte y metodo read-only
+
+- No crea ni cambia fuentes de verdad.
+- Agrega una superficie visual read-only sobre fuentes existentes:
+  - `movimientos_caja`;
+  - `cortes_caja`;
+  - `cajas`;
+  - `categorias_movimientos`.
+- La ruta `GET /caja/arqueo-metodos` no reemplaza ni recalcula totales guardados.
+- `ArqueoMetodosPago` lee por hotel actual y cierra su transaccion con rollback.
+- La UI puede mostrar diferencias historicas, pero no puede corregirlas.
+- No se agregan migraciones, tablas, columnas, escrituras, pagos, cobros,
+  reversiones ni ajustes.
+- PWA/offline, IndexedDB, cache names y `/api/sync` quedan fuera de alcance.
+
+## Fase 9C-B-F - Cierre pantalla arqueo por corte y metodo read-only
+
+- No crea ni cambia fuentes de verdad.
+- Cierra documentalmente la pantalla `GET /caja/arqueo-metodos` como diagnostico
+  read-only.
+- La QA manual validada no convierte el arqueo en fuente de correccion ni escritura.
+- Las fuentes de Caja siguen siendo `movimientos_caja`, `cortes_caja`, `cajas` y
+  `categorias_movimientos`.
+- PWA/offline, IndexedDB, cache names y `/api/sync` quedan fuera de alcance.
+
+## Fase 10A-0 - Contrato tablero ejecutivo integral read-only
+
+- No crea ni cambia fuentes de verdad.
+- Define una futura lectura agregada sobre fuentes existentes:
+  - reservaciones y habitaciones para operacion hotelera;
+  - CxC y CxP para cartera;
+  - Caja y cortes para flujo financiero;
+  - inventario moderno para stock y movimientos;
+  - tareas y trabajadores para pendientes operativos;
+  - documentos y logs solo como resumen read-only.
+- La futura ruta candidata `GET /reportes/ejecutivo` no reemplaza reportes existentes.
+- El tablero futuro solo podra presentar KPIs, alertas y enlaces de contexto.
+- No autoriza recalculos persistentes, correcciones ni escrituras por lectura simple.
+- PWA/offline, IndexedDB, cache names y `/api/sync` quedan fuera de alcance.
+
+## Fase 10A-A - Preflight tablero ejecutivo integral read-only
+
+- No crea ni cambia fuentes de verdad.
+- Agrega una herramienta diagnostica:
+  `tools/saas/preflight_tablero_ejecutivo.php`.
+- Las fuentes leidas siguen siendo las tablas existentes de operacion hotelera, CxC,
+  CxP, Caja, cortes, compras, inventario, tareas, trabajadores, documentos y
+  auditoria.
+- `ledger_laboral` se reconoce como fuente opcional ausente en el entorno actual.
+- `huespedes` se reconoce como fuente sin `hotel_id` directo; cualquier lectura futura
+  debe derivar scope por joins con entidades del hotel.
+- `GET /reportes/gerencial-diario` no se convierte en fuente read-only pura mientras
+  archive notificaciones al abrirse.
+- No autoriza rutas, controladores, modelos, vistas, migraciones ni escrituras.
+- PWA/offline, IndexedDB, cache names y `/api/sync` quedan fuera de alcance.
+
+## Fase 10A-B-0 - Contrato pantalla tablero ejecutivo read-only
+
+- No crea ni cambia fuentes de verdad.
+- No registra la ruta `GET /reportes/ejecutivo`; solo la reserva como superficie
+  futura.
+- La futura pantalla debe leer las mismas fuentes validadas en 10A-A.
+- `huespedes` no debe tratarse como fuente hotel-scoped directa; debe consultarse por
+  relaciones con reservaciones o CxC del hotel.
+- `ledger_laboral` sigue siendo opcional ausente; no autoriza migracion ni tabla nueva.
+- `logs_auditoria` con `hotel_id` nulo se mantiene como historico degradado a warning,
+  no como dato para automatizaciones.
+- `GET /reportes/gerencial-diario` sigue fuera de alcance como fuente read-only pura
+  mientras archive notificaciones.
+- La pantalla futura solo podra presentar KPIs, advertencias y enlaces GET seguros.
+- No autoriza recalculos persistentes, correcciones, escrituras por lectura simple ni
+  cambios en PWA/offline, IndexedDB, cache names o `/api/sync`.
+
+## Fase 10A-B-A - Pantalla tablero ejecutivo read-only
+
+- No crea ni cambia fuentes de verdad.
+- Agrega una lectura agregada en `app/models/TableroEjecutivo.php`.
+- La fuente visual nueva es `GET /reportes/ejecutivo`.
+- La pantalla lee fuentes existentes ya diagnosticadas en 10A-A.
+- `huespedes` se consulta por join desde `reservaciones` con `hotel_id`.
+- `ledger_laboral` sigue sin crearse y queda degradado como warning.
+- `logs_auditoria` con `hotel_id` nulo se muestra solo como warning historico.
+- `/reportes/gerencial-diario` no se usa como fuente ejecutiva para evitar archivado de
+  notificaciones por lectura simple.
+- No autoriza escrituras, recalculos persistentes, migraciones ni cambios en
+  PWA/offline, IndexedDB, cache names o `/api/sync`.
+
+## Fase 10A-B-F - Cierre tablero ejecutivo read-only
+
+- No crea ni cambia fuentes de verdad.
+- Cierra documentalmente `GET /reportes/ejecutivo` como pantalla read-only validada.
+- La fuente agregada por 10A-B-A sigue siendo `TableroEjecutivo` como lector de
+  fuentes existentes.
+- La QA manual validada no convierte el tablero en fuente de escritura, correccion,
+  pago, cobro, reversion, recalculo ni automatizacion.
+- `/reportes/gerencial-diario` sigue identificado como riesgo separado mientras archive
+  notificaciones por lectura.
+- PWA/offline, IndexedDB, cache names y `/api/sync` quedan fuera de alcance.
+
+## Fase 10B-0 - Contrato reporte gerencial y notificaciones
+
+- No crea ni modifica fuentes de verdad.
+- Mantiene al reporte gerencial diario como fuente de lectura operativa, pero no como
+  fuente read-only pura mientras tenga side effects sobre `notificaciones`.
+- Define que una futura 10B-A debera separar lectura directa del reporte y archivado
+  controlado de notificaciones.
+- `notificaciones` sigue siendo la fuente de verdad del estado de avisos.
+- Cualquier cambio futuro sobre `notificaciones` debe quedar scoped por hotel y en un
+  flujo explicito de notificaciones.
+- No autoriza migraciones, SQL manual, recalculos, permisos/auth, PWA/offline,
+  IndexedDB, cache names ni `/api/sync`.
+
+## Fase 10B-A - Separacion reporte gerencial y notificaciones
+
+- No crea ni modifica fuentes de verdad.
+- `GET /reportes/gerencial-diario` vuelve a comportarse como lectura directa del
+  reporte, sin cambiar `notificaciones`.
+- `GET /reportes/gerencial-diario/pdf` vuelve a comportarse como descarga directa,
+  sin cambiar `notificaciones`.
+- `notificaciones` sigue siendo la fuente de verdad del estado de avisos.
+- Los cambios de estado de notificaciones de reporte gerencial quedan reservados al
+  flujo controlado de notificaciones.
+- No autoriza migraciones, SQL manual, recalculos, permisos/auth, PWA/offline,
+  IndexedDB, cache names ni `/api/sync`.
+
+## Fase 10B-F - Cierre reporte gerencial y notificaciones
+
+- No crea ni modifica fuentes de verdad.
+- Cierra documentalmente la separacion validada manualmente por el usuario.
+- La QA manual validada no convierte el reporte gerencial en fuente de escritura.
+- `notificaciones` sigue siendo la fuente de verdad del estado de avisos.
+- El reporte gerencial HTML/PDF queda como lectura directa sin side effects sobre
+  `notificaciones`.
+- No autoriza migraciones, SQL manual, recalculos, permisos/auth, PWA/offline,
+  IndexedDB, cache names ni `/api/sync`.
+
+## Fase 11A-0 - Contrato perfil operativo de huesped read-only
+
+- No crea ni modifica fuentes de verdad.
+- `huespedes` debe tratarse como fuente scoped por hotel solo si la lectura valida
+  `hotel_id` del huesped actual.
+- Reservaciones, CxC, documentos y vehiculos del perfil deben derivarse siempre del
+  hotel actual.
+- El score de recurrencia futuro sera calculado al vuelo y no persistido.
+- No autoriza migraciones, SQL manual, creacion de CxC, cobros, pagos, check-in,
+  check-out, cambios de reservaciones, permisos/auth, PWA/offline, IndexedDB, cache
+  names ni `/api/sync`.
+
+## Fase 11A-A - Perfil operativo de huesped read-only
+
+- No crea ni modifica fuentes de verdad.
+- La ficha `GET /huespedes/{id}` sigue usando `huespedes` filtrado por hotel actual.
+- `Huesped::perfilOperativoReadOnlyPorHotel()` es un lector derivado, no una fuente
+  persistente.
+- Reservaciones se leen desde `reservaciones` con `huesped_id` y `hotel_id`.
+- Vehiculos se leen desde `huesped_vehiculos` validando el huesped contra el hotel.
+- CxC se lee desde `cuentas_por_cobrar` con `hotel_id`, `huesped_id`, estado abierto
+  y saldo positivo.
+- Documentos se leen desde `documentos` y `documento_entidades` para entidad
+  `huesped`.
+- La clasificacion, score y alertas se calculan al vuelo y no reemplazan datos de
+  negocio.
+- No autoriza migraciones, SQL manual, creacion de CxC, cobros, pagos, check-in,
+  check-out, cambios de reservaciones, documentos, permisos/auth, PWA/offline,
+  IndexedDB, cache names ni `/api/sync`.
+
+## Fase 11A-F - Cierre perfil operativo de huesped read-only
+
+- No crea ni modifica fuentes de verdad.
+- Cierra documentalmente la lectura derivada de 11A-A tras QA manual validada.
+- La ficha `GET /huespedes/{id}` sigue siendo una superficie de lectura y no una
+  fuente nueva.
+- `perfilOperativoReadOnlyPorHotel()` sigue siendo un calculo al vuelo.
+- La QA manual validada no autoriza persistir score, automatizar alertas ni crear
+  escrituras.
+- No autoriza migraciones, SQL manual, CxC nueva, cobros, pagos, check-in,
+  check-out, cambios de reservaciones, documentos, permisos/auth, PWA/offline,
+  IndexedDB, cache names ni `/api/sync`.
+
+## Fase 5E-0 - Contrato pagos laborales con Caja
+
+- No crea ni modifica fuentes de verdad.
+- Reafirma que `trabajador_pagos` es fuente de conceptos laborales, no pagos reales.
+- Reafirma que `trabajador_anticipos` y `trabajador_prestamos` mantienen saldos
+  informativos hasta que una fase futura implemente abonos/liquidaciones.
+- Define una futura fuente de verdad para pagos reales laborales, por ejemplo
+  `trabajador_pagos_caja`, pero no la crea en esta fase.
+- La fuente de Caja futura seguiria siendo `movimientos_caja`, enlazada desde la
+  entidad laboral nueva mediante `movimiento_caja_id`.
+- La QA/contrato 5E-0 no autoriza escrituras, migraciones, pagos reales,
+  movimientos de Caja, categorias de Caja, reversiones, nomina automatica ni
+  `/api/sync`.
+
+## Fase 5E-A - Preflight pagos laborales con Caja
+
+- No crea ni modifica fuentes de verdad.
+- Agrega una herramienta CLI/read-only como compuerta de diagnostico.
+- `trabajador_pagos` sigue siendo fuente de conceptos laborales, no pagos reales.
+- `trabajador_pagos_caja` sigue como fuente futura recomendada, todavia no creada.
+- `movimientos_caja` y `cortes_caja` se leen solo para detectar condiciones y riesgos.
+- El preflight debe fallar si detecta rutas prematuras, servicio prematuro,
+  columnas financieras en `trabajador_pagos`, categorias/movimientos de nomina o
+  mezcla accidental entre Personal y Caja.
+- La advertencia de ausencia de trabajadores activos no cambia fuentes de verdad; solo
+  indica preparacion pendiente para QA futura.
+- No autoriza migraciones, SQL manual, pagos reales, movimientos de Caja,
+  categorias de Caja, reversiones, nomina automatica ni `/api/sync`.
+
+## Fase 5E-B-0 - Contrato migracion pagos laborales con Caja
+
+- No crea ni modifica fuentes de verdad.
+- Define `trabajador_pagos_caja` como fuente futura independiente para pagos laborales
+  reales, pero no la crea todavia.
+- `trabajador_pagos` sigue siendo fuente de conceptos laborales manuales.
+- `trabajador_anticipos` y `trabajador_prestamos` siguen manteniendo saldos
+  informativos; 5E-B-0 no autoriza abonos ni liquidaciones.
+- `movimientos_caja` seguira siendo la fuente de egresos de Caja cuando una fase
+  posterior implemente el servicio transaccional.
+- La futura relacion entre `trabajador_pagos_caja` y `movimientos_caja` debera usar
+  `movimiento_caja_id` y una `referencia` unica por hotel.
+- La futura migracion 5E-B-A no debera crear registros historicos ni categorias de
+  Caja.
+- No autoriza migraciones, SQL manual, pagos reales, movimientos de Caja,
+  categorias de Caja, reversiones, nomina automatica ni `/api/sync`.
+
+## Fase 5E-B-A - Migracion pagos laborales con Caja
+
+- Crea la fuente futura `trabajador_pagos_caja`.
+- `trabajador_pagos_caja` queda vacia tras la migracion.
+- `trabajador_pagos` sigue siendo fuente de conceptos laborales manuales.
+- `trabajador_anticipos` y `trabajador_prestamos` siguen siendo saldos informativos.
+- `movimientos_caja` no recibe movimientos de pago laboral en esta fase.
+- `categorias_movimientos` no recibe categoria de nomina/pago laboral en esta fase.
+- La relacion futura con Caja queda preparada por `movimiento_caja_id`, `corte_id` y
+  `referencia`, pero no se usa todavia.
+- La migracion no autoriza servicio real, POST, pagos, reversiones, nomina automatica
+  ni `/api/sync`.
+
+## Fase 5E-C-0 - Contrato simulador pago laboral con Caja
+
+- No crea ni modifica fuentes de verdad.
+- Define una futura pantalla read-only como lector derivado.
+- `trabajador_pagos_caja` sigue vacia hasta que exista servicio transaccional
+  autorizado.
+- `trabajador_pagos` sigue siendo conceptos laborales manuales.
+- `trabajador_anticipos` y `trabajador_prestamos` siguen siendo saldos informativos.
+- `movimientos_caja` solo seria leida para diagnosticar corte/referencia, sin
+  escrituras.
+- Los saldos o montos sugeridos por el simulador futuro no deben persistirse.
+- No autoriza pagos reales, movimientos de Caja, categorias de Caja, reversiones,
+  nomina automatica ni `/api/sync`.
+
+## Fase 5E-C-A - Simulador pago laboral con Caja
+
+- No crea ni modifica fuentes de verdad.
+- La pantalla `GET /trabajadores/pagos-caja/simulador` es un lector derivado.
+- `trabajador_pagos` sigue siendo la fuente de conceptos laborales.
+- `trabajador_pagos_caja` sigue siendo la fuente futura de pagos laborales reales,
+  pero permanece sin registros hasta servicio autorizado.
+- `cortes_caja`, `cajas` y `movimientos_caja` solo se leen para diagnosticar corte
+  abierto y referencia duplicada.
+- El saldo estimado, monto simulado y elegibilidad son calculos al vuelo.
+- No autoriza pagos reales, movimientos de Caja, categorias de Caja, reversiones,
+  nomina automatica, permisos/auth, PWA/offline ni `/api/sync`.
+
+## Fase 5E-C-F - Cierre simulador pago laboral con Caja
+
+- No crea ni modifica fuentes de verdad.
+- Cierra documentalmente la pantalla read-only validada manualmente.
+- La QA manual no convierte el simulador en fuente de pago real.
+- `trabajador_pagos_caja` permanece como fuente futura, vacia hasta servicio autorizado.
+
+## Fase 5E-D-0 - Contrato servicio pago laboral con Caja
+
+- No crea ni modifica fuentes de verdad.
+- Define `trabajador_pagos_caja` como fuente futura del pago laboral real.
+- Define `movimientos_caja` como fuente futura del egreso de Caja.
+- `trabajador_pagos` conserva conceptos laborales; no debe recibir pago real.
+- `trabajador_anticipos` y `trabajador_prestamos` siguen como saldos informativos.
+- El saldo disponible futuro debe recalcularse dentro del servicio y no confiar en el frontend.
+- No autoriza pagos reales, movimientos de Caja, categorias de Caja, reversiones, nomina automatica, permisos/auth, PWA/offline ni `/api/sync`.
+
+## Fase 5E-D-A - Pago laboral con Caja controlado
+
+- `trabajador_pagos_caja` queda como fuente de verdad del pago laboral real.
+- `movimientos_caja` queda como fuente de verdad del egreso Caja vinculado por `movimiento_caja_id`.
+- `logs_auditoria` registra el evento `trabajadores.pago_laboral_caja_registrado`.
+- `trabajador_pagos` conserva conceptos laborales manuales y no representa pago real.
+- `trabajador_anticipos` y `trabajador_prestamos` siguen siendo saldos informativos; no se liquidan automaticamente.
+- El saldo disponible se recalcula dentro de `TrabajadorPagoCajaService`, no desde el frontend.
+- La vista solo envia solicitud POST con CSRF/token; no calcula ni persiste saldos.
+- No cambia PWA/offline ni `/api/sync`.
+
+## Fase 5E-D-F - Cierre pago laboral con Caja
+
+- No crea ni modifica fuentes de verdad.
+- Cierra documentalmente el pago laboral individual con Caja validado manualmente.
+- `trabajador_pagos_caja` permanece como fuente del pago laboral real.
+- `movimientos_caja` permanece como fuente del egreso financiero vinculado.
+- `trabajador_pagos` conserva solo conceptos laborales manuales.
+- La vista separa saldo bruto informativo de saldo disponible despues de pagos Caja.
+- No autoriza reversion, pagos masivos, nomina automatica, abonos/liquidaciones,
+  permisos/auth, PWA/offline ni `/api/sync`.

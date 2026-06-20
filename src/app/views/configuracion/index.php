@@ -78,6 +78,55 @@ $configGeneralUnitRows = is_array($generalUnitCatalog ?? null)
     ? array_values($generalUnitCatalog)
     : (function_exists('hotel_general_catalog_unit_rows') ? hotel_general_catalog_unit_rows(null, true) : []);
 $configPwaPushDevices = is_array($pwaPushDevices ?? null) ? array_values($pwaPushDevices) : [];
+$configGuestFieldCatalog = is_array($guestFieldCatalog ?? null)
+    ? $guestFieldCatalog
+    : (function_exists('hotel_guest_field_catalog') ? hotel_guest_field_catalog() : []);
+$configGuestFieldPolicy = is_array($guestFieldPolicy ?? null)
+    ? $guestFieldPolicy
+    : (function_exists('hotel_guest_field_policy') ? hotel_guest_field_policy($configHotelId) : ['fields' => []]);
+$configGuestFieldsByScope = [
+    'guest' => [],
+    'vehicle' => [],
+];
+foreach ($configGuestFieldCatalog as $guestFieldKey => $guestFieldDefinition) {
+    $guestFieldScope = (string)($guestFieldDefinition['scope'] ?? 'guest');
+    if (!isset($configGuestFieldsByScope[$guestFieldScope])) {
+        continue;
+    }
+
+    $configGuestFieldsByScope[$guestFieldScope][$guestFieldKey] = $guestFieldDefinition;
+}
+$configIdentityFieldKeys = [
+    'identificacion_tipo',
+    'identificacion_numero',
+    'ine_folio',
+    'identificacion_archivo',
+];
+$configIdentityFieldDefinitions = [];
+foreach ($configIdentityFieldKeys as $identityFieldKey) {
+    if (isset($configGuestFieldsByScope['guest'][$identityFieldKey])) {
+        $configIdentityFieldDefinitions[$identityFieldKey] = $configGuestFieldsByScope['guest'][$identityFieldKey];
+    }
+}
+$configIdentityAnyVisible = false;
+$configIdentityAnyRequired = false;
+$configIdentityFileVisible = false;
+$configIdentityFileRequired = false;
+foreach (array_keys($configIdentityFieldDefinitions) as $identityFieldKey) {
+    $identityState = is_array($configGuestFieldPolicy['fields'][$identityFieldKey] ?? null)
+        ? $configGuestFieldPolicy['fields'][$identityFieldKey]
+        : [];
+    $identityVisible = !empty($identityState['visible']);
+    $identityRequired = !empty($identityState['required']);
+
+    $configIdentityAnyVisible = $configIdentityAnyVisible || $identityVisible;
+    $configIdentityAnyRequired = $configIdentityAnyRequired || $identityRequired;
+
+    if ($identityFieldKey === 'identificacion_archivo') {
+        $configIdentityFileVisible = $identityVisible;
+        $configIdentityFileRequired = $identityRequired;
+    }
+}
 
 $configPwaDeviceName = function (array $device) {
     $agent = (string)($device['navegador'] ?? '');
@@ -340,6 +389,72 @@ $configRenderSettingField = function ($settingKey, array $settingDefinition, $se
             <?php endif; ?>
         <?php endif; ?>
     </div>
+    <?php
+    return ob_get_clean();
+};
+
+$configRenderGuestFieldPolicy = function ($fieldKey, array $fieldDefinition) use ($configGuestFieldPolicy) {
+    $fieldState = is_array($configGuestFieldPolicy['fields'][$fieldKey] ?? null)
+        ? $configGuestFieldPolicy['fields'][$fieldKey]
+        : [];
+    $label = (string)($fieldDefinition['label'] ?? $fieldKey);
+    $description = (string)($fieldDefinition['descripcion'] ?? '');
+    $icon = (string)($fieldDefinition['icon'] ?? 'fa-circle-dot');
+    $locked = !empty($fieldDefinition['locked']);
+    $visible = $locked || !empty($fieldState['visible']);
+    $required = $locked || !empty($fieldState['required']);
+    $inputType = (string)($fieldDefinition['input'] ?? 'text');
+    $fieldId = 'guest_field_' . preg_replace('/[^a-z0-9_]+/i', '_', (string)$fieldKey);
+
+    ob_start();
+    ?>
+    <article class="hc-policy-row<?= $locked ? ' is-locked' : '' ?>"
+             data-guest-policy-row
+             data-guest-field="<?= htmlspecialchars((string)$fieldKey, ENT_QUOTES, 'UTF-8') ?>">
+        <div class="hc-policy-main">
+            <span class="hc-policy-icon"><i class="fas <?= htmlspecialchars($icon, ENT_QUOTES, 'UTF-8') ?>"></i></span>
+            <div>
+                <h4><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></h4>
+                <?php if ($description !== ''): ?>
+                    <p><?= htmlspecialchars($description, ENT_QUOTES, 'UTF-8') ?></p>
+                <?php endif; ?>
+                <span class="hc-policy-type"><?= htmlspecialchars(strtoupper($inputType), ENT_QUOTES, 'UTF-8') ?></span>
+            </div>
+        </div>
+
+        <div class="hc-policy-controls">
+            <?php if ($locked): ?>
+                <input type="hidden" name="guest_fields[<?= htmlspecialchars($fieldKey, ENT_QUOTES, 'UTF-8') ?>][visible]" value="1">
+                <input type="hidden" name="guest_fields[<?= htmlspecialchars($fieldKey, ENT_QUOTES, 'UTF-8') ?>][required]" value="1">
+                <span class="hc-policy-lock"><i class="fas fa-lock"></i> Base</span>
+                <span class="hc-policy-lock is-required"><i class="fas fa-check"></i> Obligatorio</span>
+            <?php else: ?>
+                <input type="hidden" name="guest_fields[<?= htmlspecialchars($fieldKey, ENT_QUOTES, 'UTF-8') ?>][visible]" value="0">
+                <label class="hc-policy-toggle" for="<?= htmlspecialchars($fieldId, ENT_QUOTES, 'UTF-8') ?>_visible">
+                    <input type="checkbox"
+                           id="<?= htmlspecialchars($fieldId, ENT_QUOTES, 'UTF-8') ?>_visible"
+                           name="guest_fields[<?= htmlspecialchars($fieldKey, ENT_QUOTES, 'UTF-8') ?>][visible]"
+                           value="1"
+                           data-guest-visible
+                           <?= $visible ? 'checked' : '' ?>>
+                    <span class="hc-switch-ui" aria-hidden="true"></span>
+                    <strong>Visible</strong>
+                </label>
+
+                <input type="hidden" name="guest_fields[<?= htmlspecialchars($fieldKey, ENT_QUOTES, 'UTF-8') ?>][required]" value="0">
+                <label class="hc-policy-toggle" for="<?= htmlspecialchars($fieldId, ENT_QUOTES, 'UTF-8') ?>_required">
+                    <input type="checkbox"
+                           id="<?= htmlspecialchars($fieldId, ENT_QUOTES, 'UTF-8') ?>_required"
+                           name="guest_fields[<?= htmlspecialchars($fieldKey, ENT_QUOTES, 'UTF-8') ?>][required]"
+                           value="1"
+                           data-guest-required
+                           <?= $required ? 'checked' : '' ?>>
+                    <span class="hc-switch-ui" aria-hidden="true"></span>
+                    <strong>Obligatorio</strong>
+                </label>
+            <?php endif; ?>
+        </div>
+    </article>
     <?php
     return ob_get_clean();
 };
@@ -1756,6 +1871,7 @@ html {
 .hc-nav-link[href="#hc-readonly"] { --hc-nav-accent: var(--hc-tone-blue); }
 .hc-nav-link[href="#hc-settings"] { --hc-nav-accent: var(--hc-tone-sage); }
 .hc-nav-link[href="#hc-notifications"] { --hc-nav-accent: var(--hc-tone-amber); }
+.hc-nav-link[href="#hc-guest-fields"] { --hc-nav-accent: var(--hc-tone-blue); }
 .hc-nav-link[href="#hc-rooms"] { --hc-nav-accent: var(--hc-tone-indigo); }
 .hc-nav-link[href="#hc-catalogs"] { --hc-nav-accent: var(--hc-tone-olive); }
 .hc-nav-link[href="#hc-brand"] { --hc-nav-accent: var(--hc-accent); }
@@ -1838,6 +1954,7 @@ html {
 #hc-settings { --hc-section-accent: var(--hc-tone-sage); --hc-section-wash: color-mix(in srgb, var(--hc-tone-sage) 6%, #fff); }
 #hc-notifications { --hc-section-accent: var(--hc-tone-amber); --hc-section-wash: color-mix(in srgb, var(--hc-tone-amber) 7%, #fff); }
 #hc-rooms { --hc-section-accent: var(--hc-tone-indigo); --hc-section-wash: color-mix(in srgb, var(--hc-tone-indigo) 6%, #fff); }
+#hc-guest-fields { --hc-section-accent: var(--hc-tone-blue); --hc-section-wash: color-mix(in srgb, var(--hc-tone-blue) 6%, #fff); }
 #hc-catalogs { --hc-section-accent: var(--hc-tone-olive); --hc-section-wash: color-mix(in srgb, var(--hc-tone-olive) 6%, #fff); }
 #hc-brand { --hc-section-accent: var(--hc-accent); --hc-section-wash: color-mix(in srgb, var(--hc-accent) 7%, #fff); }
 #hc-system { --hc-section-accent: var(--hc-tone-coral); --hc-section-wash: color-mix(in srgb, var(--hc-tone-coral) 6%, #fff); }
@@ -2014,6 +2131,8 @@ html {
 #hc-notifications .hc-notification-block:nth-child(3n+1) { --hc-block-accent: var(--hc-tone-amber); }
 #hc-notifications .hc-notification-block:nth-child(3n+2) { --hc-block-accent: var(--hc-tone-blue); }
 #hc-notifications .hc-notification-block:nth-child(3n+3) { --hc-block-accent: var(--hc-tone-coral); }
+#hc-guest-fields .hc-policy-box:nth-child(2n+1) { --hc-block-accent: var(--hc-tone-blue); }
+#hc-guest-fields .hc-policy-box:nth-child(2n+2) { --hc-block-accent: var(--hc-tone-sage); }
 #hc-rooms .hc-catalog-box:nth-child(3n+1) { --hc-block-accent: var(--hc-tone-indigo); }
 #hc-rooms .hc-catalog-box:nth-child(3n+2) { --hc-block-accent: var(--hc-tone-sage); }
 #hc-rooms .hc-catalog-box:nth-child(3n+3) { --hc-block-accent: var(--hc-tone-amber); }
@@ -2080,6 +2199,302 @@ html {
 .hc-catalog-head {
     margin-bottom: 20px;
     padding-top: 2px;
+}
+
+.hc-identity-policy {
+    --hc-block-accent: var(--hc-tone-indigo);
+    display: grid;
+    gap: 18px;
+    margin-bottom: 20px;
+    padding: 18px;
+    border: 1px solid color-mix(in srgb, var(--hc-block-accent) 22%, var(--hc-line));
+    border-radius: 18px;
+    background:
+        radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--hc-block-accent) 13%, transparent), transparent 14rem),
+        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--hc-success) 9%, transparent), transparent 12rem),
+        linear-gradient(135deg, color-mix(in srgb, var(--hc-block-accent) 7%, #fff), color-mix(in srgb, var(--hc-success) 4%, #fff));
+    box-shadow: 0 16px 34px -30px color-mix(in srgb, var(--hc-block-accent) 48%, transparent);
+}
+
+.hc-identity-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: start;
+}
+
+.hc-identity-copy {
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr);
+    gap: 13px;
+    align-items: start;
+    min-width: 0;
+}
+
+.hc-identity-emblem {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
+    color: color-mix(in srgb, var(--hc-block-accent) 80%, #334155);
+    background: color-mix(in srgb, var(--hc-block-accent) 13%, #fff);
+    border: 1px solid color-mix(in srgb, var(--hc-block-accent) 22%, var(--hc-line));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.78);
+}
+
+.hc-identity-eyebrow {
+    margin: 0 0 3px;
+    color: color-mix(in srgb, var(--hc-block-accent) 74%, var(--hc-ink-soft));
+    font-size: .7rem;
+    font-weight: 850;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.hc-identity-copy h4 {
+    margin: 0;
+    color: var(--hc-brand-strong);
+    font-size: 1.04rem;
+    font-weight: 820;
+    line-height: 1.2;
+}
+
+.hc-identity-copy p:not(.hc-identity-eyebrow) {
+    max-width: 68ch;
+    margin: 7px 0 0;
+    color: var(--hc-ink-soft);
+    font-size: .82rem;
+    line-height: 1.5;
+    font-weight: 470;
+}
+
+.hc-identity-status {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.hc-identity-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 32px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--hc-block-accent) 18%, var(--hc-line));
+    background: rgba(255,255,255,.78);
+    color: var(--hc-ink-soft);
+    font-size: .72rem;
+    font-weight: 830;
+    white-space: nowrap;
+}
+
+.hc-identity-pill.is-on {
+    color: color-mix(in srgb, var(--hc-success) 80%, #1f2937);
+    background: color-mix(in srgb, var(--hc-success) 11%, #fff);
+    border-color: color-mix(in srgb, var(--hc-success) 22%, var(--hc-line));
+}
+
+.hc-identity-pill.is-muted {
+    color: color-mix(in srgb, var(--hc-ink-faint) 90%, #64748b);
+    background: color-mix(in srgb, var(--hc-tone-slate) 6%, #fff);
+}
+
+.hc-identity-flow {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.hc-identity-step {
+    min-width: 0;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid color-mix(in srgb, var(--hc-block-accent) 14%, var(--hc-line));
+    background: rgba(255,255,255,.72);
+}
+
+.hc-identity-step i {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    color: color-mix(in srgb, var(--hc-block-accent) 78%, #334155);
+    background: color-mix(in srgb, var(--hc-block-accent) 11%, #fff);
+}
+
+.hc-identity-step strong,
+.hc-identity-step span {
+    display: block;
+}
+
+.hc-identity-step strong {
+    color: var(--hc-brand-strong);
+    font-size: .78rem;
+    font-weight: 820;
+    line-height: 1.24;
+}
+
+.hc-identity-step span {
+    margin-top: 4px;
+    color: var(--hc-ink-soft);
+    font-size: .72rem;
+    font-weight: 500;
+    line-height: 1.42;
+}
+
+.hc-identity-fields {
+    display: grid;
+    gap: 10px;
+}
+
+.hc-identity-fields .hc-policy-row {
+    border-color: color-mix(in srgb, var(--hc-block-accent) 20%, var(--hc-line));
+    background: linear-gradient(135deg, rgba(255,255,255,.86), color-mix(in srgb, var(--hc-block-accent) 5%, #fff));
+}
+
+.hc-policy-grid {
+    display: grid;
+    gap: 22px;
+}
+
+.hc-policy-box {
+    border-top: 1px solid color-mix(in srgb, var(--hc-block-accent, var(--hc-section-accent)) 18%, var(--hc-line));
+    padding-top: 20px;
+}
+
+.hc-policy-box:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.hc-policy-list {
+    display: grid;
+    gap: 11px;
+}
+
+.hc-policy-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 18px;
+    align-items: center;
+    min-height: 86px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, var(--hc-block-accent, var(--hc-section-accent)) 13%, var(--hc-line));
+    border-radius: 16px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--hc-block-accent, var(--hc-section-accent)) 6%, #fff), #fff 62%);
+}
+
+.hc-policy-row.is-locked {
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--hc-tone-sage) 10%, #fff), color-mix(in srgb, var(--hc-accent) 5%, #fff));
+}
+
+.hc-policy-main {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    min-width: 0;
+}
+
+.hc-policy-icon {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    color: color-mix(in srgb, var(--hc-block-accent, var(--hc-section-accent)) 82%, #334155);
+    background: color-mix(in srgb, var(--hc-block-accent, var(--hc-section-accent)) 12%, #fff);
+    border: 1px solid color-mix(in srgb, var(--hc-block-accent, var(--hc-section-accent)) 20%, var(--hc-line));
+}
+
+.hc-policy-main h4 {
+    margin: 0;
+    color: var(--hc-brand-strong);
+    font-size: .94rem;
+    font-weight: 760;
+    line-height: 1.25;
+}
+
+.hc-policy-main p {
+    margin: 4px 0 0;
+    color: var(--hc-ink-soft);
+    font-size: .78rem;
+    line-height: 1.45;
+    font-weight: 430;
+}
+
+.hc-policy-type {
+    display: inline-flex;
+    width: fit-content;
+    margin-top: 7px;
+    padding: 4px 7px;
+    border-radius: 999px;
+    color: color-mix(in srgb, var(--hc-block-accent, var(--hc-section-accent)) 68%, #475569);
+    background: color-mix(in srgb, var(--hc-block-accent, var(--hc-section-accent)) 9%, #fff);
+    font-size: .62rem;
+    font-weight: 860;
+    letter-spacing: .05em;
+}
+
+.hc-policy-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 9px;
+    flex-wrap: wrap;
+}
+
+.hc-policy-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 8px 10px;
+    border: 1px solid color-mix(in srgb, var(--hc-block-accent, var(--hc-section-accent)) 14%, var(--hc-line));
+    border-radius: 999px;
+    background: rgba(255,255,255,.78);
+    color: var(--hc-ink-soft);
+    font-size: .76rem;
+    font-weight: 760;
+    cursor: pointer;
+}
+
+.hc-policy-toggle .hc-switch-ui {
+    width: 34px;
+    height: 20px;
+    margin: 0;
+}
+
+.hc-policy-toggle .hc-switch-ui::after {
+    width: 14px;
+    height: 14px;
+}
+
+.hc-policy-lock {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 34px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    color: color-mix(in srgb, var(--hc-brand) 70%, #334155);
+    background: color-mix(in srgb, var(--hc-brand) 7%, #fff);
+    border: 1px solid color-mix(in srgb, var(--hc-brand) 16%, var(--hc-line));
+    font-size: .74rem;
+    font-weight: 820;
+}
+
+.hc-policy-lock.is-required {
+    color: color-mix(in srgb, var(--hc-success) 80%, #1f2937);
+    background: color-mix(in srgb, var(--hc-success) 10%, #fff);
+    border-color: color-mix(in srgb, var(--hc-success) 18%, var(--hc-line));
 }
 
 .hc-catalog-list {
@@ -2984,6 +3399,23 @@ html {
     .hc-catalog-row.is-unit {
         grid-template-columns: 1fr;
     }
+
+    .hc-policy-row {
+        grid-template-columns: 1fr;
+    }
+
+    .hc-policy-controls {
+        justify-content: flex-start;
+    }
+
+    .hc-identity-top,
+    .hc-identity-flow {
+        grid-template-columns: 1fr;
+    }
+
+    .hc-identity-status {
+        justify-content: flex-start;
+    }
 }
 
 @media (max-width: 1020px) {
@@ -3168,6 +3600,10 @@ html {
                             <strong>Notificaciones <span>Reglas y umbrales</span></strong>
                         </a>
                     <?php endif; ?>
+                    <a href="#hc-guest-fields" class="hc-nav-link">
+                        <i class="fas fa-user-check"></i>
+                        <strong>Huespedes <span>Campos requeridos</span></strong>
+                    </a>
                     <a href="#hc-rooms" class="hc-nav-link">
                         <i class="fas fa-bed"></i>
                         <strong>Habitaciones <span>Tipos y amenidades</span></strong>
@@ -3340,6 +3776,116 @@ html {
                             </div>
                         </section>
                     <?php endif; ?>
+
+                    <section id="hc-guest-fields" class="hc-panel" data-hc-section aria-labelledby="hc-guest-fields-title">
+                        <div class="hc-panel-header">
+                            <div>
+                                <p class="hc-section-kicker">Registro de huespedes</p>
+                                <h2 id="hc-guest-fields-title" class="hc-panel-title">
+                                    <span class="hc-section-mark"><i class="fas fa-user-check"></i></span>
+                                    Campos solicitados al registrar
+                                </h2>
+                                <p class="hc-panel-copy">
+                                    Define que datos se muestran y cuales son obligatorios para el huesped y sus vehiculos. Nombre y telefono celular quedan como base del sistema.
+                                </p>
+                            </div>
+                            <span class="hc-badge">
+                                <i class="fas fa-hotel"></i>
+                                Por hotel
+                            </span>
+                        </div>
+
+                        <div class="hc-policy-grid">
+                            <section class="hc-policy-box" aria-label="Datos del huesped">
+                                <div class="hc-group-head">
+                                    <div>
+                                        <h3 class="hc-group-title">
+                                            <i class="fas fa-user"></i>
+                                            Datos del huesped
+                                        </h3>
+                                        <p class="hc-group-hint">Contacto, procedencia, documentos, datos fiscales y preferencias del expediente.</p>
+                                    </div>
+                                </div>
+                                <?php if (!empty($configIdentityFieldDefinitions)): ?>
+                                    <section class="hc-identity-policy" data-identity-policy-panel aria-label="Configuracion de identificacion">
+                                        <div class="hc-identity-top">
+                                            <div class="hc-identity-copy">
+                                                <span class="hc-identity-emblem"><i class="fas fa-id-card-clip"></i></span>
+                                                <div>
+                                                    <p class="hc-identity-eyebrow">Documento de identidad</p>
+                                                    <h4>INE, pasaporte o licencia</h4>
+                                                    <p>
+                                                        Decide si recepcion debe capturar el tipo de documento, el folio y una imagen o PDF. El archivo puede venir de camara, galeria o selector de archivos.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div class="hc-identity-status" aria-label="Estado de identificacion">
+                                                <span class="hc-identity-pill<?= $configIdentityAnyVisible ? ' is-on' : ' is-muted' ?>" data-identity-status="record">
+                                                    <i class="fas <?= $configIdentityAnyVisible ? 'fa-eye' : 'fa-eye-slash' ?>"></i>
+                                                    <?= $configIdentityAnyVisible ? 'Se pedira' : 'No se pedira' ?>
+                                                </span>
+                                                <span class="hc-identity-pill<?= $configIdentityAnyRequired ? ' is-on' : ' is-muted' ?>" data-identity-status="required">
+                                                    <i class="fas <?= $configIdentityAnyRequired ? 'fa-circle-check' : 'fa-circle' ?>"></i>
+                                                    <?= $configIdentityAnyRequired ? 'Con obligatorios' : 'Sin obligatorios' ?>
+                                                </span>
+                                                <span class="hc-identity-pill<?= $configIdentityFileVisible ? ' is-on' : ' is-muted' ?>" data-identity-status="file">
+                                                    <i class="fas <?= $configIdentityFileVisible ? 'fa-file-arrow-up' : 'fa-file-circle-xmark' ?>"></i>
+                                                    <?= $configIdentityFileVisible ? ($configIdentityFileRequired ? 'Archivo obligatorio' : 'Archivo opcional') : 'Archivo apagado' ?>
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div class="hc-identity-flow" aria-label="Flujo de captura">
+                                            <div class="hc-identity-step">
+                                                <i class="fas fa-list-check"></i>
+                                                <strong>1. Pedir dato</strong>
+                                                <span>Activa los campos que debe ver recepcion.</span>
+                                            </div>
+                                            <div class="hc-identity-step">
+                                                <i class="fas fa-asterisk"></i>
+                                                <strong>2. Hacer obligatorio</strong>
+                                                <span>Marca lo que no puede faltar al registrar.</span>
+                                            </div>
+                                            <div class="hc-identity-step">
+                                                <i class="fas fa-camera-retro"></i>
+                                                <strong>3. Adjuntar archivo</strong>
+                                                <span>JPG, PNG, WEBP o PDF hasta 10 MB.</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="hc-identity-fields">
+                                            <?php foreach ($configIdentityFieldDefinitions as $guestFieldKey => $guestFieldDefinition): ?>
+                                                <?= $configRenderGuestFieldPolicy($guestFieldKey, $guestFieldDefinition) ?>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </section>
+                                <?php endif; ?>
+                                <div class="hc-policy-list">
+                                    <?php foreach ($configGuestFieldsByScope['guest'] as $guestFieldKey => $guestFieldDefinition): ?>
+                                        <?php if (in_array($guestFieldKey, $configIdentityFieldKeys, true)) { continue; } ?>
+                                        <?= $configRenderGuestFieldPolicy($guestFieldKey, $guestFieldDefinition) ?>
+                                    <?php endforeach; ?>
+                                </div>
+                            </section>
+
+                            <section class="hc-policy-box" aria-label="Datos de vehiculos">
+                                <div class="hc-group-head">
+                                    <div>
+                                        <h3 class="hc-group-title">
+                                            <i class="fas fa-car-side"></i>
+                                            Vehiculos registrados
+                                        </h3>
+                                        <p class="hc-group-hint">El hotel decide si captura marca, modelo, placas, color, tipo, cajon o notas del vehiculo.</p>
+                                    </div>
+                                </div>
+                                <div class="hc-policy-list">
+                                    <?php foreach ($configGuestFieldsByScope['vehicle'] as $guestFieldKey => $guestFieldDefinition): ?>
+                                        <?= $configRenderGuestFieldPolicy($guestFieldKey, $guestFieldDefinition) ?>
+                                    <?php endforeach; ?>
+                                </div>
+                            </section>
+                        </div>
+                    </section>
 
                     <section id="hc-rooms" class="hc-panel" data-hc-section aria-labelledby="hc-rooms-title">
                         <div class="hc-panel-header">
@@ -4866,6 +5412,71 @@ if (backupCheckbox) {
 
     backupCheckbox.addEventListener('change', syncBackupOptions);
     syncBackupOptions();
+}
+
+document.querySelectorAll('[data-guest-policy-row]').forEach(row => {
+    const visible = row.querySelector('[data-guest-visible]');
+    const required = row.querySelector('[data-guest-required]');
+
+    if (!visible || !required) {
+        return;
+    }
+
+    required.addEventListener('change', () => {
+        if (required.checked) {
+            visible.checked = true;
+        }
+    });
+
+    visible.addEventListener('change', () => {
+        if (!visible.checked) {
+            required.checked = false;
+        }
+    });
+});
+
+const identityPolicyPanel = document.querySelector('[data-identity-policy-panel]');
+if (identityPolicyPanel) {
+    const identityRows = Array.from(identityPolicyPanel.querySelectorAll('[data-guest-policy-row]'));
+    const identityStatusRecord = identityPolicyPanel.querySelector('[data-identity-status="record"]');
+    const identityStatusRequired = identityPolicyPanel.querySelector('[data-identity-status="required"]');
+    const identityStatusFile = identityPolicyPanel.querySelector('[data-identity-status="file"]');
+
+    const setIdentityStatus = function(node, isOn, text, iconClass) {
+        if (!node) {
+            return;
+        }
+
+        node.classList.toggle('is-on', isOn);
+        node.classList.toggle('is-muted', !isOn);
+        const icon = node.querySelector('i');
+        if (icon) {
+            icon.className = 'fas ' + iconClass;
+        }
+        node.lastChild.textContent = ' ' + text;
+    };
+
+    const syncIdentitySummary = function() {
+        const anyVisible = identityRows.some(row => row.querySelector('[data-guest-visible]')?.checked);
+        const anyRequired = identityRows.some(row => row.querySelector('[data-guest-required]')?.checked);
+        const fileRow = identityPolicyPanel.querySelector('[data-guest-field="identificacion_archivo"]');
+        const fileVisible = !!fileRow?.querySelector('[data-guest-visible]')?.checked;
+        const fileRequired = !!fileRow?.querySelector('[data-guest-required]')?.checked;
+
+        setIdentityStatus(identityStatusRecord, anyVisible, anyVisible ? 'Se pedira' : 'No se pedira', anyVisible ? 'fa-eye' : 'fa-eye-slash');
+        setIdentityStatus(identityStatusRequired, anyRequired, anyRequired ? 'Con obligatorios' : 'Sin obligatorios', anyRequired ? 'fa-circle-check' : 'fa-circle');
+        setIdentityStatus(
+            identityStatusFile,
+            fileVisible,
+            fileVisible ? (fileRequired ? 'Archivo obligatorio' : 'Archivo opcional') : 'Archivo apagado',
+            fileVisible ? 'fa-file-arrow-up' : 'fa-file-circle-xmark'
+        );
+    };
+
+    identityPolicyPanel.querySelectorAll('[data-guest-visible], [data-guest-required]').forEach(input => {
+        input.addEventListener('change', syncIdentitySummary);
+    });
+    syncIdentitySummary();
 }
 
 const navLinks = Array.from(document.querySelectorAll('.hc-nav-link'));

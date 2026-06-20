@@ -2,6 +2,13 @@
 $cuenta = $cuenta ?? [];
 $movimientos = $movimientos ?? [];
 $movimientosDisponibles = $movimientosDisponibles ?? false;
+$cobroCaja = $cobroCaja ?? [];
+$cobroToken = $cobroToken ?? null;
+$reversionesCobro = $reversionesCobro ?? [];
+$reversionTokens = $reversionTokens ?? [];
+$movimientosCobro = array_values(array_filter($movimientos, static function ($movimiento) {
+    return (string)($movimiento['tipo_movimiento'] ?? '') === 'COBRO';
+}));
 
 if (!function_exists('cxc_op_view_safe')) {
     function cxc_op_view_safe($value, $fallback = '-')
@@ -72,6 +79,16 @@ if (!function_exists('cxc_op_view_money')) {
     background: #fff;
     color: #334155;
 }
+.cxc-op-detail .cxc-op-btn-primary {
+    background: var(--cxc-op-brand);
+    border-color: var(--cxc-op-brand);
+    color: #fff;
+}
+.cxc-op-detail .cxc-op-btn-danger {
+    background: #991b1b;
+    border-color: #991b1b;
+    color: #fff;
+}
 .cxc-op-detail .cxc-op-badge {
     display: inline-flex;
     align-items: center;
@@ -100,6 +117,17 @@ if (!function_exists('cxc_op_view_money')) {
     text-transform: uppercase;
     letter-spacing: .06em;
 }
+.cxc-op-detail .cxc-op-input {
+    width: 100%;
+    min-height: 40px;
+    border: 1px solid var(--cxc-op-line);
+    background: #fff;
+    padding: 0 12px;
+}
+.cxc-op-detail textarea.cxc-op-input {
+    min-height: 82px;
+    padding-top: 10px;
+}
 </style>
 
 <div class="cxc-op-detail">
@@ -109,7 +137,7 @@ if (!function_exists('cxc_op_view_money')) {
                 <div class="cxc-op-kicker">CxC operativa / Solo lectura</div>
                 <h1 class="cxc-op-title">Cuenta por cobrar #<?= (int)($cuenta['id'] ?? 0) ?></h1>
                 <p class="cxc-op-subtitle">
-                    Detalle read-only de la tabla operativa. Esta pantalla no cobra, no registra pagos, no modifica saldos y no toca Caja.
+                    Detalle operativo de la cuenta. El cobro con Caja queda condicionado por saldo, estado, corte abierto, CSRF y token de un solo uso.
                 </p>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 min-w-[320px]">
@@ -168,8 +196,8 @@ if (!function_exists('cxc_op_view_money')) {
                 <?php endif; ?>
             </div>
             <span class="cxc-op-badge">
-                <i class="fas fa-lock"></i>
-                Sin acciones de cobro
+                <i class="fas fa-shield-alt"></i>
+                Cobro controlado
             </span>
         </div>
 
@@ -234,6 +262,175 @@ if (!function_exists('cxc_op_view_money')) {
                     <div class="mt-1 text-slate-700 whitespace-pre-line"><?= cxc_op_view_safe($cuenta['notas'] ?? null, 'Sin notas') ?></div>
                 </div>
             </div>
+        </div>
+
+        <div class="cxc-op-panel p-5 mb-4">
+            <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                <div>
+                    <h2 class="font-black text-lg">Cobro con Caja</h2>
+                    <p class="text-sm text-slate-500 mt-1">Registra ingreso en Caja y movimiento CxC solo si la cuenta es elegible.</p>
+                </div>
+                <?php if (!empty($cobroCaja['corte'])): ?>
+                    <span class="cxc-op-badge">
+                        <i class="fas fa-cash-register"></i>
+                        Corte #<?= (int)$cobroCaja['corte']['id'] ?>
+                    </span>
+                <?php endif; ?>
+            </div>
+
+            <?php if (!empty($cobroCaja['elegible']) && $cobroToken): ?>
+                <form method="POST" action="<?= url('cuentas-por-cobrar/operativas/' . (int)($cuenta['id'] ?? 0) . '/registrar-cobro-caja') ?>" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="cobro_token" value="<?= cxc_op_view_safe($cobroToken, '') ?>">
+
+                    <div>
+                        <label class="cxc-op-label" for="cxc_monto">Monto</label>
+                        <input
+                            id="cxc_monto"
+                            class="cxc-op-input mt-1"
+                            type="number"
+                            name="monto"
+                            min="0.01"
+                            step="0.01"
+                            max="<?= cxc_op_view_safe($cobroCaja['monto_maximo'] ?? '0.00', '0.00') ?>"
+                            value="<?= cxc_op_view_safe($cobroCaja['monto_maximo'] ?? '0.00', '0.00') ?>"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label class="cxc-op-label" for="cxc_metodo_pago">Metodo</label>
+                        <select id="cxc_metodo_pago" class="cxc-op-input mt-1" name="metodo_pago" required>
+                            <?php foreach (($cobroCaja['metodos_pago'] ?? []) as $valor => $label): ?>
+                                <option value="<?= cxc_op_view_safe($valor, '') ?>"><?= cxc_op_view_safe($label, '') ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="cxc-op-label" for="cxc_referencia">Referencia</label>
+                        <input id="cxc_referencia" class="cxc-op-input mt-1" type="text" name="referencia" maxlength="100" placeholder="Opcional">
+                    </div>
+
+                    <div class="md:col-span-4">
+                        <label class="cxc-op-label" for="cxc_notas">Notas</label>
+                        <textarea id="cxc_notas" class="cxc-op-input mt-1" name="notas" maxlength="1000" placeholder="Opcional"></textarea>
+                    </div>
+
+                    <div class="md:col-span-4 flex flex-wrap items-center justify-between gap-3">
+                        <p class="text-sm text-slate-500">
+                            Maximo elegible: <strong><?= cxc_op_view_money($cobroCaja['monto_maximo'] ?? 0) ?></strong>.
+                            El envio consume el token de cobro.
+                        </p>
+                        <button class="cxc-op-btn cxc-op-btn-primary" type="submit">
+                            <i class="fas fa-cash-register"></i>
+                            Registrar cobro
+                        </button>
+                    </div>
+                </form>
+            <?php else: ?>
+                <div class="text-sm text-slate-600">
+                    <strong>Cobro bloqueado.</strong>
+                    <?= cxc_op_view_safe($cobroCaja['motivo_bloqueo'] ?? 'La cuenta no es elegible para cobro con Caja.') ?>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <div class="cxc-op-panel p-5 mb-4">
+            <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                <div>
+                    <h2 class="font-black text-lg">Reversion de cobros</h2>
+                    <p class="text-sm text-slate-500 mt-1">Registra gasto en Caja y movimiento CxC de cancelacion sin borrar el cobro original.</p>
+                </div>
+                <span class="cxc-op-badge">
+                    <i class="fas fa-undo-alt"></i>
+                    Anulacion controlada
+                </span>
+            </div>
+
+            <?php if (empty($movimientosCobro)): ?>
+                <div class="text-sm text-slate-600">
+                    No hay movimientos `COBRO` disponibles para revertir.
+                </div>
+            <?php else: ?>
+                <div class="space-y-4">
+                    <?php foreach ($movimientosCobro as $movimientoCobro): ?>
+                        <?php
+                            $movimientoCobroId = (int)($movimientoCobro['id'] ?? 0);
+                            $reversion = $reversionesCobro[$movimientoCobroId] ?? [
+                                'elegible' => false,
+                                'motivo_bloqueo' => 'No se pudo evaluar la reversion.',
+                                'monto' => $movimientoCobro['monto'] ?? '0.00',
+                            ];
+                            $reversionToken = $reversionTokens[$movimientoCobroId] ?? null;
+                        ?>
+                        <div class="border border-slate-200 p-4">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <div class="cxc-op-label">Cobro #<?= $movimientoCobroId ?></div>
+                                    <div class="font-black mt-1">
+                                        <?= cxc_op_view_money($movimientoCobro['monto'] ?? 0) ?>
+                                        <span class="text-sm font-normal text-slate-500">
+                                            <?= cxc_op_view_safe($movimientoCobro['referencia'] ?? null, 'Sin referencia') ?>
+                                        </span>
+                                    </div>
+                                </div>
+                                <?php if (!empty($reversion['corte'])): ?>
+                                    <span class="cxc-op-badge">
+                                        <i class="fas fa-cash-register"></i>
+                                        Corte #<?= (int)$reversion['corte']['id'] ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+
+                            <?php if (!empty($reversion['elegible']) && $reversionToken): ?>
+                                <form
+                                    method="POST"
+                                    action="<?= url('cuentas-por-cobrar/operativas/' . (int)($cuenta['id'] ?? 0) . '/movimientos/' . $movimientoCobroId . '/revertir-cobro-caja') ?>"
+                                    class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4"
+                                >
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="reversion_token" value="<?= cxc_op_view_safe($reversionToken, '') ?>">
+
+                                    <div>
+                                        <div class="cxc-op-label">Monto a revertir</div>
+                                        <div class="font-black mt-2"><?= cxc_op_view_money($reversion['monto'] ?? $movimientoCobro['monto'] ?? 0) ?></div>
+                                    </div>
+
+                                    <div class="md:col-span-3">
+                                        <label class="cxc-op-label" for="cxc_reversion_motivo_<?= $movimientoCobroId ?>">Motivo</label>
+                                        <textarea
+                                            id="cxc_reversion_motivo_<?= $movimientoCobroId ?>"
+                                            class="cxc-op-input mt-1"
+                                            name="motivo"
+                                            maxlength="1000"
+                                            required
+                                            placeholder="Motivo obligatorio de la reversion"
+                                        ></textarea>
+                                    </div>
+
+                                    <div class="md:col-span-4 flex flex-wrap items-center justify-between gap-3">
+                                        <p class="text-sm text-slate-500">
+                                            Referencia futura:
+                                            <strong><?= cxc_op_view_safe($reversion['referencia_reversion'] ?? null, 'REV-CXC') ?></strong>.
+                                            El envio consume el token de reversion.
+                                        </p>
+                                        <button class="cxc-op-btn cxc-op-btn-danger" type="submit">
+                                            <i class="fas fa-undo-alt"></i>
+                                            Revertir cobro
+                                        </button>
+                                    </div>
+                                </form>
+                            <?php else: ?>
+                                <div class="mt-3 text-sm text-slate-600">
+                                    <strong>Reversion bloqueada.</strong>
+                                    <?= cxc_op_view_safe($reversion['motivo_bloqueo'] ?? 'Este cobro no es elegible para reversion.') ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
 
         <div class="cxc-op-panel overflow-hidden">

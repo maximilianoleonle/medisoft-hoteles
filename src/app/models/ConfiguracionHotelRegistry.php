@@ -43,6 +43,11 @@ class ConfiguracionHotelRegistry
             'default' => 'Medisoft Hoteles',
             'description' => 'Nombre visible sugerido para la app.',
         ],
+        'huespedes.campos_registro' => [
+            'type' => 'json',
+            'default' => [],
+            'description' => 'Politica de campos visibles y obligatorios para registro de huespedes y vehiculos.',
+        ],
     ];
 
     private static $legacyFallbacks = [

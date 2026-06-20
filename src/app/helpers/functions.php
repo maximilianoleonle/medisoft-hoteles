@@ -193,7 +193,7 @@ function verificar_disponibilidad_estacionamiento($ubicacion) {
 function get_resumen_vehiculos_huesped($huesped_id) {
     if (class_exists('HuespedVehiculo')) {
         $vehiculoModel = new HuespedVehiculo();
-        $vehiculos = $vehiculoModel->porHuesped($huesped_id);
+        $vehiculos = $vehiculoModel->porHuespedHotel($huesped_id);
         
         if (empty($vehiculos)) {
             return 'Sin vehículos';

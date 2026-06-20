@@ -8,6 +8,7 @@ require_once __DIR__ . '/../../core/Controller.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
 require_once __DIR__ . '/../services/ReporteEntregaService.php';
 require_once __DIR__ . '/../services/ReporteGerencialDiarioService.php';
+require_once __DIR__ . '/../models/TableroEjecutivo.php';
 
 class ReportesController extends Controller {
     private $reporteModel;
@@ -15,6 +16,7 @@ class ReportesController extends Controller {
     private $cajaModel;
     private $huespedModel;
     private $habitacionModel;
+    private $tableroEjecutivoModel;
 
     private function hotelIdActual() {
         return obtenerHotelIdActualCompat();
@@ -184,6 +186,7 @@ class ReportesController extends Controller {
         $this->cajaModel = new Caja();
         $this->huespedModel = new Huesped();
         $this->habitacionModel = new Habitacion();
+        $this->tableroEjecutivoModel = new TableroEjecutivo();
     }
     
     /**
@@ -195,6 +198,24 @@ class ReportesController extends Controller {
         ]);
     }
     
+    public function ejecutivoAction() {
+        $this->requireAuth();
+
+        $filtros = [
+            'periodo' => $this->getQuery('periodo', 'mes'),
+            'fecha_desde' => $this->getQuery('fecha_desde', ''),
+            'fecha_hasta' => $this->getQuery('fecha_hasta', ''),
+            'area' => $this->getQuery('area', 'todas'),
+            'severidad' => $this->getQuery('severidad', 'todas'),
+            'limit' => $this->getQuery('limit', 10),
+        ];
+
+        View::renderTemplate('reportes/ejecutivo', [
+            'title' => 'Tablero ejecutivo - ' . current_hotel_display_name(),
+            'reporte' => $this->tableroEjecutivoModel->reporteReadOnlyPorHotel((int)$this->hotelIdActual(), $filtros),
+        ]);
+    }
+
     // Agregar esta acción al ReportesController.php
     public function gerencialDiarioAction() {
         $this->requireAuth();
@@ -207,7 +228,6 @@ class ReportesController extends Controller {
         $servicio = new ReporteGerencialDiarioService();
         $reporte = $servicio->generar((int)$this->hotelIdActual(), $fecha);
         $fecha = (string)($reporte['fecha'] ?? $fecha);
-        $this->archivarNotificacionReporteGerencialVisto($fecha);
 
         View::renderTemplate('reportes/gerencial-diario', [
             'title' => 'Reporte gerencial diario - ' . current_hotel_display_name(),
@@ -227,7 +247,6 @@ class ReportesController extends Controller {
         $servicio = new ReporteGerencialDiarioService();
         $reporte = $servicio->generar((int)$this->hotelIdActual(), $fecha);
         $fecha = (string)($reporte['fecha'] ?? $fecha);
-        $this->archivarNotificacionReporteGerencialVisto($fecha);
 
         $pdf = $this->crearReporteGerencialDiarioPdf($reporte);
         $this->entregarReportePdf($pdf, [
@@ -242,36 +261,6 @@ class ReportesController extends Controller {
                 'fecha' => $fecha,
             ],
         ]);
-    }
-
-    private function archivarNotificacionReporteGerencialVisto(string $fecha): void {
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
-            return;
-        }
-
-        $hotelId = (int)$this->hotelIdActual();
-        if ($hotelId <= 0) {
-            return;
-        }
-
-        try {
-            $dedupeKey = 'regla.reporte_gerencial_diario.' . str_replace('-', '', $fecha);
-            $db = Database::getInstance();
-            $db->query(
-                "UPDATE notificaciones
-                 SET estado = 'descartada',
-                     leida_en = COALESCE(leida_en, NOW()),
-                     descartada_en = COALESCE(descartada_en, NOW()),
-                     updated_at = NOW()
-                 WHERE hotel_id = ?
-                   AND tipo = 'regla_reporte_gerencial_diario'
-                   AND dedupe_key = ?
-                   AND estado IN ('nueva', 'leida')",
-                [$hotelId, $dedupeKey]
-            );
-        } catch (Throwable $e) {
-            error_log('No se pudo archivar notificacion de reporte gerencial visto: ' . $e->getMessage());
-        }
     }
 
     private function crearReporteGerencialDiarioPdf(array $reporte) {

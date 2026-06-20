@@ -1568,7 +1568,7 @@ Revision recomendada:
 
 ## Fase 3D-C - Pago proveedor con Caja
 
-Estado: implementacion tecnica pendiente de QA manual.
+Estado: QA manual completada por el usuario.
 
 Backup previo confirmado:
 
@@ -1576,15 +1576,615 @@ Backup previo confirmado:
 - SHA256:
   `9584636FF545D8370B5E84171A9B1CF4EA2A8637D73285316DC83EB14E499A16`
 
-Pruebas manuales recomendadas:
+Pruebas manuales validadas:
 
-1. Iniciar sesion en el hotel Los Cedros.
+1. Iniciar sesion en el hotel `Maximiliano Leon`.
 2. Confirmar que existe corte de Caja abierto.
 3. Abrir `/cuentas-por-pagar/1` o una CxP elegible.
 4. Confirmar que se muestra panel "Pago proveedor con Caja".
-5. Registrar un pago parcial pequeno con referencia unica.
+5. Registrar un pago parcial pequeno.
 6. Confirmar mensaje de exito y nuevo saldo.
 7. Confirmar que el movimiento aparece en "Movimientos referenciales".
 8. Abrir Caja y confirmar gasto con categoria `Pago proveedor`.
-9. Reintentar mismo envio desde navegador y confirmar bloqueo por token o referencia.
+9. Registrar pago total restante y confirmar estado `pagada`.
 10. Confirmar que compras no cambian y que `/api/sync` sigue bloqueado por checker.
+
+Evidencia:
+
+- Pago parcial CxP `#1`: movimiento CxP `#4`, Caja `#1478`.
+- Pago total restante CxP `#1`: movimiento CxP `#5`, Caja `#1479`.
+- Estado tras 3D-C: CxP `#1` `pagada`, saldo `0.00`.
+- Estado vigente tras 3D-D-A: CxP `#1` `parcial`, saldo `10.00`.
+
+## Fase 3D-D-0 - Contrato reversion pago proveedor con Caja
+
+Estado: sin QA manual operativa; solo contrato documental.
+
+Revision recomendada:
+
+1. Leer `docs/fase_3D_D_0_contrato_reversion_pago_proveedor_caja.md`.
+2. Confirmar que no aparecen botones nuevos de reversion.
+3. Confirmar que no hay rutas POST nuevas para revertir pagos proveedor.
+4. Confirmar que no se crearon movimientos CxP.
+5. Confirmar que no se crearon movimientos de Caja.
+6. Confirmar que saldos de CxP no cambiaron.
+
+## Fase 3D-D-A - Reversion pago proveedor con Caja
+
+Estado: QA manual validada por el usuario.
+
+Backup previo confirmado:
+
+- `backups/medisoft_hoteles_import_before_3d_d_a_cxp_payment_reversal_20260619_095320.sql`
+- SHA256:
+  `3BB71EF0C696E1AB0CB3FC4A4B2E51319DCD654F0CEAA7E83280378F9A9001FB`
+
+Resultado validado:
+
+- CxP `#1`, pago proveedor `#4`, monto `10.00`.
+- Movimiento CxP `CANCELACION #9`.
+- Ingreso Caja `#1494`, categoria `Reversion Pago proveedor`.
+- Referencia `REV-CXP-1-MOV-4`.
+- Auditoria `#121`.
+- Estado final CxP `#1`: `parcial`, saldo `10.00`.
+- No queda QA pendiente para esta subfase; conservar esta entrada solo como rastro
+  historico de validacion.
+
+## Fase 9A-0 - Contrato conciliacion financiera read-only
+
+Estado: sin QA manual operativa; solo contrato documental.
+
+Revision recomendada:
+
+1. Leer `docs/fase_9A_0_contrato_conciliacion_financiera_readonly.md`.
+2. Confirmar que no hay rutas nuevas.
+3. Confirmar que no hay POST, formularios ni botones operativos.
+4. Confirmar que no se crean pagos, cobros, reversiones, ajustes ni movimientos Caja.
+5. Confirmar que `/api/sync` sigue fuera de alcance.
+
+La QA real correspondera a 9A-A si se implementa preflight o vista read-only.
+
+## Fase 9A-A - Preflight conciliacion financiera read-only
+
+Estado: validacion automatica completada; sin QA manual de UI porque no se agrego
+pantalla.
+
+Revision recomendada:
+
+1. Ejecutar `php tools/saas/preflight_conciliacion_financiera.php`.
+2. Confirmar `ERROR: 0`.
+3. Confirmar que el resultado muestra `WARNING: 0` en el estado actual validado.
+4. Confirmar que no hay rutas nuevas de conciliacion financiera.
+5. Confirmar que no hay POST, formularios ni botones de correccion.
+6. Confirmar que no se crean pagos, cobros, reversiones, ajustes ni movimientos Caja.
+7. Confirmar que `/api/sync` sigue fuera de alcance.
+
+La QA manual real correspondera a una futura 9A-B si se implementa una pantalla
+GET/read-only.
+
+## Fase 9A-B-0 - Contrato pantalla conciliacion financiera read-only
+
+Estado: sin QA manual operativa; solo contrato documental.
+
+Revision recomendada:
+
+1. Leer
+   `docs/fase_9A_B_0_contrato_pantalla_conciliacion_financiera_readonly.md`.
+2. Confirmar que no hay ruta nueva `/operacion/conciliacion-financiera`.
+3. Confirmar que no hay controlador, modelo ni vista nuevos para conciliacion.
+4. Confirmar que no hay POST, formularios ni botones operativos.
+5. Confirmar que no se crean pagos, cobros, reversiones, ajustes ni movimientos Caja.
+6. Confirmar que la futura UI queda limitada a tokens `--brand-*`.
+7. Confirmar que `/api/sync` sigue fuera de alcance.
+
+La QA manual real correspondera a 9A-B-A si se implementa la pantalla GET/read-only.
+
+## Fase 9A-B-A - Pantalla conciliacion financiera read-only
+
+Estado: QA manual completada por el usuario.
+
+Confirmacion recibida: la pantalla paso la prueba manual con sesion.
+
+Pruebas validadas:
+
+1. Iniciar sesion con hotel activo.
+2. Abrir `/operacion/conciliacion-financiera`.
+3. Confirmar etiqueta visible `Solo lectura`.
+4. Confirmar resumen CxC, CxP, Caja y Auditoria.
+5. Probar filtros GET por fecha, tipo, severidad, referencia y limite.
+6. Confirmar que la URL cambia por query string y no por POST.
+7. Confirmar que no existen botones de corregir, pagar, cobrar, revertir, ajustar ni
+   compensar.
+8. Confirmar que no cambian saldos, movimientos de Caja, cortes ni auditoria por
+   navegar o filtrar.
+9. Confirmar que los totales coinciden con
+   `php tools/saas/preflight_conciliacion_financiera.php`.
+10. Confirmar que `/api/sync` sigue bloqueado con HTTP 423 y
+    `sync_temporarily_disabled`.
+
+No queda QA pendiente para 9A-B-A.
+
+## Fase 9A-B-F - Cierre pantalla conciliacion financiera read-only
+
+Estado: cierre documental; sin QA manual operativa adicional.
+
+Revision recomendada:
+
+1. Leer `docs/fase_9A_B_F_cierre_pantalla_conciliacion_financiera.md`.
+2. Confirmar que no agrega codigo, rutas, formularios, migraciones ni escrituras.
+3. Confirmar que cualquier ampliacion futura queda condicionada a contrato
+   independiente.
+
+## Fase 9C-0 - Contrato arqueo por corte y metodo read-only
+
+Estado: contrato documental; sin QA manual operativa.
+
+Revision recomendada:
+
+1. Leer `docs/fase_9C_0_contrato_arqueo_metodos_pago_readonly.md`.
+2. Confirmar que no agrega rutas, modelos, vistas, formularios, migraciones ni
+   escrituras.
+3. Confirmar que no hay botones nuevos de cerrar, recalcular, corregir o ajustar corte.
+4. Confirmar que no se modificaron movimientos de Caja ni cortes.
+5. Confirmar que la futura 9C-A queda limitada a preflight/read-only.
+
+## Fase 9C-A - Preflight arqueo por corte y metodo read-only
+
+Estado: validacion automatica completada; sin QA manual de UI porque no se agrego
+pantalla.
+
+Revision recomendada:
+
+1. Ejecutar `php tools/saas/preflight_arqueo_metodos_pago.php`.
+2. Confirmar `ERROR: 0`.
+3. Confirmar que los warnings corresponden a diferencias historicas de cortes cerrados.
+4. Confirmar que no hay rutas nuevas de arqueo.
+5. Confirmar que no hay POST, formularios ni botones de correccion.
+6. Confirmar que no se modifican movimientos de Caja ni cortes.
+7. Confirmar que `/api/sync` sigue fuera de alcance.
+
+La QA manual real correspondera a una futura 9C-B si se implementa pantalla
+GET/read-only.
+
+## Fase 9C-B-0 - Contrato pantalla arqueo por corte y metodo read-only
+
+Estado: sin QA manual operativa; solo contrato documental.
+
+Revision recomendada:
+
+1. Leer
+   `docs/fase_9C_B_0_contrato_pantalla_arqueo_metodos_pago_readonly.md`.
+2. Confirmar que no hay ruta nueva `/caja/arqueo-metodos`.
+3. Confirmar que no hay controlador, modelo ni vista nuevos para arqueo por metodo.
+4. Confirmar que no hay POST, formularios ni botones operativos.
+5. Confirmar que no se crean cierres, recalculos, ajustes ni ediciones de Caja.
+6. Confirmar que la futura UI queda limitada a tokens `--brand-*`.
+7. Confirmar que `/api/sync` sigue fuera de alcance.
+
+La QA manual real correspondera a 9C-B-A si se implementa la pantalla GET/read-only.
+
+## Fase 9C-B-A - Pantalla arqueo por corte y metodo read-only
+
+Estado: QA manual validada por el usuario.
+
+Revision completada:
+
+1. Abrir sin sesion `/caja/arqueo-metodos` y confirmar redireccion/bloqueo.
+2. Abrir con sesion de hotel y modulo Caja activo.
+3. Confirmar etiqueta visible `Solo lectura`.
+4. Confirmar que la URL usa filtros GET al filtrar.
+5. Confirmar resumen general: cortes, movimientos, ingresos, gastos y neto.
+6. Confirmar resumen por metodo: efectivo, tarjeta y transferencia.
+7. Confirmar tabla de alertas y que los warnings historicos coinciden con
+   `preflight_arqueo_metodos_pago.php`.
+8. Confirmar tabla de cortes con comparativo movimiento vs guardado.
+9. Confirmar que cortes abiertos se muestran como datos vivos, sin accion de cierre.
+10. Confirmar que no hay botones de cerrar, reabrir, recalcular, corregir, ajustar,
+    compensar, editar movimiento ni cambiar metodo.
+11. Confirmar que navegar o filtrar no modifica cortes ni movimientos.
+12. Confirmar que `/api/sync` sigue fuera de alcance.
+
+Resultado reportado: la pantalla se ve correctamente.
+
+## Fase 9C-B-F - Cierre pantalla arqueo por corte y metodo read-only
+
+Estado: cierre documental; sin QA manual operativa adicional.
+
+Revision recomendada:
+
+1. Leer `docs/fase_9C_B_F_cierre_pantalla_arqueo_metodos_pago.md`.
+2. Confirmar que no agrega codigo, rutas, formularios, migraciones ni escrituras.
+3. Confirmar que cualquier ampliacion futura queda condicionada a contrato
+   independiente.
+
+## Fase 10A-0 - Contrato tablero ejecutivo integral read-only
+
+Estado: contrato documental; sin QA manual operativa.
+
+Revision recomendada:
+
+1. Leer `docs/fase_10A_0_contrato_tablero_ejecutivo_readonly.md`.
+2. Confirmar que no agrega ruta nueva `/reportes/ejecutivo`.
+3. Confirmar que no hay controlador, modelo, vista, formulario ni migracion nuevos.
+4. Confirmar que no hay POST ni acciones operativas.
+5. Confirmar que la futura implementacion queda limitada a read-only y filtros GET.
+6. Confirmar que `/api/sync` sigue fuera de alcance.
+
+La QA manual real correspondera a una futura 10A-B si se implementa pantalla.
+
+## Fase 10A-A - Preflight tablero ejecutivo integral read-only
+
+Estado: preflight CLI/read-only; sin QA manual operativa.
+
+Revision recomendada:
+
+1. Ejecutar `php tools/saas/preflight_tablero_ejecutivo.php`.
+2. Confirmar `ERROR: 0`.
+3. Confirmar que no se registro `GET /reportes/ejecutivo`.
+4. Confirmar que no existe `POST /reportes/ejecutivo`.
+5. Confirmar que el preflight abre transaccion read-only y cierra con rollback.
+6. Confirmar warnings conocidos:
+   `gerencial-diario` archiva notificaciones, `ledger_laboral` no existe,
+   `huespedes` no tiene `hotel_id` directo y `logs_auditoria` tiene historico sin
+   hotel.
+7. Ejecutar `php tools/saas/health_check_fase_1a.php`.
+8. Confirmar `ERROR: 0`.
+
+La QA manual real correspondera a una futura 10A-B si se implementa pantalla
+GET/read-only.
+
+## Fase 10A-B-0 - Contrato pantalla tablero ejecutivo read-only
+
+Estado: contrato documental; sin QA manual operativa.
+
+Revision recomendada:
+
+1. Leer `docs/fase_10A_B_0_contrato_pantalla_tablero_ejecutivo_readonly.md`.
+2. Confirmar que no registra `GET /reportes/ejecutivo`.
+3. Confirmar que no registra `POST /reportes/ejecutivo`.
+4. Confirmar que no agrega controlador, modelo, vista, navegacion, formulario,
+   migracion ni escritura.
+5. Confirmar que la futura pantalla queda limitada a tokens `--brand-*`, etiqueta
+   `Solo lectura`, filtros GET y cero acciones operativas.
+6. Confirmar que `gerencial-diario` no puede reutilizarse como fuente read-only pura
+   mientras archive notificaciones.
+7. Confirmar que `/api/sync` sigue fuera de alcance.
+
+La QA manual real correspondera a 10A-B-A si se implementa la pantalla
+`GET /reportes/ejecutivo`.
+
+## Fase 10A-B-A - Pantalla tablero ejecutivo read-only
+
+Estado: QA manual validada por el usuario.
+
+Revision recomendada:
+
+1. Abrir `/reportes/ejecutivo` sin sesion y confirmar redireccion a login.
+2. Abrir `/reportes/ejecutivo` con sesion de hotel.
+3. Confirmar etiqueta visible `Solo lectura`.
+4. Confirmar filtros GET: periodo, desde, hasta, area, estado y alertas.
+5. Confirmar que no hay formularios POST ni CSRF.
+6. Confirmar que no hay `hotel_id` editable.
+7. Confirmar KPIs de operacion, finanzas, inventario, tareas/personal,
+   documentos/auditoria y alertas.
+8. Confirmar enlaces GET a reportes, conciliacion, operacion diaria, arqueo,
+   inventario y tareas.
+9. Filtrar y confirmar que no se modifican notificaciones, saldos, cortes,
+   movimientos, inventario, tareas ni documentos.
+10. Ejecutar `php tools/saas/preflight_tablero_ejecutivo.php` y confirmar
+    `ERROR: 0`.
+11. Ejecutar `php tools/saas/health_check_fase_1a.php` y confirmar `ERROR: 0`.
+
+QA manual validada. El cierre documental corresponde a 10A-B-F.
+
+## Fase 10A-B-F - Cierre tablero ejecutivo read-only
+
+Estado: cierre documental; sin QA manual adicional.
+
+Revision recomendada:
+
+1. Leer `docs/fase_10A_B_F_cierre_tablero_ejecutivo.md`.
+2. Confirmar que no agrega codigo, rutas, formularios, migraciones ni escrituras.
+3. Confirmar que registra la QA manual validada de `GET /reportes/ejecutivo`.
+4. Confirmar que el siguiente bloque recomendado queda como contrato independiente
+   para separar lectura de reporte gerencial diario y archivado de notificaciones.
+
+## Fase 10B-0 - Contrato reporte gerencial y notificaciones
+
+Estado: contrato documental; sin QA manual funcional.
+
+Revision recomendada:
+
+1. Leer `docs/fase_10B_0_contrato_reporte_gerencial_notificaciones.md`.
+2. Confirmar que no agrega codigo, rutas, formularios, migraciones ni escrituras.
+3. Confirmar que identifica el side effect actual en reporte gerencial HTML y PDF.
+4. Confirmar que la futura QA exigira que abrir el reporte directo no cambie
+   `notificaciones`.
+5. Confirmar que cualquier archivado queda reservado para el flujo controlado de
+   notificaciones.
+
+## Fase 10B-A - Separacion reporte gerencial y notificaciones
+
+Estado: QA manual validada por el usuario.
+
+Prueba manual validada:
+
+1. Iniciar sesion en un hotel con modulo reportes.
+2. Identificar una notificacion activa de reporte gerencial diario.
+3. Abrir `/reportes/gerencial-diario?fecha=YYYY-MM-DD`.
+4. Confirmar que el reporte carga correctamente.
+5. Confirmar que la notificacion sigue activa y no fue archivada por abrir el reporte.
+6. Abrir `/reportes/gerencial-diario/pdf?fecha=YYYY-MM-DD`.
+7. Confirmar que el PDF se genera o descarga correctamente.
+8. Confirmar que la notificacion sigue activa y no fue archivada por descargar el PDF.
+9. Abrir esa notificacion desde `/notificaciones`.
+10. Confirmar que solo ese flujo controlado archiva o marca el estado esperado.
+11. Ejecutar `php tools/saas/preflight_tablero_ejecutivo.php` y confirmar `ERROR: 0`.
+12. Ejecutar `php tools/saas/health_check_fase_1a.php` y confirmar `ERROR: 0`.
+
+El usuario confirmo que la prueba paso perfectamente. El cierre documental corresponde
+a 10B-F.
+
+## Fase 10B-F - Cierre reporte gerencial y notificaciones
+
+Estado: cierre documental; sin QA manual adicional.
+
+Revision recomendada:
+
+1. Leer `docs/fase_10B_F_cierre_reporte_gerencial_notificaciones.md`.
+2. Confirmar que no agrega codigo, rutas, formularios, migraciones ni escrituras.
+3. Confirmar que registra la QA manual validada de 10B-A.
+4. Confirmar que el siguiente bloque recomendado queda como contrato independiente.
+
+## Fase 11A-0 - Contrato perfil operativo de huesped read-only
+
+Estado: contrato documental; sin QA manual operativa.
+
+Revision recomendada:
+
+1. Leer `docs/fase_11A_0_contrato_perfil_huesped_readonly.md`.
+2. Confirmar que no agrega codigo, rutas, formularios, migraciones ni escrituras.
+3. Confirmar que la futura 11A-A no alterara formularios existentes de huespedes.
+4. Confirmar que la futura lectura se limita al hotel actual.
+5. Confirmar que no autoriza CxC, cobros, pagos, check-in/check-out, documentos,
+   tareas, permisos/auth, PWA/offline ni `/api/sync`.
+
+## Fase 11A-A - Perfil operativo de huesped read-only
+
+Estado: QA manual validada por el usuario.
+
+Revision validada:
+
+1. Abrir `/huespedes/{id}` sin sesion y confirmar redireccion a login.
+2. Abrir `/huespedes/{id}` con sesion de hotel.
+3. Confirmar que aparece el bloque `Perfil operativo`.
+4. Confirmar etiqueta visible `Solo lectura`.
+5. Confirmar que no hay botones, enlaces ni formularios dentro del bloque nuevo.
+6. Confirmar que los formularios existentes de vehiculos siguen visualmente igual.
+7. Confirmar que clasificacion, proxima estancia, saldo CxC, documentos y alertas
+   corresponden al huesped del hotel actual.
+8. Confirmar que abrir o refrescar la ficha no cambia saldos, reservaciones,
+   documentos, vehiculos ni notificaciones.
+9. Ejecutar `php tools/saas/health_check_fase_1a.php` y confirmar `ERROR: 0`.
+
+Resultado: el usuario confirmo que el bloque se muestra correctamente, `Solo lectura`
+esta visible y no hay acciones/formularios dentro del bloque nuevo.
+
+## Fase 11A-F - Cierre perfil operativo de huesped read-only
+
+Estado: cierre documental; sin QA manual adicional.
+
+Revision recomendada:
+
+1. Leer `docs/fase_11A_F_cierre_perfil_huesped_readonly.md`.
+2. Confirmar que no agrega codigo, rutas, formularios, migraciones ni escrituras.
+3. Confirmar que registra la QA manual validada de 11A-A.
+4. Confirmar que el siguiente bloque recomendado queda como contrato independiente.
+
+## Fase 5E-0 - Contrato pagos laborales con Caja
+
+Estado: contrato documental; sin QA manual operativa.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_0_contrato_pagos_laborales_caja.md`.
+2. Confirmar que no agrega codigo, rutas, formularios, migraciones ni escrituras.
+3. Confirmar que `trabajador_pagos` queda como conceptos laborales y no pagos reales.
+4. Confirmar que el futuro pago real exige entidad independiente.
+5. Confirmar que no hay movimientos de Caja, categorias de Caja ni pagos laborales en
+   esta subfase.
+6. Confirmar que la siguiente accion segura es solo un preflight CLI/read-only 5E-A.
+
+La QA manual real correspondera a una futura fase de simulador o pago real con
+trabajador activo, backup y autorizacion explicita.
+
+## Fase 5E-A - Preflight pagos laborales con Caja
+
+Estado: preflight CLI/read-only completado; sin QA manual funcional.
+
+Revision recomendada:
+
+1. Ejecutar `php tools/saas/preflight_personal_pagos_caja.php`.
+2. Confirmar `ERROR: 0`.
+3. Confirmar que no existe `trabajador_pagos_caja` antes de migracion 5E-B.
+4. Confirmar que `trabajador_pagos` no contiene columnas financieras de Caja.
+5. Confirmar que no hay rutas de pago laboral con Caja.
+6. Confirmar que no existe `TrabajadorPagoCajaService`.
+7. Confirmar que no hay movimientos/categorias de Caja con nomina o pago laboral.
+8. Confirmar que `php tools/saas/health_check_fase_1a.php` mantiene `ERROR: 0`.
+
+Resultado automatico actual:
+
+- Preflight 5E-A: `OK: 34`, `WARNING: 1`, `ERROR: 0`.
+- Health general: `OK: 305`, `WARNING: 25`, `ERROR: 0`.
+
+Advertencia vigente:
+
+- No hay trabajadores activos para una QA futura de pago real.
+
+Antes de una fase operativa de pago laboral se debe contar con al menos un trabajador
+activo del hotel de prueba, backup previo y autorizacion explicita.
+
+## Fase 5E-B-0 - Contrato migracion pagos laborales con Caja
+
+Estado: contrato documental; sin QA manual funcional.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_B_0_contrato_migracion_pagos_laborales_caja.md`.
+2. Confirmar que no agrega archivo SQL ni ejecuta migracion.
+3. Confirmar que la tabla futura sera `trabajador_pagos_caja`.
+4. Confirmar que `trabajador_pagos` no se altera ni se reutiliza como pago real.
+5. Confirmar que la migracion futura no creara movimientos de Caja ni categorias.
+6. Confirmar que la referencia futura sera unica por hotel y compartida con Caja.
+7. Confirmar que rollback futuro solo permite eliminar la tabla si esta vacia.
+8. Confirmar que el siguiente paso 5E-B-A requiere backup y autorizacion explicita
+   para tocar DB.
+
+No hay prueba manual en navegador porque no se implementa UI, ruta, formulario,
+servicio ni pago real.
+
+## Fase 5E-B-A - Migracion pagos laborales con Caja
+
+Estado: migracion aplicada; sin QA manual funcional.
+
+Revision recomendada:
+
+1. Confirmar que existe `trabajador_pagos_caja`.
+2. Confirmar que `SELECT COUNT(*) FROM trabajador_pagos_caja` devuelve `0`.
+3. Confirmar que la migracion
+   `20260619_003_fase_5e_b_a_trabajador_pagos_caja.sql` figura como `ejecutada`.
+4. Confirmar que no cambiaron conteos operativos por pagos laborales:
+   `trabajador_pagos`, `trabajador_anticipos`, `trabajador_prestamos`.
+5. Confirmar que no se crearon movimientos/categorias de Caja por nomina.
+6. Ejecutar `php tools/saas/preflight_personal_pagos_caja.php` y confirmar
+   `ERROR: 0`.
+7. Ejecutar `php tools/saas/health_check_fase_1a.php` y confirmar `ERROR: 0`.
+
+Resultado automatico actual:
+
+- Preflight 5E: `OK: 37`, `WARNING: 0`, `ERROR: 0`.
+- Health general: `OK: 307`, `WARNING: 26`, `ERROR: 0`.
+
+No hay prueba manual en navegador porque no se implementa UI, ruta, formulario,
+servicio ni pago real.
+
+## Fase 5E-C-0 - Contrato simulador pago laboral con Caja
+
+Estado: contrato documental; sin QA manual funcional.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_C_0_contrato_simulador_pago_laboral_caja.md`.
+2. Confirmar que no agrega ruta ni vista todavia.
+3. Confirmar que la ruta futura candidata es
+   `GET /trabajadores/pagos-caja/simulador`.
+4. Confirmar que la futura pantalla debe ser solo GET/read-only.
+5. Confirmar que no autoriza POST, token, servicio ni pago laboral real.
+6. Confirmar que no autoriza movimientos de Caja ni categorias de Caja.
+7. Confirmar que no autoriza liquidacion de anticipos/prestamos.
+8. Confirmar que 5E-C-A requerira autorizacion explicita para tocar rutas,
+   controlador/modelo read-only, vista y checkers.
+
+No hay prueba manual en navegador porque no se implementa UI ni ruta en esta subfase.
+
+## Fase 5E-C-A - Simulador pago laboral con Caja
+
+Estado: validado manualmente por el usuario.
+
+Revision recomendada:
+
+1. Abrir `/trabajadores`.
+2. Confirmar que existe el boton `Simulador Caja`.
+3. Abrir `/trabajadores/pagos-caja/simulador`.
+4. Confirmar que la pantalla muestra etiqueta `Solo GET / Read-only`.
+5. Confirmar que el formulario usa filtros GET y no hay boton de registrar pago.
+6. Confirmar que muestra corte abierto o bloqueo por falta de corte.
+7. Confirmar que muestra trabajadores con saldo estimado, monto simulado y diagnostico.
+8. Abrir la ficha de un trabajador y confirmar el enlace `Simulador Caja` con
+   `trabajador_id`.
+9. Probar tarjeta o transferencia sin referencia y confirmar bloqueo visual.
+10. Confirmar que no cambia el conteo de `trabajador_pagos_caja`.
+11. Confirmar que no cambia el conteo de `movimientos_caja`.
+12. Confirmar que no hay movimientos/categorias de Caja por nomina.
+
+Resultado automatico actual:
+
+- Preflight 5E: `OK: 41`, `WARNING: 0`, `ERROR: 0`.
+- Health general: `OK: 309`, `WARNING: 26`, `ERROR: 0`.
+- HTTP sin sesion: `303`, no `404`.
+
+No avanzar a pago real, POST, token, servicio transaccional ni reversion sin contrato
+5E-D-0 y autorizacion explicita.
+
+Resultado manual 5E-C-A:
+
+- El usuario confirmo que todas las pruebas pasaron.
+
+## Fase 5E-C-F - Cierre simulador pago laboral con Caja
+
+Estado: cierre documental completado.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_C_F_cierre_simulador_pago_laboral_caja.md`.
+2. Confirmar que solo documenta la QA manual validada.
+3. Confirmar que no agrega codigo, rutas, formularios ni escrituras.
+
+## Fase 5E-D-0 - Contrato servicio pago laboral con Caja
+
+Estado: contrato documental; sin QA manual funcional.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_D_0_contrato_servicio_pago_laboral_caja.md`.
+2. Confirmar que no implementa servicio ni ruta POST.
+3. Confirmar que define `TrabajadorPagoCajaService` como futuro servicio.
+4. Confirmar que exige backup, token de un solo uso, transaccion, locks y rollback.
+5. Confirmar que no autoriza pago real todavia.
+
+## Fase 5E-D-A - Pago laboral con Caja controlado
+
+Estado: implementacion tecnica validada automaticamente; QA manual pendiente del usuario.
+
+Revision recomendada:
+
+1. Abrir `/trabajadores`.
+2. Entrar a la ficha de un trabajador activo.
+3. Confirmar panel `Pago laboral con Caja`.
+4. Si esta bloqueado por saldo, registrar un concepto laboral a favor desde el ledger.
+5. Recargar la ficha y confirmar `Maximo elegible` positivo.
+6. Registrar pago con referencia unica.
+7. Confirmar mensaje con `Movimiento Caja #...`.
+8. Confirmar que `trabajador_pagos_caja` aumento en 1.
+9. Confirmar que `movimientos_caja` aumento en 1 con categoria `Pago laboral`.
+10. Confirmar que el simulador descuenta el pago registrado.
+11. Intentar repetir la misma referencia y confirmar bloqueo.
+
+Resultado automatico actual:
+
+- Lint PHP: OK en archivos tocados.
+- Rollback `probar_pago_laboral_caja.php`: OK sin cambios persistentes.
+- Preflight 5E: `OK: 41`, `WARNING: 0`, `ERROR: 0`.
+- Health general: `OK: 313`, `WARNING: 25`, `ERROR: 0`.
+
+No probar reversion; no existe todavia en 5E-D-A.
+
+Resultado manual 5E-D-A:
+
+- El usuario confirmo que la prueba manual paso correctamente.
+- La ficha muestra bruto laboral `$100.00`, pagos Caja `$100.00` y disponible `$0.00`.
+- El panel de pago laboral queda bloqueado por saldo no positivo.
+
+## Fase 5E-D-F - Cierre pago laboral con Caja
+
+Estado: cierre documental aplicado despues de QA manual.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_D_F_cierre_pago_laboral_caja.md`.
+2. Confirmar que no agrega codigo ni escrituras.
+3. Confirmar que mantiene fuera de alcance reversion, pagos masivos, nomina automatica
+   y abonos/liquidaciones.
+4. Confirmar que el siguiente paso requiere contrato independiente y autorizacion
+   explicita si toca modelo, controlador, ruta, vista o Caja.

@@ -147,7 +147,7 @@ $estado = (string)($filtros['estado'] ?? 'activos');
             </div>
         <?php else: ?>
             <div class="worker-panel p-4 mb-4">
-                <form method="GET" action="<?= url('trabajadores') ?>" class="grid grid-cols-1 md:grid-cols-[1fr_180px_auto_auto_auto] gap-3">
+                <form method="GET" action="<?= url('trabajadores') ?>" class="grid grid-cols-1 md:grid-cols-[1fr_180px_auto_auto_auto_auto] gap-3">
                     <input class="worker-input" type="search" name="buscar" value="<?= trab_safe($buscar, '') ?>" placeholder="Buscar por nombre, identificacion, rol, telefono o correo">
                     <select class="worker-input" name="estado">
                         <option value="activos" <?= $estado === 'activos' ? 'selected' : '' ?>>Activos</option>
@@ -162,6 +162,10 @@ $estado = (string)($filtros['estado'] ?? 'activos');
                     <a class="worker-btn" href="<?= url('trabajadores/reporte') ?>">
                         <i class="fas fa-chart-pie"></i>
                         Reporte
+                    </a>
+                    <a class="worker-btn" href="<?= url('trabajadores/pagos-caja/simulador') ?>">
+                        <i class="fas fa-cash-register"></i>
+                        Simulador Caja
                     </a>
                     <a class="worker-btn" href="<?= url('trabajadores/crear') ?>">
                         <i class="fas fa-plus"></i>

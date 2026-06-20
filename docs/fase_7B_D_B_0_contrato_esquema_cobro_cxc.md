@@ -149,3 +149,15 @@ Antes de implementar cobro real:
 7B-D-B-A: migracion aditiva para agregar el tipo `COBRO` a
 `cuentas_por_cobrar_movimientos.tipo_movimiento`, solo si el usuario autoriza
 explicitamente tocar DB.
+
+## Implementacion posterior
+
+7B-D-B-A fue ejecutada posteriormente como migracion aditiva.
+
+Ver:
+
+- `docs/fase_7B_D_B_A_migracion_cobro_enum.md`
+
+Resultado: `COBRO` quedo disponible en
+`cuentas_por_cobrar_movimientos.tipo_movimiento`, sin crear cobros reales ni movimientos
+de Caja.

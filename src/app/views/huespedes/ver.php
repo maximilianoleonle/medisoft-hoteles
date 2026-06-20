@@ -12,6 +12,29 @@ $total_gastado = (float)($total_gastado ?? 0);
 $gasto_promedio = $total_reservaciones > 0 ? $total_gastado / $total_reservaciones : 0;
 $vehiculos_count = count($vehiculos);
 $reservaciones_count = count($reservaciones);
+$perfilOperativo = is_array($perfilOperativo ?? null) ? $perfilOperativo : [];
+$perfilReservaciones = is_array($perfilOperativo['reservaciones'] ?? null) ? $perfilOperativo['reservaciones'] : [];
+$perfilVehiculos = is_array($perfilOperativo['vehiculos'] ?? null) ? $perfilOperativo['vehiculos'] : [];
+$perfilCxc = is_array($perfilOperativo['cxc'] ?? null) ? $perfilOperativo['cxc'] : [];
+$perfilDocumentos = is_array($perfilOperativo['documentos'] ?? null) ? $perfilOperativo['documentos'] : [];
+$perfilAlertas = is_array($perfilOperativo['alertas'] ?? null) ? $perfilOperativo['alertas'] : [];
+$perfilScore = (int)($perfilOperativo['score'] ?? 0);
+$perfilClasificacion = trim((string)($perfilOperativo['clasificacion'] ?? 'Sin historial'));
+$perfilProximaVisita = $perfilReservaciones['proxima_visita'] ?? null;
+$perfilNoches = (int)($perfilReservaciones['noches'] ?? 0);
+$perfilCxcSaldo = (float)($perfilCxc['saldo_pendiente'] ?? 0);
+$perfilCxcCuentas = (int)($perfilCxc['cuentas_pendientes'] ?? 0);
+$perfilDocumentosActivos = (int)($perfilDocumentos['activos'] ?? 0);
+$perfilAlertColors = [
+    'warning' => '#B45309',
+    'success' => '#148653',
+    'info' => '#2563EB',
+];
+$perfilAlertIcons = [
+    'warning' => 'fas fa-triangle-exclamation',
+    'success' => 'fas fa-circle-check',
+    'info' => 'fas fa-circle-info',
+];
 $nombre_huesped = trim((string)($huesped['nombre_completo'] ?? 'Huesped'));
 $inicial_huesped = function_exists('mb_substr') && function_exists('mb_strtoupper')
     ? mb_strtoupper(mb_substr($nombre_huesped !== '' ? $nombre_huesped : 'H', 0, 1, 'UTF-8'), 'UTF-8')
@@ -88,6 +111,88 @@ $guestParkingOptionsHtml = function ($inputClass = '') use ($estacionamientos, $
     }
 
     return $html;
+};
+
+$guestFieldPolicy = is_array($guestFieldPolicy ?? null)
+    ? $guestFieldPolicy
+    : (function_exists('hotel_guest_field_policy') ? hotel_guest_field_policy() : ['fields' => []]);
+$guestExtraValues = function_exists('hotel_guest_decode_extra_json')
+    ? hotel_guest_decode_extra_json($huesped['datos_extra_json'] ?? null)
+    : [];
+$guestVisibleFields = function ($scope) use ($guestFieldPolicy) {
+    return function_exists('hotel_guest_visible_fields') ? hotel_guest_visible_fields($scope, $guestFieldPolicy) : [];
+};
+$guestFieldRequired = function ($key) use ($guestFieldPolicy) {
+    return function_exists('hotel_guest_field_required') ? hotel_guest_field_required($key, $guestFieldPolicy) : false;
+};
+$guestExtraDisplayFields = array_filter($guestVisibleFields('guest'), function ($definition) {
+    return ($definition['storage'] ?? 'column') === 'extra';
+});
+$guestVehicleVisibleFields = $guestVisibleFields('vehicle');
+$guestRequiredHtml = function ($key) use ($guestFieldRequired) {
+    return $guestFieldRequired($key) ? ' <span class="text-red-500">*</span>' : '';
+};
+$guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisibleFields, $guestFieldRequired, $guestParkingOptionsHtml, $guestRequiredHtml) {
+    ob_start();
+    foreach ($guestVehicleVisibleFields as $fieldKey => $definition) {
+        $input = (string)($definition['input'] ?? 'text');
+        $storage = (string)($definition['storage'] ?? 'extra');
+        $fieldName = (string)($definition['field'] ?? $fieldKey);
+        $name = $storage === 'column' ? $fieldName : 'extras[' . $fieldKey . ']';
+        $id = $mode === 'edit' ? 'edit_' . ($storage === 'column' ? $fieldName : 'extra_' . $fieldKey) : '';
+        $label = htmlspecialchars((string)($definition['label'] ?? $fieldKey), ENT_QUOTES, 'UTF-8');
+        $placeholder = htmlspecialchars((string)($definition['placeholder'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $required = $guestFieldRequired($fieldKey);
+        $max = (int)($definition['max'] ?? 0);
+        $requiredAttr = $required ? ' required' : '';
+        $maxAttr = $max > 0 ? ' maxlength="' . $max . '"' : '';
+        $dataExtra = $mode === 'edit' && $storage !== 'column' ? ' data-edit-extra="' . htmlspecialchars((string)$fieldKey, ENT_QUOTES, 'UTF-8') . '"' : '';
+        ?>
+        <?php if ($input === 'parking'): ?>
+            <div class="guest-radio-group">
+                <label><?= $label ?><?= $guestRequiredHtml($fieldKey) ?></label>
+                <div class="guest-radio-options">
+                    <?= $guestParkingOptionsHtml($mode === 'edit' ? 'edit-estacionamiento' : '') ?>
+                </div>
+            </div>
+        <?php else: ?>
+            <div class="guest-form-field<?= $input === 'textarea' ? ' is-wide' : '' ?>">
+                <label><?= $label ?><?= $guestRequiredHtml($fieldKey) ?></label>
+                <?php if ($input === 'textarea'): ?>
+                    <textarea name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>"
+                              <?= $id !== '' ? 'id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '"' : '' ?>
+                              rows="<?= (int)($definition['rows'] ?? 2) ?>"
+                              placeholder="<?= $placeholder ?>"
+                              <?= $dataExtra ?>
+                              <?= $requiredAttr ?>
+                              <?= $maxAttr ?>></textarea>
+                <?php elseif ($input === 'select'): ?>
+                    <select name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>"
+                            <?= $id !== '' ? 'id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '"' : '' ?>
+                            <?= $dataExtra ?>
+                            <?= $requiredAttr ?>>
+                        <option value="">Seleccione una opcion</option>
+                        <?php foreach (($definition['options'] ?? []) as $optionValue => $optionLabel): ?>
+                            <option value="<?= htmlspecialchars((string)$optionValue, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string)$optionLabel, ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php else: ?>
+                    <input type="<?= in_array($input, ['email', 'tel', 'date'], true) ? htmlspecialchars($input, ENT_QUOTES, 'UTF-8') : 'text' ?>"
+                           name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>"
+                           <?= $id !== '' ? 'id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '"' : '' ?>
+                           placeholder="<?= $placeholder ?>"
+                           <?= !empty($definition['uppercase']) ? 'style="text-transform: uppercase"' : '' ?>
+                           <?= !empty($definition['uppercase']) ? 'class="font-mono"' : '' ?>
+                           <?= $dataExtra ?>
+                           <?= $requiredAttr ?>
+                           <?= $maxAttr ?>>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+        <?php
+    }
+
+    return ob_get_clean();
 };
 ?>
 
@@ -474,6 +579,105 @@ $guestParkingOptionsHtml = function ($inputClass = '') use ($estacionamientos, $
 .guest-panel-action:hover {
     transform: translateY(-1px);
     box-shadow: 0 12px 24px -18px rgba(15,23,42,.58);
+}
+
+.guest-readonly-badge {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid color-mix(in srgb, var(--gd-primary) 18%, var(--gd-line));
+    border-radius: 999px;
+    background: #FFFFFF;
+    color: var(--gd-text-soft);
+    padding: 0 12px;
+    font-size: .76rem;
+    font-weight: 950;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.guest-operational-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.guest-operational-card {
+    border: 1px solid var(--gd-line-soft);
+    border-radius: 16px;
+    background: #FFFFFF;
+    padding: 15px;
+}
+
+.guest-operational-card span {
+    display: block;
+    color: var(--gd-muted);
+    font-size: .72rem;
+    font-weight: 950;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+}
+
+.guest-operational-card strong {
+    display: block;
+    margin-top: 8px;
+    color: var(--gd-heading);
+    font-size: clamp(1.12rem, 2vw, 1.55rem);
+    line-height: 1.08;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+.guest-operational-card small {
+    display: block;
+    margin-top: 7px;
+    color: var(--gd-muted);
+    font-size: .8rem;
+    font-weight: 750;
+    line-height: 1.45;
+}
+
+.guest-alert-list {
+    display: grid;
+    gap: 9px;
+    margin-top: 14px;
+}
+
+.guest-alert-item {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    border: 1px solid color-mix(in srgb, var(--alert-color, var(--gd-accent)) 18%, var(--gd-line-soft));
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--alert-color, var(--gd-accent)) 7%, #FFFFFF);
+    padding: 11px;
+}
+
+.guest-alert-item i {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: #FFFFFF;
+    color: var(--alert-color, var(--gd-accent-readable));
+}
+
+.guest-alert-item strong {
+    display: block;
+    color: var(--gd-heading);
+    font-weight: 950;
+}
+
+.guest-alert-item p {
+    margin: 3px 0 0;
+    color: var(--gd-muted);
+    font-size: .83rem;
+    font-weight: 750;
+    line-height: 1.45;
 }
 
 .guest-vehicle-grid {
@@ -983,7 +1187,9 @@ $guestParkingOptionsHtml = function ($inputClass = '') use ($estacionamientos, $
     text-transform: uppercase;
 }
 
-.guest-form-field input {
+.guest-form-field input,
+.guest-form-field select,
+.guest-form-field textarea {
     width: 100%;
     min-height: 43px;
     border: 1px solid rgba(44, 55, 75, .24);
@@ -997,7 +1203,18 @@ $guestParkingOptionsHtml = function ($inputClass = '') use ($estacionamientos, $
     box-shadow: 0 1px 0 rgba(255,255,255,.75);
 }
 
-.guest-form-field input:focus {
+.guest-form-field textarea {
+    min-height: 86px;
+    resize: vertical;
+}
+
+.guest-form-field.is-wide {
+    grid-column: 1 / -1;
+}
+
+.guest-form-field input:focus,
+.guest-form-field select:focus,
+.guest-form-field textarea:focus {
     border-color: color-mix(in srgb, var(--gd-accent) 68%, var(--gd-primary));
     box-shadow:
         0 0 0 4px color-mix(in srgb, var(--gd-accent) 18%, transparent),
@@ -1093,6 +1310,10 @@ $guestParkingOptionsHtml = function ($inputClass = '') use ($estacionamientos, $
         grid-template-columns: 1fr;
     }
 
+    .guest-operational-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .guest-side-stack {
         position: static;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1107,6 +1328,7 @@ $guestParkingOptionsHtml = function ($inputClass = '') use ($estacionamientos, $
 
     .guest-action-rail,
     .guest-side-stack,
+    .guest-operational-grid,
     .guest-metrics-strip,
     .guest-info-grid {
         grid-template-columns: 1fr;
@@ -1278,6 +1500,62 @@ $guestParkingOptionsHtml = function ($inputClass = '') use ($estacionamientos, $
             </article>
         </section>
 
+        <section class="guest-panel guest-readonly-profile" aria-label="Perfil operativo del huesped">
+            <div class="guest-panel-head">
+                <div>
+                    <h2>Perfil operativo</h2>
+                    <p>Lectura consolidada de recurrencia, cartera y expediente.</p>
+                </div>
+                <span class="guest-readonly-badge">
+                    <i class="fas fa-shield-alt"></i>
+                    Solo lectura
+                </span>
+            </div>
+            <div class="guest-panel-body">
+                <div class="guest-operational-grid">
+                    <article class="guest-operational-card">
+                        <span>Clasificacion</span>
+                        <strong><?= guest_detail_safe($perfilClasificacion, 'Sin historial') ?></strong>
+                        <small><?= number_format($perfilScore) ?> / 100 puntos operativos</small>
+                    </article>
+                    <article class="guest-operational-card">
+                        <span>Proxima estancia</span>
+                        <strong><?= $perfilProximaVisita ? format_date($perfilProximaVisita) : 'No programada' ?></strong>
+                        <small><?= number_format((int)($perfilReservaciones['proximas'] ?? 0)) ?> reservaciones futuras</small>
+                    </article>
+                    <article class="guest-operational-card">
+                        <span>Saldo CxC</span>
+                        <strong><?= format_money($perfilCxcSaldo) ?></strong>
+                        <small><?= number_format($perfilCxcCuentas) ?> cuentas pendientes</small>
+                    </article>
+                    <article class="guest-operational-card">
+                        <span>Expediente</span>
+                        <strong><?= number_format($perfilDocumentosActivos) ?></strong>
+                        <small><?= number_format((int)($perfilDocumentos['total'] ?? 0)) ?> documentos vinculados</small>
+                    </article>
+                </div>
+
+                <?php if (!empty($perfilAlertas)): ?>
+                    <div class="guest-alert-list" aria-label="Alertas operativas del perfil">
+                        <?php foreach ($perfilAlertas as $alerta): ?>
+                            <?php
+                                $alertNivel = (string)($alerta['nivel'] ?? 'info');
+                                $alertColor = $perfilAlertColors[$alertNivel] ?? '#64748B';
+                                $alertIcon = $perfilAlertIcons[$alertNivel] ?? 'fas fa-circle-info';
+                            ?>
+                            <article class="guest-alert-item" style="--alert-color: <?= guest_detail_safe($alertColor, '#64748B') ?>;">
+                                <i class="<?= guest_detail_safe($alertIcon, 'fas fa-circle-info') ?>"></i>
+                                <div>
+                                    <strong><?= guest_detail_safe($alerta['titulo'] ?? 'Aviso operativo') ?></strong>
+                                    <p><?= guest_detail_safe($alerta['mensaje'] ?? 'Dato disponible para revision.') ?></p>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </section>
+
         <div class="guest-layout">
             <main class="guest-main-stack">
                 <section class="guest-panel">
@@ -1328,6 +1606,21 @@ $guestParkingOptionsHtml = function ($inputClass = '') use ($estacionamientos, $
                                     </div>
                                 </article>
                             <?php endif; ?>
+                            <?php foreach ($guestExtraDisplayFields as $fieldKey => $fieldDefinition): ?>
+                                <?php
+                                $extraValue = is_scalar($guestExtraValues[$fieldKey] ?? null) ? trim((string)$guestExtraValues[$fieldKey]) : '';
+                                if ($extraValue === '') {
+                                    continue;
+                                }
+                                ?>
+                                <article class="guest-info-card">
+                                    <i class="fas <?= guest_detail_safe($fieldDefinition['icon'] ?? 'fa-circle-info') ?>"></i>
+                                    <div>
+                                        <span class="guest-info-label"><?= guest_detail_safe($fieldDefinition['label'] ?? $fieldKey) ?></span>
+                                        <strong><?= guest_detail_safe($extraValue) ?></strong>
+                                    </div>
+                                </article>
+                            <?php endforeach; ?>
                         </div>
 
                         <?php if (!empty($huesped['notas'])): ?>
@@ -1359,6 +1652,9 @@ $guestParkingOptionsHtml = function ($inputClass = '') use ($estacionamientos, $
                                         $icono = ($vehiculo['estacionamiento'] ?? '') === 'coches' ? 'fa-car' : 'fa-square-parking';
                                         $vehiculo_nombre = trim(($vehiculo['marca'] ?? '') . ' ' . ($vehiculo['modelo'] ?? ''));
                                         $vehiculo_desc = trim(($vehiculo['marca'] ?? '') . ' - ' . ($vehiculo['placas'] ?? ''));
+                                        $vehiculoExtras = function_exists('hotel_guest_decode_extra_json')
+                                            ? hotel_guest_decode_extra_json($vehiculo['datos_extra_json'] ?? null)
+                                            : [];
                                     ?>
                                     <article class="guest-vehicle-card">
                                         <div class="guest-vehicle-top">
@@ -1398,6 +1694,21 @@ $guestParkingOptionsHtml = function ($inputClass = '') use ($estacionamientos, $
                                                     <?= guest_detail_safe($ubicacion) ?>
                                                 </strong>
                                             </div>
+                                            <?php foreach ($guestVehicleVisibleFields as $vehicleFieldKey => $vehicleFieldDefinition): ?>
+                                                <?php
+                                                if (($vehicleFieldDefinition['storage'] ?? 'column') !== 'extra') {
+                                                    continue;
+                                                }
+                                                $vehicleExtraValue = is_scalar($vehiculoExtras[$vehicleFieldKey] ?? null) ? trim((string)$vehiculoExtras[$vehicleFieldKey]) : '';
+                                                if ($vehicleExtraValue === '') {
+                                                    continue;
+                                                }
+                                                ?>
+                                                <div class="guest-detail-row">
+                                                    <span><?= guest_detail_safe($vehicleFieldDefinition['label'] ?? $vehicleFieldKey) ?></span>
+                                                    <strong><?= guest_detail_safe($vehicleExtraValue) ?></strong>
+                                                </div>
+                                            <?php endforeach; ?>
                                         </div>
                                     </article>
                                 <?php endforeach; ?>
@@ -1574,32 +1885,7 @@ $guestParkingOptionsHtml = function ($inputClass = '') use ($estacionamientos, $
             <?= csrf_field() ?>
 
             <div class="guest-form-grid">
-                <div class="guest-form-field">
-                    <label>Marca <span class="text-red-500">*</span></label>
-                    <input type="text" name="marca" required>
-                </div>
-                <div class="guest-form-field">
-                    <label>Modelo</label>
-                    <input type="text" name="modelo">
-                </div>
-            </div>
-
-            <div class="guest-form-grid">
-                <div class="guest-form-field">
-                    <label>Placas</label>
-                    <input type="text" name="placas" style="text-transform: uppercase" class="font-mono">
-                </div>
-                <div class="guest-form-field">
-                    <label>Color</label>
-                    <input type="text" name="color">
-                </div>
-            </div>
-
-            <div class="guest-radio-group">
-                <label>Estacionamiento <span class="text-red-500">*</span></label>
-                <div class="guest-radio-options">
-                    <?= $guestParkingOptionsHtml() ?>
-                </div>
+                <?= $guestRenderVehicleModalFields('add') ?>
             </div>
 
             <div class="guest-modal-actions">
@@ -1630,32 +1916,7 @@ $guestParkingOptionsHtml = function ($inputClass = '') use ($estacionamientos, $
             <?= csrf_field() ?>
 
             <div class="guest-form-grid">
-                <div class="guest-form-field">
-                    <label>Marca <span class="text-red-500">*</span></label>
-                    <input type="text" name="marca" id="edit_marca" required>
-                </div>
-                <div class="guest-form-field">
-                    <label>Modelo</label>
-                    <input type="text" name="modelo" id="edit_modelo">
-                </div>
-            </div>
-
-            <div class="guest-form-grid">
-                <div class="guest-form-field">
-                    <label>Placas</label>
-                    <input type="text" name="placas" id="edit_placas" style="text-transform: uppercase" class="font-mono">
-                </div>
-                <div class="guest-form-field">
-                    <label>Color</label>
-                    <input type="text" name="color" id="edit_color">
-                </div>
-            </div>
-
-            <div class="guest-radio-group">
-                <label>Estacionamiento <span class="text-red-500">*</span></label>
-                <div class="guest-radio-options">
-                    <?= $guestParkingOptionsHtml('edit-estacionamiento') ?>
-                </div>
+                <?= $guestRenderVehicleModalFields('edit') ?>
             </div>
 
             <div class="guest-modal-actions">
@@ -1705,10 +1966,24 @@ function cerrarModalEditarVehiculo() {
 
 function editarVehiculo(vehiculo) {
     document.getElementById('edit_vehiculo_id').value = vehiculo.id || '';
-    document.getElementById('edit_marca').value = vehiculo.marca || '';
-    document.getElementById('edit_modelo').value = vehiculo.modelo || '';
-    document.getElementById('edit_placas').value = vehiculo.placas || '';
-    document.getElementById('edit_color').value = vehiculo.color || '';
+    document.getElementById('edit_marca') && (document.getElementById('edit_marca').value = vehiculo.marca || '');
+    document.getElementById('edit_modelo') && (document.getElementById('edit_modelo').value = vehiculo.modelo || '');
+    document.getElementById('edit_placas') && (document.getElementById('edit_placas').value = vehiculo.placas || '');
+    document.getElementById('edit_color') && (document.getElementById('edit_color').value = vehiculo.color || '');
+
+    let extras = {};
+    try {
+        extras = typeof vehiculo.datos_extra_json === 'string'
+            ? JSON.parse(vehiculo.datos_extra_json || '{}')
+            : (vehiculo.datos_extra_json || {});
+    } catch (error) {
+        extras = {};
+    }
+
+    document.querySelectorAll('[data-edit-extra]').forEach(input => {
+        const key = input.dataset.editExtra;
+        input.value = extras && Object.prototype.hasOwnProperty.call(extras, key) ? extras[key] : '';
+    });
 
     const selectedParking = vehiculo.estacionamiento || <?= json_encode($estacionamientoDefault, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     const parkingRadios = document.querySelectorAll('.edit-estacionamiento');

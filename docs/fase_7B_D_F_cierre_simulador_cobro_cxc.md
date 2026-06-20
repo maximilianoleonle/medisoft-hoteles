@@ -60,13 +60,10 @@ no contiene un tipo de cobro. No se debe usar `AJUSTE` para representar cobros.
 
 ## Siguiente paso seguro
 
-7B-D-B-0: contrato de esquema de cobro CxC.
+7B-D-B-A ya agrego el tipo semantico `COBRO` al ledger CxC.
 
-Ese contrato debe decidir la estructura antes de cualquier migracion o escritura:
+El siguiente paso seguro es 7B-D-C-0: contrato del servicio transaccional de cobro CxC
+con Caja.
 
-- ampliar `cuentas_por_cobrar_movimientos` con tipo semantico de cobro;
-- crear tabla independiente de cobros CxC;
-- o crear entidad de recibos/cobros.
-
-No implementar cobro real hasta tener backup, migracion autorizada, servicio
-transaccional, prueba rollback y QA manual especifica.
+No implementar cobro real hasta tener contrato de servicio, backup, prueba rollback,
+token de un solo uso, auditoria y QA manual especifica.

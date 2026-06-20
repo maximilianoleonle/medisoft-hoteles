@@ -6,6 +6,7 @@
 require_once __DIR__ . '/../helpers/hotel_config.php';
 require_once __DIR__ . '/../models/Notificacion.php';
 require_once __DIR__ . '/../services/NotificacionReglasService.php';
+require_once __DIR__ . '/../services/NotificacionService.php';
 
 class DashboardController extends Controller {
     
@@ -100,6 +101,7 @@ class DashboardController extends Controller {
             // Obtener datos para gráficos
             $datosGraficos = $this->getDatosGraficos();
             NotificacionReglasService::evaluarDashboard($this->hotelIdActual());
+            NotificacionService::sincronizarBandeja($this->hotelIdActual());
             $notificacionesDashboard = $this->getNotificacionesDashboard();
             
             // Preparar datos para la vista

@@ -377,6 +377,13 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
 
 .hotel-layout-scope .hotel-sidebar {
     width: 268px !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-sizing: border-box !important;
     padding: 30px 18px 18px !important;
     border-right: 1px solid var(--hotel-border) !important;
     background:
@@ -385,6 +392,7 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
     box-shadow: 18px 0 38px color-mix(in srgb, var(--hotel-secondary) 8%, transparent) !important;
     color: var(--hotel-text) !important;
     font-family: Manrope, Inter, ui-sans-serif, system-ui, sans-serif !important;
+    overflow: hidden !important;
 }
 
 /* Shared tonal balance for hotel index views: keep brand color as an accent,
@@ -614,11 +622,18 @@ body.hotel-layout-scope {
 }
 
 .hotel-layout-scope .hotel-sidebar .sidebar-nav {
-    flex: 0 0 auto;
+    flex: 1 1 auto;
+    min-height: 0;
     display: grid;
+    align-content: start;
     gap: 7px;
-    padding: 0 !important;
-    overflow: visible !important;
+    padding: 0 4px 10px 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--hotel-brand) 24%, #CBD5E1) transparent;
+    -webkit-overflow-scrolling: touch;
 }
 
 .hotel-layout-scope .hotel-sidebar .nav-section {
@@ -772,11 +787,12 @@ body.hotel-layout-scope {
 }
 
 .hotel-layout-scope .hotel-sidebar .sidebar-footer {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    min-height: 160px;
+    min-height: 0;
+    margin-top: 12px;
     padding: 0 !important;
     border: 0 !important;
     background: transparent !important;
@@ -872,4 +888,49 @@ body.hotel-layout-scope {
     min-width: 0 !important;
     line-height: 1 !important;
     white-space: nowrap !important;
+}
+
+@media (max-width: 1024px) {
+    body.hotel-layout-scope .sidebar-main.hotel-sidebar {
+        top: 0 !important;
+        bottom: 0 !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
+        padding: 22px 14px max(14px, env(safe-area-inset-bottom)) !important;
+    }
+
+    .hotel-layout-scope .hotel-sidebar .sidebar-header {
+        padding-bottom: 14px !important;
+    }
+
+    .hotel-layout-scope .hotel-sidebar .hotel-boutique-brand {
+        gap: 8px;
+        padding-bottom: 4px;
+    }
+
+    .hotel-layout-scope .hotel-sidebar .hotel-boutique-mark {
+        width: 42px;
+        height: 42px;
+    }
+
+    .hotel-layout-scope .hotel-sidebar .sidebar-search {
+        padding-bottom: 10px !important;
+    }
+
+    .hotel-layout-scope .hotel-sidebar .sidebar-nav {
+        gap: 6px;
+        padding-bottom: 12px !important;
+    }
+
+    .hotel-layout-scope .hotel-sidebar .hotel-operaciones-section,
+    .hotel-layout-scope .hotel-sidebar .hotel-admin-section {
+        margin-top: 12px !important;
+        padding-top: 12px !important;
+    }
+
+    .hotel-layout-scope .hotel-sidebar .sidebar-footer {
+        margin-top: 10px;
+    }
 }

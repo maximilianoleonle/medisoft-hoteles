@@ -91,6 +91,8 @@ class ConfiguracionController extends Controller {
             'generalZoneCatalog' => function_exists('hotel_general_catalog_zone_rows') ? hotel_general_catalog_zone_rows($hotelId, true) : [],
             'generalParkingCatalog' => function_exists('hotel_general_catalog_parking_rows') ? hotel_general_catalog_parking_rows($hotelId, true) : [],
             'generalUnitCatalog' => function_exists('hotel_general_catalog_unit_rows') ? hotel_general_catalog_unit_rows($hotelId, true) : [],
+            'guestFieldCatalog' => function_exists('hotel_guest_field_catalog') ? hotel_guest_field_catalog() : [],
+            'guestFieldPolicy' => function_exists('hotel_guest_field_policy') ? hotel_guest_field_policy($hotelId) : [],
             'pwaPushDevices' => $pwaPushDevices,
             'ultimo_backup' => $ultimo_backup,
             'espacio' => $espacio
@@ -150,6 +152,13 @@ class ConfiguracionController extends Controller {
             }
 
             $generalCatalogValues = $generalCatalogResult['values'];
+        }
+
+        $guestFieldPolicyValues = null;
+        $guestFieldPayload = $_POST['guest_fields'] ?? null;
+
+        if (is_array($guestFieldPayload) && function_exists('hotel_guest_field_policy_normalize_payload')) {
+            $guestFieldPolicyValues = hotel_guest_field_policy_normalize_payload($guestFieldPayload);
         }
 
         $brandingValues = null;
@@ -226,6 +235,10 @@ class ConfiguracionController extends Controller {
 
             if (is_array($generalCatalogValues) && function_exists('hotel_general_catalog_save_values')) {
                 hotel_general_catalog_save_values($generalCatalogValues);
+            }
+
+            if (is_array($guestFieldPolicyValues) && function_exists('hotel_guest_field_policy_save')) {
+                hotel_guest_field_policy_save($guestFieldPolicyValues);
             }
 
             if (is_array($brandingValues) && !empty($brandingContext['id'])) {

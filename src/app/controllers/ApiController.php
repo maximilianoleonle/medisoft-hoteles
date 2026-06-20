@@ -657,8 +657,18 @@ public function vehiculosHuespedAction() {
         return;
     }
     
+    $hotel_id = $this->hotelIdActual();
+    $huespedModel = new Huesped();
+    if (!$huespedModel->findForHotel($huesped_id, $hotel_id)) {
+        View::renderJSON([
+            'success' => false,
+            'message' => 'HuÃ©sped no encontrado'
+        ], 404);
+        return;
+    }
+
     $vehiculoModel = new HuespedVehiculo();
-    $vehiculos = $vehiculoModel->porHuesped($huesped_id);
+    $vehiculos = $vehiculoModel->porHuespedHotel($huesped_id, $hotel_id);
     
     View::renderJSON([
         'success' => true,
@@ -797,12 +807,7 @@ public function vehiculosHuespedAction() {
                     $stmt = $db->query(
                         "SELECT id, nombre_completo, telefono, procedencia_estado
                          FROM huespedes h
-                         WHERE EXISTS (
-                             SELECT 1
-                             FROM reservaciones r
-                             WHERE r.huesped_id = h.id
-                               AND r.hotel_id = ?
-                         )
+                         WHERE h.hotel_id = ?
                          ORDER BY nombre_completo ASC
                          LIMIT 1000",
                         [$hotel_id]
@@ -958,16 +963,11 @@ public function vehiculosHuespedAction() {
                 $stmt = $db->query(
                     "SELECT id, nombre_completo, telefono, procedencia_estado
                      FROM huespedes h
-                     WHERE (nombre_completo LIKE ? OR telefono LIKE ?)
-                       AND EXISTS (
-                           SELECT 1
-                           FROM reservaciones r
-                           WHERE r.huesped_id = h.id
-                             AND r.hotel_id = ?
-                       )
+                     WHERE h.hotel_id = ?
+                       AND (nombre_completo LIKE ? OR telefono LIKE ?)
                      ORDER BY nombre_completo ASC
                      LIMIT ?",
-                    [$buscar, $buscar, $hotel_id, $limite]
+                    [$hotel_id, $buscar, $buscar, $limite]
                 );
                 $huespedes = $stmt ? $stmt->fetchAll() : [];
             }
@@ -1174,14 +1174,17 @@ public function vehiculosHuespedAction() {
 
     public function buscarHuespedesAction() {
         $termino = $this->getQuery('q', '');
+        $hotel_id = $this->hotelIdActual();
 
         if ($termino === '__offline_cache__') {
             $db = Database::getInstance();
             $stmt = $db->query(
                 "SELECT id, nombre_completo, telefono, procedencia_estado
                  FROM huespedes
+                 WHERE hotel_id = ?
                  ORDER BY nombre_completo
-                 LIMIT 500"
+                 LIMIT 500",
+                [$hotel_id]
             );
 
             View::renderJSON([
@@ -1203,12 +1206,13 @@ public function vehiculosHuespedAction() {
         
         $sql = "SELECT id, nombre_completo, telefono, procedencia_estado 
                 FROM huespedes 
-                WHERE nombre_completo LIKE ? OR telefono LIKE ?
+                WHERE hotel_id = ?
+                  AND (nombre_completo LIKE ? OR telefono LIKE ?)
                 ORDER BY nombre_completo 
                 LIMIT 10";
         
         $termino_busqueda = '%' . $termino . '%';
-        $stmt = $db->query($sql, [$termino_busqueda, $termino_busqueda]);
+        $stmt = $db->query($sql, [$hotel_id, $termino_busqueda, $termino_busqueda]);
         $huespedes = $stmt->fetchAll();
         
         View::renderJSON([

@@ -13,6 +13,7 @@ class HuespedVehiculo extends Model {
         'placas',
         'color',
         'estacionamiento',
+        'datos_extra_json',
         'activo'
     ];
     
@@ -31,6 +32,124 @@ class HuespedVehiculo extends Model {
     /**
      * Obtener vehículos por huésped
      */
+    private function hotelIdActual($hotelId = null) {
+        if ($hotelId !== null && (int)$hotelId > 0) {
+            return (int)$hotelId;
+        }
+
+        if (function_exists('obtenerHotelIdActualCompat')) {
+            return (int)obtenerHotelIdActualCompat();
+        }
+
+        return (int)($_SESSION['hotel_id'] ?? 0);
+    }
+
+    public function porHuespedHotel($huesped_id, $hotelId = null) {
+        $hotelId = $this->hotelIdActual($hotelId);
+        if ($hotelId <= 0 || (int)$huesped_id <= 0) {
+            return [];
+        }
+
+        $sql = "SELECT v.*
+                FROM {$this->table} v
+                INNER JOIN huespedes h ON v.huesped_id = h.id
+                WHERE v.huesped_id = ?
+                  AND h.hotel_id = ?
+                  AND v.activo = 1
+                ORDER BY v.created_at DESC";
+
+        $stmt = $this->db->query($sql, [(int)$huesped_id, $hotelId]);
+        return $stmt ? $stmt->fetchAll() : [];
+    }
+
+    public function findForHotel($id, $hotelId = null) {
+        $hotelId = $this->hotelIdActual($hotelId);
+        if ($hotelId <= 0 || (int)$id <= 0) {
+            return null;
+        }
+
+        $sql = "SELECT v.*
+                FROM {$this->table} v
+                INNER JOIN huespedes h ON v.huesped_id = h.id
+                WHERE v.id = ?
+                  AND h.hotel_id = ?
+                LIMIT 1";
+
+        $stmt = $this->db->query($sql, [(int)$id, $hotelId]);
+        $vehiculo = $stmt ? $stmt->fetch() : null;
+        return $vehiculo ?: null;
+    }
+
+    public function buscarPorPlacasPorHotel($placas, $hotelId = null) {
+        $hotelId = $this->hotelIdActual($hotelId);
+        if ($hotelId <= 0 || trim((string)$placas) === '') {
+            return null;
+        }
+
+        $sql = "SELECT v.*
+                FROM {$this->table} v
+                INNER JOIN huespedes h ON v.huesped_id = h.id
+                WHERE v.placas = ?
+                  AND h.hotel_id = ?
+                  AND v.activo = 1
+                LIMIT 1";
+
+        $stmt = $this->db->query($sql, [$placas, $hotelId]);
+        $vehiculo = $stmt ? $stmt->fetch() : null;
+        return $vehiculo ?: null;
+    }
+
+    public function existenPlacasPorHotel($placas, $hotelId = null, $excluir_id = null) {
+        $hotelId = $this->hotelIdActual($hotelId);
+        if ($hotelId <= 0 || empty($placas)) {
+            return false;
+        }
+
+        $sql = "SELECT COUNT(*) as total
+                FROM {$this->table} v
+                INNER JOIN huespedes h ON v.huesped_id = h.id
+                WHERE v.placas = ?
+                  AND h.hotel_id = ?
+                  AND v.activo = 1";
+        $params = [$placas, $hotelId];
+
+        if ($excluir_id) {
+            $sql .= " AND v.id != ?";
+            $params[] = (int)$excluir_id;
+        }
+
+        $stmt = $this->db->query($sql, $params);
+        $result = $stmt ? $stmt->fetch() : null;
+        return (int)($result['total'] ?? 0) > 0;
+    }
+
+    public function desactivarParaHotel($id, $hotelId = null) {
+        $vehiculo = $this->findForHotel((int)$id, $hotelId);
+        if (!$vehiculo) {
+            return false;
+        }
+
+        return $this->update((int)$id, ['activo' => 0]);
+    }
+
+    public function obtenerConHuespedParaHotel($id, $hotelId = null) {
+        $hotelId = $this->hotelIdActual($hotelId);
+        if ($hotelId <= 0 || (int)$id <= 0) {
+            return null;
+        }
+
+        $sql = "SELECT v.*, h.nombre_completo, h.telefono
+                FROM {$this->table} v
+                INNER JOIN huespedes h ON v.huesped_id = h.id
+                WHERE v.id = ?
+                  AND h.hotel_id = ?
+                  AND v.activo = 1";
+
+        $stmt = $this->db->query($sql, [(int)$id, $hotelId]);
+        $vehiculo = $stmt ? $stmt->fetch() : null;
+        return $vehiculo ?: null;
+    }
+
     public function porHuesped($huesped_id) {
         $sql = "SELECT * FROM {$this->table} 
                 WHERE huesped_id = ? AND activo = 1

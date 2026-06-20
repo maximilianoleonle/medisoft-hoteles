@@ -1,10 +1,10 @@
 <?php
 /**
- * Definición de Rutas
+ * DefiniciÃ³n de Rutas
  * Los Cedros
  */
 
-// Rutas AJAX para vehículos de huéspedes
+// Rutas AJAX para vehÃ­culos de huÃ©spedes
 $router->post('/huespedes/agregar-vehiculo', [
     'controller' => 'Huesped',
     'action' => 'agregarVehiculo'
@@ -15,9 +15,9 @@ $router->post('/huespedes/actualizar-vehiculo', [
     'action' => 'actualizarVehiculo'
 ]);
 
-// Check-in tardío - Vista
+// Check-in tardÃ­o - Vista
 $router->post('/reservaciones/cotizacion-reservacion-pdf', ['controller' => 'Reservacion', 'action' => 'cotizacionReservacionPdf']);
-// Modificar días de reservación (AJAX)
+// Modificar dÃ­as de reservaciÃ³n (AJAX)
 $router->post('/reservaciones/verificar-modificar-dias', ['controller' => 'Reservacion', 'action' => 'verificarModificarDias']);
 $router->post('/reservaciones/modificar-dias', ['controller' => 'Reservacion', 'action' => 'modificarDias']);
 
@@ -92,7 +92,7 @@ $router->post('/reservaciones/recibir-llave', [
     'controller' => 'Reservacion',
     'action' => 'recibirLlave'
 ]);
-// RUTAS PARA GESTIÓN DE MÚLTIPLES IMÁGENES
+// RUTAS PARA GESTIÃ“N DE MÃšLTIPLES IMÃGENES
 $router->get('/habitaciones/{id:[0-9]+}/imagenes', [
     'controller' => 'Habitacion',
     'action' => 'gestionarImagenes'
@@ -145,7 +145,7 @@ $router->post('/reservaciones/checkin/{id:[0-9]+}', [
 
 $router->get('/caja/descargar-pdf/{id:[0-9]+}', ['controller' => 'Caja', 'action' => 'descargarPDF']);
 
-// Remotos múltiples
+// Remotos mÃºltiples
 $router->post('/reservaciones/entregar-remotos-multiples', ['controller' => 'Reservacion', 'action' => 'entregarRemotosMultiples']);
 $router->post('/reservaciones/recibir-remotos-multiples', ['controller' => 'Reservacion', 'action' => 'recibirRemotosMultiples']);
 
@@ -161,10 +161,11 @@ $router->get('/caja/historial', ['controller' => 'Caja', 'action' => 'historial'
 $router->get('/caja/corte/{id:[0-9]+}', ['controller' => 'Caja', 'action' => 'verCorte']);
 $router->get('/caja/exportar', ['controller' => 'Caja', 'action' => 'exportar']);
 $router->get('/caja/reporte-metodos', ['controller' => 'Caja', 'action' => 'reporteMetodos']);
+$router->get('/caja/arqueo-metodos', ['controller' => 'Caja', 'action' => 'arqueoMetodos']);
 
 
 
-// Gestión de categorías (solo gerente)
+// GestiÃ³n de categorÃ­as (solo gerente)
 $router->get('/caja/categorias', ['controller' => 'Caja', 'action' => 'categorias']);
 
 $router->post('/caja/categoria/crear', ['controller' => 'Caja', 'action' => 'crearCategoria']);
@@ -179,7 +180,7 @@ $router->post('/caja/movimiento/editar', ['controller' => 'Caja', 'action' => 'e
 // APIs para AJAX
 $router->get('/api/huespedes/vehiculos/{id:[0-9]+}', ['controller' => 'Api', 'action' => 'vehiculosHuesped']);
 
-// Rutas de autenticación
+// Rutas de autenticaciÃ³n
 $router->get('/', ['controller' => 'Auth', 'action' => 'login']);
 $router->get('/login', ['controller' => 'Auth', 'action' => 'login']);
 $router->post('/login/authenticate', ['controller' => 'Auth', 'action' => 'authenticate']);
@@ -195,6 +196,8 @@ $router->get('/dashboard/charts', ['controller' => 'Dashboard', 'action' => 'cha
 
 // Fase OP-A: tablero operativo diario GET/read-only. Sin acciones, Caja, pagos ni /api/sync.
 $router->get('/operacion/diaria', ['controller' => 'Operacion', 'action' => 'diaria']);
+// Fase 9A-B-A: conciliacion financiera GET/read-only. Sin acciones, Caja operativa ni /api/sync.
+$router->get('/operacion/conciliacion-financiera', ['controller' => 'Operacion', 'action' => 'conciliacionFinanciera']);
 
 // Centro de notificaciones
 $router->get('/notificaciones', ['controller' => 'Notificacion', 'action' => 'index']);
@@ -228,6 +231,7 @@ $router->get('/cuentas-por-pagar/generacion-preview', ['controller' => 'CuentaPo
 $router->get('/cuentas-por-pagar/simulador-caja', ['controller' => 'CuentaPorPagar', 'action' => 'simuladorCaja']);
 $router->post('/cuentas-por-pagar/generar-desde-compra/{id:[0-9]+}', ['controller' => 'CuentaPorPagar', 'action' => 'generarDesdeCompra']);
 $router->post('/cuentas-por-pagar/{id:[0-9]+}/registrar-pago-caja', ['controller' => 'CuentaPorPagar', 'action' => 'registrarPagoCaja']);
+$router->post('/cuentas-por-pagar/{id:[0-9]+}/movimientos/{movimientoid:[0-9]+}/revertir-pago-caja', ['controller' => 'CuentaPorPagar', 'action' => 'revertirPagoCaja']);
 $router->get('/cuentas-por-pagar/{id:[0-9]+}', ['controller' => 'CuentaPorPagar', 'action' => 'ver']);
 
 $router->get('/cuentas-por-cobrar', ['controller' => 'CuentaPorCobrar', 'action' => 'index']);
@@ -235,6 +239,8 @@ $router->get('/cuentas-por-cobrar/operativas', ['controller' => 'CuentaPorCobrar
 $router->get('/cuentas-por-cobrar/simulador-caja', ['controller' => 'CuentaPorCobrar', 'action' => 'simuladorCaja']);
 $router->get('/cuentas-por-cobrar/operativas/{id:[0-9]+}', ['controller' => 'CuentaPorCobrar', 'action' => 'verOperativa']);
 $router->post('/cuentas-por-cobrar/generar-desde-reservacion/{id:[0-9]+}', ['controller' => 'CuentaPorCobrar', 'action' => 'generarDesdeReservacion']);
+$router->post('/cuentas-por-cobrar/operativas/{id:[0-9]+}/registrar-cobro-caja', ['controller' => 'CuentaPorCobrar', 'action' => 'registrarCobroCaja']);
+$router->post('/cuentas-por-cobrar/operativas/{id:[0-9]+}/movimientos/{movimientoid:[0-9]+}/revertir-cobro-caja', ['controller' => 'CuentaPorCobrar', 'action' => 'revertirCobroCaja']);
 
 // Fase 4A/4B/4D: Centro Documental con metadata, carga segura, descarga autenticada, edicion limitada, archivado reversible y baja logica. Sin borrado fisico.
 $router->get('/documentos', ['controller' => 'Documento', 'action' => 'index']);
@@ -249,12 +255,14 @@ $router->post('/documentos/{id:[0-9]+}/eliminar', ['controller' => 'Documento', 
 $router->get('/documentos/{id:[0-9]+}/descargar', ['controller' => 'Documento', 'action' => 'descargar']);
 $router->get('/documentos/{id:[0-9]+}', ['controller' => 'Documento', 'action' => 'ver']);
 
-// Fase NP-A/NP-F-A: Personal base, CRUD basico, ledger laboral manual y reporte read-only. Sin pagos reales, nomina ni Caja.
+// Fase NP-A/NP-F-A/5E-C/5E-D-A: Personal base, ledger laboral, reporte, simulador Caja y pago laboral controlado.
 $router->get('/trabajadores', ['controller' => 'Trabajador', 'action' => 'index']);
 $router->get('/trabajadores/reporte', ['controller' => 'Trabajador', 'action' => 'reporte']);
+$router->get('/trabajadores/pagos-caja/simulador', ['controller' => 'Trabajador', 'action' => 'simuladorPagoCaja']);
 $router->get('/trabajadores/crear', ['controller' => 'Trabajador', 'action' => 'crear']);
 $router->post('/trabajadores', ['controller' => 'Trabajador', 'action' => 'guardar']);
 $router->get('/trabajadores/{id:[0-9]+}', ['controller' => 'Trabajador', 'action' => 'ver']);
+$router->post('/trabajadores/{id:[0-9]+}/registrar-pago-caja', ['controller' => 'Trabajador', 'action' => 'registrarPagoCaja']);
 $router->get('/trabajadores/{id:[0-9]+}/editar', ['controller' => 'Trabajador', 'action' => 'editar']);
 $router->post('/trabajadores/{id:[0-9]+}/actualizar', ['controller' => 'Trabajador', 'action' => 'actualizar']);
 $router->post('/trabajadores/{id:[0-9]+}/conceptos-laborales', ['controller' => 'Trabajador', 'action' => 'registrarConceptoLaboral']);
@@ -296,12 +304,12 @@ $router->post('/admin/saas/hoteles/{id:[0-9]+}/modulos', ['controller' => 'SaasA
 $router->post('/admin/saas/hoteles/{id:[0-9]+}/plan', ['controller' => 'SaasAdmin', 'action' => 'actualizarPlanHotel']);
 $router->post('/admin/saas/hoteles/{id:[0-9]+}/branding', ['controller' => 'SaasAdmin', 'action' => 'actualizarBrandingHotel']);
 
-// APIs del Dashboard para actualización en tiempo real
+// APIs del Dashboard para actualizaciÃ³n en tiempo real
 $router->get('/api/dashboard/ocupacion', ['controller' => 'Api', 'action' => 'ocupacionActual']);
 $router->get('/api/dashboard/movimientos-recientes', ['controller' => 'Api', 'action' => 'movimientosRecientes']);
 $router->get('/api/dashboard/alertas', ['controller' => 'Api', 'action' => 'alertasDashboard']);
 
-// Gestión de Habitaciones
+// GestiÃ³n de Habitaciones
 $router->get('/habitaciones', ['controller' => 'Habitacion', 'action' => 'index']);
 $router->get('/habitaciones/disponibles', ['controller' => 'Habitacion', 'action' => 'disponibles']);
 $router->get('/habitaciones/create', ['controller' => 'Habitacion', 'action' => 'crear']);
@@ -322,7 +330,7 @@ $router->post('/habitaciones/liberar-multiples', ['controller' => 'Habitacion', 
 // $router->get('/habitaciones/{id:[0-9]+}/imagen', ['controller' => 'Habitacion', 'action' => 'verImagen']);
 $router->get('/habitaciones/{id:[0-9]+}/historial', ['controller' => 'Habitacion', 'action' => 'historial']);
 
-// Gestión de Huéspedes
+// GestiÃ³n de HuÃ©spedes
 $router->get('/huespedes', ['controller' => 'Huesped', 'action' => 'index']);
 $router->get('/huespedes/create', ['controller' => 'Huesped', 'action' => 'crear']);
 $router->post('/huespedes/store', ['controller' => 'Huesped', 'action' => 'guardar']);
@@ -349,7 +357,7 @@ $router->post('/reservaciones/cancelar/{id:[0-9]+}', ['controller' => 'Reservaci
 $router->get('/reservaciones/calendario', ['controller' => 'Reservacion', 'action' => 'calendario']);
 $router->post('/reservaciones/check-out-rapido/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'checkOutRapido']);
 
-// Sistema de Check-in Tardío
+// Sistema de Check-in TardÃ­o
 $router->get('/reservaciones/check-in-tardio/{id:[0-9]+}', [
     'controller' => 'Reservacion',
     'action' => 'checkInTardio'
@@ -382,7 +390,7 @@ $router->get('/reservaciones/habitaciones-disponibles', ['controller' => 'Api', 
 $router->get('/reservaciones/exportar-pdf', ['controller' => 'Reservacion', 'action' => 'exportarPDF']);
 $router->get('/reservaciones/exportar-excel', ['controller' => 'Reservacion', 'action' => 'exportarExcel']);
 
-// Ruta para editar habitaciones de una reservación (GET)
+// Ruta para editar habitaciones de una reservaciÃ³n (GET)
 $router->get('/reservaciones/editar-habitaciones/{id:[0-9]+}', [
     'controller' => 'Reservacion',
     'action' => 'editarHabitaciones'
@@ -393,7 +401,7 @@ $router->post('/reservaciones/actualizar-habitaciones', [
     'controller' => 'Reservacion', 
     'action' => 'actualizarHabitaciones'
 ]);
-// Gestión de tarifas dinámicas
+// GestiÃ³n de tarifas dinÃ¡micas
 
 // ============================================================================
 // SISTEMA COMPLETO DE INVENTARIOS - RUTAS ACTUALIZADAS
@@ -406,7 +414,7 @@ $router->get('/inventario', ['controller' => 'Inventario', 'action' => 'index'])
 $router->get('/inventario/nuevo', ['controller' => 'Inventario', 'action' => 'nuevo']);
 $router->post('/inventario/guardar', ['controller' => 'Inventario', 'action' => 'guardar']);
 
-// AGREGAR ESTAS DOS LÍNEAS PARA EDITAR:
+// AGREGAR ESTAS DOS LÃNEAS PARA EDITAR:
 // Sistema de inventarios
 $router->get('/inventario/editar/{id:[0-9]+}', ['controller' => 'Inventario', 'action' => 'editar']);
 $router->post('/inventario/actualizar/{id:[0-9]+}', ['controller' => 'Inventario', 'action' => 'actualizar']);
@@ -420,7 +428,7 @@ $router->get('/inventario/configuracion', ['controller' => 'Inventario', 'action
 $router->post('/inventario/guardarConfiguracion', ['controller' => 'Inventario', 'action' => 'guardarConfiguracion']);
 $router->get('/inventario/movimientos', ['controller' => 'Inventario', 'action' => 'movimientos']);
 $router->get('/inventarios/movimientos', ['controller' => 'Inventario', 'action' => 'movimientos']);
-// Rutas de inventario - exportación
+// Rutas de inventario - exportaciÃ³n
 $router->get('/inventario/exportar', ['controller' => 'Inventario', 'action' => 'exportar']);
 $router->post('/inventario/generarPdfMovimientos', ['controller' => 'Inventario', 'action' => 'generarPdfMovimientos']);
 $router->get('/inventario/ajuste/{id:[0-9]+}', ['controller' => 'Inventario', 'action' => 'ajuste']);
@@ -432,7 +440,7 @@ $router->post('/inventario/ajuste/{id:[0-9]+}', ['controller' => 'Inventario', '
 // SISTEMA COMPLETO DE REPORTES - RUTAS ACTUALIZADAS
 // ============================================================================
 
-// Página principal de reportes
+// PÃ¡gina principal de reportes
 // ============================================================================
 // SISTEMA COMPLETO DE REPORTES - RUTAS CORREGIDAS
 // ============================================================================
@@ -441,8 +449,9 @@ $router->post('/inventario/ajuste/{id:[0-9]+}', ['controller' => 'Inventario', '
 // SISTEMA COMPLETO DE REPORTES - RUTAS CORREGIDAS
 // ============================================================================
 
-// Página principal de reportes
+// PÃ¡gina principal de reportes
 $router->get('/reportes', ['controller' => 'Reportes', 'action' => 'index']);
+$router->get('/reportes/ejecutivo', ['controller' => 'Reportes', 'action' => 'ejecutivo']);
 $router->get('/reportes/gerencial-diario', ['controller' => 'Reportes', 'action' => 'gerencialDiario']);
 $router->get('/reportes/gerencial-diario/pdf', ['controller' => 'Reportes', 'action' => 'gerencialDiarioPdf']);
 $router->get('/reportes/links', ['controller' => 'ReporteLink', 'action' => 'historial']);
@@ -460,18 +469,18 @@ $router->get('/reportes/habitaciones-rentables', ['controller' => 'Reportes', 'a
 $router->get('/reportes/ocupacion', ['controller' => 'Reportes', 'action' => 'ocupacion']);
 $router->get('/reportes/estancia', ['controller' => 'Reportes', 'action' => 'estancia']);
 $router->get('/reportes/ranking-estados', ['controller' => 'Reportes', 'action' => 'rankingEstados']);
-$router->get('/reportes/mantenimiento', ['controller' => 'Reportes', 'action' => 'mantenimiento']); // NUEVA LÍNEA
-// En tu archivo routes.php, después de las otras rutas de reportes
+$router->get('/reportes/mantenimiento', ['controller' => 'Reportes', 'action' => 'mantenimiento']); // NUEVA LÃNEA
+// En tu archivo routes.php, despuÃ©s de las otras rutas de reportes
 // Rutas de prueba deshabilitadas en produccion.
 // $router->get('/reportes/test-datos', ['controller' => 'Reportes', 'action' => 'testDatos']);
 // $router->get('/reportes/test-usuario', ['controller' => 'Reportes', 'action' => 'testUsuario']);
-// Exportación y datos AJAX
+// ExportaciÃ³n y datos AJAX
 $router->get('/reportes/exportar-pdf', ['controller' => 'Reportes', 'action' => 'exportarPdf']);
 $router->get('/reportes/datos-grafica', ['controller' => 'Reportes', 'action' => 'datosGrafica']);
 
 // $router->get('/reportes/test-calculos', ['controller' => 'Reportes', 'action' => 'testCalculoTotales']);
 
-// Gestión de Usuarios (solo gerente)
+// GestiÃ³n de Usuarios (solo gerente)
 $router->get('/usuarios', ['controller' => 'Usuario', 'action' => 'index']);
 $router->get('/usuarios/create', ['controller' => 'Usuario', 'action' => 'crear']);
 $router->post('/usuarios/store', ['controller' => 'Usuario', 'action' => 'guardar']);
@@ -479,7 +488,7 @@ $router->get('/usuarios/{id:[0-9]+}/edit', ['controller' => 'Usuario', 'action' 
 $router->post('/usuarios/{id:[0-9]+}/update', ['controller' => 'Usuario', 'action' => 'actualizar']);
 $router->post('/usuarios/{id:[0-9]+}/toggle', ['controller' => 'Usuario', 'action' => 'cambiarEstado']);
 
-// API para validación de imágenes
+// API para validaciÃ³n de imÃ¡genes
 $router->post('/api/validate-image', ['controller' => 'Api', 'action' => 'validarImagen']);
 $router->get('/api/habitaciones/{id:[0-9]+}/imagen-info', ['controller' => 'Api', 'action' => 'informacionImagen']);
 
@@ -487,7 +496,7 @@ $router->get('/api/habitaciones/{id:[0-9]+}/imagen-info', ['controller' => 'Api'
 // Ruta de setup deshabilitada en produccion. Ejecutar tareas de setup por CLI.
 // $router->get('/setup/directories', ['controller' => 'Setup', 'action' => 'createDirectories']);
 
-// Configuración (solo gerente)
+// ConfiguraciÃ³n (solo gerente)
 $router->get('/configuracion', ['controller' => 'Configuracion', 'action' => 'index']);
 $router->post('/configuracion/update', ['controller' => 'Configuracion', 'action' => 'actualizar']);
 $router->post('/configuracion/pwa-push/{id:[0-9]+}/revocar', ['controller' => 'PwaPush', 'action' => 'revocarDispositivo']);
@@ -509,7 +518,7 @@ $router->get('/api/buscar', ['controller' => 'Api', 'action' => 'buscarGlobal'])
 $router->get('/api/reservaciones/hoy', ['controller' => 'Api', 'action' => 'reservacionesHoy']);
 $router->post('/api/sync', ['controller' => 'Api', 'action' => 'sync']);
 $router->get('/api/habitaciones/disponibles', ['controller' => 'Api', 'action' => 'habitacionesDisponibles']);
-// Agregar esta línea después de las otras rutas de API de habitaciones (alrededor de la línea 295)
+// Agregar esta lÃ­nea despuÃ©s de las otras rutas de API de habitaciones (alrededor de la lÃ­nea 295)
 $router->get('/api/habitaciones/todas-con-ocupacion', ['controller' => 'Api', 'action' => 'todasConOcupacion']);
 $router->get('/api/huespedes/search', ['controller' => 'Api', 'action' => 'buscarHuespedes']);
 $router->get('/api/dashboard/stats', ['controller' => 'Api', 'action' => 'estadisticasDashboard']);

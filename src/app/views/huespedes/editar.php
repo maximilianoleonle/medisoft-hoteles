@@ -31,11 +31,96 @@ if (!function_exists('guest_edit_safe')) {
     }
 }
 
+$guestFieldPolicy = is_array($guestFieldPolicy ?? null)
+    ? $guestFieldPolicy
+    : (function_exists('hotel_guest_field_policy') ? hotel_guest_field_policy() : ['fields' => []]);
+$guestFieldCatalog = function_exists('hotel_guest_field_catalog') ? hotel_guest_field_catalog() : [];
+$guestExtraValues = function_exists('hotel_guest_decode_extra_json')
+    ? hotel_guest_decode_extra_json($huesped['datos_extra_json'] ?? null)
+    : [];
+$identificacionDocumentoPresente = !empty($identificacionDocumentoPresente);
+$geGuestVisibleFields = function ($scope) use ($guestFieldPolicy) {
+    return function_exists('hotel_guest_visible_fields') ? hotel_guest_visible_fields($scope, $guestFieldPolicy) : [];
+};
+$geGuestFieldVisible = function ($key) use ($guestFieldPolicy) {
+    return function_exists('hotel_guest_field_visible') ? hotel_guest_field_visible($key, $guestFieldPolicy) : true;
+};
+$geGuestFieldRequired = function ($key) use ($guestFieldPolicy) {
+    return function_exists('hotel_guest_field_required') ? hotel_guest_field_required($key, $guestFieldPolicy) : false;
+};
+$geRequiredMark = function ($key) use ($geGuestFieldRequired) {
+    return $geGuestFieldRequired($key) ? ' <span class="ge-required">*</span>' : '';
+};
+$geRenderHiddenColumn = function ($fieldName, $value) {
+    return '<input type="hidden" name="' . htmlspecialchars($fieldName, ENT_QUOTES, 'UTF-8') . '" value="' . htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8') . '">';
+};
+$geRenderGuestExtraField = function ($fieldKey, array $definition) use ($geGuestFieldRequired, $guestExtraValues, $identificacionDocumentoPresente) {
+    $label = htmlspecialchars((string)($definition['label'] ?? $fieldKey), ENT_QUOTES, 'UTF-8');
+    $placeholder = htmlspecialchars((string)($definition['placeholder'] ?? ''), ENT_QUOTES, 'UTF-8');
+    $currentValue = is_scalar($guestExtraValues[$fieldKey] ?? null) ? (string)$guestExtraValues[$fieldKey] : '';
+    $value = htmlspecialchars($currentValue, ENT_QUOTES, 'UTF-8');
+    $required = $geGuestFieldRequired($fieldKey);
+    $input = (string)($definition['input'] ?? 'text');
+    $wide = !empty($definition['wide']) || in_array($input, ['textarea'], true);
+    $max = (int)($definition['max'] ?? 0);
+    $fieldKeySafe = htmlspecialchars((string)$fieldKey, ENT_QUOTES, 'UTF-8');
+    $name = 'extras[' . $fieldKeySafe . ']';
+    if ($input === 'file') {
+        $name = htmlspecialchars((string)($definition['file_name'] ?? $fieldKey), ENT_QUOTES, 'UTF-8');
+    }
+    $requiredHtml = ($required && !($input === 'file' && $identificacionDocumentoPresente)) ? ' required' : '';
+    $maxHtml = $max > 0 ? ' maxlength="' . $max . '"' : '';
+    $acceptHtml = !empty($definition['accept'])
+        ? ' accept="' . htmlspecialchars((string)$definition['accept'], ENT_QUOTES, 'UTF-8') . '"'
+        : '';
+
+    ob_start();
+    ?>
+    <div class="ge-field<?= $wide ? ' ge-field-full' : '' ?>">
+        <label class="ge-label"><?= $label ?><?= $required ? ' <span class="ge-required">*</span>' : '' ?></label>
+        <?php if ($input === 'file'): ?>
+            <input type="file"
+                   name="<?= $name ?>"
+                   class="ge-control ge-file-control"
+                   <?= $acceptHtml ?>
+                   <?= $requiredHtml ?>>
+            <p class="ge-field-hint">
+                Puede tomar foto con la camara, elegir desde galeria o adjuntar PDF/imagen desde archivos.
+                <?php if ($identificacionDocumentoPresente): ?>
+                    Ya existe una identificacion vinculada; subir otra reemplaza solo el requisito operativo, no borra la anterior.
+                <?php endif; ?>
+            </p>
+        <?php elseif ($input === 'textarea'): ?>
+            <textarea name="<?= $name ?>" rows="<?= (int)($definition['rows'] ?? 3) ?>" placeholder="<?= $placeholder ?>" class="ge-control"<?= $requiredHtml ?><?= $maxHtml ?>><?= $value ?></textarea>
+        <?php elseif ($input === 'select'): ?>
+            <select name="<?= $name ?>" class="ge-control"<?= $requiredHtml ?>>
+                <option value="">Seleccione una opcion</option>
+                <?php foreach (($definition['options'] ?? []) as $optionValue => $optionLabel): ?>
+                    <option value="<?= htmlspecialchars((string)$optionValue, ENT_QUOTES, 'UTF-8') ?>" <?= $currentValue === (string)$optionValue ? 'selected' : '' ?>>
+                        <?= htmlspecialchars((string)$optionLabel, ENT_QUOTES, 'UTF-8') ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        <?php else: ?>
+            <input type="<?= in_array($input, ['email', 'tel', 'date'], true) ? htmlspecialchars($input, ENT_QUOTES, 'UTF-8') : 'text' ?>"
+                   name="<?= $name ?>"
+                   value="<?= $value ?>"
+                   placeholder="<?= $placeholder ?>"
+                   class="ge-control<?= !empty($definition['uppercase']) ? ' ge-uppercase' : '' ?>"
+                   <?= !empty($definition['uppercase']) ? 'style="text-transform: uppercase"' : '' ?>
+                   <?= $requiredHtml ?>
+                   <?= $maxHtml ?>>
+        <?php endif; ?>
+    </div>
+    <?php
+    return ob_get_clean();
+};
+
 $vehiculos = [];
 $estacionamientos = [];
 if (class_exists('HuespedVehiculo')) {
     $vehiculoModel = new HuespedVehiculo();
-    $vehiculos = $vehiculoModel->porHuesped($huesped_id);
+    $vehiculos = $vehiculoModel->porHuespedHotel($huesped_id);
 }
 if (function_exists('hotel_general_catalog_parking_rows')) {
     foreach (hotel_general_catalog_parking_rows(null, false) as $parkingRow) {
@@ -447,6 +532,31 @@ $vehiculos_count = count($vehiculos);
 .ge-control::placeholder {
     color: color-mix(in srgb, var(--ge-muted) 65%, #CBD5E1);
     font-weight: 650;
+}
+
+.ge-file-control {
+    padding: 9px 13px;
+    cursor: pointer;
+}
+
+.ge-file-control::file-selector-button {
+    margin-right: 12px;
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ge-brand) 88%, #FFFFFF);
+    color: #FFFFFF;
+    font-size: .76rem;
+    font-weight: 850;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.ge-field-hint {
+    margin: 7px 0 0;
+    color: var(--ge-muted);
+    font-size: .76rem;
+    font-weight: 650;
+    line-height: 1.45;
 }
 
 textarea.ge-control {
@@ -909,7 +1019,7 @@ textarea.ge-control {
             </div>
         </header>
 
-        <form method="POST" action="<?= url('huespedes/' . $huesped_id . '/update') ?>" class="ge-form" id="guestEditForm">
+        <form method="POST" action="<?= url('huespedes/' . $huesped_id . '/update') ?>" class="ge-form" id="guestEditForm" enctype="multipart/form-data">
             <?= csrf_field() ?>
 
             <div class="ge-layout">
@@ -942,7 +1052,7 @@ textarea.ge-control {
                                 </div>
 
                                 <div class="ge-field">
-                                    <label class="ge-label" for="telefono">Tel&eacute;fono</label>
+                                    <label class="ge-label" for="telefono">Telefono celular<?= $geRequiredMark('telefono') ?></label>
                                     <div class="ge-input-wrap">
                                         <i class="fas fa-phone"></i>
                                         <input type="tel"
@@ -951,27 +1061,34 @@ textarea.ge-control {
                                                value="<?= guest_edit_safe($huesped['telefono'] ?? '', '') ?>"
                                                autocomplete="tel"
                                                placeholder="10 d&iacute;gitos"
-                                               class="ge-control has-icon">
+                                               class="ge-control has-icon"
+                                               <?= $geGuestFieldRequired('telefono') ? 'required' : '' ?>>
                                     </div>
                                 </div>
 
-                                <div class="ge-field">
-                                    <label class="ge-label" for="email">Email</label>
-                                    <div class="ge-input-wrap">
-                                        <i class="fas fa-envelope"></i>
-                                        <input type="email"
-                                               id="email"
-                                               name="email"
-                                               value="<?= guest_edit_safe($huesped['email'] ?? '', '') ?>"
-                                               autocomplete="email"
-                                               placeholder="correo@ejemplo.com"
-                                               class="ge-control has-icon">
+                                <?php if ($geGuestFieldVisible('email')): ?>
+                                    <div class="ge-field">
+                                        <label class="ge-label" for="email">Email<?= $geRequiredMark('email') ?></label>
+                                        <div class="ge-input-wrap">
+                                            <i class="fas fa-envelope"></i>
+                                            <input type="email"
+                                                   id="email"
+                                                   name="email"
+                                                   value="<?= guest_edit_safe($huesped['email'] ?? '', '') ?>"
+                                                   autocomplete="email"
+                                                   placeholder="correo@ejemplo.com"
+                                                   class="ge-control has-icon"
+                                                   <?= $geGuestFieldRequired('email') ? 'required' : '' ?>>
+                                        </div>
                                     </div>
-                                </div>
+                                <?php else: ?>
+                                    <?= $geRenderHiddenColumn('email', $huesped['email'] ?? '') ?>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </section>
 
+                    <?php if ($geGuestFieldVisible('procedencia_estado') || $geGuestFieldVisible('procedencia_ciudad')): ?>
                     <section class="ge-panel">
                         <div class="ge-panel-head">
                             <div class="ge-panel-title">
@@ -985,33 +1102,75 @@ textarea.ge-control {
 
                         <div class="ge-panel-body">
                             <div class="ge-grid">
-                                <div class="ge-field">
-                                    <label class="ge-label" for="procedencia_estado">Estado</label>
-                                    <select id="procedencia_estado"
-                                            name="procedencia_estado"
-                                            class="ge-control">
-                                        <option value="">Seleccione un estado</option>
-                                        <?php foreach ($estados as $estado): ?>
-                                            <option value="<?= guest_edit_safe($estado, '') ?>" <?= $procedencia_estado === $estado ? 'selected' : '' ?>>
-                                                <?= guest_edit_safe($estado) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
+                                <?php if ($geGuestFieldVisible('procedencia_estado')): ?>
+                                    <div class="ge-field">
+                                        <label class="ge-label" for="procedencia_estado">Estado<?= $geRequiredMark('procedencia_estado') ?></label>
+                                        <select id="procedencia_estado"
+                                                name="procedencia_estado"
+                                                class="ge-control"
+                                                <?= $geGuestFieldRequired('procedencia_estado') ? 'required' : '' ?>>
+                                            <option value="">Seleccione un estado</option>
+                                            <?php foreach ($estados as $estado): ?>
+                                                <option value="<?= guest_edit_safe($estado, '') ?>" <?= $procedencia_estado === $estado ? 'selected' : '' ?>>
+                                                    <?= guest_edit_safe($estado) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                <?php else: ?>
+                                    <?= $geRenderHiddenColumn('procedencia_estado', $huesped['procedencia_estado'] ?? '') ?>
+                                <?php endif; ?>
 
-                                <div class="ge-field">
-                                    <label class="ge-label" for="procedencia_ciudad">Ciudad</label>
-                                    <input type="text"
-                                           id="procedencia_ciudad"
-                                           name="procedencia_ciudad"
-                                           value="<?= guest_edit_safe($huesped['procedencia_ciudad'] ?? '', '') ?>"
-                                           placeholder="Ciudad de origen"
-                                           class="ge-control">
-                                </div>
+                                <?php if ($geGuestFieldVisible('procedencia_ciudad')): ?>
+                                    <div class="ge-field">
+                                        <label class="ge-label" for="procedencia_ciudad">Ciudad<?= $geRequiredMark('procedencia_ciudad') ?></label>
+                                        <input type="text"
+                                               id="procedencia_ciudad"
+                                               name="procedencia_ciudad"
+                                               value="<?= guest_edit_safe($huesped['procedencia_ciudad'] ?? '', '') ?>"
+                                               placeholder="Ciudad de origen"
+                                               class="ge-control"
+                                               <?= $geGuestFieldRequired('procedencia_ciudad') ? 'required' : '' ?>>
+                                    </div>
+                                <?php else: ?>
+                                    <?= $geRenderHiddenColumn('procedencia_ciudad', $huesped['procedencia_ciudad'] ?? '') ?>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </section>
+                    <?php else: ?>
+                        <?= $geRenderHiddenColumn('procedencia_estado', $huesped['procedencia_estado'] ?? '') ?>
+                        <?= $geRenderHiddenColumn('procedencia_ciudad', $huesped['procedencia_ciudad'] ?? '') ?>
+                    <?php endif; ?>
 
+                    <?php
+                    $geExtraGuestFields = array_filter($geGuestVisibleFields('guest'), function ($definition) {
+                        return in_array(($definition['storage'] ?? 'column'), ['extra', 'document'], true);
+                    });
+                    ?>
+                    <?php if (!empty($geExtraGuestFields)): ?>
+                        <section class="ge-panel">
+                            <div class="ge-panel-head">
+                                <div class="ge-panel-title">
+                                    <span class="ge-icon-box"><i class="fas fa-id-card"></i></span>
+                                    <div>
+                                        <h2>Datos adicionales</h2>
+                                        <p>Campos personalizados definidos por la configuracion del hotel.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ge-panel-body">
+                                <div class="ge-grid">
+                                    <?php foreach ($geExtraGuestFields as $fieldKey => $fieldDefinition): ?>
+                                        <?= $geRenderGuestExtraField($fieldKey, $fieldDefinition) ?>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </section>
+                    <?php endif; ?>
+
+                    <?php if ($geGuestFieldVisible('notas')): ?>
                     <section class="ge-panel">
                         <div class="ge-panel-head">
                             <div class="ge-panel-title">
@@ -1085,14 +1244,18 @@ textarea.ge-control {
                         </div>
 
                         <div class="ge-panel-body">
-                            <label class="ge-label" for="notas">Notas</label>
+                            <label class="ge-label" for="notas">Notas<?= $geRequiredMark('notas') ?></label>
                             <textarea id="notas"
                                       name="notas"
                                       rows="4"
                                       placeholder="Cualquier informaci&oacute;n adicional sobre el hu&eacute;sped..."
-                                      class="ge-control"><?= guest_edit_safe($notas_huesped, '') ?></textarea>
+                                      class="ge-control"
+                                      <?= $geGuestFieldRequired('notas') ? 'required' : '' ?>><?= guest_edit_safe($notas_huesped, '') ?></textarea>
                         </div>
                     </section>
+                    <?php else: ?>
+                        <?= $geRenderHiddenColumn('notas', $huesped['notas'] ?? '') ?>
+                    <?php endif; ?>
 
                     <div class="ge-actions">
                         <div class="ge-actions-copy">
@@ -1146,9 +1309,9 @@ textarea.ge-control {
                     <section class="ge-side-card">
                         <h3>Antes de guardar</h3>
                         <div class="ge-tips">
-                            <span><i class="fas fa-check-circle"></i> El nombre completo es el &uacute;nico dato obligatorio.</span>
-                            <span><i class="fas fa-check-circle"></i> Tel&eacute;fono y correo ayudan a localizar reservaciones m&aacute;s r&aacute;pido.</span>
-                            <span><i class="fas fa-check-circle"></i> La procedencia alimenta reportes sin cambiar reservas existentes.</span>
+                            <span><i class="fas fa-check-circle"></i> Nombre completo y telefono celular son datos base.</span>
+                            <span><i class="fas fa-check-circle"></i> Los campos visibles dependen de la configuracion del hotel.</span>
+                            <span><i class="fas fa-check-circle"></i> Los datos ocultos existentes se conservan.</span>
                         </div>
                     </section>
                 </aside>

@@ -94,6 +94,7 @@ $estadoReservacionLabels = [
         </div>
         <div class="op-daily-actions">
             <a class="op-daily-btn" href="<?= url('dashboard') ?>"><i class="fas fa-arrow-left"></i> Dashboard</a>
+            <a class="op-daily-btn" href="<?= url('operacion/conciliacion-financiera') ?>"><i class="fas fa-shield-alt"></i> Conciliacion financiera</a>
             <a class="op-daily-btn" href="<?= url('tareas/reporte') ?>"><i class="fas fa-tasks"></i> Reporte TLM</a>
         </div>
     </div>

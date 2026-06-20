@@ -3,6 +3,8 @@
 require_once __DIR__ . '/../../core/Controller.php';
 require_once __DIR__ . '/../../core/View.php';
 require_once __DIR__ . '/../models/Notificacion.php';
+require_once __DIR__ . '/../services/NotificacionService.php';
+require_once __DIR__ . '/../services/NotificacionReglasService.php';
 
 class NotificacionController extends Controller {
     private $notificacionModel;
@@ -41,6 +43,10 @@ class NotificacionController extends Controller {
         ];
 
         $tablaDisponible = $this->notificacionModel->tablaDisponible();
+        if ($tablaDisponible) {
+            NotificacionReglasService::evaluarDashboard($hotelId);
+            NotificacionService::sincronizarBandeja($hotelId);
+        }
         $notificaciones = $tablaDisponible
             ? $this->notificacionModel->listarPorHotel($hotelId, $filtros, 120)
             : [];

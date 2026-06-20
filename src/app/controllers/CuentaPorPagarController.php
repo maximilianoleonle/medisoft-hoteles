@@ -6,17 +6,20 @@ require_once __DIR__ . '/../helpers/hotel_config.php';
 require_once __DIR__ . '/../models/CuentaPorPagar.php';
 require_once __DIR__ . '/../models/Documento.php';
 require_once __DIR__ . '/../services/CuentaPorPagarPagoService.php';
+require_once __DIR__ . '/../services/CuentaPorPagarReversionPagoService.php';
 
 class CuentaPorPagarController extends Controller
 {
     private $cuentaModel;
     private $pagoService;
+    private $reversionPagoService;
 
     public function __construct($route_params = [])
     {
         parent::__construct($route_params);
         $this->cuentaModel = new CuentaPorPagar();
         $this->pagoService = new CuentaPorPagarPagoService();
+        $this->reversionPagoService = new CuentaPorPagarReversionPagoService();
     }
 
     protected function before()
@@ -102,13 +105,44 @@ class CuentaPorPagarController extends Controller
             $pagoCaja['motivo_bloqueo'] = $e->getMessage();
         }
 
+        $movimientos = $this->cuentaModel->movimientosPorCuenta($id, $hotelId, 100);
+        $reversionesPago = [];
+        $reversionTokens = [];
+        $movimientosPago = [];
+        foreach ($movimientos as $movimiento) {
+            if ((string)($movimiento['tipo_movimiento'] ?? '') !== 'PAGO_REFERENCIAL') {
+                continue;
+            }
+
+            $movimientoId = (int)($movimiento['id'] ?? 0);
+            if ($movimientoId <= 0) {
+                continue;
+            }
+
+            $movimientosPago[] = $movimiento;
+            try {
+                $reversionesPago[$movimientoId] = $this->reversionPagoService->evaluarReversion($hotelId, $id, $movimientoId);
+                if (!empty($reversionesPago[$movimientoId]['elegible'])) {
+                    $reversionTokens[$movimientoId] = $this->generarReversionPagoToken($id, $movimientoId);
+                }
+            } catch (Throwable $e) {
+                $reversionesPago[$movimientoId] = [
+                    'elegible' => false,
+                    'motivo_bloqueo' => $e->getMessage(),
+                ];
+            }
+        }
+
         View::renderTemplate('cuentas_por_pagar/ver', [
             'title' => 'Cuenta por pagar #' . $id . ' - ' . current_hotel_display_name(),
             'cuenta' => $cuenta,
-            'movimientos' => $this->cuentaModel->movimientosPorCuenta($id, $hotelId, 100),
+            'movimientos' => $movimientos,
             'movimientosDisponibles' => $this->cuentaModel->movimientosDisponibles(),
             'pagoCaja' => $pagoCaja,
             'pagoToken' => $pagoToken,
+            'reversionesPago' => $reversionesPago,
+            'reversionTokens' => $reversionTokens,
+            'movimientosPago' => $movimientosPago,
             'documentosEntidad' => $documentosEntidad,
             'documentosEntidadContexto' => [
                 'tipo' => 'cuenta_por_pagar',
@@ -233,6 +267,48 @@ class CuentaPorPagarController extends Controller
         $this->redirect($cuentaId > 0 ? 'cuentas-por-pagar/' . $cuentaId : 'cuentas-por-pagar');
     }
 
+    public function revertirPagoCajaAction(): void
+    {
+        if (!$this->isPost()) {
+            $this->redirect('cuentas-por-pagar');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('caja');
+        }
+
+        $cuentaId = (int)($this->route_params['id'] ?? 0);
+        $movimientoId = (int)($this->route_params['movimientoid'] ?? $this->route_params['movimientoId'] ?? 0);
+        try {
+            if (!$this->consumirReversionPagoToken($cuentaId, $movimientoId, (string)$this->getPost('reversion_token', ''))) {
+                throw new Exception('Token de reversion invalido o ya utilizado; recarga la cuenta antes de reintentar');
+            }
+
+            $resultado = $this->reversionPagoService->revertirPago(
+                $this->hotelIdActual(),
+                $cuentaId,
+                $movimientoId,
+                [
+                    'motivo' => $this->getPost('motivo'),
+                ],
+                $this->usuarioIdActual()
+            );
+
+            set_mensaje(
+                'Pago proveedor revertido. Ingreso Caja #' . (int)$resultado['movimiento_caja_reversion_id']
+                . ', saldo nuevo ' . number_format((float)$resultado['saldo_posterior'], 2) . '.',
+                'success'
+            );
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo revertir el pago proveedor: ' . $e->getMessage(), 'error');
+        }
+
+        $this->redirect($cuentaId > 0 ? 'cuentas-por-pagar/' . $cuentaId : 'cuentas-por-pagar');
+    }
+
     private function hotelIdActual(): int
     {
         return function_exists('obtenerHotelIdActualCompat')
@@ -266,6 +342,40 @@ class CuentaPorPagarController extends Controller
         $token = trim($token);
         $registro = $_SESSION['cxp_pago_tokens'][$cuentaId] ?? null;
         unset($_SESSION['cxp_pago_tokens'][$cuentaId]);
+
+        if (!is_array($registro) || $token === '') {
+            return false;
+        }
+
+        if ((int)($registro['created_at'] ?? 0) < time() - 3600) {
+            return false;
+        }
+
+        return hash_equals((string)($registro['token'] ?? ''), $token);
+    }
+
+    private function generarReversionPagoToken(int $cuentaId, int $movimientoId): string
+    {
+        if (!isset($_SESSION['cxp_reversion_pago_tokens']) || !is_array($_SESSION['cxp_reversion_pago_tokens'])) {
+            $_SESSION['cxp_reversion_pago_tokens'] = [];
+        }
+
+        $key = $cuentaId . ':' . $movimientoId;
+        $token = bin2hex(random_bytes(16));
+        $_SESSION['cxp_reversion_pago_tokens'][$key] = [
+            'token' => $token,
+            'created_at' => time(),
+        ];
+
+        return $token;
+    }
+
+    private function consumirReversionPagoToken(int $cuentaId, int $movimientoId, string $token): bool
+    {
+        $token = trim($token);
+        $key = $cuentaId . ':' . $movimientoId;
+        $registro = $_SESSION['cxp_reversion_pago_tokens'][$key] ?? null;
+        unset($_SESSION['cxp_reversion_pago_tokens'][$key]);
 
         if (!is_array($registro) || $token === '') {
             return false;

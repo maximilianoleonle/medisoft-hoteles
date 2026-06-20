@@ -218,3 +218,24 @@ Esta subfase:
 
 El pago real sigue bloqueado hasta backup verificado, prueba local controlada y
 autorizacion explicita de escrituras financieras.
+
+## Actualizacion Fase 3D-D-0
+
+Estado: `CONTRATO_3D_D_0_REVERSION_PAGO_PROVEEDOR_CAJA_COMPLETADO`.
+
+Se documento el contrato seguro de reversion/anulacion de pago proveedor en
+`docs/fase_3D_D_0_contrato_reversion_pago_proveedor_caja.md`.
+
+Esta subfase:
+
+- no implementa codigo;
+- no crea rutas;
+- no crea formularios POST;
+- no registra reversiones;
+- no crea movimientos CxP;
+- no crea movimientos de Caja;
+- no cambia saldos;
+- no toca `/api/sync`.
+
+La implementacion real de reversion sigue bloqueada hasta backup, prueba rollback,
+preflight ampliado y autorizacion explicita de escrituras financieras.

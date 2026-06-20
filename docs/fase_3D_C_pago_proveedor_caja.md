@@ -100,33 +100,43 @@ El usuario confirmo que todas las pruebas manuales del flujo pasaron.
 1. Abrir `/cuentas-por-pagar/1` o una CxP elegible del hotel actual.
 2. Confirmar que el formulario aparece solo si hay corte abierto.
 3. Registrar pago parcial pequeño con referencia unica.
-4. Confirmar que baja el saldo y el estado pasa a `parcial`.
+4. Confirmar que baja el saldo y el estado pasa a `parcial` o `pagada` segun el monto.
 5. Confirmar que aparece movimiento referencial en el detalle.
 6. Confirmar que Caja muestra un gasto con categoria `Pago proveedor`.
 7. Reintentar el mismo POST desde el navegador y confirmar bloqueo por token/referencia.
 8. Pagar saldo restante en una CxP de prueba y confirmar estado `pagada`.
 9. Confirmar que no se toca `/api/sync`.
 
-Evidencia post-QA del pago real controlado:
+Evidencia post-QA de pagos reales controlados:
 
 - Hotel: `Maximiliano Leon`.
 - CxP: `#1`.
 - Proveedor: `Juan Pedro`.
 - Pago parcial registrado: `10.00` en efectivo.
-- Saldo CxP: `1000.00 -> 990.00`.
-- Estado CxP: `pendiente -> parcial`.
-- Movimiento CxP creado: `cuentas_por_pagar_movimientos.id = 4`.
-- Movimiento de Caja creado: `movimientos_caja.id = 1478`.
-- Categoria Caja: `Pago proveedor`.
-- Corte de Caja: `corte_id = 237`.
-- Referencia Caja: `CXP-1-MOV-4`.
+  - Saldo CxP: `1000.00 -> 990.00`.
+  - Estado CxP: `pendiente -> parcial`.
+  - Movimiento CxP creado: `cuentas_por_pagar_movimientos.id = 4`.
+  - Movimiento de Caja creado: `movimientos_caja.id = 1478`.
+  - Categoria Caja: `Pago proveedor`.
+  - Corte de Caja: `corte_id = 237`.
+  - Referencia Caja: `CXP-1-MOV-4`.
+- Pago total restante registrado: `990.00` en efectivo.
+  - Saldo CxP: `990.00 -> 0.00`.
+  - Estado CxP: `parcial -> pagada`.
+  - Movimiento CxP creado: `cuentas_por_pagar_movimientos.id = 5`.
+  - Movimiento de Caja creado: `movimientos_caja.id = 1479`.
+  - Categoria Caja: `Pago proveedor`.
+  - Corte de Caja: `corte_id = 237`.
+  - Referencia Caja: `1212331312`.
 - Preflight post-QA: `preflight_pagos_proveedores_caja.php` con `OK: 22`,
   `WARNING: 0`, `ERROR: 0`.
 - `/api/sync` no fue tocado.
 
 ## Pendiente futuro
 
-- Probar pago total sobre una CxP dedicada cuando se cree un escenario de prueba
-  limpio para validar estado `pagada`.
-- Disenar un flujo formal de anulacion/reversion antes de escalar pagos reales en
-  operacion diaria.
+- El contrato de reversion quedo documentado en
+  `docs/fase_3D_D_0_contrato_reversion_pago_proveedor_caja.md`.
+- La implementacion tecnica de reversion quedo en
+  `docs/fase_3D_D_A_reversion_pago_proveedor_caja.md`; la QA manual fue validada.
+- Estado actual despues de 3D-D-A: CxP `#1` quedo `parcial`, saldo `10.00`,
+  porque se revirtio el pago `#4` mediante `CANCELACION #9` e ingreso Caja `#1494`.

@@ -432,13 +432,17 @@ class Documento extends Model
         $movedFile = $storage['absolute_path'];
         @chmod($movedFile, 0640);
         $pdo = $this->db->getConnection();
+        $usarTransaccionExterna = !empty($datos['_usar_transaccion_externa']);
+        $controlaTransaccion = !$pdo->inTransaction();
 
-        if ($pdo->inTransaction()) {
+        if (!$controlaTransaccion && !$usarTransaccionExterna) {
             $this->eliminarArchivoNuevo($movedFile);
             throw new Exception('La carga documental debe controlar su propia transaccion');
         }
 
-        $pdo->beginTransaction();
+        if ($controlaTransaccion) {
+            $pdo->beginTransaction();
+        }
 
         try {
             $stmt = $pdo->prepare(
@@ -485,16 +489,19 @@ class Documento extends Model
 
             $this->auditarCarga($hotelId, $documentoId, $usuarioId, $validado, $entidad);
 
-            $pdo->commit();
+            if ($controlaTransaccion) {
+                $pdo->commit();
+            }
 
             return [
                 'documento_id' => $documentoId,
                 'hotel_id' => $hotelId,
                 'storage_path' => $storage['storage_path'],
+                '_absolute_path' => $movedFile,
                 'entidad' => $entidad,
             ];
         } catch (Throwable $e) {
-            if ($pdo->inTransaction()) {
+            if ($controlaTransaccion && $pdo->inTransaction()) {
                 $pdo->rollBack();
             }
 

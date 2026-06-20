@@ -11,6 +11,7 @@ require_once __DIR__ . '/../models/Habitacion.php';
 require_once __DIR__ . '/../models/Huesped.php';
 require_once __DIR__ . '/../models/Documento.php';
 require_once __DIR__ . '/../models/Caja.php';
+require_once __DIR__ . '/../helpers/hotel_config.php';
 
 class ReservacionController extends Controller {
     
@@ -142,6 +143,143 @@ class ReservacionController extends Controller {
         return in_array($extension, ['png', 'jpg', 'jpeg'], true) ? $realPath : null;
     }
 
+    private function cotizacionPdfHoraConfig($value, string $fallback): string {
+        $value = trim((string) $value);
+        if (preg_match('/^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/', $value, $matches)) {
+            return $matches[1] . ':' . $matches[2];
+        }
+
+        return $fallback;
+    }
+
+    private function cotizacionPdfHoraTexto(string $hora): string {
+        $parts = explode(':', $hora);
+        $hour = isset($parts[0]) ? (int) $parts[0] : 0;
+        $minute = isset($parts[1]) ? (int) $parts[1] : 0;
+        $period = $hour >= 12 ? 'PM' : 'AM';
+        $displayHour = $hour % 12;
+        if ($displayHour === 0) {
+            $displayHour = 12;
+        }
+
+        return sprintf('%s hrs (%d:%02d %s)', $hora, $displayHour, $minute, $period);
+    }
+
+    private function cotizacionPdfHotelConfig(?int $hotelId = null): array {
+        $checkinHora = $this->cotizacionPdfHoraConfig(
+            function_exists('hotel_config_get') ? hotel_config_get('operacion.checkin_hora', '15:00', $hotelId) : '15:00',
+            '15:00'
+        );
+        $checkoutHora = $this->cotizacionPdfHoraConfig(
+            function_exists('hotel_config_get') ? hotel_config_get('operacion.checkout_hora', '12:00', $hotelId) : '12:00',
+            '12:00'
+        );
+        $terminos = function_exists('hotel_config_get')
+            ? trim((string) hotel_config_get('reservaciones.terminos_cotizacion', '', $hotelId))
+            : '';
+
+        return [
+            'checkin_hora' => $checkinHora,
+            'checkout_hora' => $checkoutHora,
+            'checkin_texto' => $this->cotizacionPdfHoraTexto($checkinHora),
+            'checkout_texto' => $this->cotizacionPdfHoraTexto($checkoutHora),
+            'terminos' => $terminos,
+        ];
+    }
+
+    private function cotizacionPdfTerminosDefault(string $fechaEntradaTexto, string $checkinTexto, string $checkoutTexto): array {
+        return [
+            'El alojamiento es por la noche del ' . $fechaEntradaTexto . ' con salida conforme al horario de check-out configurado.',
+            'El numero de personas se encuentra senalado en la tabla. En caso de ingresar mas personas se cobrara un excedente.',
+            'CHECK IN: La hora de ingreso a las habitaciones es a las ' . $checkinTexto . '.',
+            'CHECK OUT: La hora para desocupar las habitaciones y salida del hotel es a las ' . $checkoutTexto . '.',
+            'Esta cotizacion tiene una vigencia de 7 dias a partir de la fecha de elaboracion.',
+            'Los precios pueden variar segun la temporada y disponibilidad al momento de confirmar.',
+        ];
+    }
+
+    private function cotizacionPdfTerminos(array $config, string $fechaEntradaTexto, string $hotelNombre): array {
+        $texto = trim((string) ($config['terminos'] ?? ''));
+        if ($texto === '') {
+            return $this->cotizacionPdfTerminosDefault(
+                $fechaEntradaTexto,
+                $config['checkin_texto'] ?? '15:00 hrs (3:00 PM)',
+                $config['checkout_texto'] ?? '12:00 hrs (12:00 PM)'
+            );
+        }
+
+        $replacements = [
+            '{hotel}' => $hotelNombre,
+            '{fecha_entrada}' => $fechaEntradaTexto,
+            '{checkin}' => $config['checkin_texto'] ?? '',
+            '{checkout}' => $config['checkout_texto'] ?? '',
+        ];
+        $texto = strtr($texto, $replacements);
+        $lineas = preg_split('/\r\n|\r|\n/', $texto);
+        $terminos = [];
+
+        foreach ($lineas as $linea) {
+            $linea = trim((string) $linea);
+            $linea = preg_replace('/^(?:[-*]|\d+[.)])\s*/', '', $linea);
+            if ($linea !== '') {
+                $terminos[] = $linea;
+            }
+        }
+
+        return $terminos ?: $this->cotizacionPdfTerminosDefault(
+            $fechaEntradaTexto,
+            $config['checkin_texto'] ?? '15:00 hrs (3:00 PM)',
+            $config['checkout_texto'] ?? '12:00 hrs (12:00 PM)'
+        );
+    }
+
+    private function cotizacionPdfRenderTerminos($pdf, array $terminos, callable $u, int $margin, int $contentW, array $cream, array $creamMid, array $olivo, array $negro): void {
+        $terminos = array_values(array_filter(array_map('trim', $terminos), static function ($termino) {
+            return $termino !== '';
+        }));
+
+        if (empty($terminos)) {
+            return;
+        }
+
+        $textW = $contentW - 23;
+        $lineHeights = [];
+        foreach ($terminos as $termino) {
+            $safeText = (string) $u($termino);
+            $estimatedLines = max(1, (int) ceil($pdf->GetStringWidth($safeText) / max(1, $textW)));
+            $lineHeights[] = max(5.2, $estimatedLines * 4.2);
+        }
+
+        $termH = 7 + array_sum($lineHeights) + count($terminos) + 4;
+        if ($pdf->GetY() + $termH > 258) {
+            $pdf->AddPage();
+        }
+
+        $termBoxY = $pdf->GetY();
+        $pdf->SetFillColor($cream[0], $cream[1], $cream[2]);
+        $pdf->Rect($margin, $termBoxY, $contentW, $termH, 'F');
+        $pdf->SetDrawColor($creamMid[0], $creamMid[1], $creamMid[2]);
+        $pdf->Rect($margin, $termBoxY, $contentW, $termH, 'D');
+        $pdf->SetFillColor($olivo[0], $olivo[1], $olivo[2]);
+        $pdf->Rect($margin, $termBoxY, 2.5, $termH, 'F');
+
+        $currentY = $termBoxY + 3.5;
+        foreach ($terminos as $i => $termino) {
+            $pdf->SetXY($margin + 5, $currentY);
+            $pdf->SetFont('Helvetica', 'B', 7);
+            $pdf->SetTextColor($olivo[0], $olivo[1], $olivo[2]);
+            $pdf->Cell(7, 4.4, ($i + 1) . '.', 0, 0, 'R');
+
+            $pdf->SetXY($margin + 15, $currentY);
+            $pdf->SetFont('Helvetica', '', 7.5);
+            $pdf->SetTextColor($negro[0], $negro[1], $negro[2]);
+            $pdf->MultiCell($textW, 4.2, (string) $u($termino), 0, 'L');
+            $currentY = max($pdf->GetY(), $currentY + $lineHeights[$i]) + 1;
+        }
+
+        $pdf->SetY($termBoxY + $termH + 2);
+    }
+
     public function agregarNotaAction() {
     if (!$this->isPost()) {
         header('Content-Type: application/json');
@@ -211,7 +349,7 @@ class ReservacionController extends Controller {
             }
  
             // Obtener huésped
-            $huesped = $this->huespedModel->find($reservacion['huesped_id']);
+            $huesped = $this->huespedModel->findForHotel($reservacion['huesped_id'], $hotel_id);
             if (!$huesped) {
                 die('Huésped no encontrado.');
             }
@@ -220,12 +358,15 @@ class ReservacionController extends Controller {
             $vehiculos = [];
             try {
                 $stmtV = $this->db->prepare("
-                    SELECT marca, modelo, placas, color, estacionamiento 
-                    FROM huesped_vehiculos 
-                    WHERE huesped_id = :hid AND activo = 1
-                    ORDER BY id ASC
+                    SELECT v.marca, v.modelo, v.placas, v.color, v.estacionamiento
+                    FROM huesped_vehiculos v
+                    INNER JOIN huespedes h ON v.huesped_id = h.id
+                    WHERE v.huesped_id = :hid
+                      AND h.hotel_id = :hotel_id
+                      AND v.activo = 1
+                    ORDER BY v.id ASC
                 ");
-                $stmtV->execute([':hid' => $reservacion['huesped_id']]);
+                $stmtV->execute([':hid' => $reservacion['huesped_id'], ':hotel_id' => $hotel_id]);
                 $vehiculos = $stmtV->fetchAll(PDO::FETCH_ASSOC);
             } catch (Exception $e) {
                 error_log('Error obteniendo vehículos: ' . $e->getMessage());
@@ -291,6 +432,7 @@ class ReservacionController extends Controller {
                 $d = new DateTime($fecha);
                 return $d->format('d') . ' de ' . $meses[$d->format('n')-1] . ' de ' . $d->format('Y');
             };
+            $cotizacionConfig = $this->cotizacionPdfHotelConfig((int) $hotel_id);
  
             // ═══════════════════════════════════════════════════════
             // HEADER
@@ -442,9 +584,9 @@ class ReservacionController extends Controller {
  
             $pdf->SetFillColor($cream[0], $cream[1], $cream[2]);
             $boxY2 = $pdf->GetY();
-            $pdf->Rect($margin, $boxY2, $contentW, 14, 'F');
+            $pdf->Rect($margin, $boxY2, $contentW, 18, 'F');
             $pdf->SetDrawColor($creamMid[0], $creamMid[1], $creamMid[2]);
-            $pdf->Rect($margin, $boxY2, $contentW, 14, 'D');
+            $pdf->Rect($margin, $boxY2, $contentW, 18, 'D');
  
             $colW = $contentW / 3;
             $pdf->SetXY($margin + 4, $boxY2 + 2);
@@ -461,11 +603,18 @@ class ReservacionController extends Controller {
             $pdf->Cell($colW, 5, $u($formatFecha($reservacion['fecha_salida'])), 0, 0, 'L');
             $pdf->SetTextColor($olivo[0], $olivo[1], $olivo[2]);
             $pdf->Cell($colW - 8, 5, $noches . ' noche' . ($noches > 1 ? 's' : ''), 0, 1, 'L');
+
+            $pdf->SetX($margin + 4);
+            $pdf->SetFont('Helvetica', '', 7.5);
+            $pdf->SetTextColor($gris[0], $gris[1], $gris[2]);
+            $pdf->Cell($colW, 4, $u('Desde ' . $cotizacionConfig['checkin_texto']), 0, 0, 'L');
+            $pdf->Cell($colW, 4, $u('Hasta ' . $cotizacionConfig['checkout_texto']), 0, 0, 'L');
+            $pdf->Cell($colW - 8, 4, '', 0, 1, 'L');
  
             // ═══════════════════════════════════════════════════════
             // TABLA DE HABITACIONES
             // ═══════════════════════════════════════════════════════
-            $y = $boxY2 + 22;
+            $y = $boxY2 + 26;
             $pdf->SetY($y);
             $pdf->SetFont('Helvetica', 'B', 10);
             $pdf->SetTextColor($olivoOsc[0], $olivoOsc[1], $olivoOsc[2]);
@@ -476,12 +625,11 @@ class ReservacionController extends Controller {
             $pdf->Line($margin, $pdf->GetY(), $margin + 50, $pdf->GetY());
             $pdf->Ln(3);
  
-            // Columnas: HAB | PRECIO/NOCHE | NOCHES | TOTAL | OBSERVACIONES
-            $colHab    = 20;
-            $colPrecio = 28;
-            $colNoches = 18;
-            $colTotal  = 28;
-            $colObs    = $contentW - $colHab - $colPrecio - $colNoches - $colTotal;
+            // Columnas: HAB | PRECIO/NOCHE | NOCHES | TOTAL
+            $colHab    = 26;
+            $colPrecio = 42;
+            $colNoches = 28;
+            $colTotal  = $contentW - $colHab - $colPrecio - $colNoches;
  
             // Header tabla
             $pdf->SetFillColor($olivoOsc[0], $olivoOsc[1], $olivoOsc[2]);
@@ -491,8 +639,7 @@ class ReservacionController extends Controller {
             $pdf->Cell($colHab, 8, 'HAB.', 0, 0, 'C', true);
             $pdf->Cell($colPrecio, 8, 'PRECIO/NOCHE', 0, 0, 'C', true);
             $pdf->Cell($colNoches, 8, 'NOCHES', 0, 0, 'C', true);
-            $pdf->Cell($colTotal, 8, 'TOTAL', 0, 0, 'C', true);
-            $pdf->Cell($colObs, 8, 'OBSERVACIONES', 0, 1, 'C', true);
+            $pdf->Cell($colTotal, 8, 'TOTAL', 0, 1, 'C', true);
  
             // ── Cargar modelo de tarifas dinámicas ──────────────
             if (!class_exists('IncrementoTarifa')) {
@@ -554,20 +701,14 @@ class ReservacionController extends Controller {
                     $pdf->Cell($colPrecio, 7, '$' . number_format($precioPorNoche, 0, '.', ','), 0, 0, 'C', true);
                     $pdf->Cell($colNoches, 7, $noches, 0, 0, 'C', true);
                     $pdf->SetFont('Helvetica', 'B', 8);
-                    $pdf->Cell($colTotal, 7, $u('CORTESÍA'), 0, 0, 'C', true);
+                    $pdf->Cell($colTotal, 7, $u('CORTESÍA'), 0, 1, 'C', true);
                 } else {
                     $pdf->Cell($colPrecio, 7, '$' . number_format($precioPorNoche, 0, '.', ','), 0, 0, 'C', true);
                     $pdf->Cell($colNoches, 7, $noches, 0, 0, 'C', true);
                     $pdf->SetFont('Helvetica', 'B', 8);
                     $pdf->SetTextColor($olivo[0], $olivo[1], $olivo[2]);
-                    $pdf->Cell($colTotal, 7, '$' . number_format($precioTotalHab, 0, '.', ','), 0, 0, 'C', true);
+                    $pdf->Cell($colTotal, 7, '$' . number_format($precioTotalHab, 0, '.', ','), 0, 1, 'C', true);
                 }
- 
-                // Observaciones
-                $pdf->SetFont('Helvetica', '', 6.5);
-                $pdf->SetTextColor($gris[0], $gris[1], $gris[2]);
-                $obs = $hab['observaciones'] ?? '';
-                $pdf->Cell($colObs, 7, $u($obs), 0, 1, 'L', true);
  
                 $row++;
             }
@@ -678,34 +819,8 @@ class ReservacionController extends Controller {
             $pdf->Ln(3);
  
             $fechaEntradaTexto = $formatFecha($reservacion['fecha_entrada']);
-            $terminos = [
-                'El alojamiento es por la noche del ' . $fechaEntradaTexto . ' con salida el dia siguiente a las doce del medio dia.',
-                'El numero de personas se encuentra senalado en la tabla. En caso de ingresar mas personas se cobrara un excedente.',
-                'CHECK IN: La hora de ingreso a las habitaciones es a las 15:00 hrs (3:00 PM).',
-                'CHECK OUT: La hora para desocupar las habitaciones y salida del hotel es a las 12:00 hrs (12:00 PM).',
-                'Esta cotizacion tiene una vigencia de 7 dias a partir de la fecha de elaboracion.',
-                'Los precios pueden variar segun la temporada y disponibilidad al momento de confirmar.'
-            ];
- 
-            $termH = 6 + (count($terminos) * 6) + 4;
-            $termBoxY = $pdf->GetY();
-            $pdf->SetFillColor($cream[0], $cream[1], $cream[2]);
-            $pdf->Rect($margin, $termBoxY, $contentW, $termH, 'F');
-            $pdf->SetDrawColor($creamMid[0], $creamMid[1], $creamMid[2]);
-            $pdf->Rect($margin, $termBoxY, $contentW, $termH, 'D');
-            $pdf->SetFillColor($olivo[0], $olivo[1], $olivo[2]);
-            $pdf->Rect($margin, $termBoxY, 2.5, $termH, 'F');
- 
-            $pdf->SetXY($margin + 6, $termBoxY + 3);
-            foreach ($terminos as $i => $termino) {
-                $pdf->SetX($margin + 6);
-                $pdf->SetFont('Helvetica', 'B', 7);
-                $pdf->SetTextColor($olivo[0], $olivo[1], $olivo[2]);
-                $pdf->Cell(6, 5, ($i + 1) . '.', 0, 0, 'R');
-                $pdf->SetFont('Helvetica', '', 7.5);
-                $pdf->SetTextColor($negro[0], $negro[1], $negro[2]);
-                $pdf->Cell($contentW - 14, 5, '  ' . $u($termino), 0, 1, 'L');
-            }
+            $terminos = $this->cotizacionPdfTerminos($cotizacionConfig, $fechaEntradaTexto, $brand['hotel']);
+            $this->cotizacionPdfRenderTerminos($pdf, $terminos, $u, $margin, $contentW, $cream, $creamMid, $olivo, $negro);
  
             // ═══════════════════════════════════════════════════════
             // FOOTER
@@ -1522,8 +1637,47 @@ private function generarHTMLReservacionesPersonalizado(
     $total_habitaciones,
     $habitaciones_con_checkin,
     $habitaciones_reservadas,
-    $habitaciones_disponibles
+        $habitaciones_disponibles
 ) {
+    $branding = function_exists('current_hotel_branding') ? current_hotel_branding() : [];
+    $hotelNombre = function_exists('hotel_branding_public_name')
+        ? hotel_branding_public_name($branding, current_hotel_display_name('Medisoft Hoteles'))
+        : (function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles');
+    $hotelNombreMayus = function_exists('mb_strtoupper') ? mb_strtoupper($hotelNombre, 'UTF-8') : strtoupper($hotelNombre);
+    $primary = $this->cotizacionPdfHex($branding['color_primary'] ?? null, '#1B2746');
+    $secondary = $this->cotizacionPdfHex($branding['color_secondary'] ?? null, '#0F172A');
+    $accent = $this->cotizacionPdfHex($branding['color_accent'] ?? null, '#BD9441');
+    $primarySoft = $this->cotizacionPdfMix($primary, '#FFFFFF', 0.08);
+    $accentSoft = $this->cotizacionPdfMix($accent, '#FFFFFF', 0.14);
+    $lineColor = $this->cotizacionPdfMix($primary, '#E5E7EB', 0.16);
+    $mutedText = $this->cotizacionPdfMix($secondary, '#FFFFFF', 0.62);
+    $headerText = $this->cotizacionPdfTextColor($secondary);
+    $accentText = $this->cotizacionPdfTextColor($accent);
+    $ocupadas = $habitaciones_con_checkin + $habitaciones_reservadas;
+    $porcentajeOcupacion = $total_habitaciones > 0 ? round(($ocupadas / $total_habitaciones) * 100) : 0;
+    $fechaGeneracion = date('d/m/Y H:i') . ' hrs';
+    $logoUrl = null;
+    $candidateLogo = trim((string) ($branding['logo_url'] ?? ''));
+    $defaultLogo = function_exists('hotel_branding_default_logo_path') ? hotel_branding_default_logo_path() : 'img/logo.png';
+    $candidateLogoPath = parse_url($candidateLogo, PHP_URL_PATH);
+    $candidateLogoNormalized = ltrim((string) ($candidateLogoPath ?: $candidateLogo), '/');
+    if ($candidateLogo !== '' && $candidateLogoNormalized !== $defaultLogo && function_exists('hotel_branding_asset_url')) {
+        $logoUrl = hotel_branding_asset_url($candidateLogo);
+    }
+    $brandInitials = '';
+    foreach (preg_split('/\s+/', trim($hotelNombre)) as $word) {
+        if ($word !== '') {
+            $brandInitials .= function_exists('mb_substr') ? mb_substr($word, 0, 1, 'UTF-8') : substr($word, 0, 1);
+        }
+        if (strlen($brandInitials) >= 3) {
+            break;
+        }
+    }
+    $brandInitials = $brandInitials !== '' ? (function_exists('mb_strtoupper') ? mb_strtoupper($brandInitials, 'UTF-8') : strtoupper($brandInitials)) : 'H';
+    $esc = static function($value) {
+        return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+    };
+
     ob_start();
     ?>
     <!DOCTYPE html>
@@ -1532,111 +1686,409 @@ private function generarHTMLReservacionesPersonalizado(
         <meta charset="UTF-8">
         <title>Reservaciones - <?= htmlspecialchars($fecha_bonita) ?></title>
         <style>
-            @page {
-                size: A4 landscape;
-                margin: 0.4cm 0.5cm;
+            :root {
+                --report-primary: <?= $esc($primary) ?>;
+                --report-secondary: <?= $esc($secondary) ?>;
+                --report-accent: <?= $esc($accent) ?>;
+                --report-primary-soft: <?= $esc($primarySoft) ?>;
+                --report-accent-soft: <?= $esc($accentSoft) ?>;
+                --report-line: <?= $esc($lineColor) ?>;
+                --report-muted: <?= $esc($mutedText) ?>;
+                --report-header-text: <?= $esc($headerText) ?>;
+                --report-accent-text: <?= $esc($accentText) ?>;
+                --paper: #fffefb;
+                --ink: #172033;
+                --soft-gray: #f5f3ee;
+                --free-bg: #edf8ef;
+                --free-line: #8bbd95;
+                --reserved-bg: #f3eefb;
+                --reserved-line: #a891c8;
+                --checkin-bg: #fcebea;
+                --checkin-line: #d98781;
             }
+            @page { size: A4 landscape; margin: 0.42cm 0.5cm; }
             @media print {
                 body { margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
                 .no-print { display: none !important; }
-                .page-break { page-break-before: always; }
+                .page-break { break-before: page; page-break-before: always; }
+                thead { display: table-header-group; }
             }
             * { box-sizing: border-box; }
             body {
                 font-family: Arial, Helvetica, sans-serif;
-                font-size: 8pt;
-                line-height: 1.15;
+                font-size: 7.4pt;
+                line-height: 1.18;
                 margin: 0;
-                padding: 6px;
-                background: white;
+                padding: 5px;
+                background: var(--paper);
+                color: var(--ink);
             }
-            .header {
-                background: linear-gradient(135deg, #1565C0, #1976D2);
-                color: white;
-                text-align: center;
-                padding: 6px 10px;
-                border-radius: 4px;
-                margin-bottom: 4px;
-                font-size: 11pt;
-                font-weight: bold;
+            .report-page { min-height: 188mm; }
+            .brand-header {
+                display: grid;
+                grid-template-columns: auto 1fr auto;
+                align-items: center;
+                gap: 10px;
+                min-height: 25mm;
+                padding: 8px 11px;
+                margin-bottom: 5px;
+                border: 1px solid color-mix(in srgb, var(--report-primary) 22%, #ffffff);
+                border-radius: 8px;
+                background:
+                    linear-gradient(135deg, color-mix(in srgb, var(--report-secondary) 94%, #000000), color-mix(in srgb, var(--report-primary) 88%, #111827)),
+                    var(--report-secondary);
+                color: var(--report-header-text);
+                box-shadow: 0 5px 16px rgba(17, 24, 39, .10);
             }
-            .header small { font-size: 8pt; font-weight: normal; opacity: .85; }
-            .stats-bar {
-                display: flex;
-                justify-content: center;
-                gap: 8px;
-                margin-bottom: 4px;
-                font-size: 7.5pt;
-                font-weight: bold;
+            .brand-mark {
+                width: 18mm;
+                height: 18mm;
+                border-radius: 7px;
+                background: rgba(255,255,255,.92);
+                border: 1px solid rgba(255,255,255,.55);
+                display: grid;
+                place-items: center;
+                overflow: hidden;
+                color: var(--report-secondary);
+                font-size: 10pt;
+                font-weight: 800;
+                letter-spacing: .4px;
             }
-            .stats-bar span {
-                padding: 2px 8px;
-                border-radius: 3px;
-                border: 1px solid;
+            .brand-mark img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                padding: 2.5mm;
             }
-            .stat-total { background: #E3F2FD; border-color: #1565C0; color: #0D47A1; }
-            .stat-ci { background: #FFCDD2; border-color: #D32F2F; color: #B71C1C; }
-            .stat-res { background: #E1BEE7; border-color: #7B1FA2; color: #4A148C; }
-            .stat-disp { background: #C8E6C9; border-color: #388E3C; color: #1B5E20; }
-            
-            .seccion-titulo {
-                background: #263238;
-                color: white;
-                padding: 3px 10px;
-                font-size: 8.5pt;
-                font-weight: bold;
-                border-radius: 3px 3px 0 0;
+            .brand-eyebrow {
+                color: var(--report-accent);
+                font-size: 6.6pt;
+                font-weight: 800;
+                letter-spacing: .9px;
+                text-transform: uppercase;
+                margin-bottom: 1px;
+            }
+            .brand-title {
+                font-size: 16pt;
+                line-height: 1;
+                font-weight: 800;
+                letter-spacing: .2px;
+                margin: 0;
+            }
+            .brand-subtitle {
+                margin-top: 3px;
+                color: rgba(255,255,255,.78);
+                font-size: 8pt;
+            }
+            .date-card {
+                min-width: 49mm;
+                padding: 6px 8px;
+                border-radius: 7px;
+                background: rgba(255,255,255,.10);
+                border: 1px solid rgba(255,255,255,.16);
+                text-align: right;
+            }
+            .date-card .label {
+                display: block;
+                color: var(--report-accent);
+                font-size: 6.2pt;
+                font-weight: 800;
+                letter-spacing: .7px;
+                text-transform: uppercase;
+            }
+            .date-card .value {
+                display: block;
                 margin-top: 2px;
+                font-size: 8.2pt;
+                font-weight: 700;
+            }
+            .summary-grid {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 5px;
+                margin: 0 0 5px;
+            }
+            .summary-card {
+                padding: 5px 7px;
+                border: 1px solid var(--report-line);
+                border-radius: 7px;
+                background: #ffffff;
+                min-height: 12mm;
+            }
+            .summary-card span {
+                display: block;
+                color: var(--report-muted);
+                font-size: 6.2pt;
+                font-weight: 800;
+                letter-spacing: .55px;
+                text-transform: uppercase;
+            }
+            .summary-card strong {
+                display: block;
+                margin-top: 1px;
+                color: var(--report-secondary);
+                font-size: 13pt;
+                line-height: 1;
+            }
+            .summary-card.is-accent {
+                background: var(--report-accent-soft);
+                border-color: color-mix(in srgb, var(--report-accent) 42%, #ffffff);
+            }
+            .section-title {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 5px 8px;
+                margin-top: 3px;
+                border-radius: 7px 7px 0 0;
+                background: var(--report-primary);
+                color: #fffefb;
+                font-size: 8pt;
+                font-weight: 800;
+                letter-spacing: .45px;
+                text-transform: uppercase;
+            }
+            .section-title small {
+                color: rgba(255,255,255,.78);
+                font-size: 6.4pt;
+                font-weight: 700;
+                letter-spacing: .2px;
             }
             table {
                 width: 100%;
                 border-collapse: collapse;
-                font-size: 7.5pt;
+                table-layout: fixed;
+                font-size: 7.15pt;
+                background: #ffffff;
+                border: 1px solid var(--report-line);
+                border-top: 0;
             }
             th {
-                background: #37474F;
-                color: white;
-                padding: 3px 4px;
-                text-align: center;
-                border: 1px solid #263238;
-                font-size: 7pt;
+                padding: 4px 4px;
+                text-align: left;
+                background: color-mix(in srgb, var(--report-secondary) 92%, #ffffff);
+                color: #fffefb;
+                border: 1px solid color-mix(in srgb, var(--report-secondary) 74%, #ffffff);
+                font-size: 6.35pt;
                 text-transform: uppercase;
-                letter-spacing: 0.3px;
+                letter-spacing: .35px;
+                white-space: nowrap;
             }
+            th.center, td.center { text-align: center; }
             td {
-                padding: 2px 4px;
-                border: 1px solid #999;
+                padding: 3px 4px;
+                border: 1px solid var(--report-line);
                 vertical-align: middle;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
-            .con-checkin td { background: #FFCDD2; }
-            .reservada td { background: #E1BEE7; }
-            .disponible td { background: #C8E6C9; }
-            .hab-num { font-weight: bold; text-align: center; font-size: 8.5pt; }
-            .huesped { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
-            .precio { text-align: right; font-weight: bold; white-space: nowrap; }
-            .tel { font-family: 'Courier New', monospace; font-size: 7pt; text-align: center; }
-            .pago { font-size: 6.5pt; white-space: nowrap; }
-            .vehiculo { font-size: 6.5pt; }
-            .procedencia { font-size: 6.5pt; }
-            
-            .pie {
+            tbody tr:nth-child(even) td { background-image: linear-gradient(rgba(17,24,39,.018), rgba(17,24,39,.018)); }
+            .is-checkin td { background-color: var(--checkin-bg); border-color: color-mix(in srgb, var(--checkin-line) 54%, #ffffff); }
+            .is-reserved td { background-color: var(--reserved-bg); border-color: color-mix(in srgb, var(--reserved-line) 54%, #ffffff); }
+            .is-free td { background-color: var(--free-bg); border-color: color-mix(in srgb, var(--free-line) 52%, #ffffff); color: color-mix(in srgb, var(--report-secondary) 70%, #31533b); }
+            .room-cell {
+                font-weight: 900;
                 text-align: center;
-                font-size: 6.5pt;
-                color: #777;
+                font-size: 8.8pt;
+                color: var(--report-secondary);
+            }
+            .guest-cell { font-weight: 800; white-space: nowrap; }
+            .money-cell { text-align: right; font-weight: 800; white-space: nowrap; color: var(--report-secondary); }
+            .mono-cell { font-family: "Courier New", monospace; font-size: 6.7pt; text-align: center; white-space: nowrap; }
+            .small-cell { font-size: 6.55pt; }
+            .status-pill {
+                display: inline-block;
+                min-width: 22mm;
+                padding: 2px 5px;
+                border-radius: 999px;
+                font-size: 6.1pt;
+                font-weight: 800;
+                text-align: center;
+                white-space: nowrap;
+            }
+            .status-pill.checkin { background: #ffffff; color: #9b2f2b; border: 1px solid var(--checkin-line); }
+            .status-pill.reserved { background: #ffffff; color: #60438e; border: 1px solid var(--reserved-line); }
+            .status-pill.free { background: #ffffff; color: #237047; border: 1px solid var(--free-line); }
+            .invoice-mark {
+                font-weight: 900;
+                color: var(--report-secondary);
+            }
+            .footer-line {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 8px;
+                margin-top: 5px;
+                padding-top: 4px;
+                border-top: 1px solid var(--report-line);
+                color: var(--report-muted);
+                font-size: 6.2pt;
+            }
+            .legend {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+                white-space: nowrap;
+            }
+            .legend span::before {
+                content: "";
+                display: inline-block;
+                width: 8px;
+                height: 8px;
+                border-radius: 2px;
+                margin-right: 3px;
+                vertical-align: -1px;
+            }
+            .legend .l-checkin::before { background: var(--checkin-bg); border: 1px solid var(--checkin-line); }
+            .legend .l-reserved::before { background: var(--reserved-bg); border: 1px solid var(--reserved-line); }
+            .legend .l-free::before { background: var(--free-bg); border: 1px solid var(--free-line); }
+            .print-button {
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                background: var(--report-primary);
+                color: #fffefb;
+                border: 0;
+                padding: 10px 18px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: 800;
+                font-size: 10pt;
+                z-index: 1000;
+                box-shadow: 0 8px 20px rgba(17,24,39,.24);
+            }
+            .header {
+                display: grid;
+                grid-template-columns: auto 1fr auto;
+                align-items: center;
+                gap: 10px;
+                min-height: 25mm;
+                padding: 8px 11px;
+                margin-bottom: 5px;
+                border: 1px solid color-mix(in srgb, var(--report-primary) 22%, #ffffff);
+                border-radius: 8px;
+                background:
+                    linear-gradient(135deg, color-mix(in srgb, var(--report-secondary) 94%, #000000), color-mix(in srgb, var(--report-primary) 88%, #111827)),
+                    var(--report-secondary);
+                color: var(--report-header-text);
+                box-shadow: 0 5px 16px rgba(17, 24, 39, .10);
+            }
+            .header-logo {
+                width: 18mm;
+                height: 18mm;
+                border-radius: 7px;
+                background: rgba(255,255,255,.92);
+                border: 1px solid rgba(255,255,255,.55);
+                display: grid;
+                place-items: center;
+                overflow: hidden;
+                color: var(--report-secondary);
+                font-size: 10pt;
+                font-weight: 800;
+                letter-spacing: .4px;
+            }
+            .header-logo img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                padding: 2.5mm;
+            }
+            .header-copy { text-align: left; }
+            .header-eyebrow {
+                color: var(--report-accent);
+                font-size: 6.6pt;
+                font-weight: 800;
+                letter-spacing: .9px;
+                text-transform: uppercase;
+                margin-bottom: 1px;
+            }
+            .header-title {
+                margin: 0;
+                font-size: 16pt;
+                line-height: 1;
+                font-weight: 800;
+                letter-spacing: .2px;
+            }
+            .header-subtitle {
                 margin-top: 3px;
+                color: rgba(255,255,255,.78);
+                font-size: 8pt;
+                font-weight: 500;
             }
-            .boton-imprimir {
-                position: fixed; top: 8px; right: 8px;
-                background: #1565C0; color: white; border: none;
-                padding: 10px 20px; border-radius: 5px;
-                cursor: pointer; font-weight: bold; font-size: 11pt;
-                z-index: 1000; box-shadow: 0 3px 8px rgba(0,0,0,.3);
+            .header-date {
+                min-width: 48mm;
+                padding: 6px 8px;
+                border-radius: 7px;
+                background: rgba(255,255,255,.10);
+                border: 1px solid rgba(255,255,255,.16);
+                text-align: right;
             }
-            .boton-imprimir:hover { background: #0D47A1; }
+            .header-date span {
+                display: block;
+                color: var(--report-accent);
+                font-size: 6.2pt;
+                font-weight: 800;
+                letter-spacing: .7px;
+                text-transform: uppercase;
+            }
+            .header-date strong {
+                display: block;
+                margin-top: 2px;
+                font-size: 8.2pt;
+            }
+            .stats-bar {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 5px;
+                margin-bottom: 5px;
+            }
+            .stats-bar span {
+                display: block;
+                padding: 5px 7px;
+                min-height: 12mm;
+                border: 1px solid var(--report-line);
+                border-radius: 7px;
+                background: #ffffff;
+                color: var(--report-secondary);
+                font-size: 7.1pt;
+                font-weight: 800;
+            }
+            .stat-total { background: var(--report-primary-soft) !important; }
+            .stat-occ { background: var(--report-accent-soft) !important; }
+            .stat-ci { background: var(--checkin-bg) !important; }
+            .stat-res { background: var(--reserved-bg) !important; }
+            .stat-disp { background: var(--free-bg) !important; }
+            .seccion-titulo {
+                padding: 5px 8px;
+                margin-top: 3px;
+                border-radius: 7px 7px 0 0;
+                background: var(--report-primary);
+                color: #fffefb;
+                font-size: 8pt;
+                font-weight: 800;
+                letter-spacing: .45px;
+                text-transform: uppercase;
+            }
+            .con-checkin td { background-color: var(--checkin-bg); border-color: color-mix(in srgb, var(--checkin-line) 54%, #ffffff); }
+            .reservada td { background-color: var(--reserved-bg); border-color: color-mix(in srgb, var(--reserved-line) 54%, #ffffff); }
+            .disponible td { background-color: var(--free-bg); border-color: color-mix(in srgb, var(--free-line) 52%, #ffffff); color: color-mix(in srgb, var(--report-secondary) 70%, #31533b); }
+            .hab-num { font-weight: 900; text-align: center; font-size: 8.8pt; color: var(--report-secondary); }
+            .huesped { font-weight: 800; white-space: nowrap; }
+            .precio { text-align: right; font-weight: 800; white-space: nowrap; color: var(--report-secondary); }
+            .tel { font-family: "Courier New", monospace; font-size: 6.7pt; text-align: center; white-space: nowrap; }
+            .pago, .vehiculo, .procedencia { font-size: 6.55pt; }
+            .pie {
+                margin-top: 5px;
+                padding-top: 4px;
+                border-top: 1px solid var(--report-line);
+                color: var(--report-muted);
+                font-size: 6.2pt;
+                text-align: right;
+            }
         </style>
     </head>
     <body>
-        <button class="boton-imprimir no-print" onclick="window.print()">🖨️ IMPRIMIR</button>
+        <button class="print-button no-print" onclick="window.print()">Imprimir PDF</button>
         
         <?php
         // Función interna para generar tabla de una sección
@@ -1669,7 +2121,7 @@ private function generarHTMLReservacionesPersonalizado(
                         
                         $precio_mostrar = $res['precio_hab'] ?? $hab['precio_base'];
                         $precio_fmt = '$' . number_format($precio_mostrar, 0, '.', ',');
-                        if ($res['es_cortesia_hab'] ?? false) { $precio_fmt = 'Cortesía'; }
+                        if ($res['es_cortesia_hab'] ?? false) { $precio_fmt = 'Cortesia'; }
                         
                         $vehiculo = '';
                         if (isset($res['vehiculo'])) {
@@ -1680,14 +2132,14 @@ private function generarHTMLReservacionesPersonalizado(
                             if (!empty($v['color'])) $partes[] = $v['color'];
                             $vehiculo = implode(' ', $partes);
                         } else {
-                            $vehiculo = 'Sin vehículo';
+                            $vehiculo = 'Sin vehiculo';
                         }
                         
                         $metodo = ucfirst($res['metodo_pago'] ?? '');
                         $estado_pago = $es_checkin ? 'Pagado' : 'Pendiente';
                         $tipo_pago = $metodo ? $metodo . ' - ' . $estado_pago : '';
                         
-                        $factura_txt = isset($res['tiene_factura']) ? 'Sí' : '';
+                        $factura_txt = isset($res['tiene_factura']) ? 'Si' : '';
                     ?>
                     <tr class="<?= $clase ?>">
                         <td class="huesped"><?= htmlspecialchars($res['nombre_completo'] ?? '') ?></td>
@@ -1719,13 +2171,31 @@ private function generarHTMLReservacionesPersonalizado(
         ?>
         
         <!-- ═══ PÁGINA 1: Habitaciones Numéricas ═══ -->
+        <?php if (!empty($hab_numericas)): ?>
         <div class="header">
-            <?= htmlspecialchars(function_exists('current_hotel_display_name') ? (function_exists('mb_strtoupper') ? mb_strtoupper(current_hotel_display_name('Medisoft Hoteles'), 'UTF-8') : strtoupper(current_hotel_display_name('Medisoft Hoteles'))) : 'MEDISOFT HOTELES', ENT_QUOTES, 'UTF-8') ?> - CONTROL DE HABITACIONES
-            <br><small><?= htmlspecialchars($fecha_bonita) ?></small>
+            <div class="header-logo">
+                <?php if ($logoUrl): ?>
+                    <img src="<?= $esc($logoUrl) ?>" alt="<?= $esc($hotelNombre) ?>">
+                <?php else: ?>
+                    <?= $esc($brandInitials) ?>
+                <?php endif; ?>
+            </div>
+            <div class="header-copy">
+                <div class="header-eyebrow">Operacion hotelera</div>
+                <h1 class="header-title"><?= $esc($hotelNombreMayus) ?></h1>
+                <div class="header-subtitle">Control diario de habitaciones - Habitaciones numericas</div>
+            </div>
+            <div class="header-date">
+                <span>Fecha del reporte</span>
+                <strong><?= $esc($fecha_bonita) ?></strong>
+                <span style="margin-top:5px;">Generado</span>
+                <strong><?= $esc($fechaGeneracion) ?></strong>
+            </div>
         </div>
         
         <div class="stats-bar">
             <span class="stat-total">Total: <?= $total_habitaciones ?></span>
+            <span class="stat-occ">Ocupacion: <?= $porcentajeOcupacion ?>%</span>
             <span class="stat-ci">Check-in: <?= $habitaciones_con_checkin ?></span>
             <span class="stat-res">Reservadas: <?= $habitaciones_reservadas ?></span>
             <span class="stat-disp">Disponibles: <?= $habitaciones_disponibles ?></span>
@@ -1736,20 +2206,40 @@ private function generarHTMLReservacionesPersonalizado(
         <?php endif; ?>
         
         <div class="pie">
-            <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?> - Impreso <?= date('d/m/Y H:i') ?> hrs
+            <?= $esc($hotelNombre) ?> - Exportacion generada <?= $esc($fechaGeneracion) ?>
         </div>
         
         <!-- ═══ PÁGINA 2: Habitaciones de Color ═══ -->
+        <?php endif; ?>
         <?php if (!empty($hab_color)): ?>
-        <div class="page-break"></div>
+        <?php if (!empty($hab_numericas)): ?>
+            <div class="page-break"></div>
+        <?php endif; ?>
         
         <div class="header">
-            <?= htmlspecialchars(function_exists('current_hotel_display_name') ? (function_exists('mb_strtoupper') ? mb_strtoupper(current_hotel_display_name('Medisoft Hoteles'), 'UTF-8') : strtoupper(current_hotel_display_name('Medisoft Hoteles'))) : 'MEDISOFT HOTELES', ENT_QUOTES, 'UTF-8') ?> - CONTROL DE HABITACIONES
-            <br><small><?= htmlspecialchars($fecha_bonita) ?></small>
+            <div class="header-logo">
+                <?php if ($logoUrl): ?>
+                    <img src="<?= $esc($logoUrl) ?>" alt="<?= $esc($hotelNombre) ?>">
+                <?php else: ?>
+                    <?= $esc($brandInitials) ?>
+                <?php endif; ?>
+            </div>
+            <div class="header-copy">
+                <div class="header-eyebrow">Operacion hotelera</div>
+                <h1 class="header-title"><?= $esc($hotelNombreMayus) ?></h1>
+                <div class="header-subtitle">Control diario de habitaciones - Habitaciones de color</div>
+            </div>
+            <div class="header-date">
+                <span>Fecha del reporte</span>
+                <strong><?= $esc($fecha_bonita) ?></strong>
+                <span style="margin-top:5px;">Generado</span>
+                <strong><?= $esc($fechaGeneracion) ?></strong>
+            </div>
         </div>
         
         <div class="stats-bar">
             <span class="stat-total">Total: <?= $total_habitaciones ?></span>
+            <span class="stat-occ">Ocupacion: <?= $porcentajeOcupacion ?>%</span>
             <span class="stat-ci">Check-in: <?= $habitaciones_con_checkin ?></span>
             <span class="stat-res">Reservadas: <?= $habitaciones_reservadas ?></span>
             <span class="stat-disp">Disponibles: <?= $habitaciones_disponibles ?></span>
@@ -1758,7 +2248,7 @@ private function generarHTMLReservacionesPersonalizado(
         <?php $renderTabla($hab_color, 'HABITACIONES DE COLOR (' . count($hab_color) . ')'); ?>
         
         <div class="pie">
-            <?= htmlspecialchars(function_exists('current_hotel_display_name') ? current_hotel_display_name('Medisoft Hoteles') : 'Medisoft Hoteles', ENT_QUOTES, 'UTF-8') ?> - Impreso <?= date('d/m/Y H:i') ?> hrs
+            <?= $esc($hotelNombre) ?> - Exportacion generada <?= $esc($fechaGeneracion) ?>
         </div>
         <?php endif; ?>
         
@@ -1857,7 +2347,7 @@ public function indexAction() {
     }
     
     // Obtener huésped
-    $huesped = $this->huespedModel->find($reservacion['huesped_id']);
+    $huesped = $this->huespedModel->findForHotel($reservacion['huesped_id'], $hotel_id);
     
     // Obtener habitaciones seleccionadas de la reservación
     $habitaciones_seleccionadas = $this->reservacionModel->getHabitaciones($id);
@@ -2132,12 +2622,12 @@ foreach ($habitaciones as $hab) {
 error_log("=== FIN DEBUG ===");
         
         // Obtener información del huésped
-        $huesped = $this->huespedModel->find($reservacion['huesped_id']);
+        $huesped = $this->huespedModel->findForHotel($reservacion['huesped_id'], $this->hotelIdActual());
         
         // Obtener vehículos
         $vehiculos = [];
         if (method_exists($this->huespedModel, 'getVehiculos')) {
-            $vehiculos = $this->huespedModel->getVehiculos($reservacion['huesped_id']);
+            $vehiculos = $this->huespedModel->getVehiculosPorHotel($reservacion['huesped_id'], $this->hotelIdActual());
         }
         
         // Obtener pagos si está en check-in
@@ -2990,7 +3480,7 @@ private function validarCancelacion($reservacion) {
     $huesped_preseleccionado = null;
     
     if ($huesped_id) {
-        $huesped_preseleccionado = $this->huespedModel->find($huesped_id);
+        $huesped_preseleccionado = $this->huespedModel->findForHotel($huesped_id, $this->hotelIdActual());
     }
     
     // Obtener habitaciones activas
@@ -3174,7 +3664,7 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
 
             // Obtener datos del huésped
             $hotel_id = obtenerHotelIdActualCompat();
-            $huesped = $this->huespedModel->find($huesped_id);
+            $huesped = $this->huespedModel->findForHotel($huesped_id, $hotel_id);
             if (!$huesped) {
                 die('Huésped no encontrado.');
             }
@@ -3348,14 +3838,15 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
                 return $d->format('d') . ' de ' . $meses[$d->format('n')-1] . ' de ' . $d->format('Y');
             };
 
+            $cotizacionConfig = $this->cotizacionPdfHotelConfig((int) $hotel_id);
             $noches = $calculo['noches'];
 
             // Caja de fechas
             $pdf->SetFillColor($cream[0], $cream[1], $cream[2]);
             $boxY2 = $pdf->GetY();
-            $pdf->Rect($margin, $boxY2, $contentW, 14, 'F');
+            $pdf->Rect($margin, $boxY2, $contentW, 18, 'F');
             $pdf->SetDrawColor($creamMid[0], $creamMid[1], $creamMid[2]);
-            $pdf->Rect($margin, $boxY2, $contentW, 14, 'D');
+            $pdf->Rect($margin, $boxY2, $contentW, 18, 'D');
 
             $colW = $contentW / 3;
 
@@ -3374,10 +3865,17 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             $pdf->SetTextColor($olivo[0], $olivo[1], $olivo[2]);
             $pdf->Cell($colW - 8, 5, $noches . ' noche' . ($noches > 1 ? 's' : ''), 0, 1, 'L');
 
+            $pdf->SetX($margin + 4);
+            $pdf->SetFont('Helvetica', '', 7.5);
+            $pdf->SetTextColor($gris[0], $gris[1], $gris[2]);
+            $pdf->Cell($colW, 4, $u('Desde ' . $cotizacionConfig['checkin_texto']), 0, 0, 'L');
+            $pdf->Cell($colW, 4, $u('Hasta ' . $cotizacionConfig['checkout_texto']), 0, 0, 'L');
+            $pdf->Cell($colW - 8, 4, '', 0, 1, 'L');
+
             // ═══════════════════════════════════════════════════════
             // TABLA DE HABITACIONES
             // ═══════════════════════════════════════════════════════
-            $y = $boxY2 + 22;
+            $y = $boxY2 + 26;
             $pdf->SetY($y);
 
             $pdf->SetFont('Helvetica', 'B', 10);
@@ -3565,46 +4063,9 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             $pdf->Line($margin, $pdf->GetY(), $margin + 50, $pdf->GetY());
             $pdf->Ln(3);
 
-            // Caja de términos
-            $pdf->SetFillColor($cream[0], $cream[1], $cream[2]);
-            $termBoxY = $pdf->GetY();
-
-            $pdf->SetFont('Helvetica', '', 8);
-            $pdf->SetTextColor($negro[0], $negro[1], $negro[2]);
-
-            // Término 1 - con fechas dinámicas
             $fechaEntradaTexto = $formatFecha($fecha_entrada);
-            $terminos = [
-                'El alojamiento es por la noche del ' . $fechaEntradaTexto . ' con salida el dia siguiente a las doce del medio dia.',
-                'El numero de personas se encuentra senalado en la tabla. En caso de ingresar mas personas se cobrara un excedente.',
-                'CHECK IN: La hora de ingreso a las habitaciones es a las 15:00 hrs (3:00 PM).',
-                'CHECK OUT: La hora para desocupar las habitaciones y salida del hotel es a las 12:00 hrs (12:00 PM).',
-                'Esta cotizacion tiene una vigencia de 7 dias a partir de la fecha de elaboracion.',
-                'Los precios pueden variar segun la temporada y disponibilidad al momento de confirmar.'
-            ];
-
-            // Calcular alto del recuadro
-            $termH = 6 + (count($terminos) * 6) + 4;
-            $pdf->Rect($margin, $termBoxY, $contentW, $termH, 'F');
-            $pdf->SetDrawColor($creamMid[0], $creamMid[1], $creamMid[2]);
-            $pdf->Rect($margin, $termBoxY, $contentW, $termH, 'D');
-
-            // Acento olivo izquierdo
-            $pdf->SetFillColor($olivo[0], $olivo[1], $olivo[2]);
-            $pdf->Rect($margin, $termBoxY, 2.5, $termH, 'F');
-
-            $pdf->SetXY($margin + 6, $termBoxY + 3);
-
-            foreach ($terminos as $i => $termino) {
-                $pdf->SetX($margin + 6);
-                $pdf->SetFont('Helvetica', 'B', 7);
-                $pdf->SetTextColor($olivo[0], $olivo[1], $olivo[2]);
-                $bullet = ($i + 1) . '.';
-                $pdf->Cell(6, 5, $bullet, 0, 0, 'R');
-                $pdf->SetFont('Helvetica', '', 7.5);
-                $pdf->SetTextColor($negro[0], $negro[1], $negro[2]);
-                $pdf->Cell($contentW - 14, 5, '  ' . $u($termino), 0, 1, 'L');
-            }
+            $terminos = $this->cotizacionPdfTerminos($cotizacionConfig, $fechaEntradaTexto, $brand['hotel']);
+            $this->cotizacionPdfRenderTerminos($pdf, $terminos, $u, $margin, $contentW, $cream, $creamMid, $olivo, $negro);
 
             // ═══════════════════════════════════════════════════════
             // FOOTER
@@ -3870,7 +4331,7 @@ public function checkOutRapidoAction() {
         }
         
         // Obtener datos del huésped
-        $huesped = $this->huespedModel->find($reservacion['huesped_id']);
+        $huesped = $this->huespedModel->findForHotel($reservacion['huesped_id'], $this->hotelIdActual());
         
         // Obtener habitaciones para mostrar
         $hotel_id = $this->hotelIdActual();
@@ -4009,7 +4470,7 @@ public function checkOutRapidoAction() {
             if (!$reservacion) {
                 throw new Exception('Reservación no encontrada para el hotel actual');
             }
-            $huesped = $this->huespedModel->find($reservacion['huesped_id']);
+            $huesped = $this->huespedModel->findForHotel($reservacion['huesped_id'], $this->hotelIdActual());
             $habitaciones = $this->reservacionModel->getHabitaciones($id);
             
             // Preparar vista según el tipo

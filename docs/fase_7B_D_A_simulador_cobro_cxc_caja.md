@@ -107,6 +107,9 @@ Evidencia post-QA:
 
 ## Siguiente paso seguro
 
-Cerrar documentalmente 7B-D-A y definir 7B-D-B-0 como contrato de esquema de cobros
-CxC. No implementar cobro real hasta decidir si se agregara tipo `COBRO`, tabla de
-cobros CxC o entidad de recibos/cobros.
+7B-D-B-A ya dejo disponible el tipo semantico `COBRO` en
+`cuentas_por_cobrar_movimientos.tipo_movimiento`.
+
+El siguiente paso seguro es 7B-D-C-0: contrato del servicio transaccional de cobro CxC
+con Caja. No implementar cobro real hasta definir validaciones, referencia unica,
+actualizacion de saldo/estado, movimiento Caja, auditoria, prueba rollback y QA manual.

@@ -184,6 +184,17 @@ if (!function_exists('hotel_config_editable_definitions')) {
                 'max' => 1200,
                 'rows' => 4,
             ],
+            'reservaciones.terminos_cotizacion' => [
+                'label' => 'Terminos de cotizacion',
+                'type' => 'string',
+                'input' => 'textarea',
+                'default' => '',
+                'grupo' => 'reservaciones',
+                'descripcion' => 'Texto que se imprime en el PDF de cotizacion. Variables: {hotel}, {fecha_entrada}, {checkin}, {checkout}. Si queda vacio se usan los terminos predeterminados.',
+                'required' => false,
+                'max' => 2000,
+                'rows' => 6,
+            ],
             'reservaciones.mensaje_confirmacion_whatsapp' => [
                 'label' => 'Mensaje de confirmacion WhatsApp',
                 'type' => 'string',
@@ -1733,6 +1744,741 @@ if (!function_exists('hotel_notification_threshold')) {
         $value = (int) hotel_config_get('notificaciones.' . $clave, (int) $default, $hotelId);
 
         return max((int) $min, min((int) $max, $value));
+    }
+}
+
+if (!function_exists('hotel_guest_field_catalog')) {
+    function hotel_guest_field_catalog()
+    {
+        return [
+            'nombre_completo' => [
+                'scope' => 'guest',
+                'label' => 'Nombre completo',
+                'descripcion' => 'Nombre legal o comercial del huesped.',
+                'input' => 'text',
+                'storage' => 'column',
+                'field' => 'nombre_completo',
+                'default_visible' => true,
+                'default_required' => true,
+                'locked' => true,
+                'wide' => true,
+                'max' => 200,
+                'placeholder' => 'Nombre completo del huesped',
+                'icon' => 'fa-user',
+            ],
+            'telefono' => [
+                'scope' => 'guest',
+                'label' => 'Telefono celular',
+                'descripcion' => 'Dato base para recuperar clientes, confirmar reservas y contactar por WhatsApp.',
+                'input' => 'tel',
+                'storage' => 'column',
+                'field' => 'telefono',
+                'default_visible' => true,
+                'default_required' => true,
+                'locked' => true,
+                'max' => 20,
+                'placeholder' => '10 digitos',
+                'icon' => 'fa-mobile-screen-button',
+            ],
+            'email' => [
+                'scope' => 'guest',
+                'label' => 'Email',
+                'descripcion' => 'Correo para confirmaciones, cotizaciones o facturacion.',
+                'input' => 'email',
+                'storage' => 'column',
+                'field' => 'email',
+                'default_visible' => true,
+                'default_required' => false,
+                'max' => 160,
+                'placeholder' => 'correo@ejemplo.com',
+                'icon' => 'fa-envelope',
+            ],
+            'procedencia_estado' => [
+                'scope' => 'guest',
+                'label' => 'Estado de procedencia',
+                'descripcion' => 'Estado o region de origen para reportes.',
+                'input' => 'state',
+                'storage' => 'column',
+                'field' => 'procedencia_estado',
+                'default_visible' => true,
+                'default_required' => false,
+                'icon' => 'fa-map-location-dot',
+            ],
+            'procedencia_ciudad' => [
+                'scope' => 'guest',
+                'label' => 'Ciudad de procedencia',
+                'descripcion' => 'Ciudad de origen del huesped.',
+                'input' => 'text',
+                'storage' => 'column',
+                'field' => 'procedencia_ciudad',
+                'default_visible' => true,
+                'default_required' => false,
+                'max' => 120,
+                'placeholder' => 'Ciudad de origen',
+                'icon' => 'fa-city',
+            ],
+            'identificacion_tipo' => [
+                'scope' => 'guest',
+                'label' => 'Tipo de identificacion',
+                'descripcion' => 'INE, pasaporte, licencia u otro documento.',
+                'input' => 'select',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'options' => [
+                    'ine' => 'INE',
+                    'pasaporte' => 'Pasaporte',
+                    'licencia' => 'Licencia de conducir',
+                    'cedula' => 'Cedula profesional',
+                    'otro' => 'Otro documento',
+                ],
+                'icon' => 'fa-id-card',
+            ],
+            'identificacion_numero' => [
+                'scope' => 'guest',
+                'label' => 'Numero o folio de identificacion',
+                'descripcion' => 'Folio, numero o clave del documento presentado.',
+                'input' => 'text',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'max' => 80,
+                'placeholder' => 'Folio o numero',
+                'icon' => 'fa-fingerprint',
+            ],
+            'ine_folio' => [
+                'scope' => 'guest',
+                'label' => 'Clave/Folio INE',
+                'descripcion' => 'Campo separado para hoteles que necesitan capturar la INE de forma especifica.',
+                'input' => 'text',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'max' => 80,
+                'placeholder' => 'Folio INE',
+                'uppercase' => true,
+                'icon' => 'fa-address-card',
+            ],
+            'identificacion_archivo' => [
+                'scope' => 'guest',
+                'label' => 'Archivo de identificacion / INE',
+                'descripcion' => 'Activa camara, galeria o selector de archivos para subir imagen o PDF al Centro Documental.',
+                'input' => 'file',
+                'storage' => 'document',
+                'default_visible' => false,
+                'default_required' => false,
+                'accept' => 'image/*,.pdf,application/pdf',
+                'accept_label' => 'JPG, PNG, WEBP o PDF hasta 10 MB',
+                'ui_note' => 'Puede quedar visible y opcional, o visible y obligatorio segun la politica del hotel.',
+                'wide' => true,
+                'icon' => 'fa-camera',
+            ],
+            'curp' => [
+                'scope' => 'guest',
+                'label' => 'CURP',
+                'descripcion' => 'Clave unica de registro de poblacion.',
+                'input' => 'text',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'max' => 18,
+                'placeholder' => 'CURP',
+                'uppercase' => true,
+                'icon' => 'fa-barcode',
+            ],
+            'rfc' => [
+                'scope' => 'guest',
+                'label' => 'RFC',
+                'descripcion' => 'Dato fiscal para hoteles que preparan facturacion desde recepcion.',
+                'input' => 'text',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'max' => 13,
+                'placeholder' => 'RFC',
+                'uppercase' => true,
+                'icon' => 'fa-file-invoice',
+            ],
+            'fecha_nacimiento' => [
+                'scope' => 'guest',
+                'label' => 'Fecha de nacimiento',
+                'descripcion' => 'Dato opcional para expedientes o politicas internas.',
+                'input' => 'date',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'icon' => 'fa-cake-candles',
+            ],
+            'nacionalidad' => [
+                'scope' => 'guest',
+                'label' => 'Nacionalidad',
+                'descripcion' => 'Pais o nacionalidad declarada por el huesped.',
+                'input' => 'text',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'max' => 80,
+                'placeholder' => 'Mexicana, estadounidense, etc.',
+                'icon' => 'fa-earth-americas',
+            ],
+            'direccion' => [
+                'scope' => 'guest',
+                'label' => 'Direccion',
+                'descripcion' => 'Domicilio del huesped si el hotel lo requiere.',
+                'input' => 'text',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'max' => 220,
+                'wide' => true,
+                'placeholder' => 'Calle, numero, colonia',
+                'icon' => 'fa-house',
+            ],
+            'codigo_postal' => [
+                'scope' => 'guest',
+                'label' => 'Codigo postal',
+                'descripcion' => 'CP del huesped o de facturacion.',
+                'input' => 'text',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'max' => 12,
+                'placeholder' => '00000',
+                'icon' => 'fa-location-crosshairs',
+            ],
+            'contacto_emergencia_nombre' => [
+                'scope' => 'guest',
+                'label' => 'Contacto de emergencia',
+                'descripcion' => 'Persona a quien contactar ante una emergencia.',
+                'input' => 'text',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'max' => 160,
+                'placeholder' => 'Nombre del contacto',
+                'icon' => 'fa-user-shield',
+            ],
+            'contacto_emergencia_telefono' => [
+                'scope' => 'guest',
+                'label' => 'Telefono de emergencia',
+                'descripcion' => 'Celular del contacto de emergencia.',
+                'input' => 'tel',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'max' => 20,
+                'placeholder' => '10 digitos',
+                'icon' => 'fa-phone-volume',
+            ],
+            'empresa' => [
+                'scope' => 'guest',
+                'label' => 'Empresa',
+                'descripcion' => 'Empresa, institucion o razon social relacionada con la estancia.',
+                'input' => 'text',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'max' => 160,
+                'placeholder' => 'Empresa o institucion',
+                'icon' => 'fa-building',
+            ],
+            'agencia' => [
+                'scope' => 'guest',
+                'label' => 'Agencia o canal',
+                'descripcion' => 'Agencia, convenio o canal por el que llega el huesped.',
+                'input' => 'text',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'max' => 160,
+                'placeholder' => 'Agencia, OTA o convenio',
+                'icon' => 'fa-briefcase',
+            ],
+            'motivo_viaje' => [
+                'scope' => 'guest',
+                'label' => 'Motivo de viaje',
+                'descripcion' => 'Motivo principal de la estancia.',
+                'input' => 'select',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'options' => [
+                    'turismo' => 'Turismo',
+                    'trabajo' => 'Trabajo',
+                    'familia' => 'Familia',
+                    'religioso' => 'Religioso',
+                    'salud' => 'Salud',
+                    'evento' => 'Evento',
+                    'otro' => 'Otro',
+                ],
+                'icon' => 'fa-route',
+            ],
+            'preferencias' => [
+                'scope' => 'guest',
+                'label' => 'Preferencias del huesped',
+                'descripcion' => 'Preferencias de habitacion, alergias, accesibilidad o notas recurrentes.',
+                'input' => 'textarea',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'max' => 800,
+                'rows' => 3,
+                'wide' => true,
+                'placeholder' => 'Preferencias o requerimientos especiales',
+                'icon' => 'fa-star',
+            ],
+            'requiere_factura' => [
+                'scope' => 'guest',
+                'label' => 'Requiere factura',
+                'descripcion' => 'Marca si el huesped suele requerir factura.',
+                'input' => 'checkbox',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'icon' => 'fa-receipt',
+            ],
+            'notas' => [
+                'scope' => 'guest',
+                'label' => 'Notas internas',
+                'descripcion' => 'Observaciones visibles para recepcion.',
+                'input' => 'textarea',
+                'storage' => 'column',
+                'field' => 'notas',
+                'default_visible' => true,
+                'default_required' => false,
+                'max' => 1200,
+                'rows' => 4,
+                'wide' => true,
+                'placeholder' => 'Cualquier informacion adicional sobre el huesped',
+                'icon' => 'fa-note-sticky',
+            ],
+            'vehiculo_marca' => [
+                'scope' => 'vehicle',
+                'label' => 'Marca',
+                'descripcion' => 'Marca del vehiculo.',
+                'input' => 'text',
+                'storage' => 'column',
+                'field' => 'marca',
+                'default_visible' => true,
+                'default_required' => false,
+                'max' => 80,
+                'placeholder' => 'Toyota, Nissan, etc.',
+                'icon' => 'fa-car-side',
+            ],
+            'vehiculo_modelo' => [
+                'scope' => 'vehicle',
+                'label' => 'Modelo',
+                'descripcion' => 'Modelo o linea del vehiculo.',
+                'input' => 'text',
+                'storage' => 'column',
+                'field' => 'modelo',
+                'default_visible' => true,
+                'default_required' => false,
+                'max' => 80,
+                'placeholder' => 'Corolla, Sentra, etc.',
+                'icon' => 'fa-car',
+            ],
+            'vehiculo_placas' => [
+                'scope' => 'vehicle',
+                'label' => 'Placas',
+                'descripcion' => 'Placas para control de estacionamiento.',
+                'input' => 'text',
+                'storage' => 'column',
+                'field' => 'placas',
+                'default_visible' => true,
+                'default_required' => false,
+                'max' => 20,
+                'placeholder' => 'ABC-123',
+                'uppercase' => true,
+                'icon' => 'fa-barcode',
+            ],
+            'vehiculo_color' => [
+                'scope' => 'vehicle',
+                'label' => 'Color',
+                'descripcion' => 'Color del vehiculo.',
+                'input' => 'text',
+                'storage' => 'column',
+                'field' => 'color',
+                'default_visible' => true,
+                'default_required' => false,
+                'max' => 50,
+                'placeholder' => 'Rojo, azul, blanco',
+                'icon' => 'fa-palette',
+            ],
+            'vehiculo_tipo' => [
+                'scope' => 'vehicle',
+                'label' => 'Tipo de vehiculo',
+                'descripcion' => 'Auto, camioneta, motocicleta u otro.',
+                'input' => 'select',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'options' => [
+                    'auto' => 'Auto',
+                    'camioneta' => 'Camioneta',
+                    'motocicleta' => 'Motocicleta',
+                    'van' => 'Van',
+                    'otro' => 'Otro',
+                ],
+                'icon' => 'fa-truck-pickup',
+            ],
+            'vehiculo_estacionamiento' => [
+                'scope' => 'vehicle',
+                'label' => 'Estacionamiento',
+                'descripcion' => 'Zona o cajon donde se estaciona.',
+                'input' => 'parking',
+                'storage' => 'column',
+                'field' => 'estacionamiento',
+                'default_visible' => true,
+                'default_required' => false,
+                'icon' => 'fa-square-parking',
+            ],
+            'vehiculo_observaciones' => [
+                'scope' => 'vehicle',
+                'label' => 'Observaciones del vehiculo',
+                'descripcion' => 'Notas internas sobre acceso, cajon o distintivos.',
+                'input' => 'textarea',
+                'storage' => 'extra',
+                'default_visible' => false,
+                'default_required' => false,
+                'max' => 500,
+                'rows' => 2,
+                'wide' => true,
+                'placeholder' => 'Observaciones del vehiculo',
+                'icon' => 'fa-clipboard-list',
+            ],
+        ];
+    }
+}
+
+if (!function_exists('hotel_guest_field_policy_defaults')) {
+    function hotel_guest_field_policy_defaults()
+    {
+        $fields = [];
+
+        foreach (hotel_guest_field_catalog() as $key => $definition) {
+            $visible = !empty($definition['default_visible']);
+            $required = !empty($definition['default_required']);
+
+            if (!empty($definition['locked'])) {
+                $visible = true;
+                $required = true;
+            }
+
+            $fields[$key] = [
+                'visible' => $visible,
+                'required' => $required,
+            ];
+        }
+
+        return [
+            'version' => 1,
+            'fields' => $fields,
+        ];
+    }
+}
+
+if (!function_exists('hotel_guest_field_policy_normalize')) {
+    function hotel_guest_field_policy_normalize($policy)
+    {
+        $defaults = hotel_guest_field_policy_defaults();
+        $fields = $defaults['fields'];
+
+        if (is_string($policy) && trim($policy) !== '') {
+            $decoded = json_decode($policy, true);
+            $policy = json_last_error() === JSON_ERROR_NONE ? $decoded : [];
+        }
+
+        if (!is_array($policy)) {
+            $policy = [];
+        }
+
+        $storedFields = is_array($policy['fields'] ?? null) ? $policy['fields'] : $policy;
+
+        foreach (hotel_guest_field_catalog() as $key => $definition) {
+            $stored = is_array($storedFields[$key] ?? null) ? $storedFields[$key] : [];
+            $visible = array_key_exists('visible', $stored) ? !empty($stored['visible']) : $fields[$key]['visible'];
+            $required = array_key_exists('required', $stored) ? !empty($stored['required']) : $fields[$key]['required'];
+
+            if (!empty($definition['locked'])) {
+                $visible = true;
+                $required = true;
+            }
+
+            if ($required) {
+                $visible = true;
+            }
+
+            if (!$visible) {
+                $required = false;
+            }
+
+            $fields[$key] = [
+                'visible' => $visible,
+                'required' => $required,
+            ];
+        }
+
+        return [
+            'version' => 1,
+            'fields' => $fields,
+        ];
+    }
+}
+
+if (!function_exists('hotel_guest_field_policy')) {
+    function hotel_guest_field_policy($hotelId = null)
+    {
+        $stored = hotel_config_get('huespedes.campos_registro', [], $hotelId);
+        return hotel_guest_field_policy_normalize($stored);
+    }
+}
+
+if (!function_exists('hotel_guest_field_policy_normalize_payload')) {
+    function hotel_guest_field_policy_normalize_payload(array $payload)
+    {
+        $fields = [];
+
+        foreach (hotel_guest_field_catalog() as $key => $definition) {
+            $row = is_array($payload[$key] ?? null) ? $payload[$key] : [];
+            $visible = !empty($row['visible']);
+            $required = !empty($row['required']);
+
+            if (!empty($definition['locked'])) {
+                $visible = true;
+                $required = true;
+            }
+
+            if ($required) {
+                $visible = true;
+            }
+
+            if (!$visible) {
+                $required = false;
+            }
+
+            $fields[$key] = [
+                'visible' => $visible,
+                'required' => $required,
+            ];
+        }
+
+        return hotel_guest_field_policy_normalize([
+            'version' => 1,
+            'fields' => $fields,
+        ]);
+    }
+}
+
+if (!function_exists('hotel_guest_field_policy_save')) {
+    function hotel_guest_field_policy_save(array $policy, $hotelId = null)
+    {
+        return hotel_config_save_value(
+            'huespedes.campos_registro',
+            hotel_guest_field_policy_normalize($policy),
+            'json',
+            'huespedes',
+            'Politica de campos visibles y obligatorios para registro de huespedes y vehiculos.',
+            $hotelId
+        );
+    }
+}
+
+if (!function_exists('hotel_guest_field_visible')) {
+    function hotel_guest_field_visible($fieldKey, array $policy = null)
+    {
+        $policy = $policy ?: hotel_guest_field_policy();
+        return !empty($policy['fields'][(string) $fieldKey]['visible']);
+    }
+}
+
+if (!function_exists('hotel_guest_field_required')) {
+    function hotel_guest_field_required($fieldKey, array $policy = null)
+    {
+        $policy = $policy ?: hotel_guest_field_policy();
+        return !empty($policy['fields'][(string) $fieldKey]['required']);
+    }
+}
+
+if (!function_exists('hotel_guest_visible_fields')) {
+    function hotel_guest_visible_fields($scope, array $policy = null)
+    {
+        $scope = (string) $scope;
+        $policy = $policy ?: hotel_guest_field_policy();
+        $fields = [];
+
+        foreach (hotel_guest_field_catalog() as $key => $definition) {
+            if (($definition['scope'] ?? '') !== $scope) {
+                continue;
+            }
+
+            if (!hotel_guest_field_visible($key, $policy)) {
+                continue;
+            }
+
+            $fields[$key] = $definition;
+        }
+
+        return $fields;
+    }
+}
+
+if (!function_exists('hotel_guest_decode_extra_json')) {
+    function hotel_guest_decode_extra_json($value)
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        $decoded = json_decode((string) ($value ?? ''), true);
+        return json_last_error() === JSON_ERROR_NONE && is_array($decoded) ? $decoded : [];
+    }
+}
+
+if (!function_exists('hotel_guest_sanitize_field_value')) {
+    function hotel_guest_sanitize_field_value($fieldKey, $value, array $definition)
+    {
+        if (($definition['input'] ?? 'text') === 'checkbox') {
+            return !empty($value) ? '1' : '0';
+        }
+
+        $value = trim((string) ($value ?? ''));
+        $cleanValue = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $value);
+        if ($cleanValue !== null) {
+            $value = $cleanValue;
+        }
+
+        if (!empty($definition['uppercase'])) {
+            $value = function_exists('mb_strtoupper') ? mb_strtoupper($value, 'UTF-8') : strtoupper($value);
+        }
+
+        $max = (int) ($definition['max'] ?? 0);
+        if ($max > 0) {
+            if (function_exists('mb_substr')) {
+                $value = mb_substr($value, 0, $max, 'UTF-8');
+            } else {
+                $value = substr($value, 0, $max);
+            }
+        }
+
+        return $value;
+    }
+}
+
+if (!function_exists('hotel_guest_collect_extra_values')) {
+    function hotel_guest_collect_extra_values(array $payload, $scope, array $policy = null, array $existing = [])
+    {
+        $scope = (string) $scope;
+        $policy = $policy ?: hotel_guest_field_policy();
+        $values = $existing;
+
+        foreach (hotel_guest_field_catalog() as $key => $definition) {
+            if (($definition['scope'] ?? '') !== $scope || ($definition['storage'] ?? '') !== 'extra') {
+                continue;
+            }
+
+            if (!hotel_guest_field_visible($key, $policy)) {
+                continue;
+            }
+
+            $values[$key] = hotel_guest_sanitize_field_value($key, $payload[$key] ?? null, $definition);
+        }
+
+        return $values;
+    }
+}
+
+if (!function_exists('hotel_guest_has_vehicle_payload')) {
+    function hotel_guest_has_vehicle_payload(array $vehicle, array $policy = null)
+    {
+        $policy = $policy ?: hotel_guest_field_policy();
+
+        foreach (hotel_guest_field_catalog() as $key => $definition) {
+            if (($definition['scope'] ?? '') !== 'vehicle' || !hotel_guest_field_visible($key, $policy)) {
+                continue;
+            }
+
+            $storage = $definition['storage'] ?? 'column';
+            $field = $storage === 'column' ? ($definition['field'] ?? $key) : $key;
+            $raw = $storage === 'column' ? ($vehicle[$field] ?? null) : (($vehicle['extras'][$key] ?? null) ?? ($vehicle[$key] ?? null));
+
+            if (($definition['input'] ?? 'text') === 'checkbox') {
+                if (!empty($raw)) {
+                    return true;
+                }
+                continue;
+            }
+
+            if (trim((string) ($raw ?? '')) !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('hotel_guest_field_validation_errors')) {
+    function hotel_guest_field_validation_errors(array $columnData, array $extraData = [], $scope = 'guest', array $policy = null, $contextLabel = '')
+    {
+        $scope = (string) $scope;
+        $policy = $policy ?: hotel_guest_field_policy();
+        $errors = [];
+
+        foreach (hotel_guest_field_catalog() as $key => $definition) {
+            if (($definition['scope'] ?? '') !== $scope || !hotel_guest_field_visible($key, $policy)) {
+                continue;
+            }
+
+            $storage = $definition['storage'] ?? 'column';
+            if ($storage === 'document') {
+                continue;
+            }
+
+            $field = $storage === 'column' ? ($definition['field'] ?? $key) : $key;
+            $value = $storage === 'column' ? ($columnData[$field] ?? null) : ($extraData[$key] ?? null);
+            $label = $definition['label'] ?? $key;
+            $prefix = trim((string) $contextLabel) !== '' ? trim((string) $contextLabel) . ': ' : '';
+
+            if (hotel_guest_field_required($key, $policy)) {
+                $isEmpty = ($definition['input'] ?? 'text') === 'checkbox'
+                    ? empty($value)
+                    : trim((string) ($value ?? '')) === '';
+
+                if ($isEmpty) {
+                    $errors[] = $prefix . $label . ' es obligatorio.';
+                    continue;
+                }
+            }
+
+            $valueText = trim((string) ($value ?? ''));
+            if ($valueText === '') {
+                continue;
+            }
+
+            $input = $definition['input'] ?? 'text';
+
+            if ($input === 'email' && !filter_var($valueText, FILTER_VALIDATE_EMAIL)) {
+                $errors[] = $prefix . $label . ' no tiene un formato valido.';
+            }
+
+            if ($input === 'tel') {
+                $digits = preg_replace('/\D+/', '', $valueText);
+                if (strlen($digits) < 7 || strlen($digits) > 15) {
+                    $errors[] = $prefix . $label . ' debe contener entre 7 y 15 digitos.';
+                }
+            }
+
+            if ($input === 'date' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $valueText)) {
+                $errors[] = $prefix . $label . ' debe tener formato AAAA-MM-DD.';
+            }
+
+            if ($input === 'select' && !empty($definition['options']) && !array_key_exists($valueText, $definition['options'])) {
+                $errors[] = $prefix . $label . ' contiene una opcion no valida.';
+            }
+        }
+
+        return $errors;
     }
 }
 

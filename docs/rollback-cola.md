@@ -1425,6 +1425,154 @@ Rollback:
 4. No crear rutas POST ni botones de cobro.
 5. No tocar CxC, Caja, cortes, reservaciones, pagos, abonos, facturacion ni `/api/sync`.
 
+## Rollback Fase 7B-D-B-A
+
+7B-D-B-A agrega `COBRO` al enum
+`cuentas_por_cobrar_movimientos.tipo_movimiento`.
+
+Backup previo:
+
+- `backups/medisoft_hoteles_import_before_7b_d_b_a_cxc_cobro_enum_20260618_180420.sql`
+- SHA256: `906309EB73EB74B94A62FF493C1B1DAE214F82C02F253AA616C38FFEE3A6C21E`
+- Tamano: `1646040` bytes
+
+Rollback DB solo con autorizacion explicita y si no existen movimientos `COBRO`:
+
+1. Confirmar:
+   ```sql
+   SELECT COUNT(*) AS movimientos_cobro
+   FROM cuentas_por_cobrar_movimientos
+   WHERE tipo_movimiento = 'COBRO';
+   ```
+2. Si el conteo es `0`, ejecutar `ALTER TABLE` para volver al enum anterior:
+   `CREACION`, `AJUSTE`, `CANCELACION`, `NOTA`, `RECLASIFICACION`.
+3. Borrar el registro de `migrations` para
+   `20260618_002_fase_7b_d_b_a_cxc_movimiento_cobro_enum.sql`.
+4. Ejecutar preflight CxC.
+
+Si existen movimientos `COBRO`, no revertir el enum sin una fase formal de anulacion o
+reconciliacion. No tocar Caja, cortes, saldos, reservaciones, pagos, abonos,
+facturacion ni `/api/sync`.
+
+## Rollback Fase 7B-D-C-0
+
+7B-D-C-0 es solo contrato documental del servicio transaccional de cobro CxC.
+
+Rollback:
+
+1. Revertir `docs/fase_7B_D_C_0_contrato_servicio_cobro_cxc_caja.md`.
+2. Retirar referencias a 7B-D-C-0 en resumen, cola, auditoria y fuentes de verdad.
+3. No tocar el enum `COBRO`, porque pertenece a 7B-D-B-A.
+4. No tocar la CxC `#1`.
+5. No tocar Caja, cortes, saldos, reservaciones, pagos, abonos, facturacion ni
+   `/api/sync`.
+
+DB: no aplica; 7B-D-C-0 no escribe datos ni ejecuta migraciones.
+
+## Rollback Fase 7B-D-C-A
+
+7B-D-C-A habilita cobro CxC con Caja mediante servicio transaccional.
+
+Backup previo:
+
+- `backups/medisoft_hoteles_import_before_7b_d_c_a_cxc_cash_service_20260618_232434.sql`
+- SHA256: `5708BC91E1BD7A54EFA53A8BA6A92A282ACC98A2AD9237F274AAB87AB11796CD`
+- Tamano: `1646216` bytes
+
+Rollback de codigo:
+
+1. Retirar ruta POST
+   `/cuentas-por-cobrar/operativas/{id}/registrar-cobro-caja`.
+2. Retirar `CuentaPorCobrarController::registrarCobroCajaAction()`.
+3. Retirar `CuentaPorCobrarCobroService`.
+4. Retirar formulario de cobro del detalle CxC.
+5. Retirar `tools/saas/probar_cobro_cxc_caja.php`.
+6. Ajustar preflight CxC al contrato anterior.
+
+Rollback de datos si se ejecuto un cobro real:
+
+1. No borrar datos con SQL directo.
+2. Identificar movimiento CxC tipo `COBRO`.
+3. Identificar movimiento Caja por referencia compartida manual o por referencia
+   automatica `CXC-{cuenta_id}-MOV-{movimiento_cxc_id}`.
+4. Restaurar saldo/estado solo mediante script transaccional revisado o fase formal de
+   anulacion/reversion.
+5. Registrar auditoria del rollback.
+
+En el QA manual validado existe cobro real persistente:
+
+- movimiento CxC `#4`;
+- movimiento Caja `#1482`;
+- referencia compartida `QA-CXC-20260619-001`;
+- CxC `#1` fue revertida posteriormente en 7B-D-D-A y queda pendiente con saldo
+  `4250.00`.
+
+Si solo se ejecuta la prueba CLI rollback adicional, no deja datos persistentes que
+revertir.
+
+No tocar reservaciones, pagos, abonos, facturacion, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 7B-D-D-0
+
+7B-D-D-0 es contrato documental de reversion de cobro CxC.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_7B_D_D_0_contrato_reversion_cobro_cxc.md`.
+2. Retirar referencias 7B-D-D-0 de resumen, cola, auditoria y fuentes de verdad.
+
+No ejecutar SQL ni tocar el cobro real `#4`/Caja `#1482` durante rollback documental.
+
+## Rollback Fase 7B-D-D-A
+
+7B-D-D-A implementa reversion de cobro CxC con Caja mediante servicio transaccional.
+
+Backup previo:
+
+- `backups/medisoft_hoteles_import_before_7b_d_d_a_cxc_reversal_20260619_091552.sql`
+- SHA256: `9B0157802EF9A959983879CF43505F6ED446613533B0E3A7C4FFCED4BFEEC0AE`
+- Tamano: `1649562` bytes
+
+Rollback de codigo:
+
+1. Retirar ruta POST
+   `/cuentas-por-cobrar/operativas/{id}/movimientos/{movimientoid}/revertir-cobro-caja`.
+2. Retirar `CuentaPorCobrarController::revertirCobroCajaAction()`.
+3. Retirar helpers de token `generarReversionCobroToken()` y
+   `consumirReversionCobroToken()`.
+4. Retirar `CuentaPorCobrarReversionCobroService`.
+5. Retirar panel "Reversion de cobros" del detalle CxC.
+6. Retirar `tools/saas/probar_reversion_cobro_cxc_caja.php`.
+7. Ajustar preflight CxC al contrato anterior.
+
+Rollback de datos:
+
+- La prueba CLI rollback no dejo datos adicionales persistentes.
+- La QA manual ya creo una reversion real; no borrar con SQL directo.
+- Movimiento CxC real de reversion: `CANCELACION #8`, referencia
+  `REV-CXC-1-MOV-4`.
+- Movimiento Caja real de reversion: gasto `#1486`, categoria
+  `Reversion Cobro CxC`, referencia `REV-CXC-1-MOV-4`.
+- Corregir solo mediante fase formal de anulacion de reversion o restauracion
+  autorizada con backup.
+
+No tocar reservaciones, pagos, abonos, facturacion, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 7B-D-D-F
+
+7B-D-D-F es cierre documental.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_7B_D_D_F_cierre_reversion_cobro_cxc.md`.
+2. Retirar referencias 7B-D-D-F de resumen, cola, auditoria y fuentes de verdad.
+
+No ejecutar SQL ni tocar cobros/reversiones reales durante rollback documental.
+
 ## Rollback Fase 8A-0
 
 8A-0 es solo contrato documental.
@@ -1517,3 +1665,692 @@ Rollback de datos si se ejecuto un pago real:
 4. Restaurar saldo/estado de `cuentas_por_pagar` solo con script transaccional revisado.
 5. Registrar auditoria del rollback.
 6. Si el riesgo es alto, restaurar backup completo en una base separada y reconciliar.
+
+Datos reales de QA 3D-C y estado vigente post 3D-D-A:
+
+- Despues de 3D-C, CxP `#1` quedo `pagada`, saldo `0.00`.
+- Despues de 3D-D-A, CxP `#1` queda `parcial`, saldo `10.00`.
+- Pago parcial: movimiento CxP `#4`, Caja `#1478`, referencia `CXP-1-MOV-4`.
+- Pago total restante: movimiento CxP `#5`, Caja `#1479`, referencia `1212331312`.
+- Reversion del pago parcial: movimiento CxP `#9`, Caja `#1494`, referencia
+  `REV-CXP-1-MOV-4`.
+
+No borrar esos movimientos con SQL directo.
+
+## Rollback Fase 3D-D-0
+
+3D-D-0 es contrato documental de reversion de pago proveedor con Caja.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_3D_D_0_contrato_reversion_pago_proveedor_caja.md`.
+2. Retirar referencias 3D-D-0 de resumen, cola, auditoria, fuentes de verdad y QA.
+
+No ejecutar SQL ni tocar pagos reales `#4`/`#5` ni Caja `#1478`/`#1479` durante rollback
+documental.
+
+## Rollback Fase 3D-D-A
+
+3D-D-A implementa reversion de pago proveedor con Caja mediante servicio transaccional.
+
+Backup previo:
+
+- `backups/medisoft_hoteles_import_before_3d_d_a_cxp_payment_reversal_20260619_095320.sql`
+- SHA256: `3BB71EF0C696E1AB0CB3FC4A4B2E51319DCD654F0CEAA7E83280378F9A9001FB`
+- Tamano: `3286902` bytes
+
+Rollback de codigo:
+
+1. Retirar ruta POST
+   `/cuentas-por-pagar/{id}/movimientos/{movimientoid}/revertir-pago-caja`.
+2. Retirar `CuentaPorPagarController::revertirPagoCajaAction()`.
+3. Retirar helpers de token `generarReversionPagoToken()` y
+   `consumirReversionPagoToken()`.
+4. Retirar `CuentaPorPagarReversionPagoService`.
+5. Retirar panel "Reversion de pagos" del detalle CxP.
+6. Retirar `tools/saas/probar_reversion_pago_proveedor_caja.php`.
+7. Ajustar preflight pagos proveedor y health al contrato anterior.
+
+Rollback de datos:
+
+- La prueba CLI rollback no dejo `CANCELACION` ni ingreso Caja adicionales.
+- La QA manual creo una reversion real persistente; no borrar con SQL directo.
+- Movimiento CxP de reversion real: `#9`, referencia `REV-CXP-1-MOV-4`.
+- Ingreso Caja de reversion real: `#1494`, categoria `Reversion Pago proveedor`.
+- Auditoria real: `logs_auditoria #121`.
+- Identificar movimiento CxP `CANCELACION` por referencia
+  `REV-CXP-{cuenta_id}-MOV-{movimiento_pago_id}`.
+- Identificar ingreso Caja `Reversion Pago proveedor` por la misma referencia.
+- Corregir solo mediante fase formal de anulacion de reversion o restauracion
+  autorizada con backup.
+
+No tocar compras, proveedores, abonos, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 3D-D-F
+
+3D-D-F es cierre documental.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_3D_D_F_cierre_reversion_pago_proveedor_caja.md`.
+2. Retirar referencias 3D-D-F de resumen, cola, auditoria y fuentes de verdad.
+
+No ejecutar SQL ni tocar pagos/reversiones reales durante rollback documental.
+
+## Rollback Fase 9A-0
+
+9A-0 es contrato documental read-only.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_9A_0_contrato_conciliacion_financiera_readonly.md`.
+2. Retirar referencias 9A-0 de resumen, cola, auditoria y fuentes de verdad.
+
+No ejecutar SQL ni tocar CxC, CxP, Caja, cortes, reservaciones, compras, proveedores,
+PWA/offline ni `/api/sync`.
+
+## Rollback Fase 9A-A
+
+9A-A agrega solo un preflight CLI read-only y documentacion.
+
+No crea rutas, vistas, modelos, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `src/tools/saas/preflight_conciliacion_financiera.php`.
+2. Retirar `docs/fase_9A_A_preflight_conciliacion_financiera_readonly.md`.
+3. Retirar referencias 9A-A de resumen, cola, auditoria, fuentes de verdad y QA.
+
+No ejecutar SQL ni tocar CxC, CxP, Caja, cortes, reservaciones, compras, proveedores,
+PWA/offline ni `/api/sync`.
+
+## Rollback Fase 9A-B-0
+
+9A-B-0 es contrato documental read-only.
+
+No crea codigo, rutas, vistas, modelos, migraciones ni datos.
+
+Rollback:
+
+1. Retirar
+   `docs/fase_9A_B_0_contrato_pantalla_conciliacion_financiera_readonly.md`.
+2. Retirar referencias 9A-B-0 de resumen, cola, auditoria, fuentes de verdad y QA.
+
+No ejecutar SQL ni tocar CxC, CxP, Caja, cortes, reservaciones, compras, proveedores,
+permisos, auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 9A-B-A
+
+9A-B-A agrega una pantalla GET/read-only y un lector de conciliacion sin escrituras.
+
+No crea migraciones ni datos.
+
+Rollback de codigo:
+
+1. Retirar ruta GET `/operacion/conciliacion-financiera`.
+2. Retirar `OperacionController::conciliacionFinancieraAction()` y
+   `filtrosConciliacion()`.
+3. Retirar `app/models/ConciliacionFinanciera.php`.
+4. Retirar `app/views/operacion/conciliacion_financiera.php`.
+5. Retirar enlace desde `app/views/operacion/diaria.php`.
+6. Retirar validaciones 9A-B-A agregadas a
+   `tools/saas/preflight_conciliacion_financiera.php`.
+7. Retirar referencias documentales 9A-B-A.
+
+No ejecutar SQL ni tocar CxC, CxP, Caja, cortes, reservaciones, compras, proveedores,
+permisos, auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 9A-B-F
+
+9A-B-F es cierre documental.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_9A_B_F_cierre_pantalla_conciliacion_financiera.md`.
+2. Retirar referencias 9A-B-F de resumen, cola, auditoria, fuentes de verdad y QA.
+
+No ejecutar SQL ni tocar CxC, CxP, Caja, cortes, reservaciones, compras, proveedores,
+permisos, auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 9C-0
+
+9C-0 es contrato documental read-only.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_9C_0_contrato_arqueo_metodos_pago_readonly.md`.
+2. Retirar referencias 9C-0 de resumen, cola, auditoria, fuentes de verdad y QA.
+
+No ejecutar SQL ni tocar movimientos de Caja, cortes, cajas, categorias, CxC, CxP,
+reservaciones, compras, proveedores, permisos, auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 9C-A
+
+9C-A agrega solo un preflight CLI/read-only y documentacion.
+
+No crea rutas, vistas, modelos, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `src/tools/saas/preflight_arqueo_metodos_pago.php`.
+2. Retirar `docs/fase_9C_A_preflight_arqueo_metodos_pago_readonly.md`.
+3. Retirar validacion 9C-A agregada a `tools/saas/health_check_fase_1a.php`.
+4. Retirar referencias 9C-A de resumen, cola, auditoria, fuentes de verdad y QA.
+
+No ejecutar SQL ni tocar movimientos de Caja, cortes, cajas, categorias, CxC, CxP,
+reservaciones, compras, proveedores, permisos, auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 9C-B-0
+
+9C-B-0 es contrato documental read-only.
+
+No crea codigo, rutas, vistas, modelos, migraciones ni datos.
+
+Rollback:
+
+1. Retirar
+   `docs/fase_9C_B_0_contrato_pantalla_arqueo_metodos_pago_readonly.md`.
+2. Retirar referencias 9C-B-0 de resumen, cola, auditoria, fuentes de verdad y QA.
+
+No ejecutar SQL ni tocar movimientos de Caja, cortes, cajas, categorias, CxC, CxP,
+reservaciones, compras, proveedores, permisos, auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 9C-B-A
+
+9C-B-A agrega una pantalla GET/read-only, un lector dedicado y validaciones
+automaticas.
+
+No crea migraciones ni datos.
+
+Rollback:
+
+1. Retirar ruta `GET /caja/arqueo-metodos` de `src/config/routes.php`.
+2. Retirar `ArqueoMetodosPago` de `src/app/models/ArqueoMetodosPago.php`.
+3. Retirar `CajaController::arqueoMetodosAction()` y la dependencia
+   `ArqueoMetodosPago` de `src/app/controllers/CajaController.php`.
+4. Retirar `src/app/views/caja/arqueo_metodos.php`.
+5. Retirar validaciones 9C-B-A agregadas a
+   `src/tools/saas/preflight_arqueo_metodos_pago.php`.
+6. Retirar validaciones 9C-B-A agregadas a
+   `src/tools/saas/health_check_fase_1a.php`.
+7. Retirar `docs/fase_9C_B_A_pantalla_arqueo_metodos_pago_readonly.md`.
+8. Retirar referencias 9C-B-A de resumen, cola, auditoria, fuentes de verdad y QA.
+
+Validacion posterior:
+
+- `php -l` en archivos PHP tocados.
+- `php tools/saas/preflight_arqueo_metodos_pago.php`.
+- `php tools/saas/health_check_fase_1a.php`.
+
+No ejecutar SQL ni tocar movimientos de Caja, cortes, cajas, categorias, CxC, CxP,
+reservaciones, compras, proveedores, permisos, auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 9C-B-F
+
+9C-B-F es cierre documental.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_9C_B_F_cierre_pantalla_arqueo_metodos_pago.md`.
+2. Retirar referencias 9C-B-F de resumen, cola, auditoria, fuentes de verdad y QA.
+
+No ejecutar SQL ni tocar movimientos de Caja, cortes, cajas, categorias, CxC, CxP,
+reservaciones, compras, proveedores, permisos, auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 10A-0
+
+10A-0 es contrato documental read-only.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_10A_0_contrato_tablero_ejecutivo_readonly.md`.
+2. Retirar referencias 10A-0 de resumen, cola, auditoria, fuentes de verdad y QA.
+
+No ejecutar SQL ni tocar Dashboard, reportes, Caja, CxC, CxP, inventario, tareas,
+trabajadores, documentos, permisos, auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 10A-B-A
+
+10A-B-A agrega pantalla GET/read-only, lector, ruta y validaciones.
+
+No crea migraciones ni datos.
+
+Rollback:
+
+1. Retirar ruta `GET /reportes/ejecutivo` de `src/config/routes.php`.
+2. Retirar `ReportesController::ejecutivoAction`, propiedad/modelo
+   `tableroEjecutivoModel` y require de `TableroEjecutivo`.
+3. Retirar `src/app/models/TableroEjecutivo.php`.
+4. Retirar `src/app/views/reportes/ejecutivo.php`.
+5. Retirar enlace a `reportes/ejecutivo` de `src/app/views/reportes/index.php`.
+6. Retirar validaciones 10A-B-A de
+   `src/tools/saas/preflight_tablero_ejecutivo.php`.
+7. Retirar validaciones 10A-B-A de `src/tools/saas/health_check_fase_1a.php`.
+8. Retirar `docs/fase_10A_B_A_pantalla_tablero_ejecutivo_readonly.md`.
+9. Retirar referencias 10A-B-A de resumen, cola, auditoria, fuentes de verdad y QA.
+
+Verificacion posterior:
+
+- `php -l config/routes.php`.
+- `php -l app/controllers/ReportesController.php`.
+- `php -l tools/saas/preflight_tablero_ejecutivo.php`.
+- `php -l tools/saas/health_check_fase_1a.php`.
+- `php tools/saas/preflight_tablero_ejecutivo.php`.
+- `php tools/saas/health_check_fase_1a.php`.
+
+No ejecutar SQL ni tocar Caja, CxC, CxP, inventario, tareas, documentos, permisos,
+auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 10A-B-F
+
+10A-B-F es cierre documental con QA manual validada.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_10A_B_F_cierre_tablero_ejecutivo.md`.
+2. Restaurar estado de `docs/fase_10A_B_A_pantalla_tablero_ejecutivo_readonly.md` a
+   implementada con QA pendiente, si se desea repetir la validacion manual.
+3. Retirar referencias 10A-B-F de resumen, cola, auditoria, fuentes de verdad y QA.
+
+No ejecutar SQL ni tocar `GET /reportes/ejecutivo`, Dashboard, reportes, Caja, CxC,
+CxP, inventario, tareas, trabajadores, documentos, permisos, auth, PWA/offline ni
+`/api/sync`.
+
+## Rollback Fase 10B-0
+
+10B-0 es contrato documental para separar reporte gerencial y notificaciones.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_10B_0_contrato_reporte_gerencial_notificaciones.md`.
+2. Retirar referencias 10B-0 de resumen, cola, auditoria, fuentes de verdad y QA.
+3. Restaurar notas de seguimiento en 10A-B-A y 10A-B-F si se quiere volver al estado
+   previo al contrato.
+
+No ejecutar SQL ni tocar `ReportesController`, `NotificacionController`, modelos,
+rutas, Caja, CxC, CxP, inventario, tareas, trabajadores, documentos, permisos, auth,
+PWA/offline ni `/api/sync`.
+
+## Rollback Fase 10B-A
+
+10B-A separa reporte gerencial directo y archivado de notificaciones.
+
+No crea rutas, migraciones ni datos.
+
+Rollback:
+
+1. Restaurar en `ReportesController` las llamadas de archivado desde
+   `gerencialDiarioAction` y `gerencialDiarioPdfAction`.
+2. Restaurar el metodo privado `archivarNotificacionReporteGerencialVisto`.
+3. Retirar validaciones 10B-A de
+   `src/tools/saas/preflight_tablero_ejecutivo.php`.
+4. Retirar validaciones 10B-A de `src/tools/saas/health_check_fase_1a.php`.
+5. Retirar `docs/fase_10B_A_separacion_reporte_gerencial_notificaciones.md`.
+6. Retirar referencias 10B-A de resumen, cola, auditoria, fuentes de verdad y QA.
+
+No ejecutar SQL ni tocar modelos de negocio, rutas, vistas, formularios, Caja, CxC,
+CxP, inventario, tareas, trabajadores, documentos, permisos, auth, PWA/offline ni
+`/api/sync`.
+
+## Rollback Fase 10B-F
+
+10B-F es cierre documental con QA manual validada.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_10B_F_cierre_reporte_gerencial_notificaciones.md`.
+2. Restaurar estado de `docs/fase_10B_A_separacion_reporte_gerencial_notificaciones.md`
+   a implementada con QA pendiente, si se desea repetir la validacion manual.
+3. Retirar referencias 10B-F de resumen, cola, auditoria, fuentes de verdad y QA.
+
+No ejecutar SQL ni tocar `ReportesController`, `NotificacionController`, modelos,
+rutas, Caja, CxC, CxP, inventario, tareas, trabajadores, documentos, permisos, auth,
+PWA/offline ni `/api/sync`.
+
+## Rollback Fase 11A-0
+
+11A-0 es contrato documental de perfil operativo de huesped read-only.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_11A_0_contrato_perfil_huesped_readonly.md`.
+2. Retirar referencias 11A-0 de resumen, cola, auditoria, fuentes de verdad y QA.
+3. Restaurar la nota de siguiente bloque en
+   `docs/fase_10B_F_cierre_reporte_gerencial_notificaciones.md` si se quiere volver
+   al estado previo.
+
+No ejecutar SQL ni tocar `HuespedController`, `Huesped`, vistas de huespedes, rutas,
+reservaciones, Caja, CxC, documentos, tareas, permisos/auth, PWA/offline ni
+`/api/sync`.
+
+## Rollback Fase 11A-A
+
+11A-A agrega un bloque read-only en la ficha de huesped y checks en health.
+
+No crea rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar el bloque `guest-readonly-profile` de
+   `src/app/views/huespedes/ver.php`.
+2. Retirar variables auxiliares `$perfilOperativo`, `$perfilReservaciones`,
+   `$perfilVehiculos`, `$perfilCxc`, `$perfilDocumentos` y `$perfilAlertas` de la
+   vista si ya no se usan.
+3. Retirar de `HuespedController::verAction` la llamada a
+   `perfilOperativoReadOnlyPorHotel()` y el parametro `perfilOperativo` enviado a la
+   vista.
+4. Retirar `perfilOperativoReadOnlyPorHotel()` y metodos auxiliares agregados en
+   `src/app/models/Huesped.php`.
+5. Retirar validaciones 11A-A de `src/tools/saas/health_check_fase_1a.php`.
+6. Retirar `docs/fase_11A_A_perfil_huesped_readonly.md`.
+7. Retirar referencias 11A-A de resumen, cola, auditoria, fuentes de verdad y QA.
+
+Verificacion posterior:
+
+- `php -l app/models/Huesped.php`.
+- `php -l app/controllers/HuespedController.php`.
+- `php -l app/views/huespedes/ver.php`.
+- `php -l tools/saas/health_check_fase_1a.php`.
+- `php tools/saas/health_check_fase_1a.php`.
+
+No ejecutar SQL ni tocar reservaciones, Caja, CxC, documentos, tareas, permisos/auth,
+PWA/offline ni `/api/sync`.
+
+## Rollback Fase 11A-F
+
+11A-F es cierre documental con QA manual validada.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_11A_F_cierre_perfil_huesped_readonly.md`.
+2. Restaurar estado de `docs/fase_11A_A_perfil_huesped_readonly.md` a implementada
+   con QA pendiente, si se desea repetir la validacion manual.
+3. Retirar referencias 11A-F de resumen, cola, auditoria, fuentes de verdad y QA.
+
+No ejecutar SQL ni tocar `GET /huespedes/{id}`, `HuespedController`, `Huesped`,
+vistas de huespedes, reservaciones, Caja, CxC, documentos, tareas, permisos/auth,
+PWA/offline ni `/api/sync`.
+
+## Rollback Fase 5E-0
+
+5E-0 es contrato documental de pagos laborales con Caja.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_0_contrato_pagos_laborales_caja.md`.
+2. Retirar referencias 5E-0 de resumen, cola, auditoria, fuentes de verdad y QA.
+3. Restaurar la nota de siguiente bloque en 11A-F si se quiere volver al estado
+   previo.
+
+No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
+`trabajador_anticipos`, `trabajador_prestamos`, Caja, cortes, movimientos de Caja,
+permisos/auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 5E-A
+
+5E-A agrega una herramienta CLI/read-only y validacion en health.
+
+No crea rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `src/tools/saas/preflight_personal_pagos_caja.php`.
+2. Retirar la variable `$workerCashPaymentPreflight` y el bloque de validacion 5E-A
+   de `src/tools/saas/health_check_fase_1a.php`.
+3. Restaurar el encabezado del health si se quiere quitar la mencion `5E-A`.
+4. Retirar `docs/fase_5E_A_preflight_pagos_laborales_caja.md`.
+5. Retirar referencias 5E-A de resumen, cola, auditoria, fuentes de verdad, QA y
+   del contrato 5E-0.
+
+Verificacion posterior:
+
+- `php -l tools/saas/health_check_fase_1a.php`.
+- `php tools/saas/health_check_fase_1a.php`.
+
+No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
+`trabajador_anticipos`, `trabajador_prestamos`, Caja, cortes, movimientos de Caja,
+permisos/auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 5E-B-0
+
+5E-B-0 es contrato documental de migracion aditiva para pagos laborales con Caja.
+
+No crea SQL, migracion, tabla ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_B_0_contrato_migracion_pagos_laborales_caja.md`.
+2. Retirar referencias 5E-B-0 de resumen, cola, auditoria, fuentes de verdad y QA.
+3. Retirar el seguimiento 5E-B-0 en
+   `docs/fase_5E_A_preflight_pagos_laborales_caja.md`.
+4. Retirar el seguimiento 5E-B-0 en
+   `docs/fase_5E_0_contrato_pagos_laborales_caja.md`.
+
+No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
+`trabajador_anticipos`, `trabajador_prestamos`, Caja, cortes, movimientos de Caja,
+permisos/auth, PWA/offline ni `/api/sync`.
+
+Si una futura 5E-B-A crea `trabajador_pagos_caja`, su rollback debe documentarse en
+esa fase y solo podra eliminar la tabla si esta vacia y hay autorizacion explicita
+para tocar DB.
+
+## Rollback Fase 5E-B-A
+
+5E-B-A crea la tabla `trabajador_pagos_caja` como migracion aditiva.
+
+Backup previo:
+
+- `backups/medisoft_hoteles_import_before_5e_b_a_trabajador_pagos_caja_20260619_220444.sql`.
+- SHA256:
+  `2E279999DA95C0216942F1FE480E5E43E96AAE42A06DA7C9FD83633BC53898BC`.
+
+Rollback permitido solo con autorizacion explicita y si la tabla sigue vacia.
+
+Verificacion previa:
+
+```sql
+SELECT COUNT(*) AS pagos_laborales_caja
+FROM trabajador_pagos_caja;
+```
+
+Si el conteo es `0`, rollback conceptual:
+
+```sql
+DROP TABLE trabajador_pagos_caja;
+
+DELETE FROM migrations
+WHERE nombre = '20260619_003_fase_5e_b_a_trabajador_pagos_caja.sql';
+```
+
+Verificacion posterior:
+
+- `php tools/saas/preflight_personal_pagos_caja.php`.
+- `php tools/saas/health_check_fase_1a.php`.
+
+Si existen pagos laborales reales en el futuro, no eliminar la tabla. Se requiere fase
+formal de reversion/reconciliacion.
+
+No tocar `trabajador_pagos`, `trabajador_anticipos`, `trabajador_prestamos`,
+movimientos de Caja, categorias de Caja, permisos/auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 5E-C-0
+
+5E-C-0 es contrato documental de simulador GET/read-only de pago laboral con Caja.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_C_0_contrato_simulador_pago_laboral_caja.md`.
+2. Retirar referencias 5E-C-0 de resumen, cola, auditoria, fuentes de verdad y QA.
+3. Retirar el seguimiento 5E-C-0 en
+   `docs/fase_5E_B_A_migracion_pagos_laborales_caja.md`.
+4. Retirar el seguimiento 5E-C-0 en
+   `docs/fase_5E_0_contrato_pagos_laborales_caja.md`.
+
+No ejecutar SQL ni tocar `trabajador_pagos_caja`, `trabajador_pagos`,
+`trabajador_anticipos`, `trabajador_prestamos`, Caja, cortes, movimientos de Caja,
+permisos/auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 5E-C-A
+
+5E-C-A agrega simulador GET/read-only de pago laboral con Caja.
+
+No crea migraciones, no escribe datos y no registra pagos reales.
+
+Rollback:
+
+1. Retirar ruta `GET /trabajadores/pagos-caja/simulador`.
+2. Retirar `TrabajadorController::simuladorPagoCajaAction()`.
+3. Retirar metodos read-only de simulador en `Trabajador`.
+4. Eliminar `src/app/views/trabajadores/simulador_pago_caja.php`.
+5. Retirar enlaces `Simulador Caja` de `trabajadores/index.php` y
+   `trabajadores/ver.php`.
+6. Retirar validaciones 5E-C-A de
+   `src/tools/saas/preflight_personal_pagos_caja.php`.
+7. Retirar validaciones 5E-C-A de `src/tools/saas/health_check_fase_1a.php`.
+8. Retirar `docs/fase_5E_C_A_simulador_pago_laboral_caja.md` y referencias en
+   resumen, cola, auditoria, fuentes de verdad y QA.
+
+Verificacion posterior:
+
+- `php -l` en archivos PHP tocados.
+- `php tools/saas/preflight_personal_pagos_caja.php`.
+- `php tools/saas/health_check_fase_1a.php`.
+
+No ejecutar SQL ni tocar `trabajador_pagos_caja`, `trabajador_pagos`,
+`trabajador_anticipos`, `trabajador_prestamos`, Caja, cortes, movimientos de Caja,
+permisos/auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 10A-B-0
+
+10A-B-0 es contrato documental de pantalla read-only.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_10A_B_0_contrato_pantalla_tablero_ejecutivo_readonly.md`.
+2. Retirar referencias 10A-B-0 de resumen, cola, auditoria, fuentes de verdad y QA.
+3. Restaurar la nota de siguiente paso en
+   `docs/fase_10A_A_preflight_tablero_ejecutivo_readonly.md` si se quiere volver al
+   estado previo al contrato de pantalla.
+
+No ejecutar SQL ni tocar Dashboard, reportes, Caja, CxC, CxP, inventario, tareas,
+trabajadores, documentos, permisos, auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 10A-A
+
+10A-A agrega una herramienta CLI/read-only y validacion en health.
+
+No crea rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `src/tools/saas/preflight_tablero_ejecutivo.php`.
+2. Retirar validaciones 10A-A de `src/tools/saas/health_check_fase_1a.php`.
+3. Retirar `docs/fase_10A_A_preflight_tablero_ejecutivo_readonly.md`.
+4. Retirar referencias 10A-A de resumen, cola, auditoria, fuentes de verdad y QA.
+
+Verificacion posterior:
+
+- `php -l tools/saas/health_check_fase_1a.php`.
+- `php tools/saas/health_check_fase_1a.php`.
+
+No ejecutar SQL ni tocar Dashboard, reportes, Caja, CxC, CxP, inventario, tareas,
+trabajadores, documentos, permisos, auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 5E-C-F
+
+5E-C-F es cierre documental del simulador validado manualmente.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_C_F_cierre_simulador_pago_laboral_caja.md`.
+2. Retirar referencias 5E-C-F de resumen, cola, auditoria, fuentes de verdad y QA.
+
+No ejecutar SQL ni tocar codigo operativo.
+
+## Rollback Fase 5E-D-0
+
+5E-D-0 es contrato documental del servicio futuro de pago laboral con Caja.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_D_0_contrato_servicio_pago_laboral_caja.md`.
+2. Retirar referencias 5E-D-0 de resumen, cola, auditoria, fuentes de verdad y QA.
+3. Restaurar la nota de siguiente paso en `docs/fase_5E_C_F_cierre_simulador_pago_laboral_caja.md` si se quiere volver al cierre sin contrato de servicio.
+
+No ejecutar SQL ni tocar `trabajador_pagos_caja`, `trabajador_pagos`, `trabajador_anticipos`, `trabajador_prestamos`, Caja, cortes, movimientos de Caja, permisos/auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 5E-D-A
+
+5E-D-A agrega servicio, ruta POST, panel en ficha de trabajador, herramienta rollback y validaciones.
+
+Rollback de codigo:
+
+1. Retirar `src/app/services/TrabajadorPagoCajaService.php`.
+2. Retirar `POST /trabajadores/{id}/registrar-pago-caja` de `src/config/routes.php`.
+3. Retirar de `TrabajadorController` la propiedad/instancia `pagoCajaService`, `registrarPagoCajaAction`, tokens y datos de pago Caja.
+4. Retirar el panel `Pago laboral con Caja` de `src/app/views/trabajadores/ver.php`.
+5. Revertir el ajuste del simulador que descuenta `pagos_caja_total` si se desea volver a 5E-C-A exacto.
+6. Retirar `src/tools/saas/probar_pago_laboral_caja.php`.
+7. Revertir validaciones 5E-D-A en preflight y health.
+8. Retirar `docs/fase_5E_D_A_pago_laboral_caja_controlado.md` y referencias documentales.
+
+Rollback de datos si hubo QA manual real:
+
+- No borrar directo sin autorizacion.
+- Identificar `trabajador_pagos_caja.id`, `movimiento_caja_id`, `corte_id`, referencia y auditoria.
+- En esta fase no existe reversion automatica; cualquier correccion debe hacerse con plan manual separado y backup.
+
+Verificacion posterior:
+
+- `docker compose exec app php -l` en PHP tocados.
+- `docker compose exec app php tools/saas/preflight_personal_pagos_caja.php`.
+- `docker compose exec app php tools/saas/health_check_fase_1a.php`.
+
+No tocar PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase 5E-D-F
+
+5E-D-F es cierre documental del pago laboral con Caja validado manualmente.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_D_F_cierre_pago_laboral_caja.md`.
+2. Retirar referencias 5E-D-F de resumen, cola, auditoria, fuentes de verdad, QA y
+   rollback.
+3. Restaurar la nota de siguiente paso en
+   `docs/fase_5E_D_A_pago_laboral_caja_controlado.md` si se quiere volver a la fase
+   con QA manual pendiente.
+
+No ejecutar SQL ni tocar codigo operativo.

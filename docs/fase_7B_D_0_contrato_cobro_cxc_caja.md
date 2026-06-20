@@ -153,3 +153,9 @@ El siguiente contrato documental define el esquema previo al primer cobro real:
 Ese contrato no autoriza migraciones ni cobros. Solo fija la decision de no usar
 `AJUSTE` como cobro y recomienda agregar un tipo semantico `COBRO` antes de implementar
 un servicio transaccional.
+
+7B-D-B-A ejecuto despues esa migracion aditiva:
+
+- `docs/fase_7B_D_B_A_migracion_cobro_enum.md`
+
+El cobro real sigue pendiente de un contrato de servicio transaccional.

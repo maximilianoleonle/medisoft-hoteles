@@ -51,6 +51,134 @@ foreach ($estacionamientos as $parkingCode => $parkingLabel) {
     $gcParkingOptionsTemplate .= '<div class="gc-radio-card"><i class="fas fa-car"></i><p>' . $parkingLabelEsc . '</p></div>';
     $gcParkingOptionsTemplate .= '</label>';
 }
+
+$guestFieldPolicy = is_array($guestFieldPolicy ?? null)
+    ? $guestFieldPolicy
+    : (function_exists('hotel_guest_field_policy') ? hotel_guest_field_policy() : ['fields' => []]);
+$guestFieldCatalog = function_exists('hotel_guest_field_catalog') ? hotel_guest_field_catalog() : [];
+$gcGuestVisibleFields = function ($scope) use ($guestFieldPolicy) {
+    return function_exists('hotel_guest_visible_fields') ? hotel_guest_visible_fields($scope, $guestFieldPolicy) : [];
+};
+$gcGuestFieldVisible = function ($key) use ($guestFieldPolicy) {
+    return function_exists('hotel_guest_field_visible') ? hotel_guest_field_visible($key, $guestFieldPolicy) : true;
+};
+$gcGuestFieldRequired = function ($key) use ($guestFieldPolicy) {
+    return function_exists('hotel_guest_field_required') ? hotel_guest_field_required($key, $guestFieldPolicy) : false;
+};
+$gcOldExtra = function ($key, $default = '') {
+    $value = $_SESSION['old_input']['extras'][$key] ?? $default;
+    return is_scalar($value) ? (string)$value : (string)$default;
+};
+$gcRequiredMark = function ($key) use ($gcGuestFieldRequired) {
+    return $gcGuestFieldRequired($key) ? ' <span class="gc-required">*</span>' : '';
+};
+$gcRenderGuestExtraField = function ($fieldKey, array $definition) use ($gcGuestFieldRequired, $gcOldExtra) {
+    $label = htmlspecialchars((string)($definition['label'] ?? $fieldKey), ENT_QUOTES, 'UTF-8');
+    $placeholder = htmlspecialchars((string)($definition['placeholder'] ?? ''), ENT_QUOTES, 'UTF-8');
+    $value = htmlspecialchars($gcOldExtra($fieldKey), ENT_QUOTES, 'UTF-8');
+    $required = $gcGuestFieldRequired($fieldKey);
+    $input = (string)($definition['input'] ?? 'text');
+    $wide = !empty($definition['wide']) || in_array($input, ['textarea'], true);
+    $max = (int)($definition['max'] ?? 0);
+    $fieldKeySafe = htmlspecialchars((string)$fieldKey, ENT_QUOTES, 'UTF-8');
+    $name = 'extras[' . $fieldKeySafe . ']';
+    if ($input === 'file') {
+        $name = htmlspecialchars((string)($definition['file_name'] ?? $fieldKey), ENT_QUOTES, 'UTF-8');
+    }
+    $requiredHtml = $required ? ' required' : '';
+    $maxHtml = $max > 0 ? ' maxlength="' . $max . '"' : '';
+    $acceptHtml = !empty($definition['accept'])
+        ? ' accept="' . htmlspecialchars((string)$definition['accept'], ENT_QUOTES, 'UTF-8') . '"'
+        : '';
+
+    ob_start();
+    ?>
+    <div class="gc-field<?= $wide ? ' gc-field-full' : '' ?>">
+        <label class="gc-label"><?= $label ?><?= $required ? ' <span class="gc-required">*</span>' : '' ?></label>
+        <?php if ($input === 'file'): ?>
+            <input type="file"
+                   name="<?= $name ?>"
+                   class="gc-control gc-file-control"
+                   <?= $acceptHtml ?>
+                   <?= $requiredHtml ?>>
+            <p class="gc-field-hint">
+                Puede tomar foto con la camara, elegir desde galeria o adjuntar PDF/imagen desde archivos.
+            </p>
+        <?php elseif ($input === 'textarea'): ?>
+            <textarea name="<?= $name ?>" rows="<?= (int)($definition['rows'] ?? 3) ?>" placeholder="<?= $placeholder ?>" class="gc-control"<?= $requiredHtml ?><?= $maxHtml ?>><?= $value ?></textarea>
+        <?php elseif ($input === 'select'): ?>
+            <select name="<?= $name ?>" class="gc-control"<?= $requiredHtml ?>>
+                <option value="">Seleccione una opcion</option>
+                <?php foreach (($definition['options'] ?? []) as $optionValue => $optionLabel): ?>
+                    <option value="<?= htmlspecialchars((string)$optionValue, ENT_QUOTES, 'UTF-8') ?>" <?= $gcOldExtra($fieldKey) === (string)$optionValue ? 'selected' : '' ?>>
+                        <?= htmlspecialchars((string)$optionLabel, ENT_QUOTES, 'UTF-8') ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        <?php else: ?>
+            <input type="<?= in_array($input, ['email', 'tel', 'date'], true) ? htmlspecialchars($input, ENT_QUOTES, 'UTF-8') : 'text' ?>"
+                   name="<?= $name ?>"
+                   value="<?= $value ?>"
+                   placeholder="<?= $placeholder ?>"
+                   class="gc-control<?= !empty($definition['uppercase']) ? ' gc-uppercase' : '' ?>"
+                   <?= !empty($definition['uppercase']) ? 'style="text-transform: uppercase"' : '' ?>
+                   <?= $requiredHtml ?>
+                   <?= $maxHtml ?>>
+        <?php endif; ?>
+    </div>
+    <?php
+    return ob_get_clean();
+};
+
+$gcVehicleVisibleFields = $gcGuestVisibleFields('vehicle');
+$gcRenderVehicleFields = function ($indexToken) use ($gcVehicleVisibleFields, $gcGuestFieldRequired, $gcParkingOptionsTemplate) {
+    ob_start();
+    foreach ($gcVehicleVisibleFields as $fieldKey => $definition) {
+        $input = (string)($definition['input'] ?? 'text');
+        $storage = (string)($definition['storage'] ?? 'extra');
+        $fieldName = (string)($definition['field'] ?? $fieldKey);
+        $label = htmlspecialchars((string)($definition['label'] ?? $fieldKey), ENT_QUOTES, 'UTF-8');
+        $placeholder = htmlspecialchars((string)($definition['placeholder'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $required = $gcGuestFieldRequired($fieldKey);
+        $wide = !empty($definition['wide']) || in_array($input, ['textarea', 'parking'], true);
+        $max = (int)($definition['max'] ?? 0);
+        $name = $storage === 'column'
+            ? 'vehiculos[' . $indexToken . '][' . htmlspecialchars($fieldName, ENT_QUOTES, 'UTF-8') . ']'
+            : 'vehiculos[' . $indexToken . '][extras][' . htmlspecialchars((string)$fieldKey, ENT_QUOTES, 'UTF-8') . ']';
+        $requiredHtml = $required ? ' required' : '';
+        $maxHtml = $max > 0 ? ' maxlength="' . $max . '"' : '';
+        ?>
+        <div class="gc-field<?= $wide ? ' gc-field-full' : '' ?>">
+            <label class="gc-label"><?= $label ?><?= $required ? ' <span class="gc-required">*</span>' : '' ?></label>
+            <?php if ($input === 'parking'): ?>
+                <div class="gc-radio-grid">
+                    <?= str_replace('__PARKING_NAME__', $name, $gcParkingOptionsTemplate) ?>
+                </div>
+            <?php elseif ($input === 'textarea'): ?>
+                <textarea name="<?= $name ?>" rows="<?= (int)($definition['rows'] ?? 2) ?>" placeholder="<?= $placeholder ?>" class="gc-control"<?= $requiredHtml ?><?= $maxHtml ?>></textarea>
+            <?php elseif ($input === 'select'): ?>
+                <select name="<?= $name ?>" class="gc-control"<?= $requiredHtml ?>>
+                    <option value="">Seleccione una opcion</option>
+                    <?php foreach (($definition['options'] ?? []) as $optionValue => $optionLabel): ?>
+                        <option value="<?= htmlspecialchars((string)$optionValue, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string)$optionLabel, ENT_QUOTES, 'UTF-8') ?></option>
+                    <?php endforeach; ?>
+                </select>
+            <?php else: ?>
+                <input type="<?= in_array($input, ['email', 'tel', 'date'], true) ? htmlspecialchars($input, ENT_QUOTES, 'UTF-8') : 'text' ?>"
+                       name="<?= $name ?>"
+                       placeholder="<?= $placeholder ?>"
+                       class="gc-control<?= !empty($definition['uppercase']) ? ' font-mono' : '' ?>"
+                       <?= !empty($definition['uppercase']) ? 'style="text-transform: uppercase"' : '' ?>
+                       <?= $requiredHtml ?>
+                       <?= $maxHtml ?>>
+            <?php endif; ?>
+        </div>
+        <?php
+    }
+
+    return ob_get_clean();
+};
+$gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
 ?>
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
@@ -381,6 +509,31 @@ foreach ($estacionamientos as $parkingCode => $parkingLabel) {
     border-color: var(--gc-accent);
     background: #FFFFFF;
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--gc-accent) 22%, transparent);
+}
+
+.gc-file-control {
+    padding: 9px 12px;
+    cursor: pointer;
+}
+
+.gc-file-control::file-selector-button {
+    margin-right: 12px;
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--gc-brand) 92%, #FFFFFF);
+    color: #FFFFFF;
+    font-size: .76rem;
+    font-weight: 800;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.gc-field-hint {
+    margin: 7px 0 0;
+    color: var(--gc-muted);
+    font-size: .76rem;
+    font-weight: 650;
+    line-height: 1.45;
 }
 
 .gc-note {
@@ -912,7 +1065,7 @@ foreach ($estacionamientos as $parkingCode => $parkingLabel) {
             </div>
         <?php endif; ?>
 
-        <form method="POST" action="<?= url('huespedes/store') . ($return_to ? '?return_to=' . urlencode($return_to) . $reservacion_rapida_params : '') ?>" class="gc-form">
+        <form method="POST" action="<?= url('huespedes/store') . ($return_to ? '?return_to=' . urlencode($return_to) . $reservacion_rapida_params : '') ?>" class="gc-form" enctype="multipart/form-data">
             <?= csrf_field() ?>
 
             <div class="gc-layout">
@@ -943,32 +1096,37 @@ foreach ($estacionamientos as $parkingCode => $parkingLabel) {
                                 </div>
 
                                 <div class="gc-field">
-                                    <label class="gc-label">Telefono</label>
+                                    <label class="gc-label">Telefono celular<?= $gcRequiredMark('telefono') ?></label>
                                     <div class="gc-input-wrap">
                                         <i class="fas fa-phone"></i>
                                         <input type="tel"
                                                name="telefono"
                                                value="<?= old('telefono') ?>"
                                                placeholder="10 digitos"
-                                               class="gc-control has-icon">
+                                               class="gc-control has-icon"
+                                               <?= $gcGuestFieldRequired('telefono') ? 'required' : '' ?>>
                                     </div>
                                 </div>
 
-                                <div class="gc-field">
-                                    <label class="gc-label">Email</label>
-                                    <div class="gc-input-wrap">
-                                        <i class="fas fa-envelope"></i>
-                                        <input type="email"
-                                               name="email"
-                                               value="<?= old('email') ?>"
-                                               placeholder="correo@ejemplo.com"
-                                               class="gc-control has-icon">
+                                <?php if ($gcGuestFieldVisible('email')): ?>
+                                    <div class="gc-field">
+                                        <label class="gc-label">Email<?= $gcRequiredMark('email') ?></label>
+                                        <div class="gc-input-wrap">
+                                            <i class="fas fa-envelope"></i>
+                                            <input type="email"
+                                                   name="email"
+                                                   value="<?= old('email') ?>"
+                                                   placeholder="correo@ejemplo.com"
+                                                   class="gc-control has-icon"
+                                                   <?= $gcGuestFieldRequired('email') ? 'required' : '' ?>>
+                                        </div>
                                     </div>
-                                </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </section>
 
+                    <?php if ($gcGuestFieldVisible('procedencia_estado') || $gcGuestFieldVisible('procedencia_ciudad')): ?>
                     <section class="gc-section">
                         <div class="gc-section-head">
                             <div class="gc-section-title-wrap">
@@ -982,31 +1140,66 @@ foreach ($estacionamientos as $parkingCode => $parkingLabel) {
 
                         <div class="gc-section-body">
                             <div class="gc-grid">
-                                <div class="gc-field">
-                                    <label class="gc-label">Estado</label>
-                                    <select name="procedencia_estado"
-                                            class="gc-control">
-                                        <option value="">Seleccione un estado</option>
-                                        <?php foreach ($estados as $estado): ?>
-                                            <option value="<?= $estado ?>" <?= old('procedencia_estado') == $estado ? 'selected' : '' ?>>
-                                                <?= $estado ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
+                                <?php if ($gcGuestFieldVisible('procedencia_estado')): ?>
+                                    <div class="gc-field">
+                                        <label class="gc-label">Estado<?= $gcRequiredMark('procedencia_estado') ?></label>
+                                        <select name="procedencia_estado"
+                                                class="gc-control"
+                                                <?= $gcGuestFieldRequired('procedencia_estado') ? 'required' : '' ?>>
+                                            <option value="">Seleccione un estado</option>
+                                            <?php foreach ($estados as $estado): ?>
+                                                <option value="<?= $estado ?>" <?= old('procedencia_estado') == $estado ? 'selected' : '' ?>>
+                                                    <?= $estado ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                <?php endif; ?>
 
-                                <div class="gc-field">
-                                    <label class="gc-label">Ciudad</label>
-                                    <input type="text"
-                                           name="procedencia_ciudad"
-                                           value="<?= old('procedencia_ciudad') ?>"
-                                           placeholder="Ciudad de origen"
-                                           class="gc-control">
-                                </div>
+                                <?php if ($gcGuestFieldVisible('procedencia_ciudad')): ?>
+                                    <div class="gc-field">
+                                        <label class="gc-label">Ciudad<?= $gcRequiredMark('procedencia_ciudad') ?></label>
+                                        <input type="text"
+                                               name="procedencia_ciudad"
+                                               value="<?= old('procedencia_ciudad') ?>"
+                                               placeholder="Ciudad de origen"
+                                               class="gc-control"
+                                               <?= $gcGuestFieldRequired('procedencia_ciudad') ? 'required' : '' ?>>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </section>
+                    <?php endif; ?>
 
+                    <?php
+                    $gcExtraGuestFields = array_filter($gcGuestVisibleFields('guest'), function ($definition) {
+                        return in_array(($definition['storage'] ?? 'column'), ['extra', 'document'], true);
+                    });
+                    ?>
+                    <?php if (!empty($gcExtraGuestFields)): ?>
+                        <section class="gc-section">
+                            <div class="gc-section-head">
+                                <div class="gc-section-title-wrap">
+                                    <span class="gc-section-icon"><i class="fas fa-id-card"></i></span>
+                                    <div>
+                                        <h2>Datos adicionales</h2>
+                                        <p class="gc-section-sub">Campos definidos por la configuracion de este hotel.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="gc-section-body">
+                                <div class="gc-grid">
+                                    <?php foreach ($gcExtraGuestFields as $fieldKey => $fieldDefinition): ?>
+                                        <?= $gcRenderGuestExtraField($fieldKey, $fieldDefinition) ?>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </section>
+                    <?php endif; ?>
+
+                    <?php if (!empty($gcVehicleVisibleFields)): ?>
                     <section class="gc-section">
                         <div class="gc-section-head">
                             <div class="gc-section-title-wrap">
@@ -1032,47 +1225,7 @@ foreach ($estacionamientos as $parkingCode => $parkingLabel) {
                                     </div>
 
                                     <div class="gc-grid">
-                                        <div class="gc-field">
-                                            <label class="gc-label">Marca</label>
-                                            <input type="text"
-                                                   name="vehiculos[0][marca]"
-                                                   placeholder="Ej: Toyota, Nissan, etc."
-                                                   class="gc-control">
-                                        </div>
-
-                                        <div class="gc-field">
-                                            <label class="gc-label">Modelo</label>
-                                            <input type="text"
-                                                   name="vehiculos[0][modelo]"
-                                                   placeholder="Ej: Corolla, Sentra, etc."
-                                                   class="gc-control">
-                                        </div>
-
-                                        <div class="gc-field">
-                                            <label class="gc-label">Placas</label>
-                                            <input type="text"
-                                                   name="vehiculos[0][placas]"
-                                                   placeholder="ABC-123"
-                                                   style="text-transform: uppercase"
-                                                   class="gc-control font-mono">
-                                        </div>
-
-                                        <div class="gc-field">
-                                            <label class="gc-label">Color</label>
-                                            <input type="text"
-                                                   name="vehiculos[0][color]"
-                                                   placeholder="Ej: Rojo, Azul, etc."
-                                                   class="gc-control">
-                                        </div>
-
-                                        <div class="gc-field gc-field-full">
-                                            <label class="gc-label">
-                                                Estacionamiento <span class="gc-required">*</span>
-                                             </label>
-                                             <div class="gc-radio-grid">
-                                                <?= str_replace('__PARKING_NAME__', 'vehiculos[0][estacionamiento]', $gcParkingOptionsTemplate) ?>
-                                            </div>
-                                        </div>
+                                        <?= str_replace('__INDEX__', '0', $gcVehicleFieldsTemplate) ?>
                                     </div>
                                 </div>
                             </div>
@@ -1088,7 +1241,9 @@ foreach ($estacionamientos as $parkingCode => $parkingLabel) {
                             </p>
                         </div>
                     </section>
+                    <?php endif; ?>
 
+                    <?php if ($gcGuestFieldVisible('notas')): ?>
                     <section class="gc-section">
                         <div class="gc-section-head">
                             <div class="gc-section-title-wrap">
@@ -1101,13 +1256,15 @@ foreach ($estacionamientos as $parkingCode => $parkingLabel) {
                         </div>
 
                         <div class="gc-section-body">
-                            <label class="gc-label">Notas</label>
+                            <label class="gc-label">Notas<?= $gcRequiredMark('notas') ?></label>
                             <textarea name="notas"
                                       rows="4"
                                       placeholder="Cualquier informacion adicional sobre el huesped..."
-                                      class="gc-control"><?= old('notas') ?></textarea>
+                                      class="gc-control"
+                                      <?= $gcGuestFieldRequired('notas') ? 'required' : '' ?>><?= old('notas') ?></textarea>
                         </div>
                     </section>
+                    <?php endif; ?>
                 </main>
 
                 <aside class="gc-side">
@@ -1117,9 +1274,9 @@ foreach ($estacionamientos as $parkingCode => $parkingLabel) {
                             Registro limpio
                         </h3>
                         <div class="gc-check-list">
-                            <span><i class="fas fa-check-circle"></i> El nombre completo es el unico dato obligatorio del huesped.</span>
-                            <span><i class="fas fa-check-circle"></i> Telefono y correo ayudan a recuperar reservaciones mas rapido.</span>
-                            <span><i class="fas fa-check-circle"></i> Los vehiculos pueden quedarse vacios si no aplican.</span>
+                            <span><i class="fas fa-check-circle"></i> Nombre completo y telefono celular son la base del expediente.</span>
+                            <span><i class="fas fa-check-circle"></i> Los demas datos dependen de la configuracion del hotel.</span>
+                            <span><i class="fas fa-check-circle"></i> Vehiculos se pueden registrar solo si aplican.</span>
                         </div>
                     </div>
 
@@ -1152,13 +1309,12 @@ foreach ($estacionamientos as $parkingCode => $parkingLabel) {
 
 <script>
 let vehiculoIndex = 1;
-const estacionamientoOptionsTemplate = <?= json_encode($gcParkingOptionsTemplate, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+const vehicleFieldsTemplate = <?= json_encode($gcVehicleFieldsTemplate, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
 // Funcion para agregar vehiculo
 function agregarVehiculo() {
     const container = document.getElementById('vehiculos-container');
-    const estacionamientoName = `vehiculos[${vehiculoIndex}][estacionamiento]`;
-    const estacionamientoOptionsHtml = estacionamientoOptionsTemplate.replace(/__PARKING_NAME__/g, estacionamientoName);
+    const vehicleFieldsHtml = vehicleFieldsTemplate.replace(/__INDEX__/g, String(vehiculoIndex));
     const vehiculoHtml = `
         <div class="vehiculo-item animate-fadeIn">
             <div class="gc-vehicle-head">
@@ -1172,48 +1328,7 @@ function agregarVehiculo() {
             </div>
 
             <div class="gc-grid">
-                <div class="gc-field">
-                    <label class="gc-label">Marca</label>
-                    <input type="text"
-                           name="vehiculos[${vehiculoIndex}][marca]"
-                           placeholder="Ej: Toyota, Nissan, etc."
-                           class="gc-control">
-                </div>
-
-                <div class="gc-field">
-                    <label class="gc-label">Modelo</label>
-                    <input type="text"
-                           name="vehiculos[${vehiculoIndex}][modelo]"
-                           placeholder="Ej: Corolla, Sentra, etc."
-                           class="gc-control">
-                </div>
-
-                <div class="gc-field">
-                    <label class="gc-label">Placas</label>
-                    <input type="text"
-                           name="vehiculos[${vehiculoIndex}][placas]"
-                           placeholder="ABC-123"
-                           style="text-transform: uppercase"
-                           onchange="this.value = this.value.toUpperCase()"
-                           class="gc-control font-mono">
-                </div>
-
-                <div class="gc-field">
-                    <label class="gc-label">Color</label>
-                    <input type="text"
-                           name="vehiculos[${vehiculoIndex}][color]"
-                           placeholder="Ej: Rojo, Azul, etc."
-                           class="gc-control">
-                </div>
-
-                <div class="gc-field gc-field-full">
-                    <label class="gc-label">
-                        Estacionamiento <span class="gc-required">*</span>
-                    </label>
-                    <div class="gc-radio-grid">
-                        ${estacionamientoOptionsHtml}
-                    </div>
-                </div>
+                ${vehicleFieldsHtml}
             </div>
         </div>
     `;
@@ -1250,7 +1365,7 @@ function eliminarVehiculo(button) {
 }
 
 // Formatear telefono mientras se escribe
-document.querySelector('input[name="telefono"]').addEventListener('input', function(e) {
+document.querySelector('input[name="telefono"]')?.addEventListener('input', function(e) {
     let value = e.target.value.replace(/\D/g, '');
     if (value.length > 10) {
         value = value.slice(0, 10);
@@ -1272,8 +1387,8 @@ document.querySelector('form').addEventListener('submit', function(e) {
     let hayVehiculoCompleto = false;
 
     vehiculos.forEach(vehiculo => {
-        const marca = vehiculo.querySelector('input[name*="[marca]"]').value;
-        const placas = vehiculo.querySelector('input[name*="[placas]"]').value;
+        const marca = vehiculo.querySelector('input[name*="[marca]"]')?.value || '';
+        const placas = vehiculo.querySelector('input[name*="[placas]"]')?.value || '';
 
         if (marca && placas) {
             hayVehiculoCompleto = true;

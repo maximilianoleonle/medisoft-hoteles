@@ -320,7 +320,51 @@ class NotificacionReglasService {
             $this->tiposActivos[] = $tipo;
         }
 
-        return NotificacionService::crear($datos);
+        $id = NotificacionService::crear($datos);
+        $this->actualizarReglaActiva($datos);
+
+        return $id;
+    }
+
+    private function actualizarReglaActiva(array $datos): void {
+        $dedupeKey = trim((string)($datos['dedupe_key'] ?? ''));
+        if ($dedupeKey === '') {
+            return;
+        }
+
+        $entidadId = isset($datos['entidad_id']) && $datos['entidad_id'] !== ''
+            ? (int)$datos['entidad_id']
+            : null;
+
+        try {
+            $this->db->query(
+                "UPDATE notificaciones
+                 SET severidad = ?,
+                     titulo = ?,
+                     mensaje = ?,
+                     url = ?,
+                     entidad_tipo = ?,
+                     entidad_id = ?,
+                     rol_destino = ?,
+                     updated_at = NOW()
+                 WHERE hotel_id = ?
+                   AND dedupe_key = ?
+                   AND estado IN ('nueva', 'leida')",
+                [
+                    (string)($datos['severidad'] ?? 'info'),
+                    (string)($datos['titulo'] ?? 'Notificacion'),
+                    (string)($datos['mensaje'] ?? 'Evento registrado en el sistema.'),
+                    (string)($datos['url'] ?? ''),
+                    $datos['entidad_tipo'] ?? null,
+                    $entidadId,
+                    $datos['rol_destino'] ?? null,
+                    $this->hotelId,
+                    $dedupeKey,
+                ]
+            );
+        } catch (Throwable $e) {
+            error_log('No se pudo actualizar notificacion automatica activa: ' . $e->getMessage());
+        }
     }
 
     private function fetchOne(string $sql, array $params = []): array {

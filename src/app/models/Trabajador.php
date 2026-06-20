@@ -30,6 +30,26 @@ class Trabajador extends Model
         return $disponibles;
     }
 
+    public function tablasSimuladorPagoCajaDisponibles(): bool
+    {
+        foreach ([
+            'trabajadores',
+            'trabajador_pagos',
+            'trabajador_anticipos',
+            'trabajador_prestamos',
+            'trabajador_pagos_caja',
+            'cajas',
+            'cortes_caja',
+            'movimientos_caja',
+        ] as $tabla) {
+            if (!$this->tablaExiste($tabla)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function listarPorHotel(int $hotelId, array $filtros = [], int $limite = 100): array
     {
         if ($hotelId <= 0 || !$this->tablaDisponible()) {
@@ -317,6 +337,61 @@ class Trabajador extends Model
 
         $row = $stmt ? $stmt->fetch() : null;
         return $row ?: null;
+    }
+
+    public function simuladorPagoCajaPorHotel(int $hotelId, array $filtros = [], int $limite = 200): array
+    {
+        $filtros = $this->normalizarFiltrosSimuladorPagoCaja($filtros);
+        $corte = $this->corteAbiertoSimuladorPagoCaja($hotelId);
+        $trabajadores = [];
+
+        if ($hotelId > 0 && $this->tablasSimuladorPagoCajaDisponibles()) {
+            $limite = max(1, min(300, $limite));
+            $filas = [];
+
+            if ((int)$filtros['trabajador_id'] > 0) {
+                $trabajador = $this->buscarPorIdHotel((int)$filtros['trabajador_id'], $hotelId);
+                if ($trabajador) {
+                    $filas[] = $trabajador;
+                }
+            } else {
+                $filas = $this->listarPorHotel($hotelId, [
+                    'estado' => 'todos',
+                    'buscar' => $filtros['buscar'],
+                ], $limite);
+            }
+
+            foreach ($filas as $fila) {
+                $resumenLaboral = $this->resumenLaboralSimuladorPagoCaja(
+                    (int)($fila['id'] ?? 0),
+                    $hotelId,
+                    $filtros['periodo_inicio'],
+                    $filtros['periodo_fin']
+                );
+                $pagosCaja = $this->pagosCajaResumenPorTrabajador(
+                    (int)($fila['id'] ?? 0),
+                    $hotelId,
+                    $filtros['periodo_inicio'],
+                    $filtros['periodo_fin']
+                );
+
+                $trabajadores[] = $this->evaluarSimuladorPagoCajaTrabajador(
+                    $fila,
+                    $resumenLaboral,
+                    $pagosCaja,
+                    $corte,
+                    $filtros,
+                    $hotelId
+                );
+            }
+        }
+
+        return [
+            'corte' => $corte,
+            'trabajadores' => $trabajadores,
+            'resumen' => $this->resumenSimuladorPagoCaja($trabajadores, $corte),
+            'filtros_normalizados' => $filtros,
+        ];
     }
 
     public function usuariosVinculablesPorHotel(int $hotelId): array
@@ -1074,6 +1149,351 @@ class Trabajador extends Model
         );
 
         return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
+    private function normalizarFiltrosSimuladorPagoCaja(array $filtros): array
+    {
+        $monto = trim((string)($filtros['monto'] ?? ''));
+        $montoNormalizado = '';
+        $montoInvalido = false;
+        if ($monto !== '') {
+            if (is_numeric($monto)) {
+                $montoNormalizado = $this->decimal($monto);
+            } else {
+                $montoInvalido = true;
+            }
+        }
+
+        $metodo = strtolower(trim((string)($filtros['metodo_pago'] ?? 'efectivo')));
+        $metodoInvalido = !in_array($metodo, ['efectivo', 'tarjeta', 'transferencia'], true);
+        if ($metodoInvalido) {
+            $metodo = 'efectivo';
+        }
+
+        $periodoInicio = $this->nullableFecha($filtros['periodo_inicio'] ?? null);
+        $periodoFin = $this->nullableFecha($filtros['periodo_fin'] ?? null);
+
+        return [
+            'trabajador_id' => max(0, (int)($filtros['trabajador_id'] ?? 0)),
+            'buscar' => $this->limpiarTexto($filtros['buscar'] ?? '', 120),
+            'periodo_inicio' => $periodoInicio,
+            'periodo_fin' => $periodoFin,
+            'periodo_invalido' => $periodoInicio !== null && $periodoFin !== null && $periodoFin < $periodoInicio,
+            'metodo_pago' => $metodo,
+            'metodo_pago_invalido' => $metodoInvalido,
+            'monto' => $montoNormalizado,
+            'monto_invalido' => $montoInvalido,
+            'referencia' => $this->limpiarTexto($filtros['referencia'] ?? '', 120),
+        ];
+    }
+
+    private function resumenLaboralSimuladorPagoCaja(int $trabajadorId, int $hotelId, ?string $periodoInicio, ?string $periodoFin): array
+    {
+        $resumen = [
+            'conceptos_count' => 0,
+            'conceptos_a_favor' => '0.00',
+            'conceptos_en_contra' => '0.00',
+            'anticipos_count' => 0,
+            'anticipos_saldo' => '0.00',
+            'prestamos_count' => 0,
+            'prestamos_saldo' => '0.00',
+            'saldo_estimado' => '0.00',
+        ];
+
+        if ($trabajadorId <= 0 || $hotelId <= 0) {
+            return $resumen;
+        }
+
+        if ($this->tablaExiste('trabajador_pagos')) {
+            $where = ['hotel_id = ?', 'trabajador_id = ?'];
+            $params = [$hotelId, $trabajadorId];
+            if ($periodoInicio !== null) {
+                $where[] = 'COALESCE(periodo_fin, fecha) >= ?';
+                $params[] = $periodoInicio;
+            }
+            if ($periodoFin !== null) {
+                $where[] = 'COALESCE(periodo_inicio, fecha) <= ?';
+                $params[] = $periodoFin;
+            }
+
+            $row = $this->fetchOne(
+                "SELECT COUNT(*) AS total,
+                        COALESCE(SUM(CASE WHEN estado = 'activo' AND efecto = 'a_favor' THEN monto ELSE 0 END), 0) AS a_favor,
+                        COALESCE(SUM(CASE WHEN estado = 'activo' AND efecto = 'en_contra' THEN monto ELSE 0 END), 0) AS en_contra
+                 FROM trabajador_pagos
+                 WHERE " . implode(' AND ', $where),
+                $params
+            );
+            $resumen['conceptos_count'] = (int)($row['total'] ?? 0);
+            $resumen['conceptos_a_favor'] = $this->decimal($row['a_favor'] ?? 0);
+            $resumen['conceptos_en_contra'] = $this->decimal($row['en_contra'] ?? 0);
+        }
+
+        if ($this->tablaExiste('trabajador_anticipos')) {
+            $row = $this->fetchOne(
+                "SELECT COUNT(*) AS total,
+                        COALESCE(SUM(CASE WHEN estado = 'pendiente' THEN saldo_pendiente ELSE 0 END), 0) AS saldo
+                 FROM trabajador_anticipos
+                 WHERE hotel_id = ?
+                   AND trabajador_id = ?",
+                [$hotelId, $trabajadorId]
+            );
+            $resumen['anticipos_count'] = (int)($row['total'] ?? 0);
+            $resumen['anticipos_saldo'] = $this->decimal($row['saldo'] ?? 0);
+        }
+
+        if ($this->tablaExiste('trabajador_prestamos')) {
+            $row = $this->fetchOne(
+                "SELECT COUNT(*) AS total,
+                        COALESCE(SUM(CASE WHEN estado = 'vigente' THEN saldo_pendiente ELSE 0 END), 0) AS saldo
+                 FROM trabajador_prestamos
+                 WHERE hotel_id = ?
+                   AND trabajador_id = ?",
+                [$hotelId, $trabajadorId]
+            );
+            $resumen['prestamos_count'] = (int)($row['total'] ?? 0);
+            $resumen['prestamos_saldo'] = $this->decimal($row['saldo'] ?? 0);
+        }
+
+        $resumen['saldo_estimado'] = $this->decimal(
+            (float)$resumen['conceptos_a_favor']
+            - (float)$resumen['conceptos_en_contra']
+            - (float)$resumen['anticipos_saldo']
+            - (float)$resumen['prestamos_saldo']
+        );
+
+        return $resumen;
+    }
+
+    private function pagosCajaResumenPorTrabajador(int $trabajadorId, int $hotelId, ?string $periodoInicio, ?string $periodoFin): array
+    {
+        $resumen = [
+            'pagos_caja_count' => 0,
+            'pagos_caja_pagados' => 0,
+            'pagos_caja_revertidos' => 0,
+            'pagos_caja_total' => '0.00',
+            'ultimo_pago_caja' => null,
+        ];
+
+        if ($trabajadorId <= 0 || $hotelId <= 0 || !$this->tablaExiste('trabajador_pagos_caja')) {
+            return $resumen;
+        }
+
+        $where = ['hotel_id = ?', 'trabajador_id = ?'];
+        $params = [$hotelId, $trabajadorId];
+        if ($periodoInicio !== null) {
+            $where[] = 'COALESCE(periodo_fin, DATE(fecha_pago)) >= ?';
+            $params[] = $periodoInicio;
+        }
+        if ($periodoFin !== null) {
+            $where[] = 'COALESCE(periodo_inicio, DATE(fecha_pago)) <= ?';
+            $params[] = $periodoFin;
+        }
+
+        $row = $this->fetchOne(
+            "SELECT COUNT(*) AS total,
+                    SUM(CASE WHEN estado = 'pagado' THEN 1 ELSE 0 END) AS pagados,
+                    SUM(CASE WHEN estado = 'revertido' THEN 1 ELSE 0 END) AS revertidos,
+                    COALESCE(SUM(CASE WHEN estado = 'pagado' THEN monto ELSE 0 END), 0) AS monto,
+                    MAX(fecha_pago) AS ultimo_pago
+             FROM trabajador_pagos_caja
+             WHERE " . implode(' AND ', $where),
+            $params
+        );
+
+        $resumen['pagos_caja_count'] = (int)($row['total'] ?? 0);
+        $resumen['pagos_caja_pagados'] = (int)($row['pagados'] ?? 0);
+        $resumen['pagos_caja_revertidos'] = (int)($row['revertidos'] ?? 0);
+        $resumen['pagos_caja_total'] = $this->decimal($row['monto'] ?? 0);
+        $resumen['ultimo_pago_caja'] = $row['ultimo_pago'] ?? null;
+
+        return $resumen;
+    }
+
+    private function evaluarSimuladorPagoCajaTrabajador(
+        array $trabajador,
+        array $resumenLaboral,
+        array $pagosCaja,
+        ?array $corte,
+        array $filtros,
+        int $hotelId
+    ): array {
+        $bloqueos = [];
+        $saldoBase = (float)($resumenLaboral['saldo_estimado'] ?? 0);
+        $pagosCajaTotal = (float)($pagosCaja['pagos_caja_total'] ?? 0);
+        $saldoEstimado = $saldoBase - $pagosCajaTotal;
+        $montoSimulado = $filtros['monto'] !== ''
+            ? (float)$filtros['monto']
+            : max(0, $saldoEstimado);
+        $referenciaSugerida = 'NOM-TRAB-' . (int)($trabajador['id'] ?? 0) . '-' . date('YmdHis');
+        $referenciaEvaluada = $filtros['referencia'] !== ''
+            ? $filtros['referencia']
+            : $referenciaSugerida;
+
+        if (empty($corte)) {
+            $bloqueos[] = 'No hay corte de Caja abierto para el hotel actual.';
+        }
+        if (($trabajador['estado'] ?? '') !== 'activo') {
+            $bloqueos[] = 'El trabajador no esta activo.';
+        }
+        if ((int)($trabajador['hotel_id'] ?? 0) !== $hotelId) {
+            $bloqueos[] = 'El trabajador no pertenece al hotel actual.';
+        }
+        if (!empty($filtros['periodo_invalido'])) {
+            $bloqueos[] = 'El periodo evaluado no es valido.';
+        }
+        if (!empty($filtros['metodo_pago_invalido'])) {
+            $bloqueos[] = 'El metodo de pago no es valido.';
+        }
+        if (!empty($filtros['monto_invalido']) || $montoSimulado <= 0) {
+            $bloqueos[] = 'El monto simulado debe ser mayor a cero.';
+        }
+        if ($saldoEstimado <= 0) {
+            $bloqueos[] = 'El saldo laboral estimado no es positivo.';
+        } elseif ($montoSimulado > $saldoEstimado) {
+            $bloqueos[] = 'El monto simulado excede el saldo laboral estimado.';
+        }
+        if (in_array($filtros['metodo_pago'], ['tarjeta', 'transferencia'], true) && $filtros['referencia'] === '') {
+            $bloqueos[] = 'Tarjeta o transferencia requieren referencia manual.';
+        }
+        if ($referenciaEvaluada === '') {
+            $bloqueos[] = 'La referencia no es valida.';
+        } elseif ($this->referenciaDuplicadaPagoLaboralCaja($hotelId, $referenciaEvaluada)) {
+            $bloqueos[] = 'La referencia ya existe en pagos laborales con Caja.';
+        } elseif ($this->referenciaDuplicadaMovimientoCaja($hotelId, $referenciaEvaluada)) {
+            $bloqueos[] = 'La referencia ya existe en movimientos de Caja.';
+        }
+
+        $trabajador['conceptos_count'] = (int)($resumenLaboral['conceptos_count'] ?? 0);
+        $trabajador['conceptos_a_favor'] = $this->decimal($resumenLaboral['conceptos_a_favor'] ?? 0);
+        $trabajador['conceptos_en_contra'] = $this->decimal($resumenLaboral['conceptos_en_contra'] ?? 0);
+        $trabajador['anticipos_count'] = (int)($resumenLaboral['anticipos_count'] ?? 0);
+        $trabajador['anticipos_saldo'] = $this->decimal($resumenLaboral['anticipos_saldo'] ?? 0);
+        $trabajador['prestamos_count'] = (int)($resumenLaboral['prestamos_count'] ?? 0);
+        $trabajador['prestamos_saldo'] = $this->decimal($resumenLaboral['prestamos_saldo'] ?? 0);
+        $trabajador['saldo_base_caja'] = $this->decimal($saldoBase);
+        $trabajador['saldo_estimado'] = $this->decimal($saldoEstimado);
+        $trabajador['monto_simulado'] = $this->decimal($montoSimulado);
+        $trabajador['monto_maximo_sugerido'] = $this->decimal(max(0, $saldoEstimado));
+        $trabajador['metodo_pago_simulado'] = $filtros['metodo_pago'];
+        $trabajador['referencia_sugerida'] = $referenciaSugerida;
+        $trabajador['referencia_evaluada'] = $referenciaEvaluada;
+        $trabajador['periodo_inicio_simulado'] = $filtros['periodo_inicio'];
+        $trabajador['periodo_fin_simulado'] = $filtros['periodo_fin'];
+        $trabajador['pagos_caja_count'] = (int)($pagosCaja['pagos_caja_count'] ?? 0);
+        $trabajador['pagos_caja_pagados'] = (int)($pagosCaja['pagos_caja_pagados'] ?? 0);
+        $trabajador['pagos_caja_revertidos'] = (int)($pagosCaja['pagos_caja_revertidos'] ?? 0);
+        $trabajador['pagos_caja_total'] = $this->decimal($pagosCaja['pagos_caja_total'] ?? 0);
+        $trabajador['ultimo_pago_caja'] = $pagosCaja['ultimo_pago_caja'] ?? null;
+        $trabajador['es_elegible_caja'] = empty($bloqueos);
+        $trabajador['motivo_elegibilidad_caja'] = empty($bloqueos)
+            ? 'Trabajador activo, saldo positivo, corte abierto y referencia disponible. Esta pantalla no registra pagos.'
+            : '';
+        $trabajador['motivo_bloqueo_caja'] = implode(' ', $bloqueos);
+
+        return $trabajador;
+    }
+
+    private function corteAbiertoSimuladorPagoCaja(int $hotelId): ?array
+    {
+        if ($hotelId <= 0 || !$this->tablaExiste('cajas') || !$this->tablaExiste('cortes_caja')) {
+            return null;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT cc.id,
+                    cc.hotel_id,
+                    cc.caja_id,
+                    cc.fecha_apertura,
+                    cc.monto_inicial,
+                    cc.estado,
+                    c.nombre AS caja_nombre,
+                    c.ubicacion AS caja_ubicacion
+             FROM cortes_caja cc
+             INNER JOIN cajas c
+                ON c.id = cc.caja_id
+               AND c.hotel_id = cc.hotel_id
+             WHERE cc.hotel_id = ?
+               AND cc.estado = 'abierto'
+               AND COALESCE(c.activa, 1) = 1
+             ORDER BY cc.fecha_apertura DESC, cc.id DESC
+             LIMIT 1",
+            [$hotelId]
+        );
+
+        $row = $stmt ? $stmt->fetch() : null;
+        return $row ?: null;
+    }
+
+    private function referenciaDuplicadaPagoLaboralCaja(int $hotelId, string $referencia): bool
+    {
+        if ($hotelId <= 0 || $referencia === '' || !$this->tablaExiste('trabajador_pagos_caja')) {
+            return false;
+        }
+
+        $row = $this->fetchOne(
+            "SELECT id
+             FROM trabajador_pagos_caja
+             WHERE hotel_id = ?
+               AND referencia = ?
+             LIMIT 1",
+            [$hotelId, $referencia]
+        );
+
+        return !empty($row);
+    }
+
+    private function referenciaDuplicadaMovimientoCaja(int $hotelId, string $referencia): bool
+    {
+        if ($hotelId <= 0 || $referencia === '' || !$this->tablaExiste('movimientos_caja')) {
+            return false;
+        }
+
+        $row = $this->fetchOne(
+            "SELECT id
+             FROM movimientos_caja
+             WHERE hotel_id = ?
+               AND referencia = ?
+             LIMIT 1",
+            [$hotelId, $referencia]
+        );
+
+        return !empty($row);
+    }
+
+    private function resumenSimuladorPagoCaja(array $trabajadores, ?array $corte): array
+    {
+        $resumen = [
+            'total' => count($trabajadores),
+            'elegibles' => 0,
+            'bloqueadas' => 0,
+            'saldo_estimado_total' => '0.00',
+            'monto_simulado_total' => '0.00',
+            'pagos_caja_count' => 0,
+            'pagos_caja_total' => '0.00',
+            'corte_abierto' => !empty($corte),
+        ];
+
+        foreach ($trabajadores as $trabajador) {
+            $resumen['saldo_estimado_total'] = $this->decimal(
+                (float)$resumen['saldo_estimado_total'] + (float)($trabajador['saldo_estimado'] ?? 0)
+            );
+            $resumen['pagos_caja_count'] += (int)($trabajador['pagos_caja_count'] ?? 0);
+            $resumen['pagos_caja_total'] = $this->decimal(
+                (float)$resumen['pagos_caja_total'] + (float)($trabajador['pagos_caja_total'] ?? 0)
+            );
+
+            if (!empty($trabajador['es_elegible_caja'])) {
+                $resumen['elegibles']++;
+                $resumen['monto_simulado_total'] = $this->decimal(
+                    (float)$resumen['monto_simulado_total'] + (float)($trabajador['monto_simulado'] ?? 0)
+                );
+            } else {
+                $resumen['bloqueadas']++;
+            }
+        }
+
+        return $resumen;
     }
 
     public function normalizarDatos(array $datos): array

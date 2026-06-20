@@ -5,7 +5,7 @@ $guestRows = [];
 $vehiculoModel = !empty($huespedes) ? new HuespedVehiculo() : null;
 
 foreach ($huespedes as $huesped) {
-    $vehiculos = $vehiculoModel ? $vehiculoModel->porHuesped($huesped['id']) : [];
+    $vehiculos = $vehiculoModel ? $vehiculoModel->porHuespedHotel($huesped['id']) : [];
     $guestRows[] = [
         'huesped' => $huesped,
         'vehiculos' => $vehiculos,

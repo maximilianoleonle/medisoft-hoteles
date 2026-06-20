@@ -41,8 +41,8 @@ if (!function_exists('ntx_label')) {
     {
         $labels = [
             'activas' => 'Pendientes',
-            'nueva' => 'Nueva',
-            'leida' => 'Vista',
+            'nueva' => 'Sin abrir',
+            'leida' => 'En seguimiento',
             'resuelta' => 'Atendida',
             'descartada' => 'Archivada',
             'info' => 'Info',
@@ -113,6 +113,25 @@ $estadoTabs = [
     'resuelta' => ['label' => 'Atendidas', 'count' => (int)($resumen['resueltas'] ?? 0)],
     'descartada' => ['label' => 'Archivadas', 'count' => max(0, $historial - (int)($resumen['resueltas'] ?? 0))],
 ];
+$contextoVacio = $moduloFiltro !== '' ? ' de ' . ntx_label($moduloFiltro) : '';
+$emptyStates = [
+    'activas' => [
+        'icon' => 'fa-circle-check',
+        'title' => 'Bandeja limpia',
+        'message' => 'No hay pendientes accionables' . $contextoVacio . '. Los avisos informativos ya atendidos se mantienen fuera de esta vista.',
+    ],
+    'resuelta' => [
+        'icon' => 'fa-check-double',
+        'title' => 'Sin atendidas todavia',
+        'message' => 'Cuando una notificacion se resuelva, aparecera aqui para consulta.',
+    ],
+    'descartada' => [
+        'icon' => 'fa-box-archive',
+        'title' => 'Archivo limpio',
+        'message' => 'Las notificaciones archivadas se mostraran aqui cuando necesites revisar historial.',
+    ],
+];
+$emptyState = $emptyStates[$estadoFiltro] ?? $emptyStates['activas'];
 $totalModulos = array_sum(array_map(static function ($modulo) {
     return (int)($modulo['total'] ?? 0);
 }, $modulos));
@@ -1011,20 +1030,20 @@ $totalModulos = array_sum(array_map(static function ($modulo) {
                 <div class="ntx-title-copy">
                     <p class="ntx-kicker">Operacion hotelera</p>
                     <h1 class="ntx-title">Notificaciones</h1>
-                    <p class="ntx-subtitle">Pendientes, avisos y alertas del dia con lectura clara de estado, origen y prioridad &middot; <?= ntx_safe($hotelNombre) ?></p>
+                    <p class="ntx-subtitle">Pendientes accionables, avisos atendidos e historial sin saturar la operacion diaria &middot; <?= ntx_safe($hotelNombre) ?></p>
                 </div>
             </div>
 
             <aside class="ntx-live-card" aria-label="Resumen principal">
                 <span>Pendientes</span>
                 <strong><?= $pendientesArchivables ?></strong>
-                <small><?= $nuevas ?> nuevas - <?= $prioritarias ?> prioritarias</small>
+                <small><?= $nuevas ?> sin abrir - <?= $prioritarias ?> prioritarias</small>
             </aside>
         </header>
 
         <section class="ntx-stats" aria-label="Resumen de notificaciones">
             <div class="ntx-stat is-new">
-                <span>Nuevas</span>
+                <span>Sin abrir</span>
                 <strong><?= $nuevas ?></strong>
             </div>
             <div class="ntx-stat is-priority">
@@ -1047,7 +1066,7 @@ $totalModulos = array_sum(array_map(static function ($modulo) {
                     <section class="ntx-panel ntx-module-panel">
                         <div class="ntx-panel-head">
                             <h2>Origen</h2>
-                            <p>Accesos directos por area operativa.</p>
+                            <p>Filtra por area sin llenar la pantalla de controles.</p>
                         </div>
                         <div class="ntx-module-strip">
                             <a class="ntx-module-chip <?= $moduloFiltro === '' ? 'is-active' : '' ?>"
@@ -1108,12 +1127,12 @@ $totalModulos = array_sum(array_map(static function ($modulo) {
                             <form method="POST"
                                   action="<?= url('notificaciones/marcar-todas-leidas') ?>"
                                   class="ntx-archive-form"
-                                  onsubmit="return confirm('Se archivaran todas las notificaciones pendientes visibles. Podras consultarlas en Archivadas.');">
+                                  onsubmit="return confirm('Se archivaran las notificaciones pendientes visibles. No se borran; podras consultarlas en Archivadas.');">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="accion" value="archivar_pendientes">
                                 <button type="submit" class="ntx-btn is-archive">
                                     <i class="fas fa-box-archive"></i>
-                                    <span>Archivar pendientes</span>
+                                    <span>Archivar visibles</span>
                                 </button>
                             </form>
                         <?php endif; ?>
@@ -1143,9 +1162,9 @@ $totalModulos = array_sum(array_map(static function ($modulo) {
                     <?php elseif (empty($notificaciones)): ?>
                         <div class="ntx-empty">
                             <div>
-                                <i class="fas fa-circle-check"></i>
-                                <h3>Sin registros</h3>
-                                <p>No hay notificaciones para los filtros seleccionados.</p>
+                                <i class="fas <?= ntx_safe($emptyState['icon'] ?? 'fa-circle-check') ?>"></i>
+                                <h3><?= ntx_safe($emptyState['title'] ?? 'Bandeja limpia') ?></h3>
+                                <p><?= ntx_safe($emptyState['message'] ?? 'No hay notificaciones para esta vista.') ?></p>
                             </div>
                         </div>
                     <?php else: ?>
@@ -1162,13 +1181,14 @@ $totalModulos = array_sum(array_map(static function ($modulo) {
                                 $tituloNotificacion = (string)($notificacion['titulo'] ?? 'Notificacion');
                                 $estadoClass = ntx_class($estado, 'nueva');
                                 $severidadClass = ntx_class($severidad, 'info');
+                                $requiereAccion = in_array($estado, ['nueva', 'leida'], true);
                             ?>
                             <article class="ntx-row state-<?= $estadoClass ?> sev-<?= $severidadClass ?><?= $urlDestinoFinal !== '' ? ' is-clickable' : '' ?>"
                                      <?php if ($urlDestinoFinal !== ''): ?>
                                          data-notif-url="<?= htmlspecialchars($urlDestinoFinal, ENT_QUOTES, 'UTF-8') ?>"
                                          role="link"
                                          tabindex="0"
-                                         aria-label="Ver <?= ntx_safe($tituloNotificacion) ?>"
+                                         aria-label="Abrir <?= ntx_safe($tituloNotificacion) ?>"
                                      <?php endif; ?>>
                                 <div class="ntx-icon" aria-hidden="true">
                                     <i class="fas <?= ntx_safe(ntx_icon($modulo), 'fa-bell') ?>"></i>
@@ -1183,6 +1203,9 @@ $totalModulos = array_sum(array_map(static function ($modulo) {
                                     <p class="ntx-message"><?= ntx_safe($notificacion['mensaje'] ?? '') ?></p>
                                     <div class="ntx-meta">
                                         <span><i class="fas fa-layer-group"></i> <?= ntx_safe(ntx_label($modulo)) ?></span>
+                                        <?php if ($requiereAccion): ?>
+                                            <span><i class="fas fa-bolt"></i> Requiere accion</span>
+                                        <?php endif; ?>
                                         <?php if ($esAutomatica): ?>
                                             <span><i class="fas fa-rotate"></i> Automatica</span>
                                         <?php endif; ?>

@@ -1,6 +1,6 @@
 <?php
 /**
- * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A/MANT-E-A/MANT-G-B-A/LIM-B-A.
+ * Health check tecnico Fase 1A/1B/1C/2A/2B/2C/2D/2E/2F/2G/2H/2I/2J/2K/2L/2M/2N/2O/2P/2Q/2R/2S/2T/2U/2V/2W/2X/2Y/2Z/3A/3B/3C-C/4D/NP-C-D-A/5E-B-A/5E-C-A/5E-D-A/TLM-G/OP-A/9A-B-A/9C-A/9C-B-A/10A-A/10A-B-A/10B-A/11A-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A/MANT-E-A/MANT-G-B-A/LIM-B-A.
  *
  * Solo lectura. No ejecuta migraciones ni modifica datos.
  */
@@ -106,6 +106,28 @@ function hcColumnExists(PDO $pdo, string $database, string $table, string $colum
     return (int) $stmt->fetchColumn() > 0;
 }
 
+function hcIndexExists(PDO $pdo, string $database, string $table, string $index): bool
+{
+    $stmt = $pdo->prepare(
+        'SELECT COUNT(*) FROM information_schema.STATISTICS
+         WHERE TABLE_SCHEMA = :db AND TABLE_NAME = :table AND INDEX_NAME = :index'
+    );
+    $stmt->execute(['db' => $database, 'table' => $table, 'index' => $index]);
+
+    return (int) $stmt->fetchColumn() > 0;
+}
+
+function hcConstraintExists(PDO $pdo, string $database, string $table, string $constraint): bool
+{
+    $stmt = $pdo->prepare(
+        'SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+         WHERE TABLE_SCHEMA = :db AND TABLE_NAME = :table AND CONSTRAINT_NAME = :constraint'
+    );
+    $stmt->execute(['db' => $database, 'table' => $table, 'constraint' => $constraint]);
+
+    return (int) $stmt->fetchColumn() > 0;
+}
+
 function hcCountRows(PDO $pdo, string $table): ?int
 {
     try {
@@ -201,7 +223,14 @@ function hcReportCxpConsistency(PDO $pdo, string $database): void
             WHERE cxp.id IS NULL
                OR m.hotel_id IS NULL
                OR m.monto <= 0
-               OR m.saldo_anterior < m.saldo_posterior
+               OR (
+                   m.tipo_movimiento <> 'CANCELACION'
+                   AND m.saldo_anterior < m.saldo_posterior
+               )
+               OR (
+                   m.tipo_movimiento = 'CANCELACION'
+                   AND m.saldo_anterior > m.saldo_posterior
+               )
                OR m.saldo_posterior < 0"),
         'Revisar movimientos CxP antes de operar pagos proveedores.'
     );
@@ -304,7 +333,10 @@ function hcReportCxpConsistency(PDO $pdo, string $database): void
                     WHERE " . $predicate . "
                       AND (
                           hotel_id IS NULL
-                          OR tipo <> 'gasto'
+                          OR NOT (
+                              (tipo = 'gasto' AND categoria = 'Pago proveedor')
+                              OR (tipo = 'ingreso' AND categoria = 'Reversion Pago proveedor')
+                          )
                           OR monto <= 0
                           OR corte_id IS NULL
                           OR NOT EXISTS (
@@ -745,6 +777,27 @@ $workerLedgerPreflight = hcFindFirstExistingPath([
     dirname(getcwd()) . '/src/tools/saas/preflight_personal_ledger.php',
     '/workspace/src/tools/saas/preflight_personal_ledger.php',
 ]);
+$workerCashPaymentPreflight = hcFindFirstExistingPath([
+    $appRoot . '/tools/saas/preflight_personal_pagos_caja.php',
+    $projectRoot . '/src/tools/saas/preflight_personal_pagos_caja.php',
+    getcwd() . '/tools/saas/preflight_personal_pagos_caja.php',
+    dirname(getcwd()) . '/src/tools/saas/preflight_personal_pagos_caja.php',
+    '/workspace/src/tools/saas/preflight_personal_pagos_caja.php',
+]);
+$workerCashPaymentServiceFile = hcFindFirstExistingPath([
+    $appRoot . '/app/services/TrabajadorPagoCajaService.php',
+    $projectRoot . '/src/app/services/TrabajadorPagoCajaService.php',
+    getcwd() . '/app/services/TrabajadorPagoCajaService.php',
+    dirname(getcwd()) . '/src/app/services/TrabajadorPagoCajaService.php',
+    '/workspace/src/app/services/TrabajadorPagoCajaService.php',
+]);
+$workerCashPaymentRollbackTool = hcFindFirstExistingPath([
+    $appRoot . '/tools/saas/probar_pago_laboral_caja.php',
+    $projectRoot . '/src/tools/saas/probar_pago_laboral_caja.php',
+    getcwd() . '/tools/saas/probar_pago_laboral_caja.php',
+    dirname(getcwd()) . '/src/tools/saas/probar_pago_laboral_caja.php',
+    '/workspace/src/tools/saas/probar_pago_laboral_caja.php',
+]);
 $purchaseServiceFile = hcFindFirstExistingPath([
     $appRoot . '/app/services/CompraService.php',
     $projectRoot . '/src/app/services/CompraService.php',
@@ -843,12 +896,26 @@ $cxpPaymentServiceFile = hcFindFirstExistingPath([
     dirname(getcwd()) . '/src/app/services/CuentaPorPagarPagoService.php',
     '/workspace/src/app/services/CuentaPorPagarPagoService.php',
 ]);
+$cxpPaymentReversalServiceFile = hcFindFirstExistingPath([
+    $appRoot . '/app/services/CuentaPorPagarReversionPagoService.php',
+    $projectRoot . '/src/app/services/CuentaPorPagarReversionPagoService.php',
+    getcwd() . '/app/services/CuentaPorPagarReversionPagoService.php',
+    dirname(getcwd()) . '/src/app/services/CuentaPorPagarReversionPagoService.php',
+    '/workspace/src/app/services/CuentaPorPagarReversionPagoService.php',
+]);
 $cxpPaymentRollbackTool = hcFindFirstExistingPath([
     $appRoot . '/tools/saas/probar_pago_proveedor_caja.php',
     $projectRoot . '/src/tools/saas/probar_pago_proveedor_caja.php',
     getcwd() . '/tools/saas/probar_pago_proveedor_caja.php',
     dirname(getcwd()) . '/src/tools/saas/probar_pago_proveedor_caja.php',
     '/workspace/src/tools/saas/probar_pago_proveedor_caja.php',
+]);
+$cxpPaymentReversalRollbackTool = hcFindFirstExistingPath([
+    $appRoot . '/tools/saas/probar_reversion_pago_proveedor_caja.php',
+    $projectRoot . '/src/tools/saas/probar_reversion_pago_proveedor_caja.php',
+    getcwd() . '/tools/saas/probar_reversion_pago_proveedor_caja.php',
+    dirname(getcwd()) . '/src/tools/saas/probar_reversion_pago_proveedor_caja.php',
+    '/workspace/src/tools/saas/probar_reversion_pago_proveedor_caja.php',
 ]);
 $purchaseTestTool = hcFindFirstExistingPath([
     $appRoot . '/tools/saas/probar_compra_service.php',
@@ -899,7 +966,7 @@ $inventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/inventory_reconciliati
 $duplicatedTablesDoc = $docsTechnicalDir ? $docsTechnicalDir . '/duplicated_tables.md' : null;
 $purchasingInventoryDoc = $docsTechnicalDir ? $docsTechnicalDir . '/purchasing_inventory_contract.md' : null;
 
-echo "Health check Fase 1A-4D/NP-C-D-A/TLM-G/OP-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A/MANT-E-A/MANT-G-B-A/LIM-B-A - Medisoft Hoteles\n";
+echo "Health check Fase 1A-4D/NP-C-D-A/5E-B-A/5E-C-A/5E-D-A/TLM-G/OP-A/9A-B-A/9C-A/9C-B-A/10A-A/10A-B-A/10B-A/11A-A/MANT-A/MANT-B/MANT-C-A/MANT-D-A/MANT-E-A/MANT-G-B-A/LIM-B-A - Medisoft Hoteles\n";
 echo "============================================================\n";
 
 if (!is_file($configPath)) {
@@ -1024,17 +1091,20 @@ if ($providerCashPreflight && is_file($providerCashPreflight)) {
         && strpos($providerCashPreflightCode, 'START TRANSACTION READ ONLY') !== false
         && strpos($providerCashPreflightCode, 'cuentas-por-pagar/simulador-caja') !== false
         && strpos($providerCashPreflightCode, 'registrar-pago-caja') !== false
+        && strpos($providerCashPreflightCode, 'revertir-pago-caja') !== false
         && strpos($providerCashPreflightCode, 'function simuladorCajaAction') !== false
         && strpos($providerCashPreflightCode, 'function simuladorCajaProveedor') !== false
         && strpos($providerCashPreflightCode, 'CuentaPorPagarPagoService') !== false
+        && strpos($providerCashPreflightCode, 'CuentaPorPagarReversionPagoService') !== false
         && strpos($providerCashPreflightCode, 'probar_pago_proveedor_caja.php') !== false
+        && strpos($providerCashPreflightCode, 'probar_reversion_pago_proveedor_caja.php') !== false
         && strpos($providerCashPreflightCode, 'movimientos_caja') !== false
     ) {
-        hcOk('Preflight Fase 3D de pagos proveedores existe, es solo lectura y valida POST controlado.');
+        hcOk('Preflight Fase 3D de pagos proveedores existe, es solo lectura y valida POST controlado/reversion.');
     } else {
         hcWarning(
             'Preflight Fase 3D existe pero no declara todas las guardas esperadas.',
-            'Verificar read-only, ruta GET simulador, POST registrar-pago-caja, servicio y prueba rollback.'
+            'Verificar read-only, ruta GET simulador, POST registrar-pago-caja, POST revertir-pago-caja, servicios y pruebas rollback.'
         );
     }
 } else {
@@ -1094,6 +1164,87 @@ if ($workerLedgerPreflight && is_file($workerLedgerPreflight)) {
     );
 }
 
+if ($workerCashPaymentPreflight && is_file($workerCashPaymentPreflight)) {
+    $workerCashPaymentPreflightCode = (string) file_get_contents($workerCashPaymentPreflight);
+    if (
+        strpos($workerCashPaymentPreflightCode, 'Preflight Fase 5E-D-A') !== false
+        && strpos($workerCashPaymentPreflightCode, 'Herramienta solo lectura') !== false
+        && strpos($workerCashPaymentPreflightCode, 'TrabajadorPagoCajaService') !== false
+        && strpos($workerCashPaymentPreflightCode, 'registrar-pago-caja') !== false
+        && strpos($workerCashPaymentPreflightCode, 'trabajadores/pagos-caja/simulador') !== false
+        && strpos($workerCashPaymentPreflightCode, 'simuladorPagoCajaPorHotel') !== false
+        && strpos($workerCashPaymentPreflightCode, 'trabajador_pagos_caja') !== false
+        && strpos($workerCashPaymentPreflightCode, 'movimientos_caja') !== false
+        && strpos($workerCashPaymentPreflightCode, 'cortes_caja') !== false
+        && strpos($workerCashPaymentPreflightCode, 'probar_pago_laboral_caja.php') !== false
+        && strpos($workerCashPaymentPreflightCode, 'Pago laboral') !== false
+    ) {
+        hcOk('Preflight Fase 5E-D-A de pagos laborales con Caja existe y valida servicio/ruta/rollback.');
+    } else {
+        hcWarning(
+            'Preflight Fase 5E-D-A existe pero no declara todas las guardas esperadas.',
+            'Verificar servicio, POST registrar-pago-caja, simulador GET, tabla trabajador_pagos_caja, Caja/cortes y rollback.'
+        );
+    }
+} else {
+    hcWarning(
+        'No existe preflight Fase 5E-D-A de pagos laborales con Caja.',
+        'Crear src/tools/saas/preflight_personal_pagos_caja.php antes de cerrar el pago laboral real.'
+    );
+}
+
+if ($workerCashPaymentServiceFile && is_file($workerCashPaymentServiceFile)) {
+    $workerCashPaymentServiceCode = (string) file_get_contents($workerCashPaymentServiceFile);
+    if (
+        strpos($workerCashPaymentServiceCode, 'class TrabajadorPagoCajaService') !== false
+        && strpos($workerCashPaymentServiceCode, 'function evaluarPago') !== false
+        && strpos($workerCashPaymentServiceCode, 'function registrarPago') !== false
+        && strpos($workerCashPaymentServiceCode, 'manage_transaction') !== false
+        && strpos($workerCashPaymentServiceCode, 'FOR UPDATE') !== false
+        && strpos($workerCashPaymentServiceCode, 'INSERT INTO movimientos_caja') !== false
+        && strpos($workerCashPaymentServiceCode, 'INSERT INTO trabajador_pagos_caja') !== false
+        && strpos($workerCashPaymentServiceCode, "'Pago laboral'") !== false
+        && strpos($workerCashPaymentServiceCode, 'AuditService::record') !== false
+        && strpos($workerCashPaymentServiceCode, 'assertReferenciaNoDuplicada') !== false
+        && strpos($workerCashPaymentServiceCode, 'rollBack') !== false
+    ) {
+        hcOk('Servicio Personal 5E-D-A TrabajadorPagoCajaService controla pago laboral con Caja, locks, auditoria y rollback.');
+    } else {
+        hcError(
+            'Servicio Personal 5E-D-A TrabajadorPagoCajaService incompleto.',
+            'Revisar transaccion, FOR UPDATE, INSERT trabajador_pagos_caja, INSERT movimientos_caja, duplicados y AuditService.'
+        );
+    }
+} else {
+    hcWarning(
+        'No existe TrabajadorPagoCajaService para pago laboral con Caja.',
+        'Crear el servicio antes de exponer el POST 5E-D-A.'
+    );
+}
+
+if ($workerCashPaymentRollbackTool && is_file($workerCashPaymentRollbackTool)) {
+    $workerCashPaymentRollbackCode = (string) file_get_contents($workerCashPaymentRollbackTool);
+    if (
+        strpos($workerCashPaymentRollbackCode, 'manage_transaction') !== false
+        && strpos($workerCashPaymentRollbackCode, 'false') !== false
+        && strpos($workerCashPaymentRollbackCode, 'rollBack') !== false
+        && strpos($workerCashPaymentRollbackCode, 'trabajador_pagos_caja') !== false
+        && strpos($workerCashPaymentRollbackCode, 'movimientos_caja') !== false
+        && strpos($workerCashPaymentRollbackCode, 'TEST-ROLLBACK-5E-D-A') !== false
+    ) {
+        hcOk('Prueba rollback Personal 5E-D-A existe y valida pago laboral con Caja sin persistencia.');
+    } else {
+        hcError(
+            'Prueba rollback Personal 5E-D-A incompleta.',
+            'Debe abrir transaccion externa, usar manage_transaction false, insertar temporalmente y hacer rollBack.'
+        );
+    }
+} else {
+    hcWarning(
+        'No existe prueba rollback probar_pago_laboral_caja.php.',
+        'Crear herramienta reversible para QA de pago laboral con Caja.'
+    );
+}
 if ($minimalPurchasingOfficialMigration && is_file($minimalPurchasingOfficialMigration)) {
     hcOk('Migracion oficial Fase 2O de compras minimas existe en migrations/.');
 } else {
@@ -1749,7 +1900,7 @@ if ($pdo) {
             "SELECT COUNT(*)
              FROM proveedores
              WHERE hotel_id = 1
-               AND nombre IN ('huésped', 'Huesped', 'no se', 'sin definir')"
+               AND nombre IN ('huÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©sped', 'Huesped', 'no se', 'sin definir')"
         );
         $phase2LExcludedInserted = $stmt ? (int) $stmt->fetchColumn() : 0;
         if ($phase2LExcludedInserted === 0) {
@@ -1757,7 +1908,7 @@ if ($pdo) {
         } else {
             hcWarning(
                 'Candidatos excluidos Fase 2L aparecen insertados: ' . $phase2LExcludedInserted,
-                'Revisar manualmente huésped/no se/sin definir antes de construir compras.'
+                'Revisar manualmente huÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©sped/no se/sin definir antes de construir compras.'
             );
         }
 
@@ -2106,6 +2257,126 @@ if ($pdo) {
                 'Registrar solo si la migracion fue aplicada tras backup verificado.'
             );
         }
+    }
+
+    if (hcTableExists($pdo, $database, 'trabajador_pagos_caja')) {
+        $workerCashPaymentColumns = [
+            'id',
+            'hotel_id',
+            'trabajador_id',
+            'movimiento_caja_id',
+            'corte_id',
+            'monto',
+            'metodo_pago',
+            'referencia',
+            'periodo_inicio',
+            'periodo_fin',
+            'concepto',
+            'fecha_pago',
+            'estado',
+            'notas',
+            'created_by',
+            'updated_by',
+            'created_at',
+            'updated_at',
+        ];
+        $workerCashPaymentMissingColumns = [];
+        foreach ($workerCashPaymentColumns as $column) {
+            if (!hcColumnExists($pdo, $database, 'trabajador_pagos_caja', $column)) {
+                $workerCashPaymentMissingColumns[] = $column;
+            }
+        }
+
+        $workerCashPaymentIndexes = [
+            'PRIMARY',
+            'uk_trabajador_pagos_caja_hotel_referencia',
+            'uk_trabajador_pagos_caja_movimiento',
+            'idx_trabajador_pagos_caja_hotel_trabajador',
+            'idx_trabajador_pagos_caja_hotel_fecha',
+            'idx_trabajador_pagos_caja_hotel_corte',
+            'idx_trabajador_pagos_caja_estado',
+            'idx_trabajador_pagos_caja_created_by',
+            'idx_trabajador_pagos_caja_updated_by',
+        ];
+        $workerCashPaymentMissingIndexes = [];
+        foreach ($workerCashPaymentIndexes as $index) {
+            if (!hcIndexExists($pdo, $database, 'trabajador_pagos_caja', $index)) {
+                $workerCashPaymentMissingIndexes[] = $index;
+            }
+        }
+
+        $workerCashPaymentConstraints = [
+            'fk_trabajador_pagos_caja_hotel',
+            'fk_trabajador_pagos_caja_trabajador',
+            'fk_trabajador_pagos_caja_movimiento',
+            'fk_trabajador_pagos_caja_corte',
+            'fk_trabajador_pagos_caja_created_by',
+            'fk_trabajador_pagos_caja_updated_by',
+            'chk_trabajador_pagos_caja_monto',
+            'chk_trabajador_pagos_caja_periodo',
+        ];
+        $workerCashPaymentMissingConstraints = [];
+        foreach ($workerCashPaymentConstraints as $constraint) {
+            if (!hcConstraintExists($pdo, $database, 'trabajador_pagos_caja', $constraint)) {
+                $workerCashPaymentMissingConstraints[] = $constraint;
+            }
+        }
+
+        if (
+            empty($workerCashPaymentMissingColumns)
+            && empty($workerCashPaymentMissingIndexes)
+            && empty($workerCashPaymentMissingConstraints)
+        ) {
+            hcOk('Tabla 5E-B-A trabajador_pagos_caja cumple columnas, indices y constraints requeridos.');
+        } else {
+            hcError(
+                'Tabla 5E-B-A trabajador_pagos_caja incompleta. Columnas faltantes: ' . implode(', ', $workerCashPaymentMissingColumns) . '. Indices faltantes: ' . implode(', ', $workerCashPaymentMissingIndexes) . '. Constraints faltantes: ' . implode(', ', $workerCashPaymentMissingConstraints) . '.',
+                'No avanzar a servicio de pago laboral hasta reconciliar la migracion 5E-B-A.'
+            );
+        }
+
+        $workerCashPaymentRows = hcCountRows($pdo, 'trabajador_pagos_caja');
+        hcOk('Tabla 5E-B-A trabajador_pagos_caja disponible; registros actuales: ' . (string)$workerCashPaymentRows . '.');
+
+        $workerCashPaymentOrphans = hcCountScalar(
+            $pdo,
+            'SELECT COUNT(*)
+             FROM trabajador_pagos_caja pc
+             LEFT JOIN movimientos_caja m
+               ON m.id = pc.movimiento_caja_id
+              AND m.hotel_id = pc.hotel_id
+             WHERE m.id IS NULL'
+        );
+        if ($workerCashPaymentOrphans === 0) {
+            hcOk('Pagos laborales Caja mantienen vinculo con movimientos_caja.');
+        } else {
+            hcError(
+                'Pagos laborales Caja sin movimiento_caja asociado: ' . (string)$workerCashPaymentOrphans . '.',
+                'Reconciliar trabajador_pagos_caja.movimiento_caja_id antes de continuar.'
+            );
+        }
+
+        if (hcTableExists($pdo, $database, 'migrations')) {
+            $stmt = $pdo->prepare(
+                "SELECT COUNT(*) FROM migrations
+                 WHERE nombre = '20260619_003_fase_5e_b_a_trabajador_pagos_caja.sql'
+                   AND estado = 'ejecutada'"
+            );
+            $stmt->execute();
+            if ((int)$stmt->fetchColumn() === 1) {
+                hcOk('Migracion 5E-B-A trabajador_pagos_caja registrada como ejecutada.');
+            } else {
+                hcWarning(
+                    'Tabla trabajador_pagos_caja existe pero la migracion 5E-B-A no esta registrada.',
+                    'Registrar solo si la migracion fue aplicada tras backup verificado.'
+                );
+            }
+        }
+    } else {
+        hcWarning(
+            'Tabla 5E-B-A trabajador_pagos_caja aun no existe.',
+            'Aplicar migrations/20260619_003_fase_5e_b_a_trabajador_pagos_caja.sql solo con backup y autorizacion explicita.'
+        );
     }
 
     $cajaNomina = hcTableExists($pdo, $database, 'movimientos_caja')
@@ -2819,6 +3090,8 @@ if (!is_file($routesPath)) {
         ['method' => 'get', 'path' => 'cuentas-por-pagar/generacion-preview'],
         ['method' => 'get', 'path' => 'cuentas-por-pagar/simulador-caja'],
         ['method' => 'post', 'path' => 'cuentas-por-pagar/generar-desde-compra/{id:[0-9]+}'],
+        ['method' => 'post', 'path' => 'cuentas-por-pagar/{id:[0-9]+}/registrar-pago-caja'],
+        ['method' => 'post', 'path' => 'cuentas-por-pagar/{id:[0-9]+}/movimientos/{movimientoid:[0-9]+}/revertir-pago-caja'],
         ['method' => 'get', 'path' => 'cuentas-por-pagar/{id:[0-9]+}'],
     ];
     $missingCxpRoutes = [];
@@ -2829,20 +3102,22 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($missingCxpRoutes)) {
-        hcOk('Rutas Fase 3B/3C-C/3D-A de CxP, preview GET, simulador Caja GET y generacion manual POST estan registradas.');
+        hcOk('Rutas Fase 3B/3C-C/3D/3D-D-A de CxP, preview, simulador, pago y reversion estan registradas.');
     } else {
         hcWarning(
-            'Rutas Fase 3B/3C-C/3D-A de CxP faltantes: ' . implode(', ', $missingCxpRoutes),
-            'Registrar GET listado/preview/simulador-caja/detalle y solo POST manual /cuentas-por-pagar/generar-desde-compra/{id}.'
+            'Rutas Fase 3B/3C-C/3D/3D-D-A de CxP faltantes: ' . implode(', ', $missingCxpRoutes),
+            'Registrar GET listado/preview/simulador-caja/detalle, POST generar, POST pago Caja y POST reversion pago Caja.'
         );
     }
 
     $workerExpectedRoutes = [
         ['method' => 'get', 'path' => 'trabajadores'],
         ['method' => 'get', 'path' => 'trabajadores/reporte'],
+        ['method' => 'get', 'path' => 'trabajadores/pagos-caja/simulador'],
         ['method' => 'get', 'path' => 'trabajadores/crear'],
         ['method' => 'post', 'path' => 'trabajadores'],
         ['method' => 'get', 'path' => 'trabajadores/{id:[0-9]+}'],
+        ['method' => 'post', 'path' => 'trabajadores/{id:[0-9]+}/registrar-pago-caja'],
         ['method' => 'get', 'path' => 'trabajadores/{id:[0-9]+}/editar'],
         ['method' => 'post', 'path' => 'trabajadores/{id:[0-9]+}/actualizar'],
         ['method' => 'post', 'path' => 'trabajadores/{id:[0-9]+}/conceptos-laborales'],
@@ -2860,11 +3135,11 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($missingWorkerRoutes)) {
-        hcOk('Rutas Personal NP-F-A registradas: CRUD basico, reporte read-only y ledger laboral manual sin Caja.');
+        hcOk('Rutas Personal NP-F-A/5E-C/5E-D-A registradas: CRUD, reporte, ledger, simulador Caja y pago laboral controlado.');
     } else {
         hcWarning(
-            'Rutas Personal NP-F-A faltantes: ' . implode(', ', $missingWorkerRoutes),
-            'Registrar CRUD basico, GET reporte read-only y POST de ledger laboral manual; sin pagos reales, nomina ni Caja.'
+            'Rutas Personal NP-F-A/5E-C/5E-D-A faltantes: ' . implode(', ', $missingWorkerRoutes),
+            'Registrar CRUD basico, GET reporte, GET simulador Caja, POST ledger laboral y POST pago laboral controlado.'
         );
     }
 
@@ -2872,9 +3147,11 @@ if (!is_file($routesPath)) {
     $allowedWorkerRouteSignatures = [
         'GET /trabajadores -> trabajador::index',
         'GET /trabajadores/reporte -> trabajador::reporte',
+        'GET /trabajadores/pagos-caja/simulador -> trabajador::simuladorpagocaja',
         'GET /trabajadores/crear -> trabajador::crear',
         'POST /trabajadores -> trabajador::guardar',
         'GET /trabajadores/{id:[0-9]+} -> trabajador::ver',
+        'POST /trabajadores/{id:[0-9]+}/registrar-pago-caja -> trabajador::registrarpagocaja',
         'GET /trabajadores/{id:[0-9]+}/editar -> trabajador::editar',
         'POST /trabajadores/{id:[0-9]+}/actualizar -> trabajador::actualizar',
         'POST /trabajadores/{id:[0-9]+}/conceptos-laborales -> trabajador::registrarconceptolaboral',
@@ -2896,11 +3173,11 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($forbiddenWorkerRoutes)) {
-        hcOk('Personal NP-F-A mantiene solo rutas autorizadas; reporte read-only y ledger laboral manual no tocan pagos reales ni Caja.');
+        hcOk('Personal NP-F-A/5E-C/5E-D-A mantiene solo rutas autorizadas; simulador GET y pago POST controlado.');
     } else {
         hcError(
             'Personal NP-F-A tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenWorkerRoutes),
-            'Retirar rutas que no sean CRUD basico, reporte read-only o ledger laboral manual sin Caja.'
+            'Retirar rutas que no sean CRUD basico, reporte, simulador Caja, ledger laboral manual o pago laboral controlado.'
         );
     }
 
@@ -2993,8 +3270,9 @@ if (!is_file($routesPath)) {
             'GET /cuentas-por-pagar/simulador-caja',
             'POST /cuentas-por-pagar/generar-desde-compra/{id:[0-9]+}',
             'POST /cuentas-por-pagar/{id:[0-9]+}/registrar-pago-caja',
+            'POST /cuentas-por-pagar/{id:[0-9]+}/movimientos/{movimientoid:[0-9]+}/revertir-pago-caja',
             'GET /cuentas-por-pagar/{id:[0-9]+}',
-        ], true) && $controller === 'cuentaporpagar' && in_array($action, ['index', 'generacionpreview', 'simuladorcaja', 'generardesdecompra', 'registrarpagocaja', 'ver'], true);
+        ], true) && $controller === 'cuentaporpagar' && in_array($action, ['index', 'generacionpreview', 'simuladorcaja', 'generardesdecompra', 'registrarpagocaja', 'revertirpagocaja', 'ver'], true);
 
         if ($isAllowedPurchaseRoute || $isAllowedCxpReadOnlyRoute) {
             continue;
@@ -3155,6 +3433,7 @@ if (!is_file($routesPath)) {
     $workerControllerPath = $controllersDir . '/TrabajadorController.php';
     $workerIndexViewPath = $appRoot . '/app/views/trabajadores/index.php';
     $workerDetailViewPath = $appRoot . '/app/views/trabajadores/ver.php';
+    $workerCashSimulatorViewPath = $appRoot . '/app/views/trabajadores/simulador_pago_caja.php';
 
     if (is_file($workerModelPath) && is_file($workerControllerPath)) {
         $workerModelCode = (string) file_get_contents($workerModelPath);
@@ -3196,15 +3475,40 @@ if (!is_file($routesPath)) {
 
         $workerForbiddenWrite = preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(trabajador_documentos|movimientos_caja|cajas|cortes_caja)\b/i', $workerCode)
             || preg_match('/\b(UPDATE|DELETE\s+FROM)\s+(trabajador_pagos|trabajador_anticipos|trabajador_prestamos|trabajador_asistencias)\b/i', $workerCode)
-            || preg_match('/\bDELETE\s+FROM\s+trabajadores\b/i', $workerCode)
-            || strpos($workerCode, 'movimientos_caja') !== false;
+            || preg_match('/\bDELETE\s+FROM\s+trabajadores\b/i', $workerCode);
 
         if (!$workerForbiddenWrite) {
-            hcOk('Personal NP-F-A escribe solo trabajadores y ledger laboral permitido; reporte read-only sin Caja ni Nomina operativa.');
+            hcOk('Personal NP-F-A/5E-C/5E-D-A mantiene modelo/controlador sin escrituras Caja directas; pago real vive en servicio.');
         } else {
             hcError(
                 'Personal NP-F-A contiene escrituras o referencias fuera de alcance.',
-                'Permitir solo INSERT/UPDATE en trabajadores e INSERT controlado en trabajador_pagos/anticipos/prestamos/asistencias; sin DELETE ni Caja.'
+                'Permitir solo INSERT/UPDATE en trabajadores e INSERT controlado en ledger laboral dentro del modelo/controlador; escrituras Caja solo en TrabajadorPagoCajaService.'
+            );
+        }
+
+        $workerSimulatorModelBody = hcMethodBody($workerModelCode, 'simuladorPagoCajaPorHotel');
+        $workerSimulatorControllerBody = hcMethodBody($workerControllerCode, 'simuladorPagoCajaAction');
+        if (
+            $workerSimulatorModelBody !== ''
+            && $workerSimulatorControllerBody !== ''
+            && hcCodeBodyIsReadOnly($workerSimulatorModelBody)
+            && hcCodeBodyIsReadOnly($workerSimulatorControllerBody)
+            && strpos($workerModelCode, 'function tablasSimuladorPagoCajaDisponibles') !== false
+            && strpos($workerModelCode, 'function corteAbiertoSimuladorPagoCaja') !== false
+            && strpos($workerModelCode, 'function pagosCajaResumenPorTrabajador') !== false
+            && strpos($workerModelCode, 'function referenciaDuplicadaPagoLaboralCaja') !== false
+            && strpos($workerModelCode, 'function referenciaDuplicadaMovimientoCaja') !== false
+            && strpos($workerControllerCode, 'trabajadores/simulador_pago_caja') !== false
+            && strpos($workerControllerCode, 'validateCSRF') !== false
+            && strpos($workerControllerCode, 'pagoCajaService->registrarPago') !== false
+            && strpos($workerControllerCode, 'consumirPagoCajaToken') !== false
+            && strpos($workerControllerCode, "require_hotel_module('caja')") !== false
+        ) {
+            hcOk('Personal 5E-C-A expone simulador de pago laboral con Caja en modo read-only.');
+        } else {
+            hcWarning(
+                'Personal 5E-C-A no muestra simulador read-only completo.',
+                'Validar ruta GET, controlador sin POST, modelo solo lectura y diagnostico con corte abierto/referencia.'
             );
         }
 
@@ -3222,6 +3526,7 @@ if (!is_file($routesPath)) {
             && strpos($workerControllerCode, 'function registrarAnticipoLaboralAction') !== false
             && strpos($workerControllerCode, 'function registrarPrestamoLaboralAction') !== false
             && strpos($workerControllerCode, 'function registrarAsistenciaLaboralAction') !== false
+            && strpos($workerControllerCode, 'function registrarPagoCajaAction') !== false
             && strpos($workerControllerCode, 'conceptosLaboralesPorTrabajador') !== false
             && strpos($workerControllerCode, 'registrarConceptoLaboralParaHotel') !== false
             && strpos($workerControllerCode, 'registrarAnticipoLaboralParaHotel') !== false
@@ -3241,17 +3546,20 @@ if (!is_file($routesPath)) {
                 || strpos($workerControllerCode, "requireWritePermission('usuarios.edit')") !== false
             )
             && strpos($workerControllerCode, 'validateCSRF') !== false
+            && strpos($workerControllerCode, 'pagoCajaService->registrarPago') !== false
+            && strpos($workerControllerCode, 'consumirPagoCajaToken') !== false
+            && strpos($workerControllerCode, "require_hotel_module('caja')") !== false
             && strpos($workerControllerCode, 'AuditService::record') !== false
             && strpos($workerControllerCode, 'trabajadores/index') !== false
             && strpos($workerControllerCode, 'trabajadores/reporte') !== false
             && strpos($workerControllerCode, 'trabajadores/ver') !== false
             && strpos($workerControllerCode, 'trabajadores/form') !== false
         ) {
-            hcOk('TrabajadorController NP-F-A expone CRUD, reporte read-only y ledger laboral manual con permisos, CSRF y auditoria.');
+            hcOk('TrabajadorController NP-F-A/5E-D-A expone CRUD, reporte, ledger y pago laboral Caja con permisos, CSRF, token y auditoria.');
         } else {
             hcWarning(
-                'TrabajadorController NP-F-A no muestra guardas o acciones completas.',
-                'Validar requireAuth, hotel, permisos, CSRF, auditoria y acciones CRUD/reporte/ledger laboral.'
+                'TrabajadorController NP-F-A/5E-D-A no muestra guardas o acciones completas.',
+                'Validar requireAuth, hotel, permisos, Caja, CSRF, token, auditoria y acciones CRUD/reporte/ledger/pago laboral.'
             );
         }
     } else {
@@ -3274,10 +3582,12 @@ if (!is_file($routesPath)) {
             strpos($workerIndexViewCode, "action=\"<?= url('trabajadores') ?>\"") !== false
             && strpos($workerIndexViewCode, 'method="GET"') !== false
             && strpos($workerIndexViewCode, "url('trabajadores/reporte')") !== false
+            && strpos($workerIndexViewCode, "url('trabajadores/pagos-caja/simulador')") !== false
             && strpos($workerIndexViewCode, "url('trabajadores/' . (int)") !== false
             && strpos($workerIndexViewCode, '/baja-logica') !== false
             && strpos($workerIndexViewCode, '/reactivar') !== false
             && strpos($workerDetailViewCode, 'Captura manual') !== false
+            && strpos($workerDetailViewCode, 'trabajadores/pagos-caja/simulador?trabajador_id=') !== false
             && strpos($workerDetailViewCode, '/baja-logica') !== false
             && strpos($workerDetailViewCode, '/reactivar') !== false
             && strpos($workerDetailViewCode, "url('trabajadores')") !== false
@@ -3293,7 +3603,9 @@ if (!is_file($routesPath)) {
             && strpos($workerDetailViewCode, 'name="tipo"') !== false
             && strpos($workerDetailViewCode, 'name="monto"') !== false
             && strpos($workerDetailViewCode, 'name="hora_entrada"') !== false
-            && strpos($workerDetailViewCode, 'no representa movimiento de Caja') !== false
+            && strpos($workerDetailViewCode, 'Pago laboral con Caja') !== false
+            && strpos($workerDetailViewCode, 'registrar-pago-caja') !== false
+            && strpos($workerDetailViewCode, 'name="pago_token"') !== false
             && strpos($workerReportViewCode, 'Reporte de Personal') !== false
             && strpos($workerReportViewCode, 'read-only') !== false
             && strpos($workerReportViewCode, 'No genera nomina') !== false
@@ -3304,17 +3616,44 @@ if (!is_file($routesPath)) {
             && strpos($workerViewsCode, 'movimientos_caja') === false
             && strpos($workerViewsCode, 'cuentas_por_pagar') === false
         ) {
-            hcOk('Vistas Personal NP-F-A muestran CRUD, reporte read-only y ledger laboral manual con CSRF sin Caja/pagos reales.');
+            hcOk('Vistas Personal NP-F-A/5E-D-A muestran CRUD, reporte, ledger manual y panel de pago laboral con CSRF/token.');
         } else {
             hcWarning(
-                'Vistas Personal NP-F-A no muestran contrato completo.',
-                'Asegurar filtros GET, reporte sin POST, formulario POST+CSRF, ledger laboral manual, sin pagos reales/Caja ni rutas internas de archivos.'
+                'Vistas Personal NP-F-A/5E-D-A no muestran contrato completo.',
+                'Asegurar filtros GET, reporte sin POST, formularios POST+CSRF, ledger laboral manual y pago laboral con token, sin rutas internas de archivos.'
             );
         }
     } else {
         hcWarning(
             'Faltan vistas Personal NP-F-A.',
             'Crear index.php, reporte.php, ver.php y form.php antes de habilitar Personal completo.'
+        );
+    }
+
+    if (is_file($workerCashSimulatorViewPath)) {
+        $workerCashSimulatorViewCode = (string) file_get_contents($workerCashSimulatorViewPath);
+        if (
+            strpos($workerCashSimulatorViewCode, "action=\"<?= url('trabajadores/pagos-caja/simulador') ?>\"") !== false
+            && strpos($workerCashSimulatorViewCode, 'method="GET"') !== false
+            && strpos($workerCashSimulatorViewCode, 'method="POST"') === false
+            && strpos($workerCashSimulatorViewCode, 'csrf_field()') === false
+            && strpos($workerCashSimulatorViewCode, "url('trabajadores/' . (int)") !== false
+            && strpos($workerCashSimulatorViewCode, "url('caja')") !== false
+            && strpos($workerCashSimulatorViewCode, 'Solo GET') !== false
+            && strpos($workerCashSimulatorViewCode, 'registrar-pago-caja') === false
+            && strpos($workerCashSimulatorViewCode, 'movimientos_caja') === false
+        ) {
+            hcOk('Vista Personal 5E-C-A simulador Caja es GET/read-only y no expone pago laboral real.');
+        } else {
+            hcError(
+                'Vista Personal 5E-C-A incompleta o con acciones fuera de alcance.',
+                'Mantener simulador_pago_caja.php como GET/read-only, sin POST, sin CSRF y sin escrituras.'
+            );
+        }
+    } else {
+        hcWarning(
+            'Falta vista Personal 5E-C-A simulador Caja.',
+            'Crear app/views/trabajadores/simulador_pago_caja.php solo para diagnostico read-only.'
         );
     }
 
@@ -3773,8 +4112,10 @@ if (!is_file($routesPath)) {
             && strpos($cxpControllerCode, 'function simuladorCajaAction') !== false
             && strpos($cxpControllerCode, 'function generarDesdeCompraAction') !== false
             && strpos($cxpControllerCode, 'function registrarPagoCajaAction') !== false
+            && strpos($cxpControllerCode, 'function revertirPagoCajaAction') !== false
             && strpos($cxpControllerCode, 'validateCSRF') !== false
             && strpos($cxpControllerCode, 'consumirPagoToken') !== false
+            && strpos($cxpControllerCode, 'consumirReversionPagoToken') !== false
             && strpos($cxpControllerCode, "require_hotel_module('caja')") !== false
             && strpos($cxpControllerCode, 'function verAction') !== false
             && strpos($cxpControllerCode, "require_hotel_module('inventario')") !== false
@@ -3798,11 +4139,11 @@ if (!is_file($routesPath)) {
             && strpos($cxpModelCode, 'FROM cuentas_por_pagar') !== false
             && strpos($cxpModelCode, 'FROM cuentas_por_pagar_movimientos') !== false
         ) {
-            hcOk('CxP Fase 3B/3C/3D expone lectura, preview, simulador Caja GET, generacion manual y POST pago Caja delegado.');
+            hcOk('CxP Fase 3B/3C/3D/3D-D-A expone lectura, preview, simulador, pago y reversion Caja delegados.');
         } else {
             hcError(
                 'CxP Fase 3D no cumple contrato o contiene tokens prohibidos.',
-                'Mantener GET index/preview/simulador-caja/ver, POST generar desde compra y POST registrarPagoCaja delegado al servicio.'
+                'Mantener GET index/preview/simulador-caja/ver, POST generar, POST registrarPagoCaja y POST revertirPagoCaja delegados al servicio.'
             );
         }
     } else {
@@ -3834,15 +4175,17 @@ if (!is_file($routesPath)) {
             && strpos($cxpPreviewViewCode, "url('compras/' . (int)") !== false
             && strpos($cxpPreviewViewCode, "url('proveedores/' . (int)") !== false
             && strpos($cxpDetailViewCode, 'registrar-pago-caja') !== false
+            && strpos($cxpDetailViewCode, 'revertir-pago-caja') !== false
             && strpos($cxpDetailViewCode, 'csrf_field()') !== false
             && strpos($cxpDetailViewCode, 'name="pago_token"') !== false
+            && strpos($cxpDetailViewCode, 'name="reversion_token"') !== false
             && strpos($cxpViewsCode, 'movimientos_caja') === false
         ) {
-            hcOk('Vistas CxP Fase 3D incluyen lectura, preview, detalle con pago Caja controlado y CSRF.');
+            hcOk('Vistas CxP Fase 3D/3D-D-A incluyen detalle con pago/reversion Caja controlados y CSRF.');
         } else {
             hcError(
                 'Vistas CxP Fase 3D incompletas o con acciones fuera de alcance.',
-                'Mantener listado/preview y detalle con unico formulario pago Caja con CSRF/token; simulador debe seguir GET.'
+                'Mantener listado/preview y detalle con formularios pago/reversion Caja con CSRF/token; simulador debe seguir GET.'
             );
         }
     } else {
@@ -3881,6 +4224,45 @@ if (!is_file($routesPath)) {
         hcError(
             'Falta servicio o herramienta rollback de pago proveedor Fase 3D.',
             'Crear CuentaPorPagarPagoService y tools/saas/probar_pago_proveedor_caja.php antes de QA manual.'
+        );
+    }
+
+    if (
+        $cxpPaymentReversalServiceFile && is_file($cxpPaymentReversalServiceFile)
+        && $cxpPaymentReversalRollbackTool && is_file($cxpPaymentReversalRollbackTool)
+    ) {
+        $cxpPaymentReversalServiceCode = (string) file_get_contents($cxpPaymentReversalServiceFile);
+        $cxpPaymentReversalRollbackCode = (string) file_get_contents($cxpPaymentReversalRollbackTool);
+
+        if (
+            strpos($cxpPaymentReversalServiceCode, 'class CuentaPorPagarReversionPagoService') !== false
+            && strpos($cxpPaymentReversalServiceCode, 'manage_transaction') !== false
+            && strpos($cxpPaymentReversalServiceCode, 'FOR UPDATE') !== false
+            && strpos($cxpPaymentReversalServiceCode, 'PAGO_REFERENCIAL') !== false
+            && strpos($cxpPaymentReversalServiceCode, 'CANCELACION') !== false
+            && strpos($cxpPaymentReversalServiceCode, "tipo = 'ingreso'") !== false
+            && strpos($cxpPaymentReversalServiceCode, 'Reversion Pago proveedor') !== false
+            && strpos($cxpPaymentReversalServiceCode, 'INSERT INTO cuentas_por_pagar_movimientos') !== false
+            && strpos($cxpPaymentReversalServiceCode, 'INSERT INTO movimientos_caja') !== false
+            && strpos($cxpPaymentReversalServiceCode, 'UPDATE cuentas_por_pagar') !== false
+            && strpos($cxpPaymentReversalServiceCode, 'AuditService::record') !== false
+            && strpos($cxpPaymentReversalRollbackCode, "['manage_transaction' => false]") !== false
+            && strpos($cxpPaymentReversalRollbackCode, 'CuentaPorPagarPagoService') !== false
+            && strpos($cxpPaymentReversalRollbackCode, 'CuentaPorPagarReversionPagoService') !== false
+            && strpos($cxpPaymentReversalRollbackCode, 'rollBack()') !== false
+            && strpos($cxpPaymentReversalRollbackCode, "categoria = 'Reversion Pago proveedor'") !== false
+        ) {
+            hcOk('Servicio Fase 3D-D-A de reversion proveedor concentra transaccion, locks, CxP, Caja, auditoria y prueba rollback.');
+        } else {
+            hcError(
+                'Servicio Fase 3D-D-A de reversion proveedor incompleto.',
+                'Revisar transaccion, locks FOR UPDATE, CANCELACION CxP, ingreso Caja, auditoria y prueba rollback sin persistencia.'
+            );
+        }
+    } else {
+        hcError(
+            'Falta servicio o herramienta rollback de reversion proveedor Fase 3D-D-A.',
+            'Crear CuentaPorPagarReversionPagoService y tools/saas/probar_reversion_pago_proveedor_caja.php antes de QA manual.'
         );
     }
 
@@ -5070,9 +5452,44 @@ if (!is_file($routesPath)) {
     $opModelPath = $appRoot . '/app/models/OperacionDiaria.php';
     $opViewPath = $appRoot . '/app/views/operacion/diaria.php';
     $opPreflightPath = $appRoot . '/tools/saas/preflight_operacion_diaria.php';
+    $cashMethodPreflightPath = $appRoot . '/tools/saas/preflight_arqueo_metodos_pago.php';
+    $executivePreflightPath = $appRoot . '/tools/saas/preflight_tablero_ejecutivo.php';
+    $executiveReportesControllerPath = $controllersDir . '/ReportesController.php';
+    $executiveNotificacionControllerPath = $controllersDir . '/NotificacionController.php';
+    $executiveModelPath = $appRoot . '/app/models/TableroEjecutivo.php';
+    $executiveViewPath = $appRoot . '/app/views/reportes/ejecutivo.php';
+    $reportesIndexViewPath = $appRoot . '/app/views/reportes/index.php';
+    $guestControllerPath = $controllersDir . '/HuespedController.php';
+    $guestModelPath = $appRoot . '/app/models/Huesped.php';
+    $guestViewPath = $appRoot . '/app/views/huespedes/ver.php';
+    $cashControllerPath = $controllersDir . '/CajaController.php';
+    $cashArqueoModelPath = $appRoot . '/app/models/ArqueoMetodosPago.php';
+    $cashArqueoViewPath = $appRoot . '/app/views/caja/arqueo_metodos.php';
+    $cfinModelPath = $appRoot . '/app/models/ConciliacionFinanciera.php';
+    $cfinViewPath = $appRoot . '/app/views/operacion/conciliacion_financiera.php';
     $opControllerCode = is_file($opControllerPath) ? (string) file_get_contents($opControllerPath) : '';
     $opModelCode = is_file($opModelPath) ? (string) file_get_contents($opModelPath) : '';
     $opViewCode = is_file($opViewPath) ? (string) file_get_contents($opViewPath) : '';
+    $cashMethodPreflightCode = is_file($cashMethodPreflightPath) ? (string) file_get_contents($cashMethodPreflightPath) : '';
+    $executivePreflightCode = is_file($executivePreflightPath) ? (string) file_get_contents($executivePreflightPath) : '';
+    $executiveReportesControllerCode = is_file($executiveReportesControllerPath) ? (string) file_get_contents($executiveReportesControllerPath) : '';
+    $executiveNotificacionControllerCode = is_file($executiveNotificacionControllerPath) ? (string) file_get_contents($executiveNotificacionControllerPath) : '';
+    $executiveModelCode = is_file($executiveModelPath) ? (string) file_get_contents($executiveModelPath) : '';
+    $executiveViewCode = is_file($executiveViewPath) ? (string) file_get_contents($executiveViewPath) : '';
+    $reportesIndexViewCode = is_file($reportesIndexViewPath) ? (string) file_get_contents($reportesIndexViewPath) : '';
+    $guestControllerCode = is_file($guestControllerPath) ? (string) file_get_contents($guestControllerPath) : '';
+    $guestModelCode = is_file($guestModelPath) ? (string) file_get_contents($guestModelPath) : '';
+    $guestViewCode = is_file($guestViewPath) ? (string) file_get_contents($guestViewPath) : '';
+    $cashControllerCode = is_file($cashControllerPath) ? (string) file_get_contents($cashControllerPath) : '';
+    $cashArqueoModelCode = is_file($cashArqueoModelPath) ? (string) file_get_contents($cashArqueoModelPath) : '';
+    $cashArqueoViewCode = is_file($cashArqueoViewPath) ? (string) file_get_contents($cashArqueoViewPath) : '';
+    $cashMethodPreflightSqlProbe = preg_replace(
+        '/preg_match\s*\([^;]*(INSERT|UPDATE|DELETE|ALTER|DROP|TRUNCATE)[^;]*;/is',
+        '',
+        $cashMethodPreflightCode
+    );
+    $cfinModelCode = is_file($cfinModelPath) ? (string) file_get_contents($cfinModelPath) : '';
+    $cfinViewCode = is_file($cfinViewPath) ? (string) file_get_contents($cfinViewPath) : '';
     $opSidebarCode = is_file($sidebarPath) ? (string) file_get_contents($sidebarPath) : '';
 
     if (hcRouteExists($routes, 'operacion/diaria', 'get')) {
@@ -5084,6 +5501,37 @@ if (!is_file($routesPath)) {
         );
     }
 
+    if (hcRouteExists($routes, 'operacion/conciliacion-financiera', 'get')) {
+        hcOk('Ruta 9A-B-A registrada: GET /operacion/conciliacion-financiera.');
+    } else {
+        hcError(
+            'Ruta 9A-B-A GET /operacion/conciliacion-financiera no esta registrada.',
+            'Restaurar la pantalla read-only de conciliacion financiera o retirar su documentacion de fase.'
+        );
+    }
+
+    if (hcRouteExists($routes, 'caja/arqueo-metodos', 'get')) {
+        hcOk('Ruta 9C-B-A registrada: GET /caja/arqueo-metodos.');
+    } else {
+        hcError(
+            'Ruta 9C-B-A GET /caja/arqueo-metodos no esta registrada.',
+            'Restaurar la pantalla read-only de arqueo por metodo o retirar su documentacion de fase.'
+        );
+    }
+
+    if (!hcRouteExists($routes, 'caja/arqueo-metodos', 'post')) {
+        hcOk('9C-B-A no expone POST /caja/arqueo-metodos.');
+    } else {
+        hcError(
+            '9C-B-A expone POST /caja/arqueo-metodos fuera de contrato.',
+            'Retirar POST; el arqueo por metodo debe seguir solo lectura.'
+        );
+    }
+
+    $allowedOpRoutes = [
+        'GET /operacion/diaria -> operacion::diaria' => true,
+        'GET /operacion/conciliacion-financiera -> operacion::conciliacionfinanciera' => true,
+    ];
     $forbiddenOpRoutes = [];
     foreach ($routes as $route) {
         $method = strtoupper((string) $route['method']);
@@ -5093,17 +5541,17 @@ if (!is_file($routesPath)) {
         $signature = $method . ' /' . $path . ' -> ' . $controller . '::' . $action;
 
         if (($path === 'operacion/diaria' || strpos($path, 'operacion/') === 0 || $controller === 'operacion')
-            && $signature !== 'GET /operacion/diaria -> operacion::diaria') {
+            && !isset($allowedOpRoutes[$signature])) {
             $forbiddenOpRoutes[] = $signature;
         }
     }
 
     if (empty($forbiddenOpRoutes)) {
-        hcOk('OP-A mantiene una unica ruta GET/read-only y no expone POST operativos.');
+        hcOk('OP-A/9A-B-A mantienen rutas GET/read-only y no exponen POST operativos.');
     } else {
         hcError(
-            'OP-A tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenOpRoutes),
-            'Retirar rutas OP que no sean GET /operacion/diaria -> Operacion::diaria.'
+            'OP-A/9A-B-A tienen rutas fuera de alcance: ' . implode(' | ', $forbiddenOpRoutes),
+            'Retirar rutas OP que no sean GET /operacion/diaria o GET /operacion/conciliacion-financiera.'
         );
     }
 
@@ -5161,6 +5609,38 @@ if (!is_file($routesPath)) {
     }
 
     if (
+        $cfinModelCode !== ''
+        && strpos($cfinModelCode, 'class ConciliacionFinanciera') !== false
+        && strpos($cfinModelCode, 'function reporteReadOnlyPorHotel') !== false
+        && strpos($cfinModelCode, 'START TRANSACTION READ ONLY') !== false
+        && strpos($cfinModelCode, 'rollBack') !== false
+        && !preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|ALTER|DROP|TRUNCATE)\b/i', $cfinModelCode)
+    ) {
+        hcOk('ConciliacionFinanciera 9A-B-A es lector read-only con transaccion y rollback.');
+    } else {
+        hcError(
+            'ConciliacionFinanciera 9A-B-A no cumple contrato read-only.',
+            'Mantener lector sin escrituras SQL, con START TRANSACTION READ ONLY y rollback final.'
+        );
+    }
+
+    if (
+        $cfinViewCode !== ''
+        && strpos($cfinViewCode, 'Solo lectura') !== false
+        && strpos($cfinViewCode, 'method="get"') !== false
+        && preg_match('/method\s*=\s*[\'"]post[\'"]/i', $cfinViewCode) !== 1
+        && strpos($cfinViewCode, '--brand-') !== false
+        && strpos($cfinViewCode, '--ms-') === false
+    ) {
+        hcOk('Vista 9A-B-A usa filtros GET, solo lectura y branding hotelero.');
+    } else {
+        hcError(
+            'Vista 9A-B-A no cumple contrato visual/read-only.',
+            'Usar filtros GET, etiqueta Solo lectura, tokens --brand-* y cero formularios POST.'
+        );
+    }
+
+    if (
         $opSidebarCode !== ''
         && strpos($opSidebarCode, '$mostrarOperacionDiaria') !== false
         && strpos($opSidebarCode, "url('operacion/diaria')") !== false
@@ -5179,6 +5659,364 @@ if (!is_file($routesPath)) {
         hcWarning(
             'Preflight OP-A no existe.',
             'Crear preflight read-only para validar tablero operativo diario.'
+        );
+    }
+
+    if (
+        $cashMethodPreflightCode !== ''
+        && strpos($cashMethodPreflightCode, 'Preflight Fase 9C-A') !== false
+        && strpos($cashMethodPreflightCode, 'START TRANSACTION READ ONLY') !== false
+        && strpos($cashMethodPreflightCode, 'rollBack') !== false
+        && strpos($cashMethodPreflightCode, 'movimientos_caja') !== false
+        && strpos($cashMethodPreflightCode, 'cortes_caja') !== false
+        && !preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|ALTER|DROP|TRUNCATE)\b/i', $cashMethodPreflightSqlProbe ?? $cashMethodPreflightCode)
+    ) {
+        hcOk('Preflight 9C-A de arqueo por metodo es CLI/read-only con transaccion y rollback.');
+    } else {
+        hcError(
+            'Preflight 9C-A de arqueo por metodo no cumple contrato read-only.',
+            'Mantener tools/saas/preflight_arqueo_metodos_pago.php sin escrituras SQL, con READ ONLY y rollback.'
+        );
+    }
+
+    if (
+        $cashControllerCode !== ''
+        && strpos($cashControllerCode, 'function arqueoMetodosAction') !== false
+        && strpos($cashControllerCode, 'ArqueoMetodosPago') !== false
+        && strpos($cashControllerCode, 'reporteReadOnlyPorHotel') !== false
+        && strpos($cashControllerCode, "View::renderTemplate('caja/arqueo_metodos'") !== false
+        && strpos($cashControllerCode, 'getQuery') !== false
+    ) {
+        hcOk('CajaController 9C-B-A usa lector dedicado, filtros GET y vista read-only.');
+    } else {
+        hcError(
+            'CajaController 9C-B-A no muestra contrato read-only completo.',
+            'Usar ArqueoMetodosPago::reporteReadOnlyPorHotel(), getQuery y render caja/arqueo_metodos.'
+        );
+    }
+
+    if (
+        $cashArqueoModelCode !== ''
+        && strpos($cashArqueoModelCode, 'class ArqueoMetodosPago') !== false
+        && strpos($cashArqueoModelCode, 'function reporteReadOnlyPorHotel') !== false
+        && strpos($cashArqueoModelCode, 'START TRANSACTION READ ONLY') !== false
+        && strpos($cashArqueoModelCode, 'rollBack') !== false
+        && strpos($cashArqueoModelCode, 'hotel_id') !== false
+        && !preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|ALTER|DROP|TRUNCATE)\b/i', $cashArqueoModelCode)
+    ) {
+        hcOk('ArqueoMetodosPago 9C-B-A es lector read-only con hotel_id, transaccion y rollback.');
+    } else {
+        hcError(
+            'ArqueoMetodosPago 9C-B-A no cumple contrato read-only.',
+            'Mantener modelo sin escrituras SQL, con START TRANSACTION READ ONLY, rollback y filtro por hotel actual.'
+        );
+    }
+
+    if (
+        $cashArqueoViewCode !== ''
+        && strpos($cashArqueoViewCode, 'Solo lectura') !== false
+        && strpos($cashArqueoViewCode, 'method="get"') !== false
+        && preg_match('/method\s*=\s*[\'"]post[\'"]/i', $cashArqueoViewCode) !== 1
+        && strpos($cashArqueoViewCode, 'csrf_field()') === false
+        && strpos($cashArqueoViewCode, 'name="hotel_id"') === false
+        && strpos($cashArqueoViewCode, '--brand-') !== false
+        && strpos($cashArqueoViewCode, '--ms-') === false
+    ) {
+        hcOk('Vista 9C-B-A usa filtros GET, solo lectura y branding hotelero.');
+    } else {
+        hcError(
+            'Vista 9C-B-A no cumple contrato visual/read-only.',
+            'Usar filtros GET, etiqueta Solo lectura, tokens --brand-*, sin CSRF/POST y sin hotel_id editable.'
+        );
+    }
+
+    if (hcRouteExists($routes, 'reportes/ejecutivo', 'get')) {
+        hcOk('Ruta 10A-B-A registrada: GET /reportes/ejecutivo.');
+    } else {
+        hcError(
+            'Ruta 10A-B-A GET /reportes/ejecutivo no esta registrada.',
+            'Registrar una unica ruta GET para el tablero ejecutivo read-only.'
+        );
+    }
+
+    if (!hcRouteExists($routes, 'reportes/ejecutivo', 'post')) {
+        hcOk('10A-B-A no expone POST /reportes/ejecutivo.');
+    } else {
+        hcError(
+            '10A-B-A expone POST /reportes/ejecutivo fuera de contrato.',
+            'Retirar POST; el tablero ejecutivo debe seguir read-only.'
+        );
+    }
+
+    if (
+        $executivePreflightCode !== ''
+        && strpos($executivePreflightCode, 'Preflight Fase 10A-A/10A-B-A') !== false
+        && strpos($executivePreflightCode, 'START TRANSACTION READ ONLY') !== false
+        && strpos($executivePreflightCode, 'rollBack') !== false
+        && strpos($executivePreflightCode, 'reservaciones') !== false
+        && strpos($executivePreflightCode, 'cuentas_por_cobrar') !== false
+        && strpos($executivePreflightCode, 'cuentas_por_pagar') !== false
+        && strpos($executivePreflightCode, 'movimientos_caja') !== false
+        && strpos($executivePreflightCode, 'inventario_productos') !== false
+        && strpos($executivePreflightCode, 'tareas_operativas') !== false
+        && strpos($executivePreflightCode, 'trabajadores') !== false
+        && strpos($executivePreflightCode, 'documentos') !== false
+        && strpos($executivePreflightCode, 'logs_auditoria') !== false
+        && !preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|ALTER|DROP|TRUNCATE)\b/i', $executivePreflightCode)
+    ) {
+        hcOk('Preflight 10A-A/10A-B-A de tablero ejecutivo es CLI/read-only con fuentes transversales y rollback.');
+    } else {
+        hcError(
+            'Preflight 10A-A/10A-B-A de tablero ejecutivo no cumple contrato read-only.',
+            'Mantener tools/saas/preflight_tablero_ejecutivo.php sin escrituras SQL, con READ ONLY, fuentes transversales y rollback.'
+        );
+    }
+
+    $executiveActionBody = $executiveReportesControllerCode !== ''
+        ? hcExtractMethodCode($executiveReportesControllerCode, 'ejecutivoAction')
+        : '';
+    if (
+        $executiveActionBody !== ''
+        && strpos($executiveReportesControllerCode, 'TableroEjecutivo') !== false
+        && strpos($executiveActionBody, 'tableroEjecutivoModel') !== false
+        && strpos($executiveActionBody, 'reporteReadOnlyPorHotel') !== false
+        && strpos($executiveActionBody, "View::renderTemplate('reportes/ejecutivo'") !== false
+        && strpos($executiveActionBody, 'archivarNotificacionReporteGerencialVisto') === false
+        && hcCodeBodyIsReadOnly($executiveActionBody)
+    ) {
+        hcOk('ReportesController 10A-B-A usa lector dedicado, filtros GET y vista read-only.');
+    } else {
+        hcError(
+            'ReportesController 10A-B-A no muestra contrato read-only completo.',
+            'Usar TableroEjecutivo::reporteReadOnlyPorHotel(), filtros GET, render reportes/ejecutivo y cero archivado de notificaciones.'
+        );
+    }
+
+    if (
+        $executiveModelCode !== ''
+        && strpos($executiveModelCode, 'class TableroEjecutivo') !== false
+        && strpos($executiveModelCode, 'function reporteReadOnlyPorHotel') !== false
+        && strpos($executiveModelCode, 'START TRANSACTION READ ONLY') !== false
+        && strpos($executiveModelCode, 'rollBack') !== false
+        && strpos($executiveModelCode, 'hotel_id') !== false
+        && strpos($executiveModelCode, 'ledger_laboral') !== false
+        && !preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|ALTER|DROP|TRUNCATE)\b/i', $executiveModelCode)
+    ) {
+        hcOk('TableroEjecutivo 10A-B-A es lector read-only con hotel_id, transaccion y rollback.');
+    } else {
+        hcError(
+            'TableroEjecutivo 10A-B-A no cumple contrato read-only.',
+            'Mantener modelo sin escrituras SQL, con START TRANSACTION READ ONLY, rollback y filtro por hotel actual.'
+        );
+    }
+
+    if (
+        $executiveViewCode !== ''
+        && strpos($executiveViewCode, 'Solo lectura') !== false
+        && strpos($executiveViewCode, 'method="get"') !== false
+        && strpos($executiveViewCode, "url('reportes/ejecutivo')") !== false
+        && preg_match('/method\s*=\s*[\'"]post[\'"]/i', $executiveViewCode) !== 1
+        && strpos($executiveViewCode, 'csrf_field()') === false
+        && strpos($executiveViewCode, 'name="hotel_id"') === false
+        && strpos($executiveViewCode, '--brand-') !== false
+        && strpos($executiveViewCode, '--ms-') === false
+    ) {
+        hcOk('Vista 10A-B-A usa filtros GET, solo lectura y branding hotelero.');
+    } else {
+        hcError(
+            'Vista 10A-B-A no cumple contrato visual/read-only.',
+            'Usar filtros GET, etiqueta Solo lectura, tokens --brand-*, sin CSRF/POST y sin hotel_id editable.'
+        );
+    }
+
+    if ($reportesIndexViewCode !== '' && strpos($reportesIndexViewCode, "url('reportes/ejecutivo')") !== false) {
+        hcOk('Indice de reportes enlaza 10A-B-A por GET.');
+    } else {
+        hcWarning(
+            'Indice de reportes no enlaza 10A-B-A.',
+            'Agregar enlace GET al tablero ejecutivo para QA manual.'
+        );
+    }
+
+    $executiveGerencialBody = $executiveReportesControllerCode !== ''
+        ? hcExtractMethodCode($executiveReportesControllerCode, 'gerencialDiarioAction')
+        : '';
+    $executiveGerencialPdfBody = $executiveReportesControllerCode !== ''
+        ? hcExtractMethodCode($executiveReportesControllerCode, 'gerencialDiarioPdfAction')
+        : '';
+    if (
+        $executiveGerencialBody !== ''
+        && strpos($executiveGerencialBody, 'archivarNotificacionReporteGerencialVisto') === false
+        && hcCodeBodyIsReadOnly($executiveGerencialBody)
+    ) {
+        hcOk('10B-A: reporte gerencial HTML no archiva notificaciones por lectura directa.');
+    } else {
+        hcError(
+            '10B-A: reporte gerencial HTML conserva side effect sobre notificaciones.',
+            'Separar lectura directa de /reportes/gerencial-diario y archivado de notificaciones.'
+        );
+    }
+
+    if (
+        $executiveGerencialPdfBody !== ''
+        && strpos($executiveGerencialPdfBody, 'archivarNotificacionReporteGerencialVisto') === false
+        && hcCodeBodyIsReadOnly($executiveGerencialPdfBody)
+    ) {
+        hcOk('10B-A: reporte gerencial PDF no archiva notificaciones por descarga directa.');
+    } else {
+        hcError(
+            '10B-A: reporte gerencial PDF conserva side effect sobre notificaciones.',
+            'Mantener /reportes/gerencial-diario/pdf como descarga directa sin cambiar notificaciones.'
+        );
+    }
+
+    if (strpos($executiveReportesControllerCode, 'function archivarNotificacionReporteGerencialVisto(') === false) {
+        hcOk('10B-A: ReportesController no conserva archivado automatico de reporte gerencial.');
+    } else {
+        hcError(
+            '10B-A: ReportesController aun conserva archivado automatico de reporte gerencial.',
+            'Reservar cambios de estado de notificaciones para el flujo controlado de notificaciones.'
+        );
+    }
+
+    $executiveNotificacionAbrirBody = $executiveNotificacionControllerCode !== ''
+        ? hcExtractMethodCode($executiveNotificacionControllerCode, 'abrirAction')
+        : '';
+    $executiveNotificacionArchivaBody = $executiveNotificacionControllerCode !== ''
+        ? hcExtractMethodCode($executiveNotificacionControllerCode, 'seArchivaAlAbrir')
+        : '';
+    if (
+        $executiveNotificacionAbrirBody !== ''
+        && $executiveNotificacionArchivaBody !== ''
+        && strpos($executiveNotificacionAbrirBody, 'cambiarEstado') !== false
+        && strpos($executiveNotificacionAbrirBody, 'seArchivaAlAbrir') !== false
+        && strpos($executiveNotificacionArchivaBody, 'regla_reporte_gerencial_diario') !== false
+    ) {
+        hcOk('10B-A: archivado de reporte gerencial queda en flujo controlado de notificaciones.');
+    } else {
+        hcWarning(
+            '10B-A: no se pudo confirmar archivado controlado de reporte gerencial desde notificaciones.',
+            'Revisar manualmente /notificaciones/{id}/abrir para notificaciones de reporte gerencial.'
+        );
+    }
+
+    if (hcRoutePatternExists($routes, 'huespedes/1', 'get')) {
+        hcOk('Ruta 11A-A registrada: GET /huespedes/{id}.');
+    } else {
+        hcError(
+            'Ruta 11A-A GET /huespedes/{id} no esta registrada.',
+            'Restaurar la ficha operativa del huesped bajo la ruta GET existente.'
+        );
+    }
+
+    if (!hcRoutePatternExists($routes, 'huespedes/1', 'post')) {
+        hcOk('11A-A no expone POST directo /huespedes/{id}.');
+    } else {
+        hcError(
+            '11A-A expone POST directo en /huespedes/{id} fuera de contrato.',
+            'Mantener la ficha del huesped como lectura; las escrituras existentes deben seguir en sus rutas controladas.'
+        );
+    }
+
+    $guestVerBody = $guestControllerCode !== ''
+        ? hcExtractMethodCode($guestControllerCode, 'verAction')
+        : '';
+    if (
+        $guestVerBody !== ''
+        && strpos($guestVerBody, 'findForHotel') !== false
+        && strpos($guestVerBody, 'getReservacionesPorHotel') !== false
+        && strpos($guestVerBody, 'getVehiculosPorHotel') !== false
+        && strpos($guestVerBody, 'perfilOperativoReadOnlyPorHotel') !== false
+        && strpos($guestVerBody, "'perfilOperativo'") !== false
+        && strpos($guestVerBody, 'documentosPorEntidad') !== false
+        && hcCodeBodyIsReadOnly($guestVerBody)
+    ) {
+        hcOk('HuespedController 11A-A compone ficha con lector operativo scoped y sin escrituras.');
+    } else {
+        hcError(
+            'HuespedController 11A-A no muestra contrato read-only completo.',
+            'Usar findForHotel(), perfilOperativoReadOnlyPorHotel(), documentosPorEntidad() y render huespedes/ver sin escrituras.'
+        );
+    }
+
+    $guestProfileMethods = [
+        'perfilOperativoReadOnlyPorHotel',
+        'huespedPerteneceAlHotel',
+        'metricasReservacionesPerfil',
+        'metricasVehiculosPerfil',
+        'metricasCxcPerfil',
+        'metricasDocumentosPerfil',
+        'scoreRecurrenciaPerfil',
+        'clasificacionPerfil',
+        'alertasPerfil',
+        'tablaPerfilExiste',
+    ];
+    $guestMissingMethods = [];
+    $guestMutableMethods = [];
+    foreach ($guestProfileMethods as $guestMethod) {
+        $guestMethodBody = $guestModelCode !== '' ? hcExtractMethodCode($guestModelCode, $guestMethod) : '';
+        if ($guestMethodBody === '') {
+            $guestMissingMethods[] = $guestMethod;
+            continue;
+        }
+
+        if (!hcCodeBodyIsReadOnly($guestMethodBody)) {
+            $guestMutableMethods[] = $guestMethod;
+        }
+    }
+
+    if (
+        $guestModelCode !== ''
+        && empty($guestMissingMethods)
+        && empty($guestMutableMethods)
+        && strpos($guestModelCode, 'function perfilOperativoReadOnlyPorHotel') !== false
+        && strpos($guestModelCode, 'hotel_id = ?') !== false
+        && strpos($guestModelCode, 'huesped_id = ?') !== false
+        && strpos($guestModelCode, 'cuentas_por_cobrar') !== false
+        && strpos($guestModelCode, 'documento_entidades') !== false
+        && strpos($guestModelCode, 'information_schema.TABLES') !== false
+    ) {
+        hcOk('Huesped 11A-A calcula perfil operativo con consultas scoped por hotel_id y cuerpos read-only.');
+    } else {
+        $detalleGuest = [];
+        if (!empty($guestMissingMethods)) {
+            $detalleGuest[] = 'faltan metodos: ' . implode(', ', $guestMissingMethods);
+        }
+        if (!empty($guestMutableMethods)) {
+            $detalleGuest[] = 'metodos con escrituras: ' . implode(', ', $guestMutableMethods);
+        }
+        hcError(
+            'Huesped 11A-A no cumple contrato de lector operativo' . (!empty($detalleGuest) ? ' (' . implode(' | ', $detalleGuest) . ')' : '') . '.',
+            'Mantener perfilOperativoReadOnlyPorHotel() y su familia sin INSERT/UPDATE/DELETE y con filtros hotel_id/huesped_id.'
+        );
+    }
+
+    $guestProfileViewBlock = '';
+    $guestBlockStart = strpos($guestViewCode, 'guest-readonly-profile');
+    if ($guestBlockStart !== false) {
+        $guestBlockEnd = strpos($guestViewCode, '<div class="guest-layout">', $guestBlockStart);
+        $guestProfileViewBlock = $guestBlockEnd !== false
+            ? substr($guestViewCode, $guestBlockStart, $guestBlockEnd - $guestBlockStart)
+            : substr($guestViewCode, $guestBlockStart, 12000);
+    }
+
+    if (
+        $guestProfileViewBlock !== ''
+        && strpos($guestProfileViewBlock, 'Perfil operativo') !== false
+        && strpos($guestProfileViewBlock, 'Solo lectura') !== false
+        && strpos($guestProfileViewBlock, 'guest-operational-grid') !== false
+        && strpos($guestProfileViewBlock, 'format_money($perfilCxcSaldo)') !== false
+        && strpos($guestProfileViewBlock, '<form') === false
+        && stripos($guestProfileViewBlock, 'method=') === false
+        && strpos($guestProfileViewBlock, 'csrf_field') === false
+        && strpos($guestProfileViewBlock, 'url(') === false
+        && strpos($guestProfileViewBlock, '--ms-') === false
+    ) {
+        hcOk('Vista huespedes/ver 11A-A agrega perfil operativo sin formularios, acciones ni identidad Medisoft.');
+    } else {
+        hcError(
+            'Vista huespedes/ver 11A-A no muestra bloque read-only completo.',
+            'Mantener el bloque Perfil operativo con etiqueta Solo lectura, sin form/method/CSRF/url() y sin tokens --ms-*.'
         );
     }
 

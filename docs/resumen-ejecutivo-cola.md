@@ -219,6 +219,195 @@ Riesgo naranja por tocar estructuras financieras de DB, mitigado por:
 - No avanzar a pagos, Caja ni Fase 3D sin nuevo mensaje real o cola especifica.
 - La siguiente accion recomendada es Fase 4A-A migracion base documental si se autoriza.
 
+## Fase 9A-B-A conciliacion financiera read-only
+
+Estado actual:
+`CIERRE_9A_B_F_PANTALLA_CONCILIACION_FINANCIERA_COMPLETADO`.
+
+- Se implementa GET `/operacion/conciliacion-financiera`.
+- Se agrega lector read-only `ConciliacionFinanciera`.
+- La vista muestra resumen CxC, CxP, Caja, auditoria y matriz de alertas con filtros
+  GET.
+- No hay POST propio, pagos, cobros, reversiones, ajustes, migraciones ni escrituras.
+- El preflight de conciliacion ahora cubre 9A-A y 9A-B-A.
+- Resultado inicial: lector directo `hallazgos=0`, `errores=0`; preflight
+  `OK: 96`, `WARNING: 0`, `ERROR: 0`.
+- Health general: `OK: 281`, `WARNING: 25`, `ERROR: 0`.
+- QA manual con sesion completada por el usuario.
+- Cierre 9A-B-F documentado; cualquier ampliacion de conciliacion requiere contrato
+  independiente.
+
+## Fase 9C-0 arqueo por corte y metodo read-only
+
+Estado actual:
+`CIERRE_9C_B_F_PANTALLA_ARQUEO_METODOS_PAGO_COMPLETADO`.
+
+- Se crea contrato para diagnostico futuro de arqueo por corte y metodo de pago.
+- No se implementa codigo, rutas, formularios, modelos, migraciones ni escrituras.
+- Fuentes futuras: `movimientos_caja`, `cortes_caja`, `cajas`,
+  `categorias_movimientos`, usuarios como contexto y hoteles para scope.
+- Lectura local inicial: cortes `223`, abiertos `3`, movimientos Caja `1409`, metodos
+  distintos `3`, sin metodo `0`, sin corte `0`.
+- Se implementa 9C-A como preflight CLI/read-only:
+  `src/tools/saas/preflight_arqueo_metodos_pago.php`.
+- Resultado 9C-A: `OK: 34`, `WARNING: 2`, `ERROR: 0`.
+- Warnings esperados: `4` cortes cerrados con totales guardados distintos a movimientos
+  y `1` corte con `efectivo_esperado` distinto a formula guardada.
+- Health general: `OK: 282`, `WARNING: 25`, `ERROR: 0`.
+- Se crea contrato 9C-B-0 para futura pantalla GET/read-only de arqueo por corte y
+  metodo.
+- Se implementa 9C-B-A como pantalla GET/read-only:
+  `GET /caja/arqueo-metodos`.
+- Superficies nuevas: `ArqueoMetodosPago`, `CajaController::arqueoMetodosAction()`
+  y `app/views/caja/arqueo_metodos.php`.
+- La vista usa filtros GET, etiqueta `Solo lectura` y tokens `--brand-*`; no usa
+  `--ms-*`.
+- No hay POST, migraciones, escrituras, CSRF, `hotel_id` editable ni botones de
+  cierre/recalculo/correccion.
+- Preflight actualizado: `OK: 39`, `WARNING: 2`, `ERROR: 0`.
+- Health general actualizado: `OK: 287`, `WARNING: 25`, `ERROR: 0`.
+- QA manual con sesion completada por el usuario.
+- Cierre 9C-B-F documentado; cualquier ampliacion de arqueo requiere contrato
+  independiente.
+
+## Fase 10A-0 tablero ejecutivo integral read-only
+
+Estado actual:
+`CONTRATO_10A_0_TABLERO_EJECUTIVO_READONLY_COMPLETADO`.
+
+- Se crea contrato para un tablero ejecutivo integral, solo lectura.
+- Ruta candidata futura: `GET /reportes/ejecutivo`.
+- No se implementa codigo, rutas, formularios, modelos, migraciones ni escrituras.
+- El tablero futuro debe consolidar KPIs de operacion hotelera, finanzas, Caja, CxC,
+  CxP, inventario, tareas, personal y documentos.
+- Se documenta que el reporte existente `GET /reportes/gerencial-diario` no debe
+  reutilizarse como read-only puro mientras marque notificaciones como vistas.
+- Quedan prohibidos pagos, cobros, reversiones, cierres/reaperturas de corte,
+  recalculos, ajustes, ediciones de movimientos, exports/links sin contrato y
+  `/api/sync`.
+- Paso seguro ejecutado despues del contrato: 10A-A como preflight CLI/read-only
+  antes de cualquier UI.
+
+## Fase 10A-A preflight tablero ejecutivo integral read-only
+
+Estado actual:
+`PREFLIGHT_10A_A_TABLERO_EJECUTIVO_READONLY_COMPLETADO`.
+
+- Se agrega `src/tools/saas/preflight_tablero_ejecutivo.php`.
+- Se extiende `src/tools/saas/health_check_fase_1a.php`.
+- No se registra `/reportes/ejecutivo` ni se agrega pantalla.
+- El preflight revisa fuentes de operacion, cartera, Caja, cortes, compras,
+  inventario, tareas, trabajadores, documentos y auditoria.
+- Detecta como warning controlado que `GET /reportes/gerencial-diario` archiva
+  notificaciones y por tanto no debe reutilizarse como fuente read-only pura.
+- Resultado del preflight: `OK: 79`, `WARNING: 5`, `ERROR: 0`.
+- Resultado del health general: `OK: 290`, `WARNING: 26`, `ERROR: 0`.
+- Siguiente paso seguro: 10A-B-0 como contrato de pantalla ejecutiva GET/read-only.
+
+## Fase 10A-B-0 contrato pantalla tablero ejecutivo read-only
+
+Estado actual:
+`CONTRATO_10A_B_0_PANTALLA_TABLERO_EJECUTIVO_READONLY_COMPLETADO`.
+
+- Se crea contrato de pantalla ejecutiva antes de tocar codigo.
+- Ruta futura candidata unica: `GET /reportes/ejecutivo`.
+- No se implementa ruta, controlador, modelo, vista, navegacion, formularios,
+  migraciones ni escrituras.
+- La pantalla futura debe mostrar KPIs de operacion, finanzas, Caja, inventario,
+  tareas, personal, documentos y auditoria, siempre en solo lectura.
+- Quedan prohibidos POST, acciones operativas, archivado de notificaciones por lectura,
+  exports/links sin contrato separado, permisos nuevos, PWA/offline y `/api/sync`.
+- Siguiente paso posible: 10A-B-A solo con autorizacion explicita para tocar rutas,
+  controlador/modelo read-only y vista.
+
+## Fase 10A-B-A pantalla tablero ejecutivo read-only
+
+Estado actual:
+`PANTALLA_10A_B_A_TABLERO_EJECUTIVO_READONLY_IMPLEMENTADA`.
+
+- Se implementa `GET /reportes/ejecutivo`.
+- Se agrega `TableroEjecutivo` como lector read-only con transaccion y rollback.
+- Se agrega vista `reportes/ejecutivo.php` con filtros GET y etiqueta `Solo lectura`.
+- Se enlaza desde el indice de reportes.
+- No se agrega POST, migracion, export, link publico ni accion operativa.
+- Preflight: `OK: 86`, `WARNING: 5`, `ERROR: 0`.
+- Health general: `OK: 294`, `WARNING: 26`, `ERROR: 0`.
+- Sin sesion redirige a login con `303`.
+- QA manual con sesion validada por el usuario.
+
+## Fase 10A-B-F cierre tablero ejecutivo read-only
+
+Estado actual:
+`CIERRE_10A_B_TABLERO_EJECUTIVO_READONLY_QA_MANUAL_VALIDADA`.
+
+- Se documenta el cierre de 10A-B tras QA manual aprobada.
+- No se modifica codigo, rutas, controladores, modelos, vistas, formularios,
+  migraciones ni datos.
+- `GET /reportes/ejecutivo` queda como pantalla read-only validada.
+- Siguiente bloque recomendado: separar lectura de reporte gerencial diario y archivado
+  automatico de notificaciones.
+
+## Fase 10B-0 contrato reporte gerencial y notificaciones
+
+Estado actual:
+`CONTRATO_10B_0_REPORTE_GERENCIAL_NOTIFICACIONES_COMPLETADO`.
+
+- Se crea contrato documental para desacoplar lectura directa de reporte gerencial y
+  archivado automatico de notificaciones.
+- No se modifica codigo, rutas, controladores, modelos, vistas, formularios,
+  migraciones ni datos.
+- Se documenta que `GET /reportes/gerencial-diario` y su PDF llaman actualmente
+  `archivarNotificacionReporteGerencialVisto`.
+- La futura implementacion debera hacer que abrir el reporte directo no cambie
+  `notificaciones`.
+- El archivado, si aplica, debe quedar en el flujo controlado de notificaciones y
+  scoped por hotel.
+- Accion ejecutada despues: 10B-A con autorizacion explicita.
+
+## Fase 10B-A separacion reporte gerencial y notificaciones
+
+Estado actual:
+`SEPARACION_10B_A_REPORTE_GERENCIAL_NOTIFICACIONES_QA_MANUAL_VALIDADA`.
+
+- Se retiro el archivado automatico de notificaciones desde el reporte gerencial HTML
+  y PDF.
+- `ReportesController` ya no conserva
+  `archivarNotificacionReporteGerencialVisto`.
+- El flujo controlado de notificaciones sigue en `/notificaciones/{id}/abrir`.
+- No se tocaron rutas, modelos de negocio, vistas, formularios, migraciones, datos,
+  permisos/auth, PWA/offline ni `/api/sync`.
+- Preflight tablero ejecutivo: `OK: 91`, `WARNING: 3`, `ERROR: 0`.
+- Health general: `OK: 298`, `WARNING: 25`, `ERROR: 0`.
+- HTTP sin sesion en HTML/PDF gerencial: `303`.
+- QA manual con sesion de hotel validada por el usuario.
+
+## Fase 10B-F cierre reporte gerencial y notificaciones
+
+Estado actual:
+`CIERRE_10B_REPORTE_GERENCIAL_NOTIFICACIONES_QA_MANUAL_VALIDADA`.
+
+- Se documenta el cierre del bloque 10B tras QA manual aprobada.
+- No se modifica codigo, rutas, controladores, modelos, vistas, formularios,
+  migraciones ni datos.
+- `GET /reportes/gerencial-diario` y su PDF quedan como lecturas directas sin
+  archivado automatico de notificaciones.
+- El archivado queda reservado al flujo controlado de notificaciones.
+- Siguiente paso recomendado: abrir contrato independiente para el siguiente frente.
+
+## Fase 11A-0 contrato perfil operativo de huesped read-only
+
+Estado actual:
+`CONTRATO_11A_0_PERFIL_HUESPED_READONLY_COMPLETADO`.
+
+- Se crea contrato documental para enriquecer la ficha de huesped/cliente sin
+  escrituras.
+- No se modifica codigo, rutas, controladores, modelos, vistas, formularios,
+  migraciones ni datos.
+- Define una futura lectura en `GET /huespedes/{id}` con reservaciones, vehiculos,
+  CxC, documentos, recurrencia y alertas visuales.
+- Queda prohibido alterar formularios existentes de huespedes.
+- Siguiente paso posible: 11A-A solo con autorizacion explicita.
+
 ## Nuevo bloque Fase 4A Centro Documental
 
 Estado: `CIERRE_TECNICO_4A_COMPLETADO`.
@@ -1509,6 +1698,98 @@ Resultado 7B-D-B-0:
   de recibos/cobros para una fase posterior.
 - No implementa DB, rutas, formularios, servicios ni escrituras.
 
+Resultado 7B-D-B-A:
+
+- Estado tecnico: `MIGRACION_7B_D_B_A_COBRO_ENUM_COMPLETADA`.
+- Documento: `docs/fase_7B_D_B_A_migracion_cobro_enum.md`.
+- Backup previo:
+  `backups/medisoft_hoteles_import_before_7b_d_b_a_cxc_cobro_enum_20260618_180420.sql`.
+- SHA256: `906309EB73EB74B94A62FF493C1B1DAE214F82C02F253AA616C38FFEE3A6C21E`.
+- Migracion aplicada:
+  `migrations/20260618_002_fase_7b_d_b_a_cxc_movimiento_cobro_enum.sql`.
+- `cuentas_por_cobrar_movimientos.tipo_movimiento` ahora incluye `COBRO`.
+- No se crearon movimientos tipo `COBRO`, no se modificaron saldos CxC y no se toco Caja.
+- Preflight CxC actualizado: `OK: 36`, `WARNING: 3`, `ERROR: 0`.
+- Siguiente paso recomendado: 7B-D-C-0 contrato de servicio transaccional de cobro CxC.
+
+Resultado 7B-D-C-0:
+
+- Estado tecnico: `CONTRATO_7B_D_C_0_SERVICIO_COBRO_CXC_CAJA_COMPLETADO`.
+- Documento: `docs/fase_7B_D_C_0_contrato_servicio_cobro_cxc_caja.md`.
+- Define el servicio futuro `CuentaPorCobrarCobroService`, la ruta propuesta
+  `POST /cuentas-por-cobrar/operativas/{id}/registrar-cobro-caja` y el orden
+  transaccional.
+- No implementa codigo, rutas, formularios, botones, migraciones ni escrituras.
+- Deja prohibido escribir en `reservacion_pagos`, `reservacion_abonos`,
+  `solicitudes_factura`, cortes, cajas, PWA/offline y `/api/sync`.
+- Siguiente paso seguro: 7B-D-C-A solo con autorizacion explicita de escrituras
+  financieras, backup y prueba rollback.
+
+Resultado 7B-D-C-A:
+
+- Estado tecnico: `COBRO_CXC_CAJA_7B_D_C_A_VALIDADO_MANUALMENTE`.
+- Documento: `docs/fase_7B_D_C_A_cobro_cxc_caja.md`.
+- Backup previo:
+  `backups/medisoft_hoteles_import_before_7b_d_c_a_cxc_cash_service_20260618_232434.sql`.
+- SHA256: `5708BC91E1BD7A54EFA53A8BA6A92A282ACC98A2AD9237F274AAB87AB11796CD`.
+- Se agrega `CuentaPorCobrarCobroService`, POST controlado, formulario con CSRF/token y
+  prueba rollback.
+- QA manual validada: CxC `#1` queda `parcial`, saldo `4249.00`, movimiento
+  `COBRO #4` por `1.00`, ingreso Caja `#1482` con categoria `Cobro CxC`.
+- Prueba rollback post-QA OK: movimiento CxC temporal `#5`, movimiento Caja temporal
+  `#1483`, rollback completo sin persistir cambios adicionales.
+- Conteos post-QA: CxC `1`, movimientos CxC `2`, movimientos `COBRO=1`,
+  Caja-CxC `1`.
+- Preflight CxC: `OK: 39`, `WARNING: 5`, `ERROR: 0`.
+- Health general: `OK: 277`, `WARNING: 25`, `ERROR: 0`.
+
+Resultado 7B-D-D-0:
+
+- Estado tecnico: `CONTRATO_7B_D_D_0_ANULACION_REVERSION_COBRO_CXC_COMPLETADO`.
+- Documento: `docs/fase_7B_D_D_0_contrato_reversion_cobro_cxc.md`.
+- Define reversion sin borrar ni editar cobro original.
+- La implementacion posterior crea movimiento CxC `CANCELACION`, gasto Caja
+  `Reversion Cobro CxC`, auditoria y actualizacion transaccional de saldo/estado.
+- No implementa codigo, rutas, DB ni escrituras.
+- 7B-D-D-A fue autorizada, implementada y validada manualmente despues de este
+  contrato.
+
+Resultado 7B-D-D-A:
+
+- Estado tecnico: `REVERSION_COBRO_CXC_CAJA_7B_D_D_A_VALIDADA_MANUALMENTE`.
+- Documento: `docs/fase_7B_D_D_A_reversion_cobro_cxc.md`.
+- Backup previo:
+  `backups/medisoft_hoteles_import_before_7b_d_d_a_cxc_reversal_20260619_091552.sql`.
+- SHA256: `9B0157802EF9A959983879CF43505F6ED446613533B0E3A7C4FFCED4BFEEC0AE`.
+- Se agrega `CuentaPorCobrarReversionCobroService`, POST controlado, token de
+  reversion, panel en detalle y prueba rollback.
+- QA manual validada: CxC `#1` vuelve a `pendiente`, saldo `4250.00`,
+  `CANCELACION #8`, gasto Caja `#1486`, referencia `REV-CXC-1-MOV-4`.
+- Prueba rollback post-QA OK: `COBRO` temporal `#10`, `CANCELACION` temporal `#11`,
+  ingreso Caja temporal `#1488`, gasto Caja temporal `#1489`, rollback completo.
+- Regresion cobro CxC post-QA OK: movimiento CxC temporal `#12`, Caja temporal
+  `#1490`, rollback completo.
+- Conteos finales: CxC `#1` pendiente saldo `4250.00`, `COBRO=1`,
+  `CANCELACION REV=1`, Caja-CxC `1`, Caja-Reversion `1`, doble reversion `0`.
+- Preflight CxC: `OK: 45`, `WARNING: 6`, `ERROR: 0`.
+- Health general: `OK: 277`, `WARNING: 25`, `ERROR: 0`.
+- La reversion real queda validada; no borrar `CANCELACION #8` ni Caja `#1486`
+  con SQL directo.
+
+Resultado 7B-D-D-F:
+
+- Estado tecnico: `CIERRE_7B_D_D_F_REVERSION_COBRO_CXC_CAJA_COMPLETADO`.
+- Documento: `docs/fase_7B_D_D_F_cierre_reversion_cobro_cxc.md`.
+- Cierra documentalmente cobro CxC con Caja y reversion de cobro CxC.
+- No agrega codigo, rutas, formularios, migraciones ni escrituras.
+- Evidencia final: CxC `#1` pendiente saldo `4250.00`, cobro `#4`, Caja `#1482`,
+  `CANCELACION #8`, Caja reversion `#1486`, referencia `REV-CXC-1-MOV-4`.
+- Validacion de cierre: preflight CxC `OK: 45`, `WARNING: 6`, `ERROR: 0`;
+  health general `OK: 278`, `WARNING: 25`, `ERROR: 0`.
+- Deja como limite formal no avanzar a cobros masivos, reversiones masivas,
+  reversiones parciales ni automatizaciones sin contrato independiente, backup y
+  rollback.
+
 Resultado 8A-0:
 
 - Estado tecnico: `CONTRATO_8A_DASHBOARD_KPIS_READONLY_COMPLETADO`.
@@ -1582,10 +1863,294 @@ Resultado 3D-C:
 - No se agregan pagos automaticos desde compras, abonos, cambios en pantallas de Caja ni
   `/api/sync`.
 - QA manual completada por el usuario: pago parcial de `10.00` sobre CxP `#1`.
-- Evidencia post-QA: saldo `1000.00 -> 990.00`, estado `parcial`,
-  `cuentas_por_pagar_movimientos.id = 4`, `movimientos_caja.id = 1478`,
-  categoria `Pago proveedor`, corte `#237`.
+- Evidencia post-QA: pago parcial `#4` por `10.00` con Caja `#1478` y pago total
+  restante `#5` por `990.00` con Caja `#1479`; CxP `#1` queda `pagada`, saldo
+  `0.00`.
 - Preflight post-QA `preflight_pagos_proveedores_caja.php`: `OK: 22`,
   `WARNING: 0`, `ERROR: 0`.
-- Pendiente futuro: probar pago total en una CxP dedicada y disenar anulacion/reversion
-  formal antes de escalar pagos reales.
+- Pendiente futuro: no escalar pagos reales hasta implementar anulacion/reversion formal.
+
+Resultado 3D-D-0:
+
+- Estado tecnico: `CONTRATO_3D_D_0_REVERSION_PAGO_PROVEEDOR_CAJA_COMPLETADO`.
+- Documento: `docs/fase_3D_D_0_contrato_reversion_pago_proveedor_caja.md`.
+- Define reversion sin borrar ni editar pagos proveedor originales.
+- La futura implementacion debe crear movimiento CxP `CANCELACION`, ingreso Caja
+  `Reversion Pago proveedor`, auditoria y actualizacion transaccional de saldo/estado.
+- No implementa codigo, rutas, formularios, migraciones ni escrituras.
+- 3D-D-A fue autorizada, implementada y validada manualmente despues de este
+  contrato.
+
+Resultado 3D-D-A:
+
+- Estado tecnico: `REVERSION_PAGO_PROVEEDOR_CAJA_3D_D_A_VALIDADA_MANUALMENTE`.
+- Documento: `docs/fase_3D_D_A_reversion_pago_proveedor_caja.md`.
+- Backup previo:
+  `backups/medisoft_hoteles_import_before_3d_d_a_cxp_payment_reversal_20260619_095320.sql`.
+- SHA256: `3BB71EF0C696E1AB0CB3FC4A4B2E51319DCD654F0CEAA7E83280378F9A9001FB`.
+- Se agrega `CuentaPorPagarReversionPagoService`, POST controlado, token de
+  reversion, panel en detalle y prueba rollback.
+- Prueba rollback OK: `PAGO_REFERENCIAL` temporal `#6`, `CANCELACION` temporal
+  `#7`, gasto Caja temporal `#1491`, ingreso Caja temporal `#1492`, rollback
+  completo sin persistir reversion.
+- Regresion pago proveedor OK: movimiento CxP temporal `#8`, Caja temporal `#1493`,
+  rollback completo.
+- QA manual validada: CxP `#1`, pago proveedor `#4` por `10.00`, movimiento
+  CxP `CANCELACION #9`, Caja ingreso `#1494`, referencia `REV-CXP-1-MOV-4`.
+- Resultado post-QA: CxP `#1` queda `parcial`, saldo `10.00`.
+- Conteos finales: `PAGO_REFERENCIAL=2`, `CANCELACION REV=1`, Caja Pago proveedor
+  `2`, Caja Reversion `1`.
+- Preflight pagos proveedor: `OK: 29`, `WARNING: 1`, `ERROR: 0`.
+  La advertencia corresponde a la `CANCELACION` real validada.
+- Health general: `OK: 278`, `WARNING: 25`, `ERROR: 0`.
+- Health actualizado para considerar como consistentes las cancelaciones CxP y los
+  ingresos Caja de reversion.
+
+Resultado 3D-D-F:
+
+- Estado tecnico: `CIERRE_3D_D_F_REVERSION_PAGO_PROVEEDOR_CAJA_COMPLETADO`.
+- Documento: `docs/fase_3D_D_F_cierre_reversion_pago_proveedor_caja.md`.
+- Cierra documentalmente pagos y reversiones de proveedor con Caja.
+- No agrega codigo, rutas, formularios, migraciones ni escrituras.
+- Deja como limite formal no avanzar a reversiones masivas, reversiones parciales,
+  pagos masivos ni automatizaciones sin contrato independiente, backup y rollback.
+
+Resultado 9A-0:
+
+- Estado tecnico: `CONTRATO_9A_0_CONCILIACION_FINANCIERA_READONLY_COMPLETADO`.
+- Documento: `docs/fase_9A_0_contrato_conciliacion_financiera_readonly.md`.
+- Define una futura conciliacion financiera operativa solo lectura entre CxC, CxP y
+  Caja.
+- No agrega codigo, rutas, formularios, migraciones ni escrituras.
+- Prohibe correcciones automaticas, pagos, cobros, reversiones, ajustes, cambios de
+  corte y cualquier modificacion de saldos.
+- Siguiente paso recomendado: 9A-A como preflight read-only antes de cualquier UI.
+
+Resultado 9A-A:
+
+- Estado tecnico: `PREFLIGHT_9A_A_CONCILIACION_FINANCIERA_READONLY_COMPLETADO`.
+- Documento: `docs/fase_9A_A_preflight_conciliacion_financiera_readonly.md`.
+- Herramienta nueva: `src/tools/saas/preflight_conciliacion_financiera.php`.
+- Implementa conciliacion CLI/read-only entre CxC, CxP, Caja, cortes y auditoria.
+- No agrega rutas, vistas, formularios, POST, migraciones, modelos ni escrituras.
+- Resultado del preflight 9A-A: `OK: 75`, `WARNING: 0`, `ERROR: 0`.
+- Regresiones: preflight CxC `ERROR: 0`; preflight pagos proveedor `ERROR: 0`.
+- Health general: `OK: 278`, `WARNING: 25`, `ERROR: 0`.
+- Siguiente paso seguro: contrato 9A-B para una futura pantalla GET/read-only.
+
+Resultado 9A-B-0:
+
+- Estado tecnico:
+  `CONTRATO_9A_B_0_PANTALLA_CONCILIACION_FINANCIERA_READONLY_COMPLETADO`.
+- Documento:
+  `docs/fase_9A_B_0_contrato_pantalla_conciliacion_financiera_readonly.md`.
+- Define la futura pantalla `GET /operacion/conciliacion-financiera` como superficie
+  candidata, sin implementarla todavia.
+- Exige UI solo lectura con filtros GET, branding del hotel `--brand-*` y sin tokens
+  `--ms-*`.
+- Prohibe botones de corregir, ajustar, pagar, cobrar, revertir o compensar.
+- No agrega codigo, rutas, controladores, modelos, vistas, formularios, migraciones ni
+  escrituras.
+- Siguiente paso seguro: 9A-B-A solo si se autoriza implementar una pantalla GET.
+
+## 11A-A Perfil operativo de huesped read-only
+
+Estado formal:
+`PERFIL_11A_A_HUESPED_READONLY_VALIDADO_MANUALMENTE`.
+
+- Documento creado:
+  `docs/fase_11A_A_perfil_huesped_readonly.md`.
+- Ficha usada: `GET /huespedes/{id}` existente.
+- Lector nuevo: `Huesped::perfilOperativoReadOnlyPorHotel()`.
+- Vista: bloque `Perfil operativo` con etiqueta `Solo lectura`.
+- Datos mostrados: clasificacion, score al vuelo, proxima estancia, saldo CxC,
+  documentos y alertas visuales.
+- No agrega rutas, POST, formularios nuevos, migraciones ni escrituras.
+- Health checker actualizado para validar ruta GET, controlador, modelo y bloque
+  visual read-only.
+- Validaciones automaticas: PHP lint OK, health `OK: 304`, `WARNING: 25`,
+  `ERROR: 0`, HTTP sin sesion `303`, `git diff --check` scoped OK.
+- QA manual validada por el usuario.
+
+## 11A-F Cierre perfil operativo de huesped read-only
+
+Estado formal:
+`CIERRE_11A_PERFIL_HUESPED_READONLY_QA_MANUAL_VALIDADA`.
+
+- Documento creado:
+  `docs/fase_11A_F_cierre_perfil_huesped_readonly.md`.
+- Cierra el bloque 11A-0/11A-A como perfil operativo de huesped read-only.
+- No agrega codigo, rutas, controladores, modelos, vistas, formularios, migraciones
+  ni datos.
+- Mantiene el perfil como lectura informativa sin CxC nueva, cobros, pagos,
+  check-in/check-out, cambios de reservaciones, documentos, tareas, permisos/auth,
+  PWA/offline ni `/api/sync`.
+
+## 5E-0 Contrato pagos laborales con Caja
+
+Estado formal:
+`CONTRATO_5E_0_PAGOS_LABORALES_CAJA_COMPLETADO`.
+
+- Documento creado:
+  `docs/fase_5E_0_contrato_pagos_laborales_caja.md`.
+- Es solo contrato/diagnostico; no agrega codigo, rutas, vistas, formularios,
+  migraciones ni escrituras.
+- Define el futuro flujo de pagos laborales reales con Caja.
+- Mantiene `trabajador_pagos` como conceptos laborales, no pagos reales.
+- Recomienda entidad independiente futura `trabajador_pagos_caja`.
+- Exige para una implementacion posterior: backup, corte abierto, transaccion,
+  referencia unica, movimiento Caja tipo gasto, auditoria, token de pago y prueba
+  rollback.
+- Prohibe por ahora pagos reales, movimientos de Caja, nomina automatica,
+  abonos/liquidaciones de anticipos/prestamos, reversiones y `/api/sync`.
+- Siguiente paso seguro: 5E-A preflight CLI/read-only.
+
+## 5E-A Preflight pagos laborales con Caja
+
+Estado formal:
+`PREFLIGHT_5E_A_PAGOS_LABORALES_CAJA_READONLY_COMPLETADO`.
+
+- Documento creado:
+  `docs/fase_5E_A_preflight_pagos_laborales_caja.md`.
+- Se agrega `src/tools/saas/preflight_personal_pagos_caja.php`.
+- Se extiende `src/tools/saas/health_check_fase_1a.php`.
+- Es una fase solo lectura: no crea rutas, vistas, formularios, migraciones, tabla,
+  pagos ni movimientos de Caja.
+- Resultado automatico: preflight 5E-A `OK: 34`, `WARNING: 1`, `ERROR: 0`;
+  health general `OK: 305`, `WARNING: 25`, `ERROR: 0`.
+- Hallazgo operativo: no hay trabajadores activos para QA futura de pago real.
+- Siguiente paso seguro: 5E-B-0 contrato de migracion aditiva para
+  `trabajador_pagos_caja`.
+
+## 5E-B-0 Contrato migracion pagos laborales con Caja
+
+Estado formal:
+`CONTRATO_5E_B_0_MIGRACION_PAGOS_LABORALES_CAJA_COMPLETADO`.
+
+- Documento creado:
+  `docs/fase_5E_B_0_contrato_migracion_pagos_laborales_caja.md`.
+- Es contrato documental; no agrega SQL, migracion, tabla, rutas, vistas, formularios,
+  servicios, datos ni movimientos de Caja.
+- Define el esquema futuro de `trabajador_pagos_caja` con enlace a trabajador, corte,
+  movimiento de Caja, metodo, referencia, periodo, estado y auditoria.
+- Define que la referencia futura debe ser unica por hotel y compartida con
+  `movimientos_caja`.
+- Prohibe alterar `trabajador_pagos` y confirma que sigue siendo tabla de conceptos.
+- Siguiente paso seguro: 5E-B-A migracion aditiva solo con backup y autorizacion
+  explicita para tocar DB.
+
+## 5E-B-A Migracion pagos laborales con Caja
+
+Estado formal:
+`MIGRACION_5E_B_A_PAGOS_LABORALES_CAJA_COMPLETADA`.
+
+- Documento creado:
+  `docs/fase_5E_B_A_migracion_pagos_laborales_caja.md`.
+- Migracion aplicada:
+  `migrations/20260619_003_fase_5e_b_a_trabajador_pagos_caja.sql`.
+- Backup previo:
+  `backups/medisoft_hoteles_import_before_5e_b_a_trabajador_pagos_caja_20260619_220444.sql`.
+- SHA256:
+  `2E279999DA95C0216942F1FE480E5E43E96AAE42A06DA7C9FD83633BC53898BC`.
+- Se creo `trabajador_pagos_caja` vacia y registrada en `migrations`.
+- Preflight 5E queda en `ERROR: 0`.
+- Health general queda en `ERROR: 0`.
+- No se implementa pago real ni se toca Caja operativa.
+- Siguiente paso seguro: 5E-C-0 contrato de simulador GET/read-only.
+
+## 5E-C-0 Contrato simulador pago laboral con Caja
+
+Estado formal:
+`CONTRATO_5E_C_0_SIMULADOR_PAGO_LABORAL_CAJA_COMPLETADO`.
+
+- Documento creado:
+  `docs/fase_5E_C_0_contrato_simulador_pago_laboral_caja.md`.
+- Es contrato documental; no agrega codigo operativo, rutas, vistas, formularios,
+  servicios, POST, pagos ni movimientos de Caja.
+- Define la futura ruta candidata:
+  `GET /trabajadores/pagos-caja/simulador`.
+- El simulador futuro debera mostrar elegibilidad/bloqueos de pago laboral sin
+  persistir calculos.
+- Siguiente paso seguro: 5E-C-A implementacion GET/read-only solo con autorizacion
+  para tocar rutas, controlador/modelo read-only, vista y checkers.
+
+## 5E-C-A Simulador pago laboral con Caja
+
+Estado formal:
+`SIMULADOR_5E_C_A_PAGO_LABORAL_CAJA_READONLY_COMPLETADO`.
+
+- Documento creado:
+  `docs/fase_5E_C_A_simulador_pago_laboral_caja.md`.
+- Ruta nueva:
+  `GET /trabajadores/pagos-caja/simulador`.
+- Se agrego vista read-only con filtros GET, corte abierto, saldo estimado,
+  referencia y motivos de elegibilidad/bloqueo.
+- Se agregaron enlaces GET desde listado y ficha de trabajadores.
+- Modelo/controlador solo leen datos; no hay POST, token, servicio, pago real ni
+  movimiento de Caja.
+- Checkers actualizados: preflight 5E y health general.
+- Validaciones automaticas: lint OK en archivos tocados, preflight 5E `OK: 41`,
+  `WARNING: 0`, `ERROR: 0`; health general `OK: 309`, `WARNING: 26`, `ERROR: 0`;
+  HTTP sin sesion `303`, no `404`.
+- Siguiente paso seguro: 5E-D-0 contrato de servicio transaccional, sin implementar
+  pago real todavia.
+
+## 5E-C-F Cierre simulador pago laboral con Caja
+
+Estado formal:
+`CIERRE_5E_C_SIMULADOR_PAGO_LABORAL_CAJA_QA_MANUAL_VALIDADA`.
+
+- Documento creado: `docs/fase_5E_C_F_cierre_simulador_pago_laboral_caja.md`.
+- El usuario confirmo que la prueba manual del simulador paso correctamente.
+- No agrega codigo, rutas, formularios, migraciones ni escrituras.
+- Confirma que 5E-C queda como diagnostico GET/read-only, sin pago real.
+
+## 5E-D-0 Contrato servicio pago laboral con Caja
+
+Estado formal:
+`CONTRATO_5E_D_0_SERVICIO_PAGO_LABORAL_CAJA_COMPLETADO`.
+
+- Documento creado: `docs/fase_5E_D_0_contrato_servicio_pago_laboral_caja.md`.
+- Es contrato documental; no agrega codigo, rutas POST, formularios, servicios, migraciones ni escrituras.
+- Define el servicio futuro `TrabajadorPagoCajaService`.
+- Define validaciones, saldo disponible, orden transaccional, token de un solo uso, auditoria y prueba rollback futura.
+- Mantiene prohibidos pago real, reversion, abonos/liquidaciones, nomina automatica, permisos nuevos, PWA/offline y `/api/sync`.
+- Siguiente paso seguro: 5E-D-A solo con autorizacion explicita y backup previo.
+
+## 5E-D-A Pago laboral con Caja controlado
+
+Estado formal:
+`SERVICIO_5E_D_A_PAGO_LABORAL_CAJA_CONTROLADO_COMPLETADO`.
+
+- Documento creado:
+  `docs/fase_5E_D_A_pago_laboral_caja_controlado.md`.
+- Servicio nuevo:
+  `src/app/services/TrabajadorPagoCajaService.php`.
+- Ruta nueva:
+  `POST /trabajadores/{id}/registrar-pago-caja`.
+- Panel nuevo en ficha de trabajador con CSRF, token de un solo uso, monto, metodo y referencia.
+- El servicio registra `trabajador_pagos_caja`, egreso `movimientos_caja` categoria `Pago laboral` y auditoria.
+- Se ajusto el simulador para descontar pagos laborales ya registrados.
+- Prueba rollback nueva:
+  `src/tools/saas/probar_pago_laboral_caja.php`.
+- Validaciones automaticas: lint OK, rollback OK, preflight 5E `OK: 41`, `WARNING: 0`, `ERROR: 0`; health general `OK: 313`, `WARNING: 25`, `ERROR: 0`.
+- No implementa reversion, nomina automatica ni abonos/liquidaciones de anticipos/prestamos.
+- Siguiente paso seguro: 5E-D-F cierre manual/documental si la prueba manual pasa.
+
+## 5E-D-F Cierre pago laboral con Caja
+
+Estado formal:
+`CIERRE_5E_D_F_PAGO_LABORAL_CAJA_QA_MANUAL_VALIDADA`.
+
+- Documento creado:
+  `docs/fase_5E_D_F_cierre_pago_laboral_caja.md`.
+- El usuario confirmo que la prueba manual del pago laboral con Caja paso correctamente.
+- La ficha muestra saldo disponible para pago, bruto laboral y pagos Caja aplicados
+  separados para evitar confundir saldo bruto con deuda pendiente.
+- Se valido que, tras pagar el saldo completo, el disponible queda en `0.00` y el
+  panel de pago se bloquea por saldo no positivo.
+- No agrega codigo, rutas, controladores, modelos, formularios, migraciones ni datos.
+- Mantiene fuera de alcance reversion, pagos masivos, nomina automatica,
+  abonos/liquidaciones, permisos/auth, PWA/offline y `/api/sync`.
+- Siguiente paso seguro: contrato independiente para reversion o historial detallado
+  read-only de pagos laborales con Caja.

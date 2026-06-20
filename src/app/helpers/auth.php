@@ -393,7 +393,7 @@ function can($permission) {
             'habitaciones.all', 'huespedes.all', 'inventarios.all'
         ],
         'administrador' => [
-            'usuarios.view',
+            'usuarios.view', 'usuarios.create', 'usuarios.edit',
             'reportes.view', 'reportes.export',
             'caja.view', 'caja.movimientos', 'caja.cobros', 'caja.corte',
             'habitaciones.all', 'huespedes.all', 'inventarios.all'

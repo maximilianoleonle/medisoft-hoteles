@@ -3049,7 +3049,7 @@ $mantenimientos_count = count($mantenimientos_programados);
                                     <?php
                                     if (class_exists('HuespedVehiculo') && isset($ocupacion_actual['huesped_id'])) {
                                         $vehiculoModel = new HuespedVehiculo();
-                                        $vehiculos_ocupacion = $vehiculoModel->porHuesped($ocupacion_actual['huesped_id']);
+                                        $vehiculos_ocupacion = $vehiculoModel->porHuespedHotel($ocupacion_actual['huesped_id']);
                                         if (!empty($vehiculos_ocupacion)): ?>
                                             <div class="rd-vehicle-list">
                                                 <?php foreach ($vehiculos_ocupacion as $vehiculo): ?>

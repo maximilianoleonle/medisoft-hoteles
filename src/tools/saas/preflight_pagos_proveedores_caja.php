@@ -2,7 +2,8 @@
 /**
  * Preflight Fase 3D para egresos a proveedores con Caja.
  *
- * Valida simulador read-only y pago proveedor controlado. No modifica datos.
+ * Valida simulador read-only, pago proveedor controlado y reversion controlada.
+ * No modifica datos.
  */
 
 if (PHP_SAPI !== 'cli') {
@@ -141,9 +142,11 @@ $modelPath = $appRoot . '/app/models/CuentaPorPagar.php';
 $viewPath = $appRoot . '/app/views/cuentas_por_pagar/simulador_caja.php';
 $detailViewPath = $appRoot . '/app/views/cuentas_por_pagar/ver.php';
 $paymentServicePath = $appRoot . '/app/services/CuentaPorPagarPagoService.php';
+$reversalServicePath = $appRoot . '/app/services/CuentaPorPagarReversionPagoService.php';
 $rollbackTestPath = $appRoot . '/tools/saas/probar_pago_proveedor_caja.php';
+$reversalRollbackTestPath = $appRoot . '/tools/saas/probar_reversion_pago_proveedor_caja.php';
 
-echo "Preflight Fase 3D - Pago proveedor controlado con Caja\n";
+echo "Preflight Fase 3D/3D-D-A - Pago proveedor controlado con Caja\n";
 echo "=====================================================\n";
 
 $pdo = null;
@@ -180,8 +183,8 @@ if ($pdo) {
         'compras' => ['id', 'hotel_id', 'proveedor_id', 'estado', 'total'],
         'cajas' => ['id', 'hotel_id', 'nombre', 'activa'],
         'cortes_caja' => ['id', 'hotel_id', 'caja_id', 'estado', 'fecha_apertura'],
-        'cuentas_por_pagar_movimientos' => ['id', 'cuenta_por_pagar_id', 'hotel_id', 'tipo_movimiento', 'monto'],
-        'movimientos_caja' => ['id', 'hotel_id', 'tipo', 'monto', 'corte_id'],
+        'cuentas_por_pagar_movimientos' => ['id', 'cuenta_por_pagar_id', 'hotel_id', 'tipo_movimiento', 'monto', 'saldo_anterior', 'saldo_posterior', 'referencia'],
+        'movimientos_caja' => ['id', 'hotel_id', 'tipo', 'categoria', 'monto', 'metodo_pago', 'referencia', 'corte_id'],
     ];
 
     foreach ($schema as $table => $columns) {
@@ -262,6 +265,86 @@ if ($pdo) {
         ppcError('CxP con compra de otro hotel = ' . $crossPurchaseCount . '.', 'Bloquear 3D-B hasta reconciliar compras.');
     }
 
+    $cancelaciones = ppcCountRows($pdo, 'cuentas_por_pagar_movimientos', "tipo_movimiento = 'CANCELACION'");
+    if ($cancelaciones === 0) {
+        ppcOk('Movimientos CxP tipo CANCELACION persistentes = 0.');
+    } else {
+        ppcWarning(
+            'Movimientos CxP tipo CANCELACION persistentes = ' . $cancelaciones . '.',
+            'Validar que toda CANCELACION CxP persistente tenga ingreso Caja y auditoria esperada.'
+        );
+    }
+
+    $cancelacionesSinCaja = $pdo->query(
+        "SELECT COUNT(*)
+         FROM cuentas_por_pagar_movimientos m
+         WHERE m.tipo_movimiento = 'CANCELACION'
+           AND m.referencia LIKE 'REV-CXP-%'
+           AND NOT EXISTS (
+                SELECT 1
+                FROM movimientos_caja mc
+                WHERE mc.hotel_id = m.hotel_id
+                  AND mc.tipo = 'ingreso'
+                  AND mc.categoria = 'Reversion Pago proveedor'
+                  AND mc.referencia = m.referencia
+                  AND mc.monto = m.monto
+           )"
+    );
+    $cancelacionesSinCajaCount = $cancelacionesSinCaja ? (int)$cancelacionesSinCaja->fetchColumn() : 0;
+    if ($cancelacionesSinCajaCount === 0) {
+        ppcOk('Movimientos CxP CANCELACION sin ingreso Caja asociado = 0.');
+    } else {
+        ppcError(
+            'Movimientos CxP CANCELACION sin ingreso Caja asociado = ' . $cancelacionesSinCajaCount . '.',
+            'Reconciliar reversiones de pago proveedor antes de operar Caja.'
+        );
+    }
+
+    $cajaReversionSinCancelacion = $pdo->query(
+        "SELECT COUNT(*)
+         FROM movimientos_caja mc
+         WHERE mc.tipo = 'ingreso'
+           AND mc.categoria = 'Reversion Pago proveedor'
+           AND NOT EXISTS (
+                SELECT 1
+                FROM cuentas_por_pagar_movimientos m
+                WHERE m.hotel_id = mc.hotel_id
+                  AND m.tipo_movimiento = 'CANCELACION'
+                  AND m.referencia = mc.referencia
+                  AND m.monto = mc.monto
+           )"
+    );
+    $cajaReversionSinCancelacionCount = $cajaReversionSinCancelacion ? (int)$cajaReversionSinCancelacion->fetchColumn() : 0;
+    if ($cajaReversionSinCancelacionCount === 0) {
+        ppcOk('Ingresos Caja Reversion Pago proveedor sin CANCELACION asociada = 0.');
+    } else {
+        ppcError(
+            'Ingresos Caja Reversion Pago proveedor sin CANCELACION asociada = ' . $cajaReversionSinCancelacionCount . '.',
+            'Reconciliar ingresos de reversion proveedor antes de cerrar 3D-D-A.'
+        );
+    }
+
+    $dobleReversion = $pdo->query(
+        "SELECT COUNT(*)
+         FROM (
+             SELECT hotel_id, cuenta_por_pagar_id, referencia, COUNT(*) AS total
+             FROM cuentas_por_pagar_movimientos
+             WHERE tipo_movimiento = 'CANCELACION'
+               AND referencia LIKE 'REV-CXP-%'
+             GROUP BY hotel_id, cuenta_por_pagar_id, referencia
+             HAVING COUNT(*) > 1
+         ) duplicados"
+    );
+    $dobleReversionCount = $dobleReversion ? (int)$dobleReversion->fetchColumn() : 0;
+    if ($dobleReversionCount === 0) {
+        ppcOk('Pagos proveedor con doble reversion = 0.');
+    } else {
+        ppcError(
+            'Pagos proveedor con doble reversion = ' . $dobleReversionCount . '.',
+            'Bloquear nuevas reversiones hasta reconciliar duplicados.'
+        );
+    }
+
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
@@ -281,11 +364,17 @@ if (is_file($routesPath)) {
         ppcError('Falta POST controlado para registrar pago proveedor con Caja.', 'Registrar solo la ruta POST autorizada de Fase 3D-B.');
     }
 
+    if (ppcRouteExists($routes, 'cuentas-por-pagar/{id:[0-9]+}/movimientos/{movimientoid:[0-9]+}/revertir-pago-caja', 'post')) {
+        ppcOk('Ruta POST /cuentas-por-pagar/{id}/movimientos/{movimientoid}/revertir-pago-caja registrada para 3D-D-A.');
+    } else {
+        ppcError('Falta POST controlado para revertir pago proveedor con Caja.', 'Registrar solo la ruta POST autorizada de Fase 3D-D-A.');
+    }
+
     foreach ($routes as $route) {
         $method = strtoupper((string)$route['method']);
         $path = strtolower((string)$route['path']);
         $action = strtolower((string)$route['action']);
-        $allowedPost = in_array($action, ['generardesdecompra', 'registrarpagocaja'], true);
+        $allowedPost = in_array($action, ['generardesdecompra', 'registrarpagocaja', 'revertirpagocaja'], true);
         if ($method === 'POST' && strpos($path, 'cuentas-por-pagar') !== false && !$allowedPost) {
             ppcError(
                 'POST CxP fuera del contrato 3D: /' . trim($path, '/') . ' -> ' . $route['action'],
@@ -379,6 +468,70 @@ if (is_file($controllerPath) && is_file($detailViewPath) && is_file($paymentServ
     }
 } else {
     ppcError('Faltan archivos del pago proveedor 3D-B.', 'Crear servicio, detalle CxP y prueba rollback antes de QA.');
+}
+
+if (is_file($controllerPath) && is_file($detailViewPath) && is_file($reversalServicePath) && is_file($reversalRollbackTestPath)) {
+    $controller = (string)file_get_contents($controllerPath);
+    $detailView = (string)file_get_contents($detailViewPath);
+    $reversalService = (string)file_get_contents($reversalServicePath);
+    $reversalRollbackTest = (string)file_get_contents($reversalRollbackTestPath);
+
+    if (
+        strpos($controller, 'function revertirPagoCajaAction') !== false
+        && strpos($controller, 'validateCSRF()') !== false
+        && strpos($controller, "require_hotel_module('caja')") !== false
+        && strpos($controller, 'consumirReversionPagoToken') !== false
+        && strpos($detailView, 'revertir-pago-caja') !== false
+        && strpos($detailView, 'csrf_field()') !== false
+        && strpos($detailView, 'name="reversion_token"') !== false
+        && strpos($detailView, 'Reversion de pagos') !== false
+    ) {
+        ppcOk('Controlador y vista tienen POST reversion Caja con CSRF, modulo Caja y token anti doble envio.');
+    } else {
+        ppcError(
+            'Controlador/vista de reversion Caja incompletos.',
+            'Revisar CSRF, modulo Caja, token de reversion y accion POST del detalle de CxP.'
+        );
+    }
+
+    if (
+        strpos($reversalService, 'class CuentaPorPagarReversionPagoService') !== false
+        && strpos($reversalService, 'manage_transaction') !== false
+        && strpos($reversalService, 'FOR UPDATE') !== false
+        && strpos($reversalService, 'PAGO_REFERENCIAL') !== false
+        && strpos($reversalService, 'CANCELACION') !== false
+        && strpos($reversalService, "tipo = 'ingreso'") !== false
+        && strpos($reversalService, 'Reversion Pago proveedor') !== false
+        && strpos($reversalService, 'INSERT INTO cuentas_por_pagar_movimientos') !== false
+        && strpos($reversalService, 'INSERT INTO movimientos_caja') !== false
+        && strpos($reversalService, 'UPDATE cuentas_por_pagar') !== false
+        && strpos($reversalService, 'AuditService::record') !== false
+    ) {
+        ppcOk('Servicio de reversion proveedor usa transaccion, locks, CANCELACION, ingreso Caja y auditoria.');
+    } else {
+        ppcError(
+            'Servicio de reversion proveedor no cumple contrato transaccional minimo.',
+            'Validar locks FOR UPDATE, CANCELACION CxP, ingreso Caja, auditoria y guardas de doble reversion.'
+        );
+    }
+
+    if (
+        strpos($reversalRollbackTest, "['manage_transaction' => false]") !== false
+        && strpos($reversalRollbackTest, 'rollBack()') !== false
+        && strpos($reversalRollbackTest, 'CuentaPorPagarPagoService') !== false
+        && strpos($reversalRollbackTest, 'CuentaPorPagarReversionPagoService') !== false
+        && strpos($reversalRollbackTest, "tipo_movimiento = 'CANCELACION'") !== false
+        && strpos($reversalRollbackTest, "categoria = 'Reversion Pago proveedor'") !== false
+    ) {
+        ppcOk('Prueba rollback de reversion pago proveedor disponible y no persistente.');
+    } else {
+        ppcError(
+            'Falta prueba rollback segura para reversion pago proveedor.',
+            'Mantener una prueba CLI que cree pago temporal, revierta y haga rollback.'
+        );
+    }
+} else {
+    ppcError('Faltan archivos de reversion proveedor 3D-D-A.', 'Crear servicio, detalle CxP y prueba rollback antes de QA.');
 }
 
 $recommendations = array_values(array_unique(array_filter($recommendations)));

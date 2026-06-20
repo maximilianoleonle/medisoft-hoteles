@@ -8,17 +8,20 @@ require_once __DIR__ . '/../models/Trabajador.php';
 require_once __DIR__ . '/../models/TareaOperativa.php';
 require_once __DIR__ . '/../models/Documento.php';
 require_once __DIR__ . '/../services/AuditService.php';
+require_once __DIR__ . '/../services/TrabajadorPagoCajaService.php';
 
 class TrabajadorController extends Controller
 {
     private $trabajadorModel;
     private $tareaModel;
+    private $pagoCajaService;
 
     public function __construct($route_params = [])
     {
         parent::__construct($route_params);
         $this->trabajadorModel = new Trabajador();
         $this->tareaModel = new TareaOperativa();
+        $this->pagoCajaService = new TrabajadorPagoCajaService();
     }
 
     protected function before()
@@ -71,6 +74,39 @@ class TrabajadorController extends Controller
         ]);
     }
 
+    public function simuladorPagoCajaAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $filtros = [
+            'trabajador_id' => $this->getQuery('trabajador_id', ''),
+            'buscar' => $this->getQuery('buscar', ''),
+            'periodo_inicio' => $this->getQuery('periodo_inicio', ''),
+            'periodo_fin' => $this->getQuery('periodo_fin', ''),
+            'metodo_pago' => $this->getQuery('metodo_pago', 'efectivo'),
+            'monto' => $this->getQuery('monto', ''),
+            'referencia' => $this->getQuery('referencia', ''),
+        ];
+
+        $tablaDisponible = $this->trabajadorModel->tablasSimuladorPagoCajaDisponibles();
+        $datos = $tablaDisponible
+            ? $this->trabajadorModel->simuladorPagoCajaPorHotel($hotelId, $filtros, 200)
+            : [
+                'trabajadores' => [],
+                'resumen' => [],
+                'corte' => null,
+                'filtros_normalizados' => $filtros,
+            ];
+
+        View::renderTemplate('trabajadores/simulador_pago_caja', [
+            'title' => 'Simulador pagos laborales Caja - ' . current_hotel_display_name(),
+            'trabajadores' => $datos['trabajadores'] ?? [],
+            'resumen' => $datos['resumen'] ?? [],
+            'corte' => $datos['corte'] ?? null,
+            'filtros' => $datos['filtros_normalizados'] ?? $filtros,
+            'tablaDisponible' => $tablaDisponible,
+        ]);
+    }
+
     public function verAction(): void
     {
         $id = (int)($this->route_params['id'] ?? 0);
@@ -91,6 +127,24 @@ class TrabajadorController extends Controller
             $documentosEntidad = [];
         }
 
+        $pagoCaja = [
+            'elegible' => false,
+            'motivo_bloqueo' => 'No se pudo evaluar el pago laboral con Caja.',
+            'corte' => null,
+            'metodos_pago' => [],
+            'monto_maximo' => '0.00',
+            'saldo' => [],
+        ];
+        $pagoCajaToken = null;
+        try {
+            $pagoCaja = $this->pagoCajaService->evaluarPago($hotelId, $id);
+            if (!empty($pagoCaja['elegible'])) {
+                $pagoCajaToken = $this->generarPagoCajaToken($id);
+            }
+        } catch (Throwable $e) {
+            $pagoCaja['motivo_bloqueo'] = $e->getMessage();
+        }
+
         View::renderTemplate('trabajadores/ver', [
             'title' => 'Trabajador #' . $id . ' - ' . current_hotel_display_name(),
             'trabajador' => $trabajador,
@@ -101,6 +155,8 @@ class TrabajadorController extends Controller
             'asistenciasRecientes' => $this->trabajadorModel->ultimosMovimientosPorTrabajador($id, $hotelId, 20),
             'ledgerDisponible' => $this->trabajadorModel->tablasLedgerDisponibles(),
             'tareasContextuales' => $this->tareaModel->listarPorEntidadHotel($hotelId, 'trabajador', $id, 8),
+            'pagoCaja' => $pagoCaja,
+            'pagoCajaToken' => $pagoCajaToken,
             'documentosEntidad' => $documentosEntidad,
             'documentosEntidadContexto' => [
                 'tipo' => 'trabajador',
@@ -372,6 +428,46 @@ class TrabajadorController extends Controller
         }
     }
 
+    public function registrarPagoCajaAction(): void
+    {
+        $this->requireWritePermission('usuarios.edit');
+
+        if (!$this->isPost()) {
+            $this->redirect('trabajadores');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('caja');
+        }
+
+        $id = (int)($this->route_params['id'] ?? 0);
+        try {
+            if (!$this->consumirPagoCajaToken($id, (string)$this->getPost('pago_token', ''))) {
+                throw new Exception('Token de pago invalido o ya utilizado; recarga el trabajador antes de reintentar');
+            }
+
+            $resultado = $this->pagoCajaService->registrarPago(
+                $this->hotelIdActual(),
+                $id,
+                $this->datosPagoCajaLaboral(),
+                $this->usuarioIdActual()
+            );
+
+            set_mensaje(
+                'Pago laboral registrado. Movimiento Caja #' . (int)$resultado['movimiento_caja_id']
+                . ', saldo estimado nuevo ' . number_format((float)$resultado['saldo_posterior_estimado'], 2) . '.',
+                'success'
+            );
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo registrar el pago laboral con Caja: ' . $e->getMessage(), 'error');
+        }
+
+        $this->redirect($id > 0 ? 'trabajadores/' . $id : 'trabajadores');
+    }
+
     private function cambiarEstado(string $estado, string $mensaje, string $accion): void
     {
         $this->requireWritePermission('usuarios.edit');
@@ -538,10 +634,55 @@ class TrabajadorController extends Controller
         ];
     }
 
+    private function datosPagoCajaLaboral(): array
+    {
+        return [
+            'monto' => $this->getPost('monto', ''),
+            'metodo_pago' => $this->getPost('metodo_pago', ''),
+            'referencia' => $this->getPost('referencia', ''),
+            'periodo_inicio' => $this->getPost('periodo_inicio', ''),
+            'periodo_fin' => $this->getPost('periodo_fin', ''),
+            'concepto' => $this->getPost('concepto', ''),
+            'notas' => $this->getPost('notas', ''),
+        ];
+    }
+
     private function usuarioIdActual(): ?int
     {
         $usuarioId = $_SESSION['user_id'] ?? $_SESSION['usuario_id'] ?? null;
         return $usuarioId ? (int)$usuarioId : null;
+    }
+
+    private function generarPagoCajaToken(int $trabajadorId): string
+    {
+        if (!isset($_SESSION['trabajador_pago_caja_tokens']) || !is_array($_SESSION['trabajador_pago_caja_tokens'])) {
+            $_SESSION['trabajador_pago_caja_tokens'] = [];
+        }
+
+        $token = bin2hex(random_bytes(16));
+        $_SESSION['trabajador_pago_caja_tokens'][$trabajadorId] = [
+            'token' => $token,
+            'created_at' => time(),
+        ];
+
+        return $token;
+    }
+
+    private function consumirPagoCajaToken(int $trabajadorId, string $token): bool
+    {
+        $token = trim($token);
+        $registro = $_SESSION['trabajador_pago_caja_tokens'][$trabajadorId] ?? null;
+        unset($_SESSION['trabajador_pago_caja_tokens'][$trabajadorId]);
+
+        if (!is_array($registro) || $token === '') {
+            return false;
+        }
+
+        if ((int)($registro['created_at'] ?? 0) < time() - 3600) {
+            return false;
+        }
+
+        return hash_equals((string)($registro['token'] ?? ''), $token);
     }
 
     private function requireWritePermission(string $permission): void

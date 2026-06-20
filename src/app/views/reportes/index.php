@@ -564,6 +564,29 @@
                 </div>
             </div>
 
+            <!-- 7: Tablero ejecutivo read-only -->
+            <div class="rep-card" style="--report-color:#164E63;--report-color-strong:#083344;--report-color-soft:#CFFAFE;">
+                <div class="card-accent"></div>
+                <div class="card-body">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="rep-icon-wrap">
+                            <i class="fas fa-tachometer-alt text-white"></i>
+                        </div>
+                        <span class="cat-badge">Ejecutivo</span>
+                    </div>
+                    <h3 class="text-base font-bold text-gray-800 mb-1.5">Tablero Ejecutivo</h3>
+                    <p class="text-xs text-gray-500 mb-4 leading-relaxed">Consolida KPIs operativos, financieros, inventario, tareas y documentos.</p>
+                    <ul class="feat-list">
+                        <li><i class="fas fa-check-circle"></i>Solo lectura</li>
+                        <li><i class="fas fa-check-circle"></i>Filtros por periodo</li>
+                        <li><i class="fas fa-check-circle"></i>Alertas por area</li>
+                    </ul>
+                    <a href="<?= url('reportes/ejecutivo') ?>" class="rep-cta">
+                        <i class="fas fa-columns text-sm"></i> Abrir tablero
+                    </a>
+                </div>
+            </div>
+
         </div><!-- end report-grid -->
 
         <!-- Bottom spacer -->

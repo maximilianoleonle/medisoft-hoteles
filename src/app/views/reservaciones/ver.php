@@ -2040,13 +2040,18 @@ function medisoftVolverAnterior(event) {
 .rdv3-card::before {
     content: "";
     position: absolute;
-    top: 0;
-    left: 42px;
-    width: 92px;
-    height: 3px;
-    border-radius: 0 0 999px 999px;
-    background: var(--rdv3-card-accent, var(--rdv3-accent));
-    opacity: .88;
+    top: -58px;
+    right: -44px;
+    width: 184px;
+    height: 138px;
+    border-radius: 999px;
+    background:
+        radial-gradient(circle at 52% 48%,
+            color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 20%, transparent) 0 24%,
+            color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 10%, transparent) 42%,
+            transparent 72%);
+    opacity: .72;
+    pointer-events: none;
 }
 .rdv3-card--stay { --rdv3-card-accent: var(--rdv3-blue); }
 .rdv3-card--rooms { --rdv3-card-accent: var(--rdv3-violet); }
@@ -2178,7 +2183,6 @@ function medisoftVolverAnterior(event) {
 .rdv3-vehicle-title { color: var(--rdv3-primary); font-size: .84rem; font-weight: 950; }
 .rdv3-vehicle-sub { color: #8790a4; font-size: .72rem; font-weight: 800; }
 .rdv3-plate { padding: 7px 10px; border-radius: 7px; background: var(--rdv3-primary); color: #fff; font-size: .73rem; font-weight: 950; white-space: nowrap; }
-.rdv3-side-card::before { left: 32px; width: 68px; }
 .rdv3-side-card .rdv3-card-header { min-height: 0; padding: 24px 32px 12px; }
 .rdv3-side-card .rdv3-heading { gap: 12px; }
 .rdv3-side-card .rdv3-icon { width: 34px; height: 34px; flex-basis: 34px; border-radius: 11px; }
@@ -2216,10 +2220,20 @@ function medisoftVolverAnterior(event) {
 .rdv3-payment-method b { display: block; font-size: .82rem; font-weight: 950; }
 .rdv3-payment-method small { display: block; color: #8790a4; font-size: .7rem; font-weight: 800; }
 .rdv3-payment-amount { font-size: .84rem; font-weight: 950; white-space: nowrap; }
+.rdv3-note-composer { display: grid; gap: 10px; margin-bottom: 14px; padding: 12px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 20%, transparent); background: linear-gradient(135deg, color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 7%, #fff), rgba(255,255,255,.74)); }
+.rdv3-note-composer label { color: var(--rdv3-primary); font-size: .78rem; font-weight: 950; }
+.rdv3-note-input { width: 100%; min-height: 86px; resize: vertical; padding: 11px 12px; border: 1px solid color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 22%, var(--rdv3-line)); border-radius: 12px; background: #fff; color: var(--rdv3-primary); font: inherit; font-size: .82rem; line-height: 1.45; }
+.rdv3-note-input::placeholder { color: #98a2b3; }
+.rdv3-note-input:focus { outline: none; border-color: color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 54%, var(--rdv3-line)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 16%, transparent); }
+.rdv3-note-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.rdv3-note-hint { color: #8b94a8; font-size: .72rem; font-weight: 800; }
+.rdv3-note-submit { min-height: 34px; border: 0; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 12px; background: color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 82%, #22324a); color: #fff; font-size: .76rem; font-weight: 950; cursor: pointer; }
+.rdv3-note-submit:hover { filter: brightness(.96); }
+.rdv3-note-submit:disabled { opacity: .64; cursor: wait; }
 .rdv3-note-list { display: grid; gap: 10px; max-height: 280px; overflow: auto; }
 .rdv3-note { border-radius: 12px; border: 1px solid color-mix(in srgb, var(--rdv3-accent) 22%, transparent); background: color-mix(in srgb, var(--rdv3-accent) 12%, #fff); padding: 13px; color: #7a5f2b; font-size: .8rem; font-weight: 800; line-height: 1.45; }
 .rdv3-note small { display: block; margin-bottom: 6px; color: color-mix(in srgb, var(--rdv3-accent) 84%, #6e5527); font-weight: 950; }
-.rdv3-count-badge { min-width: 28px; justify-content: center; background: color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 14%, #fff); }
+.rdv3-count-badge { min-width: 28px; height: 28px; padding: 0 8px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 90%, #22324a); color: #fff; font-size: .72rem; font-weight: 950; line-height: 1; box-shadow: 0 8px 16px -10px color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 74%, transparent); }
 .rdv3-sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
 .rdv3-doc-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; margin-left: auto; min-width: min(100%, 300px); }
 .rdv3-doc-btn { min-height: 36px; padding: 0 14px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: .76rem; font-weight: 950; white-space: nowrap; }
@@ -2242,10 +2256,8 @@ function medisoftVolverAnterior(event) {
 .rdv3-footer-line { display: flex; justify-content: space-between; gap: 12px; padding-top: 12px; color: #758096; font-size: .78rem; font-weight: 850; }
 @media (max-width: 1360px) {
     .rdv3-layout { grid-template-columns: minmax(0, 1fr) 320px; gap: 22px; }
-    .rdv3-card::before { left: 36px; }
     .rdv3-card-header { padding-left: 36px; padding-right: 36px; }
     .rdv3-card-body { padding-left: 36px; padding-right: 36px; }
-    .rdv3-side-card::before { left: 30px; }
     .rdv3-side-card .rdv3-card-header { padding-left: 30px; padding-right: 30px; }
     .rdv3-side-card .rdv3-card-body { padding-left: 30px; padding-right: 30px; }
 }
@@ -2259,8 +2271,6 @@ function medisoftVolverAnterior(event) {
 @media (max-width: 780px) {
     .rdv3 { margin: 0; }
     .rdv3-hero { grid-template-columns: 1fr; padding: 22px; }
-    .rdv3-card::before,
-    .rdv3-side-card::before { left: 24px; }
     .rdv3-card-header { padding: 22px 24px 12px; }
     .rdv3-card-body { padding: 12px 24px 22px; }
     .rdv3-side-card .rdv3-card-header { padding: 22px 24px 12px; }
@@ -2285,8 +2295,6 @@ function medisoftVolverAnterior(event) {
     --rdv3-main-header-x: 42px;
     --rdv3-side-header-x: 32px;
 }
-.rdv3 .rdv3-left > .rdv3-card::before { left: var(--rdv3-main-header-x) !important; }
-.rdv3 .rdv3-right > .rdv3-card::before { left: var(--rdv3-side-header-x) !important; }
 .rdv3 .rdv3-left > .rdv3-card > .rdv3-card-header {
     padding-left: var(--rdv3-main-header-x) !important;
     padding-right: var(--rdv3-main-header-x) !important;
@@ -2556,7 +2564,9 @@ function medisoftVolverAnterior(event) {
                                 <?php elseif ($rdEstadoKey === 'checked_in'): ?>
                                     <button type="button" class="rdv3-action" onclick="abrirModalCheckOut()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-green"><i class="fas fa-right-from-bracket"></i></span>Registrar check-out</span><i class="fas fa-chevron-right"></i></button>
                                 <?php endif; ?>
-                                <button type="button" class="rdv3-action" onclick="abrirModalCambiarPago()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-gold"><i class="fas fa-right-left"></i></span>Cambiar metodo de pago</span><i class="fas fa-chevron-right"></i></button>
+                                <?php if ($rdEstadoKey === 'checked_in'): ?>
+                                    <button type="button" class="rdv3-action" onclick="abrirModalCambiarPago()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-gold"><i class="fas fa-right-left"></i></span>Cambiar metodo de pago</span><i class="fas fa-chevron-right"></i></button>
+                                <?php endif; ?>
                                 <button type="button" class="rdv3-action" onclick="abrirModalCotizacion()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-blue"><i class="fas fa-clipboard-list"></i></span>Generar cotizacion</span><i class="fas fa-chevron-right"></i></button>
                                 <button type="button" class="rdv3-action" onclick="abrirModalModificarDias()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-violet"><i class="far fa-calendar"></i></span>Modificar dias</span><i class="fas fa-chevron-right"></i></button>
                                 <?php if (!empty($reservacion['metodo_pago'])): ?>
@@ -2606,11 +2616,20 @@ function medisoftVolverAnterior(event) {
 
                         <section class="rdv3-card rdv3-side-card rdv3-side-card--notes">
                             <header class="rdv3-card-header">
-                                <div class="rdv3-heading"><span class="rdv3-icon"><i class="far fa-note-sticky"></i></span><h2 class="rdv3-card-title">Notas rapidas</h2></div>
-                                <span class="rdv3-badge rdv3-count-badge"><?= (int)($total_notas ?? count($rdNotes)) ?></span>
+                                <div class="rdv3-heading"><span class="rdv3-icon"><i class="far fa-note-sticky"></i></span><h2 class="rdv3-card-title">Notas rapidas</h2><span class="rdv3-count-badge" aria-label="<?= (int)($total_notas ?? count($rdNotes)) ?> notas"><?= (int)($total_notas ?? count($rdNotes)) ?></span></div>
                             </header>
                             <div class="rdv3-card-body">
-                                <textarea id="nuevaNota" class="rdv3-sr-only" aria-hidden="true" tabindex="-1"></textarea>
+                                <div class="rdv3-note-composer">
+                                    <label for="nuevaNota">Nueva nota interna</label>
+                                    <textarea id="nuevaNota" class="rdv3-note-input" rows="3" maxlength="1000" placeholder="Escribe una observacion breve para el equipo..."></textarea>
+                                    <div class="rdv3-note-actions">
+                                        <span class="rdv3-note-hint">Ctrl + Enter tambien guarda</span>
+                                        <button type="button" id="btnAgregarNota" class="rdv3-note-submit" onclick="agregarNota(this)">
+                                            <i class="fas fa-paper-plane"></i>
+                                            <span>Agregar nota</span>
+                                        </button>
+                                    </div>
+                                </div>
                                 <div id="listaNotas" class="rdv3-note-list">
                                     <?php if (empty($rdNotes)): ?>
                                         <div class="rdv3-empty">No hay notas aun.</div>
@@ -5672,27 +5691,33 @@ document.addEventListener('keypress', function(e) {
 });
 
 // Funciones para manejo de notas
-function agregarNota() {
+function agregarNota(trigger) {
     const textarea = document.getElementById('nuevaNota');
+    if (!textarea) {
+        return;
+    }
+
     const nota = textarea.value.trim();
 
     if (!nota) {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 icon: 'warning',
-                title: 'Nota vacía',
+                title: 'Nota vacia',
                 text: 'Por favor escribe algo en la nota',
                 timer: 2000
             });
         } else {
             alert('Por favor escribe algo en la nota');
         }
+        textarea.focus();
         return;
     }
 
-    // Deshabilitar botón mientras se envía
-    const btn = event.target;
-    btn.disabled = true;
+    const btn = trigger || document.getElementById('btnAgregarNota');
+    if (btn) {
+        btn.disabled = true;
+    }
 
     const formData = new FormData();
     formData.append('reservacion_id', <?= $reservacion['id'] ?>);
@@ -5701,18 +5726,22 @@ function agregarNota() {
 
     fetch('<?= url("reservaciones/agregar-nota") ?>', {
         method: 'POST',
-        body: formData
+        body: formData,
+        headers: {
+            'Accept': 'application/json'
+        }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('No se pudo guardar la nota.');
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            // Limpiar textarea
             textarea.value = '';
-
-            // Actualizar lista de notas
             actualizarListaNotas();
 
-            // Mostrar mensaje de éxito
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'success',
@@ -5738,52 +5767,50 @@ function agregarNota() {
         }
     })
     .finally(() => {
-        btn.disabled = false;
+        if (btn) {
+            btn.disabled = false;
+        }
     });
 }
 
 function actualizarListaNotas() {
-    fetch('<?= url("reservaciones/obtener-notas?reservacion_id=") ?><?= $reservacion['id'] ?>')
+    const container = document.getElementById('listaNotas');
+    if (!container) {
+        return;
+    }
+
+    fetch('<?= url("reservaciones/obtener-notas?reservacion_id=") ?><?= $reservacion['id'] ?>', {
+        headers: {
+            'Accept': 'application/json'
+        }
+    })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            const container = document.getElementById('listaNotas');
+            const notas = Array.isArray(data.notas) ? data.notas : [];
 
-            if (data.notas.length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-500 text-xs py-3">No hay notas aún</p>';
+            if (notas.length === 0) {
+                container.innerHTML = '<div class="rdv3-empty">No hay notas aun.</div>';
             } else {
                 let html = '';
-                data.notas.forEach(nota => {
-                    const fecha = new Date(nota.created_at);
-                    const fechaFormateada = fecha.toLocaleDateString('es-MX', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
+                notas.forEach(nota => {
+                    const fechaFormateada = formatearFechaNota(nota.created_at);
+                    const usuario = nota.usuario_nombre || 'Recepcion';
+                    const texto = nota.nota || '';
 
                     html += `
-                        <div class="nota-item bg-gradient-to-r from-amber-50 to-yellow-50 p-2 rounded-lg border border-amber-200 animate-fadeIn">
-                            <div class="flex items-start justify-between mb-1">
-                                <span class="text-xs font-semibold text-amber-800">
-                                    ${escapeHtml(nota.usuario_nombre)}
-                                </span>
-                                <span class="text-xs text-amber-600">
-                                    ${fechaFormateada}
-                                </span>
-                            </div>
-                            <p class="text-xs text-gray-700 whitespace-pre-wrap">${escapeHtml(nota.nota).replace(/\n/g, '<br>')}</p>
+                        <div class="rdv3-note nota-item">
+                            <small>${escapeHtml(usuario)} &middot; ${escapeHtml(fechaFormateada)}</small>
+                            ${escapeHtml(texto).replace(/\n/g, '<br>')}
                         </div>
                     `;
                 });
                 container.innerHTML = html;
             }
 
-            // Actualizar contador
-            const badge = document.querySelector('.card-header .bg-amber-500');
-            if (badge) {
-                badge.textContent = data.notas.length;
-            }
+            document.querySelectorAll('.rdv3-count-badge').forEach(badge => {
+                badge.textContent = notas.length;
+            });
         }
     })
     .catch(error => {
@@ -5791,7 +5818,27 @@ function actualizarListaNotas() {
     });
 }
 
+function formatearFechaNota(value) {
+    if (!value) {
+        return '-';
+    }
+
+    const fecha = new Date(String(value).replace(' ', 'T'));
+    if (Number.isNaN(fecha.getTime())) {
+        return String(value);
+    }
+
+    return fecha.toLocaleDateString('es-MX', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
 function escapeHtml(text) {
+    text = String(text ?? '');
     const map = {
         '&': '&amp;',
         '<': '&lt;',
@@ -5806,12 +5853,15 @@ function escapeHtml(text) {
 setInterval(actualizarListaNotas, 30000);
 
 // Permitir enviar nota con Ctrl+Enter
-document.getElementById('nuevaNota').addEventListener('keydown', function(e) {
-    if (e.ctrlKey && e.key === 'Enter') {
-        e.preventDefault();
-        agregarNota();
-    }
-});
+const nuevaNotaTextarea = document.getElementById('nuevaNota');
+if (nuevaNotaTextarea) {
+    nuevaNotaTextarea.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            agregarNota(document.getElementById('btnAgregarNota'));
+        }
+    });
+}
 
 function abrirModalCheckOut() {
     document.getElementById('modalCheckOut').classList.remove('hidden');

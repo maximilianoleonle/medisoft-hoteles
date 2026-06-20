@@ -5,17 +5,20 @@
 
 require_once __DIR__ . '/../services/ReporteEntregaService.php';
 require_once __DIR__ . '/../services/NotificacionService.php';
+require_once __DIR__ . '/../models/ArqueoMetodosPago.php';
 
 class CajaController extends Controller {
     private $cajaModel;
     private $movimientoModel;
     private $categoriaModel;
+    private $arqueoMetodosModel;
     
     public function __construct($route_params) {
         parent::__construct($route_params);
         $this->cajaModel = new Caja();
         $this->movimientoModel = new MovimientoCaja();
         $this->categoriaModel = new CategoriaMovimiento();
+        $this->arqueoMetodosModel = new ArqueoMetodosPago();
     }
     
     /**
@@ -139,6 +142,27 @@ public function reporteMetodosAction() {
         'fecha_inicio' => $fecha_inicio,
         'fecha_fin' => $fecha_fin,
         'metodos_pago' => MovimientoCaja::getMetodosPago()
+    ]);
+}
+
+public function arqueoMetodosAction() {
+    $hotelId = obtenerHotelIdActualCompat();
+    $filtros = [
+        'fecha_desde' => $this->getQuery('fecha_desde', ''),
+        'fecha_hasta' => $this->getQuery('fecha_hasta', ''),
+        'corte_id' => $this->getQuery('corte_id', 0),
+        'caja_id' => $this->getQuery('caja_id', 0),
+        'estado_corte' => $this->getQuery('estado_corte', 'todos'),
+        'metodo_pago' => $this->getQuery('metodo_pago', 'todos'),
+        'severidad' => $this->getQuery('severidad', 'todos'),
+        'page' => $this->getQuery('page', 1),
+        'limit' => $this->getQuery('limit', 25),
+    ];
+
+    View::renderTemplate('caja/arqueo_metodos', [
+        'title' => 'Arqueo por metodo - ' . current_hotel_display_name(),
+        'reporte' => $this->arqueoMetodosModel->reporteReadOnlyPorHotel((int)$hotelId, $filtros),
+        'metodos_pago' => MovimientoCaja::getMetodosPago(),
     ]);
 }
     /**

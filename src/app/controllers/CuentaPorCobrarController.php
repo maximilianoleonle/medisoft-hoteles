@@ -4,15 +4,21 @@ require_once __DIR__ . '/../../core/Controller.php';
 require_once __DIR__ . '/../../core/View.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
 require_once __DIR__ . '/../models/CuentaPorCobrar.php';
+require_once __DIR__ . '/../services/CuentaPorCobrarCobroService.php';
+require_once __DIR__ . '/../services/CuentaPorCobrarReversionCobroService.php';
 
 class CuentaPorCobrarController extends Controller
 {
     private $cuentaModel;
+    private $cobroService;
+    private $reversionCobroService;
 
     public function __construct($route_params = [])
     {
         parent::__construct($route_params);
         $this->cuentaModel = new CuentaPorCobrar();
+        $this->cobroService = new CuentaPorCobrarCobroService();
+        $this->reversionCobroService = new CuentaPorCobrarReversionCobroService();
     }
 
     protected function before()
@@ -97,11 +103,59 @@ class CuentaPorCobrarController extends Controller
             return;
         }
 
+        $cobroCaja = [
+            'elegible' => false,
+            'motivo_bloqueo' => 'No se pudo evaluar el cobro con Caja.',
+            'corte' => null,
+            'metodos_pago' => [],
+            'monto_maximo' => '0.00',
+        ];
+        $cobroToken = null;
+        try {
+            $cobroCaja = $this->cobroService->evaluarCobro($hotelId, $id);
+            if (!empty($cobroCaja['elegible'])) {
+                $cobroToken = $this->generarCobroToken($id);
+            }
+        } catch (Throwable $e) {
+            $cobroCaja['motivo_bloqueo'] = $e->getMessage();
+        }
+
+        $movimientos = $this->cuentaModel->movimientosOperativosPorCuenta($id, $hotelId, 100);
+        $reversionesCobro = [];
+        $reversionTokens = [];
+        foreach ($movimientos as $movimiento) {
+            if ((string)($movimiento['tipo_movimiento'] ?? '') !== 'COBRO') {
+                continue;
+            }
+
+            $movimientoId = (int)($movimiento['id'] ?? 0);
+            if ($movimientoId <= 0) {
+                continue;
+            }
+
+            try {
+                $reversionesCobro[$movimientoId] = $this->reversionCobroService->evaluarReversion($hotelId, $id, $movimientoId);
+                if (!empty($reversionesCobro[$movimientoId]['elegible'])) {
+                    $reversionTokens[$movimientoId] = $this->generarReversionCobroToken($id, $movimientoId);
+                }
+            } catch (Throwable $e) {
+                $reversionesCobro[$movimientoId] = [
+                    'elegible' => false,
+                    'motivo_bloqueo' => $e->getMessage(),
+                    'monto' => $movimiento['monto'] ?? '0.00',
+                ];
+            }
+        }
+
         View::renderTemplate('cuentas_por_cobrar/ver_operativa', [
             'title' => 'CxC operativa #' . $id . ' - ' . current_hotel_display_name(),
             'cuenta' => $cuenta,
-            'movimientos' => $this->cuentaModel->movimientosOperativosPorCuenta($id, $hotelId, 100),
+            'movimientos' => $movimientos,
             'movimientosDisponibles' => $this->cuentaModel->movimientosOperativosDisponibles(),
+            'cobroCaja' => $cobroCaja,
+            'cobroToken' => $cobroToken,
+            'reversionesCobro' => $reversionesCobro,
+            'reversionTokens' => $reversionTokens,
         ]);
     }
 
@@ -163,6 +217,92 @@ class CuentaPorCobrarController extends Controller
         }
     }
 
+    public function registrarCobroCajaAction(): void
+    {
+        if (!$this->isPost()) {
+            $this->redirect('cuentas-por-cobrar/operativas');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('caja');
+        }
+
+        $cuentaId = (int)($this->route_params['id'] ?? 0);
+        try {
+            if (!$this->consumirCobroToken($cuentaId, (string)$this->getPost('cobro_token', ''))) {
+                throw new Exception('Token de cobro invalido o ya utilizado; recarga la cuenta antes de reintentar');
+            }
+
+            $resultado = $this->cobroService->registrarCobro(
+                $this->hotelIdActual(),
+                $cuentaId,
+                [
+                    'monto' => $this->getPost('monto'),
+                    'metodo_pago' => $this->getPost('metodo_pago'),
+                    'referencia' => $this->getPost('referencia'),
+                    'notas' => $this->getPost('notas'),
+                ],
+                $this->usuarioIdActual()
+            );
+
+            set_mensaje(
+                'Cobro CxC registrado. Movimiento Caja #' . (int)$resultado['movimiento_caja_id']
+                . ', saldo nuevo ' . number_format((float)$resultado['saldo_posterior'], 2) . '.',
+                'success'
+            );
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo registrar el cobro CxC: ' . $e->getMessage(), 'error');
+        }
+
+        $this->redirect($cuentaId > 0 ? 'cuentas-por-cobrar/operativas/' . $cuentaId : 'cuentas-por-cobrar/operativas');
+    }
+
+    public function revertirCobroCajaAction(): void
+    {
+        if (!$this->isPost()) {
+            $this->redirect('cuentas-por-cobrar/operativas');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('caja');
+        }
+
+        $cuentaId = (int)($this->route_params['id'] ?? 0);
+        $movimientoId = (int)($this->route_params['movimientoid'] ?? $this->route_params['movimientoId'] ?? 0);
+
+        try {
+            if (!$this->consumirReversionCobroToken($cuentaId, $movimientoId, (string)$this->getPost('reversion_token', ''))) {
+                throw new Exception('Token de reversion invalido o ya utilizado; recarga la cuenta antes de reintentar');
+            }
+
+            $resultado = $this->reversionCobroService->revertirCobro(
+                $this->hotelIdActual(),
+                $cuentaId,
+                $movimientoId,
+                [
+                    'motivo' => $this->getPost('motivo'),
+                ],
+                $this->usuarioIdActual()
+            );
+
+            set_mensaje(
+                'Reversion CxC registrada. Gasto Caja #' . (int)$resultado['movimiento_caja_reversion_id']
+                . ', saldo nuevo ' . number_format((float)$resultado['saldo_posterior'], 2) . '.',
+                'success'
+            );
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo revertir el cobro CxC: ' . $e->getMessage(), 'error');
+        }
+
+        $this->redirect($cuentaId > 0 ? 'cuentas-por-cobrar/operativas/' . $cuentaId : 'cuentas-por-cobrar/operativas');
+    }
+
     private function hotelIdActual(): int
     {
         return function_exists('obtenerHotelIdActualCompat')
@@ -174,5 +314,71 @@ class CuentaPorCobrarController extends Controller
     {
         $usuarioId = $_SESSION['user_id'] ?? $_SESSION['usuario_id'] ?? null;
         return $usuarioId ? (int)$usuarioId : null;
+    }
+
+    private function generarCobroToken(int $cuentaId): string
+    {
+        if (!isset($_SESSION['cxc_cobro_tokens']) || !is_array($_SESSION['cxc_cobro_tokens'])) {
+            $_SESSION['cxc_cobro_tokens'] = [];
+        }
+
+        $token = bin2hex(random_bytes(16));
+        $_SESSION['cxc_cobro_tokens'][$cuentaId] = [
+            'token' => $token,
+            'created_at' => time(),
+        ];
+
+        return $token;
+    }
+
+    private function consumirCobroToken(int $cuentaId, string $token): bool
+    {
+        $token = trim($token);
+        $registro = $_SESSION['cxc_cobro_tokens'][$cuentaId] ?? null;
+        unset($_SESSION['cxc_cobro_tokens'][$cuentaId]);
+
+        if (!is_array($registro) || $token === '') {
+            return false;
+        }
+
+        if ((int)($registro['created_at'] ?? 0) < time() - 3600) {
+            return false;
+        }
+
+        return hash_equals((string)($registro['token'] ?? ''), $token);
+    }
+
+    private function generarReversionCobroToken(int $cuentaId, int $movimientoId): string
+    {
+        if (!isset($_SESSION['cxc_reversion_cobro_tokens']) || !is_array($_SESSION['cxc_reversion_cobro_tokens'])) {
+            $_SESSION['cxc_reversion_cobro_tokens'] = [];
+        }
+
+        $key = $cuentaId . ':' . $movimientoId;
+        $token = bin2hex(random_bytes(16));
+        $_SESSION['cxc_reversion_cobro_tokens'][$key] = [
+            'token' => $token,
+            'created_at' => time(),
+        ];
+
+        return $token;
+    }
+
+    private function consumirReversionCobroToken(int $cuentaId, int $movimientoId, string $token): bool
+    {
+        $token = trim($token);
+        $key = $cuentaId . ':' . $movimientoId;
+        $registro = $_SESSION['cxc_reversion_cobro_tokens'][$key] ?? null;
+        unset($_SESSION['cxc_reversion_cobro_tokens'][$key]);
+
+        if (!is_array($registro) || $token === '') {
+            return false;
+        }
+
+        if ((int)($registro['created_at'] ?? 0) < time() - 3600) {
+            return false;
+        }
+
+        return hash_equals((string)($registro['token'] ?? ''), $token);
     }
 }

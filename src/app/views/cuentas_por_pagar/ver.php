@@ -4,6 +4,9 @@ $movimientos = $movimientos ?? [];
 $movimientosDisponibles = $movimientosDisponibles ?? false;
 $pagoCaja = $pagoCaja ?? [];
 $pagoToken = $pagoToken ?? null;
+$reversionesPago = $reversionesPago ?? [];
+$reversionTokens = $reversionTokens ?? [];
+$movimientosPago = $movimientosPago ?? [];
 
 if (!function_exists('cxp_view_safe')) {
     function cxp_view_safe($value, $fallback = '-')
@@ -77,6 +80,11 @@ if (!function_exists('cxp_view_money')) {
 .cxp-detail-page .cxp-btn-primary {
     background: var(--cxp-brand);
     border-color: var(--cxp-brand);
+    color: #fff;
+}
+.cxp-detail-page .cxp-btn-danger {
+    background: #b42318;
+    border-color: #b42318;
     color: #fff;
 }
 .cxp-detail-page .cxp-input {
@@ -335,6 +343,98 @@ if (!function_exists('cxp_view_money')) {
                         </button>
                     </div>
                 </form>
+            <?php endif; ?>
+        </div>
+
+        <div class="cxp-panel p-5 mb-4">
+            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                <div>
+                    <h2 class="font-black text-lg">Reversion de pagos</h2>
+                    <p class="text-sm text-slate-500 mt-1">
+                        Revierte pagos proveedor con movimiento CxP inverso e ingreso de Caja. No borra ni edita el pago original.
+                    </p>
+                </div>
+                <span class="cxp-badge">
+                    <i class="fas fa-undo-alt"></i>
+                    Control transaccional
+                </span>
+            </div>
+
+            <?php if (empty($movimientosPago)): ?>
+                <div class="mt-5 rounded border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                    No hay movimientos de pago referencial para revertir.
+                </div>
+            <?php else: ?>
+                <div class="mt-5 space-y-4">
+                    <?php foreach ($movimientosPago as $movimientoPago): ?>
+                        <?php
+                        $movimientoPagoId = (int)($movimientoPago['id'] ?? 0);
+                        $reversion = $reversionesPago[$movimientoPagoId] ?? ['elegible' => false, 'motivo_bloqueo' => 'No evaluado.'];
+                        $tokenReversion = $reversionTokens[$movimientoPagoId] ?? null;
+                        ?>
+                        <div class="border border-slate-200 bg-white p-4">
+                            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
+                                    <div>
+                                        <div class="cxp-meta-label">Movimiento</div>
+                                        <div class="font-black mt-1">PAGO #<?= $movimientoPagoId ?></div>
+                                    </div>
+                                    <div>
+                                        <div class="cxp-meta-label">Monto</div>
+                                        <div class="font-black mt-1"><?= cxp_view_money($movimientoPago['monto'] ?? 0) ?></div>
+                                    </div>
+                                    <div>
+                                        <div class="cxp-meta-label">Referencia original</div>
+                                        <div class="font-black mt-1"><?= cxp_view_safe($movimientoPago['referencia'] ?? null, 'Automatica') ?></div>
+                                    </div>
+                                    <div>
+                                        <div class="cxp-meta-label">Referencia reversion</div>
+                                        <div class="font-black mt-1"><?= cxp_view_safe($reversion['referencia_reversion'] ?? null, 'No disponible') ?></div>
+                                    </div>
+                                </div>
+                                <?php if (!empty($reversion['elegible'])): ?>
+                                    <span class="cxp-badge cxp-badge-ok">
+                                        <i class="fas fa-check-circle"></i>
+                                        Elegible
+                                    </span>
+                                <?php else: ?>
+                                    <span class="cxp-badge cxp-badge-blocked">
+                                        <i class="fas fa-ban"></i>
+                                        Bloqueado
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+
+                            <?php if (!empty($reversion['elegible']) && !empty($tokenReversion)): ?>
+                                <form method="POST" action="<?= url('cuentas-por-pagar/' . (int)($cuenta['id'] ?? 0) . '/movimientos/' . $movimientoPagoId . '/revertir-pago-caja') ?>" class="mt-4 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="reversion_token" value="<?= cxp_view_safe($tokenReversion, '') ?>">
+                                    <div>
+                                        <label class="cxp-meta-label" for="cxp_reversion_motivo_<?= $movimientoPagoId ?>">Motivo</label>
+                                        <textarea
+                                            id="cxp_reversion_motivo_<?= $movimientoPagoId ?>"
+                                            class="cxp-input mt-1"
+                                            name="motivo"
+                                            maxlength="1000"
+                                            required
+                                            placeholder="Motivo claro de la reversion"
+                                        ></textarea>
+                                    </div>
+                                    <div class="flex items-end">
+                                        <button type="submit" class="cxp-btn cxp-btn-danger justify-center">
+                                            <i class="fas fa-undo-alt"></i>
+                                            Revertir pago
+                                        </button>
+                                    </div>
+                                </form>
+                            <?php else: ?>
+                                <div class="mt-3 text-sm text-slate-500">
+                                    <?= cxp_view_safe($reversion['motivo_bloqueo'] ?? null, 'Este pago no es elegible para reversion.') ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
             <?php endif; ?>
         </div>
 

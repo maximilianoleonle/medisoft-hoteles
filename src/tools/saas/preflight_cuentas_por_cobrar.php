@@ -1,12 +1,15 @@
 <?php
 /**
- * Preflight Fase 7A-A/7B-B/7B-C-A/7B-D-A para Cuentas por Cobrar.
+ * Preflight Fase 7A-A/7B-B/7B-C-A/7B-D-A/7B-D-B-A/7B-D-C-A/7B-D-D-A para Cuentas por Cobrar.
  *
  * No crea rutas, migraciones ni datos.
  * Valida que CxC derivada siga protegida por hotel, que CxC operativa sea
  * consultable, y que 7B-C-A solo permita generar CxC manual desde reservacion
- * elegible. 7B-D-A debe ser simulador GET/read-only. Sin escrituras en Caja,
- * pagos, abonos, facturacion ni reservaciones.
+ * elegible. 7B-D-A debe ser simulador GET/read-only. 7B-D-B-A debe tener tipo
+ * semantico COBRO disponible. 7B-D-C-A permite cobro CxC con Caja solo mediante
+ * servicio transaccional, CSRF, token y prueba rollback. 7B-D-D-A permite
+ * reversion de cobro CxC con Caja mediante CANCELACION + gasto controlado.
+ * Sin escrituras en pagos, abonos, facturacion ni reservaciones.
  */
 
 if (PHP_SAPI !== 'cli') {
@@ -145,18 +148,46 @@ function cxcPfContainsForbiddenWrites(string $code): bool
     );
 }
 
+function cxcPfContainsForbiddenCobroServiceWrites(string $code): bool
+{
+    if ($code === '') {
+        return false;
+    }
+
+    return (bool)preg_match(
+        '/\b(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(?:cortes_caja|cajas|reservaciones|reservacion_pagos|reservacion_abonos|solicitudes_factura)\b/i',
+        $code
+    );
+}
+
+function cxcPfContainsForbiddenReversionServiceWrites(string $code): bool
+{
+    if ($code === '') {
+        return false;
+    }
+
+    return (bool)preg_match(
+        '/\b(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(?:cortes_caja|cajas|reservaciones|reservacion_pagos|reservacion_abonos|solicitudes_factura)\b/i',
+        $code
+    );
+}
+
 $appRoot = dirname(__DIR__, 2);
 $configPath = $appRoot . '/config/database.php';
 $routesPath = $appRoot . '/config/routes.php';
 $controllerPath = $appRoot . '/app/controllers/CuentaPorCobrarController.php';
 $modelPath = $appRoot . '/app/models/CuentaPorCobrar.php';
+$cobroServicePath = $appRoot . '/app/services/CuentaPorCobrarCobroService.php';
+$reversionServicePath = $appRoot . '/app/services/CuentaPorCobrarReversionCobroService.php';
 $viewPath = $appRoot . '/app/views/cuentas_por_cobrar/index.php';
 $operativasViewPath = $appRoot . '/app/views/cuentas_por_cobrar/operativas.php';
 $operativaDetailViewPath = $appRoot . '/app/views/cuentas_por_cobrar/ver_operativa.php';
 $simuladorCajaViewPath = $appRoot . '/app/views/cuentas_por_cobrar/simulador_caja.php';
+$cobroRollbackToolPath = $appRoot . '/tools/saas/probar_cobro_cxc_caja.php';
+$reversionRollbackToolPath = $appRoot . '/tools/saas/probar_reversion_cobro_cxc_caja.php';
 $sidebarPath = $appRoot . '/app/views/layout/sidebar.php';
 
-echo "Preflight Fase 7A-A/7B-B/7B-C-A/7B-D-A - Cuentas por cobrar\n";
+echo "Preflight Fase 7A-A/7B-B/7B-C-A/7B-D-A/7B-D-B-A/7B-D-C-A/7B-D-D-A - Cuentas por cobrar\n";
 echo "=====================================================\n";
 
 if (is_file($configPath)) {
@@ -273,6 +304,74 @@ if ($pdo instanceof PDO) {
     }
 
     if (cxcPfTableExists($pdo, $database, 'cuentas_por_cobrar_movimientos')) {
+        $stmt = $pdo->prepare(
+            "SELECT COLUMN_TYPE
+             FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = :db
+               AND TABLE_NAME = 'cuentas_por_cobrar_movimientos'
+               AND COLUMN_NAME = 'tipo_movimiento'
+             LIMIT 1"
+        );
+        $stmt->execute(['db' => $database]);
+        $tipoMovimientoColumn = (string)($stmt->fetchColumn() ?: '');
+
+        if (strpos($tipoMovimientoColumn, "'COBRO'") !== false) {
+            cxcPfOk('Enum CxC 7B-D-B-A disponible: tipo_movimiento incluye COBRO.');
+        } else {
+            cxcPfError('Enum CxC 7B-D-B-A incompleto: falta tipo COBRO.', 'Aplicar migracion aditiva 7B-D-B-A antes de implementar cobros.');
+        }
+
+        if (cxcPfTableExists($pdo, $database, 'migrations')) {
+            $migrationCount = cxcPfCountScalar(
+                $pdo,
+                "SELECT COUNT(*) FROM migrations WHERE nombre = '20260618_002_fase_7b_d_b_a_cxc_movimiento_cobro_enum.sql' AND estado = 'ejecutada'"
+            );
+
+            if ($migrationCount === 1) {
+                cxcPfOk('Migracion 7B-D-B-A registrada como ejecutada.');
+            } else {
+                cxcPfError('Migracion 7B-D-B-A no registrada como ejecutada.', 'Revisar tabla migrations antes de continuar a cobro real.');
+            }
+        }
+
+        cxcPfReportZero(
+            'movimientos CxC tipo COBRO persistentes',
+            cxcPfCountScalar($pdo, "SELECT COUNT(*) FROM cuentas_por_cobrar_movimientos WHERE tipo_movimiento = 'COBRO'"),
+            'Validar que todo COBRO persistente tenga traza Caja y auditoria esperada.',
+            true
+        );
+        cxcPfReportZero(
+            'movimientos CxC COBRO sin ingreso Caja asociado',
+            cxcPfCountScalar($pdo, "SELECT COUNT(*) FROM cuentas_por_cobrar_movimientos m LEFT JOIN movimientos_caja mc ON mc.hotel_id = m.hotel_id AND mc.tipo = 'ingreso' AND mc.categoria = 'Cobro CxC' AND mc.monto = m.monto AND (mc.referencia = CONCAT('CXC-', m.cuenta_por_cobrar_id, '-MOV-', m.id) OR (m.referencia IS NOT NULL AND m.referencia <> '' AND mc.referencia = m.referencia)) WHERE m.tipo_movimiento = 'COBRO' AND mc.id IS NULL"),
+            'Cada COBRO CxC persistente debe tener un ingreso Caja creado por el servicio.'
+        );
+        cxcPfReportZero(
+            'ingresos Caja CxC sin movimiento COBRO asociado',
+            cxcPfCountScalar($pdo, "SELECT COUNT(*) FROM movimientos_caja mc LEFT JOIN cuentas_por_cobrar_movimientos m ON m.hotel_id = mc.hotel_id AND m.tipo_movimiento = 'COBRO' AND m.monto = mc.monto AND (mc.referencia = CONCAT('CXC-', m.cuenta_por_cobrar_id, '-MOV-', m.id) OR (m.referencia IS NOT NULL AND m.referencia <> '' AND mc.referencia = m.referencia)) WHERE mc.tipo = 'ingreso' AND mc.categoria = 'Cobro CxC' AND m.id IS NULL"),
+            'Todo ingreso Caja de Cobro CxC debe apuntar a un movimiento CxC COBRO.'
+        );
+        cxcPfReportZero(
+            'movimientos CxC tipo CANCELACION persistentes',
+            cxcPfCountScalar($pdo, "SELECT COUNT(*) FROM cuentas_por_cobrar_movimientos WHERE tipo_movimiento = 'CANCELACION' AND referencia LIKE 'REV-CXC-%'"),
+            'Validar que toda CANCELACION CxC persistente tenga gasto Caja y auditoria esperada.',
+            true
+        );
+        cxcPfReportZero(
+            'movimientos CxC CANCELACION sin gasto Caja asociado',
+            cxcPfCountScalar($pdo, "SELECT COUNT(*) FROM cuentas_por_cobrar_movimientos m LEFT JOIN movimientos_caja mc ON mc.hotel_id = m.hotel_id AND mc.tipo = 'gasto' AND mc.categoria = 'Reversion Cobro CxC' AND mc.monto = m.monto AND mc.referencia = m.referencia WHERE m.tipo_movimiento = 'CANCELACION' AND m.referencia LIKE 'REV-CXC-%' AND mc.id IS NULL"),
+            'Cada CANCELACION CxC de reversion debe tener gasto Caja asociado.'
+        );
+        cxcPfReportZero(
+            'gastos Caja Reversion Cobro CxC sin CANCELACION asociada',
+            cxcPfCountScalar($pdo, "SELECT COUNT(*) FROM movimientos_caja mc LEFT JOIN cuentas_por_cobrar_movimientos m ON m.hotel_id = mc.hotel_id AND m.tipo_movimiento = 'CANCELACION' AND m.monto = mc.monto AND m.referencia = mc.referencia WHERE mc.tipo = 'gasto' AND mc.categoria = 'Reversion Cobro CxC' AND m.id IS NULL"),
+            'Todo gasto Caja de reversion debe apuntar a una CANCELACION CxC.'
+        );
+        cxcPfReportZero(
+            'cobros CxC con doble reversion',
+            cxcPfCountScalar($pdo, "SELECT COUNT(*) FROM (SELECT hotel_id, cuenta_por_cobrar_id, referencia, COUNT(*) AS total FROM cuentas_por_cobrar_movimientos WHERE tipo_movimiento = 'CANCELACION' AND referencia LIKE 'REV-CXC-%' GROUP BY hotel_id, cuenta_por_cobrar_id, referencia HAVING total > 1) x"),
+            'No permitir doble reversion del mismo movimiento COBRO.'
+        );
+
         cxcPfReportZero(
             'movimientos CxC sin cuenta existente',
             cxcPfCountScalar($pdo, 'SELECT COUNT(*) FROM cuentas_por_cobrar_movimientos m LEFT JOIN cuentas_por_cobrar c ON c.id = m.cuenta_por_cobrar_id AND c.hotel_id = m.hotel_id WHERE c.id IS NULL'),
@@ -286,9 +385,10 @@ if ($pdo instanceof PDO) {
     }
 
     cxcPfReportZero(
-        'movimientos de Caja con referencia textual a CxC',
+        'movimientos de Caja CxC persistentes',
         cxcPfCountScalar($pdo, "SELECT COUNT(*) FROM movimientos_caja WHERE categoria LIKE '%CxC%' OR descripcion LIKE '%CxC%' OR referencia LIKE '%CxC%'"),
-        'CxC 7B-B no debe crear ni depender de movimientos de Caja.'
+        'Validar que cada movimiento Caja CxC provenga del servicio 7B-D-C-A y tenga COBRO asociado.',
+        true
     );
 }
 
@@ -323,8 +423,22 @@ if (cxcPfRouteExists($routes, 'cuentas-por-cobrar/generar-desde-reservacion/{id:
     cxcPfError('No esta registrada POST /cuentas-por-cobrar/generar-desde-reservacion/{id}.', 'Registrar la ruta POST controlada para 7B-C-A.');
 }
 
+if (cxcPfRouteExists($routes, 'cuentas-por-cobrar/operativas/{id:[0-9]+}/registrar-cobro-caja', 'post')) {
+    cxcPfOk('Ruta cobro CxC registrada: POST /cuentas-por-cobrar/operativas/{id}/registrar-cobro-caja.');
+} else {
+    cxcPfError('No esta registrada POST /cuentas-por-cobrar/operativas/{id}/registrar-cobro-caja.', 'Registrar la ruta POST controlada para 7B-D-C-A.');
+}
+
+if (cxcPfRouteExists($routes, 'cuentas-por-cobrar/operativas/{id:[0-9]+}/movimientos/{movimientoid:[0-9]+}/revertir-cobro-caja', 'post')) {
+    cxcPfOk('Ruta reversion cobro CxC registrada: POST /cuentas-por-cobrar/operativas/{id}/movimientos/{movimientoid}/revertir-cobro-caja.');
+} else {
+    cxcPfError('No esta registrada POST /cuentas-por-cobrar/operativas/{id}/movimientos/{movimientoid}/revertir-cobro-caja.', 'Registrar la ruta POST controlada para 7B-D-D-A con parametro compatible con Router.');
+}
+
 $allowedCxcPostRoutes = [
     'cuentas-por-cobrar/generar-desde-reservacion/{id:[0-9]+}',
+    'cuentas-por-cobrar/operativas/{id:[0-9]+}/registrar-cobro-caja',
+    'cuentas-por-cobrar/operativas/{id:[0-9]+}/movimientos/{movimientoid:[0-9]+}/revertir-cobro-caja',
 ];
 foreach ($routes as $route) {
     $method = strtolower((string)$route['method']);
@@ -339,6 +453,8 @@ foreach ($routes as $route) {
 
 $modelCode = is_file($modelPath) ? (string)file_get_contents($modelPath) : '';
 $controllerCode = is_file($controllerPath) ? (string)file_get_contents($controllerPath) : '';
+$cobroServiceCode = is_file($cobroServicePath) ? (string)file_get_contents($cobroServicePath) : '';
+$reversionServiceCode = is_file($reversionServicePath) ? (string)file_get_contents($reversionServicePath) : '';
 $viewCode = is_file($viewPath) ? (string)file_get_contents($viewPath) : '';
 $operativasViewCode = is_file($operativasViewPath) ? (string)file_get_contents($operativasViewPath) : '';
 $operativaDetailViewCode = is_file($operativaDetailViewPath) ? (string)file_get_contents($operativaDetailViewPath) : '';
@@ -381,15 +497,63 @@ if (
     && strpos($controllerCode, 'verOperativaAction') !== false
     && strpos($controllerCode, 'simuladorCajaAction') !== false
     && strpos($controllerCode, 'generarDesdeReservacionAction') !== false
+    && strpos($controllerCode, 'registrarCobroCajaAction') !== false
+    && strpos($controllerCode, 'revertirCobroCajaAction') !== false
     && strpos($controllerCode, 'validateCSRF') !== false
     && strpos($controllerCode, 'generarDesdeReservacionElegible') !== false
     && strpos($controllerCode, 'simuladorCajaCliente') !== false
-    && strpos($controllerCode, "require_hotel_module('caja')") === false
+    && strpos($controllerCode, 'registrarCobro') !== false
+    && strpos($controllerCode, 'revertirCobro') !== false
+    && strpos($controllerCode, 'generarCobroToken') !== false
+    && strpos($controllerCode, 'consumirCobroToken') !== false
+    && strpos($controllerCode, 'generarReversionCobroToken') !== false
+    && strpos($controllerCode, 'consumirReversionCobroToken') !== false
+    && strpos($controllerCode, "require_hotel_module('caja')") !== false
     && !cxcPfContainsForbiddenWrites($controllerCode)
 ) {
-    cxcPfOk('Controller CxC expone GET protegidos y POST 7B-C-A con CSRF, sin Caja.');
+    cxcPfOk('Controller CxC expone GET protegidos, generacion manual, cobro y reversion Caja con CSRF/token.');
 } else {
-    cxcPfWarning('Controller CxC requiere revision manual.', 'Asegurar auth, hotel, modulo reservaciones, CSRF y ausencia de Caja.');
+    cxcPfWarning('Controller CxC requiere revision manual.', 'Asegurar auth, hotel, modulo reservaciones, CSRF, tokens y Caja solo en POST controlados.');
+}
+
+if (
+    $cobroServiceCode !== ''
+    && strpos($cobroServiceCode, 'class CuentaPorCobrarCobroService') !== false
+    && strpos($cobroServiceCode, 'registrarCobro') !== false
+    && strpos($cobroServiceCode, 'evaluarCobro') !== false
+    && strpos($cobroServiceCode, "tipo_movimiento, monto") !== false
+    && strpos($cobroServiceCode, "'COBRO'") !== false
+    && strpos($cobroServiceCode, 'INSERT INTO movimientos_caja') !== false
+    && strpos($cobroServiceCode, "?, 'ingreso', 'Cobro CxC'") !== false
+    && strpos($cobroServiceCode, 'UPDATE cuentas_por_cobrar') !== false
+    && strpos($cobroServiceCode, 'FOR UPDATE') !== false
+    && strpos($cobroServiceCode, 'AuditService::record') !== false
+    && strpos($cobroServiceCode, 'assertReferenciaNoDuplicada') !== false
+    && !cxcPfContainsForbiddenCobroServiceWrites($cobroServiceCode)
+) {
+    cxcPfOk('Servicio cobro CxC 7B-D-C-A concentra transaccion, CxC, Caja, auditoria y locks.');
+} else {
+    cxcPfError('Servicio cobro CxC 7B-D-C-A no cumple contrato.', 'Revisar servicio transaccional, locks, COBRO, Caja ingreso y ausencia de escrituras historicas.');
+}
+
+if (
+    $reversionServiceCode !== ''
+    && strpos($reversionServiceCode, 'class CuentaPorCobrarReversionCobroService') !== false
+    && strpos($reversionServiceCode, 'revertirCobro') !== false
+    && strpos($reversionServiceCode, 'evaluarReversion') !== false
+    && strpos($reversionServiceCode, "'CANCELACION'") !== false
+    && strpos($reversionServiceCode, 'INSERT INTO movimientos_caja') !== false
+    && strpos($reversionServiceCode, "?, 'gasto', 'Reversion Cobro CxC'") !== false
+    && strpos($reversionServiceCode, 'UPDATE cuentas_por_cobrar') !== false
+    && strpos($reversionServiceCode, 'FOR UPDATE') !== false
+    && strpos($reversionServiceCode, 'AuditService::record') !== false
+    && strpos($reversionServiceCode, 'existeReversionPrevia') !== false
+    && strpos($reversionServiceCode, 'REV-CXC-') !== false
+    && !cxcPfContainsForbiddenReversionServiceWrites($reversionServiceCode)
+) {
+    cxcPfOk('Servicio reversion CxC 7B-D-D-A concentra transaccion, CANCELACION, gasto Caja, auditoria y locks.');
+} else {
+    cxcPfError('Servicio reversion CxC 7B-D-D-A no cumple contrato.', 'Revisar servicio transaccional, locks, CANCELACION, gasto Caja y ausencia de escrituras historicas.');
 }
 
 if (
@@ -422,14 +586,18 @@ if (
 
 if (
     $operativaDetailViewCode !== ''
-    && stripos($operativaDetailViewCode, 'Solo lectura') !== false
-    && stripos($operativaDetailViewCode, 'no cobra') !== false
-    && stripos($operativaDetailViewCode, 'no toca Caja') !== false
-    && strpos($operativaDetailViewCode, 'method="POST"') === false
+    && strpos($operativaDetailViewCode, 'method="POST"') !== false
+    && strpos($operativaDetailViewCode, 'csrf_field()') !== false
+    && strpos($operativaDetailViewCode, 'registrar-cobro-caja') !== false
+    && strpos($operativaDetailViewCode, 'cobro_token') !== false
+    && strpos($operativaDetailViewCode, 'Cobro con Caja') !== false
+    && strpos($operativaDetailViewCode, 'revertir-cobro-caja') !== false
+    && strpos($operativaDetailViewCode, 'reversion_token') !== false
+    && strpos($operativaDetailViewCode, 'Reversion de cobros') !== false
 ) {
-    cxcPfOk('Detalle CxC operativa 7B-B es read-only y sin acciones de cobro.');
+    cxcPfOk('Detalle CxC operativa integra cobro y reversion Caja con POST, CSRF y token.');
 } else {
-    cxcPfWarning('Detalle CxC operativa requiere revision manual.', 'Asegurar ausencia de POST, cobros, pagos y Caja.');
+    cxcPfWarning('Detalle CxC operativa requiere revision manual.', 'Asegurar formularios de cobro/reversion con CSRF, token y visibilidad condicionada.');
 }
 
 if (
@@ -440,7 +608,7 @@ if (
     && strpos($simuladorCajaViewCode, 'cuentas-por-cobrar/simulador-caja') !== false
     && strpos($simuladorCajaViewCode, 'Tipo COBRO') !== false
 ) {
-    cxcPfOk('Vista simulador Caja CxC 7B-D-A es GET/read-only y bloquea cobro sin tipo COBRO.');
+    cxcPfOk('Vista simulador Caja CxC 7B-D-A es GET/read-only y no registra cobros reales.');
 } else {
     cxcPfWarning('Vista simulador Caja CxC requiere revision manual.', 'Asegurar GET/read-only, sin POST y sin cobros reales.');
 }
@@ -449,6 +617,29 @@ if ($sidebarCode !== '' && strpos($sidebarCode, 'cuentas-por-cobrar') !== false)
     cxcPfOk('Sidebar enlaza CxC read-only.');
 } else {
     cxcPfWarning('Sidebar no enlaza CxC.', 'Agregar navegacion solo si es segura para el hotel.');
+}
+
+if (
+    is_file($cobroRollbackToolPath)
+    && strpos((string)file_get_contents($cobroRollbackToolPath), 'CuentaPorCobrarCobroService') !== false
+    && strpos((string)file_get_contents($cobroRollbackToolPath), 'rollBack') !== false
+    && strpos((string)file_get_contents($cobroRollbackToolPath), 'tipo_movimiento = \'COBRO\'') !== false
+) {
+    cxcPfOk('Prueba rollback cobro CxC disponible y marcada como reversible.');
+} else {
+    cxcPfError('No existe prueba rollback completa para cobro CxC.', 'Crear tools/saas/probar_cobro_cxc_caja.php antes de QA manual.');
+}
+
+if (
+    is_file($reversionRollbackToolPath)
+    && strpos((string)file_get_contents($reversionRollbackToolPath), 'CuentaPorCobrarReversionCobroService') !== false
+    && strpos((string)file_get_contents($reversionRollbackToolPath), 'rollBack') !== false
+    && strpos((string)file_get_contents($reversionRollbackToolPath), "tipo_movimiento = 'CANCELACION'") !== false
+    && strpos((string)file_get_contents($reversionRollbackToolPath), "categoria = 'Reversion Cobro CxC'") !== false
+) {
+    cxcPfOk('Prueba rollback reversion cobro CxC disponible y marcada como reversible.');
+} else {
+    cxcPfError('No existe prueba rollback completa para reversion cobro CxC.', 'Crear tools/saas/probar_reversion_cobro_cxc_caja.php antes de QA manual.');
 }
 
 if ($pdo instanceof PDO) {
