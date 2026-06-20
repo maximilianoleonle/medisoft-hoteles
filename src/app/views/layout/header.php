@@ -717,14 +717,23 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
             let ticking = false;
             const mobileHeader = document.getElementById('mobileHeaderModern');
             const scrollProgress = document.getElementById('scrollProgress');
+            const scrollContainer = document.querySelector('.main-content') || document.scrollingElement || document.documentElement;
+            const isDocumentScroll = scrollContainer === document.documentElement || scrollContainer === document.body;
             
             // Verificar que el header existe
             if (mobileHeader) {
 
                 // Función para manejar el scroll
                 function handleScroll() {
-                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                    const scrollTop = isDocumentScroll
+                        ? (window.pageYOffset || document.documentElement.scrollTop)
+                        : scrollContainer.scrollTop;
+                    const scrollHeight = Math.max(
+                        0,
+                        isDocumentScroll
+                            ? document.documentElement.scrollHeight - document.documentElement.clientHeight
+                            : scrollContainer.scrollHeight - scrollContainer.clientHeight
+                    );
                     
                     // Solo en móvil
                     if (window.innerWidth <= 1024) {
@@ -764,8 +773,9 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
                     }
                 }
                 
-                // Escuchar evento de scroll
-                window.addEventListener('scroll', requestTick, { passive: true });
+                // Escuchar el scroll real del layout. En movil/PWA vive dentro de main-content.
+                (isDocumentScroll ? window : scrollContainer).addEventListener('scroll', requestTick, { passive: true });
+                window.addEventListener('resize', requestTick, { passive: true });
                 
                 // PRUEBA MANUAL mejorada
                 window.toggleHeader = function() {

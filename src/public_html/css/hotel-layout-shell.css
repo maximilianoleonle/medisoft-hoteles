@@ -891,6 +891,44 @@ body.hotel-layout-scope {
 }
 
 @media (max-width: 1024px) {
+    html {
+        height: 100%;
+        min-height: 100%;
+    }
+
+    body.hotel-layout-scope {
+        height: 100%;
+        min-height: 100%;
+        overflow: hidden;
+        overscroll-behavior-y: none;
+    }
+
+    body.hotel-layout-scope > .flex.h-screen.overflow-hidden {
+        height: calc(100dvh - 64px) !important;
+        min-height: calc(100dvh - 64px) !important;
+        max-height: calc(100dvh - 64px) !important;
+        overflow: hidden !important;
+    }
+
+    body.hotel-layout-scope .main-content {
+        height: 100%;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+        padding-bottom: max(24px, env(safe-area-inset-bottom));
+        scroll-padding-bottom: max(24px, env(safe-area-inset-bottom));
+    }
+
+    @supports not (height: 100dvh) {
+        body.hotel-layout-scope > .flex.h-screen.overflow-hidden {
+            height: calc(100vh - 64px) !important;
+            min-height: calc(100vh - 64px) !important;
+            max-height: calc(100vh - 64px) !important;
+        }
+    }
+
     body.hotel-layout-scope .sidebar-main.hotel-sidebar {
         top: 0 !important;
         bottom: 0 !important;
