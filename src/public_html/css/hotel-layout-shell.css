@@ -282,14 +282,24 @@ body.hotel-layout-scope .main-content { min-height: 0; overflow-y: auto; backgro
     }
 
     .hotel-layout-scope .mobile-menu-toggle,
-    .hotel-layout-scope .mobile-header-actions button,
-    .hotel-layout-scope #pwa-sync-indicator {
+    .hotel-layout-scope .mobile-header-actions button {
         width: 40px;
         height: 40px;
         border: 1px solid rgba(255,255,255,.22);
         border-radius: 12px;
         background: rgba(255,255,255,.12);
         color: var(--hotel-on-brand);
+    }
+
+    .hotel-layout-scope #pwa-sync-indicator {
+        width: 32px;
+        height: 32px;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(255,255,255,.08);
+        color: rgba(255,255,255,.72);
+        cursor: default;
+        pointer-events: none;
     }
 
     .hotel-layout-scope .mobile-header-logo {
@@ -896,21 +906,21 @@ body.hotel-layout-scope {
         min-height: 100%;
     }
 
-    body.hotel-layout-scope {
+    body.hotel-layout-scope:not(.page-dashboard) {
         height: 100%;
         min-height: 100%;
         overflow: hidden;
         overscroll-behavior-y: none;
     }
 
-    body.hotel-layout-scope > .flex.h-screen.overflow-hidden {
+    body.hotel-layout-scope:not(.page-dashboard) > .flex.h-screen.overflow-hidden {
         height: calc(100dvh - 64px) !important;
         min-height: calc(100dvh - 64px) !important;
         max-height: calc(100dvh - 64px) !important;
         overflow: hidden !important;
     }
 
-    body.hotel-layout-scope .main-content {
+    body.hotel-layout-scope:not(.page-dashboard) .main-content {
         height: 100%;
         min-height: 0;
         overflow-x: hidden;
@@ -922,7 +932,7 @@ body.hotel-layout-scope {
     }
 
     @supports not (height: 100dvh) {
-        body.hotel-layout-scope > .flex.h-screen.overflow-hidden {
+        body.hotel-layout-scope:not(.page-dashboard) > .flex.h-screen.overflow-hidden {
             height: calc(100vh - 64px) !important;
             min-height: calc(100vh - 64px) !important;
             max-height: calc(100vh - 64px) !important;

@@ -42,6 +42,11 @@ $layoutHotelSlug = function_exists('current_hotel_slug') ? current_hotel_slug() 
 if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $layoutHotelSlug)) {
     $layoutManifestHref = url('h/' . $layoutHotelSlug . '/manifest.webmanifest');
 }
+$layoutPathSegment = trim((string)$layoutRequestPath, '/');
+$layoutPathSegment = $layoutPathSegment === '' ? 'dashboard' : strtok($layoutPathSegment, '/');
+$layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
+    ? ' page-' . str_replace('_', '-', strtolower((string)$layoutPathSegment))
+    : '';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -582,7 +587,7 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
     <link rel="stylesheet" href="<?= function_exists('asset_version') ? asset_version('css/hotel-layout-shell.css') : asset('css/hotel-layout-shell.css') ?>">
     <?php endif; ?>
 </head>
-<body class="bg-gray-100 font-inter<?= $layoutEsPanelSaas ? ' ms-admin-scope' : ' hotel-layout-scope' ?>">
+<body class="bg-gray-100 font-inter<?= $layoutEsPanelSaas ? ' ms-admin-scope' : ' hotel-layout-scope' ?><?= htmlspecialchars($layoutPageClass, ENT_QUOTES, 'UTF-8') ?>">
 
   <!-- ── Banner Offline ─────────────────────────────────────────────────── -->
   <div id="pwa-offline-banner" role="alert" aria-live="assertive" hidden>
@@ -717,7 +722,17 @@ if (!$layoutEsPanelSaas && $layoutHotelSlug && preg_match('/^[a-z0-9-]+$/', $lay
             let ticking = false;
             const mobileHeader = document.getElementById('mobileHeaderModern');
             const scrollProgress = document.getElementById('scrollProgress');
-            const scrollContainer = document.querySelector('.main-content') || document.scrollingElement || document.documentElement;
+            const mainScrollCandidate = document.querySelector('.main-content');
+            const scrollContainer = (function () {
+                if (mainScrollCandidate) {
+                    const overflowY = window.getComputedStyle(mainScrollCandidate).overflowY;
+                    if (/auto|scroll|overlay/i.test(overflowY)) {
+                        return mainScrollCandidate;
+                    }
+                }
+
+                return document.scrollingElement || document.documentElement;
+            })();
             const isDocumentScroll = scrollContainer === document.documentElement || scrollContainer === document.body;
             
             // Verificar que el header existe
