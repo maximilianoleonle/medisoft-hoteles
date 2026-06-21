@@ -2303,3 +2303,33 @@ QA futura sugerida para 5E-H-A:
 7. Intentar exportar sin periodo y confirmar bloqueo controlado.
 8. Confirmar que no hay POST, pago masivo, recibo oficial, dispersion, movimiento de
    Caja ni escritura laboral.
+
+## Fase 5E-H-A - Export CSV del preview de pre-nomina
+
+Estado: implementacion tecnica validada automaticamente; QA manual pendiente del
+usuario.
+
+Revision manual recomendada:
+
+1. Abrir `/trabajadores/nomina/preview`.
+2. Confirmar que sin fechas el preview sigue bloqueado por periodo requerido.
+3. Seleccionar un periodo valido.
+4. Presionar `Exportar CSV`.
+5. Confirmar que el navegador descarga un archivo CSV.
+6. Confirmar que los encabezados incluyen periodo, trabajador, bruto, deducciones,
+   pagos Caja, reversiones, neto y pendiente.
+7. Confirmar que filas y totales coinciden con la pantalla.
+8. Probar `Pagos Caja` activado/desactivado y repetir descarga.
+9. Probar `Con saldo` y confirmar que el CSV respeta el filtro.
+10. Intentar exportar sin periodo y confirmar que redirige al preview sin archivo
+    ambiguo.
+11. Confirmar que no hay POST, pago masivo, recibo oficial, dispersion, movimiento de
+    Caja ni escritura laboral.
+
+Resultado automatico esperado:
+
+- Lint PHP: OK en controlador, vista, rutas y checkers.
+- Preflight pagos laborales Caja: `ERROR: 0`.
+- Health general: `ERROR: 0`.
+- Ruta local sin sesion:
+  `GET /trabajadores/nomina/preview/exportar` responde `303` a login, sin 404.

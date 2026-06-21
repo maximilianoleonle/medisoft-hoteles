@@ -2451,18 +2451,21 @@ No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
 `trabajador_anticipos`, `trabajador_prestamos`, `trabajador_pagos_caja`, Caja,
 cortes, movimientos de Caja, permisos/auth, PWA/offline ni `/api/sync`.
 
-## Rollback Fase 5E-H-A futura
+## Rollback Fase 5E-H-A
 
-Si se implementa una futura exportacion CSV del preview de pre-nomina, su rollback de
-codigo debera retirar:
+5E-H-A agrega export CSV GET/read-only del preview de pre-nomina.
+
+No crea migraciones ni datos.
+
+Rollback de codigo:
 
 1. `GET /trabajadores/nomina/preview/exportar` de `src/config/routes.php`.
 2. La accion exportadora de `src/app/controllers/TrabajadorController.php`.
-3. Cualquier metodo auxiliar agregado en `src/app/models/Trabajador.php`, si existiera.
+3. `descargarNominaPreviewCsv` de `src/app/controllers/TrabajadorController.php`.
 4. El enlace o boton de exportacion de `src/app/views/trabajadores/nomina_preview.php`.
 5. Validaciones 5E-H-A en `src/tools/saas/preflight_personal_pagos_caja.php`.
 6. Validaciones 5E-H-A en `src/tools/saas/health_check_fase_1a.php`.
-7. Documentacion de implementacion y referencias documentales.
+7. `docs/fase_5E_H_A_export_csv_nomina_preview.md` y referencias documentales.
 
 Verificacion posterior:
 
@@ -2470,5 +2473,5 @@ Verificacion posterior:
 - `docker compose exec -T app php tools/saas/preflight_personal_pagos_caja.php`.
 - `docker compose exec -T app php tools/saas/health_check_fase_1a.php`.
 
-No ejecutar SQL ni tocar datos. La exportacion CSV futura no debe crear nomina,
-pagos, movimientos de Caja, recibos, dispersion ni auditorias por simple descarga.
+No ejecutar SQL ni tocar datos. La exportacion CSV no crea nomina, pagos, movimientos
+de Caja, recibos, dispersion ni auditorias por simple descarga.

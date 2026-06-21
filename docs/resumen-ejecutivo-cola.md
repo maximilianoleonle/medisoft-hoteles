@@ -2253,3 +2253,26 @@ Estado formal:
   `/api/sync`.
 - Siguiente paso seguro: `5E-H-A` solo con autorizacion explicita para tocar ruta,
   controlador/modelo read-only, vista y checkers.
+
+## 5E-H-A Export CSV del preview de pre-nomina
+
+Estado formal:
+`EXPORT_CSV_5E_H_A_NOMINA_PREVIEW_READ_ONLY_COMPLETADO_QA_MANUAL_PENDIENTE`.
+
+- Documento creado:
+  `docs/fase_5E_H_A_export_csv_nomina_preview.md`.
+- Ruta nueva:
+  `GET /trabajadores/nomina/preview/exportar`.
+- La exportacion reutiliza `Trabajador::nominaPreviewPorHotel` con los mismos filtros
+  GET del preview.
+- La vista `nomina_preview.php` agrega enlace `Exportar CSV` sin formularios POST ni
+  CSRF.
+- El CSV usa BOM UTF-8, headers de descarga y columnas de periodo, trabajador, bruto,
+  deducciones, pagos Caja, reversiones, neto y pendiente sugerido.
+- Si el periodo falta o es invalido, la accion redirige al preview y no descarga CSV
+  ambiguo.
+- No hay pagos masivos, nomina automatica, recibos oficiales, timbrado, dispersion,
+  liquidaciones automaticas, movimientos de Caja, migraciones, datos, permisos/auth,
+  PWA/offline ni `/api/sync`.
+- Siguiente paso seguro: QA manual de la descarga CSV y luego cierre documental si
+  pasa.

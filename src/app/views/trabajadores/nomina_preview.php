@@ -52,6 +52,17 @@ $rolLaboral = (string)($filtros['rol_laboral'] ?? '');
 $estado = (string)($filtros['estado'] ?? 'activos');
 $soloConSaldo = !empty($filtros['solo_con_saldo']);
 $incluirPagosCaja = !empty($filtros['incluir_pagos_caja']);
+$exportQuery = http_build_query([
+    'fecha_inicio' => $fechaInicio,
+    'fecha_fin' => $fechaFin,
+    'trabajador_id' => $trabajadorId > 0 ? $trabajadorId : '',
+    'buscar' => $buscar,
+    'rol_laboral' => $rolLaboral,
+    'estado' => $estado,
+    'solo_con_saldo' => $soloConSaldo ? '1' : '0',
+    'incluir_pagos_caja' => $incluirPagosCaja ? '1' : '0',
+]);
+$exportUrl = url('trabajadores/nomina/preview/exportar' . ($exportQuery !== '' ? '?' . $exportQuery : ''));
 ?>
 
 <style>
@@ -229,6 +240,10 @@ $incluirPagosCaja = !empty($filtros['incluir_pagos_caja']);
                 <a class="payroll-btn" href="<?= url('trabajadores/pagos-caja/reporte') ?>">
                     <i class="fas fa-file-invoice-dollar"></i>
                     Reporte Caja
+                </a>
+                <a class="payroll-btn" href="<?= $exportUrl ?>">
+                    <i class="fas fa-file-csv"></i>
+                    Exportar CSV
                 </a>
             </div>
             <span class="payroll-badge">

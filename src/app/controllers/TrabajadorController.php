@@ -88,6 +88,24 @@ class TrabajadorController extends Controller
         ]);
     }
 
+    public function exportarNominaPreviewAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $filtros = $this->filtrosNominaPreviewDesdeQuery();
+        $preview = $this->trabajadorModel->nominaPreviewPorHotel($hotelId, $filtros, 500);
+
+        if (!empty($preview['bloqueos'])) {
+            set_mensaje('No se pudo exportar el preview de pre-nomina: ' . implode(' ', $preview['bloqueos']), 'error');
+            $query = http_build_query(array_filter($filtros, static function ($value) {
+                return $value !== null && $value !== '';
+            }));
+            $this->redirect('trabajadores/nomina/preview' . ($query !== '' ? '?' . $query : ''));
+            return;
+        }
+
+        $this->descargarNominaPreviewCsv($preview);
+    }
+
     public function reportePagosCajaAction(): void
     {
         $hotelId = $this->hotelIdActual();
@@ -769,6 +787,88 @@ class TrabajadorController extends Controller
                 $this->csvReportePagosCajaUsuario($registro, 'creado_por'),
                 $this->csvReportePagosCajaUsuario($registro, 'actualizado_por'),
                 $this->csvReportePagosCajaValor($registro['notas'] ?? ''),
+            ]);
+        }
+
+        fclose($out);
+        exit;
+    }
+
+    private function descargarNominaPreviewCsv(array $preview): void
+    {
+        if (function_exists('session_write_close')) {
+            session_write_close();
+        }
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        $filtros = is_array($preview['filtros_normalizados'] ?? null) ? $preview['filtros_normalizados'] : [];
+        $fechaInicio = $this->csvReportePagosCajaValor($filtros['fecha_inicio'] ?? '');
+        $fechaFin = $this->csvReportePagosCajaValor($filtros['fecha_fin'] ?? '');
+        $filename = 'pre_nomina_preview_' . ($fechaInicio !== '' ? str_replace('-', '', $fechaInicio) : date('Ymd')) . '_' . date('His') . '.csv';
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('X-Content-Type-Options: nosniff');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $out = fopen('php://output', 'w');
+        if ($out === false) {
+            exit;
+        }
+
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, [
+            'periodo_inicio',
+            'periodo_fin',
+            'trabajador_id',
+            'trabajador',
+            'identificacion',
+            'rol',
+            'estado_trabajador',
+            'estado_preview',
+            'bruto_periodo',
+            'conceptos_a_favor',
+            'conceptos_en_contra',
+            'anticipos_saldo',
+            'prestamos_saldo',
+            'deducciones_informativas',
+            'pagos_caja_aplicados',
+            'pagos_caja_pagados',
+            'pagos_caja_revertidos',
+            'reversiones_detectadas',
+            'neto_sugerido',
+            'pendiente_pago_sugerido',
+            'ultimo_pago_caja',
+        ]);
+
+        $trabajadores = is_array($preview['trabajadores'] ?? null) ? $preview['trabajadores'] : [];
+        foreach ($trabajadores as $trabajador) {
+            fputcsv($out, [
+                $fechaInicio,
+                $fechaFin,
+                (int)($trabajador['id'] ?? 0),
+                $this->csvReportePagosCajaValor($trabajador['nombre_completo'] ?? ''),
+                $this->csvReportePagosCajaValor($trabajador['identificacion'] ?? ''),
+                $this->csvReportePagosCajaValor($trabajador['rol_laboral'] ?? ''),
+                $this->csvReportePagosCajaValor($trabajador['estado'] ?? ''),
+                $this->csvReportePagosCajaValor($trabajador['estado_preview_nomina'] ?? ''),
+                number_format((float)($trabajador['bruto_periodo'] ?? 0), 2, '.', ''),
+                number_format((float)($trabajador['conceptos_a_favor'] ?? 0), 2, '.', ''),
+                number_format((float)($trabajador['conceptos_en_contra'] ?? 0), 2, '.', ''),
+                number_format((float)($trabajador['anticipos_saldo'] ?? 0), 2, '.', ''),
+                number_format((float)($trabajador['prestamos_saldo'] ?? 0), 2, '.', ''),
+                number_format((float)($trabajador['deducciones_informativas'] ?? 0), 2, '.', ''),
+                number_format((float)($trabajador['pagos_caja_aplicados'] ?? 0), 2, '.', ''),
+                (int)($trabajador['pagos_caja_pagados'] ?? 0),
+                (int)($trabajador['pagos_caja_revertidos'] ?? 0),
+                number_format((float)($trabajador['reversiones_detectadas'] ?? 0), 2, '.', ''),
+                number_format((float)($trabajador['neto_sugerido'] ?? 0), 2, '.', ''),
+                number_format((float)($trabajador['pendiente_pago_sugerido'] ?? 0), 2, '.', ''),
+                $this->csvReportePagosCajaValor($trabajador['ultimo_pago_caja'] ?? ''),
             ]);
         }
 

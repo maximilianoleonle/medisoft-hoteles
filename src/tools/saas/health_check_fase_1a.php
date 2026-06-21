@@ -3114,6 +3114,7 @@ if (!is_file($routesPath)) {
         ['method' => 'get', 'path' => 'trabajadores'],
         ['method' => 'get', 'path' => 'trabajadores/reporte'],
         ['method' => 'get', 'path' => 'trabajadores/nomina/preview'],
+        ['method' => 'get', 'path' => 'trabajadores/nomina/preview/exportar'],
         ['method' => 'get', 'path' => 'trabajadores/pagos-caja/reporte'],
         ['method' => 'get', 'path' => 'trabajadores/pagos-caja/reporte/exportar'],
         ['method' => 'get', 'path' => 'trabajadores/pagos-caja/simulador'],
@@ -3139,7 +3140,7 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($missingWorkerRoutes)) {
-        hcOk('Rutas Personal NP-F-A/5E-C/5E-D-A/5E-G-A/14E/14F registradas: CRUD, reportes, preview nomina, export CSV, ledger, simulador Caja, pago y reversion laboral controlada.');
+        hcOk('Rutas Personal NP-F-A/5E-C/5E-D-A/5E-G-A/5E-H-A/14E/14F registradas: CRUD, reportes, preview nomina, export CSV, ledger, simulador Caja, pago y reversion laboral controlada.');
     } else {
         hcWarning(
             'Rutas Personal NP-F-A/5E-C/5E-D-A faltantes: ' . implode(', ', $missingWorkerRoutes),
@@ -3152,6 +3153,7 @@ if (!is_file($routesPath)) {
         'GET /trabajadores -> trabajador::index',
         'GET /trabajadores/reporte -> trabajador::reporte',
         'GET /trabajadores/nomina/preview -> trabajador::nominapreview',
+        'GET /trabajadores/nomina/preview/exportar -> trabajador::exportarnominapreview',
         'GET /trabajadores/pagos-caja/reporte -> trabajador::reportepagoscaja',
         'GET /trabajadores/pagos-caja/reporte/exportar -> trabajador::exportarreportepagoscaja',
         'GET /trabajadores/pagos-caja/simulador -> trabajador::simuladorpagocaja',
@@ -3181,7 +3183,7 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($forbiddenWorkerRoutes)) {
-        hcOk('Personal NP-F-A/5E-C/5E-D-A/5E-G-A/14E/14F mantiene solo rutas autorizadas; reportes/preview/export/simulador GET y pago/reversion POST controlados.');
+        hcOk('Personal NP-F-A/5E-C/5E-D-A/5E-G-A/5E-H-A/14E/14F mantiene solo rutas autorizadas; reportes/preview/export/simulador GET y pago/reversion POST controlados.');
     } else {
         hcError(
             'Personal NP-F-A tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenWorkerRoutes),

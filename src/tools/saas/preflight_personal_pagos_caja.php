@@ -593,6 +593,10 @@ if ($routes === []) {
             && trim((string)$route['path'], '/') === 'trabajadores/nomina/preview'
             && strtolower((string)$route['controller']) === 'trabajador'
             && strtolower((string)$route['action']) === 'nominapreview';
+        $isReadOnlyPayrollPreviewExport = strtolower((string)$route['method']) === 'get'
+            && trim((string)$route['path'], '/') === 'trabajadores/nomina/preview/exportar'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'exportarnominapreview';
         $isPaymentRoute = strtolower((string)$route['method']) === 'post'
             && trim((string)$route['path'], '/') === 'trabajadores/{id:[0-9]+}/registrar-pago-caja'
             && strtolower((string)$route['controller']) === 'trabajador'
@@ -605,6 +609,7 @@ if ($routes === []) {
             && !$isReadOnlyReport
             && !$isReadOnlyReportExport
             && !$isReadOnlyPayrollPreview
+            && !$isReadOnlyPayrollPreviewExport
             && !$isPaymentRoute
             &&
             strpos($signature, 'trabajadores') !== false
@@ -656,6 +661,16 @@ if ($routes === []) {
         lpcWarning(
             'Ruta 5E-G-A GET /trabajadores/nomina/preview no esta registrada.',
             'Registrar el GET read-only antes de QA del preview de nomina por periodo.'
+        );
+    }
+
+    $payrollPreviewExportRouteOk = lpcRouteExists($routes, 'trabajadores/nomina/preview/exportar', 'get');
+    if ($payrollPreviewExportRouteOk) {
+        lpcOk('Ruta 5E-H-A GET /trabajadores/nomina/preview/exportar registrada como export CSV read-only.');
+    } else {
+        lpcWarning(
+            'Ruta 5E-H-A GET /trabajadores/nomina/preview/exportar no esta registrada.',
+            'Registrar el GET read-only antes de QA del export CSV de pre-nomina.'
         );
     }
 
@@ -737,8 +752,14 @@ if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($work
         && strpos($workerModelCode, 'function normalizarFiltrosNominaPreview') !== false
         && strpos($workerModelCode, 'function pagosCajaNominaPreviewPorTrabajador') !== false
         && strpos($workerControllerCode, 'function nominaPreviewAction') !== false
+        && strpos($workerControllerCode, 'function exportarNominaPreviewAction') !== false
+        && strpos($workerControllerCode, 'function descargarNominaPreviewCsv') !== false
+        && strpos($workerControllerCode, 'nominaPreviewPorHotel($hotelId, $filtros, 500)') !== false
+        && strpos($workerControllerCode, 'X-Content-Type-Options: nosniff') !== false
         && strpos($workerControllerCode, 'trabajadores/nomina_preview') !== false
         && strpos($workerPayrollPreviewViewCode, "action=\"<?= url('trabajadores/nomina/preview') ?>\"") !== false
+        && strpos($workerPayrollPreviewViewCode, 'trabajadores/nomina/preview/exportar') !== false
+        && strpos($workerPayrollPreviewViewCode, 'Exportar CSV') !== false
         && strpos($workerPayrollPreviewViewCode, 'method="GET"') !== false
         && strpos($workerPayrollPreviewViewCode, 'method="POST"') === false
         && strpos($workerPayrollPreviewViewCode, 'csrf_field()') === false
