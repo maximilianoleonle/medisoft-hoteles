@@ -74,6 +74,20 @@ class TrabajadorController extends Controller
         ]);
     }
 
+    public function nominaPreviewAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $filtros = $this->filtrosNominaPreviewDesdeQuery();
+        $tablaDisponible = $this->trabajadorModel->tablasNominaPreviewDisponibles();
+        $preview = $this->trabajadorModel->nominaPreviewPorHotel($hotelId, $filtros, 250);
+
+        View::renderTemplate('trabajadores/nomina_preview', [
+            'title' => 'Preview nomina laboral - ' . current_hotel_display_name(),
+            'preview' => $preview,
+            'tablaDisponible' => $tablaDisponible,
+        ]);
+    }
+
     public function reportePagosCajaAction(): void
     {
         $hotelId = $this->hotelIdActual();
@@ -648,6 +662,20 @@ class TrabajadorController extends Controller
                 'cancelada' => 0,
             ],
             'trabajadores_relevantes' => [],
+        ];
+    }
+
+    private function filtrosNominaPreviewDesdeQuery(): array
+    {
+        return [
+            'fecha_inicio' => $this->getQuery('fecha_inicio', ''),
+            'fecha_fin' => $this->getQuery('fecha_fin', ''),
+            'trabajador_id' => $this->getQuery('trabajador_id', ''),
+            'buscar' => $this->getQuery('buscar', ''),
+            'rol_laboral' => $this->getQuery('rol_laboral', ''),
+            'estado' => $this->getQuery('estado', 'activos'),
+            'solo_con_saldo' => $this->getQuery('solo_con_saldo', '0'),
+            'incluir_pagos_caja' => $this->getQuery('incluir_pagos_caja', '1'),
         ];
     }
 

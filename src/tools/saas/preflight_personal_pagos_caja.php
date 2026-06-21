@@ -207,6 +207,7 @@ $workerDetailViewPath = $appRoot . '/app/views/trabajadores/ver.php';
 $workerReportViewPath = $appRoot . '/app/views/trabajadores/reporte.php';
 $workerCashSimulatorViewPath = $appRoot . '/app/views/trabajadores/simulador_pago_caja.php';
 $workerCashReportViewPath = $appRoot . '/app/views/trabajadores/reporte_pagos_caja.php';
+$workerPayrollPreviewViewPath = $appRoot . '/app/views/trabajadores/nomina_preview.php';
 $auditServicePath = $appRoot . '/app/services/AuditService.php';
 $paymentServicePath = $appRoot . '/app/services/TrabajadorPagoCajaService.php';
 $rollbackToolPath = $appRoot . '/tools/saas/probar_pago_laboral_caja.php';
@@ -588,6 +589,10 @@ if ($routes === []) {
             && trim((string)$route['path'], '/') === 'trabajadores/pagos-caja/reporte/exportar'
             && strtolower((string)$route['controller']) === 'trabajador'
             && strtolower((string)$route['action']) === 'exportarreportepagoscaja';
+        $isReadOnlyPayrollPreview = strtolower((string)$route['method']) === 'get'
+            && trim((string)$route['path'], '/') === 'trabajadores/nomina/preview'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'nominapreview';
         $isPaymentRoute = strtolower((string)$route['method']) === 'post'
             && trim((string)$route['path'], '/') === 'trabajadores/{id:[0-9]+}/registrar-pago-caja'
             && strtolower((string)$route['controller']) === 'trabajador'
@@ -599,6 +604,7 @@ if ($routes === []) {
             !$isReadOnlySimulator
             && !$isReadOnlyReport
             && !$isReadOnlyReportExport
+            && !$isReadOnlyPayrollPreview
             && !$isPaymentRoute
             &&
             strpos($signature, 'trabajadores') !== false
@@ -640,6 +646,16 @@ if ($routes === []) {
         lpcWarning(
             'Ruta 14F GET /trabajadores/pagos-caja/reporte/exportar no esta registrada.',
             'Registrar el GET read-only antes de QA del export CSV laboral Caja.'
+        );
+    }
+
+    $payrollPreviewRouteOk = lpcRouteExists($routes, 'trabajadores/nomina/preview', 'get');
+    if ($payrollPreviewRouteOk) {
+        lpcOk('Ruta 5E-G-A GET /trabajadores/nomina/preview registrada como preview read-only.');
+    } else {
+        lpcWarning(
+            'Ruta 5E-G-A GET /trabajadores/nomina/preview no esta registrada.',
+            'Registrar el GET read-only antes de QA del preview de nomina por periodo.'
         );
     }
 
@@ -701,6 +717,46 @@ if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($work
     lpcWarning(
         'Archivos del reporte 14E no estan completos.',
         'Crear modelo/controlador/vista read-only antes de cerrar reporte laboral Caja.'
+    );
+}
+
+if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($workerPayrollPreviewViewPath)) {
+    $workerModelCode = (string) file_get_contents($workerModelPath);
+    $workerControllerCode = (string) file_get_contents($workerControllerPath);
+    $workerPayrollPreviewViewCode = (string) file_get_contents($workerPayrollPreviewViewPath);
+    $workerPayrollPreviewSurfaceCode = $workerControllerCode . "\n" . $workerPayrollPreviewViewCode;
+    $payrollPreviewWriteForbidden = preg_match(
+        '/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|REPLACE\s+INTO|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE)\s+(trabajadores|trabajador_pagos|trabajador_anticipos|trabajador_prestamos|trabajador_pagos_caja|movimientos_caja|cortes_caja|cajas)\b/i',
+        $workerPayrollPreviewSurfaceCode
+    );
+
+    if (
+        !$payrollPreviewWriteForbidden
+        && strpos($workerModelCode, 'function nominaPreviewPorHotel') !== false
+        && strpos($workerModelCode, 'function tablasNominaPreviewDisponibles') !== false
+        && strpos($workerModelCode, 'function normalizarFiltrosNominaPreview') !== false
+        && strpos($workerModelCode, 'function pagosCajaNominaPreviewPorTrabajador') !== false
+        && strpos($workerControllerCode, 'function nominaPreviewAction') !== false
+        && strpos($workerControllerCode, 'trabajadores/nomina_preview') !== false
+        && strpos($workerPayrollPreviewViewCode, "action=\"<?= url('trabajadores/nomina/preview') ?>\"") !== false
+        && strpos($workerPayrollPreviewViewCode, 'method="GET"') !== false
+        && strpos($workerPayrollPreviewViewCode, 'method="POST"') === false
+        && strpos($workerPayrollPreviewViewCode, 'csrf_field()') === false
+        && strpos($workerPayrollPreviewViewCode, 'Solo GET') !== false
+        && strpos($workerPayrollPreviewViewCode, 'registrar-pago-caja') === false
+        && strpos($workerPayrollPreviewViewCode, 'Pagar') === false
+    ) {
+        lpcOk('Preview 5E-G-A de nomina por periodo es GET/read-only y no expone pagos masivos.');
+    } else {
+        lpcError(
+            'Preview 5E-G-A de nomina por periodo incompleto o con riesgo de escritura.',
+            'Mantener nomina_preview como GET/read-only, sin POST, sin CSRF, sin pago masivo y sin escrituras laborales/Caja.'
+        );
+    }
+} else {
+    lpcWarning(
+        'Archivos del preview 5E-G-A no estan completos.',
+        'Crear modelo/controlador/vista read-only antes de QA de pre-nomina.'
     );
 }
 

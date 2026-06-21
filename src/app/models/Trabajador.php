@@ -67,6 +67,24 @@ class Trabajador extends Model
         return true;
     }
 
+    public function tablasNominaPreviewDisponibles(): bool
+    {
+        foreach ([
+            'trabajadores',
+            'trabajador_pagos',
+            'trabajador_anticipos',
+            'trabajador_prestamos',
+            'trabajador_pagos_caja',
+            'movimientos_caja',
+        ] as $tabla) {
+            if (!$this->tablaExiste($tabla)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function listarPorHotel(int $hotelId, array $filtros = [], int $limite = 100): array
     {
         if ($hotelId <= 0 || !$this->tablaDisponible()) {
@@ -554,6 +572,73 @@ class Trabajador extends Model
         $reporte['por_corte'] = $stmt ? ($stmt->fetchAll() ?: []) : [];
 
         return $reporte;
+    }
+
+    public function nominaPreviewPorHotel(int $hotelId, array $filtros = [], int $limite = 200): array
+    {
+        $filtros = $this->normalizarFiltrosNominaPreview($filtros);
+        $preview = [
+            'trabajadores' => [],
+            'resumen' => $this->resumenVacioNominaPreview(),
+            'filtros_normalizados' => $filtros,
+            'bloqueos' => [],
+        ];
+
+        if ($hotelId <= 0) {
+            $preview['bloqueos'][] = 'No hay hotel activo para calcular el preview.';
+            return $preview;
+        }
+
+        if (!$this->tablasNominaPreviewDisponibles()) {
+            $preview['bloqueos'][] = 'Faltan tablas laborales o de Caja para calcular el preview con seguridad.';
+            return $preview;
+        }
+
+        if (!empty($filtros['periodo_invalido'])) {
+            $preview['bloqueos'][] = 'El periodo seleccionado no es valido.';
+            return $preview;
+        }
+
+        if (!empty($filtros['periodo_requerido'])) {
+            $preview['bloqueos'][] = 'Selecciona fecha inicio y fecha fin para revisar la pre-nomina.';
+            return $preview;
+        }
+
+        $limite = max(1, min(300, $limite));
+        $filas = $this->trabajadoresNominaPreviewBase($hotelId, $filtros, $limite);
+        foreach ($filas as $fila) {
+            $resumenLaboral = $this->resumenNominaPreviewPorTrabajador(
+                (int)($fila['id'] ?? 0),
+                $hotelId,
+                $filtros['fecha_inicio'],
+                $filtros['fecha_fin']
+            );
+            $pagosCaja = $filtros['incluir_pagos_caja']
+                ? $this->pagosCajaNominaPreviewPorTrabajador(
+                    (int)($fila['id'] ?? 0),
+                    $hotelId,
+                    $filtros['fecha_inicio'],
+                    $filtros['fecha_fin']
+                )
+                : $this->pagosCajaVacioNominaPreview();
+
+            $trabajador = $this->evaluarNominaPreviewTrabajador(
+                $fila,
+                $resumenLaboral,
+                $pagosCaja,
+                $filtros
+            );
+
+            if (!empty($filtros['solo_con_saldo']) && (float)($trabajador['neto_sugerido'] ?? 0) <= 0) {
+                continue;
+            }
+
+            $preview['trabajadores'][] = $trabajador;
+        }
+
+        $preview['resumen'] = $this->resumenNominaPreview($preview['trabajadores']);
+
+        return $preview;
     }
 
     public function usuariosVinculablesPorHotel(int $hotelId): array
@@ -1376,6 +1461,350 @@ class Trabajador extends Model
         );
 
         return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
+    private function normalizarFiltrosNominaPreview(array $filtros): array
+    {
+        $fechaInicioRaw = trim((string)($filtros['fecha_inicio'] ?? ''));
+        $fechaFinRaw = trim((string)($filtros['fecha_fin'] ?? ''));
+        $fechaInicio = $this->nullableFecha($fechaInicioRaw);
+        $fechaFin = $this->nullableFecha($fechaFinRaw);
+
+        $estado = strtolower(trim((string)($filtros['estado'] ?? 'activos')));
+        if (!in_array($estado, ['activos', 'todos', 'inactivos', 'baja'], true)) {
+            $estado = 'activos';
+        }
+
+        $soloConSaldo = $this->normalizarBooleanoNominaPreview($filtros['solo_con_saldo'] ?? null, false);
+        $incluirPagosCaja = $this->normalizarBooleanoNominaPreview($filtros['incluir_pagos_caja'] ?? null, true);
+
+        return [
+            'fecha_inicio' => $fechaInicio,
+            'fecha_fin' => $fechaFin,
+            'fecha_inicio_raw' => $fechaInicioRaw,
+            'fecha_fin_raw' => $fechaFinRaw,
+            'periodo_requerido' => $fechaInicio === null || $fechaFin === null,
+            'periodo_invalido' => (
+                ($fechaInicioRaw !== '' && $fechaInicio === null)
+                || ($fechaFinRaw !== '' && $fechaFin === null)
+                || ($fechaInicio !== null && $fechaFin !== null && $fechaFin < $fechaInicio)
+            ),
+            'trabajador_id' => max(0, (int)($filtros['trabajador_id'] ?? 0)),
+            'buscar' => $this->limpiarTexto($filtros['buscar'] ?? '', 120),
+            'rol_laboral' => $this->limpiarTexto($filtros['rol_laboral'] ?? '', 80),
+            'estado' => $estado,
+            'solo_con_saldo' => $soloConSaldo,
+            'incluir_pagos_caja' => $incluirPagosCaja,
+        ];
+    }
+
+    private function trabajadoresNominaPreviewBase(int $hotelId, array $filtros, int $limite): array
+    {
+        $where = ['t.hotel_id = ?'];
+        $params = [$hotelId];
+
+        if ((int)($filtros['trabajador_id'] ?? 0) > 0) {
+            $where[] = 't.id = ?';
+            $params[] = (int)$filtros['trabajador_id'];
+        }
+
+        $estado = (string)($filtros['estado'] ?? 'activos');
+        if ($estado === 'inactivos') {
+            $where[] = "t.estado = 'inactivo'";
+        } elseif ($estado === 'baja') {
+            $where[] = "t.estado = 'baja'";
+        } elseif ($estado !== 'todos') {
+            $where[] = "t.estado = 'activo'";
+        }
+
+        $buscar = trim((string)($filtros['buscar'] ?? ''));
+        if ($buscar !== '') {
+            $like = '%' . $buscar . '%';
+            $where[] = '(t.nombre_completo LIKE ? OR t.identificacion LIKE ? OR t.rol_laboral LIKE ? OR t.telefono LIKE ? OR t.email LIKE ?)';
+            array_push($params, $like, $like, $like, $like, $like);
+        }
+
+        $rol = trim((string)($filtros['rol_laboral'] ?? ''));
+        if ($rol !== '') {
+            $where[] = 't.rol_laboral LIKE ?';
+            $params[] = '%' . $rol . '%';
+        }
+
+        $stmt = $this->db->query(
+            "SELECT t.id,
+                    t.hotel_id,
+                    t.usuario_id,
+                    t.nombre_completo,
+                    t.identificacion,
+                    t.rol_laboral,
+                    t.telefono,
+                    t.email,
+                    t.estado,
+                    t.fecha_alta,
+                    t.fecha_baja,
+                    t.salario_base,
+                    t.periodicidad_pago
+             FROM trabajadores t
+             WHERE " . implode(' AND ', $where) . "
+             ORDER BY FIELD(t.estado, 'activo', 'inactivo', 'baja'), t.nombre_completo ASC
+             LIMIT {$limite}",
+            $params
+        );
+
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
+    private function resumenNominaPreviewPorTrabajador(
+        int $trabajadorId,
+        int $hotelId,
+        ?string $fechaInicio,
+        ?string $fechaFin
+    ): array {
+        $resumen = [
+            'conceptos_count' => 0,
+            'conceptos_a_favor' => '0.00',
+            'conceptos_en_contra' => '0.00',
+            'bruto_periodo' => '0.00',
+            'anticipos_count' => 0,
+            'anticipos_saldo' => '0.00',
+            'prestamos_count' => 0,
+            'prestamos_saldo' => '0.00',
+            'deducciones_informativas' => '0.00',
+        ];
+
+        if ($trabajadorId <= 0 || $hotelId <= 0 || $fechaInicio === null || $fechaFin === null) {
+            return $resumen;
+        }
+
+        if ($this->tablaExiste('trabajador_pagos')) {
+            $row = $this->fetchOne(
+                "SELECT SUM(CASE WHEN estado = 'activo' THEN 1 ELSE 0 END) AS total,
+                        COALESCE(SUM(CASE WHEN estado = 'activo' AND efecto = 'a_favor' THEN monto ELSE 0 END), 0) AS a_favor,
+                        COALESCE(SUM(CASE WHEN estado = 'activo' AND efecto = 'en_contra' THEN monto ELSE 0 END), 0) AS en_contra
+                 FROM trabajador_pagos
+                 WHERE hotel_id = ?
+                   AND trabajador_id = ?
+                   AND COALESCE(periodo_fin, fecha) >= ?
+                   AND COALESCE(periodo_inicio, fecha) <= ?",
+                [$hotelId, $trabajadorId, $fechaInicio, $fechaFin]
+            );
+
+            $resumen['conceptos_count'] = (int)($row['total'] ?? 0);
+            $resumen['conceptos_a_favor'] = $this->decimal($row['a_favor'] ?? 0);
+            $resumen['conceptos_en_contra'] = $this->decimal($row['en_contra'] ?? 0);
+        }
+
+        if ($this->tablaExiste('trabajador_anticipos')) {
+            $row = $this->fetchOne(
+                "SELECT SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) AS total,
+                        COALESCE(SUM(CASE WHEN estado = 'pendiente' THEN saldo_pendiente ELSE 0 END), 0) AS saldo
+                 FROM trabajador_anticipos
+                 WHERE hotel_id = ?
+                   AND trabajador_id = ?",
+                [$hotelId, $trabajadorId]
+            );
+            $resumen['anticipos_count'] = (int)($row['total'] ?? 0);
+            $resumen['anticipos_saldo'] = $this->decimal($row['saldo'] ?? 0);
+        }
+
+        if ($this->tablaExiste('trabajador_prestamos')) {
+            $row = $this->fetchOne(
+                "SELECT SUM(CASE WHEN estado = 'vigente' THEN 1 ELSE 0 END) AS total,
+                        COALESCE(SUM(CASE WHEN estado = 'vigente' THEN saldo_pendiente ELSE 0 END), 0) AS saldo
+                 FROM trabajador_prestamos
+                 WHERE hotel_id = ?
+                   AND trabajador_id = ?",
+                [$hotelId, $trabajadorId]
+            );
+            $resumen['prestamos_count'] = (int)($row['total'] ?? 0);
+            $resumen['prestamos_saldo'] = $this->decimal($row['saldo'] ?? 0);
+        }
+
+        $bruto = (float)$resumen['conceptos_a_favor'] - (float)$resumen['conceptos_en_contra'];
+        $deducciones = (float)$resumen['anticipos_saldo'] + (float)$resumen['prestamos_saldo'];
+        $resumen['bruto_periodo'] = $this->decimal($bruto);
+        $resumen['deducciones_informativas'] = $this->decimal($deducciones);
+
+        return $resumen;
+    }
+
+    private function pagosCajaNominaPreviewPorTrabajador(
+        int $trabajadorId,
+        int $hotelId,
+        ?string $fechaInicio,
+        ?string $fechaFin
+    ): array {
+        $resumen = $this->pagosCajaVacioNominaPreview();
+
+        if ($trabajadorId <= 0 || $hotelId <= 0 || $fechaInicio === null || $fechaFin === null) {
+            return $resumen;
+        }
+
+        if (!$this->tablaExiste('trabajador_pagos_caja') || !$this->tablaExiste('movimientos_caja')) {
+            return $resumen;
+        }
+
+        $row = $this->fetchOne(
+            "SELECT COUNT(*) AS total,
+                    SUM(CASE WHEN pc.estado = 'pagado' THEN 1 ELSE 0 END) AS pagados,
+                    SUM(CASE WHEN pc.estado = 'revertido' THEN 1 ELSE 0 END) AS revertidos,
+                    COALESCE(SUM(CASE WHEN pc.estado = 'pagado' THEN pc.monto ELSE 0 END), 0) AS pagado_total,
+                    COALESCE(SUM(CASE WHEN pc.estado = 'revertido' THEN pc.monto ELSE 0 END), 0) AS revertido_total,
+                    COALESCE(SUM(CASE WHEN mcr.id IS NOT NULL THEN mcr.monto ELSE 0 END), 0) AS reversion_caja_total,
+                    MAX(pc.fecha_pago) AS ultimo_pago
+             FROM trabajador_pagos_caja pc
+             LEFT JOIN movimientos_caja mcr
+                ON mcr.hotel_id = pc.hotel_id
+               AND mcr.tipo = 'ingreso'
+               AND mcr.categoria = 'Reversion Pago laboral'
+               AND mcr.referencia = CONCAT('REV-NOM-TRAB-', pc.trabajador_id, '-PAGO-', pc.id)
+             WHERE pc.hotel_id = ?
+               AND pc.trabajador_id = ?
+               AND COALESCE(pc.periodo_fin, DATE(pc.fecha_pago)) >= ?
+               AND COALESCE(pc.periodo_inicio, DATE(pc.fecha_pago)) <= ?",
+            [$hotelId, $trabajadorId, $fechaInicio, $fechaFin]
+        );
+
+        $resumen['pagos_caja_count'] = (int)($row['total'] ?? 0);
+        $resumen['pagos_caja_pagados'] = (int)($row['pagados'] ?? 0);
+        $resumen['pagos_caja_revertidos'] = (int)($row['revertidos'] ?? 0);
+        $resumen['pagos_caja_aplicados'] = $this->decimal($row['pagado_total'] ?? 0);
+        $resumen['pagos_caja_revertidos_total'] = $this->decimal($row['revertido_total'] ?? 0);
+        $resumen['reversiones_detectadas'] = $this->decimal($row['reversion_caja_total'] ?? 0);
+        $resumen['ultimo_pago_caja'] = $row['ultimo_pago'] ?? null;
+
+        return $resumen;
+    }
+
+    private function pagosCajaVacioNominaPreview(): array
+    {
+        return [
+            'pagos_caja_count' => 0,
+            'pagos_caja_pagados' => 0,
+            'pagos_caja_revertidos' => 0,
+            'pagos_caja_aplicados' => '0.00',
+            'pagos_caja_revertidos_total' => '0.00',
+            'reversiones_detectadas' => '0.00',
+            'ultimo_pago_caja' => null,
+        ];
+    }
+
+    private function evaluarNominaPreviewTrabajador(
+        array $trabajador,
+        array $resumenLaboral,
+        array $pagosCaja,
+        array $filtros
+    ): array {
+        $bruto = (float)($resumenLaboral['bruto_periodo'] ?? 0);
+        $deducciones = (float)($resumenLaboral['deducciones_informativas'] ?? 0);
+        $pagosAplicados = !empty($filtros['incluir_pagos_caja'])
+            ? (float)($pagosCaja['pagos_caja_aplicados'] ?? 0)
+            : 0.0;
+        $neto = $bruto - $deducciones - $pagosAplicados;
+
+        $movimientos = (int)($resumenLaboral['conceptos_count'] ?? 0)
+            + (int)($resumenLaboral['anticipos_count'] ?? 0)
+            + (int)($resumenLaboral['prestamos_count'] ?? 0)
+            + (int)($pagosCaja['pagos_caja_count'] ?? 0);
+
+        $bloqueos = [];
+        if (($trabajador['estado'] ?? '') !== 'activo') {
+            $bloqueos[] = 'Trabajador no activo.';
+        }
+
+        if (!empty($bloqueos)) {
+            $estadoPreview = 'bloqueado';
+        } elseif ($movimientos === 0) {
+            $estadoPreview = 'sin_movimientos';
+        } elseif ($neto > 0) {
+            $estadoPreview = 'por_pagar';
+        } else {
+            $estadoPreview = 'cubierto';
+        }
+
+        $trabajador['conceptos_count'] = (int)($resumenLaboral['conceptos_count'] ?? 0);
+        $trabajador['conceptos_a_favor'] = $this->decimal($resumenLaboral['conceptos_a_favor'] ?? 0);
+        $trabajador['conceptos_en_contra'] = $this->decimal($resumenLaboral['conceptos_en_contra'] ?? 0);
+        $trabajador['bruto_periodo'] = $this->decimal($bruto);
+        $trabajador['anticipos_count'] = (int)($resumenLaboral['anticipos_count'] ?? 0);
+        $trabajador['anticipos_saldo'] = $this->decimal($resumenLaboral['anticipos_saldo'] ?? 0);
+        $trabajador['prestamos_count'] = (int)($resumenLaboral['prestamos_count'] ?? 0);
+        $trabajador['prestamos_saldo'] = $this->decimal($resumenLaboral['prestamos_saldo'] ?? 0);
+        $trabajador['deducciones_informativas'] = $this->decimal($deducciones);
+        $trabajador['pagos_caja_count'] = (int)($pagosCaja['pagos_caja_count'] ?? 0);
+        $trabajador['pagos_caja_pagados'] = (int)($pagosCaja['pagos_caja_pagados'] ?? 0);
+        $trabajador['pagos_caja_revertidos'] = (int)($pagosCaja['pagos_caja_revertidos'] ?? 0);
+        $trabajador['pagos_caja_aplicados'] = $this->decimal($pagosAplicados);
+        $trabajador['pagos_caja_revertidos_total'] = $this->decimal($pagosCaja['pagos_caja_revertidos_total'] ?? 0);
+        $trabajador['reversiones_detectadas'] = $this->decimal($pagosCaja['reversiones_detectadas'] ?? 0);
+        $trabajador['ultimo_pago_caja'] = $pagosCaja['ultimo_pago_caja'] ?? null;
+        $trabajador['neto_sugerido'] = $this->decimal($neto);
+        $trabajador['pendiente_pago_sugerido'] = $this->decimal(max(0, $neto));
+        $trabajador['estado_preview_nomina'] = $estadoPreview;
+        $trabajador['motivo_bloqueo_nomina'] = implode(' ', $bloqueos);
+
+        return $trabajador;
+    }
+
+    private function resumenNominaPreview(array $trabajadores): array
+    {
+        $resumen = $this->resumenVacioNominaPreview();
+        foreach ($trabajadores as $trabajador) {
+            $estado = (string)($trabajador['estado_preview_nomina'] ?? '');
+            $resumen['trabajadores_total']++;
+            if ($estado === 'por_pagar') {
+                $resumen['por_pagar_count']++;
+            } elseif ($estado === 'cubierto') {
+                $resumen['cubierto_count']++;
+            } elseif ($estado === 'bloqueado') {
+                $resumen['bloqueado_count']++;
+            } elseif ($estado === 'sin_movimientos') {
+                $resumen['sin_movimientos_count']++;
+            }
+
+            $resumen['bruto_total'] = $this->decimal((float)$resumen['bruto_total'] + (float)($trabajador['bruto_periodo'] ?? 0));
+            $resumen['deducciones_total'] = $this->decimal((float)$resumen['deducciones_total'] + (float)($trabajador['deducciones_informativas'] ?? 0));
+            $resumen['pagos_caja_aplicados_total'] = $this->decimal((float)$resumen['pagos_caja_aplicados_total'] + (float)($trabajador['pagos_caja_aplicados'] ?? 0));
+            $resumen['reversiones_detectadas_total'] = $this->decimal((float)$resumen['reversiones_detectadas_total'] + (float)($trabajador['reversiones_detectadas'] ?? 0));
+            $resumen['neto_sugerido_total'] = $this->decimal((float)$resumen['neto_sugerido_total'] + (float)($trabajador['neto_sugerido'] ?? 0));
+            $resumen['pendiente_pago_total'] = $this->decimal((float)$resumen['pendiente_pago_total'] + (float)($trabajador['pendiente_pago_sugerido'] ?? 0));
+        }
+
+        return $resumen;
+    }
+
+    private function resumenVacioNominaPreview(): array
+    {
+        return [
+            'trabajadores_total' => 0,
+            'por_pagar_count' => 0,
+            'cubierto_count' => 0,
+            'bloqueado_count' => 0,
+            'sin_movimientos_count' => 0,
+            'bruto_total' => '0.00',
+            'deducciones_total' => '0.00',
+            'pagos_caja_aplicados_total' => '0.00',
+            'reversiones_detectadas_total' => '0.00',
+            'neto_sugerido_total' => '0.00',
+            'pendiente_pago_total' => '0.00',
+        ];
+    }
+
+    private function normalizarBooleanoNominaPreview($value, bool $default): bool
+    {
+        if ($value === null || $value === '') {
+            return $default;
+        }
+
+        $texto = strtolower(trim((string)$value));
+        if (in_array($texto, ['1', 'true', 'si', 'on', 'yes'], true)) {
+            return true;
+        }
+        if (in_array($texto, ['0', 'false', 'no', 'off'], true)) {
+            return false;
+        }
+
+        return $default;
     }
 
     private function normalizarFiltrosReportePagosCaja(array $filtros): array

@@ -2387,3 +2387,33 @@ Rollback:
 No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
 `trabajador_anticipos`, `trabajador_prestamos`, `trabajador_pagos_caja`, Caja,
 cortes, movimientos de Caja, permisos/auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 5E-G-A
+
+5E-G-A agrega preview GET/read-only de nomina por periodo.
+
+Rollback de codigo:
+
+1. Retirar `GET /trabajadores/nomina/preview` de `src/config/routes.php`.
+2. Retirar `nominaPreviewAction` y `filtrosNominaPreviewDesdeQuery` de
+   `src/app/controllers/TrabajadorController.php`.
+3. Retirar de `src/app/models/Trabajador.php` los metodos de preview:
+   `tablasNominaPreviewDisponibles`, `nominaPreviewPorHotel` y helpers privados
+   asociados a `NominaPreview`.
+4. Retirar `src/app/views/trabajadores/nomina_preview.php`.
+5. Retirar enlace `Pre-nomina` de `src/app/views/trabajadores/index.php`.
+6. Revertir validaciones 5E-G-A en
+   `src/tools/saas/preflight_personal_pagos_caja.php`.
+7. Revertir ruta esperada/firma permitida 5E-G-A en
+   `src/tools/saas/health_check_fase_1a.php`.
+8. Retirar `docs/fase_5E_G_A_nomina_periodo_preview_read_only.md` y referencias
+   documentales.
+
+Verificacion posterior:
+
+- `docker compose exec -T app php -l` en PHP tocados.
+- `docker compose exec -T app php tools/saas/preflight_personal_pagos_caja.php`.
+- `docker compose exec -T app php tools/saas/health_check_fase_1a.php`.
+
+No ejecutar SQL ni tocar datos. Esta fase no crea nomina, pagos, movimientos de Caja,
+recibos, dispersion ni auditorias.

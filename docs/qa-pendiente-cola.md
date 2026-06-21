@@ -2231,3 +2231,28 @@ QA futura sugerida para 5E-G-A:
 3. Confirmar bruto, deducciones informativas, pagos Caja aplicados y neto sugerido.
 4. Confirmar que pagos revertidos no descuentan como pagos vigentes.
 5. Confirmar que no hay POST, pago masivo, movimiento de Caja ni escritura laboral.
+
+## Fase 5E-G-A - Preview read-only de nomina por periodo
+
+Estado: implementacion tecnica validada automaticamente; QA manual pendiente del
+usuario.
+
+Resultado automatico actual:
+
+- Lint PHP: OK en modelo, controlador, vista, index, rutas y checkers.
+- Preflight pagos laborales Caja: `OK: 47`, `WARNING: 0`, `ERROR: 0`.
+- Health general: `OK: 313`, `WARNING: 25`, `ERROR: 0`.
+- Ruta local sin sesion: `GET /trabajadores/nomina/preview` responde `303` a login.
+- Carga de rutas: `ROUTES_LOAD_OK`.
+- Prueba CLI del modelo: hotel `4`, trabajadores `1`, bloqueos `0`, neto `100.00`.
+
+Revision manual recomendada:
+
+1. Abrir `/trabajadores/nomina/preview`.
+2. Confirmar que sin fechas muestra bloqueo por periodo requerido.
+3. Seleccionar un periodo valido.
+4. Confirmar que aparecen solo trabajadores del hotel actual.
+5. Confirmar bruto, deducciones informativas, pagos Caja aplicados y neto sugerido.
+6. Activar/desactivar `Pagos Caja` y confirmar que no escribe datos.
+7. Activar `Con saldo` y confirmar que filtra trabajadores con neto positivo.
+8. Confirmar que no hay botones de pago masivo, recibo oficial, dispersion ni POST.

@@ -2195,3 +2195,23 @@ Estado formal:
   permisos/auth, PWA/offline y `/api/sync`.
 - Siguiente paso seguro: `5E-G-A` solo con autorizacion explicita para tocar ruta,
   controlador, modelo, vista y checkers en modo GET/read-only.
+
+## 5E-G-A Preview read-only de nomina por periodo
+
+Estado formal:
+`PREVIEW_5E_G_A_NOMINA_PERIODO_READ_ONLY_COMPLETADO_QA_MANUAL_PENDIENTE`.
+
+- Documento creado:
+  `docs/fase_5E_G_A_nomina_periodo_preview_read_only.md`.
+- Ruta nueva:
+  `GET /trabajadores/nomina/preview`.
+- Implementa filtros GET por periodo, trabajador, busqueda, rol, estado, solo con saldo
+  e incluir pagos Caja.
+- Calcula bruto del periodo, deducciones informativas, pagos Caja aplicados,
+  reversiones detectadas, neto sugerido y pendiente sugerido.
+- La vista no tiene POST, CSRF, pago masivo, recibos, dispersion ni acciones de Caja.
+- Validaciones automaticas: preflight pagos laborales Caja `OK: 47`, `WARNING: 0`,
+  `ERROR: 0`; health general `OK: 313`, `WARNING: 25`, `ERROR: 0`.
+- Prueba CLI del modelo: hotel `4`, trabajadores `1`, bloqueos `0`, neto `100.00`.
+- Siguiente paso seguro: QA manual del preview y luego cierre documental `5E-G-F` si
+  la prueba pasa.

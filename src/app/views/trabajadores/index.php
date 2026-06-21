@@ -163,6 +163,10 @@ $estado = (string)($filtros['estado'] ?? 'activos');
                         <i class="fas fa-chart-pie"></i>
                         Reporte
                     </a>
+                    <a class="worker-btn" href="<?= url('trabajadores/nomina/preview') ?>">
+                        <i class="fas fa-clipboard-list"></i>
+                        Pre-nomina
+                    </a>
                     <a class="worker-btn" href="<?= url('trabajadores/pagos-caja/simulador') ?>">
                         <i class="fas fa-cash-register"></i>
                         Simulador Caja
