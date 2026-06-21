@@ -3113,11 +3113,13 @@ if (!is_file($routesPath)) {
     $workerExpectedRoutes = [
         ['method' => 'get', 'path' => 'trabajadores'],
         ['method' => 'get', 'path' => 'trabajadores/reporte'],
+        ['method' => 'get', 'path' => 'trabajadores/pagos-caja/reporte'],
         ['method' => 'get', 'path' => 'trabajadores/pagos-caja/simulador'],
         ['method' => 'get', 'path' => 'trabajadores/crear'],
         ['method' => 'post', 'path' => 'trabajadores'],
         ['method' => 'get', 'path' => 'trabajadores/{id:[0-9]+}'],
         ['method' => 'post', 'path' => 'trabajadores/{id:[0-9]+}/registrar-pago-caja'],
+        ['method' => 'post', 'path' => 'trabajadores/{id:[0-9]+}/pagos-caja/{pagoid:[0-9]+}/revertir'],
         ['method' => 'get', 'path' => 'trabajadores/{id:[0-9]+}/editar'],
         ['method' => 'post', 'path' => 'trabajadores/{id:[0-9]+}/actualizar'],
         ['method' => 'post', 'path' => 'trabajadores/{id:[0-9]+}/conceptos-laborales'],
@@ -3135,11 +3137,11 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($missingWorkerRoutes)) {
-        hcOk('Rutas Personal NP-F-A/5E-C/5E-D-A registradas: CRUD, reporte, ledger, simulador Caja y pago laboral controlado.');
+        hcOk('Rutas Personal NP-F-A/5E-C/5E-D-A/14E registradas: CRUD, reportes, ledger, simulador Caja, pago y reversion laboral controlada.');
     } else {
         hcWarning(
             'Rutas Personal NP-F-A/5E-C/5E-D-A faltantes: ' . implode(', ', $missingWorkerRoutes),
-            'Registrar CRUD basico, GET reporte, GET simulador Caja, POST ledger laboral y POST pago laboral controlado.'
+            'Registrar CRUD basico, GET reportes, GET simulador Caja, POST ledger laboral, POST pago y POST reversion laboral controlada.'
         );
     }
 
@@ -3147,11 +3149,13 @@ if (!is_file($routesPath)) {
     $allowedWorkerRouteSignatures = [
         'GET /trabajadores -> trabajador::index',
         'GET /trabajadores/reporte -> trabajador::reporte',
+        'GET /trabajadores/pagos-caja/reporte -> trabajador::reportepagoscaja',
         'GET /trabajadores/pagos-caja/simulador -> trabajador::simuladorpagocaja',
         'GET /trabajadores/crear -> trabajador::crear',
         'POST /trabajadores -> trabajador::guardar',
         'GET /trabajadores/{id:[0-9]+} -> trabajador::ver',
         'POST /trabajadores/{id:[0-9]+}/registrar-pago-caja -> trabajador::registrarpagocaja',
+        'POST /trabajadores/{id:[0-9]+}/pagos-caja/{pagoid:[0-9]+}/revertir -> trabajador::revertirpagocaja',
         'GET /trabajadores/{id:[0-9]+}/editar -> trabajador::editar',
         'POST /trabajadores/{id:[0-9]+}/actualizar -> trabajador::actualizar',
         'POST /trabajadores/{id:[0-9]+}/conceptos-laborales -> trabajador::registrarconceptolaboral',
@@ -3173,11 +3177,11 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($forbiddenWorkerRoutes)) {
-        hcOk('Personal NP-F-A/5E-C/5E-D-A mantiene solo rutas autorizadas; simulador GET y pago POST controlado.');
+        hcOk('Personal NP-F-A/5E-C/5E-D-A/14E mantiene solo rutas autorizadas; reportes/simulador GET y pago/reversion POST controlados.');
     } else {
         hcError(
             'Personal NP-F-A tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenWorkerRoutes),
-            'Retirar rutas que no sean CRUD basico, reporte, simulador Caja, ledger laboral manual o pago laboral controlado.'
+            'Retirar rutas que no sean CRUD basico, reportes, simulador Caja, ledger laboral manual, pago o reversion laboral controlada.'
         );
     }
 

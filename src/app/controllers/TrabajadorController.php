@@ -74,6 +74,31 @@ class TrabajadorController extends Controller
         ]);
     }
 
+    public function reportePagosCajaAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $filtros = [
+            'trabajador_id' => $this->getQuery('trabajador_id', ''),
+            'buscar' => $this->getQuery('buscar', ''),
+            'estado' => $this->getQuery('estado', 'todos'),
+            'metodo_pago' => $this->getQuery('metodo_pago', 'todos'),
+            'corte_id' => $this->getQuery('corte_id', ''),
+            'fecha_inicio' => $this->getQuery('fecha_inicio', ''),
+            'fecha_fin' => $this->getQuery('fecha_fin', ''),
+        ];
+
+        $tablaDisponible = $this->trabajadorModel->tablasReportePagosCajaDisponibles();
+        $reporte = $tablaDisponible
+            ? $this->trabajadorModel->reportePagosCajaPorHotel($hotelId, $filtros, 300)
+            : $this->reportePagosCajaVacio($filtros);
+
+        View::renderTemplate('trabajadores/reporte_pagos_caja', [
+            'title' => 'Reporte pagos laborales Caja - ' . current_hotel_display_name(),
+            'reporte' => $reporte,
+            'tablaDisponible' => $tablaDisponible,
+        ]);
+    }
+
     public function simuladorPagoCajaAction(): void
     {
         $hotelId = $this->hotelIdActual();
@@ -618,6 +643,35 @@ class TrabajadorController extends Controller
                 'cancelada' => 0,
             ],
             'trabajadores_relevantes' => [],
+        ];
+    }
+
+    private function reportePagosCajaVacio(array $filtros = []): array
+    {
+        return [
+            'registros' => [],
+            'resumen' => [
+                'total_registros' => 0,
+                'pagados_count' => 0,
+                'revertidos_count' => 0,
+                'egreso_original_total' => '0.00',
+                'pagado_vigente_total' => '0.00',
+                'revertido_total' => '0.00',
+                'reversion_caja_total' => '0.00',
+                'impacto_caja_neto' => '0.00',
+            ],
+            'por_estado' => [],
+            'por_metodo' => [],
+            'por_corte' => [],
+            'filtros_normalizados' => [
+                'trabajador_id' => max(0, (int)($filtros['trabajador_id'] ?? 0)),
+                'buscar' => trim((string)($filtros['buscar'] ?? '')),
+                'estado' => trim((string)($filtros['estado'] ?? 'todos')),
+                'metodo_pago' => trim((string)($filtros['metodo_pago'] ?? 'todos')),
+                'corte_id' => max(0, (int)($filtros['corte_id'] ?? 0)),
+                'fecha_inicio' => trim((string)($filtros['fecha_inicio'] ?? '')),
+                'fecha_fin' => trim((string)($filtros['fecha_fin'] ?? '')),
+            ],
         ];
     }
 

@@ -50,6 +50,23 @@ class Trabajador extends Model
         return true;
     }
 
+    public function tablasReportePagosCajaDisponibles(): bool
+    {
+        foreach ([
+            'trabajadores',
+            'trabajador_pagos_caja',
+            'cajas',
+            'cortes_caja',
+            'movimientos_caja',
+        ] as $tabla) {
+            if (!$this->tablaExiste($tabla)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function listarPorHotel(int $hotelId, array $filtros = [], int $limite = 100): array
     {
         if ($hotelId <= 0 || !$this->tablaDisponible()) {
@@ -392,6 +409,151 @@ class Trabajador extends Model
             'resumen' => $this->resumenSimuladorPagoCaja($trabajadores, $corte),
             'filtros_normalizados' => $filtros,
         ];
+    }
+
+    public function reportePagosCajaPorHotel(int $hotelId, array $filtros = [], int $limite = 300): array
+    {
+        $filtros = $this->normalizarFiltrosReportePagosCaja($filtros);
+        $reporte = [
+            'registros' => [],
+            'resumen' => $this->resumenVacioReportePagosCaja(),
+            'por_estado' => [],
+            'por_metodo' => [],
+            'por_corte' => [],
+            'filtros_normalizados' => $filtros,
+        ];
+
+        if ($hotelId <= 0 || !$this->tablasReportePagosCajaDisponibles()) {
+            return $reporte;
+        }
+
+        $limite = max(1, min(500, $limite));
+        [$whereSql, $params] = $this->whereReportePagosCaja($hotelId, $filtros);
+        $joins = $this->joinsReportePagosCaja();
+
+        $stmt = $this->db->query(
+            "SELECT pc.id,
+                    pc.hotel_id,
+                    pc.trabajador_id,
+                    pc.movimiento_caja_id,
+                    pc.corte_id,
+                    pc.monto,
+                    pc.metodo_pago,
+                    pc.referencia,
+                    pc.periodo_inicio,
+                    pc.periodo_fin,
+                    pc.concepto,
+                    pc.fecha_pago,
+                    pc.estado,
+                    pc.notas,
+                    pc.created_at,
+                    pc.updated_at,
+                    t.nombre_completo AS trabajador_nombre,
+                    t.identificacion AS trabajador_identificacion,
+                    t.rol_laboral AS trabajador_rol,
+                    cc.estado AS corte_estado,
+                    cc.fecha_apertura AS corte_fecha_apertura,
+                    c.nombre AS caja_nombre,
+                    mc.tipo AS movimiento_tipo,
+                    mc.categoria AS movimiento_categoria,
+                    mc.descripcion AS movimiento_descripcion,
+                    mc.created_at AS movimiento_created_at,
+                    mcr.id AS movimiento_reversion_id,
+                    mcr.corte_id AS corte_reversion_id,
+                    mcr.monto AS movimiento_reversion_monto,
+                    mcr.created_at AS movimiento_reversion_created_at,
+                    u.nombre_completo AS creado_por_nombre,
+                    u.nombre_usuario AS creado_por_login,
+                    uu.nombre_completo AS actualizado_por_nombre,
+                    uu.nombre_usuario AS actualizado_por_login
+             FROM trabajador_pagos_caja pc
+             {$joins}
+             WHERE {$whereSql}
+             ORDER BY pc.fecha_pago DESC, pc.id DESC
+             LIMIT {$limite}",
+            $params
+        );
+        $reporte['registros'] = $stmt ? ($stmt->fetchAll() ?: []) : [];
+
+        $row = $this->fetchOne(
+            "SELECT COUNT(*) AS total,
+                    SUM(CASE WHEN pc.estado = 'pagado' THEN 1 ELSE 0 END) AS pagados,
+                    SUM(CASE WHEN pc.estado = 'revertido' THEN 1 ELSE 0 END) AS revertidos,
+                    COALESCE(SUM(pc.monto), 0) AS egreso_original_total,
+                    COALESCE(SUM(CASE WHEN pc.estado = 'pagado' THEN pc.monto ELSE 0 END), 0) AS pagado_vigente_total,
+                    COALESCE(SUM(CASE WHEN pc.estado = 'revertido' THEN pc.monto ELSE 0 END), 0) AS revertido_total,
+                    COALESCE(SUM(CASE WHEN mcr.id IS NOT NULL THEN mcr.monto ELSE 0 END), 0) AS reversion_caja_total
+             FROM trabajador_pagos_caja pc
+             {$joins}
+             WHERE {$whereSql}",
+            $params
+        );
+        $egresoOriginal = (float)($row['egreso_original_total'] ?? 0);
+        $reversionCaja = (float)($row['reversion_caja_total'] ?? 0);
+        $reporte['resumen'] = [
+            'total_registros' => (int)($row['total'] ?? 0),
+            'pagados_count' => (int)($row['pagados'] ?? 0),
+            'revertidos_count' => (int)($row['revertidos'] ?? 0),
+            'egreso_original_total' => $this->decimal($egresoOriginal),
+            'pagado_vigente_total' => $this->decimal($row['pagado_vigente_total'] ?? 0),
+            'revertido_total' => $this->decimal($row['revertido_total'] ?? 0),
+            'reversion_caja_total' => $this->decimal($reversionCaja),
+            'impacto_caja_neto' => $this->decimal($egresoOriginal - $reversionCaja),
+        ];
+
+        $stmt = $this->db->query(
+            "SELECT pc.estado,
+                    COUNT(*) AS total,
+                    COALESCE(SUM(pc.monto), 0) AS monto,
+                    COALESCE(SUM(CASE WHEN mcr.id IS NOT NULL THEN mcr.monto ELSE 0 END), 0) AS reversion_caja
+             FROM trabajador_pagos_caja pc
+             {$joins}
+             WHERE {$whereSql}
+             GROUP BY pc.estado
+             ORDER BY FIELD(pc.estado, 'pagado', 'revertido')",
+            $params
+        );
+        $reporte['por_estado'] = $stmt ? ($stmt->fetchAll() ?: []) : [];
+
+        $stmt = $this->db->query(
+            "SELECT pc.metodo_pago,
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN pc.estado = 'pagado' THEN 1 ELSE 0 END) AS pagados,
+                    SUM(CASE WHEN pc.estado = 'revertido' THEN 1 ELSE 0 END) AS revertidos,
+                    COALESCE(SUM(CASE WHEN pc.estado = 'pagado' THEN pc.monto ELSE 0 END), 0) AS pagado_vigente,
+                    COALESCE(SUM(CASE WHEN pc.estado = 'revertido' THEN pc.monto ELSE 0 END), 0) AS revertido,
+                    COALESCE(SUM(CASE WHEN mcr.id IS NOT NULL THEN mcr.monto ELSE 0 END), 0) AS reversion_caja
+             FROM trabajador_pagos_caja pc
+             {$joins}
+             WHERE {$whereSql}
+             GROUP BY pc.metodo_pago
+             ORDER BY pc.metodo_pago ASC",
+            $params
+        );
+        $reporte['por_metodo'] = $stmt ? ($stmt->fetchAll() ?: []) : [];
+
+        $stmt = $this->db->query(
+            "SELECT pc.corte_id,
+                    c.nombre AS caja_nombre,
+                    cc.estado AS corte_estado,
+                    cc.fecha_apertura AS corte_fecha_apertura,
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN pc.estado = 'pagado' THEN 1 ELSE 0 END) AS pagados,
+                    SUM(CASE WHEN pc.estado = 'revertido' THEN 1 ELSE 0 END) AS revertidos,
+                    COALESCE(SUM(CASE WHEN pc.estado = 'pagado' THEN pc.monto ELSE 0 END), 0) AS pagado_vigente,
+                    COALESCE(SUM(CASE WHEN pc.estado = 'revertido' THEN pc.monto ELSE 0 END), 0) AS revertido,
+                    COALESCE(SUM(CASE WHEN mcr.id IS NOT NULL THEN mcr.monto ELSE 0 END), 0) AS reversion_caja
+             FROM trabajador_pagos_caja pc
+             {$joins}
+             WHERE {$whereSql}
+             GROUP BY pc.corte_id, c.nombre, cc.estado, cc.fecha_apertura
+             ORDER BY pc.corte_id DESC
+             LIMIT 80",
+            $params
+        );
+        $reporte['por_corte'] = $stmt ? ($stmt->fetchAll() ?: []) : [];
+
+        return $reporte;
     }
 
     public function usuariosVinculablesPorHotel(int $hotelId): array
@@ -1214,6 +1376,121 @@ class Trabajador extends Model
         );
 
         return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
+    private function normalizarFiltrosReportePagosCaja(array $filtros): array
+    {
+        $estado = strtolower(trim((string)($filtros['estado'] ?? 'todos')));
+        if (!in_array($estado, ['todos', 'pagado', 'revertido'], true)) {
+            $estado = 'todos';
+        }
+
+        $metodo = strtolower(trim((string)($filtros['metodo_pago'] ?? 'todos')));
+        if (!in_array($metodo, ['todos', 'efectivo', 'tarjeta', 'transferencia'], true)) {
+            $metodo = 'todos';
+        }
+
+        $fechaInicio = $this->nullableFecha($filtros['fecha_inicio'] ?? null);
+        $fechaFin = $this->nullableFecha($filtros['fecha_fin'] ?? null);
+        if ($fechaInicio !== null && $fechaFin !== null && $fechaFin < $fechaInicio) {
+            $temporal = $fechaInicio;
+            $fechaInicio = $fechaFin;
+            $fechaFin = $temporal;
+        }
+
+        return [
+            'trabajador_id' => max(0, (int)($filtros['trabajador_id'] ?? 0)),
+            'buscar' => $this->limpiarTexto($filtros['buscar'] ?? '', 120),
+            'estado' => $estado,
+            'metodo_pago' => $metodo,
+            'corte_id' => max(0, (int)($filtros['corte_id'] ?? 0)),
+            'fecha_inicio' => $fechaInicio,
+            'fecha_fin' => $fechaFin,
+        ];
+    }
+
+    private function resumenVacioReportePagosCaja(): array
+    {
+        return [
+            'total_registros' => 0,
+            'pagados_count' => 0,
+            'revertidos_count' => 0,
+            'egreso_original_total' => '0.00',
+            'pagado_vigente_total' => '0.00',
+            'revertido_total' => '0.00',
+            'reversion_caja_total' => '0.00',
+            'impacto_caja_neto' => '0.00',
+        ];
+    }
+
+    private function joinsReportePagosCaja(): string
+    {
+        return "INNER JOIN trabajadores t
+                   ON t.id = pc.trabajador_id
+                  AND t.hotel_id = pc.hotel_id
+                INNER JOIN movimientos_caja mc
+                   ON mc.id = pc.movimiento_caja_id
+                  AND mc.hotel_id = pc.hotel_id
+                INNER JOIN cortes_caja cc
+                   ON cc.id = pc.corte_id
+                  AND cc.hotel_id = pc.hotel_id
+                INNER JOIN cajas c
+                   ON c.id = cc.caja_id
+                  AND c.hotel_id = pc.hotel_id
+                LEFT JOIN movimientos_caja mcr
+                   ON mcr.hotel_id = pc.hotel_id
+                  AND mcr.tipo = 'ingreso'
+                  AND mcr.categoria = 'Reversion Pago laboral'
+                  AND mcr.referencia = CONCAT('REV-NOM-TRAB-', pc.trabajador_id, '-PAGO-', pc.id)
+                LEFT JOIN usuarios u
+                   ON u.id = pc.created_by
+                LEFT JOIN usuarios uu
+                   ON uu.id = pc.updated_by";
+    }
+
+    private function whereReportePagosCaja(int $hotelId, array $filtros): array
+    {
+        $where = ['pc.hotel_id = ?'];
+        $params = [$hotelId];
+
+        if ((int)($filtros['trabajador_id'] ?? 0) > 0) {
+            $where[] = 'pc.trabajador_id = ?';
+            $params[] = (int)$filtros['trabajador_id'];
+        }
+
+        if (($filtros['estado'] ?? 'todos') !== 'todos') {
+            $where[] = 'pc.estado = ?';
+            $params[] = (string)$filtros['estado'];
+        }
+
+        if (($filtros['metodo_pago'] ?? 'todos') !== 'todos') {
+            $where[] = 'pc.metodo_pago = ?';
+            $params[] = (string)$filtros['metodo_pago'];
+        }
+
+        if ((int)($filtros['corte_id'] ?? 0) > 0) {
+            $where[] = 'pc.corte_id = ?';
+            $params[] = (int)$filtros['corte_id'];
+        }
+
+        if (($filtros['fecha_inicio'] ?? null) !== null) {
+            $where[] = 'DATE(pc.fecha_pago) >= ?';
+            $params[] = (string)$filtros['fecha_inicio'];
+        }
+
+        if (($filtros['fecha_fin'] ?? null) !== null) {
+            $where[] = 'DATE(pc.fecha_pago) <= ?';
+            $params[] = (string)$filtros['fecha_fin'];
+        }
+
+        $buscar = trim((string)($filtros['buscar'] ?? ''));
+        if ($buscar !== '') {
+            $like = '%' . $buscar . '%';
+            $where[] = '(t.nombre_completo LIKE ? OR t.identificacion LIKE ? OR t.rol_laboral LIKE ? OR pc.referencia LIKE ? OR pc.concepto LIKE ? OR mc.referencia LIKE ? OR c.nombre LIKE ?)';
+            array_push($params, $like, $like, $like, $like, $like, $like, $like);
+        }
+
+        return [implode(' AND ', $where), $params];
     }
 
     private function normalizarFiltrosSimuladorPagoCaja(array $filtros): array

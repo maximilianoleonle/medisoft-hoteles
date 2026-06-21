@@ -206,6 +206,7 @@ $workerIndexViewPath = $appRoot . '/app/views/trabajadores/index.php';
 $workerDetailViewPath = $appRoot . '/app/views/trabajadores/ver.php';
 $workerReportViewPath = $appRoot . '/app/views/trabajadores/reporte.php';
 $workerCashSimulatorViewPath = $appRoot . '/app/views/trabajadores/simulador_pago_caja.php';
+$workerCashReportViewPath = $appRoot . '/app/views/trabajadores/reporte_pagos_caja.php';
 $auditServicePath = $appRoot . '/app/services/AuditService.php';
 $paymentServicePath = $appRoot . '/app/services/TrabajadorPagoCajaService.php';
 $rollbackToolPath = $appRoot . '/tools/saas/probar_pago_laboral_caja.php';
@@ -485,7 +486,7 @@ if ($pdo instanceof PDO) {
 
     $movimientosLaboralesOrfanos = lpcCountScalar($pdo, "SELECT COUNT(*)
         FROM movimientos_caja m
-        WHERE LOWER(COALESCE(m.categoria, '')) LIKE '%pago laboral%'
+        WHERE LOWER(COALESCE(m.categoria, '')) = 'pago laboral'
           AND NOT EXISTS (
               SELECT 1
               FROM trabajador_pagos_caja pc
@@ -500,6 +501,27 @@ if ($pdo instanceof PDO) {
         lpcError(
             'Movimientos Caja Pago laboral sin vinculo trabajador_pagos_caja: ' . (string)$movimientosLaboralesOrfanos . '.',
             'Reconciliar Caja contra trabajador_pagos_caja antes de continuar.'
+        );
+    }
+
+    $reversionesLaboralesOrfanas = lpcCountScalar($pdo, "SELECT COUNT(*)
+        FROM movimientos_caja m
+        WHERE LOWER(COALESCE(m.categoria, '')) = 'reversion pago laboral'
+          AND NOT EXISTS (
+              SELECT 1
+              FROM trabajador_pagos_caja pc
+              WHERE pc.hotel_id = m.hotel_id
+                AND pc.estado = 'revertido'
+                AND m.referencia = CONCAT('REV-NOM-TRAB-', pc.trabajador_id, '-PAGO-', pc.id)
+          )");
+    if ($reversionesLaboralesOrfanas === null) {
+        lpcWarning('No se pudieron validar reversiones Pago laboral en Caja.', 'Revisar movimientos_caja antes de QA de reversion.');
+    } elseif ($reversionesLaboralesOrfanas === 0) {
+        lpcOk('Movimientos Caja Reversion Pago laboral estan trazados a pagos laborales revertidos o no existen.');
+    } else {
+        lpcError(
+            'Movimientos Caja Reversion Pago laboral sin pago revertido trazable: ' . (string)$reversionesLaboralesOrfanas . '.',
+            'Reconciliar referencias REV-NOM-TRAB antes de cerrar 14D/14E.'
         );
     }
 
@@ -558,6 +580,10 @@ if ($routes === []) {
             && trim((string)$route['path'], '/') === 'trabajadores/pagos-caja/simulador'
             && strtolower((string)$route['controller']) === 'trabajador'
             && strtolower((string)$route['action']) === 'simuladorpagocaja';
+        $isReadOnlyReport = strtolower((string)$route['method']) === 'get'
+            && trim((string)$route['path'], '/') === 'trabajadores/pagos-caja/reporte'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'reportepagoscaja';
         $isPaymentRoute = strtolower((string)$route['method']) === 'post'
             && trim((string)$route['path'], '/') === 'trabajadores/{id:[0-9]+}/registrar-pago-caja'
             && strtolower((string)$route['controller']) === 'trabajador'
@@ -567,6 +593,7 @@ if ($routes === []) {
         );
         if (
             !$isReadOnlySimulator
+            && !$isReadOnlyReport
             && !$isPaymentRoute
             &&
             strpos($signature, 'trabajadores') !== false
@@ -587,7 +614,17 @@ if ($routes === []) {
     } else {
         lpcError(
             'Rutas laborales de pago/Caja detectadas fuera de contrato: ' . implode(', ', $forbiddenRoutes) . '.',
-            'Mantener solo simulador GET y POST registrar-pago-caja delegado al servicio transaccional.'
+            'Mantener solo simulador/reporte GET y POST registrar-pago-caja delegado al servicio transaccional.'
+        );
+    }
+
+    $reportRouteOk = lpcRouteExists($routes, 'trabajadores/pagos-caja/reporte', 'get');
+    if ($reportRouteOk) {
+        lpcOk('Ruta 14E GET /trabajadores/pagos-caja/reporte registrada como reporte read-only.');
+    } else {
+        lpcWarning(
+            'Ruta 14E GET /trabajadores/pagos-caja/reporte no esta registrada.',
+            'Registrar el GET read-only antes de QA del reporte laboral Caja.'
         );
     }
 
@@ -610,6 +647,42 @@ if ($routes === []) {
             'Registrar el POST delegado a Trabajador::registrarPagoCajaAction.'
         );
     }
+}
+
+if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($workerCashReportViewPath)) {
+    $workerModelCode = (string) file_get_contents($workerModelPath);
+    $workerControllerCode = (string) file_get_contents($workerControllerPath);
+    $workerCashReportViewCode = (string) file_get_contents($workerCashReportViewPath);
+    $workerCashReportCode = $workerModelCode . "\n" . $workerControllerCode . "\n" . $workerCashReportViewCode;
+    $reportWriteForbidden = preg_match(
+        '/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|REPLACE\s+INTO|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE)\s+(trabajador_pagos_caja|movimientos_caja|cortes_caja|cajas)\b/i',
+        $workerCashReportCode
+    );
+
+    if (
+        !$reportWriteForbidden
+        && strpos($workerModelCode, 'function reportePagosCajaPorHotel') !== false
+        && strpos($workerModelCode, 'function tablasReportePagosCajaDisponibles') !== false
+        && strpos($workerControllerCode, 'function reportePagosCajaAction') !== false
+        && strpos($workerControllerCode, 'trabajadores/reporte_pagos_caja') !== false
+        && strpos($workerCashReportViewCode, "action=\"<?= url('trabajadores/pagos-caja/reporte') ?>\"") !== false
+        && strpos($workerCashReportViewCode, 'method="GET"') !== false
+        && strpos($workerCashReportViewCode, 'method="POST"') === false
+        && strpos($workerCashReportViewCode, 'csrf_field()') === false
+        && strpos($workerCashReportViewCode, 'Solo GET') !== false
+    ) {
+        lpcOk('Reporte 14E de pagos laborales con Caja es read-only con filtros GET y sin escrituras.');
+    } else {
+        lpcError(
+            'Reporte 14E de pagos laborales con Caja incompleto o con riesgo de escritura.',
+            'Mantener reporte_pagos_caja como GET/read-only, sin POST, sin CSRF y sin escrituras a Caja.'
+        );
+    }
+} else {
+    lpcWarning(
+        'Archivos del reporte 14E no estan completos.',
+        'Crear modelo/controlador/vista read-only antes de cerrar reporte laboral Caja.'
+    );
 }
 
 if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($workerCashSimulatorViewPath)) {

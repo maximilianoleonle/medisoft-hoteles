@@ -736,6 +736,10 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                     <p class="text-sm text-slate-500 mt-1">Historial read-only de egresos laborales vinculados a Caja, corte y movimiento.</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
+                    <a class="worker-badge" href="<?= url('trabajadores/pagos-caja/reporte?trabajador_id=' . $trabajadorId) ?>">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        Reporte Caja
+                    </a>
                     <span class="worker-badge">
                         <i class="fas fa-list-check"></i>
                         <?= count($pagosCajaLaborales) ?> registros
