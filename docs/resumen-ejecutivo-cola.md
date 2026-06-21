@@ -2359,3 +2359,23 @@ Estado formal:
   PWA/offline ni `/api/sync`.
 - Siguiente paso seguro: contrato independiente antes de recibo descargable, PDF
   informativo, cierre formal de periodo, aprobacion de nomina o pago masivo.
+
+## 5E-J-0 Contrato recibo laboral PDF informativo
+
+Estado formal:
+`CONTRATO_5E_J_0_RECIBO_LABORAL_PDF_INFORMATIVO_READ_ONLY_COMPLETADO`.
+
+- Documento creado:
+  `docs/fase_5E_J_0_contrato_recibo_laboral_pdf_informativo.md`.
+- Es contrato documental; no agrega codigo, rutas, modelos, vistas, servicios PDF,
+  migraciones, permisos, Caja, storage, datos ni `/api/sync`.
+- Define una futura ruta GET candidata:
+  `/trabajadores/{id}/recibo-laboral/pdf`.
+- El PDF futuro debe ser informativo, generado bajo demanda, scoped por hotel y
+  derivado del recibo laboral read-only.
+- Debe mostrar etiqueta visible `PDF informativo / No fiscal / No genera pago`.
+- Mantiene prohibidos PDF oficial, recibos fiscales, timbrado, CFDI, folios oficiales,
+  dispersion, pagos masivos, storage por defecto, auditoria por descarga,
+  permisos/auth, PWA/offline y `/api/sync`.
+- Siguiente paso seguro: `5E-J-A` solo con autorizacion explicita para tocar ruta,
+  controlador, renderer PDF/helper, vista, checkers o modelo read-only.

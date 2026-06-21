@@ -2427,3 +2427,32 @@ Revision recomendada:
    permisos/auth, PWA/offline y `/api/sync`.
 5. Confirmar que el siguiente paso requiere contrato independiente si toca modelo,
    controlador, ruta, vista, Caja, documentos descargables o datos.
+
+## Fase 5E-J-0 - Contrato recibo laboral PDF informativo
+
+Estado: contrato documental aplicado; sin QA manual funcional.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_J_0_contrato_recibo_laboral_pdf_informativo.md`.
+2. Confirmar que no agrega codigo, rutas, modelos, vistas, servicios PDF ni
+   migraciones.
+3. Confirmar que la ruta futura candidata es GET/read-only:
+   `/trabajadores/{id}/recibo-laboral/pdf`.
+4. Confirmar que el PDF futuro sera informativo, no fiscal y no operativo.
+5. Confirmar que no autoriza PDF oficial, recibos fiscales, CFDI, timbrado,
+   folios oficiales, dispersion, storage por defecto ni pagos masivos.
+6. Confirmar que mantiene fuera de alcance permisos/auth, PWA/offline y `/api/sync`.
+7. Para una futura 5E-J-A, exigir autorizacion explicita si se toca ruta,
+   controlador, renderer PDF/helper, vista, checkers o modelo read-only.
+
+QA futura sugerida para 5E-J-A:
+
+1. Abrir ruta PDF sin sesion y confirmar redireccion a login.
+2. Abrir PDF de trabajador del hotel actual con periodo valido.
+3. Confirmar etiqueta visible `PDF informativo / No fiscal / No genera pago`.
+4. Confirmar que totales coinciden con recibo HTML y preview de pre-nomina.
+5. Confirmar que no guarda archivo en storage por defecto.
+6. Intentar generar sin periodo y confirmar bloqueo controlado.
+7. Confirmar que no hay POST, pago masivo, timbrado, dispersion, movimiento de Caja ni
+   escritura laboral.

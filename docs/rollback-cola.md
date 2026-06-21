@@ -2388,6 +2388,24 @@ No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
 `trabajador_anticipos`, `trabajador_prestamos`, `trabajador_pagos_caja`, Caja,
 cortes, movimientos de Caja, permisos/auth, PWA/offline ni `/api/sync`.
 
+## Rollback Fase 5E-J-0
+
+5E-J-0 es contrato documental del recibo laboral PDF informativo read-only.
+
+No crea codigo, rutas, migraciones, storage ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_J_0_contrato_recibo_laboral_pdf_informativo.md`.
+2. Retirar referencias 5E-J-0 de resumen, QA y rollback.
+3. Restaurar la nota de siguiente paso en
+   `docs/fase_5E_I_F_cierre_recibo_laboral_informativo.md` si se quiere volver al
+   cierre previo sin contrato PDF informativo.
+
+No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
+`trabajador_anticipos`, `trabajador_prestamos`, `trabajador_pagos_caja`, Caja,
+cortes, movimientos de Caja, storage, permisos/auth, PWA/offline ni `/api/sync`.
+
 ## Rollback Fase 5E-I-A
 
 5E-I-A agrega recibo laboral informativo GET/read-only.
