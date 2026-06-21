@@ -2570,6 +2570,23 @@ Verificacion posterior:
 
 No tocar PWA/offline, IndexedDB, cache names ni `/api/sync`.
 
+## Rollback Fase 5E-L-B
+
+5E-L-B documenta la QA rollback local de snapshots de pre-nomina. No agrega
+codigo operativo nuevo sobre 5E-L-A, no crea rutas, no crea migraciones, no mueve
+Caja y no deja datos persistidos.
+
+Rollback documental:
+
+1. Retirar `docs/fase_5E_L_B_qa_rollback_snapshot_prenomina.md`.
+2. Retirar referencias 5E-L-B de resumen, QA y rollback.
+3. Restaurar el estado de 5E-L-A como implementacion con QA automatica sin
+   consolidar si se quiere repetir la validacion.
+
+No ejecutar SQL ni retirar la herramienta rollback de 5E-L-A salvo que se este
+revirtiendo tambien 5E-L-A completa. No tocar PWA/offline, IndexedDB, cache
+names ni `/api/sync`.
+
 ## Rollback Fase 5E-I-A
 
 5E-I-A agrega recibo laboral informativo GET/read-only.

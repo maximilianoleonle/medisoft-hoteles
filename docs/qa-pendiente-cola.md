@@ -2618,3 +2618,37 @@ Resultado automatico esperado:
   `docker compose exec -T app php tools/saas/probar_nomina_periodo_snapshot.php`.
 - Preflight pagos laborales Caja: `ERROR: 0`.
 - Health general: `ERROR: 0`.
+
+## Fase 5E-L-B - QA rollback local de snapshots de pre-nomina
+
+Estado: QA automatica local completada; QA manual de navegador pendiente.
+
+Resultado automatico registrado:
+
+1. `tools/saas/probar_nomina_periodo_snapshot.php` crea datos temporales dentro
+   de una transaccion externa.
+2. Cierra un snapshot de pre-nomina con detalle.
+3. Bloquea cierre duplicado del mismo rango.
+4. Aprueba administrativamente el snapshot.
+5. Bloquea anulacion sin motivo.
+6. Anula con motivo.
+7. Revierte toda la transaccion y confirma que no quedan datos temporales.
+
+Validaciones registradas:
+
+- Lint PHP: OK en modelo, servicio, herramienta rollback y checkers.
+- Preflight pagos laborales Caja: `OK: 60`, `WARNING: 0`, `ERROR: 0`.
+- Health general: `OK: 316`, `WARNING: 25`, `ERROR: 0`.
+
+Pendiente manual:
+
+1. Abrir `/trabajadores/nomina/periodos` con sesion activa.
+2. Cerrar snapshot desde la vista.
+3. Abrir detalle del snapshot.
+4. Aprobar desde la vista.
+5. Probar anulacion sin motivo y confirmar bloqueo visible.
+6. Anular con motivo y confirmar evento/estado.
+7. Confirmar que no se crean movimientos de Caja, CFDI, timbrado, dispersion ni
+   pago masivo.
+8. Confirmar que `/api/sync` sigue bloqueado con HTTP 423 y
+   `sync_temporarily_disabled`.

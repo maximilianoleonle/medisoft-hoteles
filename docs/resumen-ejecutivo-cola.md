@@ -2504,3 +2504,21 @@ Estado formal:
   automaticas, movimientos de Caja, PWA/offline ni `/api/sync`.
 - Siguiente paso seguro: aplicar migracion local con backup, correr checkers y QA
   manual de cierre/aprobacion/anulacion.
+
+## 5E-L-B QA rollback local de snapshots de pre-nomina
+
+Estado formal:
+`QA_5E_L_B_ROLLBACK_SNAPSHOT_PRENOMINA_COMPLETADO_MANUAL_PENDIENTE`.
+
+- Documento creado:
+  `docs/fase_5E_L_B_qa_rollback_snapshot_prenomina.md`.
+- Se ejecuto `tools/saas/probar_nomina_periodo_snapshot.php` en local.
+- La prueba crea hotel, trabajador, concepto y snapshot temporales dentro de una
+  transaccion externa, valida cierre, bloqueo de duplicado, aprobacion y anulacion
+  con motivo, y revierte todo.
+- Validaciones automaticas registradas: lint PHP OK; preflight pagos laborales Caja
+  `OK: 60`, `WARNING: 0`, `ERROR: 0`; health general `OK: 316`, `WARNING: 25`,
+  `ERROR: 0`.
+- No deja datos persistidos, no crea pagos, no mueve Caja, no toca PWA/offline ni
+  `/api/sync`.
+- Siguiente paso seguro: QA manual en navegador de cerrar/aprobar/anular snapshot.

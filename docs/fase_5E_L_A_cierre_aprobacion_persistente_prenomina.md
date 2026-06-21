@@ -85,6 +85,9 @@ La herramienta exige `APP_ENV=local`, crea hotel/trabajador/concepto/snapshot
 temporales dentro de una transaccion externa, valida cierre duplicado bloqueado,
 aprobacion y anulacion con motivo, y finalmente hace rollback.
 
+Resultado consolidado en:
+`docs/fase_5E_L_B_qa_rollback_snapshot_prenomina.md`.
+
 ## Rollback
 
 Ver `docs/rollback-cola.md`, seccion `Rollback Fase 5E-L-A`.
