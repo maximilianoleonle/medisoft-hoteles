@@ -2416,6 +2416,7 @@ Estado formal:
 - Siguiente paso seguro: `5E-K-A` solo con autorizacion explicita para tocar rutas,
   controlador, modelo, vista, checkers y, si aplica, servicio, migraciones, permisos
   o Caja.
+
 ## 5E-K-A Periodos de pre-nomina read-only
 
 Estado formal:
@@ -2433,3 +2434,24 @@ Estado formal:
   movimientos de Caja, migraciones, permisos/auth, PWA/offline ni `/api/sync`.
 - Siguiente paso seguro: QA manual de periodos; si pasa, cierre documental 5E-K-F o
   contrato separado para cualquier cierre/aprobacion persistente.
+
+## 5E-K-F Cierre periodos de pre-nomina read-only
+
+Estado formal:
+`CIERRE_5E_K_F_PERIODOS_PRENOMINA_READ_ONLY_QA_MANUAL_VALIDADA`.
+
+- Documento creado:
+  `docs/fase_5E_K_F_cierre_periodos_prenomina_read_only.md`.
+- El usuario confirmo que la prueba manual de periodos de pre-nomina funciona a la
+  perfeccion.
+- Quedan cerradas como read-only las rutas:
+  `GET /trabajadores/nomina/periodos` y
+  `GET /trabajadores/nomina/periodos/preview`.
+- Validaciones automaticas registradas: lint PHP OK, preflight pagos laborales Caja
+  `OK: 54`, `WARNING: 0`, `ERROR: 0`; health general `OK: 313`, `WARNING: 25`,
+  `ERROR: 0`; rutas locales sin sesion `303` a login, sin 404.
+- No autoriza cierre real, aprobacion, anulacion, snapshots, nomina oficial, CFDI,
+  timbrado, dispersion, pagos masivos, movimientos de Caja, migraciones,
+  permisos/auth, PWA/offline ni `/api/sync`.
+- Siguiente paso seguro: contrato independiente para cierre/aprobacion persistente de
+  pre-nomina antes de cualquier POST, migracion o escritura real.

@@ -2513,6 +2513,7 @@ QA futura sugerida para 5E-K-A:
    masivo.
 7. Confirmar que `/api/sync` sigue bloqueado con HTTP 423 y
    `sync_temporarily_disabled`.
+
 ## Fase 5E-K-A - Periodos de pre-nomina read-only
 
 Estado: implementacion tecnica pendiente de QA manual.
@@ -2537,3 +2538,22 @@ Resultado automatico esperado:
 - Health general: `ERROR: 0`.
 - Ruta local sin sesion:
   `GET /trabajadores/nomina/periodos` responde `303` a login, sin 404.
+
+Resultado manual 5E-K-A:
+
+- El usuario confirmo que la prueba manual paso correctamente.
+
+## Fase 5E-K-F - Cierre periodos de pre-nomina read-only
+
+Estado: cierre documental aplicado despues de QA manual.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_K_F_cierre_periodos_prenomina_read_only.md`.
+2. Confirmar que no agrega codigo ni escrituras.
+3. Confirmar que registra la QA manual validada de periodos de pre-nomina.
+4. Confirmar que mantiene fuera de alcance cierre real, aprobacion, anulacion,
+   snapshots, nomina oficial, CFDI, timbrado, dispersion, pagos masivos,
+   movimientos de Caja, migraciones, permisos/auth, PWA/offline y `/api/sync`.
+5. Confirmar que el siguiente paso exige contrato independiente para cualquier POST,
+   migracion, permiso, auditoria o persistencia real.

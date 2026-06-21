@@ -2456,6 +2456,7 @@ Rollback:
 No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
 `trabajador_anticipos`, `trabajador_prestamos`, `trabajador_pagos_caja`, Caja,
 cortes, movimientos de Caja, storage, permisos/auth, PWA/offline ni `/api/sync`.
+
 ## Rollback Fase 5E-K-A
 
 5E-K-A agrega periodos de pre-nomina GET/read-only.
@@ -2483,6 +2484,24 @@ Verificacion posterior:
 
 No ejecutar SQL ni tocar Caja, cortes, movimientos, permisos/auth, PWA/offline ni
 `/api/sync`.
+
+## Rollback Fase 5E-K-F
+
+5E-K-F es cierre documental de periodos de pre-nomina read-only despues de QA manual.
+
+No crea codigo, rutas, migraciones, storage ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_K_F_cierre_periodos_prenomina_read_only.md`.
+2. Retirar referencias 5E-K-F de resumen, QA y rollback.
+3. Restaurar el estado de 5E-K-A como QA manual pendiente si se quiere desconocer la
+   validacion manual.
+
+No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
+`trabajador_anticipos`, `trabajador_prestamos`, `trabajador_pagos_caja`, Caja,
+cortes, movimientos de Caja, storage, permisos/auth, PWA/offline ni `/api/sync`.
+
 ## Rollback Fase 5E-I-A
 
 5E-I-A agrega recibo laboral informativo GET/read-only.
