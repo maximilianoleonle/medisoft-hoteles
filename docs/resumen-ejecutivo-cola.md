@@ -2416,3 +2416,20 @@ Estado formal:
 - Siguiente paso seguro: `5E-K-A` solo con autorizacion explicita para tocar rutas,
   controlador, modelo, vista, checkers y, si aplica, servicio, migraciones, permisos
   o Caja.
+## 5E-K-A Periodos de pre-nomina read-only
+
+Estado formal:
+`PERIODOS_5E_K_A_PRENOMINA_READ_ONLY_COMPLETADO_QA_MANUAL_PENDIENTE`.
+
+- Documento creado:
+  `docs/fase_5E_K_A_periodos_prenomina_read_only.md`.
+- Rutas nuevas:
+  `GET /trabajadores/nomina/periodos` y
+  `GET /trabajadores/nomina/periodos/preview`.
+- La vista nueva `trabajadores/nomina_periodos` lista periodos candidatos y muestra
+  detalle read-only reutilizando `Trabajador::nominaPreviewPorHotel()`.
+- Se agregaron enlaces desde Personal y desde el preview de pre-nomina.
+- No hay POST, cierre real, aprobacion real, anulacion, snapshots persistidos, pagos,
+  movimientos de Caja, migraciones, permisos/auth, PWA/offline ni `/api/sync`.
+- Siguiente paso seguro: QA manual de periodos; si pasa, cierre documental 5E-K-F o
+  contrato separado para cualquier cierre/aprobacion persistente.

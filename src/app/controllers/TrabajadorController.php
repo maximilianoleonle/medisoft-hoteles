@@ -75,6 +75,42 @@ class TrabajadorController extends Controller
         ]);
     }
 
+    public function nominaPeriodosAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $tablaDisponible = $this->trabajadorModel->tablasNominaPreviewDisponibles();
+        $periodos = $this->trabajadorModel->nominaPeriodosReadOnlyPorHotel(
+            $hotelId,
+            $this->filtrosNominaPeriodosDesdeQuery(),
+            6
+        );
+
+        View::renderTemplate('trabajadores/nomina_periodos', [
+            'title' => 'Periodos pre-nomina - ' . current_hotel_display_name(),
+            'periodosNomina' => $periodos,
+            'tablaDisponible' => $tablaDisponible,
+            'modo' => 'lista',
+        ]);
+    }
+
+    public function nominaPeriodoPreviewAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $tablaDisponible = $this->trabajadorModel->tablasNominaPreviewDisponibles();
+        $periodos = $this->trabajadorModel->nominaPeriodosReadOnlyPorHotel(
+            $hotelId,
+            $this->filtrosNominaPeriodosDesdeQuery(),
+            6
+        );
+
+        View::renderTemplate('trabajadores/nomina_periodos', [
+            'title' => 'Detalle periodo pre-nomina - ' . current_hotel_display_name(),
+            'periodosNomina' => $periodos,
+            'tablaDisponible' => $tablaDisponible,
+            'modo' => 'detalle',
+        ]);
+    }
+
     public function nominaPreviewAction(): void
     {
         $hotelId = $this->hotelIdActual();
@@ -731,6 +767,19 @@ class TrabajadorController extends Controller
                 'cancelada' => 0,
             ],
             'trabajadores_relevantes' => [],
+        ];
+    }
+
+    private function filtrosNominaPeriodosDesdeQuery(): array
+    {
+        return [
+            'tipo_periodo' => $this->getQuery('tipo_periodo', 'semanal'),
+            'fecha_base' => $this->getQuery('fecha_base', date('Y-m-d')),
+            'fecha_inicio' => $this->getQuery('fecha_inicio', ''),
+            'fecha_fin' => $this->getQuery('fecha_fin', ''),
+            'estado' => $this->getQuery('estado', 'activos'),
+            'rol_laboral' => $this->getQuery('rol_laboral', ''),
+            'incluir_pagos_caja' => $this->getQuery('incluir_pagos_caja', '1'),
         ];
     }
 

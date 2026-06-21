@@ -3113,6 +3113,8 @@ if (!is_file($routesPath)) {
     $workerExpectedRoutes = [
         ['method' => 'get', 'path' => 'trabajadores'],
         ['method' => 'get', 'path' => 'trabajadores/reporte'],
+        ['method' => 'get', 'path' => 'trabajadores/nomina/periodos'],
+        ['method' => 'get', 'path' => 'trabajadores/nomina/periodos/preview'],
         ['method' => 'get', 'path' => 'trabajadores/nomina/preview'],
         ['method' => 'get', 'path' => 'trabajadores/nomina/preview/exportar'],
         ['method' => 'get', 'path' => 'trabajadores/pagos-caja/reporte'],
@@ -3142,7 +3144,7 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($missingWorkerRoutes)) {
-        hcOk('Rutas Personal NP-F-A/5E-C/5E-D-A/5E-G-A/5E-H-A/5E-I-A/5E-J-A/14E/14F registradas: CRUD, reportes, preview nomina, export CSV, recibo/PDF read-only, ledger, simulador Caja, pago y reversion laboral controlada.');
+        hcOk('Rutas Personal NP-F-A/5E-C/5E-D-A/5E-G-A/5E-H-A/5E-I-A/5E-J-A/5E-K-A/14E/14F registradas: CRUD, reportes, periodos/preview nomina, export CSV, recibo/PDF read-only, ledger, simulador Caja, pago y reversion laboral controlada.');
     } else {
         hcWarning(
             'Rutas Personal NP-F-A/5E-C/5E-D-A faltantes: ' . implode(', ', $missingWorkerRoutes),
@@ -3154,6 +3156,8 @@ if (!is_file($routesPath)) {
     $allowedWorkerRouteSignatures = [
         'GET /trabajadores -> trabajador::index',
         'GET /trabajadores/reporte -> trabajador::reporte',
+        'GET /trabajadores/nomina/periodos -> trabajador::nominaperiodos',
+        'GET /trabajadores/nomina/periodos/preview -> trabajador::nominaperiodopreview',
         'GET /trabajadores/nomina/preview -> trabajador::nominapreview',
         'GET /trabajadores/nomina/preview/exportar -> trabajador::exportarnominapreview',
         'GET /trabajadores/pagos-caja/reporte -> trabajador::reportepagoscaja',
@@ -3187,7 +3191,7 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($forbiddenWorkerRoutes)) {
-        hcOk('Personal NP-F-A/5E-C/5E-D-A/5E-G-A/5E-H-A/5E-I-A/5E-J-A/14E/14F mantiene solo rutas autorizadas; reportes/preview/export/recibo/PDF/simulador GET y pago/reversion POST controlados.');
+        hcOk('Personal NP-F-A/5E-C/5E-D-A/5E-G-A/5E-H-A/5E-I-A/5E-J-A/5E-K-A/14E/14F mantiene solo rutas autorizadas; reportes/periodos/preview/export/recibo/PDF/simulador GET y pago/reversion POST controlados.');
     } else {
         hcError(
             'Personal NP-F-A tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenWorkerRoutes),

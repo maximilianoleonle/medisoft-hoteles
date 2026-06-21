@@ -237,6 +237,10 @@ $exportUrl = url('trabajadores/nomina/preview/exportar' . ($exportQuery !== '' ?
                     <i class="fas fa-chart-pie"></i>
                     Reporte general
                 </a>
+                <a class="payroll-btn" href="<?= url('trabajadores/nomina/periodos') ?>">
+                    <i class="fas fa-calendar-check"></i>
+                    Periodos
+                </a>
                 <a class="payroll-btn" href="<?= url('trabajadores/pagos-caja/reporte') ?>">
                     <i class="fas fa-file-invoice-dollar"></i>
                     Reporte Caja

@@ -2513,3 +2513,27 @@ QA futura sugerida para 5E-K-A:
    masivo.
 7. Confirmar que `/api/sync` sigue bloqueado con HTTP 423 y
    `sync_temporarily_disabled`.
+## Fase 5E-K-A - Periodos de pre-nomina read-only
+
+Estado: implementacion tecnica pendiente de QA manual.
+
+Revision manual recomendada:
+
+1. Abrir `/trabajadores/nomina/periodos` con sesion activa.
+2. Confirmar que carga sin 404.
+3. Cambiar tipo semanal, quincenal y mensual.
+4. Probar rango manual valido.
+5. Probar rango manual invalido y confirmar bloqueo visible.
+6. Entrar al detalle de un periodo.
+7. Abrir `Preview completo` y confirmar que conserva periodo/filtros.
+8. Abrir `Recibo` de un trabajador y confirmar que conserva periodo.
+9. Confirmar que no hay cierre, aprobacion, anulacion, pago real ni POST.
+10. Confirmar que no se genera movimiento de Caja ni cambio de datos.
+
+Resultado automatico esperado:
+
+- Lint PHP: OK en rutas, controlador, modelo, vista y checkers.
+- Preflight pagos laborales Caja: `ERROR: 0`.
+- Health general: `ERROR: 0`.
+- Ruta local sin sesion:
+  `GET /trabajadores/nomina/periodos` responde `303` a login, sin 404.

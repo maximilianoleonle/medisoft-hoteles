@@ -208,6 +208,7 @@ $workerReportViewPath = $appRoot . '/app/views/trabajadores/reporte.php';
 $workerCashSimulatorViewPath = $appRoot . '/app/views/trabajadores/simulador_pago_caja.php';
 $workerCashReportViewPath = $appRoot . '/app/views/trabajadores/reporte_pagos_caja.php';
 $workerPayrollPreviewViewPath = $appRoot . '/app/views/trabajadores/nomina_preview.php';
+$workerPayrollPeriodsViewPath = $appRoot . '/app/views/trabajadores/nomina_periodos.php';
 $workerLaborReceiptViewPath = $appRoot . '/app/views/trabajadores/recibo_laboral_informativo.php';
 $workerLaborReceiptPdfServicePath = $appRoot . '/app/services/TrabajadorReciboLaboralPdfService.php';
 $auditServicePath = $appRoot . '/app/services/AuditService.php';
@@ -599,6 +600,14 @@ if ($routes === []) {
             && trim((string)$route['path'], '/') === 'trabajadores/nomina/preview/exportar'
             && strtolower((string)$route['controller']) === 'trabajador'
             && strtolower((string)$route['action']) === 'exportarnominapreview';
+        $isReadOnlyPayrollPeriods = strtolower((string)$route['method']) === 'get'
+            && trim((string)$route['path'], '/') === 'trabajadores/nomina/periodos'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'nominaperiodos';
+        $isReadOnlyPayrollPeriodPreview = strtolower((string)$route['method']) === 'get'
+            && trim((string)$route['path'], '/') === 'trabajadores/nomina/periodos/preview'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'nominaperiodopreview';
         $isReadOnlyLaborReceipt = strtolower((string)$route['method']) === 'get'
             && trim((string)$route['path'], '/') === 'trabajadores/{id:[0-9]+}/recibo-laboral'
             && strtolower((string)$route['controller']) === 'trabajador'
@@ -620,6 +629,8 @@ if ($routes === []) {
             && !$isReadOnlyReportExport
             && !$isReadOnlyPayrollPreview
             && !$isReadOnlyPayrollPreviewExport
+            && !$isReadOnlyPayrollPeriods
+            && !$isReadOnlyPayrollPeriodPreview
             && !$isReadOnlyLaborReceipt
             && !$isReadOnlyLaborReceiptPdf
             && !$isPaymentRoute
@@ -683,6 +694,17 @@ if ($routes === []) {
         lpcWarning(
             'Ruta 5E-H-A GET /trabajadores/nomina/preview/exportar no esta registrada.',
             'Registrar el GET read-only antes de QA del export CSV de pre-nomina.'
+        );
+    }
+
+    $payrollPeriodsRouteOk = lpcRouteExists($routes, 'trabajadores/nomina/periodos', 'get');
+    $payrollPeriodPreviewRouteOk = lpcRouteExists($routes, 'trabajadores/nomina/periodos/preview', 'get');
+    if ($payrollPeriodsRouteOk && $payrollPeriodPreviewRouteOk) {
+        lpcOk('Rutas 5E-K-A GET /trabajadores/nomina/periodos y /preview registradas como periodos read-only.');
+    } else {
+        lpcWarning(
+            'Rutas 5E-K-A de periodos de pre-nomina no estan completas.',
+            'Registrar solo GET /trabajadores/nomina/periodos y GET /trabajadores/nomina/periodos/preview.'
         );
     }
 
@@ -810,6 +832,52 @@ if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($work
     lpcWarning(
         'Archivos del preview 5E-G-A no estan completos.',
         'Crear modelo/controlador/vista read-only antes de QA de pre-nomina.'
+    );
+}
+
+if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($workerPayrollPeriodsViewPath)) {
+    $workerModelCode = (string) file_get_contents($workerModelPath);
+    $workerControllerCode = (string) file_get_contents($workerControllerPath);
+    $workerPayrollPeriodsViewCode = (string) file_get_contents($workerPayrollPeriodsViewPath);
+    $workerPayrollPeriodsSurfaceCode = $workerControllerCode . "\n" . $workerPayrollPeriodsViewCode;
+    $payrollPeriodsWriteForbidden = preg_match(
+        '/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|REPLACE\s+INTO|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE)\s+(trabajadores|trabajador_pagos|trabajador_anticipos|trabajador_prestamos|trabajador_pagos_caja|movimientos_caja|cortes_caja|cajas)\b/i',
+        $workerPayrollPeriodsSurfaceCode
+    );
+
+    if (
+        !$payrollPeriodsWriteForbidden
+        && strpos($workerModelCode, 'function nominaPeriodosReadOnlyPorHotel') !== false
+        && strpos($workerModelCode, 'nominaPreviewPorHotel($hotelId, $previewFiltros, 250)') !== false
+        && strpos($workerModelCode, 'function evaluarEstadoNominaPeriodoReadOnly') !== false
+        && strpos($workerControllerCode, 'function nominaPeriodosAction') !== false
+        && strpos($workerControllerCode, 'function nominaPeriodoPreviewAction') !== false
+        && strpos($workerControllerCode, 'function filtrosNominaPeriodosDesdeQuery') !== false
+        && strpos($workerControllerCode, 'trabajadores/nomina_periodos') !== false
+        && strpos($workerPayrollPeriodsViewCode, "action=\"<?= url('trabajadores/nomina/periodos') ?>\"") !== false
+        && strpos($workerPayrollPeriodsViewCode, 'trabajadores/nomina/periodos/preview') !== false
+        && strpos($workerPayrollPeriodsViewCode, 'trabajadores/nomina/preview') !== false
+        && strpos($workerPayrollPeriodsViewCode, 'method="GET"') !== false
+        && strpos($workerPayrollPeriodsViewCode, 'method="POST"') === false
+        && strpos($workerPayrollPeriodsViewCode, 'csrf_field()') === false
+        && strpos($workerPayrollPeriodsViewCode, 'Solo GET') !== false
+        && strpos($workerPayrollPeriodsViewCode, 'Read-only') !== false
+        && strpos($workerPayrollPeriodsViewCode, 'Sin cierre') !== false
+        && strpos($workerPayrollPeriodsViewCode, 'registrar-pago-caja') === false
+        && strpos($workerPayrollPeriodsViewCode, 'timbrar') === false
+        && strpos($workerPayrollPeriodsViewCode, 'dispersion') === false
+    ) {
+        lpcOk('Periodos 5E-K-A de pre-nomina son GET/read-only, reutilizan preview y no exponen cierre ni pagos.');
+    } else {
+        lpcError(
+            'Periodos 5E-K-A de pre-nomina incompletos o con riesgo de escritura.',
+            'Mantener nomina_periodos como GET/read-only, sin POST, sin CSRF, sin cierre real, sin Caja y reutilizando preview de nomina.'
+        );
+    }
+} else {
+    lpcWarning(
+        'Archivos de periodos 5E-K-A no estan completos.',
+        'Crear modelo/controlador/vista read-only antes de QA de periodos de pre-nomina.'
     );
 }
 

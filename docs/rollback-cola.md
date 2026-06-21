@@ -2456,6 +2456,33 @@ Rollback:
 No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
 `trabajador_anticipos`, `trabajador_prestamos`, `trabajador_pagos_caja`, Caja,
 cortes, movimientos de Caja, storage, permisos/auth, PWA/offline ni `/api/sync`.
+## Rollback Fase 5E-K-A
+
+5E-K-A agrega periodos de pre-nomina GET/read-only.
+
+No crea migraciones, storage, snapshots ni datos.
+
+Rollback de codigo:
+
+1. Retirar `GET /trabajadores/nomina/periodos` de `src/config/routes.php`.
+2. Retirar `GET /trabajadores/nomina/periodos/preview` de `src/config/routes.php`.
+3. Retirar `TrabajadorController::nominaPeriodosAction`.
+4. Retirar `TrabajadorController::nominaPeriodoPreviewAction`.
+5. Retirar `TrabajadorController::filtrosNominaPeriodosDesdeQuery`.
+6. Retirar `Trabajador::nominaPeriodosReadOnlyPorHotel` y helpers privados 5E-K-A.
+7. Retirar `src/app/views/trabajadores/nomina_periodos.php`.
+8. Retirar enlaces `Periodos` de `index.php` y `nomina_preview.php`.
+9. Retirar validaciones 5E-K-A de preflight y health.
+10. Retirar documento y referencias 5E-K-A.
+
+Verificacion posterior:
+
+- `docker compose exec -T app php -l` en PHP tocados.
+- `docker compose exec -T app php tools/saas/preflight_personal_pagos_caja.php`.
+- `docker compose exec -T app php tools/saas/health_check_fase_1a.php`.
+
+No ejecutar SQL ni tocar Caja, cortes, movimientos, permisos/auth, PWA/offline ni
+`/api/sync`.
 ## Rollback Fase 5E-I-A
 
 5E-I-A agrega recibo laboral informativo GET/read-only.

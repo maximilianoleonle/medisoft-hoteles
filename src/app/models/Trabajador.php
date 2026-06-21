@@ -706,6 +706,89 @@ class Trabajador extends Model
         return $recibo;
     }
 
+    public function nominaPeriodosReadOnlyPorHotel(int $hotelId, array $filtros = [], int $limite = 6): array
+    {
+        $filtros = $this->normalizarFiltrosNominaPeriodosReadOnly($filtros);
+        $resultado = [
+            'periodos' => [],
+            'periodo_detalle' => null,
+            'preview' => [
+                'trabajadores' => [],
+                'resumen' => $this->resumenVacioNominaPreview(),
+                'filtros_normalizados' => [],
+                'bloqueos' => [],
+            ],
+            'filtros_normalizados' => $filtros,
+            'bloqueos' => [],
+            'generado_en' => date('Y-m-d H:i:s'),
+        ];
+
+        if ($hotelId <= 0) {
+            $resultado['bloqueos'][] = 'No hay hotel activo para revisar periodos de pre-nomina.';
+            return $resultado;
+        }
+
+        if (!$this->tablasNominaPreviewDisponibles()) {
+            $resultado['bloqueos'][] = 'Faltan tablas laborales o de Caja para revisar periodos con seguridad.';
+            return $resultado;
+        }
+
+        if (!empty($filtros['fecha_base_invalida'])) {
+            $resultado['bloqueos'][] = 'La fecha base del periodo no es valida.';
+        }
+
+        if (!empty($filtros['periodo_manual_invalido'])) {
+            $resultado['bloqueos'][] = 'El periodo manual no es valido.';
+        }
+
+        $limite = max(1, min(12, $limite));
+        $candidatos = $this->construirPeriodosNominaCandidatos($filtros, $limite);
+        if (empty($candidatos)) {
+            $resultado['bloqueos'][] = 'No hay periodos validos para revisar.';
+            return $resultado;
+        }
+
+        $detalleKey = null;
+        if (!empty($filtros['fecha_inicio']) && !empty($filtros['fecha_fin'])) {
+            $detalleKey = $filtros['fecha_inicio'] . ':' . $filtros['fecha_fin'];
+        }
+
+        $indiceDetalle = 0;
+        foreach ($candidatos as $indice => $periodo) {
+            $previewFiltros = [
+                'fecha_inicio' => $periodo['fecha_inicio'],
+                'fecha_fin' => $periodo['fecha_fin'],
+                'trabajador_id' => '',
+                'buscar' => '',
+                'rol_laboral' => $filtros['rol_laboral'],
+                'estado' => $filtros['estado'],
+                'solo_con_saldo' => '0',
+                'incluir_pagos_caja' => $filtros['incluir_pagos_caja'] ? '1' : '0',
+            ];
+            $preview = $this->nominaPreviewPorHotel($hotelId, $previewFiltros, 250);
+            $periodo['preview'] = $preview;
+            $periodo['resumen'] = is_array($preview['resumen'] ?? null)
+                ? $preview['resumen']
+                : $this->resumenVacioNominaPreview();
+            $periodo['bloqueos'] = is_array($preview['bloqueos'] ?? null) ? $preview['bloqueos'] : [];
+            $periodo = array_merge($periodo, $this->evaluarEstadoNominaPeriodoReadOnly($periodo));
+
+            if ($detalleKey !== null && $detalleKey === ($periodo['fecha_inicio'] . ':' . $periodo['fecha_fin'])) {
+                $indiceDetalle = $indice;
+            }
+
+            $resultado['periodos'][] = $periodo;
+        }
+
+        $resultado['periodo_detalle'] = $resultado['periodos'][$indiceDetalle] ?? $resultado['periodos'][0] ?? null;
+        if (is_array($resultado['periodo_detalle'])) {
+            $resultado['preview'] = is_array($resultado['periodo_detalle']['preview'] ?? null)
+                ? $resultado['periodo_detalle']['preview']
+                : $resultado['preview'];
+        }
+
+        return $resultado;
+    }
     public function usuariosVinculablesPorHotel(int $hotelId): array
     {
         if ($hotelId <= 0 || !$this->tablaExiste('hotel_usuarios') || !$this->tablaExiste('usuarios')) {
@@ -1528,6 +1611,169 @@ class Trabajador extends Model
         return $stmt ? ($stmt->fetchAll() ?: []) : [];
     }
 
+    private function normalizarFiltrosNominaPeriodosReadOnly(array $filtros): array
+    {
+        $tipoPeriodo = strtolower(trim((string)($filtros['tipo_periodo'] ?? 'semanal')));
+        if (!in_array($tipoPeriodo, ['semanal', 'quincenal', 'mensual', 'manual'], true)) {
+            $tipoPeriodo = 'semanal';
+        }
+
+        $fechaBaseRaw = trim((string)($filtros['fecha_base'] ?? date('Y-m-d')));
+        $fechaBase = $this->nullableFecha($fechaBaseRaw) ?: date('Y-m-d');
+        $fechaInicioRaw = trim((string)($filtros['fecha_inicio'] ?? ''));
+        $fechaFinRaw = trim((string)($filtros['fecha_fin'] ?? ''));
+        $fechaInicio = $this->nullableFecha($fechaInicioRaw);
+        $fechaFin = $this->nullableFecha($fechaFinRaw);
+        $periodoManualSolicitado = $tipoPeriodo === 'manual' || $fechaInicioRaw !== '' || $fechaFinRaw !== '';
+
+        $estado = strtolower(trim((string)($filtros['estado'] ?? 'activos')));
+        if (!in_array($estado, ['activos', 'todos', 'inactivos', 'baja'], true)) {
+            $estado = 'activos';
+        }
+
+        return [
+            'tipo_periodo' => $tipoPeriodo,
+            'fecha_base' => $fechaBase,
+            'fecha_base_raw' => $fechaBaseRaw,
+            'fecha_base_invalida' => $fechaBaseRaw !== '' && $this->nullableFecha($fechaBaseRaw) === null,
+            'fecha_inicio' => $fechaInicio,
+            'fecha_fin' => $fechaFin,
+            'fecha_inicio_raw' => $fechaInicioRaw,
+            'fecha_fin_raw' => $fechaFinRaw,
+            'periodo_manual_solicitado' => $periodoManualSolicitado,
+            'periodo_manual_invalido' => $periodoManualSolicitado && (
+                $fechaInicio === null
+                || $fechaFin === null
+                || $fechaFin < $fechaInicio
+                || ($fechaInicioRaw !== '' && $fechaInicio === null)
+                || ($fechaFinRaw !== '' && $fechaFin === null)
+            ),
+            'estado' => $estado,
+            'rol_laboral' => $this->limpiarTexto($filtros['rol_laboral'] ?? '', 80),
+            'incluir_pagos_caja' => $this->normalizarBooleanoNominaPreview($filtros['incluir_pagos_caja'] ?? null, true),
+        ];
+    }
+
+    private function construirPeriodosNominaCandidatos(array $filtros, int $limite): array
+    {
+        $periodos = [];
+        $vistos = [];
+
+        if (empty($filtros['periodo_manual_invalido']) && !empty($filtros['fecha_inicio']) && !empty($filtros['fecha_fin'])) {
+            $manual = [
+                'tipo_periodo' => 'manual',
+                'etiqueta' => 'Periodo seleccionado',
+                'fecha_inicio' => $filtros['fecha_inicio'],
+                'fecha_fin' => $filtros['fecha_fin'],
+                'origen' => 'manual',
+            ];
+            $key = $manual['fecha_inicio'] . ':' . $manual['fecha_fin'];
+            $periodos[] = $manual;
+            $vistos[$key] = true;
+        }
+
+        if (($filtros['tipo_periodo'] ?? '') === 'manual') {
+            return array_slice($periodos, 0, $limite);
+        }
+
+        $fechaBase = (string)($filtros['fecha_base'] ?? date('Y-m-d'));
+        $tipo = (string)($filtros['tipo_periodo'] ?? 'semanal');
+        for ($i = 0; $i < $limite; $i++) {
+            $periodo = $this->periodoNominaPorBase($tipo, $fechaBase);
+            $key = $periodo['fecha_inicio'] . ':' . $periodo['fecha_fin'];
+            if (empty($vistos[$key])) {
+                $periodos[] = $periodo;
+                $vistos[$key] = true;
+            }
+
+            $fechaBase = (new DateTimeImmutable($periodo['fecha_inicio']))->modify('-1 day')->format('Y-m-d');
+        }
+
+        return array_slice($periodos, 0, $limite);
+    }
+
+    private function periodoNominaPorBase(string $tipo, string $fechaBase): array
+    {
+        $base = new DateTimeImmutable($fechaBase);
+        if ($tipo === 'mensual') {
+            $inicio = $base->modify('first day of this month');
+            $fin = $base->modify('last day of this month');
+            $etiqueta = 'Mensual ' . $inicio->format('m/Y');
+        } elseif ($tipo === 'quincenal') {
+            $dia = (int)$base->format('j');
+            if ($dia <= 15) {
+                $inicio = $base->setDate((int)$base->format('Y'), (int)$base->format('m'), 1);
+                $fin = $base->setDate((int)$base->format('Y'), (int)$base->format('m'), 15);
+                $etiqueta = 'Quincena 1 ' . $inicio->format('m/Y');
+            } else {
+                $inicio = $base->setDate((int)$base->format('Y'), (int)$base->format('m'), 16);
+                $fin = $base->modify('last day of this month');
+                $etiqueta = 'Quincena 2 ' . $inicio->format('m/Y');
+            }
+        } else {
+            $inicio = $base->modify('monday this week');
+            $fin = $inicio->modify('+6 days');
+            $etiqueta = 'Semana ' . $inicio->format('d/m/Y');
+            $tipo = 'semanal';
+        }
+
+        return [
+            'tipo_periodo' => $tipo,
+            'etiqueta' => $etiqueta,
+            'fecha_inicio' => $inicio->format('Y-m-d'),
+            'fecha_fin' => $fin->format('Y-m-d'),
+            'origen' => 'calculado',
+        ];
+    }
+
+    private function evaluarEstadoNominaPeriodoReadOnly(array $periodo): array
+    {
+        $resumen = is_array($periodo['resumen'] ?? null) ? $periodo['resumen'] : $this->resumenVacioNominaPreview();
+        $bloqueos = is_array($periodo['bloqueos'] ?? null) ? $periodo['bloqueos'] : [];
+
+        if (!empty($bloqueos)) {
+            return [
+                'estado_periodo' => 'bloqueado',
+                'estado_label' => 'Bloqueado',
+                'cerrable_readonly' => false,
+                'motivo_bloqueo' => implode(' ', $bloqueos),
+            ];
+        }
+
+        if ((int)($resumen['trabajadores_total'] ?? 0) <= 0) {
+            return [
+                'estado_periodo' => 'sin_movimientos',
+                'estado_label' => 'Sin movimientos',
+                'cerrable_readonly' => false,
+                'motivo_bloqueo' => 'No hay trabajadores visibles para este periodo.',
+            ];
+        }
+
+        if ((int)($resumen['bloqueado_count'] ?? 0) > 0) {
+            return [
+                'estado_periodo' => 'requiere_revision',
+                'estado_label' => 'Requiere revision',
+                'cerrable_readonly' => false,
+                'motivo_bloqueo' => 'Hay trabajadores bloqueados o no activos en el periodo.',
+            ];
+        }
+
+        if ((float)($resumen['pendiente_pago_total'] ?? 0) > 0) {
+            return [
+                'estado_periodo' => 'listo_revision',
+                'estado_label' => 'Listo para revision',
+                'cerrable_readonly' => true,
+                'motivo_bloqueo' => '',
+            ];
+        }
+
+        return [
+            'estado_periodo' => 'sin_saldo',
+            'estado_label' => 'Sin saldo disponible',
+            'cerrable_readonly' => true,
+            'motivo_bloqueo' => '',
+        ];
+    }
     private function normalizarFiltrosNominaPreview(array $filtros): array
     {
         $fechaInicioRaw = trim((string)($filtros['fecha_inicio'] ?? ''));
