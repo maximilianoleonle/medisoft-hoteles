@@ -2614,5 +2614,7 @@ Resultado automatico esperado:
 
 - Lint PHP: OK en rutas, controlador, modelo, servicio, vistas y checkers.
 - Migracion local: registrada como `ejecutada`.
+- Prueba rollback local:
+  `docker compose exec -T app php tools/saas/probar_nomina_periodo_snapshot.php`.
 - Preflight pagos laborales Caja: `ERROR: 0`.
 - Health general: `ERROR: 0`.

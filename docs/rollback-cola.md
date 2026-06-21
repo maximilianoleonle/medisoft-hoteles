@@ -2544,7 +2544,8 @@ Rollback de codigo:
    anulacion persistente.
 7. Retirar validaciones 5E-L-A de `preflight_personal_pagos_caja.php` y
    `health_check_fase_1a.php`.
-8. Retirar `docs/fase_5E_L_A_cierre_aprobacion_persistente_prenomina.md` y sus
+8. Retirar `src/tools/saas/probar_nomina_periodo_snapshot.php`.
+9. Retirar `docs/fase_5E_L_A_cierre_aprobacion_persistente_prenomina.md` y sus
    referencias.
 
 Rollback de base de datos local:

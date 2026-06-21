@@ -1016,7 +1016,7 @@ class Trabajador extends Model
         return $periodo;
     }
 
-    public function cerrarNominaPeriodoPersistenteParaHotel(int $hotelId, array $datos, ?int $usuarioId = null): int
+    public function cerrarNominaPeriodoPersistenteParaHotel(int $hotelId, array $datos, ?int $usuarioId = null, bool $manageTransaction = true): int
     {
         if ($hotelId <= 0 || !$this->tablasNominaPeriodoPersistenteDisponibles()) {
             throw new Exception('Persistencia de periodos de pre-nomina no disponible');
@@ -1034,7 +1034,7 @@ class Trabajador extends Model
             'incluir_pagos_caja' => $cierre['incluir_pagos_caja'] ? '1' : '0',
         ];
 
-        $this->db->safeBeginTransaction();
+        $this->iniciarTransaccionNominaPeriodo($manageTransaction);
 
         try {
             $duplicado = $this->fetchOne(
@@ -1119,22 +1119,22 @@ class Trabajador extends Model
                 $usuarioId
             );
 
-            $this->db->safeCommit();
+            $this->confirmarTransaccionNominaPeriodo($manageTransaction);
 
             return $periodoId;
         } catch (Throwable $e) {
-            $this->db->safeRollBack();
+            $this->revertirTransaccionNominaPeriodo($manageTransaction);
             throw $e;
         }
     }
 
-    public function aprobarNominaPeriodoParaHotel(int $periodoId, int $hotelId, ?int $usuarioId = null): bool
+    public function aprobarNominaPeriodoParaHotel(int $periodoId, int $hotelId, ?int $usuarioId = null, bool $manageTransaction = true): bool
     {
         if ($periodoId <= 0 || $hotelId <= 0 || !$this->tablasNominaPeriodoPersistenteDisponibles()) {
             throw new Exception('Persistencia de periodos de pre-nomina no disponible');
         }
 
-        $this->db->safeBeginTransaction();
+        $this->iniciarTransaccionNominaPeriodo($manageTransaction);
 
         try {
             $periodo = $this->fetchOne(
@@ -1180,16 +1180,16 @@ class Trabajador extends Model
                 $usuarioId
             );
 
-            $this->db->safeCommit();
+            $this->confirmarTransaccionNominaPeriodo($manageTransaction);
 
             return true;
         } catch (Throwable $e) {
-            $this->db->safeRollBack();
+            $this->revertirTransaccionNominaPeriodo($manageTransaction);
             throw $e;
         }
     }
 
-    public function anularNominaPeriodoParaHotel(int $periodoId, int $hotelId, string $motivo, ?int $usuarioId = null): bool
+    public function anularNominaPeriodoParaHotel(int $periodoId, int $hotelId, string $motivo, ?int $usuarioId = null, bool $manageTransaction = true): bool
     {
         if ($periodoId <= 0 || $hotelId <= 0 || !$this->tablasNominaPeriodoPersistenteDisponibles()) {
             throw new Exception('Persistencia de periodos de pre-nomina no disponible');
@@ -1200,7 +1200,7 @@ class Trabajador extends Model
             throw new Exception('El motivo de anulacion es obligatorio');
         }
 
-        $this->db->safeBeginTransaction();
+        $this->iniciarTransaccionNominaPeriodo($manageTransaction);
 
         try {
             $periodo = $this->fetchOne(
@@ -1247,11 +1247,11 @@ class Trabajador extends Model
                 $usuarioId
             );
 
-            $this->db->safeCommit();
+            $this->confirmarTransaccionNominaPeriodo($manageTransaction);
 
             return true;
         } catch (Throwable $e) {
-            $this->db->safeRollBack();
+            $this->revertirTransaccionNominaPeriodo($manageTransaction);
             throw $e;
         }
     }
@@ -3134,6 +3134,32 @@ class Trabajador extends Model
 
         if (!$stmt) {
             throw new Exception('No se pudo guardar el detalle del snapshot de pre-nomina');
+        }
+    }
+
+    private function iniciarTransaccionNominaPeriodo(bool $manageTransaction): void
+    {
+        if ($manageTransaction) {
+            $this->db->safeBeginTransaction();
+            return;
+        }
+
+        if (!$this->db->enTransaccion()) {
+            throw new Exception('La operacion requiere una transaccion externa activa');
+        }
+    }
+
+    private function confirmarTransaccionNominaPeriodo(bool $manageTransaction): void
+    {
+        if ($manageTransaction) {
+            $this->db->safeCommit();
+        }
+    }
+
+    private function revertirTransaccionNominaPeriodo(bool $manageTransaction): void
+    {
+        if ($manageTransaction) {
+            $this->db->safeRollBack();
         }
     }
 

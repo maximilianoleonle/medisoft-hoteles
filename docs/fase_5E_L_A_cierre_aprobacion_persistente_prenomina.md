@@ -27,6 +27,8 @@ liquidacion automatica de anticipos/prestamos ni movimientos de Caja.
 - Checkers:
   `src/tools/saas/preflight_personal_pagos_caja.php`.
   `src/tools/saas/health_check_fase_1a.php`.
+- Prueba rollback local:
+  `src/tools/saas/probar_nomina_periodo_snapshot.php`.
 
 ## Rutas
 
@@ -70,6 +72,18 @@ mismo rango dentro del mismo hotel.
 8. Confirmar que el detalle no cambia al aprobar.
 9. Anular un snapshot con motivo y confirmar evento.
 10. Confirmar que no se crean movimientos de Caja ni pagos laborales.
+
+## QA automatica local
+
+Ejecutar:
+
+```bash
+docker compose exec -T app php tools/saas/probar_nomina_periodo_snapshot.php
+```
+
+La herramienta exige `APP_ENV=local`, crea hotel/trabajador/concepto/snapshot
+temporales dentro de una transaccion externa, valida cierre duplicado bloqueado,
+aprobacion y anulacion con motivo, y finalmente hace rollback.
 
 ## Rollback
 

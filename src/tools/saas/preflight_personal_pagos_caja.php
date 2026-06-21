@@ -216,6 +216,7 @@ $workerPayrollPeriodServicePath = $appRoot . '/app/services/TrabajadorNominaPeri
 $auditServicePath = $appRoot . '/app/services/AuditService.php';
 $paymentServicePath = $appRoot . '/app/services/TrabajadorPagoCajaService.php';
 $rollbackToolPath = $appRoot . '/tools/saas/probar_pago_laboral_caja.php';
+$payrollPeriodRollbackToolPath = $appRoot . '/tools/saas/probar_nomina_periodo_snapshot.php';
 $payrollPeriodMigrationPath = $projectRoot . '/migrations/20260621_001_fase_5e_l_a_nomina_periodos_persistentes.sql';
 $contractPath = '';
 $contractCandidates = [
@@ -1002,6 +1003,7 @@ if (
         && strpos($workerControllerCode, 'consumirNominaPeriodoToken') !== false
         && strpos($workerControllerCode, 'auditarNominaPeriodo') !== false
         && strpos($workerPayrollPeriodServiceCode, 'class TrabajadorNominaPeriodoService') !== false
+        && strpos($workerPayrollPeriodServiceCode, 'manage_transaction') !== false
         && strpos($workerPayrollPeriodServiceCode, 'cerrarPeriodo') !== false
         && strpos($workerPayrollPeriodServiceCode, 'aprobarPeriodo') !== false
         && strpos($workerPayrollPeriodServiceCode, 'anularPeriodo') !== false
@@ -1237,6 +1239,33 @@ if (is_file($rollbackToolPath)) {
     lpcError(
         'Falta prueba rollback probar_pago_laboral_caja.php.',
         'Crear herramienta reversible antes de cerrar 5E-D-A.'
+    );
+}
+
+if (is_file($payrollPeriodRollbackToolPath)) {
+    $periodRollbackCode = (string) file_get_contents($payrollPeriodRollbackToolPath);
+    if (
+        strpos($periodRollbackCode, 'APP_ENV') !== false
+        && strpos($periodRollbackCode, 'local') !== false
+        && strpos($periodRollbackCode, 'manage_transaction') !== false
+        && strpos($periodRollbackCode, 'false') !== false
+        && strpos($periodRollbackCode, 'rollBack') !== false
+        && strpos($periodRollbackCode, 'trabajador_nomina_periodos') !== false
+        && strpos($periodRollbackCode, 'aprobarPeriodo') !== false
+        && strpos($periodRollbackCode, 'anularPeriodo') !== false
+        && strpos($periodRollbackCode, 'QA-ROLLBACK-5E-L-A') !== false
+    ) {
+        lpcOk('Prueba rollback probar_nomina_periodo_snapshot.php disponible para 5E-L-A sin persistencia.');
+    } else {
+        lpcError(
+            'Prueba rollback probar_nomina_periodo_snapshot.php incompleta.',
+            'Debe usar APP_ENV local, transaccion externa, manage_transaction false, cierre/aprobacion/anulacion y rollback sin persistencia.'
+        );
+    }
+} else {
+    lpcWarning(
+        'Falta prueba rollback probar_nomina_periodo_snapshot.php.',
+        'Crear herramienta reversible antes de cerrar documentalmente 5E-L-A.'
     );
 }
 

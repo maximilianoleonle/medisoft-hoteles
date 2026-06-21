@@ -2496,6 +2496,8 @@ Estado formal:
   `POST /trabajadores/nomina/periodos/{id}/anular`.
 - Se agrego `TrabajadorNominaPeriodoService` para encapsular cierre, aprobacion y
   anulacion sin usar Caja.
+- Se agrego `src/tools/saas/probar_nomina_periodo_snapshot.php` como prueba rollback
+  local de cierre, duplicado, aprobacion y anulacion sin persistencia.
 - El cierre guarda snapshot administrativo del preview; aprobar/anular solo cambian
   estado/evento del snapshot.
 - No genera nomina oficial, CFDI, timbrado, dispersion, pago masivo, liquidaciones

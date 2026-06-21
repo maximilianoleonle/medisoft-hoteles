@@ -798,6 +798,13 @@ $workerCashPaymentRollbackTool = hcFindFirstExistingPath([
     dirname(getcwd()) . '/src/tools/saas/probar_pago_laboral_caja.php',
     '/workspace/src/tools/saas/probar_pago_laboral_caja.php',
 ]);
+$workerPayrollPeriodRollbackTool = hcFindFirstExistingPath([
+    $appRoot . '/tools/saas/probar_nomina_periodo_snapshot.php',
+    $projectRoot . '/src/tools/saas/probar_nomina_periodo_snapshot.php',
+    getcwd() . '/tools/saas/probar_nomina_periodo_snapshot.php',
+    dirname(getcwd()) . '/src/tools/saas/probar_nomina_periodo_snapshot.php',
+    '/workspace/src/tools/saas/probar_nomina_periodo_snapshot.php',
+]);
 $purchaseServiceFile = hcFindFirstExistingPath([
     $appRoot . '/app/services/CompraService.php',
     $projectRoot . '/src/app/services/CompraService.php',
@@ -1245,6 +1252,35 @@ if ($workerCashPaymentRollbackTool && is_file($workerCashPaymentRollbackTool)) {
         'Crear herramienta reversible para QA de pago laboral con Caja.'
     );
 }
+
+if ($workerPayrollPeriodRollbackTool && is_file($workerPayrollPeriodRollbackTool)) {
+    $workerPayrollPeriodRollbackCode = (string) file_get_contents($workerPayrollPeriodRollbackTool);
+    if (
+        strpos($workerPayrollPeriodRollbackCode, 'APP_ENV') !== false
+        && strpos($workerPayrollPeriodRollbackCode, 'local') !== false
+        && strpos($workerPayrollPeriodRollbackCode, 'manage_transaction') !== false
+        && strpos($workerPayrollPeriodRollbackCode, 'false') !== false
+        && strpos($workerPayrollPeriodRollbackCode, 'rollBack') !== false
+        && strpos($workerPayrollPeriodRollbackCode, 'trabajador_nomina_periodos') !== false
+        && strpos($workerPayrollPeriodRollbackCode, 'cerrarPeriodo') !== false
+        && strpos($workerPayrollPeriodRollbackCode, 'aprobarPeriodo') !== false
+        && strpos($workerPayrollPeriodRollbackCode, 'anularPeriodo') !== false
+        && strpos($workerPayrollPeriodRollbackCode, 'QA-ROLLBACK-5E-L-A') !== false
+    ) {
+        hcOk('Prueba rollback Personal 5E-L-A existe y valida snapshot de pre-nomina sin persistencia.');
+    } else {
+        hcError(
+            'Prueba rollback Personal 5E-L-A incompleta.',
+            'Debe exigir APP_ENV local, abrir transaccion externa, usar manage_transaction false, cerrar/aprobar/anular y hacer rollBack.'
+        );
+    }
+} else {
+    hcWarning(
+        'No existe prueba rollback probar_nomina_periodo_snapshot.php.',
+        'Crear herramienta reversible para QA de cierre/aprobacion/anulacion 5E-L-A.'
+    );
+}
+
 if ($minimalPurchasingOfficialMigration && is_file($minimalPurchasingOfficialMigration)) {
     hcOk('Migracion oficial Fase 2O de compras minimas existe en migrations/.');
 } else {
