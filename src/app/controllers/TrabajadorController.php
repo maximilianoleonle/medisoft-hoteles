@@ -77,15 +77,7 @@ class TrabajadorController extends Controller
     public function reportePagosCajaAction(): void
     {
         $hotelId = $this->hotelIdActual();
-        $filtros = [
-            'trabajador_id' => $this->getQuery('trabajador_id', ''),
-            'buscar' => $this->getQuery('buscar', ''),
-            'estado' => $this->getQuery('estado', 'todos'),
-            'metodo_pago' => $this->getQuery('metodo_pago', 'todos'),
-            'corte_id' => $this->getQuery('corte_id', ''),
-            'fecha_inicio' => $this->getQuery('fecha_inicio', ''),
-            'fecha_fin' => $this->getQuery('fecha_fin', ''),
-        ];
+        $filtros = $this->filtrosReportePagosCajaDesdeQuery();
 
         $tablaDisponible = $this->trabajadorModel->tablasReportePagosCajaDisponibles();
         $reporte = $tablaDisponible
@@ -97,6 +89,19 @@ class TrabajadorController extends Controller
             'reporte' => $reporte,
             'tablaDisponible' => $tablaDisponible,
         ]);
+    }
+
+    public function exportarReportePagosCajaAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $filtros = $this->filtrosReportePagosCajaDesdeQuery();
+
+        $tablaDisponible = $this->trabajadorModel->tablasReportePagosCajaDisponibles();
+        $reporte = $tablaDisponible
+            ? $this->trabajadorModel->reportePagosCajaPorHotel($hotelId, $filtros, 500)
+            : $this->reportePagosCajaVacio($filtros);
+
+        $this->descargarReportePagosCajaCsv($reporte);
     }
 
     public function simuladorPagoCajaAction(): void
@@ -644,6 +649,122 @@ class TrabajadorController extends Controller
             ],
             'trabajadores_relevantes' => [],
         ];
+    }
+
+    private function filtrosReportePagosCajaDesdeQuery(): array
+    {
+        return [
+            'trabajador_id' => $this->getQuery('trabajador_id', ''),
+            'buscar' => $this->getQuery('buscar', ''),
+            'estado' => $this->getQuery('estado', 'todos'),
+            'metodo_pago' => $this->getQuery('metodo_pago', 'todos'),
+            'corte_id' => $this->getQuery('corte_id', ''),
+            'fecha_inicio' => $this->getQuery('fecha_inicio', ''),
+            'fecha_fin' => $this->getQuery('fecha_fin', ''),
+        ];
+    }
+
+    private function descargarReportePagosCajaCsv(array $reporte): void
+    {
+        if (function_exists('session_write_close')) {
+            session_write_close();
+        }
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        $filename = 'pagos_laborales_caja_' . date('Ymd_His') . '.csv';
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $out = fopen('php://output', 'w');
+        if ($out === false) {
+            exit;
+        }
+
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, [
+            'registro_id',
+            'fecha_pago',
+            'trabajador_id',
+            'trabajador',
+            'identificacion',
+            'rol',
+            'monto',
+            'metodo_pago',
+            'estado',
+            'referencia',
+            'concepto',
+            'periodo_inicio',
+            'periodo_fin',
+            'caja',
+            'corte_id',
+            'corte_estado',
+            'movimiento_caja_id',
+            'movimiento_reversion_id',
+            'corte_reversion_id',
+            'monto_reversion_caja',
+            'fecha_reversion_caja',
+            'creado_por',
+            'actualizado_por',
+            'notas',
+        ]);
+
+        $registros = is_array($reporte['registros'] ?? null) ? $reporte['registros'] : [];
+        foreach ($registros as $registro) {
+            fputcsv($out, [
+                (int)($registro['id'] ?? 0),
+                $this->csvReportePagosCajaValor($registro['fecha_pago'] ?? ''),
+                (int)($registro['trabajador_id'] ?? 0),
+                $this->csvReportePagosCajaValor($registro['trabajador_nombre'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['trabajador_identificacion'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['trabajador_rol'] ?? ''),
+                number_format((float)($registro['monto'] ?? 0), 2, '.', ''),
+                $this->csvReportePagosCajaValor($registro['metodo_pago'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['estado'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['referencia'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['concepto'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['periodo_inicio'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['periodo_fin'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['caja_nombre'] ?? ''),
+                (int)($registro['corte_id'] ?? 0),
+                $this->csvReportePagosCajaValor($registro['corte_estado'] ?? ''),
+                (int)($registro['movimiento_caja_id'] ?? 0),
+                (int)($registro['movimiento_reversion_id'] ?? 0),
+                (int)($registro['corte_reversion_id'] ?? 0),
+                number_format((float)($registro['movimiento_reversion_monto'] ?? 0), 2, '.', ''),
+                $this->csvReportePagosCajaValor($registro['movimiento_reversion_created_at'] ?? ''),
+                $this->csvReportePagosCajaUsuario($registro, 'creado_por'),
+                $this->csvReportePagosCajaUsuario($registro, 'actualizado_por'),
+                $this->csvReportePagosCajaValor($registro['notas'] ?? ''),
+            ]);
+        }
+
+        fclose($out);
+        exit;
+    }
+
+    private function csvReportePagosCajaValor($value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        return trim(str_replace(["\r\n", "\r", "\n"], ' ', (string)$value));
+    }
+
+    private function csvReportePagosCajaUsuario(array $registro, string $prefijo): string
+    {
+        $nombre = $this->csvReportePagosCajaValor($registro[$prefijo . '_nombre'] ?? '');
+        if ($nombre !== '') {
+            return $nombre;
+        }
+
+        return $this->csvReportePagosCajaValor($registro[$prefijo . '_login'] ?? '');
     }
 
     private function reportePagosCajaVacio(array $filtros = []): array

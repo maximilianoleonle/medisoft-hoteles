@@ -584,6 +584,10 @@ if ($routes === []) {
             && trim((string)$route['path'], '/') === 'trabajadores/pagos-caja/reporte'
             && strtolower((string)$route['controller']) === 'trabajador'
             && strtolower((string)$route['action']) === 'reportepagoscaja';
+        $isReadOnlyReportExport = strtolower((string)$route['method']) === 'get'
+            && trim((string)$route['path'], '/') === 'trabajadores/pagos-caja/reporte/exportar'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'exportarreportepagoscaja';
         $isPaymentRoute = strtolower((string)$route['method']) === 'post'
             && trim((string)$route['path'], '/') === 'trabajadores/{id:[0-9]+}/registrar-pago-caja'
             && strtolower((string)$route['controller']) === 'trabajador'
@@ -594,6 +598,7 @@ if ($routes === []) {
         if (
             !$isReadOnlySimulator
             && !$isReadOnlyReport
+            && !$isReadOnlyReportExport
             && !$isPaymentRoute
             &&
             strpos($signature, 'trabajadores') !== false
@@ -625,6 +630,16 @@ if ($routes === []) {
         lpcWarning(
             'Ruta 14E GET /trabajadores/pagos-caja/reporte no esta registrada.',
             'Registrar el GET read-only antes de QA del reporte laboral Caja.'
+        );
+    }
+
+    $reportExportRouteOk = lpcRouteExists($routes, 'trabajadores/pagos-caja/reporte/exportar', 'get');
+    if ($reportExportRouteOk) {
+        lpcOk('Ruta 14F GET /trabajadores/pagos-caja/reporte/exportar registrada como export CSV read-only.');
+    } else {
+        lpcWarning(
+            'Ruta 14F GET /trabajadores/pagos-caja/reporte/exportar no esta registrada.',
+            'Registrar el GET read-only antes de QA del export CSV laboral Caja.'
         );
     }
 
@@ -664,7 +679,11 @@ if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($work
         && strpos($workerModelCode, 'function reportePagosCajaPorHotel') !== false
         && strpos($workerModelCode, 'function tablasReportePagosCajaDisponibles') !== false
         && strpos($workerControllerCode, 'function reportePagosCajaAction') !== false
+        && strpos($workerControllerCode, 'function exportarReportePagosCajaAction') !== false
+        && strpos($workerControllerCode, 'fputcsv') !== false
         && strpos($workerControllerCode, 'trabajadores/reporte_pagos_caja') !== false
+        && strpos($workerCashReportViewCode, 'trabajadores/pagos-caja/reporte/exportar') !== false
+        && strpos($workerCashReportViewCode, 'Exportar CSV') !== false
         && strpos($workerCashReportViewCode, "action=\"<?= url('trabajadores/pagos-caja/reporte') ?>\"") !== false
         && strpos($workerCashReportViewCode, 'method="GET"') !== false
         && strpos($workerCashReportViewCode, 'method="POST"') === false

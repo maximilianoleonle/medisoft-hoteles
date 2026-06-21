@@ -69,6 +69,20 @@ $metodoPago = (string)($filtros['metodo_pago'] ?? 'todos');
 $corteId = (int)($filtros['corte_id'] ?? 0);
 $fechaInicio = (string)($filtros['fecha_inicio'] ?? '');
 $fechaFin = (string)($filtros['fecha_fin'] ?? '');
+$exportParams = [
+    'trabajador_id' => $trabajadorId > 0 ? $trabajadorId : null,
+    'buscar' => $buscar !== '' ? $buscar : null,
+    'estado' => $estado !== '' ? $estado : 'todos',
+    'metodo_pago' => $metodoPago !== '' ? $metodoPago : 'todos',
+    'corte_id' => $corteId > 0 ? $corteId : null,
+    'fecha_inicio' => $fechaInicio !== '' ? $fechaInicio : null,
+    'fecha_fin' => $fechaFin !== '' ? $fechaFin : null,
+];
+$exportParams = array_filter($exportParams, static function ($value) {
+    return $value !== null && trim((string)$value) !== '';
+});
+$exportQuery = http_build_query($exportParams);
+$exportUrl = url('trabajadores/pagos-caja/reporte/exportar' . ($exportQuery !== '' ? '?' . $exportQuery : ''));
 ?>
 
 <style>
@@ -230,6 +244,10 @@ $fechaFin = (string)($filtros['fecha_fin'] ?? '');
                 <a class="report-btn" href="<?= url('trabajadores/pagos-caja/simulador') ?>">
                     <i class="fas fa-cash-register"></i>
                     Simulador Caja
+                </a>
+                <a class="report-btn" href="<?= $exportUrl ?>">
+                    <i class="fas fa-file-csv"></i>
+                    Exportar CSV
                 </a>
             </div>
             <span class="report-badge">
