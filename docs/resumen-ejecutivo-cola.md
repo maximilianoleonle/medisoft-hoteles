@@ -2573,3 +2573,25 @@ Estado formal:
 - Siguiente paso seguro: `5E-M-A` solo con autorizacion explicita para tocar
   rutas, controlador, modelo read-only, vista, export CSV, checkers y
   documentacion.
+
+## 5E-M-A Reporte/export snapshots de pre-nomina
+
+Estado formal:
+`IMPLEMENTACION_5E_M_A_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_LOCAL_QA_PENDIENTE`.
+
+- Documento creado:
+  `docs/fase_5E_M_A_reporte_export_snapshots_prenomina.md`.
+- Rutas nuevas:
+  `GET /trabajadores/nomina/periodos/reporte` y
+  `GET /trabajadores/nomina/periodos/exportar`.
+- Se agrego vista `trabajadores/nomina_periodos_reporte` con filtros GET por
+  fecha, estado, tipo de periodo y busqueda libre.
+- Se agrego modelo read-only para consultar snapshots persistentes por `hotel_id`
+  y sumar importes ya congelados.
+- Se agrego export CSV en memoria, sin storage ni archivos temporales.
+- Se enlazo el reporte desde `GET /trabajadores/nomina/periodos`.
+- No agrega migraciones, datos, pagos laborales, movimientos de Caja, cortes,
+  liquidaciones, nomina oficial, CFDI, timbrado, dispersion, PWA/offline ni
+  cambios en `/api/sync`.
+- Siguiente paso seguro: correr QA local del reporte/export; si pasa, cierre
+  documental 5E-M-F.

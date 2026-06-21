@@ -3255,6 +3255,8 @@ if (!is_file($routesPath)) {
         ['method' => 'get', 'path' => 'trabajadores/reporte'],
         ['method' => 'get', 'path' => 'trabajadores/nomina/periodos'],
         ['method' => 'get', 'path' => 'trabajadores/nomina/periodos/preview'],
+        ['method' => 'get', 'path' => 'trabajadores/nomina/periodos/reporte'],
+        ['method' => 'get', 'path' => 'trabajadores/nomina/periodos/exportar'],
         ['method' => 'get', 'path' => 'trabajadores/nomina/periodos/{id:[0-9]+}'],
         ['method' => 'post', 'path' => 'trabajadores/nomina/periodos/cerrar'],
         ['method' => 'post', 'path' => 'trabajadores/nomina/periodos/{id:[0-9]+}/aprobar'],
@@ -3288,7 +3290,7 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($missingWorkerRoutes)) {
-        hcOk('Rutas Personal NP-F-A/5E-C/5E-D-A/5E-G-A/5E-H-A/5E-I-A/5E-J-A/5E-K-A/5E-L-A/14E/14F registradas: CRUD, reportes, periodos/preview nomina, snapshot persistente, export CSV, recibo/PDF read-only, ledger, simulador Caja, pago y reversion laboral controlada.');
+        hcOk('Rutas Personal NP-F-A/5E-C/5E-D-A/5E-G-A/5E-H-A/5E-I-A/5E-J-A/5E-K-A/5E-L-A/5E-M-A/14E/14F registradas: CRUD, reportes, periodos/preview nomina, snapshot persistente, export CSV, recibo/PDF read-only, ledger, simulador Caja, pago y reversion laboral controlada.');
     } else {
         hcWarning(
             'Rutas Personal NP-F-A/5E-C/5E-D-A faltantes: ' . implode(', ', $missingWorkerRoutes),
@@ -3302,6 +3304,8 @@ if (!is_file($routesPath)) {
         'GET /trabajadores/reporte -> trabajador::reporte',
         'GET /trabajadores/nomina/periodos -> trabajador::nominaperiodos',
         'GET /trabajadores/nomina/periodos/preview -> trabajador::nominaperiodopreview',
+        'GET /trabajadores/nomina/periodos/reporte -> trabajador::reportenominaperiodos',
+        'GET /trabajadores/nomina/periodos/exportar -> trabajador::exportarnominaperiodos',
         'GET /trabajadores/nomina/periodos/{id:[0-9]+} -> trabajador::nominaperiododetalle',
         'POST /trabajadores/nomina/periodos/cerrar -> trabajador::cerrarnominaperiodo',
         'POST /trabajadores/nomina/periodos/{id:[0-9]+}/aprobar -> trabajador::aprobarnominaperiodo',
@@ -3339,7 +3343,7 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($forbiddenWorkerRoutes)) {
-        hcOk('Personal NP-F-A/5E-C/5E-D-A/5E-G-A/5E-H-A/5E-I-A/5E-J-A/5E-K-A/5E-L-A/14E/14F mantiene solo rutas autorizadas; reportes/periodos/preview/export/recibo/PDF/simulador GET y cierre/aprobacion/anulacion/pago/reversion POST controlados.');
+        hcOk('Personal NP-F-A/5E-C/5E-D-A/5E-G-A/5E-H-A/5E-I-A/5E-J-A/5E-K-A/5E-L-A/5E-M-A/14E/14F mantiene solo rutas autorizadas; reportes/periodos/preview/export/recibo/PDF/simulador GET y cierre/aprobacion/anulacion/pago/reversion POST controlados.');
     } else {
         hcError(
             'Personal NP-F-A tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenWorkerRoutes),
@@ -3600,6 +3604,7 @@ if (!is_file($routesPath)) {
     $workerIndexViewPath = $appRoot . '/app/views/trabajadores/index.php';
     $workerDetailViewPath = $appRoot . '/app/views/trabajadores/ver.php';
     $workerCashSimulatorViewPath = $appRoot . '/app/views/trabajadores/simulador_pago_caja.php';
+    $workerPayrollPeriodsReportViewPath = $appRoot . '/app/views/trabajadores/nomina_periodos_reporte.php';
 
     if (is_file($workerModelPath) && is_file($workerControllerPath)) {
         $workerModelCode = (string) file_get_contents($workerModelPath);
@@ -3675,6 +3680,55 @@ if (!is_file($routesPath)) {
             hcWarning(
                 'Personal 5E-C-A no muestra simulador read-only completo.',
                 'Validar ruta GET, controlador sin POST, modelo solo lectura y diagnostico con corte abierto/referencia.'
+            );
+        }
+
+        $workerPayrollReportViewCode = is_file($workerPayrollPeriodsReportViewPath)
+            ? (string) file_get_contents($workerPayrollPeriodsReportViewPath)
+            : '';
+        $workerPayrollReportModelBody = hcMethodBody($workerModelCode, 'reporteNominaPeriodosPersistentesPorHotel');
+        $workerPayrollReportControllerBody = hcMethodBody($workerControllerCode, 'reporteNominaPeriodosAction');
+        $workerPayrollExportControllerBody = hcMethodBody($workerControllerCode, 'exportarNominaPeriodosAction');
+        $workerPayrollCsvControllerBody = hcMethodBody($workerControllerCode, 'descargarNominaPeriodosCsv');
+        $workerPayrollReportSurface = $workerPayrollReportControllerBody
+            . "\n" . $workerPayrollExportControllerBody
+            . "\n" . $workerPayrollCsvControllerBody
+            . "\n" . $workerPayrollReportViewCode;
+        if (
+            $workerPayrollReportViewCode !== ''
+            && $workerPayrollReportModelBody !== ''
+            && hcCodeBodyIsReadOnly($workerPayrollReportModelBody)
+            && hcCodeBodyIsReadOnly($workerPayrollReportControllerBody)
+            && hcCodeBodyIsReadOnly($workerPayrollExportControllerBody)
+            && hcCodeBodyIsReadOnly($workerPayrollReportSurface)
+            && strpos($workerModelCode, 'function tablasReporteNominaPeriodosDisponibles') !== false
+            && strpos($workerModelCode, 'function normalizarFiltrosReporteNominaPeriodos') !== false
+            && strpos($workerModelCode, 'trabajador_nomina_periodos') !== false
+            && strpos($workerModelCode, 'trabajador_nomina_periodo_detalles') !== false
+            && strpos($workerModelCode, 'trabajador_nomina_periodo_eventos') !== false
+            && strpos($workerControllerCode, 'function reporteNominaPeriodosAction') !== false
+            && strpos($workerControllerCode, 'function exportarNominaPeriodosAction') !== false
+            && strpos($workerControllerCode, 'function descargarNominaPeriodosCsv') !== false
+            && strpos($workerControllerCode, 'trabajadores/nomina_periodos_reporte') !== false
+            && strpos($workerControllerCode, 'fputcsv') !== false
+            && strpos($workerControllerCode, 'X-Content-Type-Options: nosniff') !== false
+            && strpos($workerPayrollReportViewCode, "action=\"<?= url('trabajadores/nomina/periodos/reporte') ?>\"") !== false
+            && strpos($workerPayrollReportViewCode, 'trabajadores/nomina/periodos/exportar') !== false
+            && strpos($workerPayrollReportViewCode, 'Exportar CSV') !== false
+            && strpos($workerPayrollReportViewCode, 'Snapshots persistentes') !== false
+            && strpos($workerPayrollReportViewCode, 'method="GET"') !== false
+            && strpos($workerPayrollReportViewCode, 'method="POST"') === false
+            && strpos($workerPayrollReportViewCode, 'csrf_field()') === false
+            && strpos($workerPayrollReportViewCode, 'Solo GET') !== false
+            && strpos($workerPayrollReportViewCode, 'registrar-pago-caja') === false
+            && strpos($workerPayrollReportViewCode, 'timbrar') === false
+            && strpos($workerPayrollReportViewCode, 'dispersion') === false
+        ) {
+            hcOk('Personal 5E-M-A expone reporte/export CSV de snapshots de pre-nomina en modo GET/read-only, sin storage, pagos ni Caja.');
+        } else {
+            hcWarning(
+                'Personal 5E-M-A no muestra reporte/export de snapshots completo.',
+                'Validar rutas GET, controlador/modelo solo lectura, CSV en memoria y vista sin POST/CSRF/pagos.'
             );
         }
 

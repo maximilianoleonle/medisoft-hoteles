@@ -255,6 +255,36 @@ class TrabajadorController extends Controller
         $this->redirect($periodoId > 0 ? 'trabajadores/nomina/periodos/' . $periodoId : 'trabajadores/nomina/periodos');
     }
 
+    public function reporteNominaPeriodosAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $filtros = $this->filtrosReporteNominaPeriodosDesdeQuery();
+
+        $tablaDisponible = $this->trabajadorModel->tablasReporteNominaPeriodosDisponibles();
+        $reporte = $tablaDisponible
+            ? $this->trabajadorModel->reporteNominaPeriodosPersistentesPorHotel($hotelId, $filtros, 300)
+            : $this->reporteNominaPeriodosVacio($filtros);
+
+        View::renderTemplate('trabajadores/nomina_periodos_reporte', [
+            'title' => 'Reporte snapshots pre-nomina - ' . current_hotel_display_name(),
+            'reporte' => $reporte,
+            'tablaDisponible' => $tablaDisponible,
+        ]);
+    }
+
+    public function exportarNominaPeriodosAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $filtros = $this->filtrosReporteNominaPeriodosDesdeQuery();
+
+        $tablaDisponible = $this->trabajadorModel->tablasReporteNominaPeriodosDisponibles();
+        $reporte = $tablaDisponible
+            ? $this->trabajadorModel->reporteNominaPeriodosPersistentesPorHotel($hotelId, $filtros, 1000)
+            : $this->reporteNominaPeriodosVacio($filtros);
+
+        $this->descargarNominaPeriodosCsv($reporte);
+    }
+
     public function nominaPreviewAction(): void
     {
         $hotelId = $this->hotelIdActual();
@@ -1052,6 +1082,17 @@ class TrabajadorController extends Controller
         ];
     }
 
+    private function filtrosReporteNominaPeriodosDesdeQuery(): array
+    {
+        return [
+            'fecha_inicio' => $this->getQuery('fecha_inicio', ''),
+            'fecha_fin' => $this->getQuery('fecha_fin', ''),
+            'estado' => $this->getQuery('estado', 'todos'),
+            'tipo_periodo' => $this->getQuery('tipo_periodo', 'todos'),
+            'buscar' => $this->getQuery('buscar', ''),
+        ];
+    }
+
     private function descargarReportePagosCajaCsv(array $reporte): void
     {
         if (function_exists('session_write_close')) {
@@ -1218,6 +1259,85 @@ class TrabajadorController extends Controller
         exit;
     }
 
+    private function descargarNominaPeriodosCsv(array $reporte): void
+    {
+        if (function_exists('session_write_close')) {
+            session_write_close();
+        }
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        $filtros = is_array($reporte['filtros_normalizados'] ?? null) ? $reporte['filtros_normalizados'] : [];
+        $fechaInicio = $this->csvReportePagosCajaValor($filtros['fecha_inicio'] ?? '');
+        $filename = 'snapshots_pre_nomina_' . ($fechaInicio !== '' ? str_replace('-', '', $fechaInicio) : date('Ymd')) . '_' . date('His') . '.csv';
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('X-Content-Type-Options: nosniff');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $out = fopen('php://output', 'w');
+        if ($out === false) {
+            exit;
+        }
+
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, [
+            'snapshot_id',
+            'tipo_periodo',
+            'etiqueta',
+            'fecha_inicio',
+            'fecha_fin',
+            'estado',
+            'trabajadores_total',
+            'bruto_total',
+            'deducciones_total',
+            'pagos_caja_aplicados_total',
+            'reversiones_detectadas_total',
+            'neto_sugerido_total',
+            'pendiente_pago_total',
+            'cerrado_por',
+            'cerrado_at',
+            'aprobado_por',
+            'aprobado_at',
+            'anulado_por',
+            'anulado_at',
+            'motivo_anulacion',
+        ]);
+
+        $registros = is_array($reporte['registros'] ?? null) ? $reporte['registros'] : [];
+        foreach ($registros as $registro) {
+            fputcsv($out, [
+                (int)($registro['id'] ?? 0),
+                $this->csvReportePagosCajaValor($registro['tipo_periodo'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['etiqueta'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['fecha_inicio'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['fecha_fin'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['estado'] ?? ''),
+                (int)($registro['trabajadores_total'] ?? 0),
+                number_format((float)($registro['bruto_total'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['deducciones_total'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['pagos_caja_aplicados_total'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['reversiones_detectadas_total'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['neto_sugerido_total'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['pendiente_pago_total'] ?? 0), 2, '.', ''),
+                $this->csvReportePagosCajaUsuario($registro, 'cerrado_por'),
+                $this->csvReportePagosCajaValor($registro['cerrado_at'] ?? ''),
+                $this->csvReportePagosCajaUsuario($registro, 'aprobado_por'),
+                $this->csvReportePagosCajaValor($registro['aprobado_at'] ?? ''),
+                $this->csvReportePagosCajaUsuario($registro, 'anulado_por'),
+                $this->csvReportePagosCajaValor($registro['anulado_at'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['motivo_anulacion'] ?? ''),
+            ]);
+        }
+
+        fclose($out);
+        exit;
+    }
+
     private function csvReportePagosCajaValor($value): string
     {
         if ($value === null) {
@@ -1262,6 +1382,44 @@ class TrabajadorController extends Controller
                 'corte_id' => max(0, (int)($filtros['corte_id'] ?? 0)),
                 'fecha_inicio' => trim((string)($filtros['fecha_inicio'] ?? '')),
                 'fecha_fin' => trim((string)($filtros['fecha_fin'] ?? '')),
+            ],
+        ];
+    }
+
+    private function reporteNominaPeriodosVacio(array $filtros = []): array
+    {
+        $estado = trim((string)($filtros['estado'] ?? 'todos'));
+        if (!in_array($estado, ['todos', 'cerrado', 'aprobado', 'anulado'], true)) {
+            $estado = 'todos';
+        }
+
+        $tipoPeriodo = trim((string)($filtros['tipo_periodo'] ?? 'todos'));
+        if (!in_array($tipoPeriodo, ['todos', 'semanal', 'quincenal', 'mensual', 'manual'], true)) {
+            $tipoPeriodo = 'todos';
+        }
+
+        return [
+            'registros' => [],
+            'resumen' => [
+                'total_registros' => 0,
+                'cerrados_count' => 0,
+                'aprobados_count' => 0,
+                'anulados_count' => 0,
+                'trabajadores_total' => 0,
+                'bruto_total' => '0.00',
+                'deducciones_total' => '0.00',
+                'pagos_caja_aplicados_total' => '0.00',
+                'reversiones_detectadas_total' => '0.00',
+                'neto_sugerido_total' => '0.00',
+                'pendiente_pago_total' => '0.00',
+            ],
+            'por_estado' => [],
+            'filtros_normalizados' => [
+                'fecha_inicio' => trim((string)($filtros['fecha_inicio'] ?? '')),
+                'fecha_fin' => trim((string)($filtros['fecha_fin'] ?? '')),
+                'estado' => $estado,
+                'tipo_periodo' => $tipoPeriodo,
+                'buscar' => trim((string)($filtros['buscar'] ?? '')),
             ],
         ];
     }

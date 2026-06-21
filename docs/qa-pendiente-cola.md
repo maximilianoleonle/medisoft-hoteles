@@ -2708,3 +2708,30 @@ QA futura sugerida para 5E-M-A:
 9. Confirmar que `movimientos_caja` y `trabajador_pagos_caja` no cambian.
 10. Confirmar que `/api/sync` sigue bloqueado con HTTP 423 y
     `sync_temporarily_disabled`.
+
+## Fase 5E-M-A - Reporte/export snapshots de pre-nomina
+
+Estado: implementacion local pendiente de QA manual.
+
+Revision manual recomendada:
+
+1. Abrir `/trabajadores/nomina/periodos/reporte` con sesion activa.
+2. Confirmar que el resumen muestra snapshots, trabajadores, bruto, deducciones,
+   pagos Caja aplicados, neto sugerido y pendiente.
+3. Filtrar por estado `cerrado`, `aprobado` y `anulado`.
+4. Filtrar por rango de fechas y tipo de periodo.
+5. Usar busqueda libre por folio, etiqueta, usuario o motivo.
+6. Abrir `Ver snapshot` y confirmar que carga el detalle existente.
+7. Exportar CSV y confirmar que respeta los filtros aplicados.
+8. Confirmar que no hay formularios POST ni CSRF en la vista de reporte.
+9. Confirmar que no se crean archivos en storage.
+10. Confirmar que no cambian `movimientos_caja` ni `trabajador_pagos_caja`.
+11. Confirmar que `/api/sync` sigue bloqueado con HTTP 423 y
+    `sync_temporarily_disabled`.
+
+Resultado automatico esperado:
+
+- Lint PHP: OK en rutas, controlador, modelo, vista nueva, vista de periodos y
+  checkers.
+- Preflight pagos laborales Caja: `ERROR: 0`.
+- Health general: `ERROR: 0`.

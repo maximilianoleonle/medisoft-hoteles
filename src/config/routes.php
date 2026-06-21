@@ -260,6 +260,8 @@ $router->get('/trabajadores', ['controller' => 'Trabajador', 'action' => 'index'
 $router->get('/trabajadores/reporte', ['controller' => 'Trabajador', 'action' => 'reporte']);
 $router->get('/trabajadores/nomina/periodos', ['controller' => 'Trabajador', 'action' => 'nominaPeriodos']);
 $router->get('/trabajadores/nomina/periodos/preview', ['controller' => 'Trabajador', 'action' => 'nominaPeriodoPreview']);
+$router->get('/trabajadores/nomina/periodos/reporte', ['controller' => 'Trabajador', 'action' => 'reporteNominaPeriodos']);
+$router->get('/trabajadores/nomina/periodos/exportar', ['controller' => 'Trabajador', 'action' => 'exportarNominaPeriodos']);
 $router->get('/trabajadores/nomina/periodos/{id:[0-9]+}', ['controller' => 'Trabajador', 'action' => 'nominaPeriodoDetalle']);
 $router->post('/trabajadores/nomina/periodos/cerrar', ['controller' => 'Trabajador', 'action' => 'cerrarNominaPeriodo']);
 $router->post('/trabajadores/nomina/periodos/{id:[0-9]+}/aprobar', ['controller' => 'Trabajador', 'action' => 'aprobarNominaPeriodo']);

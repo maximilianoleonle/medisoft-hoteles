@@ -104,6 +104,21 @@ class Trabajador extends Model
         return true;
     }
 
+    public function tablasReporteNominaPeriodosDisponibles(): bool
+    {
+        foreach ([
+            'trabajador_nomina_periodos',
+            'trabajador_nomina_periodo_detalles',
+            'trabajador_nomina_periodo_eventos',
+        ] as $tabla) {
+            if (!$this->tablaExiste($tabla)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function listarPorHotel(int $hotelId, array $filtros = [], int $limite = 100): array
     {
         if ($hotelId <= 0 || !$this->tablaDisponible()) {
@@ -852,6 +867,71 @@ class Trabajador extends Model
         );
 
         return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
+    public function reporteNominaPeriodosPersistentesPorHotel(int $hotelId, array $filtros = [], int $limite = 300): array
+    {
+        $filtros = $this->normalizarFiltrosReporteNominaPeriodos($filtros);
+        $resultado = [
+            'registros' => [],
+            'resumen' => $this->resumenVacioReporteNominaPeriodos(),
+            'por_estado' => [],
+            'filtros_normalizados' => $filtros,
+        ];
+
+        if ($hotelId <= 0 || !$this->tablasReporteNominaPeriodosDisponibles()) {
+            return $resultado;
+        }
+
+        $limite = max(1, min(1000, $limite));
+        [$whereSql, $params] = $this->whereReporteNominaPeriodos($hotelId, $filtros);
+
+        $stmt = $this->db->query(
+            "SELECT p.id,
+                    p.hotel_id,
+                    p.tipo_periodo,
+                    p.etiqueta,
+                    p.fecha_inicio,
+                    p.fecha_fin,
+                    p.estado,
+                    p.trabajadores_total,
+                    p.bruto_total,
+                    p.deducciones_total,
+                    p.pagos_caja_aplicados_total,
+                    p.reversiones_detectadas_total,
+                    p.neto_sugerido_total,
+                    p.pendiente_pago_total,
+                    p.cerrado_por,
+                    p.cerrado_at,
+                    p.aprobado_por,
+                    p.aprobado_at,
+                    p.anulado_por,
+                    p.anulado_at,
+                    p.motivo_anulacion,
+                    p.created_at,
+                    p.updated_at,
+                    uc.nombre_completo AS cerrado_por_nombre,
+                    uc.nombre_usuario AS cerrado_por_login,
+                    ua.nombre_completo AS aprobado_por_nombre,
+                    ua.nombre_usuario AS aprobado_por_login,
+                    un.nombre_completo AS anulado_por_nombre,
+                    un.nombre_usuario AS anulado_por_login
+             FROM trabajador_nomina_periodos p
+             LEFT JOIN usuarios uc ON uc.id = p.cerrado_por
+             LEFT JOIN usuarios ua ON ua.id = p.aprobado_por
+             LEFT JOIN usuarios un ON un.id = p.anulado_por
+             WHERE {$whereSql}
+             ORDER BY p.fecha_inicio DESC, p.fecha_fin DESC, p.id DESC
+             LIMIT {$limite}",
+            $params
+        );
+
+        $registros = $stmt ? ($stmt->fetchAll() ?: []) : [];
+        $resultado['registros'] = $registros;
+        $resultado['resumen'] = $this->resumenReporteNominaPeriodos($registros);
+        $resultado['por_estado'] = $this->porEstadoReporteNominaPeriodos($registros);
+
+        return $resultado;
     }
 
     public function mapaNominaPeriodosPersistentesPorRango(int $hotelId, array $periodos): array
@@ -2119,6 +2199,138 @@ class Trabajador extends Model
             'rol_laboral' => $this->limpiarTexto($filtros['rol_laboral'] ?? '', 80),
             'incluir_pagos_caja' => $this->normalizarBooleanoNominaPreview($filtros['incluir_pagos_caja'] ?? null, true),
         ];
+    }
+
+    private function normalizarFiltrosReporteNominaPeriodos(array $filtros): array
+    {
+        $estado = strtolower(trim((string)($filtros['estado'] ?? 'todos')));
+        if (!in_array($estado, ['todos', 'cerrado', 'aprobado', 'anulado'], true)) {
+            $estado = 'todos';
+        }
+
+        $tipoPeriodo = strtolower(trim((string)($filtros['tipo_periodo'] ?? 'todos')));
+        if (!in_array($tipoPeriodo, ['todos', 'semanal', 'quincenal', 'mensual', 'manual'], true)) {
+            $tipoPeriodo = 'todos';
+        }
+
+        $fechaInicio = $this->nullableFecha($filtros['fecha_inicio'] ?? null);
+        $fechaFin = $this->nullableFecha($filtros['fecha_fin'] ?? null);
+        if ($fechaInicio !== null && $fechaFin !== null && $fechaFin < $fechaInicio) {
+            $temporal = $fechaInicio;
+            $fechaInicio = $fechaFin;
+            $fechaFin = $temporal;
+        }
+
+        return [
+            'fecha_inicio' => $fechaInicio,
+            'fecha_fin' => $fechaFin,
+            'estado' => $estado,
+            'tipo_periodo' => $tipoPeriodo,
+            'buscar' => $this->limpiarTexto($filtros['buscar'] ?? '', 120),
+        ];
+    }
+
+    private function whereReporteNominaPeriodos(int $hotelId, array $filtros): array
+    {
+        $where = ['p.hotel_id = ?'];
+        $params = [$hotelId];
+
+        if (($filtros['fecha_inicio'] ?? null) !== null) {
+            $where[] = 'p.fecha_inicio >= ?';
+            $params[] = (string)$filtros['fecha_inicio'];
+        }
+
+        if (($filtros['fecha_fin'] ?? null) !== null) {
+            $where[] = 'p.fecha_fin <= ?';
+            $params[] = (string)$filtros['fecha_fin'];
+        }
+
+        if (($filtros['estado'] ?? 'todos') !== 'todos') {
+            $where[] = 'p.estado = ?';
+            $params[] = (string)$filtros['estado'];
+        }
+
+        if (($filtros['tipo_periodo'] ?? 'todos') !== 'todos') {
+            $where[] = 'p.tipo_periodo = ?';
+            $params[] = (string)$filtros['tipo_periodo'];
+        }
+
+        $buscar = trim((string)($filtros['buscar'] ?? ''));
+        if ($buscar !== '') {
+            $like = '%' . $buscar . '%';
+            $where[] = '(CAST(p.id AS CHAR) LIKE ? OR p.etiqueta LIKE ? OR p.motivo_anulacion LIKE ? OR uc.nombre_completo LIKE ? OR ua.nombre_completo LIKE ? OR un.nombre_completo LIKE ?)';
+            array_push($params, $like, $like, $like, $like, $like, $like);
+        }
+
+        return [implode(' AND ', $where), $params];
+    }
+
+    private function resumenVacioReporteNominaPeriodos(): array
+    {
+        return [
+            'total_registros' => 0,
+            'cerrados_count' => 0,
+            'aprobados_count' => 0,
+            'anulados_count' => 0,
+            'trabajadores_total' => 0,
+            'bruto_total' => '0.00',
+            'deducciones_total' => '0.00',
+            'pagos_caja_aplicados_total' => '0.00',
+            'reversiones_detectadas_total' => '0.00',
+            'neto_sugerido_total' => '0.00',
+            'pendiente_pago_total' => '0.00',
+        ];
+    }
+
+    private function resumenReporteNominaPeriodos(array $registros): array
+    {
+        $resumen = $this->resumenVacioReporteNominaPeriodos();
+
+        foreach ($registros as $registro) {
+            $estado = (string)($registro['estado'] ?? '');
+            $resumen['total_registros']++;
+            if ($estado === 'cerrado') {
+                $resumen['cerrados_count']++;
+            } elseif ($estado === 'aprobado') {
+                $resumen['aprobados_count']++;
+            } elseif ($estado === 'anulado') {
+                $resumen['anulados_count']++;
+            }
+
+            $resumen['trabajadores_total'] += (int)($registro['trabajadores_total'] ?? 0);
+            $resumen['bruto_total'] = $this->decimal((float)$resumen['bruto_total'] + (float)($registro['bruto_total'] ?? 0));
+            $resumen['deducciones_total'] = $this->decimal((float)$resumen['deducciones_total'] + (float)($registro['deducciones_total'] ?? 0));
+            $resumen['pagos_caja_aplicados_total'] = $this->decimal((float)$resumen['pagos_caja_aplicados_total'] + (float)($registro['pagos_caja_aplicados_total'] ?? 0));
+            $resumen['reversiones_detectadas_total'] = $this->decimal((float)$resumen['reversiones_detectadas_total'] + (float)($registro['reversiones_detectadas_total'] ?? 0));
+            $resumen['neto_sugerido_total'] = $this->decimal((float)$resumen['neto_sugerido_total'] + (float)($registro['neto_sugerido_total'] ?? 0));
+            $resumen['pendiente_pago_total'] = $this->decimal((float)$resumen['pendiente_pago_total'] + (float)($registro['pendiente_pago_total'] ?? 0));
+        }
+
+        return $resumen;
+    }
+
+    private function porEstadoReporteNominaPeriodos(array $registros): array
+    {
+        $items = [];
+        foreach ($registros as $registro) {
+            $estado = (string)($registro['estado'] ?? 'sin_estado');
+            if (!isset($items[$estado])) {
+                $items[$estado] = [
+                    'estado' => $estado,
+                    'total' => 0,
+                    'trabajadores_total' => 0,
+                    'pendiente_pago_total' => '0.00',
+                    'neto_sugerido_total' => '0.00',
+                ];
+            }
+
+            $items[$estado]['total']++;
+            $items[$estado]['trabajadores_total'] += (int)($registro['trabajadores_total'] ?? 0);
+            $items[$estado]['pendiente_pago_total'] = $this->decimal((float)$items[$estado]['pendiente_pago_total'] + (float)($registro['pendiente_pago_total'] ?? 0));
+            $items[$estado]['neto_sugerido_total'] = $this->decimal((float)$items[$estado]['neto_sugerido_total'] + (float)($registro['neto_sugerido_total'] ?? 0));
+        }
+
+        return array_values($items);
     }
 
     private function construirPeriodosNominaCandidatos(array $filtros, int $limite): array

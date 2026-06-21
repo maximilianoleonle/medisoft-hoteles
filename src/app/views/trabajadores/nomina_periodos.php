@@ -310,6 +310,10 @@ $previewNominaQuery = http_build_query([
                     <i class="fas fa-clipboard-list"></i>
                     Preview nomina
                 </a>
+                <a class="period-btn" href="<?= url('trabajadores/nomina/periodos/reporte') ?>">
+                    <i class="fas fa-file-lines"></i>
+                    Reporte snapshots
+                </a>
                 <a class="period-btn" href="<?= url('trabajadores/reporte') ?>">
                     <i class="fas fa-chart-pie"></i>
                     Reporte

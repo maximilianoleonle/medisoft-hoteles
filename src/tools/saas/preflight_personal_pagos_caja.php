@@ -188,6 +188,33 @@ function lpcFileContainsAny(string $path, array $needles): array
     return $matches;
 }
 
+function lpcMethodBody(string $code, string $method): string
+{
+    $needle = 'function ' . $method . '(';
+    $start = strpos($code, $needle);
+    if ($start === false) {
+        return '';
+    }
+
+    $nextPublic = strpos($code, "\n    public function ", $start + strlen($needle));
+    $nextPrivate = strpos($code, "\n    private function ", $start + strlen($needle));
+    $nextProtected = strpos($code, "\n    protected function ", $start + strlen($needle));
+    $candidates = array_filter([$nextPublic, $nextPrivate, $nextProtected], static function ($value) {
+        return $value !== false;
+    });
+    $next = $candidates !== [] ? min($candidates) : false;
+    if ($next === false) {
+        $next = strpos($code, "\n}", $start + strlen($needle));
+    }
+
+    return $next === false ? substr($code, $start) : substr($code, $start, $next - $start);
+}
+
+function lpcCodeBodyIsReadOnly(string $body): bool
+{
+    return !preg_match('/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|REPLACE\s+INTO|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE)\b/i', $body);
+}
+
 $appEnv = getenv('APP_ENV');
 if ($appEnv !== 'local') {
     lpcError(
@@ -209,6 +236,7 @@ $workerCashSimulatorViewPath = $appRoot . '/app/views/trabajadores/simulador_pag
 $workerCashReportViewPath = $appRoot . '/app/views/trabajadores/reporte_pagos_caja.php';
 $workerPayrollPreviewViewPath = $appRoot . '/app/views/trabajadores/nomina_preview.php';
 $workerPayrollPeriodsViewPath = $appRoot . '/app/views/trabajadores/nomina_periodos.php';
+$workerPayrollPeriodsReportViewPath = $appRoot . '/app/views/trabajadores/nomina_periodos_reporte.php';
 $workerPayrollPeriodDetailViewPath = $appRoot . '/app/views/trabajadores/nomina_periodo_detalle.php';
 $workerLaborReceiptViewPath = $appRoot . '/app/views/trabajadores/recibo_laboral_informativo.php';
 $workerLaborReceiptPdfServicePath = $appRoot . '/app/services/TrabajadorReciboLaboralPdfService.php';
@@ -696,6 +724,14 @@ if ($routes === []) {
             && trim((string)$route['path'], '/') === 'trabajadores/nomina/periodos/preview'
             && strtolower((string)$route['controller']) === 'trabajador'
             && strtolower((string)$route['action']) === 'nominaperiodopreview';
+        $isReadOnlyPayrollPeriodReport = strtolower((string)$route['method']) === 'get'
+            && trim((string)$route['path'], '/') === 'trabajadores/nomina/periodos/reporte'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'reportenominaperiodos';
+        $isReadOnlyPayrollPeriodExport = strtolower((string)$route['method']) === 'get'
+            && trim((string)$route['path'], '/') === 'trabajadores/nomina/periodos/exportar'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'exportarnominaperiodos';
         $isReadOnlyPayrollPeriodDetail = strtolower((string)$route['method']) === 'get'
             && trim((string)$route['path'], '/') === 'trabajadores/nomina/periodos/{id:[0-9]+}'
             && strtolower((string)$route['controller']) === 'trabajador'
@@ -735,6 +771,8 @@ if ($routes === []) {
             && !$isReadOnlyPayrollPreviewExport
             && !$isReadOnlyPayrollPeriods
             && !$isReadOnlyPayrollPeriodPreview
+            && !$isReadOnlyPayrollPeriodReport
+            && !$isReadOnlyPayrollPeriodExport
             && !$isReadOnlyPayrollPeriodDetail
             && !$isControlledPayrollPeriodClose
             && !$isControlledPayrollPeriodApprove
@@ -813,6 +851,17 @@ if ($routes === []) {
         lpcWarning(
             'Rutas 5E-K-A de periodos de pre-nomina no estan completas.',
             'Registrar solo GET /trabajadores/nomina/periodos y GET /trabajadores/nomina/periodos/preview.'
+        );
+    }
+
+    $payrollPeriodReportRouteOk = lpcRouteExists($routes, 'trabajadores/nomina/periodos/reporte', 'get');
+    $payrollPeriodExportRouteOk = lpcRouteExists($routes, 'trabajadores/nomina/periodos/exportar', 'get');
+    if ($payrollPeriodReportRouteOk && $payrollPeriodExportRouteOk) {
+        lpcOk('Rutas 5E-M-A GET /trabajadores/nomina/periodos/reporte y /exportar registradas como reporte/export read-only.');
+    } else {
+        lpcWarning(
+            'Rutas 5E-M-A de reporte/export de snapshots de pre-nomina no estan completas.',
+            'Registrar solo GET /trabajadores/nomina/periodos/reporte y GET /trabajadores/nomina/periodos/exportar.'
         );
     }
 
@@ -1042,6 +1091,64 @@ if (
     lpcWarning(
         'Archivos de periodos 5E-L-A no estan completos.',
         'Crear servicio, modelo, controlador y vistas de snapshot persistente antes de QA de periodos de pre-nomina.'
+    );
+}
+
+if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($workerPayrollPeriodsReportViewPath)) {
+    $workerModelCode = (string) file_get_contents($workerModelPath);
+    $workerControllerCode = (string) file_get_contents($workerControllerPath);
+    $workerPayrollPeriodsReportViewCode = (string) file_get_contents($workerPayrollPeriodsReportViewPath);
+    $payrollReportModelBody = lpcMethodBody($workerModelCode, 'reporteNominaPeriodosPersistentesPorHotel');
+    $payrollReportControllerBody = lpcMethodBody($workerControllerCode, 'reporteNominaPeriodosAction');
+    $payrollExportControllerBody = lpcMethodBody($workerControllerCode, 'exportarNominaPeriodosAction');
+    $payrollCsvControllerBody = lpcMethodBody($workerControllerCode, 'descargarNominaPeriodosCsv');
+    $payrollReportSurfaceCode = $payrollReportControllerBody . "\n" . $payrollExportControllerBody . "\n" . $payrollCsvControllerBody . "\n" . $workerPayrollPeriodsReportViewCode;
+    $payrollReportWriteForbidden = preg_match(
+        '/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|REPLACE\s+INTO|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE|file_put_contents)\b/i',
+        $payrollReportSurfaceCode
+    );
+
+    if (
+        !$payrollReportWriteForbidden
+        && $payrollReportModelBody !== ''
+        && lpcCodeBodyIsReadOnly($payrollReportModelBody)
+        && lpcCodeBodyIsReadOnly($payrollReportControllerBody)
+        && lpcCodeBodyIsReadOnly($payrollExportControllerBody)
+        && strpos($workerModelCode, 'function tablasReporteNominaPeriodosDisponibles') !== false
+        && strpos($workerModelCode, 'function normalizarFiltrosReporteNominaPeriodos') !== false
+        && strpos($workerModelCode, 'trabajador_nomina_periodos') !== false
+        && strpos($workerModelCode, 'trabajador_nomina_periodo_detalles') !== false
+        && strpos($workerModelCode, 'trabajador_nomina_periodo_eventos') !== false
+        && strpos($workerControllerCode, 'function reporteNominaPeriodosAction') !== false
+        && strpos($workerControllerCode, 'function exportarNominaPeriodosAction') !== false
+        && strpos($workerControllerCode, 'function descargarNominaPeriodosCsv') !== false
+        && strpos($workerControllerCode, 'reporteNominaPeriodosPersistentesPorHotel($hotelId, $filtros, 1000)') !== false
+        && strpos($workerControllerCode, 'fputcsv') !== false
+        && strpos($workerControllerCode, 'X-Content-Type-Options: nosniff') !== false
+        && strpos($workerControllerCode, 'trabajadores/nomina_periodos_reporte') !== false
+        && strpos($workerPayrollPeriodsReportViewCode, "action=\"<?= url('trabajadores/nomina/periodos/reporte') ?>\"") !== false
+        && strpos($workerPayrollPeriodsReportViewCode, 'trabajadores/nomina/periodos/exportar') !== false
+        && strpos($workerPayrollPeriodsReportViewCode, 'Exportar CSV') !== false
+        && strpos($workerPayrollPeriodsReportViewCode, 'Snapshots persistentes') !== false
+        && strpos($workerPayrollPeriodsReportViewCode, 'method="GET"') !== false
+        && strpos($workerPayrollPeriodsReportViewCode, 'method="POST"') === false
+        && strpos($workerPayrollPeriodsReportViewCode, 'csrf_field()') === false
+        && strpos($workerPayrollPeriodsReportViewCode, 'Solo GET') !== false
+        && strpos($workerPayrollPeriodsReportViewCode, 'registrar-pago-caja') === false
+        && strpos($workerPayrollPeriodsReportViewCode, 'timbrar') === false
+        && strpos($workerPayrollPeriodsReportViewCode, 'dispersion') === false
+    ) {
+        lpcOk('Reporte 5E-M-A de snapshots de pre-nomina es GET/read-only, exporta CSV en memoria y no expone pagos ni Caja.');
+    } else {
+        lpcError(
+            'Reporte 5E-M-A de snapshots de pre-nomina incompleto o con riesgo operativo.',
+            'Mantener nomina_periodos_reporte como GET/read-only, CSV en memoria, sin POST, sin CSRF, sin storage, sin pago, sin timbrado y sin Caja.'
+        );
+    }
+} else {
+    lpcWarning(
+        'Archivos del reporte 5E-M-A de snapshots de pre-nomina no estan completos.',
+        'Crear modelo/controlador/vista read-only antes de QA del reporte/export de snapshots.'
     );
 }
 

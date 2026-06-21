@@ -2645,6 +2645,39 @@ No ejecutar SQL ni tocar `trabajador_nomina_periodos`,
 `trabajador_pagos_caja`, `movimientos_caja`, storage, permisos/auth,
 PWA/offline, IndexedDB, cache names ni `/api/sync`.
 
+## Rollback Fase 5E-M-A
+
+5E-M-A agrega reporte/export GET/read-only de snapshots persistentes de
+pre-nomina.
+
+No crea migraciones, storage ni datos.
+
+Rollback de codigo:
+
+1. Retirar `GET /trabajadores/nomina/periodos/reporte` de
+   `src/config/routes.php`.
+2. Retirar `GET /trabajadores/nomina/periodos/exportar` de
+   `src/config/routes.php`.
+3. Retirar de `TrabajadorController` las acciones
+   `reporteNominaPeriodosAction` y `exportarNominaPeriodosAction`, el helper
+   `filtrosReporteNominaPeriodosDesdeQuery`, el exportador
+   `descargarNominaPeriodosCsv` y el fallback `reporteNominaPeriodosVacio`.
+4. Retirar de `Trabajador` los metodos read-only
+   `tablasReporteNominaPeriodosDisponibles`,
+   `reporteNominaPeriodosPersistentesPorHotel` y helpers privados de reporte.
+5. Eliminar `src/app/views/trabajadores/nomina_periodos_reporte.php`.
+6. Retirar el enlace `Reporte snapshots` de
+   `src/app/views/trabajadores/nomina_periodos.php`.
+7. Retirar validaciones 5E-M-A de `preflight_personal_pagos_caja.php` y
+   `health_check_fase_1a.php`.
+8. Retirar `docs/fase_5E_M_A_reporte_export_snapshots_prenomina.md` y sus
+   referencias en resumen, QA y rollback.
+
+No ejecutar SQL ni tocar `trabajador_nomina_periodos`,
+`trabajador_nomina_periodo_detalles`, `trabajador_nomina_periodo_eventos`,
+`trabajador_pagos_caja`, `movimientos_caja`, storage, permisos/auth,
+PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
 ## Rollback Fase 5E-I-A
 
 5E-I-A agrega recibo laboral informativo GET/read-only.
