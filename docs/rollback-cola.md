@@ -2417,3 +2417,18 @@ Verificacion posterior:
 
 No ejecutar SQL ni tocar datos. Esta fase no crea nomina, pagos, movimientos de Caja,
 recibos, dispersion ni auditorias.
+
+## Rollback Fase 5E-G-F
+
+5E-G-F es cierre documental del preview read-only de nomina por periodo validado
+manualmente.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_G_F_cierre_nomina_periodo_preview.md`.
+2. Retirar referencias 5E-G-F de resumen, QA y rollback.
+3. Restaurar la nota de siguiente paso en
+   `docs/fase_5E_G_A_nomina_periodo_preview_read_only.md` si se quiere volver a la
+   fase con QA manual pendiente.
+
+No ejecutar SQL ni tocar codigo operativo.

@@ -2215,3 +2215,20 @@ Estado formal:
 - Prueba CLI del modelo: hotel `4`, trabajadores `1`, bloqueos `0`, neto `100.00`.
 - Siguiente paso seguro: QA manual del preview y luego cierre documental `5E-G-F` si
   la prueba pasa.
+
+## 5E-G-F Cierre preview read-only de nomina por periodo
+
+Estado formal:
+`CIERRE_5E_G_F_NOMINA_PERIODO_PREVIEW_QA_MANUAL_VALIDADA`.
+
+- Documento creado:
+  `docs/fase_5E_G_F_cierre_nomina_periodo_preview.md`.
+- El usuario confirmo que la prueba manual del preview de pre-nomina paso
+  correctamente.
+- Queda cerrada la pantalla GET/read-only `/trabajadores/nomina/preview`.
+- La pantalla conserva filtros GET, periodo requerido, calculos read-only y ausencia de
+  POST, pago masivo, recibos oficiales, dispersion o movimientos de Caja.
+- No autoriza nomina automatica, periodos oficiales persistidos, timbrado,
+  liquidaciones automaticas, permisos/auth, PWA/offline ni `/api/sync`.
+- Siguiente paso seguro: contrato independiente antes de recibo laboral informativo,
+  export CSV del preview o cualquier nuevo frente financiero.

@@ -2256,3 +2256,20 @@ Revision manual recomendada:
 6. Activar/desactivar `Pagos Caja` y confirmar que no escribe datos.
 7. Activar `Con saldo` y confirmar que filtra trabajadores con neto positivo.
 8. Confirmar que no hay botones de pago masivo, recibo oficial, dispersion ni POST.
+
+Resultado manual 5E-G-A:
+
+- El usuario confirmo que la prueba manual paso correctamente.
+
+## Fase 5E-G-F - Cierre preview read-only de nomina por periodo
+
+Estado: cierre documental aplicado despues de QA manual.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_G_F_cierre_nomina_periodo_preview.md`.
+2. Confirmar que no agrega codigo ni escrituras.
+3. Confirmar que mantiene fuera de alcance pagos masivos, nomina automatica, recibos
+   oficiales, timbrado, dispersion y liquidaciones automaticas.
+4. Confirmar que el siguiente paso requiere contrato independiente y autorizacion
+   explicita si toca modelo, controlador, ruta, vista, Caja o datos.
