@@ -2354,3 +2354,18 @@ Rollback:
    con QA manual pendiente.
 
 No ejecutar SQL ni tocar codigo operativo.
+
+## Rollback Fase 5E-E-F
+
+5E-E-F es cierre documental de historial, reversion, reporte y export CSV de pagos
+laborales con Caja validados manualmente.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_E_F_cierre_historial_reversion_reporte_pagos_laborales_caja.md`.
+2. Retirar referencias 5E-E-F de resumen, QA y rollback.
+3. Restaurar la nota de siguiente paso en `docs/resumen-ejecutivo-cola.md` si se quiere
+   volver al estado previo al cierre documental.
+
+No ejecutar SQL ni tocar codigo operativo. No revertir pagos laborales, movimientos de
+Caja ni auditorias desde este rollback documental.

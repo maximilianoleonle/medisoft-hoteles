@@ -2188,3 +2188,21 @@ Revision recomendada:
    y abonos/liquidaciones.
 4. Confirmar que el siguiente paso requiere contrato independiente y autorizacion
    explicita si toca modelo, controlador, ruta, vista o Caja.
+
+## Fase 5E-E-F - Cierre historial, reversion y reporte pagos laborales con Caja
+
+Estado: cierre documental aplicado despues de QA manual.
+
+Revision registrada:
+
+1. Historial read-only de pagos laborales Caja en ficha: validado manualmente.
+2. Reversion controlada individual: validada manualmente.
+3. Reporte read-only de pagos laborales Caja: validado manualmente.
+4. Export CSV read-only del reporte: validado manualmente.
+5. Preflight pagos laborales Caja: `OK: 45`, `WARNING: 0`, `ERROR: 0`.
+6. Health general: `OK: 313`, `WARNING: 25`, `ERROR: 0`.
+7. Ruta export CSV local sin sesion: `303` a `/login`, sin 404.
+
+No avanzar a pagos masivos, nomina automatica, recibos oficiales, dispersion,
+liquidaciones automaticas, permisos/auth, PWA/offline ni `/api/sync` sin contrato
+independiente y autorizacion explicita.

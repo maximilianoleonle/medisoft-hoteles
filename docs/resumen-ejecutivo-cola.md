@@ -2154,3 +2154,25 @@ Estado formal:
   abonos/liquidaciones, permisos/auth, PWA/offline y `/api/sync`.
 - Siguiente paso seguro: contrato independiente para reversion o historial detallado
   read-only de pagos laborales con Caja.
+
+## 5E-E-F Cierre historial, reversion y reporte pagos laborales con Caja
+
+Estado formal:
+`CIERRE_5E_E_F_HISTORIAL_REVERSION_REPORTE_PAGOS_LABORALES_CAJA_QA_MANUAL_VALIDADA`.
+
+- Documento creado:
+  `docs/fase_5E_E_F_cierre_historial_reversion_reporte_pagos_laborales_caja.md`.
+- El usuario confirmo que pasaron las pruebas manuales de historial, reversion,
+  reporte y export CSV de pagos laborales con Caja.
+- Quedan cerradas las superficies:
+  - historial read-only en ficha de trabajador;
+  - reversion controlada individual con CSRF/token/servicio;
+  - reporte read-only de pagos laborales Caja;
+  - export CSV GET/read-only respetando filtros.
+- Validaciones automaticas recientes: preflight pagos laborales Caja `OK: 45`,
+  `WARNING: 0`, `ERROR: 0`; health general `OK: 313`, `WARNING: 25`,
+  `ERROR: 0`; ruta export CSV local responde `303` a login sin 404.
+- No autoriza pagos masivos, nomina automatica, recibos oficiales, dispersion,
+  liquidaciones automaticas, permisos/auth, PWA/offline ni `/api/sync`.
+- Siguiente paso seguro: contrato independiente antes de preview de nomina por
+  periodo, recibo laboral informativo o cualquier nuevo frente financiero.
