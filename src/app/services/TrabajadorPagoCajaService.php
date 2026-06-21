@@ -224,6 +224,176 @@ class TrabajadorPagoCajaService
         }
     }
 
+    public function evaluarReversion(int $hotelId, int $trabajadorId, int $pagoCajaId): array
+    {
+        $hotelId = $this->validarId($hotelId, 'Hotel invalido');
+        $trabajadorId = $this->validarId($trabajadorId, 'Trabajador invalido');
+        $pagoCajaId = $this->validarId($pagoCajaId, 'Pago laboral con Caja invalido');
+
+        if (!$this->tablasDisponibles()) {
+            return [
+                'elegible' => false,
+                'motivo_bloqueo' => 'Faltan tablas requeridas para reversion de pago laboral con Caja.',
+                'corte' => null,
+                'monto' => '0.00',
+                'referencia_reversion' => null,
+            ];
+        }
+
+        $trabajador = $this->obtenerTrabajador($hotelId, $trabajadorId, false);
+        $pago = $this->obtenerPagoCaja($hotelId, $trabajadorId, $pagoCajaId, false);
+        $corte = $this->obtenerCorteAbierto($hotelId, false);
+        $referenciaReversion = $this->referenciaReversion($trabajadorId, $pagoCajaId);
+        $bloqueos = $this->bloqueosReversion($trabajador, $pago, $corte, $referenciaReversion, false);
+
+        return [
+            'elegible' => empty($bloqueos),
+            'motivo_elegibilidad' => empty($bloqueos)
+                ? 'Pago laboral elegible para reversion controlada con Caja.'
+                : '',
+            'motivo_bloqueo' => implode(' ', $bloqueos),
+            'corte' => $corte,
+            'monto' => $pago ? $this->decimal($pago['monto'] ?? 0) : '0.00',
+            'referencia_reversion' => $referenciaReversion,
+        ];
+    }
+
+    public function revertirPago(int $hotelId, int $trabajadorId, int $pagoCajaId, array $datos, ?int $usuarioId = null): array
+    {
+        $hotelId = $this->validarId($hotelId, 'Hotel invalido');
+        $trabajadorId = $this->validarId($trabajadorId, 'Trabajador invalido');
+        $pagoCajaId = $this->validarId($pagoCajaId, 'Pago laboral con Caja invalido');
+        $usuarioId = $this->validarId($usuarioId, 'Usuario invalido para revertir pago laboral con Caja');
+        $motivo = $this->normalizarMotivoReversion($datos['motivo'] ?? null);
+
+        if (!$this->tablasDisponibles()) {
+            throw new Exception('Tablas requeridas para reversion de pago laboral con Caja no disponibles');
+        }
+
+        $this->assertTransactionPolicy();
+        $this->beginTransactionIfManaged();
+
+        try {
+            $trabajador = $this->obtenerTrabajador($hotelId, $trabajadorId, true);
+            $corte = $this->obtenerCorteAbierto($hotelId, true);
+            $this->bloquearFilasLaborales($hotelId, $trabajadorId);
+            $pago = $this->obtenerPagoCaja($hotelId, $trabajadorId, $pagoCajaId, true);
+            $referenciaReversion = $this->referenciaReversion($trabajadorId, $pagoCajaId);
+            $bloqueos = $this->bloqueosReversion($trabajador, $pago, $corte, $referenciaReversion, true);
+            if ($bloqueos) {
+                throw new Exception(implode(' ', $bloqueos));
+            }
+
+            $saldo = $this->saldoLaboralDisponible($hotelId, $trabajadorId, null, null);
+            $monto = (float)$pago['monto'];
+            $montoDecimal = $this->decimal($monto);
+            $saldoAnteriorDecimal = $this->decimal($saldo['saldo_disponible'] ?? 0);
+            $saldoPosteriorDecimal = $this->decimal((float)($saldo['saldo_disponible'] ?? 0) + $monto);
+            $metodoPago = $this->normalizarMetodoPago($pago['metodo_pago'] ?? $pago['movimiento_metodo_pago'] ?? null);
+            $descripcionCaja = $this->normalizarTextoObligatorio(
+                'Reversion pago laboral trabajador #' . $trabajadorId . ' pago #' . $pagoCajaId,
+                255
+            );
+
+            $stmt = $this->pdo->prepare(
+                "INSERT INTO movimientos_caja
+                    (hotel_id, tipo, categoria, categoria_id, descripcion, monto,
+                     metodo_pago, referencia, comprobante, proveedor, reservacion_id,
+                     usuario_id, corte_id, created_at)
+                 VALUES
+                    (?, 'ingreso', 'Reversion Pago laboral', NULL, ?, ?, ?, ?, NULL, ?, NULL, ?, ?, NOW())"
+            );
+            $stmt->execute([
+                $hotelId,
+                $descripcionCaja,
+                $montoDecimal,
+                $metodoPago,
+                $referenciaReversion,
+                $this->normalizarTextoNullable('Trabajador: ' . (string)($trabajador['nombre_completo'] ?? ''), 200),
+                $usuarioId,
+                (int)$corte['id'],
+            ]);
+            $movimientoCajaReversionId = (int)$this->pdo->lastInsertId();
+
+            $notaReversion = $this->limitar(
+                'Reversion controlada ' . date('Y-m-d H:i:s') . '. Motivo: ' . $motivo . '. Movimiento Caja reversion #' . $movimientoCajaReversionId . '.',
+                1000
+            );
+            $notasPrevias = trim((string)($pago['notas'] ?? ''));
+            $espacioPrevio = max(0, 1000 - strlen($notaReversion) - 2);
+            $notasPrevias = $espacioPrevio > 0 ? $this->limitar($notasPrevias, $espacioPrevio) : '';
+            $notasActualizadas = trim($notasPrevias !== '' ? $notasPrevias . "\n\n" . $notaReversion : $notaReversion);
+
+            $stmt = $this->pdo->prepare(
+                "UPDATE trabajador_pagos_caja
+                 SET estado = 'revertido',
+                     notas = ?,
+                     updated_by = ?,
+                     updated_at = NOW()
+                 WHERE id = ?
+                   AND hotel_id = ?
+                   AND trabajador_id = ?
+                   AND estado = 'pagado'"
+            );
+            $stmt->execute([
+                $notasActualizadas,
+                $usuarioId,
+                $pagoCajaId,
+                $hotelId,
+                $trabajadorId,
+            ]);
+
+            if ($stmt->rowCount() !== 1) {
+                throw new Exception('No se pudo marcar el pago laboral como revertido');
+            }
+
+            AuditService::record('trabajadores.pago_laboral_caja_revertido', [
+                'hotel_id' => $hotelId,
+                'usuario_id' => $usuarioId,
+                'entidad_tipo' => 'trabajador_pago_caja',
+                'entidad_id' => (string)$pagoCajaId,
+                'descripcion' => 'Pago laboral revertido con ingreso de Caja controlado',
+                'datos_antes' => [
+                    'trabajador_id' => $trabajadorId,
+                    'estado' => $pago['estado'] ?? null,
+                    'monto' => $montoDecimal,
+                    'saldo_disponible' => $saldoAnteriorDecimal,
+                    'movimiento_caja_original_id' => (int)($pago['movimiento_caja_id'] ?? 0),
+                ],
+                'datos_despues' => [
+                    'trabajador_id' => $trabajadorId,
+                    'estado' => 'revertido',
+                    'monto' => $montoDecimal,
+                    'movimiento_caja_reversion_id' => $movimientoCajaReversionId,
+                    'corte_id' => (int)$corte['id'],
+                    'referencia' => $referenciaReversion,
+                    'saldo_posterior_estimado' => $saldoPosteriorDecimal,
+                    'motivo' => $motivo,
+                ],
+            ]);
+
+            $this->commitIfManaged();
+
+            return [
+                'trabajador_id' => $trabajadorId,
+                'trabajador_pago_caja_id' => $pagoCajaId,
+                'movimiento_caja_original_id' => (int)($pago['movimiento_caja_id'] ?? 0),
+                'movimiento_caja_reversion_id' => $movimientoCajaReversionId,
+                'corte_id' => (int)$corte['id'],
+                'monto' => $montoDecimal,
+                'saldo_anterior' => $saldoAnteriorDecimal,
+                'saldo_posterior_estimado' => $saldoPosteriorDecimal,
+                'referencia' => $referenciaReversion,
+            ];
+        } catch (Throwable $e) {
+            if ($this->manageTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $e;
+        }
+    }
+
     private function obtenerTrabajador(int $hotelId, int $trabajadorId, bool $forUpdate): ?array
     {
         $sql = "SELECT id,
@@ -243,6 +413,37 @@ class TrabajadorPagoCajaService
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$hotelId, $trabajadorId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    private function obtenerPagoCaja(int $hotelId, int $trabajadorId, int $pagoCajaId, bool $forUpdate): ?array
+    {
+        $sql = "SELECT pc.*,
+                       mc.tipo AS movimiento_tipo,
+                       mc.categoria AS movimiento_categoria,
+                       mc.monto AS movimiento_monto,
+                       mc.metodo_pago AS movimiento_metodo_pago,
+                       mc.referencia AS movimiento_referencia,
+                       mc.descripcion AS movimiento_descripcion,
+                       mc.corte_id AS movimiento_corte_id,
+                       mc.created_at AS movimiento_created_at
+                FROM trabajador_pagos_caja pc
+                INNER JOIN movimientos_caja mc
+                   ON mc.id = pc.movimiento_caja_id
+                  AND mc.hotel_id = pc.hotel_id
+                WHERE pc.hotel_id = ?
+                  AND pc.trabajador_id = ?
+                  AND pc.id = ?
+                LIMIT 1";
+
+        if ($forUpdate) {
+            $sql .= ' FOR UPDATE';
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$hotelId, $trabajadorId, $pagoCajaId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;
@@ -276,6 +477,73 @@ class TrabajadorPagoCajaService
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ?: null;
+    }
+
+    private function bloqueosReversion(?array $trabajador, ?array $pago, ?array $corte, string $referenciaReversion, bool $forUpdate): array
+    {
+        if (!$trabajador) {
+            return ['Trabajador no encontrado para el hotel actual.'];
+        }
+
+        $bloqueos = [];
+        if (!$pago) {
+            $bloqueos[] = 'Pago laboral con Caja no encontrado para este trabajador.';
+        }
+
+        if (!$corte) {
+            $bloqueos[] = 'No hay corte de Caja abierto para registrar la reversion.';
+        }
+
+        if ($pago && (string)($pago['estado'] ?? '') !== 'pagado') {
+            $bloqueos[] = 'El pago laboral no esta en estado pagado o ya fue revertido.';
+        }
+
+        if ($pago && (float)($pago['monto'] ?? 0) <= 0) {
+            $bloqueos[] = 'El pago laboral no tiene monto valido.';
+        }
+
+        if ($pago && (string)($pago['movimiento_tipo'] ?? '') !== 'gasto') {
+            $bloqueos[] = 'El movimiento original de Caja no es un egreso.';
+        }
+
+        if ($pago && (string)($pago['movimiento_categoria'] ?? '') !== 'Pago laboral') {
+            $bloqueos[] = 'El movimiento original de Caja no corresponde a Pago laboral.';
+        }
+
+        if ($pago && abs((float)($pago['movimiento_monto'] ?? 0) - (float)($pago['monto'] ?? 0)) > 0.004) {
+            $bloqueos[] = 'El monto del pago laboral no coincide con el movimiento de Caja original.';
+        }
+
+        if ($pago && (int)($pago['movimiento_corte_id'] ?? 0) !== (int)($pago['corte_id'] ?? 0)) {
+            $bloqueos[] = 'El corte del pago laboral no coincide con el corte del movimiento original.';
+        }
+
+        if ($this->existeReversionPrevia($trabajador ? (int)$trabajador['hotel_id'] : 0, $referenciaReversion, $forUpdate)) {
+            $bloqueos[] = 'Este pago laboral ya tiene una reversion registrada.';
+        }
+
+        return $bloqueos;
+    }
+
+    private function existeReversionPrevia(int $hotelId, string $referenciaReversion, bool $forUpdate): bool
+    {
+        if ($hotelId <= 0 || trim($referenciaReversion) === '') {
+            return false;
+        }
+
+        $lock = $forUpdate ? ' FOR UPDATE' : '';
+        $stmt = $this->pdo->prepare(
+            "SELECT id
+             FROM movimientos_caja
+             WHERE hotel_id = ?
+               AND tipo = 'ingreso'
+               AND categoria = 'Reversion Pago laboral'
+               AND referencia = ?
+             LIMIT 1" . $lock
+        );
+        $stmt->execute([$hotelId, $referenciaReversion]);
+
+        return (bool)$stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     private function bloquearFilasLaborales(int $hotelId, int $trabajadorId): void
@@ -445,6 +713,11 @@ class TrabajadorPagoCajaService
         }
     }
 
+    private function referenciaReversion(int $trabajadorId, int $pagoCajaId): string
+    {
+        return 'REV-NOM-TRAB-' . $trabajadorId . '-PAGO-' . $pagoCajaId;
+    }
+
     private function assertTransactionPolicy(): void
     {
         if ($this->manageTransaction && $this->pdo->inTransaction()) {
@@ -497,6 +770,16 @@ class TrabajadorPagoCajaService
         }
 
         return $monto;
+    }
+
+    private function normalizarMotivoReversion($value): string
+    {
+        $motivo = trim((string)($value ?? ''));
+        if ($motivo === '') {
+            throw new Exception('El motivo de reversion es obligatorio');
+        }
+
+        return $this->limitar($motivo, 1000);
     }
 
     private function normalizarTextoNullable($value, int $maxLength): ?string

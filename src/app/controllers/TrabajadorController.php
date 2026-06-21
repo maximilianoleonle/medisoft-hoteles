@@ -145,12 +145,37 @@ class TrabajadorController extends Controller
             $pagoCaja['motivo_bloqueo'] = $e->getMessage();
         }
 
+        $pagosCajaLaborales = $this->trabajadorModel->pagosCajaPorTrabajador($id, $hotelId, 20);
+        $reversionesPagoCaja = [];
+        $reversionPagoCajaTokens = [];
+        foreach ($pagosCajaLaborales as $pagoLaboral) {
+            $pagoLaboralId = (int)($pagoLaboral['id'] ?? 0);
+            if ($pagoLaboralId <= 0 || (string)($pagoLaboral['estado'] ?? '') !== 'pagado') {
+                continue;
+            }
+
+            try {
+                $reversion = $this->pagoCajaService->evaluarReversion($hotelId, $id, $pagoLaboralId);
+                $reversionesPagoCaja[$pagoLaboralId] = $reversion;
+                if (!empty($reversion['elegible'])) {
+                    $reversionPagoCajaTokens[$pagoLaboralId] = $this->generarReversionPagoCajaToken($id, $pagoLaboralId);
+                }
+            } catch (Throwable $e) {
+                $reversionesPagoCaja[$pagoLaboralId] = [
+                    'elegible' => false,
+                    'motivo_bloqueo' => $e->getMessage(),
+                ];
+            }
+        }
+
         View::renderTemplate('trabajadores/ver', [
             'title' => 'Trabajador #' . $id . ' - ' . current_hotel_display_name(),
             'trabajador' => $trabajador,
             'resumenLedger' => $this->trabajadorModel->resumenLedgerPorTrabajador($id, $hotelId),
             'conceptosLaborales' => $this->trabajadorModel->conceptosLaboralesPorTrabajador($id, $hotelId, 12),
-            'pagosCajaLaborales' => $this->trabajadorModel->pagosCajaPorTrabajador($id, $hotelId, 20),
+            'pagosCajaLaborales' => $pagosCajaLaborales,
+            'reversionesPagoCaja' => $reversionesPagoCaja,
+            'reversionPagoCajaTokens' => $reversionPagoCajaTokens,
             'anticiposRecientes' => $this->trabajadorModel->anticiposPorTrabajador($id, $hotelId, 12),
             'prestamosRecientes' => $this->trabajadorModel->prestamosPorTrabajador($id, $hotelId, 12),
             'asistenciasRecientes' => $this->trabajadorModel->ultimosMovimientosPorTrabajador($id, $hotelId, 20),
@@ -469,6 +494,48 @@ class TrabajadorController extends Controller
         $this->redirect($id > 0 ? 'trabajadores/' . $id : 'trabajadores');
     }
 
+    public function revertirPagoCajaAction(): void
+    {
+        $this->requireWritePermission('usuarios.edit');
+
+        if (!$this->isPost()) {
+            $this->redirect('trabajadores');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('caja');
+        }
+
+        $id = (int)($this->route_params['id'] ?? 0);
+        $pagoCajaId = (int)($this->route_params['pagoid'] ?? $this->route_params['pagoId'] ?? 0);
+        try {
+            if (!$this->consumirReversionPagoCajaToken($id, $pagoCajaId, (string)$this->getPost('reversion_token', ''))) {
+                throw new Exception('Token de reversion invalido o ya utilizado; recarga el trabajador antes de reintentar');
+            }
+
+            $resultado = $this->pagoCajaService->revertirPago(
+                $this->hotelIdActual(),
+                $id,
+                $pagoCajaId,
+                $this->datosReversionPagoCajaLaboral(),
+                $this->usuarioIdActual()
+            );
+
+            set_mensaje(
+                'Pago laboral revertido. Ingreso Caja #' . (int)$resultado['movimiento_caja_reversion_id']
+                . ', saldo disponible estimado ' . number_format((float)$resultado['saldo_posterior_estimado'], 2) . '.',
+                'success'
+            );
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo revertir el pago laboral con Caja: ' . $e->getMessage(), 'error');
+        }
+
+        $this->redirect($id > 0 ? 'trabajadores/' . $id : 'trabajadores');
+    }
+
     private function cambiarEstado(string $estado, string $mensaje, string $accion): void
     {
         $this->requireWritePermission('usuarios.edit');
@@ -648,6 +715,13 @@ class TrabajadorController extends Controller
         ];
     }
 
+    private function datosReversionPagoCajaLaboral(): array
+    {
+        return [
+            'motivo' => $this->getPost('motivo', ''),
+        ];
+    }
+
     private function usuarioIdActual(): ?int
     {
         $usuarioId = $_SESSION['user_id'] ?? $_SESSION['usuario_id'] ?? null;
@@ -674,6 +748,40 @@ class TrabajadorController extends Controller
         $token = trim($token);
         $registro = $_SESSION['trabajador_pago_caja_tokens'][$trabajadorId] ?? null;
         unset($_SESSION['trabajador_pago_caja_tokens'][$trabajadorId]);
+
+        if (!is_array($registro) || $token === '') {
+            return false;
+        }
+
+        if ((int)($registro['created_at'] ?? 0) < time() - 3600) {
+            return false;
+        }
+
+        return hash_equals((string)($registro['token'] ?? ''), $token);
+    }
+
+    private function generarReversionPagoCajaToken(int $trabajadorId, int $pagoCajaId): string
+    {
+        if (!isset($_SESSION['trabajador_reversion_pago_caja_tokens']) || !is_array($_SESSION['trabajador_reversion_pago_caja_tokens'])) {
+            $_SESSION['trabajador_reversion_pago_caja_tokens'] = [];
+        }
+
+        $key = $trabajadorId . ':' . $pagoCajaId;
+        $token = bin2hex(random_bytes(16));
+        $_SESSION['trabajador_reversion_pago_caja_tokens'][$key] = [
+            'token' => $token,
+            'created_at' => time(),
+        ];
+
+        return $token;
+    }
+
+    private function consumirReversionPagoCajaToken(int $trabajadorId, int $pagoCajaId, string $token): bool
+    {
+        $token = trim($token);
+        $key = $trabajadorId . ':' . $pagoCajaId;
+        $registro = $_SESSION['trabajador_reversion_pago_caja_tokens'][$key] ?? null;
+        unset($_SESSION['trabajador_reversion_pago_caja_tokens'][$key]);
 
         if (!is_array($registro) || $token === '') {
             return false;

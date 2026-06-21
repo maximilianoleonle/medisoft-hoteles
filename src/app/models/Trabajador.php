@@ -1106,7 +1106,9 @@ class Trabajador extends Model
                     mc.descripcion AS movimiento_descripcion,
                     mc.created_at AS movimiento_created_at,
                     u.nombre_completo AS creado_por_nombre,
-                    u.nombre_usuario AS creado_por_login
+                    u.nombre_usuario AS creado_por_login,
+                    uu.nombre_completo AS actualizado_por_nombre,
+                    uu.nombre_usuario AS actualizado_por_login
              FROM trabajador_pagos_caja pc
              INNER JOIN movimientos_caja mc
                 ON mc.id = pc.movimiento_caja_id
@@ -1119,6 +1121,8 @@ class Trabajador extends Model
                AND c.hotel_id = pc.hotel_id
              LEFT JOIN usuarios u
                 ON u.id = pc.created_by
+             LEFT JOIN usuarios uu
+                ON uu.id = pc.updated_by
              WHERE pc.hotel_id = ?
                AND pc.trabajador_id = ?
              ORDER BY pc.fecha_pago DESC, pc.id DESC

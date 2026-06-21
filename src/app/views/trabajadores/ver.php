@@ -10,6 +10,8 @@ $ledgerDisponible = $ledgerDisponible ?? [];
 $tareasContextuales = is_array($tareasContextuales ?? null) ? $tareasContextuales : [];
 $pagoCaja = is_array($pagoCaja ?? null) ? $pagoCaja : [];
 $pagoCajaToken = $pagoCajaToken ?? null;
+$reversionesPagoCaja = is_array($reversionesPagoCaja ?? null) ? $reversionesPagoCaja : [];
+$reversionPagoCajaTokens = is_array($reversionPagoCajaTokens ?? null) ? $reversionPagoCajaTokens : [];
 
 if (!function_exists('trab_view_safe')) {
     function trab_view_safe($value, $fallback = '-')
@@ -777,13 +779,18 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                                 <th class="text-left">Periodo</th>
                                 <th class="text-left">Referencia</th>
                                 <th class="text-left">Estado</th>
+                                <th class="text-left">Reversion</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($pagosCajaLaborales as $pagoLaboral): ?>
                                 <?php
+                                    $pagoLaboralId = (int)($pagoLaboral['id'] ?? 0);
                                     $estadoPago = (string)($pagoLaboral['estado'] ?? '');
                                     $estadoClase = $estadoPago === 'pagado' ? 'is-plus' : 'is-minus';
+                                    $reversionPago = is_array($reversionesPagoCaja[$pagoLaboralId] ?? null) ? $reversionesPagoCaja[$pagoLaboralId] : [];
+                                    $reversionToken = (string)($reversionPagoCajaTokens[$pagoLaboralId] ?? '');
+                                    $puedeRevertirPago = $estadoPago === 'pagado' && !empty($reversionPago['elegible']) && $reversionToken !== '';
                                     $periodoInicio = trab_view_date($pagoLaboral['periodo_inicio'] ?? null);
                                     $periodoFin = trab_view_date($pagoLaboral['periodo_fin'] ?? null);
                                     $periodoTexto = ($periodoInicio === '-' && $periodoFin === '-')
@@ -793,11 +800,15 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                                     if ($creadoPor === '') {
                                         $creadoPor = trim((string)($pagoLaboral['creado_por_login'] ?? ''));
                                     }
+                                    $actualizadoPor = trim((string)($pagoLaboral['actualizado_por_nombre'] ?? ''));
+                                    if ($actualizadoPor === '') {
+                                        $actualizadoPor = trim((string)($pagoLaboral['actualizado_por_login'] ?? ''));
+                                    }
                                 ?>
                                 <tr>
                                     <td>
                                         <div class="font-black text-slate-800"><?= trab_view_datetime($pagoLaboral['fecha_pago'] ?? null) ?></div>
-                                        <div class="text-xs text-slate-500">Registro #<?= (int)($pagoLaboral['id'] ?? 0) ?></div>
+                                        <div class="text-xs text-slate-500">Registro #<?= $pagoLaboralId ?></div>
                                     </td>
                                     <td>
                                         <span class="worker-ledger-amount <?= $estadoClase ?>">
@@ -832,11 +843,42 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                                         <div class="text-xs text-slate-500 mt-2">
                                             <?= $creadoPor !== '' ? 'Por ' . trab_view_safe($creadoPor) : 'Usuario no disponible' ?>
                                         </div>
+                                        <?php if ($estadoPago === 'revertido' && $actualizadoPor !== ''): ?>
+                                            <div class="text-xs text-slate-500 mt-1">
+                                                Revertido por <?= trab_view_safe($actualizadoPor) ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($puedeRevertirPago): ?>
+                                            <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/pagos-caja/' . $pagoLaboralId . '/revertir') ?>" class="min-w-[260px] space-y-2">
+                                                <?= csrf_field() ?>
+                                                <input type="hidden" name="reversion_token" value="<?= trab_view_safe($reversionToken, '') ?>">
+                                                <label class="worker-meta-label" for="reversion_pago_caja_motivo_<?= $pagoLaboralId ?>">Motivo</label>
+                                                <input id="reversion_pago_caja_motivo_<?= $pagoLaboralId ?>" class="worker-input" type="text" maxlength="1000" name="motivo" placeholder="Motivo obligatorio" required>
+                                                <button class="worker-btn" type="submit">
+                                                    <i class="fas fa-rotate-left"></i>
+                                                    Revertir pago
+                                                </button>
+                                            </form>
+                                            <div class="text-xs text-slate-500 mt-2">
+                                                Crea ingreso en Caja por <?= trab_view_money($pagoLaboral['monto'] ?? 0) ?>. Ref. <?= trab_view_safe($reversionPago['referencia_reversion'] ?? null) ?>
+                                            </div>
+                                        <?php elseif ($estadoPago === 'pagado'): ?>
+                                            <div class="text-xs text-slate-500 max-w-sm">
+                                                Reversion bloqueada: <?= trab_view_safe($reversionPago['motivo_bloqueo'] ?? null, 'No evaluada para este pago.') ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="worker-badge">
+                                                <i class="fas fa-lock"></i>
+                                                Sin accion
+                                            </span>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                                 <?php if (trim((string)($pagoLaboral['notas'] ?? '')) !== ''): ?>
                                     <tr>
-                                        <td colspan="6" class="text-xs text-slate-500">
+                                        <td colspan="7" class="text-xs text-slate-500">
                                             <strong>Notas:</strong> <?= trab_view_safe($pagoLaboral['notas'] ?? null) ?>
                                         </td>
                                     </tr>
