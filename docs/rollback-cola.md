@@ -2421,6 +2421,19 @@ No ejecutar SQL ni tocar datos. El recibo es informativo; no crea nomina, pagos,
 movimientos de Caja, recibos persistidos, dispersion ni auditorias por simple
 visualizacion.
 
+## Rollback Fase 5E-I-F
+
+5E-I-F es cierre documental del recibo laboral informativo validado manualmente.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_I_F_cierre_recibo_laboral_informativo.md`.
+2. Retirar referencias 5E-I-F de resumen, QA y rollback.
+3. Restaurar el estado de `docs/fase_5E_I_A_recibo_laboral_informativo.md` a
+   implementacion con QA manual pendiente si se quiere repetir la validacion.
+
+No ejecutar SQL ni tocar codigo operativo.
+
 ## Rollback Fase 5E-G-A
 
 5E-G-A agrega preview GET/read-only de nomina por periodo.

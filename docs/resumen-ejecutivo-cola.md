@@ -2337,3 +2337,25 @@ Estado formal:
 - No hay POST, CSRF, pagos, reversiones, movimientos de Caja, recibos persistidos,
   migraciones, permisos/auth, PWA/offline ni `/api/sync`.
 - Siguiente paso seguro: QA manual del recibo; si pasa, cierre documental 5E-I-F.
+
+## 5E-I-F Cierre recibo laboral informativo
+
+Estado formal:
+`CIERRE_5E_I_F_RECIBO_LABORAL_INFORMATIVO_QA_MANUAL_VALIDADA`.
+
+- Documento creado:
+  `docs/fase_5E_I_F_cierre_recibo_laboral_informativo.md`.
+- El usuario confirmo que la prueba manual del recibo laboral informativo paso
+  correctamente.
+- Queda cerrada la ruta GET/read-only
+  `/trabajadores/{id}/recibo-laboral`.
+- El recibo conserva scope por hotel, periodo requerido, calculos derivados de
+  pre-nomina y avisos visibles `Solo lectura`, `No fiscal` y `No genera pago`.
+- Validaciones automaticas registradas: preflight pagos laborales Caja `OK: 50`,
+  `WARNING: 0`, `ERROR: 0`; health general `OK: 313`, `WARNING: 25`,
+  `ERROR: 0`; ruta local sin sesion `303` a login, sin 404.
+- No autoriza nomina automatica, recibos fiscales, PDF oficial, timbrado, CFDI,
+  dispersion, pagos masivos, auditoria por visualizacion, permisos/auth,
+  PWA/offline ni `/api/sync`.
+- Siguiente paso seguro: contrato independiente antes de recibo descargable, PDF
+  informativo, cierre formal de periodo, aprobacion de nomina o pago masivo.
