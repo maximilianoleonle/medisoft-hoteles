@@ -2333,3 +2333,22 @@ Resultado automatico esperado:
 - Health general: `ERROR: 0`.
 - Ruta local sin sesion:
   `GET /trabajadores/nomina/preview/exportar` responde `303` a login, sin 404.
+
+Resultado manual 5E-H-A:
+
+- El usuario confirmo que la prueba manual paso correctamente.
+
+## Fase 5E-H-F - Cierre export CSV del preview de pre-nomina
+
+Estado: cierre documental aplicado despues de QA manual.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_H_F_cierre_export_csv_nomina_preview.md`.
+2. Confirmar que no agrega codigo ni escrituras.
+3. Confirmar que registra la QA manual validada del export CSV.
+4. Confirmar que mantiene fuera de alcance nomina automatica, recibos oficiales,
+   timbrado, dispersion, pagos masivos, liquidaciones automaticas, permisos/auth,
+   PWA/offline y `/api/sync`.
+5. Confirmar que el siguiente paso requiere contrato independiente y autorizacion
+   explicita si toca modelo, controlador, ruta, vista, Caja o datos.

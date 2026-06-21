@@ -2276,3 +2276,25 @@ Estado formal:
   PWA/offline ni `/api/sync`.
 - Siguiente paso seguro: QA manual de la descarga CSV y luego cierre documental si
   pasa.
+
+## 5E-H-F Cierre export CSV del preview de pre-nomina
+
+Estado formal:
+`CIERRE_5E_H_F_EXPORT_CSV_NOMINA_PREVIEW_QA_MANUAL_VALIDADA`.
+
+- Documento creado:
+  `docs/fase_5E_H_F_cierre_export_csv_nomina_preview.md`.
+- El usuario confirmo que la prueba manual del export CSV de pre-nomina paso
+  correctamente.
+- Queda cerrada la ruta GET/read-only
+  `/trabajadores/nomina/preview/exportar`.
+- La descarga conserva filtros GET, periodo requerido, calculos read-only, headers CSV
+  y ausencia de POST, pago masivo, recibos oficiales, dispersion o movimientos de Caja.
+- Validaciones automaticas registradas: preflight pagos laborales Caja `OK: 48`,
+  `WARNING: 0`, `ERROR: 0`; health general `OK: 313`, `WARNING: 25`,
+  `ERROR: 0`; ruta export local sin sesion `303` a login, sin 404.
+- No autoriza nomina automatica, periodos oficiales persistidos, timbrado,
+  liquidaciones automaticas, auditoria por descarga, permisos/auth, PWA/offline ni
+  `/api/sync`.
+- Siguiente paso seguro: contrato independiente antes de recibo laboral informativo,
+  recibo descargable, cierre formal de periodo o pago masivo.

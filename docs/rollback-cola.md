@@ -2475,3 +2475,17 @@ Verificacion posterior:
 
 No ejecutar SQL ni tocar datos. La exportacion CSV no crea nomina, pagos, movimientos
 de Caja, recibos, dispersion ni auditorias por simple descarga.
+
+## Rollback Fase 5E-H-F
+
+5E-H-F es cierre documental del export CSV del preview de pre-nomina validado
+manualmente.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_H_F_cierre_export_csv_nomina_preview.md`.
+2. Retirar referencias 5E-H-F de resumen, QA y rollback.
+3. Restaurar el estado de `docs/fase_5E_H_A_export_csv_nomina_preview.md` a
+   implementacion con QA manual pendiente si se quiere repetir la validacion.
+
+No ejecutar SQL ni tocar codigo operativo.
