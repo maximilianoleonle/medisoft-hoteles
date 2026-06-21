@@ -2432,3 +2432,43 @@ Rollback:
    fase con QA manual pendiente.
 
 No ejecutar SQL ni tocar codigo operativo.
+
+## Rollback Fase 5E-H-0
+
+5E-H-0 es contrato documental del export CSV read-only del preview de pre-nomina.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_H_0_contrato_export_csv_nomina_preview.md`.
+2. Retirar referencias 5E-H-0 de resumen, QA y rollback.
+3. Restaurar la nota de siguiente paso en
+   `docs/fase_5E_G_F_cierre_nomina_periodo_preview.md` si se quiere volver al
+   cierre previo sin contrato de export CSV.
+
+No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
+`trabajador_anticipos`, `trabajador_prestamos`, `trabajador_pagos_caja`, Caja,
+cortes, movimientos de Caja, permisos/auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 5E-H-A futura
+
+Si se implementa una futura exportacion CSV del preview de pre-nomina, su rollback de
+codigo debera retirar:
+
+1. `GET /trabajadores/nomina/preview/exportar` de `src/config/routes.php`.
+2. La accion exportadora de `src/app/controllers/TrabajadorController.php`.
+3. Cualquier metodo auxiliar agregado en `src/app/models/Trabajador.php`, si existiera.
+4. El enlace o boton de exportacion de `src/app/views/trabajadores/nomina_preview.php`.
+5. Validaciones 5E-H-A en `src/tools/saas/preflight_personal_pagos_caja.php`.
+6. Validaciones 5E-H-A en `src/tools/saas/health_check_fase_1a.php`.
+7. Documentacion de implementacion y referencias documentales.
+
+Verificacion posterior:
+
+- `docker compose exec -T app php -l` en PHP tocados.
+- `docker compose exec -T app php tools/saas/preflight_personal_pagos_caja.php`.
+- `docker compose exec -T app php tools/saas/health_check_fase_1a.php`.
+
+No ejecutar SQL ni tocar datos. La exportacion CSV futura no debe crear nomina,
+pagos, movimientos de Caja, recibos, dispersion ni auditorias por simple descarga.

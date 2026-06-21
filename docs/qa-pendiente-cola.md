@@ -2273,3 +2273,33 @@ Revision recomendada:
    oficiales, timbrado, dispersion y liquidaciones automaticas.
 4. Confirmar que el siguiente paso requiere contrato independiente y autorizacion
    explicita si toca modelo, controlador, ruta, vista, Caja o datos.
+
+## Fase 5E-H-0 - Contrato export CSV del preview de pre-nomina
+
+Estado: contrato documental aplicado; sin QA manual funcional.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_H_0_contrato_export_csv_nomina_preview.md`.
+2. Confirmar que no agrega codigo, rutas, modelos, vistas, formularios ni migraciones.
+3. Confirmar que la ruta futura candidata es GET/read-only:
+   `/trabajadores/nomina/preview/exportar`.
+4. Confirmar que la exportacion futura reutilizara los mismos filtros y calculos del
+   preview.
+5. Confirmar que no autoriza pagos masivos, nomina automatica, recibos oficiales,
+   timbrado, dispersion ni liquidaciones automaticas.
+6. Confirmar que mantiene fuera de alcance permisos/auth, PWA/offline y `/api/sync`.
+7. Para una futura 5E-H-A, exigir autorizacion explicita si se toca ruta, controlador,
+   modelo, vista o checkers.
+
+QA futura sugerida para 5E-H-A:
+
+1. Abrir `/trabajadores/nomina/preview` con periodo valido.
+2. Descargar CSV desde el preview con los mismos filtros.
+3. Confirmar que el CSV contiene solo trabajadores del hotel actual.
+4. Confirmar que totales y filas coinciden con la pantalla.
+5. Probar `incluir_pagos_caja` activado y desactivado.
+6. Probar `solo_con_saldo` y confirmar que filtra igual que la pantalla.
+7. Intentar exportar sin periodo y confirmar bloqueo controlado.
+8. Confirmar que no hay POST, pago masivo, recibo oficial, dispersion, movimiento de
+   Caja ni escritura laboral.

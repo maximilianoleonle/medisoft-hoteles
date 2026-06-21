@@ -2232,3 +2232,24 @@ Estado formal:
   liquidaciones automaticas, permisos/auth, PWA/offline ni `/api/sync`.
 - Siguiente paso seguro: contrato independiente antes de recibo laboral informativo,
   export CSV del preview o cualquier nuevo frente financiero.
+
+## 5E-H-0 Contrato export CSV del preview de pre-nomina
+
+Estado formal:
+`CONTRATO_5E_H_0_EXPORT_CSV_NOMINA_PREVIEW_READ_ONLY_COMPLETADO`.
+
+- Documento creado:
+  `docs/fase_5E_H_0_contrato_export_csv_nomina_preview.md`.
+- Es contrato documental; no agrega codigo, rutas, modelos, vistas, formularios,
+  migraciones, permisos, servicios, Caja, datos ni `/api/sync`.
+- Define una futura ruta GET candidata:
+  `/trabajadores/nomina/preview/exportar`.
+- La exportacion futura debe reutilizar los mismos filtros y calculos read-only de
+  `/trabajadores/nomina/preview`.
+- Define CSV con headers de descarga, columnas de periodo/trabajador/totales/pagos Caja
+  y limite razonable de filas.
+- Mantiene prohibidos pagos masivos, nomina automatica, recibos oficiales, timbrado,
+  dispersion bancaria, liquidaciones automaticas, permisos/auth, PWA/offline y
+  `/api/sync`.
+- Siguiente paso seguro: `5E-H-A` solo con autorizacion explicita para tocar ruta,
+  controlador/modelo read-only, vista y checkers.
