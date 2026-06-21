@@ -208,6 +208,7 @@ $workerReportViewPath = $appRoot . '/app/views/trabajadores/reporte.php';
 $workerCashSimulatorViewPath = $appRoot . '/app/views/trabajadores/simulador_pago_caja.php';
 $workerCashReportViewPath = $appRoot . '/app/views/trabajadores/reporte_pagos_caja.php';
 $workerPayrollPreviewViewPath = $appRoot . '/app/views/trabajadores/nomina_preview.php';
+$workerLaborReceiptViewPath = $appRoot . '/app/views/trabajadores/recibo_laboral_informativo.php';
 $auditServicePath = $appRoot . '/app/services/AuditService.php';
 $paymentServicePath = $appRoot . '/app/services/TrabajadorPagoCajaService.php';
 $rollbackToolPath = $appRoot . '/tools/saas/probar_pago_laboral_caja.php';
@@ -597,6 +598,10 @@ if ($routes === []) {
             && trim((string)$route['path'], '/') === 'trabajadores/nomina/preview/exportar'
             && strtolower((string)$route['controller']) === 'trabajador'
             && strtolower((string)$route['action']) === 'exportarnominapreview';
+        $isReadOnlyLaborReceipt = strtolower((string)$route['method']) === 'get'
+            && trim((string)$route['path'], '/') === 'trabajadores/{id:[0-9]+}/recibo-laboral'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'recibolaboral';
         $isPaymentRoute = strtolower((string)$route['method']) === 'post'
             && trim((string)$route['path'], '/') === 'trabajadores/{id:[0-9]+}/registrar-pago-caja'
             && strtolower((string)$route['controller']) === 'trabajador'
@@ -610,6 +615,7 @@ if ($routes === []) {
             && !$isReadOnlyReportExport
             && !$isReadOnlyPayrollPreview
             && !$isReadOnlyPayrollPreviewExport
+            && !$isReadOnlyLaborReceipt
             && !$isPaymentRoute
             &&
             strpos($signature, 'trabajadores') !== false
@@ -671,6 +677,16 @@ if ($routes === []) {
         lpcWarning(
             'Ruta 5E-H-A GET /trabajadores/nomina/preview/exportar no esta registrada.',
             'Registrar el GET read-only antes de QA del export CSV de pre-nomina.'
+        );
+    }
+
+    $laborReceiptRouteOk = lpcRouteExists($routes, 'trabajadores/{id:[0-9]+}/recibo-laboral', 'get');
+    if ($laborReceiptRouteOk) {
+        lpcOk('Ruta 5E-I-A GET /trabajadores/{id}/recibo-laboral registrada como recibo laboral read-only.');
+    } else {
+        lpcWarning(
+            'Ruta 5E-I-A GET /trabajadores/{id}/recibo-laboral no esta registrada.',
+            'Registrar el GET read-only antes de QA del recibo laboral informativo.'
         );
     }
 
@@ -778,6 +794,48 @@ if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($work
     lpcWarning(
         'Archivos del preview 5E-G-A no estan completos.',
         'Crear modelo/controlador/vista read-only antes de QA de pre-nomina.'
+    );
+}
+
+if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($workerLaborReceiptViewPath)) {
+    $workerModelCode = (string) file_get_contents($workerModelPath);
+    $workerControllerCode = (string) file_get_contents($workerControllerPath);
+    $workerLaborReceiptViewCode = (string) file_get_contents($workerLaborReceiptViewPath);
+    $workerLaborReceiptSurfaceCode = $workerControllerCode . "\n" . $workerLaborReceiptViewCode;
+    $laborReceiptWriteForbidden = preg_match(
+        '/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|REPLACE\s+INTO|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE)\s+(trabajadores|trabajador_pagos|trabajador_anticipos|trabajador_prestamos|trabajador_pagos_caja|movimientos_caja|cortes_caja|cajas)\b/i',
+        $workerLaborReceiptSurfaceCode
+    );
+
+    if (
+        !$laborReceiptWriteForbidden
+        && strpos($workerModelCode, 'function reciboLaboralInformativoPorHotel') !== false
+        && strpos($workerModelCode, 'nominaPreviewPorHotel($hotelId, $filtros, 1)') !== false
+        && strpos($workerControllerCode, 'function reciboLaboralAction') !== false
+        && strpos($workerControllerCode, 'function filtrosReciboLaboralDesdeQuery') !== false
+        && strpos($workerControllerCode, 'trabajadores/recibo_laboral_informativo') !== false
+        && strpos($workerLaborReceiptViewCode, 'Recibo laboral informativo') !== false
+        && strpos($workerLaborReceiptViewCode, 'No fiscal') !== false
+        && strpos($workerLaborReceiptViewCode, 'No genera pago') !== false
+        && strpos($workerLaborReceiptViewCode, 'recibo-laboral') !== false
+        && strpos($workerLaborReceiptViewCode, 'method="GET"') !== false
+        && strpos($workerLaborReceiptViewCode, 'method="POST"') === false
+        && strpos($workerLaborReceiptViewCode, 'csrf_field()') === false
+        && strpos($workerLaborReceiptViewCode, 'registrar-pago-caja') === false
+        && strpos($workerLaborReceiptViewCode, 'timbrar') === false
+        && strpos($workerLaborReceiptViewCode, 'dispersion') === false
+    ) {
+        lpcOk('Recibo 5E-I-A laboral informativo es GET/read-only, reutiliza preview y no expone pago ni timbrado.');
+    } else {
+        lpcError(
+            'Recibo 5E-I-A laboral informativo incompleto o con riesgo de escritura.',
+            'Mantener recibo_laboral_informativo como GET/read-only, sin POST, sin CSRF, sin pago, sin timbrado y reutilizando preview de nomina.'
+        );
+    }
+} else {
+    lpcWarning(
+        'Archivos del recibo 5E-I-A no estan completos.',
+        'Crear modelo/controlador/vista read-only antes de QA del recibo laboral informativo.'
     );
 }
 

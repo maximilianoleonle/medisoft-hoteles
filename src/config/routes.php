@@ -265,6 +265,7 @@ $router->get('/trabajadores/pagos-caja/reporte', ['controller' => 'Trabajador', 
 $router->get('/trabajadores/pagos-caja/simulador', ['controller' => 'Trabajador', 'action' => 'simuladorPagoCaja']);
 $router->get('/trabajadores/crear', ['controller' => 'Trabajador', 'action' => 'crear']);
 $router->post('/trabajadores', ['controller' => 'Trabajador', 'action' => 'guardar']);
+$router->get('/trabajadores/{id:[0-9]+}/recibo-laboral', ['controller' => 'Trabajador', 'action' => 'reciboLaboral']);
 $router->get('/trabajadores/{id:[0-9]+}', ['controller' => 'Trabajador', 'action' => 'ver']);
 $router->post('/trabajadores/{id:[0-9]+}/registrar-pago-caja', ['controller' => 'Trabajador', 'action' => 'registrarPagoCaja']);
 $router->post('/trabajadores/{id:[0-9]+}/pagos-caja/{pagoid:[0-9]+}/revertir', ['controller' => 'Trabajador', 'action' => 'revertirPagoCaja']);

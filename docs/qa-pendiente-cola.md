@@ -2380,3 +2380,31 @@ QA futura sugerida para 5E-I-A:
 6. Intentar abrir sin periodo y confirmar bloqueo controlado.
 7. Confirmar que no hay POST, pago masivo, timbrado, dispersion, movimiento de Caja ni
    escritura laboral.
+
+## Fase 5E-I-A - Recibo laboral informativo read-only
+
+Estado: implementacion tecnica validada automaticamente; QA manual pendiente del
+usuario.
+
+Revision manual recomendada:
+
+1. Abrir `/trabajadores/nomina/preview`.
+2. Seleccionar un periodo valido.
+3. Entrar al enlace `Recibo` de un trabajador.
+4. Confirmar que la ruta conserva `fecha_inicio`, `fecha_fin` e
+   `incluir_pagos_caja`.
+5. Confirmar avisos visibles `Solo lectura`, `No fiscal` y `No genera pago`.
+6. Confirmar que bruto, deducciones, pagos Caja, neto y pendiente coinciden con el
+   preview para ese trabajador.
+7. Probar `Pagos Caja` activado/desactivado desde el recibo.
+8. Abrir recibo sin periodo y confirmar bloqueo controlado.
+9. Confirmar que no hay POST, boton de pagar, timbrado, dispersion, movimiento de
+   Caja ni escritura laboral.
+
+Resultado automatico esperado:
+
+- Lint PHP: OK en controlador, modelo, vistas, rutas y checkers.
+- Preflight pagos laborales Caja: `ERROR: 0`.
+- Health general: `ERROR: 0`.
+- Ruta local sin sesion:
+  `GET /trabajadores/{id}/recibo-laboral` responde `303` a login, sin 404.

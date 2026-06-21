@@ -2319,3 +2319,21 @@ Estado formal:
   visualizacion, permisos/auth, PWA/offline y `/api/sync`.
 - Siguiente paso seguro: `5E-I-A` solo con autorizacion explicita para tocar ruta,
   controlador/modelo read-only, vista y checkers.
+
+## 5E-I-A Recibo laboral informativo read-only
+
+Estado formal:
+`RECIBO_5E_I_A_LABORAL_INFORMATIVO_READ_ONLY_COMPLETADO_QA_MANUAL_PENDIENTE`.
+
+- Documento creado:
+  `docs/fase_5E_I_A_recibo_laboral_informativo.md`.
+- Ruta nueva:
+  `GET /trabajadores/{id}/recibo-laboral`.
+- La pantalla reutiliza `Trabajador::nominaPreviewPorHotel()` para calcular un solo
+  trabajador por periodo, con scope de hotel y sin duplicar reglas financieras.
+- Se agrego enlace `Recibo` desde `/trabajadores/nomina/preview`, preservando
+  `fecha_inicio`, `fecha_fin` e `incluir_pagos_caja`.
+- La vista muestra avisos visibles `Solo lectura`, `No fiscal` y `No genera pago`.
+- No hay POST, CSRF, pagos, reversiones, movimientos de Caja, recibos persistidos,
+  migraciones, permisos/auth, PWA/offline ni `/api/sync`.
+- Siguiente paso seguro: QA manual del recibo; si pasa, cierre documental 5E-I-F.

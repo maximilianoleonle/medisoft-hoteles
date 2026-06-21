@@ -106,6 +106,30 @@ class TrabajadorController extends Controller
         $this->descargarNominaPreviewCsv($preview);
     }
 
+    public function reciboLaboralAction(): void
+    {
+        $id = (int)($this->route_params['id'] ?? 0);
+        $hotelId = $this->hotelIdActual();
+        $tablaDisponible = $this->trabajadorModel->tablasNominaPreviewDisponibles();
+        $recibo = $this->trabajadorModel->reciboLaboralInformativoPorHotel(
+            $hotelId,
+            $id,
+            $this->filtrosReciboLaboralDesdeQuery()
+        );
+
+        if (empty($recibo['trabajador'])) {
+            set_mensaje('Trabajador no encontrado para el hotel actual.', 'error');
+            $this->redirect('trabajadores');
+            return;
+        }
+
+        View::renderTemplate('trabajadores/recibo_laboral_informativo', [
+            'title' => 'Recibo laboral informativo - ' . current_hotel_display_name(),
+            'recibo' => $recibo,
+            'tablaDisponible' => $tablaDisponible,
+        ]);
+    }
+
     public function reportePagosCajaAction(): void
     {
         $hotelId = $this->hotelIdActual();
@@ -693,6 +717,15 @@ class TrabajadorController extends Controller
             'rol_laboral' => $this->getQuery('rol_laboral', ''),
             'estado' => $this->getQuery('estado', 'activos'),
             'solo_con_saldo' => $this->getQuery('solo_con_saldo', '0'),
+            'incluir_pagos_caja' => $this->getQuery('incluir_pagos_caja', '1'),
+        ];
+    }
+
+    private function filtrosReciboLaboralDesdeQuery(): array
+    {
+        return [
+            'fecha_inicio' => $this->getQuery('fecha_inicio', ''),
+            'fecha_fin' => $this->getQuery('fecha_fin', ''),
             'incluir_pagos_caja' => $this->getQuery('incluir_pagos_caja', '1'),
         ];
     }

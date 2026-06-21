@@ -365,6 +365,12 @@ $exportUrl = url('trabajadores/nomina/preview/exportar' . ($exportQuery !== '' ?
                                             } elseif ($estadoPreview === 'cubierto') {
                                                 $badgeClass .= ' payroll-badge-warn';
                                             }
+                                            $reciboQuery = http_build_query([
+                                                'fecha_inicio' => $fechaInicio,
+                                                'fecha_fin' => $fechaFin,
+                                                'incluir_pagos_caja' => $incluirPagosCaja ? '1' : '0',
+                                            ]);
+                                            $reciboUrl = url('trabajadores/' . (int)($trabajador['id'] ?? 0) . '/recibo-laboral' . ($reciboQuery !== '' ? '?' . $reciboQuery : ''));
                                         ?>
                                         <tr>
                                             <td>
@@ -411,6 +417,10 @@ $exportUrl = url('trabajadores/nomina/preview/exportar' . ($exportQuery !== '' ?
                                                         reversiones <?= trab_nomina_money($trabajador['reversiones_detectadas'] ?? 0) ?>.
                                                     </div>
                                                 <?php endif; ?>
+                                                <a class="payroll-badge mt-2" href="<?= $reciboUrl ?>">
+                                                    <i class="fas fa-receipt"></i>
+                                                    Recibo
+                                                </a>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

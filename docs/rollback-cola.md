@@ -2388,6 +2388,39 @@ No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
 `trabajador_anticipos`, `trabajador_prestamos`, `trabajador_pagos_caja`, Caja,
 cortes, movimientos de Caja, permisos/auth, PWA/offline ni `/api/sync`.
 
+## Rollback Fase 5E-I-A
+
+5E-I-A agrega recibo laboral informativo GET/read-only.
+
+No crea migraciones ni datos.
+
+Rollback de codigo:
+
+1. Retirar `GET /trabajadores/{id}/recibo-laboral` de
+   `src/config/routes.php`.
+2. Retirar `TrabajadorController::reciboLaboralAction`.
+3. Retirar `TrabajadorController::filtrosReciboLaboralDesdeQuery`.
+4. Retirar `Trabajador::reciboLaboralInformativoPorHotel`.
+5. Retirar `src/app/views/trabajadores/recibo_laboral_informativo.php`.
+6. Retirar el enlace `Recibo` de
+   `src/app/views/trabajadores/nomina_preview.php`.
+7. Retirar validaciones 5E-I-A de
+   `src/tools/saas/preflight_personal_pagos_caja.php`.
+8. Retirar validaciones 5E-I-A de
+   `src/tools/saas/health_check_fase_1a.php`.
+9. Retirar `docs/fase_5E_I_A_recibo_laboral_informativo.md` y referencias
+   documentales.
+
+Verificacion posterior:
+
+- `docker compose exec -T app php -l` en PHP tocados.
+- `docker compose exec -T app php tools/saas/preflight_personal_pagos_caja.php`.
+- `docker compose exec -T app php tools/saas/health_check_fase_1a.php`.
+
+No ejecutar SQL ni tocar datos. El recibo es informativo; no crea nomina, pagos,
+movimientos de Caja, recibos persistidos, dispersion ni auditorias por simple
+visualizacion.
+
 ## Rollback Fase 5E-G-A
 
 5E-G-A agrega preview GET/read-only de nomina por periodo.

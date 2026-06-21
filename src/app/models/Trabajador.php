@@ -641,6 +641,71 @@ class Trabajador extends Model
         return $preview;
     }
 
+    public function reciboLaboralInformativoPorHotel(int $hotelId, int $trabajadorId, array $filtros = []): array
+    {
+        $recibo = [
+            'trabajador' => null,
+            'calculo' => null,
+            'periodo' => [],
+            'resumen' => $this->resumenVacioNominaPreview(),
+            'bloqueos' => [],
+            'generado_en' => date('Y-m-d H:i:s'),
+        ];
+
+        if ($hotelId <= 0) {
+            $recibo['bloqueos'][] = 'No hay hotel activo para generar el recibo informativo.';
+            return $recibo;
+        }
+
+        if ($trabajadorId <= 0) {
+            $recibo['bloqueos'][] = 'Trabajador invalido para generar el recibo informativo.';
+            return $recibo;
+        }
+
+        $trabajador = $this->buscarPorIdHotel($trabajadorId, $hotelId);
+        if (!$trabajador) {
+            $recibo['bloqueos'][] = 'Trabajador no encontrado para el hotel actual.';
+            return $recibo;
+        }
+
+        $filtros['trabajador_id'] = $trabajadorId;
+        $filtros['buscar'] = '';
+        $filtros['rol_laboral'] = '';
+        $filtros['estado'] = 'todos';
+        $filtros['solo_con_saldo'] = '0';
+
+        $preview = $this->nominaPreviewPorHotel($hotelId, $filtros, 1);
+        $filtrosNormalizados = is_array($preview['filtros_normalizados'] ?? null)
+            ? $preview['filtros_normalizados']
+            : [];
+
+        $recibo['trabajador'] = $trabajador;
+        $recibo['periodo'] = [
+            'fecha_inicio' => $filtrosNormalizados['fecha_inicio'] ?? null,
+            'fecha_fin' => $filtrosNormalizados['fecha_fin'] ?? null,
+            'fecha_inicio_raw' => $filtrosNormalizados['fecha_inicio_raw'] ?? '',
+            'fecha_fin_raw' => $filtrosNormalizados['fecha_fin_raw'] ?? '',
+            'incluir_pagos_caja' => !empty($filtrosNormalizados['incluir_pagos_caja']),
+        ];
+        $recibo['resumen'] = is_array($preview['resumen'] ?? null)
+            ? $preview['resumen']
+            : $this->resumenVacioNominaPreview();
+        $recibo['bloqueos'] = is_array($preview['bloqueos'] ?? null) ? $preview['bloqueos'] : [];
+
+        if (!empty($recibo['bloqueos'])) {
+            return $recibo;
+        }
+
+        $trabajadores = is_array($preview['trabajadores'] ?? null) ? $preview['trabajadores'] : [];
+        $recibo['calculo'] = $trabajadores[0] ?? null;
+
+        if (empty($recibo['calculo'])) {
+            $recibo['bloqueos'][] = 'No se encontro calculo laboral para el periodo seleccionado.';
+        }
+
+        return $recibo;
+    }
+
     public function usuariosVinculablesPorHotel(int $hotelId): array
     {
         if ($hotelId <= 0 || !$this->tablaExiste('hotel_usuarios') || !$this->tablaExiste('usuarios')) {
