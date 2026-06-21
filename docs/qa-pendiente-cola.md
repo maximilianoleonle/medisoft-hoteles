@@ -2674,3 +2674,37 @@ Revision recomendada:
 4. Confirmar que el cierre no autoriza nomina oficial, CFDI, timbrado,
    dispersion, pago masivo, liquidaciones automaticas, movimientos de Caja desde
    pre-nomina, PWA/offline ni cambios en `/api/sync`.
+
+## Fase 5E-M-0 - Contrato reporte/export snapshots de pre-nomina
+
+Estado: contrato documental aplicado; sin QA funcional porque no hay
+implementacion operativa.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_M_0_contrato_reporte_snapshots_prenomina.md`.
+2. Confirmar que no agrega codigo, rutas, modelos, vistas, servicios,
+   migraciones, permisos, datos, storage, Caja, PWA/offline ni `/api/sync`.
+3. Confirmar que las rutas candidatas quedan solo propuestas:
+   `/trabajadores/nomina/periodos/reporte` y
+   `/trabajadores/nomina/periodos/exportar`.
+4. Confirmar que la fase futura seria GET/read-only y CSV en memoria.
+5. Confirmar que no autoriza crear, aprobar, anular, reabrir ni recalcular
+   snapshots.
+6. Confirmar que no autoriza pagos laborales, movimientos de Caja, cortes,
+   liquidaciones, nomina oficial, CFDI, timbrado, dispersion, folios oficiales,
+   storage, correo, links publicos, PWA/offline ni `/api/sync`.
+
+QA futura sugerida para 5E-M-A:
+
+1. Abrir reporte sin sesion y confirmar redireccion a login.
+2. Abrir reporte con sesion de hotel y confirmar aislamiento por hotel.
+3. Filtrar por estado `cerrado`, `aprobado` y `anulado`.
+4. Filtrar por rango de fechas.
+5. Confirmar que cada fila enlaza al detalle existente del snapshot.
+6. Exportar CSV y confirmar que respeta filtros.
+7. Confirmar que el CSV no crea archivos en storage.
+8. Confirmar que no aparecen formularios POST ni acciones de pago.
+9. Confirmar que `movimientos_caja` y `trabajador_pagos_caja` no cambian.
+10. Confirmar que `/api/sync` sigue bloqueado con HTTP 423 y
+    `sync_temporarily_disabled`.

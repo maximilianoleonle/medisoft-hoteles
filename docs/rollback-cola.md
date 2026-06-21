@@ -2625,6 +2625,26 @@ No ejecutar SQL como parte del rollback documental normal. No tocar Caja,
 `trabajador_pagos_caja`, `movimientos_caja`, PWA/offline, IndexedDB, cache names
 ni `/api/sync`.
 
+## Rollback Fase 5E-M-0
+
+5E-M-0 es contrato documental para reporte/export GET/read-only de snapshots de
+pre-nomina.
+
+No crea codigo, rutas, migraciones, storage ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_M_0_contrato_reporte_snapshots_prenomina.md`.
+2. Retirar referencias 5E-M-0 de resumen, QA y rollback.
+3. Restaurar la nota de siguiente paso en
+   `docs/fase_5E_L_F_cierre_cierre_aprobacion_persistente_prenomina.md` si se
+   quiere volver al cierre previo sin contrato de reporte/export.
+
+No ejecutar SQL ni tocar `trabajador_nomina_periodos`,
+`trabajador_nomina_periodo_detalles`, `trabajador_nomina_periodo_eventos`,
+`trabajador_pagos_caja`, `movimientos_caja`, storage, permisos/auth,
+PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
 ## Rollback Fase 5E-I-A
 
 5E-I-A agrega recibo laboral informativo GET/read-only.

@@ -100,3 +100,8 @@ Este cierre no autoriza:
 ## Rollback
 
 Ver `docs/rollback-cola.md`, seccion `Rollback Fase 5E-L-F`.
+
+## Siguiente contrato
+
+El contrato de reporte/export read-only de snapshots queda definido en:
+`docs/fase_5E_M_0_contrato_reporte_snapshots_prenomina.md`.

@@ -2549,3 +2549,27 @@ Estado formal:
   cambios en `/api/sync`.
 - Siguiente paso seguro: contrato separado para export/listado de snapshots,
   reabrir snapshots o avanzar a recibos/liquidaciones solo con nueva autorizacion.
+
+## 5E-M-0 Contrato reporte/export snapshots de pre-nomina
+
+Estado formal:
+`CONTRATO_5E_M_0_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_COMPLETADO`.
+
+- Documento creado:
+  `docs/fase_5E_M_0_contrato_reporte_snapshots_prenomina.md`.
+- Es contrato documental; no agrega codigo, rutas, controladores, modelos, vistas,
+  servicios, migraciones, permisos, datos, storage, Caja, PWA/offline ni
+  `/api/sync`.
+- Define rutas candidatas futuras, no implementadas:
+  `GET /trabajadores/nomina/periodos/reporte` y
+  `GET /trabajadores/nomina/periodos/exportar`.
+- El alcance futuro permitido es reporte GET/read-only y CSV en memoria de
+  snapshots persistentes 5E-L-A, con filtros por fechas, estado, tipo de periodo
+  y texto libre.
+- Mantiene prohibidos crear/recalcular snapshots, aprobar/anular/reabrir desde el
+  reporte, pagos laborales, movimientos de Caja, cortes, liquidaciones,
+  nomina oficial, CFDI, timbrado, dispersion, folios oficiales, storage, correo,
+  links publicos, PWA/offline y `/api/sync`.
+- Siguiente paso seguro: `5E-M-A` solo con autorizacion explicita para tocar
+  rutas, controlador, modelo read-only, vista, export CSV, checkers y
+  documentacion.
