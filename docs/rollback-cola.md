@@ -2502,6 +2502,25 @@ No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
 `trabajador_anticipos`, `trabajador_prestamos`, `trabajador_pagos_caja`, Caja,
 cortes, movimientos de Caja, storage, permisos/auth, PWA/offline ni `/api/sync`.
 
+## Rollback Fase 5E-L-0
+
+5E-L-0 es contrato documental para cierre/aprobacion persistente de pre-nomina.
+
+No crea codigo, rutas, migraciones, storage ni datos.
+
+Rollback:
+
+1. Retirar
+   `docs/fase_5E_L_0_contrato_cierre_aprobacion_persistente_prenomina.md`.
+2. Retirar referencias 5E-L-0 de resumen, QA y rollback.
+3. Restaurar la nota de siguiente paso en
+   `docs/fase_5E_K_F_cierre_periodos_prenomina_read_only.md` si se quiere volver al
+   cierre previo sin contrato persistente.
+
+No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
+`trabajador_anticipos`, `trabajador_prestamos`, `trabajador_pagos_caja`, Caja,
+cortes, movimientos de Caja, storage, permisos/auth, PWA/offline ni `/api/sync`.
+
 ## Rollback Fase 5E-I-A
 
 5E-I-A agrega recibo laboral informativo GET/read-only.

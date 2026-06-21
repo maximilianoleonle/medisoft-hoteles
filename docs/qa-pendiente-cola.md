@@ -2557,3 +2557,34 @@ Revision recomendada:
    movimientos de Caja, migraciones, permisos/auth, PWA/offline y `/api/sync`.
 5. Confirmar que el siguiente paso exige contrato independiente para cualquier POST,
    migracion, permiso, auditoria o persistencia real.
+
+## Fase 5E-L-0 - Contrato cierre/aprobacion persistente de pre-nomina
+
+Estado: contrato documental aplicado; sin QA manual funcional.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_L_0_contrato_cierre_aprobacion_persistente_prenomina.md`.
+2. Confirmar que no agrega codigo, rutas, controladores, modelos, vistas, servicios,
+   migraciones, permisos, Caja, datos, storage, PWA/offline ni `/api/sync`.
+3. Confirmar que separa preview read-only, cierre persistente, aprobacion
+   administrativa y pago laboral real con Caja.
+4. Confirmar que las rutas POST candidatas no quedan implementadas ni autorizadas.
+5. Confirmar que exige backup, migracion y autorizacion separada antes de persistir
+   snapshots.
+6. Confirmar que no autoriza nomina oficial, CFDI, timbrado, dispersion, pagos
+   masivos, movimientos de Caja ni liquidaciones automaticas.
+
+QA futura sugerida para 5E-L-A:
+
+1. Cerrar sin sesion debe redirigir a login.
+2. Cerrar sin CSRF o sin token debe bloquearse.
+3. Cerrar periodo valido debe crear snapshot scoped por hotel.
+4. Cierre duplicado del mismo periodo debe bloquearse o exigir politica explicita.
+5. Aprobar periodo de otro hotel debe bloquearse.
+6. Aprobar no debe modificar el snapshot.
+7. Anular debe exigir motivo y no borrar fisicamente.
+8. Confirmar que no se crean movimientos de Caja, CFDI, timbrado, dispersion ni pago
+   masivo.
+9. Confirmar que `/api/sync` sigue bloqueado con HTTP 423 y
+   `sync_temporarily_disabled`.

@@ -2455,3 +2455,23 @@ Estado formal:
   permisos/auth, PWA/offline ni `/api/sync`.
 - Siguiente paso seguro: contrato independiente para cierre/aprobacion persistente de
   pre-nomina antes de cualquier POST, migracion o escritura real.
+
+## 5E-L-0 Contrato cierre/aprobacion persistente de pre-nomina
+
+Estado formal:
+`CONTRATO_5E_L_0_CIERRE_APROBACION_PERSISTENTE_PRENOMINA_COMPLETADO`.
+
+- Documento creado:
+  `docs/fase_5E_L_0_contrato_cierre_aprobacion_persistente_prenomina.md`.
+- Es contrato documental; no agrega codigo, rutas, controladores, modelos, vistas,
+  servicios, migraciones, permisos, Caja, storage, datos, PWA/offline ni `/api/sync`.
+- Define que un cierre futuro debe guardar un snapshot controlado del preview, sin
+  pagar, timbrar, dispersar, liquidar anticipos/prestamos ni mover Caja.
+- Propone rutas POST futuras solo como candidatas:
+  `/trabajadores/nomina/periodos/cerrar`,
+  `/trabajadores/nomina/periodos/{id}/aprobar` y
+  `/trabajadores/nomina/periodos/{id}/anular`.
+- Mantiene separados preview read-only, cierre persistente, aprobacion administrativa
+  y pago laboral real con Caja.
+- Siguiente paso seguro: `5E-L-A` solo con autorizacion explicita para rutas POST,
+  servicio, modelo, vista, checkers, migraciones, permisos y backup.
