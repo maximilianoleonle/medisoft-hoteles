@@ -85,6 +85,12 @@ $previewQuery = http_build_query([
     'incluir_pagos_caja' => $incluirPagosCaja ? '1' : '0',
 ]);
 $previewUrl = url('trabajadores/nomina/preview' . ($previewQuery !== '' ? '?' . $previewQuery : ''));
+$pdfQuery = http_build_query([
+    'fecha_inicio' => $fechaInicio,
+    'fecha_fin' => $fechaFin,
+    'incluir_pagos_caja' => $incluirPagosCaja ? '1' : '0',
+]);
+$pdfUrl = url('trabajadores/' . $trabajadorId . '/recibo-laboral/pdf' . ($pdfQuery !== '' ? '?' . $pdfQuery : ''));
 $volverUrl = $trabajadorId > 0 ? url('trabajadores/' . $trabajadorId) : url('trabajadores');
 $folio = 'REC-TRAB-' . ($trabajadorId > 0 ? $trabajadorId : '0') . '-' . date('Ymd');
 ?>
@@ -273,6 +279,12 @@ $folio = 'REC-TRAB-' . ($trabajadorId > 0 ? $trabajadorId : '0') . '-' . date('Y
                     <i class="fas fa-table-list"></i>
                     Preview nomina
                 </a>
+                <?php if ($tablaDisponible && empty($bloqueos) && !empty($calculo)): ?>
+                    <a class="receipt-btn" href="<?= $pdfUrl ?>">
+                        <i class="fas fa-file-pdf"></i>
+                        PDF informativo
+                    </a>
+                <?php endif; ?>
             </div>
             <div class="flex flex-wrap gap-2">
                 <span class="receipt-badge">

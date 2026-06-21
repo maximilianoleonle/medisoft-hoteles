@@ -209,6 +209,7 @@ $workerCashSimulatorViewPath = $appRoot . '/app/views/trabajadores/simulador_pag
 $workerCashReportViewPath = $appRoot . '/app/views/trabajadores/reporte_pagos_caja.php';
 $workerPayrollPreviewViewPath = $appRoot . '/app/views/trabajadores/nomina_preview.php';
 $workerLaborReceiptViewPath = $appRoot . '/app/views/trabajadores/recibo_laboral_informativo.php';
+$workerLaborReceiptPdfServicePath = $appRoot . '/app/services/TrabajadorReciboLaboralPdfService.php';
 $auditServicePath = $appRoot . '/app/services/AuditService.php';
 $paymentServicePath = $appRoot . '/app/services/TrabajadorPagoCajaService.php';
 $rollbackToolPath = $appRoot . '/tools/saas/probar_pago_laboral_caja.php';
@@ -602,6 +603,10 @@ if ($routes === []) {
             && trim((string)$route['path'], '/') === 'trabajadores/{id:[0-9]+}/recibo-laboral'
             && strtolower((string)$route['controller']) === 'trabajador'
             && strtolower((string)$route['action']) === 'recibolaboral';
+        $isReadOnlyLaborReceiptPdf = strtolower((string)$route['method']) === 'get'
+            && trim((string)$route['path'], '/') === 'trabajadores/{id:[0-9]+}/recibo-laboral/pdf'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'recibolaboralpdf';
         $isPaymentRoute = strtolower((string)$route['method']) === 'post'
             && trim((string)$route['path'], '/') === 'trabajadores/{id:[0-9]+}/registrar-pago-caja'
             && strtolower((string)$route['controller']) === 'trabajador'
@@ -616,6 +621,7 @@ if ($routes === []) {
             && !$isReadOnlyPayrollPreview
             && !$isReadOnlyPayrollPreviewExport
             && !$isReadOnlyLaborReceipt
+            && !$isReadOnlyLaborReceiptPdf
             && !$isPaymentRoute
             &&
             strpos($signature, 'trabajadores') !== false
@@ -687,6 +693,16 @@ if ($routes === []) {
         lpcWarning(
             'Ruta 5E-I-A GET /trabajadores/{id}/recibo-laboral no esta registrada.',
             'Registrar el GET read-only antes de QA del recibo laboral informativo.'
+        );
+    }
+
+    $laborReceiptPdfRouteOk = lpcRouteExists($routes, 'trabajadores/{id:[0-9]+}/recibo-laboral/pdf', 'get');
+    if ($laborReceiptPdfRouteOk) {
+        lpcOk('Ruta 5E-J-A GET /trabajadores/{id}/recibo-laboral/pdf registrada como PDF informativo read-only.');
+    } else {
+        lpcWarning(
+            'Ruta 5E-J-A GET /trabajadores/{id}/recibo-laboral/pdf no esta registrada.',
+            'Registrar el GET read-only antes de QA del PDF informativo laboral.'
         );
     }
 
@@ -836,6 +852,58 @@ if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($work
     lpcWarning(
         'Archivos del recibo 5E-I-A no estan completos.',
         'Crear modelo/controlador/vista read-only antes de QA del recibo laboral informativo.'
+    );
+}
+
+if (
+    is_file($workerModelPath)
+    && is_file($workerControllerPath)
+    && is_file($workerLaborReceiptViewPath)
+    && is_file($workerLaborReceiptPdfServicePath)
+) {
+    $workerModelCode = (string) file_get_contents($workerModelPath);
+    $workerControllerCode = (string) file_get_contents($workerControllerPath);
+    $workerLaborReceiptViewCode = (string) file_get_contents($workerLaborReceiptViewPath);
+    $workerLaborReceiptPdfServiceCode = (string) file_get_contents($workerLaborReceiptPdfServicePath);
+    $workerLaborReceiptPdfSurfaceCode = $workerControllerCode . "\n" . $workerLaborReceiptViewCode . "\n" . $workerLaborReceiptPdfServiceCode;
+    $laborReceiptPdfWriteForbidden = preg_match(
+        '/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|REPLACE\s+INTO|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE|file_put_contents)\b/i',
+        $workerLaborReceiptPdfSurfaceCode
+    );
+
+    if (
+        !$laborReceiptPdfWriteForbidden
+        && strpos($workerModelCode, 'function reciboLaboralInformativoPorHotel') !== false
+        && strpos($workerControllerCode, 'function reciboLaboralPdfAction') !== false
+        && strpos($workerControllerCode, 'TrabajadorReciboLaboralPdfService') !== false
+        && strpos($workerControllerCode, 'reciboLaboralInformativoPorHotel($hotelId, $id, $filtros)') !== false
+        && strpos($workerLaborReceiptViewCode, 'PDF informativo') !== false
+        && strpos($workerLaborReceiptViewCode, '/recibo-laboral/pdf') !== false
+        && strpos($workerLaborReceiptPdfServiceCode, 'class TrabajadorReciboLaboralPdfService') !== false
+        && strpos($workerLaborReceiptPdfServiceCode, 'ROOT_PATH . \'/app/helpers/tcpdf/tcpdf.php\'') !== false
+        && strpos($workerLaborReceiptPdfServiceCode, 'Content-Type: application/pdf') !== false
+        && strpos($workerLaborReceiptPdfServiceCode, 'Content-Disposition: attachment') !== false
+        && strpos($workerLaborReceiptPdfServiceCode, 'X-Content-Type-Options: nosniff') !== false
+        && strpos($workerLaborReceiptPdfServiceCode, 'Output($this->nombreArchivo($recibo), \'S\')') !== false
+        && strpos($workerLaborReceiptPdfServiceCode, 'PDF informativo / No fiscal / No genera pago') !== false
+        && strpos($workerLaborReceiptPdfServiceCode, 'ReporteEntregaService') === false
+        && strpos($workerLaborReceiptPdfServiceCode, 'reporte_links') === false
+        && strpos($workerLaborReceiptPdfServiceCode, 'storage') === false
+        && strpos($workerLaborReceiptPdfServiceCode, 'registrarYEnviar') === false
+        && strpos($workerLaborReceiptPdfServiceCode, 'timbrar') === false
+        && strpos($workerLaborReceiptPdfServiceCode, 'dispersion') === false
+    ) {
+        lpcOk('PDF 5E-J-A de recibo laboral es GET/read-only, en memoria y sin storage, Caja ni timbrado.');
+    } else {
+        lpcError(
+            'PDF 5E-J-A de recibo laboral incompleto o con riesgo de escritura.',
+            'Mantener PDF informativo como GET/read-only, con TCPDF en memoria, sin storage, sin reporte_links, sin pago, sin timbrado y reutilizando recibo laboral.'
+        );
+    }
+} else {
+    lpcWarning(
+        'Archivos del PDF 5E-J-A no estan completos.',
+        'Crear ruta/controlador/vista/servicio PDF read-only antes de QA del PDF informativo laboral.'
     );
 }
 

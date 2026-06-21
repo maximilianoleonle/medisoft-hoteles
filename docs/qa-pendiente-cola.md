@@ -2456,3 +2456,31 @@ QA futura sugerida para 5E-J-A:
 6. Intentar generar sin periodo y confirmar bloqueo controlado.
 7. Confirmar que no hay POST, pago masivo, timbrado, dispersion, movimiento de Caja ni
    escritura laboral.
+
+## Fase 5E-J-A - Recibo laboral PDF informativo
+
+Estado: implementacion tecnica validada automaticamente; QA manual pendiente del
+usuario.
+
+Revision manual recomendada:
+
+1. Abrir `/trabajadores/nomina/preview`.
+2. Seleccionar un periodo valido.
+3. Entrar al enlace `Recibo` de un trabajador.
+4. Presionar `PDF informativo`.
+5. Confirmar que el navegador descarga un PDF.
+6. Confirmar aviso visible `PDF informativo / No fiscal / No genera pago`.
+7. Confirmar que bruto, deducciones, pagos Caja, neto y pendiente coinciden con el
+   recibo HTML.
+8. Probar `Pagos Caja` activado/desactivado y repetir descarga.
+9. Intentar generar sin periodo y confirmar redireccion/bloqueo controlado.
+10. Confirmar que no hay POST, pago masivo, timbrado, dispersion, movimiento de Caja,
+    storage ni escritura laboral.
+
+Resultado automatico esperado:
+
+- Lint PHP: OK en controlador, servicio PDF, vista, rutas y checkers.
+- Preflight pagos laborales Caja: `ERROR: 0`.
+- Health general: `ERROR: 0`.
+- Ruta local sin sesion:
+  `GET /trabajadores/{id}/recibo-laboral/pdf` responde `303` a login, sin 404.

@@ -2379,3 +2379,21 @@ Estado formal:
   permisos/auth, PWA/offline y `/api/sync`.
 - Siguiente paso seguro: `5E-J-A` solo con autorizacion explicita para tocar ruta,
   controlador, renderer PDF/helper, vista, checkers o modelo read-only.
+
+## 5E-J-A Recibo laboral PDF informativo
+
+Estado formal:
+`RECIBO_5E_J_A_LABORAL_PDF_INFORMATIVO_READ_ONLY_COMPLETADO_QA_MANUAL_PENDIENTE`.
+
+- Documento creado:
+  `docs/fase_5E_J_A_recibo_laboral_pdf_informativo.md`.
+- Ruta nueva:
+  `GET /trabajadores/{id}/recibo-laboral/pdf`.
+- La accion reutiliza `Trabajador::reciboLaboralInformativoPorHotel()` y bloquea la
+  descarga si falta periodo o hay calculo ambiguo.
+- El renderer `TrabajadorReciboLaboralPdfService` usa TCPDF existente y genera el PDF
+  en memoria con `Output(..., 'S')`.
+- La vista del recibo HTML agrega enlace `PDF informativo` preservando filtros GET.
+- No hay storage, reporte_links, correo, POST, Caja, pagos, reversiones, recibos
+  persistidos, migraciones, permisos/auth, PWA/offline ni `/api/sync`.
+- Siguiente paso seguro: QA manual de descarga PDF y luego cierre documental si pasa.

@@ -9,6 +9,7 @@ require_once __DIR__ . '/../models/TareaOperativa.php';
 require_once __DIR__ . '/../models/Documento.php';
 require_once __DIR__ . '/../services/AuditService.php';
 require_once __DIR__ . '/../services/TrabajadorPagoCajaService.php';
+require_once __DIR__ . '/../services/TrabajadorReciboLaboralPdfService.php';
 
 class TrabajadorController extends Controller
 {
@@ -128,6 +129,32 @@ class TrabajadorController extends Controller
             'recibo' => $recibo,
             'tablaDisponible' => $tablaDisponible,
         ]);
+    }
+
+    public function reciboLaboralPdfAction(): void
+    {
+        $id = (int)($this->route_params['id'] ?? 0);
+        $hotelId = $this->hotelIdActual();
+        $filtros = $this->filtrosReciboLaboralDesdeQuery();
+        $recibo = $this->trabajadorModel->reciboLaboralInformativoPorHotel($hotelId, $id, $filtros);
+
+        if (empty($recibo['trabajador'])) {
+            set_mensaje('Trabajador no encontrado para el hotel actual.', 'error');
+            $this->redirect('trabajadores');
+            return;
+        }
+
+        if (!empty($recibo['bloqueos']) || empty($recibo['calculo'])) {
+            set_mensaje('No se pudo generar el PDF informativo: revisa el periodo del recibo.', 'error');
+            $query = http_build_query(array_filter($filtros, static function ($value) {
+                return $value !== null && $value !== '';
+            }));
+            $this->redirect('trabajadores/' . $id . '/recibo-laboral' . ($query !== '' ? '?' . $query : ''));
+            return;
+        }
+
+        $pdf = new TrabajadorReciboLaboralPdfService();
+        $pdf->descargar($recibo);
     }
 
     public function reportePagosCajaAction(): void
