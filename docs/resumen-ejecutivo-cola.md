@@ -2521,4 +2521,31 @@ Estado formal:
   `ERROR: 0`.
 - No deja datos persistidos, no crea pagos, no mueve Caja, no toca PWA/offline ni
   `/api/sync`.
-- Siguiente paso seguro: QA manual en navegador de cerrar/aprobar/anular snapshot.
+- QA manual local completada posteriormente en 5E-L-F.
+
+## 5E-L-F Cierre QA cierre/aprobacion persistente de pre-nomina
+
+Estado formal:
+`CIERRE_5E_L_F_CIERRE_APROBACION_PERSISTENTE_PRENOMINA_QA_LOCAL_VALIDADA`.
+
+- Documento creado:
+  `docs/fase_5E_L_F_cierre_cierre_aprobacion_persistente_prenomina.md`.
+- QA local ejecutada por flujo HTTP real contra `http://localhost:8080` con sesion
+  temporal de `adminmax` en hotel `Maximiliano` (`hotel_id=4`).
+- Se cerro snapshot semanal `2026-06-15` a `2026-06-21`; resultado:
+  `trabajador_nomina_periodos.id=2`.
+- Se valido detalle en estado `Cerrado`, bloqueo visual de cierre duplicado como
+  `Cerrado #2`, aprobacion administrativa, bloqueo de anulacion sin motivo y
+  anulacion con motivo `QA manual 5E-L local`.
+- Estado final local del snapshot: `anulado`, con eventos `cierre`, `aprobacion`
+  y `anulacion`.
+- Conteos sensibles sin cambio durante el flujo: `movimientos_caja=1413` y
+  `trabajador_pagos_caja=1`.
+- Validaciones: preflight pagos laborales Caja `OK: 60`, `WARNING: 0`, `ERROR: 0`;
+  health general `OK: 316`, `WARNING: 25`, `ERROR: 0`; `/api/sync` con sesion
+  activa sigue en HTTP `423` y `sync_temporarily_disabled`.
+- No autoriza nomina oficial, CFDI, timbrado, dispersion, pago masivo,
+  liquidaciones automaticas, movimientos de Caja desde pre-nomina, PWA/offline ni
+  cambios en `/api/sync`.
+- Siguiente paso seguro: contrato separado para export/listado de snapshots,
+  reabrir snapshots o avanzar a recibos/liquidaciones solo con nueva autorizacion.

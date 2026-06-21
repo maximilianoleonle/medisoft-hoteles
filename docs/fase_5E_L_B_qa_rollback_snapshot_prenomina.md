@@ -1,7 +1,7 @@
 # Fase 5E-L-B - QA rollback local de snapshots de pre-nomina
 
 Estado formal:
-`QA_5E_L_B_ROLLBACK_SNAPSHOT_PRENOMINA_COMPLETADO_MANUAL_PENDIENTE`.
+`QA_5E_L_B_ROLLBACK_SNAPSHOT_PRENOMINA_COMPLETADO_MANUAL_VALIDADA_EN_5E_L_F`.
 
 ## Objetivo
 
@@ -58,20 +58,28 @@ fase.
 - Rollback local sin persistencia.
 - Separacion de pagos reales con Caja.
 
+## QA manual/local complementaria
+
+La experiencia operativa se valido posteriormente en 5E-L-F con flujo HTTP real.
+Ver:
+
+`docs/fase_5E_L_F_cierre_cierre_aprobacion_persistente_prenomina.md`.
+
 ## Fuera de alcance
 
-Esta fase no valida manualmente la experiencia en navegador. Sigue pendiente:
+Esta fase no valida por si sola:
 
-- cerrar snapshot desde `/trabajadores/nomina/periodos`;
-- abrir el detalle del snapshot;
-- aprobar desde la vista;
-- probar anulacion sin motivo y con motivo desde la vista;
-- confirmar visualmente mensajes, botones y estados.
+- nomina oficial;
+- CFDI;
+- timbrado;
+- dispersion;
+- pago masivo;
+- liquidaciones automaticas;
+- movimientos de Caja desde pre-nomina.
 
 No autoriza nomina oficial, CFDI, timbrado, dispersion, pago masivo,
 liquidaciones automaticas, movimientos de Caja, PWA/offline ni `/api/sync`.
 
 ## Siguiente paso seguro
 
-QA manual en navegador de 5E-L-A. Si pasa, entonces si corresponde crear un cierre
-documental 5E-L-F con confirmacion manual del usuario.
+Cierre 5E-L-F ya aplicado. Cualquier avance posterior requiere contrato separado.

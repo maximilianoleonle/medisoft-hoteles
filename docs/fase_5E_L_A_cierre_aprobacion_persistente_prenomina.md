@@ -1,6 +1,7 @@
 # Fase 5E-L-A - Cierre/aprobacion persistente de pre-nomina
 
-Estado: implementado en local; QA manual pendiente.
+Estado: implementado en local; QA local validada y cierre documental aplicado en
+5E-L-F.
 
 ## Alcance
 
@@ -62,6 +63,8 @@ mismo rango dentro del mismo hotel.
 
 ## QA manual
 
+Resultado: validada localmente en 5E-L-F con flujo HTTP real sobre snapshot `#2`.
+
 1. Aplicar la migracion local con backup SQL previo.
 2. Abrir `/trabajadores/nomina/periodos`.
 3. Elegir un rango con saldo laboral elegible.
@@ -87,6 +90,9 @@ aprobacion y anulacion con motivo, y finalmente hace rollback.
 
 Resultado consolidado en:
 `docs/fase_5E_L_B_qa_rollback_snapshot_prenomina.md`.
+
+Cierre manual/local consolidado en:
+`docs/fase_5E_L_F_cierre_cierre_aprobacion_persistente_prenomina.md`.
 
 ## Rollback
 

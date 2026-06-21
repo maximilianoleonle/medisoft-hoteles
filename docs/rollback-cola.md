@@ -2587,6 +2587,44 @@ No ejecutar SQL ni retirar la herramienta rollback de 5E-L-A salvo que se este
 revirtiendo tambien 5E-L-A completa. No tocar PWA/offline, IndexedDB, cache
 names ni `/api/sync`.
 
+## Rollback Fase 5E-L-F
+
+5E-L-F es cierre documental despues de QA local validada del cierre/aprobacion/
+anulacion persistente de pre-nomina. No agrega codigo ni migraciones.
+
+Rollback documental:
+
+1. Retirar
+   `docs/fase_5E_L_F_cierre_cierre_aprobacion_persistente_prenomina.md`.
+2. Retirar referencias 5E-L-F de resumen, QA y rollback.
+3. Restaurar 5E-L-B como QA automatica completada con QA manual pendiente si se
+   quiere repetir la validacion.
+
+Artefacto local de QA:
+
+- Snapshot creado por la prueba: `trabajador_nomina_periodos.id=2`, `hotel_id=4`,
+  estado final `anulado`, motivo `QA manual 5E-L local`.
+- Si se requiere limpiar solo ese artefacto local, primero generar backup SQL y
+  confirmar que no fue reutilizado manualmente. Luego, con autorizacion explicita:
+
+```sql
+DELETE FROM trabajador_nomina_periodo_eventos
+WHERE periodo_id = 2 AND hotel_id = 4;
+
+DELETE FROM trabajador_nomina_periodo_detalles
+WHERE periodo_id = 2 AND hotel_id = 4;
+
+DELETE FROM trabajador_nomina_periodos
+WHERE id = 2
+  AND hotel_id = 4
+  AND estado = 'anulado'
+  AND motivo_anulacion = 'QA manual 5E-L local';
+```
+
+No ejecutar SQL como parte del rollback documental normal. No tocar Caja,
+`trabajador_pagos_caja`, `movimientos_caja`, PWA/offline, IndexedDB, cache names
+ni `/api/sync`.
+
 ## Rollback Fase 5E-I-A
 
 5E-I-A agrega recibo laboral informativo GET/read-only.

@@ -2591,7 +2591,8 @@ QA futura sugerida para 5E-L-A:
 
 ## Fase 5E-L-A - Cierre/aprobacion persistente de pre-nomina
 
-Estado: implementacion local pendiente de QA manual.
+Estado: implementacion local validada por QA local asistida; cierre documental
+5E-L-F aplicado.
 
 Revision manual recomendada:
 
@@ -2619,9 +2620,18 @@ Resultado automatico esperado:
 - Preflight pagos laborales Caja: `ERROR: 0`.
 - Health general: `ERROR: 0`.
 
+Resultado QA local 5E-L-F:
+
+- Cierre real por HTTP local de periodo semanal `2026-06-15` a `2026-06-21`.
+- Snapshot local `#2` creado, aprobado, bloqueado sin motivo y anulado con
+  motivo `QA manual 5E-L local`.
+- Caja sin cambios: `movimientos_caja=1413` y `trabajador_pagos_caja=1`.
+- `/api/sync` con sesion activa responde HTTP `423` y
+  `sync_temporarily_disabled`.
+
 ## Fase 5E-L-B - QA rollback local de snapshots de pre-nomina
 
-Estado: QA automatica local completada; QA manual de navegador pendiente.
+Estado: QA automatica local completada; QA manual local cerrada en 5E-L-F.
 
 Resultado automatico registrado:
 
@@ -2640,15 +2650,27 @@ Validaciones registradas:
 - Preflight pagos laborales Caja: `OK: 60`, `WARNING: 0`, `ERROR: 0`.
 - Health general: `OK: 316`, `WARNING: 25`, `ERROR: 0`.
 
-Pendiente manual:
+Resultado manual/local registrado en 5E-L-F:
 
-1. Abrir `/trabajadores/nomina/periodos` con sesion activa.
-2. Cerrar snapshot desde la vista.
-3. Abrir detalle del snapshot.
-4. Aprobar desde la vista.
-5. Probar anulacion sin motivo y confirmar bloqueo visible.
-6. Anular con motivo y confirmar evento/estado.
-7. Confirmar que no se crean movimientos de Caja, CFDI, timbrado, dispersion ni
-   pago masivo.
-8. Confirmar que `/api/sync` sigue bloqueado con HTTP 423 y
-   `sync_temporarily_disabled`.
+1. `/trabajadores/nomina/periodos` cargo con sesion activa.
+2. `Cerrar snapshot` creo snapshot local `#2`.
+3. El detalle mostro estado `Cerrado`.
+4. El duplicado quedo bloqueado visualmente como `Cerrado #2`.
+5. `Aprobar snapshot` dejo estado `aprobado`.
+6. Anulacion sin motivo mostro bloqueo visible.
+7. Anulacion con motivo dejo estado `anulado`.
+8. No se crearon movimientos de Caja, CFDI, timbrado, dispersion ni pago masivo.
+9. `/api/sync` siguio bloqueado con HTTP 423 y `sync_temporarily_disabled`.
+
+## Fase 5E-L-F - Cierre QA cierre/aprobacion persistente de pre-nomina
+
+Estado: cierre documental aplicado despues de QA local validada.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_L_F_cierre_cierre_aprobacion_persistente_prenomina.md`.
+2. Confirmar que el snapshot local `#2` queda como artefacto de QA anulado.
+3. Confirmar que los conteos de Caja no cambiaron durante el flujo.
+4. Confirmar que el cierre no autoriza nomina oficial, CFDI, timbrado,
+   dispersion, pago masivo, liquidaciones automaticas, movimientos de Caja desde
+   pre-nomina, PWA/offline ni cambios en `/api/sync`.
