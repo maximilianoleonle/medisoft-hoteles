@@ -2,6 +2,7 @@
 $trabajador = $trabajador ?? [];
 $resumenLedger = $resumenLedger ?? [];
 $conceptosLaborales = is_array($conceptosLaborales ?? null) ? $conceptosLaborales : [];
+$pagosCajaLaborales = is_array($pagosCajaLaborales ?? null) ? $pagosCajaLaborales : [];
 $anticiposRecientes = is_array($anticiposRecientes ?? null) ? $anticiposRecientes : [];
 $prestamosRecientes = is_array($prestamosRecientes ?? null) ? $prestamosRecientes : [];
 $asistenciasRecientes = $asistenciasRecientes ?? [];
@@ -42,6 +43,22 @@ if (!function_exists('trab_view_date')) {
 
         try {
             return (new DateTime($text))->format('d/m/Y');
+        } catch (Throwable $e) {
+            return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+        }
+    }
+}
+
+if (!function_exists('trab_view_datetime')) {
+    function trab_view_datetime($value)
+    {
+        $text = trim((string)($value ?? ''));
+        if ($text === '' || $text === '0000-00-00 00:00:00' || $text === '0000-00-00') {
+            return '-';
+        }
+
+        try {
+            return (new DateTime($text))->format('d/m/Y H:i');
         } catch (Throwable $e) {
             return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
         }
@@ -101,6 +118,17 @@ $pagoCajaDisponibleEstado = $pagoCajaSaldoDisponible > 0
 $pagoCajaDisponibleClase = $pagoCajaSaldoDisponible > 0
     ? 'is-positive'
     : ($pagoCajaSaldoDisponible < 0 ? 'is-negative' : 'is-neutral');
+$pagosCajaLaboralesTotal = 0.0;
+$pagosCajaLaboralesPagados = 0;
+$pagosCajaLaboralesRevertidos = 0;
+foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
+    if (($pagoCajaLaboral['estado'] ?? '') === 'pagado') {
+        $pagosCajaLaboralesPagados++;
+        $pagosCajaLaboralesTotal += (float)($pagoCajaLaboral['monto'] ?? 0);
+    } elseif (($pagoCajaLaboral['estado'] ?? '') === 'revertido') {
+        $pagosCajaLaboralesRevertidos++;
+    }
+}
 ?>
 
 <style>
@@ -695,6 +723,127 @@ $pagoCajaDisponibleClase = $pagoCajaSaldoDisponible > 0
                 <div class="worker-ledger-note">
                     <?= trab_view_safe($pagoCaja['motivo_bloqueo'] ?? null, 'Este trabajador no es elegible para pago laboral con Caja.') ?>
                     <a class="font-black underline ml-1" href="<?= url('trabajadores/pagos-caja/simulador?trabajador_id=' . $trabajadorId) ?>">Revisar simulador</a>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <div class="worker-panel p-5 mb-4">
+            <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                <div>
+                    <h2 class="font-black text-lg">Pagos laborales con Caja</h2>
+                    <p class="text-sm text-slate-500 mt-1">Historial read-only de egresos laborales vinculados a Caja, corte y movimiento.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <span class="worker-badge">
+                        <i class="fas fa-list-check"></i>
+                        <?= count($pagosCajaLaborales) ?> registros
+                    </span>
+                    <span class="worker-badge">
+                        <i class="fas fa-cash-register"></i>
+                        Pagado <?= trab_view_money($pagosCajaLaboralesTotal) ?>
+                    </span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 text-sm">
+                <div class="worker-ledger-factor is-plus">
+                    <small>Pagados</small>
+                    <strong><?= (int)$pagosCajaLaboralesPagados ?></strong>
+                </div>
+                <div class="worker-ledger-factor is-minus">
+                    <small>Revertidos</small>
+                    <strong><?= (int)$pagosCajaLaboralesRevertidos ?></strong>
+                </div>
+                <div class="worker-ledger-factor">
+                    <small>Saldo disponible actual</small>
+                    <strong><?= trab_view_money($pagoCajaSaldoDisponible) ?></strong>
+                </div>
+            </div>
+
+            <?php if (empty($pagosCajaLaborales)): ?>
+                <div class="worker-ledger-empty">
+                    <i class="fas fa-receipt"></i>
+                    <strong>Sin pagos laborales con Caja</strong>
+                    <span>Cuando registres un pago desde el panel controlado, se mostrara aqui con su corte, movimiento y referencia.</span>
+                </div>
+            <?php else: ?>
+                <div class="overflow-x-auto">
+                    <table class="worker-table w-full text-sm">
+                        <thead>
+                            <tr>
+                                <th class="text-left">Fecha</th>
+                                <th class="text-left">Pago</th>
+                                <th class="text-left">Caja / corte</th>
+                                <th class="text-left">Periodo</th>
+                                <th class="text-left">Referencia</th>
+                                <th class="text-left">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($pagosCajaLaborales as $pagoLaboral): ?>
+                                <?php
+                                    $estadoPago = (string)($pagoLaboral['estado'] ?? '');
+                                    $estadoClase = $estadoPago === 'pagado' ? 'is-plus' : 'is-minus';
+                                    $periodoInicio = trab_view_date($pagoLaboral['periodo_inicio'] ?? null);
+                                    $periodoFin = trab_view_date($pagoLaboral['periodo_fin'] ?? null);
+                                    $periodoTexto = ($periodoInicio === '-' && $periodoFin === '-')
+                                        ? 'Sin periodo'
+                                        : $periodoInicio . ' a ' . $periodoFin;
+                                    $creadoPor = trim((string)($pagoLaboral['creado_por_nombre'] ?? ''));
+                                    if ($creadoPor === '') {
+                                        $creadoPor = trim((string)($pagoLaboral['creado_por_login'] ?? ''));
+                                    }
+                                ?>
+                                <tr>
+                                    <td>
+                                        <div class="font-black text-slate-800"><?= trab_view_datetime($pagoLaboral['fecha_pago'] ?? null) ?></div>
+                                        <div class="text-xs text-slate-500">Registro #<?= (int)($pagoLaboral['id'] ?? 0) ?></div>
+                                    </td>
+                                    <td>
+                                        <span class="worker-ledger-amount <?= $estadoClase ?>">
+                                            <?= trab_view_money($pagoLaboral['monto'] ?? 0) ?>
+                                        </span>
+                                        <div class="text-xs text-slate-500 mt-1">
+                                            <?= trab_view_safe($pagoLaboral['metodo_pago'] ?? null) ?> · Mov. Caja #<?= (int)($pagoLaboral['movimiento_caja_id'] ?? 0) ?>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="font-black text-slate-800"><?= trab_view_safe($pagoLaboral['caja_nombre'] ?? null) ?></div>
+                                        <div class="text-xs text-slate-500">
+                                            <a class="font-black underline" href="<?= url('caja/corte/' . (int)($pagoLaboral['corte_id'] ?? 0)) ?>">
+                                                Corte #<?= (int)($pagoLaboral['corte_id'] ?? 0) ?>
+                                            </a>
+                                            · <?= trab_view_safe($pagoLaboral['corte_estado'] ?? null) ?>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="font-semibold text-slate-700"><?= trab_view_safe($periodoTexto) ?></div>
+                                        <div class="text-xs text-slate-500"><?= trab_view_safe($pagoLaboral['concepto'] ?? null, 'Sin concepto') ?></div>
+                                    </td>
+                                    <td>
+                                        <div class="font-black text-slate-800"><?= trab_view_safe($pagoLaboral['referencia'] ?? null) ?></div>
+                                        <div class="text-xs text-slate-500"><?= trab_view_safe($pagoLaboral['movimiento_categoria'] ?? 'Pago laboral') ?></div>
+                                    </td>
+                                    <td>
+                                        <span class="worker-badge">
+                                            <i class="fas <?= $estadoPago === 'pagado' ? 'fa-circle-check' : 'fa-rotate-left' ?>"></i>
+                                            <?= trab_view_safe($estadoPago) ?>
+                                        </span>
+                                        <div class="text-xs text-slate-500 mt-2">
+                                            <?= $creadoPor !== '' ? 'Por ' . trab_view_safe($creadoPor) : 'Usuario no disponible' ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php if (trim((string)($pagoLaboral['notas'] ?? '')) !== ''): ?>
+                                    <tr>
+                                        <td colspan="6" class="text-xs text-slate-500">
+                                            <strong>Notas:</strong> <?= trab_view_safe($pagoLaboral['notas'] ?? null) ?>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
             <?php endif; ?>
         </div>

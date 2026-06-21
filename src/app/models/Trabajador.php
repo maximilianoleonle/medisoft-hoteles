@@ -1068,6 +1068,67 @@ class Trabajador extends Model
         return $stmt ? ($stmt->fetchAll() ?: []) : [];
     }
 
+    public function pagosCajaPorTrabajador(int $trabajadorId, int $hotelId, int $limite = 20): array
+    {
+        if ($trabajadorId <= 0 || $hotelId <= 0 || !$this->tablaExiste('trabajador_pagos_caja')) {
+            return [];
+        }
+
+        foreach (['movimientos_caja', 'cortes_caja', 'cajas'] as $tabla) {
+            if (!$this->tablaExiste($tabla)) {
+                return [];
+            }
+        }
+
+        $limite = max(1, min(80, $limite));
+        $stmt = $this->db->query(
+            "SELECT pc.id,
+                    pc.hotel_id,
+                    pc.trabajador_id,
+                    pc.movimiento_caja_id,
+                    pc.corte_id,
+                    pc.monto,
+                    pc.metodo_pago,
+                    pc.referencia,
+                    pc.periodo_inicio,
+                    pc.periodo_fin,
+                    pc.concepto,
+                    pc.fecha_pago,
+                    pc.estado,
+                    pc.notas,
+                    pc.created_at,
+                    pc.updated_at,
+                    cc.estado AS corte_estado,
+                    cc.fecha_apertura AS corte_fecha_apertura,
+                    c.nombre AS caja_nombre,
+                    mc.tipo AS movimiento_tipo,
+                    mc.categoria AS movimiento_categoria,
+                    mc.descripcion AS movimiento_descripcion,
+                    mc.created_at AS movimiento_created_at,
+                    u.nombre_completo AS creado_por_nombre,
+                    u.nombre_usuario AS creado_por_login
+             FROM trabajador_pagos_caja pc
+             INNER JOIN movimientos_caja mc
+                ON mc.id = pc.movimiento_caja_id
+               AND mc.hotel_id = pc.hotel_id
+             INNER JOIN cortes_caja cc
+                ON cc.id = pc.corte_id
+               AND cc.hotel_id = pc.hotel_id
+             INNER JOIN cajas c
+                ON c.id = cc.caja_id
+               AND c.hotel_id = pc.hotel_id
+             LEFT JOIN usuarios u
+                ON u.id = pc.created_by
+             WHERE pc.hotel_id = ?
+               AND pc.trabajador_id = ?
+             ORDER BY pc.fecha_pago DESC, pc.id DESC
+             LIMIT {$limite}",
+            [$hotelId, $trabajadorId]
+        );
+
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
     public function anticiposPorTrabajador(int $trabajadorId, int $hotelId, int $limite = 20): array
     {
         if ($trabajadorId <= 0 || $hotelId <= 0 || !$this->tablaExiste('trabajador_anticipos')) {

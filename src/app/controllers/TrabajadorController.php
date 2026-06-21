@@ -150,6 +150,7 @@ class TrabajadorController extends Controller
             'trabajador' => $trabajador,
             'resumenLedger' => $this->trabajadorModel->resumenLedgerPorTrabajador($id, $hotelId),
             'conceptosLaborales' => $this->trabajadorModel->conceptosLaboralesPorTrabajador($id, $hotelId, 12),
+            'pagosCajaLaborales' => $this->trabajadorModel->pagosCajaPorTrabajador($id, $hotelId, 20),
             'anticiposRecientes' => $this->trabajadorModel->anticiposPorTrabajador($id, $hotelId, 12),
             'prestamosRecientes' => $this->trabajadorModel->prestamosPorTrabajador($id, $hotelId, 12),
             'asistenciasRecientes' => $this->trabajadorModel->ultimosMovimientosPorTrabajador($id, $hotelId, 20),
