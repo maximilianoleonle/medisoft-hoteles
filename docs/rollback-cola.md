@@ -2439,6 +2439,23 @@ No ejecutar SQL ni tocar datos. El PDF es informativo; no crea nomina, pagos,
 movimientos de Caja, storage, recibos persistidos, dispersion ni auditorias por simple
 descarga.
 
+## Rollback Fase 5E-K-0
+
+5E-K-0 es contrato documental del cierre/aprobacion de pre-nomina.
+
+No crea codigo, rutas, migraciones, storage ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_K_0_contrato_cierre_aprobacion_prenomina.md`.
+2. Retirar referencias 5E-K-0 de resumen, QA y rollback.
+3. Restaurar la nota de siguiente paso en
+   `docs/fase_5E_J_A_recibo_laboral_pdf_informativo.md` si se quiere volver al
+   paso previo sin contrato de cierre/aprobacion de pre-nomina.
+
+No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
+`trabajador_anticipos`, `trabajador_prestamos`, `trabajador_pagos_caja`, Caja,
+cortes, movimientos de Caja, storage, permisos/auth, PWA/offline ni `/api/sync`.
 ## Rollback Fase 5E-I-A
 
 5E-I-A agrega recibo laboral informativo GET/read-only.

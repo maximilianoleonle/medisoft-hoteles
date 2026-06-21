@@ -2397,3 +2397,22 @@ Estado formal:
 - No hay storage, reporte_links, correo, POST, Caja, pagos, reversiones, recibos
   persistidos, migraciones, permisos/auth, PWA/offline ni `/api/sync`.
 - Siguiente paso seguro: QA manual de descarga PDF y luego cierre documental si pasa.
+
+## 5E-K-0 Contrato cierre/aprobacion de pre-nomina
+
+Estado formal:
+`CONTRATO_5E_K_0_CIERRE_APROBACION_PRENOMINA_READ_ONLY_COMPLETADO`.
+
+- Documento creado:
+  `docs/fase_5E_K_0_contrato_cierre_aprobacion_prenomina.md`.
+- Es contrato documental; no agrega codigo, rutas, controladores, modelos, vistas,
+  servicios, migraciones, permisos, Caja, storage, datos, PWA/offline ni `/api/sync`.
+- Define la separacion futura entre lectura read-only de periodos y acciones
+  mutantes de cierre/aprobacion/anulacion.
+- Las rutas POST candidatas no quedan implementadas ni autorizadas en esta fase.
+- Mantiene prohibidos nomina oficial, CFDI, timbrado, folios oficiales, dispersion,
+  pagos masivos, movimientos de Caja, liquidaciones automaticas, permisos/auth,
+  PWA/offline y `/api/sync`.
+- Siguiente paso seguro: `5E-K-A` solo con autorizacion explicita para tocar rutas,
+  controlador, modelo, vista, checkers y, si aplica, servicio, migraciones, permisos
+  o Caja.

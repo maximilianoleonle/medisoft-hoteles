@@ -2484,3 +2484,32 @@ Resultado automatico esperado:
 - Health general: `ERROR: 0`.
 - Ruta local sin sesion:
   `GET /trabajadores/{id}/recibo-laboral/pdf` responde `303` a login, sin 404.
+
+## Fase 5E-K-0 - Contrato cierre/aprobacion de pre-nomina
+
+Estado: contrato documental aplicado; sin QA manual funcional.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_K_0_contrato_cierre_aprobacion_prenomina.md`.
+2. Confirmar que no agrega codigo, rutas, controladores, modelos, vistas, servicios,
+   migraciones, permisos, Caja, datos, storage, PWA/offline ni `/api/sync`.
+3. Confirmar que separa lectura read-only de periodos de acciones mutantes futuras.
+4. Confirmar que las rutas POST candidatas no quedan implementadas ni autorizadas.
+5. Confirmar que no autoriza nomina oficial, CFDI, timbrado, dispersion, pagos
+   masivos, movimientos de Caja ni liquidaciones automaticas.
+6. Para una futura 5E-K-A, exigir autorizacion explicita si se toca ruta,
+   controlador, modelo, vista, checkers y, si aplica, servicio, migraciones,
+   permisos o Caja.
+
+QA futura sugerida para 5E-K-A:
+
+1. Abrir lectura de periodos sin sesion y confirmar redireccion a login.
+2. Confirmar que el preview de periodo sigue siendo read-only.
+3. Confirmar bloqueo con fechas faltantes o invalidas.
+4. Confirmar scope por hotel y que no mezcla trabajadores de otros hoteles.
+5. Confirmar CSRF, permiso y token en cualquier POST autorizado.
+6. Confirmar que no se crean movimientos de Caja, CFDI, timbrado, dispersion ni pago
+   masivo.
+7. Confirmar que `/api/sync` sigue bloqueado con HTTP 423 y
+   `sync_temporarily_disabled`.
