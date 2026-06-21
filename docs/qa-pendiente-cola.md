@@ -2352,3 +2352,31 @@ Revision recomendada:
    PWA/offline y `/api/sync`.
 5. Confirmar que el siguiente paso requiere contrato independiente y autorizacion
    explicita si toca modelo, controlador, ruta, vista, Caja o datos.
+
+## Fase 5E-I-0 - Contrato recibo laboral informativo
+
+Estado: contrato documental aplicado; sin QA manual funcional.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_I_0_contrato_recibo_laboral_informativo.md`.
+2. Confirmar que no agrega codigo, rutas, modelos, vistas, formularios ni migraciones.
+3. Confirmar que la ruta futura candidata es GET/read-only:
+   `/trabajadores/{id}/recibo-laboral`.
+4. Confirmar que el recibo futuro sera informativo, no fiscal y no operativo.
+5. Confirmar que no autoriza pagos masivos, nomina automatica, CFDI, timbrado,
+   dispersion ni liquidaciones automaticas.
+6. Confirmar que mantiene fuera de alcance permisos/auth, PWA/offline y `/api/sync`.
+7. Para una futura 5E-I-A, exigir autorizacion explicita si se toca ruta, controlador,
+   modelo, vista o checkers.
+
+QA futura sugerida para 5E-I-A:
+
+1. Abrir recibo sin sesion y confirmar redireccion a login.
+2. Abrir recibo de trabajador del hotel actual con periodo valido.
+3. Confirmar etiqueta visible `Informativo / No fiscal / No genera pago`.
+4. Confirmar que totales coinciden con el preview de pre-nomina.
+5. Confirmar que pagos Caja y reversiones son solo lectura.
+6. Intentar abrir sin periodo y confirmar bloqueo controlado.
+7. Confirmar que no hay POST, pago masivo, timbrado, dispersion, movimiento de Caja ni
+   escritura laboral.

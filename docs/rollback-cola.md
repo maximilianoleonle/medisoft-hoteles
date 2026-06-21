@@ -2489,3 +2489,21 @@ Rollback:
    implementacion con QA manual pendiente si se quiere repetir la validacion.
 
 No ejecutar SQL ni tocar codigo operativo.
+
+## Rollback Fase 5E-I-0
+
+5E-I-0 es contrato documental del recibo laboral informativo read-only.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_I_0_contrato_recibo_laboral_informativo.md`.
+2. Retirar referencias 5E-I-0 de resumen, QA y rollback.
+3. Restaurar la nota de siguiente paso en
+   `docs/fase_5E_H_F_cierre_export_csv_nomina_preview.md` si se quiere volver al
+   cierre previo sin contrato de recibo informativo.
+
+No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
+`trabajador_anticipos`, `trabajador_prestamos`, `trabajador_pagos_caja`, Caja,
+cortes, movimientos de Caja, permisos/auth, PWA/offline ni `/api/sync`.

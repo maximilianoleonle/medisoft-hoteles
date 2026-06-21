@@ -2298,3 +2298,24 @@ Estado formal:
   `/api/sync`.
 - Siguiente paso seguro: contrato independiente antes de recibo laboral informativo,
   recibo descargable, cierre formal de periodo o pago masivo.
+
+## 5E-I-0 Contrato recibo laboral informativo
+
+Estado formal:
+`CONTRATO_5E_I_0_RECIBO_LABORAL_INFORMATIVO_READ_ONLY_COMPLETADO`.
+
+- Documento creado:
+  `docs/fase_5E_I_0_contrato_recibo_laboral_informativo.md`.
+- Es contrato documental; no agrega codigo, rutas, modelos, vistas, formularios,
+  migraciones, permisos, servicios, Caja, datos ni `/api/sync`.
+- Define una futura ruta GET candidata:
+  `/trabajadores/{id}/recibo-laboral`.
+- El recibo futuro debe ser informativo, scoped por hotel, por trabajador y por
+  periodo, reutilizando calculos read-only de pre-nomina.
+- Debe mostrar etiqueta visible `No fiscal / No genera pago` y no debe confundirse con
+  nomina oficial, CFDI, timbrado, dispersion o pago masivo.
+- Mantiene prohibidos pagos masivos, nomina automatica, recibos fiscales oficiales,
+  timbrado, dispersion bancaria, liquidaciones automaticas, auditoria por simple
+  visualizacion, permisos/auth, PWA/offline y `/api/sync`.
+- Siguiente paso seguro: `5E-I-A` solo con autorizacion explicita para tocar ruta,
+  controlador/modelo read-only, vista y checkers.
