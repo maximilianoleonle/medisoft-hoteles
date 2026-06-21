@@ -2588,3 +2588,31 @@ QA futura sugerida para 5E-L-A:
    masivo.
 9. Confirmar que `/api/sync` sigue bloqueado con HTTP 423 y
    `sync_temporarily_disabled`.
+
+## Fase 5E-L-A - Cierre/aprobacion persistente de pre-nomina
+
+Estado: implementacion local pendiente de QA manual.
+
+Revision manual recomendada:
+
+1. Confirmar que se aplico backup SQL local antes de la migracion.
+2. Abrir `/trabajadores/nomina/periodos` con sesion activa.
+3. Seleccionar un periodo con trabajadores activos y sin bloqueos de preview.
+4. Pulsar `Cerrar snapshot`.
+5. Confirmar mensaje de exito y que el snapshot aparece en historial.
+6. Abrir el snapshot y validar importes contra el preview del mismo rango.
+7. Intentar cerrar el mismo rango de nuevo y confirmar bloqueo por duplicado.
+8. Aprobar un snapshot cerrado y confirmar estado `aprobado`.
+9. Intentar anular sin motivo y confirmar bloqueo.
+10. Anular con motivo y confirmar evento de anulacion.
+11. Confirmar que no se crean movimientos de Caja ni registros nuevos de pago Caja.
+12. Confirmar que no hay CFDI, timbrado, dispersion ni pago masivo.
+13. Confirmar que `/api/sync` sigue bloqueado con HTTP 423 y
+    `sync_temporarily_disabled`.
+
+Resultado automatico esperado:
+
+- Lint PHP: OK en rutas, controlador, modelo, servicio, vistas y checkers.
+- Migracion local: registrada como `ejecutada`.
+- Preflight pagos laborales Caja: `ERROR: 0`.
+- Health general: `ERROR: 0`.

@@ -2521,6 +2521,54 @@ No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
 `trabajador_anticipos`, `trabajador_prestamos`, `trabajador_pagos_caja`, Caja,
 cortes, movimientos de Caja, storage, permisos/auth, PWA/offline ni `/api/sync`.
 
+## Rollback Fase 5E-L-A
+
+5E-L-A agrega cierre/aprobacion/anulacion persistente de periodos de pre-nomina
+mediante snapshots administrativos. No genera nomina oficial, CFDI, timbrado,
+dispersion, pagos masivos ni movimientos de Caja.
+
+Rollback de codigo:
+
+1. Retirar las rutas:
+   - `GET /trabajadores/nomina/periodos/{id}`.
+   - `POST /trabajadores/nomina/periodos/cerrar`.
+   - `POST /trabajadores/nomina/periodos/{id}/aprobar`.
+   - `POST /trabajadores/nomina/periodos/{id}/anular`.
+2. Retirar `src/app/services/TrabajadorNominaPeriodoService.php`.
+3. Retirar `src/app/views/trabajadores/nomina_periodo_detalle.php`.
+4. Restaurar `src/app/views/trabajadores/nomina_periodos.php` al contrato
+   5E-K-A read-only.
+5. Retirar de `TrabajadorController` las acciones y helpers de snapshot
+   persistente.
+6. Retirar de `Trabajador` los metodos de tablas/snapshot/cierre/aprobacion/
+   anulacion persistente.
+7. Retirar validaciones 5E-L-A de `preflight_personal_pagos_caja.php` y
+   `health_check_fase_1a.php`.
+8. Retirar `docs/fase_5E_L_A_cierre_aprobacion_persistente_prenomina.md` y sus
+   referencias.
+
+Rollback de base de datos local:
+
+1. Crear backup SQL antes de revertir.
+2. Revisar si existen snapshots reales que deban conservarse/exportarse.
+3. Si se autoriza eliminar la fase completa, ejecutar:
+
+```sql
+DROP TABLE IF EXISTS trabajador_nomina_periodo_eventos;
+DROP TABLE IF EXISTS trabajador_nomina_periodo_detalles;
+DROP TABLE IF EXISTS trabajador_nomina_periodos;
+DELETE FROM migrations
+WHERE nombre = '20260621_001_fase_5e_l_a_nomina_periodos_persistentes.sql';
+```
+
+Verificacion posterior:
+
+- `docker compose exec -T app php -l` en PHP tocados.
+- `docker compose exec -T app php tools/saas/preflight_personal_pagos_caja.php`.
+- `docker compose exec -T app php tools/saas/health_check_fase_1a.php`.
+
+No tocar PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
 ## Rollback Fase 5E-I-A
 
 5E-I-A agrega recibo laboral informativo GET/read-only.

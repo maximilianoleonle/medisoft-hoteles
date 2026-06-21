@@ -9,6 +9,7 @@ require_once __DIR__ . '/../models/TareaOperativa.php';
 require_once __DIR__ . '/../models/Documento.php';
 require_once __DIR__ . '/../services/AuditService.php';
 require_once __DIR__ . '/../services/TrabajadorPagoCajaService.php';
+require_once __DIR__ . '/../services/TrabajadorNominaPeriodoService.php';
 require_once __DIR__ . '/../services/TrabajadorReciboLaboralPdfService.php';
 
 class TrabajadorController extends Controller
@@ -16,6 +17,7 @@ class TrabajadorController extends Controller
     private $trabajadorModel;
     private $tareaModel;
     private $pagoCajaService;
+    private $nominaPeriodoService;
 
     public function __construct($route_params = [])
     {
@@ -23,6 +25,7 @@ class TrabajadorController extends Controller
         $this->trabajadorModel = new Trabajador();
         $this->tareaModel = new TareaOperativa();
         $this->pagoCajaService = new TrabajadorPagoCajaService();
+        $this->nominaPeriodoService = new TrabajadorNominaPeriodoService($this->trabajadorModel);
     }
 
     protected function before()
@@ -79,16 +82,21 @@ class TrabajadorController extends Controller
     {
         $hotelId = $this->hotelIdActual();
         $tablaDisponible = $this->trabajadorModel->tablasNominaPreviewDisponibles();
+        $tablaPersistenteDisponible = $this->trabajadorModel->tablasNominaPeriodoPersistenteDisponibles();
         $periodos = $this->trabajadorModel->nominaPeriodosReadOnlyPorHotel(
             $hotelId,
             $this->filtrosNominaPeriodosDesdeQuery(),
             6
         );
+        $periodos = $this->prepararNominaPeriodosPersistentesVista($periodos, $hotelId, $tablaPersistenteDisponible);
 
         View::renderTemplate('trabajadores/nomina_periodos', [
             'title' => 'Periodos pre-nomina - ' . current_hotel_display_name(),
             'periodosNomina' => $periodos,
             'tablaDisponible' => $tablaDisponible,
+            'tablaPersistenteDisponible' => $tablaPersistenteDisponible,
+            'periodosPersistentes' => $tablaPersistenteDisponible ? $this->trabajadorModel->nominaPeriodosPersistentesPorHotel($hotelId, 10) : [],
+            'cierreTokens' => $periodos['cierre_tokens'] ?? [],
             'modo' => 'lista',
         ]);
     }
@@ -97,18 +105,154 @@ class TrabajadorController extends Controller
     {
         $hotelId = $this->hotelIdActual();
         $tablaDisponible = $this->trabajadorModel->tablasNominaPreviewDisponibles();
+        $tablaPersistenteDisponible = $this->trabajadorModel->tablasNominaPeriodoPersistenteDisponibles();
         $periodos = $this->trabajadorModel->nominaPeriodosReadOnlyPorHotel(
             $hotelId,
             $this->filtrosNominaPeriodosDesdeQuery(),
             6
         );
+        $periodos = $this->prepararNominaPeriodosPersistentesVista($periodos, $hotelId, $tablaPersistenteDisponible);
 
         View::renderTemplate('trabajadores/nomina_periodos', [
             'title' => 'Detalle periodo pre-nomina - ' . current_hotel_display_name(),
             'periodosNomina' => $periodos,
             'tablaDisponible' => $tablaDisponible,
+            'tablaPersistenteDisponible' => $tablaPersistenteDisponible,
+            'periodosPersistentes' => $tablaPersistenteDisponible ? $this->trabajadorModel->nominaPeriodosPersistentesPorHotel($hotelId, 10) : [],
+            'cierreTokens' => $periodos['cierre_tokens'] ?? [],
             'modo' => 'detalle',
         ]);
+    }
+
+    public function nominaPeriodoDetalleAction(): void
+    {
+        $periodoId = (int)($this->route_params['id'] ?? 0);
+        $hotelId = $this->hotelIdActual();
+        $tablaPersistenteDisponible = $this->trabajadorModel->tablasNominaPeriodoPersistenteDisponibles();
+        $periodo = $tablaPersistenteDisponible
+            ? $this->trabajadorModel->nominaPeriodoPersistentePorHotel($periodoId, $hotelId)
+            : null;
+
+        if (!$periodo) {
+            set_mensaje('Periodo de pre-nomina no encontrado para el hotel actual.', 'error');
+            $this->redirect('trabajadores/nomina/periodos');
+            return;
+        }
+
+        View::renderTemplate('trabajadores/nomina_periodo_detalle', [
+            'title' => 'Periodo pre-nomina #' . $periodoId . ' - ' . current_hotel_display_name(),
+            'periodoNomina' => $periodo,
+            'tablaPersistenteDisponible' => $tablaPersistenteDisponible,
+            'aprobarToken' => (string)($periodo['estado'] ?? '') === 'cerrado'
+                ? $this->generarNominaPeriodoToken('aprobar', (string)$periodoId)
+                : null,
+            'anularToken' => (string)($periodo['estado'] ?? '') !== 'anulado'
+                ? $this->generarNominaPeriodoToken('anular', (string)$periodoId)
+                : null,
+        ]);
+    }
+
+    public function cerrarNominaPeriodoAction(): void
+    {
+        $this->requireWritePermission('usuarios.edit');
+
+        if (!$this->isPost()) {
+            $this->redirect('trabajadores/nomina/periodos');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        $datos = $this->datosCierreNominaPeriodo();
+        $tokenKey = $this->nominaPeriodoTokenKey(
+            (string)($datos['fecha_inicio'] ?? ''),
+            (string)($datos['fecha_fin'] ?? '')
+        );
+
+        try {
+            if (!$this->consumirNominaPeriodoToken('cerrar', $tokenKey, (string)$this->getPost('periodo_token', ''))) {
+                throw new Exception('Token de cierre invalido o ya utilizado; recarga la pantalla antes de reintentar');
+            }
+
+            $periodoId = $this->nominaPeriodoService->cerrarPeriodo(
+                $this->hotelIdActual(),
+                $datos,
+                $this->usuarioIdActual()
+            );
+            $periodo = $this->trabajadorModel->nominaPeriodoPersistentePorHotel($periodoId, $this->hotelIdActual());
+            $this->auditarNominaPeriodo('trabajadores.nomina_periodo_cerrado', $periodoId, null, $periodo);
+
+            set_mensaje('Periodo de pre-nomina cerrado como snapshot persistente. No se genero pago ni movimiento de Caja.', 'success');
+            $this->redirect('trabajadores/nomina/periodos/' . $periodoId);
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo cerrar el periodo de pre-nomina: ' . $e->getMessage(), 'error');
+            $this->redirect('trabajadores/nomina/periodos' . $this->queryNominaPeriodoDesdeDatos($datos));
+        }
+    }
+
+    public function aprobarNominaPeriodoAction(): void
+    {
+        $this->requireWritePermission('usuarios.edit');
+
+        if (!$this->isPost()) {
+            $this->redirect('trabajadores/nomina/periodos');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        $periodoId = (int)($this->route_params['id'] ?? 0);
+        try {
+            if (!$this->consumirNominaPeriodoToken('aprobar', (string)$periodoId, (string)$this->getPost('periodo_token', ''))) {
+                throw new Exception('Token de aprobacion invalido o ya utilizado; recarga el periodo antes de reintentar');
+            }
+
+            $antes = $this->trabajadorModel->nominaPeriodoPersistentePorHotel($periodoId, $this->hotelIdActual());
+            $this->nominaPeriodoService->aprobarPeriodo($this->hotelIdActual(), $periodoId, $this->usuarioIdActual());
+            $despues = $this->trabajadorModel->nominaPeriodoPersistentePorHotel($periodoId, $this->hotelIdActual());
+            $this->auditarNominaPeriodo('trabajadores.nomina_periodo_aprobado', $periodoId, $antes, $despues);
+
+            set_mensaje('Periodo de pre-nomina aprobado administrativamente. No se genero pago ni movimiento de Caja.', 'success');
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo aprobar el periodo de pre-nomina: ' . $e->getMessage(), 'error');
+        }
+
+        $this->redirect($periodoId > 0 ? 'trabajadores/nomina/periodos/' . $periodoId : 'trabajadores/nomina/periodos');
+    }
+
+    public function anularNominaPeriodoAction(): void
+    {
+        $this->requireWritePermission('usuarios.edit');
+
+        if (!$this->isPost()) {
+            $this->redirect('trabajadores/nomina/periodos');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        $periodoId = (int)($this->route_params['id'] ?? 0);
+        try {
+            if (!$this->consumirNominaPeriodoToken('anular', (string)$periodoId, (string)$this->getPost('periodo_token', ''))) {
+                throw new Exception('Token de anulacion invalido o ya utilizado; recarga el periodo antes de reintentar');
+            }
+
+            $antes = $this->trabajadorModel->nominaPeriodoPersistentePorHotel($periodoId, $this->hotelIdActual());
+            $this->nominaPeriodoService->anularPeriodo(
+                $this->hotelIdActual(),
+                $periodoId,
+                (string)$this->getPost('motivo', ''),
+                $this->usuarioIdActual()
+            );
+            $despues = $this->trabajadorModel->nominaPeriodoPersistentePorHotel($periodoId, $this->hotelIdActual());
+            $this->auditarNominaPeriodo('trabajadores.nomina_periodo_anulado', $periodoId, $antes, $despues);
+
+            set_mensaje('Periodo de pre-nomina anulado sin borrar snapshot. No se genero movimiento de Caja.', 'success');
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo anular el periodo de pre-nomina: ' . $e->getMessage(), 'error');
+        }
+
+        $this->redirect($periodoId > 0 ? 'trabajadores/nomina/periodos/' . $periodoId : 'trabajadores/nomina/periodos');
     }
 
     public function nominaPreviewAction(): void
@@ -770,6 +914,95 @@ class TrabajadorController extends Controller
         ];
     }
 
+    private function prepararNominaPeriodosPersistentesVista(array $periodosNomina, int $hotelId, bool $tablaPersistenteDisponible): array
+    {
+        $periodos = is_array($periodosNomina['periodos'] ?? null) ? $periodosNomina['periodos'] : [];
+        $periodosNomina['cierre_tokens'] = [];
+
+        if (!$tablaPersistenteDisponible || empty($periodos)) {
+            return $periodosNomina;
+        }
+
+        $persistentes = $this->trabajadorModel->mapaNominaPeriodosPersistentesPorRango($hotelId, $periodos);
+        $filtros = is_array($periodosNomina['filtros_normalizados'] ?? null) ? $periodosNomina['filtros_normalizados'] : [];
+        $estado = (string)($filtros['estado'] ?? 'activos');
+        $rolLaboral = trim((string)($filtros['rol_laboral'] ?? ''));
+
+        foreach ($periodos as $idx => $periodo) {
+            $key = $this->nominaPeriodoTokenKey(
+                (string)($periodo['fecha_inicio'] ?? ''),
+                (string)($periodo['fecha_fin'] ?? '')
+            );
+            $snapshot = $persistentes[$key] ?? null;
+            if (is_array($snapshot)) {
+                $periodos[$idx]['snapshot_id'] = (int)($snapshot['id'] ?? 0);
+                $periodos[$idx]['snapshot_estado'] = (string)($snapshot['estado'] ?? '');
+                $periodos[$idx]['snapshot_cerrado_at'] = $snapshot['cerrado_at'] ?? null;
+                $periodos[$idx]['snapshot_aprobado_at'] = $snapshot['aprobado_at'] ?? null;
+                $periodos[$idx]['snapshot_anulado_at'] = $snapshot['anulado_at'] ?? null;
+                continue;
+            }
+
+            $puedeCerrar = !empty($periodo['cerrable_readonly'])
+                && $estado === 'activos'
+                && $rolLaboral === ''
+                && trim((string)($periodo['fecha_inicio'] ?? '')) !== ''
+                && trim((string)($periodo['fecha_fin'] ?? '')) !== '';
+
+            if ($puedeCerrar) {
+                $periodosNomina['cierre_tokens'][$key] = $this->generarNominaPeriodoToken('cerrar', $key);
+                $periodos[$idx]['puede_cerrar_persistente'] = true;
+            } else {
+                $periodos[$idx]['puede_cerrar_persistente'] = false;
+            }
+        }
+
+        $periodosNomina['periodos'] = $periodos;
+        $detalle = is_array($periodosNomina['periodo_detalle'] ?? null) ? $periodosNomina['periodo_detalle'] : null;
+        if ($detalle) {
+            foreach ($periodos as $periodo) {
+                if (
+                    (string)($periodo['fecha_inicio'] ?? '') === (string)($detalle['fecha_inicio'] ?? '')
+                    && (string)($periodo['fecha_fin'] ?? '') === (string)($detalle['fecha_fin'] ?? '')
+                ) {
+                    $periodosNomina['periodo_detalle'] = $periodo;
+                    break;
+                }
+            }
+        }
+
+        return $periodosNomina;
+    }
+
+    private function datosCierreNominaPeriodo(): array
+    {
+        return [
+            'tipo_periodo' => $this->getPost('tipo_periodo', 'manual'),
+            'etiqueta' => $this->getPost('etiqueta', ''),
+            'fecha_inicio' => $this->getPost('fecha_inicio', ''),
+            'fecha_fin' => $this->getPost('fecha_fin', ''),
+            'estado' => $this->getPost('estado', 'activos'),
+            'rol_laboral' => $this->getPost('rol_laboral', ''),
+            'incluir_pagos_caja' => $this->getPost('incluir_pagos_caja', '1'),
+        ];
+    }
+
+    private function queryNominaPeriodoDesdeDatos(array $datos): string
+    {
+        $query = http_build_query(array_filter([
+            'tipo_periodo' => $datos['tipo_periodo'] ?? 'manual',
+            'fecha_inicio' => $datos['fecha_inicio'] ?? '',
+            'fecha_fin' => $datos['fecha_fin'] ?? '',
+            'estado' => $datos['estado'] ?? 'activos',
+            'rol_laboral' => $datos['rol_laboral'] ?? '',
+            'incluir_pagos_caja' => $datos['incluir_pagos_caja'] ?? '1',
+        ], static function ($value) {
+            return $value !== null && $value !== '';
+        }));
+
+        return $query !== '' ? '?' . $query : '';
+    }
+
     private function filtrosNominaPeriodosDesdeQuery(): array
     {
         return [
@@ -1140,6 +1373,47 @@ class TrabajadorController extends Controller
         return $usuarioId ? (int)$usuarioId : null;
     }
 
+    private function nominaPeriodoTokenKey(string $fechaInicio, string $fechaFin): string
+    {
+        return trim($fechaInicio) . ':' . trim($fechaFin);
+    }
+
+    private function generarNominaPeriodoToken(string $accion, string $key): string
+    {
+        if (!isset($_SESSION['trabajador_nomina_periodo_tokens']) || !is_array($_SESSION['trabajador_nomina_periodo_tokens'])) {
+            $_SESSION['trabajador_nomina_periodo_tokens'] = [];
+        }
+
+        if (!isset($_SESSION['trabajador_nomina_periodo_tokens'][$accion]) || !is_array($_SESSION['trabajador_nomina_periodo_tokens'][$accion])) {
+            $_SESSION['trabajador_nomina_periodo_tokens'][$accion] = [];
+        }
+
+        $token = bin2hex(random_bytes(16));
+        $_SESSION['trabajador_nomina_periodo_tokens'][$accion][$key] = [
+            'token' => $token,
+            'created_at' => time(),
+        ];
+
+        return $token;
+    }
+
+    private function consumirNominaPeriodoToken(string $accion, string $key, string $token): bool
+    {
+        $token = trim($token);
+        $registro = $_SESSION['trabajador_nomina_periodo_tokens'][$accion][$key] ?? null;
+        unset($_SESSION['trabajador_nomina_periodo_tokens'][$accion][$key]);
+
+        if (!is_array($registro) || $token === '') {
+            return false;
+        }
+
+        if ((int)($registro['created_at'] ?? 0) < time() - 3600) {
+            return false;
+        }
+
+        return hash_equals((string)($registro['token'] ?? ''), $token);
+    }
+
     private function generarPagoCajaToken(int $trabajadorId): string
     {
         if (!isset($_SESSION['trabajador_pago_caja_tokens']) || !is_array($_SESSION['trabajador_pago_caja_tokens'])) {
@@ -1272,6 +1546,23 @@ class TrabajadorController extends Controller
             ]);
         } catch (Throwable $e) {
             error_log('No se pudo auditar movimiento laboral: ' . $e->getMessage());
+        }
+    }
+
+    private function auditarNominaPeriodo(string $accion, int $periodoId, ?array $antes, ?array $despues): void
+    {
+        try {
+            AuditService::record($accion, [
+                'hotel_id' => $this->hotelIdActual(),
+                'usuario_id' => $this->usuarioIdActual(),
+                'entidad_tipo' => 'trabajador_nomina_periodo',
+                'entidad_id' => (string)$periodoId,
+                'descripcion' => 'Cambio administrativo de periodo de pre-nomina sin Caja',
+                'datos_antes' => $antes,
+                'datos_despues' => $despues,
+            ]);
+        } catch (Throwable $e) {
+            error_log('No se pudo auditar periodo de pre-nomina: ' . $e->getMessage());
         }
     }
 }

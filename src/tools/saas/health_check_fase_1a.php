@@ -2379,6 +2379,110 @@ if ($pdo) {
         );
     }
 
+    $payrollPeriodTables = [
+        'trabajador_nomina_periodos' => [
+            'id', 'hotel_id', 'tipo_periodo', 'etiqueta', 'fecha_inicio', 'fecha_fin',
+            'estado', 'filtros_json', 'resumen_json', 'trabajadores_total',
+            'bruto_total', 'deducciones_total', 'pagos_caja_aplicados_total',
+            'reversiones_detectadas_total', 'neto_sugerido_total', 'pendiente_pago_total',
+            'cerrado_por', 'cerrado_at', 'aprobado_por', 'aprobado_at',
+            'anulado_por', 'anulado_at', 'motivo_anulacion', 'created_at', 'updated_at',
+        ],
+        'trabajador_nomina_periodo_detalles' => [
+            'id', 'periodo_id', 'hotel_id', 'trabajador_id', 'trabajador_nombre',
+            'trabajador_identificacion', 'trabajador_rol', 'trabajador_estado',
+            'estado_preview_nomina', 'motivo_bloqueo_nomina', 'conceptos_count',
+            'conceptos_a_favor', 'conceptos_en_contra', 'bruto_periodo',
+            'anticipos_count', 'anticipos_saldo', 'prestamos_count', 'prestamos_saldo',
+            'deducciones_informativas', 'pagos_caja_count', 'pagos_caja_pagados',
+            'pagos_caja_revertidos', 'pagos_caja_aplicados',
+            'pagos_caja_revertidos_total', 'reversiones_detectadas',
+            'ultimo_pago_caja', 'neto_sugerido', 'pendiente_pago_sugerido',
+            'snapshot_json', 'created_at',
+        ],
+        'trabajador_nomina_periodo_eventos' => [
+            'id', 'periodo_id', 'hotel_id', 'tipo', 'estado_resultante',
+            'descripcion', 'motivo', 'created_by', 'created_at',
+        ],
+    ];
+    $payrollPeriodMissingTables = [];
+    $payrollPeriodMissingColumns = [];
+    foreach ($payrollPeriodTables as $table => $columns) {
+        if (!hcTableExists($pdo, $database, $table)) {
+            $payrollPeriodMissingTables[] = $table;
+            continue;
+        }
+        foreach ($columns as $column) {
+            if (!hcColumnExists($pdo, $database, $table, $column)) {
+                $payrollPeriodMissingColumns[] = $table . '.' . $column;
+            }
+        }
+    }
+
+    $payrollPeriodIndexes = [];
+    if (hcTableExists($pdo, $database, 'trabajador_nomina_periodos')) {
+        foreach ([
+            'uk_trabajador_nomina_periodo_hotel_rango',
+            'idx_trabajador_nomina_periodos_hotel_estado',
+            'idx_trabajador_nomina_periodos_hotel_fecha',
+        ] as $index) {
+            if (!hcIndexExists($pdo, $database, 'trabajador_nomina_periodos', $index)) {
+                $payrollPeriodIndexes[] = 'trabajador_nomina_periodos.' . $index;
+            }
+        }
+    }
+    if (hcTableExists($pdo, $database, 'trabajador_nomina_periodo_detalles')) {
+        foreach ([
+            'uk_trabajador_nomina_detalle_periodo_trabajador',
+            'idx_trabajador_nomina_detalles_hotel_periodo',
+            'idx_trabajador_nomina_detalles_trabajador',
+        ] as $index) {
+            if (!hcIndexExists($pdo, $database, 'trabajador_nomina_periodo_detalles', $index)) {
+                $payrollPeriodIndexes[] = 'trabajador_nomina_periodo_detalles.' . $index;
+            }
+        }
+    }
+    if (hcTableExists($pdo, $database, 'trabajador_nomina_periodo_eventos')) {
+        foreach ([
+            'idx_trabajador_nomina_eventos_periodo',
+            'idx_trabajador_nomina_eventos_hotel',
+            'idx_trabajador_nomina_eventos_created_by',
+        ] as $index) {
+            if (!hcIndexExists($pdo, $database, 'trabajador_nomina_periodo_eventos', $index)) {
+                $payrollPeriodIndexes[] = 'trabajador_nomina_periodo_eventos.' . $index;
+            }
+        }
+    }
+
+    if (empty($payrollPeriodMissingTables) && empty($payrollPeriodMissingColumns) && empty($payrollPeriodIndexes)) {
+        $payrollPeriodRows = hcTableExists($pdo, $database, 'trabajador_nomina_periodos')
+            ? hcCountRows($pdo, 'trabajador_nomina_periodos')
+            : 0;
+        hcOk('Tablas 5E-L-A de periodos de pre-nomina persistentes disponibles; snapshots actuales: ' . (string)$payrollPeriodRows . '.');
+    } else {
+        hcWarning(
+            'Tablas 5E-L-A de periodos de pre-nomina pendientes o incompletas. Tablas: ' . implode(', ', $payrollPeriodMissingTables) . '. Columnas: ' . implode(', ', $payrollPeriodMissingColumns) . '. Indices: ' . implode(', ', $payrollPeriodIndexes) . '.',
+            'Aplicar migrations/20260621_001_fase_5e_l_a_nomina_periodos_persistentes.sql solo con backup y autorizacion explicita.'
+        );
+    }
+
+    if (hcTableExists($pdo, $database, 'migrations')) {
+        $stmt = $pdo->prepare(
+            "SELECT COUNT(*) FROM migrations
+             WHERE nombre = '20260621_001_fase_5e_l_a_nomina_periodos_persistentes.sql'
+               AND estado = 'ejecutada'"
+        );
+        $stmt->execute();
+        if ((int)$stmt->fetchColumn() === 1) {
+            hcOk('Migracion 5E-L-A de periodos persistentes registrada como ejecutada.');
+        } else {
+            hcWarning(
+                'Migracion 5E-L-A de periodos persistentes no esta registrada como ejecutada.',
+                'Registrar/aplicar solo despues de backup SQL valido.'
+            );
+        }
+    }
+
     $cajaNomina = hcTableExists($pdo, $database, 'movimientos_caja')
         ? hcCountScalar($pdo, "SELECT COUNT(*) FROM movimientos_caja WHERE LOWER(COALESCE(categoria, '')) LIKE '%nomina%'")
         : null;
@@ -3115,6 +3219,10 @@ if (!is_file($routesPath)) {
         ['method' => 'get', 'path' => 'trabajadores/reporte'],
         ['method' => 'get', 'path' => 'trabajadores/nomina/periodos'],
         ['method' => 'get', 'path' => 'trabajadores/nomina/periodos/preview'],
+        ['method' => 'get', 'path' => 'trabajadores/nomina/periodos/{id:[0-9]+}'],
+        ['method' => 'post', 'path' => 'trabajadores/nomina/periodos/cerrar'],
+        ['method' => 'post', 'path' => 'trabajadores/nomina/periodos/{id:[0-9]+}/aprobar'],
+        ['method' => 'post', 'path' => 'trabajadores/nomina/periodos/{id:[0-9]+}/anular'],
         ['method' => 'get', 'path' => 'trabajadores/nomina/preview'],
         ['method' => 'get', 'path' => 'trabajadores/nomina/preview/exportar'],
         ['method' => 'get', 'path' => 'trabajadores/pagos-caja/reporte'],
@@ -3144,7 +3252,7 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($missingWorkerRoutes)) {
-        hcOk('Rutas Personal NP-F-A/5E-C/5E-D-A/5E-G-A/5E-H-A/5E-I-A/5E-J-A/5E-K-A/14E/14F registradas: CRUD, reportes, periodos/preview nomina, export CSV, recibo/PDF read-only, ledger, simulador Caja, pago y reversion laboral controlada.');
+        hcOk('Rutas Personal NP-F-A/5E-C/5E-D-A/5E-G-A/5E-H-A/5E-I-A/5E-J-A/5E-K-A/5E-L-A/14E/14F registradas: CRUD, reportes, periodos/preview nomina, snapshot persistente, export CSV, recibo/PDF read-only, ledger, simulador Caja, pago y reversion laboral controlada.');
     } else {
         hcWarning(
             'Rutas Personal NP-F-A/5E-C/5E-D-A faltantes: ' . implode(', ', $missingWorkerRoutes),
@@ -3158,6 +3266,10 @@ if (!is_file($routesPath)) {
         'GET /trabajadores/reporte -> trabajador::reporte',
         'GET /trabajadores/nomina/periodos -> trabajador::nominaperiodos',
         'GET /trabajadores/nomina/periodos/preview -> trabajador::nominaperiodopreview',
+        'GET /trabajadores/nomina/periodos/{id:[0-9]+} -> trabajador::nominaperiododetalle',
+        'POST /trabajadores/nomina/periodos/cerrar -> trabajador::cerrarnominaperiodo',
+        'POST /trabajadores/nomina/periodos/{id:[0-9]+}/aprobar -> trabajador::aprobarnominaperiodo',
+        'POST /trabajadores/nomina/periodos/{id:[0-9]+}/anular -> trabajador::anularnominaperiodo',
         'GET /trabajadores/nomina/preview -> trabajador::nominapreview',
         'GET /trabajadores/nomina/preview/exportar -> trabajador::exportarnominapreview',
         'GET /trabajadores/pagos-caja/reporte -> trabajador::reportepagoscaja',
@@ -3191,7 +3303,7 @@ if (!is_file($routesPath)) {
     }
 
     if (empty($forbiddenWorkerRoutes)) {
-        hcOk('Personal NP-F-A/5E-C/5E-D-A/5E-G-A/5E-H-A/5E-I-A/5E-J-A/5E-K-A/14E/14F mantiene solo rutas autorizadas; reportes/periodos/preview/export/recibo/PDF/simulador GET y pago/reversion POST controlados.');
+        hcOk('Personal NP-F-A/5E-C/5E-D-A/5E-G-A/5E-H-A/5E-I-A/5E-J-A/5E-K-A/5E-L-A/14E/14F mantiene solo rutas autorizadas; reportes/periodos/preview/export/recibo/PDF/simulador GET y cierre/aprobacion/anulacion/pago/reversion POST controlados.');
     } else {
         hcError(
             'Personal NP-F-A tiene rutas fuera de alcance: ' . implode(' | ', $forbiddenWorkerRoutes),

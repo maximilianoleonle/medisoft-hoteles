@@ -85,6 +85,25 @@ class Trabajador extends Model
         return true;
     }
 
+    public function tablasNominaPeriodoPersistenteDisponibles(): bool
+    {
+        if (!$this->tablasNominaPreviewDisponibles()) {
+            return false;
+        }
+
+        foreach ([
+            'trabajador_nomina_periodos',
+            'trabajador_nomina_periodo_detalles',
+            'trabajador_nomina_periodo_eventos',
+        ] as $tabla) {
+            if (!$this->tablaExiste($tabla)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function listarPorHotel(int $hotelId, array $filtros = [], int $limite = 100): array
     {
         if ($hotelId <= 0 || !$this->tablaDisponible()) {
@@ -789,6 +808,454 @@ class Trabajador extends Model
 
         return $resultado;
     }
+
+    public function nominaPeriodosPersistentesPorHotel(int $hotelId, int $limite = 12): array
+    {
+        if ($hotelId <= 0 || !$this->tablasNominaPeriodoPersistenteDisponibles()) {
+            return [];
+        }
+
+        $limite = max(1, min(50, $limite));
+        $stmt = $this->db->query(
+            "SELECT p.id,
+                    p.hotel_id,
+                    p.tipo_periodo,
+                    p.etiqueta,
+                    p.fecha_inicio,
+                    p.fecha_fin,
+                    p.estado,
+                    p.trabajadores_total,
+                    p.bruto_total,
+                    p.deducciones_total,
+                    p.pagos_caja_aplicados_total,
+                    p.reversiones_detectadas_total,
+                    p.neto_sugerido_total,
+                    p.pendiente_pago_total,
+                    p.cerrado_por,
+                    p.cerrado_at,
+                    p.aprobado_por,
+                    p.aprobado_at,
+                    p.anulado_por,
+                    p.anulado_at,
+                    p.motivo_anulacion,
+                    uc.nombre_completo AS cerrado_por_nombre,
+                    ua.nombre_completo AS aprobado_por_nombre,
+                    un.nombre_completo AS anulado_por_nombre
+             FROM trabajador_nomina_periodos p
+             LEFT JOIN usuarios uc ON uc.id = p.cerrado_por
+             LEFT JOIN usuarios ua ON ua.id = p.aprobado_por
+             LEFT JOIN usuarios un ON un.id = p.anulado_por
+             WHERE p.hotel_id = ?
+             ORDER BY p.fecha_inicio DESC, p.id DESC
+             LIMIT {$limite}",
+            [$hotelId]
+        );
+
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
+    public function mapaNominaPeriodosPersistentesPorRango(int $hotelId, array $periodos): array
+    {
+        if ($hotelId <= 0 || empty($periodos) || !$this->tablasNominaPeriodoPersistenteDisponibles()) {
+            return [];
+        }
+
+        $rangos = [];
+        $params = [$hotelId];
+        foreach ($periodos as $periodo) {
+            $inicio = $this->nullableFecha($periodo['fecha_inicio'] ?? null);
+            $fin = $this->nullableFecha($periodo['fecha_fin'] ?? null);
+            if ($inicio === null || $fin === null) {
+                continue;
+            }
+
+            $rangos[] = '(fecha_inicio = ? AND fecha_fin = ?)';
+            $params[] = $inicio;
+            $params[] = $fin;
+        }
+
+        if (empty($rangos)) {
+            return [];
+        }
+
+        $stmt = $this->db->query(
+            "SELECT id,
+                    fecha_inicio,
+                    fecha_fin,
+                    estado,
+                    cerrado_at,
+                    aprobado_at,
+                    anulado_at
+             FROM trabajador_nomina_periodos
+             WHERE hotel_id = ?
+               AND (" . implode(' OR ', $rangos) . ")",
+            $params
+        );
+
+        $mapa = [];
+        $filas = $stmt ? ($stmt->fetchAll() ?: []) : [];
+        foreach ($filas as $fila) {
+            $key = (string)($fila['fecha_inicio'] ?? '') . ':' . (string)($fila['fecha_fin'] ?? '');
+            $mapa[$key] = $fila;
+        }
+
+        return $mapa;
+    }
+
+    public function nominaPeriodoPersistentePorHotel(int $periodoId, int $hotelId): ?array
+    {
+        if ($periodoId <= 0 || $hotelId <= 0 || !$this->tablasNominaPeriodoPersistenteDisponibles()) {
+            return null;
+        }
+
+        $periodo = $this->fetchOne(
+            "SELECT p.id,
+                    p.hotel_id,
+                    p.tipo_periodo,
+                    p.etiqueta,
+                    p.fecha_inicio,
+                    p.fecha_fin,
+                    p.estado,
+                    p.filtros_json,
+                    p.resumen_json,
+                    p.trabajadores_total,
+                    p.bruto_total,
+                    p.deducciones_total,
+                    p.pagos_caja_aplicados_total,
+                    p.reversiones_detectadas_total,
+                    p.neto_sugerido_total,
+                    p.pendiente_pago_total,
+                    p.cerrado_por,
+                    p.cerrado_at,
+                    p.aprobado_por,
+                    p.aprobado_at,
+                    p.anulado_por,
+                    p.anulado_at,
+                    p.motivo_anulacion,
+                    p.created_at,
+                    p.updated_at,
+                    uc.nombre_completo AS cerrado_por_nombre,
+                    ua.nombre_completo AS aprobado_por_nombre,
+                    un.nombre_completo AS anulado_por_nombre
+             FROM trabajador_nomina_periodos p
+             LEFT JOIN usuarios uc ON uc.id = p.cerrado_por
+             LEFT JOIN usuarios ua ON ua.id = p.aprobado_por
+             LEFT JOIN usuarios un ON un.id = p.anulado_por
+             WHERE p.id = ?
+               AND p.hotel_id = ?
+             LIMIT 1",
+            [$periodoId, $hotelId]
+        );
+
+        if (empty($periodo)) {
+            return null;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT id,
+                    periodo_id,
+                    hotel_id,
+                    trabajador_id,
+                    trabajador_nombre,
+                    trabajador_identificacion,
+                    trabajador_rol,
+                    trabajador_estado,
+                    estado_preview_nomina,
+                    motivo_bloqueo_nomina,
+                    conceptos_count,
+                    conceptos_a_favor,
+                    conceptos_en_contra,
+                    bruto_periodo,
+                    anticipos_count,
+                    anticipos_saldo,
+                    prestamos_count,
+                    prestamos_saldo,
+                    deducciones_informativas,
+                    pagos_caja_count,
+                    pagos_caja_pagados,
+                    pagos_caja_revertidos,
+                    pagos_caja_aplicados,
+                    pagos_caja_revertidos_total,
+                    reversiones_detectadas,
+                    ultimo_pago_caja,
+                    neto_sugerido,
+                    pendiente_pago_sugerido,
+                    snapshot_json,
+                    created_at
+             FROM trabajador_nomina_periodo_detalles
+             WHERE periodo_id = ?
+               AND hotel_id = ?
+             ORDER BY trabajador_nombre ASC, id ASC",
+            [$periodoId, $hotelId]
+        );
+        $periodo['detalles'] = $stmt ? ($stmt->fetchAll() ?: []) : [];
+
+        $stmt = $this->db->query(
+            "SELECT e.id,
+                    e.periodo_id,
+                    e.hotel_id,
+                    e.tipo,
+                    e.estado_resultante,
+                    e.descripcion,
+                    e.motivo,
+                    e.created_by,
+                    e.created_at,
+                    u.nombre_completo AS creado_por_nombre,
+                    u.nombre_usuario AS creado_por_login
+             FROM trabajador_nomina_periodo_eventos e
+             LEFT JOIN usuarios u ON u.id = e.created_by
+             WHERE e.periodo_id = ?
+               AND e.hotel_id = ?
+             ORDER BY e.created_at DESC, e.id DESC",
+            [$periodoId, $hotelId]
+        );
+        $periodo['eventos'] = $stmt ? ($stmt->fetchAll() ?: []) : [];
+        $periodo['filtros'] = $this->decodificarJsonArray($periodo['filtros_json'] ?? null);
+        $periodo['resumen_snapshot'] = $this->decodificarJsonArray($periodo['resumen_json'] ?? null);
+
+        return $periodo;
+    }
+
+    public function cerrarNominaPeriodoPersistenteParaHotel(int $hotelId, array $datos, ?int $usuarioId = null): int
+    {
+        if ($hotelId <= 0 || !$this->tablasNominaPeriodoPersistenteDisponibles()) {
+            throw new Exception('Persistencia de periodos de pre-nomina no disponible');
+        }
+
+        $cierre = $this->normalizarDatosCierreNominaPeriodo($datos);
+        $previewFiltros = [
+            'fecha_inicio' => $cierre['fecha_inicio'],
+            'fecha_fin' => $cierre['fecha_fin'],
+            'trabajador_id' => '',
+            'buscar' => '',
+            'rol_laboral' => '',
+            'estado' => 'activos',
+            'solo_con_saldo' => '0',
+            'incluir_pagos_caja' => $cierre['incluir_pagos_caja'] ? '1' : '0',
+        ];
+
+        $this->db->safeBeginTransaction();
+
+        try {
+            $duplicado = $this->fetchOne(
+                "SELECT id, estado
+                 FROM trabajador_nomina_periodos
+                 WHERE hotel_id = ?
+                   AND fecha_inicio = ?
+                   AND fecha_fin = ?
+                 LIMIT 1
+                 FOR UPDATE",
+                [$hotelId, $cierre['fecha_inicio'], $cierre['fecha_fin']]
+            );
+            if (!empty($duplicado)) {
+                throw new Exception('El periodo ya tiene un cierre persistente registrado');
+            }
+
+            $preview = $this->nominaPreviewPorHotel($hotelId, $previewFiltros, 300);
+            $bloqueos = is_array($preview['bloqueos'] ?? null) ? $preview['bloqueos'] : [];
+            if (!empty($bloqueos)) {
+                throw new Exception('El preview del periodo esta bloqueado: ' . implode(' ', $bloqueos));
+            }
+
+            $trabajadores = is_array($preview['trabajadores'] ?? null) ? $preview['trabajadores'] : [];
+            if (empty($trabajadores)) {
+                throw new Exception('No hay trabajadores activos para cerrar este periodo');
+            }
+
+            $resumen = is_array($preview['resumen'] ?? null) ? $preview['resumen'] : $this->resumenVacioNominaPreview();
+            if ((int)($resumen['bloqueado_count'] ?? 0) > 0) {
+                throw new Exception('El periodo contiene trabajadores bloqueados');
+            }
+
+            $filtrosSnapshot = is_array($preview['filtros_normalizados'] ?? null)
+                ? $preview['filtros_normalizados']
+                : $previewFiltros;
+
+            $stmt = $this->db->query(
+                "INSERT INTO trabajador_nomina_periodos
+                    (hotel_id, tipo_periodo, etiqueta, fecha_inicio, fecha_fin, estado,
+                     filtros_json, resumen_json, trabajadores_total, bruto_total,
+                     deducciones_total, pagos_caja_aplicados_total,
+                     reversiones_detectadas_total, neto_sugerido_total,
+                     pendiente_pago_total, cerrado_por, cerrado_at, created_at, updated_at)
+                 VALUES
+                    (?, ?, ?, ?, ?, 'cerrado',
+                     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW())",
+                [
+                    $hotelId,
+                    $cierre['tipo_periodo'],
+                    $cierre['etiqueta'],
+                    $cierre['fecha_inicio'],
+                    $cierre['fecha_fin'],
+                    $this->jsonSeguro($filtrosSnapshot),
+                    $this->jsonSeguro($resumen),
+                    (int)($resumen['trabajadores_total'] ?? count($trabajadores)),
+                    $this->decimal($resumen['bruto_total'] ?? 0),
+                    $this->decimal($resumen['deducciones_total'] ?? 0),
+                    $this->decimal($resumen['pagos_caja_aplicados_total'] ?? 0),
+                    $this->decimal($resumen['reversiones_detectadas_total'] ?? 0),
+                    $this->decimal($resumen['neto_sugerido_total'] ?? 0),
+                    $this->decimal($resumen['pendiente_pago_total'] ?? 0),
+                    $usuarioId,
+                ]
+            );
+
+            if (!$stmt) {
+                throw new Exception('No se pudo cerrar el periodo de pre-nomina');
+            }
+
+            $periodoId = (int)$this->db->lastInsertId();
+            foreach ($trabajadores as $trabajador) {
+                $this->insertarDetalleNominaPeriodo($periodoId, $hotelId, $trabajador);
+            }
+
+            $this->registrarEventoNominaPeriodo(
+                $periodoId,
+                $hotelId,
+                'cierre',
+                'cerrado',
+                'Periodo de pre-nomina cerrado como snapshot persistente',
+                null,
+                $usuarioId
+            );
+
+            $this->db->safeCommit();
+
+            return $periodoId;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
+    public function aprobarNominaPeriodoParaHotel(int $periodoId, int $hotelId, ?int $usuarioId = null): bool
+    {
+        if ($periodoId <= 0 || $hotelId <= 0 || !$this->tablasNominaPeriodoPersistenteDisponibles()) {
+            throw new Exception('Persistencia de periodos de pre-nomina no disponible');
+        }
+
+        $this->db->safeBeginTransaction();
+
+        try {
+            $periodo = $this->fetchOne(
+                "SELECT id, estado
+                 FROM trabajador_nomina_periodos
+                 WHERE id = ?
+                   AND hotel_id = ?
+                 LIMIT 1
+                 FOR UPDATE",
+                [$periodoId, $hotelId]
+            );
+
+            if (empty($periodo)) {
+                throw new Exception('Periodo de pre-nomina no encontrado para el hotel actual');
+            }
+
+            if ((string)($periodo['estado'] ?? '') !== 'cerrado') {
+                throw new Exception('Solo se pueden aprobar periodos en estado cerrado');
+            }
+
+            $stmt = $this->db->query(
+                "UPDATE trabajador_nomina_periodos
+                 SET estado = 'aprobado',
+                     aprobado_por = ?,
+                     aprobado_at = NOW(),
+                     updated_at = NOW()
+                 WHERE id = ?
+                   AND hotel_id = ?",
+                [$usuarioId, $periodoId, $hotelId]
+            );
+
+            if (!$stmt) {
+                throw new Exception('No se pudo aprobar el periodo de pre-nomina');
+            }
+
+            $this->registrarEventoNominaPeriodo(
+                $periodoId,
+                $hotelId,
+                'aprobacion',
+                'aprobado',
+                'Periodo de pre-nomina aprobado administrativamente',
+                null,
+                $usuarioId
+            );
+
+            $this->db->safeCommit();
+
+            return true;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
+    public function anularNominaPeriodoParaHotel(int $periodoId, int $hotelId, string $motivo, ?int $usuarioId = null): bool
+    {
+        if ($periodoId <= 0 || $hotelId <= 0 || !$this->tablasNominaPeriodoPersistenteDisponibles()) {
+            throw new Exception('Persistencia de periodos de pre-nomina no disponible');
+        }
+
+        $motivo = $this->limpiarTexto($motivo, 255);
+        if ($motivo === '') {
+            throw new Exception('El motivo de anulacion es obligatorio');
+        }
+
+        $this->db->safeBeginTransaction();
+
+        try {
+            $periodo = $this->fetchOne(
+                "SELECT id, estado
+                 FROM trabajador_nomina_periodos
+                 WHERE id = ?
+                   AND hotel_id = ?
+                 LIMIT 1
+                 FOR UPDATE",
+                [$periodoId, $hotelId]
+            );
+
+            if (empty($periodo)) {
+                throw new Exception('Periodo de pre-nomina no encontrado para el hotel actual');
+            }
+
+            if ((string)($periodo['estado'] ?? '') === 'anulado') {
+                throw new Exception('El periodo ya esta anulado');
+            }
+
+            $stmt = $this->db->query(
+                "UPDATE trabajador_nomina_periodos
+                 SET estado = 'anulado',
+                     anulado_por = ?,
+                     anulado_at = NOW(),
+                     motivo_anulacion = ?,
+                     updated_at = NOW()
+                 WHERE id = ?
+                   AND hotel_id = ?",
+                [$usuarioId, $motivo, $periodoId, $hotelId]
+            );
+
+            if (!$stmt) {
+                throw new Exception('No se pudo anular el periodo de pre-nomina');
+            }
+
+            $this->registrarEventoNominaPeriodo(
+                $periodoId,
+                $hotelId,
+                'anulacion',
+                'anulado',
+                'Periodo de pre-nomina anulado sin borrar snapshot',
+                $motivo,
+                $usuarioId
+            );
+
+            $this->db->safeCommit();
+
+            return true;
+        } catch (Throwable $e) {
+            $this->db->safeRollBack();
+            throw $e;
+        }
+    }
+
     public function usuariosVinculablesPorHotel(int $hotelId): array
     {
         if ($hotelId <= 0 || !$this->tablaExiste('hotel_usuarios') || !$this->tablaExiste('usuarios')) {
@@ -2578,6 +3045,144 @@ class Trabajador extends Model
         return $resumen;
     }
 
+    private function normalizarDatosCierreNominaPeriodo(array $datos): array
+    {
+        $tipoPeriodo = strtolower(trim((string)($datos['tipo_periodo'] ?? 'manual')));
+        if (!in_array($tipoPeriodo, ['semanal', 'quincenal', 'mensual', 'manual'], true)) {
+            $tipoPeriodo = 'manual';
+        }
+
+        $fechaInicio = $this->nullableFecha($datos['fecha_inicio'] ?? null);
+        $fechaFin = $this->nullableFecha($datos['fecha_fin'] ?? null);
+        if ($fechaInicio === null || $fechaFin === null || $fechaFin < $fechaInicio) {
+            throw new Exception('El periodo de cierre no es valido');
+        }
+
+        $estado = strtolower(trim((string)($datos['estado'] ?? 'activos')));
+        if ($estado !== 'activos') {
+            throw new Exception('El cierre persistente solo permite trabajadores activos');
+        }
+
+        $rolLaboral = $this->limpiarTexto($datos['rol_laboral'] ?? '', 80);
+        if ($rolLaboral !== '') {
+            throw new Exception('El cierre persistente no permite filtro por rol laboral');
+        }
+
+        $etiqueta = $this->limpiarTexto($datos['etiqueta'] ?? '', 120);
+        if ($etiqueta === '') {
+            $etiqueta = 'Periodo ' . $fechaInicio . ' a ' . $fechaFin;
+        }
+
+        return [
+            'tipo_periodo' => $tipoPeriodo,
+            'etiqueta' => $etiqueta,
+            'fecha_inicio' => $fechaInicio,
+            'fecha_fin' => $fechaFin,
+            'estado' => 'activos',
+            'rol_laboral' => '',
+            'incluir_pagos_caja' => $this->normalizarBooleanoNominaPreview($datos['incluir_pagos_caja'] ?? null, true),
+        ];
+    }
+
+    private function insertarDetalleNominaPeriodo(int $periodoId, int $hotelId, array $trabajador): void
+    {
+        $stmt = $this->db->query(
+            "INSERT INTO trabajador_nomina_periodo_detalles
+                (periodo_id, hotel_id, trabajador_id, trabajador_nombre,
+                 trabajador_identificacion, trabajador_rol, trabajador_estado,
+                 estado_preview_nomina, motivo_bloqueo_nomina, conceptos_count,
+                 conceptos_a_favor, conceptos_en_contra, bruto_periodo,
+                 anticipos_count, anticipos_saldo, prestamos_count, prestamos_saldo,
+                 deducciones_informativas, pagos_caja_count, pagos_caja_pagados,
+                 pagos_caja_revertidos, pagos_caja_aplicados,
+                 pagos_caja_revertidos_total, reversiones_detectadas,
+                 ultimo_pago_caja, neto_sugerido, pendiente_pago_sugerido,
+                 snapshot_json, created_at)
+             VALUES
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+            [
+                $periodoId,
+                $hotelId,
+                (int)($trabajador['id'] ?? 0),
+                $this->limpiarTexto($trabajador['nombre_completo'] ?? '', 160),
+                $this->nullableTexto($trabajador['identificacion'] ?? null, 80),
+                $this->nullableTexto($trabajador['rol_laboral'] ?? null, 100),
+                $this->limpiarTexto($trabajador['estado'] ?? '', 30),
+                $this->limpiarTexto($trabajador['estado_preview_nomina'] ?? '', 40),
+                $this->nullableTexto($trabajador['motivo_bloqueo_nomina'] ?? null, 255),
+                (int)($trabajador['conceptos_count'] ?? 0),
+                $this->decimal($trabajador['conceptos_a_favor'] ?? 0),
+                $this->decimal($trabajador['conceptos_en_contra'] ?? 0),
+                $this->decimal($trabajador['bruto_periodo'] ?? 0),
+                (int)($trabajador['anticipos_count'] ?? 0),
+                $this->decimal($trabajador['anticipos_saldo'] ?? 0),
+                (int)($trabajador['prestamos_count'] ?? 0),
+                $this->decimal($trabajador['prestamos_saldo'] ?? 0),
+                $this->decimal($trabajador['deducciones_informativas'] ?? 0),
+                (int)($trabajador['pagos_caja_count'] ?? 0),
+                (int)($trabajador['pagos_caja_pagados'] ?? 0),
+                (int)($trabajador['pagos_caja_revertidos'] ?? 0),
+                $this->decimal($trabajador['pagos_caja_aplicados'] ?? 0),
+                $this->decimal($trabajador['pagos_caja_revertidos_total'] ?? 0),
+                $this->decimal($trabajador['reversiones_detectadas'] ?? 0),
+                $this->nullableFechaHora($trabajador['ultimo_pago_caja'] ?? null),
+                $this->decimal($trabajador['neto_sugerido'] ?? 0),
+                $this->decimal($trabajador['pendiente_pago_sugerido'] ?? 0),
+                $this->jsonSeguro($trabajador),
+            ]
+        );
+
+        if (!$stmt) {
+            throw new Exception('No se pudo guardar el detalle del snapshot de pre-nomina');
+        }
+    }
+
+    private function registrarEventoNominaPeriodo(
+        int $periodoId,
+        int $hotelId,
+        string $tipo,
+        string $estadoResultante,
+        string $descripcion,
+        ?string $motivo,
+        ?int $usuarioId
+    ): void {
+        $stmt = $this->db->query(
+            "INSERT INTO trabajador_nomina_periodo_eventos
+                (periodo_id, hotel_id, tipo, estado_resultante, descripcion, motivo, created_by, created_at)
+             VALUES
+                (?, ?, ?, ?, ?, ?, ?, NOW())",
+            [
+                $periodoId,
+                $hotelId,
+                $tipo,
+                $estadoResultante,
+                $this->limpiarTexto($descripcion, 180),
+                $this->nullableTexto($motivo, 255),
+                $usuarioId,
+            ]
+        );
+
+        if (!$stmt) {
+            throw new Exception('No se pudo registrar el evento del periodo de pre-nomina');
+        }
+    }
+
+    private function jsonSeguro(array $datos): string
+    {
+        $json = json_encode($datos, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        return $json !== false ? $json : '{}';
+    }
+
+    private function decodificarJsonArray($value): array
+    {
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        $json = json_decode((string)$value, true);
+        return is_array($json) ? $json : [];
+    }
+
     public function normalizarDatos(array $datos): array
     {
         $usuarioId = (int)($datos['usuario_id'] ?? 0);
@@ -2872,6 +3477,17 @@ class Trabajador extends Model
 
         $fecha = DateTime::createFromFormat('Y-m-d', $texto);
         return $fecha && $fecha->format('Y-m-d') === $texto ? $texto : null;
+    }
+
+    private function nullableFechaHora($value): ?string
+    {
+        $texto = trim((string)($value ?? ''));
+        if ($texto === '') {
+            return null;
+        }
+
+        $fecha = DateTime::createFromFormat('Y-m-d H:i:s', $texto);
+        return $fecha && $fecha->format('Y-m-d H:i:s') === $texto ? $texto : null;
     }
 
     private function nullableHora($value)

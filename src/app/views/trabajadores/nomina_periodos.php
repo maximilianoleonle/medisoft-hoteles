@@ -1,6 +1,9 @@
 <?php
 $periodosNomina = is_array($periodosNomina ?? null) ? $periodosNomina : [];
 $tablaDisponible = $tablaDisponible ?? false;
+$tablaPersistenteDisponible = $tablaPersistenteDisponible ?? false;
+$periodosPersistentes = is_array($periodosPersistentes ?? null) ? $periodosPersistentes : [];
+$cierreTokens = is_array($cierreTokens ?? null) ? $cierreTokens : [];
 $modo = (string)($modo ?? 'lista');
 $periodos = is_array($periodosNomina['periodos'] ?? null) ? $periodosNomina['periodos'] : [];
 $periodoDetalle = is_array($periodosNomina['periodo_detalle'] ?? null) ? $periodosNomina['periodo_detalle'] : null;
@@ -62,6 +65,37 @@ if (!function_exists('trab_periodo_badge_class')) {
             return 'period-badge period-badge-danger';
         }
         return 'period-badge';
+    }
+}
+
+if (!function_exists('trab_periodo_snapshot_badge_class')) {
+    function trab_periodo_snapshot_badge_class($estado)
+    {
+        $estado = (string)$estado;
+        if ($estado === 'aprobado') {
+            return 'period-badge period-badge-ok';
+        }
+        if ($estado === 'anulado') {
+            return 'period-badge period-badge-danger';
+        }
+        return 'period-badge period-badge-warn';
+    }
+}
+
+if (!function_exists('trab_periodo_snapshot_label')) {
+    function trab_periodo_snapshot_label($estado)
+    {
+        $estado = (string)$estado;
+        if ($estado === 'aprobado') {
+            return 'Aprobado';
+        }
+        if ($estado === 'anulado') {
+            return 'Anulado';
+        }
+        if ($estado === 'cerrado') {
+            return 'Cerrado';
+        }
+        return 'Snapshot';
     }
 }
 
@@ -165,6 +199,11 @@ $previewNominaQuery = http_build_query([
     border-color: var(--period-brand);
     color: #fff;
 }
+.nomina-periodos .period-btn-compact {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: .82rem;
+}
 .nomina-periodos .period-input {
     width: 100%;
     min-height: 40px;
@@ -236,7 +275,7 @@ $previewNominaQuery = http_build_query([
                 <div class="period-kicker">Personal / Pre-nomina</div>
                 <h1 class="period-title">Periodos de pre-nomina</h1>
                 <p class="period-subtitle">
-                    Revision interna de periodos laborales. Read-only, no genera nomina oficial, no registra pago y no modifica Caja.
+                    Revision interna de periodos laborales con cierre persistente controlado. No genera nomina oficial, no registra pago y no modifica Caja.
                 </p>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 min-w-[360px]">
@@ -278,7 +317,7 @@ $previewNominaQuery = http_build_query([
             </div>
             <span class="period-badge">
                 <i class="fas fa-lock"></i>
-                Solo GET / Read-only
+                Preview GET / Cierre controlado
             </span>
         </div>
 
@@ -288,6 +327,70 @@ $previewNominaQuery = http_build_query([
                 <p class="text-sm text-slate-500 mt-1">Faltan tablas laborales o de Caja para calcular periodos con seguridad.</p>
             </div>
         <?php else: ?>
+            <?php if (!$tablaPersistenteDisponible): ?>
+                <div class="period-panel p-5 bg-slate-50">
+                    <strong>Cierre persistente no disponible.</strong>
+                    <p class="text-sm text-slate-500 mt-1">Faltan las tablas de snapshots de pre-nomina. El preview queda disponible sin cierre.</p>
+                </div>
+            <?php elseif (!empty($periodosPersistentes)): ?>
+                <div class="period-panel overflow-hidden">
+                    <div class="p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h2 class="font-black text-lg">Cierres persistentes recientes</h2>
+                            <p class="text-sm text-slate-500 mt-1">Snapshots administrativos; no son pago, CFDI, timbrado ni movimiento de Caja.</p>
+                        </div>
+                        <span class="period-badge">
+                            <i class="fas fa-box-archive"></i>
+                            <?= trab_periodo_num(count($periodosPersistentes)) ?> visible(s)
+                        </span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="period-table min-w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">Periodo</th>
+                                    <th class="text-left">Estado</th>
+                                    <th class="text-right">Trabajadores</th>
+                                    <th class="text-right">Pendiente</th>
+                                    <th class="text-left">Cierre</th>
+                                    <th class="text-right">Accion</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($periodosPersistentes as $snapshot): ?>
+                                    <tr>
+                                        <td>
+                                            <div class="font-black"><?= trab_periodo_safe($snapshot['etiqueta'] ?? 'Periodo cerrado') ?></div>
+                                            <div class="text-xs text-slate-500">
+                                                <?= trab_periodo_date($snapshot['fecha_inicio'] ?? '') ?> - <?= trab_periodo_date($snapshot['fecha_fin'] ?? '') ?>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="<?= trab_periodo_snapshot_badge_class($snapshot['estado'] ?? '') ?>">
+                                                <i class="fas fa-circle"></i>
+                                                <?= trab_periodo_snapshot_label($snapshot['estado'] ?? '') ?>
+                                            </span>
+                                        </td>
+                                        <td class="text-right font-black"><?= trab_periodo_num($snapshot['trabajadores_total'] ?? 0) ?></td>
+                                        <td class="text-right font-black"><?= trab_periodo_money($snapshot['pendiente_pago_total'] ?? 0) ?></td>
+                                        <td>
+                                            <div class="text-sm font-bold"><?= trab_periodo_safe($snapshot['cerrado_por_nombre'] ?? 'Usuario') ?></div>
+                                            <div class="text-xs text-slate-500"><?= trab_periodo_safe($snapshot['cerrado_at'] ?? '-') ?></div>
+                                        </td>
+                                        <td class="text-right">
+                                            <a class="period-badge" href="<?= url('trabajadores/nomina/periodos/' . (int)($snapshot['id'] ?? 0)) ?>">
+                                                <i class="fas fa-eye"></i>
+                                                Ver snapshot
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <div class="period-panel p-4">
                 <form method="GET" action="<?= url('trabajadores/nomina/periodos') ?>" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[150px_150px_150px_150px_160px_minmax(170px,1fr)_auto_auto] gap-3">
                     <select class="period-input" name="tipo_periodo">
@@ -350,6 +453,10 @@ $previewNominaQuery = http_build_query([
                                 $detalleUrl = url('trabajadores/nomina/periodos/preview' . ($detalleQuery !== '' ? '?' . $detalleQuery : ''));
                                 $nominaPreviewUrl = url('trabajadores/nomina/preview' . ($detalleQuery !== '' ? '?' . $detalleQuery : ''));
                                 $periodoResumen = is_array($periodo['resumen'] ?? null) ? $periodo['resumen'] : [];
+                                $snapshotId = (int)($periodo['snapshot_id'] ?? 0);
+                                $snapshotEstado = (string)($periodo['snapshot_estado'] ?? '');
+                                $periodoTokenKey = (string)($periodo['fecha_inicio'] ?? '') . ':' . (string)($periodo['fecha_fin'] ?? '');
+                                $cierreToken = (string)($cierreTokens[$periodoTokenKey] ?? '');
                             ?>
                             <article class="period-card <?= $isActive ? 'period-card-active' : '' ?> p-4 space-y-3">
                                 <div class="flex items-start justify-between gap-3">
@@ -386,10 +493,33 @@ $previewNominaQuery = http_build_query([
                                         <i class="fas fa-table-list"></i>
                                         Preview
                                     </a>
-                                    <span class="period-badge">
-                                        <i class="fas fa-lock"></i>
-                                        Sin cierre
-                                    </span>
+                                    <?php if ($snapshotId > 0): ?>
+                                        <a class="<?= trab_periodo_snapshot_badge_class($snapshotEstado) ?>" href="<?= url('trabajadores/nomina/periodos/' . $snapshotId) ?>">
+                                            <i class="fas fa-box-archive"></i>
+                                            <?= trab_periodo_snapshot_label($snapshotEstado) ?> #<?= (int)$snapshotId ?>
+                                        </a>
+                                    <?php elseif ($tablaPersistenteDisponible && !empty($periodo['puede_cerrar_persistente']) && $cierreToken !== ''): ?>
+                                        <form method="POST" action="<?= url('trabajadores/nomina/periodos/cerrar') ?>">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="periodo_token" value="<?= trab_periodo_safe($cierreToken, '') ?>">
+                                            <input type="hidden" name="tipo_periodo" value="<?= trab_periodo_safe($periodo['tipo_periodo'] ?? $tipoPeriodo, 'manual') ?>">
+                                            <input type="hidden" name="etiqueta" value="<?= trab_periodo_safe($periodo['etiqueta'] ?? 'Periodo', '') ?>">
+                                            <input type="hidden" name="fecha_inicio" value="<?= trab_periodo_safe($periodo['fecha_inicio'] ?? '', '') ?>">
+                                            <input type="hidden" name="fecha_fin" value="<?= trab_periodo_safe($periodo['fecha_fin'] ?? '', '') ?>">
+                                            <input type="hidden" name="estado" value="activos">
+                                            <input type="hidden" name="rol_laboral" value="">
+                                            <input type="hidden" name="incluir_pagos_caja" value="<?= $incluirPagosCaja ? '1' : '0' ?>">
+                                            <button class="period-btn period-btn-primary period-btn-compact" type="submit">
+                                                <i class="fas fa-lock"></i>
+                                                Cerrar snapshot
+                                            </button>
+                                        </form>
+                                    <?php else: ?>
+                                        <span class="period-badge">
+                                            <i class="fas fa-lock"></i>
+                                            Sin cierre disponible
+                                        </span>
+                                    <?php endif; ?>
                                 </div>
                             </article>
                         <?php endforeach; ?>
@@ -400,16 +530,24 @@ $previewNominaQuery = http_build_query([
                     <div class="period-panel p-5">
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div>
-                                <h2 class="font-black text-lg">Detalle read-only del periodo</h2>
+                                <h2 class="font-black text-lg">Detalle del periodo evaluado</h2>
                                 <p class="text-sm text-slate-500 mt-1">
                                     <?= trab_periodo_date($periodoActualInicio) ?> - <?= trab_periodo_date($periodoActualFin) ?>
                                 </p>
                             </div>
                             <?php if ($periodoDetalle): ?>
-                                <span class="<?= trab_periodo_badge_class($periodoDetalle['estado_periodo'] ?? '') ?>">
-                                    <i class="fas fa-shield-halved"></i>
-                                    <?= trab_periodo_safe($periodoDetalle['estado_label'] ?? 'Revision') ?>
-                                </span>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="<?= trab_periodo_badge_class($periodoDetalle['estado_periodo'] ?? '') ?>">
+                                        <i class="fas fa-shield-halved"></i>
+                                        <?= trab_periodo_safe($periodoDetalle['estado_label'] ?? 'Revision') ?>
+                                    </span>
+                                    <?php if ((int)($periodoDetalle['snapshot_id'] ?? 0) > 0): ?>
+                                        <a class="<?= trab_periodo_snapshot_badge_class($periodoDetalle['snapshot_estado'] ?? '') ?>" href="<?= url('trabajadores/nomina/periodos/' . (int)$periodoDetalle['snapshot_id']) ?>">
+                                            <i class="fas fa-box-archive"></i>
+                                            Snapshot #<?= (int)$periodoDetalle['snapshot_id'] ?>
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -437,7 +575,7 @@ $previewNominaQuery = http_build_query([
                         <div class="p-5 border-b border-slate-200 flex flex-wrap items-start justify-between gap-3">
                             <div>
                                 <h2 class="font-black text-lg">Trabajadores del periodo</h2>
-                                <p class="text-sm text-slate-500 mt-1">No crea snapshots, recibos oficiales, pagos ni movimientos de Caja.</p>
+                                <p class="text-sm text-slate-500 mt-1">El cierre guarda snapshot administrativo; no crea recibos oficiales, pagos ni movimientos de Caja.</p>
                             </div>
                             <div class="flex flex-wrap gap-2">
                                 <a class="period-badge" href="<?= url('trabajadores/nomina/preview' . ($previewNominaQuery !== '' ? '?' . $previewNominaQuery : '')) ?>">

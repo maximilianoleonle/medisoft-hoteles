@@ -209,11 +209,14 @@ $workerCashSimulatorViewPath = $appRoot . '/app/views/trabajadores/simulador_pag
 $workerCashReportViewPath = $appRoot . '/app/views/trabajadores/reporte_pagos_caja.php';
 $workerPayrollPreviewViewPath = $appRoot . '/app/views/trabajadores/nomina_preview.php';
 $workerPayrollPeriodsViewPath = $appRoot . '/app/views/trabajadores/nomina_periodos.php';
+$workerPayrollPeriodDetailViewPath = $appRoot . '/app/views/trabajadores/nomina_periodo_detalle.php';
 $workerLaborReceiptViewPath = $appRoot . '/app/views/trabajadores/recibo_laboral_informativo.php';
 $workerLaborReceiptPdfServicePath = $appRoot . '/app/services/TrabajadorReciboLaboralPdfService.php';
+$workerPayrollPeriodServicePath = $appRoot . '/app/services/TrabajadorNominaPeriodoService.php';
 $auditServicePath = $appRoot . '/app/services/AuditService.php';
 $paymentServicePath = $appRoot . '/app/services/TrabajadorPagoCajaService.php';
 $rollbackToolPath = $appRoot . '/tools/saas/probar_pago_laboral_caja.php';
+$payrollPeriodMigrationPath = $projectRoot . '/migrations/20260621_001_fase_5e_l_a_nomina_periodos_persistentes.sql';
 $contractPath = '';
 $contractCandidates = [
     $projectRoot . '/docs/fase_5E_0_contrato_pagos_laborales_caja.md',
@@ -419,6 +422,90 @@ if ($pdo instanceof PDO) {
         );
     }
 
+    $payrollPeriodTables = [
+        'trabajador_nomina_periodos' => [
+            'id',
+            'hotel_id',
+            'tipo_periodo',
+            'fecha_inicio',
+            'fecha_fin',
+            'estado',
+            'filtros_json',
+            'resumen_json',
+            'trabajadores_total',
+            'pendiente_pago_total',
+            'cerrado_por',
+            'cerrado_at',
+            'aprobado_por',
+            'aprobado_at',
+            'anulado_por',
+            'anulado_at',
+            'motivo_anulacion',
+        ],
+        'trabajador_nomina_periodo_detalles' => [
+            'id',
+            'periodo_id',
+            'hotel_id',
+            'trabajador_id',
+            'trabajador_nombre',
+            'estado_preview_nomina',
+            'bruto_periodo',
+            'deducciones_informativas',
+            'pagos_caja_aplicados',
+            'neto_sugerido',
+            'pendiente_pago_sugerido',
+            'snapshot_json',
+        ],
+        'trabajador_nomina_periodo_eventos' => [
+            'id',
+            'periodo_id',
+            'hotel_id',
+            'tipo',
+            'estado_resultante',
+            'descripcion',
+            'motivo',
+            'created_by',
+            'created_at',
+        ],
+    ];
+    foreach ($payrollPeriodTables as $table => $columns) {
+        if (!lpcTableExists($pdo, $database, $table)) {
+            lpcError(
+                'Tabla 5E-L-A faltante: ' . $table . '.',
+                'Aplicar la migracion 20260621_001_fase_5e_l_a_nomina_periodos_persistentes.sql solo con backup local.'
+            );
+            continue;
+        }
+
+        $missingColumns = [];
+        foreach ($columns as $column) {
+            if (!lpcColumnExists($pdo, $database, $table, $column)) {
+                $missingColumns[] = $column;
+            }
+        }
+
+        if ($missingColumns === []) {
+            lpcOk('Tabla 5E-L-A ' . $table . ' disponible con columnas minimas.');
+        } else {
+            lpcError(
+                'Tabla 5E-L-A ' . $table . ' incompleta. Columnas faltantes: ' . implode(', ', $missingColumns) . '.',
+                'Reconciliar migracion de periodos persistentes antes de QA.'
+            );
+        }
+    }
+
+    if (lpcTableExists($pdo, $database, 'migrations')) {
+        $periodMigrationCount = lpcCountScalar($pdo, "SELECT COUNT(*) FROM migrations WHERE nombre = '20260621_001_fase_5e_l_a_nomina_periodos_persistentes.sql' AND estado = 'ejecutada'");
+        if ($periodMigrationCount === 1) {
+            lpcOk('Migracion 5E-L-A de periodos persistentes registrada como ejecutada.');
+        } else {
+            lpcError(
+                'Migracion 5E-L-A no figura como ejecutada.',
+                'Aplicar o reconciliar la migracion 20260621_001_fase_5e_l_a_nomina_periodos_persistentes.sql.'
+            );
+        }
+    }
+
     foreach (['movimiento_caja_id', 'corte_id', 'pago_caja_id'] as $column) {
         if (
             lpcTableExists($pdo, $database, 'trabajador_pagos')
@@ -608,6 +695,22 @@ if ($routes === []) {
             && trim((string)$route['path'], '/') === 'trabajadores/nomina/periodos/preview'
             && strtolower((string)$route['controller']) === 'trabajador'
             && strtolower((string)$route['action']) === 'nominaperiodopreview';
+        $isReadOnlyPayrollPeriodDetail = strtolower((string)$route['method']) === 'get'
+            && trim((string)$route['path'], '/') === 'trabajadores/nomina/periodos/{id:[0-9]+}'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'nominaperiododetalle';
+        $isControlledPayrollPeriodClose = strtolower((string)$route['method']) === 'post'
+            && trim((string)$route['path'], '/') === 'trabajadores/nomina/periodos/cerrar'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'cerrarnominaperiodo';
+        $isControlledPayrollPeriodApprove = strtolower((string)$route['method']) === 'post'
+            && trim((string)$route['path'], '/') === 'trabajadores/nomina/periodos/{id:[0-9]+}/aprobar'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'aprobarnominaperiodo';
+        $isControlledPayrollPeriodCancel = strtolower((string)$route['method']) === 'post'
+            && trim((string)$route['path'], '/') === 'trabajadores/nomina/periodos/{id:[0-9]+}/anular'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'anularnominaperiodo';
         $isReadOnlyLaborReceipt = strtolower((string)$route['method']) === 'get'
             && trim((string)$route['path'], '/') === 'trabajadores/{id:[0-9]+}/recibo-laboral'
             && strtolower((string)$route['controller']) === 'trabajador'
@@ -631,6 +734,10 @@ if ($routes === []) {
             && !$isReadOnlyPayrollPreviewExport
             && !$isReadOnlyPayrollPeriods
             && !$isReadOnlyPayrollPeriodPreview
+            && !$isReadOnlyPayrollPeriodDetail
+            && !$isControlledPayrollPeriodClose
+            && !$isControlledPayrollPeriodApprove
+            && !$isControlledPayrollPeriodCancel
             && !$isReadOnlyLaborReceipt
             && !$isReadOnlyLaborReceiptPdf
             && !$isPaymentRoute
@@ -705,6 +812,19 @@ if ($routes === []) {
         lpcWarning(
             'Rutas 5E-K-A de periodos de pre-nomina no estan completas.',
             'Registrar solo GET /trabajadores/nomina/periodos y GET /trabajadores/nomina/periodos/preview.'
+        );
+    }
+
+    $payrollPeriodPersistentRoutesOk = lpcRouteExists($routes, 'trabajadores/nomina/periodos/{id:[0-9]+}', 'get')
+        && lpcRouteExists($routes, 'trabajadores/nomina/periodos/cerrar', 'post')
+        && lpcRouteExists($routes, 'trabajadores/nomina/periodos/{id:[0-9]+}/aprobar', 'post')
+        && lpcRouteExists($routes, 'trabajadores/nomina/periodos/{id:[0-9]+}/anular', 'post');
+    if ($payrollPeriodPersistentRoutesOk) {
+        lpcOk('Rutas 5E-L-A de snapshot/cierre/aprobacion/anulacion de pre-nomina registradas.');
+    } else {
+        lpcError(
+            'Rutas 5E-L-A de periodos persistentes incompletas.',
+            'Registrar GET detalle y POST cerrar/aprobar/anular con TrabajadorController.'
         );
     }
 
@@ -835,13 +955,24 @@ if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($work
     );
 }
 
-if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($workerPayrollPeriodsViewPath)) {
+if (
+    is_file($workerModelPath)
+    && is_file($workerControllerPath)
+    && is_file($workerPayrollPeriodsViewPath)
+    && is_file($workerPayrollPeriodDetailViewPath)
+    && is_file($workerPayrollPeriodServicePath)
+) {
     $workerModelCode = (string) file_get_contents($workerModelPath);
     $workerControllerCode = (string) file_get_contents($workerControllerPath);
     $workerPayrollPeriodsViewCode = (string) file_get_contents($workerPayrollPeriodsViewPath);
-    $workerPayrollPeriodsSurfaceCode = $workerControllerCode . "\n" . $workerPayrollPeriodsViewCode;
+    $workerPayrollPeriodDetailViewCode = (string) file_get_contents($workerPayrollPeriodDetailViewPath);
+    $workerPayrollPeriodServiceCode = (string) file_get_contents($workerPayrollPeriodServicePath);
+    $workerPayrollPeriodsSurfaceCode = $workerControllerCode
+        . "\n" . $workerPayrollPeriodsViewCode
+        . "\n" . $workerPayrollPeriodDetailViewCode
+        . "\n" . $workerPayrollPeriodServiceCode;
     $payrollPeriodsWriteForbidden = preg_match(
-        '/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|REPLACE\s+INTO|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE)\s+(trabajadores|trabajador_pagos|trabajador_anticipos|trabajador_prestamos|trabajador_pagos_caja|movimientos_caja|cortes_caja|cajas)\b/i',
+        '/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|REPLACE\s+INTO|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE)\s+(trabajador_pagos_caja|movimientos_caja|cortes_caja|cajas)\b/i',
         $workerPayrollPeriodsSurfaceCode
     );
 
@@ -850,34 +981,65 @@ if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($work
         && strpos($workerModelCode, 'function nominaPeriodosReadOnlyPorHotel') !== false
         && strpos($workerModelCode, 'nominaPreviewPorHotel($hotelId, $previewFiltros, 250)') !== false
         && strpos($workerModelCode, 'function evaluarEstadoNominaPeriodoReadOnly') !== false
+        && strpos($workerModelCode, 'function tablasNominaPeriodoPersistenteDisponibles') !== false
+        && strpos($workerModelCode, 'function cerrarNominaPeriodoPersistenteParaHotel') !== false
+        && strpos($workerModelCode, 'function aprobarNominaPeriodoParaHotel') !== false
+        && strpos($workerModelCode, 'function anularNominaPeriodoParaHotel') !== false
+        && strpos($workerModelCode, 'trabajador_nomina_periodos') !== false
+        && strpos($workerModelCode, 'trabajador_nomina_periodo_detalles') !== false
+        && strpos($workerModelCode, 'trabajador_nomina_periodo_eventos') !== false
+        && strpos($workerModelCode, 'FOR UPDATE') !== false
         && strpos($workerControllerCode, 'function nominaPeriodosAction') !== false
         && strpos($workerControllerCode, 'function nominaPeriodoPreviewAction') !== false
+        && strpos($workerControllerCode, 'function nominaPeriodoDetalleAction') !== false
+        && strpos($workerControllerCode, 'function cerrarNominaPeriodoAction') !== false
+        && strpos($workerControllerCode, 'function aprobarNominaPeriodoAction') !== false
+        && strpos($workerControllerCode, 'function anularNominaPeriodoAction') !== false
         && strpos($workerControllerCode, 'function filtrosNominaPeriodosDesdeQuery') !== false
+        && strpos($workerControllerCode, 'TrabajadorNominaPeriodoService') !== false
+        && strpos($workerControllerCode, 'validateCSRF()') !== false
+        && strpos($workerControllerCode, 'generarNominaPeriodoToken') !== false
+        && strpos($workerControllerCode, 'consumirNominaPeriodoToken') !== false
+        && strpos($workerControllerCode, 'auditarNominaPeriodo') !== false
+        && strpos($workerPayrollPeriodServiceCode, 'class TrabajadorNominaPeriodoService') !== false
+        && strpos($workerPayrollPeriodServiceCode, 'cerrarPeriodo') !== false
+        && strpos($workerPayrollPeriodServiceCode, 'aprobarPeriodo') !== false
+        && strpos($workerPayrollPeriodServiceCode, 'anularPeriodo') !== false
+        && strpos($workerPayrollPeriodServiceCode, 'TrabajadorPagoCajaService') === false
+        && strpos($workerPayrollPeriodServiceCode, 'registrarPago') === false
         && strpos($workerControllerCode, 'trabajadores/nomina_periodos') !== false
         && strpos($workerPayrollPeriodsViewCode, "action=\"<?= url('trabajadores/nomina/periodos') ?>\"") !== false
         && strpos($workerPayrollPeriodsViewCode, 'trabajadores/nomina/periodos/preview') !== false
         && strpos($workerPayrollPeriodsViewCode, 'trabajadores/nomina/preview') !== false
+        && strpos($workerPayrollPeriodsViewCode, 'trabajadores/nomina/periodos/cerrar') !== false
         && strpos($workerPayrollPeriodsViewCode, 'method="GET"') !== false
-        && strpos($workerPayrollPeriodsViewCode, 'method="POST"') === false
-        && strpos($workerPayrollPeriodsViewCode, 'csrf_field()') === false
-        && strpos($workerPayrollPeriodsViewCode, 'Solo GET') !== false
-        && strpos($workerPayrollPeriodsViewCode, 'Read-only') !== false
-        && strpos($workerPayrollPeriodsViewCode, 'Sin cierre') !== false
+        && strpos($workerPayrollPeriodsViewCode, 'method="POST"') !== false
+        && strpos($workerPayrollPeriodsViewCode, 'csrf_field()') !== false
+        && strpos($workerPayrollPeriodsViewCode, 'periodo_token') !== false
+        && strpos($workerPayrollPeriodsViewCode, 'Cerrar snapshot') !== false
+        && strpos($workerPayrollPeriodsViewCode, 'Preview GET / Cierre controlado') !== false
+        && strpos($workerPayrollPeriodDetailViewCode, 'trabajadores/nomina/periodos/') !== false
+        && strpos($workerPayrollPeriodDetailViewCode, '/aprobar') !== false
+        && strpos($workerPayrollPeriodDetailViewCode, '/anular') !== false
+        && strpos($workerPayrollPeriodDetailViewCode, 'method="POST"') !== false
+        && strpos($workerPayrollPeriodDetailViewCode, 'csrf_field()') !== false
+        && strpos($workerPayrollPeriodDetailViewCode, 'periodo_token') !== false
+        && strpos($workerPayrollPeriodDetailViewCode, 'motivo') !== false
+        && strpos($workerPayrollPeriodDetailViewCode, 'No genera nomina oficial') !== false
         && strpos($workerPayrollPeriodsViewCode, 'registrar-pago-caja') === false
-        && strpos($workerPayrollPeriodsViewCode, 'timbrar') === false
-        && strpos($workerPayrollPeriodsViewCode, 'dispersion') === false
+        && strpos($workerPayrollPeriodDetailViewCode, 'registrar-pago-caja') === false
     ) {
-        lpcOk('Periodos 5E-K-A de pre-nomina son GET/read-only, reutilizan preview y no exponen cierre ni pagos.');
+        lpcOk('Periodos 5E-L-A de pre-nomina permiten cierre/aprobacion/anulacion persistente con CSRF/token, sin pagos, timbrado ni Caja.');
     } else {
         lpcError(
-            'Periodos 5E-K-A de pre-nomina incompletos o con riesgo de escritura.',
-            'Mantener nomina_periodos como GET/read-only, sin POST, sin CSRF, sin cierre real, sin Caja y reutilizando preview de nomina.'
+            'Periodos 5E-L-A de pre-nomina incompletos o con riesgo operativo.',
+            'Verificar snapshot persistente con CSRF/token, detalle read-only, aprobacion/anulacion controladas y ausencia de Caja/timbrado/dispersion.'
         );
     }
 } else {
     lpcWarning(
-        'Archivos de periodos 5E-K-A no estan completos.',
-        'Crear modelo/controlador/vista read-only antes de QA de periodos de pre-nomina.'
+        'Archivos de periodos 5E-L-A no estan completos.',
+        'Crear servicio, modelo, controlador y vistas de snapshot persistente antes de QA de periodos de pre-nomina.'
     );
 }
 

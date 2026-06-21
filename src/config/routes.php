@@ -260,6 +260,10 @@ $router->get('/trabajadores', ['controller' => 'Trabajador', 'action' => 'index'
 $router->get('/trabajadores/reporte', ['controller' => 'Trabajador', 'action' => 'reporte']);
 $router->get('/trabajadores/nomina/periodos', ['controller' => 'Trabajador', 'action' => 'nominaPeriodos']);
 $router->get('/trabajadores/nomina/periodos/preview', ['controller' => 'Trabajador', 'action' => 'nominaPeriodoPreview']);
+$router->get('/trabajadores/nomina/periodos/{id:[0-9]+}', ['controller' => 'Trabajador', 'action' => 'nominaPeriodoDetalle']);
+$router->post('/trabajadores/nomina/periodos/cerrar', ['controller' => 'Trabajador', 'action' => 'cerrarNominaPeriodo']);
+$router->post('/trabajadores/nomina/periodos/{id:[0-9]+}/aprobar', ['controller' => 'Trabajador', 'action' => 'aprobarNominaPeriodo']);
+$router->post('/trabajadores/nomina/periodos/{id:[0-9]+}/anular', ['controller' => 'Trabajador', 'action' => 'anularNominaPeriodo']);
 $router->get('/trabajadores/nomina/preview', ['controller' => 'Trabajador', 'action' => 'nominaPreview']);
 $router->get('/trabajadores/nomina/preview/exportar', ['controller' => 'Trabajador', 'action' => 'exportarNominaPreview']);
 $router->get('/trabajadores/pagos-caja/reporte/exportar', ['controller' => 'Trabajador', 'action' => 'exportarReportePagosCaja']);

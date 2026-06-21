@@ -2475,3 +2475,30 @@ Estado formal:
   y pago laboral real con Caja.
 - Siguiente paso seguro: `5E-L-A` solo con autorizacion explicita para rutas POST,
   servicio, modelo, vista, checkers, migraciones, permisos y backup.
+
+## 5E-L-A Cierre/aprobacion persistente de pre-nomina
+
+Estado formal:
+`IMPLEMENTACION_5E_L_A_CIERRE_APROBACION_PERSISTENTE_PRENOMINA_LOCAL_QA_PENDIENTE`.
+
+- Documento creado:
+  `docs/fase_5E_L_A_cierre_aprobacion_persistente_prenomina.md`.
+- Migracion nueva:
+  `migrations/20260621_001_fase_5e_l_a_nomina_periodos_persistentes.sql`.
+- Tablas nuevas:
+  `trabajador_nomina_periodos`,
+  `trabajador_nomina_periodo_detalles` y
+  `trabajador_nomina_periodo_eventos`.
+- Rutas nuevas:
+  `GET /trabajadores/nomina/periodos/{id}`,
+  `POST /trabajadores/nomina/periodos/cerrar`,
+  `POST /trabajadores/nomina/periodos/{id}/aprobar` y
+  `POST /trabajadores/nomina/periodos/{id}/anular`.
+- Se agrego `TrabajadorNominaPeriodoService` para encapsular cierre, aprobacion y
+  anulacion sin usar Caja.
+- El cierre guarda snapshot administrativo del preview; aprobar/anular solo cambian
+  estado/evento del snapshot.
+- No genera nomina oficial, CFDI, timbrado, dispersion, pago masivo, liquidaciones
+  automaticas, movimientos de Caja, PWA/offline ni `/api/sync`.
+- Siguiente paso seguro: aplicar migracion local con backup, correr checkers y QA
+  manual de cierre/aprobacion/anulacion.
