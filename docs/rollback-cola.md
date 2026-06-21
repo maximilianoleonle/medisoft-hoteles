@@ -2369,3 +2369,21 @@ Rollback:
 
 No ejecutar SQL ni tocar codigo operativo. No revertir pagos laborales, movimientos de
 Caja ni auditorias desde este rollback documental.
+
+## Rollback Fase 5E-G-0
+
+5E-G-0 es contrato documental del preview read-only de nomina por periodo.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_G_0_contrato_nomina_periodo_preview.md`.
+2. Retirar referencias 5E-G-0 de resumen, QA y rollback.
+3. Restaurar la nota de siguiente paso en
+   `docs/fase_5E_E_F_cierre_historial_reversion_reporte_pagos_laborales_caja.md` si
+   se quiere volver al cierre previo sin contrato de preview de nomina.
+
+No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
+`trabajador_anticipos`, `trabajador_prestamos`, `trabajador_pagos_caja`, Caja,
+cortes, movimientos de Caja, permisos/auth, PWA/offline ni `/api/sync`.

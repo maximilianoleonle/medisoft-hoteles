@@ -2176,3 +2176,22 @@ Estado formal:
   liquidaciones automaticas, permisos/auth, PWA/offline ni `/api/sync`.
 - Siguiente paso seguro: contrato independiente antes de preview de nomina por
   periodo, recibo laboral informativo o cualquier nuevo frente financiero.
+
+## 5E-G-0 Contrato preview read-only de nomina por periodo
+
+Estado formal:
+`CONTRATO_5E_G_0_NOMINA_PERIODO_PREVIEW_READ_ONLY_COMPLETADO`.
+
+- Documento creado:
+  `docs/fase_5E_G_0_contrato_nomina_periodo_preview.md`.
+- Es contrato documental; no agrega codigo, rutas, modelos, vistas, formularios,
+  migraciones, permisos, servicios, Caja, datos ni `/api/sync`.
+- Define una futura ruta GET candidata: `/trabajadores/nomina/preview`.
+- Define filtros por periodo, trabajador, busqueda, rol, estado y saldo.
+- Define calculos read-only: bruto del periodo, deducciones informativas, pagos Caja
+  aplicados, reversiones detectadas y neto sugerido.
+- Mantiene prohibidos pagos masivos, nomina automatica, calculo fiscal oficial,
+  recibos oficiales, timbrado, dispersion bancaria, liquidaciones automaticas,
+  permisos/auth, PWA/offline y `/api/sync`.
+- Siguiente paso seguro: `5E-G-A` solo con autorizacion explicita para tocar ruta,
+  controlador, modelo, vista y checkers en modo GET/read-only.

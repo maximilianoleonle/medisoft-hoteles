@@ -2206,3 +2206,28 @@ Revision registrada:
 No avanzar a pagos masivos, nomina automatica, recibos oficiales, dispersion,
 liquidaciones automaticas, permisos/auth, PWA/offline ni `/api/sync` sin contrato
 independiente y autorizacion explicita.
+
+## Fase 5E-G-0 - Contrato preview read-only de nomina por periodo
+
+Estado: contrato documental aplicado.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_G_0_contrato_nomina_periodo_preview.md`.
+2. Confirmar que no agrega codigo, rutas, modelos, vistas, formularios ni migraciones.
+3. Confirmar que la ruta futura candidata es GET/read-only:
+   `/trabajadores/nomina/preview`.
+4. Confirmar que no autoriza pagos masivos, nomina automatica, recibos oficiales,
+   timbrado, dispersion ni liquidaciones automaticas.
+5. Confirmar que mantiene fuera de alcance permisos/auth, PWA/offline y `/api/sync`.
+6. Para una futura 5E-G-A, exigir autorizacion explicita si se toca ruta, controlador,
+   modelo, vista o checkers.
+
+QA futura sugerida para 5E-G-A:
+
+1. Abrir preview sin fechas y confirmar bloqueo por periodo requerido.
+2. Seleccionar periodo valido y confirmar que solo aparecen trabajadores del hotel
+   actual.
+3. Confirmar bruto, deducciones informativas, pagos Caja aplicados y neto sugerido.
+4. Confirmar que pagos revertidos no descuentan como pagos vigentes.
+5. Confirmar que no hay POST, pago masivo, movimiento de Caja ni escritura laboral.
