@@ -2577,7 +2577,7 @@ Estado formal:
 ## 5E-M-A Reporte/export snapshots de pre-nomina
 
 Estado formal:
-`IMPLEMENTACION_5E_M_A_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_QA_TECNICA_COMPLETADA_MANUAL_PENDIENTE`.
+`IMPLEMENTACION_5E_M_A_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_QA_MANUAL_VALIDADA_EN_5E_M_F`.
 
 - Documento creado:
   `docs/fase_5E_M_A_reporte_export_snapshots_prenomina.md`.
@@ -2593,14 +2593,13 @@ Estado formal:
 - No agrega migraciones, datos, pagos laborales, movimientos de Caja, cortes,
   liquidaciones, nomina oficial, CFDI, timbrado, dispersion, PWA/offline ni
   cambios en `/api/sync`.
-- QA tecnica local completada en 5E-M-B; queda pendiente QA manual en navegador.
-- Siguiente paso seguro: si el usuario confirma la prueba manual del
-  reporte/export, cierre documental 5E-M-F.
+- QA tecnica local completada en 5E-M-B.
+- QA manual validada por el usuario y cierre documental aplicado en 5E-M-F.
 
 ## 5E-M-B QA tecnica reporte/export snapshots de pre-nomina
 
 Estado formal:
-`QA_5E_M_B_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_TECNICA_COMPLETADA_MANUAL_PENDIENTE`.
+`QA_5E_M_B_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_MANUAL_VALIDADA_EN_5E_M_F`.
 
 - Documento creado:
   `docs/fase_5E_M_B_qa_tecnica_reporte_export_snapshots_prenomina.md`.
@@ -2623,5 +2622,26 @@ Estado formal:
 - No autoriza nomina oficial, CFDI, timbrado, dispersion, pago masivo,
   liquidaciones automaticas, movimientos de Caja, storage, PWA/offline ni
   cambios en `/api/sync`.
-- Siguiente paso seguro: QA manual del usuario en navegador; si pasa, cierre
-  documental 5E-M-F.
+- QA manual validada por el usuario y cierre documental aplicado en 5E-M-F.
+
+## 5E-M-F Cierre reporte/export snapshots de pre-nomina
+
+Estado formal:
+`CIERRE_5E_M_F_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_QA_MANUAL_VALIDADA`.
+
+- Documento creado:
+  `docs/fase_5E_M_F_cierre_reporte_export_snapshots_prenomina.md`.
+- El usuario confirmo que la prueba manual del reporte/export de snapshots de
+  pre-nomina paso correctamente.
+- Quedan cerradas como GET/read-only:
+  `GET /trabajadores/nomina/periodos/reporte` y
+  `GET /trabajadores/nomina/periodos/exportar`.
+- Evidencia tecnica conservada: reporte HTTP `200`, export CSV HTTP `200`,
+  rutas sin sesion `303` a login, conteos sensibles sin cambio y `/api/sync`
+  HTTP `423`.
+- No autoriza nomina oficial, CFDI, timbrado, dispersion, pago masivo,
+  liquidaciones automaticas, movimientos de Caja desde pre-nomina, storage,
+  PWA/offline ni cambios en `/api/sync`.
+- Siguiente paso seguro: contrato independiente antes de implementar pago
+  controlado desde snapshot, reapertura de snapshots, liquidaciones automaticas
+  o cualquier accion no read-only.

@@ -2697,6 +2697,27 @@ No ejecutar SQL ni tocar `trabajador_nomina_periodos`,
 `trabajador_pagos_caja`, `movimientos_caja`, storage, permisos/auth,
 PWA/offline, IndexedDB, cache names ni `/api/sync`.
 
+## Rollback Fase 5E-M-F
+
+5E-M-F es cierre documental del reporte/export de snapshots de pre-nomina
+despues de QA manual validada. No agrega codigo operativo, rutas, migraciones,
+storage ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_M_F_cierre_reporte_export_snapshots_prenomina.md`.
+2. Restaurar el estado de `docs/fase_5E_M_A_reporte_export_snapshots_prenomina.md`
+   a implementacion con QA tecnica completada y QA manual pendiente.
+3. Restaurar el estado de
+   `docs/fase_5E_M_B_qa_tecnica_reporte_export_snapshots_prenomina.md` a QA
+   tecnica completada con QA manual pendiente.
+4. Retirar referencias 5E-M-F de resumen, QA y rollback.
+
+No ejecutar SQL ni tocar `trabajador_nomina_periodos`,
+`trabajador_nomina_periodo_detalles`, `trabajador_nomina_periodo_eventos`,
+`trabajador_pagos_caja`, `movimientos_caja`, storage, permisos/auth,
+PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
 ## Rollback Fase 5E-I-A
 
 5E-I-A agrega recibo laboral informativo GET/read-only.

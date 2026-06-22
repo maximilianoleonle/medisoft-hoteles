@@ -1,7 +1,7 @@
 # Fase 5E-M-A - Reporte/export snapshots de pre-nomina
 
 Estado formal:
-`IMPLEMENTACION_5E_M_A_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_QA_TECNICA_COMPLETADA_MANUAL_PENDIENTE`.
+`IMPLEMENTACION_5E_M_A_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_QA_MANUAL_VALIDADA_EN_5E_M_F`.
 
 ## Objetivo
 
@@ -52,10 +52,11 @@ La QA tecnica local quedo documentada en:
 `docs/fase_5E_M_B_qa_tecnica_reporte_export_snapshots_prenomina.md`.
 
 Estado posterior a QA tecnica:
-`QA_5E_M_B_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_TECNICA_COMPLETADA_MANUAL_PENDIENTE`.
+`QA_5E_M_B_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_MANUAL_VALIDADA_EN_5E_M_F`.
 
-Queda pendiente la confirmacion manual del usuario en navegador antes de cerrar
-5E-M-F.
+La confirmacion manual del usuario quedo cerrada en:
+
+`docs/fase_5E_M_F_cierre_reporte_export_snapshots_prenomina.md`.
 
 ## Rollback
 

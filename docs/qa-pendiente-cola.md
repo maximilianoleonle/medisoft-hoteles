@@ -2711,7 +2711,7 @@ QA futura sugerida para 5E-M-A:
 
 ## Fase 5E-M-A - Reporte/export snapshots de pre-nomina
 
-Estado: QA tecnica local completada; QA manual pendiente.
+Estado: cierre documental aplicado despues de QA manual validada.
 
 Revision manual recomendada:
 
@@ -2753,9 +2753,22 @@ Resultado QA tecnica 5E-M-B:
 - Preflight pagos laborales Caja: `OK: 62`, `WARNING: 0`, `ERROR: 0`.
 - Health general: `OK: 317`, `WARNING: 25`, `ERROR: 0`.
 
-Pendiente para cierre 5E-M-F:
+Resultado QA manual:
 
-1. Confirmacion manual del usuario de que el reporte carga correctamente.
-2. Confirmacion manual del usuario de que filtros y CSV se ven correctos en
-   navegador.
-3. Confirmacion manual de que `Ver snapshot` abre el detalle esperado.
+El usuario confirmo que la prueba manual del reporte/export paso correctamente.
+El cierre documental quedo aplicado en:
+
+`docs/fase_5E_M_F_cierre_reporte_export_snapshots_prenomina.md`.
+
+## Fase 5E-M-F - Cierre reporte/export snapshots de pre-nomina
+
+Estado: cierre documental aplicado despues de QA manual validada.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_M_F_cierre_reporte_export_snapshots_prenomina.md`.
+2. Confirmar que las rutas cerradas siguen siendo solo GET/read-only.
+3. Confirmar que el cierre no autoriza pago controlado desde snapshot,
+   reapertura de snapshots, liquidaciones automaticas, nomina oficial, CFDI,
+   timbrado, dispersion, movimientos de Caja desde pre-nomina, PWA/offline ni
+   cambios en `/api/sync`.

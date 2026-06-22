@@ -1,7 +1,7 @@
 # Fase 5E-M-B - QA tecnica reporte/export snapshots de pre-nomina
 
 Estado formal:
-`QA_5E_M_B_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_TECNICA_COMPLETADA_MANUAL_PENDIENTE`.
+`QA_5E_M_B_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_MANUAL_VALIDADA_EN_5E_M_F`.
 
 ## Objetivo
 
@@ -92,7 +92,9 @@ Esta QA tecnica no autoriza:
 - PWA/offline;
 - cambios en `/api/sync`.
 
-## Siguiente paso seguro
+## Confirmacion manual
 
-El usuario debe hacer QA manual en navegador sobre el reporte/export. Si pasa,
-se puede cerrar documentalmente como 5E-M-F.
+El usuario confirmo que la prueba manual del reporte/export paso correctamente.
+El cierre documental queda registrado en:
+
+`docs/fase_5E_M_F_cierre_reporte_export_snapshots_prenomina.md`.
