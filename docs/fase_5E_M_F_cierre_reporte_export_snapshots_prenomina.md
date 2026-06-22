@@ -79,3 +79,7 @@ Este cierre no autoriza:
 Abrir contrato independiente antes de implementar pago controlado desde snapshot,
 reapertura de snapshots, liquidaciones automaticas, nomina oficial, CFDI,
 timbrado, dispersion o cualquier accion que deje de ser read-only.
+
+Contrato siguiente abierto en:
+
+`docs/fase_5E_N_0_contrato_pago_snapshot_prenomina_caja.md`.

@@ -2772,3 +2772,35 @@ Revision recomendada:
    reapertura de snapshots, liquidaciones automaticas, nomina oficial, CFDI,
    timbrado, dispersion, movimientos de Caja desde pre-nomina, PWA/offline ni
    cambios en `/api/sync`.
+
+## Fase 5E-N-0 - Contrato pago desde snapshot de pre-nomina con Caja
+
+Estado: contrato documental aplicado; sin QA funcional porque no hay
+implementacion operativa.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_N_0_contrato_pago_snapshot_prenomina_caja.md`.
+2. Confirmar que no agrega codigo, rutas, modelos, servicios, vistas,
+   migraciones, permisos, datos, storage, Caja, PWA/offline ni `/api/sync`.
+3. Confirmar que el futuro pago seria individual por trabajador, no masivo.
+4. Confirmar que solo snapshots `aprobado` serian elegibles.
+5. Confirmar que el saldo vivo de Caja debe recalcularse y capearse contra el
+   pendiente del snapshot.
+6. Confirmar que el snapshot aprobado debe permanecer inmutable.
+7. Confirmar que cualquier migracion de trazabilidad futura requiere backup y
+   autorizacion explicita.
+
+QA futura sugerida para 5E-N-A:
+
+1. Pagar sin sesion debe redirigir a login.
+2. Pagar sin CSRF o sin token debe bloquearse.
+3. Snapshot cerrado o anulado debe bloquearse.
+4. Snapshot/detalle de otro hotel debe bloquearse.
+5. Monto mayor al pendiente del snapshot debe bloquearse.
+6. Monto mayor al saldo vivo recalculado debe bloquearse.
+7. Pago individual valido debe crear movimiento Caja, pago laboral y auditoria.
+8. El snapshot no debe cambiar.
+9. No debe crear pagos masivos, CFDI, timbrado ni dispersion.
+10. `/api/sync` debe seguir bloqueado con HTTP 423 y
+    `sync_temporarily_disabled`.

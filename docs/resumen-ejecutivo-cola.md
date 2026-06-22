@@ -2645,3 +2645,29 @@ Estado formal:
 - Siguiente paso seguro: contrato independiente antes de implementar pago
   controlado desde snapshot, reapertura de snapshots, liquidaciones automaticas
   o cualquier accion no read-only.
+
+## 5E-N-0 Contrato pago desde snapshot de pre-nomina con Caja
+
+Estado formal:
+`CONTRATO_5E_N_0_PAGO_SNAPSHOT_PRENOMINA_CAJA_COMPLETADO`.
+
+- Documento creado:
+  `docs/fase_5E_N_0_contrato_pago_snapshot_prenomina_caja.md`.
+- Es contrato documental; no agrega codigo, rutas, modelos, servicios, vistas,
+  migraciones, permisos, datos, storage, Caja, PWA/offline ni `/api/sync`.
+- Define un futuro pago individual controlado desde snapshot aprobado, nunca
+  pago masivo ni nomina oficial.
+- Regla central: el snapshot solo da contexto y tope; el saldo real debe
+  recalcularse en vivo con Caja. Monto maximo futuro:
+  `min(pendiente_pago_sugerido_snapshot, saldo_laboral_disponible_vivo)`.
+- Recomienda trazabilidad fuerte opcional con migracion futura nullable en
+  `trabajador_pagos_caja` para `nomina_periodo_id` y
+  `nomina_periodo_detalle_id`; no queda autorizada por este contrato.
+- Mantiene inmutable el snapshot: no recalcula totales, no cambia estado y no
+  modifica detalles por pagar.
+- No autoriza pago masivo, liquidacion automatica de anticipos/prestamos, CFDI,
+  timbrado, dispersion, movimientos de Caja desde pre-nomina sin fase posterior,
+  storage, PWA/offline ni cambios en `/api/sync`.
+- Siguiente paso seguro: 5E-N-A solo con autorizacion explicita para rutas,
+  controlador, servicio/modelo, vista, Caja, auditoria, checkers, prueba rollback
+  y, si se decide trazabilidad fuerte, migracion con backup.

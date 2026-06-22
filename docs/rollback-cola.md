@@ -2718,6 +2718,25 @@ No ejecutar SQL ni tocar `trabajador_nomina_periodos`,
 `trabajador_pagos_caja`, `movimientos_caja`, storage, permisos/auth,
 PWA/offline, IndexedDB, cache names ni `/api/sync`.
 
+## Rollback Fase 5E-N-0
+
+5E-N-0 es contrato documental para pago individual futuro desde snapshot
+aprobado de pre-nomina con Caja. No crea codigo, rutas, migraciones, storage ni
+datos.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_N_0_contrato_pago_snapshot_prenomina_caja.md`.
+2. Retirar referencias 5E-N-0 de resumen, QA y rollback.
+3. Restaurar la nota de siguiente paso en
+   `docs/fase_5E_M_F_cierre_reporte_export_snapshots_prenomina.md` si se quiere
+   volver al cierre previo sin contrato de pago desde snapshot.
+
+No ejecutar SQL ni tocar `trabajador_nomina_periodos`,
+`trabajador_nomina_periodo_detalles`, `trabajador_nomina_periodo_eventos`,
+`trabajador_pagos_caja`, `movimientos_caja`, `logs_auditoria`, storage,
+permisos/auth, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
 ## Rollback Fase 5E-I-A
 
 5E-I-A agrega recibo laboral informativo GET/read-only.
