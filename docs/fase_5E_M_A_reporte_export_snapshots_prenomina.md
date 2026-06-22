@@ -1,7 +1,7 @@
 # Fase 5E-M-A - Reporte/export snapshots de pre-nomina
 
 Estado formal:
-`IMPLEMENTACION_5E_M_A_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_LOCAL_QA_PENDIENTE`.
+`IMPLEMENTACION_5E_M_A_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_QA_TECNICA_COMPLETADA_MANUAL_PENDIENTE`.
 
 ## Objetivo
 
@@ -44,6 +44,18 @@ persistentes de pre-nomina creados en 5E-L-A.
 9. Confirmar que la vista no contiene POST, CSRF, pago, timbrado ni dispersion.
 10. Confirmar que `/api/sync` sigue bloqueado con HTTP 423 y
     `sync_temporarily_disabled`.
+
+## QA tecnica local
+
+La QA tecnica local quedo documentada en:
+
+`docs/fase_5E_M_B_qa_tecnica_reporte_export_snapshots_prenomina.md`.
+
+Estado posterior a QA tecnica:
+`QA_5E_M_B_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_TECNICA_COMPLETADA_MANUAL_PENDIENTE`.
+
+Queda pendiente la confirmacion manual del usuario en navegador antes de cerrar
+5E-M-F.
 
 ## Rollback
 

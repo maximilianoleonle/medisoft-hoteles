@@ -2577,7 +2577,7 @@ Estado formal:
 ## 5E-M-A Reporte/export snapshots de pre-nomina
 
 Estado formal:
-`IMPLEMENTACION_5E_M_A_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_LOCAL_QA_PENDIENTE`.
+`IMPLEMENTACION_5E_M_A_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_QA_TECNICA_COMPLETADA_MANUAL_PENDIENTE`.
 
 - Documento creado:
   `docs/fase_5E_M_A_reporte_export_snapshots_prenomina.md`.
@@ -2593,5 +2593,35 @@ Estado formal:
 - No agrega migraciones, datos, pagos laborales, movimientos de Caja, cortes,
   liquidaciones, nomina oficial, CFDI, timbrado, dispersion, PWA/offline ni
   cambios en `/api/sync`.
-- Siguiente paso seguro: correr QA local del reporte/export; si pasa, cierre
+- QA tecnica local completada en 5E-M-B; queda pendiente QA manual en navegador.
+- Siguiente paso seguro: si el usuario confirma la prueba manual del
+  reporte/export, cierre documental 5E-M-F.
+
+## 5E-M-B QA tecnica reporte/export snapshots de pre-nomina
+
+Estado formal:
+`QA_5E_M_B_REPORTE_EXPORT_SNAPSHOTS_PRENOMINA_TECNICA_COMPLETADA_MANUAL_PENDIENTE`.
+
+- Documento creado:
+  `docs/fase_5E_M_B_qa_tecnica_reporte_export_snapshots_prenomina.md`.
+- QA HTTP local ejecutada contra `http://localhost:8080` con sesion temporal de
+  `adminmax` (`usuario_id=24`) en hotel `Maximiliano` (`hotel_id=4`).
+- `GET /trabajadores/nomina/periodos/reporte` con sesion activa respondio
+  HTTP `200`, mostro enlace de exportacion y enlace al detalle del snapshot.
+- `GET /trabajadores/nomina/periodos/exportar?estado=anulado&tipo_periodo=semanal`
+  respondio HTTP `200` y CSV en memoria con snapshot local `#2`.
+- Rutas sin sesion respondieron HTTP `303` a `/login`.
+- Conteos sensibles sin cambio: `movimientos_caja=1413`,
+  `trabajador_pagos_caja=1`, `trabajador_nomina_periodos=1`,
+  `trabajador_nomina_periodo_detalles=1` y
+  `trabajador_nomina_periodo_eventos=3`.
+- `/api/sync` con sesion activa sigue en HTTP `423` y
+  `sync_temporarily_disabled`.
+- Validaciones: lint PHP OK; preflight pagos laborales Caja `OK: 62`,
+  `WARNING: 0`, `ERROR: 0`; health general `OK: 317`, `WARNING: 25`,
+  `ERROR: 0`.
+- No autoriza nomina oficial, CFDI, timbrado, dispersion, pago masivo,
+  liquidaciones automaticas, movimientos de Caja, storage, PWA/offline ni
+  cambios en `/api/sync`.
+- Siguiente paso seguro: QA manual del usuario en navegador; si pasa, cierre
   documental 5E-M-F.

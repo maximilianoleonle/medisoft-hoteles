@@ -2711,7 +2711,7 @@ QA futura sugerida para 5E-M-A:
 
 ## Fase 5E-M-A - Reporte/export snapshots de pre-nomina
 
-Estado: implementacion local pendiente de QA manual.
+Estado: QA tecnica local completada; QA manual pendiente.
 
 Revision manual recomendada:
 
@@ -2735,3 +2735,27 @@ Resultado automatico esperado:
   checkers.
 - Preflight pagos laborales Caja: `ERROR: 0`.
 - Health general: `ERROR: 0`.
+
+Resultado QA tecnica 5E-M-B:
+
+- `GET /trabajadores/nomina/periodos/reporte` con sesion activa respondio
+  HTTP `200`.
+- `GET /trabajadores/nomina/periodos/exportar?estado=anulado&tipo_periodo=semanal`
+  respondio HTTP `200` y devolvio CSV en memoria con snapshot `#2`.
+- Las dos rutas sin sesion respondieron HTTP `303` a `/login`.
+- Conteos sensibles sin cambio: `movimientos_caja=1413`,
+  `trabajador_pagos_caja=1`, `trabajador_nomina_periodos=1`,
+  `trabajador_nomina_periodo_detalles=1`,
+  `trabajador_nomina_periodo_eventos=3`.
+- `/api/sync` con sesion activa respondio HTTP `423` y
+  `sync_temporarily_disabled`.
+- Lint PHP: OK.
+- Preflight pagos laborales Caja: `OK: 62`, `WARNING: 0`, `ERROR: 0`.
+- Health general: `OK: 317`, `WARNING: 25`, `ERROR: 0`.
+
+Pendiente para cierre 5E-M-F:
+
+1. Confirmacion manual del usuario de que el reporte carga correctamente.
+2. Confirmacion manual del usuario de que filtros y CSV se ven correctos en
+   navegador.
+3. Confirmacion manual de que `Ver snapshot` abre el detalle esperado.
