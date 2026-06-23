@@ -162,7 +162,7 @@ $prioridadLabels = [
                     <p class="tk-subtitle">Resumen de tus tareas por estado, prioridad, categor&iacute;a, trabajador y habitaci&oacute;n. Solo para consultar.</p>
                 </div>
             </div>
-            <a class="tk-btn" href="<?= url('tareas') ?>"><i class="fas fa-arrow-left"></i> Volver a tareas</a>
+            <a class="tk-btn" href="<?= back_url('tareas') ?>"><i class="fas fa-arrow-left"></i> Volver a tareas</a>
         </section>
 
         <?php if (!$tablaDisponible): ?>

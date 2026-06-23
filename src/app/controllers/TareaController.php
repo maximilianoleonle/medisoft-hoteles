@@ -154,10 +154,13 @@ class TareaController extends Controller
             $tarea = $this->tareaModel->buscarPorIdHotel($tareaId, $hotelId);
             $this->auditar('tareas.creada', $tareaId, $tarea);
 
+            clear_old_input();
             set_mensaje('Tarea operativa creada correctamente.', 'success');
             $this->redirect('tareas/' . $tareaId);
         } catch (Throwable $e) {
             set_mensaje('No se pudo crear la tarea: ' . $e->getMessage(), 'error');
+            save_old_input($_POST);
+            save_form_errors($this->erroresCamposTarea([$e->getMessage()]));
             $this->redirect('tareas/crear');
         }
     }
@@ -336,6 +339,43 @@ class TareaController extends Controller
         }
 
         return $this->documentoModel->documentosPorTareaHotel($hotelId, $tareaId, 50);
+    }
+
+    private function erroresCamposTarea(array $errores): array
+    {
+        $fieldErrors = [];
+
+        foreach ($errores as $mensaje) {
+            $mensaje = trim((string)$mensaje);
+            if ($mensaje === '') {
+                continue;
+            }
+
+            $lower = strtolower($mensaje);
+            $campo = null;
+
+            if (strpos($lower, 'titulo') !== false) {
+                $campo = 'titulo';
+            } elseif (strpos($lower, 'descripcion') !== false) {
+                $campo = 'descripcion';
+            } elseif (strpos($lower, 'categoria') !== false) {
+                $campo = 'categoria';
+            } elseif (strpos($lower, 'prioridad') !== false) {
+                $campo = 'prioridad';
+            } elseif (strpos($lower, 'habitacion') !== false) {
+                $campo = 'habitacion_id';
+            } elseif (strpos($lower, 'fecha limite') !== false || strpos($lower, 'limite') !== false || strpos($lower, 'anterior') !== false) {
+                $campo = 'fecha_limite';
+            } elseif (strpos($lower, 'fecha programada') !== false || strpos($lower, 'programada') !== false || strpos($lower, 'fecha') !== false) {
+                $campo = 'fecha_programada';
+            }
+
+            if ($campo !== null) {
+                $fieldErrors[$campo][] = $mensaje;
+            }
+        }
+
+        return $fieldErrors;
     }
 
     private function datosFormulario(): array

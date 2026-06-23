@@ -233,9 +233,11 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
             ];
         }
     ?>
+    <?php $layoutFieldErrors = function_exists('get_form_errors') ? get_form_errors(true) : []; ?>
     <script>
         window.BASE_URL = '<?= rtrim(url(''), '/') ?>';
         window.API_URL = '<?= url('api') ?>';
+        window.MEDISOFT_FIELD_ERRORS = <?= json_encode($layoutFieldErrors, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
         window.MEDISOFT_OFFLINE_ENABLED = <?= $layoutOfflineHoteleroActivo ? 'true' : 'false' ?>;
         <?php if ($medisoftContext): ?>
         window.MEDISOFT_CONTEXT = <?= json_encode($medisoftContext, JSON_UNESCAPED_SLASHES) ?>;

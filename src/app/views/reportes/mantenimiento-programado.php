@@ -85,8 +85,12 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
 .mant-prog-inline-form{margin-top:9px}
 .mant-prog-activate{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:7px;background:#0f766e;color:#fff;font-size:12px;font-weight:900;padding:8px 10px;cursor:pointer}
 .mant-prog-activate:hover{background:#115e59}
+.mant-prog-activate.is-confirming{background:#92400e}
 .mant-prog-task-create{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:7px;background:#172033;color:#fff;font-size:12px;font-weight:900;padding:8px 10px;cursor:pointer}
 .mant-prog-task-create:hover{background:#0f172a}
+.mant-prog-task-create.is-confirming{background:#92400e}
+.mant-prog-toast{position:fixed;right:22px;bottom:22px;z-index:15000;max-width:min(390px,calc(100vw - 32px));border:1px solid #f3d08a;border-radius:14px;background:#fff8e8;color:#8a5b12;padding:12px 14px;box-shadow:0 18px 42px rgba(24,32,48,.18);font-size:13px;font-weight:850;line-height:1.42;opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+.mant-prog-toast.is-visible{opacity:1;transform:translateY(0)}
 .mant-prog-empty{padding:38px 20px;text-align:center;color:#64748b}
 .mant-prog-empty strong{display:block;color:#172033;font-size:18px;margin-bottom:8px}
 .mant-prog-note{padding:14px 18px;background:#f8fafc;color:#475569;border-top:1px solid #e5e7eb;font-size:13px;font-weight:700}
@@ -102,7 +106,7 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
             <p class="mant-prog-subtitle">Lectura de mantenimientos vencidos o proximos para el hotel actual. Esta pantalla no activa mantenimientos, no cambia habitaciones y no ejecuta automatizaciones.</p>
         </div>
         <div class="mant-prog-actions">
-            <a class="mant-prog-btn" href="<?= url('reportes') ?>"><i class="fas fa-arrow-left"></i> Reportes</a>
+            <a class="mant-prog-btn" href="<?= back_url('reportes') ?>"><i class="fas fa-arrow-left"></i> Reportes</a>
             <a class="mant-prog-btn" href="<?= url('reportes/mantenimiento') ?>"><i class="fas fa-chart-line"></i> Reporte general</a>
         </div>
     </div>
@@ -190,7 +194,9 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
                                         <form class="mant-prog-inline-form"
                                               method="POST"
                                               action="<?= url('habitaciones/activar-mantenimiento-programado/' . (int)($item['id'] ?? 0)) ?>"
-                                              onsubmit="return confirm('Activar este mantenimiento programado y marcar la habitacion en mantenimiento?')">
+                                              data-mant-confirm="1"
+                                              data-confirm-label="Confirmar activacion"
+                                              data-confirm-message="Se activara el mantenimiento programado y la habitacion quedara en mantenimiento.">
                                             <?= csrf_field() ?>
                                             <input type="hidden" name="dias" value="<?= (int)$dias ?>">
                                             <input type="hidden" name="return_to" value="preview">
@@ -226,7 +232,9 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
                                         <form class="mant-prog-inline-form"
                                               method="POST"
                                               action="<?= url('tareas/desde-mantenimiento/' . (int)($item['id'] ?? 0)) ?>"
-                                              onsubmit="return confirm('Crear una tarea operativa vinculada a este mantenimiento?')">
+                                              data-mant-confirm="1"
+                                              data-confirm-label="Confirmar tarea"
+                                              data-confirm-message="Se creara una tarea operativa vinculada a este mantenimiento.">
                                             <?= csrf_field() ?>
                                             <input type="hidden" name="dias" value="<?= (int)$dias ?>">
                                             <button type="submit" class="mant-prog-task-create">
@@ -248,3 +256,61 @@ $puedeActivarMantenimiento = function_exists('can') ? can('habitaciones.mantenim
         </div>
     </section>
 </div>
+
+<script>
+(function() {
+    function showMantToast(message, duration = 7000) {
+        let toast = document.getElementById('mantProgToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'mantProgToast';
+            toast.className = 'mant-prog-toast';
+            toast.setAttribute('role', 'status');
+            toast.setAttribute('aria-live', 'polite');
+            document.body.appendChild(toast);
+        }
+
+        window.clearTimeout(toast._hideTimer);
+        toast.textContent = message;
+        requestAnimationFrame(() => toast.classList.add('is-visible'));
+        toast._hideTimer = window.setTimeout(() => toast.classList.remove('is-visible'), duration);
+    }
+
+    function resetMantConfirm(form) {
+        if (!form) return;
+
+        delete form.dataset.confirmedAction;
+        window.clearTimeout(form._confirmTimer);
+        const button = form.querySelector('button[type="submit"]');
+        if (button && button.dataset.originalHtml) {
+            button.innerHTML = button.dataset.originalHtml;
+            delete button.dataset.originalHtml;
+        }
+        button?.classList.remove('is-confirming');
+    }
+
+    document.addEventListener('submit', function(event) {
+        const form = event.target instanceof HTMLFormElement ? event.target : null;
+        if (!form || form.dataset.mantConfirm !== '1') return;
+        if (form.dataset.confirmedAction === '1') return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        document.querySelectorAll('form[data-mant-confirm="1"]').forEach(otherForm => {
+            if (otherForm !== form) resetMantConfirm(otherForm);
+        });
+
+        form.dataset.confirmedAction = '1';
+        const button = form.querySelector('button[type="submit"]');
+        if (button) {
+            button.dataset.originalHtml = button.innerHTML;
+            button.classList.add('is-confirming');
+            button.innerHTML = `<i class="fas fa-check"></i> ${form.dataset.confirmLabel || 'Confirmar'}`;
+        }
+
+        showMantToast(`${form.dataset.confirmMessage || 'Confirma esta accion.'} Presiona el boton otra vez para continuar.`);
+        form._confirmTimer = window.setTimeout(() => resetMantConfirm(form), 7000);
+    }, true);
+})();
+</script>

@@ -36,7 +36,7 @@ class CompraController extends Controller
         $hotelId = $this->hotelIdActual();
         $filtros = [
             'buscar' => $this->getQuery('buscar', ''),
-            'estado' => $this->getQuery('estado', 'borrador'),
+            'estado' => $this->getQuery('estado', 'todos'),
         ];
 
         $compras = [];
@@ -207,10 +207,13 @@ class CompraController extends Controller
                 $this->usuarioIdActual()
             );
 
+            clear_old_input();
             set_mensaje('Borrador de compra #' . $compraId . ' creado correctamente.', 'success');
             $this->redirect('compras');
         } catch (Throwable $e) {
             set_mensaje('Error: ' . $e->getMessage(), 'error');
+            save_old_input($_POST);
+            save_form_errors($this->erroresCamposCompra([$e->getMessage()]));
             $this->redirect('compras/crear');
         }
     }
@@ -248,6 +251,43 @@ class CompraController extends Controller
             set_mensaje('Error al recibir compra: ' . $e->getMessage(), 'error');
             $this->redirect('compras');
         }
+    }
+
+    private function erroresCamposCompra(array $errores): array
+    {
+        $fieldErrors = [];
+
+        foreach ($errores as $mensaje) {
+            $mensaje = trim((string)$mensaje);
+            if ($mensaje === '') {
+                continue;
+            }
+
+            $lower = strtolower($mensaje);
+            $campo = null;
+
+            if (strpos($lower, 'proveedor') !== false) {
+                $campo = 'proveedor_id';
+            } elseif (strpos($lower, 'folio') !== false) {
+                $campo = 'folio';
+            } elseif (strpos($lower, 'fecha') !== false) {
+                $campo = 'fecha_compra';
+            } elseif (strpos($lower, 'producto') !== false || strpos($lower, 'detalle') !== false) {
+                $campo = 'producto_id';
+            } elseif (strpos($lower, 'cantidad') !== false) {
+                $campo = 'cantidad';
+            } elseif (strpos($lower, 'costo') !== false || strpos($lower, 'importe') !== false) {
+                $campo = 'costo_unitario';
+            } elseif (strpos($lower, 'nota') !== false) {
+                $campo = 'notas';
+            }
+
+            if ($campo !== null) {
+                $fieldErrors[$campo][] = $mensaje;
+            }
+        }
+
+        return $fieldErrors;
     }
 
     private function detallesFormulario(): array

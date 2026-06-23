@@ -175,7 +175,7 @@ $fechaFin = (string)($filtros['fecha_fin'] ?? '');
                 <div>
                     <strong>Este reporte todav&iacute;a no est&aacute; disponible.</strong>
                     <p>P&iacute;dele al administrador del sistema que habilite el m&oacute;dulo de compras.<?php if (!empty($errorTecnico)): ?> <span style="opacity:.75">(<?= comp_report_safe($errorTecnico, '') ?>)</span><?php endif; ?></p>
-                    <a class="cp-btn cp-btn-muted mt-4" href="<?= url('compras?estado=recibida') ?>" style="display:inline-flex">
+                    <a class="cp-btn cp-btn-muted mt-4" href="<?= back_url('compras?estado=recibida') ?>" style="display:inline-flex">
                         <i class="fas fa-arrow-left"></i>
                         Volver a compras
                     </a>
@@ -191,7 +191,7 @@ $fechaFin = (string)($filtros['fecha_fin'] ?? '');
             </section>
 
             <section class="cp-toolbar">
-                <a class="cp-btn cp-btn-muted" href="<?= url('compras?estado=recibida') ?>">
+                <a class="cp-btn cp-btn-muted" href="<?= back_url('compras?estado=recibida') ?>">
                     <i class="fas fa-arrow-left"></i>
                     Volver a compras
                 </a>

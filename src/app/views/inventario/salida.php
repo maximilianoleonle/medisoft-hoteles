@@ -20,7 +20,7 @@
                     <i class="fas fa-arrow-up"></i>
                     Salida de Inventario
                 </h1>
-                <a href="<?= url('inventario') ?>" 
+                <a href="<?= back_url('inventario') ?>"
                    class="bg-white/20 text-white px-3 py-1.5 rounded-lg hover:bg-white/30 transition text-sm flex items-center gap-2">
                     <i class="fas fa-arrow-left"></i>
                     Volver
@@ -73,6 +73,7 @@
                                        min="1"
                                        required>
                                 <small class="text-gray-500" id="stock_info"></small>
+                                <small class="text-red-600 font-semibold hidden" id="stock_error" aria-live="polite"></small>
                             </div>
                             
                             <div>
@@ -165,11 +166,14 @@ document.getElementById('producto_id').addEventListener('change', function() {
     } else {
         stockInfo.textContent = '';
     }
+
+    validarStockSalida();
 });
 
 // Actualizar cuando cambie la cantidad
 document.getElementById('cantidad').addEventListener('input', function() {
     updatePreview();
+    validarStockSalida();
 });
 
 // Vista previa actualizada
@@ -239,18 +243,62 @@ document.getElementById('motivo_tipo').addEventListener('change', function() {
 
 // Validación del formulario
 document.getElementById('formSalida').addEventListener('submit', function(e) {
-    const productoSelect = document.getElementById('producto_id');
-    const cantidad = parseInt(document.getElementById('cantidad').value) || 0;
-    const selectedOption = productoSelect.options[productoSelect.selectedIndex];
-    const stockActual = parseInt(selectedOption.getAttribute('data-stock')) || 0;
-    
-    // Verificar stock suficiente
-    if (cantidad > stockActual) {
+    if (!validarStockSalida(true)) {
         e.preventDefault();
-        alert(`No hay suficiente stock. Stock disponible: ${stockActual}`);
         return false;
     }
 });
+
+function validarStockSalida(enviar = false) {
+    const productoSelect = document.getElementById('producto_id');
+    const cantidadInput = document.getElementById('cantidad');
+    const stockError = document.getElementById('stock_error');
+    const cantidad = parseInt(cantidadInput.value) || 0;
+    const selectedOption = productoSelect.options[productoSelect.selectedIndex];
+    const stockActual = parseInt(selectedOption.getAttribute('data-stock')) || 0;
+    let mensaje = '';
+
+    if (productoSelect.value && cantidad > stockActual) {
+        mensaje = `No hay suficiente stock. Disponible: ${stockActual}.`;
+    }
+
+    cantidadInput.setCustomValidity(mensaje);
+    cantidadInput.classList.toggle('ms-form-invalid', Boolean(mensaje));
+
+    if (mensaje) {
+        cantidadInput.setAttribute('aria-invalid', 'true');
+    } else {
+        cantidadInput.removeAttribute('aria-invalid');
+        const errorId = cantidadInput.dataset.msErrorId;
+        if (errorId) {
+            document.getElementById(errorId)?.remove();
+            const describedBy = String(cantidadInput.getAttribute('aria-describedby') || '')
+                .split(/\s+/)
+                .filter(Boolean)
+                .filter(id => id !== errorId)
+                .join(' ');
+            if (describedBy) {
+                cantidadInput.setAttribute('aria-describedby', describedBy);
+            } else {
+                cantidadInput.removeAttribute('aria-describedby');
+            }
+        }
+        if (document.getElementById('formSalida')?.checkValidity()) {
+            document.getElementById('formSalida')?.querySelector('.ms-form-error-summary')?.remove();
+        }
+    }
+
+    if (stockError) {
+        stockError.textContent = mensaje;
+        stockError.classList.toggle('hidden', !mensaje);
+    }
+
+    if (mensaje && enviar) {
+        cantidadInput.focus();
+    }
+
+    return !mensaje;
+}
 
 // Animación de carga
 document.addEventListener('DOMContentLoaded', function() {

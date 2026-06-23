@@ -450,7 +450,12 @@ public function estadisticasImagenesAction() {
  public function getProductosDescuentoReservacion($id)
 {
     // LEGACY INVENTARIO FASE 2D: congelado, no ruteado; usar InventarioService.
-    header('Content-Type: application/json');
+    View::renderJSON([
+        'success' => false,
+        'error' => 'legacy_endpoint_disabled',
+        'message' => 'Este endpoint legacy no esta disponible. Use el preview moderno de inventario.',
+    ], 410);
+    return;
     
     try {
         // Obtener habitaciones de la reservación
@@ -467,8 +472,7 @@ public function estadisticasImagenesAction() {
             return;
         }
         
-        require_once __DIR__ . '/../services/ConfiguracionHabitacionService.php';
-        $configService = new \App\Services\ConfiguracionHabitacionService();
+        throw new RuntimeException('Endpoint legacy deshabilitado');
         
         $todosProductos = [];
         

@@ -5,6 +5,8 @@ $detalles = is_array($periodo['detalles'] ?? null) ? $periodo['detalles'] : [];
 $eventos = is_array($periodo['eventos'] ?? null) ? $periodo['eventos'] : [];
 $aprobarToken = $aprobarToken ?? null;
 $anularToken = $anularToken ?? null;
+$pagosSnapshot = is_array($pagosSnapshot ?? null) ? $pagosSnapshot : [];
+$pagoSnapshotTokens = is_array($pagoSnapshotTokens ?? null) ? $pagoSnapshotTokens : [];
 
 if (!function_exists('trab_nom_det_safe')) {
     function trab_nom_det_safe($value, $fallback = '-')
@@ -142,6 +144,45 @@ if (!function_exists('trab_nom_det_status_label')) {
     background: #fff;
     padding: 0 12px;
 }
+.nomina-detalle .nom-det-select {
+    width: 100%;
+    min-height: 38px;
+    border: 1px solid var(--nom-line);
+    background: #fff;
+    padding: 0 12px;
+}
+.nomina-detalle .nom-det-paybox {
+    min-width: 280px;
+}
+.nomina-detalle .nom-det-payfacts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+}
+.nomina-detalle .nom-det-payfact {
+    border: 1px solid var(--nom-line);
+    background: color-mix(in srgb, var(--nom-brand) 4%, #f8fafc);
+    padding: 7px 8px;
+}
+.nomina-detalle .nom-det-payfact span {
+    display: block;
+    color: #64748b;
+    font-size: .64rem;
+    font-weight: 900;
+    letter-spacing: .05em;
+    line-height: 1.1;
+    text-transform: uppercase;
+}
+.nomina-detalle .nom-det-payfact strong {
+    display: block;
+    margin-top: 3px;
+    color: #243142;
+    font-size: .86rem;
+    font-weight: 900;
+}
+.nomina-detalle .nom-det-payfacts-muted {
+    opacity: .82;
+}
 .nomina-detalle .nom-det-label {
     color: #64748b;
     font-size: .7rem;
@@ -205,7 +246,7 @@ if (!function_exists('trab_nom_det_status_label')) {
                 </span>
                 <span class="nom-det-badge">
                     <i class="fas fa-lock"></i>
-                    Sin pago real
+                    Pago individual controlado
                 </span>
             </div>
         </div>
@@ -214,13 +255,17 @@ if (!function_exists('trab_nom_det_status_label')) {
     <section class="p-6 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap gap-2">
-                <a class="nom-det-btn" href="<?= url('trabajadores/nomina/periodos') ?>">
+                <a class="nom-det-btn" href="<?= back_url('trabajadores/nomina/periodos') ?>">
                     <i class="fas fa-arrow-left"></i>
                     Periodos
                 </a>
                 <a class="nom-det-btn" href="<?= url('trabajadores/nomina/preview?fecha_inicio=' . urlencode((string)($periodo['fecha_inicio'] ?? '')) . '&fecha_fin=' . urlencode((string)($periodo['fecha_fin'] ?? ''))) ?>">
                     <i class="fas fa-table-list"></i>
                     Preview actual
+                </a>
+                <a class="nom-det-btn" href="<?= url('trabajadores/nomina/periodos/pagos-snapshot?periodo_id=' . (int)($periodo['id'] ?? 0)) ?>">
+                    <i class="fas fa-link"></i>
+                    Conciliacion pagos
                 </a>
             </div>
         </div>
@@ -290,10 +335,22 @@ if (!function_exists('trab_nom_det_status_label')) {
                                         <th class="text-right">Caja aplicada</th>
                                         <th class="text-right">Neto</th>
                                         <th class="text-right">Pendiente</th>
+                                        <th class="text-left">Pago Caja</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php foreach ($detalles as $detalle): ?>
+                                        <?php
+                                        $detalleId = (int)($detalle['id'] ?? 0);
+                                        $evaluacionPago = $pagosSnapshot[$detalleId] ?? null;
+                                        $pagoToken = $pagoSnapshotTokens[$detalleId] ?? null;
+                                        $montoMaximoPago = number_format((float)($evaluacionPago['monto_maximo'] ?? 0), 2, '.', '');
+                                        $snapshotPendientePago = number_format((float)($evaluacionPago['snapshot_pendiente'] ?? ($detalle['pendiente_pago_sugerido'] ?? 0)), 2, '.', '');
+                                        $saldoVivoPago = number_format((float)($evaluacionPago['saldo_vivo'] ?? 0), 2, '.', '');
+                                        $metodosPago = is_array($evaluacionPago['metodos_pago'] ?? null)
+                                            ? $evaluacionPago['metodos_pago']
+                                            : ['efectivo' => 'Efectivo', 'tarjeta' => 'Tarjeta', 'transferencia' => 'Transferencia'];
+                                        ?>
                                         <tr>
                                             <td>
                                                 <a class="font-black underline" href="<?= url('trabajadores/' . (int)($detalle['trabajador_id'] ?? 0)) ?>">
@@ -315,6 +372,90 @@ if (!function_exists('trab_nom_det_status_label')) {
                                             <td class="text-right"><?= trab_nom_det_money($detalle['pagos_caja_aplicados'] ?? 0) ?></td>
                                             <td class="text-right font-black"><?= trab_nom_det_money($detalle['neto_sugerido'] ?? 0) ?></td>
                                             <td class="text-right font-black"><?= trab_nom_det_money($detalle['pendiente_pago_sugerido'] ?? 0) ?></td>
+                                            <td>
+                                                <?php if ((string)($periodo['estado'] ?? '') !== 'aprobado'): ?>
+                                                    <span class="nom-det-badge nom-det-badge-warn">
+                                                        <i class="fas fa-lock"></i>
+                                                        Requiere aprobacion
+                                                    </span>
+                                                <?php elseif ($evaluacionPago && !empty($evaluacionPago['elegible']) && $pagoToken): ?>
+                                                    <form class="nom-det-paybox space-y-2" method="POST" action="<?= url('trabajadores/nomina/periodos/' . (int)($periodo['id'] ?? 0) . '/detalles/' . $detalleId . '/registrar-pago-caja') ?>">
+                                                        <?= csrf_field() ?>
+                                                        <input type="hidden" name="pago_token" value="<?= trab_nom_det_safe($pagoToken, '') ?>">
+                                                        <div class="nom-det-payfacts">
+                                                            <div class="nom-det-payfact">
+                                                                <span>Snapshot</span>
+                                                                <strong><?= trab_nom_det_money($snapshotPendientePago) ?></strong>
+                                                            </div>
+                                                            <div class="nom-det-payfact">
+                                                                <span>Saldo vivo</span>
+                                                                <strong><?= trab_nom_det_money($saldoVivoPago) ?></strong>
+                                                            </div>
+                                                            <div class="nom-det-payfact">
+                                                                <span>Maximo</span>
+                                                                <strong><?= trab_nom_det_money($montoMaximoPago) ?></strong>
+                                                            </div>
+                                                        </div>
+                                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                            <div>
+                                                                <label class="nom-det-label" for="snapshot_pago_monto_<?= $detalleId ?>">Monto</label>
+                                                                <input
+                                                                    class="nom-det-input"
+                                                                    id="snapshot_pago_monto_<?= $detalleId ?>"
+                                                                    type="number"
+                                                                    name="monto"
+                                                                    min="0.01"
+                                                                    max="<?= trab_nom_det_safe($montoMaximoPago, '0.00') ?>"
+                                                                    step="0.01"
+                                                                    value="<?= trab_nom_det_safe($montoMaximoPago, '0.00') ?>"
+                                                                    required
+                                                                >
+                                                            </div>
+                                                            <div>
+                                                                <label class="nom-det-label" for="snapshot_pago_metodo_<?= $detalleId ?>">Metodo</label>
+                                                                <select class="nom-det-select" id="snapshot_pago_metodo_<?= $detalleId ?>" name="metodo_pago" required>
+                                                                    <?php foreach ($metodosPago as $metodoKey => $metodoLabel): ?>
+                                                                        <option value="<?= trab_nom_det_safe($metodoKey, '') ?>"><?= trab_nom_det_safe($metodoLabel, '') ?></option>
+                                                                    <?php endforeach; ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <input class="nom-det-input" type="text" name="referencia" maxlength="100" required placeholder="Referencia obligatoria">
+                                                        <input class="nom-det-input" type="text" name="notas" maxlength="700" placeholder="Notas opcionales">
+                                                        <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+                                                            <span>Maximo <?= trab_nom_det_money($montoMaximoPago) ?></span>
+                                                            <button class="nom-det-btn nom-det-btn-primary" type="submit">
+                                                                <i class="fas fa-cash-register"></i>
+                                                                Registrar pago
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                <?php else: ?>
+                                                    <span class="nom-det-badge nom-det-badge-danger">
+                                                        <i class="fas fa-ban"></i>
+                                                        Bloqueado
+                                                    </span>
+                                                    <div class="text-xs text-slate-500 mt-2">
+                                                        <?= trab_nom_det_safe($evaluacionPago['motivo_bloqueo'] ?? 'No elegible para pago con Caja') ?>
+                                                    </div>
+                                                    <?php if ($evaluacionPago): ?>
+                                                        <div class="nom-det-payfacts nom-det-payfacts-muted mt-2">
+                                                            <div class="nom-det-payfact">
+                                                                <span>Snapshot</span>
+                                                                <strong><?= trab_nom_det_money($snapshotPendientePago) ?></strong>
+                                                            </div>
+                                                            <div class="nom-det-payfact">
+                                                                <span>Saldo vivo</span>
+                                                                <strong><?= trab_nom_det_money($saldoVivoPago) ?></strong>
+                                                            </div>
+                                                            <div class="nom-det-payfact">
+                                                                <span>Maximo</span>
+                                                                <strong><?= trab_nom_det_money($montoMaximoPago) ?></strong>
+                                                            </div>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                <?php endif; ?>
+                                            </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>

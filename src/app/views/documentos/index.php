@@ -59,6 +59,21 @@ if (!function_exists('doc_mime_meta')) {
     }
 }
 
+if (!function_exists('doc_preview_kind')) {
+    function doc_preview_kind($mime)
+    {
+        $m = strtolower(trim((string)($mime ?? '')));
+        if ($m === 'application/pdf') {
+            return 'pdf';
+        }
+        if (strpos($m, 'image/') === 0) {
+            return 'image';
+        }
+
+        return null;
+    }
+}
+
 $buscar = (string)($filtros['buscar'] ?? '');
 $estado = (string)($filtros['estado'] ?? 'todos');
 $tipoFiltro = (int)($filtros['documento_tipo_id'] ?? 0);
@@ -183,6 +198,7 @@ $visibles = count($documentos);
 .docs-page .dc-action-view { color: var(--dc-info); } .docs-page .dc-action-view:hover { background: var(--dc-info-bg); }
 .docs-page .dc-action-edit { color: var(--dc-gold-ink); } .docs-page .dc-action-edit:hover { background: var(--dc-gold-soft); }
 .docs-page .dc-action-dl { color: var(--dc-success); } .docs-page .dc-action-dl:hover { background: var(--dc-success-bg); }
+.docs-page .dc-action-preview { color: var(--dc-gold-ink); } .docs-page .dc-action-preview:hover { background: var(--dc-gold-soft); border-color: var(--dc-gold-line); }
 
 .docs-page .dc-mobile { display: grid; gap: 10px; padding: 12px; }
 .docs-page .dc-mobile-card { background: var(--dc-surface); border: 1px solid var(--dc-border); border-radius: 16px; padding: 12px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 26px -20px rgba(27,39,70,.25); transition: transform .16s ease, border-color .16s ease; }
@@ -338,12 +354,12 @@ $visibles = count($documentos);
                         <div class="dc-desktop">
                             <table class="dc-table">
                                 <colgroup>
-                                    <col style="width: 26%;">
-                                    <col style="width: 15%;">
+                                    <col style="width: 25%;">
+                                    <col style="width: 14%;">
                                     <col style="width: 20%;">
-                                    <col style="width: 11%;">
+                                    <col style="width: 10%;">
                                     <col style="width: 16%;">
-                                    <col style="width: 12%;">
+                                    <col style="width: 15%;">
                                 </colgroup>
                                 <thead>
                                     <tr>
@@ -363,6 +379,10 @@ $visibles = count($documentos);
                                         $docEstado = (string)($documento['estado'] ?? '');
                                         [$estadoLabel, $estadoClass, $estadoIcon] = doc_estado_meta($docEstado);
                                         [$fileIcon, $fileClass] = doc_mime_meta($documento['mime_type'] ?? '');
+                                        $previewKind = doc_preview_kind($documento['mime_type'] ?? '');
+                                        $previewUrl = ($docEstado === 'activo' && $previewKind !== null)
+                                            ? url('documentos/' . $docId . '/descargar') . '?preview=1'
+                                            : null;
                                         ?>
                                         <tr class="dc-row">
                                             <td>
@@ -395,6 +415,9 @@ $visibles = count($documentos);
                                             <td class="is-end">
                                                 <div class="dc-actions">
                                                     <a class="dc-action dc-action-view" href="<?= $docUrl ?>" title="Ver" aria-label="Ver documento"><i class="fas fa-eye"></i></a>
+                                                    <?php if ($previewUrl): ?>
+                                                        <a class="dc-action dc-action-preview" href="<?= doc_safe($previewUrl, '') ?>" target="_blank" rel="noopener" title="Previsualizar" aria-label="Previsualizar documento"><i class="fas fa-magnifying-glass"></i></a>
+                                                    <?php endif; ?>
                                                     <?php if ($docEstado !== 'eliminado'): ?>
                                                         <a class="dc-action dc-action-edit" href="<?= url('documentos/' . $docId . '/editar') ?>" title="Editar" aria-label="Editar documento"><i class="fas fa-pen"></i></a>
                                                     <?php endif; ?>
@@ -417,6 +440,10 @@ $visibles = count($documentos);
                                 $docEstado = (string)($documento['estado'] ?? '');
                                 [$estadoLabel, $estadoClass, $estadoIcon] = doc_estado_meta($docEstado);
                                 [$fileIcon, $fileClass] = doc_mime_meta($documento['mime_type'] ?? '');
+                                $previewKind = doc_preview_kind($documento['mime_type'] ?? '');
+                                $previewUrl = ($docEstado === 'activo' && $previewKind !== null)
+                                    ? url('documentos/' . $docId . '/descargar') . '?preview=1'
+                                    : null;
                                 ?>
                                 <article class="dc-mobile-card">
                                     <div class="dc-mobile-top">
@@ -450,6 +477,9 @@ $visibles = count($documentos);
                                     </div>
                                     <div class="dc-mobile-actions">
                                         <a class="dc-card-btn" href="<?= $docUrl ?>"><i class="fas fa-eye"></i> Ver</a>
+                                        <?php if ($previewUrl): ?>
+                                            <a class="dc-card-btn" href="<?= doc_safe($previewUrl, '') ?>" target="_blank" rel="noopener"><i class="fas fa-magnifying-glass"></i> Vista</a>
+                                        <?php endif; ?>
                                         <?php if ($docEstado !== 'eliminado'): ?>
                                             <a class="dc-card-btn" href="<?= url('documentos/' . $docId . '/editar') ?>"><i class="fas fa-pen"></i> Editar</a>
                                         <?php endif; ?>

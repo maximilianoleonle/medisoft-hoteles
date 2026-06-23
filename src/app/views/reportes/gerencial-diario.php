@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $reporte = is_array($reporte ?? null) ? $reporte : [];
 $fecha = (string)($fecha ?? ($reporte['fecha'] ?? date('Y-m-d')));
 $finanzas = is_array($reporte['finanzas'] ?? null) ? $reporte['finanzas'] : [];
@@ -53,6 +53,8 @@ $riesgoRows = [
 ?>
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700&display=swap');
+</style><style>
 .gd-view {
     --gd-brand: var(--brand-primary, #1B2746);
     --gd-brand-2: color-mix(in srgb, var(--gd-brand) 82%, #111827);
@@ -86,14 +88,14 @@ $riesgoRows = [
     margin: 0 0 7px;
     color: var(--gd-accent);
     font-size: .72rem;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: .08em;
     text-transform: uppercase;
 }
 .gd-title {
     margin: 0;
     color: var(--gd-brand);
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: 'Cormorant Garamond', Georgia, serif;
     font-size: clamp(2rem, 4vw, 3rem);
     line-height: .98;
     letter-spacing: 0;
@@ -123,7 +125,7 @@ $riesgoRows = [
     background: #FFFFFF;
     color: var(--gd-text);
     font-size: .85rem;
-    font-weight: 800;
+    font-weight: 600;
 }
 .gd-input {
     padding: 0 10px;
@@ -162,7 +164,7 @@ $riesgoRows = [
     display: block;
     color: var(--gd-muted);
     font-size: .72rem;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: .04em;
     text-transform: uppercase;
 }
@@ -170,9 +172,10 @@ $riesgoRows = [
     display: block;
     margin-top: 7px;
     color: var(--gd-brand);
-    font-size: clamp(1.35rem, 2.4vw, 2rem);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(1.5rem, 2.4vw, 2.2rem);
     line-height: 1;
-    font-weight: 950;
+    font-weight: 700;
 }
 .gd-tile em {
     display: block;
@@ -180,7 +183,7 @@ $riesgoRows = [
     color: var(--gd-muted);
     font-size: .78rem;
     font-style: normal;
-    font-weight: 750;
+    font-weight: 600;
 }
 .gd-grid {
     display: grid;
@@ -198,7 +201,7 @@ $riesgoRows = [
     margin: 3px 0 12px;
     color: var(--gd-brand);
     font-size: 1rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 .gd-money-grid,
 .gd-room-grid,
@@ -226,14 +229,14 @@ $riesgoRows = [
 .gd-stat-row span {
     color: var(--gd-muted);
     font-size: .82rem;
-    font-weight: 800;
+    font-weight: 600;
 }
 .gd-money-row strong,
 .gd-risk-row strong,
 .gd-stat-row strong {
     color: var(--gd-text);
     font-size: .88rem;
-    font-weight: 950;
+    font-weight: 700;
     text-align: right;
 }
 .gd-methods {
@@ -254,13 +257,13 @@ $riesgoRows = [
 .gd-methods th {
     color: var(--gd-muted);
     font-size: .7rem;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: .04em;
     text-transform: uppercase;
 }
 .gd-methods td {
     color: var(--gd-text);
-    font-weight: 800;
+    font-weight: 600;
 }
 .gd-risk-row {
     color: inherit;
@@ -336,7 +339,7 @@ $riesgoRows = [
                         Actualizar
                     </button>
                 </form>
-                <a href="<?= url('reportes') ?>" class="gd-btn">
+                <a href="<?= back_url('reportes') ?>" class="gd-btn">
                     <i class="fas fa-arrow-left" aria-hidden="true"></i>
                     Reportes
                 </a>

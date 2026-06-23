@@ -145,7 +145,7 @@ $referencia = (string)($filtros['referencia'] ?? '');
 
         <section class="wk-toolbar">
             <div class="flex flex-wrap gap-2">
-                <a class="wk-btn wk-btn-muted" href="<?= url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver a personal</a>
+                <a class="wk-btn wk-btn-muted" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver a personal</a>
                 <a class="wk-btn wk-btn-muted" href="<?= url('caja') ?>"><i class="fas fa-cash-register"></i> Ver Caja</a>
             </div>
         </section>

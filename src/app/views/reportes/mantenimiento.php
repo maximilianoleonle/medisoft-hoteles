@@ -1,4 +1,4 @@
-<?php include __DIR__ . '/../layout/header.php'; ?>
+﻿<?php include __DIR__ . '/../layout/header.php'; ?>
 <?php
 $estadisticas = $estadisticas ?? [];
 $porTipo = $porTipo ?? [];
@@ -97,6 +97,8 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
 ?>
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700&display=swap');
+</style><style>
 .mant-report-view {
     --mant-primary: var(--brand-primary, #1B2746);
     --mant-secondary: var(--brand-secondary, #0F172A);
@@ -200,7 +202,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     border-radius: 13px;
     background: rgba(255, 255, 255, .09);
     color: #FFFDF8;
-    font-weight: 850;
+    font-weight: 700;
     text-decoration: none;
 }
 
@@ -222,7 +224,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
 .mant-mini-label {
     color: var(--mant-muted);
     font-size: .72rem;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: .07em;
     text-transform: uppercase;
 }
@@ -253,7 +255,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     max-width: 12ch;
     margin: 14px 0 14px;
     color: var(--mant-on-action);
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: 'Cormorant Garamond', Georgia, serif;
     font-size: clamp(2.4rem, 5vw, 5.15rem);
     font-weight: 700;
     line-height: .9;
@@ -267,7 +269,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     max-width: 68ch;
     margin: 0;
     color: color-mix(in srgb, var(--mant-on-action) 82%, transparent);
-    font-weight: 650;
+    font-weight: 500;
     line-height: 1.6;
 }
 
@@ -291,7 +293,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     border-radius: 13px;
     background: var(--mant-action);
     color: var(--mant-on-action);
-    font-weight: 900;
+    font-weight: 700;
     text-decoration: none;
 }
 
@@ -342,7 +344,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
 .mant-period-value {
     margin-top: 7px;
     color: var(--mant-primary);
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: 'Cormorant Garamond', Georgia, serif;
     font-size: clamp(1.5rem, 3vw, 2.35rem);
     font-weight: 700;
     line-height: 1;
@@ -359,7 +361,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     margin-bottom: 6px;
     color: var(--mant-primary);
     font-size: .75rem;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .mant-field input,
@@ -371,7 +373,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     background: color-mix(in srgb, var(--mant-accent) 3%, #FFFDF8);
     color: var(--mant-primary);
     font-size: .92rem;
-    font-weight: 800;
+    font-weight: 600;
     outline: none;
     transition: border-color .18s ease, box-shadow .18s ease;
 }
@@ -400,7 +402,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     background: color-mix(in srgb, var(--mant-primary) 4%, #FFFDF8);
     color: var(--mant-primary);
     font-size: .76rem;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .mant-metrics {
@@ -445,7 +447,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     margin-top: 13px;
     color: var(--mant-primary);
     font-size: clamp(1.35rem, 2.4vw, 2.1rem);
-    font-weight: 950;
+    font-weight: 700;
     line-height: 1;
     font-variant-numeric: tabular-nums;
 }
@@ -454,7 +456,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     margin-top: 9px;
     color: var(--mant-muted);
     font-size: .8rem;
-    font-weight: 750;
+    font-weight: 600;
 }
 
 .mant-layout {
@@ -486,7 +488,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     margin: 0;
     color: var(--mant-primary);
     font-size: 1.05rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 
 .mant-section-body {
@@ -503,7 +505,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     background: color-mix(in srgb, var(--mant-primary) 7%, #FFFDF8);
     color: var(--mant-primary);
     font-size: .73rem;
-    font-weight: 900;
+    font-weight: 700;
     white-space: nowrap;
 }
 
@@ -558,14 +560,14 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
 .mant-gauge-center strong {
     color: var(--mant-primary);
     font-size: 2rem;
-    font-weight: 950;
+    font-weight: 700;
     line-height: 1;
 }
 
 .mant-gauge-center span {
     color: var(--mant-muted);
     font-size: .76rem;
-    font-weight: 800;
+    font-weight: 600;
 }
 
 .mant-status-stack,
@@ -603,7 +605,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
 .mant-person-row > div > strong {
     display: block;
     color: var(--mant-primary);
-    font-weight: 950;
+    font-weight: 700;
 }
 
 .mant-status-row > div > span,
@@ -613,13 +615,13 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     display: block;
     color: var(--mant-muted);
     font-size: .78rem;
-    font-weight: 750;
+    font-weight: 600;
 }
 
 .mant-row-value {
     color: var(--mant-primary);
     justify-self: end;
-    font-weight: 950;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
 
@@ -664,7 +666,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
 .mant-chart-title strong {
     color: var(--mant-primary);
     font-size: .94rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 
 .mant-chart-canvas {
@@ -706,7 +708,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     margin: 0;
     color: var(--mant-primary);
     font-size: .98rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 
 .mant-mini-value {
@@ -714,7 +716,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     margin-top: 4px;
     color: var(--mant-primary);
     font-size: 1rem;
-    font-weight: 950;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
 
@@ -771,7 +773,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     padding: 0 10px;
     border-radius: 12px;
     font-size: .75rem;
-    font-weight: 900;
+    font-weight: 700;
     white-space: nowrap;
 }
 
@@ -836,7 +838,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
         linear-gradient(180deg, #FFFFFF, color-mix(in srgb, var(--mant-accent) 8%, #FFFDF8));
     color: color-mix(in srgb, var(--mant-primary) 86%, #101827);
     font-size: .75rem;
-    font-weight: 950;
+    font-weight: 700;
     box-shadow:
         0 10px 22px -18px rgba(15, 23, 42, .55),
         inset 0 -4px 0 color-mix(in srgb, var(--mant-accent) 58%, transparent);
@@ -856,7 +858,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     margin: 10px 0 0;
     color: var(--mant-muted);
     font-size: .88rem;
-    font-weight: 750;
+    font-weight: 600;
     line-height: 1.55;
 }
 
@@ -886,7 +888,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     display: block;
     color: var(--mant-primary);
     font-size: 1rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 
 @media (max-width: 1320px) {
@@ -1013,7 +1015,7 @@ $mesCostos = array_map(fn($mes) => (float)($mes['costo_mes'] ?? 0), $tendenciaMe
     <main class="mant-shell">
         <section class="mant-hero">
             <div class="mant-hero-main">
-                <a href="<?= url('reportes') ?>" class="mant-back">
+                <a href="<?= back_url('reportes') ?>" class="mant-back">
                     <i class="fas fa-arrow-left"></i>
                     Reportes
                 </a>

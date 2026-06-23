@@ -1,4 +1,4 @@
-<?php include __DIR__ . '/../layout/header.php'; ?>
+﻿<?php include __DIR__ . '/../layout/header.php'; ?>
 <?php
 $metodosPago = $metodosPago ?? [
     'efectivo' => ['ingresos' => 0, 'gastos' => 0, 'balance' => 0],
@@ -95,6 +95,8 @@ $metodoMeta = [
 ?>
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700&display=swap');
+</style><style>
 .profit-report-view,
 .profit-modal-overlay {
     --pr-primary: var(--brand-primary, #1B2746);
@@ -188,7 +190,7 @@ $metodoMeta = [
 .profit-mini-label {
     color: var(--pr-muted);
     font-size: .72rem;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: .07em;
     text-transform: uppercase;
 }
@@ -218,7 +220,7 @@ $metodoMeta = [
     max-width: 12ch;
     margin: 14px 0 14px;
     color: var(--pr-on-action);
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: 'Cormorant Garamond', Georgia, serif;
     font-size: clamp(2.4rem, 5vw, 5.15rem);
     line-height: .9;
     font-weight: 700;
@@ -231,7 +233,7 @@ $metodoMeta = [
     max-width: 66ch;
     margin: 0;
     color: color-mix(in srgb, var(--pr-on-action) 82%, transparent);
-    font-weight: 650;
+    font-weight: 500;
     line-height: 1.6;
 }
 
@@ -261,7 +263,7 @@ $metodoMeta = [
     border: 1px solid color-mix(in srgb, var(--pr-accent) 46%, var(--pr-primary));
     background: var(--pr-action);
     color: var(--pr-on-action);
-    font-weight: 900;
+    font-weight: 700;
     text-decoration: none;
 }
 
@@ -306,7 +308,7 @@ $metodoMeta = [
 .profit-period-value {
     margin-top: 7px;
     color: var(--pr-primary);
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: 'Cormorant Garamond', Georgia, serif;
     font-size: clamp(1.45rem, 3vw, 2.3rem);
     font-weight: 700;
     line-height: 1;
@@ -323,7 +325,7 @@ $metodoMeta = [
     margin-bottom: 6px;
     color: var(--pr-primary);
     font-size: .75rem;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .profit-field input,
@@ -335,7 +337,7 @@ $metodoMeta = [
     border-radius: 13px;
     background: color-mix(in srgb, var(--pr-accent) 3%, #FFFDF8);
     color: var(--pr-primary);
-    font-weight: 800;
+    font-weight: 600;
     outline: none;
     transition: border-color .18s ease, box-shadow .18s ease;
 }
@@ -362,7 +364,7 @@ $metodoMeta = [
     background: color-mix(in srgb, var(--pr-primary) 4%, #FFFDF8);
     color: var(--pr-primary);
     font-size: .76rem;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .profit-metric-grid {
@@ -405,7 +407,7 @@ $metodoMeta = [
     margin-top: 13px;
     color: var(--pr-primary);
     font-size: clamp(1.45rem, 2.8vw, 2.2rem);
-    font-weight: 950;
+    font-weight: 700;
     line-height: 1;
     font-variant-numeric: tabular-nums;
 }
@@ -424,7 +426,7 @@ $metodoMeta = [
     margin-top: 9px;
     color: var(--pr-muted);
     font-size: .8rem;
-    font-weight: 750;
+    font-weight: 600;
 }
 
 .profit-flow {
@@ -472,13 +474,13 @@ $metodoMeta = [
 .profit-method h3 {
     margin: 4px 0 0;
     color: var(--pr-primary);
-    font-weight: 950;
+    font-weight: 700;
 }
 
 .profit-method-balance {
     color: var(--pr-primary);
     font-size: 1.22rem;
-    font-weight: 950;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
 
@@ -501,13 +503,13 @@ $metodoMeta = [
 .profit-method-line span {
     color: var(--pr-muted);
     font-size: .78rem;
-    font-weight: 800;
+    font-weight: 600;
 }
 
 .profit-method-line strong,
 .profit-money {
     color: var(--pr-primary);
-    font-weight: 950;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
 
@@ -533,7 +535,7 @@ $metodoMeta = [
     margin: 0;
     color: var(--pr-primary);
     font-size: 1.05rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 
 .profit-section-body {
@@ -562,7 +564,7 @@ $metodoMeta = [
     background: color-mix(in srgb, var(--pr-primary) 4%, #FFFDF8);
     color: var(--pr-primary);
     font-size: .75rem;
-    font-weight: 900;
+    font-weight: 700;
     transition: opacity .18s ease, transform .18s ease, background .18s ease;
 }
 
@@ -617,7 +619,7 @@ $metodoMeta = [
 .profit-table tfoot td {
     background: color-mix(in srgb, var(--pr-primary) 5%, #FFFDF8);
     color: var(--pr-primary);
-    font-weight: 950;
+    font-weight: 700;
 }
 
 .profit-bar {
@@ -691,13 +693,13 @@ $metodoMeta = [
 
 .profit-day-date {
     color: var(--pr-primary);
-    font-weight: 950;
+    font-weight: 700;
 }
 
 .profit-day-week {
     color: var(--pr-muted);
     font-size: .76rem;
-    font-weight: 800;
+    font-weight: 600;
 }
 
 .profit-insights {
@@ -715,7 +717,7 @@ $metodoMeta = [
 
 .profit-insight strong {
     color: var(--pr-primary);
-    font-weight: 950;
+    font-weight: 700;
 }
 
 .profit-insight p {
@@ -760,7 +762,7 @@ $metodoMeta = [
     margin: 0;
     color: var(--pr-primary);
     font-size: 1.05rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 
 .profit-modal-body {
@@ -772,7 +774,7 @@ $metodoMeta = [
 .profit-modal label {
     color: var(--pr-primary);
     font-size: .8rem;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .profit-modal-actions {
@@ -878,7 +880,7 @@ $metodoMeta = [
     <main class="profit-shell">
         <section class="profit-hero">
             <div class="profit-hero-main">
-                <a href="<?= url('reportes') ?>" class="profit-btn is-soft">
+                <a href="<?= back_url('reportes') ?>" class="profit-btn is-soft">
                     <i class="fas fa-arrow-left"></i>
                     Volver a reportes
                 </a>

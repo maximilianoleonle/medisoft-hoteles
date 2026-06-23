@@ -150,7 +150,7 @@
                         </div>
 
                         <div class="text-end mt-3">
-                            <a href="<?= url('inventario') ?>" class="btn btn-secondary">Cancelar</a>
+                            <a href="<?= back_url('inventario') ?>" class="btn btn-secondary">Cancelar</a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save me-1"></i> Guardar Configuración
                             </button>

@@ -276,7 +276,7 @@ $exportUrl = url('trabajadores/nomina/periodos/exportar' . ($exportQuery !== '' 
     <section class="p-6 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex flex-wrap gap-2">
-                <a class="payroll-btn" href="<?= url('trabajadores/nomina/periodos') ?>">
+                <a class="payroll-btn" href="<?= back_url('trabajadores/nomina/periodos') ?>">
                     <i class="fas fa-arrow-left"></i>
                     Periodos
                 </a>

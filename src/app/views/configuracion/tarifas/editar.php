@@ -255,6 +255,42 @@ input:checked + .toggle-slider:before {
     box-shadow: 0 4px 12px var(--brand-elevated-shadow);
 }
 
+.btn-primary.is-confirming {
+    background: color-mix(in srgb, var(--accent) 48%, var(--primary-dark));
+}
+
+.tarifa-form-alert {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0 0;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--danger) 30%, #e2e8f0);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--danger) 8%, #fff);
+    color: color-mix(in srgb, var(--danger) 78%, #111827);
+    font-size: .88rem;
+    font-weight: 800;
+}
+
+.tarifa-form-alert.is-visible {
+    display: flex;
+}
+
+.tarifa-form-alert.is-confirmation {
+    border-color: color-mix(in srgb, var(--accent) 38%, #e2e8f0);
+    background: color-mix(in srgb, var(--accent) 12%, #fff);
+    color: color-mix(in srgb, var(--accent) 70%, #111827);
+}
+
+.tarifa-form-alert i {
+    color: var(--danger);
+}
+
+.tarifa-form-alert.is-confirmation i {
+    color: color-mix(in srgb, var(--accent) 76%, #111827);
+}
+
 .btn-secondary {
     background: #e2e8f0;
     color: #475569;
@@ -333,7 +369,7 @@ input:checked + .toggle-slider:before {
                 <h1 class="text-2xl font-bold text-gray-900">Editar Incremento de Tarifa</h1>
                 <p class="text-gray-600 mt-1">Modifique los parámetros del incremento</p>
             </div>
-            <a href="<?= url('configuracion/tarifas') ?>" class="btn btn-secondary">
+            <a href="<?= back_url('configuracion/tarifas') ?>" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i>
                 Regresar
             </a>
@@ -633,8 +669,13 @@ input:checked + .toggle-slider:before {
             </div>
 
             <!-- Botones de acción -->
+            <div id="tarifaFormAlert" class="tarifa-form-alert" role="alert" aria-live="assertive" hidden>
+                <i class="fas fa-circle-exclamation"></i>
+                <span data-tarifa-alert-text></span>
+            </div>
+
             <div class="flex justify-end gap-3 mt-6">
-                <a href="<?= url('configuracion/tarifas') ?>" class="btn btn-secondary">
+                <a href="<?= back_url('configuracion/tarifas') ?>" class="btn btn-secondary">
                     <i class="fas fa-times"></i>
                     Cancelar
                 </a>
@@ -782,45 +823,100 @@ document.getElementById('valor_incremento').addEventListener('input', function()
     actualizarEjemplo(this.value || 0, tipo);
 });
 
-// Validación del formulario
-document.getElementById('formIncremento').addEventListener('submit', function(e) {
-    const alcance = document.querySelector('input[name="alcance"]:checked').value;
-    
-    if (alcance === 'tipo_habitacion') {
-        const tipos = document.querySelectorAll('input[name="tipos_habitacion[]"]:checked');
-        if (tipos.length === 0) {
-            e.preventDefault();
-            Swal.fire('Error', 'Seleccione al menos un tipo de habitación', 'error');
-            return;
-        }
-    }
-    
-    if (alcance === 'habitacion') {
-        const habitaciones = document.querySelectorAll('input[name="habitaciones[]"]:checked');
-        if (habitaciones.length === 0) {
-            e.preventDefault();
-            Swal.fire('Error', 'Seleccione al menos una habitación', 'error');
-            return;
-        }
+const formIncremento = document.getElementById('formIncremento');
+const tarifaFormAlert = document.getElementById('tarifaFormAlert');
+const tarifaSubmitButton = formIncremento ? formIncremento.querySelector('button[type="submit"]') : null;
+const tarifaSubmitDefaultHtml = tarifaSubmitButton ? tarifaSubmitButton.innerHTML : '';
+let tarifaSaveConfirmTimer = null;
+
+function mostrarErrorFormularioTarifa(message, targetSelector, mode) {
+    if (!tarifaFormAlert) {
+        return;
     }
 
-    // Confirmar cambios si hay cambios significativos
-    e.preventDefault();
-    Swal.fire({
-        title: '¿Guardar cambios?',
-        text: "Se actualizará el incremento de tarifa",
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: tarifaBrandPrimary(),
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Sí, guardar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            this.submit();
-        }
-    });
+    const text = tarifaFormAlert.querySelector('[data-tarifa-alert-text]');
+    if (text) {
+        text.textContent = message;
+    }
+
+    tarifaFormAlert.hidden = false;
+    tarifaFormAlert.classList.add('is-visible');
+    tarifaFormAlert.classList.toggle('is-confirmation', mode === 'confirmation');
+
+    const target = targetSelector ? document.querySelector(targetSelector) : tarifaFormAlert;
+    if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+function limpiarErrorFormularioTarifa() {
+    if (!tarifaFormAlert) {
+        return;
+    }
+
+    tarifaFormAlert.classList.remove('is-visible');
+    tarifaFormAlert.classList.remove('is-confirmation');
+    tarifaFormAlert.hidden = true;
+}
+
+function setTarifaSaveConfirmState(active) {
+    if (!tarifaSubmitButton) {
+        return;
+    }
+
+    tarifaSubmitButton.classList.toggle('is-confirming', active);
+    tarifaSubmitButton.innerHTML = active
+        ? '<i class="fas fa-check"></i> Confirmar cambios'
+        : tarifaSubmitDefaultHtml;
+}
+
+document.querySelectorAll('input[name="tipos_habitacion[]"], input[name="habitaciones[]"], input[name="alcance"]').forEach(input => {
+    input.addEventListener('change', limpiarErrorFormularioTarifa);
 });
+
+// Validación del formulario
+if (formIncremento) {
+    formIncremento.addEventListener('submit', function(e) {
+        const alcance = document.querySelector('input[name="alcance"]:checked').value;
+        limpiarErrorFormularioTarifa();
+
+        if (alcance === 'tipo_habitacion') {
+            const tipos = document.querySelectorAll('input[name="tipos_habitacion[]"]:checked');
+            if (tipos.length === 0) {
+                e.preventDefault();
+                mostrarErrorFormularioTarifa('Selecciona al menos un tipo de habitacion para continuar.', '#selectorTipos');
+                return;
+            }
+        }
+
+        if (alcance === 'habitacion') {
+            const habitaciones = document.querySelectorAll('input[name="habitaciones[]"]:checked');
+            if (habitaciones.length === 0) {
+                e.preventDefault();
+                mostrarErrorFormularioTarifa('Selecciona al menos una habitacion para continuar.', '#selectorHabitaciones');
+                return;
+            }
+        }
+
+        e.preventDefault();
+
+        if (this.dataset.confirmedTarifaSave === '1') {
+            this.submit();
+            return;
+        }
+
+        this.dataset.confirmedTarifaSave = '1';
+        setTarifaSaveConfirmState(true);
+        mostrarErrorFormularioTarifa('Vuelve a hacer clic en Confirmar cambios para guardar esta tarifa.', null, 'confirmation');
+
+        window.clearTimeout(tarifaSaveConfirmTimer);
+        tarifaSaveConfirmTimer = window.setTimeout(() => {
+            delete this.dataset.confirmedTarifaSave;
+            setTarifaSaveConfirmState(false);
+            limpiarErrorFormularioTarifa();
+        }, 6500);
+    });
+}
 
 // Inicializar
 document.addEventListener('DOMContentLoaded', function() {

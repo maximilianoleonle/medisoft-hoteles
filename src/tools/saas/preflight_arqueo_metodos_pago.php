@@ -454,6 +454,53 @@ if ($pdo instanceof PDO) {
 
         ampSection('Alertas de arqueo cerrado');
         ampReportZero(
+            'cortes descuadrados con movimientos creados despues del cierre',
+            ampCount(
+                $pdo,
+                "SELECT COUNT(*)
+                 FROM (
+                    SELECT cc.id,
+                           SUM(CASE WHEN mc.created_at > cc.fecha_cierre THEN 1 ELSE 0 END) AS movimientos_posteriores,
+                           ROUND(COALESCE(SUM(CASE WHEN mc.tipo = 'ingreso' AND mc.metodo_pago = 'efectivo' THEN mc.monto ELSE 0 END), 0), 2) AS mov_ing_efectivo,
+                           ROUND(COALESCE(SUM(CASE WHEN mc.tipo = 'ingreso' AND mc.metodo_pago = 'tarjeta' THEN mc.monto ELSE 0 END), 0), 2) AS mov_ing_tarjeta,
+                           ROUND(COALESCE(SUM(CASE WHEN mc.tipo = 'ingreso' AND mc.metodo_pago = 'transferencia' THEN mc.monto ELSE 0 END), 0), 2) AS mov_ing_transferencia,
+                           ROUND(COALESCE(SUM(CASE WHEN mc.tipo = 'gasto' AND mc.metodo_pago = 'efectivo' THEN mc.monto ELSE 0 END), 0), 2) AS mov_gasto_efectivo,
+                           ROUND(COALESCE(SUM(CASE WHEN mc.tipo = 'gasto' AND mc.metodo_pago = 'tarjeta' THEN mc.monto ELSE 0 END), 0), 2) AS mov_gasto_tarjeta,
+                           ROUND(COALESCE(SUM(CASE WHEN mc.tipo = 'gasto' AND mc.metodo_pago = 'transferencia' THEN mc.monto ELSE 0 END), 0), 2) AS mov_gasto_transferencia,
+                           COALESCE(cc.total_ingresos_efectivo, 0) AS corte_ing_efectivo,
+                           COALESCE(cc.total_ingresos_tarjeta, 0) AS corte_ing_tarjeta,
+                           COALESCE(cc.total_ingresos_transferencia, 0) AS corte_ing_transferencia,
+                           COALESCE(cc.total_gastos_efectivo, 0) AS corte_gasto_efectivo,
+                           COALESCE(cc.total_gastos_tarjeta, 0) AS corte_gasto_tarjeta,
+                           COALESCE(cc.total_gastos_transferencia, 0) AS corte_gasto_transferencia
+                    FROM cortes_caja cc
+                    LEFT JOIN movimientos_caja mc
+                      ON mc.corte_id = cc.id
+                     AND mc.hotel_id = cc.hotel_id
+                    WHERE cc.estado = 'cerrado'
+                      AND cc.fecha_cierre IS NOT NULL
+                    GROUP BY cc.id,
+                             cc.total_ingresos_efectivo,
+                             cc.total_ingresos_tarjeta,
+                             cc.total_ingresos_transferencia,
+                             cc.total_gastos_efectivo,
+                             cc.total_gastos_tarjeta,
+                             cc.total_gastos_transferencia
+                    HAVING movimientos_posteriores > 0
+                       AND (
+                           ABS(mov_ing_efectivo - corte_ing_efectivo) > 0.01
+                           OR ABS(mov_ing_tarjeta - corte_ing_tarjeta) > 0.01
+                           OR ABS(mov_ing_transferencia - corte_ing_transferencia) > 0.01
+                           OR ABS(mov_gasto_efectivo - corte_gasto_efectivo) > 0.01
+                           OR ABS(mov_gasto_tarjeta - corte_gasto_tarjeta) > 0.01
+                           OR ABS(mov_gasto_transferencia - corte_gasto_transferencia) > 0.01
+                       )
+                 ) x"
+            ),
+            'Revisar cortes historicos donde movimientos posteriores al cierre explican diferencias; usar diagnosticar_arqueo_cortes.php para listar cortes y categorias.',
+            true
+        );
+        ampReportZero(
             'cortes cerrados con totales guardados distintos a movimientos',
             ampCount(
                 $pdo,

@@ -274,6 +274,30 @@
         background: rgba(247, 244, 237, 0.9) !important;
     }
 
+    .create-room-upload-alert {
+        display: none;
+        align-items: flex-start;
+        gap: 0.65rem;
+        margin-top: 1rem;
+        padding: 0.85rem 0.95rem;
+        border: 1px solid rgba(196, 69, 54, 0.24);
+        border-radius: 1rem;
+        background: rgba(254, 242, 242, 0.92);
+        color: #991b1b;
+        font-size: 0.86rem;
+        font-weight: 800;
+        line-height: 1.4;
+    }
+
+    .create-room-upload-alert.is-visible {
+        display: flex;
+    }
+
+    .create-room-upload-alert i {
+        margin-top: 0.12rem;
+        color: #b91c1c;
+    }
+
     @media (max-width: 1120px) {
         .create-room-form-grid {
             grid-template-columns: 1fr;
@@ -313,7 +337,7 @@
 <div class="create-room-page min-h-screen bg-gradient-to-br from-hotel-cream to-white p-6">
     <div class="max-w-7xl mx-auto mb-8">
         <div class="create-room-breadcrumb flex items-center text-sm text-gray-600 mb-4">
-            <a href="<?= url('habitaciones') ?>" class="hover:text-hotel-brown flex items-center">
+            <a href="<?= back_url('habitaciones') ?>" class="hover:text-hotel-brown flex items-center">
                 <i class="fas fa-arrow-left mr-2"></i>Volver a Habitaciones
             </a>
         </div>
@@ -483,6 +507,11 @@
         </div>
 
         <!-- Vista previa de múltiples imágenes -->
+        <div id="upload-alert" class="create-room-upload-alert" role="alert" aria-live="assertive" hidden>
+            <i class="fas fa-circle-exclamation"></i>
+            <span></span>
+        </div>
+
         <div id="preview-container" class="mt-6 hidden">
             <h4 class="text-sm font-semibold text-gray-700 mb-3">Imágenes seleccionadas:</h4>
             <div id="preview-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -513,6 +542,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewContainer = document.getElementById('preview-container');
     const previewGrid = document.getElementById('preview-grid');
     const dropZone = document.getElementById('drop-zone');
+    const uploadAlert = document.getElementById('upload-alert');
 
     let selectedFiles = [];
     const maxFiles = 10;
@@ -560,15 +590,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleFiles(files) {
         const newFiles = Array.from(files);
+        clearUploadError();
 
         // Validar cantidad total
         if (selectedFiles.length + newFiles.length > maxFiles) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Demasiadas imágenes',
-                text: `Solo puedes subir hasta ${maxFiles} imágenes`,
-                confirmButtonColor: '#9333ea'
-            });
+            showError(`Solo puedes subir hasta ${maxFiles} imagenes por habitacion.`);
             return;
         }
 
@@ -658,12 +684,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showError(message) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: message,
-            confirmButtonColor: '#dc2626'
-        });
+        if (!uploadAlert) {
+            return;
+        }
+
+        const text = uploadAlert.querySelector('span');
+        if (text) {
+            text.textContent = message;
+        }
+
+        uploadAlert.hidden = false;
+        uploadAlert.classList.add('is-visible');
+        uploadAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function clearUploadError() {
+        if (!uploadAlert) {
+            return;
+        }
+
+        uploadAlert.hidden = true;
+        uploadAlert.classList.remove('is-visible');
     }
 });
 </script>
@@ -695,7 +736,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             Crear Habitación
                         </button>
 
-                        <a href="<?= url('habitaciones') ?>" class="create-room-cancel w-full bg-white border-2 border-gray-300 text-gray-700 font-semibold py-4 px-6 rounded-xl hover:bg-gray-50 transition-all duration-200 flex items-center justify-center">
+                        <a href="<?= back_url('habitaciones') ?>" class="create-room-cancel w-full bg-white border-2 border-gray-300 text-gray-700 font-semibold py-4 px-6 rounded-xl hover:bg-gray-50 transition-all duration-200 flex items-center justify-center">
                             <i class="fas fa-times mr-3"></i>
                             Cancelar
                         </a>

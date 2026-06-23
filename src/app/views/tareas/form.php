@@ -88,7 +88,7 @@ $prioridades = [
 
 <div class="tk-form-page p-4 sm:p-6">
     <div class="tk-shell">
-        <a class="tk-back" href="<?= url('tareas') ?>"><i class="fas fa-arrow-left"></i> Volver a tareas</a>
+        <a class="tk-back" href="<?= back_url('tareas') ?>"><i class="fas fa-arrow-left"></i> Volver a tareas</a>
 
         <section class="tk-title-lockup">
             <div class="tk-hero-icon"><i class="fas fa-list-check"></i></div>
@@ -157,7 +157,7 @@ $prioridades = [
 
             <div class="flex flex-wrap gap-3 mt-6">
                 <button class="tk-btn tk-btn-gold" type="submit"><i class="fas fa-save"></i> Crear tarea</button>
-                <a class="tk-btn tk-btn-muted" href="<?= url('tareas') ?>"><i class="fas fa-arrow-left"></i> Cancelar</a>
+                <a class="tk-btn tk-btn-muted" href="<?= back_url('tareas') ?>"><i class="fas fa-arrow-left"></i> Cancelar</a>
             </div>
         </form>
     </div>

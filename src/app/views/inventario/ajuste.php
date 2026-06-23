@@ -13,7 +13,7 @@
                         Registrar entrada o salida de inventario
                     </p>
                 </div>
-                <a href="<?= url('inventario') ?>" 
+                <a href="<?= back_url('inventario') ?>"
                    class="bg-white/10 backdrop-blur text-white px-4 py-2 rounded-lg hover:bg-white/20 transition-all duration-300 flex items-center gap-2 border border-white/20">
                     <i class="fas fa-arrow-left"></i>
                     <span>Volver</span>

@@ -647,7 +647,7 @@ $balanceGeneral = (float)($resumen['balance_general'] ?? 0);
                 </p>
             </div>
 
-            <a href="<?= url('caja') ?>" class="ccx-back">
+            <a href="<?= back_url('caja') ?>" class="ccx-back">
                 <i class="fas fa-arrow-left"></i>
                 <span>Volver a caja</span>
             </a>

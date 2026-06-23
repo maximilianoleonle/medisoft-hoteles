@@ -127,7 +127,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                 <div>
                     <strong>Esta secci&oacute;n todav&iacute;a no est&aacute; activada.</strong>
                     <p>P&iacute;dele al administrador del sistema que la habilite.<?php if (!empty($errorTecnico)): ?> <span style="opacity:.75">(<?= comp_form_safe($errorTecnico, '') ?>)</span><?php endif; ?></p>
-                    <a class="cp-btn cp-btn-muted mt-4" href="<?= url('compras') ?>" style="display:inline-flex">
+                    <a class="cp-btn cp-btn-muted mt-4" href="<?= back_url('compras') ?>" style="display:inline-flex">
                         <i class="fas fa-arrow-left"></i>
                         Volver
                     </a>
@@ -220,7 +220,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                         <i class="fas fa-save"></i>
                         Guardar borrador
                     </button>
-                    <a class="cp-btn cp-btn-muted" href="<?= url('compras') ?>">
+                    <a class="cp-btn cp-btn-muted" href="<?= back_url('compras') ?>">
                         <i class="fas fa-arrow-left"></i>
                         Volver
                     </a>

@@ -76,9 +76,26 @@ if (!function_exists('doc_view_estado_meta')) {
     }
 }
 
+if (!function_exists('doc_view_preview_kind')) {
+    function doc_view_preview_kind($mime)
+    {
+        $m = strtolower(trim((string)($mime ?? '')));
+        if ($m === 'application/pdf') {
+            return 'pdf';
+        }
+        if (strpos($m, 'image/') === 0) {
+            return 'image';
+        }
+
+        return null;
+    }
+}
+
 $documentoId = (int)($documento['id'] ?? 0);
 $docEstado = (string)($documento['estado'] ?? '');
 [$estadoLabel, $estadoClass, $estadoIcon] = doc_view_estado_meta($docEstado);
+$docPreviewKind = $docEstado === 'activo' ? doc_view_preview_kind($documento['mime_type'] ?? '') : null;
+$docPreviewUrl = $docPreviewKind !== null ? url('documentos/' . $documentoId . '/descargar') . '?preview=1' : null;
 ?>
 
 <style>
@@ -138,6 +155,8 @@ $docEstado = (string)($documento['estado'] ?? '');
 .doc-detail-page .dc-btn:hover { transform: translateY(-1px); border-color: var(--dc-gold-line); color: var(--dc-gold-ink); }
 .doc-detail-page .dc-btn-dl { color: var(--dc-success); border-color: color-mix(in srgb, var(--dc-success) 26%, var(--dc-border)); }
 .doc-detail-page .dc-btn-dl:hover { color: var(--dc-success); background: var(--dc-success-bg); border-color: color-mix(in srgb, var(--dc-success) 40%, var(--dc-border)); }
+.doc-detail-page .dc-btn-preview { color: var(--dc-gold-ink); border-color: var(--dc-gold-line); background: var(--dc-gold-soft); }
+.doc-detail-page .dc-btn-preview:hover { color: var(--dc-gold-ink); background: color-mix(in srgb, var(--dc-gold) 20%, #fff); }
 .doc-detail-page .dc-act { color: var(--dc-text); }
 .doc-detail-page .dc-act-warn { color: color-mix(in srgb, var(--dc-warning) 82%, #000); border-color: color-mix(in srgb, var(--dc-warning) 28%, var(--dc-border)); background: var(--dc-warning-bg); }
 .doc-detail-page .dc-act-warn.is-confirming { background: linear-gradient(135deg, var(--dc-warning), color-mix(in srgb, var(--dc-warning) 72%, #000)); color: #fff; border-color: transparent; }
@@ -162,6 +181,15 @@ $docEstado = (string)($documento['estado'] ?? '');
 
 .doc-detail-page .dc-panel { background: var(--dc-surface); border: 1px solid var(--dc-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); }
 .doc-detail-page .dc-panel-title { font-family: var(--dc-serif); font-size: 1.4rem; font-weight: 700; color: var(--dc-heading); }
+.doc-detail-page .dc-preview-stage { min-height: 280px; display: grid; place-items: center; background: var(--dc-surface-warm); border-top: 1px solid var(--dc-border); }
+.doc-detail-page .dc-preview-stage[hidden] { display: none; }
+.doc-detail-page .dc-preview-empty { display: grid; place-items: center; gap: 10px; padding: 42px 20px; text-align: center; color: var(--dc-muted); }
+.doc-detail-page .dc-preview-empty i { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 16px; background: var(--dc-gold-soft); color: var(--dc-gold-ink); font-size: 1.25rem; }
+.doc-detail-page .dc-preview-empty strong { color: var(--dc-heading); font-size: .95rem; }
+.doc-detail-page .dc-preview-empty p { margin: 3px 0 0; }
+.doc-detail-page .dc-preview-empty .dc-preview-empty-btn { margin-top: 8px; min-width: 150px; }
+.doc-detail-page .dc-preview-embed { width: 100%; height: min(74vh, 760px); min-height: 420px; border: 0; background: #f8fafc; }
+.doc-detail-page .dc-preview-image { width: 100%; max-height: min(74vh, 760px); object-fit: contain; padding: 14px; }
 .doc-detail-page .dc-meta-label { font-size: .68rem; color: var(--dc-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
 .doc-detail-page .dc-meta-value { margin-top: 3px; font-weight: 700; color: var(--dc-heading); word-break: break-word; }
 .doc-detail-page .dc-meta-value.is-soft { font-weight: 500; color: #334155; }
@@ -183,7 +211,10 @@ $docEstado = (string)($documento['estado'] ?? '');
 .doc-detail-page .dc-empty h3 { color: var(--dc-brand); font-size: 1.05rem; font-weight: 700; }
 .doc-detail-page .dc-empty p { color: var(--dc-muted); font-size: .88rem; margin-top: 6px; }
 
-@media (max-width: 720px) { .doc-detail-page .dc-stats { grid-template-columns: 1fr; } }
+@media (max-width: 720px) {
+    .doc-detail-page .dc-stats { grid-template-columns: 1fr; }
+    .doc-detail-page .dc-preview-embed { height: 62vh; min-height: 340px; }
+}
 </style>
 
 <div class="doc-detail-page p-4 sm:p-6">
@@ -210,7 +241,7 @@ $docEstado = (string)($documento['estado'] ?? '');
         </section>
 
         <section class="dc-toolbar">
-            <a class="dc-btn" href="<?= url('documentos') ?>">
+            <a class="dc-btn" href="<?= back_url('documentos') ?>">
                 <i class="fas fa-arrow-left"></i>
                 Volver
             </a>
@@ -225,6 +256,12 @@ $docEstado = (string)($documento['estado'] ?? '');
                     <i class="fas fa-download"></i>
                     Descargar
                 </a>
+                <?php if ($docPreviewUrl): ?>
+                    <a class="dc-btn dc-btn-preview" href="<?= doc_view_safe($docPreviewUrl, '') ?>" target="_blank" rel="noopener">
+                        <i class="fas fa-magnifying-glass"></i>
+                        Abrir preview
+                    </a>
+                <?php endif; ?>
                 <form method="POST" action="<?= url('documentos/' . $documentoId . '/archivar') ?>" data-doc-confirm="1" data-confirm-label="Confirmar archivar" data-confirm-message="Archivar quita el documento de los activos. Podras restaurarlo cuando quieras.">
                     <?= csrf_field() ?>
                     <button class="dc-btn dc-act dc-act-warn" type="submit">
@@ -246,11 +283,39 @@ $docEstado = (string)($documento['estado'] ?? '');
                     <?= csrf_field() ?>
                     <button class="dc-btn dc-act dc-act-danger" type="submit">
                         <i class="fas fa-ban"></i>
-                        Dar de baja
+                        Baja logica
                     </button>
                 </form>
             <?php endif; ?>
         </section>
+
+        <?php if ($docPreviewUrl): ?>
+            <section class="dc-panel overflow-hidden" data-doc-inline-preview data-preview-url="<?= doc_view_safe($docPreviewUrl, '') ?>" data-preview-kind="<?= doc_view_safe($docPreviewKind, '') ?>" data-preview-name="<?= doc_view_safe($documento['nombre_original'] ?? ('Documento #' . $documentoId), '') ?>">
+                <div class="dc-panel-head">
+                    <div>
+                        <h2 class="dc-panel-title">Previsualizaci&oacute;n</h2>
+                        <p class="dc-sub">Disponible para PDF e im&aacute;genes. Se carga solo cuando la solicitas.</p>
+                    </div>
+                    <button type="button" class="dc-btn dc-btn-preview" data-doc-preview-toggle>
+                        <i class="fas fa-eye"></i>
+                        Cargar vista
+                    </button>
+                </div>
+                <div class="dc-preview-stage" data-doc-preview-stage>
+                    <div class="dc-preview-empty">
+                        <i class="fas fa-file-lines"></i>
+                        <div>
+                            <strong>Vista lista para cargar</strong>
+                            <p>Presiona el bot&oacute;n para ver el archivo sin descargarlo.</p>
+                        </div>
+                        <button type="button" class="dc-btn dc-btn-preview dc-preview-empty-btn" data-doc-preview-load>
+                            <i class="fas fa-eye"></i>
+                            Cargar vista
+                        </button>
+                    </div>
+                </div>
+            </section>
+        <?php endif; ?>
 
         <div class="dc-panel p-5">
             <h2 class="dc-panel-title mb-4">Informaci&oacute;n del documento</h2>
@@ -370,6 +435,81 @@ $docEstado = (string)($documento['estado'] ?? '');
         }
         button?.classList.remove('is-confirming');
     }
+
+    document.querySelectorAll('[data-doc-inline-preview]').forEach(panel => {
+        const toggleButton = panel.querySelector('[data-doc-preview-toggle]');
+        const stage = panel.querySelector('[data-doc-preview-stage]');
+        const previewUrl = panel.dataset.previewUrl || '';
+        const previewKind = panel.dataset.previewKind || '';
+        const previewName = panel.dataset.previewName || 'Documento';
+
+        if (!toggleButton || !stage || !previewUrl) {
+            return;
+        }
+
+        function updatePreviewToggle() {
+            if (panel.dataset.previewLoaded !== '1') {
+                toggleButton.innerHTML = '<i class="fas fa-eye"></i> Cargar vista';
+                return;
+            }
+
+            if (stage.hidden) {
+                toggleButton.innerHTML = '<i class="fas fa-eye"></i> Mostrar vista';
+                return;
+            }
+
+            toggleButton.innerHTML = '<i class="fas fa-eye-slash"></i> Ocultar vista';
+        }
+
+        function loadPreview() {
+            if (panel.dataset.previewLoaded === '1') {
+                stage.hidden = false;
+                updatePreviewToggle();
+                return;
+            }
+
+            stage.hidden = false;
+            stage.replaceChildren();
+
+            if (previewKind === 'image') {
+                const image = document.createElement('img');
+                image.className = 'dc-preview-image';
+                image.src = previewUrl;
+                image.alt = previewName;
+                image.loading = 'lazy';
+                stage.appendChild(image);
+            } else {
+                const frame = document.createElement('iframe');
+                frame.className = 'dc-preview-embed';
+                frame.src = previewUrl;
+                frame.title = 'Previsualizacion de ' + previewName;
+                frame.loading = 'lazy';
+                stage.appendChild(frame);
+            }
+
+            panel.dataset.previewLoaded = '1';
+            updatePreviewToggle();
+        }
+
+        toggleButton.addEventListener('click', () => {
+            if (panel.dataset.previewLoaded === '1' && !stage.hidden) {
+                stage.hidden = true;
+                updatePreviewToggle();
+                return;
+            }
+
+            loadPreview();
+        });
+
+        stage.addEventListener('click', event => {
+            const trigger = event.target instanceof Element ? event.target.closest('[data-doc-preview-load]') : null;
+            if (!trigger) {
+                return;
+            }
+
+            loadPreview();
+        });
+    });
 
     document.addEventListener('submit', function(event) {
         const form = event.target instanceof HTMLFormElement ? event.target : null;

@@ -19,7 +19,7 @@ $reservacion_id = $reservacion['id'];
                 </h1>
                 <p class="text-gray-600 mt-1">Reservación #<?= $reservacion_id ?></p>
             </div>
-            <a href="<?= url('reservaciones/ver/' . $reservacion_id) ?>" class="text-blue-600 hover:text-blue-800">
+            <a href="<?= back_url('reservaciones/ver/' . $reservacion_id) ?>" class="text-blue-600 hover:text-blue-800">
                 ← Volver
             </a>
         </div>
@@ -119,6 +119,11 @@ $reservacion_id = $reservacion['id'];
         <?= csrf_field() ?>
         <input type="hidden" name="reservacion_id" value="<?= $reservacion_id ?>">
         <input type="hidden" name="tipo" value="<?= $verificacion['tipo'] ?>">
+
+        <div id="checkInTardioMessage"
+             class="hidden mb-6 rounded-xl border px-4 py-3 text-sm font-semibold"
+             role="alert"
+             aria-live="polite"></div>
 
         <!-- Hora de Entrada (solo para check-in tardío normal) -->
         <?php if (!$es_express): ?>
@@ -246,7 +251,7 @@ $reservacion_id = $reservacion['id'];
 
         <!-- Botones de Acción -->
         <div class="flex items-center justify-between">
-            <a href="<?= url('reservaciones/ver/' . $reservacion_id) ?>"
+            <a href="<?= back_url('reservaciones/ver/' . $reservacion_id) ?>"
                class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
                 Cancelar
             </a>
@@ -286,6 +291,38 @@ document.addEventListener('DOMContentLoaded', function() {
         return '$' + Number(valor || 0).toFixed(2);
     }
 
+    const formMessage = document.getElementById('checkInTardioMessage');
+    let mixedShortConfirmationArmed = false;
+    let expressConfirmationArmed = false;
+
+    function showFormMessage(message, type = 'error') {
+        if (!formMessage) return;
+
+        const styles = {
+            error: 'border-red-200 bg-red-50 text-red-700',
+            warning: 'border-amber-200 bg-amber-50 text-amber-800',
+            info: 'border-blue-200 bg-blue-50 text-blue-700',
+            success: 'border-emerald-200 bg-emerald-50 text-emerald-700'
+        };
+
+        formMessage.className = 'mb-6 rounded-xl border px-4 py-3 text-sm font-semibold ' + (styles[type] || styles.error);
+        formMessage.textContent = message;
+        formMessage.classList.remove('hidden');
+        formMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function clearFormMessage() {
+        if (formMessage) {
+            formMessage.className = 'hidden mb-6 rounded-xl border px-4 py-3 text-sm font-semibold';
+            formMessage.textContent = '';
+        }
+    }
+
+    function resetInlineConfirmations() {
+        mixedShortConfirmationArmed = false;
+        expressConfirmationArmed = false;
+    }
+
     // Cambiar visualización según método de pago
     if (metodoPago) {
         metodoPago.addEventListener('change', function() {
@@ -300,13 +337,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 pagoMixto.style.display = 'block';
                 calcularTotalPagado(); // Inicializar cálculo
             }
+
+            resetInlineConfirmations();
+            clearFormMessage();
         });
     }
 
     // Calcular total en pago mixto
     const pagoInputs = document.querySelectorAll('.pago-input');
     pagoInputs.forEach(input => {
-        input.addEventListener('input', calcularTotalPagado);
+        input.addEventListener('input', function() {
+            resetInlineConfirmations();
+            clearFormMessage();
+            calcularTotalPagado();
+        });
     });
 
     function calcularTotalPagado() {
@@ -336,6 +380,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Validación antes de enviar
     const form = document.getElementById('formCheckInTardio');
     form.addEventListener('submit', function(e) {
+        clearFormMessage();
         const metodo = metodoPago ? metodoPago.value : null;
 
         if (metodo === 'mixto') {
@@ -346,22 +391,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (total <= 0) {
                 e.preventDefault();
-                alert('Debe ingresar al menos un monto en el pago mixto');
+                showFormMessage('Ingresa al menos un monto en el pago mixto antes de continuar.', 'error');
+                pagoInputs[0]?.focus();
                 return false;
             }
 
-            if (total < totalReservacion) {
-                if (!confirm('El total ingresado ($' + total.toFixed(2) + ') es menor al total de la reservación ($' + totalReservacion.toFixed(2) + ').\n\n¿Desea continuar de todas formas?')) {
-                    e.preventDefault();
-                    return false;
-                }
+            if (total < totalReservacion && !mixedShortConfirmationArmed) {
+                e.preventDefault();
+                mixedShortConfirmationArmed = true;
+                <?php if ($es_express): ?>
+                expressConfirmationArmed = true;
+                showFormMessage('El total ingresado (' + formatoMoneda(total) + ') es menor al total de la reservacion (' + formatoMoneda(totalReservacion) + ') y el proceso express hara check-in y check-out en un solo paso. Si deseas continuar, presiona guardar otra vez.', 'warning');
+                <?php else: ?>
+                showFormMessage('El total ingresado (' + formatoMoneda(total) + ') es menor al total de la reservacion (' + formatoMoneda(totalReservacion) + '). Si deseas continuar de todas formas, presiona guardar otra vez.', 'warning');
+                <?php endif; ?>
+                return false;
             }
+        } else {
+            mixedShortConfirmationArmed = false;
         }
 
         // Confirmación para proceso express
         <?php if ($es_express): ?>
-        if (!confirm('¿Confirma que desea realizar el proceso EXPRESS?\n\nEsto hará check-in Y check-out automáticamente ya que la reservación está vencida.')) {
+        if (!expressConfirmationArmed) {
             e.preventDefault();
+            expressConfirmationArmed = true;
+            showFormMessage('Proceso express listo para confirmar: se registrara check-in y check-out en un solo paso. Presiona guardar otra vez para procesarlo.', 'warning');
             return false;
         }
         <?php endif; ?>

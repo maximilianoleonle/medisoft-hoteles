@@ -48,9 +48,9 @@
             <a href="<?= url('/') ?>" class="inline-block bg-hotel-brown text-white px-6 py-3 rounded-lg hover:bg-hotel-brown-dark transition duration-300">
                 <i class="fas fa-home mr-2"></i>Ir al Inicio
             </a>
-            <button onclick="history.back()" class="inline-block bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition duration-300">
+            <a href="<?= back_url('/') ?>" class="inline-block bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition duration-300">
                 <i class="fas fa-arrow-left mr-2"></i>Regresar
-            </button>
+            </a>
         </div>
     </div>
 </body>

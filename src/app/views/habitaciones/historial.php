@@ -398,7 +398,7 @@
         <div class="history-header-inner container mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <a href="<?= url('habitaciones/' . $habitacion['id']) ?>" 
+                    <a href="<?= back_url('habitaciones/' . $habitacion['id']) ?>"
                        class="history-back-link text-purple-600 hover:text-purple-800 transition-all hover:scale-110">
                         <i class="fas fa-arrow-left text-xl"></i>
                     </a>

@@ -119,6 +119,36 @@ class Trabajador extends Model
         return true;
     }
 
+    public function tablasReporteNominaPagosSnapshotDisponibles(): bool
+    {
+        foreach ([
+            'trabajadores',
+            'trabajador_pagos_caja',
+            'trabajador_nomina_periodos',
+            'trabajador_nomina_periodo_detalles',
+            'movimientos_caja',
+            'cortes_caja',
+            'cajas',
+        ] as $tabla) {
+            if (!$this->tablaExiste($tabla)) {
+                return false;
+            }
+        }
+
+        return $this->columnaExiste('trabajador_pagos_caja', 'nomina_periodo_id')
+            && $this->columnaExiste('trabajador_pagos_caja', 'nomina_periodo_detalle_id');
+    }
+
+    public function tablasAuditoriaNominaConsolidadaDisponibles(): bool
+    {
+        return $this->tablasReporteNominaPagosSnapshotDisponibles();
+    }
+
+    public function tablasExpedienteNominaAdministrativoDisponibles(): bool
+    {
+        return $this->tablasAuditoriaNominaConsolidadaDisponibles();
+    }
+
     public function listarPorHotel(int $hotelId, array $filtros = [], int $limite = 100): array
     {
         if ($hotelId <= 0 || !$this->tablaDisponible()) {
@@ -930,6 +960,300 @@ class Trabajador extends Model
         $resultado['registros'] = $registros;
         $resultado['resumen'] = $this->resumenReporteNominaPeriodos($registros);
         $resultado['por_estado'] = $this->porEstadoReporteNominaPeriodos($registros);
+
+        return $resultado;
+    }
+
+    public function reporteNominaPagosSnapshotPorHotel(int $hotelId, array $filtros = [], int $limite = 300): array
+    {
+        $filtros = $this->normalizarFiltrosReporteNominaPagosSnapshot($filtros);
+        $resultado = [
+            'registros' => [],
+            'resumen' => $this->resumenVacioReporteNominaPagosSnapshot(),
+            'por_estado' => [],
+            'por_periodo' => [],
+            'filtros_normalizados' => $filtros,
+        ];
+
+        if ($hotelId <= 0 || !$this->tablasReporteNominaPagosSnapshotDisponibles()) {
+            return $resultado;
+        }
+
+        $limite = max(1, min(1000, $limite));
+        [$whereSql, $params] = $this->whereReporteNominaPagosSnapshot($hotelId, $filtros);
+        $inconsistenciaSql = $this->condicionInconsistenciaPagosSnapshot();
+
+        $stmt = $this->db->query(
+            "SELECT pc.id,
+                    pc.hotel_id,
+                    pc.trabajador_id,
+                    pc.nomina_periodo_id,
+                    pc.nomina_periodo_detalle_id,
+                    pc.movimiento_caja_id,
+                    pc.corte_id,
+                    pc.monto,
+                    pc.metodo_pago,
+                    pc.referencia,
+                    pc.concepto,
+                    pc.periodo_inicio,
+                    pc.periodo_fin,
+                    pc.fecha_pago,
+                    pc.estado,
+                    pc.notas,
+                    pc.created_at,
+                    t.nombre_completo AS trabajador_actual_nombre,
+                    t.identificacion AS trabajador_actual_identificacion,
+                    t.rol_laboral AS trabajador_actual_rol,
+                    p.etiqueta AS periodo_etiqueta,
+                    p.fecha_inicio AS periodo_fecha_inicio,
+                    p.fecha_fin AS periodo_fecha_fin,
+                    p.estado AS periodo_estado,
+                    p.cerrado_at AS periodo_cerrado_at,
+                    p.aprobado_at AS periodo_aprobado_at,
+                    d.periodo_id AS detalle_periodo_id,
+                    d.trabajador_id AS detalle_trabajador_id,
+                    d.trabajador_nombre AS detalle_trabajador_nombre,
+                    d.trabajador_rol AS detalle_trabajador_rol,
+                    d.estado_preview_nomina,
+                    d.bruto_periodo,
+                    d.deducciones_informativas,
+                    d.pagos_caja_aplicados AS detalle_pagos_caja_aplicados,
+                    d.neto_sugerido,
+                    d.pendiente_pago_sugerido,
+                    cc.estado AS corte_estado,
+                    cc.fecha_apertura AS corte_fecha_apertura,
+                    c.nombre AS caja_nombre,
+                    mc.tipo AS movimiento_tipo,
+                    mc.categoria AS movimiento_categoria,
+                    mc.monto AS movimiento_monto,
+                    mc.referencia AS movimiento_referencia,
+                    mc.corte_id AS movimiento_corte_id,
+                    mc.created_at AS movimiento_created_at,
+                    mcr.id AS movimiento_reversion_id,
+                    mcr.corte_id AS corte_reversion_id,
+                    mcr.monto AS movimiento_reversion_monto,
+                    mcr.created_at AS movimiento_reversion_created_at,
+                    u.nombre_completo AS creado_por_nombre,
+                    u.nombre_usuario AS creado_por_login,
+                    CASE WHEN {$inconsistenciaSql} THEN 'revisar' ELSE 'ok' END AS conciliacion_estado
+             FROM trabajador_pagos_caja pc
+             LEFT JOIN trabajadores t
+                ON t.id = pc.trabajador_id
+               AND t.hotel_id = pc.hotel_id
+             LEFT JOIN trabajador_nomina_periodos p
+                ON p.id = pc.nomina_periodo_id
+               AND p.hotel_id = pc.hotel_id
+             LEFT JOIN trabajador_nomina_periodo_detalles d
+                ON d.id = pc.nomina_periodo_detalle_id
+               AND d.hotel_id = pc.hotel_id
+             LEFT JOIN movimientos_caja mc
+                ON mc.id = pc.movimiento_caja_id
+               AND mc.hotel_id = pc.hotel_id
+             LEFT JOIN cortes_caja cc
+                ON cc.id = pc.corte_id
+               AND cc.hotel_id = pc.hotel_id
+             LEFT JOIN cajas c
+                ON c.id = cc.caja_id
+               AND c.hotel_id = pc.hotel_id
+             LEFT JOIN movimientos_caja mcr
+                ON mcr.hotel_id = pc.hotel_id
+               AND mcr.tipo = 'ingreso'
+               AND mcr.categoria = 'Reversion Pago laboral'
+               AND mcr.referencia = CONCAT('REV-NOM-TRAB-', pc.trabajador_id, '-PAGO-', pc.id)
+             LEFT JOIN usuarios u
+                ON u.id = pc.created_by
+             WHERE {$whereSql}
+             ORDER BY pc.fecha_pago DESC, pc.id DESC
+             LIMIT {$limite}",
+            $params
+        );
+
+        $registros = $stmt ? ($stmt->fetchAll() ?: []) : [];
+        $resultado['registros'] = $registros;
+        $resultado['resumen'] = $this->resumenReporteNominaPagosSnapshot($registros);
+        $resultado['por_estado'] = $this->porEstadoReporteNominaPagosSnapshot($registros);
+        $resultado['por_periodo'] = $this->porPeriodoReporteNominaPagosSnapshot($registros);
+
+        return $resultado;
+    }
+
+    public function auditoriaNominaConsolidadaPorHotel(int $hotelId, array $filtros = [], int $limite = 500): array
+    {
+        $filtros = $this->normalizarFiltrosAuditoriaNomina($filtros);
+        $resultado = [
+            'registros' => [],
+            'resumen' => $this->resumenVacioAuditoriaNomina(),
+            'por_estado' => [],
+            'por_periodo' => [],
+            'filtros_normalizados' => $filtros,
+        ];
+
+        if ($hotelId <= 0 || !$this->tablasAuditoriaNominaConsolidadaDisponibles()) {
+            return $resultado;
+        }
+
+        $limite = max(1, min(1000, $limite));
+        [$whereSql, $params] = $this->whereAuditoriaNomina($hotelId, $filtros);
+        $inconsistenciaSql = $this->condicionInconsistenciaPagosSnapshotParaAlias('pc', 'p2', 'd2', 'mc', 'cc', 'mcr');
+
+        $stmt = $this->db->query(
+            "SELECT p.id AS periodo_id,
+                    p.etiqueta AS periodo_etiqueta,
+                    p.fecha_inicio AS periodo_fecha_inicio,
+                    p.fecha_fin AS periodo_fecha_fin,
+                    p.estado AS periodo_estado,
+                    p.tipo_periodo,
+                    p.cerrado_at AS periodo_cerrado_at,
+                    p.aprobado_at AS periodo_aprobado_at,
+                    p.anulado_at AS periodo_anulado_at,
+                    d.id AS detalle_id,
+                    d.trabajador_id,
+                    d.trabajador_nombre AS trabajador_snapshot_nombre,
+                    d.trabajador_identificacion AS trabajador_snapshot_identificacion,
+                    d.trabajador_rol AS trabajador_snapshot_rol,
+                    d.estado_preview_nomina,
+                    d.bruto_periodo,
+                    d.deducciones_informativas,
+                    d.neto_sugerido,
+                    d.pendiente_pago_sugerido,
+                    t.nombre_completo AS trabajador_actual_nombre,
+                    t.identificacion AS trabajador_actual_identificacion,
+                    t.rol_laboral AS trabajador_actual_rol,
+                    t.estado AS trabajador_actual_estado,
+                    COALESCE(pa.pagos_count, 0) AS pagos_count,
+                    COALESCE(pa.pagos_pagados_count, 0) AS pagos_pagados_count,
+                    COALESCE(pa.pagos_revertidos_count, 0) AS pagos_revertidos_count,
+                    COALESCE(pa.pagos_caja_total, 0.00) AS pagos_caja_total,
+                    COALESCE(pa.reversiones_total, 0.00) AS reversiones_total,
+                    COALESCE(pa.inconsistencias_count, 0) AS inconsistencias_count,
+                    pa.ultimo_pago_id,
+                    pa.ultimo_pago,
+                    pa.referencias_pago,
+                    pa.cajas,
+                    GREATEST(
+                        ROUND(COALESCE(d.pendiente_pago_sugerido, 0), 2)
+                        - ROUND(COALESCE(pa.pagos_caja_total, 0), 2),
+                        0
+                    ) AS saldo_auditoria,
+                    CASE
+                        WHEN COALESCE(pa.inconsistencias_count, 0) > 0
+                          OR ROUND(COALESCE(pa.pagos_caja_total, 0), 2) > ROUND(COALESCE(d.pendiente_pago_sugerido, 0), 2)
+                            THEN 'revisar'
+                        WHEN ROUND(COALESCE(d.pendiente_pago_sugerido, 0), 2) <= 0
+                            THEN 'liquidado'
+                        WHEN ROUND(COALESCE(pa.pagos_caja_total, 0), 2) >= ROUND(COALESCE(d.pendiente_pago_sugerido, 0), 2)
+                            THEN 'liquidado'
+                        WHEN COALESCE(pa.pagos_pagados_count, 0) > 0
+                            THEN 'parcial'
+                        ELSE 'sin_pago'
+                    END AS auditoria_estado
+             FROM trabajador_nomina_periodo_detalles d
+             INNER JOIN trabajador_nomina_periodos p
+                ON p.id = d.periodo_id
+               AND p.hotel_id = d.hotel_id
+             LEFT JOIN trabajadores t
+                ON t.id = d.trabajador_id
+               AND t.hotel_id = d.hotel_id
+             LEFT JOIN (
+                SELECT pc.hotel_id,
+                       pc.nomina_periodo_id,
+                       pc.nomina_periodo_detalle_id,
+                       COUNT(*) AS pagos_count,
+                       SUM(CASE WHEN pc.estado = 'pagado' THEN 1 ELSE 0 END) AS pagos_pagados_count,
+                       SUM(CASE WHEN pc.estado = 'revertido' THEN 1 ELSE 0 END) AS pagos_revertidos_count,
+                       SUM(CASE WHEN pc.estado = 'pagado' THEN pc.monto ELSE 0 END) AS pagos_caja_total,
+                       SUM(CASE WHEN pc.estado = 'revertido' THEN pc.monto ELSE 0 END) AS reversiones_total,
+                       SUM(CASE WHEN {$inconsistenciaSql} THEN 1 ELSE 0 END) AS inconsistencias_count,
+                       MAX(pc.id) AS ultimo_pago_id,
+                       MAX(pc.fecha_pago) AS ultimo_pago,
+                       GROUP_CONCAT(DISTINCT pc.referencia ORDER BY pc.id SEPARATOR ', ') AS referencias_pago,
+                       GROUP_CONCAT(DISTINCT c.nombre ORDER BY c.nombre SEPARATOR ', ') AS cajas
+                FROM trabajador_pagos_caja pc
+                LEFT JOIN trabajador_nomina_periodos p2
+                   ON p2.id = pc.nomina_periodo_id
+                  AND p2.hotel_id = pc.hotel_id
+                LEFT JOIN trabajador_nomina_periodo_detalles d2
+                   ON d2.id = pc.nomina_periodo_detalle_id
+                  AND d2.hotel_id = pc.hotel_id
+                LEFT JOIN movimientos_caja mc
+                   ON mc.id = pc.movimiento_caja_id
+                  AND mc.hotel_id = pc.hotel_id
+                LEFT JOIN cortes_caja cc
+                   ON cc.id = pc.corte_id
+                  AND cc.hotel_id = pc.hotel_id
+                LEFT JOIN cajas c
+                   ON c.id = cc.caja_id
+                  AND c.hotel_id = pc.hotel_id
+                LEFT JOIN movimientos_caja mcr
+                   ON mcr.hotel_id = pc.hotel_id
+                  AND mcr.tipo = 'ingreso'
+                  AND mcr.categoria = 'Reversion Pago laboral'
+                  AND mcr.referencia = CONCAT('REV-NOM-TRAB-', pc.trabajador_id, '-PAGO-', pc.id)
+                WHERE pc.nomina_periodo_id IS NOT NULL
+                  AND pc.nomina_periodo_detalle_id IS NOT NULL
+                GROUP BY pc.hotel_id, pc.nomina_periodo_id, pc.nomina_periodo_detalle_id
+             ) pa
+                ON pa.hotel_id = d.hotel_id
+               AND pa.nomina_periodo_id = p.id
+               AND pa.nomina_periodo_detalle_id = d.id
+             WHERE {$whereSql}
+             ORDER BY p.fecha_inicio DESC, p.fecha_fin DESC, p.id DESC, d.trabajador_nombre ASC, d.id ASC
+             LIMIT 1000",
+            $params
+        );
+
+        $registros = $stmt ? ($stmt->fetchAll() ?: []) : [];
+        $registros = $this->filtrarAuditoriaNominaPorEstado($registros, $filtros);
+        $registros = array_slice($registros, 0, $limite);
+
+        $resultado['registros'] = $registros;
+        $resultado['resumen'] = $this->resumenAuditoriaNomina($registros);
+        $resultado['por_estado'] = $this->porEstadoAuditoriaNomina($registros);
+        $resultado['por_periodo'] = $this->porPeriodoAuditoriaNomina($registros);
+
+        return $resultado;
+    }
+
+    public function expedienteNominaAdministrativoPorHotel(int $hotelId, array $filtros = [], int $limite = 500): array
+    {
+        $filtros = $this->normalizarFiltrosExpedienteNomina($filtros);
+        $resultado = [
+            'registros' => [],
+            'resumen' => $this->resumenVacioExpedienteNomina(),
+            'por_estado' => [],
+            'por_periodo' => [],
+            'bloqueos' => [],
+            'filtros_normalizados' => $filtros,
+        ];
+
+        if ($hotelId <= 0 || !$this->tablasExpedienteNominaAdministrativoDisponibles()) {
+            return $resultado;
+        }
+
+        $auditoriaFiltros = [
+            'periodo_id' => $filtros['periodo_id'],
+            'trabajador_id' => $filtros['trabajador_id'],
+            'buscar' => $filtros['buscar'],
+            'estado_snapshot' => $filtros['estado_snapshot'],
+            'estado_auditoria' => 'todos',
+            'fecha_inicio' => $filtros['fecha_inicio'] ?? '',
+            'fecha_fin' => $filtros['fecha_fin'] ?? '',
+        ];
+
+        $base = $this->auditoriaNominaConsolidadaPorHotel($hotelId, $auditoriaFiltros, 1000);
+        $registros = [];
+        foreach (is_array($base['registros'] ?? null) ? $base['registros'] : [] as $registro) {
+            $registros[] = $this->evaluarExpedienteNominaRegistro($registro);
+        }
+
+        $registros = $this->filtrarExpedienteNominaPorEstado($registros, $filtros);
+        $registros = array_slice($registros, 0, max(1, min(1000, $limite)));
+
+        $resultado['registros'] = $registros;
+        $resultado['resumen'] = $this->resumenExpedienteNomina($registros);
+        $resultado['por_estado'] = $this->porEstadoExpedienteNomina($registros);
+        $resultado['por_periodo'] = $this->porPeriodoExpedienteNomina($registros);
+        $resultado['bloqueos'] = $this->bloqueosExpedienteNomina($registros);
 
         return $resultado;
     }
@@ -2333,6 +2657,621 @@ class Trabajador extends Model
         return array_values($items);
     }
 
+    private function normalizarFiltrosReporteNominaPagosSnapshot(array $filtros): array
+    {
+        $estado = strtolower(trim((string)($filtros['estado'] ?? 'todos')));
+        if (!in_array($estado, ['todos', 'pagado', 'revertido'], true)) {
+            $estado = 'todos';
+        }
+
+        $conciliacion = strtolower(trim((string)($filtros['conciliacion'] ?? 'todos')));
+        if (!in_array($conciliacion, ['todos', 'ok', 'revisar'], true)) {
+            $conciliacion = 'todos';
+        }
+
+        $fechaInicio = $this->nullableFecha($filtros['fecha_inicio'] ?? null);
+        $fechaFin = $this->nullableFecha($filtros['fecha_fin'] ?? null);
+        if ($fechaInicio !== null && $fechaFin !== null && $fechaFin < $fechaInicio) {
+            $temporal = $fechaInicio;
+            $fechaInicio = $fechaFin;
+            $fechaFin = $temporal;
+        }
+
+        return [
+            'periodo_id' => max(0, (int)($filtros['periodo_id'] ?? 0)),
+            'trabajador_id' => max(0, (int)($filtros['trabajador_id'] ?? 0)),
+            'buscar' => $this->limpiarTexto($filtros['buscar'] ?? '', 120),
+            'estado' => $estado,
+            'conciliacion' => $conciliacion,
+            'fecha_inicio' => $fechaInicio,
+            'fecha_fin' => $fechaFin,
+        ];
+    }
+
+    private function whereReporteNominaPagosSnapshot(int $hotelId, array $filtros): array
+    {
+        $where = [
+            'pc.hotel_id = ?',
+            'pc.nomina_periodo_id IS NOT NULL',
+            'pc.nomina_periodo_detalle_id IS NOT NULL',
+        ];
+        $params = [$hotelId];
+
+        if ((int)($filtros['periodo_id'] ?? 0) > 0) {
+            $where[] = 'pc.nomina_periodo_id = ?';
+            $params[] = (int)$filtros['periodo_id'];
+        }
+
+        if ((int)($filtros['trabajador_id'] ?? 0) > 0) {
+            $where[] = 'pc.trabajador_id = ?';
+            $params[] = (int)$filtros['trabajador_id'];
+        }
+
+        if (($filtros['estado'] ?? 'todos') !== 'todos') {
+            $where[] = 'pc.estado = ?';
+            $params[] = (string)$filtros['estado'];
+        }
+
+        if (($filtros['fecha_inicio'] ?? null) !== null) {
+            $where[] = 'DATE(pc.fecha_pago) >= ?';
+            $params[] = (string)$filtros['fecha_inicio'];
+        }
+
+        if (($filtros['fecha_fin'] ?? null) !== null) {
+            $where[] = 'DATE(pc.fecha_pago) <= ?';
+            $params[] = (string)$filtros['fecha_fin'];
+        }
+
+        if (($filtros['conciliacion'] ?? 'todos') === 'ok') {
+            $where[] = 'NOT (' . $this->condicionInconsistenciaPagosSnapshot() . ')';
+        } elseif (($filtros['conciliacion'] ?? 'todos') === 'revisar') {
+            $where[] = '(' . $this->condicionInconsistenciaPagosSnapshot() . ')';
+        }
+
+        $buscar = trim((string)($filtros['buscar'] ?? ''));
+        if ($buscar !== '') {
+            $like = '%' . $buscar . '%';
+            $where[] = '(CAST(pc.id AS CHAR) LIKE ?
+                OR CAST(pc.nomina_periodo_id AS CHAR) LIKE ?
+                OR t.nombre_completo LIKE ?
+                OR t.identificacion LIKE ?
+                OR d.trabajador_nombre LIKE ?
+                OR p.etiqueta LIKE ?
+                OR pc.referencia LIKE ?
+                OR mc.referencia LIKE ?
+                OR c.nombre LIKE ?)';
+            array_push($params, $like, $like, $like, $like, $like, $like, $like, $like, $like);
+        }
+
+        return [implode(' AND ', $where), $params];
+    }
+
+    private function condicionInconsistenciaPagosSnapshot(): string
+    {
+        return $this->condicionInconsistenciaPagosSnapshotParaAlias('pc', 'p', 'd', 'mc', 'cc', 'mcr');
+    }
+
+    private function condicionInconsistenciaPagosSnapshotParaAlias(
+        string $pagoAlias,
+        string $periodoAlias,
+        string $detalleAlias,
+        string $movimientoAlias,
+        string $corteAlias,
+        string $reversionAlias
+    ): string {
+        return "({$periodoAlias}.id IS NULL
+            OR {$detalleAlias}.id IS NULL
+            OR {$detalleAlias}.periodo_id <> {$periodoAlias}.id
+            OR {$detalleAlias}.trabajador_id <> {$pagoAlias}.trabajador_id
+            OR {$movimientoAlias}.id IS NULL
+            OR {$corteAlias}.id IS NULL
+            OR {$movimientoAlias}.corte_id <> {$pagoAlias}.corte_id
+            OR ROUND(COALESCE({$movimientoAlias}.monto, 0), 2) <> ROUND(COALESCE({$pagoAlias}.monto, 0), 2)
+            OR COALESCE({$movimientoAlias}.tipo, '') <> 'gasto'
+            OR COALESCE({$movimientoAlias}.categoria, '') <> 'Pago laboral'
+            OR COALESCE({$movimientoAlias}.referencia, '') <> COALESCE({$pagoAlias}.referencia, '')
+            OR ({$pagoAlias}.estado = 'revertido' AND {$reversionAlias}.id IS NULL))";
+    }
+
+    private function resumenVacioReporteNominaPagosSnapshot(): array
+    {
+        return [
+            'total_registros' => 0,
+            'ok_count' => 0,
+            'revisar_count' => 0,
+            'pagados_count' => 0,
+            'revertidos_count' => 0,
+            'monto_total' => '0.00',
+            'monto_pagado_total' => '0.00',
+            'monto_revertido_total' => '0.00',
+            'reversion_caja_total' => '0.00',
+        ];
+    }
+
+    private function resumenReporteNominaPagosSnapshot(array $registros): array
+    {
+        $resumen = $this->resumenVacioReporteNominaPagosSnapshot();
+
+        foreach ($registros as $registro) {
+            $estado = (string)($registro['estado'] ?? '');
+            $conciliacion = (string)($registro['conciliacion_estado'] ?? 'revisar');
+            $monto = (float)($registro['monto'] ?? 0);
+
+            $resumen['total_registros']++;
+            $resumen['monto_total'] = $this->decimal((float)$resumen['monto_total'] + $monto);
+
+            if ($conciliacion === 'ok') {
+                $resumen['ok_count']++;
+            } else {
+                $resumen['revisar_count']++;
+            }
+
+            if ($estado === 'pagado') {
+                $resumen['pagados_count']++;
+                $resumen['monto_pagado_total'] = $this->decimal((float)$resumen['monto_pagado_total'] + $monto);
+            } elseif ($estado === 'revertido') {
+                $resumen['revertidos_count']++;
+                $resumen['monto_revertido_total'] = $this->decimal((float)$resumen['monto_revertido_total'] + $monto);
+            }
+
+            $resumen['reversion_caja_total'] = $this->decimal(
+                (float)$resumen['reversion_caja_total'] + (float)($registro['movimiento_reversion_monto'] ?? 0)
+            );
+        }
+
+        return $resumen;
+    }
+
+    private function porEstadoReporteNominaPagosSnapshot(array $registros): array
+    {
+        $items = [];
+        foreach ($registros as $registro) {
+            $estado = (string)($registro['estado'] ?? 'sin_estado');
+            if (!isset($items[$estado])) {
+                $items[$estado] = [
+                    'estado' => $estado,
+                    'total' => 0,
+                    'monto' => '0.00',
+                ];
+            }
+
+            $items[$estado]['total']++;
+            $items[$estado]['monto'] = $this->decimal((float)$items[$estado]['monto'] + (float)($registro['monto'] ?? 0));
+        }
+
+        return array_values($items);
+    }
+
+    private function porPeriodoReporteNominaPagosSnapshot(array $registros): array
+    {
+        $items = [];
+        foreach ($registros as $registro) {
+            $periodoId = (int)($registro['nomina_periodo_id'] ?? 0);
+            if (!isset($items[$periodoId])) {
+                $items[$periodoId] = [
+                    'periodo_id' => $periodoId,
+                    'etiqueta' => (string)($registro['periodo_etiqueta'] ?? ''),
+                    'fecha_inicio' => $registro['periodo_fecha_inicio'] ?? null,
+                    'fecha_fin' => $registro['periodo_fecha_fin'] ?? null,
+                    'total' => 0,
+                    'monto' => '0.00',
+                ];
+            }
+
+            $items[$periodoId]['total']++;
+            $items[$periodoId]['monto'] = $this->decimal((float)$items[$periodoId]['monto'] + (float)($registro['monto'] ?? 0));
+        }
+
+        return array_values($items);
+    }
+
+    private function normalizarFiltrosAuditoriaNomina(array $filtros): array
+    {
+        $estadoSnapshot = strtolower(trim((string)($filtros['estado_snapshot'] ?? 'todos')));
+        if (!in_array($estadoSnapshot, ['todos', 'cerrado', 'aprobado', 'anulado'], true)) {
+            $estadoSnapshot = 'todos';
+        }
+
+        $estadoAuditoria = strtolower(trim((string)($filtros['estado_auditoria'] ?? 'todos')));
+        if (!in_array($estadoAuditoria, ['todos', 'liquidado', 'parcial', 'sin_pago', 'revisar'], true)) {
+            $estadoAuditoria = 'todos';
+        }
+
+        $fechaInicio = $this->nullableFecha($filtros['fecha_inicio'] ?? null);
+        $fechaFin = $this->nullableFecha($filtros['fecha_fin'] ?? null);
+        if ($fechaInicio !== null && $fechaFin !== null && $fechaFin < $fechaInicio) {
+            $temporal = $fechaInicio;
+            $fechaInicio = $fechaFin;
+            $fechaFin = $temporal;
+        }
+
+        return [
+            'periodo_id' => max(0, (int)($filtros['periodo_id'] ?? 0)),
+            'trabajador_id' => max(0, (int)($filtros['trabajador_id'] ?? 0)),
+            'buscar' => $this->limpiarTexto($filtros['buscar'] ?? '', 120),
+            'estado_snapshot' => $estadoSnapshot,
+            'estado_auditoria' => $estadoAuditoria,
+            'fecha_inicio' => $fechaInicio,
+            'fecha_fin' => $fechaFin,
+        ];
+    }
+
+    private function whereAuditoriaNomina(int $hotelId, array $filtros): array
+    {
+        $where = ['d.hotel_id = ?'];
+        $params = [$hotelId];
+
+        if ((int)($filtros['periodo_id'] ?? 0) > 0) {
+            $where[] = 'p.id = ?';
+            $params[] = (int)$filtros['periodo_id'];
+        }
+
+        if ((int)($filtros['trabajador_id'] ?? 0) > 0) {
+            $where[] = 'd.trabajador_id = ?';
+            $params[] = (int)$filtros['trabajador_id'];
+        }
+
+        if (($filtros['estado_snapshot'] ?? 'todos') !== 'todos') {
+            $where[] = 'p.estado = ?';
+            $params[] = (string)$filtros['estado_snapshot'];
+        }
+
+        if (($filtros['fecha_inicio'] ?? null) !== null) {
+            $where[] = 'p.fecha_inicio >= ?';
+            $params[] = (string)$filtros['fecha_inicio'];
+        }
+
+        if (($filtros['fecha_fin'] ?? null) !== null) {
+            $where[] = 'p.fecha_fin <= ?';
+            $params[] = (string)$filtros['fecha_fin'];
+        }
+
+        $buscar = trim((string)($filtros['buscar'] ?? ''));
+        if ($buscar !== '') {
+            $like = '%' . $buscar . '%';
+            $where[] = '(CAST(p.id AS CHAR) LIKE ?
+                OR CAST(d.id AS CHAR) LIKE ?
+                OR CAST(d.trabajador_id AS CHAR) LIKE ?
+                OR p.etiqueta LIKE ?
+                OR d.trabajador_nombre LIKE ?
+                OR d.trabajador_identificacion LIKE ?
+                OR d.trabajador_rol LIKE ?
+                OR t.nombre_completo LIKE ?
+                OR t.identificacion LIKE ?
+                OR pa.referencias_pago LIKE ?
+                OR pa.cajas LIKE ?)';
+            array_push($params, $like, $like, $like, $like, $like, $like, $like, $like, $like, $like, $like);
+        }
+
+        return [implode(' AND ', $where), $params];
+    }
+
+    private function filtrarAuditoriaNominaPorEstado(array $registros, array $filtros): array
+    {
+        $estado = (string)($filtros['estado_auditoria'] ?? 'todos');
+        if ($estado === 'todos') {
+            return $registros;
+        }
+
+        return array_values(array_filter($registros, static function (array $registro) use ($estado): bool {
+            return (string)($registro['auditoria_estado'] ?? '') === $estado;
+        }));
+    }
+
+    private function resumenVacioAuditoriaNomina(): array
+    {
+        return [
+            'total_registros' => 0,
+            'trabajadores_total' => 0,
+            'liquidado_count' => 0,
+            'parcial_count' => 0,
+            'sin_pago_count' => 0,
+            'revisar_count' => 0,
+            'bruto_total' => '0.00',
+            'pendiente_snapshot_total' => '0.00',
+            'pagos_caja_total' => '0.00',
+            'reversiones_total' => '0.00',
+            'saldo_auditoria_total' => '0.00',
+        ];
+    }
+
+    private function resumenAuditoriaNomina(array $registros): array
+    {
+        $resumen = $this->resumenVacioAuditoriaNomina();
+        $trabajadores = [];
+
+        foreach ($registros as $registro) {
+            $estado = (string)($registro['auditoria_estado'] ?? 'revisar');
+            $trabajadorId = (int)($registro['trabajador_id'] ?? 0);
+
+            $resumen['total_registros']++;
+            if ($trabajadorId > 0) {
+                $trabajadores[$trabajadorId] = true;
+            }
+
+            if (isset($resumen[$estado . '_count'])) {
+                $resumen[$estado . '_count']++;
+            } else {
+                $resumen['revisar_count']++;
+            }
+
+            $resumen['bruto_total'] = $this->decimal((float)$resumen['bruto_total'] + (float)($registro['bruto_periodo'] ?? 0));
+            $resumen['pendiente_snapshot_total'] = $this->decimal((float)$resumen['pendiente_snapshot_total'] + (float)($registro['pendiente_pago_sugerido'] ?? 0));
+            $resumen['pagos_caja_total'] = $this->decimal((float)$resumen['pagos_caja_total'] + (float)($registro['pagos_caja_total'] ?? 0));
+            $resumen['reversiones_total'] = $this->decimal((float)$resumen['reversiones_total'] + (float)($registro['reversiones_total'] ?? 0));
+            $resumen['saldo_auditoria_total'] = $this->decimal((float)$resumen['saldo_auditoria_total'] + (float)($registro['saldo_auditoria'] ?? 0));
+        }
+
+        $resumen['trabajadores_total'] = count($trabajadores);
+
+        return $resumen;
+    }
+
+    private function porEstadoAuditoriaNomina(array $registros): array
+    {
+        $items = [];
+        foreach ($registros as $registro) {
+            $estado = (string)($registro['auditoria_estado'] ?? 'revisar');
+            if (!isset($items[$estado])) {
+                $items[$estado] = [
+                    'estado' => $estado,
+                    'total' => 0,
+                    'saldo' => '0.00',
+                    'pagos_caja' => '0.00',
+                ];
+            }
+
+            $items[$estado]['total']++;
+            $items[$estado]['saldo'] = $this->decimal((float)$items[$estado]['saldo'] + (float)($registro['saldo_auditoria'] ?? 0));
+            $items[$estado]['pagos_caja'] = $this->decimal((float)$items[$estado]['pagos_caja'] + (float)($registro['pagos_caja_total'] ?? 0));
+        }
+
+        return array_values($items);
+    }
+
+    private function porPeriodoAuditoriaNomina(array $registros): array
+    {
+        $items = [];
+        foreach ($registros as $registro) {
+            $periodoId = (int)($registro['periodo_id'] ?? 0);
+            if (!isset($items[$periodoId])) {
+                $items[$periodoId] = [
+                    'periodo_id' => $periodoId,
+                    'etiqueta' => (string)($registro['periodo_etiqueta'] ?? ''),
+                    'fecha_inicio' => $registro['periodo_fecha_inicio'] ?? null,
+                    'fecha_fin' => $registro['periodo_fecha_fin'] ?? null,
+                    'total' => 0,
+                    'saldo' => '0.00',
+                    'pagos_caja' => '0.00',
+                ];
+            }
+
+            $items[$periodoId]['total']++;
+            $items[$periodoId]['saldo'] = $this->decimal((float)$items[$periodoId]['saldo'] + (float)($registro['saldo_auditoria'] ?? 0));
+            $items[$periodoId]['pagos_caja'] = $this->decimal((float)$items[$periodoId]['pagos_caja'] + (float)($registro['pagos_caja_total'] ?? 0));
+        }
+
+        return array_values($items);
+    }
+
+    private function normalizarFiltrosExpedienteNomina(array $filtros): array
+    {
+        $estadoSnapshot = trim((string)($filtros['estado_snapshot'] ?? 'todos'));
+        if (!in_array($estadoSnapshot, ['todos', 'cerrado', 'aprobado', 'anulado'], true)) {
+            $estadoSnapshot = 'todos';
+        }
+
+        $estadoExpediente = trim((string)($filtros['estado_expediente'] ?? 'todos'));
+        if (!in_array($estadoExpediente, ['todos', 'listo_revision', 'con_pendientes', 'requiere_correccion', 'bloqueado', 'anulado'], true)) {
+            $estadoExpediente = 'todos';
+        }
+
+        return [
+            'periodo_id' => max(0, (int)($filtros['periodo_id'] ?? 0)),
+            'trabajador_id' => max(0, (int)($filtros['trabajador_id'] ?? 0)),
+            'buscar' => trim((string)($filtros['buscar'] ?? '')),
+            'estado_snapshot' => $estadoSnapshot,
+            'estado_expediente' => $estadoExpediente,
+            'fecha_inicio' => $this->nullableFecha($filtros['fecha_inicio'] ?? null),
+            'fecha_fin' => $this->nullableFecha($filtros['fecha_fin'] ?? null),
+        ];
+    }
+
+    private function evaluarExpedienteNominaRegistro(array $registro): array
+    {
+        $bloqueos = [];
+        $periodoEstado = (string)($registro['periodo_estado'] ?? '');
+        $auditoriaEstado = (string)($registro['auditoria_estado'] ?? 'revisar');
+        $pendienteSnapshot = round((float)($registro['pendiente_pago_sugerido'] ?? 0), 2);
+        $pagosCaja = round((float)($registro['pagos_caja_total'] ?? 0), 2);
+        $saldoAuditoria = round((float)($registro['saldo_auditoria'] ?? 0), 2);
+
+        if ($periodoEstado === 'anulado') {
+            $bloqueos[] = 'Snapshot anulado';
+        } elseif ($periodoEstado !== 'aprobado') {
+            $bloqueos[] = 'Snapshot no aprobado';
+        }
+
+        if ($auditoriaEstado === 'revisar') {
+            $bloqueos[] = 'Auditoria consolidada requiere correccion';
+        }
+
+        if ((int)($registro['inconsistencias_count'] ?? 0) > 0) {
+            $bloqueos[] = 'Inconsistencias de trazabilidad detectadas';
+        }
+
+        if ($pagosCaja > $pendienteSnapshot) {
+            $bloqueos[] = 'Pagos Caja mayores al pendiente congelado';
+        }
+
+        if ((int)($registro['pagos_count'] ?? 0) > 0 && (int)($registro['ultimo_pago_id'] ?? 0) <= 0) {
+            $bloqueos[] = 'Pago sin trazabilidad de ultimo movimiento';
+        }
+
+        if ((int)($registro['pagos_revertidos_count'] ?? 0) > 0) {
+            $bloqueos[] = 'Reversiones laborales detectadas';
+        }
+
+        $trabajadorEstado = (string)($registro['trabajador_actual_estado'] ?? '');
+        if ($trabajadorEstado !== '' && $trabajadorEstado !== 'activo') {
+            $bloqueos[] = 'Trabajador actual no activo';
+        }
+
+        if ($periodoEstado === 'anulado') {
+            $estado = 'anulado';
+        } elseif ($auditoriaEstado === 'revisar' || (int)($registro['inconsistencias_count'] ?? 0) > 0 || $pagosCaja > $pendienteSnapshot) {
+            $estado = 'requiere_correccion';
+        } elseif ($periodoEstado !== 'aprobado' || ($trabajadorEstado !== '' && $trabajadorEstado !== 'activo')) {
+            $estado = 'bloqueado';
+        } elseif ($saldoAuditoria > 0 || in_array($auditoriaEstado, ['parcial', 'sin_pago'], true)) {
+            $estado = 'con_pendientes';
+        } else {
+            $estado = 'listo_revision';
+        }
+
+        $registro['estado_expediente'] = $estado;
+        $registro['bloqueos'] = array_values(array_unique($bloqueos));
+        $registro['bloqueos_count'] = count($registro['bloqueos']);
+
+        return $registro;
+    }
+
+    private function filtrarExpedienteNominaPorEstado(array $registros, array $filtros): array
+    {
+        $estado = (string)($filtros['estado_expediente'] ?? 'todos');
+        if ($estado === 'todos') {
+            return $registros;
+        }
+
+        return array_values(array_filter($registros, static function (array $registro) use ($estado): bool {
+            return (string)($registro['estado_expediente'] ?? '') === $estado;
+        }));
+    }
+
+    private function resumenVacioExpedienteNomina(): array
+    {
+        return [
+            'total_registros' => 0,
+            'trabajadores_total' => 0,
+            'listo_revision_count' => 0,
+            'con_pendientes_count' => 0,
+            'requiere_correccion_count' => 0,
+            'bloqueado_count' => 0,
+            'anulado_count' => 0,
+            'bloqueos_total' => 0,
+            'bruto_total' => '0.00',
+            'pendiente_snapshot_total' => '0.00',
+            'pagos_caja_total' => '0.00',
+            'reversiones_total' => '0.00',
+            'saldo_auditoria_total' => '0.00',
+        ];
+    }
+
+    private function resumenExpedienteNomina(array $registros): array
+    {
+        $resumen = $this->resumenVacioExpedienteNomina();
+        $trabajadores = [];
+
+        foreach ($registros as $registro) {
+            $estado = (string)($registro['estado_expediente'] ?? 'bloqueado');
+            $trabajadorId = (int)($registro['trabajador_id'] ?? 0);
+
+            $resumen['total_registros']++;
+            if ($trabajadorId > 0) {
+                $trabajadores[$trabajadorId] = true;
+            }
+
+            if (isset($resumen[$estado . '_count'])) {
+                $resumen[$estado . '_count']++;
+            } else {
+                $resumen['bloqueado_count']++;
+            }
+
+            $resumen['bloqueos_total'] += (int)($registro['bloqueos_count'] ?? 0);
+            $resumen['bruto_total'] = $this->decimal((float)$resumen['bruto_total'] + (float)($registro['bruto_periodo'] ?? 0));
+            $resumen['pendiente_snapshot_total'] = $this->decimal((float)$resumen['pendiente_snapshot_total'] + (float)($registro['pendiente_pago_sugerido'] ?? 0));
+            $resumen['pagos_caja_total'] = $this->decimal((float)$resumen['pagos_caja_total'] + (float)($registro['pagos_caja_total'] ?? 0));
+            $resumen['reversiones_total'] = $this->decimal((float)$resumen['reversiones_total'] + (float)($registro['reversiones_total'] ?? 0));
+            $resumen['saldo_auditoria_total'] = $this->decimal((float)$resumen['saldo_auditoria_total'] + (float)($registro['saldo_auditoria'] ?? 0));
+        }
+
+        $resumen['trabajadores_total'] = count($trabajadores);
+
+        return $resumen;
+    }
+
+    private function porEstadoExpedienteNomina(array $registros): array
+    {
+        $items = [];
+        foreach ($registros as $registro) {
+            $estado = (string)($registro['estado_expediente'] ?? 'bloqueado');
+            if (!isset($items[$estado])) {
+                $items[$estado] = [
+                    'estado' => $estado,
+                    'total' => 0,
+                    'saldo' => '0.00',
+                    'bloqueos' => 0,
+                ];
+            }
+
+            $items[$estado]['total']++;
+            $items[$estado]['bloqueos'] += (int)($registro['bloqueos_count'] ?? 0);
+            $items[$estado]['saldo'] = $this->decimal((float)$items[$estado]['saldo'] + (float)($registro['saldo_auditoria'] ?? 0));
+        }
+
+        return array_values($items);
+    }
+
+    private function porPeriodoExpedienteNomina(array $registros): array
+    {
+        $items = [];
+        foreach ($registros as $registro) {
+            $periodoId = (int)($registro['periodo_id'] ?? 0);
+            if (!isset($items[$periodoId])) {
+                $items[$periodoId] = [
+                    'periodo_id' => $periodoId,
+                    'etiqueta' => (string)($registro['periodo_etiqueta'] ?? ''),
+                    'fecha_inicio' => $registro['periodo_fecha_inicio'] ?? null,
+                    'fecha_fin' => $registro['periodo_fecha_fin'] ?? null,
+                    'estado' => (string)($registro['periodo_estado'] ?? ''),
+                    'total' => 0,
+                    'saldo' => '0.00',
+                    'bloqueos' => 0,
+                ];
+            }
+
+            $items[$periodoId]['total']++;
+            $items[$periodoId]['bloqueos'] += (int)($registro['bloqueos_count'] ?? 0);
+            $items[$periodoId]['saldo'] = $this->decimal((float)$items[$periodoId]['saldo'] + (float)($registro['saldo_auditoria'] ?? 0));
+        }
+
+        return array_values($items);
+    }
+
+    private function bloqueosExpedienteNomina(array $registros): array
+    {
+        $items = [];
+        foreach ($registros as $registro) {
+            $bloqueos = is_array($registro['bloqueos'] ?? null) ? $registro['bloqueos'] : [];
+            foreach ($bloqueos as $bloqueo) {
+                $bloqueo = trim((string)$bloqueo);
+                if ($bloqueo === '') {
+                    continue;
+                }
+
+                if (!isset($items[$bloqueo])) {
+                    $items[$bloqueo] = [
+                        'bloqueo' => $bloqueo,
+                        'total' => 0,
+                    ];
+                }
+                $items[$bloqueo]['total']++;
+            }
+        }
+
+        return array_values($items);
+    }
+
     private function construirPeriodosNominaCandidatos(array $filtros, int $limite): array
     {
         $periodos = [];
@@ -3696,6 +4635,21 @@ class Trabajador extends Model
                AND TABLE_NAME = ?
              LIMIT 1",
             [$tabla]
+        );
+
+        return $stmt !== false && (bool)$stmt->fetch();
+    }
+
+    private function columnaExiste(string $tabla, string $columna): bool
+    {
+        $stmt = $this->db->query(
+            "SELECT 1
+             FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = ?
+               AND COLUMN_NAME = ?
+             LIMIT 1",
+            [$tabla, $columna]
         );
 
         return $stmt !== false && (bool)$stmt->fetch();

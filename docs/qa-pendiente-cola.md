@@ -2804,3 +2804,674 @@ QA futura sugerida para 5E-N-A:
 9. No debe crear pagos masivos, CFDI, timbrado ni dispersion.
 10. `/api/sync` debe seguir bloqueado con HTTP 423 y
     `sync_temporarily_disabled`.
+
+## Fase 5E-N-A - Pago individual desde snapshot de pre-nomina con Caja
+
+Estado: cierre documental aplicado despues de QA manual validada.
+
+Revision manual validada:
+
+1. Abrir un snapshot de pre-nomina aprobado.
+2. Confirmar que aparece la columna `Pago Caja` solo en detalle de periodo.
+3. Confirmar que el formulario aparece solo para trabajadores elegibles.
+4. Confirmar que snapshots cerrados o anulados no permiten pagar.
+5. Confirmar que el monto maximo coincide con el menor entre pendiente del
+   snapshot y saldo vivo de Caja.
+6. Intentar un monto mayor al maximo y confirmar bloqueo.
+7. Registrar un pago individual valido con referencia unica.
+8. Confirmar que se crea movimiento Caja y pago laboral.
+9. Confirmar que el snapshot no cambia.
+10. Confirmar que no hay pago masivo, CFDI, timbrado ni dispersion.
+11. Confirmar que `/api/sync` sigue bloqueado con HTTP 423 y
+    `sync_temporarily_disabled`.
+
+Resultado automatico local:
+
+- Lint PHP: OK en servicio, controlador, vista, rutas, rollback y checkers.
+- Rollback 5E-N-A:
+  `probar_pago_snapshot_prenomina_caja.php` completo sin persistencia.
+- Preflight pagos laborales Caja: `OK: 65`, `WARNING: 0`, `ERROR: 0`.
+- Health general: `OK: 320`, `WARNING: 25`, `ERROR: 0`.
+
+Resultado QA manual:
+
+- Periodo manual `20/06/2026 - 20/06/2026` evaluado correctamente.
+- Snapshot `#4` cerrado y aprobado.
+- Pago individual registrado por `$1.00`.
+- Movimiento Caja creado: `#1507`.
+- Referencia usada: `TEST-5ENA-001`.
+- Ficha del trabajador muestra saldo vivo disponible de `$99.00`.
+- Snapshot `#4` permanece inmutable.
+
+El cierre documental quedo aplicado en:
+
+`docs/fase_5E_N_F_cierre_pago_snapshot_prenomina_caja.md`.
+
+## Fase 5E-N-F - Cierre pago desde snapshot de pre-nomina con Caja
+
+Estado: cierre documental aplicado despues de QA manual validada.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_N_F_cierre_pago_snapshot_prenomina_caja.md`.
+2. Confirmar que 5E-N-A queda cerrado solo en local.
+3. Confirmar que no autoriza produccion, migraciones, pago masivo, nomina
+   oficial, CFDI, timbrado, dispersion, PWA/offline ni `/api/sync`.
+
+## Fase 5E-O-A - UX filtros de periodos de pre-nomina
+
+Estado: QA tecnica local completada; pendiente validacion visual/manual.
+
+Revision manual sugerida:
+
+1. Abrir `Personal / Pre-nomina / Periodos`.
+2. Confirmar que el formulario distingue `Fecha base`, `Inicio manual` y
+   `Fin manual`.
+3. Seleccionar `Manual`.
+4. Capturar la misma fecha en `Inicio manual` y `Fin manual`.
+5. Evaluar.
+6. Confirmar que aparece `Periodo seleccionado` y no queda bloqueado por periodo
+   manual invalido.
+7. Confirmar que el checkbox `Caja` sigue restando pagos vigentes.
+8. Confirmar que `Cerrar snapshot` funciona igual que antes.
+
+Resultado automatico local:
+
+- Lint PHP: OK en `nomina_periodos.php`.
+- Preflight pagos laborales Caja: `OK: 65`, `WARNING: 0`, `ERROR: 0`.
+- Health general: `OK: 320`, `WARNING: 25`, `ERROR: 0`.
+
+## Fase 5E-O-B - UX lectura de pago desde snapshot de pre-nomina
+
+Estado: QA tecnica local completada; pendiente validacion visual/manual.
+
+Revision manual sugerida:
+
+1. Abrir un snapshot aprobado.
+2. Confirmar que la columna `Pago Caja` muestra `Snapshot`, `Saldo vivo` y
+   `Maximo`.
+3. Confirmar que el monto del input coincide con `Maximo`.
+4. Registrar un pago parcial.
+5. Volver al snapshot y confirmar que el snapshot conserva su pendiente
+   congelado.
+6. Confirmar que `Saldo vivo` y `Maximo` reflejan el disponible real para el
+   siguiente pago.
+7. Confirmar que el pago sigue exigiendo referencia, CSRF y token de un solo uso.
+
+Resultado automatico local:
+
+- Lint PHP: OK en `nomina_periodo_detalle.php`.
+- Preflight pagos laborales Caja: `OK: 65`, `WARNING: 0`, `ERROR: 0`.
+- Health general: `OK: 320`, `WARNING: 25`, `ERROR: 0`.
+
+## Fase 5E-P-0 - Contrato trazabilidad fuerte de pago desde snapshot
+
+Estado: contrato documental aplicado; sin QA funcional porque no hay
+implementacion operativa.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_P_0_contrato_trazabilidad_pago_snapshot_prenomina.md`.
+2. Confirmar que no agrega codigo, rutas, modelos, servicios, vistas,
+   migraciones, permisos, datos, storage, Caja, PWA/offline ni `/api/sync`.
+3. Confirmar que una futura migracion deberia ser aditiva y nullable.
+4. Confirmar que pagos historicos no deben recibir backfill automatico.
+5. Confirmar que cualquier relacion futura debe validar hotel, periodo, detalle,
+   trabajador y snapshot aprobado.
+6. Confirmar que 5E-P-A requerira backup, autorizacion explicita y prueba
+   rollback.
+
+QA futura sugerida para 5E-P-A:
+
+1. Crear backup SQL antes de migrar.
+2. Aplicar migracion nullable en local.
+3. Confirmar que pagos historicos quedan con IDs de snapshot en `NULL`.
+4. Registrar pago nuevo desde snapshot aprobado y confirmar IDs correctos.
+5. Intentar relacion cruzada de otro hotel y confirmar bloqueo.
+6. Ejecutar rollback y confirmar cero persistencia.
+7. Ejecutar preflight pagos laborales Caja y health general con `ERROR: 0`.
+
+## Fase 5E-P-B - Guardas read-only de trazabilidad pago snapshot
+
+Estado: QA tecnica local completada; sin QA manual funcional porque son checkers
+CLI/read-only.
+
+Revision recomendada:
+
+1. Confirmar que no se crearon migraciones ni columnas nuevas.
+2. Confirmar que `preflight_personal_pagos_caja.php` reporta OK cuando
+   `nomina_periodo_id` y `nomina_periodo_detalle_id` aun no existen.
+3. Confirmar que `health_check_fase_1a.php` reporta OK para el estado actual.
+4. Confirmar que las validaciones futuras marcarian error ante relacion parcial,
+   indices faltantes o cruces de hotel/periodo/detalle/trabajador.
+5. Confirmar que 5E-P-A sigue bloqueada hasta autorizacion explicita con backup.
+
+Resultado automatico local:
+
+- Lint PHP: OK en `preflight_personal_pagos_caja.php`.
+- Lint PHP: OK en `health_check_fase_1a.php`.
+- Preflight pagos laborales Caja: `OK: 66`, `WARNING: 0`, `ERROR: 0`.
+- Health general: `OK: 321`, `WARNING: 25`, `ERROR: 0`.
+
+## Fase 5E-P-A - Trazabilidad fuerte de pago snapshot
+
+Estado: QA tecnica local completada; pendiente validacion manual si se desea
+probar el flujo visual completo.
+
+QA tecnica ejecutada:
+
+1. Confirmar backup previo:
+   `backups/db/20260622_102558_medisoft_hoteles_import_pre_5e_p_a.sql`.
+2. Confirmar migracion registrada:
+   `20260622_001_fase_5e_p_a_trazabilidad_pago_snapshot.sql`.
+3. Confirmar columnas nullable:
+   `trabajador_pagos_caja.nomina_periodo_id` y
+   `trabajador_pagos_caja.nomina_periodo_detalle_id`.
+4. Confirmar indices:
+   `idx_trabajador_pagos_caja_nomina_periodo` y
+   `idx_trabajador_pagos_caja_nomina_detalle`.
+5. Confirmar FKs restrictivas:
+   `fk_trabajador_pagos_caja_nomina_periodo` y
+   `fk_trabajador_pagos_caja_nomina_detalle`.
+6. Ejecutar `tools/saas/probar_pago_snapshot_prenomina_caja.php`.
+7. Confirmar que el pago temporal queda ligado al periodo/detalle.
+8. Confirmar rollback sin persistencia en pago, Caja, auditoria y snapshot.
+9. Ejecutar preflight pagos laborales Caja.
+10. Ejecutar health general.
+
+Resultado automatico local:
+
+- Rollback pago snapshot: OK.
+- Preflight pagos laborales Caja: `OK: 72`, `WARNING: 0`, `ERROR: 0`.
+- Health general: `OK: 327`, `WARNING: 25`, `ERROR: 0`.
+
+QA manual sugerida:
+
+1. Crear/cerrar/aprobar un snapshot de pre-nomina con trabajador elegible.
+2. Registrar un pago individual desde el snapshot aprobado.
+3. Confirmar que el snapshot no cambia.
+4. Confirmar en base local que el nuevo `trabajador_pagos_caja` tenga
+   `nomina_periodo_id` y `nomina_periodo_detalle_id` no nulos.
+5. Confirmar que pagos laborales normales fuera de snapshot quedan con ambos
+   campos en `NULL`.
+
+No ejecutar en produccion sin nueva autorizacion explicita.
+
+## Fase TLM-I/J-B - Health baseline Tareas
+
+Estado: QA tecnica local completada.
+
+QA tecnica ejecutada:
+
+1. Confirmar que el health reconoce el enlace actual de detalle mediante
+   `$tareaId`.
+2. Confirmar que acepta `Reporte de tareas` como titulo vigente del reporte.
+3. Confirmar que acepta `Historial` + `$eventos` como seccion de eventos.
+4. Confirmar que se conservan reporte/agenda sin POST ni CSRF.
+
+Resultado automatico local:
+
+- Lint PHP: OK en `tools/saas/health_check_fase_1a.php`.
+- Health general: `OK: 330`, `WARNING: 26`, `ERROR: 0`.
+- Resultado: `PASS_WITH_WARNINGS_ALLOWED`.
+- Health filtrado confirma:
+  `Vistas TLM-I-A/TLM-J-A muestran filtros GET, reporte/agenda read-only, alta/asignacion/estados manuales con CSRF sin Caja.`
+
+No ejecutar en produccion sin nueva autorizacion explicita.
+
+## Fase NP-F-B - Health baseline Personal
+
+Estado: QA tecnica local completada.
+
+QA tecnica ejecutada:
+
+1. Confirmar que el health reconoce el enlace actual de detalle mediante
+   `$tUrl`.
+2. Confirmar que conserva reporte de Personal read-only sin POST ni CSRF.
+3. Confirmar que mantiene ledger manual con CSRF.
+4. Confirmar que el panel de pago laboral conserva `pago_token`.
+
+Resultado automatico local:
+
+- Lint PHP: OK en `tools/saas/health_check_fase_1a.php`.
+- Health general: `OK: 329`, `WARNING: 27`, `ERROR: 0`.
+- Resultado: `PASS_WITH_WARNINGS_ALLOWED`.
+- Health filtrado confirma:
+  `Vistas Personal NP-F-A/5E-D-A muestran CRUD, reporte, ledger manual y panel de pago laboral con CSRF/token.`
+
+No ejecutar en produccion sin nueva autorizacion explicita.
+
+## Fase 5E-P-F - Cierre trazabilidad fuerte de pago snapshot
+
+Estado: QA manual completada y documentada.
+
+Resultado manual:
+
+- URL probada: `/trabajadores/nomina/periodos/4`.
+- Snapshot: `Periodo #4`.
+- Trabajador: `Panfilo Hernandez`.
+- Referencia: `TEST-5EPA-001`.
+- Pago creado: `trabajador_pagos_caja.id = 9`.
+- Movimiento Caja creado: `movimientos_caja.id = 1510`.
+- Trazabilidad fuerte:
+  - `nomina_periodo_id = 4`;
+  - `nomina_periodo_detalle_id = 4`.
+- Relaciones parciales posteriores: `0`.
+- Pagos trazados posteriores: `1`.
+
+La fase queda cerrada en local. No ejecutar en produccion sin nueva
+autorizacion explicita.
+
+## Fase 5E-Q-A - Conciliacion read-only de pagos snapshot
+
+Estado: QA tecnica local completada; pendiente prueba manual visual del usuario.
+
+QA tecnica ejecutada:
+
+1. Confirmar rutas GET:
+   `/trabajadores/nomina/periodos/pagos-snapshot` y
+   `/trabajadores/nomina/periodos/pagos-snapshot/exportar`.
+2. Confirmar que el reporte no tiene POST, CSRF ni acciones operativas.
+3. Confirmar que el CSV se genera en memoria.
+4. Confirmar que el pago `#9` aparece conciliado contra snapshot `#4`,
+   detalle `#4` y movimiento Caja `#1510`.
+5. Ejecutar preflight pagos laborales Caja.
+6. Ejecutar health general.
+
+Resultado automatico local:
+
+- Lint PHP: OK en rutas, modelo, controlador, vista y checkers.
+- Preflight pagos laborales Caja: `OK: 74`, `WARNING: 0`, `ERROR: 0`.
+- Health general: `OK: 328`, `WARNING: 25`, `ERROR: 0`.
+- Consulta local: `trabajador_pagos_caja.id = 9`, conciliacion `ok`.
+
+QA manual sugerida:
+
+1. Abrir `/trabajadores/nomina/periodos/pagos-snapshot?periodo_id=4`.
+2. Confirmar que aparece el pago `#9` con referencia `TEST-5EPA-001`.
+3. Confirmar que la columna Conciliacion muestra `OK`.
+4. Probar filtro `Conciliacion = OK`.
+5. Probar export CSV desde el boton `Exportar CSV`.
+
+No ejecutar en produccion sin nueva autorizacion explicita.
+
+## Fase 5E-Q-F - Cierre conciliacion pagos snapshot
+
+Estado: QA manual completada y documentada.
+
+Resultado manual:
+
+- Pantalla probada:
+  `/trabajadores/nomina/periodos/pagos-snapshot?periodo_id=4`.
+- El usuario confirmo que funciona correctamente.
+- El usuario confirmo que aparece lo que debe aparecer.
+- Pago visible: `#9`.
+- Referencia: `TEST-5EPA-001`.
+- Snapshot: `#4`.
+- Detalle: `#4`.
+- Movimiento Caja: `#1510`.
+- Conciliacion: `OK`.
+
+La fase queda cerrada en local. No ejecutar en produccion sin nueva
+autorizacion explicita.
+
+## Fase 5E-R-0 - Contrato auditoria consolidada de nomina
+
+Estado: contrato documental completado; sin QA funcional porque no hay
+implementacion operativa.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_R_0_contrato_auditoria_consolidada_nomina.md`.
+2. Confirmar que no agrega codigo, rutas, modelos, servicios, vistas,
+   migraciones, permisos, datos, storage, Caja, PWA/offline ni `/api/sync`.
+3. Confirmar que la futura auditoria debe ser GET/read-only.
+4. Confirmar que la futura vista separa snapshot administrativo, saldo vivo,
+   pago real con Caja, reversion y conciliacion.
+5. Confirmar que no autoriza pago masivo, nomina oficial, CFDI, timbrado,
+   dispersion, backfill ni recalculos.
+6. Confirmar que 5E-R-A requerira autorizacion explicita para tocar rutas,
+   controlador, modelo read-only, vista, exportador CSV y checkers.
+
+QA futura sugerida para 5E-R-A:
+
+1. Confirmar rutas GET/read-only.
+2. Confirmar que no hay formularios POST ni acciones operativas.
+3. Confirmar que el pago trazado de QA aparece con `OK`.
+4. Confirmar que un snapshot con pendiente y sin pago aparece como `Sin pago`.
+5. Confirmar que pagos revertidos no se muestran como pagos vigentes.
+6. Confirmar que el CSV se genera en memoria y no escribe storage.
+7. Ejecutar preflight pagos laborales Caja con `ERROR: 0`.
+8. Ejecutar health general con `ERROR: 0`.
+
+No ejecutar en produccion sin nueva autorizacion explicita.
+
+## Fase 5E-R-A - Auditoria consolidada de nomina read-only
+
+Estado: QA tecnica local completada; QA manual cerrada en 5E-R-F.
+
+QA tecnica ejecutada:
+
+1. Confirmar rutas GET:
+   `/trabajadores/nomina/auditoria` y
+   `/trabajadores/nomina/auditoria/exportar`.
+2. Confirmar que la vista no tiene POST, CSRF ni acciones operativas.
+3. Confirmar que el CSV se genera en memoria.
+4. Confirmar que el modelo consolida detalle de snapshot con pagos Caja
+   trazados.
+5. Ejecutar preflight pagos laborales Caja.
+6. Ejecutar health general.
+
+Resultado automatico local:
+
+- Lint PHP: OK en rutas, controlador, modelo, vistas modificadas y checkers.
+- Consulta modelo: `hotel_id = 4`, `periodo_id = 4`, `REG=1`,
+  `PAGOS=1.00`, `SALDO=99.00`, `ESTADO=parcial`.
+- Preflight pagos laborales Caja: `OK: 76`, `WARNING: 0`, `ERROR: 0`.
+- Health general: 5E-R-A OK; resultado general con `ERROR: 3` historicos de
+  Compras/CxP fuera de esta fase.
+
+QA manual validada en 5E-R-F:
+
+1. Abrir `/trabajadores/nomina/auditoria?periodo_id=4`.
+2. Confirmar titulo `Auditoria consolidada de nomina`.
+3. Confirmar trabajador `Panfilo Hernandez`.
+4. Confirmar estado `Parcial`.
+5. Confirmar `Pagos Caja` `$1.00` y `Saldo auditoria` `$99.00`.
+6. Probar filtro `Auditoria = Parcial`.
+7. Probar filtro `Snapshot = Aprobado`.
+8. Probar `Exportar CSV`.
+9. Confirmar que no hay boton de registrar pago.
+
+No ejecutar en produccion sin nueva autorizacion explicita.
+
+## Fase 5E-R-F - Cierre auditoria consolidada de nomina
+
+Estado: QA manual completada y documentada.
+
+Resultado manual:
+
+- Pantalla probada:
+  `/trabajadores/nomina/auditoria?periodo_id=4`.
+- El usuario confirmo que quedo y que las pruebas pasaron.
+- Pantalla validada: `Auditoria consolidada de nomina`.
+- Totales visibles:
+  - detalles `1`;
+  - trabajadores `1`;
+  - pagos Caja `$1.00`;
+  - saldo auditoria `$99.00`.
+- Detalle visible:
+  - trabajador `Panfilo Hernandez`;
+  - estado `Parcial`;
+  - periodo `#4 Periodo seleccionado`;
+  - pendiente snapshot `$100.00`.
+- Se confirmo que la vista se mantiene como auditoria GET/read-only y no como
+  flujo operativo de pago.
+
+La fase queda cerrada en local. No ejecutar en produccion sin nueva
+autorizacion explicita.
+
+## Fase 5E-S-0 - Contrato expediente administrativo de nomina
+
+Estado: contrato documental completado; sin QA funcional porque no hay
+implementacion operativa.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_S_0_contrato_expediente_administrativo_nomina.md`.
+2. Confirmar que no agrega codigo, rutas, modelos, servicios, vistas,
+   migraciones, permisos, datos, storage, Caja, PWA/offline ni `/api/sync`.
+3. Confirmar que el expediente futuro debe ser GET/read-only.
+4. Confirmar que el expediente futuro no es nomina oficial, CFDI, timbrado,
+   dispersion, pago masivo ni poliza contable.
+5. Confirmar que la futura vista debe mostrar bloqueos administrativos sin
+   corregirlos automaticamente.
+6. Confirmar que 5E-S-A requerira autorizacion explicita para tocar rutas,
+   controlador, modelo read-only, vista, exportador CSV y checkers.
+
+QA futura sugerida para 5E-S-A:
+
+1. Confirmar rutas GET/read-only.
+2. Confirmar que no hay formularios POST ni acciones operativas.
+3. Confirmar que los filtros no escriben datos.
+4. Confirmar que el expediente lee el periodo `#4` y el trabajador de QA.
+5. Confirmar que pagos Caja `$1.00` y saldo auditoria `$99.00` se muestran
+   como informacion administrativa, no como nomina oficial.
+6. Confirmar que estados `Revisar` bloquean el expediente.
+7. Confirmar que snapshots anulados quedan marcados como anulados o bloqueados.
+8. Confirmar que el CSV se genera en memoria y no escribe storage.
+9. Ejecutar preflight pagos laborales Caja con `ERROR: 0`.
+10. Ejecutar health general y separar errores historicos fuera de la fase.
+
+No ejecutar en produccion sin nueva autorizacion explicita.
+
+## Fase 5E-S-A - Expediente administrativo de nomina read-only
+
+Estado: QA tecnica local completada; QA manual pendiente de confirmacion del
+usuario.
+
+QA tecnica ejecutada:
+
+1. Confirmar rutas GET:
+   `/trabajadores/nomina/expediente` y
+   `/trabajadores/nomina/expediente/exportar`.
+2. Confirmar que la vista no tiene POST, CSRF ni acciones operativas.
+3. Confirmar que el CSV se genera en memoria.
+4. Confirmar que el modelo deriva el expediente desde auditoria consolidada.
+5. Ejecutar preflight pagos laborales Caja.
+6. Ejecutar health general.
+
+Resultado automatico local:
+
+- Lint PHP: OK en rutas, controlador, modelo, vista de expediente y checkers.
+- Consulta modelo: `hotel_id = 4`, `periodo_id = 4`, `REG=1`,
+  `TRABAJADOR=Panfilo Hernandez`, `EXPEDIENTE=con_pendientes`,
+  `PAGOS=1.00`, `SALDO=99.00`, `BLOQUEOS=0`.
+- Preflight pagos laborales Caja: `OK: 78`, `WARNING: 0`, `ERROR: 0`.
+- Health general: 5E-S-A OK; resultado general con `ERROR: 3` historicos de
+  Compras/CxP fuera de esta fase.
+
+QA manual sugerida:
+
+1. Abrir `/trabajadores/nomina/expediente?periodo_id=4`.
+2. Confirmar titulo `Expediente administrativo de nomina`.
+3. Confirmar trabajador `Panfilo Hernandez`.
+4. Confirmar estado `Con pendientes`.
+5. Confirmar `Pagos Caja` `$1.00`.
+6. Confirmar `Saldo auditoria` `$99.00`.
+7. Confirmar que el caso parcial valido no muestra bloqueos criticos.
+8. Probar filtro `Expediente = Con pendientes`.
+9. Probar `Exportar CSV`.
+10. Confirmar que no hay boton de registrar pago, revertir pago, aprobar/anular
+    snapshot ni formularios POST.
+
+No ejecutar en produccion sin nueva autorizacion explicita.
+
+## Fase 5E-T-0 - Contrato frontera de nomina oficial
+
+Estado: contrato documental completado; sin QA funcional porque no hay
+implementacion operativa.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_T_0_contrato_frontera_nomina_oficial.md`.
+2. Confirmar que no agrega codigo, rutas, modelos, vistas, migraciones,
+   permisos, datos, storage, Caja, PWA/offline ni `/api/sync`.
+3. Confirmar que la nomina administrativa no equivale a nomina oficial.
+4. Confirmar que CFDI laboral, timbrado, dispersion, pago masivo, recibos
+   fiscales y UUID fiscal quedan fuera de alcance.
+5. Confirmar que cualquier nomina oficial futura requiere contrato mayor e
+   independiente.
+
+No ejecutar en produccion sin nueva autorizacion explicita.
+
+## Fase 5E-T-A - Preflight frontera de nomina oficial
+
+Estado: QA tecnica local completada.
+
+QA tecnica ejecutada:
+
+1. Confirmar que el checker nuevo es CLI/read-only.
+2. Confirmar que revisa rutas activas sin crear rutas.
+3. Confirmar que revisa solo superficie Personal/Nomina para evitar falsos
+   positivos de facturacion normal del hotel.
+4. Confirmar que revisa DB local con transaccion read-only.
+5. Confirmar que `/api/sync` sigue bloqueado.
+
+Resultado automatico local:
+
+- Lint PHP: OK en `tools/saas/preflight_frontera_nomina_oficial.php`.
+- Preflight frontera nomina oficial: `OK: 10`, `WARNING: 0`, `ERROR: 0`.
+- Resultado: `PASS_WITH_WARNINGS_ALLOWED`.
+
+QA manual sugerida:
+
+1. Ejecutar el preflight en local.
+2. Confirmar que no reporta rutas oficiales de nomina.
+3. Confirmar que no reporta objetos DB de nomina oficial.
+4. Confirmar que no confunde facturacion de huespedes con nomina laboral.
+
+No ejecutar en produccion sin nueva autorizacion explicita.
+
+## Fase 5E-T-B - Health frontera de nomina oficial
+
+Estado: QA tecnica local completada.
+
+QA tecnica ejecutada:
+
+1. Confirmar que `health_check_fase_1a.php` detecta el preflight 5E-T-A.
+2. Confirmar que valida guardas de rutas, simbolos, DB read-only y `/api/sync`.
+3. Confirmar que no ejecuta escrituras ni agrega rutas.
+
+Resultado automatico local:
+
+- Lint PHP: OK en `tools/saas/health_check_fase_1a.php`.
+- Health filtrado confirma:
+  `Preflight Personal 5E-T-A de frontera nomina oficial existe y valida rutas, simbolos, DB read-only y /api/sync.`
+- Health global conserva `WARNING: 27`, `ERROR: 3` historicos de Compras/CxP.
+
+No ejecutar en produccion sin nueva autorizacion explicita.
+
+## Fase 5E-U-0 - Contrato suite QA nomina administrativa
+
+Estado: contrato documental completado; sin QA funcional porque no hay
+implementacion operativa.
+
+Revision recomendada:
+
+1. Leer `docs/fase_5E_U_0_contrato_suite_qa_nomina_administrativa.md`.
+2. Confirmar que no agrega codigo, rutas, modelos, vistas, migraciones,
+   permisos, datos, storage, Caja, PWA/offline ni `/api/sync`.
+3. Confirmar que la suite futura sera CLI/local/read-only.
+4. Confirmar que preflights historicos pueden quedar como informativos, no
+   bloqueantes, si fases posteriores los superaron con autorizacion.
+
+No ejecutar en produccion sin nueva autorizacion explicita.
+
+## Fase 5E-U-A - Suite QA nomina administrativa
+
+Estado: QA tecnica local completada.
+
+QA tecnica ejecutada:
+
+1. Confirmar que la suite es CLI/read-only y exige `APP_ENV=local`.
+2. Confirmar que ejecuta preflights actuales de pagos laborales/snapshots y
+   frontera de nomina oficial.
+3. Confirmar que mantiene el preflight de ledger como historico no bloqueante.
+4. Confirmar que valida health 5E-T-B y bloqueo `/api/sync` sin tocar archivos
+   PWA/offline.
+
+Resultado automatico local:
+
+- Lint PHP: OK en `tools/saas/preflight_nomina_administrativa_suite.php`.
+- Suite 5E-U-A: `OK: 3`, `WARNING: 1`, `ERROR: 0`.
+- Resultado: `PASS_WITH_WARNINGS_ALLOWED`.
+- Warning esperado: `preflight_personal_ledger.php` es historico y falla por
+  rutas 5E posteriores autorizadas.
+
+No ejecutar en produccion sin nueva autorizacion explicita.
+
+## Fase 5E-U-B - Health baseline Compras/CxP
+
+Estado: QA tecnica local completada.
+
+QA tecnica ejecutada:
+
+1. Confirmar que el health reconoce las vistas actuales de Compras.
+2. Confirmar que el health reconoce las vistas actuales de CxP.
+3. Confirmar que el simulador Caja CxP sigue siendo GET/read-only.
+4. Confirmar que no se modificaron vistas ni rutas.
+
+Resultado automatico local:
+
+- Lint PHP: OK en `tools/saas/health_check_fase_1a.php`.
+- Health general: `OK: 328`, `WARNING: 28`, `ERROR: 0`.
+- Resultado: `PASS_WITH_WARNINGS_ALLOWED`.
+- Suite 5E-U-A conserva `ERROR: 0`.
+
+No ejecutar en produccion sin nueva autorizacion explicita.
+
+## Fase 3A-B - Health baseline Proveedores
+
+Estado: QA tecnica local completada.
+
+QA tecnica ejecutada:
+
+1. Confirmar que el health reconoce el enlace actual de detalle mediante
+   `$provUrl`.
+2. Confirmar que acepta `Solo consulta` como marca read-only vigente.
+3. Confirmar que la ficha conserva links GET a compras y reporte.
+4. Confirmar que la ficha sigue sin formularios nuevos ni CSRF.
+
+Resultado automatico local:
+
+- Lint PHP: OK en `tools/saas/health_check_fase_1a.php`.
+- Health filtrado confirma:
+  `Vistas de Proveedores Fase 3A enlazan ficha read-only e historial sin formularios nuevos.`
+
+No ejecutar en produccion sin nueva autorizacion explicita.
+
+## Fase 9C-C - Diagnostico read-only de arqueo de cortes
+
+Estado: QA tecnica local completada.
+
+QA tecnica ejecutada:
+
+1. Confirmar que `diagnosticar_arqueo_cortes.php` es CLI/local/read-only.
+2. Confirmar que abre transaccion `READ ONLY` y cierra con rollback.
+3. Confirmar que no contiene escrituras SQL operativas.
+4. Confirmar que lista cortes con diferencias y movimientos posteriores al
+   cierre sin modificar datos.
+
+Resultado automatico local:
+
+- Lint PHP: OK en `tools/saas/diagnosticar_arqueo_cortes.php`.
+- Lint PHP: OK en `tools/saas/preflight_arqueo_metodos_pago.php`.
+- Diagnostico: `OK: 34`, `WARNING: 4`, `ERROR: 0`.
+- Preflight 9C-A/9C-B-A: `OK: 39`, `WARNING: 3`, `ERROR: 0`.
+- Cortes locales identificados: `#15`, `#21`, `#48`, `#149`.
+
+No ejecutar correcciones de datos en produccion sin nueva autorizacion explicita.
+
+## Fase 10A-C - Diagnostico fuentes Tablero Ejecutivo
+
+Estado: QA tecnica local completada.
+
+QA tecnica ejecutada:
+
+1. Confirmar que `diagnosticar_tablero_ejecutivo_fuentes.php` es
+   CLI/local/read-only.
+2. Confirmar que abre transaccion `READ ONLY` y cierra con rollback.
+3. Confirmar que `ledger_laboral` se reporta como fuente opcional degradada.
+4. Confirmar que los logs sin `hotel_id` se clasifican como `auth.*` globales
+   cuando no hay eventos operativos sin scope.
+
+Resultado automatico local:
+
+- Lint PHP: OK en `tools/saas/diagnosticar_tablero_ejecutivo_fuentes.php`.
+- Lint PHP: OK en `tools/saas/preflight_tablero_ejecutivo.php`.
+- Diagnostico 10A-C: `OK: 19`, `WARNING: 2`, `ERROR: 0`.
+- Preflight tablero ejecutivo: `OK: 92`, `WARNING: 2`, `ERROR: 0`.
+
+No tocar produccion ni cambiar schema/auth operativo sin nueva autorizacion
+explicita.

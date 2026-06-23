@@ -3181,8 +3181,15 @@ if ($tiene_doble_movimiento) {
                         'detail' => implode(' / ', $tareasDetalle),
                     ];
                 }
+                $habitacionNumeroTexto = (string)($habitacion['numero'] ?? '');
+                $habitacionNumeroLongitud = function_exists('mb_strlen')
+                    ? mb_strlen($habitacionNumeroTexto, 'UTF-8')
+                    : strlen($habitacionNumeroTexto);
+                $habitacionNumeroLayoutClass = $habitacionNumeroLongitud > 8
+                    ? ' room-code-long room-code-xl'
+                    : ($habitacionNumeroLongitud > 5 ? ' room-code-long' : '');
                 ?>
-                <div class="flip-card room-card-compact <?= $tiene_checkout_vencido ? 'has-checkout-vencido' : '' ?> <?= $es_checkin_vencido ? 'has-checkin-vencido' : '' ?> <?= $habitacion['estado'] == 'limpieza' ? 'has-cleaning-state' : '' ?>"
+                <div class="flip-card room-card-compact <?= $tiene_checkout_vencido ? 'has-checkout-vencido' : '' ?> <?= $es_checkin_vencido ? 'has-checkin-vencido' : '' ?> <?= $habitacion['estado'] == 'limpieza' ? 'has-cleaning-state' : '' ?><?= $habitacionNumeroLayoutClass ?>"
                       onclick="toggleFlip(this, event)"
                       onkeydown="hbCardKey(event, this)"
                       role="button"
@@ -3254,10 +3261,10 @@ if ($tiene_doble_movimiento) {
                                 <span class="rc-stripe" style="background: <?= htmlspecialchars($accentColor) ?>;"></span>
                                 <div class="rc-top">
                                     <div class="rc-id">
-                                        <div class="rc-num"><?= htmlspecialchars($habitacion['numero']) ?></div>
+                                        <div class="rc-num" title="<?= htmlspecialchars($habitacion['numero']) ?>"><?= htmlspecialchars($habitacion['numero']) ?></div>
                                         <div class="rc-type"><?= $pisoAbrev ?> · <?= $tipos[$habitacion['tipo']] ?? $habitacion['tipo'] ?></div>
                                     </div>
-                                    <span class="rc-badge"><i class="fas fa-<?= $estadoInfoPrincipal['icon'] ?>"></i><span><?= $estadoInfoPrincipal['label'] ?></span></span>
+                                    <span class="rc-badge" title="Estado: <?= htmlspecialchars($estadoInfoPrincipal['label']) ?>" aria-label="Estado: <?= htmlspecialchars($estadoInfoPrincipal['label']) ?>"><i class="fas fa-<?= $estadoInfoPrincipal['icon'] ?>" aria-hidden="true"></i><span><?= $estadoInfoPrincipal['label'] ?></span></span>
                                 </div>
                                 <div class="rc-mid">
                                     <?php if ($faceGuest !== ''): ?>
@@ -7478,6 +7485,86 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
   text-overflow:ellipsis;
 }
 
+/* Mantiene nombres largos de habitacion separados del estado. */
+.habitaciones-view .rc-top{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:start!important;
+  column-gap:8px!important;
+  row-gap:4px!important;
+}
+
+.habitaciones-view .rc-id{
+  min-width:0!important;
+  max-width:100%!important;
+}
+
+.habitaciones-view .rc-num,
+.habitaciones-view .rc-type{
+  display:block!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+
+.habitaciones-view .rc-badge{
+  flex:none!important;
+  justify-self:end!important;
+  min-width:28px!important;
+  max-width:104px!important;
+  overflow:hidden!important;
+}
+
+.habitaciones-view .rc-badge span{
+  display:block!important;
+  white-space:nowrap!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+.habitaciones-view .room-card-compact.room-code-long .rc-badge{
+  width:34px!important;
+  height:34px!important;
+  padding:0!important;
+  display:inline-grid!important;
+  place-items:center!important;
+  gap:0!important;
+  border-radius:999px!important;
+}
+
+.habitaciones-view .room-card-compact.room-code-long .rc-badge i{
+  font-size:14px!important;
+  line-height:1!important;
+}
+
+.habitaciones-view .room-card-compact.room-code-long .rc-badge span{
+  display:none!important;
+}
+
+.habitaciones-view .room-card-compact.room-code-xl .rc-top{
+  min-height:56px!important;
+}
+
+.habitaciones-view .room-card-compact.room-code-xl .rc-num{
+  display:-webkit-box!important;
+  white-space:normal!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  max-width:9ch!important;
+  max-height:2.1em!important;
+  line-height:.96!important;
+}
+
+.habitaciones-view .room-card-compact.room-code-xl .rc-type{
+  margin-top:3px!important;
+}
+
 .habitaciones-view .rc-mid{
   min-height:0!important;
   margin-top:auto!important;
@@ -9379,6 +9466,589 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
         transition-duration: .01ms !important;
     }
 }
+
+/* Nueva reserva: shell compartido con reservaciones, brand-aware y sin encimar pasos. */
+.swal2-container.hb-swal-sheet-container .swal2-popup.hb-reserve-swal{
+    width: min(780px, calc(100vw - 32px)) !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 12%, #E8DFD1) !important;
+    border-radius: 24px !important;
+    background: #FBFAF7 !important;
+    color: #172033 !important;
+    box-shadow: 0 34px 78px -42px rgba(8, 13, 20, .70) !important;
+}
+
+.swal2-container.hb-swal-sheet-container .swal2-popup.hb-reserve-swal .swal2-html-container{
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+}
+
+.hb-reserve-shell{
+    --hb-reserve-brand: var(--brand-primary, #1B2746);
+    --hb-reserve-brand-2: var(--brand-secondary, #0F172A);
+    --hb-reserve-accent: var(--brand-accent, #BD9441);
+    --hb-reserve-line: color-mix(in srgb, var(--brand-primary, #1B2746) 10%, #E8DFD1);
+    --hb-reserve-surface: #FBFAF7;
+    --hb-reserve-paper: #FFFEFB;
+    --hb-reserve-ink: #172033;
+    --hb-reserve-muted: #6B7686;
+    --hb-reserve-new: color-mix(in srgb, var(--brand-accent, #BD9441) 72%, #B76B52);
+    --hb-reserve-existing: #20A66B;
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    min-height: 482px;
+    text-align: left;
+    background: var(--hb-reserve-surface);
+}
+
+.hb-reserve-side{
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto auto auto auto 1fr;
+    align-content: start;
+    padding: 26px 26px;
+    color: #FFFEFB;
+    background:
+        radial-gradient(260px 210px at 100% 10%, rgba(255,255,255,.10), transparent 62%),
+        linear-gradient(155deg, color-mix(in srgb, var(--hb-reserve-brand-2) 92%, #101827), color-mix(in srgb, var(--hb-reserve-brand) 78%, #1F2937));
+}
+
+.hb-reserve-side::after{
+    content: '';
+    position: absolute;
+    top: -34px;
+    right: -70px;
+    width: 230px;
+    height: 230px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--hb-reserve-accent) 20%, transparent);
+    opacity: .65;
+    z-index: -1;
+}
+
+.hb-reserve-side__eyebrow,
+.hb-reserve-main__eyebrow{
+    display: block;
+    margin: 0 0 12px;
+    font-size: .70rem;
+    font-weight: 900;
+    letter-spacing: .18em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.hb-reserve-side__eyebrow{
+    color: color-mix(in srgb, var(--hb-reserve-accent) 70%, #FFFEFB);
+}
+
+.hb-reserve-side h2{
+    margin: 0;
+    max-width: 9ch;
+    color: #FFFEFB;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.72rem;
+    font-weight: 780;
+    line-height: 1.03;
+    letter-spacing: 0;
+}
+
+.hb-reserve-side > p{
+    margin: 12px 0 18px;
+    max-width: 25ch;
+    color: rgba(255,255,255,.78);
+    font-size: .86rem;
+    font-weight: 650;
+    line-height: 1.45;
+}
+
+.hb-reserve-datebox{
+    display: grid;
+    gap: 0;
+    padding: 8px 14px;
+    border: 1px solid rgba(255,255,255,.13);
+    border-radius: 16px;
+    background: rgba(255,255,255,.08);
+}
+
+.hb-reserve-dateitem{
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 9px;
+    align-items: center;
+    min-height: 50px;
+}
+
+.hb-reserve-dateitem + .hb-reserve-dateitem{
+    border-top: 1px solid rgba(255,255,255,.12);
+}
+
+.hb-reserve-dateicon{
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: rgba(255,255,255,.12);
+    color: color-mix(in srgb, var(--hb-reserve-accent) 62%, #FFFEFB);
+    font-size: .78rem;
+}
+
+.hb-reserve-dateitem small{
+    display: block;
+    color: rgba(255,255,255,.54);
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.hb-reserve-dateitem strong{
+    display: block;
+    margin-top: 2px;
+    color: #FFFEFB;
+    font-size: .88rem;
+    font-weight: 900;
+}
+
+.hb-reserve-steps{
+    display: grid;
+    gap: 12px;
+    margin: 18px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.hb-reserve-steps li{
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    color: rgba(255,255,255,.62);
+    font-size: .88rem;
+    font-weight: 850;
+}
+
+.hb-reserve-steps li span{
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.20);
+    color: rgba(255,255,255,.72);
+    font-variant-numeric: tabular-nums;
+}
+
+.hb-reserve-steps li.is-active,
+.hb-reserve-steps li.is-complete{
+    color: #FFFEFB;
+}
+
+.hb-reserve-steps li.is-active span{
+    border-color: color-mix(in srgb, var(--hb-reserve-accent) 76%, #FFFEFB);
+    background: color-mix(in srgb, var(--hb-reserve-accent) 82%, #9B7236);
+    color: #FFFEFB;
+}
+
+.hb-reserve-steps li.is-complete span{
+    border-color: #20A66B;
+    background: #20A66B;
+    color: #FFFEFB;
+}
+
+.hb-reserve-main{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 482px;
+    padding: 32px 24px 0;
+    background: #FFFEFB;
+}
+
+.hb-reserve-main__eyebrow{
+    color: #8791A3;
+    margin-bottom: 24px;
+}
+
+.hb-reserve-main h3{
+    margin: 0;
+    color: var(--hb-reserve-ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.35rem;
+    font-weight: 760;
+    line-height: 1.18;
+}
+
+.hb-reserve-main > p{
+    max-width: 49ch;
+    margin: 7px 0 18px;
+    color: var(--hb-reserve-muted);
+    font-size: .88rem;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.hb-reserve-choice-list{
+    display: grid;
+    gap: 10px;
+}
+
+.hb-reserve-choice{
+    --hb-choice-color: var(--hb-reserve-accent);
+    width: 100%;
+    min-height: 92px;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) 28px;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border: 1px solid var(--hb-reserve-line);
+    border-radius: 14px;
+    background: var(--hb-reserve-paper);
+    color: var(--hb-reserve-ink);
+    text-align: left;
+    cursor: pointer;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+
+.hb-reserve-choice--new{ --hb-choice-color: var(--hb-reserve-new); }
+.hb-reserve-choice--existing{ --hb-choice-color: var(--hb-reserve-existing); }
+
+.hb-reserve-choice:hover,
+.hb-reserve-choice:focus-visible,
+.hb-reserve-choice.is-selected{
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--hb-choice-color) 60%, var(--hb-reserve-line));
+    background: color-mix(in srgb, var(--hb-choice-color) 10%, #FFFEFB);
+    box-shadow: 0 18px 36px -32px color-mix(in srgb, var(--hb-choice-color) 54%, transparent);
+    outline: none;
+}
+
+.hb-reserve-choice__icon{
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    color: color-mix(in srgb, var(--hb-choice-color) 78%, var(--hb-reserve-ink));
+    background: color-mix(in srgb, var(--hb-choice-color) 10%, #FFFEFB);
+}
+
+.hb-reserve-choice__copy{
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.hb-reserve-choice__copy > span{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.hb-reserve-choice__copy strong{
+    color: var(--hb-reserve-ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.08rem;
+    font-weight: 760;
+    line-height: 1.1;
+}
+
+.hb-reserve-choice__copy em{
+    min-height: 20px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--hb-choice-color) 12%, #FFFEFB);
+    color: color-mix(in srgb, var(--hb-choice-color) 84%, var(--hb-reserve-ink));
+    font-size: .62rem;
+    font-style: normal;
+    font-weight: 900;
+}
+
+.hb-reserve-choice__copy small{
+    color: var(--hb-reserve-muted);
+    font-size: .82rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.hb-reserve-choice__check{
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    border: 2px solid color-mix(in srgb, var(--hb-choice-color) 20%, #DCD4C8);
+    color: transparent;
+    background: #FFFEFB;
+    font-size: .70rem;
+}
+
+.hb-reserve-choice.is-selected .hb-reserve-choice__check{
+    border-color: var(--hb-choice-color);
+    background: var(--hb-choice-color);
+    color: #FFFEFB;
+}
+
+.hb-reserve-timechips{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 3px 0 14px;
+}
+
+.hb-reserve-timechip{
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 16px;
+    border: 1px solid color-mix(in srgb, var(--hb-reserve-accent) 22%, var(--hb-reserve-line));
+    border-radius: 999px;
+    background: #FFFEFB;
+    color: #4F5969;
+    font-size: .84rem;
+    font-weight: 850;
+    cursor: pointer;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, color .16s ease;
+}
+
+.hb-reserve-timechip:hover,
+.hb-reserve-timechip:focus-visible,
+.hb-reserve-timechip.is-active{
+    transform: translateY(-1px);
+    border-color: var(--hb-reserve-brand-2);
+    background: var(--hb-reserve-brand-2);
+    color: #FFFEFB;
+    outline: none;
+}
+
+.hb-reserve-timefield{
+    min-height: 60px;
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 0 18px;
+    border: 1px solid var(--hb-reserve-line);
+    border-radius: 12px;
+    background: #FFFEFB;
+}
+
+.hb-reserve-timefield i{
+    color: #A8B1BF;
+}
+
+.hb-reserve-timefield .hb-arrival-input{
+    height: 58px !important;
+    min-height: 58px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: var(--hb-reserve-brand-2) !important;
+    font-size: 1.28rem !important;
+    font-weight: 900 !important;
+    box-shadow: none !important;
+}
+
+.hb-reserve-hint{
+    margin: 10px 0 0 !important;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #9AA4B5 !important;
+    font-size: .78rem !important;
+    font-weight: 650 !important;
+}
+
+.hb-reserve-validation{
+    margin: 10px 0 0;
+    padding: 10px 12px;
+    border: 1px solid #F3B8B6;
+    border-radius: 12px;
+    background: #FFF3F2;
+    color: #A4423E;
+    font-size: .80rem;
+    font-weight: 800;
+}
+
+.hb-reserve-validation.hidden{
+    display: none;
+}
+
+.hb-reserve-footer{
+    display: grid;
+    grid-template-columns: minmax(150px, .88fr) minmax(190px, 1.22fr);
+    gap: 12px;
+    margin: auto -24px 0;
+    padding: 16px 24px;
+    border-top: 1px solid var(--hb-reserve-line);
+    background: #FFFEFB;
+}
+
+.hb-reserve-btn{
+    min-height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 12px;
+    padding: 0 16px;
+    font-size: .88rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+
+.hb-reserve-btn:hover,
+.hb-reserve-btn:focus-visible{
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.hb-reserve-btn--ghost{
+    border: 1px solid var(--hb-reserve-line);
+    background: #FFFEFB;
+    color: var(--hb-reserve-brand-2);
+}
+
+.hb-reserve-btn--primary{
+    border: 0;
+    background: var(--hb-reserve-brand-2);
+    color: #FFFEFB;
+    box-shadow: 0 16px 28px -22px color-mix(in srgb, var(--hb-reserve-brand-2) 70%, transparent);
+}
+
+@media (max-width: 760px){
+    .swal2-container.hb-swal-sheet-container .swal2-popup.hb-reserve-swal{
+        width: 100% !important;
+        max-width: none !important;
+        border-radius: 22px 22px 12px 12px !important;
+    }
+
+    .hb-reserve-shell{
+        grid-template-columns: 1fr;
+        min-height: 0;
+    }
+
+    .hb-reserve-side{
+        min-height: auto;
+        padding: 20px 18px 16px;
+    }
+
+    .hb-reserve-side h2{
+        max-width: none;
+        font-size: 1.42rem;
+    }
+
+    .hb-reserve-side > p{
+        max-width: none;
+        margin-bottom: 14px;
+    }
+
+    .hb-reserve-datebox{
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        padding: 10px;
+    }
+
+    .hb-reserve-dateitem{
+        min-height: 56px;
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .hb-reserve-dateitem + .hb-reserve-dateitem{
+        border-top: 0;
+    }
+
+    .hb-reserve-dateicon{
+        display: none;
+    }
+
+    .hb-reserve-steps{
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+    }
+
+    .hb-reserve-main{
+        min-height: 0;
+        padding: 22px 16px 0;
+    }
+
+    .hb-reserve-choice-list,
+    .hb-reserve-footer{
+        grid-template-columns: 1fr;
+    }
+
+    .hb-reserve-footer{
+        margin-left: -16px;
+        margin-right: -16px;
+        padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+    }
+}
+
+/* Correccion desktop: el modal de limpieza debe respetar la sidebar fija. */
+@media (min-width: 1025px) {
+    body.hotel-layout-scope #modalLimpieza {
+        top: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        left: var(--sidebar-width, 260px) !important;
+        width: auto !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        z-index: 900 !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: clamp(18px, 2vw, 32px) !important;
+    }
+
+    body.hotel-layout-scope.sidebar-collapsed #modalLimpieza {
+        left: var(--sidebar-collapsed-width, 70px) !important;
+    }
+
+    body.hotel-layout-scope #modalLimpieza > .bg-white {
+        width: min(940px, calc(100% - 48px)) !important;
+        max-width: 940px !important;
+        max-height: min(82vh, 760px) !important;
+        margin: 0 auto !important;
+        border-radius: 22px !important;
+    }
+
+    body.hotel-layout-scope #modalLimpieza > .bg-white > div:first-child {
+        border-radius: 22px 22px 0 0 !important;
+    }
+
+    body.hotel-layout-scope #modalLimpieza .p-6.overflow-y-auto {
+        max-height: min(calc(82vh - 168px), 560px) !important;
+        padding: 20px 24px !important;
+    }
+
+    body.hotel-layout-scope #modalLimpieza .bg-gray-50 {
+        padding: 16px 24px !important;
+    }
+}
+
+@media (max-width: 1024px) {
+    body.hotel-layout-scope #modalLimpieza {
+        inset: 0 !important;
+        width: auto !important;
+        height: auto !important;
+        z-index: 1050 !important;
+    }
+}
 </style>
 
 <script>
@@ -9671,6 +10341,100 @@ function hbCerrarSwalReserva(callback, delay = 160) {
     hbReservaSwalTimer = window.setTimeout(run, swalVisible ? delay : Math.min(delay, 80));
 }
 
+function hbReservaCalcularNoches(fechaEntrada, fechaSalida) {
+    const entrada = new Date(fechaEntrada + 'T00:00:00');
+    const salida = new Date(fechaSalida + 'T00:00:00');
+    const diff = Math.round((salida - entrada) / 86400000);
+    const noches = Number.isFinite(diff) && diff > 0 ? diff : 1;
+    return noches + ' ' + (noches === 1 ? 'noche' : 'noches');
+}
+
+function hbReservaSidebar(fechaEntrada, fechaSalida, paso, habitacionId) {
+    const entradaLabel = formatearFechaCorta(new Date(fechaEntrada + 'T00:00:00'));
+    const salidaLabel = formatearFechaCorta(new Date(fechaSalida + 'T00:00:00'));
+    const nochesLabel = hbReservaCalcularNoches(fechaEntrada, fechaSalida);
+    const pasoActual = parseInt(paso, 10) || 1;
+    const tieneHabitacion = hayHabitacionReservaRapida(habitacionId);
+    const detalle = tieneHabitacion
+        ? 'Configura los datos iniciales para preparar esta habitacion.'
+        : 'Configura los datos iniciales para preparar la estancia del huesped.';
+
+    return `
+        <aside class="hb-reserve-side" aria-label="Resumen de nueva reservacion">
+            <span class="hb-reserve-side__eyebrow">Nueva reservacion</span>
+            <h2>Crear<br>reservacion</h2>
+            <p>${detalle}</p>
+
+            <div class="hb-reserve-datebox">
+                <div class="hb-reserve-dateitem">
+                    <span class="hb-reserve-dateicon"><i class="fas fa-sign-in-alt"></i></span>
+                    <span><small>Entrada</small><strong>${entradaLabel}</strong></span>
+                </div>
+                <div class="hb-reserve-dateitem">
+                    <span class="hb-reserve-dateicon"><i class="fas fa-moon"></i></span>
+                    <span><small>Noches</small><strong>${nochesLabel}</strong></span>
+                </div>
+                <div class="hb-reserve-dateitem">
+                    <span class="hb-reserve-dateicon"><i class="fas fa-sign-out-alt"></i></span>
+                    <span><small>Salida</small><strong>${salidaLabel}</strong></span>
+                </div>
+            </div>
+
+            <ol class="hb-reserve-steps" aria-label="Progreso">
+                <li class="${pasoActual === 1 ? 'is-active' : 'is-complete'}">
+                    <span>1</span>
+                    <strong>Tipo de cliente</strong>
+                </li>
+                <li class="${pasoActual === 2 ? 'is-active' : ''}">
+                    <span>2</span>
+                    <strong>Hora de llegada</strong>
+                </li>
+            </ol>
+        </aside>
+    `;
+}
+
+function hbElegirTipoCliente(button, tipo) {
+    const shell = button?.closest('.hb-reserve-shell');
+    if (!shell) return;
+    shell.dataset.tipo = tipo;
+    shell.querySelectorAll('.hb-reserve-choice').forEach(option => {
+        option.classList.toggle('is-selected', option === button);
+        option.setAttribute('aria-pressed', option === button ? 'true' : 'false');
+    });
+}
+
+function hbContinuarTipoClienteDesdeShell(habitacionId, fechaEntrada, fechaSalida, horaActual) {
+    const shell = document.querySelector('.hb-reserve-shell');
+    const tipo = shell?.dataset.tipo || 'nuevo';
+    seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, horaActual);
+}
+
+function hbReservaSetHora(valor, button) {
+    const input = document.getElementById('horaLlegadaRapida');
+    if (input) input.value = valor;
+    const shell = button?.closest('.hb-reserve-shell');
+    if (shell) {
+        shell.querySelectorAll('.hb-reserve-timechip').forEach(chip => chip.classList.remove('is-active'));
+    }
+    if (button) button.classList.add('is-active');
+    const validation = document.getElementById('hbReserveValidation');
+    if (validation) validation.classList.add('hidden');
+}
+
+function hbCrearReservacionDesdeHora(tipo, habitacionId, fechaEntrada, fechaSalida) {
+    const input = document.getElementById('horaLlegadaRapida');
+    const validation = document.getElementById('hbReserveValidation');
+    const horaSeleccionada = input ? input.value : '';
+
+    if (!horaSeleccionada) {
+        if (validation) validation.classList.remove('hidden');
+        if (input) input.focus();
+        return;
+    }
+
+    continuarReservacionDesdeModal(tipo, habitacionId, fechaEntrada, fechaSalida, horaSeleccionada, false);
+}
 function abrirSelectorNuevaReserva(event) {
     if (typeof Swal === 'undefined') {
         return true;
@@ -9691,86 +10455,70 @@ function mostrarSelectorTipoCliente(habitacionId, datosReserva) {
     const fechaEntrada = datosReserva.fechaEntrada;
     const fechaSalida = datosReserva.fechaSalida;
     const horaActual = datosReserva.horaActual;
-    const textoAyudaLimpio = tieneHabitacion
-        ? 'Elige como iniciar la reserva de esta habitacion.'
-        : 'Elige como iniciar la nueva reservacion.';
     const textoAyuda = tieneHabitacion
-        ? 'Elige cómo quieres continuar con la habitación seleccionada.'
-        : 'Elige cómo quieres iniciar esta nueva reservación.';
+        ? 'Elige si vas a registrar un huesped nuevo o si usaras un cliente que ya existe para esta habitacion.'
+        : 'Elige si vas a registrar un huesped nuevo o si la reservacion sera para un cliente que ya existe.';
 
     Swal.fire({
         title: '',
         html: `
-            <div class="hb-client-choice">
-                <div class="hb-client-choice__head">
-                    <span class="hb-client-choice__mark">
-                        <i class="fas fa-calendar-plus"></i>
-                    </span>
-                    <div>
-                        <span class="hb-client-choice__eyebrow">Nueva reservación</span>
-                        <h3>Tipo de cliente</h3>
-                        <p>${textoAyudaLimpio}</p>
-                    </div>
-                </div>
+            <div class="hb-reserve-shell" data-tipo="nuevo">
+                ${hbReservaSidebar(fechaEntrada, fechaSalida, 1, habitacionId)}
+                <section class="hb-reserve-main" aria-label="Tipo de cliente">
+                    <span class="hb-reserve-main__eyebrow">Paso 1 de 2</span>
+                    <h3>&iquest;Para quien es la reservacion?</h3>
+                    <p>${textoAyuda}</p>
 
-                <div class="hb-client-choice__options" role="group" aria-label="Tipo de cliente">
-                    <button onclick="seleccionarTipoCliente('nuevo', ${habitacionArg}, '${fechaEntrada}', '${fechaSalida}', '${horaActual}'); return false;"
-                            type="button"
-                            class="hb-client-option hb-client-option--new">
-                        <span class="hb-client-option__top">
-                            <span class="hb-client-option__icon">
-                                <i class="fas fa-user-plus"></i>
+                    <div class="hb-reserve-choice-list" role="group" aria-label="Tipo de cliente">
+                        <button onclick="hbElegirTipoCliente(this, 'nuevo'); return false;"
+                                type="button"
+                                class="hb-reserve-choice hb-reserve-choice--new is-selected"
+                                aria-pressed="true">
+                            <span class="hb-reserve-choice__icon"><i class="fas fa-user-plus"></i></span>
+                            <span class="hb-reserve-choice__copy">
+                                <span><strong>Cliente nuevo</strong><em>Registro</em></span>
+                                <small>${tieneHabitacion ? 'Crea el huesped y vuelve al flujo con esta habitacion lista.' : 'Registra al huesped y vuelve al flujo con las fechas listas.'}</small>
                             </span>
-                            <span class="hb-client-option__tag">Registro</span>
-                        </span>
-                        <span class="hb-client-option__body">
-                            <strong>Cliente nuevo</strong>
-                            <span>${tieneHabitacion ? 'Crea el huésped y regresa al flujo de esta habitación.' : 'Registra al huésped antes de armar la reserva.'}</span>
-                        </span>
-                        <span class="hb-client-option__cta">
-                            Elegir
-                            <i class="fas fa-arrow-right"></i>
-                        </span>
-                    </button>
-                    <button onclick="seleccionarTipoCliente('existente', ${habitacionArg}, '${fechaEntrada}', '${fechaSalida}', '${horaActual}'); return false;"
-                            type="button"
-                            class="hb-client-option hb-client-option--existing">
-                        <span class="hb-client-option__top">
-                            <span class="hb-client-option__icon">
-                                <i class="fas fa-user-check"></i>
+                            <span class="hb-reserve-choice__check"><i class="fas fa-check"></i></span>
+                        </button>
+                        <button onclick="hbElegirTipoCliente(this, 'existente'); return false;"
+                                type="button"
+                                class="hb-reserve-choice hb-reserve-choice--existing"
+                                aria-pressed="false">
+                            <span class="hb-reserve-choice__icon"><i class="fas fa-user-check"></i></span>
+                            <span class="hb-reserve-choice__copy">
+                                <span><strong>Cliente registrado</strong><em>Existente</em></span>
+                                <small>${tieneHabitacion ? 'Usa un huesped ya creado y completa los datos de llegada.' : 'Continua directo a crear la reservacion y busca al huesped.'}</small>
                             </span>
-                            <span class="hb-client-option__tag">Registrado</span>
-                        </span>
-                        <span class="hb-client-option__body">
-                            <strong>Cliente existente</strong>
-                            <span>${tieneHabitacion ? 'Usa un huésped ya creado y completa los datos de llegada.' : 'Busca un huésped existente desde nueva reservación.'}</span>
-                        </span>
-                        <span class="hb-client-option__cta">
-                            Elegir
-                            <i class="fas fa-arrow-right"></i>
-                        </span>
-                    </button>
-                </div>
+                            <span class="hb-reserve-choice__check"><i class="fas fa-check"></i></span>
+                        </button>
+                    </div>
+
+                    <div class="hb-reserve-footer">
+                        <button type="button" onclick="Swal.close()" class="hb-reserve-btn hb-reserve-btn--ghost">Cancelar</button>
+                        <button type="button" onclick="hbContinuarTipoClienteDesdeShell(${habitacionArg}, '${fechaEntrada}', '${fechaSalida}', '${horaActual}')" class="hb-reserve-btn hb-reserve-btn--primary">
+                            Continuar <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </section>
             </div>
         `,
         showConfirmButton: false,
-        showCancelButton: true,
+        showCancelButton: false,
         showCloseButton: true,
         allowOutsideClick: true,
         allowEscapeKey: true,
         returnFocus: false,
         closeButtonAriaLabel: 'Cerrar',
-        cancelButtonText: 'Cancelar',
-        width: '720px',
+        width: '780px',
         customClass: {
             container: 'hb-swal-sheet-container',
-            popup: 'hb-swal hb-swal-client',
-            htmlContainer: 'hb-swal-html',
-            cancelButton: 'hb-swal-cancel'
-        }
+            popup: 'hb-swal hb-swal-client hb-reserve-swal',
+            htmlContainer: 'hb-swal-html'
+        },
+        buttonsStyling: false
     });
 }
-
 // Función para entrega rápida de control remoto desde el índice de habitaciones
 function entregarRemotoRapido(habitacionId, reservacionId) {
     if (typeof Swal !== 'undefined') {
@@ -10289,142 +11037,58 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
     const habitacionArg = tieneHabitacion ? parseInt(habitacionId, 10) : 'null';
 
     hbCerrarSwalReserva(() => {
-    Swal.fire({
-        title: '',
-        html: `
-            <div class="hb-reservation-step">
-                <div class="hb-arrival-head">
-                    <span class="hb-arrival-mark">
-                        <i class="fas fa-clock"></i>
-                    </span>
-                    <div>
-                        <span class="hb-client-choice__eyebrow">Llegada estimada</span>
-                        <h3>Hora de llegada</h3>
-                        <p>Define una hora estimada o continua sin capturarla ahora.</p>
-                    </div>
-                </div>
+        Swal.fire({
+            title: '',
+            html: `
+                <div class="hb-reserve-shell" data-tipo="${tipo}">
+                    ${hbReservaSidebar(fechaEntrada, fechaSalida, 2, habitacionId)}
+                    <section class="hb-reserve-main" aria-label="Hora de llegada">
+                        <span class="hb-reserve-main__eyebrow">Paso 2 de 2</span>
+                        <h3>&iquest;A que hora llega?</h3>
+                        <p>Elige una opcion rapida o escribe la hora. Tambien puedes capturarla despues dentro de la reservacion.</p>
 
-                <div class="hb-arrival-context">
-                <div class="hb-reservation-pill ${tipo === 'existente' ? 'hb-reservation-pill--existing' : 'hb-reservation-pill--new'}">
-                    <i class="fas ${tipo === 'existente' ? 'fa-user-check' : 'fa-user-plus'}"></i>
-                    <span>Cliente ${tipo === 'existente' ? 'Existente' : 'Nuevo'}</span>
-                </div>
-
-                <div class="hb-reservation-summary">
-                    <div class="hb-reservation-dates">
-                        <div class="hb-date-row">
-                            <span>Check-in</span>
-                            <strong>${formatearFechaCorta(new Date(fechaEntrada + 'T00:00:00'))}</strong>
+                        <div class="hb-reserve-timechips" aria-label="Opciones rapidas de hora">
+                            <button type="button" onclick="hbReservaSetHora('${horaActual}', this)" class="hb-reserve-timechip is-active"><i class="far fa-clock"></i> Ahora</button>
+                            <button type="button" onclick="hbReservaSetHora('14:00', this)" class="hb-reserve-timechip">02:00 p. m.</button>
+                            <button type="button" onclick="hbReservaSetHora('20:00', this)" class="hb-reserve-timechip">08:00 p. m.</button>
+                            <button type="button" onclick="continuarReservacionSinHora('${tipo}', ${habitacionArg}, '${fechaEntrada}', '${fechaSalida}'); return false;" class="hb-reserve-timechip"><i class="far fa-calendar-plus"></i> Definir despues</button>
                         </div>
-                        <div class="hb-date-row">
-                            <span>Check-out</span>
-                            <strong>${formatearFechaCorta(new Date(fechaSalida + 'T00:00:00'))}</strong>
-                        </div>
-                    </div>
 
-                    <div class="hb-arrival-card">
-                        <label for="horaLlegadaRapida" class="hb-arrival-label">
-                            Llegada estimada
+                        <label class="hb-reserve-timefield" for="horaLlegadaRapida">
+                            <i class="far fa-clock"></i>
+                            <input type="time" id="horaLlegadaRapida" value="${horaActual}" class="hb-arrival-input brand-focus" oninput="document.getElementById('hbReserveValidation')?.classList.add('hidden')">
                         </label>
-                        <p class="hb-arrival-copy">Define la hora estimada para preparar la habitación.</p>
-                        <div class="hb-arrival-control">
-                            <input type="time"
-                                   id="horaLlegadaRapida"
-                                   value=""
-                                   placeholder="--:--"
-                                   class="hb-arrival-input brand-focus">
-                            <button onclick="document.getElementById('horaLlegadaRapida').value = '${horaActual}'"
-                                    type="button"
-                                    class="hb-arrival-now"
-                                    aria-label="Usar hora actual"
-                                    title="Usar hora actual">
-                                <i class="fas fa-clock"></i>
-                                <span>Ahora</span>
+                        <p class="hb-reserve-hint"><i class="far fa-eye"></i> Esta hora ayuda a preparar la habitacion a tiempo; no es obligatoria si decides definirla despues.</p>
+                        <p id="hbReserveValidation" class="hb-reserve-validation hidden">Ingresa la hora de llegada o usa Definir despues.</p>
+
+                        <div class="hb-reserve-footer">
+                            <button type="button" onclick="hbCerrarSwalReserva(() => mostrarSelectorTipoCliente(${habitacionArg}, { fechaEntrada: '${fechaEntrada}', fechaSalida: '${fechaSalida}', horaActual: '${horaActual}' }), 90)" class="hb-reserve-btn hb-reserve-btn--ghost">
+                                <i class="fas fa-arrow-left"></i> Volver
+                            </button>
+                            <button type="button" onclick="hbCrearReservacionDesdeHora('${tipo}', ${habitacionArg}, '${fechaEntrada}', '${fechaSalida}')" class="hb-reserve-btn hb-reserve-btn--primary">
+                                <i class="fas fa-check"></i> Crear reservacion
                             </button>
                         </div>
-                        <button onclick="continuarReservacionSinHora('${tipo}', ${habitacionArg}, '${fechaEntrada}', '${fechaSalida}'); return false;"
-                                type="button"
-                                class="hb-arrival-later"
-                                aria-label="Definir hora de llegada despues">
-                            <span class="hb-arrival-later__icon">
-                                <i class="fas fa-calendar-plus"></i>
-                            </span>
-                            <span>
-                                <strong>Definir despues</strong>
-                                <small>La podras capturar dentro de la reservacion.</small>
-                            </span>
-                        </button>
-                    </div>
+                    </section>
                 </div>
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        showCloseButton: true,
-        allowOutsideClick: true,
-        allowEscapeKey: true,
-        returnFocus: false,
-        closeButtonAriaLabel: 'Cerrar',
-        confirmButtonText: 'Continuar',
-        cancelButtonText: 'Volver',
-        customClass: {
-            container: 'hb-swal-sheet-container',
-            popup: 'hb-swal hb-swal-arrival',
-            htmlContainer: 'hb-swal-html',
-            confirmButton: 'hb-swal-confirm',
-            cancelButton: 'hb-swal-cancel'
-        },
-        preConfirm: () => {
-            const horaSeleccionada = document.getElementById('horaLlegadaRapida').value;
-            if (!horaSeleccionada) {
-                Swal.showValidationMessage('Por favor ingrese la hora de llegada');
-                return false;
-            }
-            return horaSeleccionada;
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const horaSeleccionada = result.value;
-            continuarReservacionDesdeModal(tipo, habitacionId, fechaEntrada, fechaSalida, horaSeleccionada, false);
-            return;
-
-            if (tipo === 'nuevo') {
-                // MODIFICADO: Pasar los parámetros por URL para cliente nuevo
-                const params = new URLSearchParams({
-                    'return_to': 'reservacion_rapida',
-                    'habitacion_id': habitacionId,
-                    'fecha_entrada': fechaEntrada,
-                    'fecha_salida': fechaSalida,
-                    'hora_llegada': horaSeleccionada
-                });
-
-                window.location.href = '<?= url('huespedes/create') ?>?' + params.toString();
-            } else {
-                // Cliente existente - ir directo a crear reservación
-                const params = new URLSearchParams({
-                    habitacion_id: habitacionId,
-                    fecha_entrada: fechaEntrada,
-                    fecha_salida: fechaSalida,
-                    hora_llegada: horaSeleccionada,
-                    preseleccion: 'true'
-                });
-
-                window.location.href = '<?= url('reservaciones/crear') ?>?' + params.toString();
-            }
-        } else if (result.dismiss === Swal.DismissReason.cancel || result.dismiss === 'cancel') {
-            // Volver al primer modal
-            hbCerrarSwalReserva(() => {
-                mostrarSelectorTipoCliente(habitacionId, {
-                    fechaEntrada: fechaEntrada,
-                    fechaSalida: fechaSalida,
-                    horaActual: horaActual
-                });
-            }, 90);
-        }
-    });
+            `,
+            showConfirmButton: false,
+            showCancelButton: false,
+            showCloseButton: true,
+            allowOutsideClick: true,
+            allowEscapeKey: true,
+            returnFocus: false,
+            closeButtonAriaLabel: 'Cerrar',
+            width: '780px',
+            customClass: {
+                container: 'hb-swal-sheet-container',
+                popup: 'hb-swal hb-swal-arrival hb-reserve-swal',
+                htmlContainer: 'hb-swal-html'
+            },
+            buttonsStyling: false
+        });
     });
 }
-
 // Función auxiliar para formatear fecha
 function hayHabitacionReservaRapida(habitacionId) {
     return habitacionId !== null
@@ -11236,8 +11900,6 @@ document.addEventListener('keydown', function(e) {
  * Mostrar modal de limpieza
  */
 function mostrarModalLimpieza() {
-    document.getElementById('sidebar').style.display = 'none';
-    document.getElementById('mainHeader').style.display = 'none';
     document.getElementById('modalLimpieza').classList.remove('hidden');
     document.body.classList.add('overflow-hidden');
     actualizarContadorLimpieza();
@@ -11247,8 +11909,6 @@ function mostrarModalLimpieza() {
  * Cerrar modal de limpieza
  */
 function cerrarModalLimpieza() {
-    document.getElementById('sidebar').style.display = '';
-    document.getElementById('mainHeader').style.display = '';
     document.getElementById('modalLimpieza').classList.add('hidden');
     document.body.classList.remove('overflow-hidden');
 }

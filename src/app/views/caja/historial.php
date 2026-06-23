@@ -1105,7 +1105,7 @@ foreach ($cortes as $corte_metodo) {
                     </button>
                 </form>
 
-                <a href="<?= url('caja') ?>" class="cash-history-link">
+                <a href="<?= back_url('caja') ?>" class="cash-history-link">
                     <i class="fas fa-arrow-left"></i>
                     Volver a caja
                 </a>

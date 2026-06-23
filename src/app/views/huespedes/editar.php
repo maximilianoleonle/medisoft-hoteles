@@ -1012,7 +1012,7 @@ textarea.ge-control {
                     <i class="fas fa-eye"></i>
                     Ver expediente
                 </a>
-                <a href="<?= url('huespedes') ?>" class="ge-link-btn">
+                <a href="<?= back_url('huespedes') ?>" class="ge-link-btn">
                     <i class="fas fa-arrow-left"></i>
                     Directorio
                 </a>
@@ -1263,7 +1263,7 @@ textarea.ge-control {
                             <span>Se actualizar&aacute;n solo los datos principales del hu&eacute;sped.</span>
                         </div>
                         <div class="ge-actions-buttons">
-                            <a href="<?= url('huespedes/' . $huesped_id) ?>" class="ge-btn ge-btn-secondary">
+                            <a href="<?= back_url('huespedes/' . $huesped_id) ?>" class="ge-btn ge-btn-secondary">
                                 <i class="fas fa-times"></i>
                                 Cancelar
                             </a>

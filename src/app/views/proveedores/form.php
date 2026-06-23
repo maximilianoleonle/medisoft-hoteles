@@ -165,7 +165,7 @@ if (!function_exists('prov_form_safe')) {
                         <i class="fas fa-save"></i>
                         <?= $esEditar ? 'Guardar cambios' : 'Guardar proveedor' ?>
                     </button>
-                    <a class="pv-btn pv-btn-muted" href="<?= url('proveedores') ?>">
+                    <a class="pv-btn pv-btn-muted" href="<?= back_url('proveedores') ?>">
                         <i class="fas fa-arrow-left"></i>
                         Volver
                     </a>

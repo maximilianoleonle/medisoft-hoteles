@@ -2388,6 +2388,57 @@ No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
 `trabajador_anticipos`, `trabajador_prestamos`, `trabajador_pagos_caja`, Caja,
 cortes, movimientos de Caja, permisos/auth, PWA/offline ni `/api/sync`.
 
+## Rollback Fase 5E-N-A
+
+5E-N-A agrega pago individual controlado desde snapshot aprobado de
+pre-nomina hacia Caja. No agrega migraciones ni columnas nuevas.
+
+Rollback de codigo:
+
+1. Retirar la ruta POST:
+   `/trabajadores/nomina/periodos/{periodo}/detalles/{detalle}/registrar-pago-caja`
+   de `src/config/routes.php`.
+2. Retirar de `TrabajadorController`:
+   `TrabajadorNominaSnapshotPagoService`, propiedad `snapshotPagoService`,
+   generacion de `pagoSnapshotTokens`, `registrarPagoSnapshotNominaAction` y
+   `datosPagoSnapshotNomina`.
+3. Retirar `src/app/services/TrabajadorNominaSnapshotPagoService.php`.
+4. Retirar de `nomina_periodo_detalle.php` la columna `Pago Caja`, el formulario
+   POST, `pago_token`, `pagosSnapshot` y `pagoSnapshotTokens`.
+5. Retirar `src/tools/saas/probar_pago_snapshot_prenomina_caja.php`.
+6. Revertir validaciones 5E-N-A en
+   `src/tools/saas/preflight_personal_pagos_caja.php`.
+7. Revertir validaciones/ruta permitida 5E-N-A en
+   `src/tools/saas/health_check_fase_1a.php`.
+8. Retirar `docs/fase_5E_N_A_pago_snapshot_prenomina_caja.md` y referencias en
+   resumen, QA y rollback.
+
+Verificacion posterior:
+
+- `docker compose exec -T app php -l` en PHP tocados.
+- `docker compose exec -T app env APP_ENV=local php tools/saas/preflight_personal_pagos_caja.php`.
+- `docker compose exec -T app env APP_ENV=local php tools/saas/health_check_fase_1a.php`.
+
+No ejecutar SQL ni tocar datos. Los pagos ya registrados por 5E-N-A, si existen
+en una base local o futura, deben revertirse solo con el flujo controlado de
+reversion de pagos laborales, no borrando filas manualmente.
+
+## Rollback Fase 5E-N-F
+
+5E-N-F es cierre documental del pago individual desde snapshot aprobado de
+pre-nomina con Caja validado manualmente.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_N_F_cierre_pago_snapshot_prenomina_caja.md`.
+2. Retirar referencias 5E-N-F de resumen, QA y rollback.
+3. Restaurar el estado de
+   `docs/fase_5E_N_A_pago_snapshot_prenomina_caja.md` a implementacion con QA
+   tecnica local completada si se quiere repetir la validacion manual.
+
+No ejecutar SQL ni tocar codigo operativo. Si existe un pago de prueba local,
+revertirlo solo desde el flujo controlado de reversion de pagos laborales.
+
 ## Rollback Fase 5E-J-0
 
 5E-J-0 es contrato documental del recibo laboral PDF informativo read-only.
@@ -2902,3 +2953,587 @@ Rollback:
 No ejecutar SQL ni tocar `trabajadores`, `trabajador_pagos`,
 `trabajador_anticipos`, `trabajador_prestamos`, `trabajador_pagos_caja`, Caja,
 cortes, movimientos de Caja, permisos/auth, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 5E-O-A
+
+5E-O-A solo mejora la lectura visual de filtros en la vista de periodos de
+pre-nomina. No crea rutas, modelos, migraciones ni datos.
+
+Rollback:
+
+1. Revertir en `src/app/views/trabajadores/nomina_periodos.php`:
+   - clases CSS `period-filter`, `period-filter-label`, `period-filter-hint`
+     y `period-filter-action`;
+   - wrappers y etiquetas visibles del formulario GET de periodos.
+2. Restaurar el formulario visual anterior conservando los mismos `name`:
+   `tipo_periodo`, `fecha_base`, `fecha_inicio`, `fecha_fin`, `estado`,
+   `rol_laboral`, `incluir_pagos_caja`.
+3. Retirar `docs/fase_5E_O_A_ux_filtros_periodos_prenomina.md`.
+4. Retirar referencias 5E-O-A de resumen, QA y rollback.
+
+Verificacion posterior:
+
+- `docker compose exec -T app php -l app/views/trabajadores/nomina_periodos.php`.
+- `docker compose exec -T app php tools/saas/preflight_personal_pagos_caja.php`.
+
+No ejecutar SQL ni tocar rutas, controladores, modelos, permisos, Caja, storage,
+PWA/offline ni `/api/sync`.
+
+## Rollback Fase 5E-O-B
+
+5E-O-B solo mejora la lectura visual del pago individual desde snapshot aprobado.
+No crea rutas, modelos, migraciones ni datos.
+
+Rollback:
+
+1. Revertir en `src/app/views/trabajadores/nomina_periodo_detalle.php`:
+   - clases CSS `nom-det-payfacts`, `nom-det-payfact` y
+     `nom-det-payfacts-muted`;
+   - bloque visual `Snapshot / Saldo vivo / Maximo` dentro de `Pago Caja`.
+2. Confirmar que el formulario conserva sus `name`: `pago_token`, `monto`,
+   `metodo_pago`, `referencia` y `notas`.
+3. Retirar `docs/fase_5E_O_B_ux_lectura_pago_snapshot_prenomina.md`.
+4. Retirar referencias 5E-O-B de resumen, QA y rollback.
+
+Verificacion posterior:
+
+- `docker compose exec -T app php -l app/views/trabajadores/nomina_periodo_detalle.php`.
+- `docker compose exec -T app php tools/saas/preflight_personal_pagos_caja.php`.
+
+No ejecutar SQL ni tocar rutas, controladores, modelos, servicios, permisos,
+Caja, storage, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 5E-P-0
+
+5E-P-0 es contrato documental de trazabilidad fuerte futura para pagos desde
+snapshot de pre-nomina.
+
+No crea codigo, rutas, migraciones ni datos.
+
+Rollback:
+
+1. Retirar `docs/fase_5E_P_0_contrato_trazabilidad_pago_snapshot_prenomina.md`.
+2. Retirar referencias 5E-P-0 de resumen, QA y rollback.
+3. Restaurar el estado de 5E-O-B como ultimo paso documentado del bloque UX si
+   se quiere volver al cierre anterior sin contrato de trazabilidad fuerte.
+
+No ejecutar SQL ni tocar `trabajador_pagos_caja`,
+`trabajador_nomina_periodos`, `trabajador_nomina_periodo_detalles`, Caja,
+servicios, permisos, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 5E-P-B
+
+5E-P-B agrega guardas read-only en checkers. No crea migraciones ni datos.
+
+Rollback:
+
+1. Retirar de `src/tools/saas/preflight_personal_pagos_caja.php` la validacion
+   de columnas `nomina_periodo_id` y `nomina_periodo_detalle_id`.
+2. Retirar de `src/tools/saas/health_check_fase_1a.php` la validacion
+   equivalente de trazabilidad snapshot.
+3. Retirar `docs/fase_5E_P_B_guardas_trazabilidad_pago_snapshot.md`.
+4. Retirar referencias 5E-P-B de resumen, QA y rollback.
+
+Verificacion posterior:
+
+- `docker compose exec -T app php -l tools/saas/preflight_personal_pagos_caja.php`.
+- `docker compose exec -T app php -l tools/saas/health_check_fase_1a.php`.
+- `docker compose exec -T app php tools/saas/preflight_personal_pagos_caja.php`.
+- `docker compose exec -T app php tools/saas/health_check_fase_1a.php`.
+
+No ejecutar SQL ni tocar DB, rutas, controladores, modelos, servicios, Caja,
+snapshots, PWA/offline ni `/api/sync`.
+
+## Rollback Fase 5E-P-A
+
+5E-P-A agrega trazabilidad fuerte nullable desde `trabajador_pagos_caja` hacia
+snapshots de pre-nomina.
+
+Rollback de codigo:
+
+1. Revertir en `src/app/services/TrabajadorPagoCajaService.php`:
+   - `normalizarTrazabilidadSnapshot`;
+   - `trazabilidadSnapshotDisponible`;
+   - `validarTrazabilidadSnapshot`;
+   - columnas opcionales `nomina_periodo_id` y
+     `nomina_periodo_detalle_id` en el INSERT.
+2. Revertir en `src/app/services/TrabajadorNominaSnapshotPagoService.php` el
+   envio de `nomina_periodo_id` y `nomina_periodo_detalle_id`.
+3. Revertir en `src/tools/saas/probar_pago_snapshot_prenomina_caja.php` la
+   validacion de trazabilidad 5E-P-A temporal.
+4. Revertir en `src/tools/saas/preflight_personal_pagos_caja.php` y
+   `src/tools/saas/health_check_fase_1a.php` las validaciones 5E-P-A.
+5. Retirar `docs/fase_5E_P_A_trazabilidad_pago_snapshot_prenomina.md`.
+6. Retirar referencias 5E-P-A de resumen, QA, rollback, contratos y auditoria.
+
+Rollback de migracion local:
+
+Ejecutar solo con autorizacion explicita y backup verificado.
+
+Primero validar dependencias:
+
+```sql
+SELECT COUNT(*) AS pagos_snapshot_trazados
+FROM trabajador_pagos_caja
+WHERE nomina_periodo_id IS NOT NULL
+   OR nomina_periodo_detalle_id IS NOT NULL;
+```
+
+Si el conteo es `0`, retirar estructura:
+
+```sql
+ALTER TABLE trabajador_pagos_caja
+  DROP FOREIGN KEY fk_trabajador_pagos_caja_nomina_detalle;
+
+ALTER TABLE trabajador_pagos_caja
+  DROP FOREIGN KEY fk_trabajador_pagos_caja_nomina_periodo;
+
+ALTER TABLE trabajador_pagos_caja
+  DROP INDEX idx_trabajador_pagos_caja_nomina_detalle;
+
+ALTER TABLE trabajador_pagos_caja
+  DROP INDEX idx_trabajador_pagos_caja_nomina_periodo;
+
+ALTER TABLE trabajador_pagos_caja
+  DROP COLUMN nomina_periodo_detalle_id,
+  DROP COLUMN nomina_periodo_id;
+
+DELETE FROM migrations
+WHERE nombre = '20260622_001_fase_5e_p_a_trazabilidad_pago_snapshot.sql';
+```
+
+Si existen pagos trazados, no eliminar columnas ni FKs sin fase formal de
+reconciliacion.
+
+Verificacion posterior:
+
+- `docker compose exec -T app php -l app/services/TrabajadorPagoCajaService.php`.
+- `docker compose exec -T app php -l app/services/TrabajadorNominaSnapshotPagoService.php`.
+- `docker compose exec -T app php -l tools/saas/probar_pago_snapshot_prenomina_caja.php`.
+- `docker compose exec -T app php tools/saas/preflight_personal_pagos_caja.php`.
+- `docker compose exec -T app php tools/saas/health_check_fase_1a.php`.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase TLM-I/J-B
+
+TLM-I/J-B ajusta validaciones estaticas del health para Tareas redisenadas.
+
+Rollback de codigo:
+
+1. En `src/tools/saas/health_check_fase_1a.php`, restaurar las condiciones
+   anteriores que buscaban solo:
+   - `url('tareas/' . (int)`;
+   - `Reporte operativo`;
+   - `Eventos`.
+2. Retirar `docs/fase_TLM_I_J_B_health_baseline_tareas.md`.
+3. Retirar referencias TLM-I/J-B de resumen, QA, rollback, contratos y
+   auditoria.
+
+No requiere rollback SQL: no crea migraciones, columnas, datos, tareas,
+estados, pagos ni movimientos de Caja.
+
+Verificacion posterior:
+
+- `docker exec medisoft_hoteles_app php -l /var/www/html/tools/saas/health_check_fase_1a.php`.
+- `docker exec -e APP_ENV=local medisoft_hoteles_app php /var/www/html/tools/saas/health_check_fase_1a.php`.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase NP-F-B
+
+NP-F-B ajusta validaciones estaticas del health para Personal redisenado.
+
+Rollback de codigo:
+
+1. En `src/tools/saas/health_check_fase_1a.php`, restaurar la condicion
+   anterior que buscaba solo:
+   - `url('trabajadores/' . (int)`.
+2. Retirar `docs/fase_NP_F_B_health_baseline_personal.md`.
+3. Retirar referencias NP-F-B de resumen, QA, rollback, contratos y auditoria.
+
+No requiere rollback SQL: no crea migraciones, columnas, datos, pagos,
+reversiones, nomina oficial ni movimientos de Caja.
+
+Verificacion posterior:
+
+- `docker exec medisoft_hoteles_app php -l /var/www/html/tools/saas/health_check_fase_1a.php`.
+- `docker exec -e APP_ENV=local medisoft_hoteles_app php /var/www/html/tools/saas/health_check_fase_1a.php`.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase 5E-P-F
+
+5E-P-F es cierre documental tras QA manual validada de trazabilidad 5E-P-A.
+
+Rollback documental:
+
+1. Retirar `docs/fase_5E_P_F_cierre_trazabilidad_pago_snapshot_prenomina.md`.
+2. Retirar referencias 5E-P-F de resumen, QA, rollback, contratos y auditoria.
+3. Restaurar 5E-P-A como implementacion con QA manual pendiente si se quiere
+   repetir la prueba.
+
+Rollback del dato manual de QA:
+
+El pago manual persistido fue:
+
+```text
+trabajador_pagos_caja.id = 9
+movimiento_caja_id = 1510
+referencia = TEST-5EPA-001
+nomina_periodo_id = 4
+nomina_periodo_detalle_id = 4
+```
+
+No eliminarlo directamente sin fase formal de reversion/reconciliacion. Si se
+quiere deshacer operativamente, usar el flujo controlado de reversion de pago
+laboral con Caja.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase 5E-Q-A
+
+5E-Q-A agrega conciliacion GET/read-only de pagos laborales trazados a snapshots
+de pre-nomina.
+
+Rollback de codigo:
+
+1. Retirar de `src/config/routes.php`:
+   - `GET /trabajadores/nomina/periodos/pagos-snapshot`.
+   - `GET /trabajadores/nomina/periodos/pagos-snapshot/exportar`.
+2. Retirar de `TrabajadorController`:
+   - `reporteNominaPagosSnapshotAction`.
+   - `exportarNominaPagosSnapshotAction`.
+   - `filtrosReporteNominaPagosSnapshotDesdeQuery`.
+   - `descargarNominaPagosSnapshotCsv`.
+   - `reporteNominaPagosSnapshotVacio`.
+3. Retirar de `Trabajador`:
+   - `tablasReporteNominaPagosSnapshotDisponibles`.
+   - `reporteNominaPagosSnapshotPorHotel`.
+   - helpers privados de filtros, where, resumen y conciliacion snapshot.
+   - `columnaExiste` si ya no queda otra fase usandolo.
+4. Eliminar `src/app/views/trabajadores/nomina_pagos_snapshot_reporte.php`.
+5. Retirar enlaces `Conciliacion pagos` de:
+   - `nomina_periodos.php`.
+   - `nomina_periodo_detalle.php`.
+6. Revertir validaciones 5E-Q-A en:
+   - `preflight_personal_pagos_caja.php`.
+   - `health_check_fase_1a.php`.
+7. Retirar `docs/fase_5E_Q_A_conciliacion_pagos_snapshot_prenomina.md`.
+8. Retirar referencias 5E-Q-A de resumen, QA, rollback, contratos y auditoria.
+
+No requiere rollback SQL: no crea migraciones, columnas ni datos.
+
+Verificacion posterior:
+
+- `docker compose exec -T app php -l config/routes.php`.
+- `docker compose exec -T app php -l app/models/Trabajador.php`.
+- `docker compose exec -T app php -l app/controllers/TrabajadorController.php`.
+- `docker compose exec -T app php tools/saas/preflight_personal_pagos_caja.php`.
+- `docker compose exec -T app php tools/saas/health_check_fase_1a.php`.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase 5E-Q-F
+
+5E-Q-F es cierre documental tras QA manual validada de la conciliacion
+read-only de pagos snapshot.
+
+Rollback documental:
+
+1. Retirar `docs/fase_5E_Q_F_cierre_conciliacion_pagos_snapshot_prenomina.md`.
+2. Retirar referencias 5E-Q-F de resumen, QA, rollback, contratos y auditoria.
+3. Restaurar 5E-Q-A como implementacion con QA manual pendiente si se quiere
+   repetir la prueba.
+
+No requiere rollback SQL ni cambios operativos: no crea migraciones, columnas,
+datos, pagos ni movimientos de Caja.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase 5E-R-0
+
+5E-R-0 es contrato documental para una futura auditoria consolidada GET/read-only
+de Personal/Nomina.
+
+Rollback documental:
+
+1. Retirar `docs/fase_5E_R_0_contrato_auditoria_consolidada_nomina.md`.
+2. Retirar referencias 5E-R-0 de resumen, QA, rollback, contratos y auditoria.
+3. Restaurar 5E-Q-F como ultimo cierre del bloque si se quiere volver al estado
+   anterior sin contrato de auditoria consolidada.
+
+No requiere rollback SQL ni cambios operativos: no crea rutas, migraciones,
+columnas, datos, pagos, reversiones ni movimientos de Caja.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase 5E-R-A
+
+5E-R-A implementa auditoria consolidada GET/read-only de nomina en local.
+
+Rollback de codigo:
+
+1. Retirar de `src/config/routes.php`:
+   - `GET /trabajadores/nomina/auditoria`.
+   - `GET /trabajadores/nomina/auditoria/exportar`.
+2. Retirar de `TrabajadorController`:
+   - `auditoriaNominaAction`.
+   - `exportarAuditoriaNominaAction`.
+   - `filtrosAuditoriaNominaDesdeQuery`.
+   - `descargarAuditoriaNominaCsv`.
+   - `auditoriaNominaConsolidadaVacio`.
+3. Retirar de `Trabajador`:
+   - `tablasAuditoriaNominaConsolidadaDisponibles`.
+   - `auditoriaNominaConsolidadaPorHotel`.
+   - helpers privados `normalizarFiltrosAuditoriaNomina`,
+     `whereAuditoriaNomina`, `filtrarAuditoriaNominaPorEstado`,
+     `resumenAuditoriaNomina`, `porEstadoAuditoriaNomina` y
+     `porPeriodoAuditoriaNomina`.
+   - `condicionInconsistenciaPagosSnapshotParaAlias` si no queda uso.
+4. Eliminar
+   `src/app/views/trabajadores/nomina_auditoria_consolidada.php`.
+5. Retirar enlaces `Auditoria nomina` de:
+   - `nomina_periodos.php`;
+   - `nomina_pagos_snapshot_reporte.php`.
+6. Revertir validaciones 5E-R-A en:
+   - `preflight_personal_pagos_caja.php`;
+   - `health_check_fase_1a.php`.
+7. Retirar `docs/fase_5E_R_A_auditoria_consolidada_nomina.md`.
+8. Retirar referencias 5E-R-A de resumen, QA, rollback, contratos y auditoria.
+
+No requiere rollback SQL: no crea migraciones, columnas, datos, pagos ni
+movimientos de Caja.
+
+Verificacion posterior:
+
+- `docker exec medisoft_hoteles_app php -l /var/www/html/config/routes.php`.
+- `docker exec medisoft_hoteles_app php -l /var/www/html/app/models/Trabajador.php`.
+- `docker exec medisoft_hoteles_app php -l /var/www/html/app/controllers/TrabajadorController.php`.
+- `docker exec -e APP_ENV=local medisoft_hoteles_app php /var/www/html/tools/saas/preflight_personal_pagos_caja.php`.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase 5E-R-F
+
+5E-R-F es cierre documental tras QA manual validada de la auditoria consolidada
+GET/read-only de nomina.
+
+Rollback documental:
+
+1. Retirar `docs/fase_5E_R_F_cierre_auditoria_consolidada_nomina.md`.
+2. Retirar referencias 5E-R-F de resumen, QA, rollback, contratos y auditoria.
+3. Restaurar 5E-R-A como implementacion con QA manual pendiente si se quiere
+   repetir la prueba visual.
+
+No requiere rollback SQL ni cambios operativos: no crea migraciones, columnas,
+datos, pagos, reversiones ni movimientos de Caja.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase 5E-S-0
+
+5E-S-0 es contrato documental para una futura capa GET/read-only de expediente
+administrativo de nomina.
+
+Rollback documental:
+
+1. Retirar `docs/fase_5E_S_0_contrato_expediente_administrativo_nomina.md`.
+2. Retirar referencias 5E-S-0 de resumen, QA, rollback, contratos y auditoria.
+3. Restaurar 5E-R-F como ultimo cierre del bloque si se quiere volver al estado
+   anterior sin contrato de expediente administrativo.
+
+No requiere rollback SQL ni cambios operativos: no crea rutas, migraciones,
+columnas, datos, pagos, reversiones, snapshots ni movimientos de Caja.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase 5E-S-A
+
+5E-S-A implementa expediente administrativo GET/read-only de nomina en local.
+
+Rollback de codigo:
+
+1. Retirar de `src/config/routes.php`:
+   - `GET /trabajadores/nomina/expediente`.
+   - `GET /trabajadores/nomina/expediente/exportar`.
+2. Retirar de `TrabajadorController`:
+   - `expedienteNominaAction`.
+   - `exportarExpedienteNominaAction`.
+   - `filtrosExpedienteNominaDesdeQuery`.
+   - `descargarExpedienteNominaCsv`.
+   - `expedienteNominaAdministrativoVacio`.
+3. Retirar de `Trabajador`:
+   - `tablasExpedienteNominaAdministrativoDisponibles`.
+   - `expedienteNominaAdministrativoPorHotel`.
+   - helpers privados `normalizarFiltrosExpedienteNomina`,
+     `evaluarExpedienteNominaRegistro`,
+     `filtrarExpedienteNominaPorEstado`,
+     `resumenVacioExpedienteNomina`, `resumenExpedienteNomina`,
+     `porEstadoExpedienteNomina`, `porPeriodoExpedienteNomina` y
+     `bloqueosExpedienteNomina`.
+4. Eliminar
+   `src/app/views/trabajadores/nomina_expediente_administrativo.php`.
+5. Retirar enlaces `Expediente` de:
+   - `nomina_periodos.php`;
+   - `nomina_pagos_snapshot_reporte.php`;
+   - `nomina_auditoria_consolidada.php`.
+6. Revertir validaciones 5E-S-A en:
+   - `preflight_personal_pagos_caja.php`;
+   - `health_check_fase_1a.php`.
+7. Retirar `docs/fase_5E_S_A_expediente_administrativo_nomina.md`.
+8. Retirar referencias 5E-S-A de resumen, QA, rollback, contratos y auditoria.
+
+No requiere rollback SQL: no crea migraciones, columnas, datos, pagos,
+reversiones ni movimientos de Caja.
+
+Verificacion posterior:
+
+- `docker exec medisoft_hoteles_app php -l /var/www/html/config/routes.php`.
+- `docker exec medisoft_hoteles_app php -l /var/www/html/app/models/Trabajador.php`.
+- `docker exec medisoft_hoteles_app php -l /var/www/html/app/controllers/TrabajadorController.php`.
+- `docker exec -e APP_ENV=local medisoft_hoteles_app php /var/www/html/tools/saas/preflight_personal_pagos_caja.php`.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase 5E-T-0
+
+5E-T-0 es contrato documental para frontera de nomina oficial.
+
+Rollback documental:
+
+1. Retirar `docs/fase_5E_T_0_contrato_frontera_nomina_oficial.md`.
+2. Retirar referencias 5E-T-0 de resumen, QA, rollback, contratos y auditoria.
+3. Restaurar 5E-S-A como ultimo estado documentado del bloque si se quiere
+   volver al expediente administrativo sin frontera oficial.
+
+No requiere rollback SQL ni cambios operativos: no crea rutas, migraciones,
+columnas, datos, pagos, reversiones, snapshots ni movimientos de Caja.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase 5E-T-A
+
+5E-T-A agrega un preflight CLI/read-only de frontera de nomina oficial.
+
+Rollback de codigo:
+
+1. Eliminar `src/tools/saas/preflight_frontera_nomina_oficial.php`.
+2. Retirar `docs/fase_5E_T_A_preflight_frontera_nomina_oficial.md`.
+3. Retirar referencias 5E-T-A de resumen, QA, rollback, contratos y auditoria.
+
+No requiere rollback SQL: no crea migraciones, columnas, datos, pagos,
+reversiones ni movimientos de Caja.
+
+Verificacion posterior:
+
+- `docker exec medisoft_hoteles_app php -l /var/www/html/tools/saas/preflight_personal_pagos_caja.php`.
+- `docker exec -e APP_ENV=local medisoft_hoteles_app php /var/www/html/tools/saas/preflight_personal_pagos_caja.php`.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase 5E-T-B
+
+5E-T-B integra el preflight de frontera de nomina oficial al health general.
+
+Rollback de codigo:
+
+1. Retirar de `src/tools/saas/health_check_fase_1a.php`:
+   - busqueda de `preflight_frontera_nomina_oficial.php`;
+   - bloque que valida `Preflight Personal 5E-T-A`.
+2. Retirar `docs/fase_5E_T_B_health_frontera_nomina_oficial.md`.
+3. Retirar referencias 5E-T-B de resumen, QA, rollback, contratos y auditoria.
+
+No requiere rollback SQL: no crea migraciones, columnas, datos, pagos,
+reversiones ni movimientos de Caja.
+
+Verificacion posterior:
+
+- `docker exec medisoft_hoteles_app php -l /var/www/html/tools/saas/health_check_fase_1a.php`.
+- `docker exec -e APP_ENV=local medisoft_hoteles_app php /var/www/html/tools/saas/preflight_frontera_nomina_oficial.php`.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase 5E-U-0
+
+5E-U-0 es contrato documental para suite QA de nomina administrativa.
+
+Rollback documental:
+
+1. Retirar `docs/fase_5E_U_0_contrato_suite_qa_nomina_administrativa.md`.
+2. Retirar referencias 5E-U-0 de resumen, QA, rollback, contratos y auditoria.
+3. Restaurar 5E-T-B como ultimo estado documentado del bloque si se quiere
+   volver a health/frontera sin suite.
+
+No requiere rollback SQL ni cambios operativos: no crea rutas, migraciones,
+columnas, datos, pagos, reversiones, snapshots ni movimientos de Caja.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase 5E-U-A
+
+5E-U-A agrega una suite CLI/read-only de QA nomina administrativa.
+
+Rollback de codigo:
+
+1. Eliminar `src/tools/saas/preflight_nomina_administrativa_suite.php`.
+2. Retirar `docs/fase_5E_U_A_suite_qa_nomina_administrativa.md`.
+3. Retirar referencias 5E-U-A de resumen, QA, rollback, contratos y auditoria.
+
+No requiere rollback SQL: no crea migraciones, columnas, datos, pagos,
+reversiones ni movimientos de Caja.
+
+Verificacion posterior:
+
+- `docker exec -e APP_ENV=local medisoft_hoteles_app php /var/www/html/tools/saas/preflight_personal_pagos_caja.php`.
+- `docker exec -e APP_ENV=local medisoft_hoteles_app php /var/www/html/tools/saas/preflight_frontera_nomina_oficial.php`.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase 5E-U-B
+
+5E-U-B ajusta validaciones estaticas del health para Compras/CxP redisenadas.
+
+Rollback de codigo:
+
+1. En `src/tools/saas/health_check_fase_1a.php`, restaurar las condiciones
+   anteriores que buscaban solo:
+   - `url('compras/' . (int)`;
+   - `purchase-btn-receive`;
+   - `url('cuentas-por-pagar/' . (int)`;
+   - `Solo GET`.
+2. Retirar `docs/fase_5E_U_B_health_baseline_compras_cxp.md`.
+3. Retirar referencias 5E-U-B de resumen, QA, rollback, contratos y auditoria.
+
+No requiere rollback SQL: no crea migraciones, columnas, datos, pagos,
+reversiones ni movimientos de Caja.
+
+Verificacion posterior:
+
+- `docker exec medisoft_hoteles_app php -l /var/www/html/tools/saas/health_check_fase_1a.php`.
+- `docker exec -e APP_ENV=local medisoft_hoteles_app php /var/www/html/tools/saas/health_check_fase_1a.php`.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Rollback Fase 3A-B
+
+3A-B ajusta validaciones estaticas del health para Proveedores redisenado.
+
+Rollback de codigo:
+
+1. En `src/tools/saas/health_check_fase_1a.php`, restaurar la condicion
+   anterior que buscaba solo:
+   - `url('proveedores/' . (int)$proveedor['id'])`;
+   - `Solo lectura`.
+2. Retirar `docs/fase_3A_B_health_baseline_proveedores.md`.
+3. Retirar referencias 3A-B de resumen, QA, rollback, contratos y auditoria.
+
+No requiere rollback SQL: no crea migraciones, columnas, datos, compras, CxP,
+pagos ni movimientos de Caja.
+
+Verificacion posterior:
+
+- `docker exec medisoft_hoteles_app php -l /var/www/html/tools/saas/health_check_fase_1a.php`.
+- `docker exec -e APP_ENV=local medisoft_hoteles_app php /var/www/html/tools/saas/health_check_fase_1a.php`.
+
+No tocar produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.

@@ -562,8 +562,12 @@ if (
     && strpos($viewCode, 'method="POST"') !== false
     && strpos($viewCode, 'csrf_field()') !== false
     && strpos($viewCode, 'generar-desde-reservacion') !== false
-    && stripos($viewCode, 'saldo estimado') !== false
-    && stripos($viewCode, 'no registra cobros') !== false
+    && (
+        stripos($viewCode, 'saldo estimado') !== false
+        || stripos($viewCode, 'Saldo por cobrar') !== false
+        || strpos($viewCode, 'saldo_estimado') !== false
+    )
+    && strpos($viewCode, 'registrar-cobro-caja') === false
     && strpos($viewCode, 'movimientos_caja') === false
 ) {
     cxcPfOk('Vista CxC conserva filtro GET y agrega POST con CSRF para generacion manual.');
@@ -574,9 +578,11 @@ if (
 if (
     $operativasViewCode !== ''
     && strpos($operativasViewCode, 'method="GET"') !== false
-    && stripos($operativasViewCode, 'Solo lectura') !== false
-    && stripos($operativasViewCode, 'no cobra') !== false
-    && stripos($operativasViewCode, 'no toca Caja') !== false
+    && (
+        stripos($operativasViewCode, 'Solo lectura') !== false
+        || stripos($operativasViewCode, 'Los cobros se registran desde el detalle') !== false
+    )
+    && strpos($operativasViewCode, 'registrar-cobro-caja') === false
     && strpos($operativasViewCode, 'method="POST"') === false
 ) {
     cxcPfOk('Vista CxC operativa 7B-B es GET/read-only y sin acciones de cobro.');
@@ -590,10 +596,16 @@ if (
     && strpos($operativaDetailViewCode, 'csrf_field()') !== false
     && strpos($operativaDetailViewCode, 'registrar-cobro-caja') !== false
     && strpos($operativaDetailViewCode, 'cobro_token') !== false
-    && strpos($operativaDetailViewCode, 'Cobro con Caja') !== false
+    && (
+        strpos($operativaDetailViewCode, 'Cobro con Caja') !== false
+        || strpos($operativaDetailViewCode, 'Registrar cobro (en Caja)') !== false
+    )
     && strpos($operativaDetailViewCode, 'revertir-cobro-caja') !== false
     && strpos($operativaDetailViewCode, 'reversion_token') !== false
-    && strpos($operativaDetailViewCode, 'Reversion de cobros') !== false
+    && (
+        strpos($operativaDetailViewCode, 'Reversion de cobros') !== false
+        || strpos($operativaDetailViewCode, 'Revertir un cobro') !== false
+    )
 ) {
     cxcPfOk('Detalle CxC operativa integra cobro y reversion Caja con POST, CSRF y token.');
 } else {
@@ -606,7 +618,10 @@ if (
     && strpos($simuladorCajaViewCode, 'method="POST"') === false
     && stripos($simuladorCajaViewCode, 'no registra cobros') !== false
     && strpos($simuladorCajaViewCode, 'cuentas-por-cobrar/simulador-caja') !== false
-    && strpos($simuladorCajaViewCode, 'Tipo COBRO') !== false
+    && (
+        strpos($simuladorCajaViewCode, 'Tipo COBRO') !== false
+        || strpos($simuladorCajaViewCode, 'Cobro en Caja') !== false
+    )
 ) {
     cxcPfOk('Vista simulador Caja CxC 7B-D-A es GET/read-only y no registra cobros reales.');
 } else {

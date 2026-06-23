@@ -2168,7 +2168,7 @@ $balance_es_positivo = $balance_total >= 0;
             </div>
 
             <div class="cash-hero-actions">
-                <a href="<?= url('caja') ?>" class="cash-action">
+                <a href="<?= back_url('caja') ?>" class="cash-action">
                     <i class="fas fa-arrow-left"></i>
                     <span>Volver</span>
                 </a>

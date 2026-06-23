@@ -897,7 +897,7 @@ $total_unidades = (float) ($resumen_movimientos['unidades'] ?? 0);
                 </div>
 
                 <div class="inv-mov-actions">
-                    <a href="<?= url('inventario') ?>" class="inv-mov-btn ghost">
+                    <a href="<?= back_url('inventario') ?>" class="inv-mov-btn ghost">
                         <i class="fas fa-arrow-left"></i>
                         Volver
                     </a>

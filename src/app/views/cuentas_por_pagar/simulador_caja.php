@@ -158,7 +158,7 @@ $estado = (string)($filtros['estado'] ?? 'todos');
 
         <section class="cx-toolbar">
             <div class="flex flex-wrap gap-2">
-                <a class="cx-btn cx-btn-muted" href="<?= url('cuentas-por-pagar') ?>">
+                <a class="cx-btn cx-btn-muted" href="<?= back_url('cuentas-por-pagar') ?>">
                     <i class="fas fa-arrow-left"></i>
                     Volver a cuentas por pagar
                 </a>

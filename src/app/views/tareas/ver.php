@@ -167,7 +167,7 @@ $tareaId = (int)($tarea['id'] ?? 0);
 
 <div class="tk-detail p-4 sm:p-6">
     <div class="tk-shell">
-        <a class="tk-back" href="<?= url('tareas') ?>"><i class="fas fa-arrow-left"></i> Volver a tareas</a>
+        <a class="tk-back" href="<?= back_url('tareas') ?>"><i class="fas fa-arrow-left"></i> Volver a tareas</a>
 
         <section class="tk-title-lockup">
             <div class="tk-hero-icon"><i class="fas <?= $cIcon ?>"></i></div>

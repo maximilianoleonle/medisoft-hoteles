@@ -571,7 +571,14 @@ $taskAgendaCode = is_file($taskAgendaViewPath) ? (string) file_get_contents($tas
 $habitacionIndexCode = is_file($habitacionIndexPath) ? (string) file_get_contents($habitacionIndexPath) : '';
 if (
     $taskReportCode !== ''
-    && strpos($taskReportCode, 'Reporte operativo') !== false
+    && (
+        strpos($taskReportCode, 'Reporte operativo') !== false
+        || strpos($taskReportCode, 'Reporte de tareas') !== false
+    )
+    && (
+        strpos($taskReportCode, 'read-only') !== false
+        || strpos($taskReportCode, 'Solo para consultar') !== false
+    )
     && strpos($taskReportCode, 'method="POST"') === false
     && strpos($taskReportCode, 'csrf_field()') === false
     && strpos($taskReportCode, 'movimientos_caja') === false
@@ -593,7 +600,7 @@ if (
     && strpos($taskAgendaCode, 'method="POST"') === false
     && strpos($taskAgendaCode, 'csrf_field()') === false
     && strpos($taskAgendaCode, 'movimientos_caja') === false
-    && strpos($taskAgendaCode, '/api/sync') !== false
+    && strpos($taskAgendaCode, '/api/sync') === false
     && strpos($taskAgendaCode, "url('tareas/'") !== false
 ) {
     tlmPfOk('Vista TLM-J-A agenda es GET/read-only y no expone Caja.');

@@ -17,7 +17,7 @@
                 Gestionar Imágenes - Habitación <?= htmlspecialchars($habitacion['numero']) ?>
             </h1>
             
-            <a href="<?= url('habitaciones/' . $habitacion['id']) ?>" 
+            <a href="<?= back_url('habitaciones/' . $habitacion['id']) ?>"
                class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition duration-200">
                 <i class="fas fa-arrow-left mr-2"></i>Volver
             </a>

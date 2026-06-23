@@ -516,7 +516,7 @@ if ($pdo instanceof PDO) {
     foreach ($sourceSchema as $table => $columns) {
         if (!teTableExists($pdo, $database, $table)) {
             if (isset($optionalTables[$table])) {
-                teWarning('Fuente opcional no disponible: ' . $table . '.', 'Degradar KPI laboral pendiente sin migraciones automaticas.');
+                teWarning('Fuente opcional no disponible: ' . $table . '.', 'Ejecutar diagnosticar_tablero_ejecutivo_fuentes.php antes de decidir si se autoriza una fuente dedicada.');
             } else {
                 teWarning('Fuente candidata no disponible: ' . $table . '.', 'La futura pantalla debe degradar esta seccion con alerta de esquema.');
             }
@@ -555,10 +555,36 @@ if ($pdo instanceof PDO) {
             teWarning('No se pudo validar hotel_id nulo en ' . $table . '.', 'Revisar manualmente scope multihotel.');
         } elseif ($count === 0) {
             teOk('Scope OK: ' . $table . '.hotel_id sin nulos.');
+        } elseif (
+            $table === 'logs_auditoria'
+            && in_array('accion', $columns, true)
+            && in_array('entidad_tipo', $columns, true)
+        ) {
+            $nonAuthNull = teCount(
+                $pdo,
+                "SELECT COUNT(*)
+                 FROM logs_auditoria
+                 WHERE hotel_id IS NULL
+                   AND NOT (entidad_tipo = 'auth' AND accion LIKE 'auth.%')"
+            );
+
+            if ($nonAuthNull === 0) {
+                teWarning(
+                    'Auditoria global/auth sin hotel_id: logs_auditoria tiene ' . (string)$count . ' filas auth.* sin scope de hotel.',
+                    'Mantener como warning informativo o ejecutar diagnosticar_tablero_ejecutivo_fuentes.php para revisar muestras.'
+                );
+            } else {
+                teWarning(
+                    'Scope incompleto: logs_auditoria tiene ' . (string)$nonAuthNull . ' fila(s) no-auth sin hotel_id de ' . (string)$count . ' total(es) sin scope.',
+                    'Ejecutar diagnosticar_tablero_ejecutivo_fuentes.php para revisar eventos sin hotel antes de usar auditoria como KPI operativo.'
+                );
+            }
         } else {
             teWarning(
                 'Scope incompleto: ' . $table . ' tiene hotel_id nulo en ' . (string)$count . ' filas.',
-                'No exponer esta fuente en tablero ejecutivo sin resolver scope por hotel.'
+                $table === 'logs_auditoria'
+                    ? 'Ejecutar diagnosticar_tablero_ejecutivo_fuentes.php para separar auditoria historica/global de eventos recientes.'
+                    : 'No exponer esta fuente en tablero ejecutivo sin resolver scope por hotel.'
             );
         }
     }

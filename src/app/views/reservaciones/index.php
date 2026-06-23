@@ -527,12 +527,20 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .res-export-body .lc-form-input { height: 48px; padding: 12px 14px; font-weight: 700; font-size: .95rem; border-radius: 12px; }
 .res-export-help { margin: 10px 2px 0; font-size: .75rem; color: #667085; display: flex; align-items: center; gap: 7px; line-height: 1.4; }
 .res-export-help i { color: color-mix(in srgb, var(--res-brand) 50%, #98A2B3); }
+.res-export-error { display: none; margin: 9px 2px 0; border: 1px solid #FECACA; border-radius: 10px; background: #FEF2F2; color: #B42318; padding: 8px 10px; font-size: .75rem; font-weight: 800; line-height: 1.35; }
+.res-export-error.is-visible { display: block; }
 .res-export-actions { display: flex; gap: 10px; margin-top: 22px; }
 .res-export-actions .btn-modal-cancel { flex: 1; border: 1px solid var(--res-line); background: #fff; color: var(--res-brand-2); border-radius: 12px; padding: 12px; font-weight: 800; transition: .16s; }
 .res-export-actions .btn-modal-cancel:hover { background: color-mix(in srgb, var(--res-brand) 5%, #fff); border-color: color-mix(in srgb, var(--res-brand) 28%, var(--res-line)); }
 .res-export-actions .btn-modal-confirm { flex: 1.5; border-radius: 12px; padding: 12px; font-weight: 800; color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, var(--res-brand), var(--res-brand-2)); box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--res-brand) 60%, transparent); transition: .16s; border: none; cursor: pointer; }
 .res-export-actions .btn-modal-confirm:hover { transform: translateY(-1px); filter: brightness(1.05); }
 .res-export-actions .btn-modal-confirm--excel { background: linear-gradient(135deg, #16A34A, #15803D); box-shadow: 0 12px 26px -10px rgba(21,128,61,.55); }
+.res-inline-toast { position: fixed; right: 22px; bottom: 22px; z-index: 15000; max-width: min(360px, calc(100vw - 32px)); border-radius: 14px; border: 1px solid transparent; padding: 12px 14px; box-shadow: 0 18px 42px rgba(24, 32, 48, .18); font-size: .82rem; font-weight: 850; line-height: 1.42; opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
+.res-inline-toast.is-visible { opacity: 1; transform: translateY(0); }
+.res-inline-toast.is-info { border-color: #BFD4F5; background: #F0F6FF; color: #255AA7; }
+.res-inline-toast.is-warning { border-color: #F4D38E; background: #FFF8E8; color: #9A5F10; }
+.res-inline-toast.is-error { border-color: #FECACA; background: #FEF2F2; color: #B42318; }
+.res-inline-toast.is-success { border-color: #BFE9D3; background: #F0FBF5; color: #15835A; }
 
 /* Check-in modal: arrival desk redesign, same operational flow. */
 .res-checkin-modal {
@@ -1785,6 +1793,615 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
     }
 }
 
+/* Nueva reservacion: wizard visual alineado al index de habitaciones. */
+.swal2-container.res-swal-reservation-container.swal2-backdrop-show,
+.swal2-container.res-swal-reservation-container.swal2-noanimation {
+    background: rgba(8, 13, 20, .58) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
+.swal2-container.res-swal-reservation-container.swal2-backdrop-hide {
+    background: rgba(8, 13, 20, 0) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    transition: background .14s ease !important;
+}
+
+.swal2-container.res-swal-reservation-container .swal2-popup.res-reserve-swal {
+    width: min(780px, calc(100vw - 32px)) !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 12%, #E8DFD1) !important;
+    border-radius: 24px !important;
+    background: #FBFAF7 !important;
+    color: #172033 !important;
+    box-shadow: 0 34px 78px -42px rgba(8, 13, 20, .70) !important;
+    animation: resReserveSheetIn .18s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.swal2-container.res-swal-reservation-container .swal2-popup.res-reserve-swal.swal2-hide {
+    animation: resReserveSheetOut .13s ease-in both !important;
+}
+
+.swal2-container.res-swal-reservation-container .swal2-html-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+}
+
+.swal2-container.res-swal-reservation-container .swal2-close {
+    top: 20px !important;
+    right: 18px !important;
+    z-index: 40 !important;
+    width: 34px !important;
+    height: 34px !important;
+    border: 1px solid color-mix(in srgb, var(--brand-accent, #BD9441) 24%, #E8DFD1) !important;
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, .92) !important;
+    color: #5B6674 !important;
+    box-shadow: none !important;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, color .16s ease !important;
+}
+
+.swal2-container.res-swal-reservation-container .swal2-close:hover,
+.swal2-container.res-swal-reservation-container .swal2-close:focus-visible {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--brand-accent, #BD9441) 42%, #E8DFD1) !important;
+    background: #FFFFFF !important;
+    color: var(--brand-secondary, #0F172A) !important;
+    outline: 3px solid color-mix(in srgb, var(--brand-accent, #BD9441) 12%, transparent) !important;
+}
+
+.res-reserve-shell {
+    --res-reserve-brand: var(--brand-primary, #1B2746);
+    --res-reserve-brand-2: var(--brand-secondary, #0F172A);
+    --res-reserve-accent: var(--brand-accent, #BD9441);
+    --res-reserve-line: color-mix(in srgb, var(--brand-primary, #1B2746) 10%, #E8DFD1);
+    --res-reserve-surface: #FBFAF7;
+    --res-reserve-paper: #FFFFFF;
+    --res-reserve-ink: #172033;
+    --res-reserve-muted: #6B7686;
+    --res-reserve-new: color-mix(in srgb, var(--brand-accent, #BD9441) 72%, #B76B52);
+    --res-reserve-existing: #20A66B;
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    min-height: 482px;
+    text-align: left;
+    background: var(--res-reserve-surface);
+}
+
+.res-reserve-side {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto auto auto auto 1fr;
+    align-content: start;
+    padding: 26px 26px;
+    color: #FFFFFF;
+    background:
+        radial-gradient(260px 210px at 100% 10%, rgba(255,255,255,.10), transparent 62%),
+        linear-gradient(155deg, color-mix(in srgb, var(--res-reserve-brand-2) 92%, #101827), color-mix(in srgb, var(--res-reserve-brand) 78%, #1F2937));
+}
+
+.res-reserve-side::after {
+    content: '';
+    position: absolute;
+    top: -34px;
+    right: -70px;
+    width: 230px;
+    height: 230px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--res-reserve-accent) 20%, transparent);
+    opacity: .65;
+    z-index: -1;
+}
+
+.res-reserve-side__eyebrow,
+.res-reserve-main__eyebrow {
+    display: block;
+    margin: 0 0 12px;
+    font-size: .70rem;
+    font-weight: 900;
+    letter-spacing: .18em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.res-reserve-side__eyebrow {
+    color: color-mix(in srgb, var(--res-reserve-accent) 70%, #FFFFFF);
+}
+
+.res-reserve-side h2 {
+    margin: 0;
+    max-width: 9ch;
+    color: #FFFFFF;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.72rem;
+    font-weight: 780;
+    line-height: 1.03;
+    letter-spacing: 0;
+}
+
+.res-reserve-side > p {
+    margin: 12px 0 18px;
+    max-width: 25ch;
+    color: rgba(255,255,255,.78);
+    font-size: .86rem;
+    font-weight: 650;
+    line-height: 1.45;
+}
+
+.res-reserve-datebox {
+    display: grid;
+    gap: 0;
+    padding: 8px 14px;
+    border: 1px solid rgba(255,255,255,.13);
+    border-radius: 16px;
+    background: rgba(255,255,255,.08);
+}
+
+.res-reserve-dateitem {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 9px;
+    align-items: center;
+    min-height: 50px;
+}
+
+.res-reserve-dateitem + .res-reserve-dateitem {
+    border-top: 1px solid rgba(255,255,255,.12);
+}
+
+.res-reserve-dateicon {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: rgba(255,255,255,.12);
+    color: color-mix(in srgb, var(--res-reserve-accent) 62%, #FFFFFF);
+    font-size: .78rem;
+}
+
+.res-reserve-dateitem small {
+    display: block;
+    color: rgba(255,255,255,.54);
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.res-reserve-dateitem strong {
+    display: block;
+    margin-top: 2px;
+    color: #FFFFFF;
+    font-size: .88rem;
+    font-weight: 900;
+}
+
+.res-reserve-steps {
+    display: grid;
+    gap: 12px;
+    margin: 18px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.res-reserve-steps li {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    color: rgba(255,255,255,.60);
+    font-size: .88rem;
+    font-weight: 850;
+}
+
+.res-reserve-steps li span {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.20);
+    color: rgba(255,255,255,.72);
+    font-variant-numeric: tabular-nums;
+}
+
+.res-reserve-steps li.is-active,
+.res-reserve-steps li.is-complete {
+    color: #FFFFFF;
+}
+
+.res-reserve-steps li.is-active span {
+    border-color: color-mix(in srgb, var(--res-reserve-accent) 76%, #FFFFFF);
+    background: color-mix(in srgb, var(--res-reserve-accent) 82%, #9B7236);
+    color: #FFFFFF;
+}
+
+.res-reserve-steps li.is-complete span {
+    border-color: #20A66B;
+    background: #20A66B;
+    color: #FFFFFF;
+}
+
+.res-reserve-main {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 482px;
+    padding: 32px 24px 0;
+    background: #FFFEFB;
+}
+
+.res-reserve-main__eyebrow {
+    color: #8791A3;
+    margin-bottom: 24px;
+}
+
+.res-reserve-main h3 {
+    margin: 0;
+    color: var(--res-reserve-ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.35rem;
+    font-weight: 760;
+    line-height: 1.18;
+}
+
+.res-reserve-main > p {
+    max-width: 49ch;
+    margin: 7px 0 18px;
+    color: var(--res-reserve-muted);
+    font-size: .88rem;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.res-reserve-choice-list {
+    display: grid;
+    gap: 10px;
+}
+
+.res-reserve-choice {
+    --res-choice-color: var(--res-reserve-accent);
+    width: 100%;
+    min-height: 92px;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) 28px;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border: 1px solid var(--res-reserve-line);
+    border-radius: 14px;
+    background: var(--res-reserve-paper);
+    color: var(--res-reserve-ink);
+    text-align: left;
+    cursor: pointer;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+
+.res-reserve-choice--new { --res-choice-color: var(--res-reserve-new); }
+.res-reserve-choice--existing { --res-choice-color: var(--res-reserve-existing); }
+
+.res-reserve-choice:hover,
+.res-reserve-choice:focus-visible,
+.res-reserve-choice.is-selected {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--res-choice-color) 60%, var(--res-reserve-line));
+    background: color-mix(in srgb, var(--res-choice-color) 10%, #FFFFFF);
+    box-shadow: 0 18px 36px -32px color-mix(in srgb, var(--res-choice-color) 54%, transparent);
+    outline: none;
+}
+
+.res-reserve-choice__icon {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    color: color-mix(in srgb, var(--res-choice-color) 78%, var(--res-reserve-ink));
+    background: color-mix(in srgb, var(--res-choice-color) 10%, #FFFFFF);
+}
+
+.res-reserve-choice__copy {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.res-reserve-choice__copy > span {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.res-reserve-choice__copy strong {
+    color: var(--res-reserve-ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.08rem;
+    font-weight: 760;
+    line-height: 1.1;
+}
+
+.res-reserve-choice__copy em {
+    min-height: 20px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--res-choice-color) 12%, #FFFFFF);
+    color: color-mix(in srgb, var(--res-choice-color) 84%, var(--res-reserve-ink));
+    font-size: .62rem;
+    font-style: normal;
+    font-weight: 900;
+}
+
+.res-reserve-choice__copy small {
+    color: var(--res-reserve-muted);
+    font-size: .82rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.res-reserve-choice__check {
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    border: 2px solid color-mix(in srgb, var(--res-choice-color) 20%, #DCD4C8);
+    color: transparent;
+    background: #FFFFFF;
+    font-size: .70rem;
+}
+
+.res-reserve-choice.is-selected .res-reserve-choice__check {
+    border-color: var(--res-choice-color);
+    background: var(--res-choice-color);
+    color: #FFFFFF;
+}
+
+.res-reserve-timechips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 3px 0 14px;
+}
+
+.res-reserve-timechip {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 16px;
+    border: 1px solid color-mix(in srgb, var(--res-reserve-accent) 22%, var(--res-reserve-line));
+    border-radius: 999px;
+    background: #FFFFFF;
+    color: #4F5969;
+    font-size: .84rem;
+    font-weight: 850;
+    cursor: pointer;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, color .16s ease;
+}
+
+.res-reserve-timechip:hover,
+.res-reserve-timechip:focus-visible,
+.res-reserve-timechip.is-active {
+    transform: translateY(-1px);
+    border-color: var(--res-reserve-brand-2);
+    background: var(--res-reserve-brand-2);
+    color: #FFFFFF;
+    outline: none;
+}
+
+.res-reserve-timefield {
+    min-height: 60px;
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 0 18px;
+    border: 1px solid var(--res-reserve-line);
+    border-radius: 12px;
+    background: #FFFFFF;
+}
+
+.res-reserve-timefield i {
+    color: #A8B1BF;
+}
+
+.res-reserve-timefield .hb-arrival-input {
+    height: 58px !important;
+    min-height: 58px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: var(--res-reserve-brand-2) !important;
+    font-size: 1.28rem !important;
+    font-weight: 900 !important;
+    box-shadow: none !important;
+}
+
+.res-reserve-hint {
+    margin: 10px 0 0 !important;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #9AA4B5 !important;
+    font-size: .78rem !important;
+    font-weight: 650 !important;
+}
+
+.res-reserve-validation {
+    margin: 10px 0 0;
+    padding: 10px 12px;
+    border: 1px solid #F3B8B6;
+    border-radius: 12px;
+    background: #FFF3F2;
+    color: #A4423E;
+    font-size: .80rem;
+    font-weight: 800;
+}
+
+.res-reserve-validation.hidden {
+    display: none;
+}
+
+.res-reserve-footer {
+    display: grid;
+    grid-template-columns: minmax(150px, .88fr) minmax(190px, 1.22fr);
+    gap: 12px;
+    margin: auto -24px 0;
+    padding: 16px 24px;
+    border-top: 1px solid var(--res-reserve-line);
+    background: #FFFEFB;
+}
+
+.res-reserve-btn {
+    min-height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 12px;
+    padding: 0 16px;
+    font-size: .88rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+
+.res-reserve-btn:hover,
+.res-reserve-btn:focus-visible {
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.res-reserve-btn--ghost {
+    border: 1px solid var(--res-reserve-line);
+    background: #FFFFFF;
+    color: var(--res-reserve-brand-2);
+}
+
+.res-reserve-btn--ghost:hover,
+.res-reserve-btn--ghost:focus-visible {
+    border-color: color-mix(in srgb, var(--res-reserve-accent) 32%, var(--res-reserve-line));
+    background: color-mix(in srgb, var(--res-reserve-accent) 5%, #FFFFFF);
+}
+
+.res-reserve-btn--primary {
+    border: 0;
+    background: var(--res-reserve-brand-2);
+    color: #FFFFFF;
+    box-shadow: 0 16px 28px -22px color-mix(in srgb, var(--res-reserve-brand-2) 70%, transparent);
+}
+
+.res-reserve-btn--primary:hover,
+.res-reserve-btn--primary:focus-visible {
+    background: color-mix(in srgb, var(--res-reserve-brand-2) 86%, var(--res-reserve-brand));
+}
+
+@keyframes resReserveSheetIn {
+    from { opacity: 0; transform: translateY(10px) scale(.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes resReserveSheetOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(10px) scale(.985); }
+}
+
+@media (max-width: 760px) {
+    .swal2-container.res-swal-reservation-container {
+        align-items: flex-end !important;
+        padding: 10px !important;
+    }
+
+    .swal2-container.res-swal-reservation-container .swal2-popup.res-reserve-swal {
+        width: 100% !important;
+        max-width: none !important;
+        border-radius: 22px 22px 12px 12px !important;
+    }
+
+    .res-reserve-shell {
+        grid-template-columns: 1fr;
+        min-height: 0;
+    }
+
+    .res-reserve-side {
+        min-height: auto;
+        padding: 20px 18px 16px;
+    }
+
+    .res-reserve-side h2 {
+        max-width: none;
+        font-size: 1.42rem;
+    }
+
+    .res-reserve-side > p {
+        max-width: none;
+        margin-bottom: 14px;
+    }
+
+    .res-reserve-datebox {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        padding: 10px;
+    }
+
+    .res-reserve-dateitem {
+        min-height: 56px;
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .res-reserve-dateitem + .res-reserve-dateitem {
+        border-top: 0;
+    }
+
+    .res-reserve-dateicon {
+        display: none;
+    }
+
+    .res-reserve-steps {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+    }
+
+    .res-reserve-main {
+        min-height: 0;
+        padding: 22px 16px 0;
+    }
+
+    .res-reserve-choice-list,
+    .res-reserve-footer {
+        grid-template-columns: 1fr;
+    }
+
+    .res-reserve-choice {
+        min-height: 88px;
+        grid-template-columns: 38px minmax(0, 1fr) 26px;
+        padding: 14px;
+    }
+
+    .res-reserve-timefield .hb-arrival-input {
+        font-size: 1.08rem !important;
+    }
+
+    .res-reserve-footer {
+        margin-left: -16px;
+        margin-right: -16px;
+        padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+    }
+}
 /* Viewport alignment: match the broad operational canvas used by huespedes/facturacion/inventario. */
 .res-bookings {
     padding: 1rem !important;
@@ -2370,6 +2987,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                 <label class="res-export-label">Fecha del reporte</label>
                 <input type="date" id="fechaExportar" name="fecha" value="<?= date('Y-m-d') ?>" class="lc-form-input">
                 <p class="res-export-help"><i class="fas fa-circle-info"></i>Se exportarán las reservaciones activas de esa fecha.</p>
+                <p id="fechaExportarError" class="res-export-error" aria-live="polite"></p>
                 <div class="res-export-actions">
                     <button type="button" onclick="cerrarModalExportarPDF()" class="btn-modal-cancel">Cancelar</button>
                     <button type="submit" class="btn-modal-confirm">
@@ -2396,6 +3014,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                 <label class="res-export-label">Fecha del reporte</label>
                 <input type="date" id="fechaExportarExcel" name="fecha" value="<?= date('Y-m-d') ?>" class="lc-form-input">
                 <p class="res-export-help"><i class="fas fa-circle-info"></i>Se exportarán las reservaciones activas de esa fecha.</p>
+                <p id="fechaExportarExcelError" class="res-export-error" aria-live="polite"></p>
                 <div class="res-export-actions">
                     <button type="button" onclick="cerrarModalExportarExcel()" class="btn-modal-cancel">Cancelar</button>
                     <button type="submit" class="btn-modal-confirm btn-modal-confirm--excel">
@@ -2420,6 +3039,54 @@ let filtroEstadoActual = 'todos';
 let totalReservacion = 0;
 
 let resReservaSwalTimer = null;
+let resCheckoutConfirmacion = { id: null, timer: null };
+
+function resIndexToast(mensaje, tipo = 'info', duracion = 5200) {
+    let toast = document.getElementById('resIndexToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'resIndexToast';
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('aria-live', 'polite');
+        document.body.appendChild(toast);
+    }
+
+    window.clearTimeout(toast._resTimer);
+    toast.className = `res-inline-toast is-${tipo}`;
+    toast.textContent = mensaje;
+    requestAnimationFrame(() => toast.classList.add('is-visible'));
+    toast._resTimer = window.setTimeout(() => toast.classList.remove('is-visible'), duracion);
+}
+
+function resResetCheckoutConfirmacion() {
+    if (resCheckoutConfirmacion.timer) {
+        window.clearTimeout(resCheckoutConfirmacion.timer);
+    }
+    resCheckoutConfirmacion = { id: null, timer: null };
+}
+
+function resMostrarErrorExportacion(inputId, errorId, mensaje) {
+    const input = document.getElementById(inputId);
+    const error = document.getElementById(errorId);
+    if (error) {
+        error.textContent = mensaje;
+        error.classList.add('is-visible');
+    }
+    if (input) {
+        input.classList.add('ms-form-invalid');
+        input.focus();
+    }
+}
+
+function resLimpiarErrorExportacion(inputId, errorId) {
+    const input = document.getElementById(inputId);
+    const error = document.getElementById(errorId);
+    if (error) {
+        error.textContent = '';
+        error.classList.remove('is-visible');
+    }
+    input?.classList.remove('ms-form-invalid');
+}
 
 function resFechaValida(fechaTexto) {
     return /^\d{4}-\d{2}-\d{2}$/.test(String(fechaTexto || ''));
@@ -2481,6 +3148,97 @@ function resAbrirSelectorNuevaReserva(event) {
     return false;
 }
 
+function resReservaCalcularNoches(fechaEntrada, fechaSalida) {
+    const entrada = new Date(fechaEntrada + 'T00:00:00');
+    const salida = new Date(fechaSalida + 'T00:00:00');
+    const diff = Math.round((salida - entrada) / 86400000);
+    const noches = Number.isFinite(diff) && diff > 0 ? diff : 1;
+    return noches + ' ' + (noches === 1 ? 'noche' : 'noches');
+}
+
+function resReservaSidebar(fechaEntrada, fechaSalida, paso) {
+    const entradaLabel = resFormatearFechaCorta(new Date(fechaEntrada + 'T00:00:00'));
+    const salidaLabel = resFormatearFechaCorta(new Date(fechaSalida + 'T00:00:00'));
+    const nochesLabel = resReservaCalcularNoches(fechaEntrada, fechaSalida);
+    const pasoActual = parseInt(paso, 10) || 1;
+
+    return `
+        <aside class="res-reserve-side" aria-label="Resumen de nueva reservacion">
+            <span class="res-reserve-side__eyebrow">Nueva reservacion</span>
+            <h2>Crear<br>reservacion</h2>
+            <p>Configura los datos iniciales para preparar la estancia del huesped.</p>
+
+            <div class="res-reserve-datebox">
+                <div class="res-reserve-dateitem">
+                    <span class="res-reserve-dateicon"><i class="fas fa-sign-in-alt"></i></span>
+                    <span><small>Entrada</small><strong>${entradaLabel}</strong></span>
+                </div>
+                <div class="res-reserve-dateitem">
+                    <span class="res-reserve-dateicon"><i class="fas fa-moon"></i></span>
+                    <span><small>Noches</small><strong>${nochesLabel}</strong></span>
+                </div>
+                <div class="res-reserve-dateitem">
+                    <span class="res-reserve-dateicon"><i class="fas fa-sign-out-alt"></i></span>
+                    <span><small>Salida</small><strong>${salidaLabel}</strong></span>
+                </div>
+            </div>
+
+            <ol class="res-reserve-steps" aria-label="Progreso">
+                <li class="${pasoActual === 1 ? 'is-active' : 'is-complete'}">
+                    <span>1</span>
+                    <strong>Tipo de cliente</strong>
+                </li>
+                <li class="${pasoActual === 2 ? 'is-active' : ''}">
+                    <span>2</span>
+                    <strong>Hora de llegada</strong>
+                </li>
+            </ol>
+        </aside>
+    `;
+}
+
+function resElegirTipoCliente(button, tipo) {
+    const shell = button?.closest('.res-reserve-shell');
+    if (!shell) return;
+    shell.dataset.tipo = tipo;
+    shell.querySelectorAll('.res-reserve-choice').forEach(option => {
+        option.classList.toggle('is-selected', option === button);
+        option.setAttribute('aria-pressed', option === button ? 'true' : 'false');
+    });
+}
+
+function resContinuarTipoClienteDesdeShell(fechaEntrada, fechaSalida, horaActual) {
+    const shell = document.querySelector('.res-reserve-shell');
+    const tipo = shell?.dataset.tipo || 'nuevo';
+    resSeleccionarTipoCliente(tipo, fechaEntrada, fechaSalida, horaActual);
+}
+
+function resReservaSetHora(valor, button) {
+    const input = document.getElementById('resHoraLlegadaRapida');
+    if (input) input.value = valor;
+    const shell = button?.closest('.res-reserve-shell');
+    if (shell) {
+        shell.querySelectorAll('.res-reserve-timechip').forEach(chip => chip.classList.remove('is-active'));
+    }
+    if (button) button.classList.add('is-active');
+    const validation = document.getElementById('resReserveValidation');
+    if (validation) validation.classList.add('hidden');
+}
+
+function resCrearReservacionDesdeHora(tipo, fechaEntrada, fechaSalida) {
+    const input = document.getElementById('resHoraLlegadaRapida');
+    const validation = document.getElementById('resReserveValidation');
+    const horaSeleccionada = input ? input.value : '';
+
+    if (!horaSeleccionada) {
+        if (validation) validation.classList.remove('hidden');
+        if (input) input.focus();
+        return;
+    }
+
+    resContinuarReservacionDesdeModal(tipo, fechaEntrada, fechaSalida, horaSeleccionada);
+}
+
 function resMostrarSelectorTipoCliente(datosReserva) {
     const fechaEntrada = datosReserva.fechaEntrada;
     const fechaSalida = datosReserva.fechaSalida;
@@ -2489,74 +3247,61 @@ function resMostrarSelectorTipoCliente(datosReserva) {
     Swal.fire({
         title: '',
         html: `
-            <div class="hb-client-choice">
-                <div class="hb-client-choice__head">
-                    <span class="hb-client-choice__mark">
-                        <i class="fas fa-calendar-plus"></i>
-                    </span>
-                    <div>
-                        <span class="hb-client-choice__eyebrow">Nueva reservacion</span>
-                        <h3>Selecciona el tipo de cliente</h3>
-                        <p>Elige si vas a registrar un huesped nuevo o si la reservacion sera para un cliente existente.</p>
-                    </div>
-                </div>
+            <div class="res-reserve-shell" data-tipo="nuevo">
+                ${resReservaSidebar(fechaEntrada, fechaSalida, 1)}
+                <section class="res-reserve-main" aria-label="Tipo de cliente">
+                    <span class="res-reserve-main__eyebrow">Paso 1 de 2</span>
+                    <h3>&iquest;Para quien es la reservacion?</h3>
+                    <p>Elige si vas a registrar un huesped nuevo o si la reservacion sera para un cliente que ya existe.</p>
 
-                <div class="hb-client-choice__options" role="group" aria-label="Tipo de cliente">
-                    <button onclick="resSeleccionarTipoCliente('nuevo', '${fechaEntrada}', '${fechaSalida}', '${horaActual}'); return false;"
-                            type="button"
-                            class="hb-client-option hb-client-option--new">
-                        <span class="hb-client-option__top">
-                            <span class="hb-client-option__icon">
-                                <i class="fas fa-user-plus"></i>
+                    <div class="res-reserve-choice-list" role="group" aria-label="Tipo de cliente">
+                        <button onclick="resElegirTipoCliente(this, 'nuevo'); return false;"
+                                type="button"
+                                class="res-reserve-choice res-reserve-choice--new is-selected"
+                                aria-pressed="true">
+                            <span class="res-reserve-choice__icon"><i class="fas fa-user-plus"></i></span>
+                            <span class="res-reserve-choice__copy">
+                                <span><strong>Cliente nuevo</strong><em>Registro</em></span>
+                                <small>Registra al huesped y vuelve al flujo con las fechas listas.</small>
                             </span>
-                            <span class="hb-client-option__tag">Registro</span>
-                        </span>
-                        <span class="hb-client-option__body">
-                            <strong>Cliente nuevo</strong>
-                            <span>Registra al huesped y vuelve al flujo de reservacion con las fechas listas.</span>
-                        </span>
-                        <span class="hb-client-option__cta">
-                            Continuar
-                            <i class="fas fa-arrow-right"></i>
-                        </span>
-                    </button>
-                    <button onclick="resSeleccionarTipoCliente('existente', '${fechaEntrada}', '${fechaSalida}', '${horaActual}'); return false;"
-                            type="button"
-                            class="hb-client-option hb-client-option--existing">
-                        <span class="hb-client-option__top">
-                            <span class="hb-client-option__icon">
-                                <i class="fas fa-user-check"></i>
+                            <span class="res-reserve-choice__check"><i class="fas fa-check"></i></span>
+                        </button>
+                        <button onclick="resElegirTipoCliente(this, 'existente'); return false;"
+                                type="button"
+                                class="res-reserve-choice res-reserve-choice--existing"
+                                aria-pressed="false">
+                            <span class="res-reserve-choice__icon"><i class="fas fa-user-check"></i></span>
+                            <span class="res-reserve-choice__copy">
+                                <span><strong>Cliente registrado</strong><em>Existente</em></span>
+                                <small>Continua directo a crear la reservacion y busca al huesped.</small>
                             </span>
-                            <span class="hb-client-option__tag">Registrado</span>
-                        </span>
-                        <span class="hb-client-option__body">
-                            <strong>Cliente registrado</strong>
-                            <span>Continua directo a crear la reservacion y busca al huesped existente.</span>
-                        </span>
-                        <span class="hb-client-option__cta">
-                            Seleccionar
-                            <i class="fas fa-arrow-right"></i>
-                        </span>
-                    </button>
-                </div>
+                            <span class="res-reserve-choice__check"><i class="fas fa-check"></i></span>
+                        </button>
+                    </div>
+
+                    <div class="res-reserve-footer">
+                        <button type="button" onclick="Swal.close()" class="res-reserve-btn res-reserve-btn--ghost">Cancelar</button>
+                        <button type="button" onclick="resContinuarTipoClienteDesdeShell('${fechaEntrada}', '${fechaSalida}', '${horaActual}')" class="res-reserve-btn res-reserve-btn--primary">
+                            Continuar <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </section>
             </div>
         `,
         showConfirmButton: false,
-        showCancelButton: true,
+        showCancelButton: false,
         showCloseButton: true,
         allowOutsideClick: true,
         allowEscapeKey: true,
         returnFocus: false,
         closeButtonAriaLabel: 'Cerrar',
-        cancelButtonText: 'Cancelar',
-        width: '720px',
+        width: '780px',
         customClass: {
             container: 'res-swal-reservation-container',
-            popup: 'hb-swal hb-swal-client',
-            htmlContainer: 'hb-swal-html',
-            cancelButton: 'hb-swal-cancel'
+            popup: 'hb-swal hb-swal-client res-reserve-swal',
+            htmlContainer: 'hb-swal-html'
         },
-        buttonsStyling: true
+        buttonsStyling: false
     });
 }
 
@@ -2565,112 +3310,52 @@ function resSeleccionarTipoCliente(tipo, fechaEntrada, fechaSalida, horaActual) 
         Swal.fire({
             title: '',
             html: `
-                <div class="hb-reservation-step">
-                    <div class="hb-arrival-head">
-                        <span class="hb-arrival-mark">
-                            <i class="fas fa-clock"></i>
-                        </span>
-                        <div>
-                            <span class="hb-client-choice__eyebrow">Llegada estimada</span>
-                            <h3>Hora de llegada</h3>
-                            <p>Confirma la hora para preparar la reservacion y continuar con el cliente ${tipo === 'existente' ? 'registrado' : 'nuevo'}.</p>
-                        </div>
-                    </div>
+                <div class="res-reserve-shell" data-tipo="${tipo}">
+                    ${resReservaSidebar(fechaEntrada, fechaSalida, 2)}
+                    <section class="res-reserve-main" aria-label="Hora de llegada">
+                        <span class="res-reserve-main__eyebrow">Paso 2 de 2</span>
+                        <h3>&iquest;A que hora llega?</h3>
+                        <p>Elige una opcion rapida o escribe la hora. Tambien puedes capturarla despues dentro de la reservacion.</p>
 
-                    <div class="hb-arrival-context">
-                        <div class="hb-reservation-pill ${tipo === 'existente' ? 'hb-reservation-pill--existing' : 'hb-reservation-pill--new'}">
-                            <i class="fas ${tipo === 'existente' ? 'fa-user-check' : 'fa-user-plus'}"></i>
-                            <span>Cliente ${tipo === 'existente' ? 'existente' : 'nuevo'}</span>
+                        <div class="res-reserve-timechips" aria-label="Opciones rapidas de hora">
+                            <button type="button" onclick="resReservaSetHora('${horaActual}', this)" class="res-reserve-timechip is-active"><i class="far fa-clock"></i> Ahora</button>
+                            <button type="button" onclick="resReservaSetHora('14:00', this)" class="res-reserve-timechip">02:00 p. m.</button>
+                            <button type="button" onclick="resReservaSetHora('20:00', this)" class="res-reserve-timechip">08:00 p. m.</button>
+                            <button type="button" onclick="resContinuarReservacionSinHora('${tipo}', '${fechaEntrada}', '${fechaSalida}'); return false;" class="res-reserve-timechip"><i class="far fa-calendar-plus"></i> Definir despues</button>
                         </div>
 
-                        <div class="hb-reservation-summary">
-                            <div class="hb-reservation-dates">
-                                <div class="hb-date-row">
-                                    <span>Check-in</span>
-                                    <strong>${resFormatearFechaCorta(new Date(fechaEntrada + 'T00:00:00'))}</strong>
-                                </div>
-                                <div class="hb-date-row">
-                                    <span>Check-out</span>
-                                    <strong>${resFormatearFechaCorta(new Date(fechaSalida + 'T00:00:00'))}</strong>
-                                </div>
-                            </div>
+                        <label class="res-reserve-timefield" for="resHoraLlegadaRapida">
+                            <i class="far fa-clock"></i>
+                            <input type="time" id="resHoraLlegadaRapida" value="${horaActual}" class="hb-arrival-input">
+                        </label>
+                        <p class="res-reserve-hint"><i class="far fa-eye"></i> Esta hora ayuda a preparar la habitacion a tiempo; no es obligatoria si decides definirla despues.</p>
+                        <p id="resReserveValidation" class="res-reserve-validation hidden">Ingresa la hora de llegada o usa Definir despues.</p>
 
-                            <div class="hb-arrival-card">
-                                <label for="resHoraLlegadaRapida" class="hb-arrival-label">
-                                    Hora de llegada
-                                </label>
-                                <p class="hb-arrival-copy">Define la hora estimada; tambien puedes capturarla despues en la reservacion.</p>
-                                <div class="hb-arrival-control">
-                                    <input type="time"
-                                           id="resHoraLlegadaRapida"
-                                           value=""
-                                           placeholder="--:--"
-                                           class="hb-arrival-input">
-                                    <button onclick="document.getElementById('resHoraLlegadaRapida').value = '${horaActual}'"
-                                            type="button"
-                                            class="hb-arrival-now"
-                                            aria-label="Usar hora actual"
-                                            title="Usar hora actual">
-                                        <i class="fas fa-clock"></i>
-                                        <span>Ahora</span>
-                                    </button>
-                                </div>
-                                <button onclick="resContinuarReservacionSinHora('${tipo}', '${fechaEntrada}', '${fechaSalida}'); return false;"
-                                        type="button"
-                                        class="hb-arrival-later"
-                                        aria-label="Definir hora de llegada despues">
-                                    <span class="hb-arrival-later__icon">
-                                        <i class="fas fa-calendar-plus"></i>
-                                    </span>
-                                    <span>
-                                        <strong>Definir despues</strong>
-                                        <small>La capturaras dentro de la creacion de la reservacion.</small>
-                                    </span>
-                                </button>
-                            </div>
+                        <div class="res-reserve-footer">
+                            <button type="button" onclick="resCerrarSwalReserva(() => resMostrarSelectorTipoCliente({ fechaEntrada: '${fechaEntrada}', fechaSalida: '${fechaSalida}', horaActual: '${horaActual}' }), 90)" class="res-reserve-btn res-reserve-btn--ghost">
+                                <i class="fas fa-arrow-left"></i> Volver
+                            </button>
+                            <button type="button" onclick="resCrearReservacionDesdeHora('${tipo}', '${fechaEntrada}', '${fechaSalida}')" class="res-reserve-btn res-reserve-btn--primary">
+                                <i class="fas fa-check"></i> Crear reservacion
+                            </button>
                         </div>
-                    </div>
+                    </section>
                 </div>
             `,
-            showCancelButton: true,
+            showConfirmButton: false,
+            showCancelButton: false,
             showCloseButton: true,
             allowOutsideClick: true,
             allowEscapeKey: true,
             returnFocus: false,
             closeButtonAriaLabel: 'Cerrar',
-            confirmButtonText: 'Continuar',
-            cancelButtonText: 'Volver',
+            width: '780px',
             customClass: {
                 container: 'res-swal-reservation-container',
-                popup: 'hb-swal hb-swal-arrival',
-                htmlContainer: 'hb-swal-html',
-                confirmButton: 'hb-swal-confirm',
-                cancelButton: 'hb-swal-cancel'
+                popup: 'hb-swal hb-swal-arrival res-reserve-swal',
+                htmlContainer: 'hb-swal-html'
             },
-            buttonsStyling: true,
-            preConfirm: () => {
-                const horaSeleccionada = document.getElementById('resHoraLlegadaRapida').value;
-                if (!horaSeleccionada) {
-                    Swal.showValidationMessage('Ingresa la hora de llegada o usa Definir despues');
-                    return false;
-                }
-                return horaSeleccionada;
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                resContinuarReservacionDesdeModal(tipo, fechaEntrada, fechaSalida, result.value);
-                return;
-            }
-
-            if (result.dismiss === Swal.DismissReason.cancel || result.dismiss === 'cancel') {
-                resCerrarSwalReserva(() => {
-                    resMostrarSelectorTipoCliente({
-                        fechaEntrada: fechaEntrada,
-                        fechaSalida: fechaSalida,
-                        horaActual: horaActual
-                    });
-                }, 90);
-            }
+            buttonsStyling: false
         });
     });
 }
@@ -3189,27 +3874,24 @@ document.getElementById('formCheckInModal')?.addEventListener('submit', function
 
 function confirmarCheckOut(id) {
     const form = document.getElementById('formCheckOut');
-    if (!form) return;
+    if (!form) {
+        resIndexToast('No se encontró el formulario para registrar el check-out.', 'error');
+        return;
+    }
 
-    Swal.fire({
-        title: 'Hacer Check-out?',
-        text: 'Se registrara la salida.',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: 'var(--brand-primary, #1B2746)',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Si, check-out',
-        cancelButtonText: 'Cancelar',
-        reverseButtons: true,
-        customClass: { popup: 'rounded-xl', confirmButton: 'rounded-lg', cancelButton: 'rounded-lg' }
-    }).then(result => {
-        if (result.isConfirmed) {
-            const horaSalida = form.querySelector('input[name="hora_salida"]');
-            if (horaSalida) horaSalida.value = new Date().toTimeString().slice(0, 8);
-            form.action = baseUrl + '/reservaciones/check-out/' + id;
-            form.submit();
-        }
-    });
+    if (resCheckoutConfirmacion.id === id) {
+        resResetCheckoutConfirmacion();
+        const horaSalida = form.querySelector('input[name="hora_salida"]');
+        if (horaSalida) horaSalida.value = new Date().toTimeString().slice(0, 8);
+        form.action = baseUrl + '/reservaciones/check-out/' + id;
+        form.submit();
+        return;
+    }
+
+    resResetCheckoutConfirmacion();
+    resCheckoutConfirmacion.id = id;
+    resCheckoutConfirmacion.timer = window.setTimeout(resResetCheckoutConfirmacion, 7000);
+    resIndexToast('Presiona Check-out otra vez para registrar la salida.', 'warning', 7000);
 }
 
 function abrirModalExportarPDF() {
@@ -3220,6 +3902,7 @@ function abrirModalExportarPDF() {
         modal.classList.remove('hidden');
         const fecha = document.getElementById('fechaExportar');
         if (fecha) fecha.value = new Date().toISOString().split('T')[0];
+        resLimpiarErrorExportacion('fechaExportar', 'fechaExportarError');
         document.body.classList.add('overflow-hidden');
     }
 }
@@ -3238,11 +3921,21 @@ document.getElementById('formExportarPDF')?.addEventListener('submit', function(
     e.preventDefault();
     const fecha = document.getElementById('fechaExportar')?.value;
     if (!fecha) {
-        Swal.fire({ icon: 'error', title: 'Error', text: 'Seleccione una fecha', confirmButtonColor: 'var(--brand-primary, #1B2746)' });
+        resMostrarErrorExportacion('fechaExportar', 'fechaExportarError', 'Selecciona una fecha para generar el PDF.');
         return;
     }
-    window.open(baseUrl + '/reservaciones/exportar-pdf?fecha=' + encodeURIComponent(fecha), '_blank');
+    const url = baseUrl + '/reservaciones/exportar-pdf?fecha=' + encodeURIComponent(fecha);
+    const ventana = window.open(url, '_blank');
+    if (!ventana) {
+        resIndexToast('El navegador bloqueó la nueva pestaña. Abriré el PDF aquí.', 'warning');
+        window.location.href = url;
+        return;
+    }
     cerrarModalExportarPDF();
+});
+
+document.getElementById('fechaExportar')?.addEventListener('input', function() {
+    resLimpiarErrorExportacion('fechaExportar', 'fechaExportarError');
 });
 
 function abrirModalExportarExcel() {
@@ -3253,6 +3946,7 @@ function abrirModalExportarExcel() {
         modal.classList.remove('hidden');
         const fecha = document.getElementById('fechaExportarExcel');
         if (fecha) fecha.value = new Date().toISOString().split('T')[0];
+        resLimpiarErrorExportacion('fechaExportarExcel', 'fechaExportarExcelError');
         document.body.classList.add('overflow-hidden');
     }
 }
@@ -3271,11 +3965,21 @@ document.getElementById('formExportarExcel')?.addEventListener('submit', functio
     e.preventDefault();
     const fecha = document.getElementById('fechaExportarExcel')?.value;
     if (!fecha) {
-        Swal.fire({ icon: 'error', title: 'Error', text: 'Seleccione una fecha', confirmButtonColor: '#166534' });
+        resMostrarErrorExportacion('fechaExportarExcel', 'fechaExportarExcelError', 'Selecciona una fecha para descargar Excel.');
         return;
     }
-    window.open(baseUrl + '/reservaciones/exportar-excel?fecha=' + encodeURIComponent(fecha), '_blank');
+    const url = baseUrl + '/reservaciones/exportar-excel?fecha=' + encodeURIComponent(fecha);
+    const ventana = window.open(url, '_blank');
+    if (!ventana) {
+        resIndexToast('El navegador bloqueó la nueva pestaña. Abriré el Excel aquí.', 'warning');
+        window.location.href = url;
+        return;
+    }
     cerrarModalExportarExcel();
+});
+
+document.getElementById('fechaExportarExcel')?.addEventListener('input', function() {
+    resLimpiarErrorExportacion('fechaExportarExcel', 'fechaExportarExcelError');
 });
 
 document.getElementById('modalCheckIn')?.addEventListener('click', function(e) {

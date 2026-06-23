@@ -158,7 +158,7 @@ $cuentaId = (int)($cuenta['id'] ?? 0);
         </section>
 
         <section class="cx-toolbar">
-            <a class="cx-btn" href="<?= url('cuentas-por-cobrar/operativas') ?>"><i class="fas fa-arrow-left"></i> Volver</a>
+            <a class="cx-btn" href="<?= back_url('cuentas-por-cobrar/operativas') ?>"><i class="fas fa-arrow-left"></i> Volver</a>
             <a class="cx-btn" href="<?= url('cuentas-por-cobrar/simulador-caja') ?>"><i class="fas fa-cash-register"></i> Simulador de cobros</a>
             <?php if (!empty($cuenta['reservacion_id'])): ?>
                 <a class="cx-btn" href="<?= url('reservaciones/ver/' . (int)$cuenta['reservacion_id']) ?>"><i class="fas fa-calendar-check"></i> Reservaci&oacute;n</a>

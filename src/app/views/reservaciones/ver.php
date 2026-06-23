@@ -700,7 +700,6 @@ if ($rdFechaEntrada !== '' && $rdFechaSalida !== '') {
     from { opacity: 0; }
     to { opacity: 1; }
 }
-
 @keyframes slideUp {
     from { transform: translateY(20px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
@@ -723,7 +722,7 @@ if ($rdFechaEntrada !== '' && $rdFechaSalida !== '') {
     padding: 1rem;
     border-radius: 0.75rem;
     text-align: center;
-    font-weight: 800;
+    font-weight: 600;
     font-size: 1.5rem;
     box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
     position: relative;
@@ -969,7 +968,7 @@ if ($rdFechaEntrada !== '' && $rdFechaSalida !== '') {
     border: 1px solid rgba(255, 255, 255, .28);
     box-shadow: none;
     font-size: .68rem;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: 0;
     text-transform: none;
 }
@@ -1015,7 +1014,7 @@ if ($rdFechaEntrada !== '' && $rdFechaSalida !== '') {
     border: 1px solid color-mix(in srgb, var(--rd-brand) 12%, transparent);
     border-radius: 12px;
     font-size: .78rem;
-    font-weight: 850;
+    font-weight: 600;
     line-height: 1;
     letter-spacing: 0;
     box-shadow: 0 12px 24px -20px rgba(15, 23, 42, .42);
@@ -1172,14 +1171,14 @@ if ($rdFechaEntrada !== '' && $rdFechaSalida !== '') {
 .reservation-detail-v2 .info-label {
     color: var(--rd-muted);
     font-size: .72rem;
-    font-weight: 850;
+    font-weight: 600;
 }
 
 .reservation-detail-v2 .info-value {
     min-width: 0;
     color: var(--rd-brand);
     font-size: .88rem;
-    font-weight: 900;
+    font-weight: 700;
     text-align: right;
     overflow-wrap: anywhere;
 }
@@ -1193,7 +1192,7 @@ if ($rdFechaEntrada !== '' && $rdFechaSalida !== '') {
     color: var(--rd-brand);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .78), 0 14px 28px -24px color-mix(in srgb, var(--rd-accent) 48%, transparent);
     font-size: clamp(1.45rem, 3vw, 2rem);
-    font-weight: 950;
+    font-weight: 600;
     letter-spacing: 0;
 }
 
@@ -1252,14 +1251,14 @@ if ($rdFechaEntrada !== '' && $rdFechaSalida !== '') {
     display: block;
     color: var(--rd-muted);
     font-size: .72rem;
-    font-weight: 850;
+    font-weight: 600;
 }
 
 .reservation-detail-v2 .room-paid-summary strong {
     display: block;
     color: var(--rd-brand);
     font-size: clamp(1.05rem, 2vw, 1.3rem);
-    font-weight: 950;
+    font-weight: 600;
     line-height: 1.1;
 }
 
@@ -1280,13 +1279,13 @@ if ($rdFechaEntrada !== '' && $rdFechaSalida !== '') {
 .reservation-detail-v2 .room-price-label {
     color: var(--rd-muted);
     font-size: .7rem;
-    font-weight: 850;
+    font-weight: 600;
 }
 
 .reservation-detail-v2 .room-price-value {
     color: var(--rd-brand);
     font-size: 1rem;
-    font-weight: 950;
+    font-weight: 600;
     white-space: nowrap;
 }
 
@@ -1461,7 +1460,7 @@ if ($rdFechaEntrada !== '' && $rdFechaSalida !== '') {
 .reservation-detail-v2 .rd-strip-item span {
     color: #647084;
     font-size: .7rem;
-    font-weight: 850;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: .04em;
 }
@@ -1469,7 +1468,7 @@ if ($rdFechaEntrada !== '' && $rdFechaSalida !== '') {
 .reservation-detail-v2 .rd-strip-item strong {
     color: #182033;
     font-size: 1rem;
-    font-weight: 950;
+    font-weight: 600;
     line-height: 1.05;
     font-variant-numeric: tabular-nums;
 }
@@ -1520,14 +1519,14 @@ if ($rdFechaEntrada !== '' && $rdFechaSalida !== '') {
     max-width: 100%;
     padding: 4px 7px;
     margin: -4px -7px;
-    font-weight: 950;
+    font-weight: 600;
 }
 
 .reservation-detail-v2 .rd-room-link {
     padding: 4px 7px;
     margin: -4px -7px;
     color: var(--rd-brand) !important;
-    font-weight: 950;
+    font-weight: 600;
 }
 
 .reservation-detail-v2 .rd-mini-actions {
@@ -1544,7 +1543,7 @@ if ($rdFechaEntrada !== '' && $rdFechaSalida !== '') {
     background: #FDFBF7;
     color: var(--rd-muted);
     font-size: .7rem;
-    font-weight: 850;
+    font-weight: 600;
 }
 
 .reservation-detail-v2 .rd-section-card {
@@ -1909,37 +1908,25 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 }
 ?>
 
-<script>
-function medisoftVolverAnterior(event) {
-    event.preventDefault();
-    if (window.history.length > 1) {
-        window.history.back();
-        return;
-    }
-    window.location.href = event.currentTarget.getAttribute('href');
-}
-</script>
-
 <style>
 .rdv3 {
-    --rdv3-primary: var(--brand-primary, #172342);
-    --rdv3-primary-2: var(--brand-secondary, #33415f);
-    --rdv3-accent: var(--brand-accent, #b78b42);
-    --rdv3-bg: color-mix(in srgb, var(--brand-accent, #b78b42) 9%, #f8f4eb);
-    --rdv3-ink: #24304a;
-    --rdv3-muted: #8790a7;
-    --rdv3-line: rgba(36, 48, 74, .12);
-    --rdv3-card: rgba(255, 255, 255, .94);
-    --rdv3-blue: color-mix(in srgb, var(--brand-primary, #1f5da8) 76%, #2563eb);
-    --rdv3-green: #24b777;
-    --rdv3-violet: #6757e8;
-    --rdv3-gold: color-mix(in srgb, var(--brand-accent, #b78b42) 82%, #f0b84c);
-    --rdv3-cyan: #13a8c6;
+    --rdv3-primary: var(--brand-primary, #3A4656);
+    --rdv3-primary-2: var(--brand-secondary, #2C3542);
+    --rdv3-accent: var(--brand-accent, #9D8968);
+    --rdv3-bg: #FAFAF8;
+    --rdv3-ink: #3F3F3F;
+    --rdv3-muted: #808080;
+    --rdv3-muted-2: #686868;
+    --rdv3-line: rgba(60, 70, 86, .06);
+    --rdv3-card: rgba(255, 255, 255, .99);
+    --rdv3-blue: #6B7F99;
+    --rdv3-green: #608B70;
+    --rdv3-violet: #8B8BA3;
+    --rdv3-gold: #9D8968;
+    --rdv3-cyan: #6B9FA0;
     min-height: 100dvh;
     margin: 0;
-    background:
-        radial-gradient(circle at top right, color-mix(in srgb, var(--rdv3-accent) 14%, transparent) 0, transparent 34rem),
-        var(--rdv3-bg);
+    background: var(--rdv3-bg);
     color: var(--rdv3-ink);
     font-family: Manrope, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -1963,7 +1950,7 @@ function medisoftVolverAnterior(event) {
     color: var(--rdv3-primary);
     box-shadow: 0 8px 18px rgba(36, 48, 74, .07);
 }
-.rdv3-crumbs { color: #8a93a7; font-size: .78rem; font-weight: 900; }
+.rdv3-crumbs { color: #8a93a7; font-size: .78rem; font-weight: 700; }
 .rdv3-crumbs strong { color: var(--rdv3-primary); }
 .rdv3-hero {
     position: relative;
@@ -1975,9 +1962,7 @@ function medisoftVolverAnterior(event) {
     min-height: 112px;
     padding: 26px 30px;
     border-radius: 24px;
-    background:
-        radial-gradient(circle at 100% 50%, rgba(255, 255, 255, .14) 0 8rem, transparent 8.2rem),
-        linear-gradient(135deg, var(--rdv3-primary), color-mix(in srgb, var(--rdv3-primary) 86%, #51607b));
+    background: linear-gradient(135deg, var(--rdv3-primary), color-mix(in srgb, var(--rdv3-primary) 88%, #4A5A72));
     color: #fff;
     box-shadow: 0 18px 38px rgba(23, 35, 66, .25);
 }
@@ -1987,7 +1972,7 @@ function medisoftVolverAnterior(event) {
     font-family: "Cormorant Garamond", Georgia, serif;
     font-size: clamp(2rem, 2vw, 2.75rem);
     line-height: .95;
-    font-weight: 800;
+    font-weight: 600;
     letter-spacing: 0;
 }
 .rdv3-status {
@@ -1998,13 +1983,13 @@ function medisoftVolverAnterior(event) {
     padding: 0 14px;
     border-radius: 999px;
     font-size: .78rem;
-    font-weight: 900;
+    font-weight: 700;
 }
 .rdv3-status::before { content: ""; width: 7px; height: 7px; border-radius: 999px; background: currentColor; }
 .rdv3-status--ok { background: rgba(50, 185, 122, .19); color: #82e0ae; border: 1px solid rgba(130, 224, 174, .2); }
 .rdv3-status--wait { background: rgba(245, 181, 64, .18); color: #f2cf8c; border: 1px solid rgba(242, 207, 140, .2); }
 .rdv3-status--danger { background: rgba(239, 68, 68, .18); color: #fecaca; border: 1px solid rgba(254, 202, 202, .2); }
-.rdv3-meta { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 16px; color: rgba(255, 255, 255, .72); font-size: .82rem; font-weight: 800; }
+.rdv3-meta { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 16px; color: rgba(255, 255, 255, .72); font-size: .82rem; font-weight: 600; }
 .rdv3-meta span { display: inline-flex; align-items: center; gap: 7px; }
 .rdv3-hero-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; min-width: 0; }
 .rdv3-btn {
@@ -2017,7 +2002,7 @@ function medisoftVolverAnterior(event) {
     justify-content: center;
     gap: 9px;
     font-size: .84rem;
-    font-weight: 950;
+    font-weight: 600;
     cursor: pointer;
 }
 .rdv3-btn-primary { background: #22b77a; color: #fff; box-shadow: 0 12px 24px rgba(34, 183, 122, .25); }
@@ -2032,9 +2017,7 @@ function medisoftVolverAnterior(event) {
     overflow: hidden;
     border-radius: 20px;
     border: 1px solid color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 18%, rgba(255,255,255,.8));
-    background:
-        linear-gradient(180deg, color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 5%, #fff) 0, rgba(255,255,255,.96) 9rem),
-        var(--rdv3-card);
+    background: var(--rdv3-card);
     box-shadow: 0 18px 38px rgba(61, 47, 22, .09);
 }
 .rdv3-card::before {
@@ -2045,12 +2028,8 @@ function medisoftVolverAnterior(event) {
     width: 184px;
     height: 138px;
     border-radius: 999px;
-    background:
-        radial-gradient(circle at 52% 48%,
-            color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 20%, transparent) 0 24%,
-            color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 10%, transparent) 42%,
-            transparent 72%);
-    opacity: .72;
+    background: transparent;
+    opacity: 0;
     pointer-events: none;
 }
 .rdv3-card--stay { --rdv3-card-accent: var(--rdv3-blue); }
@@ -2079,27 +2058,27 @@ function medisoftVolverAnterior(event) {
 .rdv3-icon--blue { color: #3b82f6; background: #eaf2ff; }
 .rdv3-icon--green { color: #2dbd79; background: #e7f8ef; }
 .rdv3-icon--violet { color: #6252d8; background: #eeebff; }
-.rdv3-card-title { margin: 0; color: var(--rdv3-primary); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.22rem; line-height: 1.1; font-weight: 800; overflow-wrap: anywhere; }
+.rdv3-card-title { margin: 0; color: var(--rdv3-primary); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.22rem; line-height: 1.1; font-weight: 600; overflow-wrap: anywhere; }
 .rdv3-card-body { position: relative; z-index: 1; padding: 12px 42px 32px; }
-.rdv3-stay { display: grid; grid-template-columns: minmax(0, 1fr) 82px minmax(0, 1fr); border: 1px solid color-mix(in srgb, var(--rdv3-blue) 18%, transparent); border-radius: 16px; overflow: hidden; background: linear-gradient(90deg, rgba(59,130,246,.08), rgba(255,255,255,.78) 44%, rgba(14,165,233,.07)); }
+.rdv3-stay { display: grid; grid-template-columns: minmax(0, 1fr) 82px minmax(0, 1fr); border: 1px solid color-mix(in srgb, var(--rdv3-blue) 12%, transparent); border-radius: 16px; overflow: hidden; background: #FFFFFF; }
 .rdv3-date { padding: 18px; }
-.rdv3-date:first-child { background: linear-gradient(90deg, rgba(59,130,246,.08), transparent); }
-.rdv3-date:last-child { background: linear-gradient(270deg, rgba(14,165,233,.08), transparent); }
+.rdv3-date:first-child { background: transparent; }
+.rdv3-date:last-child { background: transparent; }
 .rdv3-date:last-child { text-align: right; }
-.rdv3-label { display: block; color: #a3acbd; font-size: .69rem; font-weight: 950; text-transform: uppercase; letter-spacing: .03em; }
+.rdv3-label { display: block; color: var(--rdv3-muted-2); font-size: .69rem; font-weight: 950; text-transform: uppercase; letter-spacing: .03em; }
 .rdv3-label--green { color: #26a96f; }
 .rdv3-date strong { display: block; margin-top: 6px; color: var(--rdv3-blue); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.35rem; line-height: 1; }
-.rdv3-date span { display: block; margin-top: 6px; color: #8992a5; font-size: .78rem; font-weight: 800; }
-.rdv3-nights { display: grid; place-items: center; text-align: center; border-left: 1px solid color-mix(in srgb, var(--rdv3-blue) 16%, transparent); border-right: 1px solid color-mix(in srgb, var(--rdv3-blue) 16%, transparent); color: var(--rdv3-blue); background: rgba(255, 255, 255, .72); }
+.rdv3-date span { display: block; margin-top: 6px; color: #8992a5; font-size: .78rem; font-weight: 600; }
+.rdv3-nights { display: grid; place-items: center; text-align: center; border-left: 1px solid color-mix(in srgb, var(--rdv3-blue) 12%, transparent); border-right: 1px solid color-mix(in srgb, var(--rdv3-blue) 12%, transparent); color: var(--rdv3-muted); background: #FAFAF8; }
 .rdv3-nights b { display: block; font-size: 1.35rem; line-height: 1; }
-.rdv3-nights span { display: block; margin-top: 5px; color: #a3acbd; font-size: .62rem; font-weight: 950; text-transform: uppercase; }
-.rdv3-total { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 86px; padding: 17px 18px; border-radius: 16px; border: 1px solid rgba(45, 189, 121, .26); background: radial-gradient(circle at 12% 10%, rgba(45, 189, 121, .17), transparent 18rem), linear-gradient(90deg, rgba(45, 189, 121, .16), rgba(45, 189, 121, .07)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.55); }
-.rdv3-total .rdv3-amount { margin-top: 5px; font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.7rem; font-weight: 800; color: var(--rdv3-primary); }
+.rdv3-nights span { display: block; margin-top: 5px; color: var(--rdv3-muted-2); font-size: .62rem; font-weight: 950; text-transform: uppercase; }
+.rdv3-total { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 86px; padding: 17px 18px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--rdv3-green) 16%, transparent); background: color-mix(in srgb, var(--rdv3-green) 5%, #fff); }
+.rdv3-total .rdv3-amount { margin-top: 5px; font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.7rem; font-weight: 600; color: var(--rdv3-primary); }
 .rdv3-pill { display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 12px; border-radius: 999px; background: #fff; color: #37b77d; font-size: .74rem; font-weight: 950; }
-.rdv3-res-note { margin-top: 16px; min-height: 42px; display: flex; align-items: center; gap: 9px; padding: 11px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--rdv3-accent) 24%, transparent); background: color-mix(in srgb, var(--rdv3-accent) 12%, #fff); color: color-mix(in srgb, var(--rdv3-accent) 72%, #5c4927); font-size: .84rem; font-weight: 800; }
+.rdv3-res-note { margin-top: 16px; min-height: 42px; display: flex; align-items: center; gap: 9px; padding: 11px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--rdv3-accent) 24%, transparent); background: color-mix(in srgb, var(--rdv3-accent) 12%, #fff); color: color-mix(in srgb, var(--rdv3-accent) 72%, #5c4927); font-size: .84rem; font-weight: 600; }
 .rdv3-badge { display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 11px; border-radius: 999px; background: color-mix(in srgb, var(--rdv3-accent) 14%, #fff); color: var(--rdv3-accent); font-size: .75rem; font-weight: 950; }
 .rdv3-rooms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.rdv3-room { --room-accent: var(--rdv3-blue); position: relative; min-height: 116px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--room-accent) 18%, transparent); background: linear-gradient(135deg, color-mix(in srgb, var(--room-accent) 8%, #fff), rgba(255,252,247,.76)); padding: 16px; display: grid; align-content: space-between; gap: 12px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.62); }
+.rdv3-room { --room-accent: var(--rdv3-blue); position: relative; min-height: 116px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--room-accent) 12%, transparent); background: #FFFFFF; padding: 16px; display: grid; align-content: space-between; gap: 12px; }
 .rdv3-room::before { content: ""; position: absolute; left: 0; top: 16px; bottom: 16px; width: 4px; border-radius: 0 8px 8px 0; background: var(--room-accent); opacity: .76; }
 .rdv3-room:nth-child(4n+1) { --room-accent: var(--rdv3-blue); }
 .rdv3-room:nth-child(4n+2) { --room-accent: var(--rdv3-gold); }
@@ -2107,11 +2086,11 @@ function medisoftVolverAnterior(event) {
 .rdv3-room:nth-child(4n+4) { --room-accent: var(--rdv3-green); }
 .rdv3-room.is-courtesy { --room-accent: var(--rdv3-gold); background: color-mix(in srgb, var(--rdv3-gold) 14%, #fff); }
 .rdv3-room-top { display: flex; justify-content: space-between; gap: 12px; }
-.rdv3-room-number { font-family: "Cormorant Garamond", Georgia, serif; color: color-mix(in srgb, var(--room-accent) 82%, var(--rdv3-primary)); font-size: 1.16rem; font-weight: 800; }
-.rdv3-room-type { color: #69738a; font-size: .82rem; font-weight: 800; margin-top: 2px; }
+.rdv3-room-number { font-family: "Cormorant Garamond", Georgia, serif; color: color-mix(in srgb, var(--room-accent) 82%, var(--rdv3-primary)); font-size: 1.16rem; font-weight: 600; }
+.rdv3-room-type { color: #69738a; font-size: .82rem; font-weight: 600; margin-top: 2px; }
 .rdv3-room-price { color: color-mix(in srgb, var(--room-accent) 80%, var(--rdv3-primary)); font-weight: 950; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .rdv3-tags { display: flex; flex-wrap: wrap; gap: 7px; }
-.rdv3-tag { min-height: 23px; display: inline-flex; align-items: center; gap: 6px; padding: 0 9px; border-radius: 7px; background: rgba(255,255,255,.86); border: 1px solid color-mix(in srgb, var(--room-accent, var(--rdv3-accent)) 14%, var(--rdv3-line)); color: #6f7a91; font-size: .68rem; font-weight: 900; }
+.rdv3-tag { min-height: 23px; display: inline-flex; align-items: center; gap: 6px; padding: 0 9px; border-radius: 7px; background: rgba(255,255,255,.86); border: 1px solid color-mix(in srgb, var(--room-accent, var(--rdv3-accent)) 14%, var(--rdv3-line)); color: #6f7a91; font-size: .68rem; font-weight: 700; }
 .rdv3-link { color: var(--rdv3-accent); font-size: .78rem; font-weight: 950; border: 0; background: transparent; cursor: pointer; }
 .rdv3-card-header > .rdv3-link {
     min-height: 32px;
@@ -2126,15 +2105,15 @@ function medisoftVolverAnterior(event) {
 .rdv3-card--guest .rdv3-card-body { padding-bottom: 18px; }
 .rdv3-guest-head { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 8px 10px 12px; border-radius: 15px; background: linear-gradient(90deg, rgba(19,168,198,.08), transparent); }
 .rdv3-avatar { flex: 0 0 auto; width: 56px; height: 56px; display: grid; place-items: center; border-radius: 14px; background: linear-gradient(135deg, color-mix(in srgb, var(--rdv3-primary) 85%, #7258ff), #6252d8); color: #fff; font-size: 1.15rem; font-weight: 950; }
-.rdv3-guest-name { margin: 0; color: var(--rdv3-primary); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.55rem; font-weight: 800; line-height: 1; }
-.rdv3-guest-sub { margin-top: 5px; color: #7e879b; font-size: .83rem; font-weight: 800; }
+.rdv3-guest-name { margin: 0; color: var(--rdv3-primary); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.55rem; font-weight: 600; line-height: 1; }
+.rdv3-guest-sub { margin-top: 5px; color: #7e879b; font-size: .83rem; font-weight: 600; }
 .rdv3-info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.rdv3-info { --info-accent: var(--rdv3-blue); min-height: 62px; padding: 12px 13px; display: flex; align-items: center; gap: 12px; border: 1px solid color-mix(in srgb, var(--info-accent) 14%, transparent); border-radius: 12px; background: linear-gradient(135deg, color-mix(in srgb, var(--info-accent) 6%, #fff), rgba(255,252,247,.75)); }
+.rdv3-info { --info-accent: var(--rdv3-blue); min-height: 62px; padding: 12px 13px; display: flex; align-items: center; gap: 12px; border: 1px solid color-mix(in srgb, var(--info-accent) 10%, transparent); border-radius: 12px; background: #FFFFFF; }
 .rdv3-info:nth-child(2) { --info-accent: var(--rdv3-cyan); }
 .rdv3-info:nth-child(3) { --info-accent: var(--rdv3-violet); }
 .rdv3-info:nth-child(4) { --info-accent: var(--rdv3-green); }
 .rdv3-info i { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; color: var(--info-accent); background: #fff; border: 1px solid color-mix(in srgb, var(--info-accent) 15%, var(--rdv3-line)); }
-.rdv3-info small { display: block; color: #a3acbd; font-size: .64rem; font-weight: 950; text-transform: uppercase; }
+.rdv3-info small { display: block; color: var(--rdv3-muted-2); font-size: .64rem; font-weight: 950; text-transform: uppercase; }
 .rdv3-info b { display: block; margin-top: 2px; color: #3b4660; font-size: .82rem; font-weight: 950; overflow-wrap: anywhere; }
 .rdv3-subhead { margin: 17px 0 9px; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--rdv3-primary); font-size: .84rem; font-weight: 950; }
 .rdv3-subhead span { display: inline-flex; align-items: center; gap: 8px; }
@@ -2162,7 +2141,7 @@ function medisoftVolverAnterior(event) {
     border-radius: 14px;
     background: linear-gradient(135deg, color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-blue)) 7%, #fff), rgba(255,255,255,.62));
     color: #7f8ba0;
-    font-weight: 850;
+    font-weight: 600;
     display: grid;
     place-items: center;
 }
@@ -2181,7 +2160,13 @@ function medisoftVolverAnterior(event) {
 .rdv3-vehicle-main { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .rdv3-vehicle-icon { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; color: #1ca8c7; background: #e6f8fb; }
 .rdv3-vehicle-title { color: var(--rdv3-primary); font-size: .84rem; font-weight: 950; }
-.rdv3-vehicle-sub { color: #8790a4; font-size: .72rem; font-weight: 800; }
+.rdv3-vehicle-sub { color: #8790a4; font-size: .72rem; font-weight: 600; }
+.rdv3-vehicle-status { display: none; margin-top: 10px; border-radius: 10px; border: 1px solid transparent; padding: 8px 10px; font-size: .74rem; font-weight: 850; line-height: 1.35; }
+.rdv3-vehicle-status.is-visible { display: block; }
+.rdv3-vehicle-status.is-info { border-color: #BFD4F5; background: #F0F6FF; color: #255AA7; }
+.rdv3-vehicle-status.is-warning { border-color: #F4D38E; background: #FFF8E8; color: #9A5F10; }
+.rdv3-vehicle-status.is-error { border-color: #FECACA; background: #FEF2F2; color: #B42318; }
+.rdv3-vehicle-status.is-success { border-color: #BFE9D3; background: #F0FBF5; color: #15835A; }
 .rdv3-plate { padding: 7px 10px; border-radius: 7px; background: var(--rdv3-primary); color: #fff; font-size: .73rem; font-weight: 950; white-space: nowrap; }
 .rdv3-side-card .rdv3-card-header { min-height: 0; padding: 24px 32px 12px; }
 .rdv3-side-card .rdv3-heading { gap: 12px; }
@@ -2200,7 +2185,7 @@ function medisoftVolverAnterior(event) {
 .rdv3-action-icon.is-blue { color: #3b82f6; background: #eaf2ff; }
 .rdv3-action-icon.is-violet { color: #6252d8; background: #eeebff; }
 .rdv3-action-icon.is-gray { color: #6d7689; background: #f4f5f7; }
-.rdv3-action i.fa-chevron-right { color: #a3acbd; font-size: .72rem; }
+.rdv3-action i.fa-chevron-right { color: var(--rdv3-muted-2); font-size: .72rem; }
 .rdv3-timeline { position: relative; display: grid; gap: 15px; padding-left: 12px; }
 .rdv3-timeline::before { content: ""; position: absolute; left: 5px; top: 7px; bottom: 7px; width: 2px; background: color-mix(in srgb, var(--rdv3-accent) 18%, transparent); }
 .rdv3-step { position: relative; padding-left: 18px; }
@@ -2209,7 +2194,7 @@ function medisoftVolverAnterior(event) {
 .rdv3-step.is-green { --step-color: #24b777; }
 .rdv3-step.is-gold { --step-color: var(--rdv3-accent); }
 .rdv3-step-title { color: var(--rdv3-primary); font-size: .82rem; font-weight: 950; }
-.rdv3-step-meta { margin-top: 2px; color: #8b94a8; font-size: .72rem; font-weight: 800; line-height: 1.3; }
+.rdv3-step-meta { margin-top: 2px; color: #8b94a8; font-size: .72rem; font-weight: 600; line-height: 1.3; }
 .rdv3-payment-total { text-align: center; border-radius: 14px; border: 1px solid rgba(45, 189, 121, .26); background: radial-gradient(circle at 15% 0, rgba(45,189,121,.18), transparent 12rem), rgba(45, 189, 121, .13); padding: 18px; margin-bottom: 14px; }
 .rdv3-payment-total small { display: block; color: #27a96e; font-size: .67rem; font-weight: 950; text-transform: uppercase; }
 .rdv3-payment-total b { display: block; margin-top: 7px; color: var(--rdv3-primary); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.65rem; }
@@ -2218,20 +2203,30 @@ function medisoftVolverAnterior(event) {
 .rdv3-payment-method { display: flex; align-items: center; gap: 11px; min-width: 0; }
 .rdv3-payment-method i { width: 31px; height: 31px; border-radius: 9px; display: grid; place-items: center; color: #2dbd79; background: #e7f8ef; }
 .rdv3-payment-method b { display: block; font-size: .82rem; font-weight: 950; }
-.rdv3-payment-method small { display: block; color: #8790a4; font-size: .7rem; font-weight: 800; }
+.rdv3-payment-method small { display: block; color: #8790a4; font-size: .7rem; font-weight: 600; }
 .rdv3-payment-amount { font-size: .84rem; font-weight: 950; white-space: nowrap; }
 .rdv3-note-composer { display: grid; gap: 10px; margin-bottom: 14px; padding: 12px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 20%, transparent); background: linear-gradient(135deg, color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 7%, #fff), rgba(255,255,255,.74)); }
 .rdv3-note-composer label { color: var(--rdv3-primary); font-size: .78rem; font-weight: 950; }
 .rdv3-note-input { width: 100%; min-height: 86px; resize: vertical; padding: 11px 12px; border: 1px solid color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 22%, var(--rdv3-line)); border-radius: 12px; background: #fff; color: var(--rdv3-primary); font: inherit; font-size: .82rem; line-height: 1.45; }
 .rdv3-note-input::placeholder { color: #98a2b3; }
 .rdv3-note-input:focus { outline: none; border-color: color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 54%, var(--rdv3-line)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 16%, transparent); }
+.rdv3-note-status { display: none; border-radius: 10px; border: 1px solid transparent; padding: 8px 10px; font-size: .74rem; font-weight: 850; line-height: 1.35; }
+.rdv3-note-status.is-visible { display: block; }
+.rdv3-note-status.is-error { border-color: #FECACA; background: #FEF2F2; color: #B42318; }
+.rdv3-note-status.is-success { border-color: #BFE9D3; background: #F0FBF5; color: #15835A; }
+.rdv3-inline-toast { position: fixed; right: 22px; bottom: 22px; z-index: 10080; max-width: min(360px, calc(100vw - 32px)); border-radius: 14px; border: 1px solid transparent; padding: 12px 14px; box-shadow: 0 18px 42px rgba(24, 32, 48, .18); font-size: .82rem; font-weight: 850; line-height: 1.42; opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
+.rdv3-inline-toast.is-visible { opacity: 1; transform: translateY(0); }
+.rdv3-inline-toast.is-info { border-color: #BFD4F5; background: #F0F6FF; color: #255AA7; }
+.rdv3-inline-toast.is-warning { border-color: #F4D38E; background: #FFF8E8; color: #9A5F10; }
+.rdv3-inline-toast.is-error { border-color: #FECACA; background: #FEF2F2; color: #B42318; }
+.rdv3-inline-toast.is-success { border-color: #BFE9D3; background: #F0FBF5; color: #15835A; }
 .rdv3-note-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
-.rdv3-note-hint { color: #8b94a8; font-size: .72rem; font-weight: 800; }
+.rdv3-note-hint { color: #8b94a8; font-size: .72rem; font-weight: 600; }
 .rdv3-note-submit { min-height: 34px; border: 0; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 12px; background: color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 82%, #22324a); color: #fff; font-size: .76rem; font-weight: 950; cursor: pointer; }
 .rdv3-note-submit:hover { filter: brightness(.96); }
 .rdv3-note-submit:disabled { opacity: .64; cursor: wait; }
 .rdv3-note-list { display: grid; gap: 10px; max-height: 280px; overflow: auto; }
-.rdv3-note { border-radius: 12px; border: 1px solid color-mix(in srgb, var(--rdv3-accent) 22%, transparent); background: color-mix(in srgb, var(--rdv3-accent) 12%, #fff); padding: 13px; color: #7a5f2b; font-size: .8rem; font-weight: 800; line-height: 1.45; }
+.rdv3-note { border-radius: 12px; border: 1px solid color-mix(in srgb, var(--rdv3-accent) 22%, transparent); background: color-mix(in srgb, var(--rdv3-accent) 12%, #fff); padding: 13px; color: #7a5f2b; font-size: .8rem; font-weight: 600; line-height: 1.45; }
 .rdv3-note small { display: block; margin-bottom: 6px; color: color-mix(in srgb, var(--rdv3-accent) 84%, #6e5527); font-weight: 950; }
 .rdv3-count-badge { min-width: 28px; height: 28px; padding: 0 8px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 90%, #22324a); color: #fff; font-size: .72rem; font-weight: 950; line-height: 1; box-shadow: 0 8px 16px -10px color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 74%, transparent); }
 .rdv3-sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
@@ -2247,7 +2242,7 @@ function medisoftVolverAnterior(event) {
 .rdv3-docicon--image { background: #4f46d8; }
 .rdv3-docicon--doc { background: #2d74da; }
 .rdv3-doc-title { color: var(--rdv3-primary); font-size: .86rem; font-weight: 950; overflow-wrap: anywhere; }
-.rdv3-doc-meta { margin-top: 4px; color: #8790a4; font-size: .72rem; font-weight: 800; }
+.rdv3-doc-meta { margin-top: 4px; color: #8790a4; font-size: .72rem; font-weight: 600; }
 .rdv3-doc-right { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
 .rdv3-doc-state { border-radius: 999px; min-height: 25px; padding: 0 10px; display: inline-flex; align-items: center; color: #27a96e; background: #e7f8ef; font-size: .7rem; font-weight: 950; }
 .rdv3-doc-state.is-draft { color: var(--rdv3-accent); background: color-mix(in srgb, var(--rdv3-accent) 14%, #fff); }
@@ -2331,7 +2326,7 @@ function medisoftVolverAnterior(event) {
         <main class="rdv3-main">
             <div class="rdv3-page">
                 <div class="rdv3-topbar">
-                    <a class="rdv3-back" href="<?= url('reservaciones') ?>" onclick="medisoftVolverAnterior(event)" aria-label="Volver a reservaciones"><i class="fas fa-arrow-left"></i></a>
+                    <a class="rdv3-back" href="<?= back_url('reservaciones') ?>" aria-label="Volver"><i class="fas fa-arrow-left"></i></a>
                     <div class="rdv3-crumbs">Reservaciones / <strong>Reservacion #<?= $rdReservationId ?></strong></div>
                 </div>
 
@@ -2494,61 +2489,14 @@ function medisoftVolverAnterior(event) {
                                         <?php endforeach; ?>
                                     <?php endif; ?>
                                 </div>
+                                <div id="vehiculoStatus" class="rdv3-vehicle-status" aria-live="polite"></div>
                             </div>
                         </section>
 
-                        <section class="rdv3-card rdv3-card--docs">
-                            <header class="rdv3-card-header">
-                                <div class="rdv3-heading">
-                                    <span class="rdv3-icon"><i class="far fa-folder"></i></span>
-                                    <h2 class="rdv3-card-title">Documentos vinculados</h2>
-                                </div>
-                                <div class="rdv3-doc-actions">
-                                    <?php if ($rdDocEntityTipo !== '' && $rdDocEntityId > 0): ?>
-                                        <a class="rdv3-doc-btn is-soft" href="<?= url('documentos/entidad/' . rawurlencode($rdDocEntityTipo) . '/' . $rdDocEntityId) ?>"><i class="fas fa-lock"></i>Centro Documental</a>
-                                        <a class="rdv3-doc-btn is-gold" href="<?= url('documentos/subir' . $rdDocEntityQuery) ?>"><i class="fas fa-link"></i>Vincular documento</a>
-                                    <?php endif; ?>
-                                </div>
-                            </header>
-                            <div class="rdv3-card-body">
-                                <?php if (empty($rdDocuments)): ?>
-                                    <div class="rdv3-empty">Esta reservacion aun no tiene documentos vinculados.</div>
-                                <?php else: ?>
-                                    <div class="rdv3-doc-list">
-                                        <?php foreach ($rdDocuments as $documento): ?>
-                                            <?php
-                                            $documentoId = (int)($documento['id'] ?? 0);
-                                            $docEstado = trim((string)($documento['estado'] ?? '')) ?: 'activo';
-                                            $docName = trim((string)(($documento['titulo'] ?? '') ?: ($documento['nombre_original'] ?? 'Documento')));
-                                            [$docIconLabel, $docIconClass] = $rdDocIcon($documento);
-                                            ?>
-                                            <article class="rdv3-doc-row">
-                                                <div class="rdv3-doc-main">
-                                                    <span class="rdv3-docicon <?= $docIconClass ?>"><?= $rdSafe($docIconLabel) ?></span>
-                                                    <div>
-                                                        <div class="rdv3-doc-title"><?= $rdSafe($docName, 'Documento') ?></div>
-                                                        <div class="rdv3-doc-meta"><?= $rdBytes($documento['size_bytes'] ?? 0) ?> &middot; <?= $rdSafe($rdDateTime($documento['created_at'] ?? null)) ?> &middot; <?= $rdSafe($documento['subido_por_nombre'] ?? 'Recepcion') ?></div>
-                                                    </div>
-                                                </div>
-                                                <div class="rdv3-doc-right">
-                                                    <span class="rdv3-doc-state <?= $docEstado === 'borrador' ? 'is-draft' : '' ?>"><?= $rdSafe($docEstado, 'activo') ?></span>
-                                                    <?php if ($documentoId > 0): ?>
-                                                        <a class="rdv3-iconbtn" href="<?= url('documentos/' . $documentoId) ?>" aria-label="Ver documento"><i class="far fa-eye"></i></a>
-                                                        <a class="rdv3-iconbtn" href="<?= url('documentos/' . $documentoId . '/descargar') ?>" aria-label="Descargar documento"><i class="fas fa-print"></i></a>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </article>
-                                        <?php endforeach; ?>
-                                    </div>
-                                    <div class="rdv3-footer-line">
-                                        <span><?= count($rdDocuments) ?> documento<?= count($rdDocuments) === 1 ? '' : 's' ?> &middot; <?= $rdBytes($rdDocTotalBytes) ?> en total</span>
-                                        <?php if ($rdDocEntityTipo !== '' && $rdDocEntityId > 0): ?>
-                                            <a class="rdv3-link" href="<?= url('documentos/entidad/' . rawurlencode($rdDocEntityTipo) . '/' . $rdDocEntityId) ?>">Ver todos en Centro Documental &rarr;</a>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </section>
+                        <?php View::partial('documentos_entidad', [
+                            'documentosEntidad' => $documentosEntidad ?? [],
+                            'documentosEntidadContexto' => $documentosEntidadContexto ?? [],
+                        ]); ?>
                     </div>
 
                     <aside class="rdv3-right" aria-label="Panel lateral de reservacion">
@@ -2622,6 +2570,7 @@ function medisoftVolverAnterior(event) {
                                 <div class="rdv3-note-composer">
                                     <label for="nuevaNota">Nueva nota interna</label>
                                     <textarea id="nuevaNota" class="rdv3-note-input" rows="3" maxlength="1000" placeholder="Escribe una observacion breve para el equipo..."></textarea>
+                                    <div id="notaStatus" class="rdv3-note-status" aria-live="polite"></div>
                                     <div class="rdv3-note-actions">
                                         <span class="rdv3-note-hint">Ctrl + Enter tambien guarda</span>
                                         <button type="button" id="btnAgregarNota" class="rdv3-note-submit" onclick="agregarNota(this)">
@@ -3252,6 +3201,27 @@ function medisoftVolverAnterior(event) {
     </div>
 </div>
 <script>
+function mostrarAvisoReservacion(mensaje, tipo = 'info', duracion = 5200) {
+    let aviso = document.getElementById('rdv3InlineToast');
+    if (!aviso) {
+        aviso = document.createElement('div');
+        aviso.id = 'rdv3InlineToast';
+        aviso.setAttribute('role', 'status');
+        aviso.setAttribute('aria-live', 'polite');
+        document.body.appendChild(aviso);
+    }
+
+    const tipos = ['info', 'warning', 'error', 'success'];
+    const tipoSeguro = tipos.includes(tipo) ? tipo : 'info';
+    aviso.className = 'rdv3-inline-toast is-visible is-' + tipoSeguro;
+    aviso.textContent = mensaje;
+
+    window.clearTimeout(aviso._hideTimer);
+    aviso._hideTimer = window.setTimeout(() => {
+        aviso.classList.remove('is-visible');
+    }, duracion);
+}
+
 // Funciones para control de llaves
 function abrirModalEntregarLlave(habitacionId, numeroHabitacion) {
     document.getElementById('entregar_habitacion_id').value = habitacionId;
@@ -3289,59 +3259,23 @@ function toggleRecepcionManual(mostrar) {
 
 // Función para entrega rápida desde el índice de habitaciones
 function entregarLlaveRapida(habitacionId, reservacionId) {
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: '¿Entregar llave al huésped?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#3B82F6',
-            cancelButtonColor: '#6B7280',
-            confirmButtonText: 'Sí, entregar',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Crear formulario temporal
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '<?= url("reservaciones/entregar-llave") ?>';
+    const form = document.getElementById('formEntregarLlave');
+    const habitacionInput = document.getElementById('entregar_habitacion_id');
+    const habitacionLabel = document.getElementById('entregar_habitacion_numero');
+    const reservacionInput = form ? form.querySelector('input[name="reservacion_id"]') : null;
 
-                // CSRF token
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = 'csrf_token';
-                csrfInput.value = '<?= csrf_token() ?>';
-                form.appendChild(csrfInput);
-
-                // Habitación ID
-                const habInput = document.createElement('input');
-                habInput.type = 'hidden';
-                habInput.name = 'habitacion_id';
-                habInput.value = habitacionId;
-                form.appendChild(habInput);
-
-                // Reservación ID
-                const resInput = document.createElement('input');
-                resInput.type = 'hidden';
-                resInput.name = 'reservacion_id';
-                resInput.value = reservacionId;
-                form.appendChild(resInput);
-
-                // Tipo entrega
-                const tipoInput = document.createElement('input');
-                tipoInput.type = 'hidden';
-                tipoInput.name = 'tipo_entrega';
-                tipoInput.value = 'usuario_actual';
-                form.appendChild(tipoInput);
-
-                document.body.appendChild(form);
-                form.submit();
-            }
-        });
-    } else {
-        if (confirm('¿Entregar llave al huésped?')) {
-            window.location.href = '<?= url("reservaciones/entregar-llave-rapida/") ?>' + habitacionId + '/' + reservacionId;
-        }
+    if (!form || !habitacionInput || !habitacionLabel) {
+        console.error('Modal de entrega de llave no disponible');
+        return;
     }
+
+    habitacionInput.value = habitacionId;
+    if (reservacionInput && reservacionId) {
+        reservacionInput.value = reservacionId;
+    }
+    habitacionLabel.textContent = 'Habitacion seleccionada';
+    document.getElementById('modalEntregarLlave').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
 }
 
 // Manejadores de formularios
@@ -3359,316 +3293,257 @@ document.getElementById('formRecibirLlave').addEventListener('submit', function(
 </script>
 
 <!-- Modal de Check-in con Pagos Mixtos -->
-
-<div id="modalCheckIn" class="modal-overlay rv-checkin-modal" style="display: none;">
-    <div class="modal-content rv-checkin-shell" style="width: 380px;">
-        <div class="modal-header rv-checkin-hero" style="padding: 1rem; border-bottom: 2px solid #F3F4F6; background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);">
-            <h3 style="font-size: 1.125rem; font-weight: 700; margin: 0; color: #1F2937;">
-                <i class="fas fa-sign-in-alt" style="color: #10B981; margin-right: 0.5rem;"></i>
-                Confirmar Check-in
-            </h3>
-            <button onclick="cerrarModalCheckIn()" style="background: none; border: none; cursor: pointer; color: #6B7280; font-size: 1.25rem;">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    <div class="modal-body rv-checkin-body" style="padding: 1rem;">
+<?php
+$rvCheckinShortDate = function($value) use ($rdSafe) {
+    $text = trim((string)($value ?? ''));
+    if ($text === '') {
+        return '';
+    }
+    $ts = strtotime($text);
+    if (!$ts) {
+        return $rdSafe($text, '');
+    }
+    $months = [
+        1 => 'ene', 2 => 'feb', 3 => 'mar', 4 => 'abr', 5 => 'may', 6 => 'jun',
+        7 => 'jul', 8 => 'ago', 9 => 'sep', 10 => 'oct', 11 => 'nov', 12 => 'dic',
+    ];
+    return date('d', $ts) . ' ' . $months[(int)date('n', $ts)];
+};
+$rvCheckinStayLabel = $rdNoches . ' ' . ($rdNoches === 1 ? 'noche' : 'noches');
+$rvCheckinEntradaCorta = $rvCheckinShortDate($rdFechaEntrada);
+$rvCheckinSalidaCorta = $rvCheckinShortDate($rdFechaSalida);
+if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
+    $rvCheckinStayLabel .= ' - ' . trim($rvCheckinEntradaCorta . ' a ' . $rvCheckinSalidaCorta, ' a');
+}
+?>
+<div id="modalCheckIn" class="modal-overlay rv-checkin-modal" style="display: none;" data-checkin-step="1">
+    <div class="modal-content rv-checkin-shell" role="dialog" aria-modal="true" aria-labelledby="rvCheckinTitle">
         <form id="formCheckInModal" method="POST" action="" class="rv-checkin-form">
             <?= csrf_field() ?>
 
-            <div class="form-group rv-arrival-field" style="margin-bottom: 1rem;">
-                <label class="form-label" style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">
-                    Hora de llegada
-                </label>
-                <input type="time" name="hora_entrada" class="form-input" value="<?= date('H:i') ?>" required
-                       style="width: 100%; padding: 0.5rem; border: 2px solid #E5E7EB; border-radius: 0.5rem; font-size: 0.875rem;">
-            </div>
-
-            <div class="form-group rv-total-field" style="margin-bottom: 1rem;">
-                <label class="form-label" style="display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem;">
-                    Total a Cobrar
-                </label>
-                <div style="padding: 0.75rem; background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border-radius: 0.5rem; text-align: center;">
-                    <span id="totalACobrar" style="font-weight: 800; font-size: 1.5rem; color: #92400E;">$0.00</span>
-                </div>
-            </div>
-
-            <!-- Sección de Métodos de Pago -->
-            <div class="form-group rv-payment-section">
-                <h4 style="font-size: 0.875rem; font-weight: 700; color: #374151; margin-bottom: 0.5rem;">
-                    <i class="fas fa-wallet" style="color: #9333EA; margin-right: 0.375rem;"></i>
-                    Métodos de Pago
-                </h4>
-
-                <div class="rv-payment-shortcuts" aria-label="Atajos de pago">
-                    <button type="button" class="rv-money-shortcut is-cash" onclick="aplicarPagoRapido('efectivo')">
-                        <i class="fas fa-money-bill-wave"></i>
-                        Efectivo exacto
-                    </button>
-                    <button type="button" class="rv-money-shortcut is-card" onclick="aplicarPagoRapido('tarjeta')">
-                        <i class="fas fa-credit-card"></i>
-                        Tarjeta exacta
-                    </button>
-                    <button type="button" class="rv-money-shortcut is-transfer" onclick="aplicarPagoRapido('transferencia')">
-                        <i class="fas fa-exchange-alt"></i>
-                        Transferencia exacta
-                    </button>
-                    <button type="button" class="rv-money-shortcut is-split" onclick="dividirPagoRapido()">
-                        <i class="fas fa-code-branch"></i>
-                        Mitad efectivo/tarjeta
-                    </button>
-                </div>
-
-                <div id="metodosPagoContainer" class="rv-pay-methods" style="display: flex; flex-direction: column; gap: 0.5rem;">
-                    <!-- Efectivo -->
-                    <div class="metodo-pago-item rv-pay-option rv-pay-cash" style="background: #F0FDF4; border: 2px solid #BBF7D0; border-radius: 0.5rem; padding: 0.75rem;">
-                        <label style="display: flex; align-items: center; font-weight: 600; font-size: 0.875rem; color: #065F46; cursor: pointer;">
-                            <input type="checkbox"
-                                id="check_efectivo"
-                                onchange="toggleMetodoPago('efectivo')"
-                                style="margin-right: 0.5rem;">
-                            <i class="fas fa-money-bill-wave" style="color: #10B981; margin-right: 0.5rem;"></i>
-                            Efectivo
-                        </label>
-                        <div id="panel_efectivo" class="hidden" style="margin-top: 0.5rem;">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                                <div>
-                                    <label style="font-size: 0.75rem; color: #065F46;">Total a cobrar</label>
-                                        <input type="number"
-                                        name="monto_efectivo"
-                                        id="monto_efectivo"
-                                        data-money-format="true"
-                                        step="0.01"
-                                        min="0"
-                                        readonly
-                                        style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #BBF7D0; border-radius: 0.375rem; background-color: #F0FDF4;">
-                                </div>
-                                <div>
-                                    <label style="font-size: 0.75rem; color: #065F46;">Monto recibido</label>
-                                    <input type="number"
-                                        name="recibido_efectivo"
-                                        id="recibido_efectivo"
-                                        data-money-format="true"
-                                        step="0.01"
-                                        min="0"
-                                        oninput="calcularCambio()"
-                                        onchange="calcularCambio()"
-                                        onkeyup="calcularCambio()"
-                                        placeholder="0.00"
-                                        style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #BBF7D0; border-radius: 0.375rem; background: white;">
-                                    <button type="button" class="rv-money-mini" onclick="marcarEfectivoExacto()">
-                                        Recibi exacto
-                                    </button>
-                                </div>
-                            </div>
-                            <div style="background-color: #D1FAE5; border-radius: 0.375rem; padding: 0.375rem 0.5rem; margin-top: 0.375rem; font-size: 0.75rem;">
-                                Cambio: <span id="cambio_efectivo" style="font-weight: 700; color: #065F46;">$0.00</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tarjeta -->
-                    <div class="metodo-pago-item rv-pay-option rv-pay-card" style="background: #EFF6FF; border: 2px solid #BFDBFE; border-radius: 0.5rem; padding: 0.75rem;">
-                        <label style="display: flex; align-items: center; font-weight: 600; font-size: 0.875rem; color: #1E40AF; cursor: pointer;">
-                            <input type="checkbox"
-                                id="check_tarjeta"
-                                onchange="toggleMetodoPago('tarjeta')"
-                                style="margin-right: 0.5rem;">
-                            <i class="fas fa-credit-card" style="color: #3B82F6; margin-right: 0.5rem;"></i>
-                            Tarjeta
-                        </label>
-                        <div id="panel_tarjeta" class="hidden" style="margin-top: 0.5rem;">
-    <!-- Tipo de tarjeta: Crédito / Débito -->
-    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-        <label class="rv-radio-chip" style="flex: 1; display: flex; align-items: center; gap: 0.375rem; padding: 0.375rem 0.625rem;
-                       background: white; border: 2px solid #BFDBFE; border-radius: 0.375rem;
-                       cursor: pointer; font-size: 0.75rem; font-weight: 600; color: #1E40AF; transition: all 0.2s;"
-               id="label_credito"
-               onclick="this.style.borderColor='#3B82F6'; this.style.background='#DBEAFE'; document.getElementById('label_debito').style.borderColor='#BFDBFE'; document.getElementById('label_debito').style.background='white';">
-            <input type="radio" name="tipo_tarjeta" value="credito" style="accent-color: #3B82F6;">
-            <i class="fas fa-credit-card" style="font-size: 0.625rem;"></i> Crédito
-        </label>
-        <label class="rv-radio-chip" style="flex: 1; display: flex; align-items: center; gap: 0.375rem; padding: 0.375rem 0.625rem;
-                       background: white; border: 2px solid #BFDBFE; border-radius: 0.375rem;
-                       cursor: pointer; font-size: 0.75rem; font-weight: 600; color: #1E40AF; transition: all 0.2s;"
-               id="label_debito"
-               onclick="this.style.borderColor='#3B82F6'; this.style.background='#DBEAFE'; document.getElementById('label_credito').style.borderColor='#BFDBFE'; document.getElementById('label_credito').style.background='white';">
-            <input type="radio" name="tipo_tarjeta" value="debito" style="accent-color: #3B82F6;">
-            <i class="fas fa-money-check-alt" style="font-size: 0.625rem;"></i> Débito
-        </label>
-    </div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-        <div>
-            <label style="font-size: 0.75rem; color: #1E40AF;">Monto</label>
-                                    <input type="number"
-                                        name="monto_tarjeta"
-                                        id="monto_tarjeta"
-                                        data-money-format="true"
-                                        step="0.01"
-                                        min="0"
-                                        oninput="calcularTotales()"
-                                        onchange="calcularTotales()"
-                                        style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #BFDBFE; border-radius: 0.375rem;">
-                                </div>
-                                <div>
-                                    <label style="font-size: 0.75rem; color: #1E40AF;">Referencia</label>
-                                    <input type="text"
-                                        name="referencia_tarjeta"
-                                        placeholder="Últimos 4 dígitos"
-                                        style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #BFDBFE; border-radius: 0.375rem;">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Transferencia -->
-                    <div class="metodo-pago-item rv-pay-option rv-pay-transfer" style="background: #F5F3FF; border: 2px solid #DDD6FE; border-radius: 0.5rem; padding: 0.75rem;">
-                        <label style="display: flex; align-items: center; font-weight: 600; font-size: 0.875rem; color: #5B21B6; cursor: pointer;">
-                            <input type="checkbox"
-                                id="check_transferencia"
-                                onchange="toggleMetodoPago('transferencia')"
-                                style="margin-right: 0.5rem;">
-                            <i class="fas fa-exchange-alt" style="color: #9333EA; margin-right: 0.5rem;"></i>
-                            Transferencia
-                        </label>
-                        <div id="panel_transferencia" class="hidden" style="margin-top: 0.5rem;">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                                <div>
-                                    <label style="font-size: 0.75rem; color: #5B21B6;">Monto</label>
-                                    <input type="number"
-                                        name="monto_transferencia"
-                                        id="monto_transferencia"
-                                        data-money-format="true"
-                                        step="0.01"
-                                        min="0"
-                                        oninput="calcularTotales()"
-                                        onchange="calcularTotales()"
-                                        style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #DDD6FE; border-radius: 0.375rem;">
-                                </div>
-                                <div>
-                                    <label style="font-size: 0.75rem; color: #5B21B6;">Referencia</label>
-                                    <input type="text"
-                                        name="referencia_transferencia"
-                                        placeholder="Número de operación"
-                                        style="width: 100%; padding: 0.375rem; font-size: 0.875rem; border: 1px solid #DDD6FE; border-radius: 0.375rem;">
-                                </div>
-                            </div>
-                        </div>
+            <div class="rv-checkin-topbar">
+                <div class="rv-checkin-titleblock">
+                    <span class="rv-checkin-icon" aria-hidden="true"><i class="fas fa-right-to-bracket"></i></span>
+                    <div>
+                        <h3 id="rvCheckinTitle">Registrar check-in</h3>
+                        <p><?= $rdSafe($rdHuespedNombre) ?> - Reservacion #<?= (int)$rdReservationId ?> - Hab. <?= $rdSafe($rdHabitacionesTexto ?: 'Sin habitaciones') ?></p>
                     </div>
                 </div>
-            </div>
-            <!-- ========== SECCIÓN DE FACTURA ========== -->
-<div class="rv-invoice-section" style="margin-top: 1rem; margin-bottom: 0.5rem;">
-    <h4 style="font-size: 0.875rem; font-weight: 700; color: #374151; margin-bottom: 0.5rem;">
-        <i class="fas fa-file-invoice" style="color: #2563EB; margin-right: 0.375rem;"></i>
-        ¿El cliente requiere factura?
-        <span style="color: #EF4444; font-size: 0.75rem;">*</span>
-    </h4>
-
-    <div id="facturaContainer" class="rv-invoice-grid" style="display: flex; gap: 0.5rem;">
-        <!-- Opción SÍ -->
-        <label class="rv-invoice-choice" style="flex: 1; display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem;
-                       background: #F9FAFB; border: 2px solid #E5E7EB; border-radius: 0.5rem;
-                       cursor: pointer; transition: all 0.2s;"
-               id="label_factura_si"
-               onmouseover="this.style.borderColor='#3B82F6'"
-               onmouseout="if(!document.getElementById('factura_si').checked) this.style.borderColor='#E5E7EB'">
-            <input type="radio" name="requiere_factura" id="factura_si" value="si"
-                   onchange="seleccionarFactura('si')"
-                   style="accent-color: #2563EB;">
-            <div>
-                <span style="font-weight: 600; font-size: 0.875rem; color: #1F2937;">Sí</span>
-                <p style="font-size: 0.7rem; color: #6B7280; margin: 0;">Se registrará para facturación</p>
-            </div>
-        </label>
-
-        <!-- Opción NO -->
-        <label class="rv-invoice-choice" style="flex: 1; display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem;
-                       background: #F9FAFB; border: 2px solid #E5E7EB; border-radius: 0.5rem;
-                       cursor: pointer; transition: all 0.2s;"
-               id="label_factura_no"
-               onmouseover="this.style.borderColor='#6B7280'"
-               onmouseout="if(!document.getElementById('factura_no').checked) this.style.borderColor='#E5E7EB'">
-            <input type="radio" name="requiere_factura" id="factura_no" value="no"
-                   onchange="seleccionarFactura('no')"
-                   style="accent-color: #6B7280;">
-            <div>
-                <span style="font-weight: 600; font-size: 0.875rem; color: #1F2937;">No</span>
-                <p style="font-size: 0.7rem; color: #6B7280; margin: 0;">Sin factura</p>
-            </div>
-        </label>
-    </div>
-
-    <!-- Mensaje cuando no se ha seleccionado -->
-    <div id="facturaValidacion" class="rv-checkin-message hidden"
-         style="margin-top: 0.375rem; padding: 0.375rem 0.5rem; background: #FEF2F2;
-                border-radius: 0.375rem; border: 1px solid #FECACA;">
-        <p style="font-size: 0.75rem; color: #DC2626; margin: 0;">
-            <i class="fas fa-exclamation-circle" style="margin-right: 0.25rem;"></i>
-            Debe indicar si el cliente requiere factura
-        </p>
-    </div>
-
-    <!-- Info: se registrará para facturación interna -->
-    <div id="facturaInfoInterna" class="rv-checkin-note hidden"
-         style="margin-top: 0.375rem; padding: 0.375rem 0.5rem; background: #EFF6FF;
-                border-radius: 0.375rem; border: 1px solid #BFDBFE;">
-        <p style="font-size: 0.7rem; color: #1E40AF; margin: 0;">
-            <i class="fas fa-info-circle" style="margin-right: 0.25rem;"></i>
-            El pago con tarjeta/transferencia se registrará en facturación para uso interno
-        </p>
-    </div>
-</div>
-<!-- ========== FIN SECCIÓN DE FACTURA ========== -->
-            <!-- Resumen de Pago -->
-            <div class="rv-checkin-summary" style="background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%); border-radius: 0.5rem; padding: 0.75rem; margin: 1rem 0; border: 1px solid #E5E7EB;">
-                <h5 style="font-weight: 700; font-size: 0.75rem; color: #374151; margin-bottom: 0.375rem;">Resumen de Pago</h5>
-                <div style="font-size: 0.75rem;">
-                    <div class="rv-summary-row" style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
-                        <span>Total a cobrar:</span>
-                        <span id="resumenTotal" style="font-weight: 700;">$0.00</span>
-                    </div>
-                    <div class="rv-summary-row is-paid" style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
-                        <span>Total pagado:</span>
-                        <span id="resumenPagado" style="font-weight: 700; color: #10B981;">$0.00</span>
-                    </div>
-                    <div id="divRestante" class="rv-summary-row is-due" style="display: none; justify-content: space-between; margin-bottom: 0.25rem;">
-                        <span>Restante:</span>
-                        <span id="resumenRestante" style="font-weight: 700; color: #EF4444;">$0.00</span>
-                    </div>
-                    <div id="divCambio" class="rv-summary-row is-change" style="display: none; justify-content: space-between; margin-bottom: 0.25rem;">
-                        <span>Cambio total:</span>
-                        <span id="resumenCambio" style="font-weight: 700; color: #3B82F6;">$0.00</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Mensajes de validación -->
-            <div id="mensajeValidacion" class="rv-checkin-message hidden" style="margin-bottom: 0.75rem; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.75rem;"></div>
-
-            <!-- Botones -->
-            <div class="rv-checkin-actions" style="display: flex; gap: 0.5rem;">
-                <button type="button" onclick="cerrarModalCheckIn()"
-                        class="rv-btn-cancel"
-                        style="flex: 1; padding: 0.625rem; border: 2px solid #E5E7EB; background: white; color: #374151; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600; cursor: pointer;">
-                    Cancelar
+                <button type="button" onclick="cerrarModalCheckIn()" class="rv-checkin-close" aria-label="Cerrar modal de check-in">
+                    <i class="fas fa-times"></i>
                 </button>
-                <button type="submit"
-                        id="btnConfirmarCheckIn"
-                        class="rv-btn-confirm"
-                        style="flex: 1; padding: 0.625rem; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; border: none; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600; cursor: pointer;">
-                    <i class="fas fa-check" style="margin-right: 0.25rem;"></i>
-                    Confirmar
+            </div>
+
+            <div class="rv-checkin-stepper" aria-label="Progreso de check-in">
+                <div class="rv-checkin-step is-current" data-step-indicator="1"><span>1</span><strong>Llegada</strong></div>
+                <div class="rv-checkin-line" data-step-line="1"></div>
+                <div class="rv-checkin-step" data-step-indicator="2"><span>2</span><strong>Pago</strong></div>
+                <div class="rv-checkin-line" data-step-line="2"></div>
+                <div class="rv-checkin-step" data-step-indicator="3"><span>3</span><strong>Factura</strong></div>
+            </div>
+
+            <div class="rv-checkin-content">
+                <section class="rv-checkin-stage rv-stage-arrival is-active" data-checkin-stage="1" aria-labelledby="rvLlegadaTitle">
+                    <div class="rv-total-card">
+                        <div>
+                            <span class="rv-kicker">Total a cobrar</span>
+                            <strong id="totalACobrar">$0.00</strong>
+                        </div>
+                        <span class="rv-date-pill"><i class="far fa-calendar"></i><?= $rdSafe($rvCheckinStayLabel) ?></span>
+                    </div>
+
+                    <div class="form-group rv-arrival-field">
+                        <label class="form-label" for="horaEntradaCheckIn" id="rvLlegadaTitle">Hora de llegada</label>
+                        <div class="rv-time-input">
+                            <i class="far fa-clock" aria-hidden="true"></i>
+                            <input id="horaEntradaCheckIn" type="time" name="hora_entrada" class="form-input" value="<?= date('H:i') ?>" required>
+                        </div>
+                    </div>
+
+                    <div class="rv-room-grid" aria-label="Habitaciones para check-in">
+                        <?php if (empty($rdRooms)): ?>
+                            <div class="rv-room-card rv-room-empty">
+                                <strong>Sin habitaciones</strong>
+                                <span>Revisa la reservacion antes de continuar.</span>
+                            </div>
+                        <?php else: ?>
+                            <?php foreach ($rdRooms as $room): ?>
+                                <?php
+                                $roomIsCourtesy = !empty($room['es_cortesia']) || !empty($room['cortesia']);
+                                $roomType = $room['tipo_nombre'] ?? $room['tipo'] ?? $room['nombre_tipo'] ?? 'Habitacion';
+                                ?>
+                                <article class="rv-room-card <?= $roomIsCourtesy ? 'is-courtesy' : '' ?>">
+                                    <strong><?= $rdSafe($room['numero'] ?? 'S/N') ?></strong>
+                                    <span><?= $rdSafe($roomType) ?></span>
+                                    <em><i class="fas fa-check"></i><?= $roomIsCourtesy ? 'Cortesia' : 'Lista' ?></em>
+                                </article>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </section>
+
+                <section class="form-group rv-payment-section rv-checkin-stage" data-checkin-stage="2" aria-labelledby="rvPagoTitle" aria-hidden="true">
+                    <h4 id="rvPagoTitle"><i class="fas fa-wallet"></i> Metodos de pago</h4>
+
+                    <div class="rv-payment-shortcuts" aria-label="Atajos de pago">
+                        <button type="button" class="rv-money-shortcut is-cash" onclick="aplicarPagoRapido('efectivo')">
+                            <i class="fas fa-money-bill-wave"></i>
+                            Efectivo exacto
+                        </button>
+                        <button type="button" class="rv-money-shortcut is-card" onclick="aplicarPagoRapido('tarjeta')">
+                            <i class="fas fa-credit-card"></i>
+                            Tarjeta exacta
+                        </button>
+                        <button type="button" class="rv-money-shortcut is-transfer" onclick="aplicarPagoRapido('transferencia')">
+                            <i class="fas fa-university"></i>
+                            Transferencia exacta
+                        </button>
+                        <button type="button" class="rv-money-shortcut is-split" onclick="dividirPagoRapido()">
+                            <i class="fas fa-exchange-alt"></i>
+                            Mitad y mitad
+                        </button>
+                    </div>
+
+                    <div id="metodosPagoContainer" class="rv-pay-methods">
+                        <div class="metodo-pago-item rv-pay-option rv-pay-cash">
+                            <label>
+                                <input type="checkbox" id="check_efectivo" onchange="toggleMetodoPago('efectivo')">
+                                <i class="fas fa-money-bill-wave"></i>
+                                <span>Efectivo</span>
+                            </label>
+                            <div id="panel_efectivo" class="hidden rv-pay-panel">
+                                <div class="rv-input-grid">
+                                    <div>
+                                        <label>Total a cobrar</label>
+                                        <input type="number" name="monto_efectivo" id="monto_efectivo" data-money-format="true" step="0.01" min="0" readonly>
+                                    </div>
+                                    <div>
+                                        <label>Monto recibido</label>
+                                        <input type="number" name="recibido_efectivo" id="recibido_efectivo" data-money-format="true" step="0.01" min="0" oninput="calcularCambio()" onchange="calcularCambio()" onkeyup="calcularCambio()" placeholder="0.00">
+                                        <button type="button" class="rv-money-mini" onclick="marcarEfectivoExacto()">Recibi exacto</button>
+                                    </div>
+                                </div>
+                                <div class="rv-change-pill">Cambio <strong id="cambio_efectivo">$0.00</strong></div>
+                            </div>
+                        </div>
+
+                        <div class="metodo-pago-item rv-pay-option rv-pay-card">
+                            <label>
+                                <input type="checkbox" id="check_tarjeta" onchange="toggleMetodoPago('tarjeta')">
+                                <i class="fas fa-credit-card"></i>
+                                <span>Tarjeta</span>
+                            </label>
+                            <div id="panel_tarjeta" class="hidden rv-pay-panel">
+                                <div class="rv-card-type">
+                                    <label class="rv-radio-chip" id="label_credito" onclick="this.style.borderColor='#3B82F6'; this.style.background='#DBEAFE'; document.getElementById('label_debito').style.borderColor='#BFDBFE'; document.getElementById('label_debito').style.background='white';">
+                                        <input type="radio" name="tipo_tarjeta" value="credito">
+                                        <i class="fas fa-credit-card"></i> Credito
+                                    </label>
+                                    <label class="rv-radio-chip" id="label_debito" onclick="this.style.borderColor='#3B82F6'; this.style.background='#DBEAFE'; document.getElementById('label_credito').style.borderColor='#BFDBFE'; document.getElementById('label_credito').style.background='white';">
+                                        <input type="radio" name="tipo_tarjeta" value="debito">
+                                        <i class="fas fa-money-check-alt"></i> Debito
+                                    </label>
+                                </div>
+                                <div class="rv-input-grid">
+                                    <div>
+                                        <label>Monto</label>
+                                        <input type="number" name="monto_tarjeta" id="monto_tarjeta" data-money-format="true" step="0.01" min="0" oninput="calcularTotales()" onchange="calcularTotales()">
+                                    </div>
+                                    <div>
+                                        <label>Referencia</label>
+                                        <input type="text" name="referencia_tarjeta" placeholder="Ultimos 4 digitos">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="metodo-pago-item rv-pay-option rv-pay-transfer">
+                            <label>
+                                <input type="checkbox" id="check_transferencia" onchange="toggleMetodoPago('transferencia')">
+                                <i class="fas fa-university"></i>
+                                <span>Transferencia</span>
+                            </label>
+                            <div id="panel_transferencia" class="hidden rv-pay-panel">
+                                <div class="rv-input-grid">
+                                    <div>
+                                        <label>Monto</label>
+                                        <input type="number" name="monto_transferencia" id="monto_transferencia" data-money-format="true" step="0.01" min="0" oninput="calcularTotales()" onchange="calcularTotales()">
+                                    </div>
+                                    <div>
+                                        <label>Referencia</label>
+                                        <input type="text" name="referencia_transferencia" placeholder="Numero de operacion">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="rv-invoice-section rv-checkin-stage" data-checkin-stage="3" aria-labelledby="rvFacturaTitle" aria-hidden="true">
+                    <div class="rv-final-grid">
+                        <div class="rv-final-invoice">
+                            <h4 id="rvFacturaTitle"><i class="far fa-file-alt"></i> ¿El cliente requiere factura? <span>*</span></h4>
+
+                            <div id="facturaContainer" class="rv-invoice-grid">
+                                <label class="rv-invoice-choice" id="label_factura_si" onmouseover="this.style.borderColor='#3B82F6'" onmouseout="if(!document.getElementById('factura_si').checked) this.style.borderColor='#E5E7EB'">
+                                    <input type="radio" name="requiere_factura" id="factura_si" value="si" onchange="seleccionarFactura('si')">
+                                    <div>
+                                        <strong>Si, facturar</strong>
+                                        <p>Se registrara para facturacion electronica</p>
+                                    </div>
+                                </label>
+
+                                <label class="rv-invoice-choice" id="label_factura_no" onmouseover="this.style.borderColor='#6B7280'" onmouseout="if(!document.getElementById('factura_no').checked) this.style.borderColor='#E5E7EB'">
+                                    <input type="radio" name="requiere_factura" id="factura_no" value="no" onchange="seleccionarFactura('no')">
+                                    <div>
+                                        <strong>No requiere</strong>
+                                        <p>Sin factura</p>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div id="facturaValidacion" class="rv-checkin-message hidden">
+                                <p><i class="fas fa-exclamation-circle"></i> Debe indicar si el cliente requiere factura</p>
+                            </div>
+
+                            <div id="facturaInfoInterna" class="rv-checkin-note hidden">
+                                <p><i class="fas fa-info-circle"></i> El pago con tarjeta/transferencia se registrara en facturacion para uso interno</p>
+                            </div>
+                        </div>
+
+                        <section class="rv-checkin-summary" aria-label="Resumen de pago">
+                            <h5>Resumen final</h5>
+                            <div class="rv-summary-row"><span>Total a cobrar</span><strong id="resumenTotal">$0.00</strong></div>
+                            <div class="rv-summary-row is-paid"><span>Pagado</span><strong id="resumenPagado">$0.00</strong></div>
+                            <div id="divRestante" class="rv-summary-row is-due" style="display: none;"><span>Restante</span><strong id="resumenRestante">$0.00</strong></div>
+                            <div id="divCambio" class="rv-summary-row is-change" style="display: none;"><span>Cambio</span><strong id="resumenCambio">$0.00</strong></div>
+                        </section>
+                    </div>
+                </section>
+
+                <div id="mensajeValidacion" class="rv-checkin-message hidden" aria-live="polite"></div>
+            </div>
+
+            <div class="rv-checkin-actions">
+                <button type="button" id="btnCheckInBack" onclick="retrocederOCerrarCheckInWizard()" class="rv-btn-cancel">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Cancelar</span>
+                </button>
+                <div class="rv-step-dots" aria-hidden="true">
+                    <span class="is-active" data-step-dot="1"></span>
+                    <span data-step-dot="2"></span>
+                    <span data-step-dot="3"></span>
+                </div>
+                <button type="button" id="btnConfirmarCheckIn" onclick="avanzarCheckInWizard()" class="rv-btn-confirm">
+                    <span>Continuar</span>
+                    <i class="fas fa-chevron-right"></i>
                 </button>
             </div>
         </form>
     </div>
 </div>
 
-
-</div>
-
-<!-- Modal para cancelación -->
-
+<!-- Modal para cancelacion -->
 <div id="modalCancelacion" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="width: 360px;">
         <form action="/reservaciones/cancelar/<?= htmlspecialchars($reservacion['id'] ?? '') ?>" method="POST">
@@ -3739,7 +3614,7 @@ document.getElementById('formRecibirLlave').addEventListener('submit', function(
             <div style="background: #F9FAFB; border-radius: 0.5rem; padding: 0.75rem; margin-bottom: 1rem; border: 1px solid #E5E7EB;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 0.75rem; color: #6B7280;">Reservación #<?= htmlspecialchars($reservacion['id']) ?></span>
-                    <span style="font-weight: 800; font-size: 1.125rem; color: #92400E;"><?= format_money($reservacion['precio_total'] ?? 0) ?></span>
+                    <span style="font-weight: 600; font-size: 1.125rem; color: #92400E;"><?= format_money($reservacion['precio_total'] ?? 0) ?></span>
                 </div>
                 <p style="font-size: 0.7rem; color: #9CA3AF; margin-top: 0.25rem;">
                     <?= htmlspecialchars($huesped['nombre_completo'] ?? '') ?>
@@ -3971,6 +3846,8 @@ document.getElementById('formRecibirLlave').addEventListener('submit', function(
                 <?= csrf_field() ?>
                 <input type="hidden" name="tipo_tardio" id="tipo_tardio" value="">
 
+                <div id="mensajeValidacionTardio" class="rv-checkin-message hidden" aria-live="polite"></div>
+
                 <div class="rv-tardio-fields">
                 <!-- Info Reservación -->
                 <div class="rv-tardio-info" style="background: #F9FAFB; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1rem;">
@@ -4009,7 +3886,7 @@ document.getElementById('formRecibirLlave').addEventListener('submit', function(
                         Total a Cobrar
                     </label>
                     <div style="padding: 0.75rem; background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border-radius: 0.5rem; text-align: center;">
-                        <span id="totalACobrarTardio" style="font-weight: 800; font-size: 1.5rem; color: #92400E;">$0.00</span>
+                        <span id="totalACobrarTardio" style="font-weight: 600; font-size: 1.5rem; color: #92400E;">$0.00</span>
                     </div>
                 </div>
 
@@ -4418,7 +4295,7 @@ document.getElementById('formRecibirLlave').addEventListener('submit', function(
                             · <?= date('d/m/Y', strtotime($reservacion['fecha_entrada'])) ?> al <?= date('d/m/Y', strtotime($reservacion['fecha_salida'])) ?>
                         </p>
                     </div>
-                    <p style="font-weight: 800; font-size: 1.25rem; color: #78350F;">
+                    <p style="font-weight: 600; font-size: 1.25rem; color: #78350F;">
                         <?= format_money($reservacion['precio_total'] ?? 0) ?>
                     </p>
                 </div>
@@ -4464,7 +4341,7 @@ document.getElementById('formRecibirLlave').addEventListener('submit', function(
                 </div>
                 <div style="border-top: 1px dashed #BBF7D0; padding-top: 6px; margin-top: 4px; display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 0.875rem; font-weight: 700; color: #065F46;">Saldo pendiente:</span>
-                    <span id="txtSaldoCotizacion" style="font-size: 1.1rem; font-weight: 800; color: #065F46;">
+                    <span id="txtSaldoCotizacion" style="font-size: 1.1rem; font-weight: 600; color: #065F46;">
                         <?= format_money($reservacion['precio_total'] ?? 0) ?>
                     </span>
                 </div>
@@ -4556,7 +4433,7 @@ document.getElementById('formRecibirLlave').addEventListener('submit', function(
                             · <?= date('d/m/Y', strtotime($reservacion['fecha_entrada'])) ?> al <?= date('d/m/Y', strtotime($reservacion['fecha_salida'])) ?>
                         </p>
                     </div>
-                    <p style="font-weight: 800; font-size: 1.25rem; color: #78350F;">
+                    <p style="font-weight: 600; font-size: 1.25rem; color: #78350F;">
                         <?= format_money($reservacion['precio_total'] ?? 0) ?>
                     </p>
                 </div>
@@ -4602,7 +4479,7 @@ document.getElementById('formRecibirLlave').addEventListener('submit', function(
                 </div>
                 <div style="border-top: 1px dashed #BBF7D0; padding-top: 6px; margin-top: 4px; display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size: 0.875rem; font-weight: 700; color: #065F46;">Saldo pendiente:</span>
-                    <span id="txtSaldoCotizacion" style="font-size: 1.1rem; font-weight: 800; color: #065F46;">
+                    <span id="txtSaldoCotizacion" style="font-size: 1.1rem; font-weight: 600; color: #065F46;">
                         <?= format_money($reservacion['precio_total'] ?? 0) ?>
                     </span>
                 </div>
@@ -4721,7 +4598,10 @@ document.getElementById('modalCotizacion').addEventListener('click', function(e)
 
 // Variables globales
 let totalReservacion = 0;
+let checkInWizardStep = 1;
 let vehiculosHuesped = [];
+let vehiculoEliminacionPendiente = null;
+let vehiculoEliminacionTimer = null;
 
 // Cargar vehículos al iniciar
 document.addEventListener('DOMContentLoaded', function() {
@@ -4815,9 +4695,169 @@ function resetearFacturaCheckIn() {
 }
 
 // =============================================
-// FUNCIONES DE FACTURACIÓN - CHECK-IN TARDÍO
+// WIZARD DE CHECK-IN NORMAL
 // =============================================
 
+function setCheckInWizardStep(step) {
+    const modal = document.getElementById('modalCheckIn');
+    const safeStep = Math.max(1, Math.min(3, parseInt(step, 10) || 1));
+    checkInWizardStep = safeStep;
+
+    if (modal) {
+        modal.dataset.checkinStep = String(safeStep);
+    }
+
+    document.querySelectorAll('#modalCheckIn [data-checkin-stage]').forEach(stage => {
+        const stageStep = parseInt(stage.dataset.checkinStage, 10);
+        const active = stageStep === safeStep;
+        stage.classList.toggle('is-active', active);
+        stage.setAttribute('aria-hidden', active ? 'false' : 'true');
+    });
+
+    document.querySelectorAll('#modalCheckIn [data-step-indicator]').forEach(indicator => {
+        const indicatorStep = parseInt(indicator.dataset.stepIndicator, 10);
+        indicator.classList.toggle('is-current', indicatorStep === safeStep);
+        indicator.classList.toggle('is-complete', indicatorStep < safeStep);
+    });
+
+    document.querySelectorAll('#modalCheckIn [data-step-line]').forEach(line => {
+        const lineStep = parseInt(line.dataset.stepLine, 10);
+        line.classList.toggle('is-complete', lineStep < safeStep);
+        line.classList.toggle('is-current', lineStep === safeStep - 1);
+    });
+
+    document.querySelectorAll('#modalCheckIn [data-step-dot]').forEach(dot => {
+        dot.classList.toggle('is-active', parseInt(dot.dataset.stepDot, 10) === safeStep);
+    });
+
+    const backButton = document.getElementById('btnCheckInBack');
+    if (backButton) {
+        const label = backButton.querySelector('span');
+        const icon = backButton.querySelector('i');
+        if (label) label.textContent = safeStep === 1 ? 'Cancelar' : 'Atras';
+        if (icon) icon.className = safeStep === 1 ? 'fas fa-times' : 'fas fa-arrow-left';
+    }
+
+    const nextButton = document.getElementById('btnConfirmarCheckIn');
+    if (nextButton) {
+        const label = nextButton.querySelector('span');
+        const icon = nextButton.querySelector('i');
+        if (label) label.textContent = safeStep === 3 ? 'Confirmar check-in' : 'Continuar';
+        if (icon) icon.className = safeStep === 3 ? 'fas fa-check' : 'fas fa-chevron-right';
+        nextButton.disabled = false;
+    }
+
+    ocultarMensaje();
+}
+
+function retrocederOCerrarCheckInWizard() {
+    if (checkInWizardStep > 1) {
+        setCheckInWizardStep(checkInWizardStep - 1);
+        return;
+    }
+
+    cerrarModalCheckIn();
+}
+
+function validarLlegadaCheckInWizard() {
+    const horaEntrada = document.getElementById('horaEntradaCheckIn');
+    if (!horaEntrada) {
+        return true;
+    }
+
+    if (!horaEntrada.value) {
+        mostrarMensaje('Indica la hora de llegada para continuar.', 'warning');
+        horaEntrada.focus();
+        return false;
+    }
+
+    return true;
+}
+
+function validarPagoCheckInWizard() {
+    const metodosSeleccionados = getSelectedCheckInPaymentMethods();
+
+    if (metodosSeleccionados.length === 0) {
+        mostrarMensaje('Debe seleccionar al menos un metodo de pago', 'warning');
+        return false;
+    }
+
+    const totalPagado = calcularTotalPagado();
+    const diferencia = Math.abs(totalPagado - totalReservacion);
+
+    if (diferencia > 0.01) {
+        mostrarMensaje('El total pagado no coincide con el monto de la reservacion', 'error');
+        return false;
+    }
+
+    const checkEfectivo = document.getElementById('check_efectivo');
+    if (checkEfectivo && checkEfectivo.checked) {
+        const recibido = moneyValue(document.getElementById('recibido_efectivo'));
+        const montoPagar = moneyValue(document.getElementById('monto_efectivo'));
+
+        if (montoPagar > 0 && recibido < montoPagar) {
+            mostrarMensaje('El monto recibido en efectivo es insuficiente', 'error');
+            return false;
+        }
+    }
+
+    const checkTarjeta = document.getElementById('check_tarjeta');
+    if (checkTarjeta && checkTarjeta.checked) {
+        const tipoTarjetaSeleccionado = document.querySelector('input[name="tipo_tarjeta"]:checked');
+        if (!tipoTarjetaSeleccionado) {
+            mostrarMensaje('Debe seleccionar el tipo de tarjeta: Credito o Debito', 'error');
+            const labelCredito = document.getElementById('label_credito');
+            const labelDebito = document.getElementById('label_debito');
+            if (labelCredito) labelCredito.style.borderColor = '#EF4444';
+            if (labelDebito) labelDebito.style.borderColor = '#EF4444';
+            setTimeout(() => {
+                if (labelCredito) labelCredito.style.borderColor = '';
+                if (labelDebito) labelDebito.style.borderColor = '';
+            }, 2200);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function avanzarCheckInWizard() {
+    const form = document.getElementById('formCheckInModal');
+
+    if (checkInWizardStep === 1) {
+        if (!validarLlegadaCheckInWizard()) return;
+        setCheckInWizardStep(2);
+        return;
+    }
+
+    if (checkInWizardStep === 2) {
+        if (!validarPagoCheckInWizard()) return;
+        setCheckInWizardStep(3);
+        return;
+    }
+
+    if (!validarFacturaCheckIn()) {
+        mostrarMensaje('Debe indicar si el cliente requiere factura', 'warning');
+        return;
+    }
+
+    if (!validarPagoCheckInWizard()) {
+        setCheckInWizardStep(2);
+        validarPagoCheckInWizard();
+        return;
+    }
+
+    if (form && typeof form.requestSubmit === 'function') {
+        form.requestSubmit();
+    } else if (form) {
+        sanitizeMoneyForm(form);
+        form.submit();
+    }
+}
+
+// =============================================
+// FUNCIONES DE FACTURACION - CHECK-IN TARDIO
+// =============================================
 function seleccionarFacturaTardio(valor) {
     const labelSi = document.getElementById('label_factura_si_tardio');
     const labelNo = document.getElementById('label_factura_no_tardio');
@@ -4917,46 +4957,19 @@ function abrirModalCheckIn(id, total) {
     resetearFormularioPago();
     resetearFacturaCheckIn();
     modal.style.display = 'flex';
+    setCheckInWizardStep(1);
     document.body.style.overflow = 'hidden';
 }
 
 // Función de check-out
 function confirmarCheckOut(id) {
-    const formCheckOut = document.getElementById('formCheckOut');
-
-    if (!formCheckOut) {
-        console.error('Formulario de check-out no encontrado');
-        alert('Error: No se encontró el formulario de check-out');
+    const modalCheckOut = document.getElementById('modalCheckOut');
+    if (modalCheckOut) {
+        abrirModalCheckOut();
         return;
     }
 
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: '¿Realizar Check-out?',
-            text: "Se registrará la salida del huésped y las habitaciones pasarán a limpieza",
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#D4AF37',
-            cancelButtonColor: '#6B7280',
-            confirmButtonText: '<i class="fas fa-sign-out-alt mr-2"></i>Sí, hacer check-out',
-            cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancelar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const horaInput = formCheckOut.querySelector('input[name="hora_salida"]');
-                if (horaInput) {
-                    horaInput.value = new Date().toTimeString().slice(0, 8);
-                }
-
-                formCheckOut.action = '<?= url("reservaciones/check-out/") ?>' + id;
-                formCheckOut.submit();
-            }
-        });
-    } else {
-        if (confirm('¿Confirmar check-out?')) {
-            formCheckOut.action = '<?= url("reservaciones/check-out/") ?>' + id;
-            formCheckOut.submit();
-        }
-    }
+    console.error('Modal de check-out no encontrado para la reservacion', id);
 }
 
 // Funciones de vehículos
@@ -5068,28 +5081,37 @@ function formatMoney(amount) {
 }
 
 function moneyValue(inputOrValue) {
+    const rawValue = inputOrValue && typeof inputOrValue === 'object' && 'value' in inputOrValue
+        ? inputOrValue.value
+        : inputOrValue;
+    const parsedValue = parseFloat(String(rawValue || '').replace(/,/g, ''));
+
+    if (Number.isFinite(parsedValue)) {
+        return parsedValue;
+    }
+
     if (window.MedisoftMoneyInput) {
         return window.MedisoftMoneyInput.read(inputOrValue);
     }
 
-    const value = inputOrValue && typeof inputOrValue === 'object' && 'value' in inputOrValue
-        ? inputOrValue.value
-        : inputOrValue;
-
-    return parseFloat(String(value || '').replace(/,/g, '')) || 0;
+    return 0;
 }
-
 function setMoneyValue(inputOrId, value) {
     const input = typeof inputOrId === 'string' ? document.getElementById(inputOrId) : inputOrId;
     if (!input) {
         return;
     }
 
+    const numericValue = typeof value === 'number'
+        ? value
+        : parseFloat(String(value || '').replace(/,/g, ''));
+    const safeValue = Number.isFinite(numericValue) ? numericValue : 0;
+
     if (window.MedisoftMoneyInput) {
-        window.MedisoftMoneyInput.set(input, value);
-    } else {
-        input.value = Number(value || 0).toFixed(2);
+        window.MedisoftMoneyInput.set(input, safeValue);
     }
+
+    input.value = safeValue.toFixed(2);
 }
 
 function splitMoneyParts(total, count) {
@@ -5115,6 +5137,7 @@ function cerrarModalCheckIn() {
         modal.style.display = 'none';
         document.body.style.overflow = 'auto';
     }
+    setCheckInWizardStep(1);
     resetearFormularioPago();
 }
 
@@ -5177,19 +5200,24 @@ function toggleMetodoPago(metodo) {
 }
 
 // Validación del formulario
-function setCheckInPaymentChecked(metodo, checked) {
+function setCheckInPaymentChecked(metodo, checked, shouldRecalculate = true) {
     const checkbox = document.getElementById('check_' + metodo);
     const panel = document.getElementById('panel_' + metodo);
+    const montoInput = document.getElementById('monto_' + metodo);
     const card = checkbox?.closest('.rv-pay-option, .metodo-pago-item');
 
     if (!checkbox) {
         return false;
     }
 
-    if (checkbox.checked !== checked) {
+    const changed = checkbox.checked !== checked;
+    if (changed) {
         checkbox.checked = checked;
-        toggleMetodoPago(metodo);
-        return true;
+
+        if (shouldRecalculate) {
+            toggleMetodoPago(metodo);
+            return true;
+        }
     }
 
     if (checked) {
@@ -5198,6 +5226,17 @@ function setCheckInPaymentChecked(metodo, checked) {
     } else {
         if (panel) panel.classList.add('hidden');
         if (card) card.classList.remove('is-open');
+        if (montoInput) montoInput.value = '';
+
+        if (metodo === 'efectivo') {
+            const recibidoInput = document.getElementById('recibido_efectivo');
+            const cambioSpan = document.getElementById('cambio_efectivo');
+            if (recibidoInput) recibidoInput.value = '';
+            if (cambioSpan) {
+                cambioSpan.textContent = '$0.00';
+                cambioSpan.classList.remove('text-red-600');
+            }
+        }
     }
 
     return true;
@@ -5216,7 +5255,7 @@ function aplicarPagoRapido(metodo) {
     }
 
     resetearFormularioPago();
-    setCheckInPaymentChecked(metodo, true);
+    setCheckInPaymentChecked(metodo, true, false);
     setMoneyValue('monto_' + metodo, totalReservacion);
 
     if (metodo === 'efectivo') {
@@ -5242,100 +5281,55 @@ function marcarEfectivoExacto() {
 }
 
 function dividirPagoRapido() {
-    let metodos = getSelectedCheckInPaymentMethods();
+    resetearFormularioPago();
 
-    if (metodos.length < 2) {
-        resetearFormularioPago();
-        metodos = ['efectivo', 'tarjeta'];
-    }
+    const metodos = ['efectivo', 'tarjeta'];
+    const partes = splitMoneyParts(totalReservacion, 2);
 
     metodos.forEach(function(metodo) {
-        setCheckInPaymentChecked(metodo, true);
+        setCheckInPaymentChecked(metodo, true, false);
     });
 
-    const partes = splitMoneyParts(totalReservacion, metodos.length);
-
-    metodos.forEach(function(metodo, index) {
-        if (metodo !== 'efectivo') {
-            setMoneyValue('monto_' + metodo, partes[index]);
-        }
-    });
-
-    if (metodos.includes('efectivo')) {
-        setMoneyValue('monto_efectivo', partes[metodos.indexOf('efectivo')]);
-    }
-
-    calcularTotales();
-
-    if (metodos.includes('efectivo')) {
-        setMoneyValue('recibido_efectivo', moneyValue(document.getElementById('monto_efectivo')));
+    const aplicarMitadYMitad = function() {
+        setCheckInPaymentChecked('efectivo', true, false);
+        setCheckInPaymentChecked('tarjeta', true, false);
+        setMoneyValue('monto_efectivo', partes[0]);
+        setMoneyValue('recibido_efectivo', partes[0]);
+        setMoneyValue('monto_tarjeta', partes[1]);
+        calcularTotales({ preserveCash: true });
         calcularCambio();
+    };
+
+    aplicarMitadYMitad();
+
+    if (window.requestAnimationFrame) {
+        window.requestAnimationFrame(aplicarMitadYMitad);
+    } else {
+        setTimeout(aplicarMitadYMitad, 0);
     }
 
-    mostrarMensaje('Pago dividido entre ' + metodos.length + ' metodos.', 'success');
+    mostrarMensaje('Pago dividido entre efectivo y tarjeta.', 'success');
 }
 
 document.getElementById('formCheckInModal').addEventListener('submit', function(e) {
     e.preventDefault();
 
-    // NUEVA VALIDACIÓN: Verificar factura
     if (!validarFacturaCheckIn()) {
-        // Scroll hacia la sección de factura
-        document.getElementById('facturaContainer').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setCheckInWizardStep(3);
+        mostrarMensaje('Debe indicar si el cliente requiere factura', 'warning');
         return;
     }
 
-    const totalPagado = calcularTotalPagado();
-    const diferencia = Math.abs(totalPagado - totalReservacion);
-
-    if (diferencia > 0.01) {
-        mostrarMensaje('El total pagado no coincide con el monto de la reservación', 'error');
+    if (!validarPagoCheckInWizard()) {
+        setCheckInWizardStep(2);
+        validarPagoCheckInWizard();
         return;
-    }
-
-    const checkEfectivo = document.getElementById('check_efectivo');
-    if (checkEfectivo && checkEfectivo.checked) {
-        const recibido = moneyValue(document.getElementById('recibido_efectivo'));
-        const montoPagar = moneyValue(document.getElementById('monto_efectivo'));
-
-        if (montoPagar > 0 && recibido < montoPagar) {
-            mostrarMensaje('El monto recibido en efectivo es insuficiente', 'error');
-            return;
-        }
-    }
-
-    const metodosSeleccionados = ['efectivo', 'tarjeta', 'transferencia'].filter(metodo => {
-        const checkbox = document.getElementById('check_' + metodo);
-        return checkbox && checkbox.checked;
-    });
-
-    if (metodosSeleccionados.length === 0) {
-        mostrarMensaje('Debe seleccionar al menos un método de pago', 'error');
-        return;
-    }
-
-    // Validar tipo de tarjeta (débito/crédito) si tarjeta está seleccionada
-    const checkTarjetaCI = document.getElementById('check_tarjeta');
-    if (checkTarjetaCI && checkTarjetaCI.checked) {
-        const tipoTarjetaSeleccionado = document.querySelector('input[name="tipo_tarjeta"]:checked');
-        if (!tipoTarjetaSeleccionado) {
-            mostrarMensaje('Debe seleccionar el tipo de tarjeta: Crédito o Débito', 'error');
-            document.getElementById('panel_tarjeta').scrollIntoView({ behavior: 'smooth', block: 'center' });
-            const labelCredito = document.getElementById('label_credito');
-            const labelDebito = document.getElementById('label_debito');
-            if (labelCredito) { labelCredito.style.borderColor = '#EF4444'; }
-            if (labelDebito) { labelDebito.style.borderColor = '#EF4444'; }
-            setTimeout(() => {
-                if (labelCredito) { labelCredito.style.borderColor = '#BFDBFE'; }
-                if (labelDebito) { labelDebito.style.borderColor = '#BFDBFE'; }
-            }, 3000);
-            return;
-        }
     }
 
     sanitizeMoneyForm(this);
     this.submit();
 });
+
 function calcularTotalPagadoSinEfectivo() {
     let total = 0;
     ['tarjeta', 'transferencia'].forEach(metodo => {
@@ -5349,7 +5343,8 @@ function calcularTotalPagadoSinEfectivo() {
     return total;
 }
 
-function calcularTotales() {
+function calcularTotales(options = {}) {
+    const preserveCash = options && options.preserveCash === true;
     let totalPagado = 0;
 
     const totalOtros = calcularTotalPagadoSinEfectivo();
@@ -5359,9 +5354,13 @@ function calcularTotales() {
     const montoEfectivoInput = document.getElementById('monto_efectivo');
 
     if (checkEfectivo && checkEfectivo.checked && montoEfectivoInput) {
-        const montoRestante = Math.max(0, totalReservacion - totalOtros);
-        setMoneyValue(montoEfectivoInput, montoRestante);
-        totalPagado += montoRestante;
+        if (preserveCash) {
+            totalPagado += moneyValue(montoEfectivoInput);
+        } else {
+            const montoRestante = Math.max(0, totalReservacion - totalOtros);
+            setMoneyValue(montoEfectivoInput, montoRestante);
+            totalPagado += montoRestante;
+        }
     }
 
     const resumenPagadoElement = document.getElementById('resumenPagado');
@@ -5398,7 +5397,7 @@ function calcularTotales() {
             if (btnConfirmar) btnConfirmar.disabled = false;
         }
     } else if (diferencia < -0.01) {
-        mostrarMensaje('El monto total excede el precio de la reservación', 'error');
+        mostrarMensaje('El monto total excede el precio de la reservacion', 'error');
         if (btnConfirmar) btnConfirmar.disabled = true;
     }
 
@@ -5581,31 +5580,41 @@ function htmlspecialchars(text) {
     return text ? text.toString().replace(/[&<>"']/g, m => map[m]) : '';
 }
 
+function setVehiculoStatus(message, type = 'info') {
+    const status = document.getElementById('vehiculoStatus');
+    if (!status) return;
+
+    const allowedType = ['info', 'warning', 'error', 'success'].includes(type) ? type : 'info';
+    status.className = 'rdv3-vehicle-status is-visible is-' + allowedType;
+    status.textContent = message;
+}
+
+function clearVehiculoStatus() {
+    const status = document.getElementById('vehiculoStatus');
+    if (!status) return;
+
+    status.className = 'rdv3-vehicle-status';
+    status.textContent = '';
+}
+
+function resetVehiculoEliminarPendiente() {
+    vehiculoEliminacionPendiente = null;
+    if (vehiculoEliminacionTimer) {
+        clearTimeout(vehiculoEliminacionTimer);
+        vehiculoEliminacionTimer = null;
+    }
+}
+
 // Función de agregar vehículo (implementar según tu sistema)
 function abrirModalAgregarVehiculo() {
     // Redirigir a la página de huésped para agregar vehículo
     const huespedId = <?= json_encode($huesped['id'] ?? 0) ?>;
     if (huespedId) {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: 'Agregar Vehículo',
-                text: 'Será redirigido al perfil del huésped para agregar un vehículo',
-                icon: 'info',
-                showCancelButton: true,
-                confirmButtonColor: '#9333EA',
-                confirmButtonText: 'Ir al perfil',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = '<?= url("huespedes/") ?>' + huespedId + '#vehiculos';
-                }
-            });
-        } else {
-            if (confirm('¿Ir al perfil del huésped para agregar vehículo?')) {
-                window.location.href = '<?= url("huespedes/") ?>' + huespedId + '#vehiculos';
-            }
-        }
+        window.location.href = '<?= url("huespedes/") ?>' + huespedId + '#vehiculos';
+        return;
     }
+
+    setVehiculoStatus('No se encontro el huesped de esta reservacion para vincular un vehiculo.', 'error');
 }
 
 // Función de editar vehículo
@@ -5619,26 +5628,16 @@ function editarVehiculoPorIndex(index) {
 
 // Función de eliminar vehículo
 function confirmarEliminarVehiculo(id, descripcion) {
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: '¿Eliminar vehículo?',
-            html: `<p>Se eliminará el vehículo:</p><p class="font-bold">${descripcion}</p>`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#EF4444',
-            cancelButtonColor: '#6B7280',
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                eliminarVehiculo(id);
-            }
-        });
-    } else {
-        if (confirm(`¿Eliminar vehículo ${descripcion}?`)) {
-            eliminarVehiculo(id);
-        }
+    if (vehiculoEliminacionPendiente === id) {
+        resetVehiculoEliminarPendiente();
+        eliminarVehiculo(id);
+        return;
     }
+
+    resetVehiculoEliminarPendiente();
+    vehiculoEliminacionPendiente = id;
+    setVehiculoStatus('Para eliminar ' + descripcion + ', presiona eliminar otra vez.', 'warning');
+    vehiculoEliminacionTimer = setTimeout(resetVehiculoEliminarPendiente, 7000);
 }
 
 function eliminarVehiculo(id) {
@@ -5655,30 +5654,14 @@ function eliminarVehiculo(id) {
         if (data.success) {
             // Recargar vehículos
             cargarVehiculos();
-
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Vehículo eliminado',
-                    showConfirmButton: false,
-                    timer: 1500
-                });
-            }
+            setVehiculoStatus('Vehiculo eliminado correctamente.', 'success');
         } else {
             throw new Error(data.message || 'Error al eliminar vehículo');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'No se pudo eliminar el vehículo'
-            });
-        } else {
-            alert('Error al eliminar vehículo');
-        }
+        setVehiculoStatus(error.message || 'No se pudo eliminar el vehiculo.', 'error');
     });
 }
 
@@ -5691,6 +5674,22 @@ document.addEventListener('keypress', function(e) {
 });
 
 // Funciones para manejo de notas
+function setNotaStatus(message, type = 'error') {
+    const status = document.getElementById('notaStatus');
+    if (!status) return;
+
+    status.className = 'rdv3-note-status is-visible ' + (type === 'success' ? 'is-success' : 'is-error');
+    status.textContent = message;
+}
+
+function clearNotaStatus() {
+    const status = document.getElementById('notaStatus');
+    if (!status) return;
+
+    status.className = 'rdv3-note-status';
+    status.textContent = '';
+}
+
 function agregarNota(trigger) {
     const textarea = document.getElementById('nuevaNota');
     if (!textarea) {
@@ -5700,19 +5699,12 @@ function agregarNota(trigger) {
     const nota = textarea.value.trim();
 
     if (!nota) {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Nota vacia',
-                text: 'Por favor escribe algo en la nota',
-                timer: 2000
-            });
-        } else {
-            alert('Por favor escribe algo en la nota');
-        }
+        setNotaStatus('Escribe una nota antes de guardarla.');
         textarea.focus();
         return;
     }
+
+    clearNotaStatus();
 
     const btn = trigger || document.getElementById('btnAgregarNota');
     if (btn) {
@@ -5741,30 +5733,14 @@ function agregarNota(trigger) {
         if (data.success) {
             textarea.value = '';
             actualizarListaNotas();
-
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Nota agregada',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
-            }
+            setNotaStatus('Nota agregada correctamente.', 'success');
         } else {
             throw new Error(data.message || 'Error al agregar nota');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.message
-            });
-        } else {
-            alert('Error: ' + error.message);
-        }
+        setNotaStatus(error.message || 'No se pudo guardar la nota.');
     })
     .finally(() => {
         if (btn) {
@@ -5855,6 +5831,7 @@ setInterval(actualizarListaNotas, 30000);
 // Permitir enviar nota con Ctrl+Enter
 const nuevaNotaTextarea = document.getElementById('nuevaNota');
 if (nuevaNotaTextarea) {
+    nuevaNotaTextarea.addEventListener('input', clearNotaStatus);
     nuevaNotaTextarea.addEventListener('keydown', function(e) {
         if (e.ctrlKey && e.key === 'Enter') {
             e.preventDefault();
@@ -5863,22 +5840,32 @@ if (nuevaNotaTextarea) {
     });
 }
 
+let checkoutConfirmacionLista = false;
+
+function resetCheckoutConfirmacion() {
+    checkoutConfirmacionLista = false;
+}
+
 function abrirModalCheckOut() {
+    resetCheckoutConfirmacion();
     document.getElementById('modalCheckOut').classList.remove('hidden');
     actualizarSeleccion();
 }
 
 function cerrarModalCheckOut() {
+    resetCheckoutConfirmacion();
     document.getElementById('modalCheckOut').classList.add('hidden');
 }
 
 function seleccionarTodas(seleccionar) {
+    resetCheckoutConfirmacion();
     const checkboxes = document.querySelectorAll('input[name="habitaciones[]"]');
     checkboxes.forEach(cb => cb.checked = seleccionar);
     actualizarSeleccion();
 }
 
 function actualizarSeleccion() {
+    resetCheckoutConfirmacion();
     const checkboxes = document.querySelectorAll('input[name="habitaciones[]"]');
     const seleccionadas = Array.from(checkboxes).filter(cb => cb.checked);
     const total = checkboxes.length;
@@ -5909,45 +5896,29 @@ function actualizarSeleccion() {
 document.getElementById('formCheckOut').addEventListener('submit', function(e) {
     const checkboxes = document.querySelectorAll('input[name="habitaciones[]"]:checked');
     const total = document.querySelectorAll('input[name="habitaciones[]"]').length;
+    const mensaje = document.getElementById('mensajeSeleccion');
+    const textoMensaje = document.getElementById('textoMensaje');
 
     if (checkboxes.length === 0) {
         e.preventDefault();
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Selección requerida',
-                text: 'Debe seleccionar al menos una habitación'
-            });
-        } else {
-            alert('Debe seleccionar al menos una habitación');
+        resetCheckoutConfirmacion();
+        if (mensaje && textoMensaje) {
+            mensaje.className = 'p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700';
+            mensaje.classList.remove('hidden');
+            textoMensaje.innerHTML = '<strong>Seleccion requerida:</strong> elige al menos una habitacion para hacer check-out.';
         }
         return;
     }
 
-    const mensaje = checkboxes.length === total
-        ? '¿Realizar check-out completo de todas las habitaciones?'
-        : `¿Realizar check-out de ${checkboxes.length} habitación(es)?`;
-
-    if (typeof Swal !== 'undefined') {
-    e.preventDefault();
-    const form = e.target;  // ✅ AGREGA ESTA LÍNEA
-    Swal.fire({
-            title: 'Confirmar Check-out',
-            text: mensaje,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#F97316',
-            cancelButtonColor: '#6B7280',
-            confirmButtonText: 'Sí, confirmar',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.submit(); // ✅ USAR LA REFERENCIA GUARDADA
-            }
-        });
-    } else {
-        if (!confirm(mensaje)) {
-            e.preventDefault();
+    if (!checkoutConfirmacionLista) {
+        e.preventDefault();
+        checkoutConfirmacionLista = true;
+        if (mensaje && textoMensaje) {
+            mensaje.className = 'p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800';
+            mensaje.classList.remove('hidden');
+            textoMensaje.innerHTML = checkboxes.length === total
+                ? '<strong>Confirmar check-out completo:</strong> se liberaran todas las habitaciones. Presiona Confirmar Check-out otra vez para procesarlo.'
+                : `<strong>Confirmar check-out parcial:</strong> se liberaran ${checkboxes.length} de ${total} habitaciones. Presiona Confirmar Check-out otra vez para procesarlo.`;
         }
     }
 });
@@ -5962,6 +5933,7 @@ document.addEventListener('keydown', function(e) {
 
 let reservacionTardioData = {};
 let metodosSeleccionadosTardio = new Set(['sin_pago']);
+let confirmacionExpressTardioLista = false;
 
 function abrirModalCheckInTardio(id, huesped, habitaciones, fechaEntrada, fechaSalida, total, tipo, diasRetraso) {
     const modalTardio = document.getElementById('modalCheckInTardio');
@@ -6049,6 +6021,8 @@ function abrirModalCheckInTardio(id, huesped, habitaciones, fechaEntrada, fechaS
     metodosSeleccionadosTardio = tipo === 'express' ? new Set() : new Set(['sin_pago']);
     resetearPagosTardio();
     resetearFacturaTardio();
+    resetearConfirmacionTardio();
+    ocultarMensajeTardio();
 
     // Mostrar modal
     if (modalTardio) {
@@ -6065,9 +6039,42 @@ function cerrarModalCheckInTardio() {
     }
     document.body.style.overflow = 'auto';
     resetearPagosTardio();
+    resetearConfirmacionTardio();
+    ocultarMensajeTardio();
+}
+
+function mostrarMensajeTardio(mensaje, tipo = 'error') {
+    const div = document.getElementById('mensajeValidacionTardio');
+    if (!div) {
+        mostrarMensaje(mensaje, tipo);
+        return;
+    }
+
+    div.className = 'rv-checkin-message';
+    if (tipo === 'warning') div.classList.add('is-warning');
+    if (tipo === 'info') div.classList.add('is-info');
+    if (tipo === 'success') div.classList.add('is-success');
+    div.textContent = mensaje;
+    div.classList.remove('hidden');
+    div.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function ocultarMensajeTardio() {
+    const div = document.getElementById('mensajeValidacionTardio');
+    if (div) {
+        div.className = 'rv-checkin-message hidden';
+        div.textContent = '';
+    }
+}
+
+function resetearConfirmacionTardio() {
+    confirmacionExpressTardioLista = false;
 }
 
 function toggleMetodoPagoTardio(metodo) {
+    resetearConfirmacionTardio();
+    ocultarMensajeTardio();
+
     const checkbox = document.getElementById('check_' + metodo + (metodo === 'sin_pago' ? '' : '_tardio'));
     const panel = document.getElementById('panel_' + metodo + '_tardio');
     const card = checkbox?.closest('.rv-pay-option, .metodo-pago-item');
@@ -6121,7 +6128,7 @@ function toggleMetodoPagoTardio(metodo) {
     }
 }
 
-function setTardioPaymentChecked(metodo, checked) {
+function setTardioPaymentChecked(metodo, checked, shouldRecalculate = true) {
     const checkbox = document.getElementById('check_' + metodo + (metodo === 'sin_pago' ? '' : '_tardio'));
     const panel = document.getElementById('panel_' + metodo + '_tardio');
     const card = checkbox?.closest('.rv-pay-option, .metodo-pago-item');
@@ -6130,13 +6137,40 @@ function setTardioPaymentChecked(metodo, checked) {
         return false;
     }
 
-    if (checkbox.checked !== checked) {
+    const changed = checkbox.checked !== checked;
+    if (changed) {
         checkbox.checked = checked;
-        toggleMetodoPagoTardio(metodo);
-        return true;
+
+        if (shouldRecalculate) {
+            toggleMetodoPagoTardio(metodo);
+            return true;
+        }
     }
 
     if (checked) {
+        if (metodo !== 'sin_pago') {
+            const sinPagoCheck = document.getElementById('check_sin_pago');
+            if (sinPagoCheck) {
+                sinPagoCheck.checked = false;
+                const sinPagoCard = sinPagoCheck.closest('.rv-pay-option, .metodo-pago-item');
+                if (sinPagoCard) sinPagoCard.classList.remove('is-open');
+            }
+            metodosSeleccionadosTardio.delete('sin_pago');
+        } else {
+            ['efectivo', 'tarjeta', 'transferencia'].forEach(function(m) {
+                const methodCheck = document.getElementById('check_' + m + '_tardio');
+                const methodPanel = document.getElementById('panel_' + m + '_tardio');
+                const methodCard = methodCheck?.closest('.rv-pay-option, .metodo-pago-item');
+                const methodAmount = document.getElementById('monto_' + m + '_tardio');
+
+                if (methodCheck) methodCheck.checked = false;
+                if (methodPanel) methodPanel.classList.add('hidden');
+                if (methodCard) methodCard.classList.remove('is-open');
+                if (methodAmount) methodAmount.value = '';
+                metodosSeleccionadosTardio.delete(m);
+            });
+        }
+
         metodosSeleccionadosTardio.add(metodo);
         if (panel) panel.classList.remove('hidden');
         if (card) card.classList.add('is-open');
@@ -6144,6 +6178,17 @@ function setTardioPaymentChecked(metodo, checked) {
         metodosSeleccionadosTardio.delete(metodo);
         if (panel) panel.classList.add('hidden');
         if (card) card.classList.remove('is-open');
+
+        if (metodo !== 'sin_pago') {
+            const montoInput = document.getElementById('monto_' + metodo + '_tardio');
+            if (montoInput) montoInput.value = '';
+            if (metodo === 'efectivo') {
+                const recibidoInput = document.getElementById('recibido_efectivo_tardio');
+                const cambioSpan = document.getElementById('cambio_efectivo_tardio');
+                if (recibidoInput) recibidoInput.value = '';
+                if (cambioSpan) cambioSpan.textContent = '$0.00';
+            }
+        }
     }
 
     return true;
@@ -6161,7 +6206,7 @@ function aplicarPagoRapidoTardio(metodo) {
     }
 
     resetearPagosTardio();
-    setTardioPaymentChecked(metodo, true);
+    setTardioPaymentChecked(metodo, true, false);
     setMoneyValue('monto_' + metodo + '_tardio', reservacionTardioData.total);
 
     if (metodo === 'efectivo') {
@@ -6186,35 +6231,32 @@ function marcarEfectivoExactoTardio() {
 }
 
 function dividirPagoRapidoTardio() {
-    let metodos = getSelectedTardioPaymentMethods();
+    resetearPagosTardio();
 
-    if (metodos.length < 2) {
-        resetearPagosTardio();
-        metodos = ['efectivo', 'tarjeta'];
-    }
+    const metodos = ['efectivo', 'tarjeta'];
+    const partes = splitMoneyParts(reservacionTardioData.total, 2);
 
     metodos.forEach(function(metodo) {
-        setTardioPaymentChecked(metodo, true);
+        setTardioPaymentChecked(metodo, true, false);
     });
 
-    const partes = splitMoneyParts(reservacionTardioData.total, metodos.length);
+    const aplicarMitadYMitadTardio = function() {
+        setTardioPaymentChecked('efectivo', true, false);
+        setTardioPaymentChecked('tarjeta', true, false);
+        setMoneyValue('monto_efectivo_tardio', partes[0]);
+        setMoneyValue('recibido_efectivo_tardio', partes[0]);
+        setMoneyValue('monto_tarjeta_tardio', partes[1]);
+        mostrarResumenTardio();
+        calcularTotalesTardio({ preserveCash: true });
+        calcularCambioTardio({ preserveCash: true });
+    };
 
-    metodos.forEach(function(metodo, index) {
-        if (metodo !== 'efectivo') {
-            setMoneyValue('monto_' + metodo + '_tardio', partes[index]);
-        }
-    });
+    aplicarMitadYMitadTardio();
 
-    if (metodos.includes('efectivo')) {
-        setMoneyValue('monto_efectivo_tardio', partes[metodos.indexOf('efectivo')]);
-    }
-
-    mostrarResumenTardio();
-    calcularTotalesTardio();
-
-    if (metodos.includes('efectivo')) {
-        setMoneyValue('recibido_efectivo_tardio', moneyValue(document.getElementById('monto_efectivo_tardio')));
-        calcularCambioTardio();
+    if (window.requestAnimationFrame) {
+        window.requestAnimationFrame(aplicarMitadYMitadTardio);
+    } else {
+        setTimeout(aplicarMitadYMitadTardio, 0);
     }
 }
 
@@ -6231,17 +6273,22 @@ function calcularMontoEfectivoTardio() {
     setMoneyValue('monto_efectivo_tardio', montoEfectivo);
 }
 
-function calcularCambioTardio() {
+function calcularCambioTardio(options = {}) {
     const monto = moneyValue(document.getElementById('monto_efectivo_tardio'));
     const recibido = moneyValue(document.getElementById('recibido_efectivo_tardio'));
     const cambio = recibido - monto;
 
     document.getElementById('cambio_efectivo_tardio').textContent = formatMoney(cambio);
-    calcularTotalesTardio();
+    calcularTotalesTardio(options);
 }
 
-function calcularTotalesTardio() {
-    if (metodosSeleccionadosTardio.has('efectivo')) {
+function calcularTotalesTardio(options = {}) {
+    resetearConfirmacionTardio();
+    ocultarMensajeTardio();
+
+    const preserveCash = options && options.preserveCash === true;
+
+    if (metodosSeleccionadosTardio.has('efectivo') && !preserveCash) {
         calcularMontoEfectivoTardio();
     }
 
@@ -6264,11 +6311,11 @@ function calcularTotalesTardio() {
 
     const pendienteEl = document.getElementById('pendiente_tardio');
     if (pendiente > 0) {
-        pendienteEl.style.color = '#DC2626'; // Rojo
+        pendienteEl.style.color = '#DC2626';
     } else if (pendiente < 0) {
-        pendienteEl.style.color = '#16A34A'; // Verde (pago de más)
+        pendienteEl.style.color = '#16A34A';
     } else {
-        pendienteEl.style.color = '#6B7280'; // Gris (exacto)
+        pendienteEl.style.color = '#6B7280';
     }
 }
 
@@ -6338,9 +6385,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
+            ocultarMensajeTardio();
 
             // NUEVA VALIDACIÓN: Verificar factura
             if (!validarFacturaTardio()) {
+                mostrarMensajeTardio('Debe indicar si el cliente requiere factura.', 'warning');
                 document.getElementById('facturaContainerTardio').scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return false;
             }
@@ -6348,11 +6397,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // Validación para proceso express
             if (reservacionTardioData.tipo === 'express') {
                 if (metodosSeleccionadosTardio.size === 0) {
-                    alert('Debe seleccionar al menos un método de pago para el proceso express');
+                    mostrarMensajeTardio('Selecciona al menos un metodo de pago para el proceso express.', 'warning');
+                    document.getElementById('metodosPagoContainerTardio')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     return false;
                 }
 
-                if (!confirm('¿Confirma que desea realizar el PROCESO EXPRESS?\n\nEsto hará check-in Y check-out automáticamente ya que la reservación está vencida.')) {
+                if (!confirmacionExpressTardioLista) {
+                    confirmacionExpressTardioLista = true;
+                    mostrarMensajeTardio('Proceso express listo para confirmar: se registrara check-in y check-out en un solo paso. Presiona confirmar otra vez para procesarlo.', 'warning');
                     return false;
                 }
             }
@@ -6361,7 +6413,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (metodosSeleccionadosTardio.has('tarjeta')) {
                 const tipoTarjetaTardio = document.querySelector('#panel_tarjeta_tardio input[name="tipo_tarjeta_tardio"]:checked');
                 if (!tipoTarjetaTardio) {
-                    alert('Debe seleccionar el tipo de tarjeta: Crédito o Débito');
+                    mostrarMensajeTardio('Selecciona el tipo de tarjeta: credito o debito.', 'warning');
                     document.getElementById('panel_tarjeta_tardio').scrollIntoView({ behavior: 'smooth', block: 'center' });
                     const labelCreditoT = document.getElementById('label_credito_tardio');
                     const labelDebitoT = document.getElementById('label_debito_tardio');
@@ -6477,7 +6529,7 @@ function imprimirTicketTermico(modo = 'imprimir') {
     .hotel-name {
         text-align: center;
         font-size: 20px;
-        font-weight: 900;
+        font-weight: 700;
         letter-spacing: 2px;
         margin-bottom: 3px;
     }
@@ -6497,7 +6549,7 @@ function imprimirTicketTermico(modo = 'imprimir') {
         margin: 6px 0;
     }
     .section-title {
-        font-weight: 900;
+        font-weight: 700;
         font-size: 13px;
         margin-bottom: 4px;
         letter-spacing: 0.5px;
@@ -6510,12 +6562,12 @@ function imprimirTicketTermico(modo = 'imprimir') {
         font-size: 12px;
     }
     .row .label { color: #333; font-weight: 700; }
-    .row .value { font-weight: 900; text-align: right; }
+    .row .value { font-weight: 700; text-align: right; }
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
     table td { padding: 2px 0; font-weight: 700; }
     .total-row {
         font-size: 18px;
-        font-weight: 900;
+        font-weight: 700;
         text-align: center;
         padding: 6px 0;
         border-top: 2px dashed #000;
@@ -6533,7 +6585,7 @@ function imprimirTicketTermico(modo = 'imprimir') {
     .footer-msg {
         text-align: center;
         font-size: 13px;
-        font-weight: 900;
+        font-weight: 700;
         margin-top: 5px;
         padding: 4px;
         letter-spacing: 0.5px;
@@ -6627,15 +6679,22 @@ function imprimirTicketTermico(modo = 'imprimir') {
         ventana.document.write(ticketHtml);
         ventana.document.close();
     } else {
-        alert('Por favor permite las ventanas emergentes para imprimir el ticket.');
+        descargarTicketHtml(ticketHtml);
+        mostrarAvisoReservacion('El navegador bloqueo la ventana de impresion. Descargue el ticket para que puedas abrirlo o imprimirlo.', 'warning', 7200);
     }
 }
 
 // ========== FUNCIONES MODAL CAMBIAR MÉTODO DE PAGO ==========
 let metodosSeleccionadosCP = new Set();
 const totalReservacionCP = <?= json_encode(floatval($reservacion['precio_total'] ?? 0)) ?>;
+let cambioPagoConfirmacionLista = false;
+
+function resetConfirmacionCambioPago() {
+    cambioPagoConfirmacionLista = false;
+}
 
 function abrirModalCambiarPago() {
+    resetConfirmacionCambioPago();
     // Resetear todo
     metodosSeleccionadosCP.clear();
     ['efectivo', 'tarjeta', 'transferencia'].forEach(m => {
@@ -6665,11 +6724,13 @@ function abrirModalCambiarPago() {
 }
 
 function cerrarModalCambiarPago() {
+    resetConfirmacionCambioPago();
     document.getElementById('modalCambiarPago').style.display = 'none';
     document.body.style.overflow = 'auto';
 }
 
 function toggleMetodoPagoCP(metodo) {
+    resetConfirmacionCambioPago();
     const check = document.getElementById('check_' + metodo + '_cp');
     const panel = document.getElementById('panel_' + metodo + '_cp');
     const montoInput = document.getElementById('monto_' + metodo + '_cp');
@@ -6698,6 +6759,18 @@ function toggleMetodoPagoCP(metodo) {
 }
 
 function calcularTotalesCP() {
+    resetConfirmacionCambioPago();
+    if (metodosSeleccionadosCP.has('efectivo') && metodosSeleccionadosCP.size > 1) {
+        let otrosMontos = 0;
+        if (metodosSeleccionadosCP.has('tarjeta')) {
+            otrosMontos += moneyValue(document.getElementById('monto_tarjeta_cp'));
+        }
+        if (metodosSeleccionadosCP.has('transferencia')) {
+            otrosMontos += moneyValue(document.getElementById('monto_transferencia_cp'));
+        }
+        setMoneyValue('monto_efectivo_cp', Math.max(0, totalReservacionCP - otrosMontos));
+    }
+
     let totalAsignado = 0;
 
     ['efectivo', 'tarjeta', 'transferencia'].forEach(m => {
@@ -6717,21 +6790,6 @@ function calcularTotalesCP() {
     } else {
         document.getElementById('divPendienteCP').style.display = 'none';
     }
-
-    // Auto-calcular efectivo si hay otros métodos
-    if (metodosSeleccionadosCP.has('efectivo') && metodosSeleccionadosCP.size > 1) {
-        let otrosMontos = 0;
-        if (metodosSeleccionadosCP.has('tarjeta')) {
-            otrosMontos += moneyValue(document.getElementById('monto_tarjeta_cp'));
-        }
-        if (metodosSeleccionadosCP.has('transferencia')) {
-            otrosMontos += moneyValue(document.getElementById('monto_transferencia_cp'));
-        }
-        const efectivoCalc = totalReservacionCP - otrosMontos;
-        if (efectivoCalc >= 0) {
-            setMoneyValue('monto_efectivo_cp', efectivoCalc);
-        }
-    }
 }
 
 function confirmarCambioPago() {
@@ -6749,12 +6807,14 @@ function confirmarCambioPago() {
     // Validar que los montos cuadren
     let totalAsignado = 0;
     const pagosNuevos = [];
+    let validacionPagoOk = true;
 
     ['efectivo', 'tarjeta', 'transferencia'].forEach(m => {
         if (metodosSeleccionadosCP.has(m)) {
             const monto = moneyValue(document.getElementById('monto_' + m + '_cp'));
             if (monto <= 0) {
                 mostrarMsgCP('Todos los métodos seleccionados deben tener un monto mayor a 0', 'error');
+                validacionPagoOk = false;
                 return;
             }
             totalAsignado += monto;
@@ -6765,6 +6825,7 @@ function confirmarCambioPago() {
                 const tipoTarjeta = document.querySelector('input[name="tipo_tarjeta_cp"]:checked');
                 if (!tipoTarjeta) {
                     mostrarMsgCP('Debe seleccionar tipo de tarjeta: Crédito o Débito', 'error');
+                    validacionPagoOk = false;
                     return;
                 }
                 pago.tipo_tarjeta = tipoTarjeta.value;
@@ -6778,6 +6839,8 @@ function confirmarCambioPago() {
         }
     });
 
+    if (!validacionPagoOk) return;
+
     if (pagosNuevos.length === 0) return;
 
     if (Math.abs(totalAsignado - totalReservacionCP) > 0.01) {
@@ -6785,7 +6848,12 @@ function confirmarCambioPago() {
         return;
     }
 
-    if (!confirm('¿Está seguro de cambiar el método de pago de esta reservación?')) return;
+    if (!cambioPagoConfirmacionLista) {
+        cambioPagoConfirmacionLista = true;
+        mostrarMsgCP('Cambio listo para confirmar. Presiona Confirmar Cambio otra vez para actualizar el metodo de pago.', 'warning');
+        setTimeout(resetConfirmacionCambioPago, 7000);
+        return;
+    }
 
     const requiereFactura = document.querySelector('input[name="requiere_factura_cp"]:checked').value;
 
@@ -6811,18 +6879,8 @@ function confirmarCambioPago() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            cerrarModalCambiarPago();
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Método actualizado',
-                    text: data.message || 'El método de pago se cambió correctamente',
-                    confirmButtonColor: '#10B981'
-                }).then(() => location.reload());
-            } else {
-                alert(data.message || 'Método de pago actualizado correctamente');
-                location.reload();
-            }
+            mostrarMsgCP(data.message || 'Metodo de pago actualizado correctamente.', 'success');
+            setTimeout(() => location.reload(), 900);
         } else {
             mostrarMsgCP(data.message || 'Error al cambiar el método de pago', 'error');
         }
@@ -6840,10 +6898,12 @@ function confirmarCambioPago() {
 function mostrarMsgCP(msg, tipo) {
     const div = document.getElementById('msgValidacionCP');
     div.classList.remove('hidden');
-    div.style.background = tipo === 'error' ? '#FEF2F2' : '#F0FDF4';
-    div.style.color = tipo === 'error' ? '#DC2626' : '#059669';
-    div.style.border = '1px solid ' + (tipo === 'error' ? '#FECACA' : '#BBF7D0');
-    div.innerHTML = '<i class="fas fa-' + (tipo === 'error' ? 'exclamation-circle' : 'check-circle') + '" style="margin-right:0.25rem;"></i>' + msg;
+    const isError = tipo === 'error';
+    const isWarning = tipo === 'warning';
+    div.style.background = isError ? '#FEF2F2' : (isWarning ? '#FFF8E8' : '#F0FDF4');
+    div.style.color = isError ? '#DC2626' : (isWarning ? '#9A5F10' : '#059669');
+    div.style.border = '1px solid ' + (isError ? '#FECACA' : (isWarning ? '#F4D38E' : '#BBF7D0'));
+    div.innerHTML = '<i class="fas fa-' + (isError ? 'exclamation-circle' : (isWarning ? 'exclamation-triangle' : 'check-circle')) + '" style="margin-right:0.25rem;"></i>' + msg;
 
     setTimeout(() => div.classList.add('hidden'), 5000);
 }
@@ -6853,6 +6913,7 @@ function mostrarMsgCP(msg, tipo) {
 // =============================================
 
 function seleccionarFacturaCP(valor) {
+    resetConfirmacionCambioPago();
     const labelSi = document.getElementById('label_factura_si_cp');
     const labelNo = document.getElementById('label_factura_no_cp');
     const validacion = document.getElementById('facturaValidacionCP');
@@ -6923,6 +6984,11 @@ function resetearFacturaCP() {
 // Cerrar modal con clic fuera
 document.getElementById('modalCambiarPago').addEventListener('click', function(e) {
     if (e.target === this) cerrarModalCambiarPago();
+});
+
+document.querySelectorAll('input[name="tipo_tarjeta_cp"], #referencia_tarjeta_cp, #referencia_transferencia_cp').forEach(control => {
+    control.addEventListener('input', resetConfirmacionCambioPago);
+    control.addEventListener('change', resetConfirmacionCambioPago);
 });
 
 // Auto-imprimir ticket después de un check-in exitoso
@@ -7097,27 +7163,13 @@ async function confirmarCambioDias() {
                 const ac = data.ajuste_caja;
                 const metodoTexto = {efectivo:'Efectivo', tarjeta:'Tarjeta', transferencia:'Transferencia'};
                 const esDevolucion = ac.tipo === 'devolucion';
-
-                Swal.fire({
-                    icon: esDevolucion ? 'info' : 'success',
-                    title: esDevolucion ? 'Devolución registrada' : 'Cobro adicional registrado',
-                    html: `<div style="text-align:center;">
-                        <p style="font-size:1.1rem; margin-bottom:.5rem;">
-                            ${esDevolucion ? 'Se registró una <strong>devolución</strong> en caja por' : 'Se registró un <strong>cobro adicional</strong> en caja por'}
-                        </p>
-                        <p style="font-size:1.8rem; font-weight:700; color:${esDevolucion ? '#DC2626' : '#059669'}; margin:.5rem 0;">
-                            $${ac.monto.toLocaleString('es-MX', {minimumFractionDigits:2})}
-                        </p>
-                        <p style="font-size:.85rem; color:#6B7280;">
-                            Método: <strong>${metodoTexto[ac.metodo_pago] || ac.metodo_pago}</strong>
-                        </p>
-                        ${esDevolucion ? '<p style="font-size:.8rem; color:#9CA3AF; margin-top:.5rem;"><i class="fas fa-info-circle mr-1"></i>Recuerda entregar el cambio al huésped</p>' : ''}
-                    </div>`,
-                    confirmButtonColor: '#5C7A4E',
-                    confirmButtonText: 'Entendido'
-                }).then(() => {
-                    window.location.reload();
-                });
+                const monto = '$' + Number(ac.monto || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 });
+                const metodo = metodoTexto[ac.metodo_pago] || ac.metodo_pago || 'No definido';
+                const mensaje = esDevolucion
+                    ? 'Devolucion registrada en caja por ' + monto + '. Metodo: ' + metodo + '. Recuerda entregar el cambio al huesped.'
+                    : 'Cobro adicional registrado en caja por ' + monto + '. Metodo: ' + metodo + '.';
+                mostrarAvisoReservacion(mensaje + ' La vista se actualizara.', esDevolucion ? 'warning' : 'success', 5200);
+                setTimeout(() => window.location.reload(), 1800);
             } else {
                 window.location.reload();
             }
@@ -7206,842 +7258,894 @@ function mostrarPreviewMDD(tipo, html) {
     flex: 1;                /* ocupa todo el espacio sobrante */
 }
 
-/* Check-in confirm modal: scoped redesign, keeps IDs and form contract intact. */
+/* Check-in confirm modal: step-by-step wizard, keeps IDs and form contract intact. */
 #modalCheckIn.rv-checkin-modal {
-    padding: clamp(10px, 2vw, 24px);
-    background:
-        radial-gradient(circle at 16% 18%, color-mix(in srgb, var(--brand-accent, #BD9441) 24%, transparent), transparent 34%),
-        linear-gradient(145deg, rgba(7, 12, 22, .86), rgba(23, 29, 43, .74));
-    -webkit-backdrop-filter: blur(10px) saturate(1.05);
-    backdrop-filter: blur(10px) saturate(1.05);
+    --rv-checkin-ink: var(--brand-secondary, #14213D);
+    --rv-checkin-brand: var(--brand-primary, #1B2746);
+    --rv-checkin-accent: var(--brand-accent, #BD9441);
+    --rv-checkin-line: color-mix(in srgb, var(--rv-checkin-accent) 24%, #E7DDCB);
+    --rv-checkin-soft: color-mix(in srgb, var(--rv-checkin-accent) 9%, #FBF8F1);
+    --rv-checkin-muted: #6E7890;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(12px, 3vw, 28px);
+    background: rgba(18, 23, 31, .58);
     z-index: 12000;
 }
 
 #modalCheckIn .rv-checkin-shell {
-    width: min(960px, calc(100vw - 24px)) !important;
-    max-width: min(960px, calc(100vw - 24px)) !important;
-    max-height: min(92dvh, 900px);
-    display: grid !important;
-    grid-template-columns: minmax(250px, .9fr) minmax(0, 1.7fr);
+    width: min(640px, calc(100vw - 26px)) !important;
+    max-width: min(640px, calc(100vw - 26px)) !important;
+    height: min(94dvh, 740px);
+    max-height: min(94dvh, 740px);
     overflow: hidden;
-    border-radius: 28px;
-    background: #F8F4EC;
-    border: 1px solid rgba(255,255,255,.55);
-    box-shadow: 0 38px 92px -34px rgba(4, 8, 18, .78), 0 0 0 1px rgba(255,255,255,.22) inset;
-    animation: rvCheckInShow .32s cubic-bezier(.22, 1, .36, 1);
+    border-radius: 26px;
+    background: color-mix(in srgb, var(--rv-checkin-accent) 3%, #FFFEFB);
+    border: 1px solid color-mix(in srgb, var(--rv-checkin-accent) 18%, rgba(255,255,255,.9));
+    box-shadow: 0 32px 78px -40px rgba(4, 8, 18, .82), 0 0 0 1px rgba(255,255,255,.7) inset;
+    animation: rvCheckInShow .28s cubic-bezier(.22, 1, .36, 1);
 }
 
 @keyframes rvCheckInShow {
-    from { opacity: 0; transform: translateY(22px) scale(.985); }
+    from { opacity: 0; transform: translateY(18px) scale(.985); }
     to { opacity: 1; transform: none; }
 }
 
-#modalCheckIn .rv-checkin-hero {
-    position: relative;
-    isolation: isolate;
-    min-height: 100%;
-    padding: 28px !important;
-    display: flex !important;
-    flex-direction: column;
+@keyframes rvCheckInStageIn {
+    from { opacity: 0; transform: translateX(16px); }
+    to { opacity: 1; transform: none; }
+}
+
+#modalCheckIn .rv-checkin-form {
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    overflow: hidden;
+    padding: 0;
+    background: transparent;
+}
+
+#modalCheckIn .rv-checkin-topbar {
+    min-height: 88px;
+    display: flex;
+    align-items: center;
     justify-content: space-between;
-    gap: 28px;
-    color: #fff;
-    background:
-        linear-gradient(150deg, color-mix(in srgb, var(--brand-secondary, #0F172A) 88%, #111827), color-mix(in srgb, var(--brand-primary, #1B2746) 74%, #1F2937)),
-        var(--brand-secondary, #0F172A) !important;
-    border-bottom: 0 !important;
+    gap: 16px;
+    padding: 18px 26px 16px;
+    background: #FFFEFB;
+    border-bottom: 1px solid var(--rv-checkin-line);
 }
 
-#modalCheckIn .rv-checkin-hero::before {
-    content: '';
-    position: absolute;
-    inset: 14px;
-    z-index: -1;
-    border: 1px solid rgba(255,255,255,.13);
-    border-radius: 22px;
+#modalCheckIn .rv-checkin-titleblock {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
-#modalCheckIn .rv-checkin-hero::after {
-    content: '';
-    position: absolute;
-    right: -48px;
-    bottom: -48px;
-    z-index: -1;
-    width: 160px;
-    height: 160px;
-    border-radius: 50%;
-    background: color-mix(in srgb, var(--brand-accent, #BD9441) 34%, transparent);
-    filter: blur(4px);
+#modalCheckIn .rv-checkin-icon {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    background: color-mix(in srgb, #21A36A 13%, #F1FBF5);
+    color: #17945C;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, #21A36A 13%, transparent);
+}
+
+#modalCheckIn .rv-checkin-titleblock h3 {
+    margin: 0;
+    color: var(--rv-checkin-ink);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(1.35rem, 3vw, 1.75rem);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0;
+}
+
+#modalCheckIn .rv-checkin-titleblock p {
+    max-width: 48ch;
+    margin: 5px 0 0;
+    color: var(--rv-checkin-muted);
+    font-size: .82rem;
+    font-weight: 760;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
 }
 
 #modalCheckIn .rv-checkin-close {
-    position: absolute;
-    top: 18px;
-    right: 18px;
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
     display: grid;
     place-items: center;
-    border: 1px solid rgba(255,255,255,.24);
-    border-radius: 14px;
-    background: rgba(255,255,255,.13);
-    color: #fff;
+    border: 1px solid color-mix(in srgb, var(--rv-checkin-accent) 20%, #E4D9C6);
+    border-radius: 10px;
+    background: #FFFEFB;
+    color: #778197;
     cursor: pointer;
-    transition: transform .18s ease, background .18s ease;
+    transition: transform .18s ease, border-color .18s ease, color .18s ease, background .18s ease;
 }
 
 #modalCheckIn .rv-checkin-close:hover {
     transform: translateY(-1px);
-    background: rgba(255,255,255,.24);
+    border-color: color-mix(in srgb, var(--rv-checkin-accent) 44%, #E4D9C6);
+    color: var(--rv-checkin-ink);
+    background: var(--rv-checkin-soft);
 }
 
-#modalCheckIn .rv-checkin-hero > button {
-    position: absolute !important;
-    top: 18px !important;
-    right: 18px !important;
-    width: 38px !important;
-    height: 38px !important;
-    display: grid !important;
-    place-items: center !important;
-    border: 1px solid rgba(255,255,255,.24) !important;
-    border-radius: 14px !important;
-    background: rgba(255,255,255,.13) !important;
-    color: #fff !important;
-    cursor: pointer !important;
-    transition: transform .18s ease, background .18s ease !important;
-}
-
-#modalCheckIn .rv-checkin-hero > button:hover {
-    transform: translateY(-1px);
-    background: rgba(255,255,255,.24) !important;
-}
-
-#modalCheckIn .rv-checkin-hero h3 {
-    margin: 0 !important;
-    padding-top: 34px;
-    max-width: 9ch;
+#modalCheckIn .rv-checkin-stepper {
+    min-height: 66px;
     display: grid;
-    gap: 14px;
-    color: #fff !important;
-    font-family: 'Cormorant Garamond', Georgia, serif;
-    font-size: clamp(2rem, 4vw, 2.8rem) !important;
-    font-weight: 700 !important;
-    line-height: .9 !important;
-    letter-spacing: 0 !important;
-    text-wrap: balance;
+    grid-template-columns: auto minmax(34px, 1fr) auto minmax(34px, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 0 30px;
+    background: color-mix(in srgb, var(--rv-checkin-accent) 3%, #FBF8F1);
+    border-bottom: 1px solid var(--rv-checkin-line);
 }
 
-#modalCheckIn .rv-checkin-hero h3::after {
-    content: 'Valida llegada, pago mixto y factura antes de confirmar.';
-    max-width: 24ch;
-    color: rgba(255,255,255,.72);
-    font-family: 'Manrope', system-ui, sans-serif;
-    font-size: .86rem;
-    font-weight: 700;
-    line-height: 1.45;
-}
-
-#modalCheckIn .rv-checkin-hero h3 i {
-    width: 54px;
-    height: 54px;
-    margin: 0 !important;
-    display: grid;
-    place-items: center;
-    border-radius: 18px;
-    color: #fff !important;
-    background: rgba(255,255,255,.13);
-    border: 1px solid rgba(255,255,255,.22);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
-    font-size: 1.15rem;
-}
-
-#modalCheckIn .rv-checkin-flag {
-    width: max-content;
+#modalCheckIn .rv-checkin-step {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    border-radius: 999px;
-    background: rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.18);
-    color: rgba(255,255,255,.86);
-    font-size: .72rem;
-    font-weight: 850;
+    gap: 9px;
+    color: #97A0B3;
+    font-size: .84rem;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: color .18s ease;
 }
 
-#modalCheckIn .rv-checkin-heading {
-    display: grid;
-    gap: 14px;
-    padding-top: 26px;
-}
-
-#modalCheckIn .rv-checkin-icon {
-    width: 54px;
-    height: 54px;
+#modalCheckIn .rv-checkin-step span {
+    width: 29px;
+    height: 29px;
     display: grid;
     place-items: center;
-    border-radius: 18px;
-    background: rgba(255,255,255,.13);
-    border: 1px solid rgba(255,255,255,.22);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
-}
-
-#modalCheckIn .rv-checkin-heading h3 {
-    margin: 0;
-    max-width: 9ch;
-    color: #fff;
-    font-family: 'Cormorant Garamond', Georgia, serif;
-    font-size: clamp(2rem, 4vw, 2.8rem);
-    font-weight: 700;
-    line-height: .9;
-    letter-spacing: 0;
-    text-wrap: balance;
-}
-
-#modalCheckIn .rv-checkin-heading p {
-    max-width: 25ch;
-    margin: 0;
-    color: rgba(255,255,255,.72);
-    font-size: .86rem;
-    font-weight: 700;
-    line-height: 1.45;
-}
-
-#modalCheckIn .rv-checkin-total {
-    display: grid;
-    gap: 6px;
-    padding: 16px;
-    border-radius: 20px;
-    background: rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.18);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
-}
-
-#modalCheckIn .rv-checkin-total span {
-    color: rgba(255,255,255,.66);
-    font-size: .72rem;
-    font-weight: 850;
-    letter-spacing: 0;
-    text-transform: uppercase;
-}
-
-#modalCheckIn .rv-checkin-total strong {
-    color: #fff;
-    font-size: clamp(1.75rem, 4vw, 2.45rem);
-    font-weight: 950;
-    line-height: 1;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--rv-checkin-accent) 20%, #DFD6C8);
+    background: #FFFEFB;
+    color: #9AA3B6;
     font-variant-numeric: tabular-nums;
+    transition: background .18s ease, border-color .18s ease, color .18s ease;
 }
 
-#modalCheckIn .rv-checkin-form {
+#modalCheckIn .rv-checkin-step.is-current {
+    color: var(--rv-checkin-ink);
+}
+
+#modalCheckIn .rv-checkin-step.is-current span {
+    border-color: var(--rv-checkin-brand);
+    background: var(--rv-checkin-brand);
+    color: #fff;
+}
+
+#modalCheckIn .rv-checkin-step.is-complete {
+    color: #17945C;
+}
+
+#modalCheckIn .rv-checkin-step.is-complete span {
+    border-color: #1BA56B;
+    background: #1BA56B;
+    color: #fff;
+}
+
+#modalCheckIn .rv-checkin-line {
+    height: 2px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rv-checkin-accent) 16%, #E8E1D5);
+    transition: background .18s ease;
+}
+
+#modalCheckIn .rv-checkin-line.is-complete,
+#modalCheckIn .rv-checkin-line.is-current {
+    background: linear-gradient(90deg, #1BA56B, color-mix(in srgb, var(--rv-checkin-accent) 72%, #1BA56B));
+}
+
+#modalCheckIn .rv-checkin-content {
     min-height: 0;
-    max-height: min(92dvh, 900px);
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(175px, .58fr);
-    gap: 14px;
-    padding: 20px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 24px 26px 30px;
+    overflow-x: hidden;
     overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--brand-primary, #1B2746) 28%, #D7DCE3) transparent;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    -webkit-overflow-scrolling: touch;
 }
 
-#modalCheckIn .rv-checkin-body {
-    min-height: 0;
-    padding: 0 !important;
-    overflow: hidden;
+#modalCheckIn .rv-checkin-stage {
+    width: 100%;
+    min-height: min-content;
+    flex: 0 0 auto;
+    display: none;
+    align-content: start;
+    align-self: stretch;
+    gap: 16px;
+    animation: rvCheckInStageIn .22s ease;
 }
 
-#modalCheckIn .rv-arrival-field,
-#modalCheckIn .rv-total-field,
-#modalCheckIn .rv-payment-section,
-#modalCheckIn .rv-invoice-section,
+#modalCheckIn .rv-checkin-stage.is-active {
+    display: grid;
+}
+
+#modalCheckIn .rv-checkin-stage,
 #modalCheckIn .rv-checkin-summary {
-    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 10%, #E7DDD1) !important;
-    border-radius: 20px !important;
-    background: rgba(255,255,255,.92) !important;
-    box-shadow: 0 1px 0 rgba(255,255,255,.76) inset;
+    border: 1px solid var(--rv-checkin-line);
+    border-radius: 18px;
+    background: rgba(255,255,255,.78);
+    box-shadow: 0 1px 0 rgba(255,255,255,.86) inset;
 }
 
-#modalCheckIn .rv-arrival-field,
-#modalCheckIn .rv-total-field,
-#modalCheckIn .rv-payment-section,
-#modalCheckIn .rv-invoice-section {
-    margin: 0 !important;
-    padding: 16px !important;
+#modalCheckIn .rv-stage-arrival {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    align-content: center;
 }
 
-#modalCheckIn .rv-total-field {
-    background: linear-gradient(145deg, #fff, color-mix(in srgb, var(--brand-accent, #BD9441) 9%, #fff)) !important;
+#modalCheckIn .rv-total-card {
+    min-height: 98px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px;
+    border: 1px solid color-mix(in srgb, var(--rv-checkin-accent) 38%, #E6D2AD);
+    border-radius: 18px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--rv-checkin-accent) 16%, #FFF9EC), color-mix(in srgb, var(--rv-checkin-accent) 9%, #FFFDF7));
 }
 
-#modalCheckIn .rv-total-field > div {
-    padding: 0 !important;
-    background: transparent !important;
-    text-align: left !important;
-    border-radius: 0 !important;
+#modalCheckIn .rv-kicker {
+    display: block;
+    margin-bottom: 7px;
+    color: color-mix(in srgb, var(--rv-checkin-accent) 74%, #806037);
+    font-size: .78rem;
+    font-weight: 600;
 }
 
 #modalCheckIn #totalACobrar {
     display: block;
-    color: var(--brand-secondary, #0F172A) !important;
-    font-size: clamp(1.55rem, 4vw, 2.2rem) !important;
-    font-weight: 950 !important;
-    line-height: 1 !important;
+    color: var(--rv-checkin-ink) !important;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(2rem, 6vw, 2.65rem) !important;
+    font-weight: 800 !important;
+    line-height: .92 !important;
     font-variant-numeric: tabular-nums;
 }
 
-#modalCheckIn .rv-payment-section,
-#modalCheckIn .rv-invoice-section,
-#modalCheckIn .rv-checkin-summary,
-#modalCheckIn #mensajeValidacion,
-#modalCheckIn .rv-checkin-actions {
-    grid-column: 1 / -1;
-}
-
-#modalCheckIn .rv-checkin-scroll {
-    padding: 20px;
-    display: grid;
-    gap: 14px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--brand-primary, #1B2746) 28%, #D7DCE3) transparent;
-}
-
-#modalCheckIn .rv-checkin-block,
-#modalCheckIn .rv-checkin-summary {
-    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 10%, #E7DDD1);
-    border-radius: 20px;
-    background: rgba(255,255,255,.92);
-    box-shadow: 0 1px 0 rgba(255,255,255,.76) inset;
-}
-
-#modalCheckIn .rv-checkin-block { padding: 16px; }
-
-#modalCheckIn .rv-checkin-arrival {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(165px, .55fr);
-    gap: 14px;
-    align-items: end;
-    background:
-        linear-gradient(145deg, #fff, color-mix(in srgb, var(--brand-accent, #BD9441) 8%, #fff));
-}
-
-#modalCheckIn .rv-section-title {
-    margin: 0 0 10px;
-    color: var(--brand-secondary, #0F172A);
-    display: flex;
+#modalCheckIn .rv-date-pill {
+    min-height: 38px;
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    font-size: .94rem;
-    font-weight: 950;
+    gap: 8px;
+    padding: 0 14px;
+    border: 1px solid color-mix(in srgb, var(--rv-checkin-accent) 38%, #E6D2AD);
+    border-radius: 999px;
+    background: rgba(255,255,255,.74);
+    color: color-mix(in srgb, var(--rv-checkin-accent) 76%, #6C532F);
+    font-size: .82rem;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
-#modalCheckIn .rv-section-title small {
-    color: #7A8498;
-    font-size: .71rem;
-    font-weight: 800;
-    letter-spacing: 0;
-}
-
-#modalCheckIn .rv-section-title i { color: var(--brand-primary, #1B2746); }
-
-#modalCheckIn .rv-payment-section > h4,
-#modalCheckIn .rv-invoice-section > h4 {
-    margin: 0 0 10px !important;
-    color: var(--brand-secondary, #0F172A) !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    font-size: .94rem !important;
-    font-weight: 950 !important;
-}
-
-#modalCheckIn .rv-payment-section > h4 i,
-#modalCheckIn .rv-invoice-section > h4 i {
-    color: var(--brand-primary, #1B2746) !important;
-    margin-right: 0 !important;
-}
-
-#modalCheckIn .rv-field-label {
-    display: block;
-    margin-bottom: 7px;
-    color: #111827;
-    font-size: .72rem;
-    font-weight: 900;
-    letter-spacing: 0;
-    text-transform: uppercase;
-}
-
-#modalCheckIn .rv-field-input {
-    width: 100%;
-    min-height: 43px;
-    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 16%, #DFE4EA);
-    border-radius: 14px;
-    padding: 10px 12px;
-    background: #fff;
-    color: var(--brand-secondary, #0F172A);
-    font-size: .9rem;
-    font-weight: 760;
-    outline: none;
-    transition: border-color .18s ease, box-shadow .18s ease;
-}
-
-#modalCheckIn .rv-field-input:focus {
-    border-color: var(--brand-primary, #1B2746);
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-primary, #1B2746) 12%, transparent);
+#modalCheckIn .rv-arrival-field {
+    margin: 0 !important;
+    display: grid;
+    gap: 8px;
 }
 
 #modalCheckIn .form-label,
-#modalCheckIn .rv-arrival-field > label,
-#modalCheckIn .rv-total-field > label,
-#modalCheckIn .rv-pay-option label[style*="font-size: 0.75rem"] {
-    display: block !important;
-    margin-bottom: 7px !important;
-    color: #111827 !important;
-    font-size: .72rem !important;
+#modalCheckIn .rv-pay-panel label {
+    margin: 0;
+    color: #6F7890 !important;
+    font-size: .78rem !important;
     font-weight: 900 !important;
     letter-spacing: 0 !important;
-    text-transform: uppercase;
+    text-transform: none !important;
+}
+
+#modalCheckIn .rv-time-input {
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    border: 1px solid var(--rv-checkin-line);
+    border-radius: 14px;
+    background: #FFFEFB;
+}
+
+#modalCheckIn .rv-time-input i {
+    color: #AAB3C4;
 }
 
 #modalCheckIn input[type="time"],
 #modalCheckIn input[type="number"],
 #modalCheckIn input[type="text"] {
     width: 100% !important;
-    min-height: 43px !important;
-    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 16%, #DFE4EA) !important;
-    border-radius: 14px !important;
-    padding: 10px 12px !important;
-    background: #fff !important;
-    color: var(--brand-secondary, #0F172A) !important;
+    min-height: 38px !important;
+    border: 1px solid color-mix(in srgb, var(--rv-checkin-brand) 14%, #DEE3EA) !important;
+    border-radius: 12px !important;
+    padding: 8px 11px !important;
+    background: #FFFEFB !important;
+    color: var(--rv-checkin-ink) !important;
     font-size: .9rem !important;
-    font-weight: 760 !important;
+    font-weight: 850 !important;
     outline: none !important;
-    transition: border-color .18s ease, box-shadow .18s ease !important;
+    font-variant-numeric: tabular-nums;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+#modalCheckIn .rv-time-input input[type="time"] {
+    min-height: 50px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    font-size: 1.12rem !important;
+    font-weight: 950 !important;
 }
 
 #modalCheckIn input[type="time"]:focus,
 #modalCheckIn input[type="number"]:focus,
 #modalCheckIn input[type="text"]:focus {
-    border-color: var(--brand-primary, #1B2746) !important;
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-primary, #1B2746) 12%, transparent) !important;
+    border-color: var(--rv-checkin-brand) !important;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--rv-checkin-brand) 12%, transparent) !important;
 }
 
-#modalCheckIn .rv-pay-methods {
-    display: grid !important;
-    gap: 10px !important;
-}
-
-#modalCheckIn .rv-pay-option {
-    --rv-pay-color: var(--brand-primary, #1B2746);
-    position: relative;
-    overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--rv-pay-color) 16%, #E5E7EB) !important;
-    border-radius: 17px !important;
-    background: #fff !important;
-    padding: 0 !important;
-    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease, transform .18s ease;
-}
-
-#modalCheckIn .rv-pay-option::before {
-    content: '';
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 4px;
-    background: color-mix(in srgb, var(--rv-pay-color) 76%, #fff);
-    opacity: .68;
-}
-
-#modalCheckIn .rv-pay-option.is-open,
-#modalCheckIn .rv-pay-option:has(input[type="checkbox"]:checked) {
-    border-color: color-mix(in srgb, var(--rv-pay-color) 46%, #D7DCE3);
-    background: color-mix(in srgb, var(--rv-pay-color) 4%, #fff);
-    box-shadow: 0 18px 36px -28px color-mix(in srgb, var(--rv-pay-color) 70%, transparent);
-    transform: translateY(-1px);
-}
-
-#modalCheckIn .rv-pay-cash { --rv-pay-color: #148653; }
-#modalCheckIn .rv-pay-card { --rv-pay-color: #2563EB; }
-#modalCheckIn .rv-pay-transfer { --rv-pay-color: #7C3AED; }
-
-#modalCheckIn .rv-payment-shortcuts,
-#modalCheckInTardio .rv-payment-shortcuts {
+#modalCheckIn .rv-room-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+#modalCheckIn .rv-room-card {
+    min-height: 96px;
+    display: grid;
+    place-items: center;
+    gap: 4px;
+    padding: 14px;
+    border: 1px solid var(--rv-checkin-line);
+    border-radius: 14px;
+    background: #FFFEFB;
+    text-align: center;
+}
+
+#modalCheckIn .rv-room-card strong {
+    color: var(--rv-checkin-ink);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1.48rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+#modalCheckIn .rv-room-card span {
+    color: #63708A;
+    font-size: .78rem;
+    font-weight: 760;
+}
+
+#modalCheckIn .rv-room-card em {
+    min-height: 25px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 3px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, #20A36A 12%, #F0FBF5);
+    color: #15915B;
+    font-size: .75rem;
+    font-style: normal;
+    font-weight: 600;
+}
+
+#modalCheckIn .rv-room-card.is-courtesy em {
+    background: color-mix(in srgb, var(--rv-checkin-accent) 15%, #FFF8E8);
+    color: color-mix(in srgb, var(--rv-checkin-accent) 82%, #765621);
+}
+
+#modalCheckIn .rv-payment-section,
+#modalCheckIn .rv-invoice-section {
+    margin: 0 !important;
+    padding: 16px !important;
+    align-content: start;
+}
+
+#modalCheckIn .rv-payment-section > h4,
+#modalCheckIn .rv-invoice-section h4 {
+    margin: 0 0 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    color: var(--rv-checkin-ink) !important;
+    font-size: .92rem !important;
+    font-weight: 950 !important;
+}
+
+#modalCheckIn .rv-payment-section > h4 i,
+#modalCheckIn .rv-invoice-section h4 i {
+    color: color-mix(in srgb, var(--rv-checkin-accent) 74%, var(--rv-checkin-brand)) !important;
+    margin-right: 0 !important;
+}
+
+#modalCheckIn .rv-invoice-section h4 span {
+    color: #D34B4B;
+}
+
+#modalCheckIn .rv-payment-shortcuts {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
     gap: 8px;
-    margin: 0 0 12px;
+    margin: 0 0 16px;
 }
 
 #modalCheckIn .rv-money-shortcut,
-#modalCheckInTardio .rv-money-shortcut,
-#modalCheckIn .rv-money-mini,
-#modalCheckInTardio .rv-money-mini {
-    min-height: 38px;
+#modalCheckIn .rv-money-mini {
+    min-height: 32px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 7px;
-    border: 1px solid color-mix(in srgb, var(--rv-shortcut-color, var(--brand-primary, #1B2746)) 22%, #DCE2EA);
-    border-radius: 13px;
-    background: color-mix(in srgb, var(--rv-shortcut-color, var(--brand-primary, #1B2746)) 7%, #fff);
-    color: color-mix(in srgb, var(--rv-shortcut-color, var(--brand-primary, #1B2746)) 82%, #111827);
-    font-size: .77rem;
-    font-weight: 900;
-    line-height: 1.15;
+    padding: 0 12px;
+    border: 1px solid color-mix(in srgb, var(--rv-shortcut-color, var(--rv-checkin-accent)) 24%, #E2D8C9);
+    border-radius: 999px;
+    background: rgba(255,255,255,.7);
+    color: color-mix(in srgb, var(--rv-shortcut-color, var(--rv-checkin-brand)) 78%, #27324A);
+    font-size: .75rem;
+    font-weight: 700;
     cursor: pointer;
-    transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
 }
 
 #modalCheckIn .rv-money-shortcut:hover,
-#modalCheckInTardio .rv-money-shortcut:hover,
-#modalCheckIn .rv-money-mini:hover,
-#modalCheckInTardio .rv-money-mini:hover {
+#modalCheckIn .rv-money-mini:hover {
     transform: translateY(-1px);
-    border-color: color-mix(in srgb, var(--rv-shortcut-color, var(--brand-primary, #1B2746)) 42%, #DCE2EA);
-    box-shadow: 0 12px 24px -22px color-mix(in srgb, var(--rv-shortcut-color, var(--brand-primary, #1B2746)) 80%, transparent);
+    background: #FFFEFB;
+    border-color: color-mix(in srgb, var(--rv-shortcut-color, var(--rv-checkin-accent)) 44%, #E2D8C9);
+    box-shadow: 0 12px 22px -20px color-mix(in srgb, var(--rv-shortcut-color, var(--rv-checkin-brand)) 72%, transparent);
 }
 
-#modalCheckIn .rv-money-shortcut.is-cash,
-#modalCheckInTardio .rv-money-shortcut.is-cash { --rv-shortcut-color: #148653; }
-#modalCheckIn .rv-money-shortcut.is-card,
-#modalCheckInTardio .rv-money-shortcut.is-card { --rv-shortcut-color: #2563EB; }
-#modalCheckIn .rv-money-shortcut.is-transfer,
-#modalCheckInTardio .rv-money-shortcut.is-transfer { --rv-shortcut-color: #7C3AED; }
-#modalCheckIn .rv-money-shortcut.is-split,
-#modalCheckInTardio .rv-money-shortcut.is-split { --rv-shortcut-color: var(--brand-accent, #BD9441); }
+#modalCheckIn .rv-money-shortcut.is-cash { --rv-shortcut-color: #19A367; }
+#modalCheckIn .rv-money-shortcut.is-card { --rv-shortcut-color: #2C70E8; }
+#modalCheckIn .rv-money-shortcut.is-transfer { --rv-shortcut-color: #7A52E1; }
+#modalCheckIn .rv-money-shortcut.is-split { --rv-shortcut-color: var(--rv-checkin-accent); }
 
-#modalCheckIn .rv-money-mini,
-#modalCheckInTardio .rv-money-mini {
-    width: 100%;
-    min-height: 32px;
-    margin-top: 7px;
-    --rv-shortcut-color: #148653;
+#modalCheckIn .rv-pay-methods {
+    display: grid !important;
+    align-items: start;
+    gap: 10px !important;
 }
 
-#modalCheckIn .rv-pay-toggle {
-    width: 100%;
-    padding: 13px 14px 13px 17px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    color: var(--brand-secondary, #0F172A);
-    font-size: .9rem;
-    font-weight: 920;
+#modalCheckIn .rv-pay-option {
+    --rv-pay-color: var(--rv-checkin-brand);
+    overflow: hidden;
+    scroll-margin: 18px 0 104px;
+    border: 1px solid color-mix(in srgb, var(--rv-pay-color) 16%, #E1E7EE) !important;
+    border-radius: 14px !important;
+    background: #FFFEFB !important;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
 }
+
+#modalCheckIn .rv-pay-option.is-open,
+#modalCheckIn .rv-pay-option:has(input[type="checkbox"]:checked) {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--rv-pay-color) 56%, #DDE4EC) !important;
+    background: color-mix(in srgb, var(--rv-pay-color) 6%, #FFFEFB) !important;
+    box-shadow: 0 16px 30px -26px color-mix(in srgb, var(--rv-pay-color) 74%, transparent);
+}
+
+#modalCheckIn .rv-pay-cash { --rv-pay-color: #1BA56B; }
+#modalCheckIn .rv-pay-card { --rv-pay-color: #2C70E8; }
+#modalCheckIn .rv-pay-transfer { --rv-pay-color: #824CE6; }
 
 #modalCheckIn .rv-pay-option > label {
     width: 100% !important;
+    min-height: 48px;
     margin: 0 !important;
-    padding: 13px 14px 13px 17px !important;
     display: flex !important;
     align-items: center !important;
-    gap: 10px !important;
-    color: var(--brand-secondary, #0F172A) !important;
-    font-size: .9rem !important;
-    font-weight: 920 !important;
+    gap: 12px !important;
+    padding: 11px 14px !important;
+    color: var(--rv-checkin-ink) !important;
     cursor: pointer !important;
+    font-size: .88rem !important;
+    font-weight: 950 !important;
     text-transform: none !important;
     letter-spacing: 0 !important;
-}
-
-#modalCheckIn .rv-pay-option > label i {
-    color: var(--rv-pay-color) !important;
-    margin-right: 0 !important;
 }
 
 #modalCheckIn .rv-pay-option > label input {
     width: 18px !important;
     height: 18px !important;
-    margin-right: 0 !important;
+    margin: 0 !important;
     accent-color: var(--rv-pay-color) !important;
 }
 
-#modalCheckIn .rv-pay-toggle input {
-    width: 18px;
-    height: 18px;
-    accent-color: var(--rv-pay-color);
+#modalCheckIn .rv-pay-option > label i {
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--rv-pay-color) 11%, #F7FAFC);
+    color: var(--rv-pay-color) !important;
+    margin-right: 0 !important;
+    font-size: .75rem;
 }
-
-#modalCheckIn .rv-pay-toggle i { color: var(--rv-pay-color); }
 
 #modalCheckIn .rv-pay-panel {
-    border-top: 1px solid color-mix(in srgb, var(--rv-pay-color) 18%, #E5E7EB);
-    padding: 13px 14px 15px 17px;
-    background: color-mix(in srgb, var(--rv-pay-color) 6%, #fff);
-}
-
-#modalCheckIn .rv-pay-option > div[id^="panel_"] {
     margin-top: 0 !important;
-    border-top: 1px solid color-mix(in srgb, var(--rv-pay-color) 18%, #E5E7EB);
-    padding: 13px 14px 15px 17px;
-    background: color-mix(in srgb, var(--rv-pay-color) 6%, #fff);
-}
-
-#modalCheckIn #panel_efectivo > div:first-child,
-#modalCheckIn #panel_tarjeta > div:last-child,
-#modalCheckIn #panel_transferencia > div:first-child {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 10px !important;
-}
-
-#modalCheckIn #panel_tarjeta > div:first-child {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 8px !important;
-    margin-bottom: 10px !important;
+    padding: 10px 14px 12px;
+    border-top: 1px solid color-mix(in srgb, var(--rv-pay-color) 16%, #E1E7EE);
+    background: color-mix(in srgb, var(--rv-pay-color) 5%, #FFFEFB);
 }
 
 #modalCheckIn .rv-input-grid,
 #modalCheckIn .rv-card-type,
 #modalCheckIn .rv-invoice-grid {
     display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
 }
 
-#modalCheckIn .rv-change-pill {
-    margin-top: 9px;
-    padding: 9px 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    border-radius: 14px;
-    background: rgba(255,255,255,.78);
-    color: #475467;
-    font-size: .82rem;
-    font-weight: 850;
+#modalCheckIn .rv-card-type {
+    margin-bottom: 9px;
 }
-
-#modalCheckIn #panel_efectivo > div:last-child {
-    margin-top: 9px !important;
-    padding: 9px 10px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 10px !important;
-    border-radius: 14px !important;
-    background: rgba(255,255,255,.78) !important;
-    color: #475467 !important;
-    font-size: .82rem !important;
-    font-weight: 850 !important;
-}
-
-#modalCheckIn #cambio_efectivo {
-    color: #148653 !important;
-    font-variant-numeric: tabular-nums;
-}
-
-#modalCheckIn .rv-change-pill strong {
-    color: #148653;
-    font-variant-numeric: tabular-nums;
-}
-
-#modalCheckIn .rv-change-pill strong.text-red-600 { color: #DC2626; }
 
 #modalCheckIn .rv-radio-chip,
 #modalCheckIn .rv-invoice-choice {
-    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 13%, #DCE2EA) !important;
-    border-radius: 15px !important;
-    background: #fff !important;
+    border: 1px solid color-mix(in srgb, var(--rv-checkin-brand) 13%, #DCE3EA) !important;
+    border-radius: 13px !important;
+    background: #FFFEFB !important;
     cursor: pointer;
-    transition: border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
 }
 
 #modalCheckIn .rv-radio-chip {
-    min-height: 42px;
+    min-height: 38px;
     display: flex !important;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 9px !important;
-    color: #1E40AF !important;
-    font-size: .82rem !important;
-    font-weight: 880 !important;
+    padding: 8px 10px !important;
+    color: #2C70E8 !important;
+    font-size: .8rem !important;
+    font-weight: 900 !important;
 }
 
 #modalCheckIn .rv-radio-chip input,
 #modalCheckIn .rv-invoice-choice input {
-    accent-color: var(--brand-primary, #1B2746);
+    accent-color: var(--rv-checkin-brand);
 }
 
 #modalCheckIn .rv-radio-chip:has(input:checked) {
-    border-color: #2563EB !important;
-    background: #EFF6FF !important;
-    box-shadow: 0 12px 24px -22px rgba(37,99,235,.82);
+    border-color: #2C70E8 !important;
+    background: #EEF5FF !important;
+}
+
+#modalCheckIn .rv-change-pill {
+    min-height: 34px;
+    margin-top: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,.72);
+    color: #63708A;
+    font-size: .8rem;
+    font-weight: 600;
+}
+
+#modalCheckIn .rv-change-pill strong {
+    color: #15915B;
+    font-variant-numeric: tabular-nums;
+}
+
+#modalCheckIn .rv-money-mini {
+    width: 100%;
+    margin-top: 7px;
+    --rv-shortcut-color: #19A367;
+}
+
+#modalCheckIn .rv-final-grid {
+    display: grid;
+    gap: 14px;
 }
 
 #modalCheckIn .rv-invoice-choice {
-    min-height: 70px;
+    min-height: 78px;
     display: flex !important;
     align-items: flex-start !important;
-    gap: 10px !important;
-    padding: 13px !important;
+    gap: 11px !important;
+    padding: 14px !important;
+}
+
+#modalCheckIn .rv-invoice-choice:hover {
+    transform: translateY(-1px);
 }
 
 #modalCheckIn .rv-invoice-choice strong {
     display: block;
-    color: var(--brand-secondary, #0F172A) !important;
-    font-size: .88rem !important;
-    font-weight: 920 !important;
+    color: var(--rv-checkin-ink) !important;
+    font-size: .91rem !important;
+    font-weight: 950 !important;
 }
 
-#modalCheckIn .rv-invoice-choice > div > span {
-    display: block;
-    color: var(--brand-secondary, #0F172A) !important;
-    font-size: .88rem !important;
-    font-weight: 920 !important;
+#modalCheckIn .rv-invoice-choice p {
+    margin: 4px 0 0 !important;
+    color: #7A8498 !important;
+    font-size: .76rem !important;
+    font-weight: 720 !important;
+    line-height: 1.3 !important;
 }
 
-#modalCheckIn .rv-invoice-choice p,
-#modalCheckIn .rv-invoice-choice span span {
-    display: block;
-    margin-top: 2px;
-    color: #667085 !important;
-    font-size: .72rem !important;
-    font-weight: 700 !important;
-    line-height: 1.35 !important;
+#modalCheckIn #label_factura_si.is-selected,
+#modalCheckIn #label_factura_si:has(input:checked) {
+    border-color: color-mix(in srgb, #2C70E8 62%, #DCE3EA) !important;
+    background: #EEF5FF !important;
+    box-shadow: 0 13px 24px -22px rgba(44,112,232,.82);
 }
 
-#modalCheckIn #label_factura_si.is-selected {
-    border-color: color-mix(in srgb, #2563EB 62%, #DCE2EA) !important;
-    background: #EFF6FF !important;
-    box-shadow: 0 12px 24px -22px rgba(37,99,235,.82);
-}
-
-#modalCheckIn #label_factura_no.is-selected {
-    border-color: color-mix(in srgb, var(--brand-primary, #1B2746) 38%, #DCE2EA) !important;
-    background: color-mix(in srgb, var(--brand-primary, #1B2746) 5%, #fff) !important;
+#modalCheckIn #label_factura_no.is-selected,
+#modalCheckIn #label_factura_no:has(input:checked) {
+    border-color: color-mix(in srgb, var(--rv-checkin-accent) 62%, #DCE3EA) !important;
+    background: color-mix(in srgb, var(--rv-checkin-accent) 14%, #FFFEFB) !important;
+    box-shadow: 0 13px 24px -22px color-mix(in srgb, var(--rv-checkin-accent) 75%, transparent);
 }
 
 #modalCheckIn .rv-checkin-note,
 #modalCheckIn .rv-checkin-message {
-    margin-top: 9px !important;
-    border-radius: 13px !important;
-    padding: 10px 11px !important;
-    font-size: .78rem !important;
+    margin-top: 10px !important;
+    border-radius: 12px !important;
+    padding: 10px 12px !important;
+    font-size: .8rem !important;
     font-weight: 780 !important;
     line-height: 1.35 !important;
 }
 
+#modalCheckIn .rv-checkin-note p,
+#modalCheckIn .rv-checkin-message p {
+    margin: 0;
+}
+
 #modalCheckIn .rv-checkin-note {
-    border: 1px solid #BFDBFE !important;
-    background: #EFF6FF !important;
-    color: #1E40AF !important;
+    border: 1px solid #BFD4F5 !important;
+    background: #F0F6FF !important;
+    color: #255AA7 !important;
 }
 
 #modalCheckIn .rv-checkin-message {
+    scroll-margin: 18px 0 104px;
     border: 1px solid #FECACA !important;
     background: #FEF2F2 !important;
     color: #B42318 !important;
 }
 
 #modalCheckIn .rv-checkin-message.is-warning {
-    border-color: #FDE68A !important;
-    background: #FFFBEB !important;
-    color: #92400E !important;
+    border-color: #F5D894 !important;
+    background: #FFF8EA !important;
+    color: #926118 !important;
 }
 
 #modalCheckIn .rv-checkin-message.is-info {
-    border-color: #BFDBFE !important;
-    background: #EFF6FF !important;
-    color: #1D4ED8 !important;
+    border-color: #BFD4F5 !important;
+    background: #F0F6FF !important;
+    color: #255AA7 !important;
 }
 
 #modalCheckIn .rv-checkin-message.is-success {
-    border-color: #BBF7D0 !important;
-    background: #F0FDF4 !important;
-    color: #047857 !important;
+    border-color: #BFE9D3 !important;
+    background: #F0FBF5 !important;
+    color: #15835A !important;
+}
+
+#modalCheckIn #mensajeValidacion:not(.hidden) {
+    width: 100%;
+    flex: 0 0 auto;
+    align-self: stretch;
+    margin-top: 12px !important;
+    position: static;
 }
 
 #modalCheckIn .rv-checkin-summary {
-    padding: 15px 16px !important;
-    margin: 0 !important;
-    background: linear-gradient(135deg, #fff, #F6F2EA) !important;
+    padding: 0 !important;
+    overflow: hidden;
 }
 
 #modalCheckIn .rv-checkin-summary h5 {
-    margin: 0 0 8px !important;
-    color: var(--brand-secondary, #0F172A) !important;
-    font-size: .82rem !important;
-    font-weight: 950 !important;
+    margin: 0 !important;
+    padding: 13px 16px;
+    background: linear-gradient(135deg, var(--rv-checkin-brand), var(--rv-checkin-ink));
+    color: #fff !important;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1.05rem !important;
+    font-weight: 800 !important;
 }
 
 #modalCheckIn .rv-summary-row {
+    min-height: 38px;
     display: flex !important;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    padding: 4px 0;
-    color: #667085 !important;
-    font-size: .82rem !important;
+    gap: 14px;
+    padding: 0 16px;
+    border-top: 1px solid color-mix(in srgb, var(--rv-checkin-accent) 15%, #E8E0D4);
+    color: #6E7890 !important;
+    font-size: .84rem !important;
     font-weight: 780 !important;
-    margin-bottom: 0 !important;
+    margin: 0 !important;
 }
 
 #modalCheckIn .rv-summary-row strong {
-    color: var(--brand-secondary, #0F172A) !important;
+    color: var(--rv-checkin-ink) !important;
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
 }
 
-#modalCheckIn .rv-summary-row.is-paid strong { color: #148653; }
-#modalCheckIn .rv-summary-row.is-due strong { color: #DC2626; }
-#modalCheckIn .rv-summary-row.is-change strong { color: #2563EB; }
+#modalCheckIn .rv-summary-row.is-paid strong { color: #15915B !important; }
+#modalCheckIn .rv-summary-row.is-due strong { color: #DC3E3E !important; }
+#modalCheckIn .rv-summary-row.is-change strong { color: #2C70E8 !important; }
 
 #modalCheckIn .rv-checkin-actions {
-    position: sticky;
-    bottom: 0;
-    display: flex !important;
-    gap: 10px !important;
-    padding: 15px 20px 20px !important;
-    border-top: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 10%, #E7DDD1);
-    background: color-mix(in srgb, #F8F4EC 90%, transparent) !important;
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
+    display: grid !important;
+    grid-template-columns: minmax(120px, auto) 1fr minmax(190px, auto);
+    align-items: center;
+    gap: 14px !important;
+    padding: 16px 24px !important;
+    border-top: 1px solid var(--rv-checkin-line);
+    background: #FFFEFB !important;
 }
 
 #modalCheckIn .rv-btn-cancel,
 #modalCheckIn .rv-btn-confirm {
     min-height: 45px !important;
-    border-radius: 14px !important;
-    padding: 0 16px !important;
-    font-size: .9rem !important;
-    font-weight: 930 !important;
-    cursor: pointer;
-    transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
-}
-
-#modalCheckIn .rv-btn-cancel {
-    flex: .9;
-    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 13%, #DCE2EA) !important;
-    color: var(--brand-secondary, #0F172A) !important;
-    background: #fff !important;
-}
-
-#modalCheckIn .rv-btn-confirm {
-    flex: 1.25;
-    border: 0 !important;
-    color: #fff !important;
-    background: linear-gradient(135deg, #148653, #0F6F49) !important;
-    box-shadow: 0 16px 32px -19px rgba(20,134,83,.92) !important;
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
     gap: 8px;
+    border-radius: 13px !important;
+    padding: 0 16px !important;
+    font-size: .9rem !important;
+    font-weight: 950 !important;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+}
+
+#modalCheckIn .rv-btn-cancel {
+    border: 1px solid var(--rv-checkin-line) !important;
+    color: #4E5A70 !important;
+    background: #FFFEFB !important;
+}
+
+#modalCheckIn .rv-btn-confirm {
+    border: 0 !important;
+    color: #fff !important;
+    background: linear-gradient(135deg, color-mix(in srgb, #20A36A 76%, var(--rv-checkin-brand)), #15835A) !important;
+    box-shadow: 0 17px 32px -20px rgba(20,131,88,.9) !important;
 }
 
 #modalCheckIn .rv-btn-confirm:disabled {
     opacity: .58;
     cursor: not-allowed;
-    box-shadow: none;
+    box-shadow: none !important;
 }
 
 #modalCheckIn .rv-btn-cancel:hover,
 #modalCheckIn .rv-btn-confirm:not(:disabled):hover {
     transform: translateY(-1px);
+}
+
+#modalCheckIn .rv-step-dots {
+    display: inline-flex;
+    justify-content: center;
+    gap: 7px;
+}
+
+#modalCheckIn .rv-step-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rv-checkin-accent) 25%, #E4DED2);
+    transition: width .18s ease, background .18s ease;
+}
+
+#modalCheckIn .rv-step-dots span.is-active {
+    width: 24px;
+    background: var(--rv-checkin-accent);
+}
+
+@media (max-width: 680px) {
+    #modalCheckIn.rv-checkin-modal {
+        align-items: flex-end;
+        padding: 8px 8px 0;
+    }
+
+    #modalCheckIn .rv-checkin-shell {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 96dvh;
+        max-height: 96dvh;
+        border-radius: 24px 24px 0 0;
+    }
+
+    #modalCheckIn .rv-checkin-topbar {
+        min-height: 82px;
+        padding: 16px 16px 14px;
+    }
+
+    #modalCheckIn .rv-checkin-titleblock h3 {
+        font-family: 'Manrope', system-ui, sans-serif;
+        font-size: 1.05rem;
+        line-height: 1.15;
+    }
+
+    #modalCheckIn .rv-checkin-titleblock p {
+        font-size: .75rem;
+    }
+
+    #modalCheckIn .rv-checkin-stepper {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        padding: 0 16px;
+    }
+
+    #modalCheckIn .rv-checkin-line {
+        display: none;
+    }
+
+    #modalCheckIn .rv-checkin-step {
+        justify-content: center;
+        gap: 6px;
+        font-size: .76rem;
+    }
+
+    #modalCheckIn .rv-checkin-content {
+        padding: 16px 16px 92px;
+    }
+
+    #modalCheckIn .rv-total-card {
+        align-items: flex-start;
+        flex-direction: column;
+        min-height: 92px;
+    }
+
+    #modalCheckIn .rv-room-grid,
+    #modalCheckIn .rv-input-grid,
+    #modalCheckIn .rv-card-type,
+    #modalCheckIn .rv-invoice-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    #modalCheckIn .rv-checkin-actions {
+        grid-template-columns: 1fr;
+        padding: 12px 16px 14px !important;
+    }
+
+    #modalCheckIn .rv-step-dots {
+        order: -1;
+    }
+}
+
+@media (max-height: 720px) and (min-width: 681px) {
+    #modalCheckIn .rv-checkin-topbar { min-height: 76px; padding-block: 14px; }
+    #modalCheckIn .rv-checkin-stepper { min-height: 56px; }
+    #modalCheckIn .rv-checkin-content { padding-block: 18px 82px; }
+    #modalCheckIn .rv-total-card { min-height: 84px; padding: 16px; }
+    #modalCheckIn .rv-room-card { min-height: 84px; }
+    #modalCheckIn .rv-payment-section,
+    #modalCheckIn .rv-invoice-section { padding: 14px !important; }
+    #modalCheckIn .rv-pay-option > label { min-height: 44px; }
+    #modalCheckIn .rv-checkin-actions { padding-block: 12px !important; }
 }
 
 /* Check-in tardio / proceso express: same operating surface as check-in. */
@@ -8526,6 +8630,12 @@ function mostrarPreviewMDD(tipo, html) {
     color: #B42318 !important;
 }
 
+#modalCheckInTardio .rv-checkin-message.is-warning {
+    border-color: #F4D38E !important;
+    background: #FFF8E8 !important;
+    color: #9A5F10 !important;
+}
+
 #modalCheckInTardio #resumen_totales_tardio {
     display: block;
     background: linear-gradient(135deg, #fff, #F6F2EA) !important;
@@ -8712,7 +8822,7 @@ function mostrarPreviewMDD(tipo, html) {
     }
     #modalCheckIn .rv-checkin-form {
         grid-template-columns: 1fr;
-        padding: 14px;
+        padding: 0;
     }
     #modalCheckInTardio .rv-tardio-fields {
         grid-template-columns: 1fr;
@@ -8753,6 +8863,420 @@ function mostrarPreviewMDD(tipo, html) {
     #modalCheckInTardio .rv-btn-confirm { width: 100%; }
 }
 
+/* Reservation index-aligned check-in modal shell. */
+#modalCheckIn.rv-checkin-modal {
+    --rv-checkin-ink: var(--brand-secondary, #0F172A);
+    --rv-checkin-brand: var(--brand-primary, #1B2746);
+    --rv-checkin-accent: var(--brand-accent, #BD9441);
+    --rv-checkin-line: color-mix(in srgb, var(--rv-checkin-brand) 10%, #E7DDD1);
+    --rv-checkin-soft: color-mix(in srgb, var(--rv-checkin-accent) 7%, #F8F4EC);
+    --rv-checkin-muted: #667085;
+    padding: clamp(12px, 2.5vw, 28px);
+    background:
+        radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--rv-checkin-brand) 22%, transparent), transparent 34%),
+        linear-gradient(135deg, rgba(8, 13, 24, .82), rgba(26, 32, 45, .74));
+    -webkit-backdrop-filter: blur(10px) saturate(1.1);
+    backdrop-filter: blur(10px) saturate(1.1);
+}
+
+#modalCheckIn .rv-checkin-shell {
+    width: min(920px, 100%) !important;
+    max-width: min(920px, calc(100vw - 24px)) !important;
+    height: min(91dvh, 860px) !important;
+    max-height: min(91dvh, 860px) !important;
+    display: block !important;
+    border-radius: 28px;
+    background: #F8F4EC;
+    border: 1px solid rgba(255, 255, 255, .54);
+    box-shadow: 0 36px 90px -36px rgba(7, 10, 18, .78), 0 0 0 1px rgba(255,255,255,.28) inset;
+}
+
+#modalCheckIn .rv-checkin-form {
+    height: 100%;
+    max-height: min(91dvh, 860px);
+    display: grid;
+    grid-template-columns: minmax(230px, .82fr) minmax(0, 1.75fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    padding: 0;
+    overflow: hidden;
+}
+
+#modalCheckIn .rv-checkin-topbar {
+    grid-column: 1;
+    grid-row: 1 / 4;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 26px;
+    color: #FFFEFB;
+    position: relative;
+    isolation: isolate;
+    border: 0;
+    background:
+        linear-gradient(155deg, color-mix(in srgb, var(--rv-checkin-ink) 86%, #111827), color-mix(in srgb, var(--rv-checkin-brand) 74%, #1F2937)),
+        var(--rv-checkin-ink);
+}
+
+#modalCheckIn .rv-checkin-topbar::before {
+    content: '';
+    position: absolute;
+    inset: 14px;
+    z-index: -1;
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 22px;
+}
+
+#modalCheckIn .rv-checkin-topbar::after {
+    content: '';
+    position: absolute;
+    right: -42px;
+    bottom: -46px;
+    z-index: -1;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--rv-checkin-accent) 32%, transparent);
+    filter: blur(4px);
+    opacity: .65;
+}
+
+#modalCheckIn .rv-checkin-titleblock {
+    display: grid;
+    align-items: start;
+    gap: 14px;
+    min-width: 0;
+    padding-top: 28px;
+}
+
+#modalCheckIn .rv-checkin-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 18px;
+    display: inline-grid;
+    place-items: center;
+    color: #FFFEFB;
+    background: rgba(255,255,255,.13);
+    border: 1px solid rgba(255,255,255,.22);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+#modalCheckIn .rv-checkin-titleblock h3 {
+    max-width: 9ch;
+    margin: 0;
+    color: #FFFEFB;
+    font-family: inherit;
+    font-size: clamp(1.55rem, 3.8vw, 2.3rem);
+    line-height: .96;
+    font-weight: 600;
+    text-wrap: balance;
+}
+
+#modalCheckIn .rv-checkin-titleblock p {
+    max-width: 23ch;
+    margin: 0;
+    color: rgba(255,255,255,.72);
+    font-size: .84rem;
+    font-weight: 700;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+#modalCheckIn .rv-checkin-close {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 38px;
+    height: 38px;
+    border: 1px solid rgba(255,255,255,.24);
+    border-radius: 14px;
+    color: #FFFEFB;
+    background: rgba(255,255,255,.13);
+}
+
+#modalCheckIn .rv-checkin-close:hover {
+    color: #FFFEFB;
+    background: rgba(255,255,255,.25);
+    border-color: rgba(255,255,255,.34);
+}
+
+#modalCheckIn .rv-checkin-stepper {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 66px;
+    padding: 0 22px;
+    background: color-mix(in srgb, var(--rv-checkin-accent) 4%, #F8F4EC);
+    border-bottom: 1px solid var(--rv-checkin-line);
+}
+
+#modalCheckIn .rv-checkin-content {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--rv-checkin-brand) 28%, #D7DCE3) transparent;
+}
+
+#modalCheckIn .rv-checkin-actions {
+    grid-column: 2;
+    grid-row: 3;
+    display: grid !important;
+    grid-template-columns: minmax(120px, auto) 1fr minmax(190px, auto);
+    gap: 10px !important;
+    padding: 15px 20px 20px !important;
+    border-top: 1px solid var(--rv-checkin-line);
+    background: color-mix(in srgb, #F8F4EC 90%, transparent) !important;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+
+#modalCheckIn .rv-checkin-stage,
+#modalCheckIn .rv-checkin-summary {
+    border: 1px solid var(--rv-checkin-line);
+    border-radius: 20px;
+    background: rgba(255,255,255,.92);
+    box-shadow: 0 1px 0 rgba(255,255,255,.76) inset;
+}
+
+#modalCheckIn .rv-stage-arrival {
+    padding: 16px;
+    border: 1px solid var(--rv-checkin-line);
+    background: rgba(255,255,255,.92);
+    box-shadow: 0 1px 0 rgba(255,255,255,.76) inset;
+}
+
+#modalCheckIn .rv-total-card {
+    min-height: 98px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--rv-checkin-brand) 10%, #E7DDD1);
+    border-radius: 20px;
+    background:
+        linear-gradient(145deg, #FFFEFB, color-mix(in srgb, var(--rv-checkin-accent) 9%, #FFFEFB));
+}
+
+#modalCheckIn .rv-total-card::after {
+    content: '';
+    position: absolute;
+    right: 14px;
+    top: 14px;
+    width: 28px;
+    height: 3px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rv-checkin-accent) 70%, #FFFEFB);
+}
+
+#modalCheckIn .rv-kicker,
+#modalCheckIn .form-label,
+#modalCheckIn .rv-pay-panel label {
+    color: var(--rv-checkin-brand) !important;
+    font-size: .72rem !important;
+    font-weight: 900 !important;
+    letter-spacing: .05em !important;
+    text-transform: uppercase !important;
+}
+
+#modalCheckIn #totalACobrar {
+    margin-top: 4px;
+    color: var(--rv-checkin-ink) !important;
+    font-family: inherit;
+    font-size: clamp(1.55rem, 4vw, 2.2rem) !important;
+    font-weight: 950 !important;
+    line-height: 1 !important;
+}
+
+#modalCheckIn .rv-time-input,
+#modalCheckIn .rv-room-card,
+#modalCheckIn .rv-pay-option,
+#modalCheckIn .rv-radio-chip,
+#modalCheckIn .rv-invoice-choice {
+    border-radius: 17px !important;
+    background: #FFFEFB !important;
+}
+
+#modalCheckIn .rv-payment-section,
+#modalCheckIn .rv-invoice-section {
+    padding: 16px !important;
+}
+
+#modalCheckIn .rv-payment-section > h4,
+#modalCheckIn .rv-invoice-section h4 {
+    color: var(--rv-checkin-ink) !important;
+    font-size: .95rem !important;
+    font-weight: 900 !important;
+}
+
+#modalCheckIn .rv-pay-option.is-open,
+#modalCheckIn .rv-pay-option:has(input[type="checkbox"]:checked) {
+    border-color: color-mix(in srgb, var(--rv-pay-color) 46%, #D7DCE3) !important;
+    background: color-mix(in srgb, var(--rv-pay-color) 4%, #FFFEFB) !important;
+    box-shadow: 0 18px 36px -28px color-mix(in srgb, var(--rv-pay-color) 70%, transparent);
+}
+
+#modalCheckIn .rv-pay-panel {
+    padding: 13px 14px 15px 17px;
+    border-top: 1px solid color-mix(in srgb, var(--rv-pay-color) 18%, #E5E7EB);
+    background: color-mix(in srgb, var(--rv-pay-color) 6%, #FFFEFB);
+}
+
+#modalCheckIn .rv-checkin-summary {
+    padding: 15px 16px !important;
+    background: linear-gradient(135deg, #FFFEFB, #F6F2EA);
+}
+
+#modalCheckIn .rv-checkin-summary h5 {
+    margin: 0 0 8px !important;
+    padding: 0;
+    background: transparent;
+    color: var(--rv-checkin-ink) !important;
+    font-family: inherit;
+    font-size: .82rem !important;
+    font-weight: 950 !important;
+}
+
+#modalCheckIn .rv-summary-row {
+    min-height: auto;
+    padding: 4px 0;
+    border-top: 0;
+    color: #667085 !important;
+    font-size: .82rem !important;
+}
+
+#modalCheckIn .rv-btn-cancel,
+#modalCheckIn .rv-btn-confirm {
+    min-height: 44px !important;
+    border-radius: 13px !important;
+    font-weight: 900 !important;
+}
+
+#modalCheckIn .rv-btn-cancel {
+    border: 1px solid color-mix(in srgb, var(--rv-checkin-brand) 13%, #DCE2EA) !important;
+    color: var(--rv-checkin-ink) !important;
+    background: #FFFEFB !important;
+}
+
+#modalCheckIn .rv-btn-confirm {
+    background: linear-gradient(135deg, #148653, #0F6F49) !important;
+    box-shadow: 0 15px 30px -18px rgba(20,134,83,.9) !important;
+}
+
+@media (max-width: 860px) {
+    #modalCheckIn .rv-checkin-shell {
+        height: min(94dvh, 860px) !important;
+        max-height: min(94dvh, 860px) !important;
+        border-radius: 20px;
+    }
+
+    #modalCheckIn .rv-checkin-form {
+        height: 100%;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto minmax(0, 1fr) auto;
+    }
+
+    #modalCheckIn .rv-checkin-topbar {
+        grid-column: 1;
+        grid-row: 1;
+        min-height: auto;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
+        padding: 18px 64px 18px 18px;
+    }
+
+    #modalCheckIn .rv-checkin-topbar::before,
+    #modalCheckIn .rv-checkin-topbar::after {
+        display: none;
+    }
+
+    #modalCheckIn .rv-checkin-titleblock {
+        grid-template-columns: 44px minmax(0, 1fr);
+        align-items: center;
+        gap: 12px;
+        padding-top: 0;
+    }
+
+    #modalCheckIn .rv-checkin-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 15px;
+    }
+
+    #modalCheckIn .rv-checkin-titleblock h3 {
+        max-width: none;
+        font-size: 1.08rem;
+        line-height: 1.15;
+    }
+
+    #modalCheckIn .rv-checkin-titleblock p {
+        max-width: none;
+        grid-column: 2;
+        font-size: .76rem;
+    }
+
+    #modalCheckIn .rv-checkin-stepper {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    #modalCheckIn .rv-checkin-content {
+        grid-column: 1;
+        grid-row: 3;
+        padding: 14px;
+    }
+
+    #modalCheckIn .rv-checkin-actions {
+        grid-column: 1;
+        grid-row: 4;
+        padding: 12px 14px 14px !important;
+    }
+}
+
+@media (max-width: 540px) {
+    #modalCheckIn.rv-checkin-modal {
+        align-items: flex-end;
+        padding: 8px 8px 0;
+    }
+
+    #modalCheckIn .rv-checkin-shell {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 96dvh !important;
+        max-height: 96dvh !important;
+        border-radius: 20px 20px 0 0;
+    }
+
+    #modalCheckIn .rv-checkin-stepper {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        padding: 0 16px;
+    }
+
+    #modalCheckIn .rv-checkin-line {
+        display: none;
+    }
+
+    #modalCheckIn .rv-checkin-actions {
+        grid-template-columns: 1fr;
+    }
+
+    #modalCheckIn .rv-step-dots {
+        order: -1;
+    }
+
+    #modalCheckIn .rv-btn-cancel,
+    #modalCheckIn .rv-btn-confirm {
+        width: 100%;
+    }
+}
 
 @keyframes slideUp {
     from {

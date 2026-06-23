@@ -28,6 +28,38 @@ class HabitacionController extends Controller {
         require_hotel_module('habitaciones');
         return true;
     }
+
+    private function erroresCamposHabitacion(array $errores): array {
+        $fieldErrors = [];
+
+        foreach ($errores as $mensaje) {
+            $mensaje = trim((string)$mensaje);
+            if ($mensaje === '') {
+                continue;
+            }
+
+            $lower = strtolower($mensaje);
+            $campo = null;
+
+            if (strpos($lower, 'numero') !== false || strpos($lower, 'número') !== false) {
+                $campo = 'numero';
+            } elseif (strpos($lower, 'tipo') !== false) {
+                $campo = 'tipo';
+            } elseif (strpos($lower, 'precio') !== false || strpos($lower, 'tarifa') !== false) {
+                $campo = 'precio_base';
+            } elseif (strpos($lower, 'piso') !== false) {
+                $campo = 'piso';
+            } elseif (strpos($lower, 'imagen') !== false || strpos($lower, 'foto') !== false || strpos($lower, 'archivo') !== false) {
+                $campo = 'fotos[]';
+            }
+
+            if ($campo !== null) {
+                $fieldErrors[$campo][] = $mensaje;
+            }
+        }
+
+        return $fieldErrors;
+    }
     
     /**
      * Listado de habitaciones
@@ -710,8 +742,11 @@ error_log(print_r($ocupacion_actual, true));
             $errores[] = 'Ya existe una habitación con ese número';
         }
         
+        $fieldErrors = $this->erroresCamposHabitacion($errores);
+
         if (!empty($errores)) {
             save_old_input($_POST);
+            save_form_errors($fieldErrors);
             set_mensaje(implode('<br>', $errores), 'error');
             $this->redirect('habitaciones/create');
         }
@@ -757,6 +792,7 @@ error_log(print_r($ocupacion_actual, true));
             $db->rollBack();
             set_mensaje('Error: ' . $e->getMessage(), 'error');
             save_old_input($_POST);
+            save_form_errors($this->erroresCamposHabitacion([$e->getMessage()]));
             $this->redirect('habitaciones/create');
         }
     }
@@ -955,8 +991,11 @@ public function historial() {
             }
         }
         
+        $fieldErrors = $this->erroresCamposHabitacion($errores);
+
         if (!empty($errores)) {
             save_old_input($_POST);
+            save_form_errors($fieldErrors);
             set_mensaje(implode('<br>', $errores), 'error');
             $this->redirect('habitaciones/' . $id . '/edit');
         }
@@ -969,6 +1008,7 @@ public function historial() {
         } else {
             set_mensaje('Error al actualizar la habitación', 'error');
             save_old_input($_POST);
+            save_form_errors(['numero' => ['No se pudo actualizar la habitacion. Revisa los datos e intentalo de nuevo.']]);
             $this->redirect('habitaciones/' . $id . '/edit');
         }
     }

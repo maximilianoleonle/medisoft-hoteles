@@ -237,14 +237,19 @@ $workerCashReportViewPath = $appRoot . '/app/views/trabajadores/reporte_pagos_ca
 $workerPayrollPreviewViewPath = $appRoot . '/app/views/trabajadores/nomina_preview.php';
 $workerPayrollPeriodsViewPath = $appRoot . '/app/views/trabajadores/nomina_periodos.php';
 $workerPayrollPeriodsReportViewPath = $appRoot . '/app/views/trabajadores/nomina_periodos_reporte.php';
+$workerPayrollSnapshotPaymentsReportViewPath = $appRoot . '/app/views/trabajadores/nomina_pagos_snapshot_reporte.php';
+$workerPayrollAuditViewPath = $appRoot . '/app/views/trabajadores/nomina_auditoria_consolidada.php';
+$workerPayrollExpedientViewPath = $appRoot . '/app/views/trabajadores/nomina_expediente_administrativo.php';
 $workerPayrollPeriodDetailViewPath = $appRoot . '/app/views/trabajadores/nomina_periodo_detalle.php';
 $workerLaborReceiptViewPath = $appRoot . '/app/views/trabajadores/recibo_laboral_informativo.php';
 $workerLaborReceiptPdfServicePath = $appRoot . '/app/services/TrabajadorReciboLaboralPdfService.php';
 $workerPayrollPeriodServicePath = $appRoot . '/app/services/TrabajadorNominaPeriodoService.php';
+$workerPayrollSnapshotPaymentServicePath = $appRoot . '/app/services/TrabajadorNominaSnapshotPagoService.php';
 $auditServicePath = $appRoot . '/app/services/AuditService.php';
 $paymentServicePath = $appRoot . '/app/services/TrabajadorPagoCajaService.php';
 $rollbackToolPath = $appRoot . '/tools/saas/probar_pago_laboral_caja.php';
 $payrollPeriodRollbackToolPath = $appRoot . '/tools/saas/probar_nomina_periodo_snapshot.php';
+$payrollSnapshotPaymentRollbackToolPath = $appRoot . '/tools/saas/probar_pago_snapshot_prenomina_caja.php';
 $payrollPeriodMigrationPath = $projectRoot . '/migrations/20260621_001_fase_5e_l_a_nomina_periodos_persistentes.sql';
 $contractPath = '';
 $contractCandidates = [
@@ -275,10 +280,16 @@ if (!is_file($configPath)) {
 
 if ($contractPath !== '') {
     $contractCode = (string) file_get_contents($contractPath);
+    $contractKeepsConceptBoundary = strpos($contractCode, 'trabajador_pagos no representa pagos reales') !== false
+        || (
+            strpos($contractCode, 'trabajador_pagos') !== false
+            && strpos($contractCode, 'conceptos laborales') !== false
+            && strpos($contractCode, 'pagos reales') !== false
+        );
     if (
         strpos($contractCode, 'CONTRATO_5E_0_PAGOS_LABORALES_CAJA_COMPLETADO') !== false
         && strpos($contractCode, 'trabajador_pagos_caja') !== false
-        && strpos($contractCode, 'trabajador_pagos no representa pagos reales') !== false
+        && $contractKeepsConceptBoundary
     ) {
         lpcOk('Contrato 5E-0 detectado y coherente con entidad independiente futura.');
     } else {
@@ -431,6 +442,111 @@ if ($pdo instanceof PDO) {
             lpcWarning('No se pudo contar trabajador_pagos_caja.', 'Revisar la tabla antes de QA de pago laboral con Caja.');
         } else {
             lpcOk('Conteo informativo trabajador_pagos_caja: ' . (string)$pagosCajaCount . ' registro(s).');
+        }
+
+        $hasNominaPeriodoLink = lpcColumnExists($pdo, $database, 'trabajador_pagos_caja', 'nomina_periodo_id');
+        $hasNominaDetalleLink = lpcColumnExists($pdo, $database, 'trabajador_pagos_caja', 'nomina_periodo_detalle_id');
+        if (!$hasNominaPeriodoLink && !$hasNominaDetalleLink) {
+            lpcOk('5E-P-0: trazabilidad fuerte de snapshot aun no aplicada; trabajador_pagos_caja conserva contrato nullable futuro.');
+        } elseif ($hasNominaPeriodoLink !== $hasNominaDetalleLink) {
+            lpcError(
+                '5E-P-0: trazabilidad fuerte incompleta en trabajador_pagos_caja.',
+                'Agregar ambas columnas nullable juntas: nomina_periodo_id y nomina_periodo_detalle_id, solo con migracion autorizada.'
+            );
+        } else {
+            $missingSnapshotPaymentIndexes = [];
+            foreach ([
+                'idx_trabajador_pagos_caja_nomina_periodo',
+                'idx_trabajador_pagos_caja_nomina_detalle',
+            ] as $index) {
+                if (!lpcIndexExists($pdo, $database, 'trabajador_pagos_caja', $index)) {
+                    $missingSnapshotPaymentIndexes[] = $index;
+                }
+            }
+
+            if ($missingSnapshotPaymentIndexes) {
+                lpcError(
+                    '5E-P-0: faltan indices de trazabilidad snapshot en trabajador_pagos_caja: ' . implode(', ', $missingSnapshotPaymentIndexes) . '.',
+                    'Crear indices de busqueda por periodo/detalle en la migracion autorizada 5E-P-A.'
+                );
+            } else {
+                lpcOk('5E-P-A: columnas e indices de trazabilidad snapshot detectados en trabajador_pagos_caja.');
+            }
+
+            $missingSnapshotPaymentConstraints = [];
+            foreach ([
+                'fk_trabajador_pagos_caja_nomina_periodo',
+                'fk_trabajador_pagos_caja_nomina_detalle',
+            ] as $constraint) {
+                if (!lpcConstraintExists($pdo, $database, 'trabajador_pagos_caja', $constraint)) {
+                    $missingSnapshotPaymentConstraints[] = $constraint;
+                }
+            }
+
+            if ($missingSnapshotPaymentConstraints) {
+                lpcError(
+                    '5E-P-A: faltan FKs restrictivas de trazabilidad snapshot: ' . implode(', ', $missingSnapshotPaymentConstraints) . '.',
+                    'Aplicar o reconciliar la migracion 20260622_001_fase_5e_p_a_trazabilidad_pago_snapshot.sql.'
+                );
+            } else {
+                lpcOk('5E-P-A: FKs restrictivas de trazabilidad snapshot detectadas.');
+            }
+
+            lpcReportZero(
+                'pagos snapshot con relacion parcial',
+                lpcCountScalar($pdo, 'SELECT COUNT(*) FROM trabajador_pagos_caja
+                    WHERE (nomina_periodo_id IS NULL AND nomina_periodo_detalle_id IS NOT NULL)
+                       OR (nomina_periodo_id IS NOT NULL AND nomina_periodo_detalle_id IS NULL)'),
+                'Reconciliar trazabilidad: periodo y detalle deben guardarse juntos o ambos NULL.'
+            );
+            lpcReportZero(
+                'pagos snapshot con periodo inexistente o de otro hotel',
+                lpcCountScalar($pdo, 'SELECT COUNT(*)
+                    FROM trabajador_pagos_caja pc
+                    LEFT JOIN trabajador_nomina_periodos p
+                      ON p.id = pc.nomina_periodo_id
+                     AND p.hotel_id = pc.hotel_id
+                    WHERE pc.nomina_periodo_id IS NOT NULL
+                      AND p.id IS NULL'),
+                'Corregir nomina_periodo_id para que apunte a snapshot del mismo hotel.'
+            );
+            lpcReportZero(
+                'pagos snapshot con detalle inexistente o de otro hotel',
+                lpcCountScalar($pdo, 'SELECT COUNT(*)
+                    FROM trabajador_pagos_caja pc
+                    LEFT JOIN trabajador_nomina_periodo_detalles d
+                      ON d.id = pc.nomina_periodo_detalle_id
+                     AND d.hotel_id = pc.hotel_id
+                    WHERE pc.nomina_periodo_detalle_id IS NOT NULL
+                      AND d.id IS NULL'),
+                'Corregir nomina_periodo_detalle_id para que apunte a detalle del mismo hotel.'
+            );
+            lpcReportZero(
+                'pagos snapshot con detalle que no pertenece al periodo o trabajador pagado',
+                lpcCountScalar($pdo, 'SELECT COUNT(*)
+                    FROM trabajador_pagos_caja pc
+                    INNER JOIN trabajador_nomina_periodos p
+                      ON p.id = pc.nomina_periodo_id
+                     AND p.hotel_id = pc.hotel_id
+                    INNER JOIN trabajador_nomina_periodo_detalles d
+                      ON d.id = pc.nomina_periodo_detalle_id
+                     AND d.hotel_id = pc.hotel_id
+                    WHERE pc.nomina_periodo_id IS NOT NULL
+                      AND (d.periodo_id <> p.id OR d.trabajador_id <> pc.trabajador_id)'),
+                'Reconciliar trazabilidad: el detalle debe pertenecer al periodo y al trabajador pagado.'
+            );
+
+            if (lpcTableExists($pdo, $database, 'migrations')) {
+                $snapshotTraceMigrationCount = lpcCountScalar($pdo, "SELECT COUNT(*) FROM migrations WHERE nombre = '20260622_001_fase_5e_p_a_trazabilidad_pago_snapshot.sql' AND estado = 'ejecutada'");
+                if ($snapshotTraceMigrationCount === 1) {
+                    lpcOk('Migracion 5E-P-A de trazabilidad snapshot registrada como ejecutada.');
+                } else {
+                    lpcError(
+                        'Columnas 5E-P-A existen pero la migracion de trazabilidad snapshot no figura como ejecutada.',
+                        'Reconciliar tabla migrations para 20260622_001_fase_5e_p_a_trazabilidad_pago_snapshot.sql.'
+                    );
+                }
+            }
         }
 
         if (lpcTableExists($pdo, $database, 'migrations')) {
@@ -732,6 +848,30 @@ if ($routes === []) {
             && trim((string)$route['path'], '/') === 'trabajadores/nomina/periodos/exportar'
             && strtolower((string)$route['controller']) === 'trabajador'
             && strtolower((string)$route['action']) === 'exportarnominaperiodos';
+        $isReadOnlyPayrollSnapshotPaymentsReport = strtolower((string)$route['method']) === 'get'
+            && trim((string)$route['path'], '/') === 'trabajadores/nomina/periodos/pagos-snapshot'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'reportenominapagossnapshot';
+        $isReadOnlyPayrollSnapshotPaymentsExport = strtolower((string)$route['method']) === 'get'
+            && trim((string)$route['path'], '/') === 'trabajadores/nomina/periodos/pagos-snapshot/exportar'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'exportarnominapagossnapshot';
+        $isReadOnlyPayrollAudit = strtolower((string)$route['method']) === 'get'
+            && trim((string)$route['path'], '/') === 'trabajadores/nomina/auditoria'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'auditorianomina';
+        $isReadOnlyPayrollAuditExport = strtolower((string)$route['method']) === 'get'
+            && trim((string)$route['path'], '/') === 'trabajadores/nomina/auditoria/exportar'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'exportarauditorianomina';
+        $isReadOnlyPayrollExpedient = strtolower((string)$route['method']) === 'get'
+            && trim((string)$route['path'], '/') === 'trabajadores/nomina/expediente'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'expedientenomina';
+        $isReadOnlyPayrollExpedientExport = strtolower((string)$route['method']) === 'get'
+            && trim((string)$route['path'], '/') === 'trabajadores/nomina/expediente/exportar'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'exportarexpedientenomina';
         $isReadOnlyPayrollPeriodDetail = strtolower((string)$route['method']) === 'get'
             && trim((string)$route['path'], '/') === 'trabajadores/nomina/periodos/{id:[0-9]+}'
             && strtolower((string)$route['controller']) === 'trabajador'
@@ -748,6 +888,10 @@ if ($routes === []) {
             && trim((string)$route['path'], '/') === 'trabajadores/nomina/periodos/{id:[0-9]+}/anular'
             && strtolower((string)$route['controller']) === 'trabajador'
             && strtolower((string)$route['action']) === 'anularnominaperiodo';
+        $isControlledPayrollSnapshotPayment = strtolower((string)$route['method']) === 'post'
+            && trim((string)$route['path'], '/') === 'trabajadores/nomina/periodos/{periodo:[0-9]+}/detalles/{detalle:[0-9]+}/registrar-pago-caja'
+            && strtolower((string)$route['controller']) === 'trabajador'
+            && strtolower((string)$route['action']) === 'registrarpagosnapshotnomina';
         $isReadOnlyLaborReceipt = strtolower((string)$route['method']) === 'get'
             && trim((string)$route['path'], '/') === 'trabajadores/{id:[0-9]+}/recibo-laboral'
             && strtolower((string)$route['controller']) === 'trabajador'
@@ -773,10 +917,17 @@ if ($routes === []) {
             && !$isReadOnlyPayrollPeriodPreview
             && !$isReadOnlyPayrollPeriodReport
             && !$isReadOnlyPayrollPeriodExport
+            && !$isReadOnlyPayrollSnapshotPaymentsReport
+            && !$isReadOnlyPayrollSnapshotPaymentsExport
+            && !$isReadOnlyPayrollAudit
+            && !$isReadOnlyPayrollAuditExport
+            && !$isReadOnlyPayrollExpedient
+            && !$isReadOnlyPayrollExpedientExport
             && !$isReadOnlyPayrollPeriodDetail
             && !$isControlledPayrollPeriodClose
             && !$isControlledPayrollPeriodApprove
             && !$isControlledPayrollPeriodCancel
+            && !$isControlledPayrollSnapshotPayment
             && !$isReadOnlyLaborReceipt
             && !$isReadOnlyLaborReceiptPdf
             && !$isPaymentRoute
@@ -865,6 +1016,39 @@ if ($routes === []) {
         );
     }
 
+    $payrollSnapshotPaymentReportRouteOk = lpcRouteExists($routes, 'trabajadores/nomina/periodos/pagos-snapshot', 'get');
+    $payrollSnapshotPaymentExportRouteOk = lpcRouteExists($routes, 'trabajadores/nomina/periodos/pagos-snapshot/exportar', 'get');
+    if ($payrollSnapshotPaymentReportRouteOk && $payrollSnapshotPaymentExportRouteOk) {
+        lpcOk('Rutas 5E-Q-A GET /trabajadores/nomina/periodos/pagos-snapshot y /exportar registradas como conciliacion read-only.');
+    } else {
+        lpcWarning(
+            'Rutas 5E-Q-A de conciliacion de pagos snapshot no estan completas.',
+            'Registrar solo GET /trabajadores/nomina/periodos/pagos-snapshot y GET /trabajadores/nomina/periodos/pagos-snapshot/exportar.'
+        );
+    }
+
+    $payrollAuditRouteOk = lpcRouteExists($routes, 'trabajadores/nomina/auditoria', 'get');
+    $payrollAuditExportRouteOk = lpcRouteExists($routes, 'trabajadores/nomina/auditoria/exportar', 'get');
+    if ($payrollAuditRouteOk && $payrollAuditExportRouteOk) {
+        lpcOk('Rutas 5E-R-A GET /trabajadores/nomina/auditoria y /exportar registradas como auditoria read-only.');
+    } else {
+        lpcWarning(
+            'Rutas 5E-R-A de auditoria consolidada de nomina no estan completas.',
+            'Registrar solo GET /trabajadores/nomina/auditoria y GET /trabajadores/nomina/auditoria/exportar.'
+        );
+    }
+
+    $payrollExpedientRouteOk = lpcRouteExists($routes, 'trabajadores/nomina/expediente', 'get');
+    $payrollExpedientExportRouteOk = lpcRouteExists($routes, 'trabajadores/nomina/expediente/exportar', 'get');
+    if ($payrollExpedientRouteOk && $payrollExpedientExportRouteOk) {
+        lpcOk('Rutas 5E-S-A GET /trabajadores/nomina/expediente y /exportar registradas como expediente read-only.');
+    } else {
+        lpcWarning(
+            'Rutas 5E-S-A de expediente administrativo de nomina no estan completas.',
+            'Registrar solo GET /trabajadores/nomina/expediente y GET /trabajadores/nomina/expediente/exportar.'
+        );
+    }
+
     $payrollPeriodPersistentRoutesOk = lpcRouteExists($routes, 'trabajadores/nomina/periodos/{id:[0-9]+}', 'get')
         && lpcRouteExists($routes, 'trabajadores/nomina/periodos/cerrar', 'post')
         && lpcRouteExists($routes, 'trabajadores/nomina/periodos/{id:[0-9]+}/aprobar', 'post')
@@ -917,6 +1101,20 @@ if ($routes === []) {
             'Registrar el POST delegado a Trabajador::registrarPagoCajaAction.'
         );
     }
+
+    $payrollSnapshotPaymentRouteOk = lpcRouteExists(
+        $routes,
+        'trabajadores/nomina/periodos/{periodo:[0-9]+}/detalles/{detalle:[0-9]+}/registrar-pago-caja',
+        'post'
+    );
+    if ($payrollSnapshotPaymentRouteOk) {
+        lpcOk('Ruta 5E-N-A POST pago individual desde snapshot aprobado registrada.');
+    } else {
+        lpcError(
+            'Ruta 5E-N-A POST pago individual desde snapshot aprobado no esta registrada.',
+            'Registrar el POST delegado a Trabajador::registrarPagoSnapshotNominaAction con parametros periodo/detalle.'
+        );
+    }
 }
 
 if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($workerCashReportViewPath)) {
@@ -943,7 +1141,11 @@ if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($work
         && strpos($workerCashReportViewCode, 'method="GET"') !== false
         && strpos($workerCashReportViewCode, 'method="POST"') === false
         && strpos($workerCashReportViewCode, 'csrf_field()') === false
-        && strpos($workerCashReportViewCode, 'Solo GET') !== false
+        && (
+            strpos($workerCashReportViewCode, 'Solo GET') !== false
+            || strpos($workerCashReportViewCode, 'Solo consulta') !== false
+            || stripos($workerCashReportViewCode, 'read-only') !== false
+        )
     ) {
         lpcOk('Reporte 14E de pagos laborales con Caja es read-only con filtros GET y sin escrituras.');
     } else {
@@ -987,9 +1189,14 @@ if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($work
         && strpos($workerPayrollPreviewViewCode, 'method="GET"') !== false
         && strpos($workerPayrollPreviewViewCode, 'method="POST"') === false
         && strpos($workerPayrollPreviewViewCode, 'csrf_field()') === false
-        && strpos($workerPayrollPreviewViewCode, 'Solo GET') !== false
+        && (
+            strpos($workerPayrollPreviewViewCode, 'Solo GET') !== false
+            || strpos($workerPayrollPreviewViewCode, 'Solo consulta') !== false
+            || stripos($workerPayrollPreviewViewCode, 'read-only') !== false
+        )
         && strpos($workerPayrollPreviewViewCode, 'registrar-pago-caja') === false
-        && strpos($workerPayrollPreviewViewCode, 'Pagar') === false
+        && stripos($workerPayrollPreviewViewCode, 'registrar pago') === false
+        && stripos($workerPayrollPreviewViewCode, 'pago masivo') === false
     ) {
         lpcOk('Preview 5E-G-A de nomina por periodo es GET/read-only y no expone pagos masivos.');
     } else {
@@ -1078,19 +1285,73 @@ if (
         && strpos($workerPayrollPeriodDetailViewCode, 'motivo') !== false
         && strpos($workerPayrollPeriodDetailViewCode, 'No genera nomina oficial') !== false
         && strpos($workerPayrollPeriodsViewCode, 'registrar-pago-caja') === false
-        && strpos($workerPayrollPeriodDetailViewCode, 'registrar-pago-caja') === false
     ) {
-        lpcOk('Periodos 5E-L-A de pre-nomina permiten cierre/aprobacion/anulacion persistente con CSRF/token, sin pagos, timbrado ni Caja.');
+        lpcOk('Periodos 5E-L-A de pre-nomina permiten cierre/aprobacion/anulacion persistente con CSRF/token, sin pagos masivos, timbrado ni dispersion.');
     } else {
         lpcError(
             'Periodos 5E-L-A de pre-nomina incompletos o con riesgo operativo.',
-            'Verificar snapshot persistente con CSRF/token, detalle read-only, aprobacion/anulacion controladas y ausencia de Caja/timbrado/dispersion.'
+            'Verificar snapshot persistente con CSRF/token, detalle controlado, aprobacion/anulacion controladas y ausencia de pago masivo/timbrado/dispersion.'
         );
     }
 } else {
     lpcWarning(
         'Archivos de periodos 5E-L-A no estan completos.',
         'Crear servicio, modelo, controlador y vistas de snapshot persistente antes de QA de periodos de pre-nomina.'
+    );
+}
+
+if (
+    is_file($workerControllerPath)
+    && is_file($workerPayrollPeriodDetailViewPath)
+    && is_file($workerPayrollSnapshotPaymentServicePath)
+) {
+    $workerControllerCode = (string) file_get_contents($workerControllerPath);
+    $workerPayrollPeriodDetailViewCode = (string) file_get_contents($workerPayrollPeriodDetailViewPath);
+    $workerPayrollSnapshotPaymentServiceCode = (string) file_get_contents($workerPayrollSnapshotPaymentServicePath);
+    $snapshotPaymentControllerBody = lpcMethodBody($workerControllerCode, 'registrarPagoSnapshotNominaAction');
+    $snapshotPaymentServiceBody = lpcMethodBody($workerPayrollSnapshotPaymentServiceCode, 'registrarPagoDesdeSnapshot');
+
+    if (
+        strpos($workerPayrollSnapshotPaymentServiceCode, 'class TrabajadorNominaSnapshotPagoService') !== false
+        && strpos($workerPayrollSnapshotPaymentServiceCode, 'function evaluarPagoDesdeSnapshot') !== false
+        && strpos($workerPayrollSnapshotPaymentServiceCode, 'function registrarPagoDesdeSnapshot') !== false
+        && strpos($workerPayrollSnapshotPaymentServiceCode, 'TrabajadorPagoCajaService') !== false
+        && strpos($workerPayrollSnapshotPaymentServiceCode, 'manage_transaction') !== false
+        && strpos($workerPayrollSnapshotPaymentServiceCode, 'FOR UPDATE') !== false
+        && strpos($workerPayrollSnapshotPaymentServiceCode, "estado'] ?? '') !== 'aprobado") !== false
+        && strpos($workerPayrollSnapshotPaymentServiceCode, 'pendiente_pago_sugerido') !== false
+        && strpos($workerPayrollSnapshotPaymentServiceCode, 'min($snapshotPendiente, $saldoVivo)') !== false
+        && strpos($snapshotPaymentServiceBody, 'pagoCajaService->registrarPago') !== false
+        && strpos($snapshotPaymentServiceBody, 'nomina_periodo_id') !== false
+        && strpos($snapshotPaymentServiceBody, 'nomina_periodo_detalle_id') !== false
+        && strpos($workerPayrollSnapshotPaymentServiceCode, 'AuditService::record') !== false
+        && strpos($workerPayrollSnapshotPaymentServiceCode, 'snapshot_inmutable') !== false
+        && strpos($workerPayrollSnapshotPaymentServiceCode, 'rollBack') !== false
+        && strpos($workerControllerCode, 'function registrarPagoSnapshotNominaAction') !== false
+        && strpos($snapshotPaymentControllerBody, "require_hotel_module('caja')") !== false
+        && strpos($snapshotPaymentControllerBody, "requireWritePermission('usuarios.edit')") !== false
+        && strpos($snapshotPaymentControllerBody, 'validateCSRF()') !== false
+        && strpos($snapshotPaymentControllerBody, "consumirNominaPeriodoToken('pago_snapshot_caja'") !== false
+        && strpos($snapshotPaymentControllerBody, 'registrarPagoDesdeSnapshot') !== false
+        && strpos($workerPayrollPeriodDetailViewCode, 'pagoSnapshotTokens') !== false
+        && strpos($workerPayrollPeriodDetailViewCode, 'name="pago_token"') !== false
+        && strpos($workerPayrollPeriodDetailViewCode, 'csrf_field()') !== false
+        && strpos($workerPayrollPeriodDetailViewCode, 'registrar-pago-caja') !== false
+        && strpos($workerPayrollPeriodDetailViewCode, 'Registrar pago') !== false
+        && strpos($workerPayrollPeriodDetailViewCode, 'Requiere aprobacion') !== false
+        && strpos($workerPayrollPeriodDetailViewCode, 'pago masivo') === false
+    ) {
+        lpcOk('Pago 5E-N-A desde snapshot aprobado es individual, con CSRF/token, servicio transaccional, Caja controlada y snapshot inmutable.');
+    } else {
+        lpcError(
+            'Pago 5E-N-A desde snapshot aprobado incompleto o con riesgo operativo.',
+            'Verificar ruta/controlador/vista/servicio: solo pago individual, snapshot aprobado, CSRF/token, min(snapshot/saldo vivo), auditoria y sin nomina oficial/timbrado/dispersion.'
+        );
+    }
+} else {
+    lpcWarning(
+        'Archivos de pago 5E-N-A desde snapshot aprobado no estan completos.',
+        'Crear servicio TrabajadorNominaSnapshotPagoService, controlador y vista antes de QA del pago individual desde snapshot.'
     );
 }
 
@@ -1149,6 +1410,189 @@ if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($work
     lpcWarning(
         'Archivos del reporte 5E-M-A de snapshots de pre-nomina no estan completos.',
         'Crear modelo/controlador/vista read-only antes de QA del reporte/export de snapshots.'
+    );
+}
+
+if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($workerPayrollSnapshotPaymentsReportViewPath)) {
+    $workerModelCode = (string) file_get_contents($workerModelPath);
+    $workerControllerCode = (string) file_get_contents($workerControllerPath);
+    $workerPayrollSnapshotPaymentsReportViewCode = (string) file_get_contents($workerPayrollSnapshotPaymentsReportViewPath);
+    $snapshotPaymentReportModelBody = lpcMethodBody($workerModelCode, 'reporteNominaPagosSnapshotPorHotel');
+    $snapshotPaymentReportControllerBody = lpcMethodBody($workerControllerCode, 'reporteNominaPagosSnapshotAction');
+    $snapshotPaymentExportControllerBody = lpcMethodBody($workerControllerCode, 'exportarNominaPagosSnapshotAction');
+    $snapshotPaymentCsvControllerBody = lpcMethodBody($workerControllerCode, 'descargarNominaPagosSnapshotCsv');
+    $snapshotPaymentReportSurfaceCode = $snapshotPaymentReportControllerBody
+        . "\n" . $snapshotPaymentExportControllerBody
+        . "\n" . $snapshotPaymentCsvControllerBody
+        . "\n" . $workerPayrollSnapshotPaymentsReportViewCode;
+    $snapshotPaymentReportWriteForbidden = preg_match(
+        '/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|REPLACE\s+INTO|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE|file_put_contents)\b/i',
+        $snapshotPaymentReportSurfaceCode
+    );
+
+    if (
+        !$snapshotPaymentReportWriteForbidden
+        && $snapshotPaymentReportModelBody !== ''
+        && lpcCodeBodyIsReadOnly($snapshotPaymentReportModelBody)
+        && lpcCodeBodyIsReadOnly($snapshotPaymentReportControllerBody)
+        && lpcCodeBodyIsReadOnly($snapshotPaymentExportControllerBody)
+        && strpos($workerModelCode, 'function tablasReporteNominaPagosSnapshotDisponibles') !== false
+        && strpos($workerModelCode, 'function normalizarFiltrosReporteNominaPagosSnapshot') !== false
+        && strpos($workerModelCode, 'function condicionInconsistenciaPagosSnapshot') !== false
+        && strpos($workerModelCode, 'nomina_periodo_id IS NOT NULL') !== false
+        && strpos($workerModelCode, 'nomina_periodo_detalle_id IS NOT NULL') !== false
+        && strpos($workerControllerCode, 'function reporteNominaPagosSnapshotAction') !== false
+        && strpos($workerControllerCode, 'function exportarNominaPagosSnapshotAction') !== false
+        && strpos($workerControllerCode, 'function descargarNominaPagosSnapshotCsv') !== false
+        && strpos($workerControllerCode, 'trabajadores/nomina_pagos_snapshot_reporte') !== false
+        && strpos($workerControllerCode, 'X-Content-Type-Options: nosniff') !== false
+        && strpos($workerPayrollSnapshotPaymentsReportViewCode, "action=\"<?= url('trabajadores/nomina/periodos/pagos-snapshot') ?>\"") !== false
+        && strpos($workerPayrollSnapshotPaymentsReportViewCode, 'trabajadores/nomina/periodos/pagos-snapshot/exportar') !== false
+        && strpos($workerPayrollSnapshotPaymentsReportViewCode, 'Exportar CSV') !== false
+        && strpos($workerPayrollSnapshotPaymentsReportViewCode, 'Solo GET') !== false
+        && strpos($workerPayrollSnapshotPaymentsReportViewCode, 'method="GET"') !== false
+        && strpos($workerPayrollSnapshotPaymentsReportViewCode, 'method="POST"') === false
+        && strpos($workerPayrollSnapshotPaymentsReportViewCode, 'csrf_field()') === false
+        && strpos($workerPayrollSnapshotPaymentsReportViewCode, 'Registrar pago') === false
+    ) {
+        lpcOk('Reporte 5E-Q-A de conciliacion pagos snapshot es GET/read-only, CSV en memoria y sin acciones operativas.');
+    } else {
+        lpcError(
+            'Reporte 5E-Q-A de conciliacion pagos snapshot incompleto o con riesgo operativo.',
+            'Mantener conciliacion como GET/read-only, CSV en memoria, sin POST, sin CSRF, sin storage y sin registrar pagos.'
+        );
+    }
+} else {
+    lpcWarning(
+        'Archivos del reporte 5E-Q-A de conciliacion pagos snapshot no estan completos.',
+        'Crear modelo/controlador/vista read-only antes de QA de conciliacion de pagos trazados.'
+    );
+}
+
+if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($workerPayrollAuditViewPath)) {
+    $workerModelCode = (string) file_get_contents($workerModelPath);
+    $workerControllerCode = (string) file_get_contents($workerControllerPath);
+    $workerPayrollAuditViewCode = (string) file_get_contents($workerPayrollAuditViewPath);
+    $payrollAuditModelBody = lpcMethodBody($workerModelCode, 'auditoriaNominaConsolidadaPorHotel');
+    $payrollAuditControllerBody = lpcMethodBody($workerControllerCode, 'auditoriaNominaAction');
+    $payrollAuditExportControllerBody = lpcMethodBody($workerControllerCode, 'exportarAuditoriaNominaAction');
+    $payrollAuditCsvControllerBody = lpcMethodBody($workerControllerCode, 'descargarAuditoriaNominaCsv');
+    $payrollAuditSurfaceCode = $payrollAuditControllerBody
+        . "\n" . $payrollAuditExportControllerBody
+        . "\n" . $payrollAuditCsvControllerBody
+        . "\n" . $workerPayrollAuditViewCode;
+    $payrollAuditWriteForbidden = preg_match(
+        '/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|REPLACE\s+INTO|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE|file_put_contents)\b/i',
+        $payrollAuditSurfaceCode
+    );
+
+    if (
+        !$payrollAuditWriteForbidden
+        && $payrollAuditModelBody !== ''
+        && lpcCodeBodyIsReadOnly($payrollAuditModelBody)
+        && lpcCodeBodyIsReadOnly($payrollAuditControllerBody)
+        && lpcCodeBodyIsReadOnly($payrollAuditExportControllerBody)
+        && strpos($workerModelCode, 'function tablasAuditoriaNominaConsolidadaDisponibles') !== false
+        && strpos($workerModelCode, 'function auditoriaNominaConsolidadaPorHotel') !== false
+        && strpos($workerModelCode, 'function normalizarFiltrosAuditoriaNomina') !== false
+        && strpos($workerModelCode, 'function resumenAuditoriaNomina') !== false
+        && strpos($workerModelCode, 'function porPeriodoAuditoriaNomina') !== false
+        && strpos($workerModelCode, 'trabajador_nomina_periodo_detalles') !== false
+        && strpos($workerModelCode, 'trabajador_pagos_caja') !== false
+        && strpos($workerModelCode, 'saldo_auditoria') !== false
+        && strpos($workerControllerCode, 'function auditoriaNominaAction') !== false
+        && strpos($workerControllerCode, 'function exportarAuditoriaNominaAction') !== false
+        && strpos($workerControllerCode, 'function descargarAuditoriaNominaCsv') !== false
+        && strpos($workerControllerCode, 'trabajadores/nomina_auditoria_consolidada') !== false
+        && strpos($workerControllerCode, 'X-Content-Type-Options: nosniff') !== false
+        && strpos($workerPayrollAuditViewCode, "action=\"<?= url('trabajadores/nomina/auditoria') ?>\"") !== false
+        && strpos($workerPayrollAuditViewCode, 'trabajadores/nomina/auditoria/exportar') !== false
+        && strpos($workerPayrollAuditViewCode, 'Exportar CSV') !== false
+        && strpos($workerPayrollAuditViewCode, 'GET / read-only') !== false
+        && (strpos($workerPayrollAuditViewCode, 'method="GET"') !== false || strpos($workerPayrollAuditViewCode, 'method="get"') !== false)
+        && strpos($workerPayrollAuditViewCode, 'method="POST"') === false
+        && strpos($workerPayrollAuditViewCode, 'method="post"') === false
+        && strpos($workerPayrollAuditViewCode, 'csrf_field()') === false
+        && strpos($workerPayrollAuditViewCode, 'registrar-pago-caja') === false
+        && strpos($workerPayrollAuditViewCode, 'Registrar pago') === false
+        && strpos($workerPayrollAuditViewCode, 'timbrar') === false
+        && strpos($workerPayrollAuditViewCode, 'dispersion') === false
+    ) {
+        lpcOk('Auditoria 5E-R-A consolidada de nomina es GET/read-only, CSV en memoria y sin acciones operativas.');
+    } else {
+        lpcError(
+            'Auditoria 5E-R-A consolidada de nomina incompleta o con riesgo operativo.',
+            'Mantener nomina_auditoria_consolidada como GET/read-only, CSV en memoria, sin POST, sin CSRF, sin storage y sin registrar pagos.'
+        );
+    }
+} else {
+    lpcWarning(
+        'Archivos de auditoria 5E-R-A consolidada de nomina no estan completos.',
+        'Crear modelo/controlador/vista read-only antes de QA de auditoria consolidada de nomina.'
+    );
+}
+
+if (is_file($workerModelPath) && is_file($workerControllerPath) && is_file($workerPayrollExpedientViewPath)) {
+    $workerModelCode = (string) file_get_contents($workerModelPath);
+    $workerControllerCode = (string) file_get_contents($workerControllerPath);
+    $workerPayrollExpedientViewCode = (string) file_get_contents($workerPayrollExpedientViewPath);
+    $payrollExpedientModelBody = lpcMethodBody($workerModelCode, 'expedienteNominaAdministrativoPorHotel');
+    $payrollExpedientControllerBody = lpcMethodBody($workerControllerCode, 'expedienteNominaAction');
+    $payrollExpedientExportControllerBody = lpcMethodBody($workerControllerCode, 'exportarExpedienteNominaAction');
+    $payrollExpedientCsvControllerBody = lpcMethodBody($workerControllerCode, 'descargarExpedienteNominaCsv');
+    $payrollExpedientSurfaceCode = $payrollExpedientControllerBody
+        . "\n" . $payrollExpedientExportControllerBody
+        . "\n" . $payrollExpedientCsvControllerBody
+        . "\n" . $workerPayrollExpedientViewCode;
+    $payrollExpedientWriteForbidden = preg_match(
+        '/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|REPLACE\s+INTO|ALTER\s+TABLE|DROP\s+TABLE|TRUNCATE|file_put_contents)\b/i',
+        $payrollExpedientSurfaceCode
+    );
+
+    if (
+        !$payrollExpedientWriteForbidden
+        && $payrollExpedientModelBody !== ''
+        && lpcCodeBodyIsReadOnly($payrollExpedientModelBody)
+        && lpcCodeBodyIsReadOnly($payrollExpedientControllerBody)
+        && lpcCodeBodyIsReadOnly($payrollExpedientExportControllerBody)
+        && strpos($workerModelCode, 'function tablasExpedienteNominaAdministrativoDisponibles') !== false
+        && strpos($workerModelCode, 'function expedienteNominaAdministrativoPorHotel') !== false
+        && strpos($workerModelCode, 'function normalizarFiltrosExpedienteNomina') !== false
+        && strpos($workerModelCode, 'function evaluarExpedienteNominaRegistro') !== false
+        && strpos($workerModelCode, 'function resumenExpedienteNomina') !== false
+        && strpos($workerModelCode, 'function bloqueosExpedienteNomina') !== false
+        && strpos($workerModelCode, 'auditoriaNominaConsolidadaPorHotel') !== false
+        && strpos($workerModelCode, 'estado_expediente') !== false
+        && strpos($workerModelCode, 'bloqueos') !== false
+        && strpos($workerControllerCode, 'function expedienteNominaAction') !== false
+        && strpos($workerControllerCode, 'function exportarExpedienteNominaAction') !== false
+        && strpos($workerControllerCode, 'function descargarExpedienteNominaCsv') !== false
+        && strpos($workerControllerCode, 'trabajadores/nomina_expediente_administrativo') !== false
+        && strpos($workerControllerCode, 'X-Content-Type-Options: nosniff') !== false
+        && strpos($workerPayrollExpedientViewCode, "action=\"<?= url('trabajadores/nomina/expediente') ?>\"") !== false
+        && strpos($workerPayrollExpedientViewCode, 'trabajadores/nomina/expediente/exportar') !== false
+        && strpos($workerPayrollExpedientViewCode, 'Exportar CSV') !== false
+        && strpos($workerPayrollExpedientViewCode, 'GET / read-only') !== false
+        && strpos($workerPayrollExpedientViewCode, 'method="GET"') !== false
+        && strpos($workerPayrollExpedientViewCode, 'method="POST"') === false
+        && strpos($workerPayrollExpedientViewCode, 'method="post"') === false
+        && strpos($workerPayrollExpedientViewCode, 'csrf_field()') === false
+        && strpos($workerPayrollExpedientViewCode, 'registrar-pago-caja') === false
+        && strpos($workerPayrollExpedientViewCode, 'Registrar pago') === false
+        && strpos($workerPayrollExpedientViewCode, 'timbrar') === false
+        && strpos($workerPayrollExpedientViewCode, 'dispersion') === false
+    ) {
+        lpcOk('Expediente 5E-S-A administrativo de nomina es GET/read-only, CSV en memoria y sin acciones operativas.');
+    } else {
+        lpcError(
+            'Expediente 5E-S-A administrativo de nomina incompleto o con riesgo operativo.',
+            'Mantener nomina_expediente_administrativo como GET/read-only, CSV en memoria, sin POST, sin CSRF, sin storage y sin acciones de pago.'
+        );
+    }
+} else {
+    lpcWarning(
+        'Archivos de expediente 5E-S-A administrativo de nomina no estan completos.',
+        'Crear modelo/controlador/vista read-only antes de QA de expediente administrativo de nomina.'
     );
 }
 
@@ -1309,13 +1753,18 @@ if (is_file($paymentServicePath)) {
         && strpos($paymentServiceCode, "'Pago laboral'") !== false
         && strpos($paymentServiceCode, 'AuditService::record') !== false
         && strpos($paymentServiceCode, 'assertReferenciaNoDuplicada') !== false
+        && strpos($paymentServiceCode, 'normalizarTrazabilidadSnapshot') !== false
+        && strpos($paymentServiceCode, 'validarTrazabilidadSnapshot') !== false
+        && strpos($paymentServiceCode, 'trazabilidadSnapshotDisponible') !== false
+        && strpos($paymentServiceCode, 'nomina_periodo_id') !== false
+        && strpos($paymentServiceCode, 'nomina_periodo_detalle_id') !== false
         && strpos($paymentServiceCode, 'rollBack') !== false
     ) {
-        lpcOk('Servicio TrabajadorPagoCajaService 5E-D-A existe con transaccion, locks, Caja, entidad laboral y auditoria.');
+        lpcOk('Servicio TrabajadorPagoCajaService 5E-D-A/5E-P-A existe con transaccion, locks, Caja, entidad laboral, auditoria y trazabilidad snapshot opcional.');
     } else {
         lpcError(
-            'Servicio TrabajadorPagoCajaService incompleto para 5E-D-A.',
-            'Revisar transaccion, FOR UPDATE, duplicados, INSERT Caja, INSERT trabajador_pagos_caja y AuditService.'
+            'Servicio TrabajadorPagoCajaService incompleto para 5E-D-A/5E-P-A.',
+            'Revisar transaccion, FOR UPDATE, duplicados, INSERT Caja, INSERT trabajador_pagos_caja, AuditService y trazabilidad snapshot opcional.'
         );
     }
 } else {
@@ -1376,6 +1825,39 @@ if (is_file($payrollPeriodRollbackToolPath)) {
     );
 }
 
+if (is_file($payrollSnapshotPaymentRollbackToolPath)) {
+    $snapshotPaymentRollbackCode = (string) file_get_contents($payrollSnapshotPaymentRollbackToolPath);
+    if (
+        strpos($snapshotPaymentRollbackCode, 'APP_ENV') !== false
+        && strpos($snapshotPaymentRollbackCode, 'local') !== false
+        && strpos($snapshotPaymentRollbackCode, 'TrabajadorNominaSnapshotPagoService') !== false
+        && strpos($snapshotPaymentRollbackCode, 'manage_transaction') !== false
+        && strpos($snapshotPaymentRollbackCode, 'false') !== false
+        && strpos($snapshotPaymentRollbackCode, 'rollBack') !== false
+        && strpos($snapshotPaymentRollbackCode, 'trabajador_nomina_periodos') !== false
+        && strpos($snapshotPaymentRollbackCode, 'trabajador_nomina_periodo_detalles') !== false
+        && strpos($snapshotPaymentRollbackCode, 'trabajador_pagos_caja') !== false
+        && strpos($snapshotPaymentRollbackCode, 'movimientos_caja') !== false
+        && strpos($snapshotPaymentRollbackCode, 'TEST-ROLLBACK-5E-N-A') !== false
+        && strpos($snapshotPaymentRollbackCode, 'nomina_periodo_id') !== false
+        && strpos($snapshotPaymentRollbackCode, 'nomina_periodo_detalle_id') !== false
+        && strpos($snapshotPaymentRollbackCode, 'Trazabilidad 5E-P-A temporal') !== false
+        && strpos($snapshotPaymentRollbackCode, 'Snapshot temporal permanecio inmutable') !== false
+    ) {
+        lpcOk('Prueba rollback probar_pago_snapshot_prenomina_caja.php disponible para 5E-N-A/5E-P-A sin persistencia.');
+    } else {
+        lpcError(
+            'Prueba rollback probar_pago_snapshot_prenomina_caja.php incompleta.',
+            'Debe usar APP_ENV local, transaccion externa, manage_transaction false, snapshot aprobado, pago Caja, trazabilidad 5E-P-A, auditoria y rollback sin persistencia.'
+        );
+    }
+} else {
+    lpcWarning(
+        'Falta prueba rollback probar_pago_snapshot_prenomina_caja.php.',
+        'Crear herramienta reversible antes de cerrar documentalmente 5E-N-A.'
+    );
+}
+
 $unexpectedNeedles = [
     'pago-laboral-caja',
     'movimiento_caja_id',
@@ -1423,8 +1905,10 @@ if (is_file($workerControllerPath)) {
 }
 if (is_file($workerDetailViewPath)) {
     $viewCode = (string) file_get_contents($workerDetailViewPath);
+    $hasWorkerPaymentPanel = strpos($viewCode, 'Pago laboral con Caja') !== false
+        || strpos($viewCode, 'Pagar al trabajador (desde Caja)') !== false;
     if (
-        strpos($viewCode, 'Pago laboral con Caja') !== false
+        $hasWorkerPaymentPanel
         && strpos($viewCode, 'registrar-pago-caja') !== false
         && strpos($viewCode, 'method="POST"') !== false
         && strpos($viewCode, 'csrf_field()') !== false
@@ -1441,7 +1925,12 @@ if (is_file($workerDetailViewPath)) {
         );
     }
 
-    if (strpos($viewCode, 'No genera Caja') !== false || strpos($viewCode, 'seguimiento interno de Personal') !== false) {
+    if (
+        strpos($viewCode, 'No genera Caja') !== false
+        || strpos($viewCode, 'seguimiento interno de Personal') !== false
+        || strpos($viewCode, 'Disponible para pagar ahora') !== false
+        || strpos($viewCode, 'Lo que le sumas') !== false
+    ) {
         lpcOk('Vista de trabajador conserva aviso de ledger informativo separado del pago real.');
     } else {
         lpcWarning(

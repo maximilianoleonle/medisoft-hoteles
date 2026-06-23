@@ -1032,6 +1032,11 @@ $configRenderGuestFieldPolicy = function ($fieldKey, array $fieldDefinition) use
     background: color-mix(in srgb, var(--hc-brand-strong) 88%, var(--hc-accent));
 }
 
+.hc-btn-primary.is-confirming {
+    background: color-mix(in srgb, var(--hc-accent) 46%, var(--hc-brand-strong));
+    border-color: color-mix(in srgb, var(--hc-accent) 55%, var(--hc-brand-strong));
+}
+
 .hc-link-btn {
     color: var(--hc-brand);
     background: var(--hc-surface);
@@ -3667,7 +3672,7 @@ html {
                     </div>
                 </section>
 
-                <form method="POST" action="<?= url('configuracion/update') ?>" id="configForm" enctype="multipart/form-data">
+                <form method="POST" action="<?= url('configuracion/update') ?>" id="configForm" enctype="multipart/form-data" data-form-guard="off">
                     <?= csrf_field() ?>
 
                     <section class="hc-save-dock" aria-label="Acciones de guardado">
@@ -4945,7 +4950,6 @@ html {
     </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 const syncLegacyField = function(sourceSelector, targetSelector) {
     const source = document.querySelector(sourceSelector);
@@ -5365,33 +5369,48 @@ if (phoneInput) {
 
 const configForm = document.getElementById('configForm');
 if (configForm) {
+    const saveButtons = Array.from(configForm.querySelectorAll('button[type="submit"]'));
+    const saveStatusTargets = Array.from(configForm.querySelectorAll('.hc-save-copy, .hc-bottom-note'));
+    const originalSaveButtonHtml = new Map(saveButtons.map(button => [button, button.innerHTML]));
+    const originalSaveStatusHtml = new Map(saveStatusTargets.map(target => [target, target.innerHTML]));
+    let saveConfirmTimer = null;
+
+    const setSaveConfirmState = (active) => {
+        saveButtons.forEach(button => {
+            button.classList.toggle('is-confirming', active);
+            button.innerHTML = active
+                ? '<i class="fas fa-check"></i> Confirmar guardado'
+                : (originalSaveButtonHtml.get(button) || '<i class="fas fa-save"></i> Guardar cambios');
+        });
+
+        saveStatusTargets.forEach(target => {
+            target.innerHTML = active
+                ? '<i class="fas fa-circle-info"></i> Vuelve a hacer clic para aplicar los cambios inmediatamente.'
+                : (originalSaveStatusHtml.get(target) || target.innerHTML);
+        });
+    };
+
     configForm.addEventListener('submit', function(e) {
         e.preventDefault();
 
-        const submitForm = () => this.submit();
+        const submitForm = () => {
+            this.dataset.confirmedSave = '1';
+            this.submit();
+        };
 
-        if (!window.Swal) {
-            if (window.confirm('Guardar configuracion? Los cambios se aplicaran inmediatamente.')) {
-                submitForm();
-            }
+        if (this.dataset.confirmedSave === '1') {
+            submitForm();
             return;
         }
 
-        Swal.fire({
-            title: 'Guardar configuracion',
-            text: 'Los cambios se aplicaran inmediatamente',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#17241f',
-            cancelButtonColor: '#6b7280',
-            confirmButtonText: '<i class="fas fa-save mr-2"></i>Si, guardar',
-            cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancelar',
-            reverseButtons: true
-        }).then((result) => {
-            if (result.isConfirmed) {
-                submitForm();
-            }
-        });
+        this.dataset.confirmedSave = '1';
+        setSaveConfirmState(true);
+
+        window.clearTimeout(saveConfirmTimer);
+        saveConfirmTimer = window.setTimeout(() => {
+            delete this.dataset.confirmedSave;
+            setSaveConfirmState(false);
+        }, 6500);
     });
 }
 

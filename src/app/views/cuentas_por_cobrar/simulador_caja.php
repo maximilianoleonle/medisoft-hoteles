@@ -149,7 +149,7 @@ $estado = (string)($filtros['estado'] ?? 'todos');
 
         <section class="cx-toolbar">
             <div class="flex flex-wrap gap-2">
-                <a class="cx-btn cx-btn-muted" href="<?= url('cuentas-por-cobrar/operativas') ?>"><i class="fas fa-arrow-left"></i> Volver a cuentas por cobrar</a>
+                <a class="cx-btn cx-btn-muted" href="<?= back_url('cuentas-por-cobrar/operativas') ?>"><i class="fas fa-arrow-left"></i> Volver a cuentas por cobrar</a>
                 <a class="cx-btn cx-btn-muted" href="<?= url('caja') ?>"><i class="fas fa-cash-register"></i> Ver Caja</a>
             </div>
         </section>

@@ -194,7 +194,7 @@ $methodKeys = array_values(array_unique(array_merge(['efectivo', 'tarjeta', 'tra
         </div>
         <div class="arqueo-actions">
             <span class="arqueo-badge"><i class="fas fa-eye"></i> Solo lectura</span>
-            <a href="<?= url('caja') ?>" class="arqueo-btn"><i class="fas fa-arrow-left"></i> Caja</a>
+            <a href="<?= back_url('caja') ?>" class="arqueo-btn"><i class="fas fa-arrow-left"></i> Caja</a>
             <a href="<?= url('caja/reporte-metodos') ?>" class="arqueo-btn primary"><i class="fas fa-chart-bar"></i> Reporte metodos</a>
         </div>
     </div>

@@ -1,766 +1,1377 @@
 <?php
 /**
  * Vista Detalle de Corte de Caja
- * Los Cedros
+ * Redisenada para el sistema hotelero operativo.
  */
 
-// Calcular totales del corte
-$total_ingresos = floatval($corte['total_ingresos_efectivo'] ?? 0)
-                + floatval($corte['total_ingresos_tarjeta'] ?? 0)
-                + floatval($corte['total_ingresos_transferencia'] ?? 0);
-
-$total_gastos   = floatval($corte['total_gastos_efectivo'] ?? 0)
-                + floatval($corte['total_gastos_tarjeta'] ?? 0)
-                + floatval($corte['total_gastos_transferencia'] ?? 0);
-
-$balance_general     = $total_ingresos - $total_gastos;
-$efectivo_en_caja    = floatval($corte['monto_inicial'] ?? 0)
-                     + floatval($corte['total_ingresos_efectivo'] ?? 0)
-                     - floatval($corte['total_gastos_efectivo'] ?? 0);
-
-$diferencia          = floatval($corte['diferencia'] ?? 0);
-$esta_cerrado        = ($corte['estado'] ?? '') === 'cerrado';
-
-// Agrupar movimientos por categoría
-$cats_ingreso = [];
-$cats_gasto   = [];
-foreach ($movimientos as $mov) {
-    $cat   = $mov['categoria_nombre'] ?? 'Sin categoría';
-    $icono = $mov['categoria_icono']  ?? 'fas fa-tag';
-    $color = $mov['categoria_color']  ?? '#6B7280';
-    $tipo  = $mov['tipo'];
-    if ($tipo === 'ingreso') {
-        if (!isset($cats_ingreso[$cat])) $cats_ingreso[$cat] = ['total' => 0, 'cantidad' => 0, 'icono' => $icono, 'color' => $color];
-        $cats_ingreso[$cat]['total']    += floatval($mov['monto']);
-        $cats_ingreso[$cat]['cantidad'] += 1;
-    } else {
-        if (!isset($cats_gasto[$cat])) $cats_gasto[$cat] = ['total' => 0, 'cantidad' => 0, 'icono' => $icono, 'color' => $color];
-        $cats_gasto[$cat]['total']    += floatval($mov['monto']);
-        $cats_gasto[$cat]['cantidad'] += 1;
+if (!function_exists('cut_h')) {
+    function cut_h($value) {
+        return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
     }
 }
-arsort($cats_ingreso);
-arsort($cats_gasto);
+
+if (!function_exists('cut_money')) {
+    function cut_money($value) {
+        return '$' . number_format((float)$value, 2);
+    }
+}
+
+if (!function_exists('cut_money_abs')) {
+    function cut_money_abs($value, $prefix = '') {
+        return $prefix . '$' . number_format(abs((float)$value), 2);
+    }
+}
+
+if (!function_exists('cut_signed_money')) {
+    function cut_signed_money($value) {
+        $value = (float)$value;
+        return ($value >= 0 ? '+' : '-') . '$' . number_format(abs($value), 2);
+    }
+}
+
+if (!function_exists('cut_date_label')) {
+    function cut_date_label($value, $fallback = 'Sin fecha') {
+        if (empty($value)) {
+            return $fallback;
+        }
+        $timestamp = strtotime((string)$value);
+        if (!$timestamp) {
+            return $fallback;
+        }
+        return date('d/m/Y H:i', $timestamp);
+    }
+}
+
+if (!function_exists('cut_time_label')) {
+    function cut_time_label($value, $fallback = '--:--') {
+        if (empty($value)) {
+            return $fallback;
+        }
+        $timestamp = strtotime((string)$value);
+        if (!$timestamp) {
+            return $fallback;
+        }
+        return date('H:i', $timestamp);
+    }
+}
+
+if (!function_exists('cut_clean_color')) {
+    function cut_clean_color($value, $fallback = '#64748B') {
+        $value = trim((string)$value);
+        if (preg_match('/^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/', $value)) {
+            return $value;
+        }
+        return $fallback;
+    }
+}
+
+$movimientos = is_array($movimientos ?? null) ? $movimientos : [];
+$denominaciones = is_array($denominaciones ?? null) ? $denominaciones : [];
+
+$total_ingresos = (float)($corte['total_ingresos_efectivo'] ?? 0)
+    + (float)($corte['total_ingresos_tarjeta'] ?? 0)
+    + (float)($corte['total_ingresos_transferencia'] ?? 0);
+
+$total_gastos = (float)($corte['total_gastos_efectivo'] ?? 0)
+    + (float)($corte['total_gastos_tarjeta'] ?? 0)
+    + (float)($corte['total_gastos_transferencia'] ?? 0);
+
+$balance_general = $total_ingresos - $total_gastos;
+$efectivo_en_caja = (float)($corte['monto_inicial'] ?? 0)
+    + (float)($corte['total_ingresos_efectivo'] ?? 0)
+    - (float)($corte['total_gastos_efectivo'] ?? 0);
+
+$diferencia = (float)($corte['diferencia'] ?? 0);
+$esta_cerrado = (($corte['estado'] ?? '') === 'cerrado');
+$estado_label = $esta_cerrado ? 'Cerrado' : 'Abierto';
+$fecha_apertura_label = cut_date_label($corte['fecha_apertura'] ?? null);
+$fecha_cierre_label = cut_date_label($corte['fecha_cierre'] ?? null, 'Sin cierre');
+$hora_apertura_label = cut_time_label($corte['fecha_apertura'] ?? null);
+$usuario_apertura = trim((string)($corte['usuario_apertura'] ?? '')) ?: 'Sin responsable';
+$usuario_cierre = trim((string)($corte['usuario_cierre'] ?? '')) ?: 'Sin responsable';
+$caja_nombre = trim((string)($corte['caja_nombre'] ?? '')) ?: 'Caja';
+
+$cats_ingreso = [];
+$cats_gasto = [];
+$movimientos_ingresos = 0;
+$movimientos_gastos = 0;
+$metodo_counts = ['efectivo' => 0, 'tarjeta' => 0, 'transferencia' => 0];
+
+foreach ($movimientos as $mov) {
+    $tipo = (string)($mov['tipo'] ?? '');
+    $es_ingreso = ($tipo === 'ingreso');
+    $cat = trim((string)($mov['categoria_nombre'] ?? '')) ?: 'Sin categoria';
+    $icono = trim((string)($mov['categoria_icono'] ?? '')) ?: 'fas fa-tag';
+    $color = cut_clean_color($mov['categoria_color'] ?? '#64748B');
+    $monto = (float)($mov['monto'] ?? 0);
+    $metodo = (string)($mov['metodo_pago'] ?? '');
+
+    if (isset($metodo_counts[$metodo])) {
+        $metodo_counts[$metodo]++;
+    }
+
+    if ($es_ingreso) {
+        $movimientos_ingresos++;
+        if (!isset($cats_ingreso[$cat])) {
+            $cats_ingreso[$cat] = ['total' => 0, 'cantidad' => 0, 'icono' => $icono, 'color' => $color];
+        }
+        $cats_ingreso[$cat]['total'] += $monto;
+        $cats_ingreso[$cat]['cantidad']++;
+    } else {
+        $movimientos_gastos++;
+        if (!isset($cats_gasto[$cat])) {
+            $cats_gasto[$cat] = ['total' => 0, 'cantidad' => 0, 'icono' => $icono, 'color' => $color];
+        }
+        $cats_gasto[$cat]['total'] += $monto;
+        $cats_gasto[$cat]['cantidad']++;
+    }
+}
+
+uasort($cats_ingreso, function ($a, $b) {
+    return ($b['total'] <=> $a['total']);
+});
+uasort($cats_gasto, function ($a, $b) {
+    return ($b['total'] <=> $a['total']);
+});
+
+$metodos_pago = [
+    'efectivo' => [
+        'label' => 'Efectivo',
+        'note' => 'Dinero fisico en caja',
+        'icon' => 'money-bill-wave',
+        'tone' => 'cash',
+        'ingresos' => (float)($corte['total_ingresos_efectivo'] ?? 0),
+        'gastos' => (float)($corte['total_gastos_efectivo'] ?? 0),
+        'count' => $metodo_counts['efectivo'],
+    ],
+    'tarjeta' => [
+        'label' => 'Tarjeta',
+        'note' => 'Cobros con terminal',
+        'icon' => 'credit-card',
+        'tone' => 'card',
+        'ingresos' => (float)($corte['total_ingresos_tarjeta'] ?? 0),
+        'gastos' => (float)($corte['total_gastos_tarjeta'] ?? 0),
+        'count' => $metodo_counts['tarjeta'],
+    ],
+    'transferencia' => [
+        'label' => 'Transferencia',
+        'note' => 'Pagos bancarios',
+        'icon' => 'exchange-alt',
+        'tone' => 'transfer',
+        'ingresos' => (float)($corte['total_ingresos_transferencia'] ?? 0),
+        'gastos' => (float)($corte['total_gastos_transferencia'] ?? 0),
+        'count' => $metodo_counts['transferencia'],
+    ],
+];
+
+$total_denominaciones = 0;
+foreach ($denominaciones as $den) {
+    $total_denominaciones += (float)($den['denominacion'] ?? 0) * (int)($den['cantidad'] ?? 0);
+}
+
+$diff_label = 'Cuadrado';
+$diff_class = 'is-neutral';
+$diff_icon = 'equals';
+if ($diferencia > 0) {
+    $diff_label = 'Sobrante';
+    $diff_class = 'is-positive';
+    $diff_icon = 'arrow-up';
+} elseif ($diferencia < 0) {
+    $diff_label = 'Faltante';
+    $diff_class = 'is-negative';
+    $diff_icon = 'arrow-down';
+}
 ?>
 
-<style>
-    :root {
-        --lc-green:        #5C7A4E;
-        --lc-green-dark:   #4A6340;
-        --lc-green-deeper: #3D5234;
-        --lc-green-light:  #7A9B6A;
-        --lc-gold:         #C8A96A;
-        --lc-gold-light:   #D9BF8A;
-        --lc-cream:        #F7F4EE;
-        --lc-cream-dark:   #EEE9DE;
+<style id="cash-cut-detail-redesign">
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800;900&display=swap');
+
+    .cut-detail-page {
+        --cut-brand: var(--brand-action-bg, var(--brand-primary, #1B2746));
+        --cut-brand-deep: var(--brand-action-bg-hover, var(--brand-secondary, #0F172A));
+        --cut-accent: var(--brand-accent, #BD9441);
+        --cut-on-brand: var(--brand-action-text, #FFFEFB);
+        --cut-bg: var(--brand-surface-soft, color-mix(in srgb, var(--cut-accent) 8%, #F8F5ED));
+        --cut-paper: var(--brand-surface, #FFFEFB);
+        --cut-soft: color-mix(in srgb, var(--cut-accent) 4%, #FFFFFF);
+        --cut-line: var(--brand-border, color-mix(in srgb, var(--cut-accent) 24%, #E7DEC9));
+        --cut-line-soft: color-mix(in srgb, var(--cut-brand) 6%, #ECE6DA);
+        --cut-text: var(--brand-text, #172033);
+        --cut-muted: var(--brand-muted, #6B7686);
+        --cut-green: #18A667;
+        --cut-green-soft: #E8F7F0;
+        --cut-red: #D84A3F;
+        --cut-red-soft: #FCEDEB;
+        --cut-blue: #3B72D9;
+        --cut-blue-soft: #EAF1FD;
+        --cut-violet: #7863D8;
+        --cut-violet-soft: #F0EDFC;
+        --cut-shadow: 0 16px 42px -30px color-mix(in srgb, var(--cut-brand-deep) 34%, transparent);
+        --cut-shadow-soft: 0 1px 2px rgba(15, 23, 42, .04), 0 18px 40px -34px rgba(15, 23, 42, .32);
+        --cut-serif: 'Cormorant Garamond', Georgia, serif;
+        --cut-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        min-height: 100dvh;
+        background:
+            radial-gradient(900px 430px at 92% -8%, color-mix(in srgb, var(--cut-accent) 13%, transparent), transparent 62%),
+            radial-gradient(620px 360px at 0% 10%, color-mix(in srgb, var(--cut-brand) 8%, transparent), transparent 58%),
+            linear-gradient(180deg, color-mix(in srgb, var(--cut-bg) 72%, #FFFFFF), var(--cut-bg));
+        color: var(--cut-text);
+        font-family: var(--cut-sans);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
     }
 
-    .lc-bg { background: linear-gradient(135deg, #F0F4ED 0%, #E8F0E3 50%, #F5F2EC 100%); }
+    .cut-detail-page *,
+    .cut-detail-page *::before,
+    .cut-detail-page *::after { box-sizing: border-box; }
 
-    /* Header card */
-    .header-card {
-        background: linear-gradient(135deg, #fff 0%, #FAFDF8 100%);
-        border-left: 4px solid var(--lc-gold);
-        position: relative; overflow: hidden;
+    .cut-detail-page :where(a, button, input, p, span, small, strong, div, h1, h2, h3) { font-family: var(--cut-sans); }
+
+    .cut-shell {
+        width: min(100%, 1760px);
+        margin: 0 auto;
+        padding: clamp(18px, 2.2vw, 34px);
     }
-    .header-card::before {
-        content: ''; position: absolute;
-        top: -30px; right: -30px;
-        width: 180px; height: 180px; border-radius: 50%;
-        background: radial-gradient(circle, rgba(92,122,78,0.06) 0%, transparent 70%);
+
+    .cut-backbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .cut-back {
+        width: 42px;
+        height: 42px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 14px;
+        border: 1px solid var(--cut-line);
+        background: rgba(255,255,255,.84);
+        color: var(--cut-brand-deep);
+        text-decoration: none;
+        box-shadow: var(--cut-shadow-soft);
+        transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+
+    .cut-back:hover { transform: translateX(-2px); border-color: color-mix(in srgb, var(--cut-accent) 38%, var(--cut-line)); }
+
+    .cut-breadcrumb {
+        color: var(--cut-muted);
+        font-size: .82rem;
+        font-weight: 850;
+    }
+
+    .cut-breadcrumb strong { color: var(--cut-brand-deep); }
+
+    .cut-hero {
+        position: relative;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 24px;
+        align-items: center;
+        padding: clamp(24px, 3vw, 36px);
+        border: 1px solid color-mix(in srgb, var(--cut-accent) 26%, rgba(255,255,255,.22));
+        border-radius: 24px;
+        background: linear-gradient(135deg, color-mix(in srgb, var(--cut-brand-deep) 94%, #020617) 0%, var(--cut-brand-deep) 58%, color-mix(in srgb, var(--cut-brand) 78%, var(--cut-brand-deep)) 100%);
+        color: var(--cut-on-brand);
+        box-shadow: 0 28px 70px -42px color-mix(in srgb, var(--cut-brand-deep) 82%, transparent);
+    }
+
+    .cut-hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+            linear-gradient(90deg, rgba(255,255,255,.08), transparent 48%),
+            repeating-linear-gradient(135deg, rgba(255,255,255,.055) 0 1px, transparent 1px 18px);
+        opacity: .46;
         pointer-events: none;
     }
 
-    /* Stat cards */
-    .stat-card {
-        background: #fff; border-radius: 16px;
-        transition: transform .25s, box-shadow .25s;
-        position: relative; overflow: hidden;
-    }
-    .stat-card::after {
-        content: ''; position: absolute;
-        bottom: 0; left: 0; right: 0; height: 3px;
-        opacity: 0; transition: opacity .25s;
-    }
-    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(92,122,78,.12); }
-    .stat-card:hover::after { opacity: 1; }
-    .stat-card.card-inicial::after    { background: var(--lc-green-light); }
-    .stat-card.card-ingresos::after   { background: #10b981; }
-    .stat-card.card-gastos::after     { background: #ef4444; }
-    .stat-card.card-balance::after    { background: var(--lc-gold); }
-
-    /* Icon circles */
-    .icon-circle {
-        width: 48px; height: 48px; border-radius: 12px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 20px; flex-shrink: 0;
-    }
-    .icon-circle.green-ic   { background: rgba(92,122,78,.12);  color: var(--lc-green); }
-    .icon-circle.emerald-ic { background: rgba(16,185,129,.12); color: #059669; }
-    .icon-circle.red-ic     { background: rgba(239,68,68,.12);  color: #dc2626; }
-    .icon-circle.gold-ic    { background: rgba(200,169,106,.15);color: #92400e; }
-    .icon-circle.blue-ic    { background: rgba(59,130,246,.12); color: #1d4ed8; }
-
-    /* Efectivo en caja card */
-    .card-efectivo {
-        background: linear-gradient(135deg, var(--lc-green) 0%, var(--lc-green-deeper) 100%);
-        border-radius: 16px; color: white;
-        position: relative; overflow: hidden;
-        transition: transform .25s, box-shadow .25s;
-    }
-    .card-efectivo::before {
-        content: ''; position: absolute;
-        top: -20px; right: -20px;
-        width: 110px; height: 110px; border-radius: 50%;
-        background: rgba(255,255,255,.07);
-    }
-    .card-efectivo::after {
-        content: ''; position: absolute;
-        bottom: -30px; left: -10px;
-        width: 90px; height: 90px; border-radius: 50%;
-        background: rgba(255,255,255,.05);
-    }
-    .card-efectivo:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(61,82,52,.25); }
-
-    /* Método de pago cards */
-    .metodo-card {
-        border-radius: 12px; border: 1.5px solid;
-        transition: box-shadow .2s, transform .2s;
-    }
-    .metodo-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.08); }
-    .metodo-card.mc-efectivo  { border-color: #A7C89A; background: linear-gradient(135deg,#F0FAF0,#E8F5E3); }
-    .metodo-card.mc-tarjeta   { border-color: #A8C4E0; background: linear-gradient(135deg,#F0F6FF,#E8F0FA); }
-    .metodo-card.mc-transfer  { border-color: #B8A8D8; background: linear-gradient(135deg,#F5F0FF,#EDE8F8); }
-
-    /* Section headers */
-    .section-header {
-        padding: 16px 20px;
-        display: flex; align-items: center; gap: 10px;
-        font-weight: 600; color: white; font-size: .95rem;
-    }
-    .section-header.sh-ingresos { background: linear-gradient(135deg,#10b981,#059669); }
-    .section-header.sh-gastos   { background: linear-gradient(135deg,#ef4444,#dc2626); }
-    .section-header.sh-movs     { background: linear-gradient(135deg,var(--lc-green),var(--lc-green-dark)); }
-    .section-header.sh-denom    { background: linear-gradient(135deg,#C8A96A,#a87c3a); }
-    .section-header.sh-info     { background: linear-gradient(135deg,#3b82f6,#1d4ed8); }
-
-    /* Categoría items */
-    .cat-item {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 10px 14px; border-radius: 10px;
-        background: #FAFDF8; border: 1px solid #EBF3E7;
-        transition: background .15s, border-color .15s;
-    }
-    .cat-item:hover { background: #F0FAF0; border-color: #C8DCC0; }
-
-    /* Movimiento items */
-    .mov-item {
-        padding: 14px 16px; border-bottom: 1px solid #F0F0EE;
-        transition: background .15s;
-    }
-    .mov-item:hover { background: #FAFDF8; }
-    .mov-item:last-child { border-bottom: none; }
-
-    /* Badges */
-    .badge-ingreso { background:rgba(16,185,129,.1);  color:#065f46; border:1px solid rgba(16,185,129,.25); }
-    .badge-gasto   { background:rgba(239,68,68,.1);   color:#991b1b; border:1px solid rgba(239,68,68,.25); }
-    .badge-ingreso-manual { background:rgba(245,158,11,.12); color:#92400e; border:1px solid rgba(245,158,11,.3); }
-    .badge-ingreso-renta  { background:rgba(92,122,78,.1);   color:#3D5234; border:1px solid rgba(92,122,78,.25); }
-    .badge-cerrado { background:rgba(92,122,78,.1);   color:#3D5234; border:1px solid rgba(92,122,78,.25); }
-    .badge-abierto { background:rgba(251,191,36,.15); color:#92400e; border:1px solid rgba(251,191,36,.35); }
-
-    /* Balance bar */
-    .balance-bar {
-        background: linear-gradient(135deg,#FAFDF8,#F0F4ED);
-        border-radius: 12px; border: 1px solid #DDE8D5;
-        padding: 18px 22px;
+    .cut-hero::after {
+        content: '';
+        position: absolute;
+        right: -90px;
+        top: -120px;
+        width: 300px;
+        height: 300px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--cut-accent) 20%, transparent);
+        pointer-events: none;
     }
 
-    /* Diferencia card */
-    .diferencia-positiva { background:linear-gradient(135deg,#f0fdf4,#dcfce7); border:1.5px solid #86efac; }
-    .diferencia-negativa { background:linear-gradient(135deg,#fff1f2,#ffe4e6); border:1.5px solid #fca5a5; }
-    .diferencia-cero     { background:linear-gradient(135deg,#f8fafc,#f1f5f9); border:1.5px solid #cbd5e1; }
+    .cut-hero > * { position: relative; z-index: 1; }
 
-    /* Denominaciones table */
-    .denom-row { padding: 8px 14px; border-bottom: 1px solid #EBF3E7; }
-    .denom-row:hover { background: #F5FAF2; }
-    .denom-row:last-child { border-bottom: none; }
+    .cut-hero-content {
+        padding-left: clamp(18px, 2.4vw, 44px);
+    }
 
-    /* Scrollbar */
-    .custom-scroll::-webkit-scrollbar { width: 5px; }
-    .custom-scroll::-webkit-scrollbar-track { background:#F0F4ED; border-radius:10px; }
-    .custom-scroll::-webkit-scrollbar-thumb { background:#A8C4A0; border-radius:10px; }
-    .custom-scroll::-webkit-scrollbar-thumb:hover { background:var(--lc-green); }
+    .cut-title-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
 
-    /* Print */
+    .cut-mark {
+        width: 46px;
+        height: 46px;
+        display: grid;
+        place-items: center;
+        border-radius: 15px;
+        background:
+            linear-gradient(135deg, rgba(255,255,255,.24), rgba(255,255,255,.10)),
+            color-mix(in srgb, var(--cut-accent) 42%, transparent);
+        border: 1px solid color-mix(in srgb, var(--cut-on-brand) 30%, transparent);
+        color: var(--cut-on-brand);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 12px 26px -18px rgba(0,0,0,.55);
+    }
+
+    .cut-mark i {
+        color: var(--cut-on-brand) !important;
+        text-shadow: 0 1px 8px rgba(0,0,0,.28);
+    }
+
+    .cut-title {
+        margin: 0;
+        color: var(--cut-on-brand);
+        font-family: var(--cut-serif) !important;
+        font-size: clamp(2.25rem, 4vw, 4rem);
+        font-weight: 700;
+        line-height: .94;
+        letter-spacing: 0;
+    }
+
+    .cut-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 30px;
+        padding: 0 12px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--cut-green) 18%, rgba(255,255,255,.08));
+        border: 1px solid color-mix(in srgb, var(--cut-green) 32%, rgba(255,255,255,.12));
+        color: #DFFBEB;
+        font-size: .78rem;
+        font-weight: 900;
+    }
+
+    .cut-status.is-open {
+        background: color-mix(in srgb, var(--cut-accent) 22%, rgba(255,255,255,.08));
+        border-color: color-mix(in srgb, var(--cut-accent) 34%, rgba(255,255,255,.12));
+        color: #FFF3D6;
+    }
+
+    .cut-status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: currentColor;
+    }
+
+    .cut-hero-copy {
+        max-width: 68ch;
+        margin: 14px 0 0;
+        color: color-mix(in srgb, var(--cut-on-brand) 72%, transparent);
+        font-size: .94rem;
+        font-weight: 650;
+        line-height: 1.55;
+    }
+
+    .cut-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin-top: 18px;
+    }
+
+    .cut-meta-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 34px;
+        padding: 0 12px 0 8px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.18);
+        color: color-mix(in srgb, var(--cut-on-brand) 88%, transparent);
+        font-size: .78rem;
+        font-weight: 800;
+        backdrop-filter: blur(10px);
+    }
+
+    .cut-meta-pill i {
+        width: 22px;
+        height: 22px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--cut-on-brand) 16%, transparent);
+        color: var(--cut-on-brand) !important;
+        font-size: .72rem;
+        text-shadow: 0 1px 6px rgba(0,0,0,.24);
+    }
+
+    .cut-actions {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(132px, 1fr));
+        gap: 10px;
+        min-width: min(100%, 460px);
+    }
+
+    .cut-btn {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 15px;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,.14);
+        background: rgba(255,255,255,.09);
+        color: var(--cut-on-brand);
+        font-size: .83rem;
+        font-weight: 900;
+        text-decoration: none;
+        cursor: pointer;
+        transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+
+    .cut-btn:hover { transform: translateY(-1px); background: rgba(255,255,255,.14); }
+
+    .cut-btn.is-primary {
+        background: color-mix(in srgb, var(--cut-accent) 82%, #FFFFFF);
+        border-color: transparent;
+        color: color-mix(in srgb, var(--cut-brand-deep) 88%, #000000);
+    }
+
+    .cut-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 14px;
+        margin: 18px 0;
+    }
+
+    .cut-kpi {
+        min-height: 146px;
+        display: grid;
+        align-content: space-between;
+        gap: 18px;
+        padding: 18px;
+        border-radius: 19px;
+        border: 1px solid var(--cut-line);
+        background: linear-gradient(145deg, rgba(255,255,255,.96), color-mix(in srgb, var(--cut-soft) 76%, #FFFFFF));
+        box-shadow: var(--cut-shadow-soft);
+        transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+
+    .cut-kpi:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--cut-accent) 34%, var(--cut-line)); box-shadow: var(--cut-shadow); }
+
+    .cut-kpi-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .cut-kpi span:first-child {
+        color: var(--cut-muted);
+        font-size: .72rem;
+        font-weight: 900;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+    }
+
+    .cut-kpi-icon {
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--cut-accent) 13%, #FFFFFF);
+        color: color-mix(in srgb, var(--cut-accent) 76%, #3F2E12);
+        border: 1px solid var(--cut-line-soft);
+    }
+
+    .cut-kpi-value {
+        font-family: var(--cut-serif) !important;
+        color: var(--cut-brand-deep);
+        font-size: clamp(1.56rem, 2vw, 2.18rem);
+        line-height: 1;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .cut-kpi-value.is-income,
+    .cut-money.is-income { color: var(--cut-green); }
+    .cut-kpi-value.is-expense,
+    .cut-money.is-expense { color: var(--cut-red); }
+    .cut-kpi-value.is-blue { color: var(--cut-blue); }
+
+    .cut-kpi-note {
+        margin: 6px 0 0;
+        color: var(--cut-muted);
+        font-size: .78rem;
+        font-weight: 700;
+    }
+
+    .cut-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(370px, .95fr);
+        gap: 18px;
+        align-items: start;
+        margin-bottom: 18px;
+    }
+
+    .cut-lower-grid {
+        display: grid;
+        grid-template-columns: minmax(360px, .62fr) minmax(0, 1.38fr);
+        gap: 18px;
+        align-items: start;
+    }
+
+    .cut-stack { display: grid; gap: 18px; }
+
+    .cut-panel {
+        overflow: hidden;
+        border-radius: 20px;
+        border: 1px solid var(--cut-line);
+        background: rgba(255,255,255,.92);
+        box-shadow: var(--cut-shadow-soft);
+    }
+
+    .cut-panel-head {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 13px;
+        align-items: center;
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--cut-line-soft);
+        background: linear-gradient(120deg, color-mix(in srgb, var(--cut-accent) 5%, #FFFFFF), rgba(255,255,255,.94));
+    }
+
+    .cut-panel-icon {
+        width: 40px;
+        height: 40px;
+        display: grid;
+        place-items: center;
+        border-radius: 13px;
+        border: 1px solid var(--cut-line-soft);
+        background: color-mix(in srgb, var(--cut-accent) 12%, #FFFFFF);
+        color: color-mix(in srgb, var(--cut-accent) 78%, #3F2E12);
+    }
+
+    .cut-panel-icon.is-income { background: var(--cut-green-soft); color: var(--cut-green); }
+    .cut-panel-icon.is-expense { background: var(--cut-red-soft); color: var(--cut-red); }
+    .cut-panel-icon.is-blue { background: var(--cut-blue-soft); color: var(--cut-blue); }
+
+    .cut-panel-kicker {
+        display: block;
+        color: var(--cut-muted);
+        font-size: .68rem;
+        font-weight: 950;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .cut-panel-title {
+        margin: 3px 0 0;
+        color: var(--cut-brand-deep);
+        font-family: var(--cut-serif) !important;
+        font-size: 1.34rem;
+        line-height: 1.05;
+        font-weight: 700;
+        letter-spacing: 0;
+    }
+
+    .cut-panel-total {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 32px;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: var(--cut-soft);
+        color: var(--cut-brand-deep);
+        font-size: .82rem;
+        font-weight: 950;
+        white-space: nowrap;
+    }
+
+    .cut-panel-body { padding: 18px 20px 20px; }
+
+    .cut-method-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .cut-method {
+        display: grid;
+        gap: 14px;
+        min-height: 204px;
+        padding: 16px;
+        border-radius: 16px;
+        border: 1px solid var(--cut-line-soft);
+        background: linear-gradient(145deg, #FFFFFF, color-mix(in srgb, var(--method-soft, var(--cut-soft)) 72%, #FFFFFF));
+    }
+
+    .cut-method.is-cash { --method-soft: var(--cut-green-soft); --method-color: var(--cut-green); }
+    .cut-method.is-card { --method-soft: var(--cut-blue-soft); --method-color: var(--cut-blue); }
+    .cut-method.is-transfer { --method-soft: var(--cut-violet-soft); --method-color: var(--cut-violet); }
+
+    .cut-method-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .cut-method-name {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--cut-brand-deep);
+        font-weight: 950;
+    }
+
+    .cut-method-name i {
+        width: 32px;
+        height: 32px;
+        display: inline-grid;
+        place-items: center;
+        border-radius: 10px;
+        background: var(--method-soft);
+        color: var(--method-color);
+    }
+
+    .cut-method-count {
+        color: var(--cut-muted);
+        font-size: .72rem;
+        font-weight: 850;
+        white-space: nowrap;
+    }
+
+    .cut-method-note {
+        margin: -8px 0 0;
+        color: var(--cut-muted);
+        font-size: .78rem;
+        font-weight: 700;
+    }
+
+    .cut-method-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-top: 9px;
+        border-top: 1px solid color-mix(in srgb, var(--method-color) 14%, #E8EDF4);
+        color: var(--cut-muted);
+        font-size: .82rem;
+        font-weight: 780;
+    }
+
+    .cut-method-row strong { font-variant-numeric: tabular-nums; font-weight: 950; }
+
+    .cut-method-bar {
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: var(--cash-pct, 0fr) var(--card-pct, 0fr) var(--transfer-pct, 0fr);
+        height: 12px;
+        margin-bottom: 16px;
+        border-radius: 999px;
+        background: var(--cut-line-soft);
+    }
+
+    .cut-method-bar span:nth-child(1) { background: var(--cut-green); }
+    .cut-method-bar span:nth-child(2) { background: var(--cut-blue); }
+    .cut-method-bar span:nth-child(3) { background: var(--cut-violet); }
+
+    .cut-audit-card {
+        display: grid;
+        gap: 14px;
+    }
+
+    .cut-audit-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 13px 14px;
+        border-radius: 14px;
+        background: var(--cut-soft);
+        border: 1px solid var(--cut-line-soft);
+    }
+
+    .cut-audit-line span {
+        color: var(--cut-muted);
+        font-size: .82rem;
+        font-weight: 850;
+    }
+
+    .cut-audit-line strong {
+        color: var(--cut-brand-deep);
+        font-size: .98rem;
+        font-weight: 950;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .cut-diff {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+        padding: 15px;
+        border-radius: 16px;
+        border: 1px solid var(--cut-line-soft);
+        background: #F8FAFC;
+    }
+
+    .cut-diff.is-positive { background: var(--cut-green-soft); border-color: color-mix(in srgb, var(--cut-green) 26%, #DDEFE6); }
+    .cut-diff.is-negative { background: var(--cut-red-soft); border-color: color-mix(in srgb, var(--cut-red) 26%, #F1D6D2); }
+
+    .cut-diff-icon {
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        background: rgba(255,255,255,.72);
+        color: var(--cut-brand-deep);
+    }
+
+    .cut-diff.is-positive .cut-diff-icon,
+    .cut-diff.is-positive .cut-diff-value { color: var(--cut-green); }
+    .cut-diff.is-negative .cut-diff-icon,
+    .cut-diff.is-negative .cut-diff-value { color: var(--cut-red); }
+
+    .cut-diff-title { color: var(--cut-brand-deep); font-weight: 950; }
+    .cut-diff-sub { display: block; color: var(--cut-muted); font-size: .76rem; font-weight: 760; }
+    .cut-diff-value { font-family: var(--cut-serif) !important; font-size: 1.45rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+    .cut-note {
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid color-mix(in srgb, var(--cut-accent) 28%, var(--cut-line));
+        background: color-mix(in srgb, var(--cut-accent) 11%, #FFFFFF);
+    }
+
+    .cut-note strong {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: color-mix(in srgb, var(--cut-accent) 72%, #5B3C08);
+        font-size: .78rem;
+        font-weight: 950;
+        margin-bottom: 6px;
+    }
+
+    .cut-note p { margin: 0; color: var(--cut-text); font-size: .86rem; font-weight: 700; line-height: 1.45; }
+
+    .cut-denom-list { display: grid; gap: 8px; }
+
+    .cut-denom-row {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 14px;
+        align-items: center;
+        padding: 11px 12px;
+        border-radius: 12px;
+        border: 1px solid var(--cut-line-soft);
+        background: #FFFFFF;
+        color: var(--cut-text);
+        font-size: .86rem;
+        font-weight: 850;
+    }
+
+    .cut-denom-row small { color: var(--cut-muted); font-weight: 800; }
+    .cut-denom-row strong { color: var(--cut-brand-deep); font-variant-numeric: tabular-nums; }
+
+    .cut-denom-total {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 10px;
+        padding: 13px 14px;
+        border-radius: 14px;
+        background: color-mix(in srgb, var(--cut-brand) 8%, #FFFFFF);
+        color: var(--cut-brand-deep);
+        font-weight: 950;
+    }
+
+    .cut-cat-list { display: grid; gap: 10px; }
+
+    .cut-cat {
+        --cat-color: #64748B;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px;
+        padding: 13px;
+        border-radius: 15px;
+        border: 1px solid var(--cut-line-soft);
+        background: #FFFFFF;
+        transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+
+    .cut-cat:hover {
+        transform: translateY(-1px);
+        border-color: color-mix(in srgb, var(--cat-color) 24%, var(--cut-line));
+        background: color-mix(in srgb, var(--cat-color) 5%, #FFFFFF);
+    }
+
+    .cut-cat-icon {
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--cat-color) 14%, #FFFFFF);
+        color: var(--cat-color);
+    }
+
+    .cut-cat-title { display: block; color: var(--cut-text); font-size: .9rem; font-weight: 950; }
+    .cut-cat-sub { display: block; color: var(--cut-muted); font-size: .76rem; font-weight: 760; }
+    .cut-cat-total { font-weight: 950; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+    .cut-search {
+        position: relative;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--cut-line-soft);
+        background: color-mix(in srgb, var(--cut-soft) 80%, #FFFFFF);
+    }
+
+    .cut-search i {
+        position: absolute;
+        left: 32px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--cut-muted);
+        font-size: .82rem;
+    }
+
+    .cut-search input {
+        width: 100%;
+        min-height: 44px;
+        padding: 0 16px 0 42px;
+        border-radius: 14px;
+        border: 1px solid var(--cut-line);
+        background: #FFFFFF;
+        color: var(--cut-text);
+        font-size: .88rem;
+        font-weight: 760;
+        outline: none;
+        transition: border-color .18s ease, box-shadow .18s ease;
+    }
+
+    .cut-search input:focus {
+        border-color: var(--cut-accent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--cut-accent) 24%, transparent);
+    }
+
+    .cut-movement-list {
+        display: grid;
+        gap: 10px;
+        max-height: 720px;
+        overflow-y: auto;
+        padding: 14px;
+        scrollbar-color: color-mix(in srgb, var(--cut-accent) 50%, #FFFFFF) transparent;
+    }
+
+    .cut-movement-list::-webkit-scrollbar { width: 6px; }
+    .cut-movement-list::-webkit-scrollbar-track { background: transparent; }
+    .cut-movement-list::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--cut-accent) 44%, #FFFFFF); border-radius: 99px; }
+
+    .cut-movement {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr) auto;
+        gap: 13px;
+        align-items: start;
+        padding: 14px;
+        border-radius: 16px;
+        border: 1px solid var(--cut-line-soft);
+        background: #FFFFFF;
+        transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+
+    .cut-movement:hover { transform: translateY(-1px); border-color: var(--cut-line); box-shadow: var(--cut-shadow-soft); }
+
+    .cut-movement-mark {
+        width: 44px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+        border-radius: 14px;
+        background: var(--cut-red-soft);
+        color: var(--cut-red);
+    }
+
+    .cut-movement.is-income .cut-movement-mark { background: var(--cut-green-soft); color: var(--cut-green); }
+
+    .cut-movement-top {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex-wrap: wrap;
+        margin-bottom: 6px;
+    }
+
+    .cut-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 24px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: var(--cut-soft);
+        color: var(--cut-muted);
+        font-size: .68rem;
+        font-weight: 950;
+    }
+
+    .cut-chip.is-income { background: var(--cut-green-soft); color: var(--cut-green); }
+    .cut-chip.is-expense { background: var(--cut-red-soft); color: var(--cut-red); }
+
+    .cut-movement-title {
+        margin: 0;
+        color: var(--cut-text);
+        font-size: .94rem;
+        font-weight: 950;
+        line-height: 1.35;
+    }
+
+    .cut-movement-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 8px;
+        color: var(--cut-muted);
+        font-size: .75rem;
+        font-weight: 780;
+    }
+
+    .cut-movement-meta a,
+    .cut-movement-meta span { display: inline-flex; align-items: center; gap: 6px; }
+    .cut-movement-meta a { color: var(--cut-brand); text-decoration: none; font-weight: 900; }
+    .cut-movement-meta a:hover { text-decoration: underline; }
+
+    .cut-movement-amount {
+        align-self: center;
+        font-size: 1rem;
+        font-weight: 950;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        color: var(--cut-red);
+    }
+
+    .cut-movement.is-income .cut-movement-amount { color: var(--cut-green); }
+
+    .cut-empty {
+        display: grid;
+        place-items: center;
+        min-height: 180px;
+        padding: 24px;
+        text-align: center;
+        color: var(--cut-muted);
+    }
+
+    .cut-empty i {
+        width: 48px;
+        height: 48px;
+        display: grid;
+        place-items: center;
+        margin: 0 auto 10px;
+        border-radius: 16px;
+        background: var(--cut-soft);
+        color: color-mix(in srgb, var(--cut-brand) 46%, var(--cut-muted));
+    }
+
+    .cut-empty strong { display: block; color: var(--cut-text); font-weight: 950; }
+    .cut-empty p { margin: 5px 0 0; font-size: .86rem; font-weight: 720; }
+
+    .cut-shortcuts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .cut-shortcut {
+        flex: 1 1 150px;
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 12px;
+        border-radius: 13px;
+        border: 1px solid var(--cut-line-soft);
+        background: var(--cut-soft);
+        color: var(--cut-brand-deep);
+        text-decoration: none;
+        font-size: .82rem;
+        font-weight: 900;
+        transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+
+    .cut-shortcut:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--cut-accent) 34%, var(--cut-line)); background: color-mix(in srgb, var(--cut-accent) 8%, #FFFFFF); }
+
+    .cut-detail-page a:focus-visible,
+    .cut-detail-page button:focus-visible,
+    .cut-detail-page input:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--cut-accent) 30%, transparent);
+    }
+
+    @media (max-width: 1320px) {
+        .cut-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .cut-grid,
+        .cut-lower-grid { grid-template-columns: 1fr; }
+        .cut-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+        .cut-hero { grid-template-columns: 1fr; }
+        .cut-hero-content { padding-left: clamp(10px, 2vw, 18px); }
+    }
+
+    @media (max-width: 900px) {
+        .cut-shell { padding: 16px 12px 34px; }
+        .cut-kpi-grid,
+        .cut-method-grid { grid-template-columns: 1fr; }
+        .cut-actions { grid-template-columns: 1fr; }
+        .cut-panel-head { grid-template-columns: auto minmax(0, 1fr); }
+        .cut-panel-total { grid-column: 1 / -1; justify-self: start; }
+        .cut-movement { grid-template-columns: 40px minmax(0, 1fr); }
+        .cut-movement-amount { grid-column: 2; justify-self: start; }
+        .cut-title { font-size: clamp(2.1rem, 12vw, 3rem); }
+    }
+
+    @media (max-width: 560px) {
+        .cut-hero,
+        .cut-panel-body { padding: 16px; }
+        .cut-hero-content { padding-left: 8px; }
+        .cut-panel-head { padding: 15px 16px; }
+        .cut-kpi { min-height: 128px; }
+        .cut-denom-row { grid-template-columns: 1fr auto; }
+        .cut-denom-row strong { grid-column: 1 / -1; }
+    }
+
     @media print {
-        .no-print { display: none !important; }
-        .lc-bg { background: white !important; }
-        .stat-card, .metodo-card, .bg-white { box-shadow: none !important; border: 1px solid #e5e7eb !important; }
+        .no-print,
+        .cut-backbar,
+        .cut-search,
+        .cut-shortcuts { display: none !important; }
+        .cut-detail-page { background: #FFFFFF !important; }
+        .cut-shell { width: 100%; padding: 0; }
+        .cut-hero,
+        .cut-panel,
+        .cut-kpi,
+        .cut-method,
+        .cut-movement { box-shadow: none !important; }
+        .cut-movement-list { max-height: none; overflow: visible; }
     }
 </style>
 
-<div class="lc-bg min-h-screen p-4 md:p-6">
+<div class="cut-detail-page">
+    <main class="cut-shell">
+        <nav class="cut-backbar no-print" aria-label="Navegacion de corte">
+            <a href="<?= back_url('caja/historial') ?>" class="cut-back" title="Volver">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <span class="cut-breadcrumb">Caja / Historial / <strong>Corte #<?= (int)($corte['id'] ?? 0) ?></strong></span>
+        </nav>
 
-    <!-- ══════════════════════════════════════════════ HEADER ══ -->
-    <div class="max-w-7xl mx-auto mb-6">
-        <div class="header-card rounded-2xl shadow-lg p-5 md:p-7">
-            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-
-                <div>
-                    <div class="flex items-center gap-3 mb-2">
-                        <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:rgba(92,122,78,.12)">
-                            <i class="fas fa-file-invoice-dollar text-[#5C7A4E]"></i>
-                        </div>
-                        <h1 class="text-2xl md:text-3xl font-bold text-[#3D5234] font-playfair tracking-tight">
-                            Corte #<?= $corte['id'] ?>
-                        </h1>
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold <?= $esta_cerrado ? 'badge-cerrado' : 'badge-abierto' ?>">
-                            <i class="fas fa-circle mr-1.5 text-[9px]"></i>
-                            <?= $esta_cerrado ? 'Cerrado' : 'Abierto' ?>
-                        </span>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 ml-12">
-                        <span class="flex items-center gap-1.5 bg-[#F0F4ED] px-2.5 py-1 rounded-full">
-                            <i class="fas fa-store text-[#5C7A4E] text-xs"></i>
-                            <?= htmlspecialchars($corte['caja_nombre'] ?? '') ?>
-                        </span>
-                        <span class="flex items-center gap-1.5 bg-[#F0F4ED] px-2.5 py-1 rounded-full">
-                            <i class="fas fa-calendar-alt text-[#5C7A4E] text-xs"></i>
-                            <?= date('d/m/Y H:i', strtotime($corte['fecha_apertura'])) ?>
-                        </span>
-                        <?php if ($esta_cerrado && $corte['fecha_cierre']): ?>
-                        <span class="flex items-center gap-1.5 bg-[#F0F4ED] px-2.5 py-1 rounded-full">
-                            <i class="fas fa-calendar-check text-[#5C7A4E] text-xs"></i>
-                            Cerrado: <?= date('d/m/Y H:i', strtotime($corte['fecha_cierre'])) ?>
-                        </span>
-                        <?php endif; ?>
-                        <span class="flex items-center gap-1.5 bg-[#F0F4ED] px-2.5 py-1 rounded-full">
-                            <i class="fas fa-user text-[#5C7A4E] text-xs"></i>
-                            <?= htmlspecialchars($corte['usuario_apertura'] ?? '') ?>
-                        </span>
-                        <?php if ($esta_cerrado && $corte['usuario_cierre']): ?>
-                        <span class="flex items-center gap-1.5 bg-[#F0F4ED] px-2.5 py-1 rounded-full">
-                            <i class="fas fa-user-check text-[#5C7A4E] text-xs"></i>
-                            Cerró: <?= htmlspecialchars($corte['usuario_cierre']) ?>
-                        </span>
-                        <?php endif; ?>
-                    </div>
+        <header class="cut-hero" aria-label="Resumen principal del corte">
+            <div class="cut-hero-content">
+                <div class="cut-title-row">
+                    <span class="cut-mark"><i class="fas fa-file-invoice-dollar"></i></span>
+                    <h1 class="cut-title">Corte #<?= (int)($corte['id'] ?? 0) ?></h1>
+                    <span class="cut-status <?= $esta_cerrado ? '' : 'is-open' ?>">
+                        <span class="cut-status-dot"></span>
+                        <?= cut_h($estado_label) ?>
+                    </span>
                 </div>
-
-                <!-- Botones -->
-                <div class="flex flex-wrap gap-2 no-print">
-                    <a href="<?= url('caja/historial') ?>"
-                       class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-[#D4E6CA] text-[#4A6340] bg-[#F5FAF2] hover:bg-[#EAF3E4] transition">
-                        <i class="fas fa-arrow-left text-xs"></i> Volver al historial
-                    </a>
-                    <a href="<?= url('caja/descargar-pdf/' . $corte['id']) ?>"
-                       class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition"
-                       style="background:linear-gradient(135deg,var(--lc-gold),#B8994A);">
-                        <i class="fas fa-file-pdf text-xs"></i> Descargar PDF
-                    </a>
-                    <button onclick="window.print()"
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 transition">
-                        <i class="fas fa-print text-xs"></i> Imprimir
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ════════════════════════════════════════════ STAT CARDS ══ -->
-    <div class="max-w-7xl mx-auto mb-5 grid grid-cols-2 lg:grid-cols-4 gap-4">
-
-        <!-- Monto Inicial -->
-        <div class="stat-card card-inicial shadow-sm p-5">
-            <div class="flex items-center justify-between mb-3">
-                <div class="icon-circle green-ic"><i class="fas fa-wallet"></i></div>
-                <span class="text-xs text-gray-400 font-medium">Apertura</span>
-            </div>
-            <p class="text-2xl font-bold text-[#3D5234]">$<?= number_format($corte['monto_inicial'] ?? 0, 2) ?></p>
-            <p class="text-xs text-gray-400 mt-1">Monto inicial</p>
-        </div>
-
-        <!-- Total Ingresos -->
-        <div class="stat-card card-ingresos shadow-sm p-5">
-            <div class="flex items-center justify-between mb-3">
-                <div class="icon-circle emerald-ic"><i class="fas fa-arrow-down"></i></div>
-                <span class="text-xs text-gray-400 font-medium"><?= count(array_filter($movimientos, fn($m) => $m['tipo'] === 'ingreso')) ?> movs.</span>
-            </div>
-            <p class="text-2xl font-bold text-emerald-600">+$<?= number_format($total_ingresos, 2) ?></p>
-            <p class="text-xs text-gray-400 mt-1">Total ingresos</p>
-        </div>
-
-        <!-- Total Gastos -->
-        <div class="stat-card card-gastos shadow-sm p-5">
-            <div class="flex items-center justify-between mb-3">
-                <div class="icon-circle red-ic"><i class="fas fa-arrow-up"></i></div>
-                <span class="text-xs text-gray-400 font-medium"><?= count(array_filter($movimientos, fn($m) => $m['tipo'] !== 'ingreso')) ?> movs.</span>
-            </div>
-            <p class="text-2xl font-bold text-red-500">-$<?= number_format($total_gastos, 2) ?></p>
-            <p class="text-xs text-gray-400 mt-1">Total gastos</p>
-        </div>
-
-        <!-- Balance -->
-        <div class="stat-card card-balance shadow-sm p-5">
-            <div class="flex items-center justify-between mb-3">
-                <div class="icon-circle gold-ic"><i class="fas fa-balance-scale"></i></div>
-                <span class="text-xs text-gray-400 font-medium">Balance</span>
-            </div>
-            <p class="text-2xl font-bold <?= $balance_general >= 0 ? 'text-emerald-600' : 'text-red-500' ?>">
-                <?= $balance_general >= 0 ? '+' : '' ?>$<?= number_format($balance_general, 2) ?>
-            </p>
-            <p class="text-xs text-gray-400 mt-1">General</p>
-        </div>
-    </div>
-
-    <!-- ════════════════════════════════════ MÉTODOS DE PAGO + EFECTIVO ══ -->
-    <div class="max-w-7xl mx-auto mb-5">
-        <div class="bg-white rounded-xl shadow-sm border border-[#E0ECD8] p-5">
-
-            <!-- Tarjetas de método -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-
-                <!-- Efectivo -->
-                <div class="metodo-card mc-efectivo p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <h4 class="font-semibold text-gray-700 text-sm flex items-center gap-2">
-                            <i class="fas fa-money-bill-wave text-emerald-600"></i> Efectivo
-                        </h4>
-                        <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">Físico</span>
-                    </div>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-500">Ingresos</span>
-                            <span class="font-semibold text-emerald-600">+$<?= number_format($corte['total_ingresos_efectivo'] ?? 0, 2) ?></span>
-                        </div>
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-500">Gastos</span>
-                            <span class="font-semibold text-red-500">-$<?= number_format($corte['total_gastos_efectivo'] ?? 0, 2) ?></span>
-                        </div>
-                        <div class="pt-2 border-t border-emerald-200">
-                            <div class="flex justify-between items-center">
-                                <span class="font-semibold text-gray-600 text-sm">Balance</span>
-                                <span class="font-bold text-base <?= (($corte['total_ingresos_efectivo']??0) - ($corte['total_gastos_efectivo']??0)) >= 0 ? 'text-emerald-600' : 'text-red-500' ?>">
-                                    $<?= number_format(($corte['total_ingresos_efectivo']??0) - ($corte['total_gastos_efectivo']??0), 2) ?>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tarjeta -->
-                <div class="metodo-card mc-tarjeta p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <h4 class="font-semibold text-gray-700 text-sm flex items-center gap-2">
-                            <i class="fas fa-credit-card text-blue-500"></i> Tarjeta
-                        </h4>
-                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">No física</span>
-                    </div>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-500">Ingresos</span>
-                            <span class="font-semibold text-emerald-600">+$<?= number_format($corte['total_ingresos_tarjeta'] ?? 0, 2) ?></span>
-                        </div>
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-500">Gastos</span>
-                            <span class="font-semibold text-red-500">-$<?= number_format($corte['total_gastos_tarjeta'] ?? 0, 2) ?></span>
-                        </div>
-                        <div class="pt-2 border-t border-blue-200">
-                            <div class="flex justify-between items-center">
-                                <span class="font-semibold text-gray-600 text-sm">Balance</span>
-                                <span class="font-bold text-base <?= (($corte['total_ingresos_tarjeta']??0) - ($corte['total_gastos_tarjeta']??0)) >= 0 ? 'text-emerald-600' : 'text-red-500' ?>">
-                                    $<?= number_format(($corte['total_ingresos_tarjeta']??0) - ($corte['total_gastos_tarjeta']??0), 2) ?>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Transferencia -->
-                <div class="metodo-card mc-transfer p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <h4 class="font-semibold text-gray-700 text-sm flex items-center gap-2">
-                            <i class="fas fa-exchange-alt text-violet-500"></i> Transferencia
-                        </h4>
-                        <span class="text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full font-medium">No física</span>
-                    </div>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-500">Ingresos</span>
-                            <span class="font-semibold text-emerald-600">+$<?= number_format($corte['total_ingresos_transferencia'] ?? 0, 2) ?></span>
-                        </div>
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-500">Gastos</span>
-                            <span class="font-semibold text-red-500">-$<?= number_format($corte['total_gastos_transferencia'] ?? 0, 2) ?></span>
-                        </div>
-                        <div class="pt-2 border-t border-violet-200">
-                            <div class="flex justify-between items-center">
-                                <span class="font-semibold text-gray-600 text-sm">Balance</span>
-                                <span class="font-bold text-base <?= (($corte['total_ingresos_transferencia']??0) - ($corte['total_gastos_transferencia']??0)) >= 0 ? 'text-emerald-600' : 'text-red-500' ?>">
-                                    $<?= number_format(($corte['total_ingresos_transferencia']??0) - ($corte['total_gastos_transferencia']??0), 2) ?>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+                <p class="cut-hero-copy">
+                    Lectura completa del turno de caja: dinero inicial, movimientos, metodos de pago, arqueo y actividad registrada.
+                </p>
+                <div class="cut-meta" aria-label="Datos del corte">
+                    <span class="cut-meta-pill"><i class="fas fa-cash-register"></i><?= cut_h($caja_nombre) ?></span>
+                    <span class="cut-meta-pill"><i class="fas fa-calendar-alt"></i><?= cut_h($fecha_apertura_label) ?></span>
+                    <span class="cut-meta-pill"><i class="fas fa-user"></i><?= cut_h($usuario_apertura) ?></span>
+                    <?php if ($esta_cerrado): ?>
+                        <span class="cut-meta-pill"><i class="fas fa-calendar-check"></i><?= cut_h($fecha_cierre_label) ?></span>
+                        <span class="cut-meta-pill"><i class="fas fa-user-check"></i>Cerro: <?= cut_h($usuario_cierre) ?></span>
+                    <?php endif; ?>
                 </div>
             </div>
 
-            <!-- Balance general + Efectivo en caja -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Balance general -->
-                <div class="balance-bar flex items-center justify-between flex-wrap gap-3">
+            <div class="cut-actions no-print" aria-label="Acciones del corte">
+                <a href="<?= back_url('caja/historial') ?>" class="cut-btn"><i class="fas fa-arrow-left"></i>Volver</a>
+                <a href="<?= url('caja/descargar-pdf/' . (int)($corte['id'] ?? 0)) ?>" class="cut-btn is-primary"><i class="fas fa-file-pdf"></i>Descargar PDF</a>
+                <button type="button" onclick="window.print()" class="cut-btn"><i class="fas fa-print"></i>Imprimir</button>
+            </div>
+        </header>
+
+        <section class="cut-kpi-grid" aria-label="Indicadores del corte">
+            <article class="cut-kpi">
+                <div class="cut-kpi-top"><span>Monto inicial</span><span class="cut-kpi-icon"><i class="fas fa-wallet"></i></span></div>
+                <div><div class="cut-kpi-value"><?= cut_money($corte['monto_inicial'] ?? 0) ?></div><p class="cut-kpi-note">Base de apertura, <?= cut_h($hora_apertura_label) ?> hrs</p></div>
+            </article>
+            <article class="cut-kpi">
+                <div class="cut-kpi-top"><span>Ingresos</span><span class="cut-kpi-icon"><i class="fas fa-arrow-trend-up"></i></span></div>
+                <div><div class="cut-kpi-value is-income"><?= cut_money_abs($total_ingresos, '+') ?></div><p class="cut-kpi-note"><?= number_format($movimientos_ingresos) ?> movimientos registrados</p></div>
+            </article>
+            <article class="cut-kpi">
+                <div class="cut-kpi-top"><span>Gastos</span><span class="cut-kpi-icon"><i class="fas fa-arrow-trend-down"></i></span></div>
+                <div><div class="cut-kpi-value is-expense"><?= cut_money_abs($total_gastos, '-') ?></div><p class="cut-kpi-note"><?= number_format($movimientos_gastos) ?> salidas registradas</p></div>
+            </article>
+            <article class="cut-kpi">
+                <div class="cut-kpi-top"><span>Efectivo fisico</span><span class="cut-kpi-icon"><i class="fas fa-coins"></i></span></div>
+                <div><div class="cut-kpi-value is-blue"><?= $efectivo_en_caja < 0 ? '-' : '' ?><?= cut_money(abs($efectivo_en_caja)) ?></div><p class="cut-kpi-note">Inicial + ingresos - gastos en efectivo</p></div>
+            </article>
+            <article class="cut-kpi">
+                <div class="cut-kpi-top"><span>Balance</span><span class="cut-kpi-icon"><i class="fas fa-scale-balanced"></i></span></div>
+                <div><div class="cut-kpi-value <?= $balance_general >= 0 ? 'is-income' : 'is-expense' ?>"><?= cut_signed_money($balance_general) ?></div><p class="cut-kpi-note">Todos los metodos de pago</p></div>
+            </article>
+        </section>
+
+        <section class="cut-grid" aria-label="Metodos y arqueo">
+            <article class="cut-panel">
+                <div class="cut-panel-head">
+                    <span class="cut-panel-icon"><i class="fas fa-credit-card"></i></span>
                     <div>
-                        <h4 class="font-bold text-[#3D5234] text-sm">Balance General</h4>
-                        <p class="text-xs text-gray-400 mt-0.5">Todos los métodos de pago</p>
+                        <span class="cut-panel-kicker">Distribucion</span>
+                        <h2 class="cut-panel-title">Metodos de pago</h2>
                     </div>
-                    <div class="text-right">
-                        <p class="text-2xl font-bold <?= $balance_general >= 0 ? 'text-emerald-600' : 'text-red-500' ?>">
-                            <?= $balance_general >= 0 ? '+' : '' ?>$<?= number_format($balance_general, 2) ?>
-                        </p>
-                        <p class="text-xs text-gray-400 mt-0.5">
-                            <span class="text-emerald-600 font-medium">↑ $<?= number_format($total_ingresos, 2) ?></span>
-                            <span class="mx-1 text-gray-300">|</span>
-                            <span class="text-red-500 font-medium">↓ $<?= number_format($total_gastos, 2) ?></span>
-                        </p>
-                    </div>
+                    <span class="cut-panel-total"><?= number_format(count($movimientos)) ?> movimientos</span>
                 </div>
-
-                <!-- Efectivo físico en caja -->
-                <div class="card-efectivo p-5">
-                    <div class="relative z-10">
-                        <p class="text-white/70 text-xs font-medium mb-1 flex items-center gap-1.5">
-                            <i class="fas fa-coins text-[10px]"></i> Efectivo físico en caja
-                        </p>
-                        <p class="text-3xl font-bold text-white"><?= $efectivo_en_caja >= 0 ? '' : '-' ?>$<?= number_format(abs($efectivo_en_caja), 2) ?></p>
-                        <p class="text-white/50 text-xs mt-1">Inicial $<?= number_format($corte['monto_inicial'] ?? 0, 2) ?> + ingresos − gastos efectivo</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ═════════════════════════ ARQUEO + DENOMINACIONES (si está cerrado) ══ -->
-    <?php if ($esta_cerrado): ?>
-    <div class="max-w-7xl mx-auto mb-5 grid grid-cols-1 md:grid-cols-2 gap-5">
-
-        <!-- Arqueo -->
-        <div class="bg-white rounded-xl shadow-sm border border-[#E0ECD8] overflow-hidden">
-            <div class="section-header sh-info rounded-t-xl">
-                <div class="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-calculator text-white text-xs"></i>
-                </div>
-                Arqueo de Caja
-            </div>
-            <div class="p-5 space-y-3">
-                <div class="flex justify-between items-center text-sm py-2 border-b border-gray-100">
-                    <span class="text-gray-500 flex items-center gap-2"><i class="fas fa-calculator text-gray-400 text-xs"></i> Efectivo esperado</span>
-                    <span class="font-semibold text-gray-800">$<?= number_format($efectivo_en_caja, 2) ?></span>
-                </div>
-                <div class="flex justify-between items-center text-sm py-2 border-b border-gray-100">
-                    <span class="text-gray-500 flex items-center gap-2"><i class="fas fa-hand-holding-usd text-gray-400 text-xs"></i> Efectivo contado</span>
-                    <span class="font-semibold text-gray-800">$<?= number_format($corte['efectivo_contado'] ?? 0, 2) ?></span>
-                </div>
-                <div class="pt-1">
-                    <?php
-                    $clase_dif = $diferencia > 0 ? 'diferencia-positiva' : ($diferencia < 0 ? 'diferencia-negativa' : 'diferencia-cero');
-                    $color_dif = $diferencia > 0 ? 'text-emerald-700' : ($diferencia < 0 ? 'text-red-600' : 'text-gray-600');
-                    $icon_dif  = $diferencia > 0 ? 'fa-arrow-up text-emerald-500' : ($diferencia < 0 ? 'fa-arrow-down text-red-500' : 'fa-equals text-gray-400');
-                    $label_dif = $diferencia > 0 ? 'Sobrante' : ($diferencia < 0 ? 'Faltante' : 'Cuadrado');
-                    ?>
-                    <div class="<?= $clase_dif ?> rounded-xl p-4 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-white/60">
-                                <i class="fas <?= $icon_dif ?> text-sm"></i>
-                            </div>
-                            <div>
-                                <p class="font-bold <?= $color_dif ?> text-sm"><?= $label_dif ?></p>
-                                <p class="text-xs text-gray-500">Diferencia de arqueo</p>
-                            </div>
+                <div class="cut-panel-body">
+                    <?php if ($total_ingresos > 0): ?>
+                        <div class="cut-method-bar" style="--cash-pct: <?= max(0.01, (($metodos_pago['efectivo']['ingresos'] / $total_ingresos) * 100)) ?>fr; --card-pct: <?= max(0.01, (($metodos_pago['tarjeta']['ingresos'] / $total_ingresos) * 100)) ?>fr; --transfer-pct: <?= max(0.01, (($metodos_pago['transferencia']['ingresos'] / $total_ingresos) * 100)) ?>fr;" aria-label="Distribucion de ingresos por metodo">
+                            <span></span><span></span><span></span>
                         </div>
-                        <p class="text-xl font-bold <?= $color_dif ?>">
-                            <?= $diferencia >= 0 ? '+' : '' ?>$<?= number_format($diferencia, 2) ?>
-                        </p>
+                    <?php endif; ?>
+                    <div class="cut-method-grid">
+                        <?php foreach ($metodos_pago as $key => $method): ?>
+                            <?php $method_balance = $method['ingresos'] - $method['gastos']; ?>
+                            <article class="cut-method is-<?= cut_h($method['tone']) ?>">
+                                <div class="cut-method-head">
+                                    <div class="cut-method-name"><i class="fas fa-<?= cut_h($method['icon']) ?>"></i><?= cut_h($method['label']) ?></div>
+                                    <span class="cut-method-count"><?= number_format($method['count']) ?> mov.</span>
+                                </div>
+                                <p class="cut-method-note"><?= cut_h($method['note']) ?></p>
+                                <div class="cut-method-row"><span>Ingresos</span><strong class="cut-money is-income"><?= cut_money_abs($method['ingresos'], '+') ?></strong></div>
+                                <div class="cut-method-row"><span>Gastos</span><strong class="cut-money is-expense"><?= cut_money_abs($method['gastos'], '-') ?></strong></div>
+                                <div class="cut-method-row"><span>Balance</span><strong class="cut-money <?= $method_balance >= 0 ? 'is-income' : 'is-expense' ?>"><?= cut_signed_money($method_balance) ?></strong></div>
+                            </article>
+                        <?php endforeach; ?>
                     </div>
                 </div>
-                <?php if (!empty($corte['observaciones'])): ?>
-                <div class="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p class="text-xs font-semibold text-amber-700 mb-1 flex items-center gap-1.5">
-                        <i class="fas fa-sticky-note"></i> Observaciones
-                    </p>
-                    <p class="text-xs text-amber-800"><?= htmlspecialchars($corte['observaciones']) ?></p>
+            </article>
+
+            <aside class="cut-stack">
+                <article class="cut-panel">
+                    <div class="cut-panel-head">
+                        <span class="cut-panel-icon is-blue"><i class="fas fa-calculator"></i></span>
+                        <div>
+                            <span class="cut-panel-kicker">Arqueo</span>
+                            <h2 class="cut-panel-title"><?= $esta_cerrado ? 'Cierre de caja' : 'Caja abierta' ?></h2>
+                        </div>
+                        <span class="cut-panel-total"><?= cut_h($estado_label) ?></span>
+                    </div>
+                    <div class="cut-panel-body cut-audit-card">
+                        <div class="cut-audit-line"><span>Efectivo esperado</span><strong><?= cut_money($efectivo_en_caja) ?></strong></div>
+                        <div class="cut-audit-line"><span>Efectivo contado</span><strong><?= $esta_cerrado ? cut_money($corte['efectivo_contado'] ?? 0) : 'Pendiente' ?></strong></div>
+                        <div class="cut-diff <?= cut_h($diff_class) ?>">
+                            <span class="cut-diff-icon"><i class="fas fa-<?= cut_h($diff_icon) ?>"></i></span>
+                            <span><strong class="cut-diff-title"><?= cut_h($diff_label) ?></strong><small class="cut-diff-sub">Diferencia de arqueo</small></span>
+                            <strong class="cut-diff-value"><?= cut_signed_money($diferencia) ?></strong>
+                        </div>
+                        <?php if (!empty($corte['observaciones'])): ?>
+                            <div class="cut-note">
+                                <strong><i class="fas fa-sticky-note"></i>Observaciones</strong>
+                                <p><?= nl2br(cut_h($corte['observaciones'])) ?></p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </article>
+
+                <article class="cut-panel">
+                    <div class="cut-panel-head">
+                        <span class="cut-panel-icon"><i class="fas fa-money-bill-alt"></i></span>
+                        <div>
+                            <span class="cut-panel-kicker">Efectivo</span>
+                            <h2 class="cut-panel-title">Denominaciones</h2>
+                        </div>
+                        <span class="cut-panel-total"><?= cut_money($total_denominaciones) ?></span>
+                    </div>
+                    <div class="cut-panel-body">
+                        <?php if (empty($denominaciones)): ?>
+                            <div class="cut-empty">
+                                <div><i class="fas fa-money-bill-wave"></i><strong>Sin denominaciones</strong><p>No se registraron billetes o monedas para este corte.</p></div>
+                            </div>
+                        <?php else: ?>
+                            <div class="cut-denom-list">
+                                <?php foreach ($denominaciones as $den): ?>
+                                    <?php $subtotal = (float)($den['denominacion'] ?? 0) * (int)($den['cantidad'] ?? 0); ?>
+                                    <div class="cut-denom-row">
+                                        <span><?= cut_money($den['denominacion'] ?? 0) ?></span>
+                                        <small>x <?= number_format((int)($den['cantidad'] ?? 0)) ?></small>
+                                        <strong><?= cut_money($subtotal) ?></strong>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <div class="cut-denom-total"><span>Total contado</span><strong><?= cut_money($total_denominaciones) ?></strong></div>
+                        <?php endif; ?>
+                    </div>
+                </article>
+            </aside>
+        </section>
+
+        <section class="cut-lower-grid" aria-label="Categorias y movimientos">
+            <div class="cut-stack">
+                <article class="cut-panel">
+                    <div class="cut-panel-head">
+                        <span class="cut-panel-icon is-income"><i class="fas fa-chart-pie"></i></span>
+                        <div>
+                            <span class="cut-panel-kicker">Ingresos</span>
+                            <h2 class="cut-panel-title">Por categoria</h2>
+                        </div>
+                        <span class="cut-panel-total cut-money is-income"><?= cut_money_abs($total_ingresos, '+') ?></span>
+                    </div>
+                    <div class="cut-panel-body">
+                        <?php if (empty($cats_ingreso)): ?>
+                            <div class="cut-empty"><div><i class="fas fa-inbox"></i><strong>Sin ingresos</strong><p>No hay ingresos registrados en este corte.</p></div></div>
+                        <?php else: ?>
+                            <div class="cut-cat-list">
+                                <?php foreach ($cats_ingreso as $nombre => $cat): ?>
+                                    <article class="cut-cat" style="--cat-color: <?= cut_h(cut_clean_color($cat['color'] ?? '#64748B')) ?>;">
+                                        <span class="cut-cat-icon"><i class="<?= cut_h($cat['icono'] ?? 'fas fa-tag') ?>"></i></span>
+                                        <span><strong class="cut-cat-title"><?= cut_h($nombre) ?></strong><small class="cut-cat-sub"><?= number_format($cat['cantidad']) ?> movimiento<?= $cat['cantidad'] != 1 ? 's' : '' ?></small></span>
+                                        <strong class="cut-cat-total cut-money is-income"><?= cut_money_abs($cat['total'], '+') ?></strong>
+                                    </article>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </article>
+
+                <article class="cut-panel">
+                    <div class="cut-panel-head">
+                        <span class="cut-panel-icon is-expense"><i class="fas fa-chart-pie"></i></span>
+                        <div>
+                            <span class="cut-panel-kicker">Gastos</span>
+                            <h2 class="cut-panel-title">Por categoria</h2>
+                        </div>
+                        <span class="cut-panel-total cut-money is-expense"><?= cut_money_abs($total_gastos, '-') ?></span>
+                    </div>
+                    <div class="cut-panel-body">
+                        <?php if (empty($cats_gasto)): ?>
+                            <div class="cut-empty"><div><i class="fas fa-inbox"></i><strong>Sin gastos</strong><p>No hay gastos registrados en este corte.</p></div></div>
+                        <?php else: ?>
+                            <div class="cut-cat-list">
+                                <?php foreach ($cats_gasto as $nombre => $cat): ?>
+                                    <article class="cut-cat" style="--cat-color: <?= cut_h(cut_clean_color($cat['color'] ?? '#64748B')) ?>;">
+                                        <span class="cut-cat-icon"><i class="<?= cut_h($cat['icono'] ?? 'fas fa-tag') ?>"></i></span>
+                                        <span><strong class="cut-cat-title"><?= cut_h($nombre) ?></strong><small class="cut-cat-sub"><?= number_format($cat['cantidad']) ?> movimiento<?= $cat['cantidad'] != 1 ? 's' : '' ?></small></span>
+                                        <strong class="cut-cat-total cut-money is-expense"><?= cut_money_abs($cat['total'], '-') ?></strong>
+                                    </article>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </article>
+
+                <article class="cut-panel no-print">
+                    <div class="cut-panel-head">
+                        <span class="cut-panel-icon"><i class="fas fa-link"></i></span>
+                        <div>
+                            <span class="cut-panel-kicker">Caja</span>
+                            <h2 class="cut-panel-title">Accesos rapidos</h2>
+                        </div>
+                    </div>
+                    <div class="cut-panel-body">
+                        <nav class="cut-shortcuts" aria-label="Accesos rapidos de caja">
+                            <a href="<?= url('caja') ?>" class="cut-shortcut"><i class="fas fa-cash-register"></i>Caja</a>
+                            <a href="<?= url('caja/historial') ?>" class="cut-shortcut"><i class="fas fa-history"></i>Historial</a>
+                            <a href="<?= url('caja/movimientos') ?>" class="cut-shortcut"><i class="fas fa-list"></i>Movimientos</a>
+                            <a href="<?= url('caja/reporte-metodos') ?>" class="cut-shortcut"><i class="fas fa-credit-card"></i>Metodos</a>
+                        </nav>
+                    </div>
+                </article>
+            </div>
+
+            <article class="cut-panel">
+                <div class="cut-panel-head">
+                    <span class="cut-panel-icon"><i class="fas fa-list"></i></span>
+                    <div>
+                        <span class="cut-panel-kicker">Actividad</span>
+                        <h2 class="cut-panel-title">Movimientos del corte</h2>
+                    </div>
+                    <span class="cut-panel-total"><?= number_format(count($movimientos)) ?> registros</span>
                 </div>
+                <?php if (empty($movimientos)): ?>
+                    <div class="cut-empty"><div><i class="fas fa-receipt"></i><strong>Sin movimientos</strong><p>No hay movimientos en este corte.</p></div></div>
+                <?php else: ?>
+                    <div class="cut-search no-print">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="buscarMovCorte" placeholder="Buscar por descripcion, categoria, usuario o metodo..." autocomplete="off">
+                    </div>
+                    <div class="cut-movement-list" id="listaMovCorte">
+                        <?php foreach ($movimientos as $mov): ?>
+                            <?php
+                            $es_ingreso = (($mov['tipo'] ?? '') === 'ingreso');
+                            $metodo_key = (string)($mov['metodo_pago'] ?? '');
+                            $method_info = $metodos_pago[$metodo_key] ?? ['label' => ucfirst($metodo_key ?: 'Metodo'), 'icon' => 'circle'];
+                            $origen_ingreso = null;
+                            if ($es_ingreso) {
+                                $origen_ingreso = empty($mov['reservacion_id'])
+                                    ? ['label' => 'Ingreso manual', 'icon' => 'keyboard']
+                                    : ['label' => 'Renta habitacion', 'icon' => 'bed'];
+                            }
+                            $texto_busqueda = trim(implode(' ', [
+                                $mov['descripcion'] ?? '',
+                                $mov['categoria_nombre'] ?? '',
+                                $mov['usuario_nombre'] ?? '',
+                                $mov['metodo_pago'] ?? '',
+                                $origen_ingreso['label'] ?? '',
+                                $mov['referencia'] ?? '',
+                            ]));
+                            ?>
+                            <article class="cut-movement <?= $es_ingreso ? 'is-income' : 'is-expense' ?>" data-search="<?= cut_h(strtolower($texto_busqueda)) ?>">
+                                <span class="cut-movement-mark"><i class="fas fa-arrow-<?= $es_ingreso ? 'down' : 'up' ?>"></i></span>
+                                <div>
+                                    <div class="cut-movement-top">
+                                        <span class="cut-chip <?= $es_ingreso ? 'is-income' : 'is-expense' ?>"><i class="fas fa-arrow-<?= $es_ingreso ? 'down' : 'up' ?>"></i><?= $es_ingreso ? 'Ingreso' : 'Gasto' ?></span>
+                                        <?php if ($origen_ingreso): ?>
+                                            <span class="cut-chip"><i class="fas fa-<?= cut_h($origen_ingreso['icon']) ?>"></i><?= cut_h($origen_ingreso['label']) ?></span>
+                                        <?php endif; ?>
+                                        <span class="cut-chip"><i class="fas fa-<?= cut_h($method_info['icon'] ?? 'circle') ?>"></i><?= cut_h($method_info['label'] ?? ucfirst($metodo_key)) ?></span>
+                                    </div>
+                                    <h3 class="cut-movement-title"><?= cut_h($mov['descripcion'] ?? 'Movimiento sin descripcion') ?></h3>
+                                    <div class="cut-movement-meta">
+                                        <span><i class="far fa-clock"></i><?= cut_h(cut_date_label($mov['created_at'] ?? null)) ?></span>
+                                        <?php if (!empty($mov['usuario_nombre'])): ?><span><i class="fas fa-user"></i><?= cut_h($mov['usuario_nombre']) ?></span><?php endif; ?>
+                                        <?php if (!empty($mov['categoria_nombre'])): ?><span><i class="<?= cut_h($mov['categoria_icono'] ?? 'fas fa-tag') ?>" style="color: <?= cut_h(cut_clean_color($mov['categoria_color'] ?? '#64748B')) ?>"></i><?= cut_h($mov['categoria_nombre']) ?></span><?php endif; ?>
+                                        <?php if (!empty($mov['referencia'])): ?><span><i class="fas fa-hashtag"></i><?= cut_h($mov['referencia']) ?></span><?php endif; ?>
+                                        <?php if (!empty($mov['reservacion_id'])): ?><a href="<?= url('reservaciones/ver/' . (int)$mov['reservacion_id']) ?>"><i class="fas fa-bed"></i>Reserva #<?= (int)$mov['reservacion_id'] ?></a><?php endif; ?>
+                                        <?php if (!empty($mov['habitaciones_detalle'])): ?><span><i class="fas fa-door-open"></i><?= cut_h($mov['habitaciones_detalle']) ?></span><?php endif; ?>
+                                        <?php if (!empty($mov['editado'])): ?><span><i class="fas fa-pen"></i>Editado<?= !empty($mov['motivo_edicion']) ? ': ' . cut_h($mov['motivo_edicion']) : '' ?></span><?php endif; ?>
+                                    </div>
+                                </div>
+                                <strong class="cut-movement-amount"><?= $es_ingreso ? '+' : '-' ?><?= cut_money($mov['monto'] ?? 0) ?></strong>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
                 <?php endif; ?>
-            </div>
-        </div>
-
-        <!-- Denominaciones -->
-        <?php if (!empty($denominaciones)): ?>
-        <div class="bg-white rounded-xl shadow-sm border border-[#E0ECD8] overflow-hidden">
-            <div class="section-header sh-denom rounded-t-xl">
-                <div class="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-money-bill-alt text-white text-xs"></i>
-                </div>
-                Denominaciones de Efectivo
-            </div>
-            <div class="divide-y divide-gray-100">
-                <div class="grid grid-cols-3 text-xs font-semibold text-gray-500 px-4 py-2 bg-gray-50">
-                    <span>Denominación</span>
-                    <span class="text-center">Cantidad</span>
-                    <span class="text-right">Subtotal</span>
-                </div>
-                <?php
-                $total_denom = 0;
-                foreach ($denominaciones as $den):
-                    $subtotal = floatval($den['denominacion']) * intval($den['cantidad']);
-                    $total_denom += $subtotal;
-                ?>
-                <div class="denom-row grid grid-cols-3 text-sm">
-                    <span class="font-semibold text-gray-700">$<?= number_format($den['denominacion'], 0) ?></span>
-                    <span class="text-center text-gray-500">× <?= intval($den['cantidad']) ?></span>
-                    <span class="text-right font-semibold text-[#3D5234]">$<?= number_format($subtotal, 2) ?></span>
-                </div>
-                <?php endforeach; ?>
-                <div class="px-4 py-3 bg-[#F0F4ED] flex justify-between items-center">
-                    <span class="font-bold text-[#3D5234] text-sm">Total contado</span>
-                    <span class="font-bold text-[#3D5234]">$<?= number_format($total_denom, 2) ?></span>
-                </div>
-            </div>
-        </div>
-        <?php else: ?>
-        <!-- Sin denominaciones: mostrar observaciones si hay -->
-        <div class="bg-white rounded-xl shadow-sm border border-[#E0ECD8] overflow-hidden">
-            <div class="section-header sh-denom rounded-t-xl">
-                <div class="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-money-bill-alt text-white text-xs"></i>
-                </div>
-                Denominaciones de Efectivo
-            </div>
-            <div class="p-8 text-center text-gray-400">
-                <i class="fas fa-money-bill-wave text-3xl mb-2 opacity-30"></i>
-                <p class="text-sm">No se registraron denominaciones para este corte</p>
-            </div>
-        </div>
-        <?php endif; ?>
-    </div>
-    <?php endif; ?>
-
-    <!-- ═══════════════════════════════ CATEGORÍAS + MOVIMIENTOS ══ -->
-    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
-
-        <!-- Col izquierda: Ingresos y Gastos por categoría -->
-        <div class="lg:col-span-1 space-y-5">
-
-            <!-- Ingresos por Categoría -->
-            <div class="bg-white rounded-xl shadow-sm border border-[#D9EDD1] overflow-hidden">
-                <div class="section-header sh-ingresos rounded-t-xl">
-                    <div class="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-chart-pie text-white text-xs"></i>
-                    </div>
-                    Ingresos por Categoría
-                </div>
-                <div class="p-4">
-                    <?php if (empty($cats_ingreso)): ?>
-                        <div class="text-center py-8 text-gray-400">
-                            <i class="fas fa-inbox text-3xl mb-2 opacity-40"></i>
-                            <p class="text-sm">Sin ingresos registrados</p>
-                        </div>
-                    <?php else: ?>
-                        <div class="space-y-2">
-                            <?php foreach ($cats_ingreso as $nombre => $cat): ?>
-                            <div class="cat-item">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 flex items-center justify-center rounded-lg flex-shrink-0"
-                                         style="background-color:<?= htmlspecialchars($cat['color']) ?>18">
-                                        <i class="<?= htmlspecialchars($cat['icono']) ?> text-sm"
-                                           style="color:<?= htmlspecialchars($cat['color']) ?>"></i>
-                                    </div>
-                                    <div>
-                                        <p class="font-semibold text-gray-800 text-sm"><?= htmlspecialchars($nombre) ?></p>
-                                        <p class="text-xs text-gray-400"><?= $cat['cantidad'] ?> movimiento<?= $cat['cantidad'] != 1 ? 's' : '' ?></p>
-                                    </div>
-                                </div>
-                                <p class="font-bold text-emerald-600 text-sm">+$<?= number_format($cat['total'], 2) ?></p>
-                            </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- Gastos por Categoría -->
-            <div class="bg-white rounded-xl shadow-sm border border-[#FDDEDE] overflow-hidden">
-                <div class="section-header sh-gastos rounded-t-xl">
-                    <div class="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-chart-pie text-white text-xs"></i>
-                    </div>
-                    Gastos por Categoría
-                </div>
-                <div class="p-4">
-                    <?php if (empty($cats_gasto)): ?>
-                        <div class="text-center py-8 text-gray-400">
-                            <i class="fas fa-inbox text-3xl mb-2 opacity-40"></i>
-                            <p class="text-sm">Sin gastos registrados</p>
-                        </div>
-                    <?php else: ?>
-                        <div class="space-y-2">
-                            <?php foreach ($cats_gasto as $nombre => $cat): ?>
-                            <div class="cat-item" style="background:#FFF8F8;border-color:#FDDEDE;">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 flex items-center justify-center rounded-lg flex-shrink-0"
-                                         style="background-color:<?= htmlspecialchars($cat['color']) ?>18">
-                                        <i class="<?= htmlspecialchars($cat['icono']) ?> text-sm"
-                                           style="color:<?= htmlspecialchars($cat['color']) ?>"></i>
-                                    </div>
-                                    <div>
-                                        <p class="font-semibold text-gray-800 text-sm"><?= htmlspecialchars($nombre) ?></p>
-                                        <p class="text-xs text-gray-400"><?= $cat['cantidad'] ?> movimiento<?= $cat['cantidad'] != 1 ? 's' : '' ?></p>
-                                    </div>
-                                </div>
-                                <p class="font-bold text-red-500 text-sm">-$<?= number_format($cat['total'], 2) ?></p>
-                            </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-
-        <!-- Col derecha: Lista de movimientos -->
-        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-[#E0ECD8] overflow-hidden">
-            <div class="section-header sh-movs rounded-t-xl">
-                <div class="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-list text-white text-xs"></i>
-                </div>
-                <span class="flex-1">Movimientos del Corte</span>
-                <span class="text-white/70 text-xs bg-white/10 px-2.5 py-1 rounded-full">
-                    <?= count($movimientos) ?> registros
-                </span>
-            </div>
-
-            <?php if (empty($movimientos)): ?>
-                <div class="p-10 text-center text-gray-400">
-                    <i class="fas fa-receipt text-3xl mb-2 opacity-40"></i>
-                    <p class="text-sm">No hay movimientos en este corte</p>
-                </div>
-            <?php else: ?>
-                <!-- Buscador rápido -->
-                <div class="p-3 border-b border-gray-100 no-print">
-                    <div class="relative">
-                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                        <input type="text" id="buscarMovCorte" placeholder="Buscar en movimientos..."
-                               class="w-full pl-8 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5C7A4E]/30 focus:border-[#5C7A4E] bg-[#FAFDF8]">
-                    </div>
-                </div>
-
-                <div class="custom-scroll max-h-[600px] overflow-y-auto" id="listaMovCorte">
-                    <?php foreach ($movimientos as $mov):
-                        $es_ingreso  = $mov['tipo'] === 'ingreso';
-                        $es_ingreso_manual = $es_ingreso && empty($mov['reservacion_id']);
-                        $origen_ingreso = null;
-                        if ($es_ingreso) {
-                            $origen_ingreso = $es_ingreso_manual
-                                ? ['label' => 'Ingreso manual', 'icon' => 'keyboard', 'class' => 'badge-ingreso-manual']
-                                : ['label' => 'Renta habitacion', 'icon' => 'bed', 'class' => 'badge-ingreso-renta'];
-                        }
-                        $metodoPago  = ['efectivo' => ['icon'=>'money-bill-wave','label'=>'Efectivo'],
-                                        'tarjeta'  => ['icon'=>'credit-card',    'label'=>'Tarjeta'],
-                                        'transferencia' => ['icon'=>'exchange-alt','label'=>'Transferencia']];
-                        $metInfo     = $metodoPago[$mov['metodo_pago']] ?? ['icon'=>'circle','label'=>ucfirst($mov['metodo_pago'])];
-                        $textoBusqueda = trim(implode(' ', [
-                            $mov['descripcion'] ?? '',
-                            $mov['categoria_nombre'] ?? '',
-                            $mov['usuario_nombre'] ?? '',
-                            $mov['metodo_pago'] ?? '',
-                            $origen_ingreso['label'] ?? ''
-                        ]));
-                    ?>
-                    <div class="mov-item" data-search="<?= strtolower(htmlspecialchars($textoBusqueda)) ?>">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-1.5 mb-1.5 flex-wrap">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold <?= $es_ingreso ? 'badge-ingreso' : 'badge-gasto' ?>">
-                                        <i class="fas fa-arrow-<?= $es_ingreso ? 'down' : 'up' ?> mr-1 text-[10px]"></i>
-                                        <?= ucfirst($mov['tipo']) ?>
-                                    </span>
-                                    <?php if ($origen_ingreso): ?>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold <?= $origen_ingreso['class'] ?>">
-                                        <i class="fas fa-<?= $origen_ingreso['icon'] ?> mr-1 text-[10px]"></i>
-                                        <?= $origen_ingreso['label'] ?>
-                                    </span>
-                                    <?php endif; ?>
-                                    <span class="text-xs text-gray-400 flex items-center gap-1">
-                                        <i class="fas fa-<?= $metInfo['icon'] ?> text-[10px]"></i>
-                                        <?= $metInfo['label'] ?>
-                                    </span>
-                                    <?php if (!empty($mov['categoria_nombre'])): ?>
-                                    <span class="text-xs flex items-center gap-1" style="color:<?= htmlspecialchars($mov['categoria_color'] ?? '#9CA3AF') ?>">
-                                        <i class="<?= htmlspecialchars($mov['categoria_icono'] ?? 'fas fa-tag') ?> text-[10px]"></i>
-                                        <?= htmlspecialchars($mov['categoria_nombre']) ?>
-                                    </span>
-                                    <?php endif; ?>
-                                </div>
-                                <p class="text-sm font-semibold text-gray-800 mb-1 leading-tight">
-                                    <?= htmlspecialchars($mov['descripcion'] ?? '') ?>
-                                </p>
-                                <div class="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
-                                    <span class="flex items-center gap-1">
-                                        <i class="far fa-clock"></i>
-                                        <?= date('d/m/Y H:i', strtotime($mov['created_at'])) ?>
-                                    </span>
-                                    <?php if (!empty($mov['usuario_nombre'])): ?>
-                                    <span class="flex items-center gap-1">
-                                        <i class="fas fa-user text-[10px]"></i>
-                                        <?= htmlspecialchars($mov['usuario_nombre']) ?>
-                                    </span>
-                                    <?php endif; ?>
-                                    <?php if (!empty($mov['referencia'])): ?>
-                                    <span class="flex items-center gap-1">
-                                        <i class="fas fa-hashtag text-[10px]"></i>
-                                        <?= htmlspecialchars($mov['referencia']) ?>
-                                    </span>
-                                    <?php endif; ?>
-                                </div>
-                                <?php if ($mov['reservacion_id']): ?>
-                                <div class="mt-1.5 text-xs">
-                                    <a href="<?= url('reservaciones/ver/' . $mov['reservacion_id']) ?>"
-                                       class="text-[#5C7A4E] font-medium flex items-center gap-1 hover:underline no-print">
-                                        <i class="fas fa-bed text-[10px]"></i>
-                                        Reserva #<?= $mov['reservacion_id'] ?>
-                                    </a>
-                                    <?php if (!empty($mov['habitaciones_detalle'])): ?>
-                                    <span class="text-gray-400 flex items-center gap-1 mt-0.5">
-                                        <i class="fas fa-door-open text-[10px]"></i>
-                                        <?= htmlspecialchars($mov['habitaciones_detalle']) ?>
-                                    </span>
-                                    <?php endif; ?>
-                                </div>
-                                <?php endif; ?>
-                                <?php if (!empty($mov['editado']) && $mov['editado']): ?>
-                                <p class="text-xs text-amber-600 mt-1 flex items-center gap-1">
-                                    <i class="fas fa-pen text-[10px]"></i>
-                                    Editado<?= !empty($mov['motivo_edicion']) ? ': ' . htmlspecialchars($mov['motivo_edicion']) : '' ?>
-                                </p>
-                                <?php endif; ?>
-                            </div>
-                            <p class="text-base font-bold <?= $es_ingreso ? 'text-emerald-600' : 'text-red-500' ?> whitespace-nowrap">
-                                <?= $es_ingreso ? '+' : '-' ?>$<?= number_format($mov['monto'] ?? 0, 2) ?>
-                            </p>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-        </div>
-    </div>
-
+            </article>
+        </section>
+    </main>
 </div>
 
 <script>
-// Buscador rápido en movimientos
 document.getElementById('buscarMovCorte')?.addEventListener('input', function() {
     const q = this.value.toLowerCase().trim();
-    document.querySelectorAll('#listaMovCorte .mov-item').forEach(row => {
+    document.querySelectorAll('#listaMovCorte .cut-movement').forEach(row => {
         const text = row.dataset.search || '';
         row.style.display = (!q || text.includes(q)) ? '' : 'none';
     });

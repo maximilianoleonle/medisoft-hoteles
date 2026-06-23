@@ -152,7 +152,7 @@ function prcReportCxpConsistency(PDO $pdo, string $database): void
             WHERE cxp.id IS NULL
                OR m.hotel_id IS NULL
                OR m.monto <= 0
-               OR m.saldo_anterior < m.saldo_posterior
+               OR (m.tipo_movimiento <> 'CANCELACION' AND m.saldo_anterior < m.saldo_posterior)
                OR m.saldo_posterior < 0"),
         'Revisar movimientos CxP antes de operar pagos proveedores.'
     );
@@ -255,7 +255,10 @@ function prcReportCxpConsistency(PDO $pdo, string $database): void
                     WHERE " . $predicate . "
                       AND (
                           hotel_id IS NULL
-                          OR tipo <> 'gasto'
+                          OR NOT (
+                              tipo = 'gasto'
+                              OR (tipo = 'ingreso' AND categoria = 'Reversion Pago proveedor')
+                          )
                           OR monto <= 0
                           OR corte_id IS NULL
                           OR NOT EXISTS (
@@ -792,10 +795,11 @@ if (is_file($routesPath)) {
             'GET /cuentas-por-pagar/simulador-caja',
             'POST /cuentas-por-pagar/generar-desde-compra/{id:[0-9]+}',
             'POST /cuentas-por-pagar/{id:[0-9]+}/registrar-pago-caja',
+            'POST /cuentas-por-pagar/{id:[0-9]+}/movimientos/{movimientoid:[0-9]+}/revertir-pago-caja',
             'GET /cuentas-por-pagar/{id:[0-9]+}',
         ], true)
             && $controller === 'cuentaporpagar'
-            && in_array($action, ['index', 'generacionpreview', 'simuladorcaja', 'generardesdecompra', 'registrarpagocaja', 'ver'], true);
+            && in_array($action, ['index', 'generacionpreview', 'simuladorcaja', 'generardesdecompra', 'registrarpagocaja', 'revertirpagocaja', 'ver'], true);
 
         if ($allowed || $allowedCxpReadOnly) {
             continue;
@@ -818,8 +822,8 @@ if (is_file($routesPath)) {
         prcOk('Solo hay reporte read-only, detalle read-only, recepcion minima y CxP controlada; compras no registra pagos ni documentos.');
     } else {
         prcError(
-            'Rutas fuera del alcance Fase 2V/2W/2X/2Y/3C-C: ' . implode(' | ', $forbiddenRoutes),
-            'Retirar rutas que no sean reporte read-only, detalle, borrador, POST /compras/{id}/recibir, CxP GET/preview/detalle, POST generar CxP o POST pago Caja de CxP.'
+            'Rutas fuera del alcance Fase 2V/2W/2X/2Y/3D-D-A: ' . implode(' | ', $forbiddenRoutes),
+            'Retirar rutas que no sean reporte read-only, detalle, borrador, POST /compras/{id}/recibir, CxP GET/preview/detalle, POST generar CxP, POST pago Caja o POST reversion Caja de CxP.'
         );
     }
 } else {
@@ -908,20 +912,22 @@ if (is_file($purchaseIndexViewPath) && is_file($purchaseFormViewPath) && is_file
         && strpos($views, "url('compras/reportes/recibidas')") !== false
         && strpos($views, "url('compras/' . (int)") !== false
         && strpos($views, '/recibir') !== false
-        && strpos($views, 'purchase-btn-receive') !== false
+        && (
+            strpos($views, 'purchase-btn-receive') !== false
+            || strpos($views, 'data-receive-form') !== false
+        )
         && strpos($views, 'por_proveedor') !== false
         && strpos($views, 'por_producto') !== false
         && strpos($views, 'movimiento_inventario_id') !== false
         && strpos($views, 'movimiento_stock_posterior') !== false
         && strpos($views, "url('compras/pagar") === false
-        && strpos($views, 'cuentas-por-pagar') === false
         && strpos($views, 'documentos-proveedor') === false
     ) {
-        prcOk('Vistas de Compras muestran reporte read-only, detalle read-only y recepcion minima; no muestran pago/CxP/documentos.');
+        prcOk('Vistas de Compras muestran reporte read-only, detalle read-only, recepcion minima y enlaces CxP controlados; no muestran pago directo/documentos.');
     } else {
         prcError(
             'Vistas de Compras contienen enlaces fuera de alcance.',
-            'Mantener solo reporte read-only, detalle read-only, boton de recepcion minima y retirar pago, CxP o documentos.'
+            'Mantener solo reporte read-only, detalle read-only, boton de recepcion minima y retirar pago directo o documentos.'
         );
     }
 } else {

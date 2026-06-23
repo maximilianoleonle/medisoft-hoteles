@@ -40,7 +40,7 @@ if (!function_exists('comp_estado_meta')) {
 }
 
 $buscar = (string)($filtros['buscar'] ?? '');
-$estado = (string)($filtros['estado'] ?? 'borrador');
+$estado = (string)($filtros['estado'] ?? 'todos');
 $visibles = count($compras);
 ?>
 
@@ -276,7 +276,7 @@ $visibles = count($compras);
                         <i class="fas fa-chart-column"></i>
                         Reporte
                     </a>
-                    <a class="cp-btn cp-btn-muted cp-reset" href="<?= url('compras') ?>" title="Limpiar filtros">
+                    <a class="cp-btn cp-btn-muted cp-reset" href="<?= url('compras?estado=todos') ?>" title="Limpiar filtros">
                         <i class="fas fa-times"></i>
                         Limpiar
                     </a>
@@ -597,7 +597,7 @@ $visibles = count($compras);
         event.preventDefault();
         input.value = '';
         const estado = form.querySelector('[name="estado"]');
-        if (estado) estado.value = 'borrador';
+        if (estado) estado.value = 'todos';
         lastQuery = '';
         fetchResults(new URL(event.currentTarget.href, window.location.origin));
         input.focus();
@@ -607,7 +607,7 @@ $visibles = count($compras);
         const params = new URLSearchParams(window.location.search);
         input.value = params.get('buscar') || '';
         const estado = form.querySelector('[name="estado"]');
-        if (estado) estado.value = params.get('estado') || 'borrador';
+        if (estado) estado.value = params.get('estado') || 'todos';
         lastQuery = input.value.trim();
         fetchResults(new URL(window.location.href), { pushState: false });
     });

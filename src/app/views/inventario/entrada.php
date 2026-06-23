@@ -20,7 +20,7 @@
                     <i class="fas fa-arrow-down"></i>
                     Entrada de Inventario
                 </h1>
-                <a href="<?= url('inventario') ?>" 
+                <a href="<?= back_url('inventario') ?>"
                    class="bg-white/20 text-white px-3 py-1.5 rounded-lg hover:bg-white/30 transition text-sm flex items-center gap-2">
                     <i class="fas fa-arrow-left"></i>
                     Volver
@@ -181,17 +181,6 @@ function updatePreview() {
 }
 
 // Validación del formulario
-document.getElementById('formEntrada').addEventListener('submit', function(e) {
-    const producto = document.getElementById('producto_select').value;
-    const cantidad = document.getElementById('cantidad_input').value;
-    
-    if (!producto || !cantidad) {
-        e.preventDefault();
-        alert('Por favor complete todos los campos requeridos');
-        return false;
-    }
-});
-
 // Animación de carga
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('.entrada-view').classList.add('loaded');

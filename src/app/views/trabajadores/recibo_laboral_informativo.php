@@ -91,7 +91,7 @@ $pdfQuery = http_build_query([
     'incluir_pagos_caja' => $incluirPagosCaja ? '1' : '0',
 ]);
 $pdfUrl = url('trabajadores/' . $trabajadorId . '/recibo-laboral/pdf' . ($pdfQuery !== '' ? '?' . $pdfQuery : ''));
-$volverUrl = $trabajadorId > 0 ? url('trabajadores/' . $trabajadorId) : url('trabajadores');
+$volverUrl = back_url($trabajadorId > 0 ? 'trabajadores/' . $trabajadorId : 'trabajadores');
 $folio = 'REC-TRAB-' . ($trabajadorId > 0 ? $trabajadorId : '0') . '-' . date('Ymd');
 ?>
 

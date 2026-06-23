@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $rentabilidad = $rentabilidad ?? [];
 $ocupacionPorTipo = $ocupacionPorTipo ?? [];
 $ingresosPromedio = $ingresosPromedio ?? [];
@@ -91,6 +91,8 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
 ?>
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700&display=swap');
+</style><style>
 .rentables-view {
     --rent-primary: var(--brand-primary, #1B2746);
     --rent-secondary: var(--brand-secondary, #0F172A);
@@ -186,7 +188,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     border-radius: 13px;
     background: rgba(255, 255, 255, .09);
     color: #FFFDF8;
-    font-weight: 850;
+    font-weight: 700;
     text-decoration: none;
     transition: transform .18s ease, background .18s ease, border-color .18s ease;
 }
@@ -204,7 +206,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
 .rent-mini-label {
     color: var(--rent-muted);
     font-size: .72rem;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: .07em;
     text-transform: uppercase;
 }
@@ -235,7 +237,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     max-width: 12ch;
     margin: 14px 0 14px;
     color: var(--rent-on-action);
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: 'Cormorant Garamond', Georgia, serif;
     font-size: clamp(2.4rem, 5vw, 5.15rem);
     font-weight: 700;
     line-height: .9;
@@ -249,7 +251,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     max-width: 68ch;
     margin: 0;
     color: color-mix(in srgb, var(--rent-on-action) 82%, transparent);
-    font-weight: 650;
+    font-weight: 500;
     line-height: 1.6;
 }
 
@@ -278,7 +280,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     border: 1px solid color-mix(in srgb, var(--rent-accent) 45%, var(--rent-primary));
     background: var(--rent-action);
     color: var(--rent-on-action);
-    font-weight: 900;
+    font-weight: 700;
     text-decoration: none;
 }
 
@@ -329,7 +331,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
 .rent-period-value {
     margin-top: 7px;
     color: var(--rent-primary);
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: 'Cormorant Garamond', Georgia, serif;
     font-size: clamp(1.5rem, 3vw, 2.35rem);
     font-weight: 700;
     line-height: 1;
@@ -346,7 +348,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     margin-bottom: 6px;
     color: var(--rent-primary);
     font-size: .75rem;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .rent-field input {
@@ -357,7 +359,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     background: color-mix(in srgb, var(--rent-accent) 3%, #FFFDF8);
     color: var(--rent-primary);
     font-size: .92rem;
-    font-weight: 800;
+    font-weight: 600;
     outline: none;
     transition: border-color .18s ease, box-shadow .18s ease;
 }
@@ -382,7 +384,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     background: color-mix(in srgb, var(--rent-primary) 4%, #FFFDF8);
     color: var(--rent-primary);
     font-size: .76rem;
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .rent-metrics {
@@ -427,7 +429,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     margin-top: 13px;
     color: var(--rent-primary);
     font-size: clamp(1.45rem, 2.8vw, 2.2rem);
-    font-weight: 950;
+    font-weight: 700;
     line-height: 1;
     font-variant-numeric: tabular-nums;
 }
@@ -436,7 +438,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     margin-top: 9px;
     color: var(--rent-muted);
     font-size: .8rem;
-    font-weight: 750;
+    font-weight: 600;
 }
 
 .rent-layout {
@@ -468,7 +470,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     margin: 0;
     color: var(--rent-primary);
     font-size: 1.05rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 
 .rent-section-body {
@@ -516,7 +518,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     border-radius: 14px;
     background: color-mix(in srgb, var(--rent-primary) 8%, #FFFDF8);
     color: var(--rent-primary);
-    font-weight: 950;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
 
@@ -529,7 +531,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     display: block;
     color: var(--rent-primary);
     font-size: 1rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 
 .rent-room-meta {
@@ -537,12 +539,12 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     margin-top: 3px;
     color: var(--rent-muted);
     font-size: .8rem;
-    font-weight: 750;
+    font-weight: 600;
 }
 
 .rent-podium-money {
     color: var(--rent-good);
-    font-weight: 950;
+    font-weight: 700;
     text-align: right;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
@@ -577,7 +579,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
 .rent-chart-title strong {
     color: var(--rent-primary);
     font-size: .94rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 
 .rent-chart-canvas {
@@ -638,7 +640,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     background: var(--rent-primary);
     color: #FFFDF8;
     font-size: .75rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 
 .rent-share {
@@ -651,7 +653,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     background: color-mix(in srgb, var(--rent-accent) 13%, #FFFDF8);
     color: var(--rent-primary);
     font-size: .74rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 
 .rent-occupancy {
@@ -701,7 +703,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     margin: 0;
     color: var(--rent-primary);
     font-size: .98rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 
 .rent-pill {
@@ -713,7 +715,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     background: color-mix(in srgb, var(--rent-primary) 7%, #FFFDF8);
     color: var(--rent-primary);
     font-size: .73rem;
-    font-weight: 900;
+    font-weight: 700;
     white-space: nowrap;
 }
 
@@ -728,7 +730,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     margin-top: 4px;
     color: var(--rent-primary);
     font-size: 1rem;
-    font-weight: 950;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
 }
 
@@ -742,7 +744,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     margin: 10px 0 0;
     color: var(--rent-muted);
     font-size: .88rem;
-    font-weight: 750;
+    font-weight: 600;
     line-height: 1.55;
 }
 
@@ -772,7 +774,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     display: block;
     color: var(--rent-primary);
     font-size: 1rem;
-    font-weight: 950;
+    font-weight: 700;
 }
 
 @media (max-width: 1220px) {
@@ -885,7 +887,7 @@ $periodo_texto = rentables_date($fecha_inicio, 'd/m') . ' - ' . rentables_date($
     <main class="rent-shell">
         <section class="rent-hero">
             <div class="rent-hero-main">
-                <a href="<?= url('reportes') ?>" class="rent-back">
+                <a href="<?= back_url('reportes') ?>" class="rent-back">
                     <i class="fas fa-arrow-left"></i>
                     Reportes
                 </a>

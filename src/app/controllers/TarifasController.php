@@ -76,6 +76,40 @@ class TarifasController extends Controller {
 
         return array_values($tipos);
     }
+
+    private function erroresCamposTarifa(array $errores): array {
+        $fieldErrors = [];
+
+        foreach ($errores as $mensaje) {
+            $mensaje = trim((string)$mensaje);
+            if ($mensaje === '') {
+                continue;
+            }
+
+            $lower = strtolower($mensaje);
+            $campo = null;
+
+            if (strpos($lower, 'nombre') !== false) {
+                $campo = 'nombre';
+            } elseif (strpos($lower, 'valor') !== false || strpos($lower, 'incremento') !== false || strpos($lower, 'monto') !== false || strpos($lower, 'porcentaje') !== false) {
+                $campo = 'valor_incremento';
+            } elseif (strpos($lower, 'fecha de inicio') !== false || strpos($lower, 'inicio') !== false) {
+                $campo = 'fecha_inicio';
+            } elseif (strpos($lower, 'fecha de fin') !== false || strpos($lower, 'posterior') !== false || strpos($lower, 'temporales') !== false) {
+                $campo = 'fecha_fin';
+            } elseif (strpos($lower, 'tipo de habit') !== false) {
+                $campo = 'tipos_habitacion[]';
+            } elseif (strpos($lower, 'habitaci') !== false) {
+                $campo = 'habitaciones[]';
+            }
+
+            if ($campo !== null) {
+                $fieldErrors[$campo][] = $mensaje;
+            }
+        }
+
+        return $fieldErrors;
+    }
     
     /**
      * Lista de incrementos de tarifas
@@ -200,6 +234,7 @@ class TarifasController extends Controller {
             
             // Guardar datos del formulario para no perderlos
             save_old_input($_POST);
+            save_form_errors($this->erroresCamposTarifa([$e->getMessage()]));
             $this->redirect('configuracion/tarifas/crear');
         }
     }
@@ -322,6 +357,8 @@ class TarifasController extends Controller {
         } catch (Exception $e) {
             error_log("Error al editar incremento: " . $e->getMessage());
             set_mensaje($e->getMessage(), 'error');
+            save_old_input($_POST);
+            save_form_errors($this->erroresCamposTarifa([$e->getMessage()]));
             $this->redirect('configuracion/tarifas/editar/' . $id);
         }
     }

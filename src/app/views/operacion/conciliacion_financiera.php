@@ -136,7 +136,7 @@ $severidadLabels = [
         </div>
         <div class="cfin-actions">
             <span class="cfin-badge"><i class="fas fa-lock"></i> Solo lectura</span>
-            <a class="cfin-btn" href="<?= url('operacion/diaria') ?>"><i class="fas fa-arrow-left"></i> Operacion diaria</a>
+            <a class="cfin-btn" href="<?= back_url('operacion/diaria') ?>"><i class="fas fa-arrow-left"></i> Operacion diaria</a>
         </div>
     </div>
 

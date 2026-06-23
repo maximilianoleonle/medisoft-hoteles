@@ -114,7 +114,7 @@ $etiquetasValor = old('etiquetas', doc_edit_safe($documento['etiquetas'] ?? ''))
         </section>
 
         <div class="flex items-center justify-between gap-3">
-            <a class="dc-btn dc-btn-muted" href="<?= url('documentos/' . $documentoId) ?>" style="min-height:40px">
+            <a class="dc-btn dc-btn-muted" href="<?= back_url('documentos/' . $documentoId) ?>" style="min-height:40px">
                 <i class="fas fa-arrow-left"></i>
                 Volver al documento
             </a>
@@ -193,7 +193,7 @@ $etiquetasValor = old('etiquetas', doc_edit_safe($documento['etiquetas'] ?? ''))
             </div>
 
             <div class="mt-5 flex flex-wrap items-center justify-end gap-3">
-                <a class="dc-btn dc-btn-muted" href="<?= url('documentos/' . $documentoId) ?>">Cancelar</a>
+                <a class="dc-btn dc-btn-muted" href="<?= back_url('documentos/' . $documentoId) ?>">Cancelar</a>
                 <button class="dc-btn dc-btn-gold" type="submit">
                     <i class="fas fa-save"></i>
                     Guardar cambios

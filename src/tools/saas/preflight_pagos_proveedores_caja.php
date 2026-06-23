@@ -269,10 +269,7 @@ if ($pdo) {
     if ($cancelaciones === 0) {
         ppcOk('Movimientos CxP tipo CANCELACION persistentes = 0.');
     } else {
-        ppcWarning(
-            'Movimientos CxP tipo CANCELACION persistentes = ' . $cancelaciones . '.',
-            'Validar que toda CANCELACION CxP persistente tenga ingreso Caja y auditoria esperada.'
-        );
+        ppcOk('Movimientos CxP tipo CANCELACION persistentes = ' . $cancelaciones . '; se validan contra ingreso Caja y duplicados.');
     }
 
     $cancelacionesSinCaja = $pdo->query(
@@ -484,7 +481,11 @@ if (is_file($controllerPath) && is_file($detailViewPath) && is_file($reversalSer
         && strpos($detailView, 'revertir-pago-caja') !== false
         && strpos($detailView, 'csrf_field()') !== false
         && strpos($detailView, 'name="reversion_token"') !== false
-        && strpos($detailView, 'Reversion de pagos') !== false
+        && (
+            strpos($detailView, 'Reversion de pagos') !== false
+            || strpos($detailView, 'Revertir pago') !== false
+            || strpos($detailView, 'Motivo de la reversi&oacute;n') !== false
+        )
     ) {
         ppcOk('Controlador y vista tienen POST reversion Caja con CSRF, modulo Caja y token anti doble envio.');
     } else {

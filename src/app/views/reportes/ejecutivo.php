@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if (!function_exists('exec_safe')) {
     function exec_safe($value, string $fallback = '-'): string
     {
@@ -62,52 +62,54 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Warnings', 'erro
 ?>
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700&display=swap');
+</style><style>
 .exec-page{--exec-brand:var(--brand-primary,#1B2746);--exec-brand-2:var(--brand-secondary,#0F172A);--exec-accent:var(--brand-accent,#BD9441);--exec-text:var(--brand-text,#172033);--exec-muted:var(--brand-muted,#64748B);--exec-border:var(--brand-border,#E5E7EB);--exec-soft:color-mix(in srgb,var(--exec-brand) 5%,#F8FAFC);--exec-accent-soft:color-mix(in srgb,var(--exec-accent) 12%,#FFFFFF);max-width:1440px;margin:0 auto;padding:24px;color:var(--exec-text)}
 .exec-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--exec-border)}
-.exec-kicker{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--exec-muted);font-weight:900}
-.exec-title{margin:5px 0 7px;color:var(--exec-brand-2);font-size:30px;line-height:1.08;font-weight:950;letter-spacing:0}
+.exec-kicker{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--exec-muted);font-weight:700}
+.exec-title{margin:5px 0 7px;color:var(--exec-brand-2);font-family:'Cormorant Garamond',Georgia,serif;font-size:32px;line-height:1.08;font-weight:700;letter-spacing:0}
 .exec-subtitle{margin:0;max-width:820px;color:var(--exec-muted);font-size:14px;line-height:1.5}
 .exec-actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
-.exec-btn,.exec-badge{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px;padding:9px 12px;border-radius:8px;border:1px solid var(--exec-border);background:#fff;color:var(--exec-text);font-size:13px;font-weight:850;text-decoration:none}
+.exec-btn,.exec-badge{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px;padding:9px 12px;border-radius:8px;border:1px solid var(--exec-border);background:#fff;color:var(--exec-text);font-size:13px;font-weight:700;text-decoration:none}
 .exec-btn.primary{background:var(--exec-brand);border-color:var(--exec-brand);color:var(--brand-action-text,#fff)}
 .exec-badge{background:var(--exec-accent-soft);border-color:color-mix(in srgb,var(--exec-accent) 34%,#fff);color:var(--exec-brand)}
 .exec-filter{margin-bottom:16px;padding:14px;border:1px solid var(--exec-border);border-radius:8px;background:#fff}
 .exec-filter-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;align-items:end}
-.exec-field label{display:block;margin-bottom:6px;color:var(--exec-muted);font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
-.exec-field input,.exec-field select{width:100%;height:38px;border:1px solid var(--exec-border);border-radius:7px;background:#fff;color:var(--exec-text);font-size:13px;font-weight:760;padding:0 10px}
+.exec-field label{display:block;margin-bottom:6px;color:var(--exec-muted);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.exec-field input,.exec-field select{width:100%;height:38px;border:1px solid var(--exec-border);border-radius:7px;background:#fff;color:var(--exec-text);font-size:13px;font-weight:600;padding:0 10px}
 .exec-field input:focus,.exec-field select:focus{outline:0;border-color:var(--exec-brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--exec-brand) 13%,transparent)}
 .exec-metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:16px}
 .exec-metric{border:1px solid var(--exec-border);border-radius:8px;background:#fff;padding:14px;min-height:104px}
-.exec-metric span{display:block;color:var(--exec-muted);font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
-.exec-metric strong{display:block;margin-top:8px;color:var(--exec-brand-2);font-size:22px;line-height:1.08;font-weight:950}
-.exec-metric small{display:block;margin-top:7px;color:var(--exec-muted);font-size:12px;font-weight:730}
+.exec-metric span{display:block;color:var(--exec-muted);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.exec-metric strong{display:block;margin-top:8px;color:var(--exec-brand-2);font-family:'Cormorant Garamond',Georgia,serif;font-size:24px;line-height:1.08;font-weight:700}
+.exec-metric small{display:block;margin-top:7px;color:var(--exec-muted);font-size:12px;font-weight:600}
 .exec-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(360px,.8fr);gap:14px}
 .exec-stack{display:grid;gap:14px}
 .exec-panel{border:1px solid var(--exec-border);border-radius:8px;background:#fff;overflow:hidden}
 .exec-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--exec-border);background:var(--exec-soft)}
-.exec-panel-title{margin:0;color:var(--exec-brand-2);font-size:16px;font-weight:950}
+.exec-panel-title{margin:0;color:var(--exec-brand-2);font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;font-weight:700}
 .exec-panel-subtitle{margin:4px 0 0;color:var(--exec-muted);font-size:12px}
 .exec-panel-body{padding:14px 16px}
 .exec-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .exec-stat{border:1px solid color-mix(in srgb,var(--exec-border) 78%,transparent);border-radius:8px;padding:11px;background:#fff}
-.exec-stat span{display:block;color:var(--exec-muted);font-size:11px;font-weight:850}
-.exec-stat strong{display:block;margin-top:5px;color:var(--exec-brand);font-size:19px;font-weight:950}
+.exec-stat span{display:block;color:var(--exec-muted);font-size:11px;font-weight:700}
+.exec-stat strong{display:block;margin-top:5px;color:var(--exec-brand);font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;font-weight:700}
 .exec-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:42px;border-top:1px solid color-mix(in srgb,var(--exec-border) 70%,transparent)}
 .exec-row:first-child{border-top:0}
-.exec-row span{color:var(--exec-muted);font-size:13px;font-weight:760}
-.exec-row strong{color:var(--exec-brand-2);font-size:14px;font-weight:900;text-align:right}
+.exec-row span{color:var(--exec-muted);font-size:13px;font-weight:600}
+.exec-row strong{color:var(--exec-brand-2);font-size:14px;font-weight:700;text-align:right}
 .exec-table-wrap{overflow-x:auto}
 .exec-table{width:100%;border-collapse:collapse;min-width:620px}
-.exec-table th{padding:10px 12px;text-align:left;color:var(--exec-muted);font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--exec-border)}
+.exec-table th{padding:10px 12px;text-align:left;color:var(--exec-muted);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--exec-border)}
 .exec-table td{padding:11px 12px;border-bottom:1px solid #eef2f7;vertical-align:top;font-size:13px}
-.exec-status{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:900}
+.exec-status{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:700}
 .exec-status.ok{background:#ecfdf5;color:#047857}
 .exec-status.warning{background:#fffbeb;color:#b45309}
 .exec-status.error{background:#fef2f2;color:#b91c1c}
-.exec-link{color:var(--exec-brand);font-weight:900;text-decoration:none}
+.exec-link{color:var(--exec-brand);font-weight:700;text-decoration:none}
 .exec-empty{padding:24px;text-align:center;color:var(--exec-muted)}
 .exec-empty strong{display:block;color:var(--exec-brand-2);margin-bottom:6px}
-.exec-footnote{margin-top:10px;color:var(--exec-muted);font-size:12px;font-weight:720}
+.exec-footnote{margin-top:10px;color:var(--exec-muted);font-size:12px;font-weight:500}
 @media (max-width:1220px){.exec-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.exec-filter-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.exec-layout{grid-template-columns:1fr}.exec-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:720px){.exec-page{padding:16px}.exec-hero{display:block}.exec-actions{justify-content:flex-start;margin-top:12px}.exec-title{font-size:24px}.exec-metrics,.exec-filter-grid,.exec-stat-grid{grid-template-columns:1fr}.exec-table{min-width:540px}}
 </style>
@@ -121,7 +123,7 @@ $severidades = ['todas' => 'Todas', 'ok' => 'OK', 'warning' => 'Warnings', 'erro
         </div>
         <div class="exec-actions">
             <span class="exec-badge"><i class="fas fa-lock"></i> Solo lectura</span>
-            <a class="exec-btn" href="<?= url('reportes') ?>"><i class="fas fa-arrow-left"></i> Reportes</a>
+            <a class="exec-btn" href="<?= back_url('reportes') ?>"><i class="fas fa-arrow-left"></i> Reportes</a>
             <a class="exec-btn" href="<?= url('operacion/conciliacion-financiera') ?>"><i class="fas fa-balance-scale"></i> Conciliacion</a>
         </div>
     </div>

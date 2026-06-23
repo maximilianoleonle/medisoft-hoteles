@@ -222,6 +222,11 @@
     background: #fecaca;
 }
 
+.btn-danger.is-confirming {
+    background: #fecaca;
+    box-shadow: inset 0 0 0 1px rgba(220, 38, 38, .24);
+}
+
 /* Tabs */
 .tabs {
     display: flex;
@@ -428,7 +433,7 @@
 
         <!-- Action Buttons -->
         <div class="flex justify-between items-center mb-6">
-            <a href="<?= url('configuracion/tarifas') ?>" class="btn btn-secondary">
+            <a href="<?= back_url('configuracion/tarifas') ?>" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i>
                 Volver al listado
             </a>
@@ -442,7 +447,7 @@
                     Editar
                 </a>
                 <?php if (!($incremento['activo'] && $estado_fecha == 'vigente')): ?>
-                <button onclick="eliminarIncremento(<?= $incremento['id'] ?>)" class="btn btn-danger">
+                <button onclick="eliminarIncremento(this, <?= (int) $incremento['id'] ?>)" class="btn btn-danger">
                     <i class="fas fa-trash"></i>
                     Eliminar
                 </button>
@@ -828,42 +833,81 @@ function showTab(tabName) {
     event.currentTarget.classList.add('active');
 }
 
-// Eliminar incremento
-function eliminarIncremento(id) {
-    Swal.fire({
-        title: '¿Está seguro?',
-        text: "Esta acción eliminará permanentemente el incremento",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#DC2626',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Crear form para POST
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '<?= url("configuracion/tarifas/eliminar") ?>';
-            
-            // CSRF token
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrf_token';
-            csrfInput.value = '<?= csrf_token() ?>';
-            form.appendChild(csrfInput);
-            
-            // ID
-            const idInput = document.createElement('input');
-            idInput.type = 'hidden';
-            idInput.name = 'id';
-            idInput.value = id;
-            form.appendChild(idInput);
-            
-            document.body.appendChild(form);
-            form.submit();
-        }
+let incrementoPendienteEliminar = null;
+let incrementoPendienteTimer = null;
+
+function mostrarAvisoTarifa(message) {
+    let aviso = document.querySelector('[data-tarifa-delete-notice]');
+    if (!aviso) {
+        aviso = document.createElement('div');
+        aviso.setAttribute('data-tarifa-delete-notice', '1');
+        aviso.setAttribute('role', 'status');
+        aviso.style.position = 'fixed';
+        aviso.style.right = '24px';
+        aviso.style.bottom = '24px';
+        aviso.style.zIndex = '9999';
+        aviso.style.maxWidth = '360px';
+        aviso.style.padding = '12px 14px';
+        aviso.style.border = '1px solid rgba(220, 38, 38, .24)';
+        aviso.style.borderRadius = '14px';
+        aviso.style.background = 'rgba(254, 242, 242, .98)';
+        aviso.style.color = '#991b1b';
+        aviso.style.boxShadow = '0 16px 36px rgba(60, 20, 20, .16)';
+        aviso.style.fontSize = '14px';
+        aviso.style.fontWeight = '800';
+        document.body.appendChild(aviso);
+    }
+
+    aviso.textContent = message;
+    aviso.style.display = 'block';
+    window.clearTimeout(aviso._hideTimer);
+    aviso._hideTimer = window.setTimeout(() => {
+        aviso.style.display = 'none';
+    }, 4200);
+}
+
+function limpiarConfirmacionEliminarIncremento() {
+    document.querySelectorAll('.btn-danger.is-confirming').forEach(btn => {
+        btn.classList.remove('is-confirming');
     });
+    incrementoPendienteEliminar = null;
+}
+
+// Eliminar incremento
+function eliminarIncremento(trigger, id) {
+    const pendingKey = `${id}`;
+    if (incrementoPendienteEliminar !== pendingKey) {
+        limpiarConfirmacionEliminarIncremento();
+        incrementoPendienteEliminar = pendingKey;
+        if (trigger) {
+            trigger.classList.add('is-confirming');
+        }
+        mostrarAvisoTarifa('Esta accion eliminara permanentemente el incremento. Haz clic otra vez para confirmar.');
+        window.clearTimeout(incrementoPendienteTimer);
+        incrementoPendienteTimer = window.setTimeout(limpiarConfirmacionEliminarIncremento, 7000);
+        return;
+    }
+
+    limpiarConfirmacionEliminarIncremento();
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '<?= url("configuracion/tarifas/eliminar") ?>';
+
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrf_token';
+    csrfInput.value = '<?= csrf_token() ?>';
+    form.appendChild(csrfInput);
+
+    const idInput = document.createElement('input');
+    idInput.type = 'hidden';
+    idInput.name = 'id';
+    idInput.value = id;
+    form.appendChild(idInput);
+
+    document.body.appendChild(form);
+    form.submit();
 }
 
 // Previsualizar precios
@@ -1001,5 +1045,3 @@ document.addEventListener('DOMContentLoaded', function() {
     $('[data-toggle="tooltip"]').tooltip();
 });
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

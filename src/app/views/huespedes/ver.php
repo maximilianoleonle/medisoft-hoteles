@@ -780,6 +780,12 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
     color: var(--gd-danger);
 }
 
+.guest-icon-btn.danger.is-confirming {
+    background: color-mix(in srgb, var(--gd-danger) 9%, #FFFFFF);
+    border-color: color-mix(in srgb, var(--gd-danger) 24%, var(--gd-line-soft));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gd-danger) 12%, transparent);
+}
+
 .guest-vehicle-details {
     display: grid;
     gap: 9px;
@@ -1221,6 +1227,34 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
         0 10px 22px rgba(28, 35, 49, .08);
 }
 
+.guest-form-alert {
+    display: none;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 11px 12px;
+    border-radius: 13px;
+    border: 1px solid color-mix(in srgb, var(--gd-danger) 22%, var(--gd-line-soft));
+    background: color-mix(in srgb, var(--gd-danger) 7%, #FFFFFF);
+    color: color-mix(in srgb, var(--gd-danger) 74%, #1C2331);
+    font-size: .84rem;
+    font-weight: 850;
+    line-height: 1.35;
+}
+
+.guest-form-alert.is-visible {
+    display: flex;
+}
+
+.guest-form-alert.is-success {
+    border-color: color-mix(in srgb, var(--gd-success) 24%, var(--gd-line-soft));
+    background: color-mix(in srgb, var(--gd-success) 8%, #FFFFFF);
+    color: color-mix(in srgb, var(--gd-success) 78%, #1C2331);
+}
+
+.guest-form-alert i {
+    margin-top: 2px;
+}
+
 .guest-radio-options {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1474,7 +1508,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                     <span><i class="fas fa-pen"></i> Editar información</span>
                     <i class="fas fa-arrow-right"></i>
                 </a>
-                <a href="<?= url('huespedes') ?>" class="guest-action">
+                <a href="<?= back_url('huespedes') ?>" class="guest-action">
                     <span><i class="fas fa-arrow-left"></i> Volver al directorio</span>
                     <i class="fas fa-list"></i>
                 </a>
@@ -1675,7 +1709,7 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 <button type="button"
-                                                        onclick='confirmarEliminarVehiculo(<?= (int)($vehiculo['id'] ?? 0) ?>, <?= guest_detail_json_attr($vehiculo_desc) ?>)'
+                                                        onclick='confirmarEliminarVehiculo(this, <?= (int)($vehiculo['id'] ?? 0) ?>, <?= guest_detail_json_attr($vehiculo_desc) ?>)'
                                                         class="guest-icon-btn danger"
                                                         title="Eliminar vehículo">
                                                     <i class="fas fa-trash"></i>
@@ -1888,6 +1922,11 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                 <?= $guestRenderVehicleModalFields('add') ?>
             </div>
 
+            <div class="guest-form-alert" data-vehicle-feedback hidden role="alert" aria-live="assertive">
+                <i class="fas fa-circle-info"></i>
+                <span></span>
+            </div>
+
             <div class="guest-modal-actions">
                 <button type="button" onclick="cerrarModalAgregarVehiculo()" class="guest-cancel">Cancelar</button>
                 <button type="submit" class="guest-save">
@@ -1919,6 +1958,11 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                 <?= $guestRenderVehicleModalFields('edit') ?>
             </div>
 
+            <div class="guest-form-alert" data-vehicle-feedback hidden role="alert" aria-live="assertive">
+                <i class="fas fa-circle-info"></i>
+                <span></span>
+            </div>
+
             <div class="guest-modal-actions">
                 <button type="button" onclick="cerrarModalEditarVehiculo()" class="guest-cancel">Cancelar</button>
                 <button type="submit" class="guest-save">
@@ -1930,8 +1974,92 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+function guestShowVehicleFeedback(form, type, message) {
+    const alertBox = form ? form.querySelector('[data-vehicle-feedback]') : null;
+    if (!alertBox) {
+        return;
+    }
+
+    const icon = alertBox.querySelector('i');
+    const text = alertBox.querySelector('span');
+    alertBox.hidden = false;
+    alertBox.classList.add('is-visible');
+    alertBox.classList.toggle('is-success', type === 'success');
+    if (icon) {
+        icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-circle-exclamation';
+    }
+    if (text) {
+        text.textContent = message || 'No se pudo completar la accion.';
+    }
+    alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function guestClearVehicleFeedback(form) {
+    const alertBox = form ? form.querySelector('[data-vehicle-feedback]') : null;
+    if (!alertBox) {
+        return;
+    }
+
+    alertBox.hidden = true;
+    alertBox.classList.remove('is-visible', 'is-success');
+}
+
+function guestSetVehicleSubmitting(form, isSubmitting) {
+    const button = form ? form.querySelector('button[type="submit"]') : null;
+    if (!button) {
+        return;
+    }
+
+    if (!button.dataset.defaultHtml) {
+        button.dataset.defaultHtml = button.innerHTML;
+    }
+
+    button.disabled = isSubmitting;
+    button.innerHTML = isSubmitting
+        ? '<i class="fas fa-spinner fa-spin"></i> Guardando'
+        : button.dataset.defaultHtml;
+}
+
+function guestShowActionNotice(message, type) {
+    let notice = document.querySelector('[data-guest-action-notice]');
+    if (!notice) {
+        notice = document.createElement('div');
+        notice.setAttribute('data-guest-action-notice', '1');
+        notice.setAttribute('role', 'status');
+        notice.style.position = 'fixed';
+        notice.style.right = '24px';
+        notice.style.bottom = '24px';
+        notice.style.zIndex = '9999';
+        notice.style.maxWidth = '360px';
+        notice.style.padding = '12px 14px';
+        notice.style.borderRadius = '14px';
+        notice.style.boxShadow = '0 16px 36px rgba(28, 35, 49, .16)';
+        notice.style.fontSize = '14px';
+        notice.style.fontWeight = '850';
+        document.body.appendChild(notice);
+    }
+
+    const isError = type === 'error';
+    const isSuccess = type === 'success';
+    notice.style.border = isSuccess
+        ? '1px solid rgba(35, 126, 91, .28)'
+        : (isError ? '1px solid rgba(184, 61, 53, .26)' : '1px solid rgba(184, 139, 58, .28)');
+    notice.style.background = isSuccess
+        ? 'rgba(239, 253, 246, .98)'
+        : (isError ? 'rgba(254, 242, 242, .98)' : 'rgba(255, 249, 235, .98)');
+    notice.style.color = isSuccess
+        ? '#166534'
+        : (isError ? '#991b1b' : '#7a4b0d');
+    notice.textContent = message;
+    notice.style.display = 'block';
+
+    window.clearTimeout(notice._hideTimer);
+    notice._hideTimer = window.setTimeout(() => {
+        notice.style.display = 'none';
+    }, 4200);
+}
+
 function guestSetModalState(modalId, isOpen) {
     const modal = document.getElementById(modalId);
     const sidebar = document.getElementById('sidebar');
@@ -1945,23 +2073,37 @@ function guestSetModalState(modalId, isOpen) {
 }
 
 function abrirModalAgregarVehiculo() {
+    const form = document.getElementById('formAgregarVehiculo');
+    guestClearVehicleFeedback(form);
+    guestSetVehicleSubmitting(form, false);
     guestSetModalState('modalAgregarVehiculo', true);
 }
 
 function cerrarModalAgregarVehiculo() {
     guestSetModalState('modalAgregarVehiculo', false);
     const form = document.getElementById('formAgregarVehiculo');
-    if (form) form.reset();
+    if (form) {
+        form.reset();
+        guestClearVehicleFeedback(form);
+        guestSetVehicleSubmitting(form, false);
+    }
 }
 
 function abrirModalEditarVehiculo() {
+    const form = document.getElementById('formEditarVehiculo');
+    guestClearVehicleFeedback(form);
+    guestSetVehicleSubmitting(form, false);
     guestSetModalState('modalEditarVehiculo', true);
 }
 
 function cerrarModalEditarVehiculo() {
     guestSetModalState('modalEditarVehiculo', false);
     const form = document.getElementById('formEditarVehiculo');
-    if (form) form.reset();
+    if (form) {
+        form.reset();
+        guestClearVehicleFeedback(form);
+        guestSetVehicleSubmitting(form, false);
+    }
 }
 
 function editarVehiculo(vehiculo) {
@@ -2020,6 +2162,8 @@ document.getElementById('edit_placas')?.addEventListener('input', function(e) {
 document.getElementById('formAgregarVehiculo')?.addEventListener('submit', function(e) {
     e.preventDefault();
 
+    guestClearVehicleFeedback(this);
+    guestSetVehicleSubmitting(this, true);
     const formData = new FormData(this);
 
     fetch('<?= url('huespedes/agregar-vehiculo') ?>', {
@@ -2032,36 +2176,24 @@ document.getElementById('formAgregarVehiculo')?.addEventListener('submit', funct
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Éxito',
-                text: data.message,
-                confirmButtonColor: '#1B2746'
-            }).then(() => {
-                location.reload();
-            });
+            guestShowVehicleFeedback(this, 'success', data.message || 'Vehiculo agregado correctamente.');
+            window.setTimeout(() => location.reload(), 700);
         } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: data.message,
-                confirmButtonColor: '#1B2746'
-            });
+            guestSetVehicleSubmitting(this, false);
+            guestShowVehicleFeedback(this, 'error', data.message || 'No se pudo agregar el vehiculo.');
         }
     })
     .catch(() => {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Ocurrió un error al agregar el vehículo',
-            confirmButtonColor: '#1B2746'
-        });
+        guestSetVehicleSubmitting(this, false);
+        guestShowVehicleFeedback(this, 'error', 'Ocurrio un error al agregar el vehiculo.');
     });
 });
 
 document.getElementById('formEditarVehiculo')?.addEventListener('submit', function(e) {
     e.preventDefault();
 
+    guestClearVehicleFeedback(this);
+    guestSetVehicleSubmitting(this, true);
     const formData = new FormData(this);
 
     fetch('<?= url('huespedes/actualizar-vehiculo') ?>', {
@@ -2079,90 +2211,81 @@ document.getElementById('formEditarVehiculo')?.addEventListener('submit', functi
     })
     .then(data => {
         if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Éxito',
-                text: data.message,
-                confirmButtonColor: '#1B2746'
-            }).then(() => {
-                location.reload();
-            });
+            guestShowVehicleFeedback(this, 'success', data.message || 'Vehiculo actualizado correctamente.');
+            window.setTimeout(() => location.reload(), 700);
         } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: data.message || 'Error al actualizar el vehículo',
-                confirmButtonColor: '#1B2746'
-            });
+            guestSetVehicleSubmitting(this, false);
+            guestShowVehicleFeedback(this, 'error', data.message || 'Error al actualizar el vehiculo.');
         }
     })
     .catch(() => {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Ocurrió un error al actualizar el vehículo. Intente nuevamente.',
-            confirmButtonColor: '#1B2746'
-        });
+        guestSetVehicleSubmitting(this, false);
+        guestShowVehicleFeedback(this, 'error', 'Ocurrio un error al actualizar el vehiculo. Intente nuevamente.');
     });
 });
 
-function confirmarEliminarVehiculo(vehiculoId, descripcion) {
-    Swal.fire({
-        title: '¿Eliminar vehículo?',
-        text: `Se eliminará el vehículo: ${descripcion}`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#B83D35',
-        cancelButtonColor: '#6B7280',
-        confirmButtonText: '<i class="fas fa-trash mr-2"></i>Sí, eliminar',
-        cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const formData = new FormData();
-            formData.append('vehiculo_id', vehiculoId);
-            formData.append('csrf_token', '<?= csrf_token() ?>');
+let guestVehicleDeletePending = null;
+let guestVehicleDeleteTimer = null;
 
-            fetch('<?= url('huespedes/eliminar-vehiculo') ?>', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Eliminado',
-                        text: data.message,
-                        confirmButtonColor: '#1B2746'
-                    }).then(() => {
-                        location.reload();
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: data.message,
-                        confirmButtonColor: '#1B2746'
-                    });
-                }
-            })
-            .catch(() => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error de conexión',
-                    text: 'No se pudo eliminar el vehículo. Intente nuevamente.',
-                    confirmButtonColor: '#1B2746'
-                });
-            });
+function limpiarConfirmacionEliminarVehiculo() {
+    document.querySelectorAll('.guest-icon-btn.danger.is-confirming').forEach(button => {
+        button.classList.remove('is-confirming');
+    });
+    guestVehicleDeletePending = null;
+}
+
+function confirmarEliminarVehiculo(trigger, vehiculoId, descripcion) {
+    const pendingKey = String(vehiculoId);
+    if (guestVehicleDeletePending !== pendingKey) {
+        limpiarConfirmacionEliminarVehiculo();
+        guestVehicleDeletePending = pendingKey;
+        if (trigger) {
+            trigger.classList.add('is-confirming');
         }
+        guestShowActionNotice(`Haz clic otra vez para eliminar el vehiculo: ${descripcion}.`, 'warning');
+        window.clearTimeout(guestVehicleDeleteTimer);
+        guestVehicleDeleteTimer = window.setTimeout(limpiarConfirmacionEliminarVehiculo, 7000);
+        return;
+    }
+
+    limpiarConfirmacionEliminarVehiculo();
+    if (trigger) {
+        trigger.disabled = true;
+    }
+
+    const formData = new FormData();
+    formData.append('vehiculo_id', vehiculoId);
+    formData.append('csrf_token', '<?= csrf_token() ?>');
+
+    fetch('<?= url('huespedes/eliminar-vehiculo') ?>', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            guestShowActionNotice(data.message || 'Vehiculo eliminado correctamente.', 'success');
+            window.setTimeout(() => location.reload(), 700);
+        } else {
+            if (trigger) {
+                trigger.disabled = false;
+            }
+            guestShowActionNotice(data.message || 'No se pudo eliminar el vehiculo.', 'error');
+        }
+    })
+    .catch(() => {
+        if (trigger) {
+            trigger.disabled = false;
+        }
+        guestShowActionNotice('No se pudo eliminar el vehiculo. Intente nuevamente.', 'error');
     });
 }
 

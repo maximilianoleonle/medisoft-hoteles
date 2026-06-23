@@ -129,7 +129,7 @@ $fila = function ($label, $value) {
             <p class="mt-1 text-sm" style="color:var(--ms-muted);">Ficha de configuración SaaS del cliente.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-            <a href="<?= url('admin/saas/hoteles') ?>" class="px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-white">
+            <a href="<?= back_url('admin/saas/hoteles') ?>" class="px-4 py-2 rounded-md border border-gray-300 text-sm font-medium text-gray-700 hover:bg-white">
                 Volver
             </a>
             <a href="<?= url('admin/saas/hoteles/' . (int) $hotel['id'] . '/editar') ?>" class="px-4 py-2 rounded-md text-white text-sm font-medium transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"

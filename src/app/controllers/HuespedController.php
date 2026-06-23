@@ -810,6 +810,185 @@ public function eliminarVehiculoAction() {
     /**
  * Guardar nuevo huésped
  */
+    private function rutaCrearConContexto(): string {
+        $params = [];
+        foreach (['return_to', 'habitacion_id', 'fecha_entrada', 'fecha_salida', 'hora_llegada'] as $key) {
+            $value = $_GET[$key] ?? null;
+            if (is_scalar($value) && trim((string)$value) !== '') {
+                $params[$key] = trim((string)$value);
+            }
+        }
+
+        return 'huespedes/create' . (!empty($params) ? '?' . http_build_query($params) : '');
+    }
+
+    private function etiquetaCampoRegistro(string $campo): string {
+        $labels = [
+            'hotel_id' => 'hotel activo',
+            'huesped_id' => 'huesped asociado',
+            'nombre_completo' => 'nombre completo',
+            'telefono' => 'telefono',
+            'email' => 'email',
+            'procedencia_estado' => 'estado de procedencia',
+            'procedencia_ciudad' => 'ciudad de procedencia',
+            'notas' => 'notas',
+            'marca' => 'marca del vehiculo',
+            'modelo' => 'modelo del vehiculo',
+            'placas' => 'placas del vehiculo',
+            'color' => 'color del vehiculo',
+            'estacionamiento' => 'estacionamiento',
+            'datos_extra_json' => 'datos adicionales',
+            'created_at' => 'fecha de registro',
+            'updated_at' => 'fecha de actualizacion',
+        ];
+
+        return $labels[$campo] ?? str_replace('_', ' ', $campo);
+    }
+
+    private function mensajeErrorRegistro(string $entidad, Throwable $e): string {
+        $detalle = trim((string)$e->getMessage());
+        $detalleLower = strtolower($detalle);
+
+        if (preg_match("/Data too long for column '([^']+)'/i", $detalle, $match)) {
+            return 'El campo ' . $this->etiquetaCampoRegistro($match[1]) . ' es demasiado largo. Reduce el texto e intenta de nuevo.';
+        }
+
+        if (preg_match("/Column '([^']+)' cannot be null/i", $detalle, $match)
+            || preg_match("/Field '([^']+)' doesn't have a default value/i", $detalle, $match)) {
+            return 'Falta completar el campo obligatorio: ' . $this->etiquetaCampoRegistro($match[1]) . '.';
+        }
+
+        if (strpos($detalleLower, 'duplicate entry') !== false || (string)$e->getCode() === '23000') {
+            if (strpos($detalleLower, 'telefono') !== false || strpos($detalleLower, 'phone') !== false) {
+                return 'El telefono ya esta registrado para otro huesped de este hotel.';
+            }
+            if (strpos($detalleLower, 'placas') !== false || strpos($detalleLower, 'plate') !== false) {
+                return 'Las placas del vehiculo ya estan registradas en este hotel.';
+            }
+            return 'Ya existe un registro con los mismos datos. Revisa telefono, email o placas antes de guardar.';
+        }
+
+        if (strpos($detalleLower, 'foreign key constraint fails') !== false) {
+            return 'La referencia asociada no es valida. Recarga la pagina y verifica hotel, huesped o vehiculo seleccionado.';
+        }
+
+        if (strpos($detalleLower, 'unknown column') !== false) {
+            return 'La base de datos no tiene una columna que el formulario intenta guardar. Revisa que el esquema este actualizado.';
+        }
+
+        if (strpos($detalleLower, "doesn't exist") !== false || strpos($detalleLower, 'base table or view not found') !== false) {
+            return 'La tabla requerida para guardar ' . $entidad . ' no existe o no esta disponible en la base de datos.';
+        }
+
+        if (strpos($detalleLower, 'server has gone away') !== false || strpos($detalleLower, 'lost connection') !== false) {
+            return 'Se perdio la conexion con la base de datos durante el guardado. Intenta nuevamente.';
+        }
+
+        if ($detalle !== '') {
+            return 'Detalle tecnico: ' . substr($detalle, 0, 260);
+        }
+
+        return 'La base de datos no regreso un detalle del fallo. Revisa el log del servidor con el codigo mostrado.';
+    }
+
+    private function crearHuespedConDetalle(array $data): int {
+        $pdo = Database::getInstance()->getConnection();
+        $now = date('Y-m-d H:i:s');
+        $payload = [
+            'hotel_id' => (int)($data['hotel_id'] ?? 0),
+            'nombre_completo' => (string)($data['nombre_completo'] ?? ''),
+            'telefono' => (string)($data['telefono'] ?? ''),
+            'email' => (string)($data['email'] ?? ''),
+            'procedencia_estado' => (string)($data['procedencia_estado'] ?? ''),
+            'procedencia_ciudad' => (string)($data['procedencia_ciudad'] ?? ''),
+            'notas' => (string)($data['notas'] ?? ''),
+            'datos_extra_json' => $data['datos_extra_json'] ?? null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
+
+        try {
+            $fields = array_keys($payload);
+            $sql = 'INSERT INTO huespedes (' . implode(', ', $fields) . ') VALUES (' . implode(', ', array_fill(0, count($fields), '?')) . ')';
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute(array_values($payload));
+            $id = (int)$pdo->lastInsertId();
+            if ($id <= 0) {
+                throw new RuntimeException('La base de datos no devolvio el ID del huesped creado.');
+            }
+            return $id;
+        } catch (Throwable $e) {
+            throw new RuntimeException($this->mensajeErrorRegistro('el huesped', $e), 0, $e);
+        }
+    }
+
+    private function crearVehiculoConDetalle(array $data, int $numeroVehiculo): int {
+        $pdo = Database::getInstance()->getConnection();
+        $now = date('Y-m-d H:i:s');
+        $payload = [
+            'huesped_id' => (int)($data['huesped_id'] ?? 0),
+            'marca' => (string)($data['marca'] ?? ''),
+            'modelo' => (string)($data['modelo'] ?? ''),
+            'placas' => (string)($data['placas'] ?? ''),
+            'color' => (string)($data['color'] ?? ''),
+            'estacionamiento' => (string)($data['estacionamiento'] ?? ''),
+            'datos_extra_json' => $data['datos_extra_json'] ?? null,
+            'activo' => (int)($data['activo'] ?? 1),
+            'created_at' => $now,
+            'updated_at' => $now,
+        ];
+
+        try {
+            $fields = array_keys($payload);
+            $sql = 'INSERT INTO huesped_vehiculos (' . implode(', ', $fields) . ') VALUES (' . implode(', ', array_fill(0, count($fields), '?')) . ')';
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute(array_values($payload));
+            $id = (int)$pdo->lastInsertId();
+            if ($id <= 0) {
+                throw new RuntimeException('La base de datos no devolvio el ID del vehiculo creado.');
+            }
+            return $id;
+        } catch (Throwable $e) {
+            throw new RuntimeException('Vehiculo ' . $numeroVehiculo . ': ' . $this->mensajeErrorRegistro('el vehiculo', $e), 0, $e);
+        }
+    }
+
+    private function erroresCamposHuesped(array $errores): array {
+        $fieldErrors = [];
+
+        foreach ($errores as $mensaje) {
+            $mensaje = trim((string)$mensaje);
+            if ($mensaje === '') {
+                continue;
+            }
+
+            $lower = strtolower($mensaje);
+            $campo = null;
+
+            if (strpos($lower, 'nombre') !== false) {
+                $campo = 'nombre_completo';
+            } elseif (strpos($lower, 'telefono') !== false || strpos($lower, 'tel') !== false) {
+                $campo = 'telefono';
+            } elseif (strpos($lower, 'email') !== false || strpos($lower, 'correo') !== false) {
+                $campo = 'email';
+            } elseif (strpos($lower, 'estado') !== false) {
+                $campo = 'procedencia_estado';
+            } elseif (strpos($lower, 'ciudad') !== false) {
+                $campo = 'procedencia_ciudad';
+            } elseif (strpos($lower, 'nota') !== false) {
+                $campo = 'notas';
+            } elseif (strpos($lower, 'identificacion') !== false || strpos($lower, 'archivo') !== false) {
+                $campo = 'identificacion_archivo';
+            }
+
+            if ($campo !== null) {
+                $fieldErrors[$campo][] = $mensaje;
+            }
+        }
+
+        return $fieldErrors;
+    }
+
 public function guardarAction() {
     // LOGGING PARA DEBUG
     error_log("=== DEBUG GUARDAR HUÉSPED ===");
@@ -850,6 +1029,7 @@ public function guardarAction() {
     }
     
     // Obtener vehículos del formulario
+    $fieldErrors = [];
     $vehiculos = $this->getPost('vehiculos', []);
     $vehiculosValidos = [];
     
@@ -881,6 +1061,7 @@ public function guardarAction() {
 
             if (!empty($placas) && $vehiculoModel->existenPlacasPorHotel($placas, $hotelId)) {
                 $errores[] = "Las placas {$placas} ya estan registradas";
+                $fieldErrors['vehiculos[' . $index . '][placas]'][] = "Las placas {$placas} ya estan registradas";
                 continue;
             }
 
@@ -895,10 +1076,13 @@ public function guardarAction() {
         }
     }
     
+    $fieldErrors = array_merge_recursive($this->erroresCamposHuesped($errores), $fieldErrors);
+
     if (!empty($errores)) {
-        set_mensaje(implode('<br>', $errores), 'error');
+        set_mensaje(implode(' ', $errores), 'error');
         save_old_input($_POST);
-        $this->redirect('huespedes/create');
+        save_form_errors($fieldErrors);
+        $this->redirect($this->rutaCrearConContexto());
     }
     
     // Iniciar transacción
@@ -906,15 +1090,11 @@ public function guardarAction() {
     $db->beginTransaction();
     
     try {
-        // Crear huésped
-        $huesped_id = $this->huespedModel->create($data);
-        
-        if (!$huesped_id) {
-            throw new Exception('Error al registrar el huésped');
-        }
+        // Crear huesped con diagnostico de errores de base de datos
+        $huesped_id = $this->crearHuespedConDetalle($data);
         
         // Guardar vehículos
-        foreach ($vehiculosValidos as $vehiculo) {
+        foreach ($vehiculosValidos as $index => $vehiculo) {
             $vehiculoData = [
                 'huesped_id' => $huesped_id,
                 'marca' => $vehiculo['marca'],
@@ -926,10 +1106,7 @@ public function guardarAction() {
                 'activo' => 1
             ];
             
-            $result = $vehiculoModel->create($vehiculoData);
-            if (!$result) {
-                throw new Exception('Error al registrar vehículo');
-            }
+            $this->crearVehiculoConDetalle($vehiculoData, (int)$index + 1);
         }
         
         // Confirmar transacción
@@ -972,12 +1149,15 @@ if ($return_to == 'reservacion') {
     $this->redirect('huespedes/' . $huesped_id);
 }
         
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         $db->safeRollBack();
-        error_log("Error en transacción: " . $e->getMessage());
-        set_mensaje('Error al registrar: ' . $e->getMessage(), 'error');
+        $codigoError = 'HSP-' . date('YmdHis') . '-' . substr(sha1($e->getMessage()), 0, 6);
+        $detalleLog = $e->getPrevious() ? $e->getPrevious()->getMessage() : $e->getMessage();
+        error_log('[' . $codigoError . '] Error al registrar huesped: ' . $detalleLog);
+        set_mensaje('No se pudo registrar el huesped. ' . $e->getMessage() . ' Codigo: ' . $codigoError, 'error');
         save_old_input($_POST);
-        $this->redirect('huespedes/create');
+        save_form_errors($this->erroresCamposHuesped([$e->getMessage()]));
+        $this->redirect($this->rutaCrearConContexto());
     }
 }
     

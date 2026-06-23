@@ -688,6 +688,38 @@ $totalModulos = array_sum(array_map(static function ($modulo) {
     background: color-mix(in srgb, var(--ntx-tone-sage) 12%, #fffdf8);
 }
 
+.ntx-btn.is-archive.is-confirming {
+    border-color: color-mix(in srgb, var(--ntx-tone-gold) 58%, #d8c5a0);
+    background: color-mix(in srgb, var(--ntx-tone-gold) 16%, #fffdf8);
+    color: color-mix(in srgb, var(--ntx-tone-gold) 70%, #334155);
+}
+
+.ntx-action-toast {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 15000;
+    max-width: min(390px, calc(100vw - 32px));
+    border: 1px solid #f3d08a;
+    border-radius: 14px;
+    background: #fff8e8;
+    color: #8a5b12;
+    padding: 12px 14px;
+    box-shadow: 0 18px 42px rgba(24, 32, 48, .18);
+    font-size: .82rem;
+    font-weight: 850;
+    line-height: 1.42;
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+}
+
+.ntx-action-toast.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 .ntx-tabs {
     display: flex;
     flex-wrap: wrap;
@@ -1127,7 +1159,7 @@ $totalModulos = array_sum(array_map(static function ($modulo) {
                             <form method="POST"
                                   action="<?= url('notificaciones/marcar-todas-leidas') ?>"
                                   class="ntx-archive-form"
-                                  onsubmit="return confirm('Se archivaran las notificaciones pendientes visibles. No se borran; podras consultarlas en Archivadas.');">
+                                  data-archive-visible-form="1">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="accion" value="archivar_pendientes">
                                 <button type="submit" class="ntx-btn is-archive">
@@ -1254,6 +1286,79 @@ document.addEventListener('keydown', function (event) {
     event.preventDefault();
     window.location.href = item.dataset.notifUrl;
 });
+
+(function () {
+    'use strict';
+
+    function showArchiveNotice(message, type) {
+        if (window.PWA && typeof window.PWA.showToast === 'function') {
+            window.PWA.showToast(message, type || 'info', 5200);
+            return;
+        }
+
+        var toast = document.getElementById('ntxActionToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'ntxActionToast';
+            toast.className = 'ntx-action-toast';
+            toast.setAttribute('role', 'status');
+            toast.setAttribute('aria-live', 'polite');
+            document.body.appendChild(toast);
+        }
+
+        window.clearTimeout(toast._hideTimer);
+        toast.textContent = message;
+        requestAnimationFrame(function () {
+            toast.classList.add('is-visible');
+        });
+        toast._hideTimer = window.setTimeout(function () {
+            toast.classList.remove('is-visible');
+        }, 7000);
+    }
+
+    function resetArchiveConfirm(form) {
+        if (!form) return;
+
+        delete form.dataset.confirmArchive;
+        window.clearTimeout(form._confirmArchiveTimer);
+
+        var button = form.querySelector('button[type="submit"]');
+        if (button && button.dataset.originalHtml) {
+            button.innerHTML = button.dataset.originalHtml;
+            delete button.dataset.originalHtml;
+        }
+        if (button) {
+            button.classList.remove('is-confirming');
+        }
+    }
+
+    document.addEventListener('submit', function (event) {
+        var form = event.target instanceof HTMLFormElement ? event.target : null;
+        if (!form || form.dataset.archiveVisibleForm !== '1') {
+            return;
+        }
+
+        if (form.dataset.confirmArchive === '1') {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        form.dataset.confirmArchive = '1';
+        var button = form.querySelector('button[type="submit"]');
+        if (button) {
+            button.dataset.originalHtml = button.innerHTML;
+            button.classList.add('is-confirming');
+            button.innerHTML = '<i class="fas fa-check"></i><span>Confirmar archivo</span>';
+        }
+
+        showArchiveNotice('Se archivaran las notificaciones pendientes visibles. Podras consultarlas en Archivadas.', 'info');
+        form._confirmArchiveTimer = window.setTimeout(function () {
+            resetArchiveConfirm(form);
+        }, 7000);
+    }, true);
+})();
 
 (function () {
     'use strict';

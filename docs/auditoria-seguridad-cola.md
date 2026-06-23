@@ -2326,3 +2326,428 @@ Resultado: cierre documental del pago laboral con Caja con QA manual validada.
 - Mantiene fuera de alcance reversion, pagos masivos, nomina automatica,
   abonos/liquidaciones automaticas, permisos/auth, PWA/offline, IndexedDB, cache names
   y `/api/sync`.
+
+## Auditoria Fase 5E-P-0
+
+Resultado: contrato documental de trazabilidad fuerte futura para pagos desde
+snapshot de pre-nomina.
+
+- Documento nuevo:
+  `docs/fase_5E_P_0_contrato_trazabilidad_pago_snapshot_prenomina.md`.
+- No agrega codigo, rutas, controladores, modelos, servicios, vistas,
+  formularios, migraciones, permisos, datos ni escrituras.
+- Define columnas futuras nullable en `trabajador_pagos_caja`:
+  `nomina_periodo_id` y `nomina_periodo_detalle_id`.
+- Prohibe backfill automatico de pagos historicos.
+- Exige validacion de hotel, periodo, detalle, trabajador y snapshot aprobado.
+- Mantiene fuera de alcance nomina oficial, CFDI, timbrado, dispersion, pago
+  masivo, liquidaciones automaticas, PWA/offline, IndexedDB, cache names y
+  `/api/sync`.
+
+## Auditoria Fase 5E-P-B
+
+Resultado: guardas CLI/read-only para trazabilidad fuerte futura de pagos desde
+snapshot.
+
+- Documento nuevo:
+  `docs/fase_5E_P_B_guardas_trazabilidad_pago_snapshot.md`.
+- Checkers actualizados:
+  `src/tools/saas/preflight_personal_pagos_caja.php` y
+  `src/tools/saas/health_check_fase_1a.php`.
+- No crea migraciones, no altera DB, no toca rutas, controladores, modelos,
+  servicios, vistas, Caja, snapshots, storage, PWA/offline ni `/api/sync`.
+- Detecta implementaciones futuras parciales o inconsistentes:
+  columnas incompletas, indices faltantes, relaciones parciales y cruces de
+  hotel/periodo/detalle/trabajador.
+- Resultado automatico local: preflight `OK: 66`, `WARNING: 0`, `ERROR: 0`;
+  health `OK: 321`, `WARNING: 25`, `ERROR: 0`.
+
+## Auditoria Fase 5E-P-A
+
+Resultado: trazabilidad fuerte de pagos desde snapshot implementada en local.
+
+- Documento nuevo:
+  `docs/fase_5E_P_A_trazabilidad_pago_snapshot_prenomina.md`.
+- Migracion local:
+  `migrations/20260622_001_fase_5e_p_a_trazabilidad_pago_snapshot.sql`.
+- Backup previo:
+  `backups/db/20260622_102558_medisoft_hoteles_import_pre_5e_p_a.sql`.
+- Se agregan columnas nullable en `trabajador_pagos_caja`:
+  `nomina_periodo_id` y `nomina_periodo_detalle_id`.
+- Se agregan indices y FKs restrictivas hacia snapshots persistentes.
+- No se ejecuta backfill historico.
+- `TrabajadorPagoCajaService` valida periodo/detalle juntos, hotel, trabajador,
+  snapshot aprobado y detalle `por_pagar`.
+- `TrabajadorNominaSnapshotPagoService` delega el pago individual con IDs de
+  periodo y detalle.
+- Prueba rollback confirma pago temporal trazado y sin persistencia.
+- Preflight pagos laborales Caja: `OK: 72`, `WARNING: 0`, `ERROR: 0`.
+- Health general: `OK: 327`, `WARNING: 25`, `ERROR: 0`.
+- Mantiene fuera de alcance nomina oficial, CFDI, timbrado, dispersion, pago
+  masivo, liquidaciones automaticas, PWA/offline, IndexedDB, cache names y
+  `/api/sync`.
+
+## Auditoria Fase 5E-P-F
+
+Resultado: cierre documental tras QA manual validada de trazabilidad snapshot.
+
+- Documento nuevo:
+  `docs/fase_5E_P_F_cierre_trazabilidad_pago_snapshot_prenomina.md`.
+- El usuario confirmo que la prueba manual paso.
+- Pago auditado por consulta local:
+  `trabajador_pagos_caja.id = 9`, referencia `TEST-5EPA-001`.
+- El pago conserva trazabilidad fuerte:
+  `nomina_periodo_id = 4` y `nomina_periodo_detalle_id = 4`.
+- Movimiento Caja auditado:
+  `movimientos_caja.id = 1510`, categoria `Pago laboral`, corte `#238`.
+- Relaciones parciales posteriores: `0`.
+- Pagos trazados posteriores: `1`.
+- No se toco produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Auditoria Fase 5E-Q-A
+
+Resultado: conciliacion read-only de pagos trazados desde snapshot implementada
+en local.
+
+- Documento nuevo:
+  `docs/fase_5E_Q_A_conciliacion_pagos_snapshot_prenomina.md`.
+- Rutas GET nuevas:
+  - `/trabajadores/nomina/periodos/pagos-snapshot`.
+  - `/trabajadores/nomina/periodos/pagos-snapshot/exportar`.
+- No hay rutas POST nuevas.
+- La vista no contiene CSRF ni formularios POST porque no escribe datos.
+- El CSV se genera en memoria.
+- La consulta cruza pago laboral, snapshot, detalle, movimiento, corte y caja
+  para marcar `OK` o `Revisar`.
+- Pago auditado:
+  `trabajador_pagos_caja.id = 9`, snapshot `#4`, detalle `#4`,
+  movimiento Caja `#1510`, conciliacion `ok`.
+- Preflight pagos laborales Caja: `OK: 74`, `WARNING: 0`, `ERROR: 0`.
+- Health general: `OK: 328`, `WARNING: 25`, `ERROR: 0`.
+- No se toco produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Auditoria Fase 5E-Q-F
+
+Resultado: cierre documental tras QA manual validada de conciliacion pagos
+snapshot.
+
+- Documento nuevo:
+  `docs/fase_5E_Q_F_cierre_conciliacion_pagos_snapshot_prenomina.md`.
+- El usuario confirmo que la pantalla funciona correctamente.
+- El usuario confirmo que aparece lo esperado.
+- Pantalla validada:
+  `/trabajadores/nomina/periodos/pagos-snapshot?periodo_id=4`.
+- Pago validado visualmente:
+  `trabajador_pagos_caja.id = 9`, referencia `TEST-5EPA-001`.
+- Trazabilidad visible:
+  snapshot `#4`, detalle `#4`, movimiento Caja `#1510`,
+  conciliacion `OK`.
+- No se toco produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Auditoria Fase 5E-R-0
+
+Resultado: contrato documental para auditoria consolidada read-only de
+Personal/Nomina.
+
+- Documento nuevo:
+  `docs/fase_5E_R_0_contrato_auditoria_consolidada_nomina.md`.
+- No agrega codigo, rutas, controladores, modelos, servicios, vistas,
+  migraciones, permisos, datos, storage, Caja, PWA/offline ni `/api/sync`.
+- Define una futura pantalla GET/read-only para cruzar snapshots, detalles,
+  trabajadores, pagos Caja, reversiones, movimientos, cortes, referencias y
+  conciliacion.
+- Exige que toda lectura futura quede scoped por `hotel_id`.
+- Mantiene fuera de alcance POST, pago masivo, nomina oficial, CFDI, timbrado,
+  dispersion, backfill, recalculos, storage, PWA/offline y `/api/sync`.
+- Cualquier implementacion futura 5E-R-A requiere autorizacion explicita para
+  rutas, controlador, modelo read-only, vista, exportador CSV y checkers.
+
+## Auditoria Fase 5E-R-A
+
+Resultado: auditoria consolidada de nomina GET/read-only implementada en local.
+
+- Documento nuevo:
+  `docs/fase_5E_R_A_auditoria_consolidada_nomina.md`.
+- Rutas GET nuevas:
+  - `/trabajadores/nomina/auditoria`.
+  - `/trabajadores/nomina/auditoria/exportar`.
+- No hay rutas POST nuevas.
+- La vista no contiene CSRF ni formularios POST.
+- El CSV se genera en memoria.
+- La consulta consolida detalle congelado de snapshot con pagos Caja trazados,
+  reversiones, referencias y saldo de auditoria por `hotel_id`.
+- Caso local auditado por modelo:
+  `hotel_id = 4`, `periodo_id = 4`, trabajador `Panfilo Hernandez`, pagos Caja
+  `$1.00`, saldo auditoria `$99.00`, estado `parcial`.
+- Preflight pagos laborales Caja: `OK: 76`, `WARNING: 0`, `ERROR: 0`.
+- Health general: 5E-R-A OK; quedan `ERROR: 3` historicos de Compras/CxP fuera
+  de esta fase.
+- No se toco produccion, migraciones, permisos, auth, storage, PWA/offline,
+  IndexedDB, cache names ni `/api/sync`.
+- No se registro pago, no se revirtio pago, no se modifico Caja, no se modifico
+  snapshot y no se genero nomina oficial.
+
+## Auditoria Fase 5E-R-F
+
+Resultado: cierre documental tras QA manual validada de auditoria consolidada
+de nomina.
+
+- Documento nuevo:
+  `docs/fase_5E_R_F_cierre_auditoria_consolidada_nomina.md`.
+- El usuario confirmo que la pantalla quedo y paso todas las pruebas.
+- Pantalla validada:
+  `/trabajadores/nomina/auditoria?periodo_id=4`.
+- Datos visibles validados:
+  - detalles `1`;
+  - trabajadores `1`;
+  - pagos Caja `$1.00`;
+  - saldo auditoria `$99.00`;
+  - estado `Parcial`;
+  - trabajador `Panfilo Hernandez`;
+  - periodo `#4 Periodo seleccionado`.
+- El cierre no agrega rutas, POST, migraciones ni escrituras.
+- No se toco produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+- No se registro pago, no se revirtio pago, no se modifico Caja, no se modifico
+  snapshot y no se genero nomina oficial.
+
+## Auditoria Fase 5E-S-0
+
+Resultado: contrato documental para expediente administrativo read-only de
+nomina.
+
+- Documento nuevo:
+  `docs/fase_5E_S_0_contrato_expediente_administrativo_nomina.md`.
+- No agrega codigo, rutas, controladores, modelos, servicios, vistas,
+  formularios, migraciones, permisos, datos ni escrituras.
+- Define una futura capa GET/read-only para agrupar evidencias de pre-nomina,
+  snapshots, pagos Caja, reversiones, auditoria consolidada, documentos,
+  eventos y bloqueos.
+- Exige que toda lectura futura quede scoped por `hotel_id`.
+- Mantiene fuera de alcance nomina oficial, CFDI, timbrado, dispersion, pago
+  masivo, polizas contables, liquidaciones automaticas, PWA/offline,
+  IndexedDB, cache names y `/api/sync`.
+- No se toco produccion, Caja, cortes, movimientos de Caja, snapshots, storage,
+  PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Auditoria Fase 5E-S-A
+
+Resultado: expediente administrativo de nomina GET/read-only implementado en
+local.
+
+- Documento nuevo:
+  `docs/fase_5E_S_A_expediente_administrativo_nomina.md`.
+- Rutas GET nuevas:
+  - `/trabajadores/nomina/expediente`.
+  - `/trabajadores/nomina/expediente/exportar`.
+- No hay rutas POST nuevas.
+- La vista no contiene CSRF ni formularios POST.
+- El CSV se genera en memoria.
+- La consulta deriva el expediente desde auditoria consolidada y marca estados
+  administrativos y bloqueos por `hotel_id`.
+- Caso local auditado por modelo:
+  `hotel_id = 4`, `periodo_id = 4`, trabajador `Panfilo Hernandez`, estado
+  expediente `con_pendientes`, pagos Caja `$1.00`, saldo auditoria `$99.00`,
+  bloqueos `0`.
+- Preflight pagos laborales Caja: `OK: 78`, `WARNING: 0`, `ERROR: 0`.
+- Health general: 5E-S-A OK; quedan `ERROR: 3` historicos de Compras/CxP fuera
+  de esta fase.
+- No se toco produccion, migraciones, permisos, auth, storage, PWA/offline,
+  IndexedDB, cache names ni `/api/sync`.
+- No se registro pago, no se revirtio pago, no se modifico Caja, no se modifico
+  snapshot y no se genero nomina oficial.
+
+## Auditoria Fase 5E-T-0
+
+Resultado: contrato documental para frontera de nomina oficial.
+
+- Documento nuevo:
+  `docs/fase_5E_T_0_contrato_frontera_nomina_oficial.md`.
+- No agrega codigo, rutas, controladores, modelos, servicios, vistas,
+  formularios, migraciones, permisos, datos ni escrituras.
+- Define que el bloque 5E permanece como nomina administrativa.
+- Mantiene fuera de alcance CFDI laboral, timbrado, dispersion bancaria, pago
+  masivo, recibos fiscales, UUID fiscal laboral, polizas contables y calculo
+  fiscal patronal.
+- No se toco produccion, Caja, cortes, movimientos de Caja, snapshots, storage,
+  PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Auditoria Fase 5E-T-A
+
+Resultado: preflight CLI/read-only de frontera de nomina oficial implementado
+en local.
+
+- Documento nuevo:
+  `docs/fase_5E_T_A_preflight_frontera_nomina_oficial.md`.
+- Herramienta nueva:
+  `src/tools/saas/preflight_frontera_nomina_oficial.php`.
+- No hay rutas nuevas.
+- No hay migraciones nuevas.
+- El checker revisa rutas, simbolos Personal/Nomina, migraciones montadas,
+  objetos DB locales y bloqueo de `/api/sync`.
+- QA tecnica local:
+  - lint PHP OK;
+  - preflight `OK: 10`, `WARNING: 0`, `ERROR: 0`.
+- Confirmo que no hay superficie activa de nomina oficial, CFDI laboral,
+  timbrado, dispersion ni pago masivo.
+- Confirmo que `/api/sync` mantiene `sync_temporarily_disabled` y HTTP 423.
+- No se toco produccion, permisos, auth, storage, PWA/offline, IndexedDB, cache
+  names ni `/api/sync`.
+- No se registro pago, no se revirtio pago, no se modifico Caja, no se modifico
+  snapshot y no se genero nomina oficial.
+
+## Auditoria Fase 5E-T-B
+
+Resultado: integracion del preflight de frontera de nomina oficial al health
+general.
+
+- Documento nuevo:
+  `docs/fase_5E_T_B_health_frontera_nomina_oficial.md`.
+- Archivo modificado:
+  `src/tools/saas/health_check_fase_1a.php`.
+- El health reconoce el preflight 5E-T-A y valida que declare guardas de rutas,
+  simbolos Personal/Nomina, DB read-only, `/api/sync`, CFDI, timbrado,
+  dispersion y pago masivo.
+- QA tecnica local:
+  - lint PHP OK;
+  - health filtrado confirma 5E-T-A como OK;
+  - health global conserva `ERROR: 3` historicos de Compras/CxP fuera de esta
+    fase.
+- No se toco produccion, rutas, modelos, controladores, vistas, migraciones,
+  permisos, auth, storage, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+- No se registro pago, no se revirtio pago, no se modifico Caja, no se modifico
+  snapshot y no se genero nomina oficial.
+
+## Auditoria Fase 5E-U-0
+
+Resultado: contrato documental para suite QA nomina administrativa.
+
+- Documento nuevo:
+  `docs/fase_5E_U_0_contrato_suite_qa_nomina_administrativa.md`.
+- No agrega codigo, rutas, controladores, modelos, servicios, vistas,
+  formularios, migraciones, permisos, datos ni escrituras.
+- Define una suite CLI/local/read-only para consolidar QA tecnica de
+  Personal/Nomina administrativa.
+- Mantiene fuera de alcance nomina oficial, CFDI laboral, timbrado, dispersion,
+  pago masivo, storage, PWA/offline, IndexedDB, cache names y `/api/sync`.
+- No se toco produccion, Caja, cortes, movimientos de Caja ni snapshots.
+
+## Auditoria Fase 5E-U-A
+
+Resultado: suite CLI/read-only de QA nomina administrativa implementada en
+local.
+
+- Documento nuevo:
+  `docs/fase_5E_U_A_suite_qa_nomina_administrativa.md`.
+- Herramienta nueva:
+  `src/tools/saas/preflight_nomina_administrativa_suite.php`.
+- No hay rutas nuevas.
+- No hay migraciones nuevas.
+- La suite ejecuta preflights actuales de pagos laborales/snapshots y frontera
+  de nomina oficial, y valida health 5E-T-B.
+- El preflight de ledger queda como historico no bloqueante porque su contrato
+  original antecede a rutas 5E autorizadas.
+- QA tecnica local:
+  - lint PHP OK;
+  - suite `OK: 3`, `WARNING: 1`, `ERROR: 0`;
+  - resultado `PASS_WITH_WARNINGS_ALLOWED`.
+- No se toco produccion, rutas, modelos, controladores, vistas, migraciones,
+  permisos, auth, storage, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+- No se registro pago, no se revirtio pago, no se modifico Caja, no se modifico
+  snapshot y no se genero nomina oficial.
+
+## Auditoria Fase 5E-U-B
+
+Resultado: health general saneado para Compras/CxP redisenadas.
+
+- Documento nuevo:
+  `docs/fase_5E_U_B_health_baseline_compras_cxp.md`.
+- Archivo modificado:
+  `src/tools/saas/health_check_fase_1a.php`.
+- No hay rutas nuevas.
+- No hay migraciones nuevas.
+- No se modificaron vistas de Compras ni CxP.
+- El health ahora reconoce las marcas actuales de:
+  - detalle Compras mediante `$compraUrl`;
+  - boton de recepcion `cp-btn-receive` o `data-receive-form="1"`;
+  - detalle CxP mediante `$cuentaUrl`;
+  - simulador CxP con etiqueta `Solo consulta`.
+- QA tecnica local:
+  - lint PHP OK;
+  - health `OK: 328`, `WARNING: 28`, `ERROR: 0`;
+  - suite 5E-U-A conserva `ERROR: 0`.
+- No se toco produccion, rutas, modelos, controladores, vistas, migraciones,
+  permisos, auth, storage, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+- No se registro pago, no se revirtio pago, no se modifico Caja, no se modifico
+  snapshot y no se genero nomina oficial.
+
+## Auditoria Fase 3A-B
+
+Resultado: health general reconoce Proveedores Fase 3A redisenado.
+
+- Documento nuevo:
+  `docs/fase_3A_B_health_baseline_proveedores.md`.
+- Archivo modificado:
+  `src/tools/saas/health_check_fase_1a.php`.
+- No hay rutas nuevas.
+- No hay migraciones nuevas.
+- No se modificaron vistas de Proveedores.
+- El health ahora reconoce:
+  - enlace de detalle mediante `$provUrl`;
+  - etiqueta `Solo consulta` como marca read-only;
+  - links GET a compras y reporte;
+  - ficha sin formularios nuevos ni CSRF.
+- QA tecnica local:
+  - lint PHP OK;
+  - Proveedores Fase 3A filtrado en health: OK.
+- No se toco produccion, rutas, modelos, controladores, vistas, migraciones,
+  permisos, auth, storage, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+- No se escribieron compras, CxP, pagos, Caja ni inventario.
+
+## Auditoria Fase NP-F-B
+
+Resultado: health general reconoce Personal NP-F-A/5E-D-A redisenado.
+
+- Documento nuevo:
+  `docs/fase_NP_F_B_health_baseline_personal.md`.
+- Archivo modificado:
+  `src/tools/saas/health_check_fase_1a.php`.
+- No hay rutas nuevas.
+- No hay migraciones nuevas.
+- No se modificaron vistas de Personal.
+- El health ahora reconoce:
+  - enlace de detalle historico con `url('trabajadores/' . (int...)`;
+  - enlace de detalle actual mediante `$tUrl`;
+  - reporte read-only sin POST ni CSRF;
+  - ledger manual con CSRF;
+  - pago laboral con Caja protegido por `pago_token`.
+- QA tecnica local:
+  - lint PHP OK;
+  - Personal NP-F-A/5E-D-A filtrado en health: OK.
+- No se toco produccion, rutas, modelos, controladores, vistas, migraciones,
+  permisos, auth, storage, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+- No se escribieron pagos, reversiones, Caja, nomina oficial ni snapshots.
+
+## Auditoria Fase TLM-I/J-B
+
+Resultado: health general reconoce Tareas TLM-I-A/TLM-J-A redisenadas.
+
+- Documento nuevo:
+  `docs/fase_TLM_I_J_B_health_baseline_tareas.md`.
+- Archivo modificado:
+  `src/tools/saas/health_check_fase_1a.php`.
+- No hay rutas nuevas.
+- No hay migraciones nuevas.
+- No se modificaron vistas de Tareas.
+- El health ahora reconoce:
+  - enlace de detalle actual mediante `$tareaId`;
+  - reporte con titulo `Reporte de tareas`;
+  - seccion de eventos actual como `Historial` + `$eventos`;
+  - reporte/agenda sin POST ni CSRF;
+  - alta/asignacion/estados manuales con CSRF;
+  - ausencia de acciones directas de habitacion y Caja.
+- QA tecnica local:
+  - lint PHP OK;
+  - TLM-I-A/TLM-J-A filtrado en health: OK.
+- No se toco produccion, rutas, modelos, controladores, vistas, migraciones,
+  permisos, auth, storage, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+- No se escribieron tareas, estados, habitaciones, pagos, Caja ni snapshots.

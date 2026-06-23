@@ -163,7 +163,7 @@ $activo = (int)($proveedor['activo'] ?? 0) === 1;
 
         <section class="pv-toolbar">
             <div class="flex flex-wrap gap-2">
-                <a class="pv-btn" href="<?= url('proveedores') ?>">
+                <a class="pv-btn" href="<?= back_url('proveedores') ?>">
                     <i class="fas fa-arrow-left"></i>
                     Volver
                 </a>

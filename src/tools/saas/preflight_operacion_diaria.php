@@ -215,6 +215,10 @@ if (opPfRouteExists($routes, 'operacion/diaria', 'get')) {
     opPfError('Ruta OP-A faltante: GET /operacion/diaria.', 'Registrar solo GET /operacion/diaria para el tablero read-only.');
 }
 
+if (opPfRouteExists($routes, 'operacion/conciliacion-financiera', 'get')) {
+    opPfOk('Ruta 8A/10A registrada: GET /operacion/conciliacion-financiera read-only.');
+}
+
 $forbiddenRoutes = [];
 foreach ($routes as $route) {
     $method = strtoupper((string)$route['method']);
@@ -222,17 +226,21 @@ foreach ($routes as $route) {
     $controller = strtolower((string)$route['controller']);
     $action = strtolower((string)$route['action']);
     $signature = $method . ' /' . $path . ' -> ' . $controller . '::' . $action;
+    $allowedOperationRoutes = [
+        'GET /operacion/diaria -> operacion::diaria',
+        'GET /operacion/conciliacion-financiera -> operacion::conciliacionfinanciera',
+    ];
 
     if (($path === 'operacion/diaria' || strpos($path, 'operacion/') === 0 || $controller === 'operacion')
-        && $signature !== 'GET /operacion/diaria -> operacion::diaria') {
+        && !in_array($signature, $allowedOperationRoutes, true)) {
         $forbiddenRoutes[] = $signature;
     }
 }
 
 if ($forbiddenRoutes === []) {
-    opPfOk('No hay rutas OP-A fuera del contrato read-only.');
+    opPfOk('No hay rutas Operacion fuera del contrato read-only autorizado.');
 } else {
-    opPfError('Rutas OP-A fuera de alcance: ' . implode(' | ', $forbiddenRoutes), 'Retirar POST o rutas adicionales bajo /operacion.');
+    opPfError('Rutas Operacion fuera de alcance: ' . implode(' | ', $forbiddenRoutes), 'Retirar POST o rutas adicionales bajo /operacion que no sean tablero diario o conciliacion financiera read-only.');
 }
 
 $controllerCode = is_file($controllerPath) ? (string) file_get_contents($controllerPath) : '';

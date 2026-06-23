@@ -217,6 +217,62 @@ function url($path = '') {
 }
 
 /**
+ * Generar URL de regreso segura con fallback.
+ *
+ * Usa HTTP_REFERER solo si pertenece al mismo host/base de la app y no apunta
+ * a la misma URL actual. Si no, regresa al fallback indicado.
+ */
+function back_url($fallback = '') {
+    $fallbackUrl = url($fallback);
+    $referer = $_SERVER['HTTP_REFERER'] ?? '';
+
+    if (!$referer) {
+        return $fallbackUrl;
+    }
+
+    $refererParts = parse_url($referer);
+    if (!$refererParts || empty($refererParts['host'])) {
+        return $fallbackUrl;
+    }
+
+    $currentHostHeader = $_SERVER['HTTP_HOST'] ?? '';
+    $currentHostParts = parse_url('http://' . $currentHostHeader);
+    $currentHost = $currentHostParts['host'] ?? $currentHostHeader;
+
+    if ($currentHost === '' || strcasecmp($refererParts['host'], $currentHost) !== 0) {
+        return $fallbackUrl;
+    }
+
+    $currentScheme = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+    $refererScheme = $refererParts['scheme'] ?? $currentScheme;
+    $currentPort = $currentHostParts['port'] ?? ($currentScheme === 'https' ? 443 : 80);
+    $refererPort = $refererParts['port'] ?? ($refererScheme === 'https' ? 443 : 80);
+
+    if ((int) $currentPort !== (int) $refererPort) {
+        return $fallbackUrl;
+    }
+
+    $script = $_SERVER['SCRIPT_NAME'] ?? '/index.php';
+    $baseDir = rtrim(str_replace('\\', '/', dirname($script)), '/');
+    $refererPath = $refererParts['path'] ?? '/';
+
+    if ($baseDir !== '' && $baseDir !== '/' && strpos($refererPath, $baseDir . '/') !== 0 && $refererPath !== $baseDir) {
+        return $fallbackUrl;
+    }
+
+    $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+    $currentQuery = $_SERVER['QUERY_STRING'] ?? '';
+    $currentFullPath = $currentPath . ($currentQuery !== '' ? '?' . $currentQuery : '');
+    $refererFullPath = $refererPath . (isset($refererParts['query']) ? '?' . $refererParts['query'] : '');
+
+    if ($refererFullPath === $currentFullPath) {
+        return $fallbackUrl;
+    }
+
+    return $referer;
+}
+
+/**
  * Generar URL para assets
  */
 function asset($path) {
@@ -754,6 +810,14 @@ function get_tipo_habitacion($tipo) {
  */
 function clear_old_input() {
     unset($_SESSION['old_input']);
+    clear_form_errors();
+}
+
+/**
+ * Limpiar errores de campos guardados en sesion
+ */
+function clear_form_errors() {
+    unset($_SESSION['form_errors']);
 }
 
 /**
@@ -809,6 +873,79 @@ function old($key, $default = '') {
  */
 function save_old_input($data) {
     $_SESSION['old_input'] = $data;
+}
+
+/**
+ * Guardar errores por campo para mostrarlos junto al input correcto.
+ *
+ * Formato esperado:
+ * [
+ *   'telefono' => 'El telefono no es valido',
+ *   'email' => ['El email no es valido']
+ * ]
+ */
+function save_form_errors($errors) {
+    if (!is_array($errors)) {
+        clear_form_errors();
+        return;
+    }
+
+    $normalized = [];
+
+    foreach ($errors as $field => $messages) {
+        $field = is_string($field) ? trim($field) : '';
+        if ($field === '') {
+            continue;
+        }
+
+        if (!is_array($messages)) {
+            $messages = [$messages];
+        }
+
+        foreach ($messages as $message) {
+            $message = trim((string)$message);
+            if ($message === '') {
+                continue;
+            }
+
+            $normalized[$field][] = $message;
+        }
+    }
+
+    if (empty($normalized)) {
+        clear_form_errors();
+        return;
+    }
+
+    $_SESSION['form_errors'] = $normalized;
+}
+
+/**
+ * Obtener errores por campo. Por defecto los consume para evitar que se repitan.
+ */
+function get_form_errors($clear = true) {
+    $errors = $_SESSION['form_errors'] ?? [];
+    if (!is_array($errors)) {
+        $errors = [];
+    }
+
+    if ($clear) {
+        clear_form_errors();
+    }
+
+    return $errors;
+}
+
+/**
+ * Obtener el primer error de un campo especifico.
+ */
+function form_error($field) {
+    $errors = $_SESSION['form_errors'][$field] ?? null;
+    if (is_array($errors)) {
+        $errors = reset($errors);
+    }
+
+    return htmlspecialchars((string)($errors ?? ''), ENT_QUOTES, 'UTF-8');
 }
 
 /**

@@ -629,6 +629,23 @@ $hotelNombre = function_exists('current_hotel_display_name')
     background: color-mix(in srgb, var(--disc-accent) 3%, #FFFDF8);
 }
 
+.disc-inline-notice {
+    display: none;
+    margin: 0 20px 18px;
+    padding: 12px 14px;
+    border: 1px solid #F3D08A;
+    border-radius: 14px;
+    background: #FFF8E8;
+    color: #8A5B12;
+    font-size: .82rem;
+    font-weight: 850;
+    line-height: 1.42;
+}
+
+.disc-inline-notice.is-visible {
+    display: block;
+}
+
 .disc-mobile-grid {
     display: none;
     gap: 12px;
@@ -898,7 +915,7 @@ $hotelNombre = function_exists('current_hotel_display_name')
     <main class="disc-shell">
         <section class="disc-hero">
             <div class="disc-hero-main">
-                <a href="<?= url('inventario') ?>" class="disc-back">
+                <a href="<?= back_url('inventario') ?>" class="disc-back">
                     <i class="fas fa-arrow-left"></i>
                     Inventario
                 </a>
@@ -1164,6 +1181,7 @@ $hotelNombre = function_exists('current_hotel_display_name')
                             Restablecer
                         </button>
                     </div>
+                    <p id="configInlineNotice" class="disc-inline-notice" aria-live="polite"></p>
                 </section>
             </form>
 
@@ -1221,7 +1239,28 @@ function syncInputs(tipo, productoId, value) {
     }
 }
 
-document.getElementById('formConfiguracion')?.addEventListener('submit', function(event) {
+function configInlineNotice(message, duration = 7000) {
+    const notice = document.getElementById('configInlineNotice');
+    if (!notice) return;
+
+    window.clearTimeout(notice._hideTimer);
+    notice.textContent = message;
+    notice.classList.add('is-visible');
+    notice._hideTimer = window.setTimeout(() => {
+        notice.classList.remove('is-visible');
+    }, duration);
+}
+
+function clearConfigInlineNotice() {
+    const notice = document.getElementById('configInlineNotice');
+    if (!notice) return;
+
+    window.clearTimeout(notice._hideTimer);
+    notice.textContent = '';
+    notice.classList.remove('is-visible');
+}
+
+function syncMobileConfigInputs() {
     document.querySelectorAll('input[name^="config_m["]').forEach(mobileInput => {
         const name = mobileInput.name.replace('config_m[', 'config[');
         const desktopInput = document.querySelector(`input[name="${name}"]`);
@@ -1229,19 +1268,40 @@ document.getElementById('formConfiguracion')?.addEventListener('submit', functio
             desktopInput.value = mobileInput.value;
         }
     });
+}
 
+function hayConfiguracionActiva() {
     let hayConfiguracion = false;
     document.querySelectorAll('input[name^="config["]').forEach(input => {
         if ((parseInt(input.value, 10) || 0) > 0) {
             hayConfiguracion = true;
         }
     });
+    return hayConfiguracion;
+}
 
-    if (!hayConfiguracion) {
+function clearConfigPendingConfirmations() {
+    const form = document.getElementById('formConfiguracion');
+    if (!form) return;
+
+    delete form.dataset.confirmEmptyConfig;
+    delete form.dataset.confirmResetAll;
+    window.clearTimeout(form._confirmEmptyConfigTimer);
+    window.clearTimeout(form._confirmResetAllTimer);
+    clearConfigInlineNotice();
+}
+
+document.getElementById('formConfiguracion')?.addEventListener('submit', function(event) {
+    syncMobileConfigInputs();
+
+    if (!hayConfiguracionActiva() && this.dataset.confirmEmptyConfig !== '1') {
         event.preventDefault();
-        if (confirm('No hay ninguna configuración establecida. ¿Desea continuar?')) {
-            this.submit();
-        }
+        this.dataset.confirmEmptyConfig = '1';
+        configInlineNotice('No hay cantidades configuradas. Presiona Guardar configuracion otra vez para guardar todo en 0.');
+        window.clearTimeout(this._confirmEmptyConfigTimer);
+        this._confirmEmptyConfigTimer = window.setTimeout(() => {
+            delete this.dataset.confirmEmptyConfig;
+        }, 7000);
     }
 });
 
@@ -1253,6 +1313,7 @@ document.querySelectorAll('.btn-decrease').forEach(button => {
             const newValue = value - 1;
             syncInputs(input.dataset.tipo, input.dataset.producto, newValue);
             actualizarTotales();
+            clearConfigPendingConfirmations();
         }
     });
 });
@@ -1265,6 +1326,7 @@ document.querySelectorAll('.btn-increase').forEach(button => {
             const newValue = value + 1;
             syncInputs(input.dataset.tipo, input.dataset.producto, newValue);
             actualizarTotales();
+            clearConfigPendingConfirmations();
         }
     });
 });
@@ -1273,11 +1335,13 @@ document.querySelectorAll('.cantidad-input').forEach(input => {
     input.addEventListener('change', function() {
         syncInputs(this.dataset.tipo, this.dataset.producto, this.value);
         actualizarTotales();
+        clearConfigPendingConfirmations();
     });
 
     input.addEventListener('input', function() {
         syncInputs(this.dataset.tipo, this.dataset.producto, this.value);
         actualizarTotales();
+        clearConfigPendingConfirmations();
     });
 });
 
@@ -1309,12 +1373,34 @@ function actualizarConsumoDiario() {
 }
 
 function resetAll() {
-    if (confirm('¿Está seguro de restablecer toda la configuración a 0?')) {
-        document.querySelectorAll('.cantidad-input').forEach(input => {
-            input.value = 0;
-        });
-        actualizarTotales();
+    const form = document.getElementById('formConfiguracion');
+    if (form && form.dataset.confirmResetAll !== '1') {
+        form.dataset.confirmResetAll = '1';
+        configInlineNotice('Presiona Restablecer otra vez para poner todas las cantidades en 0.');
+        window.clearTimeout(form._confirmResetAllTimer);
+        form._confirmResetAllTimer = window.setTimeout(() => {
+            delete form.dataset.confirmResetAll;
+        }, 7000);
+        return;
     }
+
+    if (form) {
+        delete form.dataset.confirmResetAll;
+        window.clearTimeout(form._confirmResetAllTimer);
+    }
+
+    document.querySelectorAll('.cantidad-input').forEach(input => {
+        input.value = 0;
+    });
+    actualizarTotales();
+    if (form) {
+        form.dataset.confirmEmptyConfig = '1';
+        window.clearTimeout(form._confirmEmptyConfigTimer);
+        form._confirmEmptyConfigTimer = window.setTimeout(() => {
+            delete form.dataset.confirmEmptyConfig;
+        }, 12000);
+    }
+    configInlineNotice('Configuracion restablecida a 0. Revisa y guarda para aplicar el cambio.');
 }
 
 document.getElementById('btnReset')?.addEventListener('click', resetAll);

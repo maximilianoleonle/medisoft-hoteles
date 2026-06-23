@@ -119,7 +119,7 @@
                 </div>
 
                 <div class="cj-actions">
-                    <a href="<?= url('dashboard') ?>" class="cj-btn cj-btn-muted"><i class="fas fa-arrow-left"></i> Volver</a>
+                    <a href="<?= back_url('caja') ?>" class="cj-btn cj-btn-muted"><i class="fas fa-arrow-left"></i> Volver</a>
                     <button type="submit" class="cj-btn cj-btn-gold"><i class="fas fa-unlock"></i> Abrir caja</button>
                 </div>
             </form>

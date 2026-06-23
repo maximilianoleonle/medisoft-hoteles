@@ -1466,3 +1466,355 @@ Definition of Done:
 - HTTP sin sesion bloquea rutas documentales/tareas.
 - SQL read-only confirma que no se crearon documentos durante verificacion automatica.
 - `git diff --check`.
+
+## Fase 5E-P-0 - Contrato trazabilidad fuerte de pago desde snapshot
+
+Estado formal vigente:
+`CONTRATO_5E_P_0_TRAZABILIDAD_PAGO_SNAPSHOT_PRENOMINA_COMPLETADO`.
+
+- Documento:
+  `docs/fase_5E_P_0_contrato_trazabilidad_pago_snapshot_prenomina.md`.
+- Define futura trazabilidad fuerte entre `trabajador_pagos_caja` y snapshots de
+  pre-nomina mediante columnas nullable.
+- No implementa codigo, rutas, migraciones, modelos ni escrituras.
+- Prohibe backfill automatico de pagos historicos.
+- Mantiene fuera de alcance nomina oficial, CFDI, timbrado, dispersion, pago
+  masivo, liquidaciones automaticas, PWA/offline y `/api/sync`.
+- Siguiente accion segura: 5E-P-A solo con backup y autorizacion explicita.
+
+## Fase 5E-P-B - Guardas read-only de trazabilidad pago snapshot
+
+Estado formal vigente:
+`GUARDAS_5E_P_B_TRAZABILIDAD_PAGO_SNAPSHOT_READONLY_QA_TECNICA_LOCAL_COMPLETADA`.
+
+- Documento:
+  `docs/fase_5E_P_B_guardas_trazabilidad_pago_snapshot.md`.
+- Agrega validaciones CLI/read-only en preflight y health.
+- No implementa migracion ni modifica base de datos.
+- Si la trazabilidad futura no existe, el estado actual es OK.
+- Si una futura implementacion queda parcial o cruza hotel/periodo/detalle,
+  debe fallar el checker.
+- Siguiente accion segura: 5E-P-A solo con backup y autorizacion explicita.
+
+## Fase 5E-P-A - Trazabilidad fuerte de pago snapshot
+
+Estado formal vigente:
+`IMPLEMENTACION_5E_P_A_TRAZABILIDAD_PAGO_SNAPSHOT_PRENOMINA_QA_TECNICA_LOCAL_COMPLETADA`.
+
+- Documento:
+  `docs/fase_5E_P_A_trazabilidad_pago_snapshot_prenomina.md`.
+- Migracion local:
+  `migrations/20260622_001_fase_5e_p_a_trazabilidad_pago_snapshot.sql`.
+- Agrega `nomina_periodo_id` y `nomina_periodo_detalle_id` nullable en
+  `trabajador_pagos_caja`.
+- Agrega indices y FKs restrictivas hacia snapshots persistentes de pre-nomina.
+- Prohibe backfill historico automatico.
+- Los pagos normales fuera de snapshot deben quedar con ambos IDs en `NULL`.
+- Los pagos desde snapshot aprobado deben guardar ambos IDs y validar hotel,
+  periodo, detalle, trabajador, estado aprobado y detalle `por_pagar`.
+- No recalcula snapshots, no reabre periodos, no crea nomina oficial, CFDI,
+  timbrado, dispersion, pago masivo ni liquidacion automatica.
+- No toca PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Fase 5E-P-F - Cierre trazabilidad fuerte de pago snapshot
+
+Estado formal vigente:
+`CIERRE_5E_P_F_TRAZABILIDAD_PAGO_SNAPSHOT_PRENOMINA_QA_MANUAL_COMPLETADA`.
+
+- Documento:
+  `docs/fase_5E_P_F_cierre_trazabilidad_pago_snapshot_prenomina.md`.
+- Cierra 5E-P-A tras QA manual validada.
+- Pago de prueba manual:
+  `trabajador_pagos_caja.id = 9`, referencia `TEST-5EPA-001`.
+- El pago quedo ligado a `nomina_periodo_id = 4` y
+  `nomina_periodo_detalle_id = 4`.
+- Movimiento Caja asociado:
+  `movimientos_caja.id = 1510`.
+- No autoriza borrar pagos de QA directamente; cualquier deshacer operativo
+  debe usar reversion controlada de pago laboral con Caja.
+- No toca produccion, PWA/offline, IndexedDB, cache names ni `/api/sync`.
+
+## Fase 5E-Q-A - Conciliacion read-only pagos snapshot
+
+Estado formal vigente:
+`IMPLEMENTACION_5E_Q_A_CONCILIACION_PAGOS_SNAPSHOT_PRENOMINA_QA_TECNICA_LOCAL_COMPLETADA`.
+
+- Documento:
+  `docs/fase_5E_Q_A_conciliacion_pagos_snapshot_prenomina.md`.
+- Contrato: reporte GET/read-only de pagos laborales que tienen trazabilidad
+  fuerte hacia snapshots de pre-nomina.
+- Rutas permitidas:
+  - `GET /trabajadores/nomina/periodos/pagos-snapshot`.
+  - `GET /trabajadores/nomina/periodos/pagos-snapshot/exportar`.
+- Puede leer `trabajador_pagos_caja`, snapshots persistentes, detalles,
+  movimientos de Caja, cortes y cajas.
+- Debe marcar filas como `OK` o `Revisar` segun consistencia de hotel,
+  periodo, detalle, trabajador, monto, referencia y movimiento.
+- Prohibido: POST, CSRF en la vista, registro/reversion de pagos, escritura de
+  storage, migraciones, backfill, nomina oficial, timbrado, dispersion,
+  PWA/offline y `/api/sync`.
+
+## Fase 5E-Q-F - Cierre conciliacion pagos snapshot
+
+Estado formal vigente:
+`CIERRE_5E_Q_F_CONCILIACION_PAGOS_SNAPSHOT_PRENOMINA_QA_MANUAL_COMPLETADA`.
+
+- Documento:
+  `docs/fase_5E_Q_F_cierre_conciliacion_pagos_snapshot_prenomina.md`.
+- Cierra 5E-Q-A tras QA manual local.
+- Confirma que la pantalla de conciliacion muestra el pago trazado esperado.
+- No cambia el contrato tecnico de 5E-Q-A.
+- No autoriza produccion, migraciones, POST, escrituras, storage,
+  PWA/offline ni `/api/sync`.
+
+## Fase 5E-R-0 - Contrato auditoria consolidada de nomina
+
+Estado formal vigente:
+`CONTRATO_5E_R_0_AUDITORIA_CONSOLIDADA_NOMINA_READONLY_COMPLETADO`.
+
+- Documento:
+  `docs/fase_5E_R_0_contrato_auditoria_consolidada_nomina.md`.
+- Define una futura auditoria GET/read-only de Personal/Nomina.
+- Consolida, solo por lectura, snapshots, detalles, trabajadores, pagos Caja,
+  reversiones, movimientos, cortes, referencias, auditoria y conciliacion.
+- Toda futura lectura debe quedar scoped por `hotel_id`.
+- La vista futura debe distinguir snapshot administrativo, saldo vivo, pago
+  laboral real con Caja, reversion controlada y conciliacion read-only.
+- Prohibido: POST, pagos, reversiones, modificaciones de Caja/cortes,
+  cambios de snapshots, recalculos, nomina oficial, CFDI, timbrado,
+  dispersion, pago masivo, migraciones, backfill, storage, PWA/offline y
+  `/api/sync`.
+- Siguiente accion segura: 5E-R-A solo con autorizacion explicita para rutas
+  GET, controlador, modelo read-only, vista, exportador CSV y checkers.
+
+## Fase 5E-R-A - Auditoria consolidada de nomina read-only
+
+Estado formal vigente:
+`IMPLEMENTACION_5E_R_A_AUDITORIA_CONSOLIDADA_NOMINA_READONLY_QA_TECNICA_LOCAL_COMPLETADA`.
+
+- Documento:
+  `docs/fase_5E_R_A_auditoria_consolidada_nomina.md`.
+- Rutas permitidas:
+  - `GET /trabajadores/nomina/auditoria`.
+  - `GET /trabajadores/nomina/auditoria/exportar`.
+- Contrato: pantalla GET/read-only y CSV en memoria para consolidar snapshots,
+  detalles, trabajador, pagos Caja trazados, reversiones, referencias y saldo de
+  auditoria.
+- La consulta debe estar scoped por `hotel_id` y no debe corregir datos.
+- Estados permitidos de auditoria: `Liquidado`, `Parcial`, `Sin pago`,
+  `Revisar`.
+- Prohibido: POST, CSRF en la vista read-only, registrar pago, revertir pago,
+  modificar Caja/cortes/snapshots, crear nomina oficial, timbrado, CFDI,
+  dispersion, pago masivo, migraciones, backfill, storage, PWA/offline y
+  `/api/sync`.
+- Health general valida 5E-R-A como OK; errores generales restantes son
+  historicos de Compras/CxP fuera de esta fase.
+
+## Fase 5E-R-F - Cierre auditoria consolidada de nomina
+
+Estado formal vigente:
+`CIERRE_5E_R_F_AUDITORIA_CONSOLIDADA_NOMINA_QA_MANUAL_COMPLETADA`.
+
+- Documento:
+  `docs/fase_5E_R_F_cierre_auditoria_consolidada_nomina.md`.
+- Cierra 5E-R-A tras QA manual local validada.
+- Confirma que la auditoria consolidada muestra el caso esperado del periodo
+  `#4`: `Panfilo Hernandez`, estado `Parcial`, pagos Caja `$1.00` y saldo
+  auditoria `$99.00`.
+- No cambia el contrato tecnico de 5E-R-A.
+- No autoriza produccion, migraciones, POST, pagos, reversiones, escrituras,
+  storage, PWA/offline ni `/api/sync`.
+
+## Fase 5E-S-0 - Contrato expediente administrativo de nomina
+
+Estado formal vigente:
+`CONTRATO_5E_S_0_EXPEDIENTE_ADMINISTRATIVO_NOMINA_COMPLETADO`.
+
+- Documento:
+  `docs/fase_5E_S_0_contrato_expediente_administrativo_nomina.md`.
+- Define una futura capa GET/read-only de expediente administrativo de nomina.
+- El expediente agrupa evidencias de pre-nomina, snapshots, pagos Caja,
+  reversiones, auditoria consolidada, documentos, eventos y bloqueos.
+- Toda futura lectura debe quedar scoped por `hotel_id`.
+- Estados administrativos sugeridos: `Listo para revision`, `Con pendientes`,
+  `Requiere correccion`, `Bloqueado` y `Anulado`.
+- Prohibido: POST, pagos, reversiones, modificaciones de Caja/cortes,
+  movimientos, snapshots, nomina oficial, CFDI, timbrado, dispersion, pago
+  masivo, polizas contables, migraciones, backfill, storage, PWA/offline y
+  `/api/sync`.
+- Siguiente accion segura: 5E-S-A solo con autorizacion explicita para rutas
+  GET, controlador, modelo read-only, vista, exportador CSV y checkers.
+
+## Fase 5E-S-A - Expediente administrativo de nomina read-only
+
+Estado formal vigente:
+`IMPLEMENTACION_5E_S_A_EXPEDIENTE_ADMINISTRATIVO_NOMINA_QA_TECNICA_LOCAL_COMPLETADA`.
+
+- Documento:
+  `docs/fase_5E_S_A_expediente_administrativo_nomina.md`.
+- Rutas permitidas:
+  - `GET /trabajadores/nomina/expediente`.
+  - `GET /trabajadores/nomina/expediente/exportar`.
+- Contrato: pantalla GET/read-only y CSV en memoria para clasificar expediente
+  administrativo de nomina desde auditoria consolidada.
+- Estados permitidos del expediente: `Listo para revision`,
+  `Con pendientes`, `Requiere correccion`, `Bloqueado` y `Anulado`.
+- La consulta debe estar scoped por `hotel_id` y no debe corregir datos.
+- Prohibido: POST, CSRF en la vista read-only, registrar pago, revertir pago,
+  aprobar/anular snapshot, modificar Caja/cortes/snapshots, crear nomina
+  oficial, timbrado, CFDI, dispersion, pago masivo, migraciones, backfill,
+  storage, PWA/offline y `/api/sync`.
+- Health general valida 5E-S-A como OK; errores generales restantes son
+  historicos de Compras/CxP fuera de esta fase.
+
+## Fase 5E-T-0 - Contrato frontera de nomina oficial
+
+Estado formal vigente:
+`CONTRATO_5E_T_0_FRONTERA_NOMINA_OFICIAL_COMPLETADO`.
+
+- Documento:
+  `docs/fase_5E_T_0_contrato_frontera_nomina_oficial.md`.
+- Define que el bloque 5E actual permanece como nomina administrativa.
+- Cualquier nomina oficial futura debe iniciar en contrato independiente.
+- Fuera de alcance sin contrato mayor: CFDI laboral, timbrado, dispersion,
+  pago masivo, recibos fiscales, UUID fiscal laboral, polizas contables y
+  calculo fiscal patronal.
+- Siguiente accion segura: 5E-T-A preflight CLI/read-only de frontera.
+
+## Fase 5E-T-A - Preflight frontera de nomina oficial
+
+Estado formal vigente:
+`IMPLEMENTACION_5E_T_A_PREFLIGHT_FRONTERA_NOMINA_OFICIAL_QA_TECNICA_LOCAL_COMPLETADA`.
+
+- Documento:
+  `docs/fase_5E_T_A_preflight_frontera_nomina_oficial.md`.
+- Herramienta:
+  `tools/saas/preflight_frontera_nomina_oficial.php`.
+- Contrato: CLI/read-only, sin rutas, sin migraciones, sin escrituras.
+- Debe fallar si la superficie Personal/Nomina expone rutas, simbolos,
+  migraciones u objetos DB de nomina oficial, CFDI laboral, timbrado,
+  dispersion o pago masivo.
+- Debe confirmar que `/api/sync` conserva `sync_temporarily_disabled` y HTTP
+  423.
+- No autoriza nomina oficial ni cambios operativos.
+
+## Fase 5E-T-B - Health frontera de nomina oficial
+
+Estado formal vigente:
+`IMPLEMENTACION_5E_T_B_HEALTH_FRONTERA_NOMINA_OFICIAL_QA_TECNICA_LOCAL_COMPLETADA`.
+
+- Documento:
+  `docs/fase_5E_T_B_health_frontera_nomina_oficial.md`.
+- Contrato: integracion estatica del preflight 5E-T-A al health general.
+- El health debe reconocer que la frontera valida rutas, simbolos
+  Personal/Nomina, DB read-only, `/api/sync`, CFDI, timbrado, dispersion y pago
+  masivo.
+- No autoriza rutas, modelos, migraciones, POST, Caja, PWA/offline ni nomina
+  oficial.
+
+## Fase 5E-U-0 - Contrato suite QA nomina administrativa
+
+Estado formal vigente:
+`CONTRATO_5E_U_0_SUITE_QA_NOMINA_ADMINISTRATIVA_COMPLETADO`.
+
+- Documento:
+  `docs/fase_5E_U_0_contrato_suite_qa_nomina_administrativa.md`.
+- Define una suite local de QA tecnica para Personal/Nomina administrativa.
+- La suite futura debe ser CLI/read-only y ejecutarse con `APP_ENV=local`.
+- Los preflights actuales de pagos laborales, snapshots, auditoria, expediente
+  y frontera oficial deben ser bloqueantes.
+- Los preflights historicos pueden reportarse como no bloqueantes si su
+  contrato original fue superado por fases posteriores autorizadas.
+- No autoriza rutas, modelos, migraciones, POST, Caja, PWA/offline, `/api/sync`
+  ni nomina oficial.
+
+## Fase 5E-U-A - Suite QA nomina administrativa
+
+Estado formal vigente:
+`IMPLEMENTACION_5E_U_A_SUITE_QA_NOMINA_ADMINISTRATIVA_QA_TECNICA_LOCAL_COMPLETADA`.
+
+- Documento:
+  `docs/fase_5E_U_A_suite_qa_nomina_administrativa.md`.
+- Herramienta:
+  `tools/saas/preflight_nomina_administrativa_suite.php`.
+- Contrato: CLI/local/read-only, sin rutas, sin migraciones, sin escrituras.
+- Debe fallar si `preflight_personal_pagos_caja.php`,
+  `preflight_frontera_nomina_oficial.php` o la validacion estatica de health
+  5E-T-B reportan errores.
+- Debe conservar `preflight_personal_ledger.php` como historico no bloqueante.
+- No autoriza nomina oficial ni cambios operativos.
+
+## Fase 5E-U-B - Health baseline Compras/CxP
+
+Estado formal vigente:
+`IMPLEMENTACION_5E_U_B_HEALTH_BASELINE_COMPRAS_CXP_QA_TECNICA_LOCAL_COMPLETADA`.
+
+- Documento:
+  `docs/fase_5E_U_B_health_baseline_compras_cxp.md`.
+- Contrato: ajuste estatico de health para reconocer vistas Compras/CxP ya
+  redisenadas sin relajar las guardas de CSRF, GET/read-only y ausencia de
+  acciones fuera de alcance.
+- Debe mantener en OK:
+  - Compras Fase 2Y: reporte read-only, detalle, borrador y recepcion minima
+    con CSRF;
+  - CxP Fase 3D/3D-D-A: pago/reversion Caja controlados con CSRF y tokens;
+  - CxP Fase 3D-A: simulador Caja GET/read-only.
+- No autoriza rutas, modelos, migraciones, POST nuevos, Caja, PWA/offline,
+  `/api/sync` ni nomina oficial.
+
+## Fase 3A-B - Health baseline Proveedores
+
+Estado formal vigente:
+`IMPLEMENTACION_3A_B_HEALTH_BASELINE_PROVEEDORES_QA_TECNICA_LOCAL_COMPLETADA`.
+
+- Documento:
+  `docs/fase_3A_B_health_baseline_proveedores.md`.
+- Contrato: ajuste estatico de health para reconocer vistas Proveedores ya
+  redisenadas sin relajar guardas read-only.
+- Debe mantener en OK:
+  - enlace GET a ficha de proveedor desde listado;
+  - ficha con historial de compras recientes;
+  - etiqueta read-only `Solo lectura` o `Solo consulta`;
+  - enlace GET a compra y reporte de compras recibidas;
+  - ausencia de formularios nuevos y CSRF en la ficha.
+- No autoriza rutas, modelos, migraciones, POST nuevos, Caja, CxP,
+  PWA/offline ni `/api/sync`.
+
+## Fase NP-F-B - Health baseline Personal
+
+Estado formal vigente:
+`IMPLEMENTACION_NP_F_B_HEALTH_BASELINE_PERSONAL_QA_TECNICA_LOCAL_COMPLETADA`.
+
+- Documento:
+  `docs/fase_NP_F_B_health_baseline_personal.md`.
+- Contrato: ajuste estatico de health para reconocer el listado de Personal ya
+  redisenado sin relajar guardas de CRUD, reporte read-only, ledger manual ni
+  pago laboral con token.
+- Debe mantener en OK:
+  - filtros GET de Personal;
+  - enlace GET a ficha de trabajador desde listado;
+  - reporte de Personal read-only sin POST ni CSRF;
+  - ledger laboral manual con formularios POST+CSRF;
+  - panel de pago laboral con Caja solo con token de un solo uso.
+- No autoriza rutas, modelos, migraciones, POST nuevos, Caja, nomina oficial,
+  PWA/offline ni `/api/sync`.
+
+## Fase TLM-I/J-B - Health baseline Tareas
+
+Estado formal vigente:
+`IMPLEMENTACION_TLM_I_J_B_HEALTH_BASELINE_TAREAS_QA_TECNICA_LOCAL_COMPLETADA`.
+
+- Documento:
+  `docs/fase_TLM_I_J_B_health_baseline_tareas.md`.
+- Contrato: ajuste estatico de health para reconocer vistas de Tareas ya
+  redisenadas sin relajar guardas de reporte, agenda, alta, asignacion ni
+  cambios manuales de estado.
+- Debe mantener en OK:
+  - listado con filtros GET;
+  - enlace GET a ficha de tarea;
+  - reporte y agenda read-only sin POST ni CSRF;
+  - ficha con historial/eventos;
+  - alta, asignacion y estados manuales con CSRF;
+  - ausencia de acciones directas de habitacion y Caja.
+- No autoriza rutas, modelos, migraciones, POST nuevos, Caja, habitaciones,
+  PWA/offline ni `/api/sync`.

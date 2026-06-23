@@ -1043,7 +1043,7 @@ textarea.invoice-input {
     <div class="invoice-shell">
         <nav class="invoice-topbar" aria-label="Navegacion de facturacion">
             <div class="invoice-nav-left">
-                <a href="<?= url('facturacion') ?>" class="invoice-back">
+                <a href="<?= back_url('facturacion') ?>" class="invoice-back">
                     <i class="fas fa-arrow-left"></i>
                     Volver
                 </a>
@@ -1129,6 +1129,17 @@ textarea.invoice-input {
                         </div>
                     </div>
                     <div class="invoice-card-body">
+                        <?php
+                            $datosFiscalesOld = [
+                                'rfc' => old('rfc', fact_det_safe($solicitud['rfc'] ?? '', '')),
+                                'razon_social' => old('razon_social', fact_det_safe($solicitud['razon_social'] ?? '', '')),
+                                'regimen_fiscal' => old('regimen_fiscal', $solicitud['regimen_fiscal'] ?? ''),
+                                'uso_cfdi' => old('uso_cfdi', $solicitud['uso_cfdi'] ?? ''),
+                                'codigo_postal_fiscal' => old('codigo_postal_fiscal', fact_det_safe($solicitud['codigo_postal_fiscal'] ?? '', '')),
+                                'email_factura' => old('email_factura', fact_det_safe($solicitud['email_factura'] ?? '', '')),
+                                'notas' => old('notas', fact_det_safe($solicitud['notas'] ?? '', '')),
+                            ];
+                        ?>
                         <form method="POST" action="<?= url('facturacion/guardar') ?>" id="formDatosFiscales" class="invoice-fiscal-form">
                             <?= csrf_field() ?>
                             <input type="hidden" name="solicitud_id" value="<?= fact_det_safe($solicitud['id'] ?? '') ?>">
@@ -1138,7 +1149,7 @@ textarea.invoice-input {
                                     RFC <?= $es_cliente ? '<span class="required">*</span>' : '' ?>
                                 </label>
                                 <input type="text" name="rfc" class="invoice-input"
-                                       value="<?= fact_det_safe($solicitud['rfc'] ?? '', '') ?>"
+                                       value="<?= $datosFiscalesOld['rfc'] ?>"
                                        placeholder="XAXX010101000"
                                        maxlength="13"
                                        style="text-transform: uppercase; font-family: monospace; font-size: 1rem; letter-spacing: .08em;"
@@ -1151,7 +1162,7 @@ textarea.invoice-input {
                                     Razon social <?= $es_cliente ? '<span class="required">*</span>' : '' ?>
                                 </label>
                                 <input type="text" name="razon_social" class="invoice-input"
-                                       value="<?= fact_det_safe($solicitud['razon_social'] ?? '', '') ?>"
+                                       value="<?= $datosFiscalesOld['razon_social'] ?>"
                                        placeholder="Nombre o razon social"
                                        <?= !$es_editable ? 'disabled' : '' ?>>
                             </div>
@@ -1163,7 +1174,7 @@ textarea.invoice-input {
                                 <select name="regimen_fiscal" class="invoice-input" <?= !$es_editable ? 'disabled' : '' ?>>
                                     <option value="">Seleccionar...</option>
                                     <?php foreach ($regimenes_fiscales as $clave => $nombre): ?>
-                                        <option value="<?= fact_det_safe($clave) ?>" <?= (($solicitud['regimen_fiscal'] ?? '') === $clave) ? 'selected' : '' ?>>
+                                        <option value="<?= fact_det_safe($clave) ?>" <?= ($datosFiscalesOld['regimen_fiscal'] === $clave) ? 'selected' : '' ?>>
                                             <?= fact_det_safe($clave) ?> - <?= fact_det_safe($nombre) ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -1177,7 +1188,7 @@ textarea.invoice-input {
                                 <select name="uso_cfdi" class="invoice-input" <?= !$es_editable ? 'disabled' : '' ?>>
                                     <option value="">Seleccionar...</option>
                                     <?php foreach ($usos_cfdi as $clave => $nombre): ?>
-                                        <option value="<?= fact_det_safe($clave) ?>" <?= (($solicitud['uso_cfdi'] ?? '') === $clave) ? 'selected' : '' ?>>
+                                        <option value="<?= fact_det_safe($clave) ?>" <?= ($datosFiscalesOld['uso_cfdi'] === $clave) ? 'selected' : '' ?>>
                                             <?= fact_det_safe($clave) ?> - <?= fact_det_safe($nombre) ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -1189,7 +1200,7 @@ textarea.invoice-input {
                                     C.P. fiscal <?= $es_cliente ? '<span class="required">*</span>' : '' ?>
                                 </label>
                                 <input type="text" name="codigo_postal_fiscal" class="invoice-input"
-                                       value="<?= fact_det_safe($solicitud['codigo_postal_fiscal'] ?? '', '') ?>"
+                                       value="<?= $datosFiscalesOld['codigo_postal_fiscal'] ?>"
                                        placeholder="00000"
                                        maxlength="5"
                                        pattern="\d{5}"
@@ -1200,7 +1211,7 @@ textarea.invoice-input {
                             <div class="invoice-field">
                                 <label class="invoice-label">Email para factura</label>
                                 <input type="email" name="email_factura" class="invoice-input"
-                                       value="<?= fact_det_safe($solicitud['email_factura'] ?? '', '') ?>"
+                                       value="<?= $datosFiscalesOld['email_factura'] ?>"
                                        placeholder="correo@ejemplo.com"
                                        <?= !$es_editable ? 'disabled' : '' ?>>
                             </div>
@@ -1209,7 +1220,7 @@ textarea.invoice-input {
                                 <label class="invoice-label">Notas adicionales</label>
                                 <textarea name="notas" class="invoice-input" rows="3"
                                           placeholder="Observaciones para facturacion..."
-                                          <?= !$es_editable ? 'disabled' : '' ?>><?= fact_det_safe($solicitud['notas'] ?? '', '') ?></textarea>
+                                          <?= !$es_editable ? 'disabled' : '' ?>><?= $datosFiscalesOld['notas'] ?></textarea>
                             </div>
 
                             <?php if ($es_editable): ?>

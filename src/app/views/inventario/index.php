@@ -154,6 +154,10 @@
 .act-btn.edit:hover  { background:#EEF4EB; }
 .act-btn.del   { color:#DC2626; background:transparent; }
 .act-btn.del:hover   { background:#FEF2F2; }
+.act-btn.del.is-confirming {
+    background:#FEF2F2;
+    box-shadow: inset 0 0 0 1px rgba(220,38,38,.22);
+}
 
 /* ── Movement items ──────────────────────── */
 .mov-row { padding:11px 14px; border-bottom:1px solid #F0F5ED; transition:background .15s; }
@@ -1375,7 +1379,7 @@
                                                     <i class="fas fa-sliders-h"></i>
                                                 </a>
                                                 <button type="button"
-                                                        onclick="confirmarEliminarProducto(<?= $producto['id'] ?>, '<?= htmlspecialchars($producto['nombre']) ?>', <?= $producto['stock_actual'] ?>)"
+                                                        onclick="confirmarEliminarProducto(this, <?= (int) $producto['id'] ?>, <?= htmlspecialchars(json_encode((string) $producto['nombre'], JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8') ?>, <?= (int) $producto['stock_actual'] ?>)"
                                                         class="act-btn del" title="Eliminar">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
@@ -1427,7 +1431,7 @@
                                         <i class="fas fa-sliders-h"></i>
                                     </a>
                                     <button type="button"
-                                            onclick="confirmarEliminarProducto(<?= $producto['id'] ?>, '<?= htmlspecialchars($producto['nombre']) ?>', <?= $producto['stock_actual'] ?>)"
+                                            onclick="confirmarEliminarProducto(this, <?= (int) $producto['id'] ?>, <?= htmlspecialchars(json_encode((string) $producto['nombre'], JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8') ?>, <?= (int) $producto['stock_actual'] ?>)"
                                             class="act-btn del" title="Eliminar">
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -1525,41 +1529,70 @@ document.getElementById('buscarProducto').addEventListener('keyup', function() {
     });
 });
 
-function confirmarEliminarProducto(id, nombre, stock) {
-    if (stock > 0) {
-        Swal.fire({
-            title: '¿Eliminar producto con stock?',
-            html: `<div class="text-left">
-                <p class="mb-2"><strong>${nombre}</strong></p>
-                <p class="text-sm text-gray-600 mb-3">Este producto tiene <strong class="text-red-600">${stock} unidades</strong> en inventario.</p>
-                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    <p class="text-sm text-amber-800"><i class="fas fa-exclamation-triangle mr-1"></i><strong>Advertencia:</strong> Se perderá todo el registro de stock y movimientos asociados.</p>
-                </div></div>`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc2626',
-            cancelButtonColor: '#5C7A4E',
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar',
-            reverseButtons: true
-        }).then(r => { if (r.isConfirmed) eliminarProducto(id, nombre); });
-    } else {
-        Swal.fire({
-            title: '¿Eliminar producto?',
-            html: `¿Está seguro de eliminar <strong>${nombre}</strong>?<br>Esta acción no se puede deshacer.`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc2626',
-            cancelButtonColor: '#5C7A4E',
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar',
-            reverseButtons: true
-        }).then(r => { if (r.isConfirmed) eliminarProducto(id, nombre); });
+let productoPendienteEliminar = null;
+let productoPendienteTimer = null;
+
+function mostrarAvisoInventario(message) {
+    let aviso = document.querySelector('[data-inv-delete-notice]');
+    if (!aviso) {
+        aviso = document.createElement('div');
+        aviso.setAttribute('data-inv-delete-notice', '1');
+        aviso.setAttribute('role', 'status');
+        aviso.style.position = 'fixed';
+        aviso.style.right = '24px';
+        aviso.style.bottom = '24px';
+        aviso.style.zIndex = '9999';
+        aviso.style.maxWidth = '360px';
+        aviso.style.padding = '12px 14px';
+        aviso.style.border = '1px solid rgba(220, 38, 38, .24)';
+        aviso.style.borderRadius = '14px';
+        aviso.style.background = 'rgba(254, 242, 242, .98)';
+        aviso.style.color = '#991b1b';
+        aviso.style.boxShadow = '0 16px 36px rgba(60, 20, 20, .16)';
+        aviso.style.fontSize = '14px';
+        aviso.style.fontWeight = '800';
+        document.body.appendChild(aviso);
     }
+
+    aviso.textContent = message;
+    aviso.style.display = 'block';
+    window.clearTimeout(aviso._hideTimer);
+    aviso._hideTimer = window.setTimeout(() => {
+        aviso.style.display = 'none';
+    }, 4200);
 }
 
-function eliminarProducto(id, nombre) {
-    Swal.fire({ title: 'Eliminando...', allowOutsideClick: false, showConfirmButton: false, willOpen: () => Swal.showLoading() });
+function limpiarConfirmacionEliminarProducto() {
+    document.querySelectorAll('.act-btn.del.is-confirming').forEach(btn => {
+        btn.classList.remove('is-confirming');
+    });
+    productoPendienteEliminar = null;
+}
+
+function confirmarEliminarProducto(trigger, id, nombre, stock) {
+    const pendingKey = `${id}`;
+    if (productoPendienteEliminar === pendingKey) {
+        limpiarConfirmacionEliminarProducto();
+        eliminarProducto(id);
+        return;
+    }
+
+    limpiarConfirmacionEliminarProducto();
+    productoPendienteEliminar = pendingKey;
+    if (trigger) {
+        trigger.classList.add('is-confirming');
+    }
+
+    const stockMessage = stock > 0
+        ? `${nombre} tiene ${stock} unidades. Se perdera el registro de stock y movimientos asociados.`
+        : `Se eliminara ${nombre}. Esta accion no se puede deshacer.`;
+    mostrarAvisoInventario(`${stockMessage} Haz clic otra vez para confirmar.`);
+
+    window.clearTimeout(productoPendienteTimer);
+    productoPendienteTimer = window.setTimeout(limpiarConfirmacionEliminarProducto, 7000);
+}
+
+function eliminarProducto(id) {
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = '<?= url("inventario/eliminar/") ?>' + id;
@@ -1570,5 +1603,4 @@ function eliminarProducto(id, nombre) {
 }
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <?php require_once APP_PATH . '/views/layout/footer.php'; ?>

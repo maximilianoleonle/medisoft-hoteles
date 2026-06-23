@@ -120,7 +120,7 @@ $docUploadMaxBytes = 10485760;
         </section>
 
         <div class="flex items-center justify-between gap-3">
-            <a class="dc-btn dc-btn-muted" href="<?= url('documentos') ?>" style="min-height:40px">
+            <a class="dc-btn dc-btn-muted" href="<?= back_url('documentos') ?>" style="min-height:40px">
                 <i class="fas fa-arrow-left"></i>
                 Volver a documentos
             </a>
@@ -215,7 +215,7 @@ $docUploadMaxBytes = 10485760;
             </div>
 
             <div class="mt-5 flex flex-wrap items-center justify-end gap-3">
-                <a class="dc-btn dc-btn-muted" href="<?= url('documentos') ?>">Cancelar</a>
+                <a class="dc-btn dc-btn-muted" href="<?= back_url('documentos') ?>">Cancelar</a>
                 <button class="dc-btn dc-btn-gold" type="submit">
                     <i class="fas fa-upload"></i>
                     Subir documento

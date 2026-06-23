@@ -167,7 +167,7 @@ foreach ($detalles as $detalle) {
 
         <section class="cp-toolbar">
             <div class="flex flex-wrap gap-2">
-                <a class="cp-btn" href="<?= url('compras?estado=' . urlencode($estado ?: 'todos')) ?>">
+                <a class="cp-btn" href="<?= back_url('compras?estado=' . urlencode($estado ?: 'todos')) ?>">
                     <i class="fas fa-arrow-left"></i>
                     Volver
                 </a>

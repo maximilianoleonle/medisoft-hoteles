@@ -600,7 +600,7 @@ if (!function_exists('worker_form_initials')) {
                     </p>
                 </div>
             </div>
-            <a href="<?= url('usuarios') ?>" class="worker-back-btn">
+            <a href="<?= back_url('usuarios') ?>" class="worker-back-btn">
                 <i class="fas fa-arrow-left"></i>
                 Volver al listado
             </a>
@@ -839,7 +839,7 @@ if (!function_exists('worker_form_initials')) {
                     Campos obligatorios
                 </div>
                 <div class="worker-actions">
-                    <a href="<?= url('usuarios') ?>" class="worker-secondary-btn">
+                    <a href="<?= back_url('usuarios') ?>" class="worker-secondary-btn">
                         <i class="fas fa-times"></i>
                         Cancelar
                     </a>

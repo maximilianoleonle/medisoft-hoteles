@@ -27,7 +27,8 @@ $sidebarPuedeUsuarios = can('usuarios.view') || in_array($sidebarRolHotel, ['ger
 $sidebarPuedeConfiguracion = can('configuracion.view') || in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $sidebarPuedeTarifas = is_gerente() || is_admin() || in_array($sidebarRolHotel, ['gerente', 'administrador'], true);
 $mostrarGestion = $mostrarHabitaciones || $mostrarReservaciones || $mostrarHuespedes;
-$mostrarOperaciones = $mostrarCaja || $mostrarInventario || $mostrarProveedores || $mostrarCompras || $mostrarCuentasPorPagar || $mostrarCuentasPorCobrar || $mostrarDocumentos || $mostrarTareas || $mostrarFacturacion;
+$mostrarFinanzas = $mostrarCaja || $mostrarCuentasPorCobrar || $mostrarFacturacion || $mostrarCuentasPorPagar;
+$mostrarOperacionInterna = $mostrarTareas || $mostrarInventario || $mostrarCompras || $mostrarProveedores || $mostrarDocumentos;
 $filtrarMenuHotel = function_exists('hotel_menu_should_filter_modules') && hotel_menu_should_filter_modules();
 $mostrarUsuariosAdmin = (!$filtrarMenuHotel && can('usuarios.view')) || ($filtrarMenuHotel && $mostrarUsuariosModulo && $sidebarPuedeUsuarios);
 $mostrarPersonal = $mostrarUsuariosAdmin;
@@ -36,6 +37,43 @@ $mostrarTarifas = $sidebarPuedeTarifas && (!$filtrarMenuHotel || $mostrarTarifas
 $mostrarNotificacionesMenu = true;
 $mostrarAdministracion = ($mostrarReportes || $mostrarUsuariosAdmin || $mostrarPersonal || $mostrarNotificacionesMenu || $mostrarConfiguracion || $mostrarTarifas);
 $sidebarRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+$sidebarNormalizedPath = '/' . trim($sidebarRequestPath, '/');
+if ($sidebarNormalizedPath === '/') {
+    $sidebarNormalizedPath = '/dashboard';
+}
+$sidebarPathStarts = static function (string $prefix) use ($sidebarNormalizedPath): bool {
+    $prefix = '/' . trim($prefix, '/');
+    return $sidebarNormalizedPath === $prefix || strpos($sidebarNormalizedPath, $prefix . '/') === 0;
+};
+$sidebarPathIn = static function (array $prefixes) use ($sidebarPathStarts): bool {
+    foreach ($prefixes as $prefix) {
+        if ($sidebarPathStarts($prefix)) {
+            return true;
+        }
+    }
+
+    return false;
+};
+$sidebarActiveDashboard = $sidebarPathStarts('dashboard');
+$sidebarActiveOperacionDiaria = $sidebarPathStarts('operacion/diaria');
+$sidebarActiveReservaciones = $sidebarPathStarts('reservaciones');
+$sidebarActiveHabitaciones = $sidebarPathStarts('habitaciones');
+$sidebarActiveHuespedes = $sidebarPathStarts('huespedes');
+$sidebarActiveCaja = $sidebarPathStarts('caja');
+$sidebarActiveCuentasPorCobrar = $sidebarPathStarts('cuentas-por-cobrar');
+$sidebarActiveFacturacion = $sidebarPathStarts('facturacion');
+$sidebarActiveCuentasPorPagar = $sidebarPathStarts('cuentas-por-pagar');
+$sidebarActiveTareas = $sidebarPathStarts('tareas');
+$sidebarActiveInventario = $sidebarPathStarts('inventario');
+$sidebarActiveCompras = $sidebarPathStarts('compras');
+$sidebarActiveProveedores = $sidebarPathStarts('proveedores');
+$sidebarActiveDocumentos = $sidebarPathStarts('documentos');
+$sidebarActiveReportes = $sidebarPathStarts('reportes');
+$sidebarActivePersonal = $sidebarPathStarts('trabajadores');
+$sidebarActiveUsuarios = $sidebarPathStarts('usuarios');
+$sidebarActiveNotificaciones = $sidebarPathStarts('notificaciones');
+$sidebarActiveConfiguracion = $sidebarPathStarts('configuracion') && !$sidebarPathStarts('configuracion/tarifas');
+$sidebarActiveTarifas = $sidebarPathIn(['configuracion/tarifas', 'tarifas']);
 $sidebarEsPanelSaas = strpos($sidebarRequestPath, '/admin/saas') === 0;
 $sidebarBranding = (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_context() && function_exists('current_hotel_branding'))
     ? current_hotel_branding()
@@ -200,7 +238,7 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
         <div class="nav-section hotel-nav-section hotel-dashboard-section">
             <?php if ($mostrarDashboard): ?>
             <a href="<?= url('dashboard') ?>"
-               class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'dashboard') !== false ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveDashboard ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-th-large"></i>
                 </div>
@@ -210,7 +248,7 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
 
             <?php if ($mostrarOperacionDiaria): ?>
             <a href="<?= url('operacion/diaria') ?>"
-               class="nav-item <?= strpos($sidebarRequestPath, '/operacion/diaria') === 0 ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveOperacionDiaria ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-clipboard-check"></i>
                 </div>
@@ -231,28 +269,12 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
         <?php if ($mostrarGestion): ?>
         <div class="nav-section hotel-nav-section hotel-gestion-section">
             <div class="nav-section-title">
-                <span>GESTIÓN</span>
+                <span>RECEPCIÓN</span>
             </div>
-
-            <?php if ($mostrarHabitaciones): ?>
-            <a href="<?= url('habitaciones') ?>"
-               class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'habitaciones') !== false ? 'active' : '' ?>">
-                <div class="nav-icon">
-                    <i class="fas fa-bed"></i>
-                    <?php
-                    $habitaciones_ocupadas = $habitaciones_ocupadas ?? 0;
-                    if ($habitaciones_ocupadas > 0):
-                    ?>
-                    <span class="nav-badge"><?= $habitaciones_ocupadas ?></span>
-                    <?php endif; ?>
-                </div>
-                <span class="nav-text">Habitaciones</span>
-            </a>
-            <?php endif; ?>
 
             <?php if ($mostrarReservaciones): ?>
             <a href="<?= url('reservaciones') ?>"
-               class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'reservaciones') !== false ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveReservaciones ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-calendar-check"></i>
                     <?php
@@ -266,9 +288,25 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
             </a>
             <?php endif; ?>
 
+            <?php if ($mostrarHabitaciones): ?>
+            <a href="<?= url('habitaciones') ?>"
+               class="nav-item <?= $sidebarActiveHabitaciones ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-bed"></i>
+                    <?php
+                    $habitaciones_ocupadas = $habitaciones_ocupadas ?? 0;
+                    if ($habitaciones_ocupadas > 0):
+                    ?>
+                    <span class="nav-badge"><?= $habitaciones_ocupadas ?></span>
+                    <?php endif; ?>
+                </div>
+                <span class="nav-text">Habitaciones</span>
+            </a>
+            <?php endif; ?>
+
             <?php if ($mostrarHuespedes): ?>
             <a href="<?= url('huespedes') ?>"
-               class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'huespedes') !== false ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveHuespedes ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-users"></i>
                 </div>
@@ -278,15 +316,15 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
         </div>
         <?php endif; ?>
 
-        <?php if ($mostrarOperaciones): ?>
-        <div class="nav-section hotel-nav-section hotel-operaciones-section">
+        <?php if ($mostrarFinanzas): ?>
+        <div class="nav-section hotel-nav-section hotel-operaciones-section hotel-finanzas-section">
             <div class="nav-section-title">
-                <span>OPERACIONES</span>
+                <span>FINANZAS</span>
             </div>
 
             <?php if ($mostrarCaja): ?>
             <a href="<?= url('caja') ?>"
-               class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'caja') !== false ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveCaja ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-wallet"></i>
                     <?php
@@ -300,49 +338,9 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
             </a>
             <?php endif; ?>
 
-            <?php if ($mostrarInventario): ?>
-            <a href="<?= url('inventario') ?>"
-               class="nav-item <?= strpos($sidebarRequestPath, '/inventario') === 0 ? 'active' : '' ?>">
-                <div class="nav-icon">
-                    <i class="fas fa-box"></i>
-                </div>
-                <span class="nav-text">Inventarios</span>
-            </a>
-            <?php endif; ?>
-
-            <?php if ($mostrarProveedores): ?>
-            <a href="<?= url('proveedores') ?>"
-               class="nav-item <?= strpos($sidebarRequestPath, '/proveedores') === 0 ? 'active' : '' ?>">
-                <div class="nav-icon">
-                    <i class="fas fa-truck"></i>
-                </div>
-                <span class="nav-text">Proveedores</span>
-            </a>
-            <?php endif; ?>
-
-            <?php if ($mostrarCompras): ?>
-            <a href="<?= url('compras') ?>"
-               class="nav-item <?= strpos($sidebarRequestPath, '/compras') === 0 ? 'active' : '' ?>">
-                <div class="nav-icon">
-                    <i class="fas fa-clipboard-list"></i>
-                </div>
-                <span class="nav-text">Compras</span>
-            </a>
-            <?php endif; ?>
-
-            <?php if ($mostrarCuentasPorPagar): ?>
-            <a href="<?= url('cuentas-por-pagar') ?>"
-               class="nav-item <?= strpos($sidebarRequestPath, '/cuentas-por-pagar') === 0 ? 'active' : '' ?>">
-                <div class="nav-icon">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                </div>
-                <span class="nav-text">Cuentas por pagar</span>
-            </a>
-            <?php endif; ?>
-
             <?php if ($mostrarCuentasPorCobrar): ?>
             <a href="<?= url('cuentas-por-cobrar') ?>"
-               class="nav-item <?= strpos($sidebarRequestPath, '/cuentas-por-cobrar') === 0 ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveCuentasPorCobrar ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-hand-holding-dollar"></i>
                 </div>
@@ -350,29 +348,9 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
             </a>
             <?php endif; ?>
 
-            <?php if ($mostrarDocumentos): ?>
-            <a href="<?= url('documentos') ?>"
-               class="nav-item <?= strpos($sidebarRequestPath, '/documentos') === 0 ? 'active' : '' ?>">
-                <div class="nav-icon">
-                    <i class="fas fa-folder-open"></i>
-                </div>
-                <span class="nav-text">Documentos</span>
-            </a>
-            <?php endif; ?>
-
-            <?php if ($mostrarTareas): ?>
-            <a href="<?= url('tareas') ?>"
-               class="nav-item <?= strpos($sidebarRequestPath, '/tareas') === 0 ? 'active' : '' ?>">
-                <div class="nav-icon">
-                    <i class="fas fa-tasks"></i>
-                </div>
-                <span class="nav-text">Tareas</span>
-            </a>
-            <?php endif; ?>
-
             <?php if ($mostrarFacturacion): ?>
             <a href="<?= url('facturacion') ?>"
-               class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'facturacion') !== false ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveFacturacion ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-file-invoice"></i>
                     <?php if ($sidebarFacturasPendientes > 0): ?>
@@ -382,6 +360,76 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
                 <span class="nav-text">Facturación</span>
             </a>
             <?php endif; ?>
+
+            <?php if ($mostrarCuentasPorPagar): ?>
+            <a href="<?= url('cuentas-por-pagar') ?>"
+               class="nav-item <?= $sidebarActiveCuentasPorPagar ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <span class="nav-text">Cuentas por pagar</span>
+            </a>
+            <?php endif; ?>
+
+        </div>
+        <?php endif; ?>
+
+        <?php if ($mostrarOperacionInterna): ?>
+        <div class="nav-section hotel-nav-section hotel-operaciones-section hotel-operacion-interna-section">
+            <div class="nav-section-title">
+                <span>OPERACIÓN</span>
+            </div>
+
+            <?php if ($mostrarTareas): ?>
+            <a href="<?= url('tareas') ?>"
+               class="nav-item <?= $sidebarActiveTareas ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <span class="nav-text">Tareas</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarInventario): ?>
+            <a href="<?= url('inventario') ?>"
+               class="nav-item <?= $sidebarActiveInventario ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-box"></i>
+                </div>
+                <span class="nav-text">Inventarios</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarCompras): ?>
+            <a href="<?= url('compras') ?>"
+               class="nav-item <?= $sidebarActiveCompras ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <span class="nav-text">Compras</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarProveedores): ?>
+            <a href="<?= url('proveedores') ?>"
+               class="nav-item <?= $sidebarActiveProveedores ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <span class="nav-text">Proveedores</span>
+            </a>
+            <?php endif; ?>
+
+            <?php if ($mostrarDocumentos): ?>
+            <a href="<?= url('documentos') ?>"
+               class="nav-item <?= $sidebarActiveDocumentos ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <span class="nav-text">Documentos</span>
+            </a>
+            <?php endif; ?>
+
         </div>
         <?php endif; ?>
 
@@ -393,7 +441,7 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
 
             <?php if ($mostrarReportes): ?>
             <a href="<?= url('reportes') ?>"
-               class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'reportes') !== false ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveReportes ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-chart-line"></i>
                 </div>
@@ -401,19 +449,9 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
             </a>
             <?php endif; ?>
 
-            <?php if ($mostrarUsuariosAdmin): ?>
-            <a href="<?= url('usuarios') ?>"
-               class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'usuarios') !== false ? 'active' : '' ?>">
-                <div class="nav-icon">
-                    <i class="fas fa-user"></i>
-                </div>
-                <span class="nav-text">Usuarios</span>
-            </a>
-            <?php endif; ?>
-
             <?php if ($mostrarPersonal): ?>
             <a href="<?= url('trabajadores') ?>"
-               class="nav-item <?= strpos($sidebarRequestPath, '/trabajadores') === 0 ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActivePersonal ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-id-card"></i>
                 </div>
@@ -421,9 +459,19 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
             </a>
             <?php endif; ?>
 
+            <?php if ($mostrarUsuariosAdmin): ?>
+            <a href="<?= url('usuarios') ?>"
+               class="nav-item <?= $sidebarActiveUsuarios ? 'active' : '' ?>">
+                <div class="nav-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <span class="nav-text">Usuarios</span>
+            </a>
+            <?php endif; ?>
+
             <?php if ($mostrarNotificacionesMenu): ?>
             <a href="<?= url('notificaciones') ?>"
-               class="nav-item <?= strpos($sidebarRequestPath, '/notificaciones') === 0 ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveNotificaciones ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-bell"></i>
                     <?php if ($sidebarNotificacionesNoLeidas > 0): ?>
@@ -436,7 +484,7 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
 
             <?php if ($mostrarConfiguracion): ?>
             <a href="<?= url('configuracion') ?>"
-               class="nav-item <?= strpos($sidebarRequestPath, '/configuracion') === 0 && strpos($sidebarRequestPath, '/configuracion/tarifas') !== 0 ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveConfiguracion ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-cog"></i>
                 </div>
@@ -446,7 +494,7 @@ if (!$sidebarEsPanelSaas && function_exists('has_hotel_context') && has_hotel_co
 
             <?php if ($mostrarTarifas): ?>
             <a href="<?= url('configuracion/tarifas') ?>"
-               class="nav-item <?= strpos($_SERVER['REQUEST_URI'], 'tarifas') !== false ? 'active' : '' ?>">
+               class="nav-item <?= $sidebarActiveTarifas ? 'active' : '' ?>">
                 <div class="nav-icon">
                     <i class="fas fa-tags"></i>
                 </div>

@@ -33,6 +33,13 @@ class FacturacionController extends Controller {
         require_hotel_module('facturacion');
         return true;
     }
+
+    private function redirigirConErrorFiscal($id, array $datos, string $campo, string $mensaje): void {
+        set_mensaje($mensaje, 'error');
+        save_old_input(array_merge($datos, ['solicitud_id' => $id]));
+        save_form_errors([$campo => [$mensaje]]);
+        $this->redirect('facturacion/ver/' . $id);
+    }
     
     /**
      * Listado principal de solicitudes de factura
@@ -244,14 +251,14 @@ class FacturacionController extends Controller {
             // Validar RFC si se proporcionó
             if (!empty($datos['rfc']) && !$this->validarRFC($datos['rfc'])) {
                 set_mensaje('El RFC ingresado no tiene un formato válido', 'error');
-                $this->redirect('facturacion/ver/' . $id);
+                $this->redirigirConErrorFiscal($id, $datos, 'rfc', 'El RFC ingresado no tiene un formato valido');
                 return;
             }
             
             // Validar código postal si se proporcionó
             if (!empty($datos['codigo_postal_fiscal']) && !preg_match('/^\d{5}$/', $datos['codigo_postal_fiscal'])) {
                 set_mensaje('El código postal fiscal debe tener 5 dígitos', 'error');
-                $this->redirect('facturacion/ver/' . $id);
+                $this->redirigirConErrorFiscal($id, $datos, 'codigo_postal_fiscal', 'El codigo postal fiscal debe tener 5 digitos');
                 return;
             }
             
@@ -265,6 +272,7 @@ class FacturacionController extends Controller {
             $resultado = $this->reservacionModel->actualizarSolicitudFactura($id, $datos);
             
             if ($resultado) {
+                clear_old_input();
                 set_mensaje('Datos fiscales guardados correctamente', 'success');
                 if (($datos['estatus'] ?? '') === 'en_proceso') {
                     $this->registrarNotificacionFacturacion(

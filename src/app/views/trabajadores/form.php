@@ -85,7 +85,7 @@ $valoresFormulario = [
 
 <div class="worker-form-page p-4 sm:p-6">
     <div class="wk-shell">
-        <a class="wk-back" href="<?= $esEditar ? url('trabajadores/' . $trabajadorId) : url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver</a>
+        <a class="wk-back" href="<?= back_url($esEditar ? 'trabajadores/' . $trabajadorId : 'trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver</a>
 
         <section class="wk-title-lockup">
             <div class="wk-hero-icon"><i class="fas fa-user-plus"></i></div>
@@ -168,7 +168,7 @@ $valoresFormulario = [
 
             <div class="flex flex-wrap gap-3 mt-6">
                 <button class="wk-btn wk-btn-gold" type="submit"><i class="fas fa-save"></i> <?= $esEditar ? 'Guardar cambios' : 'Guardar trabajador' ?></button>
-                <a class="wk-btn wk-btn-muted" href="<?= $esEditar ? url('trabajadores/' . $trabajadorId) : url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Cancelar</a>
+                <a class="wk-btn wk-btn-muted" href="<?= back_url($esEditar ? 'trabajadores/' . $trabajadorId : 'trabajadores') ?>"><i class="fas fa-arrow-left"></i> Cancelar</a>
             </div>
         </form>
     </div>

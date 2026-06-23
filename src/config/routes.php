@@ -262,10 +262,17 @@ $router->get('/trabajadores/nomina/periodos', ['controller' => 'Trabajador', 'ac
 $router->get('/trabajadores/nomina/periodos/preview', ['controller' => 'Trabajador', 'action' => 'nominaPeriodoPreview']);
 $router->get('/trabajadores/nomina/periodos/reporte', ['controller' => 'Trabajador', 'action' => 'reporteNominaPeriodos']);
 $router->get('/trabajadores/nomina/periodos/exportar', ['controller' => 'Trabajador', 'action' => 'exportarNominaPeriodos']);
+$router->get('/trabajadores/nomina/periodos/pagos-snapshot', ['controller' => 'Trabajador', 'action' => 'reporteNominaPagosSnapshot']);
+$router->get('/trabajadores/nomina/periodos/pagos-snapshot/exportar', ['controller' => 'Trabajador', 'action' => 'exportarNominaPagosSnapshot']);
+$router->get('/trabajadores/nomina/auditoria', ['controller' => 'Trabajador', 'action' => 'auditoriaNomina']);
+$router->get('/trabajadores/nomina/auditoria/exportar', ['controller' => 'Trabajador', 'action' => 'exportarAuditoriaNomina']);
+$router->get('/trabajadores/nomina/expediente', ['controller' => 'Trabajador', 'action' => 'expedienteNomina']);
+$router->get('/trabajadores/nomina/expediente/exportar', ['controller' => 'Trabajador', 'action' => 'exportarExpedienteNomina']);
 $router->get('/trabajadores/nomina/periodos/{id:[0-9]+}', ['controller' => 'Trabajador', 'action' => 'nominaPeriodoDetalle']);
 $router->post('/trabajadores/nomina/periodos/cerrar', ['controller' => 'Trabajador', 'action' => 'cerrarNominaPeriodo']);
 $router->post('/trabajadores/nomina/periodos/{id:[0-9]+}/aprobar', ['controller' => 'Trabajador', 'action' => 'aprobarNominaPeriodo']);
 $router->post('/trabajadores/nomina/periodos/{id:[0-9]+}/anular', ['controller' => 'Trabajador', 'action' => 'anularNominaPeriodo']);
+$router->post('/trabajadores/nomina/periodos/{periodo:[0-9]+}/detalles/{detalle:[0-9]+}/registrar-pago-caja', ['controller' => 'Trabajador', 'action' => 'registrarPagoSnapshotNomina']);
 $router->get('/trabajadores/nomina/preview', ['controller' => 'Trabajador', 'action' => 'nominaPreview']);
 $router->get('/trabajadores/nomina/preview/exportar', ['controller' => 'Trabajador', 'action' => 'exportarNominaPreview']);
 $router->get('/trabajadores/pagos-caja/reporte/exportar', ['controller' => 'Trabajador', 'action' => 'exportarReportePagosCaja']);

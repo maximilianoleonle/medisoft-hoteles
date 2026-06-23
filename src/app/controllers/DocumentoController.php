@@ -88,7 +88,7 @@ class DocumentoController extends Controller
             return;
         }
 
-        $this->servirArchivoPrivado($documento, $ruta);
+        $this->servirArchivoPrivado($documento, $ruta, $this->getQuery('preview', '') === '1');
     }
 
     public function editarAction(): void
@@ -137,14 +137,18 @@ class DocumentoController extends Controller
             );
 
             if (!($resultado['changed'] ?? false)) {
+                clear_old_input();
                 set_mensaje('No se detectaron cambios de metadata.', 'info');
             } else {
+                clear_old_input();
                 set_mensaje('Metadata documental actualizada correctamente.', 'success');
             }
 
             $this->redirect('documentos/' . $id);
         } catch (Throwable $e) {
             set_mensaje('No se pudo actualizar la metadata: ' . $e->getMessage(), 'error');
+            save_old_input($_POST);
+            save_form_errors($this->erroresCamposDocumento([$e->getMessage()]));
             $this->redirect($id > 0 ? 'documentos/' . $id . '/editar' : 'documentos');
         }
     }
@@ -201,10 +205,13 @@ class DocumentoController extends Controller
             );
 
             $documentoId = (int)($resultado['documento_id'] ?? 0);
+            clear_old_input();
             set_mensaje('Documento #' . $documentoId . ' cargado correctamente en storage privado.', 'success');
             $this->redirect('documentos/' . $documentoId);
         } catch (Throwable $e) {
             set_mensaje('No se pudo cargar el documento: ' . $e->getMessage(), 'error');
+            save_old_input($_POST);
+            save_form_errors($this->erroresCamposDocumento([$e->getMessage()]));
             $this->redirect('documentos/subir' . $this->queryContexto($datos));
         }
     }
@@ -254,6 +261,41 @@ class DocumentoController extends Controller
             'estado' => $this->getQuery('estado', 'todos'),
             'documento_tipo_id' => (int)$this->getQuery('documento_tipo_id', 0),
         ];
+    }
+
+    private function erroresCamposDocumento(array $errores): array
+    {
+        $fieldErrors = [];
+
+        foreach ($errores as $mensaje) {
+            $mensaje = trim((string)$mensaje);
+            if ($mensaje === '') {
+                continue;
+            }
+
+            $lower = strtolower($mensaje);
+            $campo = null;
+
+            if (strpos($lower, 'archivo') !== false || strpos($lower, 'file') !== false || strpos($lower, 'mime') !== false || strpos($lower, 'tamano') !== false || strpos($lower, 'tamano') !== false) {
+                $campo = 'archivo';
+            } elseif (strpos($lower, 'tipo') !== false) {
+                $campo = 'documento_tipo_id';
+            } elseif (strpos($lower, 'titulo') !== false) {
+                $campo = 'titulo';
+            } elseif (strpos($lower, 'descripcion') !== false) {
+                $campo = 'descripcion';
+            } elseif (strpos($lower, 'etiqueta') !== false) {
+                $campo = 'etiquetas';
+            } elseif (strpos($lower, 'relacion') !== false || strpos($lower, 'vinculo') !== false || strpos($lower, 'entidad') !== false) {
+                $campo = 'relacion';
+            }
+
+            if ($campo !== null) {
+                $fieldErrors[$campo][] = $mensaje;
+            }
+        }
+
+        return $fieldErrors;
     }
 
     private function datosUpload(): array
@@ -405,7 +447,7 @@ class DocumentoController extends Controller
         return $labels[$entidadTipo] ?? 'Entidad';
     }
 
-    private function servirArchivoPrivado(array $documento, string $ruta): void
+    private function servirArchivoPrivado(array $documento, string $ruta, bool $preview = false): void
     {
         if (!is_file($ruta) || !is_readable($ruta)) {
             $this->auditarDescargaBloqueada(
@@ -419,10 +461,22 @@ class DocumentoController extends Controller
         }
 
         $mimeType = $this->mimeDescargaPermitido($documento['mime_type'] ?? null);
+        if ($preview && !$this->mimePreviewPermitido($mimeType)) {
+            while (ob_get_level() > 0) {
+                @ob_end_clean();
+            }
+
+            http_response_code(415);
+            header('Content-Type: text/plain; charset=UTF-8');
+            header('X-Content-Type-Options: nosniff');
+            echo 'Este archivo no tiene previsualizacion disponible.';
+            exit;
+        }
+
         $nombre = $this->nombreDescargaSeguro($documento['nombre_original'] ?? ('documento-' . (int)($documento['id'] ?? 0)));
         $tamano = filesize($ruta);
 
-        $this->auditarDescargaExitosa($documento, $mimeType, $tamano);
+        $this->auditarArchivoServido($documento, $mimeType, $tamano, $preview);
 
         while (ob_get_level() > 0) {
             @ob_end_clean();
@@ -432,9 +486,13 @@ class DocumentoController extends Controller
         header_remove('Pragma');
         header_remove('Expires');
         header('Content-Type: ' . $mimeType);
-        header('Content-Disposition: attachment; filename="' . $nombre . '"');
+        header('Content-Disposition: ' . ($preview ? 'inline' : 'attachment') . '; filename="' . $nombre . '"');
         header('Content-Length: ' . $tamano);
         header('X-Content-Type-Options: nosniff');
+        if ($preview) {
+            header('X-Frame-Options: SAMEORIGIN');
+            header("Content-Security-Policy: frame-ancestors 'self'");
+        }
         header('Cache-Control: private, max-age=0, must-revalidate');
         header('Pragma: private');
         readfile($ruta);
@@ -454,6 +512,11 @@ class DocumentoController extends Controller
         return in_array($mimeType, $permitidos, true) ? $mimeType : 'application/octet-stream';
     }
 
+    private function mimePreviewPermitido(string $mimeType): bool
+    {
+        return $mimeType === 'application/pdf' || strpos($mimeType, 'image/') === 0;
+    }
+
     private function nombreDescargaSeguro($nombre): string
     {
         $nombre = basename(str_replace('\\', '/', (string)$nombre));
@@ -463,7 +526,7 @@ class DocumentoController extends Controller
         return $nombre !== '' ? $nombre : 'documento';
     }
 
-    private function auditarDescargaExitosa(array $documento, string $mimeType, int|false $tamano): void
+    private function auditarArchivoServido(array $documento, string $mimeType, int|false $tamano, bool $preview): void
     {
         $documentoId = (int)($documento['id'] ?? 0);
         $hotelId = (int)($documento['hotel_id'] ?? $this->hotelIdActual());
@@ -472,8 +535,10 @@ class DocumentoController extends Controller
             return;
         }
 
-        $this->registrarAuditoriaDocumento('documentos.descargado', $hotelId, $documentoId, [
-            'descripcion' => 'Documento descargado desde storage privado',
+        $this->registrarAuditoriaDocumento($preview ? 'documentos.previsualizado' : 'documentos.descargado', $hotelId, $documentoId, [
+            'descripcion' => $preview
+                ? 'Documento previsualizado desde storage privado'
+                : 'Documento descargado desde storage privado',
             'datos_despues' => [
                 'documento_id' => $documentoId,
                 'nombre_original' => $documento['nombre_original'] ?? null,
@@ -481,6 +546,7 @@ class DocumentoController extends Controller
                 'size_bytes' => $tamano !== false ? (int)$tamano : (int)($documento['size_bytes'] ?? 0),
                 'estado' => $documento['estado'] ?? null,
                 'storage_privado' => true,
+                'preview' => $preview,
             ],
         ]);
     }

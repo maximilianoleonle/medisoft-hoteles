@@ -108,10 +108,13 @@ class ProveedorController extends Controller {
             $proveedor = $this->proveedorModel->buscarPorIdHotel($proveedorId, $hotelId);
 
             $this->auditar('proveedores.creado', null, $proveedor, $proveedorId);
+            clear_old_input();
             set_mensaje('Proveedor creado correctamente.', 'success');
             $this->redirect('proveedores');
         } catch (Exception $e) {
             set_mensaje('Error: ' . $e->getMessage(), 'error');
+            save_old_input($_POST);
+            save_form_errors($this->erroresCamposProveedor([$e->getMessage()]));
             $this->redirect('proveedores/crear');
         }
     }
@@ -154,10 +157,13 @@ class ProveedorController extends Controller {
 
             $despues = $this->proveedorModel->buscarPorIdHotel($id, $hotelId);
             $this->auditar('proveedores.actualizado', $antes, $despues, $id);
+            clear_old_input();
             set_mensaje('Proveedor actualizado correctamente.', 'success');
             $this->redirect('proveedores');
         } catch (Exception $e) {
             set_mensaje('Error: ' . $e->getMessage(), 'error');
+            save_old_input($_POST);
+            save_form_errors($this->erroresCamposProveedor([$e->getMessage()]));
             $id = (int)($this->route_params['id'] ?? 0);
             $this->redirect($id > 0 ? 'proveedores/' . $id . '/editar' : 'proveedores');
         }
@@ -205,6 +211,36 @@ class ProveedorController extends Controller {
     private function proveedorActual(): ?array {
         $id = (int)($this->route_params['id'] ?? 0);
         return $this->proveedorModel->buscarPorIdHotel($id, $this->hotelIdActual());
+    }
+
+    private function erroresCamposProveedor(array $errores): array {
+        $fieldErrors = [];
+
+        foreach ($errores as $mensaje) {
+            $mensaje = trim((string)$mensaje);
+            if ($mensaje === '') {
+                continue;
+            }
+
+            $lower = strtolower($mensaje);
+            $campo = null;
+
+            if (strpos($lower, 'nombre') !== false) {
+                $campo = 'nombre';
+            } elseif (strpos($lower, 'rfc') !== false) {
+                $campo = 'rfc';
+            } elseif (strpos($lower, 'correo') !== false || strpos($lower, 'email') !== false) {
+                $campo = 'email';
+            } elseif (strpos($lower, 'telefono') !== false || strpos($lower, 'tel') !== false) {
+                $campo = 'telefono';
+            }
+
+            if ($campo !== null) {
+                $fieldErrors[$campo][] = $mensaje;
+            }
+        }
+
+        return $fieldErrors;
     }
 
     private function datosFormulario(): array {

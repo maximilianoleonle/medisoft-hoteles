@@ -304,6 +304,36 @@ if (function_exists('hotel_room_catalog_type_rows')) {
     box-shadow: 0 18px 34px -26px color-mix(in srgb, var(--er-brand) 52%, transparent);
 }
 
+.edit-room-page .edit-room-actions button.is-confirming {
+    background: linear-gradient(145deg, #b91c1c, #7f1d1d) !important;
+    border-color: rgba(185, 28, 28, .34) !important;
+    color: #FFFFFF !important;
+}
+
+.edit-room-upload-alert {
+    display: none;
+    align-items: flex-start;
+    gap: 0.65rem;
+    margin: 1rem 0 0;
+    padding: 0.85rem 0.95rem;
+    border: 1px solid rgba(196, 69, 54, 0.24);
+    border-radius: 1rem;
+    background: rgba(254, 242, 242, 0.92);
+    color: #991b1b;
+    font-size: 0.86rem;
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+.edit-room-upload-alert.is-visible {
+    display: flex;
+}
+
+.edit-room-upload-alert i {
+    margin-top: 0.12rem;
+    color: #b91c1c;
+}
+
 .edit-room-page .edit-room-actions a,
 .edit-room-page .edit-room-actions button {
     transform: none !important;
@@ -759,6 +789,11 @@ if (function_exists('hotel_room_catalog_type_rows')) {
 
 
                                 <!-- Vista previa de nuevas imágenes -->
+                                <div id="upload-alert" class="edit-room-upload-alert" role="alert" aria-live="assertive" hidden>
+                                    <i class="fas fa-circle-exclamation"></i>
+                                    <span></span>
+                                </div>
+
                                 <div id="preview-container" class="mt-4 hidden">
                                     <h5 class="text-sm font-medium text-gray-700 mb-2">Nuevas imágenes a agregar:</h5>
                                     <div id="preview-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -898,7 +933,7 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                             Guardar Cambios
                         </button>
 
-                        <a href="<?= url('habitaciones/' . $habitacion['id']) ?>"
+                        <a href="<?= back_url('habitaciones/' . $habitacion['id']) ?>"
                            class="w-full bg-white border-2 border-gray-300 text-gray-700 font-semibold py-4 px-6 rounded-xl hover:bg-gray-50 transition-all duration-200 flex items-center justify-center">
                             <i class="fas fa-times mr-3"></i>
                             Cancelar
@@ -906,7 +941,7 @@ if (function_exists('hotel_room_catalog_type_rows')) {
 
                         <?php if (can('habitaciones.delete') && $habitacion['estado'] == 'disponible'): ?>
                         <button type="button"
-                                onclick="confirmarEliminacion()"
+                                onclick="confirmarEliminacion(this)"
                                 class="w-full bg-red-50 border-2 border-red-200 text-red-600 font-semibold py-4 px-6 rounded-xl hover:bg-red-100 transition-all duration-200 flex items-center justify-center">
                             <i class="fas fa-trash-alt mr-3"></i>
                             Eliminar Habitación
@@ -1053,35 +1088,78 @@ document.addEventListener('DOMContentLoaded', function() {
     updatePreview();
 });
 
+let deleteRoomPending = false;
+let deleteRoomTimer = null;
+
+function showRoomActionNotice(message) {
+    let notice = document.querySelector('[data-room-action-notice]');
+    if (!notice) {
+        notice = document.createElement('div');
+        notice.setAttribute('data-room-action-notice', '1');
+        notice.setAttribute('role', 'status');
+        notice.style.position = 'fixed';
+        notice.style.right = '24px';
+        notice.style.bottom = '24px';
+        notice.style.zIndex = '9999';
+        notice.style.maxWidth = '360px';
+        notice.style.padding = '12px 14px';
+        notice.style.border = '1px solid rgba(185, 28, 28, .24)';
+        notice.style.borderRadius = '14px';
+        notice.style.background = 'rgba(254, 242, 242, .98)';
+        notice.style.color = '#991b1b';
+        notice.style.boxShadow = '0 16px 36px rgba(60, 20, 20, .16)';
+        notice.style.fontSize = '14px';
+        notice.style.fontWeight = '800';
+        document.body.appendChild(notice);
+    }
+
+    notice.textContent = message;
+    notice.style.display = 'block';
+    window.clearTimeout(notice._hideTimer);
+    notice._hideTimer = window.setTimeout(() => {
+        notice.style.display = 'none';
+    }, 4200);
+}
+
+function resetDeleteRoomConfirmation(trigger) {
+    deleteRoomPending = false;
+    if (trigger) {
+        trigger.classList.remove('is-confirming');
+        trigger.innerHTML = trigger.dataset.defaultHtml || trigger.innerHTML;
+    }
+}
+
 // Confirmar eliminación
-function confirmarEliminacion() {
-    Swal.fire({
-        title: '¿Eliminar habitación?',
-        html: `¿Está seguro de eliminar la habitación <strong><?= htmlspecialchars($habitacion['numero']) ?></strong>?<br>
-               <span class="text-red-600">Esta acción no se puede deshacer.</span>`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc2626',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Crear form para eliminar
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '<?= url('habitaciones/' . $habitacion['id'] . '/delete') ?>';
-
-            const csrfField = document.createElement('input');
-            csrfField.type = 'hidden';
-            csrfField.name = 'csrf_token';
-            csrfField.value = '<?= csrf_token() ?>';
-            form.appendChild(csrfField);
-
-            document.body.appendChild(form);
-            form.submit();
+function confirmarEliminacion(trigger) {
+    if (!deleteRoomPending) {
+        deleteRoomPending = true;
+        if (trigger) {
+            if (!trigger.dataset.defaultHtml) {
+                trigger.dataset.defaultHtml = trigger.innerHTML;
+            }
+            trigger.classList.add('is-confirming');
+            trigger.innerHTML = '<i class="fas fa-trash-alt mr-3"></i>Confirmar eliminacion';
         }
-    });
+        showRoomActionNotice('Haz clic otra vez para eliminar esta habitacion. Esta accion no se puede deshacer.');
+        window.clearTimeout(deleteRoomTimer);
+        deleteRoomTimer = window.setTimeout(() => resetDeleteRoomConfirmation(trigger), 7000);
+        return;
+    }
+
+    resetDeleteRoomConfirmation(trigger);
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '<?= url('habitaciones/' . $habitacion['id'] . '/delete') ?>';
+
+    const csrfField = document.createElement('input');
+    csrfField.type = 'hidden';
+    csrfField.name = 'csrf_token';
+    csrfField.value = '<?= csrf_token() ?>';
+    form.appendChild(csrfField);
+
+    document.body.appendChild(form);
+    form.submit();
 }
 
 // Script para manejo de múltiples imágenes en edición
@@ -1090,6 +1168,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewContainer = document.getElementById('preview-container');
     const previewGrid = document.getElementById('preview-grid');
     const dropZone = document.getElementById('drop-zone');
+    const uploadAlert = document.getElementById('upload-alert');
 
     if (!fotosInput) return;
 
@@ -1135,15 +1214,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleFiles(files) {
         const newFiles = Array.from(files);
+        clearUploadError();
 
         // Validar cantidad
         if (newFiles.length > maxFiles) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Demasiadas imágenes',
-                text: `Solo puedes agregar ${maxFiles} imagen${maxFiles > 1 ? 'es' : ''} más`,
-                confirmButtonColor: '#9333ea'
-            });
+            showError(`Solo puedes agregar ${maxFiles} imagen${maxFiles > 1 ? 'es' : ''} mas.`);
             return;
         }
 
@@ -1216,12 +1291,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showError(message) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: message,
-            confirmButtonColor: '#dc2626'
-        });
+        if (!uploadAlert) {
+            return;
+        }
+
+        const text = uploadAlert.querySelector('span');
+        if (text) {
+            text.textContent = message;
+        }
+
+        uploadAlert.hidden = false;
+        uploadAlert.classList.add('is-visible');
+        uploadAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function clearUploadError() {
+        if (!uploadAlert) {
+            return;
+        }
+
+        uploadAlert.hidden = true;
+        uploadAlert.classList.remove('is-visible');
     }
 });
 </script>

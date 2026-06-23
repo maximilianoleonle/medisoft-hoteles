@@ -767,6 +767,194 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
     background: var(--brand-primary, #1B2746) !important;
 }
 
+.vista-reservacion .res-guest-card {
+    overflow: visible !important;
+    position: relative;
+    z-index: 20;
+}
+
+.vista-reservacion .res-guest-card .panel-hd-guest {
+    border-radius: 1rem 1rem 0 0;
+}
+
+.vista-reservacion .res-guest-combobox-wrap {
+    position: relative;
+    min-width: 0;
+}
+
+.vista-reservacion .res-guest-native-select {
+    position: absolute !important;
+    left: 18px;
+    bottom: 8px;
+    width: 1px !important;
+    height: 1px !important;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.vista-reservacion .res-guest-combobox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid var(--rc-line);
+    border-radius: 13px;
+    background: var(--rc-surface-warm);
+    color: var(--rc-text);
+    box-shadow: 0 1px 0 rgba(255,255,255,.75) inset;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.vista-reservacion .res-guest-combobox:focus-within,
+.vista-reservacion .res-guest-combobox.is-open {
+    border-color: var(--rc-accent);
+    background: #FFFFFF;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--rc-accent) 24%, transparent);
+}
+
+.vista-reservacion .res-guest-search-icon {
+    flex: 0 0 auto;
+    margin-left: 14px;
+    color: color-mix(in srgb, var(--rc-brand) 58%, #9CA3AF);
+    font-size: .78rem;
+}
+
+.vista-reservacion .res-guest-input {
+    flex: 1;
+    min-width: 0;
+    height: 42px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--rc-text);
+    font-size: .9rem;
+    font-weight: 700;
+}
+
+.vista-reservacion .res-guest-input::placeholder {
+    color: #9AA3B2;
+    font-weight: 700;
+}
+
+.vista-reservacion .res-guest-input::-webkit-search-cancel-button,
+.vista-reservacion .res-guest-input::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.vista-reservacion .res-guest-clear {
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    margin-right: 6px;
+    border: 0;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--rc-brand) 8%, #FFFFFF);
+    color: color-mix(in srgb, var(--rc-brand) 70%, #6B7280);
+    transition: transform .18s ease, background .18s ease, color .18s ease;
+}
+
+.vista-reservacion .res-guest-clear:hover {
+    transform: translateY(-1px);
+    background: color-mix(in srgb, var(--rc-brand) 14%, #FFFFFF);
+    color: var(--rc-brand);
+}
+
+.vista-reservacion .res-guest-results {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    z-index: 60;
+    max-height: 292px;
+    overflow-y: auto;
+    padding: 7px;
+    border: 1px solid var(--rc-accent-line);
+    border-radius: 15px;
+    background: rgba(255,255,255,.98);
+    box-shadow: 0 22px 44px -26px rgba(15,23,42,.42), 0 1px 0 rgba(255,255,255,.86) inset;
+    backdrop-filter: blur(10px);
+}
+
+.vista-reservacion .res-guest-results.hidden {
+    display: none;
+}
+
+.vista-reservacion .res-guest-option,
+.vista-reservacion .res-guest-state {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 11px;
+    padding: 11px 12px;
+    border: 0;
+    border-radius: 11px;
+    background: transparent;
+    text-align: left;
+}
+
+.vista-reservacion .res-guest-option {
+    cursor: pointer;
+    color: var(--rc-text);
+    transition: background .16s ease, transform .16s ease, color .16s ease;
+}
+
+.vista-reservacion .res-guest-option:hover,
+.vista-reservacion .res-guest-option.is-active {
+    transform: translateY(-1px);
+    background: color-mix(in srgb, var(--rc-brand) 8%, #FFFFFF);
+}
+
+.vista-reservacion .res-guest-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, var(--rc-brand), color-mix(in srgb, var(--rc-brand) 74%, var(--rc-accent)));
+    color: #FFFFFF;
+    font-size: .78rem;
+    font-weight: 900;
+    box-shadow: 0 10px 18px -14px color-mix(in srgb, var(--rc-brand) 80%, transparent);
+}
+
+.vista-reservacion .res-guest-option-main {
+    min-width: 0;
+}
+
+.vista-reservacion .res-guest-option-name {
+    display: block;
+    color: var(--rc-text);
+    font-size: .88rem;
+    font-weight: 850;
+    line-height: 1.2;
+}
+
+.vista-reservacion .res-guest-option-meta {
+    display: block;
+    margin-top: 3px;
+    color: var(--rc-muted);
+    font-size: .76rem;
+    font-weight: 650;
+}
+
+.vista-reservacion .res-guest-state {
+    color: var(--rc-muted);
+    font-size: .86rem;
+    font-weight: 750;
+}
+
+.vista-reservacion .res-guest-state i {
+    color: var(--rc-accent);
+}
+
+.vista-reservacion .res-guest-state.is-error i {
+    color: #DC2626;
+}
+
 .vista-reservacion .btn-gold,
 .vista-reservacion .btn-hour,
 .vista-reservacion .btn-save,
@@ -1522,7 +1710,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
                         <p style="color:rgba(255,255,255,.6);font-size:.75rem;margin-top:2px;">Seleccione habitaciones y configure cortesías del hotel</p>
                     </div>
                 </div>
-                <a href="<?= url('reservaciones') ?>" class="btn-back">
+                <a href="<?= back_url('reservaciones') ?>" class="btn-back">
                     <i class="fas fa-arrow-left text-xs"></i>
                     <span class="hidden sm:inline">Volver</span>
                 </a>
@@ -1553,7 +1741,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
                 <div class="xl:col-span-3 space-y-5">
 
                     <!-- ── 1. Huésped ── -->
-                    <div class="bg-white rounded-2xl shadow-sm border border-[#DDE8D5] overflow-hidden card-animate">
+                    <div class="bg-white rounded-2xl shadow-sm border border-[#DDE8D5] overflow-hidden card-animate res-guest-card">
                         <div class="panel-hd-guest p-4">
                             <h2 class="text-base font-bold text-white flex items-center gap-2">
                                 <i class="fas fa-user opacity-80"></i>
@@ -1593,13 +1781,34 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
                             <?php else: ?>
                                 <div class="space-y-4">
                                     <div>
-                                        <label class="block text-sm font-bold mb-2" style="color:#4A6340;">
+                                        <label for="huesped_busqueda" class="block text-sm font-bold mb-2" style="color:#4A6340;">
                                             Buscar Huésped <span class="text-red-500">*</span>
                                         </label>
                                         <div class="flex gap-3 res-guest-search-row">
-                                            <select name="huesped_id" id="huesped_id" class="flex-1" required>
-                                                <option value="">-- Buscar por nombre o teléfono --</option>
-                                            </select>
+                                            <div class="res-guest-combobox-wrap flex-1">
+                                                <select name="huesped_id" id="huesped_id" class="res-guest-native-select" required aria-hidden="true" tabindex="-1">
+                                                    <option value="">-- Buscar por nombre o teléfono --</option>
+                                                </select>
+                                                <div class="res-guest-combobox" id="huespedSearchBox">
+                                                    <i class="fas fa-search res-guest-search-icon" aria-hidden="true"></i>
+                                                    <input
+                                                        type="search"
+                                                        id="huesped_busqueda"
+                                                        class="res-guest-input"
+                                                        placeholder="Buscar huésped por nombre o teléfono..."
+                                                        autocomplete="off"
+                                                        role="combobox"
+                                                        aria-autocomplete="list"
+                                                        aria-required="true"
+                                                        aria-expanded="false"
+                                                        aria-controls="huesped_results"
+                                                    >
+                                                    <button type="button" id="limpiarHuesped" class="res-guest-clear hidden" aria-label="Limpiar huésped">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                                <div id="huesped_results" class="res-guest-results hidden" role="listbox"></div>
+                                            </div>
                                             <a href="<?= url('huespedes/create?return_to=reservacion') ?>" class="btn-gold">
                                                 <i class="fas fa-user-plus text-xs"></i>
                                                 <span class="hidden sm:inline">Nuevo</span>
@@ -1790,7 +1999,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
     <i class="fas fa-file-pdf"></i>
     <span>Generar Cotización PDF</span>
 </button>
-                                <a href="<?= url('reservaciones') ?>" class="btn-cancel">
+                                <a href="<?= back_url('reservaciones') ?>" class="btn-cancel">
                                     <i class="fas fa-times text-xs"></i>
                                     <span>Cancelar</span>
                                 </a>
@@ -1850,10 +2059,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
 </div>
 
 <!-- ── Libraries ── -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/es.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
@@ -1865,6 +2071,7 @@ $(document).ready(function() {
     let habitacionesDisponibles = [];
     let habitacionesOcupadas = [];
     let busquedaActiva = '';
+    let huespedSeleccionadoActual = null;
     const HUESPED_PRESELECCIONADO = <?= json_encode($huesped_preseleccionado ?? null, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
     const RESERVA_URL_PARAMS = new URLSearchParams(window.location.search);
     const ES_RESERVACION_RAPIDA = !!(RESERVA_URL_PARAMS.get('habitacion_id') || RESERVA_URL_PARAMS.get('preseleccion'));
@@ -1918,63 +2125,233 @@ $(document).ready(function() {
     }
 
     <?php if (!isset($huesped_preseleccionado)): ?>
-    // Select2 - guest search
-    $('#huesped_id').select2({
-        language: 'es',
-        placeholder: 'Buscar huésped por nombre o teléfono...',
-        minimumInputLength: 2,
-        ajax: {
-            url: '<?= url('api/huespedes/search') ?>',
-            dataType: 'json', delay: 250,
-            data: params => ({ q: params.term }),
-            transport: function(params, success, failure) {
-                const termino = params.data?.q || '';
-                const sinConexion = !navigator.onLine || window.PWA?.isOnline?.() === false;
+    // Buscador de huésped: un solo input visible y el id se mantiene en name="huesped_id".
+    const $huespedSelect = $('#huesped_id');
+    const $huespedInput = $('#huesped_busqueda');
+    const $huespedResults = $('#huesped_results');
+    const $huespedBox = $('#huespedSearchBox');
+    const $limpiarHuesped = $('#limpiarHuesped');
+    let huespedSearchTimer = null;
+    let huespedSearchRequest = null;
+    let huespedSearchToken = 0;
+    let huespedActiveIndex = -1;
+    let huespedResultadosActuales = [];
 
-                if (sinConexion && window.OfflineData?.buscarHuespedes) {
-                    window.OfflineData.buscarHuespedes(termino)
-                        .then(data => success({ success: true, data }))
-                        .catch(failure);
-                    return { abort: function() {} };
-                }
+    function escapeHtml(value) {
+        return $('<div>').text(value ?? '').html();
+    }
 
-                const request = $.ajax(params);
-                request.then(success);
-                request.fail(failure);
-                return request;
-            },
-            processResults: function(response) {
-                if (response.success && response.data) {
-                    window.OfflineData?.guardarHuespedes?.(response.data);
-                    return {
-                        results: response.data.map(h => ({
-                            id: h.id,
-                            text: h.nombre_completo + ' - ' + (h.telefono || 'Sin teléfono'),
-                            nombre: h.nombre_completo,
-                            telefono: h.telefono,
-                            procedencia: h.procedencia_estado
-                        }))
-                    };
-                }
-                return { results: [] };
-            },
-            cache: true
+    function inicialesHuesped(nombre) {
+        const partes = String(nombre || 'H').trim().split(/\s+/).filter(Boolean);
+        return (partes[0]?.[0] || 'H') + (partes[1]?.[0] || '');
+    }
+
+    function etiquetaHuesped(data) {
+        return `${data.nombre}${data.telefono ? ' - ' + data.telefono : ''}`;
+    }
+
+    function setResultadosAbiertos(abierto) {
+        $huespedInput.attr('aria-expanded', abierto ? 'true' : 'false');
+        $huespedBox.toggleClass('is-open', abierto);
+        $huespedResults.toggleClass('hidden', !abierto);
+    }
+
+    function estadoResultados(icono, texto, extraClass = '') {
+        huespedResultadosActuales = [];
+        huespedActiveIndex = -1;
+        $huespedResults.html(`
+            <div class="res-guest-state ${extraClass}">
+                <i class="${icono}" aria-hidden="true"></i>
+                <span>${escapeHtml(texto)}</span>
+            </div>
+        `);
+        setResultadosAbiertos(true);
+    }
+
+    function normalizarHuesped(huesped) {
+        const nombre = huesped.nombre_completo || huesped.nombre || huesped.text || `Huésped #${huesped.id}`;
+        return {
+            id: String(huesped.id || ''),
+            nombre,
+            telefono: huesped.telefono || huesped.celular || huesped.telefono_principal || '',
+            procedencia: huesped.procedencia_estado || huesped.procedencia || huesped.estado || ''
+        };
+    }
+
+    function activarResultado(index) {
+        huespedActiveIndex = index;
+        $huespedResults.find('.res-guest-option').removeClass('is-active').attr('aria-selected', 'false');
+        const $option = $huespedResults.find(`.res-guest-option[data-index="${index}"]`);
+        $option.addClass('is-active').attr('aria-selected', 'true');
+        $option[0]?.scrollIntoView({ block: 'nearest' });
+    }
+
+    function renderResultadosHuespedes(rows) {
+        huespedResultadosActuales = rows.map(normalizarHuesped).filter(h => h.id);
+        huespedActiveIndex = -1;
+
+        if (huespedResultadosActuales.length === 0) {
+            estadoResultados('fas fa-user-slash', 'No encontramos huéspedes con esa búsqueda.');
+            return;
         }
-    });
 
-    $('#huesped_id').on('select2:select', function(e) {
-        const data = e.params.data;
+        $huespedResults.html(huespedResultadosActuales.map((huesped, index) => `
+            <button type="button" class="res-guest-option" role="option" aria-selected="false" data-index="${index}">
+                <span class="res-guest-avatar">${escapeHtml(inicialesHuesped(huesped.nombre).toUpperCase())}</span>
+                <span class="res-guest-option-main">
+                    <span class="res-guest-option-name">${escapeHtml(huesped.nombre)}</span>
+                    <span class="res-guest-option-meta">${escapeHtml([huesped.telefono || 'Sin teléfono', huesped.procedencia].filter(Boolean).join(' · '))}</span>
+                </span>
+            </button>
+        `).join(''));
+        setResultadosAbiertos(true);
+    }
+
+    function seleccionarHuesped(data) {
+        huespedSeleccionadoActual = data;
+        const label = etiquetaHuesped(data);
+        $huespedSelect.empty().append(new Option(label, data.id, true, true)).val(data.id).trigger('change');
+        $huespedInput.val(label);
+        $limpiarHuesped.removeClass('hidden');
+        setResultadosAbiertos(false);
+
         $('#infoHuesped').removeClass('hidden');
         $('#detallesHuesped').html(`
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                <div><strong>Nombre:</strong> ${data.nombre}</div>
-                <div><strong>Teléfono:</strong> ${data.telefono || 'No registrado'}</div>
-                ${data.procedencia ? `<div class="md:col-span-2"><strong>Procedencia:</strong> ${data.procedencia}</div>` : ''}
+                <div><strong>Nombre:</strong> ${escapeHtml(data.nombre)}</div>
+                <div><strong>Teléfono:</strong> ${escapeHtml(data.telefono || 'No registrado')}</div>
+                ${data.procedencia ? `<div class="md:col-span-2"><strong>Procedencia:</strong> ${escapeHtml(data.procedencia)}</div>` : ''}
             </div>
         `);
+
         verificarFormularioCompleto();
         if (!ES_RESERVACION_RAPIDA) {
             window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        }
+    }
+
+    function limpiarSeleccionHuesped(mantenerTexto = false) {
+        huespedSeleccionadoActual = null;
+        $huespedSelect.empty().append(new Option('-- Buscar por nombre o teléfono --', '', true, true)).val('').trigger('change');
+        if (!mantenerTexto) {
+            $huespedInput.val('');
+            $limpiarHuesped.addClass('hidden');
+            setResultadosAbiertos(false);
+        }
+        $('#infoHuesped').addClass('hidden');
+        $('#detallesHuesped').empty();
+        verificarFormularioCompleto();
+    }
+
+    function procesarRespuestaHuespedes(response, token) {
+        if (token !== huespedSearchToken) return;
+        const rows = Array.isArray(response) ? response : (response?.success && Array.isArray(response.data) ? response.data : []);
+        window.OfflineData?.guardarHuespedes?.(rows);
+        renderResultadosHuespedes(rows);
+    }
+
+    function buscarHuespedes(termino) {
+        if (huespedSearchRequest?.abort) {
+            huespedSearchRequest.abort();
+        }
+
+        const token = ++huespedSearchToken;
+        const sinConexion = !navigator.onLine || window.PWA?.isOnline?.() === false;
+        estadoResultados('fas fa-spinner fa-spin', 'Buscando huésped...');
+
+        if (sinConexion && window.OfflineData?.buscarHuespedes) {
+            window.OfflineData.buscarHuespedes(termino)
+                .then(data => procesarRespuestaHuespedes(data, token))
+                .catch(() => estadoResultados('fas fa-triangle-exclamation', 'No se pudo buscar sin conexión.', 'is-error'));
+            return;
+        }
+
+        huespedSearchRequest = $.ajax({
+            url: '<?= url('api/huespedes/search') ?>',
+            dataType: 'json',
+            data: { q: termino }
+        }).done(response => {
+            procesarRespuestaHuespedes(response, token);
+        }).fail((xhr, status) => {
+            if (status !== 'abort') {
+                estadoResultados('fas fa-triangle-exclamation', 'No se pudo completar la búsqueda.', 'is-error');
+            }
+        });
+    }
+
+    $huespedInput.on('input', function() {
+        const valor = this.value;
+        const termino = valor.trim();
+        $limpiarHuesped.toggleClass('hidden', valor.length === 0);
+
+        if (huespedSeleccionadoActual && valor !== etiquetaHuesped(huespedSeleccionadoActual)) {
+            limpiarSeleccionHuesped(true);
+        }
+
+        clearTimeout(huespedSearchTimer);
+
+        if (termino.length === 0) {
+            setResultadosAbiertos(false);
+            return;
+        }
+
+        if (termino.length < 2) {
+            estadoResultados('fas fa-keyboard', 'Escriba al menos 2 caracteres para buscar.');
+            return;
+        }
+
+        huespedSearchTimer = setTimeout(() => buscarHuespedes(termino), 240);
+    });
+
+    $huespedInput.on('focus', function() {
+        const termino = this.value.trim();
+        if (!huespedSeleccionadoActual && termino.length >= 2 && huespedResultadosActuales.length > 0) {
+            setResultadosAbiertos(true);
+        }
+    });
+
+    $huespedInput.on('keydown', function(e) {
+        const resultadosAbiertos = !$huespedResults.hasClass('hidden');
+
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (resultadosAbiertos && huespedActiveIndex >= 0) {
+                seleccionarHuesped(huespedResultadosActuales[huespedActiveIndex]);
+            } else if (resultadosAbiertos && huespedResultadosActuales.length === 1) {
+                seleccionarHuesped(huespedResultadosActuales[0]);
+            }
+            return;
+        }
+
+        if (!resultadosAbiertos) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activarResultado(Math.min(huespedActiveIndex + 1, huespedResultadosActuales.length - 1));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activarResultado(Math.max(huespedActiveIndex - 1, 0));
+        } else if (e.key === 'Escape') {
+            setResultadosAbiertos(false);
+        }
+    });
+
+    $huespedResults.on('mousedown', '.res-guest-option', function(e) {
+        e.preventDefault();
+        const index = Number($(this).data('index'));
+        if (Number.isInteger(index) && huespedResultadosActuales[index]) {
+            seleccionarHuesped(huespedResultadosActuales[index]);
+        }
+    });
+
+    $limpiarHuesped.on('click', function() {
+        limpiarSeleccionHuesped(false);
+        $huespedInput.trigger('focus');
+    });
+
+    $(document).on('mousedown', function(e) {
+        if (!$(e.target).closest('.res-guest-combobox-wrap').length) {
+            setResultadosAbiertos(false);
         }
     });
     <?php else: ?>
@@ -2609,10 +2986,11 @@ $(document).ready(function() {
             };
         }
 
-        const data = $('#huesped_id').select2?.('data')?.[0] || {};
+        const data = huespedSeleccionadoActual || {};
+        const selectedText = $('#huesped_id option:selected').text() || '';
         return {
             id,
-            nombre_completo: data.nombre || data.text || `Huesped #${id}`,
+            nombre_completo: data.nombre || selectedText.replace(/\s-\s.*$/, '') || `Huesped #${id}`,
             telefono: data.telefono || '',
             procedencia_estado: data.procedencia || '',
         };

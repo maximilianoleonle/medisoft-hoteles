@@ -80,7 +80,31 @@ if (!function_exists('trab_view_signed_money')) {
     }
 }
 
+if (!function_exists('trab_view_inicial')) {
+    function trab_view_inicial($value)
+    {
+        $text = trim((string)($value ?? ''));
+        return htmlspecialchars(strtoupper(mb_substr($text !== '' ? $text : 'T', 0, 1, 'UTF-8')), ENT_QUOTES, 'UTF-8');
+    }
+}
+
+if (!function_exists('trab_view_estado_meta')) {
+    function trab_view_estado_meta($estado)
+    {
+        $key = strtolower(trim((string)($estado ?? '')));
+        $map = [
+            'activo'   => ['Activo', 'is-activo', 'fa-circle-check'],
+            'inactivo' => ['Inactivo', 'is-inactivo', 'fa-circle-pause'],
+            'baja'     => ['Baja', 'is-baja', 'fa-user-slash'],
+        ];
+        return $map[$key] ?? [ucfirst($key !== '' ? $key : 'Sin estado'), 'is-soft', 'fa-circle-dot'];
+    }
+}
+
 $trabajadorId = (int)($trabajador['id'] ?? 0);
+$estadoTrabajador = (string)($trabajador['estado'] ?? '');
+[$estadoLabel, $estadoClass, $estadoIcon] = trab_view_estado_meta($estadoTrabajador);
+
 $pagoCajaSaldo = is_array($pagoCaja['saldo'] ?? null) ? $pagoCaja['saldo'] : [];
 $pagoCajaMontoMaximo = (float)($pagoCaja['monto_maximo'] ?? 0);
 $pagoCajaReferencia = 'NOM-TRAB-' . $trabajadorId . '-' . date('YmdHis');
@@ -135,948 +159,511 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 
 <style>
 .worker-detail-page {
-    --trab-brand: var(--brand-primary, #1f3f46);
-    --trab-accent: var(--brand-accent, #b58a3c);
-    --trab-line: color-mix(in srgb, var(--trab-brand) 10%, #e5e7eb);
-    --trab-soft: color-mix(in srgb, var(--trab-accent) 7%, #f8fafc);
-    color: #243142;
+    --wk-brand: var(--brand-primary, #1B2746);
+    --wk-brand-2: var(--brand-secondary, #0F172A);
+    --wk-gold: var(--brand-accent, #BD9441);
+    --wk-gold-soft: color-mix(in srgb, var(--wk-gold) 15%, #FFFFFF);
+    --wk-gold-line: color-mix(in srgb, var(--wk-gold) 42%, #E4D4B0);
+    --wk-gold-ink: color-mix(in srgb, var(--wk-gold) 72%, #000);
+    --wk-ivory: #F6F2EA; --wk-ivory-2: #FBF8F2;
+    --wk-surface: #FFFFFF; --wk-surface-warm: #FCFAF5;
+    --wk-border: color-mix(in srgb, var(--wk-brand) 7%, #E7E1D4);
+    --wk-ring: color-mix(in srgb, var(--wk-gold) 32%, transparent);
+    --wk-text: #171717; --wk-muted: #667085; --wk-heading: #111827;
+    --wk-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --wk-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --wk-success: #1E9E63; --wk-success-bg: #E7F4EC;
+    --wk-warning: #C2841C; --wk-warning-bg: #FAF0DC;
+    --wk-danger: #B4392B; --wk-danger-bg: #F8EAE5;
+    --wk-info: #2F77E0; --wk-info-bg: #E6EFFC;
+    --wk-muted-2: #475467;
+    min-height: 100%; color: var(--wk-text); font-family: var(--wk-sans); font-weight: 400; line-height: 1.5;
+    background: radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--wk-gold) 8%, transparent), transparent 60%), linear-gradient(180deg, var(--wk-ivory-2), var(--wk-ivory));
 }
-.worker-detail-page .worker-hero {
-    background: linear-gradient(135deg, color-mix(in srgb, var(--trab-brand) 92%, #111827), color-mix(in srgb, var(--trab-accent) 58%, #5b4730));
-    color: #fff;
-    padding: 28px;
-}
-.worker-detail-page .worker-kicker {
-    font-size: .72rem;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    opacity: .76;
-    font-weight: 800;
-}
-.worker-detail-page .worker-title {
-    margin: 6px 0 0;
-    font-size: clamp(1.45rem, 2.4vw, 2.15rem);
-    font-weight: 900;
-    letter-spacing: 0;
-}
-.worker-detail-page .worker-subtitle {
-    margin-top: 8px;
-    max-width: 52rem;
-    color: rgba(255,255,255,.86);
-}
-.worker-detail-page .worker-stat {
-    border: 1px solid rgba(255,255,255,.22);
-    background: rgba(255,255,255,.11);
-    padding: 12px 14px;
-}
-.worker-detail-page .worker-panel {
-    border: 1px solid var(--trab-line);
-    background: rgba(255,255,255,.92);
-}
-.worker-detail-page .worker-input {
-    width: 100%;
-    min-height: 42px;
-    border: 1px solid var(--trab-line);
-    border-radius: 12px;
-    background: #fff;
-    color: #243142;
-    padding: 9px 12px;
-    font-size: .9rem;
-    font-weight: 650;
-    outline: none;
-    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
-}
-.worker-detail-page textarea.worker-input {
-    resize: vertical;
-}
-.worker-detail-page .worker-input:focus {
-    border-color: color-mix(in srgb, var(--trab-accent) 52%, var(--trab-line));
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--trab-accent) 16%, transparent);
-}
-.worker-detail-page .worker-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 38px;
-    padding: 0 14px;
-    border: 1px solid var(--trab-line);
-    background: #fff;
-    color: #334155;
-    font-weight: 800;
-}
-.worker-detail-page .worker-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 9px;
-    border: 1px solid var(--trab-line);
-    background: var(--trab-soft);
-    font-size: .78rem;
-    font-weight: 800;
-}
-.worker-detail-page .worker-table th {
-    color: #64748b;
-    font-size: .72rem;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-}
-.worker-detail-page .worker-table td,
-.worker-detail-page .worker-table th {
-    border-bottom: 1px solid var(--trab-line);
-    padding: 14px 12px;
-}
-.worker-detail-page .worker-meta-label {
-    font-size: .72rem;
-    color: #64748b;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-}
-.worker-detail-page .worker-ledger-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
-}
-.worker-detail-page .worker-ledger-overview {
-    display: grid;
-    grid-template-columns: minmax(270px, .95fr) minmax(0, 1.35fr);
-    gap: 16px;
-    margin-bottom: 16px;
-}
-.worker-detail-page .worker-ledger-balance {
-    position: relative;
-    overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--trab-brand) 14%, #dbe3ea);
-    background:
-        radial-gradient(circle at top right, color-mix(in srgb, var(--trab-accent) 18%, transparent), transparent 15rem),
-        linear-gradient(135deg, color-mix(in srgb, var(--trab-brand) 10%, #fff), #fff);
-    padding: 18px;
-}
-.worker-detail-page .worker-ledger-balance-value {
-    margin-top: 8px;
-    font-size: clamp(2rem, 4vw, 3rem);
-    line-height: 1;
-    font-weight: 950;
-    letter-spacing: 0;
-    color: var(--trab-brand);
-}
-.worker-detail-page .worker-ledger-balance.is-positive .worker-ledger-balance-value {
-    color: #0f766e;
-}
-.worker-detail-page .worker-ledger-balance.is-negative .worker-ledger-balance-value {
-    color: #b45309;
-}
-.worker-detail-page .worker-ledger-balance.is-neutral .worker-ledger-balance-value {
-    color: #334155;
-}
-.worker-detail-page .worker-ledger-balance-caption {
-    margin-top: 8px;
-    color: #64748b;
-    font-size: .84rem;
-    line-height: 1.45;
-    font-weight: 650;
-}
-.worker-detail-page .worker-ledger-equation {
-    border: 1px solid var(--trab-line);
-    background: #fff;
-    padding: 16px;
-}
-.worker-detail-page .worker-ledger-equation-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-    color: #334155;
-    font-weight: 900;
-}
-.worker-detail-page .worker-ledger-formula {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
-}
-.worker-detail-page .worker-ledger-factor {
-    min-width: 0;
-    border: 1px solid color-mix(in srgb, var(--factor-color, var(--trab-brand)) 16%, var(--trab-line));
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--factor-color, var(--trab-brand)) 7%, #fff);
-    padding: 12px;
-}
-.worker-detail-page .worker-ledger-factor.is-plus {
-    --factor-color: #0f766e;
-}
-.worker-detail-page .worker-ledger-factor.is-minus {
-    --factor-color: #b45309;
-}
-.worker-detail-page .worker-ledger-factor small {
-    display: block;
-    color: #64748b;
-    font-size: .68rem;
-    font-weight: 900;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-}
-.worker-detail-page .worker-ledger-factor strong {
-    display: block;
-    margin-top: 5px;
-    color: color-mix(in srgb, var(--factor-color, var(--trab-brand)) 78%, #243142);
-    font-size: 1rem;
-    font-weight: 950;
-}
-.worker-detail-page .worker-ledger-help {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-    margin: 14px 0 16px;
-}
-.worker-detail-page .worker-ledger-help-item {
-    border: 1px solid var(--trab-line);
-    background: color-mix(in srgb, var(--trab-brand) 3%, #fff);
-    padding: 12px;
-}
-.worker-detail-page .worker-ledger-help-item i {
-    color: var(--trab-accent);
-}
-.worker-detail-page .worker-ledger-help-item strong,
-.worker-detail-page .worker-ledger-help-item span {
-    display: block;
-}
-.worker-detail-page .worker-ledger-help-item strong {
-    margin-top: 7px;
-    color: #243142;
-    font-size: .83rem;
-    font-weight: 900;
-}
-.worker-detail-page .worker-ledger-help-item span {
-    margin-top: 4px;
-    color: #64748b;
-    font-size: .76rem;
-    line-height: 1.42;
-    font-weight: 650;
-}
-.worker-detail-page .worker-ledger-card {
-    border: 1px solid var(--trab-line);
-    background: #fff;
-}
-.worker-detail-page .worker-ledger-card header {
-    border-bottom: 1px solid var(--trab-line);
-    padding: 14px 16px;
-}
-.worker-detail-page .worker-ledger-body {
-    max-height: 360px;
-    overflow: auto;
-}
-.worker-detail-page .worker-ledger-row {
-    border-bottom: 1px solid var(--trab-line);
-    padding: 14px 16px;
-}
-.worker-detail-page .worker-ledger-row:last-child {
-    border-bottom: 0;
-}
-.worker-detail-page .worker-ledger-row:hover {
-    background: color-mix(in srgb, var(--trab-brand) 3%, #fff);
-}
-.worker-detail-page .worker-ledger-amount {
-    display: inline-flex;
-    align-items: center;
-    min-height: 30px;
-    padding: 4px 9px;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--amount-color, #64748b) 9%, #fff);
-    color: color-mix(in srgb, var(--amount-color, #64748b) 80%, #243142);
-    font-weight: 950;
-    white-space: nowrap;
-}
-.worker-detail-page .worker-ledger-amount.is-plus {
-    --amount-color: #0f766e;
-}
-.worker-detail-page .worker-ledger-amount.is-minus,
-.worker-detail-page .worker-ledger-amount.is-debt {
-    --amount-color: #b45309;
-}
-.worker-detail-page .worker-ledger-empty {
-    display: grid;
-    place-items: center;
-    min-height: 170px;
-    padding: 28px 18px;
-    text-align: center;
-    color: #64748b;
-}
-.worker-detail-page .worker-ledger-empty i {
-    margin-bottom: 10px;
-    color: color-mix(in srgb, var(--trab-brand) 24%, #cbd5e1);
-    font-size: 2rem;
-}
-.worker-detail-page .worker-ledger-empty strong {
-    display: block;
-    color: #334155;
-    font-weight: 950;
-}
-.worker-detail-page .worker-ledger-empty span {
-    display: block;
-    max-width: 26rem;
-    margin-top: 5px;
-    font-size: .84rem;
-    line-height: 1.45;
-}
-.worker-detail-page .worker-ledger-note {
-    border: 1px solid color-mix(in srgb, var(--trab-accent) 22%, #e5e7eb);
-    background: color-mix(in srgb, var(--trab-accent) 8%, #fff);
-    color: #475569;
-    padding: 12px 14px;
-    font-size: .86rem;
-}
-.worker-detail-page .worker-ledger-actions {
-    display: grid;
-    gap: 10px;
-    margin-bottom: 16px;
-}
-.worker-detail-page .worker-ledger-details {
-    border: 1px solid var(--trab-line);
-    background: #fff;
-}
-.worker-detail-page .worker-ledger-details summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    min-height: 48px;
-    padding: 0 14px;
-    cursor: pointer;
-    color: #334155;
-    font-size: .9rem;
-    font-weight: 900;
-    list-style: none;
-}
-.worker-detail-page .worker-ledger-details summary::-webkit-details-marker {
-    display: none;
-}
-.worker-detail-page .worker-ledger-details summary::after {
-    content: "+";
-    display: grid;
-    place-items: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 999px;
-    background: var(--trab-soft);
-    color: var(--trab-brand);
-    font-weight: 950;
-}
-.worker-detail-page .worker-ledger-details[open] summary {
-    border-bottom: 1px solid var(--trab-line);
-}
-.worker-detail-page .worker-ledger-details[open] summary::after {
-    content: "-";
-}
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
+
+.worker-detail-page .wk-shell { display: grid; gap: 20px; }
+.worker-detail-page .wk-title-lockup { display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; }
+.worker-detail-page .wk-avatar { width: 52px; height: 52px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.3rem; font-weight: 700; font-family: var(--wk-serif);
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--wk-gold), var(--wk-brand) 54%, color-mix(in srgb, var(--wk-brand) 68%, #2F8A70));
+    box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--wk-brand) 72%, transparent); }
+.worker-detail-page .wk-kicker { margin: 0 0 2px; color: var(--wk-muted); font-size: .72rem; font-weight: 600; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
+.worker-detail-page .wk-title { margin: 0; font-family: var(--wk-serif); color: var(--wk-heading); font-weight: 700; font-size: clamp(1.9rem, 3.4vw, 2.7rem); line-height: 1.02; }
+.worker-detail-page .wk-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+.worker-detail-page .wk-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font-size: .75rem; font-weight: 600; border: 1px solid transparent; }
+.worker-detail-page .wk-badge.is-activo { color: color-mix(in srgb, var(--wk-success) 78%, #000); background: var(--wk-success-bg); border-color: color-mix(in srgb, var(--wk-success) 26%, #fff); }
+.worker-detail-page .wk-badge.is-inactivo { color: color-mix(in srgb, var(--wk-warning) 82%, #000); background: var(--wk-warning-bg); border-color: color-mix(in srgb, var(--wk-warning) 28%, #fff); }
+.worker-detail-page .wk-badge.is-baja { color: color-mix(in srgb, var(--wk-danger) 82%, #000); background: var(--wk-danger-bg); border-color: color-mix(in srgb, var(--wk-danger) 26%, #fff); }
+.worker-detail-page .wk-badge.is-soft { color: var(--wk-muted); background: var(--wk-surface-warm); border-color: var(--wk-border); }
+.worker-detail-page .wk-badge.is-ok { color: color-mix(in srgb, var(--wk-success) 78%, #000); background: var(--wk-success-bg); border-color: color-mix(in srgb, var(--wk-success) 26%, #fff); }
+.worker-detail-page .wk-badge.is-warn { color: color-mix(in srgb, var(--wk-warning) 82%, #000); background: var(--wk-warning-bg); border-color: color-mix(in srgb, var(--wk-warning) 28%, #fff); }
+
+.worker-detail-page .wk-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.worker-detail-page .wk-toolbar form { display: inline-flex; margin: 0; }
+.worker-detail-page .wk-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 40px; padding: 0 15px;
+    border-radius: 11px; border: 1px solid var(--wk-border); background: var(--wk-surface); color: var(--wk-text); font-weight: 600; font-size: .85rem; line-height: 1; cursor: pointer; text-decoration: none;
+    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, color .16s ease, background .16s ease; }
+.worker-detail-page .wk-btn:hover { transform: translateY(-1px); border-color: var(--wk-gold-line); color: var(--wk-gold-ink); }
+.worker-detail-page .wk-btn-gold { background: linear-gradient(135deg, var(--wk-gold), color-mix(in srgb, var(--wk-gold) 76%, #000)); border-color: transparent; color: #fff; box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--wk-gold) 58%, transparent); }
+.worker-detail-page .wk-btn-gold:hover { color: #fff; border-color: transparent; }
+.worker-detail-page .wk-btn-off { color: var(--wk-danger); border-color: color-mix(in srgb, var(--wk-danger) 24%, var(--wk-border)); }
+.worker-detail-page .wk-btn-off:hover { color: var(--wk-danger); background: var(--wk-danger-bg); }
+.worker-detail-page .wk-btn-on { color: var(--wk-success); border-color: color-mix(in srgb, var(--wk-success) 24%, var(--wk-border)); }
+.worker-detail-page .wk-btn-on:hover { color: var(--wk-success); background: var(--wk-success-bg); }
+.worker-detail-page .wk-btn-off.is-confirming { background: linear-gradient(135deg, var(--wk-warning), color-mix(in srgb, var(--wk-warning) 72%, #000)); color: #fff; border-color: transparent; }
+
+.worker-action-toast { position: fixed; right: 22px; bottom: 22px; z-index: 15000; max-width: min(390px, calc(100vw - 32px));
+    border: 1px solid var(--wk-gold-line, #E4D4B0); border-radius: 14px; background: var(--wk-gold-soft, #FBF3DE); color: var(--wk-gold-ink, #6b521f);
+    padding: 12px 14px; box-shadow: 0 18px 42px rgba(24, 32, 48, .18); font-size: .82rem; font-weight: 600; line-height: 1.42;
+    opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
+.worker-action-toast.is-visible { opacity: 1; transform: translateY(0); }
+
+.worker-detail-page .wk-panel { background: var(--wk-surface); border: 1px solid var(--wk-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.05), 0 18px 38px -26px rgba(27,39,70,.32); }
+.worker-detail-page .wk-panel-pad { padding: 20px; }
+.worker-detail-page .wk-panel-head { padding: 15px 18px; border-bottom: 1px solid var(--wk-border); border-radius: 16px 16px 0 0; background: linear-gradient(180deg, var(--wk-surface-warm), var(--wk-surface)); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.worker-detail-page .wk-panel-title { font-family: var(--wk-serif); font-size: 1.5rem; font-weight: 700; color: var(--wk-heading); line-height: 1.1; }
+.worker-detail-page .wk-panel-sub { font-size: .86rem; color: var(--wk-muted-2); margin-top: 4px; line-height: 1.5; max-width: 64ch; }
+.worker-detail-page .wk-sec-head { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.worker-detail-page .wk-sec-icon { flex: none; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 1.05rem; border: 1px solid transparent; }
+.worker-detail-page .wk-sec-icon.is-navy { background: color-mix(in srgb, var(--wk-brand) 12%, #fff); color: var(--wk-brand); border-color: color-mix(in srgb, var(--wk-brand) 20%, #fff); }
+.worker-detail-page .wk-sec-icon.is-gold { background: var(--wk-gold-soft); color: var(--wk-gold-ink); border-color: var(--wk-gold-line); }
+.worker-detail-page .wk-sec-icon.is-green { background: var(--wk-success-bg); color: var(--wk-success); border-color: color-mix(in srgb, var(--wk-success) 26%, #fff); }
+.worker-detail-page .wk-sec-icon.is-blue { background: var(--wk-info-bg); color: var(--wk-info); border-color: color-mix(in srgb, var(--wk-info) 24%, #fff); }
+.worker-detail-page .wk-sec-icon.is-amber { background: var(--wk-warning-bg); color: var(--wk-warning); border-color: color-mix(in srgb, var(--wk-warning) 26%, #fff); }
+
+/* Resumen de cuenta (hero) */
+.worker-detail-page .wk-summary { display: grid; grid-template-columns: minmax(260px, .9fr) minmax(0, 1.3fr); gap: 14px; }
+.worker-detail-page .wk-balance { border-radius: 16px; border: 1px solid var(--wk-border); padding: 20px; background: linear-gradient(160deg, var(--wk-surface), var(--wk-surface-warm)); box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); }
+.worker-detail-page .wk-balance-label { color: var(--wk-muted); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.worker-detail-page .wk-balance-value { margin-top: 6px; font-family: var(--wk-serif); font-size: clamp(2.4rem, 5vw, 3.2rem); font-weight: 700; line-height: 1; color: var(--wk-heading); }
+.worker-detail-page .wk-balance.is-positive .wk-balance-value { color: var(--wk-success); }
+.worker-detail-page .wk-balance.is-negative .wk-balance-value { color: var(--wk-warning); }
+.worker-detail-page .wk-balance-caption { margin-top: 10px; color: var(--wk-muted-2); font-size: .86rem; line-height: 1.55; }
+.worker-detail-page .wk-factors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-content: start; }
+.worker-detail-page .wk-factor { border: 1px solid var(--wk-border); border-radius: 14px; padding: 13px 14px; background: var(--wk-surface); }
+.worker-detail-page .wk-factor small { display: block; color: var(--wk-muted); font-size: .69rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.worker-detail-page .wk-factor strong { display: block; margin-top: 5px; font-family: var(--wk-serif); font-size: 1.5rem; font-weight: 700; color: var(--wk-heading); }
+.worker-detail-page .wk-factor.is-plus strong { color: var(--wk-success); }
+.worker-detail-page .wk-factor.is-minus strong { color: var(--wk-danger); }
+.worker-detail-page .wk-factor.is-gold { background: var(--wk-gold-soft); border-color: var(--wk-gold-line); }
+.worker-detail-page .wk-factor.is-gold strong { color: var(--wk-gold-ink); }
+
+/* Meta grid */
+.worker-detail-page .wk-meta-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.worker-detail-page .wk-meta-label { font-size: .69rem; color: var(--wk-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.worker-detail-page .wk-meta-value { margin-top: 3px; font-weight: 600; color: var(--wk-heading); word-break: break-word; }
+.worker-detail-page .wk-meta-value.is-soft { font-weight: 500; color: #334155; }
+.worker-detail-page .wk-meta-value.is-notes { font-weight: 500; color: #334155; white-space: pre-line; }
+
+/* Forms */
+.worker-detail-page label.wk-label { display: block; font-size: .71rem; color: var(--wk-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 5px; }
+.worker-detail-page .wk-input, .worker-detail-page textarea.wk-input, .worker-detail-page select.wk-input {
+    width: 100%; min-height: 42px; border: 1px solid var(--wk-border); background: var(--wk-surface-warm); border-radius: 11px; padding: 10px 12px;
+    color: var(--wk-text); font-weight: 600; font-size: .9rem; font-family: var(--wk-sans); transition: border-color .16s ease, box-shadow .16s ease; }
+.worker-detail-page textarea.wk-input { min-height: 80px; resize: vertical; }
+.worker-detail-page select.wk-input { cursor: pointer; }
+.worker-detail-page .wk-input:focus { border-color: var(--wk-gold); box-shadow: 0 0 0 3px var(--wk-ring); outline: none; background: #fff; }
+.worker-detail-page .wk-hint { font-size: .8rem; color: var(--wk-muted-2); }
+.worker-detail-page .wk-note { border: 1px solid var(--wk-border); background: var(--wk-surface-warm); border-radius: 12px; padding: 13px 15px; font-size: .88rem; color: var(--wk-muted-2); }
+.worker-detail-page .wk-note.is-warn { background: var(--wk-warning-bg); border-color: color-mix(in srgb, var(--wk-warning) 26%, #fff); color: color-mix(in srgb, var(--wk-warning) 84%, #000); }
+
+/* Details (registrar) */
+.worker-detail-page .wk-details { border: 1px solid var(--wk-border); border-radius: 13px; background: var(--wk-surface-warm); overflow: hidden; }
+.worker-detail-page .wk-details summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 0 14px; cursor: pointer; color: var(--wk-gold-ink); font-size: .9rem; font-weight: 600; list-style: none; }
+.worker-detail-page .wk-details summary::-webkit-details-marker { display: none; }
+.worker-detail-page .wk-details summary::after { content: "+"; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 999px; background: var(--wk-gold-soft); color: var(--wk-gold-ink); border: 1px solid var(--wk-gold-line); font-weight: 700; }
+.worker-detail-page .wk-details[open] summary { border-bottom: 1px solid var(--wk-border); }
+.worker-detail-page .wk-details[open] summary::after { content: "\2212"; }
+.worker-detail-page .wk-details .wk-form-pad { padding: 14px; background: var(--wk-surface); }
+
+/* Pago caja layout */
+.worker-detail-page .wk-pay-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+
+/* Pago cards */
+.worker-detail-page .wk-pay-list { display: grid; gap: 12px; }
+.worker-detail-page .wk-pay-card { border: 1px solid var(--wk-border); border-radius: 14px; padding: 14px; background: var(--wk-surface); }
+.worker-detail-page .wk-pay-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.worker-detail-page .wk-pay-amount { font-family: var(--wk-serif); font-size: 1.5rem; font-weight: 700; color: var(--wk-heading); }
+.worker-detail-page .wk-pay-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px 14px; margin-top: 11px; }
+.worker-detail-page .wk-revert { margin-top: 12px; border-top: 1px solid var(--wk-border); padding-top: 12px; display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
+
+/* Ledger cards */
+.worker-detail-page .wk-ledger-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.worker-detail-page .wk-ledger-card { border: 1px solid var(--wk-border); border-radius: 16px; background: var(--wk-surface); overflow: hidden; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -26px rgba(27,39,70,.28); }
+.worker-detail-page .wk-ledger-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--wk-border); }
+.worker-detail-page .wk-ledger-card.is-green .wk-ledger-head { background: color-mix(in srgb, var(--wk-success-bg) 60%, #fff); border-bottom-color: color-mix(in srgb, var(--wk-success) 20%, var(--wk-border)); }
+.worker-detail-page .wk-ledger-card.is-amber .wk-ledger-head { background: color-mix(in srgb, var(--wk-warning-bg) 60%, #fff); border-bottom-color: color-mix(in srgb, var(--wk-warning) 20%, var(--wk-border)); }
+.worker-detail-page .wk-ledger-card.is-danger .wk-ledger-head { background: color-mix(in srgb, var(--wk-danger-bg) 55%, #fff); border-bottom-color: color-mix(in srgb, var(--wk-danger) 18%, var(--wk-border)); }
+.worker-detail-page .wk-ledger-head h3 { font-family: var(--wk-serif); font-size: 1.2rem; font-weight: 700; color: var(--wk-heading); }
+.worker-detail-page .wk-ledger-head p { font-size: .78rem; color: var(--wk-muted-2); margin-top: 2px; }
+.worker-detail-page .wk-ledger-body { padding: 14px 16px; display: grid; gap: 10px; max-height: 420px; overflow: auto; }
+.worker-detail-page .wk-ledger-row { border: 1px solid var(--wk-border); border-radius: 12px; padding: 11px 12px; background: var(--wk-surface-warm); }
+.worker-detail-page .wk-ledger-amount { font-weight: 700; white-space: nowrap; }
+.worker-detail-page .wk-ledger-amount.is-plus { color: var(--wk-success); }
+.worker-detail-page .wk-ledger-amount.is-minus, .worker-detail-page .wk-ledger-amount.is-debt { color: var(--wk-danger); }
+.worker-detail-page .wk-empty-box { display: grid; place-items: center; min-height: 150px; padding: 24px; text-align: center; color: var(--wk-muted); }
+.worker-detail-page .wk-empty-box i { font-size: 1.8rem; color: color-mix(in srgb, var(--wk-gold) 50%, #cbd5e1); margin-bottom: 8px; }
+.worker-detail-page .wk-empty-box strong { display: block; color: var(--wk-heading); font-weight: 600; }
+.worker-detail-page .wk-empty-box span { display: block; max-width: 26rem; margin-top: 4px; font-size: .84rem; line-height: 1.45; }
+
+.worker-detail-page .wk-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+.worker-detail-page .wk-table thead { background: var(--wk-surface-warm); border-bottom: 1px solid var(--wk-border); }
+.worker-detail-page .wk-table th { padding: 11px 13px; color: var(--wk-muted); font-size: .66rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; text-align: left; }
+.worker-detail-page .wk-table th.is-end, .worker-detail-page .wk-table td.is-end { text-align: right; }
+.worker-detail-page .wk-table td { padding: 12px 13px; border-bottom: 1px solid var(--wk-border); vertical-align: middle; }
+.worker-detail-page .wk-table tbody tr:last-child td { border-bottom: 0; }
+.worker-detail-page .wk-strong { font-weight: 600; color: var(--wk-heading); }
+.worker-detail-page .wk-sub { color: var(--wk-muted-2); font-size: .78rem; }
+.worker-detail-page .wk-link { color: var(--wk-info); font-weight: 600; text-decoration: none; }
+.worker-detail-page .wk-link:hover { text-decoration: underline; }
+
 @media (max-width: 1080px) {
-    .worker-detail-page .worker-ledger-overview,
-    .worker-detail-page .worker-ledger-formula,
-    .worker-detail-page .worker-ledger-help {
-        grid-template-columns: 1fr;
-    }
+    .worker-detail-page .wk-summary, .worker-detail-page .wk-pay-grid, .worker-detail-page .wk-ledger-grid { grid-template-columns: 1fr; }
+    .worker-detail-page .wk-meta-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 640px) {
+    .worker-detail-page .wk-factors, .worker-detail-page .wk-meta-grid { grid-template-columns: 1fr; }
+    .worker-detail-page .wk-revert { grid-template-columns: 1fr; }
 }
 </style>
 
-<div class="worker-detail-page">
-    <section class="worker-hero">
-        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-            <div>
-                <div class="worker-kicker">Personal / Trabajador</div>
-                <h1 class="worker-title"><?= trab_view_safe($trabajador['nombre_completo'] ?? null) ?></h1>
-                <p class="worker-subtitle">
-                    Ficha laboral del hotel actual. El ledger mantiene conceptos, anticipos, prestamos y asistencias; el pago real con Caja se registra solo desde el panel controlado.
+<div class="worker-detail-page p-4 sm:p-6">
+    <div class="wk-shell">
+
+        <!-- Encabezado -->
+        <section class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div class="wk-title-lockup">
+                <div class="wk-avatar"><?= trab_view_inicial($trabajador['nombre_completo'] ?? '') ?></div>
+                <div>
+                    <p class="wk-kicker">Personal del hotel</p>
+                    <h1 class="wk-title"><?= trab_view_safe($trabajador['nombre_completo'] ?? null) ?></h1>
+                    <div class="wk-chips">
+                        <span class="wk-badge <?= $estadoClass ?>"><i class="fas <?= $estadoIcon ?>"></i> <?= $estadoLabel ?></span>
+                        <span class="wk-badge is-soft"><i class="fas fa-briefcase"></i> <?= trab_view_safe($trabajador['rol_laboral'] ?? null, 'Sin rol') ?></span>
+                        <?php if (!empty($trabajador['periodicidad_pago'])): ?>
+                            <span class="wk-badge is-soft"><i class="fas fa-calendar-day"></i> Pago <?= trab_view_safe($trabajador['periodicidad_pago']) ?></span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Acciones -->
+        <section class="wk-toolbar">
+            <a class="wk-btn" href="<?= back_url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver</a>
+            <a class="wk-btn" href="<?= url('trabajadores/' . $trabajadorId . '/editar') ?>"><i class="fas fa-pen"></i> Editar datos</a>
+            <a class="wk-btn" href="<?= url('trabajadores/pagos-caja/simulador?trabajador_id=' . $trabajadorId) ?>"><i class="fas fa-cash-register"></i> Simulador de pagos</a>
+            <?php if ($estadoTrabajador === 'baja'): ?>
+                <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/reactivar') ?>">
+                    <?= csrf_field() ?>
+                    <button class="wk-btn wk-btn-on" type="submit"><i class="fas fa-rotate-left"></i> Reactivar</button>
+                </form>
+            <?php else: ?>
+                <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/baja-logica') ?>" data-worker-confirm="1" data-confirm-label="Confirmar baja" data-confirm-message="La baja conserva el registro del trabajador; podras reactivarlo despues.">
+                    <?= csrf_field() ?>
+                    <button class="wk-btn wk-btn-off" type="submit"><i class="fas fa-user-slash"></i> Dar de baja</button>
+                </form>
+            <?php endif; ?>
+        </section>
+
+        <!-- Resumen de cuenta -->
+        <section class="wk-summary">
+            <div class="wk-balance <?= $pagoCajaDisponibleClase ?>">
+                <div class="wk-balance-label">Disponible para pagar ahora</div>
+                <div class="wk-balance-value"><?= trab_view_money($pagoCajaSaldoDisponible) ?></div>
+                <p class="wk-balance-caption">
+                    Es lo que se le puede pagar hoy desde Caja, despu&eacute;s de restar lo que ya se le pag&oacute;.<br>
+                    Bruto del trabajo: <strong><?= trab_view_money($pagoCajaSaldoBase) ?></strong> &middot; Ya pagado en Caja: <strong><?= trab_view_money($pagoCajaPagosAplicados) ?></strong>
                 </p>
             </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 min-w-[340px]">
-                <div class="worker-stat">
-                    <div class="text-xs opacity-75">Conceptos</div>
-                    <div class="text-2xl font-black"><?= (int)($resumenLedger['pagos_count'] ?? 0) ?></div>
-                </div>
-                <div class="worker-stat">
-                    <div class="text-xs opacity-75">Anticipos</div>
-                    <div class="text-2xl font-black"><?= (int)($resumenLedger['anticipos_count'] ?? 0) ?></div>
-                </div>
-                <div class="worker-stat">
-                    <div class="text-xs opacity-75">Prestamos</div>
-                    <div class="text-2xl font-black"><?= (int)($resumenLedger['prestamos_count'] ?? 0) ?></div>
-                </div>
-                <div class="worker-stat">
-                    <div class="text-xs opacity-75">Docs</div>
-                    <div class="text-2xl font-black"><?= (int)($resumenLedger['documentos_count'] ?? 0) ?></div>
+            <div class="wk-factors">
+                <div class="wk-factor is-plus"><small>Le suma (a favor)</small><strong><?= trab_view_money($ledgerConceptosFavor) ?></strong></div>
+                <div class="wk-factor is-minus"><small>Le resta (descuentos)</small><strong><?= trab_view_money($ledgerTotalDescuentos) ?></strong></div>
+                <div class="wk-factor"><small>Ya pagado en Caja</small><strong><?= trab_view_money($pagoCajaPagosAplicados) ?></strong></div>
+                <div class="wk-factor is-gold"><small>Disponible</small><strong><?= trab_view_money($pagoCajaSaldoDisponible) ?></strong></div>
+            </div>
+        </section>
+
+        <!-- Datos del trabajador -->
+        <section class="wk-panel">
+            <div class="wk-panel-head">
+                <div class="wk-sec-head">
+                    <span class="wk-sec-icon is-navy"><i class="fas fa-id-card"></i></span>
+                    <h2 class="wk-panel-title">Datos del trabajador</h2>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <section class="p-6">
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div class="flex flex-wrap gap-2">
-                <a class="worker-btn" href="<?= url('trabajadores') ?>">
-                    <i class="fas fa-arrow-left"></i>
-                    Volver
-                </a>
-                <a class="worker-btn" href="<?= url('trabajadores/' . $trabajadorId . '/editar') ?>">
-                    <i class="fas fa-pen"></i>
-                    Editar
-                </a>
-                <a class="worker-btn" href="<?= url('trabajadores/pagos-caja/simulador?trabajador_id=' . $trabajadorId) ?>">
-                    <i class="fas fa-cash-register"></i>
-                    Simulador Caja
-                </a>
-                <?php if (($trabajador['estado'] ?? '') === 'baja'): ?>
-                    <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/reactivar') ?>">
-                        <?= csrf_field() ?>
-                        <button class="worker-btn" type="submit">
-                            <i class="fas fa-rotate-left"></i>
-                            Reactivar
-                        </button>
-                    </form>
-                <?php else: ?>
-                    <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/baja-logica') ?>" onsubmit="return confirm('Confirmar baja logica del trabajador. No se borrara el registro.');">
-                        <?= csrf_field() ?>
-                        <button class="worker-btn" type="submit">
-                            <i class="fas fa-user-slash"></i>
-                            Baja logica
-                        </button>
-                    </form>
-                <?php endif; ?>
+            <div class="wk-panel-pad">
+            <div class="wk-meta-grid">
+                <div><div class="wk-meta-label">Nombre completo</div><div class="wk-meta-value"><?= trab_view_safe($trabajador['nombre_completo'] ?? null) ?></div></div>
+                <div><div class="wk-meta-label">Identificaci&oacute;n</div><div class="wk-meta-value"><?= trab_view_safe($trabajador['identificacion'] ?? null) ?></div></div>
+                <div><div class="wk-meta-label">Rol o puesto</div><div class="wk-meta-value"><?= trab_view_safe($trabajador['rol_laboral'] ?? null) ?></div></div>
+                <div><div class="wk-meta-label">Usuario del sistema</div><div class="wk-meta-value is-soft"><?= trab_view_safe($trabajador['usuario_nombre'] ?? $trabajador['usuario_login'] ?? null, 'Sin usuario') ?></div></div>
+                <div><div class="wk-meta-label">Tel&eacute;fono</div><div class="wk-meta-value"><?= trab_view_safe($trabajador['telefono'] ?? null) ?></div></div>
+                <div><div class="wk-meta-label">Correo</div><div class="wk-meta-value is-soft"><?= trab_view_safe($trabajador['email'] ?? null) ?></div></div>
+                <div><div class="wk-meta-label">Fecha de alta</div><div class="wk-meta-value"><?= trab_view_safe($trabajador['fecha_alta'] ?? null) ?></div></div>
+                <div><div class="wk-meta-label">Fecha de baja</div><div class="wk-meta-value"><?= trab_view_safe($trabajador['fecha_baja'] ?? null) ?></div></div>
+                <div><div class="wk-meta-label">Salario base</div><div class="wk-meta-value"><?= array_key_exists('salario_base', $trabajador) && $trabajador['salario_base'] !== null ? trab_view_money($trabajador['salario_base']) : '-' ?></div></div>
+                <div><div class="wk-meta-label">Cada cu&aacute;ndo se le paga</div><div class="wk-meta-value"><?= trab_view_safe($trabajador['periodicidad_pago'] ?? null) ?></div></div>
+                <div style="grid-column: span 2"><div class="wk-meta-label">Notas</div><div class="wk-meta-value is-notes"><?= trab_view_safe($trabajador['notas'] ?? null, 'Sin notas') ?></div></div>
             </div>
-            <span class="worker-badge">
-                <i class="fas fa-circle-dot"></i>
-                <?= trab_view_safe($trabajador['estado'] ?? null) ?>
-            </span>
-        </div>
-
-        <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(360px,420px)] gap-4 mb-4">
-            <div class="worker-panel p-5">
-                <h2 class="font-black text-lg mb-4">Datos laborales</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <div class="worker-meta-label">Nombre completo</div>
-                        <div class="font-black mt-1"><?= trab_view_safe($trabajador['nombre_completo'] ?? null) ?></div>
-                    </div>
-                    <div>
-                        <div class="worker-meta-label">Identificacion</div>
-                        <div class="font-black mt-1"><?= trab_view_safe($trabajador['identificacion'] ?? null) ?></div>
-                    </div>
-                    <div>
-                        <div class="worker-meta-label">Rol laboral</div>
-                        <div class="font-black mt-1"><?= trab_view_safe($trabajador['rol_laboral'] ?? null) ?></div>
-                    </div>
-                    <div>
-                        <div class="worker-meta-label">Usuario vinculado</div>
-                        <div class="font-black mt-1">
-                            <?= trab_view_safe($trabajador['usuario_nombre'] ?? $trabajador['usuario_login'] ?? null, 'Sin usuario') ?>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="worker-meta-label">Telefono</div>
-                        <div class="font-black mt-1"><?= trab_view_safe($trabajador['telefono'] ?? null) ?></div>
-                    </div>
-                    <div>
-                        <div class="worker-meta-label">Correo</div>
-                        <div class="font-black mt-1"><?= trab_view_safe($trabajador['email'] ?? null) ?></div>
-                    </div>
-                    <div>
-                        <div class="worker-meta-label">Fecha alta</div>
-                        <div class="font-black mt-1"><?= trab_view_safe($trabajador['fecha_alta'] ?? null) ?></div>
-                    </div>
-                    <div>
-                        <div class="worker-meta-label">Fecha baja</div>
-                        <div class="font-black mt-1"><?= trab_view_safe($trabajador['fecha_baja'] ?? null) ?></div>
-                    </div>
-                    <div>
-                        <div class="worker-meta-label">Salario base</div>
-                        <div class="font-black mt-1"><?= array_key_exists('salario_base', $trabajador) && $trabajador['salario_base'] !== null ? trab_view_money($trabajador['salario_base']) : '-' ?></div>
-                    </div>
-                    <div>
-                        <div class="worker-meta-label">Periodicidad</div>
-                        <div class="font-black mt-1"><?= trab_view_safe($trabajador['periodicidad_pago'] ?? null) ?></div>
-                    </div>
-                    <div class="md:col-span-2">
-                        <div class="worker-meta-label">Notas</div>
-                        <div class="mt-1 text-slate-700 whitespace-pre-line"><?= trab_view_safe($trabajador['notas'] ?? null, 'Sin notas') ?></div>
-                    </div>
-                </div>
             </div>
+        </section>
 
-            <div class="worker-panel p-5">
-                <div class="flex items-start justify-between gap-3 mb-4">
+        <!-- Pagar al trabajador con Caja -->
+        <section class="wk-panel">
+            <div class="wk-panel-head">
+                <div class="wk-sec-head">
+                    <span class="wk-sec-icon is-green"><i class="fas fa-money-bill-wave"></i></span>
                     <div>
-                        <h2 class="font-black text-lg">Resumen laboral</h2>
-                        <p class="text-sm text-slate-500 mt-1">Lectura informativa del historial laboral.</p>
-                    </div>
-                    <span class="worker-badge">
-                        <i class="fas fa-scale-balanced"></i>
-                        <?= trab_view_safe($pagoCajaDisponibleEstado) ?>
-                    </span>
-                </div>
-                <div class="worker-ledger-balance <?= $pagoCajaDisponibleClase ?>">
-                    <div class="worker-meta-label">Saldo disponible para pago</div>
-                    <div class="worker-ledger-balance-value"><?= trab_view_money($pagoCajaSaldoDisponible) ?></div>
-                    <p class="worker-ledger-balance-caption">
-                        Bruto laboral: <?= trab_view_money($pagoCajaSaldoBase) ?>. Pagos Caja aplicados: <?= trab_view_money($pagoCajaPagosAplicados) ?>.
-                    </p>
-                </div>
-                <div class="grid grid-cols-2 gap-3 mt-3 text-sm">
-                    <div class="worker-ledger-factor is-plus">
-                        <small>A favor</small>
-                        <strong><?= trab_view_money($ledgerConceptosFavor) ?></strong>
-                    </div>
-                    <div class="worker-ledger-factor is-minus">
-                        <small>Por descontar</small>
-                        <strong><?= trab_view_money($ledgerTotalDescuentos) ?></strong>
-                    </div>
-                    <div class="worker-ledger-factor is-minus">
-                        <small>Pagos Caja</small>
-                        <strong><?= trab_view_money($pagoCajaPagosAplicados) ?></strong>
-                    </div>
-                    <div class="worker-ledger-factor <?= $pagoCajaDisponibleClase ?>">
-                        <small>Disponible</small>
-                        <strong><?= trab_view_money($pagoCajaSaldoDisponible) ?></strong>
+                        <h2 class="wk-panel-title">Pagar al trabajador (desde Caja)</h2>
+                        <p class="wk-panel-sub">Esto saca el dinero de la Caja abierta y lo registra como pago a este trabajador. Solo se puede si hay un corte de Caja abierto y queda saldo disponible.</p>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div class="worker-panel p-5 mb-4">
-            <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
-                <div>
-                    <h2 class="font-black text-lg">Pago laboral con Caja</h2>
-                    <p class="text-sm text-slate-500 mt-1">Registra un egreso en Caja y un pago laboral trazable solo cuando el trabajador sea elegible.</p>
-                </div>
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap gap-2 items-center">
                     <?php if (!empty($pagoCaja['corte'])): ?>
-                        <span class="worker-badge">
-                            <i class="fas fa-cash-register"></i>
-                            Corte #<?= (int)$pagoCaja['corte']['id'] ?>
-                        </span>
+                        <span class="wk-badge is-ok"><i class="fas fa-cash-register"></i> Corte #<?= (int)$pagoCaja['corte']['id'] ?> abierto</span>
+                    <?php else: ?>
+                        <span class="wk-badge is-warn"><i class="fas fa-ban"></i> Sin corte abierto</span>
                     <?php endif; ?>
-                    <span class="worker-badge">
-                        <i class="fas fa-shield-halved"></i>
-                        Token un solo uso
-                    </span>
+                    <?php if (!empty($pagoCaja['elegible'])): ?>
+                        <span class="wk-badge is-ok"><i class="fas fa-circle-check"></i> Elegible</span>
+                    <?php else: ?>
+                        <span class="wk-badge is-warn"><i class="fas fa-lock"></i> Bloqueado</span>
+                    <?php endif; ?>
                 </div>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4 text-sm">
-                <div class="worker-ledger-factor is-plus">
-                    <small>Saldo base</small>
-                    <strong><?= trab_view_money($pagoCajaSaldoBase) ?></strong>
-                </div>
-                <div class="worker-ledger-factor is-minus">
-                    <small>Pagos Caja</small>
-                    <strong><?= trab_view_money($pagoCajaPagosAplicados) ?></strong>
-                </div>
-                <div class="worker-ledger-factor <?= $pagoCajaMontoMaximo > 0 ? 'is-plus' : 'is-minus' ?>">
-                    <small>Maximo elegible</small>
-                    <strong><?= trab_view_money($pagoCajaMontoMaximo) ?></strong>
-                </div>
-                <div class="worker-ledger-factor">
-                    <small>Estado</small>
-                    <strong><?= !empty($pagoCaja['elegible']) ? 'Elegible' : 'Bloqueado' ?></strong>
-                </div>
-            </div>
+            <div class="wk-panel-pad">
 
             <?php if (!empty($pagoCaja['elegible']) && !empty($pagoCajaToken)): ?>
-                <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/registrar-pago-caja') ?>" class="grid grid-cols-1 lg:grid-cols-4 gap-3">
+                <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/registrar-pago-caja') ?>" class="wk-pay-grid">
                     <?= csrf_field() ?>
                     <input type="hidden" name="pago_token" value="<?= trab_view_safe($pagoCajaToken, '') ?>">
                     <div>
-                        <label class="worker-meta-label" for="pago_caja_monto">Monto</label>
-                        <input id="pago_caja_monto" class="worker-input mt-1" type="number" min="0.01" max="<?= trab_view_safe($pagoCaja['monto_maximo'] ?? '0.00') ?>" step="0.01" name="monto" value="<?= trab_view_safe($pagoCaja['monto_maximo'] ?? '0.00') ?>" required>
+                        <label class="wk-label" for="pago_caja_monto">Monto a pagar</label>
+                        <input id="pago_caja_monto" class="wk-input" type="number" min="0.01" max="<?= trab_view_safe($pagoCaja['monto_maximo'] ?? '0.00') ?>" step="0.01" name="monto" value="<?= trab_view_safe($pagoCaja['monto_maximo'] ?? '0.00') ?>" required>
                     </div>
                     <div>
-                        <label class="worker-meta-label" for="pago_caja_metodo">Metodo</label>
-                        <select id="pago_caja_metodo" class="worker-input mt-1" name="metodo_pago" required>
+                        <label class="wk-label" for="pago_caja_metodo">M&eacute;todo</label>
+                        <select id="pago_caja_metodo" class="wk-input" name="metodo_pago" required>
                             <?php foreach (($pagoCaja['metodos_pago'] ?? []) as $metodo => $label): ?>
                                 <option value="<?= trab_view_safe($metodo) ?>"><?= trab_view_safe($label) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div>
-                        <label class="worker-meta-label" for="pago_caja_referencia">Referencia</label>
-                        <input id="pago_caja_referencia" class="worker-input mt-1" type="text" maxlength="100" name="referencia" value="<?= trab_view_safe($pagoCajaReferencia, '') ?>" required>
+                        <label class="wk-label" for="pago_caja_referencia">Referencia</label>
+                        <input id="pago_caja_referencia" class="wk-input" type="text" maxlength="100" name="referencia" value="<?= trab_view_safe($pagoCajaReferencia, '') ?>" required>
                     </div>
                     <div>
-                        <label class="worker-meta-label" for="pago_caja_concepto">Concepto</label>
-                        <input id="pago_caja_concepto" class="worker-input mt-1" type="text" maxlength="160" name="concepto" value="<?= trab_view_safe($pagoCajaConcepto, '') ?>">
+                        <label class="wk-label" for="pago_caja_concepto">Concepto</label>
+                        <input id="pago_caja_concepto" class="wk-input" type="text" maxlength="160" name="concepto" value="<?= trab_view_safe($pagoCajaConcepto, '') ?>">
                     </div>
                     <div>
-                        <label class="worker-meta-label" for="pago_caja_periodo_inicio">Periodo inicio</label>
-                        <input id="pago_caja_periodo_inicio" class="worker-input mt-1" type="date" name="periodo_inicio">
+                        <label class="wk-label" for="pago_caja_periodo_inicio">Periodo: desde</label>
+                        <input id="pago_caja_periodo_inicio" class="wk-input" type="date" name="periodo_inicio">
                     </div>
                     <div>
-                        <label class="worker-meta-label" for="pago_caja_periodo_fin">Periodo fin</label>
-                        <input id="pago_caja_periodo_fin" class="worker-input mt-1" type="date" name="periodo_fin">
+                        <label class="wk-label" for="pago_caja_periodo_fin">Periodo: hasta</label>
+                        <input id="pago_caja_periodo_fin" class="wk-input" type="date" name="periodo_fin">
                     </div>
-                    <div class="lg:col-span-2">
-                        <label class="worker-meta-label" for="pago_caja_notas">Notas</label>
-                        <input id="pago_caja_notas" class="worker-input mt-1" type="text" maxlength="1000" name="notas" placeholder="Opcional">
+                    <div style="grid-column: span 2">
+                        <label class="wk-label" for="pago_caja_notas">Notas</label>
+                        <input id="pago_caja_notas" class="wk-input" type="text" maxlength="1000" name="notas" placeholder="Opcional">
                     </div>
-                    <div class="lg:col-span-4 flex flex-wrap items-center justify-between gap-3 pt-1">
-                        <p class="text-sm text-slate-500">El envio crea un egreso en Caja y consume el token de pago.</p>
-                        <button class="worker-btn" style="background: var(--trab-brand); color: #fff; border-color: transparent;" type="submit">
-                            <i class="fas fa-cash-register"></i>
-                            Registrar pago laboral
-                        </button>
+                    <div style="grid-column: 1 / -1" class="flex flex-wrap items-center justify-between gap-3">
+                        <p class="wk-hint">M&aacute;ximo a pagar hoy: <strong style="color:var(--wk-heading)"><?= trab_view_money($pagoCajaMontoMaximo) ?></strong>. Al guardar se registra el egreso en Caja.</p>
+                        <button class="wk-btn wk-btn-gold" type="submit"><i class="fas fa-money-bill-wave"></i> Registrar pago</button>
                     </div>
                 </form>
             <?php else: ?>
-                <div class="worker-ledger-note">
+                <div class="wk-note is-warn">
+                    <strong style="color:inherit">Por ahora no se puede pagar a este trabajador desde Caja.</strong><br>
                     <?= trab_view_safe($pagoCaja['motivo_bloqueo'] ?? null, 'Este trabajador no es elegible para pago laboral con Caja.') ?>
-                    <a class="font-black underline ml-1" href="<?= url('trabajadores/pagos-caja/simulador?trabajador_id=' . $trabajadorId) ?>">Revisar simulador</a>
+                    <a class="wk-link" style="margin-left:4px" href="<?= url('trabajadores/pagos-caja/simulador?trabajador_id=' . $trabajadorId) ?>">Revisar simulador</a>
                 </div>
             <?php endif; ?>
-        </div>
+            </div>
+        </section>
 
-        <div class="worker-panel p-5 mb-4">
-            <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
-                <div>
-                    <h2 class="font-black text-lg">Pagos laborales con Caja</h2>
-                    <p class="text-sm text-slate-500 mt-1">Historial read-only de egresos laborales vinculados a Caja, corte y movimiento.</p>
+        <!-- Historial de pagos en Caja -->
+        <section class="wk-panel">
+            <div class="wk-panel-head">
+                <div class="wk-sec-head">
+                    <span class="wk-sec-icon is-gold"><i class="fas fa-receipt"></i></span>
+                    <div>
+                        <h2 class="wk-panel-title">Pagos hechos en Caja</h2>
+                        <p class="wk-panel-sub">Cada pago que se le ha hecho desde Caja, con su corte y referencia. Si te equivocaste, puedes revertir uno.</p>
+                    </div>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <a class="worker-badge" href="<?= url('trabajadores/pagos-caja/reporte?trabajador_id=' . $trabajadorId) ?>">
-                        <i class="fas fa-file-invoice-dollar"></i>
-                        Reporte Caja
-                    </a>
-                    <span class="worker-badge">
-                        <i class="fas fa-list-check"></i>
-                        <?= count($pagosCajaLaborales) ?> registros
-                    </span>
-                    <span class="worker-badge">
-                        <i class="fas fa-cash-register"></i>
-                        Pagado <?= trab_view_money($pagosCajaLaboralesTotal) ?>
-                    </span>
+                    <a class="wk-badge is-soft" href="<?= url('trabajadores/pagos-caja/reporte?trabajador_id=' . $trabajadorId) ?>" style="text-decoration:none"><i class="fas fa-file-invoice-dollar"></i> Reporte</a>
+                    <span class="wk-badge is-ok"><i class="fas fa-circle-check"></i> Pagado <?= trab_view_money($pagosCajaLaboralesTotal) ?></span>
                 </div>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 text-sm">
-                <div class="worker-ledger-factor is-plus">
-                    <small>Pagados</small>
-                    <strong><?= (int)$pagosCajaLaboralesPagados ?></strong>
-                </div>
-                <div class="worker-ledger-factor is-minus">
-                    <small>Revertidos</small>
-                    <strong><?= (int)$pagosCajaLaboralesRevertidos ?></strong>
-                </div>
-                <div class="worker-ledger-factor">
-                    <small>Saldo disponible actual</small>
-                    <strong><?= trab_view_money($pagoCajaSaldoDisponible) ?></strong>
-                </div>
-            </div>
-
-            <?php if (empty($pagosCajaLaborales)): ?>
-                <div class="worker-ledger-empty">
-                    <i class="fas fa-receipt"></i>
-                    <strong>Sin pagos laborales con Caja</strong>
-                    <span>Cuando registres un pago desde el panel controlado, se mostrara aqui con su corte, movimiento y referencia.</span>
-                </div>
-            <?php else: ?>
-                <div class="overflow-x-auto">
-                    <table class="worker-table w-full text-sm">
-                        <thead>
-                            <tr>
-                                <th class="text-left">Fecha</th>
-                                <th class="text-left">Pago</th>
-                                <th class="text-left">Caja / corte</th>
-                                <th class="text-left">Periodo</th>
-                                <th class="text-left">Referencia</th>
-                                <th class="text-left">Estado</th>
-                                <th class="text-left">Reversion</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($pagosCajaLaborales as $pagoLaboral): ?>
-                                <?php
-                                    $pagoLaboralId = (int)($pagoLaboral['id'] ?? 0);
-                                    $estadoPago = (string)($pagoLaboral['estado'] ?? '');
-                                    $estadoClase = $estadoPago === 'pagado' ? 'is-plus' : 'is-minus';
-                                    $reversionPago = is_array($reversionesPagoCaja[$pagoLaboralId] ?? null) ? $reversionesPagoCaja[$pagoLaboralId] : [];
-                                    $reversionToken = (string)($reversionPagoCajaTokens[$pagoLaboralId] ?? '');
-                                    $puedeRevertirPago = $estadoPago === 'pagado' && !empty($reversionPago['elegible']) && $reversionToken !== '';
-                                    $periodoInicio = trab_view_date($pagoLaboral['periodo_inicio'] ?? null);
-                                    $periodoFin = trab_view_date($pagoLaboral['periodo_fin'] ?? null);
-                                    $periodoTexto = ($periodoInicio === '-' && $periodoFin === '-')
-                                        ? 'Sin periodo'
-                                        : $periodoInicio . ' a ' . $periodoFin;
-                                    $creadoPor = trim((string)($pagoLaboral['creado_por_nombre'] ?? ''));
-                                    if ($creadoPor === '') {
-                                        $creadoPor = trim((string)($pagoLaboral['creado_por_login'] ?? ''));
-                                    }
-                                    $actualizadoPor = trim((string)($pagoLaboral['actualizado_por_nombre'] ?? ''));
-                                    if ($actualizadoPor === '') {
-                                        $actualizadoPor = trim((string)($pagoLaboral['actualizado_por_login'] ?? ''));
-                                    }
-                                ?>
-                                <tr>
-                                    <td>
-                                        <div class="font-black text-slate-800"><?= trab_view_datetime($pagoLaboral['fecha_pago'] ?? null) ?></div>
-                                        <div class="text-xs text-slate-500">Registro #<?= $pagoLaboralId ?></div>
-                                    </td>
-                                    <td>
-                                        <span class="worker-ledger-amount <?= $estadoClase ?>">
-                                            <?= trab_view_money($pagoLaboral['monto'] ?? 0) ?>
-                                        </span>
-                                        <div class="text-xs text-slate-500 mt-1">
-                                            <?= trab_view_safe($pagoLaboral['metodo_pago'] ?? null) ?> · Mov. Caja #<?= (int)($pagoLaboral['movimiento_caja_id'] ?? 0) ?>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="font-black text-slate-800"><?= trab_view_safe($pagoLaboral['caja_nombre'] ?? null) ?></div>
-                                        <div class="text-xs text-slate-500">
-                                            <a class="font-black underline" href="<?= url('caja/corte/' . (int)($pagoLaboral['corte_id'] ?? 0)) ?>">
-                                                Corte #<?= (int)($pagoLaboral['corte_id'] ?? 0) ?>
-                                            </a>
-                                            · <?= trab_view_safe($pagoLaboral['corte_estado'] ?? null) ?>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="font-semibold text-slate-700"><?= trab_view_safe($periodoTexto) ?></div>
-                                        <div class="text-xs text-slate-500"><?= trab_view_safe($pagoLaboral['concepto'] ?? null, 'Sin concepto') ?></div>
-                                    </td>
-                                    <td>
-                                        <div class="font-black text-slate-800"><?= trab_view_safe($pagoLaboral['referencia'] ?? null) ?></div>
-                                        <div class="text-xs text-slate-500"><?= trab_view_safe($pagoLaboral['movimiento_categoria'] ?? 'Pago laboral') ?></div>
-                                    </td>
-                                    <td>
-                                        <span class="worker-badge">
+            <div class="wk-panel-pad">
+                <?php if (empty($pagosCajaLaborales)): ?>
+                    <div class="wk-empty-box">
+                        <i class="fas fa-receipt"></i>
+                        <strong>Sin pagos en Caja todav&iacute;a</strong>
+                        <span>Cuando registres un pago con el panel de arriba, aparecer&aacute; aqu&iacute; con su corte y referencia.</span>
+                    </div>
+                <?php else: ?>
+                    <div class="wk-pay-list">
+                        <?php foreach ($pagosCajaLaborales as $pagoLaboral): ?>
+                            <?php
+                                $pagoLaboralId = (int)($pagoLaboral['id'] ?? 0);
+                                $estadoPago = (string)($pagoLaboral['estado'] ?? '');
+                                $reversionPago = is_array($reversionesPagoCaja[$pagoLaboralId] ?? null) ? $reversionesPagoCaja[$pagoLaboralId] : [];
+                                $reversionToken = (string)($reversionPagoCajaTokens[$pagoLaboralId] ?? '');
+                                $puedeRevertirPago = $estadoPago === 'pagado' && !empty($reversionPago['elegible']) && $reversionToken !== '';
+                                $periodoInicio = trab_view_date($pagoLaboral['periodo_inicio'] ?? null);
+                                $periodoFin = trab_view_date($pagoLaboral['periodo_fin'] ?? null);
+                                $periodoTexto = ($periodoInicio === '-' && $periodoFin === '-') ? 'Sin periodo' : $periodoInicio . ' a ' . $periodoFin;
+                                $creadoPor = trim((string)($pagoLaboral['creado_por_nombre'] ?? '')); if ($creadoPor === '') { $creadoPor = trim((string)($pagoLaboral['creado_por_login'] ?? '')); }
+                                $actualizadoPor = trim((string)($pagoLaboral['actualizado_por_nombre'] ?? '')); if ($actualizadoPor === '') { $actualizadoPor = trim((string)($pagoLaboral['actualizado_por_login'] ?? '')); }
+                            ?>
+                            <article class="wk-pay-card">
+                                <div class="wk-pay-top">
+                                    <div class="wk-pay-amount"><?= trab_view_money($pagoLaboral['monto'] ?? 0) ?></div>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="wk-badge <?= $estadoPago === 'pagado' ? 'is-ok' : 'is-warn' ?>">
                                             <i class="fas <?= $estadoPago === 'pagado' ? 'fa-circle-check' : 'fa-rotate-left' ?>"></i>
                                             <?= trab_view_safe($estadoPago) ?>
                                         </span>
-                                        <div class="text-xs text-slate-500 mt-2">
-                                            <?= $creadoPor !== '' ? 'Por ' . trab_view_safe($creadoPor) : 'Usuario no disponible' ?>
-                                        </div>
-                                        <?php if ($estadoPago === 'revertido' && $actualizadoPor !== ''): ?>
-                                            <div class="text-xs text-slate-500 mt-1">
-                                                Revertido por <?= trab_view_safe($actualizadoPor) ?>
-                                            </div>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <?php if ($puedeRevertirPago): ?>
-                                            <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/pagos-caja/' . $pagoLaboralId . '/revertir') ?>" class="min-w-[260px] space-y-2">
-                                                <?= csrf_field() ?>
-                                                <input type="hidden" name="reversion_token" value="<?= trab_view_safe($reversionToken, '') ?>">
-                                                <label class="worker-meta-label" for="reversion_pago_caja_motivo_<?= $pagoLaboralId ?>">Motivo</label>
-                                                <input id="reversion_pago_caja_motivo_<?= $pagoLaboralId ?>" class="worker-input" type="text" maxlength="1000" name="motivo" placeholder="Motivo obligatorio" required>
-                                                <button class="worker-btn" type="submit">
-                                                    <i class="fas fa-rotate-left"></i>
-                                                    Revertir pago
-                                                </button>
-                                            </form>
-                                            <div class="text-xs text-slate-500 mt-2">
-                                                Crea ingreso en Caja por <?= trab_view_money($pagoLaboral['monto'] ?? 0) ?>. Ref. <?= trab_view_safe($reversionPago['referencia_reversion'] ?? null) ?>
-                                            </div>
-                                        <?php elseif ($estadoPago === 'pagado'): ?>
-                                            <div class="text-xs text-slate-500 max-w-sm">
-                                                Reversion bloqueada: <?= trab_view_safe($reversionPago['motivo_bloqueo'] ?? null, 'No evaluada para este pago.') ?>
-                                            </div>
-                                        <?php else: ?>
-                                            <span class="worker-badge">
-                                                <i class="fas fa-lock"></i>
-                                                Sin accion
-                                            </span>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
+                                        <span class="wk-sub"><?= trab_view_datetime($pagoLaboral['fecha_pago'] ?? null) ?></span>
+                                    </div>
+                                </div>
+                                <div class="wk-pay-meta">
+                                    <div><div class="wk-meta-label">M&eacute;todo</div><div class="wk-strong" style="text-transform:capitalize"><?= trab_view_safe($pagoLaboral['metodo_pago'] ?? null) ?></div></div>
+                                    <div><div class="wk-meta-label">Caja / corte</div><div class="wk-strong"><?= trab_view_safe($pagoLaboral['caja_nombre'] ?? null) ?> <a class="wk-link" href="<?= url('caja/corte/' . (int)($pagoLaboral['corte_id'] ?? 0)) ?>">#<?= (int)($pagoLaboral['corte_id'] ?? 0) ?></a></div></div>
+                                    <div><div class="wk-meta-label">Periodo</div><div class="wk-strong"><?= trab_view_safe($periodoTexto) ?></div></div>
+                                    <div><div class="wk-meta-label">Referencia</div><div class="wk-strong"><?= trab_view_safe($pagoLaboral['referencia'] ?? null) ?></div></div>
+                                    <div><div class="wk-meta-label">Registr&oacute;</div><div class="wk-sub" style="margin:0"><?= $creadoPor !== '' ? trab_view_safe($creadoPor) : 'Usuario no disponible' ?></div></div>
+                                    <?php if (trim((string)($pagoLaboral['concepto'] ?? '')) !== ''): ?>
+                                        <div><div class="wk-meta-label">Concepto</div><div class="wk-sub" style="margin:0"><?= trab_view_safe($pagoLaboral['concepto']) ?></div></div>
+                                    <?php endif; ?>
+                                </div>
                                 <?php if (trim((string)($pagoLaboral['notas'] ?? '')) !== ''): ?>
-                                    <tr>
-                                        <td colspan="7" class="text-xs text-slate-500">
-                                            <strong>Notas:</strong> <?= trab_view_safe($pagoLaboral['notas'] ?? null) ?>
-                                        </td>
-                                    </tr>
+                                    <p class="wk-sub" style="margin-top:8px"><strong style="color:var(--wk-heading)">Notas:</strong> <?= trab_view_safe($pagoLaboral['notas']) ?></p>
                                 <?php endif; ?>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
-        </div>
+
+                                <?php if ($puedeRevertirPago): ?>
+                                    <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/pagos-caja/' . $pagoLaboralId . '/revertir') ?>" class="wk-revert">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="reversion_token" value="<?= trab_view_safe($reversionToken, '') ?>">
+                                        <div>
+                                            <label class="wk-label" for="reversion_pago_caja_motivo_<?= $pagoLaboralId ?>">Motivo de la reversi&oacute;n</label>
+                                            <input id="reversion_pago_caja_motivo_<?= $pagoLaboralId ?>" class="wk-input" type="text" maxlength="1000" name="motivo" placeholder="Explica por qu&eacute; reviertes este pago" required>
+                                        </div>
+                                        <button class="wk-btn wk-btn-off" type="submit"><i class="fas fa-rotate-left"></i> Revertir pago</button>
+                                    </form>
+                                    <p class="wk-sub" style="margin-top:8px">Devuelve <?= trab_view_money($pagoLaboral['monto'] ?? 0) ?> a la Caja. Ref. <?= trab_view_safe($reversionPago['referencia_reversion'] ?? null) ?></p>
+                                <?php elseif ($estadoPago === 'pagado'): ?>
+                                    <p class="wk-sub" style="margin-top:10px">No se puede revertir: <?= trab_view_safe($reversionPago['motivo_bloqueo'] ?? null, 'No evaluada para este pago.') ?></p>
+                                <?php elseif ($estadoPago === 'revertido' && $actualizadoPor !== ''): ?>
+                                    <p class="wk-sub" style="margin-top:10px">Revertido por <?= trab_view_safe($actualizadoPor) ?>.</p>
+                                <?php endif; ?>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </section>
+
         <?php View::partial('documentos_entidad', [
             'documentosEntidad' => $documentosEntidad ?? [],
             'documentosEntidadContexto' => $documentosEntidadContexto ?? [],
         ]); ?>
 
-        <div class="worker-panel p-5 mb-4">
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <div>
-                    <h2 class="font-black text-lg">Ledger laboral</h2>
-                    <p class="text-sm text-slate-500 mt-1">Historial laboral informativo: lo que suma, lo que descuenta y lo que queda pendiente. No genera Caja.</p>
-                </div>
-                <span class="worker-badge">
-                    <i class="fas fa-lock"></i>
-                    Sin pago real
-                </span>
-            </div>
-
-            <div class="worker-ledger-overview">
-                <section class="worker-ledger-balance <?= $ledgerSaldoClase ?>" aria-label="Saldo informativo del trabajador">
-                    <div class="worker-meta-label">Saldo informativo bruto</div>
-                    <div class="worker-ledger-balance-value"><?= trab_view_money($ledgerSaldoInformativo) ?></div>
-                    <p class="worker-ledger-balance-caption">
-                        <?= trab_view_safe($ledgerSaldoEstado) ?>. Disponible para pago despues de Caja: <?= trab_view_money($pagoCajaSaldoDisponible) ?>.
-                    </p>
-                    <?php if (!$ledgerTieneMovimientos): ?>
-                        <div class="worker-ledger-note mt-4">
-                            Este trabajador todavia no tiene movimientos laborales. Cuando registres un concepto, anticipo, prestamo o asistencia, aparecera aqui.
-                        </div>
-                    <?php endif; ?>
-                </section>
-
-                <section class="worker-ledger-equation" aria-label="Formula del saldo laboral">
-                    <div class="worker-ledger-equation-title">
-                        <i class="fas fa-calculator"></i>
-                        Como se lee este saldo bruto
+        <!-- Cuenta del trabajador (ledger) -->
+        <section class="wk-panel">
+            <div class="wk-panel-head">
+                <div class="wk-sec-head">
+                    <span class="wk-sec-icon is-blue"><i class="fas fa-scale-balanced"></i></span>
+                    <div>
+                        <h2 class="wk-panel-title">Cuenta del trabajador</h2>
+                        <p class="wk-panel-sub">Lo que le sumas (bonos, comisiones) y lo que le restas (descuentos, anticipos, pr&eacute;stamos). Es informativo para llevar la cuenta: <strong>no saca dinero de Caja</strong>.</p>
                     </div>
-                    <div class="worker-ledger-formula">
-                        <div class="worker-ledger-factor is-plus">
-                            <small>+ Conceptos a favor</small>
-                            <strong><?= trab_view_signed_money($ledgerConceptosFavor, 'plus') ?></strong>
-                        </div>
-                        <div class="worker-ledger-factor is-minus">
-                            <small>- Conceptos en contra</small>
-                            <strong><?= trab_view_signed_money($ledgerConceptosContra, 'minus') ?></strong>
-                        </div>
-                        <div class="worker-ledger-factor is-minus">
-                            <small>- Anticipos pendientes</small>
-                            <strong><?= trab_view_signed_money($ledgerAnticiposPendientes, 'minus') ?></strong>
-                        </div>
-                        <div class="worker-ledger-factor is-minus">
-                            <small>- Prestamos vigentes</small>
-                            <strong><?= trab_view_signed_money($ledgerPrestamosVigentes, 'minus') ?></strong>
-                        </div>
-                    </div>
-                </section>
+                </div>
+                <span class="wk-badge is-soft"><i class="fas fa-lock"></i> Sin pago real</span>
             </div>
-
-            <div class="worker-ledger-help">
-                <div class="worker-ledger-help-item">
-                    <i class="fas fa-circle-plus"></i>
-                    <strong>Conceptos</strong>
-                    <span>Bonos y comisiones suman; descuentos restan.</span>
-                </div>
-                <div class="worker-ledger-help-item">
-                    <i class="fas fa-hand-holding-dollar"></i>
-                    <strong>Anticipos y prestamos</strong>
-                    <span>Solo muestran saldo pendiente; no son egresos de Caja.</span>
-                </div>
-                <div class="worker-ledger-help-item">
-                    <i class="fas fa-calendar-check"></i>
-                    <strong>Asistencias</strong>
-                    <span>Registro operativo diario; no genera nomina automatica.</span>
-                </div>
-            </div>
+            <div class="wk-panel-pad">
 
             <?php if ($puedeRegistrarConcepto): ?>
-                <div class="worker-ledger-actions">
-                    <details class="worker-ledger-details">
-                        <summary><span><i class="fas fa-plus mr-2"></i>Registrar concepto laboral</span></summary>
-                        <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/conceptos-laborales') ?>" class="p-4">
-                            <?= csrf_field() ?>
-                            <div class="grid grid-cols-1 lg:grid-cols-[160px_150px_150px_1fr] gap-3">
-                                <div>
-                                    <label class="worker-meta-label" for="concepto_tipo">Tipo</label>
-                                    <select id="concepto_tipo" class="worker-input mt-1" name="tipo" required>
-                                        <option value="comision">Comision</option>
-                                        <option value="bono">Bono</option>
-                                        <option value="descuento">Descuento</option>
-                                        <option value="ajuste">Ajuste</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="worker-meta-label" for="concepto_efecto">Efecto</label>
-                                    <select id="concepto_efecto" class="worker-input mt-1" name="efecto">
-                                        <option value="">Automatico</option>
-                                        <option value="a_favor">A favor</option>
-                                        <option value="en_contra">En contra</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="worker-meta-label" for="concepto_monto">Monto</label>
-                                    <input id="concepto_monto" class="worker-input mt-1" type="number" min="0.01" step="0.01" name="monto" required>
-                                </div>
-                                <div>
-                                    <label class="worker-meta-label" for="concepto_texto">Concepto</label>
-                                    <input id="concepto_texto" class="worker-input mt-1" type="text" maxlength="160" name="concepto" required placeholder="Ej. bono por desempeno">
-                                </div>
+                <details class="wk-details" style="margin-bottom:14px">
+                    <summary><span><i class="fas fa-plus" style="margin-right:8px"></i>Registrar un concepto (bono, comisi&oacute;n, descuento o ajuste)</span></summary>
+                    <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/conceptos-laborales') ?>" class="wk-form-pad">
+                        <?= csrf_field() ?>
+                        <div class="grid grid-cols-1 lg:grid-cols-[160px_150px_150px_1fr] gap-3">
+                            <div>
+                                <label class="wk-label" for="concepto_tipo">Tipo</label>
+                                <select id="concepto_tipo" class="wk-input" name="tipo" required>
+                                    <option value="comision">Comisi&oacute;n</option>
+                                    <option value="bono">Bono</option>
+                                    <option value="descuento">Descuento</option>
+                                    <option value="ajuste">Ajuste</option>
+                                </select>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mt-3">
-                                <div>
-                                    <label class="worker-meta-label" for="concepto_fecha">Fecha</label>
-                                    <input id="concepto_fecha" class="worker-input mt-1" type="date" name="fecha" value="<?= date('Y-m-d') ?>" required>
-                                </div>
-                                <div>
-                                    <label class="worker-meta-label" for="concepto_periodo_inicio">Periodo inicio</label>
-                                    <input id="concepto_periodo_inicio" class="worker-input mt-1" type="date" name="periodo_inicio">
-                                </div>
-                                <div>
-                                    <label class="worker-meta-label" for="concepto_periodo_fin">Periodo fin</label>
-                                    <input id="concepto_periodo_fin" class="worker-input mt-1" type="date" name="periodo_fin">
-                                </div>
-                                <div>
-                                    <label class="worker-meta-label" for="concepto_referencia">Referencia</label>
-                                    <input id="concepto_referencia" class="worker-input mt-1" type="text" maxlength="120" name="referencia" placeholder="Opcional">
-                                </div>
+                            <div>
+                                <label class="wk-label" for="concepto_efecto">Efecto</label>
+                                <select id="concepto_efecto" class="wk-input" name="efecto">
+                                    <option value="">Autom&aacute;tico</option>
+                                    <option value="a_favor">A favor (suma)</option>
+                                    <option value="en_contra">En contra (resta)</option>
+                                </select>
                             </div>
-                            <div class="mt-3">
-                                <label class="worker-meta-label" for="concepto_notas">Notas</label>
-                                <textarea id="concepto_notas" class="worker-input mt-1 min-h-[86px] py-3" maxlength="1000" name="notas" placeholder="Opcional. No se registra en Caja."></textarea>
+                            <div>
+                                <label class="wk-label" for="concepto_monto">Monto</label>
+                                <input id="concepto_monto" class="wk-input" type="number" min="0.01" step="0.01" name="monto" required>
                             </div>
-                            <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-                                <div class="text-xs text-slate-500">Comision/bono suman a favor; descuento resta; ajuste permite elegir efecto. No crea pagos reales.</div>
-                                <button class="worker-btn" type="submit">
-                                    <i class="fas fa-plus"></i>
-                                    Registrar concepto
-                                </button>
+                            <div>
+                                <label class="wk-label" for="concepto_texto">Concepto</label>
+                                <input id="concepto_texto" class="wk-input" type="text" maxlength="160" name="concepto" required placeholder="Ej. bono por desempe&ntilde;o">
                             </div>
-                        </form>
-                    </details>
-                </div>
-            <?php elseif (($trabajador['estado'] ?? '') !== 'activo'): ?>
-                <div class="worker-ledger-note mb-4">Solo se pueden registrar conceptos laborales a trabajadores activos.</div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mt-3">
+                            <div><label class="wk-label" for="concepto_fecha">Fecha</label><input id="concepto_fecha" class="wk-input" type="date" name="fecha" value="<?= date('Y-m-d') ?>" required></div>
+                            <div><label class="wk-label" for="concepto_periodo_inicio">Periodo: desde</label><input id="concepto_periodo_inicio" class="wk-input" type="date" name="periodo_inicio"></div>
+                            <div><label class="wk-label" for="concepto_periodo_fin">Periodo: hasta</label><input id="concepto_periodo_fin" class="wk-input" type="date" name="periodo_fin"></div>
+                            <div><label class="wk-label" for="concepto_referencia">Referencia</label><input id="concepto_referencia" class="wk-input" type="text" maxlength="120" name="referencia" placeholder="Opcional"></div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="wk-label" for="concepto_notas">Notas</label>
+                            <textarea id="concepto_notas" class="wk-input" maxlength="1000" name="notas" placeholder="Opcional. No se registra en Caja."></textarea>
+                        </div>
+                        <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+                            <div class="wk-hint">Bono y comisi&oacute;n suman; descuento resta; el ajuste te deja elegir. No crea pagos reales.</div>
+                            <button class="wk-btn wk-btn-gold" type="submit"><i class="fas fa-plus"></i> Registrar concepto</button>
+                        </div>
+                    </form>
+                </details>
+            <?php elseif ($estadoTrabajador !== 'activo'): ?>
+                <div class="wk-note" style="margin-bottom:14px">Solo se pueden registrar movimientos a trabajadores activos.</div>
             <?php endif; ?>
 
-            <div class="worker-ledger-grid">
-                <article class="worker-ledger-card">
-                    <header class="flex items-start justify-between gap-3">
-                        <div>
-                            <h3 class="font-black">Conceptos laborales</h3>
-                            <p class="text-xs text-slate-500 mt-1">Bonos, comisiones, descuentos y ajustes registrados en el ledger.</p>
-                        </div>
-                        <span class="worker-badge"><?= (int)($resumenLedger['pagos_count'] ?? 0) ?></span>
-                    </header>
-                    <div class="worker-ledger-body">
+            <div class="wk-ledger-grid">
+                <!-- Conceptos -->
+                <article class="wk-ledger-card is-green">
+                    <div class="wk-ledger-head">
+                        <div><h3>Bonos y descuentos</h3><p>Lo que suma o resta a su cuenta.</p></div>
+                        <span class="wk-badge is-soft"><?= (int)($resumenLedger['pagos_count'] ?? 0) ?></span>
+                    </div>
+                    <div class="wk-ledger-body">
                         <?php if (empty($ledgerDisponible['trabajador_pagos'])): ?>
-                            <div class="worker-ledger-empty">
-                                <i class="fas fa-triangle-exclamation"></i>
-                                <strong>Conceptos no disponibles</strong>
-                                <span>La tabla de conceptos laborales no esta disponible en esta instalacion.</span>
-                            </div>
+                            <div class="wk-empty-box"><i class="fas fa-triangle-exclamation"></i><strong>No disponible</strong><span>Esta secci&oacute;n no est&aacute; activada en esta instalaci&oacute;n.</span></div>
                         <?php elseif (empty($conceptosLaborales)): ?>
-                            <div class="worker-ledger-empty">
-                                <i class="fas fa-file-circle-plus"></i>
-                                <strong>Sin conceptos registrados</strong>
-                                <span>Registra bonos, comisiones, descuentos o ajustes para que el saldo empiece a calcularse.</span>
-                            </div>
+                            <div class="wk-empty-box"><i class="fas fa-file-circle-plus"></i><strong>Sin registros</strong><span>Registra bonos, comisiones o descuentos para que la cuenta empiece a sumar.</span></div>
                         <?php else: ?>
                             <?php foreach ($conceptosLaborales as $concepto): ?>
-                                <?php
-                                $conceptoEsContra = ($concepto['efecto'] ?? '') === 'en_contra';
-                                $conceptoDireccion = $conceptoEsContra ? 'minus' : 'plus';
-                                ?>
-                                <div class="worker-ledger-row">
+                                <?php $conceptoEsContra = ($concepto['efecto'] ?? '') === 'en_contra'; $conceptoDireccion = $conceptoEsContra ? 'minus' : 'plus'; ?>
+                                <div class="wk-ledger-row">
                                     <div class="flex items-start justify-between gap-3">
                                         <div>
-                                            <div class="font-black"><?= trab_view_safe($concepto['concepto'] ?? null, 'Sin concepto') ?></div>
-                                            <div class="text-xs text-slate-500">
-                                                <?= trab_view_date($concepto['fecha'] ?? null) ?> - <?= trab_view_safe($concepto['tipo'] ?? null) ?> - <?= trab_view_safe($concepto['efecto'] ?? null) ?>
-                                            </div>
+                                            <div class="wk-strong"><?= trab_view_safe($concepto['concepto'] ?? null, 'Sin concepto') ?></div>
+                                            <div class="wk-sub"><?= trab_view_date($concepto['fecha'] ?? null) ?> &middot; <?= trab_view_safe($concepto['tipo'] ?? null) ?></div>
                                         </div>
-                                        <strong class="worker-ledger-amount is-<?= $conceptoDireccion ?>"><?= trab_view_signed_money($concepto['monto'] ?? 0, $conceptoDireccion) ?></strong>
-                                    </div>
-                                    <div class="text-xs text-slate-500 mt-2">
-                                        Estado: <?= trab_view_safe($concepto['estado'] ?? null) ?> - Ref: <?= trab_view_safe($concepto['referencia'] ?? null, 'Sin referencia') ?>
+                                        <strong class="wk-ledger-amount is-<?= $conceptoDireccion ?>"><?= trab_view_signed_money($concepto['monto'] ?? 0, $conceptoDireccion) ?></strong>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -1084,209 +671,140 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                     </div>
                 </article>
 
-                <article class="worker-ledger-card">
-                    <header class="flex items-start justify-between gap-3">
-                        <div>
-                            <h3 class="font-black">Anticipos</h3>
-                            <p class="text-xs text-slate-500 mt-1">Registros laborales informativos; no son egresos de Caja en esta fase.</p>
-                        </div>
-                        <span class="worker-badge"><?= (int)($resumenLedger['anticipos_count'] ?? 0) ?></span>
-                    </header>
+                <!-- Anticipos -->
+                <article class="wk-ledger-card is-amber">
+                    <div class="wk-ledger-head">
+                        <div><h3>Anticipos</h3><p>Adelantos de sueldo pendientes.</p></div>
+                        <span class="wk-badge is-soft"><?= (int)($resumenLedger['anticipos_count'] ?? 0) ?></span>
+                    </div>
                     <?php if ($puedeRegistrarAnticipo): ?>
-                        <details class="worker-ledger-details">
-                            <summary><span><i class="fas fa-plus mr-2"></i>Registrar anticipo</span></summary>
-                            <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/anticipos') ?>" class="p-4">
+                        <details class="wk-details" style="margin:0 16px 12px">
+                            <summary><span><i class="fas fa-plus" style="margin-right:8px"></i>Registrar anticipo</span></summary>
+                            <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/anticipos') ?>" class="wk-form-pad">
                                 <?= csrf_field() ?>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="worker-meta-label" for="anticipo_monto">Monto</label>
-                                        <input id="anticipo_monto" class="worker-input mt-1" type="number" min="0.01" step="0.01" name="monto" required>
-                                    </div>
-                                    <div>
-                                        <label class="worker-meta-label" for="anticipo_fecha">Fecha</label>
-                                        <input id="anticipo_fecha" class="worker-input mt-1" type="date" name="fecha" value="<?= date('Y-m-d') ?>" required>
-                                    </div>
-                                    <div class="md:col-span-2">
-                                        <label class="worker-meta-label" for="anticipo_motivo">Motivo</label>
-                                        <input id="anticipo_motivo" class="worker-input mt-1" type="text" maxlength="160" name="motivo" required placeholder="Ej. anticipo de sueldo">
-                                    </div>
-                                    <div class="md:col-span-2">
-                                        <label class="worker-meta-label" for="anticipo_referencia">Referencia</label>
-                                        <input id="anticipo_referencia" class="worker-input mt-1" type="text" maxlength="120" name="referencia" placeholder="Opcional">
-                                    </div>
-                                    <div class="md:col-span-2">
-                                        <label class="worker-meta-label" for="anticipo_notas">Notas</label>
-                                        <textarea id="anticipo_notas" class="worker-input mt-1 min-h-[70px] py-3" maxlength="1000" name="notas" placeholder="Opcional. No se registra en Caja."></textarea>
-                                    </div>
+                                    <div><label class="wk-label" for="anticipo_monto">Monto</label><input id="anticipo_monto" class="wk-input" type="number" min="0.01" step="0.01" name="monto" required></div>
+                                    <div><label class="wk-label" for="anticipo_fecha">Fecha</label><input id="anticipo_fecha" class="wk-input" type="date" name="fecha" value="<?= date('Y-m-d') ?>" required></div>
+                                    <div class="md:col-span-2"><label class="wk-label" for="anticipo_motivo">Motivo</label><input id="anticipo_motivo" class="wk-input" type="text" maxlength="160" name="motivo" required placeholder="Ej. anticipo de sueldo"></div>
+                                    <div class="md:col-span-2"><label class="wk-label" for="anticipo_referencia">Referencia</label><input id="anticipo_referencia" class="wk-input" type="text" maxlength="120" name="referencia" placeholder="Opcional"></div>
+                                    <div class="md:col-span-2"><label class="wk-label" for="anticipo_notas">Notas</label><textarea id="anticipo_notas" class="wk-input" maxlength="1000" name="notas" placeholder="Opcional. No se registra en Caja."></textarea></div>
                                 </div>
                                 <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
-                                    <div class="text-xs text-slate-500">Saldo pendiente inicia igual al monto. No crea pago ni Caja.</div>
-                                    <button class="worker-btn" type="submit">
-                                        <i class="fas fa-plus"></i>
-                                        Registrar anticipo
-                                    </button>
+                                    <div class="wk-hint">El saldo pendiente inicia igual al monto. No crea pago ni Caja.</div>
+                                    <button class="wk-btn wk-btn-gold" type="submit"><i class="fas fa-plus"></i> Registrar anticipo</button>
                                 </div>
                             </form>
                         </details>
-                    <?php elseif (($trabajador['estado'] ?? '') !== 'activo'): ?>
-                        <div class="worker-ledger-note m-4">Solo se pueden registrar anticipos a trabajadores activos.</div>
                     <?php endif; ?>
-                    <div class="worker-ledger-body">
+                    <div class="wk-ledger-body">
                         <?php if (empty($ledgerDisponible['trabajador_anticipos'])): ?>
-                            <div class="worker-ledger-empty">
-                                <i class="fas fa-triangle-exclamation"></i>
-                                <strong>Anticipos no disponibles</strong>
-                                <span>La tabla de anticipos no esta disponible en esta instalacion.</span>
-                            </div>
+                            <div class="wk-empty-box"><i class="fas fa-triangle-exclamation"></i><strong>No disponible</strong><span>Esta secci&oacute;n no est&aacute; activada en esta instalaci&oacute;n.</span></div>
                         <?php elseif (empty($anticiposRecientes)): ?>
-                            <div class="worker-ledger-empty">
-                                <i class="fas fa-hand-holding-dollar"></i>
-                                <strong>Sin anticipos registrados</strong>
-                                <span>Cuando registres un anticipo, aqui se mostrara su monto y saldo pendiente.</span>
-                            </div>
+                            <div class="wk-empty-box"><i class="fas fa-hand-holding-dollar"></i><strong>Sin anticipos</strong><span>Cuando registres uno, aqu&iacute; ver&aacute;s su monto y saldo pendiente.</span></div>
                         <?php else: ?>
                             <?php foreach ($anticiposRecientes as $anticipo): ?>
-                                <div class="worker-ledger-row">
+                                <div class="wk-ledger-row">
                                     <div class="flex items-start justify-between gap-3">
                                         <div>
-                                            <div class="font-black"><?= trab_view_safe($anticipo['motivo'] ?? null, 'Sin motivo') ?></div>
-                                            <div class="text-xs text-slate-500"><?= trab_view_date($anticipo['fecha'] ?? null) ?> - <?= trab_view_safe($anticipo['estado'] ?? null) ?></div>
+                                            <div class="wk-strong"><?= trab_view_safe($anticipo['motivo'] ?? null, 'Sin motivo') ?></div>
+                                            <div class="wk-sub"><?= trab_view_date($anticipo['fecha'] ?? null) ?> &middot; <?= trab_view_safe($anticipo['estado'] ?? null) ?></div>
                                         </div>
-                                        <strong class="worker-ledger-amount is-debt"><?= trab_view_money($anticipo['monto'] ?? 0) ?></strong>
+                                        <strong class="wk-ledger-amount is-debt"><?= trab_view_money($anticipo['monto'] ?? 0) ?></strong>
                                     </div>
-                                    <div class="text-xs text-slate-500 mt-2">
-                                        Saldo pendiente: <?= trab_view_money($anticipo['saldo_pendiente'] ?? 0) ?> - Ref: <?= trab_view_safe($anticipo['referencia'] ?? null, 'Sin referencia') ?>
-                                    </div>
+                                    <div class="wk-sub" style="margin-top:6px">Saldo pendiente: <?= trab_view_money($anticipo['saldo_pendiente'] ?? 0) ?></div>
                                 </div>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
                 </article>
 
-                <article class="worker-ledger-card">
-                    <header class="flex items-start justify-between gap-3">
-                        <div>
-                            <h3 class="font-black">Prestamos</h3>
-                            <p class="text-xs text-slate-500 mt-1">Deuda laboral del trabajador registrada fuera de Caja.</p>
-                        </div>
-                        <span class="worker-badge"><?= (int)($resumenLedger['prestamos_count'] ?? 0) ?></span>
-                    </header>
+                <!-- Prestamos -->
+                <article class="wk-ledger-card is-danger">
+                    <div class="wk-ledger-head">
+                        <div><h3>Pr&eacute;stamos</h3><p>Deuda del trabajador (fuera de Caja).</p></div>
+                        <span class="wk-badge is-soft"><?= (int)($resumenLedger['prestamos_count'] ?? 0) ?></span>
+                    </div>
                     <?php if ($puedeRegistrarPrestamo): ?>
-                        <details class="worker-ledger-details">
-                            <summary><span><i class="fas fa-plus mr-2"></i>Registrar prestamo</span></summary>
-                            <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/prestamos') ?>" class="p-4">
+                        <details class="wk-details" style="margin:0 16px 12px">
+                            <summary><span><i class="fas fa-plus" style="margin-right:8px"></i>Registrar pr&eacute;stamo</span></summary>
+                            <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/prestamos') ?>" class="wk-form-pad">
                                 <?= csrf_field() ?>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="worker-meta-label" for="prestamo_monto">Monto</label>
-                                        <input id="prestamo_monto" class="worker-input mt-1" type="number" min="0.01" step="0.01" name="monto" required>
-                                    </div>
-                                    <div>
-                                        <label class="worker-meta-label" for="prestamo_fecha">Fecha</label>
-                                        <input id="prestamo_fecha" class="worker-input mt-1" type="date" name="fecha" value="<?= date('Y-m-d') ?>" required>
-                                    </div>
-                                    <div>
-                                        <label class="worker-meta-label" for="prestamo_plazo">Plazo meses</label>
-                                        <input id="prestamo_plazo" class="worker-input mt-1" type="number" min="1" step="1" name="plazo_meses" placeholder="Opcional">
-                                    </div>
-                                    <div>
-                                        <label class="worker-meta-label" for="prestamo_abono">Abono informativo</label>
-                                        <input id="prestamo_abono" class="worker-input mt-1" type="number" min="0" step="0.01" name="abono_periodico" placeholder="Opcional">
-                                    </div>
-                                    <div class="md:col-span-2">
-                                        <label class="worker-meta-label" for="prestamo_motivo">Motivo</label>
-                                        <input id="prestamo_motivo" class="worker-input mt-1" type="text" maxlength="160" name="motivo" required placeholder="Ej. prestamo interno">
-                                    </div>
-                                    <div class="md:col-span-2">
-                                        <label class="worker-meta-label" for="prestamo_referencia">Referencia</label>
-                                        <input id="prestamo_referencia" class="worker-input mt-1" type="text" maxlength="120" name="referencia" placeholder="Opcional">
-                                    </div>
-                                    <div class="md:col-span-2">
-                                        <label class="worker-meta-label" for="prestamo_notas">Notas</label>
-                                        <textarea id="prestamo_notas" class="worker-input mt-1 min-h-[70px] py-3" maxlength="1000" name="notas" placeholder="Opcional. No se registra en Caja."></textarea>
-                                    </div>
+                                    <div><label class="wk-label" for="prestamo_monto">Monto</label><input id="prestamo_monto" class="wk-input" type="number" min="0.01" step="0.01" name="monto" required></div>
+                                    <div><label class="wk-label" for="prestamo_fecha">Fecha</label><input id="prestamo_fecha" class="wk-input" type="date" name="fecha" value="<?= date('Y-m-d') ?>" required></div>
+                                    <div><label class="wk-label" for="prestamo_plazo">Plazo (meses)</label><input id="prestamo_plazo" class="wk-input" type="number" min="1" step="1" name="plazo_meses" placeholder="Opcional"></div>
+                                    <div><label class="wk-label" for="prestamo_abono">Abono sugerido</label><input id="prestamo_abono" class="wk-input" type="number" min="0" step="0.01" name="abono_periodico" placeholder="Opcional"></div>
+                                    <div class="md:col-span-2"><label class="wk-label" for="prestamo_motivo">Motivo</label><input id="prestamo_motivo" class="wk-input" type="text" maxlength="160" name="motivo" required placeholder="Ej. pr&eacute;stamo interno"></div>
+                                    <div class="md:col-span-2"><label class="wk-label" for="prestamo_referencia">Referencia</label><input id="prestamo_referencia" class="wk-input" type="text" maxlength="120" name="referencia" placeholder="Opcional"></div>
+                                    <div class="md:col-span-2"><label class="wk-label" for="prestamo_notas">Notas</label><textarea id="prestamo_notas" class="wk-input" maxlength="1000" name="notas" placeholder="Opcional. No se registra en Caja."></textarea></div>
                                 </div>
                                 <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
-                                    <div class="text-xs text-slate-500">Saldo pendiente inicia igual al monto. No crea abonos ni Caja.</div>
-                                    <button class="worker-btn" type="submit">
-                                        <i class="fas fa-plus"></i>
-                                        Registrar prestamo
-                                    </button>
+                                    <div class="wk-hint">El saldo pendiente inicia igual al monto. No crea abonos ni Caja.</div>
+                                    <button class="wk-btn wk-btn-gold" type="submit"><i class="fas fa-plus"></i> Registrar pr&eacute;stamo</button>
                                 </div>
                             </form>
                         </details>
-                    <?php elseif (($trabajador['estado'] ?? '') !== 'activo'): ?>
-                        <div class="worker-ledger-note m-4">Solo se pueden registrar prestamos a trabajadores activos.</div>
                     <?php endif; ?>
-                    <div class="worker-ledger-body">
+                    <div class="wk-ledger-body">
                         <?php if (empty($ledgerDisponible['trabajador_prestamos'])): ?>
-                            <div class="worker-ledger-empty">
-                                <i class="fas fa-triangle-exclamation"></i>
-                                <strong>Prestamos no disponibles</strong>
-                                <span>La tabla de prestamos no esta disponible en esta instalacion.</span>
-                            </div>
+                            <div class="wk-empty-box"><i class="fas fa-triangle-exclamation"></i><strong>No disponible</strong><span>Esta secci&oacute;n no est&aacute; activada en esta instalaci&oacute;n.</span></div>
                         <?php elseif (empty($prestamosRecientes)): ?>
-                            <div class="worker-ledger-empty">
-                                <i class="fas fa-file-invoice-dollar"></i>
-                                <strong>Sin prestamos registrados</strong>
-                                <span>Cuando registres un prestamo, aqui se mostrara su saldo vigente y abono sugerido.</span>
-                            </div>
+                            <div class="wk-empty-box"><i class="fas fa-file-invoice-dollar"></i><strong>Sin pr&eacute;stamos</strong><span>Cuando registres uno, aqu&iacute; ver&aacute;s su saldo y abono sugerido.</span></div>
                         <?php else: ?>
                             <?php foreach ($prestamosRecientes as $prestamo): ?>
-                                <div class="worker-ledger-row">
+                                <div class="wk-ledger-row">
                                     <div class="flex items-start justify-between gap-3">
                                         <div>
-                                            <div class="font-black"><?= trab_view_safe($prestamo['motivo'] ?? null, 'Sin motivo') ?></div>
-                                            <div class="text-xs text-slate-500"><?= trab_view_date($prestamo['fecha'] ?? null) ?> - <?= trab_view_safe($prestamo['estado'] ?? null) ?></div>
+                                            <div class="wk-strong"><?= trab_view_safe($prestamo['motivo'] ?? null, 'Sin motivo') ?></div>
+                                            <div class="wk-sub"><?= trab_view_date($prestamo['fecha'] ?? null) ?> &middot; <?= trab_view_safe($prestamo['estado'] ?? null) ?></div>
                                         </div>
-                                        <strong class="worker-ledger-amount is-debt"><?= trab_view_money($prestamo['monto'] ?? 0) ?></strong>
+                                        <strong class="wk-ledger-amount is-debt"><?= trab_view_money($prestamo['monto'] ?? 0) ?></strong>
                                     </div>
-                                    <div class="text-xs text-slate-500 mt-2">
-                                        Saldo pendiente: <?= trab_view_money($prestamo['saldo_pendiente'] ?? 0) ?> - Abono sugerido: <?= trab_view_money($prestamo['abono_periodico'] ?? 0) ?>
-                                    </div>
+                                    <div class="wk-sub" style="margin-top:6px">Saldo: <?= trab_view_money($prestamo['saldo_pendiente'] ?? 0) ?> &middot; Abono sugerido: <?= trab_view_money($prestamo['abono_periodico'] ?? 0) ?></div>
                                 </div>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
                 </article>
             </div>
-        </div>
+            </div>
+        </section>
 
-        <div class="mb-4">
+        <!-- Tareas asignadas -->
+        <section>
             <?php
             $tituloTareasContextuales = 'Tareas asignadas';
-            $subtituloTareasContextuales = 'Tareas operativas vinculadas a este trabajador. No representan asistencia ni pago.';
+            $subtituloTareasContextuales = 'Tareas operativas de este trabajador. No representan asistencia ni pago.';
             include __DIR__ . '/../tareas/_contextual_list.php';
             ?>
-        </div>
+        </section>
 
-        <div class="worker-panel overflow-hidden">
-            <div class="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                <h2 class="font-black text-lg">Asistencias recientes</h2>
-                <span class="worker-badge">
-                    <i class="fas fa-calendar-check"></i>
-                    Captura manual
-                </span>
+        <!-- Asistencias -->
+        <section class="wk-panel">
+            <div class="wk-panel-head">
+                <div class="wk-sec-head">
+                    <span class="wk-sec-icon is-amber"><i class="fas fa-calendar-check"></i></span>
+                    <div>
+                        <h2 class="wk-panel-title">Asistencias</h2>
+                        <p class="wk-panel-sub">Registro diario de entradas, faltas, permisos y horas. Es de control: no genera n&oacute;mina ni pagos.</p>
+                    </div>
+                </div>
+                <span class="wk-badge is-soft"><i class="fas fa-calendar-check"></i> Captura manual</span>
             </div>
 
             <?php if (empty($ledgerDisponible['trabajador_asistencias'])): ?>
-                <div class="p-8 text-center">
-                    <div class="text-4xl text-slate-300 mb-3"><i class="fas fa-calendar-xmark"></i></div>
-                    <h3 class="font-black text-lg">Asistencias no disponibles</h3>
-                    <p class="text-sm text-slate-500 mt-1">La tabla de asistencias laborales no esta disponible en esta instalacion.</p>
+                <div class="wk-panel-pad">
+                    <div class="wk-empty-box"><i class="fas fa-calendar-xmark"></i><strong>No disponible</strong><span>Esta secci&oacute;n no est&aacute; activada en esta instalaci&oacute;n.</span></div>
                 </div>
             <?php else: ?>
                 <?php if ($puedeRegistrarAsistencia): ?>
-                    <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/asistencias') ?>" class="p-5 border-b border-slate-200">
+                    <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/asistencias') ?>" class="wk-panel-pad" style="border-bottom:1px solid var(--wk-border)">
                         <?= csrf_field() ?>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                            <div><label class="wk-label" for="asistencia_fecha">Fecha</label><input id="asistencia_fecha" class="wk-input" type="date" name="fecha" value="<?= date('Y-m-d') ?>" required></div>
                             <div>
-                                <label class="worker-meta-label" for="asistencia_fecha">Fecha</label>
-                                <input id="asistencia_fecha" class="worker-input mt-1" type="date" name="fecha" value="<?= date('Y-m-d') ?>" required>
-                            </div>
-                            <div>
-                                <label class="worker-meta-label" for="asistencia_tipo">Tipo</label>
-                                <select id="asistencia_tipo" class="worker-input mt-1" name="tipo" required>
+                                <label class="wk-label" for="asistencia_tipo">Tipo</label>
+                                <select id="asistencia_tipo" class="wk-input" name="tipo" required>
                                     <option value="asistencia">Asistencia</option>
                                     <option value="retardo">Retardo</option>
                                     <option value="falta">Falta</option>
@@ -1296,74 +814,41 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                                     <option value="horas_extra">Horas extra</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="worker-meta-label" for="asistencia_hora_entrada">Entrada</label>
-                                <input id="asistencia_hora_entrada" class="worker-input mt-1" type="time" name="hora_entrada">
-                            </div>
-                            <div>
-                                <label class="worker-meta-label" for="asistencia_hora_salida">Salida</label>
-                                <input id="asistencia_hora_salida" class="worker-input mt-1" type="time" name="hora_salida">
-                            </div>
-                            <div>
-                                <label class="worker-meta-label" for="asistencia_horas">Horas</label>
-                                <input id="asistencia_horas" class="worker-input mt-1" type="number" min="0" step="0.25" name="horas" placeholder="Opcional">
-                            </div>
-                            <div>
-                                <label class="worker-meta-label" for="asistencia_horas_extra">Horas extra</label>
-                                <input id="asistencia_horas_extra" class="worker-input mt-1" type="number" min="0" step="0.25" name="horas_extra" placeholder="Opcional">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="worker-meta-label" for="asistencia_observaciones">Observaciones</label>
-                                <input id="asistencia_observaciones" class="worker-input mt-1" type="text" maxlength="255" name="observaciones" placeholder="Opcional">
-                            </div>
+                            <div><label class="wk-label" for="asistencia_hora_entrada">Entrada</label><input id="asistencia_hora_entrada" class="wk-input" type="time" name="hora_entrada"></div>
+                            <div><label class="wk-label" for="asistencia_hora_salida">Salida</label><input id="asistencia_hora_salida" class="wk-input" type="time" name="hora_salida"></div>
+                            <div><label class="wk-label" for="asistencia_horas">Horas</label><input id="asistencia_horas" class="wk-input" type="number" min="0" step="0.25" name="horas" placeholder="Opcional"></div>
+                            <div><label class="wk-label" for="asistencia_horas_extra">Horas extra</label><input id="asistencia_horas_extra" class="wk-input" type="number" min="0" step="0.25" name="horas_extra" placeholder="Opcional"></div>
+                            <div class="md:col-span-2"><label class="wk-label" for="asistencia_observaciones">Observaciones</label><input id="asistencia_observaciones" class="wk-input" type="text" maxlength="255" name="observaciones" placeholder="Opcional"></div>
                         </div>
                         <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-                            <div class="text-xs text-slate-500">Un registro por trabajador y dia. No genera nomina, pagos reales ni movimientos de Caja.</div>
-                            <button class="worker-btn" type="submit">
-                                <i class="fas fa-calendar-plus"></i>
-                                Registrar asistencia
-                            </button>
+                            <div class="wk-hint">Un registro por d&iacute;a. No genera n&oacute;mina, pagos reales ni movimientos de Caja.</div>
+                            <button class="wk-btn wk-btn-gold" type="submit"><i class="fas fa-calendar-plus"></i> Registrar asistencia</button>
                         </div>
                     </form>
-                <?php elseif (($trabajador['estado'] ?? '') !== 'activo'): ?>
-                    <div class="worker-ledger-note m-4">Solo se pueden registrar asistencias a trabajadores activos.</div>
+                <?php elseif ($estadoTrabajador !== 'activo'): ?>
+                    <div class="wk-panel-pad"><div class="wk-note">Solo se pueden registrar asistencias a trabajadores activos.</div></div>
                 <?php endif; ?>
 
                 <?php if (empty($asistenciasRecientes)): ?>
-                    <div class="p-8 text-center">
-                        <div class="text-4xl text-slate-300 mb-3"><i class="fas fa-calendar-day"></i></div>
-                        <h3 class="font-black text-lg">Sin asistencias registradas</h3>
-                        <p class="text-sm text-slate-500 mt-1">Este trabajador aun no tiene asistencias capturadas en el hotel actual.</p>
+                    <div class="wk-panel-pad">
+                        <div class="wk-empty-box"><i class="fas fa-calendar-day"></i><strong>Sin asistencias todav&iacute;a</strong><span>Este trabajador a&uacute;n no tiene asistencias capturadas.</span></div>
                     </div>
                 <?php else: ?>
                     <div class="overflow-x-auto">
-                        <table class="worker-table min-w-full text-sm">
+                        <table class="wk-table">
                             <thead>
-                                <tr>
-                                    <th class="text-left">Fecha</th>
-                                    <th class="text-left">Tipo</th>
-                                    <th class="text-left">Entrada</th>
-                                    <th class="text-left">Salida</th>
-                                    <th class="text-right">Horas</th>
-                                    <th class="text-right">Extra</th>
-                                    <th class="text-left">Observaciones</th>
-                                </tr>
+                                <tr><th>Fecha</th><th>Tipo</th><th>Entrada</th><th>Salida</th><th class="is-end">Horas</th><th class="is-end">Extra</th><th>Observaciones</th></tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($asistenciasRecientes as $asistencia): ?>
                                     <tr>
-                                        <td><?= trab_view_safe($asistencia['fecha'] ?? null) ?></td>
-                                        <td>
-                                            <span class="worker-badge">
-                                                <i class="fas fa-circle-dot"></i>
-                                                <?= trab_view_safe($asistencia['tipo'] ?? null) ?>
-                                            </span>
-                                        </td>
+                                        <td class="wk-strong"><?= trab_view_safe($asistencia['fecha'] ?? null) ?></td>
+                                        <td><span class="wk-badge is-soft" style="text-transform:capitalize"><?= trab_view_safe(str_replace('_', ' ', (string)($asistencia['tipo'] ?? ''))) ?></span></td>
                                         <td><?= trab_view_safe($asistencia['hora_entrada'] ?? null) ?></td>
                                         <td><?= trab_view_safe($asistencia['hora_salida'] ?? null) ?></td>
-                                        <td class="text-right"><?= trab_view_qty($asistencia['horas'] ?? 0) ?></td>
-                                        <td class="text-right"><?= trab_view_qty($asistencia['horas_extra'] ?? 0) ?></td>
-                                        <td><?= trab_view_safe($asistencia['observaciones'] ?? null, 'Sin observaciones') ?></td>
+                                        <td class="is-end"><?= trab_view_qty($asistencia['horas'] ?? 0) ?></td>
+                                        <td class="is-end"><?= trab_view_qty($asistencia['horas_extra'] ?? 0) ?></td>
+                                        <td class="wk-sub" style="margin:0"><?= trab_view_safe($asistencia['observaciones'] ?? null, 'Sin observaciones') ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -1371,6 +856,69 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                     </div>
                 <?php endif; ?>
             <?php endif; ?>
-        </div>
-    </section>
+        </section>
+    </div>
 </div>
+
+<script>
+(function() {
+    function showWorkerToast(message, duration = 7000) {
+        let toast = document.getElementById('workerActionToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'workerActionToast';
+            toast.className = 'worker-action-toast';
+            toast.setAttribute('role', 'status');
+            toast.setAttribute('aria-live', 'polite');
+            document.body.appendChild(toast);
+        }
+
+        window.clearTimeout(toast._hideTimer);
+        toast.textContent = message;
+        requestAnimationFrame(() => toast.classList.add('is-visible'));
+        toast._hideTimer = window.setTimeout(() => toast.classList.remove('is-visible'), duration);
+    }
+
+    function resetWorkerConfirm(form) {
+        if (!form) return;
+
+        delete form.dataset.confirmedAction;
+        window.clearTimeout(form._confirmTimer);
+        const button = form.querySelector('button[type="submit"]');
+        if (button && button.dataset.originalHtml) {
+            button.innerHTML = button.dataset.originalHtml;
+            delete button.dataset.originalHtml;
+        }
+        button?.classList.remove('is-confirming');
+    }
+
+    document.addEventListener('submit', function(event) {
+        const form = event.target instanceof HTMLFormElement ? event.target : null;
+        if (!form || form.dataset.workerConfirm !== '1') {
+            return;
+        }
+
+        if (form.dataset.confirmedAction === '1') {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        document.querySelectorAll('form[data-worker-confirm="1"]').forEach(otherForm => {
+            if (otherForm !== form) resetWorkerConfirm(otherForm);
+        });
+
+        form.dataset.confirmedAction = '1';
+        const button = form.querySelector('button[type="submit"]');
+        if (button) {
+            button.dataset.originalHtml = button.innerHTML;
+            button.classList.add('is-confirming');
+            button.innerHTML = `<i class="fas fa-check"></i> ${form.dataset.confirmLabel || 'Confirmar'}`;
+        }
+
+        showWorkerToast(`${form.dataset.confirmMessage || 'Confirma esta accion.'} Presiona el boton otra vez para continuar.`);
+        form._confirmTimer = window.setTimeout(() => resetWorkerConfirm(form), 7000);
+    }, true);
+})();
+</script>

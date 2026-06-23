@@ -19,7 +19,6 @@ if (empty($tarifaRoomTypeLabels) && class_exists('Habitacion')) {
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
 /* ══════════════════════════════════════════
@@ -189,6 +188,7 @@ input.toggle-activo:checked ~ div {
 .icn-view:hover   { background:#EFF6FF; }
 .icn-del    { color:#DC2626; }
 .icn-del:hover    { background:#FEF2F2; }
+.icn-del.is-confirming { background:#FEF2F2; box-shadow: inset 0 0 0 1px rgba(220,38,38,.2); }
 .icn-btn:disabled { opacity:.35; cursor:not-allowed; }
 
 /* ── Empty state ─────────────────────────── */
@@ -573,6 +573,11 @@ input.toggle-activo:checked ~ div {
 .icn-del:hover {
     background: var(--tar-danger-soft) !important;
     border-color: color-mix(in srgb, var(--tar-danger) 20%, #FFFFFF) !important;
+}
+.icn-del.is-confirming {
+    background: var(--tar-danger-soft) !important;
+    border-color: color-mix(in srgb, var(--tar-danger) 30%, #FFFFFF) !important;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tar-danger) 16%, transparent) !important;
 }
 .icn-btn:disabled {
     opacity: .36 !important;
@@ -2177,27 +2182,44 @@ $(document).ready(function() {
     }
 
     // Eliminar
+    let tarifaPendienteEliminar = null;
+    let tarifaPendienteTimer = null;
+
+    function limpiarConfirmacionEliminarTarifa() {
+        $('.btn-eliminar.is-confirming').removeClass('is-confirming');
+        tarifaPendienteEliminar = null;
+    }
+
     $('.btn-eliminar').click(function() {
         const $btn = $(this), id = $btn.data('id');
         if ($btn.prop('disabled')) return;
-        Swal.fire({
-            title: '¿Está seguro?', text: 'Esta acción no se puede deshacer',
-            icon: 'warning', showCancelButton: true,
-            confirmButtonColor: '#DC2626', cancelButtonColor: '#5C7A4E',
-            confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar',
-            reverseButtons: true,
-            customClass: { popup:'rounded-xl', confirmButton:'rounded-lg', cancelButton:'rounded-lg' }
-        }).then(result => {
-            if (result.isConfirmed) {
-                $.post('<?= url("configuracion/tarifas/eliminar") ?>', { id:id, csrf_token:'<?= csrf_token() ?>' })
-                .done(function(r) {
-                    if (r.success) {
-                        toastr.success(r.message);
-                        $btn.closest('tr').fadeOut(() => tabla.row($btn.closest('tr')).remove().draw());
-                    } else toastr.error(r.message||'Error al eliminar');
-                })
-                .fail(() => toastr.error('Error de conexión'));
+
+        if (tarifaPendienteEliminar !== String(id)) {
+            limpiarConfirmacionEliminarTarifa();
+            tarifaPendienteEliminar = String(id);
+            $btn.addClass('is-confirming');
+            toastr.warning('Haz clic otra vez para eliminar esta tarifa. Esta accion no se puede deshacer.');
+            clearTimeout(tarifaPendienteTimer);
+            tarifaPendienteTimer = setTimeout(limpiarConfirmacionEliminarTarifa, 7000);
+            return;
+        }
+
+        limpiarConfirmacionEliminarTarifa();
+        $btn.prop('disabled', true);
+
+        $.post('<?= url("configuracion/tarifas/eliminar") ?>', { id:id, csrf_token:'<?= csrf_token() ?>' })
+        .done(function(r) {
+            if (r.success) {
+                toastr.success(r.message);
+                $btn.closest('tr').fadeOut(() => tabla.row($btn.closest('tr')).remove().draw());
+            } else {
+                $btn.prop('disabled', false);
+                toastr.error(r.message||'Error al eliminar');
             }
+        })
+        .fail(() => {
+            $btn.prop('disabled', false);
+            toastr.error('Error de conexion');
         });
     });
 

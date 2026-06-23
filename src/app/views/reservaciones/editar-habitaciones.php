@@ -1133,7 +1133,7 @@ $cortesias_actuales = array_column(array_filter($habitaciones_seleccionadas, fun
                         <?= $noches ?> noche<?= $noches > 1 ? 's' : '' ?>
                     </p>
                 </div>
-                <a href="<?= url('reservaciones/ver/' . $reservacion['id']) ?>" class="btn btn-secondary">
+                <a href="<?= back_url('reservaciones/ver/' . $reservacion['id']) ?>" class="btn btn-secondary">
                     <i class="fas fa-arrow-left" style="margin-right: 5px;"></i>
                     Volver
                 </a>
@@ -1264,7 +1264,7 @@ $cortesias_actuales = array_column(array_filter($habitaciones_seleccionadas, fun
                                     <i class="fas fa-save" style="margin-right: 8px;"></i>
                                     Guardar Cambios
                                 </button>
-                                <a href="<?= url('reservaciones/ver/' . $reservacion['id']) ?>"
+                                <a href="<?= back_url('reservaciones/ver/' . $reservacion['id']) ?>"
                                    class="btn btn-secondary"
                                    style="width: 100%; display: block; text-decoration: none;">
                                     Cancelar

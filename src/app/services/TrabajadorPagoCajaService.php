@@ -8,6 +8,7 @@ class TrabajadorPagoCajaService
     private $db;
     private $pdo;
     private $manageTransaction;
+    private $snapshotTraceColumnsAvailable = null;
 
     public function __construct(?Database $db = null, array $options = [])
     {
@@ -99,6 +100,7 @@ class TrabajadorPagoCajaService
         $notas = $this->normalizarTextoNullable($datos['notas'] ?? null, 1000);
         $periodoInicio = $this->normalizarFechaNullable($datos['periodo_inicio'] ?? null, 'Periodo inicial invalido');
         $periodoFin = $this->normalizarFechaNullable($datos['periodo_fin'] ?? null, 'Periodo final invalido');
+        $trazabilidadSnapshot = $this->normalizarTrazabilidadSnapshot($datos);
         if ($periodoInicio !== null && $periodoFin !== null && $periodoFin < $periodoInicio) {
             throw new Exception('El periodo del pago laboral no es valido');
         }
@@ -110,6 +112,19 @@ class TrabajadorPagoCajaService
             $trabajador = $this->obtenerTrabajador($hotelId, $trabajadorId, true);
             $corte = $this->obtenerCorteAbierto($hotelId, true);
             $this->bloquearFilasLaborales($hotelId, $trabajadorId);
+            $trazabilidadDisponible = $this->trazabilidadSnapshotDisponible();
+            if ($trazabilidadSnapshot['requiere_trazabilidad'] && !$trazabilidadDisponible) {
+                throw new Exception('La trazabilidad de snapshot aun no esta disponible en trabajador_pagos_caja');
+            }
+            if ($trazabilidadSnapshot['requiere_trazabilidad']) {
+                $this->validarTrazabilidadSnapshot(
+                    $hotelId,
+                    $trabajadorId,
+                    (int)$trazabilidadSnapshot['nomina_periodo_id'],
+                    (int)$trazabilidadSnapshot['nomina_periodo_detalle_id'],
+                    true
+                );
+            }
             $saldo = $trabajador ? $this->saldoLaboralDisponible($hotelId, $trabajadorId, $periodoInicio, $periodoFin) : $this->saldoVacio();
 
             $bloqueos = $this->bloqueosPago($trabajador, $corte, (float)$saldo['saldo_disponible']);
@@ -153,29 +168,58 @@ class TrabajadorPagoCajaService
             ]);
             $movimientoCajaId = (int)$this->pdo->lastInsertId();
 
-            $stmt = $this->pdo->prepare(
-                "INSERT INTO trabajador_pagos_caja
-                    (hotel_id, trabajador_id, movimiento_caja_id, corte_id, monto,
-                     metodo_pago, referencia, periodo_inicio, periodo_fin, concepto,
-                     fecha_pago, estado, notas, created_by, updated_by, created_at, updated_at)
-                 VALUES
-                    (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'pagado', ?, ?, ?, NOW(), NOW())"
-            );
-            $stmt->execute([
-                $hotelId,
-                $trabajadorId,
-                $movimientoCajaId,
-                (int)$corte['id'],
-                $montoDecimal,
-                $metodoPago,
-                $referencia,
-                $periodoInicio,
-                $periodoFin,
-                $conceptoFinal,
-                $notas,
-                $usuarioId,
-                $usuarioId,
-            ]);
+            if ($trazabilidadDisponible) {
+                $stmt = $this->pdo->prepare(
+                    "INSERT INTO trabajador_pagos_caja
+                        (hotel_id, trabajador_id, movimiento_caja_id, corte_id,
+                         nomina_periodo_id, nomina_periodo_detalle_id, monto,
+                         metodo_pago, referencia, periodo_inicio, periodo_fin, concepto,
+                         fecha_pago, estado, notas, created_by, updated_by, created_at, updated_at)
+                     VALUES
+                        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'pagado', ?, ?, ?, NOW(), NOW())"
+                );
+                $stmt->execute([
+                    $hotelId,
+                    $trabajadorId,
+                    $movimientoCajaId,
+                    (int)$corte['id'],
+                    $trazabilidadSnapshot['nomina_periodo_id'],
+                    $trazabilidadSnapshot['nomina_periodo_detalle_id'],
+                    $montoDecimal,
+                    $metodoPago,
+                    $referencia,
+                    $periodoInicio,
+                    $periodoFin,
+                    $conceptoFinal,
+                    $notas,
+                    $usuarioId,
+                    $usuarioId,
+                ]);
+            } else {
+                $stmt = $this->pdo->prepare(
+                    "INSERT INTO trabajador_pagos_caja
+                        (hotel_id, trabajador_id, movimiento_caja_id, corte_id, monto,
+                         metodo_pago, referencia, periodo_inicio, periodo_fin, concepto,
+                         fecha_pago, estado, notas, created_by, updated_by, created_at, updated_at)
+                     VALUES
+                        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'pagado', ?, ?, ?, NOW(), NOW())"
+                );
+                $stmt->execute([
+                    $hotelId,
+                    $trabajadorId,
+                    $movimientoCajaId,
+                    (int)$corte['id'],
+                    $montoDecimal,
+                    $metodoPago,
+                    $referencia,
+                    $periodoInicio,
+                    $periodoFin,
+                    $conceptoFinal,
+                    $notas,
+                    $usuarioId,
+                    $usuarioId,
+                ]);
+            }
             $pagoCajaId = (int)$this->pdo->lastInsertId();
 
             AuditService::record('trabajadores.pago_laboral_caja_registrado', [
@@ -200,6 +244,8 @@ class TrabajadorPagoCajaService
                     'referencia' => $referencia,
                     'periodo_inicio' => $periodoInicio,
                     'periodo_fin' => $periodoFin,
+                    'nomina_periodo_id' => $trazabilidadSnapshot['nomina_periodo_id'],
+                    'nomina_periodo_detalle_id' => $trazabilidadSnapshot['nomina_periodo_detalle_id'],
                 ],
             ]);
 
@@ -214,6 +260,8 @@ class TrabajadorPagoCajaService
                 'saldo_anterior' => $saldoAnteriorDecimal,
                 'saldo_posterior_estimado' => $saldoPosteriorDecimal,
                 'referencia' => $referencia,
+                'nomina_periodo_id' => $trazabilidadSnapshot['nomina_periodo_id'],
+                'nomina_periodo_detalle_id' => $trazabilidadSnapshot['nomina_periodo_detalle_id'],
             ];
         } catch (Throwable $e) {
             if ($this->manageTransaction && $this->pdo->inTransaction()) {
@@ -684,6 +732,90 @@ class TrabajadorPagoCajaService
         return $bloqueos;
     }
 
+    private function normalizarTrazabilidadSnapshot(array $datos): array
+    {
+        $periodoRaw = $datos['nomina_periodo_id'] ?? null;
+        $detalleRaw = $datos['nomina_periodo_detalle_id'] ?? null;
+        $tienePeriodo = trim((string)($periodoRaw ?? '')) !== '';
+        $tieneDetalle = trim((string)($detalleRaw ?? '')) !== '';
+
+        if (!$tienePeriodo && !$tieneDetalle) {
+            return [
+                'requiere_trazabilidad' => false,
+                'nomina_periodo_id' => null,
+                'nomina_periodo_detalle_id' => null,
+            ];
+        }
+
+        if ($tienePeriodo !== $tieneDetalle) {
+            throw new Exception('La trazabilidad de snapshot requiere periodo y detalle juntos');
+        }
+
+        return [
+            'requiere_trazabilidad' => true,
+            'nomina_periodo_id' => $this->validarId($periodoRaw, 'Periodo de snapshot invalido para pago laboral'),
+            'nomina_periodo_detalle_id' => $this->validarId($detalleRaw, 'Detalle de snapshot invalido para pago laboral'),
+        ];
+    }
+
+    private function trazabilidadSnapshotDisponible(): bool
+    {
+        if ($this->snapshotTraceColumnsAvailable !== null) {
+            return (bool)$this->snapshotTraceColumnsAvailable;
+        }
+
+        $this->snapshotTraceColumnsAvailable = $this->columnaExiste('trabajador_pagos_caja', 'nomina_periodo_id')
+            && $this->columnaExiste('trabajador_pagos_caja', 'nomina_periodo_detalle_id');
+
+        return (bool)$this->snapshotTraceColumnsAvailable;
+    }
+
+    private function validarTrazabilidadSnapshot(
+        int $hotelId,
+        int $trabajadorId,
+        int $periodoId,
+        int $detalleId,
+        bool $forUpdate
+    ): void {
+        $lock = $forUpdate ? ' FOR UPDATE' : '';
+        $stmt = $this->pdo->prepare(
+            "SELECT p.id AS periodo_id,
+                    p.hotel_id AS periodo_hotel_id,
+                    p.estado AS periodo_estado,
+                    d.id AS detalle_id,
+                    d.periodo_id AS detalle_periodo_id,
+                    d.hotel_id AS detalle_hotel_id,
+                    d.trabajador_id AS detalle_trabajador_id,
+                    d.estado_preview_nomina AS detalle_estado
+             FROM trabajador_nomina_periodos p
+             INNER JOIN trabajador_nomina_periodo_detalles d
+                ON d.periodo_id = p.id
+               AND d.hotel_id = p.hotel_id
+               AND d.id = ?
+             WHERE p.id = ?
+               AND p.hotel_id = ?
+             LIMIT 1" . $lock
+        );
+        $stmt->execute([$detalleId, $periodoId, $hotelId]);
+        $snapshot = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$snapshot) {
+            throw new Exception('La trazabilidad de snapshot no pertenece al hotel actual');
+        }
+
+        if ((int)($snapshot['detalle_trabajador_id'] ?? 0) !== $trabajadorId) {
+            throw new Exception('El detalle del snapshot no corresponde al trabajador pagado');
+        }
+
+        if ((string)($snapshot['periodo_estado'] ?? '') !== 'aprobado') {
+            throw new Exception('Solo se puede trazar pago contra snapshot aprobado');
+        }
+
+        if ((string)($snapshot['detalle_estado'] ?? '') !== 'por_pagar') {
+            throw new Exception('Solo se puede trazar pago contra detalle de snapshot por pagar');
+        }
+    }
+
     private function assertReferenciaNoDuplicada(int $hotelId, string $referencia): void
     {
         $stmt = $this->pdo->prepare(
@@ -837,6 +969,21 @@ class TrabajadorPagoCajaService
              LIMIT 1"
         );
         $stmt->execute([$tabla]);
+
+        return (bool)$stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private function columnaExiste(string $tabla, string $columna): bool
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT 1
+             FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = ?
+               AND COLUMN_NAME = ?
+             LIMIT 1"
+        );
+        $stmt->execute([$tabla, $columna]);
 
         return (bool)$stmt->fetch(PDO::FETCH_ASSOC);
     }

@@ -420,7 +420,7 @@
                     </div>
                 </div>
 
-                <a href="<?= url('inventario') ?>" class="exp-btn exp-back">
+                <a href="<?= back_url('inventario') ?>" class="exp-btn exp-back">
                     <i class="fas fa-arrow-left"></i>
                     Volver
                 </a>

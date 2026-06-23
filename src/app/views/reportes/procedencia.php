@@ -1018,7 +1018,7 @@ foreach ($porEstado as $estadoDato) {
     <main class="geo-shell">
         <section class="geo-hero">
             <div class="geo-hero-main">
-                <a href="<?= url('reportes') ?>" class="geo-btn is-soft">
+                <a href="<?= back_url('reportes') ?>" class="geo-btn is-soft">
                     <i class="fas fa-arrow-left"></i>
                     Volver a reportes
                 </a>
@@ -1173,6 +1173,7 @@ foreach ($porEstado as $estadoDato) {
                         <span class="geo-section-kicker">Concentración</span>
                         <h3>Top estados</h3>
                     </div>
+
                 </div>
                 <div class="geo-section-body">
                     <?php if (!empty($top5)): ?>

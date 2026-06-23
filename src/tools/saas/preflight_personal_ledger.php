@@ -372,11 +372,36 @@ if ($routes === []) {
         'trabajadores/{id:[0-9]+}/prestamos',
         'trabajadores/{id:[0-9]+}/asistencias',
     ];
+    $allowedLaterPayrollRoutes = [
+        'trabajadores/nomina/periodos',
+        'trabajadores/nomina/periodos/preview',
+        'trabajadores/nomina/periodos/reporte',
+        'trabajadores/nomina/periodos/exportar',
+        'trabajadores/nomina/periodos/pagos-snapshot',
+        'trabajadores/nomina/periodos/pagos-snapshot/exportar',
+        'trabajadores/nomina/auditoria',
+        'trabajadores/nomina/auditoria/exportar',
+        'trabajadores/nomina/expediente',
+        'trabajadores/nomina/expediente/exportar',
+        'trabajadores/nomina/periodos/{id:[0-9]+}',
+        'trabajadores/nomina/periodos/cerrar',
+        'trabajadores/nomina/periodos/{id:[0-9]+}/aprobar',
+        'trabajadores/nomina/periodos/{id:[0-9]+}/anular',
+        'trabajadores/nomina/periodos/{periodo:[0-9]+}/detalles/{detalle:[0-9]+}/registrar-pago-caja',
+        'trabajadores/nomina/preview',
+        'trabajadores/nomina/preview/exportar',
+        'trabajadores/pagos-caja/reporte',
+        'trabajadores/pagos-caja/reporte/exportar',
+        'trabajadores/pagos-caja/simulador',
+        'trabajadores/{id:[0-9]+}/registrar-pago-caja',
+        'trabajadores/{id:[0-9]+}/pagos-caja/{pagoid:[0-9]+}/revertir',
+    ];
     foreach ($routes as $route) {
         $path = strtolower(trim((string)$route['path'], '/'));
         if (strpos($path, 'trabajadores') !== false
             && preg_match('/pago|anticipo|prestamo|asistencia|nomina|caja/', $path)
             && !in_array($path, $allowedManualLedgerRoutes, true)
+            && !in_array($path, $allowedLaterPayrollRoutes, true)
         ) {
             $forbiddenWorkerRoutes[] = strtoupper($route['method']) . ' ' . $route['path'];
         }
@@ -410,14 +435,25 @@ foreach ([$workerModelPath, $workerControllerPath] as $path) {
 
 if (is_file($workerDetailViewPath)) {
     $viewCode = (string) file_get_contents($workerDetailViewPath);
+    $hasLedgerSummary = strpos($viewCode, 'Ledger laboral') !== false
+        || strpos($viewCode, 'Disponible para pagar ahora') !== false
+        || strpos($viewCode, 'Lo que le sumas') !== false;
+    $hasLedgerBalanceCopy = strpos($viewCode, 'Saldo informativo') !== false
+        || strpos($viewCode, 'Bruto del trabajo') !== false
+        || strpos($viewCode, 'Ya pagado en Caja') !== false;
     if (
-        strpos($viewCode, 'Ledger laboral') !== false
-        && strpos($viewCode, 'Saldo informativo') !== false
+        $hasLedgerSummary
+        && $hasLedgerBalanceCopy
         && strpos($viewCode, '/conceptos-laborales') !== false
         && strpos($viewCode, '/anticipos') !== false
         && strpos($viewCode, '/prestamos') !== false
         && strpos($viewCode, '/asistencias') !== false
-        && strpos($viewCode, 'no representa movimiento de Caja') !== false
+        && (
+            strpos($viewCode, 'no representa movimiento de Caja') !== false
+            || strpos($viewCode, 'Disponible para pago despues de Caja') !== false
+            || strpos($viewCode, 'Pago laboral con Caja') !== false
+            || strpos($viewCode, 'Pagar al trabajador (desde Caja)') !== false
+        )
         && strpos($viewCode, 'movimientos_caja') === false
     ) {
         npPfOk('Vista de trabajador muestra ledger y asistencia manual sin Caja con aclaracion de saldo informativo.');

@@ -10,6 +10,7 @@ require_once __DIR__ . '/../models/Documento.php';
 require_once __DIR__ . '/../services/AuditService.php';
 require_once __DIR__ . '/../services/TrabajadorPagoCajaService.php';
 require_once __DIR__ . '/../services/TrabajadorNominaPeriodoService.php';
+require_once __DIR__ . '/../services/TrabajadorNominaSnapshotPagoService.php';
 require_once __DIR__ . '/../services/TrabajadorReciboLaboralPdfService.php';
 
 class TrabajadorController extends Controller
@@ -18,6 +19,7 @@ class TrabajadorController extends Controller
     private $tareaModel;
     private $pagoCajaService;
     private $nominaPeriodoService;
+    private $snapshotPagoService;
 
     public function __construct($route_params = [])
     {
@@ -26,6 +28,7 @@ class TrabajadorController extends Controller
         $this->tareaModel = new TareaOperativa();
         $this->pagoCajaService = new TrabajadorPagoCajaService();
         $this->nominaPeriodoService = new TrabajadorNominaPeriodoService($this->trabajadorModel);
+        $this->snapshotPagoService = new TrabajadorNominaSnapshotPagoService();
     }
 
     protected function before()
@@ -139,10 +142,45 @@ class TrabajadorController extends Controller
             return;
         }
 
+        $pagosSnapshot = [];
+        $pagoSnapshotTokens = [];
+        if ((string)($periodo['estado'] ?? '') === 'aprobado') {
+            foreach (is_array($periodo['detalles'] ?? null) ? $periodo['detalles'] : [] as $detalle) {
+                $detalleId = (int)($detalle['id'] ?? 0);
+                if ($detalleId <= 0) {
+                    continue;
+                }
+
+                try {
+                    $evaluacion = $this->snapshotPagoService->evaluarPagoDesdeSnapshot($hotelId, $periodoId, $detalleId);
+                } catch (Throwable $e) {
+                    $evaluacion = [
+                        'elegible' => false,
+                        'motivo_bloqueo' => $e->getMessage(),
+                        'monto_maximo' => '0.00',
+                        'snapshot_pendiente' => number_format((float)($detalle['pendiente_pago_sugerido'] ?? 0), 2, '.', ''),
+                        'saldo_vivo' => '0.00',
+                        'metodos_pago' => [
+                            'efectivo' => 'Efectivo',
+                            'tarjeta' => 'Tarjeta',
+                            'transferencia' => 'Transferencia',
+                        ],
+                    ];
+                }
+
+                $pagosSnapshot[$detalleId] = $evaluacion;
+                if (!empty($evaluacion['elegible'])) {
+                    $pagoSnapshotTokens[$detalleId] = $this->generarNominaPeriodoToken('pago_snapshot_caja', $periodoId . ':' . $detalleId);
+                }
+            }
+        }
+
         View::renderTemplate('trabajadores/nomina_periodo_detalle', [
             'title' => 'Periodo pre-nomina #' . $periodoId . ' - ' . current_hotel_display_name(),
             'periodoNomina' => $periodo,
             'tablaPersistenteDisponible' => $tablaPersistenteDisponible,
+            'pagosSnapshot' => $pagosSnapshot,
+            'pagoSnapshotTokens' => $pagoSnapshotTokens,
             'aprobarToken' => (string)($periodo['estado'] ?? '') === 'cerrado'
                 ? $this->generarNominaPeriodoToken('aprobar', (string)$periodoId)
                 : null,
@@ -150,6 +188,49 @@ class TrabajadorController extends Controller
                 ? $this->generarNominaPeriodoToken('anular', (string)$periodoId)
                 : null,
         ]);
+    }
+
+    public function registrarPagoSnapshotNominaAction(): void
+    {
+        $this->requireWritePermission('usuarios.edit');
+
+        if (!$this->isPost()) {
+            $this->redirect('trabajadores/nomina/periodos');
+            return;
+        }
+
+        $this->validateCSRF();
+
+        if (function_exists('require_hotel_module')) {
+            require_hotel_module('caja');
+        }
+
+        $periodoId = (int)($this->route_params['periodo'] ?? 0);
+        $detalleId = (int)($this->route_params['detalle'] ?? 0);
+        $tokenKey = $periodoId . ':' . $detalleId;
+
+        try {
+            if (!$this->consumirNominaPeriodoToken('pago_snapshot_caja', $tokenKey, (string)$this->getPost('pago_token', ''))) {
+                throw new Exception('Token de pago invalido o ya utilizado; recarga el snapshot antes de reintentar');
+            }
+
+            $resultado = $this->snapshotPagoService->registrarPagoDesdeSnapshot(
+                $this->hotelIdActual(),
+                $periodoId,
+                $detalleId,
+                $this->datosPagoSnapshotNomina(),
+                $this->usuarioIdActual()
+            );
+
+            set_mensaje(
+                'Pago desde snapshot registrado. Movimiento Caja #' . (int)($resultado['movimiento_caja_id'] ?? 0) . '. El snapshot permanece inmutable.',
+                'success'
+            );
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo registrar el pago desde snapshot: ' . $e->getMessage(), 'error');
+        }
+
+        $this->redirect($periodoId > 0 ? 'trabajadores/nomina/periodos/' . $periodoId : 'trabajadores/nomina/periodos');
     }
 
     public function cerrarNominaPeriodoAction(): void
@@ -283,6 +364,96 @@ class TrabajadorController extends Controller
             : $this->reporteNominaPeriodosVacio($filtros);
 
         $this->descargarNominaPeriodosCsv($reporte);
+    }
+
+    public function reporteNominaPagosSnapshotAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $filtros = $this->filtrosReporteNominaPagosSnapshotDesdeQuery();
+
+        $tablaDisponible = $this->trabajadorModel->tablasReporteNominaPagosSnapshotDisponibles();
+        $reporte = $tablaDisponible
+            ? $this->trabajadorModel->reporteNominaPagosSnapshotPorHotel($hotelId, $filtros, 300)
+            : $this->reporteNominaPagosSnapshotVacio($filtros);
+
+        View::renderTemplate('trabajadores/nomina_pagos_snapshot_reporte', [
+            'title' => 'Conciliacion pagos snapshot - ' . current_hotel_display_name(),
+            'reporte' => $reporte,
+            'tablaDisponible' => $tablaDisponible,
+        ]);
+    }
+
+    public function exportarNominaPagosSnapshotAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $filtros = $this->filtrosReporteNominaPagosSnapshotDesdeQuery();
+
+        $tablaDisponible = $this->trabajadorModel->tablasReporteNominaPagosSnapshotDisponibles();
+        $reporte = $tablaDisponible
+            ? $this->trabajadorModel->reporteNominaPagosSnapshotPorHotel($hotelId, $filtros, 1000)
+            : $this->reporteNominaPagosSnapshotVacio($filtros);
+
+        $this->descargarNominaPagosSnapshotCsv($reporte);
+    }
+
+    public function auditoriaNominaAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $filtros = $this->filtrosAuditoriaNominaDesdeQuery();
+
+        $tablaDisponible = $this->trabajadorModel->tablasAuditoriaNominaConsolidadaDisponibles();
+        $reporte = $tablaDisponible
+            ? $this->trabajadorModel->auditoriaNominaConsolidadaPorHotel($hotelId, $filtros, 500)
+            : $this->auditoriaNominaConsolidadaVacio($filtros);
+
+        View::renderTemplate('trabajadores/nomina_auditoria_consolidada', [
+            'title' => 'Auditoria nomina consolidada - ' . current_hotel_display_name(),
+            'reporte' => $reporte,
+            'tablaDisponible' => $tablaDisponible,
+        ]);
+    }
+
+    public function exportarAuditoriaNominaAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $filtros = $this->filtrosAuditoriaNominaDesdeQuery();
+
+        $tablaDisponible = $this->trabajadorModel->tablasAuditoriaNominaConsolidadaDisponibles();
+        $reporte = $tablaDisponible
+            ? $this->trabajadorModel->auditoriaNominaConsolidadaPorHotel($hotelId, $filtros, 1000)
+            : $this->auditoriaNominaConsolidadaVacio($filtros);
+
+        $this->descargarAuditoriaNominaCsv($reporte);
+    }
+
+    public function expedienteNominaAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $filtros = $this->filtrosExpedienteNominaDesdeQuery();
+
+        $tablaDisponible = $this->trabajadorModel->tablasExpedienteNominaAdministrativoDisponibles();
+        $expediente = $tablaDisponible
+            ? $this->trabajadorModel->expedienteNominaAdministrativoPorHotel($hotelId, $filtros, 500)
+            : $this->expedienteNominaAdministrativoVacio($filtros);
+
+        View::renderTemplate('trabajadores/nomina_expediente_administrativo', [
+            'title' => 'Expediente administrativo nomina - ' . current_hotel_display_name(),
+            'expediente' => $expediente,
+            'tablaDisponible' => $tablaDisponible,
+        ]);
+    }
+
+    public function exportarExpedienteNominaAction(): void
+    {
+        $hotelId = $this->hotelIdActual();
+        $filtros = $this->filtrosExpedienteNominaDesdeQuery();
+
+        $tablaDisponible = $this->trabajadorModel->tablasExpedienteNominaAdministrativoDisponibles();
+        $expediente = $tablaDisponible
+            ? $this->trabajadorModel->expedienteNominaAdministrativoPorHotel($hotelId, $filtros, 1000)
+            : $this->expedienteNominaAdministrativoVacio($filtros);
+
+        $this->descargarExpedienteNominaCsv($expediente);
     }
 
     public function nominaPreviewAction(): void
@@ -549,10 +720,13 @@ class TrabajadorController extends Controller
             $despues = $this->trabajadorModel->buscarPorIdHotel($trabajadorId, $hotelId);
             $this->auditar('trabajadores.creado', null, $despues, $trabajadorId);
 
+            clear_old_input();
             set_mensaje('Trabajador creado correctamente.', 'success');
             $this->redirect('trabajadores/' . $trabajadorId);
         } catch (Throwable $e) {
             set_mensaje('No se pudo crear el trabajador: ' . $e->getMessage(), 'error');
+            save_old_input($_POST);
+            save_form_errors($this->erroresCamposTrabajador([$e->getMessage()]));
             $this->redirect('trabajadores/crear');
         }
     }
@@ -607,10 +781,13 @@ class TrabajadorController extends Controller
             $despues = $this->trabajadorModel->buscarPorIdHotel($id, $hotelId);
             $this->auditar('trabajadores.actualizado', $antes, $despues, $id);
 
+            clear_old_input();
             set_mensaje('Trabajador actualizado correctamente.', 'success');
             $this->redirect('trabajadores/' . $id);
         } catch (Throwable $e) {
             set_mensaje('No se pudo actualizar el trabajador: ' . $e->getMessage(), 'error');
+            save_old_input($_POST);
+            save_form_errors($this->erroresCamposTrabajador([$e->getMessage()]));
             $this->redirect($id > 0 ? 'trabajadores/' . $id . '/editar' : 'trabajadores');
         }
     }
@@ -1093,6 +1270,45 @@ class TrabajadorController extends Controller
         ];
     }
 
+    private function filtrosReporteNominaPagosSnapshotDesdeQuery(): array
+    {
+        return [
+            'periodo_id' => $this->getQuery('periodo_id', ''),
+            'trabajador_id' => $this->getQuery('trabajador_id', ''),
+            'buscar' => $this->getQuery('buscar', ''),
+            'estado' => $this->getQuery('estado', 'todos'),
+            'conciliacion' => $this->getQuery('conciliacion', 'todos'),
+            'fecha_inicio' => $this->getQuery('fecha_inicio', ''),
+            'fecha_fin' => $this->getQuery('fecha_fin', ''),
+        ];
+    }
+
+    private function filtrosAuditoriaNominaDesdeQuery(): array
+    {
+        return [
+            'periodo_id' => $this->getQuery('periodo_id', ''),
+            'trabajador_id' => $this->getQuery('trabajador_id', ''),
+            'buscar' => $this->getQuery('buscar', ''),
+            'estado_snapshot' => $this->getQuery('estado_snapshot', 'todos'),
+            'estado_auditoria' => $this->getQuery('estado_auditoria', 'todos'),
+            'fecha_inicio' => $this->getQuery('fecha_inicio', ''),
+            'fecha_fin' => $this->getQuery('fecha_fin', ''),
+        ];
+    }
+
+    private function filtrosExpedienteNominaDesdeQuery(): array
+    {
+        return [
+            'periodo_id' => $this->getQuery('periodo_id', ''),
+            'trabajador_id' => $this->getQuery('trabajador_id', ''),
+            'buscar' => $this->getQuery('buscar', ''),
+            'estado_snapshot' => $this->getQuery('estado_snapshot', 'todos'),
+            'estado_expediente' => $this->getQuery('estado_expediente', 'todos'),
+            'fecha_inicio' => $this->getQuery('fecha_inicio', ''),
+            'fecha_fin' => $this->getQuery('fecha_fin', ''),
+        ];
+    }
+
     private function descargarReportePagosCajaCsv(array $reporte): void
     {
         if (function_exists('session_write_close')) {
@@ -1338,6 +1554,279 @@ class TrabajadorController extends Controller
         exit;
     }
 
+    private function descargarNominaPagosSnapshotCsv(array $reporte): void
+    {
+        if (function_exists('session_write_close')) {
+            session_write_close();
+        }
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        $filename = 'conciliacion_pagos_snapshot_' . date('Ymd_His') . '.csv';
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('X-Content-Type-Options: nosniff');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $out = fopen('php://output', 'w');
+        if ($out === false) {
+            exit;
+        }
+
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, [
+            'pago_id',
+            'fecha_pago',
+            'estado_pago',
+            'conciliacion',
+            'monto',
+            'metodo_pago',
+            'referencia_pago',
+            'movimiento_caja_id',
+            'movimiento_referencia',
+            'corte_id',
+            'caja',
+            'snapshot_id',
+            'snapshot_estado',
+            'snapshot_etiqueta',
+            'snapshot_inicio',
+            'snapshot_fin',
+            'detalle_id',
+            'trabajador_id',
+            'trabajador_actual',
+            'trabajador_snapshot',
+            'bruto_snapshot',
+            'deducciones_snapshot',
+            'neto_snapshot',
+            'pendiente_snapshot',
+            'movimiento_reversion_id',
+            'monto_reversion_caja',
+            'creado_por',
+            'notas',
+        ]);
+
+        $registros = is_array($reporte['registros'] ?? null) ? $reporte['registros'] : [];
+        foreach ($registros as $registro) {
+            fputcsv($out, [
+                (int)($registro['id'] ?? 0),
+                $this->csvReportePagosCajaValor($registro['fecha_pago'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['estado'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['conciliacion_estado'] ?? ''),
+                number_format((float)($registro['monto'] ?? 0), 2, '.', ''),
+                $this->csvReportePagosCajaValor($registro['metodo_pago'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['referencia'] ?? ''),
+                (int)($registro['movimiento_caja_id'] ?? 0),
+                $this->csvReportePagosCajaValor($registro['movimiento_referencia'] ?? ''),
+                (int)($registro['corte_id'] ?? 0),
+                $this->csvReportePagosCajaValor($registro['caja_nombre'] ?? ''),
+                (int)($registro['nomina_periodo_id'] ?? 0),
+                $this->csvReportePagosCajaValor($registro['periodo_estado'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['periodo_etiqueta'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['periodo_fecha_inicio'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['periodo_fecha_fin'] ?? ''),
+                (int)($registro['nomina_periodo_detalle_id'] ?? 0),
+                (int)($registro['trabajador_id'] ?? 0),
+                $this->csvReportePagosCajaValor($registro['trabajador_actual_nombre'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['detalle_trabajador_nombre'] ?? ''),
+                number_format((float)($registro['bruto_periodo'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['deducciones_informativas'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['neto_sugerido'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['pendiente_pago_sugerido'] ?? 0), 2, '.', ''),
+                (int)($registro['movimiento_reversion_id'] ?? 0),
+                number_format((float)($registro['movimiento_reversion_monto'] ?? 0), 2, '.', ''),
+                $this->csvReportePagosCajaUsuario($registro, 'creado_por'),
+                $this->csvReportePagosCajaValor($registro['notas'] ?? ''),
+            ]);
+        }
+
+        fclose($out);
+        exit;
+    }
+
+    private function descargarAuditoriaNominaCsv(array $reporte): void
+    {
+        if (function_exists('session_write_close')) {
+            session_write_close();
+        }
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        $filename = 'auditoria_nomina_consolidada_' . date('Ymd_His') . '.csv';
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('X-Content-Type-Options: nosniff');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $out = fopen('php://output', 'w');
+        if ($out === false) {
+            exit;
+        }
+
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, [
+            'periodo_id',
+            'periodo_estado',
+            'periodo_etiqueta',
+            'periodo_inicio',
+            'periodo_fin',
+            'detalle_id',
+            'trabajador_id',
+            'trabajador_snapshot',
+            'trabajador_actual',
+            'rol_snapshot',
+            'estado_auditoria',
+            'bruto_snapshot',
+            'deducciones_snapshot',
+            'neto_snapshot',
+            'pendiente_snapshot',
+            'pagos_caja_total',
+            'reversiones_total',
+            'saldo_auditoria',
+            'pagos_count',
+            'pagos_pagados_count',
+            'pagos_revertidos_count',
+            'ultimo_pago_id',
+            'ultimo_pago',
+            'referencias_pago',
+            'cajas',
+            'inconsistencias_count',
+        ]);
+
+        $registros = is_array($reporte['registros'] ?? null) ? $reporte['registros'] : [];
+        foreach ($registros as $registro) {
+            fputcsv($out, [
+                (int)($registro['periodo_id'] ?? 0),
+                $this->csvReportePagosCajaValor($registro['periodo_estado'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['periodo_etiqueta'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['periodo_fecha_inicio'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['periodo_fecha_fin'] ?? ''),
+                (int)($registro['detalle_id'] ?? 0),
+                (int)($registro['trabajador_id'] ?? 0),
+                $this->csvReportePagosCajaValor($registro['trabajador_snapshot_nombre'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['trabajador_actual_nombre'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['trabajador_snapshot_rol'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['auditoria_estado'] ?? ''),
+                number_format((float)($registro['bruto_periodo'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['deducciones_informativas'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['neto_sugerido'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['pendiente_pago_sugerido'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['pagos_caja_total'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['reversiones_total'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['saldo_auditoria'] ?? 0), 2, '.', ''),
+                (int)($registro['pagos_count'] ?? 0),
+                (int)($registro['pagos_pagados_count'] ?? 0),
+                (int)($registro['pagos_revertidos_count'] ?? 0),
+                (int)($registro['ultimo_pago_id'] ?? 0),
+                $this->csvReportePagosCajaValor($registro['ultimo_pago'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['referencias_pago'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['cajas'] ?? ''),
+                (int)($registro['inconsistencias_count'] ?? 0),
+            ]);
+        }
+
+        fclose($out);
+        exit;
+    }
+
+    private function descargarExpedienteNominaCsv(array $expediente): void
+    {
+        if (function_exists('session_write_close')) {
+            session_write_close();
+        }
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        $filename = 'expediente_administrativo_nomina_' . date('Ymd_His') . '.csv';
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('X-Content-Type-Options: nosniff');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $out = fopen('php://output', 'w');
+        if ($out === false) {
+            exit;
+        }
+
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, [
+            'periodo_id',
+            'periodo_estado',
+            'periodo_etiqueta',
+            'periodo_inicio',
+            'periodo_fin',
+            'detalle_id',
+            'trabajador_id',
+            'trabajador_snapshot',
+            'trabajador_actual',
+            'rol_snapshot',
+            'estado_auditoria',
+            'estado_expediente',
+            'bloqueos',
+            'bruto_snapshot',
+            'deducciones_snapshot',
+            'neto_snapshot',
+            'pendiente_snapshot',
+            'pagos_caja_total',
+            'reversiones_total',
+            'saldo_auditoria',
+            'pagos_count',
+            'ultimo_pago_id',
+            'ultimo_pago',
+            'referencias_pago',
+            'cajas',
+        ]);
+
+        $registros = is_array($expediente['registros'] ?? null) ? $expediente['registros'] : [];
+        foreach ($registros as $registro) {
+            $bloqueos = is_array($registro['bloqueos'] ?? null)
+                ? implode(' | ', $registro['bloqueos'])
+                : (string)($registro['bloqueos'] ?? '');
+
+            fputcsv($out, [
+                (int)($registro['periodo_id'] ?? 0),
+                $this->csvReportePagosCajaValor($registro['periodo_estado'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['periodo_etiqueta'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['periodo_fecha_inicio'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['periodo_fecha_fin'] ?? ''),
+                (int)($registro['detalle_id'] ?? 0),
+                (int)($registro['trabajador_id'] ?? 0),
+                $this->csvReportePagosCajaValor($registro['trabajador_snapshot_nombre'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['trabajador_actual_nombre'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['trabajador_snapshot_rol'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['auditoria_estado'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['estado_expediente'] ?? ''),
+                $this->csvReportePagosCajaValor($bloqueos),
+                number_format((float)($registro['bruto_periodo'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['deducciones_informativas'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['neto_sugerido'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['pendiente_pago_sugerido'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['pagos_caja_total'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['reversiones_total'] ?? 0), 2, '.', ''),
+                number_format((float)($registro['saldo_auditoria'] ?? 0), 2, '.', ''),
+                (int)($registro['pagos_count'] ?? 0),
+                (int)($registro['ultimo_pago_id'] ?? 0),
+                $this->csvReportePagosCajaValor($registro['ultimo_pago'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['referencias_pago'] ?? ''),
+                $this->csvReportePagosCajaValor($registro['cajas'] ?? ''),
+            ]);
+        }
+
+        fclose($out);
+        exit;
+    }
+
     private function csvReportePagosCajaValor($value): string
     {
         if ($value === null) {
@@ -1424,6 +1913,130 @@ class TrabajadorController extends Controller
         ];
     }
 
+    private function reporteNominaPagosSnapshotVacio(array $filtros = []): array
+    {
+        $estado = trim((string)($filtros['estado'] ?? 'todos'));
+        if (!in_array($estado, ['todos', 'pagado', 'revertido'], true)) {
+            $estado = 'todos';
+        }
+
+        $conciliacion = trim((string)($filtros['conciliacion'] ?? 'todos'));
+        if (!in_array($conciliacion, ['todos', 'ok', 'revisar'], true)) {
+            $conciliacion = 'todos';
+        }
+
+        return [
+            'registros' => [],
+            'resumen' => [
+                'total_registros' => 0,
+                'ok_count' => 0,
+                'revisar_count' => 0,
+                'pagados_count' => 0,
+                'revertidos_count' => 0,
+                'monto_total' => '0.00',
+                'monto_pagado_total' => '0.00',
+                'monto_revertido_total' => '0.00',
+                'reversion_caja_total' => '0.00',
+            ],
+            'por_estado' => [],
+            'por_periodo' => [],
+            'filtros_normalizados' => [
+                'periodo_id' => max(0, (int)($filtros['periodo_id'] ?? 0)),
+                'trabajador_id' => max(0, (int)($filtros['trabajador_id'] ?? 0)),
+                'buscar' => trim((string)($filtros['buscar'] ?? '')),
+                'estado' => $estado,
+                'conciliacion' => $conciliacion,
+                'fecha_inicio' => trim((string)($filtros['fecha_inicio'] ?? '')),
+                'fecha_fin' => trim((string)($filtros['fecha_fin'] ?? '')),
+            ],
+        ];
+    }
+
+    private function auditoriaNominaConsolidadaVacio(array $filtros = []): array
+    {
+        $estadoSnapshot = trim((string)($filtros['estado_snapshot'] ?? 'todos'));
+        if (!in_array($estadoSnapshot, ['todos', 'cerrado', 'aprobado', 'anulado'], true)) {
+            $estadoSnapshot = 'todos';
+        }
+
+        $estadoAuditoria = trim((string)($filtros['estado_auditoria'] ?? 'todos'));
+        if (!in_array($estadoAuditoria, ['todos', 'liquidado', 'parcial', 'sin_pago', 'revisar'], true)) {
+            $estadoAuditoria = 'todos';
+        }
+
+        return [
+            'registros' => [],
+            'resumen' => [
+                'total_registros' => 0,
+                'trabajadores_total' => 0,
+                'liquidado_count' => 0,
+                'parcial_count' => 0,
+                'sin_pago_count' => 0,
+                'revisar_count' => 0,
+                'bruto_total' => '0.00',
+                'pendiente_snapshot_total' => '0.00',
+                'pagos_caja_total' => '0.00',
+                'reversiones_total' => '0.00',
+                'saldo_auditoria_total' => '0.00',
+            ],
+            'por_estado' => [],
+            'por_periodo' => [],
+            'filtros_normalizados' => [
+                'periodo_id' => max(0, (int)($filtros['periodo_id'] ?? 0)),
+                'trabajador_id' => max(0, (int)($filtros['trabajador_id'] ?? 0)),
+                'buscar' => trim((string)($filtros['buscar'] ?? '')),
+                'estado_snapshot' => $estadoSnapshot,
+                'estado_auditoria' => $estadoAuditoria,
+                'fecha_inicio' => trim((string)($filtros['fecha_inicio'] ?? '')),
+                'fecha_fin' => trim((string)($filtros['fecha_fin'] ?? '')),
+            ],
+        ];
+    }
+
+    private function expedienteNominaAdministrativoVacio(array $filtros = []): array
+    {
+        $estadoSnapshot = trim((string)($filtros['estado_snapshot'] ?? 'todos'));
+        if (!in_array($estadoSnapshot, ['todos', 'cerrado', 'aprobado', 'anulado'], true)) {
+            $estadoSnapshot = 'todos';
+        }
+
+        $estadoExpediente = trim((string)($filtros['estado_expediente'] ?? 'todos'));
+        if (!in_array($estadoExpediente, ['todos', 'listo_revision', 'con_pendientes', 'requiere_correccion', 'bloqueado', 'anulado'], true)) {
+            $estadoExpediente = 'todos';
+        }
+
+        return [
+            'registros' => [],
+            'resumen' => [
+                'total_registros' => 0,
+                'trabajadores_total' => 0,
+                'listo_revision_count' => 0,
+                'con_pendientes_count' => 0,
+                'requiere_correccion_count' => 0,
+                'bloqueado_count' => 0,
+                'anulado_count' => 0,
+                'bloqueos_total' => 0,
+                'bruto_total' => '0.00',
+                'pendiente_snapshot_total' => '0.00',
+                'pagos_caja_total' => '0.00',
+                'reversiones_total' => '0.00',
+                'saldo_auditoria_total' => '0.00',
+            ],
+            'por_estado' => [],
+            'por_periodo' => [],
+            'bloqueos' => [],
+            'filtros_normalizados' => [
+                'periodo_id' => max(0, (int)($filtros['periodo_id'] ?? 0)),
+                'trabajador_id' => max(0, (int)($filtros['trabajador_id'] ?? 0)),
+                'buscar' => trim((string)($filtros['buscar'] ?? '')),
+                'estado_snapshot' => $estadoSnapshot,
+                'estado_expediente' => $estadoExpediente,
+                'fecha_inicio' => trim((string)($filtros['fecha_inicio'] ?? '')),
+                'fecha_fin' => trim((string)($filtros['fecha_fin'] ?? '')),
+            ],
+        ];
+    }
+
     private function hotelIdActual(): int
     {
         return function_exists('obtenerHotelIdActualCompat')
@@ -1435,6 +2048,49 @@ class TrabajadorController extends Controller
     {
         $id = (int)($this->route_params['id'] ?? 0);
         return $this->trabajadorModel->buscarPorIdHotel($id, $hotelId);
+    }
+
+    private function erroresCamposTrabajador(array $errores): array
+    {
+        $fieldErrors = [];
+
+        foreach ($errores as $mensaje) {
+            $mensaje = trim((string)$mensaje);
+            if ($mensaje === '') {
+                continue;
+            }
+
+            $lower = strtolower($mensaje);
+            $campo = null;
+
+            if (strpos($lower, 'nombre') !== false) {
+                $campo = 'nombre_completo';
+            } elseif (strpos($lower, 'correo') !== false || strpos($lower, 'email') !== false) {
+                $campo = 'email';
+            } elseif (strpos($lower, 'salario') !== false) {
+                $campo = 'salario_base';
+            } elseif (strpos($lower, 'usuario') !== false) {
+                $campo = 'usuario_id';
+            } elseif (strpos($lower, 'identificacion') !== false) {
+                $campo = 'identificacion';
+            } elseif (strpos($lower, 'rol') !== false) {
+                $campo = 'rol_laboral';
+            } elseif (strpos($lower, 'telefono') !== false) {
+                $campo = 'telefono';
+            } elseif (strpos($lower, 'fecha') !== false) {
+                $campo = 'fecha_alta';
+            } elseif (strpos($lower, 'periodicidad') !== false) {
+                $campo = 'periodicidad_pago';
+            } elseif (strpos($lower, 'nota') !== false) {
+                $campo = 'notas';
+            }
+
+            if ($campo !== null) {
+                $fieldErrors[$campo][] = $mensaje;
+            }
+        }
+
+        return $fieldErrors;
     }
 
     private function datosFormulario(): array
@@ -1514,6 +2170,16 @@ class TrabajadorController extends Controller
             'periodo_inicio' => $this->getPost('periodo_inicio', ''),
             'periodo_fin' => $this->getPost('periodo_fin', ''),
             'concepto' => $this->getPost('concepto', ''),
+            'notas' => $this->getPost('notas', ''),
+        ];
+    }
+
+    private function datosPagoSnapshotNomina(): array
+    {
+        return [
+            'monto' => $this->getPost('monto', ''),
+            'metodo_pago' => $this->getPost('metodo_pago', ''),
+            'referencia' => $this->getPost('referencia', ''),
             'notas' => $this->getPost('notas', ''),
         ];
     }

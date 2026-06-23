@@ -231,10 +231,44 @@ $tipoFiltro = (string)($filtros['tipo_reporte'] ?? '');
 .report-link-icon-btn.danger {
     color: #B42318;
 }
+.report-link-icon-btn.is-confirming {
+    background: #FFF8E8;
+    border-color: #F3D08A;
+    color: #8A5B12;
+}
+.report-link-icon-btn.danger.is-confirming {
+    background: #FEF2F2;
+    border-color: #FECACA;
+    color: #B42318;
+}
 .report-link-icon-btn:disabled {
     opacity: .42;
     cursor: not-allowed;
     background: #F3F4F6;
+}
+.report-link-toast {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 15000;
+    max-width: min(390px, calc(100vw - 32px));
+    border: 1px solid #F3D08A;
+    border-radius: 14px;
+    background: #FFF8E8;
+    color: #8A5B12;
+    padding: 12px 14px;
+    box-shadow: 0 18px 42px rgba(24, 32, 48, .18);
+    font-size: .82rem;
+    font-weight: 850;
+    line-height: 1.42;
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+}
+.report-link-toast.is-visible {
+    opacity: 1;
+    transform: translateY(0);
 }
 .report-link-empty {
     padding: 38px 20px;
@@ -281,7 +315,7 @@ $tipoFiltro = (string)($filtros['tipo_reporte'] ?? '');
                 <p>Control interno de PDFs guardados para compartir por link con expiracion, revocacion, correo y conteo de accesos.</p>
             </section>
             <div class="report-link-actions">
-                <a href="<?= url('reportes') ?>" class="report-link-btn">
+                <a href="<?= back_url('reportes') ?>" class="report-link-btn">
                     <i class="fas fa-arrow-left"></i> Reportes
                 </a>
             </div>
@@ -423,7 +457,7 @@ $tipoFiltro = (string)($filtros['tipo_reporte'] ?? '');
                                                 <i class="fas fa-file-pdf"></i>
                                             </a>
                                             <?php if ($estado !== 'revocado'): ?>
-                                                <form method="POST" action="<?= url('reportes/links/' . $id . '/enviar-correo') ?>" onsubmit="return confirm('Enviar este reporte por correo con un link seguro nuevo?');">
+                                                <form method="POST" action="<?= url('reportes/links/' . $id . '/enviar-correo') ?>" data-report-link-confirm="1" data-confirm-message="Se enviara este reporte por correo con un link seguro nuevo.">
                                                     <?= csrf_field() ?>
                                                     <button class="report-link-icon-btn" type="submit" title="<?= rep_link_safe($correoTitle) ?>" <?= $puedeEnviarCorreo ? '' : 'disabled' ?>>
                                                         <i class="fas fa-envelope"></i>
@@ -431,7 +465,7 @@ $tipoFiltro = (string)($filtros['tipo_reporte'] ?? '');
                                                 </form>
                                             <?php endif; ?>
                                             <?php if ($estado === 'activo'): ?>
-                                                <form method="POST" action="<?= url('reportes/links/' . $id . '/revocar') ?>" onsubmit="return confirm('Revocar este link seguro?');">
+                                                <form method="POST" action="<?= url('reportes/links/' . $id . '/revocar') ?>" data-report-link-confirm="1" data-confirm-message="Revocar este link impedira nuevos accesos con esta URL.">
                                                     <?= csrf_field() ?>
                                                     <button class="report-link-icon-btn danger" type="submit" title="Revocar link">
                                                         <i class="fas fa-ban"></i>
@@ -449,3 +483,66 @@ $tipoFiltro = (string)($filtros['tipo_reporte'] ?? '');
         <?php endif; ?>
     </div>
 </div>
+
+<script>
+(function() {
+    function showReportLinkToast(message, duration = 7000) {
+        let toast = document.getElementById('reportLinkToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'reportLinkToast';
+            toast.className = 'report-link-toast';
+            toast.setAttribute('role', 'status');
+            toast.setAttribute('aria-live', 'polite');
+            document.body.appendChild(toast);
+        }
+
+        window.clearTimeout(toast._hideTimer);
+        toast.textContent = message;
+        requestAnimationFrame(() => toast.classList.add('is-visible'));
+        toast._hideTimer = window.setTimeout(() => toast.classList.remove('is-visible'), duration);
+    }
+
+    function resetReportLinkConfirm(form) {
+        if (!form) return;
+
+        delete form.dataset.confirmedAction;
+        window.clearTimeout(form._confirmTimer);
+        const button = form.querySelector('button[type="submit"]');
+        if (button && button.dataset.originalHtml) {
+            button.innerHTML = button.dataset.originalHtml;
+            delete button.dataset.originalHtml;
+        }
+        button?.classList.remove('is-confirming');
+    }
+
+    document.addEventListener('submit', function(event) {
+        const form = event.target instanceof HTMLFormElement ? event.target : null;
+        if (!form || form.dataset.reportLinkConfirm !== '1') {
+            return;
+        }
+
+        if (form.dataset.confirmedAction === '1') {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        document.querySelectorAll('form[data-report-link-confirm="1"]').forEach(otherForm => {
+            if (otherForm !== form) resetReportLinkConfirm(otherForm);
+        });
+
+        form.dataset.confirmedAction = '1';
+        const button = form.querySelector('button[type="submit"]');
+        if (button) {
+            button.dataset.originalHtml = button.innerHTML;
+            button.classList.add('is-confirming');
+            button.innerHTML = '<i class="fas fa-check"></i>';
+        }
+
+        showReportLinkToast(`${form.dataset.confirmMessage || 'Confirma esta accion.'} Presiona el boton otra vez para continuar.`);
+        form._confirmTimer = window.setTimeout(() => resetReportLinkConfirm(form), 7000);
+    }, true);
+})();
+</script>

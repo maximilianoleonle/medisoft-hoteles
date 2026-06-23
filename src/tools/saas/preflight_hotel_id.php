@@ -353,6 +353,14 @@ $tablasCajaBaseMigradas = [
     ],
 ];
 
+$tablasHotelIdNullableMigradas = [
+    'huespedes' => [
+        'indice' => 'idx_huespedes_hotel_id',
+        'foreign_key' => 'fk_huespedes_hotel',
+        'fase' => 'HUES-REG-002',
+    ],
+];
+
 $tablasMigradasConHotelId = array_merge(
     $tablasHabitacionesMigradas,
     $tablasInventarioBaseMigradas,
@@ -378,7 +386,8 @@ $tablasPermitidasConHotelIdPostReservaciones1B = array_merge(
     array_keys($tablasInventarioBaseMigradas),
     array_keys($tablasMovimientosInventarioMigradas),
     array_keys($tablasReservacionesBaseMigradas),
-    array_keys($tablasCajaBaseMigradas)
+    array_keys($tablasCajaBaseMigradas),
+    array_keys($tablasHotelIdNullableMigradas)
 );
 
 $tablas = [
@@ -558,6 +567,23 @@ foreach ($tablas as $grupo => $grupoTablas) {
             preflightError("Tabla {$tabla} tiene hotel_id antes de la fase autorizada");
         }
 
+        if (array_key_exists($tabla, $tablasHotelIdNullableMigradas) && $tieneHotelId) {
+            $hotelIdNullable = $tablasHotelIdNullableMigradas[$tabla];
+            preflightOk("Tabla {$tabla} tiene hotel_id nullable permitido por {$hotelIdNullable['fase']}");
+
+            if (existeIndicePreflight($pdo, $databaseName, $tabla, $hotelIdNullable['indice'])) {
+                preflightOk("Indice {$hotelIdNullable['indice']} existe");
+            } else {
+                preflightError("Indice {$hotelIdNullable['indice']} no existe");
+            }
+
+            if (existeForeignKeyPreflight($pdo, $databaseName, $tabla, $hotelIdNullable['foreign_key'])) {
+                preflightOk("Foreign key {$hotelIdNullable['foreign_key']} existe hacia hoteles(id)");
+            } else {
+                preflightError("Foreign key {$hotelIdNullable['foreign_key']} no existe hacia hoteles(id)");
+            }
+        }
+
         if (array_key_exists($tabla, $tablasMigradasConHotelId) && $tieneHotelId) {
             if ($hotelLosCedrosId === null) {
                 preflightError("No se puede validar backfill de {$tabla} porque no existe Los Cedros");
@@ -615,6 +641,8 @@ foreach ($tablas as $grupo => $grupoTablas) {
             $necesitaTexto .= '; migrada en Reservaciones 1-B, pendiente integracion funcional de Reservaciones';
         } elseif (array_key_exists($tabla, $tablasCajaBaseMigradas)) {
             $necesitaTexto .= '; migrada en Reservaciones 1-F-B, pendiente integracion funcional de Caja';
+        } elseif (array_key_exists($tabla, $tablasHotelIdNullableMigradas)) {
+            $necesitaTexto .= '; migrada en HUES-REG-002 con hotel_id nullable para historicos';
         } elseif (in_array($tabla, $primerasCandidatas, true)) {
             $necesitaTexto .= '; primera candidata';
         }
@@ -697,6 +725,9 @@ echo "Recomendacion de siguiente fase: cerrar actualizacion de herramientas y no
 echo "Total OK: {$ok}\n";
 echo "Total WARN: {$warnings}\n";
 echo "Total ERROR: {$errors}\n";
+echo "OK: {$ok}\n";
+echo "WARNING: {$warnings}\n";
+echo "ERROR: {$errors}\n";
 echo 'Resultado general: ' . ($errors === 0 ? 'PASS' : 'FAIL') . "\n";
 
 exit($errors === 0 ? 0 : 1);

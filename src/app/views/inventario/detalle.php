@@ -7,7 +7,7 @@
         </div>
         
         <div class="flex gap-2">
-            <a href="<?= url('inventarios') ?>" 
+            <a href="<?= back_url('inventario') ?>"
                class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition duration-200 flex items-center">
                 <i class="fas fa-arrow-left mr-2"></i>Regresar
             </a>
@@ -229,6 +229,8 @@
                                 </p>
                             </div>
                             
+                            <p id="descuento_config_error" class="hidden mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700" aria-live="polite"></p>
+
                             <div class="overflow-x-auto">
                                 <table class="w-full">
                                     <thead>
@@ -365,6 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         actualizarPreview();
+        validarConfiguracionDescuentos(false);
     }
     
     function actualizarPreview() {
@@ -390,22 +393,61 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listeners
     checkboxCheckin.addEventListener('change', toggleConfiguracion);
     checkboxLimpieza.addEventListener('change', toggleConfiguracion);
+    document.querySelectorAll('.checkin-input, .limpieza-input, input[name="cantidad_limpieza"]').forEach(input => {
+        input.addEventListener('input', () => validarConfiguracionDescuentos(false));
+        input.addEventListener('change', () => validarConfiguracionDescuentos(false));
+    });
+
+    function tieneCantidadPositiva(selector) {
+        return Array.from(document.querySelectorAll(selector)).some(input => input.value && parseFloat(input.value) > 0);
+    }
+
+    function validarConfiguracionDescuentos(enviar = false) {
+        const error = document.getElementById('descuento_config_error');
+        const objetivo = checkboxCheckin.checked ? checkboxCheckin : checkboxLimpieza;
+        let tieneConfiguracion = true;
+
+        if (checkboxCheckin.checked || checkboxLimpieza.checked) {
+            tieneConfiguracion = false;
+
+            if (checkboxCheckin.checked && tieneCantidadPositiva('.checkin-input')) {
+                tieneConfiguracion = true;
+            }
+
+            if (checkboxLimpieza.checked) {
+                const cantidadLimpieza = document.querySelector('input[name="cantidad_limpieza"]')?.value;
+                if ((cantidadLimpieza && parseFloat(cantidadLimpieza) > 0) || tieneCantidadPositiva('.limpieza-input')) {
+                    tieneConfiguracion = true;
+                }
+            }
+        }
+
+        const mensaje = tieneConfiguracion ? '' : 'Configura al menos una cantidad mayor a 0 para el descuento automatico seleccionado.';
+        [checkboxCheckin, checkboxLimpieza].forEach(checkbox => {
+            checkbox.setCustomValidity(checkbox === objetivo ? mensaje : '');
+            checkbox.classList.toggle('ms-form-invalid', Boolean(mensaje && checkbox === objetivo));
+        });
+
+        if (error) {
+            error.textContent = mensaje;
+            error.classList.toggle('hidden', !mensaje);
+        }
+
+        if (mensaje && enviar) {
+            objetivo.focus();
+            document.getElementById('config_habitaciones')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        return !mensaje;
+    }
     
     // Validación del formulario
     document.getElementById('formNuevoProducto').addEventListener('submit', function(e) {
-        const codigo = document.querySelector('input[name="codigo"]').value.trim();
-        const nombre = document.querySelector('input[name="nombre"]').value.trim();
-        const categoria = document.querySelector('select[name="categoria_id"]').value;
-        const unidad = document.querySelector('select[name="unidad_medida_id"]').value;
-        const stockMinimo = document.querySelector('input[name="stock_minimo"]').value;
-        const costoUnitario = document.querySelector('input[name="costo_unitario"]').value;
-        
-        if (!codigo || !nombre || !categoria || !unidad || !stockMinimo || !costoUnitario) {
+        if (!validarConfiguracionDescuentos(true)) {
             e.preventDefault();
-            alert('Por favor complete todos los campos requeridos');
-            return;
+            return false;
         }
-        
+
         // Validar que si se activan descuentos automáticos, se configuren las cantidades
         if (checkboxCheckin.checked || checkboxLimpieza.checked) {
             let tieneConfiguracion = false;
@@ -433,7 +475,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (!tieneConfiguracion) {
                 e.preventDefault();
-                alert('Si activa descuentos automáticos, debe configurar al menos una cantidad para un tipo de habitación');
                 return;
             }
         }

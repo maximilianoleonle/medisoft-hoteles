@@ -140,7 +140,7 @@ function pfReportCxpConsistency(PDO $pdo, string $database): void
             WHERE cxp.id IS NULL
                OR m.hotel_id IS NULL
                OR m.monto <= 0
-               OR m.saldo_anterior < m.saldo_posterior
+               OR (m.tipo_movimiento <> 'CANCELACION' AND m.saldo_anterior < m.saldo_posterior)
                OR m.saldo_posterior < 0"),
         'Revisar movimientos CxP antes de operar pagos proveedores.'
     );
@@ -243,7 +243,10 @@ function pfReportCxpConsistency(PDO $pdo, string $database): void
                     WHERE " . $predicate . "
                       AND (
                           hotel_id IS NULL
-                          OR tipo <> 'gasto'
+                          OR NOT (
+                              tipo = 'gasto'
+                              OR (tipo = 'ingreso' AND categoria = 'Reversion Pago proveedor')
+                          )
                           OR monto <= 0
                           OR corte_id IS NULL
                           OR NOT EXISTS (
@@ -641,8 +644,9 @@ if (is_file($routesPath)) {
             'GET /cuentas-por-pagar/simulador-caja',
             'POST /cuentas-por-pagar/generar-desde-compra/{id:[0-9]+}',
             'POST /cuentas-por-pagar/{id:[0-9]+}/registrar-pago-caja',
+            'POST /cuentas-por-pagar/{id:[0-9]+}/movimientos/{movimientoid:[0-9]+}/revertir-pago-caja',
             'GET /cuentas-por-pagar/{id:[0-9]+}',
-        ], true) && $controller === 'cuentaporpagar' && in_array($action, ['index', 'generacionpreview', 'simuladorcaja', 'generardesdecompra', 'registrarpagocaja', 'ver'], true);
+        ], true) && $controller === 'cuentaporpagar' && in_array($action, ['index', 'generacionpreview', 'simuladorcaja', 'generardesdecompra', 'registrarpagocaja', 'revertirpagocaja', 'ver'], true);
 
         if ($isAllowedPurchaseRoute || $isAllowedCxpReadOnlyRoute) {
             continue;
@@ -664,8 +668,8 @@ if (is_file($routesPath)) {
         pfOk('Solo existen compras minimas y CxP controlada; compras no registra pagos, contactos ni documentos.');
     } else {
         pfError(
-            'Rutas fuera del alcance Fase 3C-C detectadas: ' . implode(' | ', $forbiddenRoutes),
-            'Retirar rutas que no sean Compras minimas, GET de CxP/preview/detalle, POST generar CxP o POST pago Caja desde CxP.'
+            'Rutas fuera del alcance Fase 3D-D-A detectadas: ' . implode(' | ', $forbiddenRoutes),
+            'Retirar rutas que no sean Compras minimas, GET de CxP/preview/detalle, POST generar CxP, POST pago Caja o POST reversion Caja desde CxP.'
         );
     }
 } else {
@@ -839,7 +843,10 @@ if (is_file($purchaseIndexViewPath) && is_file($purchaseFormViewPath) && is_file
     if (
         strpos($indexView, "url('compras/crear')") !== false
         && strpos($indexView, "url('compras/reportes/recibidas')") !== false
-        && strpos($indexView, "url('compras/' . (int)") !== false
+        && (
+            strpos($indexView, "url('compras/' . (int)") !== false
+            || strpos($indexView, "url('compras/' . \$compraId)") !== false
+        )
         && strpos($formView, "action=\"<?= url('compras') ?>\"") !== false
         && strpos($formView, 'csrf_field()') !== false
         && strpos($formView, 'name="producto_id[]"') !== false
@@ -854,15 +861,17 @@ if (is_file($purchaseIndexViewPath) && is_file($purchaseFormViewPath) && is_file
         && strpos($reportView, 'por_producto') !== false
         && strpos($reportView, "url('compras/' . (int)") !== false
         && strpos($viewsCode, '/recibir') !== false
-        && strpos($viewsCode, 'purchase-btn-receive') !== false
+        && (
+            strpos($viewsCode, 'purchase-btn-receive') !== false
+            || strpos($viewsCode, 'data-receive-form') !== false
+        )
         && strpos($viewsCode, "url('compras/pagar") === false
-        && strpos($viewsCode, 'cuentas-por-pagar') === false
     ) {
-        pfOk('Vistas Fase 2Y de Compras permiten reporte read-only, detalle, borrador y recepcion minima con CSRF.');
+        pfOk('Vistas Fase 2Y de Compras permiten reporte read-only, detalle, borrador, recepcion minima con CSRF y enlaces CxP controlados.');
     } else {
         pfError(
             'Vistas Fase 2Y de Compras incompletas o con enlaces fuera de alcance.',
-            'Revisar reporte read-only, detalle, form CSRF, action POST /compras, recepcion minima y ausencia de pagos/CxP.'
+            'Revisar reporte read-only, detalle, form CSRF, action POST /compras, recepcion minima y ausencia de pagos directos desde Compras.'
         );
     }
 } else {

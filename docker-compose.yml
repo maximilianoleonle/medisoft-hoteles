@@ -8,6 +8,9 @@
       - "${APP_PORT:-8080}:80"
     volumes:
       - ./src:/var/www/html
+      - ./docs:/var/www/docs:ro
+      - ./migrations:/var/www/migrations:ro
+      - ./.env:/var/www/.env:ro
     env_file:
       - .env
     environment:

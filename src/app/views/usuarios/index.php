@@ -431,6 +431,56 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
     background: var(--user-success-soft) !important;
     border-color: color-mix(in srgb, var(--user-success) 24%, #FFFFFF) !important;
 }
+.act-btn.is-confirming {
+    color: #FFFFFF !important;
+    background: linear-gradient(135deg, var(--user-accent), var(--user-accent-dark)) !important;
+    border-color: var(--user-accent-line) !important;
+    box-shadow: 0 12px 22px -14px color-mix(in srgb, var(--user-accent) 70%, transparent);
+}
+
+.usr-inline-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--user-accent-line);
+    background: #FFFFFF;
+    color: var(--user-text);
+    font-size: .84rem;
+    font-weight: 750;
+    box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 30px -26px rgba(27,39,70,.28);
+}
+
+.usr-inline-notice[hidden] {
+    display: none;
+}
+
+.usr-inline-notice i {
+    margin-top: 2px;
+    color: var(--user-accent-dark);
+}
+
+.usr-inline-notice.is-danger {
+    border-color: color-mix(in srgb, var(--user-danger) 24%, #FFFFFF);
+    background: var(--user-danger-soft);
+    color: var(--user-danger);
+}
+
+.usr-inline-notice.is-danger i {
+    color: var(--user-danger);
+}
+
+.usr-inline-notice.is-success {
+    border-color: color-mix(in srgb, var(--user-success) 24%, #FFFFFF);
+    background: var(--user-success-soft);
+    color: color-mix(in srgb, var(--user-success) 70%, #123322);
+}
+
+.usr-inline-notice.is-success i {
+    color: var(--user-success);
+}
 
 .usuarios-view .text-center.py-16 {
     background: var(--user-bg-2);
@@ -982,6 +1032,11 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
             </div>
         </div>
 
+        <div id="usuarios-action-notice" class="usr-inline-notice" role="status" aria-live="polite" hidden>
+            <i class="fas fa-circle-info"></i>
+            <span></span>
+        </div>
+
         <!-- Users Table -->
         <div class="usr-panel">
             <!-- Panel header -->
@@ -1101,12 +1156,12 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
                                         </a>
                                         <?php if ($usuario['id'] != user_id()): ?>
                                             <?php if ($usuario['activo']): ?>
-                                                <button onclick="cambiarEstadoUsuario(<?= (int) $usuario['id'] ?>, false, <?= json_encode($usuario['nombre_completo'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>)"
+                                                <button onclick="cambiarEstadoUsuario(<?= (int) $usuario['id'] ?>, false, <?= json_encode($usuario['nombre_completo'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>, this)"
                                                         class="act-btn act-deact" title="Desactivar">
                                                     <i class="fas fa-user-slash"></i>
                                                 </button>
                                             <?php else: ?>
-                                                <button onclick="cambiarEstadoUsuario(<?= (int) $usuario['id'] ?>, true, <?= json_encode($usuario['nombre_completo'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>)"
+                                                <button onclick="cambiarEstadoUsuario(<?= (int) $usuario['id'] ?>, true, <?= json_encode($usuario['nombre_completo'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>, this)"
                                                         class="act-btn act-act" title="Activar">
                                                     <i class="fas fa-user-check"></i>
                                                 </button>
@@ -1128,34 +1183,82 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
 </div>
 
 <script>
-function cambiarEstadoUsuario(id, activar, nombre) {
-    Swal.fire({
-        title: activar ? '¿Activar usuario?' : '¿Desactivar usuario?',
-        text: activar
-            ? `Se habilitará el acceso al sistema para ${nombre}`
-            : `Se bloqueará el acceso al sistema para ${nombre}`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: activar ? '#059669' : '#DC2626',
-        cancelButtonColor: '#5C7A4E',
-        confirmButtonText: activar
-            ? '<i class="fas fa-check mr-2"></i>Sí, activar'
-            : '<i class="fas fa-ban mr-2"></i>Sí, desactivar',
-        cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancelar',
-        reverseButtons: true
-    }).then(result => {
-        if (result.isConfirmed) {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '<?= url('usuarios/') ?>' + id + '/toggle';
-            const csrf = document.createElement('input');
-            csrf.type = 'hidden'; csrf.name = 'csrf_token';
-            csrf.value = '<?= csrf_token() ?>';
-            form.appendChild(csrf);
-            document.body.appendChild(form);
-            form.submit();
-        }
+let userStatePending = null;
+let userStateTimer = null;
+
+function resetUserStateConfirmation() {
+    window.clearTimeout(userStateTimer);
+    document.querySelectorAll('.act-btn.is-confirming').forEach(btn => {
+        btn.classList.remove('is-confirming');
+        btn.disabled = false;
+        const activating = btn.classList.contains('act-act');
+        btn.title = activating ? 'Activar' : 'Desactivar';
+        btn.innerHTML = activating
+            ? '<i class="fas fa-user-check"></i>'
+            : '<i class="fas fa-user-slash"></i>';
     });
+    userStatePending = null;
+    const notice = document.getElementById('usuarios-action-notice');
+    if (notice) {
+        notice.hidden = true;
+        notice.classList.remove('is-danger', 'is-success');
+    }
+}
+
+function showUserStateNotice(message, activar) {
+    const notice = document.getElementById('usuarios-action-notice');
+    if (!notice) return;
+    const icon = notice.querySelector('i');
+    const text = notice.querySelector('span');
+    notice.classList.toggle('is-success', !!activar);
+    notice.classList.toggle('is-danger', !activar);
+    if (icon) icon.className = activar ? 'fas fa-circle-check' : 'fas fa-triangle-exclamation';
+    if (text) text.textContent = message;
+    notice.hidden = false;
+}
+
+function submitUserStateChange(id) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '<?= url('usuarios/') ?>' + id + '/toggle';
+    const csrf = document.createElement('input');
+    csrf.type = 'hidden';
+    csrf.name = 'csrf_token';
+    csrf.value = '<?= csrf_token() ?>';
+    form.appendChild(csrf);
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function cambiarEstadoUsuario(id, activar, nombre, trigger) {
+    const actionKey = `${id}:${activar ? 'activar' : 'desactivar'}`;
+
+    if (userStatePending === actionKey) {
+        if (trigger) {
+            trigger.disabled = true;
+            trigger.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+        submitUserStateChange(id);
+        return;
+    }
+
+    resetUserStateConfirmation();
+    userStatePending = actionKey;
+
+    if (trigger) {
+        trigger.classList.add('is-confirming');
+        trigger.title = activar ? 'Confirmar activacion' : 'Confirmar desactivacion';
+        trigger.innerHTML = '<i class="fas fa-check"></i>';
+    }
+
+    const persona = nombre || 'este usuario';
+    showUserStateNotice(
+        activar
+            ? `Presiona otra vez para habilitar el acceso de ${persona}.`
+            : `Presiona otra vez para bloquear el acceso de ${persona}.`,
+        activar
+    );
+    userStateTimer = window.setTimeout(() => resetUserStateConfirmation(), 7000);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1167,5 +1270,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

@@ -63,6 +63,9 @@ $puedeCrearTareaLimpieza = function_exists('can') ? can('habitaciones.mantenimie
 .lim-rep-inline-form{margin-top:9px}
 .lim-rep-task-create{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:7px;background:#172033;color:#fff;font-size:12px;font-weight:900;padding:8px 10px;cursor:pointer}
 .lim-rep-task-create:hover{background:#0f172a}
+.lim-rep-task-create.is-confirming{background:#92400e}
+.lim-rep-toast{position:fixed;right:22px;bottom:22px;z-index:15000;max-width:min(390px,calc(100vw - 32px));border:1px solid #f3d08a;border-radius:14px;background:#fff8e8;color:#8a5b12;padding:12px 14px;box-shadow:0 18px 42px rgba(24,32,48,.18);font-size:13px;font-weight:850;line-height:1.42;opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+.lim-rep-toast.is-visible{opacity:1;transform:translateY(0)}
 .lim-rep-side{display:flex;flex-direction:column;gap:16px}
 .lim-rep-list{display:flex;flex-direction:column}
 .lim-rep-list-item{padding:12px 14px;border-bottom:1px solid #eef2f7}
@@ -82,7 +85,7 @@ $puedeCrearTareaLimpieza = function_exists('can') ? can('habitaciones.mantenimie
             <p class="lim-rep-subtitle">Vista read-only de habitaciones en limpieza y tareas activas asociadas al hotel actual. No libera habitaciones, no crea tareas y no ejecuta automatizaciones.</p>
         </div>
         <div class="lim-rep-actions">
-            <a class="lim-rep-btn" href="<?= url('reportes') ?>"><i class="fas fa-arrow-left"></i> Reportes</a>
+            <a class="lim-rep-btn" href="<?= back_url('reportes') ?>"><i class="fas fa-arrow-left"></i> Reportes</a>
             <a class="lim-rep-btn" href="<?= url('habitaciones?estado=limpieza') ?>"><i class="fas fa-broom"></i> Habitaciones</a>
         </div>
     </div>
@@ -150,7 +153,8 @@ $puedeCrearTareaLimpieza = function_exists('can') ? can('habitaciones.mantenimie
                                                 <form class="lim-rep-inline-form"
                                                       method="POST"
                                                       action="<?= url('tareas/desde-limpieza/' . (int)($habitacion['id'] ?? 0)) ?>"
-                                                      onsubmit="return confirm('Crear una tarea de limpieza para esta habitacion?')">
+                                                      data-lim-confirm="1"
+                                                      data-confirm-message="Se creara una tarea manual de limpieza para esta habitacion.">
                                                     <?= csrf_field() ?>
                                                     <button type="submit" class="lim-rep-task-create">
                                                         <i class="fas fa-tasks"></i>
@@ -221,3 +225,61 @@ $puedeCrearTareaLimpieza = function_exists('can') ? can('habitaciones.mantenimie
         </aside>
     </div>
 </div>
+
+<script>
+(function() {
+    function showLimToast(message, duration = 7000) {
+        let toast = document.getElementById('limRepToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'limRepToast';
+            toast.className = 'lim-rep-toast';
+            toast.setAttribute('role', 'status');
+            toast.setAttribute('aria-live', 'polite');
+            document.body.appendChild(toast);
+        }
+
+        window.clearTimeout(toast._hideTimer);
+        toast.textContent = message;
+        requestAnimationFrame(() => toast.classList.add('is-visible'));
+        toast._hideTimer = window.setTimeout(() => toast.classList.remove('is-visible'), duration);
+    }
+
+    function resetLimConfirm(form) {
+        if (!form) return;
+
+        delete form.dataset.confirmedAction;
+        window.clearTimeout(form._confirmTimer);
+        const button = form.querySelector('button[type="submit"]');
+        if (button && button.dataset.originalHtml) {
+            button.innerHTML = button.dataset.originalHtml;
+            delete button.dataset.originalHtml;
+        }
+        button?.classList.remove('is-confirming');
+    }
+
+    document.addEventListener('submit', function(event) {
+        const form = event.target instanceof HTMLFormElement ? event.target : null;
+        if (!form || form.dataset.limConfirm !== '1') return;
+        if (form.dataset.confirmedAction === '1') return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        document.querySelectorAll('form[data-lim-confirm="1"]').forEach(otherForm => {
+            if (otherForm !== form) resetLimConfirm(otherForm);
+        });
+
+        form.dataset.confirmedAction = '1';
+        const button = form.querySelector('button[type="submit"]');
+        if (button) {
+            button.dataset.originalHtml = button.innerHTML;
+            button.classList.add('is-confirming');
+            button.innerHTML = '<i class="fas fa-check"></i> Confirmar tarea';
+        }
+
+        showLimToast(`${form.dataset.confirmMessage || 'Confirma esta accion.'} Presiona el boton otra vez para continuar.`);
+        form._confirmTimer = window.setTimeout(() => resetLimConfirm(form), 7000);
+    }, true);
+})();
+</script>
