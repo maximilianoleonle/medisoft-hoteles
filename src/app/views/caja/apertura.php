@@ -1,135 +1,132 @@
 <?php
 /**
  * Vista de Apertura de Caja
- * Vista hotelera
+ * Rediseño boutique (dentro del layout de la app)
  */
 ?>
+<style>
+.caja-open {
+    --cj-brand: var(--brand-primary, #1B2746);
+    --cj-brand-2: var(--brand-secondary, #0F172A);
+    --cj-gold: var(--brand-accent, #BD9441);
+    --cj-gold-soft: color-mix(in srgb, var(--cj-gold) 15%, #FFFFFF);
+    --cj-gold-line: color-mix(in srgb, var(--cj-gold) 42%, #E4D4B0);
+    --cj-gold-ink: color-mix(in srgb, var(--cj-gold) 72%, #000);
+    --cj-ivory: #F6F2EA; --cj-ivory-2: #FBF8F2;
+    --cj-surface: #FFFFFF; --cj-surface-warm: #FCFAF5;
+    --cj-border: color-mix(in srgb, var(--cj-brand) 7%, #E7E1D4);
+    --cj-ring: color-mix(in srgb, var(--cj-gold) 32%, transparent);
+    --cj-text: #171717; --cj-muted: #667085; --cj-heading: #111827;
+    --cj-warning: #C2841C; --cj-warning-bg: #FAF0DC;
+    --cj-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --cj-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
+    color: var(--cj-text); font-family: var(--cj-sans);
+    background:
+        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--cj-gold) 8%, transparent), transparent 60%),
+        linear-gradient(180deg, var(--cj-ivory-2), var(--cj-ivory));
+}
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
 
-<!-- Apertura de Caja -->
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-    <div class="max-w-md w-full">
-        <!-- Logo o Imagen -->
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-hotel-gold to-yellow-600 rounded-full mb-4">
-                <i class="fas fa-cash-register text-4xl text-white"></i>
-            </div>
-            <h1 class="text-3xl font-bold text-hotel-brown font-playfair">
-                Apertura de Caja
-            </h1>
-            <p class="text-gray-600 mt-2">
-                <?= format_date(date('Y-m-d'), 'l, d \d\e F \d\e Y') ?>
-            </p>
-            <p class="text-sm text-gray-500 mt-3 max-w-sm mx-auto">
-                Abre un corte de caja para registrar movimientos de la jornada.
-            </p>
+.caja-open .cj-wrap { width: 100%; max-width: 30rem; }
+.caja-open .cj-head { text-align: center; margin-bottom: 22px; }
+.caja-open .cj-head-icon { width: 64px; height: 64px; margin: 0 auto 14px; border-radius: 18px; display: grid; place-items: center; color: #fff; font-size: 1.6rem;
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--cj-gold), var(--cj-brand) 54%, color-mix(in srgb, var(--cj-brand) 68%, #2F8A70));
+    box-shadow: 0 16px 30px -14px color-mix(in srgb, var(--cj-brand) 70%, transparent); }
+.caja-open .cj-title { font-family: var(--cj-serif); color: var(--cj-heading); font-weight: 700; font-size: 2.4rem; line-height: 1; }
+.caja-open .cj-date { margin-top: 6px; color: var(--cj-muted); font-size: .9rem; font-weight: 600; text-transform: capitalize; }
+.caja-open .cj-sub { margin-top: 6px; color: var(--cj-muted); font-size: .86rem; }
+
+.caja-open .cj-card { background: var(--cj-surface); border: 1px solid var(--cj-border); border-radius: 18px; overflow: hidden; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 22px 48px -28px rgba(27,39,70,.4); }
+.caja-open .cj-card-head { padding: 16px 20px; border-bottom: 1px solid var(--cj-border); background: var(--cj-ivory-2); display: flex; align-items: center; gap: 10px; }
+.caja-open .cj-card-head h2 { font-family: var(--cj-serif); font-size: 1.4rem; font-weight: 700; color: var(--cj-heading); }
+.caja-open .cj-card-head i { color: var(--cj-gold-ink); }
+.caja-open .cj-body { padding: 20px; display: grid; gap: 18px; }
+
+.caja-open .cj-info { background: var(--cj-surface-warm); border: 1px solid var(--cj-border); border-radius: 12px; padding: 12px 14px; display: grid; gap: 6px; font-size: .84rem; color: #334155; }
+.caja-open .cj-info i { color: var(--cj-muted); width: 16px; }
+.caja-open .cj-info strong { color: var(--cj-heading); }
+
+.caja-open label { display: block; font-size: .74rem; font-weight: 700; color: var(--cj-muted); text-transform: uppercase; letter-spacing: .045em; margin-bottom: 7px; }
+.caja-open .cj-money { position: relative; }
+.caja-open .cj-money span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--cj-muted); font-size: 1.05rem; font-weight: 700; }
+.caja-open .cj-input { width: 100%; min-height: 50px; border: 1px solid var(--cj-border); background: var(--cj-surface-warm); border-radius: 12px; padding: 0 14px 0 30px; color: var(--cj-heading); font-size: 1.15rem; font-weight: 700; font-family: var(--cj-serif); transition: border-color .16s ease, box-shadow .16s ease; }
+.caja-open textarea.cj-input { min-height: 84px; padding: 11px 14px; font-family: var(--cj-sans); font-size: .9rem; font-weight: 600; resize: vertical; }
+.caja-open .cj-input:focus { outline: none; border-color: var(--cj-gold); box-shadow: 0 0 0 3px var(--cj-ring); background: #fff; }
+.caja-open .cj-hint { margin-top: 7px; font-size: .76rem; color: var(--cj-muted); }
+
+.caja-open .cj-note { background: var(--cj-warning-bg); border: 1px solid color-mix(in srgb, var(--cj-warning) 26%, #fff); border-radius: 12px; padding: 13px 15px; }
+.caja-open .cj-note h4 { display: flex; align-items: center; gap: 8px; color: color-mix(in srgb, var(--cj-warning) 84%, #000); font-size: .82rem; font-weight: 700; margin-bottom: 8px; }
+.caja-open .cj-note ul { list-style: none; display: grid; gap: 6px; }
+.caja-open .cj-note li { display: flex; gap: 8px; align-items: flex-start; font-size: .82rem; color: color-mix(in srgb, var(--cj-warning) 78%, #000); }
+.caja-open .cj-note li i { margin-top: 3px; color: var(--cj-warning); }
+
+.caja-open .cj-actions { display: flex; gap: 12px; margin-top: 4px; }
+.caja-open .cj-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; border-radius: 12px; font-weight: 700; font-size: .92rem; text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: transform .16s ease, box-shadow .16s ease; font-family: var(--cj-sans); }
+.caja-open .cj-btn:hover { transform: translateY(-1px); }
+.caja-open .cj-btn-muted { background: var(--cj-surface); border-color: var(--cj-border); color: var(--cj-muted); }
+.caja-open .cj-btn-gold { background: linear-gradient(135deg, var(--cj-gold), color-mix(in srgb, var(--cj-gold) 76%, #000)); color: #fff; box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--cj-gold) 58%, transparent); }
+.caja-open .cj-foot { margin-top: 18px; text-align: center; }
+.caja-open .cj-foot a { color: var(--cj-muted); font-size: .82rem; font-weight: 600; text-decoration: none; }
+.caja-open .cj-foot a:hover { color: var(--cj-gold-ink); }
+</style>
+
+<div class="caja-open">
+    <div class="cj-wrap">
+        <div class="cj-head">
+            <div class="cj-head-icon"><i class="fas fa-cash-register"></i></div>
+            <h1 class="cj-title">Abrir caja</h1>
+            <p class="cj-date"><?= format_date(date('Y-m-d'), 'l, d \d\e F \d\e Y') ?></p>
+            <p class="cj-sub">Abre un corte para registrar los ingresos y gastos del turno.</p>
         </div>
 
-        <!-- Formulario -->
-        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <div class="bg-gradient-to-r from-hotel-brown to-hotel-brown-dark p-6">
-                <h2 class="text-xl font-semibold text-white flex items-center">
-                    <i class="fas fa-unlock mr-3"></i>
-                    Abrir <?= htmlspecialchars($caja['nombre']) ?>
-                </h2>
+        <div class="cj-card">
+            <div class="cj-card-head">
+                <i class="fas fa-unlock"></i>
+                <h2><?= htmlspecialchars($caja['nombre']) ?></h2>
             </div>
 
-            <form method="POST" action="<?= url('caja/abrir') ?>" class="p-6">
+            <form method="POST" action="<?= url('caja/abrir') ?>" class="cj-body">
                 <?= csrf_field() ?>
                 <input type="hidden" name="caja_id" value="<?= $caja['id'] ?>">
 
-                <div class="space-y-6">
-                    <!-- Información del Usuario -->
-                    <div class="bg-blue-50 rounded-lg p-4">
-                        <p class="text-sm text-blue-800">
-                            <i class="fas fa-user-circle mr-2"></i>
-                            <strong>Usuario:</strong> <?= user_name() ?>
-                        </p>
-                        <p class="text-sm text-blue-800 mt-1">
-                            <i class="fas fa-clock mr-2"></i>
-                            <strong>Hora:</strong> <?= date('H:i:s') ?>
-                        </p>
-                    </div>
-
-                    <!-- Monto Inicial -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Monto Inicial en Efectivo
-                        </label>
-                        <div class="relative">
-                            <span class="absolute left-4 top-3 text-gray-500 text-lg">$</span>
-                            <input type="number"
-                                   name="monto_inicial"
-                                   data-money-format="true"
-                                   step="0.01"
-                                   min="0"
-                                   class="w-full pl-10 pr-4 py-3 text-lg border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-hotel-gold/20 focus:border-hotel-gold transition-all"
-                                   placeholder="0.00"
-                                   value="0.00"
-                                   required>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2">
-                            <i class="fas fa-info-circle mr-1"></i>
-                            Captura el efectivo inicial con el que comienza este turno.
-                        </p>
-                    </div>
-
-                    <!-- Notas opcionales -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Observaciones (Opcional)
-                        </label>
-                        <textarea name="observaciones"
-                                  rows="3"
-                                  class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-hotel-gold/20 focus:border-hotel-gold transition-all"
-                                  placeholder="Alguna observación sobre el inicio de turno..."></textarea>
-                    </div>
-
-                    <!-- Recordatorio -->
-                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <h4 class="text-sm font-semibold text-yellow-800 mb-2">
-                            <i class="fas fa-exclamation-triangle mr-2"></i>
-                            Importante
-                        </h4>
-                        <ul class="text-sm text-yellow-700 space-y-1">
-                            <li class="flex items-start">
-                                <i class="fas fa-check-circle mr-2 mt-0.5 text-yellow-600"></i>
-                                <span>Verifica que el monto inicial sea correcto.</span>
-                            </li>
-                            <li class="flex items-start">
-                                <i class="fas fa-check-circle mr-2 mt-0.5 text-yellow-600"></i>
-                                <span>Una vez abierta, realiza el corte al finalizar la jornada.</span>
-                            </li>
-                            <li class="flex items-start">
-                                <i class="fas fa-check-circle mr-2 mt-0.5 text-yellow-600"></i>
-                                <span>Todos los ingresos y gastos quedarán registrados en este corte.</span>
-                            </li>
-                        </ul>
-                    </div>
+                <div class="cj-info">
+                    <p><i class="fas fa-user-circle"></i> <strong>Usuario:</strong> <?= user_name() ?></p>
+                    <p><i class="fas fa-clock"></i> <strong>Hora:</strong> <?= date('H:i:s') ?></p>
                 </div>
 
-                <!-- Botones -->
-                <div class="flex gap-3 mt-8">
-                    <a href="<?= url('dashboard') ?>"
-                       class="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-all text-center">
-                        <i class="fas fa-arrow-left mr-2"></i>
-                        Volver
-                    </a>
-                    <button type="submit"
-                            class="flex-1 px-6 py-3 bg-gradient-to-r from-hotel-gold to-yellow-600 text-white font-medium rounded-xl hover:shadow-xl transform hover:scale-105 transition-all">
-                        <i class="fas fa-unlock mr-2"></i>
-                        Abrir Caja
-                    </button>
+                <div>
+                    <label for="cj_monto_inicial">Efectivo con el que abres</label>
+                    <div class="cj-money">
+                        <span>$</span>
+                        <input type="number" id="cj_monto_inicial" name="monto_inicial" data-money-format="true" step="0.01" min="0" class="cj-input" placeholder="0.00" value="0.00" required>
+                    </div>
+                    <p class="cj-hint"><i class="fas fa-circle-info"></i> Captura el efectivo con el que comienza este turno.</p>
+                </div>
+
+                <div>
+                    <label for="cj_observaciones">Observaciones (opcional)</label>
+                    <textarea id="cj_observaciones" name="observaciones" rows="3" class="cj-input" placeholder="Alguna nota sobre el inicio del turno..."></textarea>
+                </div>
+
+                <div class="cj-note">
+                    <h4><i class="fas fa-triangle-exclamation"></i> Importante</h4>
+                    <ul>
+                        <li><i class="fas fa-circle-check"></i> <span>Verifica que el monto inicial sea correcto.</span></li>
+                        <li><i class="fas fa-circle-check"></i> <span>Cuando termine el turno, haz el corte de caja.</span></li>
+                        <li><i class="fas fa-circle-check"></i> <span>Todos los ingresos y gastos quedan en este corte.</span></li>
+                    </ul>
+                </div>
+
+                <div class="cj-actions">
+                    <a href="<?= url('dashboard') ?>" class="cj-btn cj-btn-muted"><i class="fas fa-arrow-left"></i> Volver</a>
+                    <button type="submit" class="cj-btn cj-btn-gold"><i class="fas fa-unlock"></i> Abrir caja</button>
                 </div>
             </form>
         </div>
 
-        <!-- Enlaces adicionales -->
-        <div class="mt-6 text-center">
-            <a href="<?= url('caja/historial') ?>"
-               class="text-sm text-gray-600 hover:text-hotel-brown transition">
-                <i class="fas fa-history mr-1"></i>
-                Ver historial de cortes anteriores
-            </a>
+        <div class="cj-foot">
+            <a href="<?= url('caja/historial') ?>"><i class="fas fa-history"></i> Ver historial de cortes anteriores</a>
         </div>
     </div>
 </div>
@@ -174,7 +171,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
         `,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#D4AF37',
+        confirmButtonColor: '#BD9441',
         cancelButtonColor: '#6B7280',
         confirmButtonText: '<i class="fas fa-unlock mr-2"></i>Sí, abrir caja',
         cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancelar'
