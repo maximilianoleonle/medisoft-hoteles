@@ -39,6 +39,19 @@ if (!function_exists('comp_report_qty')) {
     }
 }
 
+if (!function_exists('comp_report_estado_meta')) {
+    function comp_report_estado_meta($estado)
+    {
+        $key = strtolower(trim((string)($estado ?? '')));
+        $map = [
+            'borrador'  => ['Borrador', 'is-borrador', 'fa-pen-ruler'],
+            'recibida'  => ['Recibida', 'is-recibida', 'fa-circle-check'],
+            'cancelada' => ['Cancelada', 'is-cancelada', 'fa-circle-xmark'],
+        ];
+        return $map[$key] ?? [ucfirst($key !== '' ? $key : 'Sin estado'), 'is-soft', 'fa-circle-dot'];
+    }
+}
+
 $estado = (string)($filtros['estado'] ?? 'recibida');
 $proveedorSeleccionado = (string)($filtros['proveedor_id'] ?? '');
 $productoSeleccionado = (string)($filtros['producto_id'] ?? '');
@@ -48,148 +61,145 @@ $fechaFin = (string)($filtros['fecha_fin'] ?? '');
 
 <style>
 .purchase-report-page {
-    --purchase-brand: var(--brand-primary, #1f3f46);
-    --purchase-accent: var(--brand-accent, #b58a3c);
-    --purchase-line: color-mix(in srgb, var(--purchase-brand) 10%, #e5e7eb);
-    --purchase-soft: color-mix(in srgb, var(--purchase-accent) 7%, #f8fafc);
-    color: #243142;
+    --cp-brand: var(--brand-primary, #1B2746);
+    --cp-brand-2: var(--brand-secondary, #0F172A);
+    --cp-gold: var(--brand-accent, #BD9441);
+    --cp-gold-soft: color-mix(in srgb, var(--cp-gold) 15%, #FFFFFF);
+    --cp-gold-line: color-mix(in srgb, var(--cp-gold) 42%, #E4D4B0);
+    --cp-gold-ink: color-mix(in srgb, var(--cp-gold) 72%, #000);
+    --cp-ivory: #F6F2EA;
+    --cp-ivory-2: #FBF8F2;
+    --cp-surface: #FFFFFF;
+    --cp-surface-warm: #FCFAF5;
+    --cp-border: color-mix(in srgb, var(--cp-brand) 7%, #E7E1D4);
+    --cp-ring: color-mix(in srgb, var(--cp-gold) 32%, transparent);
+    --cp-text: #171717;
+    --cp-muted: #667085;
+    --cp-heading: #111827;
+    --cp-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --cp-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --cp-success: #1E9E63; --cp-success-bg: #E7F4EC;
+    --cp-warning: #C2841C; --cp-warning-bg: #FAF0DC;
+    --cp-danger: #B4392B; --cp-danger-bg: #F8EAE5;
+    min-height: 100%;
+    color: var(--cp-text);
+    font-family: var(--cp-sans);
+    background:
+        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--cp-gold) 8%, transparent), transparent 60%),
+        linear-gradient(180deg, var(--cp-ivory-2), var(--cp-ivory));
 }
-.purchase-report-page .purchase-report-hero {
-    background: linear-gradient(135deg, color-mix(in srgb, var(--purchase-brand) 92%, #111827), color-mix(in srgb, var(--purchase-accent) 58%, #5b4730));
-    color: #fff;
-    padding: 28px;
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
+
+.purchase-report-page .cp-shell { display: grid; gap: 14px; }
+.purchase-report-page .cp-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; }
+.purchase-report-page .cp-hero-icon {
+    width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--cp-gold), var(--cp-brand) 54%, color-mix(in srgb, var(--cp-brand) 68%, #2F8A70));
+    box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--cp-brand) 72%, transparent);
 }
-.purchase-report-page .purchase-kicker {
-    font-size: .72rem;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    opacity: .76;
-    font-weight: 800;
+.purchase-report-page .cp-kicker { margin: 0 0 2px; color: var(--cp-muted); font-size: .72rem; font-weight: 700; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
+.purchase-report-page .cp-title { margin: 0; font-family: var(--cp-serif); color: var(--cp-heading); font-weight: 700; font-size: clamp(2rem, 3.6vw, 2.9rem); line-height: 1; }
+.purchase-report-page .cp-subtitle { max-width: 48rem; margin: 8px 0 0; color: var(--cp-muted); font-size: .92rem; font-weight: 500; line-height: 1.5; }
+
+.purchase-report-page .cp-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.purchase-report-page .cp-stat { background: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: 14px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 24px -18px rgba(27,39,70,.22); }
+.purchase-report-page .cp-stat-label { color: var(--cp-muted); font-size: .66rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.purchase-report-page .cp-stat-value { margin-top: 2px; font-family: var(--cp-serif); font-size: 1.5rem; font-weight: 700; line-height: 1.1; color: var(--cp-heading); }
+
+.purchase-report-page .cp-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.purchase-report-page .cp-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 40px; padding: 0 16px;
+    border-radius: 11px; border: 1px solid transparent; font-weight: 700; font-size: .85rem; line-height: 1; cursor: pointer; text-decoration: none;
+    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, color .16s ease, background .16s ease;
 }
-.purchase-report-page .purchase-title {
-    margin: 6px 0 0;
-    font-size: clamp(1.45rem, 2.4vw, 2.15rem);
-    font-weight: 900;
-    letter-spacing: 0;
-}
-.purchase-report-page .purchase-subtitle {
-    margin-top: 8px;
-    max-width: 52rem;
-    color: rgba(255,255,255,.86);
-}
-.purchase-report-page .purchase-stat {
-    border: 1px solid rgba(255,255,255,.22);
-    background: rgba(255,255,255,.11);
-    padding: 12px 14px;
-}
-.purchase-report-page .purchase-panel {
-    border: 1px solid var(--purchase-line);
-    background: rgba(255,255,255,.92);
-}
-.purchase-report-page .purchase-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 38px;
-    padding: 0 14px;
-    border: 1px solid var(--purchase-line);
-    font-weight: 800;
-}
-.purchase-report-page .purchase-btn-primary {
-    background: var(--purchase-brand);
-    border-color: var(--purchase-brand);
-    color: #fff;
-}
-.purchase-report-page .purchase-btn-muted {
-    background: #fff;
-    color: #334155;
-}
-.purchase-report-page .purchase-input {
-    width: 100%;
-    min-height: 40px;
-    border: 1px solid var(--purchase-line);
-    background: #fff;
-    padding: 0 12px;
-}
-.purchase-report-page .purchase-table th {
-    color: #64748b;
-    font-size: .72rem;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-}
-.purchase-report-page .purchase-table td,
-.purchase-report-page .purchase-table th {
-    border-bottom: 1px solid var(--purchase-line);
-    padding: 12px;
-}
-.purchase-report-page .purchase-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 9px;
-    border: 1px solid var(--purchase-line);
-    background: var(--purchase-soft);
-    font-size: .78rem;
-    font-weight: 800;
-}
+.purchase-report-page .cp-btn:hover { transform: translateY(-1px); }
+.purchase-report-page .cp-btn-brand { background: linear-gradient(135deg, var(--cp-brand), var(--cp-brand-2)); color: #fff; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--cp-brand) 60%, transparent); }
+.purchase-report-page .cp-btn-muted { background: var(--cp-surface); border-color: var(--cp-border); color: var(--cp-muted); }
+
+.purchase-report-page .cp-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font-size: .74rem; font-weight: 700; border: 1px solid transparent; }
+.purchase-report-page .cp-badge.is-borrador { color: color-mix(in srgb, var(--cp-warning) 82%, #000); background: var(--cp-warning-bg); border-color: color-mix(in srgb, var(--cp-warning) 28%, #fff); }
+.purchase-report-page .cp-badge.is-recibida { color: color-mix(in srgb, var(--cp-success) 78%, #000); background: var(--cp-success-bg); border-color: color-mix(in srgb, var(--cp-success) 26%, #fff); }
+.purchase-report-page .cp-badge.is-cancelada { color: color-mix(in srgb, var(--cp-danger) 82%, #000); background: var(--cp-danger-bg); border-color: color-mix(in srgb, var(--cp-danger) 26%, #fff); }
+.purchase-report-page .cp-badge.is-soft { color: var(--cp-muted); background: var(--cp-surface-warm); border-color: var(--cp-border); }
+
+.purchase-report-page .cp-panel { background: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); }
+.purchase-report-page .cp-panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 18px; border-bottom: 1px solid var(--cp-border); }
+.purchase-report-page .cp-panel-title { font-family: var(--cp-serif); font-size: 1.35rem; font-weight: 700; color: var(--cp-heading); }
+.purchase-report-page .cp-panel-hint { font-size: .72rem; color: var(--cp-muted); font-weight: 600; }
+
+.purchase-report-page .cp-filter-form { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; align-items: center; }
+.purchase-report-page .cp-control { width: 100%; min-height: 40px; border: 1px solid var(--cp-border); background: var(--cp-surface-warm); border-radius: 11px; padding: 0 12px; color: var(--cp-text); font-weight: 600; font-size: .86rem; transition: border-color .16s ease, box-shadow .16s ease; }
+.purchase-report-page .cp-control:focus { border-color: var(--cp-gold); box-shadow: 0 0 0 3px var(--cp-ring); outline: none; }
+.purchase-report-page select.cp-control { cursor: pointer; }
+
+.purchase-report-page .cp-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.purchase-report-page .cp-table thead { background: var(--cp-surface-warm); border-bottom: 1px solid var(--cp-border); }
+.purchase-report-page .cp-table th { padding: 11px 14px; color: var(--cp-muted); font-size: .66rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; text-align: left; }
+.purchase-report-page .cp-table th.is-end, .purchase-report-page .cp-table td.is-end { text-align: right; }
+.purchase-report-page .cp-table td { padding: 12px 14px; border-bottom: 1px solid var(--cp-border); vertical-align: middle; }
+.purchase-report-page .cp-table tbody tr:last-child td { border-bottom: 0; }
+.purchase-report-page .cp-table tbody tr { transition: background .16s ease; }
+.purchase-report-page .cp-table tbody tr:hover { background: var(--cp-ivory-2); }
+.purchase-report-page .cp-strong { font-weight: 700; color: var(--cp-heading); }
+.purchase-report-page .cp-sub { color: var(--cp-muted); font-size: .72rem; }
+.purchase-report-page .cp-faint { color: var(--cp-muted); }
+.purchase-report-page .cp-doc-link { font-weight: 700; color: var(--cp-heading); text-decoration: none; }
+.purchase-report-page .cp-doc-link:hover { text-decoration: underline; text-decoration-color: var(--cp-gold); text-underline-offset: 3px; }
+.purchase-report-page .cp-empty-cell { text-align: center; color: var(--cp-muted); padding: 22px 14px; }
+
+.purchase-report-page .cp-notice { display: flex; gap: 12px; align-items: flex-start; padding: 16px 18px; background: var(--cp-gold-soft); border: 1px solid var(--cp-gold-line); border-radius: 16px; }
+.purchase-report-page .cp-notice i { color: var(--cp-gold-ink); font-size: 1.1rem; margin-top: 2px; }
+.purchase-report-page .cp-notice strong { color: var(--cp-heading); display: block; margin-bottom: 2px; }
+.purchase-report-page .cp-notice p { color: var(--cp-muted); font-size: .88rem; margin: 0; }
+
+@media (max-width: 980px) { .purchase-report-page .cp-filter-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .purchase-report-page .cp-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>
 
-<div class="purchase-report-page">
-    <section class="purchase-report-hero">
-        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-            <div>
-                <div class="purchase-kicker">Inventario / Reportes</div>
-                <h1 class="purchase-title">Compras recibidas</h1>
-                <p class="purchase-subtitle">
-                    Historial de solo lectura por proveedor y producto. No registra pagos, caja ni CxP.
-                </p>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-2 min-w-[360px]">
-                <div class="purchase-stat">
-                    <div class="text-xs opacity-75">Compras</div>
-                    <div class="text-2xl font-black"><?= (int)($resumen['compras'] ?? 0) ?></div>
-                </div>
-                <div class="purchase-stat">
-                    <div class="text-xs opacity-75">Proveedores</div>
-                    <div class="text-2xl font-black"><?= (int)($resumen['proveedores'] ?? 0) ?></div>
-                </div>
-                <div class="purchase-stat">
-                    <div class="text-xs opacity-75">Productos</div>
-                    <div class="text-2xl font-black"><?= (int)($resumen['productos'] ?? 0) ?></div>
-                </div>
-                <div class="purchase-stat">
-                    <div class="text-xs opacity-75">Cantidad</div>
-                    <div class="text-xl font-black"><?= comp_report_qty($resumen['cantidad_total'] ?? 0) ?></div>
-                </div>
-                <div class="purchase-stat">
-                    <div class="text-xs opacity-75">Total</div>
-                    <div class="text-xl font-black"><?= comp_report_money($resumen['total_lineas'] ?? 0) ?></div>
+<div class="purchase-report-page p-4 sm:p-6">
+    <div class="cp-shell">
+        <section class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div class="cp-title-lockup">
+                <div class="cp-hero-icon"><i class="fas fa-chart-column"></i></div>
+                <div>
+                    <p class="cp-kicker">Compras y abastecimiento</p>
+                    <h1 class="cp-title">Compras recibidas</h1>
+                    <p class="cp-subtitle">Resumen de lo que has recibido, agrupado por proveedor y por producto.</p>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <section class="p-6">
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <a class="purchase-btn purchase-btn-muted" href="<?= url('compras?estado=recibida') ?>">
-                <i class="fas fa-arrow-left"></i>
-                Volver a compras
-            </a>
-            <span class="purchase-badge">
-                <i class="fas fa-lock"></i>
-                Solo lectura
-            </span>
-        </div>
+            <span class="cp-badge is-soft"><i class="fas fa-eye"></i> Solo consulta</span>
+        </section>
 
         <?php if (!$tablaDisponible): ?>
-            <div class="purchase-panel p-5">
-                <strong>Reporte no disponible.</strong>
-                <p class="text-sm text-slate-500 mt-1"><?= comp_report_safe($errorTecnico, 'Revisa la migracion minima de compras y el health checker.') ?></p>
-            </div>
+            <section class="cp-notice">
+                <i class="fas fa-circle-info"></i>
+                <div>
+                    <strong>Este reporte todav&iacute;a no est&aacute; disponible.</strong>
+                    <p>P&iacute;dele al administrador del sistema que habilite el m&oacute;dulo de compras.<?php if (!empty($errorTecnico)): ?> <span style="opacity:.75">(<?= comp_report_safe($errorTecnico, '') ?>)</span><?php endif; ?></p>
+                    <a class="cp-btn cp-btn-muted mt-4" href="<?= url('compras?estado=recibida') ?>" style="display:inline-flex">
+                        <i class="fas fa-arrow-left"></i>
+                        Volver a compras
+                    </a>
+                </div>
+            </section>
         <?php else: ?>
-            <div class="purchase-panel p-4 mb-4">
-                <form method="GET" action="<?= url('compras/reportes/recibidas') ?>" class="grid grid-cols-1 md:grid-cols-6 gap-3">
-                    <select class="purchase-input" name="proveedor_id">
+            <section class="cp-stats">
+                <div class="cp-stat"><p class="cp-stat-label">Compras</p><p class="cp-stat-value"><?= number_format((int)($resumen['compras'] ?? 0)) ?></p></div>
+                <div class="cp-stat"><p class="cp-stat-label">Proveedores</p><p class="cp-stat-value"><?= number_format((int)($resumen['proveedores'] ?? 0)) ?></p></div>
+                <div class="cp-stat"><p class="cp-stat-label">Productos</p><p class="cp-stat-value"><?= number_format((int)($resumen['productos'] ?? 0)) ?></p></div>
+                <div class="cp-stat"><p class="cp-stat-label">Cantidad</p><p class="cp-stat-value"><?= comp_report_qty($resumen['cantidad_total'] ?? 0) ?></p></div>
+                <div class="cp-stat"><p class="cp-stat-label">Total</p><p class="cp-stat-value"><?= comp_report_money($resumen['total_lineas'] ?? 0) ?></p></div>
+            </section>
+
+            <section class="cp-toolbar">
+                <a class="cp-btn cp-btn-muted" href="<?= url('compras?estado=recibida') ?>">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver a compras
+                </a>
+            </section>
+
+            <section class="cp-panel p-3 md:p-4">
+                <form method="GET" action="<?= url('compras/reportes/recibidas') ?>" class="cp-filter-form" data-auto-filter-form>
+                    <select class="cp-control" name="proveedor_id">
                         <option value="">Todos los proveedores</option>
                         <?php foreach ($proveedores as $proveedor): ?>
                             <?php $id = (string)($proveedor['id'] ?? ''); ?>
@@ -198,7 +208,7 @@ $fechaFin = (string)($filtros['fecha_fin'] ?? '');
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <select class="purchase-input" name="producto_id">
+                    <select class="cp-control" name="producto_id">
                         <option value="">Todos los productos</option>
                         <?php foreach ($productos as $producto): ?>
                             <?php $id = (string)($producto['id'] ?? ''); ?>
@@ -207,46 +217,46 @@ $fechaFin = (string)($filtros['fecha_fin'] ?? '');
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <input class="purchase-input" type="date" name="fecha_inicio" value="<?= comp_report_safe($fechaInicio, '') ?>">
-                    <input class="purchase-input" type="date" name="fecha_fin" value="<?= comp_report_safe($fechaFin, '') ?>">
-                    <select class="purchase-input" name="estado">
+                    <input class="cp-control" type="date" name="fecha_inicio" value="<?= comp_report_safe($fechaInicio, '') ?>">
+                    <input class="cp-control" type="date" name="fecha_fin" value="<?= comp_report_safe($fechaFin, '') ?>">
+                    <select class="cp-control" name="estado">
                         <option value="recibida" <?= $estado === 'recibida' ? 'selected' : '' ?>>Recibidas</option>
                         <option value="borrador" <?= $estado === 'borrador' ? 'selected' : '' ?>>Borradores</option>
                         <option value="cancelada" <?= $estado === 'cancelada' ? 'selected' : '' ?>>Canceladas</option>
-                        <option value="todos" <?= $estado === 'todos' ? 'selected' : '' ?>>Todos</option>
+                        <option value="todos" <?= $estado === 'todos' ? 'selected' : '' ?>>Todas</option>
                     </select>
-                    <button class="purchase-btn purchase-btn-primary" type="submit">
+                    <button class="cp-btn cp-btn-brand" type="submit">
                         <i class="fas fa-filter"></i>
                         Filtrar
                     </button>
                 </form>
-            </div>
+            </section>
 
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
-                <div class="purchase-panel overflow-hidden">
-                    <div class="px-5 py-4 border-b border-slate-200">
-                        <h2 class="font-black text-lg">Totales por proveedor</h2>
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <div class="cp-panel overflow-hidden">
+                    <div class="cp-panel-head">
+                        <h2 class="cp-panel-title">Totales por proveedor</h2>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="purchase-table min-w-full text-sm">
+                        <table class="cp-table">
                             <thead>
                                 <tr>
-                                    <th class="text-left">Proveedor</th>
-                                    <th class="text-right">Compras</th>
-                                    <th class="text-right">Cantidad</th>
-                                    <th class="text-right">Total</th>
+                                    <th>Proveedor</th>
+                                    <th class="is-end">Compras</th>
+                                    <th class="is-end">Cantidad</th>
+                                    <th class="is-end">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (empty($porProveedor)): ?>
-                                    <tr><td colspan="4" class="text-center text-slate-500">Sin datos para los filtros.</td></tr>
+                                    <tr><td colspan="4" class="cp-empty-cell">Sin datos para estos filtros.</td></tr>
                                 <?php else: ?>
                                     <?php foreach ($porProveedor as $fila): ?>
                                         <tr>
-                                            <td class="font-black"><?= comp_report_safe($fila['proveedor_nombre'] ?? null) ?></td>
-                                            <td class="text-right"><?= (int)($fila['compras'] ?? 0) ?></td>
-                                            <td class="text-right"><?= comp_report_qty($fila['cantidad_total'] ?? 0) ?></td>
-                                            <td class="text-right font-black"><?= comp_report_money($fila['total_lineas'] ?? 0) ?></td>
+                                            <td class="cp-strong"><?= comp_report_safe($fila['proveedor_nombre'] ?? null) ?></td>
+                                            <td class="is-end"><?= (int)($fila['compras'] ?? 0) ?></td>
+                                            <td class="is-end"><?= comp_report_qty($fila['cantidad_total'] ?? 0) ?></td>
+                                            <td class="is-end cp-strong"><?= comp_report_money($fila['total_lineas'] ?? 0) ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
@@ -255,36 +265,36 @@ $fechaFin = (string)($filtros['fecha_fin'] ?? '');
                     </div>
                 </div>
 
-                <div class="purchase-panel overflow-hidden">
-                    <div class="px-5 py-4 border-b border-slate-200">
-                        <h2 class="font-black text-lg">Totales por producto</h2>
+                <div class="cp-panel overflow-hidden">
+                    <div class="cp-panel-head">
+                        <h2 class="cp-panel-title">Totales por producto</h2>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="purchase-table min-w-full text-sm">
+                        <table class="cp-table">
                             <thead>
                                 <tr>
-                                    <th class="text-left">Producto</th>
-                                    <th class="text-right">Compras</th>
-                                    <th class="text-right">Cantidad</th>
-                                    <th class="text-right">Total</th>
+                                    <th>Producto</th>
+                                    <th class="is-end">Compras</th>
+                                    <th class="is-end">Cantidad</th>
+                                    <th class="is-end">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (empty($porProducto)): ?>
-                                    <tr><td colspan="4" class="text-center text-slate-500">Sin datos para los filtros.</td></tr>
+                                    <tr><td colspan="4" class="cp-empty-cell">Sin datos para estos filtros.</td></tr>
                                 <?php else: ?>
                                     <?php foreach ($porProducto as $fila): ?>
                                         <tr>
                                             <td>
-                                                <div class="font-black"><?= comp_report_safe($fila['producto_nombre'] ?? null) ?></div>
-                                                <div class="text-xs text-slate-500"><?= comp_report_safe($fila['producto_codigo'] ?? null, 'Sin codigo') ?></div>
+                                                <div class="cp-strong"><?= comp_report_safe($fila['producto_nombre'] ?? null) ?></div>
+                                                <div class="cp-sub"><?= comp_report_safe($fila['producto_codigo'] ?? null, 'Sin c&oacute;digo') ?></div>
                                             </td>
-                                            <td class="text-right"><?= (int)($fila['compras'] ?? 0) ?></td>
-                                            <td class="text-right">
+                                            <td class="is-end"><?= (int)($fila['compras'] ?? 0) ?></td>
+                                            <td class="is-end">
                                                 <?= comp_report_qty($fila['cantidad_total'] ?? 0) ?>
                                                 <?= comp_report_safe($fila['unidad_medida'] ?? null, '') ?>
                                             </td>
-                                            <td class="text-right font-black"><?= comp_report_money($fila['total_lineas'] ?? 0) ?></td>
+                                            <td class="is-end cp-strong"><?= comp_report_money($fila['total_lineas'] ?? 0) ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
@@ -294,65 +304,64 @@ $fechaFin = (string)($filtros['fecha_fin'] ?? '');
                 </div>
             </div>
 
-            <div class="purchase-panel overflow-hidden">
-                <div class="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                    <h2 class="font-black text-lg">Lineas de compra</h2>
-                    <span class="text-xs font-bold text-slate-500">Maximo 300 lineas</span>
+            <div class="cp-panel overflow-hidden">
+                <div class="cp-panel-head">
+                    <h2 class="cp-panel-title">Detalle de productos comprados</h2>
+                    <span class="cp-panel-hint">Hasta 300 renglones</span>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="purchase-table min-w-full text-sm">
+                    <table class="cp-table">
                         <thead>
                             <tr>
-                                <th class="text-left">Compra</th>
-                                <th class="text-left">Proveedor</th>
-                                <th class="text-left">Producto</th>
-                                <th class="text-left">Fecha</th>
-                                <th class="text-left">Estado</th>
-                                <th class="text-right">Cantidad</th>
-                                <th class="text-right">Costo</th>
-                                <th class="text-right">Subtotal</th>
-                                <th class="text-left">Movimiento</th>
+                                <th>Compra</th>
+                                <th>Proveedor</th>
+                                <th>Producto</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th class="is-end">Cantidad</th>
+                                <th class="is-end">Costo</th>
+                                <th class="is-end">Subtotal</th>
+                                <th>Movimiento</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($lineas)): ?>
-                                <tr><td colspan="9" class="text-center text-slate-500">Sin lineas para los filtros.</td></tr>
+                                <tr><td colspan="9" class="cp-empty-cell">Sin renglones para estos filtros.</td></tr>
                             <?php else: ?>
                                 <?php foreach ($lineas as $linea): ?>
+                                    <?php [$lEstadoLabel, $lEstadoClass, $lEstadoIcon] = comp_report_estado_meta($linea['estado'] ?? null); ?>
                                     <tr>
                                         <td>
-                                            <a class="font-black text-slate-800 underline" href="<?= url('compras/' . (int)($linea['compra_id'] ?? 0)) ?>">
-                                                #<?= (int)($linea['compra_id'] ?? 0) ?>
-                                            </a>
-                                            <div class="text-xs text-slate-500"><?= comp_report_safe($linea['folio'] ?? null, 'Sin folio') ?></div>
+                                            <a class="cp-doc-link" href="<?= url('compras/' . (int)($linea['compra_id'] ?? 0)) ?>">#<?= (int)($linea['compra_id'] ?? 0) ?></a>
+                                            <div class="cp-sub"><?= comp_report_safe($linea['folio'] ?? null, 'Sin folio') ?></div>
                                         </td>
                                         <td><?= comp_report_safe($linea['proveedor_nombre'] ?? null) ?></td>
                                         <td>
-                                            <div class="font-black"><?= comp_report_safe($linea['producto_nombre'] ?? null) ?></div>
-                                            <div class="text-xs text-slate-500"><?= comp_report_safe($linea['producto_codigo'] ?? null, 'Sin codigo') ?></div>
+                                            <div class="cp-strong"><?= comp_report_safe($linea['producto_nombre'] ?? null) ?></div>
+                                            <div class="cp-sub"><?= comp_report_safe($linea['producto_codigo'] ?? null, 'Sin c&oacute;digo') ?></div>
                                         </td>
                                         <td>
                                             <div><?= comp_report_safe($linea['fecha_reporte'] ?? null) ?></div>
-                                            <div class="text-xs text-slate-500">Compra <?= comp_report_safe($linea['fecha_compra'] ?? null) ?></div>
+                                            <div class="cp-sub">Compra <?= comp_report_safe($linea['fecha_compra'] ?? null) ?></div>
                                         </td>
                                         <td>
-                                            <span class="purchase-badge">
-                                                <i class="fas fa-circle-dot"></i>
-                                                <?= comp_report_safe($linea['estado'] ?? null) ?>
+                                            <span class="cp-badge <?= $lEstadoClass ?>">
+                                                <i class="fas <?= $lEstadoIcon ?>"></i>
+                                                <?= $lEstadoLabel ?>
                                             </span>
                                         </td>
-                                        <td class="text-right">
+                                        <td class="is-end">
                                             <?= comp_report_qty($linea['cantidad'] ?? 0) ?>
                                             <?= comp_report_safe($linea['unidad_medida'] ?? null, '') ?>
                                         </td>
-                                        <td class="text-right"><?= comp_report_money($linea['costo_unitario'] ?? 0) ?></td>
-                                        <td class="text-right font-black"><?= comp_report_money($linea['subtotal'] ?? 0) ?></td>
+                                        <td class="is-end"><?= comp_report_money($linea['costo_unitario'] ?? 0) ?></td>
+                                        <td class="is-end cp-strong"><?= comp_report_money($linea['subtotal'] ?? 0) ?></td>
                                         <td>
                                             <?php if (!empty($linea['movimiento_inventario_id'])): ?>
-                                                <div class="font-black">#<?= (int)$linea['movimiento_inventario_id'] ?> <?= comp_report_safe($linea['movimiento_tipo'] ?? null) ?></div>
-                                                <div class="text-xs text-slate-500"><?= comp_report_safe($linea['movimiento_created_at'] ?? null) ?></div>
+                                                <div class="cp-strong">#<?= (int)$linea['movimiento_inventario_id'] ?> <?= comp_report_safe($linea['movimiento_tipo'] ?? null) ?></div>
+                                                <div class="cp-sub"><?= comp_report_safe($linea['movimiento_created_at'] ?? null) ?></div>
                                             <?php else: ?>
-                                                <span class="text-slate-400">Sin movimiento</span>
+                                                <span class="cp-faint">Sin movimiento</span>
                                             <?php endif; ?>
                                         </td>
                                     </tr>
@@ -363,5 +372,5 @@ $fechaFin = (string)($filtros['fecha_fin'] ?? '');
                 </div>
             </div>
         <?php endif; ?>
-    </section>
+    </div>
 </div>

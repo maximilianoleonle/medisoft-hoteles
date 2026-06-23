@@ -306,6 +306,50 @@ if (!function_exists('worker_form_initials')) {
     font-weight: 800;
 }
 
+.worker-form-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 13px;
+    border: 1px solid color-mix(in srgb, var(--worker-brand) 14%, #E7E1D4);
+    background: #FFFFFF;
+    color: var(--worker-text);
+    font-size: .82rem;
+    font-weight: 750;
+    box-shadow: 0 10px 24px -20px rgba(15,23,42,.28);
+}
+
+.worker-form-alert[hidden] {
+    display: none;
+}
+
+.worker-form-alert i {
+    margin-top: 2px;
+    color: var(--worker-brand);
+}
+
+.worker-form-alert.is-error {
+    border-color: color-mix(in srgb, #DC2626 34%, #FECACA);
+    background: #FEF2F2;
+    color: #991B1B;
+}
+
+.worker-form-alert.is-error i {
+    color: #DC2626;
+}
+
+.worker-form-alert.is-success {
+    border-color: color-mix(in srgb, #059669 34%, #A7F3D0);
+    background: #ECFDF5;
+    color: #065F46;
+}
+
+.worker-form-alert.is-success i {
+    color: #059669;
+}
+
 .worker-strength-track {
     width: 100%;
     height: 6px;
@@ -430,6 +474,10 @@ if (!function_exists('worker_form_initials')) {
     box-shadow: 0 12px 24px color-mix(in srgb, var(--worker-brand) 18%, transparent);
 }
 
+.worker-action-btn.is-confirming {
+    background: linear-gradient(135deg, var(--worker-accent), color-mix(in srgb, var(--worker-accent) 72%, #000));
+}
+
 @media (max-width: 1100px) {
     .worker-form-grid {
         grid-template-columns: 1fr;
@@ -453,6 +501,56 @@ if (!function_exists('worker_form_initials')) {
         width: 100%;
     }
 }
+</style>
+
+<style id="usuarios-form-boutique">
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
+.worker-page {
+    --worker-brand: var(--brand-primary, #1B2746) !important;
+    --worker-brand-dark: color-mix(in srgb, var(--worker-brand), #000 20%) !important;
+    --worker-brand-soft: color-mix(in srgb, var(--worker-brand) 4%, #FBF8F2) !important;
+    --worker-accent: var(--brand-accent, #BD9441) !important;
+    --worker-border: color-mix(in srgb, var(--worker-brand) 7%, #E7E1D4) !important;
+    --worker-ring: color-mix(in srgb, var(--brand-accent, #BD9441) 30%, transparent) !important;
+    --worker-text: #171717 !important;
+    --worker-muted: #667085 !important;
+    --wk-gold: var(--brand-accent, #BD9441);
+    --wk-gold-soft: color-mix(in srgb, var(--wk-gold) 15%, #FFFFFF);
+    --wk-gold-line: color-mix(in srgb, var(--wk-gold) 42%, #E4D4B0);
+    --wk-gold-ink: color-mix(in srgb, var(--wk-gold) 72%, #000);
+    --wk-ivory: #F6F2EA; --wk-ivory-2: #FBF8F2; --wk-heading: #111827;
+    --wk-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    min-height: 100%;
+    background:
+        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--wk-gold) 8%, transparent), transparent 60%),
+        linear-gradient(180deg, var(--wk-ivory-2), var(--wk-ivory)) !important;
+}
+/* Header limpio (sin banner de color) */
+.worker-page .worker-hero { background: transparent !important; box-shadow: none !important; border-radius: 0 !important; padding: 2px 2px 6px !important; overflow: visible !important; }
+.worker-page .worker-hero-icon { width: 48px !important; height: 48px !important; border-radius: 15px !important; color: #fff !important; border: none !important;
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--wk-gold), var(--worker-brand) 54%, color-mix(in srgb, var(--worker-brand) 68%, #2F8A70)) !important;
+    box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--worker-brand) 72%, transparent) !important; }
+.worker-page .worker-kicker { color: var(--worker-muted) !important; font-weight: 700 !important; letter-spacing: .11em !important; }
+.worker-page .worker-title { color: var(--wk-heading) !important; font-family: var(--wk-serif) !important; font-weight: 700 !important; font-size: clamp(2.1rem, 4vw, 3rem) !important; line-height: .98 !important; text-shadow: none !important; }
+.worker-page .worker-subtitle { color: var(--worker-muted) !important; font-weight: 500 !important; text-shadow: none !important; }
+.worker-page .worker-back-btn { color: var(--worker-muted) !important; background: #fff !important; border: 1px solid var(--worker-border) !important; box-shadow: 0 1px 2px rgba(27,39,70,.05) !important; font-weight: 700 !important; }
+/* Paneles */
+.worker-page .worker-panel, .worker-page .worker-actions-bar { background: #FFFFFF !important; border: 1px solid var(--worker-border) !important; border-radius: 16px !important; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28) !important; }
+.worker-page .worker-panel-head { background: var(--wk-ivory-2) !important; border-bottom: 1px solid var(--worker-border) !important; }
+.worker-page .worker-panel-title h2, .worker-page .worker-preview-name { color: var(--wk-heading) !important; font-weight: 700 !important; }
+.worker-page .worker-panel-icon { color: var(--wk-gold-ink) !important; background: var(--wk-gold-soft) !important; border-color: var(--wk-gold-line) !important; }
+.worker-page .worker-label { color: var(--worker-muted) !important; font-weight: 700 !important; }
+/* Inputs */
+.worker-page .worker-input { background: #FCFAF5 !important; border-color: var(--worker-border) !important; border-radius: 11px !important; font-weight: 600 !important; }
+.worker-page .worker-input:focus { border-color: var(--wk-gold) !important; box-shadow: 0 0 0 3px var(--worker-ring) !important; background: #fff !important; }
+/* Botón primario = oro */
+.worker-page .worker-action-btn { background: linear-gradient(135deg, var(--wk-gold), color-mix(in srgb, var(--wk-gold) 76%, #000)) !important; color: #fff !important; box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--wk-gold) 58%, transparent) !important; }
+.worker-page .worker-secondary-btn { background: #fff !important; border: 1px solid var(--worker-border) !important; color: var(--worker-muted) !important; }
+/* Preview + permisos */
+.worker-page .worker-preview-avatar { background: linear-gradient(145deg, var(--wk-gold-soft), #fff) !important; color: var(--wk-gold-ink) !important; border-color: var(--wk-gold-line) !important; }
+.worker-page .worker-preview-row, .worker-page .worker-permission, .worker-page .worker-note { background: #FCFAF5 !important; border-color: var(--worker-border) !important; }
+.worker-page .worker-permission i { color: var(--wk-gold-ink) !important; }
 </style>
 
 <div class="worker-page hotel-page p-4 sm:p-6">
@@ -702,6 +800,11 @@ if (!function_exists('worker_form_initials')) {
                 </aside>
             </div>
 
+            <div id="user-form-alert" class="worker-form-alert" role="alert" aria-live="assertive" hidden>
+                <i class="fas fa-circle-info"></i>
+                <span></span>
+            </div>
+
             <div class="worker-actions-bar mt-4">
                 <div class="worker-required-note">
                     <i class="fas fa-asterisk text-red-500"></i>
@@ -925,45 +1028,94 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     const form = document.getElementById('createUserForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const formAlert = document.getElementById('user-form-alert');
+    let submitArmed = false;
+    let submitResetTimer = null;
+
+    function setFormAlert(message, type = 'info') {
+        if (!formAlert) return;
+        const icon = formAlert.querySelector('i');
+        const text = formAlert.querySelector('span');
+        formAlert.classList.remove('is-error', 'is-success');
+        if (type === 'error') formAlert.classList.add('is-error');
+        if (type === 'success') formAlert.classList.add('is-success');
+        if (icon) {
+            icon.className = type === 'error'
+                ? 'fas fa-triangle-exclamation'
+                : (type === 'success' ? 'fas fa-circle-check' : 'fas fa-circle-info');
+        }
+        if (text) text.textContent = message;
+        formAlert.hidden = false;
+    }
+
+    function clearFormAlert() {
+        if (!formAlert) return;
+        formAlert.hidden = true;
+        formAlert.classList.remove('is-error', 'is-success');
+    }
+
+    function resetSubmitConfirmation(keepAlert = false) {
+        submitArmed = false;
+        window.clearTimeout(submitResetTimer);
+        if (submitBtn) {
+            submitBtn.classList.remove('is-confirming');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Crear <?= htmlspecialchars($workerLabel, ENT_QUOTES, 'UTF-8') ?>';
+        }
+        if (!keepAlert) clearFormAlert();
+    }
+
     if (form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
+
+            if (submitBtn?.disabled) return;
+            if (!form.checkValidity()) {
+                resetSubmitConfirmation(true);
+                setFormAlert('Revisa los campos obligatorios antes de crear el acceso.', 'error');
+                form.reportValidity();
+                return;
+            }
 
             const password = document.getElementById('password')?.value || '';
             const confirmation = document.getElementById('password_confirmation')?.value || '';
             const nombreCompleto = document.getElementById('nombre_completo')?.value || '';
             const nombreUsuario = document.getElementById('nombre_usuario')?.value || '';
-            const rol = document.getElementById('rol')?.value || '';
 
             if (password !== confirmation) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({ title: 'Error', text: 'Las contrasenas no coinciden', icon: 'error', confirmButtonColor: '#DC2626' });
+                resetSubmitConfirmation(true);
+                setFormAlert('Las contrasenas no coinciden. Corrige la confirmacion y vuelve a intentar.', 'error');
+                document.getElementById('password_confirmation')?.focus();
+                return;
+            }
+
+            if (!submitArmed) {
+                submitArmed = true;
+                if (submitBtn) {
+                    submitBtn.classList.add('is-confirming');
+                    submitBtn.innerHTML = '<i class="fas fa-check"></i> Confirmar creacion';
                 }
+                const resumen = nombreCompleto && nombreUsuario
+                    ? `Vuelve a presionar para crear el acceso de ${nombreCompleto} (@${nombreUsuario}).`
+                    : 'Vuelve a presionar para confirmar la creacion del acceso.';
+                setFormAlert(resumen, 'info');
+                submitResetTimer = window.setTimeout(() => resetSubmitConfirmation(), 7000);
                 return;
             }
 
-            if (typeof Swal === 'undefined') {
-                this.submit();
-                return;
+            window.clearTimeout(submitResetTimer);
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando...';
             }
+            clearFormAlert();
+            this.submit();
+        });
 
-            Swal.fire({
-                title: 'Crear <?= htmlspecialchars($workerLabelLower, ENT_QUOTES, 'UTF-8') ?>',
-                html: `<div class="text-left text-sm">
-                    <p><strong>Nombre:</strong> ${nombreCompleto}</p>
-                    <p><strong>Usuario:</strong> @${nombreUsuario}</p>
-                    <p><strong>Rol:</strong> ${titleRole(rol)}</p>
-                </div>`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: 'var(--brand-primary, #2563EB)',
-                cancelButtonColor: '#64748B',
-                confirmButtonText: 'Crear',
-                cancelButtonText: 'Cancelar',
-                reverseButtons: true
-            }).then(result => {
-                if (result.isConfirmed) this.submit();
-            });
+        form.querySelectorAll('input, select, textarea').forEach(field => {
+            field.addEventListener('input', () => resetSubmitConfirmation());
+            field.addEventListener('change', () => resetSubmitConfirmation());
         });
     }
 
@@ -971,7 +1123,5 @@ document.addEventListener('DOMContentLoaded', function() {
     actualizarPreview();
 });
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <?php clear_old_input(); ?>

@@ -24,222 +24,900 @@ if (!function_exists('prov_url')) {
     }
 }
 
+if (!function_exists('prov_inicial')) {
+    function prov_inicial($value)
+    {
+        $text = trim((string)($value ?? ''));
+        return htmlspecialchars(strtoupper(mb_substr($text !== '' ? $text : 'P', 0, 1, 'UTF-8')), ENT_QUOTES, 'UTF-8');
+    }
+}
+
 $buscar = (string)($filtros['buscar'] ?? '');
 $estado = (string)($filtros['estado'] ?? 'activos');
+$visibles = count($proveedores);
 ?>
 
 <style>
 .providers-page {
-    --prov-brand: var(--brand-primary, #1f3f46);
-    --prov-accent: var(--brand-accent, #b58a3c);
-    --prov-line: color-mix(in srgb, var(--prov-brand) 10%, #e5e7eb);
-    --prov-soft: color-mix(in srgb, var(--prov-accent) 7%, #f8fafc);
-    color: #243142;
+    --pv-brand: var(--brand-primary, #1B2746);
+    --pv-brand-2: var(--brand-secondary, #0F172A);
+    --pv-brand-dark: color-mix(in srgb, var(--pv-brand), #000 20%);
+    --pv-brand-soft: color-mix(in srgb, var(--pv-brand) 5%, #FBF8F2);
+    --pv-gold: var(--brand-accent, #BD9441);
+    --pv-gold-soft: color-mix(in srgb, var(--pv-gold) 15%, #FFFFFF);
+    --pv-gold-line: color-mix(in srgb, var(--pv-gold) 42%, #E4D4B0);
+    --pv-gold-ink: color-mix(in srgb, var(--pv-gold) 72%, #000);
+    --pv-ivory: #F6F2EA;
+    --pv-ivory-2: #FBF8F2;
+    --pv-surface: #FFFFFF;
+    --pv-surface-warm: #FCFAF5;
+    --pv-border: color-mix(in srgb, var(--pv-brand) 7%, #E7E1D4);
+    --pv-ring: color-mix(in srgb, var(--pv-gold) 32%, transparent);
+    --pv-text: #171717;
+    --pv-muted: #667085;
+    --pv-heading: #111827;
+    --pv-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --pv-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --pv-success: #1E9E63;
+    --pv-success-bg: #E7F4EC;
+    --pv-info: #2F77E0;
+    --pv-info-bg: #E6EFFC;
+    --pv-danger: #B4392B;
+    --pv-danger-bg: #F8EAE5;
+    min-height: 100%;
+    color: var(--pv-text);
+    font-family: var(--pv-sans);
+    background:
+        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--pv-gold) 8%, transparent), transparent 60%),
+        linear-gradient(180deg, var(--pv-ivory-2), var(--pv-ivory));
 }
-.providers-page .provider-hero {
-    background: linear-gradient(135deg, color-mix(in srgb, var(--prov-brand) 92%, #111827), color-mix(in srgb, var(--prov-accent) 58%, #5b4730));
-    border-radius: 0;
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+.providers-page .pv-shell {
+    display: grid;
+    gap: 14px;
+}
+
+/* Encabezado limpio */
+.providers-page .pv-title-lockup {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    align-items: center;
+    column-gap: 14px;
+    min-width: 0;
+}
+.providers-page .pv-hero-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 15px;
+    display: grid;
+    place-items: center;
     color: #fff;
-    padding: 28px;
+    font-size: 1.15rem;
+    background:
+        radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%),
+        linear-gradient(145deg, var(--pv-gold), var(--pv-brand) 54%, color-mix(in srgb, var(--pv-brand) 68%, #2F8A70));
+    box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--pv-brand) 72%, transparent);
 }
-.providers-page .provider-kicker {
+.providers-page .pv-kicker {
+    margin: 0 0 2px;
+    color: var(--pv-muted);
     font-size: .72rem;
-    letter-spacing: .08em;
+    font-weight: 700;
+    letter-spacing: .11em;
+    line-height: 1;
     text-transform: uppercase;
-    opacity: .76;
-    font-weight: 800;
 }
-.providers-page .provider-title {
-    margin: 6px 0 0;
-    font-size: clamp(1.45rem, 2.4vw, 2.15rem);
-    font-weight: 900;
-    letter-spacing: 0;
+.providers-page .pv-title {
+    margin: 0;
+    font-family: var(--pv-serif);
+    color: var(--pv-heading);
+    font-weight: 700;
+    font-size: clamp(2.2rem, 4vw, 3.1rem);
+    line-height: .98;
 }
-.providers-page .provider-subtitle {
-    margin-top: 8px;
-    max-width: 48rem;
-    color: rgba(255,255,255,.86);
+.providers-page .pv-subtitle {
+    max-width: 44rem;
+    margin: 9px 0 0;
+    color: var(--pv-muted);
+    font-size: .94rem;
+    font-weight: 600;
+    line-height: 1.5;
 }
-.providers-page .provider-stat {
-    border: 1px solid rgba(255,255,255,.22);
-    background: rgba(255,255,255,.11);
-    padding: 12px 14px;
-}
-.providers-page .provider-panel {
-    border: 1px solid var(--prov-line);
-    background: rgba(255,255,255,.9);
-}
-.providers-page .provider-btn {
+
+/* Botones base */
+.providers-page .pv-btn {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    min-height: 38px;
-    padding: 0 14px;
-    border: 1px solid var(--prov-line);
-    font-weight: 800;
+    justify-content: center;
+    gap: .5rem;
+    min-height: 42px;
+    padding: 0 18px;
+    border-radius: 11px;
+    border: 1px solid transparent;
+    font-weight: 700;
+    font-size: .9rem;
+    line-height: 1;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease, color .16s ease;
 }
-.providers-page .provider-btn-primary {
-    background: var(--prov-brand);
-    border-color: var(--prov-brand);
+.providers-page .pv-btn:hover { transform: translateY(-1px); }
+.providers-page .pv-btn:active { transform: translateY(0) scale(.98); }
+.providers-page .pv-btn:focus-visible {
+    outline: 3px solid var(--pv-ring);
+    outline-offset: 2px;
+}
+.providers-page .pv-btn-gold {
+    background: linear-gradient(135deg, var(--pv-gold), color-mix(in srgb, var(--pv-gold) 76%, #000));
     color: #fff;
+    box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--pv-gold) 58%, transparent);
 }
-.providers-page .provider-btn-muted {
-    background: #fff;
-    color: #334155;
+.providers-page .pv-btn-brand {
+    background: linear-gradient(135deg, var(--pv-brand), var(--pv-brand-2));
+    color: #fff;
+    box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--pv-brand) 60%, transparent);
 }
-.providers-page .provider-input {
+.providers-page .pv-btn-muted {
+    background: var(--pv-surface);
+    border-color: var(--pv-border);
+    color: var(--pv-muted);
+}
+
+/* Tira de resumen */
+.providers-page .pv-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+.providers-page .pv-summary-item {
+    background: var(--pv-surface);
+    border: 1px solid var(--pv-border);
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 24px -18px rgba(27,39,70,.22);
+}
+.providers-page .pv-summary-label {
+    color: var(--pv-muted);
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+}
+.providers-page .pv-summary-value {
+    margin-top: 2px;
+    font-family: var(--pv-serif);
+    font-size: 1.7rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--pv-heading);
+}
+.providers-page .pv-summary-value.is-active { color: var(--pv-success); }
+.providers-page .pv-summary-value.is-inactive { color: var(--pv-muted); }
+
+/* Panel */
+.providers-page .pv-panel {
+    background: var(--pv-surface);
+    border: 1px solid var(--pv-border);
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28);
+}
+
+/* Filtros */
+.providers-page .pv-filter-form {
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) minmax(170px, 220px) auto auto;
+    gap: 10px;
+    align-items: center;
+}
+.providers-page .pv-control {
     width: 100%;
     min-height: 40px;
-    border: 1px solid var(--prov-line);
-    background: #fff;
+    border: 1px solid var(--pv-border);
+    background: var(--pv-surface-warm);
+    border-radius: 11px;
     padding: 0 12px;
+    color: var(--pv-text);
+    font-weight: 600;
+    font-size: .88rem;
+    transition: border-color .16s ease, box-shadow .16s ease;
 }
-.providers-page .provider-table th {
-    color: #64748b;
+.providers-page .pv-control:focus {
+    border-color: var(--pv-gold);
+    box-shadow: 0 0 0 3px var(--pv-ring);
+    outline: none;
+}
+.providers-page select.pv-control { cursor: pointer; }
+.providers-page .pv-search { position: relative; }
+.providers-page .pv-search .pv-control { padding-left: 38px; }
+.providers-page .pv-search-icon {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--pv-muted);
+    font-size: .9rem;
+    pointer-events: none;
+}
+
+/* Cabecera de panel */
+.providers-page .pv-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--pv-border);
+}
+.providers-page .pv-panel-title {
+    font-size: .85rem;
+    font-weight: 700;
+    color: var(--pv-heading);
+}
+.providers-page .pv-panel-sub {
+    font-size: .75rem;
+    color: var(--pv-muted);
+}
+.providers-page .pv-count-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .36rem .66rem;
+    border-radius: 999px;
+    background: var(--pv-gold-soft);
+    color: var(--pv-gold-ink);
+    border: 1px solid var(--pv-gold-line);
     font-size: .72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Tabla */
+.providers-page .pv-desktop { display: none; }
+.providers-page .pv-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: .85rem;
+}
+.providers-page .pv-table thead {
+    background: var(--pv-surface-warm);
+    border-bottom: 1px solid var(--pv-border);
+}
+.providers-page .pv-table th {
+    padding: 12px 16px;
+    color: var(--pv-muted);
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-align: left;
     text-transform: uppercase;
-    letter-spacing: .06em;
 }
-.providers-page .provider-table td,
-.providers-page .provider-table th {
-    border-bottom: 1px solid var(--prov-line);
-    padding: 14px 12px;
+.providers-page .pv-table th.is-end { text-align: right; }
+.providers-page .pv-table td {
+    padding: 13px 16px;
+    vertical-align: middle;
 }
-.providers-page .provider-badge {
+.providers-page .pv-row {
+    border-bottom: 1px solid var(--pv-border);
+    transition: background .16s ease, box-shadow .16s ease;
+}
+.providers-page .pv-row:last-child { border-bottom: 0; }
+.providers-page .pv-row:hover {
+    background: var(--pv-ivory-2);
+    box-shadow: 0 10px 24px -24px rgba(27,39,70,.48);
+}
+.providers-page .pv-id-cell { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.providers-page .pv-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    font-weight: 700;
+    font-size: .9rem;
+    background: var(--pv-avatar-bg, #EEF2FF);
+    color: var(--pv-avatar-fg, #3730A3);
+    border: 1px solid var(--pv-avatar-border, #C7D2FE);
+}
+.providers-page .pv-name {
+    font-weight: 700;
+    color: var(--pv-heading);
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.providers-page .pv-name-link { color: inherit; text-decoration: none; }
+.providers-page .pv-name-link:hover { text-decoration: underline; text-decoration-color: var(--pv-gold); text-underline-offset: 3px; }
+.providers-page .pv-sub {
+    color: var(--pv-muted);
+    font-size: .74rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.providers-page .pv-line {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    min-width: 0;
+    color: #334155;
+    font-size: .82rem;
+    line-height: 1.35;
+}
+.providers-page .pv-line + .pv-line { margin-top: 3px; }
+.providers-page .pv-line i { color: var(--pv-muted); width: 14px; text-align: center; flex-shrink: 0; }
+.providers-page .pv-line span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.providers-page .pv-link { color: inherit; text-decoration: none; }
+.providers-page .pv-link:hover { color: var(--pv-gold-ink); text-decoration: underline; text-underline-offset: 3px; }
+.providers-page .pv-muted-text { color: var(--pv-muted); font-size: .8rem; }
+.providers-page .pv-rfc { font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace; color: #334155; font-size: .82rem; }
+
+/* Badge de estado */
+.providers-page .pv-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 9px;
-    border: 1px solid var(--prov-line);
-    background: var(--prov-soft);
-    font-size: .78rem;
-    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: .74rem;
+    font-weight: 700;
+    border: 1px solid transparent;
+}
+.providers-page .pv-badge.is-active {
+    color: color-mix(in srgb, var(--pv-success) 78%, #000);
+    background: var(--pv-success-bg);
+    border-color: color-mix(in srgb, var(--pv-success) 26%, #fff);
+}
+.providers-page .pv-badge.is-inactive {
+    color: #5F5E5A;
+    background: #F1EFE8;
+    border-color: #D3D1C7;
+}
+
+/* Acciones por fila */
+.providers-page .pv-actions { display: flex; justify-content: flex-end; gap: 7px; }
+.providers-page .pv-actions form { display: inline-flex; margin: 0; }
+.providers-page .pv-action {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: var(--pv-surface-warm);
+    border: 1px solid var(--pv-border);
+    color: var(--pv-muted);
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform .16s ease, background .16s ease, color .16s ease, border-color .16s ease;
+}
+.providers-page .pv-action:hover { transform: translateY(-1px); }
+.providers-page .pv-action:focus-visible { outline: 2px solid var(--pv-gold); outline-offset: 2px; }
+.providers-page .pv-action-view { color: var(--pv-info); }
+.providers-page .pv-action-view:hover { background: var(--pv-info-bg); }
+.providers-page .pv-action-edit { color: var(--pv-gold-ink); }
+.providers-page .pv-action-edit:hover { background: var(--pv-gold-soft); }
+.providers-page .pv-action-off { color: var(--pv-danger); }
+.providers-page .pv-action-off:hover { background: var(--pv-danger-bg); }
+.providers-page .pv-action-on { color: var(--pv-success); }
+.providers-page .pv-action-on:hover { background: var(--pv-success-bg); }
+
+/* Avatares rotativos */
+.providers-page .pv-row:nth-child(6n+1) .pv-avatar, .providers-page .pv-mobile-card:nth-child(6n+1) .pv-avatar { --pv-avatar-bg:#EEF2FF; --pv-avatar-fg:#3730A3; --pv-avatar-border:#C7D2FE; }
+.providers-page .pv-row:nth-child(6n+2) .pv-avatar, .providers-page .pv-mobile-card:nth-child(6n+2) .pv-avatar { --pv-avatar-bg:#ECFDF5; --pv-avatar-fg:#047857; --pv-avatar-border:#A7F3D0; }
+.providers-page .pv-row:nth-child(6n+3) .pv-avatar, .providers-page .pv-mobile-card:nth-child(6n+3) .pv-avatar { --pv-avatar-bg:#FFF7ED; --pv-avatar-fg:#C2410C; --pv-avatar-border:#FED7AA; }
+.providers-page .pv-row:nth-child(6n+4) .pv-avatar, .providers-page .pv-mobile-card:nth-child(6n+4) .pv-avatar { --pv-avatar-bg:#FDF2F8; --pv-avatar-fg:#BE185D; --pv-avatar-border:#FBCFE8; }
+.providers-page .pv-row:nth-child(6n+5) .pv-avatar, .providers-page .pv-mobile-card:nth-child(6n+5) .pv-avatar { --pv-avatar-bg:#F0FDFA; --pv-avatar-fg:#0F766E; --pv-avatar-border:#99F6E4; }
+.providers-page .pv-row:nth-child(6n+6) .pv-avatar, .providers-page .pv-mobile-card:nth-child(6n+6) .pv-avatar { --pv-avatar-bg:#F8FAFC; --pv-avatar-fg:#475569; --pv-avatar-border:#CBD5E1; }
+
+/* Tarjetas móviles */
+.providers-page .pv-mobile { display: grid; gap: 10px; padding: 12px; }
+.providers-page .pv-mobile-card {
+    background: var(--pv-surface);
+    border: 1px solid var(--pv-border);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 26px -20px rgba(27,39,70,.25);
+    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+.providers-page .pv-mobile-card:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--pv-gold) 38%, var(--pv-border));
+    box-shadow: 0 2px 4px rgba(27,39,70,.05), 0 16px 32px -22px rgba(27,39,70,.32);
+}
+.providers-page .pv-mobile-top {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: start;
+}
+.providers-page .pv-mobile-contact { display: grid; gap: 5px; margin-top: 10px; }
+.providers-page .pv-mobile-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 7px;
+    margin-top: 11px;
+}
+.providers-page .pv-mobile-actions form { display: flex; }
+.providers-page .pv-card-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    width: 100%;
+    min-height: 36px;
+    padding: 0 .5rem;
+    border-radius: 10px;
+    background: var(--pv-surface-warm);
+    border: 1px solid var(--pv-border);
+    color: var(--pv-text);
+    font-size: .76rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .16s ease, color .16s ease, border-color .16s ease;
+}
+.providers-page .pv-card-btn:hover { border-color: var(--pv-gold-line); color: var(--pv-gold-ink); background: var(--pv-gold-soft); }
+.providers-page .pv-card-btn.is-off { color: var(--pv-danger); }
+.providers-page .pv-card-btn.is-off:hover { background: var(--pv-danger-bg); border-color: color-mix(in srgb, var(--pv-danger) 30%, var(--pv-border)); color: var(--pv-danger); }
+.providers-page .pv-card-btn.is-on { color: var(--pv-success); }
+.providers-page .pv-card-btn.is-on:hover { background: var(--pv-success-bg); border-color: color-mix(in srgb, var(--pv-success) 30%, var(--pv-border)); color: var(--pv-success); }
+
+/* Estado vacío y aviso */
+.providers-page .pv-empty {
+    text-align: center;
+    padding: 44px 18px;
+    background: var(--pv-ivory-2);
+    border: 1px dashed var(--pv-border);
+    border-radius: 16px;
+}
+.providers-page .pv-empty-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 14px;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    background: var(--pv-gold-soft);
+    color: var(--pv-gold-ink);
+    font-size: 1.3rem;
+}
+.providers-page .pv-empty h2 { color: var(--pv-brand); font-size: 1.1rem; font-weight: 700; }
+.providers-page .pv-empty p { color: var(--pv-muted); margin: 8px auto 0; max-width: 28rem; font-size: .9rem; }
+.providers-page .pv-notice {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 16px 18px;
+    background: var(--pv-gold-soft);
+    border: 1px solid var(--pv-gold-line);
+    border-radius: 16px;
+    color: var(--pv-text);
+}
+.providers-page .pv-notice i { color: var(--pv-gold-ink); font-size: 1.1rem; margin-top: 2px; }
+.providers-page .pv-notice strong { color: var(--pv-heading); display: block; margin-bottom: 2px; }
+.providers-page .pv-notice p { color: var(--pv-muted); font-size: .88rem; margin: 0; }
+
+/* Búsqueda en vivo */
+.providers-page [data-prov-results-region] { transition: opacity .18s ease, filter .18s ease; }
+.providers-page [data-prov-results-region].is-updating { opacity: .58; filter: saturate(.88); pointer-events: none; }
+
+@media (min-width: 768px) {
+    .providers-page .pv-desktop { display: block; }
+    .providers-page .pv-mobile { display: none; }
+}
+@media (max-width: 767px) {
+    .providers-page .pv-filter-form { grid-template-columns: 1fr; }
+    .providers-page .pv-filter-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .providers-page .pv-summary-value { font-size: 1.4rem; }
+    .providers-page .pv-title { font-size: 2rem; }
 }
 </style>
 
-<div class="providers-page">
-    <section class="provider-hero">
-        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-            <div>
-                <div class="provider-kicker">Catalogo operativo</div>
-                <h1 class="provider-title">Proveedores</h1>
-                <p class="provider-subtitle">
-                    Directorio por hotel para preparar compras futuras sin tocar caja, pagos ni recepcion de inventario.
-                </p>
-            </div>
-            <div class="grid grid-cols-3 gap-2 min-w-[280px]">
-                <div class="provider-stat">
-                    <div class="text-xs opacity-75">Total</div>
-                    <div class="text-2xl font-black"><?= (int)($resumen['total'] ?? 0) ?></div>
-                </div>
-                <div class="provider-stat">
-                    <div class="text-xs opacity-75">Activos</div>
-                    <div class="text-2xl font-black"><?= (int)($resumen['activos'] ?? 0) ?></div>
-                </div>
-                <div class="provider-stat">
-                    <div class="text-xs opacity-75">Inactivos</div>
-                    <div class="text-2xl font-black"><?= (int)($resumen['inactivos'] ?? 0) ?></div>
+<div class="providers-page p-4 sm:p-6">
+    <div class="pv-shell">
+        <section class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div class="pv-title-lockup">
+                <div class="pv-hero-icon"><i class="fas fa-truck-field"></i></div>
+                <div>
+                    <p class="pv-kicker">Compras y abastecimiento</p>
+                    <h1 class="pv-title">Proveedores</h1>
+                    <p class="pv-subtitle">Tu lista de proveedores del hotel: a qui&eacute;n le compras, c&oacute;mo contactarlo y si sigue activo. Aqu&iacute; los preparas; las compras y los pagos se registran despu&eacute;s.</p>
                 </div>
             </div>
-        </div>
-    </section>
+            <a class="pv-btn pv-btn-gold" href="<?= url('proveedores/crear') ?>" title="Registrar nuevo proveedor">
+                <i class="fas fa-plus"></i>
+                Nuevo proveedor
+            </a>
+        </section>
 
-    <section class="p-6">
         <?php if (!$tablaDisponible): ?>
-            <div class="provider-panel p-5">
-                <strong>Tabla no disponible.</strong>
-                <p class="text-sm text-slate-500 mt-1">Ejecuta la migracion de Fase 2F antes de usar este catalogo.</p>
-            </div>
+            <section class="pv-notice">
+                <i class="fas fa-circle-info"></i>
+                <div>
+                    <strong>Esta secci&oacute;n todav&iacute;a no est&aacute; activada.</strong>
+                    <p>P&iacute;dele al administrador del sistema que la habilite para empezar a registrar tus proveedores.</p>
+                </div>
+            </section>
         <?php else: ?>
-            <div class="provider-panel p-4 mb-4">
-                <form method="GET" action="<?= url('proveedores') ?>" class="grid grid-cols-1 md:grid-cols-[1fr_180px_auto_auto] gap-3">
-                    <input class="provider-input" type="search" name="buscar" value="<?= prov_safe($buscar, '') ?>" placeholder="Buscar por nombre, RFC, telefono o correo">
-                    <select class="provider-input" name="estado">
+            <section class="pv-summary">
+                <div class="pv-summary-item">
+                    <p class="pv-summary-label">Total</p>
+                    <p class="pv-summary-value"><?= number_format((int)($resumen['total'] ?? 0)) ?></p>
+                </div>
+                <div class="pv-summary-item">
+                    <p class="pv-summary-label">Activos</p>
+                    <p class="pv-summary-value is-active"><?= number_format((int)($resumen['activos'] ?? 0)) ?></p>
+                </div>
+                <div class="pv-summary-item">
+                    <p class="pv-summary-label">Inactivos</p>
+                    <p class="pv-summary-value is-inactive"><?= number_format((int)($resumen['inactivos'] ?? 0)) ?></p>
+                </div>
+            </section>
+
+            <section class="pv-panel p-3 md:p-4">
+                <form method="GET" action="<?= url('proveedores') ?>" class="pv-filter-form" data-prov-live-search-form data-auto-filter-form>
+                    <div class="pv-search">
+                        <i class="fas fa-search pv-search-icon" data-prov-search-icon></i>
+                        <input class="pv-control" type="search" name="buscar" autocomplete="off" inputmode="search"
+                               value="<?= prov_safe($buscar, '') ?>"
+                               placeholder="Buscar por nombre, RFC, tel&eacute;fono o correo"
+                               data-prov-live-search-input>
+                    </div>
+                    <select class="pv-control" name="estado" title="Filtrar por estado">
                         <option value="activos" <?= $estado === 'activos' ? 'selected' : '' ?>>Activos</option>
                         <option value="inactivos" <?= $estado === 'inactivos' ? 'selected' : '' ?>>Inactivos</option>
                         <option value="todos" <?= $estado === 'todos' ? 'selected' : '' ?>>Todos</option>
                     </select>
-                    <button class="provider-btn provider-btn-muted" type="submit">
-                        <i class="fas fa-search"></i>
+                    <button class="pv-btn pv-btn-brand pv-filter-submit" type="submit">
+                        <i class="fas fa-filter"></i>
                         Filtrar
                     </button>
-                    <a class="provider-btn provider-btn-primary" href="<?= url('proveedores/crear') ?>">
-                        <i class="fas fa-plus"></i>
-                        Nuevo
+                    <a class="pv-btn pv-btn-muted pv-reset" href="<?= url('proveedores') ?>">
+                        <i class="fas fa-times"></i>
+                        Limpiar
                     </a>
                 </form>
-            </div>
+            </section>
 
-            <div class="provider-panel overflow-hidden">
+            <div data-prov-results-region aria-live="polite" aria-busy="false">
                 <?php if (empty($proveedores)): ?>
-                    <div class="p-8 text-center">
-                        <div class="text-4xl text-slate-300 mb-3"><i class="fas fa-truck-field"></i></div>
-                        <h2 class="font-black text-lg">No hay proveedores en esta vista</h2>
-                        <p class="text-sm text-slate-500 mt-1">Crea el primer proveedor del hotel o cambia los filtros.</p>
-                    </div>
+                    <section class="pv-empty">
+                        <div class="pv-empty-icon"><i class="fas fa-truck-field"></i></div>
+                        <h2>A&uacute;n no encontramos proveedores</h2>
+                        <p>No hay proveedores con estos filtros. Crea el primero del hotel o cambia la b&uacute;squeda.</p>
+                        <a class="pv-btn pv-btn-gold mt-4" href="<?= url('proveedores/crear') ?>" style="display:inline-flex">
+                            <i class="fas fa-plus"></i>
+                            Nuevo proveedor
+                        </a>
+                    </section>
                 <?php else: ?>
-                    <div class="overflow-x-auto">
-                        <table class="provider-table min-w-full text-sm">
-                            <thead>
-                                <tr>
-                                    <th class="text-left">Proveedor</th>
-                                    <th class="text-left">Contacto</th>
-                                    <th class="text-left">RFC</th>
-                                    <th class="text-left">Estado</th>
-                                    <th class="text-right">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($proveedores as $proveedor): ?>
-                                    <?php $activo = (int)($proveedor['activo'] ?? 0) === 1; ?>
+                    <section class="pv-panel overflow-hidden">
+                        <div class="pv-panel-head">
+                            <div>
+                                <div class="pv-panel-title">Lista de proveedores</div>
+                                <div class="pv-panel-sub">Contacto y estado para tus compras.</div>
+                            </div>
+                            <span class="pv-count-pill">
+                                <i class="fas fa-list"></i>
+                                <?= number_format($visibles) ?> <?= $visibles === 1 ? 'proveedor' : 'proveedores' ?>
+                            </span>
+                        </div>
+
+                        <div class="pv-desktop">
+                            <table class="pv-table">
+                                <colgroup>
+                                    <col style="width: 30%;">
+                                    <col style="width: 28%;">
+                                    <col style="width: 18%;">
+                                    <col style="width: 12%;">
+                                    <col style="width: 12%;">
+                                </colgroup>
+                                <thead>
                                     <tr>
-                                        <td>
-                                            <div class="font-black text-slate-800"><?= prov_safe($proveedor['nombre']) ?></div>
-                                            <div class="text-xs text-slate-500"><?= prov_safe($proveedor['razon_social']) ?></div>
-                                        </td>
-                                        <td>
-                                            <div><?= prov_safe($proveedor['telefono']) ?></div>
-                                            <div class="text-xs text-slate-500"><?= prov_safe($proveedor['email']) ?></div>
-                                        </td>
-                                        <td><?= prov_safe($proveedor['rfc']) ?></td>
-                                        <td>
-                                            <span class="provider-badge">
-                                                <i class="fas <?= $activo ? 'fa-check-circle' : 'fa-pause-circle' ?>"></i>
-                                                <?= $activo ? 'Activo' : 'Inactivo' ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div class="flex justify-end gap-2">
-                                                <a class="provider-btn provider-btn-muted" href="<?= url('proveedores/' . (int)$proveedor['id']) ?>" title="Ver">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                                <a class="provider-btn provider-btn-muted" href="<?= url('proveedores/' . (int)$proveedor['id'] . '/editar') ?>" title="Editar">
-                                                    <i class="fas fa-pen"></i>
-                                                </a>
-                                                <?php if ($activo): ?>
-                                                    <form method="POST" action="<?= url('proveedores/' . (int)$proveedor['id'] . '/desactivar') ?>">
-                                                        <?= csrf_field() ?>
-                                                        <button class="provider-btn provider-btn-muted" type="submit" title="Desactivar">
-                                                            <i class="fas fa-ban"></i>
-                                                        </button>
-                                                    </form>
-                                                <?php else: ?>
-                                                    <form method="POST" action="<?= url('proveedores/' . (int)$proveedor['id'] . '/reactivar') ?>">
-                                                        <?= csrf_field() ?>
-                                                        <button class="provider-btn provider-btn-muted" type="submit" title="Reactivar">
-                                                            <i class="fas fa-rotate-left"></i>
-                                                        </button>
-                                                    </form>
-                                                <?php endif; ?>
-                                            </div>
-                                        </td>
+                                        <th>Proveedor</th>
+                                        <th>Contacto</th>
+                                        <th>RFC</th>
+                                        <th>Estado</th>
+                                        <th class="is-end">Acciones</th>
                                     </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($proveedores as $proveedor): ?>
+                                        <?php
+                                        $activo = (int)($proveedor['activo'] ?? 0) === 1;
+                                        $provId = (int)($proveedor['id'] ?? 0);
+                                        $provUrl = url('proveedores/' . $provId);
+                                        $tieneRazon = trim((string)($proveedor['razon_social'] ?? '')) !== '';
+                                        $tieneTel = trim((string)($proveedor['telefono'] ?? '')) !== '';
+                                        $tieneMail = trim((string)($proveedor['email'] ?? '')) !== '';
+                                        $tieneRfc = trim((string)($proveedor['rfc'] ?? '')) !== '';
+                                        ?>
+                                        <tr class="pv-row">
+                                            <td>
+                                                <div class="pv-id-cell">
+                                                    <div class="pv-avatar"><?= prov_inicial($proveedor['nombre'] ?? '') ?></div>
+                                                    <div class="min-w-0">
+                                                        <a class="pv-name pv-name-link" href="<?= $provUrl ?>" title="Ver ficha de <?= prov_safe($proveedor['nombre']) ?>">
+                                                            <?= prov_safe($proveedor['nombre']) ?>
+                                                        </a>
+                                                        <?php if ($tieneRazon): ?>
+                                                            <div class="pv-sub"><?= prov_safe($proveedor['razon_social']) ?></div>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <?php if ($tieneTel): ?>
+                                                    <div class="pv-line">
+                                                        <i class="fas fa-phone"></i>
+                                                        <a class="pv-link" href="tel:<?= prov_safe($proveedor['telefono'], '') ?>"><?= prov_safe($proveedor['telefono']) ?></a>
+                                                    </div>
+                                                <?php endif; ?>
+                                                <?php if ($tieneMail): ?>
+                                                    <div class="pv-line">
+                                                        <i class="fas fa-envelope"></i>
+                                                        <a class="pv-link" href="mailto:<?= prov_safe($proveedor['email'], '') ?>"><?= prov_safe($proveedor['email']) ?></a>
+                                                    </div>
+                                                <?php endif; ?>
+                                                <?php if (!$tieneTel && !$tieneMail): ?>
+                                                    <span class="pv-muted-text">Sin contacto registrado</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <?php if ($tieneRfc): ?>
+                                                    <span class="pv-rfc"><?= prov_safe($proveedor['rfc']) ?></span>
+                                                <?php else: ?>
+                                                    <span class="pv-muted-text">&mdash;</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <span class="pv-badge <?= $activo ? 'is-active' : 'is-inactive' ?>">
+                                                    <i class="fas <?= $activo ? 'fa-circle-check' : 'fa-circle-pause' ?>"></i>
+                                                    <?= $activo ? 'Activo' : 'Inactivo' ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="pv-actions">
+                                                    <a class="pv-action pv-action-view" href="<?= $provUrl ?>" title="Ver ficha" aria-label="Ver proveedor">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a class="pv-action pv-action-edit" href="<?= url('proveedores/' . $provId . '/editar') ?>" title="Editar" aria-label="Editar proveedor">
+                                                        <i class="fas fa-pen"></i>
+                                                    </a>
+                                                    <?php if ($activo): ?>
+                                                        <form method="POST" action="<?= url('proveedores/' . $provId . '/desactivar') ?>">
+                                                            <?= csrf_field() ?>
+                                                            <button class="pv-action pv-action-off" type="submit" title="Desactivar" aria-label="Desactivar proveedor">
+                                                                <i class="fas fa-ban"></i>
+                                                            </button>
+                                                        </form>
+                                                    <?php else: ?>
+                                                        <form method="POST" action="<?= url('proveedores/' . $provId . '/reactivar') ?>">
+                                                            <?= csrf_field() ?>
+                                                            <button class="pv-action pv-action-on" type="submit" title="Reactivar" aria-label="Reactivar proveedor">
+                                                                <i class="fas fa-rotate-left"></i>
+                                                            </button>
+                                                        </form>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="pv-mobile">
+                            <?php foreach ($proveedores as $proveedor): ?>
+                                <?php
+                                $activo = (int)($proveedor['activo'] ?? 0) === 1;
+                                $provId = (int)($proveedor['id'] ?? 0);
+                                $provUrl = url('proveedores/' . $provId);
+                                $tieneRazon = trim((string)($proveedor['razon_social'] ?? '')) !== '';
+                                $tieneTel = trim((string)($proveedor['telefono'] ?? '')) !== '';
+                                $tieneMail = trim((string)($proveedor['email'] ?? '')) !== '';
+                                $tieneRfc = trim((string)($proveedor['rfc'] ?? '')) !== '';
+                                ?>
+                                <article class="pv-mobile-card">
+                                    <div class="pv-mobile-top">
+                                        <div class="pv-avatar"><?= prov_inicial($proveedor['nombre'] ?? '') ?></div>
+                                        <div class="min-w-0">
+                                            <a class="pv-name pv-name-link" href="<?= $provUrl ?>"><?= prov_safe($proveedor['nombre']) ?></a>
+                                            <?php if ($tieneRazon): ?>
+                                                <div class="pv-sub"><?= prov_safe($proveedor['razon_social']) ?></div>
+                                            <?php endif; ?>
+                                        </div>
+                                        <span class="pv-badge <?= $activo ? 'is-active' : 'is-inactive' ?>">
+                                            <i class="fas <?= $activo ? 'fa-circle-check' : 'fa-circle-pause' ?>"></i>
+                                            <?= $activo ? 'Activo' : 'Inactivo' ?>
+                                        </span>
+                                    </div>
+
+                                    <div class="pv-mobile-contact">
+                                        <?php if ($tieneTel): ?>
+                                            <div class="pv-line">
+                                                <i class="fas fa-phone"></i>
+                                                <a class="pv-link" href="tel:<?= prov_safe($proveedor['telefono'], '') ?>"><?= prov_safe($proveedor['telefono']) ?></a>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if ($tieneMail): ?>
+                                            <div class="pv-line">
+                                                <i class="fas fa-envelope"></i>
+                                                <a class="pv-link" href="mailto:<?= prov_safe($proveedor['email'], '') ?>"><?= prov_safe($proveedor['email']) ?></a>
+                                            </div>
+                                        <?php endif; ?>
+                                        <div class="pv-line">
+                                            <i class="fas fa-id-card"></i>
+                                            <span><?= $tieneRfc ? 'RFC ' . prov_safe($proveedor['rfc']) : 'Sin RFC' ?></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="pv-mobile-actions">
+                                        <a class="pv-card-btn" href="<?= $provUrl ?>">
+                                            <i class="fas fa-eye"></i>
+                                            Ver
+                                        </a>
+                                        <a class="pv-card-btn" href="<?= url('proveedores/' . $provId . '/editar') ?>">
+                                            <i class="fas fa-pen"></i>
+                                            Editar
+                                        </a>
+                                        <?php if ($activo): ?>
+                                            <form method="POST" action="<?= url('proveedores/' . $provId . '/desactivar') ?>">
+                                                <?= csrf_field() ?>
+                                                <button class="pv-card-btn is-off" type="submit">
+                                                    <i class="fas fa-ban"></i>
+                                                    Desactivar
+                                                </button>
+                                            </form>
+                                        <?php else: ?>
+                                            <form method="POST" action="<?= url('proveedores/' . $provId . '/reactivar') ?>">
+                                                <?= csrf_field() ?>
+                                                <button class="pv-card-btn is-on" type="submit">
+                                                    <i class="fas fa-rotate-left"></i>
+                                                    Reactivar
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
+                                    </div>
+                                </article>
+                            <?php endforeach; ?>
+                        </div>
+                    </section>
                 <?php endif; ?>
             </div>
         <?php endif; ?>
-    </section>
+    </div>
 </div>
+
+<script>
+(() => {
+    const form = document.querySelector('[data-prov-live-search-form]');
+    const input = document.querySelector('[data-prov-live-search-input]');
+    const searchIcon = document.querySelector('[data-prov-search-icon]');
+    if (!form || !input) return;
+
+    let liveSearchTimer = null;
+    let isComposing = false;
+    let lastQuery = input.value.trim();
+    let activeRequest = null;
+    const parser = new DOMParser();
+    const delay = 280;
+
+    const getResultsRegion = () => document.querySelector('[data-prov-results-region]');
+
+    const setSearching = (isSearching) => {
+        getResultsRegion()?.classList.toggle('is-updating', isSearching);
+        getResultsRegion()?.setAttribute('aria-busy', isSearching ? 'true' : 'false');
+        if (searchIcon) {
+            searchIcon.classList.toggle('fa-search', !isSearching);
+            searchIcon.classList.toggle('fa-circle-notch', isSearching);
+            searchIcon.classList.toggle('fa-spin', isSearching);
+        }
+    };
+
+    const buildSearchUrl = (targetUrl = null) => {
+        const url = targetUrl ? new URL(targetUrl, window.location.origin) : new URL(form.action, window.location.origin);
+        const data = new FormData(form);
+        for (const [key, value] of data.entries()) {
+            const normalized = String(value || '').trim();
+            if (normalized) {
+                url.searchParams.set(key, normalized);
+            } else {
+                url.searchParams.delete(key);
+            }
+        }
+        return url;
+    };
+
+    const updateFromDocument = (doc) => {
+        const incoming = doc.querySelector('[data-prov-results-region]');
+        const current = getResultsRegion();
+        if (incoming && current) {
+            current.replaceWith(incoming);
+        }
+    };
+
+    const fetchResults = async (url, { pushState = true } = {}) => {
+        if (activeRequest) activeRequest.abort();
+        const controller = new AbortController();
+        activeRequest = controller;
+        setSearching(true);
+        try {
+            const response = await fetch(url.toString(), {
+                credentials: 'same-origin',
+                signal: controller.signal,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!response.ok) throw new Error('No se pudo cargar la busqueda');
+            const html = await response.text();
+            const doc = parser.parseFromString(html, 'text/html');
+            updateFromDocument(doc);
+            if (pushState) {
+                window.history.replaceState({}, '', url.pathname + url.search);
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error('Error en busqueda de proveedores:', error);
+                HTMLFormElement.prototype.submit.call(form);
+            }
+        } finally {
+            if (activeRequest === controller) {
+                activeRequest = null;
+                setSearching(false);
+            }
+        }
+    };
+
+    const submitLiveSearch = () => {
+        const current = input.value.trim();
+        if (current === lastQuery) return;
+        lastQuery = current;
+        fetchResults(buildSearchUrl());
+    };
+
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        lastQuery = input.value.trim();
+        fetchResults(buildSearchUrl());
+    });
+
+    form.querySelector('[name="estado"]')?.addEventListener('change', () => {
+        lastQuery = input.value.trim();
+        fetchResults(buildSearchUrl());
+    });
+
+    form.querySelector('.pv-reset')?.addEventListener('click', (event) => {
+        event.preventDefault();
+        input.value = '';
+        const estado = form.querySelector('[name="estado"]');
+        if (estado) estado.value = 'activos';
+        lastQuery = '';
+        fetchResults(new URL(event.currentTarget.href, window.location.origin));
+        input.focus();
+    });
+
+    window.addEventListener('popstate', () => {
+        const params = new URLSearchParams(window.location.search);
+        input.value = params.get('buscar') || '';
+        const estado = form.querySelector('[name="estado"]');
+        if (estado) estado.value = params.get('estado') || 'activos';
+        lastQuery = input.value.trim();
+        fetchResults(new URL(window.location.href), { pushState: false });
+    });
+
+    input.addEventListener('compositionstart', () => { isComposing = true; });
+    input.addEventListener('compositionend', () => {
+        isComposing = false;
+        window.clearTimeout(liveSearchTimer);
+        liveSearchTimer = window.setTimeout(submitLiveSearch, delay);
+    });
+    input.addEventListener('input', () => {
+        if (isComposing) return;
+        window.clearTimeout(liveSearchTimer);
+        liveSearchTimer = window.setTimeout(submitLiveSearch, delay);
+    });
+})();
+</script>

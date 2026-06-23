@@ -24,7 +24,21 @@ if (!function_exists('comp_view_qty')) {
     }
 }
 
+if (!function_exists('comp_view_estado_meta')) {
+    function comp_view_estado_meta($estado)
+    {
+        $key = strtolower(trim((string)($estado ?? '')));
+        $map = [
+            'borrador'  => ['Borrador', 'is-borrador', 'fa-pen-ruler'],
+            'recibida'  => ['Recibida', 'is-recibida', 'fa-circle-check'],
+            'cancelada' => ['Cancelada', 'is-cancelada', 'fa-circle-xmark'],
+        ];
+        return $map[$key] ?? [ucfirst($key !== '' ? $key : 'Sin estado'), 'is-soft', 'fa-circle-dot'];
+    }
+}
+
 $estado = (string)($compra['estado'] ?? '');
+[$estadoLabel, $estadoClass, $estadoIcon] = comp_view_estado_meta($estado);
 $movimientosVinculados = 0;
 foreach ($detalles as $detalle) {
     if (!empty($detalle['movimiento_inventario_id'])) {
@@ -35,153 +49,152 @@ foreach ($detalles as $detalle) {
 
 <style>
 .purchase-detail-page {
-    --purchase-brand: var(--brand-primary, #1f3f46);
-    --purchase-accent: var(--brand-accent, #b58a3c);
-    --purchase-line: color-mix(in srgb, var(--purchase-brand) 10%, #e5e7eb);
-    --purchase-soft: color-mix(in srgb, var(--purchase-accent) 7%, #f8fafc);
-    color: #243142;
+    --cp-brand: var(--brand-primary, #1B2746);
+    --cp-brand-2: var(--brand-secondary, #0F172A);
+    --cp-gold: var(--brand-accent, #BD9441);
+    --cp-gold-soft: color-mix(in srgb, var(--cp-gold) 15%, #FFFFFF);
+    --cp-gold-line: color-mix(in srgb, var(--cp-gold) 42%, #E4D4B0);
+    --cp-gold-ink: color-mix(in srgb, var(--cp-gold) 72%, #000);
+    --cp-ivory: #F6F2EA;
+    --cp-ivory-2: #FBF8F2;
+    --cp-surface: #FFFFFF;
+    --cp-surface-warm: #FCFAF5;
+    --cp-border: color-mix(in srgb, var(--cp-brand) 7%, #E7E1D4);
+    --cp-text: #171717;
+    --cp-muted: #667085;
+    --cp-heading: #111827;
+    --cp-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --cp-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --cp-success: #1E9E63; --cp-success-bg: #E7F4EC;
+    --cp-warning: #C2841C; --cp-warning-bg: #FAF0DC;
+    --cp-danger: #B4392B; --cp-danger-bg: #F8EAE5;
+    min-height: 100%;
+    color: var(--cp-text);
+    font-family: var(--cp-sans);
+    background:
+        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--cp-gold) 8%, transparent), transparent 60%),
+        linear-gradient(180deg, var(--cp-ivory-2), var(--cp-ivory));
 }
-.purchase-detail-page .purchase-detail-hero {
-    background: linear-gradient(135deg, color-mix(in srgb, var(--purchase-brand) 92%, #111827), color-mix(in srgb, var(--purchase-accent) 58%, #5b4730));
-    color: #fff;
-    padding: 28px;
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
+
+.purchase-detail-page .cp-shell { display: grid; gap: 14px; }
+.purchase-detail-page .cp-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; }
+.purchase-detail-page .cp-hero-icon {
+    width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--cp-gold), var(--cp-brand) 54%, color-mix(in srgb, var(--cp-brand) 68%, #2F8A70));
+    box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--cp-brand) 72%, transparent);
 }
-.purchase-detail-page .purchase-kicker {
-    font-size: .72rem;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    opacity: .76;
-    font-weight: 800;
+.purchase-detail-page .cp-kicker { margin: 0 0 2px; color: var(--cp-muted); font-size: .72rem; font-weight: 700; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
+.purchase-detail-page .cp-title { margin: 0; font-family: var(--cp-serif); color: var(--cp-heading); font-weight: 700; font-size: clamp(2rem, 3.6vw, 2.9rem); line-height: 1; }
+.purchase-detail-page .cp-subtitle { max-width: 48rem; margin: 8px 0 0; color: var(--cp-muted); font-size: .92rem; font-weight: 500; line-height: 1.5; }
+
+.purchase-detail-page .cp-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.purchase-detail-page .cp-stat { background: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: 14px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 24px -18px rgba(27,39,70,.22); }
+.purchase-detail-page .cp-stat-label { color: var(--cp-muted); font-size: .68rem; font-weight: 700; letter-spacing: .045em; text-transform: uppercase; }
+.purchase-detail-page .cp-stat-value { margin-top: 2px; font-family: var(--cp-serif); font-size: 1.55rem; font-weight: 700; line-height: 1.1; color: var(--cp-heading); }
+
+.purchase-detail-page .cp-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.purchase-detail-page .cp-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 40px; padding: 0 16px;
+    border-radius: 11px; border: 1px solid var(--cp-border); background: var(--cp-surface); color: var(--cp-text); font-weight: 700; font-size: .85rem; line-height: 1; cursor: pointer; text-decoration: none;
+    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, color .16s ease;
 }
-.purchase-detail-page .purchase-title {
-    margin: 6px 0 0;
-    font-size: clamp(1.45rem, 2.4vw, 2.15rem);
-    font-weight: 900;
-    letter-spacing: 0;
-}
-.purchase-detail-page .purchase-subtitle {
-    margin-top: 8px;
-    max-width: 52rem;
-    color: rgba(255,255,255,.86);
-}
-.purchase-detail-page .purchase-panel {
-    border: 1px solid var(--purchase-line);
-    background: rgba(255,255,255,.92);
-}
-.purchase-detail-page .purchase-stat {
-    border: 1px solid rgba(255,255,255,.22);
-    background: rgba(255,255,255,.11);
-    padding: 12px 14px;
-}
-.purchase-detail-page .purchase-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 38px;
-    padding: 0 14px;
-    border: 1px solid var(--purchase-line);
-    font-weight: 800;
-}
-.purchase-detail-page .purchase-btn-muted {
-    background: #fff;
-    color: #334155;
-}
-.purchase-detail-page .purchase-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 9px;
-    border: 1px solid var(--purchase-line);
-    background: var(--purchase-soft);
-    font-size: .78rem;
-    font-weight: 800;
-}
-.purchase-detail-page .purchase-table th {
-    color: #64748b;
-    font-size: .72rem;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-}
-.purchase-detail-page .purchase-table td,
-.purchase-detail-page .purchase-table th {
-    border-bottom: 1px solid var(--purchase-line);
-    padding: 14px 12px;
-}
-.purchase-detail-page .purchase-meta-label {
-    font-size: .72rem;
-    color: #64748b;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-}
+.purchase-detail-page .cp-btn:hover { transform: translateY(-1px); border-color: var(--cp-gold-line); color: var(--cp-gold-ink); }
+
+.purchase-detail-page .cp-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font-size: .76rem; font-weight: 700; border: 1px solid transparent; }
+.purchase-detail-page .cp-badge.is-borrador { color: color-mix(in srgb, var(--cp-warning) 82%, #000); background: var(--cp-warning-bg); border-color: color-mix(in srgb, var(--cp-warning) 28%, #fff); }
+.purchase-detail-page .cp-badge.is-recibida { color: color-mix(in srgb, var(--cp-success) 78%, #000); background: var(--cp-success-bg); border-color: color-mix(in srgb, var(--cp-success) 26%, #fff); }
+.purchase-detail-page .cp-badge.is-cancelada { color: color-mix(in srgb, var(--cp-danger) 82%, #000); background: var(--cp-danger-bg); border-color: color-mix(in srgb, var(--cp-danger) 26%, #fff); }
+.purchase-detail-page .cp-badge.is-soft { color: var(--cp-muted); background: var(--cp-surface-warm); border-color: var(--cp-border); }
+
+.purchase-detail-page .cp-panel { background: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); }
+.purchase-detail-page .cp-panel-title { font-family: var(--cp-serif); font-size: 1.4rem; font-weight: 700; color: var(--cp-heading); }
+.purchase-detail-page .cp-meta-label { font-size: .68rem; color: var(--cp-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.purchase-detail-page .cp-meta-value { margin-top: 3px; font-weight: 700; color: var(--cp-heading); }
+
+.purchase-detail-page .cp-panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--cp-border); }
+.purchase-detail-page .cp-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.purchase-detail-page .cp-table thead { background: var(--cp-surface-warm); border-bottom: 1px solid var(--cp-border); }
+.purchase-detail-page .cp-table th { padding: 12px 14px; color: var(--cp-muted); font-size: .66rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; text-align: left; }
+.purchase-detail-page .cp-table th.is-end, .purchase-detail-page .cp-table td.is-end { text-align: right; }
+.purchase-detail-page .cp-table td { padding: 13px 14px; border-bottom: 1px solid var(--cp-border); vertical-align: middle; }
+.purchase-detail-page .cp-table tbody tr:last-child td { border-bottom: 0; }
+.purchase-detail-page .cp-table tbody tr { transition: background .16s ease; }
+.purchase-detail-page .cp-table tbody tr:hover { background: var(--cp-ivory-2); }
+.purchase-detail-page .cp-strong { font-weight: 700; color: var(--cp-heading); }
+.purchase-detail-page .cp-sub { color: var(--cp-muted); font-size: .72rem; }
+.purchase-detail-page .cp-faint { color: var(--cp-muted); }
+
+.purchase-detail-page .cp-empty { text-align: center; padding: 40px 18px; }
+.purchase-detail-page .cp-empty-icon { width: 54px; height: 54px; margin: 0 auto 12px; border-radius: 18px; display: grid; place-items: center; background: var(--cp-gold-soft); color: var(--cp-gold-ink); font-size: 1.25rem; }
+.purchase-detail-page .cp-empty h3 { color: var(--cp-brand); font-size: 1.05rem; font-weight: 700; }
+.purchase-detail-page .cp-empty p { color: var(--cp-muted); font-size: .88rem; margin-top: 6px; }
+
+@media (max-width: 720px) { .purchase-detail-page .cp-stats { grid-template-columns: 1fr; } .purchase-detail-page .cp-title { font-size: 1.9rem; } }
 </style>
 
-<div class="purchase-detail-page">
-    <section class="purchase-detail-hero">
-        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-            <div>
-                <div class="purchase-kicker">Inventario / Compra</div>
-                <h1 class="purchase-title">Compra #<?= (int)($compra['id'] ?? 0) ?></h1>
-                <p class="purchase-subtitle">
-                    Vista de solo lectura para revisar proveedor, lineas capturadas y movimientos de inventario vinculados.
-                </p>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 min-w-[320px]">
-                <div class="purchase-stat">
-                    <div class="text-xs opacity-75">Estado</div>
-                    <div class="text-xl font-black"><?= comp_view_safe($estado) ?></div>
-                </div>
-                <div class="purchase-stat">
-                    <div class="text-xs opacity-75">Lineas</div>
-                    <div class="text-2xl font-black"><?= count($detalles) ?></div>
-                </div>
-                <div class="purchase-stat">
-                    <div class="text-xs opacity-75">Movimientos</div>
-                    <div class="text-2xl font-black"><?= $movimientosVinculados ?></div>
-                </div>
-                <div class="purchase-stat">
-                    <div class="text-xs opacity-75">Total</div>
-                    <div class="text-xl font-black"><?= comp_view_money($compra['total'] ?? 0) ?></div>
+<div class="purchase-detail-page p-4 sm:p-6">
+    <div class="cp-shell">
+        <section class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div class="cp-title-lockup">
+                <div class="cp-hero-icon"><i class="fas fa-clipboard-list"></i></div>
+                <div>
+                    <p class="cp-kicker">Compras y abastecimiento</p>
+                    <h1 class="cp-title">Compra #<?= (int)($compra['id'] ?? 0) ?></h1>
+                    <p class="cp-subtitle">Detalle de la compra: proveedor, productos y los movimientos de inventario que gener&oacute;.</p>
                 </div>
             </div>
-        </div>
-    </section>
+            <span class="cp-badge <?= $estadoClass ?>">
+                <i class="fas <?= $estadoIcon ?>"></i>
+                <?= $estadoLabel ?>
+            </span>
+        </section>
 
-    <section class="p-6">
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <section class="cp-stats">
+            <div class="cp-stat">
+                <p class="cp-stat-label">Renglones</p>
+                <p class="cp-stat-value"><?= count($detalles) ?></p>
+            </div>
+            <div class="cp-stat">
+                <p class="cp-stat-label">Movimientos de inventario</p>
+                <p class="cp-stat-value"><?= $movimientosVinculados ?></p>
+            </div>
+            <div class="cp-stat">
+                <p class="cp-stat-label">Total</p>
+                <p class="cp-stat-value"><?= comp_view_money($compra['total'] ?? 0) ?></p>
+            </div>
+        </section>
+
+        <section class="cp-toolbar">
             <div class="flex flex-wrap gap-2">
-                <a class="purchase-btn purchase-btn-muted" href="<?= url('compras?estado=' . urlencode($estado ?: 'todos')) ?>">
+                <a class="cp-btn" href="<?= url('compras?estado=' . urlencode($estado ?: 'todos')) ?>">
                     <i class="fas fa-arrow-left"></i>
                     Volver
                 </a>
-                <a class="purchase-btn purchase-btn-muted" href="<?= url('compras/reportes/recibidas') ?>">
+                <a class="cp-btn" href="<?= url('compras/reportes/recibidas') ?>">
                     <i class="fas fa-chart-column"></i>
-                    Reporte
+                    Ver reporte
                 </a>
             </div>
-            <span class="purchase-badge">
-                <i class="fas fa-circle-dot"></i>
-                <?= comp_view_safe($estado) ?>
-            </span>
-        </div>
+        </section>
 
-        <div class="purchase-panel p-5 mb-4">
+        <div class="cp-panel p-5">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                    <div class="purchase-meta-label">Proveedor</div>
-                    <div class="font-black mt-1"><?= comp_view_safe($compra['proveedor_nombre'] ?? null) ?></div>
+                    <div class="cp-meta-label">Proveedor</div>
+                    <div class="cp-meta-value"><?= comp_view_safe($compra['proveedor_nombre'] ?? null) ?></div>
                 </div>
                 <div>
-                    <div class="purchase-meta-label">Folio</div>
-                    <div class="font-black mt-1"><?= comp_view_safe($compra['folio'] ?? null, 'Sin folio') ?></div>
+                    <div class="cp-meta-label">Folio</div>
+                    <div class="cp-meta-value"><?= comp_view_safe($compra['folio'] ?? null, 'Sin folio') ?></div>
                 </div>
                 <div>
-                    <div class="purchase-meta-label">Fecha compra</div>
-                    <div class="font-black mt-1"><?= comp_view_safe($compra['fecha_compra'] ?? null) ?></div>
+                    <div class="cp-meta-label">Fecha de compra</div>
+                    <div class="cp-meta-value"><?= comp_view_safe($compra['fecha_compra'] ?? null) ?></div>
                 </div>
                 <div>
-                    <div class="purchase-meta-label">Fecha recepcion</div>
-                    <div class="font-black mt-1"><?= comp_view_safe($compra['fecha_recepcion'] ?? null, 'Pendiente') ?></div>
+                    <div class="cp-meta-label">Fecha de recepci&oacute;n</div>
+                    <div class="cp-meta-value"><?= comp_view_safe($compra['fecha_recepcion'] ?? null, 'Pendiente') ?></div>
                 </div>
             </div>
         </div>
@@ -191,57 +204,58 @@ foreach ($detalles as $detalle) {
             'documentosEntidadContexto' => $documentosEntidadContexto ?? [],
         ]); ?>
 
-        <div class="purchase-panel overflow-hidden">
-            <div class="px-5 py-4 border-b border-slate-200">
-                <h2 class="font-black text-lg">Lineas y movimientos vinculados</h2>
+        <div class="cp-panel overflow-hidden">
+            <div class="cp-panel-head">
+                <h2 class="cp-panel-title">Productos y movimientos de inventario</h2>
+                <span class="cp-badge is-soft"><i class="fas fa-eye"></i> Solo consulta</span>
             </div>
             <?php if (empty($detalles)): ?>
-                <div class="p-8 text-center">
-                    <div class="text-4xl text-slate-300 mb-3"><i class="fas fa-box-open"></i></div>
-                    <h3 class="font-black text-lg">Esta compra no tiene lineas</h3>
-                    <p class="text-sm text-slate-500 mt-1">No hay productos que mostrar.</p>
+                <div class="cp-empty">
+                    <div class="cp-empty-icon"><i class="fas fa-box-open"></i></div>
+                    <h3>Esta compra no tiene productos</h3>
+                    <p>No hay renglones que mostrar.</p>
                 </div>
             <?php else: ?>
                 <div class="overflow-x-auto">
-                    <table class="purchase-table min-w-full text-sm">
+                    <table class="cp-table">
                         <thead>
                             <tr>
-                                <th class="text-left">Producto</th>
-                                <th class="text-right">Cantidad</th>
-                                <th class="text-right">Costo</th>
-                                <th class="text-right">Subtotal</th>
-                                <th class="text-left">Movimiento</th>
-                                <th class="text-right">Stock</th>
+                                <th>Producto</th>
+                                <th class="is-end">Cantidad</th>
+                                <th class="is-end">Costo</th>
+                                <th class="is-end">Subtotal</th>
+                                <th>Movimiento</th>
+                                <th class="is-end">Stock</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($detalles as $detalle): ?>
                                 <tr>
                                     <td>
-                                        <div class="font-black text-slate-800"><?= comp_view_safe($detalle['producto_nombre'] ?? null) ?></div>
-                                        <div class="text-xs text-slate-500"><?= comp_view_safe($detalle['producto_codigo'] ?? null, 'Sin codigo') ?></div>
+                                        <div class="cp-strong"><?= comp_view_safe($detalle['producto_nombre'] ?? null) ?></div>
+                                        <div class="cp-sub"><?= comp_view_safe($detalle['producto_codigo'] ?? null, 'Sin c&oacute;digo') ?></div>
                                     </td>
-                                    <td class="text-right"><?= comp_view_qty($detalle['cantidad'] ?? 0) ?></td>
-                                    <td class="text-right"><?= comp_view_money($detalle['costo_unitario'] ?? 0) ?></td>
-                                    <td class="text-right font-black"><?= comp_view_money($detalle['subtotal'] ?? 0) ?></td>
+                                    <td class="is-end"><?= comp_view_qty($detalle['cantidad'] ?? 0) ?></td>
+                                    <td class="is-end"><?= comp_view_money($detalle['costo_unitario'] ?? 0) ?></td>
+                                    <td class="is-end cp-strong"><?= comp_view_money($detalle['subtotal'] ?? 0) ?></td>
                                     <td>
                                         <?php if (!empty($detalle['movimiento_inventario_id'])): ?>
-                                            <div class="font-black">#<?= (int)$detalle['movimiento_inventario_id'] ?> <?= comp_view_safe($detalle['movimiento_tipo'] ?? null) ?></div>
-                                            <div class="text-xs text-slate-500"><?= comp_view_safe($detalle['movimiento_created_at'] ?? null) ?></div>
+                                            <div class="cp-strong">#<?= (int)$detalle['movimiento_inventario_id'] ?> <?= comp_view_safe($detalle['movimiento_tipo'] ?? null) ?></div>
+                                            <div class="cp-sub"><?= comp_view_safe($detalle['movimiento_created_at'] ?? null) ?></div>
                                         <?php else: ?>
-                                            <span class="text-slate-400">Sin movimiento</span>
+                                            <span class="cp-faint">Sin movimiento</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="text-right">
+                                    <td class="is-end">
                                         <?php if (!empty($detalle['movimiento_inventario_id'])): ?>
-                                            <div class="font-black">
+                                            <div class="cp-strong">
                                                 <?= comp_view_qty($detalle['movimiento_stock_anterior'] ?? 0) ?>
                                                 &rarr;
                                                 <?= comp_view_qty($detalle['movimiento_stock_posterior'] ?? 0) ?>
                                             </div>
-                                            <div class="text-xs text-slate-500"><?= comp_view_safe($detalle['movimiento_motivo'] ?? null) ?></div>
+                                            <div class="cp-sub"><?= comp_view_safe($detalle['movimiento_motivo'] ?? null) ?></div>
                                         <?php else: ?>
-                                            <span class="text-slate-400">-</span>
+                                            <span class="cp-faint">-</span>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -251,5 +265,5 @@ foreach ($detalles as $detalle) {
                 </div>
             <?php endif; ?>
         </div>
-    </section>
+    </div>
 </div>

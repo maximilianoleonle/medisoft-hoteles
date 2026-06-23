@@ -16,89 +16,98 @@ if (!function_exists('trab_form_safe')) {
     }
 }
 
-$usuarioSeleccionado = (int)($trabajador['usuario_id'] ?? 0);
+$usuarioSeleccionado = (int) old('usuario_id', (string)($trabajador['usuario_id'] ?? 0));
+$periodicidad = (string) old('periodicidad_pago', (string)($trabajador['periodicidad_pago'] ?? ''));
+$valoresFormulario = [
+    'nombre_completo' => old('nombre_completo', trab_form_safe($trabajador['nombre_completo'] ?? '')),
+    'identificacion' => old('identificacion', trab_form_safe($trabajador['identificacion'] ?? '')),
+    'rol_laboral' => old('rol_laboral', trab_form_safe($trabajador['rol_laboral'] ?? '')),
+    'telefono' => old('telefono', trab_form_safe($trabajador['telefono'] ?? '')),
+    'email' => old('email', trab_form_safe($trabajador['email'] ?? '')),
+    'fecha_alta' => old('fecha_alta', trab_form_safe($trabajador['fecha_alta'] ?? '')),
+    'salario_base' => old('salario_base', trab_form_safe($trabajador['salario_base'] ?? '')),
+    'notas' => old('notas', trab_form_safe($trabajador['notas'] ?? '')),
+];
 ?>
 
 <style>
 .worker-form-page {
-    --trab-brand: var(--brand-primary, #1f3f46);
-    --trab-accent: var(--brand-accent, #b58a3c);
-    --trab-line: color-mix(in srgb, var(--trab-brand) 10%, #e5e7eb);
-    color: #243142;
+    --wk-brand: var(--brand-primary, #1B2746);
+    --wk-brand-2: var(--brand-secondary, #0F172A);
+    --wk-gold: var(--brand-accent, #BD9441);
+    --wk-gold-soft: color-mix(in srgb, var(--wk-gold) 15%, #FFFFFF);
+    --wk-gold-line: color-mix(in srgb, var(--wk-gold) 42%, #E4D4B0);
+    --wk-gold-ink: color-mix(in srgb, var(--wk-gold) 72%, #000);
+    --wk-ivory: #F6F2EA; --wk-ivory-2: #FBF8F2;
+    --wk-surface: #FFFFFF; --wk-surface-warm: #FCFAF5;
+    --wk-border: color-mix(in srgb, var(--wk-brand) 7%, #E7E1D4);
+    --wk-ring: color-mix(in srgb, var(--wk-gold) 32%, transparent);
+    --wk-text: #171717; --wk-muted: #667085; --wk-heading: #111827;
+    --wk-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+    --wk-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100%; color: var(--wk-text); font-family: var(--wk-sans);
+    background:
+        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--wk-gold) 8%, transparent), transparent 60%),
+        linear-gradient(180deg, var(--wk-ivory-2), var(--wk-ivory));
 }
-.worker-form-page .worker-form-hero {
-    background: linear-gradient(135deg, color-mix(in srgb, var(--trab-brand) 92%, #111827), color-mix(in srgb, var(--trab-accent) 58%, #5b4730));
-    color: #fff;
-    padding: 28px;
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
+
+.worker-form-page .wk-shell { display: grid; gap: 14px; max-width: 1040px; }
+.worker-form-page .wk-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; }
+.worker-form-page .wk-hero-icon { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--wk-gold), var(--wk-brand) 54%, color-mix(in srgb, var(--wk-brand) 68%, #2F8A70));
+    box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--wk-brand) 72%, transparent); }
+.worker-form-page .wk-kicker { margin: 0 0 2px; color: var(--wk-muted); font-size: .72rem; font-weight: 700; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
+.worker-form-page .wk-title { margin: 0; font-family: var(--wk-serif); color: var(--wk-heading); font-weight: 700; font-size: clamp(2rem, 3.4vw, 2.7rem); line-height: 1; }
+.worker-form-page .wk-subtitle { max-width: 46rem; margin: 8px 0 0; color: var(--wk-muted); font-size: .92rem; font-weight: 500; line-height: 1.5; }
+
+.worker-form-page .wk-panel { background: var(--wk-surface); border: 1px solid var(--wk-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); }
+.worker-form-page label { display: block; font-size: .74rem; font-weight: 700; color: var(--wk-muted); text-transform: uppercase; letter-spacing: .045em; margin-bottom: 6px; }
+.worker-form-page .wk-req { color: var(--wk-gold-ink); }
+.worker-form-page .wk-input, .worker-form-page .wk-textarea {
+    width: 100%; min-height: 44px; border: 1px solid var(--wk-border); background: var(--wk-surface-warm); border-radius: 11px; padding: 11px 13px;
+    color: var(--wk-text); font-weight: 600; font-size: .9rem; font-family: var(--wk-sans); transition: border-color .16s ease, box-shadow .16s ease;
 }
-.worker-form-page .worker-form-panel {
-    border: 1px solid var(--trab-line);
-    background: rgba(255,255,255,.92);
-}
-.worker-form-page .worker-input,
-.worker-form-page .worker-textarea {
-    width: 100%;
-    border: 1px solid var(--trab-line);
-    background: #fff;
-    padding: 10px 12px;
-}
-.worker-form-page .worker-input {
-    min-height: 42px;
-}
-.worker-form-page .worker-textarea {
-    min-height: 92px;
-    resize: vertical;
-}
-.worker-form-page label {
-    display: block;
-    font-size: .78rem;
-    font-weight: 900;
-    color: #475569;
-    margin-bottom: 6px;
-}
-.worker-form-page .worker-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 40px;
-    padding: 0 15px;
-    border: 1px solid var(--trab-line);
-    font-weight: 900;
-}
-.worker-form-page .worker-btn-primary {
-    background: var(--trab-brand);
-    border-color: var(--trab-brand);
-    color: #fff;
-}
-.worker-form-page .worker-btn-muted {
-    background: #fff;
-    color: #334155;
-}
+.worker-form-page textarea.wk-textarea { min-height: 96px; resize: vertical; }
+.worker-form-page select.wk-input { cursor: pointer; }
+.worker-form-page .wk-input:focus, .worker-form-page .wk-textarea:focus { border-color: var(--wk-gold); box-shadow: 0 0 0 3px var(--wk-ring); outline: none; background: #fff; }
+.worker-form-page .wk-hint { margin-top: 6px; font-size: .74rem; color: var(--wk-muted); font-weight: 600; }
+
+.worker-form-page .wk-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; padding: 0 20px;
+    border-radius: 11px; border: 1px solid transparent; font-weight: 700; font-size: .9rem; line-height: 1; cursor: pointer; text-decoration: none;
+    transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease, color .16s ease; }
+.worker-form-page .wk-btn:hover { transform: translateY(-1px); }
+.worker-form-page .wk-btn-gold { background: linear-gradient(135deg, var(--wk-gold), color-mix(in srgb, var(--wk-gold) 76%, #000)); color: #fff; box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--wk-gold) 58%, transparent); }
+.worker-form-page .wk-btn-muted { background: var(--wk-surface); border-color: var(--wk-border); color: var(--wk-muted); }
+.worker-form-page .wk-back { display: inline-flex; align-items: center; gap: 8px; color: var(--wk-muted); text-decoration: none; font-weight: 700; font-size: .85rem; }
+.worker-form-page .wk-back:hover { color: var(--wk-gold-ink); }
 </style>
 
-<div class="worker-form-page">
-    <section class="worker-form-hero">
-        <div class="text-xs uppercase tracking-widest opacity-75 font-black">Personal</div>
-        <h1 class="text-2xl md:text-3xl font-black mt-2"><?= $esEditar ? 'Editar trabajador' : 'Nuevo trabajador' ?></h1>
-        <p class="mt-2 text-white/80 max-w-3xl">
-            Informacion laboral basica por hotel. Esta fase no registra pagos, anticipos, prestamos, asistencia ni Caja.
-        </p>
-    </section>
+<div class="worker-form-page p-4 sm:p-6">
+    <div class="wk-shell">
+        <a class="wk-back" href="<?= $esEditar ? url('trabajadores/' . $trabajadorId) : url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Volver</a>
 
-    <section class="p-6">
-        <form method="POST" action="<?= $action ?>" class="worker-form-panel p-5 max-w-5xl">
+        <section class="wk-title-lockup">
+            <div class="wk-hero-icon"><i class="fas fa-user-plus"></i></div>
+            <div>
+                <p class="wk-kicker">Personal del hotel</p>
+                <h1 class="wk-title"><?= $esEditar ? 'Editar trabajador' : 'Nuevo trabajador' ?></h1>
+                <p class="wk-subtitle">Datos b&aacute;sicos de la persona. El salario y la periodicidad son de referencia; los pagos se registran despu&eacute;s desde su ficha.</p>
+            </div>
+        </section>
+
+        <form method="POST" action="<?= $action ?>" class="wk-panel p-5">
             <?= csrf_field() ?>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label for="nombre_completo">Nombre completo *</label>
-                    <input class="worker-input" id="nombre_completo" name="nombre_completo" type="text" maxlength="150" required
-                           value="<?= trab_form_safe($trabajador['nombre_completo'] ?? '') ?>">
+                    <label for="nombre_completo">Nombre completo <span class="wk-req">*</span></label>
+                    <input class="wk-input" id="nombre_completo" name="nombre_completo" type="text" maxlength="150" required value="<?= $valoresFormulario['nombre_completo'] ?>">
                 </div>
 
                 <div>
-                    <label for="usuario_id">Usuario vinculado</label>
-                    <select class="worker-input" id="usuario_id" name="usuario_id">
+                    <label for="usuario_id">Usuario del sistema</label>
+                    <select class="wk-input" id="usuario_id" name="usuario_id">
                         <option value="">Sin usuario del sistema</option>
                         <?php foreach ($usuariosVinculables as $usuario): ?>
                             <?php $usuarioId = (int)($usuario['id'] ?? 0); ?>
@@ -107,43 +116,38 @@ $usuarioSeleccionado = (int)($trabajador['usuario_id'] ?? 0);
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    <p class="wk-hint">Opcional. S&oacute;lo si esta persona tambi&eacute;n entra al sistema.</p>
                 </div>
 
                 <div>
-                    <label for="identificacion">Identificacion</label>
-                    <input class="worker-input" id="identificacion" name="identificacion" type="text" maxlength="60"
-                           value="<?= trab_form_safe($trabajador['identificacion'] ?? '') ?>">
+                    <label for="identificacion">Identificaci&oacute;n</label>
+                    <input class="wk-input" id="identificacion" name="identificacion" type="text" maxlength="60" placeholder="N&uacute;mero de empleado, INE, etc." value="<?= $valoresFormulario['identificacion'] ?>">
                 </div>
 
                 <div>
-                    <label for="rol_laboral">Rol laboral</label>
-                    <input class="worker-input" id="rol_laboral" name="rol_laboral" type="text" maxlength="80"
-                           value="<?= trab_form_safe($trabajador['rol_laboral'] ?? '') ?>">
+                    <label for="rol_laboral">Rol o puesto</label>
+                    <input class="wk-input" id="rol_laboral" name="rol_laboral" type="text" maxlength="80" placeholder="Ej. Recepci&oacute;n, Limpieza" value="<?= $valoresFormulario['rol_laboral'] ?>">
                 </div>
 
                 <div>
-                    <label for="telefono">Telefono</label>
-                    <input class="worker-input" id="telefono" name="telefono" type="text" maxlength="30"
-                           value="<?= trab_form_safe($trabajador['telefono'] ?? '') ?>">
+                    <label for="telefono">Tel&eacute;fono</label>
+                    <input class="wk-input" id="telefono" name="telefono" type="text" maxlength="30" value="<?= $valoresFormulario['telefono'] ?>">
                 </div>
 
                 <div>
                     <label for="email">Correo</label>
-                    <input class="worker-input" id="email" name="email" type="email" maxlength="120"
-                           value="<?= trab_form_safe($trabajador['email'] ?? '') ?>">
+                    <input class="wk-input" id="email" name="email" type="email" maxlength="120" placeholder="correo@ejemplo.com" value="<?= $valoresFormulario['email'] ?>">
                 </div>
 
                 <div>
                     <label for="fecha_alta">Fecha de alta</label>
-                    <input class="worker-input" id="fecha_alta" name="fecha_alta" type="date"
-                           value="<?= trab_form_safe($trabajador['fecha_alta'] ?? '') ?>">
+                    <input class="wk-input" id="fecha_alta" name="fecha_alta" type="date" value="<?= $valoresFormulario['fecha_alta'] ?>">
                 </div>
 
                 <div>
-                    <label for="periodicidad_pago">Periodicidad de referencia</label>
-                    <select class="worker-input" id="periodicidad_pago" name="periodicidad_pago">
-                        <?php $periodicidad = (string)($trabajador['periodicidad_pago'] ?? ''); ?>
-                        <option value="">Sin periodicidad</option>
+                    <label for="periodicidad_pago">Cada cu&aacute;ndo se le paga</label>
+                    <select class="wk-input" id="periodicidad_pago" name="periodicidad_pago">
+                        <option value="">Sin definir</option>
                         <option value="semanal" <?= $periodicidad === 'semanal' ? 'selected' : '' ?>>Semanal</option>
                         <option value="quincenal" <?= $periodicidad === 'quincenal' ? 'selected' : '' ?>>Quincenal</option>
                         <option value="mensual" <?= $periodicidad === 'mensual' ? 'selected' : '' ?>>Mensual</option>
@@ -153,26 +157,19 @@ $usuarioSeleccionado = (int)($trabajador['usuario_id'] ?? 0);
 
                 <div>
                     <label for="salario_base">Salario base de referencia</label>
-                    <input class="worker-input" id="salario_base" name="salario_base" type="number" min="0" step="0.01"
-                           value="<?= trab_form_safe($trabajador['salario_base'] ?? '') ?>">
+                    <input class="wk-input" id="salario_base" name="salario_base" type="number" min="0" step="0.01" placeholder="0.00" value="<?= $valoresFormulario['salario_base'] ?>">
                 </div>
 
                 <div class="md:col-span-2">
                     <label for="notas">Notas internas</label>
-                    <textarea class="worker-textarea" id="notas" name="notas" maxlength="1000"><?= trab_form_safe($trabajador['notas'] ?? '') ?></textarea>
+                    <textarea class="wk-textarea" id="notas" name="notas" maxlength="1000" placeholder="Lo que quieras recordar de esta persona"><?= $valoresFormulario['notas'] ?></textarea>
                 </div>
             </div>
 
-            <div class="flex flex-wrap gap-3 mt-5">
-                <button class="worker-btn worker-btn-primary" type="submit">
-                    <i class="fas fa-save"></i>
-                    Guardar
-                </button>
-                <a class="worker-btn worker-btn-muted" href="<?= $esEditar ? url('trabajadores/' . $trabajadorId) : url('trabajadores') ?>">
-                    <i class="fas fa-arrow-left"></i>
-                    Volver
-                </a>
+            <div class="flex flex-wrap gap-3 mt-6">
+                <button class="wk-btn wk-btn-gold" type="submit"><i class="fas fa-save"></i> <?= $esEditar ? 'Guardar cambios' : 'Guardar trabajador' ?></button>
+                <a class="wk-btn wk-btn-muted" href="<?= $esEditar ? url('trabajadores/' . $trabajadorId) : url('trabajadores') ?>"><i class="fas fa-arrow-left"></i> Cancelar</a>
             </div>
         </form>
-    </section>
+    </div>
 </div>
