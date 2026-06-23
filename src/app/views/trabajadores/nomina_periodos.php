@@ -211,6 +211,32 @@ $previewNominaQuery = http_build_query([
     background: #fff;
     padding: 0 12px;
 }
+.nomina-periodos .period-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+.nomina-periodos .period-filter-label {
+    color: #64748b;
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+.nomina-periodos .period-filter-hint {
+    color: #64748b;
+    font-size: .72rem;
+    font-weight: 700;
+    line-height: 1.15;
+}
+.nomina-periodos .period-filter-action {
+    align-self: stretch;
+}
+.nomina-periodos .period-filter-action .period-btn {
+    width: 100%;
+}
 .nomina-periodos .period-check {
     display: inline-flex;
     align-items: center;
@@ -268,6 +294,35 @@ $previewNominaQuery = http_build_query([
 }
 </style>
 
+<style id="nomina-periodos-boutique">
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
+.nomina-periodos {
+    --period-brand: var(--brand-primary, #1B2746) !important;
+    --period-accent: var(--brand-accent, #BD9441) !important;
+    --period-line: color-mix(in srgb, var(--brand-primary, #1B2746) 7%, #E7E1D4) !important;
+    --period-soft: color-mix(in srgb, var(--brand-accent, #BD9441) 12%, #FCFAF5) !important;
+    --wk-gold: var(--brand-accent, #BD9441);
+    --wk-gold-line: color-mix(in srgb, var(--brand-accent, #BD9441) 42%, #E4D4B0);
+    color: #171717 !important;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    background:
+        radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--wk-gold) 8%, transparent), transparent 60%),
+        linear-gradient(180deg, #FBF8F2, #F6F2EA) !important;
+}
+.nomina-periodos .period-title { font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif !important; font-weight: 700 !important; font-size: clamp(2rem, 3.6vw, 2.9rem) !important; }
+.nomina-periodos .period-stat-hero .text-2xl, .nomina-periodos .period-stat-hero .text-xl { font-family: 'Cormorant Garamond', Georgia, serif !important; }
+.nomina-periodos .period-panel, .nomina-periodos .period-card, .nomina-periodos .period-stat { background: #FFFFFF !important; border-color: var(--period-line) !important; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -26px rgba(27,39,70,.3) !important; }
+.nomina-periodos .period-stat-soft { background: #FCFAF5 !important; }
+.nomina-periodos .period-stat .text-2xl, .nomina-periodos .period-card h2, .nomina-periodos h2.font-black, .nomina-periodos h3.font-black { color: #111827 !important; }
+.nomina-periodos .period-stat .text-2xl { font-family: 'Cormorant Garamond', Georgia, serif !important; }
+.nomina-periodos .period-card-active { border-color: var(--wk-gold-line) !important; box-shadow: 0 0 0 1px var(--wk-gold-line), 0 14px 32px -26px rgba(27,39,70,.32) !important; }
+.nomina-periodos .period-input { background: #FCFAF5 !important; border-color: var(--period-line) !important; border-radius: 11px !important; }
+.nomina-periodos .period-input:focus { border-color: var(--wk-gold) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--wk-gold) 26%, transparent) !important; }
+.nomina-periodos .period-btn-primary { background: linear-gradient(135deg, var(--wk-gold), color-mix(in srgb, var(--wk-gold) 76%, #000)) !important; border-color: transparent !important; color: #fff !important; }
+.nomina-periodos .period-table th { color: #667085 !important; }
+.nomina-periodos .period-table tbody tr:hover td { background: #FBF8F2 !important; }
+</style>
+
 <div class="nomina-periodos">
     <section class="period-hero">
         <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6">
@@ -313,6 +368,18 @@ $previewNominaQuery = http_build_query([
                 <a class="period-btn" href="<?= url('trabajadores/nomina/periodos/reporte') ?>">
                     <i class="fas fa-file-lines"></i>
                     Reporte snapshots
+                </a>
+                <a class="period-btn" href="<?= url('trabajadores/nomina/periodos/pagos-snapshot') ?>">
+                    <i class="fas fa-link"></i>
+                    Conciliacion pagos
+                </a>
+                <a class="period-btn" href="<?= url('trabajadores/nomina/auditoria') ?>">
+                    <i class="fas fa-list-check"></i>
+                    Auditoria nomina
+                </a>
+                <a class="period-btn" href="<?= url('trabajadores/nomina/expediente') ?>">
+                    <i class="fas fa-folder-open"></i>
+                    Expediente
                 </a>
                 <a class="period-btn" href="<?= url('trabajadores/reporte') ?>">
                     <i class="fas fa-chart-pie"></i>
@@ -396,32 +463,64 @@ $previewNominaQuery = http_build_query([
             <?php endif; ?>
 
             <div class="period-panel p-4">
-                <form method="GET" action="<?= url('trabajadores/nomina/periodos') ?>" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[150px_150px_150px_150px_160px_minmax(170px,1fr)_auto_auto] gap-3">
-                    <select class="period-input" name="tipo_periodo">
-                        <option value="semanal" <?= $tipoPeriodo === 'semanal' ? 'selected' : '' ?>>Semanal</option>
-                        <option value="quincenal" <?= $tipoPeriodo === 'quincenal' ? 'selected' : '' ?>>Quincenal</option>
-                        <option value="mensual" <?= $tipoPeriodo === 'mensual' ? 'selected' : '' ?>>Mensual</option>
-                        <option value="manual" <?= $tipoPeriodo === 'manual' ? 'selected' : '' ?>>Manual</option>
-                    </select>
-                    <input class="period-input" type="date" name="fecha_base" value="<?= trab_periodo_safe($fechaBase, date('Y-m-d')) ?>">
-                    <input class="period-input" type="date" name="fecha_inicio" value="<?= trab_periodo_safe($fechaInicio, '') ?>">
-                    <input class="period-input" type="date" name="fecha_fin" value="<?= trab_periodo_safe($fechaFin, '') ?>">
-                    <select class="period-input" name="estado">
-                        <option value="activos" <?= $estado === 'activos' ? 'selected' : '' ?>>Activos</option>
-                        <option value="todos" <?= $estado === 'todos' ? 'selected' : '' ?>>Todos</option>
-                        <option value="inactivos" <?= $estado === 'inactivos' ? 'selected' : '' ?>>Inactivos</option>
-                        <option value="baja" <?= $estado === 'baja' ? 'selected' : '' ?>>Baja</option>
-                    </select>
-                    <input class="period-input" type="search" name="rol_laboral" value="<?= trab_periodo_safe($rolLaboral, '') ?>" placeholder="Rol laboral">
-                    <label class="period-check">
-                        <input type="hidden" name="incluir_pagos_caja" value="0">
-                        <input type="checkbox" name="incluir_pagos_caja" value="1" <?= $incluirPagosCaja ? 'checked' : '' ?>>
-                        Caja
+                <form method="GET" action="<?= url('trabajadores/nomina/periodos') ?>" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[150px_150px_150px_150px_150px_minmax(190px,1fr)_130px_120px] gap-3 items-end">
+                    <label class="period-filter">
+                        <span class="period-filter-label">Tipo</span>
+                        <select class="period-input" name="tipo_periodo">
+                            <option value="semanal" <?= $tipoPeriodo === 'semanal' ? 'selected' : '' ?>>Semanal</option>
+                            <option value="quincenal" <?= $tipoPeriodo === 'quincenal' ? 'selected' : '' ?>>Quincenal</option>
+                            <option value="mensual" <?= $tipoPeriodo === 'mensual' ? 'selected' : '' ?>>Mensual</option>
+                            <option value="manual" <?= $tipoPeriodo === 'manual' ? 'selected' : '' ?>>Manual</option>
+                        </select>
+                        <span class="period-filter-hint">Manual usa rango.</span>
                     </label>
-                    <button class="period-btn period-btn-primary" type="submit">
-                        <i class="fas fa-filter"></i>
-                        Evaluar
-                    </button>
+                    <label class="period-filter">
+                        <span class="period-filter-label">Fecha base</span>
+                        <input class="period-input" type="date" name="fecha_base" value="<?= trab_periodo_safe($fechaBase, date('Y-m-d')) ?>">
+                        <span class="period-filter-hint">Para calculo auto.</span>
+                    </label>
+                    <label class="period-filter">
+                        <span class="period-filter-label">Inicio manual</span>
+                        <input class="period-input" type="date" name="fecha_inicio" value="<?= trab_periodo_safe($fechaInicio, '') ?>">
+                        <span class="period-filter-hint">Obligatorio en manual.</span>
+                    </label>
+                    <label class="period-filter">
+                        <span class="period-filter-label">Fin manual</span>
+                        <input class="period-input" type="date" name="fecha_fin" value="<?= trab_periodo_safe($fechaFin, '') ?>">
+                        <span class="period-filter-hint">Obligatorio en manual.</span>
+                    </label>
+                    <label class="period-filter">
+                        <span class="period-filter-label">Trabajadores</span>
+                        <select class="period-input" name="estado">
+                            <option value="activos" <?= $estado === 'activos' ? 'selected' : '' ?>>Activos</option>
+                            <option value="todos" <?= $estado === 'todos' ? 'selected' : '' ?>>Todos</option>
+                            <option value="inactivos" <?= $estado === 'inactivos' ? 'selected' : '' ?>>Inactivos</option>
+                            <option value="baja" <?= $estado === 'baja' ? 'selected' : '' ?>>Baja</option>
+                        </select>
+                        <span class="period-filter-hint">Segun estado laboral.</span>
+                    </label>
+                    <label class="period-filter">
+                        <span class="period-filter-label">Rol laboral</span>
+                        <input class="period-input" type="search" name="rol_laboral" value="<?= trab_periodo_safe($rolLaboral, '') ?>" placeholder="Ej. lavanderia">
+                        <span class="period-filter-hint">Opcional.</span>
+                    </label>
+                    <div class="period-filter">
+                        <span class="period-filter-label">Caja</span>
+                        <label class="period-check">
+                            <input type="hidden" name="incluir_pagos_caja" value="0">
+                            <input type="checkbox" name="incluir_pagos_caja" value="1" <?= $incluirPagosCaja ? 'checked' : '' ?>>
+                            Incluir
+                        </label>
+                        <span class="period-filter-hint">Resta pagos vigentes.</span>
+                    </div>
+                    <div class="period-filter period-filter-action">
+                        <span class="period-filter-label">&nbsp;</span>
+                        <button class="period-btn period-btn-primary" type="submit">
+                            <i class="fas fa-filter"></i>
+                            Evaluar
+                        </button>
+                        <span class="period-filter-hint">Solo revisa.</span>
+                    </div>
                 </form>
             </div>
 
