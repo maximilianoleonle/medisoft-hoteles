@@ -5,6 +5,7 @@
  */
 
 require_once __DIR__ . '/../helpers/hotel_config.php';
+require_once __DIR__ . '/../services/PropietarioDistribucionService.php';
 
 class Caja extends Model {
     protected $table = 'cajas';
@@ -596,23 +597,14 @@ class Caja extends Model {
         $stmtOtros = $db->query($sqlOtros, [$corte_id, $hotel_id, $hotel_id]);
         $otros = $stmtOtros->fetchAll();
         
-        $resultado = [
-            'manolo' => [
-                'efectivo' => 0, 'tarjeta' => 0, 'transferencia' => 0,
-                'cantidad_reservas' => 0, 'detalle' => []
-            ],
-            'elia' => [
-                'efectivo' => 0, 'tarjeta' => 0, 'transferencia' => 0,
-                'cantidad_reservas' => 0, 'detalle' => []
-            ]
-        ];
+        $distribucionPropietarios = new PropietarioDistribucionService();
+        $configPropietarios = $distribucionPropietarios->configuracionParaHotel($hotel_id);
+        $resultado = $distribucionPropietarios->crearResultadoCaja($configPropietarios);
         
         $reservacionesContadas = [];
         
         foreach ($registros as $reg) {
             $resId = $reg['reservacion_id'];
-            $metodo = $reg['metodo_pago'];
-            $monto = floatval($reg['monto']);
             
             // Obtener habitaciones de esta reservación con su precio y tipo
             $sqlHabs = "SELECT hab.numero, hab.tipo, hab.precio_base
@@ -623,77 +615,13 @@ class Caja extends Model {
             $stmtHabs = $db->query($sqlHabs, [$resId, $hotel_id]);
             $habitaciones = $stmtHabs->fetchAll();
             
-            // Calcular precio total y separar por propiedad
-            $precioManolo = 0;
-            $precioElia = 0;
-            $habsManolo = [];
-            $habsElia = [];
-            
-            foreach ($habitaciones as $hab) {
-                $precio = floatval($hab['precio_base']);
-                if (strpos($hab['tipo'], 'manolo') !== false) {
-                    $precioManolo += $precio;
-                    $habsManolo[] = $hab['numero'];
-                } else {
-                    $precioElia += $precio;
-                    $habsElia[] = $hab['numero'];
-                }
-            }
-            
-            $precioTotal = $precioManolo + $precioElia;
-            
-            if ($precioTotal > 0) {
-                // Repartir proporcionalmente al precio de las habitaciones
-                $montoManolo = round($monto * ($precioManolo / $precioTotal), 2);
-                $montoElia = round($monto * ($precioElia / $precioTotal), 2);
-                
-                // Ajustar centavos si hay diferencia por redondeo
-                $diff = $monto - ($montoManolo + $montoElia);
-                if ($diff != 0) {
-                    if ($montoElia > $montoManolo) $montoElia += $diff;
-                    else $montoManolo += $diff;
-                }
-            } else {
-                // Sin precios, todo a Elia por default
-                $montoManolo = 0;
-                $montoElia = $monto;
-            }
-            
-            // Asignar a Manolo
-            if ($montoManolo > 0) {
-                if (isset($resultado['manolo'][$metodo])) {
-                    $resultado['manolo'][$metodo] += $montoManolo;
-                }
-                $claveRes = $resId . '-manolo';
-                if (!isset($reservacionesContadas[$claveRes])) {
-                    $resultado['manolo']['cantidad_reservas']++;
-                    $reservacionesContadas[$claveRes] = true;
-                }
-                $resultado['manolo']['detalle'][] = [
-                    'huesped' => $reg['huesped_nombre'],
-                    'habitacion' => implode(', ', $habsManolo),
-                    'metodo_pago' => $metodo,
-                    'monto' => $montoManolo
-                ];
-            }
-            
-            // Asignar a Elia
-            if ($montoElia > 0) {
-                if (isset($resultado['elia'][$metodo])) {
-                    $resultado['elia'][$metodo] += $montoElia;
-                }
-                $claveRes = $resId . '-elia';
-                if (!isset($reservacionesContadas[$claveRes])) {
-                    $resultado['elia']['cantidad_reservas']++;
-                    $reservacionesContadas[$claveRes] = true;
-                }
-                $resultado['elia']['detalle'][] = [
-                    'huesped' => $reg['huesped_nombre'],
-                    'habitacion' => implode(', ', $habsElia),
-                    'metodo_pago' => $metodo,
-                    'monto' => $montoElia
-                ];
-            }
+            $resultado = $distribucionPropietarios->aplicarMovimientoCaja(
+                $resultado,
+                $reg,
+                $habitaciones,
+                $reservacionesContadas,
+                $configPropietarios
+            );
         }
         
         // Otros ingresos

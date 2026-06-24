@@ -260,6 +260,223 @@ class HuespedController extends Controller {
         return (int)($resultado['documento_id'] ?? 0) ?: null;
     }
 
+    private function listaDocumentalDesdePayload($value): array {
+        if (is_array($value)) {
+            return array_values($value);
+        }
+
+        if ($value === null) {
+            return [];
+        }
+
+        return [$value];
+    }
+
+    private function normalizarTipoDocumentoInicial($tipo): string {
+        $tipo = strtolower(trim((string)$tipo));
+        return in_array($tipo, ['identificacion', 'comprobante', 'otro'], true) ? $tipo : 'otro';
+    }
+
+    private function etiquetaDocumentoInicial(string $tipo): string {
+        $etiquetas = [
+            'identificacion' => 'INE / identificacion',
+            'comprobante' => 'Comprobante',
+            'otro' => 'Otro documento',
+        ];
+
+        return $etiquetas[$tipo] ?? $etiquetas['otro'];
+    }
+
+    private function tituloDocumentoInicial(string $tipo, string $nombreHuesped): string {
+        $nombreHuesped = trim($nombreHuesped);
+        $sufijo = $nombreHuesped !== '' ? ' - ' . $nombreHuesped : '';
+
+        if ($tipo === 'identificacion') {
+            return 'Identificacion de huesped' . $sufijo;
+        }
+
+        if ($tipo === 'comprobante') {
+            return 'Comprobante de huesped' . $sufijo;
+        }
+
+        return 'Documento de huesped' . $sufijo;
+    }
+
+    private function relacionDocumentoInicial(string $tipo): string {
+        if ($tipo === 'identificacion') {
+            return 'identificacion_huesped';
+        }
+
+        if ($tipo === 'comprobante') {
+            return 'comprobante_huesped';
+        }
+
+        return 'documento_huesped';
+    }
+
+    private function documentosInicialesDesdeRequest(): array {
+        $files = $_FILES['documentos_huesped'] ?? [];
+        if (!is_array($files)) {
+            return [];
+        }
+
+        $nombres = $this->listaDocumentalDesdePayload($files['name']['archivo'] ?? null);
+        $types = $this->listaDocumentalDesdePayload($files['type']['archivo'] ?? null);
+        $tmpNames = $this->listaDocumentalDesdePayload($files['tmp_name']['archivo'] ?? null);
+        $errores = $this->listaDocumentalDesdePayload($files['error']['archivo'] ?? null);
+        $sizes = $this->listaDocumentalDesdePayload($files['size']['archivo'] ?? null);
+
+        $post = is_array($_POST['documentos_huesped'] ?? null) ? $_POST['documentos_huesped'] : [];
+        $tipos = $this->listaDocumentalDesdePayload($post['tipo'] ?? null);
+        $titulos = $this->listaDocumentalDesdePayload($post['titulo'] ?? null);
+        $descripciones = $this->listaDocumentalDesdePayload($post['descripcion'] ?? null);
+
+        $documentos = [];
+        foreach ($nombres as $index => $nombre) {
+            $error = (int)($errores[$index] ?? UPLOAD_ERR_NO_FILE);
+            if ($error === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+
+            $tipo = $this->normalizarTipoDocumentoInicial($tipos[$index] ?? 'otro');
+            $documentos[] = [
+                'tipo' => $tipo,
+                'etiqueta' => $this->etiquetaDocumentoInicial($tipo),
+                'titulo' => trim((string)($titulos[$index] ?? '')),
+                'descripcion' => trim((string)($descripciones[$index] ?? '')),
+                'archivo' => [
+                    'name' => (string)$nombre,
+                    'type' => (string)($types[$index] ?? ''),
+                    'tmp_name' => (string)($tmpNames[$index] ?? ''),
+                    'error' => $error,
+                    'size' => (int)($sizes[$index] ?? 0),
+                ],
+            ];
+        }
+
+        return $documentos;
+    }
+
+    private function mensajeUploadDocumentoInicial(int $error): string {
+        $mensajes = [
+            UPLOAD_ERR_INI_SIZE => 'El archivo excede el tamano maximo permitido por el servidor.',
+            UPLOAD_ERR_FORM_SIZE => 'El archivo excede el tamano permitido.',
+            UPLOAD_ERR_PARTIAL => 'El archivo se cargo de forma incompleta.',
+            UPLOAD_ERR_NO_FILE => 'No se selecciono ningun archivo.',
+            UPLOAD_ERR_NO_TMP_DIR => 'No hay carpeta temporal disponible para la carga.',
+            UPLOAD_ERR_CANT_WRITE => 'No se pudo escribir el archivo en el servidor.',
+            UPLOAD_ERR_EXTENSION => 'Una extension del servidor bloqueo la carga.',
+        ];
+
+        return $mensajes[$error] ?? 'No se pudo cargar el documento.';
+    }
+
+    private function validarArchivoDocumentoInicial(array $archivo): array {
+        $error = (int)($archivo['error'] ?? UPLOAD_ERR_NO_FILE);
+        if ($error !== UPLOAD_ERR_OK) {
+            return [$this->mensajeUploadDocumentoInicial($error)];
+        }
+
+        $tmpName = (string)($archivo['tmp_name'] ?? '');
+        if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+            return ['El archivo no es valido.'];
+        }
+
+        $errores = [];
+        $size = (int)($archivo['size'] ?? 0);
+        if ($size <= 0) {
+            $errores[] = 'El archivo esta vacio.';
+        }
+
+        if ($size > 10485760) {
+            $errores[] = 'El archivo no puede superar 10 MB.';
+        }
+
+        $nombreOriginal = (string)($archivo['name'] ?? '');
+        $extension = strtolower((string)pathinfo($nombreOriginal, PATHINFO_EXTENSION));
+        $extensionesPermitidas = ['pdf', 'jpg', 'jpeg', 'png', 'webp'];
+        if ($extension === '' || !in_array($extension, $extensionesPermitidas, true)) {
+            $errores[] = 'El documento debe ser PDF, JPG, PNG o WEBP.';
+        }
+
+        $mimePermitidos = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+        $mime = '';
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo) {
+                $mime = (string)finfo_file($finfo, $tmpName);
+                finfo_close($finfo);
+            }
+        } elseif (function_exists('mime_content_type')) {
+            $mime = (string)mime_content_type($tmpName);
+        }
+
+        if ($mime !== '' && !in_array($mime, $mimePermitidos, true)) {
+            $errores[] = 'El documento tiene un tipo no permitido.';
+        }
+
+        return $errores;
+    }
+
+    private function erroresDocumentosIniciales(array $documentos): array {
+        $errores = [];
+        foreach ($documentos as $documento) {
+            $etiqueta = (string)($documento['etiqueta'] ?? 'Documento');
+            foreach ($this->validarArchivoDocumentoInicial($documento['archivo'] ?? []) as $error) {
+                $errores[] = $etiqueta . ': ' . $error;
+            }
+        }
+
+        return $errores;
+    }
+
+    private function guardarDocumentosInicialesSiAplica(int $huespedId, string $nombreHuesped, array $documentos, bool $usarTransaccionExterna = false): array {
+        if (empty($documentos)) {
+            return [];
+        }
+
+        $documentoModel = new Documento();
+        $creados = [];
+
+        foreach ($documentos as $documento) {
+            $tipo = $this->normalizarTipoDocumentoInicial($documento['tipo'] ?? 'otro');
+            $titulo = trim((string)($documento['titulo'] ?? ''));
+            $descripcion = trim((string)($documento['descripcion'] ?? ''));
+
+            $documentoDatos = [
+                'documento_tipo_id' => 0,
+                'titulo' => $titulo !== '' ? $titulo : $this->tituloDocumentoInicial($tipo, $nombreHuesped),
+                'descripcion' => $descripcion !== '' ? $descripcion : 'Documento cargado desde el alta inicial del huesped.',
+                'etiquetas' => 'huesped,alta_inicial,' . $tipo,
+                'entidad_tipo' => 'huesped',
+                'entidad_id' => $huespedId,
+                'relacion' => $this->relacionDocumentoInicial($tipo),
+            ];
+
+            if ($usarTransaccionExterna) {
+                $documentoDatos['_usar_transaccion_externa'] = true;
+            }
+
+            $creados[] = $documentoModel->crearDesdeUpload(
+                $this->hotelIdActual(),
+                $documento['archivo'] ?? [],
+                $documentoDatos,
+                $this->usuarioIdActual()
+            );
+        }
+
+        return $creados;
+    }
+
+    private function eliminarArchivosDocumentosCreados(array $documentos): void {
+        foreach ($documentos as $documento) {
+            $path = (string)($documento['_absolute_path'] ?? '');
+            if ($path !== '' && is_file($path)) {
+                @unlink($path);
+            }
+        }
+    }
+
     private function vehiculoTieneDatos(array $vehiculo, array $policy) {
         if (function_exists('hotel_guest_has_vehicle_payload')) {
             return hotel_guest_has_vehicle_payload($vehiculo, $policy);
@@ -1004,6 +1221,7 @@ public function guardarAction() {
     $return_to = $_GET['return_to'] ?? null;
     $fieldPolicy = $this->politicaCamposRegistro();
     $extrasHuesped = $this->extrasHuespedDesdePost($fieldPolicy);
+    $documentosIniciales = $this->documentosInicialesDesdeRequest();
     $hotelId = $this->hotelIdActual();
     
     // Recopilar datos del huésped
@@ -1022,6 +1240,7 @@ public function guardarAction() {
     $errores = $this->huespedModel->validar($data);
     $errores = array_merge($errores, $this->erroresCamposRegistro($data, $extrasHuesped, 'guest', $fieldPolicy));
     $errores = array_merge($errores, $this->erroresArchivoIdentificacion($fieldPolicy));
+    $errores = array_merge($errores, $this->erroresDocumentosIniciales($documentosIniciales));
     
     // Verificar si ya existe un huésped con el mismo teléfono
     if (!empty($data['telefono']) && $this->huespedModel->existeTelefonoPorHotel($data['telefono'], $hotelId)) {
@@ -1088,6 +1307,8 @@ public function guardarAction() {
     // Iniciar transacción
     $db = Database::getInstance();
     $db->beginTransaction();
+    $documentosInicialesCreados = [];
+    $transaccionConfirmada = false;
     
     try {
         // Crear huesped con diagnostico de errores de base de datos
@@ -1110,21 +1331,31 @@ public function guardarAction() {
         }
         
         // Confirmar transacción
+        $documentosInicialesCreados = $this->guardarDocumentosInicialesSiAplica((int)$huesped_id, $data['nombre_completo'], $documentosIniciales, true);
         $documentoIdentificacionId = $this->guardarArchivoIdentificacionSiAplica((int)$huesped_id, $data['nombre_completo'], $fieldPolicy, true);
 
         $db->commit();
+        $transaccionConfirmada = true;
         
         clear_old_input();
         $mensaje = 'Huésped registrado exitosamente';
-        if (!empty($documentoIdentificacionId)) {
-            $mensaje .= '. Identificacion vinculada al expediente.';
+        $documentosVinculados = count($documentosInicialesCreados) + (!empty($documentoIdentificacionId) ? 1 : 0);
+        if ($documentosVinculados > 0) {
+            $mensaje .= '. ' . $documentosVinculados . ' documento' . ($documentosVinculados === 1 ? '' : 's') . ' vinculado' . ($documentosVinculados === 1 ? '' : 's') . ' al expediente.';
         }
 
         set_mensaje($mensaje, 'success');
         
         // Redirección basada en return_to
 if ($return_to == 'reservacion') {
-    $this->redirect('reservaciones/crear?huesped_id=' . $huesped_id);
+    $params = ['huesped_id' => $huesped_id];
+    foreach (['habitacion_id', 'fecha_entrada', 'fecha_salida', 'hora_llegada', 'preseleccion'] as $key) {
+        $value = $this->getQuery($key);
+        if ($value !== null && trim((string)$value) !== '') {
+            $params[$key] = trim((string)$value);
+        }
+    }
+    $this->redirect('reservaciones/crear?' . http_build_query($params));
 } else if ($return_to == 'reservacion_rapida') {
     // Recuperar datos de la reservación rápida
     $habitacion_id = $this->getQuery('habitacion_id');
@@ -1150,7 +1381,10 @@ if ($return_to == 'reservacion') {
 }
         
     } catch (Throwable $e) {
-        $db->safeRollBack();
+        if (!$transaccionConfirmada) {
+            $db->safeRollBack();
+            $this->eliminarArchivosDocumentosCreados($documentosInicialesCreados);
+        }
         $codigoError = 'HSP-' . date('YmdHis') . '-' . substr(sha1($e->getMessage()), 0, 6);
         $detalleLog = $e->getPrevious() ? $e->getPrevious()->getMessage() : $e->getMessage();
         error_log('[' . $codigoError . '] Error al registrar huesped: ' . $detalleLog);

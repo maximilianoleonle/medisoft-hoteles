@@ -1052,7 +1052,7 @@ foreach ($cortes as $corte_metodo) {
                 <div class="cash-history-copy">
                     <h1>Historial de cortes</h1>
                     <p>
-                        Consulta cada apertura y cierre del mes, revisa diferencias de efectivo y descarga los comprobantes de cada corte cerrado.
+                        Consulta cada apertura y cierre del mes, revisa diferencias de efectivo y abre el detalle antes de descargar comprobantes.
                     </p>
                 </div>
 
@@ -1067,7 +1067,7 @@ foreach ($cortes as $corte_metodo) {
                     </span>
                     <span class="cash-history-note">
                         <i class="fas fa-file-download"></i>
-                        Comprobantes
+                        Descargas por corte
                     </span>
                 </div>
             </div>
@@ -1247,15 +1247,18 @@ foreach ($cortes as $corte_metodo) {
                                 </div>
 
                                 <div class="cash-cut-actions">
-                                    <a href="<?= url('caja/corte/' . $corte['id']) ?>" class="cash-action-icon" title="Ver detalle">
+                                    <a href="<?= url('caja/corte/' . $corte['id']) ?>" class="cash-action-icon" title="Ver detalle" aria-label="Ver detalle del corte #<?= (int)$corte['id'] ?>">
                                         <i class="fas fa-eye"></i>
+                                        <span class="cash-action-label">Ver</span>
                                     </a>
                                     <?php if ($estado == 'cerrado'): ?>
-                                        <a href="<?= url('caja/descargar-pdf/' . $corte['id']) ?>" class="cash-action-icon is-pdf" title="Descargar PDF">
+                                        <a href="<?= url('caja/descargar-pdf/' . $corte['id']) ?>" class="cash-action-icon is-pdf" title="Descargar PDF" aria-label="Descargar PDF del corte #<?= (int)$corte['id'] ?>">
                                             <i class="fas fa-file-pdf"></i>
+                                            <span class="cash-action-label">PDF</span>
                                         </a>
-                                        <button type="button" onclick="exportarCorte(<?= $corte['id'] ?>)" class="cash-action-icon is-excel" title="Exportar Excel">
+                                        <button type="button" onclick="exportarCorte(<?= $corte['id'] ?>)" class="cash-action-icon is-excel" title="Exportar Excel" aria-label="Exportar Excel del corte #<?= (int)$corte['id'] ?>">
                                             <i class="fas fa-file-excel"></i>
+                                            <span class="cash-action-label">Excel</span>
                                         </button>
                                     <?php endif; ?>
                                 </div>

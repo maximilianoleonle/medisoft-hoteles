@@ -10,6 +10,7 @@
  */
 
 require_once ROOT_PATH . '/app/helpers/tcpdf/tcpdf.php';
+require_once ROOT_PATH . '/app/services/PropietarioDistribucionService.php';
 
 class ReporteCortePDF extends TCPDF {
     
@@ -242,6 +243,7 @@ class ReporteCortePDF extends TCPDF {
         
         $this->Ln(2);
         
+        if (!$this->renderPropietariosDinamicos($ingresosPorTipo, false)) {
         // =============================================================
         // SEPARACIÓN: MANOLO vs ELIA
         // =============================================================
@@ -289,6 +291,7 @@ class ReporteCortePDF extends TCPDF {
         if ($hayElia) {
             $this->bloquePropiedad('HABITACIONES ELIA', $this->olivo, $this->olivoClaro, 
                 $totalElia, $cantElia, $datosElia, $habsElia);
+        }
         }
         
         // =============================================================
@@ -493,8 +496,90 @@ class ReporteCortePDF extends TCPDF {
         return $rutaCompleta;
     }
     
+    private function renderPropietariosDinamicos($ingresosPorTipo, $contarHabitaciones = false) {
+        if (!class_exists('PropietarioDistribucionService') || !is_array($ingresosPorTipo)) {
+            return false;
+        }
+
+        $service = new PropietarioDistribucionService();
+        $propietarios = $service->resumenPropietarios($ingresosPorTipo, $service->configuracionParaHotel());
+
+        if (empty($propietarios)) {
+            return false;
+        }
+
+        $colores = [
+            [$this->cafe, $this->cafeClaro],
+            [$this->olivo, $this->olivoClaro],
+            [$this->azulTj, [205, 220, 245]],
+            [$this->moradoTr, [225, 215, 245]],
+        ];
+
+        foreach (array_values($propietarios) as $index => $propietario) {
+            [$color, $colorClaro] = $colores[$index % count($colores)];
+            $cantidad = $contarHabitaciones ? count($propietario['habitaciones']) : (int) $propietario['cantidad'];
+            $this->bloquePropiedad(
+                'HABITACIONES ' . strtoupper($propietario['nombre']),
+                $color,
+                $colorClaro,
+                (float) $propietario['total'],
+                $cantidad,
+                $propietario['datos'],
+                $propietario['habitaciones']
+            );
+        }
+
+        if (count($propietarios) > 1) {
+            $this->renderResumenPropietarios($propietarios, $contarHabitaciones);
+        }
+
+        return true;
+    }
+
+    private function renderResumenPropietarios(array $propietarios, $contarHabitaciones = false) {
+        $this->titulo('RESUMEN POR PROPIETARIO', [80, 80, 80]);
+
+        $total = array_sum(array_map(static function ($propietario) {
+            return (float) ($propietario['total'] ?? 0);
+        }, $propietarios));
+        $cantidadTotal = 0;
+        foreach ($propietarios as $propietario) {
+            $cantidadTotal += $contarHabitaciones ? count($propietario['habitaciones']) : (int) $propietario['cantidad'];
+        }
+
+        $this->c_fill([70, 70, 70]);
+        $this->SetTextColor(255, 255, 255);
+        $this->SetFont('helvetica', 'B', 9);
+        $this->Cell(70, 8, 'PROPIETARIO', 0, 0, 'L', true);
+        $this->Cell(45, 8, 'INGRESOS', 0, 0, 'C', true);
+        $this->Cell(35, 8, $contarHabitaciones ? 'HABS.' : 'RESERVAS', 0, 0, 'C', true);
+        $this->Cell(40, 8, '%', 0, 1, 'C', true);
+
+        $fila = 0;
+        foreach ($propietarios as $propietario) {
+            $cantidad = $contarHabitaciones ? count($propietario['habitaciones']) : (int) $propietario['cantidad'];
+            $pct = $total > 0 ? ((float) $propietario['total'] / $total * 100) : 0;
+            $this->c_fill($fila % 2 === 0 ? [255, 255, 255] : $this->crema);
+            $this->c_text($this->oscuro);
+            $this->SetFont('helvetica', '', 9);
+            $this->Cell(70, 8, '  ' . $propietario['nombre'], 'B', 0, 'L', true);
+            $this->Cell(45, 8, '$' . number_format((float) $propietario['total'], 2), 'B', 0, 'C', true);
+            $this->Cell(35, 8, $cantidad, 'B', 0, 'C', true);
+            $this->Cell(40, 8, number_format($pct, 1) . '%', 'B', 1, 'C', true);
+            $fila++;
+        }
+
+        $this->c_fill($this->crema);
+        $this->SetFont('helvetica', 'B', 10);
+        $this->Cell(70, 8, '  TOTAL', 'B', 0, 'L', true);
+        $this->Cell(45, 8, '$' . number_format($total, 2), 'B', 0, 'C', true);
+        $this->Cell(35, 8, $cantidadTotal, 'B', 0, 'C', true);
+        $this->Cell(40, 8, '100%', 'B', 1, 'C', true);
+        $this->Ln(2);
+    }
+
     // =================================================================
-    // BLOQUE DE PROPIEDAD (MANOLO / ELIA)
+    // BLOQUE DE PROPIEDAD (DINAMICO / LEGACY)
     // =================================================================
     private function bloquePropiedad($titulo, $color, $colorClaro, $total, $cantidad, $datos, $habitaciones) {
         if ($this->GetY() > $this->getPageHeight() - 70) $this->AddPage();

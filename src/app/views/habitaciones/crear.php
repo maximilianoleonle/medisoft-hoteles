@@ -172,6 +172,14 @@
         color: #3f4743;
     }
 
+    .create-room-error {
+        display: block;
+        margin-top: 0.45rem;
+        color: #b42318;
+        font-size: 0.78rem;
+        font-weight: 800;
+    }
+
     .create-room-page input:not([type="checkbox"]):not([type="file"]):not([type="hidden"]),
     .create-room-page select,
     .create-room-page textarea {
@@ -377,6 +385,9 @@
                                            value="<?= old('numero') ?>"
                                            required
                                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
+                                    <?php if (form_error('numero')): ?>
+                                        <span class="create-room-error"><?= form_error('numero') ?></span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div>
@@ -424,6 +435,52 @@
                                                class="w-full pl-10 pr-4 py-3 text-xl font-semibold border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
                                         <span class="absolute right-4 top-4 text-sm text-gray-500">MXN</span>
                                     </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                        Capacidad de Personas <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number"
+                                           name="capacidad_personas"
+                                           value="<?= old('capacidad_personas', '2') ?>"
+                                           min="1"
+                                           max="30"
+                                           step="1"
+                                           required
+                                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
+                                    <?php if (form_error('capacidad_personas')): ?>
+                                        <span class="create-room-error"><?= form_error('capacidad_personas') ?></span>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                        Camas Matrimoniales <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number"
+                                           name="camas_matrimoniales"
+                                           value="<?= old('camas_matrimoniales', '1') ?>"
+                                           min="0"
+                                           max="20"
+                                           step="1"
+                                           required
+                                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                        Camas Individuales
+                                    </label>
+                                    <input type="number"
+                                           name="camas_individuales"
+                                           value="<?= old('camas_individuales', '0') ?>"
+                                           min="0"
+                                           max="20"
+                                           step="1"
+                                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
                                 </div>
                             </div>
                         </div>

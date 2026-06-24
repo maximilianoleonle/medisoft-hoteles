@@ -3,6 +3,7 @@ require_once __DIR__ . '/../models/TareaOperativa.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
 require_once __DIR__ . '/../services/NotificacionService.php';
 require_once __DIR__ . '/../services/AuditService.php';
+require_once __DIR__ . '/../services/PropietarioDistribucionService.php';
 /**
  * Controlador de Habitaciones
  * Sistema hotelero
@@ -45,6 +46,10 @@ class HabitacionController extends Controller {
                 $campo = 'numero';
             } elseif (strpos($lower, 'tipo') !== false) {
                 $campo = 'tipo';
+            } elseif (strpos($lower, 'capacidad') !== false || strpos($lower, 'persona') !== false) {
+                $campo = 'capacidad_personas';
+            } elseif (strpos($lower, 'cama') !== false) {
+                $campo = 'camas_matrimoniales';
             } elseif (strpos($lower, 'precio') !== false || strpos($lower, 'tarifa') !== false) {
                 $campo = 'precio_base';
             } elseif (strpos($lower, 'piso') !== false) {
@@ -189,6 +194,7 @@ public function indexAction() {
         return strnatcmp($a['numero'], $b['numero']);
     });
     $habitaciones = $this->anexarResumenTareasHabitaciones($hotelId, $habitaciones);
+    $habitaciones = $this->anexarPropietariosHabitaciones($hotelId, $habitaciones);
     
     // Agregar estados para la vista
     $estados = Habitacion::getEstados();
@@ -432,6 +438,7 @@ private function mostrarDisponibilidadPorFecha($filtros) {
     // Reindexar y ordenar
     $habitaciones_procesadas = array_values($habitaciones_procesadas);
     $habitaciones_procesadas = $this->anexarResumenTareasHabitaciones($hotelId, $habitaciones_procesadas);
+    $habitaciones_procesadas = $this->anexarPropietariosHabitaciones($hotelId, $habitaciones_procesadas);
     usort($habitaciones_procesadas, function($a, $b) {
         return strnatcmp($a['numero'], $b['numero']);
     });
@@ -568,6 +575,7 @@ error_log(print_r($ocupacion_actual, true));
     } else {
         $habitacion['estado_display'] = $habitacion['estado'];
     }
+    $habitacion = $this->anexarPropietariosHabitaciones($hotelId, [$habitacion])[0] ?? $habitacion;
     
     // IMPORTANTE: Obtener ocupación actual SIEMPRE, no solo cuando estado es 'ocupada'
     // Esto permitirá mostrar el huésped actual incluso cuando hay doble movimiento
@@ -713,10 +721,38 @@ error_log(print_r($ocupacion_actual, true));
         
         $this->validateCSRF();
         
+        $tipoSolicitado = (string) $this->getPost('tipo');
+        $caracteristicas_especiales = $this->normalizarCaracteristicasSeleccionadas(
+            $this->getPost('caracteristicas_especiales', [])
+        );
+        $tipoAlmacenamiento = $this->normalizarTipoHabitacionParaAlmacenamiento(
+            $tipoSolicitado,
+            $caracteristicas_especiales
+        );
+        $defaultsHabitacion = $this->defaultsCapacidadCamas($tipoSolicitado ?: $tipoAlmacenamiento);
+
         // Recopilar datos básicos
         $data = [
             'numero' => trim($this->getPost('numero')),
-            'tipo' => $this->getPost('tipo'),
+            'tipo' => $tipoAlmacenamiento,
+            'capacidad_personas' => $this->normalizarEnteroHabitacion(
+                $this->getPost('capacidad_personas'),
+                $defaultsHabitacion['capacidad_personas'],
+                1,
+                30
+            ),
+            'camas_matrimoniales' => $this->normalizarEnteroHabitacion(
+                $this->getPost('camas_matrimoniales'),
+                $defaultsHabitacion['camas_matrimoniales'],
+                0,
+                20
+            ),
+            'camas_individuales' => $this->normalizarEnteroHabitacion(
+                $this->getPost('camas_individuales'),
+                $defaultsHabitacion['camas_individuales'],
+                0,
+                20
+            ),
             'piso' => intval($this->getPost('piso')),
             'precio_base' => floatval($this->getPost('precio_base')),
             'estado' => 'disponible',
@@ -725,21 +761,19 @@ error_log(print_r($ocupacion_actual, true));
         ];
         
         // Procesar características
-        $caracteristicas_especiales = $this->getPost('caracteristicas_especiales', []);
         $caracteristicas_custom = trim($this->getPost('caracteristicas'));
-        
-        if (!empty($caracteristicas_custom)) {
-            $data['caracteristicas'] = $caracteristicas_custom;
-        } else {
-            $data['caracteristicas'] = $this->generarDescripcionCaracteristicas($data['tipo'], $caracteristicas_especiales);
-        }
+        $data['caracteristicas'] = $this->construirDescripcionCaracteristicas(
+            $tipoSolicitado ?: $data['tipo'],
+            $caracteristicas_especiales,
+            $caracteristicas_custom
+        );
         
         // Validar datos contra los catalogos configurables del hotel
         $errores = $this->validarHabitacionConCatalogos($data);
         
         // Verificar número único
         if ($this->habitacionModel->exists(['numero' => $data['numero']])) {
-            $errores[] = 'Ya existe una habitación con ese número';
+            $errores[] = 'Ya existe una habitacion con este numero. No se puede repetir.';
         }
         
         $fieldErrors = $this->erroresCamposHabitacion($errores);
@@ -790,9 +824,10 @@ error_log(print_r($ocupacion_actual, true));
             
         } catch (Exception $e) {
             $db->rollBack();
-            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            $mensajeError = $this->mensajeErrorHabitacion($e);
+            set_mensaje('Error: ' . $mensajeError, 'error');
             save_old_input($_POST);
-            save_form_errors($this->erroresCamposHabitacion([$e->getMessage()]));
+            save_form_errors($this->erroresCamposHabitacion([$mensajeError]));
             $this->redirect('habitaciones/create');
         }
     }
@@ -946,24 +981,50 @@ public function historial() {
             $this->redirect('habitaciones');
         }
         
+        $tipoSolicitado = (string) $this->getPost('tipo');
+        $caracteristicas_especiales = $this->normalizarCaracteristicasSeleccionadas(
+            $this->getPost('caracteristicas_especiales', [])
+        );
+        $tipoAlmacenamiento = $this->normalizarTipoHabitacionParaAlmacenamiento(
+            $tipoSolicitado,
+            $caracteristicas_especiales
+        );
+        $defaultsHabitacion = $this->defaultsCapacidadCamas($tipoSolicitado ?: $tipoAlmacenamiento);
+
         // Recopilar datos
         $data = [
             'numero' => trim($this->getPost('numero')),
-            'tipo' => $this->getPost('tipo'),
+            'tipo' => $tipoAlmacenamiento,
+            'capacidad_personas' => $this->normalizarEnteroHabitacion(
+                $this->getPost('capacidad_personas'),
+                (int)($habitacion['capacidad_personas'] ?? $defaultsHabitacion['capacidad_personas']),
+                1,
+                30
+            ),
+            'camas_matrimoniales' => $this->normalizarEnteroHabitacion(
+                $this->getPost('camas_matrimoniales'),
+                (int)($habitacion['camas_matrimoniales'] ?? $defaultsHabitacion['camas_matrimoniales']),
+                0,
+                20
+            ),
+            'camas_individuales' => $this->normalizarEnteroHabitacion(
+                $this->getPost('camas_individuales'),
+                (int)($habitacion['camas_individuales'] ?? $defaultsHabitacion['camas_individuales']),
+                0,
+                20
+            ),
             'piso' => intval($this->getPost('piso')),
             'precio_base' => floatval($this->getPost('precio_base')),
             'activa' => $this->getPost('activa') ? 1 : 0
         ];
         
         // Procesar características
-        $caracteristicas_especiales = $this->getPost('caracteristicas_especiales', []);
         $caracteristicas_custom = trim($this->getPost('caracteristicas'));
-        
-        if (!empty($caracteristicas_custom)) {
-            $data['caracteristicas'] = $caracteristicas_custom;
-        } else {
-            $data['caracteristicas'] = $this->generarDescripcionCaracteristicas($data['tipo'], $caracteristicas_especiales);
-        }
+        $data['caracteristicas'] = $this->construirDescripcionCaracteristicas(
+            $tipoSolicitado ?: $data['tipo'],
+            $caracteristicas_especiales,
+            $caracteristicas_custom
+        );
         
         // Validar datos contra los catalogos configurables del hotel
         $errores = $this->validarHabitacionConCatalogos($data);
@@ -972,7 +1033,7 @@ public function historial() {
         $sql = "SELECT COUNT(*) as total FROM habitaciones WHERE numero = ? AND id != ? AND hotel_id = ?";
         $stmt = Database::getInstance()->query($sql, [$data['numero'], $id, $this->hotelIdActual()]);
         if ($stmt->fetch()['total'] > 0) {
-            $errores[] = 'Ya existe otra habitación con ese número';
+            $errores[] = 'Ya existe una habitacion con este numero. No se puede repetir.';
         }
         
         // Manejar múltiples imágenes si se subieron nuevas
@@ -1833,6 +1894,41 @@ private function registrarAuditoriaMantenimientoProgramado(string $accion, array
         return !empty($tipos) ? $tipos : Habitacion::getTipos();
     }
 
+    private function anexarPropietariosHabitaciones(int $hotelId, array $habitaciones): array
+    {
+        if ($hotelId <= 0 || !class_exists('PropietarioDistribucionService')) {
+            return $habitaciones;
+        }
+
+        try {
+            $service = new PropietarioDistribucionService();
+            $config = $service->configuracionParaHotel($hotelId);
+        } catch (Throwable $e) {
+            error_log('No se pudo cargar propietarios para habitaciones: ' . $e->getMessage());
+            return $habitaciones;
+        }
+
+        foreach ($habitaciones as &$habitacion) {
+            if (!is_array($habitacion)) {
+                continue;
+            }
+
+            try {
+                $ownerKey = $service->propietarioParaHabitacion($habitacion, $config);
+                $ownerData = $config['propietarios'][$ownerKey] ?? [];
+                $habitacion['propietario_key'] = $ownerKey;
+                $habitacion['propietario_nombre'] = $service->nombrePropietario($ownerKey, $config);
+                $habitacion['propietario_participacion_pct'] = (float) ($ownerData['participacion_pct'] ?? 100);
+                $habitacion['propietario_es_default'] = $ownerKey === ($config['propietario_default'] ?? '');
+            } catch (Throwable $e) {
+                error_log('No se pudo resolver propietario de habitacion: ' . $e->getMessage());
+            }
+        }
+        unset($habitacion);
+
+        return $habitaciones;
+    }
+
     private function catalogoPisosHabitacion()
     {
         $pisos = function_exists('hotel_room_catalog_floors')
@@ -1856,6 +1952,183 @@ private function registrarAuditoriaMantenimientoProgramado(string $accion, array
         ];
     }
 
+    private function normalizarCaracteristicasSeleccionadas($seleccionadas): array
+    {
+        if (!is_array($seleccionadas)) {
+            $seleccionadas = $seleccionadas !== null && $seleccionadas !== '' ? [$seleccionadas] : [];
+        }
+
+        $normalizadas = [];
+        foreach ($seleccionadas as $codigo) {
+            $codigo = strtolower(trim((string)$codigo));
+            $codigo = preg_replace('/[^a-z0-9_\-]/', '', $codigo);
+            if ($codigo !== '') {
+                $normalizadas[] = $codigo;
+            }
+        }
+
+        return array_values(array_unique($normalizadas));
+    }
+
+    private function normalizarTipoHabitacionParaAlmacenamiento(string $tipo, array &$especiales): string
+    {
+        $tipo = strtolower(trim($tipo));
+
+        $mapaSinMigracion = [
+            'doble_jacuzzi' => 'doble',
+            'sencilla_jacuzzi' => 'sencilla',
+        ];
+
+        if (isset($mapaSinMigracion[$tipo])) {
+            $especiales[] = 'jacuzzi';
+            $especiales = array_values(array_unique($especiales));
+            return $mapaSinMigracion[$tipo];
+        }
+
+        if (isset($this->tiposAlmacenamientoCompatibles()[$tipo])) {
+            return $tipo;
+        }
+
+        $label = $this->labelTipoHabitacionCatalogo($tipo);
+        $texto = strtolower(trim($tipo . ' ' . $label));
+        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $texto);
+        if ($ascii !== false) {
+            $texto = $ascii;
+        }
+
+        if (strpos($texto, 'jacuzzi') !== false) {
+            $especiales[] = 'jacuzzi';
+            $especiales = array_values(array_unique($especiales));
+        }
+
+        if (strpos($texto, 'cuadruple') !== false || strpos($texto, 'cua') !== false) {
+            return 'cuadruple';
+        }
+        if (strpos($texto, 'triple') !== false || strpos($texto, 'tri') !== false) {
+            return 'triple';
+        }
+        if (strpos($texto, 'doble') !== false || strpos($texto, 'dob') !== false) {
+            return 'doble';
+        }
+        if (strpos($texto, 'sencilla') !== false || strpos($texto, 'simple') !== false || strpos($texto, 'sen') !== false) {
+            return 'sencilla';
+        }
+
+        return $tipo;
+    }
+
+    private function tiposAlmacenamientoCompatibles(): array
+    {
+        return [
+            'sencilla' => true,
+            'doble' => true,
+            'triple' => true,
+            'cuadruple' => true,
+            'sencilla_manolo' => true,
+            'doble_manolo' => true,
+        ];
+    }
+
+    private function labelTipoHabitacionCatalogo(string $tipo): string
+    {
+        foreach ($this->catalogoTiposHabitacion() as $codigo => $label) {
+            if (strtolower((string)$codigo) === strtolower($tipo)) {
+                return (string)$label;
+            }
+        }
+
+        return $tipo;
+    }
+
+    private function defaultsCapacidadCamas(string $tipo): array
+    {
+        $tipo = strtolower(trim($tipo));
+        $baseTipo = $tipo;
+        if ($tipo === 'doble_jacuzzi') {
+            $baseTipo = 'doble';
+        } elseif ($tipo === 'sencilla_jacuzzi') {
+            $baseTipo = 'sencilla';
+        }
+
+        $defaults = [
+            'sencilla' => ['capacidad_personas' => 2, 'camas_matrimoniales' => 1, 'camas_individuales' => 0],
+            'doble' => ['capacidad_personas' => 4, 'camas_matrimoniales' => 2, 'camas_individuales' => 0],
+            'triple' => ['capacidad_personas' => 6, 'camas_matrimoniales' => 3, 'camas_individuales' => 0],
+            'cuadruple' => ['capacidad_personas' => 8, 'camas_matrimoniales' => 4, 'camas_individuales' => 0],
+            'sencilla_manolo' => ['capacidad_personas' => 2, 'camas_matrimoniales' => 1, 'camas_individuales' => 0],
+            'doble_manolo' => ['capacidad_personas' => 4, 'camas_matrimoniales' => 2, 'camas_individuales' => 0],
+        ];
+
+        $resultado = $defaults[$baseTipo] ?? ['capacidad_personas' => 2, 'camas_matrimoniales' => 1, 'camas_individuales' => 0];
+
+        if (function_exists('hotel_room_catalog_type_rows')) {
+            foreach (hotel_room_catalog_type_rows($this->hotelIdActual(), true) as $row) {
+                if (strtolower((string)($row['codigo'] ?? '')) !== $tipo) {
+                    continue;
+                }
+
+                $capacidad = (int)($row['capacidad_default'] ?? 0);
+                if ($capacidad > 0) {
+                    $resultado['capacidad_personas'] = $capacidad;
+                }
+                break;
+            }
+        }
+
+        return $resultado;
+    }
+
+    private function normalizarEnteroHabitacion($valor, int $default, int $min, int $max): int
+    {
+        if ($valor === null || $valor === '') {
+            $valor = $default;
+        }
+
+        $valor = (int)$valor;
+        return $valor;
+    }
+
+    private function construirDescripcionCaracteristicas(string $tipo, array $especiales, string $custom): string
+    {
+        $generada = $this->generarDescripcionCaracteristicas($tipo, $especiales);
+        $partes = array_filter(array_map('trim', explode(',', $generada)));
+
+        if ($custom !== '') {
+            $extras = preg_split('/[,;\r\n]+/', $custom) ?: [];
+            foreach ($extras as $extra) {
+                $extra = trim((string)$extra);
+                if ($extra !== '') {
+                    $partes[] = $extra;
+                }
+            }
+        }
+
+        $unicas = [];
+        $normalizadas = [];
+        foreach ($partes as $parte) {
+            $clave = strtolower(trim(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $parte) ?: $parte));
+            $clave = preg_replace('/\s+/', ' ', $clave);
+            if ($clave === '' || isset($normalizadas[$clave])) {
+                continue;
+            }
+
+            $normalizadas[$clave] = true;
+            $unicas[] = $parte;
+        }
+
+        return implode(', ', $unicas);
+    }
+
+    private function mensajeErrorHabitacion(Throwable $e): string
+    {
+        $mensaje = $e->getMessage();
+        if (strpos($mensaje, 'Duplicate entry') !== false && strpos($mensaje, 'numero') !== false) {
+            return 'Ya existe una habitacion con este numero. No se puede repetir.';
+        }
+
+        return $mensaje;
+    }
+
     private function validarHabitacionConCatalogos(array $data)
     {
         $errores = [];
@@ -1870,9 +2143,26 @@ private function registrarAuditoriaMantenimientoProgramado(string $accion, array
         if (empty($data['tipo']) || !array_key_exists((string) $data['tipo'], $tiposValidos)) {
             $errores[] = 'Debe seleccionar un tipo de habitacion valido';
         }
+        if (!empty($data['tipo']) && !isset($this->tiposAlmacenamientoCompatibles()[(string)$data['tipo']])) {
+            $errores[] = 'El tipo seleccionado todavia no es compatible con el catalogo tecnico de habitaciones.';
+        }
 
         if (!is_numeric($data['precio_base']) || $data['precio_base'] <= 0) {
             $errores[] = 'El precio debe ser un numero mayor a cero';
+        }
+
+        $capacidad = (int)($data['capacidad_personas'] ?? 0);
+        if ($capacidad < 1 || $capacidad > 30) {
+            $errores[] = 'La capacidad debe estar entre 1 y 30 personas.';
+        }
+
+        $camasMatrimoniales = (int)($data['camas_matrimoniales'] ?? 0);
+        $camasIndividuales = (int)($data['camas_individuales'] ?? 0);
+        if ($camasMatrimoniales < 0 || $camasIndividuales < 0 || ($camasMatrimoniales + $camasIndividuales) < 1) {
+            $errores[] = 'Debe registrar al menos una cama en la habitacion.';
+        }
+        if ($camasMatrimoniales > 20 || $camasIndividuales > 20) {
+            $errores[] = 'El numero de camas no puede exceder 20 por tipo.';
         }
 
         $pisosValidos = $this->catalogoPisosHabitacion();

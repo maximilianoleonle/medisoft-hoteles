@@ -12,6 +12,13 @@ $total_reservaciones = $total_reservaciones ?? count($reservaciones);
 $estados             = $estados             ?? [];
 $buscar              = $buscar              ?? '';
 $fecha_filtro        = $fecha_filtro        ?? date('Y-m-d');
+$res_hotel_checkin_hora = function_exists('hotel_config_get')
+    ? (string) hotel_config_get('operacion.checkin_hora', '15:00')
+    : '15:00';
+$res_hotel_checkin_hora = substr(trim($res_hotel_checkin_hora), 0, 5);
+if (!preg_match('/^\d{2}:\d{2}$/', $res_hotel_checkin_hora)) {
+    $res_hotel_checkin_hora = '15:00';
+}
 
 $colores_habitacion = [
     'MOKA'       => ['bg' => '#7B5B3A', 'dark' => '#5C3D20'],
@@ -750,6 +757,35 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 }
 .res-ci-section-head h4 { margin: 0; color: var(--res-brand-2); font-size: .95rem; font-weight: 900; display: flex; align-items: center; gap: 8px; }
 .res-ci-section-head span { color: #7A8498; font-size: .72rem; font-weight: 750; }
+.res-ci-prompt { margin: -2px 0 12px; color: #687386; font-size: .78rem; font-weight: 650; line-height: 1.45; }
+.res-ci-shortcuts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.res-ci-shortcut {
+    --res-shortcut-color: var(--res-brand);
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid color-mix(in srgb, var(--res-shortcut-color) 22%, #DCE2EA);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--res-shortcut-color) 6%, #FFFFFF);
+    color: color-mix(in srgb, var(--res-shortcut-color) 86%, #263247);
+    font-size: .78rem;
+    font-weight: 900;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease;
+}
+.res-ci-shortcut:hover,
+.res-ci-shortcut:focus-visible {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--res-shortcut-color) 48%, #DCE2EA);
+    background: color-mix(in srgb, var(--res-shortcut-color) 10%, #FFFFFF);
+    outline: none;
+}
+.res-ci-shortcut--cash { --res-shortcut-color: #148653; }
+.res-ci-shortcut--card { --res-shortcut-color: #2563EB; }
+.res-ci-shortcut--transfer { --res-shortcut-color: #7C3AED; }
+.res-ci-shortcut--split { --res-shortcut-color: var(--res-accent); }
+.res-ci-shortcut--cash-transfer { --res-shortcut-color: #0F9F8F; }
 .res-ci-methods { display: grid; gap: 10px; }
 .res-pay-method {
     --res-pay-color: var(--res-brand);
@@ -830,6 +866,24 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .res-invoice-choice span { display: block; color: #667085; font-size: .72rem; line-height: 1.35; margin-top: 2px; }
 #label_factura_si.is-selected { border-color: color-mix(in srgb, #2563EB 62%, #DCE2EA); background: #EFF6FF; box-shadow: 0 12px 24px -22px rgba(37,99,235,.8); }
 #label_factura_no.is-selected { border-color: color-mix(in srgb, var(--res-brand) 38%, #DCE2EA); background: color-mix(in srgb, var(--res-brand) 5%, #fff); }
+.res-invoice-result {
+    margin-top: 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--res-brand) 12%, #DCE2EA);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--res-brand) 4%, #FFFFFF);
+    color: #566176;
+    font-size: .76rem;
+    font-weight: 750;
+    line-height: 1.4;
+}
+.res-invoice-result i { margin-top: 2px; color: var(--res-brand); }
+.res-invoice-result.is-client { border-color: #BFDBFE; background: #EFF6FF; color: #1D4ED8; }
+.res-invoice-result.is-internal { border-color: #FED7AA; background: #FFF7ED; color: #9A3412; }
+.res-invoice-result.is-none { border-color: #D1D5DB; background: #F9FAFB; color: #4B5563; }
 .res-ci-note,
 .res-ci-alert {
     margin-top: 9px;
@@ -922,6 +976,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
     .res-checkin-card { border-radius: 20px; max-height: 94dvh; }
     .res-checkin-summary,
     .res-ci-grid,
+    .res-ci-shortcuts,
     .res-invoice-options { grid-template-columns: 1fr; }
     .res-checkin-head { padding: 16px 62px 16px 16px; }
     .res-checkin-body { padding: 14px; }
@@ -2827,6 +2882,24 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                         <h4><i class="fas fa-wallet"></i>Metodos de pago</h4>
                         <span>Uno o varios</span>
                     </div>
+                    <p class="res-ci-prompt">Elige una forma rapida o ajusta los montos por metodo. El total pagado debe cuadrar con el total de la reservacion antes de confirmar.</p>
+                    <div class="res-ci-shortcuts" aria-label="Atajos de metodo de pago">
+                        <button type="button" class="res-ci-shortcut res-ci-shortcut--cash" onclick="aplicarPagoRapido('efectivo')">
+                            <i class="fas fa-money-bill-wave"></i>Efectivo exacto
+                        </button>
+                        <button type="button" class="res-ci-shortcut res-ci-shortcut--card" onclick="aplicarPagoRapido('tarjeta')">
+                            <i class="fas fa-credit-card"></i>Tarjeta exacta
+                        </button>
+                        <button type="button" class="res-ci-shortcut res-ci-shortcut--transfer" onclick="aplicarPagoRapido('transferencia')">
+                            <i class="fas fa-university"></i>Transferencia exacta
+                        </button>
+                        <button type="button" class="res-ci-shortcut res-ci-shortcut--split" onclick="dividirPagoRapido()">
+                            <i class="fas fa-code-branch"></i>Mitad efectivo/tarjeta
+                        </button>
+                        <button type="button" class="res-ci-shortcut res-ci-shortcut--cash-transfer" onclick="dividirPagoEfectivoTransferencia()">
+                            <i class="fas fa-exchange-alt"></i>Efectivo + transferencia
+                        </button>
+                    </div>
 
                     <div id="metodosPagoContainer" class="res-ci-methods">
                         <article class="res-pay-method res-pay-cash">
@@ -2844,6 +2917,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                                     <div>
                                         <label for="recibido_efectivo" class="res-ci-label">Monto recibido</label>
                                         <input type="number" name="recibido_efectivo" id="recibido_efectivo" data-money-format="true" step="0.01" min="0" placeholder="0.00" oninput="calcularCambio()" onchange="calcularCambio()" class="res-ci-input">
+                                        <button type="button" class="res-ci-shortcut res-ci-shortcut--cash" style="width:100%; min-height:36px; margin-top:8px;" onclick="marcarEfectivoExacto()">Recibi exacto</button>
                                     </div>
                                 </div>
                                 <div class="res-change-row">
@@ -2916,17 +2990,21 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                         <label id="label_factura_si" class="res-invoice-choice">
                             <input type="radio" name="requiere_factura" id="factura_si" value="si" onchange="seleccionarFactura('si')">
                             <span>
-                                <strong>Si requiere</strong>
-                                <span>Registrar para facturacion.</span>
+                                <strong>Factura para cliente</strong>
+                                <span>Se genera solicitud de factura para el huesped.</span>
                             </span>
                         </label>
                         <label id="label_factura_no" class="res-invoice-choice">
                             <input type="radio" name="requiere_factura" id="factura_no" value="no" onchange="seleccionarFactura('no')">
                             <span>
-                                <strong>No requiere</strong>
-                                <span>Solo registro interno del pago.</span>
+                                <strong>Sin factura del cliente</strong>
+                                <span>Si hay tarjeta o transferencia quedara como uso interno.</span>
                             </span>
                         </label>
+                    </div>
+                    <div id="facturaResultado" class="res-invoice-result">
+                        <i class="fas fa-circle-info"></i>
+                        <span>Selecciona una opcion para ver como quedara registrada la facturacion.</span>
                     </div>
                     <div id="facturaValidacion" class="res-ci-alert hidden">
                         <i class="fas fa-exclamation-circle"></i>
@@ -2947,6 +3025,10 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                     <div class="res-ci-row is-paid">
                         <span>Total pagado</span>
                         <strong id="resumenPagado">$0.00</strong>
+                    </div>
+                    <div class="res-ci-row">
+                        <span>Metodo seleccionado</span>
+                        <strong id="resumenMetodoPago">Sin seleccionar</strong>
                     </div>
                     <div id="divRestante" class="res-ci-row is-due" style="display:none;">
                         <span>Restante</span>
@@ -3112,6 +3194,21 @@ function resObtenerDatosReservaDefault() {
         fechaSalida: resFormatearFechaLocal(salidaBase),
         horaActual: hoy.toTimeString().slice(0, 5)
     };
+}
+
+const resHotelCheckinHora = <?= json_encode($res_hotel_checkin_hora, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+const resHotelCheckinHoraLabel = resReservaFormatearHoraChip(resHotelCheckinHora);
+
+function resReservaFormatearHoraChip(hora) {
+    const match = String(hora || '').match(/^(\d{1,2}):(\d{2})/);
+    if (!match) return '03:00 p. m.';
+
+    const horas24 = parseInt(match[1], 10);
+    const minutos = match[2];
+    const periodo = horas24 >= 12 ? 'p. m.' : 'a. m.';
+    const horas12 = horas24 % 12 || 12;
+
+    return `${String(horas12).padStart(2, '0')}:${minutos} ${periodo}`;
 }
 
 function resCerrarSwalReserva(callback, delay = 160) {
@@ -3319,7 +3416,7 @@ function resSeleccionarTipoCliente(tipo, fechaEntrada, fechaSalida, horaActual) 
 
                         <div class="res-reserve-timechips" aria-label="Opciones rapidas de hora">
                             <button type="button" onclick="resReservaSetHora('${horaActual}', this)" class="res-reserve-timechip is-active"><i class="far fa-clock"></i> Ahora</button>
-                            <button type="button" onclick="resReservaSetHora('14:00', this)" class="res-reserve-timechip">02:00 p. m.</button>
+                            <button type="button" onclick="resReservaSetHora(resHotelCheckinHora, this)" class="res-reserve-timechip" title="Hora de check-in configurada" aria-label="Usar hora de check-in configurada: ${resHotelCheckinHoraLabel}">${resHotelCheckinHoraLabel}</button>
                             <button type="button" onclick="resReservaSetHora('20:00', this)" class="res-reserve-timechip">08:00 p. m.</button>
                             <button type="button" onclick="resContinuarReservacionSinHora('${tipo}', '${fechaEntrada}', '${fechaSalida}'); return false;" class="res-reserve-timechip"><i class="far fa-calendar-plus"></i> Definir despues</button>
                         </div>
@@ -3488,6 +3585,8 @@ function seleccionarFactura(valor) {
     } else {
         mostrarInfoFacturaInterna();
     }
+
+    actualizarResultadoFacturaCheckIn();
 }
 
 function mostrarInfoFacturaInterna() {
@@ -3499,6 +3598,40 @@ function mostrarInfoFacturaInterna() {
 
     const debeMostrarse = facturaNo?.checked && ((checkTarjeta && checkTarjeta.checked) || (checkTransferencia && checkTransferencia.checked));
     infoInterna.classList.toggle('hidden', !debeMostrarse);
+    actualizarResultadoFacturaCheckIn();
+}
+
+function actualizarResultadoFacturaCheckIn() {
+    const resultado = document.getElementById('facturaResultado');
+    if (!resultado) return;
+
+    const facturaSi = document.getElementById('factura_si');
+    const facturaNo = document.getElementById('factura_no');
+    const checkTarjeta = document.getElementById('check_tarjeta');
+    const checkTransferencia = document.getElementById('check_transferencia');
+    const usaElectronico = Boolean((checkTarjeta && checkTarjeta.checked) || (checkTransferencia && checkTransferencia.checked));
+
+    resultado.className = 'res-invoice-result';
+
+    if (facturaSi?.checked) {
+        resultado.classList.add('is-client');
+        resultado.innerHTML = '<i class="fas fa-file-invoice"></i><span>Factura para cliente: se creara solicitud para facturacion del huesped con el metodo de pago seleccionado.</span>';
+        return;
+    }
+
+    if (facturaNo?.checked && usaElectronico) {
+        resultado.classList.add('is-internal');
+        resultado.innerHTML = '<i class="fas fa-building"></i><span>Uso interno del hotel: como hay tarjeta o transferencia, se dejara registro interno para control administrativo.</span>';
+        return;
+    }
+
+    if (facturaNo?.checked) {
+        resultado.classList.add('is-none');
+        resultado.innerHTML = '<i class="fas fa-receipt"></i><span>Sin facturacion: no se generara solicitud de factura para esta reservacion.</span>';
+        return;
+    }
+
+    resultado.innerHTML = '<i class="fas fa-circle-info"></i><span>Selecciona una opcion para ver como quedara registrada la facturacion.</span>';
 }
 
 function validarFacturaCheckIn() {
@@ -3529,6 +3662,7 @@ function resetearFacturaCheckIn() {
     if (labelNo) labelNo.classList.remove('is-selected');
     if (validacion) validacion.classList.add('hidden');
     if (infoInterna) infoInterna.classList.add('hidden');
+    actualizarResultadoFacturaCheckIn();
 }
 
 function resMoneyRead(inputOrValue) {
@@ -3560,6 +3694,17 @@ function resMoneySanitize(form) {
     if (window.MedisoftMoneyInput) {
         window.MedisoftMoneyInput.sanitize(form);
     }
+}
+
+function resSplitMoneyParts(total, count) {
+    const safeCount = Math.max(1, parseInt(count, 10) || 1);
+    const totalCents = Math.round((parseFloat(total) || 0) * 100);
+    const baseCents = Math.floor(totalCents / safeCount);
+    const remainder = totalCents - (baseCents * safeCount);
+
+    return Array.from({ length: safeCount }, function(_, index) {
+        return (baseCents + (index < remainder ? 1 : 0)) / 100;
+    });
 }
 
 function abrirModalCheckIn(id, total) {
@@ -3640,6 +3785,97 @@ function toggleMetodoPago(metodo) {
     mostrarInfoFacturaInterna();
 }
 
+function setCheckInPaymentChecked(metodo, checked, shouldRecalculate = true) {
+    const checkbox = document.getElementById('check_' + metodo);
+    const panel = document.getElementById('panel_' + metodo);
+    const montoInput = document.getElementById('monto_' + metodo);
+    const card = checkbox?.closest('.res-pay-method');
+
+    if (!checkbox) return false;
+
+    checkbox.checked = checked;
+
+    if (checked) {
+        if (panel) panel.classList.remove('hidden');
+        if (card) card.classList.add('is-open');
+    } else {
+        if (panel) panel.classList.add('hidden');
+        if (card) card.classList.remove('is-open');
+        if (montoInput) montoInput.value = '';
+
+        if (metodo === 'efectivo') {
+            const recibidoInput = document.getElementById('recibido_efectivo');
+            const cambioSpan = document.getElementById('cambio_efectivo');
+            if (recibidoInput) recibidoInput.value = '';
+            if (cambioSpan) {
+                cambioSpan.textContent = '$0.00';
+                cambioSpan.classList.remove('is-negative');
+            }
+        }
+    }
+
+    if (shouldRecalculate) {
+        calcularTotales({ preserveCash: true });
+        mostrarInfoFacturaInterna();
+    }
+
+    return true;
+}
+
+function aplicarPagoRapido(metodo) {
+    if (!['efectivo', 'tarjeta', 'transferencia'].includes(metodo)) return;
+
+    resetearFormularioPago();
+    setCheckInPaymentChecked(metodo, true, false);
+    resMoneySet('monto_' + metodo, totalReservacion);
+
+    if (metodo === 'efectivo') {
+        resMoneySet('recibido_efectivo', totalReservacion);
+        calcularCambio();
+    }
+
+    calcularTotales({ preserveCash: true });
+    mostrarMensaje('Pago exacto aplicado. Revisa la factura antes de confirmar.', 'success');
+}
+
+function marcarEfectivoExacto() {
+    setCheckInPaymentChecked('efectivo', true, false);
+    calcularTotales();
+    const montoEfectivo = resMoneyRead(document.getElementById('monto_efectivo'));
+    resMoneySet('recibido_efectivo', montoEfectivo);
+    calcularCambio();
+}
+
+function dividirPagoRapido() {
+    resetearFormularioPago();
+    const partes = resSplitMoneyParts(totalReservacion, 2);
+
+    setCheckInPaymentChecked('efectivo', true, false);
+    setCheckInPaymentChecked('tarjeta', true, false);
+    resMoneySet('monto_efectivo', partes[0]);
+    resMoneySet('recibido_efectivo', partes[0]);
+    resMoneySet('monto_tarjeta', partes[1]);
+
+    calcularTotales({ preserveCash: true });
+    calcularCambio();
+    mostrarMensaje('Pago dividido entre efectivo y tarjeta.', 'success');
+}
+
+function dividirPagoEfectivoTransferencia() {
+    resetearFormularioPago();
+    const partes = resSplitMoneyParts(totalReservacion, 2);
+
+    setCheckInPaymentChecked('efectivo', true, false);
+    setCheckInPaymentChecked('transferencia', true, false);
+    resMoneySet('monto_efectivo', partes[0]);
+    resMoneySet('recibido_efectivo', partes[0]);
+    resMoneySet('monto_transferencia', partes[1]);
+
+    calcularTotales({ preserveCash: true });
+    calcularCambio();
+    mostrarMensaje('Pago dividido entre efectivo y transferencia.', 'success');
+}
+
 function calcularTotalPagadoSinEfectivo() {
     let total = 0;
     ['tarjeta', 'transferencia'].forEach(metodo => {
@@ -3648,6 +3884,23 @@ function calcularTotalPagadoSinEfectivo() {
         if (checkbox?.checked && montoInput) total += resMoneyRead(montoInput);
     });
     return total;
+}
+
+function actualizarResumenMetodoPago() {
+    const resumenMetodo = document.getElementById('resumenMetodoPago');
+    if (!resumenMetodo) return;
+
+    const labels = {
+        efectivo: 'Efectivo',
+        tarjeta: 'Tarjeta',
+        transferencia: 'Transferencia'
+    };
+    const metodos = ['efectivo', 'tarjeta', 'transferencia'].filter(metodo => {
+        const checkbox = document.getElementById('check_' + metodo);
+        return checkbox && checkbox.checked;
+    });
+
+    resumenMetodo.textContent = metodos.length ? metodos.map(metodo => labels[metodo] || metodo).join(' + ') : 'Sin seleccionar';
 }
 
 function calcularTotales() {
@@ -3696,6 +3949,8 @@ function calcularTotales() {
     }
 
     if (checkEfectivo?.checked) calcularCambio();
+    actualizarResumenMetodoPago();
+    actualizarResultadoFacturaCheckIn();
 }
 
 function calcularCambio() {
@@ -3821,6 +4076,8 @@ function resetearFormularioPago() {
     if (btnConfirmar) btnConfirmar.disabled = false;
 
     ocultarMensaje();
+    actualizarResumenMetodoPago();
+    actualizarResultadoFacturaCheckIn();
 }
 
 document.getElementById('formCheckInModal')?.addEventListener('submit', function(e) {

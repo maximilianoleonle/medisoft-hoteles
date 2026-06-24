@@ -625,11 +625,35 @@ class ReservacionController extends Controller {
             $pdf->Line($margin, $pdf->GetY(), $margin + 50, $pdf->GetY());
             $pdf->Ln(3);
  
-            // Columnas: HAB | PRECIO/NOCHE | NOCHES | TOTAL
-            $colHab    = 26;
-            $colPrecio = 42;
-            $colNoches = 28;
-            $colTotal  = $contentW - $colHab - $colPrecio - $colNoches;
+            $formatPisoCotizacion = function($piso) {
+                $map = [
+                    '-4' => '4 niveles abajo',
+                    '-2' => '2 niveles abajo',
+                    '-1' => '1 nivel abajo',
+                    '1'  => 'Nivel de piso',
+                    '2'  => '2do Nivel',
+                    '3'  => '3er Nivel'
+                ];
+                return $map[(string)$piso] ?? 'Piso ' . $piso;
+            };
+
+            $tipoRealCotizacion = function(array $habitacion) {
+                if (!empty($habitacion['tipo_label'])) {
+                    return (string)$habitacion['tipo_label'];
+                }
+
+                return function_exists('get_tipo_habitacion_real')
+                    ? get_tipo_habitacion_real($habitacion['tipo'] ?? '', $habitacion['caracteristicas'] ?? '')
+                    : ucwords(str_replace('_', ' ', (string)($habitacion['tipo'] ?? 'Habitacion')));
+            };
+
+            // Columnas: HAB | TIPO | PISO | PRECIO/NOCHE | NOCHES | TOTAL
+            $colHab    = 18;
+            $colTipo   = 50;
+            $colPiso   = 26;
+            $colPrecio = 34;
+            $colNoches = 22;
+            $colTotal  = $contentW - $colHab - $colTipo - $colPiso - $colPrecio - $colNoches;
  
             // Header tabla
             $pdf->SetFillColor($olivoOsc[0], $olivoOsc[1], $olivoOsc[2]);
@@ -637,6 +661,8 @@ class ReservacionController extends Controller {
             $pdf->SetFont('Helvetica', 'B', 7.5);
             $pdf->SetX($margin);
             $pdf->Cell($colHab, 8, 'HAB.', 0, 0, 'C', true);
+            $pdf->Cell($colTipo, 8, 'TIPO', 0, 0, 'C', true);
+            $pdf->Cell($colPiso, 8, 'PISO', 0, 0, 'C', true);
             $pdf->Cell($colPrecio, 8, 'PRECIO/NOCHE', 0, 0, 'C', true);
             $pdf->Cell($colNoches, 8, 'NOCHES', 0, 0, 'C', true);
             $pdf->Cell($colTotal, 8, 'TOTAL', 0, 1, 'C', true);
@@ -694,6 +720,8 @@ class ReservacionController extends Controller {
  
                 // Habitación
                 $pdf->Cell($colHab, 7, $hab['numero'], 0, 0, 'C', true);
+                $pdf->Cell($colTipo, 7, $u($tipoRealCotizacion($hab)), 0, 0, 'C', true);
+                $pdf->Cell($colPiso, 7, $u($formatPisoCotizacion($hab['piso'] ?? '')), 0, 0, 'C', true);
  
                 // Precio y noches
                 if ($esCortesia) {
@@ -2661,14 +2689,20 @@ $notas = $notaModel->obtenerPorReservacion($id);
 $total_notas = count($notas);
 
 $documentosEntidad = [];
+$documentosHuesped = [];
 try {
     $hotelId = (int)$this->hotelIdActual();
     $documentoModel = new Documento();
     if ($documentoModel->entidadExisteEnHotel($hotelId, 'reservacion', (int)$id)) {
         $documentosEntidad = $documentoModel->documentosPorEntidad($hotelId, 'reservacion', (int)$id, 10);
     }
+    $huespedId = (int)($huesped['id'] ?? $reservacion['huesped_id'] ?? 0);
+    if ($huespedId > 0 && $documentoModel->entidadExisteEnHotel($hotelId, 'huesped', $huespedId)) {
+        $documentosHuesped = $documentoModel->documentosPorEntidad($hotelId, 'huesped', $huespedId, 8);
+    }
 } catch (Throwable $e) {
     $documentosEntidad = [];
+    $documentosHuesped = [];
 }
         
         View::renderTemplate('reservaciones/ver', [
@@ -2682,6 +2716,7 @@ try {
     'notas' => $notas,
     'total_notas' => $total_notas,
     'documentosEntidad' => $documentosEntidad,
+    'documentosHuesped' => $documentosHuesped,
     'documentosEntidadContexto' => [
         'tipo' => 'reservacion',
         'id' => (int)$id,
@@ -3468,6 +3503,28 @@ private function validarCancelacion($reservacion) {
     /**
      * Crear nueva reservación
      */
+    private function resolverHoraLlegadaEstimada(string $horaLlegada, string $modo): ?string {
+        $modo = in_array($modo, ['manual', 'ahora', 'despues'], true) ? $modo : 'manual';
+
+        if ($modo === 'despues') {
+            return null;
+        }
+
+        if ($modo === 'ahora' && $horaLlegada === '') {
+            return date('H:i');
+        }
+
+        if ($horaLlegada === '') {
+            return null;
+        }
+
+        if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $horaLlegada)) {
+            throw new Exception('La hora de llegada debe tener formato HH:MM.');
+        }
+
+        return $horaLlegada;
+    }
+
     public function crearAction() {
     // Obtener parámetros de preselección
     $habitacion_id = $this->getQuery('habitacion_id');
@@ -3516,12 +3573,16 @@ private function validarCancelacion($reservacion) {
     error_log("POST completo: " . json_encode($_POST));
     
     try {
+        $horaLlegadaModo = trim((string)$this->getPost('hora_llegada_modo', 'manual'));
+        $horaLlegadaPost = trim((string)$this->getPost('hora_llegada', ''));
+        $horaLlegadaEstimada = $this->resolverHoraLlegadaEstimada($horaLlegadaPost, $horaLlegadaModo);
+
         // Recopilar datos
         $data = [
             'huesped_id' => intval($this->getPost('huesped_id')),
             'fecha_entrada' => $this->getPost('fecha_entrada'),
             'fecha_salida' => $this->getPost('fecha_salida'),
-            'hora_llegada_estimada' => $this->getPost('hora_llegada', '14:00'),
+            'hora_llegada_estimada' => $horaLlegadaEstimada,
             'hora_entrada' => null,
             'metodo_pago' => null,
             'notas' => trim($this->getPost('notas', '')),
@@ -3630,6 +3691,7 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
         error_log('ERROR en guardarAction: ' . $e->getMessage());
         error_log('Stack trace: ' . $e->getTraceAsString());
         error_log("=== FIN DEBUG ===");
+        save_old_input($_POST);
         set_mensaje('Error: ' . $e->getMessage(), 'error');
         $this->redirect('reservaciones/crear');
     }
@@ -3652,7 +3714,10 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             $huesped_id     = intval($this->getPost('huesped_id'));
             $fecha_entrada  = $this->getPost('fecha_entrada');
             $fecha_salida   = $this->getPost('fecha_salida');
-            $hora_llegada   = $this->getPost('hora_llegada', '15:00');
+            $hora_llegada   = $this->resolverHoraLlegadaEstimada(
+                trim((string)$this->getPost('hora_llegada', '')),
+                trim((string)$this->getPost('hora_llegada_modo', 'manual'))
+            );
             $habitaciones_ids = $this->getPost('habitaciones', []);
             $cortesias_ids  = $this->getPost('cortesias', []);
             $notas          = trim($this->getPost('notas', ''));
@@ -3900,8 +3965,10 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             };
 
             // Formato de tipo legible
-            $formatTipo = function($tipo) {
-                return ucwords(str_replace('_', ' ', $tipo));
+            $formatTipo = function($tipo, $caracteristicas = '') {
+                return function_exists('get_tipo_habitacion_real')
+                    ? get_tipo_habitacion_real($tipo, $caracteristicas)
+                    : ucwords(str_replace('_', ' ', (string)$tipo));
             };
 
             // Piso legible
@@ -3972,9 +4039,9 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
                 $pdf->SetX($margin);
 
                 $pdf->Cell($colHab, 7, $hab['numero'], 0, 0, 'C', true);
-                $pdf->Cell($colTipo, 7, $u($formatTipo($hab['tipo'])), 0, 0, 'C', true);
+                $pdf->Cell($colTipo, 7, $u($hab['tipo_label'] ?? $formatTipo($hab['tipo'], $hab['caracteristicas'] ?? '')), 0, 0, 'C', true);
                 $pdf->Cell($colPiso, 7, $u($formatPiso($hab['piso'])), 0, 0, 'C', true);
-                $pdf->Cell($colPers, 7, $capacidadPorTipo($hab['tipo']), 0, 0, 'C', true);
+                $pdf->Cell($colPers, 7, $hab['capacidad_personas'] ?? $capacidadPorTipo($hab['tipo']), 0, 0, 'C', true);
 
                 if ($esCortesia) {
                     $pdf->SetTextColor($ambar[0], $ambar[1], $ambar[2]);

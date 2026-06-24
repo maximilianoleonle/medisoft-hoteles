@@ -518,25 +518,25 @@
                 </div>
             </div>
 
-            <!-- 5: Links seguros -->
+            <!-- 5: Exportaciones y links seguros -->
             <div class="rep-card" style="--report-color:#0F766E;--report-color-strong:#115E59;--report-color-soft:#CCFBF1;">
                 <div class="card-accent"></div>
                 <div class="card-body">
                     <div class="flex items-start justify-between mb-3">
                         <div class="rep-icon-wrap">
-                            <i class="fas fa-link text-white"></i>
+                            <i class="fas fa-file-export text-white"></i>
                         </div>
                         <span class="cat-badge">Seguridad</span>
                     </div>
-                    <h3 class="text-base font-bold text-gray-800 mb-1.5">Historial y Links Seguros</h3>
-                    <p class="text-xs text-gray-500 mb-4 leading-relaxed">Administra PDFs guardados para compartirlos con expiracion y revocacion.</p>
+                    <h3 class="text-base font-bold text-gray-800 mb-1.5">Exportaciones y Links Seguros</h3>
+                    <p class="text-xs text-gray-500 mb-4 leading-relaxed">Administra PDFs y reportes ya generados para compartirlos con expiracion y revocacion.</p>
                     <ul class="feat-list">
-                        <li><i class="fas fa-check-circle"></i>Historial interno</li>
+                        <li><i class="fas fa-check-circle"></i>Exportaciones guardadas</li>
                         <li><i class="fas fa-check-circle"></i>Vencimiento de links</li>
                         <li><i class="fas fa-check-circle"></i>Control de accesos</li>
                     </ul>
                     <a href="<?= url('reportes/links') ?>" class="rep-cta">
-                        <i class="fas fa-shield-alt text-sm"></i> Abrir historial
+                        <i class="fas fa-shield-alt text-sm"></i> Ver exportaciones
                     </a>
                 </div>
             </div>

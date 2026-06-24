@@ -84,6 +84,49 @@ $configGuestFieldCatalog = is_array($guestFieldCatalog ?? null)
 $configGuestFieldPolicy = is_array($guestFieldPolicy ?? null)
     ? $guestFieldPolicy
     : (function_exists('hotel_guest_field_policy') ? hotel_guest_field_policy($configHotelId) : ['fields' => []]);
+$configOwnerDistribution = is_array($ownerDistributionConfig ?? null)
+    ? $ownerDistributionConfig
+    : (function_exists('hotel_owner_distribution_config') ? hotel_owner_distribution_config($configHotelId) : []);
+if (function_exists('hotel_owner_distribution_normalize')) {
+    $configOwnerDistribution = hotel_owner_distribution_normalize($configOwnerDistribution);
+}
+$configOwnerRows = is_array($configOwnerDistribution['propietarios'] ?? null)
+    ? array_values($configOwnerDistribution['propietarios'])
+    : [];
+$configOwnerDefault = (string) ($configOwnerDistribution['propietario_default'] ?? '');
+$configOwnerRuleRows = [];
+if (is_array($configOwnerDistribution['reglas_tipo_contiene'] ?? null)) {
+    foreach ($configOwnerDistribution['reglas_tipo_contiene'] as $ruleText => $ruleOwnerKey) {
+        $configOwnerRuleRows[] = [
+            'texto' => (string) $ruleText,
+            'propietario_key' => (string) $ruleOwnerKey,
+        ];
+    }
+}
+$configOwnerAssignmentRows = is_array($configOwnerDistribution['habitaciones'] ?? null)
+    ? array_values($configOwnerDistribution['habitaciones'])
+    : [];
+$configOwnerRowsByKey = [];
+$configOwnerActiveRows = [];
+foreach ($configOwnerRows as $ownerRow) {
+    $ownerKey = (string) ($ownerRow['key'] ?? '');
+    if ($ownerKey === '') {
+        continue;
+    }
+
+    $configOwnerRowsByKey[$ownerKey] = $ownerRow;
+    if (!empty($ownerRow['activo'])) {
+        $configOwnerActiveRows[] = $ownerRow;
+    }
+}
+$configOwnerDefaultRow = is_array($configOwnerRowsByKey[$configOwnerDefault] ?? null)
+    ? $configOwnerRowsByKey[$configOwnerDefault]
+    : [];
+$configOwnerDefaultName = (string) ($configOwnerDefaultRow['nombre'] ?? $configOwnerDefault);
+$configOwnerFormatPercentage = function ($value) {
+    $value = is_numeric($value) ? (float) $value : 100.0;
+    return rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.');
+};
 $configGuestFieldsByScope = [
     'guest' => [],
     'vehicle' => [],
@@ -1296,8 +1339,190 @@ $configRenderGuestFieldPolicy = function ($fieldKey, array $fieldDefinition) use
     grid-template-columns: minmax(110px, .9fr) minmax(180px, 1.4fr) minmax(92px, .7fr) minmax(92px, .6fr);
 }
 
+.hc-catalog-row.is-owner {
+    grid-template-columns: minmax(120px, .78fr) minmax(180px, 1.25fr) minmax(110px, .54fr) minmax(118px, 148px);
+}
+
+.hc-catalog-row.is-owner-rule {
+    grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr);
+}
+
+.hc-catalog-row.is-owner-room {
+    grid-template-columns: minmax(104px, .62fr) minmax(120px, .78fr) minmax(160px, 1fr) minmax(180px, .95fr);
+}
+
 .hc-catalog-cell {
     min-width: 0;
+}
+
+.hc-owner-preview {
+    display: grid;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.hc-owner-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.hc-owner-summary-card,
+.hc-owner-flow-card {
+    border: 1px solid color-mix(in srgb, var(--hc-section-accent) 18%, var(--hc-line));
+    background:
+        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--hc-section-accent) 10%, transparent), transparent 9rem),
+        linear-gradient(135deg, color-mix(in srgb, var(--hc-section-accent) 6%, rgba(255,255,255,.94)), rgba(255,255,255,.88));
+    box-shadow: 0 12px 28px -30px color-mix(in srgb, var(--hc-section-accent) 44%, transparent);
+}
+
+.hc-owner-summary-card {
+    min-height: 104px;
+    padding: 14px;
+    border-radius: 14px;
+}
+
+.hc-owner-summary-card span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: color-mix(in srgb, var(--hc-section-accent) 72%, #334155);
+    font-size: .72rem;
+    font-weight: 780;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.hc-owner-summary-card strong {
+    display: block;
+    margin-top: 8px;
+    color: var(--hc-brand-strong);
+    font-size: 1.08rem;
+    line-height: 1.2;
+    font-weight: 760;
+    overflow-wrap: anywhere;
+}
+
+.hc-owner-summary-card small {
+    display: block;
+    margin-top: 6px;
+    color: var(--hc-ink-soft);
+    font-size: .76rem;
+    line-height: 1.42;
+}
+
+.hc-owner-flow-card {
+    padding: 16px;
+    border-radius: 16px;
+}
+
+.hc-owner-flow-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.hc-owner-flow-head h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--hc-brand-strong);
+    font-size: .95rem;
+    font-weight: 700;
+}
+
+.hc-owner-flow-head p {
+    margin: 5px 0 0;
+    color: var(--hc-ink-soft);
+    font-size: .78rem;
+    line-height: 1.45;
+}
+
+.hc-owner-flow-list {
+    display: grid;
+    gap: 9px;
+}
+
+.hc-owner-flow-row {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    min-height: 64px;
+    padding: 11px;
+    border: 1px solid color-mix(in srgb, var(--hc-section-accent) 13%, var(--hc-line));
+    border-radius: 14px;
+    background: rgba(255,255,255,.78);
+}
+
+.hc-owner-flow-icon {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    color: color-mix(in srgb, var(--hc-section-accent) 78%, #334155);
+    background: color-mix(in srgb, var(--hc-section-accent) 12%, #fff);
+    border: 1px solid color-mix(in srgb, var(--hc-section-accent) 20%, var(--hc-line));
+}
+
+.hc-owner-flow-name {
+    margin: 0;
+    color: var(--hc-brand-strong);
+    font-size: .9rem;
+    line-height: 1.25;
+    font-weight: 720;
+    overflow-wrap: anywhere;
+}
+
+.hc-owner-flow-note {
+    margin: 3px 0 0;
+    color: var(--hc-ink-soft);
+    font-size: .76rem;
+    line-height: 1.42;
+}
+
+.hc-owner-flow-pill {
+    min-width: 76px;
+    padding: 7px 9px;
+    border-radius: 999px;
+    color: color-mix(in srgb, var(--hc-section-accent) 74%, #334155);
+    background: color-mix(in srgb, var(--hc-section-accent) 10%, #fff);
+    border: 1px solid color-mix(in srgb, var(--hc-section-accent) 18%, var(--hc-line));
+    text-align: center;
+    font-size: .76rem;
+    font-weight: 800;
+}
+
+.hc-owner-flow-empty {
+    margin: 0;
+    padding: 12px;
+    border-radius: 13px;
+    color: var(--hc-ink-soft);
+    background: rgba(255,255,255,.76);
+    border: 1px dashed color-mix(in srgb, var(--hc-section-accent) 24%, var(--hc-line));
+    font-size: .82rem;
+    line-height: 1.45;
+}
+
+@media (max-width: 1240px) {
+    .hc-owner-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 860px) {
+    .hc-owner-summary-grid,
+    .hc-owner-flow-row {
+        grid-template-columns: 1fr;
+    }
+
+    .hc-owner-flow-pill {
+        width: fit-content;
+    }
 }
 
 .hc-brand-grid {
@@ -1520,7 +1745,10 @@ html {
     .hc-catalog-row.is-floor,
     .hc-catalog-row.is-amenity,
     .hc-catalog-row.is-simple,
-    .hc-catalog-row.is-unit {
+    .hc-catalog-row.is-unit,
+    .hc-catalog-row.is-owner,
+    .hc-catalog-row.is-owner-rule,
+    .hc-catalog-row.is-owner-room {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
@@ -1569,7 +1797,10 @@ html {
     .hc-catalog-row.is-floor,
     .hc-catalog-row.is-amenity,
     .hc-catalog-row.is-simple,
-    .hc-catalog-row.is-unit {
+    .hc-catalog-row.is-unit,
+    .hc-catalog-row.is-owner,
+    .hc-catalog-row.is-owner-rule,
+    .hc-catalog-row.is-owner-room {
         grid-template-columns: 1fr;
     }
 
@@ -1878,6 +2109,7 @@ html {
 .hc-nav-link[href="#hc-notifications"] { --hc-nav-accent: var(--hc-tone-amber); }
 .hc-nav-link[href="#hc-guest-fields"] { --hc-nav-accent: var(--hc-tone-blue); }
 .hc-nav-link[href="#hc-rooms"] { --hc-nav-accent: var(--hc-tone-indigo); }
+.hc-nav-link[href="#hc-owners"] { --hc-nav-accent: var(--hc-tone-sage); }
 .hc-nav-link[href="#hc-catalogs"] { --hc-nav-accent: var(--hc-tone-olive); }
 .hc-nav-link[href="#hc-brand"] { --hc-nav-accent: var(--hc-accent); }
 .hc-nav-link[href="#hc-system"] { --hc-nav-accent: var(--hc-tone-coral); }
@@ -1959,6 +2191,7 @@ html {
 #hc-settings { --hc-section-accent: var(--hc-tone-sage); --hc-section-wash: color-mix(in srgb, var(--hc-tone-sage) 6%, #fff); }
 #hc-notifications { --hc-section-accent: var(--hc-tone-amber); --hc-section-wash: color-mix(in srgb, var(--hc-tone-amber) 7%, #fff); }
 #hc-rooms { --hc-section-accent: var(--hc-tone-indigo); --hc-section-wash: color-mix(in srgb, var(--hc-tone-indigo) 6%, #fff); }
+#hc-owners { --hc-section-accent: var(--hc-tone-sage); --hc-section-wash: color-mix(in srgb, var(--hc-tone-sage) 6%, #fff); }
 #hc-guest-fields { --hc-section-accent: var(--hc-tone-blue); --hc-section-wash: color-mix(in srgb, var(--hc-tone-blue) 6%, #fff); }
 #hc-catalogs { --hc-section-accent: var(--hc-tone-olive); --hc-section-wash: color-mix(in srgb, var(--hc-tone-olive) 6%, #fff); }
 #hc-brand { --hc-section-accent: var(--hc-accent); --hc-section-wash: color-mix(in srgb, var(--hc-accent) 7%, #fff); }
@@ -2141,6 +2374,9 @@ html {
 #hc-rooms .hc-catalog-box:nth-child(3n+1) { --hc-block-accent: var(--hc-tone-indigo); }
 #hc-rooms .hc-catalog-box:nth-child(3n+2) { --hc-block-accent: var(--hc-tone-sage); }
 #hc-rooms .hc-catalog-box:nth-child(3n+3) { --hc-block-accent: var(--hc-tone-amber); }
+#hc-owners .hc-catalog-box:nth-child(3n+1) { --hc-block-accent: var(--hc-tone-sage); }
+#hc-owners .hc-catalog-box:nth-child(3n+2) { --hc-block-accent: var(--hc-tone-indigo); }
+#hc-owners .hc-catalog-box:nth-child(3n+3) { --hc-block-accent: var(--hc-tone-amber); }
 #hc-catalogs .hc-catalog-box:nth-child(3n+1) { --hc-block-accent: var(--hc-tone-olive); }
 #hc-catalogs .hc-catalog-box:nth-child(3n+2) { --hc-block-accent: var(--hc-tone-blue); }
 #hc-catalogs .hc-catalog-box:nth-child(3n+3) { --hc-block-accent: var(--hc-tone-indigo); }
@@ -2552,6 +2788,18 @@ html {
 
 .hc-catalog-row.is-unit {
     grid-template-columns: minmax(140px, .78fr) minmax(220px, 1.18fr) minmax(110px, .52fr) minmax(118px, 148px);
+}
+
+.hc-catalog-row.is-owner {
+    grid-template-columns: minmax(150px, .78fr) minmax(220px, 1.22fr) minmax(118px, .54fr) minmax(118px, 148px);
+}
+
+.hc-catalog-row.is-owner-rule {
+    grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr);
+}
+
+.hc-catalog-row.is-owner-room {
+    grid-template-columns: minmax(118px, .62fr) minmax(150px, .78fr) minmax(190px, 1fr) minmax(190px, .95fr);
 }
 
 .hc-catalog-row .hc-catalog-cell:last-child .hc-switch {
@@ -3390,7 +3638,10 @@ html {
     .hc-catalog-row.is-floor,
     .hc-catalog-row.is-amenity,
     .hc-catalog-row.is-simple,
-    .hc-catalog-row.is-unit {
+    .hc-catalog-row.is-unit,
+    .hc-catalog-row.is-owner,
+    .hc-catalog-row.is-owner-rule,
+    .hc-catalog-row.is-owner-room {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
@@ -3401,7 +3652,10 @@ html {
     .hc-catalog-row.is-floor,
     .hc-catalog-row.is-amenity,
     .hc-catalog-row.is-simple,
-    .hc-catalog-row.is-unit {
+    .hc-catalog-row.is-unit,
+    .hc-catalog-row.is-owner,
+    .hc-catalog-row.is-owner-rule,
+    .hc-catalog-row.is-owner-room {
         grid-template-columns: 1fr;
     }
 
@@ -3612,6 +3866,10 @@ html {
                     <a href="#hc-rooms" class="hc-nav-link">
                         <i class="fas fa-bed"></i>
                         <strong>Habitaciones <span>Tipos y amenidades</span></strong>
+                    </a>
+                    <a href="#hc-owners" class="hc-nav-link">
+                        <i class="fas fa-user-tie"></i>
+                        <strong>Propietarios <span>Distribucion</span></strong>
                     </a>
                     <a href="#hc-catalogs" class="hc-nav-link">
                         <i class="fas fa-layer-group"></i>
@@ -4102,6 +4360,315 @@ html {
                                                     <span class="hc-switch-ui" aria-hidden="true"></span>
                                                     <span class="hc-switch-text"><strong>Si</strong></span>
                                                 </label>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </section>
+                        </div>
+                    </section>
+
+                    <section id="hc-owners" class="hc-panel" data-hc-section aria-labelledby="hc-owners-title">
+                        <div class="hc-panel-header">
+                            <div>
+                                <p class="hc-section-kicker">Distribucion</p>
+                                <h2 id="hc-owners-title" class="hc-panel-title">
+                                    <span class="hc-section-mark"><i class="fas fa-user-tie"></i></span>
+                                    Propietarios por habitacion
+                                </h2>
+                                <p class="hc-panel-copy">
+                                    Define dueños, reglas por tipo de habitacion y excepciones por habitacion para reportes y cortes.
+                                </p>
+                            </div>
+                        </div>
+
+                        <datalist id="owner-key-options">
+                            <?php foreach ($configOwnerRows as $ownerRow): ?>
+                                <?php
+                                $ownerOptionKey = (string) ($ownerRow['key'] ?? '');
+                                $ownerOptionName = (string) ($ownerRow['nombre'] ?? $ownerOptionKey);
+                                ?>
+                                <?php if ($ownerOptionKey !== ''): ?>
+                                    <option value="<?= htmlspecialchars($ownerOptionKey, ENT_QUOTES, 'UTF-8') ?>">
+                                        <?= htmlspecialchars($ownerOptionName, ENT_QUOTES, 'UTF-8') ?>
+                                    </option>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </datalist>
+
+                        <div class="hc-owner-preview" data-owner-preview>
+                            <div class="hc-owner-summary-grid" aria-label="Vista previa de propietarios">
+                                <article class="hc-owner-summary-card">
+                                    <span><i class="fas fa-users"></i> Duenos activos</span>
+                                    <strong data-owner-preview-active-count><?= count($configOwnerActiveRows) ?></strong>
+                                    <small>Participan en cortes y reportes.</small>
+                                </article>
+                                <article class="hc-owner-summary-card">
+                                    <span><i class="fas fa-star"></i> Predeterminado</span>
+                                    <strong data-owner-preview-default>
+                                        <?= htmlspecialchars($configOwnerDefaultName !== '' ? $configOwnerDefaultName : 'Sin definir', ENT_QUOTES, 'UTF-8') ?>
+                                    </strong>
+                                    <small>Recibe ingresos sin coincidencia y remanentes.</small>
+                                </article>
+                                <article class="hc-owner-summary-card">
+                                    <span><i class="fas fa-filter"></i> Reglas por tipo</span>
+                                    <strong data-owner-preview-rule-count><?= count($configOwnerRuleRows) ?></strong>
+                                    <small>Coincidencias por texto en tipo de habitacion.</small>
+                                </article>
+                                <article class="hc-owner-summary-card">
+                                    <span><i class="fas fa-door-open"></i> Asignaciones</span>
+                                    <strong data-owner-preview-assignment-count><?= count($configOwnerAssignmentRows) ?></strong>
+                                    <small>Excepciones por numero, tipo exacto o ID.</small>
+                                </article>
+                            </div>
+
+                            <section class="hc-owner-flow-card" aria-labelledby="hc-owner-flow-title">
+                                <div class="hc-owner-flow-head">
+                                    <div>
+                                        <h3 id="hc-owner-flow-title">
+                                            <i class="fas fa-route"></i>
+                                            Vista previa del reparto
+                                        </h3>
+                                        <p>El porcentaje menor a 100 envia el remanente al dueno predeterminado.</p>
+                                    </div>
+                                    <span class="hc-owner-flow-pill" data-owner-preview-default-key>
+                                        <?= htmlspecialchars($configOwnerDefault !== '' ? $configOwnerDefault : 'default', ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                </div>
+
+                                <div class="hc-owner-flow-list" data-owner-preview-list>
+                                    <?php if (empty($configOwnerActiveRows)): ?>
+                                        <p class="hc-owner-flow-empty">No hay duenos activos configurados.</p>
+                                    <?php else: ?>
+                                        <?php foreach ($configOwnerActiveRows as $ownerRow): ?>
+                                            <?php
+                                            $previewOwnerKey = (string) ($ownerRow['key'] ?? '');
+                                            $previewOwnerName = (string) ($ownerRow['nombre'] ?? $previewOwnerKey);
+                                            $previewOwnerPct = $configOwnerFormatPercentage($ownerRow['participacion_pct'] ?? 100);
+                                            $previewIsDefault = $previewOwnerKey !== '' && $previewOwnerKey === $configOwnerDefault;
+                                            $previewNote = $previewIsDefault
+                                                ? 'Dueno predeterminado: recibe remanentes y lo no clasificado.'
+                                                : ((float) ($ownerRow['participacion_pct'] ?? 100) < 100
+                                                    ? 'Recibe ' . $previewOwnerPct . '%. El resto va a ' . ($configOwnerDefaultName ?: $configOwnerDefault) . '.'
+                                                    : 'Recibe el 100% de sus habitaciones asignadas.');
+                                            ?>
+                                            <article class="hc-owner-flow-row">
+                                                <span class="hc-owner-flow-icon">
+                                                    <i class="fas <?= $previewIsDefault ? 'fa-star' : 'fa-user-tie' ?>"></i>
+                                                </span>
+                                                <div>
+                                                    <p class="hc-owner-flow-name">
+                                                        <?= htmlspecialchars($previewOwnerName, ENT_QUOTES, 'UTF-8') ?>
+                                                    </p>
+                                                    <p class="hc-owner-flow-note">
+                                                        <?= htmlspecialchars($previewNote, ENT_QUOTES, 'UTF-8') ?>
+                                                    </p>
+                                                </div>
+                                                <span class="hc-owner-flow-pill">
+                                                    <?= htmlspecialchars($previewOwnerPct, ENT_QUOTES, 'UTF-8') ?>%
+                                                </span>
+                                            </article>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="hc-catalog-stack">
+                            <?php $ownerRowsForForm = $configAppendBlankRows($configOwnerRows, 2); ?>
+                            <section class="hc-catalog-box">
+                                <div class="hc-catalog-head">
+                                    <div>
+                                        <h3 class="hc-catalog-title">
+                                            <i class="fas fa-users-gear"></i>
+                                            Dueños configurados
+                                        </h3>
+                                        <p class="hc-field-hint">La clave se usa en reglas y reportes. Ejemplo: elia, manolo, socio_1.</p>
+                                    </div>
+                                    <button type="button" class="hc-add-btn" data-owner-add="propietarios">
+                                        <i class="fas fa-plus"></i>
+                                        Agregar dueño
+                                    </button>
+                                </div>
+
+                                <div class="hc-field-grid">
+                                    <div class="hc-field">
+                                        <label>Dueño predeterminado</label>
+                                        <input type="text"
+                                               name="owner_config[propietario_default]"
+                                               value="<?= htmlspecialchars($configOwnerDefault, ENT_QUOTES, 'UTF-8') ?>"
+                                               list="owner-key-options"
+                                               maxlength="40"
+                                               class="form-input"
+                                               placeholder="elia">
+                                        <p class="hc-field-hint">Se usa cuando ninguna regla o asignacion coincide.</p>
+                                    </div>
+                                </div>
+
+                                <div class="hc-catalog-list" data-owner-list="propietarios" data-next-index="<?= count($ownerRowsForForm) ?>">
+                                    <?php foreach ($ownerRowsForForm as $index => $row): ?>
+                                        <?php
+                                        $ownerKey = (string) ($row['key'] ?? '');
+                                        $ownerName = (string) ($row['nombre'] ?? '');
+                                        $ownerParticipation = array_key_exists('participacion_pct', $row)
+                                            ? rtrim(rtrim(number_format((float) $row['participacion_pct'], 2, '.', ''), '0'), '.')
+                                            : '';
+                                        $ownerActive = !array_key_exists('activo', $row) || !empty($row['activo']);
+                                        ?>
+                                        <div class="hc-catalog-row is-owner" data-owner-row="propietarios">
+                                            <div class="hc-catalog-cell">
+                                                <label>Clave</label>
+                                                <input type="text"
+                                                       name="owner_config[propietarios][<?= $index ?>][key]"
+                                                       value="<?= htmlspecialchars($ownerKey, ENT_QUOTES, 'UTF-8') ?>"
+                                                       maxlength="40"
+                                                       class="form-input"
+                                                       placeholder="elia">
+                                            </div>
+                                            <div class="hc-catalog-cell">
+                                                <label>Nombre visible</label>
+                                                <input type="text"
+                                                       name="owner_config[propietarios][<?= $index ?>][nombre]"
+                                                       value="<?= htmlspecialchars($ownerName, ENT_QUOTES, 'UTF-8') ?>"
+                                                       maxlength="80"
+                                                       class="form-input"
+                                                       placeholder="Elia">
+                                            </div>
+                                            <div class="hc-catalog-cell">
+                                                <label>Participacion %</label>
+                                                <input type="number"
+                                                       name="owner_config[propietarios][<?= $index ?>][participacion_pct]"
+                                                       value="<?= htmlspecialchars($ownerParticipation, ENT_QUOTES, 'UTF-8') ?>"
+                                                       min="0"
+                                                       max="100"
+                                                       step="0.01"
+                                                       class="form-input"
+                                                       placeholder="100">
+                                            </div>
+                                            <div class="hc-catalog-cell">
+                                                <label>Activo</label>
+                                                <input type="hidden" name="owner_config[propietarios][<?= $index ?>][activo]" value="0">
+                                                <label class="hc-switch">
+                                                    <input type="checkbox"
+                                                           name="owner_config[propietarios][<?= $index ?>][activo]"
+                                                           value="1"
+                                                           <?= $ownerActive ? 'checked' : '' ?>>
+                                                    <span class="hc-switch-ui" aria-hidden="true"></span>
+                                                    <span class="hc-switch-text"><strong>Si</strong></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </section>
+
+                            <?php $ownerRuleRowsForForm = $configAppendBlankRows($configOwnerRuleRows, 2); ?>
+                            <section class="hc-catalog-box">
+                                <div class="hc-catalog-head">
+                                    <div>
+                                        <h3 class="hc-catalog-title">
+                                            <i class="fas fa-filter-circle-dollar"></i>
+                                            Reglas por tipo
+                                        </h3>
+                                        <p class="hc-field-hint">Si el tipo de habitacion contiene el texto, el ingreso se asigna al dueño indicado.</p>
+                                    </div>
+                                    <button type="button" class="hc-add-btn" data-owner-add="reglas_tipo_contiene">
+                                        <i class="fas fa-plus"></i>
+                                        Agregar regla
+                                    </button>
+                                </div>
+
+                                <div class="hc-catalog-list" data-owner-list="reglas_tipo_contiene" data-next-index="<?= count($ownerRuleRowsForForm) ?>">
+                                    <?php foreach ($ownerRuleRowsForForm as $index => $row): ?>
+                                        <?php
+                                        $ruleText = (string) ($row['texto'] ?? '');
+                                        $ruleOwner = (string) ($row['propietario_key'] ?? '');
+                                        ?>
+                                        <div class="hc-catalog-row is-owner-rule" data-owner-row="reglas_tipo_contiene">
+                                            <div class="hc-catalog-cell">
+                                                <label>Tipo contiene</label>
+                                                <input type="text"
+                                                       name="owner_config[reglas_tipo_contiene][<?= $index ?>][texto]"
+                                                       value="<?= htmlspecialchars($ruleText, ENT_QUOTES, 'UTF-8') ?>"
+                                                       maxlength="60"
+                                                       class="form-input"
+                                                       placeholder="manolo">
+                                            </div>
+                                            <div class="hc-catalog-cell">
+                                                <label>Propietario</label>
+                                                <input type="text"
+                                                       name="owner_config[reglas_tipo_contiene][<?= $index ?>][propietario_key]"
+                                                       value="<?= htmlspecialchars($ruleOwner, ENT_QUOTES, 'UTF-8') ?>"
+                                                       list="owner-key-options"
+                                                       maxlength="40"
+                                                       class="form-input"
+                                                       placeholder="manolo">
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </section>
+
+                            <?php $ownerAssignmentRowsForForm = $configAppendBlankRows($configOwnerAssignmentRows, 2); ?>
+                            <section class="hc-catalog-box">
+                                <div class="hc-catalog-head">
+                                    <div>
+                                        <h3 class="hc-catalog-title">
+                                            <i class="fas fa-door-closed"></i>
+                                            Asignaciones especificas
+                                        </h3>
+                                        <p class="hc-field-hint">Usa numero para una habitacion exacta o tipo exacto para una categoria completa.</p>
+                                    </div>
+                                    <button type="button" class="hc-add-btn" data-owner-add="habitaciones">
+                                        <i class="fas fa-plus"></i>
+                                        Agregar asignacion
+                                    </button>
+                                </div>
+
+                                <div class="hc-catalog-list" data-owner-list="habitaciones" data-next-index="<?= count($ownerAssignmentRowsForForm) ?>">
+                                    <?php foreach ($ownerAssignmentRowsForForm as $index => $row): ?>
+                                        <?php
+                                        $assignmentNumber = (string) ($row['numero'] ?? '');
+                                        $assignmentType = (string) ($row['tipo'] ?? '');
+                                        $assignmentId = (string) ($row['habitacion_id'] ?? '');
+                                        $assignmentOwner = (string) ($row['propietario_key'] ?? '');
+                                        ?>
+                                        <div class="hc-catalog-row is-owner-room" data-owner-row="habitaciones">
+                                            <div class="hc-catalog-cell">
+                                                <label>No. habitacion</label>
+                                                <input type="text"
+                                                       name="owner_config[habitaciones][<?= $index ?>][numero]"
+                                                       value="<?= htmlspecialchars($assignmentNumber, ENT_QUOTES, 'UTF-8') ?>"
+                                                       maxlength="30"
+                                                       class="form-input"
+                                                       placeholder="101">
+                                            </div>
+                                            <div class="hc-catalog-cell">
+                                                <label>Tipo exacto</label>
+                                                <input type="text"
+                                                       name="owner_config[habitaciones][<?= $index ?>][tipo]"
+                                                       value="<?= htmlspecialchars($assignmentType, ENT_QUOTES, 'UTF-8') ?>"
+                                                       maxlength="80"
+                                                       class="form-input"
+                                                       placeholder="habitacion manolo">
+                                            </div>
+                                            <div class="hc-catalog-cell">
+                                                <label>ID opcional</label>
+                                                <input type="number"
+                                                       name="owner_config[habitaciones][<?= $index ?>][habitacion_id]"
+                                                       value="<?= htmlspecialchars($assignmentId, ENT_QUOTES, 'UTF-8') ?>"
+                                                       min="1"
+                                                       class="form-input">
+                                            </div>
+                                            <div class="hc-catalog-cell">
+                                                <label>Propietario</label>
+                                                <input type="text"
+                                                       name="owner_config[habitaciones][<?= $index ?>][propietario_key]"
+                                                       value="<?= htmlspecialchars($assignmentOwner, ENT_QUOTES, 'UTF-8') ?>"
+                                                       list="owner-key-options"
+                                                       maxlength="40"
+                                                       class="form-input"
+                                                       placeholder="elia">
                                             </div>
                                         </div>
                                     <?php endforeach; ?>
@@ -5016,6 +5583,192 @@ document.querySelectorAll('[data-catalog-add]').forEach(button => {
         row.querySelector('input, textarea, select')?.focus();
     });
 });
+
+document.querySelectorAll('[data-owner-add]').forEach(button => {
+    button.addEventListener('click', () => {
+        const kind = button.dataset.ownerAdd;
+        const list = document.querySelector(`[data-owner-list="${kind}"]`);
+
+        if (!list) {
+            return;
+        }
+
+        const sourceRow = list.querySelector(`[data-owner-row="${kind}"]`);
+        if (!sourceRow) {
+            return;
+        }
+
+        const nextIndex = parseInt(list.dataset.nextIndex || '0', 10);
+        const row = sourceRow.cloneNode(true);
+        const namePattern = new RegExp('(\\[' + kind + '\\])\\[\\d+\\]');
+
+        row.querySelectorAll('input, textarea, select').forEach(input => {
+            if (input.name) {
+                input.name = input.name.replace(namePattern, '$1[' + nextIndex + ']');
+            }
+
+            if (input.type === 'checkbox') {
+                input.checked = true;
+                return;
+            }
+
+            if (input.type === 'hidden') {
+                input.value = '0';
+                return;
+            }
+
+            input.value = '';
+        });
+
+        list.dataset.nextIndex = String(nextIndex + 1);
+        list.appendChild(row);
+        row.querySelector('input, textarea, select')?.focus();
+        document.dispatchEvent(new CustomEvent('owner-config-changed'));
+    });
+});
+
+(() => {
+    const ownerPanel = document.querySelector('#hc-owners');
+    const preview = ownerPanel?.querySelector('[data-owner-preview]');
+
+    if (!ownerPanel || !preview) {
+        return;
+    }
+
+    const activeCountNode = preview.querySelector('[data-owner-preview-active-count]');
+    const defaultNode = preview.querySelector('[data-owner-preview-default]');
+    const defaultKeyNode = preview.querySelector('[data-owner-preview-default-key]');
+    const ruleCountNode = preview.querySelector('[data-owner-preview-rule-count]');
+    const assignmentCountNode = preview.querySelector('[data-owner-preview-assignment-count]');
+    const listNode = preview.querySelector('[data-owner-preview-list]');
+    const defaultInput = ownerPanel.querySelector('input[name="owner_config[propietario_default]"]');
+
+    const normalizeKey = function(value) {
+        return String(value || '')
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9_-]+/g, '_')
+            .replace(/^[_-]+|[_-]+$/g, '');
+    };
+
+    const readRowValue = function(row, suffix) {
+        return row.querySelector(`input[name$="${suffix}"]`)?.value?.trim() || '';
+    };
+
+    const formatPercentage = function(value) {
+        const parsed = Number(String(value || '').replace(',', '.'));
+        const safe = Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 100;
+        return String(Number(safe.toFixed(2)));
+    };
+
+    const ownerRows = function() {
+        return Array.from(ownerPanel.querySelectorAll('[data-owner-row="propietarios"]'))
+            .map(row => {
+                const key = normalizeKey(readRowValue(row, '[key]'));
+                const name = readRowValue(row, '[nombre]');
+                const percentage = formatPercentage(readRowValue(row, '[participacion_pct]') || 100);
+                const active = !!row.querySelector('input[type="checkbox"][name$="[activo]"]')?.checked;
+
+                return {
+                    key,
+                    name: name || key,
+                    percentage,
+                    active,
+                    hasAny: key !== '' || name !== ''
+                };
+            })
+            .filter(row => row.hasAny);
+    };
+
+    const countFilledRows = function(kind, fields) {
+        return Array.from(ownerPanel.querySelectorAll(`[data-owner-row="${kind}"]`)).filter(row => {
+            return fields.some(field => readRowValue(row, field) !== '');
+        }).length;
+    };
+
+    const makeFlowRow = function(owner, defaultOwner) {
+        const article = document.createElement('article');
+        article.className = 'hc-owner-flow-row';
+
+        const icon = document.createElement('span');
+        icon.className = 'hc-owner-flow-icon';
+        icon.innerHTML = `<i class="fas ${owner.key === defaultOwner.key ? 'fa-star' : 'fa-user-tie'}"></i>`;
+
+        const body = document.createElement('div');
+        const name = document.createElement('p');
+        name.className = 'hc-owner-flow-name';
+        name.textContent = owner.name || owner.key || 'Sin nombre';
+
+        const note = document.createElement('p');
+        note.className = 'hc-owner-flow-note';
+        if (owner.key === defaultOwner.key) {
+            note.textContent = 'Dueno predeterminado: recibe remanentes y lo no clasificado.';
+        } else if (Number(owner.percentage) < 100) {
+            note.textContent = `Recibe ${owner.percentage}%. El resto va a ${defaultOwner.name || defaultOwner.key || 'el default'}.`;
+        } else {
+            note.textContent = 'Recibe el 100% de sus habitaciones asignadas.';
+        }
+
+        body.appendChild(name);
+        body.appendChild(note);
+
+        const pill = document.createElement('span');
+        pill.className = 'hc-owner-flow-pill';
+        pill.textContent = `${owner.percentage}%`;
+
+        article.appendChild(icon);
+        article.appendChild(body);
+        article.appendChild(pill);
+
+        return article;
+    };
+
+    const syncOwnerPreview = function() {
+        const owners = ownerRows();
+        const activeOwners = owners.filter(owner => owner.active);
+        const defaultKey = normalizeKey(defaultInput?.value || '');
+        const defaultOwner = activeOwners.find(owner => owner.key === defaultKey)
+            || owners.find(owner => owner.key === defaultKey)
+            || activeOwners[0]
+            || { key: defaultKey, name: defaultKey || 'Sin definir', percentage: '100', active: true };
+
+        if (activeCountNode) {
+            activeCountNode.textContent = String(activeOwners.length);
+        }
+        if (defaultNode) {
+            defaultNode.textContent = defaultOwner.name || defaultOwner.key || 'Sin definir';
+        }
+        if (defaultKeyNode) {
+            defaultKeyNode.textContent = defaultOwner.key || 'default';
+        }
+        if (ruleCountNode) {
+            ruleCountNode.textContent = String(countFilledRows('reglas_tipo_contiene', ['[texto]', '[propietario_key]']));
+        }
+        if (assignmentCountNode) {
+            assignmentCountNode.textContent = String(countFilledRows('habitaciones', ['[numero]', '[tipo]', '[habitacion_id]', '[propietario_key]']));
+        }
+        if (listNode) {
+            listNode.innerHTML = '';
+            const visibleOwners = activeOwners.length > 0 ? activeOwners : owners;
+
+            if (visibleOwners.length === 0) {
+                const empty = document.createElement('p');
+                empty.className = 'hc-owner-flow-empty';
+                empty.textContent = 'No hay duenos activos configurados.';
+                listNode.appendChild(empty);
+            } else {
+                visibleOwners.forEach(owner => {
+                    listNode.appendChild(makeFlowRow(owner, defaultOwner));
+                });
+            }
+        }
+    };
+
+    ownerPanel.addEventListener('input', syncOwnerPreview);
+    ownerPanel.addEventListener('change', syncOwnerPreview);
+    document.addEventListener('owner-config-changed', syncOwnerPreview);
+    syncOwnerPreview();
+})();
 
 document.querySelectorAll('.hc-color-input input[type="color"]').forEach(input => {
     const chip = input.closest('.hc-color-input')?.querySelector('.hc-color-code');

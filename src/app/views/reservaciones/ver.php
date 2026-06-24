@@ -1831,6 +1831,15 @@ $rdDateTime = function($value) use ($rdSafe) {
     $ts = strtotime($text);
     return $ts ? date('d/m/Y H:i', $ts) : $rdSafe($text);
 };
+$rdRoomTypeLabel = function(array $room) {
+    if (!empty($room['tipo_label'])) {
+        return (string)$room['tipo_label'];
+    }
+
+    return function_exists('get_tipo_habitacion_real')
+        ? get_tipo_habitacion_real($room['tipo'] ?? '', $room['caracteristicas'] ?? '')
+        : ucfirst(str_replace('_', ' ', (string)($room['tipo'] ?? 'Habitacion')));
+};
 $rdBytes = function($bytes) {
     $bytes = (int)($bytes ?? 0);
     if ($bytes <= 0) {
@@ -1865,6 +1874,7 @@ $rdRooms = is_array($habitaciones ?? null) ? $habitaciones : [];
 $rdPayments = is_array($pagos ?? null) ? $pagos : [];
 $rdNotes = is_array($notas ?? null) ? $notas : [];
 $rdDocuments = is_array($documentosEntidad ?? null) ? $documentosEntidad : [];
+$rdGuestDocuments = is_array($documentosHuesped ?? null) ? $documentosHuesped : [];
 $rdDocsContext = is_array($documentosEntidadContexto ?? null) ? $documentosEntidadContexto : [];
 $rdVehicles = is_array($vehiculos ?? null) ? $vehiculos : [];
 $rdTotal = (float)($reservacion['precio_total'] ?? 0);
@@ -1894,6 +1904,62 @@ $rdGuestOriginParts = array_filter([
     trim((string)($huesped['pais'] ?? '')),
 ]);
 $rdGuestOrigin = !empty($huesped['procedencia']) ? (string)$huesped['procedencia'] : implode(', ', $rdGuestOriginParts);
+$rdGuestIdDocScore = function($documento) {
+    $haystack = strtolower(trim(implode(' ', [
+        (string)($documento['titulo'] ?? ''),
+        (string)($documento['nombre_original'] ?? ''),
+        (string)($documento['descripcion'] ?? ''),
+        (string)($documento['etiquetas'] ?? ''),
+        (string)($documento['tipo_nombre'] ?? ''),
+        (string)($documento['tipo_clave'] ?? ''),
+        (string)($documento['relacion'] ?? ''),
+    ])));
+
+    foreach (['ine', 'identificacion', 'identificación', 'id oficial', 'oficial', 'licencia', 'pasaporte'] as $needle) {
+        if (strpos($haystack, $needle) !== false) {
+            return 0;
+        }
+    }
+
+    return 10;
+};
+$rdGuestDocPreviewKind = function($documento) {
+    $mime = strtolower((string)($documento['mime_type'] ?? ''));
+    $name = strtolower((string)(($documento['nombre_original'] ?? '') ?: ($documento['titulo'] ?? '')));
+
+    if (strpos($mime, 'image/') === 0 || preg_match('/\.(jpg|jpeg|png|webp)$/', $name)) {
+        return 'image';
+    }
+
+    if (strpos($mime, 'pdf') !== false || substr($name, -4) === '.pdf') {
+        return 'pdf';
+    }
+
+    return 'file';
+};
+usort($rdGuestDocuments, function($a, $b) use ($rdGuestIdDocScore, $rdGuestDocPreviewKind) {
+    $scoreA = $rdGuestIdDocScore($a);
+    $scoreB = $rdGuestIdDocScore($b);
+    if ($scoreA !== $scoreB) {
+        return $scoreA <=> $scoreB;
+    }
+
+    $previewRank = ['image' => 0, 'pdf' => 1, 'file' => 2];
+    $rankA = $previewRank[$rdGuestDocPreviewKind($a)] ?? 2;
+    $rankB = $previewRank[$rdGuestDocPreviewKind($b)] ?? 2;
+    if ($rankA !== $rankB) {
+        return $rankA <=> $rankB;
+    }
+
+    return strcmp((string)($b['created_at'] ?? ''), (string)($a['created_at'] ?? ''));
+});
+$rdGuestPrimaryDoc = $rdGuestDocuments[0] ?? null;
+$rdGuestDocCount = count($rdGuestDocuments);
+$rdGuestDocPanelClass = 'rdv3-guest-docs ' . ($rdGuestDocCount > 1 ? 'is-gallery' : ($rdGuestDocCount === 1 ? 'is-single' : 'is-empty'));
+$rdGuestDocEntityId = (int)($huesped['id'] ?? $reservacion['huesped_id'] ?? 0);
+$rdGuestDocEntityQuery = $rdGuestDocEntityId > 0
+    ? '?entidad_tipo=huesped&entidad_id=' . $rdGuestDocEntityId
+    : '';
 $rdEntryTime = trim((string)($reservacion['hora_entrada'] ?? '15:00'));
 $rdExitTime = trim((string)($reservacion['hora_salida'] ?? '12:00'));
 $rdCreatedAt = $reservacion['created_at'] ?? $reservacion['fecha_creacion'] ?? null;
@@ -2077,20 +2143,28 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-pill { display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 12px; border-radius: 999px; background: #fff; color: #37b77d; font-size: .74rem; font-weight: 950; }
 .rdv3-res-note { margin-top: 16px; min-height: 42px; display: flex; align-items: center; gap: 9px; padding: 11px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--rdv3-accent) 24%, transparent); background: color-mix(in srgb, var(--rdv3-accent) 12%, #fff); color: color-mix(in srgb, var(--rdv3-accent) 72%, #5c4927); font-size: .84rem; font-weight: 600; }
 .rdv3-badge { display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 11px; border-radius: 999px; background: color-mix(in srgb, var(--rdv3-accent) 14%, #fff); color: var(--rdv3-accent); font-size: .75rem; font-weight: 950; }
-.rdv3-rooms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.rdv3-room { --room-accent: var(--rdv3-blue); position: relative; min-height: 116px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--room-accent) 12%, transparent); background: #FFFFFF; padding: 16px; display: grid; align-content: space-between; gap: 12px; }
-.rdv3-room::before { content: ""; position: absolute; left: 0; top: 16px; bottom: 16px; width: 4px; border-radius: 0 8px 8px 0; background: var(--room-accent); opacity: .76; }
+.rdv3-card--rooms .rdv3-card-header { padding-bottom: 10px; }
+.rdv3-card--rooms .rdv3-card-body { padding-top: 8px; padding-bottom: 24px; }
+.rdv3-rooms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.rdv3-room { --room-accent: var(--rdv3-blue); position: relative; min-height: 0; border-radius: 13px; border: 1px solid color-mix(in srgb, var(--room-accent) 14%, transparent); background: #FFFFFF; padding: 12px 14px 12px 16px; display: grid; gap: 10px; }
+.rdv3-room::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 4px; border-radius: 0 8px 8px 0; background: var(--room-accent); opacity: .76; }
 .rdv3-room:nth-child(4n+1) { --room-accent: var(--rdv3-blue); }
 .rdv3-room:nth-child(4n+2) { --room-accent: var(--rdv3-gold); }
 .rdv3-room:nth-child(4n+3) { --room-accent: var(--rdv3-violet); }
 .rdv3-room:nth-child(4n+4) { --room-accent: var(--rdv3-green); }
 .rdv3-room.is-courtesy { --room-accent: var(--rdv3-gold); background: color-mix(in srgb, var(--rdv3-gold) 14%, #fff); }
-.rdv3-room-top { display: flex; justify-content: space-between; gap: 12px; }
-.rdv3-room-number { font-family: "Cormorant Garamond", Georgia, serif; color: color-mix(in srgb, var(--room-accent) 82%, var(--rdv3-primary)); font-size: 1.16rem; font-weight: 600; }
-.rdv3-room-type { color: #69738a; font-size: .82rem; font-weight: 600; margin-top: 2px; }
-.rdv3-room-price { color: color-mix(in srgb, var(--room-accent) 80%, var(--rdv3-primary)); font-weight: 950; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.rdv3-tags { display: flex; flex-wrap: wrap; gap: 7px; }
-.rdv3-tag { min-height: 23px; display: inline-flex; align-items: center; gap: 6px; padding: 0 9px; border-radius: 7px; background: rgba(255,255,255,.86); border: 1px solid color-mix(in srgb, var(--room-accent, var(--rdv3-accent)) 14%, var(--rdv3-line)); color: #6f7a91; font-size: .68rem; font-weight: 700; }
+.rdv3-room-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; min-width: 0; }
+.rdv3-room-number { font-family: "Cormorant Garamond", Georgia, serif; color: color-mix(in srgb, var(--room-accent) 82%, var(--rdv3-primary)); font-size: 1.15rem; line-height: 1; font-weight: 700; }
+.rdv3-room-type { color: #556176; font-size: .82rem; font-weight: 800; margin-top: 4px; overflow-wrap: anywhere; }
+.rdv3-room-sub { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+.rdv3-room-price { color: color-mix(in srgb, var(--room-accent) 80%, var(--rdv3-primary)); font-weight: 950; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.rdv3-room-price small { display: block; margin-top: 2px; color: #8a93a5; font-size: .62rem; font-weight: 900; text-transform: uppercase; letter-spacing: .02em; }
+.rdv3-room-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.rdv3-room-metric { min-height: 42px; padding: 7px 8px; border-radius: 9px; background: color-mix(in srgb, var(--room-accent) 5%, #fff); border: 1px solid color-mix(in srgb, var(--room-accent) 12%, var(--rdv3-line)); }
+.rdv3-room-metric small { display: block; color: #8790a1; font-size: .61rem; font-weight: 950; text-transform: uppercase; letter-spacing: .025em; }
+.rdv3-room-metric b { display: block; margin-top: 2px; color: var(--rdv3-primary); font-size: .78rem; font-weight: 950; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.rdv3-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.rdv3-tag { min-height: 22px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: 7px; background: rgba(255,255,255,.86); border: 1px solid color-mix(in srgb, var(--room-accent, var(--rdv3-accent)) 14%, var(--rdv3-line)); color: #6f7a91; font-size: .66rem; font-weight: 800; }
 .rdv3-link { color: var(--rdv3-accent); font-size: .78rem; font-weight: 950; border: 0; background: transparent; cursor: pointer; }
 .rdv3-card-header > .rdv3-link {
     min-height: 32px;
@@ -2115,6 +2189,81 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-info i { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; color: var(--info-accent); background: #fff; border: 1px solid color-mix(in srgb, var(--info-accent) 15%, var(--rdv3-line)); }
 .rdv3-info small { display: block; color: var(--rdv3-muted-2); font-size: .64rem; font-weight: 950; text-transform: uppercase; }
 .rdv3-info b { display: block; margin-top: 2px; color: #3b4660; font-size: .82rem; font-weight: 950; overflow-wrap: anywhere; }
+.rdv3-guest-docs {
+    width: fit-content;
+    max-width: min(100%, 322px);
+    margin-top: 18px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, var(--rdv3-cyan) 18%, transparent);
+    border-radius: 17px;
+    background:
+        radial-gradient(circle at 0 0, color-mix(in srgb, var(--rdv3-cyan) 13%, transparent), transparent 38%),
+        linear-gradient(135deg, color-mix(in srgb, var(--rdv3-cyan) 7%, #fff), rgba(255,255,255,.82));
+}
+.rdv3-guest-docs.is-gallery { width: 100%; max-width: 100%; }
+.rdv3-guest-docs.is-empty { width: 100%; max-width: 100%; }
+.rdv3-guest-docs-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.rdv3-guest-docs-title { display: flex; align-items: center; gap: 10px; min-width: 0; color: var(--rdv3-primary); font-size: .85rem; font-weight: 950; }
+.rdv3-guest-docs-title i { width: 31px; height: 31px; display: grid; place-items: center; border-radius: 10px; color: var(--rdv3-cyan); background: #fff; border: 1px solid color-mix(in srgb, var(--rdv3-cyan) 18%, var(--rdv3-line)); }
+.rdv3-guest-docs.is-single .rdv3-guest-docs-title span { max-width: 176px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rdv3-guest-docs-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.rdv3-guest-docs-grid { display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; }
+.rdv3-guest-doc-feature { width: min(100%, 220px); min-height: 122px; border: 1px solid color-mix(in srgb, var(--rdv3-cyan) 17%, transparent); border-radius: 14px; background: #fff; overflow: hidden; position: relative; display: grid; cursor: pointer; }
+.rdv3-guest-docs.is-gallery .rdv3-guest-doc-feature { width: min(100%, 248px); min-height: 136px; }
+.rdv3-guest-doc-feature:hover { border-color: color-mix(in srgb, var(--rdv3-cyan) 42%, transparent); box-shadow: 0 18px 32px -26px var(--rdv3-primary); }
+.rdv3-guest-doc-feature img,
+.rdv3-guest-doc-feature iframe { width: 100%; height: 100%; min-height: 122px; border: 0; display: block; object-fit: cover; background: #fff; pointer-events: none; }
+.rdv3-guest-docs.is-gallery .rdv3-guest-doc-feature img,
+.rdv3-guest-docs.is-gallery .rdv3-guest-doc-feature iframe { min-height: 136px; }
+.rdv3-guest-doc-file {
+    min-height: 122px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 9px;
+    padding: 18px;
+    color: var(--rdv3-primary);
+    background: linear-gradient(135deg, #fff, color-mix(in srgb, var(--rdv3-cyan) 7%, #fff));
+    text-align: center;
+}
+.rdv3-guest-doc-file i { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 15px; color: #fff; background: linear-gradient(135deg, var(--rdv3-cyan), var(--rdv3-primary)); box-shadow: 0 14px 24px -18px var(--rdv3-primary); }
+.rdv3-guest-docs.is-gallery .rdv3-guest-doc-file { min-height: 136px; }
+.rdv3-guest-doc-file b { font-size: .86rem; font-weight: 950; overflow-wrap: anywhere; }
+.rdv3-guest-doc-caption { position: absolute; left: 10px; right: 10px; bottom: 10px; padding: 9px 10px; border-radius: 11px; background: rgba(18, 28, 42, .72); color: #fff; backdrop-filter: blur(12px); }
+.rdv3-guest-doc-caption b { display: block; font-size: .8rem; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rdv3-guest-doc-caption small { display: block; margin-top: 3px; color: rgba(255,255,255,.76); font-size: .66rem; font-weight: 800; }
+.rdv3-guest-doc-list { flex: 1 1 260px; min-width: 220px; display: grid; gap: 8px; align-content: start; }
+.rdv3-guest-doc-chip {
+    min-height: 46px;
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    border: 1px solid color-mix(in srgb, var(--rdv3-cyan) 13%, transparent);
+    border-radius: 12px;
+    background: rgba(255,255,255,.86);
+    color: var(--rdv3-primary);
+}
+.rdv3-guest-doc-chip:hover { border-color: color-mix(in srgb, var(--rdv3-cyan) 34%, transparent); box-shadow: 0 14px 28px -24px var(--rdv3-primary); }
+.rdv3-guest-doc-chip-icon { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; color: var(--rdv3-cyan); background: color-mix(in srgb, var(--rdv3-cyan) 10%, #fff); border: 1px solid color-mix(in srgb, var(--rdv3-cyan) 17%, transparent); }
+.rdv3-guest-doc-chip-title { display: block; font-size: .76rem; font-weight: 950; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rdv3-guest-doc-chip-meta { display: block; margin-top: 2px; color: #8790a4; font-size: .66rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rdv3-guest-doc-empty {
+    min-height: 128px;
+    display: grid;
+    place-items: center;
+    gap: 10px;
+    padding: 20px;
+    border: 1px dashed color-mix(in srgb, var(--rdv3-cyan) 25%, transparent);
+    border-radius: 14px;
+    background: rgba(255,255,255,.68);
+    color: #7f8ba0;
+    text-align: center;
+    font-size: .84rem;
+    font-weight: 760;
+}
+.rdv3-guest-doc-empty i { color: color-mix(in srgb, var(--rdv3-cyan) 64%, #aab4c3); font-size: 1.35rem; }
 .rdv3-subhead { margin: 17px 0 9px; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--rdv3-primary); font-size: .84rem; font-weight: 950; }
 .rdv3-subhead span { display: inline-flex; align-items: center; gap: 8px; }
 .rdv3-car-accent { color: #1ca8c7; }
@@ -2229,6 +2378,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-note { border-radius: 12px; border: 1px solid color-mix(in srgb, var(--rdv3-accent) 22%, transparent); background: color-mix(in srgb, var(--rdv3-accent) 12%, #fff); padding: 13px; color: #7a5f2b; font-size: .8rem; font-weight: 600; line-height: 1.45; }
 .rdv3-note small { display: block; margin-bottom: 6px; color: color-mix(in srgb, var(--rdv3-accent) 84%, #6e5527); font-weight: 950; }
 .rdv3-count-badge { min-width: 28px; height: 28px; padding: 0 8px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 90%, #22324a); color: #fff; font-size: .72rem; font-weight: 950; line-height: 1; box-shadow: 0 8px 16px -10px color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 74%, transparent); }
+.rdv3-side-card--notes .rdv3-count-badge { background: #dc2626; box-shadow: 0 8px 18px -10px rgba(220, 38, 38, .86); }
 .rdv3-sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
 .rdv3-doc-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; margin-left: auto; min-width: min(100%, 300px); }
 .rdv3-doc-btn { min-height: 36px; padding: 0 14px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: .76rem; font-weight: 950; white-space: nowrap; }
@@ -2276,6 +2426,10 @@ foreach ($rdDocuments as $rdDocTotalRow) {
     .rdv3-hero-actions { justify-content: flex-start; width: 100%; }
     .rdv3-btn { width: 100%; }
     .rdv3-stay, .rdv3-rooms, .rdv3-info-grid { grid-template-columns: 1fr; }
+    .rdv3-guest-doc-feature { width: 100%; }
+    .rdv3-guest-doc-list { width: 100%; min-width: 0; }
+    .rdv3-guest-docs-head { align-items: flex-start; flex-direction: column; }
+    .rdv3-guest-docs-actions { justify-content: flex-start; }
     .rdv3-nights { min-height: 62px; border-left: 0; border-right: 0; border-top: 1px solid color-mix(in srgb, var(--rdv3-accent) 16%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--rdv3-accent) 16%, transparent); }
     .rdv3-date:last-child { text-align: left; }
     .rdv3-total, .rdv3-doc-row { align-items: flex-start; flex-direction: column; }
@@ -2413,26 +2567,35 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                         <?php foreach ($rdRooms as $room): ?>
                                             <?php
                                             $roomIsCourtesy = !empty($room['es_cortesia']) || !empty($room['cortesia']);
-                                            $roomType = $room['tipo_nombre'] ?? $room['tipo'] ?? $room['nombre_tipo'] ?? 'Habitacion';
-                                            $roomPeople = $room['personas'] ?? $room['capacidad'] ?? null;
-                                            $roomPrice = $room['precio'] ?? $room['precio_total'] ?? $room['precio_noche'] ?? null;
+                                            $roomType = $rdRoomTypeLabel($room);
+                                            $roomPeople = $room['capacidad_personas'] ?? $room['personas'] ?? $room['capacidad'] ?? null;
+                                            $roomSubtotal = (float)($room['precio'] ?? $room['precio_total'] ?? 0);
+                                            $roomNightly = $rdNoches > 0 ? ($roomSubtotal / $rdNoches) : $roomSubtotal;
+                                            if (!$roomIsCourtesy && $roomSubtotal <= 0 && isset($room['precio_base'])) {
+                                                $roomNightly = (float)$room['precio_base'];
+                                                $roomSubtotal = $roomNightly * $rdNoches;
+                                            }
+                                            $roomLocation = !empty($room['piso']) ? 'Piso ' . $room['piso'] : 'Sin piso';
                                             ?>
                                             <article class="rdv3-room <?= $roomIsCourtesy ? 'is-courtesy' : '' ?>">
                                                 <div class="rdv3-room-top">
-                                                    <div>
+                                                    <div class="min-w-0">
                                                         <div class="rdv3-room-number"><?= $rdSafe($room['numero'] ?? 'S/N') ?></div>
-                                                        <div class="rdv3-room-type"><?= $rdSafe($roomType) ?><?= $roomPeople ? ' - ' . (int)$roomPeople . ' personas' : '' ?></div>
+                                                        <div class="rdv3-room-type"><?= $rdSafe($roomType) ?></div>
+                                                        <div class="rdv3-room-sub">
+                                                            <span class="rdv3-tag"><i class="fas fa-layer-group"></i><?= $rdSafe($roomLocation) ?></span>
+                                                            <?php if ($roomPeople): ?><span class="rdv3-tag"><i class="fas fa-users"></i><?= (int)$roomPeople ?> persona<?= (int)$roomPeople === 1 ? '' : 's' ?></span><?php endif; ?>
+                                                        </div>
                                                     </div>
-                                                    <?php if ($roomIsCourtesy): ?>
-                                                        <span class="rdv3-badge"><i class="fas fa-gift"></i>Cortesia</span>
-                                                    <?php elseif ($roomPrice !== null): ?>
-                                                        <div class="rdv3-room-price"><?= $rdMoney($roomPrice) ?></div>
-                                                    <?php endif; ?>
+                                                    <div class="rdv3-room-price">
+                                                        <?= $roomIsCourtesy ? 'Cortesia' : $rdMoney($roomSubtotal) ?>
+                                                        <small>Subtotal</small>
+                                                    </div>
                                                 </div>
-                                                <div class="rdv3-tags">
-                                                    <?php if (!empty($room['piso'])): ?><span class="rdv3-tag"><i class="fas fa-layer-group"></i>Piso <?= $rdSafe($room['piso']) ?></span><?php endif; ?>
-                                                    <?php if (!empty($room['categoria'])): ?><span class="rdv3-tag"><i class="fas fa-tag"></i><?= $rdSafe($room['categoria']) ?></span><?php endif; ?>
-                                                    <?php if (!$roomIsCourtesy && $roomPrice === null): ?><span class="rdv3-tag"><i class="fas fa-bed"></i>Reservada</span><?php endif; ?>
+                                                <div class="rdv3-room-metrics">
+                                                    <div class="rdv3-room-metric"><small>Precio/noche</small><b><?= $roomIsCourtesy ? 'Gratis' : $rdMoney($roomNightly) ?></b></div>
+                                                    <div class="rdv3-room-metric"><small>Noches</small><b><?= (int)$rdNoches ?></b></div>
+                                                    <div class="rdv3-room-metric"><small>Subtotal</small><b><?= $roomIsCourtesy ? $rdMoney(0) : $rdMoney($roomSubtotal) ?></b></div>
                                                 </div>
                                             </article>
                                         <?php endforeach; ?>
@@ -2466,6 +2629,91 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                     <div class="rdv3-info"><i class="far fa-address-card"></i><div><small>Identificacion</small><b><?= $rdSafe($rdGuestId) ?></b></div></div>
                                     <div class="rdv3-info"><i class="fas fa-location-dot"></i><div><small>Procedencia</small><b><?= $rdSafe($rdGuestOrigin) ?></b></div></div>
                                 </div>
+
+                                <section class="<?= $rdSafe($rdGuestDocPanelClass) ?>" aria-label="Documentos del huesped">
+                                    <div class="rdv3-guest-docs-head">
+                                        <div class="rdv3-guest-docs-title">
+                                            <i class="fas fa-id-card-clip"></i>
+                                            <span>Vista documental del huesped</span>
+                                        </div>
+                                        <?php if ($rdGuestDocEntityId > 0): ?>
+                                            <div class="rdv3-guest-docs-actions">
+                                                <a class="rdv3-link" href="<?= url('documentos/subir' . $rdGuestDocEntityQuery) ?>"><i class="fas fa-paperclip"></i> Vincular</a>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <?php if (empty($rdGuestDocuments)): ?>
+                                        <div class="rdv3-guest-doc-empty">
+                                            <i class="fas fa-id-card"></i>
+                                            <div>
+                                                No hay identificaciones o archivos del huesped vinculados.
+                                                <?php if ($rdGuestDocEntityId > 0): ?>
+                                                    <br><a class="rdv3-link" href="<?= url('documentos/subir' . $rdGuestDocEntityQuery) ?>">Agregar INE, licencia o archivo</a>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    <?php else: ?>
+                                        <?php
+                                            $rdPrimaryDocId = (int)($rdGuestPrimaryDoc['id'] ?? 0);
+                                            $rdPrimaryKind = $rdGuestDocPreviewKind($rdGuestPrimaryDoc);
+                                            $rdPrimaryEstado = trim((string)($rdGuestPrimaryDoc['estado'] ?? 'activo'));
+                                            $rdPrimaryCanPreview = $rdPrimaryDocId > 0 && ($rdPrimaryEstado === '' || $rdPrimaryEstado === 'activo') && in_array($rdPrimaryKind, ['image', 'pdf'], true);
+                                            $rdPrimaryTitle = trim((string)(($rdGuestPrimaryDoc['titulo'] ?? '') ?: ($rdGuestPrimaryDoc['nombre_original'] ?? 'Documento del huesped')));
+                                            $rdPrimaryMeta = trim(implode(' · ', array_filter([
+                                                (string)($rdGuestPrimaryDoc['tipo_nombre'] ?? ''),
+                                                $rdBytes($rdGuestPrimaryDoc['size_bytes'] ?? 0),
+                                            ])));
+                                            $rdPrimaryPreviewUrl = $rdPrimaryDocId > 0 ? url('documentos/' . $rdPrimaryDocId . '/descargar') . '?preview=1' : '';
+                                        ?>
+                                        <div class="rdv3-guest-docs-grid">
+                                            <a class="rdv3-guest-doc-feature" href="<?= url('documentos/' . $rdPrimaryDocId) ?>" title="Ver <?= $rdSafe($rdPrimaryTitle, 'documento') ?>">
+                                                <?php if ($rdPrimaryCanPreview && $rdPrimaryKind === 'image'): ?>
+                                                    <img src="<?= $rdSafe($rdPrimaryPreviewUrl, '') ?>" alt="Vista previa de <?= $rdSafe($rdPrimaryTitle, 'documento') ?>" loading="lazy">
+                                                <?php elseif ($rdPrimaryCanPreview && $rdPrimaryKind === 'pdf'): ?>
+                                                    <iframe src="<?= $rdSafe($rdPrimaryPreviewUrl, '') ?>" title="Vista previa de <?= $rdSafe($rdPrimaryTitle, 'documento') ?>" loading="lazy"></iframe>
+                                                <?php else: ?>
+                                                    <div class="rdv3-guest-doc-file">
+                                                        <i class="fas fa-file-shield"></i>
+                                                        <b><?= $rdSafe($rdPrimaryTitle, 'Documento del huesped') ?></b>
+                                                    </div>
+                                                <?php endif; ?>
+                                                <div class="rdv3-guest-doc-caption">
+                                                    <b><?= $rdSafe($rdPrimaryTitle, 'Documento del huesped') ?></b>
+                                                    <small><?= $rdSafe($rdPrimaryMeta, 'Archivo vinculado') ?></small>
+                                                </div>
+                                            </a>
+
+                                            <?php $rdGuestSecondaryDocs = array_slice($rdGuestDocuments, 1, 4); ?>
+                                            <?php if (!empty($rdGuestSecondaryDocs)): ?>
+                                                <div class="rdv3-guest-doc-list">
+                                                <?php foreach ($rdGuestSecondaryDocs as $rdGuestDoc): ?>
+                                                    <?php
+                                                        $rdGuestDocId = (int)($rdGuestDoc['id'] ?? 0);
+                                                        $rdGuestDocKind = $rdGuestDocPreviewKind($rdGuestDoc);
+                                                        $rdGuestDocTitle = trim((string)(($rdGuestDoc['titulo'] ?? '') ?: ($rdGuestDoc['nombre_original'] ?? 'Documento')));
+                                                        $rdGuestDocMeta = trim(implode(' · ', array_filter([
+                                                            (string)($rdGuestDoc['tipo_nombre'] ?? ''),
+                                                            (string)($rdGuestDoc['relacion'] ?? ''),
+                                                            $rdBytes($rdGuestDoc['size_bytes'] ?? 0),
+                                                        ])));
+                                                        $rdGuestDocIcon = $rdGuestDocKind === 'image' ? 'fa-image' : ($rdGuestDocKind === 'pdf' ? 'fa-file-pdf' : 'fa-file-lines');
+                                                    ?>
+                                                    <?php if ($rdGuestDocId > 0): ?>
+                                                        <a class="rdv3-guest-doc-chip" href="<?= url('documentos/' . $rdGuestDocId) ?>">
+                                                            <span class="rdv3-guest-doc-chip-icon"><i class="fas <?= $rdGuestDocIcon ?>"></i></span>
+                                                            <span>
+                                                                <span class="rdv3-guest-doc-chip-title"><?= $rdSafe($rdGuestDocTitle, 'Documento') ?></span>
+                                                                <span class="rdv3-guest-doc-chip-meta"><?= $rdSafe($rdGuestDocMeta, 'Archivo vinculado') ?></span>
+                                                            </span>
+                                                        </a>
+                                                    <?php endif; ?>
+                                                <?php endforeach; ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </section>
 
                                 <div class="rdv3-subhead">
                                     <span><i class="fas fa-car-side rdv3-car-accent"></i>Vehiculos registrados</span>
@@ -2927,7 +3175,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                             >
                             <div class="flex-1">
                                 <span class="font-bold text-gray-800">Habitación <?= $hab['numero'] ?></span>
-                                <span class="text-xs text-gray-500 ml-2">(<?= $hab['tipo'] ?>)</span>
+                                <span class="text-xs text-gray-500 ml-2">(<?= $rdSafe($rdRoomTypeLabel($hab)) ?>)</span>
                             </div>
                         </label>
                     <?php endforeach; ?>
@@ -3370,7 +3618,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                             <?php foreach ($rdRooms as $room): ?>
                                 <?php
                                 $roomIsCourtesy = !empty($room['es_cortesia']) || !empty($room['cortesia']);
-                                $roomType = $room['tipo_nombre'] ?? $room['tipo'] ?? $room['nombre_tipo'] ?? 'Habitacion';
+                                $roomType = $rdRoomTypeLabel($room);
                                 ?>
                                 <article class="rv-room-card <?= $roomIsCourtesy ? 'is-courtesy' : '' ?>">
                                     <strong><?= $rdSafe($room['numero'] ?? 'S/N') ?></strong>
@@ -3401,6 +3649,10 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                         <button type="button" class="rv-money-shortcut is-split" onclick="dividirPagoRapido()">
                             <i class="fas fa-exchange-alt"></i>
                             Mitad y mitad
+                        </button>
+                        <button type="button" class="rv-money-shortcut is-cash-transfer" onclick="dividirPagoEfectivoTransferencia()">
+                            <i class="fas fa-university"></i>
+                            Efectivo + transferencia
                         </button>
                     </div>
 
@@ -3488,18 +3740,22 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                                 <label class="rv-invoice-choice" id="label_factura_si" onmouseover="this.style.borderColor='#3B82F6'" onmouseout="if(!document.getElementById('factura_si').checked) this.style.borderColor='#E5E7EB'">
                                     <input type="radio" name="requiere_factura" id="factura_si" value="si" onchange="seleccionarFactura('si')">
                                     <div>
-                                        <strong>Si, facturar</strong>
-                                        <p>Se registrara para facturacion electronica</p>
+                                        <strong>Factura para cliente</strong>
+                                        <p>Se registra solicitud de factura para el huesped.</p>
                                     </div>
                                 </label>
 
                                 <label class="rv-invoice-choice" id="label_factura_no" onmouseover="this.style.borderColor='#6B7280'" onmouseout="if(!document.getElementById('factura_no').checked) this.style.borderColor='#E5E7EB'">
                                     <input type="radio" name="requiere_factura" id="factura_no" value="no" onchange="seleccionarFactura('no')">
                                     <div>
-                                        <strong>No requiere</strong>
-                                        <p>Sin factura</p>
+                                        <strong>Sin factura del cliente</strong>
+                                        <p>Si hay tarjeta o transferencia quedara como uso interno.</p>
                                     </div>
                                 </label>
+                            </div>
+
+                            <div id="facturaResultado" class="rv-invoice-result">
+                                <p><i class="fas fa-circle-info"></i> Selecciona una opcion para ver como quedara registrada la facturacion.</p>
                             </div>
 
                             <div id="facturaValidacion" class="rv-checkin-message hidden">
@@ -3515,6 +3771,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                             <h5>Resumen final</h5>
                             <div class="rv-summary-row"><span>Total a cobrar</span><strong id="resumenTotal">$0.00</strong></div>
                             <div class="rv-summary-row is-paid"><span>Pagado</span><strong id="resumenPagado">$0.00</strong></div>
+                            <div class="rv-summary-row"><span>Metodo elegido</span><strong id="resumenMetodoPago">Sin seleccionar</strong></div>
                             <div id="divRestante" class="rv-summary-row is-due" style="display: none;"><span>Restante</span><strong id="resumenRestante">$0.00</strong></div>
                             <div id="divCambio" class="rv-summary-row is-change" style="display: none;"><span>Cambio</span><strong id="resumenCambio">$0.00</strong></div>
                         </section>
@@ -3917,6 +4174,10 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                             <i class="fas fa-code-branch"></i>
                             Mitad efectivo/tarjeta
                         </button>
+                        <button type="button" class="rv-money-shortcut is-cash-transfer" onclick="dividirPagoEfectivoTransferenciaTardio()">
+                            <i class="fas fa-university"></i>
+                            Efectivo + transferencia
+                        </button>
                     </div>
 
                     <div id="metodosPagoContainerTardio" class="rv-pay-methods" style="display: flex; flex-direction: column; gap: 0.5rem;">
@@ -4122,6 +4383,10 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                 <p style="font-size: 0.7rem; color: #6B7280; margin: 0;">Sin factura</p>
             </div>
         </label>
+    </div>
+
+    <div id="facturaResultadoTardio" class="rv-invoice-result">
+        <p><i class="fas fa-circle-info"></i> Selecciona una opcion para ver como quedara registrada la facturacion.</p>
     </div>
 
     <!-- Mensaje cuando no se ha seleccionado -->
@@ -4642,6 +4907,8 @@ function seleccionarFactura(valor) {
         // Mostrar info si hay pago con tarjeta o transferencia
         mostrarInfoFacturaInterna();
     }
+
+    actualizarResultadoFacturaCheckIn();
 }
 
 function mostrarInfoFacturaInterna() {
@@ -4659,6 +4926,41 @@ function mostrarInfoFacturaInterna() {
     } else {
         infoInterna.classList.add('hidden');
     }
+
+    actualizarResultadoFacturaCheckIn();
+}
+
+function actualizarResultadoFacturaCheckIn() {
+    const resultado = document.getElementById('facturaResultado');
+    if (!resultado) return;
+
+    const facturaSi = document.getElementById('factura_si');
+    const facturaNo = document.getElementById('factura_no');
+    const checkTarjeta = document.getElementById('check_tarjeta');
+    const checkTransferencia = document.getElementById('check_transferencia');
+    const usaElectronico = Boolean((checkTarjeta && checkTarjeta.checked) || (checkTransferencia && checkTransferencia.checked));
+
+    resultado.className = 'rv-invoice-result';
+
+    if (facturaSi && facturaSi.checked) {
+        resultado.classList.add('is-client');
+        resultado.innerHTML = '<p><i class="fas fa-file-invoice"></i> Factura para cliente: se creara solicitud para facturacion del huesped con el metodo de pago seleccionado.</p>';
+        return;
+    }
+
+    if (facturaNo && facturaNo.checked && usaElectronico) {
+        resultado.classList.add('is-internal');
+        resultado.innerHTML = '<p><i class="fas fa-building"></i> Uso interno del hotel: como hay tarjeta o transferencia, se dejara registro interno para control administrativo.</p>';
+        return;
+    }
+
+    if (facturaNo && facturaNo.checked) {
+        resultado.classList.add('is-none');
+        resultado.innerHTML = '<p><i class="fas fa-receipt"></i> Sin facturacion: no se generara solicitud de factura para esta reservacion.</p>';
+        return;
+    }
+
+    resultado.innerHTML = '<p><i class="fas fa-circle-info"></i> Selecciona una opcion para ver como quedara registrada la facturacion.</p>';
 }
 
 function validarFacturaCheckIn() {
@@ -4692,6 +4994,7 @@ function resetearFacturaCheckIn() {
     });
     if (validacion) validacion.classList.add('hidden');
     if (infoInterna) infoInterna.classList.add('hidden');
+    actualizarResultadoFacturaCheckIn();
 }
 
 // =============================================
@@ -4882,6 +5185,8 @@ function seleccionarFacturaTardio(valor) {
         // Mostrar info si hay pago con tarjeta o transferencia
         mostrarInfoFacturaInternaTardio();
     }
+
+    actualizarResultadoFacturaTardio();
 }
 
 function mostrarInfoFacturaInternaTardio() {
@@ -4899,6 +5204,41 @@ function mostrarInfoFacturaInternaTardio() {
     } else {
         infoInterna.classList.add('hidden');
     }
+
+    actualizarResultadoFacturaTardio();
+}
+
+function actualizarResultadoFacturaTardio() {
+    const resultado = document.getElementById('facturaResultadoTardio');
+    if (!resultado) return;
+
+    const facturaSi = document.getElementById('factura_si_tardio');
+    const facturaNo = document.getElementById('factura_no_tardio');
+    const checkTarjeta = document.getElementById('check_tarjeta_tardio');
+    const checkTransferencia = document.getElementById('check_transferencia_tardio');
+    const usaElectronico = Boolean((checkTarjeta && checkTarjeta.checked) || (checkTransferencia && checkTransferencia.checked));
+
+    resultado.className = 'rv-invoice-result';
+
+    if (facturaSi && facturaSi.checked) {
+        resultado.classList.add('is-client');
+        resultado.innerHTML = '<p><i class="fas fa-file-invoice"></i> Factura para cliente: se creara solicitud para facturacion del huesped con el metodo de pago seleccionado.</p>';
+        return;
+    }
+
+    if (facturaNo && facturaNo.checked && usaElectronico) {
+        resultado.classList.add('is-internal');
+        resultado.innerHTML = '<p><i class="fas fa-building"></i> Uso interno del hotel: como hay tarjeta o transferencia, se dejara registro interno para control administrativo.</p>';
+        return;
+    }
+
+    if (facturaNo && facturaNo.checked) {
+        resultado.classList.add('is-none');
+        resultado.innerHTML = '<p><i class="fas fa-receipt"></i> Sin facturacion: no se generara solicitud de factura para esta reservacion.</p>';
+        return;
+    }
+
+    resultado.innerHTML = '<p><i class="fas fa-circle-info"></i> Selecciona una opcion para ver como quedara registrada la facturacion.</p>';
 }
 
 function validarFacturaTardio() {
@@ -4928,6 +5268,7 @@ function resetearFacturaTardio() {
     if (labelNo) { labelNo.style.borderColor = '#E5E7EB'; labelNo.style.background = '#F9FAFB'; }
     if (validacion) validacion.classList.add('hidden');
     if (infoInterna) infoInterna.classList.add('hidden');
+    actualizarResultadoFacturaTardio();
 }
 // FUNCIONES DE CHECK-IN CON PAGOS MIXTOS
 function abrirModalCheckIn(id, total) {
@@ -5311,6 +5652,22 @@ function dividirPagoRapido() {
     mostrarMensaje('Pago dividido entre efectivo y tarjeta.', 'success');
 }
 
+function dividirPagoEfectivoTransferencia() {
+    resetearFormularioPago();
+
+    const partes = splitMoneyParts(totalReservacion, 2);
+
+    setCheckInPaymentChecked('efectivo', true, false);
+    setCheckInPaymentChecked('transferencia', true, false);
+    setMoneyValue('monto_efectivo', partes[0]);
+    setMoneyValue('recibido_efectivo', partes[0]);
+    setMoneyValue('monto_transferencia', partes[1]);
+
+    calcularTotales({ preserveCash: true });
+    calcularCambio();
+    mostrarMensaje('Pago dividido entre efectivo y transferencia.', 'success');
+}
+
 document.getElementById('formCheckInModal').addEventListener('submit', function(e) {
     e.preventDefault();
 
@@ -5341,6 +5698,19 @@ function calcularTotalPagadoSinEfectivo() {
         }
     });
     return total;
+}
+
+function actualizarResumenMetodoPago() {
+    const resumenMetodo = document.getElementById('resumenMetodoPago');
+    if (!resumenMetodo) return;
+
+    const labels = {
+        efectivo: 'Efectivo',
+        tarjeta: 'Tarjeta',
+        transferencia: 'Transferencia'
+    };
+    const metodos = getSelectedCheckInPaymentMethods();
+    resumenMetodo.textContent = metodos.length ? metodos.map(metodo => labels[metodo] || metodo).join(' + ') : 'Sin seleccionar';
 }
 
 function calcularTotales(options = {}) {
@@ -5404,6 +5774,9 @@ function calcularTotales(options = {}) {
     if (checkEfectivo && checkEfectivo.checked) {
         calcularCambio();
     }
+
+    actualizarResumenMetodoPago();
+    actualizarResultadoFacturaCheckIn();
 }
 
 function calcularCambio() {
@@ -5553,6 +5926,9 @@ function resetearFormularioPago() {
 
     const btnConfirmar = document.getElementById('btnConfirmarCheckIn');
     if (btnConfirmar) btnConfirmar.disabled = true;
+
+    actualizarResumenMetodoPago();
+    actualizarResultadoFacturaCheckIn();
 }
 
 // Cerrar modal al hacer clic fuera
@@ -6260,6 +6636,23 @@ function dividirPagoRapidoTardio() {
     }
 }
 
+function dividirPagoEfectivoTransferenciaTardio() {
+    resetearPagosTardio();
+
+    const partes = splitMoneyParts(reservacionTardioData.total, 2);
+
+    setTardioPaymentChecked('efectivo', true, false);
+    setTardioPaymentChecked('transferencia', true, false);
+    setMoneyValue('monto_efectivo_tardio', partes[0]);
+    setMoneyValue('recibido_efectivo_tardio', partes[0]);
+    setMoneyValue('monto_transferencia_tardio', partes[1]);
+
+    mostrarResumenTardio();
+    calcularTotalesTardio({ preserveCash: true });
+    calcularCambioTardio({ preserveCash: true });
+    mostrarMensajeTardio('Pago dividido entre efectivo y transferencia.', 'success');
+}
+
 function calcularMontoEfectivoTardio() {
     let totalOtros = 0;
     if (metodosSeleccionadosTardio.has('tarjeta')) {
@@ -6317,6 +6710,8 @@ function calcularTotalesTardio(options = {}) {
     } else {
         pendienteEl.style.color = '#6B7280';
     }
+
+    actualizarResultadoFacturaTardio();
 }
 
 function mostrarResumenTardio() {
@@ -6447,7 +6842,7 @@ const ticketData = {
     precioTotal: <?= json_encode(floatval($reservacion['precio_total'] ?? 0)) ?>,
     metodoPago: <?= json_encode($reservacion['metodo_pago'] ?? '') ?>,
     estado: <?= json_encode($reservacion['estado'] ?? '') ?>,
-    habitaciones: <?= json_encode(array_map(function($h) { return ['numero' => $h['numero'], 'tipo' => $h['tipo']]; }, $habitaciones)) ?>,
+    habitaciones: <?= json_encode(array_map(function($h) use ($rdRoomTypeLabel) { return ['numero' => $h['numero'], 'tipo' => $rdRoomTypeLabel($h)]; }, $habitaciones)) ?>,
     pagos: <?= json_encode($pagos ?? []) ?>,
     noches: <?= json_encode((!empty($reservacion['fecha_entrada']) && !empty($reservacion['fecha_salida'])) ? max(1, (new DateTime($reservacion['fecha_salida']))->diff(new DateTime($reservacion['fecha_entrada']))->days) : 1) ?>
 };
@@ -7717,6 +8112,46 @@ function mostrarPreviewMDD(tipo, html) {
 #modalCheckIn .rv-money-shortcut.is-card { --rv-shortcut-color: #2C70E8; }
 #modalCheckIn .rv-money-shortcut.is-transfer { --rv-shortcut-color: #7A52E1; }
 #modalCheckIn .rv-money-shortcut.is-split { --rv-shortcut-color: var(--rv-checkin-accent); }
+#modalCheckIn .rv-money-shortcut.is-cash-transfer { --rv-shortcut-color: #0F9F8F; }
+
+#modalCheckInTardio .rv-payment-shortcuts {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 9px;
+    margin: 0 0 12px;
+}
+
+#modalCheckInTardio .rv-money-shortcut {
+    --rv-shortcut-color: var(--brand-primary, #1B2746);
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid color-mix(in srgb, var(--rv-shortcut-color) 22%, #E2D8C9);
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--rv-shortcut-color) 6%, #FFFFFF);
+    color: color-mix(in srgb, var(--rv-shortcut-color) 86%, #263247);
+    font-size: .75rem;
+    font-weight: 850;
+    cursor: pointer;
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+#modalCheckInTardio .rv-money-shortcut:hover,
+#modalCheckInTardio .rv-money-shortcut:focus-visible {
+    transform: translateY(-1px);
+    background: #FFFEFB;
+    border-color: color-mix(in srgb, var(--rv-shortcut-color) 44%, #E2D8C9);
+    box-shadow: 0 12px 22px -20px color-mix(in srgb, var(--rv-shortcut-color) 72%, transparent);
+    outline: none;
+}
+
+#modalCheckInTardio .rv-money-shortcut.is-cash { --rv-shortcut-color: #19A367; }
+#modalCheckInTardio .rv-money-shortcut.is-card { --rv-shortcut-color: #2C70E8; }
+#modalCheckInTardio .rv-money-shortcut.is-transfer { --rv-shortcut-color: #7A52E1; }
+#modalCheckInTardio .rv-money-shortcut.is-split { --rv-shortcut-color: var(--brand-accent, #BD9441); }
+#modalCheckInTardio .rv-money-shortcut.is-cash-transfer { --rv-shortcut-color: #0F9F8F; }
 
 #modalCheckIn .rv-pay-methods {
     display: grid !important;
@@ -7901,6 +8336,60 @@ function mostrarPreviewMDD(tipo, html) {
     border-color: color-mix(in srgb, var(--rv-checkin-accent) 62%, #DCE3EA) !important;
     background: color-mix(in srgb, var(--rv-checkin-accent) 14%, #FFFEFB) !important;
     box-shadow: 0 13px 24px -22px color-mix(in srgb, var(--rv-checkin-accent) 75%, transparent);
+}
+
+#modalCheckIn .rv-invoice-result {
+    margin-top: 10px;
+    border: 1px solid var(--rv-checkin-line);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--rv-checkin-brand) 4%, #FFFFFF);
+    padding: 10px 12px;
+}
+
+#modalCheckIn .rv-invoice-result p {
+    margin: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: var(--rv-checkin-muted);
+    font-size: .76rem;
+    font-weight: 750;
+    line-height: 1.4;
+}
+
+#modalCheckIn .rv-invoice-result i {
+    margin-top: 2px;
+    color: var(--rv-checkin-brand);
+}
+
+#modalCheckIn .rv-invoice-result.is-client {
+    border-color: #BFDBFE;
+    background: #EFF6FF;
+}
+
+#modalCheckIn .rv-invoice-result.is-client p,
+#modalCheckIn .rv-invoice-result.is-client i {
+    color: #1D4ED8;
+}
+
+#modalCheckIn .rv-invoice-result.is-internal {
+    border-color: #FED7AA;
+    background: #FFF7ED;
+}
+
+#modalCheckIn .rv-invoice-result.is-internal p,
+#modalCheckIn .rv-invoice-result.is-internal i {
+    color: #9A3412;
+}
+
+#modalCheckIn .rv-invoice-result.is-none {
+    border-color: #D1D5DB;
+    background: #F9FAFB;
+}
+
+#modalCheckIn .rv-invoice-result.is-none p,
+#modalCheckIn .rv-invoice-result.is-none i {
+    color: #4B5563;
 }
 
 #modalCheckIn .rv-checkin-note,
@@ -8606,6 +9095,60 @@ function mostrarPreviewMDD(tipo, html) {
 #modalCheckInTardio #label_factura_no_tardio.is-selected {
     border-color: color-mix(in srgb, var(--brand-primary, #1B2746) 38%, #DCE2EA) !important;
     background: color-mix(in srgb, var(--brand-primary, #1B2746) 5%, #fff) !important;
+}
+
+#modalCheckInTardio .rv-invoice-result {
+    margin-top: 10px;
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #1B2746) 12%, #DCE2EA);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--brand-primary, #1B2746) 4%, #FFFFFF);
+    padding: 10px 12px;
+}
+
+#modalCheckInTardio .rv-invoice-result p {
+    margin: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: #667085;
+    font-size: .76rem;
+    font-weight: 750;
+    line-height: 1.4;
+}
+
+#modalCheckInTardio .rv-invoice-result i {
+    margin-top: 2px;
+    color: var(--brand-primary, #1B2746);
+}
+
+#modalCheckInTardio .rv-invoice-result.is-client {
+    border-color: #BFDBFE;
+    background: #EFF6FF;
+}
+
+#modalCheckInTardio .rv-invoice-result.is-client p,
+#modalCheckInTardio .rv-invoice-result.is-client i {
+    color: #1D4ED8;
+}
+
+#modalCheckInTardio .rv-invoice-result.is-internal {
+    border-color: #FED7AA;
+    background: #FFF7ED;
+}
+
+#modalCheckInTardio .rv-invoice-result.is-internal p,
+#modalCheckInTardio .rv-invoice-result.is-internal i {
+    color: #9A3412;
+}
+
+#modalCheckInTardio .rv-invoice-result.is-none {
+    border-color: #D1D5DB;
+    background: #F9FAFB;
+}
+
+#modalCheckInTardio .rv-invoice-result.is-none p,
+#modalCheckInTardio .rv-invoice-result.is-none i {
+    color: #4B5563;
 }
 
 #modalCheckInTardio .rv-checkin-note,

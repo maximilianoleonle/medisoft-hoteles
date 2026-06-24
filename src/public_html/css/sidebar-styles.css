@@ -262,7 +262,7 @@
     overflow-y: auto;
     padding: 0.5rem 0;
     scrollbar-width: thin;
-    scrollbar-color: rgba(156, 167, 119, 0.2) transparent;
+    scrollbar-color: color-mix(in srgb, var(--brand-secondary, #0F172A) 28%, transparent) transparent;
 }
 
 .sidebar-nav::-webkit-scrollbar {
@@ -275,13 +275,13 @@
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb {
-    background: rgba(156, 167, 119, 0.2);
+    background: color-mix(in srgb, var(--brand-secondary, #0F172A) 28%, transparent);
     border-radius: 10px;
     transition: background 0.2s;
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
-    background: rgba(156, 167, 119, 0.35);
+    background: color-mix(in srgb, var(--brand-secondary, #0F172A) 44%, transparent);
 }
 
 /* ===================================
@@ -936,5 +936,5 @@ main {
 /* Ocultar scrollbar en Firefox */
 .sidebar-nav {
     scrollbar-width: thin;
-    scrollbar-color: rgba(156, 167, 119, 0.2) transparent;
+    scrollbar-color: color-mix(in srgb, var(--brand-secondary, #0F172A) 28%, transparent) transparent;
 }

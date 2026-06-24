@@ -528,6 +528,95 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
     cursor: pointer;
 }
 
+.gc-document-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    min-width: 0;
+}
+
+.gc-document-grid-count-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.gc-doc-upload-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    min-height: 164px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, var(--gc-accent) 18%, var(--gc-line));
+    border-radius: 16px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--gc-accent) 8%, #FFFFFF), #FFFFFF 62%),
+        var(--gc-surface);
+    box-shadow: 0 10px 28px -24px color-mix(in srgb, var(--gc-brand) 48%, transparent);
+}
+
+.gc-doc-upload-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+}
+
+.gc-doc-upload-icon {
+    width: 34px;
+    height: 34px;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--gc-brand) 12%, #FFFFFF);
+    color: var(--gc-accent-dark);
+    border: 1px solid color-mix(in srgb, var(--gc-accent) 18%, var(--gc-line));
+}
+
+.gc-doc-upload-copy {
+    min-width: 0;
+}
+
+.gc-doc-upload-copy h4 {
+    margin: 0;
+    color: #111827;
+    font-size: .84rem;
+    font-weight: 850;
+    line-height: 1.25;
+}
+
+.gc-doc-upload-copy p {
+    margin: 3px 0 0;
+    color: var(--gc-muted);
+    font-size: .74rem;
+    font-weight: 650;
+    line-height: 1.4;
+}
+
+.gc-doc-upload-card .gc-file-control {
+    min-height: 40px;
+    background: #FFFFFF;
+}
+
+.gc-doc-file-name {
+    min-height: 22px;
+    padding: 6px 9px;
+    border-radius: 10px;
+    background: var(--gc-surface-warm);
+    color: var(--gc-muted);
+    font-size: .73rem;
+    font-weight: 750;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gc-doc-file-name.has-file {
+    color: var(--gc-accent-dark);
+    background: color-mix(in srgb, var(--gc-accent) 12%, #FFFFFF);
+}
+
 .gc-field-hint {
     margin: 7px 0 0;
     color: var(--gc-muted);
@@ -736,9 +825,9 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
     justify-content: flex-end;
     gap: 10px;
     padding: 14px;
-    position: sticky;
-    bottom: 12px;
-    z-index: 3;
+    position: static;
+    z-index: auto;
+    margin-top: 2px;
     align-items: center;
 }
 
@@ -855,6 +944,10 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
     .gc-grid {
         gap: 12px;
     }
+
+    .gc-document-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 1024px) {
@@ -869,7 +962,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
     }
 
     .gc-actions {
-        bottom: 10px;
+        padding: 13px;
     }
 }
 
@@ -903,6 +996,10 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
     }
 
     .gc-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .gc-document-grid {
         grid-template-columns: 1fr;
     }
 
@@ -1199,6 +1296,83 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                         </section>
                     <?php endif; ?>
 
+                    <?php
+                    $gcInitialDocumentUploads = [];
+                    if (!$gcGuestFieldVisible('identificacion_archivo')) {
+                        $gcInitialDocumentUploads[] = [
+                            'tipo' => 'identificacion',
+                            'icon' => 'fa-id-card',
+                            'title' => 'INE / identificacion',
+                            'copy' => 'Foto o PDF del documento oficial.',
+                            'description' => 'Documento de identificacion cargado desde el alta inicial.',
+                        ];
+                    }
+                    $gcInitialDocumentUploads[] = [
+                        'tipo' => 'comprobante',
+                        'icon' => 'fa-receipt',
+                        'title' => 'Comprobante',
+                        'copy' => 'Comprobante de domicilio, pago u otro soporte.',
+                        'description' => 'Comprobante cargado desde el alta inicial.',
+                    ];
+                    $gcInitialDocumentUploads[] = [
+                        'tipo' => 'otro',
+                        'icon' => 'fa-file-alt',
+                        'title' => 'Otro documento',
+                        'copy' => 'Cualquier archivo adicional del expediente.',
+                        'description' => 'Documento adicional cargado desde el alta inicial.',
+                    ];
+                    ?>
+                    <section class="gc-section">
+                        <div class="gc-section-head">
+                            <div class="gc-section-title-wrap">
+                                <span class="gc-section-icon"><i class="fas fa-folder-open"></i></span>
+                                <div>
+                                    <h2>Documentos iniciales</h2>
+                                    <p class="gc-section-sub">Adjuntos opcionales vinculados al expediente desde el primer registro.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="gc-section-body">
+                            <div class="gc-document-grid gc-document-grid-count-<?= count($gcInitialDocumentUploads) ?>">
+                                <?php foreach ($gcInitialDocumentUploads as $docIndex => $docUpload): ?>
+                                    <?php
+                                    $docFileLabelId = 'gc-doc-file-' . (int)$docIndex;
+                                    $docTipo = htmlspecialchars((string)$docUpload['tipo'], ENT_QUOTES, 'UTF-8');
+                                    $docTitle = htmlspecialchars((string)$docUpload['title'], ENT_QUOTES, 'UTF-8');
+                                    $docCopy = htmlspecialchars((string)$docUpload['copy'], ENT_QUOTES, 'UTF-8');
+                                    $docIcon = htmlspecialchars((string)$docUpload['icon'], ENT_QUOTES, 'UTF-8');
+                                    $docDescription = htmlspecialchars((string)$docUpload['description'], ENT_QUOTES, 'UTF-8');
+                                    ?>
+                                    <div class="gc-doc-upload-card">
+                                        <div class="gc-doc-upload-top">
+                                            <span class="gc-doc-upload-icon"><i class="fas <?= $docIcon ?>"></i></span>
+                                            <div class="gc-doc-upload-copy">
+                                                <h4><?= $docTitle ?></h4>
+                                                <p><?= $docCopy ?></p>
+                                            </div>
+                                        </div>
+
+                                        <input type="hidden" name="documentos_huesped[tipo][]" value="<?= $docTipo ?>">
+                                        <input type="hidden" name="documentos_huesped[titulo][]" value="">
+                                        <input type="hidden" name="documentos_huesped[descripcion][]" value="<?= $docDescription ?>">
+                                        <input type="file"
+                                               name="documentos_huesped[archivo][]"
+                                               accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+                                               class="gc-control gc-file-control gc-document-input"
+                                               data-file-label="<?= $docFileLabelId ?>">
+                                        <p class="gc-doc-file-name" id="<?= $docFileLabelId ?>">Sin archivo seleccionado</p>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+
+                            <p class="gc-note">
+                                <i class="fas fa-info-circle"></i>
+                                Puede guardar el huesped sin documentos. Si adjunta archivos, quedaran ligados al mismo expediente y hotel.
+                            </p>
+                        </div>
+                    </section>
+
                     <?php if (!empty($gcVehicleVisibleFields)): ?>
                     <section class="gc-section">
                         <div class="gc-section-head">
@@ -1310,6 +1484,19 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
 <script>
 let vehiculoIndex = 1;
 const vehicleFieldsTemplate = <?= json_encode($gcVehicleFieldsTemplate, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
+document.querySelectorAll('.gc-document-input').forEach(function(input) {
+    input.addEventListener('change', function() {
+        const label = document.getElementById(this.dataset.fileLabel || '');
+        if (!label) {
+            return;
+        }
+
+        const fileName = this.files && this.files.length ? this.files[0].name : '';
+        label.textContent = fileName || 'Sin archivo seleccionado';
+        label.classList.toggle('has-file', fileName !== '');
+    });
+});
 
 // Funcion para agregar vehiculo
 function agregarVehiculo() {

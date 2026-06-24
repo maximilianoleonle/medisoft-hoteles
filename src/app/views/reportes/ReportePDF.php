@@ -6,6 +6,7 @@
 
 // Cargar TCPDF
 require_once dirname(dirname(__DIR__)) . '/libs/TCPDF/tcpdf.php';
+require_once dirname(dirname(__DIR__)) . '/services/PropietarioDistribucionService.php';
 
 class ReportePDF extends TCPDF {
     
@@ -435,7 +436,109 @@ class ReportePDF extends TCPDF {
     /**
      * Generar sección de Ingresos por Propiedad (MANOLO vs ELIA)
      */
-    public function generarSeccionPropiedades($datos) {
+    public function generarSeccionPropiedades($datos, array $configPropietarios = null) {
+        $this->AddPage();
+
+        $service = new PropietarioDistribucionService();
+        $configPropietarios = $configPropietarios ?: $service->configuracionParaHotel();
+        $propietarios = $service->resumenPropietarios(is_array($datos) ? $datos : [], $configPropietarios);
+        $totalGeneral = array_sum(array_map(static function ($propietario) {
+            return (float) ($propietario['total'] ?? 0);
+        }, $propietarios));
+        $totalReservas = array_sum(array_map(static function ($propietario) {
+            return (int) ($propietario['cantidad'] ?? 0);
+        }, $propietarios));
+
+        $this->SetFont('helvetica', 'B', 14);
+        $this->Cell(0, 10, 'Ingresos por Propiedad', 0, 1);
+
+        if ($totalGeneral <= 0 || empty($propietarios)) {
+            $this->SetFont('helvetica', '', 10);
+            $this->Cell(0, 8, 'No hay ingresos de hospedaje para mostrar en este periodo.', 0, 1);
+            return;
+        }
+
+        $html = '<table cellpadding="4" cellspacing="0" border="1" style="font-size:10pt;">
+                <thead>
+                    <tr style="background-color:#f8f9fa;">
+                        <th width="34%"><b>Propietario</b></th>
+                        <th width="22%" align="right"><b>Ingresos</b></th>
+                        <th width="18%" align="center"><b>Reservas</b></th>
+                        <th width="26%" align="right"><b>Participacion</b></th>
+                    </tr>
+                </thead>
+                <tbody>';
+
+        foreach ($propietarios as $propietario) {
+            $pct = $totalGeneral > 0 ? ((float) $propietario['total'] / $totalGeneral * 100) : 0;
+            $html .= '<tr>
+                <td><b>' . htmlspecialchars($propietario['nombre'], ENT_QUOTES, 'UTF-8') . '</b></td>
+                <td align="right">' . $this->formatearMoneda($propietario['total']) . '</td>
+                <td align="center">' . (int) $propietario['cantidad'] . '</td>
+                <td align="right">' . number_format($pct, 1) . '%</td>
+            </tr>';
+        }
+
+        $html .= '<tr style="background-color:#f8f9fa;">
+                <td><b>TOTAL</b></td>
+                <td align="right"><b>' . $this->formatearMoneda($totalGeneral) . '</b></td>
+                <td align="center"><b>' . $totalReservas . '</b></td>
+                <td align="right"><b>100%</b></td>
+            </tr>';
+
+        $html .= '</tbody></table>';
+        $this->writeHTML($html, true, false, true, false, '');
+        $this->Ln(8);
+
+        $this->SetFont('helvetica', 'B', 12);
+        $this->Cell(0, 10, 'Desglose por Metodo de Pago', 0, 1);
+
+        $totalEfectivo = array_sum(array_map(static function ($propietario) {
+            return (float) ($propietario['datos']['efectivo'] ?? 0);
+        }, $propietarios));
+        $totalTarjeta = array_sum(array_map(static function ($propietario) {
+            return (float) ($propietario['datos']['tarjeta'] ?? 0);
+        }, $propietarios));
+        $totalTransferencia = array_sum(array_map(static function ($propietario) {
+            return (float) ($propietario['datos']['transferencia'] ?? 0);
+        }, $propietarios));
+
+        $html = '<table cellpadding="4" cellspacing="0" border="1" style="font-size:10pt;">
+                <thead>
+                    <tr style="background-color:#f8f9fa;">
+                        <th width="34%"><b>Propietario</b></th>
+                        <th width="16%" align="right"><b>Efectivo</b></th>
+                        <th width="16%" align="right"><b>Tarjeta</b></th>
+                        <th width="18%" align="right"><b>Transferencia</b></th>
+                        <th width="16%" align="right"><b>Total</b></th>
+                    </tr>
+                </thead>
+                <tbody>';
+
+        foreach ($propietarios as $propietario) {
+            $row = $propietario['datos'];
+            $html .= '<tr>
+                <td><b>' . htmlspecialchars($propietario['nombre'], ENT_QUOTES, 'UTF-8') . '</b></td>
+                <td align="right">' . $this->formatearMoneda($row['efectivo'] ?? 0) . '</td>
+                <td align="right">' . $this->formatearMoneda($row['tarjeta'] ?? 0) . '</td>
+                <td align="right">' . $this->formatearMoneda($row['transferencia'] ?? 0) . '</td>
+                <td align="right"><b>' . $this->formatearMoneda($propietario['total']) . '</b></td>
+            </tr>';
+        }
+
+        $html .= '<tr style="background-color:#f8f9fa;">
+                <td><b>TOTAL</b></td>
+                <td align="right"><b>' . $this->formatearMoneda($totalEfectivo) . '</b></td>
+                <td align="right"><b>' . $this->formatearMoneda($totalTarjeta) . '</b></td>
+                <td align="right"><b>' . $this->formatearMoneda($totalTransferencia) . '</b></td>
+                <td align="right"><b>' . $this->formatearMoneda($totalGeneral) . '</b></td>
+            </tr>';
+
+        $html .= '</tbody></table>';
+        $this->writeHTML($html, true, false, true, false, '');
+    }
+
+    public function generarSeccionPropiedadesLegacy($datos) {
         $this->AddPage();
         
         $this->SetFont('helvetica', 'B', 14);

@@ -798,11 +798,42 @@ function get_tipo_habitacion($tipo) {
         'doble' => 'Doble',
         'triple' => 'Triple',
         'cuadruple' => 'Cuádruple',
+        'doble_jacuzzi' => 'Doble con Jacuzzi',
+        'sencilla_jacuzzi' => 'Sencilla con Jacuzzi',
         'sencilla_manolo' => 'Sencilla Manolo',
         'doble_manolo' => 'Doble Manolo'
     ];
     
     return $tipos[$tipo] ?? ucfirst(str_replace('_', ' ', $tipo));
+}
+
+/**
+ * Obtener tipo real de habitacion considerando catalogo del hotel y atributos.
+ */
+function get_tipo_habitacion_real($tipo, $caracteristicas = '') {
+    $tipo = trim((string)($tipo ?? ''));
+    if ($tipo === '') {
+        return 'Habitacion';
+    }
+
+    $label = get_tipo_habitacion($tipo);
+    $labelNormal = strtolower((string)iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $label));
+    $tipoNormal = strtolower((string)iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $tipo));
+    $caracteristicasNormal = strtolower((string)iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', (string)$caracteristicas));
+
+    if (strpos($tipoNormal . ' ' . $caracteristicasNormal, 'jacuzzi') !== false && strpos($labelNormal, 'jacuzzi') === false) {
+        if (strpos($tipoNormal, 'doble') !== false || strpos($labelNormal, 'doble') !== false) {
+            return 'Doble con Jacuzzi';
+        }
+
+        if (strpos($tipoNormal, 'sencilla') !== false || strpos($tipoNormal, 'simple') !== false || strpos($labelNormal, 'sencilla') !== false) {
+            return 'Sencilla con Jacuzzi';
+        }
+
+        return trim($label . ' con Jacuzzi');
+    }
+
+    return $label;
 }
 
 /**

@@ -561,6 +561,7 @@
                 return;
             }
 
+            markFormSubmitting(this, null);
             return nativeSubmit.apply(this, arguments);
         };
 

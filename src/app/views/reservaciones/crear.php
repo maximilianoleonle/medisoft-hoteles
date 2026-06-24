@@ -11,6 +11,37 @@ $fecha_entrada_pre = $_GET['fecha_entrada'] ?? null;
 $fecha_salida_pre = $_GET['fecha_salida'] ?? null;
 $hora_llegada_pre = $_GET['hora_llegada'] ?? null;
 $es_preseleccion = $_GET['preseleccion'] ?? null;
+
+$tiposHabitacionReservacion = [
+    'sencilla' => 'Sencilla',
+    'doble' => 'Doble',
+    'triple' => 'Triple',
+    'cuadruple' => 'Cuadruple',
+    'doble_jacuzzi' => 'Doble con Jacuzzi',
+    'sencilla_jacuzzi' => 'Sencilla con Jacuzzi',
+];
+if (function_exists('hotel_room_catalog_types_for_select')) {
+    try {
+        $catalogoTiposReservacion = hotel_room_catalog_types_for_select();
+        if (!empty($catalogoTiposReservacion)) {
+            $tiposHabitacionReservacion = $catalogoTiposReservacion;
+        }
+    } catch (Throwable $e) {
+        error_log('No se pudo cargar catalogo de tipos en nueva reservacion: ' . $e->getMessage());
+    }
+} elseif (function_exists('hotel_room_catalog_types')) {
+    try {
+        $catalogoTiposReservacion = hotel_room_catalog_types();
+        if (!empty($catalogoTiposReservacion)) {
+            $tiposHabitacionReservacion = $catalogoTiposReservacion;
+        }
+    } catch (Throwable $e) {
+        error_log('No se pudo cargar catalogo de tipos en nueva reservacion: ' . $e->getMessage());
+    }
+}
+
+$horaLlegadaModoPre = old('hora_llegada_modo', $hora_llegada_pre ? 'manual' : 'despues');
+$horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues'], true) ? $horaLlegadaModoPre : 'manual';
 ?>
 
 <style>
@@ -1043,6 +1074,240 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
     color: #111827 !important;
 }
 
+.vista-reservacion .res-guest-selected {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 13px;
+}
+
+.vista-reservacion .res-guest-selected-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    display: inline-grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--rc-brand), color-mix(in srgb, var(--rc-brand) 70%, var(--rc-accent)));
+    color: #FFFFFF;
+    font-weight: 900;
+    box-shadow: 0 12px 22px -16px color-mix(in srgb, var(--rc-brand) 80%, transparent);
+}
+
+.vista-reservacion .res-guest-selected-main {
+    min-width: 0;
+}
+
+.vista-reservacion .res-guest-selected-name {
+    margin: 0;
+    color: #111827 !important;
+    font-size: 1rem;
+    font-weight: 900;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.vista-reservacion .res-guest-selected-meta,
+.vista-reservacion .res-guest-summary-grid {
+    color: var(--rc-muted);
+    font-size: .78rem;
+    font-weight: 700;
+}
+
+.vista-reservacion .res-guest-summary-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 8px;
+}
+
+.vista-reservacion .res-guest-summary-grid span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 5px 9px;
+    border: 1px solid var(--rc-line);
+    border-radius: 999px;
+    background: #FFFFFF;
+    color: var(--rc-muted) !important;
+}
+
+.vista-reservacion .res-guest-summary-grid i {
+    color: var(--rc-accent-dark);
+}
+
+.vista-reservacion .res-guest-change {
+    min-height: 34px;
+    padding: 7px 10px;
+    border: 1px solid var(--rc-line);
+    border-radius: 11px;
+    background: #FFFFFF;
+    color: var(--rc-brand);
+    font-size: .75rem;
+    font-weight: 850;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.vista-reservacion .res-guest-change:hover {
+    border-color: var(--rc-accent-line);
+    color: var(--rc-brand);
+    background: var(--rc-accent-soft);
+}
+
+.vista-reservacion .guest-info-box > .flex.items-start.justify-between {
+    align-items: center;
+    gap: 14px;
+}
+
+.vista-reservacion .guest-info-box > .flex.items-start.justify-between > div:first-child {
+    min-width: 0;
+}
+
+.vista-reservacion .guest-info-box > .flex.items-start.justify-between > div:first-child > p:first-child {
+    color: var(--rc-accent-dark) !important;
+}
+
+.vista-reservacion .guest-info-box > .flex.items-start.justify-between > div:first-child > p:nth-child(2) {
+    color: #111827 !important;
+    font-size: 1rem !important;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.vista-reservacion .guest-info-box > .flex.items-start.justify-between > a {
+    min-height: 34px;
+    padding: 7px 10px;
+    border: 1px solid var(--rc-line);
+    border-radius: 11px;
+    background: #FFFFFF;
+    color: var(--rc-brand) !important;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.vista-reservacion .arrival-planner {
+    display: grid;
+    gap: 9px;
+}
+
+.vista-reservacion .arrival-mode-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+}
+
+.vista-reservacion .arrival-mode-btn {
+    min-height: 38px;
+    padding: 7px 8px;
+    border: 1px solid var(--rc-line);
+    border-radius: 12px;
+    background: var(--rc-surface-warm);
+    color: var(--rc-muted);
+    font-size: .72rem;
+    font-weight: 850;
+    transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+
+.vista-reservacion .arrival-mode-btn:hover,
+.vista-reservacion .arrival-mode-btn.is-active {
+    border-color: var(--rc-accent-line);
+    background: var(--rc-accent-soft);
+    color: var(--rc-accent-dark);
+    transform: translateY(-1px);
+}
+
+.vista-reservacion .arrival-help {
+    color: var(--rc-muted) !important;
+    font-size: .76rem;
+    font-weight: 700;
+}
+
+.vista-reservacion .room-type-group {
+    border: 1px solid var(--rc-line);
+    border-radius: 17px;
+    background: color-mix(in srgb, var(--rc-accent) 3%, #FFFFFF);
+    overflow: hidden;
+}
+
+.vista-reservacion .room-type-group + .room-type-group {
+    margin-top: 14px;
+}
+
+.vista-reservacion .room-type-group-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 15px;
+    border-bottom: 1px solid var(--rc-line-soft);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--rc-accent) 7%, #FFFFFF), #FFFFFF);
+}
+
+.vista-reservacion .room-type-title {
+    min-width: 0;
+}
+
+.vista-reservacion .room-type-title h4 {
+    margin: 0;
+    color: #111827;
+    font-size: .95rem;
+    font-weight: 900;
+    line-height: 1.2;
+}
+
+.vista-reservacion .room-type-title p {
+    margin: 3px 0 0;
+    color: var(--rc-muted);
+    font-size: .76rem;
+    font-weight: 700;
+}
+
+.vista-reservacion .room-type-counts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.vista-reservacion .room-type-counts span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 25px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 850;
+    white-space: nowrap;
+}
+
+.vista-reservacion .room-type-body {
+    padding: 14px;
+}
+
+.vista-reservacion .room-type-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+@media (max-width: 820px) {
+    .vista-reservacion .room-type-grid,
+    .vista-reservacion .arrival-mode-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .vista-reservacion .room-type-group-head,
+    .vista-reservacion .res-guest-selected {
+        align-items: flex-start;
+    }
+
+    .vista-reservacion .room-type-group-head {
+        flex-direction: column;
+    }
+}
+
 .vista-reservacion .buscador-habitaciones {
     position: sticky;
     top: 10px;
@@ -1177,6 +1442,20 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
         0 0 0 2px color-mix(in srgb, var(--rc-success) 12%, transparent),
         0 14px 26px -24px color-mix(in srgb, var(--rc-success) 56%, transparent) !important;
     transform: none !important;
+}
+
+.vista-reservacion .habitacion-card.disponible.selected:hover > div,
+.vista-reservacion .habitacion-card.disponible.selected.es-cortesia:hover > div {
+    border-color: color-mix(in srgb, var(--rc-success) 72%, var(--rc-brand)) !important;
+    background:
+        linear-gradient(135deg,
+            color-mix(in srgb, var(--rc-success) 28%, #FFFFFF) 0%,
+            color-mix(in srgb, var(--rc-success) 18%, #FFFFFF) 58%,
+            color-mix(in srgb, var(--rc-success) 10%, #FFFFFF) 100%) !important;
+    box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--rc-success) 16%, transparent),
+        0 16px 30px -24px color-mix(in srgb, var(--rc-success) 58%, transparent) !important;
+    transform: translateY(-1px) !important;
 }
 
 .vista-reservacion .habitacion-card.selected > div .border-t {
@@ -1372,6 +1651,11 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
 
 .vista-reservacion .habitacion-card.selected .rc-room-action-text {
     color: color-mix(in srgb, var(--rc-success) 88%, #123322);
+}
+
+.vista-reservacion .habitacion-card.disponible.selected:hover .rc-room-chip--available,
+.vista-reservacion .habitacion-card.disponible.selected:hover .rc-room-action-text {
+    color: color-mix(in srgb, var(--rc-success) 90%, #10351F) !important;
 }
 
 @media (max-width: 560px) {
@@ -1809,7 +2093,7 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
                                                 </div>
                                                 <div id="huesped_results" class="res-guest-results hidden" role="listbox"></div>
                                             </div>
-                                            <a href="<?= url('huespedes/create?return_to=reservacion') ?>" class="btn-gold">
+                                            <a href="<?= url('huespedes/create?return_to=reservacion') ?>" class="btn-gold js-nuevo-huesped-link">
                                                 <i class="fas fa-user-plus text-xs"></i>
                                                 <span class="hidden sm:inline">Nuevo</span>
                                             </a>
@@ -1868,19 +2152,28 @@ $es_preseleccion = $_GET['preseleccion'] ?? null;
                                 <div>
                                     <label class="block text-sm font-bold mb-2" style="color:#4A6340;">
                                         <i class="fas fa-clock mr-1" style="color:var(--lc-green);"></i>
-                                        Hora de Llegada <span class="text-red-500">*</span>
+                                        Hora de Llegada
                                     </label>
-                                    <div class="flex gap-2">
+                                    <div class="arrival-planner">
+                                        <input type="hidden" name="hora_llegada_modo" id="hora_llegada_modo" value="<?= htmlspecialchars($horaLlegadaModoPre, ENT_QUOTES, 'UTF-8') ?>">
+                                        <div class="arrival-mode-grid" aria-label="Modo de llegada">
+                                            <button type="button" class="arrival-mode-btn" data-arrival-mode="manual">
+                                                <i class="fas fa-keyboard mr-1"></i> Manual
+                                            </button>
+                                            <button type="button" class="arrival-mode-btn" data-arrival-mode="ahora" id="btnHoraActual">
+                                                <i class="fas fa-clock mr-1"></i> Ahora
+                                            </button>
+                                            <button type="button" class="arrival-mode-btn" data-arrival-mode="despues">
+                                                <i class="fas fa-calendar-check mr-1"></i> Despues
+                                            </button>
+                                        </div>
                                         <input type="time" name="hora_llegada" id="hora_llegada"
-                                               class="lc-input flex-1"
+                                               class="lc-input"
                                                value="<?= old('hora_llegada', $hora_llegada_pre) ?>">
-                                        <button type="button" id="btnHoraActual" class="btn-hour" title="Hora actual">
-                                            <i class="fas fa-clock text-sm"></i>
-                                        </button>
                                     </div>
-                                    <p class="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
+                                    <p class="arrival-help mt-1.5 flex items-center gap-1" id="arrivalHelpText">
                                         <i class="fas fa-info-circle"></i>
-                                        Check-in oficial: 3:00 PM
+                                        Check-in oficial: 3:00 PM. Puedes dejar la hora por definir si el huesped aun no confirma.
                                     </p>
                                 </div>
                             </div>
@@ -2073,6 +2366,7 @@ $(document).ready(function() {
     let busquedaActiva = '';
     let huespedSeleccionadoActual = null;
     const HUESPED_PRESELECCIONADO = <?= json_encode($huesped_preseleccionado ?? null, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const ROOM_TYPE_LABELS = <?= json_encode($tiposHabitacionReservacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
     const RESERVA_URL_PARAMS = new URLSearchParams(window.location.search);
     const ES_RESERVACION_RAPIDA = !!(RESERVA_URL_PARAMS.get('habitacion_id') || RESERVA_URL_PARAMS.get('preseleccion'));
 
@@ -2124,6 +2418,103 @@ $(document).ready(function() {
         }
     }
 
+    function escapeHtml(value) {
+        return $('<div>').text(value ?? '').html();
+    }
+
+    function normalizarTexto(value) {
+        return String(value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase();
+    }
+
+    function contieneJacuzzi(hab) {
+        return normalizarTexto(`${hab.tipo || ''} ${hab.caracteristicas || ''}`).includes('jacuzzi');
+    }
+
+    function tipoRealHabitacion(hab) {
+        const tipo = String(hab.tipo || '').trim();
+        let label = String(hab.tipo_label || ROOM_TYPE_LABELS[tipo] || tipo.replace(/_/g, ' ') || 'Otros').trim();
+        label = label ? label.charAt(0).toUpperCase() + label.slice(1) : 'Otros';
+
+        const normal = normalizarTexto(label);
+        if (contieneJacuzzi(hab) && !normal.includes('jacuzzi')) {
+            if (normal.includes('doble')) return 'Doble con Jacuzzi';
+            if (normal.includes('sencilla') || normal.includes('simple')) return 'Sencilla con Jacuzzi';
+            return `${label} con Jacuzzi`;
+        }
+
+        return label;
+    }
+
+    function ordenTipoHabitacion(label) {
+        const normal = normalizarTexto(label);
+        if ((normal === 'sencilla' || normal.startsWith('sencilla ')) && !normal.includes('jacuzzi')) return 10;
+        if ((normal === 'doble' || normal.startsWith('doble ')) && !normal.includes('jacuzzi')) return 20;
+        if (normal.includes('triple')) return 30;
+        if (normal.includes('sencilla') && normal.includes('jacuzzi')) return 40;
+        if (normal.includes('doble') && normal.includes('jacuzzi')) return 50;
+        if (normal.includes('cuadruple') || normal.includes('cuadru')) return 60;
+        return 100;
+    }
+
+    function capacidadHabitacionLabel(hab) {
+        const capacidad = parseInt(hab.capacidad_personas || hab.capacidad || 0, 10);
+        if (!capacidad || capacidad < 1) return '';
+        return `${capacidad} persona${capacidad === 1 ? '' : 's'}`;
+    }
+
+    function camasHabitacionLabel(hab) {
+        const mat = parseInt(hab.camas_matrimoniales || 0, 10);
+        const ind = parseInt(hab.camas_individuales || 0, 10);
+        const total = Math.max(0, mat + ind);
+        if (!total) return '';
+        return `${total} cama${total === 1 ? '' : 's'}`;
+    }
+
+    function estadoHabitacion(hab) {
+        const enMant = hab.en_mantenimiento || hab.estado === 'mantenimiento';
+        const ocupada = (hab.ocupada || false) && !enMant;
+        if (enMant) return 'mantenimiento';
+        if (ocupada) return 'ocupada';
+        return 'disponible';
+    }
+
+    function horaLlegadaModoActual() {
+        return $('#hora_llegada_modo').val() || 'manual';
+    }
+
+    function horaLlegadaResumen() {
+        const modo = horaLlegadaModoActual();
+        const hora = $('#hora_llegada').val();
+        if (modo === 'despues') return 'Por definir';
+        return hora || 'Por definir';
+    }
+
+    function aplicarModoHora(modo, options = {}) {
+        const modoFinal = ['manual', 'ahora', 'despues'].includes(modo) ? modo : 'manual';
+        $('#hora_llegada_modo').val(modoFinal);
+        $('.arrival-mode-btn').toggleClass('is-active', false);
+        $(`.arrival-mode-btn[data-arrival-mode="${modoFinal}"]`).addClass('is-active');
+
+        if (modoFinal === 'ahora') {
+            establecerHoraActual(false);
+        } else if (modoFinal === 'despues') {
+            $('#hora_llegada').val('').prop('readonly', true);
+            $('#arrivalHelpText').html('<i class="fas fa-info-circle"></i>La hora quedara pendiente y no se guardara una hora estimada falsa.');
+        } else {
+            $('#hora_llegada').prop('readonly', false);
+            $('#arrivalHelpText').html('<i class="fas fa-info-circle"></i>Captura la hora estimada de llegada o usa Ahora/Despues.');
+            if (!$('#hora_llegada').val() && options.keepEmpty !== true) {
+                $('#hora_llegada').val('15:00');
+            }
+        }
+
+        verificarFormularioCompleto();
+        calcularPrecio();
+    }
+
     <?php if (!isset($huesped_preseleccionado)): ?>
     // Buscador de huésped: un solo input visible y el id se mantiene en name="huesped_id".
     const $huespedSelect = $('#huesped_id');
@@ -2136,10 +2527,6 @@ $(document).ready(function() {
     let huespedSearchToken = 0;
     let huespedActiveIndex = -1;
     let huespedResultadosActuales = [];
-
-    function escapeHtml(value) {
-        return $('<div>').text(value ?? '').html();
-    }
 
     function inicialesHuesped(nombre) {
         const partes = String(nombre || 'H').trim().split(/\s+/).filter(Boolean);
@@ -2375,8 +2762,35 @@ $(document).ready(function() {
         }
     });
     $('#fecha_salida').on('change', validarFechas);
-    $('#hora_llegada').on('change', validarFechas);
-    $('#btnHoraActual').on('click', establecerHoraActual);
+    $('#hora_llegada').on('input change', function() {
+        if ($(this).val() && horaLlegadaModoActual() === 'despues') {
+            aplicarModoHora('manual', { keepEmpty: true });
+        }
+        verificarFormularioCompleto();
+        calcularPrecio();
+    });
+    $('.arrival-mode-btn').on('click', function() {
+        aplicarModoHora($(this).data('arrival-mode'), { keepEmpty: true });
+    });
+    aplicarModoHora($('#hora_llegada_modo').val() || ($('#hora_llegada').val() ? 'manual' : 'despues'), { keepEmpty: true });
+
+    $('.js-nuevo-huesped-link').on('click', function() {
+        const params = new URLSearchParams();
+        params.set('return_to', ES_RESERVACION_RAPIDA ? 'reservacion_rapida' : 'reservacion');
+
+        const habitacionId = RESERVA_URL_PARAMS.get('habitacion_id');
+        const fechaEntrada = $('#fecha_entrada').val();
+        const fechaSalida = $('#fecha_salida').val();
+        const horaLlegada = $('#hora_llegada').val();
+
+        if (habitacionId) params.set('habitacion_id', habitacionId);
+        if (ES_RESERVACION_RAPIDA || RESERVA_URL_PARAMS.get('preseleccion')) params.set('preseleccion', 'true');
+        if (fechaEntrada) params.set('fecha_entrada', fechaEntrada);
+        if (fechaSalida) params.set('fecha_salida', fechaSalida);
+        if (horaLlegada && horaLlegadaModoActual() !== 'despues') params.set('hora_llegada', horaLlegada);
+
+        this.href = '<?= url('huespedes/create') ?>?' + params.toString();
+    });
 
     // Close mobile summary
     $('#btnCerrarResumen').on('click', () => $('#resumenFlotante').removeClass('activo'));
@@ -2390,10 +2804,17 @@ $(document).ready(function() {
         ind.classList.toggle('hidden', atBottom || el.scrollHeight <= el.clientHeight);
     }
 
-    function establecerHoraActual() {
+    function establecerHoraActual(actualizarModo = true) {
         const now = new Date();
         const h = String(now.getHours()).padStart(2,'0');
         const m = String(now.getMinutes()).padStart(2,'0');
+        if (actualizarModo) {
+            $('#hora_llegada_modo').val('ahora');
+            $('.arrival-mode-btn').removeClass('is-active');
+            $('.arrival-mode-btn[data-arrival-mode="ahora"]').addClass('is-active');
+        }
+        $('#hora_llegada').prop('readonly', false);
+        $('#arrivalHelpText').html('<i class="fas fa-info-circle"></i>Se guardara la hora actual como llegada estimada.');
         $('#hora_llegada').val(`${h}:${m}`).trigger('change');
     }
 
@@ -2515,7 +2936,9 @@ $(document).ready(function() {
         if (busquedaActiva) {
             filtradas = filtradas.filter(h =>
                 h.numero.toString().toLowerCase().includes(busquedaActiva) ||
-                h.tipo.toLowerCase().includes(busquedaActiva)
+                tipoRealHabitacion(h).toLowerCase().includes(busquedaActiva) ||
+                String(h.tipo || '').toLowerCase().includes(busquedaActiva) ||
+                String(h.caracteristicas || '').toLowerCase().includes(busquedaActiva)
             );
         }
         renderizarHabitaciones(filtradas, prevSel);
@@ -2527,9 +2950,29 @@ $(document).ready(function() {
             $('.habitacion-check:checked').each(function() { seleccionadas.push($(this).val()); });
         }
 
+        if (!habs.length) {
+            $('#contenedorHabitaciones').html(`
+                <div class="text-center py-12 text-gray-400">
+                    <div style="width:56px;height:56px;border-radius:50%;background:rgba(92,122,78,.08);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+                        <i class="fas fa-search text-2xl" style="color:#A8C4A0;"></i>
+                    </div>
+                    <h3 class="text-base font-bold mb-1">Sin resultados</h3>
+                    <p class="text-sm">No hay habitaciones que coincidan con la busqueda actual.</p>
+                </div>
+            `);
+            return;
+        }
+
         // Sort: named rooms first, then numeric
         const esNum = n => /^\d+$/.test(n.toString().trim());
         habs.sort((a, b) => {
+            const tipoA = tipoRealHabitacion(a);
+            const tipoB = tipoRealHabitacion(b);
+            const ordenA = ordenTipoHabitacion(tipoA);
+            const ordenB = ordenTipoHabitacion(tipoB);
+            if (ordenA !== ordenB) return ordenA - ordenB;
+            const tipoCompare = tipoA.localeCompare(tipoB, 'es');
+            if (tipoCompare !== 0) return tipoCompare;
             const aNum = esNum(a.numero), bNum = esNum(b.numero);
             if (!aNum && bNum)  return -1;
             if (aNum && !bNum)  return 1;
@@ -2558,16 +3001,50 @@ $(document).ready(function() {
             </div>
         `;
 
-        html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+        let grupoActual = null;
+        const resumenGrupo = (tipoLabel) => {
+            const habitacionesTipo = habs.filter(h => tipoRealHabitacion(h) === tipoLabel);
+            const disponibles = habitacionesTipo.filter(h => estadoHabitacion(h) === 'disponible').length;
+            const ocupadas = habitacionesTipo.filter(h => estadoHabitacion(h) === 'ocupada').length;
+            const mantenimiento = habitacionesTipo.filter(h => estadoHabitacion(h) === 'mantenimiento').length;
+            return { total: habitacionesTipo.length, disponibles, ocupadas, mantenimiento };
+        };
 
         habs.forEach(hab => {
+            const tipoLabel = tipoRealHabitacion(hab);
+            if (grupoActual !== tipoLabel) {
+                if (grupoActual !== null) {
+                    html += '</div></div></section>';
+                }
+                const conteo = resumenGrupo(tipoLabel);
+                html += `
+                    <section class="room-type-group" data-room-type="${escapeHtml(tipoLabel)}">
+                        <div class="room-type-group-head">
+                            <div class="room-type-title">
+                                <h4>${escapeHtml(tipoLabel)}</h4>
+                                <p>${conteo.total} habitacion${conteo.total === 1 ? '' : 'es'} en este tipo</p>
+                            </div>
+                            <div class="room-type-counts">
+                                <span style="background:var(--rc-success-soft);color:color-mix(in srgb, var(--rc-success) 82%, #123B2B);"><i class="fas fa-door-open"></i>${conteo.disponibles}</span>
+                                ${conteo.ocupadas ? `<span style="background:var(--rc-danger-soft);color:color-mix(in srgb, var(--rc-danger) 86%, #5A1713);"><i class="fas fa-door-closed"></i>${conteo.ocupadas}</span>` : ''}
+                                ${conteo.mantenimiento ? `<span style="background:var(--rc-warning-soft);color:color-mix(in srgb, var(--rc-warning) 86%, #5C2C05);"><i class="fas fa-tools"></i>${conteo.mantenimiento}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="room-type-body">
+                            <div class="room-type-grid">
+                `;
+                grupoActual = tipoLabel;
+            }
             const piso = {'-4':'4 niveles abajo','-2':'2 niveles abajo','-1':'Un nivel abajo','1':'Nivel de piso','2':'2º Nivel','3':'3º Nivel'}[hab.piso] || `Piso ${hab.piso}`;
             const checked   = seleccionadas.includes(hab.id.toString());
-            const jacuzzi   = hab.tipo.includes('jacuzzi');
+            const jacuzzi   = contieneJacuzzi(hab);
             const enMant    = hab.en_mantenimiento || hab.estado === 'mantenimiento';
             const ocupada   = (hab.ocupada || false) && !enMant;
             const cortesia  = habitacionesCortesiaSeleccionadas.includes(hab.id.toString());
+            const tipoBadge = `<span class="rc-room-chip rc-room-chip--info"><i class="fas fa-tag"></i>${escapeHtml(tipoLabel)}</span>`;
             const jacBadge  = jacuzzi ? `<span class="rc-room-chip rc-room-chip--info"><i class="fas fa-hot-tub"></i>Jacuzzi</span>` : '';
+            const capacidadBadge = capacidadHabitacionLabel(hab) ? `<span class="rc-room-chip"><i class="fas fa-users"></i>${escapeHtml(capacidadHabitacionLabel(hab))}</span>` : '';
+            const camasBadge = camasHabitacionLabel(hab) ? `<span class="rc-room-chip"><i class="fas fa-bed"></i>${escapeHtml(camasHabitacionLabel(hab))}</span>` : '';
             const precioBase = parseFloat(hab.precio_base).toLocaleString();
 
             if (enMant) {
@@ -2584,7 +3061,10 @@ $(document).ready(function() {
                                         <span class="rc-room-chip rc-room-chip--maintenance">
                                             <i class="fas fa-tools"></i>${hab.info_mantenimiento?.programado ? 'Programado' : 'Mantenimiento'}
                                         </span>
+                                        ${tipoBadge}
                                         ${jacBadge}
+                                        ${capacidadBadge}
+                                        ${camasBadge}
                                     </div>
                                     <p class="rc-room-floor"><i class="fas fa-layer-group"></i>${piso}</p>
                                 </div>
@@ -2617,7 +3097,10 @@ $(document).ready(function() {
                                 <div class="rc-room-meta">
                                     <div class="rc-room-chips">
                                         <span class="rc-room-chip rc-room-chip--occupied"><i class="fas fa-door-closed"></i>Ocupada</span>
+                                        ${tipoBadge}
                                         ${jacBadge}
+                                        ${capacidadBadge}
+                                        ${camasBadge}
                                     </div>
                                     <p class="rc-room-floor"><i class="fas fa-layer-group"></i>${piso}</p>
                                 </div>
@@ -2650,6 +3133,7 @@ $(document).ready(function() {
                                data-precio="${hab.precio_base}"
                                data-numero="${hab.numero}"
                                data-tipo="${hab.tipo}"
+                               data-tipo-label="${escapeHtml(tipoLabel)}"
                                data-piso="${hab.piso}"
                                data-caracteristicas="${hab.caracteristicas || ''}"
                                class="sr-only habitacion-check"
@@ -2668,7 +3152,10 @@ $(document).ready(function() {
                                         <span class="rc-room-chip ${cortesia ? 'rc-room-chip--courtesy' : 'rc-room-chip--available'}">
                                             <i class="fas ${cortesia ? 'fa-gift' : 'fa-door-open'}"></i>${cortesia ? 'Cortesía' : 'Disponible'}
                                         </span>
+                                        ${tipoBadge}
                                         ${jacBadge}
+                                        ${capacidadBadge}
+                                        ${camasBadge}
                                     </div>
                                     <p class="rc-room-floor"><i class="fas fa-layer-group"></i>${piso}</p>
                                 </div>
@@ -2694,7 +3181,9 @@ $(document).ready(function() {
             }
         });
 
-        html += '</div>';
+        if (grupoActual !== null) {
+            html += '</div></div></section>';
+        }
         $('#contenedorHabitaciones').html(html);
 
         // Checkbox events
@@ -2738,6 +3227,7 @@ $(document).ready(function() {
                 precio:         parseFloat($(this).data('precio')),
                 numero:         $(this).data('numero'),
                 tipo:           $(this).data('tipo'),
+                tipo_label:     $(this).data('tipo-label') || $(this).data('tipo'),
                 piso:           $(this).data('piso'),
                 caracteristicas:$(this).data('caracteristicas')
             });
@@ -2787,7 +3277,7 @@ $(document).ready(function() {
 >
                         <div>
                             <p class="font-bold text-gray-800 text-sm">Habitación ${hab.numero}</p>
-                            <p class="text-xs text-gray-500">${hab.tipo.replace('_',' ')} · $${hab.precio.toLocaleString()}/noche</p>
+                            <p class="text-xs text-gray-500">${escapeHtml(hab.tipo_label || hab.tipo || 'Habitacion')} · $${hab.precio.toLocaleString()}/noche</p>
                         </div>
                     </div>
                     <p class="text-sm font-bold ${esCort ? 'text-amber-600' : 'text-gray-300'}">${esCort ? 'GRATIS' : ''}</p>
@@ -2861,6 +3351,7 @@ $(document).ready(function() {
             <div class="space-y-1.5 text-sm">
                 <div class="flex justify-between"><span class="text-gray-500">Check-in:</span><span class="font-semibold text-gray-700">${formatearFecha(fe)}</span></div>
                 <div class="flex justify-between"><span class="text-gray-500">Check-out:</span><span class="font-semibold text-gray-700">${formatearFecha(fs)}</span></div>
+                <div class="flex justify-between"><span class="text-gray-500">Llegada:</span><span class="font-semibold text-gray-700">${horaLlegadaResumen()}</span></div>
                 <div class="flex justify-between"><span class="text-gray-500">Noches:</span><span class="font-semibold text-gray-700">${d.noches}</span></div>
                 <div class="flex justify-between"><span class="text-gray-500">Habitaciones:</span><span class="font-semibold text-gray-700">${d.totalHabs}</span></div>
             </div>
@@ -2878,7 +3369,7 @@ $(document).ready(function() {
                         <div class="flex items-center gap-1.5">
                             <span class="font-bold text-gray-700">Hab. ${hab.numero}</span>
                             <span class="text-gray-400">${pisoLabel(hab.piso)}</span>
-                            ${hab.tipo.includes('jacuzzi') ? '<i class="fas fa-hot-tub text-blue-400 text-xs"></i>' : ''}
+                            ${normalizarTexto(`${hab.tipo_label || ''} ${hab.tipo || ''} ${hab.caracteristicas || ''}`).includes('jacuzzi') ? '<i class="fas fa-hot-tub text-blue-400 text-xs"></i>' : ''}
                             ${cort ? '<span class="bg-amber-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">CORTESÍA</span>' : ''}
                         </div>
                         <span class="font-bold ${cort ? 'text-amber-500 line-through' : ''}" style="${cort?'':'color:var(--lc-green);'}">$${(hab.precio * d.noches).toLocaleString()}</span>
@@ -2960,8 +3451,9 @@ $(document).ready(function() {
         const fe   = $('#fecha_entrada').val();
         const fs   = $('#fecha_salida').val();
         const hl   = $('#hora_llegada').val();
+        const horaOk = horaLlegadaModoActual() === 'despues' || !!hl;
         const habs = $('.habitacion-check:checked').length;
-        const ok   = hid && fe && fs && hl && habs > 0;
+        const ok   = hid && fe && fs && horaOk && habs > 0;
         $('#btnGuardar, #btnGuardarMovil').prop('disabled', !ok);
         $('#btnCotizacion, #btnCotizacionMovil').prop('disabled', !ok);
     }
@@ -3017,7 +3509,7 @@ $(document).ready(function() {
         const huesped = obtenerHuespedSeleccionado();
         const fe = $('#fecha_entrada').val();
         const fs = $('#fecha_salida').val();
-        const hl = $('#hora_llegada').val();
+        const hl = horaLlegadaModoActual() === 'despues' ? null : $('#hora_llegada').val();
         const notas = $('textarea[name="notas"]').val() || '';
         const tempId = `tmp_res_${Date.now()}_${Math.random().toString(16).slice(2)}`;
         const total = calcularTotalLocal();
@@ -3120,11 +3612,11 @@ $('#btnCotizacion, #btnCotizacionMovil').on('click', function() {
     const huespedId = $('input[name="huesped_id"]').val() || $('#huesped_id').val();
     const fe = $('#fecha_entrada').val();
     const fs = $('#fecha_salida').val();
-    const hl = $('#hora_llegada').val();
+    const hl = horaLlegadaModoActual() === 'despues' ? '' : $('#hora_llegada').val();
     const notas = $('textarea[name="notas"]').val() || '';
     const habsChecked = $('.habitacion-check:checked');
 
-    if (!huespedId || !fe || !fs || !hl || habsChecked.length === 0) {
+    if (!huespedId || !fe || !fs || (horaLlegadaModoActual() !== 'despues' && !hl) || habsChecked.length === 0) {
         Swal.fire({
             icon: 'warning',
             title: 'Datos incompletos',
@@ -3153,6 +3645,7 @@ $('#btnCotizacion, #btnCotizacionMovil').on('click', function() {
     addHidden('huesped_id', huespedId);
     addHidden('fecha_entrada', fe);
     addHidden('fecha_salida', fs);
+    addHidden('hora_llegada_modo', horaLlegadaModoActual());
     addHidden('hora_llegada', hl);
     addHidden('notas', notas);
 

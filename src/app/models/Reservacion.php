@@ -1689,7 +1689,7 @@ public function obtenerEstadisticasDashboard() {
             $data['huesped_id'],
             $data['fecha_entrada'],
             $data['fecha_salida'],
-            $data['hora_llegada_estimada'] ?? '14:00',
+            array_key_exists('hora_llegada_estimada', $data) ? $data['hora_llegada_estimada'] : null,
             $data['precio_total'],
             $data['estado'] ?? 'confirmada',
             $data['notas'] ?? '',
@@ -1981,6 +1981,9 @@ public function calcularPrecioMultiple($habitaciones, $fecha_entrada, $fecha_sal
         // Guardar el precio calculado para esta habitación
         $habitaciones[$key]['precio_calculado'] = $precio_por_noche;
         $habitaciones[$key]['precio_por_noche'] = $precio_por_noche / $noches;
+        $habitaciones[$key]['tipo_label'] = function_exists('get_tipo_habitacion_real')
+            ? get_tipo_habitacion_real($habitacion['tipo'] ?? '', $habitacion['caracteristicas'] ?? '')
+            : ucfirst(str_replace('_', ' ', (string)($habitacion['tipo'] ?? 'Habitacion')));
         $habitaciones_con_precio_calculado[] = $habitaciones[$key];
         
         $precio_total += $precio_por_noche;
@@ -2022,8 +2025,11 @@ public function calcularPrecioMultiple($habitaciones, $fecha_entrada, $fecha_sal
                 h.tipo,
                 h.piso,
                 h.precio_base,
+                h.capacidad_personas,
+                h.camas_individuales,
+                h.camas_matrimoniales,
                 h.caracteristicas,
-h.observaciones
+                h.observaciones
                 FROM reservacion_habitaciones rh
                 INNER JOIN habitaciones h ON rh.habitacion_id = h.id AND h.hotel_id = rh.hotel_id
                 INNER JOIN reservaciones r ON rh.reservacion_id = r.id AND r.hotel_id = rh.hotel_id
@@ -2034,6 +2040,12 @@ h.observaciones
         try {
             $stmt = $this->db->query($sql, [$reservacion_id, $this->hotelIdActual()]);
             $result = $stmt->fetchAll();
+            foreach ($result as &$row) {
+                $row['tipo_label'] = function_exists('get_tipo_habitacion_real')
+                    ? get_tipo_habitacion_real($row['tipo'] ?? '', $row['caracteristicas'] ?? '')
+                    : ucfirst(str_replace('_', ' ', (string)($row['tipo'] ?? 'Habitacion')));
+            }
+            unset($row);
             return $result;
         } catch (Exception $e) {
             error_log("ERROR en getHabitaciones: " . $e->getMessage());

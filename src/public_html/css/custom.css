@@ -10,11 +10,14 @@
     --sidebar-width: 200px;
     --sidebar-collapsed-width: 60px;
     --header-height: 64px;
-    --hotel-brown: #6B4423;
-    --hotel-brown-dark: #5A3A1E;
-    --hotel-brown-light: #8B5A3C;
+    --hotel-brown: var(--brand-secondary, #0F172A);
+    --hotel-brown-dark: color-mix(in srgb, var(--brand-secondary, #0F172A) 88%, #000000);
+    --hotel-brown-light: color-mix(in srgb, var(--brand-secondary, #0F172A) 78%, #FFFFFF);
     --hotel-gold: #D4A574;
     --hotel-cream: #FFF8F3;
+    --hotel-scrollbar-track: color-mix(in srgb, var(--brand-secondary, #0F172A) 6%, #F8FAFC);
+    --hotel-scrollbar-thumb: color-mix(in srgb, var(--brand-secondary, #0F172A) 62%, #CBD5E1);
+    --hotel-scrollbar-thumb-hover: var(--brand-secondary, #0F172A);
 }
 
 /* ===================================
@@ -29,6 +32,8 @@ html, body {
     margin: 0;
     padding: 0;
     overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--hotel-scrollbar-thumb) var(--hotel-scrollbar-track);
 }
 
 /* ===================================
@@ -172,16 +177,16 @@ table {
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--hotel-scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--hotel-brown);
+    background: var(--hotel-scrollbar-thumb);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--hotel-brown-dark);
+    background: var(--hotel-scrollbar-thumb-hover);
 }
 
 /* ===================================

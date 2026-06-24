@@ -4312,8 +4312,17 @@ if (!is_file($routesPath)) {
             && strpos($workerFormViewCode, 'method="POST"') !== false
             && strpos($workerFormViewCode, 'name="nombre_completo"') !== false
             && strpos($workerFormViewCode, 'csrf_field()') !== false
-            && strpos($workerDetailViewCode, 'Ledger laboral') !== false
-            && strpos($workerDetailViewCode, 'Saldo informativo') !== false
+            && (
+                strpos($workerDetailViewCode, 'Ledger laboral') !== false
+                || (
+                    strpos($workerDetailViewCode, 'Cuenta del trabajador') !== false
+                    && strpos($workerDetailViewCode, 'wk-ledger-grid') !== false
+                )
+            )
+            && (
+                strpos($workerDetailViewCode, 'Saldo informativo') !== false
+                || strpos($workerDetailViewCode, '$ledgerSaldoInformativo') !== false
+            )
             && strpos($workerDetailViewCode, '/conceptos-laborales') !== false
             && strpos($workerDetailViewCode, '/anticipos') !== false
             && strpos($workerDetailViewCode, '/prestamos') !== false
@@ -4321,7 +4330,10 @@ if (!is_file($routesPath)) {
             && strpos($workerDetailViewCode, 'name="tipo"') !== false
             && strpos($workerDetailViewCode, 'name="monto"') !== false
             && strpos($workerDetailViewCode, 'name="hora_entrada"') !== false
-            && strpos($workerDetailViewCode, 'Pago laboral con Caja') !== false
+            && (
+                strpos($workerDetailViewCode, 'Pago laboral con Caja') !== false
+                || strpos($workerDetailViewCode, 'Pagar al trabajador (desde Caja)') !== false
+            )
             && strpos($workerDetailViewCode, 'registrar-pago-caja') !== false
             && strpos($workerDetailViewCode, 'name="pago_token"') !== false
             && strpos($workerReportViewCode, 'Reporte de Personal') !== false

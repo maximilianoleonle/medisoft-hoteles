@@ -3475,3 +3475,53 @@ Resultado automatico local:
 
 No tocar produccion ni cambiar schema/auth operativo sin nueva autorizacion
 explicita.
+
+## Fase NP-F-C - Health baseline Personal detalle redisenado
+
+Estado: QA tecnica local completada.
+
+QA tecnica ejecutada:
+
+1. Confirmar que el health reconoce la ficha actual de Personal redisenada.
+2. Confirmar que acepta `Cuenta del trabajador` + `wk-ledger-grid` como bloque
+   vigente de ledger laboral manual.
+3. Confirmar que acepta `Pagar al trabajador (desde Caja)` como panel vigente
+   de pago laboral controlado.
+4. Confirmar que el health general queda sin warnings.
+
+Resultado automatico local:
+
+- Lint PHP: OK en `tools/saas/health_check_fase_1a.php`.
+- Health general: `OK: 413`, `WARNING: 0`, `ERROR: 0`.
+
+No ejecutar en produccion sin nueva autorizacion explicita.
+
+## Cierre tecnico de bloque - estabilidad local 2026-06-23
+
+Estado: QA tecnica local completada.
+
+QA tecnica ejecutada:
+
+1. Ejecutar health general y confirmar cero warnings.
+2. Ejecutar suite de nomina administrativa y confirmar cero warnings.
+3. Ejecutar preflight de tablero ejecutivo y confirmar warnings aceptados.
+4. Ejecutar preflight de arqueo por metodos y confirmar warnings historicos
+   diagnosticados.
+
+Resultado automatico local:
+
+- Health general: `OK: 413`, `WARNING: 0`, `ERROR: 0`.
+- Suite nomina administrativa: `OK: 4`, `WARNING: 0`, `ERROR: 0`.
+- Tablero ejecutivo: `OK: 92`, `WARNING: 2`, `ERROR: 0`.
+- Arqueo por metodos: `OK: 39`, `WARNING: 3`, `ERROR: 0`.
+
+Revision manual recomendada:
+
+1. Elegir el siguiente bloque: QA manual final, redisenio visual o preparacion
+   de produccion.
+2. Si se redisenan vistas, conservar `action`, `method`, `name`, CSRF, hidden
+   inputs y submit dentro de cada form.
+3. No corregir datos historicos de arqueo ni cambiar auditoria/auth sin fase
+   separada y autorizacion explicita.
+
+No ejecutar en produccion sin nueva autorizacion explicita.

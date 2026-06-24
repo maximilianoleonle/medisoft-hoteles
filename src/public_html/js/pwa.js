@@ -48,7 +48,9 @@
   const KNOWN_SESSION_KEYS = [
     'loscedros_sw_controller_reload',
     'sw_cache_list',
+    'loscedros_pwa_update_banner_seen',
   ];
+  const UPDATE_BANNER_SESSION_KEY = 'loscedros_pwa_update_banner_seen';
 
   function hasOfflineStorageContext() {
     return Boolean(DB_NAME);
@@ -86,6 +88,20 @@
     } catch {}
   }
 
+  function safeSessionStorageGet(key) {
+    try {
+      return window.sessionStorage?.getItem(key) || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function safeSessionStorageSet(key, value) {
+    try {
+      window.sessionStorage?.setItem(key, value);
+    } catch {}
+  }
+
   function rememberCurrentStorageScope() {
     if (!hasOfflineStorageContext()) return;
     safeLocalStorageSet(STORAGE_SCOPE_KEY, OFFLINE_STORAGE_CONTEXT.scope);
@@ -112,6 +128,7 @@
         // Detectar nueva versiÃ³n disponible
         reg.addEventListener('updatefound', () => {
           const newWorker = reg.installing;
+          if (!newWorker) return;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               showUpdateBanner(newWorker);
@@ -673,14 +690,17 @@
   function showUpdateBanner(newWorker) {
     const banner = document.getElementById('pwa-update-banner');
     if (!banner) return;
+    if (safeSessionStorageGet(UPDATE_BANNER_SESSION_KEY) === '1') return;
+
+    safeSessionStorageSet(UPDATE_BANNER_SESSION_KEY, '1');
     banner.hidden = false;
     banner.classList.add('visible');
     const btn = banner.querySelector('[data-action="update"]');
     if (btn) {
-      btn.addEventListener('click', () => {
+      btn.onclick = () => {
         newWorker.postMessage({ type: 'SKIP_WAITING' });
         window.location.reload();
-      });
+      };
     }
   }
 

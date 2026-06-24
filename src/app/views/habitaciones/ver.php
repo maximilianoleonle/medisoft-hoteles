@@ -20,16 +20,40 @@ $habitacion_numero = (string)($habitacion['numero'] ?? '');
 $habitacion_tipo = (string)($habitacion['tipo'] ?? '');
 $habitacion_estado = (string)($habitacion['estado'] ?? 'desconocido');
 $estado_actual = (string)($habitacion['estado_display'] ?? $habitacion_estado);
-$tipo_label = $tipos[$habitacion_tipo] ?? (function_exists('get_tipo_habitacion') ? get_tipo_habitacion($habitacion_tipo) : ucfirst($habitacion_tipo));
 $piso_label = class_exists('Habitacion') ? Habitacion::getNombrePiso($habitacion['piso'] ?? '') : ('Piso ' . ($habitacion['piso'] ?? '-'));
 $capacidad = (int)($habitacion['capacidad_personas'] ?? 0);
 $caracteristicas = trim((string)($habitacion['caracteristicas'] ?? ''));
+$camas_matrimoniales = (int)($habitacion['camas_matrimoniales'] ?? 0);
+$camas_individuales = (int)($habitacion['camas_individuales'] ?? 0);
+$camas_total = max(0, $camas_matrimoniales + $camas_individuales);
+$tipo_label = $tipos[$habitacion_tipo] ?? (function_exists('get_tipo_habitacion') ? get_tipo_habitacion($habitacion_tipo) : ucfirst($habitacion_tipo));
+$caracteristicas_plain = strtolower($caracteristicas);
+$caracteristicas_ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $caracteristicas_plain);
+if ($caracteristicas_ascii !== false) {
+    $caracteristicas_plain = $caracteristicas_ascii;
+}
+if (strpos($caracteristicas_plain, 'jacuzzi') !== false && stripos($tipo_label, 'jacuzzi') === false) {
+    if ($habitacion_tipo === 'doble') {
+        $tipo_label = 'Doble con Jacuzzi';
+    } elseif ($habitacion_tipo === 'sencilla') {
+        $tipo_label = 'Sencilla con Jacuzzi';
+    }
+}
 $precio_actual = (float)($habitacion['precio_actual'] ?? $habitacion['precio_base'] ?? 0);
 $precio_base = (float)($habitacion['precio_base'] ?? 0);
 $precio_base_original = (float)($habitacion['precio_base_original'] ?? $precio_base);
 $incremento_total = (float)($habitacion['incremento_total'] ?? 0);
 $tiene_incremento = !empty($habitacion['tiene_incremento']);
 $activa = !empty($habitacion['activa']);
+$propietario_nombre = trim((string)($habitacion['propietario_nombre'] ?? ''));
+$propietario_nombre = $propietario_nombre !== '' ? $propietario_nombre : 'Sin propietario';
+$propietario_pct = is_numeric($habitacion['propietario_participacion_pct'] ?? null)
+    ? (float)$habitacion['propietario_participacion_pct']
+    : 100.0;
+$propietario_pct_label = '';
+if ($propietario_pct < 99.995) {
+    $propietario_pct_label = rtrim(rtrim(number_format($propietario_pct, 2, '.', ''), '0'), '.') . '%';
+}
 
 if (!function_exists('room_detail_safe')) {
     function room_detail_safe($value, $fallback = '-') {
@@ -2927,10 +2951,14 @@ $mantenimientos_count = count($mantenimientos_programados);
                         <i class="fas fa-<?= room_detail_safe($status_meta['icon'], 'circle') ?>"></i>
                         <?= room_detail_safe($status_meta['label']) ?>
                     </span>
+                    <span class="rd-chip"><i class="fas fa-user-tie"></i>Propietario: <?= room_detail_safe($propietario_nombre) ?></span>
                     <span class="rd-chip"><i class="fas fa-layer-group"></i><?= room_detail_safe($tipo_label) ?></span>
                     <span class="rd-chip"><i class="fas fa-building"></i><?= room_detail_safe($piso_label) ?></span>
                     <?php if ($capacidad > 0): ?>
                         <span class="rd-chip"><i class="fas fa-user-group"></i><?= number_format($capacidad) ?> personas</span>
+                    <?php endif; ?>
+                    <?php if ($camas_total > 0): ?>
+                        <span class="rd-chip"><i class="fas fa-bed"></i><?= number_format($camas_total) ?> camas</span>
                     <?php endif; ?>
                     <span class="rd-chip"><i class="fas fa-circle"></i><?= $activa ? 'Activa' : 'Inactiva' ?></span>
                 </div>
@@ -3010,6 +3038,14 @@ $mantenimientos_count = count($mantenimientos_programados);
                             <article class="rd-stat">
                                 <span>Historial</span>
                                 <strong><?= number_format($historial_count) ?> reservas</strong>
+                            </article>
+                            <article class="rd-stat">
+                                <span>Camas</span>
+                                <strong><?= $camas_total > 0 ? number_format($camas_total) : 'No definido' ?></strong>
+                            </article>
+                            <article class="rd-stat">
+                                <span>Propietario</span>
+                                <strong><?= room_detail_safe($propietario_nombre) ?></strong>
                             </article>
                         </div>
                     </div>
@@ -3455,6 +3491,10 @@ $mantenimientos_count = count($mantenimientos_programados);
                             <span><i class="fas fa-edit"></i>Editar habitaci&oacute;n</span>
                             <i class="fas fa-arrow-right"></i>
                         </a>
+                        <a href="<?= url('configuracion#hc-owners') ?>" class="rd-action">
+                            <span><i class="fas fa-user-tie"></i>Configurar propietario</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
 
                         <?php if ($habitacion_estado == 'disponible'): ?>
                             <div class="rd-action-grid">
@@ -3500,12 +3540,30 @@ $mantenimientos_count = count($mantenimientos_programados);
                             <strong><?= room_detail_safe($tipo_label) ?></strong>
                         </div>
                         <div class="rd-side-row">
+                            <span>Propietario</span>
+                            <strong>
+                                <?= room_detail_safe($propietario_nombre) ?>
+                                <?php if ($propietario_pct_label !== ''): ?>
+                                    <small><?= room_detail_safe($propietario_pct_label) ?></small>
+                                <?php endif; ?>
+                            </strong>
+                        </div>
+                        <div class="rd-side-row">
                             <span>Piso</span>
                             <strong><?= room_detail_safe($piso_label) ?></strong>
                         </div>
                         <div class="rd-side-row">
                             <span>Capacidad</span>
                             <strong><?= $capacidad > 0 ? number_format($capacidad) . ' personas' : 'No definida' ?></strong>
+                        </div>
+                        <div class="rd-side-row">
+                            <span>Camas</span>
+                            <strong>
+                                <?= $camas_total > 0 ? number_format($camas_total) . ' total' : 'No definidas' ?>
+                                <?php if ($camas_total > 0): ?>
+                                    <small><?= $camas_matrimoniales ?> mat. / <?= $camas_individuales ?> ind.</small>
+                                <?php endif; ?>
+                            </strong>
                         </div>
                         <div class="rd-side-row">
                             <span>Estado sistema</span>

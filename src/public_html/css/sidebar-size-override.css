@@ -280,17 +280,17 @@
 }
 
 .sidebar-nav::-webkit-scrollbar-track {
-    background: #f0f0f0 !important;
+    background: color-mix(in srgb, var(--brand-secondary, #0F172A) 6%, #F8FAFC) !important;
     border-radius: 4px !important;
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb {
-    background: #c0c0c0 !important;
+    background: color-mix(in srgb, var(--brand-secondary, #0F172A) 36%, #CBD5E1) !important;
     border-radius: 4px !important;
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
-    background: #999 !important;
+    background: var(--brand-secondary, #0F172A) !important;
 }
 
 /* ===================================

@@ -8,6 +8,7 @@ require_once __DIR__ . '/../../core/Controller.php';
 require_once __DIR__ . '/../helpers/hotel_config.php';
 require_once __DIR__ . '/../services/ReporteEntregaService.php';
 require_once __DIR__ . '/../services/ReporteGerencialDiarioService.php';
+require_once __DIR__ . '/../services/PropietarioDistribucionService.php';
 require_once __DIR__ . '/../models/TableroEjecutivo.php';
 
 class ReportesController extends Controller {
@@ -798,7 +799,7 @@ private function exportarIngresosGastosUsuarioPdf() {
     $pdf->Ln(8);
     // ═══ SECCIÓN MANOLO vs ELIA (ESTE USUARIO) ═══
     $propiedadesUsuario = $this->obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, $usuario_id, $hotel_id);
-    $this->generarSeccionPropiedadesPDF($pdf, $propiedadesUsuario, $brand);
+    $this->generarSeccionPropiedadesPDF($pdf, $propiedadesUsuario, $brand, $configPropietarios ?? null);
     $pdf->Ln(5);
     // DESGLOSE DE HOSPEDAJES POR FECHA
     if (!empty($habitacionesPorFecha)) {
@@ -1142,17 +1143,14 @@ public function obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, $usuario_
     $stmt = $db->query($sql, $params);
     $registros = $stmt->fetchAll();
     
-    $resultado = [
-        'manolo' => ['efectivo' => 0, 'tarjeta' => 0, 'transferencia' => 0, 'total' => 0, 'reservas' => 0],
-        'elia'   => ['efectivo' => 0, 'tarjeta' => 0, 'transferencia' => 0, 'total' => 0, 'reservas' => 0]
-    ];
+    $distribucionPropietarios = new PropietarioDistribucionService();
+    $configPropietarios = $distribucionPropietarios->configuracionParaHotel($hotel_id);
+    $resultado = $distribucionPropietarios->crearResultadoReporte($configPropietarios);
     
     $reservacionesContadas = [];
     
     foreach ($registros as $reg) {
         $resId = $reg['reservacion_id'];
-        $metodo = $reg['metodo_pago'];
-        $monto = floatval($reg['monto']);
         
         // Obtener habitaciones de la reservación
         $sqlHabs = "SELECT hab.tipo, hab.precio_base
@@ -1166,58 +1164,139 @@ public function obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, $usuario_
         $stmtHabs = $db->query($sqlHabs, [$resId, $hotel_id]);
         $habitaciones = $stmtHabs->fetchAll();
         
-        $precioManolo = 0;
-        $precioElia = 0;
-        
-        foreach ($habitaciones as $hab) {
-            $precio = floatval($hab['precio_base']);
-            if (strpos($hab['tipo'], 'manolo') !== false) {
-                $precioManolo += $precio;
-            } else {
-                $precioElia += $precio;
-            }
-        }
-        
-        $precioTotal = $precioManolo + $precioElia;
-        
-        // Repartir proporcionalmente según precio de habitaciones
-        if ($precioTotal > 0) {
-            $montoManolo = round($monto * ($precioManolo / $precioTotal), 2);
-            $montoElia = round($monto * ($precioElia / $precioTotal), 2);
-            // Ajustar centavos por redondeo
-            $diff = $monto - ($montoManolo + $montoElia);
-            if ($diff != 0) {
-                if ($montoElia > $montoManolo) $montoElia += $diff;
-                else $montoManolo += $diff;
-            }
-        } else {
-            $montoManolo = 0;
-            $montoElia = $monto;
-        }
-        
-        if ($montoManolo > 0) {
-            $resultado['manolo'][$metodo] += $montoManolo;
-            $resultado['manolo']['total'] += $montoManolo;
-            if (!isset($reservacionesContadas[$resId . '-m'])) {
-                $resultado['manolo']['reservas']++;
-                $reservacionesContadas[$resId . '-m'] = true;
-            }
-        }
-        
-        if ($montoElia > 0) {
-            $resultado['elia'][$metodo] += $montoElia;
-            $resultado['elia']['total'] += $montoElia;
-            if (!isset($reservacionesContadas[$resId . '-e'])) {
-                $resultado['elia']['reservas']++;
-                $reservacionesContadas[$resId . '-e'] = true;
-            }
-        }
+        $resultado = $distribucionPropietarios->aplicarMovimientoReporte(
+            $resultado,
+            $reg,
+            $habitaciones,
+            $reservacionesContadas,
+            $configPropietarios
+        );
     }
     
     return $resultado;
 }
 
-private function generarSeccionPropiedadesPDF($pdf, $propiedades, array $brand = []) {
+private function generarSeccionPropiedadesPDF($pdf, $propiedades, array $brand = [], array $configPropietarios = null) {
+    $distribucionPropietarios = new PropietarioDistribucionService();
+    $configPropietarios = $configPropietarios ?: $distribucionPropietarios->configuracionParaHotel();
+    $propietarios = $distribucionPropietarios->resumenPropietarios($propiedades, $configPropietarios);
+    $totalGeneral = array_sum(array_map(static function ($propietario) {
+        return (float) ($propietario['total'] ?? 0);
+    }, $propietarios));
+    $totalReservas = array_sum(array_map(static function ($propietario) {
+        return (int) ($propietario['cantidad'] ?? 0);
+    }, $propietarios));
+
+    if ($totalGeneral <= 0 || empty($propietarios)) {
+        return;
+    }
+
+    $primary = $brand['primary'] ?? '#8B6D42';
+    $secondary = $brand['secondary'] ?? '#7A8B5C';
+    $accent = $brand['accent'] ?? '#4A6FA5';
+    $primaryDark = $brand['primary_dark'] ?? '#654E2C';
+    $accentDark = $brand['accent_dark'] ?? '#2C4A6E';
+    $primarySoft = $brand['primary_soft'] ?? '#F5EFE6';
+    $accentSoft = $brand['accent_soft'] ?? '#E8EDF3';
+    $line = $brand['line'] ?? '#E7DEC9';
+    $primaryRgb = $this->reportePdfRgb($primary);
+    $primaryTextRgb = $this->reportePdfRgb($this->reportePdfTextColor($primary));
+
+    $pdf->Ln(5);
+    $pdf->SetFillColor($primaryRgb[0], $primaryRgb[1], $primaryRgb[2]);
+    $pdf->SetTextColor($primaryTextRgb[0], $primaryTextRgb[1], $primaryTextRgb[2]);
+    $pdf->SetFont('helvetica', 'B', 13);
+    $pdf->Cell(0, 11, '  INGRESOS POR PROPIEDAD', 0, 1, 'L', true);
+    $pdf->SetTextColor(0, 0, 0);
+    $pdf->Ln(4);
+
+    $html = '<table cellpadding="6" cellspacing="0" border="1" style="font-size:10pt;">
+        <thead>
+            <tr style="background-color:' . $primary . '; color:' . $this->reportePdfTextColor($primary) . '; font-weight:bold;">
+                <th width="34%">Propietario</th>
+                <th width="22%" style="text-align:right;">Ingresos</th>
+                <th width="18%" style="text-align:center;">Reservas</th>
+                <th width="26%" style="text-align:right;">Participacion</th>
+            </tr>
+        </thead>
+        <tbody>';
+
+    $fila = 0;
+    foreach ($propietarios as $propietario) {
+        $pct = $totalGeneral > 0 ? ((float) $propietario['total'] / $totalGeneral * 100) : 0;
+        $bgColor = $fila % 2 == 0 ? '#FFFFFF' : $line;
+        $html .= '<tr style="background-color:' . $bgColor . ';">
+            <td style="font-weight:bold; color:' . $primaryDark . ';">' . htmlspecialchars($propietario['nombre'], ENT_QUOTES, 'UTF-8') . '</td>
+            <td style="text-align:right; font-weight:bold; color:' . $primary . ';">$' . number_format((float) $propietario['total'], 2) . '</td>
+            <td style="text-align:center;">' . (int) $propietario['cantidad'] . '</td>
+            <td style="text-align:right;">' . number_format($pct, 1) . '%</td>
+        </tr>';
+        $fila++;
+    }
+
+    $html .= '<tr style="background-color:' . $accentSoft . '; font-weight:bold;">
+            <td style="color:' . $accentDark . ';">TOTAL HOSPEDAJE</td>
+            <td style="text-align:right; color:' . $accent . ';">$' . number_format($totalGeneral, 2) . '</td>
+            <td style="text-align:center;">' . $totalReservas . '</td>
+            <td style="text-align:right;">100%</td>
+        </tr>
+        </tbody>
+    </table>';
+
+    $pdf->writeHTML($html, true, false, false, false, '');
+    $pdf->Ln(3);
+    $pdf->SetFont('helvetica', 'B', 11);
+    $pdf->SetTextColor(60, 60, 60);
+    $pdf->Cell(0, 8, 'Desglose por propietario y metodo de pago', 0, 1);
+
+    $metodos = ['efectivo', 'tarjeta', 'transferencia'];
+    $html = '<table border="1" cellpadding="6" cellspacing="0" style="font-size:10pt;">
+        <thead>
+            <tr style="background-color:' . $primary . '; color:' . $this->reportePdfTextColor($primary) . '; font-weight:bold;">
+                <th width="34%">Propietario</th>
+                <th width="16%" style="text-align:right;">Efectivo</th>
+                <th width="16%" style="text-align:right;">Tarjeta</th>
+                <th width="18%" style="text-align:right;">Transferencia</th>
+                <th width="16%" style="text-align:right;">Total</th>
+            </tr>
+        </thead>
+        <tbody>';
+
+    $fila = 0;
+    foreach ($propietarios as $propietario) {
+        $datos = $propietario['datos'];
+        $bgColor = $fila % 2 == 0 ? '#FFFFFF' : $line;
+        $html .= '<tr style="background-color:' . $bgColor . ';">
+            <td style="font-weight:bold;">' . htmlspecialchars($propietario['nombre'], ENT_QUOTES, 'UTF-8') . '</td>
+            <td style="text-align:right;">$' . number_format((float) ($datos['efectivo'] ?? 0), 2) . '</td>
+            <td style="text-align:right;">$' . number_format((float) ($datos['tarjeta'] ?? 0), 2) . '</td>
+            <td style="text-align:right;">$' . number_format((float) ($datos['transferencia'] ?? 0), 2) . '</td>
+            <td style="text-align:right; font-weight:bold;">$' . number_format((float) $propietario['total'], 2) . '</td>
+        </tr>';
+        $fila++;
+    }
+
+    $totalesMetodo = [];
+    foreach ($metodos as $metodo) {
+        $totalesMetodo[$metodo] = array_sum(array_map(static function ($propietario) use ($metodo) {
+            return (float) ($propietario['datos'][$metodo] ?? 0);
+        }, $propietarios));
+    }
+
+    $html .= '<tr style="background-color:' . $primarySoft . '; font-weight:bold;">
+            <td style="font-size:11pt;">TOTAL</td>
+            <td style="text-align:right;">$' . number_format($totalesMetodo['efectivo'], 2) . '</td>
+            <td style="text-align:right;">$' . number_format($totalesMetodo['tarjeta'], 2) . '</td>
+            <td style="text-align:right;">$' . number_format($totalesMetodo['transferencia'], 2) . '</td>
+            <td style="text-align:right; font-size:11pt;">$' . number_format($totalGeneral, 2) . '</td>
+        </tr>
+        </tbody>
+    </table>';
+
+    $pdf->writeHTML($html, true, false, false, false, '');
+}
+
+private function generarSeccionPropiedadesLegacyPDF($pdf, $propiedades, array $brand = []) {
     $manolo = $propiedades['manolo'];
     $elia = $propiedades['elia'];
     $totalGeneral = $manolo['total'] + $elia['total'];
@@ -1593,7 +1672,7 @@ private function exportarIngresosGastosPdf() {
     // ═══ SECCIÓN MANOLO vs ELIA ═══
     // ═══════════════════════════════════════════
     $propiedades = $this->obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, null, $hotel_id);
-    $this->generarSeccionPropiedadesPDF($pdf, $propiedades, $brand);
+    $this->generarSeccionPropiedadesPDF($pdf, $propiedades, $brand, $configPropietarios ?? null);
     
     // ── FOOTER ──
     $pdf->Ln(15);
@@ -2016,7 +2095,7 @@ private function exportarIngresosTotalesPdf() {
     
     // ═══ SECCIÓN MANOLO vs ELIA ═══
     $propiedades = $this->obtenerIngresosPorPropiedad($fecha_inicio, $fecha_fin, null, $hotel_id);
-    $this->generarSeccionPropiedadesPDF($pdf, $propiedades, $brand);
+    $this->generarSeccionPropiedadesPDF($pdf, $propiedades, $brand, $configPropietarios ?? null);
     
     // Nueva página para detalle diario
     $pdf->AddPage();

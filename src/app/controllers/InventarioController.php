@@ -983,9 +983,16 @@ public function debugMovimientosDateAction() {
 
     private function tiposHabitacionInventario(): array {
         $tipos = [];
+        $catalogoTipos = [];
 
-        if (function_exists('hotel_room_catalog_types')) {
-            foreach (hotel_room_catalog_types() as $codigo => $nombre) {
+        if (function_exists('hotel_room_catalog_types_for_select')) {
+            $catalogoTipos = hotel_room_catalog_types_for_select();
+        } elseif (function_exists('hotel_room_catalog_types')) {
+            $catalogoTipos = hotel_room_catalog_types();
+        }
+
+        if (!empty($catalogoTipos)) {
+            foreach ($catalogoTipos as $codigo => $nombre) {
                 $codigo = trim((string)$codigo);
                 if ($codigo === '') {
                     continue;
@@ -1006,8 +1013,8 @@ public function debugMovimientosDateAction() {
             'doble' => 'Doble',
             'triple' => 'Triple',
             'cuadruple' => 'Cuadruple',
-            'sencilla_manolo' => 'Sencilla Manolo',
-            'doble_manolo' => 'Doble Manolo'
+            'doble_jacuzzi' => 'Doble con Jacuzzi',
+            'sencilla_jacuzzi' => 'Sencilla con Jacuzzi'
         ];
     }
 

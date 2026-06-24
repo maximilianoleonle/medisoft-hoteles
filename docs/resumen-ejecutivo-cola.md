@@ -3183,3 +3183,41 @@ Estado formal:
 - No modifica rutas, controladores, modelos operativos, vistas, migraciones,
   base de datos, auth operativo, permisos, Caja, produccion, PWA/offline ni
   `/api/sync`.
+
+## NP-F-C Health baseline Personal detalle redisenado
+
+Estado formal:
+`IMPLEMENTACION_NP_F_C_HEALTH_BASELINE_PERSONAL_DETALLE_QA_TECNICA_LOCAL_COMPLETADA`.
+
+- Documento creado:
+  `docs/fase_NP_F_C_health_baseline_personal_detalle.md`.
+- Ajusta `health_check_fase_1a.php` para reconocer las marcas actuales de
+  `trabajadores/ver.php` tras el redisenio visual.
+- El warning restante del health general pasa a OK:
+  `Vistas Personal NP-F-A/5E-D-A muestran CRUD, reporte, ledger manual y panel de pago laboral con CSRF/token.`
+- QA tecnica local: lint OK; health general `OK: 413`, `WARNING: 0`,
+  `ERROR: 0`, `PASS_WITH_WARNINGS_ALLOWED`.
+- No modifica vistas, rutas, controladores, modelos, servicios, migraciones,
+  base de datos, Caja, nomina oficial, produccion, PWA/offline ni `/api/sync`.
+
+## Cierre tecnico de bloque - estabilidad local 2026-06-23
+
+Estado formal:
+`CIERRE_TECNICO_BLOQUE_ESTABILIDAD_LOCAL_QA_TECNICA_COMPLETADA`.
+
+- Documento creado:
+  `docs/cierre_tecnico_bloque_estabilidad_local_20260623.md`.
+- Consolida el estado estable local de inventario, proveedores, compras, CxP,
+  CxC, documentos, tareas, mantenimiento, limpieza, Personal, nomina
+  administrativa, Caja, reportes y tableros.
+- Health general queda limpio: `OK: 413`, `WARNING: 0`, `ERROR: 0`.
+- Suite nomina administrativa queda limpia: `OK: 4`, `WARNING: 0`,
+  `ERROR: 0`.
+- Warnings aceptados documentados:
+  - tablero ejecutivo: `ledger_laboral` opcional;
+  - tablero ejecutivo: `auth.*` global sin `hotel_id`;
+  - arqueo: cortes historicos/locales con diferencias diagnosticadas.
+- Define superficies listas para QA manual/redisenio visual sin cambiar
+  contratos de formularios.
+- No modifica codigo operativo, vistas, rutas, controladores, modelos,
+  servicios, migraciones, base de datos, produccion, PWA/offline ni `/api/sync`.

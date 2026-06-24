@@ -133,6 +133,7 @@
 .overflow-y-auto {
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--brand-secondary, #0F172A) 36%, #CBD5E1) color-mix(in srgb, var(--brand-secondary, #0F172A) 6%, #F8FAFC);
 }
 
 /* Scrollbar más limpia */
@@ -141,17 +142,17 @@
 }
 
 .overflow-y-auto::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: color-mix(in srgb, var(--brand-secondary, #0F172A) 6%, #F8FAFC);
     border-radius: 3px;
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
+    background: color-mix(in srgb, var(--brand-secondary, #0F172A) 36%, #CBD5E1);
     border-radius: 3px;
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
+    background: var(--brand-secondary, #0F172A);
 }
 
 /* ===================================

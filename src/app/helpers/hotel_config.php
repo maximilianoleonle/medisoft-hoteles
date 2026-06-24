@@ -976,6 +976,90 @@ if (!function_exists('hotel_room_catalog_types')) {
     }
 }
 
+if (!function_exists('hotel_room_catalog_legacy_type_labels')) {
+    function hotel_room_catalog_legacy_type_labels()
+    {
+        return [
+            'sencilla_manolo' => 'Sencilla Manolo',
+            'doble_manolo' => 'Doble Manolo',
+        ];
+    }
+}
+
+if (!function_exists('hotel_room_catalog_legacy_type_codes_in_use')) {
+    function hotel_room_catalog_legacy_type_codes_in_use($hotelId = null)
+    {
+        static $cache = [];
+
+        $hotelId = hotel_config_resolve_hotel_id($hotelId);
+        if (!$hotelId || !class_exists('Database')) {
+            return [];
+        }
+
+        $cacheKey = (string) (int) $hotelId;
+        if (array_key_exists($cacheKey, $cache)) {
+            return $cache[$cacheKey];
+        }
+
+        $codes = [];
+        try {
+            $legacyCodes = array_keys(hotel_room_catalog_legacy_type_labels());
+            $placeholders = implode(',', array_fill(0, count($legacyCodes), '?'));
+            $params = array_merge([(int) $hotelId], $legacyCodes);
+            $stmt = Database::getInstance()->query(
+                "SELECT DISTINCT tipo
+                 FROM habitaciones
+                 WHERE hotel_id = ?
+                   AND activa = 1
+                   AND tipo IN ($placeholders)
+                 ORDER BY tipo",
+                $params
+            );
+
+            if ($stmt) {
+                foreach ($stmt->fetchAll() as $row) {
+                    $code = strtolower(trim((string) ($row['tipo'] ?? '')));
+                    if ($code !== '') {
+                        $codes[] = $code;
+                    }
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('Error cargando tipos legacy en uso: ' . $e->getMessage());
+        }
+
+        $cache[$cacheKey] = array_values(array_unique($codes));
+        return $cache[$cacheKey];
+    }
+}
+
+if (!function_exists('hotel_room_catalog_types_for_select')) {
+    function hotel_room_catalog_types_for_select($hotelId = null)
+    {
+        $tipos = hotel_room_catalog_types($hotelId);
+        $legacyLabels = hotel_room_catalog_legacy_type_labels();
+
+        foreach ($tipos as $codigo => $nombre) {
+            $codigo = strtolower(trim((string) $codigo));
+            if ($codigo === '' || !isset($legacyLabels[$codigo])) {
+                continue;
+            }
+
+            $tipos[$codigo] = trim((string) $nombre) !== ''
+                ? (string) $nombre
+                : $legacyLabels[$codigo];
+        }
+
+        foreach (hotel_room_catalog_legacy_type_codes_in_use($hotelId) as $codigo) {
+            if (!isset($tipos[$codigo]) && isset($legacyLabels[$codigo])) {
+                $tipos[$codigo] = $legacyLabels[$codigo];
+            }
+        }
+
+        return $tipos;
+    }
+}
+
 if (!function_exists('hotel_room_catalog_floors')) {
     function hotel_room_catalog_floors($hotelId = null)
     {
@@ -1671,6 +1755,412 @@ if (!function_exists('hotel_config_get')) {
         }
 
         return hotel_config_cast_value($row['valor'], $row['tipo'], $default);
+    }
+}
+
+if (!function_exists('hotel_owner_distribution_default')) {
+    function hotel_owner_distribution_default()
+    {
+        return [
+            'version' => 1,
+            'propietario_default' => 'elia',
+            'propietarios' => [
+                'manolo' => [
+                    'key' => 'manolo',
+                    'nombre' => 'Manolo',
+                    'activo' => true,
+                    'participacion_pct' => 100.0,
+                ],
+                'elia' => [
+                    'key' => 'elia',
+                    'nombre' => 'Elia',
+                    'activo' => true,
+                    'participacion_pct' => 100.0,
+                ],
+            ],
+            'reglas_tipo_contiene' => [
+                'manolo' => 'manolo',
+            ],
+            'habitaciones' => [],
+        ];
+    }
+}
+
+if (!function_exists('hotel_owner_distribution_text_length')) {
+    function hotel_owner_distribution_text_length($value)
+    {
+        $value = (string) $value;
+        return function_exists('mb_strlen') ? mb_strlen($value, 'UTF-8') : strlen($value);
+    }
+}
+
+if (!function_exists('hotel_owner_distribution_key')) {
+    function hotel_owner_distribution_key($value)
+    {
+        $key = strtolower(trim((string) $value));
+        $key = preg_replace('/[^a-z0-9_-]+/', '_', $key);
+        return trim((string) $key, '_-');
+    }
+}
+
+if (!function_exists('hotel_owner_distribution_percentage')) {
+    function hotel_owner_distribution_percentage($value)
+    {
+        if (is_string($value)) {
+            $value = str_replace(',', '.', $value);
+        }
+
+        $percentage = is_numeric($value) ? (float) $value : 100.0;
+
+        return max(0.0, min(100.0, round($percentage, 2)));
+    }
+}
+
+if (!function_exists('hotel_owner_distribution_normalize')) {
+    function hotel_owner_distribution_normalize($config = null)
+    {
+        $base = hotel_owner_distribution_default();
+
+        if (is_string($config) && trim($config) !== '') {
+            $decoded = json_decode($config, true);
+            $config = json_last_error() === JSON_ERROR_NONE ? $decoded : [];
+        }
+
+        if (!is_array($config)) {
+            $config = [];
+        }
+
+        $rawOwners = is_array($config['propietarios'] ?? null) && !empty($config['propietarios'])
+            ? $config['propietarios']
+            : $base['propietarios'];
+
+        $propietarios = [];
+        foreach ($rawOwners as $key => $row) {
+            if (!is_array($row)) {
+                $row = ['nombre' => (string) $row];
+            }
+
+            $ownerKey = hotel_owner_distribution_key($row['key'] ?? $key);
+            $ownerName = trim((string) ($row['nombre'] ?? $row['label'] ?? $ownerKey));
+
+            if ($ownerKey === '') {
+                continue;
+            }
+
+            $propietarios[$ownerKey] = [
+                'key' => $ownerKey,
+                'nombre' => $ownerName !== '' ? $ownerName : $ownerKey,
+                'activo' => array_key_exists('activo', $row) ? !empty($row['activo']) : true,
+                'participacion_pct' => hotel_owner_distribution_percentage(
+                    $row['participacion_pct'] ?? ($row['porcentaje'] ?? ($row['participacion'] ?? 100))
+                ),
+            ];
+        }
+
+        if (empty($propietarios)) {
+            $propietarios = $base['propietarios'];
+        }
+
+        $activeOwnerKeys = array_keys(array_filter($propietarios, static function (array $row) {
+            return !empty($row['activo']);
+        }));
+
+        if (empty($activeOwnerKeys)) {
+            $propietarios = $base['propietarios'];
+            $activeOwnerKeys = array_keys($propietarios);
+        }
+
+        $defaultKey = hotel_owner_distribution_key($config['propietario_default'] ?? $base['propietario_default']);
+        if (!isset($propietarios[$defaultKey]) || empty($propietarios[$defaultKey]['activo'])) {
+            $defaultKey = isset($propietarios[$base['propietario_default']]) && !empty($propietarios[$base['propietario_default']]['activo'])
+                ? $base['propietario_default']
+                : (string) $activeOwnerKeys[0];
+        }
+
+        $reglas = [];
+        $rawRules = is_array($config['reglas_tipo_contiene'] ?? null)
+            ? $config['reglas_tipo_contiene']
+            : $base['reglas_tipo_contiene'];
+        foreach ($rawRules as $needle => $ownerKey) {
+            if (is_array($ownerKey)) {
+                $needle = $ownerKey['texto'] ?? $needle;
+                $ownerKey = $ownerKey['propietario_key'] ?? ($ownerKey['propietario'] ?? '');
+            }
+
+            $needle = strtolower(trim((string) $needle));
+            $ownerKey = hotel_owner_distribution_key($ownerKey);
+
+            if ($needle !== '' && isset($propietarios[$ownerKey]) && !empty($propietarios[$ownerKey]['activo'])) {
+                $reglas[$needle] = $ownerKey;
+            }
+        }
+
+        $habitaciones = [];
+        $rawRooms = is_array($config['habitaciones'] ?? null) ? $config['habitaciones'] : [];
+        foreach ($rawRooms as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $ownerKey = hotel_owner_distribution_key($row['propietario_key'] ?? ($row['propietario'] ?? ''));
+            if (!isset($propietarios[$ownerKey]) || empty($propietarios[$ownerKey]['activo'])) {
+                continue;
+            }
+
+            $assignment = [
+                'propietario_key' => $ownerKey,
+            ];
+
+            foreach (['habitacion_id', 'numero', 'tipo'] as $field) {
+                if (!array_key_exists($field, $row)) {
+                    continue;
+                }
+
+                $value = is_string($row[$field]) ? trim($row[$field]) : $row[$field];
+                if ($value !== '' && $value !== null) {
+                    $assignment[$field] = $value;
+                }
+            }
+
+            if (count($assignment) > 1) {
+                $habitaciones[] = $assignment;
+            }
+        }
+
+        return [
+            'version' => 1,
+            'propietario_default' => $defaultKey,
+            'propietarios' => $propietarios,
+            'reglas_tipo_contiene' => $reglas,
+            'habitaciones' => $habitaciones,
+        ];
+    }
+}
+
+if (!function_exists('hotel_owner_distribution_config')) {
+    function hotel_owner_distribution_config($hotelId = null)
+    {
+        $stored = hotel_config_get('propietarios.distribucion', hotel_owner_distribution_default(), $hotelId);
+        return hotel_owner_distribution_normalize($stored);
+    }
+}
+
+if (!function_exists('hotel_owner_distribution_normalize_payload')) {
+    function hotel_owner_distribution_normalize_payload(array $payload)
+    {
+        $errors = [];
+        $propietarios = [];
+        $seen = [];
+
+        $ownerRows = is_array($payload['propietarios'] ?? null) ? $payload['propietarios'] : [];
+        foreach ($ownerRows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $keyRaw = trim((string) ($row['key'] ?? ''));
+            $name = trim((string) ($row['nombre'] ?? ''));
+            $percentageRaw = trim((string) ($row['participacion_pct'] ?? ''));
+            $active = !empty($row['activo']);
+            $hasAny = $keyRaw !== '' || $name !== '' || $percentageRaw !== '';
+
+            if (!$hasAny) {
+                continue;
+            }
+
+            $ownerKey = hotel_owner_distribution_key($keyRaw !== '' ? $keyRaw : $name);
+            if ($ownerKey === '' || !preg_match('/^[a-z0-9_-]{2,40}$/', $ownerKey)) {
+                $errors[] = 'Cada propietario debe tener una clave de 2 a 40 caracteres usando letras, numeros, guion o guion bajo.';
+                continue;
+            }
+
+            if (isset($seen[$ownerKey])) {
+                $errors[] = 'El propietario "' . $ownerKey . '" esta duplicado.';
+                continue;
+            }
+
+            if ($name === '') {
+                $errors[] = 'El propietario "' . $ownerKey . '" debe tener nombre.';
+                continue;
+            }
+
+            if (hotel_owner_distribution_text_length($name) > 80) {
+                $errors[] = 'El nombre del propietario "' . $ownerKey . '" no debe exceder 80 caracteres.';
+                continue;
+            }
+
+            if ($percentageRaw !== '' && !is_numeric(str_replace(',', '.', $percentageRaw))) {
+                $errors[] = 'La participacion del propietario "' . $ownerKey . '" debe ser numerica.';
+                continue;
+            }
+
+            $percentageNumber = $percentageRaw !== '' ? (float) str_replace(',', '.', $percentageRaw) : 100.0;
+            if ($percentageNumber < 0 || $percentageNumber > 100) {
+                $errors[] = 'La participacion del propietario "' . $ownerKey . '" debe estar entre 0 y 100.';
+                continue;
+            }
+            $percentage = hotel_owner_distribution_percentage($percentageNumber);
+
+            $seen[$ownerKey] = true;
+            $propietarios[$ownerKey] = [
+                'key' => $ownerKey,
+                'nombre' => $name,
+                'activo' => $active,
+                'participacion_pct' => $percentage,
+            ];
+        }
+
+        if (empty($propietarios)) {
+            $errors[] = 'Debes configurar al menos un propietario.';
+        }
+
+        $activeOwners = array_filter($propietarios, static function (array $row) {
+            return !empty($row['activo']);
+        });
+        $activeOwnerKeys = array_keys($activeOwners);
+
+        if (!empty($propietarios) && empty($activeOwners)) {
+            $errors[] = 'Debes dejar activo al menos un propietario.';
+        }
+
+        $defaultKey = hotel_owner_distribution_key($payload['propietario_default'] ?? '');
+        if ($defaultKey === '') {
+            $errors[] = 'Selecciona un propietario predeterminado.';
+        } elseif (!isset($activeOwners[$defaultKey])) {
+            $errors[] = 'El propietario predeterminado debe existir y estar activo.';
+        }
+
+        $reglas = [];
+        $ruleRows = is_array($payload['reglas_tipo_contiene'] ?? null) ? $payload['reglas_tipo_contiene'] : [];
+        foreach ($ruleRows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $needle = strtolower(trim((string) ($row['texto'] ?? '')));
+            $ownerKey = hotel_owner_distribution_key($row['propietario_key'] ?? '');
+            $hasAny = $needle !== '' || $ownerKey !== '';
+
+            if (!$hasAny) {
+                continue;
+            }
+
+            if ($needle === '') {
+                $errors[] = 'Cada regla por tipo debe tener el texto a buscar.';
+                continue;
+            }
+
+            if (hotel_owner_distribution_text_length($needle) > 60) {
+                $errors[] = 'La regla "' . $needle . '" no debe exceder 60 caracteres.';
+                continue;
+            }
+
+            if (!isset($activeOwners[$ownerKey])) {
+                $errors[] = 'La regla "' . $needle . '" debe apuntar a un propietario activo.';
+                continue;
+            }
+
+            $reglas[$needle] = $ownerKey;
+        }
+
+        $habitaciones = [];
+        $assignmentRows = is_array($payload['habitaciones'] ?? null) ? $payload['habitaciones'] : [];
+        foreach ($assignmentRows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $roomIdRaw = trim((string) ($row['habitacion_id'] ?? ''));
+            $numero = trim((string) ($row['numero'] ?? ''));
+            $tipo = strtolower(trim((string) ($row['tipo'] ?? '')));
+            $ownerKey = hotel_owner_distribution_key($row['propietario_key'] ?? '');
+            $hasScope = $roomIdRaw !== '' || $numero !== '' || $tipo !== '';
+            $hasAny = $hasScope || $ownerKey !== '';
+
+            if (!$hasAny) {
+                continue;
+            }
+
+            if (!$hasScope) {
+                $errors[] = 'Cada asignacion debe tener numero, tipo o id de habitacion.';
+                continue;
+            }
+
+            if (!isset($activeOwners[$ownerKey])) {
+                $errors[] = 'Cada asignacion de habitacion debe apuntar a un propietario activo.';
+                continue;
+            }
+
+            $assignment = [
+                'propietario_key' => $ownerKey,
+            ];
+
+            if ($roomIdRaw !== '') {
+                if (!preg_match('/^\d+$/', $roomIdRaw)) {
+                    $errors[] = 'El id de habitacion debe ser numerico.';
+                    continue;
+                }
+
+                $assignment['habitacion_id'] = (int) $roomIdRaw;
+            }
+
+            if ($numero !== '') {
+                if (hotel_owner_distribution_text_length($numero) > 30) {
+                    $errors[] = 'El numero de habitacion "' . $numero . '" no debe exceder 30 caracteres.';
+                    continue;
+                }
+
+                $assignment['numero'] = $numero;
+            }
+
+            if ($tipo !== '') {
+                if (hotel_owner_distribution_text_length($tipo) > 80) {
+                    $errors[] = 'El tipo de habitacion "' . $tipo . '" no debe exceder 80 caracteres.';
+                    continue;
+                }
+
+                $assignment['tipo'] = $tipo;
+            }
+
+            $habitaciones[] = $assignment;
+        }
+
+        if (!empty($errors)) {
+            return [
+                'values' => hotel_owner_distribution_normalize([
+                    'propietario_default' => $defaultKey ?: ($activeOwnerKeys[0] ?? ''),
+                    'propietarios' => $propietarios,
+                    'reglas_tipo_contiene' => $reglas,
+                    'habitaciones' => $habitaciones,
+                ]),
+                'errors' => $errors,
+            ];
+        }
+
+        return [
+            'values' => hotel_owner_distribution_normalize([
+                'version' => 1,
+                'propietario_default' => $defaultKey,
+                'propietarios' => $propietarios,
+                'reglas_tipo_contiene' => $reglas,
+                'habitaciones' => $habitaciones,
+            ]),
+            'errors' => [],
+        ];
+    }
+}
+
+if (!function_exists('hotel_owner_distribution_save')) {
+    function hotel_owner_distribution_save(array $config, $hotelId = null)
+    {
+        return hotel_config_save_value(
+            'propietarios.distribucion',
+            hotel_owner_distribution_normalize($config),
+            'json',
+            'propietarios',
+            'Distribucion configurable de ingresos por propietario.',
+            $hotelId
+        );
     }
 }
 

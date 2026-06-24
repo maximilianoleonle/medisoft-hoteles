@@ -8,8 +8,6 @@ $iconos = $iconos ?? [
     'doble' => 'fa-bed',
     'triple' => 'fa-bed',
     'cuadruple' => 'fa-bed',
-    'sencilla_manolo' => 'fa-bed',
-    'doble_manolo' => 'fa-bed',
     'doble_jacuzzi' => 'fa-hot-tub',
     'sencilla_jacuzzi' => 'fa-hot-tub',
 ];
@@ -26,8 +24,6 @@ $tipoEstilos = [
     'doble' => ['color' => '#16824E', 'bg' => '#EAF6EF', 'label' => 'Doble'],
     'triple' => ['color' => '#8B5CF6', 'bg' => '#F1EBFF', 'label' => 'Triple'],
     'cuadruple' => ['color' => '#B7791F', 'bg' => '#FFF4D8', 'label' => 'Cuádruple'],
-    'sencilla_manolo' => ['color' => '#0F766E', 'bg' => '#E6FFFA', 'label' => 'Sencilla Manolo'],
-    'doble_manolo' => ['color' => '#0891B2', 'bg' => '#E8F7FB', 'label' => 'Doble Manolo'],
     'doble_jacuzzi' => ['color' => '#BE5B8D', 'bg' => '#FDF2F8', 'label' => 'Doble jacuzzi'],
     'sencilla_jacuzzi' => ['color' => '#4F46E5', 'bg' => '#EEF2FF', 'label' => 'Sencilla jacuzzi'],
 ];

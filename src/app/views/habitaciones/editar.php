@@ -21,6 +21,23 @@ $amenidadesHabitacion = is_array($amenidades ?? null) && !empty($amenidades)
         'amplia' => 'Mas amplia',
     ];
 
+$habitacionCaracteristicasPlain = strtolower((string)($habitacion['caracteristicas'] ?? ''));
+$habitacionCaracteristicasAscii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $habitacionCaracteristicasPlain);
+if ($habitacionCaracteristicasAscii !== false) {
+    $habitacionCaracteristicasPlain = $habitacionCaracteristicasAscii;
+}
+
+$habitacionTipoSeleccionado = (string)($habitacion['tipo'] ?? '');
+if (strpos($habitacionCaracteristicasPlain, 'jacuzzi') !== false) {
+    if ($habitacionTipoSeleccionado === 'doble') {
+        $habitacionTipoSeleccionado = 'doble_jacuzzi';
+    } elseif ($habitacionTipoSeleccionado === 'sencilla') {
+        $habitacionTipoSeleccionado = 'sencilla_jacuzzi';
+    }
+}
+
+$habitacionTipoLabel = $tiposHabitacion[$habitacionTipoSeleccionado] ?? ($tiposHabitacion[$habitacion['tipo']] ?? get_tipo_habitacion($habitacion['tipo']));
+
 $rangosHabitacion = Habitacion::getRangoPrecios();
 if (function_exists('hotel_room_catalog_type_rows')) {
     foreach (hotel_room_catalog_type_rows(null, true) as $catalogTypeRow) {
@@ -249,6 +266,14 @@ if (function_exists('hotel_room_catalog_type_rows')) {
     color: var(--er-ink) !important;
 }
 
+.edit-room-error {
+    display: block;
+    margin-top: 0.45rem;
+    color: #b42318;
+    font-size: 0.78rem;
+    font-weight: 850;
+}
+
 .edit-room-page .text-gray-500,
 .edit-room-page .text-gray-600,
 .edit-room-page .text-gray-700 {
@@ -425,7 +450,7 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                     </h1>
                     <p class="text-gray-600">
                         <?php
-                        echo htmlspecialchars((string) ($tiposHabitacion[$habitacion['tipo']] ?? 'Tipo especial'), ENT_QUOTES, 'UTF-8');
+                        echo htmlspecialchars((string) ($habitacionTipoLabel ?? 'Tipo especial'), ENT_QUOTES, 'UTF-8');
                         ?>
                     </p>
                 </div>
@@ -490,6 +515,9 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                                required
                                                class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
                                     </div>
+                                    <?php if (form_error('numero')): ?>
+                                        <span class="edit-room-error"><?= form_error('numero') ?></span>
+                                    <?php endif; ?>
 
                                 </div>
 
@@ -503,7 +531,7 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                                 required
                                                 class="w-full pl-4 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all appearance-none">
                                             <?php foreach ($tiposHabitacion as $key => $tipo): ?>
-                                                <option value="<?= $key ?>" <?= $habitacion['tipo'] == $key ? 'selected' : '' ?>>
+                                                <option value="<?= $key ?>" <?= $habitacionTipoSeleccionado == $key ? 'selected' : '' ?>>
                                                     <?= htmlspecialchars((string) $tipo, ENT_QUOTES, 'UTF-8') ?>
                                                 </option>
                                             <?php endforeach; ?>
@@ -596,7 +624,7 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                     ?>
                                     <div class="mb-2">
                                         <span class="text-xs text-gray-500" id="rango-precio">
-                                            Rango sugerido para <?= get_tipo_habitacion($habitacion['tipo']) ?>:
+                                            Rango sugerido para <?= htmlspecialchars((string)$habitacionTipoLabel, ENT_QUOTES, 'UTF-8') ?>:
                                             $<?= number_format($rango_actual['min']) ?> - $<?= number_format($rango_actual['max']) ?>
                                         </span>
                                     </div>
@@ -607,8 +635,6 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                         <input type="number"
                                                name="precio_base"
                                                value="<?= $habitacion['precio_base'] ?>"
-                                               min="<?= $rango_actual['min'] ?>"
-                                               max="<?= $rango_actual['max'] + 500 ?>"
                                                step="50"
                                                required
                                                class="w-full pl-10 pr-4 py-3 text-xl font-semibold border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
@@ -616,6 +642,55 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                             <span class="text-sm text-gray-500">MXN</span>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                        Capacidad de Personas <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number"
+                                           name="capacidad_personas"
+                                           value="<?= htmlspecialchars((string)($habitacion['capacidad_personas'] ?? 2), ENT_QUOTES, 'UTF-8') ?>"
+                                           min="1"
+                                           max="30"
+                                           step="1"
+                                           required
+                                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
+                                    <?php if (form_error('capacidad_personas')): ?>
+                                        <span class="edit-room-error"><?= form_error('capacidad_personas') ?></span>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                        Camas Matrimoniales <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number"
+                                           name="camas_matrimoniales"
+                                           value="<?= htmlspecialchars((string)($habitacion['camas_matrimoniales'] ?? 1), ENT_QUOTES, 'UTF-8') ?>"
+                                           min="0"
+                                           max="20"
+                                           step="1"
+                                           required
+                                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
+                                    <?php if (form_error('camas_matrimoniales')): ?>
+                                        <span class="edit-room-error"><?= form_error('camas_matrimoniales') ?></span>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                        Camas Individuales
+                                    </label>
+                                    <input type="number"
+                                           name="camas_individuales"
+                                           value="<?= htmlspecialchars((string)($habitacion['camas_individuales'] ?? 0), ENT_QUOTES, 'UTF-8') ?>"
+                                           min="0"
+                                           max="20"
+                                           step="1"
+                                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
                                 </div>
                             </div>
                         </div>
@@ -857,6 +932,13 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                     <?= $habitacion['capacidad_personas'] ?> personas
                                 </span>
                             </div>
+                            <div class="flex items-center justify-between mt-3">
+                                <span class="text-sm opacity-80">Camas:</span>
+                                <span class="font-medium">
+                                    <?php $totalCamasEdicion = (int)($habitacion['camas_matrimoniales'] ?? 0) + (int)($habitacion['camas_individuales'] ?? 0); ?>
+                                    <?= $totalCamasEdicion > 0 ? $totalCamasEdicion . ' en total' : 'No definidas' ?>
+                                </span>
+                            </div>
                         </div>
 
                         <div class="bg-blue-500/20 rounded-lg p-3">
@@ -881,7 +963,7 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                         <?= htmlspecialchars($habitacion['numero']) ?>
                                     </p>
                                     <p class="text-sm text-gray-600" id="preview-tipo">
-                                        <?= get_tipo_habitacion($habitacion['tipo']) ?>
+                                        <?= htmlspecialchars((string)$habitacionTipoLabel, ENT_QUOTES, 'UTF-8') ?>
                                     </p>
                                 </div>
                                 <div class="text-right">
@@ -1039,9 +1121,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateRangoPrecio(tipo) {
         const rango = rangosPrecio[tipo];
         if (rango) {
-            precioInput.min = rango.min;
-            precioInput.max = rango.max + 500;
-
             // Buscar el elemento de rango sugerido y actualizarlo
             const rangoTexto = document.getElementById('rango-precio');
             if (rangoTexto) {

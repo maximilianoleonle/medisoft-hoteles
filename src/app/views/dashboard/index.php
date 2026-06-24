@@ -148,134 +148,321 @@ if (!function_exists('dashboard_notif_icon')) {
     }
 }
 
-if (!function_exists('get_vehiculos_activos_hoy')) {
-    function get_vehiculos_activos_hoy() {
-        try {
-            $db = Database::getInstance();
-            $hotel_id = obtenerHotelIdActualCompat();
-            $conteo = [];
-            if (function_exists('hotel_general_catalog_parking_rows')) {
-                foreach (hotel_general_catalog_parking_rows(null, false) as $parkingRow) {
-                    $parkingCode = trim((string)($parkingRow['codigo'] ?? ''));
-                    if ($parkingCode !== '') {
-                        $conteo[$parkingCode] = 0;
-                    }
+if (!function_exists('dashboard_parking_catalog')) {
+    function dashboard_parking_catalog() {
+        $catalog = [];
+        if (function_exists('hotel_general_catalog_parking_rows')) {
+            foreach (hotel_general_catalog_parking_rows(null, false) as $parkingRow) {
+                $parkingCode = trim((string)($parkingRow['codigo'] ?? ''));
+                $parkingLabel = trim((string)($parkingRow['label'] ?? ''));
+                if ($parkingCode !== '' && $parkingLabel !== '') {
+                    $catalog[$parkingCode] = $parkingLabel;
                 }
             }
-            if (empty($conteo)) {
-                $conteo = ['coches' => 0];
-            }
-
-            $sql = "
-                SELECT
-                    hv.estacionamiento,
-                    COUNT(DISTINCT hv.id) as total
-                FROM huesped_vehiculos hv
-                INNER JOIN reservaciones r ON hv.huesped_id = r.huesped_id
-                WHERE r.hotel_id = ?
-                AND r.estado = 'checked_in'
-                AND r.fecha_entrada <= CURDATE()
-                AND r.fecha_salida >= CURDATE()
-                AND hv.activo = 1
-                GROUP BY hv.estacionamiento
-            ";
-
-            $stmt = $db->query($sql, [$hotel_id]);
-            if (!$stmt) {
-                return $conteo;
-            }
-
-            $resultados = $stmt->fetchAll();
-
-            foreach ($resultados as $resultado) {
-                $parkingKey = trim((string)($resultado['estacionamiento'] ?? ''));
-                if ($parkingKey !== '') {
-                    $conteo[$parkingKey] = (int)$resultado['total'];
-                }
-            }
-
-            return $conteo;
-        } catch (Exception $e) {
-            error_log("Error obteniendo vehiculos activos: " . $e->getMessage());
-            return ['coches' => 0];
         }
+
+        return !empty($catalog) ? $catalog : ['coches' => 'Coches'];
     }
 }
 
-if (!function_exists('get_lista_vehiculos_estacionamiento')) {
-    function get_lista_vehiculos_estacionamiento() {
+if (!function_exists('dashboard_parking_default_code')) {
+    function dashboard_parking_default_code(array $catalog) {
+        foreach ($catalog as $code => $label) {
+            if (trim((string)$code) !== '') {
+                return (string)$code;
+            }
+        }
+
+        return 'coches';
+    }
+}
+
+if (!function_exists('dashboard_parking_vehicle_name')) {
+    function dashboard_parking_vehicle_name(array $vehiculo) {
+        $parts = array_filter([
+            trim((string)($vehiculo['marca'] ?? '')),
+            trim((string)($vehiculo['modelo'] ?? '')),
+        ], 'strlen');
+
+        $name = trim(implode(' ', $parts));
+        return $name !== '' ? $name : 'Vehiculo registrado';
+    }
+}
+
+if (!function_exists('dashboard_parking_datetime_label')) {
+    function dashboard_parking_datetime_label($fecha, $hora = null) {
+        $fechaLabel = dashboard_format_date($fecha, 'd/m');
+        $hora = trim((string)$hora);
+        if ($hora !== '') {
+            $time = strtotime($hora);
+            if ($time) {
+                return $fechaLabel . ' ' . date('H:i', $time);
+            }
+        }
+
+        return $fechaLabel;
+    }
+}
+
+if (!function_exists('get_estado_estacionamiento_dashboard')) {
+    function get_estado_estacionamiento_dashboard($limite = 30) {
+        $catalog = dashboard_parking_catalog();
+        $defaultParking = dashboard_parking_default_code($catalog);
+        $resumen = [];
+        foreach ($catalog as $parkingCode => $parkingLabel) {
+            $resumen[$parkingCode] = [
+                'codigo' => (string)$parkingCode,
+                'label' => (string)$parkingLabel,
+                'ocupados' => 0,
+                'apartados' => 0,
+                'registrados' => 0,
+                'total' => 0,
+            ];
+        }
+
+        $empty = [
+            'limite' => max(0, (int)$limite),
+            'resumen' => array_values($resumen),
+            'vehiculos' => [],
+            'ocupados' => 0,
+            'apartados' => 0,
+            'registrados' => 0,
+            'total_vehiculos' => 0,
+            'usados' => 0,
+        ];
+
         try {
             $db = Database::getInstance();
             $hotel_id = obtenerHotelIdActualCompat();
-            $sql = "
+            if ($hotel_id <= 0) {
+                return $empty;
+            }
+
+            $stmtVehiculos = $db->query("
                 SELECT
-                    h.nombre_completo AS huesped,
-                    GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') AS habitaciones,
+                    hv.id,
+                    hv.huesped_id,
+                    hv.estacionamiento,
                     hv.marca,
                     hv.modelo,
                     hv.color,
-                    hv.placas
+                    hv.placas,
+                    h.nombre_completo AS huesped,
+                    h.telefono
                 FROM huesped_vehiculos hv
-                INNER JOIN reservaciones r ON hv.huesped_id = r.huesped_id
                 INNER JOIN huespedes h ON h.id = hv.huesped_id
-                LEFT JOIN reservacion_habitaciones rh ON rh.reservacion_id = r.id AND rh.hotel_id = r.hotel_id
-                LEFT JOIN habitaciones hab ON hab.id = rh.habitacion_id AND hab.hotel_id = r.hotel_id
-                WHERE r.hotel_id = ?
-                  AND r.estado = 'checked_in'
-                  AND r.fecha_entrada <= CURDATE()
-                  AND r.fecha_salida >= CURDATE()
+                WHERE h.hotel_id = ?
                   AND hv.activo = 1
-                GROUP BY hv.id, h.id, hv.marca, hv.modelo, hv.color, hv.placas
-                ORDER BY h.nombre_completo
-            ";
-            $stmt = $db->query($sql, [$hotel_id]);
-            return $stmt ? ($stmt->fetchAll() ?: []) : [];
+                ORDER BY h.nombre_completo ASC, hv.created_at DESC, hv.id DESC
+            ", [$hotel_id]);
+
+            $vehiculos = $stmtVehiculos ? ($stmtVehiculos->fetchAll() ?: []) : [];
+            if (empty($vehiculos)) {
+                return $empty;
+            }
+
+            $huespedIds = [];
+            foreach ($vehiculos as $vehiculo) {
+                $huespedId = (int)($vehiculo['huesped_id'] ?? 0);
+                if ($huespedId > 0) {
+                    $huespedIds[$huespedId] = $huespedId;
+                }
+            }
+
+            $reservasPorHuesped = [];
+            if (!empty($huespedIds)) {
+                $placeholders = implode(',', array_fill(0, count($huespedIds), '?'));
+                $params = array_merge([$hotel_id], array_values($huespedIds));
+                $stmtReservas = $db->query("
+                    SELECT
+                        r.id,
+                        r.huesped_id,
+                        r.estado,
+                        r.fecha_entrada,
+                        r.fecha_salida,
+                        r.hora_llegada_estimada,
+                        r.hora_entrada,
+                        GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') AS habitaciones
+                    FROM reservaciones r
+                    LEFT JOIN reservacion_habitaciones rh
+                        ON rh.reservacion_id = r.id
+                       AND rh.hotel_id = r.hotel_id
+                    LEFT JOIN habitaciones hab
+                        ON hab.id = rh.habitacion_id
+                       AND hab.hotel_id = r.hotel_id
+                    WHERE r.hotel_id = ?
+                      AND r.huesped_id IN ($placeholders)
+                      AND r.estado IN ('checked_in', 'confirmada', 'reservada')
+                      AND DATE(r.fecha_salida) >= CURDATE()
+                    GROUP BY
+                        r.id,
+                        r.huesped_id,
+                        r.estado,
+                        r.fecha_entrada,
+                        r.fecha_salida,
+                        r.hora_llegada_estimada,
+                        r.hora_entrada
+                    ORDER BY
+                        CASE
+                            WHEN r.estado = 'checked_in'
+                                 AND DATE(r.fecha_entrada) <= CURDATE()
+                                 AND DATE(r.fecha_salida) >= CURDATE()
+                            THEN 0
+                            WHEN r.estado IN ('confirmada', 'reservada') THEN 1
+                            ELSE 2
+                        END,
+                        DATE(r.fecha_entrada) ASC,
+                        COALESCE(r.hora_llegada_estimada, '23:59:59') ASC,
+                        r.id ASC
+                ", $params);
+
+                $reservas = $stmtReservas ? ($stmtReservas->fetchAll() ?: []) : [];
+                $today = date('Y-m-d');
+                foreach ($reservas as $reserva) {
+                    $huespedId = (int)($reserva['huesped_id'] ?? 0);
+                    if ($huespedId <= 0 || isset($reservasPorHuesped[$huespedId])) {
+                        continue;
+                    }
+
+                    $estado = (string)($reserva['estado'] ?? '');
+                    $fechaEntrada = (string)($reserva['fecha_entrada'] ?? '');
+                    $fechaSalida = (string)($reserva['fecha_salida'] ?? '');
+                    $tipo = null;
+
+                    if ($estado === 'checked_in' && $fechaEntrada <= $today && $fechaSalida >= $today) {
+                        $tipo = 'ocupado';
+                    } elseif (in_array($estado, ['confirmada', 'reservada'], true) && $fechaSalida >= $today) {
+                        $tipo = 'apartado';
+                    }
+
+                    if ($tipo !== null) {
+                        $reserva['tipo_estacionamiento'] = $tipo;
+                        $reservasPorHuesped[$huespedId] = $reserva;
+                    }
+                }
+            }
+
+            $lista = [];
+            $totales = [
+                'ocupados' => 0,
+                'apartados' => 0,
+                'registrados' => 0,
+                'total_vehiculos' => count($vehiculos),
+            ];
+
+            foreach ($vehiculos as $vehiculo) {
+                $parkingCode = trim((string)($vehiculo['estacionamiento'] ?? ''));
+                $parkingCode = $parkingCode !== '' ? $parkingCode : $defaultParking;
+                if (!isset($resumen[$parkingCode])) {
+                    $resumen[$parkingCode] = [
+                        'codigo' => $parkingCode,
+                        'label' => ucwords(str_replace(['_', '-'], ' ', $parkingCode)),
+                        'ocupados' => 0,
+                        'apartados' => 0,
+                        'registrados' => 0,
+                        'total' => 0,
+                    ];
+                }
+
+                $huespedId = (int)($vehiculo['huesped_id'] ?? 0);
+                $reserva = $reservasPorHuesped[$huespedId] ?? null;
+                $status = 'registrado';
+                $statusLabel = 'Registrado';
+                $statusClass = 'registered';
+                $statusIcon = 'fa-id-card';
+                $statusMeta = 'Sin reservacion activa o futura';
+                $priority = 2;
+                $reservacionId = 0;
+
+                if ($reserva) {
+                    $reservacionId = (int)($reserva['id'] ?? 0);
+                    if (($reserva['tipo_estacionamiento'] ?? '') === 'ocupado') {
+                        $status = 'ocupado';
+                        $statusLabel = 'Ocupado';
+                        $statusClass = 'occupied';
+                        $statusIcon = 'fa-car-side';
+                        $statusMeta = 'Hospedado ahora';
+                        $priority = 0;
+                        $totales['ocupados']++;
+                        $resumen[$parkingCode]['ocupados']++;
+                    } else {
+                        $status = 'apartado';
+                        $statusLabel = 'Apartado';
+                        $statusClass = 'reserved';
+                        $statusIcon = 'fa-calendar-check';
+                        $statusMeta = 'Llegada ' . dashboard_parking_datetime_label($reserva['fecha_entrada'] ?? null, $reserva['hora_llegada_estimada'] ?? null);
+                        $priority = 1;
+                        $totales['apartados']++;
+                        $resumen[$parkingCode]['apartados']++;
+                    }
+                    $resumen[$parkingCode]['total']++;
+                } else {
+                    $totales['registrados']++;
+                }
+
+                $resumen[$parkingCode]['registrados']++;
+                $vehiculoNombre = dashboard_parking_vehicle_name($vehiculo);
+                $placas = trim((string)($vehiculo['placas'] ?? ''));
+                $habitaciones = $reserva ? trim((string)($reserva['habitaciones'] ?? '')) : '';
+
+                $lista[] = [
+                    'id' => (int)($vehiculo['id'] ?? 0),
+                    'huesped_id' => $huespedId,
+                    'reservacion_id' => $reservacionId,
+                    'huesped' => (string)($vehiculo['huesped'] ?? ''),
+                    'vehiculo' => $vehiculoNombre,
+                    'placas' => $placas,
+                    'color' => (string)($vehiculo['color'] ?? ''),
+                    'parking_codigo' => $parkingCode,
+                    'parking_label' => (string)($resumen[$parkingCode]['label'] ?? $parkingCode),
+                    'habitaciones' => $habitaciones,
+                    'status' => $status,
+                    'status_label' => $statusLabel,
+                    'status_class' => $statusClass,
+                    'status_icon' => $statusIcon,
+                    'status_meta' => $statusMeta,
+                    'priority' => $priority,
+                    'fecha_entrada' => $reserva['fecha_entrada'] ?? null,
+                ];
+            }
+
+            usort($lista, function ($a, $b) {
+                $priorityCmp = ((int)($a['priority'] ?? 9)) <=> ((int)($b['priority'] ?? 9));
+                if ($priorityCmp !== 0) {
+                    return $priorityCmp;
+                }
+
+                return strcmp((string)($a['fecha_entrada'] ?? '9999-12-31'), (string)($b['fecha_entrada'] ?? '9999-12-31'));
+            });
+
+            return [
+                'limite' => max(0, (int)$limite),
+                'resumen' => array_values($resumen),
+                'vehiculos' => $lista,
+                'ocupados' => $totales['ocupados'],
+                'apartados' => $totales['apartados'],
+                'registrados' => $totales['registrados'],
+                'total_vehiculos' => $totales['total_vehiculos'],
+                'usados' => $totales['ocupados'] + $totales['apartados'],
+            ];
         } catch (Exception $e) {
-            error_log('ERROR lista vehiculos estacionamiento: ' . $e->getMessage());
-            return [];
+            error_log('ERROR estado estacionamiento dashboard: ' . $e->getMessage());
+            return $empty;
         }
     }
 }
 
-$estadisticas_estacionamiento = get_vehiculos_activos_hoy();
-$lista_vehiculos_estacionamiento = get_lista_vehiculos_estacionamiento();
-
-$estacionamientos_dashboard = [];
-if (function_exists('hotel_general_catalog_parking_rows')) {
-    foreach (hotel_general_catalog_parking_rows(null, false) as $parkingRow) {
-        $parkingCode = trim((string)($parkingRow['codigo'] ?? ''));
-        $parkingLabel = trim((string)($parkingRow['label'] ?? ''));
-        if ($parkingCode !== '' && $parkingLabel !== '') {
-            $estacionamientos_dashboard[$parkingCode] = $parkingLabel;
-        }
-    }
-}
-if (empty($estacionamientos_dashboard)) {
-    $estacionamientos_dashboard = ['coches' => 'Coches'];
-}
-
-$resumen_estacionamientos_dashboard = [];
-foreach ($estacionamientos_dashboard as $parkingCode => $parkingLabel) {
-    $resumen_estacionamientos_dashboard[] = [
-        'codigo' => (string)$parkingCode,
-        'label' => (string)$parkingLabel,
-        'total' => (int)($estadisticas_estacionamiento[$parkingCode] ?? 0),
-    ];
-}
-foreach ($estadisticas_estacionamiento as $parkingCode => $parkingTotal) {
-    if (!array_key_exists($parkingCode, $estacionamientos_dashboard)) {
-        $resumen_estacionamientos_dashboard[] = [
-            'codigo' => (string)$parkingCode,
-            'label' => ucwords(str_replace(['_', '-'], ' ', (string)$parkingCode)),
-            'total' => (int)$parkingTotal,
-        ];
-    }
-}
-
-$limite_estacionamiento = 30;
-$vehiculos_estacionados = array_sum(array_map('intval', $estadisticas_estacionamiento));
+$estado_estacionamiento_dashboard = get_estado_estacionamiento_dashboard(30);
+$lista_vehiculos_estacionamiento = $estado_estacionamiento_dashboard['vehiculos'] ?? [];
+$resumen_estacionamientos_dashboard = $estado_estacionamiento_dashboard['resumen'] ?? [];
+$limite_estacionamiento = (int)($estado_estacionamiento_dashboard['limite'] ?? 30);
+$vehiculos_ocupados_fisicos = (int)($estado_estacionamiento_dashboard['ocupados'] ?? 0);
+$vehiculos_apartados_reserva = (int)($estado_estacionamiento_dashboard['apartados'] ?? 0);
+$vehiculos_registrados_total = (int)($estado_estacionamiento_dashboard['total_vehiculos'] ?? 0);
+$vehiculos_estacionados = (int)($estado_estacionamiento_dashboard['usados'] ?? 0);
 $pct_estacionamiento = $limite_estacionamiento > 0 ? min(100, max(0, round(($vehiculos_estacionados / $limite_estacionamiento) * 100))) : 0;
 $espacios_disp = max(0, $limite_estacionamiento - $vehiculos_estacionados);
+$espacios_excedidos = max(0, $vehiculos_estacionados - $limite_estacionamiento);
 $ring_circumference = 314;
 $ring_offset = $ring_circumference - ($ring_circumference * $pct_estacionamiento / 100);
 
@@ -663,7 +850,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     overflow: hidden;
     border-radius: 26px;
     background:
-        linear-gradient(90deg, color-mix(in srgb, var(--dash-secondary) 86%, transparent), color-mix(in srgb, var(--dash-secondary) 18%, transparent)),
+        linear-gradient(90deg, color-mix(in srgb, var(--dash-secondary) 78%, transparent), color-mix(in srgb, var(--dash-secondary) 16%, transparent)),
         url("<?= htmlspecialchars($hero_image_url, ENT_QUOTES, 'UTF-8') ?>") center/cover;
     box-shadow: var(--dash-shadow-lg);
     isolation: isolate;
@@ -674,8 +861,16 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     content: "";
     position: absolute;
     inset: 0;
+    z-index: 0;
     background:
-        linear-gradient(90deg, color-mix(in srgb, var(--dash-primary) 92%, transparent) 0%, color-mix(in srgb, var(--dash-primary) 62%, transparent) 48%, color-mix(in srgb, var(--dash-primary) 24%, transparent) 100%),
+        linear-gradient(180deg,
+            color-mix(in srgb, var(--dash-secondary) 32%, transparent) 0%,
+            color-mix(in srgb, var(--dash-secondary) 15%, transparent) 35%,
+            color-mix(in srgb, var(--dash-secondary) 72%, transparent) 100%),
+        linear-gradient(90deg,
+            color-mix(in srgb, var(--dash-primary) 92%, transparent) 0%,
+            color-mix(in srgb, var(--dash-primary) 66%, transparent) 47%,
+            color-mix(in srgb, var(--dash-primary) 24%, transparent) 100%),
         radial-gradient(circle at 74% 42%, color-mix(in srgb, var(--dash-accent) 28%, transparent), transparent 21rem);
 }
 
@@ -685,6 +880,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     inset: -18% -10% auto auto;
     width: min(44vw, 560px);
     height: 260px;
+    z-index: 0;
     border-radius: 999px;
     background:
         radial-gradient(circle, color-mix(in srgb, var(--dash-accent) 42%, transparent), transparent 62%),
@@ -696,7 +892,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
 .hero-top {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -985,7 +1181,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 
 .hero-title {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     margin-top: 18px;
     padding: 0 28px;
 }
@@ -998,13 +1194,19 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     line-height: .95;
     font-weight: 650;
     letter-spacing: -.01em;
+    text-shadow:
+        0 2px 4px rgba(0,0,0,.38),
+        0 14px 34px rgba(0,0,0,.45);
 }
 
 .hero-title p {
     margin: 9px 0 0;
-    color: color-mix(in srgb, var(--dash-on-brand) 82%, transparent);
+    color: color-mix(in srgb, var(--dash-on-brand) 91%, transparent);
     font-size: 14px;
     font-weight: 700;
+    text-shadow:
+        0 1px 2px rgba(0,0,0,.42),
+        0 10px 24px rgba(0,0,0,.36);
 }
 
 
@@ -1964,6 +2166,69 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     white-space: nowrap;
 }
 
+.parking-status-strip {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.parking-status-pill {
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--dash-line);
+    border-radius: 12px;
+    background: #fff;
+}
+
+.parking-status-pill span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--dash-slate-500);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.parking-status-pill strong {
+    display: block;
+    margin-top: 4px;
+    color: var(--dash-navy);
+    font-size: 20px;
+    line-height: 1;
+    font-weight: 950;
+    font-variant-numeric: tabular-nums;
+}
+
+.parking-status-pill.is-occupied {
+    border-color: color-mix(in srgb, var(--dash-occupied) 26%, var(--dash-line));
+    background: color-mix(in srgb, var(--dash-occupied) 7%, #fff);
+}
+
+.parking-status-pill.is-occupied span {
+    color: var(--dash-occupied);
+}
+
+.parking-status-pill.is-reserved {
+    border-color: color-mix(in srgb, var(--dash-arriving) 28%, var(--dash-line));
+    background: color-mix(in srgb, var(--dash-arriving) 8%, #fff);
+}
+
+.parking-status-pill.is-reserved span {
+    color: var(--dash-arriving);
+}
+
+.parking-status-pill.is-free {
+    border-color: color-mix(in srgb, var(--dash-available) 24%, var(--dash-line));
+    background: color-mix(in srgb, var(--dash-available) 7%, #fff);
+}
+
+.parking-status-pill.is-free span {
+    color: var(--dash-available);
+}
+
 .park-ring {
     display: grid;
     justify-items: center;
@@ -2079,6 +2344,17 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     white-space: nowrap;
 }
 
+.parking-breakdown-item span small {
+    display: block;
+    margin-top: 2px;
+    overflow: hidden;
+    color: var(--dash-slate-500);
+    font-size: 10.5px;
+    font-weight: 750;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .parking-breakdown-item strong {
     min-width: 28px;
     height: 24px;
@@ -2097,6 +2373,126 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
 .parking-breakdown-item.has-vehicles {
     background: color-mix(in srgb, var(--dash-gold) 11%, #FFFFFF);
     border-color: color-mix(in srgb, var(--dash-gold) 34%, var(--dash-line));
+}
+
+.parking-vehicle-list {
+    width: 100%;
+    display: grid;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.parking-vehicle-row {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 56px;
+    padding: 9px;
+    border: 1px solid var(--dash-line);
+    border-radius: 12px;
+    background: #fff;
+    color: inherit;
+    text-decoration: none;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.parking-vehicle-row:hover,
+.parking-vehicle-row:focus-visible {
+    transform: translateY(-1px);
+    color: inherit;
+    border-color: color-mix(in srgb, var(--dash-gold) 35%, var(--dash-line));
+    background: color-mix(in srgb, var(--dash-gold) 5%, #fff);
+}
+
+.parking-vehicle-icon {
+    width: 34px;
+    height: 34px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 11px;
+    border: 1px solid var(--dash-line);
+    background: var(--dash-surface-warm);
+    color: var(--dash-slate-500);
+}
+
+.parking-vehicle-row.is-occupied .parking-vehicle-icon {
+    color: var(--dash-occupied);
+    background: color-mix(in srgb, var(--dash-occupied) 9%, #fff);
+    border-color: color-mix(in srgb, var(--dash-occupied) 28%, var(--dash-line));
+}
+
+.parking-vehicle-row.is-reserved .parking-vehicle-icon {
+    color: var(--dash-arriving);
+    background: color-mix(in srgb, var(--dash-arriving) 10%, #fff);
+    border-color: color-mix(in srgb, var(--dash-arriving) 30%, var(--dash-line));
+}
+
+.parking-vehicle-copy {
+    min-width: 0;
+}
+
+.parking-vehicle-copy strong {
+    display: block;
+    overflow: hidden;
+    color: var(--dash-navy);
+    font-size: 12.5px;
+    font-weight: 900;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.parking-vehicle-copy em {
+    display: block;
+    margin-top: 2px;
+    overflow: hidden;
+    color: var(--dash-slate-500);
+    font-size: 10.8px;
+    font-style: normal;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.parking-vehicle-meta {
+    display: grid;
+    justify-items: end;
+    gap: 2px;
+    text-align: right;
+}
+
+.parking-vehicle-meta b {
+    min-height: 22px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--dash-surface-warm);
+    color: var(--dash-slate-500);
+    font-size: 10.5px;
+    font-weight: 950;
+}
+
+.parking-vehicle-row.is-occupied .parking-vehicle-meta b {
+    color: var(--dash-occupied);
+    background: color-mix(in srgb, var(--dash-occupied) 10%, #fff);
+}
+
+.parking-vehicle-row.is-reserved .parking-vehicle-meta b {
+    color: var(--dash-arriving);
+    background: color-mix(in srgb, var(--dash-arriving) 12%, #fff);
+}
+
+.parking-vehicle-meta small,
+.parking-more-note {
+    color: var(--dash-slate-500);
+    font-size: 10.5px;
+    font-weight: 700;
+}
+
+.parking-more-note {
+    padding: 4px 2px 0;
+    text-align: center;
 }
 
 .list-row {
@@ -2689,6 +3085,21 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
         font-size: 9px;
         white-space: normal;
     }
+
+    .parking-status-strip {
+        grid-template-columns: 1fr;
+    }
+
+    .parking-vehicle-row {
+        grid-template-columns: 34px minmax(0, 1fr);
+        align-items: start;
+    }
+
+    .parking-vehicle-meta {
+        grid-column: 2;
+        justify-items: start;
+        text-align: left;
+    }
 }
 
 /* ============================================================
@@ -2719,9 +3130,13 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     inset: 0;
     background:
         linear-gradient(180deg,
-            color-mix(in srgb, var(--dash-secondary) 55%, transparent) 0%,
-            color-mix(in srgb, var(--dash-secondary) 10%, transparent) 34%,
-            color-mix(in srgb, var(--dash-secondary) 84%, transparent) 100%),
+            color-mix(in srgb, var(--dash-secondary) 68%, transparent) 0%,
+            color-mix(in srgb, var(--dash-secondary) 18%, transparent) 32%,
+            color-mix(in srgb, var(--dash-secondary) 90%, transparent) 100%),
+        linear-gradient(90deg,
+            color-mix(in srgb, var(--dash-primary) 45%, transparent) 0%,
+            color-mix(in srgb, var(--dash-primary) 14%, transparent) 64%,
+            transparent 100%),
         radial-gradient(circle at 78% 30%, color-mix(in srgb, var(--dash-accent) 22%, transparent), transparent 16rem);
     animation: dashHeroLight 7s ease-in-out infinite;
 }
@@ -2749,13 +3164,19 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     line-height: 1;
     font-weight: 650;
     letter-spacing: -.01em;
+    text-shadow:
+        0 2px 4px rgba(0,0,0,.44),
+        0 12px 28px rgba(0,0,0,.5);
 }
 
 .dm-greet {
     margin: 6px 0 0;
-    color: color-mix(in srgb, var(--dash-on-brand) 82%, transparent);
+    color: color-mix(in srgb, var(--dash-on-brand) 92%, transparent);
     font-size: 12.5px;
     font-weight: 700;
+    text-shadow:
+        0 1px 2px rgba(0,0,0,.45),
+        0 9px 22px rgba(0,0,0,.38);
 }
 
 .dm-body {
@@ -3612,7 +4033,7 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
             <article class="card card-pad">
                 <div class="section-head">
                     <h2>Estacionamiento</h2>
-                    <span class="parking-head-note"><?= $vehiculos_estacionados ?> / <?= $limite_estacionamiento ?> ocupados</span>
+                    <span class="parking-head-note"><?= $vehiculos_estacionados ?> / <?= $limite_estacionamiento ?> comprometidos</span>
                 </div>
                 <div class="park-ring">
                     <div class="ring-box">
@@ -3628,22 +4049,83 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
                         </svg>
                         <div class="ring-num"><div><b><?= $vehiculos_estacionados ?></b><span>de <?= $limite_estacionamiento ?></span></div></div>
                     </div>
+                    <div class="parking-status-strip" aria-label="Estado de lugares de estacionamiento">
+                        <div class="parking-status-pill is-occupied">
+                            <span><i class="fas fa-car-side" aria-hidden="true"></i> Ocupados</span>
+                            <strong><?= $vehiculos_ocupados_fisicos ?></strong>
+                        </div>
+                        <div class="parking-status-pill is-reserved">
+                            <span><i class="fas fa-calendar-check" aria-hidden="true"></i> Apartados</span>
+                            <strong><?= $vehiculos_apartados_reserva ?></strong>
+                        </div>
+                        <div class="parking-status-pill is-free">
+                            <span><i class="fas fa-check-circle" aria-hidden="true"></i> Libres</span>
+                            <strong><?= $espacios_disp ?></strong>
+                        </div>
+                    </div>
                     <div class="park-bar">
                         <div class="park-bar-head">
-                            <span><i class="fas fa-car" style="color:var(--dash-gold)" aria-hidden="true"></i> Vehículos</span>
+                            <span><i class="fas fa-car" style="color:var(--dash-gold)" aria-hidden="true"></i> Cupo comprometido</span>
                             <b><?= $pct_estacionamiento ?>%</b>
                         </div>
                         <div class="progress"><i style="--progress:<?= $pct_estacionamiento ?>%"></i></div>
-                        <div class="soft-note"><?= $espacios_disp ?> espacios disponibles</div>
+                        <div class="soft-note">
+                            <?php if ($espacios_excedidos > 0): ?>
+                                <?= $espacios_excedidos ?> espacios sobre el limite configurado
+                            <?php else: ?>
+                                <?= $espacios_disp ?> espacios disponibles · <?= $vehiculos_registrados_total ?> vehiculos registrados
+                            <?php endif; ?>
+                        </div>
                         <div class="parking-breakdown" aria-label="Estacionamientos configurados">
                             <?php foreach ($resumen_estacionamientos_dashboard as $parkingItem): ?>
                                 <?php $parkingTotal = (int)($parkingItem['total'] ?? 0); ?>
                                 <div class="parking-breakdown-item <?= $parkingTotal > 0 ? 'has-vehicles' : '' ?>">
-                                    <span><?= dashboard_safe($parkingItem['label'] ?? 'Estacionamiento') ?></span>
+                                    <span>
+                                        <?= dashboard_safe($parkingItem['label'] ?? 'Estacionamiento') ?>
+                                        <small><?= (int)($parkingItem['ocupados'] ?? 0) ?> ocupados · <?= (int)($parkingItem['apartados'] ?? 0) ?> apartados · <?= (int)($parkingItem['registrados'] ?? 0) ?> registrados</small>
+                                    </span>
                                     <strong><?= $parkingTotal ?></strong>
                                 </div>
                             <?php endforeach; ?>
                         </div>
+                    </div>
+                    <div class="parking-vehicle-list" aria-label="Vehiculos vinculados al estacionamiento">
+                        <?php if (empty($lista_vehiculos_estacionamiento)): ?>
+                            <div class="empty-state" style="min-height:90px">Sin vehiculos registrados para este hotel.</div>
+                        <?php else: ?>
+                            <?php foreach (array_slice($lista_vehiculos_estacionamiento, 0, 5) as $vehiculoParking): ?>
+                                <?php
+                                $parkingHref = !empty($vehiculoParking['reservacion_id'])
+                                    ? url('reservaciones/ver/' . (int)$vehiculoParking['reservacion_id'])
+                                    : url('huespedes/' . (int)($vehiculoParking['huesped_id'] ?? 0));
+                                $parkingMeta = trim((string)($vehiculoParking['habitaciones'] ?? ''));
+                                $parkingMeta = $parkingMeta !== ''
+                                    ? 'Hab. ' . $parkingMeta . ' · ' . ($vehiculoParking['parking_label'] ?? 'Estacionamiento')
+                                    : ($vehiculoParking['parking_label'] ?? 'Estacionamiento');
+                                $parkingPlate = trim((string)($vehiculoParking['placas'] ?? ''));
+                                $parkingName = trim((string)($vehiculoParking['vehiculo'] ?? 'Vehiculo registrado'));
+                                if ($parkingPlate !== '') {
+                                    $parkingName .= ' · ' . $parkingPlate;
+                                }
+                                ?>
+                                <a class="parking-vehicle-row is-<?= dashboard_safe($vehiculoParking['status_class'] ?? 'registered') ?>"
+                                   href="<?= $parkingHref ?>"
+                                   title="Ver <?= !empty($vehiculoParking['reservacion_id']) ? 'reservacion' : 'huesped' ?> de <?= dashboard_safe($vehiculoParking['huesped'] ?? 'huesped') ?>">
+                                    <span class="parking-vehicle-icon"><i class="fas <?= dashboard_safe($vehiculoParking['status_icon'] ?? 'fa-car') ?>" aria-hidden="true"></i></span>
+                                    <span class="parking-vehicle-copy">
+                                        <strong><?= dashboard_safe($parkingName) ?></strong>
+                                        <em><?= dashboard_safe($vehiculoParking['huesped'] ?? 'Huesped') ?> · <?= dashboard_safe($parkingMeta) ?></em>
+                                    </span>
+                                    <span class="parking-vehicle-meta">
+                                        <b><?= dashboard_safe($vehiculoParking['status_label'] ?? 'Registrado') ?></b>
+                                        <small><?= dashboard_safe($vehiculoParking['status_meta'] ?? '') ?></small>
+                                    </span>
+                                </a>
+                            <?php endforeach; ?>
+                            <?php if (count($lista_vehiculos_estacionamiento) > 5): ?>
+                                <div class="parking-more-note">+<?= count($lista_vehiculos_estacionamiento) - 5 ?> vehiculos adicionales registrados</div>
+                            <?php endif; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
             </article>

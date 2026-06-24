@@ -93,6 +93,7 @@ class ConfiguracionController extends Controller {
             'generalUnitCatalog' => function_exists('hotel_general_catalog_unit_rows') ? hotel_general_catalog_unit_rows($hotelId, true) : [],
             'guestFieldCatalog' => function_exists('hotel_guest_field_catalog') ? hotel_guest_field_catalog() : [],
             'guestFieldPolicy' => function_exists('hotel_guest_field_policy') ? hotel_guest_field_policy($hotelId) : [],
+            'ownerDistributionConfig' => function_exists('hotel_owner_distribution_config') ? hotel_owner_distribution_config($hotelId) : [],
             'pwaPushDevices' => $pwaPushDevices,
             'ultimo_backup' => $ultimo_backup,
             'espacio' => $espacio
@@ -159,6 +160,21 @@ class ConfiguracionController extends Controller {
 
         if (is_array($guestFieldPayload) && function_exists('hotel_guest_field_policy_normalize_payload')) {
             $guestFieldPolicyValues = hotel_guest_field_policy_normalize_payload($guestFieldPayload);
+        }
+
+        $ownerDistributionValues = null;
+        $ownerDistributionPayload = $_POST['owner_config'] ?? null;
+
+        if (is_array($ownerDistributionPayload) && function_exists('hotel_owner_distribution_normalize_payload')) {
+            $ownerDistributionResult = hotel_owner_distribution_normalize_payload($ownerDistributionPayload);
+
+            if (!empty($ownerDistributionResult['errors'])) {
+                set_mensaje(implode('<br>', $ownerDistributionResult['errors']), 'error');
+                $this->redirect('configuracion');
+                return;
+            }
+
+            $ownerDistributionValues = $ownerDistributionResult['values'];
         }
 
         $brandingValues = null;
@@ -239,6 +255,10 @@ class ConfiguracionController extends Controller {
 
             if (is_array($guestFieldPolicyValues) && function_exists('hotel_guest_field_policy_save')) {
                 hotel_guest_field_policy_save($guestFieldPolicyValues);
+            }
+
+            if (is_array($ownerDistributionValues) && function_exists('hotel_owner_distribution_save')) {
+                hotel_owner_distribution_save($ownerDistributionValues);
             }
 
             if (is_array($brandingValues) && !empty($brandingContext['id'])) {
