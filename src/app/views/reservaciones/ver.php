@@ -1904,6 +1904,14 @@ $rdGuestOriginParts = array_filter([
     trim((string)($huesped['pais'] ?? '')),
 ]);
 $rdGuestOrigin = !empty($huesped['procedencia']) ? (string)$huesped['procedencia'] : implode(', ', $rdGuestOriginParts);
+$rdGuestPhoneDial = preg_replace('/[^\d+]/', '', $rdGuestPhone);
+$rdGuestPhoneDigits = preg_replace('/\D+/', '', $rdGuestPhone);
+$rdGuestWhatsappPhone = $rdGuestPhoneDigits;
+if (strlen($rdGuestWhatsappPhone) === 10) {
+    $rdGuestWhatsappPhone = '52' . $rdGuestWhatsappPhone;
+}
+$rdGuestTelHref = $rdGuestPhoneDial !== '' ? 'tel:' . $rdGuestPhoneDial : '';
+$rdGuestWhatsappHref = $rdGuestWhatsappPhone !== '' ? 'https://wa.me/' . $rdGuestWhatsappPhone : '';
 $rdGuestIdDocScore = function($documento) {
     $haystack = strtolower(trim(implode(' ', [
         (string)($documento['titulo'] ?? ''),
@@ -1995,6 +2003,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
     background: var(--rdv3-bg);
     color: var(--rdv3-ink);
     font-family: Manrope, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    overflow-x: hidden;
 }
 .rdv3 *, .rdv3 *::before, .rdv3 *::after { box-sizing: border-box; }
 .rdv3 a { color: inherit; text-decoration: none; }
@@ -2182,18 +2191,40 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-guest-name { margin: 0; color: var(--rdv3-primary); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.55rem; font-weight: 600; line-height: 1; }
 .rdv3-guest-sub { margin-top: 5px; color: #7e879b; font-size: .83rem; font-weight: 600; }
 .rdv3-info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.rdv3-info { --info-accent: var(--rdv3-blue); min-height: 62px; padding: 12px 13px; display: flex; align-items: center; gap: 12px; border: 1px solid color-mix(in srgb, var(--info-accent) 10%, transparent); border-radius: 12px; background: #FFFFFF; }
+.rdv3-info { --info-accent: var(--rdv3-blue); min-height: 62px; padding: 12px 13px; display: flex; align-items: center; gap: 12px; border: 1px solid color-mix(in srgb, var(--info-accent) 10%, transparent); border-radius: 12px; background: #FFFFFF; min-width: 0; }
 .rdv3-info:nth-child(2) { --info-accent: var(--rdv3-cyan); }
 .rdv3-info:nth-child(3) { --info-accent: var(--rdv3-violet); }
 .rdv3-info:nth-child(4) { --info-accent: var(--rdv3-green); }
 .rdv3-info i { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; color: var(--info-accent); background: #fff; border: 1px solid color-mix(in srgb, var(--info-accent) 15%, var(--rdv3-line)); }
+.rdv3-info > div { min-width: 0; }
 .rdv3-info small { display: block; color: var(--rdv3-muted-2); font-size: .64rem; font-weight: 950; text-transform: uppercase; }
 .rdv3-info b { display: block; margin-top: 2px; color: #3b4660; font-size: .82rem; font-weight: 950; overflow-wrap: anywhere; }
+.rdv3-info.is-empty b { color: #97A0B2; font-weight: 850; }
+.rdv3-contact-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 13px 0 17px; }
+.rdv3-contact-action {
+    min-height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    border-radius: 13px;
+    border: 1px solid color-mix(in srgb, var(--rdv3-cyan) 18%, transparent);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--rdv3-cyan) 9%, #fff), rgba(255,255,255,.88));
+    color: var(--rdv3-primary);
+    font-size: .82rem;
+    font-weight: 950;
+    white-space: nowrap;
+}
+.rdv3-contact-action i { color: var(--rdv3-cyan); }
+.rdv3-contact-action.is-whatsapp { border-color: rgba(20,134,83,.18); background: linear-gradient(135deg, rgba(20,134,83,.1), rgba(255,255,255,.9)); }
+.rdv3-contact-action.is-whatsapp i { color: #148653; }
+.rdv3-contact-action.is-disabled { color: #9AA3B4; background: #F8FAFC; border-style: dashed; cursor: not-allowed; pointer-events: none; }
+.rdv3-contact-action.is-disabled i { color: #AAB3C2; }
 .rdv3-guest-docs {
-    width: fit-content;
-    max-width: min(100%, 322px);
+    width: 100%;
+    max-width: 100%;
     margin-top: 18px;
-    padding: 14px;
+    padding: 16px;
     border: 1px solid color-mix(in srgb, var(--rdv3-cyan) 18%, transparent);
     border-radius: 17px;
     background:
@@ -2208,13 +2239,39 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-guest-docs.is-single .rdv3-guest-docs-title span { max-width: 176px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rdv3-guest-docs-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .rdv3-guest-docs-grid { display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; }
-.rdv3-guest-doc-feature { width: min(100%, 220px); min-height: 122px; border: 1px solid color-mix(in srgb, var(--rdv3-cyan) 17%, transparent); border-radius: 14px; background: #fff; overflow: hidden; position: relative; display: grid; cursor: pointer; }
-.rdv3-guest-docs.is-gallery .rdv3-guest-doc-feature { width: min(100%, 248px); min-height: 136px; }
+.rdv3-guest-doc-feature { width: min(100%, 430px); min-height: 132px; border: 1px solid color-mix(in srgb, var(--rdv3-cyan) 17%, transparent); border-radius: 15px; background: #fff; overflow: hidden; position: relative; display: grid; grid-template-columns: minmax(118px, 148px) minmax(0, 1fr); gap: 12px; padding: 10px; cursor: pointer; }
+.rdv3-guest-docs.is-gallery .rdv3-guest-doc-feature { width: min(100%, 460px); min-height: 142px; }
 .rdv3-guest-doc-feature:hover { border-color: color-mix(in srgb, var(--rdv3-cyan) 42%, transparent); box-shadow: 0 18px 32px -26px var(--rdv3-primary); }
-.rdv3-guest-doc-feature img,
-.rdv3-guest-doc-feature iframe { width: 100%; height: 100%; min-height: 122px; border: 0; display: block; object-fit: cover; background: #fff; pointer-events: none; }
-.rdv3-guest-docs.is-gallery .rdv3-guest-doc-feature img,
-.rdv3-guest-docs.is-gallery .rdv3-guest-doc-feature iframe { min-height: 136px; }
+.rdv3-guest-doc-thumb {
+    position: relative;
+    min-height: 112px;
+    overflow: hidden;
+    display: grid;
+    align-content: space-between;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 12px;
+    color: #fff;
+    background:
+        linear-gradient(135deg, rgba(255,255,255,.12), transparent 38%),
+        linear-gradient(145deg, var(--rdv3-primary), color-mix(in srgb, var(--rdv3-primary) 74%, #111827));
+}
+.rdv3-guest-doc-thumb::after {
+    content: "";
+    position: absolute;
+    right: -26px;
+    bottom: -34px;
+    width: 96px;
+    height: 96px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--rdv3-accent) 34%, transparent);
+}
+.rdv3-guest-doc-brand { position: relative; z-index: 1; font-size: .68rem; font-weight: 950; letter-spacing: .1em; }
+.rdv3-guest-doc-seal { position: relative; z-index: 1; width: 42px; height: 42px; display: grid; place-items: center; border-radius: 14px; color: #fff; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.2); }
+.rdv3-guest-doc-copy { min-width: 0; display: grid; align-content: center; gap: 7px; color: var(--rdv3-primary); }
+.rdv3-guest-doc-copy b { display: block; font-size: .94rem; font-weight: 950; line-height: 1.2; overflow-wrap: anywhere; }
+.rdv3-guest-doc-copy small { display: block; color: #8790a4; font-size: .72rem; font-weight: 760; line-height: 1.35; }
+.rdv3-guest-doc-copy .rdv3-doc-mini-state { width: fit-content; min-height: 25px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 999px; background: #e7f8ef; color: #15835A; font-size: .68rem; font-weight: 950; }
 .rdv3-guest-doc-file {
     min-height: 122px;
     display: grid;
@@ -2266,6 +2323,9 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-guest-doc-empty i { color: color-mix(in srgb, var(--rdv3-cyan) 64%, #aab4c3); font-size: 1.35rem; }
 .rdv3-subhead { margin: 17px 0 9px; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--rdv3-primary); font-size: .84rem; font-weight: 950; }
 .rdv3-subhead span { display: inline-flex; align-items: center; gap: 8px; }
+.rdv3-subhead--stack { align-items: flex-start; margin-top: 20px; }
+.rdv3-subhead-copy { min-width: 0; display: grid; gap: 4px; }
+.rdv3-subhead-note { margin: 0; color: #8790A4; font-size: .74rem; font-weight: 650; line-height: 1.35; }
 .rdv3-car-accent { color: #1ca8c7; }
 .rdv3-vehicle-list { display: grid; gap: 10px; }
 .rdv3 #listaVehiculos > .text-center {
@@ -2308,7 +2368,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-vehicle { min-height: 56px; border: 1px solid color-mix(in srgb, var(--rdv3-accent) 16%, transparent); border-radius: 12px; background: rgba(255, 252, 247, .72); padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .rdv3-vehicle-main { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .rdv3-vehicle-icon { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; color: #1ca8c7; background: #e6f8fb; }
-.rdv3-vehicle-title { color: var(--rdv3-primary); font-size: .84rem; font-weight: 950; }
+.rdv3-vehicle-title { color: var(--rdv3-primary); font-size: .84rem; font-weight: 950; overflow-wrap: anywhere; }
 .rdv3-vehicle-sub { color: #8790a4; font-size: .72rem; font-weight: 600; }
 .rdv3-vehicle-status { display: none; margin-top: 10px; border-radius: 10px; border: 1px solid transparent; padding: 8px 10px; font-size: .74rem; font-weight: 850; line-height: 1.35; }
 .rdv3-vehicle-status.is-visible { display: block; }
@@ -2399,6 +2459,59 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-iconbtn { width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--rdv3-line); background: #fff; display: grid; place-items: center; color: #8790a4; }
 .rdv3-empty { min-height: 86px; padding: 22px; text-align: center; color: #7f8ba0; font-size: .86rem; font-weight: 850; border: 1px dashed color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 22%, transparent); border-radius: 14px; background: linear-gradient(135deg, color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 7%, #fff), rgba(255,255,255,.58)); display: grid; place-items: center; }
 .rdv3-footer-line { display: flex; justify-content: space-between; gap: 12px; padding-top: 12px; color: #758096; font-size: .78rem; font-weight: 850; }
+.rdv3 .documentos-entidad-panel {
+    margin: 0 !important;
+    overflow: hidden;
+    border-radius: 20px;
+    border-color: color-mix(in srgb, var(--rdv3-accent) 18%, rgba(255,255,255,.82));
+    background: var(--rdv3-card);
+    box-shadow: 0 18px 38px rgba(61, 47, 22, .09);
+}
+.rdv3 .documentos-entidad-panel > div:first-child {
+    padding: 26px 42px 18px !important;
+    border-color: color-mix(in srgb, var(--rdv3-accent) 12%, #E5E7EB) !important;
+}
+.rdv3 .documentos-entidad-panel > div:first-child > div:first-child { min-width: 0; }
+.rdv3 .documentos-entidad-panel > div:first-child > div:first-child h2 {
+    margin: 0;
+    color: var(--rdv3-primary);
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 1.22rem;
+    font-weight: 600;
+    line-height: 1.1;
+}
+.rdv3 .documentos-entidad-panel > div:first-child > div:first-child p { color: #8790A4 !important; font-weight: 650; }
+.rdv3 .documentos-entidad-panel > div:first-child > .inline-flex {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+}
+.rdv3 .documentos-entidad-panel .de-badge,
+.rdv3 .documentos-entidad-panel .de-action {
+    flex: 0 0 auto;
+    min-height: 38px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.rdv3 .documentos-entidad-panel .de-badge {
+    background: #E7F8EF;
+    color: #148653;
+    border-color: rgba(20,134,83,.18);
+}
+.rdv3 .documentos-entidad-panel .de-action[href*="documentos/subir"] {
+    background: color-mix(in srgb, var(--rdv3-accent) 76%, var(--rdv3-primary));
+    color: #fff;
+    border-color: transparent;
+}
+.rdv3 .documentos-entidad-panel .overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
 @media (max-width: 1360px) {
     .rdv3-layout { grid-template-columns: minmax(0, 1fr) 320px; gap: 22px; }
     .rdv3-card-header { padding-left: 36px; padding-right: 36px; }
@@ -2434,6 +2547,25 @@ foreach ($rdDocuments as $rdDocTotalRow) {
     .rdv3-date:last-child { text-align: left; }
     .rdv3-total, .rdv3-doc-row { align-items: flex-start; flex-direction: column; }
     .rdv3-doc-right { width: 100%; justify-content: space-between; }
+    .rdv3 .rdv3-card--guest .rdv3-info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .rdv3-guest-doc-feature { grid-template-columns: 116px minmax(0, 1fr); width: 100%; }
+    .rdv3-guest-doc-thumb { min-height: 106px; }
+    .rdv3 .documentos-entidad-panel > div:first-child { padding: 22px 24px 16px !important; }
+    .rdv3 .documentos-entidad-panel > div:first-child > .inline-flex { width: 100%; }
+}
+@media (max-width: 430px) {
+    .rdv3-main { padding: .75rem !important; }
+    .rdv3-card-header { padding-left: 18px !important; padding-right: 18px !important; }
+    .rdv3-card-body { padding-left: 18px !important; padding-right: 18px !important; }
+    .rdv3 .rdv3-card--guest .rdv3-info-grid,
+    .rdv3-contact-actions { grid-template-columns: 1fr; }
+    .rdv3-guest-head { align-items: flex-start; }
+    .rdv3-guest-doc-feature { grid-template-columns: 1fr; }
+    .rdv3-guest-doc-thumb { min-height: 118px; }
+    .rdv3-subhead--stack { flex-direction: column; }
+    .rdv3-subhead--stack .rdv3-link { min-height: 38px; align-self: flex-start; }
+    .rdv3-vehicle { align-items: flex-start; flex-direction: column; }
+    .rdv3-plate { margin-left: 48px; }
 }
 @media (min-width: 640px) {
     .rdv3-main { padding: 2rem !important; }
@@ -2623,11 +2755,25 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                     </div>
                                 </div>
 
-                                <div class="rdv3-info-grid">
-                                    <div class="rdv3-info"><i class="fas fa-phone"></i><div><small>Telefono</small><b><?= $rdSafe($rdGuestPhone) ?></b></div></div>
-                                    <div class="rdv3-info"><i class="far fa-envelope"></i><div><small>Email</small><b><?= $rdSafe($rdGuestEmail) ?></b></div></div>
-                                    <div class="rdv3-info"><i class="far fa-address-card"></i><div><small>Identificacion</small><b><?= $rdSafe($rdGuestId) ?></b></div></div>
-                                    <div class="rdv3-info"><i class="fas fa-location-dot"></i><div><small>Procedencia</small><b><?= $rdSafe($rdGuestOrigin) ?></b></div></div>
+                                <div class="rdv3-info-grid" aria-label="Contacto del huesped">
+                                    <div class="rdv3-info <?= $rdGuestPhone === '' ? 'is-empty' : '' ?>"><i class="fas fa-phone"></i><div><small>Telefono</small><b><?= $rdSafe($rdGuestPhone, 'No registrado') ?></b></div></div>
+                                    <div class="rdv3-info <?= $rdGuestEmail === '' ? 'is-empty' : '' ?>"><i class="far fa-envelope"></i><div><small>Email</small><b><?= $rdSafe($rdGuestEmail, 'No registrado') ?></b></div></div>
+                                    <div class="rdv3-info <?= $rdGuestId === '' ? 'is-empty' : '' ?>"><i class="far fa-address-card"></i><div><small>Identificacion</small><b><?= $rdSafe($rdGuestId, 'No registrado') ?></b></div></div>
+                                    <div class="rdv3-info <?= $rdGuestOrigin === '' ? 'is-empty' : '' ?>"><i class="fas fa-location-dot"></i><div><small>Procedencia</small><b><?= $rdSafe($rdGuestOrigin, 'No registrado') ?></b></div></div>
+                                </div>
+
+                                <div class="rdv3-contact-actions" aria-label="Acciones rapidas de contacto">
+                                    <?php if ($rdGuestTelHref !== ''): ?>
+                                        <a class="rdv3-contact-action" href="<?= $rdSafe($rdGuestTelHref, '') ?>"><i class="fas fa-phone"></i>Llamar</a>
+                                    <?php else: ?>
+                                        <span class="rdv3-contact-action is-disabled" aria-disabled="true"><i class="fas fa-phone"></i>Llamar</span>
+                                    <?php endif; ?>
+
+                                    <?php if ($rdGuestWhatsappHref !== ''): ?>
+                                        <a class="rdv3-contact-action is-whatsapp" href="<?= $rdSafe($rdGuestWhatsappHref, '') ?>" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i>WhatsApp</a>
+                                    <?php else: ?>
+                                        <span class="rdv3-contact-action is-whatsapp is-disabled" aria-disabled="true"><i class="fab fa-whatsapp"></i>WhatsApp</span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <section class="<?= $rdSafe($rdGuestDocPanelClass) ?>" aria-label="Documentos del huesped">
@@ -2647,7 +2793,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                         <div class="rdv3-guest-doc-empty">
                                             <i class="fas fa-id-card"></i>
                                             <div>
-                                                No hay identificaciones o archivos del huesped vinculados.
+                                                Sin documento vinculado.
                                                 <?php if ($rdGuestDocEntityId > 0): ?>
                                                     <br><a class="rdv3-link" href="<?= url('documentos/subir' . $rdGuestDocEntityQuery) ?>">Agregar INE, licencia o archivo</a>
                                                 <?php endif; ?>
@@ -2656,32 +2802,24 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                     <?php else: ?>
                                         <?php
                                             $rdPrimaryDocId = (int)($rdGuestPrimaryDoc['id'] ?? 0);
-                                            $rdPrimaryKind = $rdGuestDocPreviewKind($rdGuestPrimaryDoc);
-                                            $rdPrimaryEstado = trim((string)($rdGuestPrimaryDoc['estado'] ?? 'activo'));
-                                            $rdPrimaryCanPreview = $rdPrimaryDocId > 0 && ($rdPrimaryEstado === '' || $rdPrimaryEstado === 'activo') && in_array($rdPrimaryKind, ['image', 'pdf'], true);
                                             $rdPrimaryTitle = trim((string)(($rdGuestPrimaryDoc['titulo'] ?? '') ?: ($rdGuestPrimaryDoc['nombre_original'] ?? 'Documento del huesped')));
                                             $rdPrimaryMeta = trim(implode(' · ', array_filter([
                                                 (string)($rdGuestPrimaryDoc['tipo_nombre'] ?? ''),
                                                 $rdBytes($rdGuestPrimaryDoc['size_bytes'] ?? 0),
                                             ])));
-                                            $rdPrimaryPreviewUrl = $rdPrimaryDocId > 0 ? url('documentos/' . $rdPrimaryDocId . '/descargar') . '?preview=1' : '';
+                                            [$rdPrimaryDocLabel, $rdPrimaryDocClass] = $rdDocIcon($rdGuestPrimaryDoc);
                                         ?>
                                         <div class="rdv3-guest-docs-grid">
                                             <a class="rdv3-guest-doc-feature" href="<?= url('documentos/' . $rdPrimaryDocId) ?>" title="Ver <?= $rdSafe($rdPrimaryTitle, 'documento') ?>">
-                                                <?php if ($rdPrimaryCanPreview && $rdPrimaryKind === 'image'): ?>
-                                                    <img src="<?= $rdSafe($rdPrimaryPreviewUrl, '') ?>" alt="Vista previa de <?= $rdSafe($rdPrimaryTitle, 'documento') ?>" loading="lazy">
-                                                <?php elseif ($rdPrimaryCanPreview && $rdPrimaryKind === 'pdf'): ?>
-                                                    <iframe src="<?= $rdSafe($rdPrimaryPreviewUrl, '') ?>" title="Vista previa de <?= $rdSafe($rdPrimaryTitle, 'documento') ?>" loading="lazy"></iframe>
-                                                <?php else: ?>
-                                                    <div class="rdv3-guest-doc-file">
-                                                        <i class="fas fa-file-shield"></i>
-                                                        <b><?= $rdSafe($rdPrimaryTitle, 'Documento del huesped') ?></b>
-                                                    </div>
-                                                <?php endif; ?>
-                                                <div class="rdv3-guest-doc-caption">
+                                                <span class="rdv3-guest-doc-thumb" aria-hidden="true">
+                                                    <span class="rdv3-guest-doc-brand">MEDISOFT</span>
+                                                    <span class="rdv3-guest-doc-seal"><i class="fas fa-file-shield"></i></span>
+                                                </span>
+                                                <span class="rdv3-guest-doc-copy">
+                                                    <span class="rdv3-doc-mini-state"><i class="fas fa-lock"></i> <?= $rdSafe($rdPrimaryDocLabel, 'DOC') ?></span>
                                                     <b><?= $rdSafe($rdPrimaryTitle, 'Documento del huesped') ?></b>
                                                     <small><?= $rdSafe($rdPrimaryMeta, 'Archivo vinculado') ?></small>
-                                                </div>
+                                                </span>
                                             </a>
 
                                             <?php $rdGuestSecondaryDocs = array_slice($rdGuestDocuments, 1, 4); ?>
@@ -2715,13 +2853,16 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                     <?php endif; ?>
                                 </section>
 
-                                <div class="rdv3-subhead">
-                                    <span><i class="fas fa-car-side rdv3-car-accent"></i>Vehiculos registrados</span>
+                                <div class="rdv3-subhead rdv3-subhead--stack">
+                                    <div class="rdv3-subhead-copy">
+                                        <span><i class="fas fa-car-side rdv3-car-accent"></i>Vehiculos registrados</span>
+                                        <p class="rdv3-subhead-note">Autos enlazados al expediente del huesped para control de estacionamiento.</p>
+                                    </div>
                                     <button type="button" class="rdv3-link" onclick="abrirModalAgregarVehiculo()"><i class="fas fa-pen"></i> Agregar</button>
                                 </div>
                                 <div id="listaVehiculos" class="rdv3-vehicle-list">
                                     <?php if (empty($rdVehicles)): ?>
-                                        <div class="rdv3-empty">Cargando vehiculos...</div>
+                                        <div class="rdv3-empty">Sin vehiculos registrados</div>
                                     <?php else: ?>
                                         <?php foreach ($rdVehicles as $vehiculo): ?>
                                             <div class="rdv3-vehicle">
