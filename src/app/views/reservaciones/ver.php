@@ -1871,6 +1871,8 @@ $rdEstadoKey = (string)($reservacion['estado'] ?? '');
 $rdEstadoLabel = trim((string)($estado_info['label'] ?? '')) ?: ucfirst(str_replace('_', ' ', $rdEstadoKey ?: 'pendiente'));
 $rdEstadoClass = in_array($rdEstadoKey, ['confirmada', 'checked_in'], true) ? 'rdv3-status--ok' : (in_array($rdEstadoKey, ['cancelada', 'no_show'], true) ? 'rdv3-status--danger' : 'rdv3-status--wait');
 $rdRooms = is_array($habitaciones ?? null) ? $habitaciones : [];
+$rdRoomCount = count($rdRooms);
+$rdRoomCountLabel = $rdRoomCount . ' habitacion' . ($rdRoomCount === 1 ? '' : 'es');
 $rdPayments = is_array($pagos ?? null) ? $pagos : [];
 $rdNotes = is_array($notas ?? null) ? $notas : [];
 $rdDocuments = is_array($documentosEntidad ?? null) ? $documentosEntidad : [];
@@ -1885,6 +1887,7 @@ foreach ($rdPayments as $rdPaymentRow) {
 if ($rdTotalPaid <= 0 && !empty($reservacion['metodo_pago'])) {
     $rdTotalPaid = $rdTotal;
 }
+$rdPaymentIsPaid = $rdTotalPaid > 0 || !empty($reservacion['metodo_pago']);
 $rdPaymentLabel = !empty($reservacion['metodo_pago']) ? 'Pagado - ' . $rdMetodoPagoLabel : 'Pago pendiente';
 $rdCortesias = (int)($reservacion['habitaciones_cortesia'] ?? 0);
 foreach ($rdRooms as $rdRoomCountRow) {
@@ -2027,6 +2030,8 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 }
 .rdv3-crumbs { color: #8a93a7; font-size: .78rem; font-weight: 700; }
 .rdv3-crumbs strong { color: var(--rdv3-primary); }
+.rdv3-topbar-copy { min-width: 0; display: grid; gap: 3px; }
+.rdv3-topbar-hotel { color: #8a93a7; font-size: .72rem; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rdv3-hero {
     position: relative;
     overflow: hidden;
@@ -2084,6 +2089,128 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-btn-primary:hover { background: #1fa66f; }
 .rdv3-btn-ghost { background: rgba(255, 255, 255, .11); color: #fff; border: 1px solid rgba(255, 255, 255, .24); }
 .rdv3-btn-danger { background: rgba(255, 255, 255, .09); color: #fff; border: 1px solid rgba(255, 255, 255, .22); }
+.rdv3-mobile-deck { display: none; }
+.rdv3-mobile-card {
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 118px;
+    padding: 16px;
+    border-radius: 18px;
+    border: 1px solid color-mix(in srgb, var(--rdv3-blue) 14%, rgba(255,255,255,.9));
+    background: #FFFFFF;
+    box-shadow: 0 12px 28px rgba(31, 43, 72, .09);
+}
+.rdv3-mobile-card--folio {
+    min-height: 126px;
+    color: #fff;
+    background:
+        radial-gradient(circle at calc(100% + 32px) -32px, rgba(157, 137, 104, .24), transparent 9rem),
+        linear-gradient(130deg, var(--rdv3-primary), color-mix(in srgb, var(--rdv3-primary) 82%, #4A5A72));
+    border-color: rgba(255,255,255,.14);
+    box-shadow: 0 18px 34px rgba(23, 35, 66, .24);
+}
+.rdv3-mobile-card--folio .rdv3-label { color: rgba(255,255,255,.64); }
+.rdv3-mobile-card--total {
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    border-color: color-mix(in srgb, var(--rdv3-green) 20%, transparent);
+    background: linear-gradient(120deg, color-mix(in srgb, var(--rdv3-green) 12%, #fff), #EAF7EF);
+}
+.rdv3-mobile-card--date { display: flex; align-items: flex-start; gap: 12px; }
+.rdv3-mobile-card--total.is-pending {
+    border-color: color-mix(in srgb, var(--rdv3-gold) 24%, transparent);
+    background: linear-gradient(120deg, color-mix(in srgb, var(--rdv3-gold) 16%, #fff), #FBF4E6);
+}
+.rdv3-mobile-folio-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rdv3-mobile-folio {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 2.25rem;
+    line-height: .92;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+.rdv3-mobile-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 0 11px;
+    border-radius: 999px;
+    background: rgba(139,139,163,.22);
+    color: #d6d5ff;
+    border: 1px solid rgba(214,213,255,.24);
+    font-size: .7rem;
+    font-weight: 950;
+    white-space: nowrap;
+}
+.rdv3-mobile-status::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+.rdv3-mobile-meta {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 11px;
+    margin-top: 13px;
+    color: rgba(255,255,255,.72);
+    font-size: .75rem;
+    font-weight: 700;
+}
+.rdv3-mobile-meta span { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.rdv3-mobile-meta i { color: #d8bc83; }
+.rdv3-mobile-date { display: grid; gap: 6px; }
+.rdv3-mobile-date small,
+.rdv3-mobile-total-copy small {
+    display: block;
+    color: var(--rdv3-muted-2);
+    font-size: .65rem;
+    font-weight: 950;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+.rdv3-mobile-date b,
+.rdv3-mobile-total-copy b {
+    display: block;
+    color: var(--rdv3-primary);
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 1.5rem;
+    line-height: .98;
+    font-weight: 700;
+}
+.rdv3-mobile-date span {
+    display: block;
+    color: #8790a4;
+    font-size: .76rem;
+    font-weight: 750;
+}
+.rdv3-mobile-card-icon {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 11px;
+    color: var(--rdv3-blue);
+    background: color-mix(in srgb, var(--rdv3-blue) 10%, #fff);
+    border: 1px solid color-mix(in srgb, var(--rdv3-blue) 14%, transparent);
+}
+.rdv3-mobile-total-copy b { font-size: 1.7rem; }
+.rdv3-mobile-pay {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 30px;
+    padding: 0 11px;
+    border-radius: 999px;
+    color: #15835A;
+    background: rgba(255,255,255,.74);
+    font-size: .72rem;
+    font-weight: 950;
+    white-space: nowrap;
+}
+.rdv3-mobile-card--total.is-pending .rdv3-mobile-pay { color: color-mix(in srgb, var(--rdv3-gold) 82%, #6b521f); }
 .rdv3-layout { display: grid; grid-template-columns: minmax(0, 1fr) clamp(318px, 24vw, 360px); gap: 26px; margin-top: 26px; align-items: start; }
 .rdv3-left, .rdv3-right { display: grid; gap: 24px; min-width: 0; }
 .rdv3-right { position: static; align-self: start; }
@@ -2150,8 +2277,12 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-total { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 86px; padding: 17px 18px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--rdv3-green) 16%, transparent); background: color-mix(in srgb, var(--rdv3-green) 5%, #fff); }
 .rdv3-total .rdv3-amount { margin-top: 5px; font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.7rem; font-weight: 600; color: var(--rdv3-primary); }
 .rdv3-pill { display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 12px; border-radius: 999px; background: #fff; color: #37b77d; font-size: .74rem; font-weight: 950; }
+.rdv3-pill.is-paid { color: #15835A; background: rgba(255,255,255,.86); }
+.rdv3-pill.is-pending { color: color-mix(in srgb, var(--rdv3-gold) 86%, #5f481d); background: #fff8ec; }
 .rdv3-res-note { margin-top: 16px; min-height: 42px; display: flex; align-items: center; gap: 9px; padding: 11px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--rdv3-accent) 24%, transparent); background: color-mix(in srgb, var(--rdv3-accent) 12%, #fff); color: color-mix(in srgb, var(--rdv3-accent) 72%, #5c4927); font-size: .84rem; font-weight: 600; }
 .rdv3-badge { display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 11px; border-radius: 999px; background: color-mix(in srgb, var(--rdv3-accent) 14%, #fff); color: var(--rdv3-accent); font-size: .75rem; font-weight: 950; }
+.rdv3-header-badges { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.rdv3-badge--count { color: var(--rdv3-gold); background: color-mix(in srgb, var(--rdv3-gold) 12%, #fff); }
 .rdv3-card--rooms .rdv3-card-header { padding-bottom: 10px; }
 .rdv3-card--rooms .rdv3-card-body { padding-top: 8px; padding-bottom: 24px; }
 .rdv3-rooms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -2529,6 +2660,15 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 @media (max-width: 780px) {
     .rdv3 { margin: 0; }
     .rdv3-hero { grid-template-columns: 1fr; padding: 22px; }
+    .rdv3-mobile-deck {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin: 14px 0 20px;
+    }
+    .rdv3-mobile-card--folio,
+    .rdv3-mobile-card--total { grid-column: 1 / -1; }
+    .rdv3-layout { margin-top: 0; }
     .rdv3-card-header { padding: 22px 24px 12px; }
     .rdv3-card-body { padding: 12px 24px 22px; }
     .rdv3-side-card .rdv3-card-header { padding: 22px 24px 12px; }
@@ -2555,6 +2695,12 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 }
 @media (max-width: 430px) {
     .rdv3-main { padding: .75rem !important; }
+    .rdv3-mobile-card { min-height: 110px; padding: 14px; border-radius: 16px; }
+    .rdv3-mobile-card--folio { min-height: 122px; }
+    .rdv3-mobile-folio-row { align-items: flex-start; flex-direction: column; gap: 10px; }
+    .rdv3-mobile-folio { font-size: 2rem; }
+    .rdv3-mobile-card--total { align-items: flex-start; flex-direction: column; }
+    .rdv3-mobile-pay { min-height: 0; padding: 7px 11px; white-space: normal; }
     .rdv3-card-header { padding-left: 18px !important; padding-right: 18px !important; }
     .rdv3-card-body { padding-left: 18px !important; padding-right: 18px !important; }
     .rdv3 .rdv3-card--guest .rdv3-info-grid,
@@ -2613,7 +2759,10 @@ foreach ($rdDocuments as $rdDocTotalRow) {
             <div class="rdv3-page">
                 <div class="rdv3-topbar">
                     <a class="rdv3-back" href="<?= back_url('reservaciones') ?>" aria-label="Volver"><i class="fas fa-arrow-left"></i></a>
-                    <div class="rdv3-crumbs">Reservaciones / <strong>Reservacion #<?= $rdReservationId ?></strong></div>
+                    <div class="rdv3-topbar-copy">
+                        <div class="rdv3-crumbs">Reservaciones / <strong>Reservacion #<?= $rdReservationId ?></strong></div>
+                        <div class="rdv3-topbar-hotel"><?= $rdSafe($nombreHotelVisible, 'Medisoft Hoteles') ?></div>
+                    </div>
                 </div>
 
                 <section class="rdv3-hero" aria-labelledby="rdv3-title">
@@ -2623,8 +2772,8 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                             <span class="rdv3-status <?= $rdEstadoClass ?>"><?= $rdSafe($rdEstadoLabel, 'Pendiente') ?></span>
                         </div>
                         <div class="rdv3-meta">
-                            <span><i class="fas fa-bed"></i><?= count($rdRooms) ?> habitacion<?= count($rdRooms) === 1 ? '' : 'es' ?></span>
-                            <span><i class="fas fa-user"></i>Registro: <?= $rdSafe($_SESSION['usuario_nombre'] ?? ($reservacion['usuario_nombre'] ?? 'Recepcion')) ?></span>
+                            <span><i class="fas fa-bed"></i><?= $rdSafe($rdRoomCountLabel) ?></span>
+                            <span><i class="fas fa-user"></i><?= $rdSafe($rdGuestName, 'Huesped') ?></span>
                             <span><i class="far fa-clock"></i><?= $rdSafe($rdDateTime($rdCreatedAt), '-') ?></span>
                         </div>
                     </div>
@@ -2641,6 +2790,49 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                             <button type="button" class="rdv3-btn rdv3-btn-danger" onclick="mostrarFormularioCancelacion()"><i class="fas fa-xmark"></i>Cancelar</button>
                         <?php endif; ?>
                     </div>
+                </section>
+
+                <section class="rdv3-mobile-deck" aria-label="Resumen rapido de la reservacion">
+                    <article class="rdv3-mobile-card rdv3-mobile-card--folio">
+                        <div class="rdv3-mobile-folio-row">
+                            <div>
+                                <span class="rdv3-label">Folio</span>
+                                <div class="rdv3-mobile-folio">#<?= $rdReservationId ?></div>
+                            </div>
+                            <span class="rdv3-mobile-status"><?= $rdSafe($rdEstadoLabel, 'Pendiente') ?></span>
+                        </div>
+                        <div class="rdv3-mobile-meta">
+                            <span><i class="fas fa-bed"></i><?= $rdSafe($rdRoomCountLabel) ?></span>
+                            <span><i class="fas fa-user"></i><?= $rdSafe($rdGuestName, 'Huesped') ?></span>
+                            <span><i class="far fa-clock"></i><?= $rdSafe($rdDateTime($rdCreatedAt), '-') ?></span>
+                        </div>
+                    </article>
+
+                    <article class="rdv3-mobile-card rdv3-mobile-card--date">
+                        <span class="rdv3-mobile-card-icon" aria-hidden="true"><i class="far fa-calendar-check"></i></span>
+                        <div class="rdv3-mobile-date">
+                            <small>Check-in</small>
+                            <b><?= $rdSafe($rdDate($reservacion['fecha_entrada'] ?? null)) ?></b>
+                            <span>Desde <?= $rdSafe($rdEntryTime, '15:00') ?></span>
+                        </div>
+                    </article>
+
+                    <article class="rdv3-mobile-card rdv3-mobile-card--date">
+                        <span class="rdv3-mobile-card-icon" aria-hidden="true"><i class="far fa-calendar-xmark"></i></span>
+                        <div class="rdv3-mobile-date">
+                            <small>Check-out</small>
+                            <b><?= $rdSafe($rdDate($reservacion['fecha_salida'] ?? null)) ?></b>
+                            <span>Antes <?= $rdSafe($rdExitTime, '12:00') ?></span>
+                        </div>
+                    </article>
+
+                    <article class="rdv3-mobile-card rdv3-mobile-card--total <?= $rdPaymentIsPaid ? 'is-paid' : 'is-pending' ?>">
+                        <div class="rdv3-mobile-total-copy">
+                            <small>Precio total</small>
+                            <b><?= $rdMoney($rdTotal) ?></b>
+                        </div>
+                        <span class="rdv3-mobile-pay"><i class="fas <?= $rdPaymentIsPaid ? 'fa-check' : 'fa-clock' ?>"></i><?= $rdSafe($rdPaymentLabel, 'Pago pendiente') ?></span>
+                    </article>
                 </section>
 
                 <div class="rdv3-layout">
@@ -2673,7 +2865,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                         <span class="rdv3-label rdv3-label--green">Precio total</span>
                                         <div class="rdv3-amount"><?= $rdMoney($rdTotal) ?></div>
                                     </div>
-                                    <span class="rdv3-pill"><i class="fas fa-check"></i><?= $rdSafe($rdPaymentLabel, 'Pago pendiente') ?></span>
+                                    <span class="rdv3-pill <?= $rdPaymentIsPaid ? 'is-paid' : 'is-pending' ?>"><i class="fas <?= $rdPaymentIsPaid ? 'fa-check' : 'fa-clock' ?>"></i><?= $rdSafe($rdPaymentLabel, 'Pago pendiente') ?></span>
                                 </div>
                                 <?php if (!empty($reservacion['notas'])): ?>
                                     <div class="rdv3-res-note"><i class="far fa-note-sticky"></i><?= $rdSafe($reservacion['notas']) ?></div>
@@ -2687,9 +2879,12 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                     <span class="rdv3-icon rdv3-icon--violet"><i class="fas fa-bed"></i></span>
                                     <h2 class="rdv3-card-title">Habitaciones reservadas</h2>
                                 </div>
-                                <?php if ($rdCortesias > 0): ?>
-                                    <span class="rdv3-badge"><i class="fas fa-gift"></i><?= $rdCortesias ?> cortesia<?= $rdCortesias === 1 ? '' : 's' ?></span>
-                                <?php endif; ?>
+                                <div class="rdv3-header-badges">
+                                    <span class="rdv3-badge rdv3-badge--count"><i class="fas fa-key"></i><?= $rdSafe($rdRoomCountLabel) ?></span>
+                                    <?php if ($rdCortesias > 0): ?>
+                                        <span class="rdv3-badge"><i class="fas fa-gift"></i><?= $rdCortesias ?> cortesia<?= $rdCortesias === 1 ? '' : 's' ?></span>
+                                    <?php endif; ?>
+                                </div>
                             </header>
                             <div class="rdv3-card-body">
                                 <?php if (empty($rdRooms)): ?>
