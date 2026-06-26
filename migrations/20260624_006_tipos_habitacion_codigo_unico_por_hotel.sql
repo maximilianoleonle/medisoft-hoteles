@@ -91,7 +91,7 @@ BEGIN
 
     IF v_has_scoped_unique = 0 THEN
         ALTER TABLE tipos_habitacion
-            ADD UNIQUE KEY uk_tipos_habitacion_hotel_codigo ((COALESCE(hotel_id, 0)), codigo);
+            ADD UNIQUE KEY uk_tipos_habitacion_hotel_codigo (hotel_id, codigo);
     END IF;
 
     SELECT INDEX_NAME
