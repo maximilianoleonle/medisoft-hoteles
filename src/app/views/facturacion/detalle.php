@@ -12,6 +12,7 @@ $notas_reservacion = $notas_reservacion ?? [];
 $regimenes_fiscales = $regimenes_fiscales ?? [];
 $usos_cfdi = $usos_cfdi ?? [];
 $mensaje = get_mensaje();
+$facturacionFieldErrors = isset($layoutFieldErrors) && is_array($layoutFieldErrors) ? $layoutFieldErrors : [];
 
 $estatus_info = [
     'pendiente'  => ['label' => 'Pendiente',  'color' => '#A16207', 'bg' => '#FFF7E0', 'border' => '#E7C873', 'icon' => 'clock'],
@@ -31,6 +32,34 @@ if (!function_exists('fact_det_safe')) {
     function fact_det_safe($value, $fallback = '-') {
         $text = trim((string)($value ?? ''));
         return htmlspecialchars($text !== '' ? $text : $fallback, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+if (!function_exists('fact_det_form_error')) {
+    function fact_det_form_error(array $errors, string $field): string {
+        $messages = $errors[$field] ?? [];
+        if (!is_array($messages)) {
+            $messages = [$messages];
+        }
+
+        $message = trim((string)($messages[0] ?? ''));
+        return $message !== '' ? fact_det_safe($message, '') : '';
+    }
+}
+
+if (!function_exists('fact_det_form_error_class')) {
+    function fact_det_form_error_class(array $errors, string $field): string {
+        return fact_det_form_error($errors, $field) !== '' ? ' invoice-input-error' : '';
+    }
+}
+
+if (!function_exists('fact_det_form_error_attrs')) {
+    function fact_det_form_error_attrs(array $errors, string $field, string $errorId): string {
+        if (fact_det_form_error($errors, $field) === '') {
+            return '';
+        }
+
+        return ' aria-invalid="true" aria-describedby="' . fact_det_safe($errorId, '') . '"';
     }
 }
 
@@ -82,6 +111,12 @@ $pagos_total = 0;
 foreach ($pagos as $pago) {
     $pagos_total += (float)($pago['monto'] ?? 0);
 }
+
+$numeroFacturaOld = old('numero_factura', fact_det_safe($solicitud['numero_factura'] ?? '', ''));
+$motivoCancelacionOld = old('motivo', '');
+$facturacionModalOld = old('facturacion_modal', '');
+$abrirModalCompletarPorError = $facturacionModalOld === 'completar' || fact_det_form_error($facturacionFieldErrors, 'numero_factura') !== '';
+$abrirModalCancelarPorError = $facturacionModalOld === 'cancelar' || fact_det_form_error($facturacionFieldErrors, 'motivo') !== '';
 ?>
 
 <style>
@@ -502,6 +537,22 @@ foreach ($pagos as $pago) {
 .invoice-input:focus {
     border-color: var(--invoice-brand);
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--invoice-brand) 13%, transparent);
+}
+
+.invoice-input-error {
+    border-color: #B42318;
+    background: #FFF7F6;
+}
+
+.invoice-form-error {
+    display: block;
+    margin-top: 7px;
+    color: #B42318;
+    font-size: .78rem;
+    font-weight: 800;
+    line-height: 1.35;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 .invoice-input:disabled {
@@ -1145,33 +1196,39 @@ textarea.invoice-input {
                             <input type="hidden" name="solicitud_id" value="<?= fact_det_safe($solicitud['id'] ?? '') ?>">
 
                             <div class="invoice-field is-half">
-                                <label class="invoice-label">
+                                <label class="invoice-label" for="fact_rfc">
                                     RFC <?= $es_cliente ? '<span class="required">*</span>' : '' ?>
                                 </label>
-                                <input type="text" name="rfc" class="invoice-input"
+                                <input type="text" id="fact_rfc" name="rfc" class="invoice-input<?= fact_det_form_error_class($facturacionFieldErrors, 'rfc') ?>"
                                        value="<?= $datosFiscalesOld['rfc'] ?>"
                                        placeholder="XAXX010101000"
                                        maxlength="13"
                                        style="text-transform: uppercase; font-family: monospace; font-size: 1rem; letter-spacing: .08em;"
-                                       <?= !$es_editable ? 'disabled' : '' ?>>
+                                       <?= !$es_editable ? 'disabled' : '' ?><?= fact_det_form_error_attrs($facturacionFieldErrors, 'rfc', 'ms-form-error-fact_rfc') ?>>
                                 <p class="invoice-hint">Persona fisica: 13 caracteres. Persona moral: 12 caracteres.</p>
+                                <?php if (fact_det_form_error($facturacionFieldErrors, 'rfc') !== ''): ?>
+                                    <span id="ms-form-error-fact_rfc" class="invoice-form-error ms-form-field-error"><?= fact_det_form_error($facturacionFieldErrors, 'rfc') ?></span>
+                                <?php endif; ?>
                             </div>
 
                             <div class="invoice-field is-half">
-                                <label class="invoice-label">
+                                <label class="invoice-label" for="fact_razon_social">
                                     Razon social <?= $es_cliente ? '<span class="required">*</span>' : '' ?>
                                 </label>
-                                <input type="text" name="razon_social" class="invoice-input"
+                                <input type="text" id="fact_razon_social" name="razon_social" class="invoice-input<?= fact_det_form_error_class($facturacionFieldErrors, 'razon_social') ?>"
                                        value="<?= $datosFiscalesOld['razon_social'] ?>"
                                        placeholder="Nombre o razon social"
-                                       <?= !$es_editable ? 'disabled' : '' ?>>
+                                       <?= !$es_editable ? 'disabled' : '' ?><?= fact_det_form_error_attrs($facturacionFieldErrors, 'razon_social', 'ms-form-error-fact_razon_social') ?>>
+                                <?php if (fact_det_form_error($facturacionFieldErrors, 'razon_social') !== ''): ?>
+                                    <span id="ms-form-error-fact_razon_social" class="invoice-form-error ms-form-field-error"><?= fact_det_form_error($facturacionFieldErrors, 'razon_social') ?></span>
+                                <?php endif; ?>
                             </div>
 
                             <div class="invoice-field">
-                                <label class="invoice-label">
+                                <label class="invoice-label" for="fact_regimen_fiscal">
                                     Regimen fiscal <?= $es_cliente ? '<span class="required">*</span>' : '' ?>
                                 </label>
-                                <select name="regimen_fiscal" class="invoice-input" <?= !$es_editable ? 'disabled' : '' ?>>
+                                <select id="fact_regimen_fiscal" name="regimen_fiscal" class="invoice-input<?= fact_det_form_error_class($facturacionFieldErrors, 'regimen_fiscal') ?>" <?= !$es_editable ? 'disabled' : '' ?><?= fact_det_form_error_attrs($facturacionFieldErrors, 'regimen_fiscal', 'ms-form-error-fact_regimen_fiscal') ?>>
                                     <option value="">Seleccionar...</option>
                                     <?php foreach ($regimenes_fiscales as $clave => $nombre): ?>
                                         <option value="<?= fact_det_safe($clave) ?>" <?= ($datosFiscalesOld['regimen_fiscal'] === $clave) ? 'selected' : '' ?>>
@@ -1179,13 +1236,16 @@ textarea.invoice-input {
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
+                                <?php if (fact_det_form_error($facturacionFieldErrors, 'regimen_fiscal') !== ''): ?>
+                                    <span id="ms-form-error-fact_regimen_fiscal" class="invoice-form-error ms-form-field-error"><?= fact_det_form_error($facturacionFieldErrors, 'regimen_fiscal') ?></span>
+                                <?php endif; ?>
                             </div>
 
                             <div class="invoice-field">
-                                <label class="invoice-label">
+                                <label class="invoice-label" for="fact_uso_cfdi">
                                     Uso de CFDI <?= $es_cliente ? '<span class="required">*</span>' : '' ?>
                                 </label>
-                                <select name="uso_cfdi" class="invoice-input" <?= !$es_editable ? 'disabled' : '' ?>>
+                                <select id="fact_uso_cfdi" name="uso_cfdi" class="invoice-input<?= fact_det_form_error_class($facturacionFieldErrors, 'uso_cfdi') ?>" <?= !$es_editable ? 'disabled' : '' ?><?= fact_det_form_error_attrs($facturacionFieldErrors, 'uso_cfdi', 'ms-form-error-fact_uso_cfdi') ?>>
                                     <option value="">Seleccionar...</option>
                                     <?php foreach ($usos_cfdi as $clave => $nombre): ?>
                                         <option value="<?= fact_det_safe($clave) ?>" <?= ($datosFiscalesOld['uso_cfdi'] === $clave) ? 'selected' : '' ?>>
@@ -1193,34 +1253,46 @@ textarea.invoice-input {
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
+                                <?php if (fact_det_form_error($facturacionFieldErrors, 'uso_cfdi') !== ''): ?>
+                                    <span id="ms-form-error-fact_uso_cfdi" class="invoice-form-error ms-form-field-error"><?= fact_det_form_error($facturacionFieldErrors, 'uso_cfdi') ?></span>
+                                <?php endif; ?>
                             </div>
 
                             <div class="invoice-field">
-                                <label class="invoice-label">
+                                <label class="invoice-label" for="fact_codigo_postal_fiscal">
                                     C.P. fiscal <?= $es_cliente ? '<span class="required">*</span>' : '' ?>
                                 </label>
-                                <input type="text" name="codigo_postal_fiscal" class="invoice-input"
+                                <input type="text" id="fact_codigo_postal_fiscal" name="codigo_postal_fiscal" class="invoice-input<?= fact_det_form_error_class($facturacionFieldErrors, 'codigo_postal_fiscal') ?>"
                                        value="<?= $datosFiscalesOld['codigo_postal_fiscal'] ?>"
                                        placeholder="00000"
                                        maxlength="5"
                                        pattern="\d{5}"
                                        style="font-family: monospace;"
-                                       <?= !$es_editable ? 'disabled' : '' ?>>
+                                       <?= !$es_editable ? 'disabled' : '' ?><?= fact_det_form_error_attrs($facturacionFieldErrors, 'codigo_postal_fiscal', 'ms-form-error-fact_codigo_postal_fiscal') ?>>
+                                <?php if (fact_det_form_error($facturacionFieldErrors, 'codigo_postal_fiscal') !== ''): ?>
+                                    <span id="ms-form-error-fact_codigo_postal_fiscal" class="invoice-form-error ms-form-field-error"><?= fact_det_form_error($facturacionFieldErrors, 'codigo_postal_fiscal') ?></span>
+                                <?php endif; ?>
                             </div>
 
                             <div class="invoice-field">
-                                <label class="invoice-label">Email para factura</label>
-                                <input type="email" name="email_factura" class="invoice-input"
+                                <label class="invoice-label" for="fact_email_factura">Email para factura</label>
+                                <input type="email" id="fact_email_factura" name="email_factura" class="invoice-input<?= fact_det_form_error_class($facturacionFieldErrors, 'email_factura') ?>"
                                        value="<?= $datosFiscalesOld['email_factura'] ?>"
                                        placeholder="correo@ejemplo.com"
-                                       <?= !$es_editable ? 'disabled' : '' ?>>
+                                       <?= !$es_editable ? 'disabled' : '' ?><?= fact_det_form_error_attrs($facturacionFieldErrors, 'email_factura', 'ms-form-error-fact_email_factura') ?>>
+                                <?php if (fact_det_form_error($facturacionFieldErrors, 'email_factura') !== ''): ?>
+                                    <span id="ms-form-error-fact_email_factura" class="invoice-form-error ms-form-field-error"><?= fact_det_form_error($facturacionFieldErrors, 'email_factura') ?></span>
+                                <?php endif; ?>
                             </div>
 
                             <div class="invoice-field is-notes">
-                                <label class="invoice-label">Notas adicionales</label>
-                                <textarea name="notas" class="invoice-input" rows="3"
+                                <label class="invoice-label" for="fact_notas">Notas adicionales</label>
+                                <textarea id="fact_notas" name="notas" class="invoice-input<?= fact_det_form_error_class($facturacionFieldErrors, 'notas') ?>" rows="3"
                                           placeholder="Observaciones para facturacion..."
-                                          <?= !$es_editable ? 'disabled' : '' ?>><?= $datosFiscalesOld['notas'] ?></textarea>
+                                          <?= !$es_editable ? 'disabled' : '' ?><?= fact_det_form_error_attrs($facturacionFieldErrors, 'notas', 'ms-form-error-fact_notas') ?>><?= $datosFiscalesOld['notas'] ?></textarea>
+                                <?php if (fact_det_form_error($facturacionFieldErrors, 'notas') !== ''): ?>
+                                    <span id="ms-form-error-fact_notas" class="invoice-form-error ms-form-field-error"><?= fact_det_form_error($facturacionFieldErrors, 'notas') ?></span>
+                                <?php endif; ?>
                             </div>
 
                             <?php if ($es_editable): ?>
@@ -1492,9 +1564,12 @@ textarea.invoice-input {
                     <strong>La solicitud pasara a completada.</strong>
                     <span>Usa esta accion solamente cuando la factura ya exista en Aspel.</span>
                 </div>
-                <label class="invoice-label">Numero de factura</label>
-                <input type="text" name="numero_factura" class="invoice-input" placeholder="Ej: FA-001234" style="font-family: monospace; font-size: 1rem;">
+                <label class="invoice-label" for="fact_numero_factura">Numero de factura</label>
+                <input type="text" id="fact_numero_factura" name="numero_factura" class="invoice-input<?= fact_det_form_error_class($facturacionFieldErrors, 'numero_factura') ?>" value="<?= $numeroFacturaOld ?>" placeholder="Ej: FA-001234" style="font-family: monospace; font-size: 1rem;"<?= fact_det_form_error_attrs($facturacionFieldErrors, 'numero_factura', 'ms-form-error-fact_numero_factura') ?>>
                 <p class="invoice-hint">Opcional. Folio de la factura generada en Aspel.</p>
+                <?php if (fact_det_form_error($facturacionFieldErrors, 'numero_factura') !== ''): ?>
+                    <span id="ms-form-error-fact_numero_factura" class="invoice-form-error ms-form-field-error"><?= fact_det_form_error($facturacionFieldErrors, 'numero_factura') ?></span>
+                <?php endif; ?>
                 <div class="invoice-modal-actions">
                     <button type="button" onclick="cerrarModalCompletar()" class="invoice-button is-secondary">Cancelar</button>
                     <button type="submit" class="invoice-button is-success">
@@ -1526,8 +1601,11 @@ textarea.invoice-input {
                     <strong>La solicitud saldra del flujo de facturacion.</strong>
                     <span>Agrega un motivo para que recepcion y administracion sepan por que se cancelo.</span>
                 </div>
-                <label class="invoice-label">Motivo de cancelacion</label>
-                <textarea name="motivo" class="invoice-input" rows="3" placeholder="Motivo de la cancelacion..."></textarea>
+                <label class="invoice-label" for="fact_motivo_cancelacion">Motivo de cancelacion</label>
+                <textarea id="fact_motivo_cancelacion" name="motivo" class="invoice-input<?= fact_det_form_error_class($facturacionFieldErrors, 'motivo') ?>" rows="3" placeholder="Motivo de la cancelacion..."<?= fact_det_form_error_attrs($facturacionFieldErrors, 'motivo', 'ms-form-error-fact_motivo_cancelacion') ?>><?= $motivoCancelacionOld ?></textarea>
+                <?php if (fact_det_form_error($facturacionFieldErrors, 'motivo') !== ''): ?>
+                    <span id="ms-form-error-fact_motivo_cancelacion" class="invoice-form-error ms-form-field-error"><?= fact_det_form_error($facturacionFieldErrors, 'motivo') ?></span>
+                <?php endif; ?>
                 <div class="invoice-modal-actions">
                     <button type="button" onclick="cerrarModalCancelar()" class="invoice-button is-secondary">No, volver</button>
                     <button type="submit" class="invoice-button is-danger">
@@ -1568,6 +1646,14 @@ function cerrarModalCancelar() {
     document.getElementById('modalCancelar').classList.add('hidden');
     document.body.classList.remove('overflow-hidden');
 }
+
+<?php if ($abrirModalCompletarPorError): ?>
+abrirModalCompletar();
+<?php endif; ?>
+
+<?php if ($abrirModalCancelarPorError): ?>
+abrirModalCancelar();
+<?php endif; ?>
 
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {

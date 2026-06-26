@@ -122,6 +122,20 @@
     .create-room-main,
     .create-room-side {
         grid-column: auto !important;
+        min-width: 0;
+    }
+
+    .create-room-side {
+        position: sticky;
+        top: 1rem;
+        align-self: start;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .create-room-side.space-y-6 > :not([hidden]) ~ :not([hidden]) {
+        margin-top: 0 !important;
     }
 
     .create-room-card {
@@ -200,6 +214,29 @@
         accent-color: var(--room-sage);
     }
 
+    .create-room-standard-feature {
+        display: flex;
+        align-items: center;
+        min-height: 4.85rem;
+        padding: 1rem;
+        border: 1px solid rgba(71, 82, 76, 0.08);
+        border-radius: 0.9rem;
+        background: rgba(247, 249, 248, 0.72);
+        color: var(--room-ink);
+    }
+
+    .create-room-standard-feature i,
+    .create-room-special-feature i {
+        width: 1.25rem;
+        margin-right: 0.65rem;
+        text-align: center;
+    }
+
+    .create-room-standard-feature span,
+    .create-room-special-feature span {
+        min-width: 0;
+    }
+
     .create-section-features .grid label {
         border: 1px solid rgba(71, 82, 76, 0.13) !important;
         background: rgba(249, 248, 244, 0.78);
@@ -210,6 +247,17 @@
         border-color: rgba(124, 155, 179, 0.45) !important;
         background: rgba(240, 246, 247, 0.95);
         transform: translateY(-1px);
+    }
+
+    .create-room-special-feature {
+        min-height: 3.4rem;
+    }
+
+    .create-room-special-feature input[type="checkbox"] {
+        width: 1rem;
+        height: 1rem;
+        margin-right: 0.75rem;
+        flex: 0 0 auto;
     }
 
     .create-section-photos #drop-zone {
@@ -239,8 +287,7 @@
     }
 
     .create-room-active-card {
-        position: sticky;
-        top: 1rem;
+        position: relative;
         overflow: hidden;
         border-radius: 1.25rem !important;
         padding: 1.5rem 1.5rem 1.5rem 1.8rem !important;
@@ -312,6 +359,11 @@
         }
 
         .create-room-active-card {
+            position: relative;
+            top: auto;
+        }
+
+        .create-room-side {
             position: relative;
             top: auto;
         }
@@ -402,6 +454,9 @@
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
+                                    <?php if (form_error('tipo')): ?>
+                                        <span class="create-room-error"><?= form_error('tipo') ?></span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
 
@@ -418,6 +473,9 @@
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
+                                    <?php if (form_error('piso')): ?>
+                                        <span class="create-room-error"><?= form_error('piso') ?></span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div>
@@ -435,6 +493,9 @@
                                                class="w-full pl-10 pr-4 py-3 text-xl font-semibold border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
                                         <span class="absolute right-4 top-4 text-sm text-gray-500">MXN</span>
                                     </div>
+                                    <?php if (form_error('precio_base')): ?>
+                                        <span class="create-room-error"><?= form_error('precio_base') ?></span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
 
@@ -468,6 +529,9 @@
                                            step="1"
                                            required
                                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
+                                    <?php if (form_error('camas_matrimoniales')): ?>
+                                        <span class="create-room-error"><?= form_error('camas_matrimoniales') ?></span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div>
@@ -481,6 +545,9 @@
                                            max="20"
                                            step="1"
                                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
+                                    <?php if (form_error('camas_individuales')): ?>
+                                        <span class="create-room-error"><?= form_error('camas_individuales') ?></span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -491,14 +558,37 @@
                         <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-6">
                             <h2 class="text-xl font-semibold text-white flex items-center">
                                 <i class="fas fa-list-check mr-3"></i>
-                                Características y Amenidades
+                                Características de la habitación
                             </h2>
                         </div>
 
                         <div class="p-6">
                             <div class="mb-6">
-                                <p class="text-sm font-medium text-gray-700 mb-3">Características especiales:</p>
+                                <p class="text-sm font-medium text-gray-700 mb-3">Características incluidas en todas las habitaciones:</p>
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    <?php
+                                    $caracteristicasBaseHabitacion = [
+                                        ['icon' => 'wifi', 'label' => 'Wi-Fi', 'color' => '#2563eb'],
+                                        ['icon' => 'tv', 'label' => 'Cablevisión', 'color' => '#8b5a46'],
+                                        ['icon' => 'bath', 'label' => 'Baño Privado', 'color' => '#16a34a'],
+                                        ['icon' => 'car', 'label' => 'Estacionamiento', 'color' => '#64748b'],
+                                        ['icon' => 'shower', 'label' => 'Agua Caliente', 'color' => '#dc2626'],
+                                        ['icon' => 'fan', 'label' => 'Ventilador', 'color' => '#0891b2'],
+                                    ];
+                                    ?>
+                                    <?php foreach ($caracteristicasBaseHabitacion as $caracteristicaBase): ?>
+                                        <div class="create-room-standard-feature">
+                                            <i class="fas fa-<?= htmlspecialchars($caracteristicaBase['icon'], ENT_QUOTES, 'UTF-8') ?>"
+                                               style="color: <?= htmlspecialchars($caracteristicaBase['color'], ENT_QUOTES, 'UTF-8') ?>;"></i>
+                                            <span class="text-xs font-medium"><?= htmlspecialchars($caracteristicaBase['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+
+                            <div class="mb-6">
+                                <p class="text-sm font-medium text-gray-700 mb-3">Características especiales:</p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <?php
                                     $amenidadesHabitacion = is_array($amenidades ?? null) && !empty($amenidades)
                                         ? $amenidades
@@ -508,17 +598,37 @@
                                             'jacuzzi' => 'Jacuzzi',
                                             'amplia' => 'Mas amplia',
                                         ];
+                                    $amenidadIconos = [
+                                        'pantalla' => ['icon' => 'tv', 'color' => '#64748b'],
+                                        'balcon' => ['icon' => 'home', 'color' => '#64748b'],
+                                        'jacuzzi' => ['icon' => 'bath', 'color' => '#64748b', 'disabled_for' => ['doble_jacuzzi', 'sencilla_jacuzzi']],
+                                        'amplia' => ['icon' => 'expand-arrows-alt', 'color' => '#64748b'],
+                                        'internet' => ['icon' => 'check-circle', 'color' => '#64748b'],
+                                    ];
                                     $oldEspeciales = $_SESSION['old_input']['caracteristicas_especiales'] ?? [];
                                     $oldEspeciales = is_array($oldEspeciales) ? $oldEspeciales : [];
+                                    $tipoSeleccionadoCaracteristicas = (string) old('tipo', '');
                                     ?>
                                     <?php foreach ($amenidadesHabitacion as $amenidadKey => $amenidadLabel): ?>
-                                        <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition-all">
+                                        <?php
+                                        $amenidadKey = (string) $amenidadKey;
+                                        $amenidadMeta = $amenidadIconos[$amenidadKey] ?? ['icon' => 'check-circle', 'color' => '#64748b'];
+                                        $isDisabled = isset($amenidadMeta['disabled_for']) && in_array($tipoSeleccionadoCaracteristicas, $amenidadMeta['disabled_for'], true);
+                                        $isChecked = in_array($amenidadKey, $oldEspeciales, true) || $isDisabled;
+                                        ?>
+                                        <label class="create-room-special-feature flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition-all group <?= $isDisabled ? 'opacity-60 cursor-not-allowed' : '' ?>">
                                             <input type="checkbox"
                                                    name="caracteristicas_especiales[]"
-                                                   value="<?= htmlspecialchars((string) $amenidadKey, ENT_QUOTES, 'UTF-8') ?>"
-                                                   <?= in_array((string) $amenidadKey, $oldEspeciales, true) ? 'checked' : '' ?>
-                                                   class="mr-3">
+                                                   value="<?= htmlspecialchars($amenidadKey, ENT_QUOTES, 'UTF-8') ?>"
+                                                   <?= $isChecked ? 'checked' : '' ?>
+                                                   <?= $isDisabled ? 'disabled' : '' ?>
+                                                   class="rounded">
+                                            <i class="fas fa-<?= htmlspecialchars($amenidadMeta['icon'], ENT_QUOTES, 'UTF-8') ?>"
+                                               style="color: <?= htmlspecialchars($amenidadMeta['color'], ENT_QUOTES, 'UTF-8') ?>;"></i>
                                             <span class="text-sm font-medium"><?= htmlspecialchars((string) $amenidadLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                            <?php if ($isDisabled): ?>
+                                                <span class="ml-2 text-xs text-gray-500">(incluido en el tipo)</span>
+                                            <?php endif; ?>
                                         </label>
                                     <?php endforeach; ?>
                                 </div>
@@ -526,12 +636,15 @@
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Descripción adicional (opcional)
+                                    Descripción completa de características
                                 </label>
                                 <textarea name="caracteristicas"
-                                          rows="3"
-                                          placeholder="Si desea personalizar la descripción, escriba aquí..."
+                                          rows="4"
+                                          placeholder="Ejemplo: 2 camas matrimoniales, pantalla, balcón, baño, ventilador, agua caliente, Wifi, Cablevisión, estacionamiento"
                                           class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all"><?= old('caracteristicas') ?></textarea>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Esta descripción se genera automáticamente con el tipo y características seleccionadas, pero puede personalizarse.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -568,6 +681,9 @@
             <i class="fas fa-circle-exclamation"></i>
             <span></span>
         </div>
+        <?php if (form_error('fotos[]')): ?>
+            <span class="create-room-error"><?= form_error('fotos[]') ?></span>
+        <?php endif; ?>
 
         <div id="preview-container" class="mt-6 hidden">
             <h4 class="text-sm font-semibold text-gray-700 mb-3">Imágenes seleccionadas:</h4>
@@ -805,3 +921,28 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <script src="<?= asset('js/habitacion-images.js') ?>"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoSelect = document.querySelector('#form-habitacion select[name="tipo"]');
+    const jacuzziCheckbox = document.querySelector('#form-habitacion input[name="caracteristicas_especiales[]"][value="jacuzzi"]');
+
+    if (!tipoSelect || !jacuzziCheckbox) {
+        return;
+    }
+
+    const jacuzziLabel = jacuzziCheckbox.closest('label');
+    function actualizarJacuzziIncluido() {
+        const incluido = tipoSelect.value === 'doble_jacuzzi' || tipoSelect.value === 'sencilla_jacuzzi';
+        jacuzziCheckbox.disabled = incluido;
+        jacuzziCheckbox.checked = incluido || jacuzziCheckbox.checked;
+
+        if (jacuzziLabel) {
+            jacuzziLabel.classList.toggle('opacity-60', incluido);
+            jacuzziLabel.classList.toggle('cursor-not-allowed', incluido);
+        }
+    }
+
+    tipoSelect.addEventListener('change', actualizarJacuzziIncluido);
+    actualizarJacuzziIncluido();
+});
+</script>

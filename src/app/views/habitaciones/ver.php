@@ -27,6 +27,15 @@ $camas_matrimoniales = (int)($habitacion['camas_matrimoniales'] ?? 0);
 $camas_individuales = (int)($habitacion['camas_individuales'] ?? 0);
 $camas_total = max(0, $camas_matrimoniales + $camas_individuales);
 $tipo_label = $tipos[$habitacion_tipo] ?? (function_exists('get_tipo_habitacion') ? get_tipo_habitacion($habitacion_tipo) : ucfirst($habitacion_tipo));
+if (preg_match('/(?:^|[,;\r\n]\s*)Tipo catalogo\s*:\s*([^\[\r\n,;]+?)\s*\[([a-z0-9_\-]+)\]/i', $caracteristicas, $tipoCatalogoMatch)) {
+    $tipoCatalogoCodigo = strtolower(trim((string)($tipoCatalogoMatch[2] ?? '')));
+    $tipoCatalogoLabel = trim((string)($tipoCatalogoMatch[1] ?? ''));
+    if ($tipoCatalogoCodigo !== '') {
+        $tipo_label = $tipos[$tipoCatalogoCodigo] ?? ($tipoCatalogoLabel !== '' ? $tipoCatalogoLabel : $tipo_label);
+    }
+    $caracteristicas = preg_replace('/(?:^|[,;\r\n]\s*)Tipo catalogo\s*:\s*[^\[\r\n,;]+?\s*\[[a-z0-9_\-]+\]/i', '', $caracteristicas);
+    $caracteristicas = trim(preg_replace('/\s*,\s*,+/', ',', (string)$caracteristicas), " \t\n\r\0\x0B,;");
+}
 $caracteristicas_plain = strtolower($caracteristicas);
 $caracteristicas_ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $caracteristicas_plain);
 if ($caracteristicas_ascii !== false) {
@@ -2911,6 +2920,61 @@ $mantenimientos_count = count($mantenimientos_programados);
     }
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   MÓVIL COMPACTO  ·  estética dashboard / habitaciones (≤768px)
+   Se omite lo que duplica info y satura (ver resumen al usuario).
+   ════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .room-detail-page .rd-shell { width: 100%; padding: 14px 14px 30px; }
+    .room-detail-page .rd-layout { gap: 12px; }
+    .room-detail-page .rd-main,
+    .room-detail-page .rd-side { gap: 12px; }
+
+    /* Breadcrumb compacto */
+    .room-detail-page .rd-breadcrumb { font-size: .76rem; margin-bottom: 12px; }
+
+    /* Hero compacto: titulo legible (no gigante) */
+    .room-detail-page .rd-hero { border-radius: 18px; }
+    .room-detail-page .rd-hero-copy { padding: 16px; }
+    .room-detail-page .rd-hero-copy::after { display: none; }
+    .room-detail-page .rd-kicker { margin-bottom: 8px; font-size: .62rem; }
+    .room-detail-page .rd-title { font-size: 2rem !important; line-height: 1; }
+    .room-detail-page .rd-title span { font-size: .64rem; margin-bottom: 4px; }
+    .room-detail-page .rd-subtitle { display: none; }        /* omitido: parrafo descriptivo */
+    .room-detail-page .rd-hero-tags { gap: 6px; margin-top: 13px; }
+    .room-detail-page .rd-chip,
+    .room-detail-page .rd-status-pill { min-height: 30px; padding: 6px 10px; font-size: .7rem; gap: 6px; }
+    .room-detail-page .rd-hero-media,
+    .room-detail-page .rd-hero-media img,
+    .room-detail-page .rd-media-placeholder { min-height: 190px; }
+    .room-detail-page .rd-media-placeholder strong { font-size: 2.6rem; }
+    .room-detail-page .rd-floating-price { margin: 12px 16px; min-width: 0; }
+
+    /* Paneles / side-cards compactos */
+    .room-detail-page .rd-panel,
+    .room-detail-page .rd-side-card { border-radius: 15px; }
+    .room-detail-page .rd-panel-head,
+    .room-detail-page .rd-panel-body,
+    .room-detail-page .rd-side-card { padding: 14px; }
+    .room-detail-page .rd-panel-head { padding-bottom: 8px; }
+    .room-detail-page .rd-icon-box { width: 32px; height: 32px; border-radius: 10px; font-size: .82rem; }
+    .room-detail-page .rd-panel h2,
+    .room-detail-page .rd-side-card h3 { font-size: .98rem; }
+    .room-detail-page .rd-panel-title p,
+    .room-detail-page .rd-side-card > p { font-size: .76rem; }
+
+    /* Stat grid del huesped / datos: 2 columnas compactas */
+    .room-detail-page .rd-guest-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px; }
+
+    /* Acciones touch-friendly */
+    .room-detail-page .rd-btn,
+    .room-detail-page .rd-action { min-height: 44px; }
+
+    /* ── OMITIDOS en movil (duplican informacion del hero) ── */
+    .room-detail-page .rd-section-overview { display: none; }  /* "Lectura operativa": duplica chips + "Datos de habitacion" */
+    .room-detail-page .rd-rate-card { display: none; }         /* "Tarifa y estado": duplica el precio flotante del hero */
+}
+
 @media (prefers-reduced-motion: reduce) {
     .room-detail-page *,
     .room-detail-page *::before,
@@ -3512,7 +3576,10 @@ $mantenimientos_count = count($mantenimientos_programados);
                                 </button>
                             </div>
                         <?php elseif ($habitacion_estado == 'limpieza'): ?>
-                            <form method="POST" action="<?= url('habitaciones/' . $habitacion_id . '/liberar') ?>">
+                            <form method="POST"
+                                  action="<?= url('habitaciones/' . $habitacion_id . '/liberar') ?>"
+                                  class="js-finalizar-limpieza-form"
+                                  data-room-number="<?= room_detail_safe($habitacion_numero) ?>">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="accion" value="finalizar">
                                 <button type="submit" class="rd-btn rd-btn-success" style="width: 100%;">
@@ -3963,6 +4030,100 @@ if (modalMantenimiento) {
         if (e.target === this) cerrarModalMantenimiento();
     });
 }
+
+document.querySelectorAll('.js-finalizar-limpieza-form').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const submitButton = form.querySelector('button[type="submit"]');
+        const roomNumber = form.dataset.roomNumber || 'esta habitacion';
+        const originalButtonHtml = submitButton ? submitButton.innerHTML : '';
+
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Finalizando limpieza...';
+        }
+
+        const showError = function(message) {
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonHtml;
+            }
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo finalizar',
+                    text: message || 'La habitacion no pudo marcarse como disponible. Intentalo de nuevo.',
+                    confirmButtonColor: '#dc2626'
+                });
+                return;
+            }
+
+            alert(message || 'La habitacion no pudo marcarse como disponible. Intentalo de nuevo.');
+        };
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Procesando...',
+                html: 'Actualizando el estado de la habitacion.',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        }
+
+        fetch(form.action, {
+            method: form.method || 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: new URLSearchParams(new FormData(form)).toString()
+        })
+            .then(function(response) {
+                return response.text().then(function(text) {
+                    let data = null;
+                    try {
+                        data = text ? JSON.parse(text) : null;
+                    } catch (error) {
+                        throw new Error('El servidor no devolvio una respuesta valida.');
+                    }
+
+                    if (!response.ok || !data || data.success !== true) {
+                        throw new Error(data?.message || 'No se pudo actualizar el estado de la habitacion.');
+                    }
+
+                    return data;
+                });
+            })
+            .then(function(data) {
+                const numero = data.numero || roomNumber;
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Habitacion disponible',
+                        text: 'La habitacion ' + numero + ' ya quedo lista para nuevas reservaciones.',
+                        confirmButtonColor: '#059669',
+                        confirmButtonText: 'Entendido'
+                    }).then(function() {
+                        window.location.reload();
+                    });
+                    return;
+                }
+
+                alert('La habitacion ' + numero + ' ya quedo disponible.');
+                window.location.reload();
+            })
+            .catch(function(error) {
+                showError(error.message);
+            });
+    });
+});
 
 function mostrarModalProgramarMantenimiento() {
     const modal = document.getElementById('modalProgramarMantenimiento');

@@ -106,9 +106,9 @@ Cambios principales:
 
 ### Indices y unicidad
 
-- `inventario_productos.codigo` sigue siendo `UNIQUE` global.
-- `inventario_config_habitacion.uk_tipo_producto` sigue siendo global sobre `(tipo_habitacion, producto_id)`.
-- Estos indices impiden todavia permitir codigos/configuraciones repetidas por hotel.
+- Resuelto el 2026-06-24: `inventario_productos.codigo` se migro de `UNIQUE` global a unicidad por `(hotel_id, codigo)`.
+- Resuelto el 2026-06-24: `inventario_config_habitacion.uk_tipo_producto` se migro de unicidad global sobre `(tipo_habitacion, producto_id)` a unicidad por `(hotel_id, tipo_habitacion, producto_id)`.
+- `hotel_id` en inventario base sigue nullable por compatibilidad historica; no se cambio a `NOT NULL` en estas fases.
 
 ### Modulos paralelos o legacy
 
@@ -152,3 +152,57 @@ No conviene implementar directamente todavia porque:
 Inventario base queda cerrado en estado tenant-aware para catalogos/configuracion, manteniendo el sistema compatible con modo mono-hotel `Los Cedros`.
 
 No se debe avanzar a movimientos, Reservaciones, Check-in/Check-out, Caja o PWA/offline sin una auditoria y aprobacion especifica.
+
+## Actualizacion 2026-06-24
+
+Con autorizacion explicita del usuario, se resolvio el primer riesgo de unicidad detectado para productos de inventario.
+
+Migracion aplicada:
+
+```text
+migrations/20260624_002_inventario_productos_codigo_unico_por_hotel.sql
+```
+
+Cambio realizado:
+
+- Se agrego el indice unico `uk_inventario_productos_hotel_codigo (hotel_id, codigo)`.
+- Se elimino el indice unico global solo sobre `codigo`.
+- La validacion funcional ya estaba alineada por hotel mediante `Inventario::codigoExisteEnHotel()`.
+
+Validacion local ejecutada:
+
+- Sin `hotel_id NULL` en `inventario_productos`.
+- Sin duplicados por `(hotel_id, codigo)` antes de migrar.
+- Prueba transaccional exitosa permitiendo reutilizar un codigo de producto en hoteles distintos.
+
+Pendiente:
+
+- `hotel_id` en inventario base sigue nullable por compatibilidad historica; no se cambio a `NOT NULL` en esta fase.
+
+## Actualizacion 2026-06-24 - Configuracion de inventario por hotel
+
+Con autorizacion explicita del usuario, se resolvio el segundo riesgo de unicidad detectado para configuracion de inventario por tipo de habitacion.
+
+Migracion aplicada:
+
+```text
+migrations/20260624_003_inventario_config_habitacion_unico_por_hotel.sql
+```
+
+Cambio realizado:
+
+- Se agrego el indice unico `uk_inventario_config_hotel_tipo_producto (hotel_id, tipo_habitacion, producto_id)`.
+- Se elimino el indice unico global `uk_tipo_producto (tipo_habitacion, producto_id)`.
+- La validacion funcional moderna ya estaba alineada por hotel mediante `Inventario::actualizarConfiguracion()`.
+
+Validacion local ejecutada:
+
+- Sin `hotel_id NULL` en `inventario_config_habitacion`.
+- Sin duplicados por `(hotel_id, tipo_habitacion, producto_id)` antes de migrar.
+- Prueba transaccional exitosa permitiendo reutilizar una combinacion en hoteles distintos.
+- Prueba transaccional exitosa bloqueando duplicados dentro del mismo hotel.
+
+Pendiente:
+
+- `hotel_id` en inventario base sigue nullable por compatibilidad historica; no se cambio a `NOT NULL` en esta fase.
+- Los consumidores legacy de configuracion de inventario siguen congelados; no se tocaron en esta fase.

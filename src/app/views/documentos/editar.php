@@ -1,6 +1,7 @@
 <?php
 $documento = $documento ?? [];
 $tipos = $tipos ?? [];
+$docEditFieldErrors = isset($layoutFieldErrors) && is_array($layoutFieldErrors) ? $layoutFieldErrors : [];
 
 if (!function_exists('doc_edit_safe')) {
     function doc_edit_safe($value, $fallback = '')
@@ -22,6 +23,36 @@ if (!function_exists('doc_edit_bytes')) {
         }
 
         return $bytes . ' B';
+    }
+}
+
+if (!function_exists('doc_edit_form_error')) {
+    function doc_edit_form_error(array $errors, string $field): string
+    {
+        $messages = $errors[$field] ?? [];
+        if (!is_array($messages)) {
+            $messages = [$messages];
+        }
+
+        return doc_edit_safe($messages[0] ?? '', '');
+    }
+}
+
+if (!function_exists('doc_edit_form_error_class')) {
+    function doc_edit_form_error_class(array $errors, string $field): string
+    {
+        return doc_edit_form_error($errors, $field) !== '' ? ' dc-field-error' : '';
+    }
+}
+
+if (!function_exists('doc_edit_form_error_attrs')) {
+    function doc_edit_form_error_attrs(array $errors, string $field, string $errorId): string
+    {
+        if (doc_edit_form_error($errors, $field) === '') {
+            return '';
+        }
+
+        return ' aria-invalid="true" aria-describedby="' . doc_edit_safe($errorId, '') . '"';
     }
 }
 
@@ -81,6 +112,8 @@ $etiquetasValor = old('etiquetas', doc_edit_safe($documento['etiquetas'] ?? ''))
 .doc-edit-page textarea.dc-field { min-height: 104px; resize: vertical; }
 .doc-edit-page select.dc-field { cursor: pointer; }
 .doc-edit-page .dc-field:focus { border-color: var(--dc-gold); box-shadow: 0 0 0 3px var(--dc-ring); outline: none; background: #fff; }
+.doc-edit-page .dc-field-error { border-color: #B4392B; background: #FFF7F6; }
+.doc-edit-page .dc-form-error { display: block; margin-top: 7px; color: #B4392B; font-size: .78rem; font-weight: 800; line-height: 1.35; letter-spacing: 0; text-transform: none; }
 .doc-edit-page .dc-meta-label { font-size: .66rem; color: var(--dc-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
 .doc-edit-page .dc-meta-value { margin-top: 3px; font-weight: 700; color: var(--dc-heading); word-break: break-word; }
 .doc-edit-page .dc-info-title { font-weight: 700; color: var(--dc-heading); }
@@ -127,22 +160,31 @@ $etiquetasValor = old('etiquetas', doc_edit_safe($documento['etiquetas'] ?? ''))
                 <div class="space-y-4">
                     <div>
                         <label class="dc-label" for="titulo">T&iacute;tulo</label>
-                        <input class="dc-field" type="text" id="titulo" name="titulo" maxlength="180" value="<?= $tituloValor ?>" placeholder="Ej. Contrato del proveedor">
+                        <input class="dc-field<?= doc_edit_form_error_class($docEditFieldErrors, 'titulo') ?>" type="text" id="titulo" name="titulo" maxlength="180" value="<?= $tituloValor ?>" placeholder="Ej. Contrato del proveedor"<?= doc_edit_form_error_attrs($docEditFieldErrors, 'titulo', 'ms-form-error-titulo') ?>>
+                        <?php if (doc_edit_form_error($docEditFieldErrors, 'titulo') !== ''): ?>
+                            <span id="ms-form-error-titulo" class="dc-form-error ms-form-field-error"><?= doc_edit_form_error($docEditFieldErrors, 'titulo') ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div>
                         <label class="dc-label" for="descripcion">Descripci&oacute;n</label>
-                        <textarea class="dc-field" id="descripcion" name="descripcion" maxlength="255" placeholder="Una nota breve sobre el documento"><?= $descripcionValor ?></textarea>
+                        <textarea class="dc-field<?= doc_edit_form_error_class($docEditFieldErrors, 'descripcion') ?>" id="descripcion" name="descripcion" maxlength="255" placeholder="Una nota breve sobre el documento"<?= doc_edit_form_error_attrs($docEditFieldErrors, 'descripcion', 'ms-form-error-descripcion') ?>><?= $descripcionValor ?></textarea>
+                        <?php if (doc_edit_form_error($docEditFieldErrors, 'descripcion') !== ''): ?>
+                            <span id="ms-form-error-descripcion" class="dc-form-error ms-form-field-error"><?= doc_edit_form_error($docEditFieldErrors, 'descripcion') ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div>
                         <label class="dc-label" for="etiquetas">Etiquetas</label>
-                        <input class="dc-field" type="text" id="etiquetas" name="etiquetas" maxlength="1000" value="<?= $etiquetasValor ?>" placeholder="contrato, compra, fiscal">
+                        <input class="dc-field<?= doc_edit_form_error_class($docEditFieldErrors, 'etiquetas') ?>" type="text" id="etiquetas" name="etiquetas" maxlength="1000" value="<?= $etiquetasValor ?>" placeholder="contrato, compra, fiscal"<?= doc_edit_form_error_attrs($docEditFieldErrors, 'etiquetas', 'ms-form-error-etiquetas') ?>>
+                        <?php if (doc_edit_form_error($docEditFieldErrors, 'etiquetas') !== ''): ?>
+                            <span id="ms-form-error-etiquetas" class="dc-form-error ms-form-field-error"><?= doc_edit_form_error($docEditFieldErrors, 'etiquetas') ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div>
                         <label class="dc-label" for="documento_tipo_id">Tipo de documento</label>
-                        <select class="dc-field" id="documento_tipo_id" name="documento_tipo_id">
+                        <select class="dc-field<?= doc_edit_form_error_class($docEditFieldErrors, 'documento_tipo_id') ?>" id="documento_tipo_id" name="documento_tipo_id"<?= doc_edit_form_error_attrs($docEditFieldErrors, 'documento_tipo_id', 'ms-form-error-documento_tipo_id') ?>>
                             <option value="0">Sin tipo espec&iacute;fico</option>
                             <?php foreach ($tipos as $tipo): ?>
                                 <?php $tipoId = (int)($tipo['id'] ?? 0); ?>
@@ -151,6 +193,9 @@ $etiquetasValor = old('etiquetas', doc_edit_safe($documento['etiquetas'] ?? ''))
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                        <?php if (doc_edit_form_error($docEditFieldErrors, 'documento_tipo_id') !== ''): ?>
+                            <span id="ms-form-error-documento_tipo_id" class="dc-form-error ms-form-field-error"><?= doc_edit_form_error($docEditFieldErrors, 'documento_tipo_id') ?></span>
+                        <?php endif; ?>
                     </div>
                 </div>
 

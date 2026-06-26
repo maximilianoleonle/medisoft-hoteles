@@ -229,15 +229,282 @@ $visibles = count($documentos);
     .docs-page .dc-mobile { display: none; }
 }
 @media (max-width: 767px) {
-    .docs-page .dc-filter-form { grid-template-columns: 1fr; }
-    .docs-page .dc-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .docs-page .dc-title { font-size: 1.9rem; }
+    .docs-page {
+        padding: 10px 12px 18px !important;
+        background:
+            radial-gradient(520px 220px at 92% -6%, color-mix(in srgb, var(--dc-gold) 12%, transparent), transparent 62%),
+            linear-gradient(180deg, #FBF8F0 0%, #F3EDE2 100%);
+    }
+    .docs-page .dc-shell { gap: 10px; }
+    .docs-page .dc-hero-section {
+        position: relative;
+        overflow: hidden;
+        display: grid !important;
+        gap: 12px !important;
+        min-height: 126px;
+        margin: 0;
+        padding: 16px 14px 14px;
+        border-radius: 22px;
+        color: #fff;
+        background:
+            radial-gradient(circle at 88% 14%, rgba(255,255,255,.17), transparent 92px),
+            linear-gradient(135deg, color-mix(in srgb, var(--dc-brand) 94%, #000) 0%, color-mix(in srgb, var(--dc-brand-2) 78%, var(--dc-gold)) 100%);
+        box-shadow: 0 18px 34px -26px color-mix(in srgb, var(--dc-brand) 72%, transparent);
+    }
+    .docs-page .dc-hero-section::after {
+        content: "";
+        position: absolute;
+        right: -44px;
+        top: -44px;
+        width: 150px;
+        height: 150px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.12);
+        pointer-events: none;
+    }
+    .docs-page .dc-title-lockup {
+        position: relative;
+        z-index: 1;
+        grid-template-columns: 42px minmax(0, 1fr);
+        column-gap: 12px;
+        align-items: start;
+    }
+    .docs-page .dc-hero-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        font-size: 1rem;
+        background: rgba(255,255,255,.16);
+        color: #fff;
+        border: 1px solid rgba(255,255,255,.22);
+        box-shadow: none;
+        backdrop-filter: blur(10px);
+    }
+    .docs-page .dc-kicker {
+        color: rgba(255,255,255,.76);
+        font-size: .62rem;
+        letter-spacing: .14em;
+    }
+    .docs-page .dc-title {
+        color: #fff;
+        font-size: 1.72rem;
+        line-height: .98;
+        text-shadow: 0 8px 22px rgba(0,0,0,.28);
+    }
+    .docs-page .dc-subtitle {
+        max-width: none;
+        margin-top: 6px;
+        color: rgba(255,255,255,.82);
+        font-size: .73rem;
+        line-height: 1.35;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .docs-page .dc-hero-actions {
+        position: relative;
+        z-index: 1;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        justify-content: flex-end;
+        gap: 7px !important;
+    }
+    .docs-page .dc-btn {
+        min-height: 38px;
+        padding: 0 12px;
+        border-radius: 13px;
+        font-size: .76rem;
+        box-shadow: none;
+    }
+    .docs-page .dc-hero-actions .dc-btn-muted {
+        background: rgba(255,255,255,.13);
+        color: #fff;
+        border-color: rgba(255,255,255,.18);
+    }
+    .docs-page .dc-hero-actions .dc-btn-gold {
+        background: #fff;
+        color: var(--dc-brand);
+    }
+    .docs-page .dc-summary {
+        display: flex;
+        grid-template-columns: none;
+        gap: 8px;
+        margin: 0 -12px;
+        padding: 0 12px 2px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .docs-page .dc-summary::-webkit-scrollbar { width: 0; height: 0; }
+    .docs-page .dc-summary-item {
+        flex: 0 0 118px;
+        min-height: 70px;
+        padding: 10px 11px;
+        border-radius: 16px;
+        background: rgba(255,255,255,.9);
+        box-shadow: 0 12px 26px -24px rgba(27,39,70,.34);
+    }
+    .docs-page .dc-summary-label {
+        font-size: .58rem;
+        letter-spacing: .055em;
+        white-space: nowrap;
+    }
+    .docs-page .dc-summary-value {
+        margin-top: 5px;
+        font-size: 1.18rem;
+        white-space: nowrap;
+    }
+    .docs-page .dc-filter-panel {
+        border-radius: 18px;
+        padding: 10px !important;
+        background: rgba(255,255,255,.92);
+        box-shadow: 0 14px 30px -26px rgba(27,39,70,.42);
+    }
+    .docs-page .dc-filter-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 40px 40px;
+        gap: 7px;
+    }
+    .docs-page .dc-search { grid-column: 1 / -1; }
+    .docs-page .dc-search .dc-control { padding-left: 40px; }
+    .docs-page .dc-search-icon { left: 14px; }
+    .docs-page .dc-control {
+        min-height: 43px;
+        border-radius: 14px;
+        padding: 0 10px;
+        font-size: 16px;
+        background: #FFFCF7;
+        border-color: color-mix(in srgb, var(--dc-brand) 10%, var(--dc-border));
+    }
+    .docs-page select.dc-control {
+        min-width: 0;
+        font-size: .77rem;
+        font-weight: 800;
+        text-overflow: ellipsis;
+    }
+    .docs-page .dc-filter-form .dc-btn {
+        min-width: 0;
+        width: 40px;
+        min-height: 40px;
+        padding: 0;
+        border-radius: 13px;
+    }
+    .docs-page .dc-filter-form .dc-btn span,
+    .docs-page .dc-filter-form .dc-reset span { display: none; }
+    .docs-page .dc-panel {
+        border-radius: 18px;
+        box-shadow: 0 16px 30px -27px rgba(27,39,70,.38);
+    }
+    .docs-page .dc-panel-head {
+        padding: 12px 13px;
+        align-items: center;
+    }
+    .docs-page .dc-panel-title {
+        font-size: .82rem;
+        color: var(--dc-brand);
+    }
+    .docs-page .dc-panel-sub { display: none; }
+    .docs-page .dc-count-pill {
+        padding: .34rem .56rem;
+        font-size: .66rem;
+    }
+    .docs-page .dc-mobile {
+        gap: 8px;
+        padding: 10px;
+    }
+    .docs-page .dc-mobile-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: 17px;
+        padding: 11px;
+        background: linear-gradient(135deg, #FFFFFF 0%, #FFFCF7 100%);
+        box-shadow: 0 12px 24px -24px rgba(27,39,70,.38);
+    }
+    .docs-page .dc-mobile-card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 12px;
+        bottom: 12px;
+        width: 4px;
+        border-radius: 0 999px 999px 0;
+        background: var(--dc-gold);
+    }
+    .docs-page .dc-mobile-top {
+        align-items: flex-start;
+        gap: 9px;
+        padding-left: 3px;
+    }
+    .docs-page .dc-fileicon {
+        width: 38px;
+        height: 38px;
+        border-radius: 13px;
+        font-size: .94rem;
+    }
+    .docs-page .dc-mobile .dc-name {
+        white-space: normal;
+        font-size: .9rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .docs-page .dc-mobile .dc-sub {
+        margin-top: 2px;
+        font-size: .69rem;
+    }
+    .docs-page .dc-mobile-top .dc-badge {
+        width: 32px;
+        height: 32px;
+        flex: 0 0 32px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 12px;
+        font-size: 0;
+    }
+    .docs-page .dc-mobile-top .dc-badge i { font-size: .78rem; }
+    .docs-page .dc-mobile-meta {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        margin-top: 10px;
+        padding-left: 3px;
+    }
+    .docs-page .dc-mobile-meta-date { display: none; }
+    .docs-page .dc-mini-label { font-size: .56rem; }
+    .docs-page .dc-mini-value { font-size: .76rem; }
+    .docs-page .dc-mobile-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 7px;
+        margin-top: 10px;
+    }
+    .docs-page .dc-card-btn {
+        flex: 0 0 36px;
+        width: 36px;
+        min-height: 36px;
+        padding: 0;
+        border-radius: 12px;
+        font-size: 0;
+    }
+    .docs-page .dc-card-btn i { font-size: .9rem; }
+    .docs-page .dc-empty {
+        padding: 30px 16px;
+        border-radius: 18px;
+    }
+    .docs-page .dc-empty-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        margin-bottom: 12px;
+    }
+    .docs-page .dc-empty h2 { font-size: .98rem; }
+    .docs-page .dc-empty p { font-size: .78rem; line-height: 1.35; }
 }
 </style>
 
 <div class="docs-page p-4 sm:p-6">
     <div class="dc-shell">
-        <section class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <section class="dc-hero-section flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             <div class="dc-title-lockup">
                 <div class="dc-hero-icon"><i class="fas fa-folder-open"></i></div>
                 <div>
@@ -247,16 +514,16 @@ $visibles = count($documentos);
                 </div>
             </div>
             <?php if ($tablaDisponible): ?>
-                <div class="flex flex-wrap gap-2">
+                <div class="dc-hero-actions flex flex-wrap gap-2">
                     <?php if ($esEntidad): ?>
                         <a class="dc-btn dc-btn-muted" href="<?= url('documentos') ?>">
                             <i class="fas fa-arrow-left"></i>
-                            Todos los documentos
+                            <span>Todos los documentos</span>
                         </a>
                     <?php endif; ?>
                     <a class="dc-btn dc-btn-gold" href="<?= doc_safe($uploadUrl, '') ?>">
                         <i class="fas fa-upload"></i>
-                        Subir documento
+                        <span>Subir documento</span>
                     </a>
                 </div>
             <?php endif; ?>
@@ -291,7 +558,7 @@ $visibles = count($documentos);
             </section>
 
             <?php if (!$esEntidad): ?>
-                <section class="dc-panel p-3 md:p-4">
+                <section class="dc-panel dc-filter-panel p-3 md:p-4">
                     <form method="GET" action="<?= url('documentos') ?>" class="dc-filter-form" data-dc-live-search-form data-auto-filter-form>
                         <div class="dc-search">
                             <i class="fas fa-search dc-search-icon" data-dc-search-icon></i>
@@ -317,11 +584,11 @@ $visibles = count($documentos);
                         </select>
                         <button class="dc-btn dc-btn-muted" type="submit" style="border-color:transparent;background:linear-gradient(135deg,var(--dc-brand),var(--dc-brand-2));color:#fff">
                             <i class="fas fa-filter"></i>
-                            Filtrar
+                            <span>Filtrar</span>
                         </button>
                         <a class="dc-btn dc-btn-muted dc-reset" href="<?= url('documentos') ?>" title="Limpiar filtros">
                             <i class="fas fa-times"></i>
-                            Limpiar
+                            <span>Limpiar</span>
                         </a>
                     </form>
                 </section>
@@ -452,7 +719,7 @@ $visibles = count($documentos);
                                             <a class="dc-name dc-name-link" href="<?= $docUrl ?>"><?= doc_safe($documento['titulo'] ?? null, 'Documento #' . $docId) ?></a>
                                             <div class="dc-sub"><?= doc_safe($documento['nombre_original'] ?? null) ?></div>
                                         </div>
-                                        <span class="dc-badge <?= $estadoClass ?>">
+                                        <span class="dc-badge <?= $estadoClass ?>" title="<?= $estadoLabel ?>">
                                             <i class="fas <?= $estadoIcon ?>"></i>
                                             <?= $estadoLabel ?>
                                         </span>
@@ -470,21 +737,21 @@ $visibles = count($documentos);
                                             <div class="dc-mini-label">V&iacute;nculos</div>
                                             <div class="dc-mini-value"><?= (int)($documento['entidades_count'] ?? 0) ?></div>
                                         </div>
-                                        <div>
+                                        <div class="dc-mobile-meta-date">
                                             <div class="dc-mini-label">Fecha</div>
                                             <div class="dc-mini-value"><?= doc_safe($documento['created_at'] ?? null) ?></div>
                                         </div>
                                     </div>
                                     <div class="dc-mobile-actions">
-                                        <a class="dc-card-btn" href="<?= $docUrl ?>"><i class="fas fa-eye"></i> Ver</a>
+                                        <a class="dc-card-btn" href="<?= $docUrl ?>" title="Ver documento" aria-label="Ver documento"><i class="fas fa-eye"></i> <span>Ver</span></a>
                                         <?php if ($previewUrl): ?>
-                                            <a class="dc-card-btn" href="<?= doc_safe($previewUrl, '') ?>" target="_blank" rel="noopener"><i class="fas fa-magnifying-glass"></i> Vista</a>
+                                            <a class="dc-card-btn" href="<?= doc_safe($previewUrl, '') ?>" target="_blank" rel="noopener" title="Vista previa" aria-label="Vista previa"><i class="fas fa-magnifying-glass"></i> <span>Vista</span></a>
                                         <?php endif; ?>
                                         <?php if ($docEstado !== 'eliminado'): ?>
-                                            <a class="dc-card-btn" href="<?= url('documentos/' . $docId . '/editar') ?>"><i class="fas fa-pen"></i> Editar</a>
+                                            <a class="dc-card-btn" href="<?= url('documentos/' . $docId . '/editar') ?>" title="Editar documento" aria-label="Editar documento"><i class="fas fa-pen"></i> <span>Editar</span></a>
                                         <?php endif; ?>
                                         <?php if ($docEstado === 'activo'): ?>
-                                            <a class="dc-card-btn" href="<?= url('documentos/' . $docId . '/descargar') ?>"><i class="fas fa-download"></i> Descargar</a>
+                                            <a class="dc-card-btn" href="<?= url('documentos/' . $docId . '/descargar') ?>" title="Descargar documento" aria-label="Descargar documento"><i class="fas fa-download"></i> <span>Descargar</span></a>
                                         <?php endif; ?>
                                     </div>
                                 </article>

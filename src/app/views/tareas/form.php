@@ -9,6 +9,38 @@ if (!function_exists('tlm_safe')) {
 
 $habitaciones = is_array($habitaciones ?? null) ? $habitaciones : [];
 $valores = is_array($valores ?? null) ? $valores : [];
+$tareaFormFieldErrors = isset($layoutFieldErrors) && is_array($layoutFieldErrors) ? $layoutFieldErrors : [];
+
+if (!function_exists('tk_create_form_error')) {
+    function tk_create_form_error(array $errors, string $field): string
+    {
+        $messages = $errors[$field] ?? [];
+        if (!is_array($messages)) {
+            $messages = [$messages];
+        }
+
+        $message = trim((string)($messages[0] ?? ''));
+        return $message !== '' ? tlm_safe($message) : '';
+    }
+}
+
+if (!function_exists('tk_create_form_error_class')) {
+    function tk_create_form_error_class(array $errors, string $field): string
+    {
+        return tk_create_form_error($errors, $field) !== '' ? ' tk-field-error' : '';
+    }
+}
+
+if (!function_exists('tk_create_form_error_attrs')) {
+    function tk_create_form_error_attrs(array $errors, string $field, string $errorId): string
+    {
+        if (tk_create_form_error($errors, $field) === '') {
+            return '';
+        }
+
+        return ' aria-invalid="true" aria-describedby="' . tlm_safe($errorId) . '"';
+    }
+}
 
 $categoriaSeleccionada = (string)old('categoria', (string)($valores['categoria'] ?? 'general'));
 $prioridadSeleccionada = (string)old('prioridad', (string)($valores['prioridad'] ?? 'media'));
@@ -75,6 +107,9 @@ $prioridades = [
 .tk-form-page select.tk-field { cursor: pointer; }
 .tk-form-page .tk-field:focus { border-color: var(--tk-gold); box-shadow: 0 0 0 3px var(--tk-ring); outline: none; background: #fff; }
 .tk-form-page .tk-help { margin-top: 6px; font-size: .76rem; color: var(--tk-muted); }
+.tk-form-page .tk-field-error { border-color: #B4392B; background: #FFF7F6; }
+.tk-form-page .tk-form-error { display: block; margin-top: 7px; color: #B4392B; font-size: .78rem; font-weight: 800; line-height: 1.35; letter-spacing: 0; text-transform: none; }
+.tk-form-page .tk-error-summary { margin-bottom: 16px; padding: 12px 14px; border: 1px solid #F0B8AE; border-radius: 12px; background: #FFF7F6; color: #9E2A1D; font-size: .86rem; font-weight: 700; }
 
 .tk-form-page .tk-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; padding: 0 20px;
     border-radius: 11px; border: 1px solid transparent; font-weight: 700; font-size: .9rem; line-height: 1; cursor: pointer; text-decoration: none;
@@ -102,33 +137,48 @@ $prioridades = [
         <form method="POST" action="<?= url('tareas') ?>" class="tk-panel p-5">
             <?= csrf_field() ?>
 
+            <?php if (tk_create_form_error($tareaFormFieldErrors, '_global') !== ''): ?>
+                <div class="tk-error-summary ms-form-error-summary" role="alert">
+                    <?= tk_create_form_error($tareaFormFieldErrors, '_global') ?>
+                </div>
+            <?php endif; ?>
+
             <div class="tk-grid">
                 <div class="tk-full">
                     <label for="titulo">T&iacute;tulo <span class="tk-req">*</span></label>
-                    <input class="tk-field" id="titulo" name="titulo" type="text" maxlength="160" value="<?= tlm_safe($tituloValor) ?>" placeholder="Ej. Cambiar foco del pasillo 2" required>
+                    <input class="tk-field<?= tk_create_form_error_class($tareaFormFieldErrors, 'titulo') ?>" id="titulo" name="titulo" type="text" maxlength="160" value="<?= tlm_safe($tituloValor) ?>" placeholder="Ej. Cambiar foco del pasillo 2" required<?= tk_create_form_error_attrs($tareaFormFieldErrors, 'titulo', 'ms-form-error-tarea_titulo') ?>>
+                    <?php if (tk_create_form_error($tareaFormFieldErrors, 'titulo') !== ''): ?>
+                        <span id="ms-form-error-tarea_titulo" class="tk-form-error ms-form-field-error"><?= tk_create_form_error($tareaFormFieldErrors, 'titulo') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div>
                     <label for="categoria">Categor&iacute;a</label>
-                    <select class="tk-field" id="categoria" name="categoria">
+                    <select class="tk-field<?= tk_create_form_error_class($tareaFormFieldErrors, 'categoria') ?>" id="categoria" name="categoria"<?= tk_create_form_error_attrs($tareaFormFieldErrors, 'categoria', 'ms-form-error-tarea_categoria') ?>>
                         <?php foreach ($categorias as $key => $label): ?>
                             <option value="<?= tlm_safe($key) ?>" <?= $categoriaSeleccionada === $key ? 'selected' : '' ?>><?= tlm_safe($label) ?></option>
                         <?php endforeach; ?>
                     </select>
+                    <?php if (tk_create_form_error($tareaFormFieldErrors, 'categoria') !== ''): ?>
+                        <span id="ms-form-error-tarea_categoria" class="tk-form-error ms-form-field-error"><?= tk_create_form_error($tareaFormFieldErrors, 'categoria') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div>
                     <label for="prioridad">Prioridad</label>
-                    <select class="tk-field" id="prioridad" name="prioridad">
+                    <select class="tk-field<?= tk_create_form_error_class($tareaFormFieldErrors, 'prioridad') ?>" id="prioridad" name="prioridad"<?= tk_create_form_error_attrs($tareaFormFieldErrors, 'prioridad', 'ms-form-error-tarea_prioridad') ?>>
                         <?php foreach ($prioridades as $key => $label): ?>
                             <option value="<?= tlm_safe($key) ?>" <?= $prioridadSeleccionada === $key ? 'selected' : '' ?>><?= tlm_safe($label) ?></option>
                         <?php endforeach; ?>
                     </select>
+                    <?php if (tk_create_form_error($tareaFormFieldErrors, 'prioridad') !== ''): ?>
+                        <span id="ms-form-error-tarea_prioridad" class="tk-form-error ms-form-field-error"><?= tk_create_form_error($tareaFormFieldErrors, 'prioridad') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div>
                     <label for="habitacion_id">Habitaci&oacute;n relacionada</label>
-                    <select class="tk-field" id="habitacion_id" name="habitacion_id">
+                    <select class="tk-field<?= tk_create_form_error_class($tareaFormFieldErrors, 'habitacion_id') ?>" id="habitacion_id" name="habitacion_id"<?= tk_create_form_error_attrs($tareaFormFieldErrors, 'habitacion_id', 'ms-form-error-tarea_habitacion') ?>>
                         <option value="">Ninguna</option>
                         <?php foreach ($habitaciones as $habitacion): ?>
                             <option value="<?= (int)($habitacion['id'] ?? 0) ?>" <?= $habitacionSeleccionada === (string)(int)($habitacion['id'] ?? 0) ? 'selected' : '' ?>>
@@ -137,21 +187,33 @@ $prioridades = [
                         <?php endforeach; ?>
                     </select>
                     <div class="tk-help">Opcional. &Uacute;til para tareas de una habitaci&oacute;n en concreto.</div>
+                    <?php if (tk_create_form_error($tareaFormFieldErrors, 'habitacion_id') !== ''): ?>
+                        <span id="ms-form-error-tarea_habitacion" class="tk-form-error ms-form-field-error"><?= tk_create_form_error($tareaFormFieldErrors, 'habitacion_id') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div>
                     <label for="fecha_programada">Fecha programada</label>
-                    <input class="tk-field" id="fecha_programada" name="fecha_programada" type="datetime-local" value="<?= tlm_safe($fechaProgramadaValor) ?>">
+                    <input class="tk-field<?= tk_create_form_error_class($tareaFormFieldErrors, 'fecha_programada') ?>" id="fecha_programada" name="fecha_programada" type="datetime-local" value="<?= tlm_safe($fechaProgramadaValor) ?>"<?= tk_create_form_error_attrs($tareaFormFieldErrors, 'fecha_programada', 'ms-form-error-tarea_fecha_programada') ?>>
+                    <?php if (tk_create_form_error($tareaFormFieldErrors, 'fecha_programada') !== ''): ?>
+                        <span id="ms-form-error-tarea_fecha_programada" class="tk-form-error ms-form-field-error"><?= tk_create_form_error($tareaFormFieldErrors, 'fecha_programada') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div>
                     <label for="fecha_limite">Fecha l&iacute;mite</label>
-                    <input class="tk-field" id="fecha_limite" name="fecha_limite" type="datetime-local" value="<?= tlm_safe($fechaLimiteValor) ?>">
+                    <input class="tk-field<?= tk_create_form_error_class($tareaFormFieldErrors, 'fecha_limite') ?>" id="fecha_limite" name="fecha_limite" type="datetime-local" value="<?= tlm_safe($fechaLimiteValor) ?>"<?= tk_create_form_error_attrs($tareaFormFieldErrors, 'fecha_limite', 'ms-form-error-tarea_fecha_limite') ?>>
+                    <?php if (tk_create_form_error($tareaFormFieldErrors, 'fecha_limite') !== ''): ?>
+                        <span id="ms-form-error-tarea_fecha_limite" class="tk-form-error ms-form-field-error"><?= tk_create_form_error($tareaFormFieldErrors, 'fecha_limite') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div class="tk-full">
                     <label for="descripcion">Descripci&oacute;n</label>
-                    <textarea class="tk-field" id="descripcion" name="descripcion" maxlength="2000" placeholder="Detalles de lo que hay que hacer"><?= tlm_safe($descripcionValor) ?></textarea>
+                    <textarea class="tk-field<?= tk_create_form_error_class($tareaFormFieldErrors, 'descripcion') ?>" id="descripcion" name="descripcion" maxlength="2000" placeholder="Detalles de lo que hay que hacer"<?= tk_create_form_error_attrs($tareaFormFieldErrors, 'descripcion', 'ms-form-error-tarea_descripcion') ?>><?= tlm_safe($descripcionValor) ?></textarea>
+                    <?php if (tk_create_form_error($tareaFormFieldErrors, 'descripcion') !== ''): ?>
+                        <span id="ms-form-error-tarea_descripcion" class="tk-form-error ms-form-field-error"><?= tk_create_form_error($tareaFormFieldErrors, 'descripcion') ?></span>
+                    <?php endif; ?>
                 </div>
             </div>
 

@@ -40,6 +40,14 @@ $descuentoAutomaticoActivo = $oldInputDisponible ? old('descuento_automatico', '
 }
 .editar-producto-view { opacity: 0; transition: opacity 0.3s ease; }
 .editar-producto-view.loaded { opacity: 1; }
+.inv-form-error {
+    display: block;
+    margin-top: 0.4rem;
+    color: #B42318;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
 </style>
 
 <div class="editar-producto-view min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-4">
@@ -91,6 +99,9 @@ $descuentoAutomaticoActivo = $oldInputDisponible ? old('descuento_automatico', '
                                        pattern="[A-Za-z0-9]{3,20}"
                                        title="Solo letras y números, 3-20 caracteres"
                                        required>
+                                <?php if (form_error('codigo')): ?>
+                                    <span class="inv-form-error"><?= form_error('codigo') ?></span>
+                                <?php endif; ?>
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -101,6 +112,9 @@ $descuentoAutomaticoActivo = $oldInputDisponible ? old('descuento_automatico', '
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown"
                                        value="<?= $nombreValor ?>"
                                        required>
+                                <?php if (form_error('nombre')): ?>
+                                    <span class="inv-form-error"><?= form_error('nombre') ?></span>
+                                <?php endif; ?>
                             </div>
                         </div>
 
@@ -121,6 +135,9 @@ $descuentoAutomaticoActivo = $oldInputDisponible ? old('descuento_automatico', '
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
+                                <?php if (form_error('categoria_id')): ?>
+                                    <span class="inv-form-error"><?= form_error('categoria_id') ?></span>
+                                <?php endif; ?>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -135,6 +152,9 @@ $descuentoAutomaticoActivo = $oldInputDisponible ? old('descuento_automatico', '
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
+                                <?php if (form_error('unidad_medida')): ?>
+                                    <span class="inv-form-error"><?= form_error('unidad_medida') ?></span>
+                                <?php endif; ?>
                             </div>
                         </div>
 
@@ -160,6 +180,9 @@ $descuentoAutomaticoActivo = $oldInputDisponible ? old('descuento_automatico', '
                                        value="<?= $stockMinimoValor ?>"
                                        min="0"
                                        required>
+                                <?php if (form_error('stock_minimo')): ?>
+                                    <span class="inv-form-error"><?= form_error('stock_minimo') ?></span>
+                                <?php endif; ?>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -174,6 +197,9 @@ $descuentoAutomaticoActivo = $oldInputDisponible ? old('descuento_automatico', '
                                            step="0.01"
                                            min="0">
                                 </div>
+                                <?php if (form_error('costo_unitario')): ?>
+                                    <span class="inv-form-error"><?= form_error('costo_unitario') ?></span>
+                                <?php endif; ?>
                             </div>
                         </div>
 
@@ -186,6 +212,9 @@ $descuentoAutomaticoActivo = $oldInputDisponible ? old('descuento_automatico', '
                                       rows="2"
                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown resize-none"
                                       placeholder="Detalles adicionales del producto..."><?= $descripcionValor ?></textarea>
+                            <?php if (form_error('descripcion')): ?>
+                                <span class="inv-form-error"><?= form_error('descripcion') ?></span>
+                            <?php endif; ?>
                         </div>
 
                         <!-- Descuento Automático -->

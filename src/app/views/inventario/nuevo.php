@@ -33,6 +33,14 @@ $descuentoAutomaticoActivo = old('descuento_automatico', '') !== '';
 }
 .nuevo-producto-view { opacity: 0; transition: opacity 0.3s ease; }
 .nuevo-producto-view.loaded { opacity: 1; }
+.inv-form-error {
+    display: block;
+    margin-top: 0.4rem;
+    color: #B42318;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
 </style>
 
 <div class="nuevo-producto-view min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-4">
@@ -80,6 +88,9 @@ $descuentoAutomaticoActivo = old('descuento_automatico', '') !== '';
                                        pattern="[A-Za-z0-9]{3,20}"
                                        title="Solo letras y números, 3-20 caracteres"
                                        required>
+                                <?php if (form_error('codigo')): ?>
+                                    <span class="inv-form-error"><?= form_error('codigo') ?></span>
+                                <?php endif; ?>
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -91,6 +102,9 @@ $descuentoAutomaticoActivo = old('descuento_automatico', '') !== '';
                                        placeholder="Papel Higiénico"
                                        value="<?= old('nombre') ?>"
                                        required>
+                                <?php if (form_error('nombre')): ?>
+                                    <span class="inv-form-error"><?= form_error('nombre') ?></span>
+                                <?php endif; ?>
                             </div>
                         </div>
 
@@ -110,6 +124,9 @@ $descuentoAutomaticoActivo = old('descuento_automatico', '') !== '';
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
+                                <?php if (form_error('categoria_id')): ?>
+                                    <span class="inv-form-error"><?= form_error('categoria_id') ?></span>
+                                <?php endif; ?>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -124,6 +141,9 @@ $descuentoAutomaticoActivo = old('descuento_automatico', '') !== '';
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
+                                <?php if (form_error('unidad_medida')): ?>
+                                    <span class="inv-form-error"><?= form_error('unidad_medida') ?></span>
+                                <?php endif; ?>
                             </div>
                         </div>
 
@@ -139,6 +159,9 @@ $descuentoAutomaticoActivo = old('descuento_automatico', '') !== '';
                                        value="<?= old('stock_inicial', 0) ?>"
                                        min="0"
                                        required>
+                                <?php if (form_error('stock_inicial')): ?>
+                                    <span class="inv-form-error"><?= form_error('stock_inicial') ?></span>
+                                <?php endif; ?>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -150,6 +173,9 @@ $descuentoAutomaticoActivo = old('descuento_automatico', '') !== '';
                                        value="<?= old('stock_minimo', 10) ?>"
                                        min="0"
                                        required>
+                                <?php if (form_error('stock_minimo')): ?>
+                                    <span class="inv-form-error"><?= form_error('stock_minimo') ?></span>
+                                <?php endif; ?>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -165,6 +191,9 @@ $descuentoAutomaticoActivo = old('descuento_automatico', '') !== '';
                                            placeholder="0.00"
                                            value="<?= old('costo_unitario') ?>">
                                 </div>
+                                <?php if (form_error('costo_unitario')): ?>
+                                    <span class="inv-form-error"><?= form_error('costo_unitario') ?></span>
+                                <?php endif; ?>
                             </div>
                         </div>
 
@@ -177,6 +206,9 @@ $descuentoAutomaticoActivo = old('descuento_automatico', '') !== '';
                                       rows="2"
                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown resize-none"
                                       placeholder="Detalles adicionales del producto..."><?= old('descripcion') ?></textarea>
+                            <?php if (form_error('descripcion')): ?>
+                                <span class="inv-form-error"><?= form_error('descripcion') ?></span>
+                            <?php endif; ?>
                         </div>
 
                         <!-- Descuento Automático -->

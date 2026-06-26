@@ -39,6 +39,10 @@ if (empty($estacionamientos)) {
 }
 reset($estacionamientos);
 $estacionamientoDefault = (string)key($estacionamientos);
+$gcOldVehicleRows = is_array($_SESSION['old_input']['vehiculos'] ?? null)
+    ? array_values($_SESSION['old_input']['vehiculos'])
+    : [];
+$gcVehicleRows = !empty($gcOldVehicleRows) ? $gcOldVehicleRows : [[]];
 
 $gcParkingOptionsTemplate = '';
 foreach ($estacionamientos as $parkingCode => $parkingLabel) {
@@ -85,8 +89,14 @@ $gcRenderGuestExtraField = function ($fieldKey, array $definition) use ($gcGuest
     if ($input === 'file') {
         $name = htmlspecialchars((string)($definition['file_name'] ?? $fieldKey), ENT_QUOTES, 'UTF-8');
     }
+    $errorKey = $input === 'file'
+        ? (string)($definition['file_name'] ?? $fieldKey)
+        : 'extras[' . (string)$fieldKey . ']';
     $requiredHtml = $required ? ' required' : '';
     $maxHtml = $max > 0 ? ' maxlength="' . $max . '"' : '';
+    $telHtml = $input === 'tel'
+        ? ' inputmode="numeric" pattern="[0-9]*"' . ($max > 0 ? ' data-max-digits="' . $max . '"' : '')
+        : '';
     $acceptHtml = !empty($definition['accept'])
         ? ' accept="' . htmlspecialchars((string)$definition['accept'], ENT_QUOTES, 'UTF-8') . '"'
         : '';
@@ -123,7 +133,11 @@ $gcRenderGuestExtraField = function ($fieldKey, array $definition) use ($gcGuest
                    class="gc-control<?= !empty($definition['uppercase']) ? ' gc-uppercase' : '' ?>"
                    <?= !empty($definition['uppercase']) ? 'style="text-transform: uppercase"' : '' ?>
                    <?= $requiredHtml ?>
+                   <?= $telHtml ?>
                    <?= $maxHtml ?>>
+        <?php endif; ?>
+        <?php if (form_error($errorKey)): ?>
+            <span class="gc-form-error"><?= form_error($errorKey) ?></span>
         <?php endif; ?>
     </div>
     <?php
@@ -131,22 +145,35 @@ $gcRenderGuestExtraField = function ($fieldKey, array $definition) use ($gcGuest
 };
 
 $gcVehicleVisibleFields = $gcGuestVisibleFields('vehicle');
-$gcRenderVehicleFields = function ($indexToken) use ($gcVehicleVisibleFields, $gcGuestFieldRequired, $gcParkingOptionsTemplate) {
+$gcRenderVehicleFields = function ($indexToken, array $values = []) use ($gcVehicleVisibleFields, $gcGuestFieldRequired, $gcParkingOptionsTemplate) {
     ob_start();
     foreach ($gcVehicleVisibleFields as $fieldKey => $definition) {
         $input = (string)($definition['input'] ?? 'text');
         $storage = (string)($definition['storage'] ?? 'extra');
         $fieldName = (string)($definition['field'] ?? $fieldKey);
+        $extrasValues = is_array($values['extras'] ?? null) ? $values['extras'] : [];
+        $currentValue = $storage === 'column'
+            ? (string)($values[$fieldName] ?? '')
+            : (string)($extrasValues[$fieldKey] ?? '');
         $label = htmlspecialchars((string)($definition['label'] ?? $fieldKey), ENT_QUOTES, 'UTF-8');
         $placeholder = htmlspecialchars((string)($definition['placeholder'] ?? ''), ENT_QUOTES, 'UTF-8');
         $required = $gcGuestFieldRequired($fieldKey);
         $wide = !empty($definition['wide']) || in_array($input, ['textarea', 'parking'], true);
         $max = (int)($definition['max'] ?? 0);
+        $errorKey = $storage === 'column'
+            ? 'vehiculos[' . $indexToken . '][' . $fieldName . ']'
+            : 'vehiculos[' . $indexToken . '][extras][' . (string)$fieldKey . ']';
         $name = $storage === 'column'
             ? 'vehiculos[' . $indexToken . '][' . htmlspecialchars($fieldName, ENT_QUOTES, 'UTF-8') . ']'
             : 'vehiculos[' . $indexToken . '][extras][' . htmlspecialchars((string)$fieldKey, ENT_QUOTES, 'UTF-8') . ']';
         $requiredHtml = $required ? ' required' : '';
         $maxHtml = $max > 0 ? ' maxlength="' . $max . '"' : '';
+        $valueHtml = htmlspecialchars($currentValue, ENT_QUOTES, 'UTF-8');
+        $fieldError = form_error($errorKey);
+        $isPlacasField = $storage === 'column' && $fieldName === 'placas';
+        if (!$isPlacasField && stripos($fieldError, 'placas') !== false) {
+            $fieldError = '';
+        }
         ?>
         <div class="gc-field<?= $wide ? ' gc-field-full' : '' ?>">
             <label class="gc-label"><?= $label ?><?= $required ? ' <span class="gc-required">*</span>' : '' ?></label>
@@ -155,22 +182,26 @@ $gcRenderVehicleFields = function ($indexToken) use ($gcVehicleVisibleFields, $g
                     <?= str_replace('__PARKING_NAME__', $name, $gcParkingOptionsTemplate) ?>
                 </div>
             <?php elseif ($input === 'textarea'): ?>
-                <textarea name="<?= $name ?>" rows="<?= (int)($definition['rows'] ?? 2) ?>" placeholder="<?= $placeholder ?>" class="gc-control"<?= $requiredHtml ?><?= $maxHtml ?>></textarea>
+                <textarea name="<?= $name ?>" rows="<?= (int)($definition['rows'] ?? 2) ?>" placeholder="<?= $placeholder ?>" class="gc-control"<?= $requiredHtml ?><?= $maxHtml ?>><?= $valueHtml ?></textarea>
             <?php elseif ($input === 'select'): ?>
                 <select name="<?= $name ?>" class="gc-control"<?= $requiredHtml ?>>
                     <option value="">Seleccione una opcion</option>
                     <?php foreach (($definition['options'] ?? []) as $optionValue => $optionLabel): ?>
-                        <option value="<?= htmlspecialchars((string)$optionValue, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string)$optionLabel, ENT_QUOTES, 'UTF-8') ?></option>
+                        <option value="<?= htmlspecialchars((string)$optionValue, ENT_QUOTES, 'UTF-8') ?>" <?= $currentValue === (string)$optionValue ? 'selected' : '' ?>><?= htmlspecialchars((string)$optionLabel, ENT_QUOTES, 'UTF-8') ?></option>
                     <?php endforeach; ?>
                 </select>
             <?php else: ?>
                 <input type="<?= in_array($input, ['email', 'tel', 'date'], true) ? htmlspecialchars($input, ENT_QUOTES, 'UTF-8') : 'text' ?>"
                        name="<?= $name ?>"
+                       value="<?= $valueHtml ?>"
                        placeholder="<?= $placeholder ?>"
                        class="gc-control<?= !empty($definition['uppercase']) ? ' font-mono' : '' ?>"
                        <?= !empty($definition['uppercase']) ? 'style="text-transform: uppercase"' : '' ?>
                        <?= $requiredHtml ?>
                        <?= $maxHtml ?>>
+            <?php endif; ?>
+            <?php if ($fieldError): ?>
+                <span class="gc-form-error"><?= $fieldError ?></span>
             <?php endif; ?>
         </div>
         <?php
@@ -465,6 +496,15 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
 
 .gc-required {
     color: var(--gc-danger);
+}
+
+.gc-form-error {
+    display: block;
+    margin-top: 7px;
+    color: var(--gc-danger);
+    font-size: .76rem;
+    font-weight: 850;
+    line-height: 1.35;
 }
 
 .gc-input-wrap {
@@ -1190,6 +1230,9 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                                            required
                                            placeholder="Ingrese el nombre completo del huesped"
                                            class="gc-control">
+                                    <?php if (form_error('nombre_completo')): ?>
+                                        <span class="gc-form-error"><?= form_error('nombre_completo') ?></span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div class="gc-field">
@@ -1203,6 +1246,9 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                                                class="gc-control has-icon"
                                                <?= $gcGuestFieldRequired('telefono') ? 'required' : '' ?>>
                                     </div>
+                                    <?php if (form_error('telefono')): ?>
+                                        <span class="gc-form-error"><?= form_error('telefono') ?></span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <?php if ($gcGuestFieldVisible('email')): ?>
@@ -1217,6 +1263,9 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                                                    class="gc-control has-icon"
                                                    <?= $gcGuestFieldRequired('email') ? 'required' : '' ?>>
                                         </div>
+                                        <?php if (form_error('email')): ?>
+                                            <span class="gc-form-error"><?= form_error('email') ?></span>
+                                        <?php endif; ?>
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -1250,6 +1299,9 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
+                                        <?php if (form_error('procedencia_estado')): ?>
+                                            <span class="gc-form-error"><?= form_error('procedencia_estado') ?></span>
+                                        <?php endif; ?>
                                     </div>
                                 <?php endif; ?>
 
@@ -1262,6 +1314,9 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                                                placeholder="Ciudad de origen"
                                                class="gc-control"
                                                <?= $gcGuestFieldRequired('procedencia_ciudad') ? 'required' : '' ?>>
+                                        <?php if (form_error('procedencia_ciudad')): ?>
+                                            <span class="gc-form-error"><?= form_error('procedencia_ciudad') ?></span>
+                                        <?php endif; ?>
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -1387,21 +1442,24 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
 
                         <div class="gc-section-body">
                             <div id="vehiculos-container">
-                                <div class="vehiculo-item">
-                                    <div class="gc-vehicle-head">
-                                        <h4 class="gc-vehicle-title">
-                                            <i class="fas fa-car-side"></i>
-                                            Vehiculo 1
-                                        </h4>
-                                        <button type="button" onclick="eliminarVehiculo(this)" class="gc-delete-vehicle hidden" title="Eliminar vehiculo">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
+                                <?php foreach ($gcVehicleRows as $vehicleIndex => $vehicleValues): ?>
+                                    <?php $vehicleValues = is_array($vehicleValues) ? $vehicleValues : []; ?>
+                                    <div class="vehiculo-item">
+                                        <div class="gc-vehicle-head">
+                                            <h4 class="gc-vehicle-title">
+                                                <i class="fas fa-car-side"></i>
+                                                Vehiculo <?= (int)$vehicleIndex + 1 ?>
+                                            </h4>
+                                            <button type="button" onclick="eliminarVehiculo(this)" class="gc-delete-vehicle <?= count($gcVehicleRows) === 1 ? 'hidden' : '' ?>" title="Eliminar vehiculo">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
 
-                                    <div class="gc-grid">
-                                        <?= str_replace('__INDEX__', '0', $gcVehicleFieldsTemplate) ?>
+                                        <div class="gc-grid">
+                                            <?= $gcRenderVehicleFields((string)$vehicleIndex, $vehicleValues) ?>
+                                        </div>
                                     </div>
-                                </div>
+                                <?php endforeach; ?>
                             </div>
 
                             <button type="button" onclick="agregarVehiculo()" class="gc-add-vehicle">
@@ -1436,6 +1494,9 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                                       placeholder="Cualquier informacion adicional sobre el huesped..."
                                       class="gc-control"
                                       <?= $gcGuestFieldRequired('notas') ? 'required' : '' ?>><?= old('notas') ?></textarea>
+                            <?php if (form_error('notas')): ?>
+                                <span class="gc-form-error"><?= form_error('notas') ?></span>
+                            <?php endif; ?>
                         </div>
                     </section>
                     <?php endif; ?>
@@ -1482,7 +1543,7 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
 </div>
 
 <script>
-let vehiculoIndex = 1;
+let vehiculoIndex = <?= count($gcVehicleRows) ?>;
 const vehicleFieldsTemplate = <?= json_encode($gcVehicleFieldsTemplate, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
 document.querySelectorAll('.gc-document-input').forEach(function(input) {
@@ -1558,6 +1619,17 @@ document.querySelector('input[name="telefono"]')?.addEventListener('input', func
         value = value.slice(0, 10);
     }
     e.target.value = value;
+});
+
+document.querySelectorAll('input[type="tel"][data-max-digits]').forEach(function(input) {
+    input.addEventListener('input', function(e) {
+        const maxDigits = parseInt(e.target.dataset.maxDigits || '0', 10);
+        let value = e.target.value.replace(/\D/g, '');
+        if (maxDigits > 0 && value.length > maxDigits) {
+            value = value.slice(0, maxDigits);
+        }
+        e.target.value = value;
+    });
 });
 
 // Convertir placas a mayusculas en todos los campos

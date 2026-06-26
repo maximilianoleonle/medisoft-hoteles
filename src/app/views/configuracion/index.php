@@ -4173,7 +4173,7 @@ html {
                                             <i class="fas fa-door-open"></i>
                                             Tipos o categorias
                                         </h3>
-                                        <p class="hc-field-hint">Ejemplo de codigo: sencilla_lujo. Usa letras, numeros y guion bajo.</p>
+                                        <p class="hc-field-hint">Codigos compatibles: sencilla, doble, triple, cuadruple, sencilla_manolo, doble_manolo, sencilla_jacuzzi, doble_jacuzzi.</p>
                                     </div>
                                     <button type="button" class="hc-add-btn" data-catalog-add="types">
                                         <i class="fas fa-plus"></i>
@@ -4757,7 +4757,7 @@ html {
                                             <i class="fas fa-square-parking"></i>
                                             Estacionamientos
                                         </h3>
-                                        <p class="hc-field-hint">Catalogo preparado para la fase de huespedes y vehiculos.</p>
+                                        <p class="hc-field-hint">Codigos compatibles con vehiculos: coches, camionetas, discos, nikkos.</p>
                                     </div>
                                     <button type="button" class="hc-add-btn" data-catalog-add="parkings">
                                         <i class="fas fa-plus"></i>
@@ -4778,7 +4778,7 @@ html {
                                                 <input type="text"
                                                        name="general_catalog[parkings][<?= $index ?>][codigo]"
                                                        value="<?= htmlspecialchars($parkingCode, ENT_QUOTES, 'UTF-8') ?>"
-                                                       maxlength="30"
+                                                       maxlength="20"
                                                        class="form-input">
                                             </div>
                                             <div class="hc-catalog-cell">
@@ -4836,7 +4836,7 @@ html {
                                                 <input type="text"
                                                        name="general_catalog[units][<?= $index ?>][codigo]"
                                                        value="<?= htmlspecialchars($unitCode, ENT_QUOTES, 'UTF-8') ?>"
-                                                       maxlength="30"
+                                                       maxlength="20"
                                                        class="form-input">
                                             </div>
                                             <div class="hc-catalog-cell">

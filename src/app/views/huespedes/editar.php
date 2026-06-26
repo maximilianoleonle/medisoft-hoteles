@@ -48,16 +48,21 @@ $geGuestFieldVisible = function ($key) use ($guestFieldPolicy) {
 $geGuestFieldRequired = function ($key) use ($guestFieldPolicy) {
     return function_exists('hotel_guest_field_required') ? hotel_guest_field_required($key, $guestFieldPolicy) : false;
 };
+$geOldExtra = function ($key, $default = '') {
+    $value = $_SESSION['old_input']['extras'][$key] ?? $default;
+    return is_scalar($value) ? (string)$value : (string)$default;
+};
 $geRequiredMark = function ($key) use ($geGuestFieldRequired) {
     return $geGuestFieldRequired($key) ? ' <span class="ge-required">*</span>' : '';
 };
 $geRenderHiddenColumn = function ($fieldName, $value) {
     return '<input type="hidden" name="' . htmlspecialchars($fieldName, ENT_QUOTES, 'UTF-8') . '" value="' . htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8') . '">';
 };
-$geRenderGuestExtraField = function ($fieldKey, array $definition) use ($geGuestFieldRequired, $guestExtraValues, $identificacionDocumentoPresente) {
+$geRenderGuestExtraField = function ($fieldKey, array $definition) use ($geGuestFieldRequired, $guestExtraValues, $identificacionDocumentoPresente, $geOldExtra) {
     $label = htmlspecialchars((string)($definition['label'] ?? $fieldKey), ENT_QUOTES, 'UTF-8');
     $placeholder = htmlspecialchars((string)($definition['placeholder'] ?? ''), ENT_QUOTES, 'UTF-8');
-    $currentValue = is_scalar($guestExtraValues[$fieldKey] ?? null) ? (string)$guestExtraValues[$fieldKey] : '';
+    $currentStoredValue = is_scalar($guestExtraValues[$fieldKey] ?? null) ? (string)$guestExtraValues[$fieldKey] : '';
+    $currentValue = $geOldExtra($fieldKey, $currentStoredValue);
     $value = htmlspecialchars($currentValue, ENT_QUOTES, 'UTF-8');
     $required = $geGuestFieldRequired($fieldKey);
     $input = (string)($definition['input'] ?? 'text');
@@ -68,6 +73,9 @@ $geRenderGuestExtraField = function ($fieldKey, array $definition) use ($geGuest
     if ($input === 'file') {
         $name = htmlspecialchars((string)($definition['file_name'] ?? $fieldKey), ENT_QUOTES, 'UTF-8');
     }
+    $errorKey = $input === 'file'
+        ? (string)($definition['file_name'] ?? $fieldKey)
+        : 'extras[' . (string)$fieldKey . ']';
     $requiredHtml = ($required && !($input === 'file' && $identificacionDocumentoPresente)) ? ' required' : '';
     $maxHtml = $max > 0 ? ' maxlength="' . $max . '"' : '';
     $acceptHtml = !empty($definition['accept'])
@@ -111,6 +119,9 @@ $geRenderGuestExtraField = function ($fieldKey, array $definition) use ($geGuest
                    <?= $requiredHtml ?>
                    <?= $maxHtml ?>>
         <?php endif; ?>
+        <?php if (form_error($errorKey)): ?>
+            <span class="ge-form-error"><?= form_error($errorKey) ?></span>
+        <?php endif; ?>
     </div>
     <?php
     return ob_get_clean();
@@ -134,7 +145,89 @@ if (function_exists('hotel_general_catalog_parking_rows')) {
 if (empty($estacionamientos) && class_exists('HuespedVehiculo')) {
     $estacionamientos = HuespedVehiculo::getEstacionamientos();
 }
+if (empty($estacionamientos)) {
+    $estacionamientos = ['coches' => 'Coches'];
+}
+reset($estacionamientos);
+$estacionamientoDefault = (string)key($estacionamientos);
 $vehiculos_count = count($vehiculos);
+$geVehicleVisibleFields = $geGuestVisibleFields('vehicle');
+$geParkingOptionsHtml = function ($fieldName = 'estacionamiento', $formId = 'formAgregarVehiculo') use ($estacionamientos, $estacionamientoDefault) {
+    $html = '';
+    $fieldNameEsc = htmlspecialchars((string)$fieldName, ENT_QUOTES, 'UTF-8');
+    $formIdEsc = htmlspecialchars((string)$formId, ENT_QUOTES, 'UTF-8');
+    foreach ($estacionamientos as $parkingCode => $parkingLabel) {
+        $parkingCode = (string)$parkingCode;
+        $parkingCodeEsc = htmlspecialchars($parkingCode, ENT_QUOTES, 'UTF-8');
+        $parkingLabelEsc = htmlspecialchars((string)$parkingLabel, ENT_QUOTES, 'UTF-8');
+        $checkedAttr = $parkingCode === $estacionamientoDefault ? ' checked' : '';
+        $html .= '<label class="ge-radio-card">';
+        $html .= '<input type="radio" form="' . $formIdEsc . '" name="' . $fieldNameEsc . '" value="' . $parkingCodeEsc . '"' . $checkedAttr . '>';
+        $html .= '<span><i class="fas fa-square-parking"></i>' . $parkingLabelEsc . '</span>';
+        $html .= '</label>';
+    }
+
+    return $html;
+};
+$geRenderVehicleInlineFields = function () use ($geVehicleVisibleFields, $geGuestFieldRequired, $geRequiredMark, $geParkingOptionsHtml) {
+    ob_start();
+    foreach ($geVehicleVisibleFields as $fieldKey => $definition) {
+        $input = (string)($definition['input'] ?? 'text');
+        $storage = (string)($definition['storage'] ?? 'extra');
+        $fieldName = (string)($definition['field'] ?? $fieldKey);
+        $name = $storage === 'column' ? $fieldName : 'extras[' . $fieldKey . ']';
+        $id = preg_replace('/[^a-zA-Z0-9_-]/', '_', 'add_' . ($storage === 'column' ? $fieldName : 'extra_' . $fieldKey));
+        $label = htmlspecialchars((string)($definition['label'] ?? $fieldKey), ENT_QUOTES, 'UTF-8');
+        $placeholder = htmlspecialchars((string)($definition['placeholder'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $requiredAttr = $geGuestFieldRequired($fieldKey) ? ' required' : '';
+        $max = (int)($definition['max'] ?? 0);
+        $maxAttr = $max > 0 ? ' maxlength="' . $max . '"' : '';
+        ?>
+        <?php if ($input === 'parking'): ?>
+            <fieldset class="ge-inline-radio-group">
+                <legend><?= $label ?><?= $geRequiredMark($fieldKey) ?></legend>
+                <div class="ge-radio-options">
+                    <?= $geParkingOptionsHtml($name) ?>
+                </div>
+            </fieldset>
+        <?php else: ?>
+            <div class="ge-inline-field<?= $input === 'textarea' ? ' ge-inline-field-full' : '' ?>">
+                <label for="<?= htmlspecialchars($id, ENT_QUOTES, 'UTF-8') ?>"><?= $label ?><?= $geRequiredMark($fieldKey) ?></label>
+                <?php if ($input === 'textarea'): ?>
+                    <textarea id="<?= htmlspecialchars($id, ENT_QUOTES, 'UTF-8') ?>"
+                              form="formAgregarVehiculo"
+                              name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>"
+                              rows="<?= (int)($definition['rows'] ?? 2) ?>"
+                              placeholder="<?= $placeholder ?>"
+                              <?= $requiredAttr ?>
+                              <?= $maxAttr ?>></textarea>
+                <?php elseif ($input === 'select'): ?>
+                    <select id="<?= htmlspecialchars($id, ENT_QUOTES, 'UTF-8') ?>"
+                            form="formAgregarVehiculo"
+                            name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>"
+                            <?= $requiredAttr ?>>
+                        <option value="">Seleccione una opcion</option>
+                        <?php foreach (($definition['options'] ?? []) as $optionValue => $optionLabel): ?>
+                            <option value="<?= htmlspecialchars((string)$optionValue, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string)$optionLabel, ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php else: ?>
+                    <input id="<?= htmlspecialchars($id, ENT_QUOTES, 'UTF-8') ?>"
+                           type="<?= in_array($input, ['email', 'tel', 'date'], true) ? htmlspecialchars($input, ENT_QUOTES, 'UTF-8') : 'text' ?>"
+                           form="formAgregarVehiculo"
+                           name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>"
+                           placeholder="<?= $placeholder ?>"
+                           <?= !empty($definition['uppercase']) ? 'style="text-transform: uppercase"' : '' ?>
+                           <?= $requiredAttr ?>
+                           <?= $maxAttr ?>>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+        <?php
+    }
+
+    return ob_get_clean();
+};
 ?>
 
 <style id="guest-edit-redesign">
@@ -379,14 +472,17 @@ $vehiculos_count = count($vehiculos);
 }
 
 .ge-main {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     gap: 16px;
 }
 
 .ge-side {
-    position: sticky;
-    top: 18px;
+    position: static;
+    top: auto;
+    z-index: 0;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -486,6 +582,15 @@ $vehiculos_count = count($vehiculos);
 
 .ge-required {
     color: var(--ge-danger);
+}
+
+.ge-form-error {
+    display: block;
+    margin-top: 7px;
+    color: var(--ge-danger);
+    font-size: .76rem;
+    font-weight: 850;
+    line-height: 1.35;
 }
 
 .ge-input-wrap {
@@ -711,19 +816,240 @@ textarea.ge-control {
     background: var(--ge-panel-warm);
 }
 
+.ge-vehicle-list[hidden],
+.ge-empty[hidden] {
+    display: none !important;
+}
+
+.ge-vehicle-capture {
+    margin-top: 14px;
+    border: 1px solid var(--ge-line);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--ge-accent) 4%, #FFFCF6);
+    padding: 15px;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.ge-vehicle-capture:focus-within {
+    border-color: color-mix(in srgb, var(--ge-accent) 34%, var(--ge-line));
+    box-shadow: 0 12px 28px -24px color-mix(in srgb, var(--ge-brand) 45%, transparent);
+}
+
+.ge-vehicle-capture-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 13px;
+}
+
+.ge-vehicle-capture-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--ge-heading);
+    font-size: .9rem;
+    font-weight: 950;
+}
+
+.ge-vehicle-capture-title i {
+    color: var(--ge-accent-deep);
+}
+
+.ge-vehicle-capture-copy {
+    margin: 4px 0 0;
+    color: var(--ge-muted);
+    font-size: .78rem;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.ge-inline-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.ge-inline-field,
+.ge-inline-radio-group {
+    min-width: 0;
+    border: 1px solid rgba(67, 78, 94, .1);
+    border-radius: 16px;
+    background: rgba(255,255,255,.54);
+    padding: 12px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.64);
+}
+
+.ge-inline-field-full,
+.ge-inline-radio-group {
+    grid-column: 1 / -1;
+}
+
+.ge-inline-field label,
+.ge-inline-radio-group legend {
+    display: block;
+    margin: 0 0 7px;
+    color: #263246;
+    font-size: .74rem;
+    font-weight: 950;
+}
+
+.ge-inline-field input,
+.ge-inline-field select,
+.ge-inline-field textarea {
+    width: 100%;
+    min-height: 43px;
+    border: 1px solid rgba(44, 55, 75, .24);
+    border-radius: 12px;
+    background: rgba(255,255,255,.96);
+    color: var(--ge-text);
+    outline: none;
+    padding: 9px 12px;
+    font-weight: 750;
+    transition: border-color .18s ease, box-shadow .18s ease;
+    box-shadow: 0 1px 0 rgba(255,255,255,.75);
+}
+
+.ge-inline-field textarea {
+    min-height: 86px;
+    resize: vertical;
+}
+
+.ge-inline-field input:focus,
+.ge-inline-field select:focus,
+.ge-inline-field textarea:focus {
+    border-color: color-mix(in srgb, var(--ge-accent) 68%, var(--ge-brand));
+    box-shadow:
+        0 0 0 4px color-mix(in srgb, var(--ge-accent) 18%, transparent),
+        0 10px 22px rgba(28, 35, 49, .08);
+}
+
+.ge-radio-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    gap: 9px;
+}
+
+.ge-radio-card {
+    cursor: pointer;
+}
+
+.ge-radio-card input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.ge-radio-card span {
+    min-height: 68px;
+    display: grid;
+    place-items: center;
+    gap: 4px;
+    border: 1px solid rgba(44, 55, 75, .2);
+    border-radius: 14px;
+    background: rgba(255,255,255,.8);
+    color: #263246;
+    font-size: .82rem;
+    font-weight: 900;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+.ge-radio-card span:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--ge-accent) 42%, rgba(44,55,75,.2));
+    background: rgba(255,255,255,.95);
+}
+
+.ge-radio-card input:focus-visible + span {
+    outline: 3px solid color-mix(in srgb, var(--ge-accent) 42%, transparent);
+    outline-offset: 2px;
+}
+
+.ge-radio-card input:checked + span {
+    border-color: var(--ge-brand);
+    background: var(--ge-brand);
+    color: #FFFFFF;
+    box-shadow: 0 10px 22px -14px color-mix(in srgb, var(--ge-brand) 68%, transparent);
+}
+
+.ge-form-alert {
+    display: none;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 11px 12px;
+    border-radius: 13px;
+    border: 1px solid color-mix(in srgb, var(--ge-danger) 22%, rgba(67,78,94,.1));
+    background: color-mix(in srgb, var(--ge-danger) 7%, #FFFFFF);
+    color: color-mix(in srgb, var(--ge-danger) 74%, #1C2331);
+    font-size: .84rem;
+    font-weight: 850;
+    line-height: 1.35;
+}
+
+.ge-form-alert.is-visible {
+    display: flex;
+}
+
+.ge-form-alert.is-success {
+    border-color: color-mix(in srgb, var(--ge-success) 24%, rgba(67,78,94,.1));
+    background: color-mix(in srgb, var(--ge-success) 8%, #FFFFFF);
+    color: color-mix(in srgb, var(--ge-success) 78%, #1C2331);
+}
+
+.ge-vehicle-capture-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.ge-vehicle-clear,
+.ge-vehicle-save {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 13px;
+    padding: 0 16px;
+    font-size: .86rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease, opacity .18s ease;
+}
+
+.ge-vehicle-clear {
+    border: 1px solid var(--ge-line);
+    background: rgba(255,255,255,.72);
+    color: var(--ge-text-soft);
+}
+
+.ge-vehicle-save {
+    border: 1px solid color-mix(in srgb, var(--ge-brand) 78%, #000000);
+    background: linear-gradient(135deg, #263246, var(--ge-brand));
+    color: #FFFFFF;
+    box-shadow: 0 14px 26px rgba(28, 35, 49, .22);
+}
+
+.ge-vehicle-clear:hover,
+.ge-vehicle-save:hover {
+    transform: translateY(-1px);
+}
+
+.ge-vehicle-save:disabled {
+    opacity: .72;
+    cursor: wait;
+}
+
 .ge-side-card {
     padding: 16px;
 }
 
 .ge-preview {
-    position: relative;
-    overflow: hidden;
-    padding: 18px;
-    border-color: color-mix(in srgb, var(--ge-accent) 32%, var(--ge-line));
-    background:
-        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--ge-accent) 20%, transparent), transparent 15rem),
-        linear-gradient(145deg, var(--ge-brand), var(--ge-brand-dark));
-    color: #FFFDF8;
+    display: none;
 }
 
 .ge-preview h3,
@@ -838,16 +1164,17 @@ textarea.ge-control {
 }
 
 .ge-actions {
-    position: sticky;
-    bottom: 12px;
-    z-index: 5;
+    position: static;
+    top: auto;
+    bottom: auto;
+    z-index: auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 14px;
     padding: 13px;
-    background: color-mix(in srgb, var(--ge-panel) 92%, transparent);
-    backdrop-filter: blur(12px);
+    background: color-mix(in srgb, var(--ge-panel) 96%, #FFFDF8);
+    backdrop-filter: none;
 }
 
 .ge-actions-copy {
@@ -961,6 +1288,21 @@ textarea.ge-control {
         grid-template-columns: 1fr;
     }
 
+    .ge-inline-grid,
+    .ge-radio-options,
+    .ge-vehicle-capture-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .ge-vehicle-capture-actions {
+        display: grid;
+    }
+
+    .ge-vehicle-clear,
+    .ge-vehicle-save {
+        width: 100%;
+    }
+
     .ge-btn,
     .ge-link-btn {
         width: 100%;
@@ -1044,11 +1386,14 @@ textarea.ge-control {
                                     <input type="text"
                                            id="nombre_completo"
                                            name="nombre_completo"
-                                           value="<?= guest_edit_safe($huesped['nombre_completo'] ?? '', '') ?>"
+                                           value="<?= old('nombre_completo', guest_edit_safe($huesped['nombre_completo'] ?? '', '')) ?>"
                                            required
                                            autocomplete="name"
                                            placeholder="Ingrese el nombre completo del hu&eacute;sped"
                                            class="ge-control">
+                                    <?php if (form_error('nombre_completo')): ?>
+                                        <span class="ge-form-error"><?= form_error('nombre_completo') ?></span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div class="ge-field">
@@ -1058,12 +1403,15 @@ textarea.ge-control {
                                         <input type="tel"
                                                id="telefono"
                                                name="telefono"
-                                               value="<?= guest_edit_safe($huesped['telefono'] ?? '', '') ?>"
+                                               value="<?= old('telefono', guest_edit_safe($huesped['telefono'] ?? '', '')) ?>"
                                                autocomplete="tel"
                                                placeholder="10 d&iacute;gitos"
                                                class="ge-control has-icon"
                                                <?= $geGuestFieldRequired('telefono') ? 'required' : '' ?>>
                                     </div>
+                                    <?php if (form_error('telefono')): ?>
+                                        <span class="ge-form-error"><?= form_error('telefono') ?></span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <?php if ($geGuestFieldVisible('email')): ?>
@@ -1074,12 +1422,15 @@ textarea.ge-control {
                                             <input type="email"
                                                    id="email"
                                                    name="email"
-                                                   value="<?= guest_edit_safe($huesped['email'] ?? '', '') ?>"
+                                                   value="<?= old('email', guest_edit_safe($huesped['email'] ?? '', '')) ?>"
                                                    autocomplete="email"
                                                    placeholder="correo@ejemplo.com"
                                                    class="ge-control has-icon"
                                                    <?= $geGuestFieldRequired('email') ? 'required' : '' ?>>
                                         </div>
+                                        <?php if (form_error('email')): ?>
+                                            <span class="ge-form-error"><?= form_error('email') ?></span>
+                                        <?php endif; ?>
                                     </div>
                                 <?php else: ?>
                                     <?= $geRenderHiddenColumn('email', $huesped['email'] ?? '') ?>
@@ -1111,11 +1462,14 @@ textarea.ge-control {
                                                 <?= $geGuestFieldRequired('procedencia_estado') ? 'required' : '' ?>>
                                             <option value="">Seleccione un estado</option>
                                             <?php foreach ($estados as $estado): ?>
-                                                <option value="<?= guest_edit_safe($estado, '') ?>" <?= $procedencia_estado === $estado ? 'selected' : '' ?>>
+                                                <option value="<?= guest_edit_safe($estado, '') ?>" <?= old('procedencia_estado', $procedencia_estado) === $estado ? 'selected' : '' ?>>
                                                     <?= guest_edit_safe($estado) ?>
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
+                                        <?php if (form_error('procedencia_estado')): ?>
+                                            <span class="ge-form-error"><?= form_error('procedencia_estado') ?></span>
+                                        <?php endif; ?>
                                     </div>
                                 <?php else: ?>
                                     <?= $geRenderHiddenColumn('procedencia_estado', $huesped['procedencia_estado'] ?? '') ?>
@@ -1127,10 +1481,13 @@ textarea.ge-control {
                                         <input type="text"
                                                id="procedencia_ciudad"
                                                name="procedencia_ciudad"
-                                               value="<?= guest_edit_safe($huesped['procedencia_ciudad'] ?? '', '') ?>"
+                                               value="<?= old('procedencia_ciudad', guest_edit_safe($huesped['procedencia_ciudad'] ?? '', '')) ?>"
                                                placeholder="Ciudad de origen"
                                                class="ge-control"
                                                <?= $geGuestFieldRequired('procedencia_ciudad') ? 'required' : '' ?>>
+                                        <?php if (form_error('procedencia_ciudad')): ?>
+                                            <span class="ge-form-error"><?= form_error('procedencia_ciudad') ?></span>
+                                        <?php endif; ?>
                                     </div>
                                 <?php else: ?>
                                     <?= $geRenderHiddenColumn('procedencia_ciudad', $huesped['procedencia_ciudad'] ?? '') ?>
@@ -1170,14 +1527,14 @@ textarea.ge-control {
                         </section>
                     <?php endif; ?>
 
-                    <?php if ($geGuestFieldVisible('notas')): ?>
+                    <?php if (!empty($geVehicleVisibleFields)): ?>
                     <section class="ge-panel">
                         <div class="ge-panel-head">
                             <div class="ge-panel-title">
                                 <span class="ge-icon-box"><i class="fas fa-car-side"></i></span>
                                 <div>
                                     <h2>Veh&iacute;culos vinculados</h2>
-                                    <p>Consulta r&aacute;pida. La administraci&oacute;n completa vive en el expediente.</p>
+                                    <p><span data-ge-vehicle-count-label><?= number_format($vehiculos_count) ?> veh&iacute;culo<?= $vehiculos_count === 1 ? '' : 's' ?> vinculado<?= $vehiculos_count === 1 ? '' : 's' ?></span> al hu&eacute;sped.</p>
                                 </div>
                             </div>
                         </div>
@@ -1186,52 +1543,84 @@ textarea.ge-control {
                             <div class="ge-context-note">
                                 <i class="fas fa-circle-info"></i>
                                 <div>
-                                    <strong>Los veh&iacute;culos se gestionan desde la vista de detalle.</strong>
-                                    <span>Esto evita cambiar informaci&oacute;n de estacionamiento mientras se edita el perfil principal.</span>
+                                    <strong>Puede registrar veh&iacute;culos sin salir de esta edici&oacute;n.</strong>
+                                    <span>El veh&iacute;culo se guarda desde esta secci&oacute;n; los cambios del perfil principal siguen usando el bot&oacute;n inferior.</span>
                                 </div>
                             </div>
 
-                            <?php if (!empty($vehiculos)): ?>
-                                <div class="ge-vehicle-list">
-                                    <?php foreach ($vehiculos as $vehiculo): ?>
-                                        <?php
-                                            $vehiculo_nombre = trim(($vehiculo['marca'] ?? '') . ' ' . ($vehiculo['modelo'] ?? ''));
-                                            $vehiculo_placas = trim((string)($vehiculo['placas'] ?? ''));
-                                            $vehiculo_color = trim((string)($vehiculo['color'] ?? ''));
-                                            $ubicacion = $estacionamientos[$vehiculo['estacionamiento'] ?? ''] ?? 'No especificado';
-                                        ?>
-                                        <article class="ge-vehicle-card">
-                                            <div class="ge-vehicle-main">
-                                                <span class="ge-vehicle-icon"><i class="fas fa-car"></i></span>
-                                                <div>
-                                                    <strong><?= guest_edit_safe($vehiculo_nombre, 'Vehiculo') ?></strong>
-                                                    <span>
-                                                        Placas: <?= guest_edit_safe($vehiculo_placas, 'Sin placas') ?>
-                                                        <?php if ($vehiculo_color !== ''): ?>
-                                                            &middot; Color: <?= guest_edit_safe($vehiculo_color) ?>
-                                                        <?php endif; ?>
-                                                    </span>
-                                                </div>
+                            <div id="geVehicleList" class="ge-vehicle-list" <?= empty($vehiculos) ? 'hidden' : '' ?>>
+                                <?php foreach ($vehiculos as $vehiculo): ?>
+                                    <?php
+                                        $vehiculo_nombre = trim(($vehiculo['marca'] ?? '') . ' ' . ($vehiculo['modelo'] ?? ''));
+                                        $vehiculo_placas = trim((string)($vehiculo['placas'] ?? ''));
+                                        $vehiculo_color = trim((string)($vehiculo['color'] ?? ''));
+                                        $ubicacion = $estacionamientos[$vehiculo['estacionamiento'] ?? ''] ?? 'No especificado';
+                                    ?>
+                                    <article class="ge-vehicle-card">
+                                        <div class="ge-vehicle-main">
+                                            <span class="ge-vehicle-icon"><i class="fas fa-car"></i></span>
+                                            <div>
+                                                <strong><?= guest_edit_safe($vehiculo_nombre, 'Vehiculo') ?></strong>
+                                                <span>
+                                                    Placas: <?= guest_edit_safe($vehiculo_placas, 'Sin placas') ?>
+                                                    <?php if ($vehiculo_color !== ''): ?>
+                                                        &middot; Color: <?= guest_edit_safe($vehiculo_color) ?>
+                                                    <?php endif; ?>
+                                                </span>
                                             </div>
-                                            <span class="ge-parking-badge"><?= guest_edit_safe($ubicacion) ?></span>
-                                        </article>
-                                    <?php endforeach; ?>
+                                        </div>
+                                        <span class="ge-parking-badge"><?= guest_edit_safe($ubicacion) ?></span>
+                                    </article>
+                                <?php endforeach; ?>
+                            </div>
+
+                            <div id="geVehicleEmpty" class="ge-empty" <?= !empty($vehiculos) ? 'hidden' : '' ?>>
+                                <i class="fas fa-car-rear"></i>
+                                <strong>Sin veh&iacute;culos registrados</strong>
+                                <span>Agregue placas, color y ubicaci&oacute;n de estacionamiento desde esta pantalla.</span>
+                            </div>
+
+                            <div class="ge-vehicle-capture" id="geVehicleCapture">
+                                <div class="ge-vehicle-capture-head">
+                                    <div>
+                                        <h3 class="ge-vehicle-capture-title">
+                                            <i class="fas fa-car-side"></i>
+                                            Nuevo veh&iacute;culo
+                                        </h3>
+                                        <p class="ge-vehicle-capture-copy">Capture los datos del auto y gu&aacute;rdelo en el expediente del hu&eacute;sped.</p>
+                                    </div>
                                 </div>
-                            <?php else: ?>
-                                <div class="ge-empty">
-                                    <i class="fas fa-car-rear"></i>
-                                    <strong>Sin veh&iacute;culos registrados</strong>
-                                    <span>Puede agregarlos desde el expediente del hu&eacute;sped.</span>
+
+                                <div class="ge-inline-grid">
+                                    <?= $geRenderVehicleInlineFields() ?>
                                 </div>
-                            <?php endif; ?>
+
+                                <div class="ge-form-alert" data-vehicle-feedback hidden role="alert" aria-live="assertive">
+                                    <i class="fas fa-circle-info"></i>
+                                    <span></span>
+                                </div>
+
+                                <div class="ge-vehicle-capture-actions">
+                                    <button type="reset" form="formAgregarVehiculo" class="ge-vehicle-clear">
+                                        <i class="fas fa-rotate-left"></i>
+                                        Limpiar
+                                    </button>
+                                    <button type="submit" form="formAgregarVehiculo" class="ge-vehicle-save">
+                                        <i class="fas fa-save"></i>
+                                        Guardar veh&iacute;culo
+                                    </button>
+                                </div>
+                            </div>
 
                             <a href="<?= url('huespedes/' . $huesped_id) ?>#vehiculos" class="ge-vehicle-link">
-                                <span><i class="fas fa-screwdriver-wrench"></i> Gestionar veh&iacute;culos</span>
+                                <span><i class="fas fa-screwdriver-wrench"></i> Abrir gesti&oacute;n avanzada en expediente</span>
                                 <i class="fas fa-arrow-right"></i>
                             </a>
                         </div>
                     </section>
+                    <?php endif; ?>
 
+                    <?php if ($geGuestFieldVisible('notas')): ?>
                     <section class="ge-panel">
                         <div class="ge-panel-head">
                             <div class="ge-panel-title">
@@ -1250,7 +1639,10 @@ textarea.ge-control {
                                       rows="4"
                                       placeholder="Cualquier informaci&oacute;n adicional sobre el hu&eacute;sped..."
                                       class="ge-control"
-                                      <?= $geGuestFieldRequired('notas') ? 'required' : '' ?>><?= guest_edit_safe($notas_huesped, '') ?></textarea>
+                                      <?= $geGuestFieldRequired('notas') ? 'required' : '' ?>><?= old('notas', guest_edit_safe($notas_huesped, '')) ?></textarea>
+                            <?php if (form_error('notas')): ?>
+                                <span class="ge-form-error"><?= form_error('notas') ?></span>
+                            <?php endif; ?>
                         </div>
                     </section>
                     <?php else: ?>
@@ -1283,7 +1675,7 @@ textarea.ge-control {
                         <div class="ge-preview-tags">
                             <span id="guestEditPreviewContact"><i class="fas fa-address-book"></i> <?= guest_edit_safe($contacto_label) ?></span>
                             <span id="guestEditPreviewOrigin"><i class="fas fa-location-dot"></i> <?= guest_edit_safe($procedencia_label) ?></span>
-                            <span><i class="fas fa-car"></i> <?= number_format($vehiculos_count) ?> veh&iacute;culo<?= $vehiculos_count === 1 ? '' : 's' ?></span>
+                            <span><i class="fas fa-car"></i> <span data-ge-vehicle-count-label><?= number_format($vehiculos_count) ?> veh&iacute;culo<?= $vehiculos_count === 1 ? '' : 's' ?> vinculado<?= $vehiculos_count === 1 ? '' : 's' ?></span></span>
                         </div>
                     </section>
 
@@ -1320,7 +1712,204 @@ textarea.ge-control {
     </div>
 </div>
 
+<form id="formAgregarVehiculo"
+      method="POST"
+      action="<?= url('huespedes/agregar-vehiculo') ?>"
+      hidden>
+    <input type="hidden" name="huesped_id" value="<?= $huesped_id ?>">
+    <?= csrf_field() ?>
+</form>
+
 <script>
+let geVehicleCount = <?= (int)$vehiculos_count ?>;
+const geParkingLabels = <?= json_encode($estacionamientos, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+const geParkingDefault = <?= json_encode($estacionamientoDefault, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
+function geEscapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function geVehicleCountLabel(count) {
+    return `${Number(count).toLocaleString('es-MX')} veh\u00edculo${Number(count) === 1 ? '' : 's'} vinculado${Number(count) === 1 ? '' : 's'}`;
+}
+
+function geRefreshVehicleCount() {
+    document.querySelectorAll('[data-ge-vehicle-count-label]').forEach(function(element) {
+        element.textContent = geVehicleCountLabel(geVehicleCount);
+    });
+}
+
+function geShowVehicleFeedback(form, type, message) {
+    const alertBox = document.querySelector('#geVehicleCapture [data-vehicle-feedback]');
+    if (!alertBox) {
+        return;
+    }
+
+    const icon = alertBox.querySelector('i');
+    const text = alertBox.querySelector('span');
+    alertBox.hidden = false;
+    alertBox.classList.add('is-visible');
+    alertBox.classList.toggle('is-success', type === 'success');
+    if (icon) {
+        icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-circle-exclamation';
+    }
+    if (text) {
+        text.textContent = message || 'No se pudo completar la accion.';
+    }
+    alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function geClearVehicleFeedback(form) {
+    const alertBox = document.querySelector('#geVehicleCapture [data-vehicle-feedback]');
+    if (!alertBox) {
+        return;
+    }
+
+    alertBox.hidden = true;
+    alertBox.classList.remove('is-visible', 'is-success');
+}
+
+function geSetVehicleSubmitting(form, isSubmitting) {
+    const button = document.querySelector('.ge-vehicle-save[form="formAgregarVehiculo"]');
+    if (!button) {
+        return;
+    }
+
+    if (!button.dataset.defaultHtml) {
+        button.dataset.defaultHtml = button.innerHTML;
+    }
+
+    button.disabled = isSubmitting;
+    button.innerHTML = isSubmitting
+        ? '<i class="fas fa-spinner fa-spin"></i> Guardando'
+        : button.dataset.defaultHtml;
+}
+
+function geBuildVehicleCard(vehicle) {
+    const article = document.createElement('article');
+    const marca = String(vehicle.marca || '').trim();
+    const modelo = String(vehicle.modelo || '').trim();
+    const placas = String(vehicle.placas || '').trim();
+    const color = String(vehicle.color || '').trim();
+    const parking = String(vehicle.estacionamiento || geParkingDefault || '').trim();
+    const nombre = `${marca} ${modelo}`.trim() || 'Vehiculo';
+    const parkingLabel = geParkingLabels[parking] || 'No especificado';
+    const details = [
+        `Placas: ${placas || 'Sin placas'}`,
+        color ? `Color: ${color}` : ''
+    ].filter(Boolean).join(' · ');
+
+    article.className = 'ge-vehicle-card';
+    article.innerHTML = `
+        <div class="ge-vehicle-main">
+            <span class="ge-vehicle-icon"><i class="fas fa-car"></i></span>
+            <div>
+                <strong>${geEscapeHtml(nombre)}</strong>
+                <span>${geEscapeHtml(details)}</span>
+            </div>
+        </div>
+        <span class="ge-parking-badge">${geEscapeHtml(parkingLabel)}</span>
+    `;
+
+    return article;
+}
+
+function geAppendVehicleCard(vehicle) {
+    const list = document.getElementById('geVehicleList');
+    const empty = document.getElementById('geVehicleEmpty');
+    if (!list) {
+        return;
+    }
+
+    list.hidden = false;
+    if (empty) {
+        empty.hidden = true;
+    }
+    list.prepend(geBuildVehicleCard(vehicle));
+    geVehicleCount += 1;
+    geRefreshVehicleCount();
+}
+
+function geVehicleFromFormData(formData) {
+    return {
+        marca: formData.get('marca') || '',
+        modelo: formData.get('modelo') || '',
+        placas: formData.get('placas') || '',
+        color: formData.get('color') || '',
+        estacionamiento: formData.get('estacionamiento') || geParkingDefault
+    };
+}
+
+function geVehicleFormData(form) {
+    const formData = new FormData(form);
+    document.querySelectorAll('[form="formAgregarVehiculo"][name]').forEach(function(control) {
+        if (control.type === 'radio' && !control.checked) {
+            return;
+        }
+        if (formData.has(control.name)) {
+            return;
+        }
+        formData.append(control.name, control.value || '');
+    });
+    return formData;
+}
+
+document.querySelector('[form="formAgregarVehiculo"][name="placas"]')?.addEventListener('input', function(event) {
+    event.target.value = event.target.value.toUpperCase();
+});
+
+document.getElementById('formAgregarVehiculo')?.addEventListener('reset', function() {
+    geClearVehicleFeedback(this);
+    geSetVehicleSubmitting(this, false);
+});
+
+document.getElementById('formAgregarVehiculo')?.addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const form = this;
+    geClearVehicleFeedback(form);
+    geSetVehicleSubmitting(form, true);
+    const formData = geVehicleFormData(form);
+    const vehicleDraft = geVehicleFromFormData(formData);
+
+    fetch(form.action, {
+        method: form.method || 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(function(response) {
+        return response.json().catch(function() {
+            return {
+                success: false,
+                message: response.ok ? 'Respuesta invalida del servidor.' : 'No se pudo guardar el vehiculo.'
+            };
+        });
+    })
+    .then(function(data) {
+        if (data.success) {
+            geAppendVehicleCard(vehicleDraft);
+            form.reset();
+            geSetVehicleSubmitting(form, false);
+            geShowVehicleFeedback(form, 'success', data.message || 'Vehiculo agregado correctamente.');
+            document.querySelector('#geVehicleCapture input[form="formAgregarVehiculo"]:not([type="radio"]), #geVehicleCapture select[form="formAgregarVehiculo"], #geVehicleCapture textarea[form="formAgregarVehiculo"]')?.focus();
+        } else {
+            geSetVehicleSubmitting(form, false);
+            geShowVehicleFeedback(form, 'error', data.message || 'No se pudo agregar el vehiculo.');
+        }
+    })
+    .catch(function() {
+        geSetVehicleSubmitting(form, false);
+        geShowVehicleFeedback(form, 'error', 'Ocurrio un error al agregar el vehiculo.');
+    });
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('guestEditForm');
     const nombreInput = form?.querySelector('input[name="nombre_completo"]');

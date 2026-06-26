@@ -11,6 +11,10 @@ $fecha_entrada_pre = $_GET['fecha_entrada'] ?? null;
 $fecha_salida_pre = $_GET['fecha_salida'] ?? null;
 $hora_llegada_pre = $_GET['hora_llegada'] ?? null;
 $es_preseleccion = $_GET['preseleccion'] ?? null;
+$reservacionOldInput = is_array($_SESSION['old_input'] ?? null) ? $_SESSION['old_input'] : [];
+$reservacionTieneOldInput = !empty($reservacionOldInput);
+$oldHabitacionesReservacion = array_values(array_unique(array_map('strval', (array)($reservacionOldInput['habitaciones'] ?? []))));
+$oldCortesiasReservacion = array_values(array_unique(array_map('strval', (array)($reservacionOldInput['cortesias'] ?? []))));
 
 $tiposHabitacionReservacion = [
     'sencilla' => 'Sencilla',
@@ -727,6 +731,15 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 
 .vista-reservacion label i {
     color: var(--rc-accent-dark) !important;
+}
+
+.vista-reservacion .res-form-error {
+    display: block;
+    margin-top: 0.45rem;
+    color: #B42318;
+    font-size: 0.78rem;
+    font-weight: 800;
+    line-height: 1.35;
 }
 
 .vista-reservacion .lc-input,
@@ -1738,6 +1751,37 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
     top: 14px !important;
 }
 
+.vista-reservacion .reservation-side-column {
+    position: sticky;
+    top: 14px;
+    z-index: 4;
+    align-self: start;
+    gap: 18px !important;
+}
+
+.vista-reservacion .reservation-side-column > .reservation-summary-card {
+    position: relative !important;
+    top: auto !important;
+    z-index: 2;
+}
+
+.vista-reservacion .reservation-summary-card .resumen-scroll {
+    max-height: clamp(180px, calc(100vh - 500px), 400px);
+}
+
+.vista-reservacion .reservation-summary-actions {
+    position: relative;
+    z-index: 2;
+    margin-top: 16px !important;
+    padding-top: 16px !important;
+    background: var(--rc-surface) !important;
+}
+
+.vista-reservacion .reservation-important-card {
+    position: relative;
+    z-index: 1;
+}
+
 .vista-reservacion .xl\:col-span-1 .border-t {
     border-color: var(--rc-line-soft) !important;
     background: transparent !important;
@@ -1812,6 +1856,16 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
     .vista-reservacion .xl\:col-span-1 > .bg-white.sticky,
     .vista-reservacion .buscador-habitaciones {
         position: static !important;
+    }
+
+    .vista-reservacion .reservation-side-column {
+        position: static !important;
+        top: auto !important;
+        z-index: auto;
+    }
+
+    .vista-reservacion .reservation-summary-card .resumen-scroll {
+        max-height: 360px;
     }
 }
 
@@ -1953,6 +2007,56 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
     }
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   MÓVIL COMPACTO  ·  estética dashboard / habitaciones (≤768px)
+   Cards de habitación copiadas del estilo .dm-card del dashboard móvil.
+   ════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    /* Header compacto */
+    .vista-reservacion > div:first-of-type h1 { font-size: 1.12rem !important; }
+    .vista-reservacion > div:first-of-type h1 + p { display: none; }   /* omitido: subtitulo decorativo */
+
+    /* Headers de panel mas compactos */
+    .vista-reservacion .panel-hd-guest,
+    .vista-reservacion .panel-hd-dates,
+    .vista-reservacion .panel-hd-rooms,
+    .vista-reservacion .panel-hd-notes,
+    .vista-reservacion .panel-hd-summary { padding: 13px 14px !important; }
+
+    /* ── Cards de habitación: estilo .dm-card del dashboard móvil ── */
+    .vista-reservacion .room-type-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
+    .vista-reservacion .room-type-group { margin-bottom: 14px; }
+    .vista-reservacion .room-type-group-head { padding: 10px 2px 8px !important; }
+    .vista-reservacion .room-type-title h4 { font-size: .95rem; }
+    .vista-reservacion .room-type-title p { display: none; }           /* omitido: "N habitaciones en este tipo" (ya está en los badges) */
+
+    .vista-reservacion .rc-room-card {
+        min-height: 0;
+        padding: 13px !important;
+        border-radius: 15px;
+        box-shadow: 0 2px 8px rgba(27, 39, 70, .05), 0 12px 26px -20px rgba(27, 39, 70, .2);
+    }
+    .vista-reservacion .rc-room-main { gap: 8px 12px; }
+    .vista-reservacion .rc-room-number strong { font-size: 1.4rem; }
+    .vista-reservacion .rc-room-label { font-size: .58rem; }
+    .vista-reservacion .rc-room-chips { gap: 5px 6px; }
+    .vista-reservacion .rc-room-chip { min-height: 22px; padding: 3px 7px; font-size: .64rem; }
+    .vista-reservacion .rc-room-floor { font-size: .74rem; }
+    .vista-reservacion .rc-room-features {
+        font-size: .74rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .vista-reservacion .rc-room-price strong { font-size: .98rem; }
+    .vista-reservacion .rc-room-footer { padding-top: 10px; }
+    .vista-reservacion .rc-room-action-text { font-size: .7rem; }
+
+    /* Estadísticas de selección: compactas */
+    .vista-reservacion .room-stats-bar { padding: 11px 13px !important; gap: 8px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .vista-reservacion *,
     .vista-reservacion *::before,
@@ -2008,7 +2112,10 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
         <div class="alert-presel">
             <i class="fas fa-bolt" style="color:var(--lc-green);flex-shrink:0;"></i>
             <p class="text-sm" style="color:#3D5234;">
-                <strong>Reservación rápida.</strong> Las fechas y habitación han sido prellenadas automáticamente.
+                <strong>Reservación rápida.</strong>
+                <?= $habitacion_preseleccionada
+                    ? 'Las fechas y habitación han sido prellenadas automáticamente.'
+                    : 'Las fechas han sido prellenadas automáticamente. Selecciona una o más habitaciones para continuar.' ?>
             </p>
         </div>
     </div>
@@ -2110,6 +2217,9 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
                                     </div>
                                 </div>
                             <?php endif; ?>
+                            <?php if (form_error('huesped_id')): ?>
+                                <span class="res-form-error"><?= form_error('huesped_id') ?></span>
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -2134,6 +2244,9 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
                                            class="lc-input"
                                            required
                                            value="<?= old('fecha_entrada', $fecha_entrada_pre) ?>">
+                                    <?php if (form_error('fecha_entrada')): ?>
+                                        <span class="res-form-error"><?= form_error('fecha_entrada') ?></span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <!-- Salida -->
@@ -2146,6 +2259,9 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
                                            class="lc-input"
                                            required
                                            value="<?= old('fecha_salida', $fecha_salida_pre) ?>">
+                                    <?php if (form_error('fecha_salida')): ?>
+                                        <span class="res-form-error"><?= form_error('fecha_salida') ?></span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <!-- Hora -->
@@ -2175,6 +2291,9 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
                                         <i class="fas fa-info-circle"></i>
                                         Check-in oficial: 3:00 PM. Puedes dejar la hora por definir si el huesped aun no confirma.
                                     </p>
+                                    <?php if (form_error('hora_llegada')): ?>
+                                        <span class="res-form-error"><?= form_error('hora_llegada') ?></span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -2217,6 +2336,9 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
                                     <p class="text-sm">Complete las fechas de entrada y salida para ver las habitaciones disponibles</p>
                                 </div>
                             </div>
+                            <?php if (form_error('habitaciones')): ?>
+                                <span class="res-form-error"><?= form_error('habitaciones') ?></span>
+                            <?php endif; ?>
 
                             <!-- Courtesy section -->
                             <div id="seccionCortesias" class="seccion-cortesias hidden">
@@ -2262,10 +2384,10 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
                 </div>
 
                 <!-- ════ Right column (1/4) ════ -->
-                <div class="xl:col-span-1 space-y-4">
+                <div class="xl:col-span-1 space-y-4 reservation-side-column">
 
                     <!-- Summary panel -->
-                    <div class="bg-white rounded-2xl shadow-sm border border-[#DDE8D5] overflow-hidden sticky top-5">
+                    <div class="bg-white rounded-2xl shadow-sm border border-[#DDE8D5] overflow-hidden sticky top-5 reservation-summary-card">
                         <div class="panel-hd-summary p-4">
                             <h3 class="font-bold text-white flex items-center gap-2">
                                 <i class="fas fa-receipt opacity-80"></i>
@@ -2283,7 +2405,7 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
                                 </div>
                             </div>
 
-                            <div class="border-t border-[#EAF0E5] pt-4 mt-4 space-y-2.5 bg-white">
+                            <div class="border-t border-[#EAF0E5] pt-4 mt-4 space-y-2.5 bg-white reservation-summary-actions">
                                 <button type="submit" id="btnGuardar" disabled class="btn-save">
                                     <i class="fas fa-save"></i>
                                     <span>Guardar Reservación</span>
@@ -2301,7 +2423,7 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
                     </div>
 
                     <!-- Info card -->
-                    <div class="info-card">
+                    <div class="info-card reservation-important-card">
                         <h4 class="font-bold mb-3 flex items-center gap-2" style="color:#4A6340;">
                             <i class="fas fa-lightbulb" style="color:var(--lc-gold-dark);"></i>
                             Información Importante
@@ -2367,8 +2489,14 @@ $(document).ready(function() {
     let huespedSeleccionadoActual = null;
     const HUESPED_PRESELECCIONADO = <?= json_encode($huesped_preseleccionado ?? null, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
     const ROOM_TYPE_LABELS = <?= json_encode($tiposHabitacionReservacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const TIENE_OLD_RESERVACION = <?= $reservacionTieneOldInput ? 'true' : 'false' ?>;
+    const OLD_HABITACIONES = <?= json_encode($oldHabitacionesReservacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const OLD_CORTESIAS = <?= json_encode($oldCortesiasReservacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
     const RESERVA_URL_PARAMS = new URLSearchParams(window.location.search);
-    const ES_RESERVACION_RAPIDA = !!(RESERVA_URL_PARAMS.get('habitacion_id') || RESERVA_URL_PARAMS.get('preseleccion'));
+    const TIENE_FECHAS_URL = !!(RESERVA_URL_PARAMS.get('fecha_entrada') && RESERVA_URL_PARAMS.get('fecha_salida'));
+    const ES_RESERVACION_RAPIDA = !!(RESERVA_URL_PARAMS.get('habitacion_id') || RESERVA_URL_PARAMS.get('preseleccion') || TIENE_FECHAS_URL);
+    const DEBE_CARGAR_HABITACIONES_INICIALES = ES_RESERVACION_RAPIDA || TIENE_OLD_RESERVACION;
+    let seleccionInicialPendiente = OLD_HABITACIONES.length > 0;
 
     // Boot
     $('.vista-reservacion').addClass('loaded');
@@ -2383,7 +2511,7 @@ $(document).ready(function() {
         const fechaSalida  = $('#fecha_salida').val();
         const habitacionId = RESERVA_URL_PARAMS.get('habitacion_id');
 
-        if (fechaEntrada && fechaSalida && ES_RESERVACION_RAPIDA) {
+        if (fechaEntrada && fechaSalida && DEBE_CARGAR_HABITACIONES_INICIALES) {
             $('#contenedorHabitaciones').html(spinnerHtml('Preparando reservación rápida...'));
 
             setTimeout(function() {
@@ -2925,7 +3053,20 @@ $(document).ready(function() {
             `);
             return;
         }
-        renderizarHabitaciones(habs);
+
+        let seleccionInicial = null;
+        if (seleccionInicialPendiente) {
+            const idsDisponibles = new Set(
+                habs
+                    .filter(h => estadoHabitacion(h) === 'disponible')
+                    .map(h => h.id.toString())
+            );
+            seleccionInicial = OLD_HABITACIONES.filter(id => idsDisponibles.has(id.toString()));
+            habitacionesCortesiaSeleccionadas = OLD_CORTESIAS.filter(id => seleccionInicial.includes(id.toString()));
+            seleccionInicialPendiente = false;
+        }
+
+        renderizarHabitaciones(habs, seleccionInicial);
     }
 
     function aplicarFiltros() {

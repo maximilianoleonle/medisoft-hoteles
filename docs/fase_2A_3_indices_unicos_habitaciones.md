@@ -248,4 +248,60 @@ Objetivo recomendado:
 - Detectar joins que deben cambiar de `h.tipo = th.codigo` a una condicion por hotel.
 - Decidir si `habitaciones.tipo` debe seguir como codigo textual temporal o migrar gradualmente a `tipo_habitacion_id`.
 
-Recomendacion actual: auditar consumidores antes de preparar la migracion 005, porque el indice compuesto por hotel permitiria duplicados que hoy algunos modulos no estan listos para distinguir.
+## Actualizacion 2026-06-24
+
+Con autorizacion explicita del usuario, se habilito la numeracion de habitaciones repetida entre hoteles.
+
+Migracion aplicada:
+
+```text
+migrations/20260624_001_habitaciones_numero_unico_por_hotel.sql
+```
+
+Cambio realizado:
+
+- Se agrego el indice unico `uk_habitaciones_hotel_numero (hotel_id, numero)`.
+- Se elimino el indice unico global solo sobre `numero`.
+- La validacion de creacion/edicion de habitaciones ahora bloquea duplicados solo dentro del hotel actual.
+
+Validacion local ejecutada:
+
+- Sin `hotel_id NULL` en `habitaciones`.
+- Sin duplicados por `(hotel_id, numero)` antes de migrar.
+- Prueba transaccional exitosa permitiendo `numero = 10` en hoteles distintos.
+
+## Actualizacion 2026-06-24 - Tipos de habitacion por hotel
+
+Con autorizacion explicita del usuario, se habilito la reutilizacion de codigos de tipo de habitacion entre hoteles.
+
+Prerrequisito aplicado:
+
+```text
+migrations/20260624_005_incrementos_tarifas_hotel_id.sql
+```
+
+Migracion aplicada:
+
+```text
+migrations/20260624_006_tipos_habitacion_codigo_unico_por_hotel.sql
+```
+
+Cambio realizado:
+
+- Se agrego `incrementos_tarifas.hotel_id` y el modelo `IncrementoTarifa` quedo scoped por hotel.
+- Se agrego el indice unico `uk_tipos_habitacion_hotel_codigo ((COALESCE(hotel_id, 0)), codigo)`.
+- Se elimino el indice unico global `uk_codigo (codigo)`.
+
+Validacion local ejecutada:
+
+- Sin `hotel_id NULL` en `tipos_habitacion`.
+- Sin duplicados por `COALESCE(hotel_id, 0), codigo`.
+- Prueba transaccional exitosa permitiendo `codigo = sencilla` en hoteles distintos.
+- Prueba transaccional exitosa bloqueando duplicados dentro del mismo hotel.
+- `php -l` correcto en `IncrementoTarifa.php` y `TarifasController.php`.
+
+Detalle tecnico documentado en:
+
+```text
+docs/fase_tipos_habitacion_codigo_por_hotel.md
+```

@@ -46,7 +46,7 @@
             <div class="page-title-right">
     <div class="btn-group">
         <?php if (in_array($_SESSION['usuario_rol'], ['gerente', 'administrador'])): ?>
-            <a href="<?= url('inventario/configuracion-habitacion') ?>" 
+            <a href="<?= url('inventario/configuracion') ?>"
                class="btn btn-info">
                 <i class="fas fa-cog me-1"></i> 
                 Configurar por Habitación

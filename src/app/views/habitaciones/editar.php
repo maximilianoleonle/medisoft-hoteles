@@ -26,9 +26,27 @@ $habitacionCaracteristicasAscii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $hab
 if ($habitacionCaracteristicasAscii !== false) {
     $habitacionCaracteristicasPlain = $habitacionCaracteristicasAscii;
 }
+$habitacionCaracteristicasLimpias = trim((string)($habitacion['caracteristicas'] ?? ''));
+$habitacionTipoCatalogoMarker = null;
+if (preg_match('/(?:^|[,;\r\n]\s*)Tipo catalogo\s*:\s*([^\[\r\n,;]+?)\s*\[([a-z0-9_\-]+)\]/i', (string)($habitacion['caracteristicas'] ?? ''), $habitacionTipoCatalogoMatch)) {
+    $habitacionTipoCatalogoCodigo = strtolower(trim((string)($habitacionTipoCatalogoMatch[2] ?? '')));
+    $habitacionTipoCatalogoLabel = trim((string)($habitacionTipoCatalogoMatch[1] ?? ''));
+    if ($habitacionTipoCatalogoCodigo !== '') {
+        $habitacionTipoCatalogoMarker = $habitacionTipoCatalogoCodigo;
+        if (!isset($tiposHabitacion[$habitacionTipoCatalogoCodigo])) {
+            $tiposHabitacion[$habitacionTipoCatalogoCodigo] = $habitacionTipoCatalogoLabel !== ''
+                ? $habitacionTipoCatalogoLabel
+                : ucfirst(str_replace('_', ' ', $habitacionTipoCatalogoCodigo));
+        }
+    }
+    $habitacionCaracteristicasLimpias = preg_replace('/(?:^|[,;\r\n]\s*)Tipo catalogo\s*:\s*[^\[\r\n,;]+?\s*\[[a-z0-9_\-]+\]/i', '', $habitacionCaracteristicasLimpias);
+    $habitacionCaracteristicasLimpias = trim(preg_replace('/\s*,\s*,+/', ',', (string)$habitacionCaracteristicasLimpias), " \t\n\r\0\x0B,;");
+}
 
 $habitacionTipoSeleccionado = (string)($habitacion['tipo'] ?? '');
-if (strpos($habitacionCaracteristicasPlain, 'jacuzzi') !== false) {
+if ($habitacionTipoCatalogoMarker !== null) {
+    $habitacionTipoSeleccionado = $habitacionTipoCatalogoMarker;
+} elseif (strpos($habitacionCaracteristicasPlain, 'jacuzzi') !== false) {
     if ($habitacionTipoSeleccionado === 'doble') {
         $habitacionTipoSeleccionado = 'doble_jacuzzi';
     } elseif ($habitacionTipoSeleccionado === 'sencilla') {
@@ -36,7 +54,33 @@ if (strpos($habitacionCaracteristicasPlain, 'jacuzzi') !== false) {
     }
 }
 
-$habitacionTipoLabel = $tiposHabitacion[$habitacionTipoSeleccionado] ?? ($tiposHabitacion[$habitacion['tipo']] ?? get_tipo_habitacion($habitacion['tipo']));
+$habitacionOldInput = is_array($_SESSION['old_input'] ?? null) ? $_SESSION['old_input'] : [];
+$habitacionTieneOldInput = !empty($habitacionOldInput);
+$habitacionCampoFormulario = static function (string $campo, $valorActual) use ($habitacionOldInput, $habitacionTieneOldInput) {
+    return $habitacionTieneOldInput && array_key_exists($campo, $habitacionOldInput)
+        ? $habitacionOldInput[$campo]
+        : $valorActual;
+};
+
+$habitacionTipoFormulario = (string)$habitacionCampoFormulario('tipo', $habitacionTipoSeleccionado);
+$habitacionNumeroFormulario = (string)$habitacionCampoFormulario('numero', $habitacion['numero'] ?? '');
+$habitacionPisoFormulario = (int)$habitacionCampoFormulario('piso', $habitacion['piso'] ?? 0);
+$habitacionPrecioFormulario = (string)$habitacionCampoFormulario('precio_base', $habitacion['precio_base'] ?? '');
+$habitacionCapacidadFormulario = (string)$habitacionCampoFormulario('capacidad_personas', $habitacion['capacidad_personas'] ?? 2);
+$habitacionCamasMatrimonialesFormulario = (string)$habitacionCampoFormulario('camas_matrimoniales', $habitacion['camas_matrimoniales'] ?? 1);
+$habitacionCamasIndividualesFormulario = (string)$habitacionCampoFormulario('camas_individuales', $habitacion['camas_individuales'] ?? 0);
+$habitacionCaracteristicasFormulario = (string)$habitacionCampoFormulario('caracteristicas', $habitacionCaracteristicasLimpias);
+$habitacionActivaFormulario = $habitacionTieneOldInput ? !empty($habitacionOldInput['activa']) : !empty($habitacion['activa']);
+$habitacionEspecialesFormulario = null;
+if ($habitacionTieneOldInput) {
+    $habitacionEspecialesFormulario = $habitacionOldInput['caracteristicas_especiales'] ?? [];
+    if (!is_array($habitacionEspecialesFormulario)) {
+        $habitacionEspecialesFormulario = [$habitacionEspecialesFormulario];
+    }
+    $habitacionEspecialesFormulario = array_map('strval', $habitacionEspecialesFormulario);
+}
+
+$habitacionTipoLabel = $tiposHabitacion[$habitacionTipoFormulario] ?? ($tiposHabitacion[$habitacion['tipo']] ?? get_tipo_habitacion($habitacion['tipo']));
 
 $rangosHabitacion = Habitacion::getRangoPrecios();
 if (function_exists('hotel_room_catalog_type_rows')) {
@@ -52,6 +96,16 @@ if (function_exists('hotel_room_catalog_type_rows')) {
         }
     }
 }
+
+$reservacionesBloqueantesEliminacion = is_array($reservaciones_bloqueantes_eliminacion ?? null)
+    ? $reservaciones_bloqueantes_eliminacion
+    : [];
+$hayReservacionesBloqueantesEliminacion = count($reservacionesBloqueantesEliminacion) > 0;
+$estadosReservacionEliminacion = [
+    'confirmada' => 'Confirmada',
+    'checked_in' => 'Check-in',
+];
+$habitacionNumeroEliminacion = (string)($habitacion['numero'] ?? '');
 ?>
 
 <style id="edit-room-redesign">
@@ -335,6 +389,104 @@ if (function_exists('hotel_room_catalog_type_rows')) {
     color: #FFFFFF !important;
 }
 
+.edit-room-delete-warning {
+    display: grid;
+    gap: 0.9rem;
+    padding: 1rem;
+    border: 1px solid rgba(185, 28, 28, .24);
+    border-radius: 1.15rem;
+    background: linear-gradient(135deg, rgba(254, 242, 242, .96), rgba(255, 247, 237, .92));
+    color: #7f1d1d;
+}
+
+.edit-room-delete-warning__head {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.edit-room-delete-warning__icon {
+    width: 2.35rem;
+    height: 2.35rem;
+    flex: 0 0 auto;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 0.9rem;
+    background: #991b1b;
+    color: #FFFFFF;
+}
+
+.edit-room-delete-warning strong {
+    display: block;
+    color: #7f1d1d;
+    font-size: 0.95rem;
+    font-weight: 950;
+    line-height: 1.2;
+}
+
+.edit-room-delete-warning p {
+    margin: 0.24rem 0 0;
+    color: #991b1b !important;
+    font-size: 0.82rem;
+    font-weight: 780;
+    line-height: 1.45;
+}
+
+.edit-room-delete-list {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.edit-room-delete-reservation {
+    display: grid;
+    gap: 0.6rem;
+    padding: 0.75rem;
+    border: 1px solid rgba(185, 28, 28, .16);
+    border-radius: 0.9rem;
+    background: rgba(255, 255, 255, .76);
+}
+
+.edit-room-delete-reservation__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    color: #7f1d1d;
+    font-size: 0.76rem;
+    font-weight: 850;
+}
+
+.edit-room-delete-reservation__meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.edit-room-delete-reservation a {
+    min-height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    border: 1px solid rgba(185, 28, 28, .25);
+    border-radius: 0.75rem;
+    background: #FFFFFF;
+    color: #991b1b;
+    font-size: 0.78rem;
+    font-weight: 930;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.edit-room-delete-reservation a:hover {
+    transform: translateY(-1px);
+    border-color: rgba(153, 27, 27, .45);
+    background: rgba(254, 242, 242, .95);
+}
+
+.edit-room-delete-disabled {
+    opacity: .78;
+    cursor: not-allowed;
+}
+
 .edit-room-upload-alert {
     display: none;
     align-items: flex-start;
@@ -511,7 +663,7 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                         </div>
                                         <input type="text"
                                                name="numero"
-                                               value="<?= htmlspecialchars($habitacion['numero']) ?>"
+                                               value="<?= htmlspecialchars($habitacionNumeroFormulario, ENT_QUOTES, 'UTF-8') ?>"
                                                required
                                                class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
                                     </div>
@@ -531,7 +683,7 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                                 required
                                                 class="w-full pl-4 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all appearance-none">
                                             <?php foreach ($tiposHabitacion as $key => $tipo): ?>
-                                                <option value="<?= $key ?>" <?= $habitacionTipoSeleccionado == $key ? 'selected' : '' ?>>
+                                                <option value="<?= $key ?>" <?= $habitacionTipoFormulario == $key ? 'selected' : '' ?>>
                                                     <?= htmlspecialchars((string) $tipo, ENT_QUOTES, 'UTF-8') ?>
                                                 </option>
                                             <?php endforeach; ?>
@@ -540,6 +692,9 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                             <i class="fas fa-chevron-down text-gray-400"></i>
                                         </div>
                                     </div>
+                                    <?php if (form_error('tipo')): ?>
+                                        <span class="edit-room-error"><?= form_error('tipo') ?></span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
 
@@ -574,7 +729,7 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                                     <input type="radio"
                                                            name="piso"
                                                            value="<?= $piso_num ?>"
-                                                           <?= $habitacion['piso'] == $piso_num ? 'checked' : '' ?>
+                                                           <?= $habitacionPisoFormulario == $piso_num ? 'checked' : '' ?>
                                                            required
                                                            class="sr-only peer">
                                                     <div class="flex flex-col items-center justify-center p-3 border-2 border-gray-200 rounded-xl cursor-pointer transition-all peer-checked:border-blue-600 peer-checked:bg-blue-600 peer-checked:text-white hover:border-gray-300">
@@ -598,7 +753,7 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                                     <input type="radio"
                                                            name="piso"
                                                            value="<?= $piso_num ?>"
-                                                           <?= $habitacion['piso'] == $piso_num ? 'checked' : '' ?>
+                                                           <?= $habitacionPisoFormulario == $piso_num ? 'checked' : '' ?>
                                                            required
                                                            class="sr-only peer">
                                                     <div class="flex flex-col items-center justify-center p-3 border-2 border-gray-200 rounded-xl cursor-pointer transition-all peer-checked:border-hotel-brown peer-checked:bg-hotel-brown peer-checked:text-white hover:border-gray-300">
@@ -610,6 +765,9 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                             </div>
                                         </div>
                                     </div>
+                                    <?php if (form_error('piso')): ?>
+                                        <span class="edit-room-error"><?= form_error('piso') ?></span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <!-- Precio con rangos por tipo -->
@@ -620,7 +778,7 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                     <?php
                                     // Mostrar rango sugerido según el tipo actual
                                     $rangos = $rangosHabitacion;
-                                    $rango_actual = $rangos[$habitacion['tipo']] ?? ['min' => 500, 'max' => 1600];
+                                    $rango_actual = $rangos[$habitacionTipoFormulario] ?? ['min' => 500, 'max' => 1600];
                                     ?>
                                     <div class="mb-2">
                                         <span class="text-xs text-gray-500" id="rango-precio">
@@ -634,7 +792,7 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                         </div>
                                         <input type="number"
                                                name="precio_base"
-                                               value="<?= $habitacion['precio_base'] ?>"
+                                               value="<?= htmlspecialchars($habitacionPrecioFormulario, ENT_QUOTES, 'UTF-8') ?>"
                                                step="50"
                                                required
                                                class="w-full pl-10 pr-4 py-3 text-xl font-semibold border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
@@ -642,6 +800,9 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                             <span class="text-sm text-gray-500">MXN</span>
                                         </div>
                                     </div>
+                                    <?php if (form_error('precio_base')): ?>
+                                        <span class="edit-room-error"><?= form_error('precio_base') ?></span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
 
@@ -652,7 +813,7 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                     </label>
                                     <input type="number"
                                            name="capacidad_personas"
-                                           value="<?= htmlspecialchars((string)($habitacion['capacidad_personas'] ?? 2), ENT_QUOTES, 'UTF-8') ?>"
+                                           value="<?= htmlspecialchars($habitacionCapacidadFormulario, ENT_QUOTES, 'UTF-8') ?>"
                                            min="1"
                                            max="30"
                                            step="1"
@@ -669,7 +830,7 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                     </label>
                                     <input type="number"
                                            name="camas_matrimoniales"
-                                           value="<?= htmlspecialchars((string)($habitacion['camas_matrimoniales'] ?? 1), ENT_QUOTES, 'UTF-8') ?>"
+                                           value="<?= htmlspecialchars($habitacionCamasMatrimonialesFormulario, ENT_QUOTES, 'UTF-8') ?>"
                                            min="0"
                                            max="20"
                                            step="1"
@@ -686,11 +847,14 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                     </label>
                                     <input type="number"
                                            name="camas_individuales"
-                                           value="<?= htmlspecialchars((string)($habitacion['camas_individuales'] ?? 0), ENT_QUOTES, 'UTF-8') ?>"
+                                           value="<?= htmlspecialchars($habitacionCamasIndividualesFormulario, ENT_QUOTES, 'UTF-8') ?>"
                                            min="0"
                                            max="20"
                                            step="1"
                                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all">
+                                    <?php if (form_error('camas_individuales')): ?>
+                                        <span class="edit-room-error"><?= form_error('camas_individuales') ?></span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -749,7 +913,7 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                     }
 
                                     // Parsear características existentes
-                                    $caracteristicas_actuales = strtolower($habitacion['caracteristicas'] ?? '');
+                                    $caracteristicas_actuales = strtolower($habitacionCaracteristicasFormulario);
                                     $caracteristicas_actuales = strtr($caracteristicas_actuales, [
                                         'á' => 'a',
                                         'é' => 'e',
@@ -767,8 +931,11 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                             'amplia' => 'amplia'
                                         ];
                                         $keyword = $keywords[$key] ?? strtolower((string) $especial['label']);
-                                        $isChecked = strpos($caracteristicas_actuales, $keyword) !== false;
-                                        $isDisabled = isset($especial['disabled_for']) && in_array($habitacion['tipo'], $especial['disabled_for']);
+                                        $isChecked = $habitacionEspecialesFormulario !== null
+                                            ? in_array((string)$key, $habitacionEspecialesFormulario, true)
+                                            : strpos($caracteristicas_actuales, $keyword) !== false;
+                                        $isDisabled = isset($especial['disabled_for']) && in_array($habitacionTipoFormulario, $especial['disabled_for'], true);
+                                        $isChecked = $isDisabled || $isChecked;
                                     ?>
                                     <label class="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-<?= $especial['color'] ?>-300 hover:bg-<?= $especial['color'] ?>-50 transition-all group <?= $isDisabled ? 'opacity-50 cursor-not-allowed' : '' ?>">
                                         <input type="checkbox"
@@ -795,7 +962,7 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                 <textarea name="caracteristicas"
                                           rows="4"
                                           placeholder="Ejemplo: 2 camas matrimoniales, pantalla, balcón, baño, ventilador, agua caliente, Wifi, Cablevisión, estacionamiento"
-                                          class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"><?= htmlspecialchars($habitacion['caracteristicas']) ?></textarea>
+                                          class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"><?= htmlspecialchars($habitacionCaracteristicasFormulario, ENT_QUOTES, 'UTF-8') ?></textarea>
                                 <p class="text-xs text-gray-500 mt-1">
                                     Esta descripción se genera automáticamente en base al tipo y características seleccionadas, pero puede personalizarse.
                                 </p>
@@ -861,6 +1028,20 @@ if (function_exists('hotel_room_catalog_type_rows')) {
 
                             <!-- Upload de nuevas imágenes -->
                             <?php if ($total_imagenes < 10): ?>
+                                <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-purple-400 transition-all" id="drop-zone">
+                                    <input type="file"
+                                           name="fotos[]"
+                                           accept="image/*"
+                                           id="fotos-input"
+                                           multiple
+                                           class="hidden">
+                                    <label for="fotos-input" class="cursor-pointer">
+                                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                                        <p class="text-gray-600 font-medium mb-1">Click para agregar nuevas imagenes</p>
+                                        <p class="text-sm text-gray-500">JPG, PNG, GIF o WebP - Maximo 5MB por imagen</p>
+                                        <p class="text-xs text-blue-600 mt-2">O arrastra y suelta las imagenes aqui</p>
+                                    </label>
+                                </div>
 
 
                                 <!-- Vista previa de nuevas imágenes -->
@@ -868,6 +1049,9 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                     <i class="fas fa-circle-exclamation"></i>
                                     <span></span>
                                 </div>
+                                <?php if (form_error('fotos[]')): ?>
+                                    <span class="edit-room-error"><?= form_error('fotos[]') ?></span>
+                                <?php endif; ?>
 
                                 <div id="preview-container" class="mt-4 hidden">
                                     <h5 class="text-sm font-medium text-gray-700 mb-2">Nuevas imágenes a agregar:</h5>
@@ -875,7 +1059,6 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                                         <!-- Las previsualizaciones se agregarán aquí dinámicamente -->
                                     </div>
                                 </div>
-                            </div>
                             <?php else: ?>
                             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                                 <p class="text-yellow-800 text-sm">
@@ -996,7 +1179,7 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                             <input type="checkbox"
                                    name="activa"
                                    value="1"
-                                   <?= $habitacion['activa'] ? 'checked' : '' ?>
+                                   <?= $habitacionActivaFormulario ? 'checked' : '' ?>
                                    class="mt-1 mr-3 w-5 h-5 text-yellow-600 focus:ring-yellow-500 rounded">
                             <div>
                                 <span class="font-semibold text-gray-800">Habitación Activa</span>
@@ -1021,7 +1204,62 @@ if (function_exists('hotel_room_catalog_type_rows')) {
                             Cancelar
                         </a>
 
-                        <?php if (can('habitaciones.delete') && $habitacion['estado'] == 'disponible'): ?>
+                        <?php if (can('habitaciones.delete') && $hayReservacionesBloqueantesEliminacion): ?>
+                            <div id="delete-room-blocker" class="edit-room-delete-warning" role="alert" aria-live="polite">
+                                <div class="edit-room-delete-warning__head">
+                                    <span class="edit-room-delete-warning__icon" aria-hidden="true">
+                                        <i class="fas fa-ban"></i>
+                                    </span>
+                                    <div>
+                                        <strong>No se puede eliminar esta habitaci&oacute;n todav&iacute;a.</strong>
+                                        <p>
+                                            La habitaci&oacute;n <?= htmlspecialchars($habitacionNumeroEliminacion, ENT_QUOTES, 'UTF-8') ?>
+                                            tiene <?= count($reservacionesBloqueantesEliminacion) ?> reservaci&oacute;n(es) activa(s) o futura(s).
+                                            Antes de eliminarla, cancela esas reservaciones o cambia la habitaci&oacute;n asignada desde cada detalle.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="edit-room-delete-list">
+                                    <?php foreach ($reservacionesBloqueantesEliminacion as $reservacionBloqueante): ?>
+                                        <?php
+                                        $reservacionBloqueanteId = (int)($reservacionBloqueante['id'] ?? 0);
+                                        $reservacionBloqueanteEstado = (string)($reservacionBloqueante['estado'] ?? '');
+                                        $reservacionBloqueanteEstadoLabel = $estadosReservacionEliminacion[$reservacionBloqueanteEstado] ?? ucfirst(str_replace('_', ' ', $reservacionBloqueanteEstado));
+                                        $reservacionBloqueanteEntrada = !empty($reservacionBloqueante['fecha_entrada']) ? date('d/m/Y', strtotime((string)$reservacionBloqueante['fecha_entrada'])) : 'Sin entrada';
+                                        $reservacionBloqueanteSalida = !empty($reservacionBloqueante['fecha_salida']) ? date('d/m/Y', strtotime((string)$reservacionBloqueante['fecha_salida'])) : 'Sin salida';
+                                        ?>
+                                        <div class="edit-room-delete-reservation">
+                                            <div>
+                                                <strong>Reservaci&oacute;n #<?= $reservacionBloqueanteId ?></strong>
+                                                <p><?= htmlspecialchars((string)($reservacionBloqueante['nombre_completo'] ?? 'Huesped sin nombre'), ENT_QUOTES, 'UTF-8') ?></p>
+                                            </div>
+                                            <div class="edit-room-delete-reservation__meta">
+                                                <span><i class="fas fa-circle" aria-hidden="true"></i><?= htmlspecialchars($reservacionBloqueanteEstadoLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                                <span><i class="fas fa-calendar-alt" aria-hidden="true"></i><?= htmlspecialchars($reservacionBloqueanteEntrada . ' - ' . $reservacionBloqueanteSalida, ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php if (!empty($reservacionBloqueante['telefono'])): ?>
+                                                    <span><i class="fas fa-phone" aria-hidden="true"></i><?= htmlspecialchars((string)$reservacionBloqueante['telefono'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <a href="<?= url('reservaciones/ver/' . $reservacionBloqueanteId) ?>">
+                                                <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                                                Ver reservaci&oacute;n y resolver bloqueo
+                                            </a>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+
+                            <button type="button"
+                                    onclick="confirmarEliminacion(this)"
+                                    class="edit-room-delete-disabled w-full bg-red-50 border-2 border-red-200 text-red-700 font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center"
+                                    aria-describedby="delete-room-blocker">
+                                <i class="fas fa-lock mr-3"></i>
+                                Eliminaci&oacute;n bloqueada por reservaciones
+                            </button>
+                        <?php endif; ?>
+
+                        <?php if (can('habitaciones.delete') && !$hayReservacionesBloqueantesEliminacion && $habitacion['estado'] == 'disponible'): ?>
                         <button type="button"
                                 onclick="confirmarEliminacion(this)"
                                 class="w-full bg-red-50 border-2 border-red-200 text-red-600 font-semibold py-4 px-6 rounded-xl hover:bg-red-100 transition-all duration-200 flex items-center justify-center">
@@ -1167,6 +1405,8 @@ document.addEventListener('DOMContentLoaded', function() {
     updatePreview();
 });
 
+const deleteRoomBlocked = <?= $hayReservacionesBloqueantesEliminacion ? 'true' : 'false' ?>;
+const deleteRoomNumber = <?= json_encode($habitacionNumeroEliminacion, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 let deleteRoomPending = false;
 let deleteRoomTimer = null;
 
@@ -1210,35 +1450,56 @@ function resetDeleteRoomConfirmation(trigger) {
 
 // Confirmar eliminación
 function confirmarEliminacion(trigger) {
-    if (!deleteRoomPending) {
-        deleteRoomPending = true;
-        if (trigger) {
-            if (!trigger.dataset.defaultHtml) {
-                trigger.dataset.defaultHtml = trigger.innerHTML;
-            }
-            trigger.classList.add('is-confirming');
-            trigger.innerHTML = '<i class="fas fa-trash-alt mr-3"></i>Confirmar eliminacion';
+    if (deleteRoomBlocked) {
+        const blocker = document.getElementById('delete-room-blocker');
+        if (blocker) {
+            blocker.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            blocker.style.boxShadow = '0 0 0 4px rgba(185, 28, 28, .14)';
+            window.setTimeout(() => {
+                blocker.style.boxShadow = '';
+            }, 1800);
         }
-        showRoomActionNotice('Haz clic otra vez para eliminar esta habitacion. Esta accion no se puede deshacer.');
-        window.clearTimeout(deleteRoomTimer);
-        deleteRoomTimer = window.setTimeout(() => resetDeleteRoomConfirmation(trigger), 7000);
+        showRoomActionNotice('No se puede eliminar esta habitacion hasta resolver sus reservaciones vinculadas.');
         return;
     }
 
-    resetDeleteRoomConfirmation(trigger);
+    const submitDeleteRoom = function() {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '<?= url('habitaciones/' . $habitacion['id'] . '/delete') ?>';
 
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '<?= url('habitaciones/' . $habitacion['id'] . '/delete') ?>';
+        const csrfField = document.createElement('input');
+        csrfField.type = 'hidden';
+        csrfField.name = 'csrf_token';
+        csrfField.value = '<?= csrf_token() ?>';
+        form.appendChild(csrfField);
 
-    const csrfField = document.createElement('input');
-    csrfField.type = 'hidden';
-    csrfField.name = 'csrf_token';
-    csrfField.value = '<?= csrf_token() ?>';
-    form.appendChild(csrfField);
+        document.body.appendChild(form);
+        form.submit();
+    };
 
-    document.body.appendChild(form);
-    form.submit();
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Eliminar habitacion ' + (deleteRoomNumber || ''),
+            html: 'Esta accion quitara la habitacion del listado operativo y de nuevas reservas. El historial asociado se conservara para auditoria.',
+            showCancelButton: true,
+            confirmButtonText: 'Si, eliminar habitacion',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#991b1b',
+            cancelButtonColor: '#6b7280',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                submitDeleteRoom();
+            }
+        });
+        return;
+    }
+
+    if (window.confirm('Eliminar habitacion ' + (deleteRoomNumber || '') + '? Se quitara del listado operativo y se conservara su historial.')) {
+        submitDeleteRoom();
+    }
 }
 
 // Script para manejo de múltiples imágenes en edición

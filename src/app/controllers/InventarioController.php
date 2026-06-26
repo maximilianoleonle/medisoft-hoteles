@@ -967,7 +967,7 @@ public function debugMovimientosDateAction() {
         if (function_exists('hotel_general_catalog_units')) {
             foreach (hotel_general_catalog_units() as $unidadKey => $unidadLabel) {
                 $unidadKey = trim((string)$unidadKey);
-                if ($unidadKey !== '') {
+                if ($unidadKey !== '' && strlen($unidadKey) <= 20) {
                     return $unidadKey;
                 }
             }
@@ -978,7 +978,38 @@ public function debugMovimientosDateAction() {
 
     private function unidadMedidaDesdePost(string $key): string {
         $unidad = trim((string)$this->getPost($key, ''));
-        return $unidad !== '' ? $unidad : $this->unidadMedidaDefaultInventario();
+        $unidades = function_exists('hotel_general_catalog_units')
+            ? hotel_general_catalog_units()
+            : [];
+
+        if ($unidad !== '' && strlen($unidad) <= 20 && (empty($unidades) || array_key_exists($unidad, $unidades))) {
+            return $unidad;
+        }
+
+        return $this->unidadMedidaDefaultInventario();
+    }
+
+    private function normalizarTipoHabitacionInventario($codigo): string {
+        $codigo = strtolower(trim((string)$codigo));
+
+        if ($codigo === '') {
+            return '';
+        }
+
+        if (function_exists('hotel_room_catalog_storage_type_for_code')) {
+            return hotel_room_catalog_storage_type_for_code($codigo) ?: '';
+        }
+
+        $compatibles = [
+            'sencilla' => true,
+            'doble' => true,
+            'triple' => true,
+            'cuadruple' => true,
+            'sencilla_manolo' => true,
+            'doble_manolo' => true,
+        ];
+
+        return isset($compatibles[$codigo]) ? $codigo : '';
     }
 
     private function tiposHabitacionInventario(): array {
@@ -998,9 +1029,14 @@ public function debugMovimientosDateAction() {
                     continue;
                 }
 
-                $tipos[$codigo] = trim((string)$nombre) !== ''
+                $tipoTecnico = $this->normalizarTipoHabitacionInventario($codigo);
+                if ($tipoTecnico === '') {
+                    continue;
+                }
+
+                $tipos[$tipoTecnico] = trim((string)$nombre) !== ''
                     ? (string)$nombre
-                    : ucwords(str_replace('_', ' ', $codigo));
+                    : ucwords(str_replace('_', ' ', $tipoTecnico));
             }
         }
 
@@ -1016,6 +1052,29 @@ public function debugMovimientosDateAction() {
             'doble_jacuzzi' => 'Doble con Jacuzzi',
             'sencilla_jacuzzi' => 'Sencilla con Jacuzzi'
         ];
+    }
+
+    private function normalizarConfiguracionInventarioPorTipo(array $configuracion): array {
+        $normalizada = [];
+
+        foreach ($configuracion as $tipo => $configs) {
+            $tipoTecnico = $this->normalizarTipoHabitacionInventario($tipo);
+            if ($tipoTecnico === '') {
+                continue;
+            }
+
+            foreach ((array)$configs as $config) {
+                $productoId = (int)($config['producto_id'] ?? 0);
+                if ($productoId <= 0) {
+                    continue;
+                }
+
+                $normalizada[$tipoTecnico][$productoId] = $config;
+                $normalizada[$tipoTecnico][$productoId]['tipo_habitacion'] = $tipoTecnico;
+            }
+        }
+
+        return array_map('array_values', $normalizada);
     }
 
     /**
@@ -1212,6 +1271,38 @@ public function debugMovimientosDateAction() {
         return $fieldErrors;
     }
 
+    private function erroresCamposInventarioMovimiento(array $errores): array {
+        $fieldErrors = [];
+
+        foreach ($errores as $mensaje) {
+            $mensaje = trim((string)$mensaje);
+            if ($mensaje === '') {
+                continue;
+            }
+
+            $lower = strtolower($mensaje);
+            $campo = null;
+
+            if (strpos($lower, 'producto') !== false) {
+                $campo = 'producto_id';
+            } elseif (strpos($lower, 'habitaci') !== false) {
+                $campo = 'habitacion_id';
+            } elseif (strpos($lower, 'cantidad') !== false || strpos($lower, 'stock insuficiente') !== false || strpos($lower, 'stock negativo') !== false) {
+                $campo = 'cantidad';
+            } elseif (strpos($lower, 'seleccionar') !== false || strpos($lower, 'suma') !== false || strpos($lower, 'resta') !== false) {
+                $campo = 'tipo';
+            } elseif (strpos($lower, 'motivo') !== false) {
+                $campo = 'motivo';
+            }
+
+            if ($campo !== null) {
+                $fieldErrors[$campo][] = $mensaje;
+            }
+        }
+
+        return $fieldErrors;
+    }
+
     /**
      * Formulario nuevo producto
      */
@@ -1368,6 +1459,7 @@ public function debugMovimientosDateAction() {
                 $this->movimientoModel->crearMovimientoManual($movimiento_data);
 
                 $this->db->safeCommit();
+                clear_old_input();
                 set_mensaje('Entrada registrada correctamente', 'success');
             } else {
                 throw new Exception('No se pudo actualizar el stock');
@@ -1378,6 +1470,10 @@ public function debugMovimientosDateAction() {
                 $this->db->safeRollBack();
             }
 	            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            save_old_input($_POST);
+            save_form_errors($this->erroresCamposInventarioMovimiento([$e->getMessage()]));
+            $this->redirect('inventario/entrada');
+            return;
 	        }
 
         $this->redirect('inventario');
@@ -1454,6 +1550,7 @@ public function debugMovimientosDateAction() {
                 $this->movimientoModel->crearMovimientoManual($movimiento_data);
 
                 $this->db->safeCommit();
+                clear_old_input();
                 set_mensaje('Salida registrada correctamente', 'success');
             } else {
                 throw new Exception('No se pudo actualizar el stock');
@@ -1464,6 +1561,8 @@ public function debugMovimientosDateAction() {
                 $this->db->safeRollBack();
             }
 	            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            save_old_input($_POST);
+            save_form_errors($this->erroresCamposInventarioMovimiento([$e->getMessage()]));
 	            $this->redirect('inventario/salida');
             return;
         }
@@ -1476,7 +1575,9 @@ public function debugMovimientosDateAction() {
      */
     public function configuracionAction() {
         $productos_automaticos = $this->inventarioModel->getProductosDescuentoAutomatico();
-        $configuracion = $this->inventarioModel->getConfiguracionCompleta();
+        $configuracion = $this->normalizarConfiguracionInventarioPorTipo(
+            $this->inventarioModel->getConfiguracionCompleta()
+        );
 
         $tipos_habitacion = $this->tiposHabitacionInventario();
 
@@ -1513,6 +1614,11 @@ public function debugMovimientosDateAction() {
         $cambiosAuditables = [];
 
         foreach ($config as $tipo_hab => $productos) {
+            $tipo_hab = $this->normalizarTipoHabitacionInventario($tipo_hab);
+            if ($tipo_hab === '') {
+                throw new Exception('Configuracion invalida para el tipo de habitacion');
+            }
+
             if (!is_array($productos)) {
                 throw new Exception('Configuracion invalida para el tipo de habitacion');
             }
@@ -1780,6 +1886,7 @@ public function debugMovimientosDateAction() {
             ]);
 
             $this->db->safeCommit();
+            clear_old_input();
             set_mensaje('Ajuste realizado correctamente', 'success');
             $this->redirect('inventario/movimientos');
             return;
@@ -1788,6 +1895,8 @@ public function debugMovimientosDateAction() {
                 $this->db->safeRollBack();
             }
 	            set_mensaje('Error: ' . $e->getMessage(), 'error');
+            save_old_input($_POST);
+            save_form_errors($this->erroresCamposInventarioMovimiento([$e->getMessage()]));
 	        }
 
         $this->redirect($redirectUrl);

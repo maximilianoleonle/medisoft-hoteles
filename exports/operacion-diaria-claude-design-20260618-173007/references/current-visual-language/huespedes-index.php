@@ -988,7 +988,7 @@ select.guest-control {
                     <div class="guest-title-copy">
                         <p class="hotel-page-kicker">Operaci&oacute;n hotelera</p>
                         <h1 class="hotel-page-title">Hu&eacute;spedes</h1>
-                        <p class="hotel-page-subtitle">Directorio operativo de hu&eacute;spedes: contacto, procedencia, veh&iacute;culos e historial de reservas.</p>
+                        <p class="hotel-page-subtitle">Directorio operativo de hu&eacute;spedes</p>
                     </div>
                 </div>
 

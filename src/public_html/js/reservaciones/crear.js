@@ -326,7 +326,7 @@ async function buscarHuesped() {
     }
     
     try {
-        const response = await apiFetch(`/api/huespedes/search?term=${encodeURIComponent(termino)}`);
+        const response = await apiFetch(`/api/huespedes/search?q=${encodeURIComponent(termino)}`);
         const data = await response.json();
         
         if (data.success && data.data.length > 0) {

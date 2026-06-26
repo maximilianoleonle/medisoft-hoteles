@@ -9,6 +9,14 @@
 }
 .entrada-view { opacity: 0; transition: opacity 0.3s ease; }
 .entrada-view.loaded { opacity: 1; }
+.inv-form-error {
+    display: block;
+    margin-top: 0.4rem;
+    color: #B42318;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
 </style>
 
 <div class="entrada-view min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-4">
@@ -50,6 +58,7 @@
                                 <option value="">Seleccione producto...</option>
                                 <?php foreach ($productos as $producto): ?>
                                     <option value="<?= $producto['id'] ?>"
+                                            <?= old('producto_id') == $producto['id'] ? 'selected' : '' ?>
                                             data-stock="<?= $producto['stock_actual'] ?>"
                                             data-nombre="<?= htmlspecialchars($producto['nombre']) ?>">
                                         <?= htmlspecialchars($producto['codigo']) ?> - 
@@ -58,6 +67,9 @@
                                     </option>
                                 <?php endforeach; ?>
                             </select>
+                            <?php if (form_error('producto_id')): ?>
+                                <span class="inv-form-error"><?= form_error('producto_id') ?></span>
+                            <?php endif; ?>
                         </div>
                         
                         <!-- Cantidad -->
@@ -72,11 +84,15 @@
                                        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" 
                                        min="1"
                                        placeholder="0"
+                                       value="<?= old('cantidad') ?>"
                                        required>
                                 <button type="button" onclick="setCantidad(10)" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">+10</button>
                                 <button type="button" onclick="setCantidad(25)" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">+25</button>
                                 <button type="button" onclick="setCantidad(50)" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">+50</button>
                             </div>
+                            <?php if (form_error('cantidad')): ?>
+                                <span class="inv-form-error"><?= form_error('cantidad') ?></span>
+                            <?php endif; ?>
                         </div>
                         
                         <!-- Motivo -->
@@ -88,7 +104,10 @@
                                       rows="3" 
                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none" 
                                       placeholder="Ej: Compra mensual, Reposición de stock..."
-                                      required></textarea>
+                                      required><?= old('motivo') ?></textarea>
+                            <?php if (form_error('motivo')): ?>
+                                <span class="inv-form-error"><?= form_error('motivo') ?></span>
+                            <?php endif; ?>
                         </div>
                     </div>
                     

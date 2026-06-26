@@ -374,7 +374,7 @@ $router->get('/reservaciones/ver/{id:[0-9]+}', ['controller' => 'Reservacion', '
 $router->post('/reservaciones/check-in/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'checkIn']);
 $router->post('/reservaciones/check-out/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'checkOut']);
 
-$router->post('/reservaciones/check-out-parcial/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'checkOutParcialAction']);
+$router->post('/reservaciones/check-out-parcial/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'checkOutParcial']);
 $router->post('/reservaciones/cancelar/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'cancelar']);
 $router->get('/reservaciones/calendario', ['controller' => 'Reservacion', 'action' => 'calendario']);
 $router->post('/reservaciones/check-out-rapido/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'checkOutRapido']);

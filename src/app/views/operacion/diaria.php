@@ -33,6 +33,25 @@ if (!function_exists('op_daily_date')) {
     }
 }
 
+if (!function_exists('op_daily_initials')) {
+    function op_daily_initials($value): string
+    {
+        $text = trim((string)($value ?? ''));
+        if ($text === '') {
+            return 'H';
+        }
+
+        $parts = preg_split('/\s+/', $text);
+        $first = $parts[0] ?? '';
+        $second = $parts[1] ?? '';
+        $firstInitial = function_exists('mb_substr') ? mb_substr($first, 0, 1, 'UTF-8') : substr($first, 0, 1);
+        $secondInitial = function_exists('mb_substr') ? mb_substr($second, 0, 1, 'UTF-8') : substr($second, 0, 1);
+        $initials = $firstInitial . ($secondInitial ?: '');
+
+        return htmlspecialchars(function_exists('mb_strtoupper') ? mb_strtoupper($initials, 'UTF-8') : strtoupper($initials), ENT_QUOTES, 'UTF-8');
+    }
+}
+
 $reporte = is_array($reporte ?? null) ? $reporte : [];
 $habitaciones = is_array($reporte['habitaciones'] ?? null) ? $reporte['habitaciones'] : [];
 $reservaciones = is_array($reporte['reservaciones'] ?? null) ? $reporte['reservaciones'] : [];
@@ -52,7 +71,23 @@ $estadoReservacionLabels = [
 ?>
 
 <style>
-.op-daily{padding:24px;max-width:1320px;margin:0 auto;color:#172033}
+.op-daily{
+    --op-brand:var(--brand-primary,#1B2746);
+    --op-brand-2:var(--brand-secondary,#0F172A);
+    --op-accent:var(--brand-accent,#BD9441);
+    --op-bg:#F5F0E8;
+    --op-card:#FFFDF9;
+    --op-line:color-mix(in srgb,var(--op-brand) 10%,#E7DDD1);
+    --op-muted:#6F7B90;
+    --op-ink:#172033;
+    --op-good:#169B62;
+    --op-warn:#C2841C;
+    --op-risk:#D64539;
+    padding:24px;
+    max-width:1320px;
+    margin:0 auto;
+    color:var(--op-ink);
+}
 .op-daily-hero{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:20px}
 .op-daily-kicker{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:#64748b;font-weight:900}
 .op-daily-title{font-size:30px;line-height:1.1;margin:6px 0 8px;font-weight:900;color:#101828}
@@ -60,7 +95,32 @@ $estadoReservacionLabels = [
 .op-daily-actions{display:flex;gap:10px;flex-wrap:wrap}
 .op-daily-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:7px;background:#fff;color:#172033;border:1px solid #d1d5db;font-weight:800;padding:10px 14px;text-decoration:none;min-height:40px}
 .op-daily-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
-.op-daily-metric{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:14px;box-shadow:0 6px 18px rgba(15,23,42,.05)}
+.op-daily-metric{
+    position:relative;
+    overflow:hidden;
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:8px;
+    padding:14px;
+    box-shadow:0 6px 18px rgba(15,23,42,.05);
+}
+.op-daily-metric::before{
+    content:"";
+    position:absolute;
+    inset:0 auto auto 0;
+    width:4px;
+    height:100%;
+    background:var(--metric-accent,var(--op-accent));
+    opacity:.95;
+}
+.op-daily-metric:nth-child(1){--metric-accent:var(--op-brand)}
+.op-daily-metric:nth-child(2){--metric-accent:var(--op-good)}
+.op-daily-metric:nth-child(3){--metric-accent:#C2603C}
+.op-daily-metric:nth-child(4){--metric-accent:#5A57D2}
+.op-daily-metric:nth-child(5){--metric-accent:#2D7EBB}
+.op-daily-metric:nth-child(6){--metric-accent:var(--op-warn)}
+.op-daily-metric:nth-child(7){--metric-accent:#14784F}
+.op-daily-metric:nth-child(8){--metric-accent:var(--op-risk)}
 .op-daily-metric span{display:block;font-size:12px;color:#64748b;font-weight:800;text-transform:uppercase}
 .op-daily-metric strong{display:block;font-size:25px;line-height:1.1;margin-top:8px;color:#111827}
 .op-daily-panel{background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 10px 28px rgba(15,23,42,.06);overflow:hidden}
@@ -72,17 +132,335 @@ $estadoReservacionLabels = [
 .op-daily-row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #eef2f7;font-size:14px}
 .op-daily-row:last-child{border-bottom:0}
 .op-daily-link{font-weight:900;color:#102a43;text-decoration:none}
+.op-daily-link:hover{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--op-accent)}
 .op-daily-muted{color:#64748b;font-size:13px;margin-top:4px}
 .op-daily-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:800;background:#eef2ff;color:#3730a3}
 .op-daily-table-wrap{overflow-x:auto}
 .op-daily-table{width:100%;border-collapse:collapse;min-width:820px}
 .op-daily-table th{font-size:12px;text-align:left;text-transform:uppercase;letter-spacing:.08em;color:#64748b;background:#fbfcfe;padding:12px 14px;border-bottom:1px solid #e5e7eb}
 .op-daily-table td{padding:13px 14px;border-bottom:1px solid #eef2f7;vertical-align:top}
+.op-daily-agenda-mobile{display:none}
 .op-daily-empty{padding:34px 20px;text-align:center;color:#64748b}
 .op-daily-empty strong{display:block;color:#172033;font-size:18px;margin-bottom:8px}
 .op-daily-alert{padding:14px 18px;background:#f8fafc;color:#475569;border-top:1px solid #e5e7eb;font-size:13px;font-weight:700}
 @media (max-width:1100px){.op-daily-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.op-daily-stack{grid-template-columns:1fr}}
-@media (max-width:720px){.op-daily-hero{display:block}.op-daily-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.op-daily-actions{margin-top:14px}.op-daily-title{font-size:24px}}
+@media (max-width:720px){
+    .op-daily{
+        max-width:none;
+        min-height:100dvh;
+        padding:0 0 calc(22px + env(safe-area-inset-bottom,0px));
+        background:var(--op-bg);
+        color:#1A1108;
+        overflow-x:hidden;
+    }
+    .op-daily-hero{
+        display:block;
+        position:relative;
+        overflow:hidden;
+        margin:12px 12px 10px;
+        padding:16px 16px 14px;
+        border-radius:18px;
+        background:
+            radial-gradient(circle at 86% 12%,color-mix(in srgb,var(--op-accent) 20%,transparent),transparent 34%),
+            linear-gradient(125deg,var(--op-brand),color-mix(in srgb,var(--op-brand) 86%,#243357));
+        color:#fff;
+        box-shadow:0 14px 28px rgba(28,37,62,.18);
+    }
+    .op-daily-hero::after{
+        content:"";
+        position:absolute;
+        right:-48px;
+        top:-44px;
+        width:150px;
+        height:150px;
+        border-radius:50%;
+        background:rgba(176,136,63,.14);
+        pointer-events:none;
+    }
+    .op-daily-hero > *{position:relative;z-index:1}
+    .op-daily-kicker{
+        color:rgba(255,255,255,.64);
+        font-size:.64rem;
+        letter-spacing:.11em;
+        font-weight:800;
+    }
+    .op-daily-title{
+        max-width:260px;
+        margin:6px 0 0;
+        color:#fff;
+        font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+        font-size:1.62rem;
+        font-weight:700;
+        line-height:1;
+    }
+    .op-daily-subtitle{display:none}
+    .op-daily-actions{
+        display:flex;
+        flex-wrap:nowrap;
+        gap:8px;
+        margin-top:14px;
+        overflow-x:auto;
+        padding-bottom:1px;
+        scrollbar-width:none;
+    }
+    .op-daily-actions::-webkit-scrollbar{display:none}
+    .op-daily-btn{
+        flex:0 0 auto;
+        min-height:38px;
+        max-width:190px;
+        padding:0 12px;
+        border-radius:11px;
+        border-color:rgba(255,255,255,.18);
+        background:rgba(255,255,255,.12);
+        color:#fff;
+        font-size:.78rem;
+        font-weight:800;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        backdrop-filter:blur(8px);
+        -webkit-backdrop-filter:blur(8px);
+    }
+    .op-daily-grid{
+        display:flex;
+        grid-template-columns:none;
+        gap:8px;
+        margin:0;
+        padding:0 12px 10px;
+        overflow-x:auto;
+        scrollbar-width:none;
+    }
+    .op-daily-grid::-webkit-scrollbar{display:none}
+    .op-daily-metric{
+        flex:0 0 112px;
+        min-height:76px;
+        padding:11px 11px 10px;
+        border-color:#E6DBC8;
+        border-radius:14px;
+        background:var(--op-card);
+        box-shadow:0 1px 2px rgba(39,31,18,.04);
+    }
+    .op-daily-metric::before{
+        width:34px;
+        height:3px;
+        left:11px;
+        top:0;
+        border-radius:0 0 99px 99px;
+    }
+    .op-daily-metric span{
+        min-height:24px;
+        color:#7C8798;
+        font-size:.64rem;
+        font-weight:800;
+        letter-spacing:.045em;
+        line-height:1.12;
+    }
+    .op-daily-metric strong{
+        margin-top:7px;
+        color:#1A1108;
+        font-size:1.28rem;
+        line-height:1;
+    }
+    .op-daily-panel{
+        margin:0 12px 10px!important;
+        border-color:#E6DBC8;
+        border-radius:16px;
+        background:var(--op-card);
+        box-shadow:0 8px 20px rgba(39,31,18,.06);
+    }
+    .op-daily-stack{
+        display:grid;
+        grid-template-columns:1fr;
+        gap:10px;
+        margin:0 12px 10px;
+    }
+    .op-daily-stack .op-daily-panel{margin:0!important}
+    .op-daily-panel-head{
+        padding:12px 14px 10px;
+        border-bottom-color:#EFE3D0;
+        background:linear-gradient(180deg,#fff,rgba(248,243,235,.62));
+    }
+    .op-daily-panel-title{
+        color:#1A1108;
+        font-size:.98rem;
+        line-height:1.15;
+    }
+    .op-daily-panel-subtitle{display:none}
+    .op-daily-list{padding:6px 14px}
+    .op-daily-row{
+        align-items:flex-start;
+        gap:12px;
+        padding:9px 0;
+        border-bottom-color:#F0E6D8;
+        font-size:.84rem;
+        line-height:1.25;
+    }
+    .op-daily-row > span{min-width:0;color:#4B5563}
+    .op-daily-row > strong{
+        flex:0 0 auto;
+        max-width:46%;
+        color:#172033;
+        text-align:right;
+        font-size:.88rem;
+        line-height:1.18;
+    }
+    .op-daily-muted{
+        color:#8A95A5;
+        font-size:.72rem;
+        line-height:1.25;
+    }
+    .op-daily-link{color:#172033}
+    .op-daily-alert{display:none}
+    .op-daily-table-wrap{display:none}
+    .op-daily-agenda-mobile{
+        display:grid;
+        gap:8px;
+        padding:9px 10px 12px;
+    }
+    .op-ag-card{
+        display:grid;
+        grid-template-columns:34px minmax(0,1fr) 14px;
+        align-items:start;
+        gap:9px;
+        min-height:44px;
+        padding:10px;
+        border:1px solid #EFE3D0;
+        border-left:4px solid var(--op-accent);
+        border-radius:14px;
+        background:#fff;
+        color:#172033;
+        text-decoration:none;
+        box-shadow:0 1px 2px rgba(39,31,18,.04);
+    }
+    .op-ag-avatar{
+        width:34px;
+        height:34px;
+        display:grid;
+        place-items:center;
+        border-radius:10px;
+        color:#fff;
+        background:linear-gradient(145deg,var(--op-brand),color-mix(in srgb,var(--op-brand) 72%,var(--op-accent)));
+        font-size:.74rem;
+        font-weight:900;
+        line-height:1;
+    }
+    .op-ag-body{min-width:0}
+    .op-ag-top{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap:8px;
+        min-width:0;
+    }
+    .op-ag-name{
+        min-width:0;
+        color:#1A1108;
+        font-size:.9rem;
+        font-weight:900;
+        line-height:1.12;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+    .op-ag-status{
+        flex:0 0 auto;
+        max-width:96px;
+        padding:4px 7px;
+        border-radius:999px;
+        color:var(--op-brand);
+        background:color-mix(in srgb,var(--op-brand) 8%,#fff);
+        font-size:.66rem;
+        font-weight:900;
+        line-height:1;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+    .op-ag-room{
+        display:flex;
+        align-items:center;
+        gap:6px;
+        min-width:0;
+        margin-top:4px;
+        color:#7C8798;
+        font-size:.74rem;
+        font-weight:750;
+        line-height:1.2;
+    }
+    .op-ag-room span{
+        min-width:0;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+    .op-ag-times{
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:7px;
+        margin-top:9px;
+    }
+    .op-ag-time{
+        min-width:0;
+        padding:7px 8px;
+        border:1px solid #F0E6D8;
+        border-radius:10px;
+        background:#F8F3EB;
+    }
+    .op-ag-time small{
+        display:block;
+        color:#8A95A5;
+        font-size:.58rem;
+        font-weight:900;
+        letter-spacing:.045em;
+        line-height:1;
+        text-transform:uppercase;
+    }
+    .op-ag-time b{
+        display:block;
+        margin-top:4px;
+        color:#1A1108;
+        font-size:.76rem;
+        font-weight:900;
+        line-height:1.1;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+    .op-ag-time em{
+        display:block;
+        margin-top:2px;
+        color:#6F7B90;
+        font-size:.69rem;
+        font-style:normal;
+        font-weight:800;
+        line-height:1.05;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+    .op-ag-go{
+        align-self:center;
+        color:#A0A8B6;
+        font-size:.72rem;
+    }
+    .op-daily-pill{
+        padding:4px 8px;
+        font-size:.7rem;
+        background:color-mix(in srgb,var(--op-brand) 8%,#fff);
+        color:var(--op-brand);
+    }
+    .op-daily-empty{
+        padding:22px 16px;
+        color:#7C8798;
+        font-size:.84rem;
+    }
+    .op-daily-empty strong{
+        color:#1A1108;
+        font-size:1rem;
+        margin-bottom:5px;
+    }
+    .op-daily-mobile-optional{display:none}
+}
 </style>
 
 <div class="op-daily">
@@ -179,16 +557,55 @@ $estadoReservacionLabels = [
                         <?php foreach ($reservaciones['hoy'] as $reservacion): ?>
                             <?php $estado = (string)($reservacion['estado'] ?? ''); ?>
                             <tr>
-                                <td><a class="op-daily-link" href="<?= url('reservaciones/ver/' . (int)($reservacion['id'] ?? 0)) ?>">#<?= (int)($reservacion['id'] ?? 0) ?></a></td>
-                                <td><?= op_daily_safe($reservacion['huesped_nombre'] ?? null) ?></td>
-                                <td><?= op_daily_safe($reservacion['habitaciones'] ?? null) ?></td>
-                                <td><?= op_daily_date($reservacion['fecha_entrada'] ?? null) ?><div class="op-daily-muted"><?= op_daily_safe($reservacion['hora_llegada_estimada'] ?? null, '') ?></div></td>
-                                <td><?= op_daily_date($reservacion['fecha_salida'] ?? null) ?><div class="op-daily-muted"><?= op_daily_safe($reservacion['hora_salida'] ?? null, '') ?></div></td>
-                                <td><span class="op-daily-pill"><?= op_daily_safe($estadoReservacionLabels[$estado] ?? $estado) ?></span></td>
+                                <td data-label="Reservacion"><a class="op-daily-link" href="<?= url('reservaciones/ver/' . (int)($reservacion['id'] ?? 0)) ?>">#<?= (int)($reservacion['id'] ?? 0) ?></a></td>
+                                <td data-label="Huesped"><?= op_daily_safe($reservacion['huesped_nombre'] ?? null) ?></td>
+                                <td data-label="Habitaciones"><?= op_daily_safe($reservacion['habitaciones'] ?? null) ?></td>
+                                <td data-label="Entrada"><?= op_daily_date($reservacion['fecha_entrada'] ?? null) ?><div class="op-daily-muted"><?= op_daily_safe($reservacion['hora_llegada_estimada'] ?? null, '') ?></div></td>
+                                <td data-label="Salida"><?= op_daily_date($reservacion['fecha_salida'] ?? null) ?><div class="op-daily-muted"><?= op_daily_safe($reservacion['hora_salida'] ?? null, '') ?></div></td>
+                                <td data-label="Estado"><span class="op-daily-pill"><?= op_daily_safe($estadoReservacionLabels[$estado] ?? $estado) ?></span></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+            <div class="op-daily-agenda-mobile" aria-label="Agenda movil de hoy">
+                <?php foreach ($reservaciones['hoy'] as $reservacion): ?>
+                    <?php
+                    $resId = (int)($reservacion['id'] ?? 0);
+                    $estado = (string)($reservacion['estado'] ?? '');
+                    $estadoLabel = $estadoReservacionLabels[$estado] ?? $estado;
+                    $huespedNombre = (string)($reservacion['huesped_nombre'] ?? 'Huesped');
+                    $habitacionesTexto = (string)($reservacion['habitaciones'] ?? '');
+                    $entradaHora = trim((string)($reservacion['hora_llegada_estimada'] ?? ''));
+                    $salidaHora = trim((string)($reservacion['hora_salida'] ?? ''));
+                    ?>
+                    <a class="op-ag-card" href="<?= url('reservaciones/ver/' . $resId) ?>" title="Ver reservacion #<?= $resId ?>">
+                        <span class="op-ag-avatar" aria-hidden="true"><?= op_daily_initials($huespedNombre) ?></span>
+                        <span class="op-ag-body">
+                            <span class="op-ag-top">
+                                <span class="op-ag-name"><?= op_daily_safe($huespedNombre, 'Huesped') ?></span>
+                                <span class="op-ag-status"><?= op_daily_safe($estadoLabel, 'Estado') ?></span>
+                            </span>
+                            <span class="op-ag-room">
+                                <i class="fas fa-bed" aria-hidden="true"></i>
+                                <span><?= op_daily_safe($habitacionesTexto, 'Sin habitacion') ?></span>
+                            </span>
+                            <span class="op-ag-times">
+                                <span class="op-ag-time">
+                                    <small>Entrada</small>
+                                    <b><?= op_daily_date($reservacion['fecha_entrada'] ?? null) ?></b>
+                                    <em><?= op_daily_safe($entradaHora, 'Sin hora') ?></em>
+                                </span>
+                                <span class="op-ag-time">
+                                    <small>Salida</small>
+                                    <b><?= op_daily_date($reservacion['fecha_salida'] ?? null) ?></b>
+                                    <em><?= op_daily_safe($salidaHora, 'Sin hora') ?></em>
+                                </span>
+                            </span>
+                        </span>
+                        <span class="op-ag-go" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
+                    </a>
+                <?php endforeach; ?>
             </div>
         <?php endif; ?>
     </section>
@@ -242,7 +659,7 @@ $estadoReservacionLabels = [
         </section>
     </div>
 
-    <section class="op-daily-panel">
+    <section class="op-daily-panel op-daily-mobile-optional">
         <div class="op-daily-panel-head">
             <h2 class="op-daily-panel-title">Documentos recientes</h2>
             <p class="op-daily-panel-subtitle">Metadatos seguros del Centro Documental; no muestra rutas internas.</p>

@@ -32,23 +32,39 @@ class TarifasController extends Controller {
     private function tiposHabitacionCatalogo(array $tiposActuales = []) {
         $tipos = [];
 
-        if (function_exists('hotel_room_catalog_types')) {
-            foreach (hotel_room_catalog_types() as $codigo => $nombre) {
+        if (function_exists('hotel_room_catalog_types_for_select')) {
+            $catalogo = hotel_room_catalog_types_for_select($this->hotelIdActual());
+        } elseif (function_exists('hotel_room_catalog_types')) {
+            $catalogo = hotel_room_catalog_types($this->hotelIdActual());
+        } else {
+            $catalogo = [];
+        }
+
+        if (!empty($catalogo)) {
+            foreach ($catalogo as $codigo => $nombre) {
                 $codigo = trim((string)$codigo);
                 if ($codigo === '') {
                     continue;
                 }
 
-                $tipos[$codigo] = [
-                    'tipo' => $codigo,
-                    'nombre' => trim((string)$nombre) !== '' ? (string)$nombre : ucwords(str_replace('_', ' ', $codigo))
+                $tipoTecnico = $this->normalizarTipoHabitacionTecnico($codigo);
+                if ($tipoTecnico === '') {
+                    continue;
+                }
+
+                $tipos[$tipoTecnico] = [
+                    'tipo' => $tipoTecnico,
+                    'nombre' => trim((string)$nombre) !== '' ? (string)$nombre : ucwords(str_replace('_', ' ', $tipoTecnico))
                 ];
             }
         }
 
         if (empty($tipos)) {
             $db = Database::getInstance();
-            $stmt = $db->query("SELECT DISTINCT tipo FROM habitaciones WHERE activa = 1 ORDER BY tipo");
+            $stmt = $db->query(
+                "SELECT DISTINCT tipo FROM habitaciones WHERE hotel_id = ? AND activa = 1 ORDER BY tipo",
+                [$this->hotelIdActual()]
+            );
             foreach (($stmt ? $stmt->fetchAll() : []) as $row) {
                 $codigo = trim((string)($row['tipo'] ?? ''));
                 if ($codigo === '') {
@@ -63,7 +79,7 @@ class TarifasController extends Controller {
         }
 
         foreach ($tiposActuales as $codigo) {
-            $codigo = trim((string)$codigo);
+            $codigo = $this->normalizarTipoHabitacionTecnico($codigo);
             if ($codigo === '' || isset($tipos[$codigo])) {
                 continue;
             }
@@ -75,6 +91,44 @@ class TarifasController extends Controller {
         }
 
         return array_values($tipos);
+    }
+
+    private function normalizarTipoHabitacionTecnico($codigo): string {
+        $codigo = strtolower(trim((string)$codigo));
+
+        if ($codigo === '') {
+            return '';
+        }
+
+        if (function_exists('hotel_room_catalog_storage_type_for_code')) {
+            $normalizado = hotel_room_catalog_storage_type_for_code($codigo, $this->hotelIdActual());
+            return $normalizado !== '' ? $normalizado : '';
+        }
+
+        $compatibles = [
+            'sencilla' => true,
+            'doble' => true,
+            'triple' => true,
+            'cuadruple' => true,
+            'sencilla_manolo' => true,
+            'doble_manolo' => true,
+        ];
+
+        return isset($compatibles[$codigo]) ? $codigo : '';
+    }
+
+    private function normalizarTiposHabitacionTecnicos($tipos): array {
+        $tipos = is_array($tipos) ? $tipos : [];
+        $normalizados = [];
+
+        foreach ($tipos as $tipo) {
+            $tipoTecnico = $this->normalizarTipoHabitacionTecnico($tipo);
+            if ($tipoTecnico !== '') {
+                $normalizados[] = $tipoTecnico;
+            }
+        }
+
+        return array_values(array_unique($normalizados));
     }
 
     private function erroresCamposTarifa(array $errores): array {
@@ -110,7 +164,7 @@ class TarifasController extends Controller {
 
         return $fieldErrors;
     }
-    
+
     /**
      * Lista de incrementos de tarifas
      */
@@ -196,7 +250,7 @@ class TarifasController extends Controller {
             // Procesar elementos según alcance
             $elementos = [];
             if ($datos['alcance'] == 'tipo_habitacion') {
-                $tipos = $this->getPost('tipos_habitacion', []);
+                $tipos = $this->normalizarTiposHabitacionTecnicos($this->getPost('tipos_habitacion', []));
                 if (empty($tipos)) {
                     throw new Exception('Debe seleccionar al menos un tipo de habitación');
                 }
@@ -264,6 +318,7 @@ class TarifasController extends Controller {
         
         // Decodificar JSON - Compatible con PHP 8+
         $incremento['tipos_habitacion_array'] = !empty($incremento['tipos_habitacion']) ? json_decode($incremento['tipos_habitacion'], true) : [];
+        $incremento['tipos_habitacion_array'] = $this->normalizarTiposHabitacionTecnicos($incremento['tipos_habitacion_array']);
         $incremento['habitaciones_array'] = !empty($incremento['habitaciones']) ? json_decode($incremento['habitaciones'], true) : [];
         $tipos_habitacion = $this->tiposHabitacionCatalogo($incremento['tipos_habitacion_array']);
 
@@ -318,7 +373,7 @@ class TarifasController extends Controller {
             // Procesar elementos según alcance
             $elementos = [];
             if ($datos['alcance'] == 'tipo_habitacion') {
-                $tipos = $this->getPost('tipos_habitacion', []);
+                $tipos = $this->normalizarTiposHabitacionTecnicos($this->getPost('tipos_habitacion', []));
                 if (empty($tipos)) {
                     throw new Exception('Debe seleccionar al menos un tipo de habitación');
                 }
@@ -489,6 +544,7 @@ class TarifasController extends Controller {
         
         // Decodificar JSON - Compatible con PHP 8+
         $incremento['tipos_habitacion_array'] = !empty($incremento['tipos_habitacion']) ? json_decode($incremento['tipos_habitacion'], true) : [];
+        $incremento['tipos_habitacion_array'] = $this->normalizarTiposHabitacionTecnicos($incremento['tipos_habitacion_array']);
         $incremento['habitaciones_array'] = !empty($incremento['habitaciones']) ? json_decode($incremento['habitaciones'], true) : [];
         
         // Si son habitaciones específicas, obtener sus números

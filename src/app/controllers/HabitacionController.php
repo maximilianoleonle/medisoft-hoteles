@@ -65,6 +65,45 @@ class HabitacionController extends Controller {
 
         return $fieldErrors;
     }
+
+    private function buscarHabitacionPorNumero(string $numero, ?int $excluirId = null): ?array {
+        $numero = trim($numero);
+        if ($numero === '') {
+            return null;
+        }
+
+        $params = [$numero, $this->hotelIdActual()];
+        $sql = "SELECT id, numero, activa FROM habitaciones WHERE numero = ? AND hotel_id = ?";
+
+        if ($excluirId !== null && $excluirId > 0) {
+            $sql .= " AND id != ?";
+            $params[] = $excluirId;
+        }
+
+        $sql .= " ORDER BY activa DESC, id ASC LIMIT 1";
+
+        $stmt = Database::getInstance()->query($sql, $params);
+        if (!$stmt) {
+            return null;
+        }
+
+        $habitacion = $stmt->fetch();
+        return $habitacion ?: null;
+    }
+
+    private function validarNumeroHabitacionUnico(array &$errores, string $numero, ?int $excluirId = null): void {
+        $duplicada = $this->buscarHabitacionPorNumero($numero, $excluirId);
+        if (!$duplicada) {
+            return;
+        }
+
+        if ((int)($duplicada['activa'] ?? 0) === 1) {
+            $errores[] = 'Ya existe una habitacion activa con este numero. No se puede repetir.';
+            return;
+        }
+
+        $errores[] = 'Este numero pertenece a una habitacion dada de baja. Para usarlo, recupera esa habitacion desde el registro existente o crea la habitacion desde Nuevo para reactivarla.';
+    }
     
     /**
      * Listado de habitaciones
@@ -90,6 +129,8 @@ public function indexAction() {
         'fecha_consulta' => get('fecha_consulta'),
         'mostrar_disponibilidad' => get('mostrar_disponibilidad')
     ];
+    $tipoFiltroSolicitado = strtolower(trim((string)($filtros['tipo'] ?? '')));
+    $tipoFiltroTecnico = $tipoFiltroSolicitado !== '' && isset($this->tiposAlmacenamientoCompatibles()[$tipoFiltroSolicitado]);
     
     // Verificar si se está filtrando por fecha específica
     if (!empty($filtros['fecha_consulta']) && !empty($filtros['mostrar_disponibilidad'])) {
@@ -101,8 +142,8 @@ public function indexAction() {
     $conditions = ['activa' => 1];
     
     // Aplicar filtros (excepto estado que se maneja después)
-    if ($filtros['tipo']) {
-        $conditions['tipo'] = $filtros['tipo'];
+    if ($tipoFiltroTecnico) {
+        $conditions['tipo'] = $tipoFiltroSolicitado;
     }
     if ($filtros['piso'] !== null && $filtros['piso'] !== '') {
         $conditions['piso'] = $filtros['piso'];
@@ -182,6 +223,12 @@ public function indexAction() {
         }
     }
     unset($habitacion);
+
+    if ($tipoFiltroSolicitado !== '' && !$tipoFiltroTecnico) {
+        $habitaciones = array_values(array_filter($habitaciones, function ($habitacion) use ($tipoFiltroSolicitado) {
+            return $this->codigoTipoCatalogoHabitacion($habitacion) === $tipoFiltroSolicitado;
+        }));
+    }
 
     // El estado queda como filtro visual inicial en la vista para no recortar el DOM.
     // Obtener estadísticas actualizadas
@@ -318,12 +365,14 @@ private function mostrarDisponibilidadPorFecha($filtros) {
     // Obtener TODAS las habitaciones activas primero
     $conditions = ['activa' => 1];
     $todasHabitaciones = [];
+    $tipoFiltroSolicitado = strtolower(trim((string)($filtros['tipo'] ?? '')));
+    $tipoFiltroTecnico = $tipoFiltroSolicitado !== '' && isset($this->tiposAlmacenamientoCompatibles()[$tipoFiltroSolicitado]);
     
     if (!empty($filtros['buscar'])) {
         $todasHabitaciones = $this->habitacionModel->buscar($filtros['buscar']);
     } else {
-        if (!empty($filtros['tipo'])) {
-            $conditions['tipo'] = $filtros['tipo'];
+        if ($tipoFiltroTecnico) {
+            $conditions['tipo'] = $tipoFiltroSolicitado;
         }
         if ($filtros['piso'] !== null && $filtros['piso'] !== '') {
             $conditions['piso'] = $filtros['piso'];
@@ -428,6 +477,12 @@ private function mostrarDisponibilidadPorFecha($filtros) {
         }
         
         $habitaciones_procesadas[] = $habitacion;
+    }
+
+    if ($tipoFiltroSolicitado !== '' && !$tipoFiltroTecnico) {
+        $habitaciones_procesadas = array_values(array_filter($habitaciones_procesadas, function ($habitacion) use ($tipoFiltroSolicitado) {
+            return $this->codigoTipoCatalogoHabitacion($habitacion) === $tipoFiltroSolicitado;
+        }));
     }
     
     error_log("=== ESTADÍSTICAS ===");
@@ -767,15 +822,26 @@ error_log(print_r($ocupacion_actual, true));
             $caracteristicas_especiales,
             $caracteristicas_custom
         );
+        $data['caracteristicas'] = $this->agregarTipoCatalogoEnCaracteristicas(
+            $data['caracteristicas'],
+            $tipoSolicitado,
+            $data['tipo']
+        );
         
         // Validar datos contra los catalogos configurables del hotel
         $errores = $this->validarHabitacionConCatalogos($data);
         
         // Verificar número único
-        if ($this->habitacionModel->exists(['numero' => $data['numero']])) {
-            $errores[] = 'Ya existe una habitacion con este numero. No se puede repetir.';
+        $habitacionInactivaDuplicada = null;
+        $habitacionDuplicada = $this->buscarHabitacionPorNumero((string)$data['numero']);
+        if ($habitacionDuplicada) {
+            if ((int)($habitacionDuplicada['activa'] ?? 0) === 1) {
+                $errores[] = 'Ya existe una habitacion activa con este numero. No se puede repetir.';
+            } else {
+                $habitacionInactivaDuplicada = $habitacionDuplicada;
+            }
         }
-        
+
         $fieldErrors = $this->erroresCamposHabitacion($errores);
 
         if (!empty($errores)) {
@@ -791,11 +857,18 @@ error_log(print_r($ocupacion_actual, true));
         try {
             $db->beginTransaction();
             
-            // Crear habitación
-            $habitacion = $this->habitacionModel->create($data);
+            $habitacionRecuperada = false;
+
+            if ($habitacionInactivaDuplicada) {
+                $habitacion = $this->habitacionModel->update((int)$habitacionInactivaDuplicada['id'], $data);
+                $habitacionRecuperada = true;
+            } else {
+                // Crear habitación
+                $habitacion = $this->habitacionModel->create($data);
+            }
             
             if (!$habitacion) {
-                throw new Exception('Error al crear la habitación');
+                throw new Exception($habitacionRecuperada ? 'Error al recuperar la habitacion' : 'Error al crear la habitacion');
             }
             
             // Procesar múltiples imágenes si se subieron
@@ -819,7 +892,7 @@ error_log(print_r($ocupacion_actual, true));
             $db->commit();
             
             clear_old_input();
-            set_mensaje('Habitación creada exitosamente', 'success');
+            set_mensaje($habitacionRecuperada ? 'Habitacion recuperada y actualizada exitosamente' : 'Habitación creada exitosamente', 'success');
             $this->redirect('habitaciones/' . $habitacion['id']);
             
         } catch (Exception $e) {
@@ -834,7 +907,7 @@ error_log(print_r($ocupacion_actual, true));
     /**
  * Historial completo de reservaciones de una habitación
  */
-public function historial() {
+public function historialAction() {
     $id = $this->route_params['id'] ?? 0;
     
     // Obtener habitación usando el mismo método que verAction()
@@ -957,6 +1030,7 @@ public function historial() {
         View::renderTemplate('habitaciones/editar', [
             'title' => 'Editar Habitación - ' . current_hotel_display_name(),
             'habitacion' => $habitacion,
+            'reservaciones_bloqueantes_eliminacion' => $this->reservacionesBloqueantesEliminacion((int)$id),
             'tipos' => $this->catalogoTiposHabitacion(),
             'pisos' => $this->catalogoPisosHabitacion(),
             'amenidades' => $this->catalogoAmenidadesHabitacion()
@@ -964,7 +1038,71 @@ public function historial() {
     }
     
     /**
-     * Actualizar habitación CON MÚLTIPLES IMÁGENES
+     * Reservaciones activas o futuras que impiden eliminar una habitacion.
+     */
+    private function reservacionesBloqueantesEliminacion(int $habitacionId): array {
+        if ($habitacionId <= 0) {
+            return [];
+        }
+
+        try {
+            $hotelId = $this->hotelIdActual();
+            $db = Database::getInstance();
+            $sql = "SELECT
+                    r.id,
+                    r.estado,
+                    r.fecha_entrada,
+                    r.fecha_salida,
+                    r.precio_total,
+                    h.nombre_completo,
+                    h.telefono,
+                    GROUP_CONCAT(DISTINCT hab.numero ORDER BY hab.numero SEPARATOR ', ') as habitaciones,
+                    COUNT(DISTINCT rh2.habitacion_id) as total_habitaciones
+                FROM reservaciones r
+                INNER JOIN reservacion_habitaciones rh
+                    ON r.id = rh.reservacion_id
+                    AND rh.hotel_id = r.hotel_id
+                INNER JOIN habitaciones hab_scope
+                    ON rh.habitacion_id = hab_scope.id
+                    AND hab_scope.hotel_id = rh.hotel_id
+                INNER JOIN huespedes h
+                    ON r.huesped_id = h.id
+                    AND h.hotel_id = r.hotel_id
+                LEFT JOIN reservacion_habitaciones rh2
+                    ON r.id = rh2.reservacion_id
+                    AND rh2.hotel_id = r.hotel_id
+                LEFT JOIN habitaciones hab
+                    ON rh2.habitacion_id = hab.id
+                    AND hab.hotel_id = rh2.hotel_id
+                WHERE rh.habitacion_id = ?
+                    AND rh.hotel_id = ?
+                    AND r.hotel_id = ?
+                    AND hab_scope.hotel_id = ?
+                    AND r.estado IN ('confirmada', 'checked_in')
+                    AND r.fecha_salida >= CURDATE()
+                GROUP BY
+                    r.id,
+                    r.estado,
+                    r.fecha_entrada,
+                    r.fecha_salida,
+                    r.precio_total,
+                    h.nombre_completo,
+                    h.telefono
+                ORDER BY
+                    CASE WHEN r.estado = 'checked_in' THEN 0 ELSE 1 END,
+                    r.fecha_entrada ASC,
+                    r.id ASC";
+
+            $stmt = $db->query($sql, [$habitacionId, $hotelId, $hotelId, $hotelId]);
+            return $stmt ? ($stmt->fetchAll() ?: []) : [];
+        } catch (Exception $e) {
+            error_log('Error consultando reservaciones bloqueantes de habitacion: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Actualizar habitacion con multiples imagenes.
      */
     public function actualizarAction() {
         if (!$this->isPost()) {
@@ -1025,16 +1163,17 @@ public function historial() {
             $caracteristicas_especiales,
             $caracteristicas_custom
         );
+        $data['caracteristicas'] = $this->agregarTipoCatalogoEnCaracteristicas(
+            $data['caracteristicas'],
+            $tipoSolicitado,
+            $data['tipo']
+        );
         
         // Validar datos contra los catalogos configurables del hotel
         $errores = $this->validarHabitacionConCatalogos($data);
         
         // Verificar número único (excluyendo la habitación actual)
-        $sql = "SELECT COUNT(*) as total FROM habitaciones WHERE numero = ? AND id != ? AND hotel_id = ?";
-        $stmt = Database::getInstance()->query($sql, [$data['numero'], $id, $this->hotelIdActual()]);
-        if ($stmt->fetch()['total'] > 0) {
-            $errores[] = 'Ya existe una habitacion con este numero. No se puede repetir.';
-        }
+        $this->validarNumeroHabitacionUnico($errores, (string)$data['numero'], (int)$id);
         
         // Manejar múltiples imágenes si se subieron nuevas
         if (isset($_FILES['fotos']) && !empty($_FILES['fotos']['name'][0])) {
@@ -1097,6 +1236,35 @@ public function historial() {
         if ($habitacion['estado'] != 'disponible') {
             set_mensaje('Solo se pueden eliminar habitaciones disponibles', 'error');
             $this->redirect('habitaciones/' . $id);
+        }
+
+        $reservacionesBloqueantes = $this->reservacionesBloqueantesEliminacion((int)$id);
+        if (!empty($reservacionesBloqueantes)) {
+            $totalReservaciones = count($reservacionesBloqueantes);
+            $numeroHabitacion = trim((string)($habitacion['numero'] ?? $id));
+            set_mensaje(
+                'No se puede eliminar la habitacion ' . $numeroHabitacion . ': tiene ' .
+                $totalReservaciones . ' reservacion(es) activa(s) o futura(s). Cancela esas reservaciones desde sus detalles y vuelve a intentarlo.',
+                'error'
+            );
+            $this->redirect('habitaciones/' . $id . '/edit');
+        }
+
+        try {
+            $resultado = $this->habitacionModel->update((int)$id, ['activa' => 0]);
+
+            if (!$resultado) {
+                throw new Exception('No se pudo desactivar la habitacion');
+            }
+
+            set_mensaje('Habitacion eliminada del listado. Se conservo el historial operativo asociado.', 'success');
+            $this->redirect('habitaciones');
+            return;
+        } catch (Exception $e) {
+            error_log('Error al dar de baja habitacion: ' . $e->getMessage());
+            set_mensaje('Error al eliminar la habitacion. Intentalo de nuevo o revisa el historial asociado.', 'error');
+            $this->redirect('habitaciones/' . $id . '/edit');
+            return;
         }
         
         $db = Database::getInstance();
@@ -2014,12 +2182,33 @@ private function registrarAuditoriaMantenimientoProgramado(string $accion, array
             return 'sencilla';
         }
 
+        if (function_exists('hotel_room_catalog_type_rows')) {
+            foreach (hotel_room_catalog_type_rows($this->hotelIdActual(), true) as $row) {
+                if (strtolower((string)($row['codigo'] ?? '')) !== $tipo) {
+                    continue;
+                }
+
+                $capacidad = max(1, (int)($row['capacidad_default'] ?? 2));
+                if ($capacidad >= 7) {
+                    return 'cuadruple';
+                }
+                if ($capacidad >= 5) {
+                    return 'triple';
+                }
+                if ($capacidad >= 3) {
+                    return 'doble';
+                }
+
+                return 'sencilla';
+            }
+        }
+
         return $tipo;
     }
 
     private function tiposAlmacenamientoCompatibles(): array
     {
-        return [
+        $compatibles = [
             'sencilla' => true,
             'doble' => true,
             'triple' => true,
@@ -2027,6 +2216,8 @@ private function registrarAuditoriaMantenimientoProgramado(string $accion, array
             'sencilla_manolo' => true,
             'doble_manolo' => true,
         ];
+
+        return $compatibles;
     }
 
     private function labelTipoHabitacionCatalogo(string $tipo): string
@@ -2119,11 +2310,97 @@ private function registrarAuditoriaMantenimientoProgramado(string $accion, array
         return implode(', ', $unicas);
     }
 
+    private function limpiarMarcadoresTipoCatalogo(string $descripcion): string
+    {
+        $partes = preg_split('/[,;\r\n]+/', $descripcion) ?: [];
+        $limpias = [];
+
+        foreach ($partes as $parte) {
+            $parte = trim((string)$parte);
+            if ($parte === '' || preg_match('/^Tipo catalogo\s*:/i', $parte)) {
+                continue;
+            }
+
+            $limpias[] = $parte;
+        }
+
+        return implode(', ', $limpias);
+    }
+
+    private function extraerTipoCatalogoDeCaracteristicas(string $descripcion): ?array
+    {
+        if (!preg_match('/(?:^|[,;\r\n]\s*)Tipo catalogo\s*:\s*([^\[\r\n,;]+?)\s*\[([a-z0-9_\-]+)\]/i', $descripcion, $matches)) {
+            return null;
+        }
+
+        $codigo = strtolower(trim((string)($matches[2] ?? '')));
+        $label = trim((string)($matches[1] ?? ''));
+
+        if ($codigo === '') {
+            return null;
+        }
+
+        return [
+            'codigo' => $codigo,
+            'label' => $label,
+        ];
+    }
+
+    private function agregarTipoCatalogoEnCaracteristicas(string $descripcion, string $tipoSolicitado, string $tipoAlmacenamiento): string
+    {
+        $descripcion = $this->limpiarMarcadoresTipoCatalogo($descripcion);
+        $tipoSolicitado = strtolower(trim($tipoSolicitado));
+        $tipoAlmacenamiento = strtolower(trim($tipoAlmacenamiento));
+
+        if ($tipoSolicitado === '' || $tipoSolicitado === $tipoAlmacenamiento) {
+            return $descripcion;
+        }
+
+        $label = $this->labelTipoHabitacionCatalogo($tipoSolicitado);
+        if ($label === '' || strtolower(trim($label)) === $tipoSolicitado) {
+            return $descripcion;
+        }
+
+        $marcador = 'Tipo catalogo: ' . $label . ' [' . $tipoSolicitado . ']';
+
+        return $descripcion !== ''
+            ? $descripcion . ', ' . $marcador
+            : $marcador;
+    }
+
+    private function codigoTipoCatalogoHabitacion(array $habitacion): string
+    {
+        $tipo = strtolower(trim((string)($habitacion['tipo'] ?? '')));
+        $caracteristicas = (string)($habitacion['caracteristicas'] ?? '');
+        $tipoCatalogo = $this->extraerTipoCatalogoDeCaracteristicas($caracteristicas);
+
+        if (is_array($tipoCatalogo) && !empty($tipoCatalogo['codigo'])) {
+            return (string)$tipoCatalogo['codigo'];
+        }
+
+        $texto = strtolower($caracteristicas);
+        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $texto);
+        if ($ascii !== false) {
+            $texto = $ascii;
+        }
+
+        if (strpos($texto, 'jacuzzi') !== false) {
+            if ($tipo === 'doble') {
+                return 'doble_jacuzzi';
+            }
+            if ($tipo === 'sencilla') {
+                return 'sencilla_jacuzzi';
+            }
+        }
+
+        return $tipo;
+    }
+
     private function mensajeErrorHabitacion(Throwable $e): string
     {
         $mensaje = $e->getMessage();
         if (strpos($mensaje, 'Duplicate entry') !== false && strpos($mensaje, 'numero') !== false) {
-            return 'Ya existe una habitacion con este numero. No se puede repetir.';
+            return 'Ya existe una habitacion con este numero en este hotel. No se puede repetir.';
         }
 
         return $mensaje;
@@ -2418,7 +2695,7 @@ private function registrarAuditoriaMantenimientoProgramado(string $accion, array
  * Liberar múltiples habitaciones (marcar como disponibles)
  * Endpoint: POST /habitaciones/liberar-multiples
  */
-public function liberarMultiples() {
+public function liberarMultiplesAction() {
     // Limpiar cualquier output previo
     if (ob_get_level()) {
         ob_clean();

@@ -7,6 +7,8 @@ $pagoToken = $pagoToken ?? null;
 $reversionesPago = $reversionesPago ?? [];
 $reversionTokens = $reversionTokens ?? [];
 $movimientosPago = $movimientosPago ?? [];
+$cxpFieldErrors = isset($layoutFieldErrors) && is_array($layoutFieldErrors) ? $layoutFieldErrors : [];
+$cxpOldInput = isset($_SESSION['old_input']) && is_array($_SESSION['old_input']) ? $_SESSION['old_input'] : [];
 
 if (!function_exists('cxp_view_safe')) {
     function cxp_view_safe($value, $fallback = '-')
@@ -39,6 +41,41 @@ if (!function_exists('cxp_view_estado_meta')) {
 }
 
 [$estadoLabel, $estadoClass, $estadoIcon] = cxp_view_estado_meta($cuenta['estado'] ?? null);
+$cxpPagoMontoValor = (string)($cxpOldInput['monto'] ?? ($pagoCaja['monto_maximo'] ?? ($cuenta['saldo'] ?? '0.00')));
+$cxpPagoMetodoValor = (string)($cxpOldInput['metodo_pago'] ?? '');
+$cxpPagoReferenciaValor = (string)($cxpOldInput['referencia'] ?? '');
+$cxpPagoNotasValor = (string)($cxpOldInput['notas'] ?? '');
+$cxpReversionOldMovimientoId = (int)($cxpOldInput['reversion_movimiento_id'] ?? 0);
+
+if (!function_exists('cxp_form_error')) {
+    function cxp_form_error(array $errors, string $field): string
+    {
+        $messages = $errors[$field] ?? [];
+        if (!is_array($messages)) {
+            $messages = [$messages];
+        }
+
+        return cxp_view_safe($messages[0] ?? '', '');
+    }
+}
+
+if (!function_exists('cxp_form_error_class')) {
+    function cxp_form_error_class(array $errors, string $field): string
+    {
+        return cxp_form_error($errors, $field) !== '' ? ' cx-input-error' : '';
+    }
+}
+
+if (!function_exists('cxp_form_error_attrs')) {
+    function cxp_form_error_attrs(array $errors, string $field, string $errorId): string
+    {
+        if (cxp_form_error($errors, $field) === '') {
+            return '';
+        }
+
+        return ' aria-invalid="true" aria-describedby="' . cxp_view_safe($errorId, '') . '"';
+    }
+}
 ?>
 
 <style>
@@ -127,6 +164,8 @@ if (!function_exists('cxp_view_estado_meta')) {
 .cxp-detail-page textarea.cx-input { min-height: 84px; resize: vertical; }
 .cxp-detail-page select.cx-input { cursor: pointer; }
 .cxp-detail-page .cx-input:focus { border-color: var(--cx-gold); box-shadow: 0 0 0 3px var(--cx-ring); outline: none; background: #fff; }
+.cxp-detail-page .cx-input-error { border-color: #B42318; background: #FFF7F6; }
+.cxp-detail-page .cx-form-error { display: block; margin-top: 7px; color: #B42318; font-size: .76rem; font-weight: 800; line-height: 1.35; letter-spacing: 0; text-transform: none; }
 
 .cxp-detail-page .cx-pay-card { border: 1px solid var(--cx-border); background: var(--cx-surface-warm); border-radius: 13px; padding: 14px; }
 .cxp-detail-page .cx-soft-note { border: 1px solid var(--cx-border); background: var(--cx-surface-warm); border-radius: 12px; padding: 14px; font-size: .88rem; color: var(--cx-muted); }
@@ -296,41 +335,57 @@ if (!function_exists('cxp_view_estado_meta')) {
                         <label class="cx-meta-label" for="cxp_pago_monto">Monto</label>
                         <input
                             id="cxp_pago_monto"
-                            class="cx-input mt-1"
+                            class="cx-input mt-1<?= cxp_form_error_class($cxpFieldErrors, 'monto') ?>"
                             type="number"
                             name="monto"
                             min="0.01"
                             max="<?= cxp_view_safe($pagoCaja['monto_maximo'] ?? ($cuenta['saldo'] ?? 0), '0.00') ?>"
                             step="0.01"
-                            value="<?= cxp_view_safe($pagoCaja['monto_maximo'] ?? ($cuenta['saldo'] ?? 0), '0.00') ?>"
+                            value="<?= cxp_view_safe($cxpPagoMontoValor, '0.00') ?>"
                             required
+                            <?= cxp_form_error_attrs($cxpFieldErrors, 'monto', 'ms-form-error-cxp_pago_monto') ?>
                         >
+                        <?php if (cxp_form_error($cxpFieldErrors, 'monto') !== ''): ?>
+                            <span id="ms-form-error-cxp_pago_monto" class="cx-form-error ms-form-field-error"><?= cxp_form_error($cxpFieldErrors, 'monto') ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div>
                         <label class="cx-meta-label" for="cxp_pago_metodo">M&eacute;todo de pago</label>
-                        <select id="cxp_pago_metodo" class="cx-input mt-1" name="metodo_pago" required>
+                        <select id="cxp_pago_metodo" class="cx-input mt-1<?= cxp_form_error_class($cxpFieldErrors, 'metodo_pago') ?>" name="metodo_pago" required<?= cxp_form_error_attrs($cxpFieldErrors, 'metodo_pago', 'ms-form-error-cxp_pago_metodo') ?>>
                             <?php foreach (($pagoCaja['metodos_pago'] ?? []) as $metodo => $label): ?>
-                                <option value="<?= cxp_view_safe($metodo, '') ?>"><?= cxp_view_safe($label) ?></option>
+                                <?php $metodoValor = (string)$metodo; ?>
+                                <option value="<?= cxp_view_safe($metodoValor, '') ?>" <?= $cxpPagoMetodoValor !== '' && $cxpPagoMetodoValor === $metodoValor ? 'selected' : '' ?>><?= cxp_view_safe($label) ?></option>
                             <?php endforeach; ?>
                         </select>
+                        <?php if (cxp_form_error($cxpFieldErrors, 'metodo_pago') !== ''): ?>
+                            <span id="ms-form-error-cxp_pago_metodo" class="cx-form-error ms-form-field-error"><?= cxp_form_error($cxpFieldErrors, 'metodo_pago') ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div class="md:col-span-2">
                         <label class="cx-meta-label" for="cxp_pago_referencia">Referencia</label>
                         <input
                             id="cxp_pago_referencia"
-                            class="cx-input mt-1"
+                            class="cx-input mt-1<?= cxp_form_error_class($cxpFieldErrors, 'referencia') ?>"
                             type="text"
                             name="referencia"
                             maxlength="100"
+                            value="<?= cxp_view_safe($cxpPagoReferenciaValor, '') ?>"
                             placeholder="Folio, transferencia o nota breve"
+                            <?= cxp_form_error_attrs($cxpFieldErrors, 'referencia', 'ms-form-error-cxp_pago_referencia') ?>
                         >
+                        <?php if (cxp_form_error($cxpFieldErrors, 'referencia') !== ''): ?>
+                            <span id="ms-form-error-cxp_pago_referencia" class="cx-form-error ms-form-field-error"><?= cxp_form_error($cxpFieldErrors, 'referencia') ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div class="md:col-span-3">
                         <label class="cx-meta-label" for="cxp_pago_notas">Notas</label>
-                        <textarea id="cxp_pago_notas" class="cx-input mt-1" name="notas" maxlength="1000" placeholder="Opcional"></textarea>
+                        <textarea id="cxp_pago_notas" class="cx-input mt-1<?= cxp_form_error_class($cxpFieldErrors, 'notas') ?>" name="notas" maxlength="1000" placeholder="Opcional"<?= cxp_form_error_attrs($cxpFieldErrors, 'notas', 'ms-form-error-cxp_pago_notas') ?>><?= cxp_view_safe($cxpPagoNotasValor, '') ?></textarea>
+                        <?php if (cxp_form_error($cxpFieldErrors, 'notas') !== ''): ?>
+                            <span id="ms-form-error-cxp_pago_notas" class="cx-form-error ms-form-field-error"><?= cxp_form_error($cxpFieldErrors, 'notas') ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div class="flex items-end">
@@ -393,6 +448,14 @@ if (!function_exists('cxp_view_estado_meta')) {
                             </div>
 
                             <?php if (!empty($reversion['elegible']) && !empty($tokenReversion)): ?>
+                                <?php
+                                $cxpMotivoError = $cxpReversionOldMovimientoId === $movimientoPagoId
+                                    ? cxp_form_error($cxpFieldErrors, 'motivo')
+                                    : '';
+                                $cxpMotivoValor = $cxpReversionOldMovimientoId === $movimientoPagoId
+                                    ? (string)($cxpOldInput['motivo'] ?? '')
+                                    : '';
+                                ?>
                                 <form method="POST" action="<?= url('cuentas-por-pagar/' . (int)($cuenta['id'] ?? 0) . '/movimientos/' . $movimientoPagoId . '/revertir-pago-caja') ?>" class="mt-4 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 items-end">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="reversion_token" value="<?= cxp_view_safe($tokenReversion, '') ?>">
@@ -400,12 +463,16 @@ if (!function_exists('cxp_view_estado_meta')) {
                                         <label class="cx-meta-label" for="cxp_reversion_motivo_<?= $movimientoPagoId ?>">Motivo de la reversi&oacute;n</label>
                                         <textarea
                                             id="cxp_reversion_motivo_<?= $movimientoPagoId ?>"
-                                            class="cx-input mt-1"
+                                            class="cx-input mt-1<?= $cxpMotivoError !== '' ? ' cx-input-error' : '' ?>"
                                             name="motivo"
                                             maxlength="1000"
                                             required
                                             placeholder="Explica por qu&eacute; reviertes este pago"
-                                        ></textarea>
+                                            <?= $cxpMotivoError !== '' ? 'aria-invalid="true" aria-describedby="ms-form-error-cxp_reversion_motivo_' . $movimientoPagoId . '"' : '' ?>
+                                        ><?= cxp_view_safe($cxpMotivoValor, '') ?></textarea>
+                                        <?php if ($cxpMotivoError !== ''): ?>
+                                            <span id="ms-form-error-cxp_reversion_motivo_<?= $movimientoPagoId ?>" class="cx-form-error ms-form-field-error"><?= $cxpMotivoError ?></span>
+                                        <?php endif; ?>
                                     </div>
                                     <div>
                                         <button type="submit" class="cx-btn cx-btn-danger justify-center">

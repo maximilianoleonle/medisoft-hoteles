@@ -244,6 +244,7 @@ class TareaController extends Controller
 
         $id = (int)($this->route_params['id'] ?? 0);
         $hotelId = $this->hotelIdActual();
+        $trabajadorId = (int)$this->getPost('trabajador_id', 0);
 
         try {
             $antes = $this->tareaModel->buscarPorIdHotel($id, $hotelId);
@@ -251,14 +252,19 @@ class TareaController extends Controller
                 throw new RuntimeException('Tarea no encontrada para el hotel actual.');
             }
 
-            $trabajadorId = (int)$this->getPost('trabajador_id', 0);
             $this->tareaModel->asignarTrabajadorParaHotel($id, $hotelId, $trabajadorId, $this->usuarioIdActual());
             $despues = $this->tareaModel->buscarPorIdHotel($id, $hotelId);
             $this->auditar('tareas.asignada', $id, $despues, $antes);
 
+            clear_old_input();
             set_mensaje('Tarea asignada correctamente.', 'success');
         } catch (Throwable $e) {
             set_mensaje('No se pudo asignar la tarea: ' . $e->getMessage(), 'error');
+            save_old_input([
+                'trabajador_id' => $trabajadorId > 0 ? (string)$trabajadorId : '',
+                'tarea_form_action' => 'asignar',
+            ]);
+            save_form_errors($this->erroresCamposTarea([$e->getMessage()]));
         }
 
         $this->redirect($id > 0 ? 'tareas/' . $id : 'tareas');
@@ -351,7 +357,19 @@ class TareaController extends Controller
                 continue;
             }
 
-            $lower = strtolower($mensaje);
+            $lower = function_exists('mb_strtolower') ? mb_strtolower($mensaje, 'UTF-8') : strtolower($mensaje);
+            $lower = strtr($lower, [
+                'á' => 'a',
+                'é' => 'e',
+                'í' => 'i',
+                'ó' => 'o',
+                'ú' => 'u',
+                'Á' => 'a',
+                'É' => 'e',
+                'Í' => 'i',
+                'Ó' => 'o',
+                'Ú' => 'u',
+            ]);
             $campo = null;
 
             if (strpos($lower, 'titulo') !== false) {
@@ -368,10 +386,16 @@ class TareaController extends Controller
                 $campo = 'fecha_limite';
             } elseif (strpos($lower, 'fecha programada') !== false || strpos($lower, 'programada') !== false || strpos($lower, 'fecha') !== false) {
                 $campo = 'fecha_programada';
+            } elseif (strpos($lower, 'trabajador') !== false || strpos($lower, 'asignacion') !== false || strpos($lower, 'asignar') !== false) {
+                $campo = 'trabajador_id';
+            } elseif (strpos($lower, 'comentario') !== false || strpos($lower, 'motivo') !== false || strpos($lower, 'nota') !== false || strpos($lower, 'cierre') !== false) {
+                $campo = 'comentario';
             }
 
             if ($campo !== null) {
                 $fieldErrors[$campo][] = $mensaje;
+            } else {
+                $fieldErrors['_global'][] = $mensaje;
             }
         }
 
@@ -424,6 +448,7 @@ class TareaController extends Controller
 
         $id = (int)($this->route_params['id'] ?? 0);
         $hotelId = $this->hotelIdActual();
+        $comentario = $this->getPost('comentario', '');
 
         try {
             $antes = $this->tareaModel->buscarPorIdHotel($id, $hotelId);
@@ -431,7 +456,6 @@ class TareaController extends Controller
                 throw new RuntimeException('Tarea no encontrada para el hotel actual.');
             }
 
-            $comentario = $this->getPost('comentario', '');
             $this->tareaModel->cambiarEstadoManualParaHotel(
                 $id,
                 $hotelId,
@@ -442,9 +466,15 @@ class TareaController extends Controller
             $despues = $this->tareaModel->buscarPorIdHotel($id, $hotelId);
             $this->auditar($accionAuditoria, $id, $despues, $antes);
 
+            clear_old_input();
             set_mensaje($mensajeExito, 'success');
         } catch (Throwable $e) {
             set_mensaje('No se pudo actualizar la tarea: ' . $e->getMessage(), 'error');
+            save_old_input([
+                'comentario' => $comentario,
+                'tarea_form_action' => $accion,
+            ]);
+            save_form_errors($this->erroresCamposTarea([$e->getMessage()]));
         }
 
         $this->redirect($id > 0 ? 'tareas/' . $id : 'tareas');

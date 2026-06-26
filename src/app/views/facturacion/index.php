@@ -859,8 +859,7 @@ a.billing-name:hover {
         height: 2.7rem;
     }
 
-    .billing-summary-strip,
-    .billing-filter-form {
+    .billing-summary-strip {
         grid-template-columns: 1fr;
     }
 
@@ -870,18 +869,125 @@ a.billing-name:hover {
         align-items: stretch;
     }
 
+    .billing-panel-header {
+        gap: 0.55rem;
+        padding: 0.82rem 0.88rem 0.5rem;
+    }
+
+    .billing-panel-title {
+        font-size: 0.98rem;
+    }
+
+    .billing-panel-copy {
+        display: none;
+    }
+
+    .billing-count-pill {
+        width: fit-content;
+        min-height: 1.8rem;
+        padding: 0.18rem 0.58rem;
+        font-size: 0.74rem;
+    }
+
+    .billing-filter-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.55rem;
+        margin: 0 0.72rem 0.78rem;
+        padding: 0.68rem;
+        border: 1px solid var(--billing-line);
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, 0.78);
+    }
+
+    .billing-filter-form .billing-field:first-child {
+        grid-column: 1 / -1;
+    }
+
+    .billing-filter-form .billing-field {
+        min-width: 0;
+    }
+
+    .billing-field label {
+        margin-bottom: 0.28rem;
+        font-size: 0.64rem;
+        letter-spacing: 0.055em;
+    }
+
+    .billing-input,
+    .billing-select {
+        min-height: 2.42rem;
+        padding: 0.58rem 0.7rem;
+        border-radius: 0.72rem;
+        font-size: 0.84rem;
+    }
+
+    .billing-input-wrap .billing-input {
+        padding-left: 2.28rem;
+    }
+
+    .billing-input-wrap i {
+        left: 0.78rem;
+        font-size: 0.86rem;
+    }
+
     .billing-filter-actions {
-        flex-direction: column;
-        align-items: stretch;
+        grid-column: 2 / 3;
+        flex-direction: row;
+        justify-content: flex-end;
+        align-items: end;
+        gap: 0.42rem;
     }
 
     .billing-filter-btn,
     .billing-clear-btn {
-        width: 100%;
+        width: 2.42rem;
+        min-width: 2.42rem;
+        min-height: 2.42rem;
+        padding: 0;
+        gap: 0;
+        border-radius: 0.72rem;
+    }
+
+    .billing-filter-label {
+        display: none;
+    }
+
+    .billing-filter-btn i,
+    .billing-clear-btn i {
+        font-size: 0.86rem;
+    }
+
+    .billing-mobile-list {
+        padding: 0.68rem;
+        gap: 0.62rem;
+    }
+
+    .billing-card {
+        padding: 0.78rem;
+    }
+
+    .billing-card-footer {
+        margin-top: 0.68rem;
+    }
+
+    .billing-card-footer .billing-action-icon {
+        width: 2.38rem;
+        min-width: 2.38rem;
+        min-height: 2.38rem;
     }
 
     .billing-pagination {
         justify-content: flex-start;
+    }
+}
+
+@media (max-width: 380px) {
+    .billing-filter-form {
+        grid-template-columns: 1fr;
+    }
+
+    .billing-filter-actions {
+        grid-column: 1 / -1;
     }
 }
 </style>
@@ -989,13 +1095,13 @@ a.billing-name:hover {
                 </div>
 
                 <div class="billing-filter-actions">
-                    <button type="submit" class="billing-filter-btn">
+                    <button type="submit" class="billing-filter-btn" aria-label="Filtrar solicitudes" title="Filtrar">
                         <i class="fas fa-filter"></i>
-                        Filtrar
+                        <span class="billing-filter-label">Filtrar</span>
                     </button>
-                    <a href="<?= url('facturacion') ?>" class="billing-clear-btn">
+                    <a href="<?= url('facturacion') ?>" class="billing-clear-btn" aria-label="Limpiar filtros" title="Limpiar filtros">
                         <i class="fas fa-undo"></i>
-                        Limpiar
+                        <span class="billing-filter-label">Limpiar</span>
                     </a>
                 </div>
             </form>
@@ -1170,9 +1276,8 @@ a.billing-name:hover {
                                 </div>
 
                                 <div class="billing-card-footer">
-                                    <a href="<?= url('facturacion/ver/' . $id) ?>" class="billing-action">
-                                        <i class="fas fa-eye"></i>
-                                        Ver solicitud
+                                    <a href="<?= url('facturacion/ver/' . $id) ?>" class="billing-action billing-action-icon" aria-label="Ver solicitud #<?= $id ?>" title="Ver solicitud">
+                                        <i class="fas fa-eye" aria-hidden="true"></i>
                                     </a>
                                 </div>
                             </article>

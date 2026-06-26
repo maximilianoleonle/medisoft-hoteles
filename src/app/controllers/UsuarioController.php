@@ -84,7 +84,8 @@ class UsuarioController extends Controller {
         $errores = $this->validarDatosUsuario($data, true);
 
         if (!empty($errores)) {
-            save_old_input($data);
+            save_old_input($this->oldInputUsuario($data));
+            save_form_errors($this->erroresCamposUsuario($errores));
             set_mensaje(implode('<br>', $errores), 'error');
             $this->redirect('usuarios/create');
         }
@@ -92,7 +93,8 @@ class UsuarioController extends Controller {
         try {
             // Verificar si el username ya existe
             if ($this->usuarioModel->usernameExiste($data['nombre_usuario'])) {
-                save_old_input($data);
+                save_old_input($this->oldInputUsuario($data));
+                save_form_errors(['nombre_usuario' => ['El nombre de usuario ya esta en uso']]);
                 set_mensaje('El nombre de usuario ya está en uso', 'error');
                 $this->redirect('usuarios/create');
             }
@@ -109,6 +111,7 @@ class UsuarioController extends Controller {
                 // Registrar en log
                 $this->registrarAccion('crear_usuario', "Usuario creado: {$data['nombre_completo']} ({$data['rol']})");
 
+                clear_old_input();
                 set_mensaje('Usuario creado exitosamente', 'success');
                 $this->redirect('usuarios');
             } else {
@@ -117,7 +120,8 @@ class UsuarioController extends Controller {
 
         } catch (Exception $e) {
             error_log("Error al crear usuario: " . $e->getMessage());
-            save_old_input($data);
+            save_old_input($this->oldInputUsuario($data));
+            save_form_errors($this->erroresCamposUsuario([$e->getMessage()]));
             set_mensaje('Error al crear el usuario. Por favor intente nuevamente.', 'error');
             $this->redirect('usuarios/create');
         }
@@ -196,7 +200,8 @@ class UsuarioController extends Controller {
         $errores = $this->validarDatosUsuario($data, false);
 
         if (!empty($errores)) {
-            save_old_input($data);
+            save_old_input($this->oldInputUsuario($data));
+            save_form_errors($this->erroresCamposUsuario($errores));
             set_mensaje(implode('<br>', $errores), 'error');
             $this->redirect("usuarios/{$id}/edit");
         }
@@ -204,7 +209,8 @@ class UsuarioController extends Controller {
         try {
             // Verificar si el username ya existe (excepto para el usuario actual)
             if ($this->usuarioModel->usernameExiste($data['nombre_usuario'], $id)) {
-                save_old_input($data);
+                save_old_input($this->oldInputUsuario($data));
+                save_form_errors(['nombre_usuario' => ['El nombre de usuario ya esta en uso']]);
                 set_mensaje('El nombre de usuario ya está en uso', 'error');
                 $this->redirect("usuarios/{$id}/edit");
             }
@@ -227,6 +233,7 @@ class UsuarioController extends Controller {
                     ]);
                 }
 
+                clear_old_input();
                 set_mensaje('Usuario actualizado exitosamente', 'success');
                 $this->redirect('usuarios');
             } else {
@@ -235,7 +242,8 @@ class UsuarioController extends Controller {
 
         } catch (Exception $e) {
             error_log("Error al actualizar usuario: " . $e->getMessage());
-            save_old_input($data);
+            save_old_input($this->oldInputUsuario($data));
+            save_form_errors($this->erroresCamposUsuario([$e->getMessage()]));
             set_mensaje('Error al actualizar el usuario. Por favor intente nuevamente.', 'error');
             $this->redirect("usuarios/{$id}/edit");
         }
@@ -342,6 +350,61 @@ class UsuarioController extends Controller {
         }
 
         return $errores;
+    }
+
+    private function oldInputUsuario(array $data): array {
+        unset($data['password']);
+        return $data;
+    }
+
+    private function erroresCamposUsuario(array $errores): array {
+        $fieldErrors = [];
+
+        foreach ($errores as $mensaje) {
+            $mensaje = trim((string)$mensaje);
+            if ($mensaje === '') {
+                continue;
+            }
+
+            $lower = function_exists('mb_strtolower') ? mb_strtolower($mensaje, 'UTF-8') : strtolower($mensaje);
+            $lower = strtr($lower, [
+                'á' => 'a',
+                'é' => 'e',
+                'í' => 'i',
+                'ó' => 'o',
+                'ú' => 'u',
+                'ñ' => 'n',
+                'Á' => 'a',
+                'É' => 'e',
+                'Í' => 'i',
+                'Ó' => 'o',
+                'Ú' => 'u',
+                'Ñ' => 'n',
+            ]);
+            $campo = null;
+
+            if (strpos($lower, 'nombre de usuario') !== false || strpos($lower, 'nombre_usuario') !== false || strpos($lower, 'username') !== false) {
+                $campo = 'nombre_usuario';
+            } elseif (strpos($lower, 'contrasena') !== false || strpos($lower, 'password') !== false) {
+                $campo = 'password';
+            } elseif (strpos($lower, 'nombre completo') !== false || strpos($lower, 'nombre') !== false) {
+                $campo = 'nombre_completo';
+            } elseif (strpos($lower, 'email') !== false || strpos($lower, 'correo') !== false) {
+                $campo = 'email';
+            } elseif (strpos($lower, 'telefono') !== false) {
+                $campo = 'telefono';
+            } elseif (strpos($lower, 'rol') !== false) {
+                $campo = 'rol';
+            }
+
+            if ($campo !== null) {
+                $fieldErrors[$campo][] = $mensaje;
+            } else {
+                $fieldErrors['_global'][] = $mensaje;
+            }
+        }
+
+        return $fieldErrors;
     }
 
     private function hotelIdActual() {

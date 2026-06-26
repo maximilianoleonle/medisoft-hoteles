@@ -253,8 +253,11 @@ class CuentaPorCobrarController extends Controller
                 . ', saldo nuevo ' . number_format((float)$resultado['saldo_posterior'], 2) . '.',
                 'success'
             );
+            clear_old_input();
         } catch (Throwable $e) {
             set_mensaje('No se pudo registrar el cobro CxC: ' . $e->getMessage(), 'error');
+            save_old_input($_POST);
+            save_form_errors($this->erroresCamposCobro([$e->getMessage()]));
         }
 
         $this->redirect($cuentaId > 0 ? 'cuentas-por-cobrar/operativas/' . $cuentaId : 'cuentas-por-cobrar/operativas');
@@ -296,11 +299,70 @@ class CuentaPorCobrarController extends Controller
                 . ', saldo nuevo ' . number_format((float)$resultado['saldo_posterior'], 2) . '.',
                 'success'
             );
+            clear_old_input();
         } catch (Throwable $e) {
             set_mensaje('No se pudo revertir el cobro CxC: ' . $e->getMessage(), 'error');
+            $oldInput = $_POST;
+            $oldInput['reversion_movimiento_id'] = $movimientoId;
+            save_old_input($oldInput);
+            save_form_errors($this->erroresCamposReversionCobro([$e->getMessage()]));
         }
 
         $this->redirect($cuentaId > 0 ? 'cuentas-por-cobrar/operativas/' . $cuentaId : 'cuentas-por-cobrar/operativas');
+    }
+
+    private function erroresCamposCobro(array $errores): array
+    {
+        $fieldErrors = [];
+
+        foreach ($errores as $mensaje) {
+            $mensaje = trim((string)$mensaje);
+            if ($mensaje === '') {
+                continue;
+            }
+
+            $lower = strtolower($mensaje);
+            $campo = null;
+
+            if (strpos($lower, 'monto') !== false || strpos($lower, 'saldo') !== false || strpos($lower, 'importe') !== false) {
+                $campo = 'monto';
+            } elseif (strpos($lower, 'metodo') !== false) {
+                $campo = 'metodo_pago';
+            } elseif (strpos($lower, 'referencia') !== false || strpos($lower, 'folio') !== false) {
+                $campo = 'referencia';
+            } elseif (strpos($lower, 'nota') !== false || strpos($lower, 'observacion') !== false) {
+                $campo = 'notas';
+            }
+
+            if ($campo !== null) {
+                $fieldErrors[$campo][] = $mensaje;
+            }
+        }
+
+        return $fieldErrors;
+    }
+
+    private function erroresCamposReversionCobro(array $errores): array
+    {
+        $fieldErrors = [];
+
+        foreach ($errores as $mensaje) {
+            $mensaje = trim((string)$mensaje);
+            if ($mensaje === '') {
+                continue;
+            }
+
+            $lower = strtolower($mensaje);
+            if (
+                strpos($lower, 'motivo') !== false
+                || strpos($lower, 'razon') !== false
+                || strpos($lower, 'explica') !== false
+            ) {
+                $fieldErrors['motivo'][] = $mensaje;
+            }
+        }
+
+        return $fieldErrors;
     }
 
     private function hotelIdActual(): int

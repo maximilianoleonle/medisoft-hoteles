@@ -286,11 +286,15 @@ class FacturacionController extends Controller {
                 }
             } else {
                 set_mensaje('No se pudieron guardar los datos. Intente de nuevo.', 'error');
+                save_old_input(array_merge($datos, ['solicitud_id' => $id]));
+                save_form_errors($this->erroresCamposFacturacion(['No se pudieron guardar los datos. Intente de nuevo.']));
             }
             
         } catch (Exception $e) {
             error_log("Error al guardar datos fiscales: " . $e->getMessage());
             set_mensaje('Error: ' . $e->getMessage(), 'error');
+            save_old_input(array_merge($datos ?? [], ['solicitud_id' => $id]));
+            save_form_errors($this->erroresCamposFacturacion([$e->getMessage()]));
         }
         
         $this->redirect('facturacion/ver/' . $id);
@@ -329,6 +333,7 @@ class FacturacionController extends Controller {
             $resultado = $this->reservacionModel->actualizarSolicitudFactura($id, $datos);
             
             if ($resultado) {
+                clear_old_input();
                 set_mensaje('Solicitud marcada como facturada exitosamente', 'success');
                 NotificacionService::sincronizarFacturacion($hotel_id, (int)$id);
                 $this->registrarNotificacionFacturacion(
@@ -343,11 +348,23 @@ class FacturacionController extends Controller {
                 );
             } else {
                 set_mensaje('No se pudo actualizar el estatus', 'error');
+                save_old_input([
+                    'solicitud_id' => $id,
+                    'numero_factura' => $numero_factura,
+                    'facturacion_modal' => 'completar',
+                ]);
+                save_form_errors($this->erroresCamposFacturacion(['No se pudo actualizar el estatus de la factura']));
             }
             
         } catch (Exception $e) {
             error_log("Error al completar factura: " . $e->getMessage());
             set_mensaje('Error: ' . $e->getMessage(), 'error');
+            save_old_input([
+                'solicitud_id' => $id,
+                'numero_factura' => $numero_factura,
+                'facturacion_modal' => 'completar',
+            ]);
+            save_form_errors($this->erroresCamposFacturacion([$e->getMessage()]));
         }
         
         $this->redirect('facturacion/ver/' . $id);
@@ -366,6 +383,7 @@ class FacturacionController extends Controller {
         
         $id = $this->getPost('solicitud_id');
         $motivo = trim($this->getPost('motivo', ''));
+        $redirect = 'facturacion';
         
         try {
             $hotel_id = obtenerHotelIdActualCompat();
@@ -388,6 +406,7 @@ class FacturacionController extends Controller {
             $resultado = $this->reservacionModel->actualizarSolicitudFactura($id, $datos);
             
             if ($resultado) {
+                clear_old_input();
                 set_mensaje('Solicitud de factura cancelada', 'success');
                 NotificacionService::sincronizarFacturacion($hotel_id, (int)$id);
                 $this->registrarNotificacionFacturacion(
@@ -400,14 +419,28 @@ class FacturacionController extends Controller {
                 );
             } else {
                 set_mensaje('No se pudo cancelar la solicitud', 'error');
+                $redirect = $id ? 'facturacion/ver/' . $id : 'facturacion';
+                save_old_input([
+                    'solicitud_id' => $id,
+                    'motivo' => $motivo,
+                    'facturacion_modal' => 'cancelar',
+                ]);
+                save_form_errors($this->erroresCamposFacturacion(['No se pudo cancelar la solicitud de factura']));
             }
             
         } catch (Exception $e) {
             error_log("Error al cancelar factura: " . $e->getMessage());
             set_mensaje('Error: ' . $e->getMessage(), 'error');
+            $redirect = $id ? 'facturacion/ver/' . $id : 'facturacion';
+            save_old_input([
+                'solicitud_id' => $id,
+                'motivo' => $motivo,
+                'facturacion_modal' => 'cancelar',
+            ]);
+            save_form_errors($this->erroresCamposFacturacion([$e->getMessage()]));
         }
         
-        $this->redirect('facturacion');
+        $this->redirect($redirect);
     }
     
     /**
@@ -459,6 +492,60 @@ class FacturacionController extends Controller {
     // ======================================================================
     // MÉTODOS PRIVADOS
     // ======================================================================
+
+    private function erroresCamposFacturacion(array $errores): array {
+        $fieldErrors = [];
+
+        foreach ($errores as $mensaje) {
+            $mensaje = trim((string)$mensaje);
+            if ($mensaje === '') {
+                continue;
+            }
+
+            $lower = function_exists('mb_strtolower') ? mb_strtolower($mensaje, 'UTF-8') : strtolower($mensaje);
+            $lower = strtr($lower, [
+                'á' => 'a',
+                'é' => 'e',
+                'í' => 'i',
+                'ó' => 'o',
+                'ú' => 'u',
+                'Á' => 'a',
+                'É' => 'e',
+                'Í' => 'i',
+                'Ó' => 'o',
+                'Ú' => 'u',
+            ]);
+            $campo = null;
+
+            if (strpos($lower, 'rfc') !== false) {
+                $campo = 'rfc';
+            } elseif (strpos($lower, 'razon') !== false) {
+                $campo = 'razon_social';
+            } elseif (strpos($lower, 'regimen') !== false) {
+                $campo = 'regimen_fiscal';
+            } elseif (strpos($lower, 'cfdi') !== false || strpos($lower, 'uso') !== false) {
+                $campo = 'uso_cfdi';
+            } elseif (strpos($lower, 'codigo postal') !== false || strpos($lower, 'postal') !== false) {
+                $campo = 'codigo_postal_fiscal';
+            } elseif (strpos($lower, 'email') !== false || strpos($lower, 'correo') !== false) {
+                $campo = 'email_factura';
+            } elseif (strpos($lower, 'folio') !== false || strpos($lower, 'numero') !== false) {
+                $campo = 'numero_factura';
+            } elseif (strpos($lower, 'motivo') !== false || strpos($lower, 'cancel') !== false) {
+                $campo = 'motivo';
+            } elseif (strpos($lower, 'nota') !== false || strpos($lower, 'observacion') !== false) {
+                $campo = 'notas';
+            }
+
+            if ($campo !== null) {
+                $fieldErrors[$campo][] = $mensaje;
+            } else {
+                $fieldErrors['_global'][] = $mensaje;
+            }
+        }
+
+        return $fieldErrors;
+    }
     
     /**
      * Obtener solicitud completa con datos del huésped y reservación

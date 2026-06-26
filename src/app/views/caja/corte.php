@@ -548,6 +548,34 @@ $balanceGeneral = (float)($resumen['balance_general'] ?? 0);
     cursor: pointer;
 }
 
+.ccx-export-group {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ccx-export.is-pdf {
+    border-color: color-mix(in srgb, #dc2626 24%, #ddd5c8);
+    background: color-mix(in srgb, #dc2626 8%, #fff);
+    color: color-mix(in srgb, #991b1b 70%, var(--ccx-primary));
+}
+
+.ccx-export:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--ccx-accent) 36%, #ddd5c8);
+}
+
+.ccx-export.is-pdf:hover {
+    border-color: color-mix(in srgb, #dc2626 38%, #ddd5c8);
+}
+
+.ccx-export:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--ccx-accent) 72%, #fff);
+    outline-offset: 2px;
+}
+
 .ccx-badge {
     display: inline-flex;
     align-items: center;
@@ -601,6 +629,15 @@ $balanceGeneral = (float)($resumen['balance_general'] ?? 0);
 
     .ccx-panel-head {
         display: grid;
+    }
+
+    .ccx-export-group {
+        justify-content: stretch;
+    }
+
+    .ccx-export {
+        min-height: 38px;
+        flex: 1 1 120px;
     }
 }
 </style>
@@ -810,10 +847,16 @@ $balanceGeneral = (float)($resumen['balance_general'] ?? 0);
                             <h2>Detalle de movimientos</h2>
                             <p>Todos los movimientos registrados en este corte.</p>
                         </div>
-                        <button onclick="exportarMovimientos()" class="ccx-export" type="button">
-                            <i class="fas fa-download"></i>
-                            <span>Exportar</span>
-                        </button>
+                        <div class="ccx-export-group" aria-label="Exportar detalle de movimientos">
+                            <button onclick="exportarMovimientos('excel')" class="ccx-export" type="button">
+                                <i class="fas fa-file-excel"></i>
+                                <span>Excel</span>
+                            </button>
+                            <button onclick="exportarMovimientos('pdf')" class="ccx-export is-pdf" type="button">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>PDF</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="ccx-table-wrap">
@@ -1026,6 +1069,7 @@ document.querySelectorAll('.denominacion-input').forEach(input => {
 document.getElementById('formCorte').addEventListener('submit', function(e) {
     e.preventDefault();
 
+    calcularTotales();
     const totalContado = parseFloat(document.getElementById('efectivo_contado').value);
     const diferencia = totalContado - efectivoEsperado;
 
@@ -1069,8 +1113,9 @@ document.getElementById('formCorte').addEventListener('submit', function(e) {
     }
 });
 
-function exportarMovimientos() {
-    window.location.href = '<?= url('caja/exportar?corte_id=' . ($corte['id'] ?? '')) ?>';
+function exportarMovimientos(formato = 'excel') {
+    const formatoSeguro = formato === 'pdf' ? 'pdf' : 'excel';
+    window.location.href = '<?= url('caja/exportar?corte_id=' . ($corte['id'] ?? '')) ?>&formato=' + formatoSeguro;
 }
 
 document.addEventListener('DOMContentLoaded', function() {

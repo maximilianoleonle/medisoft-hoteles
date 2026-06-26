@@ -250,8 +250,10 @@ if (!function_exists('get_estado_estacionamiento_dashboard')) {
                     h.nombre_completo AS huesped,
                     h.telefono
                 FROM huesped_vehiculos hv
-                INNER JOIN huespedes h ON h.id = hv.huesped_id
-                WHERE h.hotel_id = ?
+                INNER JOIN huespedes h
+                    ON h.id = hv.huesped_id
+                   AND h.hotel_id = hv.hotel_id
+                WHERE hv.hotel_id = ?
                   AND hv.activo = 1
                 ORDER BY h.nombre_completo ASC, hv.created_at DESC, hv.id DESC
             ", [$hotel_id]);

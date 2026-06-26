@@ -2060,7 +2060,21 @@ class TrabajadorController extends Controller
                 continue;
             }
 
-            $lower = strtolower($mensaje);
+            $lower = function_exists('mb_strtolower') ? mb_strtolower($mensaje, 'UTF-8') : strtolower($mensaje);
+            $lower = strtr($lower, [
+                'á' => 'a',
+                'é' => 'e',
+                'í' => 'i',
+                'ó' => 'o',
+                'ú' => 'u',
+                'ñ' => 'n',
+                'Á' => 'a',
+                'É' => 'e',
+                'Í' => 'i',
+                'Ó' => 'o',
+                'Ú' => 'u',
+                'Ñ' => 'n',
+            ]);
             $campo = null;
 
             if (strpos($lower, 'nombre') !== false) {
@@ -2087,6 +2101,8 @@ class TrabajadorController extends Controller
 
             if ($campo !== null) {
                 $fieldErrors[$campo][] = $mensaje;
+            } else {
+                $fieldErrors['_global'][] = $mensaje;
             }
         }
 

@@ -16,6 +16,39 @@ if (!function_exists('trab_form_safe')) {
     }
 }
 
+$trabajadorFieldErrors = isset($layoutFieldErrors) && is_array($layoutFieldErrors) ? $layoutFieldErrors : [];
+
+if (!function_exists('trab_form_error')) {
+    function trab_form_error(array $errors, string $field): string
+    {
+        $messages = $errors[$field] ?? [];
+        if (!is_array($messages)) {
+            $messages = [$messages];
+        }
+
+        $message = trim((string)($messages[0] ?? ''));
+        return $message !== '' ? trab_form_safe($message) : '';
+    }
+}
+
+if (!function_exists('trab_form_error_class')) {
+    function trab_form_error_class(array $errors, string $field): string
+    {
+        return trab_form_error($errors, $field) !== '' ? ' wk-field-error' : '';
+    }
+}
+
+if (!function_exists('trab_form_error_attrs')) {
+    function trab_form_error_attrs(array $errors, string $field, string $errorId): string
+    {
+        if (trab_form_error($errors, $field) === '') {
+            return '';
+        }
+
+        return ' aria-invalid="true" aria-describedby="' . trab_form_safe($errorId) . '"';
+    }
+}
+
 $usuarioSeleccionado = (int) old('usuario_id', (string)($trabajador['usuario_id'] ?? 0));
 $periodicidad = (string) old('periodicidad_pago', (string)($trabajador['periodicidad_pago'] ?? ''));
 $valoresFormulario = [
@@ -72,6 +105,9 @@ $valoresFormulario = [
 .worker-form-page select.wk-input { cursor: pointer; }
 .worker-form-page .wk-input:focus, .worker-form-page .wk-textarea:focus { border-color: var(--wk-gold); box-shadow: 0 0 0 3px var(--wk-ring); outline: none; background: #fff; }
 .worker-form-page .wk-hint { margin-top: 6px; font-size: .74rem; color: var(--wk-muted); font-weight: 600; }
+.worker-form-page .wk-field-error { border-color: #B4392B; background: #FFF7F6; }
+.worker-form-page .wk-form-error { display: block; margin-top: 7px; color: #B4392B; font-size: .78rem; font-weight: 800; line-height: 1.35; letter-spacing: 0; text-transform: none; }
+.worker-form-page .wk-error-summary { margin-bottom: 16px; padding: 12px 14px; border: 1px solid #F0B8AE; border-radius: 12px; background: #FFF7F6; color: #9E2A1D; font-size: .86rem; font-weight: 700; }
 
 .worker-form-page .wk-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; padding: 0 20px;
     border-radius: 11px; border: 1px solid transparent; font-weight: 700; font-size: .9rem; line-height: 1; cursor: pointer; text-decoration: none;
@@ -99,15 +135,24 @@ $valoresFormulario = [
         <form method="POST" action="<?= $action ?>" class="wk-panel p-5">
             <?= csrf_field() ?>
 
+            <?php if (trab_form_error($trabajadorFieldErrors, '_global') !== ''): ?>
+                <div class="wk-error-summary ms-form-error-summary" role="alert">
+                    <?= trab_form_error($trabajadorFieldErrors, '_global') ?>
+                </div>
+            <?php endif; ?>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label for="nombre_completo">Nombre completo <span class="wk-req">*</span></label>
-                    <input class="wk-input" id="nombre_completo" name="nombre_completo" type="text" maxlength="150" required value="<?= $valoresFormulario['nombre_completo'] ?>">
+                    <input class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'nombre_completo') ?>" id="nombre_completo" name="nombre_completo" type="text" maxlength="150" required value="<?= $valoresFormulario['nombre_completo'] ?>"<?= trab_form_error_attrs($trabajadorFieldErrors, 'nombre_completo', 'ms-form-error-trab_nombre_completo') ?>>
+                    <?php if (trab_form_error($trabajadorFieldErrors, 'nombre_completo') !== ''): ?>
+                        <span id="ms-form-error-trab_nombre_completo" class="wk-form-error ms-form-field-error"><?= trab_form_error($trabajadorFieldErrors, 'nombre_completo') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div>
                     <label for="usuario_id">Usuario del sistema</label>
-                    <select class="wk-input" id="usuario_id" name="usuario_id">
+                    <select class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'usuario_id') ?>" id="usuario_id" name="usuario_id"<?= trab_form_error_attrs($trabajadorFieldErrors, 'usuario_id', 'ms-form-error-trab_usuario_id') ?>>
                         <option value="">Sin usuario del sistema</option>
                         <?php foreach ($usuariosVinculables as $usuario): ?>
                             <?php $usuarioId = (int)($usuario['id'] ?? 0); ?>
@@ -117,52 +162,79 @@ $valoresFormulario = [
                         <?php endforeach; ?>
                     </select>
                     <p class="wk-hint">Opcional. S&oacute;lo si esta persona tambi&eacute;n entra al sistema.</p>
+                    <?php if (trab_form_error($trabajadorFieldErrors, 'usuario_id') !== ''): ?>
+                        <span id="ms-form-error-trab_usuario_id" class="wk-form-error ms-form-field-error"><?= trab_form_error($trabajadorFieldErrors, 'usuario_id') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div>
                     <label for="identificacion">Identificaci&oacute;n</label>
-                    <input class="wk-input" id="identificacion" name="identificacion" type="text" maxlength="60" placeholder="N&uacute;mero de empleado, INE, etc." value="<?= $valoresFormulario['identificacion'] ?>">
+                    <input class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'identificacion') ?>" id="identificacion" name="identificacion" type="text" maxlength="60" placeholder="N&uacute;mero de empleado, INE, etc." value="<?= $valoresFormulario['identificacion'] ?>"<?= trab_form_error_attrs($trabajadorFieldErrors, 'identificacion', 'ms-form-error-trab_identificacion') ?>>
+                    <?php if (trab_form_error($trabajadorFieldErrors, 'identificacion') !== ''): ?>
+                        <span id="ms-form-error-trab_identificacion" class="wk-form-error ms-form-field-error"><?= trab_form_error($trabajadorFieldErrors, 'identificacion') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div>
                     <label for="rol_laboral">Rol o puesto</label>
-                    <input class="wk-input" id="rol_laboral" name="rol_laboral" type="text" maxlength="80" placeholder="Ej. Recepci&oacute;n, Limpieza" value="<?= $valoresFormulario['rol_laboral'] ?>">
+                    <input class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'rol_laboral') ?>" id="rol_laboral" name="rol_laboral" type="text" maxlength="80" placeholder="Ej. Recepci&oacute;n, Limpieza" value="<?= $valoresFormulario['rol_laboral'] ?>"<?= trab_form_error_attrs($trabajadorFieldErrors, 'rol_laboral', 'ms-form-error-trab_rol_laboral') ?>>
+                    <?php if (trab_form_error($trabajadorFieldErrors, 'rol_laboral') !== ''): ?>
+                        <span id="ms-form-error-trab_rol_laboral" class="wk-form-error ms-form-field-error"><?= trab_form_error($trabajadorFieldErrors, 'rol_laboral') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div>
                     <label for="telefono">Tel&eacute;fono</label>
-                    <input class="wk-input" id="telefono" name="telefono" type="text" maxlength="30" value="<?= $valoresFormulario['telefono'] ?>">
+                    <input class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'telefono') ?>" id="telefono" name="telefono" type="text" maxlength="30" value="<?= $valoresFormulario['telefono'] ?>"<?= trab_form_error_attrs($trabajadorFieldErrors, 'telefono', 'ms-form-error-trab_telefono') ?>>
+                    <?php if (trab_form_error($trabajadorFieldErrors, 'telefono') !== ''): ?>
+                        <span id="ms-form-error-trab_telefono" class="wk-form-error ms-form-field-error"><?= trab_form_error($trabajadorFieldErrors, 'telefono') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div>
                     <label for="email">Correo</label>
-                    <input class="wk-input" id="email" name="email" type="email" maxlength="120" placeholder="correo@ejemplo.com" value="<?= $valoresFormulario['email'] ?>">
+                    <input class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'email') ?>" id="email" name="email" type="email" maxlength="120" placeholder="correo@ejemplo.com" value="<?= $valoresFormulario['email'] ?>"<?= trab_form_error_attrs($trabajadorFieldErrors, 'email', 'ms-form-error-trab_email') ?>>
+                    <?php if (trab_form_error($trabajadorFieldErrors, 'email') !== ''): ?>
+                        <span id="ms-form-error-trab_email" class="wk-form-error ms-form-field-error"><?= trab_form_error($trabajadorFieldErrors, 'email') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div>
                     <label for="fecha_alta">Fecha de alta</label>
-                    <input class="wk-input" id="fecha_alta" name="fecha_alta" type="date" value="<?= $valoresFormulario['fecha_alta'] ?>">
+                    <input class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'fecha_alta') ?>" id="fecha_alta" name="fecha_alta" type="date" value="<?= $valoresFormulario['fecha_alta'] ?>"<?= trab_form_error_attrs($trabajadorFieldErrors, 'fecha_alta', 'ms-form-error-trab_fecha_alta') ?>>
+                    <?php if (trab_form_error($trabajadorFieldErrors, 'fecha_alta') !== ''): ?>
+                        <span id="ms-form-error-trab_fecha_alta" class="wk-form-error ms-form-field-error"><?= trab_form_error($trabajadorFieldErrors, 'fecha_alta') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div>
                     <label for="periodicidad_pago">Cada cu&aacute;ndo se le paga</label>
-                    <select class="wk-input" id="periodicidad_pago" name="periodicidad_pago">
+                    <select class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'periodicidad_pago') ?>" id="periodicidad_pago" name="periodicidad_pago"<?= trab_form_error_attrs($trabajadorFieldErrors, 'periodicidad_pago', 'ms-form-error-trab_periodicidad_pago') ?>>
                         <option value="">Sin definir</option>
                         <option value="semanal" <?= $periodicidad === 'semanal' ? 'selected' : '' ?>>Semanal</option>
                         <option value="quincenal" <?= $periodicidad === 'quincenal' ? 'selected' : '' ?>>Quincenal</option>
                         <option value="mensual" <?= $periodicidad === 'mensual' ? 'selected' : '' ?>>Mensual</option>
                         <option value="por_evento" <?= $periodicidad === 'por_evento' ? 'selected' : '' ?>>Por evento</option>
                     </select>
+                    <?php if (trab_form_error($trabajadorFieldErrors, 'periodicidad_pago') !== ''): ?>
+                        <span id="ms-form-error-trab_periodicidad_pago" class="wk-form-error ms-form-field-error"><?= trab_form_error($trabajadorFieldErrors, 'periodicidad_pago') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div>
                     <label for="salario_base">Salario base de referencia</label>
-                    <input class="wk-input" id="salario_base" name="salario_base" type="number" min="0" step="0.01" placeholder="0.00" value="<?= $valoresFormulario['salario_base'] ?>">
+                    <input class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'salario_base') ?>" id="salario_base" name="salario_base" type="number" min="0" step="0.01" placeholder="0.00" value="<?= $valoresFormulario['salario_base'] ?>"<?= trab_form_error_attrs($trabajadorFieldErrors, 'salario_base', 'ms-form-error-trab_salario_base') ?>>
+                    <?php if (trab_form_error($trabajadorFieldErrors, 'salario_base') !== ''): ?>
+                        <span id="ms-form-error-trab_salario_base" class="wk-form-error ms-form-field-error"><?= trab_form_error($trabajadorFieldErrors, 'salario_base') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div class="md:col-span-2">
                     <label for="notas">Notas internas</label>
-                    <textarea class="wk-textarea" id="notas" name="notas" maxlength="1000" placeholder="Lo que quieras recordar de esta persona"><?= $valoresFormulario['notas'] ?></textarea>
+                    <textarea class="wk-textarea<?= trab_form_error_class($trabajadorFieldErrors, 'notas') ?>" id="notas" name="notas" maxlength="1000" placeholder="Lo que quieras recordar de esta persona"<?= trab_form_error_attrs($trabajadorFieldErrors, 'notas', 'ms-form-error-trab_notas') ?>><?= $valoresFormulario['notas'] ?></textarea>
+                    <?php if (trab_form_error($trabajadorFieldErrors, 'notas') !== ''): ?>
+                        <span id="ms-form-error-trab_notas" class="wk-form-error ms-form-field-error"><?= trab_form_error($trabajadorFieldErrors, 'notas') ?></span>
+                    <?php endif; ?>
                 </div>
             </div>
 

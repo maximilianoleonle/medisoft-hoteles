@@ -360,13 +360,20 @@ class ReservacionController extends Controller {
                 $stmtV = $this->db->prepare("
                     SELECT v.marca, v.modelo, v.placas, v.color, v.estacionamiento
                     FROM huesped_vehiculos v
-                    INNER JOIN huespedes h ON v.huesped_id = h.id
+                    INNER JOIN huespedes h
+                        ON v.huesped_id = h.id
+                       AND h.hotel_id = v.hotel_id
                     WHERE v.huesped_id = :hid
+                      AND v.hotel_id = :vehiculo_hotel_id
                       AND h.hotel_id = :hotel_id
                       AND v.activo = 1
                     ORDER BY v.id ASC
                 ");
-                $stmtV->execute([':hid' => $reservacion['huesped_id'], ':hotel_id' => $hotel_id]);
+                $stmtV->execute([
+                    ':hid' => $reservacion['huesped_id'],
+                    ':vehiculo_hotel_id' => $hotel_id,
+                    ':hotel_id' => $hotel_id,
+                ]);
                 $vehiculos = $stmtV->fetchAll(PDO::FETCH_ASSOC);
             } catch (Exception $e) {
                 error_log('Error obteniendo vehículos: ' . $e->getMessage());
@@ -737,7 +744,7 @@ class ReservacionController extends Controller {
                     $pdf->SetTextColor($olivo[0], $olivo[1], $olivo[2]);
                     $pdf->Cell($colTotal, 7, '$' . number_format($precioTotalHab, 0, '.', ','), 0, 1, 'C', true);
                 }
- 
+
                 $row++;
             }
  
@@ -845,11 +852,11 @@ class ReservacionController extends Controller {
             $pdf->SetDrawColor($gold[0], $gold[1], $gold[2]);
             $pdf->Line($margin, $pdf->GetY(), $margin + 50, $pdf->GetY());
             $pdf->Ln(3);
- 
+
             $fechaEntradaTexto = $formatFecha($reservacion['fecha_entrada']);
             $terminos = $this->cotizacionPdfTerminos($cotizacionConfig, $fechaEntradaTexto, $brand['hotel']);
             $this->cotizacionPdfRenderTerminos($pdf, $terminos, $u, $margin, $contentW, $cream, $creamMid, $olivo, $negro);
- 
+
             // ═══════════════════════════════════════════════════════
             // FOOTER
             // ═══════════════════════════════════════════════════════
@@ -864,7 +871,7 @@ class ReservacionController extends Controller {
             $pdf->SetX($margin);
             $pdf->Cell($contentW / 2, 4, $u($brand['hotel']), 0, 0, 'L');
             $pdf->Cell($contentW / 2, 4, $u('Documento generado el ' . $hoy), 0, 1, 'R');
- 
+
             // Output
             $nombreArchivo = function_exists('hotel_export_filename')
                 ? hotel_export_filename('Cotizacion_Res' . $reservacion_id, 'pdf')
@@ -1313,8 +1320,17 @@ public function obtenerNotasAction() {
             $huespedes_ids = array_unique(array_column($reservaciones, 'huesped_id'));
             if (!empty($huespedes_ids)) {
                 $placeholders = str_repeat('?,', count($huespedes_ids) - 1) . '?';
-                $stmt = $this->db->prepare("SELECT huesped_id, marca, modelo, placas, color FROM huesped_vehiculos WHERE huesped_id IN ($placeholders)");
-                $stmt->execute(array_values($huespedes_ids));
+                $stmt = $this->db->prepare("
+                    SELECT v.huesped_id, v.marca, v.modelo, v.placas, v.color
+                    FROM huesped_vehiculos v
+                    INNER JOIN huespedes h
+                        ON h.id = v.huesped_id
+                       AND h.hotel_id = v.hotel_id
+                    WHERE v.huesped_id IN ($placeholders)
+                      AND v.hotel_id = ?
+                      AND v.activo = 1
+                ");
+                $stmt->execute(array_merge(array_values($huespedes_ids), [$hotel_id]));
                 while ($v = $stmt->fetch(PDO::FETCH_ASSOC)) {
                     $vehiculos_por_huesped[$v['huesped_id']] = $v;
                 }
@@ -1460,8 +1476,17 @@ public function obtenerNotasAction() {
                 $huespedes_ids = array_unique(array_column($reservaciones, 'huesped_id'));
                 if (!empty($huespedes_ids)) {
                     $placeholders = str_repeat('?,', count($huespedes_ids) - 1) . '?';
-                    $stmt = $this->db->prepare("SELECT huesped_id, marca, modelo, placas, color FROM huesped_vehiculos WHERE huesped_id IN ($placeholders)");
-                    $stmt->execute(array_values($huespedes_ids));
+                    $stmt = $this->db->prepare("
+                        SELECT v.huesped_id, v.marca, v.modelo, v.placas, v.color
+                        FROM huesped_vehiculos v
+                        INNER JOIN huespedes h
+                            ON h.id = v.huesped_id
+                           AND h.hotel_id = v.hotel_id
+                        WHERE v.huesped_id IN ($placeholders)
+                          AND v.hotel_id = ?
+                          AND v.activo = 1
+                    ");
+                    $stmt->execute(array_merge(array_values($huespedes_ids), [$hotel_id]));
                     while ($v = $stmt->fetch(PDO::FETCH_ASSOC)) {
                         $vehiculos_por_huesped[$v['huesped_id']] = $v;
                     }
@@ -2317,6 +2342,90 @@ private function generarHTMLReservacionesPersonalizado(
     /**
      * Listado de reservaciones
      */
+private function obtenerProximasReservacionesIndex($buscar = null, $desde = null, $limite = 24) {
+    $desde = (is_string($desde) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $desde)) ? $desde : date('Y-m-d');
+    $limite = max(1, min(60, (int) $limite));
+    $hotel_id = $this->hotelIdActual();
+
+    $where = [
+        "r0.hotel_id = ?",
+        "r0.estado = 'confirmada'",
+        "DATE(r0.fecha_entrada) > ?"
+    ];
+    $params = [$hotel_id, $desde];
+
+    $buscar = trim((string) ($buscar ?? ''));
+    if ($buscar !== '') {
+        $where[] = "(h0.nombre_completo LIKE ? OR h0.telefono LIKE ? OR hab0.numero LIKE ? OR r0.id = ?)";
+        $termino = '%' . $buscar . '%';
+        $params[] = $termino;
+        $params[] = $termino;
+        $params[] = $termino;
+        $params[] = (int) $buscar;
+    }
+
+    $whereSql = implode(' AND ', $where);
+    $sql = "
+        SELECT 
+            r.id,
+            r.huesped_id,
+            r.fecha_entrada,
+            r.fecha_salida,
+            r.hora_llegada_estimada,
+            r.hora_entrada,
+            r.hora_salida,
+            r.precio_total,
+            r.metodo_pago,
+            r.estado,
+            r.notas,
+            r.usuario_registro_id,
+            r.created_at,
+            h.nombre_completo as huesped_nombre,
+            h.telefono as huesped_telefono,
+            hab.id as habitacion_id,
+            hab.numero as habitacion_numero,
+            hab.tipo as habitacion_tipo,
+            hab.piso as habitacion_piso,
+            u.nombre_completo as usuario_registro,
+            (
+                SELECT COUNT(*)
+                FROM reservacion_habitaciones rh_count
+                WHERE rh_count.reservacion_id = r.id
+                  AND rh_count.hotel_id = r.hotel_id
+            ) as total_habitaciones_reserva,
+            (
+                SELECT GROUP_CONCAT(hab2.numero ORDER BY CAST(hab2.numero AS UNSIGNED), hab2.numero SEPARATOR ', ')
+                FROM reservacion_habitaciones rh2
+                INNER JOIN habitaciones hab2 ON rh2.habitacion_id = hab2.id AND hab2.hotel_id = rh2.hotel_id
+                WHERE rh2.reservacion_id = r.id
+                  AND rh2.hotel_id = r.hotel_id
+            ) as todas_habitaciones
+        FROM reservaciones r
+        INNER JOIN (
+            SELECT r0.id
+            FROM reservaciones r0
+            INNER JOIN huespedes h0 ON r0.huesped_id = h0.id AND h0.hotel_id = r0.hotel_id
+            LEFT JOIN reservacion_habitaciones rh0 ON r0.id = rh0.reservacion_id AND rh0.hotel_id = r0.hotel_id
+            LEFT JOIN habitaciones hab0 ON rh0.habitacion_id = hab0.id AND hab0.hotel_id = r0.hotel_id
+            WHERE {$whereSql}
+            GROUP BY r0.id
+            ORDER BY r0.fecha_entrada ASC, COALESCE(r0.hora_llegada_estimada, '23:59:59') ASC, r0.id ASC
+            LIMIT {$limite}
+        ) proximas ON proximas.id = r.id
+        INNER JOIN huespedes h ON r.huesped_id = h.id AND h.hotel_id = r.hotel_id
+        INNER JOIN reservacion_habitaciones rh ON r.id = rh.reservacion_id AND rh.hotel_id = r.hotel_id
+        INNER JOIN habitaciones hab ON rh.habitacion_id = hab.id AND hab.hotel_id = rh.hotel_id
+        LEFT JOIN usuarios u ON r.usuario_registro_id = u.id
+        WHERE r.hotel_id = ?
+        ORDER BY r.fecha_entrada ASC, COALESCE(r.hora_llegada_estimada, '23:59:59') ASC, r.id ASC, CAST(hab.numero AS UNSIGNED), hab.numero
+    ";
+
+    $params[] = $hotel_id;
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 public function indexAction() {
     $buscar = $this->getQuery('buscar');
     $fecha = $this->getQuery('fecha', date('Y-m-d'));
@@ -2333,6 +2442,7 @@ public function indexAction() {
     // DEBUG: descomenta para ver cuántos resultados
     // error_log("Resultados: " . count($reservaciones) . " habitaciones para fecha " . $fecha);
     
+    $proximas_reservaciones = $this->obtenerProximasReservacionesIndex($buscar, $fecha, 60);
     $estadisticas = $this->reservacionModel->obtenerEstadisticasDashboard();
     $entradas_hoy = $this->reservacionModel->obtenerEntradasHoy();
     $salidas_hoy = $this->reservacionModel->obtenerSalidasHoy();
@@ -2340,6 +2450,7 @@ public function indexAction() {
     View::renderTemplate('reservaciones/index', [
         'title' => 'Reservaciones - ' . current_hotel_display_name(),
         'reservaciones' => $reservaciones,
+        'proximas_reservaciones' => $proximas_reservaciones,
         'buscar' => $buscar,
         'fecha_filtro' => $fecha,
         'estados' => Reservacion::getEstados(),
@@ -2704,7 +2815,7 @@ try {
     $documentosEntidad = [];
     $documentosHuesped = [];
 }
-        
+
         View::renderTemplate('reservaciones/ver', [
     'title' => 'Reservación #' . $id . ' - ' . current_hotel_display_name(),
     'reservacion' => $reservacion,
@@ -3059,6 +3170,31 @@ public function recibirRemotoAction() {
     
     $this->redirect('reservaciones/ver/' . $reservacion_id);
 }
+
+private function erroresCamposReservacionCrear(string $mensaje): array {
+    $mensaje = trim($mensaje);
+    if ($mensaje === '') {
+        return [];
+    }
+
+    $lower = strtolower($mensaje);
+    $campo = 'fecha_entrada';
+
+    if (strpos($lower, 'hu') !== false || strpos($lower, 'huesped') !== false) {
+        $campo = 'huesped_id';
+    } elseif (strpos($lower, 'habitaci') !== false || strpos($lower, 'dispon') !== false) {
+        $campo = 'habitaciones';
+    } elseif (strpos($lower, 'salida') !== false) {
+        $campo = 'fecha_salida';
+    } elseif (strpos($lower, 'entrada') !== false || strpos($lower, 'fecha') !== false) {
+        $campo = 'fecha_entrada';
+    } elseif (strpos($lower, 'hora') !== false || strpos($lower, 'llegada') !== false) {
+        $campo = 'hora_llegada';
+    }
+
+    return [$campo => [$mensaje]];
+}
+
     /**
      * Proceso de check-in usando el método del modelo
      */
@@ -3534,6 +3670,9 @@ private function validarCancelacion($reservacion) {
     $es_preseleccion = $this->getQuery('preseleccion');
     
     $huesped_id = $this->getQuery('huesped_id');
+    if (!$huesped_id && !empty($_SESSION['old_input']['huesped_id'])) {
+        $huesped_id = $_SESSION['old_input']['huesped_id'];
+    }
     $huesped_preseleccionado = null;
     
     if ($huesped_id) {
@@ -3692,6 +3831,7 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
         error_log('Stack trace: ' . $e->getTraceAsString());
         error_log("=== FIN DEBUG ===");
         save_old_input($_POST);
+        save_form_errors($this->erroresCamposReservacionCrear($e->getMessage()));
         set_mensaje('Error: ' . $e->getMessage(), 'error');
         $this->redirect('reservaciones/crear');
     }

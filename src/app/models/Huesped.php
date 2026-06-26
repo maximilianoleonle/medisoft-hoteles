@@ -94,7 +94,10 @@ class Huesped extends Model {
 
         $sql = "SELECT DISTINCT h.*
                 FROM {$this->table} h
-                LEFT JOIN huesped_vehiculos v ON h.id = v.huesped_id AND v.activo = 1
+                LEFT JOIN huesped_vehiculos v
+                    ON h.id = v.huesped_id
+                   AND v.hotel_id = h.hotel_id
+                   AND v.activo = 1
                 WHERE h.hotel_id = ?
                   AND (
                     h.nombre_completo LIKE ?
@@ -210,9 +213,11 @@ class Huesped extends Model {
 
         $sql = "SELECT COUNT(*) as total
                 FROM huesped_vehiculos v
-                INNER JOIN huespedes h ON v.huesped_id = h.id
+                INNER JOIN huespedes h
+                    ON v.huesped_id = h.id
+                   AND h.hotel_id = v.hotel_id
                 WHERE v.huesped_id = ?
-                  AND h.hotel_id = ?
+                  AND v.hotel_id = ?
                   AND v.activo = 1";
         $stmt = $this->db->query($sql, [(int)$huesped_id, $hotelId]);
         $result = $stmt ? $stmt->fetch() : null;
@@ -264,6 +269,7 @@ class Huesped extends Model {
                         SELECT 1
                         FROM huesped_vehiculos v
                         WHERE v.huesped_id = {$this->table}.id
+                          AND v.hotel_id = {$this->table}.hotel_id
                           AND v.activo = 1
                     )
                 ) THEN 1 END) as con_vehiculo,
@@ -417,6 +423,7 @@ class Huesped extends Model {
              FROM huesped_vehiculos v
              INNER JOIN {$this->table} h
                 ON h.id = v.huesped_id
+               AND h.hotel_id = v.hotel_id
              WHERE v.huesped_id = ?
                AND h.hotel_id = ?
                AND v.activo = 1",
@@ -642,39 +649,50 @@ class Huesped extends Model {
  */
 public function getVehiculos($huesped_id) {
     $vehiculoModel = new HuespedVehiculo();
-    return $vehiculoModel->porHuesped($huesped_id);
+    return $vehiculoModel->porHuespedHotel($huesped_id, $this->hotelIdActual());
 }
 
 /**
  * Contar vehículos activos del huésped
  */
 public function contarVehiculos($huesped_id) {
-    $sql = "SELECT COUNT(*) as total FROM huesped_vehiculos 
-            WHERE huesped_id = ? AND activo = 1";
-    $stmt = $this->db->query($sql, [$huesped_id]);
-    $result = $stmt->fetch();
-    return $result['total'] ?? 0;
+    return $this->contarVehiculosPorHotel($huesped_id, $this->hotelIdActual());
 }
 
 /**
  * Obtener huéspedes con sus vehículos
  */
-public function buscarConVehiculos($termino = null) {
-    $sql = "SELECT h.*, 
+public function buscarConVehiculos($termino = null, $hotelId = null) {
+    $hotelId = $this->hotelIdActual($hotelId);
+
+    $sql = "SELECT h.*,
             COUNT(DISTINCT v.id) as total_vehiculos,
             GROUP_CONCAT(DISTINCT CONCAT(v.marca, ' - ', v.placas) SEPARATOR ', ') as vehiculos_info
             FROM {$this->table} h
-            LEFT JOIN huesped_vehiculos v ON h.id = v.huesped_id AND v.activo = 1";
-    
+            LEFT JOIN huesped_vehiculos v
+                ON h.id = v.huesped_id
+               AND v.hotel_id = h.hotel_id
+               AND v.activo = 1";
+
     $params = [];
-    
+    $where = [];
+
+    if ($hotelId > 0) {
+        $where[] = "h.hotel_id = ?";
+        $params[] = $hotelId;
+    }
+
     if ($termino) {
-        $sql .= " WHERE h.nombre_completo LIKE ? 
+        $where[] = "(h.nombre_completo LIKE ?
                   OR h.telefono LIKE ?
                   OR h.email LIKE ?
-                  OR v.placas LIKE ?";
+                  OR v.placas LIKE ?)";
         $termino_like = '%' . $termino . '%';
-        $params = [$termino_like, $termino_like, $termino_like, $termino_like];
+        $params = array_merge($params, [$termino_like, $termino_like, $termino_like, $termino_like]);
+    }
+
+    if (!empty($where)) {
+        $sql .= " WHERE " . implode(' AND ', $where);
     }
     
     $sql .= " GROUP BY h.id ORDER BY h.nombre_completo";

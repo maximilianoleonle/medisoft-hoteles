@@ -13,11 +13,24 @@ class HuespedController extends Controller {
         $this->huespedModel = new Huesped();
     }
 
+    private function estacionamientosCompatiblesVehiculo(): array {
+        return function_exists('hotel_general_catalog_parking_code_set')
+            ? hotel_general_catalog_parking_code_set()
+            : [
+                'coches' => true,
+                'camionetas' => true,
+                'discos' => true,
+                'nikkos' => true,
+            ];
+    }
+
     private function estacionamientoDefaultVehiculo() {
+        $compatibles = $this->estacionamientosCompatiblesVehiculo();
+
         if (function_exists('hotel_general_catalog_parking_rows')) {
             foreach (hotel_general_catalog_parking_rows(null, false) as $parkingRow) {
                 $parkingCode = trim((string)($parkingRow['codigo'] ?? ''));
-                if ($parkingCode !== '') {
+                if ($parkingCode !== '' && isset($compatibles[$parkingCode])) {
                     return $parkingCode;
                 }
             }
@@ -28,7 +41,11 @@ class HuespedController extends Controller {
 
     private function normalizarEstacionamientoVehiculo($value) {
         $estacionamiento = trim((string)($value ?? ''));
-        return $estacionamiento !== '' ? $estacionamiento : $this->estacionamientoDefaultVehiculo();
+        $compatibles = $this->estacionamientosCompatiblesVehiculo();
+
+        return $estacionamiento !== '' && isset($compatibles[$estacionamiento])
+            ? $estacionamiento
+            : $this->estacionamientoDefaultVehiculo();
     }
 
     private function estacionamientoVehiculoDesdePost($key) {
@@ -478,6 +495,10 @@ class HuespedController extends Controller {
     }
 
     private function vehiculoTieneDatos(array $vehiculo, array $policy) {
+        // El estacionamiento tiene valor por defecto; por si solo no significa
+        // que el usuario quiera registrar un vehiculo.
+        $vehiculo['estacionamiento'] = '';
+
         if (function_exists('hotel_guest_has_vehicle_payload')) {
             return hotel_guest_has_vehicle_payload($vehiculo, $policy);
         }
@@ -489,6 +510,39 @@ class HuespedController extends Controller {
         }
 
         return false;
+    }
+
+    private function generarPlacasInternasVehiculo(int $hotelId): string {
+        $vehiculoModel = new HuespedVehiculo();
+
+        for ($i = 0; $i < 6; $i++) {
+            try {
+                $token = 'SINPLACA' . strtoupper(bin2hex(random_bytes(6)));
+            } catch (Throwable $e) {
+                $token = 'SINPLACA' . strtoupper(substr(sha1(uniqid('', true) . $i), 0, 12));
+            }
+
+            if (!$vehiculoModel->existenPlacasPorHotel($token, $hotelId)) {
+                return $token;
+            }
+        }
+
+        return 'SINPLACA' . strtoupper(substr(sha1(uniqid('', true)), 0, 12));
+    }
+
+    private function placasVehiculoParaGuardar(string $placas, array $policy, int $hotelId, ?string $placasActuales = null): string {
+        $placas = strtoupper(trim($placas));
+
+        if ($placas !== '') {
+            return $placas;
+        }
+
+        $placasActuales = strtoupper(trim((string)$placasActuales));
+        if ($placasActuales !== '') {
+            return $placasActuales;
+        }
+
+        return $this->generarPlacasInternasVehiculo($hotelId);
     }
 
     /**
@@ -508,16 +562,12 @@ class HuespedController extends Controller {
     public function indexAction() {
     // Obtener parámetros de búsqueda y filtros
     $buscar = $this->getQuery('buscar');
-    $estado = $this->getQuery('estado');
     $pagina = intval($this->getQuery('page', 1));
     $por_pagina = 20;
     $hotelId = $this->hotelIdActual();
     
     // Construir condiciones
     $conditions = [];
-    if ($estado) {
-        $conditions['procedencia_estado'] = $estado;
-    }
     
     // Obtener huéspedes
     if ($buscar) {
@@ -547,8 +597,6 @@ class HuespedController extends Controller {
         'title' => 'Huéspedes - ' . current_hotel_display_name(),
         'huespedes' => $huespedes,
         'buscar' => $buscar,
-        'estado_filtro' => $estado,
-        'estados' => Huesped::getEstados(),
         'pagina_actual' => $pagina,
         'total_paginas' => $total_paginas,
         'total_huespedes' => $estadisticas['total_huespedes'] ?? 0,
@@ -660,12 +708,14 @@ public function actualizarVehiculoAction() {
     $extrasVehiculo = $this->extrasVehiculoDesdePayload([
         'extras' => $this->getPost('extras', [])
     ], $fieldPolicy, $extrasActuales);
+    $placasCapturadas = strtoupper(trim($this->getPost('placas')));
 
     // Recopilar datos
     $vehiculoData = [
+        'hotel_id' => $hotelId,
         'marca' => trim($this->getPost('marca')),
         'modelo' => trim($this->getPost('modelo')),
-        'placas' => strtoupper(trim($this->getPost('placas'))),
+        'placas' => $placasCapturadas,
         'color' => trim($this->getPost('color')),
         'estacionamiento' => $this->estacionamientoVehiculoDesdePost('estacionamiento'),
         'datos_extra_json' => $this->extrasJson($extrasVehiculo)
@@ -678,6 +728,13 @@ public function actualizarVehiculoAction() {
         return;
     }
     
+    $vehiculoData['placas'] = $this->placasVehiculoParaGuardar(
+        $placasCapturadas,
+        $fieldPolicy,
+        $hotelId,
+        $vehiculoActual['placas'] ?? null
+    );
+
     // Si cambió las placas, verificar que no existan
     if (!empty($vehiculoData['placas']) && $vehiculoData['placas'] !== $vehiculoActual['placas']) {
         if ($vehiculoModel->existenPlacasPorHotel($vehiculoData['placas'], $hotelId, $vehiculo_id)) {
@@ -754,6 +811,8 @@ public function actualizarAction() {
     
     if (!empty($errores)) {
         set_mensaje(implode('<br>', $errores), 'error');
+        save_old_input($_POST);
+        save_form_errors($this->erroresCamposHuesped($errores));
         $this->redirect('huespedes/' . $id . '/edit');
     }
     
@@ -772,11 +831,14 @@ public function actualizarAction() {
             $mensaje .= '. Identificacion vinculada al expediente.';
         }
 
+        clear_old_input();
         set_mensaje($mensaje, 'success');
         $this->redirect('huespedes/' . $id);
     } catch (Throwable $e) {
         $db->safeRollBack();
         error_log('No se pudo guardar cambios del huesped #' . (int)$id . ': ' . $e->getMessage());
+        save_old_input($_POST);
+        save_form_errors($this->erroresCamposHuesped([$e->getMessage()]));
         set_mensaje('Error al actualizar el huésped', 'error');
         $this->redirect('huespedes/' . $id . '/edit');
     }
@@ -886,11 +948,13 @@ if (!empty($perfilOperativo['reservaciones']) && is_array($perfilOperativo['rese
     $extrasVehiculo = $this->extrasVehiculoDesdePayload([
         'extras' => $this->getPost('extras', [])
     ], $fieldPolicy);
+    $placasCapturadas = strtoupper(trim($this->getPost('placas')));
     $vehiculoData = [
+        'hotel_id' => $hotelId,
         'huesped_id' => $huesped_id,
         'marca' => trim($this->getPost('marca')),
         'modelo' => trim($this->getPost('modelo')),
-        'placas' => strtoupper(trim($this->getPost('placas'))),
+        'placas' => $placasCapturadas,
         'color' => trim($this->getPost('color')),
         'estacionamiento' => $this->estacionamientoVehiculoDesdePost('estacionamiento'),
         'datos_extra_json' => $this->extrasJson($extrasVehiculo)
@@ -914,6 +978,8 @@ if (!empty($perfilOperativo['reservaciones']) && is_array($perfilOperativo['rese
         json_response(['success' => false, 'message' => 'Las placas ya están registradas']);
     }
     
+    $vehiculoData['placas'] = $this->placasVehiculoParaGuardar($placasCapturadas, $fieldPolicy, $hotelId);
+
     $result = $vehiculoModel->create($vehiculoData);
     
     if ($result) {
@@ -1143,6 +1209,7 @@ public function eliminarVehiculoAction() {
         $pdo = Database::getInstance()->getConnection();
         $now = date('Y-m-d H:i:s');
         $payload = [
+            'hotel_id' => (int)($data['hotel_id'] ?? 0),
             'huesped_id' => (int)($data['huesped_id'] ?? 0),
             'marca' => (string)($data['marca'] ?? ''),
             'modelo' => (string)($data['modelo'] ?? ''),
@@ -1179,22 +1246,32 @@ public function eliminarVehiculoAction() {
                 continue;
             }
 
-            $lower = strtolower($mensaje);
+            $mensajeAscii = function_exists('iconv')
+                ? iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $mensaje)
+                : false;
+            $normalizado = strtolower(is_string($mensajeAscii) && $mensajeAscii !== '' ? $mensajeAscii : $mensaje);
             $campo = null;
+            $indiceVehiculo = null;
 
-            if (strpos($lower, 'nombre') !== false) {
+            if (preg_match('/veh.?culo\s+(\d+)/', $normalizado, $match)) {
+                $indiceVehiculo = max(0, (int)$match[1] - 1);
+            }
+
+            if ($indiceVehiculo !== null && preg_match('/(^|[^a-z])placas?([^a-z]|$)/', $normalizado)) {
+                $campo = 'vehiculos[' . $indiceVehiculo . '][placas]';
+            } elseif (strpos($normalizado, 'nombre') !== false) {
                 $campo = 'nombre_completo';
-            } elseif (strpos($lower, 'telefono') !== false || strpos($lower, 'tel') !== false) {
+            } elseif (preg_match('/(^|[^a-z])(telefono|celular|phone|tel)([^a-z]|$)/', $normalizado)) {
                 $campo = 'telefono';
-            } elseif (strpos($lower, 'email') !== false || strpos($lower, 'correo') !== false) {
+            } elseif (strpos($normalizado, 'email') !== false || strpos($normalizado, 'correo') !== false) {
                 $campo = 'email';
-            } elseif (strpos($lower, 'estado') !== false) {
+            } elseif (strpos($normalizado, 'estado') !== false) {
                 $campo = 'procedencia_estado';
-            } elseif (strpos($lower, 'ciudad') !== false) {
+            } elseif (strpos($normalizado, 'ciudad') !== false) {
                 $campo = 'procedencia_ciudad';
-            } elseif (strpos($lower, 'nota') !== false) {
+            } elseif (strpos($normalizado, 'nota') !== false) {
                 $campo = 'notas';
-            } elseif (strpos($lower, 'identificacion') !== false || strpos($lower, 'archivo') !== false) {
+            } elseif (strpos($normalizado, 'identificacion') !== false || strpos($normalizado, 'archivo') !== false) {
                 $campo = 'identificacion_archivo';
             }
 
@@ -1262,11 +1339,11 @@ public function guardarAction() {
                 continue;
             }
 
-            $placas = isset($vehiculo['placas']) ? strtoupper(trim($vehiculo['placas'])) : '';
+            $placasCapturadas = isset($vehiculo['placas']) ? strtoupper(trim($vehiculo['placas'])) : '';
             $vehiculoData = [
                 'marca' => isset($vehiculo['marca']) ? trim($vehiculo['marca']) : '',
                 'modelo' => isset($vehiculo['modelo']) ? trim($vehiculo['modelo']) : '',
-                'placas' => $placas,
+                'placas' => $placasCapturadas,
                 'color' => isset($vehiculo['color']) ? trim($vehiculo['color']) : '',
                 'estacionamiento' => $this->normalizarEstacionamientoVehiculo($vehiculo['estacionamiento'] ?? ''),
             ];
@@ -1278,9 +1355,9 @@ public function guardarAction() {
                 continue;
             }
 
-            if (!empty($placas) && $vehiculoModel->existenPlacasPorHotel($placas, $hotelId)) {
-                $errores[] = "Las placas {$placas} ya estan registradas";
-                $fieldErrors['vehiculos[' . $index . '][placas]'][] = "Las placas {$placas} ya estan registradas";
+            if (!empty($placasCapturadas) && $vehiculoModel->existenPlacasPorHotel($placasCapturadas, $hotelId)) {
+                $errores[] = "Las placas {$placasCapturadas} ya estan registradas";
+                $fieldErrors['vehiculos[' . $index . '][placas]'][] = "Las placas {$placasCapturadas} ya estan registradas";
                 continue;
             }
 
@@ -1288,6 +1365,8 @@ public function guardarAction() {
                 $errores,
                 $this->erroresCamposRegistro($vehiculoData, $extrasVehiculo, 'vehicle', $fieldPolicy, 'Vehiculo ' . ((int)$index + 1))
             );
+
+            $vehiculoData['placas'] = $this->placasVehiculoParaGuardar($placasCapturadas, $fieldPolicy, $hotelId);
 
             $vehiculosValidos[] = array_merge($vehiculoData, [
                 'datos_extra_json' => $this->extrasJson($extrasVehiculo),
@@ -1317,6 +1396,7 @@ public function guardarAction() {
         // Guardar vehículos
         foreach ($vehiculosValidos as $index => $vehiculo) {
             $vehiculoData = [
+                'hotel_id' => $hotelId,
                 'huesped_id' => $huesped_id,
                 'marca' => $vehiculo['marca'],
                 'modelo' => $vehiculo['modelo'],

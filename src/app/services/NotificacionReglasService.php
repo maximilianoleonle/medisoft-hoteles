@@ -354,7 +354,7 @@ class NotificacionReglasService {
                     (string)($datos['severidad'] ?? 'info'),
                     (string)($datos['titulo'] ?? 'Notificacion'),
                     (string)($datos['mensaje'] ?? 'Evento registrado en el sistema.'),
-                    (string)($datos['url'] ?? ''),
+                    $this->normalizarUrlNotificacion($datos['url'] ?? null),
                     $datos['entidad_tipo'] ?? null,
                     $entidadId,
                     $datos['rol_destino'] ?? null,
@@ -365,6 +365,23 @@ class NotificacionReglasService {
         } catch (Throwable $e) {
             error_log('No se pudo actualizar notificacion automatica activa: ' . $e->getMessage());
         }
+    }
+
+    private function normalizarUrlNotificacion($url): ?string {
+        if ($url === null) {
+            return null;
+        }
+
+        $url = trim((string)$url);
+        if ($url === '') {
+            return null;
+        }
+
+        if (strpos($url, '://') !== false || strpos($url, '..') !== false) {
+            return null;
+        }
+
+        return substr(ltrim($url, '/'), 0, 255);
     }
 
     private function fetchOne(string $sql, array $params = []): array {

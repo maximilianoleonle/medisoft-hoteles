@@ -6,7 +6,9 @@ $usuario = $usuario ?? [];
 $usuarioNombre = (string)($usuario['nombre_completo'] ?? '');
 $usuarioLogin = (string)($usuario['nombre_usuario'] ?? '');
 $usuarioRol = (string)($usuario['rol'] ?? '');
+$usuarioRolValor = (string) old('rol', $usuarioRol);
 $usuarioActivo = !empty($usuario['activo']);
+$usuarioFieldErrors = isset($layoutFieldErrors) && is_array($layoutFieldErrors) ? $layoutFieldErrors : [];
 
 if (!function_exists('worker_form_initials')) {
     function worker_form_initials($name) {
@@ -22,6 +24,36 @@ if (!function_exists('worker_form_initials')) {
         $b = function_exists('mb_substr') ? mb_substr($second, 0, 1, 'UTF-8') : substr($second, 0, 1);
         $initials = $a . ($b ?: '');
         return function_exists('mb_strtoupper') ? mb_strtoupper($initials, 'UTF-8') : strtoupper($initials);
+    }
+}
+
+if (!function_exists('usuario_form_error')) {
+    function usuario_form_error(array $errors, string $field): string
+    {
+        if (empty($errors[$field])) {
+            return '';
+        }
+
+        $message = is_array($errors[$field]) ? reset($errors[$field]) : $errors[$field];
+        return htmlspecialchars((string) $message, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+if (!function_exists('usuario_form_error_class')) {
+    function usuario_form_error_class(array $errors, string $field): string
+    {
+        return usuario_form_error($errors, $field) !== '' ? ' worker-input-error' : '';
+    }
+}
+
+if (!function_exists('usuario_form_error_attrs')) {
+    function usuario_form_error_attrs(array $errors, string $field, string $errorId): string
+    {
+        if (usuario_form_error($errors, $field) === '') {
+            return '';
+        }
+
+        return ' aria-invalid="true" aria-describedby="' . htmlspecialchars($errorId, ENT_QUOTES, 'UTF-8') . '"';
     }
 }
 ?>
@@ -297,6 +329,11 @@ if (!function_exists('worker_form_initials')) {
     box-shadow: 0 0 0 4px var(--worker-ring);
 }
 
+.worker-input.worker-input-error {
+    border-color: #B4392B;
+    background: #FFF7F6;
+}
+
 .worker-input:disabled {
     background: #F1F5F9;
     color: #64748B;
@@ -308,6 +345,27 @@ if (!function_exists('worker_form_initials')) {
     color: var(--worker-muted);
     font-size: .74rem;
     font-weight: 800;
+}
+
+.worker-field-error {
+    display: block;
+    margin-top: 2px;
+    color: #B4392B;
+    font-size: .76rem;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.worker-error-summary {
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border: 1px solid #F0B8AE;
+    border-radius: 13px;
+    background: #FFF7F6;
+    color: #9E2A1D;
+    font-size: .84rem;
+    font-weight: 800;
+    line-height: 1.35;
 }
 
 .worker-form-alert {
@@ -576,6 +634,7 @@ if (!function_exists('worker_form_initials')) {
 /* Inputs */
 .worker-page .worker-input { background: #FCFAF5 !important; border-color: var(--worker-border) !important; border-radius: 11px !important; font-weight: 600 !important; }
 .worker-page .worker-input:focus { border-color: var(--wk-gold) !important; box-shadow: 0 0 0 3px var(--worker-ring) !important; background: #fff !important; }
+.worker-page .worker-input.worker-input-error { border-color: #B4392B !important; background: #FFF7F6 !important; }
 /* Botón primario = oro */
 .worker-page .worker-action-btn { background: linear-gradient(135deg, var(--wk-gold), color-mix(in srgb, var(--wk-gold) 76%, #000)) !important; color: #fff !important; box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--wk-gold) 58%, transparent) !important; }
 .worker-page .worker-secondary-btn { background: #fff !important; border: 1px solid var(--worker-border) !important; color: var(--worker-muted) !important; }
@@ -624,6 +683,12 @@ if (!function_exists('worker_form_initials')) {
         <form method="POST" action="<?= url("usuarios/{$usuario['id']}/update") ?>" id="editUserForm">
             <?= csrf_field() ?>
 
+            <?php if (usuario_form_error($usuarioFieldErrors, '_global') !== ''): ?>
+                <div class="worker-error-summary ms-form-error-summary" role="alert">
+                    <?= usuario_form_error($usuarioFieldErrors, '_global') ?>
+                </div>
+            <?php endif; ?>
+
             <div class="worker-form-grid">
                 <div class="worker-main-stack">
                     <section class="worker-panel">
@@ -650,8 +715,11 @@ if (!function_exists('worker_form_initials')) {
                                                minlength="4"
                                                pattern="[a-zA-Z0-9_]+"
                                                title="Solo letras, numeros y guiones bajos"
-                                               class="worker-input">
+                                               class="worker-input<?= usuario_form_error_class($usuarioFieldErrors, 'nombre_usuario') ?>"<?= usuario_form_error_attrs($usuarioFieldErrors, 'nombre_usuario', 'ms-form-error-usuario_nombre_usuario') ?>>
                                     </div>
+                                    <?php if (usuario_form_error($usuarioFieldErrors, 'nombre_usuario') !== ''): ?>
+                                        <span id="ms-form-error-usuario_nombre_usuario" class="worker-field-error ms-form-field-error"><?= usuario_form_error($usuarioFieldErrors, 'nombre_usuario') ?></span>
+                                    <?php endif; ?>
                                     <p class="worker-message">Minimo 4 caracteres. Usa letras, numeros o guion bajo.</p>
                                 </div>
 
@@ -663,12 +731,15 @@ if (!function_exists('worker_form_initials')) {
                                                id="password"
                                                name="password"
                                                minlength="10"
-                                               class="worker-input has-right"
-                                               placeholder="Dejar vacio para mantener">
+                                               class="worker-input has-right<?= usuario_form_error_class($usuarioFieldErrors, 'password') ?>"
+                                               placeholder="Dejar vacio para mantener"<?= usuario_form_error_attrs($usuarioFieldErrors, 'password', 'ms-form-error-usuario_password') ?>>
                                         <button type="button" onclick="togglePassword()" class="worker-control-action" aria-label="Mostrar contrasena">
                                             <i class="fas fa-eye" id="toggleIcon"></i>
                                         </button>
                                     </div>
+                                    <?php if (usuario_form_error($usuarioFieldErrors, 'password') !== ''): ?>
+                                        <span id="ms-form-error-usuario_password" class="worker-field-error ms-form-field-error"><?= usuario_form_error($usuarioFieldErrors, 'password') ?></span>
+                                    <?php endif; ?>
                                     <p class="worker-message">Solo llena este campo si deseas cambiarla.</p>
                                 </div>
 
@@ -680,20 +751,26 @@ if (!function_exists('worker_form_initials')) {
                                             <input type="text"
                                                    value="<?= htmlspecialchars(ucfirst($usuarioRol), ENT_QUOTES, 'UTF-8') ?>"
                                                    disabled
-                                                   class="worker-input">
+                                                   class="worker-input<?= usuario_form_error_class($usuarioFieldErrors, 'rol') ?>"<?= usuario_form_error_attrs($usuarioFieldErrors, 'rol', 'ms-form-error-usuario_rol') ?>>
                                             <input type="hidden" name="rol" value="<?= htmlspecialchars($usuarioRol, ENT_QUOTES, 'UTF-8') ?>">
                                         </div>
+                                        <?php if (usuario_form_error($usuarioFieldErrors, 'rol') !== ''): ?>
+                                            <span id="ms-form-error-usuario_rol" class="worker-field-error ms-form-field-error"><?= usuario_form_error($usuarioFieldErrors, 'rol') ?></span>
+                                        <?php endif; ?>
                                         <p class="worker-message text-amber-700"><i class="fas fa-exclamation-triangle"></i> No puedes cambiar tu propio rol.</p>
                                     <?php else: ?>
                                         <div class="worker-control-wrap">
                                             <span class="worker-control-icon"><i class="fas fa-user-tag"></i></span>
-                                            <select id="rol" name="rol" required class="worker-input has-right appearance-none" onchange="actualizarPermisos()">
-                                                <option value="gerente" <?= $usuarioRol == 'gerente' ? 'selected' : '' ?>>Gerente</option>
-                                                <option value="administrador" <?= $usuarioRol == 'administrador' ? 'selected' : '' ?>>Administrador</option>
-                                                <option value="recepcionista" <?= $usuarioRol == 'recepcionista' ? 'selected' : '' ?>>Recepcionista</option>
+                                            <select id="rol" name="rol" required class="worker-input has-right appearance-none<?= usuario_form_error_class($usuarioFieldErrors, 'rol') ?>" onchange="actualizarPermisos()"<?= usuario_form_error_attrs($usuarioFieldErrors, 'rol', 'ms-form-error-usuario_rol') ?>>
+                                                <option value="gerente" <?= $usuarioRolValor === 'gerente' ? 'selected' : '' ?>>Gerente</option>
+                                                <option value="administrador" <?= $usuarioRolValor === 'administrador' ? 'selected' : '' ?>>Administrador</option>
+                                                <option value="recepcionista" <?= $usuarioRolValor === 'recepcionista' ? 'selected' : '' ?>>Recepcionista</option>
                                             </select>
                                             <span class="worker-select-caret"><i class="fas fa-chevron-down"></i></span>
                                         </div>
+                                        <?php if (usuario_form_error($usuarioFieldErrors, 'rol') !== ''): ?>
+                                            <span id="ms-form-error-usuario_rol" class="worker-field-error ms-form-field-error"><?= usuario_form_error($usuarioFieldErrors, 'rol') ?></span>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -721,8 +798,11 @@ if (!function_exists('worker_form_initials')) {
                                                name="nombre_completo"
                                                value="<?= htmlspecialchars(old('nombre_completo', $usuarioNombre), ENT_QUOTES, 'UTF-8') ?>"
                                                required
-                                               class="worker-input">
+                                               class="worker-input<?= usuario_form_error_class($usuarioFieldErrors, 'nombre_completo') ?>"<?= usuario_form_error_attrs($usuarioFieldErrors, 'nombre_completo', 'ms-form-error-usuario_nombre_completo') ?>>
                                     </div>
+                                    <?php if (usuario_form_error($usuarioFieldErrors, 'nombre_completo') !== ''): ?>
+                                        <span id="ms-form-error-usuario_nombre_completo" class="worker-field-error ms-form-field-error"><?= usuario_form_error($usuarioFieldErrors, 'nombre_completo') ?></span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div class="worker-field">
@@ -733,9 +813,12 @@ if (!function_exists('worker_form_initials')) {
                                                id="email"
                                                name="email"
                                                value="<?= htmlspecialchars(old('email', $usuario['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                               class="worker-input"
-                                               placeholder="correo@hotel.com">
+                                               class="worker-input<?= usuario_form_error_class($usuarioFieldErrors, 'email') ?>"
+                                               placeholder="correo@hotel.com"<?= usuario_form_error_attrs($usuarioFieldErrors, 'email', 'ms-form-error-usuario_email') ?>>
                                     </div>
+                                    <?php if (usuario_form_error($usuarioFieldErrors, 'email') !== ''): ?>
+                                        <span id="ms-form-error-usuario_email" class="worker-field-error ms-form-field-error"><?= usuario_form_error($usuarioFieldErrors, 'email') ?></span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div class="worker-field">
@@ -746,9 +829,12 @@ if (!function_exists('worker_form_initials')) {
                                                id="telefono"
                                                name="telefono"
                                                value="<?= htmlspecialchars(old('telefono', $usuario['telefono'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                               class="worker-input"
-                                               placeholder="(555) 123-4567">
+                                               class="worker-input<?= usuario_form_error_class($usuarioFieldErrors, 'telefono') ?>"
+                                               placeholder="(555) 123-4567"<?= usuario_form_error_attrs($usuarioFieldErrors, 'telefono', 'ms-form-error-usuario_telefono') ?>>
                                     </div>
+                                    <?php if (usuario_form_error($usuarioFieldErrors, 'telefono') !== ''): ?>
+                                        <span id="ms-form-error-usuario_telefono" class="worker-field-error ms-form-field-error"><?= usuario_form_error($usuarioFieldErrors, 'telefono') ?></span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -768,7 +854,7 @@ if (!function_exists('worker_form_initials')) {
                         <div class="worker-preview-list">
                             <div class="worker-preview-row">
                                 <span>Rol</span>
-                                <strong id="preview-rol"><?= htmlspecialchars(ucfirst($usuarioRol), ENT_QUOTES, 'UTF-8') ?></strong>
+                                <strong id="preview-rol"><?= htmlspecialchars(ucfirst($usuarioRolValor), ENT_QUOTES, 'UTF-8') ?></strong>
                             </div>
                             <div class="worker-preview-row">
                                 <span>Email</span>
@@ -854,7 +940,7 @@ if (!function_exists('worker_form_initials')) {
 </div>
 
 <script>
-const rolInicial = <?= json_encode($usuarioRol, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+const rolInicial = <?= json_encode($usuarioRolValor, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
 function togglePassword() {
     const passwordInput = document.getElementById('password');

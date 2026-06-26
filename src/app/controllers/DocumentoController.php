@@ -276,7 +276,17 @@ class DocumentoController extends Controller
             $lower = strtolower($mensaje);
             $campo = null;
 
-            if (strpos($lower, 'archivo') !== false || strpos($lower, 'file') !== false || strpos($lower, 'mime') !== false || strpos($lower, 'tamano') !== false || strpos($lower, 'tamano') !== false) {
+            if (
+                strpos($lower, 'archivo') !== false
+                || strpos($lower, 'file') !== false
+                || strpos($lower, 'mime') !== false
+                || strpos($lower, 'tamano') !== false
+                || strpos($lower, 'extension') !== false
+                || strpos($lower, 'formato') !== false
+                || strpos($lower, 'carga') !== false
+                || strpos($lower, 'peso') !== false
+                || strpos($lower, 'storage') !== false
+            ) {
                 $campo = 'archivo';
             } elseif (strpos($lower, 'tipo') !== false) {
                 $campo = 'documento_tipo_id';

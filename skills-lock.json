@@ -1,0 +1,220 @@
+{
+  "version": 1,
+  "skills": {
+    "architecture-diagram-creator": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "visual-documentation-plugin/skills/architecture-diagram-creator/SKILL.md",
+      "computedHash": "b5b03d60c55de9b708f568116436a3fb8be3be991e94fea1e53a3022ffdd5ccd"
+    },
+    "brandkit": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/brandkit/SKILL.md",
+      "computedHash": "735007879f5110aeae1e981a53fe74a12afde70347f9773dacd50e4697a091bf"
+    },
+    "code-auditor": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "productivity-skills-plugin/skills/code-auditor/SKILL.md",
+      "computedHash": "0e256f0158b9cc5ececffc81d628bf09addf6fa59fba2f2bde8f22e22e20205a"
+    },
+    "code-execution": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "code-operations-plugin/skills/code-execution/SKILL.md",
+      "computedHash": "0de2deab1ef2498a712bdf31918b8a89bca458f485415646dbe084c26a3692f9"
+    },
+    "code-refactor": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "code-operations-plugin/skills/code-refactor/SKILL.md",
+      "computedHash": "003197b99a48141070aa6d053a0a94a709a6d79c1efa11ad435d366ab87ede29"
+    },
+    "code-transfer": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "code-operations-plugin/skills/code-transfer/SKILL.md",
+      "computedHash": "d9f89d0319bfd31f5db4f28c78d69dec176b0bc5a775eb008d1f5cd3e30a2440"
+    },
+    "codebase-documenter": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "productivity-skills-plugin/skills/codebase-documenter/SKILL.md",
+      "computedHash": "854380972d0589f7c82bdb7630b76ef61f65d96b77f8a7c3f5c2efe9be1720e8"
+    },
+    "conversation-analyzer": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "productivity-skills-plugin/skills/conversation-analyzer/SKILL.md",
+      "computedHash": "f124fd40ef709db7e39bfcb86147a632b16780a891cc54e6a829214061b5a170"
+    },
+    "dashboard-creator": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "visual-documentation-plugin/skills/dashboard-creator/SKILL.md",
+      "computedHash": "730d04ae6652fc223ddee3b9804308c55ed9b2b09a13b65feb4853b46627ffca"
+    },
+    "design-taste-frontend": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/taste-skill/SKILL.md",
+      "computedHash": "899b84384f74f540ea5284d9b2e9234e050998b42eacc805410b518d4226c0b3"
+    },
+    "design-taste-frontend-v1": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/taste-skill-v1/SKILL.md",
+      "computedHash": "0a226c13d69639553cf8a7c40aa5527b026820f8ddaf7a6b263988e32ab44a27"
+    },
+    "emil-design-eng": {
+      "source": "emilkowalski/skill",
+      "sourceType": "github",
+      "skillPath": "skills/emil-design-eng/SKILL.md",
+      "computedHash": "ac3fc5b4e206488ffc408a2806f829bb2e5eaf518fded09be34790685c2b3a0d"
+    },
+    "ensemble-solving": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "engineering-workflow-plugin/skills/ensemble-solving/SKILL.md",
+      "computedHash": "9aa5813c2e4ec2bc2320bb7fb33382dcdb840af18c3127554107aae52bb9abaf"
+    },
+    "feature-planning": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "engineering-workflow-plugin/skills/feature-planning/SKILL.md",
+      "computedHash": "eb2c442c28382ff7d7707b46e0a08eddfa6dc82cca6fa96a895aec807c740e4d"
+    },
+    "file-operations": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "code-operations-plugin/skills/file-operations/SKILL.md",
+      "computedHash": "5a9207d3ff8ff10e1e88c067ec185b5b1a9dd5997b590287ee01610d25c97c69"
+    },
+    "flowchart-creator": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "visual-documentation-plugin/skills/flowchart-creator/SKILL.md",
+      "computedHash": "45c8746badbb09f54b54e5e4a2e1884e6c62d8409f0731155380a772c2ea83ce"
+    },
+    "full-output-enforcement": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/output-skill/SKILL.md",
+      "computedHash": "524f7c7950c3fde726101613f630140411c7d080e63be718687f4b38f919be81"
+    },
+    "git-pushing": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "engineering-workflow-plugin/skills/git-pushing/SKILL.md",
+      "computedHash": "80399e9785ffe0956f47961fd0baf279042916b0fdac640c05c66c167c974d73"
+    },
+    "gpt-taste": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/gpt-tasteskill/SKILL.md",
+      "computedHash": "7bd1bfdda0e51016ca222693401a65fc0dd9bf9487e0bd5b1740ba510f6f963a"
+    },
+    "high-end-visual-design": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/soft-skill/SKILL.md",
+      "computedHash": "f730e4132775f13eea19e3dc39afc6bb453cfc0498872b127ad8f0d47cfd802d"
+    },
+    "image-to-code": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/image-to-code-skill/SKILL.md",
+      "computedHash": "3d2ac14d956fdafc5500d2108b90895e134d847f9f199e7f1d18bf1f814cf7c8"
+    },
+    "imagegen-frontend-mobile": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/imagegen-frontend-mobile/SKILL.md",
+      "computedHash": "7c1d1dc59cd0df4063b8621af543bf5dea1d576b261507e17b0323c69680b048"
+    },
+    "imagegen-frontend-web": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/imagegen-frontend-web/SKILL.md",
+      "computedHash": "27255c7c50181e58add156b2aa2bd5325285b85f04027e4c8b73742d98d7be0a"
+    },
+    "industrial-brutalist-ui": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/brutalist-skill/SKILL.md",
+      "computedHash": "e66e5a2a8b73cef79ab6546459c665e8b983645689c5f3772f7eed8b9f1e8e0e"
+    },
+    "minimalist-ui": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/minimalist-skill/SKILL.md",
+      "computedHash": "7e88897e0371184e97a82b8d9ef080323c13f21eb067b58ef71eb05173a08ac2"
+    },
+    "project-bootstrapper": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "productivity-skills-plugin/skills/project-bootstrapper/SKILL.md",
+      "computedHash": "359d21d4179f29b36e1b04cc312ea001dec50b3dde079eca5777c4ad1551772d"
+    },
+    "pwa-development": {
+      "source": "alinaqi/claude-bootstrap",
+      "sourceType": "github",
+      "skillPath": "skills/pwa-development/SKILL.md",
+      "computedHash": "2219041ce92f6361ba77eb06c9a927dc7a1ba48f40ff5132321a29c4154ebc7a"
+    },
+    "pwa-ux-ui": {
+      "source": "C:\\Users\\PC\\Downloads\\pwa-ux-ui-claude-code",
+      "sourceType": "local",
+      "computedHash": "703ba59b6dad135f93c41ff2c5095b0e80f9ee2c6900f6296c7882dca641eca0"
+    },
+    "redesign-existing-projects": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/redesign-skill/SKILL.md",
+      "computedHash": "47eced3e960a2c961d3cbee11fa1216264f589344b586a5cbd03967cd6b9c54b"
+    },
+    "review-animations": {
+      "source": "emilkowalski/skill",
+      "sourceType": "github",
+      "skillPath": "skills/review-animations/SKILL.md",
+      "computedHash": "57c681344448379fbec8c11b45e355b70799998427240662318d017f292571bd"
+    },
+    "review-implementing": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "engineering-workflow-plugin/skills/review-implementing/SKILL.md",
+      "computedHash": "b3ef69870e1edb29f76865bb0ec761a87b13fcb5459ed1d97b22c6625ce0dccc"
+    },
+    "skill-creator": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/skill-creator/SKILL.md",
+      "computedHash": "7e3c9cd74e9e2b4828527a857170e86310f2dab5ea8030a9043df2c7e6c88857"
+    },
+    "stitch-design-taste": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/stitch-skill/SKILL.md",
+      "computedHash": "c96b580192b34167efa01f460bbc669ff4315cf97f3cf6ff85ded8029aa720b8"
+    },
+    "technical-doc-creator": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "visual-documentation-plugin/skills/technical-doc-creator/SKILL.md",
+      "computedHash": "0cdce9812bf529d3fd2da06570442c71c2ab412e781cbe713d897d9ace64f249"
+    },
+    "test-fixing": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "engineering-workflow-plugin/skills/test-fixing/SKILL.md",
+      "computedHash": "31d7108d359fda274327369e80e0247c081babc9b201b0b7f60db68f87deef13"
+    },
+    "timeline-creator": {
+      "source": "mhattingpete/claude-skills-marketplace",
+      "sourceType": "github",
+      "skillPath": "visual-documentation-plugin/skills/timeline-creator/SKILL.md",
+      "computedHash": "dd412fd71c2eaf903a78e2596a0ebb71953b87661a73e0106d1f9f564c172639"
+    }
+  }
+}

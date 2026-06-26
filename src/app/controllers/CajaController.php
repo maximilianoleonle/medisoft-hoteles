@@ -178,9 +178,17 @@ public function arqueoMetodosAction() {
         
         $caja_id = intval($this->getPost('caja_id'));
         $monto_inicial = floatval($this->getPost('monto_inicial', 0));
+        $oldInput = [
+            'caja_id' => $caja_id,
+            'monto_inicial' => $this->getPost('monto_inicial', '0.00'),
+            'observaciones' => trim($this->getPost('observaciones', '')),
+            'form_origen' => 'apertura'
+        ];
         
         // Validar
         if ($monto_inicial < 0) {
+            save_old_input($oldInput);
+            save_form_errors(['monto_inicial' => ['El monto inicial no puede ser negativo']]);
             set_mensaje('El monto inicial no puede ser negativo', 'error');
             $this->redirect('caja');
             return;
@@ -190,8 +198,11 @@ public function arqueoMetodosAction() {
         $resultado = $this->cajaModel->abrirCaja($caja_id, $monto_inicial, user_id());
         
         if ($resultado['success']) {
+            clear_old_input();
             set_mensaje('Caja abierta exitosamente', 'success');
         } else {
+            save_old_input($oldInput);
+            save_form_errors($this->erroresCamposAperturaCaja([$resultado['message'] ?? 'No se pudo abrir la caja']));
             set_mensaje($resultado['message'], 'error');
         }
         
@@ -219,13 +230,18 @@ public function arqueoMetodosAction() {
             'referencia' => trim($this->getPost('referencia')),
             'comprobante' => trim($this->getPost('comprobante'))
         ];
+        $oldInput = array_merge($data, [
+            'monto' => $this->getPost('monto', ''),
+            'form_origen' => 'ingreso'
+        ]);
         
         // Validar
         $errores = $this->movimientoModel->validarMovimiento($data);
         
         if (!empty($errores)) {
             set_mensaje(implode('<br>', $errores), 'error');
-            save_old_input($data);
+            save_old_input($oldInput);
+            save_form_errors($this->erroresCamposMovimientoCaja($errores));
             $this->redirect('caja');
             return;
         }
@@ -237,7 +253,8 @@ public function arqueoMetodosAction() {
             clear_old_input();
             set_mensaje('Ingreso registrado exitosamente', 'success');
         } else {
-            save_old_input($data);
+            save_old_input($oldInput);
+            save_form_errors($this->erroresCamposMovimientoCaja([$resultado['message'] ?? 'No se pudo registrar el ingreso']));
             set_mensaje($resultado['message'], 'error');
         }
         
@@ -266,13 +283,18 @@ public function arqueoMetodosAction() {
             'comprobante' => trim($this->getPost('comprobante')),
             'proveedor' => trim($this->getPost('proveedor'))
         ];
+        $oldInput = array_merge($data, [
+            'monto' => $this->getPost('monto', ''),
+            'form_origen' => 'gasto'
+        ]);
         
         // Validar
         $errores = $this->movimientoModel->validarMovimiento($data);
         
         if (!empty($errores)) {
             set_mensaje(implode('<br>', $errores), 'error');
-            save_old_input($data);
+            save_old_input($oldInput);
+            save_form_errors($this->erroresCamposMovimientoCaja($errores));
             $this->redirect('caja');
             return;
         }
@@ -284,11 +306,99 @@ public function arqueoMetodosAction() {
             clear_old_input();
             set_mensaje('Gasto registrado exitosamente', 'success');
         } else {
-            save_old_input($data);
+            save_old_input($oldInput);
+            save_form_errors($this->erroresCamposMovimientoCaja([$resultado['message'] ?? 'No se pudo registrar el gasto']));
             set_mensaje($resultado['message'], 'error');
         }
         
         $this->redirect('caja');
+    }
+
+    private function erroresCamposAperturaCaja(array $errores): array {
+        $fieldErrors = [];
+
+        foreach ($errores as $mensaje) {
+            $mensaje = trim((string)$mensaje);
+            if ($mensaje === '') {
+                continue;
+            }
+
+            $lower = $this->normalizarMensajeFormularioCaja($mensaje);
+            $campo = null;
+
+            if (strpos($lower, 'monto') !== false || strpos($lower, 'inicial') !== false || strpos($lower, 'negativo') !== false) {
+                $campo = 'monto_inicial';
+            } elseif (strpos($lower, 'observacion') !== false || strpos($lower, 'nota') !== false) {
+                $campo = 'observaciones';
+            }
+
+            if ($campo !== null) {
+                $fieldErrors[$campo][] = $mensaje;
+            } else {
+                $fieldErrors['_global'][] = $mensaje;
+            }
+        }
+
+        return $fieldErrors;
+    }
+
+    private function erroresCamposMovimientoCaja(array $errores): array {
+        $fieldErrors = [];
+
+        foreach ($errores as $mensaje) {
+            $mensaje = trim((string)$mensaje);
+            if ($mensaje === '') {
+                continue;
+            }
+
+            $lower = $this->normalizarMensajeFormularioCaja($mensaje);
+            $campo = null;
+
+            if (strpos($lower, 'categoria') !== false) {
+                $campo = 'categoria_id';
+            } elseif (strpos($lower, 'descripcion') !== false) {
+                $campo = 'descripcion';
+            } elseif (strpos($lower, 'monto') !== false || strpos($lower, 'numero') !== false || strpos($lower, 'mayor a 0') !== false) {
+                $campo = 'monto';
+            } elseif (strpos($lower, 'referencia') !== false || strpos($lower, 'autorizacion') !== false) {
+                $campo = 'referencia';
+            } elseif (strpos($lower, 'metodo') !== false || strpos($lower, 'pago') !== false) {
+                $campo = 'metodo_pago';
+            } elseif (strpos($lower, 'comprobante') !== false) {
+                $campo = 'comprobante';
+            } elseif (strpos($lower, 'proveedor') !== false || strpos($lower, 'beneficiario') !== false) {
+                $campo = 'proveedor';
+            } elseif (strpos($lower, 'tipo') !== false) {
+                $campo = 'tipo';
+            }
+
+            if ($campo !== null) {
+                $fieldErrors[$campo][] = $mensaje;
+            } else {
+                $fieldErrors['_global'][] = $mensaje;
+            }
+        }
+
+        return $fieldErrors;
+    }
+
+    private function normalizarMensajeFormularioCaja(string $mensaje): string {
+        $lower = function_exists('mb_strtolower') ? mb_strtolower($mensaje, 'UTF-8') : strtolower($mensaje);
+
+        return strtr($lower, [
+            'á' => 'a',
+            'é' => 'e',
+            'í' => 'i',
+            'ó' => 'o',
+            'ú' => 'u',
+            'ñ' => 'n',
+            'Á' => 'a',
+            'É' => 'e',
+            'Í' => 'i',
+            'Ó' => 'o',
+            'Ú' => 'u',
+            'Ñ' => 'n',
+        ]);
     }
     
     /**
@@ -416,8 +526,12 @@ public function cerrarCorteAction() {
         return;
     }
     
-    // Guardar denominaciones si se proporcionaron
     $denominaciones = $this->getPost('denominaciones', []);
+    if (is_array($denominaciones)) {
+        $efectivo_contado = $this->calcularTotalDenominacionesPost($denominaciones);
+    }
+
+    // Guardar denominaciones si se proporcionaron
     if (!empty($denominaciones)) {
         $this->guardarDenominaciones($corte_id, $denominaciones);
     }
@@ -460,6 +574,26 @@ public function cerrarCorteAction() {
     }
     
     $this->redirect('caja');
+}
+
+private function calcularTotalDenominacionesPost($denominaciones): float {
+    if (!is_array($denominaciones)) {
+        return 0.0;
+    }
+
+    $total = 0.0;
+    foreach ($denominaciones as $denominacion => $cantidad) {
+        $valor = (float) str_replace(',', '.', (string) $denominacion);
+        $cantidad = max(0, (int) $cantidad);
+
+        if ($valor <= 0 || $cantidad <= 0) {
+            continue;
+        }
+
+        $total += $valor * $cantidad;
+    }
+
+    return round($total, 2);
 }
 
 private function registrarNotificacionCorteCerrado($corte_id, array $resultado) {
@@ -653,6 +787,161 @@ private function generarYEnviarReporteCorte($corte_id, $efectivo_contado, $obser
         } else {
             $this->exportarPDF($movimientos, $corte_id);
         }
+    }
+
+    /**
+     * Exporta el detalle de movimientos del corte en formato compatible con Excel.
+     */
+    private function exportarExcel($movimientos, $corte_id) {
+        $movimientos = is_array($movimientos) ? $movimientos : [];
+        $columnas = !empty($movimientos)
+            ? array_keys(reset($movimientos))
+            : [
+                'Fecha y Hora',
+                'Tipo',
+                'Categoria',
+                'Descripcion',
+                'Monto',
+                'Metodo de Pago',
+                'Referencia',
+                'Comprobante',
+                'Proveedor',
+                'Registrado por',
+                'Reservacion'
+            ];
+
+        $nombreArchivo = function_exists('hotel_export_filename')
+            ? hotel_export_filename('Movimientos_Corte_' . (int)$corte_id, 'xls', false)
+            : 'Movimientos_Corte_' . (int)$corte_id . '.xls';
+
+        $bufferLevel = ob_get_level();
+        while ($bufferLevel-- > 0) {
+            @ob_end_clean();
+        }
+
+        header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $nombreArchivo . '"');
+        header('Cache-Control: max-age=0, no-cache, must-revalidate');
+        header('Pragma: public');
+
+        echo "\xEF\xBB\xBF";
+        echo '<!doctype html><html><head><meta charset="UTF-8"></head><body>';
+        echo '<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:10pt;">';
+        echo '<tr>';
+        foreach ($columnas as $columna) {
+            echo '<th style="background:#1f2937;color:#ffffff;font-weight:bold;text-align:left;">'
+                . $this->excelCell($columna)
+                . '</th>';
+        }
+        echo '</tr>';
+
+        if (empty($movimientos)) {
+            echo '<tr><td colspan="' . max(1, count($columnas)) . '" style="color:#64748b;">Sin movimientos para exportar</td></tr>';
+        } else {
+            foreach ($movimientos as $movimiento) {
+                echo '<tr>';
+                foreach ($columnas as $columna) {
+                    $valor = $movimiento[$columna] ?? '';
+                    $align = $columna === 'Monto' ? 'right' : 'left';
+                    echo '<td style="text-align:' . $align . ';">'
+                        . $this->excelCell($this->formatExcelValue($columna, $valor))
+                        . '</td>';
+                }
+                echo '</tr>';
+            }
+        }
+
+        echo '</table></body></html>';
+        exit;
+    }
+
+    /**
+     * Exporta el detalle de movimientos a PDF basico si se solicita explicitamente.
+     */
+    private function exportarPDF($movimientos, $corte_id) {
+        require_once APP_PATH . '/libs/TCPDF/tcpdf.php';
+
+        $movimientos = is_array($movimientos) ? $movimientos : [];
+        $pdf = new TCPDF('L', 'mm', 'LETTER', true, 'UTF-8', false);
+        $pdf->SetCreator('Medisoft Hoteles');
+        $pdf->SetAuthor(current_hotel_display_name());
+        $pdf->SetTitle('Movimientos Corte #' . (int)$corte_id);
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        $pdf->SetMargins(10, 10, 10);
+        $pdf->AddPage();
+        $pdf->SetFont('dejavusans', 'B', 14);
+        $pdf->Cell(0, 8, 'Detalle de movimientos - Corte #' . (int)$corte_id, 0, 1, 'L');
+        $pdf->SetFont('dejavusans', '', 8);
+
+        $html = '<table border="1" cellpadding="4" cellspacing="0">'
+            . '<thead><tr style="background-color:#1f2937;color:#ffffff;">'
+            . '<th width="14%">Fecha y hora</th>'
+            . '<th width="9%">Tipo</th>'
+            . '<th width="13%">Categoria</th>'
+            . '<th width="25%">Descripcion</th>'
+            . '<th width="10%">Monto</th>'
+            . '<th width="12%">Metodo</th>'
+            . '<th width="17%">Referencia</th>'
+            . '</tr></thead><tbody>';
+
+        if (empty($movimientos)) {
+            $html .= '<tr><td colspan="7">Sin movimientos para exportar</td></tr>';
+        } else {
+            foreach ($movimientos as $movimiento) {
+                $html .= '<tr>'
+                    . '<td>' . $this->excelCell($this->exportRowValue($movimiento, ['Fecha y Hora'])) . '</td>'
+                    . '<td>' . $this->excelCell($this->exportRowValue($movimiento, ['Tipo'])) . '</td>'
+                    . '<td>' . $this->excelCell($this->exportRowValue($movimiento, ['Categoria', 'Categoría', 'CategorÃ­a'])) . '</td>'
+                    . '<td>' . $this->excelCell($this->exportRowValue($movimiento, ['Descripcion', 'Descripción', 'DescripciÃ³n'])) . '</td>'
+                    . '<td align="right">' . $this->excelCell($this->formatExcelValue('Monto', $this->exportRowValue($movimiento, ['Monto']))) . '</td>'
+                    . '<td>' . $this->excelCell($this->exportRowValue($movimiento, ['Metodo de Pago', 'Método de Pago', 'MÃ©todo de Pago'])) . '</td>'
+                    . '<td>' . $this->excelCell($this->exportRowValue($movimiento, ['Referencia'])) . '</td>'
+                    . '</tr>';
+            }
+        }
+
+        $html .= '</tbody></table>';
+        $pdf->writeHTML($html, true, false, true, false, '');
+
+        $nombreArchivo = function_exists('hotel_export_filename')
+            ? hotel_export_filename('Movimientos_Corte_' . (int)$corte_id, 'pdf', false)
+            : 'Movimientos_Corte_' . (int)$corte_id . '.pdf';
+
+        $bufferLevel = ob_get_level();
+        while ($bufferLevel-- > 0) {
+            @ob_end_clean();
+        }
+
+        $pdf->Output($nombreArchivo, 'D');
+        exit;
+    }
+
+    private function formatExcelValue($columna, $valor) {
+        if ($columna === 'Monto' && is_numeric($valor)) {
+            return number_format((float)$valor, 2, '.', '');
+        }
+
+        $texto = (string)($valor ?? '');
+        if ($texto !== '' && preg_match('/^[=+\-@]/', $texto)) {
+            return "'" . $texto;
+        }
+
+        return $texto;
+    }
+
+    private function excelCell($valor) {
+        return htmlspecialchars((string)($valor ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+
+    private function exportRowValue(array $row, array $aliases) {
+        foreach ($aliases as $alias) {
+            if (array_key_exists($alias, $row)) {
+                return $row[$alias];
+            }
+        }
+
+        return '';
     }
     
     /**

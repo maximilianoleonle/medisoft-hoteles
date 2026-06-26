@@ -195,6 +195,54 @@ $visibles = count($tareas);
     .tk-page .tk-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .tk-page .tk-title { font-size: 1.9rem; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   MÓVIL COMPACTO  ·  estética dashboard / habitaciones (≤768px)
+   Se omite lo que satura en pantalla chica (ver resumen al usuario).
+   ════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .tk-page { padding: 14px !important; }
+    .tk-page .tk-shell { gap: 12px; }
+
+    /* Header compacto */
+    .tk-page .tk-title-lockup { grid-template-columns: 40px minmax(0, 1fr); column-gap: 11px; align-items: center; }
+    .tk-page .tk-hero-icon { width: 40px; height: 40px; border-radius: 12px; font-size: 1rem; }
+    .tk-page .tk-kicker { display: none; }       /* omitido */
+    .tk-page .tk-title { font-size: 1.5rem; }
+    .tk-page .tk-subtitle { display: none; }     /* omitido: parrafo largo */
+
+    /* Acciones: "Nueva tarea" full; Agenda + Reporte comparten fila */
+    .tk-page section.flex > .flex { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .tk-page section.flex > .flex > .tk-btn { min-height: 44px; font-size: .82rem; }
+    .tk-page section.flex > .flex > .tk-btn-gold { grid-column: 1 / -1; }
+
+    /* Resumen 2x2 + último a lo ancho */
+    .tk-page .tk-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .tk-page .tk-summary-item { padding: 10px 12px; border-radius: 12px; }
+    .tk-page .tk-summary-item:last-child { grid-column: 1 / -1; }
+    .tk-page .tk-summary-value { font-size: 1.35rem; }
+
+    /* Filtros compactos: search arriba + selects en 2 columnas; "Filtrar" oculto */
+    .tk-page .tk-panel.p-3 { padding: 10px !important; }
+    .tk-page .tk-filter-form { grid-template-columns: 1fr 1fr; gap: 7px; }
+    .tk-page .tk-search { grid-column: 1 / -1; }
+    .tk-page .tk-control { min-height: 38px; font-size: .82rem; border-radius: 9px; }
+    .tk-page .tk-filter-form .tk-btn-brand { display: none; }   /* omitido: redundante con busqueda en vivo */
+    .tk-page .tk-filter-form .tk-reset { min-height: 38px; font-size: .82rem; }
+
+    /* Bandeja: tarjetas compactas */
+    .tk-page .tk-panel-head { padding: 12px 14px; }
+    .tk-page .tk-panel-sub { display: none; }    /* omitido: descripcion decorativa */
+    .tk-page .tk-mobile { padding: 12px; gap: 8px; }
+    .tk-page .tk-mobile-card { padding: 12px; border-radius: 14px; }
+    .tk-page .tk-mobile-top { gap: 8px; }
+    .tk-page .tk-name { font-size: .94rem; white-space: normal; }
+    .tk-page .tk-chips { gap: 5px; margin-top: 9px; }
+    .tk-page .tk-prio { font-size: .7rem; padding: 3px 8px; }
+    .tk-page .tk-badge { font-size: .7rem; }
+    .tk-page .tk-mobile-foot { gap: 8px; margin-top: 9px; font-size: .72rem; }
+    .tk-page .tk-empty { padding: 28px 16px; }
+}
 </style>
 
 <div class="tk-page p-4 sm:p-6">

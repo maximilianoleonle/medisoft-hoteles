@@ -203,7 +203,12 @@ class ConfiguracionController extends Controller {
             }
         }
 
+        $db = null;
+
         try {
+            $db = Database::getInstance();
+            $db->safeBeginTransaction();
+
             // Hotel
             $hotelNombre = trim((string) $this->getPost('hotel_nombre'));
             if (is_array($brandingValues) && trim((string) ($brandingValues['nombre_visual'] ?? '')) !== '') {
@@ -224,8 +229,6 @@ class ConfiguracionController extends Controller {
             $this->configuracionModel->set('hotel.check_out_time', $hotelCheckOut);
             $this->configuracionModel->set('hotel.horas_estancia', $this->getPost('hotel_horas_estancia'), 'integer');
 
-            $_SESSION['hotel_nombre'] = $hotelNombre;
-            
             // Tarifas
             $this->configuracionModel->set('tarifas.incremento_fin_semana', $this->getPost('tarifas_incremento_fin_semana'), 'float');
             $this->configuracionModel->set('tarifas.descuento_grupo_minimo', $this->getPost('tarifas_descuento_grupo_minimo'), 'integer');
@@ -271,10 +274,18 @@ class ConfiguracionController extends Controller {
             
             // Registrar en log
             $this->registrarAccion('actualizar_configuracion', 'Configuración del sistema actualizada');
+
+            $db->safeCommit();
+
+            $_SESSION['hotel_nombre'] = $hotelNombre;
             
             set_mensaje('Configuración actualizada exitosamente', 'success');
             
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
+            if ($db && method_exists($db, 'safeRollBack')) {
+                $db->safeRollBack();
+            }
+
             error_log("Error al actualizar configuración: " . $e->getMessage());
             set_mensaje('Error al actualizar la configuración', 'error');
         }

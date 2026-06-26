@@ -10,6 +10,10 @@ Actualizacion Fase 2D: se valida el guardado real de configuracion con rollback,
 
 Actualizacion Fase 2E: se agrega auditoria minima tolerante a fallos para cambios reales en configuracion de inventario, se decide no implementar endpoint nuevo de preview por reservacion, y se documenta el contrato futuro en `purchasing_inventory_contract.md`.
 
+Actualizacion 2026-06-24: se revalido que las tablas legacy `productos`, `inventario_movimientos` e `inventario_habitacion_config` no tienen rutas activas. Se corrigio un enlace residual de dashboard hacia la ruta antigua `inventario/configuracion-habitacion`.
+
+Actualizacion 2026-06-24 vistas: la auditoria de formularios/enlaces confirmo que `inventario/configuracion-habitacion.php`, `inventario/detalle.php` e `inventario/reportes.php` siguen como vistas legacy desconectadas con rutas antiguas `inventarios/*`. No se deben reactivar sin migracion explicita al flujo moderno.
+
 ## Estado de base
 
 Base activa: `medisoft_hoteles_import`.
@@ -26,6 +30,29 @@ No se hicieron cambios de base de datos en Fase 2A. La reconciliacion se limita 
 | Alertas de stock bajo | derivadas desde `inventario_productos` | `ApiController::alertasInventarioAction()` |
 
 Regla para codigo nuevo: no usar `productos`, `inventario_movimientos` ni `inventario_habitacion_config` para funcionalidades nuevas.
+
+## Revalidacion 2026-06-24: exposicion legacy
+
+Conteos observados en la base activa:
+
+- `productos`: 5 registros legacy sin `hotel_id`.
+- `inventario_movimientos`: 0 registros.
+- `inventario_habitacion_config`: 0 registros.
+- `inventario_productos`: 35 registros.
+- `movimientos_inventario`: 193 registros.
+- `inventario_config_habitacion`: 58 registros.
+
+Rutas y UI:
+
+- No existen rutas registradas hacia `ProductoController`.
+- No existen rutas registradas para `inventario/productos` ni `inventario/configuracion-habitacion`.
+- El enlace residual de `src/app/views/inventario/dashboard.php` ahora apunta a `inventario/configuracion`.
+
+Decision operativa:
+
+- No borrar tablas legacy todavia.
+- No crear accesos nuevos a `productos`, `inventario_movimientos` ni `inventario_habitacion_config`.
+- Mantener el flujo oficial en `InventarioController`, `Inventario`, `InventarioService` y `MovimientoInventario`.
 
 ## Contrato Fase 2C: inventario moderno vs legacy congelado
 

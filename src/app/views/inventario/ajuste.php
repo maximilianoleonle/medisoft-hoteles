@@ -1,4 +1,15 @@
 <!-- Ajustar Stock -->
+<style>
+.inv-form-error {
+    display: block;
+    margin-top: 0.4rem;
+    color: #B42318;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+</style>
+
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-4">
     <!-- Header -->
     <div class="bg-gradient-to-r from-hotel-brown to-hotel-brown-dark text-white shadow-xl">
@@ -62,6 +73,7 @@
                                    name="tipo" 
                                    value="ENTRADA"
                                    class="peer sr-only"
+                                   <?= old('tipo') === 'ENTRADA' ? 'checked' : '' ?>
                                    required>
                             <div class="p-4 border-2 border-gray-300 rounded-lg cursor-pointer text-center transition-all duration-300 peer-checked:border-green-500 peer-checked:bg-green-50 hover:border-gray-400">
                                 <i class="fas fa-plus-circle text-2xl text-green-600 mb-2"></i>
@@ -75,6 +87,7 @@
                                    name="tipo" 
                                    value="SALIDA"
                                    class="peer sr-only"
+                                   <?= old('tipo') === 'SALIDA' ? 'checked' : '' ?>
                                    required>
                             <div class="p-4 border-2 border-gray-300 rounded-lg cursor-pointer text-center transition-all duration-300 peer-checked:border-red-500 peer-checked:bg-red-50 hover:border-gray-400">
                                 <i class="fas fa-minus-circle text-2xl text-red-600 mb-2"></i>
@@ -83,6 +96,9 @@
                             </div>
                         </label>
                     </div>
+                    <?php if (form_error('tipo')): ?>
+                        <span class="inv-form-error"><?= form_error('tipo') ?></span>
+                    <?php endif; ?>
                 </div>
                 
                 <!-- Cantidad -->
@@ -97,11 +113,15 @@
                                step="1"
                                class="w-full px-4 py-3 pr-12 text-lg border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all duration-300"
                                placeholder="0"
+                               value="<?= old('cantidad') ?>"
                                required>
                         <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
                             pzs
                         </span>
                     </div>
+                    <?php if (form_error('cantidad')): ?>
+                        <span class="inv-form-error"><?= form_error('cantidad') ?></span>
+                    <?php endif; ?>
                 </div>
                 
                 <!-- Motivo -->
@@ -113,7 +133,10 @@
                               rows="3"
                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all duration-300"
                               placeholder="Describe el motivo del ajuste..."
-                              required></textarea>
+                              required><?= old('motivo') ?></textarea>
+                    <?php if (form_error('motivo')): ?>
+                        <span class="inv-form-error"><?= form_error('motivo') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Observaciones -->
@@ -124,7 +147,10 @@
                     <textarea name="observaciones"
                               rows="2"
                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hotel-brown/20 focus:border-hotel-brown transition-all duration-300"
-                              placeholder="Detalle opcional para auditoria..."></textarea>
+                              placeholder="Detalle opcional para auditoria..."><?= old('observaciones') ?></textarea>
+                    <?php if (form_error('observaciones')): ?>
+                        <span class="inv-form-error"><?= form_error('observaciones') ?></span>
+                    <?php endif; ?>
                 </div>
                 
                 <!-- Vista Previa -->

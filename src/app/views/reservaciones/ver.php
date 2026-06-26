@@ -2089,128 +2089,8 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-btn-primary:hover { background: #1fa66f; }
 .rdv3-btn-ghost { background: rgba(255, 255, 255, .11); color: #fff; border: 1px solid rgba(255, 255, 255, .24); }
 .rdv3-btn-danger { background: rgba(255, 255, 255, .09); color: #fff; border: 1px solid rgba(255, 255, 255, .22); }
-.rdv3-mobile-deck { display: none; }
-.rdv3-mobile-card {
-    position: relative;
-    overflow: hidden;
-    min-width: 0;
-    min-height: 118px;
-    padding: 16px;
-    border-radius: 18px;
-    border: 1px solid color-mix(in srgb, var(--rdv3-blue) 14%, rgba(255,255,255,.9));
-    background: #FFFFFF;
-    box-shadow: 0 12px 28px rgba(31, 43, 72, .09);
-}
-.rdv3-mobile-card--folio {
-    min-height: 126px;
-    color: #fff;
-    background:
-        radial-gradient(circle at calc(100% + 32px) -32px, rgba(157, 137, 104, .24), transparent 9rem),
-        linear-gradient(130deg, var(--rdv3-primary), color-mix(in srgb, var(--rdv3-primary) 82%, #4A5A72));
-    border-color: rgba(255,255,255,.14);
-    box-shadow: 0 18px 34px rgba(23, 35, 66, .24);
-}
-.rdv3-mobile-card--folio .rdv3-label { color: rgba(255,255,255,.64); }
-.rdv3-mobile-card--total {
-    min-height: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    border-color: color-mix(in srgb, var(--rdv3-green) 20%, transparent);
-    background: linear-gradient(120deg, color-mix(in srgb, var(--rdv3-green) 12%, #fff), #EAF7EF);
-}
-.rdv3-mobile-card--date { display: flex; align-items: flex-start; gap: 12px; }
-.rdv3-mobile-card--total.is-pending {
-    border-color: color-mix(in srgb, var(--rdv3-gold) 24%, transparent);
-    background: linear-gradient(120deg, color-mix(in srgb, var(--rdv3-gold) 16%, #fff), #FBF4E6);
-}
-.rdv3-mobile-folio-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.rdv3-mobile-folio {
-    font-family: "Cormorant Garamond", Georgia, serif;
-    font-size: 2.25rem;
-    line-height: .92;
-    font-weight: 700;
-    letter-spacing: 0;
-}
-.rdv3-mobile-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    min-height: 28px;
-    padding: 0 11px;
-    border-radius: 999px;
-    background: rgba(139,139,163,.22);
-    color: #d6d5ff;
-    border: 1px solid rgba(214,213,255,.24);
-    font-size: .7rem;
-    font-weight: 950;
-    white-space: nowrap;
-}
-.rdv3-mobile-status::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
-.rdv3-mobile-meta {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 11px;
-    margin-top: 13px;
-    color: rgba(255,255,255,.72);
-    font-size: .75rem;
-    font-weight: 700;
-}
-.rdv3-mobile-meta span { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
-.rdv3-mobile-meta i { color: #d8bc83; }
-.rdv3-mobile-date { display: grid; gap: 6px; }
-.rdv3-mobile-date small,
-.rdv3-mobile-total-copy small {
-    display: block;
-    color: var(--rdv3-muted-2);
-    font-size: .65rem;
-    font-weight: 950;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-}
-.rdv3-mobile-date b,
-.rdv3-mobile-total-copy b {
-    display: block;
-    color: var(--rdv3-primary);
-    font-family: "Cormorant Garamond", Georgia, serif;
-    font-size: 1.5rem;
-    line-height: .98;
-    font-weight: 700;
-}
-.rdv3-mobile-date span {
-    display: block;
-    color: #8790a4;
-    font-size: .76rem;
-    font-weight: 750;
-}
-.rdv3-mobile-card-icon {
-    width: 34px;
-    height: 34px;
-    display: grid;
-    place-items: center;
-    border-radius: 11px;
-    color: var(--rdv3-blue);
-    background: color-mix(in srgb, var(--rdv3-blue) 10%, #fff);
-    border: 1px solid color-mix(in srgb, var(--rdv3-blue) 14%, transparent);
-}
-.rdv3-mobile-total-copy b { font-size: 1.7rem; }
-.rdv3-mobile-pay {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    min-height: 30px;
-    padding: 0 11px;
-    border-radius: 999px;
-    color: #15835A;
-    background: rgba(255,255,255,.74);
-    font-size: .72rem;
-    font-weight: 950;
-    white-space: nowrap;
-}
-.rdv3-mobile-card--total.is-pending .rdv3-mobile-pay { color: color-mix(in srgb, var(--rdv3-gold) 82%, #6b521f); }
+.rdv3-topbar-menu,
+.rdv3-mobile-bottom { display: none; }
 .rdv3-layout { display: grid; grid-template-columns: minmax(0, 1fr) clamp(318px, 24vw, 360px); gap: 26px; margin-top: 26px; align-items: start; }
 .rdv3-left, .rdv3-right { display: grid; gap: 24px; min-width: 0; }
 .rdv3-right { position: static; align-self: start; }
@@ -2660,14 +2540,6 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 @media (max-width: 780px) {
     .rdv3 { margin: 0; }
     .rdv3-hero { grid-template-columns: 1fr; padding: 22px; }
-    .rdv3-mobile-deck {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-        margin: 14px 0 20px;
-    }
-    .rdv3-mobile-card--folio,
-    .rdv3-mobile-card--total { grid-column: 1 / -1; }
     .rdv3-layout { margin-top: 0; }
     .rdv3-card-header { padding: 22px 24px 12px; }
     .rdv3-card-body { padding: 12px 24px 22px; }
@@ -2695,12 +2567,6 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 }
 @media (max-width: 430px) {
     .rdv3-main { padding: .75rem !important; }
-    .rdv3-mobile-card { min-height: 110px; padding: 14px; border-radius: 16px; }
-    .rdv3-mobile-card--folio { min-height: 122px; }
-    .rdv3-mobile-folio-row { align-items: flex-start; flex-direction: column; gap: 10px; }
-    .rdv3-mobile-folio { font-size: 2rem; }
-    .rdv3-mobile-card--total { align-items: flex-start; flex-direction: column; }
-    .rdv3-mobile-pay { min-height: 0; padding: 7px 11px; white-space: normal; }
     .rdv3-card-header { padding-left: 18px !important; padding-right: 18px !important; }
     .rdv3-card-body { padding-left: 18px !important; padding-right: 18px !important; }
     .rdv3 .rdv3-card--guest .rdv3-info-grid,
@@ -2751,6 +2617,626 @@ foreach ($rdDocuments as $rdDocTotalRow) {
         --rdv3-side-header-x: 24px;
     }
 }
+@media (max-width: 780px) {
+    .main-content { overflow-x: hidden !important; }
+    .rdv3 {
+        --rdv3-mobile-gutter: 16px;
+        --rdv3-mobile-surface: #F1EDE5;
+        --rdv3-mobile-card: #FFFDF9;
+        --rdv3-mobile-line: #E6DBC8;
+        background: var(--rdv3-mobile-surface);
+        overflow-x: hidden;
+        max-width: 100%;
+    }
+    .rdv3-shell,
+    .rdv3-page { background: var(--rdv3-mobile-surface); }
+    .rdv3-main {
+        padding: 0 !important;
+        padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important;
+        overflow-x: hidden !important;
+        max-width: 100%;
+    }
+    .rdv3-page {
+        padding: 0 var(--rdv3-mobile-gutter) 112px !important;
+        overflow-x: hidden;
+        max-width: 100%;
+    }
+    .rdv3-topbar {
+        position: sticky;
+        top: 0;
+        z-index: 60;
+        margin: 0 calc(var(--rdv3-mobile-gutter) * -1) 14px;
+        padding: calc(10px + env(safe-area-inset-top, 0px)) var(--rdv3-mobile-gutter) 12px;
+        background: rgba(255, 253, 249, .96);
+        border-bottom: 1px solid var(--rdv3-mobile-line);
+        backdrop-filter: blur(14px);
+    }
+    .rdv3-back,
+    .rdv3-topbar-menu {
+        width: 38px;
+        height: 38px;
+        flex: 0 0 38px;
+        border-radius: 11px;
+        border: 1px solid var(--rdv3-mobile-line);
+        background: #fff;
+        color: var(--rdv3-primary);
+        box-shadow: none;
+    }
+    .rdv3-topbar-menu {
+        margin-left: auto;
+        display: grid;
+        place-items: center;
+    }
+    .rdv3-crumb-prefix { display: none; }
+    .rdv3-crumbs {
+        color: var(--rdv3-primary);
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-size: 1.13rem;
+        line-height: 1;
+        font-weight: 700;
+    }
+    .rdv3-crumbs strong { color: var(--rdv3-primary); }
+    .rdv3-topbar-hotel {
+        color: #6f7890;
+        font-size: .73rem;
+        font-weight: 700;
+    }
+    .rdv3-hero {
+        margin: 0 0 18px;
+        min-height: 106px;
+        padding: 21px 18px;
+        border-radius: 17px;
+        grid-template-columns: 1fr;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(125deg, var(--rdv3-primary), color-mix(in srgb, var(--rdv3-primary) 86%, #243357));
+        box-shadow: 0 15px 30px rgba(28, 37, 62, .18);
+    }
+    .rdv3-hero::after {
+        content: '';
+        position: absolute;
+        right: -40px;
+        top: -40px;
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        background: rgba(176, 136, 63, .14);
+        pointer-events: none;
+    }
+    .rdv3-title-prefix { display: none; }
+    .rdv3-titleline {
+        align-items: center;
+        gap: 8px;
+    }
+    .rdv3-titleline h1 {
+        font-size: 1.55rem;
+        line-height: 1;
+        letter-spacing: 0;
+    }
+    .rdv3-status {
+        min-height: 26px;
+        padding: 0 11px;
+        font-size: .67rem;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .rdv3-status--ok {
+        color: #B6B4F0;
+        background: rgba(90, 87, 210, .26);
+        border-color: rgba(150, 148, 230, .35);
+    }
+    .rdv3-meta {
+        gap: 13px;
+        margin-top: 11px;
+        color: rgba(255,255,255,.68);
+        font-size: .72rem;
+        font-weight: 500;
+        flex-wrap: wrap;
+    }
+    .rdv3-meta i { color: #D8BC83; }
+    .rdv3-hero-actions { display: none; }
+    .rdv3-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+        margin-top: 0;
+    }
+    .rdv3-left,
+    .rdv3-right { display: contents; }
+    .rdv3-card,
+    .rdv3 .documentos-entidad-panel {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        overflow: visible;
+    }
+    .rdv3-card--stay { order: 10; }
+    .rdv3-card--rooms { order: 20; }
+    .rdv3-card--guest { order: 30; }
+    .rdv3-side-card--payment { order: 40; }
+    .rdv3-side-card--timeline { order: 50; }
+    .rdv3 .documentos-entidad-panel { order: 60; }
+    .rdv3-side-card--notes { order: 70; }
+    .rdv3-side-card--actions { order: 80; }
+    .rdv3-card-header,
+    .rdv3-side-card .rdv3-card-header {
+        min-height: 0;
+        padding: 0 3px 9px !important;
+        background: transparent;
+        border: 0;
+        align-items: center;
+    }
+    .rdv3-card-header .rdv3-icon,
+    .rdv3-side-card .rdv3-icon { display: none !important; }
+    .rdv3-heading { gap: 0; }
+    .rdv3-card-title,
+    .rdv3 .documentos-entidad-panel > div:first-child > div:first-child h2 {
+        font-family: Manrope, system-ui, sans-serif;
+        color: #9BA3B6;
+        font-size: .72rem;
+        line-height: 1.15;
+        font-weight: 950;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+    }
+    .rdv3-card-header .rdv3-link {
+        min-height: 0;
+        padding: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        color: #B08034;
+        font-size: .72rem;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+    .rdv3-card-body,
+    .rdv3-side-card .rdv3-card-body {
+        padding: 16px !important;
+        border: 1px solid var(--rdv3-mobile-line);
+        border-radius: 16px;
+        background: var(--rdv3-mobile-card);
+        box-shadow: 0 10px 22px rgba(39, 31, 18, .07);
+    }
+    .rdv3-stay {
+        grid-template-columns: minmax(0, 1fr) 60px minmax(0, 1fr);
+        border-color: var(--rdv3-mobile-line);
+        border-radius: 13px;
+        background: #F8F3EB;
+    }
+    .rdv3-date {
+        min-width: 0;
+        padding: 13px 14px;
+    }
+    .rdv3-date:last-child { text-align: right; }
+    .rdv3-date strong {
+        color: var(--rdv3-primary);
+        font-size: 1.18rem;
+    }
+    .rdv3-date span {
+        margin-top: 3px;
+        font-size: .68rem;
+    }
+    .rdv3-nights {
+        min-height: 80px;
+        border-top: 0;
+        border-bottom: 0;
+        border-color: var(--rdv3-mobile-line);
+        background: rgba(255,255,255,.55);
+    }
+    .rdv3-total {
+        margin-top: 13px;
+        min-height: 86px;
+        padding: 15px;
+        border-radius: 13px;
+        border-color: rgba(30,158,99,.22);
+        background: linear-gradient(120deg, #E8F7EF, #DFF2E8);
+    }
+    .rdv3-total .rdv3-amount { font-size: 1.55rem; }
+    .rdv3-pill {
+        min-height: 27px;
+        padding: 0 11px;
+        font-size: .69rem;
+        white-space: nowrap;
+    }
+    .rdv3-res-note {
+        margin-top: 13px;
+        align-items: flex-start;
+        border-color: #E4C98E;
+        background: #FFF4D8;
+        color: #78531C;
+        font-size: .78rem;
+        line-height: 1.45;
+    }
+    .rdv3-header-badges { display: none; }
+    .rdv3-badge {
+        min-height: 0;
+        padding: 0;
+        background: transparent;
+        color: #B08034;
+        font-size: .72rem;
+        letter-spacing: .04em;
+    }
+    .rdv3-badge i { display: none; }
+    .rdv3-rooms { display: block; }
+    .rdv3-room {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        padding: 14px 0;
+        gap: 0;
+    }
+    .rdv3-room + .rdv3-room { border-top: 1px solid #EFE3D0; }
+    .rdv3-room::before { display: none; }
+    .rdv3-room-top {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+    }
+    .rdv3-room-top > .min-w-0 {
+        display: grid;
+        grid-template-columns: 48px minmax(0, 1fr);
+        column-gap: 10px;
+        align-items: center;
+    }
+    .rdv3-room-number {
+        grid-row: 1 / 3;
+        width: 48px;
+        color: var(--rdv3-primary);
+        font-size: 1.35rem;
+    }
+    .rdv3-room-type {
+        margin-top: 0;
+        color: var(--rdv3-primary);
+        font-size: .82rem;
+        font-weight: 950;
+    }
+    .rdv3-room-sub {
+        margin-top: 2px;
+        gap: 4px;
+    }
+    .rdv3-tag {
+        min-height: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: #7F8797;
+        font-size: .72rem;
+        font-weight: 650;
+    }
+    .rdv3-tag i { display: none; }
+    .rdv3-room-price {
+        align-self: center;
+        flex-shrink: 0;
+        color: var(--rdv3-primary);
+        font-size: .92rem;
+        text-align: right;
+    }
+    .rdv3-room-price small {
+        display: block;
+        font-size: .58rem;
+        color: #9BA3B6;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        margin-top: 1px;
+    }
+    .rdv3-room.is-courtesy .rdv3-room-price {
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: #FFF2D9;
+        color: #B08034;
+        font-size: .68rem;
+    }
+    .rdv3-room.is-courtesy .rdv3-room-price small { display: none; }
+    .rdv3-room-metrics { display: none; }
+    .rdv3-guest-head {
+        margin-bottom: 15px;
+        padding: 0;
+        background: transparent;
+    }
+    .rdv3-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
+        background: linear-gradient(145deg, #6657D7, #5143C6);
+    }
+    .rdv3-guest-name { font-size: 1.2rem; }
+    .rdv3-guest-sub { font-size: .73rem; }
+    .rdv3 .rdv3-card--guest .rdv3-info-grid,
+    .rdv3-contact-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+    }
+    .rdv3-info {
+        min-height: 54px;
+        padding: 10px;
+        border-color: var(--rdv3-mobile-line);
+        background: #FFFBF5;
+    }
+    .rdv3-info i {
+        width: 28px;
+        height: 28px;
+        background: #fff;
+        color: #8D98AA;
+    }
+    .rdv3-info small { font-size: .58rem; }
+    .rdv3-info b {
+        font-size: .72rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .rdv3-contact-action {
+        min-height: 42px;
+        border-color: var(--rdv3-mobile-line);
+        background: #FFFBF5;
+        font-size: .78rem;
+    }
+    .rdv3-guest-docs {
+        margin-top: 15px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+    .rdv3-guest-docs-head { margin-bottom: 9px; }
+    .rdv3-guest-docs-title {
+        color: var(--rdv3-primary);
+        font-size: .82rem;
+    }
+    .rdv3-guest-docs-title i {
+        width: auto;
+        height: auto;
+        border: 0;
+        background: transparent;
+        color: #62A7C2;
+    }
+    .rdv3-guest-doc-feature {
+        min-height: 72px;
+        grid-template-columns: 54px minmax(0, 1fr);
+        padding: 11px;
+        border-radius: 12px;
+        border-color: var(--rdv3-mobile-line);
+        background: #FFFBF5;
+    }
+    .rdv3-guest-doc-thumb {
+        min-height: 48px;
+        padding: 8px;
+        border-radius: 8px;
+    }
+    .rdv3-guest-doc-seal { display: none; }
+    .rdv3-guest-doc-brand {
+        align-self: center;
+        font-size: .48rem;
+    }
+    .rdv3-guest-doc-copy b { font-size: .82rem; }
+    .rdv3-guest-doc-copy small { font-size: .68rem; }
+    .rdv3-doc-mini-state { display: none !important; }
+    .rdv3-subhead {
+        margin: 15px 0 9px;
+        color: var(--rdv3-primary);
+        font-size: .82rem;
+    }
+    .rdv3-subhead-note { display: none; }
+    .rdv3-vehicle {
+        border-color: var(--rdv3-mobile-line);
+        background: #FFFBF5;
+    }
+    .rdv3-payment-total {
+        border-radius: 13px;
+        background: linear-gradient(135deg, #E8F7EF, #DFF2E8);
+        border-color: rgba(30, 158, 99, .2);
+        padding: 14px 16px;
+        text-align: center;
+    }
+    .rdv3-payment-total small {
+        font-size: .67rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: #1E9E63;
+    }
+    .rdv3-payment-total b { font-size: 1.55rem; }
+    .rdv3-payment-row { padding: 8px 0; }
+    .rdv3-payment-row + .rdv3-payment-row { border-top: 1px solid #F1EDE5; }
+    .rdv3-payment-method i {
+        width: 30px; height: 30px;
+        border-radius: 8px;
+        background: #E7F8EF;
+        color: #22A66B;
+    }
+    .rdv3-timeline {
+        gap: 14px;
+        padding-left: 20px;
+    }
+    .rdv3-timeline::before {
+        left: 6px;
+        top: 5px;
+        bottom: 5px;
+        width: 2px;
+        background: #E6DBC8;
+    }
+    .rdv3-step::before {
+        left: -18px;
+        top: 9px;
+        width: 10px;
+        height: 10px;
+        border-width: 2.5px;
+    }
+    .rdv3-step-title { font-size: .84rem; font-weight: 750; }
+    .rdv3-step-meta { font-size: .72rem; line-height: 1.3; }
+    .rdv3 .documentos-entidad-panel {
+        margin: 0 !important;
+        padding: 0;
+    }
+    .rdv3 .documentos-entidad-panel > div:first-child {
+        padding: 0 3px 9px !important;
+        border: 0 !important;
+        background: transparent !important;
+    }
+    .rdv3 .documentos-entidad-panel > div:first-child > div:first-child p { display: none; }
+    .rdv3 .documentos-entidad-panel > div:first-child > .inline-flex {
+        width: 100%;
+        gap: 8px;
+        padding-bottom: 3px;
+    }
+    .rdv3 .documentos-entidad-panel .de-badge,
+    .rdv3 .documentos-entidad-panel .de-action {
+        min-height: 34px;
+        border-radius: 999px;
+        font-size: .75rem;
+        padding: 0 12px;
+    }
+    .rdv3 .documentos-entidad-panel .de-badge {
+        color: #1E9E63;
+        background: #E7F4EC;
+        border-color: rgba(30, 158, 99, .22);
+    }
+    .rdv3 .documentos-entidad-panel .de-action:last-child {
+        color: #fff;
+        background: linear-gradient(150deg, #BE9A52, #9C7730);
+        border-color: transparent;
+    }
+    .rdv3 .documentos-entidad-panel > div:not(:first-child) {
+        border: 1px solid var(--rdv3-mobile-line);
+        border-radius: 16px;
+        background: var(--rdv3-mobile-card);
+        box-shadow: 0 10px 22px rgba(39, 31, 18, .07);
+        overflow: hidden;
+    }
+    /* Mobile-friendly document table */
+    .rdv3 .documentos-entidad-panel .de-table { width: 100%; }
+    .rdv3 .documentos-entidad-panel .de-table thead { display: none; }
+    .rdv3 .documentos-entidad-panel .de-table tbody tr {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--rdv3-mobile-line);
+    }
+    .rdv3 .documentos-entidad-panel .de-table tbody tr:last-child { border-bottom: 0; }
+    .rdv3 .documentos-entidad-panel .de-table td {
+        border: 0 !important;
+        padding: 0 !important;
+    }
+    .rdv3 .documentos-entidad-panel .de-table td:nth-child(2),
+    .rdv3 .documentos-entidad-panel .de-table td:nth-child(3),
+    .rdv3 .documentos-entidad-panel .de-table td:nth-child(5),
+    .rdv3 .documentos-entidad-panel .de-table td:nth-child(6) { display: none; }
+    .rdv3 .documentos-entidad-panel .de-table td:nth-child(1) {
+        flex: 1;
+        min-width: 0;
+        font-size: .82rem;
+        font-weight: 700;
+        color: var(--rdv3-primary);
+    }
+    .rdv3 .documentos-entidad-panel .de-table td:nth-child(1) .text-xs {
+        font-size: .68rem;
+        color: #8b94a8;
+        margin-top: 1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .rdv3 .documentos-entidad-panel .de-table td:nth-child(4) {
+        white-space: nowrap;
+    }
+    .rdv3 .documentos-entidad-panel .de-table td:nth-child(7) {
+        white-space: nowrap;
+    }
+    /* Empty state inside documents panel */
+    .rdv3 .documentos-entidad-panel .p-8 {
+        padding: 20px 14px !important;
+    }
+    .rdv3-side-card--notes .rdv3-card-body {
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 12px;
+    }
+    .rdv3-note-list {
+        max-height: none;
+        overflow: visible;
+    }
+    .rdv3-note {
+        background: linear-gradient(120deg, #F4EAD5, #FBF3E1);
+        border-color: #E4D4B0;
+        border-radius: 11px;
+        padding: 11px 13px;
+        color: #7A5C20;
+        font-size: .78rem;
+        line-height: 1.5;
+    }
+    .rdv3-note small {
+        color: color-mix(in srgb, #9C7730 84%, #6e5527);
+        font-weight: 750;
+    }
+    .rdv3-note-composer {
+        margin: 0;
+        padding: 12px;
+        border-color: var(--rdv3-mobile-line);
+        background: #FFFBF5;
+        border-radius: 13px;
+    }
+    .rdv3-mobile-bottom {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 90;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+        border-top: 1px solid var(--rdv3-mobile-line);
+        background: rgba(255, 253, 249, .94);
+        box-shadow: 0 -12px 30px rgba(31, 43, 72, .12);
+        backdrop-filter: blur(16px);
+    }
+    .rdv3-mobile-primary {
+        flex: 1 1 auto;
+        min-height: 52px;
+        border: 0;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        background: #21A86A;
+        color: #fff;
+        font-size: .96rem;
+        font-weight: 950;
+        cursor: pointer;
+        box-shadow: 0 10px 22px rgba(33,168,106,.22);
+    }
+    .rdv3-mobile-more {
+        width: 52px;
+        height: 52px;
+        flex: 0 0 52px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--rdv3-mobile-line);
+        background: #fff;
+        color: var(--rdv3-primary);
+        font-size: .96rem;
+    }
+}
+@media (max-width: 370px) {
+    .rdv3 {
+        --rdv3-mobile-gutter: 12px;
+    }
+    .rdv3 .rdv3-card--guest .rdv3-info-grid,
+    .rdv3-contact-actions { grid-template-columns: 1fr; }
+    .rdv3-room-top > .min-w-0 { grid-template-columns: 42px minmax(0, 1fr); }
+    .rdv3-room-number { width: 42px; font-size: 1.18rem; }
+}
 </style>
 
 <div class="rdv3 detail-view">
@@ -2760,15 +3246,16 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                 <div class="rdv3-topbar">
                     <a class="rdv3-back" href="<?= back_url('reservaciones') ?>" aria-label="Volver"><i class="fas fa-arrow-left"></i></a>
                     <div class="rdv3-topbar-copy">
-                        <div class="rdv3-crumbs">Reservaciones / <strong>Reservacion #<?= $rdReservationId ?></strong></div>
+                        <div class="rdv3-crumbs"><span class="rdv3-crumb-prefix">Reservaciones / </span><strong>Reservacion #<?= $rdReservationId ?></strong></div>
                         <div class="rdv3-topbar-hotel"><?= $rdSafe($nombreHotelVisible, 'Medisoft Hoteles') ?></div>
                     </div>
+                    <a class="rdv3-topbar-menu" href="#rdv3-actions-panel" aria-label="Ver acciones"><i class="fas fa-ellipsis"></i></a>
                 </div>
 
                 <section class="rdv3-hero" aria-labelledby="rdv3-title">
                     <div>
                         <div class="rdv3-titleline">
-                            <h1 id="rdv3-title">Reservacion #<?= $rdReservationId ?></h1>
+                            <h1 id="rdv3-title"><span class="rdv3-title-prefix">Reservacion </span>#<?= $rdReservationId ?></h1>
                             <span class="rdv3-status <?= $rdEstadoClass ?>"><?= $rdSafe($rdEstadoLabel, 'Pendiente') ?></span>
                         </div>
                         <div class="rdv3-meta">
@@ -2790,49 +3277,6 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                             <button type="button" class="rdv3-btn rdv3-btn-danger" onclick="mostrarFormularioCancelacion()"><i class="fas fa-xmark"></i>Cancelar</button>
                         <?php endif; ?>
                     </div>
-                </section>
-
-                <section class="rdv3-mobile-deck" aria-label="Resumen rapido de la reservacion">
-                    <article class="rdv3-mobile-card rdv3-mobile-card--folio">
-                        <div class="rdv3-mobile-folio-row">
-                            <div>
-                                <span class="rdv3-label">Folio</span>
-                                <div class="rdv3-mobile-folio">#<?= $rdReservationId ?></div>
-                            </div>
-                            <span class="rdv3-mobile-status"><?= $rdSafe($rdEstadoLabel, 'Pendiente') ?></span>
-                        </div>
-                        <div class="rdv3-mobile-meta">
-                            <span><i class="fas fa-bed"></i><?= $rdSafe($rdRoomCountLabel) ?></span>
-                            <span><i class="fas fa-user"></i><?= $rdSafe($rdGuestName, 'Huesped') ?></span>
-                            <span><i class="far fa-clock"></i><?= $rdSafe($rdDateTime($rdCreatedAt), '-') ?></span>
-                        </div>
-                    </article>
-
-                    <article class="rdv3-mobile-card rdv3-mobile-card--date">
-                        <span class="rdv3-mobile-card-icon" aria-hidden="true"><i class="far fa-calendar-check"></i></span>
-                        <div class="rdv3-mobile-date">
-                            <small>Check-in</small>
-                            <b><?= $rdSafe($rdDate($reservacion['fecha_entrada'] ?? null)) ?></b>
-                            <span>Desde <?= $rdSafe($rdEntryTime, '15:00') ?></span>
-                        </div>
-                    </article>
-
-                    <article class="rdv3-mobile-card rdv3-mobile-card--date">
-                        <span class="rdv3-mobile-card-icon" aria-hidden="true"><i class="far fa-calendar-xmark"></i></span>
-                        <div class="rdv3-mobile-date">
-                            <small>Check-out</small>
-                            <b><?= $rdSafe($rdDate($reservacion['fecha_salida'] ?? null)) ?></b>
-                            <span>Antes <?= $rdSafe($rdExitTime, '12:00') ?></span>
-                        </div>
-                    </article>
-
-                    <article class="rdv3-mobile-card rdv3-mobile-card--total <?= $rdPaymentIsPaid ? 'is-paid' : 'is-pending' ?>">
-                        <div class="rdv3-mobile-total-copy">
-                            <small>Precio total</small>
-                            <b><?= $rdMoney($rdTotal) ?></b>
-                        </div>
-                        <span class="rdv3-mobile-pay"><i class="fas <?= $rdPaymentIsPaid ? 'fa-check' : 'fa-clock' ?>"></i><?= $rdSafe($rdPaymentLabel, 'Pago pendiente') ?></span>
-                    </article>
                 </section>
 
                 <div class="rdv3-layout">
@@ -3084,7 +3528,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                     </div>
 
                     <aside class="rdv3-right" aria-label="Panel lateral de reservacion">
-                        <section class="rdv3-card rdv3-side-card rdv3-side-card--actions">
+                        <section id="rdv3-actions-panel" class="rdv3-card rdv3-side-card rdv3-side-card--actions">
                             <header class="rdv3-card-header">
                                 <div class="rdv3-heading"><span class="rdv3-icon"><i class="fas fa-grip"></i></span><h2 class="rdv3-card-title">Acciones rapidas</h2></div>
                             </header>
@@ -3179,6 +3623,19 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                         </section>
                     </aside>
                 </div>
+
+                <nav class="rdv3-mobile-bottom" aria-label="Acciones principales de reservacion">
+                    <?php if ($rdCheckinMode === 'normal'): ?>
+                        <button type="button" class="rdv3-mobile-primary" onclick="abrirModalCheckIn(<?= $rdReservationId ?>, <?= $rdTotal ?>)"><i class="fas fa-right-to-bracket"></i>Check-in</button>
+                    <?php elseif ($rdCheckinMode === 'late' || $rdCheckinMode === 'express'): ?>
+                        <button type="button" class="rdv3-mobile-primary" onclick='abrirModalCheckInTardio(<?= $rdReservationId ?>, <?= $rdHuespedNombreJsonAttr ?>, <?= $rdHabitacionesTextoJsonAttr ?>, <?= $rdFechaEntradaFormatoJsonAttr ?>, <?= $rdFechaSalidaFormatoJsonAttr ?>, <?= $rdTotal ?>, "<?= $rdCheckinJsMode ?>", <?= (int)$rdCheckinDays ?>)'><i class="fas fa-right-to-bracket"></i>Check-in</button>
+                    <?php elseif ($rdEstadoKey === 'checked_in'): ?>
+                        <button type="button" class="rdv3-mobile-primary" onclick="abrirModalCheckOut()"><i class="fas fa-right-from-bracket"></i>Check-out</button>
+                    <?php else: ?>
+                        <a class="rdv3-mobile-primary" href="#rdv3-actions-panel"><i class="fas fa-grip"></i>Ver acciones</a>
+                    <?php endif; ?>
+                    <a class="rdv3-mobile-more" href="#rdv3-actions-panel" aria-label="Ver mas acciones"><i class="fas fa-ellipsis"></i></a>
+                </nav>
             </div>
         </main>
     </div>

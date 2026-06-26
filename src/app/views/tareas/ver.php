@@ -7,6 +7,19 @@ if (!function_exists('tlm_safe')) {
     }
 }
 
+if (!function_exists('tk_detail_form_error')) {
+    function tk_detail_form_error(array $errors, string $field): string
+    {
+        $messages = $errors[$field] ?? [];
+        if (!is_array($messages)) {
+            $messages = [$messages];
+        }
+
+        $message = trim((string)($messages[0] ?? ''));
+        return $message !== '' ? tlm_safe($message) : '';
+    }
+}
+
 if (!function_exists('tlm_date')) {
     function tlm_date($value): string
     {
@@ -68,12 +81,25 @@ $trabajadoresActivos = is_array($trabajadoresActivos ?? null) ? $trabajadoresAct
 $puedeAsignar = (bool)($puedeAsignar ?? false);
 $puedeCambiarEstado = (bool)($puedeCambiarEstado ?? false);
 $documentosEntidad = is_array($documentosEntidad ?? null) ? $documentosEntidad : [];
+$tareaDetailFieldErrors = isset($layoutFieldErrors) && is_array($layoutFieldErrors) ? $layoutFieldErrors : [];
 
 $estado = (string)($tarea['estado'] ?? 'pendiente');
 $tareaId = (int)($tarea['id'] ?? 0);
 [$eLabel, $eClass, $eIcon] = tk_estado_meta($estado);
 [$pLabel, $pClass, $pIcon] = tk_prioridad_meta($tarea['prioridad'] ?? 'media');
 [$cLabel, $cIcon] = tk_categoria_meta($tarea['categoria'] ?? 'general');
+
+$tareaDetailOldAction = (string)old('tarea_form_action', '');
+$trabajadorSeleccionado = $tareaDetailOldAction === 'asignar'
+    ? (string)old('trabajador_id', (string)($tarea['trabajador_id'] ?? ''))
+    : (string)($tarea['trabajador_id'] ?? '');
+$comentarioCompletarValor = $tareaDetailOldAction === 'completar' ? old('comentario', '') : '';
+$comentarioCancelarValor = $tareaDetailOldAction === 'cancelar' ? old('comentario', '') : '';
+$asignarGlobalError = $tareaDetailOldAction === 'asignar' ? tk_detail_form_error($tareaDetailFieldErrors, '_global') : '';
+$estadoGlobalError = in_array($tareaDetailOldAction, ['iniciar', 'completar', 'cancelar'], true) ? tk_detail_form_error($tareaDetailFieldErrors, '_global') : '';
+$trabajadorError = $tareaDetailOldAction === 'asignar' ? tk_detail_form_error($tareaDetailFieldErrors, 'trabajador_id') : '';
+$comentarioCompletarError = $tareaDetailOldAction === 'completar' ? tk_detail_form_error($tareaDetailFieldErrors, 'comentario') : '';
+$comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form_error($tareaDetailFieldErrors, 'comentario') : '';
 ?>
 
 <style>
@@ -145,6 +171,9 @@ $tareaId = (int)($tarea['id'] ?? 0);
 .tk-detail textarea.tk-field { min-height: 74px; resize: vertical; }
 .tk-detail .tk-field:focus { border-color: var(--tk-gold); box-shadow: 0 0 0 3px var(--tk-ring); outline: none; background: #fff; }
 .tk-detail .tk-help { font-size: .76rem; color: var(--tk-muted); margin-top: 8px; }
+.tk-detail .tk-field-error { border-color: var(--tk-danger); background: #FFF7F6; }
+.tk-detail .tk-form-error { display: block; margin-top: 7px; color: var(--tk-danger); font-size: .78rem; font-weight: 800; line-height: 1.35; letter-spacing: 0; text-transform: none; }
+.tk-detail .tk-error-summary { padding: 11px 13px; border: 1px solid color-mix(in srgb, var(--tk-danger) 32%, #fff); border-radius: 12px; background: #FFF7F6; color: color-mix(in srgb, var(--tk-danger) 86%, #000); font-size: .84rem; font-weight: 800; }
 .tk-detail .tk-form-row { display: grid; gap: 10px; }
 .tk-detail .tk-stack { display: grid; gap: 14px; }
 
@@ -276,17 +305,23 @@ $tareaId = (int)($tarea['id'] ?? 0);
                     <?php else: ?>
                         <form method="POST" action="<?= url('tareas/' . $tareaId . '/asignar') ?>" class="tk-form-row">
                             <?= csrf_field() ?>
+                            <?php if ($asignarGlobalError !== ''): ?>
+                                <div class="tk-error-summary ms-form-error-summary" role="alert"><?= $asignarGlobalError ?></div>
+                            <?php endif; ?>
                             <div>
                                 <label class="tk-label" for="tk_trabajador">Trabajador</label>
-                                <select class="tk-field" id="tk_trabajador" name="trabajador_id" required>
+                                <select class="tk-field<?= $trabajadorError !== '' ? ' tk-field-error' : '' ?>" id="tk_trabajador" name="trabajador_id" required<?= $trabajadorError !== '' ? ' aria-invalid="true" aria-describedby="ms-form-error-tk_trabajador"' : '' ?>>
                                     <option value="">Elige un trabajador</option>
                                     <?php foreach ($trabajadoresActivos as $trabajador): ?>
                                         <?php $trabajadorId = (int)($trabajador['id'] ?? 0); ?>
-                                        <option value="<?= $trabajadorId ?>" <?= $trabajadorId === (int)($tarea['trabajador_id'] ?? 0) ? 'selected' : '' ?>>
+                                        <option value="<?= $trabajadorId ?>" <?= (string)$trabajadorId === $trabajadorSeleccionado ? 'selected' : '' ?>>
                                             <?= tlm_safe($trabajador['nombre_completo'] ?? ('Trabajador #' . $trabajadorId)) ?><?= !empty($trabajador['rol_laboral']) ? ' - ' . tlm_safe($trabajador['rol_laboral']) : '' ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
+                                <?php if ($trabajadorError !== ''): ?>
+                                    <span id="ms-form-error-tk_trabajador" class="tk-form-error ms-form-field-error"><?= $trabajadorError ?></span>
+                                <?php endif; ?>
                             </div>
                             <button class="tk-btn tk-btn-gold" type="submit"><i class="fas fa-user-check"></i> Asignar</button>
                             <div class="tk-help">Solo trabajadores activos. Asignarla no genera pagos ni cambia la habitaci&oacute;n.</div>
@@ -300,6 +335,10 @@ $tareaId = (int)($tarea['id'] ?? 0);
                         <div class="tk-empty-box">Esta tarea ya no tiene cambios de estado disponibles.</div>
                     <?php else: ?>
                         <div class="tk-stack">
+                            <?php if ($estadoGlobalError !== ''): ?>
+                                <div class="tk-error-summary ms-form-error-summary" role="alert"><?= $estadoGlobalError ?></div>
+                            <?php endif; ?>
+
                             <?php if (in_array($estado, ['pendiente', 'asignada'], true)): ?>
                                 <form method="POST" action="<?= url('tareas/' . $tareaId . '/iniciar') ?>">
                                     <?= csrf_field() ?>
@@ -309,13 +348,21 @@ $tareaId = (int)($tarea['id'] ?? 0);
 
                             <form method="POST" action="<?= url('tareas/' . $tareaId . '/completar') ?>" class="tk-form-row">
                                 <?= csrf_field() ?>
-                                <textarea class="tk-field" name="comentario" maxlength="800" placeholder="Nota de cierre (opcional)"></textarea>
+                                <label class="tk-label" for="tk_completar_comentario">Nota de cierre</label>
+                                <textarea class="tk-field<?= $comentarioCompletarError !== '' ? ' tk-field-error' : '' ?>" id="tk_completar_comentario" name="comentario" maxlength="800" placeholder="Nota de cierre (opcional)"<?= $comentarioCompletarError !== '' ? ' aria-invalid="true" aria-describedby="ms-form-error-tk_completar_comentario"' : '' ?>><?= $comentarioCompletarValor ?></textarea>
+                                <?php if ($comentarioCompletarError !== ''): ?>
+                                    <span id="ms-form-error-tk_completar_comentario" class="tk-form-error ms-form-field-error"><?= $comentarioCompletarError ?></span>
+                                <?php endif; ?>
                                 <button class="tk-btn tk-btn-success" type="submit"><i class="fas fa-check"></i> Completar</button>
                             </form>
 
                             <form method="POST" action="<?= url('tareas/' . $tareaId . '/cancelar') ?>" class="tk-form-row">
                                 <?= csrf_field() ?>
-                                <textarea class="tk-field" name="comentario" maxlength="800" placeholder="Motivo de cancelaci&oacute;n (opcional)"></textarea>
+                                <label class="tk-label" for="tk_cancelar_comentario">Motivo de cancelaci&oacute;n</label>
+                                <textarea class="tk-field<?= $comentarioCancelarError !== '' ? ' tk-field-error' : '' ?>" id="tk_cancelar_comentario" name="comentario" maxlength="800" placeholder="Motivo de cancelaci&oacute;n (opcional)"<?= $comentarioCancelarError !== '' ? ' aria-invalid="true" aria-describedby="ms-form-error-tk_cancelar_comentario"' : '' ?>><?= $comentarioCancelarValor ?></textarea>
+                                <?php if ($comentarioCancelarError !== ''): ?>
+                                    <span id="ms-form-error-tk_cancelar_comentario" class="tk-form-error ms-form-field-error"><?= $comentarioCancelarError ?></span>
+                                <?php endif; ?>
                                 <button class="tk-btn tk-btn-danger" type="submit"><i class="fas fa-ban"></i> Cancelar</button>
                             </form>
 

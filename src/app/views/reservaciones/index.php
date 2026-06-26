@@ -8,6 +8,7 @@ $estadisticas        = $estadisticas        ?? [];
 $entradas_hoy        = $entradas_hoy        ?? [];
 $salidas_hoy         = $salidas_hoy         ?? [];
 $reservaciones       = $reservaciones       ?? [];
+$proximas_reservaciones = $proximas_reservaciones ?? [];
 $total_reservaciones = $total_reservaciones ?? count($reservaciones);
 $estados             = $estados             ?? [];
 $buscar              = $buscar              ?? '';
@@ -200,7 +201,10 @@ $ts = strtotime($fecha_filtro) ?: time();
 $fecha_bonita = $dias_semana[(int) date('w', $ts)] . ' ' . date('d', $ts) . ' de ' . $meses[(int) date('n', $ts) - 1] . ', ' . date('Y', $ts);
 
 $reservaciones = reserva_agrupadas_index($reservaciones);
+$proximas_reservaciones = reserva_agrupadas_index($proximas_reservaciones);
 $total_reservaciones = count($reservaciones);
+$total_proximas = count($proximas_reservaciones);
+$proxima_reserva = $proximas_reservaciones[0] ?? null;
 
 $estado_counts = [
     'confirmada'  => 0,
@@ -221,6 +225,7 @@ $entradas_count = is_countable($entradas_hoy) ? count($entradas_hoy) : (int) ($e
 $salidas_count = is_countable($salidas_hoy) ? count($salidas_hoy) : (int) ($estadisticas['salidas_hoy'] ?? 0);
 $total_listado = count($reservaciones);
 $total_visible = $total_reservaciones ?: $total_listado;
+$total_busqueda_global = $total_visible + $total_proximas;
 $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string) current_hotel_display_name() : 'Hotel';
 ?>
 
@@ -305,7 +310,8 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .res-tab.is-active { background: var(--res-heading); border-color: var(--res-heading); color: #fff; box-shadow: 0 12px 26px color-mix(in srgb, var(--res-heading) 14%, transparent); }
 .res-date-tools { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .res-date-tools input { height: 39px; border-radius: 10px; border: 1px solid var(--res-line); padding: 0 11px; color: var(--res-heading); background: #fff; font-weight: 700; }
-.res-date-chip { height: 39px; display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; border: 1px solid var(--res-line); padding: 0 12px; background: #fff; color: #40506A; font-weight: 800; font-size: .82rem; }
+.res-date-chip { height: 39px; display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; border: 1px solid var(--res-line); padding: 0 12px; background: #fff; color: #40506A; font-weight: 800; font-size: .82rem; text-decoration: none; white-space: nowrap; }
+.res-date-chip.is-upcoming { border-color: color-mix(in srgb, var(--res-accent) 34%, var(--res-line)); color: var(--res-heading); background: color-mix(in srgb, var(--res-accent) 7%, #fff); }
 .res-tab,
 .res-date-chip,
 .res-btn,
@@ -500,9 +506,156 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .res-action-primary { background: var(--res-brand); border-color: var(--res-brand); color: #fff; }
 .res-action-warning { background: #D97706; border-color: #D97706; color: #fff; }
 .res-empty, .res-filter-empty { border: 1px dashed var(--res-line); border-radius: 18px; background: rgba(255,255,255,.9); padding: 42px 18px; text-align: center; color: var(--res-muted); }
+.res-empty-actions { display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 .res-filter-empty { display: none; margin-top: 14px; }
 .res-filter-empty.is-visible { display: block; }
 .reservation-item.hidden-search { display: none !important; }
+.res-upcoming {
+    margin-top: 18px;
+    border: 1px solid var(--res-line);
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(255,255,255,.98), color-mix(in srgb, var(--res-accent) 4%, #FFFFFF));
+    box-shadow: 0 18px 42px rgba(15,23,42,.07);
+    overflow: hidden;
+}
+.res-upcoming-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--res-line);
+    background: rgba(255,255,255,.74);
+}
+.res-section-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 5px;
+    color: color-mix(in srgb, var(--res-accent) 68%, var(--res-heading));
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+.res-upcoming-head h2 {
+    margin: 0;
+    color: var(--res-heading);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.42rem;
+    font-weight: 800;
+    line-height: 1.05;
+}
+.res-upcoming-head p {
+    margin: 5px 0 0;
+    color: #748096;
+    font-size: .86rem;
+    font-weight: 700;
+}
+.res-upcoming-grid {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+}
+.res-upcoming-card {
+    display: grid;
+    grid-template-columns: 66px minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: center;
+    border: 1px solid color-mix(in srgb, var(--res-line) 78%, transparent);
+    border-radius: 16px;
+    background: rgba(255,255,255,.92);
+    padding: 12px 14px;
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.res-upcoming-card:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--res-accent) 36%, var(--res-line));
+    box-shadow: 0 16px 34px rgba(15,23,42,.08);
+}
+.res-upcoming-date {
+    min-height: 64px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 1px;
+    color: var(--res-heading);
+    background: color-mix(in srgb, var(--res-accent) 10%, #fff);
+    border: 1px solid color-mix(in srgb, var(--res-accent) 24%, var(--res-line));
+}
+.res-upcoming-date span {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.65rem;
+    font-weight: 800;
+    line-height: 1;
+}
+.res-upcoming-date strong {
+    font-size: .68rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #728096;
+}
+.res-upcoming-main { min-width: 0; }
+.res-upcoming-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+.res-upcoming-title a {
+    color: var(--res-heading);
+    font-weight: 950;
+    text-decoration: none;
+}
+.res-upcoming-title a:hover { text-decoration: underline; text-decoration-color: var(--res-accent); text-underline-offset: 3px; }
+.res-upcoming-title span {
+    color: #8B96A9;
+    font-size: .75rem;
+    font-weight: 900;
+}
+.res-upcoming-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    color: #758198;
+    font-size: .78rem;
+    font-weight: 800;
+}
+.res-upcoming-meta span { display: inline-flex; align-items: center; gap: 6px; }
+.res-upcoming-side {
+    display: grid;
+    justify-items: end;
+    gap: 8px;
+    min-width: 148px;
+}
+.res-upcoming-total {
+    color: var(--res-heading);
+    font-size: 1rem;
+    font-weight: 950;
+}
+.res-upcoming-view {
+    width: 38px;
+    min-width: 38px;
+    height: 34px;
+    min-height: 34px;
+    padding: 0;
+}
+
+@media (max-width: 780px) {
+    .res-empty-actions { width: 100%; }
+    .res-empty-actions .res-btn,
+    .res-empty-actions .res-date-chip { flex: 1 1 160px; justify-content: center; }
+    .res-upcoming { margin: 14px 12px 0; border-radius: 18px; }
+    .res-upcoming-head { flex-direction: column; padding: 16px; }
+    .res-upcoming-card { grid-template-columns: 54px minmax(0, 1fr); align-items: start; padding: 12px; }
+    .res-upcoming-date { min-height: 54px; border-radius: 12px; }
+    .res-upcoming-date span { font-size: 1.35rem; }
+    .res-upcoming-side { grid-column: 1 / -1; grid-template-columns: 1fr auto auto; align-items: center; justify-items: start; min-width: 0; }
+    .res-upcoming-side .res-action-pill { min-height: 34px; padding: 0 12px; }
+    .res-upcoming-side .res-upcoming-view { padding: 0; }
+}
 .modal-hd { background: linear-gradient(135deg, var(--res-brand), var(--res-brand-2)); padding: 16px 20px; }
 .lc-form-input { width: 100%; border: 1px solid var(--res-line); border-radius: 11px; padding: 10px 12px; outline: none; color: var(--res-brand-2); background: #fff; }
 .lc-form-input:focus { border-color: var(--res-brand); box-shadow: 0 0 0 4px color-mix(in srgb, var(--res-brand) 12%, transparent); }
@@ -2475,6 +2628,513 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
         padding: 2rem !important;
     }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   BOUTIQUE MOBILE  ·  ≤780px
+   Warm-cream editorial layout para teléfonos (iPhone 12 Pro 390px base).
+   Font-weight cap: 700 en sans-serif (regla boutique).
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* FAB bottom bar — oculto en desktop, visible en mobile */
+.res-mob-bottom { display: none; }
+
+@media (max-width: 780px) {
+
+    .main-content { overflow-x: hidden !important; }
+
+    /* 1 ── Canvas ─────────────────────────────────────────────────────── */
+    .res-bookings {
+        padding: 0 !important;
+        background: #F1EDE5 !important;
+        background-image: none !important;
+        overflow-x: hidden;
+        max-width: 100%;
+    }
+    .res-shell {
+        padding: 0 !important;
+        padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+        overflow-x: hidden;
+        max-width: 100%;
+    }
+
+    /* 2 ── Header hero card — réplica exacta de .rdv3-hero (ver.php) ────── */
+    .res-topbar {
+        position: relative;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+        margin: 14px 16px 0 !important;
+        padding: 18px 18px 18px 26px;
+        border-radius: 17px;
+        background: linear-gradient(125deg, var(--res-brand), color-mix(in srgb, var(--res-brand) 86%, #243357));
+        color: #fff;
+        box-shadow: 0 15px 30px rgba(28, 37, 62, .18);
+        max-width: calc(100% - 32px);
+    }
+    /* Círculo dorado tenue arriba-derecha (idéntico a .rdv3-hero::after) */
+    .res-topbar::after {
+        content: '';
+        position: absolute;
+        right: -40px;
+        top: -40px;
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        background: rgba(176, 136, 63, .14);
+        pointer-events: none;
+    }
+    .res-title-lockup {
+        position: relative;
+        z-index: 1;
+        grid-template-columns: 40px minmax(0, 1fr);
+        column-gap: 12px;
+        align-items: center;
+        min-width: 0;
+        max-width: none;
+    }
+    .res-title-copy {
+        min-width: 0;
+        overflow: hidden;
+    }
+    .res-hero-icon {
+        width: 40px;
+        height: 40px;
+        flex: 0 0 40px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, .12) !important;
+        border: 1px solid rgba(255, 255, 255, .2);
+        color: #fff !important;
+        box-shadow: none !important;
+    }
+    .res-kicker { display: none; }
+    .res-title {
+        font-size: 1.55rem;
+        font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+        font-weight: 600;
+        line-height: 1;
+        letter-spacing: 0;
+        color: #fff;
+    }
+    .res-subtitle {
+        font-size: .72rem;
+        font-weight: 500;
+        margin-top: 6px;
+        color: rgba(255, 255, 255, .68);
+        white-space: normal;
+        line-height: 1.45;
+        max-width: 100%;
+    }
+    /* Buscador oculto SOLO en móvil (en PC sigue visible). */
+    .res-actions {
+        display: none !important;
+    }
+    .res-search {
+        display: block !important;
+        width: 100%;
+        min-width: 0;
+        position: relative;
+    }
+    .res-search i {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: block !important;
+        color: #939BAD;
+        pointer-events: none;
+        z-index: 2;
+        font-size: .9rem;
+    }
+    .res-search input,
+    .res-search input.search-input {
+        width: 100%;
+        height: 44px;
+        font-size: .88rem;
+        font-weight: 500;
+        border-radius: 12px;
+        background: #FFFFFF;
+        border: 1px solid transparent;
+        color: #1B2746;
+        padding: 0 14px 0 40px !important;
+        box-shadow: 0 6px 16px -6px rgba(0, 0, 0, .28);
+    }
+    .res-search input::placeholder { color: #939BAD; font-weight: 500; }
+    .res-search input:focus {
+        border-color: var(--res-accent);
+        background: #FFFFFF;
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--res-accent) 22%, transparent);
+    }
+    /* Ocultar todos los botones — van al FAB inferior */
+    .res-actions > a,
+    .res-actions > button { display: none !important; }
+
+    /* 3 ── Stat pills horizontales (diseño "sumrow") ──────────────────── */
+    .res-metrics {
+        display: flex;
+        grid-template-columns: none;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 8px;
+        padding: 11px 16px 4px;
+        margin: 0;
+        scrollbar-width: none;
+    }
+    .res-metrics::-webkit-scrollbar { display: none; }
+    .res-metric {
+        flex: 0 0 auto;
+        min-height: 0;
+        min-width: 84px;
+        padding: 9px 14px 8px 28px;
+        border-radius: 13px;
+        border: 1px solid #E6DBC8;
+        background: #FFFDF9;
+        box-shadow: 0 1px 2px rgba(39, 31, 18, .04);
+        overflow: visible;
+    }
+    .res-metric.is-primary { grid-column: auto !important; }
+    .res-metric::after { display: none; }
+    /* Punto de color (estado) arriba-izquierda */
+    .res-metric::before {
+        content: "";
+        position: absolute;
+        left: 13px;
+        top: 14px;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--res-pill-dot, #5A57D2);
+    }
+    .res-metric:nth-child(1) { --res-pill-dot: #5A57D2; }  /* Llegadas */
+    .res-metric:nth-child(2) { --res-pill-dot: #C2841C; }  /* Salidas */
+    .res-metric:nth-child(3) { --res-pill-dot: #1E9E63; }  /* Confirmadas */
+    .res-metric:nth-child(4) { --res-pill-dot: #C2603C; }  /* Hospedados */
+    .res-metric:nth-child(5) { --res-pill-dot: #D64539; }  /* Canceladas */
+    .res-metric strong {
+        font-size: 1.2rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 3px;
+    }
+    .res-metric span {
+        font-size: .66rem;
+        font-weight: 600;
+        white-space: nowrap;
+        color: #6C7689;
+    }
+    /* Icono no aplica en formato pill */
+    .res-metric-icon { display: none; }
+
+    /* 4 ── Filterbar ──────────────────────────────────────────────────── */
+    .res-filterbar {
+        display: block;
+        border: none;
+        border-radius: 0;
+        border-top: 1px solid #E6DBC8;
+        border-bottom: 1px solid #E6DBC8;
+        background: transparent;
+        padding: 0;
+        margin: 12px 0 0;
+        box-shadow: none;
+    }
+    .res-tabs {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 6px;
+        padding: 8px 16px;
+        scrollbar-width: none;
+    }
+    .res-tabs::-webkit-scrollbar { display: none; }
+    .res-tab {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        font-size: .78rem;
+        font-weight: 600;
+        padding: 7px 11px;
+        border-radius: 999px;
+        border-color: #E6DBC8;
+        background: #FFFDF9;
+        color: #5C5040;
+        cursor: pointer;
+    }
+    .res-tab.is-active {
+        font-weight: 700;
+        background: var(--res-brand);
+        border-color: transparent;
+        color: #fff;
+        box-shadow: 0 6px 16px color-mix(in srgb, var(--res-brand) 22%, transparent);
+    }
+    .res-tab-dot { width: 7px; height: 7px; }
+    .res-date-tools {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 16px 8px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        border-top: 1px solid #EFE3D0;
+    }
+    .res-date-tools::-webkit-scrollbar { display: none; }
+    .res-date-tools input {
+        height: 36px;
+        border-radius: 9px;
+        border-color: #E6DBC8;
+        background: #FFFDF9;
+        font-size: .82rem;
+        font-weight: 600;
+        color: #1A1108;
+        flex: 0 0 auto;
+    }
+    .res-date-chip {
+        height: 36px;
+        border-radius: 9px;
+        border-color: #E6DBC8;
+        background: #FFFDF9;
+        color: #5C5040;
+        font-size: .78rem;
+        font-weight: 600;
+        flex: 0 0 auto;
+        white-space: nowrap;
+        cursor: pointer;
+        gap: 6px;
+    }
+
+    /* 5 ── Mobile card list ────────────────────────────────────────────── */
+    .res-mobile-list {
+        display: grid !important;
+        gap: 10px;
+        padding: 12px 16px;
+    }
+
+    /* 5a — Card shell con franja de estado (diseño "rescard .stripe") */
+    .res-mobile-card {
+        position: relative;
+        border: 1px solid #E6DBC8;
+        border-radius: 16px;
+        background: #FFFDF9;
+        padding: 15px 15px 14px 19px;
+        box-shadow: 0 1px 2px rgba(39, 31, 18, .05);
+        overflow: hidden;
+        transition: box-shadow .18s ease, transform .12s ease;
+    }
+    .res-mobile-card:active { transform: scale(.985); }
+    .res-mobile-card:hover {
+        box-shadow: 0 8px 22px rgba(39, 31, 18, .09);
+        transform: none;
+        border-color: color-mix(in srgb, var(--res-accent) 30%, #E6DBC8);
+    }
+    /* Franja lateral coloreada según estado */
+    .res-mobile-card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        background: var(--res-stripe, #939BAD);
+    }
+    .res-mobile-card[data-estado="confirmada"]  { --res-stripe: #1E9E63; }
+    .res-mobile-card[data-estado="checked_in"]  { --res-stripe: #C2603C; }
+    .res-mobile-card[data-estado="checked_out"] { --res-stripe: #5B6B86; }
+    .res-mobile-card[data-estado="cancelada"]   { --res-stripe: #D64539; }
+    .res-mobile-card[data-estado="pendiente"]   { --res-stripe: #C2841C; }
+    .res-mobile-card[data-estado="por_llegar"]  { --res-stripe: #5A57D2; }
+
+    /* 5b — Cabecera: avatar + guest + estado */
+    .res-mobile-head {
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .res-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 11px;
+        font-size: .76rem;
+        font-weight: 700;
+        border: none;
+        box-shadow: none;
+    }
+    .res-guest-name {
+        font-size: .94rem;
+        font-weight: 700;
+        color: #1A1108;
+        line-height: 1.2;
+    }
+    .res-guest-name i { font-size: .7rem; opacity: .55; }
+    .res-guest-meta {
+        font-size: .74rem;
+        font-weight: 500;
+        color: #9BA3B6;
+        margin-top: 2px;
+    }
+    .res-state {
+        font-size: .7rem;
+        font-weight: 600;
+        padding: 5px 9px;
+        flex: 0 0 auto;
+    }
+
+    /* 5c — Habitación */
+    .res-mobile-room {
+        margin: 8px 0 0;
+        gap: 8px;
+        font-size: .88rem;
+        font-weight: 700;
+        color: #1A1108;
+    }
+    .res-room-mark {
+        width: 4px;
+        min-width: 4px;
+        height: 18px;
+        margin-top: 3px;
+        border-radius: 8px;
+    }
+    .res-mobile-room-body { gap: 2px; }
+    .res-mobile-room-body small {
+        font-size: .74rem;
+        font-weight: 500;
+    }
+    .res-room-chip {
+        font-size: .68rem;
+        font-weight: 600;
+        border-radius: 6px;
+        padding: 2px 6px;
+    }
+
+    /* 5d — Info grid 2×2 */
+    .res-mobile-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+    }
+    .res-mobile-info {
+        border-radius: 10px;
+        background: #F8F3EB;
+        border: 1px solid #EFE3D0;
+        padding: 8px 10px;
+    }
+    .res-mobile-info span {
+        font-size: .64rem;
+        font-weight: 600;
+        color: #9BA3B6;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        margin-bottom: 3px;
+    }
+    .res-mobile-info strong {
+        font-size: .86rem;
+        font-weight: 700;
+        color: #1A1108;
+        line-height: 1.2;
+    }
+
+    /* 5e — Acciones */
+    .res-mobile-actions {
+        flex-direction: row;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    .res-action-pill {
+        min-height: 42px;
+        border-radius: 10px;
+        font-size: .8rem;
+        font-weight: 700;
+        border: 1px solid #E6DBC8;
+        background: #F8F3EB;
+        color: #1A1108;
+        transition: box-shadow .18s ease, transform .18s ease;
+    }
+    .res-action-pill:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(39, 31, 18, .09); }
+    .res-action-primary {
+        background: var(--res-brand);
+        border-color: transparent;
+        color: #fff;
+    }
+    .res-action-warning {
+        background: #D97706;
+        border-color: transparent;
+        color: #fff;
+    }
+
+    /* 6 ── Estado vacío ───────────────────────────────────────────────── */
+    .res-empty,
+    .res-filter-empty {
+        border-radius: 14px;
+        margin: 0 16px;
+        border-color: #E6DBC8;
+        background: #FFFDF9;
+    }
+
+    /* 7 ── FAB bottom bar ─────────────────────────────────────────────── */
+    .res-mob-bottom {
+        display: flex;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 50;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+        background: rgba(255, 253, 249, .94);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-top: 1px solid #E6DBC8;
+        box-shadow: 0 -8px 24px rgba(39, 31, 18, .08);
+    }
+    .res-mob-bottom-icon {
+        min-width: 48px;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: #F8F3EB;
+        border: 1px solid #E6DBC8;
+        color: #5C5040;
+        font-size: 1rem;
+        flex: 0 0 48px;
+        text-decoration: none;
+        transition: background .18s ease, border-color .18s ease;
+    }
+    .res-mob-bottom-icon:hover {
+        background: #EFE3D0;
+        border-color: #D8C8B0;
+    }
+    .res-mob-bottom-cta {
+        flex: 1;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-radius: 12px;
+        background: var(--brand-action-bg, var(--res-brand));
+        color: #fff;
+        font-size: .9rem;
+        font-weight: 700;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 12px 24px -12px color-mix(in srgb, var(--res-brand) 50%, transparent);
+        transition: filter .18s ease, transform .18s ease;
+    }
+    .res-mob-bottom-cta:hover { filter: brightness(1.05); transform: translateY(-1px); }
+}
+
+@media (max-width: 420px) {
+    .res-mobile-grid { grid-template-columns: 1fr 1fr; }
+    .res-mobile-actions { flex-direction: row; }
+}
+
+@media (max-width: 780px) {
+    .res-bookings .res-topbar .res-title-lockup {
+        padding-left: 12px !important;
+        box-sizing: border-box;
+    }
+}
 </style>
 
 <div class="res-bookings">
@@ -2489,6 +3149,9 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                     <h1 class="res-title">Reservaciones</h1>
                     <p class="res-subtitle">
                         <?= htmlspecialchars($hotel_nombre_reservas) ?> &middot; <?= (int) $total_visible ?> reservas activas &middot; <?= htmlspecialchars($fecha_bonita) ?>
+                        <?php if ($total_proximas > 0): ?>
+                            &middot; <?= (int) $total_proximas ?> pr&oacute;ximas
+                        <?php endif; ?>
                     </p>
                 </div>
             </div>
@@ -2548,10 +3211,10 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
         <section class="res-filterbar no-print" aria-label="Filtros de reservaciones">
             <div class="res-tabs">
                 <button type="button" onclick="filtrarEstado('todos')" class="res-tab filtro-estado is-active" data-estado="todos" title="Mostrar todas las reservaciones">
-                    Todas <span><?= (int) $total_visible ?></span>
+                    Todas <span><?= (int) $total_busqueda_global ?></span>
                 </button>
                 <button type="button" onclick="filtrarEstado('confirmada')" class="res-tab filtro-estado" data-estado="confirmada" title="Filtrar reservaciones confirmadas">
-                    <span class="res-tab-dot"></span>Confirmada <span><?= (int) ($estado_counts['confirmada'] ?? 0) ?></span>
+                    <span class="res-tab-dot"></span>Confirmada <span><?= (int) (($estado_counts['confirmada'] ?? 0) + $total_proximas) ?></span>
                 </button>
                 <button type="button" onclick="filtrarEstado('checked_in')" class="res-tab filtro-estado" data-estado="checked_in" title="Filtrar huéspedes hospedados">
                     <span class="res-tab-dot"></span>Hospedado <span><?= (int) ($estado_counts['checked_in'] ?? 0) ?></span>
@@ -2579,17 +3242,33 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
         <?php if (empty($reservaciones)): ?>
             <section class="res-empty">
                 <div style="font-size:2rem;color:var(--res-accent);margin-bottom:10px;"><i class="fas fa-calendar-day"></i></div>
-                <h2 style="font-size:1.1rem;font-weight:900;color:var(--res-heading);margin:0 0 6px;">Sin reservaciones</h2>
-                <p style="margin:0 0 18px;">No hay reservaciones activas para <?= $es_hoy ? 'hoy' : htmlspecialchars(date('d/m/Y', $ts)) ?>.</p>
-                <a href="<?= url('reservaciones/crear') ?>" onclick="return resAbrirSelectorNuevaReserva(event)" class="res-btn res-btn-primary">
-                    <i class="fas fa-plus"></i>Crear reservacion
-                </a>
+                <h2 style="font-size:1.1rem;font-weight:900;color:var(--res-heading);margin:0 0 6px;">
+                    <?= $total_proximas > 0 ? 'Sin reservaciones en esta fecha' : 'Sin reservaciones' ?>
+                </h2>
+                <p style="margin:0 0 18px;">
+                    <?php if ($total_proximas > 0 && $proxima_reserva): ?>
+                        No hay reservaciones activas para <?= $es_hoy ? 'hoy' : htmlspecialchars(date('d/m/Y', $ts)) ?>.
+                        La siguiente llegada es el <?= htmlspecialchars(format_date($proxima_reserva['fecha_entrada'] ?? $fecha_hoy, 'd M Y')) ?>.
+                    <?php else: ?>
+                        No hay reservaciones activas para <?= $es_hoy ? 'hoy' : htmlspecialchars(date('d/m/Y', $ts)) ?>.
+                    <?php endif; ?>
+                </p>
+                <div class="res-empty-actions">
+                    <?php if ($total_proximas > 0): ?>
+                        <a href="#proximasReservaciones" class="res-date-chip is-upcoming">
+                            <i class="fas fa-forward"></i>Ver agenda pr&oacute;xima
+                        </a>
+                    <?php endif; ?>
+                    <a href="<?= url('reservaciones/crear') ?>" onclick="return resAbrirSelectorNuevaReserva(event)" class="res-btn res-btn-primary">
+                        <i class="fas fa-plus"></i>Crear reservacion
+                    </a>
+                </div>
             </section>
         <?php else: ?>
             <div id="searchResults" class="hidden mb-3">
                 <p class="text-sm text-gray-500">
                     <i class="fas fa-filter mr-1" style="color:var(--res-accent);"></i>
-                    Mostrando <span id="searchCount" class="font-bold" style="color:var(--res-heading);">0</span> de <?= (int) $total_visible ?>
+                    Mostrando <span id="searchCount" class="font-bold" style="color:var(--res-heading);">0</span> de <?= (int) $total_busqueda_global ?>
                 </p>
             </div>
 
@@ -2845,6 +3524,102 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                 <?php endforeach; ?>
             </section>
         <?php endif; ?>
+
+        <?php if ($total_proximas > 0): ?>
+            <section class="res-upcoming no-print" id="proximasReservaciones" aria-label="Agenda de proximas reservaciones">
+                <div class="res-upcoming-head">
+                    <div>
+                        <span class="res-section-kicker"><i class="fas fa-route"></i>Agenda pr&oacute;xima</span>
+                        <h2>Pr&oacute;ximas reservaciones</h2>
+                        <p>Confirmadas despu&eacute;s de la fecha seleccionada, ordenadas por llegada.</p>
+                    </div>
+                    <a href="<?= url('reservaciones/calendario') ?>" class="res-date-chip">
+                        <i class="fas fa-calendar-alt"></i>Calendario
+                    </a>
+                </div>
+
+                <div class="res-upcoming-grid">
+                    <?php foreach ($proximas_reservaciones as $row): ?>
+                        <?php
+                            $res_id = (int) ($row['id'] ?? 0);
+                            $folio = 'RSV-' . str_pad((string) $res_id, 4, '0', STR_PAD_LEFT);
+                            $huesped_nombre = trim((string) ($row['huesped_nombre'] ?? 'Sin nombre'));
+                            $huesped_telefono = trim((string) ($row['huesped_telefono'] ?? ''));
+                            $habitacion_numero = trim((string) ($row['habitacion_numero'] ?? ''));
+                            $habitacion_tipo = reserva_title($row['habitacion_tipo'] ?? '');
+                            $habitaciones_lista = is_array($row['_habitaciones_lista'] ?? null) ? $row['_habitaciones_lista'] : reserva_habitaciones_lista($row);
+                            $todas_habs = trim((string) ($row['todas_habitaciones'] ?? ''));
+                            if ($todas_habs === '' && !empty($habitaciones_lista)) {
+                                $todas_habs = implode(', ', $habitaciones_lista);
+                            }
+                            $total_habs_reserva = max((int) ($row['total_habitaciones_reserva'] ?? 1), count($habitaciones_lista));
+                            $habitacion_label = $total_habs_reserva > 1 ? $total_habs_reserva . ' habitaciones' : ($habitacion_numero !== '' ? $habitacion_numero : 'Por asignar');
+                            $estado = $row['estado'] ?? 'confirmada';
+                            $estado_ui = reserva_estado_ui($estado, $estados);
+                            $fecha_entrada_raw = $row['fecha_entrada'] ?? $fecha_hoy;
+                            $fecha_salida_raw = $row['fecha_salida'] ?? $fecha_hoy;
+                            $entrada_ts = strtotime((string) $fecha_entrada_raw) ?: time();
+                            $mes_abrev = substr($meses[(int) date('n', $entrada_ts) - 1] ?? '', 0, 3);
+                            $hora_llegada = !empty($row['hora_llegada_estimada']) ? substr($row['hora_llegada_estimada'], 0, 5) : (!empty($row['hora_entrada']) ? substr($row['hora_entrada'], 0, 5) : $res_hotel_checkin_hora);
+                            $noches = reserva_noches($fecha_entrada_raw, $fecha_salida_raw);
+                            $precio_total = (float) ($row['precio_total'] ?? 0);
+                            $search_data = reserva_lower($folio . ' ' . $huesped_nombre . ' ' . $huesped_telefono . ' ' . $habitacion_label . ' ' . $todas_habs . ' ' . $habitacion_tipo . ' ' . $estado_ui['label']);
+                        ?>
+                        <article class="res-upcoming-card reservation-item" data-res-id="future-<?= $res_id ?>" data-search="<?= htmlspecialchars($search_data, ENT_QUOTES, 'UTF-8') ?>" data-estado="<?= htmlspecialchars($estado) ?>">
+                            <div class="res-upcoming-date" aria-label="Llegada <?= htmlspecialchars(format_date($fecha_entrada_raw, 'd M Y')) ?>">
+                                <span><?= htmlspecialchars(date('d', $entrada_ts)) ?></span>
+                                <strong><?= htmlspecialchars(reserva_upper($mes_abrev)) ?></strong>
+                            </div>
+
+                            <div class="res-upcoming-main">
+                                <div class="res-upcoming-title">
+                                    <a href="<?= url('reservaciones/ver/' . $res_id) ?>" title="Ver detalle de <?= htmlspecialchars($folio) ?>">
+                                        <?= htmlspecialchars($huesped_nombre) ?>
+                                    </a>
+                                    <span><?= htmlspecialchars($folio) ?></span>
+                                </div>
+                                <div class="res-upcoming-meta">
+                                    <span><i class="fas fa-clock"></i><?= htmlspecialchars($hora_llegada) ?></span>
+                                    <span><i class="fas fa-moon"></i><?= (int) $noches ?> noche<?= $noches === 1 ? '' : 's' ?></span>
+                                    <span><i class="fas fa-bed"></i><?= htmlspecialchars($habitacion_label) ?></span>
+                                    <?php if ($habitacion_tipo !== '' && $total_habs_reserva <= 1): ?>
+                                        <span><i class="fas fa-tag"></i><?= htmlspecialchars($habitacion_tipo) ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <?php if (!empty($habitaciones_lista)): ?>
+                                    <div class="res-room-list" aria-label="Habitaciones de la reservacion">
+                                        <?php foreach ($habitaciones_lista as $habitacion_item): ?>
+                                            <span class="res-room-chip"><?= htmlspecialchars($habitacion_item) ?></span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="res-upcoming-side">
+                                <span class="res-state <?= htmlspecialchars($estado_ui['class']) ?>">
+                                    <i class="fas fa-<?= htmlspecialchars($estado_ui['icon']) ?>"></i>
+                                    <?= htmlspecialchars($estado_ui['label']) ?>
+                                </span>
+                                <strong class="res-upcoming-total"><?= format_money($precio_total) ?></strong>
+                                <a href="<?= url('reservaciones/ver/' . $res_id) ?>" class="res-action-pill res-upcoming-view" title="Ver detalle de <?= htmlspecialchars($folio) ?>" aria-label="Ver detalle de <?= htmlspecialchars($folio) ?>">
+                                    <i class="fas fa-eye" aria-hidden="true"></i>
+                                </a>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endif; ?>
+    </div>
+    <!-- FAB móvil: sólo visible en ≤780px vía CSS -->
+    <div class="res-mob-bottom no-print" aria-hidden="true">
+        <a href="<?= url('reservaciones/calendario') ?>" class="res-mob-bottom-icon" title="Calendario de reservaciones">
+            <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+        </a>
+        <a href="<?= url('reservaciones/crear') ?>" onclick="return resAbrirSelectorNuevaReserva(event)" class="res-mob-bottom-cta" title="Nueva reservaci&oacute;n">
+            <i class="fas fa-plus" aria-hidden="true"></i>
+            Nueva reservaci&oacute;n
+        </a>
     </div>
 </div>
 

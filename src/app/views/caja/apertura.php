@@ -3,6 +3,52 @@
  * Vista de Apertura de Caja
  * Rediseño boutique (dentro del layout de la app)
  */
+$cajaOpenFieldErrors = isset($layoutFieldErrors) && is_array($layoutFieldErrors) ? $layoutFieldErrors : [];
+$cajaOpenOldInput = is_array($_SESSION['old_input'] ?? null) && (($_SESSION['old_input']['form_origen'] ?? '') === 'apertura')
+    ? $_SESSION['old_input']
+    : [];
+
+if (!function_exists('caja_open_safe')) {
+    function caja_open_safe($value, string $default = ''): string
+    {
+        $value = $value ?? $default;
+        return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+if (!function_exists('caja_open_error')) {
+    function caja_open_error(array $errors, string $field): string
+    {
+        $messages = $errors[$field] ?? [];
+        if (!is_array($messages)) {
+            $messages = [$messages];
+        }
+
+        $message = trim((string)($messages[0] ?? ''));
+        return $message !== '' ? caja_open_safe($message) : '';
+    }
+}
+
+if (!function_exists('caja_open_error_class')) {
+    function caja_open_error_class(array $errors, string $field): string
+    {
+        return caja_open_error($errors, $field) !== '' ? ' cj-input-error' : '';
+    }
+}
+
+if (!function_exists('caja_open_error_attrs')) {
+    function caja_open_error_attrs(array $errors, string $field, string $errorId): string
+    {
+        if (caja_open_error($errors, $field) === '') {
+            return '';
+        }
+
+        return ' aria-invalid="true" aria-describedby="' . caja_open_safe($errorId) . '"';
+    }
+}
+
+$cajaOpenMontoInicial = caja_open_safe($cajaOpenOldInput['monto_inicial'] ?? '0.00', '0.00');
+$cajaOpenObservaciones = caja_open_safe($cajaOpenOldInput['observaciones'] ?? '');
 ?>
 <style>
 .caja-open {
@@ -54,6 +100,9 @@
 .caja-open textarea.cj-input { min-height: 84px; padding: 11px 14px; font-family: var(--cj-sans); font-size: .9rem; font-weight: 600; resize: vertical; }
 .caja-open .cj-input:focus { outline: none; border-color: var(--cj-gold); box-shadow: 0 0 0 3px var(--cj-ring); background: #fff; }
 .caja-open .cj-hint { margin-top: 7px; font-size: .76rem; color: var(--cj-muted); }
+.caja-open .cj-input-error { border-color: #B4392B; background: #FFF7F6; }
+.caja-open .cj-form-error { display: block; margin-top: 7px; color: #B4392B; font-size: .78rem; font-weight: 800; line-height: 1.35; }
+.caja-open .cj-error-summary { padding: 12px 14px; border: 1px solid #F0B8AE; border-radius: 12px; background: #FFF7F6; color: #9E2A1D; font-size: .84rem; font-weight: 800; line-height: 1.35; }
 
 .caja-open .cj-note { background: var(--cj-warning-bg); border: 1px solid color-mix(in srgb, var(--cj-warning) 26%, #fff); border-radius: 12px; padding: 13px 15px; }
 .caja-open .cj-note h4 { display: flex; align-items: center; gap: 8px; color: color-mix(in srgb, var(--cj-warning) 84%, #000); font-size: .82rem; font-weight: 700; margin-bottom: 8px; }
@@ -90,6 +139,12 @@
                 <?= csrf_field() ?>
                 <input type="hidden" name="caja_id" value="<?= $caja['id'] ?>">
 
+                <?php if (caja_open_error($cajaOpenFieldErrors, '_global') !== ''): ?>
+                    <div class="cj-error-summary ms-form-error-summary" role="alert">
+                        <?= caja_open_error($cajaOpenFieldErrors, '_global') ?>
+                    </div>
+                <?php endif; ?>
+
                 <div class="cj-info">
                     <p><i class="fas fa-user-circle"></i> <strong>Usuario:</strong> <?= user_name() ?></p>
                     <p><i class="fas fa-clock"></i> <strong>Hora:</strong> <?= date('H:i:s') ?></p>
@@ -99,14 +154,20 @@
                     <label for="cj_monto_inicial">Efectivo con el que abres</label>
                     <div class="cj-money">
                         <span>$</span>
-                        <input type="number" id="cj_monto_inicial" name="monto_inicial" data-money-format="true" step="0.01" min="0" class="cj-input" placeholder="0.00" value="0.00" required>
+                        <input type="number" id="cj_monto_inicial" name="monto_inicial" data-money-format="true" step="0.01" min="0" class="cj-input<?= caja_open_error_class($cajaOpenFieldErrors, 'monto_inicial') ?>" placeholder="0.00" value="<?= $cajaOpenMontoInicial ?>" required<?= caja_open_error_attrs($cajaOpenFieldErrors, 'monto_inicial', 'ms-form-error-caja_monto_inicial') ?>>
                     </div>
+                    <?php if (caja_open_error($cajaOpenFieldErrors, 'monto_inicial') !== ''): ?>
+                        <span id="ms-form-error-caja_monto_inicial" class="cj-form-error ms-form-field-error"><?= caja_open_error($cajaOpenFieldErrors, 'monto_inicial') ?></span>
+                    <?php endif; ?>
                     <p class="cj-hint"><i class="fas fa-circle-info"></i> Captura el efectivo con el que comienza este turno.</p>
                 </div>
 
                 <div>
                     <label for="cj_observaciones">Observaciones (opcional)</label>
-                    <textarea id="cj_observaciones" name="observaciones" rows="3" class="cj-input" placeholder="Alguna nota sobre el inicio del turno..."></textarea>
+                    <textarea id="cj_observaciones" name="observaciones" rows="3" class="cj-input<?= caja_open_error_class($cajaOpenFieldErrors, 'observaciones') ?>" placeholder="Alguna nota sobre el inicio del turno..."<?= caja_open_error_attrs($cajaOpenFieldErrors, 'observaciones', 'ms-form-error-caja_observaciones') ?>><?= $cajaOpenObservaciones ?></textarea>
+                    <?php if (caja_open_error($cajaOpenFieldErrors, 'observaciones') !== ''): ?>
+                        <span id="ms-form-error-caja_observaciones" class="cj-form-error ms-form-field-error"><?= caja_open_error($cajaOpenFieldErrors, 'observaciones') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div class="cj-note">
@@ -185,3 +246,5 @@ document.querySelector('form').addEventListener('submit', function(e) {
     });
 });
 </script>
+
+<?php clear_old_input(); ?>

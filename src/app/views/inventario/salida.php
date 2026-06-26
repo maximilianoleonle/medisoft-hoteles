@@ -9,6 +9,14 @@
 }
 .salida-view { opacity: 0; transition: opacity 0.3s ease; }
 .salida-view.loaded { opacity: 1; }
+.inv-form-error {
+    display: block;
+    margin-top: 0.4rem;
+    color: #B42318;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
 </style>
 
 <div class="salida-view min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-4">
@@ -50,6 +58,7 @@
                                 <option value="">Seleccione producto...</option>
                                 <?php foreach ($productos as $producto): ?>
                                     <option value="<?= $producto['id'] ?>" 
+                                            <?= old('producto_id') == $producto['id'] ? 'selected' : '' ?>
                                             data-stock="<?= $producto['stock_actual'] ?>"
                                             data-nombre="<?= htmlspecialchars($producto['nombre']) ?>">
                                         <?= htmlspecialchars($producto['codigo']) ?> - 
@@ -58,6 +67,9 @@
                                     </option>
                                 <?php endforeach; ?>
                             </select>
+                            <?php if (form_error('producto_id')): ?>
+                                <span class="inv-form-error"><?= form_error('producto_id') ?></span>
+                            <?php endif; ?>
                         </div>
                         
                         <!-- Cantidad y Habitación en la misma fila -->
@@ -71,9 +83,13 @@
                                        id="cantidad"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500" 
                                        min="1"
+                                       value="<?= old('cantidad') ?>"
                                        required>
                                 <small class="text-gray-500" id="stock_info"></small>
                                 <small class="text-red-600 font-semibold hidden" id="stock_error" aria-live="polite"></small>
+                                <?php if (form_error('cantidad')): ?>
+                                    <span class="inv-form-error"><?= form_error('cantidad') ?></span>
+                                <?php endif; ?>
                             </div>
                             
                             <div>
@@ -84,11 +100,14 @@
                                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500">
                                     <option value="">Sin habitación</option>
                                     <?php foreach ($habitaciones as $habitacion): ?>
-                                        <option value="<?= $habitacion['id'] ?>">
+                                        <option value="<?= $habitacion['id'] ?>" <?= old('habitacion_id') == $habitacion['id'] ? 'selected' : '' ?>>
                                             Hab. <?= htmlspecialchars($habitacion['numero']) ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
+                                <?php if (form_error('habitacion_id')): ?>
+                                    <span class="inv-form-error"><?= form_error('habitacion_id') ?></span>
+                                <?php endif; ?>
                             </div>
                         </div>
                         
@@ -100,10 +119,10 @@
                             <select name="motivo_tipo" 
                                     id="motivo_tipo"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500">
-                                <option value="manual">Salida manual</option>
-                                <option value="solicitud">Solicitud de huésped</option>
-                                <option value="limpieza">Limpieza/Mantenimiento</option>
-                                <option value="otro">Otro motivo</option>
+                                <option value="manual" <?= old('motivo_tipo', 'manual') === 'manual' ? 'selected' : '' ?>>Salida manual</option>
+                                <option value="solicitud" <?= old('motivo_tipo') === 'solicitud' ? 'selected' : '' ?>>Solicitud de huésped</option>
+                                <option value="limpieza" <?= old('motivo_tipo') === 'limpieza' ? 'selected' : '' ?>>Limpieza/Mantenimiento</option>
+                                <option value="otro" <?= old('motivo_tipo') === 'otro' ? 'selected' : '' ?>>Otro motivo</option>
                             </select>
                         </div>
                         
@@ -117,7 +136,10 @@
                                       rows="2" 
                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-none" 
                                       placeholder="Especifique el motivo..."
-                                      required></textarea>
+                                      required><?= old('motivo') ?></textarea>
+                            <?php if (form_error('motivo')): ?>
+                                <span class="inv-form-error"><?= form_error('motivo') ?></span>
+                            <?php endif; ?>
                         </div>
                     </div>
                     

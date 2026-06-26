@@ -78,8 +78,57 @@ if (!function_exists('hb_room_plain_text')) {
     }
 }
 
+if (!function_exists('hb_room_type_catalog_marker')) {
+    function hb_room_type_catalog_marker(array $habitacion, array $tipos) {
+        $features = (string)($habitacion['caracteristicas'] ?? '');
+        if (!preg_match('/(?:^|[,;\r\n]\s*)Tipo catalogo\s*:\s*([^\[\r\n,;]+?)\s*\[([a-z0-9_\-]+)\]/i', $features, $matches)) {
+            return null;
+        }
+
+        $code = strtolower(trim((string)($matches[2] ?? '')));
+        if ($code === '') {
+            return null;
+        }
+
+        $label = trim((string)($matches[1] ?? ''));
+
+        return [
+            'code' => $code,
+            'label' => $tipos[$code] ?? ($label !== '' ? $label : ucfirst(str_replace('_', ' ', $code))),
+        ];
+    }
+}
+
+if (!function_exists('hb_room_type_code')) {
+    function hb_room_type_code(array $habitacion, array $tipos) {
+        $marker = hb_room_type_catalog_marker($habitacion, $tipos);
+        if (is_array($marker) && !empty($marker['code'])) {
+            return (string)$marker['code'];
+        }
+
+        $tipo = (string)($habitacion['tipo'] ?? '');
+        $features = hb_room_plain_text($habitacion['caracteristicas'] ?? '');
+
+        if (strpos($features, 'jacuzzi') !== false) {
+            if ($tipo === 'doble') {
+                return 'doble_jacuzzi';
+            }
+            if ($tipo === 'sencilla') {
+                return 'sencilla_jacuzzi';
+            }
+        }
+
+        return $tipo;
+    }
+}
+
 if (!function_exists('hb_room_type_label')) {
     function hb_room_type_label(array $habitacion, array $tipos) {
+        $marker = hb_room_type_catalog_marker($habitacion, $tipos);
+        if (is_array($marker) && trim((string)($marker['label'] ?? '')) !== '') {
+            return (string)$marker['label'];
+        }
+
         $tipo = (string)($habitacion['tipo'] ?? '');
         $label = $tipos[$tipo] ?? (function_exists('get_tipo_habitacion') ? get_tipo_habitacion($tipo) : ucfirst(str_replace('_', ' ', $tipo)));
         $features = hb_room_plain_text($habitacion['caracteristicas'] ?? '');
@@ -100,6 +149,46 @@ if (!function_exists('hb_room_type_label')) {
 if (!function_exists('hb_room_beds_total')) {
     function hb_room_beds_total(array $habitacion) {
         return max(0, (int)($habitacion['camas_matrimoniales'] ?? 0) + (int)($habitacion['camas_individuales'] ?? 0));
+    }
+}
+
+if (!function_exists('hb_room_capacity_label')) {
+    function hb_room_capacity_label(array $habitacion) {
+        $capacidad = (int)($habitacion['capacidad_personas'] ?? 0);
+        if ($capacidad < 1) {
+            return 'Personas N/D';
+        }
+
+        return number_format($capacidad) . ' persona' . ($capacidad === 1 ? '' : 's');
+    }
+}
+
+if (!function_exists('hb_room_beds_label')) {
+    function hb_room_beds_label(array $habitacion) {
+        $total = hb_room_beds_total($habitacion);
+        if ($total < 1) {
+            return 'Camas N/D';
+        }
+
+        return number_format($total) . ' cama' . ($total === 1 ? '' : 's');
+    }
+}
+
+if (!function_exists('hb_room_beds_detail_label')) {
+    function hb_room_beds_detail_label(array $habitacion) {
+        $matrimoniales = max(0, (int)($habitacion['camas_matrimoniales'] ?? 0));
+        $individuales = max(0, (int)($habitacion['camas_individuales'] ?? 0));
+        $partes = [];
+
+        if ($matrimoniales > 0) {
+            $partes[] = number_format($matrimoniales) . ' mat.';
+        }
+
+        if ($individuales > 0) {
+            $partes[] = number_format($individuales) . ' ind.';
+        }
+
+        return !empty($partes) ? implode(' / ', $partes) : 'No definido';
     }
 }
 
@@ -3107,10 +3196,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 <?php
                 $estado_actual = $habitacion['estado_display'] ?? $habitacion['estado'];
                 $estado_fisico = $habitacion['estado'] ?? $estado_actual;
+                $esta_consultando_disponibilidad_fecha = !empty($mostrar_disponibilidad_fecha)
+                    || (!empty($filtros['fecha_consulta']) && !empty($filtros['mostrar_disponibilidad']));
                 $estado_principal = $estado_actual;
-                if (in_array($estado_fisico, ['limpieza', 'mantenimiento', 'ocupada'], true)) {
+                if (!$esta_consultando_disponibilidad_fecha && in_array($estado_fisico, ['limpieza', 'mantenimiento', 'ocupada'], true)) {
                     $estado_principal = $estado_fisico;
                 }
+                $tieneEstadoLimpiezaOperativa = $estado_fisico === 'limpieza' && !$esta_consultando_disponibilidad_fecha;
                 $estadoInfo = $estados[$estado_actual] ?? ['label' => 'Desconocido', 'color' => 'gray', 'icon' => 'question'];
                 $estadoInfoPrincipal = $estados[$estado_principal] ?? $estadoInfo;
 
@@ -3118,7 +3210,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 $tiene_doble_movimiento = false;
                 // NUEVO: Verificar si está en limpieza Y tiene reservación por llegar
 $limpieza_con_por_llegar = false;
-if ($habitacion['estado'] == 'limpieza' && isset($habitacion['reservacion_pendiente'])) {
+if ($tieneEstadoLimpiezaOperativa && isset($habitacion['reservacion_pendiente'])) {
     // La habitación está en limpieza y tiene una reservación pendiente
     $limpieza_con_por_llegar = true;
 }
@@ -3179,6 +3271,9 @@ if ($habitacion['estado'] == 'limpieza' && isset($habitacion['reservacion_pendie
                 $habitacionTipoLabel = hb_room_type_label($habitacion, $tipos);
                 $habitacionCamasTotal = hb_room_beds_total($habitacion);
                 $habitacionCapacidad = (int)($habitacion['capacidad_personas'] ?? 0);
+                $habitacionCamasTexto = hb_room_beds_label($habitacion);
+                $habitacionCamasDetalle = hb_room_beds_detail_label($habitacion);
+                $habitacionCapacidadTexto = hb_room_capacity_label($habitacion);
                 $habitacionPropietarioNombre = trim((string)($habitacion['propietario_nombre'] ?? ''));
                 $habitacionPropietarioTexto = $habitacionPropietarioNombre !== '' ? $habitacionPropietarioNombre : 'Sin propietario';
                 $habitacionPropietarioPct = $habitacion['propietario_participacion_pct'] ?? 100;
@@ -3233,10 +3328,10 @@ if ($tiene_doble_movimiento) {
                     $reservacion_detalle_id = $info_checkout_vencido['reservacion_id'] ?? null;
                 } elseif ($estado_actual == 'por_llegar' && isset($habitacion['reservacion_pendiente'])) {
                     $reservacion_detalle_id = $habitacion['reservacion_pendiente']['reservacion_id'] ?? ($habitacion['reservacion_pendiente']['id'] ?? null);
-                } elseif ($habitacion['estado'] == 'ocupada' && isset($habitacion['ocupacion_actual'])) {
-                    $reservacion_detalle_id = $habitacion['ocupacion_actual']['id'] ?? ($habitacion['ocupacion_actual']['reservacion_id'] ?? null);
                 } elseif ($estado_actual == 'ocupada_fecha' && isset($habitacion['info_ocupacion']['reservacion_id'])) {
                     $reservacion_detalle_id = $habitacion['info_ocupacion']['reservacion_id'];
+                } elseif ($habitacion['estado'] == 'ocupada' && isset($habitacion['ocupacion_actual'])) {
+                    $reservacion_detalle_id = $habitacion['ocupacion_actual']['id'] ?? ($habitacion['ocupacion_actual']['reservacion_id'] ?? null);
                 }
                 $reservacion_detalle_id = $reservacion_detalle_id && (int) $reservacion_detalle_id > 0 ? (int) $reservacion_detalle_id : null;
                 $hbIncidencias = [];
@@ -3292,7 +3387,7 @@ if ($tiene_doble_movimiento) {
                     ? ' room-code-long room-code-xl'
                     : ($habitacionNumeroLongitud > 5 ? ' room-code-long' : '');
                 ?>
-                <div class="flip-card room-card-compact <?= $tiene_checkout_vencido ? 'has-checkout-vencido' : '' ?> <?= $es_checkin_vencido ? 'has-checkin-vencido' : '' ?> <?= $habitacion['estado'] == 'limpieza' ? 'has-cleaning-state' : '' ?><?= $habitacionNumeroLayoutClass ?>"
+                <div class="flip-card room-card-compact <?= $tiene_checkout_vencido ? 'has-checkout-vencido' : '' ?> <?= $es_checkin_vencido ? 'has-checkin-vencido' : '' ?> <?= $tieneEstadoLimpiezaOperativa ? 'has-cleaning-state' : '' ?><?= $habitacionNumeroLayoutClass ?>"
                       onclick="toggleFlip(this, event)"
                       onkeydown="hbCardKey(event, this)"
                       role="button"
@@ -3300,7 +3395,7 @@ if ($tiene_doble_movimiento) {
                       title="Abrir acciones de la habitación <?= htmlspecialchars($habitacion['numero']) ?>"
                       aria-label="Abrir acciones de la habitación <?= htmlspecialchars($habitacion['numero']) ?>"
                       data-habitacion-id="<?= $habitacion['id'] ?>"
-                      data-estado="<?= htmlspecialchars($estado_principal) ?>" data-tipo="<?= htmlspecialchars($habitacion['tipo']) ?>" data-piso="<?= htmlspecialchars($habitacion['piso']) ?>" data-q="<?= htmlspecialchars($hbSearchStr) ?>"
+                      data-estado="<?= htmlspecialchars($estado_principal) ?>" data-tipo="<?= htmlspecialchars(hb_room_type_code($habitacion, $tipos)) ?>" data-piso="<?= htmlspecialchars($habitacion['piso']) ?>" data-q="<?= htmlspecialchars($hbSearchStr) ?>"
                       style="--room-accent-color: <?= htmlspecialchars($accentColor) ?>; --sheet-c: <?= htmlspecialchars($sheetColor) ?>;">
                     <div class="flip-card-inner">
                         <!-- Parte frontal -->
@@ -3387,6 +3482,16 @@ if ($tiene_doble_movimiento) {
                                         </div>
                                     <?php endif; ?>
                                     <?php if ($faceMeta !== ''): ?><div class="rc-meta"><?= htmlspecialchars($faceMeta) ?></div><?php endif; ?>
+                                    <div class="rc-room-facts" aria-label="Capacidad y camas">
+                                        <span class="rc-room-fact" title="Capacidad: <?= htmlspecialchars($habitacionCapacidadTexto) ?>">
+                                            <i class="fas fa-users" aria-hidden="true"></i>
+                                            <span><?= htmlspecialchars($habitacionCapacidadTexto) ?></span>
+                                        </span>
+                                        <span class="rc-room-fact" title="Camas: <?= htmlspecialchars($habitacionCamasTexto) ?><?= $habitacionCamasTotal > 0 ? ' (' . htmlspecialchars($habitacionCamasDetalle) . ')' : '' ?>">
+                                            <i class="fas fa-bed" aria-hidden="true"></i>
+                                            <span><?= htmlspecialchars($habitacionCamasTexto) ?></span>
+                                        </span>
+                                    </div>
                                 </div>
                                 <div class="rc-foot">
                                     <span class="rc-price"><?= format_money($habitacion['precio_actual'] ?? $habitacion['precio_base']) ?><small>/noche</small></span>
@@ -3408,6 +3513,19 @@ if ($tiene_doble_movimiento) {
                                         Propietario: <?= htmlspecialchars($habitacionPropietarioTexto) ?>
                                         <?php if ($habitacionPropietarioPctLabel !== ''): ?>
                                             - <?= htmlspecialchars($habitacionPropietarioPctLabel) ?>
+                                        <?php endif; ?>
+                                    </span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-users"></i>
+                                    <span>Capacidad: <?= htmlspecialchars($habitacionCapacidadTexto) ?></span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-bed"></i>
+                                    <span>
+                                        Camas: <?= htmlspecialchars($habitacionCamasTexto) ?>
+                                        <?php if ($habitacionCamasTotal > 0): ?>
+                                            (<?= htmlspecialchars($habitacionCamasDetalle) ?>)
                                         <?php endif; ?>
                                     </span>
                                 </div>
@@ -3512,6 +3630,22 @@ if ($tiene_doble_movimiento) {
                                         <div class="info-item">
                                             <i class="fas fa-phone"></i>
                                             <span>Check-in pendiente</span>
+                                        </div>
+                                    <?php endif; ?>
+
+                                <?php elseif ($estado_actual == 'ocupada_fecha' && isset($habitacion['info_ocupacion'])): ?>
+                                    <div class="info-item">
+                                        <i class="fas fa-user"></i>
+                                        <span><?= htmlspecialchars($habitacion['info_ocupacion']['huesped'] ?? 'Reservacion') ?></span>
+                                    </div>
+                                    <div class="info-item">
+                                        <i class="fas fa-calendar-check"></i>
+                                        <span>Ocupada en la fecha consultada</span>
+                                    </div>
+                                    <?php if (!empty($habitacion['info_ocupacion']['fecha_entrada']) && !empty($habitacion['info_ocupacion']['fecha_salida'])): ?>
+                                        <div class="info-item">
+                                            <i class="fas fa-calendar-alt"></i>
+                                            <span><?= format_date($habitacion['info_ocupacion']['fecha_entrada']) ?> - <?= format_date($habitacion['info_ocupacion']['fecha_salida']) ?></span>
                                         </div>
                                     <?php endif; ?>
 
@@ -4219,6 +4353,9 @@ if ($tiene_doble_movimiento) {
                         'numero' => $hab['numero'],
                         'piso' => $pisos[$hab['piso']] ?? 'Piso ' . $hab['piso'],
                         'tipo' => hb_room_type_label($hab, $tipos),
+                        'capacidad' => hb_room_capacity_label($hab),
+                        'camas' => hb_room_beds_label($hab),
+                        'camas_detalle' => hb_room_beds_detail_label($hab),
                         'estado' => $estados[$estado_hab]['label'] ?? 'Desconocido',
                         'precio' => format_money($hab['precio_actual'] ?? $hab['precio_base']),
                         'huesped' => null,
@@ -4622,6 +4759,10 @@ if ($tiene_doble_movimiento) {
 .habitaciones-view .rc-guest span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .habitaciones-view .rc-guest--empty{ color:var(--hb-slate-400); font-weight:500; }
 .habitaciones-view .rc-meta{ font-size:.68rem; color:var(--hb-slate-500); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.habitaciones-view .rc-room-facts{ display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; min-width:0; }
+.habitaciones-view .rc-room-fact{ display:inline-flex; align-items:center; gap:4px; max-width:100%; min-height:22px; padding:4px 8px; border:1px solid color-mix(in srgb,var(--hb-line) 82%,#fff); border-radius:999px; background:rgba(255,255,255,.72); color:var(--hb-heading); font-size:.6rem; font-weight:850; line-height:1; white-space:nowrap; overflow:hidden; box-shadow:inset 0 1px 0 rgba(255,255,255,.76); }
+.habitaciones-view .rc-room-fact i{ flex:none; font-size:.58rem; color:color-mix(in srgb,var(--room-accent-color) 74%,var(--hb-heading)); }
+.habitaciones-view .rc-room-fact span{ min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .habitaciones-view .rc-foot{ display:flex; align-items:center; justify-content:space-between; margin-top:9px; gap:8px; }
 .habitaciones-view .rc-price{ font-size:.82rem; font-weight:800; color:var(--hb-primary); white-space:nowrap; }
 .habitaciones-view .rc-price small{ font-weight:600; color:var(--hb-slate-400); font-size:.6rem; }
@@ -8229,6 +8370,24 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
   }
   .habitaciones-view .rc-incidents{
     display:none!important;
+  }
+  .habitaciones-view .rc-room-facts{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    gap:4px!important;
+    margin-top:6px!important;
+    min-width:0!important;
+  }
+  .habitaciones-view .rc-room-fact{
+    flex:1 1 0!important;
+    min-width:0!important;
+    min-height:19px!important;
+    padding:3px 5px!important;
+    font-size:.54rem!important;
+    font-weight:750!important;
+  }
+  .habitaciones-view .rc-room-fact i{
+    font-size:.52rem!important;
   }
   .habitaciones-view .rc-guest{
     font-size:.7rem!important;
@@ -13633,10 +13792,10 @@ function continuarReservacionDesdeModal(tipo, habitacionId, fechaEntrada, fechaS
         fecha_entrada: fechaEntrada,
         fecha_salida: fechaSalida
     });
+    params.set('preseleccion', 'true');
 
     if (tieneHabitacion) {
         params.set('habitacion_id', habitacionValor);
-        params.set('preseleccion', 'true');
     }
 
     if (horaFinal) {
@@ -14596,6 +14755,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="tooltip-info">
                         <i class="fas fa-bed"></i>
                         <span>${data.tipo}</span>
+                    </div>
+                    <div class="tooltip-info">
+                        <i class="fas fa-users"></i>
+                        <span>${data.capacidad || 'Personas N/D'}</span>
+                    </div>
+                    <div class="tooltip-info">
+                        <i class="fas fa-bed"></i>
+                        <span>${data.camas || 'Camas N/D'}${data.camas_detalle && data.camas_detalle !== 'No definido' ? ' (' + data.camas_detalle + ')' : ''}</span>
                     </div>
                     <div class="tooltip-info">
                         <i class="fas fa-circle text-xs"></i>

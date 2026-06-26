@@ -5,12 +5,44 @@ $esEditar = $modo === 'editar';
 $action = $esEditar
     ? url('proveedores/' . (int)($proveedor['id'] ?? 0) . '/actualizar')
     : url('proveedores');
+$proveedorFieldErrors = isset($layoutFieldErrors) && is_array($layoutFieldErrors) ? $layoutFieldErrors : [];
 
 if (!function_exists('prov_form_safe')) {
     function prov_form_safe($value, $fallback = '')
     {
         $text = (string)($value ?? $fallback);
         return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+if (!function_exists('prov_form_error')) {
+    function prov_form_error(array $errors, string $field): string
+    {
+        $messages = $errors[$field] ?? [];
+        if (!is_array($messages)) {
+            $messages = [$messages];
+        }
+
+        $message = trim((string)($messages[0] ?? ''));
+        return $message !== '' ? prov_form_safe($message) : '';
+    }
+}
+
+if (!function_exists('prov_form_error_class')) {
+    function prov_form_error_class(array $errors, string $field): string
+    {
+        return prov_form_error($errors, $field) !== '' ? ' pv-input-error' : '';
+    }
+}
+
+if (!function_exists('prov_form_error_attrs')) {
+    function prov_form_error_attrs(array $errors, string $field, string $errorId): string
+    {
+        if (prov_form_error($errors, $field) === '') {
+            return '';
+        }
+
+        return ' aria-invalid="true" aria-describedby="' . prov_form_safe($errorId) . '"';
     }
 }
 ?>
@@ -70,6 +102,20 @@ if (!function_exists('prov_form_safe')) {
 .provider-form-page .pv-input:focus, .provider-form-page .pv-textarea:focus {
     border-color: var(--pv-gold); box-shadow: 0 0 0 3px var(--pv-ring); outline: none; background: #fff;
 }
+.provider-form-page .pv-input-error {
+    border-color: #B42318;
+    background: #FFF7F6;
+}
+.provider-form-page .pv-form-error {
+    display: block;
+    margin-top: 7px;
+    color: #B42318;
+    font-size: .76rem;
+    font-weight: 800;
+    line-height: 1.35;
+    letter-spacing: 0;
+    text-transform: none;
+}
 .provider-form-page .pv-req { color: var(--pv-gold-ink); }
 .provider-form-page .pv-hint { margin-top: 6px; font-size: .74rem; color: var(--pv-muted); font-weight: 600; }
 
@@ -112,50 +158,71 @@ if (!function_exists('prov_form_safe')) {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="nombre">Nombre comercial <span class="pv-req">*</span></label>
-                        <input class="pv-input" id="nombre" name="nombre" type="text" maxlength="160" required
+                        <input class="pv-input<?= prov_form_error_class($proveedorFieldErrors, 'nombre') ?>" id="nombre" name="nombre" type="text" maxlength="160" required
                                placeholder="Como lo conoces en el hotel"
-                               value="<?= old('nombre', prov_form_safe($proveedor['nombre'] ?? '')) ?>">
+                               value="<?= old('nombre', prov_form_safe($proveedor['nombre'] ?? '')) ?>"<?= prov_form_error_attrs($proveedorFieldErrors, 'nombre', 'ms-form-error-nombre') ?>>
+                        <?php if (prov_form_error($proveedorFieldErrors, 'nombre')): ?>
+                            <span class="pv-form-error ms-form-field-error" id="ms-form-error-nombre"><?= prov_form_error($proveedorFieldErrors, 'nombre') ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div>
                         <label for="razon_social">Raz&oacute;n social</label>
-                        <input class="pv-input" id="razon_social" name="razon_social" type="text" maxlength="180"
+                        <input class="pv-input<?= prov_form_error_class($proveedorFieldErrors, 'razon_social') ?>" id="razon_social" name="razon_social" type="text" maxlength="180"
                                placeholder="Nombre fiscal (para facturas)"
-                               value="<?= old('razon_social', prov_form_safe($proveedor['razon_social'] ?? '')) ?>">
+                               value="<?= old('razon_social', prov_form_safe($proveedor['razon_social'] ?? '')) ?>"<?= prov_form_error_attrs($proveedorFieldErrors, 'razon_social', 'ms-form-error-razon_social') ?>>
+                        <?php if (prov_form_error($proveedorFieldErrors, 'razon_social')): ?>
+                            <span class="pv-form-error ms-form-field-error" id="ms-form-error-razon_social"><?= prov_form_error($proveedorFieldErrors, 'razon_social') ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div>
                         <label for="rfc">RFC</label>
-                        <input class="pv-input" id="rfc" name="rfc" type="text" maxlength="20"
+                        <input class="pv-input<?= prov_form_error_class($proveedorFieldErrors, 'rfc') ?>" id="rfc" name="rfc" type="text" maxlength="20"
                                placeholder="Para facturaci&oacute;n"
-                               value="<?= old('rfc', prov_form_safe($proveedor['rfc'] ?? '')) ?>">
+                               value="<?= old('rfc', prov_form_safe($proveedor['rfc'] ?? '')) ?>"<?= prov_form_error_attrs($proveedorFieldErrors, 'rfc', 'ms-form-error-rfc') ?>>
+                        <?php if (prov_form_error($proveedorFieldErrors, 'rfc')): ?>
+                            <span class="pv-form-error ms-form-field-error" id="ms-form-error-rfc"><?= prov_form_error($proveedorFieldErrors, 'rfc') ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div>
                         <label for="telefono">Tel&eacute;fono</label>
-                        <input class="pv-input" id="telefono" name="telefono" type="text" maxlength="40"
+                        <input class="pv-input<?= prov_form_error_class($proveedorFieldErrors, 'telefono') ?>" id="telefono" name="telefono" type="text" maxlength="40"
                                placeholder="Para contactarlo"
-                               value="<?= old('telefono', prov_form_safe($proveedor['telefono'] ?? '')) ?>">
+                               value="<?= old('telefono', prov_form_safe($proveedor['telefono'] ?? '')) ?>"<?= prov_form_error_attrs($proveedorFieldErrors, 'telefono', 'ms-form-error-telefono') ?>>
+                        <?php if (prov_form_error($proveedorFieldErrors, 'telefono')): ?>
+                            <span class="pv-form-error ms-form-field-error" id="ms-form-error-telefono"><?= prov_form_error($proveedorFieldErrors, 'telefono') ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div>
                         <label for="email">Correo</label>
-                        <input class="pv-input" id="email" name="email" type="email" maxlength="160"
+                        <input class="pv-input<?= prov_form_error_class($proveedorFieldErrors, 'email') ?>" id="email" name="email" type="email" maxlength="160"
                                placeholder="correo@proveedor.com"
-                               value="<?= old('email', prov_form_safe($proveedor['email'] ?? '')) ?>">
+                               value="<?= old('email', prov_form_safe($proveedor['email'] ?? '')) ?>"<?= prov_form_error_attrs($proveedorFieldErrors, 'email', 'ms-form-error-email') ?>>
+                        <?php if (prov_form_error($proveedorFieldErrors, 'email')): ?>
+                            <span class="pv-form-error ms-form-field-error" id="ms-form-error-email"><?= prov_form_error($proveedorFieldErrors, 'email') ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div>
                         <label for="direccion">Direcci&oacute;n</label>
-                        <input class="pv-input" id="direccion" name="direccion" type="text" maxlength="255"
+                        <input class="pv-input<?= prov_form_error_class($proveedorFieldErrors, 'direccion') ?>" id="direccion" name="direccion" type="text" maxlength="255"
                                placeholder="Calle, colonia, ciudad"
-                               value="<?= old('direccion', prov_form_safe($proveedor['direccion'] ?? '')) ?>">
+                               value="<?= old('direccion', prov_form_safe($proveedor['direccion'] ?? '')) ?>"<?= prov_form_error_attrs($proveedorFieldErrors, 'direccion', 'ms-form-error-direccion') ?>>
+                        <?php if (prov_form_error($proveedorFieldErrors, 'direccion')): ?>
+                            <span class="pv-form-error ms-form-field-error" id="ms-form-error-direccion"><?= prov_form_error($proveedorFieldErrors, 'direccion') ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div class="md:col-span-2">
                         <label for="notas">Notas internas</label>
-                        <textarea class="pv-textarea" id="notas" name="notas" maxlength="1000"
-                                  placeholder="Lo que quieras recordar de este proveedor (horarios, descuentos, qu&eacute; te vende...)"><?= old('notas', prov_form_safe($proveedor['notas'] ?? '')) ?></textarea>
+                        <textarea class="pv-textarea<?= prov_form_error_class($proveedorFieldErrors, 'notas') ?>" id="notas" name="notas" maxlength="1000"
+                                  placeholder="Lo que quieras recordar de este proveedor (horarios, descuentos, qu&eacute; te vende...)"<?= prov_form_error_attrs($proveedorFieldErrors, 'notas', 'ms-form-error-notas') ?>><?= old('notas', prov_form_safe($proveedor['notas'] ?? '')) ?></textarea>
+                        <?php if (prov_form_error($proveedorFieldErrors, 'notas')): ?>
+                            <span class="pv-form-error ms-form-field-error" id="ms-form-error-notas"><?= prov_form_error($proveedorFieldErrors, 'notas') ?></span>
+                        <?php endif; ?>
                         <p class="pv-hint">Solo las ve tu equipo. El proveedor nunca las ve.</p>
                     </div>
                 </div>

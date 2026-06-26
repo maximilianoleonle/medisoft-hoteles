@@ -210,6 +210,33 @@ Recomendacion temporal:
 
 Mantener ambas. Usar `huesped_vehiculos` para codigo nuevo y reportes.
 
+## Actualizacion 2026-06-24 - Auditoria de exposicion legacy
+
+Validacion local de conteos:
+
+- `huespedes_vehiculos`: 0 registros.
+- `inventario_habitacion_config`: 0 registros.
+- `inventario_movimientos`: 0 registros.
+- `productos`: 5 registros semilla legacy.
+- `inventario_productos`: 35 registros.
+- `inventario_config_habitacion`: 58 registros.
+- `movimientos_inventario`: 193 registros.
+
+Exposicion de rutas:
+
+- El router actual solo despacha rutas registradas en `src/config/routes.php`.
+- No hay rutas registradas para `/inventario/productos`, `/inventario/productos/crear`, `/inventario/configuracion-habitacion` ni `/productos`.
+- `ProductoController` queda sin ruta activa y conserva contrato antiguo no compatible con el dispatcher moderno (`index`, `crear`, etc. sin sufijo `Action`).
+- `src/app/views/inventario/dashboard.php` tenia un enlace residual a `inventario/configuracion-habitacion`; se corrigio para apuntar al flujo oficial `inventario/configuracion`.
+
+Decision:
+
+- No borrar tablas legacy en esta fase.
+- Mantener `productos` como semilla historica congelada.
+- Mantener vacias `huespedes_vehiculos`, `inventario_habitacion_config` e `inventario_movimientos` hasta una fase de retiro con backup.
+- No crear rutas nuevas hacia `ProductoController`, vistas legacy ni servicios congelados.
+- Todo codigo nuevo de inventario debe seguir usando `inventario_productos`, `inventario_config_habitacion` y `movimientos_inventario` con `hotel_id`.
+
 ## Recomendacion Fase 1A
 
 No ejecutar limpieza de tablas en esta fase.

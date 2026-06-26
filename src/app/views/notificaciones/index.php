@@ -988,61 +988,116 @@ $totalModulos = array_sum(array_map(static function ($modulo) {
 
 @media (max-width: 760px) {
     .ntx-shell {
-        width: min(100% - 20px, 1440px);
-        padding-top: 18px;
+        width: 100%;
+        margin: 0;
+        padding: 16px 14px 40px;
     }
 
+    /* ── Header compacto ── */
+    .ntx-top {
+        display: block;
+        margin-bottom: 14px;
+    }
     .ntx-title-lockup {
-        grid-template-columns: 44px minmax(0, 1fr);
-        column-gap: 12px;
-        align-items: start;
-    }
-
-    .ntx-hero-icon {
-        width: 44px;
-        height: 44px;
-        flex-basis: 44px;
-        border-radius: 14px;
-    }
-
-    .ntx-title {
-        font-size: 2rem;
-    }
-
-    .ntx-stats {
-        grid-template-columns: 1fr;
-    }
-
-    .ntx-module-strip {
-        justify-content: stretch;
-        min-height: auto;
-    }
-
-    .ntx-module-chip {
-        flex-basis: 100%;
-    }
-
-    .ntx-inbox-head {
-        grid-template-columns: 1fr;
-    }
-
-    .ntx-inbox-tools {
-        justify-content: flex-start;
-    }
-
-    .ntx-row {
         grid-template-columns: 40px minmax(0, 1fr);
-        padding: 13px;
+        column-gap: 11px;
+        align-items: center;
+        max-width: none;
     }
-
-    .ntx-icon {
+    .ntx-hero-icon {
         width: 40px;
         height: 40px;
+        flex-basis: 40px;
+        border-radius: 13px;
+    }
+    .ntx-kicker { display: none; }            /* omitido: redundante en movil */
+    .ntx-title { font-size: 1.6rem; }
+    .ntx-subtitle { display: none; }          /* omitido: parrafo largo satura */
+    .ntx-live-card { display: none; }         /* omitido: duplica los stats de abajo */
+
+    /* ── Stats 2x2 compactos ── */
+    .ntx-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+    .ntx-stat {
+        min-height: 0;
+        gap: 5px;
+        padding: 11px 12px;
+        border-radius: 13px;
+    }
+    .ntx-stat::after { height: 2px; }
+    .ntx-stat span { font-size: .66rem; }
+    .ntx-stat strong { font-size: 1.5rem; }
+
+    /* ── Paneles laterales: compactos ── */
+    .ntx-layout { gap: 12px; }
+    .ntx-side { gap: 12px; }
+    .ntx-panel-head { padding: 12px 14px 9px; }
+    .ntx-panel-head p { display: none; }      /* omitido: descripcion decorativa */
+
+    /* Filtro de origen: chips en fila scrollable */
+    .ntx-module-strip {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        justify-content: flex-start;
+        gap: 7px;
+        min-height: 0;
+        padding: 12px 14px;
+        scrollbar-width: none;
+    }
+    .ntx-module-strip::-webkit-scrollbar { display: none; }
+    .ntx-module-chip {
+        flex: 0 0 auto;
+        min-height: 34px;
+        padding: 0 11px 0 6px;
     }
 
-    .ntx-arrow {
-        display: none;
+    /* Panel Dispositivo (push): se conserva, compacto */
+    .ntx-push-head { padding: 12px 14px 10px; }
+    .ntx-push-actions { padding: 10px 14px 13px; }
+
+    /* ── Bandeja ── */
+    .ntx-inbox-head {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 14px;
     }
+    .ntx-inbox-head h2 { font-size: 1.05rem; }
+    .ntx-inbox-tools { justify-content: flex-start; }
+    .ntx-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 6px;
+        min-height: 0;
+        padding: 10px 14px;
+        scrollbar-width: none;
+    }
+    .ntx-tabs::-webkit-scrollbar { display: none; }
+    .ntx-tab { flex: 0 0 auto; white-space: nowrap; }
+    .ntx-feed { padding: 12px; gap: 8px; }
+    .ntx-row {
+        grid-template-columns: 38px minmax(0, 1fr);
+        gap: 11px;
+        min-height: 0;
+        padding: 12px;
+        border-radius: 13px;
+    }
+    .ntx-icon { width: 38px; height: 38px; border-radius: 11px; }
+    .ntx-row-title { font-size: .92rem; }
+    .ntx-message {
+        margin-top: 5px;
+        font-size: .84rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .ntx-meta { gap: 8px; margin-top: 8px; font-size: .72rem; }
+    .ntx-arrow { display: none; }
+    .ntx-empty { min-height: 200px; padding: 24px; }
 }
 </style>
 

@@ -6,6 +6,8 @@ $cobroCaja = $cobroCaja ?? [];
 $cobroToken = $cobroToken ?? null;
 $reversionesCobro = $reversionesCobro ?? [];
 $reversionTokens = $reversionTokens ?? [];
+$cxcFieldErrors = isset($layoutFieldErrors) && is_array($layoutFieldErrors) ? $layoutFieldErrors : [];
+$cxcOldInput = isset($_SESSION['old_input']) && is_array($_SESSION['old_input']) ? $_SESSION['old_input'] : [];
 $movimientosCobro = array_values(array_filter($movimientos, static function ($movimiento) {
     return (string)($movimiento['tipo_movimiento'] ?? '') === 'COBRO';
 }));
@@ -42,7 +44,42 @@ if (!function_exists('cxc_op_view_estado_meta')) {
 }
 
 $cuentaId = (int)($cuenta['id'] ?? 0);
+$cxcCobroMontoValor = (string)($cxcOldInput['monto'] ?? ($cobroCaja['monto_maximo'] ?? '0.00'));
+$cxcCobroMetodoValor = (string)($cxcOldInput['metodo_pago'] ?? '');
+$cxcCobroReferenciaValor = (string)($cxcOldInput['referencia'] ?? '');
+$cxcCobroNotasValor = (string)($cxcOldInput['notas'] ?? '');
+$cxcReversionOldMovimientoId = (int)($cxcOldInput['reversion_movimiento_id'] ?? 0);
 [$estadoLabel, $estadoClass, $estadoIcon] = cxc_op_view_estado_meta($cuenta['estado'] ?? null);
+
+if (!function_exists('cxc_op_form_error')) {
+    function cxc_op_form_error(array $errors, string $field): string
+    {
+        $messages = $errors[$field] ?? [];
+        if (!is_array($messages)) {
+            $messages = [$messages];
+        }
+
+        return cxc_op_view_safe($messages[0] ?? '', '');
+    }
+}
+
+if (!function_exists('cxc_op_form_error_class')) {
+    function cxc_op_form_error_class(array $errors, string $field): string
+    {
+        return cxc_op_form_error($errors, $field) !== '' ? ' cx-input-error' : '';
+    }
+}
+
+if (!function_exists('cxc_op_form_error_attrs')) {
+    function cxc_op_form_error_attrs(array $errors, string $field, string $errorId): string
+    {
+        if (cxc_op_form_error($errors, $field) === '') {
+            return '';
+        }
+
+        return ' aria-invalid="true" aria-describedby="' . cxc_op_view_safe($errorId, '') . '"';
+    }
+}
 ?>
 
 <style>
@@ -118,6 +155,8 @@ $cuentaId = (int)($cuenta['id'] ?? 0);
 .cxc-op-detail textarea.cx-input { min-height: 82px; resize: vertical; }
 .cxc-op-detail select.cx-input { cursor: pointer; }
 .cxc-op-detail .cx-input:focus { border-color: var(--cx-gold); box-shadow: 0 0 0 3px var(--cx-ring); outline: none; background: #fff; }
+.cxc-op-detail .cx-input-error { border-color: #B42318; background: #FFF7F6; }
+.cxc-op-detail .cx-form-error { display: block; margin-top: 7px; color: #B42318; font-size: .76rem; font-weight: 800; line-height: 1.35; letter-spacing: 0; text-transform: none; }
 .cxc-op-detail .cx-pay-card { border: 1px solid var(--cx-border); background: var(--cx-surface-warm); border-radius: 13px; padding: 14px; }
 .cxc-op-detail .cx-soft-note { border: 1px solid var(--cx-border); background: var(--cx-surface-warm); border-radius: 12px; padding: 14px; font-size: .88rem; color: var(--cx-muted); }
 
@@ -208,23 +247,36 @@ $cuentaId = (int)($cuenta['id'] ?? 0);
                     <input type="hidden" name="cobro_token" value="<?= cxc_op_view_safe($cobroToken, '') ?>">
                     <div>
                         <label class="cx-meta-label" for="cxc_monto">Monto</label>
-                        <input id="cxc_monto" class="cx-input mt-1" type="number" name="monto" min="0.01" step="0.01" max="<?= cxc_op_view_safe($cobroCaja['monto_maximo'] ?? '0.00', '0.00') ?>" value="<?= cxc_op_view_safe($cobroCaja['monto_maximo'] ?? '0.00', '0.00') ?>" required>
+                        <input id="cxc_monto" class="cx-input mt-1<?= cxc_op_form_error_class($cxcFieldErrors, 'monto') ?>" type="number" name="monto" min="0.01" step="0.01" max="<?= cxc_op_view_safe($cobroCaja['monto_maximo'] ?? '0.00', '0.00') ?>" value="<?= cxc_op_view_safe($cxcCobroMontoValor, '0.00') ?>" required<?= cxc_op_form_error_attrs($cxcFieldErrors, 'monto', 'ms-form-error-cxc_monto') ?>>
+                        <?php if (cxc_op_form_error($cxcFieldErrors, 'monto') !== ''): ?>
+                            <span id="ms-form-error-cxc_monto" class="cx-form-error ms-form-field-error"><?= cxc_op_form_error($cxcFieldErrors, 'monto') ?></span>
+                        <?php endif; ?>
                     </div>
                     <div>
                         <label class="cx-meta-label" for="cxc_metodo_pago">M&eacute;todo de pago</label>
-                        <select id="cxc_metodo_pago" class="cx-input mt-1" name="metodo_pago" required>
+                        <select id="cxc_metodo_pago" class="cx-input mt-1<?= cxc_op_form_error_class($cxcFieldErrors, 'metodo_pago') ?>" name="metodo_pago" required<?= cxc_op_form_error_attrs($cxcFieldErrors, 'metodo_pago', 'ms-form-error-cxc_metodo_pago') ?>>
                             <?php foreach (($cobroCaja['metodos_pago'] ?? []) as $valor => $label): ?>
-                                <option value="<?= cxc_op_view_safe($valor, '') ?>"><?= cxc_op_view_safe($label, '') ?></option>
+                                <?php $valorMetodo = (string)$valor; ?>
+                                <option value="<?= cxc_op_view_safe($valorMetodo, '') ?>" <?= $cxcCobroMetodoValor !== '' && $cxcCobroMetodoValor === $valorMetodo ? 'selected' : '' ?>><?= cxc_op_view_safe($label, '') ?></option>
                             <?php endforeach; ?>
                         </select>
+                        <?php if (cxc_op_form_error($cxcFieldErrors, 'metodo_pago') !== ''): ?>
+                            <span id="ms-form-error-cxc_metodo_pago" class="cx-form-error ms-form-field-error"><?= cxc_op_form_error($cxcFieldErrors, 'metodo_pago') ?></span>
+                        <?php endif; ?>
                     </div>
                     <div class="md:col-span-2">
                         <label class="cx-meta-label" for="cxc_referencia">Referencia</label>
-                        <input id="cxc_referencia" class="cx-input mt-1" type="text" name="referencia" maxlength="100" placeholder="Folio, transferencia o nota breve">
+                        <input id="cxc_referencia" class="cx-input mt-1<?= cxc_op_form_error_class($cxcFieldErrors, 'referencia') ?>" type="text" name="referencia" maxlength="100" value="<?= cxc_op_view_safe($cxcCobroReferenciaValor, '') ?>" placeholder="Folio, transferencia o nota breve"<?= cxc_op_form_error_attrs($cxcFieldErrors, 'referencia', 'ms-form-error-cxc_referencia') ?>>
+                        <?php if (cxc_op_form_error($cxcFieldErrors, 'referencia') !== ''): ?>
+                            <span id="ms-form-error-cxc_referencia" class="cx-form-error ms-form-field-error"><?= cxc_op_form_error($cxcFieldErrors, 'referencia') ?></span>
+                        <?php endif; ?>
                     </div>
                     <div class="md:col-span-4">
                         <label class="cx-meta-label" for="cxc_notas">Notas</label>
-                        <textarea id="cxc_notas" class="cx-input mt-1" name="notas" maxlength="1000" placeholder="Opcional"></textarea>
+                        <textarea id="cxc_notas" class="cx-input mt-1<?= cxc_op_form_error_class($cxcFieldErrors, 'notas') ?>" name="notas" maxlength="1000" placeholder="Opcional"<?= cxc_op_form_error_attrs($cxcFieldErrors, 'notas', 'ms-form-error-cxc_notas') ?>><?= cxc_op_view_safe($cxcCobroNotasValor, '') ?></textarea>
+                        <?php if (cxc_op_form_error($cxcFieldErrors, 'notas') !== ''): ?>
+                            <span id="ms-form-error-cxc_notas" class="cx-form-error ms-form-field-error"><?= cxc_op_form_error($cxcFieldErrors, 'notas') ?></span>
+                        <?php endif; ?>
                     </div>
                     <div class="md:col-span-4 flex flex-wrap items-center justify-between gap-3">
                         <p class="cx-panel-sub" style="margin:0">M&aacute;ximo a cobrar: <strong style="color:var(--cx-heading)"><?= cxc_op_view_money($cobroCaja['monto_maximo'] ?? 0) ?></strong>.</p>
@@ -269,6 +321,14 @@ $cuentaId = (int)($cuenta['id'] ?? 0);
                             </div>
 
                             <?php if (!empty($reversion['elegible']) && $reversionToken): ?>
+                                <?php
+                                    $cxcMotivoError = $cxcReversionOldMovimientoId === $movimientoCobroId
+                                        ? cxc_op_form_error($cxcFieldErrors, 'motivo')
+                                        : '';
+                                    $cxcMotivoValor = $cxcReversionOldMovimientoId === $movimientoCobroId
+                                        ? (string)($cxcOldInput['motivo'] ?? '')
+                                        : '';
+                                ?>
                                 <form method="POST" action="<?= url('cuentas-por-cobrar/operativas/' . $cuentaId . '/movimientos/' . $movimientoCobroId . '/revertir-cobro-caja') ?>" class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="reversion_token" value="<?= cxc_op_view_safe($reversionToken, '') ?>">
@@ -278,7 +338,10 @@ $cuentaId = (int)($cuenta['id'] ?? 0);
                                     </div>
                                     <div class="md:col-span-3">
                                         <label class="cx-meta-label" for="cxc_reversion_motivo_<?= $movimientoCobroId ?>">Motivo de la reversi&oacute;n</label>
-                                        <textarea id="cxc_reversion_motivo_<?= $movimientoCobroId ?>" class="cx-input mt-1" name="motivo" maxlength="1000" required placeholder="Explica por qu&eacute; reviertes este cobro"></textarea>
+                                        <textarea id="cxc_reversion_motivo_<?= $movimientoCobroId ?>" class="cx-input mt-1<?= $cxcMotivoError !== '' ? ' cx-input-error' : '' ?>" name="motivo" maxlength="1000" required placeholder="Explica por qu&eacute; reviertes este cobro"<?= $cxcMotivoError !== '' ? ' aria-invalid="true" aria-describedby="ms-form-error-cxc_reversion_motivo_' . $movimientoCobroId . '"' : '' ?>><?= cxc_op_view_safe($cxcMotivoValor, '') ?></textarea>
+                                        <?php if ($cxcMotivoError !== ''): ?>
+                                            <span id="ms-form-error-cxc_reversion_motivo_<?= $movimientoCobroId ?>" class="cx-form-error ms-form-field-error"><?= $cxcMotivoError ?></span>
+                                        <?php endif; ?>
                                     </div>
                                     <div class="md:col-span-4 flex justify-end">
                                         <button class="cx-btn cx-btn-danger" type="submit"><i class="fas fa-rotate-left"></i> Revertir cobro</button>

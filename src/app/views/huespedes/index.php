@@ -1,6 +1,5 @@
 <?php
 $huespedes = $huespedes ?? [];
-$estados = $estados ?? [];
 $guestRows = [];
 $vehiculoModel = !empty($huespedes) ? new HuespedVehiculo() : null;
 
@@ -19,7 +18,6 @@ $origenesVisibles = count(array_filter(array_unique(array_column($huespedes, 'pr
 $pagina_actual = max(1, (int) ($pagina_actual ?? 1));
 $total_paginas = max(1, (int) ($total_paginas ?? 1));
 $buscar = $buscar ?? '';
-$estado_filtro = $estado_filtro ?? '';
 
 $guestPaginationPages = [];
 if ($total_paginas > 1) {
@@ -152,8 +150,6 @@ if ($total_paginas > 1) {
 }
 
 .guest-primary-btn,
-.guest-filter-btn,
-.guest-reset-btn,
 .guest-action,
 .guest-card-action,
 .guest-page-link {
@@ -178,8 +174,6 @@ if ($total_paginas > 1) {
 }
 
 .guest-primary-btn:hover,
-.guest-filter-btn:hover,
-.guest-reset-btn:hover,
 .guest-card-action:hover,
 .guest-action:hover,
 .guest-page-link:hover {
@@ -187,8 +181,6 @@ if ($total_paginas > 1) {
 }
 
 .guest-primary-btn:focus-visible,
-.guest-filter-btn:focus-visible,
-.guest-reset-btn:focus-visible,
 .guest-action:focus-visible,
 .guest-card-action:focus-visible,
 .guest-page-link:focus-visible,
@@ -200,8 +192,6 @@ if ($total_paginas > 1) {
 }
 
 .guest-primary-btn:active,
-.guest-filter-btn:active,
-.guest-reset-btn:active,
 .guest-action:active,
 .guest-card-action:active,
 .guest-page-link:active,
@@ -250,14 +240,14 @@ if ($total_paginas > 1) {
 
 .guest-filter-form {
     display: grid;
-    grid-template-columns: minmax(240px, 1fr) minmax(190px, 260px) auto;
-    gap: 10px;
-    align-items: end;
+    grid-template-columns: minmax(240px, 1fr);
+    gap: 0;
+    align-items: stretch;
 }
 
 .guest-control {
     width: 100%;
-    min-height: 38px;
+    min-height: 44px;
     border-color: var(--guest-border) !important;
     background: color-mix(in srgb, var(--guest-brand) 3%, #fff);
     border-radius: 10px;
@@ -273,17 +263,41 @@ select.guest-control {
     cursor: pointer;
 }
 
-.guest-filter-btn {
-    padding: .5rem .8rem;
-    background: linear-gradient(135deg, var(--guest-brand), var(--guest-brand-dark));
-    color: #fff;
-    box-shadow: 0 10px 20px color-mix(in srgb, var(--guest-brand) 18%, transparent);
+.guest-search-clear {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(-50%);
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    color: var(--guest-muted);
+    background: transparent;
+    cursor: pointer;
+    transition: background .16s ease, color .16s ease, transform .16s ease;
 }
 
-.guest-reset-btn {
-    padding: .5rem .8rem;
-    background: #F1F5F9;
-    color: #475569;
+.guest-search-clear:hover {
+    color: var(--guest-brand-dark);
+    background: color-mix(in srgb, var(--guest-brand) 8%, #fff);
+}
+
+.guest-search-clear:focus-visible {
+    outline: 2px solid var(--guest-brand);
+    outline-offset: 2px;
+}
+
+.guest-search-clear:active {
+    transform: translateY(-50%) scale(.96);
+}
+
+.guest-search-clear[hidden] {
+    display: none;
 }
 
 .guest-count-pill {
@@ -739,12 +753,6 @@ select.guest-control {
         grid-template-columns: 1fr;
     }
 
-    .guest-filter-actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-    }
-
     .guest-primary-btn {
         width: 100%;
     }
@@ -854,8 +862,6 @@ select.guest-control {
 .guests-page .guest-control { background: var(--guest-surface-warm) !important; border-color: var(--guest-border) !important; border-radius: 11px !important; color: var(--guest-text) !important; font-weight: 600; }
 .guests-page .guest-control:focus { border-color: var(--guest-gold) !important; box-shadow: 0 0 0 3px var(--guest-ring) !important; }
 .guests-page .guest-filter-form label { color: var(--guest-muted) !important; }
-.guests-page .guest-filter-btn { background: linear-gradient(135deg, var(--guest-brand), var(--guest-brand-2)) !important; color: #fff !important; border-radius: 11px !important; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--guest-brand) 60%, transparent) !important; }
-.guests-page .guest-reset-btn { background: var(--guest-surface) !important; border: 1px solid var(--guest-border) !important; color: var(--guest-muted) !important; border-radius: 11px !important; }
 .guests-page .guest-count-pill { background: var(--guest-gold-soft) !important; color: var(--guest-gold-ink) !important; border: 1px solid var(--guest-gold-line) !important; }
 
 /* ── Tabla ── */
@@ -988,7 +994,7 @@ select.guest-control {
                     <div class="guest-title-copy">
                         <p class="hotel-page-kicker">Operaci&oacute;n hotelera</p>
                         <h1 class="hotel-page-title">Hu&eacute;spedes</h1>
-                        <p class="hotel-page-subtitle">Directorio operativo de hu&eacute;spedes: contacto, procedencia, veh&iacute;culos e historial de reservas.</p>
+                        <p class="hotel-page-subtitle">Directorio operativo de hu&eacute;spedes.</p>
                     </div>
                 </div>
 
@@ -1027,33 +1033,19 @@ select.guest-control {
                                value="<?= htmlspecialchars($buscar ?? '') ?>"
                                title="Buscar por nombre, telefono, email o placas"
                                placeholder="Nombre, teléfono, email o placas"
-                               class="guest-control pl-10 pr-4 py-2 border text-sm">
+                               class="guest-control pl-10 pr-12 py-2 border text-sm">
                         <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" data-guest-search-icon></i>
+                        <button type="button"
+                                class="guest-search-clear"
+                                data-guest-search-clear
+                                title="Limpiar busqueda"
+                                aria-label="Limpiar busqueda"
+                                <?= trim((string)($buscar ?? '')) === '' ? 'hidden' : '' ?>>
+                            <i class="fas fa-times" aria-hidden="true"></i>
+                        </button>
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-extrabold text-slate-600 uppercase tracking-wide mb-1">Procedencia</label>
-                    <select name="estado" class="guest-control px-3 py-2 border text-sm" title="Filtrar por procedencia">
-                        <option value="">Todos los estados</option>
-                        <?php foreach ($estados as $estado): ?>
-                            <option value="<?= $estado ?>" <?= ($estado_filtro ?? '') == $estado ? 'selected' : '' ?>>
-                                <?= $estado ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="guest-filter-actions flex gap-2">
-                    <button type="submit" class="guest-filter-btn hotel-btn-primary" title="Aplicar filtros">
-                        <i class="fas fa-filter"></i>
-                        Filtrar
-                    </button>
-                    <a href="<?= url('huespedes') ?>" class="guest-reset-btn hotel-btn-secondary" title="Limpiar filtros">
-                        <i class="fas fa-times"></i>
-                        Limpiar
-                    </a>
-                </div>
             </form>
         </section>
 
@@ -1347,7 +1339,7 @@ select.guest-control {
         <nav class="guest-pagination mt-2" aria-label="Paginación de huéspedes">
             <div class="guest-pagination-shell">
             <?php if ($pagina_actual > 1): ?>
-                <a href="?page=<?= $pagina_actual - 1 ?>&buscar=<?= urlencode($buscar ?? '') ?>&estado=<?= urlencode($estado_filtro ?? '') ?>"
+                <a href="?page=<?= $pagina_actual - 1 ?>&buscar=<?= urlencode($buscar ?? '') ?>"
                    class="guest-page-link guest-page-control"
                    title="Cambiar pagina"
                    aria-label="Página anterior">
@@ -1373,7 +1365,7 @@ select.guest-control {
                             <?= $i ?>
                         </span>
                     <?php else: ?>
-                        <a href="?page=<?= $i ?>&buscar=<?= urlencode($buscar ?? '') ?>&estado=<?= urlencode($estado_filtro ?? '') ?>"
+                        <a href="?page=<?= $i ?>&buscar=<?= urlencode($buscar ?? '') ?>"
                            class="guest-page-link"
                            title="Ir a pagina"
                            aria-label="Ir a página <?= $i ?>">
@@ -1386,7 +1378,7 @@ select.guest-control {
             </div>
 
             <?php if ($pagina_actual < $total_paginas): ?>
-                <a href="?page=<?= $pagina_actual + 1 ?>&buscar=<?= urlencode($buscar ?? '') ?>&estado=<?= urlencode($estado_filtro ?? '') ?>"
+                <a href="?page=<?= $pagina_actual + 1 ?>&buscar=<?= urlencode($buscar ?? '') ?>"
                    class="guest-page-link guest-page-control"
                    title="Cambiar pagina"
                    aria-label="Página siguiente">
@@ -1412,6 +1404,7 @@ select.guest-control {
     const form = document.querySelector('[data-guest-live-search-form]');
     const input = document.querySelector('[data-guest-live-search-input]');
     const searchIcon = document.querySelector('[data-guest-search-icon]');
+    const clearButton = document.querySelector('[data-guest-search-clear]');
 
     if (!form || !input) return;
 
@@ -1424,6 +1417,10 @@ select.guest-control {
 
     const getResultsRegion = () => document.querySelector('[data-guest-results-region]');
     const getSummary = () => document.querySelector('[data-guest-summary]');
+    const updateClearVisibility = () => {
+        if (!clearButton) return;
+        clearButton.hidden = input.value.trim() === '';
+    };
 
     const setSearching = (isSearching) => {
         form.classList.toggle('is-searching', isSearching);
@@ -1526,22 +1523,13 @@ select.guest-control {
         fetchResults(buildSearchUrl());
     });
 
-    form.querySelector('[name="estado"]')?.addEventListener('change', () => {
-        lastQuery = input.value.trim();
-        fetchResults(buildSearchUrl());
-    });
-
-    form.querySelector('.guest-reset-btn')?.addEventListener('click', (event) => {
+    clearButton?.addEventListener('click', (event) => {
         event.preventDefault();
         input.value = '';
 
-        const estado = form.querySelector('[name="estado"]');
-        if (estado) {
-            estado.value = '';
-        }
-
         lastQuery = '';
-        fetchResults(new URL(event.currentTarget.href, window.location.origin));
+        updateClearVisibility();
+        fetchResults(new URL(form.action, window.location.origin));
         input.focus();
     });
 
@@ -1556,10 +1544,7 @@ select.guest-control {
     window.addEventListener('popstate', () => {
         const params = new URLSearchParams(window.location.search);
         input.value = params.get('buscar') || '';
-        const estado = form.querySelector('[name="estado"]');
-        if (estado) {
-            estado.value = params.get('estado') || '';
-        }
+        updateClearVisibility();
 
         lastQuery = input.value.trim();
         fetchResults(new URL(window.location.href), { pushState: false });
@@ -1571,14 +1556,18 @@ select.guest-control {
 
     input.addEventListener('compositionend', () => {
         isComposing = false;
+        updateClearVisibility();
         window.clearTimeout(liveSearchTimer);
         liveSearchTimer = window.setTimeout(submitLiveSearch, delay);
     });
 
     input.addEventListener('input', () => {
         if (isComposing) return;
+        updateClearVisibility();
         window.clearTimeout(liveSearchTimer);
         liveSearchTimer = window.setTimeout(submitLiveSearch, delay);
     });
+
+    updateClearVisibility();
 })();
 </script>

@@ -272,12 +272,12 @@ class CompraController extends Controller
                 $campo = 'folio';
             } elseif (strpos($lower, 'fecha') !== false) {
                 $campo = 'fecha_compra';
-            } elseif (strpos($lower, 'producto') !== false || strpos($lower, 'detalle') !== false) {
-                $campo = 'producto_id';
+            } elseif (strpos($lower, 'producto') !== false || strpos($lower, 'detalle') !== false || strpos($lower, 'linea') !== false) {
+                $campo = 'producto_id_0';
             } elseif (strpos($lower, 'cantidad') !== false) {
-                $campo = 'cantidad';
+                $campo = 'cantidad_0';
             } elseif (strpos($lower, 'costo') !== false || strpos($lower, 'importe') !== false) {
-                $campo = 'costo_unitario';
+                $campo = 'costo_unitario_0';
             } elseif (strpos($lower, 'nota') !== false) {
                 $campo = 'notas';
             }

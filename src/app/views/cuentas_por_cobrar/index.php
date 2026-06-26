@@ -150,6 +150,70 @@ $visibles = count($cuentas);
     .cxc-page .cx-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .cxc-page .cx-title { font-size: 1.9rem; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   MÓVIL COMPACTO  ·  estética dashboard / habitaciones (≤768px)
+   Tabla → tarjetas; se omite lo que satura (ver resumen al usuario).
+   ════════════════════════════════════════════════════════════════════ */
+.cxc-page .cx-mobile-list { display: none; }
+
+@media (max-width: 768px) {
+    .cxc-page { padding: 14px !important; }
+    .cxc-page .cx-shell { gap: 12px; }
+
+    /* Header compacto */
+    .cxc-page .cx-title-lockup { grid-template-columns: 40px minmax(0, 1fr); column-gap: 11px; align-items: center; }
+    .cxc-page .cx-hero-icon { width: 40px; height: 40px; border-radius: 12px; font-size: 1rem; }
+    .cxc-page .cx-kicker { display: none; }          /* omitido */
+    .cxc-page .cx-title { font-size: 1.5rem; }
+    .cxc-page .cx-subtitle { display: none; }        /* omitido: parrafo largo */
+    .cxc-page section.flex > .cx-btn { width: 100%; }
+
+    /* Resumen 2x2 compacto */
+    .cxc-page .cx-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .cxc-page .cx-summary-item { padding: 10px 12px; border-radius: 12px; }
+    .cxc-page .cx-summary-value { font-size: 1.35rem; }
+
+    /* Filtros: search + selects apilados; "Filtrar" se oculta (live-search auto-aplica) */
+    .cxc-page .cx-panel.p-3 { padding: 12px !important; }
+    .cxc-page .cx-filter-form { grid-template-columns: 1fr; gap: 8px; }
+    .cxc-page .cx-control { min-height: 44px; }
+    .cxc-page .cx-filter-form .cx-btn-brand { display: none; }   /* omitido: redundante con busqueda en vivo */
+    .cxc-page .cx-filter-form .cx-reset { width: 100%; }
+
+    /* Tabla oculta → tarjetas */
+    .cxc-page .cx-table-wrap { display: none; }
+    .cxc-page .cx-panel-head { padding: 12px 14px; }
+    .cxc-page .cx-panel-sub { display: none; }       /* omitido: descripcion decorativa */
+    .cxc-page .cx-mobile-list { display: grid; gap: 10px; padding: 12px; }
+
+    .cxc-page .cx-mcard {
+        display: grid;
+        gap: 10px;
+        border: 1px solid var(--cx-border);
+        border-radius: 14px;
+        background: var(--cx-surface);
+        padding: 13px;
+        box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 24px -20px rgba(27,39,70,.22);
+    }
+    .cxc-page .cx-mcard-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .cxc-page .cx-mcard-id { font-family: var(--cx-serif); font-size: 1.02rem; font-weight: 700; }
+    .cxc-page .cx-mcard-guest { margin-top: 2px; font-weight: 700; color: var(--cx-heading); font-size: .92rem; line-height: 1.2; }
+    .cxc-page .cx-mcard-phone { margin-top: 1px; color: var(--cx-muted); font-size: .74rem; }
+    .cxc-page .cx-mcard-figs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .cxc-page .cx-mfig { border: 1px solid var(--cx-border); border-radius: 11px; background: var(--cx-surface-warm); padding: 8px 9px; }
+    .cxc-page .cx-mfig.is-saldo { border-color: var(--cx-gold-line); background: var(--cx-gold-soft); }
+    .cxc-page .cx-mfig-label { display: block; color: var(--cx-muted); font-size: .6rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+    .cxc-page .cx-mfig-val { display: block; margin-top: 2px; color: var(--cx-heading); font-size: .92rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .cxc-page .cx-mfig.is-saldo .cx-mfig-val { color: var(--cx-gold-ink); }
+    .cxc-page .cx-mcard-dates { display: inline-flex; align-items: center; gap: 6px; color: var(--cx-muted); font-size: .74rem; }
+    .cxc-page .cx-mcard-dates i { color: var(--cx-gold-ink); }
+    .cxc-page .cx-mcard-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+    .cxc-page .cx-mcard-acts .cx-act,
+    .cxc-page .cx-mcard-acts form { flex: 1 1 auto; }
+    .cxc-page .cx-mcard-acts .cx-act { min-height: 40px; justify-content: center; }
+    .cxc-page .cx-mcard-acts form .cx-act { width: 100%; }
+}
 </style>
 
 <div class="cxc-page p-4 sm:p-6">
@@ -224,7 +288,7 @@ $visibles = count($cuentas);
                             </div>
                             <span class="cx-count-pill"><i class="fas fa-list"></i> <?= number_format($visibles) ?></span>
                         </div>
-                        <div class="overflow-x-auto">
+                        <div class="overflow-x-auto cx-table-wrap">
                             <table class="cx-table">
                                 <thead>
                                     <tr><th>Reservaci&oacute;n</th><th>Hu&eacute;sped</th><th>Fechas</th><th>Estado</th><th class="is-end">Total</th><th class="is-end">Cobrado</th><th class="is-end">Saldo</th><th class="is-end">Acci&oacute;n</th></tr>
@@ -277,6 +341,63 @@ $visibles = count($cuentas);
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
+                        </div>
+
+                        <div class="cx-mobile-list" aria-label="Cuentas por cobrar (movil)">
+                            <?php foreach ($cuentas as $cuenta): ?>
+                                <?php
+                                $reservacionId = (int)($cuenta['reservacion_id'] ?? 0);
+                                $facturaId = (int)($cuenta['solicitud_factura_id'] ?? 0);
+                                [$eLabel, $eClass, $eIcon] = cxc_estado_meta($cuenta['estado_saldo'] ?? null);
+                                ?>
+                                <article class="cx-mcard">
+                                    <div class="cx-mcard-top">
+                                        <div>
+                                            <a class="cx-link cx-mcard-id" href="<?= url('reservaciones/ver/' . $reservacionId) ?>">#<?= $reservacionId ?></a>
+                                            <div class="cx-mcard-guest"><?= cxc_safe($cuenta['huesped_nombre'] ?? null) ?></div>
+                                            <div class="cx-mcard-phone"><?= cxc_safe($cuenta['huesped_telefono'] ?? null, 'Sin tel&eacute;fono') ?></div>
+                                        </div>
+                                        <span class="cx-badge <?= $eClass ?>"><i class="fas <?= $eIcon ?>"></i> <?= $eLabel ?></span>
+                                    </div>
+
+                                    <div class="cx-mcard-figs">
+                                        <div class="cx-mfig">
+                                            <span class="cx-mfig-label">Total</span>
+                                            <span class="cx-mfig-val"><?= cxc_money($cuenta['precio_total'] ?? 0) ?></span>
+                                        </div>
+                                        <div class="cx-mfig">
+                                            <span class="cx-mfig-label">Cobrado</span>
+                                            <span class="cx-mfig-val" style="color:var(--cx-success)"><?= cxc_money($cuenta['monto_cubierto'] ?? 0) ?></span>
+                                        </div>
+                                        <div class="cx-mfig is-saldo">
+                                            <span class="cx-mfig-label">Saldo</span>
+                                            <span class="cx-mfig-val"><?= cxc_money($cuenta['saldo_estimado'] ?? 0) ?></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="cx-mcard-dates">
+                                        <i class="fas fa-calendar-day"></i>
+                                        <?= cxc_safe($cuenta['fecha_entrada'] ?? null) ?> &rarr; <?= cxc_safe($cuenta['fecha_salida'] ?? null) ?>
+                                    </div>
+
+                                    <div class="cx-mcard-acts">
+                                        <a class="cx-act" href="<?= url('reservaciones/ver/' . $reservacionId) ?>"><i class="fas fa-eye"></i> Reservaci&oacute;n</a>
+                                        <?php if ($facturaId > 0): ?>
+                                            <a class="cx-act" href="<?= url('facturacion/ver/' . $facturaId) ?>"><i class="fas fa-file-invoice"></i> Factura</a>
+                                        <?php endif; ?>
+                                        <?php if (!empty($cuenta['es_elegible_generacion_cxc'])): ?>
+                                            <form method="POST" action="<?= url('cuentas-por-cobrar/generar-desde-reservacion/' . $reservacionId) ?>">
+                                                <?= csrf_field() ?>
+                                                <button class="cx-act cx-act-gen" type="submit" title="<?= cxc_safe($cuenta['motivo_generacion_cxc'] ?? null, 'Generar cuenta por cobrar') ?>"><i class="fas fa-file-circle-plus"></i> Generar cuenta</button>
+                                            </form>
+                                        <?php elseif (!empty($cuenta['cxc_operativa_id'])): ?>
+                                            <a class="cx-act" href="<?= url('cuentas-por-cobrar/operativas/' . (int)$cuenta['cxc_operativa_id']) ?>"><i class="fas fa-table-list"></i> Cuenta #<?= (int)$cuenta['cxc_operativa_id'] ?></a>
+                                        <?php else: ?>
+                                            <span class="cx-act" title="<?= cxc_safe($cuenta['motivo_bloqueo_generacion_cxc'] ?? null, 'No disponible') ?>" style="cursor:default"><i class="fas fa-ban"></i> No disponible</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </article>
+                            <?php endforeach; ?>
                         </div>
                     </section>
                 <?php endif; ?>

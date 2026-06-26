@@ -90,6 +90,7 @@ $hora_apertura_label = cut_time_label($corte['fecha_apertura'] ?? null);
 $usuario_apertura = trim((string)($corte['usuario_apertura'] ?? '')) ?: 'Sin responsable';
 $usuario_cierre = trim((string)($corte['usuario_cierre'] ?? '')) ?: 'Sin responsable';
 $caja_nombre = trim((string)($corte['caja_nombre'] ?? '')) ?: 'Caja';
+$observaciones_corte = trim((string)($corte['observaciones'] ?? ''));
 
 $cats_ingreso = [];
 $cats_gasto = [];
@@ -770,6 +771,27 @@ if ($diferencia > 0) {
 
     .cut-note p { margin: 0; color: var(--cut-text); font-size: .86rem; font-weight: 700; line-height: 1.45; }
 
+    .cut-note--wide {
+        margin-top: 18px;
+        margin-bottom: 18px;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+    }
+
+    .cut-note--wide .cut-note-icon {
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        background: rgba(255,255,255,.72);
+        color: color-mix(in srgb, var(--cut-accent) 76%, #5B3C08);
+    }
+
+    .cut-note--wide strong { margin-bottom: 4px; }
+
     .cut-denom-list { display: grid; gap: 8px; }
 
     .cut-denom-row {
@@ -1134,6 +1156,16 @@ if ($diferencia > 0) {
             </article>
         </section>
 
+        <?php if ($observaciones_corte !== ''): ?>
+            <section class="cut-note cut-note--wide" aria-label="Observaciones del corte">
+                <span class="cut-note-icon"><i class="fas fa-sticky-note"></i></span>
+                <div>
+                    <strong>Observaciones del cierre</strong>
+                    <p><?= nl2br(cut_h($observaciones_corte)) ?></p>
+                </div>
+            </section>
+        <?php endif; ?>
+
         <section class="cut-grid" aria-label="Metodos y arqueo">
             <article class="cut-panel">
                 <div class="cut-panel-head">
@@ -1186,12 +1218,6 @@ if ($diferencia > 0) {
                             <span><strong class="cut-diff-title"><?= cut_h($diff_label) ?></strong><small class="cut-diff-sub">Diferencia de arqueo</small></span>
                             <strong class="cut-diff-value"><?= cut_signed_money($diferencia) ?></strong>
                         </div>
-                        <?php if (!empty($corte['observaciones'])): ?>
-                            <div class="cut-note">
-                                <strong><i class="fas fa-sticky-note"></i>Observaciones</strong>
-                                <p><?= nl2br(cut_h($corte['observaciones'])) ?></p>
-                            </div>
-                        <?php endif; ?>
                     </div>
                 </article>
 

@@ -7,6 +7,7 @@
 class HuespedVehiculo extends Model {
     protected $table = 'huesped_vehiculos';
     protected $fillable = [
+        'hotel_id',
         'huesped_id',
         'marca',
         'modelo',
@@ -44,6 +45,31 @@ class HuespedVehiculo extends Model {
         return (int)($_SESSION['hotel_id'] ?? 0);
     }
 
+    private function hotelIdPorHuesped($huespedId) {
+        $huespedId = (int)$huespedId;
+        if ($huespedId <= 0) {
+            return 0;
+        }
+
+        $stmt = $this->db->query(
+            "SELECT hotel_id FROM huespedes WHERE id = ? LIMIT 1",
+            [$huespedId]
+        );
+        $row = $stmt ? $stmt->fetch() : null;
+        return (int)($row['hotel_id'] ?? 0);
+    }
+
+    public function create($data) {
+        if (empty($data['hotel_id']) && !empty($data['huesped_id'])) {
+            $hotelId = $this->hotelIdPorHuesped($data['huesped_id']);
+            if ($hotelId > 0) {
+                $data['hotel_id'] = $hotelId;
+            }
+        }
+
+        return parent::create($data);
+    }
+
     public function porHuespedHotel($huesped_id, $hotelId = null) {
         $hotelId = $this->hotelIdActual($hotelId);
         if ($hotelId <= 0 || (int)$huesped_id <= 0) {
@@ -52,9 +78,11 @@ class HuespedVehiculo extends Model {
 
         $sql = "SELECT v.*
                 FROM {$this->table} v
-                INNER JOIN huespedes h ON v.huesped_id = h.id
+                INNER JOIN huespedes h
+                    ON v.huesped_id = h.id
+                   AND h.hotel_id = v.hotel_id
                 WHERE v.huesped_id = ?
-                  AND h.hotel_id = ?
+                  AND v.hotel_id = ?
                   AND v.activo = 1
                 ORDER BY v.created_at DESC";
 
@@ -70,9 +98,11 @@ class HuespedVehiculo extends Model {
 
         $sql = "SELECT v.*
                 FROM {$this->table} v
-                INNER JOIN huespedes h ON v.huesped_id = h.id
+                INNER JOIN huespedes h
+                    ON v.huesped_id = h.id
+                   AND h.hotel_id = v.hotel_id
                 WHERE v.id = ?
-                  AND h.hotel_id = ?
+                  AND v.hotel_id = ?
                 LIMIT 1";
 
         $stmt = $this->db->query($sql, [(int)$id, $hotelId]);
@@ -88,9 +118,11 @@ class HuespedVehiculo extends Model {
 
         $sql = "SELECT v.*
                 FROM {$this->table} v
-                INNER JOIN huespedes h ON v.huesped_id = h.id
+                INNER JOIN huespedes h
+                    ON v.huesped_id = h.id
+                   AND h.hotel_id = v.hotel_id
                 WHERE v.placas = ?
-                  AND h.hotel_id = ?
+                  AND v.hotel_id = ?
                   AND v.activo = 1
                 LIMIT 1";
 
@@ -107,9 +139,11 @@ class HuespedVehiculo extends Model {
 
         $sql = "SELECT COUNT(*) as total
                 FROM {$this->table} v
-                INNER JOIN huespedes h ON v.huesped_id = h.id
+                INNER JOIN huespedes h
+                    ON v.huesped_id = h.id
+                   AND h.hotel_id = v.hotel_id
                 WHERE v.placas = ?
-                  AND h.hotel_id = ?
+                  AND v.hotel_id = ?
                   AND v.activo = 1";
         $params = [$placas, $hotelId];
 
@@ -140,9 +174,11 @@ class HuespedVehiculo extends Model {
 
         $sql = "SELECT v.*, h.nombre_completo, h.telefono
                 FROM {$this->table} v
-                INNER JOIN huespedes h ON v.huesped_id = h.id
+                INNER JOIN huespedes h
+                    ON v.huesped_id = h.id
+                   AND h.hotel_id = v.hotel_id
                 WHERE v.id = ?
-                  AND h.hotel_id = ?
+                  AND v.hotel_id = ?
                   AND v.activo = 1";
 
         $stmt = $this->db->query($sql, [(int)$id, $hotelId]);
@@ -150,37 +186,73 @@ class HuespedVehiculo extends Model {
         return $vehiculo ?: null;
     }
 
-    public function porHuesped($huesped_id) {
-        $sql = "SELECT * FROM {$this->table} 
-                WHERE huesped_id = ? AND activo = 1
-                ORDER BY created_at DESC";
-        
+    public function porHuesped($huesped_id, $hotelId = null) {
+        $hotelId = $this->hotelIdActual($hotelId);
+        if ($hotelId > 0) {
+            return $this->porHuespedHotel($huesped_id, $hotelId);
+        }
+
+        $sql = "SELECT v.*
+                FROM {$this->table} v
+                INNER JOIN huespedes h
+                    ON v.huesped_id = h.id
+                   AND h.hotel_id = v.hotel_id
+                WHERE v.huesped_id = ?
+                  AND v.activo = 1
+                ORDER BY v.created_at DESC";
+
         $stmt = $this->db->query($sql, [$huesped_id]);
-        return $stmt->fetchAll();
+        return $stmt ? $stmt->fetchAll() : [];
     }
     
     /**
      * Buscar vehículo por placas
      */
-    public function buscarPorPlacas($placas) {
-        return $this->first(['placas' => $placas, 'activo' => 1]);
+    public function buscarPorPlacas($placas, $hotelId = null) {
+        $hotelId = $this->hotelIdActual($hotelId);
+        if ($hotelId > 0) {
+            return $this->buscarPorPlacasPorHotel($placas, $hotelId);
+        }
+
+        $sql = "SELECT v.*
+                FROM {$this->table} v
+                INNER JOIN huespedes h
+                    ON v.huesped_id = h.id
+                   AND h.hotel_id = v.hotel_id
+                WHERE v.placas = ?
+                  AND v.activo = 1
+                LIMIT 1";
+
+        $stmt = $this->db->query($sql, [$placas]);
+        $vehiculo = $stmt ? $stmt->fetch() : null;
+        return $vehiculo ?: null;
     }
     
     /**
      * Verificar si las placas ya existen (excluyendo un ID específico)
      */
-    public function existenPlacas($placas, $excluir_id = null) {
+    public function existenPlacas($placas, $excluir_id = null, $hotelId = null) {
         if (empty($placas)) return false;
-        
-        $sql = "SELECT COUNT(*) as total FROM {$this->table} 
-                WHERE placas = ? AND activo = 1";
+
+        $hotelId = $this->hotelIdActual($hotelId);
+        if ($hotelId > 0) {
+            return $this->existenPlacasPorHotel($placas, $hotelId, $excluir_id);
+        }
+
+        $sql = "SELECT COUNT(*) as total
+                FROM {$this->table} v
+                INNER JOIN huespedes h
+                    ON v.huesped_id = h.id
+                   AND h.hotel_id = v.hotel_id
+                WHERE v.placas = ?
+                  AND v.activo = 1";
         $params = [$placas];
-        
+
         if ($excluir_id) {
-            $sql .= " AND id != ?";
+            $sql .= " AND v.id != ?";
             $params[] = $excluir_id;
         }
-        
+
         $stmt = $this->db->query($sql, $params);
         $result = $stmt->fetch();
         return $result['total'] > 0;
@@ -189,14 +261,26 @@ class HuespedVehiculo extends Model {
     /**
      * Contar vehículos activos por estacionamiento
      */
-    public function contarPorEstacionamiento() {
-        $sql = "SELECT estacionamiento, COUNT(*) as total 
-                FROM {$this->table} 
-                WHERE activo = 1 
-                GROUP BY estacionamiento";
-        
-        $stmt = $this->db->query($sql);
-        $resultados = $stmt->fetchAll();
+    public function contarPorEstacionamiento($hotelId = null) {
+        $hotelId = $this->hotelIdActual($hotelId);
+
+        $sql = "SELECT v.estacionamiento, COUNT(*) as total
+                FROM {$this->table} v
+                INNER JOIN huespedes h
+                    ON v.huesped_id = h.id
+                   AND h.hotel_id = v.hotel_id
+                WHERE v.activo = 1";
+        $params = [];
+
+        if ($hotelId > 0) {
+            $sql .= " AND v.hotel_id = ?";
+            $params[] = $hotelId;
+        }
+
+        $sql .= " GROUP BY v.estacionamiento";
+
+        $stmt = $this->db->query($sql, $params);
+        $resultados = $stmt ? $stmt->fetchAll() : [];
         
         // Formatear resultados con los nuevos estacionamientos
         $conteo = [
@@ -225,10 +309,17 @@ class HuespedVehiculo extends Model {
     /**
      * Obtener información completa del vehículo con huésped
      */
-    public function obtenerConHuesped($id) {
-        $sql = "SELECT v.*, h.nombre_completo, h.telefono 
+    public function obtenerConHuesped($id, $hotelId = null) {
+        $hotelId = $this->hotelIdActual($hotelId);
+        if ($hotelId > 0) {
+            return $this->obtenerConHuespedParaHotel($id, $hotelId);
+        }
+
+        $sql = "SELECT v.*, h.nombre_completo, h.telefono
                 FROM {$this->table} v
-                INNER JOIN huespedes h ON v.huesped_id = h.id
+                INNER JOIN huespedes h
+                    ON v.huesped_id = h.id
+                   AND h.hotel_id = v.hotel_id
                 WHERE v.id = ? AND v.activo = 1";
         
         $stmt = $this->db->query($sql, [$id]);
@@ -238,28 +329,40 @@ class HuespedVehiculo extends Model {
     /**
      * Buscar vehículos con término de búsqueda
      */
-    public function buscar($termino) {
-        $sql = "SELECT v.*, h.nombre_completo 
+    public function buscar($termino, $hotelId = null) {
+        $hotelId = $this->hotelIdActual($hotelId);
+
+        $sql = "SELECT v.*, h.nombre_completo
                 FROM {$this->table} v
-                INNER JOIN huespedes h ON v.huesped_id = h.id
-                WHERE v.activo = 1 
-                AND (v.placas LIKE ? OR v.marca LIKE ? OR v.modelo LIKE ?)
+                INNER JOIN huespedes h
+                    ON v.huesped_id = h.id
+                   AND h.hotel_id = v.hotel_id
+                WHERE v.activo = 1";
+
+        $params = [];
+        if ($hotelId > 0) {
+            $sql .= " AND v.hotel_id = ?";
+            $params[] = $hotelId;
+        }
+
+        $sql .= " AND (v.placas LIKE ? OR v.marca LIKE ? OR v.modelo LIKE ?)
                 ORDER BY v.created_at DESC";
-        
+
         $termino = '%' . $termino . '%';
-        $stmt = $this->db->query($sql, [$termino, $termino, $termino]);
-        return $stmt->fetchAll();
+        $params = array_merge($params, [$termino, $termino, $termino]);
+        $stmt = $this->db->query($sql, $params);
+        return $stmt ? $stmt->fetchAll() : [];
     }
-    
+
     /**
      * Migrar vehículos existentes de la tabla huespedes
      * (Función de utilidad para migración inicial)
      */
     public function migrarVehiculosExistentes() {
         // Primero migrar los datos existentes con valores temporales
-        $sql = "INSERT INTO {$this->table} (huesped_id, marca, placas, estacionamiento, created_at)
-                SELECT id, vehiculo_marca, vehiculo_placas, 
-                       CASE 
+        $sql = "INSERT INTO {$this->table} (hotel_id, huesped_id, marca, placas, estacionamiento, created_at)
+                SELECT hotel_id, id, vehiculo_marca, vehiculo_placas,
+                       CASE
                            WHEN vehiculo_marca LIKE '%camioneta%' OR vehiculo_marca LIKE '%pickup%' THEN 'camionetas'
                            ELSE 'coches'
                        END as estacionamiento,

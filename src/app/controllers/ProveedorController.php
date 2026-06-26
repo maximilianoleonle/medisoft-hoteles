@@ -227,12 +227,18 @@ class ProveedorController extends Controller {
 
             if (strpos($lower, 'nombre') !== false) {
                 $campo = 'nombre';
+            } elseif (strpos($lower, 'razon') !== false || strpos($lower, 'social') !== false) {
+                $campo = 'razon_social';
             } elseif (strpos($lower, 'rfc') !== false) {
                 $campo = 'rfc';
             } elseif (strpos($lower, 'correo') !== false || strpos($lower, 'email') !== false) {
                 $campo = 'email';
             } elseif (strpos($lower, 'telefono') !== false || strpos($lower, 'tel') !== false) {
                 $campo = 'telefono';
+            } elseif (strpos($lower, 'direccion') !== false) {
+                $campo = 'direccion';
+            } elseif (strpos($lower, 'nota') !== false) {
+                $campo = 'notas';
             }
 
             if ($campo !== null) {

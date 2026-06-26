@@ -4,6 +4,7 @@ $proveedores = $catalogos['proveedores'] ?? [];
 $productos = $catalogos['productos'] ?? [];
 $tablaDisponible = $tablaDisponible ?? false;
 $errorTecnico = $errorTecnico ?? null;
+$compraFieldErrors = isset($layoutFieldErrors) && is_array($layoutFieldErrors) ? $layoutFieldErrors : [];
 
 if (!function_exists('comp_form_safe')) {
     function comp_form_safe($value, $fallback = '')
@@ -17,6 +18,37 @@ if (!function_exists('comp_form_money')) {
     function comp_form_money($value)
     {
         return number_format((float)($value ?? 0), 2, '.', '');
+    }
+}
+
+if (!function_exists('comp_form_error')) {
+    function comp_form_error(array $errors, string $field): string
+    {
+        $messages = $errors[$field] ?? [];
+        if (!is_array($messages)) {
+            $messages = [$messages];
+        }
+
+        $message = trim((string)($messages[0] ?? ''));
+        return $message !== '' ? comp_form_safe($message) : '';
+    }
+}
+
+if (!function_exists('comp_form_error_class')) {
+    function comp_form_error_class(array $errors, string $field): string
+    {
+        return comp_form_error($errors, $field) !== '' ? ' cp-input-error' : '';
+    }
+}
+
+if (!function_exists('comp_form_error_attrs')) {
+    function comp_form_error_attrs(array $errors, string $field, string $errorId): string
+    {
+        if (comp_form_error($errors, $field) === '') {
+            return '';
+        }
+
+        return ' aria-invalid="true" aria-describedby="' . comp_form_safe($errorId) . '"';
     }
 }
 
@@ -83,6 +115,20 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
 .purchase-form-page select.cp-input { cursor: pointer; }
 .purchase-form-page .cp-textarea { min-height: 96px; resize: vertical; }
 .purchase-form-page .cp-input:focus, .purchase-form-page .cp-textarea:focus { border-color: var(--cp-gold); box-shadow: 0 0 0 3px var(--cp-ring); outline: none; background: #fff; }
+.purchase-form-page .cp-input-error {
+    border-color: #B42318;
+    background: #FFF7F6;
+}
+.purchase-form-page .cp-form-error {
+    display: block;
+    margin-top: 7px;
+    color: #B42318;
+    font-size: .76rem;
+    font-weight: 800;
+    line-height: 1.35;
+    letter-spacing: 0;
+    text-transform: none;
+}
 
 .purchase-form-page .cp-section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .purchase-form-page .cp-section-title { font-family: var(--cp-serif); font-size: 1.4rem; font-weight: 700; color: var(--cp-heading); }
@@ -140,7 +186,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label for="proveedor_id">Proveedor <span class="cp-req">*</span></label>
-                        <select class="cp-input" id="proveedor_id" name="proveedor_id" required>
+                        <select class="cp-input<?= comp_form_error_class($compraFieldErrors, 'proveedor_id') ?>" id="proveedor_id" name="proveedor_id" required<?= comp_form_error_attrs($compraFieldErrors, 'proveedor_id', 'ms-form-error-proveedor_id') ?>>
                             <option value="">Elige un proveedor</option>
                             <?php foreach ($proveedores as $proveedor): ?>
                                 <option value="<?= (int)$proveedor['id'] ?>" <?= $proveedorSeleccionado === (string)$proveedor['id'] ? 'selected' : '' ?>>
@@ -148,16 +194,25 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                        <?php if (comp_form_error($compraFieldErrors, 'proveedor_id')): ?>
+                            <span class="cp-form-error ms-form-field-error" id="ms-form-error-proveedor_id"><?= comp_form_error($compraFieldErrors, 'proveedor_id') ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div>
                         <label for="folio">Folio</label>
-                        <input class="cp-input" id="folio" name="folio" type="text" maxlength="60" placeholder="Opcional (n&uacute;mero de nota o factura)" value="<?= $folioValor ?>">
+                        <input class="cp-input<?= comp_form_error_class($compraFieldErrors, 'folio') ?>" id="folio" name="folio" type="text" maxlength="60" placeholder="Opcional (n&uacute;mero de nota o factura)" value="<?= $folioValor ?>"<?= comp_form_error_attrs($compraFieldErrors, 'folio', 'ms-form-error-folio') ?>>
+                        <?php if (comp_form_error($compraFieldErrors, 'folio')): ?>
+                            <span class="cp-form-error ms-form-field-error" id="ms-form-error-folio"><?= comp_form_error($compraFieldErrors, 'folio') ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div>
                         <label for="fecha_compra">Fecha <span class="cp-req">*</span></label>
-                        <input class="cp-input" id="fecha_compra" name="fecha_compra" type="date" required value="<?= $fechaCompraValor ?>">
+                        <input class="cp-input<?= comp_form_error_class($compraFieldErrors, 'fecha_compra') ?>" id="fecha_compra" name="fecha_compra" type="date" required value="<?= $fechaCompraValor ?>"<?= comp_form_error_attrs($compraFieldErrors, 'fecha_compra', 'ms-form-error-fecha_compra') ?>>
+                        <?php if (comp_form_error($compraFieldErrors, 'fecha_compra')): ?>
+                            <span class="cp-form-error ms-form-field-error" id="ms-form-error-fecha_compra"><?= comp_form_error($compraFieldErrors, 'fecha_compra') ?></span>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -177,7 +232,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                             <div class="cp-line-row grid grid-cols-1 md:grid-cols-[1fr_130px_160px] gap-3">
                                 <div>
                                     <label for="producto_id_<?= $i ?>">Producto <?= $i === 0 ? '<span class="cp-req">*</span>' : '' ?></label>
-                                    <select class="cp-input cp-product-select" id="producto_id_<?= $i ?>" name="producto_id[]" <?= $i === 0 ? 'required' : '' ?>>
+                                    <select class="cp-input cp-product-select<?= $i === 0 ? comp_form_error_class($compraFieldErrors, 'producto_id_0') : '' ?>" id="producto_id_<?= $i ?>" name="producto_id[]" <?= $i === 0 ? 'required' : '' ?><?= $i === 0 ? comp_form_error_attrs($compraFieldErrors, 'producto_id_0', 'ms-form-error-producto_id_0') : '' ?>>
                                         <option value="">Elige un producto</option>
                                         <?php foreach ($productos as $producto): ?>
                                             <option value="<?= (int)$producto['id'] ?>" data-costo="<?= comp_form_money($producto['costo_unitario'] ?? 0) ?>" <?= $productoSeleccionado === (string)$producto['id'] ? 'selected' : '' ?>>
@@ -186,16 +241,25 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
+                                    <?php if ($i === 0 && comp_form_error($compraFieldErrors, 'producto_id_0')): ?>
+                                        <span class="cp-form-error ms-form-field-error" id="ms-form-error-producto_id_0"><?= comp_form_error($compraFieldErrors, 'producto_id_0') ?></span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div>
                                     <label for="cantidad_<?= $i ?>">Cantidad <?= $i === 0 ? '<span class="cp-req">*</span>' : '' ?></label>
-                                    <input class="cp-input" id="cantidad_<?= $i ?>" name="cantidad[]" type="number" min="0.01" step="0.01" value="<?= $cantidadValor ?>" <?= $i === 0 ? 'required' : '' ?>>
+                                    <input class="cp-input<?= $i === 0 ? comp_form_error_class($compraFieldErrors, 'cantidad_0') : '' ?>" id="cantidad_<?= $i ?>" name="cantidad[]" type="number" min="0.01" step="0.01" value="<?= $cantidadValor ?>" <?= $i === 0 ? 'required' : '' ?><?= $i === 0 ? comp_form_error_attrs($compraFieldErrors, 'cantidad_0', 'ms-form-error-cantidad_0') : '' ?>>
+                                    <?php if ($i === 0 && comp_form_error($compraFieldErrors, 'cantidad_0')): ?>
+                                        <span class="cp-form-error ms-form-field-error" id="ms-form-error-cantidad_0"><?= comp_form_error($compraFieldErrors, 'cantidad_0') ?></span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div>
                                     <label for="costo_unitario_<?= $i ?>">Costo unitario</label>
-                                    <input class="cp-input cp-cost-input" id="costo_unitario_<?= $i ?>" name="costo_unitario[]" type="number" min="0" step="0.01" value="<?= $costoValor ?>">
+                                    <input class="cp-input cp-cost-input<?= $i === 0 ? comp_form_error_class($compraFieldErrors, 'costo_unitario_0') : '' ?>" id="costo_unitario_<?= $i ?>" name="costo_unitario[]" type="number" min="0" step="0.01" value="<?= $costoValor ?>"<?= $i === 0 ? comp_form_error_attrs($compraFieldErrors, 'costo_unitario_0', 'ms-form-error-costo_unitario_0') : '' ?>>
+                                    <?php if ($i === 0 && comp_form_error($compraFieldErrors, 'costo_unitario_0')): ?>
+                                        <span class="cp-form-error ms-form-field-error" id="ms-form-error-costo_unitario_0"><?= comp_form_error($compraFieldErrors, 'costo_unitario_0') ?></span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endfor; ?>
@@ -205,7 +269,10 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
 
                 <div class="mt-6">
                     <label for="notas">Notas internas</label>
-                    <textarea class="cp-textarea" id="notas" name="notas" maxlength="1000" placeholder="Lo que quieras recordar de esta compra"><?= $notasValor ?></textarea>
+                    <textarea class="cp-textarea<?= comp_form_error_class($compraFieldErrors, 'notas') ?>" id="notas" name="notas" maxlength="1000" placeholder="Lo que quieras recordar de esta compra"<?= comp_form_error_attrs($compraFieldErrors, 'notas', 'ms-form-error-notas') ?>><?= $notasValor ?></textarea>
+                    <?php if (comp_form_error($compraFieldErrors, 'notas')): ?>
+                        <span class="cp-form-error ms-form-field-error" id="ms-form-error-notas"><?= comp_form_error($compraFieldErrors, 'notas') ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <?php if ($faltanCatalogos): ?>

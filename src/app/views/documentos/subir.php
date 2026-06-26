@@ -1,6 +1,7 @@
 <?php
 $tipos = $tipos ?? [];
 $contextoEntidad = $contextoEntidad ?? null;
+$docUploadFieldErrors = isset($layoutFieldErrors) && is_array($layoutFieldErrors) ? $layoutFieldErrors : [];
 
 if (!function_exists('doc_upload_safe')) {
     function doc_upload_safe($value, $fallback = '-')
@@ -22,6 +23,36 @@ if (!function_exists('doc_upload_label')) {
         ];
 
         return $labels[(string)$tipo] ?? 'Entidad';
+    }
+}
+
+if (!function_exists('doc_upload_form_error')) {
+    function doc_upload_form_error(array $errors, string $field): string
+    {
+        $messages = $errors[$field] ?? [];
+        if (!is_array($messages)) {
+            $messages = [$messages];
+        }
+
+        return doc_upload_safe($messages[0] ?? '', '');
+    }
+}
+
+if (!function_exists('doc_upload_form_error_class')) {
+    function doc_upload_form_error_class(array $errors, string $field): string
+    {
+        return doc_upload_form_error($errors, $field) !== '' ? ' dc-field-error' : '';
+    }
+}
+
+if (!function_exists('doc_upload_form_error_attrs')) {
+    function doc_upload_form_error_attrs(array $errors, string $field, string $errorId): string
+    {
+        if (doc_upload_form_error($errors, $field) === '') {
+            return '';
+        }
+
+        return ' aria-invalid="true" aria-describedby="' . doc_upload_safe($errorId, '') . '"';
     }
 }
 
@@ -85,6 +116,8 @@ $docUploadMaxBytes = 10485760;
 .doc-upload-page select.dc-field { cursor: pointer; }
 .doc-upload-page .dc-field:focus { border-color: var(--dc-gold); box-shadow: 0 0 0 3px var(--dc-ring); outline: none; background: #fff; }
 .doc-upload-page .dc-field.is-invalid { border-color: var(--dc-danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--dc-danger) 14%, transparent); }
+.doc-upload-page .dc-field-error { border-color: var(--dc-danger); background: #FFF7F6; }
+.doc-upload-page .dc-form-error { display: block; margin-top: 7px; color: var(--dc-danger); font-size: .78rem; font-weight: 800; line-height: 1.35; letter-spacing: 0; text-transform: none; }
 .doc-upload-page .dc-hint { margin-top: 8px; font-size: .82rem; color: var(--dc-muted); }
 .doc-upload-page .dc-upload-error { display: none; margin-top: 8px; color: var(--dc-danger); font-size: .85rem; font-weight: 700; }
 .doc-upload-page .dc-upload-error.is-visible { display: block; }
@@ -135,41 +168,54 @@ $docUploadMaxBytes = 10485760;
                     <div>
                         <label class="dc-label" for="archivo">Archivo</label>
                         <input
-                            class="dc-field"
+                            class="dc-field<?= doc_upload_form_error_class($docUploadFieldErrors, 'archivo') ?>"
                             type="file"
                             id="archivo"
                             name="archivo"
                             accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
                             data-doc-upload-file
                             data-max-bytes="<?= $docUploadMaxBytes ?>"
-                            aria-describedby="archivoAyuda archivoError"
+                            aria-describedby="archivoAyuda archivoError<?= doc_upload_form_error($docUploadFieldErrors, 'archivo') !== '' ? ' ms-form-error-archivo' : '' ?>"
                             required
+                            <?= doc_upload_form_error($docUploadFieldErrors, 'archivo') !== '' ? 'aria-invalid="true"' : '' ?>
                         >
                         <p id="archivoAyuda" class="dc-hint">Guardamos el archivo con un nombre interno seguro; nadie ve la ruta real.</p>
                         <p id="archivoError" class="dc-upload-error" role="alert" aria-live="polite"></p>
+                        <?php if (doc_upload_form_error($docUploadFieldErrors, 'archivo') !== ''): ?>
+                            <p id="ms-form-error-archivo" class="dc-form-error ms-form-field-error"><?= doc_upload_form_error($docUploadFieldErrors, 'archivo') ?></p>
+                        <?php endif; ?>
                     </div>
 
                     <div>
                         <label class="dc-label" for="titulo">T&iacute;tulo</label>
-                        <input class="dc-field" type="text" id="titulo" name="titulo" maxlength="180" placeholder="Ej. Contrato del proveedor" value="<?= doc_upload_safe($tituloValor, '') ?>">
+                        <input class="dc-field<?= doc_upload_form_error_class($docUploadFieldErrors, 'titulo') ?>" type="text" id="titulo" name="titulo" maxlength="180" placeholder="Ej. Contrato del proveedor" value="<?= doc_upload_safe($tituloValor, '') ?>"<?= doc_upload_form_error_attrs($docUploadFieldErrors, 'titulo', 'ms-form-error-titulo') ?>>
+                        <?php if (doc_upload_form_error($docUploadFieldErrors, 'titulo') !== ''): ?>
+                            <span id="ms-form-error-titulo" class="dc-form-error ms-form-field-error"><?= doc_upload_form_error($docUploadFieldErrors, 'titulo') ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div>
                         <label class="dc-label" for="descripcion">Descripci&oacute;n</label>
-                        <textarea class="dc-field" id="descripcion" name="descripcion" maxlength="255" placeholder="Una nota breve sobre el documento"><?= doc_upload_safe($descripcionValor, '') ?></textarea>
+                        <textarea class="dc-field<?= doc_upload_form_error_class($docUploadFieldErrors, 'descripcion') ?>" id="descripcion" name="descripcion" maxlength="255" placeholder="Una nota breve sobre el documento"<?= doc_upload_form_error_attrs($docUploadFieldErrors, 'descripcion', 'ms-form-error-descripcion') ?>><?= doc_upload_safe($descripcionValor, '') ?></textarea>
+                        <?php if (doc_upload_form_error($docUploadFieldErrors, 'descripcion') !== ''): ?>
+                            <span id="ms-form-error-descripcion" class="dc-form-error ms-form-field-error"><?= doc_upload_form_error($docUploadFieldErrors, 'descripcion') ?></span>
+                        <?php endif; ?>
                     </div>
 
                     <div>
                         <label class="dc-label" for="etiquetas">Etiquetas</label>
-                        <input class="dc-field" type="text" id="etiquetas" name="etiquetas" maxlength="1000" placeholder="contrato, compra, fiscal" value="<?= doc_upload_safe($etiquetasValor, '') ?>">
+                        <input class="dc-field<?= doc_upload_form_error_class($docUploadFieldErrors, 'etiquetas') ?>" type="text" id="etiquetas" name="etiquetas" maxlength="1000" placeholder="contrato, compra, fiscal" value="<?= doc_upload_safe($etiquetasValor, '') ?>"<?= doc_upload_form_error_attrs($docUploadFieldErrors, 'etiquetas', 'ms-form-error-etiquetas') ?>>
                         <p class="dc-hint">Palabras para encontrarlo despu&eacute;s, separadas por comas.</p>
+                        <?php if (doc_upload_form_error($docUploadFieldErrors, 'etiquetas') !== ''): ?>
+                            <span id="ms-form-error-etiquetas" class="dc-form-error ms-form-field-error"><?= doc_upload_form_error($docUploadFieldErrors, 'etiquetas') ?></span>
+                        <?php endif; ?>
                     </div>
                 </div>
 
                 <div class="space-y-4">
                     <div>
                         <label class="dc-label" for="documento_tipo_id">Tipo de documento</label>
-                        <select class="dc-field" id="documento_tipo_id" name="documento_tipo_id">
+                        <select class="dc-field<?= doc_upload_form_error_class($docUploadFieldErrors, 'documento_tipo_id') ?>" id="documento_tipo_id" name="documento_tipo_id"<?= doc_upload_form_error_attrs($docUploadFieldErrors, 'documento_tipo_id', 'ms-form-error-documento_tipo_id') ?>>
                             <option value="0">Sin tipo espec&iacute;fico</option>
                             <?php foreach ($tipos as $tipo): ?>
                                 <option value="<?= (int)($tipo['id'] ?? 0) ?>" <?= (int)($tipo['id'] ?? 0) === $documentoTipoSeleccionado ? 'selected' : '' ?>>
@@ -179,6 +225,9 @@ $docUploadMaxBytes = 10485760;
                         </select>
                         <?php if (empty($tipos)): ?>
                             <p class="dc-hint">A&uacute;n no hay tipos configurados; puedes subirlo sin tipo.</p>
+                        <?php endif; ?>
+                        <?php if (doc_upload_form_error($docUploadFieldErrors, 'documento_tipo_id') !== ''): ?>
+                            <span id="ms-form-error-documento_tipo_id" class="dc-form-error ms-form-field-error"><?= doc_upload_form_error($docUploadFieldErrors, 'documento_tipo_id') ?></span>
                         <?php endif; ?>
                     </div>
 
@@ -194,7 +243,10 @@ $docUploadMaxBytes = 10485760;
                             <p class="dc-hint">El documento quedar&aacute; ligado a este registro.</p>
 
                             <label class="dc-label mt-4" for="relacion">Relaci&oacute;n</label>
-                            <input class="dc-field" type="text" id="relacion" name="relacion" maxlength="80" placeholder="Ej. comprobante, contrato, evidencia" value="<?= doc_upload_safe($relacionValor, '') ?>">
+                            <input class="dc-field<?= doc_upload_form_error_class($docUploadFieldErrors, 'relacion') ?>" type="text" id="relacion" name="relacion" maxlength="80" placeholder="Ej. comprobante, contrato, evidencia" value="<?= doc_upload_safe($relacionValor, '') ?>"<?= doc_upload_form_error_attrs($docUploadFieldErrors, 'relacion', 'ms-form-error-relacion') ?>>
+                            <?php if (doc_upload_form_error($docUploadFieldErrors, 'relacion') !== ''): ?>
+                                <span id="ms-form-error-relacion" class="dc-form-error ms-form-field-error"><?= doc_upload_form_error($docUploadFieldErrors, 'relacion') ?></span>
+                            <?php endif; ?>
                         <?php else: ?>
                             <div class="dc-info-title">Sin v&iacute;nculo por ahora</div>
                             <p class="dc-hint">
@@ -254,15 +306,31 @@ $docUploadMaxBytes = 10485760;
     function setFileError(message) {
         fileInput.setCustomValidity(message);
         fileInput.classList.add('is-invalid');
+        fileInput.setAttribute('aria-invalid', 'true');
         error.textContent = message;
         error.classList.add('is-visible');
     }
 
     function clearFileError() {
         fileInput.setCustomValidity('');
-        fileInput.classList.remove('is-invalid');
+        fileInput.classList.remove('is-invalid', 'dc-field-error', 'ms-form-invalid');
+        fileInput.removeAttribute('aria-invalid');
         error.textContent = '';
         error.classList.remove('is-visible');
+
+        const serverError = document.getElementById('ms-form-error-archivo');
+        if (serverError) {
+            serverError.remove();
+        }
+
+        const describedBy = String(fileInput.getAttribute('aria-describedby') || '')
+            .split(/\s+/)
+            .filter(Boolean)
+            .filter(id => id !== 'ms-form-error-archivo')
+            .join(' ');
+        if (describedBy) {
+            fileInput.setAttribute('aria-describedby', describedBy);
+        }
     }
 
     function validateSelectedDocumentFile(showRequiredMessage = false) {
