@@ -141,7 +141,7 @@ BEGIN
 
     IF v_has_scoped_unique = 0 THEN
         ALTER TABLE huesped_vehiculos
-            ADD UNIQUE KEY uk_huesped_vehiculos_hotel_placas ((COALESCE(hotel_id, 0)), placas);
+            ADD UNIQUE KEY uk_huesped_vehiculos_hotel_placas (hotel_id, placas);
     END IF;
 
     SELECT INDEX_NAME
@@ -193,8 +193,8 @@ DROP PROCEDURE IF EXISTS migrar_huesped_vehiculos_placas_por_hotel$$
 DELIMITER ;
 
 -- Nota:
--- - Los vehiculos cuyo huesped ya no existe conservan hotel_id NULL.
--- - El indice funcional trata NULL como scope 0 para evitar placas duplicadas entre huerfanos.
+-- - Los vehiculos cuyo huesped ya no existe conservan hotel_id NULL hasta que se archive su registro.
+-- - Se usa indice compuesto estandar para compatibilidad con MariaDB/Hostinger.
 --
 -- Rollback manual:
 -- 1) Confirmar que no existan placas repetidas globalmente:
