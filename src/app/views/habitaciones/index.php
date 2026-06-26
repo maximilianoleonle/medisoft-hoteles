@@ -3357,6 +3357,7 @@ if ($tiene_doble_movimiento) {
                         'icon' => 'calendar-day',
                         'label' => 'Reserva pendiente',
                         'detail' => '',
+                        'class' => 'reservation-pending',
                     ];
                 }
                 $tareasResumen = is_array($habitacion['tareas_activas_resumen'] ?? null) ? $habitacion['tareas_activas_resumen'] : [];
@@ -3473,7 +3474,7 @@ if ($tiene_doble_movimiento) {
                                     <?php if (!empty($hbIncidencias)): ?>
                                         <div class="rc-incidents" aria-label="Incidencias de la habitación">
                                             <?php foreach ($hbIncidencias as $incidencia): ?>
-                                                <span class="rc-incident rc-incident--<?= htmlspecialchars($incidencia['type']) ?>">
+                                                <span class="rc-incident rc-incident--<?= htmlspecialchars($incidencia['type']) ?><?= !empty($incidencia['class']) ? ' rc-incident--' . htmlspecialchars($incidencia['class']) : '' ?>">
                                                     <i class="fas fa-<?= htmlspecialchars($incidencia['icon']) ?>"></i>
                                                     <span><?= htmlspecialchars($incidencia['label']) ?></span>
                                                     <?php if (!empty($incidencia['detail'])): ?><small><?= htmlspecialchars($incidencia['detail']) ?></small><?php endif; ?>
@@ -3505,8 +3506,8 @@ if ($tiene_doble_movimiento) {
 
                         <!-- Parte trasera con información adicional -->
                         <div class="flip-card-back <?= $backColorClass ?>"<?= $backStyle ? ' style="' . $backStyle . '"' : '' ?>>
-                            <div>
-                                <h4>Hab. <?= htmlspecialchars($habitacion['numero']) ?></h4>
+                            <h4 class="room-card-action-title">Hab. <?= htmlspecialchars($habitacion['numero']) ?></h4>
+                            <div class="room-card-scroll-info">
                                 <div class="info-item">
                                     <i class="fas fa-user-tie"></i>
                                     <span>
@@ -4834,6 +4835,9 @@ if ($tiene_doble_movimiento) {
 /* Tiles de vista rápida: micro-zoom ya existente; respetar reduce-motion */
 @media (prefers-reduced-motion: reduce){
   .habitaciones-view .room-card-compact, .habitaciones-view .flip-card-back .info-item,
+  .habitaciones-view .rc-incident--reservation-pending,
+  .habitaciones-view .rc-incident--reservation-pending::after,
+  .habitaciones-view .rc-incident--reservation-pending i,
   .habitaciones-view .flip-card-back .action-buttons,
   #vistaRapidaModal > .bg-white, #modalLimpieza > .bg-white{ animation:none!important; transition:none!important; }
   .habitaciones-view .room-card-compact:not(.flipped):hover{ transform:none!important; }
@@ -4860,6 +4864,75 @@ if ($tiene_doble_movimiento) {
 .habitaciones-view .flip-card-back h4{ border-bottom:1px solid rgba(255,255,255,.22)!important; padding-bottom:7px!important; margin-bottom:5px!important; letter-spacing:.01em; }
 .swal2-styled.swal2-confirm:focus{ box-shadow:0 0 0 3px color-mix(in srgb, var(--brand-primary,#1B2746) 30%, transparent)!important; }
 .swal2-styled.swal2-cancel{ border-radius:11px!important; font-weight:700!important; }
+.swal2-popup.hb-swal-checkout{
+  width:min(520px,calc(100vw - 24px))!important;
+  max-height:min(92dvh,760px)!important;
+  padding:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+}
+.hb-swal-checkout .swal2-title{
+  flex:0 0 auto;
+  padding:20px 24px 10px!important;
+  font-size:1.14rem!important;
+  line-height:1.2!important;
+}
+.hb-swal-checkout .swal2-html-container{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0 24px!important;
+  overflow:visible!important;
+}
+.hb-checkout-shell{
+  min-height:0;
+  display:grid;
+  gap:14px;
+  text-align:left;
+}
+.hb-checkout-room-list{
+  max-height:min(38dvh,260px);
+  overflow-y:auto;
+  padding:2px 4px 2px 0;
+  scrollbar-width:thin;
+  scrollbar-color:#F97316 #FFEDD5;
+}
+.hb-checkout-room-list::-webkit-scrollbar{ width:8px; }
+.hb-checkout-room-list::-webkit-scrollbar-track{ background:#FFEDD5; border-radius:999px; }
+.hb-checkout-room-list::-webkit-scrollbar-thumb{ background:#F97316; border-radius:999px; }
+.hb-checkout-room-option{
+  min-height:48px;
+}
+.hb-swal-checkout .swal2-actions{
+  flex:0 0 auto;
+  width:100%;
+  margin:0!important;
+  padding:16px 24px 20px!important;
+  display:grid!important;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  border-top:1px solid var(--hb-line,#E7DDCA);
+  background:var(--hb-surface-warm,#FFFCF7);
+}
+.hb-swal-checkout .swal2-actions .swal2-styled{
+  width:100%;
+  min-height:44px;
+  margin:0!important;
+}
+@media (max-width:640px){
+  .swal2-popup.hb-swal-checkout{
+    width:calc(100vw - 16px)!important;
+    max-height:92dvh!important;
+    border-radius:22px 22px 0 0!important;
+  }
+  .hb-swal-checkout .swal2-title{ padding:18px 18px 8px!important; }
+  .hb-swal-checkout .swal2-html-container{ padding:0 18px!important; }
+  .hb-swal-checkout .swal2-actions{
+    grid-template-columns:1fr;
+    padding:14px 18px calc(16px + env(safe-area-inset-bottom, 0px))!important;
+  }
+}
 .swal2-popup.hb-swal-checkin{
   width:min(430px,calc(100vw - 28px))!important;
   padding:0!important;
@@ -7818,6 +7891,62 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
   border-color:color-mix(in srgb,var(--c-arriving) 26%,#fff);
   background:color-mix(in srgb,var(--c-arriving) 9%,#fff);
   color:color-mix(in srgb,var(--c-arriving) 78%,var(--hb-heading));
+}
+
+.habitaciones-view .rc-incident--reservation-pending{
+  position:relative;
+  isolation:isolate;
+  border-color:color-mix(in srgb,var(--c-arriving) 42%,#fff);
+  background:linear-gradient(135deg,
+    color-mix(in srgb,var(--c-arriving) 14%,#fff) 0%,
+    rgba(255,255,255,.86) 100%);
+  color:color-mix(in srgb,var(--c-arriving) 88%,var(--hb-heading));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.82),0 0 0 0 color-mix(in srgb,var(--c-arriving) 22%,transparent);
+  animation:hbReservationPendingPulse 2s ease-in-out infinite;
+}
+
+.habitaciones-view .rc-incident--reservation-pending::after{
+  content:"";
+  position:absolute;
+  inset:-55% -80%;
+  z-index:0;
+  background:linear-gradient(100deg,transparent 38%,rgba(255,255,255,.82) 50%,transparent 62%);
+  transform:translateX(-65%) rotate(7deg);
+  opacity:0;
+  animation:hbReservationPendingSweep 3.2s ease-in-out infinite;
+}
+
+.habitaciones-view .rc-incident--reservation-pending i,
+.habitaciones-view .rc-incident--reservation-pending span,
+.habitaciones-view .rc-incident--reservation-pending small{
+  position:relative;
+  z-index:1;
+}
+
+.habitaciones-view .rc-incident--reservation-pending i{
+  animation:hbReservationPendingIcon 2s ease-in-out infinite;
+}
+
+@keyframes hbReservationPendingPulse{
+  0%,100%{
+    transform:translateY(0) scale(1);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.82),0 0 0 0 color-mix(in srgb,var(--c-arriving) 0%,transparent);
+  }
+  50%{
+    transform:translateY(-1px) scale(1.015);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.88),0 0 0 4px color-mix(in srgb,var(--c-arriving) 18%,transparent);
+  }
+}
+
+@keyframes hbReservationPendingSweep{
+  0%,38%{ opacity:0; transform:translateX(-70%) rotate(7deg); }
+  48%{ opacity:.75; }
+  66%,100%{ opacity:0; transform:translateX(70%) rotate(7deg); }
+}
+
+@keyframes hbReservationPendingIcon{
+  0%,100%{ transform:scale(1); }
+  50%{ transform:scale(1.12); }
 }
 
 .habitaciones-view .room-card-compact.has-checkin-vencido:not(.flipped) .flip-card-front,
@@ -11856,6 +11985,10 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
         font-size: 1.18rem !important;
     }
 
+    .swal2-container.hb-swal-sheet-container .swal2-popup.hb-reserve-swal .swal2-close{
+        display: none !important;
+    }
+
     .swal2-container.hb-swal-sheet-container .swal2-popup.hb-reserve-swal .swal2-html-container,
     .hb-reserve-shell,
     .hb-reserve-main{
@@ -11951,6 +12084,7 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
 
     .hb-reserve-main h3{
         padding: 0 20px !important;
+        margin: 0 0 14px !important;
         font-size: 1.06rem !important;
         line-height: 1.15 !important;
     }
@@ -12044,6 +12178,10 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
         gap: 10px !important;
         margin-top: 14px !important;
         padding: 12px 20px calc(14px + env(safe-area-inset-bottom)) !important;
+    }
+
+    .hb-reserve-footer--single{
+        grid-template-columns: 1fr !important;
     }
 
     .hb-reserve-btn{
@@ -12444,6 +12582,149 @@ body.hb-mobile-sheet-open{ overflow:hidden; }
 }
 </style>
 
+<style id="hb-room-card-info-scroll-fixed-actions">
+@media (min-width: 641px) {
+    .habitaciones-view .flip-card.flipped {
+        min-height: 258px !important;
+        height: 258px !important;
+        overflow: visible !important;
+    }
+
+    .habitaciones-view .room-card-compact.has-checkin-vencido.flipped {
+        min-height: 284px !important;
+        height: 284px !important;
+    }
+
+    .habitaciones-view .room-card-compact.has-checkin-vencido.has-cleaning-state.flipped {
+        min-height: 306px !important;
+        height: 306px !important;
+    }
+
+    .habitaciones-view .flip-card.flipped .flip-card-back {
+        top: 3px !important;
+        bottom: 3px !important;
+        overflow: hidden !important;
+        padding: 12px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        gap: 8px !important;
+    }
+
+    .habitaciones-view .flip-card.flipped .flip-card-back > .room-card-scroll-info,
+    .habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back > .room-card-scroll-info {
+        min-height: 0 !important;
+        flex: 1 1 auto !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        padding-right: 5px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 5px !important;
+        scrollbar-width: thin !important;
+        scrollbar-color: rgba(255, 255, 255, .42) transparent !important;
+    }
+
+    .habitaciones-view .flip-card.flipped .flip-card-back > .room-card-scroll-info::-webkit-scrollbar,
+    .habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back > .room-card-scroll-info::-webkit-scrollbar {
+        width: 5px !important;
+    }
+
+    .habitaciones-view .flip-card.flipped .flip-card-back > .room-card-scroll-info::-webkit-scrollbar-track,
+    .habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back > .room-card-scroll-info::-webkit-scrollbar-track {
+        background: transparent !important;
+    }
+
+    .habitaciones-view .flip-card.flipped .flip-card-back > .room-card-scroll-info::-webkit-scrollbar-thumb,
+    .habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back > .room-card-scroll-info::-webkit-scrollbar-thumb {
+        border-radius: 999px !important;
+        background: rgba(255, 255, 255, .38) !important;
+    }
+
+    .habitaciones-view .flip-card.flipped .flip-card-back h4,
+    .habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back h4 {
+        flex: none !important;
+        position: relative !important;
+        z-index: 3 !important;
+        margin: 0 0 3px !important;
+        padding: 0 0 8px !important;
+        font-size: 1.05rem !important;
+        line-height: 1.05 !important;
+        border-bottom: 1px solid rgba(255, 255, 255, .22) !important;
+    }
+
+    .habitaciones-view .flip-card.flipped .flip-card-back .info-item,
+    .habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back .info-item {
+        min-height: 24px !important;
+        margin: 0 !important;
+        padding: 4px 7px !important;
+        border: 1px solid rgba(255, 255, 255, .14) !important;
+        border-radius: 9px !important;
+        background: rgba(255, 255, 255, .11) !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        color: rgba(255, 255, 255, .94) !important;
+        font-size: .66rem !important;
+        font-weight: 750 !important;
+        line-height: 1.12 !important;
+        text-shadow: none !important;
+    }
+
+    .habitaciones-view .flip-card.flipped .flip-card-back .info-item i,
+    .habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back .info-item i {
+        width: 17px !important;
+        height: 17px !important;
+        display: inline-grid !important;
+        place-items: center !important;
+        flex: none !important;
+        border-radius: 6px !important;
+        background: rgba(255, 255, 255, .15) !important;
+        color: #fff !important;
+        font-size: .58rem !important;
+    }
+
+    .habitaciones-view .flip-card.flipped .flip-card-back .info-item span,
+    .habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back .info-item span {
+        min-width: 0 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .habitaciones-view .flip-card.flipped .flip-card-back .action-buttons,
+    .habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back .action-buttons {
+        flex: none !important;
+        position: relative !important;
+        z-index: 2 !important;
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 7px !important;
+        margin-top: 0 !important;
+        padding-top: 8px !important;
+        border-top: 1px solid rgba(255, 255, 255, .18) !important;
+    }
+
+    .habitaciones-view .flip-card.flipped .flip-card-back .btn-action,
+    .habitaciones-view .room-card-compact.has-checkin-vencido.flipped .flip-card-back .btn-action {
+        min-width: 0 !important;
+        min-height: 32px !important;
+        padding: 7px 8px !important;
+        border-radius: 10px !important;
+        font-size: .65rem !important;
+        font-weight: 850 !important;
+        line-height: 1 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .habitaciones-view .room-card-compact.has-checkin-vencido.has-cleaning-state.flipped .flip-card-back .action-buttons {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+</style>
+
 <script>
 /* Filtro client-side (sin recargar): chips de estado + tipo + piso + búsqueda, con animación */
 (function(){
@@ -12782,8 +13063,8 @@ function hbReservaCalcularNoches(fechaEntrada, fechaSalida) {
 }
 
 function hbReservaSidebar(fechaEntrada, fechaSalida, paso, habitacionId) {
-    const entradaLabel = formatearFechaCorta(new Date(fechaEntrada + 'T00:00:00'));
-    const salidaLabel = formatearFechaCorta(new Date(fechaSalida + 'T00:00:00'));
+    const entradaLabel = formatearFechaReservaCorta(new Date(fechaEntrada + 'T00:00:00'));
+    const salidaLabel = formatearFechaReservaCorta(new Date(fechaSalida + 'T00:00:00'));
     const nochesLabel = hbReservaCalcularNoches(fechaEntrada, fechaSalida);
     const pasoActual = parseInt(paso, 10) || 1;
     const tieneHabitacion = hayHabitacionReservaRapida(habitacionId);
@@ -12827,8 +13108,8 @@ function hbReservaSidebar(fechaEntrada, fechaSalida, paso, habitacionId) {
 }
 
 function hbReservaMobileIntro(fechaEntrada, fechaSalida, paso, habitacionId) {
-    const entradaLabel = formatearFechaCorta(new Date(fechaEntrada + 'T00:00:00'));
-    const salidaLabel = formatearFechaCorta(new Date(fechaSalida + 'T00:00:00'));
+    const entradaLabel = formatearFechaReservaCorta(new Date(fechaEntrada + 'T00:00:00'));
+    const salidaLabel = formatearFechaReservaCorta(new Date(fechaSalida + 'T00:00:00'));
     const nochesLabel = hbReservaCalcularNoches(fechaEntrada, fechaSalida);
     const pasoActual = parseInt(paso, 10) || 1;
     const tieneHabitacion = hayHabitacionReservaRapida(habitacionId);
@@ -13134,8 +13415,7 @@ function mostrarSelectorTipoCliente(habitacionId, datosReserva) {
                         </button>
                     </div>
 
-                    <div class="hb-reserve-footer">
-                        <button type="button" onclick="Swal.close()" class="hb-reserve-btn hb-reserve-btn--ghost">Cancelar</button>
+                    <div class="hb-reserve-footer hb-reserve-footer--single">
                         <button type="button" onclick="hbContinuarTipoClienteDesdeShell(${habitacionArg}, '${fechaEntrada}', '${fechaSalida}', '${horaActual}')" class="hb-reserve-btn hb-reserve-btn--primary">
                             Continuar <i class="fas fa-arrow-right"></i>
                         </button>
@@ -13145,7 +13425,7 @@ function mostrarSelectorTipoCliente(habitacionId, datosReserva) {
         `,
         showConfirmButton: false,
         showCancelButton: false,
-        showCloseButton: true,
+        showCloseButton: false,
         allowOutsideClick: true,
         allowEscapeKey: true,
         returnFocus: false,
@@ -13720,7 +14000,7 @@ function seleccionarTipoCliente(tipo, habitacionId, fechaEntrada, fechaSalida, h
             `,
             showConfirmButton: false,
             showCancelButton: false,
-            showCloseButton: true,
+            showCloseButton: false,
             allowOutsideClick: true,
             allowEscapeKey: true,
             returnFocus: false,
@@ -13811,6 +14091,14 @@ function formatearFechaCorta(fecha) {
     const mes = meses[fecha.getMonth()];
     const año = fecha.getFullYear();
     return `${dia} ${mes} ${año}`;
+}
+
+function formatearFechaReservaCorta(fecha) {
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const dia = fecha.getDate();
+    const mes = meses[fecha.getMonth()];
+    const anio = String(fecha.getFullYear()).slice(-2);
+    return `${dia} ${mes} ${anio}`;
 }
 
 function hacerCheckInRapido(reservacionId) {
@@ -13933,7 +14221,7 @@ function mostrarModalCheckOutIndex(reservacionId, habitaciones) {
         }
 
         return `
-        <label class="flex items-center p-3 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer border-2 border-transparent hover:border-orange-400 transition-all">
+        <label class="hb-checkout-room-option flex items-center p-3 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer border-2 border-transparent hover:border-orange-400 transition-all">
             <input
                 type="checkbox"
                 value="${habId}"
@@ -13952,20 +14240,22 @@ function mostrarModalCheckOutIndex(reservacionId, habitaciones) {
     Swal.fire({
         title: 'Seleccionar Habitaciones',
         html: `
-            <div class="text-left">
+            <div class="hb-checkout-shell">
                 <p class="text-sm text-gray-600 mb-4">
                     Selecciona las habitaciones a liberar:
                 </p>
-                <div class="space-y-2 mb-4 max-h-96 overflow-y-auto">
+                <div class="hb-checkout-room-list space-y-2" role="group" aria-label="Habitaciones para check-out">
                     ${habitacionesHTML}
                 </div>
                 <div class="flex gap-2 mb-4">
                     <button
+                        type="button"
                         onclick="document.querySelectorAll('.checkbox-habitacion-index').forEach(cb => cb.checked = true)"
                         class="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
                         Todas
                     </button>
                     <button
+                        type="button"
                         onclick="document.querySelectorAll('.checkbox-habitacion-index').forEach(cb => cb.checked = false)"
                         class="text-xs px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">
                         Ninguna
@@ -13984,8 +14274,9 @@ function mostrarModalCheckOutIndex(reservacionId, habitaciones) {
         cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancelar',
         width: '500px',
         customClass: {
-            popup: 'swal-popup-scrollable',
-            htmlContainer: 'swal-content-scrollable'
+            popup: 'hb-swal-checkout',
+            htmlContainer: 'hb-swal-checkout-html',
+            actions: 'hb-swal-checkout-actions'
         },
         preConfirm: () => {
             // ✅ CORRECCIÓN: Asegurar que se convierten a números correctamente

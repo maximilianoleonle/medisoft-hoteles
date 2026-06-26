@@ -2088,7 +2088,13 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-btn-primary { background: #22b77a; color: #fff; box-shadow: 0 12px 24px rgba(34, 183, 122, .25); }
 .rdv3-btn-primary:hover { background: #1fa66f; }
 .rdv3-btn-ghost { background: rgba(255, 255, 255, .11); color: #fff; border: 1px solid rgba(255, 255, 255, .24); }
-.rdv3-btn-danger { background: rgba(255, 255, 255, .09); color: #fff; border: 1px solid rgba(255, 255, 255, .22); }
+.rdv3-btn-danger {
+    background: linear-gradient(135deg, #B91C1C, #DC2626);
+    color: #fff;
+    border: 1px solid rgba(254, 202, 202, .45);
+    box-shadow: 0 12px 24px rgba(185, 28, 28, .25);
+}
+.rdv3-btn-danger:hover { background: linear-gradient(135deg, #991B1B, #C81E1E); }
 .rdv3-topbar-menu,
 .rdv3-mobile-bottom { display: none; }
 .rdv3-layout { display: grid; grid-template-columns: minmax(0, 1fr) clamp(318px, 24vw, 360px); gap: 26px; margin-top: 26px; align-items: start; }
@@ -2405,7 +2411,16 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-action-icon.is-blue { color: #3b82f6; background: #eaf2ff; }
 .rdv3-action-icon.is-violet { color: #6252d8; background: #eeebff; }
 .rdv3-action-icon.is-gray { color: #6d7689; background: #f4f5f7; }
+.rdv3-action-icon.is-danger { color: #B91C1C; background: #FEE2E2; }
+.rdv3-action--danger {
+    --action-accent: #B91C1C;
+    margin-top: 4px;
+    border-color: rgba(185, 28, 28, .28);
+    background: linear-gradient(135deg, #FFF7F7, #FFFDF9);
+    color: #991B1B;
+}
 .rdv3-action i.fa-chevron-right { color: var(--rdv3-muted-2); font-size: .72rem; }
+.rdv3-action--danger i.fa-chevron-right { color: rgba(153, 27, 27, .55); }
 .rdv3-timeline { position: relative; display: grid; gap: 15px; padding-left: 12px; }
 .rdv3-timeline::before { content: ""; position: absolute; left: 5px; top: 7px; bottom: 7px; width: 2px; background: color-mix(in srgb, var(--rdv3-accent) 18%, transparent); }
 .rdv3-step { position: relative; padding-left: 18px; }
@@ -3227,6 +3242,24 @@ foreach ($rdDocuments as $rdDocTotalRow) {
         color: var(--rdv3-primary);
         font-size: .96rem;
     }
+    .rdv3-mobile-danger {
+        min-height: 52px;
+        flex: 0 0 auto;
+        padding: 0 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(185, 28, 28, .24);
+        background: #FFF5F5;
+        color: #991B1B;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        font-size: .8rem;
+        font-weight: 950;
+        white-space: nowrap;
+        box-shadow: 0 8px 18px rgba(185, 28, 28, .12);
+        cursor: pointer;
+    }
 }
 @media (max-width: 370px) {
     .rdv3 {
@@ -3236,6 +3269,119 @@ foreach ($rdDocuments as $rdDocTotalRow) {
     .rdv3-contact-actions { grid-template-columns: 1fr; }
     .rdv3-room-top > .min-w-0 { grid-template-columns: 42px minmax(0, 1fr); }
     .rdv3-room-number { width: 42px; font-size: 1.18rem; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ARMONÍA PC ↔ MÓVIL  ·  solo desktop/tablet (≥781px, jamás afecta ≤780px)
+   Iguala la paleta fría del desktop al cálido cream de la vista móvil:
+   fondo arena #F1EDE5, cards #FFFDF9, líneas/bordes en tono arena #E6DBC8.
+   ════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 781px) {
+    .rdv3 {
+        --rdv3-bg: #F1EDE5;          /* = --rdv3-mobile-surface */
+        --rdv3-card: #FFFDF9;        /* = --rdv3-mobile-card */
+        --rdv3-line: rgba(157, 137, 104, .16);
+        background: var(--rdv3-bg);
+    }
+    /* Cards y side-cards: fondo cálido + borde arena con un toque del acento */
+    .rdv3-card,
+    .rdv3-side-card,
+    .rdv3 .documentos-entidad-panel {
+        background: var(--rdv3-card);
+        border-color: color-mix(in srgb, var(--rdv3-card-accent, var(--rdv3-accent)) 16%, #E6DBC8);
+    }
+    /* Superficies blancas/frías hardcodeadas → cálidas, como en móvil */
+    .rdv3-stay,
+    .rdv3-room { background: #FFFDF9; }
+    .rdv3-stay { border-color: #E6DBC8; }
+    .rdv3-nights {
+        background: #F1EDE5;
+        border-left-color: #E6DBC8;
+        border-right-color: #E6DBC8;
+    }
+
+    /* ── Quitar el "rainbow" por tipo: un único acento dorado (como móvil) ── */
+    .rdv3-card--stay,
+    .rdv3-card--rooms,
+    .rdv3-card--guest,
+    .rdv3-card--docs,
+    .rdv3-side-card--actions,
+    .rdv3-side-card--timeline,
+    .rdv3-side-card--payment,
+    .rdv3-side-card--notes {
+        --rdv3-card-accent: var(--rdv3-accent);
+    }
+    /* Habitaciones: el ciclo de colores por :nth-child gana en especificidad,
+       así que lo igualamos rule-por-rule a un único acento dorado. */
+    .rdv3-room,
+    .rdv3-room:nth-child(4n+1),
+    .rdv3-room:nth-child(4n+2),
+    .rdv3-room:nth-child(4n+3),
+    .rdv3-room:nth-child(4n+4),
+    .rdv3-room.is-courtesy { --room-accent: var(--rdv3-accent); }
+
+    .rdv3-card--rooms .rdv3-rooms {
+        gap: 12px;
+    }
+    .rdv3-card--rooms .rdv3-room {
+        border-width: 1px;
+        border-color: color-mix(in srgb, var(--room-accent) 24%, #D8CCBA);
+        box-shadow: 0 8px 18px rgba(47, 39, 25, .045);
+    }
+    .rdv3-card--rooms .rdv3-room:hover {
+        border-color: color-mix(in srgb, var(--room-accent) 30%, #C8B79B);
+        box-shadow: 0 10px 20px rgba(47, 39, 25, .06);
+    }
+
+    /* Iconos de info del huésped: mismo ciclo de colores → uniforme dorado. */
+    .rdv3-info,
+    .rdv3-info:nth-child(2),
+    .rdv3-info:nth-child(3),
+    .rdv3-info:nth-child(4) { --info-accent: var(--rdv3-accent); }
+
+    .rdv3-card--guest .rdv3-info-grid {
+        gap: 12px;
+    }
+    .rdv3-card--guest .rdv3-info {
+        border-color: color-mix(in srgb, var(--info-accent) 22%, #D8CCBA);
+        background: #FFFDF9;
+        box-shadow: 0 8px 18px rgba(47, 39, 25, .04);
+    }
+    .rdv3-card--guest .rdv3-info i {
+        background: #FFFBF5;
+        border-color: color-mix(in srgb, var(--info-accent) 20%, #D8CCBA);
+    }
+
+    /* Texto clave en navy (como móvil), no en colores de acento */
+    .rdv3-date strong,
+    .rdv3-room-number,
+    .rdv3-room-price,
+    .rdv3-room-type { color: var(--rdv3-primary); }
+
+    /* Badge de estado del hero: visible en desktop, con el mismo tono morado del móvil */
+    .rdv3-status {
+        min-height: 34px;
+        padding: 0 15px;
+        border-radius: 999px;
+        border-width: 1px;
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, .16),
+            0 10px 22px rgba(24, 32, 72, .18);
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        white-space: nowrap;
+    }
+    .rdv3-status--ok {
+        color: #F3F1FF;
+        background:
+            linear-gradient(135deg, rgba(111, 106, 222, .52), rgba(90, 87, 210, .32)),
+            rgba(90, 87, 210, .36);
+        border-color: rgba(194, 191, 255, .52);
+    }
+    .rdv3-status--ok::before {
+        background: #C8C4FF;
+        box-shadow: 0 0 0 3px rgba(200, 196, 255, .18);
+    }
 }
 </style>
 
@@ -3274,7 +3420,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                         <?php endif; ?>
                         <?php if (in_array($rdEstadoKey, ['confirmada', 'checked_in'], true)): ?>
                             <button type="button" class="rdv3-btn rdv3-btn-ghost" onclick="abrirModalModificarDias()"><i class="far fa-calendar"></i>Modificar dias</button>
-                            <button type="button" class="rdv3-btn rdv3-btn-danger" onclick="mostrarFormularioCancelacion()"><i class="fas fa-xmark"></i>Cancelar</button>
+                            <button type="button" class="rdv3-btn rdv3-btn-danger" onclick="mostrarFormularioCancelacion()"><i class="fas fa-ban"></i>Cancelar reservacion</button>
                         <?php endif; ?>
                     </div>
                 </section>
@@ -3548,6 +3694,9 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                 <?php if (!empty($reservacion['metodo_pago'])): ?>
                                     <button type="button" class="rdv3-action" onclick="imprimirTicketTermico()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-gray"><i class="fas fa-print"></i></span>Imprimir ticket termico</span><i class="fas fa-chevron-right"></i></button>
                                 <?php endif; ?>
+                                <?php if (in_array($rdEstadoKey, ['confirmada', 'checked_in'], true)): ?>
+                                    <button type="button" class="rdv3-action rdv3-action--danger" onclick="mostrarFormularioCancelacion()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-danger"><i class="fas fa-ban"></i></span>Cancelar reservacion</span><i class="fas fa-chevron-right"></i></button>
+                                <?php endif; ?>
                             </div>
                         </section>
 
@@ -3633,6 +3782,9 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                         <button type="button" class="rdv3-mobile-primary" onclick="abrirModalCheckOut()"><i class="fas fa-right-from-bracket"></i>Check-out</button>
                     <?php else: ?>
                         <a class="rdv3-mobile-primary" href="#rdv3-actions-panel"><i class="fas fa-grip"></i>Ver acciones</a>
+                    <?php endif; ?>
+                    <?php if (in_array($rdEstadoKey, ['confirmada', 'checked_in'], true)): ?>
+                        <button type="button" class="rdv3-mobile-danger" onclick="mostrarFormularioCancelacion()"><i class="fas fa-ban"></i><span>Cancelar</span></button>
                     <?php endif; ?>
                     <a class="rdv3-mobile-more" href="#rdv3-actions-panel" aria-label="Ver mas acciones"><i class="fas fa-ellipsis"></i></a>
                 </nav>
@@ -3936,7 +4088,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 <!-- ============================================================ -->
 <!-- Modal para selección de habitaciones -->
 <div id="modalCheckOut" class="modal-overlay hidden">
-    <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-content checkout-modal-content" style="max-width: 500px;">
         <div class="modal-header">
             <h3 class="font-bold text-lg">
                 <i class="fas fa-sign-out-alt mr-2"></i>
@@ -3947,16 +4099,16 @@ foreach ($rdDocuments as $rdDocTotalRow) {
             </button>
         </div>
 
-        <form method="POST" action="<?= url('reservaciones/check-out-parcial/' . $reservacion['id']) ?>" id="formCheckOut">
+        <form method="POST" action="<?= url('reservaciones/check-out-parcial/' . $reservacion['id']) ?>" id="formCheckOut" class="checkout-modal-form">
             <?= csrf_field() ?>
 
-            <div class="modal-body">
+            <div class="modal-body checkout-modal-body">
                 <p class="text-sm text-gray-600 mb-4">
                     Selecciona las habitaciones que deseas liberar:
                 </p>
 
                 <!-- Lista de habitaciones con checkboxes -->
-                <div class="space-y-2 mb-4">
+                <div class="space-y-2 mb-4 checkout-room-scroll" aria-label="Habitaciones para check-out">
                     <?php foreach ($habitaciones as $hab): ?>
                         <label class="flex items-center p-3 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer border-2 border-transparent hover:border-brown-500 transition-all">
                             <input
@@ -4011,7 +4163,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                 </div>
             </div>
 
-            <div class="flex gap-3 p-4 bg-gray-50 border-t">
+            <div class="flex gap-3 p-4 bg-gray-50 border-t checkout-modal-actions">
                 <button
                     type="button"
                     onclick="cerrarModalCheckOut()"
@@ -8444,6 +8596,81 @@ function mostrarPreviewMDD(tipo, html) {
     padding: 1rem;
     overflow-y: auto;       /* scroll vertical */
     flex: 1;                /* ocupa todo el espacio sobrante */
+}
+
+#modalCheckOut {
+    padding: clamp(10px, 2vw, 24px);
+}
+
+#modalCheckOut .checkout-modal-content {
+    width: min(500px, calc(100vw - 24px)) !important;
+    max-width: min(500px, calc(100vw - 24px)) !important;
+    max-height: min(92dvh, 760px) !important;
+    overflow: hidden !important;
+}
+
+#modalCheckOut .modal-header {
+    flex: 0 0 auto;
+}
+
+#modalCheckOut .checkout-modal-form {
+    min-height: 0;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+}
+
+#modalCheckOut .checkout-modal-body {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+}
+
+#modalCheckOut .checkout-room-scroll {
+    max-height: min(38dvh, 260px);
+    overflow-y: auto;
+    padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: #F97316 #FFEDD5;
+}
+
+#modalCheckOut .checkout-room-scroll::-webkit-scrollbar {
+    width: 8px;
+}
+
+#modalCheckOut .checkout-room-scroll::-webkit-scrollbar-track {
+    background: #FFEDD5;
+    border-radius: 999px;
+}
+
+#modalCheckOut .checkout-room-scroll::-webkit-scrollbar-thumb {
+    background: #F97316;
+    border-radius: 999px;
+}
+
+#modalCheckOut .checkout-modal-actions {
+    flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+    #modalCheckOut {
+        align-items: flex-end;
+        padding: 8px 8px 0;
+    }
+
+    #modalCheckOut .checkout-modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 92dvh !important;
+        border-radius: 1.25rem 1.25rem 0 0;
+    }
+
+    #modalCheckOut .checkout-modal-actions {
+        display: grid !important;
+        grid-template-columns: 1fr;
+        gap: .75rem;
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)) !important;
+    }
 }
 
 /* Check-in confirm modal: step-by-step wizard, keeps IDs and form contract intact. */

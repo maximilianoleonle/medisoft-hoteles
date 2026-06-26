@@ -2610,6 +2610,640 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
         padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
     }
 }
+
+/* Nueva reservacion: paridad visual con el wizard de habitaciones. */
+.res-reserve-mobile-dates,
+.res-reserve-mobile-intro {
+    display: none;
+}
+
+.res-reserve-footer--single {
+    grid-template-columns: 1fr !important;
+}
+
+.swal2-container.res-swal-reservation-container .swal2-popup.res-reserve-swal .swal2-close {
+    display: none !important;
+}
+
+@media (min-width: 761px) {
+    .swal2-container.res-swal-reservation-container.swal2-backdrop-show,
+    .swal2-container.res-swal-reservation-container.swal2-noanimation {
+        background: rgba(17, 24, 39, .42) !important;
+        backdrop-filter: none !important;
+    }
+
+    .swal2-container.res-swal-reservation-container .swal2-popup.res-reserve-swal {
+        width: min(820px, calc(100vw - 56px)) !important;
+        border-radius: 22px !important;
+        border: 1px solid color-mix(in srgb, var(--brand-secondary, #0F172A) 12%, #E8DED1) !important;
+        background: color-mix(in srgb, var(--brand-accent, #BD9441) 3%, #FFFEFB) !important;
+        box-shadow:
+            0 34px 90px -48px color-mix(in srgb, var(--brand-secondary, #0F172A) 78%, transparent),
+            0 1px 0 rgba(255,255,255,.86) inset !important;
+    }
+
+    .res-reserve-shell {
+        --res-reserve-brand: var(--brand-primary, #1B2746);
+        --res-reserve-brand-2: var(--brand-secondary, #0F172A);
+        --res-reserve-accent: var(--brand-accent, #BD9441);
+        --res-reserve-warm: color-mix(in srgb, var(--brand-secondary, #0F172A) 72%, var(--brand-accent, #BD9441));
+        --res-reserve-line: color-mix(in srgb, var(--brand-secondary, #0F172A) 13%, #E9DFD1);
+        --res-reserve-surface: color-mix(in srgb, var(--brand-accent, #BD9441) 3%, #FFFEFB);
+        --res-reserve-paper: #FFFEFB;
+        --res-reserve-ink: color-mix(in srgb, var(--brand-secondary, #0F172A) 88%, #121826);
+        --res-reserve-muted: color-mix(in srgb, var(--brand-secondary, #0F172A) 52%, #8D96A5);
+        --res-reserve-new: color-mix(in srgb, var(--brand-secondary, #0F172A) 68%, var(--brand-accent, #BD9441));
+        grid-template-columns: 318px minmax(0, 1fr);
+        min-height: 528px;
+        background: var(--res-reserve-paper);
+    }
+
+    .res-reserve-side {
+        padding: 28px 32px;
+        grid-template-rows: auto auto auto auto 1fr;
+        background:
+            radial-gradient(240px 210px at 108% 9%, rgba(255,255,255,.12), transparent 64%),
+            linear-gradient(158deg, color-mix(in srgb, var(--res-reserve-warm) 88%, #5F514A), color-mix(in srgb, var(--res-reserve-brand-2) 84%, #3C302D)) !important;
+    }
+
+    .res-reserve-side::after {
+        top: -26px;
+        right: -78px;
+        width: 250px;
+        height: 250px;
+        background: rgba(255,255,255,.08);
+        opacity: .88;
+    }
+
+    .res-reserve-side__eyebrow {
+        margin-bottom: 14px;
+        color: rgba(255,255,255,.68);
+        font-size: .68rem;
+        letter-spacing: .22em;
+    }
+
+    .res-reserve-side h2 {
+        max-width: 10ch;
+        font-size: 2rem;
+        line-height: 1.02;
+        text-shadow: 0 1px 0 rgba(0,0,0,.08);
+    }
+
+    .res-reserve-side > p {
+        margin: 14px 0 22px;
+        max-width: 27ch;
+        color: rgba(255,255,255,.80);
+        font-size: .88rem;
+        font-weight: 620;
+    }
+
+    .res-reserve-datebox {
+        padding: 10px 16px;
+        border-radius: 15px;
+        border-color: rgba(255,255,255,.16);
+        background: rgba(255,255,255,.09);
+        box-shadow: 0 1px 0 rgba(255,255,255,.10) inset;
+    }
+
+    .res-reserve-dateitem {
+        min-height: 58px;
+        grid-template-columns: 34px minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .res-reserve-dateicon {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        background: rgba(255,255,255,.12);
+        color: rgba(255,255,255,.86);
+        font-size: .82rem;
+    }
+
+    .res-reserve-dateitem small {
+        color: rgba(255,255,255,.55);
+        font-size: .66rem;
+        letter-spacing: .09em;
+    }
+
+    .res-reserve-dateitem strong {
+        font-size: .91rem;
+        letter-spacing: .01em;
+    }
+
+    .res-reserve-steps {
+        gap: 14px;
+        margin-top: 22px;
+    }
+
+    .res-reserve-steps li {
+        grid-template-columns: 32px minmax(0, 1fr);
+        gap: 12px;
+        color: rgba(255,255,255,.58);
+    }
+
+    .res-reserve-steps li span {
+        width: 32px;
+        height: 32px;
+        border-color: rgba(255,255,255,.18);
+        background: rgba(255,255,255,.05);
+    }
+
+    .res-reserve-steps li.is-active span {
+        border-color: rgba(255,255,255,.20);
+        background: color-mix(in srgb, var(--res-reserve-warm) 78%, #FFFEFB);
+        box-shadow: 0 14px 26px -20px rgba(0,0,0,.45);
+    }
+
+    .res-reserve-main {
+        min-height: 528px;
+        padding: 42px 36px 0;
+        background:
+            linear-gradient(180deg, #FFFEFB, color-mix(in srgb, var(--brand-accent, #BD9441) 2%, #FFFEFB)) !important;
+    }
+
+    .res-reserve-main__eyebrow {
+        margin-bottom: 24px;
+        color: #8E97A7;
+        font-size: .69rem;
+        letter-spacing: .18em;
+    }
+
+    .res-reserve-main h3 {
+        font-size: 1.42rem;
+        line-height: 1.16;
+    }
+
+    .res-reserve-main > p {
+        max-width: 48ch;
+        margin: 8px 0 22px;
+        font-size: .88rem;
+        line-height: 1.48;
+    }
+
+    .res-reserve-choice-list {
+        gap: 14px;
+    }
+
+    .res-reserve-choice {
+        min-height: 98px;
+        grid-template-columns: 46px minmax(0, 1fr) 30px;
+        gap: 16px;
+        padding: 17px 20px;
+        border-radius: 12px;
+        border-color: color-mix(in srgb, var(--brand-secondary, #0F172A) 11%, #E9DFD1);
+        background: #FFFEFB;
+        box-shadow: 0 1px 0 rgba(255,255,255,.86) inset;
+    }
+
+    .res-reserve-choice:hover,
+    .res-reserve-choice:focus-visible,
+    .res-reserve-choice.is-selected {
+        transform: translateY(-1px);
+        border-color: color-mix(in srgb, var(--res-choice-color) 58%, #D9CABE);
+        background:
+            radial-gradient(260px 140px at 100% 0%, color-mix(in srgb, var(--res-choice-color) 9%, transparent), transparent 68%),
+            color-mix(in srgb, var(--res-choice-color) 5%, #FFFEFB);
+        box-shadow:
+            0 1px 0 rgba(255,255,255,.92) inset,
+            0 18px 38px -34px color-mix(in srgb, var(--res-choice-color) 62%, transparent);
+    }
+
+    .res-reserve-choice__icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--res-choice-color) 8%, #F7F2EC);
+        color: color-mix(in srgb, var(--res-choice-color) 68%, var(--res-reserve-ink));
+    }
+
+    .res-reserve-choice__copy {
+        gap: 7px;
+    }
+
+    .res-reserve-choice__copy strong {
+        font-size: 1.04rem;
+    }
+
+    .res-reserve-choice__copy em {
+        min-height: 19px;
+        padding: 0 8px;
+        background: color-mix(in srgb, var(--res-choice-color) 9%, #F8F3EE);
+        color: color-mix(in srgb, var(--res-choice-color) 72%, var(--res-reserve-muted));
+    }
+
+    .res-reserve-choice__copy small {
+        max-width: 42ch;
+        color: color-mix(in srgb, var(--brand-secondary, #0F172A) 46%, #8D96A5);
+        font-size: .82rem;
+        line-height: 1.42;
+    }
+
+    .res-reserve-choice__check {
+        width: 30px;
+        height: 30px;
+        border-color: color-mix(in srgb, var(--res-choice-color) 24%, #D9CEC4);
+    }
+
+    .res-reserve-choice.is-selected .res-reserve-choice__check {
+        border-color: color-mix(in srgb, var(--res-choice-color) 88%, #FFFEFB);
+        background: color-mix(in srgb, var(--res-choice-color) 88%, #FFFEFB);
+    }
+
+    .res-reserve-footer {
+        grid-template-columns: minmax(160px, .9fr) minmax(220px, 1.15fr);
+        gap: 18px;
+        margin: auto -36px 0;
+        padding: 24px 36px 24px;
+        border-top-color: color-mix(in srgb, var(--brand-secondary, #0F172A) 9%, #E9DFD1);
+        background: linear-gradient(180deg, color-mix(in srgb, var(--brand-accent, #BD9441) 1%, #FFFEFB), #FFFEFB);
+    }
+
+    .res-reserve-footer--single {
+        grid-template-columns: 1fr !important;
+    }
+
+    .res-reserve-btn {
+        min-height: 50px;
+        border-radius: 12px;
+        font-size: .88rem;
+    }
+
+    .res-reserve-btn--ghost {
+        border-color: color-mix(in srgb, var(--brand-secondary, #0F172A) 12%, #E9DFD1);
+        background: #FFFEFB;
+        color: color-mix(in srgb, var(--brand-secondary, #0F172A) 78%, #384153);
+    }
+
+    .res-reserve-btn--primary {
+        background: linear-gradient(135deg, color-mix(in srgb, var(--brand-secondary, #0F172A) 84%, #4D5566), var(--brand-secondary, #0F172A));
+        color: #FFFEFB;
+        box-shadow: 0 18px 34px -24px color-mix(in srgb, var(--brand-secondary, #0F172A) 72%, transparent);
+    }
+}
+
+@media (max-width: 760px) {
+    .swal2-container.res-swal-reservation-container.swal2-backdrop-show,
+    .swal2-container.res-swal-reservation-container.swal2-noanimation {
+        align-items: flex-end !important;
+        padding: 0 18px calc(18px + env(safe-area-inset-bottom)) !important;
+        background: rgba(17, 24, 39, .54) !important;
+        backdrop-filter: none !important;
+    }
+
+    .swal2-container.res-swal-reservation-container .swal2-popup.res-reserve-swal {
+        width: min(390px, calc(100vw - 36px)) !important;
+        max-width: 390px !important;
+        max-height: 86dvh !important;
+        border: 0 !important;
+        border-radius: 24px 24px 16px 16px !important;
+        background: #FFFEFB !important;
+        box-shadow: 0 -12px 40px rgba(18,22,34,.22) !important;
+    }
+
+    .swal2-container.res-swal-reservation-container .swal2-popup.res-reserve-swal .swal2-html-container,
+    .res-reserve-shell,
+    .res-reserve-main {
+        max-height: 86dvh !important;
+    }
+
+    .swal2-container.res-swal-reservation-container .swal2-popup.res-reserve-swal .swal2-html-container {
+        overflow: hidden !important;
+    }
+
+    .res-reserve-shell {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        background: #FFFEFB;
+    }
+
+    .res-reserve-side {
+        display: none !important;
+    }
+
+    .res-reserve-main {
+        min-height: 0;
+        padding: 0 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        background: #FFFEFB !important;
+    }
+
+    .res-reserve-mobile-intro {
+        display: block;
+        position: relative;
+        padding: 26px 20px 0 !important;
+    }
+
+    .res-reserve-mobile-intro::before {
+        content: '';
+        position: absolute;
+        top: 10px !important;
+        left: 50%;
+        width: 40px !important;
+        height: 5px !important;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--brand-accent, #BD9441) 26%, #D7D0C7) !important;
+        transform: translateX(-50%);
+    }
+
+    .res-reserve-mobile-kicker {
+        display: block;
+        margin: 0 48px 6px 0 !important;
+        color: #8A93A4;
+        font-size: .64rem !important;
+        font-weight: 900;
+        letter-spacing: .16em !important;
+        line-height: 1;
+        text-transform: uppercase;
+    }
+
+    .res-reserve-mobile-title {
+        margin: 0 48px 12px 0 !important;
+        color: color-mix(in srgb, var(--brand-secondary, #0F172A) 92%, #111827);
+        font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+        font-size: 1.36rem !important;
+        font-weight: 850;
+        letter-spacing: -.02em;
+        line-height: 1.05 !important;
+    }
+
+    .res-reserve-mobile-copy {
+        display: none !important;
+    }
+
+    .res-reserve-mobile-datebox {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin: 0 0 14px !important;
+        border: 1px solid color-mix(in srgb, var(--brand-secondary, #0F172A) 18%, #E9D8C8);
+        border-radius: 13px !important;
+        background: linear-gradient(180deg, #FFFEFB, color-mix(in srgb, var(--brand-accent, #BD9441) 3%, #FFFEFB));
+        overflow: hidden;
+    }
+
+    .res-reserve-mobile-dateitem {
+        min-width: 0;
+        display: grid;
+        grid-template-columns: 24px minmax(0, 1fr) !important;
+        align-items: center;
+        gap: 6px !important;
+        padding: 10px 7px !important;
+    }
+
+    .res-reserve-mobile-dateitem + .res-reserve-mobile-dateitem {
+        border-left: 1px solid color-mix(in srgb, var(--brand-secondary, #0F172A) 10%, #E9D8C8);
+    }
+
+    .res-reserve-mobile-dateicon {
+        width: 24px !important;
+        height: 24px !important;
+        display: grid;
+        place-items: center;
+        border-radius: 8px !important;
+        background: color-mix(in srgb, var(--brand-accent, #BD9441) 7%, #F8F2EC);
+        color: color-mix(in srgb, var(--brand-secondary, #0F172A) 70%, var(--brand-accent, #BD9441));
+        font-size: .66rem !important;
+    }
+
+    .res-reserve-mobile-dateitem small {
+        display: block;
+        color: #8A93A4;
+        font-size: .50rem !important;
+        font-weight: 900;
+        letter-spacing: .07em !important;
+        line-height: 1;
+        text-transform: uppercase;
+    }
+
+    .res-reserve-mobile-dateitem strong {
+        display: block;
+        margin-top: 3px !important;
+        color: color-mix(in srgb, var(--brand-secondary, #0F172A) 88%, #111827);
+        font-size: .68rem !important;
+        font-weight: 850;
+        line-height: 1.1;
+        white-space: nowrap;
+    }
+
+    .res-reserve-mobile-progress {
+        display: grid;
+        grid-template-columns: 86px minmax(0, 1fr) !important;
+        align-items: center !important;
+        gap: 8px !important;
+        margin: 0 0 16px !important;
+    }
+
+    .res-reserve-mobile-progress-title {
+        color: color-mix(in srgb, var(--brand-secondary, #0F172A) 56%, #6B7280);
+        font-size: .74rem !important;
+        font-weight: 820;
+        line-height: 26px !important;
+    }
+
+    .res-reserve-mobile-steps {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        position: relative;
+        min-width: 0;
+    }
+
+    .res-reserve-mobile-steps::before {
+        content: '';
+        position: absolute;
+        top: 12px !important;
+        left: 24px !important;
+        right: 24px !important;
+        height: 2px;
+        background: color-mix(in srgb, var(--brand-secondary, #0F172A) 16%, #D9DEE6);
+    }
+
+    .res-reserve-mobile-step {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        justify-items: center;
+        gap: 0 !important;
+        color: #7A8496;
+        font-size: .72rem;
+        font-weight: 820;
+        text-align: center;
+    }
+
+    .res-reserve-mobile-step span {
+        width: 26px !important;
+        height: 26px !important;
+        display: grid;
+        place-items: center;
+        border-radius: 999px;
+        border: 1px solid color-mix(in srgb, var(--brand-secondary, #0F172A) 20%, #DADDE3);
+        background: #FFFEFB;
+        color: #7A8496;
+        font-size: .70rem !important;
+        font-weight: 850;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .res-reserve-mobile-step strong {
+        display: none !important;
+    }
+
+    .res-reserve-mobile-step.is-active {
+        color: color-mix(in srgb, var(--brand-secondary, #0F172A) 68%, var(--brand-accent, #BD9441));
+    }
+
+    .res-reserve-mobile-step.is-active span {
+        border-color: color-mix(in srgb, var(--brand-secondary, #0F172A) 34%, var(--brand-accent, #BD9441));
+        background: color-mix(in srgb, var(--brand-secondary, #0F172A) 68%, var(--brand-accent, #BD9441));
+        color: #FFFEFB;
+    }
+
+    .res-reserve-mobile-step.is-complete span {
+        border-color: #20A66B;
+        background: #20A66B;
+        color: #FFFEFB;
+    }
+
+    .res-reserve-main > .res-reserve-main__eyebrow {
+        display: none;
+    }
+
+    .res-reserve-main h3 {
+        margin: 0 0 14px !important;
+        padding: 0 20px !important;
+        color: color-mix(in srgb, var(--brand-secondary, #0F172A) 92%, #111827);
+        font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+        font-size: 1.06rem !important;
+        font-weight: 850;
+        letter-spacing: -.02em;
+        line-height: 1.15 !important;
+    }
+
+    .res-reserve-main > p {
+        display: none !important;
+    }
+
+    .res-reserve-choice-list {
+        grid-template-columns: 1fr;
+        gap: 8px !important;
+        padding: 0 20px !important;
+    }
+
+    .res-reserve-choice {
+        min-height: 68px !important;
+        grid-template-columns: 38px minmax(0, 1fr) 28px !important;
+        gap: 11px !important;
+        padding: 11px 12px !important;
+        border-radius: 12px !important;
+    }
+
+    .res-reserve-choice__icon {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 11px !important;
+        font-size: .88rem !important;
+    }
+
+    .res-reserve-choice__copy {
+        gap: 3px !important;
+    }
+
+    .res-reserve-choice__copy > span {
+        gap: 7px !important;
+    }
+
+    .res-reserve-choice__copy strong {
+        font-size: .94rem !important;
+    }
+
+    .res-reserve-choice__copy em {
+        min-height: 18px !important;
+        padding: 0 7px !important;
+        font-size: .58rem !important;
+    }
+
+    .res-reserve-choice__copy small {
+        display: none !important;
+    }
+
+    .res-reserve-choice__check {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: .72rem !important;
+    }
+
+    .res-reserve-timechips {
+        flex-wrap: wrap;
+        gap: 7px !important;
+        padding: 0 20px !important;
+        margin: 0 !important;
+    }
+
+    .res-reserve-timechip {
+        min-height: 38px !important;
+        flex: 1 1 calc(50% - 4px) !important;
+        min-width: 0;
+        justify-content: center;
+        padding: 8px 7px !important;
+        font-size: .76rem !important;
+    }
+
+    .res-reserve-timefield {
+        min-height: 52px !important;
+        margin: 10px 20px 0 !important;
+        padding: 0 14px !important;
+    }
+
+    .res-reserve-timefield .hb-arrival-input {
+        height: 50px !important;
+        min-height: 50px !important;
+        font-size: .98rem !important;
+    }
+
+    .res-reserve-hint {
+        display: none !important;
+    }
+
+    .res-reserve-validation {
+        margin: 8px 20px 0 !important;
+    }
+
+    .res-reserve-footer {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px !important;
+        position: sticky;
+        bottom: 0;
+        z-index: 4;
+        margin: 14px 0 0 !important;
+        padding: 12px 20px calc(14px + env(safe-area-inset-bottom)) !important;
+        border-top: 0;
+        background:
+            linear-gradient(180deg, rgba(255,254,251,0), #FFFEFB 20%),
+            #FFFEFB;
+    }
+
+    .res-reserve-footer--single {
+        grid-template-columns: 1fr !important;
+    }
+
+    .res-reserve-btn {
+        min-height: 46px !important;
+        border-radius: 13px !important;
+        font-size: .84rem !important;
+    }
+
+    .res-reserve-btn--ghost {
+        border-color: color-mix(in srgb, var(--brand-secondary, #0F172A) 13%, #E9D8C8);
+        background: #FFFEFB;
+        color: color-mix(in srgb, var(--brand-secondary, #0F172A) 76%, #394154);
+    }
+
+    .res-reserve-btn--primary {
+        background: linear-gradient(135deg, color-mix(in srgb, var(--brand-secondary, #0F172A) 76%, var(--brand-accent, #BD9441)), var(--brand-secondary, #0F172A));
+        box-shadow: 0 18px 36px -26px color-mix(in srgb, var(--brand-secondary, #0F172A) 76%, transparent);
+    }
+}
 /* Viewport alignment: match the broad operational canvas used by huespedes/facturacion/inventario. */
 .res-bookings {
     padding: 1rem !important;
@@ -4029,8 +4663,8 @@ function resReservaCalcularNoches(fechaEntrada, fechaSalida) {
 }
 
 function resReservaSidebar(fechaEntrada, fechaSalida, paso) {
-    const entradaLabel = resFormatearFechaCorta(new Date(fechaEntrada + 'T00:00:00'));
-    const salidaLabel = resFormatearFechaCorta(new Date(fechaSalida + 'T00:00:00'));
+    const entradaLabel = resFormatearFechaReservaCorta(new Date(fechaEntrada + 'T00:00:00'));
+    const salidaLabel = resFormatearFechaReservaCorta(new Date(fechaSalida + 'T00:00:00'));
     const nochesLabel = resReservaCalcularNoches(fechaEntrada, fechaSalida);
     const pasoActual = parseInt(paso, 10) || 1;
 
@@ -4042,7 +4676,7 @@ function resReservaSidebar(fechaEntrada, fechaSalida, paso) {
 
             <div class="res-reserve-datebox">
                 <div class="res-reserve-dateitem">
-                    <span class="res-reserve-dateicon"><i class="fas fa-sign-in-alt"></i></span>
+                    <span class="res-reserve-dateicon"><i class="fas fa-calendar-day"></i></span>
                     <span><small>Entrada</small><strong>${entradaLabel}</strong></span>
                 </div>
                 <div class="res-reserve-dateitem">
@@ -4050,7 +4684,7 @@ function resReservaSidebar(fechaEntrada, fechaSalida, paso) {
                     <span><small>Noches</small><strong>${nochesLabel}</strong></span>
                 </div>
                 <div class="res-reserve-dateitem">
-                    <span class="res-reserve-dateicon"><i class="fas fa-sign-out-alt"></i></span>
+                    <span class="res-reserve-dateicon"><i class="fas fa-calendar-day"></i></span>
                     <span><small>Salida</small><strong>${salidaLabel}</strong></span>
                 </div>
             </div>
@@ -4066,6 +4700,50 @@ function resReservaSidebar(fechaEntrada, fechaSalida, paso) {
                 </li>
             </ol>
         </aside>
+    `;
+}
+
+function resReservaMobileIntro(fechaEntrada, fechaSalida, paso) {
+    const entradaLabel = resFormatearFechaReservaCorta(new Date(fechaEntrada + 'T00:00:00'));
+    const salidaLabel = resFormatearFechaReservaCorta(new Date(fechaSalida + 'T00:00:00'));
+    const nochesLabel = resReservaCalcularNoches(fechaEntrada, fechaSalida);
+    const pasoActual = parseInt(paso, 10) || 1;
+
+    return `
+        <div class="res-reserve-mobile-intro" role="group" aria-label="Resumen de nueva reservacion">
+            <span class="res-reserve-mobile-kicker">Nueva reservacion</span>
+            <h2 class="res-reserve-mobile-title">Crear reservacion</h2>
+            <p class="res-reserve-mobile-copy">Configura los datos iniciales para preparar la estancia del huesped.</p>
+
+            <div class="res-reserve-mobile-datebox">
+                <div class="res-reserve-mobile-dateitem">
+                    <span class="res-reserve-mobile-dateicon"><i class="fas fa-calendar-day"></i></span>
+                    <span><small>Entrada</small><strong>${entradaLabel}</strong></span>
+                </div>
+                <div class="res-reserve-mobile-dateitem">
+                    <span class="res-reserve-mobile-dateicon"><i class="fas fa-moon"></i></span>
+                    <span><small>Noches</small><strong>${nochesLabel}</strong></span>
+                </div>
+                <div class="res-reserve-mobile-dateitem">
+                    <span class="res-reserve-mobile-dateicon"><i class="fas fa-calendar-day"></i></span>
+                    <span><small>Salida</small><strong>${salidaLabel}</strong></span>
+                </div>
+            </div>
+
+            <div class="res-reserve-mobile-progress" aria-label="Progreso">
+                <span class="res-reserve-mobile-progress-title">Paso ${pasoActual} de 2</span>
+                <div class="res-reserve-mobile-steps" role="list">
+                    <div class="res-reserve-mobile-step ${pasoActual === 1 ? 'is-active' : 'is-complete'}" role="listitem">
+                        <span>1</span>
+                        <strong>Tipo de cliente</strong>
+                    </div>
+                    <div class="res-reserve-mobile-step ${pasoActual === 2 ? 'is-active' : ''}" role="listitem">
+                        <span>2</span>
+                        <strong>Hora de llegada</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
     `;
 }
 
@@ -4122,6 +4800,7 @@ function resMostrarSelectorTipoCliente(datosReserva) {
             <div class="res-reserve-shell" data-tipo="nuevo">
                 ${resReservaSidebar(fechaEntrada, fechaSalida, 1)}
                 <section class="res-reserve-main" aria-label="Tipo de cliente">
+                    ${resReservaMobileIntro(fechaEntrada, fechaSalida, 1)}
                     <span class="res-reserve-main__eyebrow">Paso 1 de 2</span>
                     <h3>&iquest;Para quien es la reservacion?</h3>
                     <p>Elige si vas a registrar un huesped nuevo o si la reservacion sera para un cliente que ya existe.</p>
@@ -4151,8 +4830,7 @@ function resMostrarSelectorTipoCliente(datosReserva) {
                         </button>
                     </div>
 
-                    <div class="res-reserve-footer">
-                        <button type="button" onclick="Swal.close()" class="res-reserve-btn res-reserve-btn--ghost">Cancelar</button>
+                    <div class="res-reserve-footer res-reserve-footer--single">
                         <button type="button" onclick="resContinuarTipoClienteDesdeShell('${fechaEntrada}', '${fechaSalida}', '${horaActual}')" class="res-reserve-btn res-reserve-btn--primary">
                             Continuar <i class="fas fa-arrow-right"></i>
                         </button>
@@ -4162,12 +4840,12 @@ function resMostrarSelectorTipoCliente(datosReserva) {
         `,
         showConfirmButton: false,
         showCancelButton: false,
-        showCloseButton: true,
+        showCloseButton: false,
         allowOutsideClick: true,
         allowEscapeKey: true,
         returnFocus: false,
         closeButtonAriaLabel: 'Cerrar',
-        width: '780px',
+        width: '820px',
         customClass: {
             container: 'res-swal-reservation-container',
             popup: 'hb-swal hb-swal-client res-reserve-swal',
@@ -4185,6 +4863,7 @@ function resSeleccionarTipoCliente(tipo, fechaEntrada, fechaSalida, horaActual) 
                 <div class="res-reserve-shell" data-tipo="${tipo}">
                     ${resReservaSidebar(fechaEntrada, fechaSalida, 2)}
                     <section class="res-reserve-main" aria-label="Hora de llegada">
+                        ${resReservaMobileIntro(fechaEntrada, fechaSalida, 2)}
                         <span class="res-reserve-main__eyebrow">Paso 2 de 2</span>
                         <h3>&iquest;A que hora llega?</h3>
                         <p>Elige una opcion rapida o escribe la hora. Tambien puedes capturarla despues dentro de la reservacion.</p>
@@ -4198,7 +4877,7 @@ function resSeleccionarTipoCliente(tipo, fechaEntrada, fechaSalida, horaActual) 
 
                         <label class="res-reserve-timefield" for="resHoraLlegadaRapida">
                             <i class="far fa-clock"></i>
-                            <input type="time" id="resHoraLlegadaRapida" value="${horaActual}" class="hb-arrival-input">
+                            <input type="time" id="resHoraLlegadaRapida" value="${horaActual}" class="hb-arrival-input" oninput="document.getElementById('resReserveValidation')?.classList.add('hidden')">
                         </label>
                         <p class="res-reserve-hint"><i class="far fa-eye"></i> Esta hora ayuda a preparar la habitacion a tiempo; no es obligatoria si decides definirla despues.</p>
                         <p id="resReserveValidation" class="res-reserve-validation hidden">Ingresa la hora de llegada o usa Definir despues.</p>
@@ -4216,12 +4895,12 @@ function resSeleccionarTipoCliente(tipo, fechaEntrada, fechaSalida, horaActual) 
             `,
             showConfirmButton: false,
             showCancelButton: false,
-            showCloseButton: true,
+            showCloseButton: false,
             allowOutsideClick: true,
             allowEscapeKey: true,
             returnFocus: false,
             closeButtonAriaLabel: 'Cerrar',
-            width: '780px',
+            width: '820px',
             customClass: {
                 container: 'res-swal-reservation-container',
                 popup: 'hb-swal hb-swal-arrival res-reserve-swal',
@@ -4283,6 +4962,12 @@ function resContinuarReservacionDesdeModal(tipo, fechaEntrada, fechaSalida, hora
 function resFormatearFechaCorta(fecha) {
     const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     return `${fecha.getDate()} ${meses[fecha.getMonth()]}`;
+}
+
+function resFormatearFechaReservaCorta(fecha) {
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const anio = String(fecha.getFullYear()).slice(-2);
+    return `${fecha.getDate()} ${meses[fecha.getMonth()]} ${anio}`;
 }
 
 function cambiarFecha(f) {

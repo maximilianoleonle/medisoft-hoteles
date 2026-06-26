@@ -74,6 +74,14 @@ $configGeneralZoneRows = is_array($generalZoneCatalog ?? null)
 $configGeneralParkingRows = is_array($generalParkingCatalog ?? null)
     ? array_values($generalParkingCatalog)
     : (function_exists('hotel_general_catalog_parking_rows') ? hotel_general_catalog_parking_rows(null, true) : []);
+$configParkingCapacityTotal = 0;
+$configParkingActiveCount = 0;
+foreach ($configGeneralParkingRows as $configParkingRow) {
+    if (!empty($configParkingRow['activo'])) {
+        $configParkingActiveCount++;
+        $configParkingCapacityTotal += max(0, min(999, (int) ($configParkingRow['cupo'] ?? 0)));
+    }
+}
 $configGeneralUnitRows = is_array($generalUnitCatalog ?? null)
     ? array_values($generalUnitCatalog)
     : (function_exists('hotel_general_catalog_unit_rows') ? hotel_general_catalog_unit_rows(null, true) : []);
@@ -1122,6 +1130,34 @@ $configRenderGuestFieldPolicy = function ($fieldKey, array $fieldDefinition) use
     margin-bottom: 14px;
 }
 
+.hc-catalog-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.hc-catalog-metric {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 7px 10px;
+    border: 1px solid color-mix(in srgb, var(--hc-block-accent, var(--hc-brand)) 18%, var(--hc-line));
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--hc-block-accent, var(--hc-brand)) 6%, #fffffd);
+    color: var(--hc-brand-strong);
+    font-size: .78rem;
+    font-weight: 780;
+}
+
+.hc-catalog-metric b {
+    color: var(--hc-block-accent, var(--hc-brand));
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+}
+
 .hc-group-title,
 .hc-catalog-title {
     display: flex;
@@ -1333,6 +1369,10 @@ $configRenderGuestFieldPolicy = function ($fieldKey, array $fieldDefinition) use
 .hc-catalog-row.is-amenity,
 .hc-catalog-row.is-simple {
     grid-template-columns: minmax(110px, .8fr) minmax(180px, 1.5fr) minmax(92px, .6fr);
+}
+
+.hc-catalog-row.is-parking {
+    grid-template-columns: minmax(110px, .72fr) minmax(180px, 1.28fr) minmax(92px, .52fr) minmax(92px, .55fr);
 }
 
 .hc-catalog-row.is-unit {
@@ -1745,6 +1785,7 @@ html {
     .hc-catalog-row.is-floor,
     .hc-catalog-row.is-amenity,
     .hc-catalog-row.is-simple,
+    .hc-catalog-row.is-parking,
     .hc-catalog-row.is-unit,
     .hc-catalog-row.is-owner,
     .hc-catalog-row.is-owner-rule,
@@ -1797,6 +1838,7 @@ html {
     .hc-catalog-row.is-floor,
     .hc-catalog-row.is-amenity,
     .hc-catalog-row.is-simple,
+    .hc-catalog-row.is-parking,
     .hc-catalog-row.is-unit,
     .hc-catalog-row.is-owner,
     .hc-catalog-row.is-owner-rule,
@@ -2786,6 +2828,10 @@ html {
     grid-template-columns: minmax(160px, .72fr) minmax(240px, 1.28fr) minmax(118px, 148px);
 }
 
+.hc-catalog-row.is-parking {
+    grid-template-columns: minmax(140px, .62fr) minmax(220px, 1.08fr) minmax(104px, .42fr) minmax(118px, 148px);
+}
+
 .hc-catalog-row.is-unit {
     grid-template-columns: minmax(140px, .78fr) minmax(220px, 1.18fr) minmax(110px, .52fr) minmax(118px, 148px);
 }
@@ -3638,6 +3684,7 @@ html {
     .hc-catalog-row.is-floor,
     .hc-catalog-row.is-amenity,
     .hc-catalog-row.is-simple,
+    .hc-catalog-row.is-parking,
     .hc-catalog-row.is-unit,
     .hc-catalog-row.is-owner,
     .hc-catalog-row.is-owner-rule,
@@ -3652,6 +3699,7 @@ html {
     .hc-catalog-row.is-floor,
     .hc-catalog-row.is-amenity,
     .hc-catalog-row.is-simple,
+    .hc-catalog-row.is-parking,
     .hc-catalog-row.is-unit,
     .hc-catalog-row.is-owner,
     .hc-catalog-row.is-owner-rule,
@@ -4757,12 +4805,19 @@ html {
                                             <i class="fas fa-square-parking"></i>
                                             Estacionamientos
                                         </h3>
-                                        <p class="hc-field-hint">Codigos compatibles con vehiculos: coches, camionetas, discos, nikkos.</p>
+                                        <p class="hc-field-hint">Define el nombre visible y el cupo que alimentara el indicador de estacionamiento del dashboard.</p>
                                     </div>
-                                    <button type="button" class="hc-add-btn" data-catalog-add="parkings">
-                                        <i class="fas fa-plus"></i>
-                                        Agregar estacionamiento
-                                    </button>
+                                    <div class="hc-catalog-actions">
+                                        <span class="hc-catalog-metric" title="Suma de cupos activos" data-parking-capacity-total>
+                                            <i class="fas fa-car-side" aria-hidden="true"></i>
+                                            <b data-parking-capacity-value><?= (int) $configParkingCapacityTotal ?></b>
+                                            cupos activos
+                                        </span>
+                                        <button type="button" class="hc-add-btn" data-catalog-add="parkings">
+                                            <i class="fas fa-plus"></i>
+                                            Agregar estacionamiento
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div class="hc-catalog-list" data-catalog-list="parkings" data-next-index="<?= count($parkingRowsForForm) ?>">
@@ -4770,9 +4825,10 @@ html {
                                         <?php
                                         $parkingCode = (string) ($row['codigo'] ?? '');
                                         $parkingLabel = (string) ($row['label'] ?? '');
+                                        $parkingCapacity = array_key_exists('cupo', $row) ? max(0, min(999, (int) $row['cupo'])) : '';
                                         $parkingActive = !array_key_exists('activo', $row) || !empty($row['activo']);
                                         ?>
-                                        <div class="hc-catalog-row is-simple" data-catalog-row="parkings">
+                                        <div class="hc-catalog-row is-parking" data-catalog-row="parkings">
                                             <div class="hc-catalog-cell">
                                                 <label>Codigo</label>
                                                 <input type="text"
@@ -4788,6 +4844,18 @@ html {
                                                        value="<?= htmlspecialchars($parkingLabel, ENT_QUOTES, 'UTF-8') ?>"
                                                        maxlength="80"
                                                        class="form-input">
+                                            </div>
+                                            <div class="hc-catalog-cell">
+                                                <label>Cupo</label>
+                                                <input type="number"
+                                                       name="general_catalog[parkings][<?= $index ?>][cupo]"
+                                                       value="<?= $parkingCapacity === '' ? '' : (int) $parkingCapacity ?>"
+                                                       min="0"
+                                                       max="999"
+                                                       step="1"
+                                                       inputmode="numeric"
+                                                       class="form-input"
+                                                       placeholder="0">
                                             </div>
                                             <div class="hc-catalog-cell">
                                                 <label>Activo</label>
@@ -5581,8 +5649,41 @@ document.querySelectorAll('[data-catalog-add]').forEach(button => {
         list.dataset.nextIndex = String(nextIndex + 1);
         list.appendChild(row);
         row.querySelector('input, textarea, select')?.focus();
+        document.dispatchEvent(new CustomEvent('catalog-config-changed', { detail: { kind } }));
     });
 });
+
+(() => {
+    const catalogPanel = document.querySelector('#hc-catalogs');
+    const capacityNode = catalogPanel?.querySelector('[data-parking-capacity-value]');
+
+    if (!catalogPanel || !capacityNode) {
+        return;
+    }
+
+    const syncParkingCapacity = () => {
+        let total = 0;
+        catalogPanel.querySelectorAll('[data-catalog-row="parkings"]').forEach(row => {
+            const activeInput = row.querySelector('input[type="checkbox"][name$="[activo]"]');
+            const capacityInput = row.querySelector('input[name$="[cupo]"]');
+            if (!activeInput?.checked || !capacityInput) {
+                return;
+            }
+
+            const value = Number.parseInt(capacityInput.value || '0', 10);
+            if (Number.isFinite(value)) {
+                total += Math.max(0, Math.min(999, value));
+            }
+        });
+
+        capacityNode.textContent = String(total);
+    };
+
+    catalogPanel.addEventListener('input', syncParkingCapacity);
+    catalogPanel.addEventListener('change', syncParkingCapacity);
+    document.addEventListener('catalog-config-changed', syncParkingCapacity);
+    syncParkingCapacity();
+})();
 
 document.querySelectorAll('[data-owner-add]').forEach(button => {
     button.addEventListener('click', () => {

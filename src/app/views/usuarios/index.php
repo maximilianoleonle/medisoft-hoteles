@@ -937,6 +937,199 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
         border-spacing: 0;
     }
 }
+
+.usuarios-view .usr-mobile {
+    display: none;
+}
+
+.usuarios-view .usr-mcard {
+    background: var(--user-surface);
+    border: 1px solid var(--user-border);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 26px -20px rgba(27,39,70,.25);
+}
+
+.usuarios-view .usr-mtop {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.usuarios-view .usr-mtop .min-w-0 {
+    min-width: 0;
+    flex: 1;
+}
+
+.usuarios-view .usr-mname {
+    display: block;
+    color: var(--user-heading);
+    font-size: .9rem;
+    font-weight: 650;
+    line-height: 1.24;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.usuarios-view .usr-msub {
+    margin-top: 2px;
+    color: var(--user-muted);
+    font-size: .7rem;
+    font-weight: 520;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.usuarios-view .usr-mmeta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px 12px;
+    margin-top: 11px;
+}
+
+.usuarios-view .usr-mlabel {
+    color: color-mix(in srgb, var(--user-muted) 72%, #AAB3C0);
+    font-size: .64rem;
+    font-weight: 650;
+    letter-spacing: .04em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.usuarios-view .usr-mvalue {
+    color: color-mix(in srgb, var(--user-text) 78%, #778394);
+    font-size: .84rem;
+    font-weight: 620;
+    line-height: 1.28;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.usuarios-view .usr-mactions {
+    display: flex;
+    gap: 7px;
+    margin-top: 11px;
+}
+
+.usuarios-view .usr-cardbtn {
+    flex: 1;
+    width: 100%;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    border: 1px solid var(--user-border);
+    border-radius: 10px;
+    background: var(--user-surface-warm);
+    color: color-mix(in srgb, var(--user-text) 78%, #778394);
+    cursor: pointer;
+    font-size: .76rem;
+    font-weight: 650;
+    text-decoration: none;
+    transition: background .16s ease, border-color .16s ease, color .16s ease, transform .16s ease;
+}
+
+.usuarios-view .usr-cardbtn:hover {
+    border-color: var(--user-accent-line);
+    background: var(--user-accent-soft);
+    color: var(--user-accent-dark);
+    transform: translateY(-1px);
+}
+
+.usuarios-view .usr-cardbtn.is-danger {
+    color: var(--user-danger);
+}
+
+.usuarios-view .usr-cardbtn.is-success {
+    color: var(--user-success);
+}
+
+.usuarios-view .usr-cardbtn.is-confirming {
+    color: #FFFFFF !important;
+    background: linear-gradient(135deg, var(--user-accent), var(--user-accent-dark)) !important;
+    border-color: var(--user-accent-line) !important;
+}
+
+@media (max-width: 767px) {
+    .usuarios-view {
+        --user-mobile-ink: color-mix(in srgb, var(--user-brand) 62%, #6F7784);
+        --user-mobile-text: color-mix(in srgb, var(--user-brand) 42%, #778394);
+        --user-mobile-muted: #98A2B3;
+        --user-mobile-faint: #AAB3C0;
+    }
+
+    .usuarios-view .usr-desktop-table {
+        display: none;
+    }
+
+    .usuarios-view .usr-mobile {
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .usuarios-view .usr-mcard {
+        background: rgba(255,255,255,.78) !important;
+        border-color: color-mix(in srgb, var(--user-brand) 5%, #ECE4D8) !important;
+        box-shadow: 0 12px 24px -26px rgba(27,39,70,.28) !important;
+    }
+
+    .usuarios-view .usr-mcard .usr-avatar {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 12px !important;
+        font-size: .76rem !important;
+    }
+
+    .usuarios-view .usr-mcard:nth-child(2n) .usr-avatar {
+        background: #E8F4ED !important;
+        color: #276749 !important;
+        border-color: color-mix(in srgb, #2F855A 16%, #FFFFFF) !important;
+    }
+
+    .usuarios-view .usr-mcard:nth-child(3n) .usr-avatar {
+        background: #F8F0DC !important;
+        color: #7C4A03 !important;
+        border-color: color-mix(in srgb, #A16207 16%, #FFFFFF) !important;
+    }
+
+    .usuarios-view .usr-mcard:nth-child(4n) .usr-avatar {
+        background: #EEF1F4 !important;
+        color: #334155 !important;
+        border-color: color-mix(in srgb, #64748B 18%, #FFFFFF) !important;
+    }
+
+    .usuarios-view .usr-mname {
+        color: var(--user-mobile-ink);
+    }
+
+    .usuarios-view .usr-msub {
+        color: var(--user-mobile-muted);
+    }
+
+    .usuarios-view .usr-mlabel {
+        color: var(--user-mobile-faint);
+    }
+
+    .usuarios-view .usr-mvalue {
+        color: var(--user-mobile-text);
+    }
+
+    .usuarios-view .usr-cardbtn {
+        color: var(--user-mobile-text);
+        background: rgba(255,252,247,.76);
+        border-color: color-mix(in srgb, var(--user-brand) 6%, #EAE1D4);
+    }
+
+    .usuarios-view .usr-panel-hd {
+        padding: 12px 13px !important;
+    }
+}
 </style>
 
 <!-- ═══════════════════ USUARIOS PAGE ══════════════════════ -->
@@ -1064,7 +1257,7 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
                     <?php endif; ?>
                 </div>
             <?php else: ?>
-                <div class="overflow-x-auto lc-scroll">
+                <div class="usr-desktop-table overflow-x-auto lc-scroll">
                     <table class="min-w-full">
                         <thead>
                             <tr class="border-b border-[#EAF0E5]">
@@ -1177,6 +1370,94 @@ $puedeEditarUsuarios = $puedeEditarUsuarios ?? can('usuarios.edit');
                         </tbody>
                     </table>
                 </div>
+
+                <div class="usr-mobile">
+                    <?php foreach ($usuarios as $usuario): ?>
+                        <?php
+                        $usuarioId = (int)($usuario['id'] ?? 0);
+                        $nombreUsuario = (string)($usuario['nombre_usuario'] ?? '');
+                        $nombreCompleto = (string)($usuario['nombre_completo'] ?? '');
+                        $rolUsuario = (string)($usuario['rol'] ?? '');
+                        $contactoUsuario = trim((string)($usuario['email'] ?? ''));
+                        if ($contactoUsuario === '') {
+                            $contactoUsuario = trim((string)($usuario['telefono'] ?? ''));
+                        }
+                        $ultimoAcceso = null;
+                        $ultimoAccesoRelativo = 'Nunca';
+                        if (!empty($usuario['ultimo_login'])) {
+                            $ultimoAcceso = format_datetime($usuario['ultimo_login']);
+                            $hace = time() - strtotime($usuario['ultimo_login']);
+                            if ($hace < 3600) {
+                                $ultimoAccesoRelativo = 'Hace ' . round($hace / 60) . ' min';
+                            } elseif ($hace < 86400) {
+                                $ultimoAccesoRelativo = 'Hace ' . round($hace / 3600) . ' h';
+                            } else {
+                                $ultimoAccesoRelativo = 'Hace ' . round($hace / 86400) . ' dias';
+                            }
+                        }
+                        ?>
+                        <article class="usr-mcard">
+                            <div class="usr-mtop">
+                                <div class="usr-avatar">
+                                    <?= strtoupper(substr($nombreUsuario, 0, 2)) ?>
+                                </div>
+                                <div class="min-w-0">
+                                    <span class="usr-mname"><?= htmlspecialchars($nombreCompleto !== '' ? $nombreCompleto : $nombreUsuario) ?></span>
+                                    <span class="usr-msub"><?= htmlspecialchars($nombreUsuario) ?> &middot; ID #<?= $usuarioId ?></span>
+                                </div>
+                                <?php if ($usuario['activo']): ?>
+                                    <span class="status-on"><i class="fas fa-check-circle text-xs"></i> Activo</span>
+                                <?php else: ?>
+                                    <span class="status-off"><i class="fas fa-times-circle text-xs"></i> Inactivo</span>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="usr-mmeta">
+                                <div>
+                                    <div class="usr-mlabel">Rol</div>
+                                    <div class="usr-mvalue">
+                                        <span class="rol-badge rol-<?= $rolUsuario ?>"><?= ucfirst($rolUsuario) ?></span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="usr-mlabel">Contacto</div>
+                                    <div class="usr-mvalue"><?= htmlspecialchars($contactoUsuario !== '' ? $contactoUsuario : 'Sin contacto') ?></div>
+                                </div>
+                                <div>
+                                    <div class="usr-mlabel">Acceso</div>
+                                    <div class="usr-mvalue"><?= $ultimoAcceso ? htmlspecialchars($ultimoAccesoRelativo) : 'Nunca' ?></div>
+                                </div>
+                                <div>
+                                    <div class="usr-mlabel">Fecha</div>
+                                    <div class="usr-mvalue"><?= $ultimoAcceso ? htmlspecialchars($ultimoAcceso) : '-' ?></div>
+                                </div>
+                            </div>
+
+                            <div class="usr-mactions">
+                                <?php if ($puedeEditarUsuarios): ?>
+                                    <a href="<?= url("usuarios/{$usuarioId}/edit") ?>" class="usr-cardbtn">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </a>
+                                    <?php if ($usuarioId != user_id()): ?>
+                                        <?php if ($usuario['activo']): ?>
+                                            <button onclick="cambiarEstadoUsuario(<?= $usuarioId ?>, false, <?= json_encode($nombreCompleto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>, this)"
+                                                    class="usr-cardbtn act-deact" type="button">
+                                                <i class="fas fa-user-slash"></i> Desactivar
+                                            </button>
+                                        <?php else: ?>
+                                            <button onclick="cambiarEstadoUsuario(<?= $usuarioId ?>, true, <?= json_encode($nombreCompleto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>, this)"
+                                                    class="usr-cardbtn act-act" type="button">
+                                                <i class="fas fa-user-check"></i> Activar
+                                            </button>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <span class="usr-cardbtn">Solo lectura</span>
+                                <?php endif; ?>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
             <?php endif; ?>
         </div>
     </div>
@@ -1188,14 +1469,14 @@ let userStateTimer = null;
 
 function resetUserStateConfirmation() {
     window.clearTimeout(userStateTimer);
-    document.querySelectorAll('.act-btn.is-confirming').forEach(btn => {
+    document.querySelectorAll('.act-btn.is-confirming, .usr-cardbtn.is-confirming').forEach(btn => {
         btn.classList.remove('is-confirming');
         btn.disabled = false;
         const activating = btn.classList.contains('act-act');
         btn.title = activating ? 'Activar' : 'Desactivar';
         btn.innerHTML = activating
-            ? '<i class="fas fa-user-check"></i>'
-            : '<i class="fas fa-user-slash"></i>';
+            ? '<i class="fas fa-user-check"></i>' + (btn.classList.contains('usr-cardbtn') ? ' Activar' : '')
+            : '<i class="fas fa-user-slash"></i>' + (btn.classList.contains('usr-cardbtn') ? ' Desactivar' : '');
     });
     userStatePending = null;
     const notice = document.getElementById('usuarios-action-notice');
@@ -1248,7 +1529,7 @@ function cambiarEstadoUsuario(id, activar, nombre, trigger) {
     if (trigger) {
         trigger.classList.add('is-confirming');
         trigger.title = activar ? 'Confirmar activacion' : 'Confirmar desactivacion';
-        trigger.innerHTML = '<i class="fas fa-check"></i>';
+        trigger.innerHTML = '<i class="fas fa-check"></i>' + (trigger.classList.contains('usr-cardbtn') ? ' Confirmar' : '');
     }
 
     const persona = nombre || 'este usuario';

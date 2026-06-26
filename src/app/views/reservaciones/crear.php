@@ -259,6 +259,52 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 .resumen-flotante.activo { transform: translateY(0); }
 @media (min-width: 1280px) { .resumen-flotante { display: none; } }
 
+/* ── Barra slim tipo checkout (fila total + Guardar) ── */
+.resumen-flotante { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.rf-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+}
+.rf-info {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 2px;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+}
+.rf-info-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.1; }
+.rf-info-text strong { font-size: 1.18rem; font-weight: 800; color: var(--lc-green); font-variant-numeric: tabular-nums; }
+.rf-info-text small { margin-top: 2px; font-size: .72rem; font-weight: 600; color: #6B7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rf-caret { flex: 0 0 auto; color: #9CA3AF; font-size: .8rem; transition: transform .25s ease; }
+.resumen-flotante.expanded .rf-caret { transform: rotate(180deg); }
+.rf-save {
+    flex: 0 0 auto;
+    width: auto !important;
+    min-width: 138px;
+    margin: 0 !important;
+}
+.rf-detail {
+    max-height: 0;
+    overflow: hidden;
+    padding: 0 14px;
+    transition: max-height .3s ease, padding .25s ease;
+}
+.resumen-flotante.expanded .rf-detail {
+    max-height: 48vh;
+    overflow-y: auto;
+    padding: 13px 14px 2px;
+    border-bottom: 1px solid #EAF0E5;
+}
+.rf-cotizacion { margin-top: 10px !important; }
+
 /* ── Panel headers ───────────────────────── */
 .panel-hd-guest   { background: linear-gradient(135deg, #5C7A4E, #4A6340); }
 .panel-hd-dates   { background: linear-gradient(135deg, #4A6340, #3D5234); }
@@ -2012,27 +2058,51 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
    Cards de habitación copiadas del estilo .dm-card del dashboard móvil.
    ════════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-    /* Header compacto */
-    .vista-reservacion > div:first-of-type h1 { font-size: 1.12rem !important; }
+    /* ── FIX del hueco: el contenedor de la alerta arrastraba 116px de
+       padding-bottom (regla de 700px). Lo reseteamos; solo el contenedor
+       del formulario conserva espacio para la barra flotante inferior. ── */
+    .vista-reservacion > .px-5 { padding-top: 12px !important; padding-bottom: 12px !important; }
+    .vista-reservacion > .px-5:has(#formReservacion) { padding-bottom: 96px !important; }
+
+    /* Layout: stack flex limpio (sin tracks fantasma del grid) */
+    .vista-reservacion #formReservacion > .grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        grid-template-columns: none !important;
+    }
+    .vista-reservacion #formReservacion > .grid > .xl\:col-span-3,
+    .vista-reservacion #formReservacion > .grid > .xl\:col-span-1 {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        width: 100% !important;
+    }
+
+    /* ── Header compacto ── */
+    .vista-reservacion > div:first-of-type .px-5 { padding-top: 14px !important; padding-bottom: 12px !important; }
+    .vista-reservacion > div:first-of-type h1 { font-size: 1.5rem !important; }
     .vista-reservacion > div:first-of-type h1 + p { display: none; }   /* omitido: subtitulo decorativo */
+    .vista-reservacion .btn-back { display: none !important; }         /* omitido: el breadcrumb ya permite volver */
 
     /* Headers de panel mas compactos */
     .vista-reservacion .panel-hd-guest,
     .vista-reservacion .panel-hd-dates,
     .vista-reservacion .panel-hd-rooms,
     .vista-reservacion .panel-hd-notes,
-    .vista-reservacion .panel-hd-summary { padding: 13px 14px !important; }
+    .vista-reservacion .panel-hd-summary { min-height: 0 !important; padding: 12px 14px !important; }
 
     /* ── Cards de habitación: estilo .dm-card del dashboard móvil ── */
     .vista-reservacion .room-type-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
     .vista-reservacion .room-type-group { margin-bottom: 14px; }
-    .vista-reservacion .room-type-group-head { padding: 10px 2px 8px !important; }
+    /* Más margen izquierdo para el tipo ("Sencilla") y los badges de conteo */
+    .vista-reservacion .room-type-group-head { padding: 10px 10px 8px 14px !important; }
     .vista-reservacion .room-type-title h4 { font-size: .95rem; }
     .vista-reservacion .room-type-title p { display: none; }           /* omitido: "N habitaciones en este tipo" (ya está en los badges) */
 
     .vista-reservacion .rc-room-card {
         min-height: 0;
-        padding: 13px !important;
+        padding: 14px 14px 14px 17px !important;   /* +margen izquierdo al contenido de la card */
         border-radius: 15px;
         box-shadow: 0 2px 8px rgba(27, 39, 70, .05), 0 12px 26px -20px rgba(27, 39, 70, .2);
     }
@@ -2055,6 +2125,12 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
 
     /* Estadísticas de selección: compactas */
     .vista-reservacion .room-stats-bar { padding: 11px 13px !important; gap: 8px; }
+
+    /* ── PROPUESTA resumen: en móvil usamos SOLO la barra flotante inferior ──
+       Se oculta el bloque inline (resumen + "Información Importante") que
+       apilado ocupaba muchísima pantalla. La barra flotante (#resumenFlotante)
+       ya aparece al seleccionar habitaciones con total + Guardar + Cotización. */
+    .vista-reservacion .reservation-side-column { display: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2450,26 +2526,31 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
     </div>
 </div><!-- end page -->
 
-<!-- ── Mobile floating summary ── -->
+<!-- ── Barra resumen móvil (slim, tipo checkout) ── -->
 <div class="resumen-flotante" id="resumenFlotante">
-    <div class="p-4">
-        <div class="flex items-center justify-between mb-3">
-            <h4 class="font-bold text-gray-800">Resumen de Reservación</h4>
-            <button type="button" id="btnCerrarResumen" class="text-gray-400 hover:text-gray-600">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div id="resumenMovil" class="mb-4 max-h-[200px] overflow-y-auto" style="scrollbar-width:thin;">
+    <!-- Detalle expandible (oculto por defecto) -->
+    <div class="rf-detail" id="rfDetail">
+        <div id="resumenMovil">
             <p class="text-gray-400 text-sm text-center">Sin habitaciones seleccionadas</p>
         </div>
-        <button type="submit" form="formReservacion" id="btnGuardarMovil" disabled class="btn-save">
-            <i class="fas fa-save"></i>
-            <span>Guardar Reservación</span>
+        <button type="button" id="btnCotizacionMovil" disabled class="btn-cotizacion rf-cotizacion">
+            <i class="fas fa-file-pdf"></i>
+            <span>Cotización PDF</span>
         </button>
-        <button type="button" id="btnCotizacionMovil" disabled class="btn-cotizacion mt-2">
-    <i class="fas fa-file-pdf"></i>
-    <span>Cotización PDF</span>
-</button>
+    </div>
+    <!-- Fila slim siempre visible: total + Guardar -->
+    <div class="rf-row">
+        <button type="button" class="rf-info" id="rfToggle" aria-expanded="false" aria-controls="rfDetail">
+            <span class="rf-info-text">
+                <strong id="rfTotal">$0</strong>
+                <small id="rfMeta">Selecciona habitaciones</small>
+            </span>
+            <i class="fas fa-chevron-up rf-caret" aria-hidden="true"></i>
+        </button>
+        <button type="submit" form="formReservacion" id="btnGuardarMovil" disabled class="btn-save rf-save">
+            <i class="fas fa-save"></i>
+            <span>Guardar</span>
+        </button>
     </div>
 </div>
 
@@ -2921,7 +3002,11 @@ $(document).ready(function() {
     });
 
     // Close mobile summary
-    $('#btnCerrarResumen').on('click', () => $('#resumenFlotante').removeClass('activo'));
+    // Barra slim: toque en el total expande/colapsa el detalle hacia arriba
+    $('#rfToggle').on('click', function () {
+        const expandido = $('#resumenFlotante').toggleClass('expanded').hasClass('expanded');
+        $(this).attr('aria-expanded', expandido ? 'true' : 'false');
+    });
     $('#resumenReservacion').on('scroll', manejarScrollResumen);
 
     function manejarScrollResumen() {
@@ -3398,7 +3483,10 @@ $(document).ready(function() {
                 </div>
             `;
             $('#resumenReservacion, #resumenMovil').html(emptyHtml);
-            $('#resumenFlotante').removeClass('activo');
+            $('#resumenFlotante').removeClass('activo expanded');
+            $('#rfTotal').text('$0');
+            $('#rfMeta').text('Selecciona habitaciones');
+            $('#rfToggle').attr('aria-expanded', 'false');
         }
         verificarFormularioCompleto();
     }
@@ -3567,6 +3655,10 @@ $(document).ready(function() {
                 </div>
             </div>
         `);
+
+        // Barra slim: total + meta siempre visibles
+        $('#rfTotal').text('$' + d.precioTotal.toLocaleString());
+        $('#rfMeta').text(`${d.totalHabs} hab · ${d.noches} noche${d.noches > 1 ? 's' : ''}`);
     }
 
     // ── Helpers ───────────────────────────────────────────────

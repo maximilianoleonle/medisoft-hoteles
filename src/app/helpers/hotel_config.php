@@ -1594,11 +1594,43 @@ if (!function_exists('hotel_general_catalog_default_parking_rows')) {
     function hotel_general_catalog_default_parking_rows()
     {
         return [
-            ['codigo' => 'coches', 'label' => 'Coches', 'activo' => 1, 'orden' => 0],
-            ['codigo' => 'camionetas', 'label' => 'Camionetas', 'activo' => 1, 'orden' => 1],
-            ['codigo' => 'discos', 'label' => 'Discos', 'activo' => 1, 'orden' => 2],
-            ['codigo' => 'nikkos', 'label' => 'Nikkos', 'activo' => 1, 'orden' => 3],
+            ['codigo' => 'coches', 'label' => 'Coches', 'activo' => 1, 'orden' => 0, 'cupo' => 30],
+            ['codigo' => 'camionetas', 'label' => 'Camionetas', 'activo' => 1, 'orden' => 1, 'cupo' => 0],
+            ['codigo' => 'discos', 'label' => 'Discos', 'activo' => 1, 'orden' => 2, 'cupo' => 0],
+            ['codigo' => 'nikkos', 'label' => 'Nikkos', 'activo' => 1, 'orden' => 3, 'cupo' => 0],
         ];
+    }
+}
+
+if (!function_exists('hotel_general_catalog_parking_capacity')) {
+    function hotel_general_catalog_parking_capacity($value)
+    {
+        if (is_string($value)) {
+            $value = trim($value);
+        }
+
+        if ($value === '' || $value === null || !is_numeric($value)) {
+            return 0;
+        }
+
+        return max(0, min(999, (int) $value));
+    }
+}
+
+if (!function_exists('hotel_general_catalog_apply_default_parking_capacity')) {
+    function hotel_general_catalog_apply_default_parking_capacity(array $rows)
+    {
+        $defaults = [];
+        foreach (hotel_general_catalog_default_parking_rows() as $defaultRow) {
+            $defaults[(string) ($defaultRow['codigo'] ?? '')] = hotel_general_catalog_parking_capacity($defaultRow['cupo'] ?? 0);
+        }
+
+        foreach ($rows as $index => $row) {
+            $codigo = (string) ($row['codigo'] ?? '');
+            $rows[$index]['cupo'] = $defaults[$codigo] ?? 0;
+        }
+
+        return $rows;
     }
 }
 
@@ -1645,12 +1677,25 @@ if (!function_exists('hotel_general_catalog_parking_rows')) {
     function hotel_general_catalog_parking_rows($hotelId = null, $includeInactive = true)
     {
         $storedRows = hotel_config_get('catalogos.estacionamientos', null, $hotelId);
+        $hasStoredCapacity = false;
+
+        if (is_array($storedRows)) {
+            foreach ($storedRows as $storedRow) {
+                if (is_array($storedRow) && array_key_exists('cupo', $storedRow)) {
+                    $hasStoredCapacity = true;
+                    break;
+                }
+            }
+        }
+
         $rows = is_array($storedRows) && !empty($storedRows)
-            ? hotel_general_catalog_sanitize_rows($storedRows, false, 30, hotel_general_catalog_parking_code_set())
+            ? hotel_general_catalog_sanitize_rows($storedRows, false, 30, hotel_general_catalog_parking_code_set(), true)
             : hotel_general_catalog_default_parking_rows();
 
         if (empty($rows)) {
             $rows = hotel_general_catalog_default_parking_rows();
+        } elseif (!$hasStoredCapacity) {
+            $rows = hotel_general_catalog_apply_default_parking_capacity($rows);
         }
 
         return $includeInactive ? $rows : hotel_general_catalog_active_rows($rows);
@@ -1695,7 +1740,7 @@ if (!function_exists('hotel_general_catalog_active_rows')) {
 }
 
 if (!function_exists('hotel_general_catalog_sanitize_rows')) {
-    function hotel_general_catalog_sanitize_rows(array $rows, $withAbbreviation = false, $maxCodeLength = 30, array $allowedCodes = null)
+    function hotel_general_catalog_sanitize_rows(array $rows, $withAbbreviation = false, $maxCodeLength = 30, array $allowedCodes = null, $withCapacity = false)
     {
         $clean = [];
         $seen = [];
@@ -1734,6 +1779,10 @@ if (!function_exists('hotel_general_catalog_sanitize_rows')) {
                 $item['abreviatura'] = trim((string) ($row['abreviatura'] ?? $codigo));
             }
 
+            if ($withCapacity) {
+                $item['cupo'] = hotel_general_catalog_parking_capacity($row['cupo'] ?? 0);
+            }
+
             $clean[] = $item;
             $orden++;
         }
@@ -1750,7 +1799,7 @@ if (!function_exists('hotel_general_catalog_normalize_payload')) {
     function hotel_general_catalog_normalize_payload(array $payload)
     {
         $zoneResult = hotel_general_catalog_normalize_rows($payload['zones'] ?? [], 'zona', false, true);
-        $parkingResult = hotel_general_catalog_normalize_rows($payload['parkings'] ?? [], 'estacionamiento', false, true, 30, hotel_general_catalog_parking_code_set());
+        $parkingResult = hotel_general_catalog_normalize_rows($payload['parkings'] ?? [], 'estacionamiento', false, true, 30, hotel_general_catalog_parking_code_set(), true);
         $unitResult = hotel_general_catalog_normalize_rows($payload['units'] ?? [], 'unidad de medida', true, true, 20);
 
         return [
@@ -1765,7 +1814,7 @@ if (!function_exists('hotel_general_catalog_normalize_payload')) {
 }
 
 if (!function_exists('hotel_general_catalog_normalize_rows')) {
-    function hotel_general_catalog_normalize_rows($rows, $labelSingular, $withAbbreviation = false, $requireActive = true, $maxCodeLength = 30, array $allowedCodes = null)
+    function hotel_general_catalog_normalize_rows($rows, $labelSingular, $withAbbreviation = false, $requireActive = true, $maxCodeLength = 30, array $allowedCodes = null, $withCapacity = false)
     {
         $rows = is_array($rows) ? $rows : [];
         $values = [];
@@ -1782,7 +1831,8 @@ if (!function_exists('hotel_general_catalog_normalize_rows')) {
             $codigo = strtolower(trim((string) ($row['codigo'] ?? '')));
             $label = trim((string) ($row['label'] ?? ''));
             $abbreviation = trim((string) ($row['abreviatura'] ?? ''));
-            $hasAny = $codigo !== '' || $label !== '' || $abbreviation !== '';
+            $capacityRaw = trim((string) ($row['cupo'] ?? ''));
+            $hasAny = $codigo !== '' || $label !== '' || $abbreviation !== '' || ($withCapacity && $capacityRaw !== '');
 
             if (!$hasAny) {
                 continue;
@@ -1827,6 +1877,22 @@ if (!function_exists('hotel_general_catalog_normalize_rows')) {
                     continue;
                 }
                 $item['abreviatura'] = $abbreviation;
+            }
+
+            if ($withCapacity) {
+                $capacityRaw = $capacityRaw !== '' ? $capacityRaw : '0';
+                if (!preg_match('/^\d+$/', $capacityRaw)) {
+                    $errors[] = 'El cupo de "' . $label . '" debe ser un numero entero entre 0 y 999.';
+                    continue;
+                }
+
+                $capacity = (int) $capacityRaw;
+                if ($capacity > 999) {
+                    $errors[] = 'El cupo de "' . $label . '" no debe exceder 999 espacios.';
+                    continue;
+                }
+
+                $item['cupo'] = $capacity;
             }
 
             $seen[$codigo] = true;
