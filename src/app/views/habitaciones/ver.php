@@ -1287,21 +1287,22 @@ $mantenimientos_count = count($mantenimientos_programados);
 }
 
 .rd-lightbox {
-    z-index: 90;
+    z-index: 10050;
     background: rgba(4, 8, 15, .94);
 }
 
 .rd-lightbox-frame {
     position: relative;
-    width: min(1120px, 100%);
+    width: min(1600px, 97vw);
     max-height: 100%;
     display: grid;
     place-items: center;
 }
 
 .rd-lightbox-frame img#lightbox-img {
-    max-width: 100%;
-    max-height: min(78vh, 780px);
+    width: 100%;
+    height: 90vh;
+    max-width: 97vw;
     object-fit: contain;
     border-radius: 18px;
     box-shadow: 0 28px 80px -30px rgba(0,0,0,.9);

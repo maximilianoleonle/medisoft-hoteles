@@ -88,12 +88,26 @@ class PwaPushController extends Controller {
 
         $this->validateCSRF();
         $resultado = $this->pushService->enviarPrueba($this->hotelIdActual());
+        $diag = $resultado['diagnostico'] ?? [];
+
+        if (empty($diag['configurado'])) {
+            $mensaje = 'Push no configurado en el servidor (faltan/invalidas las llaves VAPID).';
+        } elseif (empty($diag['activo_en_hotel'])) {
+            $mensaje = 'Las notificaciones push estan desactivadas para este hotel.';
+        } elseif ((int)($diag['dispositivos_activos'] ?? 0) === 0) {
+            $mensaje = 'No hay dispositivos suscritos en este hotel todavia.';
+        } else {
+            $mensaje = sprintf(
+                'Prueba enviada a %d de %d dispositivo(s).%s',
+                (int)($diag['enviados'] ?? 0),
+                (int)($diag['dispositivos_activos'] ?? 0),
+                (int)($diag['fallidos'] ?? 0) > 0 ? ' Fallidos: ' . (int)$diag['fallidos'] . '.' : ''
+            );
+        }
 
         View::renderJSON([
-            'success' => empty($resultado['skipped']) && (int)($resultado['sent'] ?? 0) > 0,
-            'message' => empty($resultado['skipped'])
-                ? 'Prueba enviada a dispositivos activos.'
-                : 'Las notificaciones PWA no estan listas o no hay dispositivos activos.',
+            'success' => (int)($resultado['sent'] ?? 0) > 0,
+            'message' => $mensaje,
             'result' => $resultado,
         ]);
     }

@@ -486,6 +486,7 @@
                                         <span class="absolute left-4 top-3 text-xl font-bold text-hotel-gold">$</span>
                                         <input type="number"
                                                name="precio_base"
+                                               data-money-format="true"
                                                value="<?= old('precio_base', '550.00') ?>"
                                                min="0"
                                                step="0.01"

@@ -1880,9 +1880,9 @@ input.toggle-activo:checked ~ div {
                                         <!-- Valor en móvil -->
                                         <div class="sm:hidden mt-1">
                                             <?php if ($inc['tipo_incremento'] == 'porcentaje'): ?>
-                                                <span class="val-badge"><i class="fas fa-percentage text-xs"></i>+<?= number_format($inc['valor_incremento'],2) ?>%</span>
+                                                <span class="val-badge"><i class="fas fa-percentage text-xs"></i><?= (($inc['clase'] ?? 'incremento') === 'descuento') ? '&minus;' : '+' ?><?= number_format($inc['valor_incremento'],2) ?>%</span>
                                             <?php else: ?>
-                                                <span class="val-badge"><i class="fas fa-dollar-sign text-xs"></i>+<?= format_currency($inc['valor_incremento']) ?></span>
+                                                <span class="val-badge"><i class="fas fa-dollar-sign text-xs"></i><?= (($inc['clase'] ?? 'incremento') === 'descuento') ? '&minus;' : '+' ?><?= format_currency($inc['valor_incremento']) ?></span>
                                             <?php endif; ?>
                                         </div>
                                     </td>
@@ -1890,9 +1890,9 @@ input.toggle-activo:checked ~ div {
                                     <!-- Valor desktop -->
                                     <td class="hidden sm:table-cell">
                                         <?php if ($inc['tipo_incremento'] == 'porcentaje'): ?>
-                                            <span class="val-badge"><i class="fas fa-percentage text-xs"></i>+<?= number_format($inc['valor_incremento'],2) ?>%</span>
+                                            <span class="val-badge"><i class="fas fa-percentage text-xs"></i><?= (($inc['clase'] ?? 'incremento') === 'descuento') ? '&minus;' : '+' ?><?= number_format($inc['valor_incremento'],2) ?>%</span>
                                         <?php else: ?>
-                                            <span class="val-badge"><i class="fas fa-dollar-sign text-xs"></i>+<?= format_currency($inc['valor_incremento']) ?></span>
+                                            <span class="val-badge"><i class="fas fa-dollar-sign text-xs"></i><?= (($inc['clase'] ?? 'incremento') === 'descuento') ? '&minus;' : '+' ?><?= format_currency($inc['valor_incremento']) ?></span>
                                         <?php endif; ?>
                                     </td>
 

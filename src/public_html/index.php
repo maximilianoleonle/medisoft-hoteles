@@ -127,16 +127,39 @@ foreach ($config as $key => $value) {
 if (!is_authenticated() && isset($_COOKIE['remember_token'])) {
     $db = Database::getInstance();
     $token_hash = hash('sha256', $_COOKIE['remember_token']);
-    
+
     $stmt = $db->query(
-        "SELECT user_id FROM remember_tokens WHERE token = ? AND expires_at > NOW()",
+        "SELECT id, user_id, hotel_id FROM remember_tokens WHERE token = ? AND expires_at > NOW()",
         [$token_hash]
     );
-    
-    if ($user = $stmt->fetch()) {
-        login($user['user_id'], false);
+
+    if ($rememberRow = $stmt->fetch()) {
+        // Restaurar el MISMO hotel con el que se creó el token (si sigue activo y
+        // el usuario es miembro). Si no, se reconstruye sin hotel (irá a elegir hotel).
+        $rememberHotel = !empty($rememberRow['hotel_id'])
+            ? remember_resolve_hotel_context((int) $rememberRow['user_id'], (int) $rememberRow['hotel_id'])
+            : null;
+
+        // Reconstruir la sesión + contexto del hotel SIN emitir un token nuevo
+        // (remember=false) para no provocar carreras entre peticiones concurrentes.
+        login((int) $rememberRow['user_id'], false, $rememberHotel);
+
+        // Expiración deslizante: renovamos el mismo token y su cookie a 30 días.
+        $rememberSlideExpiry = time() + (30 * 24 * 60 * 60);
+        $db->query(
+            "UPDATE remember_tokens SET expires_at = ? WHERE id = ?",
+            [date('Y-m-d H:i:s', $rememberSlideExpiry), (int) $rememberRow['id']]
+        );
+        setcookie('remember_token', $_COOKIE['remember_token'], [
+            'expires' => $rememberSlideExpiry,
+            'path' => '/',
+            'domain' => '',
+            'secure' => $secureCookie,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
     } else {
-        // Token inválido, eliminar cookie
+        // Token inválido o expirado, eliminar cookie
         setcookie('remember_token', '', [
             'expires' => time() - 3600,
             'path' => '/',

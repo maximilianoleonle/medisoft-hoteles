@@ -164,20 +164,22 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
     --wk-gold: var(--brand-accent, #BD9441);
     --wk-gold-soft: color-mix(in srgb, var(--wk-gold) 15%, #FFFFFF);
     --wk-gold-line: color-mix(in srgb, var(--wk-gold) 42%, #E4D4B0);
-    --wk-gold-ink: color-mix(in srgb, var(--wk-gold) 72%, #000);
+    --wk-gold-ink: color-mix(in srgb, var(--wk-gold) 58%, var(--wk-brand));
     --wk-ivory: #F6F2EA; --wk-ivory-2: #FBF8F2;
     --wk-surface: #FFFFFF; --wk-surface-warm: #FCFAF5;
     --wk-border: color-mix(in srgb, var(--wk-brand) 7%, #E7E1D4);
     --wk-ring: color-mix(in srgb, var(--wk-gold) 32%, transparent);
-    --wk-text: #171717; --wk-muted: #667085; --wk-heading: #111827;
+    --wk-text: color-mix(in srgb, var(--wk-brand) 46%, #707B8C);
+    --wk-muted: #8791A2;
+    --wk-heading: color-mix(in srgb, var(--wk-brand) 66%, #566172);
     --wk-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
     --wk-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --wk-success: #1E9E63; --wk-success-bg: #E7F4EC;
     --wk-warning: #C2841C; --wk-warning-bg: #FAF0DC;
     --wk-danger: #B4392B; --wk-danger-bg: #F8EAE5;
     --wk-info: #2F77E0; --wk-info-bg: #E6EFFC;
-    --wk-muted-2: #475467;
-    min-height: 100%; color: var(--wk-text); font-family: var(--wk-sans); font-weight: 400; line-height: 1.5;
+    --wk-muted-2: color-mix(in srgb, var(--wk-brand) 34%, #8590A1);
+    min-height: 100%; color: var(--wk-text); font-family: var(--wk-sans); font-weight: 450; line-height: 1.5;
     background: radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--wk-gold) 8%, transparent), transparent 60%), linear-gradient(180deg, var(--wk-ivory-2), var(--wk-ivory));
 }
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
@@ -185,10 +187,10 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 .worker-detail-page .wk-shell { display: grid; gap: 20px; }
 .worker-detail-page .wk-title-lockup { display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; }
 .worker-detail-page .wk-avatar { width: 52px; height: 52px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.3rem; font-weight: 700; font-family: var(--wk-serif);
-    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--wk-gold), var(--wk-brand) 54%, color-mix(in srgb, var(--wk-brand) 68%, #2F8A70));
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--wk-gold), var(--wk-brand) 54%, color-mix(in srgb, var(--wk-brand) 68%, var(--brand-accent, #BD9441)));
     box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--wk-brand) 72%, transparent); }
 .worker-detail-page .wk-kicker { margin: 0 0 2px; color: var(--wk-muted); font-size: .72rem; font-weight: 600; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
-.worker-detail-page .wk-title { margin: 0; font-family: var(--wk-serif); color: var(--wk-heading); font-weight: 700; font-size: clamp(1.9rem, 3.4vw, 2.7rem); line-height: 1.02; }
+.worker-detail-page .wk-title { margin: 0; font-family: var(--wk-serif); color: var(--wk-heading); font-weight: 650; font-size: clamp(1.9rem, 3.4vw, 2.7rem); line-height: 1.02; }
 .worker-detail-page .wk-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 
 .worker-detail-page .wk-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font-size: .75rem; font-weight: 600; border: 1px solid transparent; }
@@ -202,7 +204,7 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 .worker-detail-page .wk-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .worker-detail-page .wk-toolbar form { display: inline-flex; margin: 0; }
 .worker-detail-page .wk-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 40px; padding: 0 15px;
-    border-radius: 11px; border: 1px solid var(--wk-border); background: var(--wk-surface); color: var(--wk-text); font-weight: 600; font-size: .85rem; line-height: 1; cursor: pointer; text-decoration: none;
+    border-radius: 11px; border: 1px solid var(--wk-border); background: rgba(255,255,255,.86); color: var(--wk-text); font-weight: 650; font-size: .85rem; line-height: 1; cursor: pointer; text-decoration: none;
     transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, color .16s ease, background .16s ease; }
 .worker-detail-page .wk-btn:hover { transform: translateY(-1px); border-color: var(--wk-gold-line); color: var(--wk-gold-ink); }
 .worker-detail-page .wk-btn-gold { background: linear-gradient(135deg, var(--wk-gold), color-mix(in srgb, var(--wk-gold) 76%, #000)); border-color: transparent; color: #fff; box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--wk-gold) 58%, transparent); }
@@ -219,11 +221,11 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
     opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
 .worker-action-toast.is-visible { opacity: 1; transform: translateY(0); }
 
-.worker-detail-page .wk-panel { background: var(--wk-surface); border: 1px solid var(--wk-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.05), 0 18px 38px -26px rgba(27,39,70,.32); }
+.worker-detail-page .wk-panel { background: rgba(255,255,255,.88); border: 1px solid var(--wk-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 14px 30px -27px rgba(27,39,70,.22); }
 .worker-detail-page .wk-panel-pad { padding: 20px; }
-.worker-detail-page .wk-panel-head { padding: 15px 18px; border-bottom: 1px solid var(--wk-border); border-radius: 16px 16px 0 0; background: linear-gradient(180deg, var(--wk-surface-warm), var(--wk-surface)); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
-.worker-detail-page .wk-panel-title { font-family: var(--wk-serif); font-size: 1.5rem; font-weight: 700; color: var(--wk-heading); line-height: 1.1; }
-.worker-detail-page .wk-panel-sub { font-size: .86rem; color: var(--wk-muted-2); margin-top: 4px; line-height: 1.5; max-width: 64ch; }
+.worker-detail-page .wk-panel-head { padding: 13px 16px; border-bottom: 1px solid var(--wk-border); border-radius: 16px 16px 0 0; background: linear-gradient(180deg, color-mix(in srgb, var(--wk-surface-warm) 82%, #fff), rgba(255,255,255,.92)); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.worker-detail-page .wk-panel-title { font-family: var(--wk-serif); font-size: 1.35rem; font-weight: 650; color: var(--wk-heading); line-height: 1.1; }
+.worker-detail-page .wk-panel-sub { font-size: .84rem; color: var(--wk-muted); margin-top: 4px; line-height: 1.5; max-width: 64ch; font-weight: 500; }
 .worker-detail-page .wk-sec-head { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .worker-detail-page .wk-sec-icon { flex: none; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 1.05rem; border: 1px solid transparent; }
 .worker-detail-page .wk-sec-icon.is-navy { background: color-mix(in srgb, var(--wk-brand) 12%, #fff); color: var(--wk-brand); border-color: color-mix(in srgb, var(--wk-brand) 20%, #fff); }
@@ -234,16 +236,16 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 
 /* Resumen de cuenta (hero) */
 .worker-detail-page .wk-summary { display: grid; grid-template-columns: minmax(260px, .9fr) minmax(0, 1.3fr); gap: 14px; }
-.worker-detail-page .wk-balance { border-radius: 16px; border: 1px solid var(--wk-border); padding: 20px; background: linear-gradient(160deg, var(--wk-surface), var(--wk-surface-warm)); box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); }
+.worker-detail-page .wk-balance { border-radius: 16px; border: 1px solid var(--wk-border); padding: 18px; background: linear-gradient(160deg, rgba(255,255,255,.9), var(--wk-surface-warm)); box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 12px 28px -25px rgba(27,39,70,.22); }
 .worker-detail-page .wk-balance-label { color: var(--wk-muted); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
-.worker-detail-page .wk-balance-value { margin-top: 6px; font-family: var(--wk-serif); font-size: clamp(2.4rem, 5vw, 3.2rem); font-weight: 700; line-height: 1; color: var(--wk-heading); }
+.worker-detail-page .wk-balance-value { margin-top: 6px; font-family: var(--wk-serif); font-size: clamp(2.25rem, 5vw, 3rem); font-weight: 650; line-height: 1; color: var(--wk-heading); }
 .worker-detail-page .wk-balance.is-positive .wk-balance-value { color: var(--wk-success); }
 .worker-detail-page .wk-balance.is-negative .wk-balance-value { color: var(--wk-warning); }
 .worker-detail-page .wk-balance-caption { margin-top: 10px; color: var(--wk-muted-2); font-size: .86rem; line-height: 1.55; }
 .worker-detail-page .wk-factors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-content: start; }
 .worker-detail-page .wk-factor { border: 1px solid var(--wk-border); border-radius: 14px; padding: 13px 14px; background: var(--wk-surface); }
 .worker-detail-page .wk-factor small { display: block; color: var(--wk-muted); font-size: .69rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-.worker-detail-page .wk-factor strong { display: block; margin-top: 5px; font-family: var(--wk-serif); font-size: 1.5rem; font-weight: 700; color: var(--wk-heading); }
+.worker-detail-page .wk-factor strong { display: block; margin-top: 5px; font-family: var(--wk-serif); font-size: 1.4rem; font-weight: 650; color: var(--wk-heading); }
 .worker-detail-page .wk-factor.is-plus strong { color: var(--wk-success); }
 .worker-detail-page .wk-factor.is-minus strong { color: var(--wk-danger); }
 .worker-detail-page .wk-factor.is-gold { background: var(--wk-gold-soft); border-color: var(--wk-gold-line); }
@@ -253,14 +255,15 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 .worker-detail-page .wk-meta-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .worker-detail-page .wk-meta-label { font-size: .69rem; color: var(--wk-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
 .worker-detail-page .wk-meta-value { margin-top: 3px; font-weight: 600; color: var(--wk-heading); word-break: break-word; }
-.worker-detail-page .wk-meta-value.is-soft { font-weight: 500; color: #334155; }
-.worker-detail-page .wk-meta-value.is-notes { font-weight: 500; color: #334155; white-space: pre-line; }
+.worker-detail-page .wk-meta-value.is-soft { font-weight: 500; color: var(--wk-text); }
+.worker-detail-page .wk-meta-value.is-notes { font-weight: 500; color: var(--wk-text); white-space: pre-line; }
 
 /* Forms */
-.worker-detail-page label.wk-label { display: block; font-size: .71rem; color: var(--wk-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 5px; }
+.worker-detail-page label.wk-label { display: block; font-size: .71rem; color: var(--wk-muted); font-weight: 650; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 5px; }
 .worker-detail-page .wk-input, .worker-detail-page textarea.wk-input, .worker-detail-page select.wk-input {
-    width: 100%; min-height: 42px; border: 1px solid var(--wk-border); background: var(--wk-surface-warm); border-radius: 11px; padding: 10px 12px;
-    color: var(--wk-text); font-weight: 600; font-size: .9rem; font-family: var(--wk-sans); transition: border-color .16s ease, box-shadow .16s ease; }
+    width: 100%; min-height: 40px; border: 1px solid var(--wk-border); background: var(--wk-surface-warm); border-radius: 11px; padding: 9px 12px;
+    color: var(--wk-text); font-weight: 560; font-size: .88rem; font-family: var(--wk-sans); transition: border-color .16s ease, box-shadow .16s ease, background .16s ease; }
+.worker-detail-page .wk-input::placeholder, .worker-detail-page textarea.wk-input::placeholder { color: color-mix(in srgb, var(--wk-muted) 78%, #B8C0CB); font-weight: 520; }
 .worker-detail-page textarea.wk-input { min-height: 80px; resize: vertical; }
 .worker-detail-page select.wk-input { cursor: pointer; }
 .worker-detail-page .wk-input:focus { border-color: var(--wk-gold); box-shadow: 0 0 0 3px var(--wk-ring); outline: none; background: #fff; }
@@ -275,36 +278,48 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 .worker-detail-page .wk-details summary::after { content: "+"; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 999px; background: var(--wk-gold-soft); color: var(--wk-gold-ink); border: 1px solid var(--wk-gold-line); font-weight: 700; }
 .worker-detail-page .wk-details[open] summary { border-bottom: 1px solid var(--wk-border); }
 .worker-detail-page .wk-details[open] summary::after { content: "\2212"; }
-.worker-detail-page .wk-details .wk-form-pad { padding: 14px; background: var(--wk-surface); }
+.worker-detail-page .wk-details .wk-form-pad { padding: 14px; background: rgba(255,255,255,.92); }
+.worker-detail-page .wk-panel-pad > .wk-details { max-width: 980px; }
+.worker-detail-page .wk-panel-pad > .wk-details .wk-form-pad > .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
 
 /* Pago caja layout */
-.worker-detail-page .wk-pay-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.worker-detail-page .wk-pay-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+    gap: 12px;
+    max-width: 980px;
+    align-items: end;
+}
+.worker-detail-page .wk-pay-grid > div { min-width: 0; }
+.worker-detail-page .wk-pay-grid > [style*="grid-column"] { grid-column: 1 / -1 !important; }
 
 /* Pago cards */
 .worker-detail-page .wk-pay-list { display: grid; gap: 12px; }
-.worker-detail-page .wk-pay-card { border: 1px solid var(--wk-border); border-radius: 14px; padding: 14px; background: var(--wk-surface); }
+.worker-detail-page .wk-pay-card { border: 1px solid var(--wk-border); border-radius: 14px; padding: 14px; background: rgba(255,255,255,.9); }
 .worker-detail-page .wk-pay-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
-.worker-detail-page .wk-pay-amount { font-family: var(--wk-serif); font-size: 1.5rem; font-weight: 700; color: var(--wk-heading); }
+.worker-detail-page .wk-pay-amount { font-family: var(--wk-serif); font-size: 1.42rem; font-weight: 650; color: var(--wk-heading); }
 .worker-detail-page .wk-pay-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px 14px; margin-top: 11px; }
 .worker-detail-page .wk-revert { margin-top: 12px; border-top: 1px solid var(--wk-border); padding-top: 12px; display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
 
 /* Ledger cards */
 .worker-detail-page .wk-ledger-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.worker-detail-page .wk-ledger-card { border: 1px solid var(--wk-border); border-radius: 16px; background: var(--wk-surface); overflow: hidden; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -26px rgba(27,39,70,.28); }
+.worker-detail-page .wk-ledger-card { border: 1px solid var(--wk-border); border-radius: 16px; background: rgba(255,255,255,.9); overflow: hidden; box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 12px 28px -25px rgba(27,39,70,.22); }
 .worker-detail-page .wk-ledger-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--wk-border); }
 .worker-detail-page .wk-ledger-card.is-green .wk-ledger-head { background: color-mix(in srgb, var(--wk-success-bg) 60%, #fff); border-bottom-color: color-mix(in srgb, var(--wk-success) 20%, var(--wk-border)); }
 .worker-detail-page .wk-ledger-card.is-amber .wk-ledger-head { background: color-mix(in srgb, var(--wk-warning-bg) 60%, #fff); border-bottom-color: color-mix(in srgb, var(--wk-warning) 20%, var(--wk-border)); }
 .worker-detail-page .wk-ledger-card.is-danger .wk-ledger-head { background: color-mix(in srgb, var(--wk-danger-bg) 55%, #fff); border-bottom-color: color-mix(in srgb, var(--wk-danger) 18%, var(--wk-border)); }
-.worker-detail-page .wk-ledger-head h3 { font-family: var(--wk-serif); font-size: 1.2rem; font-weight: 700; color: var(--wk-heading); }
+.worker-detail-page .wk-ledger-head h3 { font-family: var(--wk-serif); font-size: 1.15rem; font-weight: 650; color: var(--wk-heading); }
 .worker-detail-page .wk-ledger-head p { font-size: .78rem; color: var(--wk-muted-2); margin-top: 2px; }
 .worker-detail-page .wk-ledger-body { padding: 14px 16px; display: grid; gap: 10px; max-height: 420px; overflow: auto; }
-.worker-detail-page .wk-ledger-row { border: 1px solid var(--wk-border); border-radius: 12px; padding: 11px 12px; background: var(--wk-surface-warm); }
+.worker-detail-page .wk-ledger-row { border: 1px solid var(--wk-border); border-radius: 12px; padding: 11px 12px; background: color-mix(in srgb, var(--wk-surface-warm) 74%, #fff); }
 .worker-detail-page .wk-ledger-amount { font-weight: 700; white-space: nowrap; }
 .worker-detail-page .wk-ledger-amount.is-plus { color: var(--wk-success); }
 .worker-detail-page .wk-ledger-amount.is-minus, .worker-detail-page .wk-ledger-amount.is-debt { color: var(--wk-danger); }
 .worker-detail-page .wk-empty-box { display: grid; place-items: center; min-height: 150px; padding: 24px; text-align: center; color: var(--wk-muted); }
 .worker-detail-page .wk-empty-box i { font-size: 1.8rem; color: color-mix(in srgb, var(--wk-gold) 50%, #cbd5e1); margin-bottom: 8px; }
-.worker-detail-page .wk-empty-box strong { display: block; color: var(--wk-heading); font-weight: 600; }
+.worker-detail-page .wk-empty-box strong { display: block; color: var(--wk-heading); font-weight: 650; }
 .worker-detail-page .wk-empty-box span { display: block; max-width: 26rem; margin-top: 4px; font-size: .84rem; line-height: 1.45; }
 
 .worker-detail-page .wk-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
@@ -313,7 +328,7 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 .worker-detail-page .wk-table th.is-end, .worker-detail-page .wk-table td.is-end { text-align: right; }
 .worker-detail-page .wk-table td { padding: 12px 13px; border-bottom: 1px solid var(--wk-border); vertical-align: middle; }
 .worker-detail-page .wk-table tbody tr:last-child td { border-bottom: 0; }
-.worker-detail-page .wk-strong { font-weight: 600; color: var(--wk-heading); }
+.worker-detail-page .wk-strong { font-weight: 620; color: var(--wk-heading); }
 .worker-detail-page .wk-sub { color: var(--wk-muted-2); font-size: .78rem; }
 .worker-detail-page .wk-link { color: var(--wk-info); font-weight: 600; text-decoration: none; }
 .worker-detail-page .wk-link:hover { text-decoration: underline; }
@@ -321,10 +336,12 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
 @media (max-width: 1080px) {
     .worker-detail-page .wk-summary, .worker-detail-page .wk-pay-grid, .worker-detail-page .wk-ledger-grid { grid-template-columns: 1fr; }
     .worker-detail-page .wk-meta-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .worker-detail-page .wk-pay-grid > [style*="grid-column"] { grid-column: 1 / -1 !important; }
 }
 @media (max-width: 640px) {
     .worker-detail-page .wk-factors, .worker-detail-page .wk-meta-grid { grid-template-columns: 1fr; }
     .worker-detail-page .wk-revert { grid-template-columns: 1fr; }
+    .worker-detail-page .wk-panel-pad > .wk-details .wk-form-pad > .grid { grid-template-columns: 1fr !important; }
 }
 </style>
 
@@ -441,7 +458,7 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                     <input type="hidden" name="pago_token" value="<?= trab_view_safe($pagoCajaToken, '') ?>">
                     <div>
                         <label class="wk-label" for="pago_caja_monto">Monto a pagar</label>
-                        <input id="pago_caja_monto" class="wk-input" type="number" min="0.01" max="<?= trab_view_safe($pagoCaja['monto_maximo'] ?? '0.00') ?>" step="0.01" name="monto" value="<?= trab_view_safe($pagoCaja['monto_maximo'] ?? '0.00') ?>" required>
+                        <input id="pago_caja_monto" class="wk-input" type="number" data-money-format="true" min="0.01" max="<?= trab_view_safe($pagoCaja['monto_maximo'] ?? '0.00') ?>" step="0.01" name="monto" value="<?= trab_view_safe($pagoCaja['monto_maximo'] ?? '0.00') ?>" required>
                     </div>
                     <div>
                         <label class="wk-label" for="pago_caja_metodo">M&eacute;todo</label>
@@ -615,7 +632,7 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                             </div>
                             <div>
                                 <label class="wk-label" for="concepto_monto">Monto</label>
-                                <input id="concepto_monto" class="wk-input" type="number" min="0.01" step="0.01" name="monto" required>
+                                <input id="concepto_monto" class="wk-input" type="number" data-money-format="true" min="0.01" step="0.01" name="monto" required>
                             </div>
                             <div>
                                 <label class="wk-label" for="concepto_texto">Concepto</label>
@@ -683,7 +700,7 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                             <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/anticipos') ?>" class="wk-form-pad">
                                 <?= csrf_field() ?>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <div><label class="wk-label" for="anticipo_monto">Monto</label><input id="anticipo_monto" class="wk-input" type="number" min="0.01" step="0.01" name="monto" required></div>
+                                    <div><label class="wk-label" for="anticipo_monto">Monto</label><input id="anticipo_monto" class="wk-input" type="number" data-money-format="true" min="0.01" step="0.01" name="monto" required></div>
                                     <div><label class="wk-label" for="anticipo_fecha">Fecha</label><input id="anticipo_fecha" class="wk-input" type="date" name="fecha" value="<?= date('Y-m-d') ?>" required></div>
                                     <div class="md:col-span-2"><label class="wk-label" for="anticipo_motivo">Motivo</label><input id="anticipo_motivo" class="wk-input" type="text" maxlength="160" name="motivo" required placeholder="Ej. anticipo de sueldo"></div>
                                     <div class="md:col-span-2"><label class="wk-label" for="anticipo_referencia">Referencia</label><input id="anticipo_referencia" class="wk-input" type="text" maxlength="120" name="referencia" placeholder="Opcional"></div>
@@ -730,10 +747,10 @@ foreach ($pagosCajaLaborales as $pagoCajaLaboral) {
                             <form method="POST" action="<?= url('trabajadores/' . $trabajadorId . '/prestamos') ?>" class="wk-form-pad">
                                 <?= csrf_field() ?>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <div><label class="wk-label" for="prestamo_monto">Monto</label><input id="prestamo_monto" class="wk-input" type="number" min="0.01" step="0.01" name="monto" required></div>
+                                    <div><label class="wk-label" for="prestamo_monto">Monto</label><input id="prestamo_monto" class="wk-input" type="number" data-money-format="true" min="0.01" step="0.01" name="monto" required></div>
                                     <div><label class="wk-label" for="prestamo_fecha">Fecha</label><input id="prestamo_fecha" class="wk-input" type="date" name="fecha" value="<?= date('Y-m-d') ?>" required></div>
                                     <div><label class="wk-label" for="prestamo_plazo">Plazo (meses)</label><input id="prestamo_plazo" class="wk-input" type="number" min="1" step="1" name="plazo_meses" placeholder="Opcional"></div>
-                                    <div><label class="wk-label" for="prestamo_abono">Abono sugerido</label><input id="prestamo_abono" class="wk-input" type="number" min="0" step="0.01" name="abono_periodico" placeholder="Opcional"></div>
+                                    <div><label class="wk-label" for="prestamo_abono">Abono sugerido</label><input id="prestamo_abono" class="wk-input" type="number" data-money-format="true" min="0" step="0.01" name="abono_periodico" placeholder="Opcional"></div>
                                     <div class="md:col-span-2"><label class="wk-label" for="prestamo_motivo">Motivo</label><input id="prestamo_motivo" class="wk-input" type="text" maxlength="160" name="motivo" required placeholder="Ej. pr&eacute;stamo interno"></div>
                                     <div class="md:col-span-2"><label class="wk-label" for="prestamo_referencia">Referencia</label><input id="prestamo_referencia" class="wk-input" type="text" maxlength="120" name="referencia" placeholder="Opcional"></div>
                                     <div class="md:col-span-2"><label class="wk-label" for="prestamo_notas">Notas</label><textarea id="prestamo_notas" class="wk-input" maxlength="1000" name="notas" placeholder="Opcional. No se registra en Caja."></textarea></div>

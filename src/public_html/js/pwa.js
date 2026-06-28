@@ -52,8 +52,33 @@
   ];
   const UPDATE_BANNER_SESSION_KEY = 'loscedros_pwa_update_banner_seen';
 
+  lockMobileZoomGestures();
+
   function hasOfflineStorageContext() {
     return Boolean(DB_NAME);
+  }
+
+  function lockMobileZoomGestures() {
+    if (!('ontouchstart' in window) && (navigator.maxTouchPoints || 0) <= 0) return;
+
+    const prevent = event => event.preventDefault();
+    document.addEventListener('gesturestart', prevent, { passive: false });
+    document.addEventListener('gesturechange', prevent, { passive: false });
+    document.addEventListener('gestureend', prevent, { passive: false });
+    document.addEventListener('touchmove', event => {
+      if (event.touches && event.touches.length > 1) {
+        event.preventDefault();
+      }
+    }, { passive: false });
+
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', event => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
   }
 
   function warnMissingOfflineContext() {
@@ -143,6 +168,7 @@
         postToSW({ type: 'CACHE_KEY_PAGES' });
         postToSW({ type: 'CACHE_PAGE', url: window.location.href });
         postToSW({ type: 'GET_CACHE_LIST' });
+        cacheOfflineBrandingAssets();
 
       } catch (err) {
         console.error('[PWA] Error al registrar SW:', err);
@@ -164,6 +190,53 @@
         if (worker) worker.postMessage(message);
       })
       .catch(() => {});
+  }
+
+  function normalizeOfflineBrandingAsset(value) {
+    const raw = String(value || '').trim();
+    if (!raw || /[\u0000-\u001F<>"']/.test(raw)) return '';
+
+    try {
+      const url = new URL(raw, window.location.origin);
+      const scopePath = `${SW_SCOPE}`.replace(/\/$/, '/');
+      const pathWithinScope = url.pathname.startsWith(scopePath)
+        ? url.pathname.slice(scopePath.length)
+        : url.pathname.replace(/^\/+/, '');
+      const allowedPath = pathWithinScope.startsWith('uploads/branding/') ||
+        pathWithinScope.startsWith('uploads/') ||
+        pathWithinScope.startsWith('img/');
+      const allowedExtension = /\.(png|jpe?g|webp|ico)$/i.test(url.pathname);
+
+      if (url.origin !== window.location.origin || !allowedPath || !allowedExtension) {
+        return '';
+      }
+
+      return url.pathname + url.search;
+    } catch {
+      return '';
+    }
+  }
+
+  function cacheOfflineBrandingAssets() {
+    const branding = window.MEDISOFT_OFFLINE_BRANDING || null;
+    if (!branding || !window.MEDISOFT_OFFLINE_ENABLED) return;
+
+    const assets = [
+      branding.logo,
+      branding.favicon,
+      branding.pwaIcon192,
+      branding.pwaIcon512,
+    ]
+      .map(normalizeOfflineBrandingAsset)
+      .filter(Boolean);
+
+    const uniqueAssets = Array.from(new Set(assets));
+    if (!uniqueAssets.length) return;
+
+    postToSW({
+      type: 'CACHE_OFFLINE_BRANDING',
+      assets: uniqueAssets,
+    });
   }
 
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -920,8 +993,8 @@
         setPushPanelState(panel, 'loading', 'Enviando prueba...');
 
         try {
-          await pushJson(panel.dataset.testUrl || `${BASE}/api/pwa-push/test`, {});
-          showToast('Prueba enviada. Revisa las notificaciones del dispositivo.', 'success', 5200);
+          const res = await pushJson(panel.dataset.testUrl || `${BASE}/api/pwa-push/test`, {});
+          showToast(res.message || 'Prueba enviada. Revisa las notificaciones del dispositivo.', 'success', 5200);
         } catch (error) {
           showToast(error.message || 'No se pudo enviar la prueba.', 'error', 5200);
         } finally {

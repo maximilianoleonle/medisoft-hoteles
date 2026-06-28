@@ -1898,6 +1898,20 @@ foreach ($rdRooms as $rdRoomCountRow) {
 $rdGuestName = trim((string)($huesped['nombre_completo'] ?? $rdHuespedNombre ?? 'Huesped'));
 $rdGuestPhone = trim((string)($huesped['telefono'] ?? $huesped['celular'] ?? $huesped['telefono_principal'] ?? ''));
 $rdGuestEmail = trim((string)($huesped['email'] ?? $huesped['correo'] ?? ''));
+
+// Edición inline del huésped desde esta vista (solo campos atómicos y seguros).
+$rdGuestEditId = (int)($huesped['id'] ?? 0);
+$rdGuestEditable = $rdGuestEditId > 0;
+$rdEditAttr = function (string $field, string $value, string $emptyLabel, string $type = 'text') use ($rdGuestEditable, $rdSafe) {
+    if (!$rdGuestEditable) {
+        return '';
+    }
+    return ' class="rd-editable" data-field="' . $rdSafe($field, '')
+        . '" data-value="' . $rdSafe($value, '')
+        . '" data-empty="' . $rdSafe($emptyLabel, '')
+        . '" data-type="' . $rdSafe($type, 'text')
+        . '" tabindex="0" role="button" title="Clic para editar"';
+};
 $rdGuestIdType = trim((string)($huesped['tipo_identificacion'] ?? $huesped['identificacion_tipo'] ?? ''));
 $rdGuestIdNumber = trim((string)($huesped['numero_identificacion'] ?? $huesped['identificacion_numero'] ?? $huesped['identificacion'] ?? ''));
 $rdGuestId = trim(($rdGuestIdType !== '' ? $rdGuestIdType . ' - ' : '') . $rdGuestIdNumber);
@@ -2087,6 +2101,12 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 }
 .rdv3-btn-primary { background: #22b77a; color: #fff; box-shadow: 0 12px 24px rgba(34, 183, 122, .25); }
 .rdv3-btn-primary:hover { background: #1fa66f; }
+.rdv3-btn-checkout {
+    background: linear-gradient(135deg, #D97706, #B45309);
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(180, 83, 9, .28);
+}
+.rdv3-btn-checkout:hover { background: linear-gradient(135deg, #C7651D, #92400E); }
 .rdv3-btn-ghost { background: rgba(255, 255, 255, .11); color: #fff; border: 1px solid rgba(255, 255, 255, .24); }
 .rdv3-btn-danger {
     background: linear-gradient(135deg, #B91C1C, #DC2626);
@@ -2285,6 +2305,14 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 }
 .rdv3-guest-doc-brand { position: relative; z-index: 1; font-size: .68rem; font-weight: 950; letter-spacing: .1em; }
 .rdv3-guest-doc-seal { position: relative; z-index: 1; width: 42px; height: 42px; display: grid; place-items: center; border-radius: 14px; color: #fff; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.2); }
+.rdv3-doc-reveal { appearance: none; -webkit-appearance: none; border: 0; width: 100%; text-align: left; font-family: inherit; cursor: zoom-in; }
+.rdv3-guest-doc-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 12px; opacity: 0; transition: opacity .22s ease; z-index: 2; }
+.rdv3-doc-reveal:hover .rdv3-guest-doc-img,
+.rdv3-guest-doc-feature.is-revealed .rdv3-guest-doc-img { opacity: 1; }
+.rdv3-doc-reveal-hint { position: absolute; top: 10px; right: 10px; z-index: 3; display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px; background: rgba(18,28,42,.6); color: #fff; font-size: .6rem; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; backdrop-filter: blur(6px); transition: background .18s ease; }
+.rdv3-guest-doc-feature.is-revealed .rdv3-doc-reveal-hint { background: var(--rdv3-cyan); }
+.rdv3-doc-open { margin-top: 5px; display: inline-flex; align-items: center; gap: 5px; font-size: .7rem; font-weight: 900; color: var(--rdv3-cyan); text-decoration: none; width: max-content; }
+.rdv3-doc-open:hover { text-decoration: underline; }
 .rdv3-guest-doc-copy { min-width: 0; display: grid; align-content: center; gap: 7px; color: var(--rdv3-primary); }
 .rdv3-guest-doc-copy b { display: block; font-size: .94rem; font-weight: 950; line-height: 1.2; overflow-wrap: anywhere; }
 .rdv3-guest-doc-copy small { display: block; color: #8790a4; font-size: .72rem; font-weight: 760; line-height: 1.35; }
@@ -2407,11 +2435,19 @@ foreach ($rdDocuments as $rdDocTotalRow) {
 .rdv3-action-left { display: inline-flex; align-items: center; gap: 12px; min-width: 0; }
 .rdv3-action-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: #fff; color: var(--rdv3-primary); }
 .rdv3-action-icon.is-green { color: #24b777; background: #e7f8ef; }
+.rdv3-action-icon.is-checkout { color: #C7651D; background: #FFF2DF; }
 .rdv3-action-icon.is-gold { color: var(--rdv3-accent); background: color-mix(in srgb, var(--rdv3-accent) 15%, #fff); }
 .rdv3-action-icon.is-blue { color: #3b82f6; background: #eaf2ff; }
 .rdv3-action-icon.is-violet { color: #6252d8; background: #eeebff; }
 .rdv3-action-icon.is-gray { color: #6d7689; background: #f4f5f7; }
 .rdv3-action-icon.is-danger { color: #B91C1C; background: #FEE2E2; }
+.rdv3-action--checkout {
+    --action-accent: #C7651D;
+    border-color: rgba(199, 101, 29, .24);
+    background: linear-gradient(135deg, #FFF6EA, #FFFDF9);
+    box-shadow: inset 3px 0 0 rgba(199, 101, 29, .68), 0 12px 22px -20px rgba(199, 101, 29, .55);
+}
+.rdv3-action--checkout i.fa-chevron-right { color: rgba(199, 101, 29, .62); }
 .rdv3-action--danger {
     --action-accent: #B91C1C;
     margin-top: 4px;
@@ -3230,6 +3266,10 @@ foreach ($rdDocuments as $rdDocTotalRow) {
         cursor: pointer;
         box-shadow: 0 10px 22px rgba(33,168,106,.22);
     }
+    .rdv3-mobile-checkout {
+        background: linear-gradient(135deg, #D97706, #B45309);
+        box-shadow: 0 10px 22px rgba(180, 83, 9, .25);
+    }
     .rdv3-mobile-more {
         width: 52px;
         height: 52px;
@@ -3416,7 +3456,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                         <?php elseif ($rdCheckinMode === 'late' || $rdCheckinMode === 'express'): ?>
                             <button type="button" class="rdv3-btn rdv3-btn-primary" onclick='abrirModalCheckInTardio(<?= $rdReservationId ?>, <?= $rdHuespedNombreJsonAttr ?>, <?= $rdHabitacionesTextoJsonAttr ?>, <?= $rdFechaEntradaFormatoJsonAttr ?>, <?= $rdFechaSalidaFormatoJsonAttr ?>, <?= $rdTotal ?>, "<?= $rdCheckinJsMode ?>", <?= (int)$rdCheckinDays ?>)'><i class="fas fa-right-to-bracket"></i>Check-in</button>
                         <?php elseif ($rdEstadoKey === 'checked_in'): ?>
-                            <button type="button" class="rdv3-btn rdv3-btn-primary" onclick="abrirModalCheckOut()"><i class="fas fa-right-from-bracket"></i>Check-out</button>
+                            <button type="button" class="rdv3-btn rdv3-btn-checkout" onclick="abrirModalCheckOut()"><i class="fas fa-right-from-bracket"></i>Check-out</button>
                         <?php endif; ?>
                         <?php if (in_array($rdEstadoKey, ['confirmada', 'checked_in'], true)): ?>
                             <button type="button" class="rdv3-btn rdv3-btn-ghost" onclick="abrirModalModificarDias()"><i class="far fa-calendar"></i>Modificar dias</button>
@@ -3450,6 +3490,17 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                         <span>Antes de <?= $rdSafe($rdExitTime, '12:00') ?></span>
                                     </div>
                                 </div>
+                                <?php $rdDescuentoTotal = (float)($reservacion['descuento_total'] ?? 0); ?>
+                                <?php if ($rdDescuentoTotal > 0): ?>
+                                    <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px dashed #E7E1D4;font-size:.9rem;">
+                                        <span class="rdv3-label">Subtotal</span>
+                                        <strong><?= $rdMoney($rdTotal + $rdDescuentoTotal) ?></strong>
+                                    </div>
+                                    <div style="display:flex;justify-content:space-between;align-items:center;padding:0 0 7px;color:#B4392B;font-size:.9rem;">
+                                        <span>Descuento aplicado</span>
+                                        <strong>&minus;<?= $rdMoney($rdDescuentoTotal) ?></strong>
+                                    </div>
+                                <?php endif; ?>
                                 <div class="rdv3-total">
                                     <div>
                                         <span class="rdv3-label rdv3-label--green">Precio total</span>
@@ -3459,6 +3510,79 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                 </div>
                                 <?php if (!empty($reservacion['notas'])): ?>
                                     <div class="rdv3-res-note"><i class="far fa-note-sticky"></i><?= $rdSafe($reservacion['notas']) ?></div>
+                                <?php endif; ?>
+                            </div>
+                        </section>
+
+                        <?php
+                            $rpResumen = $resumenPagos ?? ['total' => $rdTotal, 'pagado' => 0, 'saldo' => $rdTotal];
+                            $rpEval = $anticipoEval ?? ['elegible' => false, 'motivo' => '', 'metodos_pago' => []];
+                            $rpAbonos = $abonos ?? [];
+                            $rpSaldoPositivo = ($rpResumen['saldo'] ?? 0) > 0.004;
+                        ?>
+                        <section class="rdv3-card">
+                            <header class="rdv3-card-header">
+                                <div class="rdv3-heading">
+                                    <span class="rdv3-icon rdv3-icon--green"><i class="fas fa-hand-holding-dollar"></i></span>
+                                    <h2 class="rdv3-card-title">Pagos y anticipos</h2>
+                                </div>
+                            </header>
+                            <div class="rdv3-card-body">
+                                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
+                                    <div style="background:#F6F8F4;border-radius:10px;padding:10px;text-align:center;">
+                                        <small style="color:#667085;display:block;">Total</small>
+                                        <strong style="color:#111827;font-size:1rem;"><?= $rdMoney($rpResumen['total']) ?></strong>
+                                    </div>
+                                    <div style="background:#F0FBF5;border-radius:10px;padding:10px;text-align:center;">
+                                        <small style="color:#667085;display:block;">Pagado</small>
+                                        <strong style="color:#15835A;font-size:1rem;"><?= $rdMoney($rpResumen['pagado']) ?></strong>
+                                    </div>
+                                    <div style="background:<?= $rpSaldoPositivo ? '#FFF7ED' : '#F0FBF5' ?>;border-radius:10px;padding:10px;text-align:center;">
+                                        <small style="color:#667085;display:block;">Saldo</small>
+                                        <strong style="color:<?= $rpSaldoPositivo ? '#B4540F' : '#15835A' ?>;font-size:1rem;"><?= $rdMoney($rpResumen['saldo']) ?></strong>
+                                    </div>
+                                </div>
+
+                                <?php if (!empty($rpEval['elegible'])): ?>
+                                    <form method="POST" action="<?= url('reservaciones/' . $rdReservationId . '/anticipo') ?>" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">
+                                        <?= csrf_field() ?>
+                                        <div style="flex:1;min-width:130px;">
+                                            <label style="font-size:.7rem;color:#667085;font-weight:700;display:block;margin-bottom:3px;">Monto del anticipo</label>
+                                            <input type="number" name="monto" min="0.01" step="0.01" max="<?= number_format((float)$rpResumen['saldo'], 2, '.', '') ?>" data-money-format="true" placeholder="0.00" required style="width:100%;padding:9px;border:1px solid #E2E8F0;border-radius:8px;font-weight:600;">
+                                        </div>
+                                        <div style="min-width:140px;">
+                                            <label style="font-size:.7rem;color:#667085;font-weight:700;display:block;margin-bottom:3px;">Método</label>
+                                            <select name="metodo_pago" style="width:100%;padding:9px;border:1px solid #E2E8F0;border-radius:8px;font-weight:600;">
+                                                <?php foreach (($rpEval['metodos_pago'] ?? []) as $mk => $ml): ?>
+                                                    <option value="<?= $rdSafe($mk) ?>"><?= $rdSafe($ml) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="rdv3-btn rdv3-btn-primary"><i class="fas fa-plus"></i> Registrar anticipo</button>
+                                    </form>
+                                <?php else: ?>
+                                    <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:10px 12px;color:#9A3412;font-size:.84rem;">
+                                        <i class="fas fa-circle-info"></i> <?= $rdSafe($rpEval['motivo'] ?: 'No se puede registrar un anticipo ahora.') ?>
+                                    </div>
+                                <?php endif; ?>
+
+                                <?php if (!empty($rpAbonos)): ?>
+                                    <div style="margin-top:14px;">
+                                        <small style="color:#667085;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Anticipos registrados</small>
+                                        <?php foreach ($rpAbonos as $ab): ?>
+                                            <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #EEF1F4;padding:8px 0;">
+                                                <div style="font-size:.85rem;">
+                                                    <strong><?= $rdMoney($ab['monto']) ?></strong>
+                                                    <span style="color:#667085;"> &middot; <?= $rdSafe(ucfirst((string)$ab['metodo_pago'])) ?> &middot; <?= $rdSafe(date('d/m/Y H:i', strtotime((string)$ab['created_at']))) ?></span>
+                                                </div>
+                                                <form method="POST" action="<?= url('reservaciones/' . $rdReservationId . '/anticipo/revertir') ?>" onsubmit="return confirm('¿Revertir este anticipo? Se generará un movimiento de caja de reverso.');" style="margin:0;">
+                                                    <?= csrf_field() ?>
+                                                    <input type="hidden" name="abono_id" value="<?= (int)$ab['id'] ?>">
+                                                    <button type="submit" style="background:none;border:none;color:#B4392B;cursor:pointer;font-size:.8rem;font-weight:600;"><i class="fas fa-rotate-left"></i> Revertir</button>
+                                                </form>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
                                 <?php endif; ?>
                             </div>
                         </section>
@@ -3521,7 +3645,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                             </div>
                         </section>
 
-                        <section class="rdv3-card rdv3-card--guest">
+                        <section class="rdv3-card rdv3-card--guest"<?= $rdGuestEditable ? ' data-huesped-id="' . $rdGuestEditId . '"' : '' ?>>
                             <header class="rdv3-card-header">
                                 <div class="rdv3-heading">
                                     <span class="rdv3-icon rdv3-icon--violet"><i class="far fa-user"></i></span>
@@ -3535,14 +3659,14 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                 <div class="rdv3-guest-head">
                                     <div class="rdv3-avatar"><?= $rdSafe($rdHuespedIniciales, 'H') ?></div>
                                     <div>
-                                        <h2 class="rdv3-guest-name"><?= $rdSafe($rdGuestName, 'Huesped') ?></h2>
+                                        <h2 class="rdv3-guest-name<?= $rdGuestEditable ? ' rd-editable' : '' ?>"<?= $rdGuestEditable ? ' data-field="nombre_completo" data-value="' . $rdSafe($rdGuestName, '') . '" data-empty="Sin nombre" data-type="text" tabindex="0" role="button" title="Clic para editar"' : '' ?>><?= $rdSafe($rdGuestName, 'Huesped') ?></h2>
                                         <div class="rdv3-guest-sub"><?= $rdSafe($huesped['tipo_cliente'] ?? 'Cliente') ?><?= $rdGuestOrigin !== '' ? ' - ' . $rdSafe($rdGuestOrigin) : '' ?></div>
                                     </div>
                                 </div>
 
                                 <div class="rdv3-info-grid" aria-label="Contacto del huesped">
-                                    <div class="rdv3-info <?= $rdGuestPhone === '' ? 'is-empty' : '' ?>"><i class="fas fa-phone"></i><div><small>Telefono</small><b><?= $rdSafe($rdGuestPhone, 'No registrado') ?></b></div></div>
-                                    <div class="rdv3-info <?= $rdGuestEmail === '' ? 'is-empty' : '' ?>"><i class="far fa-envelope"></i><div><small>Email</small><b><?= $rdSafe($rdGuestEmail, 'No registrado') ?></b></div></div>
+                                    <div class="rdv3-info <?= $rdGuestPhone === '' ? 'is-empty' : '' ?>"><i class="fas fa-phone"></i><div><small>Telefono</small><b<?= $rdEditAttr('telefono', $rdGuestPhone, 'No registrado', 'tel') ?>><?= $rdSafe($rdGuestPhone, 'No registrado') ?></b></div></div>
+                                    <div class="rdv3-info <?= $rdGuestEmail === '' ? 'is-empty' : '' ?>"><i class="far fa-envelope"></i><div><small>Email</small><b<?= $rdEditAttr('email', $rdGuestEmail, 'No registrado', 'email') ?>><?= $rdSafe($rdGuestEmail, 'No registrado') ?></b></div></div>
                                     <div class="rdv3-info <?= $rdGuestId === '' ? 'is-empty' : '' ?>"><i class="far fa-address-card"></i><div><small>Identificacion</small><b><?= $rdSafe($rdGuestId, 'No registrado') ?></b></div></div>
                                     <div class="rdv3-info <?= $rdGuestOrigin === '' ? 'is-empty' : '' ?>"><i class="fas fa-location-dot"></i><div><small>Procedencia</small><b><?= $rdSafe($rdGuestOrigin, 'No registrado') ?></b></div></div>
                                 </div>
@@ -3594,18 +3718,37 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                             ])));
                                             [$rdPrimaryDocLabel, $rdPrimaryDocClass] = $rdDocIcon($rdGuestPrimaryDoc);
                                         ?>
+                                        <?php $rdPrimaryKind = $rdGuestDocPreviewKind($rdGuestPrimaryDoc); ?>
                                         <div class="rdv3-guest-docs-grid">
-                                            <a class="rdv3-guest-doc-feature" href="<?= url('documentos/' . $rdPrimaryDocId) ?>" title="Ver <?= $rdSafe($rdPrimaryTitle, 'documento') ?>">
-                                                <span class="rdv3-guest-doc-thumb" aria-hidden="true">
-                                                    <span class="rdv3-guest-doc-brand">MEDISOFT</span>
-                                                    <span class="rdv3-guest-doc-seal"><i class="fas fa-file-shield"></i></span>
-                                                </span>
-                                                <span class="rdv3-guest-doc-copy">
-                                                    <span class="rdv3-doc-mini-state"><i class="fas fa-lock"></i> <?= $rdSafe($rdPrimaryDocLabel, 'DOC') ?></span>
-                                                    <b><?= $rdSafe($rdPrimaryTitle, 'Documento del huesped') ?></b>
-                                                    <small><?= $rdSafe($rdPrimaryMeta, 'Archivo vinculado') ?></small>
-                                                </span>
-                                            </a>
+                                            <?php if ($rdPrimaryKind === 'image' && $rdPrimaryDocId > 0): ?>
+                                                <?php $rdPrimaryPreviewUrl = url('documentos/' . $rdPrimaryDocId . '/descargar') . '?preview=1'; ?>
+                                                <div class="rdv3-guest-doc-feature is-revealable" role="group" aria-label="Documento del huesped <?= $rdSafe($rdPrimaryTitle, 'documento') ?>">
+                                                    <button type="button" class="rdv3-guest-doc-thumb rdv3-doc-reveal" data-doc-src="<?= $rdSafe($rdPrimaryPreviewUrl) ?>" aria-pressed="false" aria-label="Mostrar la imagen del documento del huesped">
+                                                        <span class="rdv3-guest-doc-brand">MEDISOFT</span>
+                                                        <span class="rdv3-guest-doc-seal"><i class="fas fa-file-shield"></i></span>
+                                                        <img class="rdv3-guest-doc-img" alt="" loading="lazy" decoding="async">
+                                                        <span class="rdv3-doc-reveal-hint"><i class="fas fa-eye"></i> Ver</span>
+                                                    </button>
+                                                    <span class="rdv3-guest-doc-copy">
+                                                        <span class="rdv3-doc-mini-state"><i class="fas fa-id-card"></i> <?= $rdSafe($rdPrimaryDocLabel, 'DOC') ?></span>
+                                                        <b><?= $rdSafe($rdPrimaryTitle, 'Documento del huesped') ?></b>
+                                                        <small><?= $rdSafe($rdPrimaryMeta, 'Archivo vinculado') ?></small>
+                                                        <a class="rdv3-doc-open" href="<?= url('documentos/' . $rdPrimaryDocId) ?>">Abrir ficha <i class="fas fa-arrow-up-right-from-square"></i></a>
+                                                    </span>
+                                                </div>
+                                            <?php else: ?>
+                                                <a class="rdv3-guest-doc-feature" href="<?= url('documentos/' . $rdPrimaryDocId) ?>" title="Ver <?= $rdSafe($rdPrimaryTitle, 'documento') ?>">
+                                                    <span class="rdv3-guest-doc-thumb" aria-hidden="true">
+                                                        <span class="rdv3-guest-doc-brand">MEDISOFT</span>
+                                                        <span class="rdv3-guest-doc-seal"><i class="fas fa-file-shield"></i></span>
+                                                    </span>
+                                                    <span class="rdv3-guest-doc-copy">
+                                                        <span class="rdv3-doc-mini-state"><i class="fas fa-lock"></i> <?= $rdSafe($rdPrimaryDocLabel, 'DOC') ?></span>
+                                                        <b><?= $rdSafe($rdPrimaryTitle, 'Documento del huesped') ?></b>
+                                                        <small><?= $rdSafe($rdPrimaryMeta, 'Archivo vinculado') ?></small>
+                                                    </span>
+                                                </a>
+                                            <?php endif; ?>
 
                                             <?php $rdGuestSecondaryDocs = array_slice($rdGuestDocuments, 1, 4); ?>
                                             <?php if (!empty($rdGuestSecondaryDocs)): ?>
@@ -3684,7 +3827,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                 <?php elseif ($rdCheckinMode === 'late' || $rdCheckinMode === 'express'): ?>
                                     <button type="button" class="rdv3-action" onclick='abrirModalCheckInTardio(<?= $rdReservationId ?>, <?= $rdHuespedNombreJsonAttr ?>, <?= $rdHabitacionesTextoJsonAttr ?>, <?= $rdFechaEntradaFormatoJsonAttr ?>, <?= $rdFechaSalidaFormatoJsonAttr ?>, <?= $rdTotal ?>, "<?= $rdCheckinJsMode ?>", <?= (int)$rdCheckinDays ?>)'><span class="rdv3-action-left"><span class="rdv3-action-icon is-green"><i class="fas fa-right-to-bracket"></i></span>Registrar check-in</span><i class="fas fa-chevron-right"></i></button>
                                 <?php elseif ($rdEstadoKey === 'checked_in'): ?>
-                                    <button type="button" class="rdv3-action" onclick="abrirModalCheckOut()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-green"><i class="fas fa-right-from-bracket"></i></span>Registrar check-out</span><i class="fas fa-chevron-right"></i></button>
+                                    <button type="button" class="rdv3-action rdv3-action--checkout" onclick="abrirModalCheckOut()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-checkout"><i class="fas fa-right-from-bracket"></i></span>Registrar check-out</span><i class="fas fa-chevron-right"></i></button>
                                 <?php endif; ?>
                                 <?php if ($rdEstadoKey === 'checked_in'): ?>
                                     <button type="button" class="rdv3-action" onclick="abrirModalCambiarPago()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-gold"><i class="fas fa-right-left"></i></span>Cambiar metodo de pago</span><i class="fas fa-chevron-right"></i></button>
@@ -3779,7 +3922,7 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                     <?php elseif ($rdCheckinMode === 'late' || $rdCheckinMode === 'express'): ?>
                         <button type="button" class="rdv3-mobile-primary" onclick='abrirModalCheckInTardio(<?= $rdReservationId ?>, <?= $rdHuespedNombreJsonAttr ?>, <?= $rdHabitacionesTextoJsonAttr ?>, <?= $rdFechaEntradaFormatoJsonAttr ?>, <?= $rdFechaSalidaFormatoJsonAttr ?>, <?= $rdTotal ?>, "<?= $rdCheckinJsMode ?>", <?= (int)$rdCheckinDays ?>)'><i class="fas fa-right-to-bracket"></i>Check-in</button>
                     <?php elseif ($rdEstadoKey === 'checked_in'): ?>
-                        <button type="button" class="rdv3-mobile-primary" onclick="abrirModalCheckOut()"><i class="fas fa-right-from-bracket"></i>Check-out</button>
+                        <button type="button" class="rdv3-mobile-primary rdv3-mobile-checkout" onclick="abrirModalCheckOut()"><i class="fas fa-right-from-bracket"></i>Check-out</button>
                     <?php else: ?>
                         <a class="rdv3-mobile-primary" href="#rdv3-actions-panel"><i class="fas fa-grip"></i>Ver acciones</a>
                     <?php endif; ?>
@@ -4544,6 +4687,7 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
                         </div>
                         <span class="rv-date-pill"><i class="far fa-calendar"></i><?= $rdSafe($rvCheckinStayLabel) ?></span>
                     </div>
+                    <div id="checkinAnticipoAviso" style="display:none;margin-top:8px;background:#F0FBF5;border:1px solid #BBF7D0;border-radius:10px;padding:9px 12px;color:#15803D;font-size:.82rem;font-weight:600;"></div>
 
                     <div class="form-group rv-arrival-field">
                         <label class="form-label" for="horaEntradaCheckIn" id="rvLlegadaTitle">Hora de llegada</label>
@@ -5793,6 +5937,9 @@ function actualizarSaldoCotizacion() {
 function generarCotizacionPdf() {
     const anticipo = cotizacionMoneyValue(document.getElementById('inputAnticipoCotizacion'));
     document.getElementById('hiddenAnticipoCotizacion').value = anticipo;
+    if (window.MedisoftMobileFiles && window.MedisoftMobileFiles.isMobile()) {
+        window.MedisoftMobileFiles.showHint('cotizacion PDF', false);
+    }
     document.getElementById('formCotizacionReservacion').submit();
 
     // Cerrar modal después de un momento
@@ -6216,8 +6363,16 @@ function resetearFacturaTardio() {
     actualizarResultadoFacturaTardio();
 }
 // FUNCIONES DE CHECK-IN CON PAGOS MIXTOS
+// Saldo pendiente (total menos anticipos ya pagados). El check-in cobra ESTO, no el total.
+const SALDO_RESERVACION_CHECKIN = <?= json_encode(floatval($resumenPagos['saldo'] ?? ($reservacion['precio_total'] ?? 0))) ?>;
+const TOTAL_RESERVACION_CHECKIN = <?= json_encode(floatval($reservacion['precio_total'] ?? 0)) ?>;
+
 function abrirModalCheckIn(id, total) {
-    totalReservacion = parseFloat(total);
+    // Cobrar el SALDO pendiente (descontando anticipos), no el total bruto.
+    const saldoACobrar = (typeof SALDO_RESERVACION_CHECKIN === 'number' && SALDO_RESERVACION_CHECKIN >= 0)
+        ? SALDO_RESERVACION_CHECKIN
+        : parseFloat(total);
+    totalReservacion = saldoACobrar;
 
     const modal = document.getElementById('modalCheckIn');
     if (!modal) {
@@ -6232,12 +6387,26 @@ function abrirModalCheckIn(id, total) {
 
     const totalACobrarElement = document.getElementById('totalACobrar');
     if (totalACobrarElement) {
-        totalACobrarElement.textContent = formatMoney(totalReservacion);
+        totalACobrarElement.textContent = formatMoney(saldoACobrar);
     }
 
     const resumenTotalElement = document.getElementById('resumenTotal');
     if (resumenTotalElement) {
-        resumenTotalElement.textContent = formatMoney(totalReservacion);
+        resumenTotalElement.textContent = formatMoney(saldoACobrar);
+    }
+
+    // Aviso de anticipo: si el saldo es menor que el total, mostrar lo ya pagado.
+    const avisoAnticipo = document.getElementById('checkinAnticipoAviso');
+    if (avisoAnticipo) {
+        const anticipado = TOTAL_RESERVACION_CHECKIN - saldoACobrar;
+        if (anticipado > 0.004) {
+            avisoAnticipo.style.display = '';
+            avisoAnticipo.innerHTML = '<i class="fas fa-circle-info"></i> Anticipo ya pagado: <strong>' +
+                formatMoney(anticipado) + '</strong> de ' + formatMoney(TOTAL_RESERVACION_CHECKIN) +
+                '. Solo se cobra el saldo.';
+        } else {
+            avisoAnticipo.style.display = 'none';
+        }
     }
 
     resetearFormularioPago();
@@ -6395,9 +6564,9 @@ function setMoneyValue(inputOrId, value) {
 
     if (window.MedisoftMoneyInput) {
         window.MedisoftMoneyInput.set(input, safeValue);
+    } else {
+        input.value = safeValue.toFixed(2);
     }
-
-    input.value = safeValue.toFixed(2);
 }
 
 function splitMoneyParts(total, count) {
@@ -7930,13 +8099,47 @@ function imprimirTicketTermico(modo = 'imprimir') {
         padding: 4px;
         letter-spacing: 0.5px;
     }
+    .ticket-actions {
+        position: fixed;
+        top: 5px;
+        left: 5px;
+        right: 5px;
+        z-index: 999;
+        display: flex;
+        gap: 6px;
+    }
+    .ticket-actions button {
+        flex: 1;
+        border: none;
+        border-radius: 7px;
+        padding: 9px 8px;
+        color: #fff;
+        font-weight: 700;
+        font-size: 12px;
+        cursor: pointer;
+        box-shadow: 0 8px 18px rgba(0,0,0,.14);
+    }
+    .ticket-actions .ticket-back { background: #1F2937; }
+    .ticket-actions .ticket-print { background: #374151; }
+    .ticket-actions + button.no-print[onclick="window.print()"] { display: none; }
+    @media screen {
+        body { padding-top: calc(4mm + 42px); }
+    }
     @media print {
         body { width: 80mm; }
-        .no-print { display: none !important; }
+        .no-print, .ticket-actions { display: none !important; }
     }
 </style>
 </head>
 <body>
+    <div class="ticket-actions no-print">
+        <button class="ticket-back" onclick="if (window.opener && !window.opener.closed) { window.close(); } else if (history.length > 1) { history.back(); }">
+            Volver al sistema
+        </button>
+        <button class="ticket-print" onclick="window.print()">
+            Imprimir
+        </button>
+    </div>
     <button class="no-print" onclick="window.print()"
             style="position:fixed;top:5px;right:5px;background:#374151;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:bold;z-index:999;">
         🖨️ Imprimir
@@ -8018,6 +8221,9 @@ function imprimirTicketTermico(modo = 'imprimir') {
     if (ventana) {
         ventana.document.write(ticketHtml);
         ventana.document.close();
+        if (window.MedisoftMobileFiles && window.MedisoftMobileFiles.isMobile()) {
+            window.MedisoftMobileFiles.showHint('ticket', false);
+        }
     } else {
         descargarTicketHtml(ticketHtml);
         mostrarAvisoReservacion('El navegador bloqueo la ventana de impresion. Descargue el ticket para que puedas abrirlo o imprimirlo.', 'warning', 7200);
@@ -8534,6 +8740,29 @@ function mostrarPreviewMDD(tipo, html) {
     el.style.cssText = `display:block; background:${c.bg}; border:1.5px solid ${c.border}; color:${c.color}; border-radius:.625rem; padding:.875rem; margin-bottom:1rem; font-size:.82rem; line-height:1.5;`;
     el.innerHTML = html;
 }
+</script>
+
+<script>
+// Documento del huesped: revelar la imagen al pasar el cursor (PC) o tocar (movil),
+// sin salir de la pagina. La imagen solo se descarga al primer hover/tap (privacidad).
+(function () {
+    function ensureSrc(btn) {
+        var img = btn.querySelector('.rdv3-guest-doc-img');
+        if (img && !img.getAttribute('src') && btn.dataset.docSrc) {
+            img.src = btn.dataset.docSrc;
+        }
+    }
+    document.querySelectorAll('.rdv3-doc-reveal').forEach(function (btn) {
+        var feature = btn.closest('.rdv3-guest-doc-feature');
+        btn.addEventListener('mouseenter', function () { ensureSrc(btn); });
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            ensureSrc(btn);
+            var revealed = feature.classList.toggle('is-revealed');
+            btn.setAttribute('aria-pressed', revealed ? 'true' : 'false');
+        });
+    });
+})();
 </script>
 
 <style>
@@ -10880,3 +11109,146 @@ function mostrarPreviewMDD(tipo, html) {
     }
 }
 </style>
+
+<style>
+/* Edición inline del huésped (nombre / teléfono / email) en el detalle de reservación */
+.rdv3-card--guest .rd-editable { cursor: text; border-radius: 6px; padding: 1px 4px; margin: -1px -4px; transition: background .15s ease, box-shadow .15s ease; outline: none; }
+.rdv3-card--guest .rd-editable:hover { background: color-mix(in srgb, var(--brand-accent, #BD9441) 13%, transparent); box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--brand-accent, #BD9441) 55%, transparent); }
+.rdv3-card--guest .rd-editable:focus-visible { box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-accent, #BD9441) 45%, transparent); }
+.rdv3-card--guest .rd-editable.rd-editing { background: #fff; box-shadow: none; cursor: text; }
+.rdv3-card--guest .rd-editable.rd-edit-saving { opacity: .6; pointer-events: none; }
+.rdv3-card--guest .rd-edit-input { font: inherit; color: inherit; width: 100%; min-width: 120px; box-sizing: border-box; border: 1px solid color-mix(in srgb, var(--brand-accent, #BD9441) 60%, #ccc); border-radius: 6px; padding: 2px 6px; background: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-accent, #BD9441) 18%, transparent); outline: none; }
+.rdv3-card--guest h2.rd-editable .rd-edit-input { font-size: inherit; font-weight: inherit; }
+.rd-flash-ok { animation: rdFlashOk .9s ease; }
+.rd-flash-error { animation: rdFlashErr .9s ease; }
+@keyframes rdFlashOk { 0% { background: color-mix(in srgb, #1E9E63 26%, transparent); } 100% { background: transparent; } }
+@keyframes rdFlashErr { 0% { background: color-mix(in srgb, #B4392B 24%, transparent); } 100% { background: transparent; } }
+</style>
+
+<script>
+(function () {
+    const card = document.querySelector('.rdv3-card--guest[data-huesped-id]');
+    if (!card) return;
+    const huespedId = parseInt(card.getAttribute('data-huesped-id'), 10);
+    if (!huespedId) return;
+
+    const endpoint = '<?= url("huespedes/") ?>' + huespedId + '/actualizar-inline';
+    const csrf = '<?= csrf_token() ?>';
+    let activo = null;
+
+    function soloDigitos(v) { return (v || '').replace(/\D/g, '').slice(0, 15); }
+
+    function avisar(msg, ok) {
+        if (typeof mostrarAvisoReservacion === 'function') {
+            mostrarAvisoReservacion(msg, ok ? 'success' : 'error', ok ? 2200 : 4200);
+        }
+    }
+
+    function pintarValor(el, valor) {
+        el.dataset.value = valor;
+        el.textContent = valor !== '' ? valor : (el.dataset.empty || '');
+        const info = el.closest('.rdv3-info');
+        if (info) info.classList.toggle('is-empty', valor === '');
+    }
+
+    function flash(el, ok) {
+        el.classList.remove('rd-flash-ok', 'rd-flash-error');
+        void el.offsetWidth;
+        el.classList.add(ok ? 'rd-flash-ok' : 'rd-flash-error');
+        setTimeout(function () { el.classList.remove('rd-flash-ok', 'rd-flash-error'); }, 1000);
+    }
+
+    function guardar(el, field, nuevo, anterior) {
+        activo = null;
+        el.classList.remove('rd-editing');
+        el.classList.add('rd-edit-saving');
+        el.textContent = nuevo !== '' ? nuevo : (el.dataset.empty || '');
+
+        const body = new URLSearchParams();
+        body.append('campo', field);
+        body.append('valor', nuevo);
+        body.append('csrf_token', csrf);
+
+        fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrf,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: body.toString()
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                el.classList.remove('rd-edit-saving');
+                if (data && data.success) {
+                    pintarValor(el, nuevo);
+                    flash(el, true);
+                    avisar('Cambio guardado', true);
+                } else {
+                    pintarValor(el, anterior);
+                    flash(el, false);
+                    avisar((data && data.message) || 'No se pudo guardar', false);
+                }
+            })
+            .catch(function () {
+                el.classList.remove('rd-edit-saving');
+                pintarValor(el, anterior);
+                flash(el, false);
+                avisar('Error de conexión. Intenta de nuevo.', false);
+            });
+    }
+
+    function iniciar(el) {
+        if (activo) return;
+        activo = el;
+        const field = el.dataset.field;
+        const type = el.dataset.type || 'text';
+        const valor = el.dataset.value || '';
+
+        el.classList.add('rd-editing');
+        el.textContent = '';
+
+        const input = document.createElement('input');
+        input.type = (type === 'tel') ? 'tel' : (type === 'email' ? 'email' : 'text');
+        input.className = 'rd-edit-input';
+        input.value = valor;
+        input.setAttribute('aria-label', 'Editar ' + field);
+        if (type === 'tel') { input.inputMode = 'numeric'; input.maxLength = 15; }
+        el.appendChild(input);
+        input.focus();
+        input.select();
+
+        let cerrado = false;
+        function cerrar(guardarCambio) {
+            if (cerrado) return;
+            cerrado = true;
+            let nuevo = input.value.trim();
+            if (type === 'tel') nuevo = soloDigitos(nuevo);
+            if (!guardarCambio || nuevo === valor) {
+                activo = null;
+                el.classList.remove('rd-editing');
+                pintarValor(el, valor);
+                return;
+            }
+            guardar(el, field, nuevo, valor);
+        }
+
+        if (type === 'tel') {
+            input.addEventListener('input', function () { input.value = soloDigitos(input.value); });
+        }
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); cerrar(true); }
+            else if (e.key === 'Escape') { e.preventDefault(); cerrar(false); }
+        });
+        input.addEventListener('blur', function () { cerrar(true); });
+    }
+
+    card.querySelectorAll('.rd-editable').forEach(function (el) {
+        el.addEventListener('click', function () { iniciar(el); });
+        el.addEventListener('keydown', function (e) {
+            if ((e.key === 'Enter' || e.key === ' ') && activo !== el) { e.preventDefault(); iniciar(el); }
+        });
+    });
+})();
+</script>

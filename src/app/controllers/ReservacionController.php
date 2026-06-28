@@ -347,7 +347,14 @@ class ReservacionController extends Controller {
             if (!$reservacion || (int)($reservacion['hotel_id'] ?? 0) !== (int)$hotel_id) {
                 die('Reservación no encontrada.');
             }
- 
+
+            // Anticipos REALES ya registrados (abonos + pagos). Si existen, mandan sobre el simbólico.
+            $resumenCobro = $this->reservacionModel->resumenPagos((int)$reservacion_id, (int)$hotel_id);
+            $anticipoReal = (float)($resumenCobro['pagado'] ?? 0);
+            if ($anticipoReal > 0) {
+                $anticipo = $anticipoReal;
+            }
+
             // Obtener huésped
             $huesped = $this->huespedModel->findForHotel($reservacion['huesped_id'], $hotel_id);
             if (!$huesped) {
@@ -760,23 +767,35 @@ class ReservacionController extends Controller {
             $totalesX = $margin + $contentW - 80;
             $totalesW = 80;
  
-            $totalReservacion = $subtotal - $descuento_cortesia;
- 
-            // Subtotal (sin cortesías)
-            if ($descuento_cortesia > 0) {
+            // Descuento de precio guardado en la reservación (por tipo + huésped)
+            $descuento_precio = (float)($reservacion['descuento_total'] ?? 0);
+            $totalReservacion = $subtotal - $descuento_cortesia - $descuento_precio;
+
+            // Subtotal (cuando hay cortesía y/o descuento de precio)
+            if ($descuento_cortesia > 0 || $descuento_precio > 0) {
                 $pdf->SetFont('Helvetica', '', 9);
                 $pdf->SetTextColor($gris[0], $gris[1], $gris[2]);
                 $pdf->SetX($totalesX);
                 $pdf->Cell(40, 6, 'Subtotal:', 0, 0, 'R');
                 $pdf->SetTextColor($negro[0], $negro[1], $negro[2]);
                 $pdf->Cell(40, 6, '$' . number_format($subtotal, 0, '.', ',') . ' MXN', 0, 1, 'R');
- 
-                $pdf->SetFont('Helvetica', 'B', 9);
-                $pdf->SetTextColor($ambar[0], $ambar[1], $ambar[2]);
-                $pdf->SetX($totalesX);
-                $cortCount = count(array_filter($habitaciones, fn($h) => $h['es_cortesia'] ?? false));
-                $pdf->Cell(40, 6, $u('Cortesía (' . $cortCount . ' hab.):'), 0, 0, 'R');
-                $pdf->Cell(40, 6, '-$' . number_format($descuento_cortesia, 0, '.', ',') . ' MXN', 0, 1, 'R');
+
+                if ($descuento_cortesia > 0) {
+                    $pdf->SetFont('Helvetica', 'B', 9);
+                    $pdf->SetTextColor($ambar[0], $ambar[1], $ambar[2]);
+                    $pdf->SetX($totalesX);
+                    $cortCount = count(array_filter($habitaciones, fn($h) => $h['es_cortesia'] ?? false));
+                    $pdf->Cell(40, 6, $u('Cortesía (' . $cortCount . ' hab.):'), 0, 0, 'R');
+                    $pdf->Cell(40, 6, '-$' . number_format($descuento_cortesia, 0, '.', ',') . ' MXN', 0, 1, 'R');
+                }
+
+                if ($descuento_precio > 0) {
+                    $pdf->SetFont('Helvetica', 'B', 9);
+                    $pdf->SetTextColor(180, 57, 43);
+                    $pdf->SetX($totalesX);
+                    $pdf->Cell(40, 6, $u('Descuento:'), 0, 0, 'R');
+                    $pdf->Cell(40, 6, '-$' . number_format($descuento_precio, 0, '.', ',') . ' MXN', 0, 1, 'R');
+                }
             }
  
             // Anticipo (si aplica)
@@ -2816,6 +2835,27 @@ try {
     $documentosHuesped = [];
 }
 
+        // Resumen de cobro (total/pagado/saldo) + abonos (anticipos) para la ficha
+        require_once __DIR__ . '/../services/AnticipoService.php';
+        $hotelIdAnticipo = (int)$this->hotelIdActual();
+        $resumenPagos = $this->reservacionModel->resumenPagos((int)$id, $hotelIdAnticipo);
+        $anticipoEval = (new AnticipoService())->evaluar($hotelIdAnticipo, (int)$id);
+        $abonos = [];
+        try {
+            $dbAbonos = Database::getInstance();
+            $chkAbonos = $dbAbonos->query("SHOW TABLES LIKE 'reservacion_abonos'");
+            if ($chkAbonos && $chkAbonos->rowCount() > 0) {
+                $stmtAbonos = $dbAbonos->query(
+                    "SELECT id, monto, metodo_pago, concepto, referencia, corte_id, created_at
+                     FROM reservacion_abonos WHERE reservacion_id = ? AND hotel_id = ? ORDER BY id DESC",
+                    [(int)$id, $hotelIdAnticipo]
+                );
+                $abonos = $stmtAbonos ? $stmtAbonos->fetchAll(PDO::FETCH_ASSOC) : [];
+            }
+        } catch (Throwable $e) {
+            $abonos = [];
+        }
+
         View::renderTemplate('reservaciones/ver', [
     'title' => 'Reservación #' . $id . ' - ' . current_hotel_display_name(),
     'reservacion' => $reservacion,
@@ -2824,6 +2864,9 @@ try {
     'habitaciones' => $habitaciones,
     'estados' => Reservacion::getEstados(),
     'pagos' => $pagos,
+    'resumenPagos' => $resumenPagos,
+    'abonos' => $abonos,
+    'anticipoEval' => $anticipoEval,
     'notas' => $notas,
     'total_notas' => $total_notas,
     'documentosEntidad' => $documentosEntidad,
@@ -3230,6 +3273,12 @@ private function erroresCamposReservacionCrear(string $mensaje): array {
             if (!$reservacion) {
                 throw new Exception('Reservación no encontrada para el hotel actual');
             }
+
+            // SALDO-AWARE: el check-in cobra el SALDO (total - anticipos ya pagados), no el total.
+            // Evita el doble cobro cuando ya hubo anticipos registrados en reservacion_abonos.
+            $resumenCobro = $this->reservacionModel->resumenPagos((int)$id, (int)($reservacion['hotel_id'] ?? $this->hotelIdActual()));
+            $saldoCheckin = (float)$resumenCobro['saldo'];
+
             // Verificar cada método de pago
             $metodos = ['efectivo', 'tarjeta', 'transferencia'];
             
@@ -3261,16 +3310,35 @@ private function erroresCamposReservacionCrear(string $mensaje): array {
                 }
             }
             
-            // Si no hay pagos específicos, usar efectivo por defecto
+            // Si no hay pagos específicos, cobrar el SALDO por efectivo (no el total).
+            // Si el saldo ya es 0 (cubierto por anticipos), no se agrega ningún pago.
             if (empty($pagos)) {
-                $pagos[] = [
-                    'metodo' => 'efectivo',
-                    'monto' => $reservacion['precio_total'],
-                    'referencia' => null
-                ];
-                $monto_recibido_total = $reservacion['precio_total'];
+                if ($saldoCheckin > 0.004) {
+                    $pagos[] = [
+                        'metodo' => 'efectivo',
+                        'monto' => $saldoCheckin,
+                        'referencia' => null
+                    ];
+                    $monto_recibido_total = $saldoCheckin;
+                }
             }
-            
+
+            // GUARDA UNIVERSAL anti-doble-cobro: no se puede cobrar más que el saldo pendiente.
+            // Protege cualquier punto de entrada (ficha, listado, etc.) cuando ya hubo anticipos.
+            $totalCobrado = 0;
+            foreach ($pagos as $p) {
+                $totalCobrado += (float)$p['monto'];
+            }
+            if ($totalCobrado > $saldoCheckin + 0.01) {
+                $yaPagado = (float)$resumenCobro['pagado'];
+                throw new Exception(sprintf(
+                    'El cobro ($%s) excede el saldo pendiente ($%s). Esta reservación ya tiene $%s pagado (anticipos). Registra el check-in desde la ficha para cobrar solo el saldo.',
+                    number_format($totalCobrado, 2),
+                    number_format($saldoCheckin, 2),
+                    number_format($yaPagado, 2)
+                ));
+            }
+
             // Usar el método del modelo para check-in con pagos mixtos
             if (method_exists($this->reservacionModel, 'checkInConPagosMixtos')) {
                 $resultado = $this->reservacionModel->checkInConPagosMixtos(
@@ -3479,9 +3547,63 @@ private function procesarRecogidaLlavesCheckOut($reservacion_id) {
     /**
      * Cancelar reservación
      */
+    /**
+     * Registrar un anticipo/abono real de la reservación (movimiento de Caja + abono).
+     */
+    public function registrarAnticipoAction() {
+        $id = (int)($this->route_params['id'] ?? 0);
+        if (!$this->isPost()) {
+            $this->redirect('reservaciones/ver/' . $id);
+            return;
+        }
+        $this->validateCSRF();
+        try {
+            require_once __DIR__ . '/../services/AnticipoService.php';
+            $hotelId = obtenerHotelIdActualCompat();
+            $svc = new AnticipoService();
+            $resultado = $svc->registrar($hotelId, $id, [
+                'monto'       => $this->getPost('monto'),
+                'metodo_pago' => $this->getPost('metodo_pago'),
+                'referencia'  => $this->getPost('referencia'),
+                'concepto'    => $this->getPost('concepto'),
+            ], user_id());
+            set_mensaje(
+                'Anticipo de $' . number_format($resultado['monto'], 2) .
+                ' registrado. Saldo pendiente: $' . number_format($resultado['saldo_posterior'], 2),
+                'success'
+            );
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo registrar el anticipo: ' . $e->getMessage(), 'error');
+        }
+        $this->redirect('reservaciones/ver/' . $id);
+    }
+
+    /**
+     * Revertir un anticipo (contramovimiento de Caja + eliminar abono).
+     */
+    public function revertirAnticipoAction() {
+        $id = (int)($this->route_params['id'] ?? 0);
+        if (!$this->isPost()) {
+            $this->redirect('reservaciones/ver/' . $id);
+            return;
+        }
+        $this->validateCSRF();
+        try {
+            require_once __DIR__ . '/../services/AnticipoService.php';
+            $hotelId = obtenerHotelIdActualCompat();
+            $abonoId = (int)$this->getPost('abono_id');
+            $svc = new AnticipoService();
+            $svc->reversar($hotelId, $id, $abonoId, user_id());
+            set_mensaje('Anticipo revertido correctamente.', 'success');
+        } catch (Throwable $e) {
+            set_mensaje('No se pudo revertir el anticipo: ' . $e->getMessage(), 'error');
+        }
+        $this->redirect('reservaciones/ver/' . $id);
+    }
+
     public function cancelarAction() {
     $id = $this->route_params['id'] ?? 0;
-    
+
     if (!$this->isPost()) {
         $this->redirect('reservaciones/ver/' . $id);
         return;
@@ -3729,6 +3851,13 @@ private function validarCancelacion($reservacion) {
             'usuario_registro_id' => user_id(),
             'hotel_id' => $this->hotelIdActual()
         ];
+
+        // Descuento ajustable: el operador pudo editar/quitar el descuento en el form.
+        // Si viene vacio, el modelo aplica el descuento automatico (por tipo + huesped).
+        $descuentoAplicadoPost = $this->getPost('descuento_aplicado', null);
+        if ($descuentoAplicadoPost !== null && $descuentoAplicadoPost !== '') {
+            $data['descuento_aplicado'] = (float) str_replace(',', '', (string) $descuentoAplicadoPost);
+        }
         
         // DEBUG: Log datos procesados
         error_log("Datos procesados: " . json_encode($data));
@@ -3819,6 +3948,35 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
         
         if ($reservacion && isset($reservacion['id'])) {
             error_log("ÉXITO: Reservación creada con ID: " . $reservacion['id']);
+
+            // Anticipo inicial opcional: si el operador capturó uno, se registra como abono real.
+            // Best-effort: si no hay caja abierta u ocurre un error, la reservación NO se pierde.
+            $anticipoInicial = (float) str_replace(',', '', (string) $this->getPost('anticipo_inicial', ''));
+            if ($anticipoInicial > 0) {
+                try {
+                    require_once __DIR__ . '/../services/AnticipoService.php';
+                    $svcAnticipo = new AnticipoService();
+                    $resAnticipo = $svcAnticipo->registrar((int)$this->hotelIdActual(), (int)$reservacion['id'], [
+                        'monto'       => $anticipoInicial,
+                        'metodo_pago' => $this->getPost('anticipo_metodo', 'efectivo'),
+                        'concepto'    => 'Anticipo inicial',
+                    ], user_id());
+                    set_mensaje(
+                        'Reservación creada. Anticipo de $' . number_format($resAnticipo['monto'], 2) .
+                        ' registrado (saldo: $' . number_format($resAnticipo['saldo_posterior'], 2) . ').',
+                        'success'
+                    );
+                } catch (Throwable $eAnt) {
+                    set_mensaje(
+                        'Reservación creada, pero el anticipo no se registró: ' . $eAnt->getMessage() .
+                        ' Puedes registrarlo desde la ficha.',
+                        'warning'
+                    );
+                }
+                $this->redirect('reservaciones/ver/' . $reservacion['id']);
+                return;
+            }
+
             set_mensaje('Reservación creada exitosamente', 'success');
             $this->redirect('reservaciones/ver/' . $reservacion['id']);
         } else {
@@ -3889,12 +4047,13 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
                 die('No se encontraron las habitaciones seleccionadas.');
             }
 
-            // Calcular precios usando el mismo método que guardar
+            // Calcular precios usando el mismo método que guardar (incluye descuentos por tipo + huésped)
             $calculo = $this->reservacionModel->calcularPrecioMultiple(
                 $habitaciones,
                 $fecha_entrada,
                 $fecha_salida,
-                $hora_llegada
+                $hora_llegada,
+                $huesped_id ?: null
             );
 
             // ─── Generar PDF ─────────────────────────────────────
@@ -4231,6 +4390,29 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
                 $pdf->Cell(40, 6, '-$' . number_format($descuento_cortesia, 0, '.', ',') . ' MXN', 0, 1, 'R');
             }
 
+            // Descuentos de precio (por tipo de habitación + por huésped)
+            $descuento_precio = (float)($calculo['descuento_total'] ?? 0);
+            $max_desc_precio = $subtotal - $descuento_cortesia;
+            if ($descuento_precio > $max_desc_precio) {
+                $descuento_precio = max(0, $max_desc_precio);
+            }
+            if ($descuento_precio > 0) {
+                $desc_tipo = (float)($calculo['descuento_tipo'] ?? 0);
+                $desc_huesped = (float)($calculo['descuento_huesped'] ?? 0);
+                $pdf->SetFont('Helvetica', '', 9);
+                $pdf->SetTextColor(180, 57, 43);
+                if ($desc_tipo > 0) {
+                    $pdf->SetX($totalesX);
+                    $pdf->Cell(40, 6, $u('Descuento por tipo:'), 0, 0, 'R');
+                    $pdf->Cell(40, 6, '-$' . number_format($desc_tipo, 0, '.', ',') . ' MXN', 0, 1, 'R');
+                }
+                if ($desc_huesped > 0) {
+                    $pdf->SetX($totalesX);
+                    $pdf->Cell(40, 6, $u('Descuento del huésped:'), 0, 0, 'R');
+                    $pdf->Cell(40, 6, '-$' . number_format($desc_huesped, 0, '.', ',') . ' MXN', 0, 1, 'R');
+                }
+            }
+
             // Línea antes del total
             $pdf->SetDrawColor($gold[0], $gold[1], $gold[2]);
             $pdf->SetLineWidth(0.5);
@@ -4239,7 +4421,7 @@ error_log("Cortesías seleccionadas por el usuario: " . json_encode($cortesias_i
             $pdf->Ln(4);
 
             // TOTAL FINAL
-            $totalFinal = $subtotal - $descuento_cortesia;
+            $totalFinal = $subtotal - $descuento_cortesia - $descuento_precio;
             $pdf->SetFillColor($olivoOsc[0], $olivoOsc[1], $olivoOsc[2]);
             $totalBoxY = $pdf->GetY();
             $pdf->Rect($totalesX - 2, $totalBoxY, $totalesW + 4, 10, 'F');

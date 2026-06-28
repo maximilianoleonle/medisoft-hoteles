@@ -10,6 +10,7 @@ class IncrementoTarifa extends Model {
         'nombre',
         'descripcion',
         'tipo_incremento',
+        'clase',
         'valor_incremento',
         'alcance',
         'tipos_habitacion',
@@ -170,11 +171,57 @@ class IncrementoTarifa extends Model {
         ];
     }
 
-    private function getIncrementosAplicables($habitacion_id, $tipo_habitacion, $fecha, $hotelId = null) {
+    /**
+     * Calcula el descuento por TIPO de habitacion (clase='descuento') sobre un precio dado.
+     * Aplica registros con alcance global o por tipo de habitacion. Espejo de
+     * calcularPrecioConIncremento, pero resta. El descuento total se topa al precio (no negativo).
+     */
+    public function calcularDescuentoPorTipo($tipo_habitacion, $precio, $fecha, $hotelId = null) {
+        $hotelId = $this->hotelIdActual($hotelId);
+        $descuentos = $this->getIncrementosAplicables(0, $tipo_habitacion, $fecha, $hotelId, 'descuento');
+
+        $descuento_total = 0;
+        $descuentos_aplicados = [];
+
+        foreach ($descuentos as $descuento) {
+            if ($descuento['tipo_incremento'] == 'porcentaje') {
+                $monto = $precio * ($descuento['valor_incremento'] / 100);
+            } else {
+                $monto = (float)$descuento['valor_incremento'];
+            }
+
+            $descuento_total += $monto;
+            $descuentos_aplicados[] = [
+                'id' => $descuento['id'],
+                'nombre' => $descuento['nombre'],
+                'tipo' => $descuento['tipo_incremento'],
+                'valor' => $descuento['valor_incremento'],
+                'monto' => $monto
+            ];
+        }
+
+        if ($descuento_total > $precio) {
+            $descuento_total = $precio;
+        }
+
+        return [
+            'descuento_total' => $descuento_total,
+            'descuentos_aplicados' => $descuentos_aplicados
+        ];
+    }
+
+    private function getIncrementosAplicables($habitacion_id, $tipo_habitacion, $fecha, $hotelId = null, $clase = 'incremento') {
         $incrementos = $this->getActivosParaFecha($fecha, $hotelId);
         $aplicables = [];
 
         foreach ($incrementos as $inc) {
+            // Separar incrementos de descuentos. Si la columna 'clase' aun no existe
+            // (migracion no aplicada), se asume 'incremento' para preservar el comportamiento previo.
+            $claseInc = $inc['clase'] ?? 'incremento';
+            if ($claseInc !== $clase) {
+                continue;
+            }
+
             switch ($inc['alcance']) {
                 case 'global':
                     $aplicables[] = $inc;

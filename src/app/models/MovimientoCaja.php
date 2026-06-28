@@ -509,7 +509,8 @@ $sql .= " ORDER BY mc.created_at $orden";
             CONCAT('Hab. ', hab.numero, ' - ', hab.tipo)
             ORDER BY hab.numero
             SEPARATOR ', '
-        ) as habitaciones_detalle
+        ) as habitaciones_detalle,
+        tpc.trabajador_id as trabajador_id
         FROM movimientos_caja mc
         LEFT JOIN categorias_movimientos cm ON mc.categoria_id = cm.id
         LEFT JOIN usuarios u ON mc.usuario_id = u.id
@@ -517,6 +518,8 @@ $sql .= " ORDER BY mc.created_at $orden";
             ON mc.reservacion_id = rh.reservacion_id AND rh.hotel_id = mc.hotel_id
         LEFT JOIN habitaciones hab
             ON rh.habitacion_id = hab.id AND hab.hotel_id = mc.hotel_id
+        LEFT JOIN trabajador_pagos_caja tpc
+            ON tpc.movimiento_caja_id = mc.id AND tpc.hotel_id = mc.hotel_id
         WHERE mc.hotel_id = ?
         GROUP BY mc.id
         ORDER BY mc.created_at DESC

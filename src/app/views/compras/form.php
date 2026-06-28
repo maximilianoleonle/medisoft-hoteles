@@ -97,7 +97,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
 .purchase-form-page .cp-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; }
 .purchase-form-page .cp-hero-icon {
     width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
-    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--cp-gold), var(--cp-brand) 54%, color-mix(in srgb, var(--cp-brand) 68%, #2F8A70));
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--cp-gold), var(--cp-brand) 54%, color-mix(in srgb, var(--cp-brand) 68%, var(--brand-accent, #BD9441)));
     box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--cp-brand) 72%, transparent);
 }
 .purchase-form-page .cp-kicker { margin: 0 0 2px; color: var(--cp-muted); font-size: .72rem; font-weight: 700; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
@@ -256,7 +256,7 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
 
                                 <div>
                                     <label for="costo_unitario_<?= $i ?>">Costo unitario</label>
-                                    <input class="cp-input cp-cost-input<?= $i === 0 ? comp_form_error_class($compraFieldErrors, 'costo_unitario_0') : '' ?>" id="costo_unitario_<?= $i ?>" name="costo_unitario[]" type="number" min="0" step="0.01" value="<?= $costoValor ?>"<?= $i === 0 ? comp_form_error_attrs($compraFieldErrors, 'costo_unitario_0', 'ms-form-error-costo_unitario_0') : '' ?>>
+                                    <input class="cp-input cp-cost-input<?= $i === 0 ? comp_form_error_class($compraFieldErrors, 'costo_unitario_0') : '' ?>" id="costo_unitario_<?= $i ?>" name="costo_unitario[]" type="number" data-money-format="true" min="0" step="0.01" value="<?= $costoValor ?>"<?= $i === 0 ? comp_form_error_attrs($compraFieldErrors, 'costo_unitario_0', 'ms-form-error-costo_unitario_0') : '' ?>>
                                     <?php if ($i === 0 && comp_form_error($compraFieldErrors, 'costo_unitario_0')): ?>
                                         <span class="cp-form-error ms-form-field-error" id="ms-form-error-costo_unitario_0"><?= comp_form_error($compraFieldErrors, 'costo_unitario_0') ?></span>
                                     <?php endif; ?>
@@ -309,7 +309,11 @@ $faltanCatalogos = empty($proveedores) || empty($productos);
             }
             const cost = selected.getAttribute('data-costo');
             if (cost !== null && cost !== '') {
-                costInput.value = cost;
+                if (window.MedisoftMoneyInput) {
+                    window.MedisoftMoneyInput.set(costInput, cost);
+                } else {
+                    costInput.value = cost;
+                }
             }
         });
     });

@@ -1580,6 +1580,10 @@ function exportarPDF() {
     const url = '<?= url('reportes/exportar-pdf') ?>?tipo=habitaciones-rentables' +
                 '&fecha_inicio=<?= rawurlencode((string)$fecha_inicio) ?>' +
                 '&fecha_fin=<?= rawurlencode((string)$fecha_fin) ?>';
+    if (window.MedisoftMobileFiles) {
+        window.MedisoftMobileFiles.open(url, { label: 'PDF del reporte' });
+        return;
+    }
     window.open(url, '_blank');
 }
 

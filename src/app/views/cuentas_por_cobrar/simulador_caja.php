@@ -48,12 +48,14 @@ $estado = (string)($filtros['estado'] ?? 'todos');
     --cx-gold: var(--brand-accent, #BD9441);
     --cx-gold-soft: color-mix(in srgb, var(--cx-gold) 15%, #FFFFFF);
     --cx-gold-line: color-mix(in srgb, var(--cx-gold) 42%, #E4D4B0);
-    --cx-gold-ink: color-mix(in srgb, var(--cx-gold) 72%, #000);
+    --cx-gold-ink: color-mix(in srgb, var(--cx-gold) 78%, var(--cx-brand));
     --cx-ivory: #F6F2EA; --cx-ivory-2: #FBF8F2;
     --cx-surface: #FFFFFF; --cx-surface-warm: #FCFAF5;
     --cx-border: color-mix(in srgb, var(--cx-brand) 7%, #E7E1D4);
     --cx-ring: color-mix(in srgb, var(--cx-gold) 32%, transparent);
-    --cx-text: #171717; --cx-muted: #667085; --cx-heading: #111827;
+    --cx-text: color-mix(in srgb, var(--cx-brand) 34%, #647080);
+    --cx-text-soft: color-mix(in srgb, var(--cx-brand) 24%, #7B8492);
+    --cx-muted: #7A8493; --cx-heading: color-mix(in srgb, var(--cx-brand) 62%, #6B7280);
     --cx-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
     --cx-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --cx-success: #1E9E63; --cx-success-bg: #E7F4EC;
@@ -68,7 +70,7 @@ $estado = (string)($filtros['estado'] ?? 'todos');
 .cxc-cash-page .cx-shell { display: grid; gap: 14px; }
 .cxc-cash-page .cx-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; }
 .cxc-cash-page .cx-hero-icon { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
-    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--cx-gold), var(--cx-brand) 54%, color-mix(in srgb, var(--cx-brand) 68%, #2F8A70));
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--cx-gold), var(--cx-brand) 54%, color-mix(in srgb, var(--cx-brand) 68%, var(--brand-accent, #BD9441)));
     box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--cx-brand) 72%, transparent); }
 .cxc-cash-page .cx-kicker { margin: 0 0 2px; color: var(--cx-muted); font-size: .72rem; font-weight: 700; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
 .cxc-cash-page .cx-title { margin: 0; font-family: var(--cx-serif); color: var(--cx-heading); font-weight: 700; font-size: clamp(2rem, 3.6vw, 2.9rem); line-height: 1; }
@@ -95,18 +97,21 @@ $estado = (string)($filtros['estado'] ?? 'todos');
 
 .cxc-cash-page .cx-control { width: 100%; min-height: 40px; border: 1px solid var(--cx-border); background: var(--cx-surface-warm); border-radius: 11px; padding: 0 12px; color: var(--cx-text); font-weight: 600; font-size: .88rem; transition: border-color .16s ease, box-shadow .16s ease; }
 .cxc-cash-page .cx-control:focus { border-color: var(--cx-gold); box-shadow: 0 0 0 3px var(--cx-ring); outline: none; }
+.cxc-cash-page .cx-control::placeholder { color: color-mix(in srgb, var(--cx-muted) 72%, #fff); font-weight: 600; }
 .cxc-cash-page select.cx-control { cursor: pointer; }
-.cxc-cash-page .cx-filter-form { display: grid; grid-template-columns: 1fr 180px auto; gap: 10px; align-items: center; }
+.cxc-cash-page .cx-filter-form { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(150px, 180px) 42px; max-width: 650px; gap: 10px; align-items: center; }
+.cxc-cash-page .cx-filter-form .cx-btn-brand { width: 42px; min-width: 42px; padding: 0; border-radius: 12px; overflow: hidden; font-size: 0; }
+.cxc-cash-page .cx-filter-form .cx-btn-brand i { margin: 0; font-size: .86rem; }
 
 .cxc-cash-page .cx-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; font-size: .74rem; font-weight: 700; border: 1px solid transparent; }
-.cxc-cash-page .cx-badge.is-pendiente { color: color-mix(in srgb, var(--cx-info) 80%, #000); background: var(--cx-info-bg); border-color: color-mix(in srgb, var(--cx-info) 26%, #fff); }
-.cxc-cash-page .cx-badge.is-parcial { color: color-mix(in srgb, var(--cx-warning) 82%, #000); background: var(--cx-warning-bg); border-color: color-mix(in srgb, var(--cx-warning) 28%, #fff); }
-.cxc-cash-page .cx-badge.is-vencida { color: color-mix(in srgb, var(--cx-danger) 82%, #000); background: var(--cx-danger-bg); border-color: color-mix(in srgb, var(--cx-danger) 26%, #fff); }
-.cxc-cash-page .cx-badge.is-liquidada { color: color-mix(in srgb, var(--cx-success) 78%, #000); background: var(--cx-success-bg); border-color: color-mix(in srgb, var(--cx-success) 26%, #fff); }
-.cxc-cash-page .cx-badge.is-incobrable { color: color-mix(in srgb, var(--cx-danger) 82%, #000); background: var(--cx-danger-bg); border-color: color-mix(in srgb, var(--cx-danger) 26%, #fff); }
+.cxc-cash-page .cx-badge.is-pendiente { color: color-mix(in srgb, var(--cx-info) 80%, var(--cx-brand)); background: var(--cx-info-bg); border-color: color-mix(in srgb, var(--cx-info) 26%, #fff); }
+.cxc-cash-page .cx-badge.is-parcial { color: color-mix(in srgb, var(--cx-warning) 82%, var(--cx-brand)); background: var(--cx-warning-bg); border-color: color-mix(in srgb, var(--cx-warning) 28%, #fff); }
+.cxc-cash-page .cx-badge.is-vencida { color: color-mix(in srgb, var(--cx-danger) 82%, var(--cx-brand)); background: var(--cx-danger-bg); border-color: color-mix(in srgb, var(--cx-danger) 26%, #fff); }
+.cxc-cash-page .cx-badge.is-liquidada { color: color-mix(in srgb, var(--cx-success) 78%, var(--cx-brand)); background: var(--cx-success-bg); border-color: color-mix(in srgb, var(--cx-success) 26%, #fff); }
+.cxc-cash-page .cx-badge.is-incobrable { color: color-mix(in srgb, var(--cx-danger) 82%, var(--cx-brand)); background: var(--cx-danger-bg); border-color: color-mix(in srgb, var(--cx-danger) 26%, #fff); }
 .cxc-cash-page .cx-badge.is-cancelada, .cxc-cash-page .cx-badge.is-soft { color: var(--cx-muted); background: var(--cx-surface-warm); border-color: var(--cx-border); }
-.cxc-cash-page .cx-badge-ok { color: color-mix(in srgb, var(--cx-success) 78%, #000); background: var(--cx-success-bg); border-color: color-mix(in srgb, var(--cx-success) 26%, #fff); }
-.cxc-cash-page .cx-badge-blocked { color: color-mix(in srgb, var(--cx-warning) 82%, #000); background: var(--cx-warning-bg); border-color: color-mix(in srgb, var(--cx-warning) 28%, #fff); }
+.cxc-cash-page .cx-badge-ok { color: color-mix(in srgb, var(--cx-success) 78%, var(--cx-brand)); background: var(--cx-success-bg); border-color: color-mix(in srgb, var(--cx-success) 26%, #fff); }
+.cxc-cash-page .cx-badge-blocked { color: color-mix(in srgb, var(--cx-warning) 82%, var(--cx-brand)); background: var(--cx-warning-bg); border-color: color-mix(in srgb, var(--cx-warning) 28%, #fff); }
 
 .cxc-cash-page .cx-panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 18px; border-bottom: 1px solid var(--cx-border); }
 .cxc-cash-page .cx-panel-title { font-family: var(--cx-serif); font-size: 1.35rem; font-weight: 700; color: var(--cx-heading); }
@@ -123,14 +128,14 @@ $estado = (string)($filtros['estado'] ?? 'todos');
 
 .cxc-cash-page .cx-empty { text-align: center; padding: 40px 18px; }
 .cxc-cash-page .cx-empty-icon { width: 54px; height: 54px; margin: 0 auto 12px; border-radius: 18px; display: grid; place-items: center; background: var(--cx-gold-soft); color: var(--cx-gold-ink); font-size: 1.25rem; }
-.cxc-cash-page .cx-empty h2 { color: var(--cx-brand); font-size: 1.05rem; font-weight: 700; }
+.cxc-cash-page .cx-empty h2 { color: var(--cx-heading); font-size: 1.05rem; font-weight: 700; }
 .cxc-cash-page .cx-empty p { color: var(--cx-muted); font-size: .88rem; margin-top: 6px; }
 .cxc-cash-page .cx-notice { display: flex; gap: 12px; align-items: flex-start; padding: 16px 18px; background: var(--cx-gold-soft); border: 1px solid var(--cx-gold-line); border-radius: 16px; }
 .cxc-cash-page .cx-notice i { color: var(--cx-gold-ink); font-size: 1.1rem; margin-top: 2px; }
 .cxc-cash-page .cx-notice strong { color: var(--cx-heading); display: block; margin-bottom: 2px; }
 .cxc-cash-page .cx-notice p { color: var(--cx-muted); font-size: .88rem; margin: 0; }
 
-@media (max-width: 980px) { .cxc-cash-page .cx-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cxc-cash-page .cx-filter-form { grid-template-columns: 1fr; } }
+@media (max-width: 980px) { .cxc-cash-page .cx-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cxc-cash-page .cx-filter-form { grid-template-columns: 1fr; } .cxc-cash-page .cx-filter-form .cx-btn-brand { justify-self: end; } }
 </style>
 
 <div class="cxc-cash-page p-4 sm:p-6">

@@ -109,12 +109,15 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
     --tk-gold: var(--brand-accent, #BD9441);
     --tk-gold-soft: color-mix(in srgb, var(--tk-gold) 15%, #FFFFFF);
     --tk-gold-line: color-mix(in srgb, var(--tk-gold) 42%, #E4D4B0);
-    --tk-gold-ink: color-mix(in srgb, var(--tk-gold) 72%, #000);
+    --tk-gold-ink: color-mix(in srgb, var(--tk-gold) 78%, var(--tk-brand));
     --tk-ivory: #F6F2EA; --tk-ivory-2: #FBF8F2;
     --tk-surface: #FFFFFF; --tk-surface-warm: #FCFAF5;
     --tk-border: color-mix(in srgb, var(--tk-brand) 7%, #E7E1D4);
     --tk-ring: color-mix(in srgb, var(--tk-gold) 32%, transparent);
-    --tk-text: #171717; --tk-muted: #667085; --tk-heading: #111827;
+    --tk-text: color-mix(in srgb, var(--tk-brand) 36%, #596474);
+    --tk-text-soft: color-mix(in srgb, var(--tk-brand) 30%, #6C7788);
+    --tk-muted: #828B99;
+    --tk-heading: color-mix(in srgb, var(--tk-brand) 62%, #667284);
     --tk-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
     --tk-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --tk-success: #1E9E63; --tk-success-bg: #E7F4EC;
@@ -134,7 +137,7 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
 .tk-detail .tk-back:hover { color: var(--tk-gold-ink); }
 .tk-detail .tk-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; }
 .tk-detail .tk-hero-icon { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
-    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--tk-gold), var(--tk-brand) 54%, color-mix(in srgb, var(--tk-brand) 68%, #2F8A70));
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--tk-gold), var(--tk-brand) 54%, color-mix(in srgb, var(--tk-brand) 68%, var(--brand-accent, #BD9441)));
     box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--tk-brand) 72%, transparent); }
 .tk-detail .tk-kicker { margin: 0 0 2px; color: var(--tk-muted); font-size: .72rem; font-weight: 700; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
 .tk-detail .tk-title { margin: 0; font-family: var(--tk-serif); color: var(--tk-heading); font-weight: 700; font-size: clamp(1.9rem, 3.4vw, 2.7rem); line-height: 1.02; }
@@ -156,10 +159,10 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
 .tk-detail .tk-col { display: grid; gap: 14px; }
 .tk-detail .tk-card { background: var(--tk-surface); border: 1px solid var(--tk-border); border-radius: 16px; padding: 18px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); }
 .tk-detail .tk-card h2 { font-family: var(--tk-serif); font-size: 1.35rem; font-weight: 700; color: var(--tk-heading); margin: 0 0 12px; }
-.tk-detail .tk-desc { color: #334155; line-height: 1.6; white-space: pre-wrap; }
+.tk-detail .tk-desc { color: var(--tk-text-soft); line-height: 1.6; white-space: pre-wrap; }
 .tk-detail .tk-defs { display: grid; grid-template-columns: 150px 1fr; gap: 9px 14px; font-size: .88rem; }
 .tk-detail .tk-defs dt { color: var(--tk-muted); font-weight: 700; }
-.tk-detail .tk-defs dd { margin: 0; color: var(--tk-heading); font-weight: 600; }
+.tk-detail .tk-defs dd { margin: 0; color: var(--tk-text); font-weight: 600; }
 .tk-detail .tk-defs a { color: var(--tk-info); text-decoration: none; font-weight: 700; }
 .tk-detail .tk-defs a:hover { text-decoration: underline; }
 .tk-detail .tk-faint { color: var(--tk-muted); font-weight: 500; }
@@ -188,7 +191,7 @@ $comentarioCancelarError = $tareaDetailOldAction === 'cancelar' ? tk_detail_form
 
 .tk-detail .tk-timeline { display: grid; gap: 10px; }
 .tk-detail .tk-event { border: 1px solid var(--tk-border); border-radius: 12px; padding: 12px; background: var(--tk-surface-warm); }
-.tk-detail .tk-event strong { display: block; color: var(--tk-heading); font-weight: 700; }
+.tk-detail .tk-event strong { display: block; color: var(--tk-text); font-weight: 700; }
 .tk-detail .tk-event .tk-faint { font-size: .78rem; }
 
 @media (max-width: 900px) { .tk-detail .tk-grid { grid-template-columns: 1fr; } .tk-detail .tk-defs { grid-template-columns: 1fr; } .tk-detail .tk-title { font-size: 1.8rem; } }

@@ -175,8 +175,10 @@ function is_authenticated() {
     $lastActivity = $_SESSION['last_activity'] ?? $_SESSION['login_time'] ?? time();
 
     if ($lifetimeMinutes > 0 && (time() - (int) $lastActivity) > ($lifetimeMinutes * 60)) {
-        remember_hotel_login_context($_SESSION['hotel_slug'] ?? null);
-        logout();
+        // Expiró la sesión por inactividad: limpiamos la sesión PERO conservamos el
+        // token "recordarme" para que el auto-login reconstruya la sesión en la
+        // siguiente petición (sesión siempre activa cuando se marcó recordarme).
+        session_idle_expire();
         return false;
     }
 
@@ -542,12 +544,18 @@ function login($user_id, $remember = false, $hotel = null) {
     if ($remember) {
         // Implementar token de remember me
         $token = generate_random_string(64);
-        $expiry = time() + (30 * 24 * 60 * 60); // 30 días
-        
+        $expiry = time() + (30 * 24 * 60 * 60); // 30 días (deslizante: se renueva en cada auto-login)
+
+        // El token recuerda el hotel con el que se inició sesión para restaurar
+        // ese MISMO contexto al auto-loguear (evita el cruce a otro hotel).
+        $rememberHotelId = (is_array($hotel) && !empty($hotel['id']))
+            ? (int) $hotel['id']
+            : (!empty($_SESSION['hotel_id']) ? (int) $_SESSION['hotel_id'] : null);
+
         // Guardar en BD
         $db->query(
-            "INSERT INTO remember_tokens (user_id, token, expires_at) VALUES (?, ?, ?)",
-            [$user_id, hash('sha256', $token), date('Y-m-d H:i:s', $expiry)]
+            "INSERT INTO remember_tokens (user_id, hotel_id, token, expires_at) VALUES (?, ?, ?, ?)",
+            [$user_id, $rememberHotelId, hash('sha256', $token), date('Y-m-d H:i:s', $expiry)]
         );
         
         // Crear cookie
@@ -603,4 +611,82 @@ function logout() {
     }
     
     session_destroy();
+}
+
+/**
+ * Expira la sesión por inactividad SIN destruir el token "recordarme".
+ * Permite que el auto-login (front controller) reconstruya la sesión y el
+ * contexto del hotel en la siguiente petición. A diferencia de logout(), no
+ * borra la fila ni la cookie de remember_token.
+ */
+function session_idle_expire() {
+    if (class_exists('TenantContext')) {
+        TenantContext::reset();
+    }
+
+    $_SESSION = array();
+
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', [
+            'expires' => time() - 42000,
+            'path' => $params['path'] ?? '/',
+            'domain' => $params['domain'] ?? '',
+            'secure' => $params['secure'] ?? (function_exists('is_https_request') ? is_https_request() : true),
+            'httponly' => $params['httponly'] ?? true,
+            'samesite' => $params['samesite'] ?? 'Lax',
+        ]);
+    }
+
+    session_destroy();
+}
+
+/**
+ * Resuelve el array de hotel (formato que espera login()) a partir del hotel_id
+ * guardado en un token "recordarme", validando que el usuario siga siendo
+ * miembro ACTIVO de ese hotel. Devuelve null si el hotel no está activo o el
+ * usuario ya no pertenece a él (así el auto-login no entra a un hotel indebido).
+ */
+function remember_resolve_hotel_context($userId, $hotelId) {
+    $userId = (int) $userId;
+    $hotelId = (int) $hotelId;
+
+    if ($userId <= 0 || $hotelId <= 0 || !class_exists('Database')) {
+        return null;
+    }
+
+    try {
+        $db = Database::getInstance();
+
+        $hotelStmt = $db->query(
+            "SELECT id, slug, nombre FROM hoteles WHERE id = ? AND activo = 1 LIMIT 1",
+            [$hotelId]
+        );
+        $hotel = $hotelStmt ? $hotelStmt->fetch() : null;
+
+        if (!$hotel) {
+            return null;
+        }
+
+        $miembroStmt = $db->query(
+            "SELECT id, rol FROM hotel_usuarios WHERE hotel_id = ? AND usuario_id = ? AND activo = 1 LIMIT 1",
+            [$hotelId, $userId]
+        );
+        $miembro = $miembroStmt ? $miembroStmt->fetch() : null;
+
+        if (!$miembro) {
+            return null;
+        }
+
+        return [
+            'id' => (int) $hotel['id'],
+            'slug' => $hotel['slug'] ?? null,
+            'nombre' => $hotel['nombre'] ?? null,
+            'rol_hotel' => $miembro['rol'] ?? null,
+            'hotel_usuario_id' => $miembro['id'] ?? null,
+        ];
+    } catch (Throwable $e) {
+        error_log('remember_resolve_hotel_context: ' . $e->getMessage());
+        return null;
+    }
 }

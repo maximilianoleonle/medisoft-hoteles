@@ -22,6 +22,7 @@
 
     <!-- Buscador global (todas las páginas autenticadas) -->
     <script src="<?= asset('js/buscador-global.js') ?>" defer></script>
+    <script src="<?= function_exists('asset_version') ? asset_version('js/mobile-file-return.js') : asset('js/mobile-file-return.js') ?>" defer></script>
 
     <script>
         document.addEventListener('change', function(event) {

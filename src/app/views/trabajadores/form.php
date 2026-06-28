@@ -88,7 +88,7 @@ $valoresFormulario = [
 .worker-form-page .wk-shell { display: grid; gap: 14px; max-width: 1040px; }
 .worker-form-page .wk-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; }
 .worker-form-page .wk-hero-icon { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
-    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--wk-gold), var(--wk-brand) 54%, color-mix(in srgb, var(--wk-brand) 68%, #2F8A70));
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--wk-gold), var(--wk-brand) 54%, color-mix(in srgb, var(--wk-brand) 68%, var(--brand-accent, #BD9441)));
     box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--wk-brand) 72%, transparent); }
 .worker-form-page .wk-kicker { margin: 0 0 2px; color: var(--wk-muted); font-size: .72rem; font-weight: 700; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
 .worker-form-page .wk-title { margin: 0; font-family: var(--wk-serif); color: var(--wk-heading); font-weight: 700; font-size: clamp(2rem, 3.4vw, 2.7rem); line-height: 1; }
@@ -117,6 +117,16 @@ $valoresFormulario = [
 .worker-form-page .wk-btn-muted { background: var(--wk-surface); border-color: var(--wk-border); color: var(--wk-muted); }
 .worker-form-page .wk-back { display: inline-flex; align-items: center; gap: 8px; color: var(--wk-muted); text-decoration: none; font-weight: 700; font-size: .85rem; }
 .worker-form-page .wk-back:hover { color: var(--wk-gold-ink); }
+
+.worker-form-page .wk-date-row { display: flex; align-items: stretch; gap: 8px; }
+.worker-form-page .wk-date-row .wk-input { flex: 1 1 auto; min-width: 0; }
+.worker-form-page .wk-today-btn { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 15px;
+    border-radius: 11px; border: 1px solid color-mix(in srgb, var(--wk-gold) 40%, #fff); background: color-mix(in srgb, var(--wk-gold) 12%, #fff);
+    color: var(--wk-gold-ink); font-family: var(--wk-sans); font-weight: 700; font-size: .82rem; line-height: 1; cursor: pointer; white-space: nowrap;
+    transition: background .16s ease, border-color .16s ease, transform .16s ease; }
+.worker-form-page .wk-today-btn:hover { background: color-mix(in srgb, var(--wk-gold) 20%, #fff); border-color: var(--wk-gold); transform: translateY(-1px); }
+.worker-form-page .wk-today-btn:active { transform: translateY(0); }
+.worker-form-page .wk-today-btn i { font-size: .78rem; }
 </style>
 
 <div class="worker-form-page p-4 sm:p-6">
@@ -185,7 +195,7 @@ $valoresFormulario = [
 
                 <div>
                     <label for="telefono">Tel&eacute;fono</label>
-                    <input class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'telefono') ?>" id="telefono" name="telefono" type="text" maxlength="30" value="<?= $valoresFormulario['telefono'] ?>"<?= trab_form_error_attrs($trabajadorFieldErrors, 'telefono', 'ms-form-error-trab_telefono') ?>>
+                    <input class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'telefono') ?>" id="telefono" name="telefono" type="tel" inputmode="numeric" maxlength="15" data-max-digits="15" placeholder="Solo n&uacute;meros" value="<?= $valoresFormulario['telefono'] ?>"<?= trab_form_error_attrs($trabajadorFieldErrors, 'telefono', 'ms-form-error-trab_telefono') ?>>
                     <?php if (trab_form_error($trabajadorFieldErrors, 'telefono') !== ''): ?>
                         <span id="ms-form-error-trab_telefono" class="wk-form-error ms-form-field-error"><?= trab_form_error($trabajadorFieldErrors, 'telefono') ?></span>
                     <?php endif; ?>
@@ -201,7 +211,10 @@ $valoresFormulario = [
 
                 <div>
                     <label for="fecha_alta">Fecha de alta</label>
-                    <input class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'fecha_alta') ?>" id="fecha_alta" name="fecha_alta" type="date" value="<?= $valoresFormulario['fecha_alta'] ?>"<?= trab_form_error_attrs($trabajadorFieldErrors, 'fecha_alta', 'ms-form-error-trab_fecha_alta') ?>>
+                    <div class="wk-date-row">
+                        <input class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'fecha_alta') ?>" id="fecha_alta" name="fecha_alta" type="date" value="<?= $valoresFormulario['fecha_alta'] ?>"<?= trab_form_error_attrs($trabajadorFieldErrors, 'fecha_alta', 'ms-form-error-trab_fecha_alta') ?>>
+                        <button type="button" class="wk-today-btn" data-today-for="fecha_alta" aria-label="Poner la fecha de hoy"><i class="fas fa-calendar-day" aria-hidden="true"></i> Hoy</button>
+                    </div>
                     <?php if (trab_form_error($trabajadorFieldErrors, 'fecha_alta') !== ''): ?>
                         <span id="ms-form-error-trab_fecha_alta" class="wk-form-error ms-form-field-error"><?= trab_form_error($trabajadorFieldErrors, 'fecha_alta') ?></span>
                     <?php endif; ?>
@@ -223,7 +236,7 @@ $valoresFormulario = [
 
                 <div>
                     <label for="salario_base">Salario base de referencia</label>
-                    <input class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'salario_base') ?>" id="salario_base" name="salario_base" type="number" min="0" step="0.01" placeholder="0.00" value="<?= $valoresFormulario['salario_base'] ?>"<?= trab_form_error_attrs($trabajadorFieldErrors, 'salario_base', 'ms-form-error-trab_salario_base') ?>>
+                    <input class="wk-input<?= trab_form_error_class($trabajadorFieldErrors, 'salario_base') ?>" id="salario_base" name="salario_base" type="number" data-money-format="true" min="0" step="0.01" placeholder="0.00" value="<?= $valoresFormulario['salario_base'] ?>"<?= trab_form_error_attrs($trabajadorFieldErrors, 'salario_base', 'ms-form-error-trab_salario_base') ?>>
                     <?php if (trab_form_error($trabajadorFieldErrors, 'salario_base') !== ''): ?>
                         <span id="ms-form-error-trab_salario_base" class="wk-form-error ms-form-field-error"><?= trab_form_error($trabajadorFieldErrors, 'salario_base') ?></span>
                     <?php endif; ?>
@@ -245,3 +258,30 @@ $valoresFormulario = [
         </form>
     </div>
 </div>
+
+<script>
+// Limita los campos de telefono a solo digitos con tope de longitud
+document.querySelectorAll('input[type="tel"][data-max-digits]').forEach(function(input) {
+    input.addEventListener('input', function(e) {
+        const maxDigits = parseInt(e.target.dataset.maxDigits || '0', 10);
+        let value = e.target.value.replace(/\D/g, '');
+        if (maxDigits > 0 && value.length > maxDigits) {
+            value = value.slice(0, maxDigits);
+        }
+        e.target.value = value;
+    });
+});
+
+// Acceso rapido "Hoy": fija la fecha actual (hora local, sin desfase de zona) en el campo enlazado
+document.querySelectorAll('[data-today-for]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var input = document.getElementById(btn.dataset.todayFor);
+        if (!input) return;
+        var now = new Date();
+        var local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+        input.value = local.toISOString().slice(0, 10);
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        input.focus();
+    });
+});
+</script>

@@ -3,7 +3,7 @@
  * Estrategia de cachÃ© por capas con soporte offline completo
  */
 
-const SW_VERSION = 'v17';
+const SW_VERSION = 'v18';
 const BASE = self.registration.scope; // detecta automÃ¡ticamente el subdirectorio
 
 const CACHE = {
@@ -271,6 +271,10 @@ self.addEventListener('message', event => {
     case 'CLEAR_PRIVATE_DATA':
       event.waitUntil(clearPrivateCaches());
       break;
+
+    case 'CACHE_OFFLINE_BRANDING':
+      event.waitUntil(cacheOfflineBrandingAssets(event.data.assets));
+      break;
   }
 });
 
@@ -284,6 +288,47 @@ function isSafeStaticAsset(url) {
   return pathname.endsWith('/offline.html') ||
     pathname.endsWith('/manifest.json') ||
     /\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|otf|webp)(\?.*)?$/i.test(pathname);
+}
+
+function normalizeOfflineBrandingAsset(value) {
+  const raw = String(value || '').trim();
+  if (!raw || /[\u0000-\u001F<>"']/.test(raw)) return '';
+
+  try {
+    const url = new URL(raw, BASE);
+    const scopePath = new URL(BASE).pathname;
+    const pathWithinScope = url.pathname.startsWith(scopePath)
+      ? url.pathname.slice(scopePath.length)
+      : url.pathname.replace(/^\/+/, '');
+    const allowedPath = pathWithinScope.startsWith('uploads/branding/') ||
+      pathWithinScope.startsWith('uploads/') ||
+      pathWithinScope.startsWith('img/');
+    const allowedExtension = /\.(png|jpe?g|webp|ico)$/i.test(url.pathname);
+
+    if (url.origin !== self.location.origin || !allowedPath || !allowedExtension) {
+      return '';
+    }
+
+    return url.href;
+  } catch {
+    return '';
+  }
+}
+
+async function cacheOfflineBrandingAssets(assets) {
+  if (!Array.isArray(assets) || !assets.length) return;
+
+  const urls = Array.from(new Set(assets.map(normalizeOfflineBrandingAsset).filter(Boolean)));
+  if (!urls.length) return;
+
+  const cache = await caches.open(CACHE.shell);
+  await Promise.allSettled(urls.map(async url => {
+    const request = new Request(url, { credentials: 'same-origin', cache: 'reload' });
+    const response = await fetch(request);
+    if (response && response.ok) {
+      await cache.put(request, response.clone());
+    }
+  }));
 }
 
 /** Cache First: devuelve del cachÃ©, si no existe lo busca en red y lo guarda */

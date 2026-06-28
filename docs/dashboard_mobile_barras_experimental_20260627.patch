@@ -1,0 +1,411 @@
+diff --git a/src/app/views/dashboard/index.php b/src/app/views/dashboard/index.php
+index 10012fdb..20b66ae5 100644
+--- a/src/app/views/dashboard/index.php
++++ b/src/app/views/dashboard/index.php
+@@ -714,8 +714,58 @@ $weekly_line_updated_at = date('H:i');
+ // ── Compact mobile dashboard helpers (Claude Design "mobile-foto") ──
+ // Editorial hero + tight operational cards for phones. Reuses the same
+ // data as the desktop layout; no extra queries, no logic changes.
+-$m_ring_circ = 264; // 2·π·r con r = 42
+-$m_ring_offset = $m_ring_circ * (1 - min(100, max(0, $ocupacion_pct)) / 100);
++$m_occupancy_width = min(100, max(0, (float)$ocupacion_pct));
++$m_occ_avg_pct = $weekly_total_active > 0
++    ? min(100, max(0, ($weekly_chart_avg / $weekly_total_active) * 100))
++    : 0;
++$m_occ_average_label = $weekly_chart_count > 0 ? dashboard_percent_text($m_occ_avg_pct) : '0%';
++$m_occ_bars = [];
++
++foreach (array_slice($weekly_line_rows, -7) as $row) {
++    $bar_pct = min(100, max(0, (float)($row['pct'] ?? 0)));
++    $m_occ_bars[] = [
++        'label' => (string)($row['dia'] ?? '-'),
++        'height' => max(18, $bar_pct),
++        'value' => max(0, (int)($row['ocupadas'] ?? 0)),
++        'is_today' => !empty($row['es_hoy']),
++        'is_peak' => !empty($row['es_pico']),
++    ];
++}
++
++if (empty($m_occ_bars)) {
++    $m_occ_bars[] = [
++        'label' => 'Hoy',
++        'height' => max(18, $m_occupancy_width),
++        'value' => $habitaciones_ocupadas,
++        'is_today' => true,
++        'is_peak' => true,
++    ];
++}
++
++// Orden fijo de la semana (Dom→Sáb): el día de hoy ya no se va al extremo derecho.
++$m_occ_day_order = ['Dom' => 0, 'Lun' => 1, 'Mar' => 2, 'Mié' => 3, 'Jue' => 4, 'Vie' => 5, 'Sáb' => 6];
++usort($m_occ_bars, static function ($a, $b) use ($m_occ_day_order) {
++    return ($m_occ_day_order[$a['label']] ?? 99) <=> ($m_occ_day_order[$b['label']] ?? 99);
++});
++
++// "Hoy" del card = mismo dato que su barra de hoy (coherente con la gráfica de la semana).
++$m_today_occupied = $habitaciones_ocupadas;
++foreach ($m_occ_bars as $__bar_today) {
++    if (!empty($__bar_today['is_today'])) {
++        $m_today_occupied = (int)$__bar_today['value'];
++        break;
++    }
++}
++$m_today_available = max(0, $weekly_total_active - $m_today_occupied);
++$m_today_pct = $weekly_total_active > 0
++    ? min(100, max(0, ($m_today_occupied / $weekly_total_active) * 100))
++    : 0;
++$m_occ_today_pct_label = dashboard_percent_text($m_today_pct);
++
++$m_occ_delta_pct = $m_today_pct - $m_occ_avg_pct;
++$m_occ_delta_label = ($m_occ_delta_pct >= 0 ? '+' : '') . dashboard_percent_text($m_occ_delta_pct);
++$m_occ_delta_class = $m_occ_delta_pct >= 0 ? 'is-up' : 'is-down';
++
+ $m_bar_width = static function ($count) use ($habitaciones_total) {
+     if ($habitaciones_total <= 0 || $count <= 0) {
+         return 0;
+@@ -910,6 +960,17 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
+     }
+ }
+ 
++@keyframes dashBarLift {
++    from {
++        transform: scaleY(.18);
++        opacity: .62;
++    }
++    to {
++        transform: scaleY(1);
++        opacity: 1;
++    }
++}
++
+ @keyframes dashRingDraw {
+     from {
+         stroke-dashoffset: 314;
+@@ -3491,62 +3552,252 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
+     animation: dashPulseDot 2.4s ease-in-out infinite;
+ }
+ 
+-/* Ocupación */
++/* Ocupación móvil */
+ .dm-occ {
++    position: relative;
++    overflow: hidden;
++    display: grid;
++    gap: 14px;
++    padding: 2px 0 0;
++}
++
++.dm-occ::before {
++    content: "";
++    position: absolute;
++    inset: auto -42px -56px auto;
++    width: 154px;
++    height: 154px;
++    border-radius: 999px;
++    background: color-mix(in srgb, var(--dash-available) 9%, transparent);
++    pointer-events: none;
++}
++
++.dm-occ-head,
++.dm-occ-bars,
++.dm-occ-foot {
++    position: relative;
++    z-index: 1;
++}
++
++.dm-occ-head {
+     display: flex;
++    align-items: flex-start;
++    justify-content: space-between;
++    gap: 12px;
++}
++
++.dm-occ-title {
++    color: var(--dash-navy);
++    font-size: 14.5px;
++    font-weight: 700;
++    line-height: 1.15;
++    letter-spacing: -.01em;
++}
++
++.dm-occ-sub {
++    margin-top: 7px;
++    color: var(--dash-slate-500);
++    font-size: 12px;
++    font-weight: 500;
++    line-height: 1.15;
++}
++
++.dm-occ-sub strong {
++    color: var(--dash-navy);
++    font-weight: 700;
++}
++
++.dm-occ-available {
++    min-height: 30px;
++    display: inline-flex;
+     align-items: center;
+-    gap: 15px;
++    gap: 6px;
++    flex: none;
++    padding: 7px 11px;
++    border: 1px solid color-mix(in srgb, var(--dash-available) 16%, #fff);
++    border-radius: 999px;
++    background: color-mix(in srgb, var(--dash-available) 11%, #fff);
++    color: var(--dash-available);
++    font-size: 11.5px;
++    font-weight: 700;
++    line-height: 1;
++    font-variant-numeric: tabular-nums;
+ }
+ 
+-.dm-ring {
+-    position: relative;
+-    width: 76px;
+-    height: 76px;
++.dm-occ-available .led {
++    width: 5px;
++    height: 5px;
+     flex: 0 0 auto;
++    border-radius: 50%;
++    background: currentColor;
+ }
+ 
+-.dm-ring svg {
+-    width: 76px;
+-    height: 76px;
++.dm-occ-bars {
++    position: relative;
++    min-height: 162px;
++    display: grid;
++    grid-template-columns: repeat(var(--bars, 7), minmax(0, 1fr));
++    align-items: end;
++    gap: 6px;
++    padding: 22px 0 0;
+ }
+ 
+-.dm-ring svg circle[stroke-dasharray] {
+-    animation: dashRingDraw .85s cubic-bezier(.2, .78, .22, 1) both .12s;
++.dm-occ-bars::before {
++    content: "";
++    position: absolute;
++    left: 0;
++    right: 0;
++    bottom: 27px;
++    height: 1px;
++    background: var(--dash-line-soft);
++    z-index: 0;
+ }
+ 
+-.dm-ring b {
+-    position: absolute;
+-    inset: 0;
++.dm-occ-bar {
++    position: relative;
++    z-index: 1;
++    min-width: 0;
+     display: grid;
+-    place-items: center;
+-    color: var(--dash-navy);
+-    font-size: 19px;
+-    font-weight: 900;
+-    font-variant-numeric: tabular-nums;
++    justify-items: center;
++    gap: 9px;
++    color: var(--dash-slate-500);
+ }
+ 
+-.dm-occ-meta .big {
++.dm-occ-bar i {
++    position: relative;
++    width: 100%;
++    max-width: 34px;
++    height: calc(var(--h, 42) * 1.3px);
++    min-height: 20px;
++    max-height: 128px;
++    display: block;
++    border-radius: 8px;
++    background-color: color-mix(in srgb, var(--dash-navy) 42%, #fff);
++    background-image: repeating-linear-gradient(
++        -45deg,
++        color-mix(in srgb, var(--dash-navy) 34%, #fff) 0,
++        color-mix(in srgb, var(--dash-navy) 34%, #fff) 4px,
++        color-mix(in srgb, var(--dash-navy) 50%, #fff) 4px,
++        color-mix(in srgb, var(--dash-navy) 50%, #fff) 9px
++    );
++    box-shadow: 0 10px 18px -14px color-mix(in srgb, var(--dash-navy) 40%, transparent);
++    transform-origin: bottom center;
++    animation: dashBarLift .72s cubic-bezier(.2, .78, .22, 1) both;
++}
++
++.dm-occ-bar i b {
++    position: absolute;
++    left: 50%;
++    top: -19px;
++    transform: translateX(-50%);
++    display: none;
++    padding: 2px 7px;
++    border-radius: 999px;
++    background: color-mix(in srgb, var(--dash-navy) 12%, #fff);
+     color: var(--dash-navy);
+-    font-size: 21px;
+-    font-weight: 900;
++    font-size: 10.5px;
++    font-weight: 700;
++    line-height: 1;
+     font-variant-numeric: tabular-nums;
++    white-space: nowrap;
+ }
+ 
+-.dm-occ-meta .big span {
+-    color: var(--dash-slate-400);
+-    font-size: 15px;
++.dm-occ-bar.is-today i {
++    min-height: 32px;
++    background-color: var(--dash-navy);
++    background-image: repeating-linear-gradient(
++        -45deg,
++        color-mix(in srgb, var(--dash-navy) 80%, #fff) 0,
++        color-mix(in srgb, var(--dash-navy) 80%, #fff) 4px,
++        var(--dash-navy) 4px,
++        var(--dash-navy) 9px
++    );
++    box-shadow:
++        0 0 0 2px color-mix(in srgb, var(--dash-navy) 18%, #fff),
++        0 12px 22px -12px color-mix(in srgb, var(--dash-navy) 60%, transparent);
++}
++
++.dm-occ-bar.is-today::before {
++    content: "";
++    position: absolute;
++    left: 50%;
++    top: 4px;
++    bottom: 22px;
++    transform: translateX(-50%);
++    width: 44px;
++    max-width: calc(100% + 8px);
++    border-radius: 12px;
++    background: color-mix(in srgb, var(--dash-navy) 9%, transparent);
++    z-index: 0;
++}
++
++.dm-occ-bar.is-today i b {
++    display: block;
++}
++
++.dm-occ-bar.is-today span {
++    color: var(--dash-navy);
+     font-weight: 700;
+ }
+ 
+-.dm-occ-meta .sub {
+-    margin-top: 1px;
++.dm-occ-bar span {
++    max-width: 100%;
++    overflow: hidden;
+     color: var(--dash-slate-500);
+-    font-size: 12.5px;
++    font-size: 10.5px;
++    font-weight: 600;
++    line-height: 1;
++    letter-spacing: -.01em;
++    text-overflow: ellipsis;
++    white-space: nowrap;
++}
++
++.dm-occ-foot {
++    display: flex;
++    align-items: center;
++    justify-content: space-between;
++    gap: 10px;
++    padding-top: 2px;
++}
++
++.dm-occ-today {
++    color: var(--dash-slate-500);
++    font-size: 12px;
++    font-weight: 500;
++    line-height: 1.2;
++    min-width: 0;
++}
++
++.dm-occ-today strong {
++    color: var(--dash-navy);
+     font-weight: 700;
++    font-variant-numeric: tabular-nums;
+ }
+ 
+-.dm-occ-meta .dm-badge {
+-    margin-top: 8px;
++.dm-occ-delta {
++    min-height: 38px;
++    display: inline-flex;
++    align-items: center;
++    gap: 8px;
++    flex: 0 0 auto;
++    padding: 9px 13px;
++    border-radius: 999px;
++    color: #fff;
++    font-size: 13.5px;
++    font-weight: 700;
++    line-height: 1;
++    background: var(--dash-available);
++    box-shadow: 0 14px 22px -18px color-mix(in srgb, var(--dash-available) 70%, transparent);
++    font-variant-numeric: tabular-nums;
++}
++
++.dm-occ-delta.is-down {
++    background: var(--dash-occupied);
++    box-shadow: 0 14px 22px -18px color-mix(in srgb, var(--dash-occupied) 70%, transparent);
++}
++
++.dm-occ-delta i {
++    font-size: 11px;
+ }
+ 
+ /* Movimientos del día */
+@@ -4475,19 +4726,32 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
+             <div class="dm-body">
+                 <div class="dm-sec"><span>Ocupación</span></div>
+                 <div class="dm-card">
+-                    <div class="dm-occ">
+-                        <div class="dm-ring">
+-                            <svg viewBox="0 0 100 100" aria-hidden="true">
+-                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--dash-line)" stroke-width="9"></circle>
+-                                <circle cx="50" cy="50" r="42" fill="none" stroke="var(--dash-navy)" stroke-width="9" stroke-linecap="round"
+-                                    stroke-dasharray="<?= $m_ring_circ ?>" stroke-dashoffset="<?= $m_ring_offset ?>" transform="rotate(-90 50 50)"></circle>
+-                            </svg>
+-                            <b><?= dashboard_percent_text($ocupacion_pct) ?></b>
++                    <div class="dm-occ" aria-label="Ocupación de hoy: <?= dashboard_safe($m_occ_today_pct_label) ?>">
++                        <div class="dm-occ-head">
++                            <div>
++                                <div class="dm-occ-title">Ocupación semanal</div>
++                                <div class="dm-occ-sub">Promedio <strong><?= dashboard_safe($m_occ_average_label) ?></strong></div>
++                            </div>
++                            <span class="dm-occ-available">
++                                <span class="led" aria-hidden="true"></span>
++                                <?= (int)$m_today_available ?> disponibles
++                            </span>
++                        </div>
++                        <div class="dm-occ-bars" style="--bars:<?= count($m_occ_bars) ?>" aria-label="Ocupación reciente por día">
++                            <?php foreach ($m_occ_bars as $bar): ?>
++                                <?php $bar_class = 'dm-occ-bar' . (!empty($bar['is_today']) ? ' is-today' : ''); ?>
++                                <span class="<?= $bar_class ?>" title="<?= dashboard_safe($bar['value']) ?> habitaciones ocupadas">
++                                    <i style="--h:<?= round((float)$bar['height']) ?>" aria-hidden="true"><b><?= dashboard_safe($bar['value']) ?></b></i>
++                                    <span><?= dashboard_safe($bar['label']) ?></span>
++                                </span>
++                            <?php endforeach; ?>
+                         </div>
+-                        <div class="dm-occ-meta">
+-                            <div class="big"><?= $habitaciones_ocupadas ?> <span>/ <?= $habitaciones_total ?></span></div>
+-                            <div class="sub">habitaciones ocupadas</div>
+-                            <span class="dm-badge"><span class="led"></span> <?= $habitaciones_libres ?> disponibles</span>
++                        <div class="dm-occ-foot">
++                            <div class="dm-occ-today"><strong><?= dashboard_safe($m_occ_today_pct_label) ?></strong> ocupación de hoy</div>
++                            <span class="dm-occ-delta <?= $m_occ_delta_class ?>">
++                                <i class="fas fa-arrow-trend-<?= $m_occ_delta_pct >= 0 ? 'up' : 'down' ?>" aria-hidden="true"></i>
++                                <?= dashboard_safe($m_occ_delta_label) ?>
++                            </span>
+                         </div>
+                     </div>
+                 </div>

@@ -3520,8 +3520,9 @@ body.hotel-layout-scope .main-content > .dashboard-boutique {
     display: grid;
     place-items: center;
     color: var(--dash-navy);
-    font-size: 19px;
-    font-weight: 900;
+    font-size: 15px;
+    font-weight: 820;
+    letter-spacing: -.01em;
     font-variant-numeric: tabular-nums;
 }
 

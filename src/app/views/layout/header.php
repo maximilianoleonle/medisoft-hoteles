@@ -18,6 +18,13 @@ $layoutLogoUrl = ($layoutBranding && function_exists('hotel_branding_asset_url')
 $layoutFaviconUrl = ($layoutBranding && function_exists('hotel_branding_asset_url'))
     ? hotel_branding_asset_url($layoutBranding['favicon_url'] ?? null)
     : null;
+$layoutPwaIcon192Url = ($layoutBranding && function_exists('hotel_branding_pwa_icon_asset_url'))
+    ? hotel_branding_pwa_icon_asset_url($layoutBranding['pwa_icon_192_url'] ?? null, 192)
+    : null;
+$layoutPwaIcon512Url = ($layoutBranding && function_exists('hotel_branding_pwa_icon_asset_url'))
+    ? hotel_branding_pwa_icon_asset_url($layoutBranding['pwa_icon_512_url'] ?? null, 512)
+    : null;
+$layoutAppleTouchIconUrl = $layoutPwaIcon192Url ?: $layoutLogoUrl;
 $layoutThemeColor = '#1B2746';
 if ($layoutEsPanelSaas) {
     $layoutThemeColor = '#0B1220';
@@ -29,6 +36,9 @@ if ($layoutOfflineHoteleroActivo && $layoutBranding && function_exists('hotel_br
     $layoutOfflineBrandingPayload = [
         'name' => $layoutNombreVisual,
         'logo' => $layoutLogoUrl,
+        'favicon' => $layoutFaviconUrl,
+        'pwaIcon192' => $layoutPwaIcon192Url,
+        'pwaIcon512' => $layoutPwaIcon512Url,
         'primary' => hotel_branding_hex($layoutBranding['color_primary'] ?? null, '#1B2746'),
         'secondary' => hotel_branding_hex($layoutBranding['color_secondary'] ?? null, '#0F172A'),
         'accent' => hotel_branding_hex($layoutBranding['color_accent'] ?? null, '#BD9441'),
@@ -52,7 +62,7 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="description" content="Sistema de Gestión Hotelera - <?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
     <title><?= htmlspecialchars($title ?? $layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?></title>
     
@@ -62,10 +72,10 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="Medisoft Hoteles">
-    <meta name="application-name" content="Medisoft Hoteles">
+    <meta name="apple-mobile-web-app-title" content="<?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
+    <meta name="application-name" content="<?= htmlspecialchars($layoutNombreVisual, ENT_QUOTES, 'UTF-8') ?>">
     <meta name="msapplication-TileColor" content="<?= htmlspecialchars($layoutThemeColor, ENT_QUOTES, 'UTF-8') ?>">
-    <meta name="msapplication-TileImage" content="<?= asset('img/icons/icon-144x144.png') ?>">
+    <meta name="msapplication-TileImage" content="<?= htmlspecialchars($layoutPwaIcon192Url ?: asset('img/icons/icon-144x144.png'), ENT_QUOTES, 'UTF-8') ?>">
     <meta name="msapplication-config" content="<?= asset('browserconfig.xml') ?>">
     <meta name="format-detection" content="telephone=no">
     
@@ -84,15 +94,15 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <?php endif; ?>
     
     <!-- iOS Icons -->
-    <link rel="apple-touch-icon" href="<?= asset('img/icons/icon-192x192.png') ?>">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars($layoutAppleTouchIconUrl, ENT_QUOTES, 'UTF-8') ?>">
     <link rel="apple-touch-icon" sizes="72x72" href="<?= asset('img/icons/icon-72x72.png') ?>">
     <link rel="apple-touch-icon" sizes="96x96" href="<?= asset('img/icons/icon-96x96.png') ?>">
     <link rel="apple-touch-icon" sizes="128x128" href="<?= asset('img/icons/icon-128x128.png') ?>">
     <link rel="apple-touch-icon" sizes="144x144" href="<?= asset('img/icons/icon-144x144.png') ?>">
     <link rel="apple-touch-icon" sizes="152x152" href="<?= asset('img/icons/icon-152x152.png') ?>">
-    <link rel="apple-touch-icon" sizes="192x192" href="<?= asset('img/icons/icon-192x192.png') ?>">
+    <link rel="apple-touch-icon" sizes="192x192" href="<?= htmlspecialchars($layoutPwaIcon192Url ?: asset('img/icons/icon-192x192.png'), ENT_QUOTES, 'UTF-8') ?>">
     <link rel="apple-touch-icon" sizes="384x384" href="<?= asset('img/icons/icon-384x384.png') ?>">
-    <link rel="apple-touch-icon" sizes="512x512" href="<?= asset('img/icons/icon-512x512.png') ?>">
+    <link rel="apple-touch-icon" sizes="512x512" href="<?= htmlspecialchars($layoutPwaIcon512Url ?: asset('img/icons/icon-512x512.png'), ENT_QUOTES, 'UTF-8') ?>">
     
     <!-- Preconnect para optimización -->
     <link rel="preconnect" href="https://cdn.tailwindcss.com">
@@ -247,6 +257,12 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
         window.MEDISOFT_OFFLINE_BRANDING = <?= json_encode($layoutOfflineBrandingPayload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
         try {
             window.localStorage.setItem('medisoft:offline-branding', JSON.stringify(window.MEDISOFT_OFFLINE_BRANDING));
+            if (window.MEDISOFT_OFFLINE_BRANDING.slug) {
+                window.localStorage.setItem('medisoft:offline-branding:' + window.MEDISOFT_OFFLINE_BRANDING.slug, JSON.stringify(window.MEDISOFT_OFFLINE_BRANDING));
+            }
+            if (window.MEDISOFT_OFFLINE_BRANDING.hotelId) {
+                window.localStorage.setItem('medisoft:offline-branding:hotel-' + window.MEDISOFT_OFFLINE_BRANDING.hotelId, JSON.stringify(window.MEDISOFT_OFFLINE_BRANDING));
+            }
         } catch (error) {}
         <?php endif; ?>
     </script>
@@ -273,14 +289,14 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
     <script src="<?= function_exists('asset_version') ? asset_version('js/loading-screen.js') : asset('js/loading-screen.js') ?>"></script>
 
     <!-- JavaScript Global -->
-    <script src="<?= asset('js/app.js') ?>" defer></script>
+    <script src="<?= function_exists('asset_version') ? asset_version('js/app.js') : asset('js/app.js') ?>" defer></script>
 
     <!-- PWA: registro de SW + lógica offline (reemplaza el script inline de SW) -->
     <?php if ($layoutOfflineHoteleroActivo): ?>
-    <script src="<?= asset('js/pwa.js') ?>" defer></script>
+    <script src="<?= function_exists('asset_version') ? asset_version('js/pwa.js') : asset('js/pwa.js') ?>" defer></script>
 
     <!-- Offline Data: snapshots de habitaciones/reservaciones + cola tipada + sync -->
-    <script src="<?= asset('js/offline-data.js') ?>" defer></script>
+    <script src="<?= function_exists('asset_version') ? asset_version('js/offline-data.js') : asset('js/offline-data.js') ?>" defer></script>
     <?php endif; ?>
 
     <style>

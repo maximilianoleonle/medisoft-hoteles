@@ -77,7 +77,7 @@ $cajaOpenObservaciones = caja_open_safe($cajaOpenOldInput['observaciones'] ?? ''
 .caja-open .cj-wrap { width: 100%; max-width: 30rem; }
 .caja-open .cj-head { text-align: center; margin-bottom: 22px; }
 .caja-open .cj-head-icon { width: 64px; height: 64px; margin: 0 auto 14px; border-radius: 18px; display: grid; place-items: center; color: #fff; font-size: 1.6rem;
-    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--cj-gold), var(--cj-brand) 54%, color-mix(in srgb, var(--cj-brand) 68%, #2F8A70));
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--cj-gold), var(--cj-brand) 54%, color-mix(in srgb, var(--cj-brand) 68%, var(--brand-accent, #BD9441)));
     box-shadow: 0 16px 30px -14px color-mix(in srgb, var(--cj-brand) 70%, transparent); }
 .caja-open .cj-title { font-family: var(--cj-serif); color: var(--cj-heading); font-weight: 700; font-size: 2.4rem; line-height: 1; }
 .caja-open .cj-date { margin-top: 6px; color: var(--cj-muted); font-size: .9rem; font-weight: 600; text-transform: capitalize; }

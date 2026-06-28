@@ -79,7 +79,7 @@ if (!function_exists('prov_form_error_attrs')) {
 .provider-form-page .pv-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; }
 .provider-form-page .pv-hero-icon {
     width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
-    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--pv-gold), var(--pv-brand) 54%, color-mix(in srgb, var(--pv-brand) 68%, #2F8A70));
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--pv-gold), var(--pv-brand) 54%, color-mix(in srgb, var(--pv-brand) 68%, var(--brand-accent, #BD9441)));
     box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--pv-brand) 72%, transparent);
 }
 .provider-form-page .pv-kicker { margin: 0 0 2px; color: var(--pv-muted); font-size: .72rem; font-weight: 700; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
@@ -188,8 +188,8 @@ if (!function_exists('prov_form_error_attrs')) {
 
                     <div>
                         <label for="telefono">Tel&eacute;fono</label>
-                        <input class="pv-input<?= prov_form_error_class($proveedorFieldErrors, 'telefono') ?>" id="telefono" name="telefono" type="text" maxlength="40"
-                               placeholder="Para contactarlo"
+                        <input class="pv-input<?= prov_form_error_class($proveedorFieldErrors, 'telefono') ?>" id="telefono" name="telefono" type="tel" inputmode="numeric" maxlength="15" data-max-digits="15"
+                               placeholder="Solo n&uacute;meros"
                                value="<?= old('telefono', prov_form_safe($proveedor['telefono'] ?? '')) ?>"<?= prov_form_error_attrs($proveedorFieldErrors, 'telefono', 'ms-form-error-telefono') ?>>
                         <?php if (prov_form_error($proveedorFieldErrors, 'telefono')): ?>
                             <span class="pv-form-error ms-form-field-error" id="ms-form-error-telefono"><?= prov_form_error($proveedorFieldErrors, 'telefono') ?></span>
@@ -264,3 +264,17 @@ if (!function_exists('prov_form_error_attrs')) {
         </div>
     </div>
 </div>
+
+<script>
+// Limita los campos de telefono a solo digitos con tope de longitud
+document.querySelectorAll('input[type="tel"][data-max-digits]').forEach(function(input) {
+    input.addEventListener('input', function(e) {
+        const maxDigits = parseInt(e.target.dataset.maxDigits || '0', 10);
+        let value = e.target.value.replace(/\D/g, '');
+        if (maxDigits > 0 && value.length > maxDigits) {
+            value = value.slice(0, maxDigits);
+        }
+        e.target.value = value;
+    });
+});
+</script>

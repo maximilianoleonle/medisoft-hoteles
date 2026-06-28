@@ -96,7 +96,7 @@ $visibles = count($proveedores);
     font-size: 1.15rem;
     background:
         radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%),
-        linear-gradient(145deg, var(--pv-gold), var(--pv-brand) 54%, color-mix(in srgb, var(--pv-brand) 68%, #2F8A70));
+        linear-gradient(145deg, var(--pv-gold), var(--pv-brand) 54%, color-mix(in srgb, var(--pv-brand) 68%, var(--brand-accent, #BD9441)));
     box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--pv-brand) 72%, transparent);
 }
 .providers-page .pv-kicker {

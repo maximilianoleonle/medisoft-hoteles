@@ -11,6 +11,8 @@ class Huesped extends Model {
         'nombre_completo',
         'telefono',
         'email',
+        'descuento_tipo',
+        'descuento_valor',
         'procedencia_estado',
         'procedencia_ciudad',
         'vehiculo_marca',
@@ -18,6 +20,35 @@ class Huesped extends Model {
         'notas',
         'datos_extra_json'
     ];
+
+    /**
+     * Calcula el descuento del huesped sobre un subtotal dado.
+     * Devuelve el monto ya resuelto (topado al subtotal) y el detalle.
+     * Si el huesped no tiene descuento configurado, devuelve 0.
+     */
+    public function calcularDescuentoHuesped($huesped, $subtotal) {
+        $tipo = $huesped['descuento_tipo'] ?? '';
+        $valor = (float)($huesped['descuento_valor'] ?? 0);
+
+        if ($valor <= 0 || ($tipo !== 'porcentaje' && $tipo !== 'monto')) {
+            return ['descuento' => 0, 'tipo' => null, 'valor' => 0];
+        }
+
+        if ($tipo === 'porcentaje') {
+            $monto = $subtotal * ($valor / 100);
+        } else {
+            $monto = $valor;
+        }
+
+        if ($monto > $subtotal) {
+            $monto = $subtotal;
+        }
+        if ($monto < 0) {
+            $monto = 0;
+        }
+
+        return ['descuento' => $monto, 'tipo' => $tipo, 'valor' => $valor];
+    }
     
     /**
      * Obtener lista de estados de México

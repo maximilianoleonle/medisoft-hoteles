@@ -257,7 +257,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .res-topbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: start; margin-bottom: 20px; }
 .res-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; max-width: min(960px, 100%); }
 .res-title-copy { min-width: 0; padding-top: 1px; }
-.res-hero-icon { width: 48px; height: 48px; display: grid; place-items: center; flex: 0 0 48px; border-radius: 15px; color: #fff; background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--res-accent), var(--res-brand) 54%, color-mix(in srgb, var(--res-brand) 68%, #2F8A70)); box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--res-brand) 72%, transparent); }
+.res-hero-icon { width: 48px; height: 48px; display: grid; place-items: center; flex: 0 0 48px; border-radius: 15px; color: #fff; background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--res-accent), var(--res-brand) 54%, color-mix(in srgb, var(--res-brand) 68%, var(--brand-accent, #BD9441))); box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--res-brand) 72%, transparent); }
 .res-kicker { display: block; margin: 0 0 2px; color: var(--res-muted); font-size: .72rem; font-weight: 900; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
 .res-title { margin: 0; color: var(--res-heading); font-size: clamp(2.35rem, 4vw, 3.35rem); font-family: var(--res-serif); font-weight: 700; letter-spacing: 0; line-height: .98; text-wrap: balance; }
 .res-subtitle { max-width: 920px; margin-top: 9px; color: #718096; font-size: .94rem; font-weight: 600; line-height: 1.55; }
@@ -510,6 +510,9 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
 .res-filter-empty { display: none; margin-top: 14px; }
 .res-filter-empty.is-visible { display: block; }
 .reservation-item.hidden-search { display: none !important; }
+.reservation-item.is-linked { cursor: pointer; }
+tr.reservation-item.is-linked:hover { background: color-mix(in srgb, var(--res-accent, #1E9E63) 6%, transparent); }
+.reservation-item.is-linked:focus-visible { outline: 2px solid color-mix(in srgb, var(--res-accent, #1E9E63) 55%, transparent); outline-offset: -2px; }
 .res-upcoming {
     margin-top: 18px;
     border: 1px solid var(--res-line);
@@ -3956,7 +3959,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                                 $precio_total = (float) ($row['precio_total'] ?? 0);
                                 $search_data = reserva_lower($folio . ' ' . $huesped_nombre . ' ' . $huesped_telefono . ' ' . $habitacion_label . ' ' . $todas_habs . ' ' . $estado_ui['label'] . ' ' . ($row['usuario_registro'] ?? ''));
                             ?>
-                            <tr class="reservation-item" data-res-id="<?= $res_id ?>" data-search="<?= htmlspecialchars($search_data, ENT_QUOTES, 'UTF-8') ?>" data-estado="<?= htmlspecialchars($estado) ?>">
+                            <tr class="reservation-item is-linked" data-res-id="<?= $res_id ?>" data-href="<?= url('reservaciones/ver/' . $res_id) ?>" data-search="<?= htmlspecialchars($search_data, ENT_QUOTES, 'UTF-8') ?>" data-estado="<?= htmlspecialchars($estado) ?>">
                                 <td>
                                     <a href="<?= url('reservaciones/ver/' . $res_id) ?>" class="res-folio res-detail-link" title="Ver detalle de <?= htmlspecialchars($folio) ?>">
                                         <?= htmlspecialchars($folio) ?>
@@ -4076,7 +4079,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                         $precio_total = (float) ($row['precio_total'] ?? 0);
                         $search_data = reserva_lower($folio . ' ' . $huesped_nombre . ' ' . $huesped_telefono . ' ' . $habitacion_label . ' ' . $todas_habs . ' ' . $estado_ui['label'] . ' ' . ($row['usuario_registro'] ?? ''));
                     ?>
-                    <article class="res-mobile-card reservation-item" data-res-id="<?= $res_id ?>" data-search="<?= htmlspecialchars($search_data, ENT_QUOTES, 'UTF-8') ?>" data-estado="<?= htmlspecialchars($estado) ?>">
+                    <article class="res-mobile-card reservation-item is-linked" data-res-id="<?= $res_id ?>" data-href="<?= url('reservaciones/ver/' . $res_id) ?>" data-search="<?= htmlspecialchars($search_data, ENT_QUOTES, 'UTF-8') ?>" data-estado="<?= htmlspecialchars($estado) ?>">
                         <div class="res-mobile-head">
                             <div class="res-mobile-guest">
                                 <div class="res-avatar" style="background:linear-gradient(135deg, <?= htmlspecialchars($color['bg']) ?>, <?= htmlspecialchars($color['dark']) ?>);">
@@ -4199,7 +4202,7 @@ $hotel_nombre_reservas = function_exists('current_hotel_display_name') ? (string
                             $precio_total = (float) ($row['precio_total'] ?? 0);
                             $search_data = reserva_lower($folio . ' ' . $huesped_nombre . ' ' . $huesped_telefono . ' ' . $habitacion_label . ' ' . $todas_habs . ' ' . $habitacion_tipo . ' ' . $estado_ui['label']);
                         ?>
-                        <article class="res-upcoming-card reservation-item" data-res-id="future-<?= $res_id ?>" data-search="<?= htmlspecialchars($search_data, ENT_QUOTES, 'UTF-8') ?>" data-estado="<?= htmlspecialchars($estado) ?>">
+                        <article class="res-upcoming-card reservation-item is-linked" data-res-id="future-<?= $res_id ?>" data-href="<?= url('reservaciones/ver/' . $res_id) ?>" data-search="<?= htmlspecialchars($search_data, ENT_QUOTES, 'UTF-8') ?>" data-estado="<?= htmlspecialchars($estado) ?>">
                             <div class="res-upcoming-date" aria-label="Llegada <?= htmlspecialchars(format_date($fecha_entrada_raw, 'd M Y')) ?>">
                                 <span><?= htmlspecialchars(date('d', $entrada_ts)) ?></span>
                                 <strong><?= htmlspecialchars(reserva_upper($mes_abrev)) ?></strong>
@@ -5192,6 +5195,22 @@ function abrirModalCheckIn(id, total) {
     modal.classList.remove('hidden');
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('overflow-hidden');
+
+    // Saldo-aware: cobrar el SALDO (total menos anticipos ya pagados), no el total bruto.
+    fetch(baseUrl + '/api/reservaciones/' + id + '/resumen-pagos', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            if (d && d.success && d.data) {
+                var saldo = parseFloat(d.data.saldo);
+                if (!isNaN(saldo) && saldo >= 0 && saldo < totalReservacion - 0.004) {
+                    totalReservacion = saldo;
+                    totalLabel.textContent = formatMoney(saldo);
+                    if (resumenTotal) resumenTotal.textContent = formatMoney(saldo);
+                    resetearFormularioPago();
+                }
+            }
+        })
+        .catch(function () {});
 }
 
 function cerrarModalCheckIn() {
@@ -5642,8 +5661,11 @@ document.getElementById('formExportarPDF')?.addEventListener('submit', function(
         return;
     }
     const url = baseUrl + '/reservaciones/exportar-pdf?fecha=' + encodeURIComponent(fecha);
-    const ventana = window.open(url, '_blank');
-    if (!ventana) {
+    const mobileFileHelper = window.MedisoftMobileFiles;
+    const ventana = mobileFileHelper
+        ? mobileFileHelper.open(url, { label: 'PDF de reservaciones' })
+        : window.open(url, '_blank');
+    if (!ventana && !mobileFileHelper) {
         resIndexToast('El navegador bloqueó la nueva pestaña. Abriré el PDF aquí.', 'warning');
         window.location.href = url;
         return;
@@ -5712,4 +5734,33 @@ document.getElementById('modalExportarExcel')?.addEventListener('click', functio
 function formatMoney(amount) {
     return '$' + parseFloat(amount || 0).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
 }
+
+// Clic en cualquier parte de la fila/tarjeta de reservacion -> abre su detalle.
+// Respeta enlaces y botones internos (folio, telefono, check-in/out, acciones).
+(function () {
+    function destino(target) {
+        if (target.closest('a, button, input, textarea, select, label')) return null;
+        return target.closest('.reservation-item.is-linked[data-href]');
+    }
+
+    document.addEventListener('click', function (e) {
+        const row = destino(e.target);
+        if (!row) return;
+        const href = row.getAttribute('data-href');
+        if (!href) return;
+        if (e.ctrlKey || e.metaKey || e.button === 1) {
+            window.open(href, '_blank', 'noopener');
+        } else {
+            window.location.href = href;
+        }
+    });
+
+    document.addEventListener('auxclick', function (e) {
+        if (e.button !== 1) return;
+        const row = destino(e.target);
+        if (!row) return;
+        const href = row.getAttribute('data-href');
+        if (href) { e.preventDefault(); window.open(href, '_blank', 'noopener'); }
+    });
+})();
 </script>

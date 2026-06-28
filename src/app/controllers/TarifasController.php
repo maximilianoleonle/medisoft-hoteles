@@ -29,6 +29,12 @@ class TarifasController extends Controller {
         return true;
     }
 
+    private function hotelIdActual(): int {
+        return function_exists('obtenerHotelIdActualCompat')
+            ? (int)obtenerHotelIdActualCompat()
+            : (int)($_SESSION['hotel_id'] ?? 0);
+    }
+
     private function tiposHabitacionCatalogo(array $tiposActuales = []) {
         $tipos = [];
 
@@ -237,6 +243,7 @@ class TarifasController extends Controller {
                 'nombre' => $nombre,
                 'descripcion' => $this->getPost('descripcion'),
                 'tipo_incremento' => $this->getPost('tipo_incremento'),
+                'clase' => in_array($this->getPost('clase'), ['incremento', 'descuento'], true) ? $this->getPost('clase') : 'incremento',
                 'valor_incremento' => $valor_incremento,
                 'alcance' => $this->getPost('alcance'),
                 'es_permanente' => $es_permanente,
@@ -362,6 +369,7 @@ class TarifasController extends Controller {
                 'nombre' => $nombre,
                 'descripcion' => $this->getPost('descripcion'),
                 'tipo_incremento' => $this->getPost('tipo_incremento'),
+                'clase' => in_array($this->getPost('clase'), ['incremento', 'descuento'], true) ? $this->getPost('clase') : 'incremento',
                 'valor_incremento' => $valor_incremento,
                 'alcance' => $this->getPost('alcance'),
                 'es_permanente' => $es_permanente,

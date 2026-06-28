@@ -1476,6 +1476,10 @@ function exportarPDF() {
     const url = '<?= url('reportes/exportar-pdf') ?>?tipo=ingresos-gastos' +
                 '&fecha_inicio=<?= $fecha_inicio ?>' +
                 '&fecha_fin=<?= $fecha_fin ?>';
+    if (window.MedisoftMobileFiles) {
+        window.MedisoftMobileFiles.open(url, { label: 'PDF del reporte' });
+        return;
+    }
     window.open(url, '_blank');
 }
 
@@ -1561,7 +1565,12 @@ document.getElementById('formReporteUsuario').addEventListener('submit', functio
     e.preventDefault();
     const formData = new FormData(this);
     const params = new URLSearchParams(formData).toString();
-    window.open('<?= url('reportes/exportar-pdf') ?>?tipo=ingresos-gastos-usuario&' + params, '_blank');
+    const url = '<?= url('reportes/exportar-pdf') ?>?tipo=ingresos-gastos-usuario&' + params;
+    if (window.MedisoftMobileFiles) {
+        window.MedisoftMobileFiles.open(url, { label: 'PDF por usuario' });
+    } else {
+        window.open(url, '_blank');
+    }
     cerrarModalReporteUsuario();
 });
 
@@ -1569,7 +1578,12 @@ document.getElementById('formReporteIngresos').addEventListener('submit', functi
     e.preventDefault();
     const formData = new FormData(this);
     const params = new URLSearchParams(formData).toString();
-    window.open('<?= url('reportes/exportar-pdf') ?>?tipo=ingresos-totales&' + params, '_blank');
+    const url = '<?= url('reportes/exportar-pdf') ?>?tipo=ingresos-totales&' + params;
+    if (window.MedisoftMobileFiles) {
+        window.MedisoftMobileFiles.open(url, { label: 'PDF de ingresos' });
+    } else {
+        window.open(url, '_blank');
+    }
     cerrarModalReporteIngresos();
 });
 

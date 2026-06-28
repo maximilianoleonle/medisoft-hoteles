@@ -1439,6 +1439,48 @@ textarea.ge-control {
                         </div>
                     </section>
 
+                    <?php
+                        $geDescuentoTipo = old('descuento_tipo', (string)($huesped['descuento_tipo'] ?? ''));
+                        $geDescuentoValor = old('descuento_valor', guest_edit_safe($huesped['descuento_valor'] ?? '', ''));
+                    ?>
+                    <section class="ge-panel">
+                        <div class="ge-panel-head">
+                            <div class="ge-panel-title">
+                                <span class="ge-icon-box"><i class="fas fa-tags"></i></span>
+                                <div>
+                                    <h2>Descuento del hu&eacute;sped</h2>
+                                    <p>Opcional. Se aplica autom&aacute;ticamente al cotizar reservaciones de este hu&eacute;sped (ajustable en cada reservaci&oacute;n).</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ge-panel-body">
+                            <div class="ge-grid">
+                                <div class="ge-field">
+                                    <label class="ge-label" for="descuento_tipo">Tipo de descuento</label>
+                                    <div class="ge-input-wrap">
+                                        <i class="fas fa-percent"></i>
+                                        <select id="descuento_tipo" name="descuento_tipo" class="ge-control has-icon">
+                                            <option value="">Sin descuento</option>
+                                            <option value="porcentaje" <?= $geDescuentoTipo === 'porcentaje' ? 'selected' : '' ?>>Porcentaje (%)</option>
+                                            <option value="monto" <?= $geDescuentoTipo === 'monto' ? 'selected' : '' ?>>Monto fijo ($)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="ge-field">
+                                    <label class="ge-label" for="descuento_valor">Valor</label>
+                                    <div class="ge-input-wrap">
+                                        <i class="fas fa-tag"></i>
+                                        <input type="number" id="descuento_valor" name="descuento_valor" min="0" step="0.01"
+                                               value="<?= $geDescuentoValor ?>"
+                                               placeholder="Ej. 10"
+                                               class="ge-control has-icon">
+                                    </div>
+                                    <span class="ge-field-hint">Porcentaje (ej. 10 = 10%) o pesos, seg&uacute;n el tipo elegido.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                     <?php if ($geGuestFieldVisible('procedencia_estado') || $geGuestFieldVisible('procedencia_ciudad')): ?>
                     <section class="ge-panel">
                         <div class="ge-panel-head">

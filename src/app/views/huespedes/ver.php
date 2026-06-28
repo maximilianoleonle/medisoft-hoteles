@@ -691,11 +691,10 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
     grid-template-columns: minmax(0, 1.2fr) minmax(220px, .8fr);
     gap: 14px;
     align-items: stretch;
-    border: 1px solid color-mix(in srgb, var(--gd-primary) 12%, var(--gd-line-soft));
-    border-radius: 18px;
-    background:
-        linear-gradient(135deg, #FFFFFF, color-mix(in srgb, var(--gd-accent) 4%, #FFFFFF));
-    padding: 15px;
+    border: 1px solid var(--gd-line-soft);
+    border-radius: 14px;
+    background: #FFFFFF;
+    padding: 16px;
     transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
 
@@ -720,20 +719,20 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
 }
 
 .guest-vehicle-icon {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     flex: none;
     display: grid;
     place-items: center;
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--gd-accent) 10%, #FFFFFF);
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--gd-accent) 8%, #FFFFFF);
     color: var(--gd-accent-readable);
 }
 
 .guest-vehicle-title strong {
     display: block;
     color: var(--gd-text);
-    font-weight: 950;
+    font-weight: 700;
     line-height: 1.15;
     overflow-wrap: anywhere;
 }
@@ -741,14 +740,12 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
 .guest-vehicle-title span {
     width: fit-content;
     display: inline-flex;
-    margin-top: 7px;
-    border: 1px solid var(--gd-line-soft);
-    border-radius: 9px;
-    background: color-mix(in srgb, var(--gd-primary) 5%, #FFFFFF);
+    margin-top: 6px;
     color: var(--gd-muted);
-    padding: 4px 8px;
+    padding: 0;
     font-size: .78rem;
-    font-weight: 850;
+    font-weight: 600;
+    letter-spacing: .02em;
     font-variant-numeric: tabular-nums;
 }
 
@@ -788,26 +785,33 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
 
 .guest-vehicle-details {
     display: grid;
-    gap: 9px;
+    gap: 0;
     margin-top: 0;
-    padding: 12px;
-    border: 1px solid var(--gd-line-soft);
-    border-radius: 15px;
-    background: rgba(255,255,255,.72);
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    align-content: start;
 }
 
 .guest-detail-row {
     display: flex;
     justify-content: space-between;
     gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--gd-line-soft);
     color: var(--gd-muted);
-    font-size: .83rem;
-    font-weight: 750;
+    font-size: .82rem;
+    font-weight: 500;
+}
+
+.guest-detail-row:last-child {
+    border-bottom: none;
 }
 
 .guest-detail-row strong {
     color: var(--gd-text);
-    font-weight: 900;
+    font-weight: 600;
     text-align: right;
     overflow-wrap: anywhere;
 }
@@ -817,15 +821,15 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
     width: fit-content;
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    border-radius: 12px;
-    padding: 6px 9px;
+    gap: 6px;
+    border-radius: 8px;
+    padding: 4px 8px;
     font-size: .76rem;
-    font-weight: 900;
+    font-weight: 600;
 }
 
 .guest-parking-badge {
-    background: color-mix(in srgb, var(--gd-accent) 12%, #FFFFFF);
+    background: color-mix(in srgb, var(--gd-accent) 8%, #FFFFFF);
     color: var(--gd-text-soft);
 }
 
@@ -1627,6 +1631,23 @@ $guestRenderVehicleModalFields = function ($mode = 'add') use ($guestVehicleVisi
                                 <div>
                                     <span class="guest-info-label">Última visita</span>
                                     <strong><?= guest_detail_safe($ultima_visita_label) ?></strong>
+                                </div>
+                            </article>
+                            <?php
+                            $descTipoVer = (string)($huesped['descuento_tipo'] ?? '');
+                            $descValorVer = (float)($huesped['descuento_valor'] ?? 0);
+                            $descLabelVer = 'Sin descuento';
+                            if ($descValorVer > 0 && $descTipoVer === 'porcentaje') {
+                                $descLabelVer = rtrim(rtrim(number_format($descValorVer, 2), '0'), '.') . '%';
+                            } elseif ($descValorVer > 0 && $descTipoVer === 'monto') {
+                                $descLabelVer = '$' . number_format($descValorVer, 2);
+                            }
+                            ?>
+                            <article class="guest-info-card">
+                                <i class="fas fa-tags"></i>
+                                <div>
+                                    <span class="guest-info-label">Descuento</span>
+                                    <strong><?= guest_detail_safe($descLabelVer) ?></strong>
                                 </div>
                             </article>
                             <?php if (!empty($huesped['vehiculo_marca']) || !empty($huesped['vehiculo_placas'])): ?>

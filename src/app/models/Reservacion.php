@@ -19,6 +19,8 @@ class Reservacion extends Model {
         'fecha_salida',
         'hora_salida',
         'precio_total',
+        'descuento_total',
+        'descuento_detalle_json',
         'metodo_pago',
         'estado',
         'notas',
@@ -730,6 +732,54 @@ public function obtenerPagos($reservacion_id) {
 }
 
 /**
+ * Resumen de cobro de una reservación: total, pagado (pagos + abonos) y saldo pendiente.
+ * Reusa las dos mismas fuentes que Cuentas por Cobrar (reservacion_pagos + reservacion_abonos),
+ * de forma defensiva por si alguna tabla no existe en algún hotel.
+ */
+public function resumenPagos($reservacion_id, $hotelId = null) {
+    $db = Database::getInstance();
+    $reservacion_id = (int)$reservacion_id;
+    $hotelId = $hotelId !== null ? (int)$hotelId : (int)$this->hotelIdActual();
+
+    $stmt = $db->query(
+        "SELECT precio_total FROM reservaciones WHERE id = ? AND hotel_id = ? LIMIT 1",
+        [$reservacion_id, $hotelId]
+    );
+    $row = $stmt ? $stmt->fetch() : null;
+    $total = (float)($row['precio_total'] ?? 0);
+
+    $sumarTabla = function ($tabla) use ($db, $reservacion_id, $hotelId) {
+        try {
+            $chk = $db->query("SHOW TABLES LIKE '" . $tabla . "'");
+            if (!$chk || $chk->rowCount() === 0) {
+                return 0.0;
+            }
+            $stmt = $db->query(
+                "SELECT COALESCE(SUM(monto), 0) AS t FROM {$tabla} WHERE reservacion_id = ? AND hotel_id = ?",
+                [$reservacion_id, $hotelId]
+            );
+            $r = $stmt ? $stmt->fetch() : null;
+            return (float)($r['t'] ?? 0);
+        } catch (\Throwable $e) {
+            return 0.0;
+        }
+    };
+
+    $pagos = $sumarTabla('reservacion_pagos');
+    $abonos = $sumarTabla('reservacion_abonos');
+    $pagado = $pagos + $abonos;
+    $saldo = max(0, round($total - $pagado, 2));
+
+    return [
+        'total'  => round($total, 2),
+        'pagos'  => round($pagos, 2),
+        'abonos' => round($abonos, 2),
+        'pagado' => round($pagado, 2),
+        'saldo'  => $saldo,
+    ];
+}
+
+/**
  * Obtener resumen de pagos por método
  * @param int $reservacion_id
  * @return array
@@ -1242,20 +1292,81 @@ public function actualizarHabitaciones($reservacion_id, $habitaciones, $cortesia
         }
         // ====== FIN RECALCULO ======
 
+        // ====== RE-APLICAR DESCUENTOS DE PRECIO (por tipo + huésped) ======
+        // Al cambiar las habitaciones se recalcula el descuento automatico sobre el nuevo set.
+        $precioPorHabId = [];
+        foreach ($habitaciones_con_precio as $hpc) {
+            $precioPorHabId[(string)$hpc['id']] = $hpc;
+        }
+        $descuento_tipo_total = 0;
+        $descuento_detalle_tipo = [];
+        foreach ($habitaciones as $habitacion) {
+            $hid = (string)$habitacion['id'];
+            if (!isset($precioPorHabId[$hid]) || $precioPorHabId[$hid]['es_cortesia']) {
+                continue;
+            }
+            $dt = $tarifaModel->calcularDescuentoPorTipo(
+                $habitacion['tipo'] ?? '',
+                $precioPorHabId[$hid]['precio'],
+                $fecha_entrada
+            );
+            $descuento_tipo_total += $dt['descuento_total'];
+            foreach ($dt['descuentos_aplicados'] as $da) {
+                $descuento_detalle_tipo[] = $da + ['habitacion' => $habitacion['numero'] ?? $habitacion['id']];
+            }
+        }
+
+        $subtotal_tras_tipo = max(0, $precio_total - $descuento_tipo_total);
+        $descuento_huesped = 0;
+        $descuento_huesped_detalle = ['descuento' => 0, 'tipo' => null, 'valor' => 0];
+        $huesped_id_res = (int)($reservacion_actual['huesped_id'] ?? 0);
+        if ($huesped_id_res > 0) {
+            if (!class_exists('Huesped')) {
+                require_once __DIR__ . '/Huesped.php';
+            }
+            $huespedModelUpd = new Huesped();
+            $huespedRowUpd = $huespedModelUpd->findForHotel($huesped_id_res, $hotel_id);
+            if ($huespedRowUpd) {
+                $descuento_huesped_detalle = $huespedModelUpd->calcularDescuentoHuesped($huespedRowUpd, $subtotal_tras_tipo);
+                $descuento_huesped = $descuento_huesped_detalle['descuento'];
+            }
+        }
+
+        $descuento_total_upd = $descuento_tipo_total + $descuento_huesped;
+        if ($descuento_total_upd > $precio_total) {
+            $descuento_total_upd = $precio_total;
+        }
+        $descuento_detalle_json_upd = json_encode([
+            'subtotal' => $precio_total,
+            'descuento_tipo' => $descuento_tipo_total,
+            'descuento_huesped' => $descuento_huesped,
+            'descuento_auto' => $descuento_total_upd,
+            'descuento_aplicado' => $descuento_total_upd,
+            'tipo' => $descuento_detalle_tipo,
+            'huesped' => $descuento_huesped_detalle
+        ]);
+        $precio_total = $precio_total - $descuento_total_upd;
+        error_log("Descuento re-aplicado en actualizarHabitaciones: \${$descuento_total_upd}; precio_total final: \${$precio_total}");
+        // ====== FIN DESCUENTOS ======
+
         // Actualizar reservacion
         $total_habitaciones = count($habitaciones);
         $habitaciones_cortesia = count($cortesias_ids);
-        
-        $sql = "UPDATE reservaciones 
+
+        $sql = "UPDATE reservaciones
                 SET precio_total = ?,
+                    descuento_total = ?,
+                    descuento_detalle_json = ?,
                     total_habitaciones = ?,
                     habitaciones_cortesia = ?,
                     updated_at = NOW()
                 WHERE id = ?
                 AND hotel_id = ?";
-        
+
         $pdo->prepare($sql)->execute([
             $precio_total,
+            $descuento_total_upd,
+            $descuento_detalle_json_upd,
             $total_habitaciones,
             $habitaciones_cortesia,
             $reservacion_id,
@@ -1666,31 +1777,103 @@ public function obtenerEstadisticasDashboard() {
         }
         // ====== FIN RECALCULO ======
 
+        // ====== DESCUENTOS DE PRECIO (por tipo de habitacion + por huesped) ======
+        // Se calcula sobre el monto realmente cobrado (sin habitaciones de cortesia).
+        // El operador puede ajustar el total via 'descuento_aplicado' (override del form).
+        if (!class_exists('IncrementoTarifa')) {
+            require_once __DIR__ . '/IncrementoTarifa.php';
+        }
+        $tarifaModelDesc = new IncrementoTarifa();
+        $descuento_tipo_total = 0;
+        $descuento_detalle_tipo = [];
+        foreach ($habitaciones as $habitacion) {
+            if (in_array(strval($habitacion['id']), $ids_cortesia)) {
+                continue; // las cortesias no reciben descuento adicional
+            }
+            $dt = $tarifaModelDesc->calcularDescuentoPorTipo(
+                $habitacion['tipo'] ?? '',
+                $habitacion['precio_calculado'] ?? 0,
+                $data['fecha_entrada']
+            );
+            $descuento_tipo_total += $dt['descuento_total'];
+            foreach ($dt['descuentos_aplicados'] as $da) {
+                $descuento_detalle_tipo[] = $da + ['habitacion' => $habitacion['numero'] ?? $habitacion['id']];
+            }
+        }
+
+        $subtotal_tras_tipo = max(0, $precio_real_total - $descuento_tipo_total);
+        $descuento_huesped = 0;
+        $descuento_huesped_detalle = ['descuento' => 0, 'tipo' => null, 'valor' => 0];
+        if (!empty($data['huesped_id'])) {
+            if (!class_exists('Huesped')) {
+                require_once __DIR__ . '/Huesped.php';
+            }
+            $huespedModelDesc = new Huesped();
+            $huespedRowDesc = $huespedModelDesc->findForHotel($data['huesped_id'], $hotel_id);
+            if ($huespedRowDesc) {
+                $descuento_huesped_detalle = $huespedModelDesc->calcularDescuentoHuesped($huespedRowDesc, $subtotal_tras_tipo);
+                $descuento_huesped = $descuento_huesped_detalle['descuento'];
+            }
+        }
+
+        $descuento_auto = $descuento_tipo_total + $descuento_huesped;
+
+        // Override ajustable del operador (si lo envio el formulario)
+        if (array_key_exists('descuento_aplicado', $data) && $data['descuento_aplicado'] !== null && $data['descuento_aplicado'] !== '') {
+            $descuento_final = (float)$data['descuento_aplicado'];
+        } else {
+            $descuento_final = $descuento_auto;
+        }
+        if ($descuento_final < 0) {
+            $descuento_final = 0;
+        }
+        if ($descuento_final > $precio_real_total) {
+            $descuento_final = $precio_real_total;
+        }
+
+        $data['precio_total'] = $precio_real_total - $descuento_final;
+        $data['descuento_total'] = $descuento_final;
+        $data['descuento_detalle_json'] = json_encode([
+            'subtotal' => $precio_real_total,
+            'descuento_tipo' => $descuento_tipo_total,
+            'descuento_huesped' => $descuento_huesped,
+            'descuento_auto' => $descuento_auto,
+            'descuento_aplicado' => $descuento_final,
+            'tipo' => $descuento_detalle_tipo,
+            'huesped' => $descuento_huesped_detalle
+        ]);
+        error_log("Descuento aplicado: \${$descuento_final} (auto: \${$descuento_auto}); precio_total final: \${$data['precio_total']}");
+        // ====== FIN DESCUENTOS ======
+
         // CRÍTICO: Crear la reservación primero
         error_log("Intentando insertar en tabla reservaciones...");
         
         $sql = "INSERT INTO reservaciones (
-                    huesped_id, 
-                    fecha_entrada, 
-                    fecha_salida, 
-                    hora_llegada_estimada, 
-                    precio_total, 
-                    estado, 
-                    notas, 
-                    usuario_registro_id, 
-                    total_habitaciones, 
+                    huesped_id,
+                    fecha_entrada,
+                    fecha_salida,
+                    hora_llegada_estimada,
+                    precio_total,
+                    descuento_total,
+                    descuento_detalle_json,
+                    estado,
+                    notas,
+                    usuario_registro_id,
+                    total_habitaciones,
                     habitaciones_cortesia,
                     hotel_id,
-                    created_at, 
+                    created_at,
                     updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
-        
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+
         $params = [
             $data['huesped_id'],
             $data['fecha_entrada'],
             $data['fecha_salida'],
             array_key_exists('hora_llegada_estimada', $data) ? $data['hora_llegada_estimada'] : null,
             $data['precio_total'],
+            $data['descuento_total'] ?? 0,
+            $data['descuento_detalle_json'] ?? null,
             $data['estado'] ?? 'confirmada',
             $data['notas'] ?? '',
             $data['usuario_registro_id'] ?? 1,
@@ -1927,7 +2110,7 @@ public function obtenerEstadisticasDashboard() {
     /**
  * Calcular precio múltiple con consideración de horarios especiales
  */
-public function calcularPrecioMultiple($habitaciones, $fecha_entrada, $fecha_salida, $hora_llegada = null) {
+public function calcularPrecioMultiple($habitaciones, $fecha_entrada, $fecha_salida, $hora_llegada = null, $huespedId = null) {
     // Incluir el modelo de tarifas si no está incluido
     if (!class_exists('IncrementoTarifa')) {
         require_once __DIR__ . '/IncrementoTarifa.php';
@@ -1957,7 +2140,9 @@ public function calcularPrecioMultiple($habitaciones, $fecha_entrada, $fecha_sal
     // Calcular precio total sin descuentos pero CON incrementos de tarifas
     $precio_total = 0;
     $habitaciones_con_precio_calculado = [];
-    
+    $descuento_tipo_total = 0;
+    $descuento_detalle_tipo = [];
+
     foreach ($habitaciones as $key => $habitacion) {
         $precio_por_noche = 0;
         
@@ -1981,6 +2166,18 @@ public function calcularPrecioMultiple($habitaciones, $fecha_entrada, $fecha_sal
         // Guardar el precio calculado para esta habitación
         $habitaciones[$key]['precio_calculado'] = $precio_por_noche;
         $habitaciones[$key]['precio_por_noche'] = $precio_por_noche / $noches;
+
+        // Descuento por TIPO de habitacion (clase='descuento') sobre el total de la habitacion
+        $desc_tipo_info = $tarifaModel->calcularDescuentoPorTipo(
+            $habitacion['tipo'],
+            $precio_por_noche,
+            $fecha_entrada
+        );
+        $habitaciones[$key]['descuento_tipo'] = $desc_tipo_info['descuento_total'];
+        $descuento_tipo_total += $desc_tipo_info['descuento_total'];
+        foreach ($desc_tipo_info['descuentos_aplicados'] as $da) {
+            $descuento_detalle_tipo[] = $da + ['habitacion' => $habitacion['numero'] ?? ($habitacion['id'] ?? null)];
+        }
         $habitaciones[$key]['tipo_label'] = function_exists('get_tipo_habitacion_real')
             ? get_tipo_habitacion_real($habitacion['tipo'] ?? '', $habitacion['caracteristicas'] ?? '')
             : ucfirst(str_replace('_', ' ', (string)($habitacion['tipo'] ?? 'Habitacion')));
@@ -1996,7 +2193,35 @@ public function calcularPrecioMultiple($habitaciones, $fecha_entrada, $fecha_sal
     // calcularPrecioMultiple solo devuelve el precio bruto (suma de todas las habitaciones).
     // El descuento se aplica en crearConHabitaciones / actualizarHabitaciones segun seleccion.
     $habitaciones_cortesia = floor(count($habitaciones) / 11); // solo para mostrar en UI
-    
+
+    // ====== Descuentos de precio (por tipo + por huesped) ======
+    // Aditivo: no altera 'precio_total' (que conserva la cortesia/incrementos previos);
+    // el desglose se expone en llaves nuevas y lo consumen guardarAction y la API.
+    $subtotal_tras_tipo = $precio_total - $descuento_tipo_total;
+    if ($subtotal_tras_tipo < 0) {
+        $subtotal_tras_tipo = 0;
+    }
+
+    $descuento_huesped = 0;
+    $descuento_huesped_detalle = ['descuento' => 0, 'tipo' => null, 'valor' => 0];
+    if (!empty($huespedId)) {
+        if (!class_exists('Huesped')) {
+            require_once __DIR__ . '/Huesped.php';
+        }
+        $huespedModel = new Huesped();
+        $huespedRow = $huespedModel->findForHotel($huespedId, $this->hotelIdActual());
+        if ($huespedRow) {
+            $descuento_huesped_detalle = $huespedModel->calcularDescuentoHuesped($huespedRow, $subtotal_tras_tipo);
+            $descuento_huesped = $descuento_huesped_detalle['descuento'];
+        }
+    }
+
+    $descuento_total = $descuento_tipo_total + $descuento_huesped;
+    if ($descuento_total > $precio_total) {
+        $descuento_total = $precio_total;
+    }
+    $precio_con_descuento = $precio_total - $descuento_total;
+
     return [
         'precio_total' => $precio_total,
         'noches' => $noches,
@@ -2005,7 +2230,17 @@ public function calcularPrecioMultiple($habitaciones, $fecha_entrada, $fecha_sal
         'es_madrugada' => ($hora_llegada && $hora >= 0 && $hora < 12),
         'descuento_cortesia' => $precio_sin_descuento - $precio_total,
         'habitaciones_detalle' => $habitaciones_con_precio_calculado,
-        'habitaciones_necesarias_proxima_cortesia' => $this->calcularHabitacionesParaProximaCortesia(count($habitaciones))
+        'habitaciones_necesarias_proxima_cortesia' => $this->calcularHabitacionesParaProximaCortesia(count($habitaciones)),
+        // Desglose de descuentos de precio (aditivo, no rompe consumidores previos)
+        'subtotal' => $precio_total,
+        'descuento_tipo' => $descuento_tipo_total,
+        'descuento_huesped' => $descuento_huesped,
+        'descuento_total' => $descuento_total,
+        'precio_con_descuento' => $precio_con_descuento,
+        'descuento_detalle' => [
+            'tipo' => $descuento_detalle_tipo,
+            'huesped' => $descuento_huesped_detalle
+        ]
     ];
 }
   private function calcularHabitacionesParaProximaCortesia($total_habitaciones) {

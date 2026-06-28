@@ -1468,6 +1468,10 @@ function exportarPDF() {
     const url = '<?= url('reportes/exportar-pdf') ?>?tipo=procedencia' +
                 '&fecha_inicio=<?= $fecha_inicio ?>' +
                 '&fecha_fin=<?= $fecha_fin ?>';
+    if (window.MedisoftMobileFiles) {
+        window.MedisoftMobileFiles.open(url, { label: 'PDF del reporte' });
+        return;
+    }
     window.open(url, '_blank');
 }
 

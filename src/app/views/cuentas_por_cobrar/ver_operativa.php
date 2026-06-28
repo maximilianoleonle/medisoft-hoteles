@@ -89,12 +89,14 @@ if (!function_exists('cxc_op_form_error_attrs')) {
     --cx-gold: var(--brand-accent, #BD9441);
     --cx-gold-soft: color-mix(in srgb, var(--cx-gold) 15%, #FFFFFF);
     --cx-gold-line: color-mix(in srgb, var(--cx-gold) 42%, #E4D4B0);
-    --cx-gold-ink: color-mix(in srgb, var(--cx-gold) 72%, #000);
+    --cx-gold-ink: color-mix(in srgb, var(--cx-gold) 78%, var(--cx-brand));
     --cx-ivory: #F6F2EA; --cx-ivory-2: #FBF8F2;
     --cx-surface: #FFFFFF; --cx-surface-warm: #FCFAF5;
     --cx-border: color-mix(in srgb, var(--cx-brand) 7%, #E7E1D4);
     --cx-ring: color-mix(in srgb, var(--cx-gold) 32%, transparent);
-    --cx-text: #171717; --cx-muted: #667085; --cx-heading: #111827;
+    --cx-text: color-mix(in srgb, var(--cx-brand) 34%, #647080);
+    --cx-text-soft: color-mix(in srgb, var(--cx-brand) 24%, #7B8492);
+    --cx-muted: #7A8493; --cx-heading: color-mix(in srgb, var(--cx-brand) 62%, #6B7280);
     --cx-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
     --cx-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --cx-success: #1E9E63; --cx-success-bg: #E7F4EC;
@@ -109,7 +111,7 @@ if (!function_exists('cxc_op_form_error_attrs')) {
 .cxc-op-detail .cx-shell { display: grid; gap: 14px; }
 .cxc-op-detail .cx-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; }
 .cxc-op-detail .cx-hero-icon { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
-    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--cx-gold), var(--cx-brand) 54%, color-mix(in srgb, var(--cx-brand) 68%, #2F8A70));
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--cx-gold), var(--cx-brand) 54%, color-mix(in srgb, var(--cx-brand) 68%, var(--brand-accent, #BD9441)));
     box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--cx-brand) 72%, transparent); }
 .cxc-op-detail .cx-kicker { margin: 0 0 2px; color: var(--cx-muted); font-size: .72rem; font-weight: 700; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
 .cxc-op-detail .cx-title { margin: 0; font-family: var(--cx-serif); color: var(--cx-heading); font-weight: 700; font-size: clamp(2rem, 3.6vw, 2.9rem); line-height: 1; }
@@ -127,25 +129,25 @@ if (!function_exists('cxc_op_form_error_attrs')) {
 .cxc-op-detail .cx-btn:hover { transform: translateY(-1px); border-color: var(--cx-gold-line); color: var(--cx-gold-ink); }
 .cxc-op-detail .cx-btn-brand { background: linear-gradient(135deg, var(--cx-brand), var(--cx-brand-2)); border-color: transparent; color: #fff; }
 .cxc-op-detail .cx-btn-brand:hover { color: #fff; border-color: transparent; }
-.cxc-op-detail .cx-btn-danger { background: linear-gradient(135deg, var(--cx-danger), color-mix(in srgb, var(--cx-danger) 72%, #000)); border-color: transparent; color: #fff; }
+.cxc-op-detail .cx-btn-danger { background: linear-gradient(135deg, var(--cx-danger), color-mix(in srgb, var(--cx-danger) 72%, var(--cx-brand))); border-color: transparent; color: #fff; }
 .cxc-op-detail .cx-btn-danger:hover { color: #fff; border-color: transparent; }
 
 .cxc-op-detail .cx-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font-size: .76rem; font-weight: 700; border: 1px solid transparent; }
-.cxc-op-detail .cx-badge.is-pendiente { color: color-mix(in srgb, var(--cx-info) 80%, #000); background: var(--cx-info-bg); border-color: color-mix(in srgb, var(--cx-info) 26%, #fff); }
-.cxc-op-detail .cx-badge.is-parcial { color: color-mix(in srgb, var(--cx-warning) 82%, #000); background: var(--cx-warning-bg); border-color: color-mix(in srgb, var(--cx-warning) 28%, #fff); }
-.cxc-op-detail .cx-badge.is-vencida { color: color-mix(in srgb, var(--cx-danger) 82%, #000); background: var(--cx-danger-bg); border-color: color-mix(in srgb, var(--cx-danger) 26%, #fff); }
-.cxc-op-detail .cx-badge.is-liquidada { color: color-mix(in srgb, var(--cx-success) 78%, #000); background: var(--cx-success-bg); border-color: color-mix(in srgb, var(--cx-success) 26%, #fff); }
-.cxc-op-detail .cx-badge.is-incobrable { color: color-mix(in srgb, var(--cx-danger) 82%, #000); background: var(--cx-danger-bg); border-color: color-mix(in srgb, var(--cx-danger) 26%, #fff); }
+.cxc-op-detail .cx-badge.is-pendiente { color: color-mix(in srgb, var(--cx-info) 80%, var(--cx-brand)); background: var(--cx-info-bg); border-color: color-mix(in srgb, var(--cx-info) 26%, #fff); }
+.cxc-op-detail .cx-badge.is-parcial { color: color-mix(in srgb, var(--cx-warning) 82%, var(--cx-brand)); background: var(--cx-warning-bg); border-color: color-mix(in srgb, var(--cx-warning) 28%, #fff); }
+.cxc-op-detail .cx-badge.is-vencida { color: color-mix(in srgb, var(--cx-danger) 82%, var(--cx-brand)); background: var(--cx-danger-bg); border-color: color-mix(in srgb, var(--cx-danger) 26%, #fff); }
+.cxc-op-detail .cx-badge.is-liquidada { color: color-mix(in srgb, var(--cx-success) 78%, var(--cx-brand)); background: var(--cx-success-bg); border-color: color-mix(in srgb, var(--cx-success) 26%, #fff); }
+.cxc-op-detail .cx-badge.is-incobrable { color: color-mix(in srgb, var(--cx-danger) 82%, var(--cx-brand)); background: var(--cx-danger-bg); border-color: color-mix(in srgb, var(--cx-danger) 26%, #fff); }
 .cxc-op-detail .cx-badge.is-cancelada, .cxc-op-detail .cx-badge.is-soft { color: var(--cx-muted); background: var(--cx-surface-warm); border-color: var(--cx-border); }
-.cxc-op-detail .cx-badge-ok { color: color-mix(in srgb, var(--cx-success) 78%, #000); background: var(--cx-success-bg); border-color: color-mix(in srgb, var(--cx-success) 26%, #fff); }
+.cxc-op-detail .cx-badge-ok { color: color-mix(in srgb, var(--cx-success) 78%, var(--cx-brand)); background: var(--cx-success-bg); border-color: color-mix(in srgb, var(--cx-success) 26%, #fff); }
 
 .cxc-op-detail .cx-panel { background: var(--cx-surface); border: 1px solid var(--cx-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); }
 .cxc-op-detail .cx-panel-title { font-family: var(--cx-serif); font-size: 1.4rem; font-weight: 700; color: var(--cx-heading); }
 .cxc-op-detail .cx-panel-sub { color: var(--cx-muted); font-size: .85rem; margin-top: 3px; line-height: 1.45; }
 .cxc-op-detail .cx-meta-label { font-size: .68rem; color: var(--cx-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
 .cxc-op-detail .cx-meta-value { margin-top: 3px; font-weight: 700; color: var(--cx-heading); }
-.cxc-op-detail .cx-meta-value.is-soft { font-weight: 500; color: #334155; }
-.cxc-op-detail .cx-meta-value.is-notes { font-weight: 500; color: #334155; white-space: pre-line; }
+.cxc-op-detail .cx-meta-value.is-soft { font-weight: 500; color: var(--cx-text-soft); }
+.cxc-op-detail .cx-meta-value.is-notes { font-weight: 500; color: var(--cx-text-soft); white-space: pre-line; }
 
 .cxc-op-detail label.cx-meta-label { display: block; }
 .cxc-op-detail .cx-input, .cxc-op-detail textarea.cx-input, .cxc-op-detail select.cx-input {
@@ -153,11 +155,13 @@ if (!function_exists('cxc_op_form_error_attrs')) {
     color: var(--cx-text); font-weight: 600; font-size: .9rem; font-family: var(--cx-sans); transition: border-color .16s ease, box-shadow .16s ease;
 }
 .cxc-op-detail textarea.cx-input { min-height: 82px; resize: vertical; }
+.cxc-op-detail .cx-input::placeholder { color: color-mix(in srgb, var(--cx-muted) 72%, #fff); font-weight: 600; }
 .cxc-op-detail select.cx-input { cursor: pointer; }
 .cxc-op-detail .cx-input:focus { border-color: var(--cx-gold); box-shadow: 0 0 0 3px var(--cx-ring); outline: none; background: #fff; }
 .cxc-op-detail .cx-input-error { border-color: #B42318; background: #FFF7F6; }
 .cxc-op-detail .cx-form-error { display: block; margin-top: 7px; color: #B42318; font-size: .76rem; font-weight: 800; line-height: 1.35; letter-spacing: 0; text-transform: none; }
 .cxc-op-detail .cx-pay-card { border: 1px solid var(--cx-border); background: var(--cx-surface-warm); border-radius: 13px; padding: 14px; }
+.cxc-op-detail form.cx-pay-card { max-width: 880px; }
 .cxc-op-detail .cx-soft-note { border: 1px solid var(--cx-border); background: var(--cx-surface-warm); border-radius: 12px; padding: 14px; font-size: .88rem; color: var(--cx-muted); }
 
 .cxc-op-detail .cx-panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--cx-border); }
@@ -170,10 +174,11 @@ if (!function_exists('cxc_op_form_error_attrs')) {
 .cxc-op-detail .cx-table tbody tr:hover { background: var(--cx-ivory-2); }
 .cxc-op-detail .cx-strong { font-weight: 700; color: var(--cx-heading); }
 .cxc-op-detail .cx-empty { text-align: center; padding: 38px 18px; }
-.cxc-op-detail .cx-empty h3 { color: var(--cx-brand); font-size: 1.05rem; font-weight: 700; }
+.cxc-op-detail .cx-empty h3 { color: var(--cx-heading); font-size: 1.05rem; font-weight: 700; }
 .cxc-op-detail .cx-empty p { color: var(--cx-muted); font-size: .88rem; margin-top: 6px; }
 
-@media (max-width: 720px) { .cxc-op-detail .cx-stats { grid-template-columns: 1fr; } .cxc-op-detail .cx-title { font-size: 1.9rem; } }
+@media (min-width: 768px) { .cxc-op-detail form.cx-pay-card { grid-template-columns: minmax(120px, .65fr) minmax(150px, .8fr) minmax(220px, 1.25fr); } .cxc-op-detail form.cx-pay-card > .md\:col-span-2 { grid-column: auto; } .cxc-op-detail form.cx-pay-card > .md\:col-span-4 { grid-column: 1 / -1; } }
+@media (max-width: 720px) { .cxc-op-detail .cx-stats { grid-template-columns: 1fr; } .cxc-op-detail .cx-title { font-size: 1.9rem; } .cxc-op-detail form.cx-pay-card { max-width: none; } }
 </style>
 
 <div class="cxc-op-detail p-4 sm:p-6">
@@ -247,7 +252,7 @@ if (!function_exists('cxc_op_form_error_attrs')) {
                     <input type="hidden" name="cobro_token" value="<?= cxc_op_view_safe($cobroToken, '') ?>">
                     <div>
                         <label class="cx-meta-label" for="cxc_monto">Monto</label>
-                        <input id="cxc_monto" class="cx-input mt-1<?= cxc_op_form_error_class($cxcFieldErrors, 'monto') ?>" type="number" name="monto" min="0.01" step="0.01" max="<?= cxc_op_view_safe($cobroCaja['monto_maximo'] ?? '0.00', '0.00') ?>" value="<?= cxc_op_view_safe($cxcCobroMontoValor, '0.00') ?>" required<?= cxc_op_form_error_attrs($cxcFieldErrors, 'monto', 'ms-form-error-cxc_monto') ?>>
+                        <input id="cxc_monto" class="cx-input mt-1<?= cxc_op_form_error_class($cxcFieldErrors, 'monto') ?>" type="number" data-money-format="true" name="monto" min="0.01" step="0.01" max="<?= cxc_op_view_safe($cobroCaja['monto_maximo'] ?? '0.00', '0.00') ?>" value="<?= cxc_op_view_safe($cxcCobroMontoValor, '0.00') ?>" required<?= cxc_op_form_error_attrs($cxcFieldErrors, 'monto', 'ms-form-error-cxc_monto') ?>>
                         <?php if (cxc_op_form_error($cxcFieldErrors, 'monto') !== ''): ?>
                             <span id="ms-form-error-cxc_monto" class="cx-form-error ms-form-field-error"><?= cxc_op_form_error($cxcFieldErrors, 'monto') ?></span>
                         <?php endif; ?>

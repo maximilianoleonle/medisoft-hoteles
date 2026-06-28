@@ -401,6 +401,9 @@ if (!function_exists('caja_form_error_attrs')) {
 }
 .cj-mov:first-child { padding-top:0; }
 .cj-mov:last-child  { border-bottom:none; padding-bottom:0; }
+.cj-mov.is-linked { cursor:pointer; border-radius:10px; margin:0 -8px; padding-left:8px; padding-right:8px; transition:background .15s ease; }
+.cj-mov.is-linked:hover { background:color-mix(in srgb, var(--cj-blue, #2563EB) 6%, transparent); }
+.cj-mov.is-linked:focus-visible { outline:2px solid color-mix(in srgb, var(--cj-blue, #2563EB) 45%, transparent); outline-offset:-2px; }
 .cj-mov-ico {
     width:36px; height:36px;
     display:grid; place-items:center;
@@ -723,7 +726,7 @@ $cash_methods = [
 
     <!-- ── Topbar ── -->
     <nav class="cj-topbar">
-        <a href="<?= url('dashboard') ?>" class="cj-back" title="Volver al inicio">
+        <a href="<?= back_url('dashboard') ?>" class="cj-back" title="Volver">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
@@ -954,8 +957,15 @@ $cash_methods = [
                         <div class="cj-mov-list">
                             <?php foreach ($ultimos_movimientos as $mov):
                                 $es_ingreso = ($mov['tipo'] ?? '') === 'ingreso';
+                                // Destino al clic: reservacion -> su detalle; pago laboral -> ficha del trabajador.
+                                $cj_mov_href = '';
+                                if (!empty($mov['reservacion_id'])) {
+                                    $cj_mov_href = url('reservaciones/ver/' . (int)$mov['reservacion_id']);
+                                } elseif (!empty($mov['trabajador_id'])) {
+                                    $cj_mov_href = url('trabajadores/' . (int)$mov['trabajador_id']);
+                                }
                             ?>
-                            <div class="cj-mov">
+                            <div class="cj-mov<?= $cj_mov_href !== '' ? ' is-linked' : '' ?>"<?= $cj_mov_href !== '' ? ' data-href="' . htmlspecialchars($cj_mov_href, ENT_QUOTES, 'UTF-8') . '" role="link" tabindex="0" title="Abrir detalle"' : '' ?>>
                                 <div class="cj-mov-ico <?= $es_ingreso ? 'is-income' : 'is-expense' ?>">
                                     <i class="fas fa-<?= !empty($mov['categoria_icono']) ? htmlspecialchars($mov['categoria_icono']) : ($es_ingreso ? 'plus' : 'minus') ?>"></i>
                                 </div>
@@ -976,9 +986,9 @@ $cash_methods = [
                                         <?php endif; ?>
                                         <?php if (!empty($mov['reservacion_id'])): ?>
                                         <span>
-                                            <a href="<?= url('reservaciones/' . $mov['reservacion_id']) ?>"
+                                            <a href="<?= url('reservaciones/ver/' . (int)$mov['reservacion_id']) ?>"
                                                style="color:var(--cj-blue);text-decoration:none">
-                                                Res. #<?= $mov['reservacion_id'] ?>
+                                                Res. #<?= (int)$mov['reservacion_id'] ?>
                                             </a>
                                         </span>
                                         <?php endif; ?>
@@ -1423,6 +1433,40 @@ document.addEventListener('keydown', function(e) {
 setInterval(function() {
     location.reload();
 }, 300000);
+
+// Clic en cualquier parte del movimiento -> su destino (reservacion o ficha del trabajador).
+// Respeta el enlace interno "Res. #".
+(function () {
+    function destino(target) {
+        if (target.closest('a, button, input, textarea, select, label')) return null;
+        return target.closest('.cj-mov.is-linked[data-href]');
+    }
+    document.addEventListener('click', function (e) {
+        const row = destino(e.target);
+        if (!row) return;
+        const href = row.getAttribute('data-href');
+        if (!href) return;
+        if (e.ctrlKey || e.metaKey || e.button === 1) {
+            window.open(href, '_blank', 'noopener');
+        } else {
+            window.location.href = href;
+        }
+    });
+    document.addEventListener('auxclick', function (e) {
+        if (e.button !== 1) return;
+        const row = destino(e.target);
+        if (!row) return;
+        const href = row.getAttribute('data-href');
+        if (href) { e.preventDefault(); window.open(href, '_blank', 'noopener'); }
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        const row = e.target.closest && e.target.closest('.cj-mov.is-linked[data-href]');
+        if (!row || row !== e.target) return;
+        e.preventDefault();
+        window.location.href = row.getAttribute('data-href');
+    });
+})();
 </script>
 
 <?php clear_old_input(); ?>

@@ -587,7 +587,7 @@ if (!function_exists('usuario_form_error_attrs')) {
 /* Header limpio (sin banner de color) */
 .worker-page .worker-hero { background: transparent !important; box-shadow: none !important; border-radius: 0 !important; padding: 2px 2px 6px !important; overflow: visible !important; }
 .worker-page .worker-hero-icon { width: 48px !important; height: 48px !important; border-radius: 15px !important; color: #fff !important; border: none !important;
-    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--wk-gold), var(--worker-brand) 54%, color-mix(in srgb, var(--worker-brand) 68%, #2F8A70)) !important;
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--wk-gold), var(--worker-brand) 54%, color-mix(in srgb, var(--worker-brand) 68%, var(--brand-accent, #BD9441))) !important;
     box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--worker-brand) 72%, transparent) !important; }
 .worker-page .worker-kicker { color: var(--worker-muted) !important; font-weight: 700 !important; letter-spacing: .11em !important; }
 .worker-page .worker-title { color: var(--wk-heading) !important; font-family: var(--wk-serif) !important; font-weight: 700 !important; font-size: clamp(2.1rem, 4vw, 3rem) !important; line-height: .98 !important; text-shadow: none !important; }

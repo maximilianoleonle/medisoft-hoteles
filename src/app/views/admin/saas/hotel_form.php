@@ -102,7 +102,7 @@ $valor = function ($campo, $default = '') use ($hotel) {
             <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <label for="telefono" class="block text-sm font-medium" style="color:var(--ms-text);">Teléfono</label>
-                    <input type="text" id="telefono" name="telefono" maxlength="30"
+                    <input type="tel" id="telefono" name="telefono" maxlength="15" inputmode="numeric" data-max-digits="15"
                            value="<?= $valor('telefono') ?>"
                            class="ms-input mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900">
                 </div>
@@ -227,3 +227,17 @@ $valor = function ($campo, $default = '') use ($hotel) {
         </div>
     </form>
 </div>
+
+<script>
+// Limita los campos de telefono a solo digitos con tope de longitud
+document.querySelectorAll('input[type="tel"][data-max-digits]').forEach(function(input) {
+    input.addEventListener('input', function(e) {
+        const maxDigits = parseInt(e.target.dataset.maxDigits || '0', 10);
+        let value = e.target.value.replace(/\D/g, '');
+        if (maxDigits > 0 && value.length > maxDigits) {
+            value = value.slice(0, maxDigits);
+        }
+        e.target.value = value;
+    });
+});
+</script>

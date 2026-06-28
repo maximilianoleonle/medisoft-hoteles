@@ -114,7 +114,7 @@ if (!function_exists('cxp_form_error_attrs')) {
 .cxp-detail-page .cx-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; }
 .cxp-detail-page .cx-hero-icon {
     width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
-    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--cx-gold), var(--cx-brand) 54%, color-mix(in srgb, var(--cx-brand) 68%, #2F8A70));
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--cx-gold), var(--cx-brand) 54%, color-mix(in srgb, var(--cx-brand) 68%, var(--brand-accent, #BD9441)));
     box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--cx-brand) 72%, transparent);
 }
 .cxp-detail-page .cx-kicker { margin: 0 0 2px; color: var(--cx-muted); font-size: .72rem; font-weight: 700; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
@@ -337,6 +337,7 @@ if (!function_exists('cxp_form_error_attrs')) {
                             id="cxp_pago_monto"
                             class="cx-input mt-1<?= cxp_form_error_class($cxpFieldErrors, 'monto') ?>"
                             type="number"
+                            data-money-format="true"
                             name="monto"
                             min="0.01"
                             max="<?= cxp_view_safe($pagoCaja['monto_maximo'] ?? ($cuenta['saldo'] ?? 0), '0.00') ?>"

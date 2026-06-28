@@ -1958,6 +1958,10 @@ $balance_es_positivo = $balance_total >= 0;
     background: color-mix(in srgb, var(--row-color) 4%, #fffdf8);
 }
 
+.cash-movements-view .cash-move-row.is-linked { cursor: pointer; }
+.cash-movements-view .cash-move-row.is-linked:hover { background: color-mix(in srgb, var(--row-color) 8%, #fffdf8); }
+.cash-movements-view .cash-move-row.is-linked:focus-visible { outline: 2px solid color-mix(in srgb, var(--row-color) 55%, transparent); outline-offset: -2px; }
+
 .cash-movements-view .cash-move-date strong,
 .cash-movements-view .cash-move-description strong {
     color: var(--cash-ink);
@@ -2377,8 +2381,10 @@ $balance_es_positivo = $balance_total >= 0;
                                 $category_icon = $mov['categoria_icono'] ?? 'fas fa-tag';
                                 $category_color = $mov['categoria_color'] ?? '#64748B';
                                 $can_edit = (($mov['corte_id'] ?? null) == ($corteActual['id'] ?? 0) && empty($mov['editado']));
+                                // Destino al clic en toda la fila: solo si el movimiento esta ligado a una reservacion real.
+                                $row_href = !empty($mov['reservacion_id']) ? url('reservaciones/ver/' . (int)$mov['reservacion_id']) : '';
                             ?>
-                            <article class="cash-move-row" data-id="<?= caja_mov_safe($mov['id'] ?? '') ?>" style="--row-color: <?= $row_color ?>;">
+                            <article class="cash-move-row<?= $row_href !== '' ? ' is-linked' : '' ?>" data-id="<?= caja_mov_safe($mov['id'] ?? '') ?>"<?= $row_href !== '' ? ' data-href="' . caja_mov_safe($row_href) . '" role="link" tabindex="0" title="Ir a la Reserva #' . (int)$mov['reservacion_id'] . '"' : '' ?> style="--row-color: <?= $row_color ?>;">
                                 <div class="cash-move-date">
                                     <strong><?= caja_mov_safe(caja_mov_date($mov['created_at'] ?? null)) ?></strong>
                                     <span><?= caja_mov_safe(caja_mov_date($mov['created_at'] ?? null, 'H:i:s')) ?></span>
@@ -2633,4 +2639,43 @@ document.addEventListener('keydown', function(e) {
         toggleFiltros();
     }
 });
+
+// Click en cualquier parte de la fila -> ir a su reservacion (solo filas ligadas a una reserva).
+// Se respetan los botones/enlaces internos (editar, ver detalle, link de reserva).
+(function () {
+    function destinoFila(target) {
+        if (target.closest('a, button, input, textarea, select, label')) return null;
+        return target.closest('.cash-move-row.is-linked[data-href]');
+    }
+
+    document.addEventListener('click', function (e) {
+        const row = destinoFila(e.target);
+        if (!row) return;
+        const href = row.getAttribute('data-href');
+        if (!href) return;
+        if (e.ctrlKey || e.metaKey || e.button === 1) {
+            window.open(href, '_blank', 'noopener');
+        } else {
+            window.location.href = href;
+        }
+    });
+
+    // Soporte de teclado (la fila tiene role="link" y tabindex="0").
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        const row = e.target.closest && e.target.closest('.cash-move-row.is-linked[data-href]');
+        if (!row || row !== e.target) return;
+        e.preventDefault();
+        window.location.href = row.getAttribute('data-href');
+    });
+
+    // Click central (rueda) para abrir en pestana nueva.
+    document.addEventListener('auxclick', function (e) {
+        if (e.button !== 1) return;
+        const row = destinoFila(e.target);
+        if (!row) return;
+        const href = row.getAttribute('data-href');
+        if (href) { e.preventDefault(); window.open(href, '_blank', 'noopener'); }
+    });
+})();
 </script>

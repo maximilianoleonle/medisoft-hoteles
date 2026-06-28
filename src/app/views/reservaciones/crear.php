@@ -2201,6 +2201,7 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
     <div class="px-5 sm:px-7 py-5 pb-24 xl:pb-6">
         <form method="POST" action="<?= url('reservaciones/guardar') ?>" id="formReservacion">
             <?= csrf_field() ?>
+            <input type="hidden" name="descuento_aplicado" id="descuento_aplicado" value="">
 
             <div class="grid grid-cols-1 xl:grid-cols-4 gap-5">
 
@@ -2454,6 +2455,26 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
                             <p class="text-xs text-gray-400 mt-2 flex items-center gap-1">
                                 <i class="fas fa-info-circle"></i>
                                 El método de pago se registrará durante el check-in
+                            </p>
+                        </div>
+
+                        <div class="p-5 border-t border-gray-100">
+                            <label class="block text-sm font-bold mb-2" style="color:#4A6340;">
+                                <i class="fas fa-hand-holding-dollar mr-1" style="color:var(--lc-gold-dark);"></i>
+                                Anticipo inicial (opcional)
+                            </label>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <input type="number" name="anticipo_inicial" min="0.01" step="0.01" data-money-format="true"
+                                       placeholder="0.00" class="lc-input" style="flex:1;min-width:120px;" value="<?= old('anticipo_inicial') ?>">
+                                <select name="anticipo_metodo" class="lc-input" style="min-width:140px;">
+                                    <option value="efectivo">Efectivo</option>
+                                    <option value="tarjeta">Tarjeta</option>
+                                    <option value="transferencia">Transferencia</option>
+                                </select>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                                <i class="fas fa-info-circle"></i>
+                                Si capturas un anticipo, se registra en caja al crear la reservación (requiere caja abierta).
                             </p>
                         </div>
                     </div>
@@ -2821,6 +2842,10 @@ $(document).ready(function() {
         `);
 
         verificarFormularioCompleto();
+        // Recotizar para aplicar el descuento del huesped
+        if (typeof calcularPrecio === 'function' && habitacionesSeleccionadas.length) {
+            calcularPrecio();
+        }
         if (!ES_RESERVACION_RAPIDA) {
             window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
         }
@@ -2837,6 +2862,10 @@ $(document).ready(function() {
         $('#infoHuesped').addClass('hidden');
         $('#detallesHuesped').empty();
         verificarFormularioCompleto();
+        // Quitar el descuento del huesped recotizando sin huesped
+        if (typeof calcularPrecio === 'function' && habitacionesSeleccionadas.length) {
+            calcularPrecio();
+        }
     }
 
     function procesarRespuestaHuespedes(response, token) {
@@ -3541,6 +3570,9 @@ $(document).ready(function() {
     }
 
     // ── Price calculation ─────────────────────────────────────
+    let descuentoOverrideResumen = null; // null = descuento automatico; numero = ajuste manual
+    let ultimoResumenData = null;        // ultimo objeto pasado a actualizarResumen (para re-render al ajustar)
+
     function calcularPrecio() {
         const fe = $('#fecha_entrada').val();
         const fs = $('#fecha_salida').val();
@@ -3556,6 +3588,8 @@ $(document).ready(function() {
             if (!habitacionesCortesiaSeleccionadas.includes(hab.id.toString())) precioTotal += p;
         });
 
+        // Render inmediato con el estimado local (respaldo / offline)
+        descuentoOverrideResumen = null;
         actualizarResumen({
             noches,
             totalHabs:         habitacionesSeleccionadas.length,
@@ -3564,8 +3598,44 @@ $(document).ready(function() {
             precioSinDescuento: precioSinDesc,
             ahorro:            precioSinDesc - precioTotal,
             habitaciones:      habitacionesSeleccionadas,
-            habitacionesCortesia: habitacionesCortesiaSeleccionadas
+            habitacionesCortesia: habitacionesCortesiaSeleccionadas,
+            subtotal: precioTotal, descuentoTipo: 0, descuentoHuesped: 0, descuentoTotal: 0
         });
+
+        // Cotizacion precisa (incrementos + descuentos por tipo/huesped) via el motor del backend.
+        // Solo cuando no hay cortesias seleccionadas (esas se resuelven al guardar).
+        if (habitacionesCortesiaSeleccionadas.length > 0) return;
+
+        const hid = $('input[name="huesped_id"]').val() || $('#huesped_id').val() || '';
+        const hl = $('#hora_llegada').val() || '';
+        const params = new URLSearchParams({
+            habitaciones: habitacionesSeleccionadas.map(h => h.id).join(','),
+            fecha_entrada: fe, fecha_salida: fs, hora_llegada: hl
+        });
+        if (hid) params.append('huesped_id', hid);
+
+        fetch(`<?= url('api/habitaciones/calcular-precio') ?>?${params.toString()}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.ok ? r.json() : null)
+            .then(resp => {
+                if (!resp || !resp.success || !resp.data) return;
+                const dd = resp.data;
+                descuentoOverrideResumen = null;
+                actualizarResumen({
+                    noches,
+                    totalHabs:         habitacionesSeleccionadas.length,
+                    habsCortesia:      0,
+                    precioTotal:       Number(dd.precio_con_descuento != null ? dd.precio_con_descuento : dd.precio_total),
+                    precioSinDescuento: Number(dd.subtotal != null ? dd.subtotal : dd.precio_total),
+                    ahorro:            0,
+                    habitaciones:      habitacionesSeleccionadas,
+                    habitacionesCortesia: [],
+                    subtotal:          Number(dd.subtotal != null ? dd.subtotal : dd.precio_total),
+                    descuentoTipo:     Number(dd.descuento_tipo || 0),
+                    descuentoHuesped:  Number(dd.descuento_huesped || 0),
+                    descuentoTotal:    Number(dd.descuento_total || 0)
+                });
+            })
+            .catch(() => { /* respaldo: ya se mostro el estimado local */ });
     }
 
     function actualizarResumen(d) {
@@ -3622,12 +3692,41 @@ $(document).ready(function() {
             `;
         }
 
+        // ===== Descuento de precio (por tipo + por huésped) =====
+        ultimoResumenData = d;
+        const autoDesc = Number(d.descuentoTotal || 0);
+        const subBase = Number(d.subtotal != null ? d.subtotal : d.precioSinDescuento);
+        let descAplicado = (descuentoOverrideResumen !== null) ? Number(descuentoOverrideResumen) : autoDesc;
+        if (!isFinite(descAplicado) || descAplicado < 0) descAplicado = 0;
+        if (descAplicado > subBase) descAplicado = subBase;
+        const inpDesc = document.getElementById('descuento_aplicado');
+        if (inpDesc) inpDesc.value = descAplicado.toFixed(2);
+
+        const hayDescuento = (autoDesc > 0 || descAplicado > 0);
+        if (hayDescuento) {
+            const dt = Number(d.descuentoTipo || 0), dh = Number(d.descuentoHuesped || 0);
+            html += `<div class="space-y-1 text-sm">`;
+            html += `<div class="flex justify-between"><span class="text-gray-500">Subtotal:</span><span class="font-semibold text-gray-700">$${subBase.toLocaleString()}</span></div>`;
+            if (dt > 0) html += `<div class="flex justify-between"><span class="text-rose-600">Descuento por tipo:</span><span class="text-rose-600 font-semibold">-$${dt.toLocaleString()}</span></div>`;
+            if (dh > 0) html += `<div class="flex justify-between"><span class="text-rose-600">Descuento del huésped:</span><span class="text-rose-600 font-semibold">-$${dh.toLocaleString()}</span></div>`;
+            html += `<div class="flex justify-between"><span class="text-rose-700 font-bold">Descuento aplicado:</span><span class="text-rose-700 font-bold">-$${descAplicado.toLocaleString()}</span></div>`;
+            html += `<div class="flex items-center gap-2 pt-1">
+                        <span class="text-gray-500 text-xs">Ajustar:</span>
+                        <input type="number" min="0" step="0.01" value="${descAplicado.toFixed(2)}" id="descuento_input_visible" class="form-input" style="max-width:120px;font-size:.8rem;" onchange="ajustarDescuentoResumen(this.value)">
+                        <button type="button" class="text-gray-500 underline text-xs" onclick="restaurarDescuentoAutoResumen()">Auto</button>
+                        <button type="button" class="text-gray-500 underline text-xs" onclick="quitarDescuentoResumen()">Quitar</button>
+                     </div>`;
+            html += `</div>`;
+        }
+
+        const displayTotal = hayDescuento ? (subBase - descAplicado) : Number(d.precioTotal || 0);
+
         // Total
         html += `
             <div class="total-box">
                 <div class="flex justify-between items-center">
                     <span class="font-bold text-sm" style="color:#4A6340;">Total a pagar:</span>
-                    <span class="font-black text-xl" style="color:var(--lc-green);">$${d.precioTotal.toLocaleString()}</span>
+                    <span class="font-black text-xl" style="color:var(--lc-green);">$${displayTotal.toLocaleString()}</span>
                 </div>
             </div>
         </div>`;
@@ -3641,8 +3740,9 @@ $(document).ready(function() {
                     <div class="text-sm">
                         <p class="font-bold text-gray-700">${d.totalHabs} hab. × ${d.noches} noche${d.noches>1?'s':''}</p>
                         ${d.habsCortesia>0 ? `<p class="text-xs text-amber-600">${d.habsCortesia} cortesía${d.habsCortesia>1?'s':''}</p>` : ''}
+                        ${hayDescuento ? `<p class="text-xs text-rose-600">Descuento: -$${descAplicado.toLocaleString()}</p>` : ''}
                     </div>
-                    <p class="font-black text-lg" style="color:var(--lc-green);">$${d.precioTotal.toLocaleString()}</p>
+                    <p class="font-black text-lg" style="color:var(--lc-green);">$${displayTotal.toLocaleString()}</p>
                 </div>
                 <div class="text-xs border-t border-[#EAF0E5] pt-2 space-y-1 max-h-[100px] overflow-y-auto">
                     ${d.habitaciones.map(h => {
@@ -3657,9 +3757,24 @@ $(document).ready(function() {
         `);
 
         // Barra slim: total + meta siempre visibles
-        $('#rfTotal').text('$' + d.precioTotal.toLocaleString());
+        $('#rfTotal').text('$' + displayTotal.toLocaleString());
         $('#rfMeta').text(`${d.totalHabs} hab · ${d.noches} noche${d.noches > 1 ? 's' : ''}`);
     }
+
+    // Ajuste manual del descuento por el operador (override). Re-renderiza con el ultimo desglose.
+    function ajustarDescuentoResumen(valor) {
+        const n = parseFloat(String(valor).replace(/,/g, ''));
+        descuentoOverrideResumen = (isFinite(n) && n >= 0) ? n : 0;
+        if (ultimoResumenData) actualizarResumen(ultimoResumenData);
+    }
+    function quitarDescuentoResumen() { ajustarDescuentoResumen(0); }
+    function restaurarDescuentoAutoResumen() {
+        descuentoOverrideResumen = null;
+        if (ultimoResumenData) actualizarResumen(ultimoResumenData);
+    }
+    window.ajustarDescuentoResumen = ajustarDescuentoResumen;
+    window.quitarDescuentoResumen = quitarDescuentoResumen;
+    window.restaurarDescuentoAutoResumen = restaurarDescuentoAutoResumen;
 
     // ── Helpers ───────────────────────────────────────────────
     function formatearFecha(f) {
@@ -3893,6 +4008,9 @@ $('#btnCotizacion, #btnCotizacionMovil').on('click', function() {
     }
 
     document.body.appendChild(form);
+    if (window.MedisoftMobileFiles && window.MedisoftMobileFiles.isMobile()) {
+        window.MedisoftMobileFiles.showHint('cotizacion PDF', false);
+    }
     form.submit();
     document.body.removeChild(form);
 });

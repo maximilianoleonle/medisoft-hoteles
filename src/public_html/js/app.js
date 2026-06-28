@@ -111,6 +111,9 @@
     // errores visibles antes de enviar y recuperacion de borradores tras errores.
     const hotelFormDraftPrefix = 'medisoft:hotel-form-draft:';
     const hotelFormDraftMaxAge = 8 * 60 * 60 * 1000;
+    const hotelPendingSubmitKey = 'medisoft:hotel-pending-form-submit';
+    const hotelCompletedFormPrefix = 'medisoft:hotel-completed-form:';
+    const hotelCompletedFormMaxAge = 45 * 60 * 1000;
     const hotelFormSaveTimers = new WeakMap();
     const hotelFormSubmitTimers = new WeakMap();
     const hotelFormSubmitState = new WeakMap();
@@ -135,6 +138,11 @@
 
         injectFormGuardStyles();
         cleanupExpiredDrafts();
+        cleanupCompletedFormRoutes();
+
+        if (initHotelSmartNavigation(pageHasSuccess)) {
+            return;
+        }
 
         if (pageHasSuccess) {
             clearDraftsForCurrentPath();
@@ -212,6 +220,7 @@
                 }
 
                 markFormSubmitting(form, event.submitter);
+                rememberPendingFormSubmission(form);
 
                 window.setTimeout(() => {
                     if (event.defaultPrevented) {
@@ -303,6 +312,361 @@
             return new URL(value || window.location.pathname, window.location.origin).pathname;
         } catch (error) {
             return String(value || '').split('?')[0] || window.location.pathname;
+        }
+    }
+
+    function initHotelSmartNavigation(pageHasSuccess) {
+        if (!document.body || !document.body.classList.contains('hotel-layout-scope')) {
+            return false;
+        }
+
+        if (pageHasSuccess) {
+            rememberCompletedFormFromSuccessfulNavigation();
+        } else {
+            clearStalePendingFormSubmission();
+        }
+
+        initSmartBackLinkGuard();
+
+        const redirectUrl = getCompletedFormRedirectUrl();
+        if (redirectUrl) {
+            window.location.replace(redirectUrl);
+            return true;
+        }
+
+        if (document.documentElement.dataset.medisoftSmartBackPageShow !== 'ready') {
+            document.documentElement.dataset.medisoftSmartBackPageShow = 'ready';
+            window.addEventListener('pageshow', event => {
+                const targetUrl = getCompletedFormRedirectUrl(event);
+                if (targetUrl) {
+                    window.location.replace(targetUrl);
+                }
+            });
+        }
+
+        return false;
+    }
+
+    function rememberPendingFormSubmission(form) {
+        if (!shouldPersistForm(form)) {
+            return;
+        }
+
+        const current = getAppRoute(window.location.href);
+        if (!current || !isSmartBackFormRoute(current.path)) {
+            return;
+        }
+
+        try {
+            window.sessionStorage.setItem(hotelPendingSubmitKey, JSON.stringify({
+                createdAt: Date.now(),
+                url: current.key,
+                path: current.path,
+                fallback: inferSmartBackFallback(current.path)
+            }));
+        } catch (error) {}
+    }
+
+    function rememberCompletedFormFromSuccessfulNavigation() {
+        const pending = readPendingFormSubmission();
+        const candidates = [];
+
+        if (pending && pending.path && isSmartBackFormRoute(pending.path)) {
+            candidates.push({
+                key: pending.url || pathToSmartBackKey(pending.path, ''),
+                path: pending.path,
+                fallback: pending.fallback || inferSmartBackFallback(pending.path)
+            });
+        }
+
+        const referrer = getAppRoute(document.referrer || '');
+        if (referrer && isSmartBackFormRoute(referrer.path)) {
+            candidates.push({
+                key: referrer.key,
+                path: referrer.path,
+                fallback: inferSmartBackFallback(referrer.path)
+            });
+        }
+
+        candidates.forEach(markCompletedFormRoute);
+
+        try {
+            window.sessionStorage.removeItem(hotelPendingSubmitKey);
+        } catch (error) {}
+    }
+
+    function readPendingFormSubmission() {
+        let pending = null;
+        try {
+            pending = JSON.parse(window.sessionStorage.getItem(hotelPendingSubmitKey) || 'null');
+        } catch (error) {
+            pending = null;
+        }
+
+        if (!pending || !pending.createdAt || Date.now() - pending.createdAt > hotelCompletedFormMaxAge) {
+            try {
+                window.sessionStorage.removeItem(hotelPendingSubmitKey);
+            } catch (error) {}
+            return null;
+        }
+
+        return pending;
+    }
+
+    function clearStalePendingFormSubmission() {
+        readPendingFormSubmission();
+        try {
+            window.sessionStorage.removeItem(hotelPendingSubmitKey);
+        } catch (error) {}
+    }
+
+    function markCompletedFormRoute(route) {
+        if (!route || !route.path || !isSmartBackFormRoute(route.path)) {
+            return;
+        }
+
+        const record = {
+            createdAt: Date.now(),
+            path: route.path,
+            fallback: route.fallback || inferSmartBackFallback(route.path)
+        };
+
+        const keys = Array.from(new Set([
+            route.key || pathToSmartBackKey(route.path, ''),
+            pathToSmartBackKey(route.path, '')
+        ]));
+
+        try {
+            keys.forEach(key => {
+                window.sessionStorage.setItem(hotelCompletedFormPrefix + key, JSON.stringify(record));
+            });
+        } catch (error) {}
+    }
+
+    function cleanupCompletedFormRoutes() {
+        try {
+            Object.keys(window.sessionStorage)
+                .filter(key => key === hotelPendingSubmitKey || key.indexOf(hotelCompletedFormPrefix) === 0)
+                .forEach(key => {
+                    try {
+                        const value = JSON.parse(window.sessionStorage.getItem(key) || 'null');
+                        if (!value || !value.createdAt || Date.now() - value.createdAt > hotelCompletedFormMaxAge) {
+                            window.sessionStorage.removeItem(key);
+                        }
+                    } catch (error) {
+                        window.sessionStorage.removeItem(key);
+                    }
+                });
+        } catch (error) {}
+    }
+
+    function getCompletedFormRedirectUrl(event) {
+        const current = getAppRoute(window.location.href);
+        if (!current || !isSmartBackFormRoute(current.path) || hasServerError()) {
+            return '';
+        }
+
+        if (!isHistoryReturnNavigation(event)) {
+            return '';
+        }
+
+        const record = getCompletedFormRoute(current);
+        if (!record) {
+            return '';
+        }
+
+        return toAppUrl(record.fallback || inferSmartBackFallback(current.path));
+    }
+
+    function getCompletedFormRoute(route) {
+        const keys = Array.from(new Set([
+            route.key,
+            pathToSmartBackKey(route.path, '')
+        ]));
+
+        for (const key of keys) {
+            try {
+                const record = JSON.parse(window.sessionStorage.getItem(hotelCompletedFormPrefix + key) || 'null');
+                if (record && record.createdAt && Date.now() - record.createdAt <= hotelCompletedFormMaxAge) {
+                    return record;
+                }
+            } catch (error) {}
+        }
+
+        return null;
+    }
+
+    function isHistoryReturnNavigation(event) {
+        if (event && event.persisted) {
+            return true;
+        }
+
+        try {
+            const navigation = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+            return navigation && navigation.type === 'back_forward';
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function initSmartBackLinkGuard() {
+        if (document.documentElement.dataset.medisoftSmartBackLinks === 'ready') {
+            return;
+        }
+        document.documentElement.dataset.medisoftSmartBackLinks = 'ready';
+
+        document.addEventListener('click', event => {
+            const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
+            if (!link || event.defaultPrevented || shouldIgnoreSmartBackLink(link, event) || !looksLikeBackLink(link)) {
+                return;
+            }
+
+            const target = getAppRoute(link.href);
+            if (!target || !isSmartBackFormRoute(target.path)) {
+                return;
+            }
+
+            const record = getCompletedFormRoute(target);
+            if (!record) {
+                return;
+            }
+
+            event.preventDefault();
+            window.location.assign(toAppUrl(record.fallback || inferSmartBackFallback(target.path)));
+        }, true);
+    }
+
+    function shouldIgnoreSmartBackLink(link, event) {
+        if (link.matches('[data-smart-back="off"], [data-no-smart-back]')) {
+            return true;
+        }
+
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+            return true;
+        }
+
+        const href = link.getAttribute('href') || '';
+        return !href || href === '#' || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')
+            || link.hasAttribute('download')
+            || String(link.getAttribute('target') || '').toLowerCase() === '_blank';
+    }
+
+    function looksLikeBackLink(link) {
+        const text = [
+            link.textContent,
+            link.getAttribute('aria-label'),
+            link.getAttribute('title'),
+            link.className
+        ].filter(Boolean).join(' ');
+
+        return /\b(back|volver|atras|atr[aá]s|regresar|cancelar)\b/i.test(text);
+    }
+
+    function getAppRoute(value) {
+        if (!value) {
+            return null;
+        }
+
+        let url;
+        try {
+            url = new URL(value, window.location.href);
+        } catch (error) {
+            return null;
+        }
+
+        if (url.origin !== window.location.origin) {
+            return null;
+        }
+
+        const basePath = getAppBasePath();
+        let path = url.pathname || '/';
+        if (basePath !== '/' && path.indexOf(basePath + '/') === 0) {
+            path = path.slice(basePath.length);
+        } else if (basePath !== '/' && path === basePath) {
+            path = '/';
+        }
+
+        path = '/' + path.replace(/^\/+/, '').replace(/\/+$/, '');
+        if (path === '') {
+            path = '/';
+        }
+
+        return {
+            path,
+            search: url.search || '',
+            key: pathToSmartBackKey(path, url.search || '')
+        };
+    }
+
+    function getAppBasePath() {
+        try {
+            const base = new URL(window.BASE_URL || '/', window.location.origin).pathname.replace(/\/+$/, '');
+            return base || '/';
+        } catch (error) {
+            return '/';
+        }
+    }
+
+    function pathToSmartBackKey(path, search) {
+        return `${path || '/'}${search || ''}`;
+    }
+
+    function isSmartBackFormRoute(path) {
+        const segments = String(path || '')
+            .toLowerCase()
+            .split('/')
+            .filter(Boolean);
+
+        if (!segments.length) {
+            return false;
+        }
+
+        return segments.some(segment => {
+            return ['crear', 'nuevo', 'create', 'new', 'form', 'subir'].includes(segment)
+                || ['editar', 'edit'].includes(segment)
+                || segment.indexOf('editar-') === 0;
+        });
+    }
+
+    function inferSmartBackFallback(path) {
+        const segments = String(path || '')
+            .toLowerCase()
+            .split('/')
+            .filter(Boolean);
+
+        if (!segments.length) {
+            return '/dashboard';
+        }
+
+        if (segments[0] === 'configuracion' && segments[1] === 'tarifas') {
+            return '/configuracion/tarifas';
+        }
+
+        if (segments[0] === 'trabajadores' && segments[1] === 'nomina') {
+            return '/trabajadores/nomina/periodos';
+        }
+
+        if (segments[0] === 'cuentas-por-cobrar') {
+            return segments[1] === 'operativas' ? '/cuentas-por-cobrar/operativas' : '/cuentas-por-cobrar';
+        }
+
+        if (segments[0] === 'cuentas-por-pagar') {
+            return '/cuentas-por-pagar';
+        }
+
+        return `/${segments[0]}`;
+    }
+
+    function toAppUrl(path) {
+        try {
+            const basePath = getAppBasePath();
+            const cleanPath = '/' + String(path || '/dashboard').replace(/^\/+/, '');
+            const scopedPath = basePath === '/'
+                ? cleanPath
+                : `${basePath}${cleanPath}`;
+            return new URL(scopedPath, window.location.origin).href;
+        } catch (error) {
+            return '/dashboard';
         }
     }
 
@@ -561,6 +925,7 @@
                 return;
             }
 
+            rememberPendingFormSubmission(this);
             markFormSubmitting(this, null);
             return nativeSubmit.apply(this, arguments);
         };
@@ -671,7 +1036,9 @@
             return '';
         }
 
-        const normalized = rawValue.replace(/,/g, '.');
+        // En campos de dinero la coma es separador de miles, no decimal.
+        const isMoneyManaged = field.matches('[data-money-format="true"]') || field.dataset.moneyReady === '1';
+        const normalized = isMoneyManaged ? rawValue.replace(/,/g, '') : rawValue.replace(/,/g, '.');
         const numberValue = Number(normalized);
         if (!Number.isFinite(numberValue)) {
             return 'Ingresa un numero valido.';
@@ -693,7 +1060,8 @@
 
         const stepValue = field.getAttribute('step');
         const isMoneyField = field.matches('[data-money-format="true"]') || /(^|[_\[\]-])(monto|importe|total|precio|costo|tarifa|anticipo|abono|deposito|descuento|salario)([_\]\[-]|$)/i.test(String(field.name || ''));
-        if ((isMoneyField || stepValue === '0.01') && hasMoreThanTwoDecimals(rawValue)) {
+        const decimalsCheckValue = isMoneyManaged ? rawValue.replace(/,/g, '') : rawValue;
+        if ((isMoneyField || stepValue === '0.01') && hasMoreThanTwoDecimals(decimalsCheckValue)) {
             return 'Usa maximo 2 decimales.';
         }
 
@@ -2190,6 +2558,147 @@
         `;
         document.head.appendChild(style);
     }
+
+    /* ===================================================================
+     * MedisoftMoneyInput
+     * Formatea con separadores de miles (comas) mientras el usuario escribe
+     * importes de dinero, y entrega un valor limpio (sin comas) al backend.
+     * Las vistas ya invocan window.MedisoftMoneyInput.{init,read,set,format,sanitize}.
+     * Se activa en cualquier <input data-money-format="true">.
+     * =================================================================== */
+    (function initMedisoftMoneyInput() {
+        var SELECTOR = 'input[data-money-format="true"]';
+
+        function toNumber(value) {
+            if (typeof value === 'number') {
+                return Number.isFinite(value) ? value : 0;
+            }
+            var n = parseFloat(String(value == null ? '' : value).replace(/,/g, ''));
+            return Number.isFinite(n) ? n : 0;
+        }
+
+        // Formatea respetando lo que se va escribiendo (sin forzar decimales).
+        function formatWhileTyping(rawValue) {
+            var s = String(rawValue == null ? '' : rawValue).replace(/[^\d.]/g, '');
+            var dot = s.indexOf('.');
+            if (dot !== -1) {
+                // un solo punto decimal
+                s = s.slice(0, dot + 1) + s.slice(dot + 1).replace(/\./g, '');
+            }
+            var hasDot = s.indexOf('.') !== -1;
+            var parts = s.split('.');
+            var intPart = (parts[0] || '').replace(/^0+(?=\d)/, '');
+            var decPart = parts.length > 1 ? parts[1].slice(0, 2) : '';
+            var intFmt = intPart === '' ? '' : Number(intPart).toLocaleString('en-US');
+            if (hasDot) {
+                return (intFmt === '' ? '0' : intFmt) + '.' + decPart;
+            }
+            return intFmt;
+        }
+
+        // Formatea un numero ya resuelto (para mostrar). opts.fixed => 2 decimales.
+        function formatNumber(value, opts) {
+            var num = toNumber(value);
+            var fixed = opts && opts.fixed === true;
+            return num.toLocaleString('en-US', {
+                minimumFractionDigits: fixed ? 2 : 0,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function caretFromRight(input) {
+            try { return input.value.length - input.selectionStart; } catch (e) { return 0; }
+        }
+        function restoreCaret(input, fromRight) {
+            try {
+                var pos = Math.max(0, input.value.length - fromRight);
+                input.setSelectionRange(pos, pos);
+            } catch (e) {}
+        }
+
+        function handleInput(e) {
+            var input = e.target;
+            var fromRight = caretFromRight(input);
+            input.value = formatWhileTyping(input.value);
+            restoreCaret(input, fromRight);
+        }
+
+        function handleBlur(e) {
+            var input = e.target;
+            if (String(input.value).trim() === '') { return; }
+            input.value = formatNumber(toNumber(input.value), { fixed: true });
+        }
+
+        function prepare(input) {
+            if (!input || input.dataset.moneyReady === '1') { return; }
+            if (input.type === 'number') { input.type = 'text'; }
+            if (!input.getAttribute('inputmode')) { input.setAttribute('inputmode', 'decimal'); }
+            input.dataset.moneyReady = '1';
+            if (String(input.value).trim() !== '') {
+                input.value = formatWhileTyping(input.value);
+            }
+            input.addEventListener('input', handleInput);
+            input.addEventListener('blur', handleBlur);
+        }
+
+        function init(target) {
+            if (target && target.nodeType === 1 && target.matches && target.matches('input')) {
+                prepare(target);
+                return;
+            }
+            var scope = (target && target.querySelectorAll) ? target : document;
+            scope.querySelectorAll(SELECTOR).forEach(prepare);
+        }
+
+        function set(input, value) {
+            if (!input) { return; }
+            input.value = formatNumber(value, { fixed: true });
+        }
+
+        function read(inputOrValue) {
+            var v = (inputOrValue && typeof inputOrValue === 'object' && 'value' in inputOrValue)
+                ? inputOrValue.value
+                : inputOrValue;
+            return toNumber(v);
+        }
+
+        // Quita las comas antes de enviar para que el backend reciba un numero limpio.
+        function sanitize(form) {
+            if (!form || !form.querySelectorAll) { return; }
+            form.querySelectorAll('input[data-money-ready="1"]').forEach(function (input) {
+                if (String(input.value).trim() === '') { return; }
+                input.value = String(toNumber(input.value));
+            });
+        }
+
+        window.MedisoftMoneyInput = {
+            init: init,
+            prepare: prepare,
+            read: read,
+            set: set,
+            format: formatNumber,
+            sanitize: sanitize,
+            parse: toNumber
+        };
+
+        function boot() {
+            init(document);
+            // Red de seguridad: cualquier form con campos de dinero se limpia antes de enviarse,
+            // aunque la vista no llame explicitamente a sanitize().
+            document.addEventListener('submit', function (e) {
+                var form = e.target;
+                if (form && form.querySelector && form.querySelector('input[data-money-ready="1"]')) {
+                    sanitize(form);
+                }
+            }, true);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', boot);
+        } else {
+            boot();
+        }
+    })();
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {

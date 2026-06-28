@@ -1,6 +1,8 @@
 // Variables globales
 let habitacionesSeleccionadas = [];
 let precioCalculado = 0;
+let descuentoOverride = null;   // null = descuento automatico; numero = ajuste manual del operador
+let ultimoCalculoPrecio = null; // ultimo desglose recibido de la API (para re-render al ajustar)
 
 function apiFetch(url) {
     return fetch(url, {
@@ -212,7 +214,10 @@ async function actualizarPrecio() {
     if (habitacionesSeleccionadas.length === 0) {
         return;
     }
-    
+
+    // Cada recalculo vuelve al descuento automatico (el ajuste manual se re-aplica despues si el operador lo cambia)
+    descuentoOverride = null;
+
     const fechaEntrada = document.getElementById('fecha_entrada').value;
     const fechaSalida = document.getElementById('fecha_salida').value;
     const horaLlegada = document.getElementById('hora_llegada').value;
@@ -235,18 +240,27 @@ async function actualizarPrecio() {
             fecha_salida: fechaSalida,
             hora_llegada: horaLlegada
         });
-        
+
+        // Incluir al huesped para aplicar su descuento (si ya fue seleccionado)
+        const huespedIdEl = document.getElementById('huesped_id');
+        const huespedId = huespedIdEl ? huespedIdEl.value : '';
+        if (huespedId) {
+            params.append('huesped_id', huespedId);
+        }
+
         const response = await apiFetch(`/api/habitaciones/calcular-precio?${params}`);
-        
+
         if (!response.ok) {
             throw new Error('Error al calcular precio');
         }
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             mostrarDetallesPrecio(data.data);
-            precioCalculado = data.data.precio_total;
+            precioCalculado = (data.data.precio_con_descuento != null)
+                ? data.data.precio_con_descuento
+                : data.data.precio_total;
         } else {
             throw new Error(data.message || 'Error al calcular precio');
         }
@@ -303,18 +317,69 @@ function mostrarDetallesPrecio(datos) {
             </div>
         `;
     }
-    
+
+    // ===== Desglose de descuentos (por tipo de habitación + por huésped) =====
+    const autoDescuento = Number(datos.descuento_total || 0);
+    const subtotalBase = Number(datos.subtotal != null ? datos.subtotal : datos.precio_total);
+    let descuentoActual = (descuentoOverride !== null) ? Number(descuentoOverride) : autoDescuento;
+    if (!isFinite(descuentoActual) || descuentoActual < 0) descuentoActual = 0;
+    if (descuentoActual > subtotalBase) descuentoActual = subtotalBase;
+    const totalFinal = subtotalBase - descuentoActual;
+
+    // Valor que se enviará al backend al guardar
+    const inputDescuento = document.getElementById('descuento_aplicado');
+    if (inputDescuento) inputDescuento.value = descuentoActual.toFixed(2);
+
+    if (autoDescuento > 0 || descuentoActual > 0) {
+        const dt = Number(datos.descuento_tipo || 0);
+        const dh = Number(datos.descuento_huesped || 0);
+        html += `<div class="border-t pt-3 space-y-1">`;
+        html += `<div class="flex justify-between text-gray-600"><span>Subtotal:</span><span>$${formatMoney(subtotalBase)}</span></div>`;
+        if (dt > 0) html += `<div class="flex justify-between text-rose-600"><span>Descuento por tipo de habitación:</span><span>-$${formatMoney(dt)}</span></div>`;
+        if (dh > 0) html += `<div class="flex justify-between text-rose-600"><span>Descuento del huésped:</span><span>-$${formatMoney(dh)}</span></div>`;
+        html += `<div class="flex justify-between text-rose-700 font-medium"><span>Descuento aplicado:</span><span>-$${formatMoney(descuentoActual)}</span></div>`;
+        html += `<div class="flex items-center gap-2 pt-1 text-sm">
+                    <span class="text-gray-500">Ajustar:</span>
+                    <input type="number" min="0" step="0.01" value="${descuentoActual.toFixed(2)}" id="descuento_input_visible"
+                           class="form-input" style="max-width:130px" onchange="ajustarDescuento(this.value)">
+                    <button type="button" class="text-gray-500 underline" onclick="restaurarDescuentoAuto()">Auto</button>
+                    <button type="button" class="text-gray-500 underline" onclick="quitarDescuento()">Quitar</button>
+                 </div>`;
+        html += `</div>`;
+    }
+
     html += `
             <div class="border-t pt-3">
                 <div class="flex justify-between text-xl font-bold">
                     <span>Total a pagar:</span>
-                    <span class="text-hotel-brown">${datos.precio_formateado}</span>
+                    <span class="text-hotel-brown">$${formatMoney(totalFinal)}</span>
                 </div>
             </div>
         </div>
     `;
-    
+
     precioContainer.innerHTML = html;
+    ultimoCalculoPrecio = datos;
+}
+
+// Ajuste manual del descuento por el operador (override). Re-renderiza sin volver a llamar la API.
+function ajustarDescuento(valor) {
+    const n = parseFloat(String(valor).replace(/,/g, ''));
+    descuentoOverride = isFinite(n) && n >= 0 ? n : 0;
+    if (ultimoCalculoPrecio) {
+        mostrarDetallesPrecio(ultimoCalculoPrecio);
+    }
+}
+
+function quitarDescuento() {
+    ajustarDescuento(0);
+}
+
+function restaurarDescuentoAuto() {
+    descuentoOverride = null;
+    if (ultimoCalculoPrecio) {
+        mostrarDetallesPrecio(ultimoCalculoPrecio);
+    }
 }
 
 async function buscarHuesped() {
@@ -369,6 +434,11 @@ function seleccionarHuesped(id, nombre, telefono) {
     // Ocultar sección de búsqueda y mostrar huésped seleccionado
     document.getElementById('buscar-huesped-section').style.display = 'none';
     document.getElementById('huesped-seleccionado').style.display = 'block';
+
+    // Recalcular el precio para aplicar el descuento del huesped
+    if (habitacionesSeleccionadas.length > 0) {
+        actualizarPrecio();
+    }
 }
 
 function cambiarHuesped() {
@@ -376,6 +446,11 @@ function cambiarHuesped() {
     document.getElementById('huesped_nombre').value = '';
     document.getElementById('buscar-huesped-section').style.display = 'block';
     document.getElementById('huesped-seleccionado').style.display = 'none';
+
+    // Quitar el descuento del huesped recalculando sin huesped
+    if (habitacionesSeleccionadas.length > 0) {
+        actualizarPrecio();
+    }
 }
 
 // Funciones auxiliares

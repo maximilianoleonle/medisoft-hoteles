@@ -690,7 +690,7 @@
     color: #fff !important;
     background:
         radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%),
-        linear-gradient(145deg, var(--inv-accent), var(--inv-brand) 54%, var(--inv-success)) !important;
+        linear-gradient(145deg, var(--inv-accent), var(--inv-brand) 54%, color-mix(in srgb, var(--inv-brand) 68%, var(--brand-accent, #BD9441))) !important;
     box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--inv-brand) 72%, transparent) !important;
 }
 
@@ -1030,7 +1030,7 @@
     color: #fff !important;
     background:
         radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%),
-        linear-gradient(145deg, var(--inv-accent), var(--inv-brand) 54%, var(--inv-success)) !important;
+        linear-gradient(145deg, var(--inv-accent), var(--inv-brand) 54%, color-mix(in srgb, var(--inv-brand) 68%, var(--brand-accent, #BD9441))) !important;
     border-color: transparent !important;
     box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--inv-brand) 72%, transparent) !important;
 }

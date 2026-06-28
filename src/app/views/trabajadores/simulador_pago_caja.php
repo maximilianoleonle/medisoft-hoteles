@@ -48,19 +48,22 @@ $referencia = (string)($filtros['referencia'] ?? '');
     --wk-gold: var(--brand-accent, #BD9441);
     --wk-gold-soft: color-mix(in srgb, var(--wk-gold) 15%, #FFFFFF);
     --wk-gold-line: color-mix(in srgb, var(--wk-gold) 42%, #E4D4B0);
-    --wk-gold-ink: color-mix(in srgb, var(--wk-gold) 72%, #000);
+    --wk-gold-ink: color-mix(in srgb, var(--wk-gold) 58%, var(--wk-brand));
     --wk-ivory: #F6F2EA; --wk-ivory-2: #FBF8F2;
     --wk-surface: #FFFFFF; --wk-surface-warm: #FCFAF5;
     --wk-border: color-mix(in srgb, var(--wk-brand) 7%, #E7E1D4);
     --wk-ring: color-mix(in srgb, var(--wk-gold) 32%, transparent);
-    --wk-text: #171717; --wk-muted: #667085; --wk-heading: #111827;
+    --wk-text: color-mix(in srgb, var(--wk-brand) 46%, #707B8C);
+    --wk-muted: #8791A2;
+    --wk-heading: color-mix(in srgb, var(--wk-brand) 66%, #566172);
     --wk-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
     --wk-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --wk-success: #1E9E63; --wk-success-bg: #E7F4EC;
     --wk-warning: #C2841C; --wk-warning-bg: #FAF0DC;
     --wk-danger: #B4392B; --wk-danger-bg: #F8EAE5;
     --wk-info: #2F77E0; --wk-info-bg: #E6EFFC;
-    min-height: 100%; color: var(--wk-text); font-family: var(--wk-sans);
+    --wk-muted-2: color-mix(in srgb, var(--wk-brand) 34%, #8590A1);
+    min-height: 100%; color: var(--wk-text); font-family: var(--wk-sans); font-weight: 450;
     background: radial-gradient(1100px 460px at 88% -8%, color-mix(in srgb, var(--wk-gold) 8%, transparent), transparent 60%), linear-gradient(180deg, var(--wk-ivory-2), var(--wk-ivory));
 }
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap');
@@ -68,36 +71,37 @@ $referencia = (string)($filtros['referencia'] ?? '');
 .worker-cash-page .wk-shell { display: grid; gap: 14px; }
 .worker-cash-page .wk-title-lockup { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; column-gap: 14px; min-width: 0; }
 .worker-cash-page .wk-hero-icon { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; color: #fff; font-size: 1.15rem;
-    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--wk-gold), var(--wk-brand) 54%, color-mix(in srgb, var(--wk-brand) 68%, #2F8A70));
+    background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.24), transparent 34%), linear-gradient(145deg, var(--wk-gold), var(--wk-brand) 54%, color-mix(in srgb, var(--wk-brand) 68%, var(--brand-accent, #BD9441)));
     box-shadow: 0 14px 26px -14px color-mix(in srgb, var(--wk-brand) 72%, transparent); }
-.worker-cash-page .wk-kicker { margin: 0 0 2px; color: var(--wk-muted); font-size: .72rem; font-weight: 700; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
-.worker-cash-page .wk-title { margin: 0; font-family: var(--wk-serif); color: var(--wk-heading); font-weight: 700; font-size: clamp(2rem, 3.6vw, 2.9rem); line-height: 1; }
+.worker-cash-page .wk-kicker { margin: 0 0 2px; color: var(--wk-muted); font-size: .72rem; font-weight: 650; letter-spacing: .11em; line-height: 1; text-transform: uppercase; }
+.worker-cash-page .wk-title { margin: 0; font-family: var(--wk-serif); color: var(--wk-heading); font-weight: 650; font-size: clamp(2rem, 3.6vw, 2.9rem); line-height: 1; }
 .worker-cash-page .wk-subtitle { max-width: 52rem; margin: 8px 0 0; color: var(--wk-muted); font-size: .92rem; font-weight: 500; line-height: 1.5; }
 
 .worker-cash-page .wk-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .worker-cash-page .wk-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 40px; padding: 0 16px;
-    border-radius: 11px; border: 1px solid transparent; font-weight: 700; font-size: .85rem; text-decoration: none; cursor: pointer;
+    border-radius: 11px; border: 1px solid transparent; font-weight: 650; font-size: .85rem; text-decoration: none; cursor: pointer;
     transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, color .16s ease, background .16s ease; }
 .worker-cash-page .wk-btn:hover { transform: translateY(-1px); }
 .worker-cash-page .wk-btn-brand { background: linear-gradient(135deg, var(--wk-brand), var(--wk-brand-2)); color: #fff; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--wk-brand) 60%, transparent); }
-.worker-cash-page .wk-btn-muted { background: var(--wk-surface); border-color: var(--wk-border); color: var(--wk-muted); }
-.worker-cash-page .wk-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--wk-surface-warm); color: var(--wk-muted); border: 1px solid var(--wk-border); font-size: .74rem; font-weight: 700; }
+.worker-cash-page .wk-btn-muted { background: rgba(255,255,255,.86); border-color: var(--wk-border); color: var(--wk-muted); }
+.worker-cash-page .wk-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--wk-surface-warm); color: var(--wk-muted); border: 1px solid var(--wk-border); font-size: .74rem; font-weight: 650; }
 
 .worker-cash-page .wk-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.worker-cash-page .wk-stat { background: var(--wk-surface); border: 1px solid var(--wk-border); border-radius: 14px; padding: 13px 14px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 10px 24px -18px rgba(27,39,70,.22); }
-.worker-cash-page .wk-stat-label { color: var(--wk-muted); font-size: .66rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
-.worker-cash-page .wk-stat-value { margin-top: 3px; font-family: var(--wk-serif); font-size: 1.55rem; font-weight: 700; line-height: 1; color: var(--wk-heading); }
+.worker-cash-page .wk-stat { background: rgba(255,255,255,.88); border: 1px solid var(--wk-border); border-radius: 14px; padding: 13px 14px; box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 10px 22px -20px rgba(27,39,70,.18); }
+.worker-cash-page .wk-stat-label { color: var(--wk-muted); font-size: .66rem; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }
+.worker-cash-page .wk-stat-value { margin-top: 3px; font-family: var(--wk-serif); font-size: 1.48rem; font-weight: 650; line-height: 1; color: var(--wk-heading); }
 
-.worker-cash-page .wk-panel { background: var(--wk-surface); border: 1px solid var(--wk-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.04), 0 14px 32px -24px rgba(27,39,70,.28); }
-.worker-cash-page .wk-meta-label { font-size: .66rem; color: var(--wk-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
-.worker-cash-page .wk-meta-value { margin-top: 3px; font-weight: 700; color: var(--wk-heading); }
-.worker-cash-page .wk-sub { color: var(--wk-muted); font-size: .72rem; }
-.worker-cash-page .wk-strong { font-weight: 700; color: var(--wk-heading); }
+.worker-cash-page .wk-panel { background: rgba(255,255,255,.88); border: 1px solid var(--wk-border); border-radius: 16px; box-shadow: 0 1px 2px rgba(27,39,70,.03), 0 14px 30px -27px rgba(27,39,70,.22); }
+.worker-cash-page .wk-meta-label { font-size: .66rem; color: var(--wk-muted); font-weight: 650; text-transform: uppercase; letter-spacing: .05em; }
+.worker-cash-page .wk-meta-value { margin-top: 3px; font-weight: 620; color: var(--wk-heading); }
+.worker-cash-page .wk-sub { color: var(--wk-muted-2); font-size: .72rem; }
+.worker-cash-page .wk-strong { font-weight: 620; color: var(--wk-heading); }
 
-.worker-cash-page .wk-control { width: 100%; min-height: 40px; border: 1px solid var(--wk-border); background: var(--wk-surface-warm); border-radius: 11px; padding: 0 12px; color: var(--wk-text); font-weight: 600; font-size: .85rem; transition: border-color .16s ease, box-shadow .16s ease; }
+.worker-cash-page .wk-control { width: 100%; min-height: 40px; border: 1px solid var(--wk-border); background: var(--wk-surface-warm); border-radius: 11px; padding: 0 12px; color: var(--wk-text); font-weight: 560; font-size: .85rem; transition: border-color .16s ease, box-shadow .16s ease, background .16s ease; }
+.worker-cash-page .wk-control::placeholder { color: color-mix(in srgb, var(--wk-muted) 78%, #B8C0CB); font-weight: 520; }
 .worker-cash-page .wk-control:focus { border-color: var(--wk-gold); box-shadow: 0 0 0 3px var(--wk-ring); outline: none; }
 .worker-cash-page select.wk-control { cursor: pointer; }
-.worker-cash-page .wk-filter-form { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; align-items: center; }
+.worker-cash-page .wk-filter-form { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; align-items: center; max-width: 1080px; }
 
 .worker-cash-page .wk-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; font-size: .74rem; font-weight: 700; border: 1px solid transparent; }
 .worker-cash-page .wk-badge-ok { color: color-mix(in srgb, var(--wk-success) 78%, #000); background: var(--wk-success-bg); border-color: color-mix(in srgb, var(--wk-success) 26%, #fff); }
@@ -106,27 +110,32 @@ $referencia = (string)($filtros['referencia'] ?? '');
 
 .worker-cash-page .wk-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
 .worker-cash-page .wk-table thead { background: var(--wk-surface-warm); border-bottom: 1px solid var(--wk-border); }
-.worker-cash-page .wk-table th { padding: 12px 13px; color: var(--wk-muted); font-size: .64rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; text-align: left; }
+.worker-cash-page .wk-table th { padding: 12px 13px; color: var(--wk-muted); font-size: .64rem; font-weight: 650; letter-spacing: .05em; text-transform: uppercase; text-align: left; }
 .worker-cash-page .wk-table th.is-end, .worker-cash-page .wk-table td.is-end { text-align: right; }
 .worker-cash-page .wk-table td { padding: 12px 13px; border-bottom: 1px solid var(--wk-border); vertical-align: top; }
 .worker-cash-page .wk-table tbody tr:last-child td { border-bottom: 0; }
-.worker-cash-page .wk-table tbody tr:hover { background: var(--wk-ivory-2); }
-.worker-cash-page .wk-link { font-weight: 700; color: var(--wk-heading); text-decoration: none; }
+.worker-cash-page .wk-table tbody tr:hover { background: color-mix(in srgb, var(--wk-ivory-2) 72%, #fff); }
+.worker-cash-page .wk-link { font-weight: 650; color: var(--wk-heading); text-decoration: none; }
 .worker-cash-page .wk-link:hover { text-decoration: underline; text-decoration-color: var(--wk-gold); text-underline-offset: 3px; }
 .worker-cash-page .wk-act { display: inline-flex; align-items: center; gap: .35rem; min-height: 32px; padding: 0 12px; border-radius: 9px; background: var(--wk-surface-warm); border: 1px solid var(--wk-border); color: var(--wk-info); font-size: .76rem; font-weight: 700; text-decoration: none; }
 .worker-cash-page .wk-act:hover { background: var(--wk-info-bg); }
 
 .worker-cash-page .wk-empty { text-align: center; padding: 40px 18px; }
 .worker-cash-page .wk-empty-icon { width: 54px; height: 54px; margin: 0 auto 12px; border-radius: 18px; display: grid; place-items: center; background: var(--wk-gold-soft); color: var(--wk-gold-ink); font-size: 1.25rem; }
-.worker-cash-page .wk-empty h2 { color: var(--wk-brand); font-size: 1.05rem; font-weight: 700; }
+.worker-cash-page .wk-empty h2 { color: var(--wk-heading); font-size: 1.05rem; font-weight: 650; }
 .worker-cash-page .wk-empty p { color: var(--wk-muted); font-size: .88rem; margin-top: 6px; }
 .worker-cash-page .wk-notice { display: flex; gap: 12px; align-items: flex-start; padding: 16px 18px; background: var(--wk-gold-soft); border: 1px solid var(--wk-gold-line); border-radius: 16px; }
 .worker-cash-page .wk-notice i { color: var(--wk-gold-ink); font-size: 1.1rem; margin-top: 2px; }
-.worker-cash-page .wk-notice strong { color: var(--wk-heading); display: block; margin-bottom: 2px; }
+.worker-cash-page .wk-notice strong { color: var(--wk-heading); display: block; margin-bottom: 2px; font-weight: 650; }
 .worker-cash-page .wk-notice p { color: var(--wk-muted); font-size: .88rem; margin: 0; }
 
-@media (min-width: 1100px) { .worker-cash-page .wk-filter-form { grid-template-columns: 110px minmax(160px,1fr) 140px 140px 150px 130px minmax(150px,1fr) auto; } }
+@media (min-width: 1100px) { .worker-cash-page .wk-filter-form { grid-template-columns: 88px minmax(220px,1.15fr) repeat(2, minmax(132px,.65fr)) minmax(132px,.65fr) minmax(118px,.6fr) minmax(150px,.75fr) auto; } }
 @media (max-width: 980px) { .worker-cash-page .wk-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) {
+    .worker-cash-page .wk-stats,
+    .worker-cash-page .wk-filter-form { grid-template-columns: 1fr; }
+    .worker-cash-page .wk-btn { width: 100%; }
+}
 </style>
 
 <div class="worker-cash-page p-4 sm:p-6">
@@ -193,7 +202,7 @@ $referencia = (string)($filtros['referencia'] ?? '');
                         <option value="tarjeta" <?= $metodoPago === 'tarjeta' ? 'selected' : '' ?>>Tarjeta</option>
                         <option value="transferencia" <?= $metodoPago === 'transferencia' ? 'selected' : '' ?>>Transferencia</option>
                     </select>
-                    <input class="wk-control" type="number" min="0" step="0.01" name="monto" value="<?= trab_cash_safe($monto, '') ?>" placeholder="Monto">
+                    <input class="wk-control" type="number" data-money-format="true" min="0" step="0.01" name="monto" value="<?= trab_cash_safe($monto, '') ?>" placeholder="Monto">
                     <input class="wk-control" type="text" name="referencia" value="<?= trab_cash_safe($referencia, '') ?>" placeholder="Referencia (opcional)">
                     <button class="wk-btn wk-btn-brand" type="submit"><i class="fas fa-filter"></i> Evaluar</button>
                 </form>

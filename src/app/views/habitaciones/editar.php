@@ -576,6 +576,25 @@ $habitacionNumeroEliminacion = (string)($habitacion['numero'] ?? '');
         position: static;
     }
 }
+
+/* ===== Ajuste minimalista (override) ===== */
+.edit-room-page { background: #F7F8FA !important; }
+.edit-room-page * { font-weight: 600 !important; }
+.edit-room-page h1, .edit-room-page h2, .edit-room-page h3,
+.edit-room-page strong, .edit-room-page b,
+.edit-room-page .edit-room-title { font-weight: 700 !important; }
+.edit-room-page [class*="kicker"] { letter-spacing: .06em !important; }
+.edit-room-page .edit-room-card,
+.edit-room-page .edit-room-hero-card,
+.edit-room-page .edit-room-status-card,
+.edit-room-page .edit-room-preview-card {
+    background: #FFFFFF !important;
+    border: 1px solid #ECEEF1 !important;
+    box-shadow: 0 1px 2px rgba(16,24,40,.03), 0 10px 26px -22px rgba(16,24,40,.28) !important;
+    border-radius: 16px !important;
+}
+.edit-room-page .edit-room-preview-inner { background: #FAFBFC !important; box-shadow: none !important; }
+.edit-room-page .edit-room-hero-icon { background: #F2F5F9 !important; box-shadow: none !important; }
 </style>
 
 <div class="edit-room-page min-h-screen bg-gradient-to-br from-hotel-cream to-white p-6">
@@ -792,6 +811,7 @@ $habitacionNumeroEliminacion = (string)($habitacion['numero'] ?? '');
                                         </div>
                                         <input type="number"
                                                name="precio_base"
+                                               data-money-format="true"
                                                value="<?= htmlspecialchars($habitacionPrecioFormulario, ENT_QUOTES, 'UTF-8') ?>"
                                                step="50"
                                                required
@@ -1313,8 +1333,10 @@ document.addEventListener('DOMContentLoaded', function() {
             previewPiso.textContent = 'Sin definir';
         }
 
-        // Precio
-        const precio = parseFloat(precioInput.value) || 0;
+        // Precio (lee de forma segura aunque el campo tenga comas de miles)
+        const precio = window.MedisoftMoneyInput
+            ? window.MedisoftMoneyInput.read(precioInput)
+            : (parseFloat(String(precioInput.value).replace(/,/g, '')) || 0);
         previewPrecio.textContent = '$' + precio.toLocaleString('es-MX');
 
         // Características especiales

@@ -763,6 +763,25 @@ public function actualizarVehiculoAction() {
 /**
  * Actualizar huésped (sin vehículos - se gestionan por separado)
  */
+/**
+ * Sanitiza el descuento por huesped desde el POST.
+ * Devuelve [descuento_tipo, descuento_valor] o NULL/NULL si no hay descuento valido.
+ */
+private function descuentoHuespedDesdePost() {
+    $tipo = trim((string)$this->getPost('descuento_tipo', ''));
+    $valorRaw = str_replace(',', '', (string)$this->getPost('descuento_valor', ''));
+    $valor = is_numeric($valorRaw) ? (float)$valorRaw : 0;
+
+    if (($tipo !== 'porcentaje' && $tipo !== 'monto') || $valor <= 0) {
+        return ['descuento_tipo' => null, 'descuento_valor' => null];
+    }
+    if ($tipo === 'porcentaje' && $valor > 100) {
+        $valor = 100;
+    }
+
+    return ['descuento_tipo' => $tipo, 'descuento_valor' => $valor];
+}
+
 public function actualizarAction() {
     if (!$this->isPost()) {
         $this->redirect('huespedes');
@@ -796,7 +815,8 @@ public function actualizarAction() {
         'notas' => trim($this->getPost('notas')),
         'datos_extra_json' => $this->extrasJson($extrasHuesped)
     ];
-    
+    $data = array_merge($data, $this->descuentoHuespedDesdePost());
+
     // Validar datos
     $errores = $this->huespedModel->validar($data, $id);
     $errores = array_merge($errores, $this->erroresCamposRegistro($data, $extrasHuesped, 'guest', $fieldPolicy));
@@ -844,6 +864,88 @@ public function actualizarAction() {
     }
 }
     
+    /**
+     * Actualización inline de un solo campo del huésped (AJAX).
+     * Pensado para editar nombre / teléfono / email desde otras vistas
+     * (p.ej. el detalle de reservación) sin pasar por el formulario completo.
+     */
+    public function actualizarInlineAction() {
+        if (!$this->isAjax() || !$this->isPost()) {
+            View::renderJSON(['success' => false, 'message' => 'Método no permitido']);
+            return;
+        }
+
+        $this->validateCSRF();
+
+        $id = (int)($this->route_params['id'] ?? 0);
+        $hotelId = $this->hotelIdActual();
+
+        $huesped = $this->huespedModel->findForHotel($id, $hotelId);
+        if (!$huesped) {
+            View::renderJSON(['success' => false, 'message' => 'Huésped no encontrado']);
+            return;
+        }
+
+        $camposPermitidos = ['nombre_completo', 'telefono', 'email'];
+        $campo = (string)$this->getPost('campo');
+        if (!in_array($campo, $camposPermitidos, true)) {
+            View::renderJSON(['success' => false, 'message' => 'Campo no editable']);
+            return;
+        }
+
+        $valor = trim((string)$this->getPost('valor'));
+
+        // Validación por campo (espejo de las reglas de Huesped::validar,
+        // aislada para no bloquear por otros datos previos del registro).
+        $error = '';
+        if ($campo === 'nombre_completo') {
+            $len = function_exists('mb_strlen') ? mb_strlen($valor) : strlen($valor);
+            if ($valor === '') {
+                $error = 'El nombre completo es obligatorio';
+            } elseif ($len < 3) {
+                $error = 'El nombre debe tener al menos 3 caracteres';
+            } elseif ($len > 200) {
+                $error = 'El nombre no puede exceder 200 caracteres';
+            }
+        } elseif ($campo === 'telefono') {
+            if ($valor !== '') {
+                $telefonoLimpio = preg_replace('/[\s\-\(\)]/', '', $valor);
+                if (!preg_match('/^[0-9]{10,15}$/', $telefonoLimpio)) {
+                    $error = 'El teléfono debe contener entre 10 y 15 dígitos';
+                }
+            }
+        } elseif ($campo === 'email') {
+            if ($valor !== '' && !filter_var($valor, FILTER_VALIDATE_EMAIL)) {
+                $error = 'El email no es válido';
+            }
+        }
+
+        if ($error !== '') {
+            View::renderJSON(['success' => false, 'message' => $error]);
+            return;
+        }
+
+        // Teléfono único por hotel (igual que en actualizarAction).
+        if ($campo === 'telefono' && $valor !== '' && $valor !== (string)($huesped['telefono'] ?? '')) {
+            if ($this->huespedModel->existeTelefonoPorHotel($valor, $hotelId, $id)) {
+                View::renderJSON(['success' => false, 'message' => 'Ya existe otro huésped con ese número de teléfono']);
+                return;
+            }
+        }
+
+        if (!$this->huespedModel->update($id, [$campo => $valor])) {
+            View::renderJSON(['success' => false, 'message' => 'No se pudo guardar el cambio']);
+            return;
+        }
+
+        View::renderJSON([
+            'success' => true,
+            'message' => 'Cambio guardado',
+            'campo'   => $campo,
+            'valor'   => $valor
+        ]);
+    }
+
     /**
      * Ver detalle de huésped
      */
@@ -1312,7 +1414,8 @@ public function guardarAction() {
         'notas' => trim($this->getPost('notas')),
         'datos_extra_json' => $this->extrasJson($extrasHuesped)
     ];
-    
+    $data = array_merge($data, $this->descuentoHuespedDesdePost());
+
     // Validar datos
     $errores = $this->huespedModel->validar($data);
     $errores = array_merge($errores, $this->erroresCamposRegistro($data, $extrasHuesped, 'guest', $fieldPolicy));

@@ -1272,6 +1272,44 @@ $gcVehicleFieldsTemplate = $gcRenderVehicleFields('__INDEX__');
                         </div>
                     </section>
 
+                    <section class="gc-section">
+                        <div class="gc-section-head">
+                            <div class="gc-section-title-wrap">
+                                <span class="gc-section-icon"><i class="fas fa-tags"></i></span>
+                                <div>
+                                    <h2>Descuento del huesped</h2>
+                                    <p class="gc-section-sub">Opcional. Se aplica automaticamente al cotizar reservaciones de este huesped (ajustable en cada reservacion).</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="gc-section-body">
+                            <div class="gc-grid">
+                                <div class="gc-field">
+                                    <label class="gc-label">Tipo de descuento</label>
+                                    <div class="gc-input-wrap">
+                                        <i class="fas fa-percent"></i>
+                                        <select name="descuento_tipo" class="gc-control has-icon">
+                                            <option value="">Sin descuento</option>
+                                            <option value="porcentaje" <?= old('descuento_tipo') === 'porcentaje' ? 'selected' : '' ?>>Porcentaje (%)</option>
+                                            <option value="monto" <?= old('descuento_tipo') === 'monto' ? 'selected' : '' ?>>Monto fijo ($)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="gc-field">
+                                    <label class="gc-label">Valor</label>
+                                    <div class="gc-input-wrap">
+                                        <i class="fas fa-tag"></i>
+                                        <input type="number" name="descuento_valor" min="0" step="0.01"
+                                               value="<?= old('descuento_valor') ?>"
+                                               placeholder="Ej. 10"
+                                               class="gc-control has-icon">
+                                    </div>
+                                    <span class="gc-field-hint">Porcentaje (ej. 10 = 10%) o pesos, segun el tipo elegido.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                     <?php if ($gcGuestFieldVisible('procedencia_estado') || $gcGuestFieldVisible('procedencia_ciudad')): ?>
                     <section class="gc-section">
                         <div class="gc-section-head">

@@ -70,6 +70,10 @@ $router->get('/api/reservaciones/{id:[0-9]+}/habitaciones', [
     'controller' => 'Reservacion',
     'action' => 'habitacionesApi'
 ]);
+$router->get('/api/reservaciones/{id:[0-9]+}/resumen-pagos', [
+    'controller' => 'Api',
+    'action' => 'reservacionResumenPagos'
+]);
 // Rutas de control de remotos
 $router->post('/reservaciones/entregar-remoto', [
     'controller' => 'Reservacion',
@@ -359,6 +363,7 @@ $router->post('/huespedes/store', ['controller' => 'Huesped', 'action' => 'guard
 $router->get('/huespedes/{id:[0-9]+}', ['controller' => 'Huesped', 'action' => 'ver']);
 $router->get('/huespedes/{id:[0-9]+}/edit', ['controller' => 'Huesped', 'action' => 'editar']);
 $router->post('/huespedes/{id:[0-9]+}/update', ['controller' => 'Huesped', 'action' => 'actualizar']);
+$router->post('/huespedes/{id:[0-9]+}/actualizar-inline', ['controller' => 'Huesped', 'action' => 'actualizarInline']);
 $router->get('/huespedes/buscar', ['controller' => 'Huesped', 'action' => 'buscar']);
 
 // Sistema de Reservaciones
@@ -376,6 +381,8 @@ $router->post('/reservaciones/check-out/{id:[0-9]+}', ['controller' => 'Reservac
 
 $router->post('/reservaciones/check-out-parcial/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'checkOutParcial']);
 $router->post('/reservaciones/cancelar/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'cancelar']);
+$router->post('/reservaciones/{id:[0-9]+}/anticipo', ['controller' => 'Reservacion', 'action' => 'registrarAnticipo']);
+$router->post('/reservaciones/{id:[0-9]+}/anticipo/revertir', ['controller' => 'Reservacion', 'action' => 'revertirAnticipo']);
 $router->get('/reservaciones/calendario', ['controller' => 'Reservacion', 'action' => 'calendario']);
 $router->post('/reservaciones/check-out-rapido/{id:[0-9]+}', ['controller' => 'Reservacion', 'action' => 'checkOutRapido']);
 

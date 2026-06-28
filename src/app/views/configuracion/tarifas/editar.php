@@ -448,7 +448,28 @@ input:checked + .toggle-slider:before {
                     </h2>
                 </div>
                 <div class="section-body">
-                    <div class="option-cards grid-cols-2">
+                    <?php $incClase = $incremento['clase'] ?? 'incremento'; ?>
+                    <div class="option-cards grid-cols-2" id="claseCards" style="margin-bottom:1.25rem;">
+                        <div class="option-card <?= $incClase === 'descuento' ? '' : 'selected' ?>" onclick="selectClase('incremento')">
+                            <input type="radio" name="clase" value="incremento" <?= $incClase === 'descuento' ? '' : 'checked' ?>>
+                            <div class="option-icon bg-blue-100 text-blue-600">
+                                <i class="fas fa-arrow-up"></i>
+                            </div>
+                            <div class="option-title">Incremento</div>
+                            <div class="option-desc">Aumenta el precio de la habitacion</div>
+                        </div>
+
+                        <div class="option-card <?= $incClase === 'descuento' ? 'selected' : '' ?>" onclick="selectClase('descuento')">
+                            <input type="radio" name="clase" value="descuento" <?= $incClase === 'descuento' ? 'checked' : '' ?>>
+                            <div class="option-icon bg-rose-100 text-rose-600">
+                                <i class="fas fa-arrow-down"></i>
+                            </div>
+                            <div class="option-title">Descuento</div>
+                            <div class="option-desc">Resta del precio de la habitacion</div>
+                        </div>
+                    </div>
+
+                    <div class="option-cards grid-cols-2" id="tipoCards">
                         <div class="option-card <?= $incremento['tipo_incremento'] == 'porcentaje' ? 'selected' : '' ?>" onclick="selectTipo('porcentaje')">
                             <input type="radio" name="tipo_incremento" value="porcentaje" <?= $incremento['tipo_incremento'] == 'porcentaje' ? 'checked' : '' ?>>
                             <div class="option-icon bg-blue-100 text-blue-600">
@@ -696,8 +717,8 @@ function tarifaBrandPrimary() {
 
 // Función para seleccionar tipo - CORREGIDA
 function selectTipo(tipo) {
-    // Buscar específicamente en la sección de tipo
-    document.querySelectorAll('#seccionTipo .option-card').forEach(card => {
+    // Buscar específicamente en las tarjetas de tipo (no en las de clase)
+    document.querySelectorAll('#tipoCards .option-card').forEach(card => {
         card.classList.remove('selected');
     });
     event.currentTarget.classList.add('selected');
@@ -720,6 +741,15 @@ function selectTipo(tipo) {
         ayuda.textContent = 'Ejemplo: 100 para incrementar $100';
         actualizarEjemplo(valor, 'monto_fijo');
     }
+}
+
+function selectClase(clase) {
+    document.querySelectorAll('#claseCards .option-card').forEach(function (card) {
+        const radio = card.querySelector('input[name="clase"]');
+        const isSel = radio && radio.value === clase;
+        card.classList.toggle('selected', isSel);
+        if (isSel) { radio.checked = true; }
+    });
 }
 
 // Función para seleccionar alcance - CORREGIDA

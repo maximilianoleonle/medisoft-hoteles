@@ -1115,7 +1115,12 @@ document.getElementById('formCorte').addEventListener('submit', function(e) {
 
 function exportarMovimientos(formato = 'excel') {
     const formatoSeguro = formato === 'pdf' ? 'pdf' : 'excel';
-    window.location.href = '<?= url('caja/exportar?corte_id=' . ($corte['id'] ?? '')) ?>&formato=' + formatoSeguro;
+    const exportUrl = '<?= url('caja/exportar?corte_id=' . ($corte['id'] ?? '')) ?>&formato=' + formatoSeguro;
+    if (formatoSeguro === 'pdf' && window.MedisoftMobileFiles) {
+        window.MedisoftMobileFiles.open(exportUrl, { label: 'PDF de movimientos' });
+        return;
+    }
+    window.location.href = exportUrl;
 }
 
 document.addEventListener('DOMContentLoaded', function() {

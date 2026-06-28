@@ -49,6 +49,7 @@ class ApiController extends Controller {
             'movimientosRecientes' => 'dashboard',
             'ocupacionActual' => 'dashboard',
             'reservacionesHoy' => 'reservaciones',
+            'reservacionResumenPagos' => 'reservaciones',
             'todasConOcupacion' => 'habitaciones',
             'validarImagen' => 'habitaciones',
             'vehiculosHuesped' => 'huespedes',
@@ -1694,6 +1695,7 @@ public function verificarStockHabitacionAction() {
     $fecha_entrada = $this->getQuery('fecha_entrada');
     $fecha_salida = $this->getQuery('fecha_salida');
     $hora_llegada = $this->getQuery('hora_llegada');
+    $huesped_id = (int)$this->getQuery('huesped_id', 0);
     
     // Validar que habitaciones_ids sea un array
     if (is_string($habitaciones_ids)) {
@@ -1771,9 +1773,13 @@ public function verificarStockHabitacionAction() {
         $habitaciones_con_precio,
         $fecha_entrada,
         $fecha_salida,
-        $hora_llegada
+        $hora_llegada,
+        $huesped_id ?: null
     );
-    
+
+    $descuento_total = $calculo['descuento_total'] ?? 0;
+    $precio_con_descuento = $calculo['precio_con_descuento'] ?? $calculo['precio_total'];
+
     View::renderJSON([
         'success' => true,
         'data' => [
@@ -1786,9 +1792,30 @@ public function verificarStockHabitacionAction() {
             'ahorro' => $calculo['precio_sin_descuento'] - $calculo['precio_total'],
             'precio_formateado' => format_money($calculo['precio_total']),
             'es_madrugada' => $calculo['es_madrugada'],
-            'habitaciones' => $habitaciones_con_precio
+            'habitaciones' => $habitaciones_con_precio,
+            // ===== Desglose de descuentos (motor unico, reutilizable por canal publico) =====
+            'subtotal' => $calculo['subtotal'] ?? $calculo['precio_total'],
+            'descuento_tipo' => $calculo['descuento_tipo'] ?? 0,
+            'descuento_huesped' => $calculo['descuento_huesped'] ?? 0,
+            'descuento_total' => $descuento_total,
+            'precio_con_descuento' => $precio_con_descuento,
+            'precio_con_descuento_formateado' => format_money($precio_con_descuento),
+            'descuento_total_formateado' => format_money($descuento_total),
+            'descuento_detalle' => $calculo['descuento_detalle'] ?? ['tipo' => [], 'huesped' => ['descuento' => 0]]
         ]
     ]);
+}
+
+/**
+ * Devuelve el resumen de cobro de una reservación (total/pagado/saldo).
+ * Usado por el check-in del listado para cobrar el SALDO, no el total bruto.
+ */
+public function reservacionResumenPagosAction() {
+    $id = (int)($this->route_params['id'] ?? 0);
+    require_once __DIR__ . '/../models/Reservacion.php';
+    $resModel = new Reservacion();
+    $resumen = $resModel->resumenPagos($id, (int)$this->hotelIdActual());
+    View::renderJSON(['success' => true, 'data' => $resumen]);
 }
 
 public function incrementosTarifaActivosAction() {

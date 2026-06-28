@@ -216,6 +216,41 @@ function url($path = '') {
     return base_url($path);
 }
 
+function back_url_normalized_path($path, $baseDir = '') {
+    $path = parse_url((string) $path, PHP_URL_PATH) ?: (string) $path;
+    $path = '/' . ltrim(str_replace('\\', '/', $path), '/');
+    $baseDir = rtrim(str_replace('\\', '/', (string) $baseDir), '/');
+
+    if ($baseDir !== '' && $baseDir !== '/' && ($path === $baseDir || strpos($path, $baseDir . '/') === 0)) {
+        $path = substr($path, strlen($baseDir));
+        $path = '/' . ltrim($path, '/');
+    }
+
+    return $path === '/' ? '/' : rtrim($path, '/');
+}
+
+function back_url_is_form_route($path, $baseDir = '') {
+    $path = back_url_normalized_path($path, $baseDir);
+    $segments = array_values(array_filter(explode('/', trim(strtolower($path), '/')), 'strlen'));
+
+    if (empty($segments)) {
+        return false;
+    }
+
+    foreach ($segments as $segment) {
+        if (in_array($segment, ['crear', 'nuevo', 'create', 'new', 'form', 'subir'], true)) {
+            return true;
+        }
+
+        if (in_array($segment, ['editar', 'edit'], true) || strpos($segment, 'editar-') === 0) {
+            return true;
+        }
+    }
+
+    $last = end($segments);
+    return in_array($last, ['crear', 'nuevo', 'create', 'new', 'form', 'subir'], true);
+}
+
 /**
  * Generar URL de regreso segura con fallback.
  *
@@ -266,6 +301,10 @@ function back_url($fallback = '') {
     $refererFullPath = $refererPath . (isset($refererParts['query']) ? '?' . $refererParts['query'] : '');
 
     if ($refererFullPath === $currentFullPath) {
+        return $fallbackUrl;
+    }
+
+    if (back_url_is_form_route($refererPath, $baseDir) && !back_url_is_form_route($currentPath, $baseDir)) {
         return $fallbackUrl;
     }
 

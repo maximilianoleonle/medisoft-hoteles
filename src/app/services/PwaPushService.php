@@ -44,13 +44,29 @@ class PwaPushService {
     }
 
     public function enviarPrueba(int $hotelId): array {
-        return $this->enviarPayloadHotel($hotelId, [
+        $configurado = $this->estaConfigurado();
+        $activo = $this->estaActivoParaHotel($hotelId);
+        $dispositivos = ($configurado && $activo)
+            ? count($this->subscriptionModel->listarActivasPorHotel($hotelId))
+            : 0;
+
+        $resultado = $this->enviarPayloadHotel($hotelId, [
             'title' => 'Notificaciones activas',
             'body' => 'Este dispositivo ya puede recibir avisos de Medisoft Hoteles.',
             'url' => 'notificaciones',
             'tag' => 'pwa-push-test-' . $hotelId,
             'severity' => 'info',
         ]);
+
+        $resultado['diagnostico'] = [
+            'configurado' => $configurado,
+            'activo_en_hotel' => $activo,
+            'dispositivos_activos' => $dispositivos,
+            'enviados' => (int)($resultado['sent'] ?? 0),
+            'fallidos' => (int)($resultado['failed'] ?? 0),
+        ];
+
+        return $resultado;
     }
 
     public function enviarNotificacion(array $notificacion, ?int $notificacionId = null): array {
@@ -499,17 +515,24 @@ class PwaPushService {
     }
 
     private function expandirRolesDestino(array $roles): array {
+        // Los roles de gestion (dueno/gerente/admin/superadmin) reciben TODAS las
+        // notificaciones, ademas del personal del rol especifico. Asi el push
+        // operativo (reservas, limpieza, mantenimiento) tambien llega a gerencia
+        // con la app cerrada, no solo a recepcion/administrador.
+        $gestion = ['superadmin', 'propietario', 'gerente', 'administrador'];
+
         $expandir = [
-            'gerente' => ['superadmin', 'propietario', 'gerente', 'administrador'],
-            'administrador' => ['superadmin', 'propietario', 'gerente', 'administrador'],
-            'propietario' => ['superadmin', 'propietario', 'gerente', 'administrador'],
-            'superadmin' => ['superadmin', 'propietario', 'gerente', 'administrador'],
-            'recepcionista' => ['recepcionista', 'administrador'],
-            'limpieza' => ['limpieza', 'recepcionista', 'administrador'],
-            'mantenimiento' => ['mantenimiento', 'recepcionista', 'administrador'],
+            'gerente' => $gestion,
+            'administrador' => $gestion,
+            'propietario' => $gestion,
+            'superadmin' => $gestion,
+            'recepcionista' => array_merge(['recepcionista'], $gestion),
+            'limpieza' => array_merge(['limpieza', 'recepcionista'], $gestion),
+            'mantenimiento' => array_merge(['mantenimiento', 'recepcionista'], $gestion),
         ];
 
-        $resultado = [];
+        // Siempre se incluye la gestion como base (incluso para roles desconocidos).
+        $resultado = $gestion;
         foreach ($roles as $rol) {
             $rol = strtolower(trim((string)$rol));
             foreach (($expandir[$rol] ?? [$rol]) as $rolExpandido) {
