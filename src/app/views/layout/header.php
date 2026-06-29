@@ -789,6 +789,236 @@ $layoutPageClass = preg_match('/^[a-z0-9_-]+$/i', (string)$layoutPathSegment)
             <!-- Contenido de la página -->
             <main class="main-content">
                 <!-- Mensajes Flash → ahora se renderizan como toast flotante (siempre visible) en partials/toast.php -->
+<?php
+/* ── Skeleton de carga estilo FB ─────────────────────────────────
+ *  Tipo A → dashboard / calendario / vistas con columnas
+ *  Tipo B → listas (reservaciones, habitaciones, huespedes, etc.)
+ *  Tipo C → detalle de un registro (ver/N)
+ * ──────────────────────────────────────────────────────────────── */
+$_skUri  = $_SERVER['REQUEST_URI'] ?? '';
+$_skType = 'b'; // default: lista
+if (preg_match('#/ver/\d+#', $_skUri) || preg_match('#/(ver|detalle|editar)$#i', $_skUri)) {
+    $_skType = 'c';
+} elseif (preg_match('#/(dashboard|inicio|calendario|reportes)#i', $_skUri)) {
+    $_skType = 'a';
+}
+// Panel SaaS admin → no skeleton
+$_skShow = !($layoutEsPanelSaas ?? false);
+if ($_skShow):
+?>
+<style>
+/* ── Skeleton global ───────────────────────────────────────────── */
+#psk{
+    position:fixed;
+    inset:0;
+    z-index:500;
+    background:#fff;
+    overflow:hidden;
+    pointer-events:none;
+    transition:opacity .3s ease;
+}
+/* En desktop queda a la derecha del sidebar */
+@media(min-width:1025px){
+    #psk{ left:268px; }
+    .ms-admin-scope #psk{ left:0; }
+}
+@media(max-width:1024px){
+    #psk{ top:60px; } /* debajo del header mobile */
+}
+#psk.psk-out{ opacity:0; }
+
+/* ── Shimmer ── */
+@keyframes psk-shimmer{
+    0%  { background-position:-600px 0 }
+    100%{ background-position: 600px 0 }
+}
+.psk-bone{
+    border-radius:8px;
+    background:linear-gradient(90deg,#EBEBEB 25%,#F5F5F5 50%,#EBEBEB 75%);
+    background-size:1200px 100%;
+    animation:psk-shimmer 1.5s infinite ease-in-out;
+}
+/* Variantes de grosor */
+.psk-circle { border-radius:50% !important; }
+.psk-r4     { border-radius:4px !important; }
+.psk-r12    { border-radius:12px !important; }
+.psk-r16    { border-radius:16px !important; }
+
+/* ── Contenedor del skeleton ── */
+.psk-wrap{
+    padding:22px 22px 0;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    height:100%;
+    box-sizing:border-box;
+}
+/* Cabecera */
+.psk-hd{ display:flex; align-items:center; gap:12px; }
+.psk-hd-circle{ width:44px; height:44px; flex-shrink:0; }
+.psk-hd-lines{ flex:1; display:flex; flex-direction:column; gap:7px; }
+/* Fila de stats */
+.psk-stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+@media(max-width:640px){ .psk-stats{ grid-template-columns:repeat(2,1fr); } }
+.psk-stat-card{ height:78px; }
+/* Layout 2 columnas */
+.psk-cols{ display:grid; grid-template-columns:1fr 280px; gap:14px; flex:1; min-height:0; }
+@media(max-width:900px){ .psk-cols{ grid-template-columns:1fr; } }
+.psk-main{ display:flex; flex-direction:column; gap:10px; }
+.psk-side{ display:flex; flex-direction:column; gap:10px; }
+/* Card grande */
+.psk-card{ border-radius:16px; overflow:hidden; }
+/* Lista rows */
+.psk-rows{ display:flex; flex-direction:column; gap:8px; }
+.psk-row{ display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #F5F5F5; }
+.psk-row:last-child{ border-bottom:none; }
+/* Toolbar */
+.psk-toolbar{ display:flex; gap:10px; align-items:center; }
+/* Detail hero */
+.psk-hero{ height:130px; }
+.psk-detail-cols{ display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:14px; flex:1; min-height:0; }
+@media(max-width:800px){ .psk-detail-cols{ grid-template-columns:1fr; } }
+</style>
+
+<div id="psk" role="status" aria-label="Cargando…">
+<?php if ($_skType === 'a'): /* ── TIPO A: Dashboard / Calendario ── */ ?>
+<div class="psk-wrap">
+    <div class="psk-hd">
+        <div class="psk-bone psk-circle psk-hd-circle"></div>
+        <div class="psk-hd-lines">
+            <div class="psk-bone" style="height:11px;width:38%"></div>
+            <div class="psk-bone" style="height:20px;width:55%"></div>
+        </div>
+        <div class="psk-bone psk-r12" style="height:36px;width:120px;margin-left:auto"></div>
+    </div>
+    <div class="psk-stats">
+        <div class="psk-bone psk-stat-card psk-r16"></div>
+        <div class="psk-bone psk-stat-card psk-r16"></div>
+        <div class="psk-bone psk-stat-card psk-r16"></div>
+        <div class="psk-bone psk-stat-card psk-r16"></div>
+    </div>
+    <div class="psk-cols">
+        <div class="psk-main">
+            <div class="psk-bone psk-r16" style="height:44px"></div>
+            <div class="psk-bone psk-r16" style="height:200px"></div>
+            <div class="psk-rows">
+                <?php for ($i = 0; $i < 4; $i++): ?>
+                <div class="psk-row">
+                    <div class="psk-bone psk-circle" style="width:36px;height:36px;flex-shrink:0"></div>
+                    <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+                        <div class="psk-bone" style="height:10px;width:<?= [60,75,50,68][$i] ?>%"></div>
+                        <div class="psk-bone" style="height:10px;width:<?= [40,55,35,45][$i] ?>%"></div>
+                    </div>
+                    <div class="psk-bone psk-r12" style="height:24px;width:64px"></div>
+                </div>
+                <?php endfor; ?>
+            </div>
+        </div>
+        <div class="psk-side">
+            <div class="psk-bone psk-r16" style="height:160px"></div>
+            <div class="psk-bone psk-r16" style="height:110px"></div>
+            <div class="psk-bone psk-r16" style="height:90px"></div>
+        </div>
+    </div>
+</div>
+
+<?php elseif ($_skType === 'b'): /* ── TIPO B: Lista ── */ ?>
+<div class="psk-wrap">
+    <div class="psk-hd">
+        <div class="psk-hd-lines">
+            <div class="psk-bone" style="height:11px;width:28%"></div>
+            <div class="psk-bone" style="height:24px;width:42%"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-left:auto">
+            <div class="psk-bone psk-r12" style="height:36px;width:90px"></div>
+            <div class="psk-bone psk-r12" style="height:36px;width:120px"></div>
+        </div>
+    </div>
+    <div class="psk-toolbar">
+        <div class="psk-bone psk-r12" style="height:40px;flex:1"></div>
+        <div class="psk-bone psk-r12" style="height:40px;width:100px"></div>
+        <div class="psk-bone psk-r12" style="height:40px;width:80px"></div>
+    </div>
+    <div class="psk-bone psk-r16" style="height:48px"></div>
+    <div class="psk-rows">
+        <?php
+        $pskW1 = [80,65,72,58,70,62,75];
+        $pskW2 = [55,42,50,38,48,40,52];
+        for ($i = 0; $i < 7; $i++):
+        ?>
+        <div class="psk-row">
+            <div class="psk-bone psk-circle" style="width:40px;height:40px;flex-shrink:0"></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+                <div class="psk-bone" style="height:11px;width:<?= $pskW1[$i] ?>%"></div>
+                <div class="psk-bone" style="height:10px;width:<?= $pskW2[$i] ?>%"></div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+                <div class="psk-bone psk-r12" style="height:22px;width:72px"></div>
+                <div class="psk-bone" style="height:9px;width:50px"></div>
+            </div>
+        </div>
+        <?php endfor; ?>
+    </div>
+    <div class="psk-bone psk-r12" style="height:38px;width:220px;margin:0 auto"></div>
+</div>
+
+<?php else: /* ── TIPO C: Detalle ── */ ?>
+<div class="psk-wrap">
+    <div class="psk-hd">
+        <div class="psk-bone psk-r12" style="height:36px;width:36px;flex-shrink:0"></div>
+        <div class="psk-hd-lines">
+            <div class="psk-bone" style="height:11px;width:25%"></div>
+            <div class="psk-bone" style="height:22px;width:45%"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-left:auto">
+            <div class="psk-bone psk-r12" style="height:36px;width:80px"></div>
+            <div class="psk-bone psk-r12" style="height:36px;width:100px"></div>
+        </div>
+    </div>
+    <div class="psk-bone psk-hero psk-r16"></div>
+    <div class="psk-detail-cols">
+        <div class="psk-main">
+            <div class="psk-bone psk-r16" style="height:130px"></div>
+            <div class="psk-rows">
+                <?php
+                $pskDW = [70,55,80,45,65];
+                for ($i = 0; $i < 5; $i++):
+                ?>
+                <div class="psk-row">
+                    <div class="psk-bone psk-r4" style="height:10px;width:20%"></div>
+                    <div class="psk-bone" style="height:10px;width:<?= $pskDW[$i] ?>%;margin-left:16px"></div>
+                </div>
+                <?php endfor; ?>
+            </div>
+            <div class="psk-bone psk-r16" style="height:100px"></div>
+        </div>
+        <div class="psk-side">
+            <div class="psk-bone psk-r16" style="height:200px"></div>
+            <div class="psk-bone psk-r16" style="height:140px"></div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+</div><!-- /#psk -->
+
+<script>
+(function(){
+    var sk = document.getElementById('psk');
+    if (!sk) return;
+    function dismiss(){
+        sk.classList.add('psk-out');
+        setTimeout(function(){ if(sk.parentNode) sk.parentNode.removeChild(sk); }, 320);
+    }
+    if (document.readyState === 'complete') {
+        setTimeout(dismiss, 60);
+    } else {
+        window.addEventListener('load', function(){ setTimeout(dismiss, 80); }, { once: true });
+        // Fallback por si load tarda demasiado
+        setTimeout(dismiss, 3500);
+    }
+})();
+</script>
+<?php endif; // $_skShow ?>
 
 
     <!-- SCRIPT PARA AUTO-HIDE -->

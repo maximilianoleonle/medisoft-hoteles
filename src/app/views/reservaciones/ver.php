@@ -5314,115 +5314,130 @@ if ($rvCheckinEntradaCorta !== '' || $rvCheckinSalidaCorta !== '') {
 
 <!-- ── Modal Express / Tardío ─────────────────────────────── -->
 <style>
-.xpm-ov{position:fixed;inset:0;z-index:9990;background:rgba(17,24,39,.52);display:flex;align-items:flex-end;justify-content:center}
-@media(min-width:600px){.xpm-ov{align-items:center;backdrop-filter:blur(3px)}}
-.xpm-shell{width:100%;height:100dvh;max-height:100dvh;background:#F6F8F5;display:flex;flex-direction:column;overflow:hidden;font-family:'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-@media(min-width:600px){.xpm-shell{max-width:468px;height:auto;max-height:min(90dvh,800px);border-radius:18px;box-shadow:0 32px 80px -12px rgba(0,0,0,.3)}}
+/* Anular CSS viejo que convertía el modal en 2 columnas */
+#modalCheckInTardio.rv-tardio-modal{all:unset;display:flex!important;position:fixed!important;inset:0!important;z-index:9990!important}
+#modalCheckInTardio .rv-tardio-shell{all:unset!important;display:contents!important}
+/* ── Overlay ── */
+.xpm-ov{position:fixed;inset:0;z-index:9990;background:rgba(40,48,62,.55);display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:600px){.xpm-ov{align-items:center;backdrop-filter:blur(4px)}}
+/* ── Shell — usa tokens rdv3 ── */
+.xpm-shell{
+    --xpm-bg: #FAFAF8;
+    --xpm-card: #FFFFFF;
+    --xpm-border: rgba(60,70,86,.08);
+    --xpm-ink: #3F3F3F;
+    --xpm-muted: #808080;
+    --xpm-green: #22b77a;
+    --xpm-green-2: #1fa66f;
+    --xpm-green-soft: #e8f7f0;
+    --xpm-amber: #B66A00;
+    --xpm-amber-soft: #FFF3E0;
+    --xpm-blue: #6B7F99;
+    --xpm-line: rgba(60,70,86,.08);
+    width:100%;height:100dvh;max-height:100dvh;
+    background:var(--xpm-bg);
+    display:flex;flex-direction:column;overflow:hidden;
+    font-family:Manrope,system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    color:var(--xpm-ink);
+}
+@media(min-width:600px){.xpm-shell{max-width:420px;height:auto;max-height:min(90dvh,760px);border-radius:20px;box-shadow:0 40px 80px -16px rgba(20,28,46,.28),0 0 0 1px rgba(255,255,255,.6)}}
 .xpm-shell *,.xpm-shell *::before,.xpm-shell *::after{box-sizing:border-box}
-.xpm-shell h2,.xpm-shell h3,.xpm-shell h4{font-family:'Outfit','DM Sans',sans-serif;letter-spacing:-.01em;margin:0}
-/* Header */
-.xpm-head{flex-shrink:0;display:flex;align-items:center;gap:11px;padding:14px 16px 13px;background:#fff;border-bottom:1px solid #E5EAE4}
-.xpm-head-ico{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:#FFF3E0;color:#B66A00;font-size:.9rem;flex-shrink:0}
-.xpm-head-ico.is-late{background:#EDF2EC;color:#3A5233}
+/* ── Header ── */
+.xpm-head{flex-shrink:0;display:flex;align-items:center;gap:11px;padding:15px 16px 14px;background:var(--xpm-card);border-bottom:1px solid var(--xpm-border)}
+.xpm-head-ico{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;background:var(--xpm-amber-soft);color:var(--xpm-amber);font-size:.85rem;flex-shrink:0}
+.xpm-head-ico.is-late{background:var(--xpm-green-soft);color:var(--xpm-green-2)}
 .xpm-head-text{flex:1;min-width:0}
-.xpm-head-title{display:block;font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:800;color:#111827;line-height:1.2}
-.xpm-head-sub{display:block;font-size:.7rem;font-weight:500;color:#9CA3AF;margin-top:1px}
-.xpm-head-close{width:34px;height:34px;display:grid;place-items:center;border:1px solid #E5E7EB;border-radius:9px;background:#F9FAFB;color:#6B7280;font-size:.82rem;cursor:pointer;flex-shrink:0;transition:background .12s,color .12s}
-.xpm-head-close:hover{background:#FEE2E2;color:#B91C1C;border-color:#FECACA}
+.xpm-head-title{display:block;font-size:.94rem;font-weight:800;color:var(--xpm-ink);line-height:1.2}
+.xpm-head-sub{display:block;font-size:.68rem;font-weight:600;color:var(--xpm-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xpm-head-close{width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--xpm-border);border-radius:9px;background:var(--xpm-bg);color:var(--xpm-muted);font-size:.8rem;cursor:pointer;flex-shrink:0;transition:background .14s,color .14s,border-color .14s}
+.xpm-head-close:hover{background:#FEE2E2;color:#B91C1C;border-color:#FCA5A5}
 /* Alert */
-.xpm-alert{flex-shrink:0;padding:10px 16px;background:#FFF8E1;border-bottom:1px solid #FFE082;font-size:.79rem;font-weight:600;color:#78350F;display:none}
+.xpm-alert{flex-shrink:0;padding:9px 14px;background:var(--xpm-amber-soft);border-bottom:1px solid rgba(182,106,0,.2);font-size:.75rem;font-weight:700;color:#78350F;display:none;line-height:1.4}
 /* Form */
 .xpm-form{flex:1;display:flex;flex-direction:column;min-height:0}
-/* Scrollable body */
-.xpm-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:14px 14px 8px;display:flex;flex-direction:column;gap:12px}
-/* Validation */
-.xpm-vmsg{padding:9px 13px;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;font-size:.78rem;font-weight:600;color:#B91C1C}
+/* Body scrollable */
+.xpm-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:13px 14px 8px;display:flex;flex-direction:column;gap:10px}
+/* Validación */
+.xpm-vmsg{padding:8px 12px;background:#FEF2F2;border:1px solid #FECACA;border-radius:9px;font-size:.76rem;font-weight:600;color:#B91C1C}
 .xpm-vmsg.hidden{display:none}
-/* Info card */
-.xpm-info-card{background:#fff;border:1px solid #E5EAE4;border-radius:13px;overflow:hidden}
-.xpm-info-row{display:flex;align-items:center;gap:11px;padding:11px 13px;border-bottom:1px solid #F3F6F2}
-.xpm-info-row:last-child{border-bottom:none}
-.xpm-info-ico{width:30px;height:30px;display:grid;place-items:center;border-radius:8px;background:#EDF2EC;color:#4A6741;font-size:.72rem;flex-shrink:0}
-.xpm-info-lbl{font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9CA3AF;display:block}
-.xpm-info-val{font-size:.86rem;font-weight:700;color:#111827;display:block;margin-top:1px}
-/* Fields */
+/* Field */
 .xpm-field{display:flex;flex-direction:column;gap:5px}
-.xpm-lbl{font-size:.76rem;font-weight:700;color:#374151;display:flex;align-items:center;gap:6px}
-.xpm-lbl i{color:#4A6741;font-size:.7rem}
-.xpm-inp{width:100%;height:42px;padding:0 12px;border:1.5px solid #D1D9CC;border-radius:10px;font-family:inherit;font-size:.88rem;font-weight:600;color:#111827;background:#fff;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .13s,box-shadow .13s}
-.xpm-inp:focus{border-color:#4A6741;box-shadow:0 0 0 3px rgba(74,103,65,.12)}
-textarea.xpm-inp{height:auto;padding:10px 12px;resize:none;line-height:1.5}
+.xpm-lbl{font-size:.72rem;font-weight:700;color:var(--xpm-muted);display:flex;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:.04em}
+.xpm-lbl i{font-size:.65rem}
+.xpm-inp{width:100%;height:40px;padding:0 11px;border:1px solid rgba(60,70,86,.16);border-radius:10px;font-family:inherit;font-size:.86rem;font-weight:600;color:var(--xpm-ink);background:var(--xpm-card);outline:none;-webkit-appearance:none;appearance:none;transition:border-color .14s,box-shadow .14s}
+.xpm-inp:focus{border-color:var(--xpm-green);box-shadow:0 0 0 3px rgba(34,183,122,.12)}
+textarea.xpm-inp{height:auto;padding:9px 11px;resize:none;line-height:1.45;font-size:.82rem}
 /* Total */
-.xpm-total{background:#fff;border:1.5px solid #C5D3C0;border-radius:13px;padding:13px 15px;display:flex;align-items:center;justify-content:space-between}
-.xpm-total-lbl{font-size:.76rem;font-weight:700;color:#5A7058;display:flex;align-items:center;gap:7px}
-.xpm-total-lbl i{color:#4A6741}
-.xpm-total-val{font-family:'Outfit',sans-serif;font-size:1.6rem;font-weight:800;color:#1A2E1A;font-variant-numeric:tabular-nums}
-/* Section */
-.xpm-sec{font-size:.69rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#9CA3AF;display:flex;align-items:center;gap:6px;margin-bottom:2px}
-.xpm-sec i{color:#4A6741}
+.xpm-total{background:var(--xpm-card);border:1px solid var(--xpm-border);border-radius:13px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(40,48,62,.04)}
+.xpm-total-lbl{font-size:.7rem;font-weight:700;color:var(--xpm-muted);text-transform:uppercase;letter-spacing:.04em}
+.xpm-total-val{font-size:1.55rem;font-weight:800;color:var(--xpm-ink);font-variant-numeric:tabular-nums}
+/* Section label */
+.xpm-sec{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--xpm-muted);margin-bottom:1px}
 /* Shortcuts */
-.xpm-sc-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.xpm-sc{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 7px;background:#fff;border:1.5px solid #E2EBE0;border-radius:11px;font-family:inherit;font-size:.69rem;font-weight:700;color:#3A5233;cursor:pointer;text-align:center;line-height:1.3;-webkit-tap-highlight-color:transparent;transition:background .12s,border-color .12s}
-.xpm-sc i{font-size:.88rem;color:#4A6741}
-.xpm-sc:active{background:#EDF2EC;border-color:#A8C0A0}
+.xpm-sc-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.xpm-sc{display:flex;align-items:center;gap:7px;padding:9px 11px;background:var(--xpm-card);border:1px solid var(--xpm-border);border-radius:10px;font-family:inherit;font-size:.72rem;font-weight:700;color:var(--xpm-ink);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .14s,border-color .14s;box-shadow:0 1px 4px rgba(40,48,62,.04)}
+.xpm-sc i{font-size:.78rem;color:var(--xpm-muted);flex-shrink:0;width:14px;text-align:center}
+.xpm-sc:hover{background:var(--xpm-green-soft);border-color:rgba(34,183,122,.28);color:var(--xpm-green-2)}
+.xpm-sc:hover i{color:var(--xpm-green-2)}
+.xpm-sc:active{transform:scale(.98)}
 /* Payment opts */
-.xpm-pay-list{display:flex;flex-direction:column;gap:7px}
-.xpm-pay-opt{background:#fff;border:1.5px solid #E5EAE4;border-radius:12px;overflow:hidden;transition:border-color .13s}
-.xpm-pay-opt.is-active{border-color:#A8C0A0}
-.xpm-pay-toggle{display:flex;align-items:center;gap:11px;padding:12px 13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.xpm-pay-toggle input[type=checkbox]{width:18px;height:18px;accent-color:#4A6741;flex-shrink:0;cursor:pointer}
-.xpm-pay-ico{width:32px;height:32px;display:grid;place-items:center;border-radius:8px;font-size:.78rem;flex-shrink:0}
-.xpm-pay-ico.cash{background:#DCFCE7;color:#15803D}
-.xpm-pay-ico.card{background:#DBEAFE;color:#1D4ED8}
-.xpm-pay-ico.xfer{background:#EDE9FE;color:#6D28D9}
-.xpm-pay-ico.pend{background:#F3F4F6;color:#6B7280}
-.xpm-pay-name{font-size:.86rem;font-weight:700;color:#111827;flex:1}
-.xpm-pay-sub{font-size:.68rem;font-weight:500;color:#9CA3AF}
-.xpm-pay-body{padding:0 13px 13px;display:flex;flex-direction:column;gap:9px}
+.xpm-pay-list{display:flex;flex-direction:column;gap:5px}
+.xpm-pay-opt{background:var(--xpm-card);border:1px solid var(--xpm-border);border-radius:11px;overflow:hidden;box-shadow:0 1px 4px rgba(40,48,62,.04);transition:border-color .14s}
+.xpm-pay-opt.is-active{border-color:var(--xpm-green)}
+.xpm-pay-toggle{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.xpm-pay-toggle input[type=checkbox]{width:16px;height:16px;accent-color:var(--xpm-green);flex-shrink:0;cursor:pointer}
+.xpm-pay-ico{width:28px;height:28px;display:grid;place-items:center;border-radius:7px;font-size:.72rem;flex-shrink:0}
+.xpm-pay-ico.cash{background:#E8F5E9;color:#2E7D32}
+.xpm-pay-ico.card{background:#E3F2FD;color:#1565C0}
+.xpm-pay-ico.xfer{background:#F3E5F5;color:#6A1B9A}
+.xpm-pay-ico.pend{background:var(--xpm-bg);color:var(--xpm-muted)}
+.xpm-pay-name{font-size:.84rem;font-weight:700;color:var(--xpm-ink);flex:1}
+.xpm-pay-body{padding:0 12px 11px;display:flex;flex-direction:column;gap:8px}
 .xpm-pay-body.hidden{display:none}
-.xpm-2col{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.xpm-fld{display:flex;flex-direction:column;gap:4px}
-.xpm-fld-lbl{font-size:.68rem;font-weight:700;color:#6B7280}
-.xpm-cambio{padding:8px 11px;background:#DCFCE7;border-radius:9px;display:flex;justify-content:space-between;align-items:center;font-size:.78rem;font-weight:600;color:#14532D}
-.xpm-card-types{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.xpm-card-chip{display:flex;align-items:center;justify-content:center;gap:5px;padding:9px;border:1.5px solid #BFDBFE;border-radius:9px;background:#fff;color:#1D4ED8;font-family:inherit;font-size:.74rem;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .12s,border-color .12s}
+.xpm-2col{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.xpm-fld{display:flex;flex-direction:column;gap:3px}
+.xpm-fld-lbl{font-size:.64rem;font-weight:700;color:var(--xpm-muted);text-transform:uppercase;letter-spacing:.03em}
+.xpm-cambio{padding:7px 10px;background:#E8F5E9;border-radius:8px;display:flex;justify-content:space-between;align-items:center;font-size:.75rem;font-weight:700;color:#1B5E20}
+.xpm-card-types{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.xpm-card-chip{display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;border:1px solid var(--xpm-border);border-radius:8px;background:var(--xpm-bg);color:var(--xpm-muted);font-family:inherit;font-size:.72rem;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .12s,border-color .12s,color .12s}
 .xpm-card-chip input{display:none}
-.xpm-card-chip.is-sel{background:#DBEAFE;border-color:#3B82F6}
-/* Resumen */
-.xpm-resumen{background:#F4F7F3;border:1.5px solid #C5D3C0;border-radius:12px;padding:11px 13px;display:flex;flex-direction:column;gap:5px;margin-top:4px}
+.xpm-card-chip.is-sel{background:#E3F2FD;border-color:#1565C0;color:#1565C0}
+/* Resumen mixto */
+.xpm-resumen{background:var(--xpm-bg);border:1px solid var(--xpm-border);border-radius:10px;padding:9px 12px;display:flex;flex-direction:column;gap:5px;margin-top:3px}
 .xpm-resumen.hidden{display:none}
-.xpm-rrow{display:flex;justify-content:space-between;align-items:center;font-size:.81rem}
-.xpm-rrow span{color:#5A7058;font-weight:500}
-.xpm-rrow strong{color:#111827;font-weight:800}
+.xpm-rrow{display:flex;justify-content:space-between;align-items:center;font-size:.79rem}
+.xpm-rrow span{color:var(--xpm-muted);font-weight:600}
+.xpm-rrow strong{color:var(--xpm-ink);font-weight:800}
 .xpm-rrow strong.red{color:#B91C1C}
-/* Invoice */
-.xpm-inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.xpm-inv-opt{display:flex;align-items:center;gap:9px;padding:11px 12px;background:#fff;border:1.5px solid #E5EAE4;border-radius:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .12s,border-color .12s}
-.xpm-inv-opt input{accent-color:#4A6741;flex-shrink:0;width:16px;height:16px}
-.xpm-inv-opt:has(input:checked){border-color:#4A6741;background:#EDF2EC}
-.xpm-inv-t{font-size:.8rem;font-weight:700;color:#111827;display:block}
-.xpm-inv-s{font-size:.66rem;color:#9CA3AF;font-weight:500;display:block;margin-top:1px}
-.xpm-inv-note{padding:8px 11px;border-radius:9px;font-size:.76rem;font-weight:600;margin-top:7px}
+/* Invoice — pill row */
+.xpm-inv-row{display:flex;gap:6px}
+.xpm-inv-opt{flex:1;display:flex;align-items:center;gap:7px;padding:9px 11px;background:var(--xpm-card);border:1px solid var(--xpm-border);border-radius:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .14s,border-color .14s;min-width:0;box-shadow:0 1px 4px rgba(40,48,62,.04)}
+.xpm-inv-opt input{accent-color:var(--xpm-green);flex-shrink:0;width:15px;height:15px}
+.xpm-inv-opt:has(input:checked){border-color:var(--xpm-green);background:var(--xpm-green-soft)}
+.xpm-inv-t{font-size:.78rem;font-weight:700;color:var(--xpm-ink)}
+.xpm-inv-note{padding:7px 10px;border-radius:8px;font-size:.73rem;font-weight:600;margin-top:6px}
 .xpm-inv-note.is-err{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C}
-.xpm-inv-note.is-info{background:#EFF6FF;border:1px solid #BFDBFE;color:#1D4ED8}
-.xpm-inv-note.is-ok{background:#EDF2EC;border:1px solid #C5D3C0;color:#3A5233}
+.xpm-inv-note.is-info{background:#EFF6FF;border:1px solid #BFDBFE;color:#1565C0}
+.xpm-inv-note.is-ok{background:var(--xpm-green-soft);border:1px solid rgba(34,183,122,.2);color:var(--xpm-green-2)}
 .xpm-inv-note.hidden{display:none}
 /* Mini btn */
-.xpm-mini{align-self:flex-start;padding:5px 11px;border:1.5px solid #C5D3C0;border-radius:8px;background:#EDF2EC;color:#3A5233;font-family:inherit;font-size:.7rem;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.xpm-mini:active{background:#C5D3C0}
+.xpm-mini{align-self:flex-start;padding:4px 10px;border:1px solid var(--xpm-border);border-radius:7px;background:var(--xpm-bg);color:var(--xpm-muted);font-family:inherit;font-size:.68rem;font-weight:700;cursor:pointer;margin-top:2px;-webkit-tap-highlight-color:transparent}
+.xpm-mini:hover{background:var(--xpm-green-soft);color:var(--xpm-green-2)}
 /* Footer */
-.xpm-foot{flex-shrink:0;display:grid;grid-template-columns:1fr 1.7fr;gap:9px;padding:12px 14px;padding-bottom:calc(12px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #E5EAE4}
-.xpm-fbtn{height:48px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;font-family:inherit;font-size:.88rem;font-weight:700;cursor:pointer;border:none;-webkit-tap-highlight-color:transparent;transition:opacity .13s,transform .13s}
-.xpm-fbtn:active{opacity:.85;transform:scale(.98)}
-.xpm-fbtn-cancel{background:#F3F4F6;color:#374151}
-.xpm-fbtn-cancel:hover{background:#E5E7EB}
-.xpm-fbtn-ok{background:#4A6741;color:#fff}
-.xpm-fbtn-ok:hover{background:#3A5233}
-.xpm-fbtn-ok.is-express{background:#B66A00}
+.xpm-foot{flex-shrink:0;display:grid;grid-template-columns:auto 1fr;gap:8px;padding:11px 14px;padding-bottom:calc(11px + env(safe-area-inset-bottom));background:var(--xpm-card);border-top:1px solid var(--xpm-border)}
+.xpm-fbtn{height:44px;display:flex;align-items:center;justify-content:center;gap:7px;border-radius:12px;font-family:inherit;font-size:.85rem;font-weight:700;cursor:pointer;border:none;-webkit-tap-highlight-color:transparent;transition:background .14s,transform .13s,box-shadow .14s}
+.xpm-fbtn:active{transform:scale(.97)}
+.xpm-fbtn-cancel{background:var(--xpm-bg);color:var(--xpm-muted);border:1px solid var(--xpm-border);padding:0 18px}
+.xpm-fbtn-cancel:hover{background:var(--xpm-border);color:var(--xpm-ink)}
+.xpm-fbtn-ok{background:var(--xpm-green);color:#fff;box-shadow:0 12px 24px rgba(34,183,122,.28)}
+.xpm-fbtn-ok:hover{background:var(--xpm-green-2);box-shadow:0 8px 16px rgba(34,183,122,.22)}
+.xpm-fbtn-ok.is-express{background:var(--xpm-amber);box-shadow:0 12px 24px rgba(182,106,0,.22)}
+.xpm-fbtn-ok.is-express:hover{background:#92400E}
 </style>
 
 <div id="modalCheckInTardio" class="xpm-ov" style="display:none;">
-    <div class="xpm-shell rv-tardio-shell">
+    <div class="xpm-shell">
 
         <div class="xpm-head">
             <div class="xpm-head-ico is-express" id="xpHeaderIcon"><i class="fas fa-bolt"></i></div>
@@ -5439,33 +5454,20 @@ textarea.xpm-inp{height:auto;padding:10px 12px;resize:none;line-height:1.5}
 
         <form id="formCheckInTardio" method="POST" action="" class="xpm-form rv-checkin-form rv-tardio-form">
             <?= csrf_field() ?>
-            <input type="hidden" name="tipo_tardio" id="tipo_tardio" value="">
+            <input type="hidden" name="tipo" id="tipo_tardio" value="">
 
             <div class="xpm-body">
 
                 <div id="mensajeValidacionTardio" class="xpm-vmsg hidden rv-checkin-message" aria-live="polite"></div>
 
-                <div class="xpm-info-card">
-                    <div class="xpm-info-row">
-                        <span class="xpm-info-ico"><i class="fas fa-user"></i></span>
-                        <div><span class="xpm-info-lbl">Huésped</span><span class="xpm-info-val" id="huesped_tardio">—</span></div>
-                    </div>
-                    <div class="xpm-info-row">
-                        <span class="xpm-info-ico"><i class="fas fa-bed"></i></span>
-                        <div><span class="xpm-info-lbl">Habitaciones</span><span class="xpm-info-val" id="habitaciones_tardio">—</span></div>
-                    </div>
-                    <div class="xpm-info-row">
-                        <span class="xpm-info-ico"><i class="fas fa-arrow-right-to-bracket"></i></span>
-                        <div><span class="xpm-info-lbl">Entrada</span><span class="xpm-info-val" id="fecha_entrada_tardio">—</span></div>
-                    </div>
-                    <div class="xpm-info-row">
-                        <span class="xpm-info-ico"><i class="fas fa-arrow-right-from-bracket"></i></span>
-                        <div><span class="xpm-info-lbl">Salida</span><span class="xpm-info-val" id="fecha_salida_tardio">—</span></div>
-                    </div>
-                </div>
+                <!-- Info compacta en una línea (ocultos para JS, los datos se muestran en el subtitle del header) -->
+                <span id="huesped_tardio" style="display:none"></span>
+                <span id="habitaciones_tardio" style="display:none"></span>
+                <span id="fecha_entrada_tardio" style="display:none"></span>
+                <span id="fecha_salida_tardio" style="display:none"></span>
 
                 <div id="campo_hora_entrada" class="xpm-field rv-arrival-field">
-                    <label class="xpm-lbl" for="hora_entrada_xpm"><i class="fas fa-clock"></i> Hora de Check-in</label>
+                    <label class="xpm-lbl" for="hora_entrada_xpm"><i class="fas fa-clock"></i> Hora de check-in</label>
                     <input type="time" name="hora_entrada" id="hora_entrada_xpm" class="xpm-inp" value="<?= date('H:i') ?>">
                 </div>
 
@@ -5475,10 +5477,8 @@ textarea.xpm-inp{height:auto;padding:10px 12px;resize:none;line-height:1.5}
                 </div>
 
                 <div>
-                    <div class="xpm-sec"><i class="fas fa-wallet"></i> Método de pago</div>
-                    <p id="nota_pago_opcional" style="font-size:.72rem;color:#9CA3AF;font-weight:500;margin:6px 0 10px;">Opcional — puede quedar pendiente y cobrarse después.</p>
-
-                    <div class="xpm-sc-grid" style="margin-bottom:10px;">
+                    <div class="xpm-sec" style="margin-bottom:7px;"><i class="fas fa-wallet"></i> Pago rápido</div>
+                    <div class="xpm-sc-grid" style="margin-bottom:8px;">
                         <button type="button" class="xpm-sc rv-money-shortcut is-cash" onclick="aplicarPagoRapidoTardio('efectivo')">
                             <i class="fas fa-money-bill-wave"></i>Efectivo exacto
                         </button>
@@ -5496,6 +5496,9 @@ textarea.xpm-inp{height:auto;padding:10px 12px;resize:none;line-height:1.5}
                         </button>
                     </div>
 
+                    <div class="xpm-sec" style="margin-bottom:7px;"><i class="fas fa-wallet"></i> Método de pago</div>
+                    <p id="nota_pago_opcional" style="font-size:.7rem;color:#9CA3AF;font-weight:500;margin:0 0 7px;">Opcional — puede dejarse pendiente.</p>
+
                     <div id="metodosPagoContainerTardio" class="xpm-pay-list rv-pay-methods">
 
                         <div class="xpm-pay-opt metodo-pago-item rv-pay-option rv-pay-pending">
@@ -5503,7 +5506,6 @@ textarea.xpm-inp{height:auto;padding:10px 12px;resize:none;line-height:1.5}
                                 <input type="checkbox" id="check_sin_pago" onchange="toggleMetodoPagoTardio('sin_pago')" checked>
                                 <span class="xpm-pay-ico pend"><i class="fas fa-clock"></i></span>
                                 <span class="xpm-pay-name">Sin pago ahora</span>
-                                <span class="xpm-pay-sub">Queda pendiente</span>
                             </label>
                         </div>
 
@@ -5592,14 +5594,14 @@ textarea.xpm-inp{height:auto;padding:10px 12px;resize:none;line-height:1.5}
 
                 <div>
                     <div class="xpm-sec"><i class="fas fa-file-invoice"></i> ¿Requiere factura?</div>
-                    <div id="facturaContainerTardio" class="xpm-inv-grid rv-invoice-grid" style="margin-top:9px;">
+                    <div id="facturaContainerTardio" class="xpm-inv-row rv-invoice-grid" style="margin-top:8px;">
                         <label class="xpm-inv-opt rv-invoice-choice" id="label_factura_si_tardio">
                             <input type="radio" name="requiere_factura" id="factura_si_tardio" value="si" onchange="seleccionarFacturaTardio('si')">
-                            <div><span class="xpm-inv-t">Sí, con factura</span><span class="xpm-inv-s">Genera solicitud</span></div>
+                            <span class="xpm-inv-t">Con factura</span>
                         </label>
                         <label class="xpm-inv-opt rv-invoice-choice" id="label_factura_no_tardio">
                             <input type="radio" name="requiere_factura" id="factura_no_tardio" value="no" onchange="seleccionarFacturaTardio('no')">
-                            <div><span class="xpm-inv-t">Sin factura</span><span class="xpm-inv-s">Uso interno si aplica</span></div>
+                            <span class="xpm-inv-t">Sin factura</span>
                         </label>
                     </div>
                     <div id="facturaResultadoTardio" class="xpm-inv-note is-ok rv-invoice-result hidden"></div>
@@ -7627,47 +7629,34 @@ function abrirModalCheckInTardio(id, huesped, habitaciones, fechaEntrada, fechaS
     const notaPagoOpcional = document.getElementById('nota_pago_opcional');
     const checkSinPago = document.getElementById('check_sin_pago');
 
+    // Mostrar info compacta en el subtitle del header
+    const headerSub = document.querySelector('#modalCheckInTardio .xpm-head-sub');
+    if (headerSub) {
+        headerSub.textContent = huesped + ' · Hab. ' + habitaciones + ' · ' + fechaEntrada + ' → ' + fechaSalida;
+    }
+
     if (tipo === 'express') {
-        // Proceso Express
-        titulo.innerHTML = '<i class="fas fa-bolt" style="color: #EA580C; margin-right: 0.5rem;"></i>Proceso Express';
-        btnConfirmar.innerHTML = '⚡ Procesar Express';
-        btnConfirmar.style.background = 'linear-gradient(135deg, #EA580C 0%, #C2410C 100%)';
+        titulo.textContent = 'Proceso Express';
+        const ico = document.getElementById('xpHeaderIcon');
+        if (ico) { ico.className = 'xpm-head-ico is-express'; ico.innerHTML = '<i class="fas fa-bolt"></i>'; }
+        btnConfirmar.innerHTML = '<i class="fas fa-bolt"></i> Procesar Express';
+        btnConfirmar.className = 'xpm-fbtn xpm-fbtn-ok is-express rv-btn-confirm';
         campoHora.style.display = 'none';
         notaPagoOpcional.style.display = 'none';
-        checkSinPago.parentElement.parentElement.style.display = 'none';
-
+        checkSinPago.closest('.xpm-pay-opt').style.display = 'none';
         alerta.style.display = 'block';
-        alerta.innerHTML = `
-            <div style="background: #FFF7ED; border-left: 4px solid #EA580C; padding: 0.75rem; border-radius: 0.375rem;">
-                <p style="font-size: 0.875rem; color: #9A3412; font-weight: 600; margin-bottom: 0.25rem;">
-                    ⚠️ IMPORTANTE: Proceso Express
-                </p>
-                <p style="font-size: 0.75rem; color: #9A3412;">
-                    La fecha de salida pasó hace <strong>${diasRetraso} día(s)</strong>.
-                    Este proceso hará check-in Y check-out automáticamente en un solo paso.
-                </p>
-            </div>
-        `;
+        alerta.innerHTML = `<i class="fas fa-triangle-exclamation"></i> <strong>Proceso Express:</strong> la salida pasó hace ${diasRetraso} día(s). Se hará check-in Y check-out en un solo paso.`;
     } else {
-        // Check-in Tardío Normal
-        titulo.innerHTML = '<i class="fas fa-clock" style="color: #F59E0B; margin-right: 0.5rem;"></i>Check-in Tardío';
-        btnConfirmar.innerHTML = '✓ Confirmar Check-in Tardío';
-        btnConfirmar.style.background = 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)';
-        campoHora.style.display = 'block';
-        notaPagoOpcional.style.display = 'block';
-        checkSinPago.parentElement.parentElement.style.display = 'block';
-
+        titulo.textContent = 'Check-in Tardío';
+        const ico = document.getElementById('xpHeaderIcon');
+        if (ico) { ico.className = 'xpm-head-ico is-late'; ico.innerHTML = '<i class="fas fa-clock"></i>'; }
+        btnConfirmar.innerHTML = '<i class="fas fa-check"></i> Confirmar Check-in';
+        btnConfirmar.className = 'xpm-fbtn xpm-fbtn-ok rv-btn-confirm';
+        campoHora.style.display = '';
+        notaPagoOpcional.style.display = '';
+        checkSinPago.closest('.xpm-pay-opt').style.display = '';
         alerta.style.display = 'block';
-        alerta.innerHTML = `
-            <div style="background: #FFFBEB; border-left: 4px solid #F59E0B; padding: 0.75rem; border-radius: 0.375rem;">
-                <p style="font-size: 0.875rem; color: #92400E; font-weight: 600; margin-bottom: 0.25rem;">
-                    ⏰ Check-in con ${diasRetraso} día(s) de retraso
-                </p>
-                <p style="font-size: 0.75rem; color: #92400E;">
-                    La fecha de entrada fue ${fechaEntrada}. Se registrará el check-in con nota de retraso.
-                </p>
-            </div>
-        `;
+        alerta.innerHTML = `<i class="fas fa-clock"></i> Llegada con <strong>${diasRetraso} día(s) de retraso</strong>. Entrada programada: ${fechaEntrada}.`;
     }
 
     // Resetear pagos
@@ -8069,16 +8058,28 @@ document.addEventListener('DOMContentLoaded', function() {
             // Validación para proceso express
             if (reservacionTardioData.tipo === 'express') {
                 if (metodosSeleccionadosTardio.size === 0) {
-                    mostrarMensajeTardio('Selecciona al menos un metodo de pago para el proceso express.', 'warning');
+                    mostrarMensajeTardio('Selecciona al menos un método de pago para el proceso express.', 'warning');
                     document.getElementById('metodosPagoContainerTardio')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     return false;
                 }
-
-                if (!confirmacionExpressTardioLista) {
-                    confirmacionExpressTardioLista = true;
-                    mostrarMensajeTardio('Proceso express listo para confirmar: se registrara check-in y check-out en un solo paso. Presiona confirmar otra vez para procesarlo.', 'warning');
-                    return false;
-                }
+                // Confirmación única con Swal — sin doble clic
+                const formRef = this;
+                Swal.fire({
+                    title: 'Confirmar proceso express',
+                    html: 'Se registrará <strong>check-in y check-out</strong> en un solo paso. Esta acción no se puede deshacer.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, procesar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#B66A00',
+                    reverseButtons: true,
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        sanitizeMoneyForm(formRef);
+                        formRef.submit();
+                    }
+                });
+                return false;
             }
 
             // Validar tipo de tarjeta tardío
