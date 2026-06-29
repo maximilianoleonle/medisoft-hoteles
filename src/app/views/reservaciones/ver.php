@@ -167,7 +167,9 @@ if (($reservacion['estado'] ?? '') === 'confirmada' && $rdFechaEntrada !== '' &&
         $rdCheckinDays = (int)((strtotime($rdFechaHoy) - strtotime($rdFechaSalida)) / 86400);
     }
 }
-$rdCheckinJsMode = $rdCheckinMode === 'express' ? 'express' : 'normal_tardio';
+$rdCheckinJsMode = 'normal_tardio';
+$rdCheckinButtonLabel = $rdCheckinMode === 'normal' ? 'Check-in' : 'Check-in (Tardío)';
+$rdCheckinActionLabel = $rdCheckinMode === 'normal' ? 'Registrar check-in' : 'Registrar check-in tardío';
 $rdHuespedNombreJsonAttr = htmlspecialchars(json_encode($rdHuespedNombre, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8');
 $rdHabitacionesTextoJsonAttr = htmlspecialchars(json_encode($rdHabitacionesTexto, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8');
 $rdFechaEntradaFormatoJsonAttr = htmlspecialchars(json_encode($rdFechaEntrada !== '' ? date('d/m/Y', strtotime($rdFechaEntrada)) : '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8');
@@ -3526,10 +3528,10 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                         </div>
                     </div>
                     <div class="rdv3-hero-actions">
-                        <?php if ($rdCheckinMode === 'normal'): ?>
-                            <button type="button" class="rdv3-btn rdv3-btn-primary" onclick="abrirModalCheckIn(<?= $rdReservationId ?>, <?= $rdTotal ?>)"><i class="fas fa-right-to-bracket"></i>Check-in</button>
-                        <?php elseif ($rdCheckinMode === 'late' || $rdCheckinMode === 'express'): ?>
-                            <button type="button" class="rdv3-btn rdv3-btn-primary" onclick='abrirModalCheckInTardio(<?= $rdReservationId ?>, <?= $rdHuespedNombreJsonAttr ?>, <?= $rdHabitacionesTextoJsonAttr ?>, <?= $rdFechaEntradaFormatoJsonAttr ?>, <?= $rdFechaSalidaFormatoJsonAttr ?>, <?= $rdTotal ?>, "<?= $rdCheckinJsMode ?>", <?= (int)$rdCheckinDays ?>)'><i class="fas fa-right-to-bracket"></i>Check-in</button>
+                        <?php if ($rdCheckinMode === 'normal' || $rdCheckinMode === 'express'): ?>
+                            <button type="button" class="rdv3-btn rdv3-btn-primary" onclick="abrirModalCheckIn(<?= $rdReservationId ?>, <?= $rdTotal ?>)"><i class="fas fa-right-to-bracket"></i><?= $rdCheckinButtonLabel ?></button>
+                        <?php elseif ($rdCheckinMode === 'late'): ?>
+                            <button type="button" class="rdv3-btn rdv3-btn-primary" onclick='abrirModalCheckInTardio(<?= $rdReservationId ?>, <?= $rdHuespedNombreJsonAttr ?>, <?= $rdHabitacionesTextoJsonAttr ?>, <?= $rdFechaEntradaFormatoJsonAttr ?>, <?= $rdFechaSalidaFormatoJsonAttr ?>, <?= $rdTotal ?>, "<?= $rdCheckinJsMode ?>", <?= (int)$rdCheckinDays ?>)'><i class="fas fa-right-to-bracket"></i><?= $rdCheckinButtonLabel ?></button>
                         <?php elseif ($rdEstadoKey === 'checked_in' && !$rdHasCheckoutDebt): ?>
                             <button type="button" class="rdv3-btn rdv3-btn-checkout" onclick="abrirModalCheckOut()"><i class="fas fa-right-from-bracket"></i>Check-out</button>
                         <?php endif; ?>
@@ -3954,10 +3956,10 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                                 <div class="rdv3-heading"><span class="rdv3-icon"><i class="fas fa-grip"></i></span><h2 class="rdv3-card-title">Acciones rapidas</h2></div>
                             </header>
                             <div class="rdv3-card-body rdv3-actions">
-                                <?php if ($rdCheckinMode === 'normal'): ?>
-                                    <button type="button" class="rdv3-action" onclick="abrirModalCheckIn(<?= $rdReservationId ?>, <?= $rdTotal ?>)"><span class="rdv3-action-left"><span class="rdv3-action-icon is-green"><i class="fas fa-right-to-bracket"></i></span>Registrar check-in</span><i class="fas fa-chevron-right"></i></button>
-                                <?php elseif ($rdCheckinMode === 'late' || $rdCheckinMode === 'express'): ?>
-                                    <button type="button" class="rdv3-action" onclick='abrirModalCheckInTardio(<?= $rdReservationId ?>, <?= $rdHuespedNombreJsonAttr ?>, <?= $rdHabitacionesTextoJsonAttr ?>, <?= $rdFechaEntradaFormatoJsonAttr ?>, <?= $rdFechaSalidaFormatoJsonAttr ?>, <?= $rdTotal ?>, "<?= $rdCheckinJsMode ?>", <?= (int)$rdCheckinDays ?>)'><span class="rdv3-action-left"><span class="rdv3-action-icon is-green"><i class="fas fa-right-to-bracket"></i></span>Registrar check-in</span><i class="fas fa-chevron-right"></i></button>
+                                <?php if ($rdCheckinMode === 'normal' || $rdCheckinMode === 'express'): ?>
+                                    <button type="button" class="rdv3-action" onclick="abrirModalCheckIn(<?= $rdReservationId ?>, <?= $rdTotal ?>)"><span class="rdv3-action-left"><span class="rdv3-action-icon is-green"><i class="fas fa-right-to-bracket"></i></span><?= $rdCheckinActionLabel ?></span><i class="fas fa-chevron-right"></i></button>
+                                <?php elseif ($rdCheckinMode === 'late'): ?>
+                                    <button type="button" class="rdv3-action" onclick='abrirModalCheckInTardio(<?= $rdReservationId ?>, <?= $rdHuespedNombreJsonAttr ?>, <?= $rdHabitacionesTextoJsonAttr ?>, <?= $rdFechaEntradaFormatoJsonAttr ?>, <?= $rdFechaSalidaFormatoJsonAttr ?>, <?= $rdTotal ?>, "<?= $rdCheckinJsMode ?>", <?= (int)$rdCheckinDays ?>)'><span class="rdv3-action-left"><span class="rdv3-action-icon is-green"><i class="fas fa-right-to-bracket"></i></span><?= $rdCheckinActionLabel ?></span><i class="fas fa-chevron-right"></i></button>
                                 <?php elseif ($rdEstadoKey === 'checked_in' && !$rdHasCheckoutDebt): ?>
                                     <button type="button" class="rdv3-action rdv3-action--checkout" onclick="abrirModalCheckOut()"><span class="rdv3-action-left"><span class="rdv3-action-icon is-checkout"><i class="fas fa-right-from-bracket"></i></span>Registrar check-out</span><i class="fas fa-chevron-right"></i></button>
                                 <?php endif; ?>
@@ -4049,10 +4051,10 @@ foreach ($rdDocuments as $rdDocTotalRow) {
                 </div>
 
                 <nav class="rdv3-mobile-bottom" aria-label="Acciones principales de reservacion">
-                    <?php if ($rdCheckinMode === 'normal'): ?>
-                        <button type="button" class="rdv3-mobile-primary" onclick="abrirModalCheckIn(<?= $rdReservationId ?>, <?= $rdTotal ?>)"><i class="fas fa-right-to-bracket"></i>Check-in</button>
-                    <?php elseif ($rdCheckinMode === 'late' || $rdCheckinMode === 'express'): ?>
-                        <button type="button" class="rdv3-mobile-primary" onclick='abrirModalCheckInTardio(<?= $rdReservationId ?>, <?= $rdHuespedNombreJsonAttr ?>, <?= $rdHabitacionesTextoJsonAttr ?>, <?= $rdFechaEntradaFormatoJsonAttr ?>, <?= $rdFechaSalidaFormatoJsonAttr ?>, <?= $rdTotal ?>, "<?= $rdCheckinJsMode ?>", <?= (int)$rdCheckinDays ?>)'><i class="fas fa-right-to-bracket"></i>Check-in</button>
+                    <?php if ($rdCheckinMode === 'normal' || $rdCheckinMode === 'express'): ?>
+                        <button type="button" class="rdv3-mobile-primary" onclick="abrirModalCheckIn(<?= $rdReservationId ?>, <?= $rdTotal ?>)"><i class="fas fa-right-to-bracket"></i><?= $rdCheckinButtonLabel ?></button>
+                    <?php elseif ($rdCheckinMode === 'late'): ?>
+                        <button type="button" class="rdv3-mobile-primary" onclick='abrirModalCheckInTardio(<?= $rdReservationId ?>, <?= $rdHuespedNombreJsonAttr ?>, <?= $rdHabitacionesTextoJsonAttr ?>, <?= $rdFechaEntradaFormatoJsonAttr ?>, <?= $rdFechaSalidaFormatoJsonAttr ?>, <?= $rdTotal ?>, "<?= $rdCheckinJsMode ?>", <?= (int)$rdCheckinDays ?>)'><i class="fas fa-right-to-bracket"></i><?= $rdCheckinButtonLabel ?></button>
                     <?php elseif ($rdEstadoKey === 'checked_in' && !$rdHasCheckoutDebt): ?>
                         <button type="button" class="rdv3-mobile-primary rdv3-mobile-checkout" onclick="abrirModalCheckOut()"><i class="fas fa-right-from-bracket"></i>Check-out</button>
                     <?php else: ?>
@@ -5440,9 +5442,9 @@ textarea.xpm-inp{height:auto;padding:9px 11px;resize:none;line-height:1.45;font-
     <div class="xpm-shell">
 
         <div class="xpm-head">
-            <div class="xpm-head-ico is-express" id="xpHeaderIcon"><i class="fas fa-bolt"></i></div>
+            <div class="xpm-head-ico is-late" id="xpHeaderIcon"><i class="fas fa-clock"></i></div>
             <div class="xpm-head-text">
-                <span class="xpm-head-title" id="tituloModalTardio">Proceso Express</span>
+                <span class="xpm-head-title" id="tituloModalTardio">Check-in Tardío</span>
                 <span class="xpm-head-sub">Confirma la llegada y registra el pago</span>
             </div>
             <button type="button" class="xpm-head-close" onclick="cerrarModalCheckInTardio()" aria-label="Cerrar">
@@ -7592,6 +7594,9 @@ let confirmacionExpressTardioLista = false;
 
 function abrirModalCheckInTardio(id, huesped, habitaciones, fechaEntrada, fechaSalida, total, tipo, diasRetraso) {
     const modalTardio = document.getElementById('modalCheckInTardio');
+    if (tipo === 'express') {
+        tipo = 'normal_tardio';
+    }
 
     reservacionTardioData = {
         id: id,
@@ -7635,32 +7640,19 @@ function abrirModalCheckInTardio(id, huesped, habitaciones, fechaEntrada, fechaS
         headerSub.textContent = huesped + ' · Hab. ' + habitaciones + ' · ' + fechaEntrada + ' → ' + fechaSalida;
     }
 
-    if (tipo === 'express') {
-        titulo.textContent = 'Proceso Express';
-        const ico = document.getElementById('xpHeaderIcon');
-        if (ico) { ico.className = 'xpm-head-ico is-express'; ico.innerHTML = '<i class="fas fa-bolt"></i>'; }
-        btnConfirmar.innerHTML = '<i class="fas fa-bolt"></i> Procesar Express';
-        btnConfirmar.className = 'xpm-fbtn xpm-fbtn-ok is-express rv-btn-confirm';
-        campoHora.style.display = 'none';
-        notaPagoOpcional.style.display = 'none';
-        checkSinPago.closest('.xpm-pay-opt').style.display = 'none';
-        alerta.style.display = 'block';
-        alerta.innerHTML = `<i class="fas fa-triangle-exclamation"></i> <strong>Proceso Express:</strong> la salida pasó hace ${diasRetraso} día(s). Se hará check-in Y check-out en un solo paso.`;
-    } else {
-        titulo.textContent = 'Check-in Tardío';
-        const ico = document.getElementById('xpHeaderIcon');
-        if (ico) { ico.className = 'xpm-head-ico is-late'; ico.innerHTML = '<i class="fas fa-clock"></i>'; }
-        btnConfirmar.innerHTML = '<i class="fas fa-check"></i> Confirmar Check-in';
-        btnConfirmar.className = 'xpm-fbtn xpm-fbtn-ok rv-btn-confirm';
-        campoHora.style.display = '';
-        notaPagoOpcional.style.display = '';
-        checkSinPago.closest('.xpm-pay-opt').style.display = '';
-        alerta.style.display = 'block';
-        alerta.innerHTML = `<i class="fas fa-clock"></i> Llegada con <strong>${diasRetraso} día(s) de retraso</strong>. Entrada programada: ${fechaEntrada}.`;
-    }
+    titulo.textContent = 'Check-in Tardío';
+    const ico = document.getElementById('xpHeaderIcon');
+    if (ico) { ico.className = 'xpm-head-ico is-late'; ico.innerHTML = '<i class="fas fa-clock"></i>'; }
+    btnConfirmar.innerHTML = '<i class="fas fa-check"></i> Confirmar Check-in';
+    btnConfirmar.className = 'xpm-fbtn xpm-fbtn-ok rv-btn-confirm';
+    campoHora.style.display = '';
+    notaPagoOpcional.style.display = '';
+    checkSinPago.closest('.xpm-pay-opt').style.display = '';
+    alerta.style.display = 'block';
+    alerta.innerHTML = `<i class="fas fa-clock"></i> Llegada con <strong>${diasRetraso} día(s) de retraso</strong>. Entrada programada: ${fechaEntrada}.`;
 
     // Resetear pagos
-    metodosSeleccionadosTardio = tipo === 'express' ? new Set() : new Set(['sin_pago']);
+    metodosSeleccionadosTardio = new Set(['sin_pago']);
     resetearPagosTardio();
     resetearFacturaTardio();
     resetearConfirmacionTardio();
@@ -7992,7 +7984,7 @@ function mostrarResumenTardio() {
 }
 
 function resetearPagosTardio() {
-    metodosSeleccionadosTardio = reservacionTardioData.tipo === 'express' ? new Set() : new Set(['sin_pago']);
+    metodosSeleccionadosTardio = new Set(['sin_pago']);
 
     // Desmarcar todos los checkboxes
     ['sin_pago', 'efectivo_tardio', 'tarjeta_tardio', 'transferencia_tardio'].forEach(id => {
@@ -8029,14 +8021,11 @@ function resetearPagosTardio() {
     document.getElementById('pendiente_tardio').textContent = '$0.00';
     document.getElementById('resumen_totales_tardio').classList.add('hidden');
 
-    // Marcar "sin pago" por defecto si no es express
-    if (reservacionTardioData.tipo !== 'express') {
-        const sinPago = document.getElementById('check_sin_pago');
-        if (sinPago) {
-            sinPago.checked = true;
-            const sinPagoCard = sinPago.closest('.rv-pay-option, .metodo-pago-item');
-            if (sinPagoCard) sinPagoCard.classList.add('is-open');
-        }
+    const sinPago = document.getElementById('check_sin_pago');
+    if (sinPago) {
+        sinPago.checked = true;
+        const sinPagoCard = sinPago.closest('.rv-pay-option, .metodo-pago-item');
+        if (sinPagoCard) sinPagoCard.classList.add('is-open');
     }
 }
 

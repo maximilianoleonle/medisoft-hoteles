@@ -2133,6 +2133,587 @@ $horaLlegadaModoPre = in_array($horaLlegadaModoPre, ['manual', 'ahora', 'despues
     .vista-reservacion .reservation-side-column { display: none !important; }
 }
 
+/* Guest-create inspired mobile refresh */
+@media (max-width: 768px) {
+    .vista-reservacion {
+        background:
+            repeating-linear-gradient(135deg, color-mix(in srgb, var(--rc-accent) 2%, transparent) 0 1px, transparent 1px 20px),
+            linear-gradient(180deg, var(--rc-ivory-2), var(--rc-ivory));
+    }
+
+    .vista-reservacion > div:first-of-type > .px-5 {
+        padding: 10px 10px 0 !important;
+    }
+
+    .vista-reservacion > .px-5:has(#formReservacion) {
+        padding: 18px 10px 98px !important;
+    }
+
+    .vista-reservacion > .pt-4 {
+        padding: 10px 10px 0 !important;
+    }
+
+    .vista-reservacion > div:first-of-type .flex.items-center.text-xs.mb-3 {
+        width: 100%;
+        margin-bottom: 16px !important;
+        gap: 5px !important;
+        overflow-x: auto;
+        padding-bottom: 0;
+        white-space: nowrap;
+        font-size: .66rem !important;
+        scrollbar-width: none;
+    }
+
+    .vista-reservacion > div:first-of-type .flex.items-center.text-xs.mb-3::-webkit-scrollbar {
+        display: none;
+    }
+
+    .vista-reservacion > div:first-of-type .flex.items-center.justify-between.gap-3 {
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        margin-bottom: 14px;
+        padding: 0 4px 2px;
+    }
+
+    .vista-reservacion > div:first-of-type .flex.items-center.gap-3 {
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        gap: 9px !important;
+        min-width: 0;
+    }
+
+    .vista-reservacion > div:first-of-type .flex.items-center.gap-3 > div[style*="width:46px"] {
+        width: 38px !important;
+        height: 38px !important;
+        flex: 0 0 38px !important;
+        border-radius: 12px !important;
+        font-size: .88rem;
+    }
+
+    .vista-reservacion > div:first-of-type .flex.items-center.gap-3 > div[style*="width:46px"] i {
+        font-size: .9rem !important;
+    }
+
+    .vista-reservacion > div:first-of-type h1 {
+        font-size: 1.38rem !important;
+        line-height: .96 !important;
+    }
+
+    .vista-reservacion > div:first-of-type h1 + p {
+        display: -webkit-box !important;
+        max-width: none;
+        margin-top: 3px !important;
+        color: var(--rc-muted) !important;
+        font-size: .68rem !important;
+        line-height: 1.25 !important;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .vista-reservacion .btn-back {
+        display: none !important;
+    }
+
+    .vista-reservacion .alert-presel {
+        padding: 9px 10px !important;
+        border-radius: 13px !important;
+        gap: 8px;
+        font-size: .71rem;
+        line-height: 1.3;
+    }
+
+    .vista-reservacion #formReservacion > .grid,
+    .vista-reservacion #formReservacion > .grid > .xl\:col-span-3,
+    .vista-reservacion #formReservacion > .grid > .xl\:col-span-1 {
+        gap: 9px !important;
+    }
+
+    .vista-reservacion .card-animate,
+    .vista-reservacion #formReservacion > .grid > .xl\:col-span-1 > .bg-white,
+    .vista-reservacion .info-card {
+        border-radius: 15px !important;
+        box-shadow: 0 10px 24px rgba(24, 33, 46, .07) !important;
+    }
+
+    .vista-reservacion .card-animate:hover,
+    .vista-reservacion #formReservacion > .grid > .xl\:col-span-1 > .bg-white:hover,
+    .vista-reservacion .info-card:hover {
+        transform: none;
+    }
+
+    .vista-reservacion .panel-hd-guest,
+    .vista-reservacion .panel-hd-dates,
+    .vista-reservacion .panel-hd-rooms,
+    .vista-reservacion .panel-hd-notes,
+    .vista-reservacion .panel-hd-summary {
+        min-height: 0 !important;
+        padding: 9px 10px !important;
+        background: var(--rc-surface-warm) !important;
+        border-bottom: 1px solid var(--rc-line);
+    }
+
+    .vista-reservacion .panel-hd-guest h2,
+    .vista-reservacion .panel-hd-dates h2,
+    .vista-reservacion .panel-hd-rooms h2,
+    .vista-reservacion .panel-hd-notes h2,
+    .vista-reservacion .panel-hd-summary h3 {
+        gap: 8px !important;
+        color: #111827 !important;
+        font-size: .86rem !important;
+        line-height: 1.1 !important;
+    }
+
+    .vista-reservacion .panel-hd-guest h2 i,
+    .vista-reservacion .panel-hd-dates h2 i,
+    .vista-reservacion .panel-hd-rooms h2 i,
+    .vista-reservacion .panel-hd-notes h2 i,
+    .vista-reservacion .panel-hd-summary h3 i {
+        width: 29px !important;
+        height: 29px !important;
+        flex: 0 0 29px !important;
+        border-radius: 10px !important;
+        font-size: .78rem !important;
+    }
+
+    .vista-reservacion .card-animate > .p-5,
+    .vista-reservacion #formReservacion > .grid > .xl\:col-span-1 > .bg-white .p-4,
+    .vista-reservacion .info-card {
+        padding: 10px !important;
+    }
+
+    .vista-reservacion label {
+        margin-bottom: 4px !important;
+        gap: 4px;
+        font-size: .58rem !important;
+        letter-spacing: .045em;
+        line-height: 1.1;
+    }
+
+    .vista-reservacion label i {
+        font-size: .68rem;
+    }
+
+    .vista-reservacion .lc-input,
+    .vista-reservacion .input-busqueda {
+        min-height: 44px !important;
+        border-radius: 11px !important;
+        padding: 7px 10px !important;
+        font-size: 13px !important;
+        line-height: 1.15 !important;
+        font-weight: 650 !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .66) !important;
+    }
+
+    .vista-reservacion .lc-input::placeholder,
+    .vista-reservacion .input-busqueda::placeholder,
+    .vista-reservacion .res-guest-input::placeholder {
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .vista-reservacion select.lc-input {
+        font-size: 12.5px !important;
+        text-overflow: ellipsis;
+    }
+
+    .vista-reservacion textarea.lc-input {
+        min-height: 76px !important;
+        padding-top: 9px !important;
+        line-height: 1.32 !important;
+    }
+
+    .vista-reservacion .select2-container--default .select2-selection--single {
+        min-height: 44px !important;
+        height: 44px !important;
+        border-radius: 11px !important;
+    }
+
+    .vista-reservacion .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 42px !important;
+        padding-left: 10px !important;
+        padding-right: 28px !important;
+        font-size: 12.5px !important;
+        font-weight: 650 !important;
+    }
+
+    .vista-reservacion .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 42px !important;
+        right: 6px !important;
+    }
+
+    .vista-reservacion .res-guest-search-row {
+        flex-direction: row !important;
+        gap: 8px !important;
+        align-items: stretch;
+    }
+
+    .vista-reservacion .res-guest-combobox {
+        min-height: 44px;
+        border-radius: 11px;
+        gap: 7px;
+    }
+
+    .vista-reservacion .res-guest-search-icon {
+        margin-left: 10px;
+        font-size: .68rem;
+    }
+
+    .vista-reservacion .res-guest-input {
+        height: 42px;
+        font-size: 13px;
+        font-weight: 650;
+    }
+
+    .vista-reservacion .res-guest-clear {
+        width: 44px;
+        height: 44px;
+        margin-right: 0;
+        border-radius: 11px;
+    }
+
+    .vista-reservacion .res-guest-results {
+        top: calc(100% + 6px);
+        max-height: 248px;
+        padding: 6px;
+        border-radius: 13px;
+    }
+
+    .vista-reservacion .res-guest-option,
+    .vista-reservacion .res-guest-state {
+        gap: 8px;
+        padding: 9px;
+        border-radius: 10px;
+    }
+
+    .vista-reservacion .res-guest-avatar {
+        width: 30px;
+        height: 30px;
+        flex-basis: 30px;
+        border-radius: 10px;
+        font-size: .7rem;
+    }
+
+    .vista-reservacion .res-guest-option-name {
+        font-size: .78rem;
+    }
+
+    .vista-reservacion .res-guest-option-meta,
+    .vista-reservacion .res-guest-state {
+        font-size: .66rem;
+    }
+
+    .vista-reservacion #infoHuesped.guest-info-box {
+        margin-top: 8px;
+        min-height: 0 !important;
+        padding: 9px 10px !important;
+        border-radius: 13px !important;
+    }
+
+    .vista-reservacion #infoHuesped > p {
+        margin: 0 0 7px !important;
+        color: var(--rc-muted) !important;
+        font-size: .58rem !important;
+        line-height: 1.1;
+        letter-spacing: .055em;
+    }
+
+    .vista-reservacion #detallesHuesped {
+        min-height: 0;
+    }
+
+    .vista-reservacion #detallesHuesped > .grid {
+        display: flex !important;
+        flex-wrap: wrap;
+        align-items: baseline;
+        align-content: flex-start;
+        gap: 6px 13px !important;
+        min-height: 0;
+        font-size: .66rem !important;
+        line-height: 1.35;
+    }
+
+    .vista-reservacion #detallesHuesped > .grid > div {
+        width: auto;
+        min-height: 0;
+        display: inline-flex;
+        align-items: baseline;
+        gap: 4px;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: var(--rc-muted);
+    }
+
+    .vista-reservacion #detallesHuesped strong {
+        color: #111827;
+        font-size: .64rem;
+        font-weight: 850;
+    }
+
+    .vista-reservacion .btn-gold {
+        width: 44px !important;
+        min-width: 44px;
+        min-height: 44px !important;
+        padding: 0 !important;
+        border-radius: 11px;
+    }
+
+    .vista-reservacion .btn-gold span {
+        display: none !important;
+    }
+
+    .vista-reservacion .panel-hd-dates + .p-5 > .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    .vista-reservacion .panel-hd-dates + .p-5 > .grid > div:nth-child(3) {
+        grid-column: 1 / -1;
+    }
+
+    .vista-reservacion .arrival-planner {
+        gap: 7px;
+    }
+
+    .vista-reservacion .arrival-mode-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 6px !important;
+    }
+
+    .vista-reservacion .arrival-mode-btn {
+        min-height: 44px;
+        padding: 6px 5px;
+        border-radius: 11px;
+        font-size: .61rem;
+        line-height: 1.1;
+    }
+
+    .vista-reservacion .arrival-mode-btn i {
+        display: block;
+        margin: 0 0 3px !important;
+        font-size: .72rem;
+    }
+
+    .vista-reservacion .arrival-help,
+    .vista-reservacion .text-xs.text-gray-400 {
+        margin-top: 4px !important;
+        font-size: .62rem !important;
+        line-height: 1.25;
+    }
+
+    .vista-reservacion .buscador-habitaciones {
+        position: static !important;
+        margin-bottom: 10px !important;
+        padding: 9px !important;
+        border-radius: 13px;
+        box-shadow: none;
+    }
+
+    .vista-reservacion .buscador-habitaciones .mt-2\.5 {
+        gap: 6px 9px !important;
+        font-size: .61rem !important;
+        line-height: 1.15;
+    }
+
+    .vista-reservacion .icono-busqueda {
+        right: 10px;
+        font-size: .72rem;
+    }
+
+    .vista-reservacion .room-type-grid {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+
+    .vista-reservacion .room-type-group {
+        margin-bottom: 10px;
+        border-radius: 14px;
+    }
+
+    .vista-reservacion .room-type-group-head {
+        padding: 9px 10px !important;
+        gap: 8px;
+    }
+
+    .vista-reservacion .room-type-title h4 {
+        font-size: .84rem;
+        line-height: 1.1;
+    }
+
+    .vista-reservacion .room-type-count {
+        min-height: 24px;
+        padding: 4px 8px;
+        font-size: .62rem;
+    }
+
+    .vista-reservacion .room-type-body {
+        padding: 8px;
+    }
+
+    .vista-reservacion .rc-room-card {
+        min-height: 0;
+        padding: 12px 12px 12px 15px !important;
+        border-radius: 14px !important;
+    }
+
+    .vista-reservacion .rc-room-main {
+        gap: 8px 10px;
+    }
+
+    .vista-reservacion .rc-room-number strong {
+        font-size: 1.32rem;
+    }
+
+    .vista-reservacion .rc-room-label {
+        font-size: .55rem;
+    }
+
+    .vista-reservacion .rc-room-chip {
+        min-height: 21px;
+        padding: 3px 7px;
+        font-size: .6rem;
+    }
+
+    .vista-reservacion .rc-room-floor,
+    .vista-reservacion .rc-room-features {
+        font-size: .7rem;
+        line-height: 1.28;
+    }
+
+    .vista-reservacion .rc-room-price strong {
+        font-size: .92rem;
+    }
+
+    .vista-reservacion .rc-room-price span,
+    .vista-reservacion .rc-room-action-text {
+        font-size: .62rem;
+    }
+
+    .vista-reservacion .rc-room-footer {
+        padding-top: 9px;
+    }
+
+    .vista-reservacion .seccion-cortesias {
+        margin-top: 10px !important;
+        padding: 10px !important;
+        border-radius: 13px !important;
+    }
+
+    .vista-reservacion .titulo-cortesias {
+        gap: 6px;
+        margin-bottom: 8px;
+        font-size: .78rem;
+    }
+
+    .vista-reservacion .item-cortesia {
+        padding: 9px;
+        border-radius: 11px !important;
+    }
+
+    .vista-reservacion .checkbox-cortesia,
+    .vista-reservacion .rc-room-check {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    .vista-reservacion .res-form-error {
+        margin-top: 2px;
+        font-size: .66rem;
+        line-height: 1.25;
+    }
+
+    .resumen-flotante {
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+        border-radius: 16px !important;
+        border: 1px solid var(--brand-accent, #BD9441) !important;
+        padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+        box-shadow: 0 -14px 34px -24px rgba(15, 23, 42, .42) !important;
+        overflow: hidden;
+    }
+
+    .rf-row {
+        gap: 8px;
+        padding: 8px;
+    }
+
+    .rf-info {
+        min-height: 44px;
+        padding: 6px 8px;
+        border: 1px solid color-mix(in srgb, var(--brand-accent, #BD9441) 18%, #E5E7EB);
+        border-radius: 12px;
+        background: #FFFFFF;
+    }
+
+    .rf-info-text strong {
+        font-size: 1rem;
+    }
+
+    .rf-info-text small {
+        font-size: .62rem;
+    }
+
+    .rf-save {
+        min-width: 112px;
+        min-height: 44px !important;
+        border-radius: 12px;
+        font-size: .72rem;
+    }
+
+    .rf-detail {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .resumen-flotante.expanded .rf-detail {
+        max-height: 44vh;
+        padding: 9px 8px 2px;
+    }
+}
+
+@media (max-width: 380px) {
+    .vista-reservacion > div:first-of-type > .px-5,
+    .vista-reservacion > .px-5:has(#formReservacion),
+    .vista-reservacion > .pt-4 {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+
+    .vista-reservacion > div:first-of-type h1 {
+        font-size: 1.22rem !important;
+    }
+
+    .vista-reservacion .panel-hd-dates + .p-5 > .grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .vista-reservacion .arrival-mode-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .vista-reservacion .res-guest-search-row {
+        flex-direction: column !important;
+    }
+
+    .vista-reservacion .btn-gold {
+        width: 100% !important;
+    }
+
+    .vista-reservacion .btn-gold span {
+        display: inline !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .select2-dropdown {
+        font-size: 13px !important;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .vista-reservacion *,
     .vista-reservacion *::before,
